@@ -1068,7 +1068,7 @@ the market — or from the order, on a contract for work.
   (the company block and the footer), the payout invoice footer and the booking confirmation's seller
   section. A customer and a cleaner therefore see one address wherever the company is named. The
   development seed writes it; until then it held `info@cleansia.cz`. A DEV database seeded earlier is
-  moved by `sql-scripts/update_company_contact_placeholders.sql`, which changes only a row that still
+  moved by `sql-scripts/fix-company-contact-placeholders.sql`, which changes only a row that still
   holds the old address. Production's record is typed into the admin console
   ([The first production deploy](/deployment/ci-cd#first-production-deploy)). No e-mail prints the
   company record's e-mail or phone.

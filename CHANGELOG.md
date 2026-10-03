@@ -531,7 +531,7 @@ need backfilling.
   already give for support. The terms, the privacy policy, the complaints procedure and the cleaner's
   agreements print it, and so do the receipt, the payout invoice and the booking confirmation. They
   printed info@cleansia.cz, so a customer saw two addresses. **Operator:** a DEV database seeded
-  before this keeps info@cleansia.cz until `sql-scripts/update_company_contact_placeholders.sql` runs
+  before this keeps info@cleansia.cz until `sql-scripts/fix-company-contact-placeholders.sql` runs
   on it. Production's company record is typed into the admin console. (Owner ruling 2026-10-03.)
 
 - **Customer and cleaner — the company phone reads `<company_phone_number>` until the real one is

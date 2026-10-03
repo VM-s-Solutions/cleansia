@@ -245,7 +245,6 @@ describe('MembershipPlanFormComponent', () => {
       },
       discountPercentage: 10,
       trialPeriodDays: 30,
-      freeCancellationWindowHours: 24,
       allowsExpressUpgrade: true,
       expressUpgradesPerMonth: 2,
       isActive: true,

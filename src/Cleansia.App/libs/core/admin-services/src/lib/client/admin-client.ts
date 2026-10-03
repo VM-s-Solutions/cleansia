@@ -22776,7 +22776,6 @@ export class CreateMembershipPlanCommand implements ICreateMembershipPlanCommand
     billingInterval!: BillingInterval;
     prices!: { [key: string]: MembershipPlanPriceInput; } | undefined;
     discountPercentage!: number;
-    freeCancellationWindowHours!: number;
     trialPeriodDays!: number;
     allowsExpressUpgrade!: boolean;
     expressUpgradesPerMonth!: number;
@@ -22803,7 +22802,6 @@ export class CreateMembershipPlanCommand implements ICreateMembershipPlanCommand
                 }
             }
             this.discountPercentage = Data["discountPercentage"];
-            this.freeCancellationWindowHours = Data["freeCancellationWindowHours"];
             this.trialPeriodDays = Data["trialPeriodDays"];
             this.allowsExpressUpgrade = Data["allowsExpressUpgrade"];
             this.expressUpgradesPerMonth = Data["expressUpgradesPerMonth"];
@@ -22830,7 +22828,6 @@ export class CreateMembershipPlanCommand implements ICreateMembershipPlanCommand
             }
         }
         data["discountPercentage"] = this.discountPercentage;
-        data["freeCancellationWindowHours"] = this.freeCancellationWindowHours;
         data["trialPeriodDays"] = this.trialPeriodDays;
         data["allowsExpressUpgrade"] = this.allowsExpressUpgrade;
         data["expressUpgradesPerMonth"] = this.expressUpgradesPerMonth;
@@ -22844,7 +22841,6 @@ export interface ICreateMembershipPlanCommand {
     billingInterval: BillingInterval;
     prices: { [key: string]: MembershipPlanPriceInput; } | undefined;
     discountPercentage: number;
-    freeCancellationWindowHours: number;
     trialPeriodDays: number;
     allowsExpressUpgrade: boolean;
     expressUpgradesPerMonth: number;
@@ -29898,7 +29894,6 @@ export class MembershipPlanDetailDto implements IMembershipPlanDetailDto {
     prices!: { [key: string]: MembershipPlanPriceDto; } | undefined;
     discountPercentage!: number;
     trialPeriodDays!: number;
-    freeCancellationWindowHours!: number;
     allowsExpressUpgrade!: boolean;
     expressUpgradesPerMonth!: number;
     isActive!: boolean;
@@ -29929,7 +29924,6 @@ export class MembershipPlanDetailDto implements IMembershipPlanDetailDto {
             }
             this.discountPercentage = Data["discountPercentage"];
             this.trialPeriodDays = Data["trialPeriodDays"];
-            this.freeCancellationWindowHours = Data["freeCancellationWindowHours"];
             this.allowsExpressUpgrade = Data["allowsExpressUpgrade"];
             this.expressUpgradesPerMonth = Data["expressUpgradesPerMonth"];
             this.isActive = Data["isActive"];
@@ -29960,7 +29954,6 @@ export class MembershipPlanDetailDto implements IMembershipPlanDetailDto {
         }
         data["discountPercentage"] = this.discountPercentage;
         data["trialPeriodDays"] = this.trialPeriodDays;
-        data["freeCancellationWindowHours"] = this.freeCancellationWindowHours;
         data["allowsExpressUpgrade"] = this.allowsExpressUpgrade;
         data["expressUpgradesPerMonth"] = this.expressUpgradesPerMonth;
         data["isActive"] = this.isActive;
@@ -29978,7 +29971,6 @@ export interface IMembershipPlanDetailDto {
     prices: { [key: string]: MembershipPlanPriceDto; } | undefined;
     discountPercentage: number;
     trialPeriodDays: number;
-    freeCancellationWindowHours: number;
     allowsExpressUpgrade: boolean;
     expressUpgradesPerMonth: number;
     isActive: boolean;
@@ -29996,7 +29988,6 @@ export class MembershipPlanListItem implements IMembershipPlanListItem {
     currencyCode!: string | undefined;
     discountPercentage!: number;
     trialPeriodDays!: number;
-    freeCancellationWindowHours!: number;
     allowsExpressUpgrade!: boolean;
     expressUpgradesPerMonth!: number;
     isActive!: boolean;
@@ -30022,7 +30013,6 @@ export class MembershipPlanListItem implements IMembershipPlanListItem {
             this.currencyCode = Data["currencyCode"];
             this.discountPercentage = Data["discountPercentage"];
             this.trialPeriodDays = Data["trialPeriodDays"];
-            this.freeCancellationWindowHours = Data["freeCancellationWindowHours"];
             this.allowsExpressUpgrade = Data["allowsExpressUpgrade"];
             this.expressUpgradesPerMonth = Data["expressUpgradesPerMonth"];
             this.isActive = Data["isActive"];
@@ -30048,7 +30038,6 @@ export class MembershipPlanListItem implements IMembershipPlanListItem {
         data["currencyCode"] = this.currencyCode;
         data["discountPercentage"] = this.discountPercentage;
         data["trialPeriodDays"] = this.trialPeriodDays;
-        data["freeCancellationWindowHours"] = this.freeCancellationWindowHours;
         data["allowsExpressUpgrade"] = this.allowsExpressUpgrade;
         data["expressUpgradesPerMonth"] = this.expressUpgradesPerMonth;
         data["isActive"] = this.isActive;
@@ -30067,7 +30056,6 @@ export interface IMembershipPlanListItem {
     currencyCode: string | undefined;
     discountPercentage: number;
     trialPeriodDays: number;
-    freeCancellationWindowHours: number;
     allowsExpressUpgrade: boolean;
     expressUpgradesPerMonth: number;
     isActive: boolean;
@@ -37532,7 +37520,6 @@ export class UpdateMembershipPlanCommand implements IUpdateMembershipPlanCommand
     name!: string | undefined;
     prices!: { [key: string]: MembershipPlanPriceInput; } | undefined;
     discountPercentage!: number;
-    freeCancellationWindowHours!: number;
     trialPeriodDays!: number;
     allowsExpressUpgrade!: boolean;
     expressUpgradesPerMonth!: number;
@@ -37558,7 +37545,6 @@ export class UpdateMembershipPlanCommand implements IUpdateMembershipPlanCommand
                 }
             }
             this.discountPercentage = Data["discountPercentage"];
-            this.freeCancellationWindowHours = Data["freeCancellationWindowHours"];
             this.trialPeriodDays = Data["trialPeriodDays"];
             this.allowsExpressUpgrade = Data["allowsExpressUpgrade"];
             this.expressUpgradesPerMonth = Data["expressUpgradesPerMonth"];
@@ -37584,7 +37570,6 @@ export class UpdateMembershipPlanCommand implements IUpdateMembershipPlanCommand
             }
         }
         data["discountPercentage"] = this.discountPercentage;
-        data["freeCancellationWindowHours"] = this.freeCancellationWindowHours;
         data["trialPeriodDays"] = this.trialPeriodDays;
         data["allowsExpressUpgrade"] = this.allowsExpressUpgrade;
         data["expressUpgradesPerMonth"] = this.expressUpgradesPerMonth;
@@ -37597,7 +37582,6 @@ export interface IUpdateMembershipPlanCommand {
     name: string | undefined;
     prices: { [key: string]: MembershipPlanPriceInput; } | undefined;
     discountPercentage: number;
-    freeCancellationWindowHours: number;
     trialPeriodDays: number;
     allowsExpressUpgrade: boolean;
     expressUpgradesPerMonth: number;

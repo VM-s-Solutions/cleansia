@@ -2668,7 +2668,6 @@
         "price": "Price",
         "monthly_equivalent": "Monthly equivalent",
         "discount": "Discount",
-        "free_cancel_window": "Free-cancel (h)",
         "trial": "Trial (days)",
         "express": "Express",
         "status": "Status",
@@ -2707,7 +2706,6 @@
           "stripe_price_id": "Stripe Price id",
           "stripe_price_id_help": "Copy from the Stripe dashboard (price_...). The platform does not create Stripe prices.",
           "discount": "Discount (%)",
-          "free_cancel_window": "Free-cancellation window (hours)",
           "trial_days": "Free trial (days)",
           "trial_days_help": "Days a new member gets every Plus benefit before the first charge. One trial per account; 0 means no trial.",
           "express_upgrade": "Allows express upgrade",
@@ -3313,8 +3311,7 @@
         "code_already_exists": "A plan with this code already exists.",
         "discount_out_of_range": "Discount must be between 0 and 100.",
         "not_found": "Membership plan not found.",
-        "stripe_price_already_used": "That Stripe Price id is already used by another plan price.",
-        "free_cancellation_window_too_long": "The free cancellation window cannot be longer than the standard 24 hours."
+        "stripe_price_already_used": "That Stripe Price id is already used by another plan price."
       }
     },
     "order": {

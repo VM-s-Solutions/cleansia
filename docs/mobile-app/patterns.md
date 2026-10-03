@@ -195,12 +195,14 @@ the fade below.
 
 Home, Profile and the Plus offer draw to the top edge with no navigation bar, so once their content
 scrolls up it passes under the clock and the camera cut-out. On those three screens, once the content
-has left its top, it fades out under the status bar, down to 24pt (24dp) below it. On iOS 26 that is
-the system's soft scroll edge, the one a navigation bar draws (Edit schedule's, for instance), and on
-iOS 16–25 a thin blur. On Android it is a band of the page background. Through either iOS form the
-content stays visible, blurred, as it passes under the clock. Until 2026-10-03 iOS drew a band of the
-page colour too, and it read as a solid white strip (owner remark 2026-10-03). Orders and Rewards keep
-a fixed title above their scroll view, so nothing passes under the status bar there.
+has left its top, it fades out under the status bar. On iOS the fade covers the status bar alone (the
+clock, signal and battery) and ends in a short tail 8pt below it: a light blur under a see-through wash
+of the page colour, the same on every iOS version, so the content stays visible under the clock. On
+Android it is a band of the page background that reaches 24dp below the status bar. iOS changed twice
+on 2026-10-03 (owner remarks): a band of the page colour, like Android's, read as a solid white strip,
+and the system soft edge and blur that replaced it were too tall, too sharp and too opaque (below).
+Orders and Rewards keep a fixed title above their scroll view, so nothing passes under the status bar
+there.
 
 **It is scroll-driven, never static.** At rest nothing is drawn, so the full-bleed Profile and Plus
 heroes (above) paint the strip themselves. A pull-to-refresh never raises it either. It is decoration
@@ -212,21 +214,30 @@ first point of scroll.
   is written only when it crosses the threshold, not on every scrolled frame. A `PreferenceKey` reader
   does not work here, because the scroll view does not pass its content's preference changes to an
   `onPreferenceChange` outside it.
-- **iOS 26 draws the system's soft scroll edge.** The system draws it only under a bar, and these
-  screens hide their navigation bar, so the scroll view carries a stand-in: a `safeAreaBar` 24pt tall
-  (`StatusBarFade.depth`) filled with the page colour at 1.1 % opacity, with `spacing: -24` giving its
-  height back so the content does not move down. Then come `scrollEdgeEffectStyle(.soft, for: .top)`
-  and `scrollEdgeEffectHidden(!isScrolled, for: .top)`. The fill is what makes the system draw: on
-  the 26.3 simulator with real drags, compared against Edit schedule's frames, `scrollEdgeEffectStyle`
-  alone drew nothing, and so did a clear or a zero-height `safeAreaBar`; a near-clear fill drew the
-  edge.
-  The bar takes no touches, so Home's address row and the Plus offer's back arrow under it still
-  answer. It has not been checked on a physical iPhone 17. When checking a scroll-driven effect, use
-  real drags: `UIScrollView.setContentOffset` does not update SwiftUI geometry.
-- **iOS 16–25** lay an `.ultraThinMaterial` band over the status bar instead, masked by a gradient
-  that is solid over the status bar and clear 24pt below it, and fade it in and out with the scroll.
-  The band's own reader keeps the safe area on purpose: one that ignores it reports a top inset of 0,
-  which collapses the band to its fade. Checked on iOS 16.4 and 18.6.
+- **One overlay, the same on every iOS version.** Over the scroll view lies a strip as tall as the
+  status bar plus `StatusBarFade.tail` (8pt), faded in and out with the scroll. Its fill is
+  `.ultraThinMaterial` at 40 % (`blur`) under the page colour at 40 % (`wash`). The wash moves the
+  content the way the page does, lighter in light mode and darker in dark, which keeps the clock
+  legible over a busy card; the material alone lifted dark content towards grey and left a glow at the
+  screen's edges. A gradient masks the strip: full across the top 35 % of the status bar
+  (`holdShare`), then a smoothstep falloff, sampled at nine points, to clear at the tail's end, so no
+  line marks the status bar's edge. Under Reduce Transparency the material goes and the wash alone, at
+  85 % (`solidWash`), stands in for it. The strip's reader keeps the safe area on purpose: one that
+  ignores it reports a top inset of 0, which collapses the fade to its tail. The strip takes no
+  touches, so Home's address row and the Plus offer's back arrow under it still answer.
+  `ContentSafeAreaBindingTests` pins the mask (full at the top, never rising, no step above 0.2, clear
+  at the tail's end, a tail of 6–10pt), and that the fade has no per-version branch and no system
+  edge. Checked on the iOS 26.3, 18.6 and 16.4 simulators, light and dark, with a card under the
+  clock.
+- **Why not iOS 26's own soft edge.** From the first to the second remark of 2026-10-03, iOS 26 drew
+  the system's soft scroll edge, the one a navigation bar draws: a `safeAreaBar` stand-in 24pt tall
+  with a near-clear fill, then `scrollEdgeEffectStyle(.soft, for: .top)`, because the system draws its
+  edge only under a bar and these screens hide theirs. iOS 16–25 laid an `.ultraThinMaterial` band
+  over the status bar, masked to clear 24pt below it. The system draws its edge well below the status
+  bar, a milky wash down to about 77pt on the iPhone 17 Pro, at a height an app cannot set, so it could
+  not cover the status bar alone, and the 16–25 band ended in a visible line. Both are gone, with
+  `StatusBarFade.depth`. When checking a scroll-driven effect, use real drags:
+  `UIScrollView.setContentOffset` does not update SwiftUI geometry.
 - **Android** applies `Modifier.statusBarFade(scrollState)` (customer `ui/components/StatusBarFade.kt`)
   directly before `verticalScroll(scrollState)`, so it draws over the viewport and not over the
   scrolled content. It is visible while `scrollState.value > 0`. Home moved its status-bar padding

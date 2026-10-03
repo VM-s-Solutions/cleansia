@@ -160,11 +160,13 @@ need backfilling.
 - **Customer Android and iOS — content fades out under the clock as it scrolls.** On Home, Profile
   and the Cleansia Plus offer, content scrolled to the top of the screen fades out under the status
   bar instead of running into the clock and the camera cut-out. At rest, and while pulling down to
-  refresh, nothing is drawn, so the Profile and Plus headers still reach the top edge. On iOS 26 it is
-  the system's own soft edge, the one under a navigation bar, and earlier iOS versions blur the
-  content under a thin veil that clears just below the clock; until 2026-10-03 iOS covered it with a
-  solid band of the page colour instead. Android fades it into the page colour. (Owner remark
-  2026-10-01; the iOS edge and blur, owner remark 2026-10-03.)
+  refresh, nothing is drawn, so the Profile and Plus headers still reach the top edge. On iOS the fade
+  covers only the status bar and clears a few points below it: a light blur under a see-through veil
+  of the page colour, eased out with no visible edge, the same on every iOS version, so the content
+  stays visible under the clock. For part of 2026-10-03 iOS 26 used the system's own soft edge, which
+  reached well below the status bar, and iOS 16 to 25 a blur that ended in a visible line; before
+  that, iOS covered it with a solid band of the page colour. Android fades it into the page colour.
+  (Owner remark 2026-10-01; the iOS fade, owner remarks 2026-10-03.)
 
 - **A contract for work between the customer and the cleaner, per job.** Every booking is now made
   under the platform's *contract for work* text — published at `/work-contract` beside the terms and the

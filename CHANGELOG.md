@@ -542,6 +542,13 @@ need backfilling.
   is unchanged. **Operator:** enter the company's real phone in the admin console's company form; the
   same DEV script moves a DEV database seeded before this. (Owner ruling 2026-10-03.)
 
+- **Customer — the privacy policy sends personal-data questions to privacy@cleansia.cz.** Where the
+  policy invites questions about your personal data, and where it says how to use your rights beyond
+  what the app and the website let you do, it now names privacy@cleansia.cz, the address the privacy
+  page already gave. It named the company's general address. Nothing else in the policy changed. It
+  is a new version, effective 2026-10-03, so the tick comes back before your next booking; the same
+  tick accepts the terms of the same date. (Owner ruling 2026-10-03.)
+
 - **Customer Android and iOS — arrival times are grouped by part of day, as on the web.** The
   booking's time step asks for morning, afternoon or evening first, then shows that part's sixteen
   times in a grid of four rows, instead of one long list of every quarter hour. A part with nothing

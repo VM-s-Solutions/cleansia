@@ -1008,17 +1008,28 @@ one of them is our own draft until the lawyer delivers** ([below](#legal-drafts)
 
 | Text | Audience | In force | Who is bound, and how |
 |---|---|---|---|
-| Terms of service | customer | `2026-09-30` | the customer's contract with the operating company of the market the home is in, concluded at booking — a card booking once its payment completes. Accepted by the tick at registration and at booking, and again before the next booking when a newer version applies ([What is recorded about a customer](#customer-record)); shown at `/terms` |
-| Privacy policy | customer | `2026-09-29` | the operating company is the controller; accepted with the terms; shown at `/privacy` |
+| Terms of service | customer | `2026-10-03` | the customer's contract with the operating company of the market the home is in, concluded at booking — a card booking once its payment completes. Accepted by the tick at registration and at booking, and again before the next booking when a newer version applies ([What is recorded about a customer](#customer-record)); shown at `/terms` |
+| Privacy policy | customer | `2026-10-03` | the operating company is the controller; accepted with the terms, and again before the next booking when a newer version applies; shown at `/privacy` |
 | Complaints procedure | customer | `2026-09-29` | read, never accepted; shown at `/complaints` on the customer web and linked from its footer |
 | Framework cooperation agreement, self-billing agreement, data-processing agreement | employee | `2026-09-29` | the cleaner's agreements with the operating company of the market they work in, each accepted in the partner apps → [A cleaner's own documents](#cleaner-documents) |
 | Contract for work | employee | `2026-09-29` | one per seat of a job, between the operating company and the cleaner, stamped on the order at booking and accepted at the take → [The contract for work](#work-contract) |
 
 Earlier versions stay in the database as the texts earlier customers and orders were bound by: the
-terms `2026-09-14`, `2026-09-27` and `2026-09-29`, the privacy policy `2026-09-14`, and the contract for
-work `2026-09-20`, which named the customer and the cleaner as its parties. The terms `2026-09-30` differ
-from `2026-09-29` only where Plus is concerned: they offer the free trial, and the Plus cancellation
-terms follow having the Plus benefits rather than a paid membership ([The free trial](#plus-trial)).
+terms `2026-09-14`, `2026-09-27`, `2026-09-29` and `2026-09-30`, the privacy policy `2026-09-14` and
+`2026-09-29`, and the contract for work `2026-09-20`, which named the customer and the cleaner as its
+parties. The terms `2026-09-30` differ from `2026-09-29` only where Plus is concerned: they offer the
+free trial, and the Plus cancellation terms follow having the Plus benefits rather than a paid
+membership ([The free trial](#plus-trial)). The terms `2026-10-03` differ from `2026-09-30` only in the
+dirtiness rates, +15 % and +30 % ([The dirtiness level](#dirtiness)).
+
+The privacy policy `2026-10-03` differs from `2026-09-29` only in where personal-data questions go
+(owner ruling 2026-10-03). The sentence under *1. The controller* that invites them, and the sentence
+after the list of rights in *6. Your rights*, name `privacy@cleansia.cz` instead of the company
+record's e-mail. The line that identifies the controller still prints the record's e-mail and phone,
+the company's general contact. The address is written into the text, not filled from the record, so
+a second operating company's market would print it too. Like any newer version, it brings the tick
+back before a customer's next booking ([below](#customer-record)). It took effect on the same day as
+the terms `2026-10-03`, so one tick accepts both.
 
 ### The seller is named from the company record {#company-identity}
 
@@ -1049,7 +1060,8 @@ the market — or from the order, on a contract for work.
   administrator, sets its Reply-To to `support@cleansia.cz` from the same constant, so pressing Reply
   writes to support, not to the sender (since 2026-10-03; before, no Reply-To was set). One other
   address is unchanged. `privacy@cleansia.cz` is the
-  data-protection contact on the privacy page and in the partner GDPR copy.
+  data-protection contact on the privacy page and in the partner GDPR copy, and since the privacy
+  policy `2026-10-03` in the policy's own personal-data sentences ([above](#legal-texts)).
 - **The company record's e-mail is `support@cleansia.cz` too** (owner ruling 2026-10-03). It is the
   seller's address as the record holds it, the `companyEmail` the legal texts print. The customer terms,
   privacy policy and complaints procedure and the cleaner's three agreements print it. So do the receipt
@@ -2364,10 +2376,11 @@ failed order"* (owner, Q-AUD-O2).
 **The terms have a version, and the version is the date the text started applying.** The terms and
 the privacy policy are stored documents (`LegalDocuments`, one per audience, type and market, seeded
 from files in the repository at every host start), each identified by its effective date as
-`yyyy-MM-dd`. For the whole platform, in five languages, the terms in force are `2026-09-30` and the
-privacy policy and the complaints procedure `2026-09-29` — our drafts, naming the operating company as
-the seller ([The legal texts](#legal-texts)); the terms `2026-09-29`, `2026-09-27` and `2026-09-14` and
-the privacy policy `2026-09-14` stay as the texts earlier customers accepted. **A document in force
+`yyyy-MM-dd`. For the whole platform, in five languages, the terms and the privacy policy in force are
+`2026-10-03` and the complaints procedure `2026-09-29` — our drafts, naming the operating company as
+the seller ([The legal texts](#legal-texts)); the terms `2026-09-30`, `2026-09-29`, `2026-09-27` and
+`2026-09-14` and the privacy policy `2026-09-29` and `2026-09-14` stay as the texts earlier customers
+accepted. **A document in force
 is immutable**: an edit to its file is refused with a warning, and a wording change is a new file
 under a new date, so every text a customer ever accepted stays in the database. The `/terms`,
 `/privacy` and `/complaints` pages show the version in force for the customer's market (a market's own

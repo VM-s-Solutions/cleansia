@@ -59,7 +59,7 @@ top safe boundary and that clipping does not hide a required control.
 ## Screen coverage
 
 Customer:
-- Root/splash/auth: CustomerRootView, SplashGateView, SignInView, SignUpView, ForgotPasswordView, EmailVerifyView, ProfileOnboardingView. CenteredAuthScroll uses safe GeometryReader/ScrollView; only colors/gradients ignore edges. Busy/authenticating overlays ignore only their dimming background; centered message controls remain safe.
+- Root/splash/auth: CustomerRootView, SplashGateView, SignInView, SignUpView, ForgotPasswordView, EmailVerifyView, ProfileOnboardingView. CenteredAuthScroll (in CleansiaCore since 2026-10-03, shared with the partner auth screens) uses safe GeometryReader/ScrollView; only colors/gradients ignore edges. Busy/authenticating overlays ignore only their dimming background; centered message controls remain safe.
 - Main tabs: HomeTab (address top bar, market chip, notifications trigger), OrdersTab (fixed heading plus list states), RewardsTab (including loading/error/empty), RewardsActivityScreen: ordinary safe-area containers; background-only escape. ProfileTab is repaired above.
 - Booking modal: BookingSheetView/BookingSheetContent and all Services/WhenWhere/Confirm steps; fixed header and footer are in a safe VStack, scrollable step bodies inherit it. BookingSuccessView keeps safe content. PackageDetailsSheet, PromoCodeSheet, ReferralCodeSheet/CodeSheetShell, PreferredCleanerSheet use safe content roots and background-only escape.
 - Address flows: AddressManagerView list/review/add, BookingSavedAddressChooserView, BookingAddressReviewPane, BookingAddressPickerView. The chooser is a fullScreenCover; mapContent ignores only the map sibling, while its VStack/topBar stays safe. The map's center pin is intentional map decoration. No entire overlay-root escape.
@@ -68,7 +68,7 @@ Customer:
 - Disputes: DisputesListView, CreateDisputeView, DisputeDetailView/thread/reply/footer safe. FullscreenSingleImage's black background extends, close button is a safe sibling. Camera/library and QuickLook sheets are UIKit-owned controllers, audited separately below.
 - Profile/settings: EditProfileView, CustomerDevicesView, NotificationsView, SecurityView, LanguagePickerView, MarketPickerView, AppearancePickerView, HelpSupportView, DeleteAccountView safe. Bottom-inset delete CTA does not alter top safety. Avatar camera/library presentation is UIKit-owned.
 
-Shared containers: SnapSheet geometry/content are safe with the ornament now clipped at the safe viewport; backdrop extension is intentional. CleansiaDialog ignores only the scrim. WordmarkSplashView ignores only its gradient. GlobalSnackbarHost is bottom-aligned; no top escape. CameraOrLibraryPicker returns UIImagePickerController and QuickLookPreview returns QLPreviewController with no overridden safeAreaInsets, edgesForExtendedLayout, or custom top controls; iOS owns the navigation/camera chrome. MapKitMapProvider is the intentional edge-to-edge media layer.
+Shared containers: SnapSheet geometry/content are safe with the ornament now clipped at the safe viewport; backdrop extension is intentional. Confirms are system `.alert` / `.confirmationDialog`, laid out by iOS. WordmarkSplashView ignores only its gradient. GlobalSnackbarHost is bottom-aligned; no top escape. CameraOrLibraryPicker returns UIImagePickerController and QuickLookPreview returns QLPreviewController with no overridden safeAreaInsets, edgesForExtendedLayout, or custom top controls; iOS owns the navigation/camera chrome. MapKitMapProvider is the intentional edge-to-edge media layer.
 
 ## View-file inventory
 
@@ -78,7 +78,6 @@ Shared containers: SnapSheet geometry/content are safe with the ornament now cli
 | CleansiaCustomer/Sources/Components/StatusBarFadeScrollView.swift | StatusBarFadeScrollView | Decorative band drawn above the safe viewport; content inherits safe host |
 | CleansiaCustomer/Sources/CustomerRootView.swift | CustomerRootView | Background/media/UIKit-only escape; controls inherit safe host |
 | CleansiaCustomer/Sources/Features/Addresses/AddressManagerView.swift | AddressManagerView, AddressManagerHeader, AddressListPane, RenameAlertButtons, SavedAddressRow, AddressReviewPane | Background/media/UIKit-only escape; controls inherit safe host |
-| CleansiaCustomer/Sources/Features/Auth/CenteredAuthScroll.swift | CenteredAuthScroll | Inherits safe host; no direct top-content escape |
 | CleansiaCustomer/Sources/Features/Auth/EmailVerifyView.swift | EmailVerifyView, EmailVerifyContent | Background/media/UIKit-only escape; controls inherit safe host |
 | CleansiaCustomer/Sources/Features/Auth/ForgotPasswordView.swift | ForgotPasswordView, ForgotPasswordContent | Background/media/UIKit-only escape; controls inherit safe host |
 | CleansiaCustomer/Sources/Features/Auth/SignInView.swift | SignInView, SignInContent | Background/media/UIKit-only escape; controls inherit safe host |

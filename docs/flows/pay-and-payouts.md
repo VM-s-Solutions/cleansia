@@ -28,7 +28,7 @@ platform does its last checking (below).
 **One pay row per assigned employee, and each is one seat's share of the job** (owner rulings
 2026-09-28). A rate describes the job, so `CalculateOrderPay` divides the job's base, extras and clamp
 bounds by its `RequiredEmployees`, clamps the seat, and adds the dirtiness term — the job's clamped pay ×
-the level's rate, split the same way — after the clamp. Every term's cent residue goes to the first seat,
+the rate the order was booked at (`Order.DirtinessRate`), split the same way — after the clamp. Every term's cent residue goes to the first seat,
 so a full crew's rows add up to the job; the divisor is the seats the job needs, not the cleaners who
 came, so a cleaner who works a two-seat job alone is paid one seat. That is also why there is still no
 spare seat and why the order seat needs a database-level arbiter — a cleaner on a seat the job does not

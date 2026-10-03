@@ -4206,6 +4206,12 @@ namespace Cleansia.Infra.Database.Migrations
                         .HasColumnType("integer")
                         .HasDefaultValue(0);
 
+                    b.Property<decimal>("DirtinessRate")
+                        .ValueGeneratedOnAdd()
+                        .HasPrecision(5, 4)
+                        .HasColumnType("numeric(5,4)")
+                        .HasDefaultValue(0m);
+
                     b.Property<decimal>("DirtinessSurchargeAmount")
                         .ValueGeneratedOnAdd()
                         .HasPrecision(18, 2)

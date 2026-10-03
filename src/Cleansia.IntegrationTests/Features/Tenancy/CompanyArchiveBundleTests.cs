@@ -509,7 +509,7 @@ public sealed class CompanyArchiveBundleTests(PostgresContainerFixture fixture) 
         var receiptedOrder = NewOrder("bundle-b-receipted", SvkId, EurId, customerB.Id, DateTime.UtcNow.AddDays(-40), B);
         receiptedOrder.AddOrderStatus(OrderStatusTrack.Create(OrderStatus.Completed, receiptedOrder));
         receiptedOrder.AddSelectedExtras([OrderExtra.Create(receiptedOrder, extra, 12m)]);
-        receiptedOrder.SetDirtinessSurcharge(DirtinessLevel.Increased, 3.60m);
+        receiptedOrder.SetDirtinessSurcharge(DirtinessLevel.Increased, 3.60m, 0.30m);
         receiptedOrder.SetWorkContractDocument(contractDocument);
         var seatB = OrderEmployee.Create(receiptedOrder, cleanerB);
         receiptedOrder.AddAssignedEmployee(seatB);

@@ -89,7 +89,8 @@ public static class OrderMappers
             o.Reviews.Any(),
             o.CompletedAt,
             o.DirtinessLevel,
-            o.DirtinessSurchargeAmount));
+            o.DirtinessSurchargeAmount,
+            o.DirtinessRate));
     }
 
     public static OrderListItem MapToDto(this OrderListRow row)

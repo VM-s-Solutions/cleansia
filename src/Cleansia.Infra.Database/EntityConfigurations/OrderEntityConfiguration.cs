@@ -141,6 +141,12 @@ public class OrderEntityConfiguration : TenantAuditableEntityConfiguration<Order
             .HasPrecision(18, 2)
             .HasDefaultValue(0m);
 
+        // A fraction, so (5,4) like the VAT and cancellation-fee rates; the default is Normal's rate.
+        builder.Property(o => o.DirtinessRate)
+            .IsRequired()
+            .HasPrecision(5, 4)
+            .HasDefaultValue(0m);
+
         // Loyalty tier discount applied at create-time. Nullable; not
         // required on existing/anon orders.
         builder.Property(o => o.TierDiscountAmount)

@@ -382,6 +382,13 @@ public class Order : TenantAuditable
     public decimal DirtinessSurchargeAmount { get; private set; }
 
     /// <summary>
+    /// The level's rate when this order was booked, as a fraction (0.15 = 15 %): what scaled its surcharge
+    /// and its minutes, and what raises its pay. Pay and the pay estimate read it rather than today's
+    /// <c>BookingPolicy</c>, so a rate change never moves the pay of a job already booked.
+    /// </summary>
+    public decimal DirtinessRate { get; private set; }
+
+    /// <summary>
     /// The language the customer booked in, as the booking request stated it. Null where no customer
     /// made a request — a recurring occurrence — and on orders booked before it was recorded.
     ///
@@ -911,12 +918,14 @@ public class Order : TenantAuditable
         return this;
     }
 
-    public Order SetDirtinessSurcharge(DirtinessLevel level, decimal amount)
+    public Order SetDirtinessSurcharge(DirtinessLevel level, decimal amount, decimal rate)
     {
         ArgumentOutOfRangeException.ThrowIfLessThan(amount, 0m);
+        ArgumentOutOfRangeException.ThrowIfLessThan(rate, 0m);
 
         DirtinessLevel = level;
         DirtinessSurchargeAmount = amount;
+        DirtinessRate = rate;
         return this;
     }
 

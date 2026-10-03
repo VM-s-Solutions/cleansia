@@ -607,7 +607,9 @@ booking flow — web, Android and iOS — asks as a required step of its own aft
 three descriptions and the hint to pick the higher level when unsure, and picks nothing for the
 customer. An unknown value is `common.invalid_enum_value` on the quote, the Plus preview, the booking,
 the serving-cleaners picker and both recurring commands. The order stores the level
-(`Order.DirtinessLevel`), and nothing changes it after booking.
+(`Order.DirtinessLevel`), and nothing changes it after booking. It stores the level's rate beside it
+(`Order.DirtinessRate`), and [cleaner pay](#cleaner-pay) and every pay estimate read that rate, not
+today's, so a later change of rate moves no booked job's pay.
 → [ADR-0069](/decisions/adr-0069)
 
 ### What the rate applies to {#dirtiness-price}
@@ -1375,7 +1377,7 @@ which is why *both* was the right ruling and not a redundancy. → [Admin notifi
 decisions 33 and 40). One `EmployeePayConfig` is selected per selected service **and** per selected
 package, at the paid cleaner's rates, and summed into the job's figures; one seat of the job's
 `RequiredEmployees` is paid an equal share of each, and the [dirtiness level](#dirtiness) raises it by
-the level's rate after the clamp:
+the rate the order was booked at (`Order.DirtinessRate`) after the clamp:
 
 ```
 # the job
@@ -1384,7 +1386,7 @@ jobExtras   = Σ (config.ExtraPerRoom × max(0, rooms - 1))       # the FIRST ro
             + Σ (config.ExtraPerBathroom × bathrooms)
 jobMin      = max(config.MinimumPay > 0)     # the strongest guarantee wins; 0 = no bound
 jobMax      = min(config.MaximumPay > 0)     # the tightest cap wins;        0 = no bound
-jobDirt     = round(clamp(jobBase + jobExtras, jobMin, jobMax) × rate(level), 2)
+jobDirt     = round(clamp(jobBase + jobExtras, jobMin, jobMax) × Order.DirtinessRate, 2)
 
 # one seat, n = RequiredEmployees
 share(x)    = floor(x × 100 / n) / 100       # the first seat takes x − share(x) × (n − 1)
@@ -1417,9 +1419,9 @@ Six things that surprise people:
   `AddressSectionView`) gives travel pay as a reason for asking for the address.
 - **The clamp bounds are persisted on the pay row** — the seat's share of them. A later bonus or
   deduction re-clamps the same core identically, instead of silently dropping the clamp.
-- **The dirtiness term sits outside the clamp.** It is the job's clamped pay × the level's rate, split
-  like the rest and added after the seat's clamp, so a maximum cannot swallow it; a later bonus or
-  deduction re-clamps base + extras (and any legacy expenses) and adds it back outside the clamp. It
+- **The dirtiness term sits outside the clamp.** It is the job's clamped pay × the rate the order was
+  booked at, split like the rest and added after the seat's clamp, so a maximum cannot swallow it; a
+  later bonus or deduction re-clamps base + extras (and any legacy expenses) and adds it back outside the clamp. It
   is stored as `OrderEmployeePays.DirtinessPay` and named in the breakdown
   (`Base: …, Extras: …, Dirtiness: …`).
 - **A full crew adds up to the job, and an empty seat's share is nobody's.** The divisor is

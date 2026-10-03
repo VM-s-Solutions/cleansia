@@ -1,6 +1,5 @@
 using Cleansia.Core.AppServices.Features.Orders.DTOs;
 using Cleansia.Core.Domain.EmployeePayroll;
-using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Extensions;
 using Cleansia.Core.Domain.Orders;
 
@@ -18,8 +17,8 @@ internal static class OrderPayEstimator
     /// <summary>
     /// Returns what the given employee would earn on one seat of the given order
     /// based on their per-employee pay configs: the seat's share of the job, raised by the dirtiness
-    /// level, as <c>CalculateOrderPay</c> writes it for every seat but the first, which also takes the
-    /// cent residue. Falls back to default
+    /// rate the order was booked at, as <c>CalculateOrderPay</c> writes it for every seat but the first,
+    /// which also takes the cent residue. Falls back to default
     /// configs when no per-employee override exists. Returns null when
     /// no config matches any of the order's services / packages — the
     /// caller treats that as "we can't quote pay, hide the chip".
@@ -35,7 +34,7 @@ internal static class OrderPayEstimator
             order.Rooms,
             order.Bathrooms,
             order.RequiredEmployees,
-            order.DirtinessLevel,
+            order.DirtinessRate,
             order.CurrencyId,
             employeeId,
             serviceConfigs,
@@ -56,7 +55,7 @@ internal static class OrderPayEstimator
             order.Rooms,
             order.Bathrooms,
             order.RequiredEmployees,
-            order.DirtinessLevel,
+            order.DirtinessRate,
             order.CurrencyId,
             employeeId,
             serviceConfigs,
@@ -85,7 +84,7 @@ internal static class OrderPayEstimator
         int rooms,
         int bathrooms,
         int requiredEmployees,
-        DirtinessLevel dirtinessLevel,
+        decimal dirtinessRate,
         string orderCurrencyId,
         string employeeId,
         IReadOnlyList<EmployeePayConfig> serviceConfigs,
@@ -110,7 +109,7 @@ internal static class OrderPayEstimator
         }
 
         var (_, _, _, totalPay, _, _, _) = allConfigs.CalculateSeatPay(
-            rooms, bathrooms, BookingPolicy.DirtinessSurchargeRate(dirtinessLevel), requiredEmployees, firstSeat: false);
+            rooms, bathrooms, dirtinessRate, requiredEmployees, firstSeat: false);
         return totalPay;
     }
 }

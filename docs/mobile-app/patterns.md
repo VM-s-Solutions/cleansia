@@ -268,20 +268,44 @@ customer picked in the sheet is never replaced (`hydratedWithPreferred`: `Bookin
 reopened after Home switched address was quoted and created for the old one while Home showed and
 priced the new one.
 
-**A resumed time is re-checked against the When step's own rules** (since 2026-10-03). On a plain
-open both apps ask `draftTimeStillHolds` (`WhenWhereStep.kt` on Android, `BookingTimeSlots` on iOS),
-which reads the same slot states the When step draws. The time holds while the When step still offers
-it, which means its day is not past and it is not inside the 2 h lead time, and while it is in the
-band it was in when the sheet closed. A standard time that has since slid into the 2–4 h express band
-does not hold, because it was quoted as a standard time, without the express surcharge; a time that
-was already express when the sheet closed does. A time that does not hold is cleared, and its day with it once the day is
-past. The booking goes back to the When step if it was past it, and a notice asks for a new time
-(`booking_draft_time_changed`). A time that holds is kept. A kept day is named against the moment of the
-resume, so a day that has since become today reads *Today* and is the day the When step selects; iOS
-stores the day as its label and re-derives it, Android stores the date. A seeded open is not re-checked: it
-resets the draft anyway. Until then a draft resumed on the Confirm step could keep a time that had
-come inside the lead time, and only the server refused it. Neither app re-checks a sheet that stays
-open, such as a booking left on the Confirm step while the app sat in the background.
+**A booking's time is re-checked against the When step's own rules** (since 2026-10-03). Both apps
+ask `draftTimeStillHolds` (`WhenWhereStep.kt` on Android, `BookingTimeSlots` on iOS), which reads the
+same slot states the When step draws, at three moments:
+
+- **A plain open**, which resumes the draft.
+- **A return to the foreground with the sheet open.** Android re-checks on `ON_START` after an
+  `ON_STOP` in the sheet, a real return from the background. iOS re-checks whenever the shell's
+  `scenePhase` turns `.active` while the booking is presented, so also after a spell that was only
+  inactive, such as Control Center. It is the shell's `scenePhase` because inside a sheet it stops
+  updating on iOS 16. The check changes nothing while the time holds, so the two triggers come to the
+  same.
+- **Just before submit**, in `submit()` and in the submit that follows a card guarantee, before
+  anything is sent: no profile read, no quote, no card capture, no order.
+
+The time holds while the When step still offers it, which means its day is not past and it is not
+inside the 2 h lead time, and while it is in the band it was in when its price was quoted. That moment
+is when the quote for the chosen time landed, read only while the last quote that landed names that
+time; with no such quote it is when the sheet closed. Every quote that lands resets it, and a seeded
+open forgets both moments. A standard time that has since slid into the 2–4 h express band does not
+hold, because it was quoted as a standard time, without the express surcharge. A time that was
+already express when it was quoted does, and so does one re-quoted after it went express, because that
+quote carries the surcharge. A time that does not hold is cleared, and its day with it once the day is
+past. Nothing is sent, the booking goes back to the When step if it was past it, and a notice asks for
+a new time (`booking_draft_time_changed`). A time that holds is kept. A kept day is named against the
+moment of the resume, so a day that has since become today reads *Today* and is the day the When step
+selects; iOS stores the day as its label and re-derives it, Android stores the date. A seeded open is
+not re-checked: it resets the draft anyway.
+
+On a return to the foreground the When step also rebuilds its day strip and its slots from the
+current clock, so a step left on screen no longer offers a slot that has since come inside the lead
+time, or calls yesterday *Today*. Android rebuilds both on `ON_START`; iOS redraws the sheet from the
+shell's foreground re-check.
+
+Until the first of these, a draft resumed on the Confirm step could keep a time that had come inside
+the lead time, and only the server refused it. Until the foreground and submit re-checks, a sheet left
+open in the background, or a Confirm step left on screen, kept such a time too. The band was judged
+from when the sheet closed, so a time quoted standard and left after it had gone express read as
+unchanged and kept a price without the surcharge.
 
 ## The booking's steps slide the way they go {#booking-steps}
 

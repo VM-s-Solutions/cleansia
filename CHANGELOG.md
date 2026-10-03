@@ -1022,6 +1022,16 @@ need backfilling.
 
 ### Fixed
 
+- **Customer Android and iOS — a booking left open asks for a new time too.** A booking left open
+  while the app was in the background, or left on the confirm step, kept its time after the time had
+  passed or come within 2 hours, and only the server refused it. The time is now checked again when you
+  come back to the app and when you place the booking, before anything is sent. A time that no longer
+  holds is cleared, the booking goes back to *When & where*, and a notice asks for a new time. Whether
+  a time has moved into the express band, 2 to 4 hours ahead, is now judged from when its price was
+  quoted, not from when the booking was closed. So a time priced without the express surcharge is never
+  booked at that price, and one priced again with it is kept. A *When & where* step left open shows
+  today's days and times again when you come back. (Owner remark 2026-10-03.)
+
 - **Customer Android and iOS — a booking you come back to asks for a new time when its time has
   gone.** A booking swiped away and reopened with the Book button came back with the time it had, even
   hours later. A time that had since passed, or come within 2 hours, stayed on the confirm step until

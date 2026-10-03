@@ -24,9 +24,13 @@ landed. `LoyaltyAccount` now carries the Postgres `xmin` concurrency token, regi
 `UserMemberships` registers it, so the later write conflicts instead. The commit
 (`CleansiaDbContext.CommitAsync`) then does the following, up to five attempts:
 
-1. It resets the losing account to the committed row.
+1. It resets every account the commit changed that another writer has committed to since it was
+   loaded to the committed row. A failed save names only the first stale row it met, and a tier edit
+   can move thousands of accounts in one commit, so all of them are found in one pass.
 2. It replays the points and completed bookings the write moved on top (`LoyaltyAccount.Replay`).
-3. It reads the tier again with the thresholds the write used.
+3. It reads the tier again with the thresholds in force, read after the committed rows: the stored
+   tier configs, under any threshold edit the same commit is saving. The thresholds the write read
+   earlier are not used, because an edit that committed first has already re-tiered the account.
 4. It saves again.
 
 The write's ledger rows were never saved, so they are saved once with the replay, and the total stays

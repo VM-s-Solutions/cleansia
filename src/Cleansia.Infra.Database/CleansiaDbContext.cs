@@ -153,31 +153,91 @@ public class CleansiaDbContext : DbContext, IUnitOfWork
                 && ex.Entries.Count > 0
                 && ex.Entries.All(e => e.Entity is LoyaltyAccount))
             {
-                foreach (var entry in ex.Entries)
+                if (!await ReplayStaleLoyaltyAccountsAsync(cancellationToken))
                 {
-                    var committed = await entry.GetDatabaseValuesAsync(cancellationToken);
-                    if (committed is null)
-                    {
-                        throw;
-                    }
-
-                    var account = (LoyaltyAccount)entry.Entity;
-                    var pointsMoved = account.LifetimePoints
-                        - entry.OriginalValues.GetValue<int>(nameof(LoyaltyAccount.LifetimePoints));
-                    var bookingsMoved = account.CompletedBookingsCount
-                        - entry.OriginalValues.GetValue<int>(nameof(LoyaltyAccount.CompletedBookingsCount));
-                    var (updatedBy, updatedOn) = (account.UpdatedBy, account.UpdatedOn);
-
-                    entry.OriginalValues.SetValues(committed);
-                    entry.CurrentValues.SetValues(committed);
-                    account.Replay(pointsMoved, bookingsMoved);
-                    if (updatedBy is not null && updatedOn is { } on)
-                    {
-                        account.Updated(updatedBy, on);
-                    }
+                    throw;
                 }
             }
         }
+    }
+
+    /// <summary>
+    /// A failed save names only the first stale row it met, so every account this unit of work changed is
+    /// checked against its committed version and each one another writer moved is replayed in the same
+    /// pass. A tier edit can change thousands of accounts in one commit; one per attempt would not reach them.
+    /// </summary>
+    private async Task<bool> ReplayStaleLoyaltyAccountsAsync(CancellationToken cancellationToken)
+    {
+        var changed = ChangeTracker.Entries<LoyaltyAccount>()
+            .Where(e => e.State == EntityState.Modified)
+            .ToList();
+        var ids = changed.Select(e => e.Entity.Id).ToList();
+        var committedVersions = await LoyaltyAccounts
+            .IgnoreQueryFilters()
+            .AsNoTracking()
+            .Where(a => ids.Contains(a.Id))
+            .Select(a => new { a.Id, Version = EF.Property<uint>(a, "xmin") })
+            .ToDictionaryAsync(a => a.Id, a => a.Version, cancellationToken);
+
+        var replays = new List<(LoyaltyAccount Account, int PointsMoved, int BookingsMoved, string? UpdatedBy, DateTimeOffset? UpdatedOn)>();
+        foreach (var entry in changed)
+        {
+            if (committedVersions.TryGetValue(entry.Entity.Id, out var version)
+                && version == entry.OriginalValues.GetValue<uint>("xmin"))
+            {
+                continue;
+            }
+
+            var committed = await entry.GetDatabaseValuesAsync(cancellationToken);
+            if (committed is null)
+            {
+                return false;
+            }
+
+            var account = entry.Entity;
+            replays.Add((
+                account,
+                account.LifetimePoints - entry.OriginalValues.GetValue<int>(nameof(LoyaltyAccount.LifetimePoints)),
+                account.CompletedBookingsCount
+                    - entry.OriginalValues.GetValue<int>(nameof(LoyaltyAccount.CompletedBookingsCount)),
+                account.UpdatedBy,
+                account.UpdatedOn));
+            entry.OriginalValues.SetValues(committed);
+            entry.CurrentValues.SetValues(committed);
+        }
+
+        if (replays.Count == 0)
+        {
+            return false;
+        }
+
+        // Read after the accounts: a threshold edit commits together with the re-tier it causes, so
+        // thresholds read later are never older than the rows they are applied to.
+        var thresholds = await LoyaltyTierThresholdsInForceAsync(cancellationToken);
+        foreach (var (account, pointsMoved, bookingsMoved, updatedBy, updatedOn) in replays)
+        {
+            account.Replay(pointsMoved, bookingsMoved, thresholds);
+            if (updatedBy is not null && updatedOn is { } on)
+            {
+                account.Updated(updatedBy, on);
+            }
+        }
+
+        return true;
+    }
+
+    /// <summary>
+    /// The committed thresholds, under any edit this unit of work is saving. Read untracked: a config this
+    /// unit of work only read is tracked with the values it read, which may predate an edit committed since.
+    /// </summary>
+    private async Task<LoyaltyTierThresholds> LoyaltyTierThresholdsInForceAsync(CancellationToken cancellationToken)
+    {
+        var editing = ChangeTracker.Entries<LoyaltyTierConfig>()
+            .Where(e => e.State is EntityState.Added or EntityState.Modified)
+            .Select(e => e.Entity)
+            .ToList();
+        var committed = await LoyaltyTierConfigs.AsNoTracking().ToListAsync(cancellationToken);
+        return LoyaltyTierThresholds.From(editing.Concat(committed.Where(c => editing.All(e => e.Id != c.Id))));
     }
 
     internal async Task LockCreditOwnerAsync(string userId, CancellationToken cancellationToken)

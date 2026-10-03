@@ -1,3 +1,4 @@
+using Cleansia.Core.AppServices.Features.Loyalty.Admin;
 using Cleansia.Core.AppServices.Features.Orders;
 using Cleansia.Core.AppServices.Services;
 using Cleansia.Core.AppServices.Services.Interfaces;
@@ -39,13 +40,6 @@ public class LoyaltyAccountConcurrentWriteTests(PostgresContainerFixture fixture
     private static readonly TimeSpan Timeout = TimeSpan.FromSeconds(30);
 
     private static readonly LoyaltyTierThresholds Thresholds = new(Silver: 500, Gold: 2000, Platinum: 5000);
-
-    private static readonly IReadOnlyList<LoyaltyTierConfig> TierConfigs =
-    [
-        LoyaltyTierConfig.Create(LoyaltyTier.SilverMopper, Thresholds.Silver, 0m, null, "[]"),
-        LoyaltyTierConfig.Create(LoyaltyTier.GoldPolisher, Thresholds.Gold, 0m, null, "[]"),
-        LoyaltyTierConfig.Create(LoyaltyTier.PlatinumSparkler, Thresholds.Platinum, 0m, null, "[]"),
-    ];
 
     [Fact]
     public async Task Two_Refund_Clawbacks_At_The_Same_Moment_Both_Take_Their_Points()
@@ -108,6 +102,87 @@ public class LoyaltyAccountConcurrentWriteTests(PostgresContainerFixture fixture
         await AssertAccountAsync(points: 2100, completedBookings: 2, LoyaltyTier.GoldPolisher);
     }
 
+    /// <summary>
+    /// The grant read the thresholds before an admin lowered Gold, and the edit re-tiered the account and
+    /// committed first. The replayed grant lands on the edit's row, so its tier is the one the thresholds
+    /// now in force give the new total, not the one the grant's stale read gave.
+    /// </summary>
+    [Fact]
+    public async Task A_Completion_Grant_That_Lost_To_A_Tier_Edit_Keeps_The_Tier_The_Edit_Gave()
+    {
+        await ResetAsync();
+        await SeedAsync((OrderA, 1600m, 1600), (OrderC, 50m, 0));
+        var read = NewSignal();
+        var release = NewSignal();
+
+        var grant = Task.Run(() => WriteAsync(
+            service => service.GrantForCompletedOrderAsync(OrderC, CancellationToken.None),
+            () => Arrive(read, release)));
+        await read.Task.WaitAsync(Timeout);
+
+        await using (var ctx = NewContext())
+        {
+            await EditGoldThresholdAsync(ctx, 1500);
+            await ctx.CommitAsync(CancellationToken.None);
+        }
+
+        release.SetResult();
+        await grant.WaitAsync(Timeout);
+
+        await AssertAccountAsync(points: 1650, completedBookings: 2, LoyaltyTier.GoldPolisher);
+    }
+
+    /// <summary>
+    /// A threshold edit re-tiers every account it moves in one commit, and each account another write
+    /// committed to in the meantime conflicts. Every one of them is replayed, however many there are, and
+    /// against the thresholds the edit itself is committing.
+    /// </summary>
+    [Fact]
+    public async Task A_Tier_Edit_That_Lost_To_Writes_On_Many_Accounts_Lands_On_Every_One()
+    {
+        await ResetAsync();
+        await SeedAsync();
+        var userIds = await SeedAccountsAsync(count: 6, points: 1600);
+
+        await using var edit = NewContext();
+        await EditGoldThresholdAsync(edit, 1500);
+
+        await using (var ctx = NewContext())
+        {
+            var accounts = new LoyaltyAccountRepository(ctx);
+            foreach (var userId in userIds)
+            {
+                var account = await accounts.GetByUserIdAsync(userId, CancellationToken.None);
+                account!.GrantPoints(
+                    50, LoyaltyEarnSource.ManualGrant, null, ActorId, Thresholds, "race", $"race:{userId}");
+            }
+
+            await ctx.CommitAsync(CancellationToken.None);
+        }
+
+        await edit.CommitAsync(CancellationToken.None);
+
+        foreach (var userId in userIds)
+        {
+            await AssertAccountAsync(points: 1650, completedBookings: 0, LoyaltyTier.GoldPolisher, userId);
+        }
+    }
+
+    private static async Task EditGoldThresholdAsync(CleansiaDbContext ctx, int threshold)
+    {
+        var tierConfigs = new LoyaltyTierConfigRepository(ctx);
+        var gold = await tierConfigs.GetByTierAsync(LoyaltyTier.GoldPolisher, CancellationToken.None);
+        var result = await new UpdateTierConfig.Handler(
+                tierConfigs,
+                new LoyaltyAccountRepository(ctx),
+                new TestUserSessionProvider(ActorId, "system@cleansia.test"))
+            .Handle(
+                new UpdateTierConfig.Command(
+                    gold!.Id, threshold, gold.DiscountPercent, gold.MinimumOrderAmountForDiscount, gold.PerksJson),
+                CancellationToken.None);
+        Assert.True(result.IsSuccess);
+    }
+
     private async Task RaceAsync(Func<LoyaltyService, Task> first, Func<LoyaltyService, Task> second)
     {
         var firstRead = NewSignal();
@@ -143,13 +218,15 @@ public class LoyaltyAccountConcurrentWriteTests(PostgresContainerFixture fixture
 
     private static LoyaltyService NewService(CleansiaDbContext ctx, Func<Task> atTierRead)
     {
+        var stored = new LoyaltyTierConfigRepository(ctx);
         var tierConfigs = new Mock<ILoyaltyTierConfigRepository>();
         tierConfigs
             .Setup(r => r.GetAllForTenantAsync(It.IsAny<CancellationToken>()))
-            .Returns(async (CancellationToken _) =>
+            .Returns(async (CancellationToken cancellationToken) =>
             {
+                var configs = await stored.GetAllForTenantAsync(cancellationToken);
                 await atTierRead();
-                return TierConfigs;
+                return configs;
             });
 
         return new LoyaltyService(
@@ -162,19 +239,40 @@ public class LoyaltyAccountConcurrentWriteTests(PostgresContainerFixture fixture
             NullLogger<LoyaltyService>.Instance);
     }
 
-    private async Task AssertAccountAsync(int points, int completedBookings, LoyaltyTier tier)
+    private async Task AssertAccountAsync(int points, int completedBookings, LoyaltyTier tier, string userId = UserId)
     {
         await using var ctx = NewContext();
-        var account = await ctx.Set<LoyaltyAccount>().AsNoTracking().SingleAsync(a => a.UserId == UserId);
+        var account = await ctx.Set<LoyaltyAccount>().AsNoTracking().SingleAsync(a => a.UserId == userId);
         var ledger = await ctx.Set<LoyaltyTransaction>().AsNoTracking()
             .Where(t => t.LoyaltyAccountId == account.Id)
             .SumAsync(t => t.Points);
+        var inForce = LoyaltyTierThresholds.From(await ctx.LoyaltyTierConfigs.AsNoTracking().ToListAsync());
 
         Assert.Equal(ledger, account.LifetimePoints);
         Assert.Equal(points, account.LifetimePoints);
         Assert.Equal(completedBookings, account.CompletedBookingsCount);
         Assert.Equal(tier, account.CurrentTier);
-        Assert.Equal(Thresholds.ResolveTier(account.LifetimePoints), account.CurrentTier);
+        Assert.Equal(inForce.ResolveTier(account.LifetimePoints), account.CurrentTier);
+    }
+
+    private async Task<IReadOnlyList<string>> SeedAccountsAsync(int count, int points)
+    {
+        await using var ctx = NewContext();
+        var userIds = new List<string>();
+        for (var i = 1; i <= count; i++)
+        {
+            var user = User.CreateWithPassword(
+                $"loyalty-race-{i}@cleansia.test", "Seed-Password-123", "Loyalty", $"Race{i}");
+            ctx.Users.Add(user);
+            var account = LoyaltyAccount.Create(user.Id);
+            account.GrantPoints(
+                points, LoyaltyEarnSource.ManualGrant, null, ActorId, Thresholds, "seed", $"seed:{user.Id}");
+            ctx.Add(account);
+            userIds.Add(user.Id);
+        }
+
+        await ctx.CommitAsync(CancellationToken.None);
+        return userIds;
     }
 
     private async Task SeedAsync(params (string OrderId, decimal TotalPrice, int Earned)[] orders)
@@ -192,6 +290,10 @@ public class LoyaltyAccountConcurrentWriteTests(PostgresContainerFixture fixture
         var user = User.CreateWithPassword("loyalty-race@cleansia.test", "Seed-Password-123", "Loyalty", "Race");
         user.Id = UserId;
         ctx.Users.Add(user);
+        ctx.LoyaltyTierConfigs.AddRange(
+            LoyaltyTierConfig.Create(LoyaltyTier.SilverMopper, Thresholds.Silver, 0m, null, "[]"),
+            LoyaltyTierConfig.Create(LoyaltyTier.GoldPolisher, Thresholds.Gold, 0m, null, "[]"),
+            LoyaltyTierConfig.Create(LoyaltyTier.PlatinumSparkler, Thresholds.Platinum, 0m, null, "[]"));
 
         var account = LoyaltyAccount.Create(UserId);
         foreach (var (orderId, totalPrice, earned) in orders)

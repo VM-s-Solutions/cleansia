@@ -32,10 +32,6 @@ public class LoyaltyAccount : TenantAuditable
     private readonly List<LoyaltyTransaction> _transactions = new();
     public IReadOnlyCollection<LoyaltyTransaction> Transactions => _transactions.AsReadOnly();
 
-    // Not persisted. A write replayed after losing a race must read its tier with the thresholds it was
-    // made with, which may be a threshold edit that is committing in the same unit of work.
-    private LoyaltyTierThresholds? _tierThresholds;
-
     // Private constructor for EF Core
     private LoyaltyAccount() { }
 
@@ -144,22 +140,19 @@ public class LoyaltyAccount : TenantAuditable
     /// <summary>
     /// Lands a write on this account after another writer committed to it first. The caller has already
     /// reset the account to the committed row; the points and completed bookings the write moved go on top,
-    /// so neither write is lost, and the tier is read again with the thresholds the write used. The write's
-    /// ledger rows are untouched: they were never saved, and are saved with this.
+    /// so neither write is lost, and the tier is read again with the thresholds in force as it lands, which
+    /// may be an edit the other writer committed. The write's ledger rows are untouched: they were never
+    /// saved, and are saved with this.
     /// </summary>
-    public void Replay(int pointsMoved, int completedBookingsMoved)
+    public void Replay(int pointsMoved, int completedBookingsMoved, LoyaltyTierThresholds thresholds)
     {
         LifetimePoints = Math.Max(0, LifetimePoints + pointsMoved);
         CompletedBookingsCount = Math.Max(0, CompletedBookingsCount + completedBookingsMoved);
-        if (_tierThresholds is { } thresholds)
-        {
-            RecomputeTier(thresholds);
-        }
+        RecomputeTier(thresholds);
     }
 
     private bool RecomputeTier(LoyaltyTierThresholds thresholds)
     {
-        _tierThresholds = thresholds;
         var newTier = thresholds.ResolveTier(LifetimePoints);
         if (newTier == CurrentTier)
         {

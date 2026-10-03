@@ -33,7 +33,7 @@ public class LoyaltyAccountReplayTests
         var account = Committed(points: 2200, completedBookings: 2, Thresholds);
         Assert.Equal(LoyaltyTier.GoldPolisher, account.CurrentTier);
 
-        account.Replay(pointsMoved: -300, completedBookingsMoved: 0);
+        account.Replay(pointsMoved: -300, completedBookingsMoved: 0, Thresholds);
 
         Assert.Equal(1900, account.LifetimePoints);
         Assert.Equal(2, account.CompletedBookingsCount);
@@ -45,7 +45,7 @@ public class LoyaltyAccountReplayTests
     {
         var account = Committed(points: 600, completedBookings: 1, Thresholds);
 
-        account.Replay(pointsMoved: 1500, completedBookingsMoved: 1);
+        account.Replay(pointsMoved: 1500, completedBookingsMoved: 1, Thresholds);
 
         Assert.Equal(2100, account.LifetimePoints);
         Assert.Equal(2, account.CompletedBookingsCount);
@@ -53,15 +53,27 @@ public class LoyaltyAccountReplayTests
     }
 
     [Fact]
-    public void The_Tier_Is_Read_With_The_Thresholds_The_Write_Used()
+    public void The_Tier_Is_Read_With_The_Thresholds_In_Force_When_The_Write_Lands()
     {
-        var account = Committed(points: 1000, completedBookings: 1, Thresholds);
+        var account = Committed(points: 1600, completedBookings: 1, Thresholds);
+        Assert.Equal(LoyaltyTier.SilverMopper, account.CurrentTier);
         var edited = new LoyaltyTierThresholds(Silver: 500, Gold: 1500, Platinum: 5000);
-        account.ApplyTierThresholds(edited, ActorId);
 
-        account.Replay(pointsMoved: 600, completedBookingsMoved: 0);
+        account.Replay(pointsMoved: 50, completedBookingsMoved: 0, edited);
 
-        Assert.Equal(1600, account.LifetimePoints);
+        Assert.Equal(1650, account.LifetimePoints);
+        Assert.Equal(LoyaltyTier.GoldPolisher, account.CurrentTier);
+    }
+
+    [Fact]
+    public void A_Replay_That_Moves_No_Points_Still_Reads_The_Tier_Again()
+    {
+        var account = Committed(points: 1650, completedBookings: 1, Thresholds);
+        var edited = new LoyaltyTierThresholds(Silver: 500, Gold: 1500, Platinum: 5000);
+
+        account.Replay(pointsMoved: 0, completedBookingsMoved: 0, edited);
+
+        Assert.Equal(1650, account.LifetimePoints);
         Assert.Equal(LoyaltyTier.GoldPolisher, account.CurrentTier);
     }
 
@@ -70,7 +82,7 @@ public class LoyaltyAccountReplayTests
     {
         var account = Committed(points: 200, completedBookings: 1, Thresholds);
 
-        account.Replay(pointsMoved: -300, completedBookingsMoved: 0);
+        account.Replay(pointsMoved: -300, completedBookingsMoved: 0, Thresholds);
 
         Assert.Equal(0, account.LifetimePoints);
         Assert.Equal(LoyaltyTier.BronzeCleaner, account.CurrentTier);
@@ -82,7 +94,7 @@ public class LoyaltyAccountReplayTests
         var account = Committed(points: 2200, completedBookings: 2, Thresholds);
         var reached = account.TierAchievedOn;
 
-        account.Replay(pointsMoved: 100, completedBookingsMoved: 0);
+        account.Replay(pointsMoved: 100, completedBookingsMoved: 0, Thresholds);
 
         Assert.Equal(2300, account.LifetimePoints);
         Assert.Equal(LoyaltyTier.GoldPolisher, account.CurrentTier);

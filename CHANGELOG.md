@@ -999,6 +999,11 @@ need backfilling.
 
 ### Fixed
 
+- **Customer, cleaner and admin — a reply to a Cleansia e-mail goes to support.** Every e-mail the
+  platform sends now has support@cleansia.cz as its reply address, so pressing Reply writes to
+  support. Until now a reply went to the address the e-mails are sent from, it@cleansia.cz, which is
+  only for sending. That covers the administrators' notification e-mails too.
+
 - **Customer Android and iOS — Help's *Email us* and *Call support* reach support.** *Email us* opens
   the mail app on support@cleansia.cz, and *Call support* opens the dialer on +420 739 788 108, the
   line the customer web footer prints. On a phone with no mail app, or one that cannot make calls,

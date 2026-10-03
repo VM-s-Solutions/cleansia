@@ -132,7 +132,7 @@ second company that takes card payments needs its own account first.
 |---------|-----------|-------------|
 | `ApiKey` | Yes | SendGrid API key |
 | `*TemplateId` | No | SendGrid dynamic template IDs |
-| `AddressFrom` | No | Sender email address. Delivery only: no e-mail shows it as the contact, whose support line is always `support@cleansia.cz` ([Decision 54](/product/business-rules#company-identity)) |
+| `AddressFrom` | No | Sender email address. Delivery only: no e-mail shows it as the contact, whose support line is always `support@cleansia.cz`, and a reply goes to `support@cleansia.cz` too, the Reply-To every e-mail sets ([Decision 54](/product/business-rules#company-identity)) |
 | `ResetPasswordUrl` | No | Frontend password reset page URL |
 | `OrderStatusUrl` | No | Frontend order status page URL |
 

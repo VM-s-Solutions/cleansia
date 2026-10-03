@@ -224,6 +224,35 @@ first point of scroll.
   black, passed through greys and tinted the light theme. `StatusBarFadeBindingTest` pins both
   (2026-10-02).
 
+## A booking swiped away keeps its draft {#booking-draft}
+
+On both apps the booking sheet closes with a swipe down on any step, and closing it throws nothing
+away (owner remark 2026-10-03). The draft, meaning the step and every choice on it, lives in the
+`BookingViewModel` that the signed-in shell keeps for the session. What happens to it depends on how
+the sheet is opened:
+
+- **A plain open resumes it.** The Book button and the other plain *Book now* entries reopen the sheet
+  on the step it was left on, with every choice it held.
+- **An open that seeds a booking starts a fresh one in its place.** *Order again*, a popular package
+  and the quick-size card's *See my price* reset the draft, fill it with that order, package or size,
+  and open on the first step.
+- **A booking placed resets it**, as before. On iOS the sheet holds the swipe only while a booking is
+  being placed, so the outcome has a screen to land on.
+- **It lasts as long as the signed-in shell.** After a sign-out, or once the app has been quit, the
+  next booking starts from scratch.
+
+Until then iOS held the swipe from step 2 on, so a half-built booking could be closed only by stepping
+back to the first step. Android let the swipe through on any step, but every plain open reset the
+draft, while *Order again* skipped the reset, so an abandoned draft's dirtiness level, date, time and
+payment carried into the repeated order.
+
+One difference between the platforms remains. On a plain open, iOS refills the draft's address from
+the preferred saved address when the draft's address was filled in from it automatically and the
+preferred one has since changed; Android keeps the address the draft had. One gap is known on both:
+neither app re-checks a resumed draft's time. A draft resumed on the Confirm step can hold a time that
+has since come inside the 2 h lead time. The When step clears such a time, but a booking placed
+straight from a resumed Confirm step is left for the server to refuse.
+
 ## Every map is quiet, with one Cleansia pin {#maps}
 
 All four map surfaces in both apps show a muted base map with **no points of interest**, and their only
@@ -362,9 +391,9 @@ What changed on iOS:
   (Home's book buttons, the carousel slides, *Order again*) slides the sheet up as before. The FAB looks
   the same at rest: no glass was added, since the glass FAB was retired for rendering corrupted on an
   iOS 26 iPhone ([ADR-0022](/decisions/adr-0022)). The gate is iOS 26, not iOS 18 where the API starts.
-  From step 2 on the booking sheet refuses a swipe down, so a half-built booking cannot be swiped away,
-  and only on iOS 26 has a zoom-presented sheet been checked to keep refusing it. iOS 18 to 25 keep the
-  plain sheet until someone checks them on a device.
+  On iOS 18.6 the zoom presents, swipes away and keeps [the draft](#booking-draft), but iOS 18 shows
+  the zoomed sheet as a full-screen page with no grabber and no card edge, so nothing tells the
+  customer it can be swiped away. iOS 18 to 25 keep the plain sheet.
 - **A plain confirmation is the system alert; a rich one keeps the branded card.** A confirmation that
   only asks (a title, a message, a confirm and a cancel), closes on the tap and then starts its work is
   a native `.alert`, with a red confirm where it destroys. That covers every sign-out, deleting the

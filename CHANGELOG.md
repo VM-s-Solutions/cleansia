@@ -533,6 +533,14 @@ need backfilling.
   *Earliest* tag is gone. A recurring schedule picks its time the same way; on iOS it was a wheel.
   (Owner request 2026-10-03.)
 
+- **Customer Android and iOS — a booking you swipe away is still there when you tap Book.** The
+  booking sheet swipes away on any step, and the Book button reopens it on the same step with
+  everything you chose, until you sign out or quit the app. *Order again*, a popular package and *See
+  my price* start a new booking in its place, and placing a booking clears it. On iOS the sheet could
+  be swiped away only on its first step; on Android every reopen started over, and *Order again* kept
+  the date, time, payment and dirtiness level of a booking you had abandoned. (Owner remark
+  2026-10-03.)
+
 - **Customer and cleaner — one support address, support@cleansia.cz.** The customer web footer, its
   FAQ and legal pages, the order detail's payment note, the cleaner's *How jobs are offered* page,
   Help in the Android and iOS apps and the support line of every e-mail now name support@cleansia.cz.

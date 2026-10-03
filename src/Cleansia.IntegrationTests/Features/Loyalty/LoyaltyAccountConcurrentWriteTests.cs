@@ -1,0 +1,249 @@
+using Cleansia.Core.AppServices.Features.Orders;
+using Cleansia.Core.AppServices.Services;
+using Cleansia.Core.AppServices.Services.Interfaces;
+using Cleansia.Core.Domain.Enums;
+using Cleansia.Core.Domain.Internationalization;
+using Cleansia.Core.Domain.Loyalty;
+using Cleansia.Core.Domain.Orders;
+using Cleansia.Core.Domain.Repositories;
+using Cleansia.Core.Domain.Users;
+using Cleansia.Infra.Database;
+using Cleansia.Infra.Database.Repositories;
+using Cleansia.TestUtilities;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging.Abstractions;
+using Moq;
+using Npgsql;
+using Respawn;
+
+namespace Cleansia.IntegrationTests.Features.Loyalty;
+
+/// <summary>
+/// Two loyalty writes for one customer at the same moment, on real Postgres. Each write reads the account,
+/// then waits at its tier-threshold read until both have read, so both start from the same totals and one
+/// of them must lose. The account's xmin token turns the loser's overwrite into a conflict, and the commit
+/// replays the loser's points onto the row the winner committed: the account's total stays the sum of its
+/// ledger, and its tier is the one that total earns.
+/// </summary>
+[Collection("PostgresCollection")]
+public class LoyaltyAccountConcurrentWriteTests(PostgresContainerFixture fixture) : BaseIntegrationTest(fixture)
+{
+    private const string UserId = "01LOYALTYRACEUSER000000001";
+    private const string CountryId = "01LOYALTYRACECOUNTRY000001";
+    private const string CurrencyId = "01LOYALTYRACECURRENCY00001";
+    private const string ActorId = "system";
+    private const string OrderA = "01LOYALTYRACEORDERA0000001";
+    private const string OrderB = "01LOYALTYRACEORDERB0000001";
+    private const string OrderC = "01LOYALTYRACEORDERC0000001";
+
+    private static readonly TimeSpan Timeout = TimeSpan.FromSeconds(30);
+
+    private static readonly LoyaltyTierThresholds Thresholds = new(Silver: 500, Gold: 2000, Platinum: 5000);
+
+    private static readonly IReadOnlyList<LoyaltyTierConfig> TierConfigs =
+    [
+        LoyaltyTierConfig.Create(LoyaltyTier.SilverMopper, Thresholds.Silver, 0m, null, "[]"),
+        LoyaltyTierConfig.Create(LoyaltyTier.GoldPolisher, Thresholds.Gold, 0m, null, "[]"),
+        LoyaltyTierConfig.Create(LoyaltyTier.PlatinumSparkler, Thresholds.Platinum, 0m, null, "[]"),
+    ];
+
+    [Fact]
+    public async Task Two_Refund_Clawbacks_At_The_Same_Moment_Both_Take_Their_Points()
+    {
+        await ResetAsync();
+        await SeedAsync((OrderA, 1000m, 1000), (OrderB, 1000m, 1000));
+
+        await RaceAsync(
+            service => service.RevokeForRefundAsync(OrderA, 600m, "refund:race-a", ActorId, CancellationToken.None),
+            service => service.RevokeForRefundAsync(OrderB, 500m, "refund:race-b", ActorId, CancellationToken.None));
+
+        await AssertAccountAsync(points: 900, completedBookings: 2, LoyaltyTier.SilverMopper);
+    }
+
+    [Fact]
+    public async Task A_Completion_Grant_And_A_Refund_Clawback_At_The_Same_Moment_Both_Land()
+    {
+        await ResetAsync();
+        await SeedAsync((OrderA, 1000m, 1000), (OrderC, 1500m, 0));
+
+        await RaceAsync(
+            service => service.GrantForCompletedOrderAsync(OrderC, CancellationToken.None),
+            service => service.RevokeForRefundAsync(OrderA, 400m, "refund:race-a", ActorId, CancellationToken.None));
+
+        await AssertAccountAsync(points: 2100, completedBookings: 2, LoyaltyTier.GoldPolisher);
+    }
+
+    /// <summary>
+    /// A dispute settled in credit holds the customer's credit lock when its clawback commits. Losing the
+    /// race must not release that lock before the replay saves, so the replay runs inside the same
+    /// transaction, and the ledger row the failed save sent is not sent twice.
+    /// </summary>
+    [Fact]
+    public async Task A_Clawback_Holding_The_Credit_Lock_Replays_Under_It_After_Losing_To_A_Grant()
+    {
+        await ResetAsync();
+        await SeedAsync((OrderA, 1000m, 1000), (OrderC, 1500m, 0));
+        var read = NewSignal();
+        var release = NewSignal();
+
+        var clawback = Task.Run(async () =>
+        {
+            await using var ctx = NewContext();
+            await new CreditAccountRepository(ctx).LockForUserAsync(UserId, CancellationToken.None);
+            await NewService(ctx, () => Arrive(read, release))
+                .RevokeForRefundAsync(OrderA, 400m, "dispute-settlement:race", ActorId, CancellationToken.None);
+            await ctx.CommitAsync(CancellationToken.None);
+        });
+        await read.Task.WaitAsync(Timeout);
+
+        await using (var ctx = NewContext())
+        {
+            await NewService(ctx, () => Task.CompletedTask).GrantForCompletedOrderAsync(OrderC, CancellationToken.None);
+            await ctx.CommitAsync(CancellationToken.None);
+        }
+
+        release.SetResult();
+        await clawback.WaitAsync(Timeout);
+
+        await AssertAccountAsync(points: 2100, completedBookings: 2, LoyaltyTier.GoldPolisher);
+    }
+
+    private async Task RaceAsync(Func<LoyaltyService, Task> first, Func<LoyaltyService, Task> second)
+    {
+        var firstRead = NewSignal();
+        var secondRead = NewSignal();
+        var release = NewSignal();
+
+        var writes = new[]
+        {
+            Task.Run(() => WriteAsync(first, () => Arrive(firstRead, release))),
+            Task.Run(() => WriteAsync(second, () => Arrive(secondRead, release))),
+        };
+        await Task.WhenAll(firstRead.Task, secondRead.Task).WaitAsync(Timeout);
+
+        release.SetResult();
+        await Task.WhenAll(writes).WaitAsync(Timeout);
+    }
+
+    // The service, then the commit the UnitOfWork pipeline runs after the handler.
+    private async Task WriteAsync(Func<LoyaltyService, Task> write, Func<Task> atTierRead)
+    {
+        await using var ctx = NewContext();
+        await write(NewService(ctx, atTierRead));
+        await ctx.CommitAsync(CancellationToken.None);
+    }
+
+    private static async Task Arrive(TaskCompletionSource read, TaskCompletionSource release)
+    {
+        read.TrySetResult();
+        await release.Task;
+    }
+
+    private static TaskCompletionSource NewSignal() => new(TaskCreationOptions.RunContinuationsAsynchronously);
+
+    private static LoyaltyService NewService(CleansiaDbContext ctx, Func<Task> atTierRead)
+    {
+        var tierConfigs = new Mock<ILoyaltyTierConfigRepository>();
+        tierConfigs
+            .Setup(r => r.GetAllForTenantAsync(It.IsAny<CancellationToken>()))
+            .Returns(async (CancellationToken _) =>
+            {
+                await atTierRead();
+                return TierConfigs;
+            });
+
+        return new LoyaltyService(
+            new OrderRepository(ctx),
+            new LoyaltyAccountRepository(ctx),
+            tierConfigs.Object,
+            new LoyaltyTransactionRepository(ctx),
+            new CurrencyRepository(ctx),
+            Mock.Of<INotificationProducer>(),
+            NullLogger<LoyaltyService>.Instance);
+    }
+
+    private async Task AssertAccountAsync(int points, int completedBookings, LoyaltyTier tier)
+    {
+        await using var ctx = NewContext();
+        var account = await ctx.Set<LoyaltyAccount>().AsNoTracking().SingleAsync(a => a.UserId == UserId);
+        var ledger = await ctx.Set<LoyaltyTransaction>().AsNoTracking()
+            .Where(t => t.LoyaltyAccountId == account.Id)
+            .SumAsync(t => t.Points);
+
+        Assert.Equal(ledger, account.LifetimePoints);
+        Assert.Equal(points, account.LifetimePoints);
+        Assert.Equal(completedBookings, account.CompletedBookingsCount);
+        Assert.Equal(tier, account.CurrentTier);
+        Assert.Equal(Thresholds.ResolveTier(account.LifetimePoints), account.CurrentTier);
+    }
+
+    private async Task SeedAsync(params (string OrderId, decimal TotalPrice, int Earned)[] orders)
+    {
+        await using var ctx = NewContext();
+        ctx.Languages.Add(Language.Create("en", "English"));
+        var country = Country.Create("Czechia", "CZE", "CZ", isServiced: true);
+        country.Id = CountryId;
+        ctx.Countries.Add(country);
+        var currency = Currency.Create("CZK", "Kc", "Czech koruna");
+        currency.Id = CurrencyId;
+        currency.IsActive = true;
+        currency.SetLoyaltyPointsDivisor(1m);
+        ctx.Currencies.Add(currency);
+        var user = User.CreateWithPassword("loyalty-race@cleansia.test", "Seed-Password-123", "Loyalty", "Race");
+        user.Id = UserId;
+        ctx.Users.Add(user);
+
+        var account = LoyaltyAccount.Create(UserId);
+        foreach (var (orderId, totalPrice, earned) in orders)
+        {
+            var order = Order.Create("Loyalty Race", "loyalty-race@cleansia.test", "+420777123456",
+                Address.Create("Testovaci 12", "Praha", "11000", CountryId), 2, 1,
+                DateTime.UtcNow.AddDays(-1), PaymentType.Card, totalPrice, CurrencyId, PaymentStatus.Paid,
+                cancellationTerms: BookingPolicy.CancellationTermsAtBooking, userId: UserId);
+            order.Id = orderId;
+            order.AddOrderStatus(OrderStatusTrack.Create(OrderStatus.Completed, order));
+            order.CompleteOrder(60);
+            ctx.Orders.Add(order);
+
+            if (earned > 0)
+            {
+                account.GrantPoints(earned, LoyaltyEarnSource.OrderCompleted, orderId, ActorId, Thresholds);
+            }
+        }
+
+        ctx.Add(account);
+        await ctx.CommitAsync(CancellationToken.None);
+    }
+
+    private CleansiaDbContext NewContext()
+    {
+        var options = new DbContextOptionsBuilder<CleansiaDbContext>()
+            .UseNpgsql(Fixture.GetConnectionString())
+            .Options;
+        return new CleansiaDbContext(
+            options,
+            new TestUserSessionProvider(ActorId, "system@cleansia.test"),
+            new FixedTenantProvider(TestTenants.Default));
+    }
+
+    private async Task ResetAsync()
+    {
+        await using var conn = new NpgsqlConnection(Fixture.GetConnectionString());
+        await conn.OpenAsync();
+        var respawner = await Respawner.CreateAsync(conn, new RespawnerOptions
+        {
+            DbAdapter = DbAdapter.Postgres,
+            SchemasToExclude = ["pg_catalog", "information_schema"]
+        });
+        await respawner.ResetAsync(conn);
+        await SeedTenantRegistryAsync(conn);
+    }
+
+    private sealed class FixedTenantProvider(string? tenantId) : ITenantProvider
+    {
+        private string? _tenantId = tenantId;
+        public string? GetCurrentTenantId() => _tenantId;
+        public void SetTenantOverride(string tenantId) => _tenantId = tenantId;
+        public void ClearTenantOverride() => _tenantId = null;
+    }
+}

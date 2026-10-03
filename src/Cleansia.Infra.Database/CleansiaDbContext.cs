@@ -115,7 +115,7 @@ public class CleansiaDbContext : DbContext, IUnitOfWork
         try
         {
             await RefuseFrozenBooksAsync(cancellationToken);
-            await SaveChangesAsync(cancellationToken);
+            await SaveChangesReplayingLoyaltyAsync(cancellationToken);
             if (lockTransaction is not null)
             {
                 await lockTransaction.CommitAsync(cancellationToken);
@@ -127,6 +127,56 @@ public class CleansiaDbContext : DbContext, IUnitOfWork
         {
             RollbackLockTransaction();
             throw;
+        }
+    }
+
+    /// <summary>
+    /// Two loyalty writes for one customer can read the same totals, and unchecked the later commit would
+    /// overwrite the earlier one's points. The account's xmin token makes the later one conflict instead; it
+    /// is reset to the committed row, its own moves are replayed on top, and it saves again.
+    ///
+    /// <para>The retry stays inside this commit on purpose: in a lock transaction EF rolls back only to its
+    /// savepoint, so a lock the unit of work holds is still held when the replay saves. A retry in a caller
+    /// would run after <see cref="CommitAsync"/> had rolled the lock transaction back.</para>
+    /// </summary>
+    private async Task SaveChangesReplayingLoyaltyAsync(CancellationToken cancellationToken)
+    {
+        const int maxAttempts = 5;
+        for (var attempt = 1; ; attempt++)
+        {
+            try
+            {
+                await SaveChangesAsync(cancellationToken);
+                return;
+            }
+            catch (DbUpdateConcurrencyException ex) when (attempt < maxAttempts
+                && ex.Entries.Count > 0
+                && ex.Entries.All(e => e.Entity is LoyaltyAccount))
+            {
+                foreach (var entry in ex.Entries)
+                {
+                    var committed = await entry.GetDatabaseValuesAsync(cancellationToken);
+                    if (committed is null)
+                    {
+                        throw;
+                    }
+
+                    var account = (LoyaltyAccount)entry.Entity;
+                    var pointsMoved = account.LifetimePoints
+                        - entry.OriginalValues.GetValue<int>(nameof(LoyaltyAccount.LifetimePoints));
+                    var bookingsMoved = account.CompletedBookingsCount
+                        - entry.OriginalValues.GetValue<int>(nameof(LoyaltyAccount.CompletedBookingsCount));
+                    var (updatedBy, updatedOn) = (account.UpdatedBy, account.UpdatedOn);
+
+                    entry.OriginalValues.SetValues(committed);
+                    entry.CurrentValues.SetValues(committed);
+                    account.Replay(pointsMoved, bookingsMoved);
+                    if (updatedBy is not null && updatedOn is { } on)
+                    {
+                        account.Updated(updatedBy, on);
+                    }
+                }
+            }
         }
     }
 
@@ -236,6 +286,7 @@ public class CleansiaDbContext : DbContext, IUnitOfWork
 
         ApplyRefreshTokenConcurrencyToken(modelBuilder);
         ApplyMembershipConcurrencyToken(modelBuilder);
+        ApplyLoyaltyAccountConcurrencyToken(modelBuilder);
 
         ApplyTenantQueryFilters(modelBuilder);
     }
@@ -274,6 +325,18 @@ public class CleansiaDbContext : DbContext, IUnitOfWork
         // The losing sweep rolls back its latch, feed row and outbox together; webhook recovery also
         // conflicts with a stale lapse notification instead of silently overwriting it.
         modelBuilder.Entity<UserMembership>()
+            .Property<uint>("xmin")
+            .ValueGeneratedOnAddOrUpdate()
+            .IsConcurrencyToken();
+    }
+
+    private void ApplyLoyaltyAccountConcurrencyToken(ModelBuilder modelBuilder)
+    {
+        if (Database.ProviderName != "Npgsql.EntityFrameworkCore.PostgreSQL") return;
+
+        // A later loyalty write conflicts instead of overwriting an earlier one's points; the commit
+        // replays it (SaveChangesReplayingLoyaltyAsync).
+        modelBuilder.Entity<LoyaltyAccount>()
             .Property<uint>("xmin")
             .ValueGeneratedOnAddOrUpdate()
             .IsConcurrencyToken();

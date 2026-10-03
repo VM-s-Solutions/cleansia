@@ -1087,7 +1087,11 @@ the market — or from the order, on a contract for work.
   the app copies the address or the number and says so. On iOS the address is also copied, with a
   notice, when no Mail account is set up, and the link still opens the default mail app. Before, neither row did anything on Android,
   and iOS showed both as plain text. Android also offered a *Live chat* row; there is no chat, and the
-  row is gone.
+  row is gone. Both apps list *Email us* first and *Call support* second, under the same titles in
+  every language: iOS is the reference for this screen (owner ruling 2026-10-03). Until then Android
+  listed *Call support* first, and in Czech, Slovak, Ukrainian and Russian its two titles were
+  infinitives (*Napsat e-mail*, *Zavolat na podporu*) where iOS addresses the customer (*Napište nám*,
+  *Zavolejte podpoře*).
 - **The registered name comes with the registration.** Whether the company is *Cleansia CZ s.r.o.* or
   *Cleansia s.r.o.* is written once, on the company record, and every text, receipt, confirmation and
   e-mail footer follows it; the footer's copyright line still reads *Cleansia s.r.o.*

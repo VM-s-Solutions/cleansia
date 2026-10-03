@@ -567,7 +567,10 @@ private fun SplashGate(
         }
     }
 
-    if (outcome == SplashOutcome.Unreachable) {
+    // While the wipe runs the splash goes back to its wordmark: that is its busy state, and it takes
+    // Retry and Logout off the screen with it. A Retry there could resolve, navigate away and cancel
+    // the wipe half-done — the dialog used to cover them, and it now closes on the tap.
+    if (outcome == SplashOutcome.Unreachable && !isSigningOut) {
         CleansiaErrorState(
             title = stringResource(R.string.splash_unreachable_title),
             message = stringResource(R.string.splash_unreachable_message),
@@ -577,9 +580,7 @@ private fun SplashGate(
             // it signs out — the one thing a stuck cleaner can always do, and the same escape the
             // registration lock offers. It really does sign out now; it used to only navigate.
             backLabel = stringResource(R.string.logout),
-            // Once confirmed, the wipe is running and the view model refuses a second one; nothing
-            // asks again meanwhile.
-            onBack = { if (!isSigningOut) confirmingSignOut = true },
+            onBack = { confirmingSignOut = true },
         )
     } else {
         WordmarkSplash(
@@ -660,7 +661,7 @@ class SplashViewModel @Inject constructor(
      * `logout()` always reaches its local wipe (its two network calls are each wrapped in
      * runCatching), so an unreachable server — the only reason this screen exists — cannot
      * leave the session half-cleared. It is not time-bounded the way the iOS twin is, which is
-     * why the screen does not offer the sign-out again while it runs.
+     * why the screen shows the wordmark splash while it runs, and why [resolve] refuses meanwhile.
      */
     fun signOut(onSignedOut: () -> Unit) {
         if (_isSigningOut.value) return
@@ -672,6 +673,11 @@ class SplashViewModel @Inject constructor(
     }
 
     fun resolve() {
+        // The token is still on disk until the wipe ends, so a resolve now would pass the session
+        // check, could land on an outcome that navigates, and that pops this entry mid-logout.
+        // The screen takes Retry away during a sign-out; this also covers the LaunchedEffect that
+        // re-runs it when the activity is recreated.
+        if (_isSigningOut.value) return
         viewModelScope.launch {
             _outcome.value = null
 

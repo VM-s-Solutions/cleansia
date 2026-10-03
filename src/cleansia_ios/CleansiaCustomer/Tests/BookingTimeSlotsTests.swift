@@ -57,7 +57,7 @@ final class BookingTimeSlotsTests: XCTestCase {
         XCTAssertEqual(slots.first { $0.time == "12:00" }?.state, .unavailable)
         XCTAssertEqual(slots.first { $0.time == "12:15" }?.state, .express)
         XCTAssertEqual(slots.first { $0.time == "14:00" }?.state, .express)
-        XCTAssertEqual(slots.first { $0.time == "14:15" }?.state, .earliest)
+        XCTAssertEqual(slots.first { $0.time == "14:15" }?.state, .available)
         XCTAssertEqual(slots.first { $0.time == "14:30" }?.state, .available)
     }
 
@@ -77,11 +77,13 @@ final class BookingTimeSlotsTests: XCTestCase {
         XCTAssertEqual(slots.first { $0.time == "13:00" }?.state, .express)
     }
 
-    func testTodayFirstStandardSlotIsMarkedEarliestThenAvailable() {
+    /// The grid draws no "Earliest" tag any more (Android's twin dropped it with the list rows), so the
+    /// first standard slot is simply available.
+    func testTodayFirstStandardSlotIsAvailable() {
         let now = date(DateComponents(year: 2026, month: 7, day: 1, hour: 10, minute: 0))
         let slots = BookingTimeSlots.slots(for: now, now: now, calendar: calendar)
 
-        XCTAssertEqual(slots.first { $0.time == "14:00" }?.state, .earliest)
+        XCTAssertEqual(slots.first { $0.time == "14:00" }?.state, .available)
         XCTAssertEqual(slots.first { $0.time == "15:00" }?.state, .available)
         XCTAssertEqual(slots.first { $0.time == "19:00" }?.state, .available)
     }
@@ -95,7 +97,7 @@ final class BookingTimeSlotsTests: XCTestCase {
             XCTAssertNotNil(instant)
             XCTAssertTrue(BookingPricing.requiresExpressSurcharge(cleaningAt: instant, now: now))
         }
-        let earliest = try XCTUnwrap(slots.first { $0.state == .earliest })
+        let earliest = try XCTUnwrap(slots.first { $0.state == .available })
         let earliestInstant = BookingTimeSlots.instant(date: now, timeLabel: earliest.time, calendar: calendar)
         XCTAssertFalse(BookingPricing.requiresExpressSurcharge(cleaningAt: earliestInstant, now: now))
     }
@@ -133,12 +135,68 @@ final class BookingTimeSlotsTests: XCTestCase {
         }
     }
 
-    func testVisibleSlotsDropUnavailable() {
-        let now = date(DateComponents(year: 2026, month: 7, day: 1, hour: 10, minute: 0))
-        let slots = BookingTimeSlots.slots(for: now, now: now, calendar: calendar)
-        let visible = slots.filter { $0.state != .unavailable }
+    // MARK: - The part of day (the web wizard's dayParts)
 
-        XCTAssertFalse(visible.contains { $0.state == .unavailable })
-        XCTAssertEqual(visible.first?.time, "12:00")
+    func testEveryArrivalTimeFallsInExactlyOnePartSixteenToAPart() throws {
+        let now = date(DateComponents(year: 2026, month: 7, day: 1, hour: 12))
+        let tomorrow = try XCTUnwrap(calendar.date(byAdding: .day, value: 1, to: now))
+        let slots = BookingTimeSlots.slots(for: tomorrow, now: now, calendar: calendar)
+        let parts = BookingTimeSlots.dayParts(slots)
+
+        XCTAssertEqual(parts.map(\.part), [.morning, .afternoon, .evening])
+        XCTAssertEqual(parts.flatMap { $0.slots.map(\.time) }, slots.map(\.time))
+        XCTAssertEqual(parts.map(\.slots.count), [16, 16, 16])
+        XCTAssertEqual(parts.map { "\($0.slots.first?.time ?? "")–\($0.slots.last?.time ?? "")" }, [
+            "08:00–11:45", "12:00–15:45", "16:00–19:45"
+        ])
+    }
+
+    func testAFutureDayOpensOnThePartHoldingTheBookedTime() throws {
+        let now = date(DateComponents(year: 2026, month: 7, day: 1, hour: 12))
+        let tomorrow = try XCTUnwrap(calendar.date(byAdding: .day, value: 1, to: now))
+        let parts = BookingTimeSlots.dayParts(BookingTimeSlots.slots(for: tomorrow, now: now, calendar: calendar))
+
+        XCTAssertEqual(BookingTimeSlots.openingDayPart(parts, selectedTime: "09:00"), .morning)
+        XCTAssertEqual(BookingTimeSlots.openingDayPart(parts, selectedTime: "15:45"), .afternoon)
+        XCTAssertEqual(BookingTimeSlots.openingDayPart(parts, selectedTime: "16:00"), .evening)
+        // No time booked yet: the first part with a bookable slot, as the web's default 09:00 lands.
+        XCTAssertEqual(BookingTimeSlots.openingDayPart(parts, selectedTime: ""), .morning)
+    }
+
+    /// At 13:00 every morning slot is inside the lead time, so the morning is disabled and the step opens
+    /// on the afternoon — the web wizard's "snap to 15:00, morning closed" case.
+    func testAtOnePmTodayTheMorningIsClosedAndTheAfternoonOpens() {
+        let now = date(DateComponents(year: 2026, month: 9, day: 10, hour: 13, minute: 0))
+        let parts = BookingTimeSlots.dayParts(BookingTimeSlots.slots(for: now, now: now, calendar: calendar))
+
+        XCTAssertFalse(parts[0].isBookable)
+        XCTAssertEqual(parts[0].bookableCount, 0)
+        XCTAssertTrue(parts[1].isBookable)
+        // 15:00–15:45 are bookable (15:00–16:45 express, then standard): four of the afternoon's sixteen.
+        XCTAssertEqual(parts[1].bookableCount, 4)
+        XCTAssertEqual(parts[2].bookableCount, 16)
+        XCTAssertEqual(BookingTimeSlots.openingDayPart(parts, selectedTime: ""), .afternoon)
+        // A booked time in a closed part does not hold the step there.
+        XCTAssertEqual(BookingTimeSlots.openingDayPart(parts, selectedTime: "09:00"), .afternoon)
+    }
+
+    /// A slot inside the lead time stays in the grid, drawn disabled, rather than vanishing from it.
+    func testAPartKeepsItsUnavailableSlotsSoTheGridStaysFourByFour() {
+        let now = date(DateComponents(year: 2026, month: 7, day: 1, hour: 10, minute: 0))
+        let parts = BookingTimeSlots.dayParts(BookingTimeSlots.slots(for: now, now: now, calendar: calendar))
+
+        XCTAssertEqual(parts[1].slots.count, 16)
+        XCTAssertEqual(parts[1].slots.first { $0.state != .unavailable }?.time, "12:00")
+        XCTAssertEqual(parts[0].bookableCount, 0)
+    }
+
+    func testTimesOutsideTheWindowBelongToNoPart() {
+        XCTAssertNil(DayPart.of("07:45"))
+        XCTAssertNil(DayPart.of("20:00"))
+        XCTAssertNil(DayPart.of(""))
+        XCTAssertEqual(DayPart.of("08:00"), .morning)
+        XCTAssertEqual(DayPart.of("11:45"), .morning)
+        XCTAssertEqual(DayPart.of("12:00"), .afternoon)
+        XCTAssertEqual(DayPart.of("19:45"), .evening)
     }
 }

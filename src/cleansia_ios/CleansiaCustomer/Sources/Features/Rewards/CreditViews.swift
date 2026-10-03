@@ -60,46 +60,73 @@ struct CreditCard: View {
 /// What credit is, where it comes from and how it is spent — opened from the Rewards card and from the
 /// Profile row, so both explain it in the same words. Ends on the largest balance's expiry, which the
 /// Profile row does not show.
+///
+/// Sized to what it holds, not to the medium detent: on iOS 16–18 a medium sheet left "Got it" under the
+/// home indicator, cut off. The button is pinned below the scrolling text, so at a large text size the
+/// text scrolls and the button stays in view; `.large` is there for when the text outgrows the screen.
 struct CreditExplainerSheet: View {
     @Environment(\.locale) private var locale
     let credit: CustomerCredit
     let onDismiss: () -> Void
 
+    @State private var contentHeight: CGFloat = 320
+    @State private var buttonHeight: CGFloat = 80
+
     var body: some View {
         ScrollView {
-            VStack(alignment: .leading, spacing: Spacing.m) {
-                Text(L10n.Credit.explainerTitle)
-                    .cleansiaFont(CleansiaTypography.headlineSmall)
-                    .foregroundColor(CleansiaColors.onSurface)
-                row(
-                    systemImage: "heart",
-                    title: L10n.Credit.explainerSourceTitle,
-                    body: L10n.Credit.explainerSourceBody
-                )
-                row(
-                    systemImage: "creditcard",
-                    title: L10n.Credit.explainerSpendTitle,
-                    body: L10n.Credit.explainerSpendBody(credit.maxShareOfOrder)
-                )
-                row(
-                    systemImage: "star",
-                    title: L10n.Credit.explainerPointsTitle,
-                    body: L10n.Credit.explainerPointsBody
-                )
-                if let line = CreditExpiry.line(credit.primary, locale: locale) {
-                    Text(line)
-                        .font(CleansiaTypography.labelMedium)
-                        .foregroundColor(CleansiaColors.onSurfaceVariant)
-                }
-                CleansiaPrimaryButton(L10n.Credit.gotIt, action: onDismiss)
-                    .padding(.top, Spacing.xs)
-            }
-            .padding(Spacing.l)
-            .frame(maxWidth: .infinity, alignment: .leading)
+            content
+                .background(GeometryReader { proxy in
+                    Color.clear
+                        .onAppear { contentHeight = proxy.size.height }
+                        .onChange(of: proxy.size.height) { contentHeight = $0 }
+                })
+        }
+        .safeAreaInset(edge: .bottom, spacing: 0) {
+            CleansiaPrimaryButton(L10n.Credit.gotIt, action: onDismiss)
+                .padding(.horizontal, Spacing.l)
+                .padding(.top, Spacing.xs)
+                .padding(.bottom, Spacing.s)
+                .background(CleansiaColors.surface)
+                .background(GeometryReader { proxy in
+                    Color.clear
+                        .onAppear { buttonHeight = proxy.size.height }
+                        .onChange(of: proxy.size.height) { buttonHeight = $0 }
+                })
         }
         .background(CleansiaColors.surface.ignoresSafeArea())
-        .presentationDetents([.medium, .large])
+        .presentationDetents([.height(contentHeight + buttonHeight), .large])
         .presentationDragIndicator(.visible)
+    }
+
+    private var content: some View {
+        VStack(alignment: .leading, spacing: Spacing.m) {
+            Text(L10n.Credit.explainerTitle)
+                .cleansiaFont(CleansiaTypography.headlineSmall)
+                .foregroundColor(CleansiaColors.onSurface)
+            row(
+                systemImage: "heart",
+                title: L10n.Credit.explainerSourceTitle,
+                body: L10n.Credit.explainerSourceBody
+            )
+            row(
+                systemImage: "creditcard",
+                title: L10n.Credit.explainerSpendTitle,
+                body: L10n.Credit.explainerSpendBody(credit.maxShareOfOrder)
+            )
+            row(
+                systemImage: "star",
+                title: L10n.Credit.explainerPointsTitle,
+                body: L10n.Credit.explainerPointsBody
+            )
+            if let line = CreditExpiry.line(credit.primary, locale: locale) {
+                Text(line)
+                    .font(CleansiaTypography.labelMedium)
+                    .foregroundColor(CleansiaColors.onSurfaceVariant)
+            }
+        }
+        .padding([.horizontal, .top], Spacing.l)
+        .padding(.bottom, Spacing.xs)
+        .frame(maxWidth: .infinity, alignment: .leading)
     }
 
     private func row(systemImage: String, title: String, body: String) -> some View {

@@ -4,6 +4,8 @@ import SwiftUI
 struct CustomerDevicesView: View {
     @StateObject private var vm: CustomerDevicesViewModel
     @State private var deviceToRevoke: UserDevice?
+    /// The device a confirmed revoke is running for, so its row can show the spinner the dialog used to.
+    @State private var revokingId: String?
 
     private let authClient: AuthClient
     private let onSignedOut: () -> Void
@@ -22,17 +24,35 @@ struct CustomerDevicesView: View {
     var body: some View {
         DevicesContent(
             state: vm.state,
-            revokeAction: vm.revokeAction,
-            deviceToRevoke: deviceToRevoke,
+            revokingId: vm.revokeAction.isSubmitting ? revokingId : nil,
             onRetry: { Task { await vm.load() } },
-            onRevokeRequested: { deviceToRevoke = $0 },
-            onRevokeConfirmed: { device in Task { await vm.revoke(device) } },
-            onRevokeDismissed: { deviceToRevoke = nil }
+            onRevokeRequested: { deviceToRevoke = $0 }
         )
         .navigationTitle(L10n.Devices.title)
         .navigationBarTitleDisplayMode(.inline)
+        // Self-revoke gets distinct copy: revoking THIS device signs you out now. The system confirm closes
+        // on the tap; the row shows the revoke running and a refusal is the snackbar's.
+        .alert(
+            deviceToRevoke?.isCurrent == true ? L10n.Devices.selfRevokeDialogTitle : L10n.Devices.revokeDialogTitle,
+            isPresented: Binding(get: { deviceToRevoke != nil }, set: { if !$0 { deviceToRevoke = nil } }),
+            presenting: deviceToRevoke
+        ) { device in
+            Button(
+                device.isCurrent ? L10n.Devices.selfRevokeDialogConfirm : L10n.Devices.revokeDialogConfirm,
+                role: .destructive
+            ) {
+                revokingId = device.id
+                Task { await vm.revoke(device) }
+            }
+            Button(L10n.cancel, role: .cancel) {}
+        } message: { device in
+            Text(
+                device.isCurrent
+                    ? L10n.Devices.selfRevokeDialogMessage
+                    : L10n.Devices.revokeDialogMessage(platformLabel(device.platform))
+            )
+        }
         .task { await vm.load() }
-        .onReceive(vm.revoked) { deviceToRevoke = nil }
         .onReceive(vm.signedOut) {
             Task {
                 // Local wipe only: the self-revoke already killed this device's session
@@ -47,37 +67,14 @@ struct CustomerDevicesView: View {
 
 private struct DevicesContent: View {
     let state: UiState<[UserDevice]>
-    let revokeAction: ActionState
-    let deviceToRevoke: UserDevice?
+    let revokingId: String?
     let onRetry: () -> Void
     let onRevokeRequested: (UserDevice) -> Void
-    let onRevokeConfirmed: (UserDevice) -> Void
-    let onRevokeDismissed: () -> Void
 
     var body: some View {
         ZStack {
             CleansiaColors.background.ignoresSafeArea()
             content
-            if let device = deviceToRevoke {
-                // Self-revoke gets distinct copy: revoking THIS device signs you out now.
-                CleansiaDialog(
-                    title: device.isCurrent
-                        ? L10n.Devices.selfRevokeDialogTitle
-                        : L10n.Devices.revokeDialogTitle,
-                    confirmLabel: device.isCurrent
-                        ? L10n.Devices.selfRevokeDialogConfirm
-                        : L10n.Devices.revokeDialogConfirm,
-                    onConfirm: { onRevokeConfirmed(device) },
-                    onDismiss: onRevokeDismissed,
-                    message: device.isCurrent
-                        ? L10n.Devices.selfRevokeDialogMessage
-                        : L10n.Devices.revokeDialogMessage(platformLabel(device.platform)),
-                    dismissLabel: L10n.cancel,
-                    icon: "rectangle.portrait.and.arrow.right",
-                    destructive: true,
-                    confirmEnabled: !revokeAction.isSubmitting
-                )
-            }
         }
     }
 
@@ -102,7 +99,12 @@ private struct DevicesContent: View {
                             .font(CleansiaTypography.labelSmall)
                             .foregroundColor(CleansiaColors.onSurfaceVariant)
                         ForEach(devices) { device in
-                            DeviceCard(device: device, onRevoke: { onRevokeRequested(device) })
+                            DeviceCard(
+                                device: device,
+                                revoking: revokingId == device.id,
+                                canRevoke: revokingId == nil,
+                                onRevoke: { onRevokeRequested(device) }
+                            )
                         }
                     }
                     .padding(Spacing.m)
@@ -114,6 +116,9 @@ private struct DevicesContent: View {
 
 private struct DeviceCard: View {
     let device: UserDevice
+    let revoking: Bool
+    /// One revoke at a time: the view model drops a second while the first is in flight.
+    let canRevoke: Bool
     let onRevoke: () -> Void
 
     var body: some View {
@@ -144,12 +149,17 @@ private struct DeviceCard: View {
             // The current device is revocable too: it reads as "sign out this device now"
             // (distinct icon + dialog copy) and ends the session at 0s instead of leaving a zombie
             // session for the ≤30s revocation directory to catch.
-            Button(action: onRevoke) {
-                Image(systemName: device.isCurrent ? "rectangle.portrait.and.arrow.right" : "trash")
-                    .foregroundColor(CleansiaColors.error)
+            if revoking {
+                ProgressView()
+            } else {
+                Button(action: onRevoke) {
+                    Image(systemName: device.isCurrent ? "rectangle.portrait.and.arrow.right" : "trash")
+                        .foregroundColor(CleansiaColors.error.opacity(canRevoke ? 1 : 0.4))
+                }
+                .buttonStyle(.plain)
+                .disabled(!canRevoke)
+                .accessibilityLabel(device.isCurrent ? L10n.Devices.selfRevokeButton : L10n.Devices.revokeButton)
             }
-            .buttonStyle(.plain)
-            .accessibilityLabel(device.isCurrent ? L10n.Devices.selfRevokeButton : L10n.Devices.revokeButton)
         }
         .padding(Spacing.l)
         .frame(maxWidth: .infinity)
@@ -232,12 +242,9 @@ private func formatLastActive(_ date: Date?) -> String? {
                     UserDevice(id: "row-1", platform: "ios", deviceId: "d1", lastActiveAt: Date(), isCurrent: true),
                     UserDevice(id: "row-2", platform: "android", deviceId: "d2", lastActiveAt: Date(), isCurrent: false)
                 ]),
-                revokeAction: .idle,
-                deviceToRevoke: nil,
+                revokingId: nil,
                 onRetry: {},
-                onRevokeRequested: { _ in },
-                onRevokeConfirmed: { _ in },
-                onRevokeDismissed: {}
+                onRevokeRequested: { _ in }
             )
         }
     }

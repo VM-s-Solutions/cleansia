@@ -140,7 +140,7 @@ outline-offset: -1px`, so no box changes size. A new card opts in by joining the
 ### 2.6 Shared components
 
 `CleansiaSectionHeader` (badge + title + subtitle) · `CleansiaPrimaryButton` (pill) · `CleansiaChip` ·
-`CleansiaTextField` · `CleansiaDialog` · `MascotEmptyState` · `OrderTrackerBar` · `TrustStrip` ·
+`CleansiaTextField` · `CleansiaDialog` (Android; every iOS confirm is a system dialog) · `MascotEmptyState` · `OrderTrackerBar` · `TrustStrip` ·
 `PopularPackageCard` · `SnapSheet` · `SudsRefreshIndicator` · `WordmarkSplash`.
 
 The customer mobile home reads: address bar → upsell carousel → trust strip → order-again → recurring

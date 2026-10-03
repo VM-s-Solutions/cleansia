@@ -294,9 +294,11 @@ struct CustomerShellView: View {
 
     private static let bookZoomID = "book"
 
-    /// The booking sheet grows out of the FAB on iOS 26+ only: that is where a zoom-presented sheet was
-    /// checked to still refuse a swipe-dismiss mid-flow (`interactiveDismissDisabled`). iOS 16-25 keep
-    /// the plain sheet, and so does every other entry (Home's book buttons, the slides, order again).
+    /// The booking sheet grows out of the FAB on iOS 26+ only. On iOS 18.6 the zoom also works — it
+    /// dismisses on a swipe, keeps the draft and still holds a booking being placed — but it turns the
+    /// sheet into a full-screen page with no grabber and no card edge, so nothing says it can be swiped
+    /// away. iOS 16-25 keep the plain sheet, and so does every other entry (Home's book buttons, the
+    /// slides, order again).
     private var fabZoom: Namespace.ID? {
         if #available(iOS 26, *) { return bookZoom }
         return nil

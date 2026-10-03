@@ -56,14 +56,18 @@ final class CreateRecurringBindingTests: XCTestCase {
         XCTAssertTrue(source.contains("in: range,"), "the start picker ignores the range it is given")
     }
 
-    /// A free time wheel offered 03:07, which the server refuses and the materialiser would book.
-    func testTheTimeWheelOffersOnlyBookableStarts() throws {
+    /// A free time wheel offered 03:07, which the server refuses and the materialiser would book. The
+    /// schedule's time is now the booking's part-of-day picker, still over the bookable starts only.
+    func testTheTimePickerOffersOnlyBookableStarts() throws {
         let source = try read(Self.screen)
         XCTAssertTrue(
-            source.contains("ForEach(RecurringTime.bookableTimes, id: \\.self)"),
-            "the wheel is not built from the bookable starts"
+            source.contains("RecurringTime.bookableTimes.map { BookingTimeSlot(time: $0, state: .available) }"),
+            "the picker is not built from the bookable starts"
         )
-        XCTAssertTrue(source.contains(".pickerStyle(.wheel)"), "the bookable starts are not on a wheel")
+        XCTAssertTrue(
+            source.contains("DayPartTimePicker(slots: Self.slots, selectedTime: time, onSelect: onChange)"),
+            "the bookable starts are not on the part-of-day picker"
+        )
         XCTAssertFalse(source.contains("displayedComponents: .hourAndMinute"), "a free time wheel is back")
     }
 

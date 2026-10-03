@@ -98,18 +98,16 @@ final class PaymentsViewModelTests: XCTestCase {
     func testRemovingTheCardTakesItOffThePage() async {
         let vm = makeVM()
         await vm.load()
-        var removed: [String] = []
-        vm.removed.sink { removed.append($0) }.store(in: &cancellables)
 
         await vm.remove(PaymentsFixtures.czkCard)
 
         XCTAssertEqual(cards.removedIds, ["card-czk"])
-        XCTAssertEqual(removed, ["card-czk"])
         XCTAssertEqual(vm.state.loadedValue?.cards, [])
         XCTAssertEqual(vm.state.loadedValue?.receivables, [PaymentsFixtures.receivable()])
         XCTAssertEqual(vm.removeState, .idle)
     }
 
+    /// The system confirm has already closed, so the refusal is the snackbar's and the row is free again.
     func testARefusedRemovalKeepsTheCardAndSaysSo() async {
         cards.removeResult = .failure(ApiError(code: "saved_card.not_found", httpStatus: 400))
         let vm = makeVM()
@@ -118,7 +116,7 @@ final class PaymentsViewModelTests: XCTestCase {
         await vm.remove(PaymentsFixtures.czkCard)
 
         XCTAssertEqual(vm.state.loadedValue?.cards, [PaymentsFixtures.czkCard])
-        XCTAssertEqual(vm.removeState, .error(L10n.Payments.cardRemoveRetryHint))
+        XCTAssertEqual(vm.removeState, .idle)
         XCTAssertNotNil(snackbar.current)
     }
 

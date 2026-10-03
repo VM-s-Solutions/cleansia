@@ -5476,41 +5476,6 @@
         }
       }
     },
-    "devices_revoke_retry_hint": {
-      "extractionState": "stale",
-      "localizations": {
-        "cs": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Nepodařilo se odebrat – zkuste to znovu."
-          }
-        },
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Couldn't remove — please try again."
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Не удалось удалить – попробуйте ещё раз."
-          }
-        },
-        "sk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Nepodarilo sa odobrať – skúste to znova."
-          }
-        },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Не вдалося видалити – спробуйте ще раз."
-          }
-        }
-      }
-    },
     "devices_revoke_success": {
       "extractionState": "stale",
       "localizations": {

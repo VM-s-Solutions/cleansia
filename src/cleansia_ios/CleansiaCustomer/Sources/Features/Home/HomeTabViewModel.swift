@@ -34,6 +34,8 @@ final class HomeTabViewModel: ViewModel {
     @Published private(set) var marketCurrencyCode: String?
     @Published private(set) var catalogCurrencyCode: String?
     @Published private(set) var referralCode: String?
+    /// The points each side of a referral gets, the server's; nil until the referral account loads.
+    @Published private(set) var referralPoints: Int?
     /// The system does not let this app alert. Re-read on Home entry and every foreground, so turning
     /// notifications on in Settings removes the carousel's slide on return.
     @Published private(set) var notificationsOff = false
@@ -106,6 +108,9 @@ final class HomeTabViewModel: ViewModel {
         referralRepository.$account
             .map { $0.flatMap { $0.code.isBlank ? nil : $0.code } }
             .assign(to: &$referralCode)
+        referralRepository.$account
+            .map { $0.flatMap { $0.pointsPerReferral > 0 ? $0.pointsPerReferral : nil } }
+            .assign(to: &$referralPoints)
         startFirstPaintWatcher()
     }
 
@@ -135,8 +140,28 @@ final class HomeTabViewModel: ViewModel {
             credit: creditHere,
             creditShare: credit?.maxShareOfOrder ?? 0,
             expressRemaining: expressRemaining,
-            referralCode: referralCode
+            referralCode: referralCode,
+            plusDiscountPercent: plusDiscountPercent,
+            memberCancellationHours: memberCancellationHours,
+            referralPoints: referralPoints
         )
+    }
+
+    /// The discount the Plus slide names, in whole percent: the headline plan's, as the subscribe page
+    /// shows it. 0 while the plans are unread or the plan carries none — the slide then names no figure.
+    var plusDiscountPercent: Int {
+        MembershipPlan.headline(of: plusPlans)?.discountPerkPercent ?? 0
+    }
+
+    /// The member's own free-cancellation window when it is a benefit — shorter than everyone's, as the
+    /// booking's cancellation policy reads it — else 0, and the slide does not show. A renewal that failed
+    /// runs no benefit, so it shows none.
+    var memberCancellationHours: Int {
+        guard let membership, membership.hasMembership, !membership.benefitsPaused,
+              let hours = membership.freeCancellationWindowHours,
+              hours > 0, hours < CancellationPolicyBuilder.standardFreeHours
+        else { return 0 }
+        return hours
     }
 
     /// Credit only pays an order in its own currency, so the slide offers the balance held in the

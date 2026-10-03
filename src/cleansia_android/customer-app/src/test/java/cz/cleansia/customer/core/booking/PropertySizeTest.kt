@@ -107,15 +107,32 @@ class PropertySizeTest {
 
     /**
      * "1 ванна кімната" is wider than a 360dp phone leaves the bathrooms counter, so its label is the
-     * part that gives: weighted, so both steps keep their place, and wrapping onto a second line.
+     * part that gives: weighted, so both steps keep their place and the label is centred between them,
+     * and wrapping onto a second line.
      */
     @Test
     fun `a counter label too wide for its pill wraps instead of pushing the plus out`() {
         val counter = source("features/booking/ServicesStep.kt")
             .substringAfter("private fun CompactCounter(")
             .substringBefore("private fun CounterStep(")
-        assertTrue("the label is no longer weighted", counter.contains("Modifier.weight(1f, fill = false)"))
+        assertTrue("the label is no longer weighted", counter.contains("Modifier.weight(1f).padding(horizontal = 4.dp)"))
+        assertTrue("the label is no longer centred", counter.contains("textAlign = TextAlign.Center"))
         assertTrue("the label no longer wraps onto two lines", counter.contains("maxLines = 2"))
+    }
+
+    /** The two capsules share the row equally, with the quick-size slide's 8dp gap, and match heights. */
+    @Test
+    fun `the size row's two capsules are equal and fill the row`() {
+        val row = source("features/booking/ServicesStep.kt")
+            .substringAfter("private fun PropertyCompactRow(")
+            .substringBefore("private fun CompactCounter(")
+        assertEquals(
+            "both capsules no longer take an equal share of the row",
+            2,
+            Regex("\\.weight\\(1f\\)\\s*\\.fillMaxHeight\\(\\)").findAll(row).count(),
+        )
+        assertTrue("the gap between the capsules moved", row.contains("horizontalArrangement = Arrangement.spacedBy(8.dp)"))
+        assertTrue("a wrapped label no longer keeps both capsules one height", row.contains(".height(IntrinsicSize.Min)"))
     }
 
     /** The one-off flow floors at 1 like the recurring one floors at 0: a minus that cannot move looks dead. */

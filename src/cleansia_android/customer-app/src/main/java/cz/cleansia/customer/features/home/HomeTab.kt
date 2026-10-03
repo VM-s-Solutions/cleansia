@@ -35,14 +35,21 @@ import androidx.compose.material.icons.outlined.Add
 import androidx.compose.material.icons.outlined.Remove
 import androidx.compose.material.icons.automirrored.outlined.ArrowForward
 import androidx.compose.material.icons.automirrored.outlined.ArrowForwardIos
+import androidx.compose.material.icons.outlined.AccountBalanceWallet
 import androidx.compose.material.icons.outlined.AutoAwesome
 import androidx.compose.material.icons.outlined.Bolt
+import androidx.compose.material.icons.outlined.CardGiftcard
 import androidx.compose.material.icons.outlined.CleaningServices
+import androidx.compose.material.icons.outlined.EmojiEvents
+import androidx.compose.material.icons.outlined.EventAvailable
+import androidx.compose.material.icons.outlined.Home
 import androidx.compose.material.icons.outlined.KeyboardArrowDown
 import androidx.compose.material.icons.outlined.LocationOn
 import androidx.compose.material.icons.outlined.NotificationsNone
 import androidx.compose.material.icons.outlined.Person
 import androidx.compose.material.icons.outlined.Refresh
+import androidx.compose.material.icons.outlined.Repeat
+import androidx.compose.material.icons.outlined.Schedule
 import androidx.compose.material.icons.outlined.Shield
 import androidx.compose.material.icons.outlined.Star
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -107,7 +114,11 @@ import cz.cleansia.customer.core.loyalty.LoyaltyTier
 import cz.cleansia.customer.core.memberships.ExpressWaiverStatus
 import cz.cleansia.customer.core.memberships.benefitsPaused
 import cz.cleansia.customer.core.memberships.resolveExpressWaiver
+import cz.cleansia.customer.features.booking.BOOKING_SLOT_INTERVAL_MINUTES
 import cz.cleansia.customer.features.booking.BookingPricing
+import cz.cleansia.customer.features.booking.FIRST_WINDOW_HOUR
+import cz.cleansia.customer.features.booking.LAST_WINDOW_HOUR
+import cz.cleansia.customer.features.booking.cancellationPolicyFor
 import cz.cleansia.customer.core.orders.OrderListItemDto
 import cz.cleansia.customer.features.booking.localizedName
 import cz.cleansia.customer.features.orders.OrderStatus
@@ -225,6 +236,11 @@ fun HomeTab(
     }
     val isPlus = membership?.hasMembership == true
     val plusTrialDays by viewModel.plusTrialDays.collectAsStateWithLifecycle()
+    val plusDiscountPercent by viewModel.plusDiscountPercent.collectAsStateWithLifecycle()
+    // The member's own free-cancellation window, the figure MembershipPerks lists, read by the confirm
+    // step's rule: 0 hides the slide, and so do a renewal that failed, since no benefit runs then, and
+    // a window no shorter than the standard one everyone gets, which is no benefit to advertise.
+    val memberCancellationHours = cancellationPolicyFor(membership).plusFreeHours ?: 0
 
     // Catalog — used for the popular-packages quick-book strip. Home prices the chosen market
     // (ADR-0058 D5): refresh on first composition when nothing is loaded, whenever the market
@@ -402,12 +418,15 @@ fun HomeTab(
             SmartUpsellCarousel(
                 isPlus = isPlus,
                 plusTrialDays = plusTrialDays,
+                plusDiscountPercent = plusDiscountPercent,
+                memberCancellationHours = memberCancellationHours,
                 showSetupRecurring = showSetupRecurringSlide,
                 notificationsOff = !notificationsEnabled,
                 credit = creditHere,
                 creditShare = credit?.maxShareOfOrder ?: 0.0,
                 expressRemaining = expressRemaining,
                 referralCode = referralAccount?.code?.takeIf { it.isNotBlank() },
+                referralPoints = referralAccount?.pointsPerReferral?.takeIf { it > 0 },
                 onTurnOnNotifications = onTurnOnNotifications,
                 onSubscribePlus = onSubscribePlus,
                 onBookCleaning = onBookCleaning,
@@ -601,17 +620,30 @@ private fun AddressTopBar(
  * -> /product/features
  */
 
-internal enum class UpsellKind { Notifications, Credit, Express, SetupRecurring, Plus, Referral, QuickSize }
+internal enum class UpsellKind {
+    Notifications,
+    Credit,
+    Express,
+    SetupRecurring,
+    Plus,
+    Referral,
+    PlusCancellation,
+    ExpressToday,
+    Rewards,
+    ArrivalTimes,
+    QuickSize,
+}
 
-/** How many slides may come before the quick-size closer, which always shows. */
+/** How many slides come before the quick-size closer, which always shows. */
 internal const val UPSELL_LEADING_CAP = 4
 
 /**
  * Which slides show, in order — most relevant first, so the slide on screen at t=0 is the one the
  * customer is most likely to act on. The first [UPSELL_LEADING_CAP] eligible slides show, then the
- * quick-size slide always closes the set, so there are never more than five: a longer set is a
- * longer auto-advance cycle and a row of dots nobody counts. Referral is always eligible but is the
- * first to give way.
+ * quick-size slide closes the set: five every time, for every customer. The state-driven slides come
+ * first; the "did you know" facts after referral fill the rest, and give way first. Referral, rewards
+ * and arrival times are always eligible, and express-today is whenever the express slide is not, so
+ * four leading slides always exist.
  */
 internal fun upsellKinds(
     notificationsOff: Boolean,
@@ -619,6 +651,8 @@ internal fun upsellKinds(
     expressAvailable: Boolean,
     showSetupRecurring: Boolean,
     isPlus: Boolean,
+    /** The member's free-cancellation window in hours; 0 for a non-member or one whose benefits are paused. */
+    memberCancellationHours: Int = 0,
 ): List<UpsellKind> = buildList {
     if (notificationsOff) add(UpsellKind.Notifications)
     if (hasCredit) add(UpsellKind.Credit)
@@ -626,6 +660,11 @@ internal fun upsellKinds(
     if (showSetupRecurring) add(UpsellKind.SetupRecurring)
     if (!isPlus) add(UpsellKind.Plus)
     add(UpsellKind.Referral)
+    if (isPlus && memberCancellationHours > 0) add(UpsellKind.PlusCancellation)
+    // The express slide already says it for a member with a waiver left.
+    if (!expressAvailable) add(UpsellKind.ExpressToday)
+    add(UpsellKind.Rewards)
+    add(UpsellKind.ArrivalTimes)
 }.take(UPSELL_LEADING_CAP) + UpsellKind.QuickSize
 
 /** Every slide its own drawing, so no two visible slides repeat a mascot. Same mapping as iOS. */
@@ -637,13 +676,24 @@ internal fun UpsellKind.mascotRes(): Int = when (this) {
     UpsellKind.SetupRecurring -> R.drawable.mascot_idea
     UpsellKind.Plus -> R.drawable.mascot_plus
     UpsellKind.Referral -> R.drawable.mascot_thumbs_up
+    UpsellKind.PlusCancellation -> R.drawable.mascot_leaning
+    UpsellKind.ExpressToday -> R.drawable.mascot_ready
+    UpsellKind.Rewards -> R.drawable.mascot_spray_and_cloth
+    UpsellKind.ArrivalTimes -> R.drawable.mascot_resting
     UpsellKind.QuickSize -> R.drawable.mascot_vacuuming
 }
 
+/**
+ * One card: an eyebrow, a title, a two-line description, and a fact chip in the corner above the
+ * mascot — an icon, with the slide's figure beside it when it has one.
+ */
 private data class UpsellSlide(
     val kind: UpsellKind,
     val top: String,
     val title: String,
+    val description: String,
+    val chipIcon: ImageVector,
+    val chipText: String?,
     val cta: String,
     val gradient: List<Color>,
     val onClick: () -> Unit,
@@ -652,10 +702,27 @@ private data class UpsellSlide(
 /** Every slide is this tall, so the pager never changes height between slides. The skeleton matches. */
 private val UpsellCardHeight = 196.dp
 
+/** The mascot's side; the fact chip sits in the same column above it. */
+private val UpsellMascotSize = 84.dp
+
+/** What the eyebrow, the description and the CTA leave free at the card's end: the mascot's column and a 4dp gap. */
+private val UpsellMascotColumn = UpsellMascotSize + 4.dp
+
+/** The first and the last arrival time the booking offers, for the arrival-times slide: 08:00 and 19:45. */
+internal fun upsellArrivalBounds(): Pair<String, String> {
+    val last = LAST_WINDOW_HOUR * 60 - BOOKING_SLOT_INTERVAL_MINUTES
+    return "%02d:00".format(java.util.Locale.ROOT, FIRST_WINDOW_HOUR) to
+        "%02d:%02d".format(java.util.Locale.ROOT, last / 60, last % 60)
+}
+
 @Composable
 private fun SmartUpsellCarousel(
     isPlus: Boolean,
     plusTrialDays: Int,
+    /** The headline plan's discount in whole percent; 0 while unknown, and the Plus slide then names none. */
+    plusDiscountPercent: Int,
+    /** The member's free-cancellation window in hours; 0 hides that slide. */
+    memberCancellationHours: Int,
     showSetupRecurring: Boolean,
     notificationsOff: Boolean,
     /** The balance held in Home's currency, or null when there is none to spend here. */
@@ -665,6 +732,8 @@ private fun SmartUpsellCarousel(
     expressRemaining: Int,
     /** The customer's referral code once it has loaded; null falls back to opening Rewards. */
     referralCode: String?,
+    /** The points each side of a referral gets, from the server; null until the referral account loads. */
+    referralPoints: Int?,
     onTurnOnNotifications: () -> Unit,
     onSubscribePlus: () -> Unit,
     onBookCleaning: () -> Unit,
@@ -691,15 +760,23 @@ private fun SmartUpsellCarousel(
         expressAvailable = expressRemaining > 0,
         showSetupRecurring = showSetupRecurring,
         isPlus = isPlus,
+        memberCancellationHours = memberCancellationHours,
     )
     val sharePercent = (creditShare * 100).roundToInt()
     val offersTrial = plusTrialDays > 0
+    val expressLead = BookingPricing.EXPRESS_LEAD_HOURS.toInt()
+    val standardLead = BookingPricing.STANDARD_LEAD_HOURS.toInt()
+    val didYouKnow = stringResource(R.string.home_upsell_did_you_know)
+    val bookCta = stringResource(R.string.home_upsell_book_cta)
     val slides = kinds.map { kind ->
         when (kind) {
             UpsellKind.Notifications -> UpsellSlide(
                 kind = kind,
                 top = stringResource(R.string.home_upsell_notifications_top),
                 title = stringResource(R.string.home_upsell_notifications_title),
+                description = stringResource(R.string.home_upsell_notifications_desc),
+                chipIcon = Icons.Outlined.NotificationsNone,
+                chipText = null,
                 cta = stringResource(R.string.home_upsell_notifications_cta),
                 gradient = orangeGradient,
                 onClick = onTurnOnNotifications,
@@ -712,22 +789,23 @@ private fun SmartUpsellCarousel(
                 title = stringResource(
                     R.string.home_upsell_credit_title,
                     formatOrderPrice(credit?.balance ?: 0.0, credit?.currencyCode),
-                    sharePercent,
                 ),
-                cta = stringResource(R.string.home_upsell_book_cta),
+                description = stringResource(R.string.home_upsell_credit_desc, sharePercent),
+                chipIcon = Icons.Outlined.AccountBalanceWallet,
+                chipText = null,
+                cta = bookCta,
                 gradient = emeraldGradient,
                 onClick = onBookCleaning,
             )
             // Members only: Plus waives the express surcharge N times a month, on a slot 2–4 h out.
             UpsellKind.Express -> UpsellSlide(
                 kind = kind,
-                top = stringResource(
-                    R.string.home_upsell_express_top,
-                    BookingPricing.EXPRESS_LEAD_HOURS.toInt(),
-                    BookingPricing.STANDARD_LEAD_HOURS.toInt(),
-                ),
+                top = stringResource(R.string.home_upsell_express_top, expressLead, standardLead),
                 title = pluralStringResource(R.plurals.home_upsell_express_title, expressRemaining, expressRemaining),
-                cta = stringResource(R.string.home_upsell_book_cta),
+                description = stringResource(R.string.home_upsell_express_desc),
+                chipIcon = Icons.Outlined.Bolt,
+                chipText = stringResource(R.string.home_upsell_chip_times, expressRemaining),
+                cta = bookCta,
                 gradient = plusGradient,
                 onClick = onBookCleaning,
             )
@@ -738,10 +816,15 @@ private fun SmartUpsellCarousel(
                 kind = kind,
                 top = stringResource(R.string.home_upsell_setup_recurring_top),
                 title = stringResource(R.string.home_upsell_setup_recurring_title),
+                description = stringResource(R.string.home_upsell_setup_recurring_desc),
+                chipIcon = Icons.Outlined.Repeat,
+                chipText = null,
                 cta = stringResource(R.string.home_upsell_setup_recurring_cta),
                 gradient = purpleGradient,
                 onClick = onSetupRecurring,
             )
+            // The discount is the headline plan's, read from the server; until the plans load the
+            // slide names the two benefits no plan configures.
             UpsellKind.Plus -> UpsellSlide(
                 kind = kind,
                 top = stringResource(R.string.home_upsell_plus_top),
@@ -750,6 +833,14 @@ private fun SmartUpsellCarousel(
                 } else {
                     stringResource(R.string.home_upsell_plus_title)
                 },
+                description = if (plusDiscountPercent > 0) {
+                    stringResource(R.string.home_upsell_plus_desc, plusDiscountPercent)
+                } else {
+                    stringResource(R.string.home_upsell_plus_desc_generic)
+                },
+                chipIcon = Icons.Outlined.Star,
+                chipText = plusDiscountPercent.takeIf { it > 0 }
+                    ?.let { stringResource(R.string.home_upsell_chip_percent_off, it) },
                 cta = stringResource(if (offersTrial) R.string.home_upsell_plus_cta_trial else R.string.home_upsell_plus_cta),
                 // Same gradient as the Plus subscribe page hero — tapping
                 // the card visually previews where the user lands.
@@ -757,20 +848,78 @@ private fun SmartUpsellCarousel(
                 onClick = onSubscribePlus,
             )
             // The CTA says "Share my code", so the card shares it; until the code has loaded it
-            // opens Rewards, where the code appears.
+            // opens Rewards, where the code appears. The points are the server's.
             UpsellKind.Referral -> UpsellSlide(
                 kind = kind,
                 top = stringResource(R.string.home_upsell_referral_top),
                 title = stringResource(R.string.home_upsell_referral_title),
+                description = referralPoints
+                    ?.let { pluralStringResource(R.plurals.home_upsell_referral_desc, it, it) }
+                    ?: stringResource(R.string.home_upsell_referral_desc_generic),
+                chipIcon = Icons.Outlined.CardGiftcard,
+                chipText = referralPoints?.let { stringResource(R.string.home_upsell_chip_points, it) },
                 cta = stringResource(R.string.home_upsell_referral_cta),
                 gradient = cyanGradient,
                 onClick = { referralCode?.let(onShareReferral) ?: onOpenReferral() },
             )
+            // "Did you know?" — the member's own window, as the membership reports it.
+            UpsellKind.PlusCancellation -> UpsellSlide(
+                kind = kind,
+                top = didYouKnow,
+                title = stringResource(R.string.home_upsell_plus_cancel_title, memberCancellationHours),
+                description = stringResource(R.string.home_upsell_plus_cancel_desc),
+                chipIcon = Icons.Outlined.EventAvailable,
+                chipText = stringResource(R.string.home_upsell_chip_hours, memberCancellationHours),
+                cta = bookCta,
+                gradient = purpleGradient,
+                onClick = onBookCleaning,
+            )
+            // The express band is the booking policy's (BookingPricing mirrors it, and a test pins it).
+            UpsellKind.ExpressToday -> UpsellSlide(
+                kind = kind,
+                top = didYouKnow,
+                title = stringResource(R.string.home_upsell_express_today_title, expressLead),
+                description = stringResource(R.string.home_upsell_express_today_desc, standardLead),
+                chipIcon = Icons.Outlined.Bolt,
+                chipText = stringResource(R.string.home_upsell_chip_hours, expressLead),
+                cta = bookCta,
+                gradient = orangeGradient,
+                onClick = onBookCleaning,
+            )
+            UpsellKind.Rewards -> UpsellSlide(
+                kind = kind,
+                top = didYouKnow,
+                title = stringResource(R.string.home_upsell_rewards_title),
+                description = stringResource(R.string.home_upsell_rewards_desc),
+                chipIcon = Icons.Outlined.EmojiEvents,
+                chipText = null,
+                cta = stringResource(R.string.home_upsell_rewards_cta),
+                gradient = emeraldGradient,
+                onClick = onOpenReferral,
+            )
+            // The booking's own window and grid, the times the When step offers.
+            UpsellKind.ArrivalTimes -> {
+                val (first, last) = upsellArrivalBounds()
+                UpsellSlide(
+                    kind = kind,
+                    top = didYouKnow,
+                    title = stringResource(R.string.home_upsell_times_title),
+                    description = stringResource(R.string.home_upsell_times_desc, first, last),
+                    chipIcon = Icons.Outlined.Schedule,
+                    chipText = stringResource(R.string.home_upsell_chip_minutes, BOOKING_SLOT_INTERVAL_MINUTES),
+                    cta = bookCta,
+                    gradient = cyanGradient,
+                    onClick = onBookCleaning,
+                )
+            }
             // The closer replaces the old generic "Book" slide, which only duplicated the FAB.
             UpsellKind.QuickSize -> UpsellSlide(
                 kind = kind,
                 top = "",
                 title = stringResource(R.string.home_quick_size_title),
+                description = "",
+                chipIcon = Icons.Outlined.Home,
+                chipText = null,
                 cta = stringResource(R.string.home_quick_size_cta),
                 gradient = blueGradient,
                 onClick = {},
@@ -955,6 +1104,14 @@ private fun upsellAutoAdvanceAllowed(context: android.content.Context): Boolean 
     return animatorScale > 0f
 }
 
+/**
+ * The card inside 196dp: 20dp padding leaves 156dp. The column stacks the eyebrow (18) + 6 + the title
+ * (two 24sp lines, 48) + 4 + the description (two 16sp lines, 32) + the CTA pill (36), 144dp, with the
+ * slack above the pill. The mascot's [UpsellMascotSize] square starts 72dp down, where the title's
+ * second line ends, so the title runs the full width; the fact chip sits above the mascot, and the
+ * eyebrow, the description and the pill stop short of that column. A title or description too long for
+ * its two lines steps down to 80% before it ellipsises, as iOS's minimumScaleFactor(0.8) does.
+ */
 @Composable
 private fun UpsellSlideCard(slide: UpsellSlide, modifier: Modifier = Modifier) {
     // Outer padding lives on the slide (not the pager) so each page snaps
@@ -970,28 +1127,87 @@ private fun UpsellSlideCard(slide: UpsellSlide, modifier: Modifier = Modifier) {
             .clickable(onClick = slide.onClick)
             .padding(20.dp),
     ) {
-        Column(modifier = Modifier.fillMaxWidth(0.72f)) {
-            Text(
-                slide.top,
-                style = MaterialTheme.typography.labelLarge,
-                color = Color.White.copy(alpha = 0.85f),
-            )
-            Spacer(Modifier.height(4.dp))
-            Text(
-                slide.title,
-                style = MaterialTheme.typography.headlineSmall.copy(fontFamily = Poppins, fontWeight = FontWeight.Bold),
-                color = Color.White,
-            )
-            Spacer(Modifier.height(14.dp))
-            UpsellCtaPill(slide.cta)
-        }
         Image(
             painter = painterResource(slide.kind.mascotRes()),
             contentDescription = null,
             modifier = Modifier
                 .align(Alignment.BottomEnd)
-                .size(110.dp),
+                .size(UpsellMascotSize),
         )
+        UpsellFactChip(
+            icon = slide.chipIcon,
+            text = slide.chipText,
+            modifier = Modifier.align(Alignment.TopEnd),
+        )
+        Column(modifier = Modifier.fillMaxHeight()) {
+            Text(
+                slide.top,
+                style = MaterialTheme.typography.labelMedium,
+                color = Color.White.copy(alpha = 0.85f),
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+                modifier = Modifier.padding(end = UpsellMascotColumn),
+            )
+            Spacer(Modifier.height(6.dp))
+            UpsellFittedText(
+                slide.title,
+                style = MaterialTheme.typography.headlineSmall.copy(fontFamily = Poppins, fontWeight = FontWeight.Bold),
+                color = Color.White,
+            )
+            Spacer(Modifier.height(4.dp))
+            UpsellFittedText(
+                slide.description,
+                style = MaterialTheme.typography.bodySmall,
+                color = Color.White.copy(alpha = 0.9f),
+                modifier = Modifier.padding(end = UpsellMascotColumn),
+            )
+            Spacer(Modifier.weight(1f))
+            UpsellCtaPill(slide.cta, modifier = Modifier.padding(end = UpsellMascotColumn))
+        }
+    }
+}
+
+/** Two lines at most; a text that does not fit them shrinks by 10% twice before it ellipsises. */
+@Composable
+private fun UpsellFittedText(
+    text: String,
+    style: androidx.compose.ui.text.TextStyle,
+    color: Color,
+    modifier: Modifier = Modifier,
+) {
+    var shrinkSteps by remember(text) { mutableIntStateOf(0) }
+    val scale = 1f - 0.1f * shrinkSteps
+    Text(
+        text,
+        style = style.copy(fontSize = style.fontSize * scale, lineHeight = style.lineHeight * scale),
+        color = color,
+        maxLines = 2,
+        overflow = TextOverflow.Ellipsis,
+        onTextLayout = { if (it.hasVisualOverflow && shrinkSteps < 2) shrinkSteps++ },
+        modifier = modifier,
+    )
+}
+
+/** The slide's fact: an icon, and its figure when it has one ("−5%", "2 h", "+150"). */
+@Composable
+private fun UpsellFactChip(icon: ImageVector, text: String?, modifier: Modifier = Modifier) {
+    Row(
+        modifier = modifier
+            .background(Color.White.copy(alpha = 0.22f), RoundedCornerShape(999.dp))
+            // 24dp tall (an 18sp line + 3dp either side), so it ends where the title's first line begins.
+            .padding(horizontal = if (text == null) 6.dp else 10.dp, vertical = 3.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Icon(icon, null, tint = Color.White, modifier = Modifier.size(16.dp))
+        if (text != null) {
+            Spacer(Modifier.width(4.dp))
+            Text(
+                text,
+                style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.ExtraBold),
+                color = Color.White,
+                maxLines = 1,
+            )
+        }
     }
 }
 

@@ -109,7 +109,7 @@
     <string name="home_upsell_plus_title_trial">Prvých %1$d dní zadarmo.</string>
     <string name="home_upsell_plus_cta_trial">Vyskúšať zadarmo</string>
     <string name="home_upsell_referral_top">Pozvite kamaráta</string>
-    <string name="home_upsell_referral_title">150 bodov pre oboch po dokončení jeho prvého upratovania</string>
+    <string name="home_upsell_referral_title">Odporučte Cleansiu kamarátovi</string>
     <string name="home_upsell_referral_cta">Zdieľať môj kód</string>
     <string name="home_upsell_page_a11y">Ponuka %1$d z %2$d</string>
     <string name="home_upsell_next">Ďalšia ponuka</string>
@@ -117,13 +117,13 @@
     <string name="home_upsell_notifications_top">Buďte v obraze</string>
     <string name="home_upsell_notifications_title">Dozviete sa hneď, keď je upratovač na ceste</string>
     <string name="home_upsell_notifications_cta">Zapnúť</string>
-    <string name="home_upsell_credit_title">%1$s sa odpočíta z vašej ďalšej objednávky kartou, až %2$d %% jej ceny</string>
+    <string name="home_upsell_credit_title">%1$s na vaše upratovania</string>
     <string name="home_upsell_express_top">Plus · %1$d–%2$d h vopred</string>
     <plurals name="home_upsell_express_title">
-        <item quantity="one">Bez expresného príplatku ešte %1$d objednávka tento mesiac</item>
-        <item quantity="few">Bez expresného príplatku ešte %1$d objednávky tento mesiac</item>
-        <item quantity="many">Bez expresného príplatku ešte %1$d objednávky tento mesiac</item>
-        <item quantity="other">Bez expresného príplatku ešte %1$d objednávok tento mesiac</item>
+        <item quantity="one">Bez príplatku ešte %1$d expresná objednávka</item>
+        <item quantity="few">Bez príplatku ešte %1$d expresné objednávky</item>
+        <item quantity="many">Bez príplatku ešte %1$d expresnej objednávky</item>
+        <item quantity="other">Bez príplatku ešte %1$d expresných objednávok</item>
     </plurals>
     <string name="home_upsell_book_cta">Objednať</string>
     <string name="home_quick_size_title">Aký veľký je váš domov?</string>
@@ -133,8 +133,36 @@
     <string name="home_quick_size_baths_less">Menej kúpeľní</string>
     <string name="home_quick_size_baths_more">Viac kúpeľní</string>
     <string name="home_upsell_setup_recurring_top">Výhoda Plus</string>
-    <string name="home_upsell_setup_recurring_title">Nastavte si pravidelné upratovanie — raz objednať, navždy beží</string>
+    <string name="home_upsell_setup_recurring_title">Nastavte si pravidelné upratovanie</string>
     <string name="home_upsell_setup_recurring_cta">Nastaviť</string>
+    <string name="home_upsell_did_you_know">Vedeli ste?</string>
+    <string name="home_upsell_notifications_desc">Dáme vedieť, keď vyrazí, začne aj skončí.</string>
+    <string name="home_upsell_credit_desc">Odpočíta sa z ďalšej platby kartou, až %1$d %% ceny objednávky.</string>
+    <string name="home_upsell_express_desc">Plus vám ho odpúšťa a počet sa každý mesiac obnoví.</string>
+    <string name="home_upsell_setup_recurring_desc">Týždenne, každé dva týždne alebo mesačne, v deň a čas podľa vás.</string>
+    <string name="home_upsell_plus_desc">Zľava %1$d %% na každé upratovanie a obľúbený upratovač na želanie.</string>
+    <string name="home_upsell_plus_desc_generic">Pravidelné upratovania a váš obľúbený upratovač na želanie.</string>
+    <string name="home_upsell_referral_desc_generic">Obaja získate body po dokončení jeho prvého upratovania.</string>
+    <string name="home_upsell_plus_cancel_title">Zrušenie zadarmo až %1$d h vopred</string>
+    <string name="home_upsell_plus_cancel_desc">Jedna z výhod Plus, pri každej vašej objednávke.</string>
+    <string name="home_upsell_express_today_title">Objednávajte už %1$d h vopred</string>
+    <string name="home_upsell_express_today_desc">Na poslednú chvíľu? Menej než %1$d h vopred znamená expresný príplatok.</string>
+    <string name="home_upsell_rewards_title">Každé dokončené upratovanie prináša body</string>
+    <string name="home_upsell_rewards_desc">Zbierajte ich, postupujte úrovňami a odomykajte ich výhody.</string>
+    <string name="home_upsell_rewards_cta">Moje odmeny</string>
+    <string name="home_upsell_times_title">Zvoľte si presný čas príchodu</string>
+    <string name="home_upsell_times_desc">Dopoludnie, popoludnie aj večer, kedykoľvek od %1$s do %2$s.</string>
+    <string name="home_upsell_chip_percent_off">−%1$d %%</string>
+    <string name="home_upsell_chip_points">+%1$d</string>
+    <string name="home_upsell_chip_hours">%1$d h</string>
+    <string name="home_upsell_chip_minutes">%1$d min</string>
+    <string name="home_upsell_chip_times">%1$d×</string>
+    <plurals name="home_upsell_referral_desc">
+        <item quantity="one">Obaja získate %1$d bod po dokončení jeho prvého upratovania.</item>
+        <item quantity="few">Obaja získate %1$d body po dokončení jeho prvého upratovania.</item>
+        <item quantity="many">Obaja získate %1$d bodu po dokončení jeho prvého upratovania.</item>
+        <item quantity="other">Obaja získate %1$d bodov po dokončení jeho prvého upratovania.</item>
+    </plurals>
 
     <string name="home_hero2_top">Jar je tu</string>
     <string name="home_hero2_title">Hĺbkové upratovanie + okná v jednom</string>
@@ -580,13 +608,20 @@
     <string name="booking_total">Celkom</string>
     <string name="booking_arrival_window">Upratovačka príde do 1 hodiny</string>
     <string name="booking_slot_unavailable">Obsadené</string>
-    <string name="booking_slot_earliest">Najskôr</string>
     <string name="booking_slot_express" formatted="false">Expres +20 %</string>
     <string name="booking_slot_express_waived">Expres · bez príplatku</string>
     <string name="booking_express_waiver_available">Plus pokrýva 20%% expresný príplatok — %1$d zostáva tento kalendárny mesiac.</string>
     <string name="booking_express_waiver_used" formatted="false">Tento mesiac už nezostáva žiadne odpustenie expresného príplatku — expresné termíny sa účtujú s +20 % až do budúceho mesiaca.</string>
-    <string name="booking_slot_select">Vybrať</string>
     <string name="booking_all_slots_booked">Pre tento deň sú všetky termíny obsadené — vyberte iný deň.</string>
+    <string name="booking_day_part_morning">Dopoludnie</string>
+    <string name="booking_day_part_afternoon">Popoludnie</string>
+    <string name="booking_day_part_evening">Večer</string>
+    <plurals name="booking_day_part_a11y">
+        <item quantity="one">%1$s, %2$d voľný termín</item>
+        <item quantity="few">%1$s, %2$d voľné termíny</item>
+        <item quantity="many">%1$s, %2$d voľného termínu</item>
+        <item quantity="other">%1$s, %2$d voľných termínov</item>
+    </plurals>
 
     <!-- Booking — cancellation policy -->
     <string name="booking_cancel_hint">Zrušenie zdarma do 24 hodín pred začiatkom</string>
@@ -1043,9 +1078,6 @@
     <string name="recurring_freq_biweekly_subline">~2 upratovania mesačne</string>
     <string name="recurring_freq_monthly_subline">1 upratovanie mesačne</string>
     <string name="recurring_freq_most_popular_badge">NAJOBĽÚBENEJŠIE</string>
-    <string name="recurring_time_period_morning">Ráno</string>
-    <string name="recurring_time_period_afternoon">Popoludnie</string>
-    <string name="recurring_time_period_evening">Večer</string>
     <string name="common_ok">OK</string>
 
     <!-- Order detail action: Make this recurring -->

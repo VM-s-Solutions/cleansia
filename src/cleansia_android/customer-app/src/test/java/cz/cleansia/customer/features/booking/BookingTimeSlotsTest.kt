@@ -30,7 +30,7 @@ class BookingTimeSlotsTest {
         assertEquals(SlotState.Unavailable, slots["12:00"])
         assertEquals(SlotState.Express, slots["12:15"])
         assertEquals(SlotState.Express, slots["14:00"])
-        assertEquals(SlotState.Earliest, slots["14:15"])
+        assertEquals(SlotState.Available, slots["14:15"])
         assertEquals(SlotState.Available, slots["14:30"])
     }
 
@@ -40,6 +40,55 @@ class BookingTimeSlotsTest {
 
         assertEquals(SlotState.Unavailable, slots["12:15"])
         assertEquals(SlotState.Express, slots["12:30"])
+    }
+
+    // The part of day before the arrival times — the web wizard's dayParts (/customer-app/ordering-flow).
+
+    @Test
+    fun `every arrival time sits in exactly one part, sixteen to a part`() {
+        val slots = timeSlotsFor(LocalDate(2026, 9, 11), now, TimeZone.UTC)
+        val parts = groupByDayPart(slots)
+
+        assertEquals(listOf(DayPart.Morning, DayPart.Afternoon, DayPart.Evening), parts.map { it.part })
+        assertEquals(slots.map { it.time }, parts.flatMap { part -> part.slots.map { it.time } })
+        assertEquals(listOf(16, 16, 16), parts.map { it.slots.size })
+        assertEquals(
+            listOf("08:00" to "11:45", "12:00" to "15:45", "16:00" to "19:45"),
+            parts.map { it.slots.first().time to it.slots.last().time },
+        )
+    }
+
+    @Test
+    fun `a future day opens on the part that holds the booked time, else on the morning`() {
+        val parts = groupByDayPart(timeSlotsFor(LocalDate(2026, 9, 11), now, TimeZone.UTC))
+
+        assertEquals(DayPart.Morning, openingDayPart(parts, ""))
+        assertEquals(DayPart.Morning, openingDayPart(parts, "09:00"))
+        assertEquals(DayPart.Afternoon, openingDayPart(parts, "12:00"))
+        assertEquals(DayPart.Afternoon, openingDayPart(parts, "15:45"))
+        assertEquals(DayPart.Evening, openingDayPart(parts, "16:00"))
+    }
+
+    /** The web's own case: at 13:00 today the morning is closed and the first bookable slot is 15:00. */
+    @Test
+    fun `at 13 00 today the morning is disabled and the step opens on the afternoon`() {
+        val parts = groupByDayPart(timeSlotsFor(today, Instant.parse("2026-09-10T13:00:00Z"), TimeZone.UTC))
+
+        assertEquals(listOf(false, true, true), parts.map { it.bookable })
+        assertEquals(0, parts[0].bookableCount)
+        assertEquals(4, parts[1].bookableCount)
+        assertEquals("15:00", parts[1].slots.first { it.state != SlotState.Unavailable }.time)
+        assertEquals(DayPart.Afternoon, openingDayPart(parts, ""))
+        // A booked time the lead time has since overtaken does not hold the step on a closed part.
+        assertEquals(DayPart.Afternoon, openingDayPart(parts, "09:00"))
+    }
+
+    @Test
+    fun `a time outside the window belongs to no part`() {
+        assertEquals(null, DayPart.of("07:45"))
+        assertEquals(null, DayPart.of("20:00"))
+        assertEquals(null, DayPart.of(""))
+        assertEquals(DayPart.Evening, DayPart.of("19:45"))
     }
 
     @Test

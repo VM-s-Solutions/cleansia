@@ -7,8 +7,6 @@ final class DevicesViewModel: ViewModel {
     @Published private(set) var state: UiState<[UserDevice]> = .loading
     @Published private(set) var revokeAction: ActionState = .idle
 
-    /// Fires when a revoke succeeds — the View closes the confirm dialog.
-    let revoked = PassthroughSubject<Void, Never>()
     /// Fires when the CURRENT device was revoked (D7b) — the View forces
     /// logout + routes to login; the access token would otherwise survive
     /// ~15min on a server-killed session.
@@ -41,7 +39,6 @@ final class DevicesViewModel: ViewModel {
         case .success:
             snackbar.showSuccess(L10n.Devices.revokeSuccess)
             revokeAction = .idle
-            revoked.send()
             if isCurrentDevice(device) {
                 // D7b: the caller revoked its own device — sign out so the
                 // surviving access token can't strand a dead session.
@@ -50,8 +47,9 @@ final class DevicesViewModel: ViewModel {
                 state = .loaded(devices.filter { $0.id != device.id })
             }
         case let .failure(error):
+            // The confirm closed on the tap, so the snackbar is where a refusal is said; the row stays.
             snackbar.showError(localizer.message(for: error))
-            revokeAction = .error(L10n.Devices.revokeRetryHint)
+            revokeAction = .idle
         }
     }
 

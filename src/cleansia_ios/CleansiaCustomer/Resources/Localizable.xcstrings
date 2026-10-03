@@ -2383,6 +2383,254 @@
         }
       }
     },
+    "booking_day_part_afternoon": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Afternoon"
+          }
+        },
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Odpoledne"
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Popoludnie"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "День"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "День"
+          }
+        }
+      }
+    },
+    "booking_day_part_evening": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Evening"
+          }
+        },
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Večer"
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Večer"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Вечір"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Вечер"
+          }
+        }
+      }
+    },
+    "booking_day_part_morning": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Morning"
+          }
+        },
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dopoledne"
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dopoludnie"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ранок"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Утро"
+          }
+        }
+      }
+    },
+    "booking_day_part_slots_available": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%1$lld slot available"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%1$lld slots available"
+                }
+              }
+            }
+          }
+        },
+        "cs": {
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%1$lld volný termín"
+                }
+              },
+              "few": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%1$lld volné termíny"
+                }
+              },
+              "many": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%1$lld volného termínu"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%1$lld volných termínů"
+                }
+              }
+            }
+          }
+        },
+        "sk": {
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%1$lld voľný termín"
+                }
+              },
+              "few": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%1$lld voľné termíny"
+                }
+              },
+              "many": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%1$lld voľného termínu"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%1$lld voľných termínov"
+                }
+              }
+            }
+          }
+        },
+        "uk": {
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%1$lld вільний слот"
+                }
+              },
+              "few": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%1$lld вільні слоти"
+                }
+              },
+              "many": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%1$lld вільних слотів"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%1$lld вільного слота"
+                }
+              }
+            }
+          }
+        },
+        "ru": {
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%1$lld свободный слот"
+                }
+              },
+              "few": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%1$lld свободных слота"
+                }
+              },
+              "many": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%1$lld свободных слотов"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%1$lld свободного слота"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "booking_early_performance_toggle": {
       "extractionState": "manual",
       "localizations": {
@@ -5362,41 +5610,6 @@
         }
       }
     },
-    "booking_slot_earliest": {
-      "extractionState": "stale",
-      "localizations": {
-        "cs": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Nejdříve"
-          }
-        },
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Earliest"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Раньше всего"
-          }
-        },
-        "sk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Najskôr"
-          }
-        },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Найшвидше"
-          }
-        }
-      }
-    },
     "booking_slot_express": {
       "extractionState": "stale",
       "localizations": {
@@ -5463,41 +5676,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Експрес · без доплати"
-          }
-        }
-      }
-    },
-    "booking_slot_select": {
-      "extractionState": "stale",
-      "localizations": {
-        "cs": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Vybrat"
-          }
-        },
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Select"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Выбрать"
-          }
-        },
-        "sk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Vybrať"
-          }
-        },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Вибрати"
           }
         }
       }
@@ -8998,41 +9176,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Видалити цей пристрій?"
-          }
-        }
-      }
-    },
-    "devices_revoke_retry_hint": {
-      "extractionState": "stale",
-      "localizations": {
-        "cs": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Nepodařilo se odebrat — zkuste to znovu."
-          }
-        },
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Couldn't remove — please try again."
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Не удалось удалить — попробуйте снова."
-          }
-        },
-        "sk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Nepodarilo sa odstrániť — skúste to znova."
-          }
-        },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Не вдалося видалити — спробуйте ще раз."
           }
         }
       }
@@ -13449,37 +13592,317 @@
         }
       }
     },
+    "home_upsell_chip_hours": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$lld h"
+          }
+        },
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$lld h"
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$lld h"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$lld год"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$lld ч"
+          }
+        }
+      }
+    },
+    "home_upsell_chip_minutes": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$lld min"
+          }
+        },
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$lld min"
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$lld min"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$lld хв"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$lld мин"
+          }
+        }
+      }
+    },
+    "home_upsell_chip_percent_off": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "−%1$lld%%"
+          }
+        },
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "−%1$lld %%"
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "−%1$lld %%"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "−%1$lld%%"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "−%1$lld%%"
+          }
+        }
+      }
+    },
+    "home_upsell_chip_points": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "+%1$lld"
+          }
+        },
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "+%1$lld"
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "+%1$lld"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "+%1$lld"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "+%1$lld"
+          }
+        }
+      }
+    },
+    "home_upsell_chip_times": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$lld×"
+          }
+        },
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$lld×"
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$lld×"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$lld×"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$lld×"
+          }
+        }
+      }
+    },
+    "home_upsell_credit_desc": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Taken off your next card payment, up to %1$lld%% of the order."
+          }
+        },
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Odečte se z příští platby kartou, až %1$lld %% ceny objednávky."
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Odpočíta sa z ďalšej platby kartou, až %1$lld %% ceny objednávky."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Спишеться з наступної оплати карткою, до %1$lld%% вартості замовлення."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Спишется со следующей оплаты картой, до %1$lld%% стоимости заказа."
+          }
+        }
+      }
+    },
     "home_upsell_credit_title": {
       "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "%1$@ comes off your next card booking, up to %2$lld%% of it"
+            "value": "%1$@ to spend on cleanings"
           }
         },
         "cs": {
           "stringUnit": {
             "state": "translated",
-            "value": "%1$@ se odečte z vaší příští objednávky kartou, až %2$lld %% její ceny"
+            "value": "%1$@ na vaše úklidy"
           }
         },
         "sk": {
           "stringUnit": {
             "state": "translated",
-            "value": "%1$@ sa odpočíta z vašej ďalšej objednávky kartou, až %2$lld %% jej ceny"
+            "value": "%1$@ na vaše upratovania"
           }
         },
         "uk": {
           "stringUnit": {
             "state": "translated",
-            "value": "%1$@ спишуться з наступного замовлення карткою — до %2$lld%% вартості"
+            "value": "%1$@ кредиту на ваші прибирання"
           }
         },
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "%1$@ спишутся со следующего заказа картой — до %2$lld%% стоимости"
+            "value": "%1$@ кредита на ваши уборки"
+          }
+        }
+      }
+    },
+    "home_upsell_did_you_know": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Did you know?"
+          }
+        },
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Věděli jste?"
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vedeli ste?"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Чи знали ви?"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "А вы знали?"
+          }
+        }
+      }
+    },
+    "home_upsell_express_desc": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your Plus waives it, and the count resets every month."
+          }
+        },
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Plus vám ho promíjí a počet se každý měsíc obnoví."
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Plus vám ho odpúšťa a počet sa každý mesiac obnoví."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Plus скасовує доплату, а ліміт оновлюється щомісяця."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Plus отменяет доплату, а лимит обновляется каждый месяц."
           }
         }
       }
@@ -13493,13 +13916,13 @@
               "one": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "No express surcharge on %1$lld more booking this month"
+                  "value": "No surcharge on %1$lld more express booking"
                 }
               },
               "other": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "No express surcharge on %1$lld more bookings this month"
+                  "value": "No surcharge on %1$lld more express bookings"
                 }
               }
             }
@@ -13511,25 +13934,25 @@
               "one": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "Bez expresního příplatku ještě %1$lld objednávka tento měsíc"
+                  "value": "Bez příplatku ještě %1$lld expresní objednávka"
                 }
               },
               "few": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "Bez expresního příplatku ještě %1$lld objednávky tento měsíc"
+                  "value": "Bez příplatku ještě %1$lld expresní objednávky"
                 }
               },
               "many": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "Bez expresního příplatku ještě %1$lld objednávky tento měsíc"
+                  "value": "Bez příplatku ještě %1$lld expresní objednávky"
                 }
               },
               "other": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "Bez expresního příplatku ještě %1$lld objednávek tento měsíc"
+                  "value": "Bez příplatku ještě %1$lld expresních objednávek"
                 }
               }
             }
@@ -13541,25 +13964,25 @@
               "one": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "Bez expresného príplatku ešte %1$lld objednávka tento mesiac"
+                  "value": "Bez príplatku ešte %1$lld expresná objednávka"
                 }
               },
               "few": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "Bez expresného príplatku ešte %1$lld objednávky tento mesiac"
+                  "value": "Bez príplatku ešte %1$lld expresné objednávky"
                 }
               },
               "many": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "Bez expresného príplatku ešte %1$lld objednávky tento mesiac"
+                  "value": "Bez príplatku ešte %1$lld expresnej objednávky"
                 }
               },
               "other": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "Bez expresného príplatku ešte %1$lld objednávok tento mesiac"
+                  "value": "Bez príplatku ešte %1$lld expresných objednávok"
                 }
               }
             }
@@ -13571,25 +13994,25 @@
               "one": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "Ще %1$lld замовлення цього місяця без експрес-доплати"
+                  "value": "Без доплати ще %1$lld експрес-замовлення"
                 }
               },
               "few": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "Ще %1$lld замовлення цього місяця без експрес-доплати"
+                  "value": "Без доплати ще %1$lld експрес-замовлення"
                 }
               },
               "many": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "Ще %1$lld замовлень цього місяця без експрес-доплати"
+                  "value": "Без доплати ще %1$lld експрес-замовлень"
                 }
               },
               "other": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "Ще %1$lld замовлення цього місяця без експрес-доплати"
+                  "value": "Без доплати ще %1$lld експрес-замовлення"
                 }
               }
             }
@@ -13601,28 +14024,98 @@
               "one": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "Ещё %1$lld заказ в этом месяце без экспресс-доплаты"
+                  "value": "Без доплаты ещё %1$lld экспресс-заказ"
                 }
               },
               "few": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "Ещё %1$lld заказа в этом месяце без экспресс-доплаты"
+                  "value": "Без доплаты ещё %1$lld экспресс-заказа"
                 }
               },
               "many": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "Ещё %1$lld заказов в этом месяце без экспресс-доплаты"
+                  "value": "Без доплаты ещё %1$lld экспресс-заказов"
                 }
               },
               "other": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "Ещё %1$lld заказа в этом месяце без экспресс-доплаты"
+                  "value": "Без доплаты ещё %1$lld экспресс-заказа"
                 }
               }
             }
+          }
+        }
+      }
+    },
+    "home_upsell_express_today_desc": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Short notice? Under %1$lld h ahead, an express surcharge applies."
+          }
+        },
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Na poslední chvíli? Méně než %1$lld h předem znamená expresní příplatek."
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Na poslednú chvíľu? Menej než %1$lld h vopred znamená expresný príplatok."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "В останню мить? Менш ніж за %1$lld год діє експрес-доплата."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "В последний момент? Менее чем за %1$lld ч действует экспресс-доплата."
+          }
+        }
+      }
+    },
+    "home_upsell_express_today_title": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Book as little as %1$lld h ahead"
+          }
+        },
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Objednávejte už %1$lld h předem"
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Objednávajte už %1$lld h vopred"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Замовляйте вже за %1$lld год"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Заказывайте всего за %1$lld ч"
           }
         }
       }
@@ -13693,6 +14186,41 @@
           "stringUnit": {
             "state": "translated",
             "value": "Включить"
+          }
+        }
+      }
+    },
+    "home_upsell_notifications_desc": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "We tell you when they set off, start and finish."
+          }
+        },
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dáme vědět, když vyrazí, začne i skončí."
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dáme vedieť, keď vyrazí, začne aj skončí."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Повідомимо, коли він вирушить, почне й завершить."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Сообщим, когда он выедет, начнёт и закончит."
           }
         }
       }
@@ -13802,6 +14330,76 @@
         }
       }
     },
+    "home_upsell_plus_cancel_desc": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "One of your Plus benefits, on every booking you make."
+          }
+        },
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Jedna z výhod Plus, u každé vaší objednávky."
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Jedna z výhod Plus, pri každej vašej objednávke."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Одна з переваг Plus, для кожного вашого замовлення."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Одно из преимуществ Plus, для каждого вашего заказа."
+          }
+        }
+      }
+    },
+    "home_upsell_plus_cancel_title": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Free cancellation up to %1$lld h before"
+          }
+        },
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zrušení zdarma až %1$lld h předem"
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zrušenie zadarmo až %1$lld h vopred"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Безкоштовне скасування за %1$lld год до прибирання"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Бесплатная отмена за %1$lld ч до уборки"
+          }
+        }
+      }
+    },
     "home_upsell_plus_cta": {
       "extractionState": "stale",
       "localizations": {
@@ -13833,6 +14431,76 @@
           "stringUnit": {
             "state": "translated",
             "value": "Отримати Plus"
+          }
+        }
+      }
+    },
+    "home_upsell_plus_desc": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Take %1$lld%% off every cleaning and request your favorite cleaner."
+          }
+        },
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sleva %1$lld %% na každý úklid a váš oblíbený uklízeč na přání."
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zľava %1$lld %% na každé upratovanie a obľúbený upratovač na želanie."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Знижка %1$lld%% на кожне прибирання та улюблений прибиральник на запит."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Скидка %1$lld%% на каждую уборку и ваш любимый уборщик по запросу."
+          }
+        }
+      }
+    },
+    "home_upsell_plus_desc_generic": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Book recurring cleanings and request your favorite cleaner."
+          }
+        },
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pravidelné úklidy a váš oblíbený uklízeč na přání."
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pravidelné upratovania a váš obľúbený upratovač na želanie."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Регулярні прибирання і ваш улюблений прибиральник на запит."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Регулярные уборки и ваш любимый уборщик по запросу."
           }
         }
       }
@@ -14012,37 +14680,215 @@
         }
       }
     },
+    "home_upsell_referral_desc": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "You both get %1$lld point once their first cleaning is completed."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "You both get %1$lld points once their first cleaning is completed."
+                }
+              }
+            }
+          }
+        },
+        "cs": {
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Oba získáte %1$lld bod po jeho prvním dokončeném úklidu."
+                }
+              },
+              "few": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Oba získáte %1$lld body po jeho prvním dokončeném úklidu."
+                }
+              },
+              "many": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Oba získáte %1$lld bodu po jeho prvním dokončeném úklidu."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Oba získáte %1$lld bodů po jeho prvním dokončeném úklidu."
+                }
+              }
+            }
+          }
+        },
+        "sk": {
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Obaja získate %1$lld bod po dokončení jeho prvého upratovania."
+                }
+              },
+              "few": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Obaja získate %1$lld body po dokončení jeho prvého upratovania."
+                }
+              },
+              "many": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Obaja získate %1$lld bodu po dokončení jeho prvého upratovania."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Obaja získate %1$lld bodov po dokončení jeho prvého upratovania."
+                }
+              }
+            }
+          }
+        },
+        "uk": {
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Обом по %1$lld балу після першого завершеного прибирання друга."
+                }
+              },
+              "few": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Обом по %1$lld бали після першого завершеного прибирання друга."
+                }
+              },
+              "many": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Обом по %1$lld балів після першого завершеного прибирання друга."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Обом по %1$lld бала після першого завершеного прибирання друга."
+                }
+              }
+            }
+          }
+        },
+        "ru": {
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Вы оба получите %1$lld балл после его первой завершённой уборки."
+                }
+              },
+              "few": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Вы оба получите %1$lld балла после его первой завершённой уборки."
+                }
+              },
+              "many": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Вы оба получите %1$lld баллов после его первой завершённой уборки."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Вы оба получите %1$lld балла после его первой завершённой уборки."
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "home_upsell_referral_desc_generic": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "You both get points once their first cleaning is completed."
+          }
+        },
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Oba získáte body po jeho prvním dokončeném úklidu."
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Obaja získate body po dokončení jeho prvého upratovania."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Обом бали після першого завершеного прибирання друга."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Вы оба получите баллы после его первой завершённой уборки."
+          }
+        }
+      }
+    },
     "home_upsell_referral_title": {
       "extractionState": "stale",
       "localizations": {
         "cs": {
           "stringUnit": {
             "state": "translated",
-            "value": "Oba získáte 150 bodů po jeho prvním dokončeném úklidu"
+            "value": "Doporučte Cleansii kamarádovi"
           }
         },
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "You both get 150 points after their first completed cleaning"
+            "value": "Share Cleansia with a friend"
           }
         },
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Оба получите 150 баллов после первой завершённой уборки друга"
+            "value": "Посоветуйте Cleansia другу"
           }
         },
         "sk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Obaja získate 150 bodov po jeho prvom dokončenom upratovaní"
+            "value": "Odporučte Cleansiu kamarátovi"
           }
         },
         "uk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Обидва отримаєте 150 балів після першого завершеного прибирання друга"
+            "value": "Порадьте Cleansia другові"
           }
         }
       }
@@ -14082,6 +14928,111 @@
         }
       }
     },
+    "home_upsell_rewards_cta": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "See my rewards"
+          }
+        },
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Moje odměny"
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Moje odmeny"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Мої винагороди"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Мои награды"
+          }
+        }
+      }
+    },
+    "home_upsell_rewards_desc": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Collect them to climb the tiers and unlock their perks."
+          }
+        },
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sbírejte je, postupujte úrovněmi a odemykejte jejich výhody."
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zbierajte ich, postupujte úrovňami a odomykajte ich výhody."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Збирайте їх, піднімайтеся рівнями й відкривайте їхні переваги."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Копите их, поднимайтесь по уровням и открывайте преимущества."
+          }
+        }
+      }
+    },
+    "home_upsell_rewards_title": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Every completed cleaning earns points"
+          }
+        },
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Každý dokončený úklid přináší body"
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Každé dokončené upratovanie prináša body"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Кожне завершене прибирання приносить бали"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Каждая завершённая уборка приносит баллы"
+          }
+        }
+      }
+    },
     "home_upsell_setup_recurring_cta": {
       "extractionState": "stale",
       "localizations": {
@@ -14117,37 +15068,72 @@
         }
       }
     },
+    "home_upsell_setup_recurring_desc": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Weekly, fortnightly or monthly, on the day and time you pick."
+          }
+        },
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Týdně, jednou za dva týdny nebo měsíčně, v den a čas dle vás."
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Týždenne, každé dva týždne alebo mesačne, v deň a čas podľa vás."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Щотижня, раз на два тижні чи щомісяця, у ваш день і час."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Еженедельно, раз в две недели или ежемесячно, в ваш день и час."
+          }
+        }
+      }
+    },
     "home_upsell_setup_recurring_title": {
       "extractionState": "stale",
       "localizations": {
         "cs": {
           "stringUnit": {
             "state": "translated",
-            "value": "Nastavte si pravidelný úklid — jednou objednat, navždy běží"
+            "value": "Nastavte si pravidelný úklid"
           }
         },
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Set up a recurring cleaning — book once, run forever"
+            "value": "Put your cleaning on repeat"
           }
         },
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Настройте регулярную уборку — закажите один раз, работает всегда"
+            "value": "Настройте регулярную уборку"
           }
         },
         "sk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Nastavte si pravidelné upratovanie — raz objednať, navždy beží"
+            "value": "Nastavte si pravidelné upratovanie"
           }
         },
         "uk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Налаштуйте регулярне прибирання — замов один раз, працює завжди"
+            "value": "Налаштуйте регулярне прибирання"
           }
         }
       }
@@ -14183,6 +15169,76 @@
           "stringUnit": {
             "state": "translated",
             "value": "Перевага Plus"
+          }
+        }
+      }
+    },
+    "home_upsell_times_desc": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Morning, afternoon or evening, any time from %1$@ to %2$@."
+          }
+        },
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dopoledne, odpoledne i večer, kdykoli od %1$@ do %2$@."
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dopoludnie, popoludnie aj večer, kedykoľvek od %1$@ do %2$@."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ранок, день чи вечір, будь-коли з %1$@ до %2$@."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Утро, день или вечер, в любое время с %1$@ до %2$@."
+          }
+        }
+      }
+    },
+    "home_upsell_times_title": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Choose your exact arrival time"
+          }
+        },
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zvolte si přesný čas příjezdu"
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zvoľte si presný čas príchodu"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Оберіть точний час прибуття"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Выберите точное время прибытия"
           }
         }
       }
@@ -28926,41 +29982,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Картку видалено"
-          }
-        }
-      }
-    },
-    "payments_card_remove_retry_hint": {
-      "extractionState": "manual",
-      "localizations": {
-        "cs": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Kartu se nepodařilo odebrat. Zkuste to prosím znovu."
-          }
-        },
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Couldn't remove the card. Please try again."
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Не удалось удалить карту. Попробуйте ещё раз."
-          }
-        },
-        "sk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Kartu sa nepodarilo odstrániť. Skúste to prosím znova."
-          }
-        },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Не вдалося видалити картку. Спробуйте ще раз."
           }
         }
       }

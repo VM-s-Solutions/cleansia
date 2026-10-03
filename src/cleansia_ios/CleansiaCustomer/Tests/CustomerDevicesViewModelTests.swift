@@ -123,6 +123,7 @@ final class CustomerDevicesViewModelTests: XCTestCase {
         XCTAssertTrue(signedOut)
     }
 
+    /// The system confirm has already closed, so the refusal is the snackbar's and the row is free again.
     func testRevokeFailureKeepsListAndSurfacesError() async {
         client.myDevicesResult = .success([thisDevice, otherDevice])
         client.revokeResult = .failure(ApiError(httpStatus: 404))
@@ -131,7 +132,7 @@ final class CustomerDevicesViewModelTests: XCTestCase {
 
         await vm.revoke(otherDevice)
 
-        guard case .error = vm.revokeAction else { return XCTFail("expected action error") }
+        XCTAssertEqual(vm.revokeAction, .idle)
         XCTAssertEqual(vm.state.loadedValue, [thisDevice, otherDevice])
         XCTAssertNotNil(snackbar.current)
     }

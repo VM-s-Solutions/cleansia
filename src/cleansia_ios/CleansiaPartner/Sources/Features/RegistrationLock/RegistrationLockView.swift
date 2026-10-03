@@ -375,7 +375,9 @@ private struct StepRow: View {
         Button {
             if isFixable(step) { onFix(step) }
         } label: {
-            HStack(alignment: .top, spacing: Spacing.s) {
+            // The icon and the trailing status line up with the title's line, however many detail lines
+            // follow it; top-aligned, the smaller "Done" and the chevron sat above the title's centre.
+            HStack(alignment: .stepTitleCenter, spacing: Spacing.s) {
                 Image(systemName: statusSymbol)
                     .font(.system(size: 22))
                     .foregroundColor(statusColor)
@@ -383,6 +385,7 @@ private struct StepRow: View {
                     Text(categoryLabel)
                         .font(CleansiaTypography.titleMedium)
                         .foregroundColor(CleansiaColors.onSurface)
+                        .alignmentGuide(.stepTitleCenter) { $0[VerticalAlignment.center] }
                     ForEach(step.details.indices, id: \.self) { index in
                         Text(detailText(step.details[index]))
                             .font(CleansiaTypography.bodyMedium)
@@ -455,6 +458,17 @@ private struct StepRow: View {
         case .missing: return CleansiaColors.onSurfaceVariant
         }
     }
+}
+
+private extension VerticalAlignment {
+    /// The centre of a step row's title line.
+    enum StepTitleCenter: AlignmentID {
+        static func defaultValue(in context: ViewDimensions) -> CGFloat {
+            context[VerticalAlignment.center]
+        }
+    }
+
+    static let stepTitleCenter = VerticalAlignment(StepTitleCenter.self)
 }
 
 private struct SignOutButton: View {

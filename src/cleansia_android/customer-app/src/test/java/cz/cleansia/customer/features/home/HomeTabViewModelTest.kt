@@ -195,6 +195,33 @@ class HomeTabViewModelTest {
         assertEquals(0, vm.plusTrialDays.value)
     }
 
+    // The Plus slide names the headline plan's discount, as the subscribe page does — and none until the plans arrive.
+
+    @Test
+    fun plusDiscountPercent_isTheMonthlyPlansDiscount() = runTest {
+        coEvery { membershipRepository.getPlans(any(), any()) } returns ApiResult.Success(
+            listOf(plan(billingInterval = 2, trialDays = 0).copy(discountPercentage = 8.0), plan(billingInterval = 1, trialDays = 0)),
+        )
+
+        val vm = newViewModel()
+        assertEquals(0, vm.plusDiscountPercent.value)
+        vm.refreshPlusPlans()
+        advanceUntilIdle()
+
+        assertEquals(5, vm.plusDiscountPercent.value)
+    }
+
+    @Test
+    fun plusDiscountPercent_isZeroWhenThePlansCannotBeRead() = runTest {
+        coEvery { membershipRepository.getPlans(any(), any()) } returns ApiResult.Error(ApiError.Network("offline"))
+
+        val vm = newViewModel()
+        vm.refreshPlusPlans()
+        advanceUntilIdle()
+
+        assertEquals(0, vm.plusDiscountPercent.value)
+    }
+
     @Test
     fun onResume_refreshesTheDirectoryOnlyWhileStale() = runTest {
         val vm = newViewModel()

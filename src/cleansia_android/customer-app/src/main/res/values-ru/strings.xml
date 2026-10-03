@@ -109,7 +109,7 @@
     <string name="home_upsell_plus_title_trial">Первые %1$d дней бесплатно.</string>
     <string name="home_upsell_plus_cta_trial">Попробовать бесплатно</string>
     <string name="home_upsell_referral_top">Пригласите друга</string>
-    <string name="home_upsell_referral_title">Обоим по 150 баллов после его первой завершённой уборки</string>
+    <string name="home_upsell_referral_title">Посоветуйте Cleansia другу</string>
     <string name="home_upsell_referral_cta">Поделиться кодом</string>
     <string name="home_upsell_page_a11y">Предложение %1$d из %2$d</string>
     <string name="home_upsell_next">Следующее предложение</string>
@@ -117,13 +117,13 @@
     <string name="home_upsell_notifications_top">Будьте в курсе</string>
     <string name="home_upsell_notifications_title">Узнайте сразу, когда уборщик уже в пути</string>
     <string name="home_upsell_notifications_cta">Включить</string>
-    <string name="home_upsell_credit_title">%1$s спишутся со следующего заказа картой — до %2$d%% стоимости</string>
+    <string name="home_upsell_credit_title">%1$s кредита на ваши уборки</string>
     <string name="home_upsell_express_top">Plus · за %1$d–%2$d ч</string>
     <plurals name="home_upsell_express_title">
-        <item quantity="one">Ещё %1$d заказ в этом месяце без экспресс-доплаты</item>
-        <item quantity="few">Ещё %1$d заказа в этом месяце без экспресс-доплаты</item>
-        <item quantity="many">Ещё %1$d заказов в этом месяце без экспресс-доплаты</item>
-        <item quantity="other">Ещё %1$d заказа в этом месяце без экспресс-доплаты</item>
+        <item quantity="one">Без доплаты ещё %1$d экспресс-заказ</item>
+        <item quantity="few">Без доплаты ещё %1$d экспресс-заказа</item>
+        <item quantity="many">Без доплаты ещё %1$d экспресс-заказов</item>
+        <item quantity="other">Без доплаты ещё %1$d экспресс-заказа</item>
     </plurals>
     <string name="home_upsell_book_cta">Заказать</string>
     <string name="home_quick_size_title">Какой размер вашего жилья?</string>
@@ -133,8 +133,36 @@
     <string name="home_quick_size_baths_less">Меньше ванных комнат</string>
     <string name="home_quick_size_baths_more">Больше ванных комнат</string>
     <string name="home_upsell_setup_recurring_top">Преимущество Plus</string>
-    <string name="home_upsell_setup_recurring_title">Настройте регулярную уборку — закажите один раз, работает всегда</string>
+    <string name="home_upsell_setup_recurring_title">Настройте регулярную уборку</string>
     <string name="home_upsell_setup_recurring_cta">Настроить</string>
+    <string name="home_upsell_did_you_know">А вы знали?</string>
+    <string name="home_upsell_notifications_desc">Сообщим, когда он выедет, начнёт и закончит.</string>
+    <string name="home_upsell_credit_desc">Спишется со следующей оплаты картой, до %1$d%% стоимости заказа.</string>
+    <string name="home_upsell_express_desc">Plus отменяет доплату, а лимит обновляется каждый месяц.</string>
+    <string name="home_upsell_setup_recurring_desc">Еженедельно, раз в две недели или ежемесячно, в ваш день и час.</string>
+    <string name="home_upsell_plus_desc">Скидка %1$d%% на каждую уборку и ваш любимый уборщик по запросу.</string>
+    <string name="home_upsell_plus_desc_generic">Регулярные уборки и ваш любимый уборщик по запросу.</string>
+    <string name="home_upsell_referral_desc_generic">Вы оба получите баллы после его первой завершённой уборки.</string>
+    <string name="home_upsell_plus_cancel_title">Бесплатная отмена за %1$d ч до уборки</string>
+    <string name="home_upsell_plus_cancel_desc">Одно из преимуществ Plus, для каждого вашего заказа.</string>
+    <string name="home_upsell_express_today_title">Заказывайте всего за %1$d ч</string>
+    <string name="home_upsell_express_today_desc">В последний момент? Менее чем за %1$d ч действует экспресс-доплата.</string>
+    <string name="home_upsell_rewards_title">Каждая завершённая уборка приносит баллы</string>
+    <string name="home_upsell_rewards_desc">Копите их, поднимайтесь по уровням и открывайте преимущества.</string>
+    <string name="home_upsell_rewards_cta">Мои награды</string>
+    <string name="home_upsell_times_title">Выберите точное время прибытия</string>
+    <string name="home_upsell_times_desc">Утро, день или вечер, в любое время с %1$s до %2$s.</string>
+    <string name="home_upsell_chip_percent_off">−%1$d%%</string>
+    <string name="home_upsell_chip_points">+%1$d</string>
+    <string name="home_upsell_chip_hours">%1$d ч</string>
+    <string name="home_upsell_chip_minutes">%1$d мин</string>
+    <string name="home_upsell_chip_times">%1$d×</string>
+    <plurals name="home_upsell_referral_desc">
+        <item quantity="one">Вы оба получите %1$d балл после его первой завершённой уборки.</item>
+        <item quantity="few">Вы оба получите %1$d балла после его первой завершённой уборки.</item>
+        <item quantity="many">Вы оба получите %1$d баллов после его первой завершённой уборки.</item>
+        <item quantity="other">Вы оба получите %1$d балла после его первой завершённой уборки.</item>
+    </plurals>
 
     <string name="home_hero2_top">Весна уже здесь</string>
     <string name="home_hero2_title">Глубокая уборка + окна вместе</string>
@@ -580,13 +608,20 @@
     <string name="booking_total">Итого</string>
     <string name="booking_arrival_window">Клинер прибудет в течение 1 часа</string>
     <string name="booking_slot_unavailable">Недоступно</string>
-    <string name="booking_slot_earliest">Раньше всего</string>
     <string name="booking_slot_express" formatted="false">Экспресс +20 %</string>
     <string name="booking_slot_express_waived">Экспресс · без доплаты</string>
     <string name="booking_express_waiver_available">Plus покрывает 20%% экспресс-доплаты — %1$d осталось в этом календарном месяце.</string>
     <string name="booking_express_waiver_used" formatted="false">В этом месяце отмена экспресс-доплаты больше не действует — экспресс-слоты оплачиваются с +20 % до следующего месяца.</string>
-    <string name="booking_slot_select">Выбрать</string>
     <string name="booking_all_slots_booked">Все слоты на этот день заняты — выберите другой день.</string>
+    <string name="booking_day_part_morning">Утро</string>
+    <string name="booking_day_part_afternoon">День</string>
+    <string name="booking_day_part_evening">Вечер</string>
+    <plurals name="booking_day_part_a11y">
+        <item quantity="one">%1$s, %2$d свободный слот</item>
+        <item quantity="few">%1$s, %2$d свободных слота</item>
+        <item quantity="many">%1$s, %2$d свободных слотов</item>
+        <item quantity="other">%1$s, %2$d свободного слота</item>
+    </plurals>
 
     <!-- Booking — cancellation policy -->
     <string name="booking_cancel_hint">Бесплатная отмена за 24 часа до начала</string>
@@ -1043,9 +1078,6 @@
     <string name="recurring_freq_biweekly_subline">~2 уборки в месяц</string>
     <string name="recurring_freq_monthly_subline">1 уборка в месяц</string>
     <string name="recurring_freq_most_popular_badge">САМОЕ ПОПУЛЯРНОЕ</string>
-    <string name="recurring_time_period_morning">Утро</string>
-    <string name="recurring_time_period_afternoon">День</string>
-    <string name="recurring_time_period_evening">Вечер</string>
     <string name="common_ok">OK</string>
 
     <!-- Order detail action: Make this recurring -->

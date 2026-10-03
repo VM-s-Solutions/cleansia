@@ -5,6 +5,7 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -12,31 +13,37 @@ import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Bolt
-import androidx.compose.material.icons.outlined.Check
 import androidx.compose.material.icons.automirrored.outlined.KeyboardArrowRight
 import androidx.compose.material.icons.outlined.Info
 import androidx.compose.material.icons.outlined.LocationOn
-import androidx.compose.material.icons.outlined.Schedule
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import cz.cleansia.customer.R
 import cz.cleansia.customer.core.memberships.ExpressWaiver
@@ -111,7 +118,7 @@ internal fun combineDateAndTime(
     return local.toInstant(tz)
 }
 
-internal enum class SlotState { Available, Express, Unavailable, Earliest }
+internal enum class SlotState { Available, Express, Unavailable }
 
 internal data class TimeSlot(val time: String, val state: SlotState)
 
@@ -125,9 +132,8 @@ internal const val BOOKING_SLOT_INTERVAL_MINUTES = 15
 
 /**
  * Build the quarter-hour arrival list for a given local date, gated on lead time.
- * - Below [EXPRESS_LEAD_HOURS] from now → Unavailable (rendered greyed out).
+ * - Below [EXPRESS_LEAD_HOURS] from now → Unavailable (greyed out and disabled in the grid).
  * - Inside [BookingPricing.requiresExpressSurcharge]'s band → Express (a tag, never a price).
- * - The first slot past it → Earliest (visual hint).
  * - The rest → Available.
  *
  * For dates strictly in the future (tomorrow+), every slot is Available
@@ -141,7 +147,6 @@ internal fun timeSlotsFor(
 ): List<TimeSlot> {
     val today = now.toLocalDateTime(tz).date
     val isToday = date == today
-    var earliestAssigned = false
 
     return (FIRST_WINDOW_HOUR * 60 until LAST_WINDOW_HOUR * 60 step BOOKING_SLOT_INTERVAL_MINUTES).map { minutes ->
         val hour = minutes / 60
@@ -156,12 +161,48 @@ internal fun timeSlotsFor(
         val state = when {
             leadHours < EXPRESS_LEAD_HOURS -> SlotState.Unavailable
             BookingPricing.requiresExpressSurcharge(slotInstant, now) -> SlotState.Express
-            !earliestAssigned -> { earliestAssigned = true; SlotState.Earliest }
             else -> SlotState.Available
         }
         TimeSlot(label, state)
     }
 }
+
+/**
+ * The part of day the time step asks for first, the web wizard's `dayParts`: each holds the arrival
+ * times whose hour falls in [fromHour, toHour), sixteen quarter hours apiece on the 15-minute grid.
+ * -> /customer-app/ordering-flow#step-2-date-time
+ */
+internal enum class DayPart(val fromHour: Int, val toHour: Int) {
+    Morning(FIRST_WINDOW_HOUR, 12),
+    Afternoon(12, 16),
+    Evening(16, LAST_WINDOW_HOUR),
+    ;
+
+    companion object {
+        fun of(time: String): DayPart? {
+            val hour = time.substringBefore(':').toIntOrNull() ?: return null
+            return entries.firstOrNull { hour >= it.fromHour && hour < it.toHour }
+        }
+    }
+}
+
+/** One part's slots. A part with nothing bookable left (today's morning, by noon) is drawn disabled. */
+internal data class DayPartSlots(val part: DayPart, val slots: List<TimeSlot>) {
+    val bookableCount: Int get() = slots.count { it.state != SlotState.Unavailable }
+    val bookable: Boolean get() = bookableCount > 0
+}
+
+internal fun groupByDayPart(slots: List<TimeSlot>): List<DayPartSlots> =
+    DayPart.entries.map { part -> DayPartSlots(part, slots.filter { DayPart.of(it.time) == part }) }
+
+/**
+ * The part the step opens on: the one that holds the booked time, else the first with a bookable slot.
+ * The web always holds a time (09:00, or the date's first bookable slot), which lands on the same part.
+ */
+internal fun openingDayPart(parts: List<DayPartSlots>, selectedTime: String): DayPart =
+    DayPart.of(selectedTime)?.takeIf { part -> parts.any { it.part == part && it.bookable } }
+        ?: parts.firstOrNull { it.bookable }?.part
+        ?: DayPart.Morning
 
 @Composable
 fun WhenWhereStep(
@@ -239,7 +280,7 @@ fun WhenWhereStep(
 
         Spacer(Modifier.height(24.dp))
 
-        // ── TIME — full-width list, hide unavailable ──
+        // ── TIME — the part of day, then that part's quarter hours ──
         Row(
             modifier = Modifier.padding(horizontal = 20.dp),
             verticalAlignment = Alignment.CenterVertically,
@@ -259,9 +300,6 @@ fun WhenWhereStep(
         val daySlots = androidx.compose.runtime.remember(pickedDayChip?.localDate) {
             pickedDayChip?.localDate?.let { timeSlotsFor(it) } ?: emptyList()
         }
-        // Hide Unavailable from the visible list — the user can scroll up to find
-        // an empty-day note if every slot is gone (uncommon mid-day).
-        val visibleSlots = daySlots.filter { it.state != SlotState.Unavailable }
 
         // Defensive: if the previously-selected time slipped into Unavailable
         // (e.g. user opened the wizard hours ago and the day shifted), clear it
@@ -274,38 +312,40 @@ fun WhenWhereStep(
             }
         }
 
-        Column(
-            modifier = Modifier.padding(horizontal = 20.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp),
-        ) {
-            visibleSlots.forEach { slot ->
-                TimeSlotRow(
-                    slot = slot,
-                    selected = state.selectedTime == slot.time,
-                    waiverAvailable = expressWaiver.status == ExpressWaiverStatus.Available,
-                    onClick = {
-                        val instant = pickedDayChip?.let { combineDateAndTime(it.localDate, slot.time) }
-                        onUpdate(
-                            state.copy(
-                                selectedTime = slot.time,
-                                selectedInstant = instant,
-                            ),
-                        )
-                    },
-                )
-            }
-            if (visibleSlots.isEmpty()) {
-                Text(
-                    stringResource(R.string.booking_all_slots_booked),
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.padding(vertical = 16.dp),
-                )
-            }
-            // The express verdict belongs at the moment of choice, not at payment: a member who
-            // learns their waiver is gone while confirming the price has already been surprised.
-            if (visibleSlots.any { it.state == SlotState.Express }) {
-                ExpressWaiverNote(expressWaiver)
+        // Nothing until a day is picked, as on iOS.
+        if (pickedDayChip != null) {
+            Column(
+                modifier = Modifier.padding(horizontal = 20.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                if (daySlots.none { it.state != SlotState.Unavailable }) {
+                    Text(
+                        stringResource(R.string.booking_all_slots_booked),
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.padding(vertical = 16.dp),
+                    )
+                } else {
+                    DayPartTimePicker(
+                        slots = daySlots,
+                        selectedTime = state.selectedTime,
+                        resetKey = pickedDayChip.localDate,
+                        waiverAvailable = expressWaiver.status == ExpressWaiverStatus.Available,
+                        onSelect = { time ->
+                            onUpdate(
+                                state.copy(
+                                    selectedTime = time,
+                                    selectedInstant = combineDateAndTime(pickedDayChip.localDate, time),
+                                ),
+                            )
+                        },
+                    )
+                }
+                // The express verdict belongs at the moment of choice, not at payment: a member who
+                // learns their waiver is gone while confirming the price has already been surprised.
+                if (daySlots.any { it.state == SlotState.Express }) {
+                    ExpressWaiverNote(expressWaiver)
+                }
             }
         }
 
@@ -479,106 +519,197 @@ private fun ExpressWaiverNote(waiver: ExpressWaiver) {
     }
 }
 
-/* ── Time slot row — full-width list row with optional express left stripe ── */
+/* ── Part of day, then a 4 × 4 grid of its quarter hours ── */
 
 private val ExpressOrange = androidx.compose.ui.graphics.Color(0xFFEA580C)
 
+/**
+ * Three part-of-day buttons, each with its first and last arrival, over a 4 × 4 grid of the chosen
+ * part's slots — the web wizard's time step (/customer-app/ordering-flow#step-2-date-time). Choosing a
+ * part never changes the booked time; it only changes which sixteen slots are on screen. The step opens
+ * on the part that holds the booked time, which carries a dot while another part is browsed; a part with
+ * nothing bookable is disabled, and so is a slot inside the lead time. Shared with the recurring
+ * schedule's time step, whose slots are all [SlotState.Available].
+ *
+ * [resetKey] drops the part being browsed, e.g. a new day reopens on the part holding the booked time.
+ */
 @Composable
-private fun TimeSlotRow(
-    slot: TimeSlot,
-    selected: Boolean,
-    waiverAvailable: Boolean,
-    onClick: () -> Unit,
+internal fun DayPartTimePicker(
+    slots: List<TimeSlot>,
+    selectedTime: String,
+    onSelect: (String) -> Unit,
+    modifier: Modifier = Modifier,
+    resetKey: Any? = null,
+    waiverAvailable: Boolean = false,
 ) {
-    val isExpress = slot.state == SlotState.Express
-    val isEarliest = slot.state == SlotState.Earliest
+    val parts = androidx.compose.runtime.remember(slots) { groupByDayPart(slots) }
+    var browsed by androidx.compose.runtime.remember(resetKey, selectedTime) {
+        androidx.compose.runtime.mutableStateOf<DayPart?>(null)
+    }
+    val active = browsed?.takeIf { part -> parts.any { it.part == part && it.bookable } }
+        ?: openingDayPart(parts, selectedTime)
+    val holding = DayPart.of(selectedTime)
+    val expressLabel = stringResource(if (waiverAvailable) R.string.booking_slot_express_waived else R.string.booking_slot_express)
 
-    // Selected: surface background + 2dp primary border + primary text.
-    // Unselected: surface background + 1dp outlineVariant border.
-    val bg = MaterialTheme.colorScheme.surface
-    val borderColor = if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant
-    val borderWidth = if (selected) 2.dp else 1.dp
-    val textColor = if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
-    val subTextColor = MaterialTheme.colorScheme.onSurfaceVariant
-
-    Box(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clip(RoundedCornerShape(14.dp))
-            .clickable(onClick = onClick)
-            .background(bg)
-            .border(borderWidth, borderColor, RoundedCornerShape(14.dp)),
-    ) {
-        // Left accent stripe for express slots (always shown — independent of selection)
-        if (isExpress) {
-            Box(
-                modifier = Modifier
-                    .fillMaxHeight()
-                    .width(4.dp)
-                    .background(ExpressOrange),
-            )
-        }
+    Column(modifier = modifier, verticalArrangement = Arrangement.spacedBy(8.dp)) {
         Row(
-            modifier = Modifier.padding(horizontal = 16.dp, vertical = 14.dp),
-            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(IntrinsicSize.Min),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
         ) {
-            // Leading icon (express = lightning, earliest = clock)
-            if (isExpress) {
-                Icon(
-                    Icons.Outlined.Bolt,
-                    null,
-                    tint = ExpressOrange,
-                    modifier = Modifier.size(18.dp),
+            parts.forEach { part ->
+                DayPartChip(
+                    part = part,
+                    active = part.part == active,
+                    holdsSelection = part.part == holding && part.part != active,
+                    onClick = { browsed = part.part },
+                    modifier = Modifier
+                        .weight(1f)
+                        .fillMaxHeight(),
                 )
-                Spacer(Modifier.width(10.dp))
-            } else if (isEarliest) {
-                Icon(
-                    Icons.Outlined.Schedule,
-                    null,
-                    tint = MaterialTheme.colorScheme.primary,
-                    modifier = Modifier.size(18.dp),
-                )
-                Spacer(Modifier.width(10.dp))
             }
-            // Main — time + subtitle tag
-            Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    slot.time,
-                    style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.SemiBold),
-                    color = textColor,
-                )
-                when {
-                    isExpress -> Text(
-                        stringResource(
-                            if (waiverAvailable) R.string.booking_slot_express_waived
-                            else R.string.booking_slot_express,
-                        ),
-                        style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.SemiBold),
-                        color = ExpressOrange,
-                    )
-                    isEarliest -> Text(
-                        stringResource(R.string.booking_slot_earliest),
-                        style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.SemiBold),
-                        color = MaterialTheme.colorScheme.primary,
+        }
+        Spacer(Modifier.height(4.dp))
+        val visible = parts.first { it.part == active }.slots
+        visible.chunked(4).forEach { row ->
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                row.forEach { slot ->
+                    TimeSlotChip(
+                        slot = slot,
+                        selected = slot.time == selectedTime,
+                        expressLabel = expressLabel,
+                        onClick = { onSelect(slot.time) },
+                        modifier = Modifier.weight(1f),
                     )
                 }
             }
-            // Trailing — checkmark when selected, chevron otherwise
-            if (selected) {
-                Icon(
-                    Icons.Outlined.Check,
-                    null,
-                    tint = MaterialTheme.colorScheme.primary,
-                    modifier = Modifier.size(20.dp),
-                )
-            } else {
+        }
+        // The grid marks an express slot with a bolt; this says what the bolt costs.
+        if (visible.any { it.state == SlotState.Express }) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Icon(Icons.Outlined.Bolt, null, tint = ExpressOrange, modifier = Modifier.size(14.dp))
+                Spacer(Modifier.width(6.dp))
                 Text(
-                    stringResource(R.string.booking_slot_select),
-                    style = MaterialTheme.typography.labelSmall,
-                    color = subTextColor,
+                    expressLabel,
+                    style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.SemiBold),
+                    color = ExpressOrange,
                 )
             }
         }
+    }
+}
+
+/** A part-of-day button: its name over its first and last arrival ("08:00–11:45"). */
+@Composable
+private fun DayPartChip(
+    part: DayPartSlots,
+    active: Boolean,
+    holdsSelection: Boolean,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val name = stringResource(
+        when (part.part) {
+            DayPart.Morning -> R.string.booking_day_part_morning
+            DayPart.Afternoon -> R.string.booking_day_part_afternoon
+            DayPart.Evening -> R.string.booking_day_part_evening
+        },
+    )
+    val description = androidx.compose.ui.res.pluralStringResource(
+        R.plurals.booking_day_part_a11y,
+        part.bookableCount,
+        name,
+        part.bookableCount,
+    )
+    val enabled = part.bookable
+    val shape = RoundedCornerShape(12.dp)
+    val alpha = if (enabled) 1f else 0.38f
+    Column(
+        modifier = modifier
+            .heightIn(min = 48.dp)
+            .clip(shape)
+            .background(if (active) selectionTint() else MaterialTheme.colorScheme.surface)
+            .border(
+                width = if (active) 2.dp else 1.dp,
+                color = if (active) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant,
+                shape = shape,
+            )
+            .selectable(selected = active, enabled = enabled, role = Role.Tab, onClick = onClick)
+            .semantics { contentDescription = description }
+            .padding(horizontal = 4.dp, vertical = 8.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center,
+    ) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Text(
+                name,
+                style = MaterialTheme.typography.titleSmall,
+                color = (if (active) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface).copy(alpha = alpha),
+                textAlign = TextAlign.Center,
+            )
+            if (holdsSelection) {
+                Spacer(Modifier.width(4.dp))
+                Box(Modifier.size(6.dp).background(MaterialTheme.colorScheme.primary, CircleShape))
+            }
+        }
+        Text(
+            "${part.slots.firstOrNull()?.time.orEmpty()}–${part.slots.lastOrNull()?.time.orEmpty()}",
+            style = MaterialTheme.typography.labelSmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = alpha),
+            textAlign = TextAlign.Center,
+        )
+    }
+}
+
+/** One arrival time in the grid: the time, with a bolt when it is an express slot. */
+@Composable
+private fun TimeSlotChip(
+    slot: TimeSlot,
+    selected: Boolean,
+    expressLabel: String,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val enabled = slot.state != SlotState.Unavailable
+    val isExpress = slot.state == SlotState.Express
+    val shape = RoundedCornerShape(12.dp)
+    val textColor = when {
+        selected -> MaterialTheme.colorScheme.primary
+        enabled -> MaterialTheme.colorScheme.onSurface
+        else -> MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f)
+    }
+    Row(
+        modifier = modifier
+            .height(48.dp)
+            .clip(shape)
+            .background(
+                when {
+                    selected -> selectionTint()
+                    enabled -> MaterialTheme.colorScheme.surface
+                    else -> MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f)
+                },
+            )
+            .border(
+                width = if (selected) 2.dp else 1.dp,
+                color = if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant,
+                shape = shape,
+            )
+            .selectable(selected = selected, enabled = enabled, role = Role.RadioButton, onClick = onClick)
+            .semantics { contentDescription = if (isExpress) "${slot.time}, $expressLabel" else slot.time },
+        horizontalArrangement = Arrangement.Center,
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        if (isExpress) {
+            Icon(Icons.Outlined.Bolt, null, tint = ExpressOrange, modifier = Modifier.size(12.dp))
+            Spacer(Modifier.width(2.dp))
+        }
+        Text(
+            slot.time,
+            style = MaterialTheme.typography.titleSmall,
+            color = textColor,
+            maxLines = 1,
+        )
     }
 }
 

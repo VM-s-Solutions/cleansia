@@ -165,9 +165,9 @@ final class BookingViewModelTests: XCTestCase {
         XCTAssertEqual(vm.currentStep, 1)
     }
 
-    /// The swipe-down dismissal is held exactly while the leading control steps back rather than
-    /// closes: past step one the gesture would discard the draft, on step one it is the close.
-    func testTheSheetCanOnlyBeSwipedAwayOnTheFirstStep() {
+    /// The leading control steps back past step one and closes on it. The swipe-down closes on any
+    /// step, since closing keeps the draft — this no longer decides that.
+    func testTheLeadingControlStepsBackPastTheFirstStep() {
         let vm = BookingViewModel()
         XCTAssertFalse(vm.canStepBack)
 
@@ -182,14 +182,18 @@ final class BookingViewModelTests: XCTestCase {
         XCTAssertFalse(vm.canStepBack)
     }
 
-    func testResetReleasesTheSwipeToDismissHold() {
+    /// A booking placed, or an entry that starts its own flow, begins again on step one.
+    func testResetReturnsTheDraftToTheFirstStep() {
         let vm = BookingViewModel()
+        vm.setRooms(3)
         vm.advance()
         vm.advance()
 
         vm.reset()
 
+        XCTAssertEqual(vm.currentStep, 1)
         XCTAssertFalse(vm.canStepBack)
+        XCTAssertEqual(vm.state, BookingState())
     }
 
     func testUpdateRebuildsStateViaCopy() {

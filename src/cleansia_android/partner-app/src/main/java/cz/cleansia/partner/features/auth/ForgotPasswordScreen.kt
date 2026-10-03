@@ -8,8 +8,6 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.ArrowBack
 import androidx.compose.material3.Icon
@@ -89,14 +87,8 @@ fun ForgotPasswordScreen(
                 }
             }
 
-            Column(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .verticalScroll(rememberScrollState())
-                    .padding(horizontal = 24.dp)
-                    .padding(bottom = 32.dp),
-                horizontalAlignment = Alignment.CenterHorizontally,
-            ) {
+            // The back row stays at the top; the form centres in the space under it.
+            CenteredAuthColumn(modifier = Modifier.weight(1f)) {
                 Text(
                     text = stringResource(R.string.forgot_password_title),
                     style = MaterialTheme.typography.displayMedium,

@@ -200,6 +200,8 @@ private struct PropertyRow: View {
     /// title sits above the steppers, not beside them: on a 320 pt phone the two uk steppers ("3 кімнати",
     /// "2 ванні кімнати") need more than the row's width on their own, and beside them the title was
     /// squeezed to nothing. A stepper that still does not fit wraps its label (Android's twin does both).
+    /// The two split the row equally, 8 pt apart as on the quick-size slide, from the title's leading
+    /// edge to the card's trailing one, and stay one height when a label wraps.
     var body: some View {
         VStack(alignment: .leading, spacing: Spacing.xxs) {
             Text(L10n.Booking.yourHome)
@@ -213,6 +215,7 @@ private struct PropertyRow: View {
                     value: rooms,
                     minimum: 1,
                     maximum: PropertySize.maxRooms,
+                    fills: true,
                     onChange: onRoomsChange
                 )
                 PropertyStepper(
@@ -221,9 +224,11 @@ private struct PropertyRow: View {
                     value: bathrooms,
                     minimum: 1,
                     maximum: PropertySize.maxBathrooms,
+                    fills: true,
                     onChange: onBathroomsChange
                 )
             }
+            .fixedSize(horizontal: false, vertical: true)
             Text(L10n.Booking.sizeLimitCaption)
                 .font(CleansiaTypography.labelSmall)
                 .foregroundColor(CleansiaColors.onSurfaceVariant)

@@ -55,10 +55,6 @@ extension L10n {
             localized("devices_revoke_success")
         }
 
-        static var revokeRetryHint: String {
-            localized("devices_revoke_retry_hint")
-        }
-
         static var platformAndroid: String {
             localized("devices_platform_android")
         }

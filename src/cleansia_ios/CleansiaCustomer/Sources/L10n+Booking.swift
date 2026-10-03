@@ -145,12 +145,21 @@ extension L10n {
             localized("booking_express_waiver_used")
         }
 
-        static var slotEarliest: String {
-            localized("booking_slot_earliest")
+        static var dayPartMorning: String {
+            localized("booking_day_part_morning")
         }
 
-        static var slotSelect: String {
-            localized("booking_slot_select")
+        static var dayPartAfternoon: String {
+            localized("booking_day_part_afternoon")
+        }
+
+        static var dayPartEvening: String {
+            localized("booking_day_part_evening")
+        }
+
+        /// "6 slots available" — read after the part's name.
+        static func dayPartSlotsAvailable(_ count: Int) -> String {
+            plural("booking_day_part_slots_available", count)
         }
 
         static var allSlotsBooked: String {

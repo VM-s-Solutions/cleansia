@@ -73,7 +73,7 @@ private struct ConfirmEmailContent: View {
             }
             .padding(Spacing.s)
 
-            ScrollView {
+            CenteredAuthScroll {
                 VStack(spacing: 0) {
                     Text(L10n.ConfirmEmail.title)
                         .cleansiaFont(CleansiaTypography.displayMedium)
@@ -111,7 +111,7 @@ private struct ConfirmEmailContent: View {
                     )
                 }
                 .padding(.horizontal, Spacing.l)
-                .padding(.bottom, Spacing.xl)
+                .padding(.vertical, Spacing.xl)
                 .frame(maxWidth: .infinity)
             }
         }

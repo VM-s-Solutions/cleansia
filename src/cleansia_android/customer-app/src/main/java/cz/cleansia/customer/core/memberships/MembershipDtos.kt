@@ -118,9 +118,11 @@ fun GetMyMembershipResponse.trialEndsAt(now: Instant = Clock.System.now()): Inst
 fun GetMyMembershipResponse?.trialDaysOn(plan: MembershipPlanDto?): Int =
     if (this?.trialEligible == true && plan != null) plan.trialPeriodDays else 0
 
-/** The trial a surface without a plan picker offers: the monthly plan's, the one every Plus surface leads with. */
-fun GetMyMembershipResponse?.headlineTrialDays(plans: List<MembershipPlanDto>): Int =
-    trialDaysOn(plans.firstOrNull { it.billingInterval == 1 } ?: plans.firstOrNull())
+/** The plan a surface without a plan picker speaks for: the monthly one, which every Plus surface leads with. */
+fun List<MembershipPlanDto>.headlinePlan(): MembershipPlanDto? = firstOrNull { it.billingInterval == 1 } ?: firstOrNull()
+
+/** The trial a surface without a plan picker offers: the headline plan's. */
+fun GetMyMembershipResponse?.headlineTrialDays(plans: List<MembershipPlanDto>): Int = trialDaysOn(plans.headlinePlan())
 
 /**
  * A live enrolment whose renewal payment failed, or that Stripe paused. [GetMyMembershipResponse.hasMembership]

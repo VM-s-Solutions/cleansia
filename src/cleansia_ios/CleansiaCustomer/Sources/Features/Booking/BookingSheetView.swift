@@ -98,7 +98,10 @@ struct BookingSheetView: View {
         .snackbarHost(snackbar, bottomInset: Self.footerSnackbarInset)
         .presentationDetents([.large])
         .presentationDragIndicator(.visible)
-        .interactiveDismissDisabled(vm.canStepBack)
+        // Swiping down closes the sheet on any step: the draft is the session's view model, so the Book
+        // button reopens it where it was left. Only a booking being placed holds it, so its outcome has
+        // somewhere to land.
+        .interactiveDismissDisabled(vm.submitState.isSubmitting)
     }
 
     private func submit() async {
@@ -175,6 +178,7 @@ private struct BookingSuccess {
 
 private struct BookingSheetContent: View {
     @ObservedObject var viewModel: BookingViewModel
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     let geocoding: GeocodingService
     let mapProvider: MapProvider
     let serviceArea: ServiceAreaProvider?
@@ -182,6 +186,10 @@ private struct BookingSheetContent: View {
     let onLeading: () -> Void
     let onContinue: () -> Void
     let onConfirm: () async -> Void
+
+    /// Which way the step change being drawn goes: on, the next step comes in from the trailing edge;
+    /// back, the previous one comes in from the leading edge (Android's `AnimatedContent` twin).
+    @State private var movingForward = true
 
     private var step: Int {
         viewModel.currentStep
@@ -238,7 +246,9 @@ private struct BookingSheetContent: View {
 
     private var header: some View {
         HStack(spacing: Spacing.s) {
-            Button(action: onLeading) {
+            Button {
+                changeStep(forward: false, onLeading)
+            } label: {
                 Image(systemName: step > 1 ? "chevron.left" : "xmark")
                     .font(.system(size: 17, weight: .semibold))
                     .foregroundColor(CleansiaColors.onSurface)
@@ -284,11 +294,21 @@ private struct BookingSheetContent: View {
         .animation(.easeInOut(duration: 0.28), value: step)
     }
 
+    /// Leading and trailing follow the layout direction, so back slides the right way in either. Reduce
+    /// Motion crossfades instead.
     private var stepTransition: AnyTransition {
-        .asymmetric(
-            insertion: .move(edge: .trailing).combined(with: .opacity),
-            removal: .move(edge: .leading).combined(with: .opacity)
+        if reduceMotion { return .opacity }
+        return .asymmetric(
+            insertion: .move(edge: movingForward ? .trailing : .leading).combined(with: .opacity),
+            removal: .move(edge: movingForward ? .leading : .trailing).combined(with: .opacity)
         )
+    }
+
+    /// The direction lands one run-loop turn before the step does. A page leaving animates with the
+    /// transition it last rendered with, so a direction set in the same update would send it the old way.
+    private func changeStep(forward: Bool, _ change: @escaping () -> Void) {
+        movingForward = forward
+        DispatchQueue.main.async(execute: change)
     }
 
     private var confirmLabel: String {
@@ -315,7 +335,7 @@ private struct BookingSheetContent: View {
                     trailingIcon: "arrow.right",
                     loading: viewModel.isQuoting,
                     enabled: canContinue,
-                    action: onContinue
+                    action: { changeStep(forward: true, onContinue) }
                 )
                 .lineLimit(1)
                 .minimumScaleFactor(0.85)

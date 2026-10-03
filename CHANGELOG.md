@@ -143,21 +143,28 @@ need backfilling.
   clean. The web order detail used to show the total alone, so it did not match the card statement.
   (Matches the apps, 2026-10-02.)
 
-- **Customer Android and iOS — new cards in the Home carousel.** *Stay in the loop* shows while the
-  phone blocks the app's notifications, and asks for them or opens the settings. A card with the
-  customer's credit balance shows when they hold one, and a Plus member sees how many
-  express-surcharge waivers are left this month; both open booking. *How big is your home?* closes the
-  row with room and bathroom steppers, and *See my price* opens booking at that size; it replaces the
-  plain *Book* card. The referral card's *Share my code* opens the share sheet with the code. The first
-  four cards that apply show, most relevant first, so there are never more than five. (Owner ruling
-  2026-10-01.)
+- **Customer Android and iOS — five cards in the Home carousel, each saying more.** Each of the first
+  four cards now has a two-line description under its title and a chip with its figure. *Stay in the
+  loop* shows while the phone blocks the app's notifications, and asks for them or opens the settings.
+  A card with the customer's credit balance shows when they hold one, and a Plus member sees how many
+  express-surcharge waivers are left this month; both open booking. *Did you know?* cards fill the
+  rest: a Plus member's free-cancellation window, booking from 2 hours ahead, points on every
+  completed cleaning and the exact arrival times. The Plus card names the plan's discount and the
+  referral card the points each side gets, both as the server states them. *How big is your home?*
+  closes the row with room and bathroom steppers, and *See my price* opens booking at that size; it
+  replaces the plain *Book* card. The referral card's *Share my code* opens the share sheet with the
+  code. The first four cards that apply show, most relevant first, so every customer sees five; a
+  customer with nothing pending used to see two or three. (Owner ruling 2026-10-01; the descriptions
+  and the *Did you know?* cards, owner remark 2026-10-03.)
 
 - **Customer Android and iOS — content fades out under the clock as it scrolls.** On Home, Profile
   and the Cleansia Plus offer, content scrolled to the top of the screen fades out under the status
   bar instead of running into the clock and the camera cut-out. At rest, and while pulling down to
-  refresh, nothing is drawn, so the Profile and Plus headers still reach the top edge. On iOS this is
-  the app's own fade on every version, because iOS 26's built-in scroll-edge effect does not draw on
-  these screens. (Owner remark 2026-10-01.)
+  refresh, nothing is drawn, so the Profile and Plus headers still reach the top edge. On iOS 26 it is
+  the system's own soft edge, the one under a navigation bar, and earlier iOS versions blur the
+  content under a thin veil that clears just below the clock; until 2026-10-03 iOS covered it with a
+  solid band of the page colour instead. Android fades it into the page colour. (Owner remark
+  2026-10-01; the iOS edge and blur, owner remark 2026-10-03.)
 
 - **A contract for work between the customer and the cleaner, per job.** Every booking is now made
   under the platform's *contract for work* text — published at `/work-contract` beside the terms and the
@@ -519,6 +526,31 @@ need backfilling.
 
 ### Changed
 
+- **Customer Android and iOS — arrival times are grouped by part of day, as on the web.** The
+  booking's time step asks for morning, afternoon or evening first, then shows that part's sixteen
+  times in a grid of four rows, instead of one long list of every quarter hour. A part with nothing
+  left to book is greyed out, and so is a time too soon to book, which used to be left out. The
+  *Earliest* tag is gone. A recurring schedule picks its time the same way; on iOS it was a wheel.
+  (Owner request 2026-10-03.)
+
+- **Customer Android and iOS — a booking you swipe away is still there when you tap Book.** The
+  booking sheet swipes away on any step, and the Book button reopens it on the same step with
+  everything you chose, until you sign out or quit the app. *Order again*, a popular package and *See
+  my price* start a new booking in its place, and placing a booking clears it. On iOS the sheet could
+  be swiped away only on its first step; on Android every reopen started over, and *Order again* kept
+  the date, time, payment and dirtiness level of a booking you had abandoned. (Owner remark
+  2026-10-03.)
+
+- **Cleaner Android and iOS — the sign-in and account forms sit in the middle of the screen.**
+  Sign-in, registration, forgot password and e-mail confirmation centre their form when it fits,
+  instead of sitting at the top over an empty bottom, and scroll when it does not. (Owner remark
+  2026-10-03.)
+
+- **Cleaner Android and iOS — the profile steps are named.** The stepper above the profile sections
+  names all four steps, Personal, Address, Identity and Bank. The current one stands out, a finished
+  one shows a check and keeps its name, and the rest are greyed. It used to name only the current
+  step, so the other three were identical circles. (Owner remark 2026-10-03.)
+
 - **Customer and cleaner — one support address, support@cleansia.cz.** The customer web footer, its
   FAQ and legal pages, the order detail's payment note, the cleaner's *How jobs are offered* page,
   Help in the Android and iOS apps and the support line of every e-mail now name support@cleansia.cz.
@@ -555,12 +587,16 @@ need backfilling.
   while the cleaner is on the way, sparkles during the clean, a seal when it is done and a cross if it
   was cancelled, and VoiceOver reads the step. Not yet seen on a phone with two activities running.
 
-- **Customer and cleaner iOS — a plain confirmation is the iPhone's own alert.** Signing out, deleting
-  the account, cancelling or switching Plus, deleting a schedule, and for a cleaner confirming cash,
-  deleting a note or an issue and declining or refusing an offer now ask with the system alert (Liquid
-  Glass on iOS 26) instead of the app's card; the words are the same. Removing a saved card, revoking a
-  device and the document dialogs keep the app's card, because they hold a field or stay open until
-  the request finishes. Android is unchanged. (Owner ruling 2026-10-01.)
+- **Customer and cleaner iOS — every confirmation is the iPhone's own dialog.** Signing out, deleting
+  the account, cancelling or switching Plus, deleting a schedule, removing a saved card, revoking a
+  device, and for a cleaner confirming cash, deleting a note or an issue and declining or refusing an
+  offer now ask with the system alert (Liquid Glass on iOS 26) instead of the app's card; the words are
+  the same. A cleaner uploading a document picks its type from a system menu and types the description
+  into a system alert, and a replacement or a deletion request asks for its text the same way. The
+  dialog closes when you tap, the screen shows that it is working, and an error appears at the bottom
+  of the screen. A deletion request sent without a reason is refused with *This field is required.*
+  Android is unchanged. (Owner ruling 2026-10-01; the card removal, device and document dialogs, owner
+  remark 2026-10-03.)
 
 - **Customer and cleaner iOS — a short list drops down from its field.** The dispute reason, the
   cleaner's sign-up market and the document type open as a menu on the field instead of a sheet over
@@ -615,7 +651,7 @@ need backfilling.
   last card lands on the first, and back past the first on the last, and it moves on by itself every 6
   seconds, always forward. After a swipe, a tap or a screen-reader card change it stops for the rest of
   that visit to Home, and it never moves by itself with VoiceOver, TalkBack, Reduce Motion or Remove
-  animations on. Screen readers announce *Offer 2 of 4*. (Owner ruling 2026-10-01.)
+  animations on. Screen readers announce *Offer 2 of 5*. (Owner ruling 2026-10-01.)
 
 - **Customer Android and iOS — every Home carousel card draws its own mascot.** The referral card and
   the Book card drew the same one, which every customer saw twice. No two cards repeat a drawing now,
@@ -951,6 +987,33 @@ need backfilling.
   generic English sentence that is honest about being generic, until counsel supplies each one.
 
 ### Fixed
+
+- **Cleaner Android and iOS — the registration screen's *Done* and arrow line up with their step.** On
+  a step with details under it, such as missing fields or a rejection reason, the status and the
+  arrow sat at the top of the row on iOS and halfway down the details on Android. They now sit beside
+  the step's name, not halfway down the details: level with the name on iOS, and level with the name
+  and the line under it on Android. (Owner remark 2026-10-03.)
+
+- **Customer Android and iOS — the address picker holds still while it finds the address.** Each time
+  the map stopped, the card under it shrank to one line while it looked the address up, then grew back
+  to two. On iOS the map, the pin and the card jumped with it, and on Android the card and the Mapbox
+  logo bobbed. The card now keeps its height, in booking and in the saved addresses. (Owner remark
+  2026-10-03.)
+
+- **Customer iOS — the credit sheet's *Got it* button is no longer cut off.** The sheet that explains
+  credit, opened from Rewards and from Profile, took half the screen whatever it held. That was too
+  short for its text, so on iOS 16 and 18 *Got it* sat under the home indicator, and at a large text
+  size it was out of reach. The sheet now takes the height its text and button need, and the text
+  scrolls above the button when it does not fit. (Owner remark 2026-10-03.)
+
+- **Customer Android and iOS — the booking's room and bathroom steppers are the same width.** On the
+  *Your home* row the two steppers now share the row equally, with their counts centred, in line with
+  the title and the caption above and below them. They used to be as wide as their text, so they
+  never lined up. (Owner remark 2026-10-03.)
+
+- **Customer iOS — going back in the booking slides back.** Stepping back through the booking's
+  steps brought the previous step in from the right, as if going on. It now comes in from the left,
+  as on Android, and with Reduce Motion on the steps fade instead. (Owner remark 2026-10-03.)
 
 - **Customer web — the booking summary no longer takes credit off a cash booking.** With a credit
   balance, the summary showed *Your credit −X* and *To pay by card Y* whichever payment method was

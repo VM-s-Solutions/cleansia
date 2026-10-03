@@ -13,6 +13,8 @@ final class UpsellClaimTests: XCTestCase {
         "home_upsell_plus_top",
         "home_upsell_plus_title",
         "home_upsell_plus_cta",
+        "home_upsell_plus_desc",
+        "home_upsell_plus_desc_generic",
         "membership_inactive_badge",
         "membership_inactive_title",
         "membership_inactive_perks_summary",
@@ -55,7 +57,6 @@ final class UpsellClaimTests: XCTestCase {
 
     /// Every line that tells the customer the referral points, so every line that says when they arrive.
     private static let referralRewardKeys = [
-        "home_upsell_referral_title",
         "booking_referral_code_dialog_helper",
         "booking_referral_code_dialog_success",
         "booking_referral_code_dialog_success_named",
@@ -130,6 +131,106 @@ final class UpsellClaimTests: XCTestCase {
         }
     }
 
+    /// The carousel states the server's `pointsPerReferral`, so its rows carry the count and no figure of
+    /// their own, and still say the points wait for the friend's first completed cleaning.
+    func testTheCarouselsReferralRewardIsTheServersAndWaitsForACompletedCleaning() throws {
+        try forEachLanguage { language in
+            let stem = try XCTUnwrap(Self.completedStem[language])
+            for points in [1, 2, 5, 175] {
+                let line = L10n.Home.upsellReferralDesc(points)
+                XCTAssertTrue(line.contains(String(points)), "\(language) drops the count: \(line)")
+                XCTAssertNil(Self.digitsBeyond(line, String(points)), "\(language) names a number: \(line)")
+                XCTAssertNotNil(line.range(of: stem, options: .caseInsensitive), "\(language): \(line)")
+            }
+            let generic = L10n.Home.upsellReferralDescGeneric
+            XCTAssertNil(generic.rangeOfCharacter(from: .decimalDigits), "\(language): \(generic)")
+            XCTAssertNotNil(generic.range(of: stem, options: .caseInsensitive), "\(language): \(generic)")
+            let title = L10n.localized("home_upsell_referral_title")
+            XCTAssertNil(title.rangeOfCharacter(from: .decimalDigits), "the title states a reward in \(language)")
+        }
+    }
+
+    /// The rows that state no figure at all: their facts are the server's or the booking's, carried elsewhere.
+    private static let carouselFigureFree = [
+        "home_upsell_did_you_know",
+        "home_upsell_notifications_desc",
+        "home_upsell_express_desc",
+        "home_upsell_setup_recurring_title",
+        "home_upsell_setup_recurring_desc",
+        "home_upsell_plus_desc_generic",
+        "home_upsell_plus_cancel_desc",
+        "home_upsell_rewards_title",
+        "home_upsell_rewards_desc",
+        "home_upsell_rewards_cta",
+        "home_upsell_times_title"
+    ]
+
+    func testTheDidYouKnowRowsWithoutAFigureStateNone() throws {
+        try forEachLanguage { language in
+            for key in Self.carouselFigureFree {
+                let value = L10n.localized(key)
+                XCTAssertNotEqual(value, key, "\(key) is unlocalized in \(language)")
+                XCTAssertNil(value.rangeOfCharacter(from: .decimalDigits), "\(key) names a figure in \(language)")
+            }
+        }
+    }
+
+    /// The discount and the cancellation window are the membership's, the lead times the booking policy's,
+    /// the arrival window and grid the time step's — rendered with sentinel figures, no row adds its own.
+    func testTheDidYouKnowRowsStateOnlyTheFiguresTheyAreGiven() throws {
+        try forEachLanguage { language in
+            let rows: [(String, [String])] = [
+                (L10n.Home.upsellPlusDesc(7), ["7"]),
+                (L10n.Home.upsellPlusCancelTitle(6), ["6"]),
+                (L10n.Home.upsellExpressTodayTitle(3), ["3"]),
+                (L10n.Home.upsellExpressTodayDesc(5), ["5"]),
+                (L10n.Home.upsellTimesDesc("§", "¶"), ["§", "¶"]),
+                (L10n.Home.upsellChipPercentOff(7), ["7"]),
+                (L10n.Home.upsellChipPoints(175), ["175"]),
+                (L10n.Home.upsellChipHours(6), ["6"]),
+                (L10n.Home.upsellChipMinutes(9), ["9"]),
+                (L10n.Home.upsellChipTimes(3), ["3"])
+            ]
+            for (line, figures) in rows {
+                for figure in figures {
+                    XCTAssertTrue(line.contains(figure), "\(language) drops \(figure): \(line)")
+                }
+                var residue = line
+                for figure in figures {
+                    residue = residue.replacingOccurrences(of: figure, with: "")
+                }
+                XCTAssertNil(residue.rangeOfCharacter(from: .decimalDigits), "\(language) names a number: \(line)")
+                XCTAssertFalse(Self.matches(line, Self.trialClaim), "\(language) promises a trial: \(line)")
+            }
+        }
+    }
+
+    /// Express is a 2–4 h lead band, so a morning booking for the evening is same-day and pays the
+    /// standard price: the express-today slide frames it as short notice, never as the same day.
+    func testTheExpressTodaySlideNeverSaysSameDay() throws {
+        let sameDay = [
+            "same-day",
+            "same day",
+            "today",
+            "dnes",
+            "ještě dnes",
+            "ešte dnes",
+            "сьогодні",
+            "сегодня",
+            "týž den",
+            "v rovnaký deň",
+            "того ж дня",
+            "в тот же день"
+        ]
+        try forEachLanguage { language in
+            for line in [L10n.Home.upsellExpressTodayTitle(2), L10n.Home.upsellExpressTodayDesc(4)] {
+                for claim in sameDay {
+                    XCTAssertFalse(line.lowercased().contains(claim), "\(language) says \"\(claim)\": \(line)")
+                }
+            }
+        }
+    }
+
     /// The newer carousel slides; every one renders, so every one is in every language.
     private static let carouselKeys = [
         "home_upsell_notifications_top",
@@ -138,6 +239,23 @@ final class UpsellClaimTests: XCTestCase {
         "home_upsell_credit_title",
         "home_upsell_express_top",
         "home_upsell_book_cta",
+        "home_upsell_did_you_know",
+        "home_upsell_notifications_desc",
+        "home_upsell_credit_desc",
+        "home_upsell_express_desc",
+        "home_upsell_setup_recurring_desc",
+        "home_upsell_plus_desc",
+        "home_upsell_plus_desc_generic",
+        "home_upsell_referral_desc_generic",
+        "home_upsell_plus_cancel_title",
+        "home_upsell_plus_cancel_desc",
+        "home_upsell_express_today_title",
+        "home_upsell_express_today_desc",
+        "home_upsell_rewards_title",
+        "home_upsell_rewards_desc",
+        "home_upsell_rewards_cta",
+        "home_upsell_times_title",
+        "home_upsell_times_desc",
         "home_quick_size_title",
         "home_quick_size_cta",
         "home_quick_size_rooms_less",
@@ -161,9 +279,12 @@ final class UpsellClaimTests: XCTestCase {
     /// membership's, and the express window is the booking policy's — so no language states a number.
     func testTheCreditAndExpressSlidesStateTheServersFiguresNeverTheirOwn() throws {
         try forEachLanguage { language in
-            let credit = L10n.Home.upsellCreditTitle("§", share: 0.55)
-            XCTAssertTrue(credit.contains("§") && credit.contains("55"), "\(language): \(credit)")
-            XCTAssertNil(Self.digitsBeyond(credit, "55"), "the credit slide names a number in \(language)")
+            let credit = L10n.Home.upsellCreditTitle("§")
+            XCTAssertTrue(credit.contains("§"), "\(language): \(credit)")
+            XCTAssertNil(Self.digitsBeyond(credit), "the credit slide names a number in \(language)")
+            let share = L10n.Home.upsellCreditDesc(share: 0.55)
+            XCTAssertTrue(share.contains("55"), "\(language): \(share)")
+            XCTAssertNil(Self.digitsBeyond(share, "55"), "the credit share names a number in \(language)")
 
             let window = L10n.Home.upsellExpressTop(7, 9)
             XCTAssertTrue(window.contains("7") && window.contains("9"), "\(language): \(window)")

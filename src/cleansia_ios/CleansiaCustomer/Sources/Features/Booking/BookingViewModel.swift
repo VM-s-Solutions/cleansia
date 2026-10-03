@@ -127,9 +127,8 @@ final class BookingViewModel: ViewModel {
         currentStep <= 1
     }
 
-    /// Past the first step the sheet's leading control steps back instead of closing, and the
-    /// swipe-down gesture is held so a half-built draft is not thrown away by a flick (Android
-    /// intercepts the system back gesture the same way).
+    /// Past the first step the sheet's leading control steps back instead of closing (Android routes the
+    /// system back gesture the same way). The swipe-down is not held: closing keeps the draft.
     var canStepBack: Bool {
         currentStep > 1
     }

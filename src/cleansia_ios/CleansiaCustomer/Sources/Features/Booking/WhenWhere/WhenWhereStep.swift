@@ -16,14 +16,14 @@ struct WhenWhereStep: View {
         days.first { BookingDateFormat.dayLabel($0.date) == viewModel.state.selectedDate }
     }
 
-    private var visibleSlots: [BookingTimeSlot] {
+    private var daySlots: [BookingTimeSlot] {
         guard let selectedDay else { return [] }
-        return BookingTimeSlots.slots(for: selectedDay.date).filter { $0.state != .unavailable }
+        return BookingTimeSlots.slots(for: selectedDay.date)
     }
 
-    /// The waiver note belongs under a grid that actually offers an express slot, and nowhere else.
+    /// The waiver note belongs under a day that actually offers an express slot, and nowhere else.
     private var offersExpressSlot: Bool {
-        visibleSlots.contains { $0.state == .express }
+        daySlots.contains { $0.state == .express }
     }
 
     var body: some View {
@@ -121,29 +121,24 @@ struct WhenWhereStep: View {
         }
     }
 
+    /// Nothing until a day is picked; then the part of day and that part's quarter hours.
     @ViewBuilder
     private var timeSlots: some View {
-        if selectedDay == nil {
-            EmptyView()
-        } else if visibleSlots.isEmpty {
-            Text(L10n.Booking.allSlotsBooked)
-                .font(CleansiaTypography.bodyMedium)
-                .foregroundColor(CleansiaColors.onSurfaceVariant)
-                .padding(.vertical, Spacing.m)
-        } else {
-            VStack(spacing: Spacing.s) {
-                ForEach(visibleSlots) { slot in
-                    TimeSlotRow(
-                        slot: slot,
-                        selected: viewModel.state.selectedTime == slot.time,
-                        expressWaived: viewModel.expressWaiverStatus == .available,
-                        action: {
-                            if let date = selectedDay?.date {
-                                viewModel.selectTime(slot.time, on: date)
-                            }
-                        }
-                    )
-                }
+        if let selectedDay {
+            let slots = daySlots
+            if !slots.contains(where: { $0.state != .unavailable }) {
+                Text(L10n.Booking.allSlotsBooked)
+                    .font(CleansiaTypography.bodyMedium)
+                    .foregroundColor(CleansiaColors.onSurfaceVariant)
+                    .padding(.vertical, Spacing.m)
+            } else {
+                DayPartTimePicker(
+                    slots: slots,
+                    selectedTime: viewModel.state.selectedTime,
+                    resetKey: selectedDay.date,
+                    expressWaived: viewModel.expressWaiverStatus == .available,
+                    onSelect: { viewModel.selectTime($0, on: selectedDay.date) }
+                )
             }
         }
     }
@@ -283,85 +278,201 @@ private struct ExpressWaiverNote: View {
     }
 }
 
-private struct TimeSlotRow: View {
-    let slot: BookingTimeSlot
-    let selected: Bool
-    let expressWaived: Bool
+/// Three part-of-day buttons, each with its first and last arrival, over a 4 × 4 grid of the chosen part's
+/// slots — the web wizard's time step (→ /customer-app/ordering-flow#step-2-date-time) and Android's
+/// `DayPartTimePicker`. Choosing a part never changes the booked time; it only changes which sixteen
+/// slots are on screen. The step opens on the part holding the booked time, which carries a dot while
+/// another part is browsed; a part with nothing bookable is disabled, and so is a slot inside the lead
+/// time. Shared with the recurring schedule's time, whose slots are all available. `resetKey` drops the
+/// part being browsed, e.g. a new day reopens on the part holding the booked time. Nothing animates.
+struct DayPartTimePicker: View {
+    let slots: [BookingTimeSlot]
+    let selectedTime: String
+    var resetKey: Date?
+    var expressWaived = false
+    let onSelect: (String) -> Void
+
+    @State private var browsed: DayPart?
+
+    private static let columns = 4
+
+    private var parts: [DayPartSlots] {
+        BookingTimeSlots.dayParts(slots)
+    }
+
+    private func active(in parts: [DayPartSlots]) -> DayPart {
+        if let browsed, parts.contains(where: { $0.part == browsed && $0.isBookable }) { return browsed }
+        return BookingTimeSlots.openingDayPart(parts, selectedTime: selectedTime)
+    }
+
+    private var expressLabel: String {
+        expressWaived ? L10n.Booking.slotExpressWaived : L10n.Booking.slotExpress
+    }
+
+    var body: some View {
+        let parts = parts
+        let active = active(in: parts)
+        let visible = parts.first { $0.part == active }?.slots ?? []
+        VStack(alignment: .leading, spacing: Spacing.xs) {
+            HStack(spacing: Spacing.xs) {
+                ForEach(parts, id: \.part) { part in
+                    DayPartButton(
+                        part: part,
+                        active: part.part == active,
+                        holdsSelection: part.part == DayPart.of(selectedTime) && part.part != active,
+                        action: { browsed = part.part }
+                    )
+                }
+            }
+            .fixedSize(horizontal: false, vertical: true)
+            .padding(.bottom, Spacing.xxs)
+            ForEach(Array(stride(from: 0, to: visible.count, by: Self.columns)), id: \.self) { start in
+                HStack(spacing: Spacing.xs) {
+                    ForEach(visible[start ..< min(start + Self.columns, visible.count)]) { slot in
+                        TimeSlotChip(
+                            slot: slot,
+                            selected: slot.time == selectedTime,
+                            expressLabel: expressLabel,
+                            action: { onSelect(slot.time) }
+                        )
+                    }
+                }
+            }
+            // The grid marks an express slot with a bolt; this says what the bolt costs.
+            if visible.contains(where: { $0.state == .express }) {
+                HStack(spacing: 6) {
+                    Image(systemName: "bolt.fill")
+                        .font(.system(size: 12))
+                    Text(expressLabel)
+                        .font(CleansiaTypography.labelSmall)
+                        .fontWeight(.semibold)
+                }
+                .foregroundColor(TimeSlotChip.expressOrange)
+                .accessibilityElement(children: .combine)
+            }
+        }
+        .onChange(of: selectedTime) { _ in browsed = nil }
+        .onChange(of: resetKey) { _ in browsed = nil }
+    }
+}
+
+/// A part-of-day button: its name over its first and last arrival ("08:00–11:45").
+private struct DayPartButton: View {
+    let part: DayPartSlots
+    let active: Bool
+    let holdsSelection: Bool
     let action: () -> Void
 
-    private static let expressOrange = Color(red: 0.918, green: 0.345, blue: 0.047)
-
-    private var isExpress: Bool {
-        slot.state == .express
+    private var name: String {
+        switch part.part {
+        case .morning: L10n.Booking.dayPartMorning
+        case .afternoon: L10n.Booking.dayPartAfternoon
+        case .evening: L10n.Booking.dayPartEvening
+        }
     }
 
-    private var isEarliest: Bool {
-        slot.state == .earliest
+    private var range: String {
+        "\(part.slots.first?.time ?? "")–\(part.slots.last?.time ?? "")"
     }
 
-    private var expressAccent: Color {
-        expressWaived ? CleansiaColors.primary : Self.expressOrange
+    var body: some View {
+        let enabled = part.isBookable
+        Button(action: action) {
+            VStack(spacing: 2) {
+                HStack(spacing: Spacing.xxs) {
+                    Text(name)
+                        .font(CleansiaTypography.labelLarge)
+                        .foregroundColor(active ? CleansiaColors.primary : CleansiaColors.onSurface)
+                        .multilineTextAlignment(.center)
+                    if holdsSelection {
+                        Circle()
+                            .fill(CleansiaColors.primary)
+                            .frame(width: 6, height: 6)
+                    }
+                }
+                Text(range)
+                    .font(CleansiaTypography.labelSmall)
+                    .foregroundColor(CleansiaColors.onSurfaceVariant)
+            }
+            .opacity(enabled ? 1 : 0.38)
+            .padding(.horizontal, Spacing.xxs)
+            .padding(.vertical, Spacing.xs)
+            .frame(maxWidth: .infinity, minHeight: 48, maxHeight: .infinity)
+            .background(active ? DayPartTimePicker.selectionTint : CleansiaColors.surface)
+            .overlay(
+                RoundedRectangle(cornerRadius: CornerRadius.small)
+                    .stroke(active ? CleansiaColors.primary : CleansiaColors.outlineVariant, lineWidth: active ? 2 : 1)
+            )
+            .clipShape(RoundedRectangle(cornerRadius: CornerRadius.small))
+        }
+        .buttonStyle(.plain)
+        .disabled(!enabled)
+        // "Morning, 6 slots available" — the range is what the grid then shows.
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(name + ", " + L10n.Booking.dayPartSlotsAvailable(part.bookableCount))
+        .accessibilityAddTraits(active ? [.isButton, .isSelected] : .isButton)
+    }
+}
+
+/// One arrival time in the grid: the time, with a bolt when it is an express slot.
+private struct TimeSlotChip: View {
+    let slot: BookingTimeSlot
+    let selected: Bool
+    let expressLabel: String
+    let action: () -> Void
+
+    static let expressOrange = Color(red: 0.918, green: 0.345, blue: 0.047)
+
+    private var enabled: Bool {
+        slot.state != .unavailable
+    }
+
+    private var textColor: Color {
+        if selected { return CleansiaColors.primary }
+        return enabled ? CleansiaColors.onSurface : CleansiaColors.onSurface.opacity(0.38)
+    }
+
+    private var background: Color {
+        if selected { return DayPartTimePicker.selectionTint }
+        return enabled ? CleansiaColors.surface : CleansiaColors.surfaceVariant.opacity(0.4)
     }
 
     var body: some View {
         Button(action: action) {
-            HStack(spacing: Spacing.s) {
-                if isExpress {
+            HStack(spacing: 2) {
+                if slot.state == .express {
                     Image(systemName: "bolt.fill")
-                        .font(.system(size: 16))
-                        .foregroundColor(expressAccent)
-                } else if isEarliest {
-                    Image(systemName: "clock")
-                        .font(.system(size: 16))
-                        .foregroundColor(CleansiaColors.primary)
+                        .font(.system(size: 10))
+                        .foregroundColor(Self.expressOrange)
                 }
-                VStack(alignment: .leading, spacing: 2) {
-                    Text(slot.time)
-                        .font(CleansiaTypography.titleMedium)
-                        .foregroundColor(selected ? CleansiaColors.primary : CleansiaColors.onSurface)
-                    if isExpress {
-                        Text(expressWaived ? L10n.Booking.slotExpressWaived : L10n.Booking.slotExpress)
-                            .font(CleansiaTypography.labelSmall)
-                            .foregroundColor(expressAccent)
-                    } else if isEarliest {
-                        Text(L10n.Booking.slotEarliest)
-                            .font(CleansiaTypography.labelSmall)
-                            .foregroundColor(CleansiaColors.primary)
-                    }
-                }
-                Spacer()
-                if selected {
-                    Image(systemName: "checkmark")
-                        .font(.system(size: 16, weight: .semibold))
-                        .foregroundColor(CleansiaColors.primary)
-                } else {
-                    Text(L10n.Booking.slotSelect)
-                        .font(CleansiaTypography.labelSmall)
-                        .foregroundColor(CleansiaColors.onSurfaceVariant)
-                }
+                Text(slot.time)
+                    .font(CleansiaTypography.labelLarge)
+                    .foregroundColor(textColor)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.8)
             }
-            .padding(.horizontal, Spacing.m)
-            .padding(.vertical, Spacing.s)
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .overlay(alignment: .leading) {
-                if isExpress {
-                    Rectangle()
-                        .fill(expressAccent)
-                        .frame(width: 4)
-                }
-            }
-            .background(CleansiaColors.surface)
+            .frame(maxWidth: .infinity, minHeight: 48)
+            .background(background)
             .overlay(
-                RoundedRectangle(cornerRadius: CornerRadius.medium)
+                RoundedRectangle(cornerRadius: CornerRadius.small)
                     .stroke(
                         selected ? CleansiaColors.primary : CleansiaColors.outlineVariant,
                         lineWidth: selected ? 2 : 1
                     )
             )
-            .clipShape(RoundedRectangle(cornerRadius: CornerRadius.medium))
+            .clipShape(RoundedRectangle(cornerRadius: CornerRadius.small))
         }
         .buttonStyle(.plain)
+        .disabled(!enabled)
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(slot.state == .express ? slot.time + ", " + expressLabel : slot.time)
+        .accessibilityAddTraits(selected ? [.isButton, .isSelected] : .isButton)
     }
+}
+
+extension DayPartTimePicker {
+    /// The selected chip's wash — Android's `selectionTint`: a faint primary on either theme.
+    static let selectionTint = CleansiaColors.primary.opacity(0.14)
 }
 
 private struct SectionLabel: View {

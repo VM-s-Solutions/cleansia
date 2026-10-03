@@ -51,25 +51,21 @@ final class DevicesViewModelTests: XCTestCase {
         XCTAssertNotNil(snackbar.current)
     }
 
-    func testRevokeSuccessRemovesRowEmitsEffectReturnsToIdle() async {
+    func testRevokeSuccessRemovesRowReturnsToIdle() async {
         client.myDevicesResult = .success([thisDevice, otherDevice])
         client.revokeResult = .success(())
         let vm = makeVM()
         await vm.load()
 
-        var revokedEmitted = false
-        let token = vm.revoked.sink { revokedEmitted = true }
-        defer { token.cancel() }
-
         await vm.revoke(otherDevice)
 
-        XCTAssertTrue(revokedEmitted)
         XCTAssertEqual(vm.revokeAction, .idle)
         XCTAssertEqual(vm.state.loadedValue, [thisDevice])
         XCTAssertEqual(client.revokedRowIds, ["row-2"])
     }
 
-    func testRevokeFailureKeepsListAndSurfacesActionError() async {
+    /// The system confirm has already closed, so the refusal is the snackbar's and the row is free again.
+    func testRevokeFailureKeepsListAndSurfacesError() async {
         client.myDevicesResult = .success([thisDevice, otherDevice])
         client.revokeResult = .failure(ApiError(httpStatus: 400))
         let vm = makeVM()
@@ -77,7 +73,7 @@ final class DevicesViewModelTests: XCTestCase {
 
         await vm.revoke(otherDevice)
 
-        guard case .error = vm.revokeAction else { return XCTFail("expected action error") }
+        XCTAssertEqual(vm.revokeAction, .idle)
         XCTAssertEqual(vm.state.loadedValue, [thisDevice, otherDevice])
         XCTAssertNotNil(snackbar.current)
     }

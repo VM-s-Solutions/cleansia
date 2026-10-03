@@ -7,18 +7,19 @@ final class UpsellSlideTests: XCTestCase {
 
     private let heldCredit = CustomerCredit.Balance(amount: 250, currencyCode: "CZK", expiresOn: nil)
 
-    /// Every combination of the five predicates that decide the set — 32 of them, the Android
-    /// `UpsellSlidesTest` sweep.
+    /// Every combination of the predicates that decide the set — 64 of them, the Android
+    /// `UpsellSlidesTest` sweep; the member's cancellation window is either none or 4 h.
     private var everyInputs: [Inputs] {
         var all: [Inputs] = []
-        for mask in 0 ..< 32 {
+        for mask in 0 ..< 64 {
             all.append(Inputs(
                 isPlus: mask & 1 != 0,
                 showSetupRecurring: mask & 2 != 0,
                 notificationsOff: mask & 4 != 0,
                 credit: mask & 8 != 0 ? heldCredit : nil,
                 creditShare: 0.7,
-                expressRemaining: mask & 16 != 0 ? 2 : 0
+                expressRemaining: mask & 16 != 0 ? 2 : 0,
+                memberCancellationHours: mask & 32 != 0 ? 4 : 0
             ))
         }
         return all
@@ -26,19 +27,51 @@ final class UpsellSlideTests: XCTestCase {
 
     // MARK: - Which slides, in which order
 
-    func testAFreeCustomerGetsPlusReferralAndQuickSize() {
-        XCTAssertEqual(UpsellSlide.kinds(Inputs()), [.plus, .referral, .quickSize])
+    func testEveryCustomerSeesFiveSlidesClosedByQuickSize() {
+        for inputs in everyInputs {
+            let kinds = UpsellSlide.kinds(inputs)
+            XCTAssertEqual(kinds.count, UpsellSlide.leadingCap + 1, "\(inputs)")
+            XCTAssertEqual(kinds.last, .quickSize, "\(inputs)")
+            XCTAssertEqual(Set(kinds).count, kinds.count, "\(inputs) repeats a slide")
+        }
     }
 
-    func testAMemberWithASchedulePairsReferralWithQuickSize() {
-        XCTAssertEqual(UpsellSlide.kinds(Inputs(isPlus: true)), [.referral, .quickSize])
+    func testAFreeCustomerGetsPlusReferralThenTheFacts() {
+        XCTAssertEqual(UpsellSlide.kinds(Inputs()), [.plus, .referral, .expressToday, .rewards, .quickSize])
+    }
+
+    /// A member whose plan has no shorter cancellation window (or whose renewal failed) gets the
+    /// figure-free facts.
+    func testAMemberWithASchedulePairsReferralWithTheFacts() {
+        XCTAssertEqual(
+            UpsellSlide.kinds(Inputs(isPlus: true)),
+            [.referral, .expressToday, .rewards, .arrivalTimes, .quickSize]
+        )
+    }
+
+    func testTheFactsComeAfterReferralCancellationFirst() {
+        XCTAssertEqual(
+            UpsellSlide.kinds(Inputs(isPlus: true, memberCancellationHours: 4)),
+            [.referral, .plusCancellation, .expressToday, .rewards, .quickSize]
+        )
     }
 
     func testAMemberWithoutAScheduleLeadsWithSetupRecurring() {
         XCTAssertEqual(
             UpsellSlide.kinds(Inputs(isPlus: true, showSetupRecurring: true)),
-            [.setupRecurring, .referral, .quickSize]
+            [.setupRecurring, .referral, .expressToday, .rewards, .quickSize]
         )
+    }
+
+    func testExpressTodayNeverRepeatsTheMembersExpressSlide() {
+        for inputs in everyInputs {
+            let kinds = UpsellSlide.kinds(inputs)
+            XCTAssertFalse(kinds.contains(.express) && kinds.contains(.expressToday), "\(inputs)")
+        }
+    }
+
+    func testANonMemberNeverSeesAMembersCancellationWindow() {
+        XCTAssertFalse(UpsellSlide.kinds(Inputs(memberCancellationHours: 4)).contains(.plusCancellation))
     }
 
     func testTheRuledOrderIsNotificationsCreditExpressRecurringPlusReferral() {
@@ -55,13 +88,23 @@ final class UpsellSlideTests: XCTestCase {
         XCTAssertEqual(UpsellSlide.kinds(free), [.notifications, .credit, .plus, .referral, .quickSize])
     }
 
-    /// The first four eligible show, then quick-size always closes — never more than five.
+    /// The first four eligible show, then quick-size closes — never more than five.
     func testTheSetIsCappedAtFiveAndQuickSizeAlwaysCloses() {
         for inputs in everyInputs {
             let kinds = UpsellSlide.kinds(inputs)
             XCTAssertLessThanOrEqual(kinds.count, UpsellSlide.leadingCap + 1, "\(inputs)")
             XCTAssertEqual(kinds.last, .quickSize, "\(inputs)")
             XCTAssertEqual(kinds.filter { $0 == .quickSize }.count, 1, "\(inputs)")
+        }
+    }
+
+    /// Every card but quick-size carries its two-line description, in the shown language.
+    func testEverySlideBesideQuickSizeHasADescription() {
+        for inputs in everyInputs {
+            for slide in UpsellSlide.slides(inputs) where slide.kind != .quickSize {
+                XCTAssertFalse(slide.description.isEmpty, "\(slide.kind) has no description")
+                XCTAssertFalse(slide.chipSymbol.isEmpty, "\(slide.kind) has no chip")
+            }
         }
     }
 
@@ -109,6 +152,16 @@ final class UpsellSlideTests: XCTestCase {
         XCTAssertEqual(slide.top, L10n.Home.upsellPlusTop)
         XCTAssertEqual(slide.title, L10n.Home.upsellPlusTitle)
         XCTAssertEqual(slide.cta, L10n.Home.upsellPlusCta)
+        XCTAssertEqual(slide.description, L10n.Home.upsellPlusDescGeneric, "no plans read: no figure")
+        XCTAssertNil(slide.chipText)
+    }
+
+    /// The headline plan's discount, as the server lists it, and none before the plans arrive.
+    func testThePlusSlideNamesTheServersDiscount() throws {
+        let slide = try slide(.plus, in: UpsellSlide.slides(Inputs(plusDiscountPercent: 7)))
+        XCTAssertEqual(slide.description, L10n.Home.upsellPlusDesc(7))
+        XCTAssertEqual(slide.chipText, L10n.Home.upsellChipPercentOff(7))
+        XCTAssertTrue(slide.description.contains("7"))
     }
 
     func testThePlusSlideOffersTheTrialOnlyWhenThereIsOneToOffer() throws {
@@ -145,6 +198,44 @@ final class UpsellSlideTests: XCTestCase {
         XCTAssertEqual(loaded.action, .shareReferral(code: "JOIN50"))
     }
 
+    /// The points are the server's `pointsPerReferral`; before they load the slide names none.
+    func testTheReferralSlideStatesTheServersPoints() throws {
+        let waiting = try slide(.referral, in: UpsellSlide.slides(Inputs(isPlus: true)))
+        XCTAssertEqual(waiting.description, L10n.Home.upsellReferralDescGeneric)
+        XCTAssertNil(waiting.chipText)
+
+        let loaded = try slide(.referral, in: UpsellSlide.slides(Inputs(isPlus: true, referralPoints: 175)))
+        XCTAssertEqual(loaded.description, L10n.Home.upsellReferralDesc(175))
+        XCTAssertEqual(loaded.chipText, L10n.Home.upsellChipPoints(175))
+        XCTAssertTrue(loaded.description.contains("175"))
+    }
+
+    func testTheFactSlidesStateTheMembershipsAndTheBookingsFigures() throws {
+        let member = UpsellSlide.slides(Inputs(isPlus: true, memberCancellationHours: 6))
+        let cancel = try slide(.plusCancellation, in: member)
+        XCTAssertEqual(cancel.top, L10n.Home.upsellDidYouKnow)
+        XCTAssertEqual(cancel.title, L10n.Home.upsellPlusCancelTitle(6))
+        XCTAssertEqual(cancel.chipText, L10n.Home.upsellChipHours(6))
+        XCTAssertEqual(cancel.mascot, .leaning)
+        XCTAssertEqual(cancel.action, .book)
+
+        let today = try slide(.expressToday, in: member)
+        XCTAssertEqual(today.title, L10n.Home.upsellExpressTodayTitle(Int(BookingPricing.expressLeadHours)))
+        XCTAssertEqual(today.description, L10n.Home.upsellExpressTodayDesc(Int(BookingPricing.standardLeadHours)))
+        XCTAssertEqual(today.mascot, .ready)
+
+        let rewards = try slide(.rewards, in: member)
+        XCTAssertEqual(rewards.action, .openReferral, "Rewards, where the points are")
+        XCTAssertEqual(rewards.cta, L10n.Home.upsellRewardsCta)
+        XCTAssertEqual(rewards.mascot, .sprayAndCloth)
+
+        let times = try slide(.arrivalTimes, in: UpsellSlide.slides(Inputs(isPlus: true)))
+        XCTAssertEqual(times.description, L10n.Home.upsellTimesDesc("08:00", "19:45"))
+        XCTAssertEqual(times.chipText, L10n.Home.upsellChipMinutes(15))
+        XCTAssertEqual(times.mascot, .resting)
+        XCTAssertEqual(times.action, .book)
+    }
+
     func testNotificationsSlideTurnsThemOn() throws {
         let slide = try slide(.notifications, in: UpsellSlide.slides(Inputs(notificationsOff: true)))
         XCTAssertEqual(slide.mascot, .waving)
@@ -161,11 +252,9 @@ final class UpsellSlideTests: XCTestCase {
         XCTAssertEqual(slide.gradient, .emerald)
         XCTAssertEqual(slide.action, .book)
         XCTAssertEqual(slide.top, L10n.Credit.yourCredit)
-        XCTAssertEqual(
-            slide.title,
-            L10n.Home.upsellCreditTitle(OrdersFormat.price(250, currencyCode: "CZK"), share: 0.55)
-        )
-        XCTAssertTrue(slide.title.contains("55"))
+        XCTAssertEqual(slide.title, L10n.Home.upsellCreditTitle(OrdersFormat.price(250, currencyCode: "CZK")))
+        XCTAssertEqual(slide.description, L10n.Home.upsellCreditDesc(share: 0.55))
+        XCTAssertTrue(slide.description.contains("55"))
     }
 
     func testExpressSlideStatesTheWaiversLeftAndTheBookingWindow() throws {
@@ -175,6 +264,7 @@ final class UpsellSlideTests: XCTestCase {
         XCTAssertEqual(slide.top, L10n.Home.upsellExpressTop(2, 4))
         XCTAssertEqual(slide.title, L10n.Home.upsellExpressTitle(3))
         XCTAssertTrue(slide.title.contains("3"))
+        XCTAssertEqual(slide.chipText, L10n.Home.upsellChipTimes(3))
     }
 
     func testQuickSizeClosesWithItsOwnTitleAndPriceButton() throws {
@@ -249,7 +339,7 @@ final class UpsellSlideTests: XCTestCase {
         let before: [UpsellSlide.Kind] = [.plus, .referral, .quickSize]
         let onReferral = UpsellSlide.page(logical: 1, count: before.count)
 
-        let arrived: [UpsellSlide.Kind] = [.credit, .plus, .referral, .quickSize]
+        let arrived: [UpsellSlide.Kind] = [.credit, .plus, .referral, .expressToday, .quickSize]
         let kept = UpsellSlide.page(afterChangeFrom: onReferral, old: before, new: arrived)
         XCTAssertEqual(arrived[UpsellSlide.logicalIndex(page: kept, count: arrived.count)], .referral)
 

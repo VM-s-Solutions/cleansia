@@ -15,8 +15,6 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.ExperimentalLayoutApi
-import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -36,11 +34,8 @@ import androidx.compose.material.icons.outlined.Add
 import androidx.compose.material.icons.outlined.CalendarMonth
 import androidx.compose.material.icons.outlined.Check
 import androidx.compose.material.icons.outlined.CreditCard
-import androidx.compose.material.icons.outlined.LightMode
-import androidx.compose.material.icons.outlined.NightlightRound
 import androidx.compose.material.icons.outlined.Payments
 import androidx.compose.material.icons.outlined.Remove
-import androidx.compose.material.icons.outlined.WbSunny
 import androidx.compose.material3.Button
 import androidx.compose.material3.DatePicker
 import androidx.compose.material3.DatePickerDialog
@@ -81,8 +76,11 @@ import cz.cleansia.customer.core.catalog.ServiceListItem
 import cz.cleansia.customer.core.data.UserAddress
 import cz.cleansia.customer.core.recurring.RecurrenceFrequency
 import cz.cleansia.customer.features.addresses.AddressManagerSheet
+import cz.cleansia.customer.features.booking.DayPartTimePicker
 import cz.cleansia.customer.features.booking.DirtinessLevelPicker
 import cz.cleansia.customer.features.booking.PreferredCleanerPicker
+import cz.cleansia.customer.features.booking.SlotState
+import cz.cleansia.customer.features.booking.TimeSlot
 import cz.cleansia.customer.features.booking.localizedDescription
 import cz.cleansia.customer.features.booking.localizedName
 import cz.cleansia.customer.ui.state.ActionState
@@ -907,122 +905,13 @@ private fun DayChip(
 }
 
 /**
- * Time-of-day picker — slots grouped into Morning / Afternoon / Evening with
- * section labels and matching glyphs (sun rising / sun / moon). The grouping
- * gives users orientation ("ah, the cleaner comes in the morning") instead
- * of forcing them to mentally categorize a flat list of "08:00, 08:15…".
+ * The schedule's arrival time, picked the way the booking's When step picks it: the part of day, then
+ * that part's sixteen quarter hours. A weekly time has no lead time, so every slot is bookable.
  */
 @Composable
 private fun TimeOfDayPicker(selected: String, onSelect: (String) -> Unit) {
-    val (morning, rest) = remember { CreateRecurringViewModel.START_TIMES.partition { it < "12:00" } }
-    val (afternoon, evening) = remember(rest) { rest.partition { it < "17:00" } }
-
-    Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
-        TimeSlotGroup(
-            label = stringResource(R.string.recurring_time_period_morning),
-            icon = Icons.Outlined.WbSunny,
-            slots = morning,
-            selected = selected,
-            onSelect = onSelect,
-        )
-        TimeSlotGroup(
-            label = stringResource(R.string.recurring_time_period_afternoon),
-            icon = Icons.Outlined.LightMode,
-            slots = afternoon,
-            selected = selected,
-            onSelect = onSelect,
-        )
-        TimeSlotGroup(
-            label = stringResource(R.string.recurring_time_period_evening),
-            icon = Icons.Outlined.NightlightRound,
-            slots = evening,
-            selected = selected,
-            onSelect = onSelect,
-        )
-    }
-}
-
-@OptIn(ExperimentalLayoutApi::class)
-@Composable
-private fun TimeSlotGroup(
-    label: String,
-    icon: ImageVector,
-    slots: List<String>,
-    selected: String,
-    onSelect: (String) -> Unit,
-) {
-    Column {
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            Icon(
-                imageVector = icon,
-                contentDescription = null,
-                tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.size(14.dp),
-            )
-            Spacer(Modifier.width(6.dp))
-            Text(
-                text = label,
-                style = MaterialTheme.typography.labelMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-        }
-        Spacer(Modifier.height(6.dp))
-        FlowRow(
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp),
-        ) {
-            slots.forEach { slot ->
-                OutlinedSelectableChip(
-                    selected = slot == selected,
-                    onClick = { onSelect(slot) },
-                    contentPadding = androidx.compose.foundation.layout.PaddingValues(
-                        horizontal = 16.dp, vertical = 12.dp,
-                    ),
-                    content = {
-                        Text(
-                            text = slot,
-                            style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.SemiBold),
-                            color = if (slot == selected) MaterialTheme.colorScheme.primary
-                                else MaterialTheme.colorScheme.onSurface,
-                        )
-                    },
-                )
-            }
-        }
-    }
-}
-
-/**
- * Outlined selectable chip — matches the order booking time-slot pattern:
- * surface background, 2dp primary border + primary text when selected, plain
- * outlineVariant border otherwise. No filled state — keeps the visual
- * vocabulary consistent with the package/service cards on the next step.
- */
-@Composable
-private fun OutlinedSelectableChip(
-    selected: Boolean,
-    onClick: () -> Unit,
-    modifier: Modifier = Modifier,
-    contentPadding: androidx.compose.foundation.layout.PaddingValues =
-        androidx.compose.foundation.layout.PaddingValues(0.dp),
-    content: @Composable () -> Unit,
-) {
-    Box(
-        modifier = modifier
-            .clip(RoundedCornerShape(12.dp))
-            .background(MaterialTheme.colorScheme.surface)
-            .border(
-                width = if (selected) 2.dp else 1.dp,
-                color = if (selected) MaterialTheme.colorScheme.primary
-                    else MaterialTheme.colorScheme.outlineVariant,
-                shape = RoundedCornerShape(12.dp),
-            )
-            .clickable(onClick = onClick)
-            .padding(contentPadding),
-        contentAlignment = Alignment.Center,
-    ) {
-        content()
-    }
+    val slots = remember { CreateRecurringViewModel.START_TIMES.map { TimeSlot(it, SlotState.Available) } }
+    DayPartTimePicker(slots = slots, selectedTime = selected, onSelect = onSelect)
 }
 
 @Composable

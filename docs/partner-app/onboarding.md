@@ -190,6 +190,24 @@ Country-specific labels and validation rules (e.g., field names, format masks) a
 
 The employee record has an `isProfileComplete` flag that tracks whether all required fields have been filled.
 
+**On the apps the profile is a chain of four steps, Personal, Address, Identity and Bank, under a
+stepper that names every one** (since 2026-10-03, owner remark). Each step is a node over its short
+name:
+
+| Step | Node | Name |
+|---|---|---|
+| Current | larger, filled, with the section's icon | bold, in the brand colour |
+| Finished | a check | kept, in full |
+| Not done yet | outlined, with the section's icon; the ring is the brand colour when the cleaner may jump to it | muted |
+
+A step the cleaner may jump to is tappable across its whole column (T-0607), and a line joins the
+nodes, in the brand colour behind a finished step. VoiceOver and TalkBack read each step as one
+element: its place, its name and its state, such as *Step 2 of 4, Address, current step* (or
+*completed*, *not started*). The *Step n of 4* header above the stepper is unchanged. Until then only
+the current step was named, inside a capsule, and the other three were identical unlabelled discs. At
+320pt (320dp) each step's column is 64 wide, and every name fits on one line in all five languages. At
+a large text size iOS shrinks a name to fit its column, and Android wraps it onto a second line.
+
 ## Step 5: Document Upload
 
 Partners must upload identity and work-related documents through the profile page. The upload flow works as follows:
@@ -333,13 +351,26 @@ and iOS apps a fourth, **Contract documents**:
    - _"Rejected: {reason}"_ -- admin has rejected the application with a reason
    - _"Approved"_ -- admin has approved the partner
 
+**On the apps each row's status sits beside its step's name, not beside its details** (since
+2026-10-03, owner remark). However many detail lines follow (the missing fields, a rejection reason),
+they hang below at the title's indent, and the status and chevron stay at the top beside the name.
+The two apps centre them on different lines. iOS centres its status icon, *Done* and chevron on the
+title's line, with *Contact support* below the details. Android centres its halo, status icon and
+chevron on the row's header: the title and the line under it, which is *Done*, the call to action
+(*Contact support* on a rejected application) or the awaiting-review note. Until then iOS pinned
+its status icon, *Done* and chevron to the top of the row, above the title's centre, and Android
+centred its halo, status icon and chevron on the whole row, beside the middle of the details. The
+two apps still draw the row differently. iOS leads with the status icon and trails *Done* and the
+chevron. Android leads with the step's category halo, says *Done* under the title, and trails a
+status icon and the chevron.
+
 **On the mobile apps a finished row still opens its section, until approval** (owner ruling
 2026-10-01). The lock replaces the whole app until an admin approves, so a row that went inert at
 *Done* left a cleaner who had filled everything in with no way back to correct it — and
 *Documents: Done* means one active document, not every type the country requires, so a cleaner who had
 uploaded only an ID could not get back to add the insurance certificate approval needs. A *Done* row
 keeps its *Done* label and gains a chevron: Profile opens Personal at the start of the onboarding
-chain, from which every section is one step-dot away; Documents opens the documents screen; Contract
+chain, from which every section is one tap away on its stepper; Documents opens the documents screen; Contract
 documents opens the documents to read and accept. This holds for a **rejected** cleaner too, and **an
 edit does not resubmit anything** — the application stays where the admin left it. With a complete
 profile the Personal, Address and Identification buttons read **Save** rather than *Next*, because

@@ -679,24 +679,17 @@ raw components one-off; never duplicate a `:core` component.
 > continuous with a deep floating shadow. Severity accent = `error` / green / `primary` / amber; the
 > `SnackbarMessage`/`SnackbarSeverity` API + dismiss button + accessibility are unchanged.
 
-> **iOS `CleansiaDialog` — only for a confirm that holds a field or stays up while submitting (owner
-> decision D15, 2026-10-01).** A plain confirm (title, message, confirm/cancel; it closes on the tap and
-> then its work starts) is a native `.alert` with `role: .destructive` where it destroys. Choose by what
-> the confirm does, not by how much it destroys: an alert is gone before the request starts, so the
-> double-submit guard must be the trigger's (disabled or busy while the request runs) or the view
-> model's re-entry check. A `confirmEnabled: !isSubmitting` on a dialog that closes first guards
-> nothing, which is why five such sites were converted too. Six cards remain: customer card removal
-> (stays up, shows its error) and device revoke, partner device revoke (both stay up until `revoked`),
-> and the partner document replace, upload and deletion request (they hold fields). The card is an overlay,
-> so it draws inside whatever it is mounted on: mount it on the screen, never on a card or a section (the
-> membership card and the notes section did; both are alerts now).
->
-> **iOS `CleansiaDialog` spring pop-in:** call sites present the dialog with a plain
-> `if flag { CleansiaDialog(…) }` (no `withAnimation` around the flag), so a bare `.transition` never
-> fires. The dialog springs itself in — `@State presented` flipped true in `.onAppear` under a
-> `withAnimation(.spring(response: 0.4, dampingFraction: 0.62))`, driving `scaleEffect(0.85→1)` +
-> `opacity` on the card and a fade on the scrim (Android `scaleIn(0.85)+fadeIn` parity). Keeps the
-> public API unchanged — no new required params, so partner call sites are untouched.
+> **iOS confirms — every one is a system dialog (H-8, owner remark 2026-10-03; D15 of 2026-10-01 kept a card for
+> six).** A confirm is a native `.alert` with `role: .destructive` where it destroys; a short choice is a
+> `.confirmationDialog` (anchor it to the control that opens it, so iOS 26 points at it); input is an iOS 16 `.alert`
+> holding a `TextField`. A system dialog is gone before the request starts, so the double-submit guard must be the trigger's (disabled or busy while the request runs) or the
+> view model's re-entry check, the busy state is the screen's (a row spinner, the other rows' buttons waiting), and a
+> refusal is the snackbar's — a retry hint inside the dialog has nowhere to live. **iOS 16 hides a disabled alert button
+> and never brings it back**, so a required field in an alert is refused by the view model (the partner document
+> deletion reason answers a blank one with `error.common.required` and sends nothing), never by
+> `.disabled(text.isEmpty)`. The Core `CleansiaDialog` overlay card is **deleted**; a custom confirm card on iOS is a
+> deviation. Android keeps `:core` `CleansiaDialog` (ADR-0018 D1 holds the content, D3 the component) → docs
+> `/mobile-app/patterns#native-ios`.
 
 > **iOS consent row + outbound web links — the ONE way:** a checkbox whose label carries links uses
 > the Core **`CleansiaConsentCheckbox`**, never `CleansiaCheckbox` — the latter wraps box + label in a
@@ -916,7 +909,7 @@ and `…/Network`; the `:core` sub-packages map by name (`auth`→`Auth`, `netwo
 | Material `colorScheme.*` (per-app `lightColorScheme`/`darkColorScheme`) | `CleansiaColors` in `Core/DesignSystem` — the **same Material slot names** (`primary`/`onPrimary`/`surface`/`outline`/`error`…) as `Color.dynamic(light:dark:)`, so components read 1:1 with the Compose source; the sky/slate ramp is `Palette` (internal). Slots the Android themes **don't override** render Compose's **Material3 BASELINE** on device — mirror that baseline hex verbatim (e.g. `tertiaryContainer`, dark `errorContainer`/`onErrorContainer` = error30/error90), never substitute a "close" ramp color |
 | `CleansiaTypography` (Poppins headings / Nunito body) | `CleansiaTypography` in `Core/DesignSystem` — same slot names returning `Font`; `CleansiaFont.{poppins,nunito}` register bundled `.ttf` (owner step) and **fall back to system font** if absent so it always builds |
 | customer `ui.theme.BrandGradients` (light/dark brand pairs) + the inline Plus `Sky950→Slate900` pair (`HomeTab.kt:412-421`) | the Core **`BrandGradient`** enum in `Core/DesignSystem` — `.blue`/`.purple`/`.cyan` as `Color.dynamic` pairs + the fixed `.plusHero`, exposing `colors` and a `linearGradient` (top-leading→bottom-trailing = Compose's default `Brush.linearGradient`). Models/views carry the semantic **token**, not resolved `Color`s, so slide/predicate tests compare gradients by case |
-| `cz.cleansia.core.ui.components.*` Composables | the same `Cleansia*` names as `View`s in `Core/Components` — **native SwiftUI, no Material re-impl** (Gate-DP): a `CleansiaDropdown` over a short closed list → a native `Menu` + inline `Picker` anchored to the field, a searchable one (the country lists) → `.sheet`+`.presentationDetents`+`.searchable` (owner decision D15, 2026-10-01; until then every dropdown was a sheet), Material Checkbox → SF-Symbol tappable row, custom Dialog → a native `.alert` for a plain confirm, the `CleansiaDialog` overlay card for one that holds a field or stays up while submitting (D15; until then every confirm was the card); same layout/labels/branding |
+| `cz.cleansia.core.ui.components.*` Composables | the same `Cleansia*` names as `View`s in `Core/Components` — **native SwiftUI, no Material re-impl** (Gate-DP): a `CleansiaDropdown` over a short closed list → a native `Menu` + inline `Picker` anchored to the field, a searchable one (the country lists) → `.sheet`+`.presentationDetents`+`.searchable` (owner decision D15, 2026-10-01; until then every dropdown was a sheet), Material Checkbox → SF-Symbol tappable row, custom Dialog → a native `.alert` / `.confirmationDialog` for every confirm, a field held in an `.alert` `TextField` (H-8, 2026-10-03; the `CleansiaDialog` card that D15 kept for six confirms is deleted); same layout/labels/branding |
 | `@HiltViewModel` + `StateFlow` | `ObservableObject` + `@Published` state; own a VM with `@StateObject`, inject with `@ObservedObject` (the iOS-16 foot-gun, ADR-0014 #11). New VMs may subclass the `@MainActor open class ViewModel` base in `Core/State` (NOT `@Observable`) |
 | sealed `*UiState` (Loading/Error/Loaded) | an `enum State { case loading, error(canRetry: Bool), loaded(OrderDetailDto) }` |
 | `ActionState` (Idle/Submitting/Error) | an `enum ActionState` mirror |
@@ -1443,7 +1436,12 @@ ADR-0018 D3 + §7.6 D1 + §7.7 D5 + the Parity rule; reviewer #29/#30/#31):**
   content**: `.fixedSize(horizontal:false, vertical:true)` on the content, a `GeometryReader` `PreferenceKey`
   reading its height, and `.presentationDetents([.height(measured)])` (16.0-safe; the content-height key breaks
   the size↔detent feedback loop). No trailing `Spacer()`. *(Architect-ratified T-0397, 2026-07-19 — verified
-  against `CodeSheetShell.swift:29-36`; second adopter `PackageDetailsSheet.swift:28`.)*
+  against `CodeSheetShell.swift:29-36`; second adopter `PackageDetailsSheet.swift:28`.)* The same holds for a
+  short **read** sheet: the customer credit explainer (`Rewards/CreditViews.swift`) opened at `.medium`, which on
+  iOS 16.4 and 18.6 put its *Got it* under the home indicator. It now measures its text and its button separately,
+  pins the button with `safeAreaInset(edge: .bottom)` below a `ScrollView` of the text, and offers
+  `.presentationDetents([.height(text + button), .large])`, so at an accessibility text size the text scrolls and the
+  button stays in view (H-7, 2026-10-03).
 - **The primary lifecycle action** is the **pure shared `OrderPrimaryAction.action(for:isMine:hasAfterPhotos:)`** sealed
   enum (one tested function, three call sites — NOT inline switches), mirroring `OrderPrimaryAction.kt`'s table; it is
   **presentational** and consumes `isMine`/`hasAfterPhotos` — the **ownership trust is SECURITY §7.8 (O1–O4)**, not this

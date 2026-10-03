@@ -3,11 +3,11 @@ import CleansiaPartnerApi
 import SwiftUI
 import UniformTypeIdentifiers
 
-/// A file the cleaner has picked but not yet sent: it is held here while a dialog collects the rest.
+/// A file the cleaner has picked but not yet sent: it is held here while the system dialogs collect the rest.
 ///
-/// For a fresh upload that dialog asks for a document type (required) and a description. For a
-/// REPLACEMENT it asks only for a description — the server carries the type over from the version
-/// being replaced, so offering a picker would promise a choice the request cannot express.
+/// For a fresh upload they ask for a document type (required) and then a description. For a
+/// REPLACEMENT they ask only for a description — the server carries the type over from the version
+/// being replaced, so offering a choice would promise one the request cannot express.
 private struct PendingUpload: Equatable {
     let fileName: String
     let contentType: String
@@ -25,6 +25,12 @@ struct DocumentsSectionView: View {
     @State private var pending: PendingUpload?
     @State private var pendingType: String?
     @State private var pendingDescription = ""
+    /// One flag per system dialog. Each is SwiftUI's to clear when its dialog closes; the data they ask
+    /// about lives in the state above, so a closing dialog never wipes what a button just chose.
+    @State private var choosingType = false
+    @State private var describingUpload = false
+    @State private var describingReplacement = false
+    @State private var confirmingDeletion = false
 
     /// Which document the next pick replaces, and which one a removal is being asked about. Both are
     /// decisions in flight, and both are behind a confirmation — the button this replaced removed the
@@ -73,6 +79,7 @@ struct DocumentsSectionView: View {
                                     guard let id = document.documentId else { return }
                                     deletionReason = ""
                                     deletionTarget = id
+                                    confirmingDeletion = true
                                 }
                             )
                         }
@@ -93,6 +100,23 @@ struct DocumentsSectionView: View {
                         }
                     )
                     .padding(.top, Spacing.s)
+                    // On the button, so iOS 26 points the choice at what opened it.
+                    .confirmationDialog(
+                        L10n.Profile.documentType,
+                        isPresented: $choosingType,
+                        titleVisibility: .visible,
+                        presenting: pending
+                    ) { _ in
+                        ForEach(DocumentPresentation.types, id: \.type) { option in
+                            Button(option.label()) {
+                                pendingType = DocumentPresentation.optionId(option.type)
+                                describingUpload = true
+                            }
+                        }
+                        Button(L10n.cancel, role: .cancel, action: clearPending)
+                    } message: { upload in
+                        Text(upload.fileName)
+                    }
                 }
             }
         )
@@ -104,99 +128,46 @@ struct DocumentsSectionView: View {
         ) { result in
             handleImport(result)
         }
-        .overlay { uploadDialog }
-        .overlay { deletionDialog }
-    }
-
-    /// Deliberately an in-tree overlay, not a `.sheet`. `.fileImporter` is
-    /// itself a presentation, and state set from its completion handler that
-    /// would trigger a second sheet gets swallowed while the importer
-    /// dismisses. `CleansiaDialog` is a ZStack overlay, so it just appears.
-    @ViewBuilder
-    private var uploadDialog: some View {
-        if let pending {
-            if let replaces = pending.replacesDocumentId {
-                CleansiaDialog(
-                    title: L10n.Profile.documentReplaceTitle,
-                    confirmLabel: L10n.Profile.documentReplace,
-                    onConfirm: { confirmReplace(pending, documentId: replaces) },
-                    onDismiss: clearPending,
-                    message: L10n.Profile.documentReplaceMessage(pending.fileName),
-                    dismissLabel: L10n.cancel,
-                    icon: "arrow.triangle.2.circlepath",
-                    confirmEnabled: !vm.action.isSubmitting,
-                    content: {
-                        CleansiaTextField(
-                            value: $pendingDescription,
-                            label: L10n.Profile.descriptionOptional,
-                            enabled: !vm.action.isSubmitting
-                        )
-                    }
-                )
-            } else {
-                CleansiaDialog(
-                    title: L10n.Profile.uploadDocument,
-                    confirmLabel: L10n.Profile.save,
-                    onConfirm: { confirmUpload(pending) },
-                    onDismiss: clearPending,
-                    message: pending.fileName,
-                    dismissLabel: L10n.cancel,
-                    confirmEnabled: pendingType != nil && !vm.action.isSubmitting,
-                    content: {
-                        VStack(spacing: Spacing.s) {
-                            CleansiaDropdown(
-                                selectedId: $pendingType,
-                                options: DocumentPresentation.types.map {
-                                    CleansiaDropdownOption(
-                                        id: DocumentPresentation.optionId($0.type),
-                                        label: $0.label()
-                                    )
-                                },
-                                label: L10n.Profile.documentType,
-                                placeholder: L10n.Profile.documentType,
-                                enabled: !vm.action.isSubmitting
-                            )
-                            CleansiaTextField(
-                                value: $pendingDescription,
-                                label: L10n.Profile.descriptionOptional,
-                                enabled: !vm.action.isSubmitting
-                            )
-                        }
-                    }
-                )
+        .alert(L10n.Profile.uploadDocument, isPresented: $describingUpload, presenting: pending) { upload in
+            TextField(L10n.Profile.descriptionOptional, text: $pendingDescription)
+            Button(L10n.Profile.save) { confirmUpload(upload) }
+            Button(L10n.cancel, role: .cancel, action: clearPending)
+        } message: { upload in
+            Text(uploadSummary(upload))
+        }
+        .alert(L10n.Profile.documentReplaceTitle, isPresented: $describingReplacement, presenting: pending) { upload in
+            TextField(L10n.Profile.descriptionOptional, text: $pendingDescription)
+            Button(L10n.Profile.documentReplace) {
+                if let replaces = upload.replacesDocumentId { confirmReplace(upload, documentId: replaces) }
             }
+            Button(L10n.cancel, role: .cancel, action: clearPending)
+        } message: { upload in
+            Text(L10n.Profile.documentReplaceMessage(upload.fileName))
+        }
+        // The reason is required by the server and required here — without one an admin is being asked
+        // to rule on nothing, which is the whole point of routing this past a person. The view model
+        // refuses a blank one, since this button cannot be held back on iOS 16.
+        .alert(
+            L10n.Profile.documentRequestDeletionTitle,
+            isPresented: $confirmingDeletion,
+            presenting: deletionTarget
+        ) { documentId in
+            TextField(L10n.Profile.documentDeletionReason, text: $deletionReason)
+            Button(L10n.Profile.documentRequestDeletion, role: .destructive) {
+                let reason = deletionReason
+                deletionTarget = nil
+                Task { await vm.requestDeletion(documentId: documentId, reason: reason) }
+            }
+            Button(L10n.cancel, role: .cancel) { deletionTarget = nil }
+        } message: { _ in
+            Text(L10n.Profile.documentRequestDeletionMessage)
         }
     }
 
-    /// The reason is required by the server and required here — without one an admin is being asked
-    /// to rule on nothing, which is the whole point of routing this past a person.
-    @ViewBuilder
-    private var deletionDialog: some View {
-        if let documentId = deletionTarget {
-            CleansiaDialog(
-                title: L10n.Profile.documentRequestDeletionTitle,
-                confirmLabel: L10n.Profile.documentRequestDeletion,
-                onConfirm: {
-                    let reason = deletionReason.trimmingCharacters(in: .whitespacesAndNewlines)
-                    deletionTarget = nil
-                    Task { await vm.requestDeletion(documentId: documentId, reason: reason) }
-                },
-                onDismiss: { deletionTarget = nil },
-                message: L10n.Profile.documentRequestDeletionMessage,
-                dismissLabel: L10n.cancel,
-                icon: "trash",
-                destructive: true,
-                confirmEnabled: !deletionReason.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
-                    && vm.busyDocumentId == nil,
-                content: {
-                    CleansiaTextField(
-                        value: $deletionReason,
-                        label: L10n.Profile.documentDeletionReason,
-                        enabled: vm.busyDocumentId == nil
-                    )
-                }
-            )
-        }
+    /// The type just chosen, then the file — the alert after the choice says what is being sent.
+    private func uploadSummary(_ upload: PendingUpload) -> String {
+        guard let type = DocumentPresentation.type(forOptionId: pendingType) else { return upload.fileName }
+        return DocumentPresentation.typeLabel(type) + "\n" + upload.fileName
     }
 
     /// Reads the file and parks it; the upload itself waits for the dialog.
@@ -220,12 +191,14 @@ struct DocumentsSectionView: View {
         }
         let contentType = UTType(filenameExtension: url.pathExtension)?.preferredMIMEType
             ?? "application/octet-stream"
-        pending = PendingUpload(
+        let upload = PendingUpload(
             fileName: url.lastPathComponent,
             contentType: contentType,
             base64: data.base64EncodedString(),
             replacesDocumentId: replaces
         )
+        pending = upload
+        if upload.replacesDocumentId == nil { choosingType = true } else { describingReplacement = true }
     }
 
     private func confirmReplace(_ upload: PendingUpload, documentId: String) {

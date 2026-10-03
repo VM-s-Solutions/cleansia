@@ -16,7 +16,6 @@ final class PaymentsViewModel: ViewModel {
     @Published private(set) var cardConsentAccepted = false
     @Published private(set) var addCardState: ActionState = .idle
 
-    let removed = PassthroughSubject<String, Never>()
     /// The Stripe Checkout page to open; the screen hands it to the browser.
     let payLinks = PassthroughSubject<URL, Never>()
     /// PaymentSheet in setup mode; the screen presents it and hands the outcome to `cardSheetFinished`.
@@ -83,7 +82,6 @@ final class PaymentsViewModel: ViewModel {
         switch await savedCardClient.remove(savedCardId: card.id) {
         case .success:
             removeState = .idle
-            removed.send(card.id)
             snackbar.showSuccess(L10n.Payments.cardRemoved)
             if case let .loaded(snapshot) = state {
                 state = .loaded(PaymentsSnapshot(
@@ -92,8 +90,9 @@ final class PaymentsViewModel: ViewModel {
                 ))
             }
         case let .failure(error):
+            // The confirm closed on the tap, so the snackbar is where a refusal is said; the card stays.
             snackbar.showApiError(error)
-            removeState = .error(L10n.Payments.cardRemoveRetryHint)
+            removeState = .idle
         }
     }
 

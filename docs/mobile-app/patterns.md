@@ -78,7 +78,8 @@ and the mascot is unchanged everywhere else.
 **The customer sign-in fits one screen.** Without the mascot and the guest link the form fits every
 supported iPhone, the SE included, and ordinary Android phones; only the legacy 360×640dp size still
 scrolls. The scroll view stays on both platforms, because the keyboard, field errors and large text
-still need it. On iOS, `CenteredAuthScroll` (the one container the centred auth forms share) sets
+still need it. On iOS, `CenteredAuthScroll` (the one container the centred auth forms of both apps
+share, in CleansiaCore since 2026-10-03) sets
 `scrollBounceBehavior(.basedOnSize)` from iOS 16.4, so a form that fits neither rubber-bands nor shows
 a scroll indicator. Do not reach for `ViewThatFits` here: when the keyboard changes the available
 space the view switches branch, the focused field is recreated, the keyboard drops, and the cycle
@@ -93,6 +94,19 @@ that rubber-banded. On Android, sign-up, forgot password and e-mail confirmation
 `systemBarsPadding().imePadding()` as sign-in: none of these routes sits in a `Scaffold`, so the latter
 two drew their back arrow under the status bar, and sign-up's fixed 64dp top and 32dp bottom (now 24dp
 each, as on sign-in) let the end of the form sit under a 3-button navigation bar or the keyboard.
+
+**Every partner auth form is centred** (since 2026-10-03, owner remark). Sign-in, registration, forgot
+password and e-mail confirmation centre their form in the space they are given when it fits, and
+scroll from the top when it does not (a short phone, the keyboard, a large text size), with 24 at the
+sides and 32 above and below. Forgot password and e-mail confirmation keep their back row at the top
+and centre the form under it. On iOS the four use `CenteredAuthScroll`, which moved from the customer
+app to CleansiaCore when the partner app became its second caller. On Android they share
+`CenteredAuthColumn` (partner `features/auth/`), a scrolling column at least as tall as its viewport
+that centres its content. Its keyboard handling is unchanged: the partner activity has no
+`adjustResize`, so the system pans the window for the keyboard, and padding by the keyboard here would
+change it on every partner screen. Until then each partner form sat at the top, under a fixed 64pt
+(64dp) pad on sign-in and registration and right under the back row on the other two, over an empty
+bottom on a tall phone. The customer forms are unchanged: centred on iOS, top-anchored on Android.
 
 **The customer sign-up still scrolls, by decision.** Removing its mascot was the whole change (owner
 ruling 2026-10-01). Even without it, the form is about 220pt taller than a 6.1" iPhone, and it is
@@ -181,37 +195,94 @@ the fade below.
 
 Home, Profile and the Plus offer draw to the top edge with no navigation bar, so once their content
 scrolls up it passes under the clock and the camera cut-out. On those three screens, once the content
-has left its top, a band of the page background covers the status bar and fades to clear 24pt (24dp)
-below it. Orders and Rewards keep a fixed title above their scroll view, so nothing passes under the
-status bar there.
+has left its top, it fades out under the status bar, down to 24pt (24dp) below it. On iOS 26 that is
+the system's soft scroll edge, the one a navigation bar draws (Edit schedule's, for instance), and on
+iOS 16–25 a thin blur. On Android it is a band of the page background. Through either iOS form the
+content stays visible, blurred, as it passes under the clock. Until 2026-10-03 iOS drew a band of the
+page colour too, and it read as a solid white strip (owner remark 2026-10-03). Orders and Rewards keep
+a fixed title above their scroll view, so nothing passes under the status bar there.
 
-**It is scroll-driven, never static.** At rest the band is hidden, so the full-bleed Profile and Plus
+**It is scroll-driven, never static.** At rest nothing is drawn, so the full-bleed Profile and Plus
 heroes (above) paint the strip themselves. A pull-to-refresh never raises it either. It is decoration
 only: it takes no touches and is hidden from VoiceOver and TalkBack. Both platforms show it from the
-first point of scroll and fade it in and out.
+first point of scroll.
 
 - **iOS** wraps the scroll view in `StatusBarFadeScrollView` (customer `Components/`). A
   `GeometryReader` behind the content reads the content's top in a named coordinate space, and state
   is written only when it crosses the threshold, not on every scrolled frame. A `PreferenceKey` reader
   does not work here, because the scroll view does not pass its content's preference changes to an
-  `onPreferenceChange` outside it. The band's own reader keeps the safe area on purpose: one that
-  ignores it reports a top inset of 0, which collapses the band to its fade.
-- **iOS 26's native soft scroll edge is not used.** The owner's first choice was
-  `scrollEdgeEffectStyle(.soft, for: .top)`, alone or with a zero-height `safeAreaBar`, but it draws
-  nothing when the navigation bar is hidden. On the iOS 26.3 simulator with real drags, scrolled frames
-  were byte-identical to frames with no treatment. So the band runs on every iOS version. It has not
-  been checked on a physical iPhone 17. When checking a scroll-driven effect, use real drags:
-  `UIScrollView.setContentOffset` does not update SwiftUI geometry.
+  `onPreferenceChange` outside it.
+- **iOS 26 draws the system's soft scroll edge.** The system draws it only under a bar, and these
+  screens hide their navigation bar, so the scroll view carries a stand-in: a `safeAreaBar` 24pt tall
+  (`StatusBarFade.depth`) filled with the page colour at 1.1 % opacity, with `spacing: -24` giving its
+  height back so the content does not move down. Then come `scrollEdgeEffectStyle(.soft, for: .top)`
+  and `scrollEdgeEffectHidden(!isScrolled, for: .top)`. The fill is what makes the system draw: on
+  the 26.3 simulator with real drags, compared against Edit schedule's frames, `scrollEdgeEffectStyle`
+  alone drew nothing, and so did a clear or a zero-height `safeAreaBar`; a near-clear fill drew the
+  edge.
+  The bar takes no touches, so Home's address row and the Plus offer's back arrow under it still
+  answer. It has not been checked on a physical iPhone 17. When checking a scroll-driven effect, use
+  real drags: `UIScrollView.setContentOffset` does not update SwiftUI geometry.
+- **iOS 16–25** lay an `.ultraThinMaterial` band over the status bar instead, masked by a gradient
+  that is solid over the status bar and clear 24pt below it, and fade it in and out with the scroll.
+  The band's own reader keeps the safe area on purpose: one that ignores it reports a top inset of 0,
+  which collapses the band to its fade. Checked on iOS 16.4 and 18.6.
 - **Android** applies `Modifier.statusBarFade(scrollState)` (customer `ui/components/StatusBarFade.kt`)
   directly before `verticalScroll(scrollState)`, so it draws over the viewport and not over the
   scrolled content. It is visible while `scrollState.value > 0`. Home moved its status-bar padding
   inside the scroll, so the address bar starts below the status bar at rest and then scrolls under the
   band. That leaves Home's `PullToRefreshBox` filling the whole screen, so its indicator pads
   `WindowInsets.statusBars` before its 8dp and rests below the status bar, not under it. The band's
-  gradient ends on `background.copy(alpha = 0f)`, as iOS ends on `background.opacity(0)`: Android
-  interpolates gradient colours unpremultiplied, so a tail of `Color.Transparent`, which is transparent
-  black, passed through greys and tinted the light theme. `StatusBarFadeBindingTest` pins both
+  gradient ends on `background.copy(alpha = 0f)`, the page colour at zero alpha: Android interpolates
+  gradient colours unpremultiplied, so a tail of `Color.Transparent`, which is transparent black,
+  passed through greys and tinted the light theme. `StatusBarFadeBindingTest` pins both
   (2026-10-02).
+
+## A booking swiped away keeps its draft {#booking-draft}
+
+On both apps the booking sheet closes with a swipe down on any step, and closing it throws nothing
+away (owner remark 2026-10-03). The draft, meaning the step and every choice on it, lives in the
+`BookingViewModel` that the signed-in shell keeps for the session. What happens to it depends on how
+the sheet is opened:
+
+- **A plain open resumes it.** The Book button and the other plain *Book now* entries reopen the sheet
+  on the step it was left on, with every choice it held.
+- **An open that seeds a booking starts a fresh one in its place.** *Order again*, a popular package
+  and the quick-size card's *See my price* reset the draft, fill it with that order, package or size,
+  and open on the first step.
+- **A booking placed resets it**, as before. On iOS the sheet holds the swipe only while a booking is
+  being placed, so the outcome has a screen to land on.
+- **It lasts as long as the signed-in shell.** After a sign-out, or once the app has been quit, the
+  next booking starts from scratch.
+
+Until then iOS held the swipe from step 2 on, so a half-built booking could be closed only by stepping
+back to the first step. Android let the swipe through on any step, but every plain open reset the
+draft, while *Order again* skipped the reset, so an abandoned draft's dirtiness level, date, time and
+payment carried into the repeated order.
+
+One difference between the platforms remains. On a plain open, iOS refills the draft's address from
+the preferred saved address when the draft's address was filled in from it automatically and the
+preferred one has since changed; Android keeps the address the draft had. One gap is known on both:
+neither app re-checks a resumed draft's time. A draft resumed on the Confirm step can hold a time that
+has since come inside the 2 h lead time. The When step clears such a time, but a booking placed
+straight from a resumed Confirm step is left for the server to refuse.
+
+## The booking's steps slide the way they go {#booking-steps}
+
+Going on, the next step comes in from the trailing edge and the current one leaves to the leading
+edge. Going back, the previous step comes in from the leading edge and the current one leaves to the
+trailing edge (owner remark 2026-10-03). Leading and trailing follow the layout direction, so a
+right-to-left language mirrors the slide. On iOS the steps crossfade instead under Reduce Motion, and
+on Android the slide runs at zero duration when animations are removed in the system settings.
+
+- **iOS** (`BookingSheetView`) used one transition for every change until then, so going back looked
+  like going on. The direction is set one run-loop turn before the step changes: a page that leaves
+  animates with the transition it last rendered with, so setting both in one update sent it the old
+  way.
+- **Android** (`BookingBottomSheet.kt`) was already directional, but with fixed left and right, which
+  a right-to-left layout would have turned around. `stepSlideDirection(forward, rtl)` now mirrors the
+  sign under `LayoutDirection.Rtl`. No locale the app ships is right-to-left, so nothing changed on
+  screen.
 
 ## Every map is quiet, with one Cleansia pin {#maps}
 
@@ -238,7 +309,14 @@ things: no POIs, a muted base and the same pin.
   above both up to AX5. MapKit centres its region inside the layout margins, so the centre pin is
   pinned to the margins' centre, not the view's. When the inset changes, for example on a live
   text-size change, the picker sets the picked point back under the pin, because MapKit holds the map
-  still while the margins move. Since 2026-10-02 the two full-bleed order maps (the customer
+  still while the margins move. **So the card must not change height on a lookup** (since 2026-10-03,
+  owner remark). Every drag starts a reverse lookup, and the card's address block used to be one line
+  while it looked the address up (*Looking up…*) and two lines once it had it (the street over its
+  city line). Each lookup therefore moved the inset, and with it the map, the pin and the card. The
+  customer `BookingAddressPickerView` (booking and the address manager share it) now holds two lines
+  in every state. While there is no second line, the title holds its place in the second line's font,
+  unseen and hidden from VoiceOver, so the height still follows the text size. The partner
+  `AddressPickerView` has the same one-line lookup state and does not hold the line yet. Since 2026-10-02 the two full-bleed order maps (the customer
   `OrderDetailMap` and the partner `OrderDetailView`) keep the logo and *Legal* above their `SnapSheet`
   the same way: `fullBleedMap(coordinate:)` measures the map and reads the sheet's top, which `SnapSheet`
   publishes to its backdrop (`snapSheetTop`), and the bottom margin is the part of the map below it, at
@@ -255,7 +333,11 @@ things: no POIs, a muted base and the same pin.
   Both are lifted above the resting sheet, which covers the map's bottom edge. Since 2026-10-02 the two
   address pickers (the customer `AddressManagerScreen` and the partner `AddressPickerScreen`) lift them
   above their bottom card too, by the card's measured height, keeping Mapbox's own horizontal places;
-  only the ornaments move, not the camera centre the pin marks. `CleansiaMapUsageTest` fails any of the
+  only the ornaments move, not the camera centre the pin marks. Since 2026-10-03 the customer picker's
+  address block keeps the height of its two lines while it looks the address up (a minimum height of
+  the `titleSmall` and `bodySmall` line heights, converted through the density so it follows the font
+  scale). Before, each lookup bobbed the card and the ornaments above it by about 12dp. The partner
+  picker's card still changes height on a lookup. `CleansiaMapUsageTest` fails any of the
   four maps that leaves either ornament on its defaults.
 
 **The pin** is a brand-sky teardrop with a white house, 40 × 50 (pt or dp): sky-600 `#0284C7` on a
@@ -351,20 +433,33 @@ What changed on iOS:
   (Home's book buttons, the carousel slides, *Order again*) slides the sheet up as before. The FAB looks
   the same at rest: no glass was added, since the glass FAB was retired for rendering corrupted on an
   iOS 26 iPhone ([ADR-0022](/decisions/adr-0022)). The gate is iOS 26, not iOS 18 where the API starts.
-  From step 2 on the booking sheet refuses a swipe down, so a half-built booking cannot be swiped away,
-  and only on iOS 26 has a zoom-presented sheet been checked to keep refusing it. iOS 18 to 25 keep the
-  plain sheet until someone checks them on a device.
-- **A plain confirmation is the system alert; a rich one keeps the branded card.** A confirmation that
-  only asks (a title, a message, a confirm and a cancel), closes on the tap and then starts its work is
-  a native `.alert`, with a red confirm where it destroys. That covers every sign-out, deleting the
-  account (both apps), cancelling or switching Plus, deleting a schedule, and on the partner side the
-  cash-collected confirm, deleting a note or an issue, declining or refusing an offer and the
-  removal-reason notice. A confirmation that holds a field, or stays up while it submits, is still the
-  `CleansiaDialog` card: removing a saved card, revoking a device (both apps), and the partner's
-  document replace, upload and deletion request. A system alert closes on the tap, so it cannot keep a
-  disabled button up until the request lands, or show the error inside itself. The alerts use the same
-  title, message and button strings; they lose the card's icon circle and spring. Android keeps its
-  branded dialog for every confirmation, since the content is what ADR-0018 D1 holds identical.
+  On iOS 18.6 the zoom presents, swipes away and keeps [the draft](#booking-draft), but iOS 18 shows
+  the zoomed sheet as a full-screen page with no grabber and no card edge, so nothing tells the
+  customer it can be swiped away. iOS 18 to 25 keep the plain sheet.
+- **Every confirmation is a system dialog** (owner remark 2026-10-03). A confirmation that only asks
+  (a title, a message, a confirm and a cancel) is a native `.alert`, with a red confirm where it
+  destroys. That covers every sign-out, deleting the account (both apps), cancelling or switching
+  Plus, deleting a schedule, removing a saved card, revoking a device (both apps), and on the partner
+  side the cash-collected confirm, deleting a note or an issue, declining or refusing an offer and
+  the removal-reason notice. Deleting a saved address and choosing a photo's source stay the
+  `.confirmationDialog` action sheet. The partner's document dialogs, which take input, are system
+  dialogs too. An upload asks for the type with a `.confirmationDialog` anchored to the Upload
+  button, then for the description with an `.alert` holding a text field. A replacement and a
+  deletion request are each one `.alert` with a text field.
+  - **No dialog stays up while its request runs.** A system dialog closes on the tap. The row or the
+    button it came from shows a spinner while the request runs, the other rows' buttons wait, and a
+    refusal goes to the snackbar. The retry hint the card showed after a failure had nowhere left to go and was
+    deleted.
+  - **iOS 16 hides a disabled alert button** and never brings it back, so the deletion request cannot
+    hold its button off until a reason is typed. The view model refuses a blank reason itself, with
+    *This field is required.* in the snackbar, and sends nothing.
+  - The alerts use the same title, message and button strings, and lose the card's icon circle and
+    spring. `CleansiaDialog`, the branded card, had no caller left and is deleted from CleansiaCore.
+    Until 2026-10-01 it was every confirmation, and until 2026-10-03 it was still the six that held a
+    field or stayed up while submitting (card removal, both device revokes and the three document
+    dialogs). This is [ADR-0018](/decisions/adr-0018) D3's `AlertDialog` row with no exception left,
+    so no ADR changed. Android keeps its branded dialog for every confirmation, since the content is
+    what ADR-0018 D1 holds identical.
 - **The birth date is picked on wheels.** The date-of-birth field (customer profile edit and
   completion, partner personal details) opens day, month and year wheels in a half-height sheet,
   instead of a month-by-month calendar that started at today. An empty field's wheels open thirty

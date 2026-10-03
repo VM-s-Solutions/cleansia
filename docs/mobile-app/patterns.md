@@ -290,11 +290,13 @@ open forgets both moments. A standard time that has since slid into the 2–4 h 
 hold, because it was quoted as a standard time, without the express surcharge. A time that was
 already express when it was quoted does, and so does one re-quoted after it went express, because that
 quote carries the surcharge. A time that does not hold is cleared, and its day with it once the day is
-past. Nothing is sent, the booking goes back to the When step if it was past it, and a notice asks for
-a new time (`booking_draft_time_changed`). A time that holds is kept. A kept day is named against the
-moment of the resume, so a day that has since become today reads *Today* and is the day the When step
-selects; iOS stores the day as its label and re-derives it, Android stores the date. A seeded open is
-not re-checked: it resets the draft anyway.
+past. Nothing is sent, the booking goes back to the When step if it was past it, and a notice says the
+time picked is no longer available or its price has changed and asks for a new one
+(`booking_draft_time_changed`, worded the same on both apps). It first opened *While you were away*,
+which did not fit a customer refused at submit who had never left. A time that holds is kept. A kept
+day is named against the moment of the resume, so a day that has since become today reads *Today* and
+is the day the When step selects; iOS stores the day as its label and re-derives it, Android stores the
+date. A seeded open is not re-checked: it resets the draft anyway.
 
 On a return to the foreground the When step also rebuilds its day strip and its slots from the
 current clock, so a step left on screen no longer offers a slot that has since come inside the lead

@@ -577,12 +577,16 @@ need backfilling.
   while the cleaner is on the way, sparkles during the clean, a seal when it is done and a cross if it
   was cancelled, and VoiceOver reads the step. Not yet seen on a phone with two activities running.
 
-- **Customer and cleaner iOS — a plain confirmation is the iPhone's own alert.** Signing out, deleting
-  the account, cancelling or switching Plus, deleting a schedule, and for a cleaner confirming cash,
-  deleting a note or an issue and declining or refusing an offer now ask with the system alert (Liquid
-  Glass on iOS 26) instead of the app's card; the words are the same. Removing a saved card, revoking a
-  device and the document dialogs keep the app's card, because they hold a field or stay open until
-  the request finishes. Android is unchanged. (Owner ruling 2026-10-01.)
+- **Customer and cleaner iOS — every confirmation is the iPhone's own dialog.** Signing out, deleting
+  the account, cancelling or switching Plus, deleting a schedule, removing a saved card, revoking a
+  device, and for a cleaner confirming cash, deleting a note or an issue and declining or refusing an
+  offer now ask with the system alert (Liquid Glass on iOS 26) instead of the app's card; the words are
+  the same. A cleaner uploading a document picks its type from a system menu and types the description
+  into a system alert, and a replacement or a deletion request asks for its text the same way. The
+  dialog closes when you tap, the screen shows that it is working, and an error appears at the bottom
+  of the screen. A deletion request sent without a reason is refused with *This field is required.*
+  Android is unchanged. (Owner ruling 2026-10-01; the card removal, device and document dialogs, owner
+  remark 2026-10-03.)
 
 - **Customer and cleaner iOS — a short list drops down from its field.** The dispute reason, the
   cleaner's sign-up market and the document type open as a menu on the field instead of a sheet over

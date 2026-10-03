@@ -411,17 +411,30 @@ What changed on iOS:
   On iOS 18.6 the zoom presents, swipes away and keeps [the draft](#booking-draft), but iOS 18 shows
   the zoomed sheet as a full-screen page with no grabber and no card edge, so nothing tells the
   customer it can be swiped away. iOS 18 to 25 keep the plain sheet.
-- **A plain confirmation is the system alert; a rich one keeps the branded card.** A confirmation that
-  only asks (a title, a message, a confirm and a cancel), closes on the tap and then starts its work is
-  a native `.alert`, with a red confirm where it destroys. That covers every sign-out, deleting the
-  account (both apps), cancelling or switching Plus, deleting a schedule, and on the partner side the
-  cash-collected confirm, deleting a note or an issue, declining or refusing an offer and the
-  removal-reason notice. A confirmation that holds a field, or stays up while it submits, is still the
-  `CleansiaDialog` card: removing a saved card, revoking a device (both apps), and the partner's
-  document replace, upload and deletion request. A system alert closes on the tap, so it cannot keep a
-  disabled button up until the request lands, or show the error inside itself. The alerts use the same
-  title, message and button strings; they lose the card's icon circle and spring. Android keeps its
-  branded dialog for every confirmation, since the content is what ADR-0018 D1 holds identical.
+- **Every confirmation is a system dialog** (owner remark 2026-10-03). A confirmation that only asks
+  (a title, a message, a confirm and a cancel) is a native `.alert`, with a red confirm where it
+  destroys. That covers every sign-out, deleting the account (both apps), cancelling or switching
+  Plus, deleting a schedule, removing a saved card, revoking a device (both apps), and on the partner
+  side the cash-collected confirm, deleting a note or an issue, declining or refusing an offer and
+  the removal-reason notice. Deleting a saved address and choosing a photo's source stay the
+  `.confirmationDialog` action sheet. The partner's document dialogs, which take input, are system
+  dialogs too. An upload asks for the type with a `.confirmationDialog` anchored to the Upload
+  button, then for the description with an `.alert` holding a text field. A replacement and a
+  deletion request are each one `.alert` with a text field.
+  - **No dialog stays up while its request runs.** A system dialog closes on the tap. The row or the
+    button it came from shows a spinner while the request runs, the other rows' buttons wait, and a
+    refusal goes to the snackbar. The retry hint the card showed after a failure had nowhere left to go and was
+    deleted.
+  - **iOS 16 hides a disabled alert button** and never brings it back, so the deletion request cannot
+    hold its button off until a reason is typed. The view model refuses a blank reason itself, with
+    *This field is required.* in the snackbar, and sends nothing.
+  - The alerts use the same title, message and button strings, and lose the card's icon circle and
+    spring. `CleansiaDialog`, the branded card, had no caller left and is deleted from CleansiaCore.
+    Until 2026-10-01 it was every confirmation, and until 2026-10-03 it was still the six that held a
+    field or stayed up while submitting (card removal, both device revokes and the three document
+    dialogs). This is [ADR-0018](/decisions/adr-0018) D3's `AlertDialog` row with no exception left,
+    so no ADR changed. Android keeps its branded dialog for every confirmation, since the content is
+    what ADR-0018 D1 holds identical.
 - **The birth date is picked on wheels.** The date-of-birth field (customer profile edit and
   completion, partner personal details) opens day, month and year wheels in a half-height sheet,
   instead of a month-by-month calendar that started at today. An empty field's wheels open thirty

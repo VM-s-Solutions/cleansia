@@ -17,8 +17,9 @@ import SwiftUI
 ///
 /// **It fits because the columns share the width.** At 320pt the card gives 256pt of content, 64pt a
 /// step; the longest name in the five shipped locales is eight characters (`Особисте`, `Identity`,
-/// `Личность`). Each is one word, so a larger font shrinks a name to its column rather than breaking it
-/// mid-word or truncating it. The connector runs centre to centre behind the nodes, `primary` behind a
+/// `Личность`). A larger font first shrinks a name to its column; at an accessibility size, where even
+/// the shrunk name is wider than its column, it takes a second line, as on Android — a name is never cut
+/// with an ellipsis. The connector runs centre to centre behind the nodes, `primary` behind a
 /// finished step — no green, and no shadow: `successText` measures 2.92:1 on this app's dark surface,
 /// and elevation is invisible against it.
 ///
@@ -160,14 +161,14 @@ private struct StepNode: View {
                 nodeDisc
             }
             .frame(height: Self.nodeRow)
-            // Never cut: every name is one word, so at a large font it shrinks to fit its column rather
-            // than breaking mid-word onto a second line.
+            // Never cut: shrink to the column first, then two lines at most, as Android's maxLines = 2.
+            // One line alone ellipsized "Особисте" and "Личность" at 320pt from AX2.
             Text(label)
                 .font(CleansiaTypography.labelMedium)
                 .fontWeight(state == .current ? .heavy : .semibold)
                 .foregroundColor(labelColor)
                 .multilineTextAlignment(.center)
-                .lineLimit(1)
+                .lineLimit(2)
                 .minimumScaleFactor(0.6)
                 .padding(.horizontal, 2)
         }

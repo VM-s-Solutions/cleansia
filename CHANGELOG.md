@@ -534,6 +534,14 @@ need backfilling.
   before this keeps info@cleansia.cz until `sql-scripts/update_company_contact_placeholders.sql` runs
   on it. Production's company record is typed into the admin console. (Owner ruling 2026-10-03.)
 
+- **Customer and cleaner — the company phone reads `<company_phone_number>` until the real one is
+  entered.** The development seed's company phone was +420 123 456 789, which read like a real number
+  in the terms, the privacy policy, the cleaner's agreements, receipts, invoices and the booking
+  confirmation. It is now the visible placeholder `<company_phone_number>`. Every page and PDF prints
+  it as written, never as a link. The number Help dials and the web footer prints, +420 739 788 108,
+  is unchanged. **Operator:** enter the company's real phone in the admin console's company form; the
+  same DEV script moves a DEV database seeded before this. (Owner ruling 2026-10-03.)
+
 - **Customer Android and iOS — arrival times are grouped by part of day, as on the web.** The
   booking's time step asks for morning, afternoon or evening first, then shows that part's sixteen
   times in a grid of four rows, instead of one long list of every quarter hour. A part with nothing

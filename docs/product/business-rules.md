@@ -1060,6 +1060,15 @@ the market — or from the order, on a contract for work.
   holds the old address. Production's record is typed into the admin console
   ([The first production deploy](/deployment/ci-cd#first-production-deploy)). No e-mail prints the
   company record's e-mail or phone.
+- **The seeded phone is the placeholder `<company_phone_number>`** (owner ruling 2026-10-03). It stays
+  that until the real number is entered in the admin console's company form. It prints as written
+  wherever the record's phone appears. A legal page shows it as text, never as a tag or a link: the
+  HTML carries it escaped, `&lt;company_phone_number&gt;`, and a PDF built from a text prints the
+  literal. The receipt's company block and footer, the payout invoice footer and the booking
+  confirmation's seller section print the literal too. The seed used to hold `+420 123 456 789`, which
+  read like a real number in the legal texts and the cleaner's agreements. The same DEV script moves
+  a row that still holds it. The line the customer web footer prints and the apps' Help dials,
+  +420 739 788 108, does not come from the company record and is unchanged.
 - **Help in the customer apps opens the contact** (since 2026-10-03). On Android and iOS, *Email us*
   opens the mail app on `support@cleansia.cz` and *Call support* opens the dialer on
   +420 739 788 108, the line the customer web footer prints. When nothing on the phone takes the link,

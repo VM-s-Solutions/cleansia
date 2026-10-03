@@ -69,6 +69,7 @@
               </div>
               <div class="cl-rec__picks">
                 @for (service of facade.services(); track service.id) {
+                  @let inPackage = facade.packageNamesIncluding(service.id ?? '');
                   <button
                     type="button"
                     class="cl-rec__pick"
@@ -85,6 +86,13 @@
                       <span class="cl-rec__pick-name">{{
                         facade.serviceName(service.id ?? '')
                       }}</span>
+                      <!-- Said, not prevented: a package plus a service it includes books it twice. -->
+                      @if (inPackage) {
+                        <span class="cl-rec__pick-note" data-spec-in-package>
+                          <i class="pi pi-box" aria-hidden="true"></i>
+                          {{ 'pages.order.package_overlap.in_package' | translate: { package: inPackage } }}
+                        </span>
+                      }
                     </span>
                   </button>
                 }

@@ -9,6 +9,8 @@ export interface ConfirmOptions {
   icon?: string;
   acceptLabelKey?: string;
   rejectLabelKey?: string;
+  /** The button focused on open, so Enter takes it. PrimeNG focuses accept unless told otherwise. */
+  defaultFocus?: 'accept' | 'reject';
 }
 
 export interface DialogConfig {
@@ -18,6 +20,7 @@ export interface DialogConfig {
   acceptLabel?: string;
   rejectLabel?: string;
   danger?: boolean;
+  defaultFocus?: 'accept' | 'reject';
 }
 
 /**
@@ -43,6 +46,7 @@ export class DialogService {
       rejectLabel: config.rejectLabel || this.translate.instant('global.actions.cancel'),
       acceptButtonProps: { severity: config.danger ? 'danger' : 'primary' },
       rejectButtonProps: { text: true },
+      ...(config.defaultFocus ? { defaultFocus: config.defaultFocus } : {}),
       accept: () => {
         result$.next(true);
         result$.complete();
@@ -69,6 +73,7 @@ export class DialogService {
       acceptLabel: options.acceptLabelKey ? this.translate.instant(options.acceptLabelKey) : undefined,
       rejectLabel: options.rejectLabelKey ? this.translate.instant(options.rejectLabelKey) : undefined,
       danger: options.danger,
+      defaultFocus: options.defaultFocus,
     });
   }
 

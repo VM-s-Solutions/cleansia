@@ -454,11 +454,7 @@ export class OrderWizardComponent implements OnInit {
   }
 
   toggleService(id: string): void {
-    const current = this.facade.formData().selectedServiceIds;
-    const updated = current.includes(id)
-      ? current.filter((s) => s !== id)
-      : [...current, id];
-    this.facade.updateFormData({ selectedServiceIds: updated });
+    this.facade.toggleService(id);
   }
 
   isPackageSelected(id: string): boolean {
@@ -466,11 +462,7 @@ export class OrderWizardComponent implements OnInit {
   }
 
   togglePackage(id: string): void {
-    const current = this.facade.formData().selectedPackageIds;
-    const updated = current.includes(id)
-      ? current.filter((p) => p !== id)
-      : [...current, id];
-    this.facade.updateFormData({ selectedPackageIds: updated });
+    this.facade.togglePackage(id);
   }
 
   getServiceById(id: string): ServiceListItem | undefined {

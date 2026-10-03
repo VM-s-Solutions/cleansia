@@ -834,6 +834,15 @@
       "package_most_popular": "Most popular",
       "package_select": "Choose package",
       "package_selected": "Chosen",
+      "package_overlap": {
+        "in_package": "In your package: {{package}}",
+        "service_title": "Already in your package",
+        "service_message": "{{service}} is part of {{package}}. Adding it again books it twice: it is done twice and charged twice.",
+        "add_again": "Add again",
+        "package_title": "Already in your booking",
+        "package_message": "{{package}} includes {{services}}, which you added on its own. Adding the package books it twice: it is done twice and charged twice.",
+        "add_package": "Add package"
+      },
       "packages_section_title": "Packages",
       "pay_by_card": "Pay by Card",
       "pay_by_cash": "Pay in Cash",

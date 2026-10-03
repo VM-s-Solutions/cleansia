@@ -68,6 +68,16 @@ describe('DialogService', () => {
       expect(confirmation.icon).toBe('pi pi-trash');
     });
 
+    it('leaves the focus to PrimeNG unless the caller makes cancel the default', () => {
+      service.confirmTranslated('pages.x.confirm').subscribe();
+      service
+        .confirmTranslated('pages.x.confirm', undefined, undefined, { defaultFocus: 'reject' })
+        .subscribe();
+
+      expect('defaultFocus' in (confirmMock.mock.calls[0][0] as Confirmation)).toBe(false);
+      expect((confirmMock.mock.calls[1][0] as Confirmation).defaultFocus).toBe('reject');
+    });
+
     it('emits true once on accept and completes', () => {
       const seen: boolean[] = [];
       let completed = false;

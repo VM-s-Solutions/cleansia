@@ -73,6 +73,7 @@ class FakeRecurringBookingsFacade {
   loadForEdit = jest.fn();
   packageName = jest.fn(() => null);
   serviceName = jest.fn(() => null);
+  packageNamesIncluding = jest.fn<string | null, [string]>(() => null);
   updateFormData = jest.fn();
   selectPayment = jest.fn();
   toggleService = jest.fn();
@@ -84,6 +85,68 @@ class FakeRecurringBookingsFacade {
   toggleActive = jest.fn();
   deleteTemplate = jest.fn();
 }
+
+// A package plus a service it already includes books that service on every clean twice. The row
+// says so, and the add goes through the facade, which asks first.
+describe('CreateRecurringWizardComponent — a service a chosen package already includes', () => {
+  let fixture: ComponentFixture<CreateRecurringWizardComponent>;
+  let facade: FakeRecurringBookingsFacade;
+  let el: HTMLElement;
+
+  beforeEach(async () => {
+    facade = new FakeRecurringBookingsFacade();
+    facade.services.set([ServiceListItem.fromJS({ id: 'windows', name: 'Windows' })]);
+    await TestBed.configureTestingModule({
+      imports: [CreateRecurringWizardComponent, TranslateModule.forRoot()],
+      providers: [
+        provideRouter([]),
+        provideNoopAnimations(),
+        {
+          provide: ActivatedRoute,
+          useValue: {
+            snapshot: { paramMap: { get: () => null }, queryParamMap: { get: () => null } },
+          },
+        },
+      ],
+    })
+      .overrideComponent(CreateRecurringWizardComponent, {
+        set: {
+          providers: [
+            { provide: RecurringBookingsFacade, useValue: facade },
+            ConfirmationService,
+          ],
+        },
+      })
+      .compileComponents();
+    fixture = TestBed.createComponent(CreateRecurringWizardComponent);
+    el = fixture.nativeElement;
+    fixture.detectChanges();
+  });
+
+  const marker = () => el.querySelector('[data-spec-in-package]');
+
+  it('shows no line while no chosen package includes the service', () => {
+    expect(marker()).toBeNull();
+  });
+
+  it('names the package inside the row, so it is read with it', () => {
+    facade.packageNamesIncluding.mockImplementation((id: string) =>
+      id === 'windows' ? 'Deep clean' : null,
+    );
+    facade.formData.update((d) => ({ ...d, selectedPackageIds: ['deep'] }));
+    fixture.detectChanges();
+
+    expect(marker()?.textContent).toContain('pages.order.package_overlap.in_package');
+    expect(marker()?.closest('button')).not.toBeNull();
+  });
+
+  it('hands an add to the facade, which decides whether to ask', () => {
+    // The only pick on screen: the catalogue holds one service and no package.
+    el.querySelector<HTMLButtonElement>('.cl-rec__pick')?.click();
+
+    expect(facade.toggleService).toHaveBeenCalledWith('windows');
+  });
+});
 
 // Cash is refused unless one cleaner does each clean. The select is the only thing that keeps a
 // refused cash pick off screen — the facade ignores it, so an enabled option would show Cash on a

@@ -9,6 +9,7 @@ import {
   ExtraListItem,
   GetMyMembershipResponse,
   MembershipStatus,
+  PackageListItem,
   PaymentType,
   ServiceListItem,
 } from '@cleansia/customer-services';
@@ -26,7 +27,7 @@ import {
   selectMarkets,
 } from '@cleansia/customer-stores';
 import { GuestOrderService } from '@cleansia-customer/orders';
-import { CleansiaCustomerRoute, SnackbarService } from '@cleansia/services';
+import { CleansiaCustomerRoute, DialogService, SnackbarService } from '@cleansia/services';
 import { provideMockStore, MockStore } from '@ngrx/store/testing';
 import { TranslateService } from '@ngx-translate/core';
 import { of, Subject, throwError } from 'rxjs';
@@ -63,6 +64,7 @@ describe('OrderWizardFacade', () => {
   let authService: { isLoggedIn: jest.Mock };
   let signedIn: WritableSignal<boolean>;
   let snackbar: { showError: jest.Mock; showInfoTranslated: jest.Mock };
+  let dialog: { confirmTranslated: jest.Mock };
   let router: { navigate: jest.Mock };
   let guestOrderService: { save: jest.Mock };
   let langChange: Subject<{ lang: string }>;
@@ -116,6 +118,7 @@ describe('OrderWizardFacade', () => {
     authService = { isLoggedIn: jest.fn(() => signedIn()) };
     guestOrderService = { save: jest.fn() };
     snackbar = { showError: jest.fn(), showInfoTranslated: jest.fn() };
+    dialog = { confirmTranslated: jest.fn().mockReturnValue(of(false)) };
     router = { navigate: jest.fn() };
     langChange = new Subject<{ lang: string }>();
     savedAddressStore = {
@@ -156,6 +159,7 @@ describe('OrderWizardFacade', () => {
         { provide: CustomerAuthService, useValue: authService },
         { provide: GuestOrderService, useValue: guestOrderService },
         { provide: SnackbarService, useValue: snackbar },
+        { provide: DialogService, useValue: dialog },
         { provide: Router, useValue: router },
         {
           provide: SavedAddressStore,
@@ -820,6 +824,145 @@ describe('OrderWizardFacade', () => {
 
       expect(facade.formData().address.street).toBe('Old St 5');
       expect(facade.formData().address.city).toBe('Brno');
+    });
+  });
+
+  // A package plus a service it already includes books that service twice, and the owner ruled
+  // it stays that way. The wizard marks the pair and asks before either half is added by hand.
+  describe('a package and a service it already includes', () => {
+    const windows = ServiceListItem.fromJS({ id: 'windows', name: 'Windows' });
+    const oven = ServiceListItem.fromJS({ id: 'oven', name: 'Oven' });
+    const ironing = ServiceListItem.fromJS({ id: 'ironing', name: 'Ironing' });
+    const deep = PackageListItem.fromJS({
+      id: 'deep',
+      name: 'Deep clean',
+      includedServices: [
+        { serviceId: 'windows', name: 'Windows' },
+        { serviceId: 'oven', name: 'Oven' },
+      ],
+    });
+    const kitchen = PackageListItem.fromJS({
+      id: 'kitchen',
+      name: 'Kitchen',
+      includedServices: [{ serviceId: 'oven', name: 'Oven' }],
+    });
+
+    beforeEach(() => {
+      store.overrideSelector(selectCustomerServices, [windows, oven, ironing]);
+      store.overrideSelector(selectCustomerPackages, [deep, kitchen]);
+      store.refreshState();
+    });
+
+    const chosen = () => ({
+      services: facade.formData().selectedServiceIds,
+      packages: facade.formData().selectedPackageIds,
+    });
+
+    it('marks a service with the chosen packages that include it, and nothing else', () => {
+      expect(facade.packageNamesIncluding('oven')).toBeNull();
+
+      facade.updateFormData({ selectedPackageIds: ['deep', 'kitchen'] });
+
+      expect(facade.packageNamesIncluding('oven')).toBe('Deep clean, Kitchen');
+      expect(facade.packageNamesIncluding('windows')).toBe('Deep clean');
+      expect(facade.packageNamesIncluding('ironing')).toBeNull();
+    });
+
+    it('asks before adding a service a chosen package includes, with Cancel as the default', () => {
+      facade.updateFormData({ selectedPackageIds: ['deep'] });
+
+      facade.toggleService('windows');
+
+      expect(dialog.confirmTranslated).toHaveBeenCalledWith(
+        'pages.order.package_overlap.service_message',
+        'pages.order.package_overlap.service_title',
+        { service: 'Windows', package: 'Deep clean' },
+        { acceptLabelKey: 'pages.order.package_overlap.add_again', defaultFocus: 'reject' },
+      );
+    });
+
+    it('keeps the basket as it was when the customer cancels', () => {
+      facade.updateFormData({ selectedPackageIds: ['deep'] });
+      dialog.confirmTranslated.mockReturnValue(of(false));
+
+      facade.toggleService('windows');
+
+      expect(chosen()).toEqual({ services: [], packages: ['deep'] });
+    });
+
+    it('adds the service a second time when the customer confirms', () => {
+      facade.updateFormData({ selectedPackageIds: ['deep'] });
+      dialog.confirmTranslated.mockReturnValue(of(true));
+
+      facade.toggleService('windows');
+
+      expect(chosen()).toEqual({ services: ['windows'], packages: ['deep'] });
+    });
+
+    it('adds a service no chosen package includes without asking', () => {
+      facade.updateFormData({ selectedPackageIds: ['deep'] });
+
+      facade.toggleService('ironing');
+
+      expect(dialog.confirmTranslated).not.toHaveBeenCalled();
+      expect(chosen().services).toEqual(['ironing']);
+    });
+
+    it('asks before adding a package that includes a service already chosen on its own', () => {
+      facade.updateFormData({ selectedServiceIds: ['oven', 'windows', 'ironing'] });
+
+      facade.togglePackage('deep');
+
+      expect(dialog.confirmTranslated).toHaveBeenCalledWith(
+        'pages.order.package_overlap.package_message',
+        'pages.order.package_overlap.package_title',
+        { package: 'Deep clean', services: 'Windows, Oven' },
+        { acceptLabelKey: 'pages.order.package_overlap.add_package', defaultFocus: 'reject' },
+      );
+      expect(chosen().packages).toEqual([]);
+    });
+
+    it('adds the package when the customer confirms, and keeps the service', () => {
+      facade.updateFormData({ selectedServiceIds: ['oven'] });
+      dialog.confirmTranslated.mockReturnValue(of(true));
+
+      facade.togglePackage('kitchen');
+
+      expect(chosen()).toEqual({ services: ['oven'], packages: ['kitchen'] });
+    });
+
+    it('adds a package without asking when nothing it includes is chosen', () => {
+      facade.updateFormData({ selectedServiceIds: ['ironing'] });
+
+      facade.togglePackage('deep');
+
+      expect(dialog.confirmTranslated).not.toHaveBeenCalled();
+      expect(chosen().packages).toEqual(['deep']);
+    });
+
+    it('never asks when either half of the pair is removed', () => {
+      facade.updateFormData({ selectedServiceIds: ['windows'], selectedPackageIds: ['deep'] });
+
+      facade.toggleService('windows');
+      facade.togglePackage('deep');
+
+      expect(dialog.confirmTranslated).not.toHaveBeenCalled();
+      expect(chosen()).toEqual({ services: [], packages: [] });
+    });
+
+    it('only marks a pair the wizard is handed, as Order again hands it over', () => {
+      facade.prefillFromRebook({
+        selectedServiceIds: ['windows'],
+        selectedPackageIds: ['deep'],
+        selectedServiceNames: ['Windows'],
+        selectedPackageNames: ['Deep clean'],
+        rooms: 2,
+        bathrooms: 1,
+      });
+
+      expect(dialog.confirmTranslated).not.toHaveBeenCalled();
+      expect(chosen()).toEqual({ services: ['windows'], packages: ['deep'] });
+      expect(facade.packageNamesIncluding('windows')).toBe('Deep clean');
     });
   });
 

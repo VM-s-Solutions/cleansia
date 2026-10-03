@@ -4,11 +4,13 @@ import { UnsubscribeControlDirective } from '@cleansia/directives';
 import {
   AddSavedAddressCommand,
   CardCaptureFacade,
+  chosenPackagesByService,
   CreateRecurringBookingCommand,
   CustomerClient,
   DeleteRecurringBookingCommand,
   DirtinessLevel,
   GetMyServingCleanersResponse,
+  includedServicesAlreadyChosen,
   MembershipStatus,
   PackageListItem,
   PaymentType,
@@ -22,7 +24,12 @@ import {
   UpdateRecurringBookingCommand,
 } from '@cleansia/customer-services';
 import { CashEligibility, cashIsRefused, resolveCashEligibility } from '@cleansia/models';
-import { CleansiaCustomerRoute, extractApiErrorCode, SnackbarService } from '@cleansia/services';
+import {
+  CleansiaCustomerRoute,
+  DialogService,
+  extractApiErrorCode,
+  SnackbarService,
+} from '@cleansia/services';
 import {
   loadCustomerPackages,
   loadCustomerServices,
@@ -104,6 +111,7 @@ export class RecurringBookingsFacade extends UnsubscribeControlDirective {
   private readonly orderClient = this.customerClient.orderClient;
   private readonly membershipClient = this.customerClient.membershipClient;
   private readonly snackbar = inject(SnackbarService);
+  private readonly dialog = inject(DialogService);
   private readonly translate = inject(TranslateService);
   private readonly savedAddressStore = inject(SavedAddressStore);
   private readonly store = inject(Store);
@@ -721,22 +729,86 @@ export class RecurringBookingsFacade extends UnsubscribeControlDirective {
     });
   }
 
-  toggleService(id: string): void {
-    const current = this.formData().selectedServiceIds;
-    this.updateFormData({
-      selectedServiceIds: current.includes(id)
-        ? current.filter((s) => s !== id)
-        : [...current, id],
-    });
+  // ─── A package and a service it already includes ──────────────────
+  //
+  // Booked together they book that service twice on every clean, and nothing merges them. So the
+  // services list marks such a service, and adding either half of the pair by hand asks first. A
+  // selection the form is handed (an order to repeat, a schedule to edit, a parked form) is only
+  // marked. → /product/business-rules#charging-a-package-and-a-service-together
+  private readonly packagesByIncludedService = computed(() =>
+    chosenPackagesByService(this.packages(), this.formData().selectedPackageIds),
+  );
+
+  /** The chosen packages that include a service, by name, or null when none does. */
+  packageNamesIncluding(serviceId: string): string | null {
+    const including = this.packagesByIncludedService().get(serviceId);
+    if (!including) return null;
+    return including.map((pkg) => this.catalogName(pkg) ?? '').join(', ');
   }
 
+  /** Removing never asks; adding a service a chosen package includes does. */
+  toggleService(id: string): void {
+    const chosen = this.formData().selectedServiceIds;
+    if (chosen.includes(id)) {
+      this.updateFormData({ selectedServiceIds: chosen.filter((s) => s !== id) });
+      return;
+    }
+    const packageNames = this.packageNamesIncluding(id);
+    if (!packageNames) {
+      this.addService(id);
+      return;
+    }
+    this.dialog
+      .confirmTranslated(
+        'pages.order.package_overlap.service_message',
+        'pages.order.package_overlap.service_title',
+        { service: this.serviceName(id) ?? '', package: packageNames },
+        { acceptLabelKey: 'pages.order.package_overlap.add_again', defaultFocus: 'reject' },
+      )
+      .pipe(takeUntil(this.destroyed$))
+      .subscribe((confirmed) => {
+        if (confirmed) this.addService(id);
+      });
+  }
+
+  /** Removing never asks; adding a package that includes a service already chosen does. */
   togglePackage(id: string): void {
-    const current = this.formData().selectedPackageIds;
-    this.updateFormData({
-      selectedPackageIds: current.includes(id)
-        ? current.filter((p) => p !== id)
-        : [...current, id],
-    });
+    const chosen = this.formData().selectedPackageIds;
+    if (chosen.includes(id)) {
+      this.updateFormData({ selectedPackageIds: chosen.filter((p) => p !== id) });
+      return;
+    }
+    const pkg = this.packages().find((p) => p.id === id);
+    const overlap = includedServicesAlreadyChosen(pkg, this.formData().selectedServiceIds);
+    if (overlap.length === 0) {
+      this.addPackage(id);
+      return;
+    }
+    this.dialog
+      .confirmTranslated(
+        'pages.order.package_overlap.package_message',
+        'pages.order.package_overlap.package_title',
+        {
+          package: this.catalogName(pkg) ?? '',
+          services: overlap.map((s) => this.catalogName(s) ?? '').join(', '),
+        },
+        { acceptLabelKey: 'pages.order.package_overlap.add_package', defaultFocus: 'reject' },
+      )
+      .pipe(takeUntil(this.destroyed$))
+      .subscribe((confirmed) => {
+        if (confirmed) this.addPackage(id);
+      });
+  }
+
+  // Read again on the answer: the form may have moved while the question was open.
+  private addService(id: string): void {
+    const chosen = this.formData().selectedServiceIds;
+    if (!chosen.includes(id)) this.updateFormData({ selectedServiceIds: [...chosen, id] });
+  }
+
+  private addPackage(id: string): void {
+    const chosen = this.formData().selectedPackageIds;
+    if (!chosen.includes(id)) this.updateFormData({ selectedPackageIds: [...chosen, id] });
   }
 
   nextStep(): void {

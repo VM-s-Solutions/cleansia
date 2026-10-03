@@ -34,6 +34,7 @@ import cz.cleansia.customer.core.settings.AppSettingsRepository
 import cz.cleansia.customer.core.user.UserRepository
 import cz.cleansia.core.network.ApiError
 import cz.cleansia.core.network.ApiResult
+import cz.cleansia.core.settings.AppLocale
 import cz.cleansia.core.snackbar.SnackbarController
 import cz.cleansia.customer.ui.state.ActionState
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -352,6 +353,15 @@ class BookingViewModel @Inject constructor(
     }
 
     /**
+     * The in-app language, held for [revalidateResumedTime]'s synchronous read: on API 26–32 [appContext]
+     * resolves in the device's ([AppLocale.localizedContext]). Null until the setting is first read,
+     * which is the device's language — what a System choice is too.
+     */
+    private val languageTag: StateFlow<String?> = settings.settings
+        .map { it.language.tag }
+        .stateIn(viewModelScope, SharingStarted.Eagerly, null)
+
+    /**
      * The time on a booking can stop holding while nobody touches it: a draft resumed hours after it
      * was left, a sheet left open while the app was in the background, a Confirm step left on screen
      * before the swipe. Only the server would refuse a time that has since passed or come inside the
@@ -361,13 +371,18 @@ class BookingViewModel @Inject constructor(
      * no longer holds is cleared — with its day, when the day has left the strip — the wizard goes
      * back to the When step if it was past it, and the customer is told why. True when it cleared one.
      * A kept day is re-labelled against [now], held or not: picked on an earlier day it carries its
-     * weekday, and on the day itself it reads "Today", as the When step's strip labels it ([buildDays]).
+     * weekday, and on the day itself it reads "Today" in the in-app language, as the When step's strip
+     * labels it ([buildDays]).
      */
     fun revalidateResumedTime(now: Instant = clock.now()): Boolean {
         val s = _state.value
         val pricedAt = quotedAt.takeIf { lastQuoteInputs.value?.cleaningInstant == s.selectedInstant } ?: draftLeftAt
         val today = now.toLocalDateTime(TimeZone.currentSystemDefault()).date
-        val dayLabel = if (s.selectedLocalDate == today) appContext.getString(R.string.booking_today) else s.selectedDate
+        val dayLabel = if (s.selectedLocalDate == today) {
+            AppLocale.localizedContext(appContext, languageTag.value).getString(R.string.booking_today)
+        } else {
+            s.selectedDate
+        }
         if (draftTimeStillHolds(s.selectedLocalDate, s.selectedTime, pricedAt, now)) {
             _state.update { it.copy(selectedDate = dayLabel) }
             return false

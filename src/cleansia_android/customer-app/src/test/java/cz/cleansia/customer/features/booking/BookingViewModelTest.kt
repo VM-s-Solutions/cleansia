@@ -34,7 +34,9 @@ import cz.cleansia.customer.core.promo.ValidatePromoCodeRequest
 import cz.cleansia.customer.core.promo.ValidatePromoCodeResponse
 import cz.cleansia.customer.core.referral.ReferralRepository
 import cz.cleansia.customer.core.referral.ValidateReferralResponse
+import cz.cleansia.customer.core.settings.AppSettings
 import cz.cleansia.customer.core.settings.AppSettingsRepository
+import cz.cleansia.customer.core.settings.LanguagePreference
 import cz.cleansia.customer.core.user.CurrentUser
 import cz.cleansia.customer.core.user.UserRepository
 import cz.cleansia.customer.testing.MainDispatcherRule
@@ -117,6 +119,7 @@ class BookingViewModelTest {
     private val catalogExtrasFlow = MutableStateFlow<List<ExtraListItem>>(emptyList())
     private val usableCzkCard = SavedCard(id = "card-1", brand = "visa", last4 = "4242", expMonth = 12, expYear = 2099, currencyCode = "CZK")
     private val savedCardsFlow = MutableStateFlow<List<SavedCard>?>(listOf(usableCzkCard))
+    private val settingsFlow = MutableStateFlow(AppSettings())
     private val marketNotice = "Some of your picks are not offered at this address and were removed."
 
     private val networkMessage = "Check your internet connection and try again."
@@ -157,6 +160,7 @@ class BookingViewModelTest {
         consentClient = mockk()
         coEvery { consentClient.grantedTypes() } returns emptySet()
         settings = mockk()
+        every { settings.settings } returns settingsFlow
         coEvery { settings.emailLanguageTag() } returns "en"
         appContext = mockk(relaxed = true)
 
@@ -1234,6 +1238,52 @@ class BookingViewModelTest {
         assertEquals(LocalDate(2026, 9, 11), vm.state.value.selectedLocalDate)
         assertEquals("Today", vm.state.value.selectedDate)
         assertEquals(3, vm.step.value)
+    }
+
+    /**
+     * "Today" is the in-app language's, as the strip's label is. On API 26–32 the application context
+     * resolves in the device's, so a Czech app on an English phone had Confirm's "Dnes" turn into
+     * "Today" on every same-day submit. Local unit tests run below API 33 (SDK_INT reads 0), where the
+     * context is wrapped, and the wrapped context reads Czech.
+     */
+    private fun czechApp() {
+        settingsFlow.value = AppSettings(language = LanguagePreference.Czech)
+        val czechStrings = mockk<Context>(relaxed = true)
+        every { czechStrings.getString(R.string.booking_today) } returns "Dnes"
+        every { appContext.createConfigurationContext(any()) } returns czechStrings
+    }
+
+    @Test
+    fun aSameDayTimeThatHolds_keepsTodayInTheInAppLanguage() = runTest {
+        czechApp()
+        val vm = newViewModel()
+        advanceUntilIdle()
+        vm.update {
+            it.copy(selectedLocalDate = LocalDate(2026, 9, 10), selectedDate = "Dnes", selectedTime = "17:00", selectedInstant = localAt(10, 17))
+        }
+        repeat(3) { vm.nextStep() }
+
+        assertEquals(false, vm.revalidateResumedTime(now = localAt(10, 9)))
+
+        assertEquals("17:00", vm.state.value.selectedTime)
+        assertEquals("Dnes", vm.state.value.selectedDate)
+    }
+
+    @Test
+    fun aKeptDayThatHasSinceBecomeToday_readsTodayInTheInAppLanguage() = runTest {
+        czechApp()
+        val vm = newViewModel()
+        advanceUntilIdle()
+        vm.update {
+            it.copy(selectedLocalDate = LocalDate(2026, 9, 11), selectedDate = "pá", selectedTime = "09:00", selectedInstant = localAt(11, 9))
+        }
+        repeat(3) { vm.nextStep() }
+        vm.setSheetVisible(false, now = localAt(10, 20))
+
+        assertTrue(vm.revalidateResumedTime(now = localAt(11, 8)))
+
+        assertEquals(LocalDate(2026, 9, 11), vm.state.value.selectedLocalDate)
+        assertEquals("Dnes", vm.state.value.selectedDate)
     }
 
     /** A booking that went through, or one a seeded open replaced, takes its close with it. */

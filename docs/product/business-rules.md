@@ -1817,8 +1817,8 @@ pair shows marked, as it will be charged. The web booking's Plus step suggests s
 their own, which can include one a chosen package holds, and its *Add* asks the same question.
 
 The marker matches the package's `IncludedServices[].ServiceId` (`PackageServiceSummary`), which the
-package list already sent; a client given an item without it still prints the item and only loses the
-marker. Android and iOS word it alike in all five languages; the web words it the same, except that
+package list already sent; a client given an item without it still prints the item, but neither marks
+that service nor asks about it. Android and iOS word it alike in all five languages; the web words it the same, except that
 its Slovak calls a package *balík*, as the rest of its wizard does, where the apps say *balíček*.
 
 ## Discounts, and the 12 % cap {#discount-cap}

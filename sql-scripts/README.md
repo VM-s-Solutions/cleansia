@@ -35,6 +35,18 @@ A Development boot runs both, then `insert_local_dev_admin.sql`
 then `insert_local_dev_admin.sql` for the published local administrator (owner ruling 2026-09-30;
 the workflow refuses it for PRO).
 
+## DEV data fixes
+
+`insert_seed_data.sql` never updates a row that already exists, so re-seeding does not move a DEV
+database seeded before the seed changed. Run these through **Execute SQL Script** with **DEV**.
+
+- **`fix-company-contact-placeholders.sql`** — the company record's contact values (owner rulings
+  2026-10-03): an e-mail of `info@cleansia.cz` becomes `support@cleansia.cz`, and a phone of
+  `+420 123 456 789` becomes the literal placeholder `<company_phone_number>`. Each value moves only
+  on a row that still holds the old seeded one, so a value an administrator has typed in is kept. One
+  transaction, idempotent. Written for DEV: production's company record is typed into the admin
+  console.
+
 ## `seed/` — dev fixture data
 
 > ### ⚠️ This is NOT the seed the DEV database uses.

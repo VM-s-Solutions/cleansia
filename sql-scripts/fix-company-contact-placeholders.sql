@@ -2,7 +2,7 @@
 -- Give the seeded company record its current contact values (DEV)
 -- ============================================================
 -- Usage: Execute via GitHub Actions (execute-sql.yml), environment DEV
---   Script: update_company_contact_placeholders.sql
+--   Script: fix-company-contact-placeholders.sql
 --
 -- Owner decisions 2026-10-03:
 --   - the company record's e-mail is support@cleansia.cz, the one support address customers and

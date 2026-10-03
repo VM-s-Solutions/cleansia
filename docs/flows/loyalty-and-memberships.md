@@ -8,11 +8,35 @@ Every grant carries an **idempotency key**, unique per tenant. A retried grant i
 index rather than doubling someone's balance.
 
 A completed order earns `floor(total / Currency.LoyaltyPointsDivisor)` in the order's currency — 1
-point per 10 CZK today. A partial refund takes back the same share of the points that order earned as
-it returned of the price — card and credit, gross — whatever the divisor is by then (owner ruling
-2026-10-03); a full refund and a dispute refund take back none today, a known gap. The divisor is
-authored per currency on the admin currency form; a currency with no divisor earns nothing and logs.
-It is not scaled from another currency's rate.
+point per 10 CZK today. Every refund takes back the same share of the points that order earned as it
+returned of the price — card and credit, gross — whatever the divisor is by then (owner rulings
+2026-10-03). A partial refund takes its share. A full refund takes everything the earn still holds. A
+dispute settlement takes the share of what it returned, on the card or as credit
+([Refunds](/flows/cancellation-refund-dispute#refund)). The divisor is authored per currency on the
+admin currency form; a currency with no divisor earns nothing and logs. It is not scaled from another
+currency's rate.
+
+**Two writes for one customer at the same moment both land** (owner decision 2026-10-03). A loyalty
+write loads the account, moves `LifetimePoints` in memory and saves the new total. When two writes
+read the same total — two refund clawbacks, or a clawback and a completion grant — the later commit
+used to overwrite the earlier one's points, and the tier those points reached, while both ledger rows
+landed. `LoyaltyAccount` now carries the Postgres `xmin` concurrency token, registered the way
+`UserMemberships` registers it, so the later write conflicts instead. The commit
+(`CleansiaDbContext.CommitAsync`) then does the following, up to five attempts:
+
+1. It resets the losing account to the committed row.
+2. It replays the points and completed bookings the write moved on top (`LoyaltyAccount.Replay`).
+3. It reads the tier again with the thresholds the write used.
+4. It saves again.
+
+The write's ledger rows were never saved, so they are saved once with the replay, and the total stays
+the sum of the ledger. The retry sits in the commit rather than in `LoyaltyService` because a refund
+with a credit leg still holds the credit lock when its clawback flushes. Only inside the commit is the
+replay saved under that lock. The same retry covers every loyalty write the pipeline commits: the
+completion grant, the cancellation revoke, referrals and tier edits. An atomic SQL increment was
+considered and not chosen. It would need its own transaction on every write path to stay atomic with
+the ledger insert, and it would still have to recompute the tier from the stored total.
+`LoyaltyAccountConcurrentWriteTests` runs the races on a real Postgres.
 
 **A market cannot open without one.** An order completed while its currency has no divisor earns
 nothing, permanently: the earn returns before any ledger row is written and nothing re-fires it when
@@ -33,7 +57,7 @@ A customer holds two balances, and they do different things.
 | What it is | a count with no currency | money the platform owes the customer, one account per currency |
 | Earned by | a completed order, a qualified referral, an administrator's grant | the no-show or no-cleaner apology, a complaint settled in credit, goodwill |
 | Spent | never; nothing redeems points | automatically, on the next card booking in the same currency, up to the server's share of it; a refunded or cancelled booking gives back what it spent |
-| Taken back | a partial refund's clawback, a cancelled order's points, a reversed referral, an administrator's revoke | account deletion, the operating company's deactivation, an administrator's *Expire credit* |
+| Taken back | a refund's clawback (partial, full or a dispute's), a cancelled order's points, a reversed referral, an administrator's revoke | account deletion, the operating company's deactivation, an administrator's *Expire credit* |
 | Expires | never | 12 months after the last movement |
 | What it changes | the tier, and through it the tier discount | what the card is asked for |
 
@@ -45,7 +69,7 @@ bookings. → [Business rules — customer credit](/product/business-rules#credi
 
 **A tier follows the points total, both ways.** `LoyaltyAccount` recomputes its tier from
 `LifetimePoints` against the tier thresholds every time points move. A grant can raise it, and a revoke
-lowers the total and can lower the tier. Revokes include a partial refund's clawback, an
+lowers the total and can lower the tier. Revokes include a refund's clawback, an
 administrator's manual revoke and a reversed referral. Nothing ratchets. The web rewards page says so:
 the ladder states that the tier follows the current points total, and the balance note says a tier can
 drop.
@@ -203,6 +227,15 @@ currency is "Plus is not on sale in that market", a valid state that gates nothi
 `ActivateCurrency` does not check plans. → [ADR-0059](/decisions/adr-0059),
 [API — markets and memberships](/api/markets-and-memberships)
 
+**A subscribed plan's offer is fixed** (owner ruling 2026-10-03). Once anyone has subscribed to a
+plan, in any status and in any company, `UpdateMembershipPlan` refuses a change to its discount or
+its express quota (`membership.plan.benefits_locked`). Switching the express waiver off counts as a
+quota change while the quota is above zero. A subscriber was shown those figures *for your plan when
+you subscribe*, and an edit used to reach every booking they made after it. A different offer is a new
+plan, with the old one deactivated. The admin form disables
+the two fields when the plan detail says `benefitsLocked`.
+→ [Business rules — Cleansia Plus](/product/business-rules#cleansia-plus)
+
 ## The express waiver is metered per calendar month
 
 ```mermaid
@@ -263,6 +296,9 @@ alone. You cannot redeem your own code, and you cannot be referred twice.
 | Swap to a plan unpriced in the membership's currency | `membership.plan.not_priced_in_currency`; the clients do not offer the switch. |
 | Webhook names a currency the platform does not know | Nothing is provisioned; an error is logged. |
 | Points granted twice by a retry | Rejected by the idempotency index. |
+| Two loyalty writes for one customer commit at once | The later one conflicts on the account's `xmin` token, is replayed on top of the committed total and saved again; both writes' points land and the tier is the one the total reaches. |
+| Several refunds on one order — a partial refund, then a dispute settlement | Each takes its share of the earn under its own key; the cap stops them together at what the order earned. |
+| An admin edits a subscribed plan's discount or express quota | Refused, `membership.plan.benefits_locked`; the name, the trial and the prices still save. |
 | A revoke takes the total below the current tier's threshold | The tier drops to the one the total now reaches, and its achieved date moves with it. |
 | Order in a currency with no points divisor | Unreachable through the admin surface — activation refuses without a divisor and an active currency cannot have it cleared (`currency.loyalty_divisor_missing`). A row that reaches the state anyway earns nothing and logs a warning; nothing is borrowed from another currency's rate. |
 | Self-referral | Refused. |

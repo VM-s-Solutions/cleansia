@@ -256,6 +256,13 @@ Three of those forms author what a customer's **market** shows:
   `membership.plan.stripe_price_already_used`. The form has no free-cancellation window since
   2026-10-03: a Plus member's window is a fixed term of the customer contract, not a plan setting
   ([Business rules — Cleansia Plus](/product/business-rules#cleansia-plus)).
+  **Once anyone has subscribed, the plan's offer is fixed** (owner ruling 2026-10-03). The plan detail
+  carries `benefitsLocked`. When it is set, *Discount (%)* and *Included express upgrades per month* are
+  disabled, and a note under the discount says the benefits are fixed: to offer different ones, create
+  a new plan and deactivate this one. A save still sends the two disabled fields with their stored
+  values, which the server accepts. *Allows express upgrade* stays enabled. The server accepts that
+  switch while the quota is 0 and otherwise refuses it with `membership.plan.benefits_locked`, which
+  the form shows translated. The name, the trial and the prices stay editable.
 - **Currencies** — `No-show apology credit` beside the loyalty divisor: the amount `CancelUnfilledOrders`
   pays on an order in that currency; blank means none is paid.
 - **Countries** — the `Two-letter code` (required on create, pattern-checked on edit; the market chip

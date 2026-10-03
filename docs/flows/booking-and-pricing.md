@@ -172,8 +172,13 @@ box was shown and ticked. With the tick, a signed-in customer's two consent rows
 force, with the IP and device, and the booking row records the versions **actually accepted**
 ([ADR-0063](/decisions/adr-0063)); without it, the versions the customer's rows hold. **Creating a
 recurring schedule is gated the same way** (`CreateRecurringBooking`); Android's schedule form asks for
-the tick, the web and iOS schedule forms do not yet. Confirming a recurring occurrence is not gated —
-the template was accepted. → [Business rules — what is recorded about a customer](/product/business-rules#customer-record)
+the tick, the web and iOS schedule forms do not yet. **So is confirming a recurring occurrence**
+(`ConfirmRecurringOrder`, owner ruling 2026-10-03). It uses the same method as `CreateOrder`
+(`CustomerLegalConsents.AssertedOrCoverTextsInForceAsync`), applied to the market of the occurrence's
+address, and is refused with the same key. Until then it was not gated, on the reasoning that the
+template had been accepted. But an occurrence is created up to a week ahead, under whatever version
+is in force on that day → [Recurring bookings](#recurring-bookings).
+→ [Business rules — what is recorded about a customer](/product/business-rules#customer-record)
 
 ## The order is stamped with the contract for work it is booked under {#work-contract-stamp}
 
@@ -316,7 +321,7 @@ time and the express window still apply to the exact selected instant, including
 | Guest, no account | Allowed **on the web**, by card. The order is keyed on the email address, and the customer later finds it via order lookup. The audit row has no user; an admin reaches it from the order's history. The customer mobile host's create route requires a session, so an anonymous call there is `401` and creates nothing → [CreateOrder](/api/orders#createorder). |
 | Cash from a guest, or on a booking that needs two cleaners or more | Refused, `order.cash_not_available`, before anything is reserved, debited or dispatched. 120 booked minutes is one cleaner; 121 is two. |
 | An unknown language code on the booking | Refused (`CreateOrder.Validator` carries the `LanguageValidator`, the `Register` idiom) — the audit row records `language`, and an unrecognised code is not evidence of anything. No shipped client sends one outside the five seeded codes. |
-| A recurring occurrence confirmed | One `customer.order.recurring.confirm` row: the order, the template, the price and currency, the dirtiness level, the payment type, the cleaning time and lead time. A schedule created, edited, paused/resumed or deleted writes a `customer.recurring.*` row with the schedule facts — its level among them — before and after. |
+| A recurring occurrence confirmed | One `customer.order.recurring.confirm` row: the order, the template, the price and currency, the dirtiness level, the payment type, the cleaning time and lead time, and — since 2026-10-03 — the terms tick and the terms and privacy versions it was confirmed under. A confirm refused for the terms writes the failure row with `consent.terms_not_accepted`, as a booking does. A schedule created, edited, paused/resumed or deleted writes a `customer.recurring.*` row with the schedule facts — its level among them — before and after. |
 
 ## Recurring bookings
 
@@ -348,6 +353,31 @@ stale-occurrence sweep and the confirm reminders select only occurrences still a
 (`Order.AwaitsCustomerConfirmation`: open, `Pending`, and for cash not yet confirmed); the order detail
 carries it as `needsConfirmation`, and every client offers the confirm on it. Until the web confirm
 existed, every occurrence of a web-only customer was auto-cancelled an hour before its slot.
+
+**The confirm asks for the terms in force, on a booking's rule** (owner ruling 2026-10-03, *ask at
+confirm*). An occurrence is created up to 7 days ahead under the version in force that day, and the
+customer is asked to accept the version in force at the confirm.
+
+- **The command** carries an optional `termsAccepted`, like `CreateOrder`. Without the tick, a
+  customer whose terms and privacy consents do not both cover the texts in force for the occurrence's
+  market is refused `consent.terms_not_accepted`
+  ([the terms tick](#the-terms-tick-is-required-unless-the-account-already-accepted-the-texts-in-force)).
+  The validator reads the order the same way the handler does. An order the handler refuses anyway (not
+  the caller's, not an occurrence, no longer awaiting confirmation) passes, so the handler's own answer
+  is the one returned.
+- **With the tick, both consent rows move to the texts in force** (`CustomerLegalConsents.RecordAsync`,
+  the booking's call). This happens after every refusal and under the account's own company, before
+  either tender switches to the order's company. The confirmation row records the tick and the versions
+  confirmed under.
+- **The clients show the tick only when it is needed.** Each reads the customer's consents once, and
+  only for an order that `needsConfirmation`. It asks unless both consents are granted, not withdrawn
+  and cover the version in force, so a failed read asks too. The box sits above the confirm, uses the
+  booking's own copy, and sends `termsAccepted: true` only when it was shown and ticked; otherwise the
+  member is not sent. The web order detail (card and cash alike) disables the confirm and shows the
+  booking's reason until the box is ticked. Android disables the button the same way. iOS keeps the
+  box hidden and the button disabled until the consents are read, so the box never flashes over an
+  account that holds them.
+- **An occurrence nobody confirms** is still retracted an hour before its slot, with no fee.
 
 **A schedule's weekday and time are the market's wall-clock time** (since 2026-09-28; they used to be
 read as UTC, so a Prague 10:00 schedule ran at 11:00 in winter and 12:00 in summer). The materialiser

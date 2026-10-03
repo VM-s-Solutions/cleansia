@@ -239,12 +239,20 @@ Stripe Price objects are created out of band — the admin enters ids.
   (a Stripe Price id already charging another row, in this payload or in the database — a Stripe Price
   is single-currency), `Required` / `MaxLength` on a blank or over-long id, `MustBePositive` on a
   negative price or a negative `trialPeriodDays` (`0` is no trial).
+- **Once anyone has subscribed, the offer is fixed** (owner ruling 2026-10-03). After any membership
+  row exists for the plan (any status, any company), an update that changes `discountPercentage` or
+  `expressUpgradesPerMonth` is refused with `membership.plan.benefits_locked`, on that field. So is a
+  change to `allowsExpressUpgrade` while the quota is above zero, reported on
+  `expressUpgradesPerMonth`, because with the switch off a subscriber is shown a quota of 0. Sending
+  the stored values passes. A different offer is a new plan, with this one deactivated →
+  [Business rules — Cleansia Plus](/product/business-rules#cleansia-plus).
 
 **Detail** returns `prices` as `{ "CZK": { "price", "monthlyEquivalentPrice", "stripePriceId" } }` —
-an absent key is a currency the plan is not priced in, never a zero. **The paged list** carries the
-**platform-default-currency** row's `price` and `monthlyEquivalentPrice` plus `currencyCode`; both
-figures are `null` when the plan has no row in that currency (the admin app prints "—"), because "0"
-would read as free. The list has no price sort.
+an absent key is a currency the plan is not priced in, never a zero. It also carries `benefitsLocked`:
+`true` once anyone has subscribed, so the form can disable the discount and the quota. **The paged
+list** carries the **platform-default-currency** row's `price` and `monthlyEquivalentPrice` plus
+`currencyCode`; both figures are `null` when the plan has no row in that currency (the admin app prints
+"—"), because "0" would read as free. The list has no price sort.
 
 ---
 
@@ -327,6 +335,7 @@ credit. `AdminCurrencyDetailDto` and `AdminCurrencyListItem` carry it back; the 
 | `membership.plan.not_priced_in_currency` | checkout, subscribe, swap | customer web, Android customer, iOS customer |
 | `membership.stripe_customer_currency_locked` | checkout, subscribe | customer web, Android customer, iOS customer |
 | `membership.plan.stripe_price_already_used` | admin plan create/update | admin web |
+| `membership.plan.benefits_locked` | admin plan update, once anyone has subscribed | admin web |
 | `country.configuration_missing` | market-content PUT | admin web |
 | `country.market_not_ready` | serviced PUT, default-market PUT | admin web |
 | `country.not_serviced` | default-market PUT (and the customer quote / subscribe paths, already catalogued there); **since ADR-0061** also `Auth/Register` (customer hosts only — the partner hosts stopped routing it on 2026-09-15), `Auth/RegisterEmployee`, `Auth/GoogleAuth`, `Auth/AppleAuth`, `PromoCode/Request`, `Referral/Validate` and guest `Order/CreateOrder` when the named market is not one | admin web; customer web, Android customer, iOS customer; partner web, Android partner, iOS partner (`RegisterEmployee` / social) |

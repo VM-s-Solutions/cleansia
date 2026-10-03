@@ -161,7 +161,7 @@ The phase-5 loyalty perks arrive with the reseed that follows the drop (below) �
 Phase 6A (2026-09-23) regenerates `Initial` as **`20260923071814`**, removing the unread
 `CountryConfigurations.ReducedVatRate` column while retaining both live VAT rates.
 
-The 2026-09-27 meeting plan and the fixes after it regenerated it nineteen times more, each one adding
+The 2026-09-27 meeting plan and the fixes after it regenerated it twenty times more, each one adding
 what is named against the id before it:
 
 - **`20260927231818`** (2026-09-28, `5d7d7b68a`, the chargeback and dispute-amount fixes):
@@ -197,9 +197,15 @@ what is named against the id before it:
   `numeric(18,2)` NULL; `MembershipPlans.FreeCancellationWindowHours` is dropped. Still **89** tables
   and **53** with the `Tenants` FK; `has-pending-model-changes` reports none, and the three backend
   suites ran green at it (7564 / 739 / 417).
+- **`20261003220403`** (2026-10-03, `fa24756ea`, branch `fix/settlement-followups-2026-10-03`):
+  `LoyaltyAccounts` maps the Postgres `xmin` system column as a concurrency token (`5064b2bdd`, owner
+  decision 5 — two loyalty writes for one customer must not lose an update). A system column, so
+  Npgsql emits no DDL; the delta against `20261003132430` is that one property in the Designer and
+  the snapshot. Still **89** tables and **53** with the `Tenants` FK; `has-pending-model-changes`
+  reports none, and the three backend suites ran green at it (7604 / 742 / 417).
 
-**The one owed drop belongs to `20261003132430`**, and the coordinator runs it right after
-`fix/settlement-snapshots-2026-10-03` merges: a DEV database whose
+**The one owed drop belongs to `20261003220403`** (it renews the one owed for `20261003132430`), and
+the coordinator runs it right after `fix/settlement-followups-2026-10-03` merges: a DEV database whose
 `__EFMigrationsHistory` records any earlier id replays the whole create script against tables that
 already exist. The legal texts need no extra step — every host seeds them at start, and since
 `b34dff07` a fresh Development database is seeded once more in the boot that migrates it (the factory

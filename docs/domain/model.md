@@ -323,7 +323,7 @@ membership is tenant-scoped. → [ADR-0059](/decisions/adr-0059)
 
 | Entity | |
 |---|---|
-| `LoyaltyAccount` | references `User` |
+| `LoyaltyAccount` | references `User`; the Postgres `xmin` is its concurrency token (since 2026-10-03), so a later write for the same customer is replayed on the committed total instead of overwriting it → [Points](/flows/loyalty-and-memberships#points) |
 | `LoyaltyTransaction` | — |
 | `LoyaltyTierConfig` | — ; **tenantless** since [ADR-0061](/decisions/adr-0061) D7 — the brand's programme, sold identically by every operator (the `MembershipPlan` sibling); unique `Tier` |
 | `ReferralCode` | references `User` |

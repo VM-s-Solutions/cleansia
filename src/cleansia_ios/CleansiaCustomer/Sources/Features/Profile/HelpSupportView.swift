@@ -2,6 +2,12 @@ import CleansiaCore
 import SwiftUI
 
 struct HelpSupportView: View {
+    /// The line the customer web footer prints and Android's Help dials. The address is
+    /// `CleansiaWeb.contactEmail`, the one support contact (owner ruling 2026-10-02).
+    static let supportPhone = "+420739788108"
+
+    @Environment(\.openURL) private var openURL
+    @Environment(\.snackbarController) private var snackbar
     private let faqs: [(question: String, answer: String)]
 
     /// `insurance` is the chosen market's ceiling; nil renders the answer without a figure.
@@ -36,31 +42,62 @@ struct HelpSupportView: View {
                 .font(CleansiaTypography.labelSmall)
                 .foregroundColor(CleansiaColors.onSurfaceVariant)
             VStack(spacing: 0) {
-                contactRow(icon: "envelope", title: L10n.Help.email, subtitle: CleansiaWeb.contactEmail)
+                contactRow(icon: "envelope", title: L10n.Help.email, subtitle: CleansiaWeb.contactEmail) {
+                    open(
+                        "mailto:\(CleansiaWeb.contactEmail)",
+                        orCopy: CleansiaWeb.contactEmail,
+                        notice: L10n.Help.emailUnavailable
+                    )
+                }
                 Divider().padding(.leading, Spacing.xl)
-                contactRow(icon: "phone", title: L10n.Help.call, subtitle: L10n.Help.callDesc)
+                contactRow(icon: "phone", title: L10n.Help.call, subtitle: L10n.Help.callDesc) {
+                    open("tel:\(Self.supportPhone)", orCopy: Self.supportPhone, notice: L10n.Help.callUnavailable)
+                }
             }
             .background(CleansiaColors.surface)
             .clipShape(RoundedRectangle(cornerRadius: CornerRadius.large))
         }
     }
 
-    private func contactRow(icon: String, title: String, subtitle: String) -> some View {
-        HStack(spacing: Spacing.m) {
-            Image(systemName: icon)
-                .foregroundColor(CleansiaColors.primary)
-                .frame(width: 24)
-            VStack(alignment: .leading, spacing: 2) {
-                Text(title)
-                    .font(CleansiaTypography.bodyLarge)
-                    .foregroundColor(CleansiaColors.onSurface)
-                Text(subtitle)
-                    .font(CleansiaTypography.labelSmall)
+    private func contactRow(
+        icon: String,
+        title: String,
+        subtitle: String,
+        action: @escaping () -> Void
+    ) -> some View {
+        Button(action: action) {
+            HStack(spacing: Spacing.m) {
+                Image(systemName: icon)
+                    .foregroundColor(CleansiaColors.primary)
+                    .frame(width: 24)
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(title)
+                        .font(CleansiaTypography.bodyLarge)
+                        .foregroundColor(CleansiaColors.onSurface)
+                    Text(subtitle)
+                        .font(CleansiaTypography.labelSmall)
+                        .foregroundColor(CleansiaColors.onSurfaceVariant)
+                }
+                Spacer()
+                Image(systemName: "chevron.right")
+                    .font(.system(size: 13, weight: .semibold))
                     .foregroundColor(CleansiaColors.onSurfaceVariant)
             }
-            Spacer()
+            .padding(Spacing.m)
+            .contentShape(Rectangle())
         }
-        .padding(Spacing.m)
+        .buttonStyle(.plain)
+    }
+
+    /// Hands the link to the system. When nothing on the device takes it — no mail app, no phone — the
+    /// value is copied and the customer told, as Android's Help does.
+    private func open(_ link: String, orCopy value: String, notice: String) {
+        guard let url = URL(string: link) else { return }
+        openURL(url) { accepted in
+            guard !accepted else { return }
+            UIPasteboard.general.string = value
+            snackbar.showInfo(notice)
+        }
     }
 
     private var faqSection: some View {

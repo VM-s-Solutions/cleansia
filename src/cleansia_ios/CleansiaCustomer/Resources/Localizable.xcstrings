@@ -12155,6 +12155,41 @@
         }
       }
     },
+    "help_call_unavailable": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Na tomto zařízení nelze volat. Číslo je zkopírované."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Calls aren't available on this device. Number copied."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "На этом устройстве нельзя позвонить. Номер скопирован."
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Na tomto zariadení sa nedá volať. Číslo je skopírované."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "На цьому пристрої не можна телефонувати. Номер скопійовано."
+          }
+        }
+      }
+    },
     "help_contact_title": {
       "extractionState": "stale",
       "localizations": {
@@ -12221,6 +12256,41 @@
           "stringUnit": {
             "state": "translated",
             "value": "Напишіть нам"
+          }
+        }
+      }
+    },
+    "help_email_unavailable": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nenašli jsme e-mailovou aplikaci. Adresa je zkopírovaná."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No e-mail app found. Address copied."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Почтовое приложение не найдено. Адрес скопирован."
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nenašli sme e-mailovú aplikáciu. Adresa je skopírovaná."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Не знайдено поштового застосунку. Адресу скопійовано."
           }
         }
       }

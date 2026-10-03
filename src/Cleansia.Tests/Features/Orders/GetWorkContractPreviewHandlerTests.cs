@@ -52,7 +52,7 @@ public sealed class GetWorkContractPreviewHandlerTests
     {
         _orderRepository.Setup(r => r.GetQueryable()).Returns(new[] { order }.AsQueryable().BuildMock());
         _accessService.Setup(s => s.GetCallerEmployeeIdAsync(It.IsAny<CancellationToken>())).ReturnsAsync(caller);
-        _factsBuilder.Setup(b => b.BuildAsync(OrderId, EmployeeId, It.IsAny<CancellationToken>())).ReturnsAsync(Facts);
+        _factsBuilder.Setup(b => b.BuildAsync(OrderId, EmployeeId, It.IsAny<CancellationToken>())).ReturnsAsync((Facts, null));
     }
 
     [Fact]

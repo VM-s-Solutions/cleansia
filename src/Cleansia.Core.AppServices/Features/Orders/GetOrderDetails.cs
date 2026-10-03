@@ -89,14 +89,18 @@ public class GetOrderDetails
 
                     // Prefer the persisted OrderEmployeePay row when the
                     // cleaner has actually been paid for this order — that's
-                    // the authoritative number. Fall back to a live estimate
-                    // from the pay-config repo for offers they could still
-                    // take and confirmed work that hasn't been paid yet.
+                    // the authoritative number. Then the reward their own
+                    // seat's contract for work states; otherwise a live
+                    // estimate from the pay configs.
                     var existingPay = await orderEmployeePayRepository.GetByOrderAndEmployeeAsync(
                         order.Id, callerEmployeeId, cancellationToken);
                     if (existingPay?.TotalPay != null)
                     {
                         estimatedCleanerPay = existingPay.TotalPay;
+                    }
+                    else if (OrderPayEstimator.ContractReward(order, callerEmployeeId) is { } contracted)
+                    {
+                        estimatedCleanerPay = contracted;
                     }
                     else
                     {

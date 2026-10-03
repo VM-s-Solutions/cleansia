@@ -101,8 +101,8 @@ public class GetWorkContractPreview
             }
 
             var employeeId = (await orderAccessService.GetCallerEmployeeIdAsync(cancellationToken))!;
-            var facts = await factsBuilder.BuildAsync(query.OrderId, employeeId, cancellationToken);
-            if (facts is null)
+            var built = await factsBuilder.BuildAsync(query.OrderId, employeeId, cancellationToken);
+            if (built is not { Facts: var facts })
             {
                 return BusinessResult.Failure<WorkContractDto>(
                     new Error(nameof(query.OrderId), BusinessErrorMessage.OrderNotFound));

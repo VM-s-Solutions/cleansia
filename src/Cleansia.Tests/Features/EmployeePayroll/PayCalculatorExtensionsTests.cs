@@ -400,6 +400,45 @@ public class PayCalculatorExtensionsTests
         Assert.Equal(172.5m, seat.totalPay);
     }
 
+    [Fact]
+    public void AggregateJobPay_Is_The_Summed_Base_And_Extras_And_The_Aggregated_Bounds()
+    {
+        // 840 + 2 extra rooms x 140 + 1 bathroom x 50 = 840 + 330; a second line adds 200 + 2 x 10. The
+        // floor is the higher minimum, 500, and the ceiling the lower maximum, 1500.
+        var configs = new[]
+        {
+            Config(basePay: 840m, extraPerRoom: 140m, extraPerBathroom: 50m, minimumPay: 500m, maximumPay: 2000m),
+            Config(basePay: 200m, extraPerRoom: 10m, minimumPay: 100m, maximumPay: 1500m),
+        };
+
+        Assert.Equal((1040m, 350m, 500m, 1500m), configs.AggregateJobPay(rooms: 3, bathrooms: 1));
+    }
+
+    public static TheoryData<int, bool, DirtinessLevel, decimal, decimal> SeatsAndBounds() => new()
+    {
+        { 1, true, DirtinessLevel.Normal, 0m, 0m },
+        { 2, true, DirtinessLevel.Increased, 0m, 0m },
+        { 2, false, DirtinessLevel.Increased, 0m, 0m },
+        { 3, true, DirtinessLevel.Heavy, 1500m, 0m },
+        { 3, false, DirtinessLevel.Heavy, 0m, 900m },
+    };
+
+    /// <summary>The figures a seat freezes reprice it exactly as the configs they came from did.</summary>
+    [Theory]
+    [MemberData(nameof(SeatsAndBounds))]
+    public void CalculateSeatPay_From_The_Job_Figures_Equals_The_Config_Overload(
+        int seats, bool firstSeat, DirtinessLevel level, decimal minimumPay, decimal maximumPay)
+    {
+        var configs = new[] { Config(basePay: 1000.01m, extraPerRoom: 33.37m, minimumPay: minimumPay, maximumPay: maximumPay) };
+        var (jobBasePay, jobExtrasPay, jobMinPay, jobMaxPay) = configs.AggregateJobPay(rooms: 4, bathrooms: 0);
+
+        var fromConfigs = configs.CalculateSeatPay(rooms: 4, bathrooms: 0, Rate(level), seats, firstSeat);
+        var fromFigures = PayCalculatorExtensions.CalculateSeatPay(
+            jobBasePay, jobExtrasPay, jobMinPay, jobMaxPay, Rate(level), seats, firstSeat);
+
+        Assert.Equal(fromConfigs, fromFigures);
+    }
+
     // ── CalculateSeatFeeShare — the crew's half of a collected fee, split like job pay ──
 
     [Fact]

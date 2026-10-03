@@ -174,12 +174,13 @@ public class GetPagedOrders
                 if (!isAdmin && !string.IsNullOrEmpty(callerEmployeeId))
                 {
                     // Pre-fetched dictionary lookup — no DB hit. Falls
-                    // back to the in-memory estimator (uses the
-                    // page-wide pay-config batch) when the cleaner
-                    // doesn't have a booked pay row yet.
+                    // back to the reward the caller's own seat was
+                    // contracted at, then to the in-memory estimator (uses
+                    // the page-wide pay-config batch).
                     decimal? estimatedCleanerPay = existingPayByOrderId.TryGetValue(order.Id, out var booked)
                         ? booked
-                        : OrderPayEstimator.Estimate(order, callerEmployeeId, serviceConfigsForCaller, packageConfigsForCaller);
+                        : OrderPayEstimator.ContractReward(order, callerEmployeeId)
+                            ?? OrderPayEstimator.Estimate(order, callerEmployeeId, serviceConfigsForCaller, packageConfigsForCaller);
                     dto = dto with { EstimatedCleanerPay = estimatedCleanerPay };
                 }
 

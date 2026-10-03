@@ -11,7 +11,8 @@ public sealed class WorkContractFactsBuilder(
     IOrderRepository orderRepository,
     IEmployeePayConfigRepository payConfigRepository) : IWorkContractFactsBuilder
 {
-    public async Task<WorkContractFacts?> BuildAsync(string orderId, string employeeId, CancellationToken cancellationToken)
+    public async Task<(WorkContractFacts Facts, (decimal jobBasePay, decimal jobExtrasPay, decimal jobMinPay, decimal jobMaxPay)? JobPay)?> BuildAsync(
+        string orderId, string employeeId, CancellationToken cancellationToken)
     {
         // Its own projection, never the take handler's tracked aggregate: that load is the seat-race
         // arbiter's and must not widen for a read.
@@ -55,11 +56,13 @@ public sealed class WorkContractFactsBuilder(
 
         // No rate in the order's currency is also what the pay run would find, and it writes nothing for
         // the seat; booking and pay-config deletion both refuse to leave a live order in that state.
-        var reward = OrderPayEstimator.Estimate(
-            serviceIds, packageIds, row.Rooms, row.Bathrooms, row.RequiredEmployees, row.DirtinessRate,
-            row.CurrencyId, employeeId, serviceConfigs, packageConfigs) ?? 0m;
+        var jobPay = OrderPayEstimator.JobPay(
+            serviceIds, packageIds, row.Rooms, row.Bathrooms, row.CurrencyId, employeeId, serviceConfigs, packageConfigs);
+        var reward = jobPay is { } priced
+            ? OrderPayEstimator.SeatReward(priced, row.DirtinessRate, row.RequiredEmployees)
+            : 0m;
 
-        return new WorkContractFacts(
+        var facts = new WorkContractFacts(
             OrderNumber: row.DisplayOrderNumber,
             CleaningDateTimeUtc: row.CleaningDateTime,
             EstimatedMinutes: row.EstimatedTime,
@@ -72,5 +75,7 @@ public sealed class WorkContractFactsBuilder(
             Services: row.Services,
             Packages: row.Packages,
             ExtraSlugs: row.ExtraSlugs);
+
+        return (facts, jobPay);
     }
 }

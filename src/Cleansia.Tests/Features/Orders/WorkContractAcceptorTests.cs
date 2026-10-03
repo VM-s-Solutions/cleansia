@@ -63,7 +63,7 @@ public sealed class WorkContractAcceptorTests
     public async Task Stage_Builds_The_Row_From_The_Seat_The_Text_The_Facts_And_The_Request()
     {
         var (order, seat) = ArrangeSeat();
-        _factsBuilder.Setup(b => b.BuildAsync(OrderId, EmployeeId, It.IsAny<CancellationToken>())).ReturnsAsync(Facts);
+        _factsBuilder.Setup(b => b.BuildAsync(OrderId, EmployeeId, It.IsAny<CancellationToken>())).ReturnsAsync((Facts, null));
         WorkContractAcceptance? added = null;
         _acceptanceRepository.Setup(r => r.Add(It.IsAny<WorkContractAcceptance>())).Callback<WorkContractAcceptance>(a => added = a);
 
@@ -87,10 +87,38 @@ public sealed class WorkContractAcceptorTests
     }
 
     [Fact]
+    public async Task Stage_Freezes_On_The_Seat_The_Job_Figures_Its_Reward_Was_Priced_From()
+    {
+        var (order, seat) = ArrangeSeat();
+        _factsBuilder.Setup(b => b.BuildAsync(OrderId, EmployeeId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync((Facts, (900m, 100m, 600m, 1200m)));
+
+        await CreateAcceptor(SessionWithDeviceClaim(null), new TestRequestMetadataProvider())
+            .StageAsync(order, seat, WorkContractTestData.TextIdEn, CancellationToken.None);
+
+        Assert.Equal(
+            (900m, 100m, 600m, 1200m),
+            (seat.JobBasePay, seat.JobExtrasPay, seat.JobMinPay, seat.JobMaxPay));
+    }
+
+    [Fact]
+    public async Task A_Reward_No_Rate_Priced_Freezes_Nothing_And_The_Seat_Stays_On_Live_Rates()
+    {
+        var (order, seat) = ArrangeSeat();
+        _factsBuilder.Setup(b => b.BuildAsync(OrderId, EmployeeId, It.IsAny<CancellationToken>())).ReturnsAsync((Facts, null));
+
+        await CreateAcceptor(SessionWithDeviceClaim(null), new TestRequestMetadataProvider())
+            .StageAsync(order, seat, WorkContractTestData.TextIdEn, CancellationToken.None);
+
+        Assert.Null(seat.JobBasePay);
+        Assert.Null(seat.FrozenPay(order.DirtinessRate, order.RequiredEmployees, firstSeat: true));
+    }
+
+    [Fact]
     public async Task The_Device_Is_The_Sessions_Claim_Or_Nothing_Never_The_Header()
     {
         var (order, seat) = ArrangeSeat();
-        _factsBuilder.Setup(b => b.BuildAsync(OrderId, EmployeeId, It.IsAny<CancellationToken>())).ReturnsAsync(Facts);
+        _factsBuilder.Setup(b => b.BuildAsync(OrderId, EmployeeId, It.IsAny<CancellationToken>())).ReturnsAsync((Facts, null));
 
         var acceptance = await CreateAcceptor(
                 SessionWithDeviceClaim(null),
@@ -105,7 +133,7 @@ public sealed class WorkContractAcceptorTests
     public async Task Stage_Adds_The_Audit_Index_Row_For_The_Cleaner_On_The_Orders_Company_And_Commits_Nothing()
     {
         var (order, seat) = ArrangeSeat();
-        _factsBuilder.Setup(b => b.BuildAsync(OrderId, EmployeeId, It.IsAny<CancellationToken>())).ReturnsAsync(Facts);
+        _factsBuilder.Setup(b => b.BuildAsync(OrderId, EmployeeId, It.IsAny<CancellationToken>())).ReturnsAsync((Facts, null));
         EmployeeActionAudit? audit = null;
         _auditRepository.Setup(r => r.Add(It.IsAny<EmployeeActionAudit>())).Callback<EmployeeActionAudit>(a => audit = a);
 
@@ -125,7 +153,7 @@ public sealed class WorkContractAcceptorTests
     public async Task Stage_Sends_The_Cleaner_A_Copy_Of_The_Contract_Once_The_Acceptance_Commits_Under_The_Orders_Company()
     {
         var (order, seat) = ArrangeSeat();
-        _factsBuilder.Setup(b => b.BuildAsync(OrderId, EmployeeId, It.IsAny<CancellationToken>())).ReturnsAsync(Facts);
+        _factsBuilder.Setup(b => b.BuildAsync(OrderId, EmployeeId, It.IsAny<CancellationToken>())).ReturnsAsync((Facts, null));
 
         var acceptance = await CreateAcceptor(SessionWithDeviceClaim(null), new TestRequestMetadataProvider())
             .StageAsync(order, seat, WorkContractTestData.TextIdEn, CancellationToken.None);
@@ -141,7 +169,7 @@ public sealed class WorkContractAcceptorTests
     public async Task A_Text_Of_Another_Document_Is_A_Programming_Error_Not_A_Row()
     {
         var (order, seat) = ArrangeSeat();
-        _factsBuilder.Setup(b => b.BuildAsync(OrderId, EmployeeId, It.IsAny<CancellationToken>())).ReturnsAsync(Facts);
+        _factsBuilder.Setup(b => b.BuildAsync(OrderId, EmployeeId, It.IsAny<CancellationToken>())).ReturnsAsync((Facts, null));
 
         await Assert.ThrowsAsync<InvalidOperationException>(() =>
             CreateAcceptor(SessionWithDeviceClaim(null), new TestRequestMetadataProvider())

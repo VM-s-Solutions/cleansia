@@ -2,6 +2,7 @@ using Cleansia.Core.AppServices.Features.Orders;
 using Cleansia.Core.AppServices.Services;
 using Cleansia.Core.Domain.EmployeePayroll;
 using Cleansia.Core.Domain.Enums;
+using Cleansia.Core.Domain.Extensions;
 using Cleansia.Core.Domain.Orders;
 using Cleansia.Core.Domain.Repositories;
 using Cleansia.Core.Domain.Services;
@@ -74,10 +75,30 @@ public sealed class WorkContractFactsBuilderTests
         var callers = await CreateBuilder().BuildAsync(OrderId, CallerId, CancellationToken.None);
         var others = await CreateBuilder().BuildAsync(OrderId, OtherId, CancellationToken.None);
 
-        Assert.Equal(400m, callers!.TotalPrice);
-        Assert.Equal(300m, others!.TotalPrice);
-        Assert.Equal("CZK", callers.CurrencyCode);
-        Assert.Equal("Standard clean", callers.Services.Single().Name);
+        Assert.Equal(400m, callers!.Value.Facts.TotalPrice);
+        Assert.Equal(300m, others!.Value.Facts.TotalPrice);
+        Assert.Equal("CZK", callers.Value.Facts.CurrencyCode);
+        Assert.Equal("Standard clean", callers.Value.Facts.Services.Single().Name);
+    }
+
+    /// <summary>
+    /// The figures the seat freezes are the named cleaner's own rate for the whole job, 800 against the
+    /// platform's 600, and repriced as a seat that is not the first they give back exactly the stated reward.
+    /// </summary>
+    [Theory]
+    [InlineData(CallerId, 800)]
+    [InlineData(OtherId, 600)]
+    public async Task The_Figures_Are_The_Named_Cleaners_Rates_And_Reprice_The_Stated_Reward(string employeeId, int jobBasePay)
+    {
+        _order.SetDirtinessSurcharge(DirtinessLevel.Heavy, 900m, 0.30m);
+
+        var (facts, jobPay) = (await CreateBuilder().BuildAsync(OrderId, employeeId, CancellationToken.None))!.Value;
+
+        var (basePay, extras, min, max) = jobPay!.Value;
+        Assert.Equal(((decimal)jobBasePay, 0m, 0m, 0m), (basePay, extras, min, max));
+        Assert.Equal(
+            facts.TotalPrice,
+            PayCalculatorExtensions.CalculateSeatPay(basePay, extras, min, max, 0.30m, seats: 2, firstSeat: false).totalPay);
     }
 
     /// <summary>
@@ -91,7 +112,7 @@ public sealed class WorkContractFactsBuilderTests
 
         var facts = await CreateBuilder().BuildAsync(OrderId, CallerId, CancellationToken.None);
 
-        Assert.Equal(640m, facts!.TotalPrice);
+        Assert.Equal(640m, facts!.Value.Facts.TotalPrice);
     }
 
     [Fact]
@@ -104,7 +125,8 @@ public sealed class WorkContractFactsBuilderTests
 
         var facts = await CreateBuilder().BuildAsync(OrderId, "emp-facts-unrated", CancellationToken.None);
 
-        Assert.Equal(0m, facts!.TotalPrice);
+        Assert.Equal(0m, facts!.Value.Facts.TotalPrice);
+        Assert.Null(facts.Value.JobPay);
     }
 
     [Fact]

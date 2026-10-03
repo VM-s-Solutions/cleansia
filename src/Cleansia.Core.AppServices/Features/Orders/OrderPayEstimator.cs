@@ -88,6 +88,54 @@ internal static class OrderPayEstimator
         string orderCurrencyId,
         string employeeId,
         IReadOnlyList<EmployeePayConfig> serviceConfigs,
+        IReadOnlyList<EmployeePayConfig> packageConfigs) =>
+        JobPay(orderServiceIds, orderPackageIds, rooms, bathrooms, orderCurrencyId, employeeId, serviceConfigs, packageConfigs) is { } jobPay
+            ? SeatReward(jobPay, dirtinessRate, requiredEmployees)
+            : null;
+
+    /// <summary>
+    /// The reward the employee's own seat was contracted at, from the figures frozen on it when its contract
+    /// for work formed. Null when they hold no seat or its contract has not formed, and the caller quotes the
+    /// live estimate instead.
+    /// </summary>
+    public static decimal? ContractReward(Order order, string employeeId) =>
+        order.AssignedEmployees
+            .FirstOrDefault(ae => ae.EmployeeId == employeeId)
+            ?.FrozenPay(order.DirtinessRate, order.RequiredEmployees, firstSeat: false)
+            ?.totalPay;
+
+    /// <summary>Projection-row twin of the entity overload, for the list handler.</summary>
+    public static decimal? ContractReward(OrderListRow order, string employeeId) =>
+        order.AssignedEmployees.FirstOrDefault(ae => ae.EmployeeId == employeeId)
+            is { JobBasePay: { } jobBasePay, JobExtrasPay: { } jobExtrasPay, JobMinPay: { } jobMinPay, JobMaxPay: { } jobMaxPay }
+            ? SeatReward((jobBasePay, jobExtrasPay, jobMinPay, jobMaxPay), order.DirtinessRate, order.RequiredEmployees)
+            : null;
+
+    /// <summary>
+    /// One seat's reward on a job priced at <paramref name="jobPay"/>, as the board and the contract for work
+    /// state it: the share of every seat but the first, which is paid the cent residue on top.
+    /// </summary>
+    internal static decimal SeatReward(
+        (decimal jobBasePay, decimal jobExtrasPay, decimal jobMinPay, decimal jobMaxPay) jobPay,
+        decimal dirtinessRate,
+        int requiredEmployees) =>
+        PayCalculatorExtensions.CalculateSeatPay(
+            jobPay.jobBasePay, jobPay.jobExtrasPay, jobPay.jobMinPay, jobPay.jobMaxPay,
+            dirtinessRate, requiredEmployees, firstSeat: false).totalPay;
+
+    /// <summary>
+    /// The four job figures the employee's rates in the order's currency price the order at, their own
+    /// override before the platform-wide row; what a seat freezes when its contract for work forms. Null when
+    /// no rate covers any of the order's services or packages.
+    /// </summary>
+    internal static (decimal jobBasePay, decimal jobExtrasPay, decimal jobMinPay, decimal jobMaxPay)? JobPay(
+        HashSet<string> orderServiceIds,
+        HashSet<string> orderPackageIds,
+        int rooms,
+        int bathrooms,
+        string orderCurrencyId,
+        string employeeId,
+        IReadOnlyList<EmployeePayConfig> serviceConfigs,
         IReadOnlyList<EmployeePayConfig> packageConfigs)
     {
         var matchedServiceConfigs = serviceConfigs
@@ -103,13 +151,6 @@ internal static class OrderPayEstimator
             .Select(g => g.FirstOrDefault(c => c.EmployeeId == employeeId) ?? g.First());
 
         var allConfigs = matchedServiceConfigs.Concat(matchedPackageConfigs).ToList();
-        if (allConfigs.Count == 0)
-        {
-            return null;
-        }
-
-        var (_, _, _, totalPay, _, _, _) = allConfigs.CalculateSeatPay(
-            rooms, bathrooms, dirtinessRate, requiredEmployees, firstSeat: false);
-        return totalPay;
+        return allConfigs.Count == 0 ? null : allConfigs.AggregateJobPay(rooms, bathrooms);
     }
 }

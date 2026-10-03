@@ -19,6 +19,8 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.ArrowBack
 import androidx.compose.material.icons.outlined.LocationOn
 import androidx.compose.material.icons.outlined.Schedule
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -47,7 +49,6 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import cz.cleansia.core.format.formatOrderDateRange
 import cz.cleansia.core.format.formatOrderPrice
-import cz.cleansia.core.ui.components.CleansiaDialog
 import cz.cleansia.core.ui.components.CleansiaPrimaryButton
 import cz.cleansia.core.ui.components.MascotEmptyState
 import cz.cleansia.core.ui.state.ActionState
@@ -110,16 +111,21 @@ fun PendingOffersScreen(
     }
 
     pendingDecline?.let { offer ->
-        CleansiaDialog(
-            onDismiss = { pendingDecline = null },
-            title = stringResource(R.string.offer_decline_title),
-            message = stringResource(R.string.offer_decline_body),
-            confirmLabel = stringResource(R.string.offer_decline_cta),
-            dismissLabel = stringResource(R.string.cancel),
-            destructive = true,
-            onConfirm = {
-                pendingDecline = null
-                viewModel.decline(offer)
+        AlertDialog(
+            onDismissRequest = { pendingDecline = null },
+            title = { Text(stringResource(R.string.offer_decline_title)) },
+            text = { Text(stringResource(R.string.offer_decline_body)) },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        pendingDecline = null
+                        viewModel.decline(offer)
+                    },
+                    colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error),
+                ) { Text(stringResource(R.string.offer_decline_cta)) }
+            },
+            dismissButton = {
+                TextButton(onClick = { pendingDecline = null }) { Text(stringResource(R.string.cancel)) }
             },
         )
     }
@@ -218,14 +224,19 @@ fun PendingOffersScreenContent(
 @Composable
 fun OfferRefusalDialog(refusal: OfferRefusal, onDismiss: () -> Unit) {
     val copy = offerRefusalCopy(refusal.action)
-    CleansiaDialog(
-        onDismiss = onDismiss,
-        title = refusal.displayOrderNumber
-            ?.let { stringResource(copy.titleRes) + " · $it" }
-            ?: stringResource(copy.titleRes),
-        message = stringResource(copy.bodyRes, refusal.reason),
-        confirmLabel = stringResource(R.string.ok),
-        onConfirm = onDismiss,
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = {
+            Text(
+                refusal.displayOrderNumber
+                    ?.let { stringResource(copy.titleRes) + " · $it" }
+                    ?: stringResource(copy.titleRes),
+            )
+        },
+        text = { Text(stringResource(copy.bodyRes, refusal.reason)) },
+        confirmButton = {
+            TextButton(onClick = onDismiss) { Text(stringResource(R.string.ok)) }
+        },
     )
 }
 

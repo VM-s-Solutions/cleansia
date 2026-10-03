@@ -46,9 +46,6 @@ class PaymentsViewModel @Inject constructor(
     private val _removeState = MutableStateFlow<ActionState>(ActionState.Idle)
     val removeState: StateFlow<ActionState> = _removeState.asStateFlow()
 
-    private val _removed = MutableSharedFlow<String>(extraBufferCapacity = 1)
-    val removed: SharedFlow<String> = _removed.asSharedFlow()
-
     private val _payState = MutableStateFlow<ActionState>(ActionState.Idle)
     val payState: StateFlow<ActionState> = _payState.asStateFlow()
 
@@ -84,15 +81,15 @@ class PaymentsViewModel @Inject constructor(
             when (val result = savedCardRepository.remove(card.id)) {
                 is ApiResult.Success -> {
                     _removeState.value = ActionState.Idle
-                    _removed.emit(card.id)
                     snackbar.showSuccessKey(R.string.payments_card_removed)
                     (_state.value as? PaymentsUiState.Loaded)?.let { loaded ->
                         _state.value = loaded.copy(cards = loaded.cards.filterNot { it.id == card.id })
                     }
                 }
                 is ApiResult.Error -> {
+                    // The confirm closed on the tap, so the snackbar is where a refusal is said; the card stays.
                     surfaceError(result.error)
-                    _removeState.value = ActionState.Error(appContext.getString(R.string.payments_card_remove_retry_hint))
+                    _removeState.value = ActionState.Idle
                 }
             }
         }

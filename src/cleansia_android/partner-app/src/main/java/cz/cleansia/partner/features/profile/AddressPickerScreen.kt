@@ -20,6 +20,7 @@ import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -63,6 +64,7 @@ import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.mapbox.geojson.Point
@@ -195,7 +197,7 @@ fun AddressPickerScreen(
     }
 
     // How much of the map's bottom edge the confirm card covers, nav bar included; measured, since
-    // the card grows with the address and the font scale.
+    // the card follows the font scale. It keeps one height while the map moves (see ConfirmCard).
     val density = LocalDensity.current
     var cardCoverHeight by remember { mutableStateOf(0.dp) }
 
@@ -351,30 +353,46 @@ private fun ConfirmCard(
                 modifier = Modifier.size(20.dp),
             )
             Spacer(Modifier.width(8.dp))
-            Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    text = when {
-                        lookingUp -> stringResource(R.string.address_picker_looking_up)
-                        resolved == null -> stringResource(R.string.address_picker_drag_to_pick)
-                        else -> resolved.street.ifBlank { resolved.formatted }
-                    },
-                    style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.SemiBold),
-                    color = MaterialTheme.colorScheme.onSurface,
-                    maxLines = 1,
-                )
-                if (resolved != null && !lookingUp) {
-                    val parts = listOfNotNull(
-                        resolved.zipCode.takeIf { it.isNotBlank() },
-                        resolved.city.takeIf { it.isNotBlank() },
-                        resolved.country.takeIf { it.isNotBlank() },
+            // Two lines tall in every state, the street over its city line, so the lookup that starts on
+            // each camera move and ends with an address never changes the card's height: its top edge,
+            // and the Mapbox ornaments lifted above it, stay put while the map moves. Measured from the
+            // two lines' heights in sp, so it follows the font scale. Every line keeps to one, as on iOS:
+            // a hint that wrapped (a long locale, or a large font) would outgrow it.
+            val addressLines = with(LocalDensity.current) {
+                MaterialTheme.typography.titleSmall.lineHeight.toDp() + MaterialTheme.typography.bodySmall.lineHeight.toDp()
+            }
+            Box(
+                modifier = Modifier
+                    .weight(1f)
+                    .heightIn(min = addressLines),
+                contentAlignment = Alignment.CenterStart,
+            ) {
+                Column {
+                    Text(
+                        text = when {
+                            lookingUp -> stringResource(R.string.address_picker_looking_up)
+                            resolved == null -> stringResource(R.string.address_picker_drag_to_pick)
+                            else -> resolved.street.ifBlank { resolved.formatted }
+                        },
+                        style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.SemiBold),
+                        color = MaterialTheme.colorScheme.onSurface,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
                     )
-                    if (parts.isNotEmpty()) {
-                        Text(
-                            text = parts.joinToString(" · "),
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            maxLines = 1,
+                    if (resolved != null && !lookingUp) {
+                        val parts = listOfNotNull(
+                            resolved.zipCode.takeIf { it.isNotBlank() },
+                            resolved.city.takeIf { it.isNotBlank() },
+                            resolved.country.takeIf { it.isNotBlank() },
                         )
+                        if (parts.isNotEmpty()) {
+                            Text(
+                                text = parts.joinToString(" · "),
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                maxLines = 1,
+                            )
+                        }
                     }
                 }
             }

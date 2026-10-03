@@ -29,13 +29,15 @@ import androidx.compose.material.icons.outlined.Devices
 import androidx.compose.material.icons.outlined.Laptop
 import androidx.compose.material.icons.outlined.PhoneIphone
 import androidx.compose.material.icons.outlined.Smartphone
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -49,7 +51,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import cz.cleansia.core.ui.components.CleansiaDialog
 import cz.cleansia.core.ui.components.CleansiaPrimaryButton
 import cz.cleansia.core.ui.state.ActionState
 import cz.cleansia.core.ui.theme.Spacing
@@ -76,31 +77,68 @@ fun DevicesScreen(
     val state by viewModel.state.collectAsStateWithLifecycle()
     val revokeState by viewModel.revokeState.collectAsStateWithLifecycle()
     var deviceToRevoke by remember { mutableStateOf<UserDeviceDto?>(null) }
-
-    LaunchedEffect(viewModel) { viewModel.revoked.collect { deviceToRevoke = null } }
+    // The device a confirmed revoke is running for, so its row can show the spinner the dialog used to.
+    var revokingId by remember { mutableStateOf<String?>(null) }
 
     DevicesScreenContent(
         state = state,
-        revokeState = revokeState,
-        deviceToRevoke = deviceToRevoke,
+        revokingId = revokingId.takeIf { revokeState is ActionState.Submitting },
         onNavigateBack = onNavigateBack,
         onRetry = viewModel::load,
         onRevokeRequested = { deviceToRevoke = it },
-        onRevokeConfirmed = { viewModel.revoke(it) },
-        onRevokeDismissed = { deviceToRevoke = null },
     )
+
+    // Self-revoke gets distinct copy: revoking THIS device signs you out now. The system confirm closes
+    // on the tap; the row shows the revoke running and a refusal is the snackbar's.
+    deviceToRevoke?.let { device ->
+        AlertDialog(
+            onDismissRequest = { deviceToRevoke = null },
+            title = {
+                Text(
+                    stringResource(
+                        if (device.isCurrent) R.string.devices_self_revoke_dialog_title else R.string.devices_revoke_dialog_title,
+                    ),
+                )
+            },
+            text = {
+                Text(
+                    if (device.isCurrent) {
+                        stringResource(R.string.devices_self_revoke_dialog_message)
+                    } else {
+                        stringResource(R.string.devices_revoke_dialog_message, platformLabel(device.platform))
+                    },
+                )
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        deviceToRevoke = null
+                        revokingId = device.id
+                        viewModel.revoke(device)
+                    },
+                    colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error),
+                ) {
+                    Text(
+                        stringResource(
+                            if (device.isCurrent) R.string.devices_self_revoke_dialog_confirm else R.string.devices_revoke_dialog_confirm,
+                        ),
+                    )
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { deviceToRevoke = null }) { Text(stringResource(R.string.cancel)) }
+            },
+        )
+    }
 }
 
 @Composable
 fun DevicesScreenContent(
     state: DevicesUiState,
-    revokeState: ActionState,
-    deviceToRevoke: UserDeviceDto?,
+    revokingId: String?,
     onNavigateBack: () -> Unit,
     onRetry: () -> Unit,
     onRevokeRequested: (UserDeviceDto) -> Unit,
-    onRevokeConfirmed: (UserDeviceDto) -> Unit,
-    onRevokeDismissed: () -> Unit,
 ) {
     val statusBarTop = WindowInsets.statusBars.asPaddingValues().calculateTopPadding()
 
@@ -162,6 +200,8 @@ fun DevicesScreenContent(
                         items(state.devices, key = { it.id }) { device ->
                             DeviceCard(
                                 device = device,
+                                revoking = revokingId == device.id,
+                                canRevoke = revokingId == null,
                                 onRevoke = { onRevokeRequested(device) },
                             )
                         }
@@ -170,42 +210,16 @@ fun DevicesScreenContent(
             }
         }
     }
-
-    deviceToRevoke?.let { device ->
-        CleansiaDialog(
-            onDismiss = onRevokeDismissed,
-            title = stringResource(
-                if (device.isCurrent) R.string.devices_self_revoke_dialog_title else R.string.devices_revoke_dialog_title,
-            ),
-            message = if (device.isCurrent) {
-                // Revoking your own device signs you out immediately — say so.
-                stringResource(R.string.devices_self_revoke_dialog_message)
-            } else {
-                stringResource(R.string.devices_revoke_dialog_message, platformLabel(device.platform))
-            },
-            icon = Icons.AutoMirrored.Outlined.Logout,
-            destructive = true,
-            confirmLabel = stringResource(
-                if (device.isCurrent) R.string.devices_self_revoke_dialog_confirm else R.string.devices_revoke_dialog_confirm,
-            ),
-            confirmEnabled = revokeState !is ActionState.Submitting,
-            onConfirm = { onRevokeConfirmed(device) },
-            dismissLabel = stringResource(R.string.cancel),
-            content = (revokeState as? ActionState.Error)?.let { error ->
-                {
-                    Text(
-                        text = error.message,
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.error,
-                    )
-                }
-            },
-        )
-    }
 }
 
 @Composable
-private fun DeviceCard(device: UserDeviceDto, onRevoke: () -> Unit) {
+private fun DeviceCard(
+    device: UserDeviceDto,
+    revoking: Boolean,
+    // One revoke at a time: the view model drops a second while the first is in flight.
+    canRevoke: Boolean,
+    onRevoke: () -> Unit,
+) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -245,18 +259,28 @@ private fun DeviceCard(device: UserDeviceDto, onRevoke: () -> Unit) {
         // The current device is revocable too: it reads as "sign out this device now"
         // (distinct icon + dialog copy) and ends the session at 0s instead of leaving a zombie
         // session for the ≤30s revocation directory to catch.
-        IconButton(onClick = onRevoke) {
-            Icon(
-                imageVector = if (device.isCurrent) {
-                    Icons.AutoMirrored.Outlined.Logout
-                } else {
-                    Icons.Outlined.DeleteOutline
-                },
-                contentDescription = stringResource(
-                    if (device.isCurrent) R.string.devices_self_revoke_action else R.string.devices_revoke_action,
-                ),
-                tint = MaterialTheme.colorScheme.error,
-            )
+        if (revoking) {
+            Box(Modifier.size(48.dp), contentAlignment = Alignment.Center) {
+                CircularProgressIndicator(
+                    modifier = Modifier.size(22.dp),
+                    strokeWidth = 2.dp,
+                    color = MaterialTheme.colorScheme.error,
+                )
+            }
+        } else {
+            IconButton(onClick = onRevoke, enabled = canRevoke) {
+                Icon(
+                    imageVector = if (device.isCurrent) {
+                        Icons.AutoMirrored.Outlined.Logout
+                    } else {
+                        Icons.Outlined.DeleteOutline
+                    },
+                    contentDescription = stringResource(
+                        if (device.isCurrent) R.string.devices_self_revoke_action else R.string.devices_revoke_action,
+                    ),
+                    tint = MaterialTheme.colorScheme.error.copy(alpha = if (canRevoke) 1f else 0.4f),
+                )
+            }
         }
     }
 }

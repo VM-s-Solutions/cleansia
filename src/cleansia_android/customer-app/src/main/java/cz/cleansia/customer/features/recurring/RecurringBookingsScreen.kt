@@ -29,6 +29,8 @@ import androidx.compose.material.icons.outlined.Pause
 import androidx.compose.material.icons.outlined.PlayArrow
 import androidx.compose.material.icons.outlined.Repeat
 import androidx.compose.material.icons.outlined.Schedule
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
@@ -56,7 +58,6 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import cz.cleansia.core.ui.components.CleansiaDialog
 import cz.cleansia.core.ui.components.SudsRefreshIndicator
 import cz.cleansia.customer.R
 import cz.cleansia.customer.core.recurring.RecurrenceFrequency
@@ -607,14 +608,19 @@ private fun DeleteScheduleDialog(
         "$cadence · $day · ${it.timeOfDay}"
     }
 
-    CleansiaDialog(
-        onDismiss = onDismiss,
-        title = stringResource(R.string.recurring_bookings_delete_dialog_title),
-        destructive = true,
-        confirmLabel = stringResource(R.string.recurring_bookings_delete_dialog_confirm),
-        onConfirm = onConfirm,
-        dismissLabel = stringResource(R.string.common_back),
-        content = {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(stringResource(R.string.recurring_bookings_delete_dialog_title)) },
+        confirmButton = {
+            TextButton(
+                onClick = onConfirm,
+                colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error),
+            ) { Text(stringResource(R.string.recurring_bookings_delete_dialog_confirm)) }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) { Text(stringResource(R.string.common_back)) }
+        },
+        text = {
             Column {
                 if (!scheduleSummary.isNullOrBlank()) {
                     Text(

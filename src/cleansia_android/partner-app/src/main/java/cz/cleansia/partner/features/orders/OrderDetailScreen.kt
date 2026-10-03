@@ -24,9 +24,10 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.ArrowBack
-import androidx.compose.material.icons.outlined.Payments
 import androidx.compose.material.icons.outlined.Place
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.BottomSheetScaffold
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -69,7 +70,6 @@ import com.mapbox.maps.viewannotation.viewAnnotationOptions
 import cz.cleansia.core.format.formatOrderPrice
 import cz.cleansia.core.location.CleansiaMapPin
 import cz.cleansia.core.location.CleansiaMapStyle
-import cz.cleansia.core.ui.components.CleansiaDialog
 import cz.cleansia.core.ui.components.CleansiaErrorState
 import cz.cleansia.core.ui.theme.Spacing
 import cz.cleansia.partner.R
@@ -173,16 +173,21 @@ fun OrderDetailScreen(
                 )
 
                 if (decliningOffer) {
-                    CleansiaDialog(
-                        onDismiss = { decliningOffer = false },
-                        title = stringResource(R.string.offer_decline_title),
-                        message = stringResource(R.string.offer_decline_body),
-                        confirmLabel = stringResource(R.string.offer_decline_cta),
-                        dismissLabel = stringResource(R.string.cancel),
-                        destructive = true,
-                        onConfirm = {
-                            decliningOffer = false
-                            viewModel.declinePreferredOffer()
+                    AlertDialog(
+                        onDismissRequest = { decliningOffer = false },
+                        title = { Text(stringResource(R.string.offer_decline_title)) },
+                        text = { Text(stringResource(R.string.offer_decline_body)) },
+                        confirmButton = {
+                            TextButton(
+                                onClick = {
+                                    decliningOffer = false
+                                    viewModel.declinePreferredOffer()
+                                },
+                                colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error),
+                            ) { Text(stringResource(R.string.offer_decline_cta)) }
+                        },
+                        dismissButton = {
+                            TextButton(onClick = { decliningOffer = false }) { Text(stringResource(R.string.cancel)) }
                         },
                     )
                 }
@@ -203,35 +208,42 @@ fun OrderDetailScreen(
                     )
                 }
 
+                // The confirm closes on the tap; the button that raised it shows the collection
+                // running, and the view model refuses a second mutation while it does.
                 if (confirmingCash) {
-                    CleansiaDialog(
-                        onDismiss = { confirmingCash = false },
-                        title = stringResource(
-                            R.string.partner_order_mark_cash_collected_confirm_title,
-                        ),
-                        message = cashDueLabel(
-                            s.order.totalPrice,
-                            s.order.currency?.code ?: s.order.currency?.symbol,
-                        )?.let {
-                            stringResource(
-                                R.string.partner_order_mark_cash_collected_confirm_message,
-                                it,
-                            )
-                        } ?: stringResource(
-                            R.string.partner_order_mark_cash_collected_confirm_message_no_amount,
-                        ),
-                        icon = Icons.Outlined.Payments,
-                        confirmLabel = stringResource(
-                            R.string.partner_order_mark_cash_collected_confirm_action,
-                        ),
-                        onConfirm = {
-                            confirmingCash = false
-                            viewModel.markCashCollected()
+                    AlertDialog(
+                        onDismissRequest = { confirmingCash = false },
+                        title = {
+                            Text(stringResource(R.string.partner_order_mark_cash_collected_confirm_title))
                         },
-                        dismissLabel = stringResource(R.string.cancel),
-                        // Belt to the button's own spinner: an in-flight
-                        // collection must not be confirmable twice.
-                        confirmEnabled = inFlightAction != OrderAction.MarkCashCollected,
+                        text = {
+                            Text(
+                                cashDueLabel(
+                                    s.order.totalPrice,
+                                    s.order.currency?.code ?: s.order.currency?.symbol,
+                                )?.let {
+                                    stringResource(
+                                        R.string.partner_order_mark_cash_collected_confirm_message,
+                                        it,
+                                    )
+                                } ?: stringResource(
+                                    R.string.partner_order_mark_cash_collected_confirm_message_no_amount,
+                                ),
+                            )
+                        },
+                        confirmButton = {
+                            TextButton(
+                                onClick = {
+                                    confirmingCash = false
+                                    viewModel.markCashCollected()
+                                },
+                            ) {
+                                Text(stringResource(R.string.partner_order_mark_cash_collected_confirm_action))
+                            }
+                        },
+                        dismissButton = {
+                            TextButton(onClick = { confirmingCash = false }) { Text(stringResource(R.string.cancel)) }
+                        },
                     )
                 }
             }
@@ -269,12 +281,13 @@ fun OrderDetailScreen(
     }
 
     removalReason?.let { reason ->
-        CleansiaDialog(
-            onDismiss = viewModel::dismissRemovalReason,
-            title = stringResource(R.string.order_removal_title),
-            message = stringResource(R.string.order_removal_message, reason),
-            confirmLabel = stringResource(R.string.ok),
-            onConfirm = viewModel::dismissRemovalReason,
+        AlertDialog(
+            onDismissRequest = viewModel::dismissRemovalReason,
+            title = { Text(stringResource(R.string.order_removal_title)) },
+            text = { Text(stringResource(R.string.order_removal_message, reason)) },
+            confirmButton = {
+                TextButton(onClick = viewModel::dismissRemovalReason) { Text(stringResource(R.string.ok)) }
+            },
         )
     }
 }

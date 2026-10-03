@@ -30,7 +30,6 @@ class PaymentsCopyTest {
         "payments_card_remove_message",
         "payments_card_remove_confirm",
         "payments_card_removed",
-        "payments_card_remove_retry_hint",
         "payments_error_message",
         "payments_error_retry",
     )

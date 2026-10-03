@@ -22,9 +22,10 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Add
 import androidx.compose.material.icons.outlined.Delete
-import androidx.compose.material.icons.outlined.DeleteOutline
 import androidx.compose.material.icons.outlined.Edit
 import androidx.compose.material.icons.outlined.ReportProblem
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
@@ -35,6 +36,7 @@ import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -51,7 +53,6 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import cz.cleansia.core.ui.components.CleansiaDialog
 import cz.cleansia.core.ui.components.CleansiaOutlinedButton
 import cz.cleansia.core.ui.components.CleansiaPrimaryButton
 import cz.cleansia.core.ui.components.CleansiaTextField
@@ -257,7 +258,6 @@ fun NotesAndIssuesSection(
     deletingNote?.let { note ->
         ConfirmDeleteDialog(
             message = stringResource(R.string.delete_note_confirm),
-            isWorking = uiState.mutatingId == note.id,
             onDismiss = { deletingNote = null },
             onConfirm = {
                 note.id?.let(viewModel::deleteNote)
@@ -268,7 +268,6 @@ fun NotesAndIssuesSection(
     deletingIssue?.let { issue ->
         ConfirmDeleteDialog(
             message = stringResource(R.string.delete_issue_confirm),
-            isWorking = uiState.mutatingId == issue.id,
             onDismiss = { deletingIssue = null },
             onConfirm = {
                 issue.id?.let(viewModel::deleteIssue)
@@ -395,27 +394,29 @@ private fun EntryRow(
     }
 }
 
+/**
+ * The system confirm closes on the tap; the row it was raised from shows the deletion running, and the
+ * row's own actions stay hidden until it ends.
+ */
 @Composable
 private fun ConfirmDeleteDialog(
     message: String,
-    isWorking: Boolean,
     onDismiss: () -> Unit,
     onConfirm: () -> Unit,
 ) {
-    // Custom CleansiaDialog — same shape, halo, and choreography as
-    // the profile logout confirm in the customer app, so destructive
-    // confirms read consistently across the platform instead of
-    // dropping the user into a stock Material AlertDialog.
-    CleansiaDialog(
-        onDismiss = { if (!isWorking) onDismiss() },
-        title = stringResource(R.string.delete),
-        message = message,
-        icon = Icons.Outlined.DeleteOutline,
-        destructive = true,
-        confirmLabel = stringResource(R.string.delete),
-        confirmEnabled = !isWorking,
-        onConfirm = onConfirm,
-        dismissLabel = stringResource(R.string.cancel),
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(stringResource(R.string.delete)) },
+        text = { Text(message) },
+        confirmButton = {
+            TextButton(
+                onClick = onConfirm,
+                colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error),
+            ) { Text(stringResource(R.string.delete)) }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) { Text(stringResource(R.string.cancel)) }
+        },
     )
 }
 

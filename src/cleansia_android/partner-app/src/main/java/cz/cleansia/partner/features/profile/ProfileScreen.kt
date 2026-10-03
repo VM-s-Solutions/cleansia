@@ -45,11 +45,14 @@ import androidx.compose.material.icons.outlined.MyLocation
 import androidx.compose.material.icons.outlined.Person
 import androidx.compose.material.icons.outlined.Phone
 import androidx.compose.material.icons.outlined.Place
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -68,7 +71,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import cz.cleansia.core.ui.components.CleansiaDialog
 import cz.cleansia.core.ui.theme.Spacing
 import cz.cleansia.partner.R
 import cz.cleansia.partner.api.model.ContractStatus
@@ -324,18 +326,24 @@ fun ProfileScreen(
     }
 
     if (showLogoutDialog) {
-        CleansiaDialog(
-            onDismiss = { showLogoutDialog = false },
-            title = stringResource(R.string.profile_logout_dialog_title),
-            message = stringResource(R.string.profile_logout_dialog_message),
-            icon = Icons.AutoMirrored.Outlined.Logout,
-            destructive = true,
-            confirmLabel = stringResource(R.string.profile_logout_dialog_confirm),
-            onConfirm = {
-                showLogoutDialog = false
-                viewModel.signOut()
+        AlertDialog(
+            onDismissRequest = { showLogoutDialog = false },
+            title = { Text(stringResource(R.string.profile_logout_dialog_title)) },
+            text = { Text(stringResource(R.string.profile_logout_dialog_message)) },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        showLogoutDialog = false
+                        viewModel.signOut()
+                    },
+                    colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error),
+                ) { Text(stringResource(R.string.profile_logout_dialog_confirm)) }
             },
-            dismissLabel = stringResource(R.string.profile_logout_dialog_cancel),
+            dismissButton = {
+                TextButton(onClick = { showLogoutDialog = false }) {
+                    Text(stringResource(R.string.profile_logout_dialog_cancel))
+                }
+            },
         )
     }
 }

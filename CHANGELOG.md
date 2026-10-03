@@ -595,8 +595,19 @@ need backfilling.
   into a system alert, and a replacement or a deletion request asks for its text the same way. The
   dialog closes when you tap, the screen shows that it is working, and an error appears at the bottom
   of the screen. A deletion request sent without a reason is refused with *This field is required.*
-  Android is unchanged. (Owner ruling 2026-10-01; the card removal, device and document dialogs, owner
-  remark 2026-10-03.)
+  (Owner ruling 2026-10-01; the card removal, device and document dialogs, owner remark 2026-10-03.)
+
+- **Customer and cleaner Android — every confirmation is the phone's own dialog, as on iOS.** Signing
+  out, deleting the account, cancelling or switching Plus, deleting a schedule, renaming or deleting a
+  saved address, removing a saved card, revoking a device, and for a cleaner confirming cash, deleting
+  a note or an issue and declining or refusing an offer now ask with Android's standard dialog instead
+  of the app's card; the words are the same. A cleaner uploading a document picks its
+  type from a list and then types the description into a second dialog, and a replacement or a
+  deletion request asks for its text in one; the deletion request's button stays off until a reason
+  is typed. The dialog closes when you tap, the screen shows that it is working (a card being removed
+  or a device being revoked shows a spinner on its row), and an error appears at the bottom of the
+  screen. A cleaner signing out from the screen shown when the app cannot reach the server sees the
+  dialog close at once, and is not asked again while the sign-out finishes. (Owner remark 2026-10-03.)
 
 - **Customer and cleaner iOS — a short list drops down from its field.** The dispute reason, the
   cleaner's sign-up market and the document type open as a menu on the field instead of a sheet over
@@ -994,11 +1005,12 @@ need backfilling.
   the step's name, not halfway down the details: level with the name on iOS, and level with the name
   and the line under it on Android. (Owner remark 2026-10-03.)
 
-- **Customer Android and iOS — the address picker holds still while it finds the address.** Each time
-  the map stopped, the card under it shrank to one line while it looked the address up, then grew back
-  to two. On iOS the map, the pin and the card jumped with it, and on Android the card and the Mapbox
-  logo bobbed. The card now keeps its height, in booking and in the saved addresses. (Owner remark
-  2026-10-03.)
+- **Customer and cleaner Android and iOS — the address picker holds still while it finds the
+  address.** Each time the map stopped, the card under it shrank to one line while it looked the
+  address up, then grew back to two. On iOS the map, the pin and the card jumped with it, and on
+  Android the card and the Mapbox logo bobbed. The card now keeps its height: for a customer in
+  booking and in the saved addresses, and for a cleaner in the address on their profile. (Owner
+  remarks 2026-10-03.)
 
 - **Customer iOS — the credit sheet's *Got it* button is no longer cut off.** The sheet that explains
   credit, opened from Rewards and from Profile, took half the screen whatever it held. That was too

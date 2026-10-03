@@ -1286,7 +1286,6 @@
     <string name="devices_revoke_dialog_message">%1$s bude odhlásené a prestane dostávať upozornenia.</string>
     <string name="devices_revoke_dialog_confirm">Odobrať</string>
     <string name="devices_revoke_success">Zariadenie odobraté</string>
-    <string name="devices_revoke_retry_hint">Nepodarilo sa odobrať – skúste to znova.</string>
     <string name="devices_self_revoke_action">Odhlásiť toto zariadenie</string>
     <string name="devices_self_revoke_dialog_title">Odhlásiť toto zariadenie?</string>
     <string name="devices_self_revoke_dialog_message">Toto zariadenie bude odobraté a budete okamžite odhlásení.</string>

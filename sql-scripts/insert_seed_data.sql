@@ -658,7 +658,7 @@ VALUES (
     '11000',
     (SELECT "Id" FROM public."Countries" WHERE "IsoCode" = 'CZE' LIMIT 1),
     '+420 123 456 789',
-    'info@cleansia.cz',
+    'support@cleansia.cz',
     'https://www.cleansia.cz',
     'Česká spořitelna',
     '123456789/0800',

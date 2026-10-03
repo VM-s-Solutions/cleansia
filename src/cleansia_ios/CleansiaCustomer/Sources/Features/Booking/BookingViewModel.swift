@@ -57,6 +57,8 @@ final class BookingViewModel: ViewModel {
     private let scheduler: AnySchedulerOf<DispatchQueue>
 
     var lastQuoteRequest: QuoteRequest?
+    /// When the sheet last closed on this draft; the band its time was in then is the band it was quoted in.
+    private var draftLeftAt: Date?
     /// The currency of the card PaymentSheet is saving; the booking waits for that card to land.
     var guaranteeCurrencyCode: String?
     private var quoteTask: Task<Void, Never>?
@@ -483,6 +485,46 @@ final class BookingViewModel: ViewModel {
             }
         }
     }
+}
+
+/// The resumed draft. In this file because it reads the private record of when the draft was left.
+extension BookingViewModel {
+    /// The sheet closed on the draft: swiped away, or closed for the profile or an order.
+    func draftLeft(at now: Date = Date()) {
+        draftLeftAt = now
+    }
+
+    /// A plain open resumes the draft, possibly hours after it was left, and only the server would refuse
+    /// a time that has since passed or come inside the lead time. Re-checked against the When step's own
+    /// slot rules (`BookingTimeSlots.draftTimeStillHolds`): a time that no longer holds is cleared — with
+    /// its day, when the day is past — and the wizard goes back to the When step if it was past it. True
+    /// when it cleared one, so the caller says why. Android's `revalidateResumedTime` is the twin.
+    @discardableResult
+    func revalidateResumedTime(now: Date = Date(), calendar: Calendar = .current) -> Bool {
+        let draft = state
+        guard !BookingTimeSlots.draftTimeStillHolds(
+            on: draft.selectedInstant,
+            time: draft.selectedTime,
+            leftAt: draftLeftAt,
+            now: now,
+            calendar: calendar
+        ) else { return false }
+        let dayGone = draft.selectedInstant.map {
+            calendar.startOfDay(for: $0) < calendar.startOfDay(for: now)
+        } ?? true
+        update { current in
+            var next = current
+            next.selectedTime = ""
+            next.selectedInstant = nil
+            if dayGone { next.selectedDate = "" }
+            return next
+        }
+        currentStep = min(currentStep, Self.whenStep)
+        return true
+    }
+
+    /// Where a resumed draft goes back to when its time no longer holds.
+    private static let whenStep = 3
 }
 
 extension BookingState {

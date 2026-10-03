@@ -22,6 +22,11 @@ extension CustomerShellView {
     /// (a package, the quick-size slide, order again) replaces it.
     func openBooking() {
         bookingVM.update { BookingPrefill.hydratedWithPreferred($0, preferred: preferredAddress) }
+        // A resumed draft's time may have passed while it was away. Only a plain open re-checks it: a seeded
+        // one starts afresh, and a notice about a time it throws away would be noise.
+        if bookingVM.revalidateResumedTime() {
+            snackbar.showInfo(L10n.Booking.draftTimeChanged)
+        }
         model.book()
     }
 

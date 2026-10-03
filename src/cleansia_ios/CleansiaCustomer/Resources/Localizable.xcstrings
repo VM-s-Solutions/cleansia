@@ -2631,6 +2631,41 @@
         }
       }
     },
+    "booking_draft_time_changed": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zatímco jste byli pryč, vybraný čas přestal být dostupný nebo se změnila jeho cena. Vyberte prosím čas znovu."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "While you were away, the time you picked became unavailable or changed price. Please pick a time again."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Пока вас не было, выбранное время стало недоступным или изменилась его цена. Пожалуйста, выберите время снова."
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kým ste boli preč, vybraný čas prestal byť dostupný alebo sa zmenila jeho cena. Vyberte si, prosím, čas znova."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Поки вас не було, обраний час став недоступним або змінив ціну. Будь ласка, оберіть час знову."
+          }
+        }
+      }
+    },
     "booking_early_performance_toggle": {
       "extractionState": "manual",
       "localizations": {

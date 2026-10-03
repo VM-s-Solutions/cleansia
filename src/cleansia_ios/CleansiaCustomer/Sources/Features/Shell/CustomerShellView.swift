@@ -78,7 +78,10 @@ struct CustomerShellView: View {
             }
         }
         .tint(CleansiaColors.primary)
-        .sheet(isPresented: $model.isBookingPresented, onDismiss: { bookingFromFab = false }, content: {
+        .sheet(isPresented: $model.isBookingPresented, onDismiss: {
+            bookingFromFab = false
+            bookingVM.draftLeft()
+        }, content: {
             BookingSheetView(
                 vm: bookingVM,
                 geocoding: container.geocodingService,

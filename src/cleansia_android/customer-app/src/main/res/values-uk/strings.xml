@@ -1386,7 +1386,6 @@
     <string name="payments_card_remove_message">Під час наступного замовлення з оплатою готівкою ми знову попросимо картку.</string>
     <string name="payments_card_remove_confirm">Видалити</string>
     <string name="payments_card_removed">Картку видалено</string>
-    <string name="payments_card_remove_retry_hint">Не вдалося видалити картку. Спробуйте ще раз.</string>
     <string name="payments_error_message">Не вдалося завантажити платежі. Перевірте з’єднання та спробуйте ще раз.</string>
     <string name="payments_error_retry">Спробувати ще раз</string>
     <!-- ── Ваші пристрої ── -->
@@ -1407,7 +1406,6 @@
     <string name="devices_revoke_dialog_message">%1$s буде відключено від облікового запису, і він перестане отримувати сповіщення.</string>
     <string name="devices_revoke_dialog_confirm">Видалити</string>
     <string name="devices_revoke_success">Пристрій видалено</string>
-    <string name="devices_revoke_retry_hint">Не вдалося видалити – спробуйте ще раз.</string>
     <string name="devices_self_revoke_action">Вийти з цього пристрою</string>
     <string name="devices_self_revoke_dialog_title">Вийти з цього пристрою?</string>
     <string name="devices_self_revoke_dialog_message">Цей пристрій буде видалено, і ви одразу вийдете з облікового запису.</string>

@@ -5,6 +5,7 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -18,6 +19,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.ArrowBack
 import androidx.compose.material.icons.outlined.Add
@@ -26,6 +28,8 @@ import androidx.compose.material.icons.outlined.SwapHoriz
 import androidx.compose.material.icons.outlined.Description
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FloatingActionButton
@@ -35,6 +39,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
@@ -51,7 +56,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import cz.cleansia.core.ui.components.CleansiaDialog
 import cz.cleansia.core.ui.components.CleansiaErrorState
 import cz.cleansia.core.ui.components.CleansiaTextField
 import cz.cleansia.core.ui.theme.Spacing
@@ -260,7 +264,6 @@ fun DocumentsSectionScreen(
 
     deletionTarget?.let { documentId ->
         RequestDeletionDialog(
-            isSubmitting = deletingId == documentId,
             onDismiss = { deletionTarget = null },
             onConfirm = { reason ->
                 deletionTarget = null
@@ -364,8 +367,9 @@ private fun RequirementsCard(requirements: List<MyDocumentRequirementDto>) {
 }
 
 /**
- * Confirms a replacement. The message names the file, matching the upload dialog — the thing most
- * worth checking before confirming is that the right file was picked.
+ * Confirms a replacement, with an optional description in the dialog itself. The message names the
+ * file, matching the upload dialog — the thing most worth checking before confirming is that the right
+ * file was picked. Save waits while another upload is still sending, which the view model would drop.
  */
 @Composable
 private fun ReplaceDialog(
@@ -376,55 +380,69 @@ private fun ReplaceDialog(
 ) {
     var description by remember { mutableStateOf("") }
 
-    CleansiaDialog(
-        onDismiss = onDismiss,
-        title = stringResource(R.string.document_replace_title),
-        message = stringResource(R.string.document_replace_message, pending.fileName),
-        icon = Icons.Outlined.SwapHoriz,
-        confirmLabel = stringResource(R.string.document_replace),
-        onConfirm = { onConfirm(description) },
-        confirmEnabled = !isUploading,
-        dismissLabel = stringResource(R.string.cancel),
-    ) {
-        CleansiaTextField(
-            value = description,
-            onValueChange = { description = it },
-            label = stringResource(R.string.description_optional),
-            enabled = !isUploading,
-        )
-    }
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(stringResource(R.string.document_replace_title)) },
+        text = {
+            Column {
+                Text(stringResource(R.string.document_replace_message, pending.fileName))
+                Spacer(Modifier.height(Spacing.S))
+                CleansiaTextField(
+                    value = description,
+                    onValueChange = { description = it },
+                    label = stringResource(R.string.description_optional),
+                )
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = { onConfirm(description) }, enabled = !isUploading) {
+                Text(stringResource(R.string.document_replace))
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) { Text(stringResource(R.string.cancel)) }
+        },
+    )
 }
 
 /**
  * Confirms a deletion REQUEST. The reason is required by the server and required here — without one
- * an admin is being asked to rule on nothing, which is the whole point of routing this past a person.
+ * an admin is being asked to rule on nothing, which is the whole point of routing this past a person —
+ * so the request button waits until one is typed. The dialog closes on the tap; the row shows the
+ * request running.
  */
 @Composable
 private fun RequestDeletionDialog(
-    isSubmitting: Boolean,
     onDismiss: () -> Unit,
     onConfirm: (String) -> Unit,
 ) {
     var reason by remember { mutableStateOf("") }
 
-    CleansiaDialog(
-        onDismiss = onDismiss,
-        title = stringResource(R.string.document_request_deletion_title),
-        message = stringResource(R.string.document_request_deletion_message),
-        icon = Icons.Outlined.Delete,
-        destructive = true,
-        confirmLabel = stringResource(R.string.document_request_deletion),
-        onConfirm = { onConfirm(reason.trim()) },
-        confirmEnabled = reason.isNotBlank() && !isSubmitting,
-        dismissLabel = stringResource(R.string.cancel),
-    ) {
-        CleansiaTextField(
-            value = reason,
-            onValueChange = { reason = it },
-            label = stringResource(R.string.document_deletion_reason),
-            enabled = !isSubmitting,
-        )
-    }
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(stringResource(R.string.document_request_deletion_title)) },
+        text = {
+            Column {
+                Text(stringResource(R.string.document_request_deletion_message))
+                Spacer(Modifier.height(Spacing.S))
+                CleansiaTextField(
+                    value = reason,
+                    onValueChange = { reason = it },
+                    label = stringResource(R.string.document_deletion_reason),
+                )
+            }
+        },
+        confirmButton = {
+            TextButton(
+                onClick = { onConfirm(reason.trim()) },
+                enabled = reason.isNotBlank(),
+                colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error),
+            ) { Text(stringResource(R.string.document_request_deletion)) }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) { Text(stringResource(R.string.cancel)) }
+        },
+    )
 }
 
 @Composable
@@ -555,6 +573,12 @@ private fun documentTypeLabel(type: DocumentType?): String = when (type) {
     null -> "—"
 }
 
+/**
+ * A fresh upload asks twice, as on iOS: first which kind of document the file is (required — the
+ * server files it under that type), then an optional description, with the choice and the file named
+ * above the field so the cleaner sees what is about to be sent. Cancel at either step drops the pick.
+ * Save waits while another upload is still sending, which the view model would drop.
+ */
 @Composable
 private fun UploadDialog(
     pending: PendingUpload,
@@ -564,39 +588,60 @@ private fun UploadDialog(
 ) {
     var selectedType by remember { mutableStateOf<DocumentType?>(null) }
     var description by remember { mutableStateOf("") }
+    val type = selectedType
 
-    // Same labels the document rows show — not remembered, because
-    // documentTypeLabel reads string resources and so must run inside
-    // composition. Ten lookups per recomposition of an open dialog is free.
-    val typeOptions: List<Pair<DocumentType, String>> =
-        documentTypeOptions.map { it to documentTypeLabel(it) }
-
-    CleansiaDialog(
-        onDismiss = onDismiss,
-        title = stringResource(R.string.upload_document),
-        message = pending.fileName,
-        confirmLabel = stringResource(R.string.save),
-        onConfirm = { selectedType?.let { onConfirm(it, description) } },
-        confirmEnabled = selectedType != null && !isUploading,
-        dismissLabel = stringResource(R.string.cancel),
-    ) {
-        Column {
-            PickerDropdown(
-                selectedId = selectedType?.value?.toString(),
-                options = typeOptions.map { (t, label) -> t.value.toString() to label },
-                onSelected = { id ->
-                    selectedType = DocumentType.values().firstOrNull { it.value.toString() == id }
-                },
-                label = stringResource(R.string.document_type),
-                enabled = !isUploading,
-            )
-            Spacer(Modifier.height(Spacing.S))
-            CleansiaTextField(
-                value = description,
-                onValueChange = { description = it },
-                label = stringResource(R.string.description_optional),
-                enabled = !isUploading,
-            )
-        }
+    if (type == null) {
+        AlertDialog(
+            onDismissRequest = onDismiss,
+            title = { Text(stringResource(R.string.document_type)) },
+            text = {
+                // Ten types do not fit a short phone at a large font scale, so the list scrolls inside
+                // the dialog. Labels are the ones the document rows show.
+                Column(Modifier.verticalScroll(rememberScrollState())) {
+                    Text(pending.fileName)
+                    Spacer(Modifier.height(Spacing.XS))
+                    documentTypeOptions.forEach { option ->
+                        Text(
+                            text = documentTypeLabel(option),
+                            style = MaterialTheme.typography.bodyLarge,
+                            color = MaterialTheme.colorScheme.onSurface,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable { selectedType = option }
+                                .padding(vertical = Spacing.S),
+                        )
+                    }
+                }
+            },
+            confirmButton = {},
+            dismissButton = {
+                TextButton(onClick = onDismiss) { Text(stringResource(R.string.cancel)) }
+            },
+        )
+    } else {
+        AlertDialog(
+            onDismissRequest = onDismiss,
+            title = { Text(stringResource(R.string.upload_document)) },
+            text = {
+                Column {
+                    Text(documentTypeLabel(type))
+                    Text(pending.fileName)
+                    Spacer(Modifier.height(Spacing.S))
+                    CleansiaTextField(
+                        value = description,
+                        onValueChange = { description = it },
+                        label = stringResource(R.string.description_optional),
+                    )
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = { onConfirm(type, description) }, enabled = !isUploading) {
+                    Text(stringResource(R.string.save))
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = onDismiss) { Text(stringResource(R.string.cancel)) }
+            },
+        )
     }
 }

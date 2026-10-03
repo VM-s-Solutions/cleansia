@@ -56,7 +56,6 @@ class PaymentsViewModelTest {
         receivables = mockk()
         snackbar = mockk(relaxed = true)
         appContext = mockk(relaxed = true)
-        every { appContext.getString(R.string.payments_card_remove_retry_hint) } returns "retry hint"
         every { appContext.getString(R.string.error_generic_server) } returns "server"
         every { appContext.getString(R.string.error_generic_unknown) } returns "unknown"
         every { appContext.packageName } returns "cz.cleansia.customer"
@@ -95,24 +94,23 @@ class PaymentsViewModelTest {
     }
 
     @Test
-    fun `removing the card drops it from the page and closes the dialog`() = runTest {
+    fun `removing the card drops it from the page`() = runTest {
         coEvery { savedCards.remove("card-1") } returns ApiResult.Success(Unit)
         val vm = viewModel()
         advanceUntilIdle()
 
-        vm.removed.test {
-            vm.remove(card)
-            advanceUntilIdle()
-            assertEquals("card-1", awaitItem())
-        }
+        vm.remove(card)
+        assertEquals(ActionState.Submitting, vm.removeState.value)
+        advanceUntilIdle()
 
         assertEquals(PaymentsUiState.Loaded(receivables = listOf(fee), cards = emptyList()), vm.state.value)
         assertEquals(ActionState.Idle, vm.removeState.value)
         verify(exactly = 1) { snackbar.showSuccessKey(R.string.payments_card_removed) }
     }
 
+    /** The system confirm has already closed, so the refusal is the snackbar's and the row is free again. */
     @Test
-    fun `a refused removal keeps the card and says so in the dialog`() = runTest {
+    fun `a refused removal keeps the card and says so in the snackbar`() = runTest {
         coEvery { savedCards.remove("card-1") } returns ApiResult.Error(serverDown)
         val vm = viewModel()
         advanceUntilIdle()
@@ -120,8 +118,9 @@ class PaymentsViewModelTest {
         vm.remove(card)
         advanceUntilIdle()
 
-        assertEquals(ActionState.Error("retry hint"), vm.removeState.value)
+        assertEquals(ActionState.Idle, vm.removeState.value)
         assertEquals(PaymentsUiState.Loaded(receivables = listOf(fee), cards = listOf(card)), vm.state.value)
+        verify(exactly = 1) { snackbar.showError("Server unavailable.") }
     }
 
     @Test

@@ -54,6 +54,8 @@ import androidx.compose.material.icons.outlined.MyLocation
 import androidx.compose.material.icons.outlined.Search
 import androidx.compose.material.icons.outlined.Star
 import androidx.compose.material.icons.outlined.WarningAmber
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
@@ -64,6 +66,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Switch
 import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -100,7 +103,6 @@ import cz.cleansia.core.location.CleansiaMapStyle
 import cz.cleansia.core.location.ReverseGeocodingService
 import cz.cleansia.core.serviceareas.CityNameMatch
 import cz.cleansia.core.snackbar.SnackbarController
-import cz.cleansia.core.ui.components.CleansiaDialog
 import cz.cleansia.core.ui.components.CleansiaPrimaryButton
 import cz.cleansia.core.ui.theme.Poppins
 import cz.cleansia.customer.R
@@ -358,17 +360,22 @@ private fun ListPane(
     }
 
     deleting?.let { target ->
-        CleansiaDialog(
-            onDismiss = { deleting = null },
-            title = stringResource(R.string.address_manager_delete_title),
-            message = stringResource(R.string.address_manager_delete_body, target.oneLine),
-            destructive = true,
-            confirmLabel = stringResource(R.string.common_delete),
-            onConfirm = {
-                onDelete(target.id)
-                deleting = null
+        AlertDialog(
+            onDismissRequest = { deleting = null },
+            title = { Text(stringResource(R.string.address_manager_delete_title)) },
+            text = { Text(stringResource(R.string.address_manager_delete_body, target.oneLine)) },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        deleting = null
+                        onDelete(target.id)
+                    },
+                    colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error),
+                ) { Text(stringResource(R.string.common_delete)) }
             },
-            dismissLabel = stringResource(R.string.common_cancel),
+            dismissButton = {
+                TextButton(onClick = { deleting = null }) { Text(stringResource(R.string.common_cancel)) }
+            },
         )
     }
 }
@@ -508,14 +515,18 @@ private fun RenameDialog(
     onConfirm: (String) -> Unit,
 ) {
     var value by remember { mutableStateOf(initialLabel) }
-    CleansiaDialog(
-        onDismiss = onDismiss,
-        title = stringResource(R.string.address_manager_rename_title),
-        confirmLabel = stringResource(R.string.common_save),
-        onConfirm = { if (value.isNotBlank()) onConfirm(value.trim()) },
-        confirmEnabled = value.isNotBlank(),
-        dismissLabel = stringResource(R.string.common_cancel),
-        content = { LabelTextField(value = value, onValueChange = { value = it }) },
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(stringResource(R.string.address_manager_rename_title)) },
+        text = { LabelTextField(value = value, onValueChange = { value = it }) },
+        confirmButton = {
+            TextButton(onClick = { onConfirm(value.trim()) }, enabled = value.isNotBlank()) {
+                Text(stringResource(R.string.common_save))
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) { Text(stringResource(R.string.common_cancel)) }
+        },
     )
 }
 

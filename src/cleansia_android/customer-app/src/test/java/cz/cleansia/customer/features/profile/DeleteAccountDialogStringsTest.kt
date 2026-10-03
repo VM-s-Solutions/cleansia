@@ -159,7 +159,7 @@ class DeleteAccountDialogStringsTest {
         val screen = File(resDir.parentFile, "java/cz/cleansia/customer/features/profile/DeleteAccountScreen.kt")
         assertTrue("DeleteAccountScreen.kt not found next to res/", screen.isFile)
         val source = screen.readText()
-        assertTrue(source.contains("message = stringResource(R.string.delete_account_dialog_message)"))
+        assertTrue(source.contains("text = { Text(stringResource(R.string.delete_account_dialog_message)) }"))
         assertTrue(source.contains("stringResource(R.string.delete_account_subtitle)"))
     }
 

@@ -32,6 +32,7 @@ import androidx.compose.material.icons.automirrored.outlined.ArrowBack
 import androidx.compose.material.icons.outlined.CameraAlt
 import androidx.compose.material.icons.outlined.DeleteOutline
 import androidx.compose.material.icons.outlined.PhotoLibrary
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DatePicker
 import androidx.compose.material3.DatePickerDialog
@@ -68,7 +69,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import cz.cleansia.customer.R
 import cz.cleansia.customer.core.user.CurrentUser
-import cz.cleansia.core.ui.components.CleansiaDialog
 import cz.cleansia.core.ui.components.CleansiaPrimaryButton
 import cz.cleansia.customer.ui.theme.CleansiaTheme
 import cz.cleansia.core.ui.theme.Poppins
@@ -338,12 +338,13 @@ private fun AvatarPreview(
     }
 
     if (pickerUnavailable) {
-        CleansiaDialog(
-            onDismiss = { pickerUnavailable = false },
-            title = stringResource(R.string.profile_avatar_picker_unavailable_title),
-            message = stringResource(R.string.profile_avatar_picker_unavailable_message),
-            confirmLabel = stringResource(R.string.common_ok),
-            onConfirm = { pickerUnavailable = false },
+        AlertDialog(
+            onDismissRequest = { pickerUnavailable = false },
+            title = { Text(stringResource(R.string.profile_avatar_picker_unavailable_title)) },
+            text = { Text(stringResource(R.string.profile_avatar_picker_unavailable_message)) },
+            confirmButton = {
+                TextButton(onClick = { pickerUnavailable = false }) { Text(stringResource(R.string.common_ok)) }
+            },
         )
     }
 }

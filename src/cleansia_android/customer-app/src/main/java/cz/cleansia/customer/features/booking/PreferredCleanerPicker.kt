@@ -21,10 +21,12 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.KeyboardArrowRight
 import androidx.compose.material.icons.outlined.Close
 import androidx.compose.material.icons.outlined.PersonOutline
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -41,7 +43,6 @@ import androidx.compose.ui.unit.dp
 import cz.cleansia.customer.R
 import cz.cleansia.customer.core.memberships.benefitsPaused
 import cz.cleansia.customer.core.orders.ServingCleanerDto
-import cz.cleansia.core.ui.components.CleansiaDialog
 
 /**
  * Plus-only picker that lets the customer pre-request a cleaner they've
@@ -155,12 +156,11 @@ fun PreferredCleanerPicker(
     }
 
     if (dialogOpen) {
-        CleansiaDialog(
-            onDismiss = { dialogOpen = false },
-            title = stringResource(R.string.booking_preferred_cleaner_dialog_title),
-            confirmLabel = stringResource(R.string.common_back),
-            onConfirm = { dialogOpen = false },
-            content = {
+        // A pick closes it; Back leaves the choice as it was.
+        AlertDialog(
+            onDismissRequest = { dialogOpen = false },
+            title = { Text(stringResource(R.string.booking_preferred_cleaner_dialog_title)) },
+            text = {
                 LazyColumn(
                     verticalArrangement = Arrangement.spacedBy(8.dp),
                     modifier = Modifier.height(320.dp),
@@ -176,6 +176,9 @@ fun PreferredCleanerPicker(
                         )
                     }
                 }
+            },
+            confirmButton = {
+                TextButton(onClick = { dialogOpen = false }) { Text(stringResource(R.string.common_back)) }
             },
         )
     }

@@ -26,7 +26,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.KeyboardArrowRight
-import androidx.compose.material.icons.automirrored.outlined.Logout
 import androidx.compose.material.icons.outlined.Cancel
 import androidx.compose.material.icons.outlined.CheckCircle
 import androidx.compose.material.icons.outlined.Description
@@ -38,12 +37,15 @@ import androidx.compose.material.icons.outlined.Mail
 import androidx.compose.material.icons.outlined.Person
 import androidx.compose.material.icons.outlined.Refresh
 import androidx.compose.material.icons.outlined.VerifiedUser
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
 import androidx.compose.runtime.Composable
@@ -68,7 +70,6 @@ import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.Lifecycle
 import cz.cleansia.core.settings.AppLocale
-import cz.cleansia.core.ui.components.CleansiaDialog
 import cz.cleansia.core.ui.components.SudsRefreshIndicator
 import cz.cleansia.core.ui.theme.Spacing
 import cz.cleansia.partner.LocalAppSettings
@@ -239,18 +240,22 @@ fun RegistrationLockScreen(
     }
 
     if (confirmingSignOut) {
-        CleansiaDialog(
-            onDismiss = { confirmingSignOut = false },
-            title = stringResource(R.string.registration_lock_sign_out_confirm_title),
-            message = stringResource(R.string.registration_lock_sign_out_confirm_message),
-            icon = Icons.AutoMirrored.Outlined.Logout,
-            destructive = true,
-            confirmLabel = stringResource(R.string.registration_lock_sign_out),
-            onConfirm = {
-                confirmingSignOut = false
-                viewModel.signOut(onSignedOut)
+        AlertDialog(
+            onDismissRequest = { confirmingSignOut = false },
+            title = { Text(stringResource(R.string.registration_lock_sign_out_confirm_title)) },
+            text = { Text(stringResource(R.string.registration_lock_sign_out_confirm_message)) },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        confirmingSignOut = false
+                        viewModel.signOut(onSignedOut)
+                    },
+                    colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error),
+                ) { Text(stringResource(R.string.registration_lock_sign_out)) }
             },
-            dismissLabel = stringResource(R.string.cancel),
+            dismissButton = {
+                TextButton(onClick = { confirmingSignOut = false }) { Text(stringResource(R.string.cancel)) }
+            },
         )
     }
 }

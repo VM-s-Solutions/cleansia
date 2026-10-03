@@ -25,6 +25,8 @@ import androidx.compose.material.icons.outlined.LocalOffer
 import androidx.compose.material.icons.outlined.Repeat
 import androidx.compose.material.icons.outlined.Schedule
 import androidx.compose.material.icons.outlined.WorkspacePremium
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -47,7 +49,6 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import cz.cleansia.customer.R
 import cz.cleansia.customer.core.memberships.ExpressWaiverStatus
 import cz.cleansia.customer.core.memberships.benefitsPaused
-import cz.cleansia.core.ui.components.CleansiaDialog
 import java.time.Instant
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
@@ -122,46 +123,64 @@ fun MembershipManagementCard(
     }
 
     if (showCancelDialog) {
-        CleansiaDialog(
-            onDismiss = { showCancelDialog = false },
-            title = stringResource(R.string.membership_cancel_dialog_title),
-            message = when {
-                membership?.benefitsPaused == true -> stringResource(R.string.membership_cancel_dialog_message_now)
-                trialEndText != null -> stringResource(R.string.membership_cancel_dialog_message_trial, trialEndText)
-                else -> stringResource(R.string.membership_cancel_dialog_message)
+        AlertDialog(
+            onDismissRequest = { showCancelDialog = false },
+            title = { Text(stringResource(R.string.membership_cancel_dialog_title)) },
+            text = {
+                Text(
+                    when {
+                        membership?.benefitsPaused == true -> stringResource(R.string.membership_cancel_dialog_message_now)
+                        trialEndText != null -> stringResource(R.string.membership_cancel_dialog_message_trial, trialEndText)
+                        else -> stringResource(R.string.membership_cancel_dialog_message)
+                    },
+                )
             },
-            destructive = true,
-            confirmLabel = stringResource(R.string.membership_cancel_dialog_confirm),
-            onConfirm = {
-                showCancelDialog = false
-                viewModel.cancel()
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        showCancelDialog = false
+                        viewModel.cancel()
+                    },
+                    colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error),
+                ) { Text(stringResource(R.string.membership_cancel_dialog_confirm)) }
             },
-            dismissLabel = stringResource(R.string.common_back),
+            dismissButton = {
+                TextButton(onClick = { showCancelDialog = false }) { Text(stringResource(R.string.common_back)) }
+            },
         )
     }
 
     if (showSwitchDialog && yearlyPlan != null) {
-        CleansiaDialog(
-            onDismiss = { showSwitchDialog = false },
-            title = stringResource(R.string.membership_switch_dialog_title),
-            message = if (trialEndText != null) {
-                stringResource(
-                    R.string.membership_switch_dialog_message_trial,
-                    trialEndText,
-                    formatOrderPrice(yearlyPlan.price, yearlyPlan.currencyCode),
-                )
-            } else {
-                stringResource(
-                    R.string.membership_switch_dialog_message,
-                    formatOrderPrice(yearlyPlan.price, yearlyPlan.currencyCode),
+        AlertDialog(
+            onDismissRequest = { showSwitchDialog = false },
+            title = { Text(stringResource(R.string.membership_switch_dialog_title)) },
+            text = {
+                Text(
+                    if (trialEndText != null) {
+                        stringResource(
+                            R.string.membership_switch_dialog_message_trial,
+                            trialEndText,
+                            formatOrderPrice(yearlyPlan.price, yearlyPlan.currencyCode),
+                        )
+                    } else {
+                        stringResource(
+                            R.string.membership_switch_dialog_message,
+                            formatOrderPrice(yearlyPlan.price, yearlyPlan.currencyCode),
+                        )
+                    },
                 )
             },
-            confirmLabel = stringResource(R.string.membership_switch_dialog_confirm),
-            onConfirm = {
-                showSwitchDialog = false
-                viewModel.swapPlan(yearlyPlan.code)
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        showSwitchDialog = false
+                        viewModel.swapPlan(yearlyPlan.code)
+                    },
+                ) { Text(stringResource(R.string.membership_switch_dialog_confirm)) }
             },
-            dismissLabel = stringResource(R.string.common_back),
+            dismissButton = {
+                TextButton(onClick = { showSwitchDialog = false }) { Text(stringResource(R.string.common_back)) }
+            },
         )
     }
 }

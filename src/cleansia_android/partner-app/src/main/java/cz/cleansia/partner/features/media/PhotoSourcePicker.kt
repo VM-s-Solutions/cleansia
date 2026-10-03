@@ -19,11 +19,13 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.PhotoCamera
 import androidx.compose.material.icons.outlined.PhotoLibrary
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -38,7 +40,6 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.core.content.FileProvider
-import cz.cleansia.core.ui.components.CleansiaDialog
 import cz.cleansia.partner.R
 import java.io.File
 
@@ -168,31 +169,37 @@ fun rememberPhotoSourcePicker(
     }
 
     if (showPermissionDialog) {
-        CleansiaDialog(
-            onDismiss = { showPermissionDialog = false },
-            title = stringResource(R.string.camera_permission_title),
-            message = stringResource(R.string.camera_permission_message),
-            confirmLabel = stringResource(R.string.open_settings),
-            dismissLabel = stringResource(R.string.cancel),
-            onConfirm = {
-                showPermissionDialog = false
-                context.startActivity(
-                    Intent(
-                        Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
-                        Uri.fromParts("package", context.packageName, null),
-                    ),
-                )
+        AlertDialog(
+            onDismissRequest = { showPermissionDialog = false },
+            title = { Text(stringResource(R.string.camera_permission_title)) },
+            text = { Text(stringResource(R.string.camera_permission_message)) },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        showPermissionDialog = false
+                        context.startActivity(
+                            Intent(
+                                Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
+                                Uri.fromParts("package", context.packageName, null),
+                            ),
+                        )
+                    },
+                ) { Text(stringResource(R.string.open_settings)) }
+            },
+            dismissButton = {
+                TextButton(onClick = { showPermissionDialog = false }) { Text(stringResource(R.string.cancel)) }
             },
         )
     }
 
     if (showNoCameraDialog) {
-        CleansiaDialog(
-            onDismiss = { showNoCameraDialog = false },
-            title = stringResource(R.string.camera_unavailable),
-            message = stringResource(R.string.job_photos_camera_only),
-            confirmLabel = stringResource(android.R.string.ok),
-            onConfirm = { showNoCameraDialog = false },
+        AlertDialog(
+            onDismissRequest = { showNoCameraDialog = false },
+            title = { Text(stringResource(R.string.camera_unavailable)) },
+            text = { Text(stringResource(R.string.job_photos_camera_only)) },
+            confirmButton = {
+                TextButton(onClick = { showNoCameraDialog = false }) { Text(stringResource(android.R.string.ok)) }
+            },
         )
     }
 

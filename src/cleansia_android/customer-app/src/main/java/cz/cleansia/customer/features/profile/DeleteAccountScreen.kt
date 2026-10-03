@@ -25,13 +25,15 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.ArrowBack
 import androidx.compose.material.icons.outlined.DeleteForever
-import androidx.compose.material.icons.outlined.WarningAmber
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LocalTextStyle
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
@@ -50,7 +52,6 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import cz.cleansia.customer.R
 import cz.cleansia.core.ui.components.CleansiaDestructiveButton
-import cz.cleansia.core.ui.components.CleansiaDialog
 import cz.cleansia.core.ui.theme.Poppins
 
 /**
@@ -230,22 +231,25 @@ fun DeleteAccountScreen(
         }
     }
 
+    // The confirm closes on the tap; the sticky button shows the deletion running, and the VM refuses a
+    // second one while it does.
     if (confirming) {
-        CleansiaDialog(
-            onDismiss = { confirming = false },
-            title = stringResource(R.string.delete_account_dialog_title),
-            message = stringResource(R.string.delete_account_dialog_message),
-            icon = Icons.Outlined.WarningAmber,
-            destructive = true,
-            confirmLabel = stringResource(R.string.delete_account_dialog_confirm),
-            onConfirm = {
-                confirming = false
-                onConfirmDelete()
+        AlertDialog(
+            onDismissRequest = { confirming = false },
+            title = { Text(stringResource(R.string.delete_account_dialog_title)) },
+            text = { Text(stringResource(R.string.delete_account_dialog_message)) },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        confirming = false
+                        onConfirmDelete()
+                    },
+                    colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error),
+                ) { Text(stringResource(R.string.delete_account_dialog_confirm)) }
             },
-            dismissLabel = stringResource(R.string.common_cancel),
-            // The VM already guards re-entry; this stops the second tap ever
-            // reaching it, so the dialog cannot flash a second confirm.
-            confirmEnabled = !loading,
+            dismissButton = {
+                TextButton(onClick = { confirming = false }) { Text(stringResource(R.string.common_cancel)) }
+            },
         )
     }
 }

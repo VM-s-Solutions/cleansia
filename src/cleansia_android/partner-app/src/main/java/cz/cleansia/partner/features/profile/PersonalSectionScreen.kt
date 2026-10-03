@@ -15,6 +15,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.CalendarMonth
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.DatePicker
 import androidx.compose.material3.DatePickerDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -39,7 +40,6 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.ui.layout.ContentScale
 import coil3.compose.AsyncImage
-import cz.cleansia.core.ui.components.CleansiaDialog
 import cz.cleansia.core.ui.components.CleansiaTextLink
 import androidx.compose.foundation.layout.fillMaxSize
 import cz.cleansia.core.ui.state.ActionState
@@ -221,12 +221,13 @@ private fun AvatarPreview(
     val launchPicker = { photoPicker.open() }
 
     if (pickerUnavailable) {
-        CleansiaDialog(
-            onDismiss = { pickerUnavailable = false },
-            title = stringResource(R.string.profile_avatar_picker_unavailable_title),
-            confirmLabel = stringResource(android.R.string.ok),
-            onConfirm = { pickerUnavailable = false },
-            message = stringResource(R.string.profile_avatar_picker_unavailable_message),
+        AlertDialog(
+            onDismissRequest = { pickerUnavailable = false },
+            title = { Text(stringResource(R.string.profile_avatar_picker_unavailable_title)) },
+            text = { Text(stringResource(R.string.profile_avatar_picker_unavailable_message)) },
+            confirmButton = {
+                TextButton(onClick = { pickerUnavailable = false }) { Text(stringResource(android.R.string.ok)) }
+            },
         )
     }
 

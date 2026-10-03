@@ -140,8 +140,10 @@ outline-offset: -1px`, so no box changes size. A new card opts in by joining the
 ### 2.6 Shared components
 
 `CleansiaSectionHeader` (badge + title + subtitle) · `CleansiaPrimaryButton` (pill) · `CleansiaChip` ·
-`CleansiaTextField` · `CleansiaDialog` (Android; every iOS confirm is a system dialog) · `MascotEmptyState` · `OrderTrackerBar` · `TrustStrip` ·
-`PopularPackageCard` · `SnapSheet` · `SudsRefreshIndicator` · `WordmarkSplash`.
+`CleansiaTextField` · `MascotEmptyState` · `OrderTrackerBar` · `TrustStrip` · `PopularPackageCard` · `SnapSheet` ·
+`SudsRefreshIndicator` · `WordmarkSplash`. The mobile apps have no branded dialog: every confirm in the Android
+and iOS apps is the system's (Material 3 `AlertDialog`, iOS `.alert` / `.confirmationDialog`), and
+`CleansiaDialog` is deleted → docs `/mobile-app/patterns#native-ios`.
 
 The customer mobile home reads: address bar → upsell carousel → trust strip → order-again → recurring
 schedules → popular packages → recent bookings → milestone progress → seasonal card.

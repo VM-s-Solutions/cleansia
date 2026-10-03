@@ -1389,7 +1389,6 @@
     <string name="payments_card_remove_message">Při další objednávce v hotovosti vás o kartu požádáme znovu.</string>
     <string name="payments_card_remove_confirm">Odebrat</string>
     <string name="payments_card_removed">Karta odebrána</string>
-    <string name="payments_card_remove_retry_hint">Kartu se nepodařilo odebrat. Zkuste to prosím znovu.</string>
     <string name="payments_error_message">Platby se nepodařilo načíst. Zkontrolujte připojení a zkuste to znovu.</string>
     <string name="payments_error_retry">Zkusit znovu</string>
     <!-- ── Vaše zařízení ── -->
@@ -1410,7 +1409,6 @@
     <string name="devices_revoke_dialog_message">%1$s bude odhlášeno a přestane dostávat oznámení.</string>
     <string name="devices_revoke_dialog_confirm">Odebrat</string>
     <string name="devices_revoke_success">Zařízení odebráno</string>
-    <string name="devices_revoke_retry_hint">Nepodařilo se odebrat – zkuste to znovu.</string>
     <string name="devices_self_revoke_action">Odhlásit toto zařízení</string>
     <string name="devices_self_revoke_dialog_title">Odhlásit toto zařízení?</string>
     <string name="devices_self_revoke_dialog_message">Toto zařízení bude odebráno a budete okamžitě odhlášeni.</string>

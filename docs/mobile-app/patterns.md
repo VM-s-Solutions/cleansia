@@ -312,11 +312,13 @@ things: no POIs, a muted base and the same pin.
   still while the margins move. **So the card must not change height on a lookup** (since 2026-10-03,
   owner remark). Every drag starts a reverse lookup, and the card's address block used to be one line
   while it looked the address up (*Looking up…*) and two lines once it had it (the street over its
-  city line). Each lookup therefore moved the inset, and with it the map, the pin and the card. The
-  customer `BookingAddressPickerView` (booking and the address manager share it) now holds two lines
-  in every state. While there is no second line, the title holds its place in the second line's font,
-  unseen and hidden from VoiceOver, so the height still follows the text size. The partner
-  `AddressPickerView` has the same one-line lookup state and does not hold the line yet. Since 2026-10-02 the two full-bleed order maps (the customer
+  city line). Each lookup therefore moved the inset, and with it the map, the pin and the card. Both
+  pickers now hold two lines in every state: the customer `BookingAddressPickerView` (booking and the
+  address manager share it) and the partner `AddressPickerView`, which had the same one-line lookup
+  state. While there is no second line, the title holds its place in the second line's font, unseen
+  and hidden from VoiceOver, so the height still follows the text size. `AddressPickerConfirmCardTests`
+  measures the partner card in all five languages, at the default and an accessibility text size, in
+  every lookup state. Since 2026-10-02 the two full-bleed order maps (the customer
   `OrderDetailMap` and the partner `OrderDetailView`) keep the logo and *Legal* above their `SnapSheet`
   the same way: `fullBleedMap(coordinate:)` measures the map and reads the sheet's top, which `SnapSheet`
   publishes to its backdrop (`snapSheetTop`), and the bottom margin is the part of the map below it, at
@@ -333,12 +335,18 @@ things: no POIs, a muted base and the same pin.
   Both are lifted above the resting sheet, which covers the map's bottom edge. Since 2026-10-02 the two
   address pickers (the customer `AddressManagerScreen` and the partner `AddressPickerScreen`) lift them
   above their bottom card too, by the card's measured height, keeping Mapbox's own horizontal places;
-  only the ornaments move, not the camera centre the pin marks. Since 2026-10-03 the customer picker's
-  address block keeps the height of its two lines while it looks the address up (a minimum height of
-  the `titleSmall` and `bodySmall` line heights, converted through the density so it follows the font
-  scale). Before, each lookup bobbed the card and the ornaments above it by about 12dp. The partner
-  picker's card still changes height on a lookup. `CleansiaMapUsageTest` fails any of the
-  four maps that leaves either ornament on its defaults.
+  only the ornaments move, not the camera centre the pin marks. Since 2026-10-03 both pickers' address
+  blocks keep the height of their two lines while they look the address up (a minimum height of the
+  `titleSmall` and `bodySmall` line heights, converted through the density so it follows the font
+  scale). Each line keeps to one, so a long locale or a large font cannot outgrow the reservation.
+  The partner card's first line carries the looking-up and drag-the-map hints as well as the street,
+  and ends in an ellipsis. The customer card gives each state its own text, and only its two hints end
+  in an ellipsis. Its street and postcode-and-city lines, and the partner card's place line, are cut
+  off at the card's edge (Compose's default), where iOS ends every line of both cards in an ellipsis.
+  Before, each lookup bobbed the card and the ornaments above it, by about 12dp on the customer
+  picker and 16dp on the partner one. `AddressPickerCardTest` (partner) pins the reservation, the
+  one-line rule and that the card's height reaches only the ornaments.
+  `CleansiaMapUsageTest` fails any of the four maps that leaves either ornament on its defaults.
 
 **The pin** is a brand-sky teardrop with a white house, 40 × 50 (pt or dp): sky-600 `#0284C7` on a
 light map and sky-400 `#38BDF8` on a dark one. On iOS it is `CleansiaMapMarker` and on Android
@@ -450,16 +458,37 @@ What changed on iOS:
     button it came from shows a spinner while the request runs, the other rows' buttons wait, and a
     refusal goes to the snackbar. The retry hint the card showed after a failure had nowhere left to go and was
     deleted.
-  - **iOS 16 hides a disabled alert button** and never brings it back, so the deletion request cannot
-    hold its button off until a reason is typed. The view model refuses a blank reason itself, with
-    *This field is required.* in the snackbar, and sends nothing.
+  - **iOS 16 hides a disabled alert button** and never brings it back, so an alert cannot hold its
+    button off until its field is filled. Two dialogs need a filled field, and both differ between the
+    platforms for that reason. For the deletion request, the view model refuses a blank reason itself,
+    with *This field is required.* in the snackbar, and sends nothing. The customer's address rename
+    keeps *Save* enabled, and a blank label closes the alert and saves nothing, with no message.
+    Android can bring a button back, so both its dialogs hold the confirm disabled until the reason
+    or the label is typed. Those two are the only differences in what the two platforms' dialogs do.
   - The alerts use the same title, message and button strings, and lose the card's icon circle and
     spring. `CleansiaDialog`, the branded card, had no caller left and is deleted from CleansiaCore.
     Until 2026-10-01 it was every confirmation, and until 2026-10-03 it was still the six that held a
     field or stayed up while submitting (card removal, both device revokes and the three document
-    dialogs). This is [ADR-0018](/decisions/adr-0018) D3's `AlertDialog` row with no exception left,
-    so no ADR changed. Android keeps its branded dialog for every confirmation, since the content is
-    what ADR-0018 D1 holds identical.
+    dialogs).
+  - **Android has matched since 2026-10-03** (owner remark). Every confirmation, notice and short
+    choice in both Android apps is a Material 3 `AlertDialog` with the same strings: a title, the
+    text, a `TextButton` confirm (in the error colour where it destroys) and a `TextButton` cancel,
+    with no icon circle, read by TalkBack as the system reads any dialog. The rules above hold there
+    too. The dialog closes on the tap. Removing a card or revoking a device shows a spinner on that
+    row while the other rows' buttons wait, a refusal goes to the snackbar, and the two retry hints
+    are deleted in all five locales. A field sits in the dialog's text. A document upload asks for the
+    type in a dialog that lists them, then for the description in a second dialog that holds the field
+    and names the type and the file. A replacement and a deletion request are one dialog each. The
+    cleaner's unreachable-server splash, which held its sign-out dialog open over the wipe, now closes
+    it on the tap and does not offer sign-out again while the wipe runs. The `:core` `CleansiaDialog`,
+    which drew a window of its own with an icon halo and a spring, is deleted too.
+    `SystemDialogUsageTest` fails any screen that imports Compose's `Dialog` window again.
+  - **Some forms differ by platform idiom, not by content.** Deleting a saved address is a dialog on
+    Android and an action sheet on iOS. The preferred-cleaner list is a dialog on Android and a sheet
+    on iOS. Choosing a photo's source is a bottom sheet on Android and an action sheet on iOS.
+  - **No ADR changed.** [ADR-0018](/decisions/adr-0018) D3 maps Material's `AlertDialog` to `.alert`
+    and `.confirmationDialog`. That row now holds on both sides with no exception left, and D1 holds
+    the content identical, which did not change.
 - **The birth date is picked on wheels.** The date-of-birth field (customer profile edit and
   completion, partner personal details) opens day, month and year wheels in a half-height sheet,
   instead of a month-by-month calendar that started at today. An empty field's wheels open thirty

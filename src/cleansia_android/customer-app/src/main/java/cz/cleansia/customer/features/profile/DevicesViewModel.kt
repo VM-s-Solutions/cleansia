@@ -14,11 +14,8 @@ import cz.cleansia.customer.core.devices.UserDeviceDto
 import cz.cleansia.customer.ui.state.ActionState
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
-import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -42,9 +39,6 @@ class DevicesViewModel @Inject constructor(
 
     private val _revokeState = MutableStateFlow<ActionState>(ActionState.Idle)
     val revokeState: StateFlow<ActionState> = _revokeState.asStateFlow()
-
-    private val _revoked = MutableSharedFlow<String>(extraBufferCapacity = 1)
-    val revoked: SharedFlow<String> = _revoked.asSharedFlow()
 
     init {
         load()
@@ -70,7 +64,6 @@ class DevicesViewModel @Inject constructor(
             when (val result = repository.revoke(device.id)) {
                 is ApiResult.Success -> {
                     _revokeState.value = ActionState.Idle
-                    _revoked.emit(device.id)
                     if (device.isCurrent) {
                         // Revoking THIS device killed our own session server-side; don't wait for
                         // the ≤30s revocation directory to bounce us — sign out at 0s. Local wipe
@@ -86,8 +79,9 @@ class DevicesViewModel @Inject constructor(
                     }
                 }
                 is ApiResult.Error -> {
+                    // The confirm closed on the tap, so the snackbar is where a refusal is said; the row stays.
                     surfaceError(result.error)
-                    _revokeState.value = ActionState.Error(appContext.getString(R.string.devices_revoke_retry_hint))
+                    _revokeState.value = ActionState.Idle
                 }
             }
         }

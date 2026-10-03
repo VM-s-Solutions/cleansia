@@ -53,6 +53,8 @@ public sealed class CompanyArchiveBundleTests(PostgresContainerFixture fixture) 
     private static readonly string Folder = CompanyArchiveService.FolderOf(B, FrozenOn);
     private static readonly byte[] ReceiptPdf = "%PDF-1.4 receipt of B"u8.ToArray();
     private static readonly byte[] InvoicePdf = "%PDF-1.4 payout invoice of B"u8.ToArray();
+    // Unlike today's BookingPolicy in every figure, so the row can only have read them off the order.
+    private static readonly CancellationTerms BookedTerms = new(FreeHours: 48, PartialHours: 12, PartialFeeRate: 0.30m, LastMinuteFeeRate: 0.80m, PlusFreeHours: 6);
 
     private static readonly string[] ExpectedLayout =
     [
@@ -154,6 +156,12 @@ public sealed class CompanyArchiveBundleTests(PostgresContainerFixture fixture) 
                 Assert.Single(receipted.GetProperty("extras").EnumerateArray());
                 Assert.Equal("Increased", receipted.GetProperty("dirtinessLevel").GetString());
                 Assert.Equal(3.60m, receipted.GetProperty("dirtinessSurchargeAmount").GetDecimal());
+                Assert.Equal(0.30m, receipted.GetProperty("dirtinessRate").GetDecimal());
+                Assert.Equal(BookedTerms.FreeHours, receipted.GetProperty("cancellationFreeHours").GetInt32());
+                Assert.Equal(BookedTerms.PartialHours, receipted.GetProperty("cancellationPartialHours").GetInt32());
+                Assert.Equal(BookedTerms.PartialFeeRate, receipted.GetProperty("cancellationPartialFeeRate").GetDecimal());
+                Assert.Equal(BookedTerms.LastMinuteFeeRate, receipted.GetProperty("cancellationLastMinuteFeeRate").GetDecimal());
+                Assert.Equal(BookedTerms.PlusFreeHours, receipted.GetProperty("cancellationPlusFreeHours").GetInt32());
                 // The cash handed over sits beside the price: an administrator may record less than it.
                 Assert.Equal(100m, receipted.GetProperty("cashCollectedAmount").GetDecimal());
                 var anonymised = Assert.Single(orders, o => o.GetProperty("id").GetString() == seeded.AnonymisedOrderId);
@@ -507,7 +515,7 @@ public sealed class CompanyArchiveBundleTests(PostgresContainerFixture fixture) 
         ctx.EmployeePayoutDetails.Add(Stamped(EmployeePayoutDetails.Create(
             cleanerB.Id, PayoutScheme.SepaIban, SvkId, PayoutDetailsStatus.Provided, iban: "SK3112000000198742637541", holderName: "Bundle Cleaner"), B));
 
-        var receiptedOrder = NewOrder("bundle-b-receipted", SvkId, EurId, customerB.Id, DateTime.UtcNow.AddDays(-40), B);
+        var receiptedOrder = NewOrder("bundle-b-receipted", SvkId, EurId, customerB.Id, DateTime.UtcNow.AddDays(-40), B, BookedTerms);
         receiptedOrder.AddOrderStatus(OrderStatusTrack.Create(OrderStatus.Completed, receiptedOrder));
         receiptedOrder.AddSelectedExtras([OrderExtra.Create(receiptedOrder, extra, 12m)]);
         receiptedOrder.SetDirtinessSurcharge(DirtinessLevel.Increased, 3.60m, 0.30m);
@@ -595,7 +603,8 @@ public sealed class CompanyArchiveBundleTests(PostgresContainerFixture fixture) 
         return user;
     }
 
-    private static Order NewOrder(string id, string countryId, string currencyId, string userId, DateTime cleaningAt, string tenantId)
+    private static Order NewOrder(
+        string id, string countryId, string currencyId, string userId, DateTime cleaningAt, string tenantId, CancellationTerms? cancellationTerms = null)
     {
         var address = Address.Create("Hlavna 1", "Bratislava", "81101", countryId);
         address.TenantId = tenantId;
@@ -612,7 +621,7 @@ public sealed class CompanyArchiveBundleTests(PostgresContainerFixture fixture) 
             currencyId: currencyId,
             paymentStatus: PaymentStatus.Paid,
             userId: userId,
-            cancellationTerms: BookingPolicy.CancellationTermsAtBooking);
+            cancellationTerms: cancellationTerms ?? BookingPolicy.CancellationTermsAtBooking);
         order.Id = id;
         order.TenantId = tenantId;
         order.AddOrderStatus(OrderStatusTrack.Create(OrderStatus.New, order));

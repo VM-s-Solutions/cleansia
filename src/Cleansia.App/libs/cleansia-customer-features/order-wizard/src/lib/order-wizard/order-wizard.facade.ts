@@ -698,7 +698,7 @@ export class OrderWizardFacade extends UnsubscribeControlDirective {
           service: service ? getItemTranslation(service, 'name', this.translate) : '',
           package: packageNames,
         },
-        { acceptLabelKey: 'pages.order.package_overlap.add_again', defaultFocus: 'reject' },
+        { acceptLabelKey: 'pages.order.package_overlap.add_again' },
       )
       .pipe(takeUntil(this.destroyed$))
       .subscribe((confirmed) => {
@@ -727,7 +727,7 @@ export class OrderWizardFacade extends UnsubscribeControlDirective {
           package: getItemTranslation(pkg, 'name', this.translate),
           services: overlap.map((s) => getItemTranslation(s, 'name', this.translate)).join(', '),
         },
-        { acceptLabelKey: 'pages.order.package_overlap.add_package', defaultFocus: 'reject' },
+        { acceptLabelKey: 'pages.order.package_overlap.add_package' },
       )
       .pipe(takeUntil(this.destroyed$))
       .subscribe((confirmed) => {

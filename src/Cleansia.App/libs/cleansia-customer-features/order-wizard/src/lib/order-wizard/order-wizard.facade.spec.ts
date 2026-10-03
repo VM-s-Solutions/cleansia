@@ -877,7 +877,7 @@ describe('OrderWizardFacade', () => {
         'pages.order.package_overlap.service_message',
         'pages.order.package_overlap.service_title',
         { service: 'Windows', package: 'Deep clean' },
-        { acceptLabelKey: 'pages.order.package_overlap.add_again', defaultFocus: 'reject' },
+        { acceptLabelKey: 'pages.order.package_overlap.add_again' },
       );
     });
 
@@ -917,7 +917,7 @@ describe('OrderWizardFacade', () => {
         'pages.order.package_overlap.package_message',
         'pages.order.package_overlap.package_title',
         { package: 'Deep clean', services: 'Windows, Oven' },
-        { acceptLabelKey: 'pages.order.package_overlap.add_package', defaultFocus: 'reject' },
+        { acceptLabelKey: 'pages.order.package_overlap.add_package' },
       );
       expect(chosen().packages).toEqual([]);
     });

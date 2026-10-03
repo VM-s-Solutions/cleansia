@@ -763,7 +763,7 @@ export class RecurringBookingsFacade extends UnsubscribeControlDirective {
         'pages.order.package_overlap.service_message',
         'pages.order.package_overlap.service_title',
         { service: this.serviceName(id) ?? '', package: packageNames },
-        { acceptLabelKey: 'pages.order.package_overlap.add_again', defaultFocus: 'reject' },
+        { acceptLabelKey: 'pages.order.package_overlap.add_again' },
       )
       .pipe(takeUntil(this.destroyed$))
       .subscribe((confirmed) => {
@@ -792,7 +792,7 @@ export class RecurringBookingsFacade extends UnsubscribeControlDirective {
           package: this.catalogName(pkg) ?? '',
           services: overlap.map((s) => this.catalogName(s) ?? '').join(', '),
         },
-        { acceptLabelKey: 'pages.order.package_overlap.add_package', defaultFocus: 'reject' },
+        { acceptLabelKey: 'pages.order.package_overlap.add_package' },
       )
       .pipe(takeUntil(this.destroyed$))
       .subscribe((confirmed) => {

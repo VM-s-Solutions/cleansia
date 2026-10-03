@@ -974,6 +974,10 @@ need backfilling.
 
 ### Fixed
 
+- **Customer iOS — going back in the booking slides back.** Stepping back through the booking's
+  steps brought the previous step in from the right, as if going on. It now comes in from the left,
+  as on Android, and with Reduce Motion on the steps fade instead. (Owner remark 2026-10-03.)
+
 - **Customer web — the booking summary no longer takes credit off a cash booking.** With a credit
   balance, the summary showed *Your credit −X* and *To pay by card Y* whichever payment method was
   chosen, but credit only ever comes off a card payment. The split now shows only with card chosen;

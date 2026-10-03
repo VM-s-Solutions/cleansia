@@ -253,6 +253,23 @@ neither app re-checks a resumed draft's time. A draft resumed on the Confirm ste
 has since come inside the 2 h lead time. The When step clears such a time, but a booking placed
 straight from a resumed Confirm step is left for the server to refuse.
 
+## The booking's steps slide the way they go {#booking-steps}
+
+Going on, the next step comes in from the trailing edge and the current one leaves to the leading
+edge. Going back, the previous step comes in from the leading edge and the current one leaves to the
+trailing edge (owner remark 2026-10-03). Leading and trailing follow the layout direction, so a
+right-to-left language mirrors the slide. On iOS the steps crossfade instead under Reduce Motion, and
+on Android the slide runs at zero duration when animations are removed in the system settings.
+
+- **iOS** (`BookingSheetView`) used one transition for every change until then, so going back looked
+  like going on. The direction is set one run-loop turn before the step changes: a page that leaves
+  animates with the transition it last rendered with, so setting both in one update sent it the old
+  way.
+- **Android** (`BookingBottomSheet.kt`) was already directional, but with fixed left and right, which
+  a right-to-left layout would have turned around. `stepSlideDirection(forward, rtl)` now mirrors the
+  sign under `LayoutDirection.Rtl`. No locale the app ships is right-to-left, so nothing changed on
+  screen.
+
 ## Every map is quiet, with one Cleansia pin {#maps}
 
 All four map surfaces in both apps show a muted base map with **no points of interest**, and their only

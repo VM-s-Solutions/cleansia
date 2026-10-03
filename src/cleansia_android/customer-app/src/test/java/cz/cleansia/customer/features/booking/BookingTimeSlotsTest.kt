@@ -4,6 +4,8 @@ import kotlinx.datetime.Instant
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.TimeZone
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
@@ -97,5 +99,54 @@ class BookingTimeSlotsTest {
 
         assertEquals(Instant.parse("2026-09-10T08:15:00Z"), combineDateAndTime(today, "10:15", prague))
         assertEquals(Instant.parse("2026-09-10T08:45:00Z"), combineDateAndTime(today, "10:45", prague))
+    }
+
+    // A resumed draft keeps its time only while the When step still offers it, in the band it was left in.
+
+    private fun holds(date: LocalDate?, time: String, leftAt: String?, at: String) =
+        draftTimeStillHolds(date, time, leftAt?.let(Instant::parse), Instant.parse(at), TimeZone.UTC)
+
+    @Test
+    fun `a resumed time the step still offers in the same band holds`() {
+        assertTrue(holds(LocalDate(2026, 9, 11), "10:00", "2026-09-10T09:00:00Z", "2026-09-10T10:15:00Z"))
+        assertTrue(holds(today, "15:00", "2026-09-10T09:00:00Z", "2026-09-10T10:15:00Z"))
+    }
+
+    @Test
+    fun `a resumed time that came inside the lead time, or whose day has passed, no longer holds`() {
+        assertFalse(holds(today, "12:00", "2026-09-10T07:00:00Z", "2026-09-10T10:15:00Z"))
+        assertFalse(holds(today, "09:00", "2026-09-10T06:00:00Z", "2026-09-10T10:15:00Z"))
+        assertFalse(holds(LocalDate(2026, 9, 9), "10:00", "2026-09-08T10:00:00Z", "2026-09-10T10:15:00Z"))
+    }
+
+    /** The draft was quoted in the band it was left in; a standard slot gone express would be charged more. */
+    @Test
+    fun `a standard slot that slid into the express band no longer holds, an express one left as express does`() {
+        assertFalse(holds(today, "14:00", "2026-09-10T09:00:00Z", "2026-09-10T10:15:00Z"))
+        assertTrue(holds(today, "13:00", "2026-09-10T10:00:00Z", "2026-09-10T10:15:00Z"))
+    }
+
+    @Test
+    fun `tomorrow's slot left the night before holds while standard and not once it is express`() {
+        val tomorrow = LocalDate(2026, 9, 11)
+        assertTrue(holds(tomorrow, "08:00", "2026-09-10T20:00:00Z", "2026-09-11T02:00:00Z"))
+        assertFalse(holds(tomorrow, "08:00", "2026-09-10T20:00:00Z", "2026-09-11T05:00:00Z"))
+    }
+
+    @Test
+    fun `with no time chosen, or no record of when it was left, only today's rules apply`() {
+        assertTrue(holds(null, "", null, "2026-09-10T10:15:00Z"))
+        assertTrue(holds(today, "", null, "2026-09-10T10:15:00Z"))
+        assertTrue(holds(today, "14:00", null, "2026-09-10T10:15:00Z"))
+        assertFalse(holds(today, "12:00", null, "2026-09-10T10:15:00Z"))
+    }
+
+    @Test
+    fun `the step offers no slot off the day strip or off the quarter-hour grid`() {
+        assertNull(slotStateAt(LocalDate(2026, 9, 9), "10:00", now, TimeZone.UTC))
+        assertNull(slotStateAt(LocalDate(2026, 9, 18), "10:00", now, TimeZone.UTC))
+        assertEquals(SlotState.Available, slotStateAt(LocalDate(2026, 9, 17), "10:00", now, TimeZone.UTC))
+        assertNull(slotStateAt(LocalDate(2026, 9, 11), "10:07", now, TimeZone.UTC))
+        assertNull(slotStateAt(LocalDate(2026, 9, 11), "20:00", now, TimeZone.UTC))
     }
 }

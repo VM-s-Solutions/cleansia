@@ -827,6 +827,7 @@
     <string name="booking_cash_needs_card">Cleaners needed for this booking: %1$d. Cash is only for bookings one cleaner handles alone, so this one is paid by card.</string>
     <string name="booking_cash_pending">Whether you can pay in cash is confirmed once the price is ready.</string>
     <string name="booking_cash_cleared">Cash is no longer available for this booking, so no payment method is selected. Choose how you want to pay.</string>
+    <string name="booking_draft_time_changed">While you were away, the time you picked became unavailable or changed price. Please pick a time again.</string>
     <string name="booking_card_guarantee_title">A card to guarantee cash bookings</string>
     <string name="booking_card_guarantee_body">Your first cash booking saves a card. Nothing is charged now: you still pay the cleaner in cash.</string>
     <string name="consent_card_guarantee_draft_2026_09_28">I agree that Cleansia may charge this card for a cancellation fee, a lockout fee, cash I did not pay and a top-up I approved on my cash bookings.</string>

@@ -83,7 +83,7 @@ internal data class DayChip(
 internal fun buildDays(locale: Locale, todayLabel: String): List<DayChip> {
     val tz = TimeZone.currentSystemDefault()
     val today = Clock.System.now().toLocalDateTime(tz).date
-    return (0..7).map { offset ->
+    return (0..BOOKING_DAYS_AHEAD).map { offset ->
         val d = today.plus(offset, DateTimeUnit.DAY)
         val label = if (offset == 0) {
             todayLabel
@@ -126,6 +126,8 @@ internal data class TimeSlot(val time: String, val state: SlotState)
 // LastWindowHour = 20). Slot states are derived from the user's selected date so "Today" never shows
 // already-passed hours as bookable; the express band itself is [BookingPricing]'s.
 private const val EXPRESS_LEAD_HOURS = 2
+/** The day strip: today and the next seven days. */
+internal const val BOOKING_DAYS_AHEAD = 7
 internal const val FIRST_WINDOW_HOUR = 8
 internal const val LAST_WINDOW_HOUR = 20
 internal const val BOOKING_SLOT_INTERVAL_MINUTES = 15
@@ -165,6 +167,41 @@ internal fun timeSlotsFor(
         }
         TimeSlot(label, state)
     }
+}
+
+/**
+ * The state the When step gives [time] on [date] at [now], or null when it does not offer that slot at
+ * all: the day has left the strip (it is past) or the time is not on the quarter-hour grid.
+ */
+internal fun slotStateAt(
+    date: LocalDate,
+    time: String,
+    now: kotlinx.datetime.Instant,
+    tz: TimeZone = TimeZone.currentSystemDefault(),
+): SlotState? {
+    val today = now.toLocalDateTime(tz).date
+    if (date < today || date > today.plus(BOOKING_DAYS_AHEAD, DateTimeUnit.DAY)) return null
+    return timeSlotsFor(date, now, tz).firstOrNull { it.time == time }?.state
+}
+
+/**
+ * Whether a resumed draft keeps its time: the When step still offers it, in the band it was in when
+ * the draft was left at [leftAt]. Inside the lead time or past it is gone; a standard slot that slid
+ * into the express band was quoted without the surcharge, so it is gone too. With no time chosen
+ * there is nothing to re-check.
+ */
+internal fun draftTimeStillHolds(
+    date: LocalDate?,
+    time: String,
+    leftAt: kotlinx.datetime.Instant?,
+    now: kotlinx.datetime.Instant,
+    tz: TimeZone = TimeZone.currentSystemDefault(),
+): Boolean {
+    if (date == null || time.isBlank()) return true
+    val current = slotStateAt(date, time, now, tz) ?: return false
+    if (current == SlotState.Unavailable) return false
+    val whenLeft = leftAt?.let { slotStateAt(date, time, it, tz) } ?: return true
+    return current == whenLeft
 }
 
 /**

@@ -822,6 +822,7 @@
     <string name="booking_cash_needs_card">Počet upratovačov potrebných pre túto objednávku: %1$d. V hotovosti sa dá platiť len za objednávky, ktoré zvládne jeden upratovač, túto preto zaplatíte kartou.</string>
     <string name="booking_cash_pending">Či môžete platiť v hotovosti, potvrdíme, keď bude známa cena.</string>
     <string name="booking_cash_cleared">Platba v hotovosti už pre túto objednávku nie je možná, preto nie je vybraný žiadny spôsob platby. Zvoľte, ako chcete platiť.</string>
+    <string name="booking_draft_time_changed">Kým ste boli preč, vybraný čas prestal byť dostupný alebo sa zmenila jeho cena. Vyberte si, prosím, čas znova.</string>
     <string name="booking_card_guarantee_title">Karta ako záruka platieb v hotovosti</string>
     <string name="booking_card_guarantee_body">Pri prvej objednávke v hotovosti si uložíte kartu. Teraz sa nič nestrháva: za upratovanie zaplatíte v hotovosti ako zvyčajne.</string>
     <string name="consent_card_guarantee_draft_2026_09_28">Súhlasím, že Cleansia môže pri mojich objednávkach v hotovosti strhnúť z tejto karty stornovací poplatok, poplatok za neumožnenie vstupu, nezaplatenú hotovosť a doplatok, ktorý som schválil(a).</string>

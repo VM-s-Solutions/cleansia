@@ -54,6 +54,10 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlinx.datetime.Clock
+import kotlinx.datetime.Instant
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.toLocalDateTime
 import okhttp3.ResponseBody.Companion.toResponseBody
 
 /**
@@ -333,8 +337,36 @@ class BookingViewModel @Inject constructor(
      */
     private var sheetVisible = true
 
-    fun setSheetVisible(visible: Boolean) {
+    /** When the sheet last closed on this draft; the band its time was in then is what was quoted. */
+    private var draftLeftAt: Instant? = null
+
+    fun setSheetVisible(visible: Boolean, now: Instant = Clock.System.now()) {
         sheetVisible = visible
+        if (!visible) draftLeftAt = now
+    }
+
+    /**
+     * A plain open resumes the draft, possibly hours after it was left, and only the server would
+     * refuse a time that has since passed or come inside the lead time. Re-checked against the When
+     * step's own slot rules ([draftTimeStillHolds]): a time that no longer holds is cleared — with its
+     * day, when the day has left the strip — the wizard goes back to the When step if it was past it,
+     * and the customer is told why.
+     */
+    fun revalidateResumedTime(now: Instant = Clock.System.now()) {
+        val s = _state.value
+        if (draftTimeStillHolds(s.selectedLocalDate, s.selectedTime, draftLeftAt, now)) return
+        val today = now.toLocalDateTime(TimeZone.currentSystemDefault()).date
+        val dayGone = s.selectedLocalDate.let { it == null || it < today }
+        _state.update {
+            it.copy(
+                selectedTime = "",
+                selectedInstant = null,
+                selectedLocalDate = if (dayGone) null else it.selectedLocalDate,
+                selectedDate = if (dayGone) "" else it.selectedDate,
+            )
+        }
+        _step.update { it.coerceAtMost(WHEN_STEP) }
+        snackbar.showInfoKey(R.string.booking_draft_time_changed)
     }
 
     /** Never replaced by card: the customer is told and chooses again. */
@@ -902,6 +934,9 @@ class BookingViewModel @Inject constructor(
 
     companion object {
         const val TOTAL_STEPS = 4
+
+        /** Where a resumed draft goes back to when its time no longer holds. */
+        private const val WHEN_STEP = 3
 
         /** Mirrors `CreateOrder`'s `RuleFor(x => x.AccessInstructions).MaximumLength(2000)`. */
         const val ACCESS_INSTRUCTIONS_MAX_LENGTH = 2000

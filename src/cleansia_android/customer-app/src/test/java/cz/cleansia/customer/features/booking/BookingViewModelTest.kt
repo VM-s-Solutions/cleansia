@@ -58,6 +58,10 @@ import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
 import kotlinx.datetime.Clock
 import kotlinx.datetime.Instant
+import kotlinx.datetime.LocalDate
+import kotlinx.datetime.LocalDateTime
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.toInstant
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.ResponseBody.Companion.toResponseBody
 import org.junit.Assert.assertEquals
@@ -1133,6 +1137,67 @@ class BookingViewModelTest {
         vm.reset()
         assertEquals(1, vm.step.value)
     }
+
+    /**
+     * A plain open re-checks a resumed draft's time against the When step's rules: one that no longer
+     * holds is cleared (with its day once the day has left the strip), the wizard goes back to the
+     * When step if it was past it, and the customer is told. One that holds is left alone.
+     */
+    @Test
+    fun resumingADraft_whoseTimeNoLongerHolds_clearsItAndGoesBackToTheWhenStep() = runTest {
+        val today = LocalDate(2026, 9, 10)
+        val vm = newViewModel()
+        vm.update {
+            it.copy(selectedLocalDate = today, selectedDate = "Today", selectedTime = "11:00", selectedInstant = localAt(10, 11))
+        }
+        repeat(3) { vm.nextStep() }
+        vm.setSheetVisible(false, now = localAt(10, 7))
+
+        vm.revalidateResumedTime(now = localAt(10, 10, 15))
+
+        assertEquals("", vm.state.value.selectedTime)
+        assertNull(vm.state.value.selectedInstant)
+        assertEquals("the day is still on the strip, so it stays", today, vm.state.value.selectedLocalDate)
+        assertEquals("Today", vm.state.value.selectedDate)
+        assertEquals(3, vm.step.value)
+        verify(exactly = 1) { snackbar.showInfoKey(R.string.booking_draft_time_changed) }
+    }
+
+    @Test
+    fun resumingADraft_whoseDayHasPassed_clearsTheDayToo_andAnEarlierStepStays() = runTest {
+        val vm = newViewModel()
+        vm.update { it.copy(selectedLocalDate = LocalDate(2026, 9, 9), selectedDate = "We", selectedTime = "10:00") }
+        vm.nextStep()
+
+        vm.revalidateResumedTime(now = localAt(10, 10, 15))
+
+        assertEquals("", vm.state.value.selectedTime)
+        assertNull(vm.state.value.selectedLocalDate)
+        assertEquals("", vm.state.value.selectedDate)
+        assertEquals("the customer was before the When step, so they stay there", 2, vm.step.value)
+        verify(exactly = 1) { snackbar.showInfoKey(R.string.booking_draft_time_changed) }
+    }
+
+    @Test
+    fun resumingADraft_whoseTimeStillHolds_keepsItOnTheConfirmStep() = runTest {
+        val vm = newViewModel()
+        vm.update {
+            it.copy(selectedLocalDate = LocalDate(2026, 9, 12), selectedDate = "Sa", selectedTime = "10:00", selectedInstant = localAt(12, 10))
+        }
+        repeat(3) { vm.nextStep() }
+        vm.setSheetVisible(false, now = localAt(10, 7))
+
+        vm.revalidateResumedTime(now = localAt(10, 10, 15))
+
+        assertEquals("10:00", vm.state.value.selectedTime)
+        assertEquals(localAt(12, 10), vm.state.value.selectedInstant)
+        assertEquals(4, vm.step.value)
+        verify(exactly = 0) { snackbar.showInfoKey(R.string.booking_draft_time_changed) }
+    }
+
+    /** September 2026, on the device's clock — the zone the When step's rules read. */
+    private fun localAt(day: Int, hour: Int, minute: Int = 0): Instant =
+        LocalDateTime(2026, 9, day, hour, minute).toInstant(TimeZone.currentSystemDefault())
 
     // ── express waiver ──
 

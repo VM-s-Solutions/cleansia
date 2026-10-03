@@ -367,6 +367,11 @@ private fun SheetContent(
     // these effects run, so a seeded open still gets the default address.
     LaunchedEffect(visible) {
         bookingVm.setSheetVisible(visible)
+        // A resumed draft's time may have passed while it was away. Only a plain open re-checks it: a
+        // seeded one resets the draft below, and a notice about a time it throws away would be noise.
+        if (visible && rebookFromOrderId == null && prefillPackageId == null && prefillSize == null) {
+            bookingVm.revalidateResumedTime()
+        }
     }
 
     LaunchedEffect(visible, rebookFromOrderId) {

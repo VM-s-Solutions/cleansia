@@ -28,8 +28,12 @@ class BookingSheetDraftTest {
     fun `a plain open resumes the draft`() {
         val flat = sheet.replace(Regex("\\s+"), " ")
         assertTrue(
-            "the open effect does more than report the sheet's visibility",
-            flat.contains("LaunchedEffect(visible) { bookingVm.setSheetVisible(visible) }"),
+            "the open effect does more than report the sheet's visibility and re-check a plain open's time",
+            flat.contains(
+                "LaunchedEffect(visible) { bookingVm.setSheetVisible(visible) " +
+                    "if (visible && rebookFromOrderId == null && prefillPackageId == null && prefillSize == null) { " +
+                    "bookingVm.revalidateResumedTime() } }",
+            ),
         )
         assertTrue("an open sends the draft back to its first step", !sheet.contains("returnToFirstStep()"))
     }

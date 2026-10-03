@@ -499,6 +499,8 @@ extension BookingViewModel {
     /// slot rules (`BookingTimeSlots.draftTimeStillHolds`): a time that no longer holds is cleared — with
     /// its day, when the day is past — and the wizard goes back to the When step if it was past it. True
     /// when it cleared one, so the caller says why. Android's `revalidateResumedTime` is the twin.
+    /// A time that holds keeps its day, re-labelled against `now`: picked on an earlier day it carries its
+    /// weekday, which on the day itself names the same weekday a week later on the When step's strip.
     @discardableResult
     func revalidateResumedTime(now: Date = Date(), calendar: Calendar = .current) -> Bool {
         let draft = state
@@ -508,7 +510,19 @@ extension BookingViewModel {
             leftAt: draftLeftAt,
             now: now,
             calendar: calendar
-        ) else { return false }
+        ) else {
+            if let instant = draft.selectedInstant {
+                let label = BookingDateFormat.dayLabel(instant, calendar: calendar, now: now)
+                if label != draft.selectedDate {
+                    update { current in
+                        var next = current
+                        next.selectedDate = label
+                        return next
+                    }
+                }
+            }
+            return false
+        }
         let dayGone = draft.selectedInstant.map {
             calendar.startOfDay(for: $0) < calendar.startOfDay(for: now)
         } ?? true

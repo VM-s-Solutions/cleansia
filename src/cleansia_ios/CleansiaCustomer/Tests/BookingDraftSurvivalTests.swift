@@ -174,11 +174,32 @@ final class BookingDraftSurvivalTests: XCTestCase {
     func testAResumedTimeThatStillHoldsIsLeftAlone() {
         let vm = makeVM()
         draftOnConfirm(vm)
-        let before = vm.state
+        let resumedAt = at(day: 1, hour: 9)
+        var before = vm.state
+        before.selectedDate = BookingDateFormat.dayLabel(at(day: 1, hour: 0), calendar: calendar, now: resumedAt)
 
-        XCTAssertFalse(vm.revalidateResumedTime(now: at(day: 1, hour: 9), calendar: calendar))
+        XCTAssertFalse(vm.revalidateResumedTime(now: resumedAt, calendar: calendar))
 
         XCTAssertEqual(vm.state, before)
+        XCTAssertEqual(vm.currentStep, 4)
+    }
+
+    /// A time that still holds on a day that has since become today kept the weekday it was picked as:
+    /// Confirm read the weekday, and going back to When selected the same weekday a week later.
+    func testAHeldTimeOnADayThatHasSinceBecomeTodayReadsToday() {
+        let vm = makeVM()
+        seedDraft(vm)
+        vm.selectDay(at(day: 2, hour: 0), calendar: calendar)
+        vm.selectTime("18:00", on: at(day: 2, hour: 0), calendar: calendar)
+        vm.advance()
+        vm.draftLeft(at: at(day: 1, hour: 20))
+        let resumedAt = at(day: 2, hour: 8)
+
+        XCTAssertFalse(vm.revalidateResumedTime(now: resumedAt, calendar: calendar))
+
+        XCTAssertEqual(vm.state.selectedTime, "18:00")
+        XCTAssertEqual(vm.state.selectedDate, L10n.Booking.today)
+        XCTAssertEqual(stripDay(vm, now: resumedAt), at(day: 2, hour: 0), "the When step selects next week's day")
         XCTAssertEqual(vm.currentStep, 4)
     }
 

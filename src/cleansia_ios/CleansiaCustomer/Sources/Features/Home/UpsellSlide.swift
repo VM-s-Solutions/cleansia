@@ -258,12 +258,12 @@ struct UpsellSlide: Equatable, Identifiable {
                 cta: trial ? L10n.Home.upsellPlusCtaTrial : L10n.Home.upsellPlusCta
             )
         case .referral:
-            // The points are the server's.
+            // The points are the server's; until they load the line names none.
+            let reward = inputs.referralPoints.map(L10n.Home.upsellReferralDesc)
             return Copy(
                 top: L10n.Home.upsellReferralTop,
                 title: L10n.Home.upsellReferralTitle,
-                description: inputs.referralPoints.map(L10n.Home.upsellReferralDesc) ?? L10n.Home
-                    .upsellReferralDescGeneric,
+                description: reward ?? L10n.Home.upsellReferralDescGeneric,
                 cta: L10n.Home.upsellReferralCta
             )
         case .plusCancellation:

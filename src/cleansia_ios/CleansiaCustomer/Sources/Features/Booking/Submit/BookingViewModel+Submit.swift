@@ -7,7 +7,7 @@ extension BookingViewModel {
         submitState = .submitting
         defer { submitState = .idle }
 
-        guard tokenStore.current() != nil else { return .failed(nil) }
+        if let refused = refusalBeforeSending() { return refused }
 
         let profileResult = await profileClient.currentProfile()
         guard case let .success(profile) = profileResult else {
@@ -68,6 +68,13 @@ extension BookingViewModel {
         // The card path resets in the view when PaymentSheet resolves to success.
         reset()
         return .success(orderId: order.id, confirmationCode: order.confirmationCode)
+    }
+
+    /// What stops a booking before anything is sent: no session, or a time that no longer holds — a Confirm
+    /// step left on screen may hold one that has since passed or slid into the express band it was not priced in.
+    private func refusalBeforeSending() -> BookingSubmitOutcome? {
+        guard tokenStore.current() != nil else { return .failed(nil) }
+        return revalidateResumedTime() ? .timeNoLongerHolds : nil
     }
 
     private func cardPending(for order: CreatedOrder, saveCard: Bool) async -> BookingSubmitOutcome {

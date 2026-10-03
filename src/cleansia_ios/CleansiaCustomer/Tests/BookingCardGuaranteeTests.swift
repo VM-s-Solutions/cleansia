@@ -217,6 +217,29 @@ final class BookingCardGuaranteeTests: XCTestCase {
         XCTAssertFalse(vm.submitState.isSubmitting)
     }
 
+    /// Saving the card can take a while; a time that stopped holding meanwhile books nothing and waits for no
+    /// card — the customer picks a time again first.
+    func testATimeThatStoppedHoldingWhileTheCardWasSavedBooksNothing() async throws {
+        let cards = FakeSavedCardClient()
+        let create = FakeOrderCreateClient()
+        let vm = makeVM(cards: cards, create: create)
+        vm.update(readyState())
+        guard case .cardGuaranteeNeeded = await vm.submit() else { return XCTFail("no capture was asked for") }
+        let readsBefore = cards.readCount
+        let calendar = Calendar.current
+        let yesterday = try XCTUnwrap(calendar.date(byAdding: .day, value: -1, to: calendar.startOfDay(for: Date())))
+        vm.selectDay(yesterday)
+        vm.selectTime("10:00", on: yesterday)
+
+        let outcome = await vm.submitAfterCardGuarantee()
+
+        XCTAssertEqual(outcome, .timeNoLongerHolds)
+        XCTAssertEqual(vm.state.selectedTime, "")
+        XCTAssertTrue(create.commands.isEmpty)
+        XCTAssertEqual(cards.readCount, readsBefore, "it waited for the card")
+        XCTAssertFalse(vm.submitState.isSubmitting)
+    }
+
     func testWithoutACaptureInFlightThereIsNothingToWaitFor() async {
         let cards = FakeSavedCardClient()
         let vm = makeVM(cards: cards)

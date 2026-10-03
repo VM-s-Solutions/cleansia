@@ -57,7 +57,9 @@ final class BookingViewModel: ViewModel {
     private let scheduler: AnySchedulerOf<DispatchQueue>
 
     var lastQuoteRequest: QuoteRequest?
-    /// When the sheet last closed on this draft; the band its time was in then is the band it was quoted in.
+    /// When the quote for `lastQuoteRequest` landed: the band the time it names was priced in.
+    var quotedAt: Date?
+    /// When the sheet last closed on this draft: the band its time was priced in when no quote for it landed.
     private var draftLeftAt: Date?
     /// The currency of the card PaymentSheet is saving; the booking waits for that card to land.
     var guaranteeCurrencyCode: String?
@@ -248,6 +250,9 @@ final class BookingViewModel: ViewModel {
         guaranteeCurrencyCode = nil
         currentStep = 1
         lastQuoteRequest = nil
+        // The last booking's quote and close are never read against the next one.
+        quotedAt = nil
+        draftLeftAt = nil
         quoteTask?.cancel()
         countryLookup?.cancel()
     }
@@ -464,6 +469,7 @@ final class BookingViewModel: ViewModel {
             // Cache invalidation, not tidying: without this a later submit of
             // the same request shape could be served the abandoned quote.
             lastQuoteRequest = nil
+            quotedAt = nil
             return
         }
         let previousQuote = quoteState.quote
@@ -494,20 +500,24 @@ extension BookingViewModel {
         draftLeftAt = now
     }
 
-    /// A plain open resumes the draft, possibly hours after it was left, and only the server would refuse
-    /// a time that has since passed or come inside the lead time. Re-checked against the When step's own
-    /// slot rules (`BookingTimeSlots.draftTimeStillHolds`): a time that no longer holds is cleared — with
-    /// its day, when the day is past — and the wizard goes back to the When step if it was past it. True
-    /// when it cleared one, so the caller says why. Android's `revalidateResumedTime` is the twin.
-    /// A time that holds keeps its day, re-labelled against `now`: picked on an earlier day it carries its
-    /// weekday, which on the day itself names the same weekday a week later on the When step's strip.
+    /// The time on a booking can stop holding while nobody touches it: a draft resumed hours after it was
+    /// left, a sheet left open while the app was in the background, a Confirm step left on screen before the
+    /// slide. Only the server would refuse a time that has since passed or come inside the lead time, so it
+    /// is re-checked against the When step's own slot rules (`BookingTimeSlots.draftTimeStillHolds`) on a
+    /// plain open, on the way back to the foreground, and before submit. The band is judged from when the
+    /// quote for that time landed, or from when the draft was left if none did. A time that no longer holds
+    /// is cleared — with its day, when the day is past — and the wizard goes back to the When step if it was
+    /// past it. True when it cleared one, so the caller says why. Android's `revalidateResumedTime` is the
+    /// twin. A time that holds keeps its day, re-labelled against `now`: picked on an earlier day it carries
+    /// its weekday, which on the day itself names the same weekday a week later on the When step's strip.
     @discardableResult
     func revalidateResumedTime(now: Date = Date(), calendar: Calendar = .current) -> Bool {
         let draft = state
+        let quotedForThisTime = lastQuoteRequest?.cleaningDate == draft.selectedInstant
         guard !BookingTimeSlots.draftTimeStillHolds(
             on: draft.selectedInstant,
             time: draft.selectedTime,
-            leftAt: draftLeftAt,
+            pricedAt: (quotedForThisTime ? quotedAt : nil) ?? draftLeftAt,
             now: now,
             calendar: calendar
         ) else {

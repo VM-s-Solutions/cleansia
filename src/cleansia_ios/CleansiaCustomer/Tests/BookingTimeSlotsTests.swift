@@ -221,7 +221,7 @@ final class BookingTimeSlotsTests: XCTestCase {
         let left = date(DateComponents(year: 2026, month: 7, day: 1, hour: 12))
         let day = left
         let holds = { (time: String, now: Date) in
-            BookingTimeSlots.draftTimeStillHolds(on: day, time: time, leftAt: left, now: now, calendar: self.calendar)
+            BookingTimeSlots.draftTimeStillHolds(on: day, time: time, pricedAt: left, now: now, calendar: self.calendar)
         }
         let moment = { (hour: Int, minute: Int) in
             self.date(DateComponents(year: 2026, month: 7, day: 1, hour: hour, minute: minute))
@@ -244,7 +244,7 @@ final class BookingTimeSlotsTests: XCTestCase {
             BookingTimeSlots.draftTimeStillHolds(
                 on: tomorrow,
                 time: "08:00",
-                leftAt: left,
+                pricedAt: left,
                 now: now,
                 calendar: self.calendar
             )
@@ -260,22 +260,22 @@ final class BookingTimeSlotsTests: XCTestCase {
         XCTAssertTrue(BookingTimeSlots.draftTimeStillHolds(
             on: nil,
             time: "",
-            leftAt: nil,
+            pricedAt: nil,
             now: now,
             calendar: calendar
         ))
         XCTAssertTrue(BookingTimeSlots.draftTimeStillHolds(
             on: now,
             time: "",
-            leftAt: nil,
+            pricedAt: nil,
             now: now,
             calendar: calendar
         ))
         XCTAssertTrue(
-            BookingTimeSlots.draftTimeStillHolds(on: now, time: "15:00", leftAt: nil, now: now, calendar: calendar)
+            BookingTimeSlots.draftTimeStillHolds(on: now, time: "15:00", pricedAt: nil, now: now, calendar: calendar)
         )
         XCTAssertFalse(
-            BookingTimeSlots.draftTimeStillHolds(on: now, time: "13:00", leftAt: nil, now: now, calendar: calendar)
+            BookingTimeSlots.draftTimeStillHolds(on: now, time: "13:00", pricedAt: nil, now: now, calendar: calendar)
         )
     }
 }

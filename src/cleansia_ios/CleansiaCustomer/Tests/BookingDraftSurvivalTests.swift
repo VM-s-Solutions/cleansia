@@ -215,9 +215,210 @@ final class BookingDraftSurvivalTests: XCTestCase {
         XCTAssertEqual(vm.currentStep, 2)
     }
 
-    /// The re-check runs on a plain open only, says why when it clears a time, and measures the band from
-    /// the moment the sheet closed.
-    func testThePlainOpenReChecksTheTimeAndTheSheetsCloseRecordsWhenItWasLeft() throws {
+    // MARK: An open sheet's time — on the way back to the foreground and before submit
+
+    /// `time` on 1 July, picked on the Confirm step and quoted at `quotedAt`.
+    private func quotedOnConfirm(_ vm: BookingViewModel, time: String, quotedAt: Date) {
+        seedDraft(vm)
+        vm.selectDay(at(day: 1, hour: 0), calendar: calendar)
+        vm.selectTime(time, on: at(day: 1, hour: 0), calendar: calendar)
+        vm.advance()
+        land(vm, at: quotedAt)
+    }
+
+    /// A quote for the selection on screen lands at `moment`.
+    private func land(_ vm: BookingViewModel, at moment: Date) {
+        vm.landQuote(
+            BookingQuote(totalPrice: 1000, currencyCode: "CZK"),
+            for: vm.state.quoteRequest(marketCountryId: nil),
+            at: moment
+        )
+    }
+
+    /// The sheet's way back to the foreground (`recheckOpenBooking`) is this call with the sheet open, when no
+    /// close has been recorded: 18:00 was quoted standard at 13:00 and is express at 14:30.
+    func testAnOpenSheetsTimeThatSlidIntoTheExpressBandSinceItWasQuotedIsCleared() {
+        let vm = makeVM()
+        quotedOnConfirm(vm, time: "18:00", quotedAt: at(day: 1, hour: 13))
+        let back = at(day: 1, hour: 14, minute: 30)
+
+        XCTAssertTrue(vm.revalidateResumedTime(now: back, calendar: calendar))
+
+        XCTAssertEqual(vm.state.selectedTime, "")
+        XCTAssertEqual(stripDay(vm, now: back), at(day: 1, hour: 0), "the day did not stay with the draft")
+        XCTAssertEqual(vm.currentStep, 3)
+    }
+
+    /// 15:00 quoted at 10:30 is standard; at 12:30 it is express already, so the close calls it unchanged at 12:45.
+    func testTheBandIsJudgedFromWhenTheQuoteLandedNotFromWhenTheSheetClosed() {
+        let vm = makeVM()
+        quotedOnConfirm(vm, time: "15:00", quotedAt: at(day: 1, hour: 10, minute: 30))
+        vm.draftLeft(at: at(day: 1, hour: 12, minute: 30))
+
+        XCTAssertTrue(vm.revalidateResumedTime(now: at(day: 1, hour: 12, minute: 45), calendar: calendar))
+
+        XCTAssertEqual(vm.state.selectedTime, "")
+        XCTAssertEqual(vm.currentStep, 3)
+    }
+
+    /// Closed at 08:00, when 14:30 was standard; reopened, and 14:30 picked and quoted express at 12:00.
+    func testATimeQuotedAfterTheSheetLastClosedIsJudgedFromItsQuote() {
+        let vm = makeVM()
+        vm.draftLeft(at: at(day: 1, hour: 8))
+        quotedOnConfirm(vm, time: "14:30", quotedAt: at(day: 1, hour: 12))
+
+        XCTAssertFalse(vm.revalidateResumedTime(now: at(day: 1, hour: 12, minute: 10), calendar: calendar))
+
+        XCTAssertEqual(vm.state.selectedTime, "14:30")
+        XCTAssertEqual(vm.currentStep, 4)
+    }
+
+    /// A re-quote after 15:00 went express carries the surcharge, so from then on the time holds — neither the
+    /// first quote nor the close before it is the band it is judged in.
+    func testAReQuoteThatLandsLaterResetsTheMomentTheTimeIsJudgedFrom() {
+        let vm = makeVM()
+        quotedOnConfirm(vm, time: "15:00", quotedAt: at(day: 1, hour: 10, minute: 30))
+        vm.draftLeft(at: at(day: 1, hour: 10, minute: 45))
+        land(vm, at: at(day: 1, hour: 12))
+
+        XCTAssertFalse(vm.revalidateResumedTime(now: at(day: 1, hour: 12, minute: 10), calendar: calendar))
+
+        XCTAssertEqual(vm.state.selectedTime, "15:00")
+    }
+
+    /// The quote on screen names 18:00, so it says nothing about the 15:00 picked after it; the close does.
+    func testAQuoteForAnotherTimeLeavesTheCloseToJudgeTheBand() {
+        let vm = makeVM()
+        quotedOnConfirm(vm, time: "18:00", quotedAt: at(day: 1, hour: 10))
+        vm.selectTime("15:00", on: at(day: 1, hour: 0), calendar: calendar)
+        vm.draftLeft(at: at(day: 1, hour: 12, minute: 30))
+
+        XCTAssertFalse(vm.revalidateResumedTime(now: at(day: 1, hour: 12, minute: 45), calendar: calendar))
+
+        XCTAssertEqual(vm.state.selectedTime, "15:00")
+    }
+
+    /// A seeded open resets the draft: the last booking's quote and close are not the band the next is judged in.
+    func testResetForgetsWhenTheLastBookingWasQuotedAndLeft() {
+        let vm = makeVM()
+        quotedOnConfirm(vm, time: "18:00", quotedAt: at(day: 1, hour: 8))
+        vm.draftLeft(at: at(day: 1, hour: 8))
+
+        vm.reset()
+        vm.selectDay(at(day: 1, hour: 0), calendar: calendar)
+        vm.selectTime("15:00", on: at(day: 1, hour: 0), calendar: calendar)
+
+        XCTAssertNil(vm.quotedAt)
+        XCTAssertFalse(vm.revalidateResumedTime(now: at(day: 1, hour: 12, minute: 45), calendar: calendar))
+        XCTAssertEqual(vm.state.selectedTime, "15:00")
+    }
+
+    /// The live quote records when it landed, and a selection emptied of everything drops it with the quote.
+    func testALandedQuoteRecordsWhenItLandedAndAnEmptiedSelectionForgetsIt() async throws {
+        let scheduler = TestScheduler.dispatch
+        let vm = BookingViewModel(
+            catalogClient: FakeCatalogClient(),
+            quoteClient: FakeQuoteClient(),
+            quoteDebounce: .milliseconds(400),
+            scheduler: scheduler.eraseToAnyScheduler()
+        )
+        let before = Date()
+
+        vm.update { current in
+            var next = current
+            next.selectedServiceIds = ["s-1"]
+            return next
+        }
+        scheduler.advance(by: .milliseconds(400))
+        await eventually { vm.quoteState.quote != nil }
+
+        let landed = try XCTUnwrap(vm.quotedAt, "the landed quote recorded no moment")
+        XCTAssertGreaterThanOrEqual(landed, before)
+        XCTAssertLessThanOrEqual(landed, Date())
+
+        vm.update { current in
+            var next = current
+            next.selectedServiceIds = []
+            return next
+        }
+        scheduler.advance(by: .milliseconds(400))
+        await eventually { vm.quoteState == .idle }
+
+        XCTAssertNil(vm.quotedAt)
+    }
+
+    /// A signed-in customer's booking, with the fakes a submit reaches.
+    private func makeSubmittingVM(
+        quote: FakeQuoteClient = FakeQuoteClient(),
+        profile: FakeProfileClient = FakeProfileClient(),
+        create: FakeOrderCreateClient = FakeOrderCreateClient()
+    ) -> BookingViewModel {
+        BookingViewModel(
+            quoteClient: quote,
+            profileClient: profile,
+            orderCreateClient: create,
+            countryResolver: FakeCountryResolver(),
+            savedCardClient: FakeSavedCardClient.holdingCzkCard(),
+            tokenStore: FakeTokenStore.signedIn(),
+            isCardPaymentAvailable: false,
+            quoteDebounce: .milliseconds(400),
+            scheduler: TestScheduler.dispatch.eraseToAnyScheduler()
+        )
+    }
+
+    /// `time` on the day `offset` days from today on the device's clock, which submit reads; card, on Confirm.
+    private func pickOnConfirm(_ vm: BookingViewModel, time: String, dayOffset offset: Int) throws {
+        seedDraft(vm)
+        let calendar = Calendar.current
+        let day = try XCTUnwrap(calendar.date(byAdding: .day, value: offset, to: calendar.startOfDay(for: Date())))
+        vm.selectDay(day)
+        vm.selectTime(time, on: day)
+        vm.selectPayment(.card)
+        vm.advance()
+    }
+
+    /// A Confirm step left on screen can hold a time that has since gone; the slide refuses it before anything
+    /// is asked of the server, and the wizard is back on the When step to pick again.
+    func testATimeThatNoLongerHoldsIsRefusedAtSubmitBeforeAnythingIsSent() async throws {
+        let quote = FakeQuoteClient()
+        let profile = FakeProfileClient()
+        let create = FakeOrderCreateClient()
+        let vm = makeSubmittingVM(quote: quote, profile: profile, create: create)
+        try pickOnConfirm(vm, time: "10:00", dayOffset: -1)
+
+        let outcome = await vm.submit()
+
+        XCTAssertEqual(outcome, .timeNoLongerHolds)
+        XCTAssertEqual(vm.state.selectedTime, "")
+        XCTAssertEqual(vm.currentStep, 3)
+        XCTAssertEqual(profile.callCount, 0)
+        XCTAssertEqual(quote.callCount, 0)
+        XCTAssertEqual(create.callCount, 0)
+        XCTAssertEqual(vm.submitState, .idle)
+    }
+
+    func testATimeThatStillHoldsIsSent() async throws {
+        let create = FakeOrderCreateClient(result: .success(CreatedOrder(id: "o-11", confirmationCode: "CLN-11")))
+        let vm = makeSubmittingVM(create: create)
+        try pickOnConfirm(vm, time: "10:00", dayOffset: 2)
+
+        let outcome = await vm.submit()
+
+        XCTAssertEqual(outcome, .success(orderId: "o-11", confirmationCode: "CLN-11"))
+        XCTAssertEqual(create.callCount, 1)
+    }
+
+    private func eventually(_ condition: () -> Bool) async {
+        for _ in 0 ..< 500 {
+            if condition() { return }
+            await Task.yield()
+        }
+    }
+
+    /// The re-check runs on a plain open and on a return to the foreground with the sheet open — not on a
+    /// seeded open — says why when it clears a time, and measures the band from the moment the sheet closed
+    /// when no quote for the time landed.
+    func testThePlainOpenAndTheForegroundReCheckTheTimeAndTheSheetsCloseRecordsWhenItWasLeft() throws {
         let shell = URL(fileURLWithPath: #filePath)
             .deletingLastPathComponent()
             .deletingLastPathComponent()
@@ -226,26 +427,45 @@ final class BookingDraftSurvivalTests: XCTestCase {
             contentsOf: shell.appendingPathComponent("CustomerShellView+Booking.swift"),
             encoding: .utf8
         )
+        func body(from start: String, to end: String?) -> String? {
+            guard let open = booking.range(of: start) else { return nil }
+            let close = end.flatMap { booking.range(of: $0, range: open.upperBound ..< booking.endIndex) }
+            return String(booking[open.lowerBound ..< (close?.lowerBound ?? booking.endIndex)])
+        }
         let plainOpen = try XCTUnwrap(
-            booking.range(of: "func openBooking() {").flatMap { start in
-                booking.range(of: "func bookPackage", range: start.upperBound ..< booking.endIndex)
-                    .map { String(booking[start.lowerBound ..< $0.lowerBound]) }
-            },
+            body(from: "func openBooking() {", to: "func recheckOpenBooking"),
             "openBooking() not found"
         )
-        XCTAssertTrue(plainOpen.contains("if bookingVM.revalidateResumedTime() {"), "a plain open no longer re-checks")
+        let foreground = try XCTUnwrap(
+            body(from: "func recheckOpenBooking() {", to: "func bookPackage"),
+            "recheckOpenBooking() not found"
+        )
+        let seeded = try XCTUnwrap(body(from: "func bookPackage", to: nil), "bookPackage(_:) not found")
+        for (entry, source) in [("a plain open", plainOpen), ("the return to the foreground", foreground)] {
+            XCTAssertTrue(source.contains("if bookingVM.revalidateResumedTime() {"), "\(entry) no longer re-checks")
+            XCTAssertTrue(
+                source.contains("snackbar.showInfo(L10n.Booking.draftTimeChanged)"),
+                "\(entry) clears the time unexplained"
+            )
+        }
         XCTAssertTrue(
-            plainOpen.contains("snackbar.showInfo(L10n.Booking.draftTimeChanged)"),
-            "the clear goes unexplained"
+            foreground.contains("bookingVM.objectWillChange.send()"),
+            "the open sheet's When step is not redrawn against the clock on the way back"
         )
-        XCTAssertEqual(
-            booking.components(separatedBy: "revalidateResumedTime()").count, 2,
-            "only the plain open re-checks: a seeded one starts afresh"
-        )
+        XCTAssertFalse(seeded.contains("revalidateResumedTime"), "a seeded open starts afresh, so it re-checks nothing")
+
         let view = try String(contentsOf: shell.appendingPathComponent("CustomerShellView.swift"), encoding: .utf8)
+            .replacingOccurrences(of: #"\s+"#, with: " ", options: .regularExpression)
         XCTAssertTrue(
             view.contains("bookingVM.draftLeft()"),
             "closing the sheet no longer records when the draft was left"
+        )
+        XCTAssertTrue(
+            view.contains(
+                ".onChange(of: scenePhase) { phase in " +
+                    "if phase == .active, model.isBookingPresented { recheckOpenBooking() } }"
+            ),
+            "a return to the foreground no longer re-checks the open sheet"
         )
     }
 

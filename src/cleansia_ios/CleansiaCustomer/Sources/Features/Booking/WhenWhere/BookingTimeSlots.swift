@@ -116,14 +116,14 @@ enum BookingTimeSlots {
         return slots(for: date, now: now, calendar: calendar).first { $0.time == time }?.state
     }
 
-    /// Whether a resumed draft keeps its time: the When step still offers it, in the band it was in when the
-    /// draft was left at `leftAt`. Inside the lead time or past it is gone; a standard slot that slid into
-    /// the express band was quoted without the surcharge, so it is gone too. With no time chosen there is
-    /// nothing to re-check. Android's `draftTimeStillHolds` is the twin.
+    /// Whether a booking keeps its time: the When step still offers it, in the band it was in at `pricedAt` —
+    /// when the quote for it landed, or when the draft was left if none did. Inside the lead time or past it
+    /// is gone; a standard slot that slid into the express band was quoted without the surcharge, so it is
+    /// gone too. With no time chosen there is nothing to re-check. Android's `draftTimeStillHolds` is the twin.
     static func draftTimeStillHolds(
         on date: Date?,
         time: String,
-        leftAt: Date?,
+        pricedAt: Date?,
         now: Date,
         calendar: Calendar = .current
     ) -> Bool {
@@ -131,10 +131,9 @@ enum BookingTimeSlots {
         guard let current = slotState(on: date, time: time, now: now, calendar: calendar),
               current != .unavailable
         else { return false }
-        guard let leftAt, let whenLeft = slotState(on: date, time: time, now: leftAt, calendar: calendar) else {
-            return true
-        }
-        return current == whenLeft
+        guard let pricedAt, let whenPriced = slotState(on: date, time: time, now: pricedAt, calendar: calendar)
+        else { return true }
+        return current == whenPriced
     }
 
     static func dayParts(_ slots: [BookingTimeSlot]) -> [DayPartSlots] {

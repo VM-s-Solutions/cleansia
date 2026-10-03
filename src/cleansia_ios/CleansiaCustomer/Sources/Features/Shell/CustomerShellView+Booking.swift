@@ -30,6 +30,16 @@ extension CustomerShellView {
         model.book()
     }
 
+    /// Back in the foreground with the sheet open: its time may have passed while the app was away, so it is
+    /// re-checked as a plain open re-checks one. The sheet is drawn afresh too — its When step builds the day
+    /// strip and the slots from the clock as it draws them, and nothing else redraws it on the way back.
+    func recheckOpenBooking() {
+        if bookingVM.revalidateResumedTime() {
+            snackbar.showInfo(L10n.Booking.draftTimeChanged)
+        }
+        bookingVM.objectWillChange.send()
+    }
+
     func bookPackage(_ packageId: String) {
         bookingVM.reset()
         bookingVM.update {

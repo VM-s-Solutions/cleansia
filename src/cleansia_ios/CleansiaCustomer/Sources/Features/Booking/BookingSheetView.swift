@@ -127,6 +127,9 @@ struct BookingSheetView: View {
         case .cardGuaranteePending:
             slideResetCount += 1
             snackbar.showInfo(L10n.Booking.cardGuaranteePending)
+        case .timeNoLongerHolds:
+            slideResetCount += 1
+            snackbar.showInfo(L10n.Booking.draftTimeChanged)
         case let .failed(error):
             slideResetCount += 1
             // Prefer the server's own business error — "no cleaner is available

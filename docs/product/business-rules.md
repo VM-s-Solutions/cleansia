@@ -1050,6 +1050,12 @@ the market — or from the order, on a contract for work.
   data-protection contact on the privacy page and in the partner GDPR copy. The `companyEmail` on the
   company record is the seller's own address (`info@cleansia.cz` in the seed), printed on receipts,
   invoices and the legal texts.
+- **Help in the customer apps opens the contact** (since 2026-10-03). On Android and iOS, *Email us*
+  opens the mail app on `support@cleansia.cz` and *Call support* opens the dialer on
+  +420 739 788 108, the line the customer web footer prints. When nothing on the phone takes the link,
+  the app copies the address or the number and says so. Before, neither row did anything on Android,
+  and iOS showed both as plain text. Android also offered a *Live chat* row; there is no chat, and the
+  row is gone.
 - **The registered name comes with the registration.** Whether the company is *Cleansia CZ s.r.o.* or
   *Cleansia s.r.o.* is written once, on the company record, and every text, receipt, confirmation and
   e-mail footer follows it; the footer's copyright line still reads *Cleansia s.r.o.*

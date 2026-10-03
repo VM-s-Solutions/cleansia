@@ -135,11 +135,19 @@
         <div class="cl-lbl cl-wiz__section-label">{{ 'pages.order.services_or_single' | translate }}</div>
         <div class="cl-wiz__services">
           @for (service of facade.services(); track service.id) {
+          @let inPackage = facade.packageNamesIncluding(service.id!);
           <div class="cl-wiz__svc">
             <div class="cl-wiz__svc-body">
               <div class="cl-h4 cl-wiz__svc-name">{{ getTranslation(service, 'name') }}</div>
               @if (getTranslation(service, 'description'); as desc) {
               <div class="cl-muted cl-wiz__svc-desc">{{ desc }}</div>
+              }
+              <!-- Said, not prevented: a package plus a service it includes books it twice. -->
+              @if (inPackage) {
+              <div class="cl-wiz__svc-in-pack" data-spec-in-package [id]="'svc-in-pack-' + service.id">
+                <i class="pi pi-box" aria-hidden="true"></i>
+                <span>{{ 'pages.order.package_overlap.in_package' | translate: { package: inPackage } }}</span>
+              </div>
               }
             </div>
             <div class="cl-num cl-wiz__svc-price">{{ formatPrice(service.basePrice, service.currencyCode) }}</div>
@@ -150,6 +158,7 @@
               [class.cl-chip--on]="isServiceSelected(service.id!)"
               [attr.aria-pressed]="isServiceSelected(service.id!)"
               [attr.aria-label]="'aria.select_service' | translate: { name: getTranslation(service, 'name') }"
+              [attr.aria-describedby]="inPackage ? 'svc-in-pack-' + service.id : null"
               (click)="toggleService(service.id!)"
             >
               {{ (isServiceSelected(service.id!) ? 'pages.order.service_added' : 'pages.order.service_add') | translate }}
@@ -1086,11 +1095,18 @@
         </div>
         <div class="cl-wiz__cross">
           @for (service of crossSellServices(); track service.id) {
+          @let inPackage = facade.packageNamesIncluding(service.id!);
           <div class="cl-wiz__cross-row">
             <div>
               <div class="cl-h4 cl-wiz__cross-name">{{ getTranslation(service, 'name') }}</div>
               @if (getTranslation(service, 'description'); as desc) {
               <div class="cl-muted cl-wiz__cross-desc">{{ desc }}</div>
+              }
+              @if (inPackage) {
+              <div class="cl-wiz__svc-in-pack" data-spec-in-package [id]="'cross-in-pack-' + service.id">
+                <i class="pi pi-box" aria-hidden="true"></i>
+                <span>{{ 'pages.order.package_overlap.in_package' | translate: { package: inPackage } }}</span>
+              </div>
               }
             </div>
             <div class="cl-num cl-wiz__cross-price">{{ formatPrice(service.basePrice, service.currencyCode) }}</div>
@@ -1098,6 +1114,7 @@
               type="button"
               class="cl-chip cl-wiz__cross-add"
               [attr.aria-label]="'aria.select_service' | translate: { name: getTranslation(service, 'name') }"
+              [attr.aria-describedby]="inPackage ? 'cross-in-pack-' + service.id : null"
               (click)="toggleService(service.id!)"
             >{{ 'pages.order.service_add' | translate }}</button>
           </div>

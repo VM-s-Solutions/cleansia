@@ -13,6 +13,7 @@ import {
 import { SnackbarService } from '@cleansia/services';
 import { provideMockStore } from '@ngrx/store/testing';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
+import { ConfirmationService } from 'primeng/api';
 import { RecurringBookingsFacade } from '../recurring-bookings.facade';
 import { RecurringBookingsListComponent } from './recurring-bookings-list.component';
 
@@ -177,6 +178,8 @@ describe('RecurringBookingsListComponent — its own facade', () => {
         { provide: CustomerClient, useValue: {} },
         { provide: SavedAddressStore, useValue: { addresses: signal([]), loaded: signal(true) } },
         { provide: SnackbarService, useValue: {} },
+        // The app root's, behind the shared confirm the facade asks through.
+        ConfirmationService,
       ],
     }).compileComponents();
 

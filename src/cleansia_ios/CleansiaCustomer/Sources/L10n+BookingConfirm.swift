@@ -81,6 +81,10 @@ extension L10n.Booking {
         L10n.localized("booking_cash_cleared")
     }
 
+    static var draftTimeChanged: String {
+        L10n.localized("booking_draft_time_changed")
+    }
+
     /// Why cash cannot be chosen right now, or nil when it can.
     static func cashReason(_ eligibility: CashEligibility) -> String? {
         switch eligibility {

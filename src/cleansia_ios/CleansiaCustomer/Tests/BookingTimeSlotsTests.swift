@@ -199,4 +199,83 @@ final class BookingTimeSlotsTests: XCTestCase {
         XCTAssertEqual(DayPart.of("12:00"), .afternoon)
         XCTAssertEqual(DayPart.of("19:45"), .evening)
     }
+
+    // MARK: A resumed draft's time
+
+    func testASlotsStateIsTheWhenSteps() throws {
+        let now = date(DateComponents(year: 2026, month: 7, day: 1, hour: 12))
+        let yesterday = try XCTUnwrap(calendar.date(byAdding: .day, value: -1, to: now))
+        let beyondTheStrip = try XCTUnwrap(calendar.date(byAdding: .day, value: 8, to: now))
+
+        XCTAssertEqual(BookingTimeSlots.slotState(on: now, time: "13:00", now: now, calendar: calendar), .unavailable)
+        XCTAssertEqual(BookingTimeSlots.slotState(on: now, time: "15:00", now: now, calendar: calendar), .express)
+        XCTAssertEqual(BookingTimeSlots.slotState(on: now, time: "18:00", now: now, calendar: calendar), .available)
+        XCTAssertNil(BookingTimeSlots.slotState(on: yesterday, time: "18:00", now: now, calendar: calendar))
+        XCTAssertNil(BookingTimeSlots.slotState(on: beyondTheStrip, time: "18:00", now: now, calendar: calendar))
+        XCTAssertNil(BookingTimeSlots.slotState(on: now, time: "18:07", now: now, calendar: calendar))
+    }
+
+    /// The When step's rules decide, at the moment the draft comes back: inside the lead time, past, or
+    /// slid from the standard band into the express one (quoted without the surcharge) it is gone.
+    func testADraftTimeHoldsOnlyWhileTheWhenStepStillOffersItInItsBand() {
+        let left = date(DateComponents(year: 2026, month: 7, day: 1, hour: 12))
+        let day = left
+        let holds = { (time: String, now: Date) in
+            BookingTimeSlots.draftTimeStillHolds(on: day, time: time, pricedAt: left, now: now, calendar: self.calendar)
+        }
+        let moment = { (hour: Int, minute: Int) in
+            self.date(DateComponents(year: 2026, month: 7, day: 1, hour: hour, minute: minute))
+        }
+
+        XCTAssertTrue(holds("18:00", moment(13, 0)), "a standard slot still standard holds")
+        XCTAssertFalse(holds("18:00", moment(15, 0)), "a standard slot now in the express band was quoted without it")
+        XCTAssertTrue(holds("15:00", moment(12, 30)), "an express slot still express holds")
+        XCTAssertFalse(holds("15:00", moment(13, 30)), "an express slot now inside the lead time is gone")
+        XCTAssertFalse(holds("18:00", moment(16, 30)), "a slot inside the lead time is gone")
+        let nextMorning = date(DateComponents(year: 2026, month: 7, day: 2, hour: 9))
+        XCTAssertFalse(holds("18:00", nextMorning), "a slot on a day that has passed is gone")
+    }
+
+    /// Tomorrow's slot is today's once midnight passes, and is judged by today's bands.
+    func testTomorrowsSlotIsJudgedByTodaysBandsAfterMidnight() {
+        let left = date(DateComponents(year: 2026, month: 7, day: 1, hour: 23))
+        let tomorrow = date(DateComponents(year: 2026, month: 7, day: 2))
+        let holds = { (now: Date) in
+            BookingTimeSlots.draftTimeStillHolds(
+                on: tomorrow,
+                time: "08:00",
+                pricedAt: left,
+                now: now,
+                calendar: self.calendar
+            )
+        }
+
+        XCTAssertTrue(holds(date(DateComponents(year: 2026, month: 7, day: 2, hour: 3))))
+        XCTAssertFalse(holds(date(DateComponents(year: 2026, month: 7, day: 2, hour: 5))), "now in the express band")
+        XCTAssertFalse(holds(date(DateComponents(year: 2026, month: 7, day: 2, hour: 7))), "now inside the lead time")
+    }
+
+    func testADraftWithNoTimeOrNoRecordOfLeavingHasOnlyTheLeadTimeToMeet() {
+        let now = date(DateComponents(year: 2026, month: 7, day: 1, hour: 12))
+        XCTAssertTrue(BookingTimeSlots.draftTimeStillHolds(
+            on: nil,
+            time: "",
+            pricedAt: nil,
+            now: now,
+            calendar: calendar
+        ))
+        XCTAssertTrue(BookingTimeSlots.draftTimeStillHolds(
+            on: now,
+            time: "",
+            pricedAt: nil,
+            now: now,
+            calendar: calendar
+        ))
+        XCTAssertTrue(
+            BookingTimeSlots.draftTimeStillHolds(on: now, time: "15:00", pricedAt: nil, now: now, calendar: calendar)
+        )
+        XCTAssertFalse(
+            BookingTimeSlots.draftTimeStillHolds(on: now, time: "13:00", pricedAt: nil, now: now, calendar: calendar)
+        )
+    }
 }

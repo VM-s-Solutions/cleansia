@@ -147,9 +147,12 @@ final class BookingSubmitTests: XCTestCase {
         XCTAssertEqual(create.callCount, 0)
     }
 
-    func testMissingInstantFails() async {
+    /// A time already cleared — a re-check on the way back to the foreground — is refused before anything is
+    /// read, with the time-changed notice rather than the connection error.
+    func testAMissingTimeIsRefusedAsOneThatNoLongerHoldsBeforeAnythingIsSent() async {
+        let profile = FakeProfileClient()
         let create = FakeOrderCreateClient()
-        let vm = makeVM(create: create)
+        let vm = makeVM(profile: profile, create: create)
         vm.update { _ in
             var s = BookingState()
             s.selectedServiceIds = ["s-1"]
@@ -160,7 +163,8 @@ final class BookingSubmitTests: XCTestCase {
         }
 
         let outcome = await vm.submit()
-        XCTAssertEqual(outcome, .failed(nil))
+        XCTAssertEqual(outcome, .timeNoLongerHolds)
+        XCTAssertEqual(profile.callCount, 0)
         XCTAssertEqual(create.callCount, 0)
     }
 

@@ -34,6 +34,8 @@ final class BookingViewModel: ViewModel {
     @Published internal(set) var savedCards: [SavedCard]?
 
     @Published private(set) var currentStep = 1
+    /// A tap that would book a service twice, waiting for the customer to confirm or cancel it.
+    @Published internal(set) var twiceBookedPick: TwiceBookedPick?
 
     let events = PassthroughSubject<BookingEvent, Never>()
 
@@ -57,8 +59,16 @@ final class BookingViewModel: ViewModel {
     private let scheduler: AnySchedulerOf<DispatchQueue>
 
     var lastQuoteRequest: QuoteRequest?
-    /// The currency of the card PaymentSheet is saving; the booking waits for that card to land.
+    /// When the quote for `lastQuoteRequest` landed: the band the time it names was priced in.
+    var quotedAt: Date?
+    /// When the sheet last closed on this draft: the band its time was priced in when no quote for it landed.
+    private var draftLeftAt: Date?
+    /// The currency of the card PaymentSheet is saving, until it is seen to land or the sheet is abandoned.
+    /// While it is set a cash booking waits for that card instead of capturing a second one.
     var guaranteeCurrencyCode: String?
+    /// While Stripe's sheet is over the booking, paying for its order or saving its card. The sheet sets it; a
+    /// return to the foreground re-checks nothing under it (`recheckOpenBooking`).
+    var paymentSheetShowing = false
     private var quoteTask: Task<Void, Never>?
     private var catalogLoad: Task<Void, Never>?
     private var marketReload: Task<Void, Never>?
@@ -245,7 +255,11 @@ final class BookingViewModel: ViewModel {
         savedCards = nil
         guaranteeCurrencyCode = nil
         currentStep = 1
+        twiceBookedPick = nil
         lastQuoteRequest = nil
+        // The last booking's quote and close are never read against the next one.
+        quotedAt = nil
+        draftLeftAt = nil
         quoteTask?.cancel()
         countryLookup?.cancel()
     }
@@ -462,6 +476,7 @@ final class BookingViewModel: ViewModel {
             // Cache invalidation, not tidying: without this a later submit of
             // the same request shape could be served the abandoned quote.
             lastQuoteRequest = nil
+            quotedAt = nil
             return
         }
         let previousQuote = quoteState.quote
@@ -483,6 +498,68 @@ final class BookingViewModel: ViewModel {
             }
         }
     }
+}
+
+/// The resumed draft. In this file because it reads the private record of when the draft was left.
+extension BookingViewModel {
+    /// The sheet closed on the draft: swiped away, or closed for the profile or an order.
+    func draftLeft(at now: Date = Date()) {
+        draftLeftAt = now
+    }
+
+    /// The time on a booking can stop holding while nobody touches it: a draft resumed hours after it was
+    /// left, a sheet left open while the app was in the background, a Confirm step left on screen before the
+    /// slide. Only the server would refuse a time that has since passed or come inside the lead time, so it
+    /// is re-checked against the When step's own slot rules (`BookingTimeSlots.draftTimeStillHolds`) on a
+    /// plain open, on the way back to the foreground, and before submit. The band is judged from when the
+    /// quote for that time landed, or from when the draft was left if none did. A time that no longer holds
+    /// is cleared — with its day, when the day is past — and the wizard goes back to the When step if it was
+    /// past it. True when it cleared one, so the caller says why. Android's `revalidateResumedTime` is the
+    /// twin. A time that holds keeps its day, re-labelled against `now`: picked on an earlier day it carries
+    /// its weekday, which on the day itself names the same weekday a week later on the When step's strip.
+    @discardableResult
+    func revalidateResumedTime(now: Date = Date(), calendar: Calendar = .current) -> Bool {
+        let draft = state
+        let quotedForThisTime = lastQuoteRequest?.cleaningDate == draft.selectedInstant
+        guard !BookingTimeSlots.draftTimeStillHolds(
+            on: draft.selectedInstant,
+            time: draft.selectedTime,
+            pricedAt: (quotedForThisTime ? quotedAt : nil) ?? draftLeftAt,
+            now: now,
+            calendar: calendar
+        ) else {
+            if let instant = draft.selectedInstant {
+                let label = BookingDateFormat.dayLabel(instant, calendar: calendar, now: now)
+                if label != draft.selectedDate {
+                    update { current in
+                        var next = current
+                        next.selectedDate = label
+                        return next
+                    }
+                }
+            }
+            return false
+        }
+        let dayGone = draft.selectedInstant.map {
+            calendar.startOfDay(for: $0) < calendar.startOfDay(for: now)
+        } ?? true
+        update { current in
+            var next = current
+            next.selectedTime = ""
+            next.selectedInstant = nil
+            // A kept day is re-labelled against `now`: picked on an earlier day it carries its weekday, which
+            // on the day itself names the same weekday a week later on the When step's strip.
+            next.selectedDate = dayGone ? "" : draft.selectedInstant.map {
+                BookingDateFormat.dayLabel($0, calendar: calendar, now: now)
+            } ?? ""
+            return next
+        }
+        currentStep = min(currentStep, Self.whenStep)
+        return true
+    }
+
+    /// Where a resumed draft goes back to when its time no longer holds.
+    private static let whenStep = 3
 }
 
 extension BookingState {

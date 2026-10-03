@@ -245,4 +245,45 @@ final class BookingCardSubmitTests: XCTestCase {
         )
         XCTAssertEqual(vm.isCardPaymentAvailable, StripeConfig.isCardPaymentAvailable)
     }
+
+    /// A 3-D Secure approval in the bank app, or a Face ID prompt, comes back to the foreground under Stripe's
+    /// sheet. A booking being sent or paid for is not re-checked then: clearing its time would send an order
+    /// already placed back to the When step, or fail a card guarantee as a network error.
+    func testABookingBeingSentOrPaidForIsNotReCheckedOnTheWayBack() throws {
+        let features = URL(fileURLWithPath: #filePath)
+            .deletingLastPathComponent()
+            .deletingLastPathComponent()
+            .appendingPathComponent("Sources/Features")
+        let shell = try String(
+            contentsOf: features.appendingPathComponent("Shell/CustomerShellView+Booking.swift"),
+            encoding: .utf8
+        )
+        let recheck = try XCTUnwrap(
+            shell.range(of: "func recheckOpenBooking() {").map { String(shell[$0.upperBound...].prefix(200)) },
+            "recheckOpenBooking() not found"
+        )
+        XCTAssertTrue(
+            recheck
+                .contains("guard !bookingVM.submitState.isSubmitting, !bookingVM.paymentSheetShowing else { return }"),
+            "a return to the foreground re-checks a booking being sent or paid for"
+        )
+
+        let sheet = try String(
+            contentsOf: features.appendingPathComponent("Booking/BookingSheetView.swift"),
+            encoding: .utf8
+        ).replacingOccurrences(of: #"\s+"#, with: " ", options: .regularExpression)
+        XCTAssertEqual(
+            sheet.components(separatedBy: "paymentSheet.present(").count - 1,
+            1,
+            "Stripe's sheet is shown somewhere that does not hold the re-check"
+        )
+        XCTAssertEqual(sheet.components(separatedBy: "await showPaymentSheet(presentation)").count - 1, 2)
+        XCTAssertTrue(
+            sheet.contains(
+                "vm.paymentSheetShowing = true defer { vm.paymentSheetShowing = false } " +
+                    "return await paymentSheet.present(presentation)"
+            ),
+            "Stripe's sheet no longer holds the re-check while it is up"
+        )
+    }
 }

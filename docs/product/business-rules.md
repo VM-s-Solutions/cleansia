@@ -892,9 +892,14 @@ holds a card there and, while it stays usable, is asked for nothing ([below](#sa
   booking or the schedule, sends the customer through Stripe, and brings them back to it as they left
   it. Android does the same at the one-off booking; iOS reads the saved cards before it books and
   captures when it finds no usable one. Both then wait for the card to land (eight reads, 1.5 s apart)
-  before they book, and iOS also offers *Save a card* under Profile → Payments. The other two refusals
-  take cash off and send the customer back to choose how to pay; on the web, a debt refusal lists what
-  is owed with *Pay now*.
+  before they book, and iOS also offers *Save a card* under Profile → Payments. On both apps a card
+  that has not landed by then books nothing: the customer is told it is still being saved and slides
+  again. That slide, like one after a time that stopped holding meanwhile, waits for the same card the
+  same way and never opens a second capture. A setup sheet cancelled or failed saved nothing, so the
+  next slide captures afresh at once. Until 2026-10-04 iOS's next slide read the cards, found none
+  usable yet and opened a second capture. The other two
+  refusals take cash off and send the customer back to choose how to pay; on the web, a debt refusal
+  lists what is owed with *Pay now*.
 
 #### Saving a card while paying by card {#save-card}
 
@@ -1046,17 +1051,28 @@ one of them is our own draft until the lawyer delivers** ([below](#legal-drafts)
 
 | Text | Audience | In force | Who is bound, and how |
 |---|---|---|---|
-| Terms of service | customer | `2026-09-30` | the customer's contract with the operating company of the market the home is in, concluded at booking — a card booking once its payment completes. Accepted by the tick at registration and at booking, and again before the next booking when a newer version applies ([What is recorded about a customer](#customer-record)); shown at `/terms` |
-| Privacy policy | customer | `2026-09-29` | the operating company is the controller; accepted with the terms; shown at `/privacy` |
+| Terms of service | customer | `2026-10-03` | the customer's contract with the operating company of the market the home is in, concluded at booking — a card booking once its payment completes. Accepted by the tick at registration and at booking, and again before the next booking when a newer version applies ([What is recorded about a customer](#customer-record)); shown at `/terms` |
+| Privacy policy | customer | `2026-10-03` | the operating company is the controller; accepted with the terms, and again before the next booking when a newer version applies; shown at `/privacy` |
 | Complaints procedure | customer | `2026-09-29` | read, never accepted; shown at `/complaints` on the customer web and linked from its footer |
 | Framework cooperation agreement, self-billing agreement, data-processing agreement | employee | `2026-09-29` | the cleaner's agreements with the operating company of the market they work in, each accepted in the partner apps → [A cleaner's own documents](#cleaner-documents) |
 | Contract for work | employee | `2026-09-29` | one per seat of a job, between the operating company and the cleaner, stamped on the order at booking and accepted at the take → [The contract for work](#work-contract) |
 
 Earlier versions stay in the database as the texts earlier customers and orders were bound by: the
-terms `2026-09-14`, `2026-09-27` and `2026-09-29`, the privacy policy `2026-09-14`, and the contract for
-work `2026-09-20`, which named the customer and the cleaner as its parties. The terms `2026-09-30` differ
-from `2026-09-29` only where Plus is concerned: they offer the free trial, and the Plus cancellation
-terms follow having the Plus benefits rather than a paid membership ([The free trial](#plus-trial)).
+terms `2026-09-14`, `2026-09-27`, `2026-09-29` and `2026-09-30`, the privacy policy `2026-09-14` and
+`2026-09-29`, and the contract for work `2026-09-20`, which named the customer and the cleaner as its
+parties. The terms `2026-09-30` differ from `2026-09-29` only where Plus is concerned: they offer the
+free trial, and the Plus cancellation terms follow having the Plus benefits rather than a paid
+membership ([The free trial](#plus-trial)). The terms `2026-10-03` differ from `2026-09-30` only in the
+dirtiness rates, +15 % and +30 % ([The dirtiness level](#dirtiness)).
+
+The privacy policy `2026-10-03` differs from `2026-09-29` only in where personal-data questions go
+(owner ruling 2026-10-03). The sentence under *1. The controller* that invites them, and the sentence
+after the list of rights in *6. Your rights*, name `privacy@cleansia.cz` instead of the company
+record's e-mail. The line that identifies the controller still prints the record's e-mail and phone,
+the company's general contact. The address is written into the text, not filled from the record, so
+a second operating company's market would print it too. Like any newer version, it brings the tick
+back before a customer's next booking ([below](#customer-record)). It took effect on the same day as
+the terms `2026-10-03`, so one tick accepts both.
 
 ### The seller is named from the company record {#company-identity}
 
@@ -1083,11 +1099,42 @@ the market — or from the order, on a contract for work.
   every e-mail. The server fills that line from one constant, whatever a template's translation row
   says. Before, the e-mails named the SendGrid sender `it@cleansia.cz`, a `.com` address or
   `info@cleansia.cz`, and Help named `info@cleansia.cz`. The sender (`SendGrid:AddressFrom`) only
-  delivers mail and is never shown as the contact. No Reply-To is set, so a customer who presses
-  Reply writes to the sender. Two other addresses are unchanged. `privacy@cleansia.cz` is the
-  data-protection contact on the privacy page and in the partner GDPR copy. The `companyEmail` on the
-  company record is the seller's own address (`info@cleansia.cz` in the seed), printed on receipts,
-  invoices and the legal texts.
+  delivers mail and is never shown as the contact. Every e-mail, to a customer, a cleaner or an
+  administrator, sets its Reply-To to `support@cleansia.cz` from the same constant, so pressing Reply
+  writes to support, not to the sender (since 2026-10-03; before, no Reply-To was set). One other
+  address is unchanged. `privacy@cleansia.cz` is the
+  data-protection contact on the privacy page and in the partner GDPR copy, and since the privacy
+  policy `2026-10-03` in the policy's own personal-data sentences ([above](#legal-texts)).
+- **The company record's e-mail is `support@cleansia.cz` too** (owner ruling 2026-10-03). It is the
+  seller's address as the record holds it, the `companyEmail` the legal texts print. The customer terms,
+  privacy policy and complaints procedure and the cleaner's three agreements print it. So do the receipt
+  (the company block and the footer), the payout invoice footer and the booking confirmation's seller
+  section. A customer and a cleaner therefore see one address wherever the company is named. The
+  development seed writes it; until then it held `info@cleansia.cz`. A DEV database seeded earlier is
+  moved by `sql-scripts/fix-company-contact-placeholders.sql`, which changes only a row that still
+  holds the old address; `execute-sql.yml` refuses it against PRO. Production's record is typed into
+  the admin console ([The first production deploy](/deployment/ci-cd#first-production-deploy)). No
+  e-mail prints the company record's e-mail or phone.
+- **The seeded phone is the placeholder `<company_phone_number>`** (owner ruling 2026-10-03). It stays
+  that until the real number is entered in the admin console's company form. It prints as written
+  wherever the record's phone appears. A legal page shows it as text, never as a tag or a link: the
+  HTML carries it escaped, `&lt;company_phone_number&gt;`, and a PDF built from a text prints the
+  literal. The receipt's company block and footer, the payout invoice footer and the booking
+  confirmation's seller section print the literal too. The seed used to hold `+420 123 456 789`, which
+  read like a real number in the legal texts and the cleaner's agreements. The same DEV script moves
+  a row that still holds it. The line the customer web footer prints and the apps' Help dials,
+  +420 739 788 108, does not come from the company record and is unchanged.
+- **Help in the customer apps opens the contact** (since 2026-10-03). On Android and iOS, *Email us*
+  opens the mail app on `support@cleansia.cz` and *Call support* opens the dialer on
+  +420 739 788 108, the line the customer web footer prints. When nothing on the phone takes the link,
+  the app copies the address or the number and says so. On iOS the address is also copied, with a
+  notice, when no Mail account is set up, and the link still opens the default mail app. Before, neither row did anything on Android,
+  and iOS showed both as plain text. Android also offered a *Live chat* row; there is no chat, and the
+  row is gone. Both apps list *Email us* first and *Call support* second, under the same titles in
+  every language: iOS is the reference for this screen (owner ruling 2026-10-03). Until then Android
+  listed *Call support* first, and in Czech, Slovak, Ukrainian and Russian its two titles were
+  infinitives (*Napsat e-mail*, *Zavolat na podporu*) where iOS addresses the customer (*Napište nám*,
+  *Zavolejte podpoře*).
 - **The registered name comes with the registration.** Whether the company is *Cleansia CZ s.r.o.* or
   *Cleansia s.r.o.* is written once, on the company record, and every text, receipt, confirmation and
   e-mail footer follows it; the footer's copyright line still reads *Cleansia s.r.o.*
@@ -1741,6 +1788,39 @@ it is performed twice, priced twice, and takes twice as long.
 
 That is an owner ruling, not a bug, and the doubled crew size and duration follow from it correctly.
 It must not be "fixed" with a de-duplication.
+
+**The clients mark the pair and ask before it is made by hand; they never merge it** (owner remark
+2026-10-03). Wherever a customer picks services and packages — the booking and the schedule form, on
+the web, Android and iOS — the same four things hold:
+
+- **A service a chosen package includes is marked** *In your package: {package}* under its name, the
+  names joined by commas when more than one chosen package includes it. The line is part of what a
+  screen reader announces for the row (on the web booking, the add button's description; on the web
+  schedule form the whole row is the button, and the line is part of its name), and the row stays
+  selectable.
+- **Adding that service asks first.** *Already in your package* — *"{service} is part of {package}.
+  Adding it again books it twice: it is done twice and charged twice."* — with *Add again* and
+  *Cancel*.
+- **Adding a package asks the other way round** when it includes a service already chosen on its
+  own. *Already in your booking* — *"{package} also includes what you already added separately:
+  {services}. Adding the package books that twice: done twice and charged twice."* The wording reads
+  the same for one service or several. — with *Add package* and *Cancel*.
+  On Android and iOS the package's details sheet stays open under the question, closes once the
+  package is in, and stays open on *Cancel*.
+- ***Cancel* leaves the selection as it was**, and it is the way out: it is the alert's cancel action
+  on iOS, Back or a tap outside answers it on Android, and on the web it is the focused button and
+  Escape answers it. **Removing either half never asks.**
+
+**A selection the form is handed is only marked.** A package card on Home, the quick-size card's *See
+my price*, *Order again*, a booking resumed or parked, a schedule started from an order or opened for
+editing, and on the web a catalogue link all fill the form without a tap, so none of them asks; the
+pair shows marked, as it will be charged. The web booking's Plus step suggests services not chosen on
+their own, which can include one a chosen package holds, and its *Add* asks the same question.
+
+The marker matches the package's `IncludedServices[].ServiceId` (`PackageServiceSummary`), which the
+package list already sent; a client given an item without it still prints the item, but neither marks
+that service nor asks about it. Android and iOS word it alike in all five languages; the web words it the same, except that
+its Slovak calls a package *balík*, as the rest of its wizard does, where the apps say *balíček*.
 
 ## Discounts, and the 12 % cap {#discount-cap}
 
@@ -2410,10 +2490,11 @@ failed order"* (owner, Q-AUD-O2).
 **The terms have a version, and the version is the date the text started applying.** The terms and
 the privacy policy are stored documents (`LegalDocuments`, one per audience, type and market, seeded
 from files in the repository at every host start), each identified by its effective date as
-`yyyy-MM-dd`. For the whole platform, in five languages, the terms in force are `2026-09-30` and the
-privacy policy and the complaints procedure `2026-09-29` — our drafts, naming the operating company as
-the seller ([The legal texts](#legal-texts)); the terms `2026-09-29`, `2026-09-27` and `2026-09-14` and
-the privacy policy `2026-09-14` stay as the texts earlier customers accepted. **A document in force
+`yyyy-MM-dd`. For the whole platform, in five languages, the terms and the privacy policy in force are
+`2026-10-03` and the complaints procedure `2026-09-29` — our drafts, naming the operating company as
+the seller ([The legal texts](#legal-texts)); the terms `2026-09-30`, `2026-09-29`, `2026-09-27` and
+`2026-09-14` and the privacy policy `2026-09-29` and `2026-09-14` stay as the texts earlier customers
+accepted. **A document in force
 is immutable**: an edit to its file is refused with a warning, and a wording change is a new file
 under a new date, so every text a customer ever accepted stays in the database. The `/terms`,
 `/privacy` and `/complaints` pages show the version in force for the customer's market (a market's own

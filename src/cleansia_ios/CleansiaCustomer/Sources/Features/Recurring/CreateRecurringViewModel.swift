@@ -129,7 +129,8 @@ enum CreateRecurringEvent: Equatable {
 
 @MainActor
 final class CreateRecurringViewModel: ViewModel {
-    @Published private(set) var formState = CreateRecurringFormState()
+    /// Written here and by the services' taps in CreateRecurringViewModel+TwiceBooked.swift.
+    @Published internal(set) var formState = CreateRecurringFormState()
     @Published private(set) var submitState: ActionState = .idle
     @Published private(set) var catalogState: UiState<Catalog> = .loading
     @Published private(set) var savedAddresses: [RecurringSavedAddress] = []
@@ -140,6 +141,8 @@ final class CreateRecurringViewModel: ViewModel {
     /// customer chooses to save without them.
     @Published private(set) var preferredCleanerRefused = false
     @Published private(set) var servingCleaners: [ServingCleaner] = []
+    /// A tap that would book a service twice, waiting for the customer to confirm or cancel it.
+    @Published internal(set) var twiceBookedPick: TwiceBookedPick?
 
     let sourceOrderId: String?
     let editing: RecurringTemplate?
@@ -452,22 +455,6 @@ final class CreateRecurringViewModel: ViewModel {
 
     func setStartsOn(_ date: Date) {
         formState.startsOn = date
-    }
-
-    func toggleService(_ id: String) {
-        if formState.selectedServiceIds.contains(id) {
-            formState.selectedServiceIds.remove(id)
-        } else {
-            formState.selectedServiceIds.insert(id)
-        }
-    }
-
-    func togglePackage(_ id: String) {
-        if formState.selectedPackageIds.contains(id) {
-            formState.selectedPackageIds.remove(id)
-        } else {
-            formState.selectedPackageIds.insert(id)
-        }
     }
 
     // MARK: - Submit

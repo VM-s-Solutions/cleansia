@@ -373,5 +373,33 @@ extension L10n {
         static var removeFromBooking: String {
             localized("details_remove_from_booking")
         }
+
+        static func inYourPackage(_ packages: String) -> String {
+            format("booking_in_your_package", packages)
+        }
+
+        static var twiceServiceTitle: String {
+            localized("booking_twice_service_title")
+        }
+
+        static func twiceServiceMessage(service: String, packages: String) -> String {
+            format("booking_twice_service_message", service, packages)
+        }
+
+        static var twiceServiceConfirm: String {
+            localized("booking_twice_service_confirm")
+        }
+
+        static var twicePackageTitle: String {
+            localized("booking_twice_package_title")
+        }
+
+        static func twicePackageMessage(package: String, services: String) -> String {
+            format("booking_twice_package_message", package, services)
+        }
+
+        static var twicePackageConfirm: String {
+            localized("booking_twice_package_confirm")
+        }
     }
 }

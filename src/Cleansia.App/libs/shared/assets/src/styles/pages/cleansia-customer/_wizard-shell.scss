@@ -843,6 +843,20 @@
   margin-top: 2px;
 }
 
+// A service a chosen package already includes: one line, the info voice, not a warning.
+.cl-wiz__svc-in-pack {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 4px;
+  font-size: calc(0.8125 * var(--cl-u));
+  color: var(--cl-accent-text);
+
+  i {
+    flex-shrink: 0;
+  }
+}
+
 .cl-wiz__svc-price {
   font-family: $font-heading;
   font-weight: 700;

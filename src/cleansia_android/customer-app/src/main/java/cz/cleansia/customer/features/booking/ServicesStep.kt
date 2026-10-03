@@ -157,9 +157,14 @@ internal fun localizedDescription(
 @Composable
 fun ServicesStep(
     state: BookingState,
-    onUpdate: (BookingState) -> Unit,
+    onToggleService: (String) -> Unit,
+    /** True when the selection changed now; false when the customer is asked to confirm first. */
+    onTogglePackage: (String) -> Boolean,
     onRoomsChange: (Int) -> Unit,
     onBathroomsChange: (Int) -> Unit,
+    doubleBooking: DoubleBooking?,
+    onConfirmDoubleBooking: () -> Unit,
+    onDismissDoubleBooking: () -> Unit,
     viewModel: ServicesStepViewModel = androidx.hilt.navigation.compose.hiltViewModel(),
 ) {
     val catalogRepo = viewModel.catalogRepository
@@ -198,7 +203,7 @@ fun ServicesStep(
         )
         else -> CatalogContent(
             state = state,
-            onUpdate = onUpdate,
+            onToggleService = onToggleService,
             onRoomsChange = onRoomsChange,
             onBathroomsChange = onBathroomsChange,
             services = services,
@@ -227,12 +232,21 @@ fun ServicesStep(
             pkg = pkg,
             currencyCode = currencyCode,
             isSelected = selected,
-            onToggle = {
-                val updated = if (selected) state.selectedPackageIds - pkg.id
-                else state.selectedPackageIds + pkg.id
-                onUpdate(state.copy(selectedPackageIds = updated))
-            },
+            onToggle = { if (onTogglePackage(pkg.id)) detailPackage = null },
             onDismiss = { detailPackage = null },
+        )
+    }
+
+    // Over the package sheet when its add asks: the sheet closes once the package is in, and stays
+    // open on Cancel.
+    doubleBooking?.let { pick ->
+        DoubleBookingDialog(
+            pick = pick,
+            onConfirm = {
+                onConfirmDoubleBooking()
+                detailPackage = null
+            },
+            onDismiss = onDismissDoubleBooking,
         )
     }
 }
@@ -240,7 +254,7 @@ fun ServicesStep(
 @Composable
 private fun CatalogContent(
     state: BookingState,
-    onUpdate: (BookingState) -> Unit,
+    onToggleService: (String) -> Unit,
     onRoomsChange: (Int) -> Unit,
     onBathroomsChange: (Int) -> Unit,
     services: List<ServiceListItem>,
@@ -339,17 +353,13 @@ private fun CatalogContent(
             }
             items(filteredServices) { service ->
                 Column(Modifier.padding(horizontal = 20.dp)) {
-                    val selected = state.selectedServiceIds.contains(service.id)
                     ServiceRow(
                         service = service,
                         currencyCode = currencyCode,
-                        selected = selected,
+                        selected = state.selectedServiceIds.contains(service.id),
+                        inPackages = packages.selectedIncluding(service.id, state.selectedPackageIds),
                         onInfoClick = { onServiceInfo(service) },
-                    ) {
-                        val updated = if (selected) state.selectedServiceIds - service.id
-                        else state.selectedServiceIds + service.id
-                        onUpdate(state.copy(selectedServiceIds = updated))
-                    }
+                    ) { onToggleService(service.id) }
                     Spacer(Modifier.height(8.dp))
                 }
             }
@@ -546,6 +556,7 @@ private fun ServiceRow(
     service: ServiceListItem,
     currencyCode: String?,
     selected: Boolean,
+    inPackages: List<PackageListItem>,
     onInfoClick: () -> Unit,
     onClick: () -> Unit,
 ) {
@@ -580,6 +591,7 @@ private fun ServiceRow(
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
             )
+            InPackageMarker(inPackages)
             if (!description.isNullOrBlank()) {
                 Spacer(Modifier.height(4.dp))
                 Text(

@@ -78,6 +78,9 @@ import cz.cleansia.customer.core.recurring.RecurrenceFrequency
 import cz.cleansia.customer.features.addresses.AddressManagerSheet
 import cz.cleansia.customer.features.booking.DayPartTimePicker
 import cz.cleansia.customer.features.booking.DirtinessLevelPicker
+import cz.cleansia.customer.features.booking.DoubleBookingDialog
+import cz.cleansia.customer.features.booking.InPackageMarker
+import cz.cleansia.customer.features.booking.selectedIncluding
 import cz.cleansia.customer.features.booking.PreferredCleanerPicker
 import cz.cleansia.customer.features.booking.SlotState
 import cz.cleansia.customer.features.booking.TimeSlot
@@ -122,6 +125,7 @@ fun CreateRecurringScreen(
     val cashClearedNotice by viewModel.cashClearedNotice.collectAsStateWithLifecycle()
     val preferredCleanerRefused by viewModel.preferredCleanerRefused.collectAsStateWithLifecycle()
     val termsAsked by viewModel.termsAsked.collectAsStateWithLifecycle()
+    val doubleBooking by viewModel.doubleBooking.collectAsStateWithLifecycle()
     val submitting = submitState is ActionState.Submitting
     val isEditing = viewModel.isEditing
 
@@ -242,6 +246,14 @@ fun CreateRecurringScreen(
             addressSheetOpen = false
         },
     )
+
+    doubleBooking?.let { pick ->
+        DoubleBookingDialog(
+            pick = pick,
+            onConfirm = viewModel::confirmDoubleBooking,
+            onDismiss = viewModel::dismissDoubleBooking,
+        )
+    }
 }
 
 private const val TOTAL_STEPS = CreateRecurringViewModel.TOTAL_STEPS
@@ -1055,7 +1067,8 @@ private fun CatalogRetryBlock(text: String, onRetry: () -> Unit) {
  * Services + packages picker — full-width selectable cards. Package cards
  * additionally show a bulleted "Includes:" list of services contained in
  * the package, so users can compare like-for-like before tapping. Service
- * cards stay simple (title + optional description).
+ * cards carry a title, an optional description and, while a chosen package
+ * includes the service, the "In your package" marker.
  */
 @Composable
 private fun ServicesPackagesPicker(
@@ -1098,6 +1111,7 @@ private fun ServicesPackagesPicker(
                 ServiceCard(
                     title = localizedName(svc.translations, svc.name),
                     description = localizedDescription(svc.translations, svc.description),
+                    inPackages = packages.selectedIncluding(svc.id, selectedPackageIds),
                     selected = svc.id in selectedServiceIds,
                     onClick = { onToggleService(svc.id) },
                 )
@@ -1166,6 +1180,7 @@ private fun PackageCard(
 private fun ServiceCard(
     title: String,
     description: String?,
+    inPackages: List<PackageListItem>,
     selected: Boolean,
     onClick: () -> Unit,
 ) {
@@ -1179,6 +1194,7 @@ private fun ServiceCard(
                 style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.SemiBold),
                 color = MaterialTheme.colorScheme.onSurface,
             )
+            InPackageMarker(inPackages)
             if (!description.isNullOrBlank()) {
                 Spacer(Modifier.height(2.dp))
                 Text(

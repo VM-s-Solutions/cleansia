@@ -156,6 +156,7 @@ private fun GenPackageServiceSummary.toAppDto(): PackageServiceSummary =
     PackageServiceSummary(
         name = name.required("name"),
         translations = translations?.mapValues { it.value.toAppDto() },
+        serviceId = serviceId,
     )
 
 private fun GenTranslation.toAppDto(): TranslationDto =

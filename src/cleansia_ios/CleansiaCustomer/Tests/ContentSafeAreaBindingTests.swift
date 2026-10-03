@@ -1,3 +1,4 @@
+import SwiftUI
 import XCTest
 @testable import CleansiaCustomer
 
@@ -59,6 +60,49 @@ final class ContentSafeAreaBindingTests: XCTestCase {
         XCTAssertFalse(StatusBarFade.isScrolled(contentMinY: -0.5))
         XCTAssertTrue(StatusBarFade.isScrolled(contentMinY: -2))
         XCTAssertTrue(StatusBarFade.isScrolled(contentMinY: -400))
+    }
+
+    /// The fade covers the status bar and a short tail, nothing more, and eases from full to clear with no
+    /// step a line could show at: the stops start full, never rise, fall by little at a time and end clear
+    /// at the tail's end; the backing is full only across the top of the status bar.
+    func testTheFadeCoversOnlyTheStatusBarAndEasesOutWithoutAStep() {
+        XCTAssertTrue((6 ... 10).contains(StatusBarFade.tail), "the tail below the status bar is not short")
+        for top: CGFloat in [20, 47, 59, 62] {
+            let stops = StatusBarFade.stops(statusBar: top)
+            let alphas = stops.map { UIColor($0.color).cgColor.alpha }
+            let locations = stops.map(\.location)
+            XCTAssertGreaterThanOrEqual(stops.count, 8, "too few stops for an eased curve")
+            XCTAssertEqual(locations.first, 0)
+            XCTAssertEqual(locations.last ?? 0, 1, accuracy: 0.0001)
+            XCTAssertEqual(alphas.first ?? 0, 1, accuracy: 0.001)
+            XCTAssertEqual(alphas.last ?? 1, 0, accuracy: 0.001)
+            XCTAssertEqual(
+                locations[1],
+                top * StatusBarFade.holdShare / (top + StatusBarFade.tail),
+                accuracy: 0.0001,
+                "the falloff does not start inside the status bar"
+            )
+            XCTAssertLessThan(StatusBarFade.holdShare, 1)
+            for (earlier, later) in zip(stops, stops.dropFirst()) {
+                XCTAssertLessThanOrEqual(earlier.location, later.location)
+                let fall = UIColor(earlier.color).cgColor.alpha - UIColor(later.color).cgColor.alpha
+                XCTAssertGreaterThanOrEqual(fall, -0.0001, "the fade rises again")
+                XCTAssertLessThanOrEqual(fall, 0.2, "the fade drops in a step")
+            }
+        }
+    }
+
+    /// One fade on every version (iOS 26's system edge reaches far below the status bar), with Reduce
+    /// Transparency read so a page-colour wash stands in for the blur.
+    func testTheFadeIsTheSameOnEveryVersionAndHonoursReduceTransparency() throws {
+        let fade = try compactSource("CleansiaCustomer/Sources/Components/StatusBarFadeScrollView.swift")
+        XCTAssertFalse(fade.contains("#available"), "the fade differs by version")
+        XCTAssertFalse(fade.contains("scrollEdgeEffect"), "the system edge is back")
+        XCTAssertTrue(fade.contains("@Environment(\\.accessibilityReduceTransparency)"))
+        XCTAssertTrue(fade.contains(
+            "if!reduceTransparency{Rectangle().fill(.ultraThinMaterial).opacity(StatusBarFade.blur)}"
+        ))
+        XCTAssertTrue(fade.contains(".allowsHitTesting(false).accessibilityHidden(true)"))
     }
 
     private func assertOnlyBackgroundsExtendUnderTheStatusBar(_ path: String) throws {

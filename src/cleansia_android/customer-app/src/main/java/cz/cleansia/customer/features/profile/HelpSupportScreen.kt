@@ -1,5 +1,11 @@
 package cz.cleansia.customer.features.profile
 
+import android.content.ActivityNotFoundException
+import android.content.ClipData
+import android.content.ClipboardManager
+import android.content.Context
+import android.content.Intent
+import android.net.Uri
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -20,7 +26,6 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.ArrowBack
 import androidx.compose.material.icons.automirrored.outlined.ArrowForwardIos
-import androidx.compose.material.icons.outlined.Chat
 import androidx.compose.material.icons.outlined.Email
 import androidx.compose.material.icons.outlined.ExpandMore
 import androidx.compose.material.icons.outlined.HelpOutline
@@ -42,6 +47,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
@@ -55,6 +61,10 @@ import cz.cleansia.customer.ui.theme.CleansiaTheme
 import cz.cleansia.core.ui.theme.Poppins
 
 private data class FaqItem(val qRes: Int, val answer: @Composable () -> String)
+
+/** The one support contact (owner ruling 2026-10-02) and the line the customer web footer prints. */
+private const val SUPPORT_EMAIL = "support@cleansia.cz"
+private const val SUPPORT_PHONE = "+420739788108"
 
 /** Answer 3 states the insurance ceiling only when the market authored one (ADR-0060 D2). */
 private fun faqs(insuranceCoverage: InsuranceCoverage?) = listOf(
@@ -72,19 +82,32 @@ private fun faqs(insuranceCoverage: InsuranceCoverage?) = listOf(
 @Composable
 fun HelpSupportScreen(
     onBack: () -> Unit = {},
-    onCall: () -> Unit = {},
-    onEmail: () -> Unit = {},
-    onChat: () -> Unit = {},
     viewModel: HelpSupportViewModel = hiltViewModel(),
 ) {
+    val context = LocalContext.current
     val insuranceCoverage by viewModel.insuranceCoverage.collectAsStateWithLifecycle()
     HelpSupportScreenContent(
         insuranceCoverage = insuranceCoverage,
         onBack = onBack,
-        onCall = onCall,
-        onEmail = onEmail,
-        onChat = onChat,
+        onCall = {
+            val dial = Intent(Intent.ACTION_DIAL, Uri.parse("tel:$SUPPORT_PHONE"))
+            if (!context.openOrCopy(dial, SUPPORT_PHONE)) viewModel.onCallUnavailable()
+        },
+        onEmail = {
+            val mail = Intent(Intent.ACTION_SENDTO, Uri.parse("mailto:$SUPPORT_EMAIL"))
+            if (!context.openOrCopy(mail, SUPPORT_EMAIL)) viewModel.onEmailUnavailable()
+        },
     )
+}
+
+/** Starts [intent]; when no app on the device handles it, copies [value] instead and returns false. */
+private fun Context.openOrCopy(intent: Intent, value: String): Boolean = try {
+    startActivity(intent)
+    true
+} catch (_: ActivityNotFoundException) {
+    (getSystemService(Context.CLIPBOARD_SERVICE) as? ClipboardManager)
+        ?.setPrimaryClip(ClipData.newPlainText(value, value))
+    false
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -94,7 +117,6 @@ private fun HelpSupportScreenContent(
     onBack: () -> Unit,
     onCall: () -> Unit,
     onEmail: () -> Unit,
-    onChat: () -> Unit,
 ) {
     val faqs = faqs(insuranceCoverage)
     Column(
@@ -123,11 +145,12 @@ private fun HelpSupportScreenContent(
             )
             Spacer(Modifier.height(10.dp))
 
+            // E-mail first, then the line: iOS's Help is the reference for this screen (owner, 2026-10-03).
             ContactRow(
-                icon = Icons.Outlined.Chat,
-                title = stringResource(R.string.help_chat),
-                subtitle = stringResource(R.string.help_chat_desc),
-                onClick = onChat,
+                icon = Icons.Outlined.Email,
+                title = stringResource(R.string.help_email),
+                subtitle = stringResource(R.string.help_email_desc),
+                onClick = onEmail,
             )
             Spacer(Modifier.height(8.dp))
             ContactRow(
@@ -135,13 +158,6 @@ private fun HelpSupportScreenContent(
                 title = stringResource(R.string.help_call),
                 subtitle = stringResource(R.string.help_call_desc),
                 onClick = onCall,
-            )
-            Spacer(Modifier.height(8.dp))
-            ContactRow(
-                icon = Icons.Outlined.Email,
-                title = stringResource(R.string.help_email),
-                subtitle = stringResource(R.string.help_email_desc),
-                onClick = onEmail,
             )
 
             Spacer(Modifier.height(24.dp))
@@ -256,6 +272,6 @@ private fun FaqRow(faq: FaqItem) {
 @Composable
 private fun HelpPreview() {
     CleansiaTheme {
-        HelpSupportScreenContent(insuranceCoverage = null, onBack = {}, onCall = {}, onEmail = {}, onChat = {})
+        HelpSupportScreenContent(insuranceCoverage = null, onBack = {}, onCall = {}, onEmail = {})
     }
 }

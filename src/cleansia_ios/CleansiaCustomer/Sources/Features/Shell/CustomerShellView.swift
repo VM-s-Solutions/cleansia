@@ -13,6 +13,8 @@ struct CustomerShellView: View {
     /// Whether the open booking came from the FAB, the one entry it zooms out of.
     @State private var bookingFromFab = false
     @Environment(\.snackbarController) var snackbar
+    /// The shell's, not the booking sheet's: inside a sheet `scenePhase` stops updating on iOS 16.
+    @Environment(\.scenePhase) private var scenePhase
     let container: CustomerAppContainer
     private let onSignedOut: () -> Void
     private let onNeedsOnboarding: () -> Void
@@ -78,7 +80,10 @@ struct CustomerShellView: View {
             }
         }
         .tint(CleansiaColors.primary)
-        .sheet(isPresented: $model.isBookingPresented, onDismiss: { bookingFromFab = false }, content: {
+        .sheet(isPresented: $model.isBookingPresented, onDismiss: {
+            bookingFromFab = false
+            bookingVM.draftLeft()
+        }, content: {
             BookingSheetView(
                 vm: bookingVM,
                 geocoding: container.geocodingService,
@@ -118,6 +123,9 @@ struct CustomerShellView: View {
         }
         .onChange(of: model.selection) { _ in
             if model.resolveSelection() { openBooking() }
+        }
+        .onChange(of: scenePhase) { phase in
+            if phase == .active, model.isBookingPresented { recheckOpenBooking() }
         }
         .onChange(of: pushNavigation.pendingDestination) { destination in
             guard let destination else { return }

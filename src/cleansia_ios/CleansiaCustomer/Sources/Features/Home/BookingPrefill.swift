@@ -5,11 +5,12 @@ import Foundation
 /// the `BookingBottomSheet.kt` hydration/prefill/rebook effects (:270-282,
 /// :305-374, :390-399), lifted out so the shell wiring stays logic-free.
 enum BookingPrefill {
-    /// Seed the address from the preferred saved address. Android resets the
-    /// draft on every fresh open and then hydrates a blank street; iOS keeps a
-    /// session-lived draft, so it re-hydrates when the preferred selection has
-    /// changed AND the current address is still the one auto-hydration seeded
-    /// (never overwriting a hand-picked address). A blank street always seeds.
+    /// Seed the address from the preferred saved address. Both apps keep a
+    /// session-lived draft, so a blank street always seeds, and a resumed one
+    /// re-seeds only when the preferred selection has changed AND the current
+    /// address is still the one auto-hydration seeded (never overwriting a
+    /// hand-picked address) — the rule Android's
+    /// `BookingState.hydratedWithPreferred` (BookingBottomSheet.kt) applies too.
     /// The Android copy also assigns `countryIsoCode`, but server-loaded saved
     /// addresses carry an empty ISO there; iOS keeps the current value —
     /// `savedAddressId` drives the submit either way.

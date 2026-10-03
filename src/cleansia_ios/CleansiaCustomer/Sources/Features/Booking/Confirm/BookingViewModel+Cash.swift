@@ -57,8 +57,9 @@ extension BookingViewModel {
         }
     }
 
-    func landQuote(_ quote: BookingQuote, for request: QuoteRequest) {
+    func landQuote(_ quote: BookingQuote, for request: QuoteRequest, at now: Date = Date()) {
         lastQuoteRequest = request
+        quotedAt = now
         quoteState = .quoted(quote)
         if state.paymentMethod == .cash, cashEligibility.refusesCash {
             dropCash(announce: true)

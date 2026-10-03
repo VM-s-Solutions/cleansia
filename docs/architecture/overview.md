@@ -1,41 +1,41 @@
 # Architecture Overview
 
-Cleansia is a multi-tenant cleaning services platform deployed on Azure. The system consists of 4 backend APIs, 3 frontend apps, an Android mobile app, and Azure Functions for background processing.
+Cleansia is a multi-tenant cleaning services platform deployed on Azure. The system consists of 5 backend APIs, 3 frontend apps, a customer app and a partner app on both Android and iOS, and Azure Functions for background processing.
 
 ## System Diagram
 
 ```
-                          ┌─────────────────────┐
-                          │   Azure DNS          │
-                          │   cleansia.cz        │
-                          └──────────┬───────────┘
-                                     │
-              ┌──────────────────────┼──────────────────────┐
-              │                      │                      │
-     ┌────────▼────────┐   ┌────────▼────────┐   ┌────────▼────────┐
-     │ Customer SSR    │   │ Partner SPA     │   │ Admin SPA       │
-     │ App Service     │   │ Static Web App  │   │ Static Web App  │
-     │ (Node.js 20)    │   │ (Angular 19)    │   │ (Angular 19)    │
-     └────────┬────────┘   └────────┬────────┘   └────────┬────────┘
-              │                      │                      │
-     ┌────────▼────────┐   ┌────────▼────────┐   ┌────────▼────────┐
-     │ Customer API    │   │ Partner API     │   │ Admin API       │
-     │ .NET 10         │   │ .NET 10         │   │ .NET 10         │
-     └────────┬────────┘   └────────┬────────┘   └────────┬────────┘
-              │                      │                      │
-              └──────────────────────┼──────────────────────┘
-                                     │
-                          ┌──────────▼───────────┐
-                          │   PostgreSQL          │
-                          │   Flexible Server     │
-                          └──────────┬───────────┘
-                                     │
-              ┌──────────────────────┼──────────────────────┐
-              │                      │                      │
-     ┌────────▼────────┐   ┌────────▼────────┐   ┌────────▼────────┐
-     │ Azure Functions │   │ Azure Blob      │   │ Azure Key Vault │
-     │ (Docker)        │   │ Storage         │   │                 │
-     └─────────────────┘   └─────────────────┘   └─────────────────┘
+                    ┌───────────────────┐
+                    │ Azure DNS         │
+                    │ cleansia.cz       │
+                    └─────────┬─────────┘
+                              │
+         ┌────────────────────┼────────────────────┐
+         │                    │                    │
+┌────────▼────────┐  ┌────────▼────────┐  ┌────────▼────────┐  ┌─────────────────┐  ┌─────────────────┐
+│ Customer SSR    │  │ Partner SPA     │  │ Admin SPA       │  │ Customer app    │  │ Partner app     │
+│ App Service     │  │ Static Web App  │  │ Static Web App  │  │ Android + iOS   │  │ Android + iOS   │
+│ (Node.js 20)    │  │ (Angular 19)    │  │ (Angular 19)    │  │                 │  │                 │
+└────────┬────────┘  └────────┬────────┘  └────────┬────────┘  └────────┬────────┘  └────────┬────────┘
+         │                    │                    │                    │                    │
+┌────────▼────────┐  ┌────────▼────────┐  ┌────────▼────────┐  ┌────────▼────────┐  ┌────────▼────────┐
+│ Customer API    │  │ Partner API     │  │ Admin API       │  │ Customer Mobile │  │ Partner Mobile  │
+│ .NET 10         │  │ .NET 10         │  │ .NET 10         │  │ API · .NET 10   │  │ API · .NET 10   │
+└────────┬────────┘  └────────┬────────┘  └────────┬────────┘  └────────┬────────┘  └────────┬────────┘
+         │                    │                    │                    │                    │
+         └────────────────────┴────────────────────┼────────────────────┴────────────────────┘
+                                                   │
+                                        ┌──────────▼──────────┐
+                                        │ PostgreSQL          │
+                                        │ Flexible Server     │
+                                        └──────────┬──────────┘
+                                                   │
+                              ┌────────────────────┼────────────────────┐
+                              │                    │                    │
+                     ┌────────▼────────┐  ┌────────▼────────┐  ┌────────▼────────┐
+                     │ Azure Functions │  │ Azure Blob      │  │ Azure Key Vault │
+                     │ (Docker)        │  │ Storage         │  │                 │
+                     └─────────────────┘  └─────────────────┘  └─────────────────┘
 ```
 
 ## Technology Stack
@@ -50,7 +50,7 @@ Cleansia is a multi-tenant cleaning services platform deployed on Azure. The sys
 | iOS | Swift / SwiftUI (iOS 16 floor) | XcodeGen + SPM |
 | Background Jobs | Azure Functions (Docker) | v4 |
 | PDF Generation | QuestPDF | Native .NET |
-| Email | SendGrid | Dynamic Templates |
+| Email | SendGrid | Delivery only — [the server renders the HTML](/architecture/infrastructure#sendgrid) |
 | Payments | Stripe | Checkout Sessions |
 | Auth | JWT + Google OAuth | Custom |
 | Orchestration | .NET Aspire | 13.1.1 |

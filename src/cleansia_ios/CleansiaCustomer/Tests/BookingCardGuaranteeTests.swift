@@ -217,6 +217,114 @@ final class BookingCardGuaranteeTests: XCTestCase {
         XCTAssertFalse(vm.submitState.isSubmitting)
     }
 
+    /// Saving the card can take a while; a time that stopped holding meanwhile books nothing and waits for no
+    /// card — the customer picks a time again first.
+    func testATimeThatStoppedHoldingWhileTheCardWasSavedBooksNothing() async throws {
+        let cards = FakeSavedCardClient()
+        let create = FakeOrderCreateClient()
+        let vm = makeVM(cards: cards, create: create)
+        vm.update(readyState())
+        guard case .cardGuaranteeNeeded = await vm.submit() else { return XCTFail("no capture was asked for") }
+        let readsBefore = cards.readCount
+        let calendar = Calendar.current
+        let yesterday = try XCTUnwrap(calendar.date(byAdding: .day, value: -1, to: calendar.startOfDay(for: Date())))
+        vm.selectDay(yesterday)
+        vm.selectTime("10:00", on: yesterday)
+
+        let outcome = await vm.submitAfterCardGuarantee()
+
+        XCTAssertEqual(outcome, .timeNoLongerHolds)
+        XCTAssertEqual(vm.state.selectedTime, "")
+        XCTAssertTrue(create.commands.isEmpty)
+        XCTAssertEqual(cards.readCount, readsBefore, "it waited for the card")
+        XCTAssertFalse(vm.submitState.isSubmitting)
+    }
+
+    /// A time already cleared — a re-check ran while the card was being saved — is refused the same way: no card
+    /// is waited for and nothing is sent, and the customer is told the time changed, not that the connection
+    /// failed.
+    func testATimeClearedWhileTheCardWasSavedBooksNothing() async throws {
+        let cards = FakeSavedCardClient()
+        let create = FakeOrderCreateClient()
+        let vm = makeVM(cards: cards, create: create)
+        vm.update(readyState())
+        guard case .cardGuaranteeNeeded = await vm.submit() else { return XCTFail("no capture was asked for") }
+        let readsBefore = cards.readCount
+        let calendar = Calendar.current
+        let yesterday = try XCTUnwrap(calendar.date(byAdding: .day, value: -1, to: calendar.startOfDay(for: Date())))
+        vm.selectDay(yesterday)
+        vm.selectTime("10:00", on: yesterday)
+        XCTAssertTrue(vm.revalidateResumedTime(), "the time was not cleared")
+
+        let outcome = await vm.submitAfterCardGuarantee()
+
+        XCTAssertEqual(outcome, .timeNoLongerHolds)
+        XCTAssertEqual(cards.readCount, readsBefore, "it waited for the card")
+        XCTAssertTrue(create.commands.isEmpty)
+        XCTAssertFalse(vm.submitState.isSubmitting)
+    }
+
+    /// "Still saving your card" asks the customer to slide again. That slide waits for the card PaymentSheet
+    /// already saved; it never opens a second capture because the first has not reached the server yet
+    /// (Android's `submit`).
+    func testASlideAfterTheCardWasStillSavingWaitsForThatCardRatherThanCapturingASecond() async {
+        let notYet = [ApiResult<[SavedCard]>](repeating: .success([]), count: 1 + BookingViewModel.cardCaptureReads + 1)
+        let cards = FakeSavedCardClient(reads: notYet + [.success([PaymentsFixtures.czkCard])])
+        let create = FakeOrderCreateClient()
+        let vm = makeVM(cards: cards, create: create)
+        vm.update(readyState())
+        guard case .cardGuaranteeNeeded = await vm.submit() else { return XCTFail("no capture was asked for") }
+        let stillSaving = await vm.submitAfterCardGuarantee()
+        XCTAssertEqual(stillSaving, .cardGuaranteePending)
+
+        let outcome = await vm.submit()
+
+        XCTAssertEqual(outcome, .success(orderId: "order-1", confirmationCode: "CLN-001"))
+        XCTAssertEqual(cards.captureConsents.count, 1, "a second card was captured")
+        XCTAssertEqual(create.commands.count, 1)
+    }
+
+    /// A time that stopped holding while the card was saved sends the customer back to When; the slide after
+    /// they pick again books on the card already saved.
+    func testASlideAfterATimeThatStoppedHoldingWaitsForTheCardAlreadySaved() async throws {
+        let cards = FakeSavedCardClient(reads: [.success([]), .success([]), .success([PaymentsFixtures.czkCard])])
+        let create = FakeOrderCreateClient()
+        let vm = makeVM(cards: cards, create: create)
+        vm.update(readyState())
+        guard case .cardGuaranteeNeeded = await vm.submit() else { return XCTFail("no capture was asked for") }
+        let calendar = Calendar.current
+        let today = calendar.startOfDay(for: Date())
+        let yesterday = try XCTUnwrap(calendar.date(byAdding: .day, value: -1, to: today))
+        vm.selectDay(yesterday)
+        vm.selectTime("10:00", on: yesterday)
+        let timeGone = await vm.submitAfterCardGuarantee()
+        XCTAssertEqual(timeGone, .timeNoLongerHolds)
+        let later = try XCTUnwrap(calendar.date(byAdding: .day, value: 3, to: today))
+        vm.selectDay(later)
+        vm.selectTime("10:00", on: later)
+
+        let outcome = await vm.submit()
+
+        XCTAssertEqual(outcome, .success(orderId: "order-1", confirmationCode: "CLN-001"))
+        XCTAssertEqual(cards.captureConsents.count, 1, "a second card was captured")
+    }
+
+    /// A setup sheet the customer cancelled saved nothing: the next slide captures afresh at once instead of
+    /// waiting out the reads for a card that is not coming.
+    func testAfterTheSetupSheetIsAbandonedTheNextSlideCapturesAfresh() async {
+        let cards = FakeSavedCardClient()
+        let vm = makeVM(cards: cards)
+        vm.update(readyState())
+        guard case .cardGuaranteeNeeded = await vm.submit() else { return XCTFail("no capture was asked for") }
+
+        vm.abandonCardGuarantee()
+        let outcome = await vm.submit()
+
+        guard case .cardGuaranteeNeeded = outcome else { return XCTFail("no fresh capture: \(outcome)") }
+        XCTAssertEqual(cards.captureConsents.count, 2)
+        XCTAssertEqual(cards.readCount, 2, "it waited for a card the cancelled sheet never saved")
+    }
+
     func testWithoutACaptureInFlightThereIsNothingToWaitFor() async {
         let cards = FakeSavedCardClient()
         let vm = makeVM(cards: cards)

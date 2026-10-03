@@ -35,6 +35,11 @@ data class ServiceListItem(
 data class PackageServiceSummary(
     val name: String,
     val translations: Map<String, TranslationDto>? = null,
+    /**
+     * The included service's own id, which marks that service in the list while the package is chosen.
+     * Not required: a row without it still prints, and only loses that marker.
+     */
+    val serviceId: String? = null,
 )
 
 @Serializable

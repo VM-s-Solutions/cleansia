@@ -834,6 +834,15 @@
       "package_most_popular": "Najobľúbenejšie",
       "package_select": "Vybrať balík",
       "package_selected": "Vybrané",
+      "package_overlap": {
+        "in_package": "Vo vašom balíku: {{package}}",
+        "service_title": "Už je vo vašom balíku",
+        "service_message": "Služba {{service}} je súčasťou balíka {{package}}. Ak ju pridáte znova, objednáte ju dvakrát: vykoná sa dvakrát a zaplatíte ju dvakrát.",
+        "add_again": "Pridať znova",
+        "package_title": "Už je vo vašej rezervácii",
+        "package_message": "Balík {{package}} obsahuje aj to, čo už máte v rezervácii samostatne: {{services}}. Ak balík pridáte, objednáte to dvakrát: vykoná sa to dvakrát a zaplatíte to dvakrát.",
+        "add_package": "Pridať balík"
+      },
       "packages_section_title": "Balíky",
       "pay_by_card": "Platba kartou",
       "pay_by_cash": "Platba v hotovosti",

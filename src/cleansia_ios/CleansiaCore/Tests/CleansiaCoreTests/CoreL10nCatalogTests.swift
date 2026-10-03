@@ -69,6 +69,16 @@ final class CoreL10nCatalogTests: XCTestCase {
         XCTAssertEqual(localizer.message(forStatus: 500), english)
     }
 
+    /// Both apps resolve catalog plurals against this locale, so it is the in-app language's, whatever the
+    /// process locale reports — the switch never changes `.current`.
+    func testTheLocaleIsTheAppliedLanguagesNotTheDevices() {
+        defer { CoreL10n.apply(languageTag: "en") }
+        for tag in ["uk", "ru", "cs", "sk", "en"] {
+            CoreL10n.apply(languageTag: tag)
+            XCTAssertEqual(CoreL10n.locale.identifier, tag)
+        }
+    }
+
     func testApplyUnknownTagFallsBackToTheModuleDefault() {
         CoreL10n.apply(languageTag: "de")
         XCTAssertEqual(CoreL10n.bundle.bundlePath, Bundle.module.bundlePath)

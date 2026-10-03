@@ -540,12 +540,12 @@
     <!-- Profile — help & support -->
     <string name="help_title">Nápověda a podpora</string>
     <string name="help_contact_title">Kontaktujte nás</string>
-    <string name="help_chat">Živý chat</string>
-    <string name="help_chat_desc">Obvykle odpovíme do několika minut</string>
-    <string name="help_call">Zavolat na podporu</string>
+    <string name="help_call">Zavolejte podpoře</string>
     <string name="help_call_desc">Po–Ne · 8:00–20:00</string>
-    <string name="help_email">Napsat e-mail</string>
+    <string name="help_email">Napište nám</string>
     <string name="help_email_desc">support@cleansia.cz</string>
+    <string name="help_call_unavailable">Na tomto zařízení nelze volat. Číslo je zkopírované.</string>
+    <string name="help_email_unavailable">Nenašli jsme e-mailovou aplikaci. Adresa je zkopírovaná.</string>
     <string name="help_faq_title">Často kladené otázky</string>
     <string name="help_faq_q1">Jak mohu zrušit rezervaci?</string>
     <string name="help_faq_a1">Otevřete rezervaci v záložce Objednávky a klepněte na \"Zrušit\". Zrušení zdarma až 24 hodin před začátkem úklidu. Do 15 minut od objednání neplatíte nic — u první objednávky nebo s Cleansia Plus do 60 minut.</string>
@@ -656,6 +656,13 @@
     <string name="details_per_room">Za pokoj</string>
     <string name="details_add_to_booking">Přidat do rezervace</string>
     <string name="details_remove_from_booking">Odebrat z rezervace</string>
+    <string name="booking_in_your_package">Ve vašem balíčku: %1$s</string>
+    <string name="booking_twice_service_title">Už je ve vašem balíčku</string>
+    <string name="booking_twice_service_message">Služba %1$s je součástí balíčku %2$s. Když ji přidáte znovu, objednáte ji dvakrát: provede se dvakrát a zaplatíte ji dvakrát.</string>
+    <string name="booking_twice_service_confirm">Přidat znovu</string>
+    <string name="booking_twice_package_title">Už je ve vaší rezervaci</string>
+    <string name="booking_twice_package_message">Balíček %1$s obsahuje i to, co už máte v rezervaci samostatně: %2$s. Když balíček přidáte, objednáte to dvakrát: provede se to dvakrát a zaplatíte to dvakrát.</string>
+    <string name="booking_twice_package_confirm">Přidat balíček</string>
     <string name="booking_your_home">Váš domov</string>
     <string name="booking_size_limit_caption">Nejvýše %1$d pokojů a %2$d koupelny</string>
     <string name="booking_search_services">Hledat služby</string>
@@ -827,6 +834,7 @@
     <string name="booking_cash_needs_card">Počet uklízečů potřebných pro tuto objednávku: %1$d. Hotově lze platit jen objednávky, které zvládne jeden uklízeč, tuto proto zaplatíte kartou.</string>
     <string name="booking_cash_pending">Zda můžete platit hotově, potvrdíme, jakmile bude známa cena.</string>
     <string name="booking_cash_cleared">Platba hotově už pro tuto objednávku není možná, a proto není vybrán žádný způsob platby. Zvolte, jak chcete platit.</string>
+    <string name="booking_draft_time_changed">Vybraný čas už není dostupný nebo se změnila jeho cena. Vyberte prosím čas znovu.</string>
     <string name="booking_card_guarantee_title">Karta jako záruka plateb v hotovosti</string>
     <string name="booking_card_guarantee_body">Při první objednávce v hotovosti si uložíte kartu. Nic se teď nestrhává: za úklid zaplatíte v hotovosti jako obvykle.</string>
     <string name="consent_card_guarantee_draft_2026_09_28">Souhlasím, že Cleansia může u mých objednávek v hotovosti strhnout z této karty storno poplatek, poplatek za neumožnění vstupu, nezaplacenou hotovost a doplatek, který jsem schválil(a).</string>

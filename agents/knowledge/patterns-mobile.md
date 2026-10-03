@@ -1151,8 +1151,13 @@ the device. **Views read `@Environment(\.locale)`**; a **non-View** (ViewModel) 
 in-app language (it follows the DEVICE). Pure formatters/localizers take an explicit `locale:` / `for locale:`
 param threaded from the caller's `@Environment(\.locale)` — never default to `.current` at a call site
 (e.g. `OrdersFormat.dateRange/dateTime`, `Catalog{Service,Package,Category,Extra}.localizedName(for:)`).
+A catalog **plural** is the same rule: `String(format:locale:)` picks the variation by the locale's plural
+rules, so it goes through the app's `L10n.plural`, which passes `CoreL10n.locale` (the in-app tag's locale)
+→ `docs/mobile-app/features.md#localization`.
 **Deviations a reviewer rejects:** a View date/name that renders `Locale.current` (device) while a sibling
-renders the app language; a device-defaulting `localizedName` computed accessor kept as a call-site footgun.
+renders the app language; a device-defaulting `localizedName` computed accessor kept as a call-site footgun;
+a plural key formatted through `format` / `String(format:)` with no locale or `.current` (K-1, 2026-10-03:
+*5 кімнати* on an English phone).
 **Re-rendering on the in-app switch (iOS fix3, partner Orders/OrderDetail/Dashboard):** injecting the root
 `\.environment(\.locale, …)` is necessary but NOT sufficient — a view only re-runs its body when a dependency
 it *reads* changes. A view that renders a per-locale value (a threaded `locale:` date/name) re-runs for free.

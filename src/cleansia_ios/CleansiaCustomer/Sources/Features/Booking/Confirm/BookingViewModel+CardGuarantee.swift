@@ -58,8 +58,14 @@ extension BookingViewModel {
         return await cardGuaranteeStep(for: current, quote: quote)
     }
 
-    /// Read from the server's cards at the moment of booking, not the list the review step showed.
+    /// Read from the server's cards at the moment of booking, not the list the review step showed. A card
+    /// PaymentSheet already saved is waited for, never captured a second time: a slide after "still saving"
+    /// or after a time that stopped holding books on the card already on its way (Android's `submit`).
     private func cardGuaranteeStep(for current: BookingState, quote: BookingQuote) async -> BookingSubmitOutcome? {
+        if let pending = guaranteeCurrencyCode {
+            guard await awaitUsableCard(currencyCode: pending) else { return .cardGuaranteePending }
+            guaranteeCurrencyCode = nil
+        }
         let read = await refreshSavedCards()
         guard case let .success(cards) = read else { return .failed(read.apiErrorOrNil) }
         guard SavedCard.usable(in: cards, currencyCode: quote.currencyCode) == nil else { return nil }
@@ -81,16 +87,18 @@ extension BookingViewModel {
     }
 
     /// Called once PaymentSheet saved the card. The card reaches the account through Stripe's webhook,
-    /// so the booking waits until it can be read before the cash order is created; if it has not landed
-    /// in time, nothing is booked and the customer slides again.
+    /// so the booking waits until it can be read before the cash order is created (`cardGuaranteeStep`);
+    /// if it has not landed in time, nothing is booked and the customer slides again, and that slide waits
+    /// for the same card. A time that stopped holding while the card was saved waits for no card: `submit`
+    /// refuses it before anything is read.
     func submitAfterCardGuarantee() async -> BookingSubmitOutcome {
-        guard let currencyCode = guaranteeCurrencyCode, !submitState.isSubmitting else { return .failed(nil) }
-        submitState = .submitting
-        let landed = await awaitUsableCard(currencyCode: currencyCode)
-        submitState = .idle
-        guard landed else { return .cardGuaranteePending }
-        guaranteeCurrencyCode = nil
+        guard guaranteeCurrencyCode != nil else { return .failed(nil) }
         return await submit()
+    }
+
+    /// A cancelled or failed setup sheet saved nothing, so the next cash booking captures afresh.
+    func abandonCardGuarantee() {
+        guaranteeCurrencyCode = nil
     }
 
     private func awaitUsableCard(currencyCode: String) async -> Bool {

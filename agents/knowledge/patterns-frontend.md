@@ -320,7 +320,8 @@ will do, or what a preview found) → **`.dialog-actions`**: the outlined cancel
 expire-credit and reject are the three admin templates the guard names (owner may overrule; the
 review ruling of 2026-09-22 is on T-0790). No dialog draws its own header, title or footer.
 Confirmations are the shared **`DialogService`** in `@cleansia/services` (`confirmTranslated(messageKey,
-headerKey?, params?, { danger })`, `confirmDelete(itemName?)`) over the **one**
+headerKey?, params?, { danger, defaultFocus })`, `confirmDelete(itemName?)`; `defaultFocus: 'reject'`
+puts *Cancel* under Enter where adding is the risk, and left out PrimeNG focuses accept) over the **one**
 `<p-confirmDialog styleClass="cleansia-dialog" />` each app shell mounts; no feature provides
 `ConfirmationService` or calls `.confirm(` itself. PrimeNG's own words (Yes / No / month names / *No
 results found*) come from the bundle's `primeng.*` block through `providePrimeNgTranslation()` in each

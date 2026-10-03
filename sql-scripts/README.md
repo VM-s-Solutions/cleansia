@@ -11,9 +11,18 @@ Operational SQL scripts for the Cleansia database. These are executed via the **
 
 ## Naming conventions
 
+The prefix says what a script does. Scripts outside these prefixes keep their names, because the
+workflow, `CleansiaStartupBase`, the tests and the docs call them by name.
+
 - `check-*.sql` — read-only diagnostic queries (safe to run anytime)
 - `fix-*.sql` — data fixes wrapped in transactions
-- `migrate-*.sql` — schema or data migrations wrapped in transactions
+- `backfill-*.sql` — one-off, idempotent fills for a column a schema change added
+- `insert_*.sql` — development fixtures: `insert_seed_data.sql` and `insert_local_dev_admin.sql` here,
+  and most of `seed/` (below)
+- `prod-bootstrap.sql` — the reference data every database needs (below)
+- `set-admin-role.sql` — a hand tool: set the e-mail and the role at its top, then run it
+- `reset-database.sql` — drops every table, type and extension so the migrations can be reapplied;
+  for a local database, run with `psql`
 
 ## The seed: `prod-bootstrap.sql`, then `insert_seed_data.sql`
 
@@ -34,6 +43,26 @@ A Development boot runs both, then `insert_local_dev_admin.sql`
 `prod-bootstrap.sql` and then `insert_seed_data.sql` through **Execute SQL Script** with **DEV**,
 then `insert_local_dev_admin.sql` for the published local administrator (owner ruling 2026-09-30;
 the workflow refuses it for PRO).
+
+## DEV data fixes
+
+`insert_seed_data.sql` never updates a row that already exists, so re-seeding does not move a DEV
+database seeded before the seed changed. Run these through **Execute SQL Script** with **DEV**.
+
+- **`fix-company-contact-placeholders.sql`** — the company record's contact values (owner rulings
+  2026-10-03): an e-mail of `info@cleansia.cz` becomes `support@cleansia.cz`, and a phone of
+  `+420 123 456 789` becomes the literal placeholder `<company_phone_number>`. Each value moves only
+  on a row that still holds the old seeded one, so a value an administrator has typed in is kept. One
+  transaction, idempotent. Written for DEV: production's company record is typed into the admin
+  console, and `execute-sql.yml` refuses it against PRO.
+- **`fix-plus-trial-14-days.sql`** — the two seeded Cleansia Plus plans' free trial (owner ruling
+  2026-09-30): a `TrialPeriodDays` of 0 becomes 14. It touches only the two seeded plans, by their seed
+  ids, and only while their trial is 0, so a trial an administrator has set is kept. One transaction,
+  idempotent. Written for DEV: production's plans are typed into the admin console.
+- **`fix-deactivate-local-dev-admin.sql`** — retires `admin@cleansia.local`, the administrator whose
+  password is published in the root README: the account is deactivated, so sign-in and refresh refuse
+  it. It refuses to run while that account is the only active Administrator, so create a named one
+  first with `set-admin-role.sql`. One transaction, idempotent.
 
 ## `seed/` — dev fixture data
 

@@ -30,7 +30,7 @@ import {
   selectCustomerServicesCatalogue,
   selectMarketCountryId,
 } from '@cleansia/customer-stores';
-import { SnackbarService } from '@cleansia/services';
+import { DialogService, SnackbarService } from '@cleansia/services';
 import { Action } from '@ngrx/store';
 import { provideMockStore, MockStore } from '@ngrx/store/testing';
 import { TranslateService } from '@ngx-translate/core';
@@ -61,6 +61,7 @@ describe('RecurringBookingsFacade', () => {
     showSuccess: jest.Mock;
     showInfoTranslated: jest.Mock;
   };
+  let dialog: { confirmTranslated: jest.Mock };
 
   const template = (overrides?: Partial<RecurringBookingTemplateDto>): RecurringBookingTemplateDto =>
     RecurringBookingTemplateDto.fromJS({
@@ -102,6 +103,7 @@ describe('RecurringBookingsFacade', () => {
       showSuccess: jest.fn(),
       showInfoTranslated: jest.fn(),
     };
+    dialog = { confirmTranslated: jest.fn().mockReturnValue(of(false)) };
 
     TestBed.configureTestingModule({
       providers: [
@@ -119,7 +121,8 @@ describe('RecurringBookingsFacade', () => {
         },
         { provide: SavedAddressStore, useValue: savedAddressStore },
         { provide: SnackbarService, useValue: snackbar },
-        { provide: TranslateService, useValue: { instant: (k: string) => k } },
+        { provide: DialogService, useValue: dialog },
+        { provide: TranslateService, useValue: { instant: (k: string) => k, currentLang: 'en' } },
       ],
     });
 
@@ -369,6 +372,152 @@ describe('RecurringBookingsFacade', () => {
 
       expect(facade.formData().selectedServiceIds).toEqual(['s1']);
       expect(snackbar.showSuccess).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  // A package plus a service it already includes books that service on every clean twice, and the
+  // owner ruled it stays that way. The form marks the pair and asks before either half is added.
+  describe('a package and a service it already includes', () => {
+    const windows = ServiceListItem.fromJS({ id: 'windows', name: 'Windows' });
+    const oven = ServiceListItem.fromJS({ id: 'oven', name: 'Oven' });
+    const ironing = ServiceListItem.fromJS({ id: 'ironing', name: 'Ironing' });
+    const deep = PackageListItem.fromJS({
+      id: 'deep',
+      name: 'Deep clean',
+      includedServices: [
+        { serviceId: 'windows', name: 'Windows' },
+        { serviceId: 'oven', name: 'Oven' },
+      ],
+    });
+    const kitchen = PackageListItem.fromJS({
+      id: 'kitchen',
+      name: 'Kitchen',
+      includedServices: [{ serviceId: 'oven', name: 'Oven' }],
+    });
+
+    beforeEach(() => {
+      store.overrideSelector(selectCustomerServices, [windows, oven, ironing]);
+      store.overrideSelector(selectCustomerPackages, [deep, kitchen]);
+      store.refreshState();
+    });
+
+    const chosen = () => ({
+      services: facade.formData().selectedServiceIds,
+      packages: facade.formData().selectedPackageIds,
+    });
+
+    it('marks a service with the chosen packages that include it, and nothing else', () => {
+      expect(facade.packageNamesIncluding('oven')).toBeNull();
+
+      facade.updateFormData({ selectedPackageIds: ['deep', 'kitchen'] });
+
+      expect(facade.packageNamesIncluding('oven')).toBe('Deep clean, Kitchen');
+      expect(facade.packageNamesIncluding('windows')).toBe('Deep clean');
+      expect(facade.packageNamesIncluding('ironing')).toBeNull();
+    });
+
+    it('asks before adding a service a chosen package includes, with Cancel as the default', () => {
+      facade.updateFormData({ selectedPackageIds: ['deep'] });
+
+      facade.toggleService('windows');
+
+      expect(dialog.confirmTranslated).toHaveBeenCalledWith(
+        'pages.order.package_overlap.service_message',
+        'pages.order.package_overlap.service_title',
+        { service: 'Windows', package: 'Deep clean' },
+        { acceptLabelKey: 'pages.order.package_overlap.add_again' },
+      );
+    });
+
+    it('keeps the form as it was when the customer cancels', () => {
+      facade.updateFormData({ selectedPackageIds: ['deep'] });
+      dialog.confirmTranslated.mockReturnValue(of(false));
+
+      facade.toggleService('windows');
+
+      expect(chosen()).toEqual({ services: [], packages: ['deep'] });
+    });
+
+    it('adds the service a second time when the customer confirms', () => {
+      facade.updateFormData({ selectedPackageIds: ['deep'] });
+      dialog.confirmTranslated.mockReturnValue(of(true));
+
+      facade.toggleService('windows');
+
+      expect(chosen()).toEqual({ services: ['windows'], packages: ['deep'] });
+    });
+
+    it('adds a service no chosen package includes without asking', () => {
+      facade.updateFormData({ selectedPackageIds: ['deep'] });
+
+      facade.toggleService('ironing');
+
+      expect(dialog.confirmTranslated).not.toHaveBeenCalled();
+      expect(chosen().services).toEqual(['ironing']);
+    });
+
+    it('asks before adding a package that includes a service already chosen on its own', () => {
+      facade.updateFormData({ selectedServiceIds: ['oven', 'windows', 'ironing'] });
+
+      facade.togglePackage('deep');
+
+      expect(dialog.confirmTranslated).toHaveBeenCalledWith(
+        'pages.order.package_overlap.package_message',
+        'pages.order.package_overlap.package_title',
+        { package: 'Deep clean', services: 'Windows, Oven' },
+        { acceptLabelKey: 'pages.order.package_overlap.add_package' },
+      );
+      expect(chosen().packages).toEqual([]);
+    });
+
+    it('adds the package when the customer confirms, and keeps the service', () => {
+      facade.updateFormData({ selectedServiceIds: ['oven'] });
+      dialog.confirmTranslated.mockReturnValue(of(true));
+
+      facade.togglePackage('kitchen');
+
+      expect(chosen()).toEqual({ services: ['oven'], packages: ['kitchen'] });
+    });
+
+    it('adds a package without asking when nothing it includes is chosen', () => {
+      facade.updateFormData({ selectedServiceIds: ['ironing'] });
+
+      facade.togglePackage('deep');
+
+      expect(dialog.confirmTranslated).not.toHaveBeenCalled();
+      expect(chosen().packages).toEqual(['deep']);
+    });
+
+    it('never asks when either half of the pair is removed', () => {
+      facade.updateFormData({ selectedServiceIds: ['windows'], selectedPackageIds: ['deep'] });
+
+      facade.toggleService('windows');
+      facade.togglePackage('deep');
+
+      expect(dialog.confirmTranslated).not.toHaveBeenCalled();
+      expect(chosen()).toEqual({ services: [], packages: [] });
+    });
+
+    it('only marks a pair the form is handed, as repeating an order and editing a schedule hand it over', () => {
+      facade.prefillFromOrder({
+        selectedServiceIds: ['windows'],
+        selectedPackageIds: ['deep'],
+        selectedServiceNames: ['Windows'],
+        selectedPackageNames: ['Deep clean'],
+        rooms: 2,
+        bathrooms: 1,
+        paymentType: 0,
+        timeOfDay: '',
+      });
+      expect(chosen()).toEqual({ services: ['windows'], packages: ['deep'] });
+
+      facade.loadForEdit(
+        template({ selectedServiceIds: ['oven'], selectedPackageIds: ['kitchen'] }),
+      );
+
+      expect(dialog.confirmTranslated).not.toHaveBeenCalled();
+      expect(chosen()).toEqual({ services: ['oven'], packages: ['kitchen'] });
+      expect(facade.packageNamesIncluding('oven')).toBe('Kitchen');
     });
   });
 

@@ -353,6 +353,28 @@ public class Order : TenantAuditable
     public decimal? CancellationFeeRate { get; private set; }
 
     /// <summary>
+    /// The cancellation schedule this order was booked under (<see cref="CancellationTerms"/>), written
+    /// once by <see cref="Create"/>. The cancel and both previews read these, never today's
+    /// <c>BookingPolicy</c>, so a change of schedule only reaches bookings made after it.
+    /// </summary>
+    public int CancellationFreeHours { get; private set; }
+
+    /// <inheritdoc cref="CancellationFreeHours"/>
+    public int CancellationPartialHours { get; private set; }
+
+    /// <inheritdoc cref="CancellationFreeHours"/>
+    public decimal CancellationPartialFeeRate { get; private set; }
+
+    /// <inheritdoc cref="CancellationFreeHours"/>
+    public decimal CancellationLastMinuteFeeRate { get; private set; }
+
+    /// <summary>
+    /// The free window of an entitled Plus member, frozen with the rest of the schedule. Whether the
+    /// customer IS a Plus member is still judged at the cancel.
+    /// </summary>
+    public int CancellationPlusFreeHours { get; private set; }
+
+    /// <summary>
     /// Who initiated the cancellation. Persisted as the legacy lowercase string
     /// ("customer"/"cleaner"/"admin"/"system") via a value converter so already-cancelled
     /// rows remain readable. Null while active.
@@ -584,6 +606,7 @@ public class Order : TenantAuditable
         Address customerAddress, int rooms, int bathrooms,
         DateTime cleaningDateTime, PaymentType paymentType,
         decimal totalPrice, string currencyId, PaymentStatus paymentStatus,
+        CancellationTerms cancellationTerms,
         // Optional: when present, links the order to the booking user so
         // CancelOrder / SubmitReview / ReportIssue can enforce ownership.
         // Empty/null is allowed for the (legacy) anonymous guest checkout
@@ -641,6 +664,11 @@ public class Order : TenantAuditable
             TotalPrice = totalPrice,
             CurrencyId = currencyId,
             PaymentStatus = paymentStatus,
+            CancellationFreeHours = cancellationTerms.FreeHours,
+            CancellationPartialHours = cancellationTerms.PartialHours,
+            CancellationPartialFeeRate = cancellationTerms.PartialFeeRate,
+            CancellationLastMinuteFeeRate = cancellationTerms.LastMinuteFeeRate,
+            CancellationPlusFreeHours = cancellationTerms.PlusFreeHours,
             UserId = string.IsNullOrEmpty(userId) ? null : userId,
             TierDiscountAmount = tierDiscountAmount is > 0 ? tierDiscountAmount : null,
             TierAtPurchase = tierAtPurchase,

@@ -208,7 +208,6 @@ public class PreferredCleanerSlotAgreementTests(PostgresContainerFixture fixture
             code: "PLUS",
             name: "Cleansia Plus",
             discountPercentage: 5m,
-            freeCancellationWindowHours: 48,
             allowsExpressUpgrade: true);
         plan.Id = "plan-slot";
         context.Add(plan);
@@ -275,7 +274,8 @@ public class PreferredCleanerSlotAgreementTests(PostgresContainerFixture fixture
             totalPrice: 1500m,
             currencyId: CurrencyId,
             paymentStatus: PaymentStatus.Paid,
-            userId: ownedByCustomer ? CustomerId : null);
+            userId: ownedByCustomer ? CustomerId : null,
+            cancellationTerms: BookingPolicy.CancellationTermsAtBooking);
         order.Id = orderId;
         order.UpdateEstimatedTime(estimatedMinutes);
         order.Created(TestUtilities.Constants.TestUserSession.TestUserName, DateTime.UtcNow);

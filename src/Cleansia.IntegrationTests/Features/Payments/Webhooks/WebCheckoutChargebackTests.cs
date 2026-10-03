@@ -1,3 +1,4 @@
+using Cleansia.Core.AppServices.Features.Orders;
 using System.Text.Json;
 using Cleansia.Core.AppServices.Features.Payments;
 using Cleansia.Core.Clients.Abstractions.Stripe;
@@ -174,7 +175,8 @@ public class WebCheckoutChargebackTests(PostgresContainerFixture fixture) : Base
             paymentType: PaymentType.Card,
             totalPrice: 1500m,
             currencyId: CurrencyId,
-            paymentStatus: paymentStatus);
+            paymentStatus: paymentStatus,
+            cancellationTerms: BookingPolicy.CancellationTermsAtBooking);
         order.Id = OrderId;
         order.AssignStripeSessionId(SessionId);
         order.AddOrderStatus(OrderStatusTrack.Create(OrderStatus.New, order));

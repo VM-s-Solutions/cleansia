@@ -1,3 +1,4 @@
+using Cleansia.Core.AppServices.Features.Orders;
 using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Orders;
 using Cleansia.Core.Domain.Repositories;
@@ -66,7 +67,8 @@ public sealed class OrderCurrentStatusPersistenceTests : IDisposable
             paymentType: PaymentType.Card,
             totalPrice: 1000m,
             currencyId: "czk",
-            paymentStatus: PaymentStatus.Paid);
+            paymentStatus: PaymentStatus.Paid,
+            cancellationTerms: BookingPolicy.CancellationTermsAtBooking);
         order.Id = orderId;
         order.Created("system", DateTimeOffset.UtcNow.AddDays(-1));
         return order;

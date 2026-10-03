@@ -84,7 +84,8 @@ public sealed class ConfirmRecurringOrderCardSavingTests
             currencyId: _czk.Id,
             paymentStatus: PaymentStatus.Pending,
             userId: CustomerUserId,
-            recurringTemplateId: "tmpl-weekly");
+            recurringTemplateId: "tmpl-weekly",
+            cancellationTerms: BookingPolicy.CancellationTermsAtBooking);
         _order.Id = OrderId;
         _order.TenantId = "company-of-the-order";
         _order.SetCurrency(_czk);

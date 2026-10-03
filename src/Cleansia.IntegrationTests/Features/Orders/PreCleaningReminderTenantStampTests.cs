@@ -149,7 +149,8 @@ public class PreCleaningReminderTenantStampTests(PostgresContainerFixture fixtur
             totalPrice: 1500m,
             currencyId: CurrencyId,
             paymentStatus: PaymentStatus.Pending,
-            userId: userId);
+            userId: userId,
+            cancellationTerms: BookingPolicy.CancellationTermsAtBooking);
         order.Id = orderId;
         order.TenantId = tenantId;
         order.CalculateRequiredEmployees(spareSeats: 0);

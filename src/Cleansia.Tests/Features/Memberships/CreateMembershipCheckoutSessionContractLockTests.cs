@@ -50,7 +50,6 @@ public class CreateMembershipCheckoutSessionContractLockTests
             code: PlanCode,
             name: "Plus Monthly",
             discountPercentage: 5m,
-            freeCancellationWindowHours: 4,
             allowsExpressUpgrade: true,
             billingInterval: BillingInterval.Monthly,
             trialPeriodDays: 0);
@@ -118,7 +117,7 @@ public class CreateMembershipCheckoutSessionContractLockTests
 
         var plan = MembershipPlan.Create(
             code: PlanCode, name: "Plus Monthly",
-            discountPercentage: 5m, freeCancellationWindowHours: 4, allowsExpressUpgrade: true,
+            discountPercentage: 5m, allowsExpressUpgrade: true,
             billingInterval: BillingInterval.Monthly, trialPeriodDays: 0);
         var active = UserMembership.Create(UserId, plan.Id, "currency-czk", "sub_active_1", DateTime.UtcNow, DateTime.UtcNow.AddMonths(1));
         _membershipRepository

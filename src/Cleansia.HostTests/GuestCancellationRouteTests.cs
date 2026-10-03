@@ -36,7 +36,8 @@ public class GuestCancellationRouteTests(HostTestPostgresFixture fixture) : Auth
             var order = Order.Create("Guest", Email, "+421900123456",
                 Address.Create("Route Street", "Bratislava", "81101", DomainSeed.CountryId), 1, 1,
                 DateTime.UtcNow.AddDays(2), PaymentType.Cash, 100m, DomainSeed.CurrencyId,
-                PaymentStatus.Pending, userId: customer?.Id);
+                PaymentStatus.Pending, userId: customer?.Id,
+                cancellationTerms: BookingPolicy.CancellationTermsAtBooking);
             order.TenantId = HostTestTenants.B;
             order.CustomerAddress!.TenantId = HostTestTenants.B;
             var track = OrderStatusTrack.Create(status, order);

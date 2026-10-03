@@ -1,3 +1,4 @@
+using Cleansia.Core.AppServices.Features.Orders;
 using System.Security.Claims;
 using System.Text.Json;
 using Cleansia.Core.AppServices.Common;
@@ -69,7 +70,8 @@ public class CreateDisputeAuditTests(PostgresContainerFixture fixture) : BaseInt
             totalPrice: 1250m,
             currencyId: CurrencyId,
             paymentStatus: PaymentStatus.Paid,
-            userId: CustomerId);
+            userId: CustomerId,
+            cancellationTerms: BookingPolicy.CancellationTermsAtBooking);
         order.Id = OrderId;
         order.AddOrderStatus(OrderStatusTrack.Create(OrderStatus.New, order));
         context.Orders.Add(order);

@@ -1,4 +1,5 @@
 using Cleansia.Core.AppServices.Features.Memberships;
+using Cleansia.Core.AppServices.Features.Orders;
 using Cleansia.Core.Domain.Memberships;
 using Cleansia.Core.Domain.Repositories;
 using Cleansia.TestUtilities.MockDataFactories.Memberships;
@@ -34,7 +35,7 @@ public class GetMembershipPlansHandlerTests
     private static MembershipPlan Plan(string code, BillingInterval interval)
     {
         var plan = MembershipPlan.Create(
-            code: code, name: code, discountPercentage: 5m, freeCancellationWindowHours: 4,
+            code: code, name: code, discountPercentage: 5m,
             allowsExpressUpgrade: true, billingInterval: interval);
         plan.Id = $"plan-{code}";
         return plan;
@@ -116,5 +117,18 @@ public class GetMembershipPlansHandlerTests
         var only = Assert.Single(result.Value);
         Assert.Equal("PLUS_MONTHLY", only.Code);
         Assert.Equal(0m, only.SavingsPercentVsMonthly);
+    }
+
+    /// <summary>The Plus free window is a contract term, the same on every plan; the wire keeps the field.</summary>
+    [Fact]
+    public async Task EveryPlan_StatesThePlusFreeWindowOfTheContract()
+    {
+        PricedIn(MembershipPricingMockFactory.CzkCurrencyId, (_monthly, 199m), (_yearly, 2030m));
+
+        var result = await Handler(MarketResolution.Resolving())
+            .Handle(new GetMembershipPlans.Query(null), CancellationToken.None);
+
+        Assert.Equal(2, result.Value.Count);
+        Assert.All(result.Value, p => Assert.Equal(BookingPolicy.PlusFreeCancellationHours, p.FreeCancellationWindowHours));
     }
 }

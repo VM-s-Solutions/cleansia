@@ -322,7 +322,8 @@ public class OrderOfferabilityAgreementTests(PostgresContainerFixture fixture) :
             totalPrice: 1500m,
             currencyId: CurrencyId,
             paymentStatus: scenario.PaymentStatus,
-            recurringTemplateId: scenario.RecurringTemplateId);
+            recurringTemplateId: scenario.RecurringTemplateId,
+            cancellationTerms: BookingPolicy.CancellationTermsAtBooking);
         order.Id = scenario.OrderId;
         order.Created(TestUtilities.Constants.TestUserSession.TestUserName, DateTime.UtcNow);
         order.SetWorkContractDocument(WorkContractTestData.Document());

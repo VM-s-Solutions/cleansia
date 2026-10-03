@@ -101,7 +101,8 @@ public sealed class ConfirmRecurringOrderLeadTimeTests
             currencyId: "currency-czk",
             paymentStatus: PaymentStatus.Pending,
             userId: CustomerUserId,
-            recurringTemplateId: "tmpl-weekly-lead-time");
+            recurringTemplateId: "tmpl-weekly-lead-time",
+            cancellationTerms: BookingPolicy.CancellationTermsAtBooking);
         order.Id = OrderId;
         order.TenantId = "company-of-the-order";
         order.SetCurrency(Currency.Create("CZK", "Kč", "Czech koruna"));

@@ -1,3 +1,4 @@
+using Cleansia.Core.AppServices.Features.Orders;
 using System.Security.Claims;
 using System.Text;
 using System.Text.Json;
@@ -438,7 +439,8 @@ public class IncidentFileTests(PostgresContainerFixture fixture) : BaseIntegrati
             totalPrice: 1500m,
             currencyId: CurrencyId,
             paymentStatus: PaymentStatus.Paid,
-            userId: userId);
+            userId: userId,
+            cancellationTerms: BookingPolicy.CancellationTermsAtBooking);
         order.Id = orderId;
         order.Created("seed", T0);
         var stamp = T0;

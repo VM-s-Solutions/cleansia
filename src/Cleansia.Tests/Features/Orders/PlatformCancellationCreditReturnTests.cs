@@ -46,7 +46,8 @@ public sealed class PlatformCancellationCreditReturnTests
             totalPrice: 1000m,
             currencyId: "czk",
             paymentStatus: paymentStatus,
-            userId: UserId);
+            userId: UserId,
+            cancellationTerms: BookingPolicy.CancellationTermsAtBooking);
         order.Id = $"order-platform-credit-{paymentStatus}";
         order.AssignStripePaymentIntentId("pi_platform_credit");
         order.ApplyCredit(300m, UserId);

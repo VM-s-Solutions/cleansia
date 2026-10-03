@@ -1,4 +1,5 @@
 using Cleansia.Core.AppServices.Features.EmployeePayroll;
+using Cleansia.Core.AppServices.Features.Orders;
 using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.EmployeePayroll;
 using Cleansia.Core.Domain.Internationalization;
@@ -140,7 +141,8 @@ public class PackageOnlyOrderPayTests(PostgresContainerFixture fixture) : BaseIn
             paymentType: PaymentType.Card,
             totalPrice: 2400m,
             currencyId: CurrencyId,
-            paymentStatus: PaymentStatus.Paid);
+            paymentStatus: PaymentStatus.Paid,
+            cancellationTerms: BookingPolicy.CancellationTermsAtBooking);
         order.AddSelectedPackages([OrderPackage.Create(order, package, 2400m)]);
         order.AddAssignedEmployee(OrderEmployee.Create(order, employee));
         order.AddOrderStatus(OrderStatusTrack.Create(OrderStatus.Completed, order));

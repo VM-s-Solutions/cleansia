@@ -1,3 +1,4 @@
+using Cleansia.Core.AppServices.Features.Orders;
 using Cleansia.Core.Domain.Auditing;
 using Cleansia.Core.Domain.Configuration;
 using Cleansia.Core.Domain.Disputes;
@@ -274,7 +275,8 @@ public static class DomainSeed
             totalPrice: 1500m,
             currencyId: CurrencyId,
             paymentStatus: PaymentStatus.Pending,
-            userId: ownerUserId);
+            userId: ownerUserId,
+            cancellationTerms: BookingPolicy.CancellationTermsAtBooking);
         var newTrack = OrderStatusTrack.Create(OrderStatus.New, order);
         order.AddOrderStatus(newTrack);
         if (workContract is not null)
@@ -373,7 +375,6 @@ public static class DomainSeed
             code: code,
             name: "Host-test plan",
             discountPercentage: 10m,
-            freeCancellationWindowHours: 24,
             allowsExpressUpgrade: true);
 
     /// <summary>The plan's CZK price. The Stripe id is derived from the plan code, never a shared literal:

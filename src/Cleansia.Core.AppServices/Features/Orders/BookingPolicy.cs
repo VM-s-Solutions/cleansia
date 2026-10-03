@@ -1,5 +1,6 @@
 using Cleansia.Core.AppServices.Shared.DTOs.Enums;
 using Cleansia.Core.Domain.Enums;
+using Cleansia.Core.Domain.Orders;
 
 namespace Cleansia.Core.AppServices.Features.Orders;
 
@@ -130,6 +131,18 @@ public static class BookingPolicy
     public const int PartialCancellationHours = 4;
 
     /// <summary>
+    /// The schedule a booking made now is frozen under, stamped on the order by <c>OrderFactory</c>. A
+    /// booking stays under the terms version it was made under, so the cancel and both previews read the
+    /// order, never these constants. → /product/business-rules#cancellation
+    /// </summary>
+    public static readonly CancellationTerms CancellationTermsAtBooking = new(
+        FreeHours: FreeCancellationHours,
+        PartialHours: PartialCancellationHours,
+        PartialFeeRate: PartialCancellationFeeRate,
+        LastMinuteFeeRate: LastMinuteCancellationFeeRate,
+        PlusFreeHours: PlusFreeCancellationHours);
+
+    /// <summary>
     /// How long past the booked start the assigned cleaner waits at the door before reporting that they
     /// cannot get in (owner ruling 2026-09-28, decision 11) — the 15 minutes the customer FAQ promises.
     /// </summary>
@@ -161,9 +174,17 @@ public static class BookingPolicy
 
     /// <summary>
     /// The oops window of an entitled Plus member. MINUTES after booking — a separate benefit from
-    /// the plan's <c>FreeCancellationWindowHours</c> before the cleaning, and never derived from it.
+    /// <see cref="PlusFreeCancellationHours"/> before the cleaning, and never derived from it.
     /// </summary>
     public const int OopsWindowMinutesPlus = 60;
+
+    /// <summary>
+    /// An entitled Plus member cancels free until this many hours before the cleaning, in place of
+    /// <see cref="FreeCancellationHours"/>. A term of the customer contract, the same on every plan, so it
+    /// changes only with a new terms version and is frozen on each order with the rest of the schedule.
+    /// → /product/business-rules#cancellation
+    /// </summary>
+    public const int PlusFreeCancellationHours = 4;
 
     /// <summary>
     /// The most of one order a customer's credit balance may settle. The rest goes on the card.
@@ -261,10 +282,9 @@ public static class BookingPolicy
     /// </summary>
     /// <param name="waiverApplies">
     /// A membership benefit has already been RESOLVED and RESERVED for this booking, so the surcharge is
-    /// waived. A parameter rather than an <c>&amp;&amp;</c> at each call site, for the same reason
-    /// <see cref="CalculateCancellationFeeRate"/>'s <c>freeCancellationHoursOverride</c> is one: the
-    /// parameter makes every caller answer the question and makes an omission greppable. Default
-    /// <see langword="false"/> = "no benefit" — the same default direction as the cancellation override.
+    /// waived. A parameter rather than an <c>&amp;&amp;</c> at each call site: the parameter makes every
+    /// caller answer the question and makes an omission greppable. Default <see langword="false"/> =
+    /// "no benefit".
     /// <para>A <see langword="bool"/>, never the waiver record: this class gets the ANSWER, never the
     /// reason, and learns nothing about memberships.</para>
     /// </param>
@@ -372,8 +392,9 @@ public static class BookingPolicy
     ///
     /// Acceptance-aware: if no cleaner has been pulled onto the job yet, cancellation
     /// is always free regardless of timing — there is no cleaner's time to compensate.
-    /// Once accepted, the standard tiered policy applies (free 24+ h before, 25% 4–24 h
-    /// before, 50% under 4 h).
+    /// Once accepted, the order's own tiered schedule applies: free from
+    /// <paramref name="freeCancellationHours"/> before the start, the partial rate down to
+    /// <paramref name="partialCancellationHours"/>, the last-minute rate under it.
     /// </summary>
     /// <param name="cleaningUtc">Order's scheduled start time.</param>
     /// <param name="bookingCreatedUtc">When the order was created.</param>
@@ -390,32 +411,38 @@ public static class BookingPolicy
     /// release can prove the crew is empty, not written when a cleaner takes a seat on an order that
     /// was already Confirmed. The fee prices the cleaner's time, so it reads the crew.
     /// </param>
-    /// <param name="freeCancellationHoursOverride">
-    /// Absolute free-cancellation threshold in hours that REPLACES
-    /// <see cref="FreeCancellationHours"/> when set. The production caller
-    /// (<c>CancellationAssessor</c>) passes <c>CancellationPolicy.FreeCancellationHours</c>,
-    /// which the resolver fills with the absolute window: 24 for the standard tier,
-    /// the membership's <c>FreeCancellationWindowHours</c> for a Plus member. A
-    /// SMALLER threshold is MORE generous (a member can cancel free closer to the
-    /// start), so a Plus plan seeded at e.g. 4 is wider than the standard 24h. Null
-    /// keeps the standard 24h window. The partial-fee and last-minute thresholds and
-    /// rates are unaffected — only the free window moves.
+    /// <param name="freeCancellationHours">
+    /// Absolute free-cancellation threshold in hours — <c>CancellationPolicy.FreeCancellationHours</c>,
+    /// which the resolver fills from the order: its standard free hours, or its Plus free hours for an
+    /// entitled member. A SMALLER threshold is MORE generous (a member can cancel free closer to the
+    /// start). No default: falling back to a constant would price an order under terms it was not booked
+    /// under.
     /// </param>
-    /// <returns>Fee rate: 0.0 = free, 0.25 = quarter charge, 0.5 = half charge.</returns>
+    /// <param name="partialCancellationHours">The order's partial/last-minute threshold, in hours.</param>
+    /// <param name="partialCancellationFeeRate">The order's partial-tier rate.</param>
+    /// <param name="lastMinuteCancellationFeeRate">The order's last-minute-tier rate.</param>
+    /// <returns>Fee rate: 0.0 = free, otherwise one of the two rates passed in.</returns>
     public static decimal CalculateCancellationFeeRate(
         DateTime cleaningUtc,
         DateTime bookingCreatedUtc,
         DateTime cancelUtc,
         int oopsWindowMinutes,
         bool hasBeenAccepted,
-        int? freeCancellationHoursOverride = null)
-        => CancellationFeeRateFor(ClassifyCancellation(
-            cleaningUtc,
-            bookingCreatedUtc,
-            cancelUtc,
-            oopsWindowMinutes,
-            hasBeenAccepted,
-            freeCancellationHoursOverride));
+        int freeCancellationHours,
+        int partialCancellationHours,
+        decimal partialCancellationFeeRate,
+        decimal lastMinuteCancellationFeeRate)
+        => CancellationFeeRateFor(
+            ClassifyCancellation(
+                cleaningUtc,
+                bookingCreatedUtc,
+                cancelUtc,
+                oopsWindowMinutes,
+                hasBeenAccepted,
+                freeCancellationHours,
+                partialCancellationHours),
+            partialCancellationFeeRate,
+            lastMinuteCancellationFeeRate);
 
     /// <summary>
     /// The cancellation schedule itself — the ONE evaluation of which arm applies, shared by the fee
@@ -429,7 +456,8 @@ public static class BookingPolicy
         DateTime cancelUtc,
         int oopsWindowMinutes,
         bool hasBeenAccepted,
-        int? freeCancellationHoursOverride = null)
+        int freeCancellationHours,
+        int partialCancellationHours)
     {
         if (!hasBeenAccepted)
         {
@@ -441,21 +469,25 @@ public static class BookingPolicy
             return CancellationFeeTier.FreeOopsWindow;
         }
 
-        var freeWindow = freeCancellationHoursOverride ?? FreeCancellationHours;
         var hoursBeforeStart = (cleaningUtc - cancelUtc).TotalHours;
         return hoursBeforeStart switch
         {
-            var h when h >= freeWindow => CancellationFeeTier.FreeOutsideWindow,
-            >= PartialCancellationHours => CancellationFeeTier.Partial,
+            var h when h >= freeCancellationHours => CancellationFeeTier.FreeOutsideWindow,
+            var h when h >= partialCancellationHours => CancellationFeeTier.Partial,
             _ => CancellationFeeTier.LastMinute,
         };
     }
 
-    /// <summary>What a given tier costs, as a fraction of the order total. The only place a tier is priced.</summary>
-    public static decimal CancellationFeeRateFor(CancellationFeeTier tier) => tier switch
-    {
-        CancellationFeeTier.Partial => PartialCancellationFeeRate,
-        CancellationFeeTier.LastMinute => LastMinuteCancellationFeeRate,
-        _ => 0m,
-    };
+    /// <summary>
+    /// What a given tier costs, as a fraction of the order total, at the order's own rates. The only place
+    /// a tier is priced.
+    /// </summary>
+    public static decimal CancellationFeeRateFor(
+        CancellationFeeTier tier, decimal partialCancellationFeeRate, decimal lastMinuteCancellationFeeRate)
+        => tier switch
+        {
+            CancellationFeeTier.Partial => partialCancellationFeeRate,
+            CancellationFeeTier.LastMinute => lastMinuteCancellationFeeRate,
+            _ => 0m,
+        };
 }

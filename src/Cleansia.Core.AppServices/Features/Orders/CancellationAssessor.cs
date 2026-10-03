@@ -59,8 +59,10 @@ internal static class CancellationAssessor
             nowUtc,
             oopsWindowMinutes: policy.OopsWindowMinutes,
             hasBeenAccepted: hasBeenAccepted,
-            freeCancellationHoursOverride: policy.FreeCancellationHours);
-        var feeRate = BookingPolicy.CancellationFeeRateFor(tier);
+            freeCancellationHours: policy.FreeCancellationHours,
+            partialCancellationHours: policy.PartialCancellationHours);
+        var feeRate = BookingPolicy.CancellationFeeRateFor(
+            tier, policy.PartialCancellationFeeRate, policy.LastMinuteCancellationFeeRate);
 
         // Round to the currency's 2 dp at the source (away-from-zero): the Refund row persists
         // numeric(18,2) (rounds) while Stripe truncates (long)(amount*100), so an unrounded value can

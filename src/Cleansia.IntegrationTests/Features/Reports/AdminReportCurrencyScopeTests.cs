@@ -1,4 +1,5 @@
 using Cleansia.Core.AppServices.Common;
+using Cleansia.Core.AppServices.Features.Orders;
 using Cleansia.Core.AppServices.Features.Reports;
 using Cleansia.Core.AppServices.Features.Reports.DTOs;
 using Cleansia.Core.AppServices.Features.Reports.Filters;
@@ -197,7 +198,8 @@ public class AdminReportCurrencyScopeTests(PostgresContainerFixture fixture) : B
             paymentType: PaymentType.Cash,
             totalPrice: totalPrice,
             currencyId: currencyId,
-            paymentStatus: PaymentStatus.Paid);
+            paymentStatus: PaymentStatus.Paid,
+            cancellationTerms: BookingPolicy.CancellationTermsAtBooking);
         order.AddOrderStatus(OrderStatusTrack.Create(OrderStatus.New, order));
         order.AddOrderStatus(OrderStatusTrack.Create(OrderStatus.Completed, order));
         order.MarkCompletedAt(DateTime.UtcNow);

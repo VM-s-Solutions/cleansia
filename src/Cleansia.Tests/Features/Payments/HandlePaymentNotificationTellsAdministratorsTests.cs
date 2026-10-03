@@ -101,7 +101,8 @@ public sealed class HandlePaymentNotificationTellsAdministratorsTests
             totalPrice: 1500m,
             currencyId: "currency-czk",
             paymentStatus: paymentStatus,
-            userId: "user-customer-tells");
+            userId: "user-customer-tells",
+            cancellationTerms: BookingPolicy.CancellationTermsAtBooking);
         order.Id = OrderId;
         order.TenantId = TenantId;
         order.SetCurrency(Currency.Create("CZK", "Kč", "Czech koruna"));

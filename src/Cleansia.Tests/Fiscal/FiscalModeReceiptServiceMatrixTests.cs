@@ -1,3 +1,4 @@
+using Cleansia.Core.AppServices.Features.Orders;
 using Cleansia.Core.AppServices.Services;
 using Cleansia.Core.Blobs.Abstractions;
 using Cleansia.Core.Domain.Company;
@@ -119,7 +120,8 @@ public class FiscalModeReceiptServiceMatrixTests
             paymentType: PaymentType.Cash,
             totalPrice: 1000m,
             currencyId: "eur",
-            paymentStatus: PaymentStatus.Pending);
+            paymentStatus: PaymentStatus.Pending,
+            cancellationTerms: BookingPolicy.CancellationTermsAtBooking);
         order.SetCurrency(Euro());
         order.Id = "01HZX9N6M7Q8R9S0T1V2W3X4Y5";
         return order;
@@ -139,7 +141,8 @@ public class FiscalModeReceiptServiceMatrixTests
             paymentType: PaymentType.Cash,
             totalPrice: 1000m,
             currencyId: "eur",
-            paymentStatus: PaymentStatus.Pending);
+            paymentStatus: PaymentStatus.Pending,
+            cancellationTerms: BookingPolicy.CancellationTermsAtBooking);
         order.SetCurrency(Euro());
         order.Id = "01HZX9N6M7Q8R9S0T1V2W3X4Y6";
         return order;

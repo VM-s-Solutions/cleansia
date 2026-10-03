@@ -1,3 +1,4 @@
+using Cleansia.Core.AppServices.Features.Orders;
 using Cleansia.Core.AppServices.Services;
 using Cleansia.Core.Blobs.Abstractions;
 using Cleansia.Core.Domain.Company;
@@ -128,7 +129,8 @@ public class ActualTenderRoutingTests
             paymentType: paymentType,
             totalPrice: 1000m,
             currencyId: "eur",
-            paymentStatus: PaymentStatus.Pending);
+            paymentStatus: PaymentStatus.Pending,
+            cancellationTerms: BookingPolicy.CancellationTermsAtBooking);
         order.SetCurrency(Euro());
         order.Id = OrderId;
 

@@ -74,7 +74,8 @@ public class GenerateReceiptHandlerBranchTests
             paymentType: paymentType,
             totalPrice: 1000m,
             currencyId: "czk",
-            paymentStatus: paymentStatus);
+            paymentStatus: paymentStatus,
+            cancellationTerms: BookingPolicy.CancellationTermsAtBooking);
         order.Id = OrderId;
         return order;
     }

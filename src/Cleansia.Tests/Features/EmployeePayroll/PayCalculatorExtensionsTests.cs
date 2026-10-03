@@ -86,7 +86,8 @@ public class PayCalculatorExtensionsTests
             paymentType: PaymentType.Cash,
             totalPrice: 1000m,
             currencyId: CurrencyId,
-            paymentStatus: PaymentStatus.Pending);
+            paymentStatus: PaymentStatus.Pending,
+            cancellationTerms: BookingPolicy.CancellationTermsAtBooking);
 
         if (travelDistance.HasValue)
         {

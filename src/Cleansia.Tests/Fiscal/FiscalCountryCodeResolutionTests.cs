@@ -1,3 +1,4 @@
+using Cleansia.Core.AppServices.Features.Orders;
 using Cleansia.Core.AppServices.Services;
 using Cleansia.Core.Blobs.Abstractions;
 using Cleansia.Core.Domain.Company;
@@ -210,7 +211,8 @@ public class FiscalCountryCodeResolutionTests
             paymentType: PaymentType.Cash,
             totalPrice: 1000m,
             currencyId: "czk",
-            paymentStatus: PaymentStatus.Pending);
+            paymentStatus: PaymentStatus.Pending,
+            cancellationTerms: BookingPolicy.CancellationTermsAtBooking);
         var czk = Currency.Create("CZK", "Kč", "Czech koruna");
         czk.Id = "czk";
         order.SetCurrency(czk);

@@ -1,3 +1,4 @@
+using Cleansia.Core.AppServices.Features.Orders;
 using System.Globalization;
 using System.Reflection;
 using Cleansia.Core.Domain.EmployeePayroll;
@@ -77,7 +78,8 @@ public class OrderPayEstimatorLegacyDistanceTests
             paymentType: PaymentType.Card,
             totalPrice: 1000m,
             currencyId: CurrencyId,
-            paymentStatus: PaymentStatus.Pending);
+            paymentStatus: PaymentStatus.Pending,
+            cancellationTerms: BookingPolicy.CancellationTermsAtBooking);
         order.AddSelectedServices([OrderService.Create(order, service, 1000m, 0m, 1000m)]);
         return order;
     }

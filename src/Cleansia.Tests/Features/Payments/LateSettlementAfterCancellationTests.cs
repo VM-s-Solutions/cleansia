@@ -82,7 +82,8 @@ public class LateSettlementAfterCancellationTests
             currencyId: "currency-czk",
             paymentStatus: PaymentStatus.Pending,
             userId: "user-after-cancel",
-            recurringTemplateId: recurringTemplateId);
+            recurringTemplateId: recurringTemplateId,
+            cancellationTerms: BookingPolicy.CancellationTermsAtBooking);
         order.Id = OrderId;
         order.TenantId = "tenant-after-cancel";
         order.AddOrderStatus(OrderStatusTrack.Create(OrderStatus.New, order));

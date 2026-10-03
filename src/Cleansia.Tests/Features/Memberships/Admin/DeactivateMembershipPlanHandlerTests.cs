@@ -21,7 +21,6 @@ public class DeactivateMembershipPlanHandlerTests
             code: "PLUS_MONTHLY",
             name: "Plus Monthly",
             discountPercentage: 5m,
-            freeCancellationWindowHours: 4,
             allowsExpressUpgrade: true,
             billingInterval: BillingInterval.Monthly,
             trialPeriodDays: 0);

@@ -169,7 +169,8 @@ public class FiscalLineItemsReconcileToTotalTests
             paymentStatus: PaymentStatus.Paid,
             tierDiscountAmount: tierDiscount,
             promoDiscountAmount: promoDiscount,
-            membershipDiscountAmount: membershipDiscount);
+            membershipDiscountAmount: membershipDiscount,
+            cancellationTerms: BookingPolicy.CancellationTermsAtBooking);
         order.Id = OrderId;
         var euro = Currency.Create("EUR", "€", "Euro");
         euro.Id = "eur";

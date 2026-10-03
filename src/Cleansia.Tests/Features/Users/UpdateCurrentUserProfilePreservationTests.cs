@@ -1,4 +1,5 @@
 using Cleansia.Core.AppServices.Common;
+using Cleansia.Core.AppServices.Features.Orders;
 using Cleansia.Core.AppServices.Features.Users;
 using Cleansia.Core.Blobs.Abstractions;
 using Cleansia.Core.Domain.Enums;
@@ -89,7 +90,8 @@ public class UpdateCurrentUserProfilePreservationTests
             totalPrice: 1000m,
             currencyId: "czk",
             paymentStatus: PaymentStatus.Pending,
-            userId: CallerId);
+            userId: CallerId,
+            cancellationTerms: BookingPolicy.CancellationTermsAtBooking);
     }
 
     private UpdateCurrentUser.Handler CreateHandler() => new(

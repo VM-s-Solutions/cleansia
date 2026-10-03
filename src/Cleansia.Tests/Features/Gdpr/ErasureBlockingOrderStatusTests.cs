@@ -267,7 +267,8 @@ public sealed class ErasureBlockingOrderStatusTests : IDisposable
             totalPrice: 1500m,
             currencyId: "czk",
             paymentStatus: PaymentStatus.Pending,
-            userId: userId);
+            userId: userId,
+            cancellationTerms: BookingPolicy.CancellationTermsAtBooking);
         order.Id = OrderId;
         order.AddOrderStatus(OrderStatusTrack.Create(status, order));
         ctx.Add(order);

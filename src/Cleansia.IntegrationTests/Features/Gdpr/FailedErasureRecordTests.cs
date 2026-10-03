@@ -1,3 +1,4 @@
+using Cleansia.Core.AppServices.Features.Orders;
 using System.Globalization;
 using System.Security.Claims;
 using System.Text.Json;
@@ -538,7 +539,8 @@ public class FailedErasureRecordTests(PostgresContainerFixture fixture) : BaseIn
                 totalPrice: 1250m,
                 currencyId: CurrencyId,
                 paymentStatus: PaymentStatus.Pending,
-                userId: SubjectId);
+                userId: SubjectId,
+                cancellationTerms: BookingPolicy.CancellationTermsAtBooking);
             order.Id = "order-failed-erasure-live";
             order.AddOrderStatus(OrderStatusTrack.Create(OrderStatus.InProgress, order));
             context.Orders.Add(order);

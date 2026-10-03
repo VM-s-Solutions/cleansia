@@ -1,3 +1,4 @@
+using Cleansia.Core.AppServices.Features.Orders;
 using System.Text.Json;
 using Cleansia.Core.AppServices.Features.Payments;
 using Cleansia.Core.Domain.Enums;
@@ -82,7 +83,8 @@ public class OrderWebhookTellsAdministratorsTests(PostgresContainerFixture fixtu
             totalPrice: 1500m,
             currencyId: CurrencyId,
             paymentStatus: PaymentStatus.Pending,
-            userId: CustomerId);
+            userId: CustomerId,
+            cancellationTerms: BookingPolicy.CancellationTermsAtBooking);
         order.Id = OrderId;
         order.AssignStripeSessionId("cs_webhook_tells");
         order.AssignStripePaymentIntentId(PaymentIntentId);

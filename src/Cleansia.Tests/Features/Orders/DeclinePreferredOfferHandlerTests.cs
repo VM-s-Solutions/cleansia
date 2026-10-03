@@ -168,7 +168,8 @@ public class DeclinePreferredOfferHandlerTests
             currencyId: "czk",
             paymentStatus: PaymentStatus.Paid,
             userId: CustomerUserId,
-            preferredEmployeeId: BeneficiaryId);
+            preferredEmployeeId: BeneficiaryId,
+            cancellationTerms: BookingPolicy.CancellationTermsAtBooking);
         order.Id = OrderId;
         order.AddOrderStatus(OrderStatusTrack.Create(OrderStatus.New, order));
         order.AddOrderStatus(OrderStatusTrack.Create(OrderStatus.Confirmed, order));

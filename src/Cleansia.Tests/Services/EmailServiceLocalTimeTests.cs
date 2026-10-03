@@ -1,3 +1,4 @@
+using Cleansia.Core.AppServices.Features.Orders;
 using System.Globalization;
 using System.Net;
 using Cleansia.Core.AppServices.Services;
@@ -97,7 +98,8 @@ public sealed class EmailServiceLocalTimeTests
             paymentType: PaymentType.Cash,
             totalPrice: 1000m,
             currencyId: "czk",
-            paymentStatus: PaymentStatus.Pending);
+            paymentStatus: PaymentStatus.Pending,
+            cancellationTerms: BookingPolicy.CancellationTermsAtBooking);
 
     private static (EmailService Service, Dictionary<string, string?> Values) BuildService(
         EmailType emailType, string timeZoneId)

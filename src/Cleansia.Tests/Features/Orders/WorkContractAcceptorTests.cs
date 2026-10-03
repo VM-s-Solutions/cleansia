@@ -158,7 +158,8 @@ public sealed class WorkContractAcceptorTests
         var order = Order.Create(
             "Test Customer", "test@example.com", "+420000000000",
             Core.Domain.Users.Address.Create("123 Main St", "Prague", "11000", "cz"),
-            1, 1, ValidatorTestHelpers.DefaultCleaningTime, PaymentType.Cash, 1000m, ValidatorTestHelpers.CurrencyId, PaymentStatus.Pending);
+            1, 1, ValidatorTestHelpers.DefaultCleaningTime, PaymentType.Cash, 1000m, ValidatorTestHelpers.CurrencyId, PaymentStatus.Pending,
+            cancellationTerms: BookingPolicy.CancellationTermsAtBooking);
         order.Id = OrderId;
         var seat = OrderEmployee.Create(order, ValidatorTestHelpers.BuildEmployee(EmployeeId, ContractStatus.Approved));
         order.AddAssignedEmployee(seat);

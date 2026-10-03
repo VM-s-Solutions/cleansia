@@ -313,7 +313,7 @@ public class OrderCallerCurrencyTests
         _membershipPlanRepository
             .Setup(r => r.GetByCodeAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(MembershipPlan.Create(
-                code: "PLUS_MONTHLY", name: "Cleansia Plus", discountPercentage: 10m, freeCancellationWindowHours: 4,
+                code: "PLUS_MONTHLY", name: "Cleansia Plus", discountPercentage: 10m,
                 allowsExpressUpgrade: true, billingInterval: BillingInterval.Monthly,
                 trialPeriodDays: 0, expressUpgradesPerMonth: 1));
         _loyaltyService

@@ -164,6 +164,7 @@ public sealed class OrderFactory(
             finalTotalPrice,
             input.Currency.Id,
             PaymentStatus.Pending,
+            cancellationTerms: BookingPolicy.CancellationTermsAtBooking,
             userId: input.UserId,
             tierDiscountAmount: appliedTierDiscount,
             tierAtPurchase: appliedTierAtPurchase,

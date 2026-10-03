@@ -82,7 +82,8 @@ public class CancelUnfilledOrdersApologyCurrencyTests(PostgresContainerFixture f
             totalPrice: 1000m,
             currencyId: currencyId,
             paymentStatus: PaymentStatus.Pending,
-            userId: userId);
+            userId: userId,
+            cancellationTerms: BookingPolicy.CancellationTermsAtBooking);
         order.Id = orderId;
         order.SetMaxEmployees(1);
         order.AddOrderStatus(OrderStatusTrack.Create(OrderStatus.New, order));

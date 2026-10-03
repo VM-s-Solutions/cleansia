@@ -1,5 +1,6 @@
 using Cleansia.Core.AppServices.Features.DataRetention;
 using Cleansia.Core.AppServices.Features.Gdpr;
+using Cleansia.Core.AppServices.Features.Orders;
 using Cleansia.Core.AppServices.Services.Interfaces;
 using Cleansia.Core.Blobs.Abstractions;
 using Cleansia.Core.Domain.Common;
@@ -328,7 +329,8 @@ public class SharedAddressAnonymisationTests(PostgresContainerFixture fixture) :
                     userId: SubjectId,
                     customerFloor: "3",
                     customerApartment: "12B",
-                    accessMode: "door_code");
+                    accessMode: "door_code",
+                    cancellationTerms: BookingPolicy.CancellationTermsAtBooking);
                 order.Id = SubjectPastOrderId;
                 order.Cancel(DateTime.UtcNow.AddDays(-31), CancelledBy.Customer, 0m, 0m, "Moving out of Dlouha 14");
                 order.AddOrderStatus(OrderStatusTrack.Create(OrderStatus.Cancelled, order));
@@ -573,7 +575,8 @@ public class SharedAddressAnonymisationTests(PostgresContainerFixture fixture) :
             totalPrice: 1250m,
             currencyId: CurrencyId,
             paymentStatus: PaymentStatus.Paid,
-            userId: userId);
+            userId: userId,
+            cancellationTerms: BookingPolicy.CancellationTermsAtBooking);
         order.Id = id;
         order.AddOrderStatus(OrderStatusTrack.Create(status, order));
         return order;

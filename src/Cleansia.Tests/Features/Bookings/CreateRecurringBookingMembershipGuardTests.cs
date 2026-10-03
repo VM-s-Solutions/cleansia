@@ -70,7 +70,6 @@ public class CreateRecurringBookingMembershipGuardTests
             code: "PLUS",
             name: "Cleansia Plus",
             discountPercentage: 10m,
-            freeCancellationWindowHours: 4,
             allowsExpressUpgrade: true);
         var membership = UserMembership.Create(
             userId: UserId,

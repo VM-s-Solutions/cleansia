@@ -1,3 +1,4 @@
+using Cleansia.Core.AppServices.Features.Orders;
 using System.Security.Claims;
 using System.Text.Json;
 using Cleansia.Core.AppServices.Features.Gdpr;
@@ -319,7 +320,8 @@ public class GuestOrderErasureTests(PostgresContainerFixture fixture) : BaseInte
             totalPrice: 1250m,
             currencyId: CurrencyId,
             paymentStatus: PaymentStatus.Paid,
-            userId: userId);
+            userId: userId,
+            cancellationTerms: BookingPolicy.CancellationTermsAtBooking);
         order.Id = id;
         order.AddOrderStatus(OrderStatusTrack.Create(status, order));
         order.RecordEarlyPerformanceConsent(

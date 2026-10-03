@@ -318,7 +318,8 @@ public sealed class ColdPathCurrentStatusQueryTests : IDisposable
             totalPrice: 1200m,
             currencyId: "czk",
             paymentStatus: PaymentStatus.Paid,
-            userId: userId);
+            userId: userId,
+            cancellationTerms: BookingPolicy.CancellationTermsAtBooking);
         order.Id = orderId;
         order.Created("system", DateTimeOffset.UtcNow.AddDays(-2));
         return order;

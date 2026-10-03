@@ -1,3 +1,4 @@
+using Cleansia.Core.AppServices.Features.Orders;
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
@@ -610,7 +611,8 @@ public sealed class CompanyArchiveBundleTests(PostgresContainerFixture fixture) 
             totalPrice: 100m,
             currencyId: currencyId,
             paymentStatus: PaymentStatus.Paid,
-            userId: userId);
+            userId: userId,
+            cancellationTerms: BookingPolicy.CancellationTermsAtBooking);
         order.Id = id;
         order.TenantId = tenantId;
         order.AddOrderStatus(OrderStatusTrack.Create(OrderStatus.New, order));

@@ -47,7 +47,6 @@ public class GetPagedMembershipPlansHandlerTests
             code: code,
             name: code,
             discountPercentage: 5m,
-            freeCancellationWindowHours: 4,
             allowsExpressUpgrade: true,
             billingInterval: interval,
             trialPeriodDays: 0);

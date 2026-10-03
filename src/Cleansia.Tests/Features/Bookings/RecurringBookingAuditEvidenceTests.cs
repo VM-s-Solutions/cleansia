@@ -36,7 +36,7 @@ public sealed class RecurringBookingAuditEvidenceTests
         _savedAddressRepository
             .Setup(r => r.GetByUserAsync(UserId, It.IsAny<CancellationToken>()))
             .ReturnsAsync([ArrangeSavedAddress()]);
-        var plan = MembershipPlan.Create("PLUS", "Cleansia Plus", 10m, freeCancellationWindowHours: 4, allowsExpressUpgrade: true);
+        var plan = MembershipPlan.Create("PLUS", "Cleansia Plus", 10m, allowsExpressUpgrade: true);
         _membershipRepository
             .Setup(r => r.GetEntitledForUserNoTrackingAsync(UserId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(UserMembership.Create(UserId, plan.Id, "currency-czk", "sub_1", DateTime.UtcNow.AddDays(-1), DateTime.UtcNow.AddMonths(1)));

@@ -173,7 +173,8 @@ public class OrderVisibilityTests
             totalPrice: 1500m,
             currencyId: "czk",
             paymentStatus: PaymentStatus.Paid,
-            preferredEmployeeId: preferredEmployeeId);
+            preferredEmployeeId: preferredEmployeeId,
+            cancellationTerms: BookingPolicy.CancellationTermsAtBooking);
 
         if (holdUntilUtc is not null)
         {

@@ -88,7 +88,8 @@ public class CancelOrderRefundSeamTests
             totalPrice: 1000m,
             currencyId: currency.Id,
             paymentStatus: PaymentStatus.Paid,
-            userId: UserId);
+            userId: UserId,
+            cancellationTerms: BookingPolicy.CancellationTermsAtBooking);
         order.Id = OrderId;
         order.SetCurrency(currency);
         order.AssignStripeSessionId("cs_test_cancel");

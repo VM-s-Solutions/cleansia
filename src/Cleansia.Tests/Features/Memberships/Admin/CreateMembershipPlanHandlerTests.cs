@@ -37,7 +37,6 @@ public class CreateMembershipPlanHandlerTests
             BillingInterval: BillingInterval.Monthly,
             Prices: new Dictionary<string, MembershipPlanPriceInput> { ["CZK"] = new(199m, "price_plus_monthly") },
             DiscountPercentage: 5m,
-            FreeCancellationWindowHours: 4,
             TrialPeriodDays: 0,
             AllowsExpressUpgrade: true);
 
@@ -88,7 +87,6 @@ public class CreateMembershipPlanHandlerTests
             code: "PLUS_MONTHLY",
             name: "Plus Monthly",
             discountPercentage: 5m,
-            freeCancellationWindowHours: 4,
             allowsExpressUpgrade: true,
             billingInterval: BillingInterval.Monthly,
             trialPeriodDays: 0);

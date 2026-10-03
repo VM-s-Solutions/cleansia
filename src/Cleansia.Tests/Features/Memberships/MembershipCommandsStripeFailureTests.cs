@@ -57,7 +57,6 @@ public class MembershipCommandsStripeFailureTests
             code: PlanCode,
             name: "Plus Monthly",
             discountPercentage: 5m,
-            freeCancellationWindowHours: 4,
             allowsExpressUpgrade: true,
             billingInterval: BillingInterval.Monthly,
             trialPeriodDays: 0);
@@ -149,7 +148,6 @@ public class MembershipCommandsStripeFailureTests
             code: NewPlanCode,
             name: "Plus Yearly",
             discountPercentage: 10m,
-            freeCancellationWindowHours: 8,
             allowsExpressUpgrade: true,
             billingInterval: BillingInterval.Yearly,
             trialPeriodDays: 0);

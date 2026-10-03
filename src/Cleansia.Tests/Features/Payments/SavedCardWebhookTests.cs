@@ -100,7 +100,8 @@ public class SavedCardWebhookTests
             totalPrice: 1500m,
             currencyId: CurrencyId,
             paymentStatus: PaymentStatus.Pending,
-            userId: UserId);
+            userId: UserId,
+            cancellationTerms: BookingPolicy.CancellationTermsAtBooking);
         order.Id = OrderId;
         order.TenantId = "tenant-operator";
         order.SetCurrency(Currency.Create("CZK", "Kč", "Czech koruna"));

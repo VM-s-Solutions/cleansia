@@ -282,7 +282,7 @@ public class RecurringCashEligibilityTests(PostgresContainerFixture fixture) : B
         context.Add(user);
         context.SavedCards.Add(TestSavedCards.Usable(CustomerUserId, Czk));
 
-        var plan = MembershipPlan.Create("PLUS", "Plus", 0m, 4, true);
+        var plan = MembershipPlan.Create("PLUS", "Plus", 0m, true);
         context.MembershipPlans.Add(plan);
         context.UserMemberships.Add(UserMembership.Create(
             CustomerUserId, plan.Id, Czk, "sub_rcash", DateTime.UtcNow.AddDays(-1), DateTime.UtcNow.AddMonths(1)));
@@ -303,7 +303,8 @@ public class RecurringCashEligibilityTests(PostgresContainerFixture fixture) : B
                 "Recurring Customer", CustomerEmail, "+420777444555",
                 Address.Create("Opakovana 3", "Praha", "11000", Czechia),
                 rooms: 2, bathrooms: 1, FirstOccurrence, PaymentType.Cash, 900m, Czk, PaymentStatus.Pending,
-                userId: CustomerUserId, recurringTemplateId: LegacyTemplateId);
+                userId: CustomerUserId, recurringTemplateId: LegacyTemplateId,
+                cancellationTerms: BookingPolicy.CancellationTermsAtBooking);
             occurrence.Id = LegacyOccurrenceId;
             occurrence.UpdateEstimatedTime(121);
             occurrence.CalculateRequiredEmployees(BookingPolicy.SpareSeatsPerOrder);

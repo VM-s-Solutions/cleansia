@@ -1,3 +1,4 @@
+using Cleansia.Core.AppServices.Features.Orders;
 using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.EmployeePayroll;
 using Cleansia.Core.Domain.Internationalization;
@@ -87,7 +88,8 @@ public sealed class FiscalReconciliationQueryTests : IDisposable
             paymentType: paymentType,
             totalPrice: 1000m,
             currencyId: "czk",
-            paymentStatus: paymentStatus);
+            paymentStatus: paymentStatus,
+            cancellationTerms: BookingPolicy.CancellationTermsAtBooking);
         order.Id = orderId;
         // The "older than N min" filter keys on the commit time (CreatedOn).
         order.Created("system", createdOn);

@@ -94,7 +94,7 @@ public class PastDueMembershipLifecycleTests(PostgresContainerFixture fixture) :
         czk.SetAsDefault(true);
         ctx.Currencies.Add(czk);
 
-        var plan = MembershipPlan.Create("PLUS_MONTHLY", "Cleansia Plus (Monthly)", 5m, 4, true);
+        var plan = MembershipPlan.Create("PLUS_MONTHLY", "Cleansia Plus (Monthly)", 5m, true);
         plan.Id = PlanId;
         ctx.MembershipPlans.Add(plan);
 

@@ -36,7 +36,7 @@ public class UpdateMembershipPlanValidatorTests
         new(_planRepository.Object, _currencyRepository.Object, _priceRepository.Object);
 
     private static UpdateMembershipPlan.Command Valid(Dictionary<string, MembershipPlanPriceInput>? prices) =>
-        new(PlanId, "Plus Monthly", prices, 5m, 4, 0, true);
+        new(PlanId, "Plus Monthly", prices, 5m, 0, true);
 
     [Fact]
     public async Task OnlySomeCurrencies_Passes()
@@ -120,27 +120,6 @@ public class UpdateMembershipPlanValidatorTests
 
         Assert.False(result.IsValid);
         Assert.Contains(result.Errors, e => e.ErrorMessage == BusinessErrorMessage.CurrencyNotFound);
-    }
-
-    [Theory]
-    [InlineData(25)]
-    [InlineData(72)]
-    public async Task ACancellationWindowLongerThanTheStandardOne_Fails_TooLong(int hours)
-    {
-        var result = await Validator().ValidateAsync(Valid(null) with { FreeCancellationWindowHours = hours });
-
-        Assert.False(result.IsValid);
-        Assert.Contains(result.Errors, e =>
-            e.PropertyName == nameof(UpdateMembershipPlan.Command.FreeCancellationWindowHours)
-            && e.ErrorMessage == BusinessErrorMessage.MembershipPlanFreeCancellationWindowTooLong);
-    }
-
-    [Fact]
-    public async Task ACancellationWindowOfExactlyTheStandardOne_Passes()
-    {
-        var result = await Validator().ValidateAsync(Valid(null) with { FreeCancellationWindowHours = 24 });
-
-        Assert.True(result.IsValid);
     }
 
     /// <summary>Owner ruling 2026-09-30: an admin sets the plan's trial length, and zero means no trial.</summary>

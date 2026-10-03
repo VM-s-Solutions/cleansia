@@ -1,3 +1,4 @@
+using Cleansia.Core.AppServices.Features.Orders;
 using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Internationalization;
 using Cleansia.Core.Domain.Orders;
@@ -137,7 +138,8 @@ public sealed class CustomerProfileStatsQueryTests : IDisposable
             userId: userId,
             tierDiscountAmount: tier,
             promoDiscountAmount: promo,
-            membershipDiscountAmount: membership);
+            membershipDiscountAmount: membership,
+            cancellationTerms: BookingPolicy.CancellationTermsAtBooking);
         order.Id = orderId;
         order.Created("system", DateTimeOffset.UtcNow.AddDays(-createdDaysAgo));
 

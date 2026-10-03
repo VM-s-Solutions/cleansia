@@ -246,7 +246,8 @@ public class PreferredOfferExitAgreementTests
             paymentStatus: scenario == "money-has-not-landed" ? PaymentStatus.Pending : PaymentStatus.Paid,
             userId: CustomerUserId,
             preferredEmployeeId: FirstChoiceId,
-            recurringTemplateId: scenario == "recurring-occurrence" ? "tmpl-weekly" : null);
+            recurringTemplateId: scenario == "recurring-occurrence" ? "tmpl-weekly" : null,
+            cancellationTerms: BookingPolicy.CancellationTermsAtBooking);
         order.Id = OrderId;
         order.UpdateEstimatedTime(120);
         order.SetMaxEmployees(2);

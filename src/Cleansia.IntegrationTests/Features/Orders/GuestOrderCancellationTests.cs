@@ -121,7 +121,8 @@ public class GuestOrderCancellationTests(PostgresContainerFixture fixture) : Bas
         var order = Order.Create("Guest", Email, "+421900123456",
             Address.Create("Guest Street", "Bratislava", "81101", CountryId), 2, 1,
             DateTime.UtcNow.AddHours(3), PaymentType.Card, 1000m, CurrencyId,
-            paid ? PaymentStatus.Paid : PaymentStatus.Pending, userId: customer?.Id);
+            paid ? PaymentStatus.Paid : PaymentStatus.Pending, userId: customer?.Id,
+            cancellationTerms: BookingPolicy.CancellationTermsAtBooking);
         order.Id = OrderId;
         order.TenantId = TestTenants.Second;
         order.CustomerAddress!.TenantId = TestTenants.Second;

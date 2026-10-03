@@ -275,7 +275,8 @@ public class PreferredHoldSurfaceAgreementTests(PostgresContainerFixture fixture
             totalPrice: 1500m,
             currencyId: CurrencyId,
             paymentStatus: PaymentStatus.Paid,
-            preferredEmployeeId: scenario.Beneficiary);
+            preferredEmployeeId: scenario.Beneficiary,
+            cancellationTerms: BookingPolicy.CancellationTermsAtBooking);
         order.Id = scenario.OrderId;
         order.Created(TestUtilities.Constants.TestUserSession.TestUserName, DateTime.UtcNow);
         order.SetWorkContractDocument(WorkContractTestData.Document());

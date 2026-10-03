@@ -88,7 +88,8 @@ public class CancelOrderAuditTests(PostgresContainerFixture fixture) : BaseInteg
             totalPrice: 1000m,
             currencyId: CurrencyId,
             paymentStatus: PaymentStatus.Paid,
-            userId: ownerUserId);
+            userId: ownerUserId,
+            cancellationTerms: BookingPolicy.CancellationTermsAtBooking);
         order.Id = OrderId;
         order.TenantId = operatorTenantId;
         order.CustomerAddress!.TenantId = operatorTenantId;

@@ -240,7 +240,6 @@ public class CreateRecurringBookingPreferredCleanerTests
             code: "PLUS",
             name: "Cleansia Plus",
             discountPercentage: 10m,
-            freeCancellationWindowHours: 4,
             allowsExpressUpgrade: true);
 
         return UserMembership.Create(

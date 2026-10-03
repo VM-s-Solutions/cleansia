@@ -1,3 +1,4 @@
+using Cleansia.Core.AppServices.Features.Orders;
 using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Orders;
 using Cleansia.Core.Domain.Repositories;
@@ -203,7 +204,8 @@ public sealed class GetBusyEmployeeIdsInWindowTests : IDisposable
             paymentType: PaymentType.Card,
             totalPrice: 1200m,
             currencyId: "czk",
-            paymentStatus: PaymentStatus.Paid);
+            paymentStatus: PaymentStatus.Paid,
+            cancellationTerms: BookingPolicy.CancellationTermsAtBooking);
         order.Id = orderId;
         order.UpdateEstimatedTime(estimatedMinutes);
         order.Created("system", DateTimeOffset.UtcNow.AddDays(-2));

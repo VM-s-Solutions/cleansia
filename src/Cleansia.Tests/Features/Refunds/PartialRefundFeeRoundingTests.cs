@@ -1,5 +1,6 @@
 using Cleansia.Core.AppServices.Auditing;
 using Cleansia.Core.AppServices.Common;
+using Cleansia.Core.AppServices.Features.Orders;
 using Cleansia.Core.AppServices.Features.Refunds;
 using Cleansia.Core.AppServices.Services.Interfaces;
 using Cleansia.Core.Domain.Configuration;
@@ -85,7 +86,8 @@ public class PartialRefundFeeRoundingTests
             totalPrice: totalPrice,
             currencyId: currency.Id,
             paymentStatus: PaymentStatus.Paid,
-            userId: "user-1");
+            userId: "user-1",
+            cancellationTerms: BookingPolicy.CancellationTermsAtBooking);
         order.Id = OrderId;
         order.SetCurrency(currency);
         order.SetVatBreakdown(

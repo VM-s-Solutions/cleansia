@@ -1,3 +1,4 @@
+using Cleansia.Core.AppServices.Features.Orders;
 using Cleansia.Core.AppServices.Services;
 using Cleansia.Core.Blobs.Abstractions;
 using Cleansia.Core.Domain.Company;
@@ -103,7 +104,8 @@ public class FeeReceiptTests
             totalPrice: 2000m,
             currencyId: "eur",
             paymentStatus: PaymentStatus.Pending,
-            userId: "user-owing");
+            userId: "user-owing",
+            cancellationTerms: BookingPolicy.CancellationTermsAtBooking);
         order.Id = OrderId;
         var euro = Currency.Create("EUR", "€", "Euro");
         euro.Id = "eur";

@@ -6,10 +6,11 @@ using Cleansia.Core.Domain.Repositories;
 namespace Cleansia.Core.AppServices.Services;
 
 /// <summary>
-/// The standard <see cref="BookingPolicy"/> figures, adjusted for an ENTITLED (paid or trialing, current) Plus
-/// membership — the Plus oops window always, and the plan's free-cancellation hours when it sets any —
-/// or else for the customer's first booking, whose oops window is the longer one too.
-/// Read live on every call — a membership that lapsed since the preview is judged as it stands now.
+/// The schedule the order was booked under (its frozen <see cref="CancellationTerms"/>), adjusted for an
+/// ENTITLED (paid or trialing, current) Plus membership — the Plus oops window and the order's Plus free
+/// hours — or else for the customer's first booking, whose oops window is the longer one too.
+/// Plus status and the first-booking test are read live on every call — a membership that lapsed since the
+/// preview is judged as it stands now — but every figure is the order's.
 /// </summary>
 public class CancellationPolicyResolver(
     IUserMembershipRepository userMembershipRepository,
@@ -21,28 +22,22 @@ public class CancellationPolicyResolver(
         CancellationToken cancellationToken)
     {
         var standardPolicy = new CancellationPolicy(
-            FreeCancellationHours: BookingPolicy.FreeCancellationHours,
-            PartialCancellationHours: BookingPolicy.PartialCancellationHours,
-            PartialCancellationFeeRate: BookingPolicy.PartialCancellationFeeRate,
-            LastMinuteCancellationFeeRate: BookingPolicy.LastMinuteCancellationFeeRate,
+            FreeCancellationHours: order.CancellationFreeHours,
+            PartialCancellationHours: order.CancellationPartialHours,
+            PartialCancellationFeeRate: order.CancellationPartialFeeRate,
+            LastMinuteCancellationFeeRate: order.CancellationLastMinuteFeeRate,
             OopsWindowMinutes: BookingPolicy.OopsWindowMinutesStandard,
             OopsWindowRule: OopsWindowRule.Standard);
 
-        if (!string.IsNullOrEmpty(order.UserId))
+        if (!string.IsNullOrEmpty(order.UserId)
+            && await userMembershipRepository.GetEntitledForUserNoTrackingAsync(order.UserId, cancellationToken) != null)
         {
-            var entitledMembership = await userMembershipRepository
-                .GetEntitledForUserNoTrackingAsync(order.UserId, cancellationToken);
-
-            if (entitledMembership != null)
+            return standardPolicy with
             {
-                var planFreeHours = entitledMembership.MembershipPlan.FreeCancellationWindowHours;
-                return standardPolicy with
-                {
-                    OopsWindowMinutes = BookingPolicy.OopsWindowMinutesPlus,
-                    OopsWindowRule = OopsWindowRule.Plus,
-                    FreeCancellationHours = planFreeHours > 0 ? planFreeHours : standardPolicy.FreeCancellationHours,
-                };
-            }
+                OopsWindowMinutes = BookingPolicy.OopsWindowMinutesPlus,
+                OopsWindowRule = OopsWindowRule.Plus,
+                FreeCancellationHours = order.CancellationPlusFreeHours,
+            };
         }
 
         return await orderRepository.IsFirstBookingAsync(order, cancellationToken)

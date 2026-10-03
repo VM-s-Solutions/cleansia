@@ -195,7 +195,8 @@ public class CancellationAcceptanceSignalTests
             currencyId: currency.Id,
             paymentStatus: PaymentStatus.Pending,
             userId: UserId,
-            recurringTemplateId: recurringTemplateId);
+            recurringTemplateId: recurringTemplateId,
+            cancellationTerms: BookingPolicy.CancellationTermsAtBooking);
         order.Id = OrderId;
         order.Created("tester", DateTime.UtcNow.AddMinutes(-bookedMinutesAgo));
         order.SetCurrency(currency);

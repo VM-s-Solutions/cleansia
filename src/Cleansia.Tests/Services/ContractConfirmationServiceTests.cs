@@ -88,7 +88,8 @@ public sealed class ContractConfirmationServiceTests
             totalPrice: 1500m,
             currencyId: "czk",
             paymentStatus: PaymentStatus.Paid,
-            userId: "user-1");
+            userId: "user-1",
+            cancellationTerms: BookingPolicy.CancellationTermsAtBooking);
         order.SetCurrency(Currency.Create("CZK", "Kč", "Czech koruna"));
         order.Created("user-1", BookedOn);
         order.RecordEarlyPerformanceConsent(ConsentVersion, BookedOn.AddSeconds(5), "cleansia.customer", null, null);
@@ -153,7 +154,8 @@ public sealed class ContractConfirmationServiceTests
         var order = Order.Create(
             "Jana Nováková", "jana@example.test", "+420777123456",
             Address.Create("Vinohradská 12", "Praha", "12000", CountryId),
-            1, 1, new DateTime(2026, 8, 10, 7, 0, 0, DateTimeKind.Utc), PaymentType.Cash, 900m, "czk", PaymentStatus.Pending, userId: "user-1");
+            1, 1, new DateTime(2026, 8, 10, 7, 0, 0, DateTimeKind.Utc), PaymentType.Cash, 900m, "czk", PaymentStatus.Pending, userId: "user-1",
+            cancellationTerms: BookingPolicy.CancellationTermsAtBooking);
         order.Created("user-1", BookedOn);
 
         await CreateService().ForBookingAsync(order, BookedOn, "en", CancellationToken.None);

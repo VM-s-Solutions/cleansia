@@ -345,7 +345,8 @@ public sealed class TakeOrderWorkContractTests(PostgresContainerFixture fixture)
             paymentType: PaymentType.Card,
             totalPrice: 1500m,
             currencyId: CzkId,
-            paymentStatus: PaymentStatus.Paid);
+            paymentStatus: PaymentStatus.Paid,
+            cancellationTerms: BookingPolicy.CancellationTermsAtBooking);
         order.Id = id;
         order.UpdateEstimatedTime(120);
         order.SetMaxEmployees(1);

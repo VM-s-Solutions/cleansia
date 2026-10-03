@@ -1,5 +1,6 @@
 using Cleansia.Core.AppServices.Features.DataRetention;
 using Cleansia.Core.AppServices.Features.Gdpr;
+using Cleansia.Core.AppServices.Features.Orders;
 using Cleansia.Core.Blobs.Abstractions;
 using Cleansia.Core.Domain.Common;
 using Cleansia.Core.Domain.Disputes;
@@ -150,7 +151,8 @@ public class DisputeTextRetentionTests(PostgresContainerFixture fixture) : BaseI
             totalPrice: 1250m,
             currencyId: CurrencyId,
             paymentStatus: PaymentStatus.Paid,
-            userId: SubjectId);
+            userId: SubjectId,
+            cancellationTerms: BookingPolicy.CancellationTermsAtBooking);
         order.Id = OrderId;
         order.AddOrderStatus(OrderStatusTrack.Create(OrderStatus.Completed, order));
         context.Orders.Add(order);

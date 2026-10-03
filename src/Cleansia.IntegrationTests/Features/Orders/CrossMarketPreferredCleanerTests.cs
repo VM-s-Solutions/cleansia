@@ -45,7 +45,8 @@ public partial class CreateOrderCallerCurrencyTests
                     var address = Address.Create("Work 1", "Bratislava", "11000", Slovakia);
                     address.TenantId = TestTenants.Second;
                     var history = Order.Create("Customer", CustomerEmail, "+420777111555", address, 2, 1,
-                        DateTime.UtcNow.AddDays(-7), PaymentType.Cash, 60m, Eur, PaymentStatus.Paid, userId: CustomerUserId);
+                        DateTime.UtcNow.AddDays(-7), PaymentType.Cash, 60m, Eur, PaymentStatus.Paid, userId: CustomerUserId,
+                        cancellationTerms: BookingPolicy.CancellationTermsAtBooking);
                     history.TenantId = TestTenants.Second;
                     history.AddAssignedEmployee(OrderEmployee.Create(history, employee));
                     var status = OrderStatusTrack.Create(OrderStatus.Completed, history);

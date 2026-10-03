@@ -129,7 +129,8 @@ public class HandleChargebackNotificationTests
             totalPrice: 1000m,
             currencyId: "currency-1",
             paymentStatus: PaymentStatus.Paid,
-            userId: "user-1");
+            userId: "user-1",
+            cancellationTerms: BookingPolicy.CancellationTermsAtBooking);
         order.Id = OrderId;
         order.AssignStripePaymentIntentId(PaymentIntentId);
         order.TenantId = TenantId;
@@ -486,7 +487,8 @@ public class HandleChargebackNotificationTests
             totalPrice: 1000m,
             currencyId: "currency-1",
             paymentStatus: PaymentStatus.Paid,
-            userId: "user-1");
+            userId: "user-1",
+            cancellationTerms: BookingPolicy.CancellationTermsAtBooking);
         order.Id = OrderId;
         order.AssignStripeSessionId("cs_test_web_1");
         order.TenantId = TenantId;

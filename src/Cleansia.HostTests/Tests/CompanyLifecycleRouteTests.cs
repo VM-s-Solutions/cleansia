@@ -1,3 +1,4 @@
+using Cleansia.Core.AppServices.Features.Orders;
 using System.Net;
 using System.Net.Http.Json;
 using System.Security.Cryptography;
@@ -896,7 +897,8 @@ public sealed class CompanyLifecycleRouteTests(HostTestPostgresFixture db) : Aut
             totalPrice: 60m,
             currencyId: EurId,
             paymentStatus: PaymentStatus.Pending,
-            userId: CustomerBId);
+            userId: CustomerBId,
+            cancellationTerms: BookingPolicy.CancellationTermsAtBooking);
         order.TenantId = HostTestTenants.B;
         var created = OrderStatusTrack.Create(OrderStatus.New, order);
         created.TenantId = HostTestTenants.B;

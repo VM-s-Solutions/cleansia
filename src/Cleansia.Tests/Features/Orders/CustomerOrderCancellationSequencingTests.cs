@@ -22,7 +22,8 @@ public class CustomerOrderCancellationSequencingTests
     {
         var order = Order.Create("Customer", "customer@example.test", "+420777111222",
             Address.Create("Street", "Prague", "11000", "CZ"), 1, 1, DateTime.UtcNow.AddDays(2),
-            PaymentType.Card, 1000m, "CZK", PaymentStatus.Paid, userId: guest ? null : "account");
+            PaymentType.Card, 1000m, "CZK", PaymentStatus.Paid, userId: guest ? null : "account",
+            cancellationTerms: BookingPolicy.CancellationTermsAtBooking);
         order.TenantId = "operator";
         order.AddOrderStatus(OrderStatusTrack.Create(OrderStatus.New, order));
         order.AssignStripePaymentIntentId("pi_order");

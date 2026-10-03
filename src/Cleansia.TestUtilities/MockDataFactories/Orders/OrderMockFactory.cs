@@ -1,3 +1,4 @@
+using Cleansia.Core.AppServices.Features.Orders;
 using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Internationalization;
 using Cleansia.Core.Domain.Orders;
@@ -79,7 +80,8 @@ public class OrderMockFactory
             paymentStatus: partial.PaymentStatus ?? PaymentStatus.Paid,
             userId: partial.UserId ?? Constants.TestUserSession.TestUserId,
             promoDiscountAmount: partial.PromoDiscountAmount,
-            promoCodeId: partial.PromoCodeId);
+            promoCodeId: partial.PromoCodeId,
+            cancellationTerms: BookingPolicy.CancellationTermsAtBooking);
         order.Created(Constants.TestUserSession.TestUserName, DateTime.UtcNow);
         order.SetCurrency(resolvedCurrency);
 
@@ -133,7 +135,8 @@ public class OrderMockFactory
             totalPrice: totalPrice,
             currencyId: resolvedCurrency.Id,
             paymentStatus: paymentStatus,
-            userId: userId);
+            userId: userId,
+            cancellationTerms: BookingPolicy.CancellationTermsAtBooking);
         order.Id = orderId;
         order.Created(Constants.TestUserSession.TestUserName, DateTime.UtcNow.AddDays(-1));
         order.SetCurrency(resolvedCurrency);

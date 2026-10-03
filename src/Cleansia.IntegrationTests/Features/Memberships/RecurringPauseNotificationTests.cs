@@ -1,3 +1,4 @@
+using Cleansia.Core.AppServices.Features.Orders;
 using System.Text.Json;
 using Cleansia.Core.AppServices.Features.Bookings;
 using Cleansia.Core.AppServices.Features.Memberships;
@@ -92,7 +93,7 @@ public class RecurringPauseNotificationTests(PostgresContainerFixture fixture) :
         currency.Id = "pause-currency";
         currency.IsActive = true;
         db.Currencies.Add(currency);
-        var plan = MembershipPlan.Create("PAUSE-PLUS", "Plus", 5m, 4, false);
+        var plan = MembershipPlan.Create("PAUSE-PLUS", "Plus", 5m, false);
         plan.Id = "pause-plan";
         db.MembershipPlans.Add(plan);
         foreach (var (userId, membershipId, tenant) in new[] { (UserA, MemberA, TestTenants.Default), (UserB, MemberB, TestTenants.Second) })
@@ -135,7 +136,8 @@ public class RecurringPauseNotificationTests(PostgresContainerFixture fixture) :
         {
             var order = Order.Create("Recurring Customer", $"{UserA}@example.test", "+420777111222",
                 Address.Create("Booked Street", "Prague", "11000", country.Id), 1, 1, now.AddDays(5),
-                PaymentType.Cash, 1000m, currency.Id, PaymentStatus.Paid, userId: UserA, recurringTemplateId: TemplateA);
+                PaymentType.Cash, 1000m, currency.Id, PaymentStatus.Paid, userId: UserA, recurringTemplateId: TemplateA,
+                cancellationTerms: BookingPolicy.CancellationTermsAtBooking);
             order.Id = "existing-occurrence";
             order.TenantId = TestTenants.Second;
             order.CustomerAddress!.TenantId = TestTenants.Second;
@@ -428,7 +430,7 @@ public class RecurringPauseNotificationTests(PostgresContainerFixture fixture) :
             {
                 swap.ServiceProvider.GetRequiredService<ITenantProvider>().SetTenantOverride(TestTenants.Default);
                 var db = swap.ServiceProvider.GetRequiredService<CleansiaDbContext>();
-                var yearly = MembershipPlan.Create("PAUSE-YEARLY", "Yearly", 5m, 4, false, BillingInterval.Yearly);
+                var yearly = MembershipPlan.Create("PAUSE-YEARLY", "Yearly", 5m, false, BillingInterval.Yearly);
                 db.MembershipPlans.Add(yearly);
                 db.MembershipPlanPrices.Add(MembershipPlanPrice.Create(yearly.Id, "pause-currency", 1200m, "price-pause-yearly"));
                 await db.CommitAsync(CancellationToken.None);

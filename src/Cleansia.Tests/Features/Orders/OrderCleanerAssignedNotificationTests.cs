@@ -172,7 +172,8 @@ public class OrderCleanerAssignedNotificationTests
             totalPrice: 1000m,
             currencyId: "czk",
             paymentStatus: paymentStatus,
-            userId: userId);
+            userId: userId,
+            cancellationTerms: BookingPolicy.CancellationTermsAtBooking);
         order.Id = OrderId;
         order.TenantId = TenantId;
         order.SetMaxEmployees(maxEmployees);

@@ -19,19 +19,30 @@ public class CancellationFeeTierTests
 
     private static CancellationFeeTier Tier(
         DateTime cleaning, DateTime cancel, bool accepted = true,
-        int oopsMinutes = BookingPolicy.OopsWindowMinutesStandard, int? freeOverride = null) =>
+        int oopsMinutes = BookingPolicy.OopsWindowMinutesStandard,
+        int freeOverride = BookingPolicy.FreeCancellationHours,
+        int partialHours = BookingPolicy.PartialCancellationHours) =>
         BookingPolicy.ClassifyCancellation(
             cleaning, BookingCreated, cancel,
             oopsWindowMinutes: oopsMinutes, hasBeenAccepted: accepted,
-            freeCancellationHoursOverride: freeOverride);
+            freeCancellationHours: freeOverride,
+            partialCancellationHours: partialHours);
 
     private static decimal Rate(
         DateTime cleaning, DateTime cancel, bool accepted = true,
-        int oopsMinutes = BookingPolicy.OopsWindowMinutesStandard, int? freeOverride = null) =>
+        int oopsMinutes = BookingPolicy.OopsWindowMinutesStandard,
+        int freeOverride = BookingPolicy.FreeCancellationHours) =>
         BookingPolicy.CalculateCancellationFeeRate(
             cleaning, BookingCreated, cancel,
             oopsWindowMinutes: oopsMinutes, hasBeenAccepted: accepted,
-            freeCancellationHoursOverride: freeOverride);
+            freeCancellationHours: freeOverride,
+            partialCancellationHours: BookingPolicy.PartialCancellationHours,
+            partialCancellationFeeRate: BookingPolicy.PartialCancellationFeeRate,
+            lastMinuteCancellationFeeRate: BookingPolicy.LastMinuteCancellationFeeRate);
+
+    private static decimal Price(CancellationFeeTier tier) =>
+        BookingPolicy.CancellationFeeRateFor(
+            tier, BookingPolicy.PartialCancellationFeeRate, BookingPolicy.LastMinuteCancellationFeeRate);
 
     // ── The tier→rate table: the ONE place a tier is priced ──
 
@@ -41,18 +52,26 @@ public class CancellationFeeTierTests
     [InlineData(CancellationFeeTier.FreeOutsideWindow)]
     public void Every_Free_Tier_Prices_At_Zero(CancellationFeeTier tier)
     {
-        Assert.Equal(0m, BookingPolicy.CancellationFeeRateFor(tier));
+        Assert.Equal(0m, Price(tier));
     }
 
     [Fact]
-    public void Charging_Tiers_Price_At_The_Policy_Constants()
+    public void Charging_Tiers_Price_At_The_Rates_Passed_In_Not_The_Policy_Constants()
     {
-        Assert.Equal(
-            BookingPolicy.PartialCancellationFeeRate,
-            BookingPolicy.CancellationFeeRateFor(CancellationFeeTier.Partial));
-        Assert.Equal(
-            BookingPolicy.LastMinuteCancellationFeeRate,
-            BookingPolicy.CancellationFeeRateFor(CancellationFeeTier.LastMinute));
+        // An order frozen under a different schedule (30 % / 60 %) is charged its own rates.
+        Assert.Equal(0.30m, BookingPolicy.CancellationFeeRateFor(CancellationFeeTier.Partial, 0.30m, 0.60m));
+        Assert.Equal(0.60m, BookingPolicy.CancellationFeeRateFor(CancellationFeeTier.LastMinute, 0.30m, 0.60m));
+    }
+
+    [Fact]
+    public void The_Partial_Threshold_Is_The_One_Passed_In_Not_The_Policy_Constant()
+    {
+        // Five hours out: partial under today's 4 h threshold, last-minute under an order frozen at 6 h.
+        var cleaning = BookingCreated.AddDays(30);
+        var cancel = cleaning.AddHours(-5);
+
+        Assert.Equal(CancellationFeeTier.Partial, Tier(cleaning, cancel));
+        Assert.Equal(CancellationFeeTier.LastMinute, Tier(cleaning, cancel, partialHours: 6));
     }
 
     // ── The tier and the rate move together, at the same instants ──
@@ -65,13 +84,13 @@ public class CancellationFeeTierTests
         // both boundaries, for a member window and the standard one.
         var cleaning = BookingCreated.AddDays(30);
 
-        foreach (var freeOverride in new int?[] { null, BookingPolicy.FreeCancellationHours, 4 })
+        foreach (var freeOverride in new[] { BookingPolicy.FreeCancellationHours, BookingPolicy.PlusFreeCancellationHours })
         {
             foreach (var hoursBefore in new[] { 48d, 24d, 23.99, 15d, 12d, 4d, 3.99, 0.5 })
             {
                 var cancel = cleaning.AddHours(-hoursBefore);
                 Assert.Equal(
-                    BookingPolicy.CancellationFeeRateFor(Tier(cleaning, cancel, freeOverride: freeOverride)),
+                    Price(Tier(cleaning, cancel, freeOverride: freeOverride)),
                     Rate(cleaning, cancel, freeOverride: freeOverride));
             }
         }
@@ -203,8 +222,8 @@ public class CancellationFeeTierTests
     [Fact]
     public void Plus_Window_Of_Four_Hours_Is_FreeOutsideWindow_Where_Standard_Is_Partial()
     {
-        // Six hours out: a Plus member whose plan carries FreeCancellationWindowHours = 4 (the seeded
-        // value) is free; the same order for a non-member is the 25% tier.
+        // Six hours out: a Plus member, whose order carries the Plus window of 4 hours, is free; the
+        // same order for a non-member is the 25% tier.
         var cleaning = BookingCreated.AddDays(30);
         var cancel = cleaning.AddHours(-6);
 

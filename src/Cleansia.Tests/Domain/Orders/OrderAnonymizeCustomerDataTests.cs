@@ -1,3 +1,4 @@
+using Cleansia.Core.AppServices.Features.Orders;
 using Cleansia.Core.Domain.Common;
 using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Orders;
@@ -93,5 +94,6 @@ public sealed class OrderAnonymizeCustomerDataTests
             paymentStatus: PaymentStatus.Pending,
             customerFloor: "3",
             customerApartment: "12B",
-            accessMode: "door_code");
+            accessMode: "door_code",
+            cancellationTerms: BookingPolicy.CancellationTermsAtBooking);
 }

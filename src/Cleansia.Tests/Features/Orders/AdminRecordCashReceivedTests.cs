@@ -58,7 +58,8 @@ public class AdminRecordCashReceivedTests
             totalPrice: 1000m,
             currencyId: currency.Id,
             paymentStatus: paymentStatus,
-            userId: "owner-user");
+            userId: "owner-user",
+            cancellationTerms: BookingPolicy.CancellationTermsAtBooking);
         order.Id = OrderId;
         order.SetCurrency(currency);
         order.AddAssignedEmployee(OrderEmployee.Create(

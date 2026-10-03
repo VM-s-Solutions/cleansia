@@ -32,7 +32,6 @@ public static class UserMembershipMockFactory
             code: "PLUS_MONTHLY",
             name: "Cleansia Plus (Monthly)",
             discountPercentage: 5m,
-            freeCancellationWindowHours: 4,
             allowsExpressUpgrade: true);
 
         var membership = UserMembership.Create(

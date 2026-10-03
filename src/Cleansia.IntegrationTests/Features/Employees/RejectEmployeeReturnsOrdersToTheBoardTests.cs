@@ -1,3 +1,4 @@
+using Cleansia.Core.AppServices.Features.Orders;
 using System.Security.Claims;
 using System.Text.Json;
 using Cleansia.Core.AppServices.Features.Employees;
@@ -83,7 +84,8 @@ public class RejectEmployeeReturnsOrdersToTheBoardTests(PostgresContainerFixture
             totalPrice: 1250m,
             currencyId: CurrencyId,
             paymentStatus: PaymentStatus.Paid,
-            userId: CustomerId);
+            userId: CustomerId,
+            cancellationTerms: BookingPolicy.CancellationTermsAtBooking);
         order.Id = id;
         order.SetMaxEmployees(maxEmployees);
         var stamp = DateTimeOffset.UtcNow.AddDays(-1);

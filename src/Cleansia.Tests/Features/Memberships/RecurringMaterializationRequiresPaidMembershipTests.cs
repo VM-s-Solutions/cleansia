@@ -145,7 +145,7 @@ public class RecurringMaterializationRequiresPaidMembershipTests
     {
         var plan = MembershipPlan.Create(
             code: "PLUS_MONTHLY", name: "Plus",
-            discountPercentage: 5m, freeCancellationWindowHours: 4, allowsExpressUpgrade: true);
+            discountPercentage: 5m, allowsExpressUpgrade: true);
         var membership = UserMembership.Create(
             UserId, plan.Id, "currency-czk", "sub_test", DateTime.UtcNow.AddDays(-10), DateTime.UtcNow.AddDays(20), null);
 

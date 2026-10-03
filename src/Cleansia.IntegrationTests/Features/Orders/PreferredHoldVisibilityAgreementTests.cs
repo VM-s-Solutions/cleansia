@@ -173,7 +173,8 @@ public class PreferredHoldVisibilityAgreementTests(PostgresContainerFixture fixt
             totalPrice: 1500m,
             currencyId: CurrencyId,
             paymentStatus: PaymentStatus.Paid,
-            preferredEmployeeId: scenario.Beneficiary);
+            preferredEmployeeId: scenario.Beneficiary,
+            cancellationTerms: BookingPolicy.CancellationTermsAtBooking);
         order.Id = scenario.OrderId;
         order.Created(TestUtilities.Constants.TestUserSession.TestUserName, DateTime.UtcNow);
         order.AddOrderStatus(OrderStatusTrack.Create(OrderStatus.New, order));

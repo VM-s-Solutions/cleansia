@@ -51,7 +51,7 @@ public sealed class MembershipAuditEvidenceTests
         _userRepository.Setup(r => r.GetByIdAsync(UserId, It.IsAny<CancellationToken>())).ReturnsAsync(user);
 
         _plan = MembershipPlan.Create(
-            code: PlanCode, name: "Plus Monthly", discountPercentage: 5m, freeCancellationWindowHours: 4,
+            code: PlanCode, name: "Plus Monthly", discountPercentage: 5m,
             allowsExpressUpgrade: true, billingInterval: BillingInterval.Monthly, trialPeriodDays: 14);
         _planRepository.Setup(r => r.GetByCodeAsync(PlanCode, It.IsAny<CancellationToken>())).ReturnsAsync(_plan);
         _priceRepository.PriceIn(_plan.Id, MembershipPricingMockFactory.CzkCurrencyId, StripePriceId, price: 199m);
@@ -258,7 +258,7 @@ public sealed class MembershipAuditEvidenceTests
         _membershipRepository
             .Setup(r => r.GetLifecycleForUserAsync(UserId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(membership);
-        var yearly = MembershipPlan.Create("PLUS_YEARLY", "Plus Yearly", 5m, 4, true, BillingInterval.Yearly);
+        var yearly = MembershipPlan.Create("PLUS_YEARLY", "Plus Yearly", 5m, true, BillingInterval.Yearly);
         _planRepository.Setup(r => r.GetByCodeAsync("PLUS_YEARLY", It.IsAny<CancellationToken>())).ReturnsAsync(yearly);
         _priceRepository.PriceIn(yearly.Id, MembershipPricingMockFactory.CzkCurrencyId, "price_yearly", price: 1990m);
         var periodStart = new DateTime(2026, 10, 1, 0, 0, 0, DateTimeKind.Utc);

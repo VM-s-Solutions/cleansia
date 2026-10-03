@@ -88,7 +88,8 @@ public sealed class PreCleaningReminderSweepTests : IDisposable
             currencyId: "czk",
             paymentStatus: paymentStatus,
             userId: userId,
-            recurringTemplateId: recurringTemplateId);
+            recurringTemplateId: recurringTemplateId,
+            cancellationTerms: BookingPolicy.CancellationTermsAtBooking);
         order.Id = orderId;
         order.CalculateRequiredEmployees(spareSeats: 0);
         order.AddOrderStatus(OrderStatusTrack.Create(OrderStatus.New, order));

@@ -411,7 +411,8 @@ public sealed class AuditSensitiveSnapshotTests
             totalPrice: totalPrice,
             currencyId: currency.Id,
             paymentStatus: PaymentStatus.Paid,
-            userId: "owner-user");
+            userId: "owner-user",
+            cancellationTerms: BookingPolicy.CancellationTermsAtBooking);
         order.Id = orderId;
         order.SetCurrency(currency);
         if (completed)

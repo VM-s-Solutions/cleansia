@@ -16,11 +16,11 @@ public interface ICancellationPolicyResolver
 }
 
 /// <summary>
-/// The cancellation rules that apply to one order at one moment. The oops window after booking
-/// (<c>BookingPolicy.OopsWindowMinutesPlus</c> for an entitled Plus membership,
-/// <c>BookingPolicy.OopsWindowMinutesFirstBooking</c> on a first booking) and, when a Plus plan sets
-/// one, the free window before the cleaning move independently. The partial and last-minute thresholds
-/// and rates never move.
+/// The cancellation rules that apply to one order at one moment. The figures are the ones frozen on the
+/// order at booking. The oops window after booking (<c>BookingPolicy.OopsWindowMinutesPlus</c> for an
+/// entitled Plus membership, <c>BookingPolicy.OopsWindowMinutesFirstBooking</c> on a first booking) and,
+/// for an entitled Plus membership, the free window before the cleaning move independently. The partial
+/// and last-minute thresholds and rates do not depend on Plus or a first booking.
 /// </summary>
 public record CancellationPolicy(
     int FreeCancellationHours,

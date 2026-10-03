@@ -31,7 +31,8 @@ public class GuestOrderAccessTokenTests
             totalPrice: 1000m,
             currencyId: "currency-1",
             paymentStatus: PaymentStatus.Pending,
-            userId: userId);
+            userId: userId,
+            cancellationTerms: BookingPolicy.CancellationTermsAtBooking);
         order.Id = "ord-1";
         order.TenantId = tenantId;
         return order;

@@ -37,7 +37,8 @@ public class OrderAssignmentCancellationNotifierTests
             totalPrice: 1000m,
             currencyId: currency.Id,
             paymentStatus: PaymentStatus.Paid,
-            userId: "customer-1");
+            userId: "customer-1",
+            cancellationTerms: BookingPolicy.CancellationTermsAtBooking);
         order.Id = OrderId;
         order.SetCurrency(currency);
         // DisplayOrderNumber has a private setter (auto-generated at construction); invoke it via

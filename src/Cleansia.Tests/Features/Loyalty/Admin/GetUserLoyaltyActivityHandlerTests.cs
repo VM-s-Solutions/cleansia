@@ -1,3 +1,4 @@
+using Cleansia.Core.AppServices.Features.Orders;
 using System.Linq.Expressions;
 using System.Reflection;
 using Cleansia.Core.AppServices.Features.Loyalty.Admin;
@@ -64,7 +65,8 @@ public class GetUserLoyaltyActivityHandlerTests
             totalPrice: 100m,
             currencyId: "currency-1",
             paymentStatus: PaymentStatus.Paid,
-            userId: UserId);
+            userId: UserId,
+            cancellationTerms: BookingPolicy.CancellationTermsAtBooking);
         order.Id = id;
         return order;
     }

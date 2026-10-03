@@ -41,7 +41,8 @@ public class AdminReassignOrderValidatorTests
             totalPrice: 1000m,
             currencyId: "czk",
             paymentStatus: PaymentStatus.Paid,
-            userId: "owner-user");
+            userId: "owner-user",
+            cancellationTerms: BookingPolicy.CancellationTermsAtBooking);
         _order.Id = OrderId;
         _order.SetMaxEmployees(2);
 

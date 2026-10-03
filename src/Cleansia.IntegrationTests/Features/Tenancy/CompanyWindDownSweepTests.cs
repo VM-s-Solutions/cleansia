@@ -1,3 +1,4 @@
+using Cleansia.Core.AppServices.Features.Orders;
 using System.Text.Json;
 using Cleansia.Core.AppServices.Services;
 using Cleansia.Core.AppServices.Services.Interfaces;
@@ -499,7 +500,7 @@ public sealed class CompanyWindDownSweepTests(PostgresContainerFixture fixture) 
             CountryConfiguration.Create(SvkId, "EUR", "sk", 0.20m, timeZoneId: "Europe/Bratislava").AssignOperator(B),
             CountryConfiguration.Create(CzeId, "CZK", "cs", 0.21m, timeZoneId: "Europe/Prague").AssignOperator(A).SetAsDefaultMarket(true));
 
-        var plan = MembershipPlan.Create(PlanId, "Wind-down plan", 10m, 24, allowsExpressUpgrade: false);
+        var plan = MembershipPlan.Create(PlanId, "Wind-down plan", 10m, allowsExpressUpgrade: false);
         plan.Id = PlanId;
         ctx.MembershipPlans.Add(plan);
 
@@ -686,7 +687,8 @@ public sealed class CompanyWindDownSweepTests(PostgresContainerFixture fixture) 
             totalPrice: 100m,
             currencyId: currencyId,
             paymentStatus: paymentStatus,
-            userId: userId);
+            userId: userId,
+            cancellationTerms: BookingPolicy.CancellationTermsAtBooking);
         order.Id = id;
         order.TenantId = tenantId;
         order.AddOrderStatus(OrderStatusTrack.Create(OrderStatus.New, order));

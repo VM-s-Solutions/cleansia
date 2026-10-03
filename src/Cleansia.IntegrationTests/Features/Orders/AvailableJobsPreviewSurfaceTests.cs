@@ -1,3 +1,4 @@
+using Cleansia.Core.AppServices.Features.Orders;
 using Cleansia.TestUtilities.MockDataFactories.Orders;
 using System.Security.Claims;
 using System.Text.Json;
@@ -327,7 +328,8 @@ public class AvailableJobsPreviewSurfaceTests(PostgresContainerFixture fixture) 
             paymentType: PaymentType.Card,
             totalPrice: 1000m + index,
             currencyId: currencyId,
-            paymentStatus: PaymentStatus.Paid);
+            paymentStatus: PaymentStatus.Paid,
+            cancellationTerms: BookingPolicy.CancellationTermsAtBooking);
         order.Id = $"order-preview-{index:D3}";
         order.UpdateEstimatedTime(120);
         order.SetMaxEmployees(1);

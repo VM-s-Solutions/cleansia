@@ -65,7 +65,8 @@ public class AdminRefundOrderHandlerTests
             totalPrice: 1000m,
             currencyId: currency.Id,
             paymentStatus: paymentStatus,
-            userId: OwnerUserId);
+            userId: OwnerUserId,
+            cancellationTerms: BookingPolicy.CancellationTermsAtBooking);
         order.Id = OrderId;
         order.SetCurrency(currency);
         order.AssignStripeSessionId("cs_test_admin_refund");
@@ -99,7 +100,8 @@ public class AdminRefundOrderHandlerTests
             totalPrice: 1000m,
             currencyId: currency.Id,
             paymentStatus: paymentStatus,
-            userId: OwnerUserId);
+            userId: OwnerUserId,
+            cancellationTerms: BookingPolicy.CancellationTermsAtBooking);
         order.Id = OrderId;
         order.SetCurrency(currency);
         order.AssignStripePaymentIntentId("pi_test_admin_refund");

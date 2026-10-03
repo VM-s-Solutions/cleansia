@@ -49,7 +49,8 @@ public sealed class SendEmailHandlerReceivablePayLinkTests
             totalPrice: 1500m,
             currencyId: "czk",
             paymentStatus: PaymentStatus.Pending,
-            userId: "user-1");
+            userId: "user-1",
+            cancellationTerms: BookingPolicy.CancellationTermsAtBooking);
         _order.TenantId = TenantId;
         _order.SetLanguage("cs");
         _orders.Setup(r => r.GetQueryable()).Returns(new[] { _order }.AsQueryable().BuildMock());

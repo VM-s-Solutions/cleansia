@@ -1,3 +1,4 @@
+using Cleansia.Core.AppServices.Features.Orders;
 using Cleansia.Core.AppServices.Services;
 using Cleansia.Core.Domain.EmployeePayroll;
 using Cleansia.Core.Domain.Enums;
@@ -42,7 +43,8 @@ public sealed class WorkContractFactsBuilderTests
             paymentType: PaymentType.Card,
             totalPrice: 1500m,
             currencyId: currency.Id,
-            paymentStatus: PaymentStatus.Paid);
+            paymentStatus: PaymentStatus.Paid,
+            cancellationTerms: BookingPolicy.CancellationTermsAtBooking);
         order.Id = OrderId;
         order.SetCurrency(currency);
         order.AddSelectedServices([OrderService.Create(order, service, 1500m, 0m, 1500m)]);

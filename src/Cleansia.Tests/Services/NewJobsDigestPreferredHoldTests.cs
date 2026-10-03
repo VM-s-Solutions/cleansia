@@ -330,7 +330,8 @@ public sealed class NewJobsDigestPreferredHoldTests : IDisposable
             paymentType: PaymentType.Card,
             totalPrice: 1200m,
             currencyId: "czk",
-            paymentStatus: PaymentStatus.Paid);
+            paymentStatus: PaymentStatus.Paid,
+            cancellationTerms: BookingPolicy.CancellationTermsAtBooking);
         order.Id = orderId;
         order.UpdateEstimatedTime(SlotMinutes);
         order.Created("system", DateTimeOffset.UtcNow.AddDays(-1));

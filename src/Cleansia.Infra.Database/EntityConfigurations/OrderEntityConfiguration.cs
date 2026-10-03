@@ -147,6 +147,25 @@ public class OrderEntityConfiguration : TenantAuditableEntityConfiguration<Order
             .HasPrecision(5, 4)
             .HasDefaultValue(0m);
 
+        // The cancellation schedule frozen at booking. No database default: a missing stamp read as 0
+        // free hours would make the order free to cancel at any time. Order.Create requires the terms.
+        builder.Property(o => o.CancellationFreeHours)
+            .IsRequired();
+
+        builder.Property(o => o.CancellationPartialHours)
+            .IsRequired();
+
+        builder.Property(o => o.CancellationPartialFeeRate)
+            .IsRequired()
+            .HasPrecision(5, 4);
+
+        builder.Property(o => o.CancellationLastMinuteFeeRate)
+            .IsRequired()
+            .HasPrecision(5, 4);
+
+        builder.Property(o => o.CancellationPlusFreeHours)
+            .IsRequired();
+
         // Loyalty tier discount applied at create-time. Nullable; not
         // required on existing/anon orders.
         builder.Property(o => o.TierDiscountAmount)

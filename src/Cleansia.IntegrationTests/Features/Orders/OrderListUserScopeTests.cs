@@ -225,7 +225,8 @@ public class OrderListUserScopeTests(PostgresContainerFixture fixture) : BaseInt
             totalPrice: 1500m,
             currencyId: CurrencyId,
             paymentStatus: PaymentStatus.Paid,
-            userId: userId);
+            userId: userId,
+            cancellationTerms: BookingPolicy.CancellationTermsAtBooking);
         order.Id = id;
         order.Created(TestUtilities.Constants.TestUserSession.TestUserName, DateTime.UtcNow);
         order.AddOrderStatus(OrderStatusTrack.Create(OrderStatus.Confirmed, order));

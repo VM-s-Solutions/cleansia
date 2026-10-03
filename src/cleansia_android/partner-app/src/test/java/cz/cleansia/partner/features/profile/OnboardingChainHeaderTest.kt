@@ -34,6 +34,24 @@ class OnboardingChainHeaderTest {
         assertTrue("a name can be cut off", !node.contains("TextOverflow.Ellipsis"))
     }
 
+    /**
+     * Every name is one word, so a second line breaks inside it ("Особист" over "е"). A name too wide
+     * for its column (uk and ru at 320dp, any locale at a larger font) shrinks on one line first, 10% a
+     * step down to 60%, and only then may wrap: the iOS twin's lineLimit(2) with minimumScaleFactor(0.6).
+     */
+    @Test
+    fun `a name too wide for its column shrinks on one line before it may wrap`() {
+        val node = header.substringAfter("private fun StepNode(").substringBefore("private fun iconFor(")
+        assertTrue("the shrink no longer stops at 60%", header.contains("private const val LABEL_SHRINK_STEPS = 4"))
+        assertTrue("the shrink no longer steps 10% at a time", node.contains("labelStyle.fontSize * (1f - 0.1f * shrinkSteps)"))
+        assertTrue("the floor is no longer the last shrink step", node.contains("val atFloor = shrinkSteps == LABEL_SHRINK_STEPS"))
+        assertTrue("a name that overflows its column no longer shrinks", node.contains("onTextLayout = { if (it.hasVisualOverflow && !atFloor) shrinkSteps++ }"))
+        assertTrue(
+            "a name may wrap before it has shrunk to the floor",
+            node.contains("maxLines = if (atFloor) 2 else 1,") && node.contains("softWrap = atFloor,"),
+        )
+    }
+
     @Test
     fun `TalkBack reads one element per step with its position, name and state`() {
         val node = header.substringAfter("private fun StepNode(").substringBefore("private fun iconFor(")

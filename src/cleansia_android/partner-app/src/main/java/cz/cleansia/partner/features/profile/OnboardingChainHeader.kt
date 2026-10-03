@@ -26,6 +26,10 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -47,6 +51,9 @@ import cz.cleansia.partner.features.orders.ProfileSection
 private val NODE = 32.dp
 private val NODE_CURRENT = 36.dp
 private val NODE_ROW = 36.dp
+
+/** A name too wide for its column shrinks 10% a step, so four steps stop it at iOS's minimumScaleFactor(0.6). */
+private const val LABEL_SHRINK_STEPS = 4
 
 /** What a step node draws: the current step is emphasised, a finished one checked, the rest muted. */
 internal enum class StepNodeState { Current, Done, Upcoming }
@@ -73,9 +80,12 @@ internal fun stepNodeState(isCurrent: Boolean, isDone: Boolean): StepNodeState =
  * one you cannot. A reachable step stays tappable across its whole column, node and name (T-0607).
  *
  * **It fits because the columns share the width.** At 320dp the card gives 256dp of content, 64dp a
- * step; the longest name in the five shipped locales is eight characters (`Особисте`, `Identity`,
- * `Личность`), about 56dp of labelMedium. A larger font wraps a name onto a second line rather than
- * truncating it. The connector runs centre to centre behind the nodes, `primary` behind a finished step.
+ * step and 60dp for its name; the longest names in the five shipped locales (`Особисте`, `Личность`)
+ * measure about 61dp of labelMedium. Every name is one word, so a name wider than its column, there
+ * or at a larger font, shrinks to fit down to 60% rather than breaking inside the word; only a name
+ * still too wide at 60% takes a second line, and none is cut. That is the iOS twin's lineLimit(2) with
+ * minimumScaleFactor(0.6). The connector runs centre to centre behind the nodes, `primary` behind a
+ * finished step.
  *
  * TalkBack reads each column as one element: "Step 2 of 4, Address, current step".
  *
@@ -224,19 +234,25 @@ private fun StepNode(
             }
         }
         Spacer(Modifier.height(6.dp))
-        // Two lines at most and never cut: a name too long for its column at a large font wraps.
+        // Shrink before breaking the word: a name wider than its column steps its size down on one
+        // line until it fits, and only at 60% may it take a second line. Never cut. Keyed on the weight
+        // as well, since the current step's ExtraBold is the wider one.
+        val weight = if (state == StepNodeState.Current) FontWeight.ExtraBold else FontWeight.SemiBold
+        var shrinkSteps by remember(label, weight) { mutableIntStateOf(0) }
+        val atFloor = shrinkSteps == LABEL_SHRINK_STEPS
+        val labelStyle = MaterialTheme.typography.labelMedium
         Text(
             text = label,
-            style = MaterialTheme.typography.labelMedium.copy(
-                fontWeight = if (state == StepNodeState.Current) FontWeight.ExtraBold else FontWeight.SemiBold,
-            ),
+            style = labelStyle.copy(fontWeight = weight, fontSize = labelStyle.fontSize * (1f - 0.1f * shrinkSteps)),
             color = when (state) {
                 StepNodeState.Current -> colors.primary
                 StepNodeState.Done -> colors.onSurface
                 StepNodeState.Upcoming -> colors.onSurfaceVariant
             },
             textAlign = TextAlign.Center,
-            maxLines = 2,
+            maxLines = if (atFloor) 2 else 1,
+            softWrap = atFloor,
+            onTextLayout = { if (it.hasVisualOverflow && !atFloor) shrinkSteps++ },
             modifier = Modifier.padding(horizontal = 2.dp),
         )
     }

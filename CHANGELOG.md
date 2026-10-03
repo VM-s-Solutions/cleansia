@@ -546,6 +546,11 @@ need backfilling.
   instead of sitting at the top over an empty bottom, and scroll when it does not. (Owner remark
   2026-10-03.)
 
+- **Cleaner Android and iOS — the profile steps are named.** The stepper above the profile sections
+  names all four steps, Personal, Address, Identity and Bank. The current one stands out, a finished
+  one shows a check and keeps its name, and the rest are greyed. It used to name only the current
+  step, so the other three were identical circles. (Owner remark 2026-10-03.)
+
 - **Customer and cleaner — one support address, support@cleansia.cz.** The customer web footer, its
   FAQ and legal pages, the order detail's payment note, the cleaner's *How jobs are offered* page,
   Help in the Android and iOS apps and the support line of every e-mail now name support@cleansia.cz.

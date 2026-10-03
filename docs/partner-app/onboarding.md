@@ -190,6 +190,24 @@ Country-specific labels and validation rules (e.g., field names, format masks) a
 
 The employee record has an `isProfileComplete` flag that tracks whether all required fields have been filled.
 
+**On the apps the profile is a chain of four steps, Personal, Address, Identity and Bank, under a
+stepper that names every one** (since 2026-10-03, owner remark). Each step is a node over its short
+name:
+
+| Step | Node | Name |
+|---|---|---|
+| Current | larger, filled, with the section's icon | bold, in the brand colour |
+| Finished | a check | kept, in full |
+| Not done yet | outlined, with the section's icon; the ring is the brand colour when the cleaner may jump to it | muted |
+
+A step the cleaner may jump to is tappable across its whole column (T-0607), and a line joins the
+nodes, in the brand colour behind a finished step. VoiceOver and TalkBack read each step as one
+element: its place, its name and its state, such as *Step 2 of 4, Address, current step* (or
+*completed*, *not started*). The *Step n of 4* header above the stepper is unchanged. Until then only
+the current step was named, inside a capsule, and the other three were identical unlabelled discs. At
+320pt (320dp) each step's column is 64 wide, and every name fits on one line in all five languages. At
+a large text size iOS shrinks a name to fit its column, and Android wraps it onto a second line.
+
 ## Step 5: Document Upload
 
 Partners must upload identity and work-related documents through the profile page. The upload flow works as follows:
@@ -348,7 +366,7 @@ trails a status icon and the chevron.
 *Documents: Done* means one active document, not every type the country requires, so a cleaner who had
 uploaded only an ID could not get back to add the insurance certificate approval needs. A *Done* row
 keeps its *Done* label and gains a chevron: Profile opens Personal at the start of the onboarding
-chain, from which every section is one step-dot away; Documents opens the documents screen; Contract
+chain, from which every section is one tap away on its stepper; Documents opens the documents screen; Contract
 documents opens the documents to read and accept. This holds for a **rejected** cleaner too, and **an
 edit does not resubmit anything** — the application stays where the admin left it. With a complete
 profile the Personal, Address and Identification buttons read **Save** rather than *Next*, because

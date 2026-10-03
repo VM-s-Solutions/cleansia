@@ -32,9 +32,9 @@ public class OrderPayEstimatorSeatShareTests
     {
         { 1, DirtinessLevel.Normal, 500m },
         { 2, DirtinessLevel.Normal, 250m },
-        { 1, DirtinessLevel.Increased, 650m },
-        // 250 a seat, plus 60 % of the job's 500 split across two seats.
-        { 2, DirtinessLevel.Heavy, 400m },
+        { 1, DirtinessLevel.Increased, 575m },
+        // 250 a seat, plus 30 % of the job's 500 split across two seats.
+        { 2, DirtinessLevel.Heavy, 325m },
     };
 
     [Theory]

@@ -100,7 +100,12 @@ forgeable by CSRF, so it needs no second factor. Do not read this page for mobil
 
 ### `customerAuthGuard`
 
-Protects routes that require authentication (orders, profile, disputes). Checks if the user has a valid session via `CustomerAuthService.isLoggedIn()`. Redirects to `/login` if not authenticated.
+Protects routes that require authentication (orders, profile, disputes). Checks if the user has a valid session via `CustomerAuthService.isLoggedIn()`. Redirects to `/login` if not authenticated, carrying the page asked for as `?returnUrl=`.
+
+After a sign-in — password, Google or Apple — `LoginFacade` navigates to that `returnUrl` when it is a
+path on this site (starts with one `/`), and to `/orders` otherwise. It is what makes an order e-mail's
+button open the booking it names: an account booking's e-mail links `/orders/:orderId`, and a reader
+who is signed out on that device used to land on the order board instead.
 
 ### `customerGuestGuard`
 

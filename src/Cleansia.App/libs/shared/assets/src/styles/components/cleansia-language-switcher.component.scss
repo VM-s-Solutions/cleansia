@@ -46,6 +46,13 @@
 .cleansia-language-switcher__list--globe {
   @include pref-pill-list;
 
+  // As wide as its longest row: the shared 208px floor is sized for the market
+  // list, and beside an 80px language pill it read as a sheet, not a menu.
+  &.p-select-overlay {
+    min-width: 0;
+    width: max-content;
+  }
+
   .cleansia-language-switcher__code {
     font-size: 13px;
     color: var(--cl-muted);

@@ -27,10 +27,10 @@ class DirtinessCopyStringsTest {
 
     private val statedRates = mapOf(
         "dirtiness_normal_price" to emptyList(),
-        "dirtiness_increased_price" to listOf(30),
-        "dirtiness_heavy_price" to listOf(60),
-        "dirtiness_surcharge_increased" to listOf(30),
-        "dirtiness_surcharge_heavy" to listOf(60),
+        "dirtiness_increased_price" to listOf(15),
+        "dirtiness_heavy_price" to listOf(30),
+        "dirtiness_surcharge_increased" to listOf(15),
+        "dirtiness_surcharge_heavy" to listOf(30),
     )
 
     private val moduleDir: File = sequenceOf(

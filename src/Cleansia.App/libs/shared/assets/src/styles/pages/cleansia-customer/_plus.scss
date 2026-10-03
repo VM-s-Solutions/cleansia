@@ -155,6 +155,13 @@
   background: var(--cl-band);
 }
 
+// A member's panel is the first section under the hero, so it carries the same
+// tint: the divider's tabs are cut in it, and on the page ground they read as a
+// strip of tabs ending in a hard grey edge.
+.cl-plusp__member {
+  background: var(--cl-band);
+}
+
 .cl-plusp__inner {
   max-width: calc(#{$home-width} + 2 * var(--cl-gutter));
   margin: 0 auto;

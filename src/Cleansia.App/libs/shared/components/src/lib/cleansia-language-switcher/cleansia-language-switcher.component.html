@@ -7,6 +7,7 @@
     [appendTo]="appendTo()"
     [overlayOptions]="overlayOptions()"
     [panelStyleClass]="listClass()"
+    [scrollHeight]="scrollHeight()"
     (onChange)="changeLanguage($event.value)"
   >
     <ng-template let-lang pTemplate="item">

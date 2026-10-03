@@ -50,6 +50,14 @@ export class CleansiaLanguageSwitcherComponent implements OnInit {
     () => `cleansia-language-switcher__list--${this.variant()}`
   );
 
+  /**
+   * The globe list's five 40px rows overran PrimeNG's 200px default by 15px, so
+   * the last language sat behind a scrollbar.
+   */
+  readonly scrollHeight = computed(() =>
+    this.variant() === 'globe' ? '320px' : '200px'
+  );
+
   // The last constructor-injected dependency in this lib; every sibling field
   // here already uses inject(), and the constructor now only seeds state.
   private readonly translate = inject(TranslateService);

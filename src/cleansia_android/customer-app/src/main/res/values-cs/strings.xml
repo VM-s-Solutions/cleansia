@@ -747,21 +747,21 @@
     <string name="dirtiness_normal_detail_3">Kuchyň po běžném vaření: linka a sporák otřít, bez připečenin</string>
     <string name="dirtiness_normal_detail_4">Nádobí umyté nebo v myčce</string>
     <string name="dirtiness_increased_title">Zvýšené</string>
-    <string name="dirtiness_increased_price" formatted="false">+30 %</string>
+    <string name="dirtiness_increased_price" formatted="false">+15 %</string>
     <string name="dirtiness_increased_when">Poslední úklid před 3–6 týdny, nebo domácnost se zvířaty či malými dětmi.</string>
     <string name="dirtiness_increased_detail_1">Viditelná vrstva prachu, skvrny a zašlá místa na podlaze</string>
     <string name="dirtiness_increased_detail_2">Vodní kámen na bateriích, sprchovém koutě a vaně, zašlé spáry</string>
     <string name="dirtiness_increased_detail_3">Mastnota na kuchyňské lince, obkladu a digestoři, znečištěná trouba nebo mikrovlnka zvenku</string>
     <string name="dirtiness_increased_detail_4">Chlupy zvířat na sedačce, kobercích a v rozích</string>
     <string name="dirtiness_heavy_title">Silné</string>
-    <string name="dirtiness_heavy_price" formatted="false">+60 %</string>
+    <string name="dirtiness_heavy_price" formatted="false">+30 %</string>
     <string name="dirtiness_heavy_when">Déle než 2 měsíce bez úklidu, nebo dlouhodobě zanedbaná domácnost.</string>
     <string name="dirtiness_heavy_detail_1">Silný vodní kámen a usazeniny, které nejdou dolů jedním setřením</string>
     <string name="dirtiness_heavy_detail_2">Připečená mastnota na sporáku, digestoři a skříňkách</string>
     <string name="dirtiness_heavy_detail_3">Černé skvrny (plíseň) na silikonu nebo ve spárách</string>
     <string name="dirtiness_heavy_detail_4">Zaschlé nečistoty na podlaze, lepkavé povrchy, výrazný zápach</string>
-    <string name="dirtiness_surcharge_increased" formatted="false">Příplatek za zvýšené znečištění (+30 %)</string>
-    <string name="dirtiness_surcharge_heavy" formatted="false">Příplatek za silné znečištění (+60 %)</string>
+    <string name="dirtiness_surcharge_increased" formatted="false">Příplatek za zvýšené znečištění (+15 %)</string>
+    <string name="dirtiness_surcharge_heavy" formatted="false">Příplatek za silné znečištění (+30 %)</string>
 
     <string name="booking_summary_promo_discount">Slevový kód (-%1$s)</string>
     <string name="booking_summary_membership_discount">Sleva Cleansia Plus</string>

@@ -749,21 +749,21 @@
     <string name="dirtiness_normal_detail_3">Kitchen after everyday cooking: the worktop and hob need a wipe, nothing baked on</string>
     <string name="dirtiness_normal_detail_4">Dishes washed or in the dishwasher</string>
     <string name="dirtiness_increased_title">Increased</string>
-    <string name="dirtiness_increased_price" formatted="false">+30%</string>
+    <string name="dirtiness_increased_price" formatted="false">+15%</string>
     <string name="dirtiness_increased_when">Last cleaned 3–6 weeks ago, or a home with pets or small children.</string>
     <string name="dirtiness_increased_detail_1">A visible layer of dust, stains and grimy patches on the floor</string>
     <string name="dirtiness_increased_detail_2">Limescale on the taps, shower and bath, grimy grout</string>
     <string name="dirtiness_increased_detail_3">Grease on the kitchen worktop, tiles and cooker hood, a dirty oven or microwave on the outside</string>
     <string name="dirtiness_increased_detail_4">Pet hair on the sofa, carpets and in the corners</string>
     <string name="dirtiness_heavy_title">Heavy</string>
-    <string name="dirtiness_heavy_price" formatted="false">+60%</string>
+    <string name="dirtiness_heavy_price" formatted="false">+30%</string>
     <string name="dirtiness_heavy_when">Not cleaned for more than 2 months, or a home neglected for a long time.</string>
     <string name="dirtiness_heavy_detail_1">Heavy limescale and deposits that do not come off with one wipe</string>
     <string name="dirtiness_heavy_detail_2">Baked-on grease on the hob, cooker hood and cupboards</string>
     <string name="dirtiness_heavy_detail_3">Black spots (mould) on silicone or in the grout</string>
     <string name="dirtiness_heavy_detail_4">Dried-on dirt on the floor, sticky surfaces, a strong smell</string>
-    <string name="dirtiness_surcharge_increased" formatted="false">Increased dirtiness surcharge (+30%)</string>
-    <string name="dirtiness_surcharge_heavy" formatted="false">Heavy dirtiness surcharge (+60%)</string>
+    <string name="dirtiness_surcharge_increased" formatted="false">Increased dirtiness surcharge (+15%)</string>
+    <string name="dirtiness_surcharge_heavy" formatted="false">Heavy dirtiness surcharge (+30%)</string>
 
     <string name="booking_summary_promo_discount">Promo (-%1$s)</string>
     <string name="booking_summary_membership_discount">Cleansia Plus discount</string>

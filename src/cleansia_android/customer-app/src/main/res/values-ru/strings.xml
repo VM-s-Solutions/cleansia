@@ -744,21 +744,21 @@
     <string name="dirtiness_normal_detail_3">Кухня после обычной готовки: протереть столешницу и плиту, без пригоревшего</string>
     <string name="dirtiness_normal_detail_4">Посуда вымыта или в посудомоечной машине</string>
     <string name="dirtiness_increased_title">Повышенный</string>
-    <string name="dirtiness_increased_price" formatted="false">+30%</string>
+    <string name="dirtiness_increased_price" formatted="false">+15%</string>
     <string name="dirtiness_increased_when">Последняя уборка 3–6 недель назад или жильё с животными либо маленькими детьми.</string>
     <string name="dirtiness_increased_detail_1">Заметный слой пыли, пятна и затёртые места на полу</string>
     <string name="dirtiness_increased_detail_2">Известковый налёт на смесителях, в душевой кабине и на ванне, потемневшие швы</string>
     <string name="dirtiness_increased_detail_3">Жир на кухонной столешнице, плитке и вытяжке, загрязнённая духовка или микроволновка снаружи</string>
     <string name="dirtiness_increased_detail_4">Шерсть животных на диване, коврах и в углах</string>
     <string name="dirtiness_heavy_title">Сильный</string>
-    <string name="dirtiness_heavy_price" formatted="false">+60%</string>
+    <string name="dirtiness_heavy_price" formatted="false">+30%</string>
     <string name="dirtiness_heavy_when">Более 2 месяцев без уборки или давно запущенное жильё.</string>
     <string name="dirtiness_heavy_detail_1">Сильный известковый налёт и отложения, которые не оттираются с одного раза</string>
     <string name="dirtiness_heavy_detail_2">Пригоревший жир на плите, вытяжке и шкафчиках</string>
     <string name="dirtiness_heavy_detail_3">Чёрные пятна (плесень) на силиконе или в швах</string>
     <string name="dirtiness_heavy_detail_4">Засохшая грязь на полу, липкие поверхности, сильный запах</string>
-    <string name="dirtiness_surcharge_increased" formatted="false">Доплата за повышенное загрязнение (+30%)</string>
-    <string name="dirtiness_surcharge_heavy" formatted="false">Доплата за сильное загрязнение (+60%)</string>
+    <string name="dirtiness_surcharge_increased" formatted="false">Доплата за повышенное загрязнение (+15%)</string>
+    <string name="dirtiness_surcharge_heavy" formatted="false">Доплата за сильное загрязнение (+30%)</string>
 
     <string name="booking_summary_promo_discount">Промокод (-%1$s)</string>
     <string name="booking_summary_membership_discount">Скидка Cleansia Plus</string>

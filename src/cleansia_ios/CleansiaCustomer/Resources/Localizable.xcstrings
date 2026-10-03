@@ -36532,31 +36532,31 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "+30%"
+            "value": "+15%"
           }
         },
         "cs": {
           "stringUnit": {
             "state": "translated",
-            "value": "+30 %"
+            "value": "+15 %"
           }
         },
         "sk": {
           "stringUnit": {
             "state": "translated",
-            "value": "+30 %"
+            "value": "+15 %"
           }
         },
         "uk": {
           "stringUnit": {
             "state": "translated",
-            "value": "+30%"
+            "value": "+15%"
           }
         },
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "+30%"
+            "value": "+15%"
           }
         }
       }
@@ -36567,31 +36567,31 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "+60%"
+            "value": "+30%"
           }
         },
         "cs": {
           "stringUnit": {
             "state": "translated",
-            "value": "+60 %"
+            "value": "+30 %"
           }
         },
         "sk": {
           "stringUnit": {
             "state": "translated",
-            "value": "+60 %"
+            "value": "+30 %"
           }
         },
         "uk": {
           "stringUnit": {
             "state": "translated",
-            "value": "+60%"
+            "value": "+30%"
           }
         },
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "+60%"
+            "value": "+30%"
           }
         }
       }
@@ -37127,31 +37127,31 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Increased dirtiness surcharge (+30%)"
+            "value": "Increased dirtiness surcharge (+15%)"
           }
         },
         "cs": {
           "stringUnit": {
             "state": "translated",
-            "value": "Příplatek za zvýšené znečištění (+30%)"
+            "value": "Příplatek za zvýšené znečištění (+15%)"
           }
         },
         "sk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Príplatok za zvýšené znečistenie (+30%)"
+            "value": "Príplatok za zvýšené znečistenie (+15%)"
           }
         },
         "uk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Доплата за підвищене забруднення (+30%)"
+            "value": "Доплата за підвищене забруднення (+15%)"
           }
         },
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Доплата за повышенное загрязнение (+30%)"
+            "value": "Доплата за повышенное загрязнение (+15%)"
           }
         }
       }
@@ -37162,31 +37162,31 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Heavy dirtiness surcharge (+60%)"
+            "value": "Heavy dirtiness surcharge (+30%)"
           }
         },
         "cs": {
           "stringUnit": {
             "state": "translated",
-            "value": "Příplatek za silné znečištění (+60%)"
+            "value": "Příplatek za silné znečištění (+30%)"
           }
         },
         "sk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Príplatok za silné znečistenie (+60%)"
+            "value": "Príplatok za silné znečistenie (+30%)"
           }
         },
         "uk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Доплата за сильне забруднення (+60%)"
+            "value": "Доплата за сильне забруднення (+30%)"
           }
         },
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Доплата за сильное загрязнение (+60%)"
+            "value": "Доплата за сильное загрязнение (+30%)"
           }
         }
       }

@@ -1,7 +1,7 @@
 import { inject, Injectable } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { FormBuilder, Validators } from '@angular/forms';
-import { Router } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import { UnsubscribeControlDirective } from '@cleansia/directives';
 import {
   CustomerAuthService,
@@ -23,6 +23,7 @@ export class LoginFacade extends UnsubscribeControlDirective {
   private readonly fb = inject(FormBuilder);
   private readonly store = inject(Store);
   private readonly router = inject(Router);
+  private readonly route = inject(ActivatedRoute);
   private readonly authService = inject(CustomerAuthService);
   private readonly translate = inject(TranslateService);
   private readonly snackbarService = inject(SnackbarService);
@@ -60,7 +61,7 @@ export class LoginFacade extends UnsubscribeControlDirective {
           this.guestOrderService.clear();
           this.store.dispatch(loadCustomerUser());
           this.snackbarService.showSuccessTranslated('auth.login.success');
-          this.router.navigate([CleansiaCustomerRoute.ORDERS]);
+          this.navigateAfterSignIn();
         },
         error: (err) => {
           this.snackbarService.showApiError(err, 'auth.login.error');
@@ -88,7 +89,7 @@ export class LoginFacade extends UnsubscribeControlDirective {
           this.guestOrderService.clear();
           this.store.dispatch(loadCustomerUser());
           this.snackbarService.showSuccessTranslated('auth.login.success');
-          this.router.navigate([CleansiaCustomerRoute.ORDERS]);
+          this.navigateAfterSignIn();
         },
         error: (err) => {
           this.snackbarService.showApiError(err, 'auth.login.error');
@@ -117,7 +118,7 @@ export class LoginFacade extends UnsubscribeControlDirective {
           this.guestOrderService.clear();
           this.store.dispatch(loadCustomerUser());
           this.snackbarService.showSuccessTranslated('auth.login.success');
-          this.router.navigate([CleansiaCustomerRoute.ORDERS]);
+          this.navigateAfterSignIn();
         },
         error: (err) => {
           this.snackbarService.showApiError(err, 'auth.login.error');
@@ -132,6 +133,19 @@ export class LoginFacade extends UnsubscribeControlDirective {
    */
   appleSignInFailed(): void {
     this.snackbarService.showErrorTranslated('api.common.error_occurred');
+  }
+
+  /**
+   * Where a sign-in lands: the page the auth guard turned away (an order e-mail's
+   * link, say), else the order board. Only a path on this site is followed.
+   */
+  private navigateAfterSignIn(): void {
+    const returnUrl = this.route.snapshot.queryParamMap.get('returnUrl');
+    if (returnUrl?.startsWith('/') && !returnUrl.startsWith('//')) {
+      this.router.navigateByUrl(returnUrl);
+      return;
+    }
+    this.router.navigate([CleansiaCustomerRoute.ORDERS]);
   }
 
   private createFormGroup() {

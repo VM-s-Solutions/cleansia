@@ -1,4 +1,5 @@
 import CleansiaCore
+import MessageUI
 import SwiftUI
 
 struct HelpSupportView: View {
@@ -46,7 +47,8 @@ struct HelpSupportView: View {
                     open(
                         "mailto:\(CleansiaWeb.contactEmail)",
                         orCopy: CleansiaWeb.contactEmail,
-                        notice: L10n.Help.emailUnavailable
+                        notice: L10n.Help.emailUnavailable,
+                        copyFirst: !MFMailComposeViewController.canSendMail()
                     )
                 }
                 Divider().padding(.leading, Spacing.xl)
@@ -90,13 +92,17 @@ struct HelpSupportView: View {
     }
 
     /// Hands the link to the system. When nothing on the device takes it — no mail app, no phone — the
-    /// value is copied and the customer told, as Android's Help does.
-    private func open(_ link: String, orCopy value: String, notice: String) {
+    /// value is copied and the customer told, as Android's Help does. With `copyFirst` it is copied before
+    /// the link goes out: Mail with no account set up still takes a mailto: link, on its setup screen.
+    private func open(_ link: String, orCopy value: String, notice: String, copyFirst: Bool = false) {
         guard let url = URL(string: link) else { return }
-        openURL(url) { accepted in
-            guard !accepted else { return }
+        let copy = {
             UIPasteboard.general.string = value
             snackbar.showInfo(notice)
+        }
+        if copyFirst { copy() }
+        openURL(url) { accepted in
+            if !accepted, !copyFirst { copy() }
         }
     }
 

@@ -12301,31 +12301,31 @@
         "cs": {
           "stringUnit": {
             "state": "translated",
-            "value": "Nenašli jsme e-mailovou aplikaci. Adresa je zkopírovaná."
+            "value": "Adresa je zkopírovaná pro případ, že e-mailová aplikace není nastavená."
           }
         },
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "No e-mail app found. Address copied."
+            "value": "Address copied, in case your mail app isn't set up."
           }
         },
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Почтовое приложение не найдено. Адрес скопирован."
+            "value": "Адрес скопирован на случай, если почтовое приложение не настроено."
           }
         },
         "sk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Nenašli sme e-mailovú aplikáciu. Adresa je skopírovaná."
+            "value": "Adresa je skopírovaná pre prípad, že e-mailová aplikácia nie je nastavená."
           }
         },
         "uk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Не знайдено поштового застосунку. Адресу скопійовано."
+            "value": "Адресу скопійовано на випадок, якщо поштовий застосунок не налаштовано."
           }
         }
       }

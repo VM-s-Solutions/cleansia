@@ -5,7 +5,8 @@ import XCTest
 /// Help's contact rows were plain text: the support address could not be tapped and the support line
 /// was never dialled. They now open the mail app on the one support address and the dialer on the line
 /// the customer web footer prints, and when nothing on the device takes the link they copy the value
-/// and say so. Android's `MarketCopyStringsTest` holds the same rows.
+/// and say so. Android's `MarketCopyStringsTest` holds the same rows. Mail with no account set up still
+/// takes a mailto: link, on its setup screen, so with no account the address is copied as the link goes out.
 final class HelpSupportContactTests: XCTestCase {
     private static let languages = ["en", "cs", "sk", "uk", "ru"]
     private static let noticeKeys = ["help_email_unavailable", "help_call_unavailable"]
@@ -20,6 +21,11 @@ final class HelpSupportContactTests: XCTestCase {
         XCTAssertTrue(help.contains("\"tel:\\(Self.supportPhone)\""), "Call support dials nothing")
         XCTAssertTrue(help.contains("openURL(url) { accepted in"), "a link nothing takes goes unnoticed")
         XCTAssertTrue(help.contains("UIPasteboard.general.string = value"), "a link nothing takes is not copied")
+        XCTAssertTrue(
+            help.contains("copyFirst: !MFMailComposeViewController.canSendMail()"),
+            "with no mail account set up, Mail opens on its setup screen and the address is not copied"
+        )
+        XCTAssertTrue(help.contains("if copyFirst { copy() }"), "the address is not copied before the link goes out")
         XCTAssertTrue(help.contains("notice: L10n.Help.emailUnavailable"))
         XCTAssertTrue(help.contains("notice: L10n.Help.callUnavailable"))
     }

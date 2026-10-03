@@ -34,6 +34,7 @@ public class ResolveDisputeRefundSeamTests
     private readonly Mock<INotificationProducer> _producer = new();
     private readonly Mock<ICreditAccountRepository> _creditAccountRepository = new();
     private readonly Mock<IOrderEmployeePayRepository> _payRepository = new();
+    private readonly Mock<ILoyaltyService> _loyalty = new();
 
     public ResolveDisputeRefundSeamTests()
     {
@@ -44,7 +45,7 @@ public class ResolveDisputeRefundSeamTests
 
     private ResolveDispute.Handler CreateHandler() =>
         new(_disputeRepository.Object, _session.Object, _refundService.Object, Mock.Of<IRefundRepository>(),
-            _creditAccountRepository.Object, _payRepository.Object, _producer.Object, _auditContext);
+            _creditAccountRepository.Object, _payRepository.Object, _loyalty.Object, _producer.Object, _auditContext);
 
     private static Dispute NewPendingDispute()
     {
@@ -147,6 +148,43 @@ public class ResolveDisputeRefundSeamTests
         Assert.Contains("\"cardRefundedAmount\":null", snapshot.BeforeJson);
     }
 
+    /// <summary>
+    /// The dispute's settlement takes back its share of the order's points (customer terms §11), on what
+    /// it actually returned: 300 to the card and 160 to the credit balance, 460 — not the 800 asked for.
+    /// </summary>
+    [Fact]
+    public async Task Resolve_WithARefund_TakesBackTheShareOfPointsItReturned_CardPlusCredit()
+    {
+        ArrangeDispute();
+        _refundService
+            .Setup(s => s.IssueRefundAsync(It.IsAny<RefundRequest>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(BusinessResult.Success(new RefundResult(
+                "refund-1", $"refund:{OrderId}:dispute:{DisputeId}", 300m, RefundStatus.Succeeded, false,
+                CreditReturned: 160m)));
+
+        var result = await CreateHandler().Handle(
+            new ResolveDispute.Command(DisputeId, 800m, "approved"), CancellationToken.None);
+
+        Assert.True(result.IsSuccess);
+        _loyalty.Verify(l => l.RevokeForRefundAsync(
+            OrderId, 460m, $"dispute-settlement:{DisputeId}", ActorId, It.IsAny<CancellationToken>()), Times.Once);
+        _loyalty.VerifyNoOtherCalls();
+    }
+
+    [Theory]
+    [InlineData(null)]
+    [InlineData(0.0)]
+    public async Task Resolve_WithoutARefund_TakesNoPoints(double? refundAmount)
+    {
+        ArrangeDispute();
+
+        var result = await CreateHandler().Handle(
+            new ResolveDispute.Command(DisputeId, (decimal?)refundAmount, "no refund warranted"), CancellationToken.None);
+
+        Assert.True(result.IsSuccess);
+        _loyalty.VerifyNoOtherCalls();
+    }
+
     [Fact]
     public async Task Resolve_WithSuccessfulRefund_RecordsRefundNotificationViaTheSeam()
     {
@@ -227,6 +265,7 @@ public class ResolveDisputeRefundSeamTests
         _producer.Verify(p => p.NotifyAsync(
             It.IsAny<string>(), It.IsAny<string>(), It.IsAny<Dictionary<string, string>>(),
             It.IsAny<string?>(), It.IsAny<string?>(), It.IsAny<CancellationToken>()), Times.Never);
+        _loyalty.VerifyNoOtherCalls();
     }
 
     /// <summary>
@@ -350,5 +389,10 @@ public class ResolveDisputeRefundSeamTests
             s => s.IssueRefundAsync(
                 It.Is<RefundRequest>(r => r.DisputeId == DisputeId), It.IsAny<CancellationToken>()),
             Times.Exactly(2));
+        // Both attempts hand the clawback the one per-dispute key, on which the second collapses.
+        _loyalty.Verify(l => l.RevokeForRefundAsync(
+            OrderId, 250m, $"dispute-settlement:{DisputeId}", ActorId, It.IsAny<CancellationToken>()),
+            Times.Exactly(2));
+        _loyalty.VerifyNoOtherCalls();
     }
 }

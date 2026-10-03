@@ -257,7 +257,7 @@ public class PartialRefundFeeRoundingTests
     {
         public decimal? LastAmountReturned { get; private set; }
 
-        public Task RevokeForPartialRefundAsync(
+        public Task RevokeForRefundAsync(
             string orderId, decimal amountReturned, string refundKey, string actorId, CancellationToken cancellationToken)
         {
             LastAmountReturned = amountReturned;

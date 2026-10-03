@@ -166,7 +166,7 @@ public class IssuePartialRefund
             // leg plus the credit leg, gross: the earn was on the whole gross price.
             var result = refund.Value!;
             var refundVat = ApportionVat(result.Amount, order.AppliedVatRate);
-            await loyaltyService.RevokeForPartialRefundAsync(
+            await loyaltyService.RevokeForRefundAsync(
                 order.Id, result.Amount + result.CreditReturned, result.RefundKey, actorId, cancellationToken);
 
             var consumedAfter = await refundRepository.GetSucceededRefundTotalForOrderAsync(

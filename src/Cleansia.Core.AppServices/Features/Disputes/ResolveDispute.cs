@@ -97,6 +97,7 @@ public class ResolveDispute
         IRefundRepository refundRepository,
         ICreditAccountRepository creditAccountRepository,
         IOrderEmployeePayRepository orderEmployeePayRepository,
+        ILoyaltyService loyaltyService,
         INotificationProducer notificationProducer,
         IAuditContext auditContext) : ICommandHandler<Command>
     {
@@ -226,8 +227,19 @@ public class ResolveDispute
                     cancellationToken);
             }
 
+            // Last, because the clawback flushes the unit of work to collapse a duplicate on its key. The
+            // settlement's share is what it returned on either tender; a dispute settles once, on one key.
+            var returned = (dispute.CardRefundedAmount ?? 0m) + (dispute.CreditReturnedAmount ?? 0m);
+            if (returned > 0m)
+            {
+                await loyaltyService.RevokeForRefundAsync(
+                    dispute.OrderId, returned, SettlementKey(dispute), actorId, cancellationToken);
+            }
+
             return BusinessResult.Success();
         }
+
+        private static string SettlementKey(Dispute dispute) => $"dispute-settlement:{dispute.Id}";
 
         /// <summary>
         /// The customer chose credit, so the settlement lands on their balance in the order's currency
@@ -262,7 +274,7 @@ public class ResolveDispute
             account.Issue(
                 amount: amount,
                 reason: CreditTransactionReason.DisputeSettlement,
-                idempotencyKey: $"dispute-settlement:{dispute.Id}",
+                idempotencyKey: SettlementKey(dispute),
                 issuedBy: actorId,
                 orderId: dispute.OrderId,
                 disputeId: dispute.Id);

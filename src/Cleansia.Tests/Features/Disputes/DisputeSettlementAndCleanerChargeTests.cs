@@ -41,6 +41,7 @@ public sealed class DisputeSettlementAndCleanerChargeTests
     private readonly Mock<IRefundRepository> _refundRows = new();
     private readonly Mock<ICreditAccountRepository> _creditAccounts = new();
     private readonly Mock<IOrderEmployeePayRepository> _pays = new();
+    private readonly Mock<ILoyaltyService> _loyalty = new();
 
     public DisputeSettlementAndCleanerChargeTests()
     {
@@ -68,6 +69,24 @@ public sealed class DisputeSettlementAndCleanerChargeTests
         Assert.Equal(DisputeStatus.Resolved, dispute.Status);
         Assert.Equal(300m, dispute.CreditReturnedAmount);
         Assert.Null(dispute.CardRefundedAmount);
+    }
+
+    /// <summary>
+    /// Settled in credit is still a refund of 300 of the 1000 order, so it takes back the same share of
+    /// the points a card settlement would: choosing credit does not keep them.
+    /// </summary>
+    [Fact]
+    public async Task A_Credit_Settlement_Takes_Back_Its_Share_Of_The_Points_Like_A_Card_Refund()
+    {
+        ArrangeDispute(DisputeSettlementPreference.Credit);
+        ArrangeCreditAccount();
+
+        var result = await Handler().Handle(new ResolveDispute.Command(DisputeId, 300m, "justified"), CancellationToken.None);
+
+        Assert.True(result.IsSuccess, result.Error?.Message);
+        _loyalty.Verify(l => l.RevokeForRefundAsync(
+            OrderId, 300m, $"dispute-settlement:{DisputeId}", ActorId, It.IsAny<CancellationToken>()), Times.Once);
+        _loyalty.VerifyNoOtherCalls();
     }
 
     [Fact]
@@ -340,7 +359,7 @@ public sealed class DisputeSettlementAndCleanerChargeTests
 
     private ResolveDispute.Handler Handler() =>
         new(_disputes.Object, _session.Object, _refunds.Object, _refundRows.Object, _creditAccounts.Object, _pays.Object,
-            Mock.Of<INotificationProducer>(), new AuditContext());
+            _loyalty.Object, Mock.Of<INotificationProducer>(), new AuditContext());
 
     private Dispute ArrangeDispute(DisputeSettlementPreference preference)
     {

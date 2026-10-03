@@ -49,6 +49,7 @@ public class AdminRefundOrder
         IOrderRepository orderRepository,
         IRefundRepository refundRepository,
         IRefundService refundService,
+        ILoyaltyService loyaltyService,
         IUserSessionProvider userSessionProvider,
         INotificationProducer notificationProducer,
         IAuditContext auditContext
@@ -140,6 +141,11 @@ public class AdminRefundOrder
                     refund.Value!.RefundId,
                     cancellationToken);
             }
+
+            // Last, because the clawback flushes the unit of work to collapse a duplicate on its key. A full
+            // refund hands it the whole price, so it takes everything earlier refunds left of the earn.
+            await loyaltyService.RevokeForRefundAsync(
+                order.Id, order.TotalPrice, result.RefundKey, adminId, cancellationToken);
 
             return BusinessResult.Success(new Response(
                 OrderId: order.Id,

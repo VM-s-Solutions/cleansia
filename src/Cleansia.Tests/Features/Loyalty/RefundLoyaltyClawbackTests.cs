@@ -14,22 +14,25 @@ using Moq;
 namespace Cleansia.Tests.Features.Loyalty;
 
 /// <summary>
-/// Proportional loyalty clawback on a partial refund: a refund takes back the same share of the points
-/// the order's OrderCompleted earn granted as it returned of the order's price. The method is keyed per
-/// refund, so two distinct partial refunds each revoke — it is not the one-shot cancel mirror that no-ops
-/// on a second call. Σ(revoked) across an order's partials is capped at the original earn.
+/// The one loyalty clawback every refund of a completed order goes through — partial, full and a
+/// dispute's settlement: a refund takes back the same share of the points the order's OrderCompleted earn
+/// granted as it returned of the order's price. The method is keyed per refund, so two distinct refunds
+/// each revoke — it is not the one-shot cancel mirror that no-ops on a second call. Σ(revoked) across an
+/// order's refunds is capped at the original earn, so a full refund takes only what the others left.
 ///
 /// These are logic-level unit tests with mocked repositories: the fast-path key lookup is the mocked
 /// GetByIdempotencyKeyAsync and the concurrent-race backstop is the mocked CommitAsync throwing a wrapped
 /// 23505. A true-parallel proof against a real filtered unique index belongs to the integration suite.
 /// </summary>
-public class PartialRefundLoyaltyClawbackTests
+public class RefundLoyaltyClawbackTests
 {
     private const string UserId = "user-1";
     private const string ActorId = "system";
     private const string OrderId = "order-1";
     private const string RefundKey = "refund-key-aaa";
     private const string OtherRefundKey = "refund-key-bbb";
+    private const string FullRefundKey = "refund:order-1:admin:full";
+    private const string DisputeSettlementKey = "dispute-settlement:dispute-1";
 
     private readonly Mock<IOrderRepository> _orderRepository = new();
     private readonly Mock<ILoyaltyAccountRepository> _accountRepository = new();
@@ -167,7 +170,7 @@ public class PartialRefundLoyaltyClawbackTests
         ArrangeCommit();
 
         // floor(100 × 95 / 1000) = floor(9.5) = 9.
-        await CreateService().RevokeForPartialRefundAsync(OrderId, 95m, RefundKey, ActorId, CancellationToken.None);
+        await CreateService().RevokeForRefundAsync(OrderId, 95m, RefundKey, ActorId, CancellationToken.None);
 
         var revoke = Assert.Single(PartialRevokes(account));
         Assert.Equal(-9, revoke.Points);
@@ -194,7 +197,7 @@ public class PartialRefundLoyaltyClawbackTests
         ArrangeTierConfigs();
         ArrangeCommit();
 
-        await CreateService().RevokeForPartialRefundAsync(OrderId, 1000m, RefundKey, ActorId, CancellationToken.None);
+        await CreateService().RevokeForRefundAsync(OrderId, 1000m, RefundKey, ActorId, CancellationToken.None);
 
         var revoke = Assert.Single(PartialRevokes(account));
         Assert.Equal(-100, revoke.Points);
@@ -217,7 +220,7 @@ public class PartialRefundLoyaltyClawbackTests
         ArrangeTierConfigs();
         ArrangeCommit();
 
-        await CreateService().RevokeForPartialRefundAsync(OrderId, 1210m, RefundKey, ActorId, CancellationToken.None);
+        await CreateService().RevokeForRefundAsync(OrderId, 1210m, RefundKey, ActorId, CancellationToken.None);
 
         var revoke = Assert.Single(PartialRevokes(account));
         Assert.Equal(-121, revoke.Points);
@@ -234,7 +237,7 @@ public class PartialRefundLoyaltyClawbackTests
             .ReturnsAsync((LoyaltyTransaction?)null);
         ArrangeNoExistingKey();
 
-        await CreateService().RevokeForPartialRefundAsync(OrderId, 500m, RefundKey, ActorId, CancellationToken.None);
+        await CreateService().RevokeForRefundAsync(OrderId, 500m, RefundKey, ActorId, CancellationToken.None);
 
         _accountRepository.Verify(r => r.GetByUserIdIgnoringTenantAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Never);
         _transactionRepository.Verify(r => r.CommitAsync(It.IsAny<CancellationToken>()), Times.Never);
@@ -251,7 +254,7 @@ public class PartialRefundLoyaltyClawbackTests
         ArrangeCommit();
 
         var ex = await Record.ExceptionAsync(() =>
-            CreateService().RevokeForPartialRefundAsync(OrderId, 100m, RefundKey, ActorId, CancellationToken.None));
+            CreateService().RevokeForRefundAsync(OrderId, 100m, RefundKey, ActorId, CancellationToken.None));
 
         Assert.Null(ex);
         Assert.Empty(PartialRevokes(account));
@@ -275,8 +278,8 @@ public class PartialRefundLoyaltyClawbackTests
             .Returns(Task.CompletedTask);
 
         var service = CreateService();
-        await service.RevokeForPartialRefundAsync(OrderId, 100m, RefundKey, ActorId, CancellationToken.None);
-        await service.RevokeForPartialRefundAsync(OrderId, 100m, RefundKey, ActorId, CancellationToken.None);
+        await service.RevokeForRefundAsync(OrderId, 100m, RefundKey, ActorId, CancellationToken.None);
+        await service.RevokeForRefundAsync(OrderId, 100m, RefundKey, ActorId, CancellationToken.None);
 
         var revoke = Assert.Single(PartialRevokes(account));
         Assert.Equal(-10, revoke.Points);
@@ -292,8 +295,8 @@ public class PartialRefundLoyaltyClawbackTests
         ArrangeRunningRevokedTotal(account);
 
         var service = CreateService();
-        await service.RevokeForPartialRefundAsync(OrderId, 30m, RefundKey, ActorId, CancellationToken.None);
-        await service.RevokeForPartialRefundAsync(OrderId, 50m, OtherRefundKey, ActorId, CancellationToken.None);
+        await service.RevokeForRefundAsync(OrderId, 30m, RefundKey, ActorId, CancellationToken.None);
+        await service.RevokeForRefundAsync(OrderId, 50m, OtherRefundKey, ActorId, CancellationToken.None);
 
         var revokes = PartialRevokes(account);
         Assert.Equal(2, revokes.Count);
@@ -314,11 +317,101 @@ public class PartialRefundLoyaltyClawbackTests
         ArrangeRunningRevokedTotal(account);
 
         var service = CreateService();
-        await service.RevokeForPartialRefundAsync(OrderId, 600m, RefundKey, ActorId, CancellationToken.None);
-        await service.RevokeForPartialRefundAsync(OrderId, 600m, OtherRefundKey, ActorId, CancellationToken.None);
+        await service.RevokeForRefundAsync(OrderId, 600m, RefundKey, ActorId, CancellationToken.None);
+        await service.RevokeForRefundAsync(OrderId, 600m, OtherRefundKey, ActorId, CancellationToken.None);
 
         Assert.Equal([-60, -40], PartialRevokes(account).Select(t => t.Points));
         Assert.Equal(0, account.LifetimePoints);
+    }
+
+    /// <summary>
+    /// A 1000 order earned 99. A partial refund of 300 takes floor(99 × 300 / 1000) = floor(29.7) = 29.
+    /// The full refund then asks for the whole price — floor(99 × 1000 / 1000) = 99 — and finds 70 left,
+    /// so it takes 70, not the 69 the remaining 700 would floor to on its own: nothing is left behind.
+    /// </summary>
+    [Fact]
+    public async Task FullRefund_AfterAPartialRefund_TakesOnlyWhatIsLeft()
+    {
+        var account = ArrangeEarn(99);
+        ArrangeOrder(UserId, totalPrice: 1000m);
+        ArrangeNoExistingKey();
+        ArrangeTierConfigs();
+        ArrangeRunningRevokedTotal(account);
+
+        var service = CreateService();
+        await service.RevokeForRefundAsync(OrderId, 300m, RefundKey, ActorId, CancellationToken.None);
+        await service.RevokeForRefundAsync(OrderId, 1000m, FullRefundKey, ActorId, CancellationToken.None);
+
+        Assert.Equal([-29, -70], PartialRevokes(account).Select(t => t.Points));
+        Assert.Equal([RefundKey, FullRefundKey], PartialRevokes(account).Select(t => t.IdempotencyKey));
+        Assert.Equal(0, account.LifetimePoints);
+    }
+
+    /// <summary>
+    /// A dispute on a 1000 order that earned 100 is settled with 300 to the card and 160 back to the
+    /// credit balance: it returned 460, so it takes floor(100 × 460 / 1000) = 46 and leaves 54.
+    /// </summary>
+    [Fact]
+    public async Task DisputeRefund_TakesTheShareItReturned_CardPlusCredit()
+    {
+        var account = ArrangeEarn(100);
+        ArrangeOrder(UserId, totalPrice: 1000m);
+        ArrangeNoExistingKey();
+        ArrangeAlreadyRevoked(0);
+        ArrangeTierConfigs();
+        ArrangeCommit();
+
+        await CreateService().RevokeForRefundAsync(OrderId, 300m + 160m, DisputeSettlementKey, ActorId, CancellationToken.None);
+
+        var revoke = Assert.Single(PartialRevokes(account));
+        Assert.Equal(-46, revoke.Points);
+        Assert.Equal(DisputeSettlementKey, revoke.IdempotencyKey);
+        Assert.Equal(54, account.LifetimePoints);
+    }
+
+    /// <summary>
+    /// The full refund retried on its own key takes the points once: 100 earned, 100 taken, and the
+    /// replay finds its key already on the ledger.
+    /// </summary>
+    [Fact]
+    public async Task FullRefund_Retried_TakesThePointsOnce()
+    {
+        var account = ArrangeEarn(100);
+        ArrangeOrder(UserId, totalPrice: 1000m);
+        ArrangeAlreadyRevoked(0);
+        ArrangeTierConfigs();
+
+        LoyaltyTransaction? existing = null;
+        _transactionRepository
+            .Setup(r => r.GetByIdempotencyKeyAsync(FullRefundKey, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(() => existing);
+        _transactionRepository
+            .Setup(r => r.CommitAsync(It.IsAny<CancellationToken>()))
+            .Callback(() => existing ??= account.Transactions.LastOrDefault(t => t.IdempotencyKey == FullRefundKey))
+            .Returns(Task.CompletedTask);
+
+        var service = CreateService();
+        await service.RevokeForRefundAsync(OrderId, 1000m, FullRefundKey, ActorId, CancellationToken.None);
+        await service.RevokeForRefundAsync(OrderId, 1000m, FullRefundKey, ActorId, CancellationToken.None);
+
+        var revoke = Assert.Single(PartialRevokes(account));
+        Assert.Equal(-100, revoke.Points);
+        Assert.Equal(0, account.LifetimePoints);
+    }
+
+    [Fact]
+    public async Task FullRefund_OrderEarnedNothing_TakesNothing()
+    {
+        ArrangeOrder(UserId, totalPrice: 1000m);
+        _transactionRepository
+            .Setup(r => r.GetLatestForOrderSourceAsync(OrderId, LoyaltyEarnSource.OrderCompleted, It.IsAny<CancellationToken>()))
+            .ReturnsAsync((LoyaltyTransaction?)null);
+        ArrangeNoExistingKey();
+
+        await CreateService().RevokeForRefundAsync(OrderId, 1000m, FullRefundKey, ActorId, CancellationToken.None);
+
+        _accountRepository.Verify(r => r.GetByUserIdIgnoringTenantAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Never);
+        _transactionRepository.Verify(r => r.CommitAsync(It.IsAny<CancellationToken>()), Times.Never);
     }
 
     [Fact]
@@ -334,7 +427,7 @@ public class PartialRefundLoyaltyClawbackTests
         ArrangeAlreadyRevoked(90);
         ArrangeCommit();
 
-        await CreateService().RevokeForPartialRefundAsync(OrderId, 500m, RefundKey, ActorId, CancellationToken.None);
+        await CreateService().RevokeForRefundAsync(OrderId, 500m, RefundKey, ActorId, CancellationToken.None);
 
         var revoke = Assert.Single(PartialRevokes(account));
         Assert.Equal(-10, revoke.Points);
@@ -349,7 +442,7 @@ public class PartialRefundLoyaltyClawbackTests
         ArrangeTierConfigs();
         ArrangeAlreadyRevoked(100);
 
-        await CreateService().RevokeForPartialRefundAsync(OrderId, 500m, RefundKey, ActorId, CancellationToken.None);
+        await CreateService().RevokeForRefundAsync(OrderId, 500m, RefundKey, ActorId, CancellationToken.None);
 
         Assert.Empty(PartialRevokes(account));
         _transactionRepository.Verify(r => r.CommitAsync(It.IsAny<CancellationToken>()), Times.Never);
@@ -360,7 +453,7 @@ public class PartialRefundLoyaltyClawbackTests
     {
         ArrangeOrder(userId: null);
 
-        await CreateService().RevokeForPartialRefundAsync(OrderId, 100m, RefundKey, ActorId, CancellationToken.None);
+        await CreateService().RevokeForRefundAsync(OrderId, 100m, RefundKey, ActorId, CancellationToken.None);
 
         _accountRepository.Verify(r => r.GetByUserIdIgnoringTenantAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Never);
         _transactionRepository.Verify(r => r.CommitAsync(It.IsAny<CancellationToken>()), Times.Never);
@@ -382,7 +475,7 @@ public class PartialRefundLoyaltyClawbackTests
                 new FakePostgresUniqueViolationException()));
 
         var ex = await Record.ExceptionAsync(() =>
-            CreateService().RevokeForPartialRefundAsync(OrderId, 100m, RefundKey, ActorId, CancellationToken.None));
+            CreateService().RevokeForRefundAsync(OrderId, 100m, RefundKey, ActorId, CancellationToken.None));
 
         Assert.Null(ex);
         _transactionRepository.Verify(r => r.CommitAsync(It.IsAny<CancellationToken>()), Times.Once);

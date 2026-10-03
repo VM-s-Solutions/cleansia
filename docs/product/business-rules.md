@@ -1784,6 +1784,37 @@ it is performed twice, priced twice, and takes twice as long.
 That is an owner ruling, not a bug, and the doubled crew size and duration follow from it correctly.
 It must not be "fixed" with a de-duplication.
 
+**The clients mark the pair and ask before it is made by hand; they never merge it** (owner remark
+2026-10-03). Wherever a customer picks services and packages — the booking and the schedule form, on
+the web, Android and iOS — the same four things hold:
+
+- **A service a chosen package includes is marked** *In your package: {package}* under its name, the
+  names joined by commas when more than one chosen package includes it. The line is part of what a
+  screen reader announces for the row (on the web, the add button's description), and the row stays
+  selectable.
+- **Adding that service asks first.** *Already in your package* — *"{service} is part of {package}.
+  Adding it again books it twice: it is done twice and charged twice."* — with *Add again* and
+  *Cancel*.
+- **Adding a package asks the other way round** when it includes a service already chosen on its
+  own. *Already in your booking* — *"{package} includes {services}, which you added on its own. Adding
+  the package books it twice: it is done twice and charged twice."* — with *Add package* and *Cancel*.
+  On Android and iOS the package's details sheet stays open under the question, closes once the
+  package is in, and stays open on *Cancel*.
+- ***Cancel* leaves the selection as it was**, and it is the way out: it is the alert's cancel action
+  on iOS, Back or a tap outside answers it on Android, and on the web it is the focused button and
+  Escape answers it. **Removing either half never asks.**
+
+**A selection the form is handed is only marked.** A package card on Home, the quick-size card's *See
+my price*, *Order again*, a booking resumed or parked, a schedule started from an order or opened for
+editing, and on the web a catalogue link all fill the form without a tap, so none of them asks; the
+pair shows marked, as it will be charged. The web booking's Plus step suggests services not chosen on
+their own, which can include one a chosen package holds, and its *Add* asks the same question.
+
+The marker matches the package's `IncludedServices[].ServiceId` (`PackageServiceSummary`), which the
+package list already sent; a client given an item without it still prints the item and only loses the
+marker. Android and iOS word it alike in all five languages; the web words it the same, except that
+its Slovak calls a package *balík*, as the rest of its wizard does, where the apps say *balíček*.
+
 ## Discounts, and the 12 % cap {#discount-cap}
 
 Three sources can reduce a price: the customer's **loyalty tier**, their **Cleansia Plus** membership,

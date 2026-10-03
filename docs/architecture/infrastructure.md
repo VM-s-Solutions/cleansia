@@ -360,7 +360,7 @@ is missing (`ValidateEmailTemplates` in the project file):
 | `closure-period-reminder.html` | A cleaner's pay period ends in 3 days, and again in 1 |
 | `promo-code.html` | The public site's promo form is sent for an address that has not had a code ([Public promo-code requests](/flows/loyalty-and-memberships#public-promo-code-requests)) |
 | `company-wind-down-customer.html`, `company-wind-down-cleaner.html` | A company winds down: one to its customers, one to its approved cleaners ([A company's lifecycle](/product/business-rules#company-lifecycle)) |
-| `admin-notification.html` | Something the company's administrators are told about, to its notification mailbox or else every active administrator ([Administrators are told](/product/business-rules#admin-notifications)) |
+| `admin-notification.html` | Something the company's administrators are told about, to its notification mailbox or else every administrator in the event's audience ([Administrators are told](/product/business-rules#admin-notifications)) |
 
 Three more e-mails reuse a template with their copy written in code rather than in translation rows.
 `order-status-update.html` carries the pay link a customer gets when their saved card could not be

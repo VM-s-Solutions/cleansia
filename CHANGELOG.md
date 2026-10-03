@@ -541,6 +541,11 @@ need backfilling.
   the date, time, payment and dirtiness level of a booking you had abandoned. (Owner remark
   2026-10-03.)
 
+- **Cleaner Android and iOS — the sign-in and account forms sit in the middle of the screen.**
+  Sign-in, registration, forgot password and e-mail confirmation centre their form when it fits,
+  instead of sitting at the top over an empty bottom, and scroll when it does not. (Owner remark
+  2026-10-03.)
+
 - **Customer and cleaner — one support address, support@cleansia.cz.** The customer web footer, its
   FAQ and legal pages, the order detail's payment note, the cleaner's *How jobs are offered* page,
   Help in the Android and iOS apps and the support line of every e-mail now name support@cleansia.cz.

@@ -78,7 +78,8 @@ and the mascot is unchanged everywhere else.
 **The customer sign-in fits one screen.** Without the mascot and the guest link the form fits every
 supported iPhone, the SE included, and ordinary Android phones; only the legacy 360×640dp size still
 scrolls. The scroll view stays on both platforms, because the keyboard, field errors and large text
-still need it. On iOS, `CenteredAuthScroll` (the one container the centred auth forms share) sets
+still need it. On iOS, `CenteredAuthScroll` (the one container the centred auth forms of both apps
+share, in CleansiaCore since 2026-10-03) sets
 `scrollBounceBehavior(.basedOnSize)` from iOS 16.4, so a form that fits neither rubber-bands nor shows
 a scroll indicator. Do not reach for `ViewThatFits` here: when the keyboard changes the available
 space the view switches branch, the focused field is recreated, the keyboard drops, and the cycle
@@ -93,6 +94,19 @@ that rubber-banded. On Android, sign-up, forgot password and e-mail confirmation
 `systemBarsPadding().imePadding()` as sign-in: none of these routes sits in a `Scaffold`, so the latter
 two drew their back arrow under the status bar, and sign-up's fixed 64dp top and 32dp bottom (now 24dp
 each, as on sign-in) let the end of the form sit under a 3-button navigation bar or the keyboard.
+
+**Every partner auth form is centred** (since 2026-10-03, owner remark). Sign-in, registration, forgot
+password and e-mail confirmation centre their form in the space they are given when it fits, and
+scroll from the top when it does not (a short phone, the keyboard, a large text size), with 24 at the
+sides and 32 above and below. Forgot password and e-mail confirmation keep their back row at the top
+and centre the form under it. On iOS the four use `CenteredAuthScroll`, which moved from the customer
+app to CleansiaCore when the partner app became its second caller. On Android they share
+`CenteredAuthColumn` (partner `features/auth/`), a scrolling column at least as tall as its viewport
+that centres its content. Its keyboard handling is unchanged: the partner activity has no
+`adjustResize`, so the system pans the window for the keyboard, and padding by the keyboard here would
+change it on every partner screen. Until then each partner form sat at the top, under a fixed 64pt
+(64dp) pad on sign-in and registration and right under the back row on the other two, over an empty
+bottom on a tall phone. The customer forms are unchanged: centred on iOS, top-anchored on Android.
 
 **The customer sign-up still scrolls, by decision.** Removing its mascot was the whole change (owner
 ruling 2026-10-01). Even without it, the form is about 220pt taller than a 6.1" iPhone, and it is

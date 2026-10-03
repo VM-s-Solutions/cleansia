@@ -351,14 +351,18 @@ and iOS apps a fourth, **Contract documents**:
    - _"Rejected: {reason}"_ -- admin has rejected the application with a reason
    - _"Approved"_ -- admin has approved the partner
 
-**On the apps each row's status sits on its title's line** (since 2026-10-03, owner remark). Whatever
-follows below the title (the missing fields, a rejection reason, *Contact support*), the row's status
-and its chevron are centred on the title's line, and the details hang below at the title's indent.
-Until then iOS pinned its status icon, *Done* and chevron to the top of the row, above the title's
-centre, and Android centred its halo, status icon and chevron on the whole row, beside the middle of
-the details. The two apps still draw the row differently. iOS leads with the status icon and trails
-*Done* and the chevron. Android leads with the step's category halo, says *Done* under the title, and
-trails a status icon and the chevron.
+**On the apps each row's status sits beside its step's name, not beside its details** (since
+2026-10-03, owner remark). However many detail lines follow (the missing fields, a rejection reason),
+they hang below at the title's indent, and the status and chevron stay at the top beside the name.
+The two apps centre them on different lines. iOS centres its status icon, *Done* and chevron on the
+title's line, with *Contact support* below the details. Android centres its halo, status icon and
+chevron on the row's header: the title and the line under it, which is *Done*, the call to action
+(*Contact support* on a rejected application) or the awaiting-review note. Until then iOS pinned
+its status icon, *Done* and chevron to the top of the row, above the title's centre, and Android
+centred its halo, status icon and chevron on the whole row, beside the middle of the details. The
+two apps still draw the row differently. iOS leads with the status icon and trails *Done* and the
+chevron. Android leads with the step's category halo, says *Done* under the title, and trails a
+status icon and the chevron.
 
 **On the mobile apps a finished row still opens its section, until approval** (owner ruling
 2026-10-01). The lock replaces the whole app until an admin approves, so a row that went inert at

@@ -990,8 +990,9 @@ need backfilling.
 
 - **Cleaner Android and iOS — the registration screen's *Done* and arrow line up with their step.** On
   a step with details under it, such as missing fields or a rejection reason, the status and the
-  arrow sat at the top of the row on iOS and halfway down the details on Android. They now sit level
-  with the step's name. (Owner remark 2026-10-03.)
+  arrow sat at the top of the row on iOS and halfway down the details on Android. They now sit beside
+  the step's name, not halfway down the details: level with the name on iOS, and level with the name
+  and the line under it on Android. (Owner remark 2026-10-03.)
 
 - **Customer Android and iOS — the address picker holds still while it finds the address.** Each time
   the map stopped, the card under it shrank to one line while it looked the address up, then grew back

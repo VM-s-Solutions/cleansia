@@ -63,6 +63,16 @@ describe('MembershipPlanFormComponent', () => {
     return component.form.controls.prices.get(code);
   }
 
+  function inputFor(controlName: string): HTMLInputElement {
+    return fixture.debugElement.query(By.css(`[formControlName="${controlName}"] input`))
+      .nativeElement as HTMLInputElement;
+  }
+
+  function acceptsTyping(controlName: string): boolean {
+    const input = inputFor(controlName);
+    return !input.readOnly && !input.disabled;
+  }
+
   async function setup(mode: 'create' | 'edit'): Promise<void> {
     facade = new FacadeStub();
     routeData = { mode };
@@ -304,6 +314,10 @@ describe('MembershipPlanFormComponent', () => {
       expect(component.form.controls.discountPercentage.disabled).toBe(true);
       expect(component.form.controls.expressUpgradesPerMonth.disabled).toBe(true);
       expect(component.form.controls.allowsExpressUpgrade.disabled).toBe(false);
+      // A disabled control alone does not reach the shared input's DOM element.
+      expect(acceptsTyping('discountPercentage')).toBe(false);
+      expect(acceptsTyping('expressUpgradesPerMonth')).toBe(false);
+      expect(acceptsTyping('trialPeriodDays')).toBe(true);
       const hint = fixture.debugElement.query(By.css('[data-spec-benefits-locked]'));
       expect(hint.nativeElement.textContent).toContain(
         'pages.membership_plans.form.field.benefits_locked_help'
@@ -323,6 +337,8 @@ describe('MembershipPlanFormComponent', () => {
 
       expect(component.form.controls.discountPercentage.enabled).toBe(true);
       expect(component.form.controls.expressUpgradesPerMonth.enabled).toBe(true);
+      expect(acceptsTyping('discountPercentage')).toBe(true);
+      expect(acceptsTyping('expressUpgradesPerMonth')).toBe(true);
       expect(fixture.debugElement.query(By.css('[data-spec-benefits-locked]'))).toBeNull();
     });
 

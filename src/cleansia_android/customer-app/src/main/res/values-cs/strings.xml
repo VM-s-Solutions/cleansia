@@ -1382,7 +1382,7 @@
     <string name="receivable_kind_top_up">Schválený doplatek</string>
     <string name="receivable_kind_other">Částka k úhradě</string>
     <string name="payments_card_title">Uložená karta</string>
-    <string name="payments_card_intro">Karta uložená ve vašem účtu. Nic z ní nestrhneme, pokud jí sami nezaplatíte, a kdykoli ji můžete odebrat.</string>
+    <string name="payments_card_intro">Z karet uložených ve vašem účtu nic nestrhneme, pokud jimi sami nezaplatíte, a kartu můžete kdykoli odebrat.</string>
     <string name="payments_card_label">%1$s •••• %2$s</string>
     <string name="payments_card_expires">Platnost do %1$02d/%2$02d · %3$s</string>
     <string name="payments_card_empty">Nemáte uloženou kartu. Uložit ji můžete při příští platbě kartou.</string>

@@ -554,6 +554,8 @@ const PARTNER_SURFACE_ERROR_KEYS: readonly string[] = [
   // Country-scoped IČO/VAT format checks on the cleaner's own profile save
   // (UpdateEmployee, dispatched by Cleansia.Web.Partner).
   'validation.registration_number.invalid_format',
+  // The same save, refused when the country's business register (ARES for Czechia) does not hold the IČO.
+  'validation.registration_number.not_registered',
   // User account
   'user.email_confirmed',
   'user.existing_email',

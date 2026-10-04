@@ -80,7 +80,8 @@ public sealed class ApproveEmployeeWorkCountryOperatorTests
             _operators.Object,
             _tenant.Object,
             Mock.Of<ILegalDocumentResolver>(),
-            Mock.Of<IUserConsentRepository>());
+            Mock.Of<IUserConsentRepository>(),
+            BusinessRegistryDoubles.NotConsulted());
     }
 
     [Fact]

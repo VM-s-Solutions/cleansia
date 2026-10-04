@@ -1,6 +1,8 @@
+using Cleansia.Infra.Services.BusinessRegistry;
 using Cleansia.Infra.Services.Geocoding;
 using Cleansia.Infra.Services.Pdf;
 using Cleansia.Infra.Services.Pdf.Layouts;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Polly;
 
@@ -38,6 +40,30 @@ public static class ServiceCollectionExtensions
                 builder.AddTimeout(TimeSpan.FromSeconds(5));
             });
         services.AddScoped<IGeocodingService, MapboxGeocodingService>();
+
+        // A lookup sits on a cleaner's profile save and on an admin's approval, both waiting for it, so
+        // the whole budget is bounded rather than per attempt only.
+        services.AddHttpClient(AresBusinessRegistry.HttpClientName)
+            .ConfigurePrimaryHttpMessageHandler(() => new SocketsHttpHandler
+            {
+                PooledConnectionLifetime = TimeSpan.FromMinutes(5),
+            })
+            .AddResilienceHandler("ares-lookup", builder =>
+            {
+                builder.AddTimeout(TimeSpan.FromSeconds(12));
+                builder.AddRetry(new Microsoft.Extensions.Http.Resilience.HttpRetryStrategyOptions
+                {
+                    MaxRetryAttempts = 2,
+                    Delay = TimeSpan.FromMilliseconds(500),
+                    MaxDelay = TimeSpan.FromSeconds(2),
+                    BackoffType = DelayBackoffType.Exponential,
+                    UseJitter = true,
+                    ShouldRetryAfterHeader = true,
+                });
+                builder.AddTimeout(TimeSpan.FromSeconds(4));
+            });
+        services.AddSingleton(provider => new AresConfig(provider.GetRequiredService<IConfiguration>()));
+        services.AddScoped<IBusinessRegistry, AresBusinessRegistry>();
 
         return services;
     }

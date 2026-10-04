@@ -308,6 +308,12 @@ public static class BusinessErrorMessage
     /// the cleaner has not accepted its current version: approval and the take refuse.
     /// </summary>
     public const string EmployeeLegalDocumentsNotAccepted = "employee.legal_documents_not_accepted";
+    /// <summary>The business register says the cleaner's business has ended: approval refuses.</summary>
+    public const string EmployeeBusinessCeased = "employee.business_ceased";
+    /// <summary>The business register holds no trade licence in force for the cleaner: approval refuses.</summary>
+    public const string EmployeeTradeLicenceInactive = "employee.trade_licence_inactive";
+    /// <summary>The business register did not answer; approval waits for it and the admin tries again.</summary>
+    public const string EmployeeBusinessRegistryUnavailable = "employee.business_registry_unavailable";
     // The order-action approval gate: a cleaner who is not Approved (rejected, still pending, or
     // terminated) may not take/start/complete an order.
     public const string EmployeeNotApproved = "employee.not_approved";
@@ -518,6 +524,8 @@ public static class BusinessErrorMessage
     public const string InvalidAge = "validation.invalid_age";
     // Country-scoped IČO/VAT format checks, driven by CountryConfiguration's regexes.
     public const string RegistrationNumberInvalidFormat = "validation.registration_number.invalid_format";
+    /// <summary>The country's public business register does not know the number.</summary>
+    public const string RegistrationNumberNotRegistered = "validation.registration_number.not_registered";
 
     // Payout details (ADR-0034 D4) — every key the payout validator can return, plus the feature's own.
     public const string PayoutCountryNotSupported = "validation.payout.country_not_supported";

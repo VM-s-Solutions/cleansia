@@ -908,7 +908,8 @@
       "date_must_be_in_past": "Date must be in the past",
       "invalid_age": "Invalid age",
       "registration_number": {
-        "invalid_format": "Invalid company registration number format for the selected country"
+        "invalid_format": "Invalid company registration number format for the selected country",
+        "not_registered": "This company ID (IČO) is not in the business register (ARES). Check the number."
       },
       "must_be_positive": "Value must be positive",
       "page_size_exceeded": "Page size cannot exceed 100",

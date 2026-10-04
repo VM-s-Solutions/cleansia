@@ -14,6 +14,7 @@ using Cleansia.Core.Domain.Repositories;
 using Cleansia.Core.Domain.Services;
 using Cleansia.Core.Domain.Users;
 using Cleansia.Infra.Common.Validations;
+using Cleansia.Infra.Services.BusinessRegistry;
 using FluentValidation;
 
 namespace Cleansia.Core.AppServices.Features.Employees;
@@ -32,16 +33,21 @@ public class UpdateEmployee
         private readonly IEmployeeRepository _employeeRepository;
         private readonly IUserSessionProvider _userSessionProvider;
         private readonly ITaxIdValidator _taxIdValidator;
+        private readonly ICountryRepository _countryRepository;
+        private readonly IBusinessRegistry _businessRegistry;
 
         public Validator(
             ICountryRepository countryRepository,
             IEmployeeRepository employeeRepository,
             IUserSessionProvider userSessionProvider,
-            ITaxIdValidator taxIdValidator)
+            ITaxIdValidator taxIdValidator,
+            IBusinessRegistry businessRegistry)
         {
             _employeeRepository = employeeRepository ?? throw new ArgumentNullException(nameof(employeeRepository));
             _userSessionProvider = userSessionProvider ?? throw new ArgumentNullException(nameof(userSessionProvider));
             _taxIdValidator = taxIdValidator ?? throw new ArgumentNullException(nameof(taxIdValidator));
+            _countryRepository = countryRepository;
+            _businessRegistry = businessRegistry;
 
             RuleFor(c => c)
                 .MustAsync(CallerIsAnEmployee)
@@ -99,13 +105,16 @@ public class UpdateEmployee
                 .WithMessage(BusinessErrorMessage.MaxLengthExceeded);
 
             RuleFor(c => c.RegistrationNumber)
+                .Cascade(CascadeMode.Stop)
                 .MustAsync(async (command, value, ct) =>
                 {
                     var result = await _taxIdValidator.ValidateRegistrationNumberAsync(
                         command.CountryId, command.EntityType, value, ct);
                     return result.IsValid;
                 })
-                .WithMessage(BusinessErrorMessage.RegistrationNumberInvalidFormat);
+                .WithMessage(BusinessErrorMessage.RegistrationNumberInvalidFormat)
+                .MustAsync(KnownToTheBusinessRegisterAsync)
+                .WithMessage(BusinessErrorMessage.RegistrationNumberNotRegistered);
 
             RuleFor(c => c.EmergencyName)
                 .ValidateEmergencyName()
@@ -157,6 +166,11 @@ public class UpdateEmployee
                 _userSessionProvider.GetUserEmail() ?? string.Empty, cancellationToken);
             return employee?.EntityType == EmployeeEntityType.LegalEntity;
         }
+
+        private async Task<bool> KnownToTheBusinessRegisterAsync(
+            Command command, string registrationNumber, CancellationToken cancellationToken)
+            => CleanerBusinessRegister.AcceptsOnSave(await CleanerBusinessRegister.LookupAsync(
+                _countryRepository, _businessRegistry, command.CountryId, registrationNumber, cancellationToken));
     }
 
     public record Command(

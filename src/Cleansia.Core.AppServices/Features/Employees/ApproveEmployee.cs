@@ -10,6 +10,7 @@ using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Notifications;
 using Cleansia.Core.Domain.Repositories;
 using Cleansia.Infra.Common.Validations;
+using Cleansia.Infra.Services.BusinessRegistry;
 using FluentValidation;
 using FluentValidation.Results;
 using Microsoft.EntityFrameworkCore;
@@ -32,7 +33,8 @@ public class ApproveEmployee
             IOperatorTenantResolver operatorTenantResolver,
             ITenantProvider tenantProvider,
             ILegalDocumentResolver legalDocumentResolver,
-            IUserConsentRepository userConsentRepository)
+            IUserConsentRepository userConsentRepository,
+            IBusinessRegistry businessRegistry)
         {
             RuleFor(x => x.EmployeeId)
                 .Cascade(CascadeMode.Stop)
@@ -161,6 +163,43 @@ public class ApproveEmployee
                 RuleFor(x => x.Notes)
                     .MaximumLength(1000).WithMessage(BusinessErrorMessage.MaxLength);
             });
+
+            // The binding check of the cleaner's registration number, in the register of the country they
+            // are approved for: it exists, the business has not ended and a trade licence is in force. A
+            // register that does not answer refuses, unlike the cleaner's own save, because a person is
+            // here to try again. After the profile, document and country rules, so those report first.
+            RuleFor(x => x)
+                .CustomAsync(async (command, context, cancellationToken) =>
+                {
+                    if (string.IsNullOrEmpty(command.EmployeeId))
+                    {
+                        return;
+                    }
+
+                    var employee = await employeeRepository.GetByIdAsync(command.EmployeeId, cancellationToken);
+                    if (employee is null)
+                    {
+                        return;
+                    }
+
+                    var record = await CleanerBusinessRegister.LookupAsync(
+                        countryRepository, businessRegistry, command.WorkCountryId,
+                        employee.RegistrationNumber ?? string.Empty, cancellationToken);
+
+                    var refusal = record switch
+                    {
+                        { Answer: BusinessRegistryAnswer.NotRegistered } => BusinessErrorMessage.RegistrationNumberNotRegistered,
+                        { Answer: BusinessRegistryAnswer.Unavailable } => BusinessErrorMessage.EmployeeBusinessRegistryUnavailable,
+                        { Answer: BusinessRegistryAnswer.Registered, Ceased: true } => BusinessErrorMessage.EmployeeBusinessCeased,
+                        { Answer: BusinessRegistryAnswer.Registered, TradeLicenceActive: false } => BusinessErrorMessage.EmployeeTradeLicenceInactive,
+                        _ => null,
+                    };
+
+                    if (refusal is not null)
+                    {
+                        context.AddFailure(new ValidationFailure(nameof(Command.EmployeeId), refusal));
+                    }
+                });
 
             // Declared LAST on purpose. Class-level cascade is Continue, so every chain runs and the
             // clients localize the FIRST entry of the errors bag: an approval that is also blocked by a

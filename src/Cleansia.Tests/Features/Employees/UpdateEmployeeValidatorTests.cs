@@ -1,9 +1,11 @@
 using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.AppServices.Features.Employees;
 using Cleansia.Core.Domain.Enums;
+using Cleansia.Core.Domain.Internationalization;
 using Cleansia.Core.Domain.Repositories;
 using Cleansia.Core.Domain.Services;
 using Cleansia.Core.Domain.Users;
+using Cleansia.Infra.Services.BusinessRegistry;
 using Moq;
 
 namespace Cleansia.Tests.Features.Employees;
@@ -25,12 +27,14 @@ public class UpdateEmployeeValidatorTests
     private readonly Mock<IEmployeeRepository> _employeeRepository = new();
     private readonly Mock<IUserSessionProvider> _session = new();
     private readonly Mock<ITaxIdValidator> _taxIdValidator = new();
+    private Mock<IBusinessRegistry> _registry = BusinessRegistryDoubles.Answering(BusinessRegistryDoubles.InForce());
 
     private UpdateEmployee.Validator CreateValidator() => new(
         _countryRepository.Object,
         _employeeRepository.Object,
         _session.Object,
-        _taxIdValidator.Object);
+        _taxIdValidator.Object,
+        _registry.Object);
 
     private void ArrangePassingContext()
     {
@@ -47,6 +51,9 @@ public class UpdateEmployeeValidatorTests
             .ReturnsAsync(true);
         _countryRepository.Setup(r => r.ExistsAsync(CountryId, It.IsAny<CancellationToken>())).ReturnsAsync(true);
         _countryRepository.Setup(r => r.IsServicedAsync(CountryId, It.IsAny<CancellationToken>())).ReturnsAsync(true);
+        _countryRepository
+            .Setup(r => r.GetByIdAsync(CountryId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(Country.Create("Czechia", "CZE", "CZ", isServiced: true));
         _taxIdValidator
             .Setup(v => v.ValidateRegistrationNumberAsync(It.IsAny<string>(), It.IsAny<EmployeeEntityType>(), It.IsAny<string?>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(TaxIdValidationResult.Valid());
@@ -71,6 +78,49 @@ public class UpdateEmployeeValidatorTests
         EmergencyName: null,
         EmergencyPhone: null,
         Consent: true);
+
+    /// <summary>
+    /// Owner ruling 2026-10-04: the cleaner's own save asks the register of the country the number is
+    /// judged against whether it exists, and nothing more.
+    /// </summary>
+    [Fact]
+    public async Task A_Number_The_Business_Register_Does_Not_Hold_Is_Refused_On_The_Registration_Number()
+    {
+        ArrangePassingContext();
+        _registry = BusinessRegistryDoubles.Answering(BusinessRegistryRecord.NotRegistered);
+
+        var result = await CreateValidator().ValidateAsync(Valid());
+
+        var failure = Assert.Single(result.Errors);
+        Assert.Equal(BusinessErrorMessage.RegistrationNumberNotRegistered, failure.ErrorMessage);
+        Assert.Equal(nameof(UpdateEmployee.Command.RegistrationNumber), failure.PropertyName);
+        _registry.Verify(r => r.LookupAsync("CZE", "12345678", It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    [Fact]
+    public async Task A_Register_That_Does_Not_Answer_Lets_The_Save_Through()
+    {
+        ArrangePassingContext();
+        _registry = BusinessRegistryDoubles.Answering(BusinessRegistryRecord.Unavailable);
+
+        var result = await CreateValidator().ValidateAsync(Valid());
+
+        Assert.True(result.IsValid);
+    }
+
+    [Fact]
+    public async Task A_Number_In_The_Wrong_Format_Is_Not_Taken_To_The_Register()
+    {
+        ArrangePassingContext();
+        _taxIdValidator
+            .Setup(v => v.ValidateRegistrationNumberAsync(It.IsAny<string>(), It.IsAny<EmployeeEntityType>(), It.IsAny<string?>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(TaxIdValidationResult.Invalid(BusinessErrorMessage.RegistrationNumberInvalidFormat));
+
+        var result = await CreateValidator().ValidateAsync(Valid());
+
+        Assert.Equal(BusinessErrorMessage.RegistrationNumberInvalidFormat, Assert.Single(result.Errors).ErrorMessage);
+        _registry.VerifyNoOtherCalls();
+    }
 
     [Fact]
     public async Task Valid_Command_Passes()

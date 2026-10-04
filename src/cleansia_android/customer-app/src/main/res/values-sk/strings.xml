@@ -541,7 +541,7 @@
     <string name="help_call_desc">Po–Ne · 8:00–20:00</string>
     <string name="help_email">Napíšte nám</string>
     <string name="help_call_unavailable">Na tomto zariadení sa nedá volať. Číslo je skopírované.</string>
-    <string name="help_email_unavailable">Adresa je skopírovaná pre prípad, že e-mailová aplikácia nie je nastavená.</string>
+    <string name="help_email_unavailable">Nenašli sme poštovú aplikáciu, adresa je skopírovaná.</string>
     <string name="help_faq_title">Časté otázky</string>
     <string name="help_faq_q1">Ako zruším rezerváciu?</string>
     <string name="help_faq_a1">Otvorte rezerváciu na karte Objednávky a ťuknite na „Zrušiť“. Zrušenie je zdarma až 24 hodín pred začiatkom upratovania. Do 15 minút od objednania neplatíte nič — pri prvej objednávke alebo s Cleansia Plus do 60 minút.</string>

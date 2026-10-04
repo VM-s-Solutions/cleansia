@@ -6,6 +6,7 @@ import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNotEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
@@ -145,6 +146,7 @@ class MarketCopyStringsTest {
      * 2026-10-04). Every Help string reads as iOS's in every locale — read from iOS's catalog, so the two
      * cannot drift apart unnoticed — with only the format placeholder adapted (`%1$@` → `%1$s`). The
      * Profile row that opens the screen counts: it must not name the screen differently from its title.
+     * The one exception is [OWN_REASON]: a notice whose reason is true on one platform only.
      */
     @Test
     fun `every help string reads as iOS's in every locale`() {
@@ -158,7 +160,11 @@ class MarketCopyStringsTest {
                 val ios = catalog.getValue(key).jsonObject["localizations"]?.jsonObject?.get(language)?.jsonObject
                     ?.get("stringUnit")?.jsonObject?.get("value")?.jsonPrimitive?.content
                     ?: error("iOS has no $language/$key")
-                assertEquals("$locale/$key reads differently from iOS", ios.replace("\$@", "\$s"), android[key])
+                if (key in OWN_REASON) {
+                    assertNotEquals("$locale/$key gives iOS's reason, which is false on Android", ios, android[key])
+                } else {
+                    assertEquals("$locale/$key reads differently from iOS", ios.replace("\$@", "\$s"), android[key])
+                }
             }
         }
     }
@@ -211,6 +217,10 @@ class MarketCopyStringsTest {
 
     private companion object {
         const val IOS_CATALOG = "cleansia_ios/CleansiaCustomer/Resources/Localizable.xcstrings"
+
+        /** T6: iOS copies the address when no Mail account is set up, Android when no app takes mailto:, so each says its own. */
+        val OWN_REASON = setOf("help_email_unavailable")
+
         val PLACEHOLDER = Regex("%\\d+\\\$[sd]")
         val DIGIT = Regex("\\d")
         val CURRENCY_WORD = Regex("CZK|Kč|EUR|€|koru|euro|крон|євро|евро", RegexOption.IGNORE_CASE)

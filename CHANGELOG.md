@@ -1053,6 +1053,12 @@ need backfilling.
 
 ### Fixed
 
+- **Customer web — removing a line from the booking summary never puts it back.** Right after you
+  took a service, a package or an extra out of the booking, the summary could still show its line
+  until the new price arrived, and that line's remove button added the item back; for a service one
+  of your packages includes, it even asked whether to book it again. The button now only removes, and
+  on a line already taken out it does nothing.
+
 - **Customer iOS — a cash booking waits for the card you just saved, and never asks for another.**
   After you saved a card to guarantee a cash booking, the booking waits for the card to reach your
   account. When it took too long and you slid again, or the time had to be picked again first, iOS

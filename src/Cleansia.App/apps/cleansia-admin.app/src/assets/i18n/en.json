@@ -1510,7 +1510,7 @@
       "iso_alpha2_help": "ISO 3166-1 alpha-2. Customers see it on the market chip.",
       "market": "Market",
       "insurance_coverage_amount": "Insurance coverage per booking",
-      "insurance_coverage_amount_placeholder": "Leave empty to make no insurance claim",
+      "insurance_coverage_amount_placeholder": "Leave empty and the apps do not mention insurance",
       "insurance_coverage_amount_help": "A number in the country's default currency. With a figure, the customer apps say cleaners are insured up to it. Empty: the apps do not say cleaners are insured.",
       "market_content_unavailable": "Available once the country has a configuration."
     },

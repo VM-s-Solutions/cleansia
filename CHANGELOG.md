@@ -1061,6 +1061,11 @@ need backfilling.
 
 ### Fixed
 
+- **Customer web — deleting your account is confirmed on a red button.** The question before your
+  account is deleted offered the same blue confirm button as any harmless question. It now shows the
+  red, destructive button that deleting a saved card or a schedule already shows, so the risk reads
+  before the words do.
+
 - **Customer web — removing a line from the booking summary never puts it back.** Right after you
   took a service, a package or an extra out of the booking, the summary could still show its line
   until the new price arrived, and that line's remove button added the item back; for a service one

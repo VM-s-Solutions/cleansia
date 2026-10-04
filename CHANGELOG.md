@@ -1403,7 +1403,9 @@ need backfilling.
   into its page as they came. A name holding `<` or `&` broke the e-mail, and HTML typed into a name,
   a link for instance, arrived as working HTML, in the e-mails customers, cleaners and administrators
   get alike. Every value is now inserted as text. The links the platform builds, such as the password
-  reset and the order links, work as before.
+  reset and the order links, work as before. A name written like one of the e-mail's own fields,
+  `{{SupportEmail}}` for instance, is printed as typed too: it used to be filled in with the support
+  address, and any other `{{…}}` in a name disappeared.
 
 - **Customer — your own data export no longer writes your e-mail onto the request record.** The
   GDPR request row a self-export files outlives your erasure; it used to carry your live address as

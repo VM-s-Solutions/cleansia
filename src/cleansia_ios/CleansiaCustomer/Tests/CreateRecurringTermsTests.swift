@@ -107,6 +107,59 @@ final class CreateRecurringTermsTests: XCTestCase {
         XCTAssertNil(client.createInputs.first?.termsAccepted)
     }
 
+    /// The read judges the texts in force for the default market, CreateRecurringBooking the saved address's.
+    /// When they disagree the server refuses the create, and that refusal — not another read — shows the box.
+    private func createRefusedOverTheTerms(_ client: FakeRecurringBookingClient) async -> CreateRecurringViewModel {
+        client.createResult = .failure(ApiError(code: "consent.terms_not_accepted", httpStatus: 400))
+        let vm = makeVM(consent: FakeConsentStatusClient(granted: Self.bothConsents), client: client)
+        await vm.load()
+        fillValid(vm)
+        XCTAssertFalse(vm.termsAsked)
+        XCTAssertTrue(vm.isValid)
+        let refused = await vm.submit()
+        XCTAssertFalse(refused)
+        return vm
+    }
+
+    func testATermsRefusalShowsTheTickAtOnceAndTheTickedRetryAssertsIt() async {
+        let client = FakeRecurringBookingClient()
+        let vm = await createRefusedOverTheTerms(client)
+
+        XCTAssertTrue(vm.termsAsked, "the refusal left the box hidden")
+        XCTAssertFalse(vm.isValid, "the submit reopened without the tick")
+
+        vm.setTermsAccepted(true)
+        client.createResult = .success(RecurringFixtures.template())
+        let succeeded = await vm.submit()
+
+        XCTAssertTrue(succeeded)
+        XCTAssertEqual(client.createInputs.map(\.termsAccepted), [nil, true])
+    }
+
+    /// The read still says "held" for the default market, so letting it answer again would hide the box the
+    /// server just asked for, and the next submit would be refused the same way.
+    func testNoLaterReadHidesTheTickTheServerAskedFor() async {
+        let vm = await createRefusedOverTheTerms(FakeRecurringBookingClient())
+
+        await vm.load()
+
+        XCTAssertTrue(vm.termsAsked)
+        XCTAssertFalse(vm.isValid)
+    }
+
+    func testARefusalForAnotherReasonLeavesTheTermsAsTheyWere() async {
+        let client = FakeRecurringBookingClient()
+        client.createResult = .failure(ApiError(code: "order.not_found", httpStatus: 400))
+        let vm = makeVM(consent: FakeConsentStatusClient(granted: Self.bothConsents), client: client)
+        await vm.load()
+        fillValid(vm)
+
+        _ = await vm.submit()
+
+        XCTAssertFalse(vm.termsAsked)
+        XCTAssertTrue(vm.isValid)
+    }
+
     func testAnEditAsksNothingAndReadsNoConsents() async {
         let consent = FakeConsentStatusClient(granted: [])
         let client = FakeRecurringBookingClient()

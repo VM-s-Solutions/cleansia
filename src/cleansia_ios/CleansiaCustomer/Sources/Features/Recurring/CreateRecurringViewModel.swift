@@ -144,8 +144,9 @@ final class CreateRecurringViewModel: ViewModel {
     @Published private(set) var servingCleaners: [ServingCleaner] = []
     /// A tap that would book a service twice, waiting for the customer to confirm or cancel it.
     @Published internal(set) var twiceBookedPick: TwiceBookedPick?
-    /// Written in CreateRecurringViewModel+Terms.swift.
+    /// Both written in CreateRecurringViewModel+Terms.swift; the latch once a create is refused over the terms.
     @Published internal(set) var termsAsked = true
+    internal(set) var termsRefused = false
 
     let sourceOrderId: String?
     let editing: RecurringTemplate?
@@ -514,6 +515,7 @@ final class CreateRecurringViewModel: ViewModel {
             if isEditing, error.code == Self.preferredCleanerRefusalCode {
                 preferredCleanerRefused = true
             }
+            showTermsIfRefused(error)
             submitState = .error(isEditing ? L10n.Recurring.editFailed : L10n.Recurring.createFailed)
             return false
         }

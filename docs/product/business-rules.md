@@ -2628,7 +2628,8 @@ the confirm until it is ticked
 **A refusal over the terms shows the box at once** (since 2026-10-04). The consent read the clients
 decide by is judged for the default market, while the server judges the market of the booking's
 address, so the two can disagree. When the server refuses with `consent.terms_not_accepted`, the
-recurring confirm on Android and iOS, and the web's new-schedule form, show the box at once, unticked.
+recurring confirm on Android and iOS, and the new-schedule form on the web and iOS, show the box at once,
+unticked.
 They take the refusal as the answer rather than read the consents again, because a second read could
 call the account covered and hide the box. On iOS, an order detail refreshed by a push reads the
 consents as opening the screen does, so an occurrence that first arrives that way never leaves the

@@ -174,8 +174,8 @@ force, with the IP and device, and the booking row records the versions **actual
 recurring schedule is gated the same way** (`CreateRecurringBooking`). The web, Android and iOS
 schedule forms ask for the tick on a new schedule by the same rule, never on an edit. The web and iOS
 forms have done so since 2026-10-04; until then a customer behind on the terms was refused there with
-no box to tick. On the web a refusal with `consent.terms_not_accepted` shows the box, unticked, instead
-of a generic error. **So is confirming a recurring occurrence**
+no box to tick. On the web and iOS a refusal with `consent.terms_not_accepted` shows the box, unticked,
+instead of a generic error. **So is confirming a recurring occurrence**
 (`ConfirmRecurringOrder`, owner ruling 2026-10-03). It uses the same method as `CreateOrder`
 (`CustomerLegalConsents.AssertedOrCoverTextsInForceAsync`), applied to the market of the occurrence's
 address, and is refused with the same key. Until then it was not gated, on the reasoning that the

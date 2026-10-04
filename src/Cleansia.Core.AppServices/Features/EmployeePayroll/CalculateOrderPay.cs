@@ -15,9 +15,10 @@ using Microsoft.EntityFrameworkCore;
 namespace Cleansia.Core.AppServices.Features.EmployeePayroll;
 
 /// <summary>
-/// A cleaner's pay on one order: the job on an order they completed, and on a cancelled one their share of
-/// the late-cancellation or lockout fee the company collected, never of a fee still owed (owner ruling
-/// 2026-09-28, decision 12).
+/// A cleaner's pay on one order: the job on an order they completed or were locked out of, and on a
+/// late-cancelled one their share of the fee the company collected, never of a fee still owed (owner ruling
+/// 2026-09-28, decision 12). A confirmed lockout pays the seat's full reward whether or not the customer ever
+/// pays its price (owner decision 2026-10-04).
 /// </summary>
 public class CalculateOrderPay
 {
@@ -39,6 +40,9 @@ public class CalculateOrderPay
         }
     }
 
+    private static bool IsLockout(Order order) =>
+        order.CancelledAt is not null && order.CancellationReason == OrderCancellationReasons.CustomerLockout;
+
     /// <summary>
     /// The fee a cancelled order has actually brought in: what its payment kept at cancellation, or, on one
     /// that took no payment, the fee receivables paid since. Zero on a cancellation that charged no fee.
@@ -57,8 +61,8 @@ public class CalculateOrderPay
 
         if (!order.TookNoPayment)
         {
-            // Never more than the company still holds. An order refunded before it was cancelled or locked
-            // out is no longer Paid, so the cancellation refunds nothing and the price less the recorded
+            // Never more than the company still holds. An order refunded before it was cancelled is no
+            // longer Paid, so the cancellation refunds nothing and the price less the recorded
             // refund would count money already given back. A cancellation refund still waiting for its
             // re-drive is not among the succeeded refunds yet, so the first term keeps the fee to its size.
             var stillHeld = order.TotalPrice
@@ -71,7 +75,7 @@ public class CalculateOrderPay
             .GetAll()
             .Where(r => r.OrderId == order.Id
                 && r.Status == ReceivableStatus.Paid
-                && (r.Kind == ReceivableKind.CashCancellationFee || r.Kind == ReceivableKind.Lockout))
+                && r.Kind == ReceivableKind.CashCancellationFee)
             .SumAsync(r => r.Amount, cancellationToken);
     }
 
@@ -149,6 +153,7 @@ public class CalculateOrderPay
                 .FirstOrDefaultAsync(o => o.Id == command.OrderId, cancellationToken);
 
             return order?.CancelledAt is null
+                || IsLockout(order)
                 || await CollectedFeeAsync(
                     order, _receivableRepository, _refundRepository, _creditAccountRepository, cancellationToken) > 0m;
         }
@@ -182,7 +187,7 @@ public class CalculateOrderPay
 
             // A seat paid from its frozen figures needs no rate today; the rate it was priced from may since
             // have been deleted.
-            if (order.CancelledAt is not null
+            if ((order.CancelledAt is not null && !IsLockout(order))
                 || order.AssignedEmployees.Any(oe => oe.EmployeeId == command.EmployeeId && oe.JobBasePay is not null))
             {
                 return true;
@@ -237,7 +242,8 @@ public class CalculateOrderPay
 
             var firstSeat = order.AssignedEmployees.MinBy(oe => oe.SeatOrdinal)?.EmployeeId == command.EmployeeId;
 
-            if (order.CancelledAt is not null)
+            var lockout = IsLockout(order);
+            if (order.CancelledAt is not null && !lockout)
             {
                 var collectedFee = await CollectedFeeAsync(
                     order, receivableRepository, refundRepository, creditAccountRepository, cancellationToken);
@@ -248,9 +254,7 @@ public class CalculateOrderPay
                     employeeId: command.EmployeeId,
                     payPeriodId: payPeriod.Id,
                     currencyId: order.CurrencyId,
-                    lineType: order.CancellationReason == OrderCancellationReasons.CustomerLockout
-                        ? PayLineType.LockoutFeeShare
-                        : PayLineType.CancellationFeeShare,
+                    lineType: PayLineType.CancellationFeeShare,
                     share: share,
                     payBreakdown: $"Collected fee: {collectedFee:F2}, Share: {share:F2}");
 
@@ -286,11 +290,15 @@ public class CalculateOrderPay
                 totalPay: totalPay,
                 minPay: minPay,
                 maxPay: maxPay,
-                payBreakdown: breakdown);
+                payBreakdown: breakdown,
+                lineType: lockout ? PayLineType.LockoutFeeShare : PayLineType.Job);
 
             orderEmployeePayRepository.Add(orderEmployeePay);
 
-            order.MarkEmployeePayCalculated();
+            if (!lockout)
+            {
+                order.MarkEmployeePayCalculated();
+            }
 
             return BusinessResult.Success(new Response(orderEmployeePay.Id));
         }

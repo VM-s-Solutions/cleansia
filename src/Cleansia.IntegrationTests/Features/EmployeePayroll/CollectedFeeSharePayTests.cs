@@ -1,7 +1,6 @@
 using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.AppServices.Features.EmployeePayroll;
 using Cleansia.Core.AppServices.Features.Orders;
-using Cleansia.Core.Domain.Credit;
 using Cleansia.Core.Domain.EmployeePayroll;
 using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Internationalization;
@@ -18,9 +17,10 @@ using Microsoft.Extensions.DependencyInjection;
 namespace Cleansia.IntegrationTests.Features.EmployeePayroll;
 
 /// <summary>
-/// Owner ruling 2026-09-28, decision 12: on a cancelled job the crew is paid half of the late-cancellation
-/// or lockout fee the company collected, split across the seats as job pay is, as a pay line of its own
-/// type; a fee still owed pays nothing. The webhook finds the crew to pay on the receivable it settles.
+/// Owner ruling 2026-09-28, decision 12: on a late-cancelled job the crew is paid half of the fee the company
+/// collected, split across the seats as job pay is, as a pay line of its own type; a fee still owed pays
+/// nothing. The webhook finds the crew to pay on the receivable it settles. A confirmed lockout pays the
+/// seat's reward instead (<see cref="LockoutRewardPayTests"/>).
 /// </summary>
 [Collection("PostgresCollection")]
 public class CollectedFeeSharePayTests(PostgresContainerFixture fixture) : BaseIntegrationTest(fixture)
@@ -76,34 +76,6 @@ public class CollectedFeeSharePayTests(PostgresContainerFixture fixture) : BaseI
     }
 
     [Fact]
-    public async Task A_Paid_Lockout_Receivable_Pays_The_Cleaner_Half_Of_It_As_A_Lockout_Share()
-    {
-        await TestMethod(
-            arrange: async ctx =>
-            {
-                var order = SeedCancelledOrder(ctx, PaymentType.Cash, PaymentStatus.Pending, totalPrice: 900m, seats: 1);
-                order.Cancel(DateTime.UtcNow, CancelledBy.Admin, feeRate: 1m, refundAmount: 0m,
-                    reason: OrderCancellationReasons.CustomerLockout);
-                var receivable = Receivable.ForLockout(order, 900m);
-                receivable.MarkPaid("pi_lockout_share", DateTimeOffset.UtcNow);
-                ctx.Receivables.Add(receivable);
-                await ctx.CommitAsync(CancellationToken.None);
-            },
-            act: provider => provider.GetRequiredService<IMediator>()
-                .Send(new CalculateOrderPay.Command(_orderId, _firstSeatEmployeeId)),
-            assert: async (CleansiaDbContext context, BusinessResult<CalculateOrderPay.Response> result) =>
-            {
-                Assert.True(result.IsSuccess, result.Error?.Message);
-
-                var pay = await context.Set<OrderEmployeePay>()
-                    .IgnoreQueryFilters()
-                    .SingleAsync(p => p.OrderId == _orderId);
-                Assert.Equal(PayLineType.LockoutFeeShare, pay.LineType);
-                Assert.Equal(450m, pay.TotalPay);
-            });
-    }
-
-    [Fact]
     public async Task A_Fee_Still_Owed_On_An_Open_Receivable_Pays_Nothing()
     {
         await TestMethod(
@@ -112,41 +84,6 @@ public class CollectedFeeSharePayTests(PostgresContainerFixture fixture) : BaseI
                 var order = SeedCancelledOrder(ctx, PaymentType.Cash, PaymentStatus.Pending, totalPrice: 900m, seats: 1);
                 order.Cancel(DateTime.UtcNow, CancelledBy.Customer, feeRate: 0.5m, refundAmount: 450m, reason: null);
                 ctx.Receivables.Add(Receivable.ForCashCancellationFee(order, 450m));
-                await ctx.CommitAsync(CancellationToken.None);
-            },
-            act: provider => provider.GetRequiredService<IMediator>()
-                .Send(new CalculateOrderPay.Command(_orderId, _firstSeatEmployeeId)),
-            assert: async (CleansiaDbContext context, BusinessResult<CalculateOrderPay.Response> result) =>
-            {
-                var validation = Assert.IsAssignableFrom<IValidationResult>(result);
-                Assert.Contains(validation.Errors, e => e.Message == BusinessErrorMessage.NoCollectedFee);
-                Assert.False(await context.Set<OrderEmployeePay>()
-                    .IgnoreQueryFilters()
-                    .AnyAsync(p => p.OrderId == _orderId));
-            });
-    }
-
-    [Fact]
-    public async Task A_Card_Order_Refunded_In_Full_Before_Its_Lockout_Collected_Nothing_And_Pays_Nothing()
-    {
-        await TestMethod(
-            arrange: async ctx =>
-            {
-                var order = SeedCancelledOrder(ctx, PaymentType.Card, PaymentStatus.Paid, totalPrice: 1000m, seats: 1);
-                order.ApplyCredit(400m, order.UserId!);
-
-                var cardLeg = Refund.Create(_orderId, "refund:admin-full", 600m, "CZK",
-                    RefundReason.AdminDiscretion, RefundSource.AppRefund);
-                cardLeg.MarkSucceeded("re_admin_full", DateTimeOffset.UtcNow);
-                ctx.Refunds.Add(cardLeg);
-                var credit = CreditAccount.Create(order.UserId!, CurrencyId, "admin");
-                credit.Issue(400m, CreditTransactionReason.OrderPaymentReturned, "credit-return:refund:admin-full",
-                    "admin", orderId: _orderId);
-                ctx.CreditAccounts.Add(credit);
-                order.UpdatePaymentStatus(PaymentStatus.Refunded);
-
-                order.Cancel(DateTime.UtcNow, CancelledBy.Admin, feeRate: 1m, refundAmount: 0m,
-                    reason: OrderCancellationReasons.CustomerLockout);
                 await ctx.CommitAsync(CancellationToken.None);
             },
             act: provider => provider.GetRequiredService<IMediator>()

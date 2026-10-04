@@ -201,9 +201,12 @@ its last 5pt. It ends at the bottom line of the status bar's content: the Dynami
 notch's bottom edge, or the bottom of a home-button phone's 20pt status bar, with nothing below it,
 the same on every iOS version. On Home that colour is the page colour; on Profile and the Plus offer
 it is the hero's own colour while the hero is under the status bar, and the page colour once it has
-scrolled past. On Android it is a band of the page background that reaches 24dp below the status
-bar. iOS changed four times (owner remarks). On 2026-10-03 a band of the page colour, like
-Android's, read as a solid white strip, and the system soft edge and blur that replaced it were too
+scrolled past. Android draws the same rule (since 2026-10-05), ending at the bottom of the camera
+hole, the line its clock is centred on (below). Until then it drew an opaque band of the page
+colour over the status bar and 24dp below it, a white band over the Plus and Profile heroes; the
+owner ruled that Android follows iOS, and that on both the fade ends at the clock and island line
+(2026-10-04). iOS changed four times (owner remarks). On 2026-10-03 a band of the page colour, like
+Android's then, read as a solid white strip, and the system soft edge and blur that replaced it were too
 tall, too sharp and too opaque. On 2026-10-04 the light blur under a 40 % wash of the page colour
 that followed read as a white band over the Plus offer's navy hero, and was so see-through that the
 content under the clock clashed with it (below). The solid colour that replaced it the same day
@@ -291,16 +294,49 @@ first point of scroll.
   checks `UIScrollView.setContentOffset` did not update SwiftUI geometry; in the 2026-10-04 checks an
   animated `setContentOffset` did drive both the threshold and the hero cross-fade, on iOS 26.3, 18.6
   and 16.4.
-- **Android** applies `Modifier.statusBarFade(scrollState)` (customer `ui/components/StatusBarFade.kt`)
-  directly before `verticalScroll(scrollState)`, so it draws over the viewport and not over the
-  scrolled content. It is visible while `scrollState.value > 0`. Home moved its status-bar padding
-  inside the scroll, so the address bar starts below the status bar at rest and then scrolls under the
-  band. That leaves Home's `PullToRefreshBox` filling the whole screen, so its indicator pads
-  `WindowInsets.statusBars` before its 8dp and rests below the status bar, not under it. The band's
-  gradient ends on `background.copy(alpha = 0f)`, the page colour at zero alpha: Android interpolates
-  gradient colours unpremultiplied, so a tail of `Color.Transparent`, which is transparent black,
-  passed through greys and tinted the light theme. `StatusBarFadeBindingTest` pins both
-  (2026-10-02).
+- **Android** applies `Modifier.statusBarFade(scrollState, heroTint, heroHeight)` (customer
+  `ui/components/StatusBarFade.kt`) directly before `verticalScroll(scrollState)`, so it draws over
+  the viewport and not over the scrolled content. It is visible while `scrollState.value > 0`. Since
+  2026-10-05 it draws the iOS rule:
+  - **One solid colour, the one behind the status bar.** Home passes no tint, and its fade is the
+    page background. The Plus offer passes `Sky950`, its hero's top, and Profile its hero's top
+    colour, each with the hero's height as measured by `onSizeChanged`. The fade wears the hero's
+    colour while the hero's bottom reaches the fade's end, and cross-fades in proportion into the page
+    colour as that bottom passes up through it to the top of the screen (`statusBarFadeHeroShare`),
+    the hero's colour laid over the page in its share as iOS lays it (`statusBarFadeColor`).
+  - **Held at 90 %, eased out over its last 6dp, with no tail** (`STATUS_BAR_FADE_OPACITY`,
+    `FadeEase`, a smoothstep sampled at nine points). Every stop is the one colour at some alpha:
+    Android interpolates gradient colours unpremultiplied, so a stop of `Color.Transparent`, which is
+    transparent black, passed through greys and tinted the light theme (2026-10-02). iOS eases over
+    5pt; the one-unit difference is known and left as it is.
+  - **It ends at the clock's line**, the bottom of the display cutout's path (`cutoutPath`, API 31 and
+    later), which is the camera hole itself and the line the system centres the clock and icons on
+    (`statusBarFadeHeight`). The status-bar inset is not that line: on the Pixel 8 emulator it is
+    132px, while the clock and icons span 50–81px and the hole ends at 102px. With no cutout inside the
+    status bar, or below API 31, the fade ends at the status bar's bottom; on a cutout phone running
+    API 26–30 it therefore still ends below the clock line. Until 2026-10-05 the band covered the
+    status bar and a 24dp tail, 195px on the emulator, which hid Home's address line.
+  - **The icons follow the colour.** On a screen with a hero, the status bar's icons are set light
+    while the fade's colour has a relative luminance under 0.25 (`statusBarIconsLight`). A light theme
+    draws them in 60 % black (`#636465` measured on the page), which reads better than white only on a
+    lighter colour. A screen holds them while it is resumed, and the newest screen to set them owns
+    them and hands them back to the theme's on pause or dispose, because Profile leaves composition
+    only once Plus has entered. `CleansiaTheme` sets the bars in a `DisposableEffect(darkTheme)`, not a
+    `SideEffect`: side effects run after every other effect in a frame, so it undid the screen's
+    setting. Android sets the icons itself, so it needs no iOS 16 exception: the Plus fade is navy in
+    light mode on every version.
+  - **Home pads inside the scroll.** Home moved its status-bar padding inside the scroll, so the
+    address bar starts below the status bar at rest and then scrolls under the fade. That leaves
+    Home's `PullToRefreshBox` filling the whole screen, so its indicator pads `WindowInsets.statusBars`
+    before its 8dp and rests below the status bar, not under it.
+  - **Measured on the emulator** (API 35, 1080 × 2400), the clock over the Plus hero in light mode
+    went from 1.35:1 to 14.2:1 at rest, where white icons replace the theme's dark ones, and reads
+    14.1–14.2:1 scrolled, where it read 5.7:1 on the old white band. Plus in dark mode reads
+    14.1–14.8:1, and Home 5.7:1 in light mode and 17.9:1 in dark as before, with the fade ending 30px
+    higher. `StatusBarFadeTest` pins the
+    hold, the ease, the single colour, the end line and the cutout rule, the cross-fade and the icon
+    rule; `StatusBarFadeBindingTest` pins each screen's wiring, Home's padding and refresh indicator,
+    and both heroes' tint and height.
 
 ## A booking swiped away keeps its draft {#booking-draft}
 

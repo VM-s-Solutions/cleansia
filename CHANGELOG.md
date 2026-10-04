@@ -176,21 +176,25 @@ need backfilling.
 - **Customer Android and iOS — content fades out under the clock as it scrolls.** On Home, Profile
   and the Cleansia Plus offer, content scrolled to the top of the screen fades out under the status
   bar instead of running into the clock and the camera cut-out. At rest, and while pulling down to
-  refresh, nothing is drawn, so the Profile and Plus headers still reach the top edge. On iOS the fade
-  ends at the bottom of the Dynamic Island or the notch, or of the status bar on a phone with a Home
-  button, and eases out over its last few points with no visible edge, the same on every iOS version.
-  It is one solid colour, the colour behind the clock, nine-tenths opaque: the page colour on Home,
-  and on Profile and the Plus offer the colour of their header while it is under the clock, blending
-  into the page colour as the header scrolls away. On iOS 16 in light mode, where the clock is always
-  black, the Plus offer's fade is the page colour instead. With Reduce Transparency on it is fully
-  opaque. Until 2026-10-05 it reached past the island, to about 21 points below it on an iPhone 17
-  Pro. Until 2026-10-04 it was a light blur under a see-through veil of the page
+  refresh, nothing is drawn, so the Profile and Plus headers still reach the top edge. The fade is one
+  solid colour, the colour behind the clock, nine-tenths opaque: the page colour on Home, and on
+  Profile and the Plus offer the colour of their header while it is under the clock, blending into the
+  page colour as the header scrolls away. It ends at the clock's line and eases out over its last few
+  points with no visible edge. On iOS that line is the bottom of the Dynamic Island or the notch, or
+  of the status bar on a phone with a Home button, the same on every iOS version; on Android it is the
+  bottom of the camera cut-out, or of the status bar on a phone without one. On Android the clock and
+  icons turn white over the Plus and Profile headers while the header is under them. On iOS 16 in
+  light mode, where the clock is always black, the Plus offer's fade is the page colour instead. With
+  Reduce Transparency on, the iOS fade is fully opaque. Until 2026-10-05 the iOS fade reached past the
+  island, to about 21 points below it on an iPhone 17 Pro, and Android covered the status bar and a
+  strip below it with a solid band of the page colour, which read as a white band over the Plus and
+  Profile headers. Until 2026-10-04 iOS drew a light blur under a see-through veil of the page
   colour, which read as a white band over the Plus offer's navy header and let the content under the
   clock show through. For part of 2026-10-03 iOS 26 used the system's own soft edge, which reached
   well below the status bar, and iOS 16 to 25 a blur that ended in a visible line; before that, iOS
-  covered it with a solid band of the page colour. Android fades it into the page colour. (Owner
-  remark 2026-10-01; the iOS fade, owner remarks 2026-10-03 and 2026-10-04; its height, owner remark
-  2026-10-04.)
+  covered it with a solid band of the page colour. (Owner remark
+  2026-10-01; the iOS fade, owner remarks 2026-10-03 and 2026-10-04; its height and Android following
+  iOS, owner remark and ruling 2026-10-04.)
 
 - **A contract for work between the customer and the cleaner, per job.** Every booking is now made
   under the platform's *contract for work* text — published at `/work-contract` beside the terms and the

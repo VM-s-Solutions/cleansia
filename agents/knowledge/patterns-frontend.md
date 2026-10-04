@@ -320,12 +320,17 @@ will do, or what a preview found) → **`.dialog-actions`**: the outlined cancel
 expire-credit and reject are the three admin templates the guard names (owner may overrule; the
 review ruling of 2026-09-22 is on T-0790). No dialog draws its own header, title or footer.
 Confirmations are the shared **`DialogService`** in `@cleansia/services` (`confirmTranslated(messageKey,
-headerKey?, params?, { danger, defaultFocus })`, `confirmDelete(itemName?)`; `defaultFocus: 'reject'`
-puts *Cancel* under Enter where adding is the risk, and left out PrimeNG focuses accept) over the **one**
-`<p-confirmDialog styleClass="cleansia-dialog" />` each app shell mounts; no feature provides
-`ConfirmationService` or calls `.confirm(` itself. PrimeNG's own words (Yes / No / month names / *No
-results found*) come from the bundle's `primeng.*` block through `providePrimeNgTranslation()` in each
-`app.config.ts`, re-applied on `onLangChange`.
+headerKey?, params?, { danger, icon, acceptLabelKey, rejectLabelKey })`, `confirmDelete(itemName?)`)
+over the **one** `<p-confirmDialog styleClass="cleansia-dialog" />` each app shell mounts; no feature
+provides `ConfirmationService` or calls `.confirm(` itself. **Every shared confirm opens with *Cancel*
+focused, and no option sets that** (PrimeNG 20.4): `ConfirmDialog` copies a confirmation's keys onto
+itself but never calls its own `getElementToFocus()`, so `defaultFocus` is read by nothing; the
+underlying `Dialog`'s `focusOnShow` takes the first focusable element of the content (none — a
+confirm's message has no link), then of the footer, and the default footer, which no shell replaces,
+renders reject before accept. A PrimeNG upgrade that starts honouring `defaultFocus` (default
+`'accept'`) would move focus to the accept button (`c135599d5` removed the option, which did nothing).
+PrimeNG's own words (Yes / No / month names / *No results found*) come from the bundle's `primeng.*`
+block through `providePrimeNgTranslation()` in each `app.config.ts`, re-applied on `onLangChange`.
 
 ### Feedback — one of each
 

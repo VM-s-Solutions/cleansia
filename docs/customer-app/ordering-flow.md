@@ -43,9 +43,13 @@ Services and packages support **translations** -- the component reads the user's
 service the step prints *In your package: {package}* (`pages.order.package_overlap.in_package`), and the
 service's add button takes that line as its `aria-describedby`. `OrderWizardFacade.toggleService` and
 `togglePackage` ask through the shared `DialogService` before a tap adds either half of a twice-booked
-pair, with *Cancel* focused (`defaultFocus: 'reject'`); removing never asks, and the Plus step's
-suggested *Add* goes through `toggleService` too. A service two or more chosen packages include is
-asked about with `service_message_many` (*"books it once more"*), and a package asks when a service
+pair, with *Cancel* focused. No option puts it there: on PrimeNG 20.4 the shell's `<p-confirmDialog>`
+never applies its own `defaultFocus`, so the dialog focuses the first focusable element of the
+message, which has none, then of the footer, where *Cancel* comes before the accept button. A PrimeNG
+upgrade that starts honouring `defaultFocus` (default `'accept'`) would move focus to *Add again* or
+*Add package*. Removing never asks, and the Plus step's suggested *Add* goes through `toggleService`
+too. A service two or more chosen packages include is asked about with `service_message_many`
+(*"books it once more"*), and a package asks when a service
 it includes is already in the booking on its own **or** through another chosen package, never
 counting itself (`includedServicesAlreadyChosen`, since 2026-10-04). A selection the wizard is handed
 (a catalogue link, *Order again*, a parked basket) is written through `updateFormData`, so it is only

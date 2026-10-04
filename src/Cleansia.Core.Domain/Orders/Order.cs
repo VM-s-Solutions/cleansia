@@ -385,6 +385,17 @@ public class Order : TenantAuditable
     public string? CancellationReason { get; private set; }
 
     /// <summary>
+    /// An administrator confirmed the cleaner's report that they could not get in. Read from what only that
+    /// confirmation writes together, and what erasure keeps: a customer's cancellation can carry any text as
+    /// its reason, including the lockout key, and is never one.
+    /// </summary>
+    [NotMapped]
+    public bool IsConfirmedLockout =>
+        CancelledBy == Enums.CancelledBy.Admin
+        && LockoutReportedAt is not null
+        && CancellationReason == OrderCancellationReasons.CustomerLockout;
+
+    /// <summary>
     /// The express surcharge this booking was charged, in the order's currency. Zero when none applied.
     /// The receipt's term between its raw catalogue lines and its discounts, which are measured against
     /// the charged price.
@@ -1162,9 +1173,10 @@ public class Order : TenantAuditable
         LockoutCallAttempts = null;
         EarlyPerformanceConsentIpAddress = null;
         EarlyPerformanceConsentDeviceLabel = null;
-        // A platform reason is a code, not personal data, and the wind-down's refund re-drive selects its
-        // cancelled orders by it; the customer's or an admin's free text goes.
-        if (CancelledBy != Enums.CancelledBy.System)
+        // A platform reason is a code, not personal data: the wind-down's refund re-drive selects its
+        // cancelled orders by it, and a confirmed lockout's crew is paid by it. The customer's or an admin's
+        // free text goes.
+        if (CancelledBy != Enums.CancelledBy.System && !IsConfirmedLockout)
         {
             CancellationReason = null;
         }

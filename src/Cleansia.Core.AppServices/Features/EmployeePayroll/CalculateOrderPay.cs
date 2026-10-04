@@ -42,9 +42,6 @@ public class CalculateOrderPay
         }
     }
 
-    private static bool IsLockout(Order order) =>
-        order.CancelledAt is not null && order.CancellationReason == OrderCancellationReasons.CustomerLockout;
-
     /// <summary>
     /// The fee a cancelled order has actually brought in: what its payment kept at cancellation, or, on one
     /// that took no payment, the fee receivables paid since. Zero on a cancellation that charged no fee.
@@ -155,7 +152,7 @@ public class CalculateOrderPay
                 .FirstOrDefaultAsync(o => o.Id == command.OrderId, cancellationToken);
 
             return order?.CancelledAt is null
-                || IsLockout(order)
+                || order.IsConfirmedLockout
                 || await CollectedFeeAsync(
                     order, _receivableRepository, _refundRepository, _creditAccountRepository, cancellationToken) > 0m;
         }
@@ -189,7 +186,7 @@ public class CalculateOrderPay
 
             // A seat paid from its frozen figures needs no rate today; the rate it was priced from may since
             // have been deleted.
-            if ((order.CancelledAt is not null && !IsLockout(order))
+            if ((order.CancelledAt is not null && !order.IsConfirmedLockout)
                 || order.AssignedEmployees.Any(oe => oe.EmployeeId == command.EmployeeId && oe.JobBasePay is not null))
             {
                 return true;
@@ -246,7 +243,7 @@ public class CalculateOrderPay
 
             var firstSeat = order.AssignedEmployees.MinBy(oe => oe.SeatOrdinal)?.EmployeeId == command.EmployeeId;
 
-            var lockout = IsLockout(order);
+            var lockout = order.IsConfirmedLockout;
             if (order.CancelledAt is not null && !lockout)
             {
                 var collectedFee = await CollectedFeeAsync(

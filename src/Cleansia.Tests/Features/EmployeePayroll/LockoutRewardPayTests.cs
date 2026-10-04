@@ -66,6 +66,25 @@ public class LockoutRewardPayTests
 
     private Order ArrangeLockedOutOrder(PaymentType paymentType, PaymentStatus paymentStatus, params string[] crew)
     {
+        var order = NewOrder(paymentType, paymentStatus, crew);
+        order.ReportLockout(crew[0], "Called the customer twice", DateTime.UtcNow.AddMinutes(-30));
+        order.Cancel(DateTime.UtcNow, CancelledBy.Admin, feeRate: BookingPolicy.LockoutFeeRate, refundAmount: 0m,
+            reason: OrderCancellationReasons.CustomerLockout);
+        return Stored(order);
+    }
+
+    /// <summary>A late cancellation at half the price, whose free-text reason is the lockout key.</summary>
+    private Order ArrangeCustomerCancellationNamingTheLockout(
+        PaymentType paymentType, PaymentStatus paymentStatus, params string[] crew)
+    {
+        var order = NewOrder(paymentType, paymentStatus, crew);
+        order.Cancel(DateTime.UtcNow, CancelledBy.Customer, feeRate: 0.5m, refundAmount: 1500m,
+            reason: OrderCancellationReasons.CustomerLockout);
+        return Stored(order);
+    }
+
+    private static Order NewOrder(PaymentType paymentType, PaymentStatus paymentStatus, string[] crew)
+    {
         var currency = CreateOrderTestData.DefaultCurrency();
         var service = Service.Create("cat-1", "Standard clean", "Regular");
         service.Id = ServiceId;
@@ -94,9 +113,11 @@ public class LockoutRewardPayTests
                 order, ValidatorTestHelpers.BuildEmployee(employeeId, ContractStatus.Approved)));
         }
 
-        order.Cancel(DateTime.UtcNow, CancelledBy.Admin, feeRate: BookingPolicy.LockoutFeeRate, refundAmount: 0m,
-            reason: OrderCancellationReasons.CustomerLockout);
+        return order;
+    }
 
+    private Order Stored(Order order)
+    {
         _orders.Setup(r => r.GetQueryable()).Returns(new[] { order }.AsQueryable().BuildMock());
         _orders.Setup(r => r.GetAll()).Returns(new[] { order }.AsQueryable().BuildMock());
         _orders.Setup(r => r.ExistsAsync(OrderId, It.IsAny<CancellationToken>())).ReturnsAsync(true);
@@ -210,5 +231,50 @@ public class LockoutRewardPayTests
         await PayAsync(CleanerId);
 
         Assert.False(order.EmployeePayCalculated);
+    }
+
+    /// <summary>
+    /// The customer's erasure can run between the confirmation and its queued pay. The anonymised order is
+    /// still a confirmed lockout, so the seat is still paid its reward rather than a share of a fee or nothing.
+    /// </summary>
+    [Theory]
+    [InlineData(PaymentType.Card, PaymentStatus.Paid)]
+    [InlineData(PaymentType.Cash, PaymentStatus.Pending)]
+    public async Task A_Lockout_Whose_Customer_Is_Erased_Before_The_Pay_Runs_Still_Pays_The_Reward(
+        PaymentType paymentType, PaymentStatus paymentStatus)
+    {
+        var order = ArrangeLockedOutOrder(paymentType, paymentStatus, CleanerId);
+        FreezeAtTheTake(order, CleanerId);
+        order.AnonymizeCustomerData();
+
+        var pay = await PayAsync(CleanerId);
+
+        Assert.Equal((PayLineType.LockoutFeeShare, 1300m), (pay.LineType, pay.TotalPay));
+    }
+
+    /// <summary>
+    /// A customer's reason is free text, so it can be the lockout key. A card booking cancelled late at half
+    /// its 3 000 kept 1 500, and the seat is paid its half of that, 750, not the 1 300 reward.
+    /// </summary>
+    [Fact]
+    public async Task A_Customers_Late_Cancellation_Naming_The_Lockout_Is_Paid_The_Fee_Share()
+    {
+        var order = ArrangeCustomerCancellationNamingTheLockout(PaymentType.Card, PaymentStatus.Paid, CleanerId);
+        FreezeAtTheTake(order, CleanerId);
+
+        var pay = await PayAsync(CleanerId);
+
+        Assert.Equal((PayLineType.CancellationFeeShare, 750m), (pay.LineType, pay.TotalPay));
+    }
+
+    [Fact]
+    public async Task A_Customers_Cash_Cancellation_Naming_The_Lockout_Pays_Nothing_Until_Its_Fee_Is_Paid()
+    {
+        var order = ArrangeCustomerCancellationNamingTheLockout(PaymentType.Cash, PaymentStatus.Pending, CleanerId);
+        FreezeAtTheTake(order, CleanerId);
+
+        var validation = await Validator().ValidateAsync(new CalculateOrderPay.Command(OrderId, CleanerId));
+
+        Assert.Equal(BusinessErrorMessage.NoCollectedFee, Assert.Single(validation.Errors).ErrorMessage);
     }
 }

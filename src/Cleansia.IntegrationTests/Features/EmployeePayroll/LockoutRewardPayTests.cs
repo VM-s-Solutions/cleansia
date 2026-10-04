@@ -196,6 +196,7 @@ public class LockoutRewardPayTests(PostgresContainerFixture fixture) : BaseInteg
             }
         }
 
+        order.ReportLockout(first.Id, "Called the customer twice", DateTime.UtcNow.AddMinutes(-30));
         order.Cancel(DateTime.UtcNow, CancelledBy.Admin, feeRate: BookingPolicy.LockoutFeeRate, refundAmount: 0m,
             reason: OrderCancellationReasons.CustomerLockout);
         order.AddOrderStatus(OrderStatusTrack.Create(OrderStatus.Cancelled, order));

@@ -1,6 +1,7 @@
 using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.AppServices.Features.EmployeePayroll;
 using Cleansia.Core.AppServices.Features.Orders;
+using Cleansia.Core.Domain.Configuration;
 using Cleansia.Core.Domain.EmployeePayroll;
 using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Orders;
@@ -134,7 +135,8 @@ public class LockoutRewardPayTests
             _pays.Object,
             _receivables.Object,
             Mock.Of<IRefundRepository>(),
-            Mock.Of<ICreditAccountRepository>());
+            Mock.Of<ICreditAccountRepository>(),
+            Mock.Of<IAppConfigurationProvider>());
 
         var result = await handler.Handle(new CalculateOrderPay.Command(OrderId, employeeId), CancellationToken.None);
 

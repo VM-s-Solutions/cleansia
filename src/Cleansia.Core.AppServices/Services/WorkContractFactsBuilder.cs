@@ -1,7 +1,10 @@
 using Cleansia.Core.AppServices.Features.Orders;
+using Cleansia.Core.AppServices.Features.TenantSettings;
 using Cleansia.Core.AppServices.Mappers;
 using Cleansia.Core.AppServices.Services.Interfaces;
+using Cleansia.Core.Domain.Configuration;
 using Cleansia.Core.Domain.EmployeePayroll;
+using Cleansia.Core.Domain.Extensions;
 using Cleansia.Core.Domain.Repositories;
 using Microsoft.EntityFrameworkCore;
 
@@ -9,7 +12,8 @@ namespace Cleansia.Core.AppServices.Services;
 
 public sealed class WorkContractFactsBuilder(
     IOrderRepository orderRepository,
-    IEmployeePayConfigRepository payConfigRepository) : IWorkContractFactsBuilder
+    IEmployeePayConfigRepository payConfigRepository,
+    IAppConfigurationProvider configurationProvider) : IWorkContractFactsBuilder
 {
     public async Task<(WorkContractFacts Facts, (decimal jobBasePay, decimal jobExtrasPay, decimal jobMinPay, decimal jobMaxPay)? JobPay)?> BuildAsync(
         string orderId, string employeeId, CancellationToken cancellationToken)
@@ -37,6 +41,7 @@ public sealed class WorkContractFactsBuilder(
                 Services = o.SelectedServices.Select(s => new WorkContractFactsLine(s.ServiceId, s.Service!.Name)).ToList(),
                 Packages = o.SelectedPackages.Select(p => new WorkContractFactsLine(p.PackageId, p.Package!.Name)).ToList(),
                 ExtraSlugs = o.SelectedExtras.Select(e => e.Slug).ToList(),
+                ExtrasSubtotal = o.SelectedExtras.Sum(e => e.UnitPrice),
             })
             .FirstOrDefaultAsync(cancellationToken);
 
@@ -54,10 +59,14 @@ public sealed class WorkContractFactsBuilder(
             ? []
             : await payConfigRepository.GetPackageConfigsForOrderAsync(packageIds, employeeId, [row.CurrencyId], cancellationToken);
 
+        var extrasSharePercent = await configurationProvider.GetAsync(TenantSettingCatalog.ExtrasSharePercent, cancellationToken);
+
         // No rate in the order's currency is also what the pay run would find, and it writes nothing for
         // the seat; booking and pay-config deletion both refuse to leave a live order in that state.
         var jobPay = OrderPayEstimator.JobPay(
-            serviceIds, packageIds, row.Rooms, row.Bathrooms, row.CurrencyId, employeeId, serviceConfigs, packageConfigs);
+            serviceIds, packageIds, row.Rooms, row.Bathrooms,
+            PayCalculatorExtensions.BookedExtrasPay(row.ExtrasSubtotal, extrasSharePercent),
+            row.CurrencyId, employeeId, serviceConfigs, packageConfigs);
         var reward = jobPay is { } priced
             ? OrderPayEstimator.SeatReward(priced, row.DirtinessRate, row.RequiredEmployees)
             : 0m;

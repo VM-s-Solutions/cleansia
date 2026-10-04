@@ -89,7 +89,7 @@ internal static class OrderPayEstimator
         string employeeId,
         IReadOnlyList<EmployeePayConfig> serviceConfigs,
         IReadOnlyList<EmployeePayConfig> packageConfigs) =>
-        JobPay(orderServiceIds, orderPackageIds, rooms, bathrooms, orderCurrencyId, employeeId, serviceConfigs, packageConfigs) is { } jobPay
+        JobPay(orderServiceIds, orderPackageIds, rooms, bathrooms, bookedExtrasPay: 0m, orderCurrencyId, employeeId, serviceConfigs, packageConfigs) is { } jobPay
             ? SeatReward(jobPay, dirtinessRate, requiredEmployees)
             : null;
 
@@ -125,14 +125,15 @@ internal static class OrderPayEstimator
 
     /// <summary>
     /// The four job figures the employee's rates in the order's currency price the order at, their own
-    /// override before the platform-wide row; what a seat freezes when its contract for work forms. Null when
-    /// no rate covers any of the order's services or packages.
+    /// override before the platform-wide row, with <paramref name="bookedExtrasPay"/> in the extras; what a seat
+    /// freezes when its contract for work forms. Null when no rate covers any of the order's services or packages.
     /// </summary>
     internal static (decimal jobBasePay, decimal jobExtrasPay, decimal jobMinPay, decimal jobMaxPay)? JobPay(
         HashSet<string> orderServiceIds,
         HashSet<string> orderPackageIds,
         int rooms,
         int bathrooms,
+        decimal bookedExtrasPay,
         string orderCurrencyId,
         string employeeId,
         IReadOnlyList<EmployeePayConfig> serviceConfigs,
@@ -151,6 +152,6 @@ internal static class OrderPayEstimator
             .Select(g => g.FirstOrDefault(c => c.EmployeeId == employeeId) ?? g.First());
 
         var allConfigs = matchedServiceConfigs.Concat(matchedPackageConfigs).ToList();
-        return allConfigs.Count == 0 ? null : allConfigs.AggregateJobPay(rooms, bathrooms);
+        return allConfigs.Count == 0 ? null : allConfigs.AggregateJobPay(rooms, bathrooms, bookedExtrasPay);
     }
 }

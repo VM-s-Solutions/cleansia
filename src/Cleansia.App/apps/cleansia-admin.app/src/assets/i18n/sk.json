@@ -1871,7 +1871,8 @@
         "retention": "Uchovávanie údajov",
         "lifecycle": "Životný cyklus spoločnosti",
         "notifications": "Notifikácie",
-        "cash": "Hotovosť u upratovačov"
+        "cash": "Hotovosť u upratovačov",
+        "pay": "Odmeny upratovačov"
       },
       "descriptions": {
         "retention": {
@@ -1927,6 +1928,9 @@
         "cash": {
           "float_cap": "Najvyššia suma hotovosti, ktorú smie upratovač držať v jednej mene; nad ňou sa mu hotovostné zákazky skryjú a uvidí prečo. 0 znamená bez limitu",
           "remittance_request_days": "Počet dní, počas ktorých smie upratovač držať hotovosť, ktorá mu zostala po uzávierke výplatného obdobia, kým bude požiadaný o jej odovzdanie (1–365)"
+        },
+        "pay": {
+          "extras_share_percent": "Percento z cien doplnkov objednaných zákazníkom, ktoré sa pripočíta k odmene upratovačov za zákazku; delí sa rovným dielom medzi miesta a pevne sa určí, keď upratovač zákazku prijme (0–100)"
         }
       }
     },

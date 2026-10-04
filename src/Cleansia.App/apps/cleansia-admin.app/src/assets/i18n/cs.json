@@ -1975,7 +1975,8 @@
         "retention": "Uchovávání dat",
         "lifecycle": "Životní cyklus společnosti",
         "notifications": "Notifikace",
-        "cash": "Hotovost u uklízečů"
+        "cash": "Hotovost u uklízečů",
+        "pay": "Odměny uklízečů"
       },
       "descriptions": {
         "retention": {
@@ -2031,6 +2032,9 @@
         "cash": {
           "float_cap": "Nejvyšší částka hotovosti, kterou smí uklízeč držet v jedné měně; nad ní se mu hotovostní zakázky skryjí a uvidí proč. 0 znamená bez limitu",
           "remittance_request_days": "Počet dní, po které smí uklízeč držet hotovost, jež mu zůstala po uzávěrce platebního období, než bude požádán o její odevzdání (1–365)"
+        },
+        "pay": {
+          "extras_share_percent": "Procento z cen doplňků objednaných zákazníkem, které se přičte k odměně uklízečů za zakázku; dělí se rovným dílem mezi místa a pevně se určí, když uklízeč zakázku přijme (0–100)"
         }
       }
     },

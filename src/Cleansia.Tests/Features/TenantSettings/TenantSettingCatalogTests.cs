@@ -73,14 +73,31 @@ public sealed class TenantSettingCatalogTests
     }
 
     [Fact]
-    public void The_Catalogue_Holds_Exactly_The_Fourteen_Retention_Keys_The_Lifecycle_Horizon_The_Admin_Mailbox_The_Two_Cash_Keys_And_No_Duplicate()
+    public void The_Catalogue_Holds_Exactly_The_Fourteen_Retention_Keys_The_Lifecycle_Horizon_The_Admin_Mailbox_The_Two_Cash_Keys_The_Extras_Share_And_No_Duplicate()
     {
-        Assert.Equal(18, TenantSettingCatalog.All.Count);
+        Assert.Equal(19, TenantSettingCatalog.All.Count);
         Assert.Equal(TenantSettingCatalog.All.Count, TenantSettingCatalog.All.Select(d => d.Key).Distinct(StringComparer.Ordinal).Count());
         Assert.Equal(14, TenantSettingCatalog.All.Count(d => d.Category == TenantSettingCatalog.RetentionCategory));
         Assert.Equal(1, TenantSettingCatalog.All.Count(d => d.Category == TenantSettingCatalog.LifecycleCategory));
         Assert.Equal(1, TenantSettingCatalog.All.Count(d => d.Category == TenantSettingCatalog.NotificationsCategory));
         Assert.Equal(2, TenantSettingCatalog.All.Count(d => d.Category == TenantSettingCatalog.CashCategory));
+        Assert.Equal(1, TenantSettingCatalog.All.Count(d => d.Category == TenantSettingCatalog.PayCategory));
+    }
+
+    [Fact]
+    public void The_Extras_Share_Is_Catalogued_Under_Pay_At_Fifty_Percent_Within_Zero_To_A_Hundred()
+    {
+        var share = TenantSettingCatalog.Find("pay.extras_share_percent");
+
+        Assert.Same(TenantSettingCatalog.ExtrasSharePercent, share);
+        Assert.Equal(TenantSettingCatalog.PayCategory, share!.Category);
+        Assert.Equal(TenantSettingValueType.Int, share.ValueType);
+        Assert.Equal("50", share.DefaultValue);
+        Assert.True(share.IsValid("0"));
+        Assert.True(share.IsValid("100"));
+        Assert.False(share.IsValid("101"));
+        Assert.False(share.IsValid("-1"));
+        Assert.Equal(50, TenantSettingCatalog.ExtrasSharePercent.Resolve(null));
     }
 
     [Fact]

@@ -1,6 +1,8 @@
 using Cleansia.Core.AppServices.Abstractions;
 using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.AppServices.Features.Orders;
+using Cleansia.Core.AppServices.Features.TenantSettings;
+using Cleansia.Core.Domain.Configuration;
 using Cleansia.Core.Domain.EmployeePayroll;
 using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Extensions;
@@ -211,7 +213,8 @@ public class CalculateOrderPay
         IOrderEmployeePayRepository orderEmployeePayRepository,
         IReceivableRepository receivableRepository,
         IRefundRepository refundRepository,
-        ICreditAccountRepository creditAccountRepository)
+        ICreditAccountRepository creditAccountRepository,
+        IAppConfigurationProvider configurationProvider)
         : ICommandHandler<Command, Response>
     {
         public async Task<BusinessResult<Response>> Handle(Command command, CancellationToken cancellationToken)
@@ -220,6 +223,7 @@ public class CalculateOrderPay
                 .GetAll()
                 .Include(o => o.SelectedServices)
                 .Include(o => o.SelectedPackages)
+                .Include(o => o.SelectedExtras)
                 .Include(o => o.AssignedEmployees)
                 .FirstOrDefaultAsync(o => o.Id == command.OrderId, cancellationToken);
 
@@ -272,6 +276,9 @@ public class CalculateOrderPay
                 ?? (await LivePayConfigsAsync(order, command.EmployeeId, cancellationToken)).CalculateSeatPay(
                     order.Rooms,
                     order.Bathrooms,
+                    PayCalculatorExtensions.BookedExtrasPay(
+                        order.SelectedExtras.Sum(e => e.UnitPrice),
+                        await configurationProvider.GetAsync(TenantSettingCatalog.ExtrasSharePercent, cancellationToken)),
                     order.DirtinessRate,
                     order.RequiredEmployees,
                     firstSeat);

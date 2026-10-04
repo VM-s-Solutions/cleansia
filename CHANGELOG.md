@@ -1205,10 +1205,13 @@ need backfilling.
   a tap on its words, so a tap on the empty part of the field did nothing: the cleaner's market,
   document type and country fields, and the customer's dispute reason. (Owner remark 2026-10-01.)
 
-- **Customer Android and iOS — the size steppers say where they stop.** Under the room and bathroom
-  steppers, both apps now say *Up to 8 rooms and 4 bathrooms*; the steppers used to stop at the cap
-  without saying why. On a one-off booking the minus button greys at 1, where it used to look live.
-  (Owner ruling 2026-10-01.)
+- **Customer Android and iOS — the size steppers say where they stop.** Above the room and bathroom
+  steppers, both apps now say *Up to 8 rooms and 4 bathrooms*, in the top-right corner beside *Your
+  home*, or on its own line under *Your home* when the two do not fit side by side; the steppers used
+  to stop at the cap without saying why. The schedule form's size section gains a *Your home* title to
+  carry it. On a one-off booking the minus button greys at 1, where it used to look live. Until
+  2026-10-05 the line sat under the steppers. (Owner ruling 2026-10-01; its place, owner remark
+  2026-10-04.)
 
 - **Customer iOS — the busy card's shadow sits on its edge.** While a booking or a Plus activation is
   submitted, the card with the cleaning mascot cast a grey halo around the mascot and the message. Only

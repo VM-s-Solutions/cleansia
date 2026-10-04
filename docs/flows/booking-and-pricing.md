@@ -255,17 +255,31 @@ typed into the admin catalogue, so for now the size moves the price and not the 
 
 **No client offers a size the server refuses, and the mobile apps say where it stops.** Every picker
 stops at 8 rooms and 4 bathrooms. On Android and iOS both stepper buttons stop at the bounds: the plus
-greys at the cap, and the minus greys at the floor, 1 on a one-off booking and 0 on a schedule. Under
-the size row of both flows the apps state the limit, *Up to 8 rooms and 4 bathrooms*
-(`booking_size_limit_caption`, rendered from the two constants rather than written into the
-translation). The steppers used to stop at the cap without saying why, and the one-off minus looked
-live at 1 (owner ruling 2026-10-01):
+greys at the cap, and the minus greys at the floor, 1 on a one-off booking and 0 on a schedule. Both
+flows state the limit, *Up to 8 rooms and 4 bathrooms* (`booking_size_limit_caption`, rendered from
+the two constants rather than written into the translation). The steppers used to stop at the cap
+without saying why, and the one-off minus looked live at 1 (owner ruling 2026-10-01):
 
 | Picker | Rooms | Bathrooms |
 |---|---|---|
 | One-off booking — web, Android, iOS | 1 – 8 | 1 – 4 |
 | Recurring schedule — web | 1 – 8 | 1 – 4 |
 | Recurring schedule — Android, iOS | 0 – 8 | 0 – 4 |
+
+**The caption sits on the *Your home* title's row, at its trailing end** (owner remark 2026-10-04,
+since 2026-10-05). It is on the title's first baseline, in the same small secondary style it had, and
+the steppers follow directly under the row, so the card is a line shorter. Where the title and the
+caption do not fit on one line, as on a 320pt (320dp) phone in Ukrainian or Russian or at a large
+text size, the caption takes its own line directly under the title, leading-aligned, and never goes
+back below the steppers. VoiceOver and TalkBack read the title, then the caption. Both apps lay it out
+in a `SizeLimitTitleRow`, the same in both flows: on iOS a `ViewThatFits` that tries the one-line row
+first, on Android a `Layout` that keeps the caption beside the title while the two fit with at least
+12dp between them (`sizeCaptionFitsBesideTitle`). The schedule form's size section had no title, only
+its *Rooms* and *Bathrooms* labels, so it now opens with a *Your home* title row carrying the caption
+(the booking's `booking_your_home` string), with the two counters under it. Until then the caption was
+a line of its own under the steppers in both flows. `PropertySizeTests` (iOS) and `PropertySizeTest`
+(Android) pin that each flow states the caps once, on its title's row, above the steppers, and the
+fit rule.
 
 **On the one-off booking's size row, the *Your home* title sits above the two steppers** on Android
 and iOS (since 2026-10-02). The steppers used to sit beside the title, which left no room once

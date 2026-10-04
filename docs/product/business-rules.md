@@ -528,7 +528,8 @@ needed a paid period and no plan could have a trial).
 - **The customer terms say so.** The terms `2026-09-30` offer the 14-day trial on either plan, one per
   account, with the first charge when it ends unless cancelled before ([The legal texts](#legal-texts)).
 - **A DEV database seeded before the ruling** keeps `0` days on both seeded plans, because the seed
-  never updates a plan that exists; `sql-scripts/fix-plus-trial-14-days.sql` sets them to 14.
+  never updates a plan that exists; `sql-scripts/fix-plus-trial-14-days.sql` sets them to 14, and
+  `execute-sql.yml` refuses it against PRO, whose plans are typed into the admin console.
 
 There are **seven** benefits:
 

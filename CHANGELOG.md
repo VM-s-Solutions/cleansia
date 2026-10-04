@@ -1118,9 +1118,11 @@ need backfilling.
   the title and the caption above and below them. They used to be as wide as their text, so they
   never lined up. (Owner remark 2026-10-03.)
 
-- **Customer iOS — going back in the booking slides back.** Stepping back through the booking's
-  steps brought the previous step in from the right, as if going on. It now comes in from the left,
-  as on Android, and with Reduce Motion on the steps fade instead. (Owner remark 2026-10-03.)
+- **Customer iOS — going back in the booking slides back, and the step you leave slides out.**
+  Stepping back through the booking's steps brought the previous step in from the right, as if going
+  on. It now comes in from the left, as on Android, and with Reduce Motion on the steps fade instead.
+  The step you leave also vanished at once, going on or back, so only the incoming step moved; it now
+  slides out the other way as the next one slides in. (Owner remark 2026-10-03.)
 
 - **Customer web — the booking summary no longer takes credit off a cash booking.** With a credit
   balance, the summary showed *Your credit −X* and *To pay by card Y* whichever payment method was

@@ -335,7 +335,13 @@ on Android the slide runs at zero duration when animations are removed in the sy
 - **iOS** (`BookingSheetView`) used one transition for every change until then, so going back looked
   like going on. The direction is set one run-loop turn before the step changes: a page that leaves
   animates with the transition it last rendered with, so setting both in one update sent it the old
-  way.
+  way. **The page changes identity inside a `ZStack` of its own**,
+  `ZStack { stepPage.transition(stepTransition).id(step) }`, with the animation on the `ZStack`, so
+  the container that removes the leaving page is the one that keeps it on screen through the slide.
+  Until 2026-10-04 the `.id(step)` sat at the top of the step area, the container was the sheet's
+  outer `VStack`, and the leaving page vanished in one frame on every step change while only the next
+  one slid in (recorded frame by frame on iOS 26.3 and 16.4). `BookingStepGateTests` pins the
+  `ZStack` and a single `.id(step)`.
 - **Android** (`BookingBottomSheet.kt`) was already directional, but with fixed left and right, which
   a right-to-left layout would have turned around. `stepSlideDirection(forward, rtl)` now mirrors the
   sign under `LayoutDirection.Rtl`. No locale the app ships is right-to-left, so nothing changed on

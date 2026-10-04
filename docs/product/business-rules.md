@@ -2375,8 +2375,10 @@ the list is retried on the next navigation.
 [ADR-0060](/decisions/adr-0060)). A locale string carries a placeholder, never an amount or a
 currency word; the client formats the market's figure in the market's currency. The two figures are
 the no-show credit (per currency) and the insurance ceiling (per country), both on the market row;
-the terms page states the market's currency code; a market with no figure gets the copy variant that
-names none. The parity checker fails any locale that types a figure back in.
+the terms page states the market's currency code; a market whose currency has no no-show credit gets
+the copy variant that names none, and a market with no insurance ceiling makes no insurance claim at
+all (owner ruling 2026-10-04) → [Insurance ceiling](#money-constants). The parity checker fails any
+locale that types a figure back in.
 
 **A market has an operating company** (owner ruling 2026-09-13, [ADR-0061](/decisions/adr-0061):
 *"We'll make a holding company and more companies under it for each region"*). Each market is served
@@ -2918,7 +2920,10 @@ for 3 years then delete — cleaner and better for defence"*): the description, 
 resolution notes stay readable under a stamp the erasure sets, and the weekly sweep blanks them once
 it is past; the evidence files still go at erasure. The cancellation reason is cleared with the
 order's other customer fields — unless the platform wrote it, because a platform reason is a code
-(`order.cancelled.company_wind_down`), not personal data, and the wind-down retries its refunds by it.
+(`order.cancelled.company_wind_down`), not personal data, and the wind-down retries its refunds by it;
+or, since 2026-10-04, unless it is the key `order.cancelled.customer_lockout` on a lockout an
+administrator confirmed (`LockoutReportedAt` stamped), because the crew's pay recognises the lockout by
+it → [A confirmed lockout pays the seat's reward](#lockout-pay).
 **Every saved address goes**, inactive ones included, and an address the subject only ever saved is
 deleted unless another customer's order, saved address or employee record still uses it.
 → [GDPR — erasure](/flows/gdpr-and-audit#erasure-is-anonymise-in-place)

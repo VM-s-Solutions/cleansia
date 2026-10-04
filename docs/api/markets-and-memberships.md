@@ -265,7 +265,8 @@ PUT /api/AdminCountry/{countryId}/market-content      { "countryId": "country-id
 **Auth:** `CanUpdateCountry` (rate-limited, `auth` policy; the route id must match the body's)
 
 Authors the one per-country copy figure: the insurance ceiling per booking, a number in the country's
-default currency, `null` to state no figure. The country must already have a configuration row —
+default currency, `null` for none — and with none no client claims insurance at all (owner ruling
+2026-10-04; until then a no-figure *Insured* rendered). The country must already have a configuration row —
 `country.configuration_missing` otherwise (creating one needs a currency, a language and a VAT rate,
 which is not this command's business). A negative amount is `MustBePositive`.
 

@@ -237,7 +237,8 @@ names an active `Currency` — three existing rows joined by the anonymous `Mark
 `Country` carries `IsoCode` (alpha-3, what clients persist) and `IsoAlpha2` (what the market chip
 prints); `CountryConfiguration` carries, besides the fiscal and formatting columns, `InsuranceCoverageAmount`
 — the one marketing figure in customer copy, a number in the country's currency, per country because
-a policy is written per jurisdiction, null = the copy names no figure (every market seeded null since 2026-09-28) — and
+a policy is written per jurisdiction, null = no client claims insurance at all (owner ruling 2026-10-04;
+every market seeded null since 2026-09-28) — and
 `IsDefaultMarket`, the market a customer surface pre-selects before any choice is made: a filtered
 unique index (`IX_CountryConfigurations_IsDefaultMarket_Unique`, the `Currency.IsDefault` shape) holds
 at most one, `SetDefaultMarket` is the only writer, CZE is seeded with it — and **`OperatorTenantId`**,

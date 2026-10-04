@@ -2102,7 +2102,7 @@
       }
     },
     "saved_card": {
-      "consent_not_accepted": "Pred uložením karty prosím potvrďte súhlas, že na ňu môžu byť účtované poplatky a nezaplatená hotovosť.",
+      "consent_not_accepted": "Pred uložením karty prosím potvrďte svoj súhlas.",
       "not_found": "Túto uloženú kartu sme nenašli.",
       "requires_account": "Na uloženie karty na ďalšie objednávky sa prihláste."
     },

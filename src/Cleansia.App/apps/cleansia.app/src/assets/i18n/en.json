@@ -2102,7 +2102,7 @@
       }
     },
     "saved_card": {
-      "consent_not_accepted": "Please agree that fees and unpaid cash may be charged to your card before saving it.",
+      "consent_not_accepted": "Please confirm your consent before saving your card.",
       "not_found": "We couldn't find that saved card.",
       "requires_account": "Sign in to save your card for your next bookings."
     },

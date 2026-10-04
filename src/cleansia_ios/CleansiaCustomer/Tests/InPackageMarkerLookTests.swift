@@ -34,6 +34,48 @@ final class InPackageMarkerLookTests: XCTestCase {
         }
     }
 
+    /// WCAG AA for the row's text that is not the name: the "from" price and the secondary text
+    /// (description, per-room price) on the plain card, on a covered row's tint and on a picked row's fill,
+    /// in both schemes. The picked fill is translucent and the rows sit on the booking sheet's page colour
+    /// (`BookingSheetView`), so that is the ground under it.
+    /// The brand primary is sky-600 in light mode (4.1:1 on white, 3.7:1 tinted) and slate-400 measured
+    /// 4.2:1 on a tinted row in dark mode, so neither may be the ink there.
+    func testThePriceAndTheSecondaryTextMeetAAOnEveryRowInBothSchemes() {
+        for style in [UIUserInterfaceStyle.light, .dark] {
+            let scheme: ColorScheme = style == .dark ? .dark : .light
+            let surface = rgb(CleansiaColors.surface, style)
+            let page = rgb(CleansiaColors.background, style)
+            let rows: [(name: String, ground: RGB)] = [
+                ("plain", surface),
+                ("covered", over(rgb(CleansiaColors.primary, style), InPackageStyle.rowTintOpacity(scheme), surface)),
+                ("picked", over(rgb(CleansiaColors.primaryContainer, style), 0.5, page))
+            ]
+            for row in rows {
+                let price = rgb(ServiceRow.fromPriceInk(scheme), style)
+                let secondary = rgb(ServiceRow.secondaryInk(scheme, tinted: row.name != "plain"), style)
+                XCTAssertGreaterThanOrEqual(contrast(price, row.ground), 4.5, "\(style) \(row.name): the price")
+                XCTAssertGreaterThanOrEqual(
+                    contrast(secondary, row.ground),
+                    4.5,
+                    "\(style) \(row.name): secondary text"
+                )
+            }
+        }
+    }
+
+    /// The row draws its price and secondary text in those inks, and keeps the primary for its fills.
+    func testTheServiceRowDrawsItsTextInTheTextSafeInks() throws {
+        let source = try compactSource(Self.components)
+        XCTAssertTrue(source.contains(".foregroundColor(Self.fromPriceInk(colorScheme))"))
+        XCTAssertEqual(
+            source.components(separatedBy: ".foregroundColor(Self.secondaryInk(colorScheme,tinted:selected||covered))")
+                .count - 1,
+            2,
+            "the description and the per-room price"
+        )
+        XCTAssertTrue(source.contains(".stroke(border,lineWidth:selected?2:covered?InPackageStyle.borderWidth:1)"))
+    }
+
     /// The badge is a check on a primary tint in the ink, no longer a grey caption after a box glyph.
     func testTheNoteIsABadge() throws {
         let source = try compactSource(Self.components)

@@ -1,6 +1,7 @@
 using Cleansia.Core.AppServices.Services.Interfaces;
 using Cleansia.Core.Domain.Loyalty;
 using Cleansia.Core.Domain.Notifications;
+using Cleansia.Core.Domain.Orders;
 using Cleansia.Core.Domain.Repositories;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
@@ -18,6 +19,8 @@ public sealed class LoyaltyService(
     ILoyaltyTierConfigRepository loyaltyTierConfigRepository,
     ILoyaltyTransactionRepository loyaltyTransactionRepository,
     ICurrencyRepository currencyRepository,
+    IRefundRepository refundRepository,
+    ICreditAccountRepository creditAccountRepository,
     INotificationProducer notificationProducer,
     ILogger<LoyaltyService> logger) : ILoyaltyService
 {
@@ -63,6 +66,16 @@ public sealed class LoyaltyService(
         var tierAsRead = account.CurrentTier;
         var thresholds = await ResolveThresholdsAsync(cancellationToken);
         account.GrantPoints(pointsEarned, LoyaltyEarnSource.OrderCompleted, orderId, SystemActor, thresholds);
+
+        // The earn row holds the whole price's points: every later clawback takes its share of them. Money
+        // given back before completion found no earn to take from, so its share is taken here, by the same
+        // rule. → /product/business-rules#money-constants
+        account.RevokePoints(
+            await ShareReturnedBeforeCompletionAsync(order, pointsEarned, cancellationToken),
+            LoyaltyEarnSource.OrderPartiallyRefunded,
+            orderId,
+            SystemActor,
+            thresholds);
 
         // Decided once the grant is saved, not from this read: a write another request commits to the account
         // first is replayed under this one, and can take the tier past a threshold this read did not reach or
@@ -425,6 +438,23 @@ public sealed class LoyaltyService(
         }
 
         return (int)Math.Floor(amount / divisor);
+    }
+
+    /// <summary>
+    /// The clawback's share, <c>floor(earned × returned / TotalPrice)</c>, of everything the order has
+    /// already given back: card refunds, the credit legs returned with them, and dispute settlements paid
+    /// in credit.
+    /// </summary>
+    private async Task<int> ShareReturnedBeforeCompletionAsync(
+        Order order, int earned, CancellationToken cancellationToken)
+    {
+        var returned = await refundRepository.GetSucceededRefundTotalForOrderAsync(order.Id, cancellationToken)
+            + await creditAccountRepository.GetReturnedTotalForOrderAsync(order.Id, cancellationToken)
+            + await creditAccountRepository.GetDisputeSettledTotalForOrderAsync(order.Id, cancellationToken);
+
+        return returned > 0m
+            ? (int)Math.Floor(earned * Math.Min(returned, order.TotalPrice) / order.TotalPrice)
+            : 0;
     }
 
     private async Task<LoyaltyTierThresholds> ResolveThresholdsAsync(CancellationToken cancellationToken)

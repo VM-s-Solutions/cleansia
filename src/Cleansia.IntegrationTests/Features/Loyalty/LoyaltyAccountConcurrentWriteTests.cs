@@ -307,6 +307,8 @@ public class LoyaltyAccountConcurrentWriteTests(PostgresContainerFixture fixture
             tierConfigs.Object,
             new LoyaltyTransactionRepository(ctx),
             new CurrencyRepository(ctx),
+            new RefundRepository(ctx),
+            new CreditAccountRepository(ctx),
             new NotificationProducer(
                 new UserNotificationRepository(ctx),
                 new OutboxPendingDispatch(ctx),

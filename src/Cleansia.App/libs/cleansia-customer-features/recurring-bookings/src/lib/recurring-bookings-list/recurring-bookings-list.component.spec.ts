@@ -1,3 +1,4 @@
+import { provideHttpClient } from '@angular/common/http';
 import { signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
@@ -180,6 +181,8 @@ describe('RecurringBookingsListComponent — its own facade', () => {
         { provide: SnackbarService, useValue: {} },
         // The app root's, behind the shared confirm the facade asks through.
         ConfirmationService,
+        // The app root's, under the toast-suppressing client the facade quotes through.
+        provideHttpClient(),
       ],
     }).compileComponents();
 

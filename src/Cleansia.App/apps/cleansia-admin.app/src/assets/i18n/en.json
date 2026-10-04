@@ -714,7 +714,7 @@
         "lockout": {
           "action": "Confirm customer lockout",
           "context": "Use this when the cleaner reported that they could not get in. Check the entrance photo and the calls they made before you confirm.",
-          "confirm": "This cancels the booking as a customer lockout at the whole price. A card order keeps its payment and any credit applied to it; a signed-in customer's unpaid cash booking owes the whole price as a receivable; a guest keeps nothing back and is never charged more. The crew is paid its share of the fee once it is collected. It cannot be undone.",
+          "confirm": "This cancels the booking as a customer lockout at the whole price. A card order keeps its payment and any credit applied to it; a signed-in customer's unpaid cash booking owes the whole price as a receivable; a guest keeps nothing back and is never charged more. Each cleaner on the crew is paid their full reward for the job, whether or not the customer ever pays. It cannot be undone.",
           "submit": "Confirm lockout",
           "success": "Order cancelled as a customer lockout at {{fee}}. {{receivable}}",
           "receivable_opened": "The customer owes {{amount}}, recorded as a receivable.",

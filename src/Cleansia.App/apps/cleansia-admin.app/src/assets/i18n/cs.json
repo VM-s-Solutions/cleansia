@@ -714,7 +714,7 @@
         "lockout": {
           "action": "Potvrdit znemožněný vstup",
           "context": "Použijte, když uklízeč nahlásil, že se nemůže dostat dovnitř. Před potvrzením zkontrolujte fotografii vchodu a jeho pokusy o volání.",
-          "confirm": "Rezervace se zruší jako vstup znemožněný zákazníkem za plnou cenu. Objednávka placená kartou si ponechá platbu i uplatněný kredit; nezaplacená hotovostní rezervace přihlášeného zákazníka dluží plnou cenu jako pohledávku; host nedostane nic zpět a nic dalšího se mu neúčtuje. Tým dostane svůj podíl z poplatku, jakmile bude vybrán. Akci nelze vrátit zpět.",
+          "confirm": "Rezervace se zruší jako vstup znemožněný zákazníkem za plnou cenu. Objednávka placená kartou si ponechá platbu i uplatněný kredit; nezaplacená hotovostní rezervace přihlášeného zákazníka dluží plnou cenu jako pohledávku; host nedostane nic zpět a nic dalšího se mu neúčtuje. Každý uklízeč v týmu dostane plnou odměnu za zakázku, ať už zákazník zaplatí, nebo ne. Akci nelze vrátit zpět.",
           "submit": "Potvrdit znemožněný vstup",
           "success": "Objednávka byla zrušena jako znemožněný vstup za {{fee}}. {{receivable}}",
           "receivable_opened": "Zákazník dluží {{amount}}, zaznamenáno jako pohledávka.",

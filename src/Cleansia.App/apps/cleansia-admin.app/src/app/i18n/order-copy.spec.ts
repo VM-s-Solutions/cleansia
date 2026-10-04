@@ -28,9 +28,20 @@ const REFUND_COLUMN = 'pages.disputes_management.columns.refund_amount';
 /** The refusal also covers a cleaner who has left or been erased, whose contract still reads approved. */
 const REASSIGN_REFUSAL = 'api.order.reassign.employee_not_approved';
 
+/** A confirmed lockout pays each seat its full reward for the job, collected fee or not. */
+const LOCKOUT_CONFIRM = 'pages.order_management.ops.lockout.confirm';
+
 const COPY: Record<
   Locale,
-  { completed: RegExp; cancelled: RegExp; requested: RegExp; notYet: RegExp; inactive: RegExp }
+  {
+    completed: RegExp;
+    cancelled: RegExp;
+    requested: RegExp;
+    notYet: RegExp;
+    inactive: RegExp;
+    fullReward: RegExp;
+    feeShare: RegExp;
+  }
 > = {
   en: {
     completed: /completed/i,
@@ -38,6 +49,8 @@ const COPY: Record<
     requested: /requested/i,
     notYet: /not approved yet/i,
     inactive: /no longer active/i,
+    fullReward: /full reward for the job/i,
+    feeShare: /share of the fee|once it is collected/i,
   },
   cs: {
     completed: /dokončen/i,
@@ -45,6 +58,8 @@ const COPY: Record<
     requested: /požadovan/i,
     notYet: /zatím/i,
     inactive: /není aktivní/i,
+    fullReward: /plnou odměnu za zakázku/i,
+    feeShare: /podíl z poplatku|bude vybrán/i,
   },
   sk: {
     completed: /dokončen/i,
@@ -52,6 +67,8 @@ const COPY: Record<
     requested: /požadovan/i,
     notYet: /zatiaľ/i,
     inactive: /nie je aktívny/i,
+    fullReward: /plnú odmenu za zákazku/i,
+    feeShare: /podiel z poplatku|bude vybraný/i,
   },
   uk: {
     completed: /виконан|завершен/i,
@@ -59,6 +76,8 @@ const COPY: Record<
     requested: /запитан/i,
     notYet: /ще не/i,
     inactive: /не активний/i,
+    fullReward: /повну винагороду за замовлення/i,
+    feeShare: /частку комісії|буде стягнуто/i,
   },
   ru: {
     completed: /выполнен|завершени/i,
@@ -66,6 +85,8 @@ const COPY: Record<
     requested: /запрошен/i,
     notYet: /ещё не|еще не/i,
     inactive: /не активен/i,
+    fullReward: /полное вознаграждение за заказ/i,
+    feeShare: /долю комиссии|будет взыскана/i,
   },
 };
 
@@ -105,5 +126,12 @@ describe('the admin order copy says what the platform does', () => {
 
     expect(value).not.toMatch(COPY[locale].notYet);
     expect(value).toMatch(COPY[locale].inactive);
+  });
+
+  it.each(LOCALES)('confirms a lockout as paying the crew its full reward, not a share of the fee, in %s', (locale) => {
+    const value = resolveKey(readLocale(locale), LOCKOUT_CONFIRM);
+
+    expect(value).toMatch(COPY[locale].fullReward);
+    expect(value).not.toMatch(COPY[locale].feeShare);
   });
 });

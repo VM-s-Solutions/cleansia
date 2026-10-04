@@ -714,7 +714,7 @@
         "lockout": {
           "action": "Potvrdiť znemožnený vstup",
           "context": "Použite, keď upratovač nahlásil, že sa nemôže dostať dnu. Pred potvrdením skontrolujte fotografiu vchodu a jeho pokusy o volanie.",
-          "confirm": "Rezervácia sa zruší ako vstup znemožnený zákazníkom za plnú cenu. Objednávka platená kartou si ponechá platbu aj uplatnený kredit; nezaplatená hotovostná rezervácia prihláseného zákazníka dlhuje plnú cenu ako pohľadávku; hosť nedostane nič späť a nič ďalšie sa mu neúčtuje. Tím dostane svoj podiel z poplatku, keď bude vybraný. Akciu nie je možné vrátiť.",
+          "confirm": "Rezervácia sa zruší ako vstup znemožnený zákazníkom za plnú cenu. Objednávka platená kartou si ponechá platbu aj uplatnený kredit; nezaplatená hotovostná rezervácia prihláseného zákazníka dlhuje plnú cenu ako pohľadávku; hosť nedostane nič späť a nič ďalšie sa mu neúčtuje. Každý upratovač v tíme dostane plnú odmenu za zákazku, či už zákazník zaplatí, alebo nie. Akciu nie je možné vrátiť.",
           "submit": "Potvrdiť znemožnený vstup",
           "success": "Objednávka bola zrušená ako znemožnený vstup za {{fee}}. {{receivable}}",
           "receivable_opened": "Zákazník dlhuje {{amount}}, zaznamenané ako pohľadávka.",

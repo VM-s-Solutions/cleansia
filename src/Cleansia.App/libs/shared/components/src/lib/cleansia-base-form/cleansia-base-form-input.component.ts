@@ -10,6 +10,7 @@ import {
   OnDestroy,
   OnInit,
   Signal,
+  signal,
   SimpleChanges,
 } from '@angular/core';
 import {
@@ -41,7 +42,12 @@ export abstract class CleansiaBaseFormInputComponent
   protected destroyed$ = new Subject<void>();
 
   inputSize = input<InputSize>('full-width');
-  disabled = input(false, { transform: booleanAttribute });
+  // Renamed so that `disabled()`, which every subclass template binds, also answers for a control
+  // disabled in code.
+  // eslint-disable-next-line @angular-eslint/no-input-rename
+  disabledInput = input(false, { alias: 'disabled', transform: booleanAttribute });
+  private readonly controlDisabled = signal(false);
+  disabled: Signal<boolean> = computed(() => this.disabledInput() || this.controlDisabled());
   label = input<string>();
   required = input(false, { transform: booleanAttribute });
   readonlyInput = input(false, { transform: booleanAttribute }); // Renamed to avoid conflict with JS keyword
@@ -105,14 +111,14 @@ export abstract class CleansiaBaseFormInputComponent
       }
     }
 
-    if (this.disabled()) {
+    if (this.disabledInput()) {
       this.formControl.disable();
     }
   }
 
   ngOnChanges(changes: SimpleChanges): void {
-    if (changes['disabled'] && this.formControl) {
-      if (changes['disabled'].currentValue) {
+    if (changes['disabledInput'] && this.formControl) {
+      if (changes['disabledInput'].currentValue) {
         this.formControl.disable();
       } else {
         this.formControl.enable();
@@ -133,8 +139,8 @@ export abstract class CleansiaBaseFormInputComponent
     this.onTouch = fn;
   }
 
-  setDisabledState(): void {
-    // Handled via signal and ngOnChanges
+  setDisabledState(isDisabled: boolean): void {
+    this.controlDisabled.set(isDisabled);
   }
 
   abstract writeValue(value: unknown): void;

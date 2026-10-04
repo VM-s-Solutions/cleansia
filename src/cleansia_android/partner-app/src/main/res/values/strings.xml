@@ -1219,6 +1219,7 @@
     <string name="error_validation_invalid_iban">Please enter a valid IBAN.</string>
     <string name="error_validation_invalid_zip_code">Please enter a valid ZIP code.</string>
     <string name="error_validation_registration_number_invalid_format">Please enter a valid company registration number for the selected country.</string>
+    <string name="error_validation_registration_number_not_registered">This company ID (IČO) is not in the business register (ARES). Check the number.</string>
     <string name="error_validation_must_be_positive">Must be a positive number.</string>
 
     <!-- Payout / bank details -->

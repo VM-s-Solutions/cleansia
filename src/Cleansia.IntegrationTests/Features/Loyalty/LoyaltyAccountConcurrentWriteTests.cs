@@ -171,6 +171,24 @@ public class LoyaltyAccountConcurrentWriteTests(PostgresContainerFixture fixture
     }
 
     /// <summary>
+    /// The first grant takes 450 to 550 and is announced as Silver. The second read 450 and lands at
+    /// 550 + 30 = 580: above the tier it read, but in the Silver the first already announced, so it says nothing.
+    /// </summary>
+    [Fact]
+    public async Task A_Completion_Grant_Replayed_Into_The_Tier_The_Winner_Reached_Announces_Nothing_More()
+    {
+        await ResetAsync();
+        await SeedAsync((OrderA, 450m, 450), (OrderB, 100m, 0), (OrderC, 30m, 0));
+
+        await LoseToAsync(
+            service => service.GrantForCompletedOrderAsync(OrderC, CancellationToken.None),
+            service => service.GrantForCompletedOrderAsync(OrderB, CancellationToken.None));
+
+        await AssertAccountAsync(points: 580, completedBookings: 3, LoyaltyTier.SilverMopper);
+        Assert.Equal(new[] { (OrderB, "SilverMopper") }, await TiersAnnouncedAsync());
+    }
+
+    /// <summary>
     /// The first grant takes 450 to 1950 and is announced as Silver. The second read 450 and saw itself reach
     /// Silver at 550, but lands at 1950 + 100 = 2050, past Gold at 2000, and is announced as the Gold it reached.
     /// </summary>

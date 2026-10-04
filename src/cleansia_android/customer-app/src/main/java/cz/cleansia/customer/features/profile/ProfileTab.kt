@@ -81,7 +81,9 @@ import cz.cleansia.customer.ui.theme.CleansiaTheme
 import cz.cleansia.core.ui.theme.Poppins
 import cz.cleansia.core.ui.theme.Spacing
 import cz.cleansia.customer.ui.theme.Sky600
+import cz.cleansia.customer.ui.theme.Sky700
 import cz.cleansia.customer.ui.theme.asList
+import cz.cleansia.customer.ui.theme.isDark
 import kotlinx.datetime.toJavaLocalDateTime
 import kotlinx.datetime.toLocalDateTime
 import cz.cleansia.customer.features.main.MainShellBottomClearance
@@ -161,13 +163,14 @@ fun ProfileTab(
     var showCreditSheet by remember { mutableStateOf(false) }
     val scrollState = rememberScrollState()
     var heroHeight by remember { mutableIntStateOf(0) }
+    val heroColors = profileHeroColors(isDark(), BrandGradients.blue())
 
     Column(
         modifier = modifier
             .fillMaxSize()
             .background(MaterialTheme.colorScheme.background)
             // The fade wears the hero's top colour while the hero is under the status bar.
-            .statusBarFade(scrollState, heroTint = BrandGradients.blue().first, heroHeight = { heroHeight })
+            .statusBarFade(scrollState, heroTint = heroColors.first, heroHeight = { heroHeight })
             .verticalScroll(scrollState),
     ) {
         // 1. Hero + stats card (stats overlap the hero's bottom edge)
@@ -294,6 +297,16 @@ fun ProfileTab(
 // spare — so ru ellipsizes below ~376dp by design.
 private const val EditChipMaxWidthFraction = 0.45f
 
+/**
+ * The hero's gradient: the brand blue, except that in light mode it starts at sky-700. The status bar sits
+ * on the hero's top at rest and on the fade in that colour once scrolled, and its white clock and icons
+ * read at 3.9:1 on the brand blue's sky-600 there; on sky-700, 5.0:1 at the clock's lowest pixel. Dark mode
+ * keeps the brand blue (white on sky-800, 7.3:1). The shared brand blue is unchanged; iOS's
+ * `ProfileTab.heroTop` is the twin.
+ */
+internal fun profileHeroColors(dark: Boolean, brand: Pair<Color, Color>): Pair<Color, Color> =
+    if (dark) brand else Sky700 to brand.second
+
 // The gradient runs edge to edge under the status bar and the row starts this far below it. iOS pads
 // its hero by the same 48 inside the safe area and paints the background up through the status bar.
 private val HeroContentTopPadding = 48.dp
@@ -315,7 +328,7 @@ private fun ProfileHero(
     BoxWithConstraints(
         modifier = Modifier
             .fillMaxWidth()
-            .background(brush = Brush.verticalGradient(BrandGradients.blue().asList()))
+            .background(brush = Brush.verticalGradient(profileHeroColors(isDark(), BrandGradients.blue()).asList()))
             .padding(
                 start = Spacing.ML,
                 end = Spacing.ML,

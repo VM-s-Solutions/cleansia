@@ -52,7 +52,7 @@ class StatusBarFadeBindingTest {
     @Test
     fun `the hero screens hand the fade their hero's colour and measured height`() {
         val heroes = mapOf(
-            "features/profile/ProfileTab.kt" to "BrandGradients.blue().first",
+            "features/profile/ProfileTab.kt" to "heroColors.first",
             "features/membership/SubscribePlusScreen.kt" to "Sky950",
         )
         for ((screen, tint) in heroes) {

@@ -1839,14 +1839,15 @@ the web, Android and iOS — the same four things hold:
   its name), and the row stays selectable.
   **The mark reads at a glance, and looks the same on every client** (owner remark 2026-10-04; iOS is
   the reference). The row takes a tint of the brand primary over its card (8 % in light mode, 16 % in
-  dark) and a 1.5 pt border of the primary at 60 %, in place of the neutral card and hairline. The line
+  dark) and a 1.5 pt border of the primary at 60 %, in place of the row's neutral look. The line
   is a badge straight under the service's name: a check in a circle, then the same words in semibold,
   never smaller than the row's secondary text, on the primary at 14 % (24 % in dark mode). Its corners
   (12 on the apps, 1em on the web) make it a capsule on one line and a rounded box when a long package
   name wraps it to two.
   The words are in the primary container's ink (sky-900 in light mode, sky-100 in dark), not in the
-  primary, which reads only about 3.1:1 on the badge; the ink reads 7.2:1 in light mode and 6.1:1 in
-  dark. A picked row keeps its picked look where its list has one, and still carries the badge. The add
+  primary, which reads only about 3.1:1 on the badge; the ink reads 7.2:1 in light mode, and in dark
+  mode 6.1:1 on the apps and 7.0:1 on the web. A picked row keeps its picked look where its list has
+  one, and still carries the badge. The add
   control is unchanged, so adding is still allowed after the question below. Until 2026-10-04 the line
   was a small grey caption after a box glyph (on the web, a 13px line in the accent colour), easy to
   read past. → [Mobile: a covered service](/mobile-app/patterns#package-covered),

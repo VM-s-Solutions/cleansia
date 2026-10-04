@@ -1,3 +1,4 @@
+import CleansiaCore
 import SwiftUI
 import XCTest
 @testable import CleansiaCustomer
@@ -21,9 +22,9 @@ final class ContentSafeAreaBindingTests: XCTestCase {
     func testTheScrollingHeroesPaintTheirOwnStatusBarStrip() throws {
         let profile = try compactSource("CleansiaCustomer/Sources/Features/Profile/ProfileTab.swift")
         XCTAssertTrue(profile.contains(
-            "VStack(spacing:0){BrandGradient.blue.colors[0].frame(height:heroBleed)"
-                + "LinearGradient(colors:BrandGradient.blue.colors,startPoint:.top,endPoint:.bottom)}"
-                + ".padding(.top,-heroBleed)"
+            "VStack(spacing:0){ProfileTab.heroTop(colorScheme).frame(height:heroBleed)"
+                + "LinearGradient(colors:[ProfileTab.heroTop(colorScheme),BrandGradient.blue.colors[1]],"
+                + "startPoint:.top,endPoint:.bottom)}.padding(.top,-heroBleed)"
         ))
         let plus = try compactSource("CleansiaCustomer/Sources/Features/Membership/SubscribePlusScreen.swift")
         XCTAssertTrue(plus.contains(
@@ -60,7 +61,7 @@ final class ContentSafeAreaBindingTests: XCTestCase {
         XCTAssertTrue(plus.contains("StatusBarFadeScrollView(heroTint:fadeHeroTint){"))
         XCTAssertTrue(plus.contains("onBack:onBack).statusBarFadeHero()"), "the Plus hero is not marked")
         let profile = try compactSource("CleansiaCustomer/Sources/Features/Profile/ProfileTab.swift")
-        XCTAssertTrue(profile.contains("StatusBarFadeScrollView(heroTint:BrandGradient.blue.colors[0]){"))
+        XCTAssertTrue(profile.contains("StatusBarFadeScrollView(heroTint:Self.heroTop(colorScheme)){"))
         XCTAssertTrue(
             profile.contains("onAvatarLoadSuccess:onAvatarLoadSuccess).statusBarFadeHero()"),
             "the Profile hero is not marked"
@@ -82,6 +83,30 @@ final class ContentSafeAreaBindingTests: XCTestCase {
             "privatevarfadeHeroTint:Color{if#available(iOS17,*){returnMembershipPalette.sky950}"
                 + "returncolorScheme==.dark?MembershipPalette.sky950:CleansiaColors.background}"
         ), "the Plus fade wears the navy under iOS 16's black light-mode clock")
+    }
+
+    /// The status bar sits on Profile's hero at rest and on the fade in the hero's top colour once scrolled,
+    /// so the clock must read on that colour (finding 2026-10-04: white on the brand blue's sky-600, 4.1:1).
+    /// From iOS 17 the clock is white over the hero in both schemes; before it, black in light mode, which
+    /// keeps the brand blue (a darker top would drop it to 3.5:1). The shared brand blue is not changed.
+    func testTheClockReadsOnProfilesHeroAtLeastAt4_5() throws {
+        let white = SIMD3<Double>(1, 1, 1)
+        for style in [UIUserInterfaceStyle.light, .dark] {
+            let top = rgb(ProfileTab.heroTop(style == .dark ? .dark : .light), style)
+            XCTAssertGreaterThanOrEqual(contrast(white, top), 4.5, "\(style) at rest (iOS 17+ in light)")
+            // Scrolled, the fade wears the top colour at 90 % over whatever passes under it — at worst the
+            // white avatar or stats card.
+            let fade = top * StatusBarFade.opacity + white * (1 - StatusBarFade.opacity)
+            XCTAssertGreaterThanOrEqual(contrast(white, fade), 4.5, "\(style) scrolled, over white content")
+        }
+        let brandTop = try XCTUnwrap(BrandGradient.blue.stops.first)
+        XCTAssertEqual(brandTop.light, 0x0284C7, "the shared brand blue changed")
+        XCTAssertGreaterThanOrEqual(contrast(SIMD3<Double>(0, 0, 0), hex(brandTop.light)), 4.5, "light, iOS 16")
+        XCTAssertGreaterThanOrEqual(contrast(white, hex(brandTop.dark)), 4.5, "dark, iOS 16")
+        let profile = try compactSource("CleansiaCustomer/Sources/Features/Profile/ProfileTab.swift")
+        XCTAssertTrue(profile.contains(
+            "if#available(iOS17,*),scheme==.light{returnheroTopLight}returnBrandGradient.blue.colors[0]"
+        ), "before iOS 17 the black light-mode clock would sit on the darker top")
     }
 
     /// The hero's colour covers the fade while the hero reaches below it and gives way to the page
@@ -229,6 +254,29 @@ final class ContentSafeAreaBindingTests: XCTestCase {
                 + "heroTint.opacity(StatusBarFade.heroShare(heroBottom:heroBottom,safeTop:top,height:height))}"
         ))
         XCTAssertTrue(fade.contains(".allowsHitTesting(false).accessibilityHidden(true)"))
+    }
+
+    private func rgb(_ color: Color, _ style: UIUserInterfaceStyle) -> SIMD3<Double> {
+        let resolved = UIColor(color).resolvedColor(with: UITraitCollection(userInterfaceStyle: style))
+        var red: CGFloat = 0
+        var green: CGFloat = 0
+        var blue: CGFloat = 0
+        var alpha: CGFloat = 0
+        resolved.getRed(&red, green: &green, blue: &blue, alpha: &alpha)
+        return SIMD3(Double(red), Double(green), Double(blue))
+    }
+
+    private func hex(_ value: UInt32) -> SIMD3<Double> {
+        SIMD3(Double((value >> 16) & 0xFF), Double((value >> 8) & 0xFF), Double(value & 0xFF)) / 255
+    }
+
+    private func contrast(_ first: SIMD3<Double>, _ second: SIMD3<Double>) -> Double {
+        func luminance(_ color: SIMD3<Double>) -> Double {
+            let linear = [color.x, color.y, color.z].map { $0 <= 0.04045 ? $0 / 12.92 : pow(($0 + 0.055) / 1.055, 2.4) }
+            return 0.2126 * linear[0] + 0.7152 * linear[1] + 0.0722 * linear[2]
+        }
+        let (lighter, darker) = (max(luminance(first), luminance(second)), min(luminance(first), luminance(second)))
+        return (lighter + 0.05) / (darker + 0.05)
     }
 
     /// The mask's alpha at `location`, linearly between its stops as the gradient draws it.

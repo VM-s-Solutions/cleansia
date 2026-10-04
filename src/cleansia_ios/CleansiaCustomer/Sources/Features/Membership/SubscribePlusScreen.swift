@@ -97,7 +97,8 @@ struct SubscribePlusScreen: View {
     }
 
     private func offer(_ plans: [MembershipPlan]) -> some View {
-        StatusBarFadeScrollView {
+        // The hero is navy, so the status-bar fade wears its top colour until it has scrolled past.
+        StatusBarFadeScrollView(heroTint: MembershipPalette.sky950) {
             VStack(alignment: .leading, spacing: Spacing.l) {
                 HeroBlock(
                     plans: plans,
@@ -107,6 +108,7 @@ struct SubscribePlusScreen: View {
                     onSelectPlan: { selectedPlanCode = $0 },
                     onBack: onBack
                 )
+                .statusBarFadeHero()
                 SocialProofTile()
                 PerksSection(plan: selectedPlan)
             }

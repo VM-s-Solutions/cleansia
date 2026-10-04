@@ -49,6 +49,23 @@ by the system well below the status bar, at a height the app cannot set. Checked
 (iOS 26.3), iPhone 16 Pro (iOS 18.6) and iPhone 14 Pro (iOS 16.4) simulators, light and dark, with
 Home scrolled so a carousel card sits under the status bar.
 
+### 2026-10-04 — one solid colour, the colour behind the status bar
+
+Owner remark 2026-10-04: on the Plus offer the fade was a white band over the navy hero, and once the
+hero had gone the 40 % wash let the content under the clock clash with it. The fade is now one solid
+colour with no material under it, held at 90 % (`StatusBarFade.opacity`) across the status bar and
+eased to clear over a 10pt tail through a nine-sample smoothstep; with Reduce Transparency on it is
+drawn at full strength. The colour is the one actually behind the status bar: the page colour on Home,
+and on the Plus offer and Profile the hero's top colour (`heroTint`, the hero marked
+`statusBarFadeHero()`) while the hero is under the status bar, cross-faded into the page colour as the
+hero's bottom passes up through the fade. The hero's reader writes state only within 80pt above and
+20pt below the status bar's edge, and only the fade reads it, so the content is not redrawn as it
+scrolls. Checked on the iPhone 17 (iOS 26.3), iPhone 16 (iOS 18.6) and iPhone 14 (iOS 16.4)
+simulators, light and dark: the Plus offer with the hero under the status bar and with the perks under
+it, Profile with its hero under the status bar and scrolled past it, and Home with a carousel card
+under it; the clock reads at 12:1 on the Plus hero's navy and 3.3:1 on Profile's light-mode blue, the
+contrast it already has over that hero at rest.
+
 The map backdrop remains full bleed. No navigation flow, generated API member, text or membership
 behavior changes. The decision follows SwiftUI's documented [safe-area expansion](https://developer.apple.com/documentation/swiftui/view/ignoressafearea(_:edges:)) and [clipping](https://developer.apple.com/documentation/swiftui/view/clipped(antialiased:)) behavior.
 

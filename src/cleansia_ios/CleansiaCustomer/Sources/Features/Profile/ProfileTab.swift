@@ -34,7 +34,8 @@ struct ProfileTab: View {
     var body: some View {
         ZStack {
             CleansiaColors.background.ignoresSafeArea()
-            StatusBarFadeScrollView {
+            // The hero is brand blue, so the status-bar fade wears its top colour until it has scrolled past.
+            StatusBarFadeScrollView(heroTint: BrandGradient.blue.colors[0]) {
                 VStack(spacing: Spacing.l) {
                     ProfileHeader(
                         user: profileVM.currentUser,
@@ -268,6 +269,7 @@ private struct ProfileHeader: View {
                 onAvatarLoadFailure: onAvatarLoadFailure,
                 onAvatarLoadSuccess: onAvatarLoadSuccess
             )
+            .statusBarFadeHero()
             ProfileStatsCard(
                 bookings: user?.totalBookings ?? 0,
                 saved: ProfileStatsFormat.saved(user?.totalSavings ?? 0, currencyCode: user?.savingsCurrencyCode),

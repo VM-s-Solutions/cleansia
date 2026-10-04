@@ -243,6 +243,14 @@ The admin app provides CRUD interfaces for platform-wide configuration:
 
 Per-employee pay overrides are managed on the Employee Detail page (see [User Management](./user-management)), not via Global Rates.
 
+**A field a form fixes is drawn disabled** (since 2026-10-04). On edit, an extra's slug, a membership
+plan's code, and a promo code with its two discount fields are shown and cannot be changed. Each form
+disables them on the form control. Until then the shared input ignored a control disabled that way, so
+those fields looked editable and accepted typing. The shared input is now drawn disabled whether it is
+disabled by its `[disabled]` binding or by its form control, in every web app, and nothing a form sends
+changed. A subscribed plan's locked benefits (the plan form, below) are disabled the same way, without
+the read-only binding they needed before.
+
 ### The market forms (ADR-0058, ADR-0059, ADR-0060)
 
 Three of those forms author what a customer's **market** shows:

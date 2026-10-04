@@ -1993,7 +1993,6 @@
       },
       "payment_gateway_unavailable": "Platby sú dočasne nedostupné. Skúste to prosím o chvíľu.",
       "cash_not_available": "Platba v hotovosti je možná len po prihlásení a pri objednávke, ktorú zvládne jeden upratovač.",
-      "cash_requires_saved_card": "Na platbu v hotovosti si najprv uložte kartu ako záruku — alebo zaplaťte kartou.",
       "cash_open_bookings_limit_reached": "Už máte najvyšší povolený počet nezaplatených objednávok v hotovosti. Zvoľte kartu alebo hotovosť znova, keď bude niektorá z nich zaplatená.",
       "cash_unpaid_receivable": "Máte u nás nezaplatenú sumu, napríklad stornovací poplatok. Zatiaľ zaplaťte kartou; v hotovosti budete môcť platiť znova, keď bude uhradená.",
       "country_operator_mismatch": "Túto adresu obsluhuje iná spoločnosť Cleansia, preto ju tu nie je možné objednať.",

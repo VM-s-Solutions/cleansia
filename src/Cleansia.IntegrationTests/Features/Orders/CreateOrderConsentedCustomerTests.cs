@@ -166,7 +166,6 @@ public class CreateOrderConsentedCustomerTests(PostgresContainerFixture fixture)
         customer.Id = CustomerUserId;
         customer.ConfirmEmail();
         context.Users.Add(customer);
-        context.SavedCards.Add(TestSavedCards.Usable(CustomerUserId, Czk));
 
         var terms = await LegalSeed.PlatformWideAsync(context, LegalDocumentType.TermsOfService);
         var privacy = await LegalSeed.PlatformWideAsync(context, LegalDocumentType.PrivacyPolicy);

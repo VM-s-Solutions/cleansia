@@ -145,7 +145,7 @@ public class CancellationAcceptanceSignalTests
         new(
             Cleansia.Tests.Common.OrderAccessDoubles.Over(_orderRepository, _session),
             _orderRepository.Object,
-            SavedCards.SavedCardDoubles.Guaranteed(), Mock.Of<IReceivableRepository>(),
+            Mock.Of<ISavedCardRepository>(), Mock.Of<IReceivableRepository>(),
             _creditAccountRepository.Object,
             _userRepository.Object,
             _session.Object,

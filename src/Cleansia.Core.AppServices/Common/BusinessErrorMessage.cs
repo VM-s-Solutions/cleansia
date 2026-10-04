@@ -117,8 +117,6 @@ public static class BusinessErrorMessage
     public const string OrderCashNotCollected = "order.cash_not_collected";
     /// <summary>Cash is only for a signed-in customer whose booking needs one cleaner; anything else pays by card.</summary>
     public const string OrderCashNotAvailable = "order.cash_not_available";
-    /// <summary>Cash needs a usable card saved in the booking's currency, the guarantee fees and unpaid cash may be charged to.</summary>
-    public const string OrderCashRequiresSavedCard = "order.cash_requires_saved_card";
     /// <summary>The customer already holds the most open unpaid cash bookings allowed; the next one pays by card.</summary>
     public const string OrderCashOpenBookingsLimitReached = "order.cash_open_bookings_limit_reached";
     /// <summary>The customer owes the company an open receivable (an unpaid fee or unpaid cash); cash waits until it is settled, card stays open.</summary>

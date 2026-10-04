@@ -115,7 +115,7 @@ public class OrderPaymentConfirmedHonestProducerTests
         var handler = new ConfirmRecurringOrder.Handler(
             OrderAccessDoubles.Over(_orderRepository, session),
             _orderRepository.Object,
-            SavedCards.SavedCardDoubles.Guaranteed(), Mock.Of<IReceivableRepository>(),
+            Mock.Of<ISavedCardRepository>(), Mock.Of<IReceivableRepository>(),
             new Mock<ICreditAccountRepository>().Object,
             new Mock<IUserRepository>().Object,
             session.Object,

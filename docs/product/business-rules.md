@@ -1864,7 +1864,9 @@ that service nor asks about it. The web, Android and iOS word it alike in all fi
 calls a package *balík* on every client and Czech *balíček* (owner ruling 2026-10-04); until then the
 apps' Slovak, and older strings on the web, said *balíček* too. One Slovak text still says *balíčky*:
 the customer terms of service in force. A text in force is never edited, so it changes only with its
-next version ([above](#legal-drafts)).
+next version ([above](#legal-drafts)), and only with one made for a real change of terms: a version for
+this word alone would bring the booking tick back for every customer (owner ruling 2026-10-04; filed as
+T-0802).
 
 ## Discounts, and the 12 % cap {#discount-cap}
 

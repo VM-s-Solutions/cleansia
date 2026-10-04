@@ -252,9 +252,10 @@ per-seat figure, raised by the level, the same share `CalculateOrderPay` writes 
 first (which also takes the residue cents). The partner web labels it *per spot*. Once the cleaner
 holds the seat, the job detail, *My jobs* and the dashboard quote that seat's contract reward from its
 frozen figures, which is what the pay row will say; the board stays at today's rates. **The estimate
-before the take leaves out the extras share** (since 2026-10-04): `OrderPayEstimator.Estimate` passes
-none, so a job with extras is quoted low until it is taken. The contract read before the take states
-the reward with the share.
+before the take includes the extras share** (since 2026-10-04): `OrderPayEstimator.Estimate` adds the
+company's `pay.extras_share_percent` of the extras booked, so the board, the job detail, the dashboard
+and the preview quote what the contract read before the take states. Until then it passed none, and a
+job with extras was quoted low until it was taken.
 
 ## Numbering is allocated, never derived
 

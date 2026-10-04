@@ -90,8 +90,8 @@ number (`validation.registration_number.not_registered`); when ARES does not ans
 through. Approval asks again and is stricter: the business must be live and a trade licence in force,
 and an ARES outage refuses it until the admin tries again. Nothing ARES answers is stored, and no name
 is matched. The partner web shows the refusal in five languages; the Android and iOS partner apps have
-no text for it yet and show the key. Local runs and the tests switch the lookup off (`Ares:Enabled`);
-the deployed DEV hosts run as `Production` and check ARES.
+no text for it yet and show the key. Local runs, the tests and the deployed DEV hosts switch the lookup
+off (`Ares:Enabled`); only prod checks ARES.
 → [The business register](/product/business-rules#business-register)
 
 ::: info Not part of the completeness check

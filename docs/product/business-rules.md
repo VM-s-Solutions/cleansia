@@ -1041,7 +1041,11 @@ they are prepaid (decision 18 (a)) → [Cash needs no card](#card-guarantee).
   → [Payment and fiscal](/flows/payment-and-fiscal#fee-receipt); and a paid cancellation fee pays the
   crew their share → [The crew's share of a collected fee](#fee-share). A lockout's crew is paid at the
   confirmation, whether its receivable is paid or not
-  → [A confirmed lockout pays the seat's reward](#lockout-pay).
+  → [A confirmed lockout pays the seat's reward](#lockout-pay). A paid lockout receivable asks for no
+  pay (since 2026-10-04). It used to ask for the crew's pay again under the key the confirmation had
+  used, which the outbox holds for at least 14 days, so the webhook's commit failed on that key's
+  unique index on every Stripe retry: the payment was never recorded and the customer stayed blocked
+  from cash.
 
 **Administrators** list the company's receivables — Orders → Receivables, filtered by status, kind,
 customer or order (`GET api/AdminReceivable/get-paged`, any administrator) — and write an open one off
@@ -1428,9 +1432,11 @@ register of economic subjects. Before the ruling, only its format (`^\d{8}$` for
   forgets the section still checks. The Development settings of the Partner, Partner Mobile and Admin
   hosts switch it off, as do the integration-test and host-test settings, so local runs and CI never
   call ares.gov.cz. Switched off, nothing is consulted and both the save and approval pass, so
-  `12345678`, which ARES does not hold, is approved on a local run. **The deployed DEV hosts check
-  ARES**: they run as `Production` ([Infrastructure](/architecture/infrastructure)), and nothing in
-  `deploy/` sets `Ares__Enabled`.
+  `12345678`, which ARES does not hold, is approved on a local run. **The deployed DEV hosts skip
+  ARES too** (since 2026-10-04, owner default). They run as `Production`
+  ([Infrastructure](/architecture/infrastructure)), so the Development settings never load there, and
+  `deploy/bicep/main.bicep` sets `Ares__Enabled` on every API host: `true` on prod, `false` elsewhere.
+  Until then DEV checked ARES, and a test cleaner with a made-up IČO could not be approved.
 - **What the cleaner and the administrator read.** The admin web has all four keys in its five locales,
   the partner web has `validation.registration_number.not_registered` in its five. **The Android and
   iOS partner apps have no text for that key yet**, so a refused save in the apps shows the raw key.
@@ -1635,10 +1641,11 @@ Six things that surprise people:
   the first seat's residue cents — and the partner web labels it *per spot*. On a job the cleaner
   holds, the job detail, *My jobs* and the dashboard (a completed job not yet paid included) quote
   their own seat's contract reward from its frozen figures; an open job is quoted at today's rates,
-  because an offer is made at them. **An open job's quote leaves out the extras share**:
-  `OrderPayEstimator.Estimate` passes none, so the board, the job detail, the dashboard estimate and the
-  preview understate a job with extras until it is taken. The contract the cleaner reads before the take
-  (`GetWorkContractPreview`) states the reward with it. My Pay carries the term as
+  because an offer is made at them. **An open job's quote includes the extras share** (since
+  2026-10-04): `OrderPayEstimator.Estimate` adds the company's `pay.extras_share_percent` of the extras
+  booked on the board, the job detail, the dashboard estimate and the preview, so each quotes the reward
+  the contract the cleaner reads before the take (`GetWorkContractPreview`) states. Until then it passed
+  none, and a job with extras was quoted low until it was taken. My Pay carries the term as
   `dirtinessPay` on each row and `totalDirtinessPay` on the period summary, and the partner web, Android
   and iOS show it in the pay breakdown. → [Pay and payouts](/flows/pay-and-payouts)
 
@@ -1720,9 +1727,9 @@ and nothing while the fee was owed.
   job. The order is not marked `EmployeePayCalculated`, because it was never completed.
 - **What the line is called.** The copy now names the job's reward: *Your reward for the job — the
   customer did not let you in* on the partner web, *Your reward for a job you could not get into* on
-  Android and iOS, *Job reward — customer lockout* in the admin console, in five languages each. **The
-  self-billed invoice PDF still prints the old line**, *Share of the fee for denied access — order*
-  (*Podíl na poplatku za znemožněný přístup — objednávka*).
+  Android and iOS, *Job reward — customer lockout* in the admin console, in five languages each, and
+  *Job reward, customer lockout — order* (*Odměna za zakázku, znemožněný vstup — objednávka*) on the
+  self-billed invoice PDF, which until the same day still printed *Share of the fee for denied access*.
 
 A one-seat job frozen at a base of 500 and extras of 100, at *Normal*, pays 600 when the cleaner is
 locked out, as it would on completion. The framework agreement in force still says a lockout pays half

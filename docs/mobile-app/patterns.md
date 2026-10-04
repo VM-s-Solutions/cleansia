@@ -499,6 +499,35 @@ control is unchanged.
   a covered and a picked row in both themes, from `LightColors` and `DarkColors` themselves, and pins
   the tints, the border and both lists. Unlike iOS, it has not yet been checked on a screen.
 
+**The row's price and secondary text clear 4.5:1 on every row** (finding 2026-10-04, since
+2026-10-05). Two texts on a service row read under it. The *from* price was the brand primary, sky-600
+in light mode, which reads 4.1:1 on the plain card and 3.6–3.7:1 on a covered or picked row. In dark
+mode the secondary text, a description or the per-room price, was the theme's slate-400, 4.2:1 on a
+covered or picked row. Both apps now draw them in two inks of their own, and the primary is unchanged,
+so the rows' fills, borders, ticks and badge stay the brand colour:
+
+| Text | Light mode | Dark mode |
+|---|---|---|
+| The *from* price | sky-700 `#0369A1`: 5.9:1 plain, 5.4:1 covered, 5.2–5.4:1 picked | the primary, sky-400, as before: 6.8:1 plain, 5.0:1 covered, 5.1:1 picked |
+| Secondary text, on a covered or picked row | the theme's slate-700, as before: 9:1 or more | slate-300 `#CBD5E1`: 7.2:1 or more |
+
+A plain row keeps the theme's secondary colour in both modes, 5.7:1 in dark.
+
+- **iOS**: `ServiceRow.fromPriceInk` and `ServiceRow.secondaryInk`, on the booking's services step.
+  The schedule form's rows show neither text. `InPackageMarkerLookTests` checks both inks at 4.5:1 or
+  more on the plain, covered and picked rows in both schemes, with the row tints composited as drawn,
+  and that the row draws its price, description and per-room price in them.
+- **Android**: `fromPriceInk` (`ServicesStep.kt`) and `rowSecondaryText` (`DoubleBooking.kt`), on the
+  booking's `ServiceRow` and on the description of the schedule form's `ServiceCard`. Measured on the
+  emulator, the light *from* price went from 4.10 to 5.93:1 on a plain row, 3.70 to 5.36:1 on a covered
+  one and 3.57 to 5.17:1 on a picked one. The dark secondary text went from 4.16 to 7.19:1 on a covered
+  row, and on a picked one from 4.94 to 8.54:1 (booking) and 6.32 to 10.91:1 (schedule form).
+  `DoubleBookingTest` measures both inks over every row a service list draws, in both themes, and pins
+  the three call sites.
+- **The web** already met it. Its row prices are sky-700 in light mode and sky-300 in dark, 5.36:1 or
+  more, and a covered row's description takes `--cl-muted-on-tint`
+  ([the services step](/customer-app/ordering-flow#step-0-services-packages)).
+
 ## Every map is quiet, with one Cleansia pin {#maps}
 
 All four map surfaces in both apps show a muted base map with **no points of interest**, and their only

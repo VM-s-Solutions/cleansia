@@ -1084,6 +1084,13 @@ need backfilling.
   too. They are now dark on the light blue in dark mode and white on the dark blue in light mode.
   Hovering over a picked one no longer turns its border pale. (Finding 2026-10-04.)
 
+- **Customer Android and iOS — a service's price and description are easier to read.** In booking's
+  list of services, the blue *from* price was faint in light mode, most of all on a row your package
+  covers or you have picked, and in dark mode the description and per-room price on those rows were
+  faint too. The price is now a deeper blue in light mode, and that text a lighter grey in dark mode,
+  on Android in the schedule form's services as well. The brand blue of the rows' fills, borders and
+  ticks is unchanged, and the web already read clearly. (Finding 2026-10-04.)
+
 - **Customer web — deleting your account is confirmed on a red button.** The question before your
   account is deleted offered the same blue confirm button as any harmless question. It now shows the
   red, destructive button that deleting a saved card or a schedule already shows, so the risk reads

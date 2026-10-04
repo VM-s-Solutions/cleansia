@@ -85,6 +85,40 @@ struct PropertyStepper: View {
     }
 }
 
+/// A home-size title with the size caption ("Up to 8 rooms and 4 bathrooms") at its trailing end, on
+/// its baseline, so the caps are stated beside the steppers' heading rather than under them (owner remark
+/// 2026-10-04). Where the two do not fit on one line — a 320pt phone, Ukrainian or Russian, large text —
+/// the caption drops to its own line under the title, leading-aligned; never below the steppers.
+/// VoiceOver reads the title, then the caption. The one-off booking's size card and the recurring form's
+/// size section both use it, so the fit rule is the same in both.
+struct SizeLimitTitleRow<Title: View>: View {
+    private let title: Title
+
+    init(@ViewBuilder title: () -> Title) {
+        self.title = title()
+    }
+
+    var body: some View {
+        ViewThatFits(in: .horizontal) {
+            HStack(alignment: .firstTextBaseline, spacing: Spacing.s) {
+                title
+                Spacer(minLength: 0)
+                caption
+            }
+            VStack(alignment: .leading, spacing: Spacing.hair) {
+                title
+                caption
+            }
+        }
+    }
+
+    private var caption: some View {
+        Text(L10n.Booking.sizeLimitCaption)
+            .font(CleansiaTypography.labelSmall)
+            .foregroundColor(CleansiaColors.onSurfaceVariant)
+    }
+}
+
 struct CategoryChip: View {
     let label: String
     let systemImage: String

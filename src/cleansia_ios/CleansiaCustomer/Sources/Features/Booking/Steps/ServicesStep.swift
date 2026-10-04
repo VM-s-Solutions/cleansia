@@ -210,18 +210,21 @@ private struct PropertyRow: View {
     let onRoomsChange: (Int) -> Void
     let onBathroomsChange: (Int) -> Void
 
-    /// The caption states the caps up front, so the plus greying at them reads as the limit it is. The
-    /// title sits above the steppers, not beside them: on a 320 pt phone the two uk steppers ("3 кімнати",
-    /// "2 ванні кімнати") need more than the row's width on their own, and beside them the title was
-    /// squeezed to nothing. A stepper that still does not fit wraps its label (Android's twin does both).
-    /// The two split the row equally, 8 pt apart as on the quick-size slide, from the title's leading
-    /// edge to the card's trailing one, and stay one height when a label wraps.
+    /// The caption states the caps up front, on the title's row (`SizeLimitTitleRow`), so the plus greying
+    /// at them reads as the limit it is. The title sits above the steppers, not beside them: on a 320 pt
+    /// phone the two uk steppers ("3 кімнати", "2 ванні кімнати") need more than the row's width on their
+    /// own, and beside them the title was squeezed to nothing. A stepper that still does not fit wraps its
+    /// label (Android's twin does both). The two split the row equally, 8 pt apart as on the quick-size
+    /// slide, from the title's leading edge to the card's trailing one, and stay one height when a label
+    /// wraps.
     var body: some View {
         VStack(alignment: .leading, spacing: Spacing.xxs) {
-            Text(L10n.Booking.yourHome)
-                .font(CleansiaTypography.labelLarge)
-                .foregroundColor(CleansiaColors.primary)
-                .padding(.bottom, Spacing.hair)
+            SizeLimitTitleRow {
+                Text(L10n.Booking.yourHome)
+                    .font(CleansiaTypography.labelLarge)
+                    .foregroundColor(CleansiaColors.primary)
+            }
+            .padding(.bottom, Spacing.hair)
             HStack(spacing: Spacing.xs) {
                 PropertyStepper(
                     name: L10n.Booking.yourHome,
@@ -243,9 +246,6 @@ private struct PropertyRow: View {
                 )
             }
             .fixedSize(horizontal: false, vertical: true)
-            Text(L10n.Booking.sizeLimitCaption)
-                .font(CleansiaTypography.labelSmall)
-                .foregroundColor(CleansiaColors.onSurfaceVariant)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(.horizontal, Spacing.s)

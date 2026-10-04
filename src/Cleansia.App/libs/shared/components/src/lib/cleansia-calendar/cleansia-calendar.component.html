@@ -11,6 +11,7 @@
     [minDate]="minDate()"
     [maxDate]="maxDate()"
     [appendTo]="appendTo()"
+    [disabled]="disabled()"
     [class]="'cleansia-calendar ' + (hasErrors() ? 'ng-invalid ng-dirty' : '')"
   />
   <label [for]="id()">{{ label() }}</label>
@@ -39,6 +40,7 @@
     [minDate]="minDate()"
     [maxDate]="maxDate()"
     [appendTo]="appendTo()"
+    [disabled]="disabled()"
     [class]="'full-width ' + (hasErrors() ? 'ng-invalid ng-dirty' : '')"
   />
 </div>

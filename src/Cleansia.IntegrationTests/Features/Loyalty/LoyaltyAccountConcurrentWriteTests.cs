@@ -242,6 +242,26 @@ public class LoyaltyAccountConcurrentWriteTests(PostgresContainerFixture fixture
         }
     }
 
+    /// <summary>
+    /// A customer with no account yet: their first order completes while an administrator grants them 50
+    /// points. Both miss the account; the grant waits for the completion to commit and lands on the row it
+    /// created, where it used to insert a second one and fail the completion on IX_LoyaltyAccounts_UserId.
+    /// </summary>
+    [Fact]
+    public async Task Two_First_Grants_For_A_Customer_With_No_Account_Land_On_One_Account()
+    {
+        await ResetAsync();
+        await SeedWithoutAccountAsync((OrderC, 1500m, 0));
+
+        await SerializedAsync(
+            service => service.GrantForCompletedOrderAsync(OrderC, CancellationToken.None),
+            service => service.GrantPointsManuallyAsync(
+                UserId, 50, LoyaltyEarnSource.ManualGrant, null, ActorId, "goodwill", "grant:first-race",
+                CancellationToken.None));
+
+        await AssertAccountAsync(points: 1550, completedBookings: 1, LoyaltyTier.SilverMopper);
+    }
+
     private static async Task EditGoldThresholdAsync(CleansiaDbContext ctx, int threshold)
     {
         var tierConfigs = new LoyaltyTierConfigRepository(ctx);
@@ -288,6 +308,43 @@ public class LoyaltyAccountConcurrentWriteTests(PostgresContainerFixture fixture
 
         release.SetResult();
         await losing.WaitAsync(Timeout);
+    }
+
+    // The first write waits at its tier read holding whatever it has locked. The second starts then, and the
+    // first is let go once the second is seen waiting on a lock or has finished without one.
+    private async Task SerializedAsync(Func<LoyaltyService, Task> first, Func<LoyaltyService, Task> second)
+    {
+        var read = NewSignal();
+        var release = NewSignal();
+
+        var firstWrite = Task.Run(() => WriteAsync(first, () => Arrive(read, release)));
+        await read.Task.WaitAsync(Timeout);
+
+        var secondWrite = Task.Run(() => WriteAsync(second, () => Task.CompletedTask));
+        try
+        {
+            await using var observer = new NpgsqlConnection(Fixture.GetConnectionString() + ";Pooling=false");
+            await observer.OpenAsync();
+            await using var waiting = new NpgsqlCommand("""
+                SELECT count(*) FROM pg_stat_activity
+                WHERE datname = current_database()
+                  AND wait_event_type = 'Lock'
+                  AND query LIKE '%FOR NO KEY UPDATE%'
+                """, observer);
+            var deadline = DateTime.UtcNow.Add(Timeout);
+            while (!secondWrite.IsCompleted
+                && (long)(await waiting.ExecuteScalarAsync())! == 0
+                && DateTime.UtcNow < deadline)
+            {
+                await Task.Delay(10);
+            }
+        }
+        finally
+        {
+            release.TrySetResult();
+        }
+
+        await Task.WhenAll(firstWrite, secondWrite).WaitAsync(Timeout);
     }
 
     // The service, then the commit the UnitOfWork pipeline runs after the handler.
@@ -400,7 +457,13 @@ public class LoyaltyAccountConcurrentWriteTests(PostgresContainerFixture fixture
         return userIds;
     }
 
-    private async Task SeedAsync(params (string OrderId, decimal TotalPrice, int Earned)[] orders)
+    private Task SeedAsync(params (string OrderId, decimal TotalPrice, int Earned)[] orders) =>
+        SeedAsync(withAccount: true, orders);
+
+    private Task SeedWithoutAccountAsync(params (string OrderId, decimal TotalPrice, int Earned)[] orders) =>
+        SeedAsync(withAccount: false, orders);
+
+    private async Task SeedAsync(bool withAccount, (string OrderId, decimal TotalPrice, int Earned)[] orders)
     {
         await using var ctx = NewContext();
         ctx.Languages.Add(Language.Create("en", "English"));
@@ -438,7 +501,11 @@ public class LoyaltyAccountConcurrentWriteTests(PostgresContainerFixture fixture
             }
         }
 
-        ctx.Add(account);
+        if (withAccount)
+        {
+            ctx.Add(account);
+        }
+
         await ctx.CommitAsync(CancellationToken.None);
     }
 

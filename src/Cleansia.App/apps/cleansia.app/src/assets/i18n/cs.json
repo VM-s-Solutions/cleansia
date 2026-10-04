@@ -1440,7 +1440,7 @@
       "tx": {
         "completed": "Úklid dokončen",
         "cancelled": "Objednávka zrušena",
-        "refunded": "Částečně vráceno",
+        "refunded": "Vráceno",
         "referral": "Bonus za doporučení",
         "manual": "Ruční úprava"
       }
@@ -2298,6 +2298,7 @@
     "cash_unchecked": "Nepodařilo se ověřit, zda lze tento rozvrh platit hotově. Uložte ho za chvíli znovu, nebo zvolte kartu.",
     "payment_placeholder": "Zvolte způsob platby",
     "error_payment": "Zvolte, jak se bude rozvrh platit.",
+    "terms_label": "Souhlas s podmínkami",
     "early_performance_label": "Žádost o zahájení ve lhůtě pro odstoupení",
     "error_early_performance": "Potvrďte, že chcete, aby úklidy začínaly ve lhůtě pro odstoupení.",
     "cash_change_title": "Tento rozvrh už nelze platit hotově",

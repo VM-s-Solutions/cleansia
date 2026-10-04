@@ -171,8 +171,11 @@ the texts in force, or there is no account, gate the confirmation on it, and sen
 box was shown and ticked. With the tick, a signed-in customer's two consent rows move to the texts in
 force, with the IP and device, and the booking row records the versions **actually accepted**
 ([ADR-0063](/decisions/adr-0063)); without it, the versions the customer's rows hold. **Creating a
-recurring schedule is gated the same way** (`CreateRecurringBooking`); Android's schedule form asks for
-the tick, the web and iOS schedule forms do not yet. **So is confirming a recurring occurrence**
+recurring schedule is gated the same way** (`CreateRecurringBooking`). The web, Android and iOS
+schedule forms ask for the tick on a new schedule by the same rule, never on an edit. The web and iOS
+forms have done so since 2026-10-04; until then a customer behind on the terms was refused there with
+no box to tick. On the web and iOS a refusal with `consent.terms_not_accepted` shows the box, unticked,
+instead of a generic error. **So is confirming a recurring occurrence**
 (`ConfirmRecurringOrder`, owner ruling 2026-10-03). It uses the same method as `CreateOrder`
 (`CustomerLegalConsents.AssertedOrCoverTextsInForceAsync`), applied to the market of the occurrence's
 address, and is refused with the same key. Until then it was not gated, on the reasoning that the
@@ -377,6 +380,20 @@ customer is asked to accept the version in force at the confirm.
   booking's reason until the box is ticked. Android disables the button the same way. iOS keeps the
   box hidden and the button disabled until the consents are read, so the box never flashes over an
   account that holds them.
+- **A refusal over the terms shows the box at once** on Android and iOS (since 2026-10-04). The
+  consent read is judged for the default market and the confirm for the occurrence's own, so an account
+  the read called covered can still be refused `consent.terms_not_accepted`. Until then the box stayed
+  hidden until the screen was reopened. The box now appears at once, unticked, and stays for the
+  screen's life, and the next confirm sends the tick. The apps do not read the consents again, because
+  that read would still say covered and hide the box. On iOS, a refresh triggered by a push reads the
+  consents as opening the screen does, so an occurrence that first arrives by a push no longer leaves
+  the confirm disabled with no box.
+- **An occurrence is not paid before it is confirmed** (since 2026-10-04). `CreatePaymentIntent`
+  refuses an occurrence with no `CustomerConfirmedAt` as `order.invalid_status_transition`, so a
+  hand-made call for a PaymentSheet intent cannot skip the confirm's terms check. A confirmed
+  occurrence, including a retry after a failed payment, pays as before. The apps confirm first and
+  then take the sheet's intent. The web confirm opens its own Checkout Session, and
+  `ResumeOrderCheckout` already refused every occurrence.
 - **An occurrence nobody confirms** is still retracted an hour before its slot, with no fee.
 
 **A schedule's weekday and time are the market's wall-clock time** (since 2026-09-28; they used to be

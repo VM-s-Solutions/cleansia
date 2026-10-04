@@ -1,5 +1,6 @@
 package cz.cleansia.customer.features.rewards
 
+import androidx.annotation.StringRes
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -75,7 +76,6 @@ import cz.cleansia.customer.core.loyalty.LoyaltyAccountDto
 import cz.cleansia.customer.core.loyalty.LoyaltyActivityItemDto
 import cz.cleansia.customer.core.loyalty.LoyaltyEarnSource
 import cz.cleansia.customer.core.loyalty.LoyaltyTier
-import cz.cleansia.customer.core.loyalty.LoyaltyTransactionType
 import cz.cleansia.customer.core.loyalty.TierInfoDto
 import cz.cleansia.customer.core.loyalty.TierPerkDto
 import cz.cleansia.customer.core.referral.ReferralAccountDto
@@ -943,8 +943,6 @@ private fun ActivityPreviewCard(
  */
 @Composable
 internal fun ActivityRow(item: LoyaltyActivityItemDto) {
-    val type = LoyaltyTransactionType.fromValue(item.type)
-    val source = LoyaltyEarnSource.fromValue(item.source)
     val isPositive = item.points >= 0
     val pointsColor = if (isPositive) SuccessText else MaterialTheme.colorScheme.error
 
@@ -954,7 +952,11 @@ internal fun ActivityRow(item: LoyaltyActivityItemDto) {
     ) {
         Column(modifier = Modifier.weight(1f)) {
             Text(
-                text = transactionDescription(type, source, item),
+                text = stringResource(
+                    transactionLabelRes(item.source),
+                    item.points,
+                    item.orderDisplayNumber?.takeIf { it.isNotBlank() } ?: "—",
+                ),
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurface,
             )
@@ -974,35 +976,17 @@ internal fun ActivityRow(item: LoyaltyActivityItemDto) {
 }
 
 /**
- * Pick the right description string for a transaction based on its type +
- * source. Order-linked transactions try to embed the display order number; if
- * absent (e.g. a manual grant or a referral) we fall back to a no-args variant.
+ * The line a transaction reads as, decided by its source alone: a refund clawback is a Revoke like a
+ * cancellation, so the type cannot tell them apart. Every line takes the signed points first and the
+ * order number second; the lines with no order ignore the second.
  */
-@Composable
-private fun transactionDescription(
-    type: LoyaltyTransactionType?,
-    source: LoyaltyEarnSource?,
-    item: LoyaltyActivityItemDto,
-): String {
-    val orderRef = item.orderDisplayNumber?.takeIf { it.isNotBlank() } ?: "—"
-    val signedPoints = item.points
-    return when (source) {
-        LoyaltyEarnSource.OrderCompleted -> stringResource(
-            R.string.loyalty_tx_earn_order, signedPoints, orderRef,
-        )
-        LoyaltyEarnSource.OrderCancelled -> stringResource(
-            R.string.loyalty_tx_revoke_order, signedPoints, orderRef,
-        )
-        LoyaltyEarnSource.Referral -> stringResource(
-            R.string.loyalty_tx_referral, signedPoints,
-        )
-        LoyaltyEarnSource.ManualGrant -> stringResource(
-            R.string.loyalty_tx_manual, signedPoints,
-        )
-        // Unknown source from a future backend addition — fall back to a
-        // best-effort line that at least surfaces the points delta.
-        null -> stringResource(R.string.loyalty_tx_manual, signedPoints)
-    }
+@StringRes
+internal fun transactionLabelRes(source: Int): Int = when (LoyaltyEarnSource.fromValue(source)) {
+    LoyaltyEarnSource.OrderCompleted -> R.string.loyalty_tx_earn_order
+    LoyaltyEarnSource.OrderCancelled -> R.string.loyalty_tx_revoke_order
+    LoyaltyEarnSource.OrderPartiallyRefunded -> R.string.loyalty_tx_refund_order
+    LoyaltyEarnSource.Referral -> R.string.loyalty_tx_referral
+    LoyaltyEarnSource.ManualGrant, LoyaltyEarnSource.ManualRevoke, null -> R.string.loyalty_tx_manual
 }
 
 /* ── Invite friends card (Loyalty Phase C) ── */

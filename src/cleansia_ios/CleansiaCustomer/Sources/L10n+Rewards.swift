@@ -87,6 +87,10 @@ extension L10n {
             format("loyalty_tx_revoke_order", points, order)
         }
 
+        static func txRefundOrder(_ points: Int, _ order: String) -> String {
+            format("loyalty_tx_refund_order", points, order)
+        }
+
         static func txReferral(_ points: Int) -> String {
             format("loyalty_tx_referral", points)
         }

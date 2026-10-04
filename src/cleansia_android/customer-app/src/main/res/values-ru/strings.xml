@@ -1295,6 +1295,7 @@
     <string name="loyalty_activity_view_all">Вся активность</string>
     <string name="loyalty_tx_earn_order">+%1$d б. — Уборка №%2$s</string>
     <string name="loyalty_tx_revoke_order">%1$d б. — Отменена №%2$s</string>
+    <string name="loyalty_tx_refund_order">%1$d б. — Возврат №%2$s</string>
     <string name="loyalty_tx_referral">+%1$d б. — Бонус за рекомендацию</string>
     <string name="loyalty_tx_manual">%1$d б. — Ручная корректировка</string>
     <string name="loyalty_empty_activity">Пока нет активности. Закажите первую уборку, чтобы начать зарабатывать.</string>

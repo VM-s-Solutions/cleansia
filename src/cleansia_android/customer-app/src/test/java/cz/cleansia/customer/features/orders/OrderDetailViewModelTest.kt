@@ -659,6 +659,52 @@ class OrderDetailViewModelTest {
         assertFalse(vm.canConfirmRecurring.value)
     }
 
+    /**
+     * The server judges the texts in force for the visit's own market, which the consents read cannot
+     * see, so its refusal is the answer: the tick is shown at once, unticked, and a later re-read of the
+     * order does not take it away again.
+     */
+    @Test
+    fun `a confirm refused over the terms shows the tick at once and the next confirm asserts it`() = runTest {
+        val vm = cashConfirmReady()
+        coEvery { repository.confirmRecurring(orderId, null) } returns
+            ApiResult.Error(ApiError.BadRequest("refused", errorKey = "consent.terms_not_accepted"))
+        advanceUntilIdle()
+        assertFalse(vm.termsAsked.value)
+
+        vm.confirmRecurring()
+        advanceUntilIdle()
+
+        assertTrue(vm.termsAsked.value)
+        assertFalse(vm.termsAccepted.value)
+        assertFalse(vm.canConfirmRecurring.value)
+        assertEquals(ActionState.Idle, vm.confirmRecurringState.value)
+
+        vm.refresh()
+        advanceUntilIdle()
+        assertTrue(vm.termsAsked.value)
+
+        vm.setTermsAccepted(true)
+        vm.confirmRecurring()
+        advanceUntilIdle()
+
+        coVerify(exactly = 1) { repository.confirmRecurring(orderId, true) }
+    }
+
+    @Test
+    fun `a confirm refused for another reason does not ask for the tick`() = runTest {
+        val vm = cashConfirmReady()
+        coEvery { repository.confirmRecurring(orderId, null) } returns
+            ApiResult.Error(ApiError.BadRequest("refused", errorKey = "order.not_found"))
+        advanceUntilIdle()
+
+        vm.confirmRecurring()
+        advanceUntilIdle()
+
+        assertFalse(vm.termsAsked.value)
+        assertTrue(vm.canConfirmRecurring.value)
+    }
+
     @Test
     fun `the consents are read once, and only for a visit awaiting its confirmation`() = runTest {
         coEvery { repository.getById(orderId) } returns ApiResult.Success(order(5))

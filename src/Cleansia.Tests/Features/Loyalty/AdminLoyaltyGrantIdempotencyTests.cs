@@ -41,6 +41,8 @@ public class AdminLoyaltyGrantIdempotencyTests
             _tierConfigRepository.Object,
             _transactionRepository.Object,
             _currencyRepository.Object,
+            Mock.Of<IRefundRepository>(),
+            Mock.Of<ICreditAccountRepository>(),
             _producer.Object,
             NullLogger<LoyaltyService>.Instance);
 

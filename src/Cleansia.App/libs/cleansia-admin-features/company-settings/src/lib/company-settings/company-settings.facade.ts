@@ -79,6 +79,11 @@ export class CompanySettingsFacade extends UnsubscribeControlDirective {
 
   beginEdit(setting: TenantSettingDto): void {
     if (!setting.key || this.busyKey()) return;
+    // The editor's busy flag disables its draft, and a save or reset that closes the editor in the
+    // same turn destroys it before the flag clears, so the draft would stay disabled.
+    this.intDraft?.enable();
+    this.boolDraft?.enable();
+    this.emailDraft?.enable();
     if (setting.valueType === TenantSettingValueType.Bool) {
       this.boolDraft?.setValue(parseBoolSetting(setting.effectiveValue));
     } else if (setting.valueType === TenantSettingValueType.Email) {

@@ -5,8 +5,11 @@ using Cleansia.Core.AppServices.Services.Interfaces;
 using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Internationalization;
 using Cleansia.Core.Domain.Orders;
+using Cleansia.Core.Domain.Payments;
 using Cleansia.Core.Domain.Repositories;
 using Cleansia.Core.Domain.Notifications;
+using Cleansia.Core.Domain.Outbox;
+using Cleansia.Core.Queue.Abstractions;
 using Cleansia.Infra.Common.Validations;
 using MockQueryable;
 using Moq;
@@ -32,6 +35,7 @@ public class AdminRefundOrderHandlerTests
     private readonly Mock<ILoyaltyService> _loyalty = new();
     private readonly Mock<IUserSessionProvider> _session = new();
     private readonly Mock<INotificationProducer> _producer = new();
+    private readonly Mock<IOutboxMessageRepository> _outbox = new();
 
     public AdminRefundOrderHandlerTests()
     {
@@ -48,6 +52,7 @@ public class AdminRefundOrderHandlerTests
             _loyalty.Object,
             _session.Object,
             _producer.Object,
+            _outbox.Object,
             _auditContext);
 
     private Order ArrangeOrder(
@@ -320,6 +325,115 @@ public class AdminRefundOrderHandlerTests
             OrderId, order.TotalPrice, $"refund:{OrderId}:admin:full", AdminUserId, It.IsAny<CancellationToken>()),
             Times.Once);
         _loyalty.VerifyNoOtherCalls();
+    }
+
+    /// <summary>
+    /// The full refund settled and flipped the order to Refunded, then its clawback failed. The refund's
+    /// notice was staged in the same unit of work as the clawback and was lost with it. Running the command
+    /// again is the way back to both: the seam answers with the settled refund and moves no money, the
+    /// clawback is handed the whole 1000 under the same key, and the notice the customer never got is queued.
+    /// </summary>
+    [Fact]
+    public async Task Admin_FullRefund_Rerun_After_Its_Refund_Settled_Runs_The_Clawback_And_Sends_The_Lost_Notice()
+    {
+        var order = ArrangeOrder(OrderStatus.Completed, paymentStatus: PaymentStatus.Refunded);
+        ArrangeOwnFullRefund(RefundStatus.Succeeded);
+        ArrangeSeamSuccess(amount: 1000m, resolvedToExisting: true);
+        ArrangeConsumedTotal(1000m);
+
+        var result = await CreateHandler().Handle(
+            new AdminRefundOrder.Command(OrderId), CancellationToken.None);
+
+        Assert.True(result.IsSuccess, result.Error?.Message);
+        Assert.Equal(PaymentStatus.Refunded, result.Value!.PaymentStatus);
+        _loyalty.Verify(l => l.RevokeForRefundAsync(
+            OrderId, order.TotalPrice, $"refund:{OrderId}:admin:full", AdminUserId, It.IsAny<CancellationToken>()),
+            Times.Once);
+        _producer.Verify(p => p.NotifyAsync(
+                OwnerUserId,
+                NotificationEventCatalog.OrderRefunded,
+                It.IsAny<Dictionary<string, string>>(),
+                It.IsAny<string?>(),
+                "refund-1",
+                It.IsAny<CancellationToken>()),
+            Times.Once);
+    }
+
+    /// <summary>
+    /// The first call's notice committed, so the re-run queues none: a second row on its key would fail the
+    /// commit on the outbox's unique index.
+    /// </summary>
+    [Fact]
+    public async Task Admin_FullRefund_Rerun_Whose_Notice_Is_Already_Queued_Sends_No_Second_One()
+    {
+        ArrangeOrder(OrderStatus.Completed, paymentStatus: PaymentStatus.Refunded);
+        ArrangeOwnFullRefund(RefundStatus.Succeeded);
+        ArrangeSeamSuccess(amount: 1000m, resolvedToExisting: true);
+        ArrangeConsumedTotal(1000m);
+        var pushKey = MessageKeys.Push(OwnerUserId, NotificationEventCatalog.OrderRefunded, "refund-1");
+        _outbox
+            .Setup(o => o.GetByQueueAndKeyAsync(QueueNames.NotificationsDispatch, pushKey, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(OutboxMessage.Create(QueueNames.NotificationsDispatch, pushKey, "{}", "tenant-1"));
+
+        var result = await CreateHandler().Handle(
+            new AdminRefundOrder.Command(OrderId), CancellationToken.None);
+
+        Assert.True(result.IsSuccess, result.Error?.Message);
+        _producer.Verify(p => p.NotifyAsync(
+                It.IsAny<string>(),
+                It.IsAny<string>(),
+                It.IsAny<Dictionary<string, string>>(),
+                It.IsAny<string?>(),
+                It.IsAny<string?>(),
+                It.IsAny<CancellationToken>()),
+            Times.Never);
+    }
+
+    /// <summary>
+    /// Only the order's own settled full refund reopens the command. An order refunded some other way —
+    /// partial refunds, a cancellation, a dispute — or whose full refund never settled stays refused, and
+    /// the seam is never asked.
+    /// </summary>
+    [Theory]
+    [InlineData(PaymentStatus.Refunded, null)]
+    [InlineData(PaymentStatus.PartiallyRefunded, null)]
+    [InlineData(PaymentStatus.PartiallyRefunded, RefundStatus.Pending)]
+    [InlineData(PaymentStatus.Refunded, RefundStatus.Failed)]
+    public async Task Admin_FullRefund_On_An_Order_Not_Paid_Without_Its_Own_Settled_Refund_Stays_Refused(
+        PaymentStatus paymentStatus, RefundStatus? ownFullRefund)
+    {
+        ArrangeOrder(OrderStatus.Completed, paymentStatus);
+        if (ownFullRefund is { } status)
+        {
+            ArrangeOwnFullRefund(status);
+        }
+
+        var result = await CreateHandler().Handle(
+            new AdminRefundOrder.Command(OrderId), CancellationToken.None);
+
+        Assert.True(result.IsFailure);
+        Assert.Equal(BusinessErrorMessage.RefundOrderNotRefundable, result.Error!.Message);
+        _refundService.Verify(
+            s => s.IssueRefundAsync(It.IsAny<RefundRequest>(), It.IsAny<CancellationToken>()), Times.Never);
+        _loyalty.VerifyNoOtherCalls();
+    }
+
+    private void ArrangeOwnFullRefund(RefundStatus status)
+    {
+        var refund = Refund.Create(
+            OrderId, $"refund:{OrderId}:admin:full", 1000m, "CZK", RefundReason.AdminDiscretion, RefundSource.AppRefund);
+        if (status == RefundStatus.Succeeded)
+        {
+            refund.MarkSucceeded(stripeRefundId: null, confirmedOnUtc: DateTimeOffset.UtcNow);
+        }
+        else if (status == RefundStatus.Failed)
+        {
+            refund.MarkFailed();
+        }
+
+        _refundRepository
+            .Setup(r => r.GetByRefundKeyAsync($"refund:{OrderId}:admin:full", It.IsAny<CancellationToken>()))
+            .ReturnsAsync(refund);
     }
 
     [Fact]

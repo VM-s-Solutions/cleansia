@@ -112,7 +112,7 @@ public sealed class AuditSensitiveSnapshotTests
 
         var handler = new AdminRefundOrder.Handler(
             orderRepository.Object, refundRepository.Object, refundService.Object, Mock.Of<ILoyaltyService>(),
-            AdminSession(), Mock.Of<INotificationProducer>(), auditContext);
+            AdminSession(), Mock.Of<INotificationProducer>(), Mock.Of<IOutboxMessageRepository>(), auditContext);
 
         var result = await handler.Handle(new AdminRefundOrder.Command("order-ref"), CancellationToken.None);
 

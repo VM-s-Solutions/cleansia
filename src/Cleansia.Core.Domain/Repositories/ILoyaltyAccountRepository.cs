@@ -31,4 +31,12 @@ public interface ILoyaltyAccountRepository : IRepository<LoyaltyAccount, string>
     /// grant under another company's claim finds the same row every time instead of colliding on it.
     /// </summary>
     Task<LoyaltyAccount> EnsureForUserAsync(string userId, CancellationToken cancellationToken);
+
+    /// <summary>
+    /// Runs <paramref name="afterSave"/> once this unit of work's write to <paramref name="account"/> is saved,
+    /// with the tier the row held just before it, which is a concurrent writer's when the write was replayed
+    /// onto its commit, or null when the save creates the row. It runs inside the save's transaction, so what
+    /// it stages commits with the write or not at all.
+    /// </summary>
+    void AfterSave(LoyaltyAccount account, Func<LoyaltyTier?, CancellationToken, Task> afterSave);
 }

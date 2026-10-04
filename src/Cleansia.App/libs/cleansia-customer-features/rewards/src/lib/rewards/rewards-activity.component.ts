@@ -18,6 +18,7 @@ import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import { localeFor } from '@cleansia/utils';
 import { SkeletonModule } from 'primeng/skeleton';
 import { RewardsFacade } from './rewards.facade';
+import { movementLabelKey } from './rewards.models';
 
 @Component({
   selector: 'cleansia-customer-rewards-activity',
@@ -110,22 +111,7 @@ export class RewardsActivityComponent implements OnInit {
    * line under it is the order.
    */
   txLabel(item: GetLoyaltyActivityActivityItem): { key: string; params: Record<string, unknown> } {
-    if (item.source === LoyaltyEarnSource.Referral) {
-      return { key: 'pages.rewards.tx.referral', params: {} };
-    }
-    if (item.source === LoyaltyEarnSource.ManualGrant) {
-      return { key: 'pages.rewards.tx.manual', params: {} };
-    }
-    if (
-      item.type === LoyaltyTransactionType.Revoke ||
-      item.source === LoyaltyEarnSource.OrderCancelled
-    ) {
-      return { key: 'pages.rewards.tx.cancelled', params: {} };
-    }
-    if (item.source === LoyaltyEarnSource.OrderPartiallyRefunded) {
-      return { key: 'pages.rewards.tx.refunded', params: {} };
-    }
-    return { key: 'pages.rewards.tx.completed', params: {} };
+    return { key: movementLabelKey(item.source), params: {} };
   }
 
   formatDate(date: Date | undefined | null): string {

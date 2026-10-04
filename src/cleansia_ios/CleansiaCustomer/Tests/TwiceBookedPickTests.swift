@@ -217,6 +217,7 @@ final class TwiceBookedPickTests: XCTestCase {
             orderClient: orderClient,
             quoteClient: FakeQuoteClient(),
             cleanersClient: FakeServingCleanersClient(),
+            consentClient: FakeConsentStatusClient(granted: [.termsOfService, .privacyPolicy]),
             snackbar: SnackbarController(),
             scheduler: TestScheduler.dispatch.eraseToAnyScheduler()
         )

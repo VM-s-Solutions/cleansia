@@ -3,6 +3,8 @@ import { provideRouter } from '@angular/router';
 import {
   AdminClient,
   GetTenantSettingsResponse,
+  ResetTenantSettingResponse,
+  SetTenantSettingResponse,
   TenantSettingDto,
   TenantSettingValueType,
 } from '@cleansia/admin-services';
@@ -14,6 +16,8 @@ import { CompanySettingsComponent } from './company-settings.component';
 describe('CompanySettingsComponent', () => {
   let fixture: ComponentFixture<CompanySettingsComponent>;
   let getAllMock: jest.Mock;
+  let setMock: jest.Mock;
+  let resetMock: jest.Mock;
 
   const staleDevices = TenantSettingDto.fromJS({
     key: 'retention.stale_devices.days',
@@ -46,14 +50,22 @@ describe('CompanySettingsComponent', () => {
 
   const text = () => (fixture.nativeElement as HTMLElement).textContent ?? '';
 
+  beforeEach(() => {
+    setMock = jest.fn();
+    resetMock = jest.fn();
+  });
+
   async function render(): Promise<void> {
     await TestBed.configureTestingModule({
       imports: [CompanySettingsComponent, TranslateModule.forRoot()],
       providers: [
         provideRouter([]),
-        { provide: AdminClient, useValue: { adminTenantSettingsClient: { getAll: getAllMock } } },
+        {
+          provide: AdminClient,
+          useValue: { adminTenantSettingsClient: { getAll: getAllMock, set: setMock, reset: resetMock } },
+        },
         { provide: SnackbarService, useValue: { showSuccessTranslated: jest.fn() } },
-        { provide: DialogService, useValue: { confirmTranslated: jest.fn() } },
+        { provide: DialogService, useValue: { confirmTranslated: jest.fn().mockReturnValue(of(true)) } },
         { provide: PermissionService, useValue: { hasPolicy: () => true } },
       ],
     }).compileComponents();
@@ -144,5 +156,59 @@ describe('CompanySettingsComponent', () => {
     expect(fixture.nativeElement.querySelector('cleansia-text-input input[type="email"]')).not.toBeNull();
     expect(fixture.nativeElement.querySelector('input[type="number"]')).toBeNull();
     expect(fixture.nativeElement.querySelector('cleansia-checkbox')).toBeNull();
+  });
+
+  it('opens the next edit typeable after a save that greyed the field out while it was in flight', async () => {
+    const saved = new Subject<SetTenantSettingResponse>();
+    setMock.mockReturnValue(saved);
+    getAllMock = jest.fn().mockReturnValue(of(GetTenantSettingsResponse.fromJS({ settings: [staleDevices] })));
+    await render();
+    const facade = fixture.componentInstance['facade'];
+    const numberInput = () =>
+      fixture.nativeElement.querySelector('cleansia-text-input input[type="number"]') as HTMLInputElement | null;
+
+    facade.beginEdit(staleDevices);
+    fixture.detectChanges();
+    facade.save();
+    fixture.detectChanges();
+    expect(numberInput()?.disabled).toBe(true);
+
+    saved.next(SetTenantSettingResponse.fromJS({ key: staleDevices.key, value: '120' }));
+    saved.complete();
+    fixture.detectChanges();
+    expect(numberInput()).toBeNull();
+
+    facade.beginEdit(staleDevices);
+    fixture.detectChanges();
+
+    expect(numberInput()?.disabled).toBe(false);
+    expect(fixture.componentInstance.intDraft.enabled).toBe(true);
+  });
+
+  it('opens the next edit tickable after a reset of the row being edited', async () => {
+    const reset = new Subject<ResetTenantSettingResponse>();
+    resetMock.mockReturnValue(reset);
+    getAllMock = jest.fn().mockReturnValue(of(GetTenantSettingsResponse.fromJS({ settings: [expiredCodes] })));
+    await render();
+    const facade = fixture.componentInstance['facade'];
+    const checkbox = () =>
+      fixture.nativeElement.querySelector('cleansia-checkbox input[type="checkbox"]') as HTMLInputElement | null;
+
+    facade.beginEdit(expiredCodes);
+    fixture.detectChanges();
+    facade.reset(expiredCodes);
+    fixture.detectChanges();
+    expect(checkbox()?.disabled).toBe(true);
+
+    reset.next(ResetTenantSettingResponse.fromJS({ key: expiredCodes.key, value: 'true' }));
+    reset.complete();
+    fixture.detectChanges();
+    expect(checkbox()).toBeNull();
+
+    facade.beginEdit(expiredCodes);
+    fixture.detectChanges();
+
+    expect(checkbox()?.disabled).toBe(false);
+    expect(fixture.componentInstance.boolDraft.enabled).toBe(true);
   });
 });

@@ -97,6 +97,8 @@ public class LoyaltyEarnDivisorTests
             _tierConfigRepository.Object,
             _transactionRepository.Object,
             _currencyRepository.Object,
+            Mock.Of<IRefundRepository>(),
+            Mock.Of<ICreditAccountRepository>(),
             _producer.Object,
             new CapturingLogger(_log));
 

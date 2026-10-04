@@ -205,6 +205,26 @@ The full refund and the dispute settlement call it as their **last** write. The 
 unit of work to collapse a duplicate on its key, so that flush commits the whole command, or discards
 a concurrent duplicate's work entirely. A refund that fails takes no points. Until the second ruling
 that day, a full refund and a dispute refund took back no points, against the customer terms' §11.
+
+**Money returned before completion is taken at completion** (since 2026-10-04). A refund or a dispute
+settlement before the order completes finds no earn and takes nothing, so the share is taken when the
+order completes. `GrantForCompletedOrderAsync` writes the earn on the whole price and, in the same unit
+of work, a refund row of `floor(earned × returned / TotalPrice)`. *Returned* is the succeeded card
+refunds, their credit legs and dispute settlements in credit. Later refunds take their share of the
+earn, capped by what the earn still holds after that row, so a refund before completion and one after
+take back what the same two refunds would take after it. A refund that settled before the earn was
+written and is replayed after it — the same line selection submitted again — takes nothing more, because
+completion already took its share.
+
+**A full refund whose clawback failed can be run again** (since 2026-10-04). The refund seam commits
+the settlement, and with it the order's `Refunded` status, before the clawback runs. Until then a
+failed clawback left the order refused by `AdminRefundOrder`'s paid-order check, with the points kept.
+The check now also passes an order whose own full refund (`refund:{orderId}:admin:full`) succeeded. The
+seam answers with that refund and moves nothing. The clawback, on the same key, takes what is left
+exactly once. The refund notice is queued when the outbox holds none on its key: the first call staged it
+in the unit of work its clawback commits, so a failed clawback lost the notice too. A notice that did
+commit is not queued again, because a second row on its key would fail the commit. Any other refunded
+or unpaid order is still `refund.order_not_refundable`.
 → [Business rules — money constants](/product/business-rules#money-constants)
 
 ## Dispute

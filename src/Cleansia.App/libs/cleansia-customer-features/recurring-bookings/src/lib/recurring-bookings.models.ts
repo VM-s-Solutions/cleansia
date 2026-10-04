@@ -60,6 +60,8 @@ export interface RecurringWizardFormData {
   preferredEmployeeId: string | null;
   /** One request covers every cleaning the schedule books; asked only when it is set up. */
   earlyPerformanceRequested: boolean;
+  /** Read only while the facade asks for the tick. */
+  termsAccepted: boolean;
 }
 
 export const RECURRING_WIZARD_INITIAL_DATA: RecurringWizardFormData = {
@@ -77,6 +79,7 @@ export const RECURRING_WIZARD_INITIAL_DATA: RecurringWizardFormData = {
   endsOn: null,
   preferredEmployeeId: null,
   earlyPerformanceRequested: false,
+  termsAccepted: false,
 };
 
 /**
@@ -323,6 +326,7 @@ export type MissingField =
   | 'address'
   | 'startsOn'
   | 'payment'
+  | 'terms'
   | 'earlyPerformance';
 
 /**
@@ -333,7 +337,11 @@ export type MissingField =
  * which field to look at — the previous behaviour was a dead button and a page
  * that appeared to ignore the click.
  */
-export function missingFields(data: RecurringWizardFormData, newSchedule = false): MissingField[] {
+export function missingFields(
+  data: RecurringWizardFormData,
+  newSchedule = false,
+  termsAsked = false,
+): MissingField[] {
   const missing: MissingField[] = [];
   if (data.selectedServiceIds.length === 0 && data.selectedPackageIds.length === 0) {
     missing.push('services');
@@ -343,6 +351,7 @@ export function missingFields(data: RecurringWizardFormData, newSchedule = false
   if (!data.savedAddressId) missing.push('address');
   if (!data.startsOn) missing.push('startsOn');
   if (data.paymentType === null) missing.push('payment');
+  if (termsAsked && !data.termsAccepted) missing.push('terms');
   if (newSchedule && !data.earlyPerformanceRequested) missing.push('earlyPerformance');
   return missing;
 }

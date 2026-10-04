@@ -55,6 +55,7 @@ class FakeRecurringBookingsFacade {
   submitAttempted = signal(false);
   submitting = signal(false);
   missing = signal<MissingField[]>([]);
+  termsAsked = signal(false);
   formPrice = signal(null);
   cardCaptureVisible = signal(false);
   cardCaptureConsent = signal(false);
@@ -66,6 +67,7 @@ class FakeRecurringBookingsFacade {
   initialize = jest.fn();
   ensureAddresses = jest.fn();
   loadServingCleaners = jest.fn();
+  loadConsentState = jest.fn();
   selectPreferredCleaner = jest.fn();
   quoteForm = jest.fn();
   prefill = jest.fn();
@@ -629,5 +631,95 @@ describe('CreateRecurringWizardComponent — the request to start within the wit
     expect(fixture.componentInstance.missingLabels()).toBe(
       'recurring_booking.early_performance_label',
     );
+  });
+});
+
+describe('CreateRecurringWizardComponent — the terms tick', () => {
+  let fixture: ComponentFixture<CreateRecurringWizardComponent>;
+  let facade: FakeRecurringBookingsFacade;
+  let el: HTMLElement;
+
+  async function open(scheduleId: string | null): Promise<void> {
+    facade = new FakeRecurringBookingsFacade();
+    await TestBed.configureTestingModule({
+      imports: [CreateRecurringWizardComponent, TranslateModule.forRoot()],
+      providers: [
+        provideRouter([]),
+        provideNoopAnimations(),
+        {
+          provide: ActivatedRoute,
+          useValue: {
+            snapshot: {
+              paramMap: { get: (key: string) => (key === 'id' ? scheduleId : null) },
+              queryParamMap: { get: () => null },
+            },
+          },
+        },
+      ],
+    })
+      .overrideComponent(CreateRecurringWizardComponent, {
+        set: {
+          providers: [
+            { provide: RecurringBookingsFacade, useValue: facade },
+            ConfirmationService,
+          ],
+        },
+      })
+      .compileComponents();
+    fixture = TestBed.createComponent(CreateRecurringWizardComponent);
+    el = fixture.nativeElement;
+    fixture.detectChanges();
+  }
+
+  const tick = () => el.querySelector<HTMLElement>('[data-spec-terms]');
+
+  it('reads the consents on record when a schedule is created', async () => {
+    await open(null);
+
+    expect(facade.loadConsentState).toHaveBeenCalledTimes(1);
+  });
+
+  it('reads no consents when a schedule is edited', async () => {
+    await open('t1');
+
+    expect(facade.loadConsentState).not.toHaveBeenCalled();
+  });
+
+  it('is shown only while the facade asks for it, in the booking wording', async () => {
+    await open(null);
+    expect(tick()).toBeNull();
+
+    facade.termsAsked.set(true);
+    fixture.detectChanges();
+
+    expect(tick()?.textContent).toContain('pages.order.accept_terms');
+  });
+
+  it('hands the answer to the facade', async () => {
+    await open(null);
+    facade.termsAsked.set(true);
+    fixture.detectChanges();
+
+    fixture.debugElement
+      .query(By.css('[data-spec-terms] p-checkbox'))
+      .triggerEventHandler('ngModelChange', true);
+
+    expect(facade.updateFormData).toHaveBeenCalledWith({ termsAccepted: true });
+  });
+
+  it('names the missing tick only once save has been pressed', async () => {
+    await open(null);
+    facade.termsAsked.set(true);
+    facade.missing.set(['terms']);
+    fixture.detectChanges();
+    expect(el.querySelector('[data-spec-terms-error]')).toBeNull();
+
+    facade.submitAttempted.set(true);
+    fixture.detectChanges();
+
+    expect(el.querySelector('[data-spec-terms-error]')?.textContent).toContain(
+      'pages.order.missing.terms',
+    );
+    expect(fixture.componentInstance.missingLabels()).toBe('recurring_booking.terms_label');
   });
 });

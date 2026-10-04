@@ -186,4 +186,16 @@ describe('missingFields', () => {
   it('does not ask an edit, whose schedule recorded the request when it was set up', () => {
     expect(missingFields(complete, false)).toEqual([]);
   });
+
+  it('holds a schedule whose terms tick is asked until it is ticked, in the order the form asks', () => {
+    expect(RECURRING_WIZARD_INITIAL_DATA.termsAccepted).toBe(false);
+    expect(missingFields(complete, true, true)).toEqual(['terms', 'earlyPerformance']);
+    expect(
+      missingFields({ ...complete, termsAccepted: true, earlyPerformanceRequested: true }, true, true),
+    ).toEqual([]);
+  });
+
+  it('does not hold on a tick it does not ask for, however it was left', () => {
+    expect(missingFields({ ...complete, earlyPerformanceRequested: true }, true, false)).toEqual([]);
+  });
 });

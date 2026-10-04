@@ -5,6 +5,7 @@ import {
   AddSavedAddressCommand,
   CardCaptureFacade,
   chosenPackagesByService,
+  ConsentType,
   CreateRecurringBookingCommand,
   CustomerClient,
   DeleteRecurringBookingCommand,
@@ -22,6 +23,7 @@ import {
   SetRecurringBookingActiveCommand,
   toPreferredCleanerOptions,
   UpdateRecurringBookingCommand,
+  UserConsentDto,
 } from '@cleansia/customer-services';
 import { CashEligibility, cashIsRefused, resolveCashEligibility } from '@cleansia/models';
 import {
@@ -43,7 +45,7 @@ import {
 import { Store } from '@ngrx/store';
 import { TranslateService } from '@ngx-translate/core';
 import { toObservable, toSignal } from '@angular/core/rxjs-interop';
-import { firstValueFrom, takeUntil } from 'rxjs';
+import { catchError, firstValueFrom, of, takeUntil } from 'rxjs';
 import {
   PricedSelection,
   RecurringPrefillParams,
@@ -199,6 +201,14 @@ export class RecurringBookingsFacade extends UnsubscribeControlDirective {
   /** Drives the address field's own spinner — see `ensureAddresses`. */
   readonly addressesLoading = signal(false);
 
+  // ─── The terms tick ────────────────────────────────────────────────
+  /**
+   * Decided as the booking wizard decides its tick: both consents granted, not withdrawn, and each an
+   * acceptance of the text in force. Unread or unreadable is "ask"; an edit is never asked.
+   */
+  private readonly alreadyConsented = signal(false);
+  readonly termsAsked = computed(() => this.editingId() === null && !this.alreadyConsented());
+
   readonly cardCaptureVisible = this.cardCapture.visible;
   readonly cardCaptureConsent = this.cardCapture.consentAccepted;
   readonly cardCaptureStarting = this.cardCapture.starting;
@@ -303,7 +313,9 @@ export class RecurringBookingsFacade extends UnsubscribeControlDirective {
   readonly submitAttempted = signal(false);
 
   /** Which required fields are still empty, in the order the form asks them. */
-  readonly missing = computed(() => missingFields(this.formData(), this.editingId() === null));
+  readonly missing = computed(() =>
+    missingFields(this.formData(), this.editingId() === null, this.termsAsked()),
+  );
 
   constructor() {
     super();
@@ -618,6 +630,25 @@ export class RecurringBookingsFacade extends UnsubscribeControlDirective {
     this.updateFormData({ preferredEmployeeId: employeeId });
   }
 
+  loadConsentState(): void {
+    this.customerClient.gdprClient
+      .consentsGet()
+      .pipe(
+        takeUntil(this.destroyed$),
+        catchError(() => of([] as UserConsentDto[])),
+      )
+      .subscribe((consents) => {
+        const onRecord = consents ?? [];
+        const granted = (type: ConsentType) =>
+          onRecord.some(
+            (c) => c.consentType === type && c.isGranted && !c.withdrawnAt && c.coversCurrentVersion,
+          );
+        this.alreadyConsented.set(
+          granted(ConsentType.TermsOfService) && granted(ConsentType.PrivacyPolicy),
+        );
+      });
+  }
+
   /** Look one template up in the loaded list — the edit screen's entry point. */
   findTemplate(templateId: string): RecurringBookingTemplateDto | null {
     return this.templates().find((t) => t.id === templateId) ?? null;
@@ -646,6 +677,7 @@ export class RecurringBookingsFacade extends UnsubscribeControlDirective {
       endsOn: template.endsOn ? new Date(template.endsOn) : null,
       preferredEmployeeId: template.preferredEmployeeId ?? null,
       earlyPerformanceRequested: false,
+      termsAccepted: false,
     });
     this.preferredCleanerRefused.set(false);
     this.activeStep.set(1);
@@ -974,6 +1006,12 @@ export class RecurringBookingsFacade extends UnsubscribeControlDirective {
         this.preferredCleanerRefused.set(true);
         return false;
       }
+      // The consents read covered the default market's texts; the server checks the address's.
+      if (code === 'consent.terms_not_accepted') {
+        this.alreadyConsented.set(false);
+        this.updateFormData({ termsAccepted: false });
+        return false;
+      }
       this.snackbar.showError(
         this.translate.instant(
           editingId ? 'recurring_booking.update_failed' : 'recurring_booking.create_failed',
@@ -1017,6 +1055,7 @@ export class RecurringBookingsFacade extends UnsubscribeControlDirective {
     command.endsOn = undefined;
     command.preferredEmployeeId = preferredEmployeeId;
     command.dirtinessLevel = dirtinessLevel;
+    command.termsAccepted = this.termsAsked() && d.termsAccepted ? true : undefined;
     command.earlyPerformanceRequested = d.earlyPerformanceRequested ? true : undefined;
     return firstValueFrom(this.client.create(command).pipe(takeUntil(this.destroyed$)));
   }

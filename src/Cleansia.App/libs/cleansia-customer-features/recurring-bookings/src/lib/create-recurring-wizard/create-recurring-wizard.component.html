@@ -421,6 +421,26 @@
           </section>
         }
 
+        @if (facade.termsAsked()) {
+          <section class="cl-rec__section">
+            <label class="cl-wiz__consent" data-spec-terms>
+              <p-checkbox
+                [ngModel]="facade.formData().termsAccepted"
+                (ngModelChange)="facade.updateFormData({ termsAccepted: $event })"
+                [binary]="true"
+                inputId="recurring-terms"
+              />
+              <span>{{ 'pages.order.accept_terms' | translate }}</span>
+            </label>
+            @if (showError('terms')) {
+              <p class="cl-rec__error" data-spec-terms-error>
+                <i class="pi pi-exclamation-circle" aria-hidden="true"></i>
+                {{ 'pages.order.missing.terms' | translate }}
+              </p>
+            }
+          </section>
+        }
+
         @if (!isEditing()) {
           <section class="cl-rec__section">
             <label class="cl-wiz__consent" data-spec-early-performance>

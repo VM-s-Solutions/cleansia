@@ -1312,6 +1312,7 @@
     <string name="loyalty_activity_view_all">See all activity</string>
     <string name="loyalty_tx_earn_order">+%1$d pts — Cleaning #%2$s</string>
     <string name="loyalty_tx_revoke_order">%1$d pts — Cancelled #%2$s</string>
+    <string name="loyalty_tx_refund_order">%1$d pts — Refunded #%2$s</string>
     <string name="loyalty_tx_referral">+%1$d pts — Referral bonus</string>
     <string name="loyalty_tx_manual">%1$d pts — Manual adjustment</string>
     <string name="loyalty_empty_activity">No activity yet. Book your first cleaning to start earning.</string>

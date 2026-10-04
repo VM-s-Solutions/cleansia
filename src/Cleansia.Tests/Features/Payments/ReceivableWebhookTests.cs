@@ -23,9 +23,10 @@ namespace Cleansia.Tests.Features.Payments;
 /// <summary>
 /// What a customer owes on an order is settled through the webhook (owner ruling 2026-09-28, decision 18):
 /// a paid pay link or a successful off-session charge marks the receivable paid under its own company and
-/// asks for its fee receipt, and never touches the order's sale; a second payment of a receivable already
-/// paid is refunded in full; a declined off-session charge, or one the bank wants authenticated, e-mails the
-/// customer a pay link for the amount and records it; a receivable no longer open is left alone.
+/// asks for its fee receipt, and never touches the order's sale; a paid lockout asks for no crew pay, which
+/// its confirmation already asked for; a second payment of a receivable already paid is refunded in full; a
+/// declined off-session charge, or one the bank wants authenticated, e-mails the customer a pay link for the
+/// amount and records it; a receivable no longer open is left alone.
 /// </summary>
 public class ReceivableWebhookTests
 {
@@ -137,6 +138,34 @@ public class ReceivableWebhookTests
             It.Is<QueueEnvelope<CalculateOrderPayMessage>>(e => e.TenantId == TenantId
                 && e.Payload.OrderId == order.Id && e.Payload.EmployeeId == "emp-owed-share"),
             MessageKeys.Pay(order.Id, "emp-owed-share")), Times.Once);
+    }
+
+    [Fact]
+    public async Task A_Paid_Lockout_Receivable_Asks_For_No_Crew_Pay_The_Confirmation_Already_Asked_For()
+    {
+        var order = _receivable.Order!;
+        order.TenantId = TenantId;
+        order.AddAssignedEmployee(OrderEmployee.Create(
+            order, ValidatorTestHelpers.BuildEmployee("emp-locked-out", ContractStatus.Approved)));
+        var lockout = Receivable.ForLockout(order, 1500m);
+        lockout.TenantId = TenantId;
+        typeof(Receivable).GetProperty(nameof(Receivable.Order))!.SetValue(lockout, order);
+        _receivables
+            .Setup(r => r.GetByIdIgnoringTenantAsync(lockout.Id, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(lockout);
+
+        var result = await DeliverAsync(PayLinkCompleted("evt_link_lockout", lockout.Id, "pi_lockout"));
+
+        Assert.True(result.IsSuccess);
+        Assert.True(lockout.IsPaid);
+        _pending.Verify(p => p.Enqueue(
+            QueueNames.GenerateReceipt,
+            It.IsAny<QueueEnvelope<GenerateReceiptMessage>>(),
+            MessageKeys.FeeReceipt(lockout.Id)), Times.Once);
+        _pending.Verify(p => p.Enqueue(
+            QueueNames.CalculateOrderPay,
+            It.IsAny<QueueEnvelope<CalculateOrderPayMessage>>(),
+            It.IsAny<string>()), Times.Never);
     }
 
     [Fact]

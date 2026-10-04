@@ -581,11 +581,12 @@ public class HandlePaymentNotification
         private const string ReceivableMetadataKey = "ReceivableId";
 
         /// <summary>
-        /// The receivable is paid, and its fee receipt and, on a late-cancellation or lockout fee, the crew's
-        /// share of it are asked for. A second payment of one already paid is
-        /// money taken twice for one debt, and it is refunded in full, keyed on its own PaymentIntent so a
-        /// redelivery replays the same refund. The refund is made here, so an unreachable Stripe throws, the
-        /// processed-event stamp rolls back and Stripe redelivers.
+        /// The receivable is paid, and its fee receipt and, on a late-cancellation fee, the crew's share of it
+        /// are asked for. A lockout's crew pay was asked for at the confirmation under the same outbox key, so
+        /// asking again here would fail this commit on the key's unique index. A second payment of one already
+        /// paid is money taken twice for one debt, and it is refunded in full, keyed on its own PaymentIntent
+        /// so a redelivery replays the same refund. The refund is made here, so an unreachable Stripe throws,
+        /// the processed-event stamp rolls back and Stripe redelivers.
         /// </summary>
         private async Task<BusinessResult> SettleReceivable(
             string receivableId, string? paymentIntentId, string language, CancellationToken cancellationToken)
@@ -620,7 +621,7 @@ public class HandlePaymentNotification
             }
 
             receivable.MarkPaid(paymentIntentId, DateTimeOffset.UtcNow);
-            if (receivable.Kind is ReceivableKind.CashCancellationFee or ReceivableKind.Lockout)
+            if (receivable.Kind == ReceivableKind.CashCancellationFee)
             {
                 CalculateOrderPay.EnqueueForCrew(receivable.Order!, pending);
             }

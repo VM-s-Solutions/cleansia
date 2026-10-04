@@ -1399,7 +1399,7 @@
     <string name="receivable_kind_top_up">Approved top-up</string>
     <string name="receivable_kind_other">Amount due</string>
     <string name="payments_card_title">Saved card</string>
-    <string name="payments_card_intro">Saved to make paying by card quicker. It is charged only when you pay with it, and you can remove it at any time.</string>
+    <string name="payments_card_intro">The card saved to your account. It is never charged unless you pay with it, and you can remove it at any time.</string>
     <string name="payments_card_label">%1$s •••• %2$s</string>
     <string name="payments_card_expires">Expires %1$02d/%2$02d · %3$s</string>
     <string name="payments_card_empty">No card saved. You can save one the next time you pay by card.</string>

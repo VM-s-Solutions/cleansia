@@ -1379,7 +1379,7 @@
     <string name="receivable_kind_top_up">Одобренная доплата</string>
     <string name="receivable_kind_other">Сумма к оплате</string>
     <string name="payments_card_title">Сохранённая карта</string>
-    <string name="payments_card_intro">Сохранена для более быстрой оплаты картой. Деньги с неё списываются, только когда вы сами ею платите, и её можно удалить в любой момент.</string>
+    <string name="payments_card_intro">Карта, сохранённая в вашем аккаунте. Деньги с неё списываются, только когда вы сами ею платите, и её можно удалить в любой момент.</string>
     <string name="payments_card_label">%1$s •••• %2$s</string>
     <string name="payments_card_expires">Действует до %1$02d/%2$02d · %3$s</string>
     <string name="payments_card_empty">Карта не сохранена. Её можно сохранить при следующей оплате картой.</string>

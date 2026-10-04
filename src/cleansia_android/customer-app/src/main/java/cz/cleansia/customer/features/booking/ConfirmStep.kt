@@ -510,24 +510,24 @@ fun ConfirmStep(
         Spacer(Modifier.height(16.dp))
 
         // ── Trust badges ──
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .clip(RoundedCornerShape(14.dp))
-                .background(MaterialTheme.colorScheme.surface)
-                .border(1.dp, MaterialTheme.colorScheme.outlineVariant, RoundedCornerShape(14.dp))
-                .padding(14.dp)
-                .height(androidx.compose.foundation.layout.IntrinsicSize.Max),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(12.dp),
-        ) {
-            TrustBadge(
-                Icons.Outlined.Shield,
-                insuranceCoverage?.let { coverage ->
-                    stringResource(R.string.booking_trust_insured, formatOrderPrice(coverage.amount, coverage.currencyCode))
-                } ?: stringResource(R.string.booking_trust_insured_no_figure),
-                Modifier.weight(1f).fillMaxHeight(),
-            )
+        insuranceCoverage?.let { coverage ->
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(14.dp))
+                    .background(MaterialTheme.colorScheme.surface)
+                    .border(1.dp, MaterialTheme.colorScheme.outlineVariant, RoundedCornerShape(14.dp))
+                    .padding(14.dp)
+                    .height(androidx.compose.foundation.layout.IntrinsicSize.Max),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
+            ) {
+                TrustBadge(
+                    Icons.Outlined.Shield,
+                    stringResource(R.string.booking_trust_insured, formatOrderPrice(coverage.amount, coverage.currencyCode)),
+                    Modifier.weight(1f).fillMaxHeight(),
+                )
+            }
         }
 
         Spacer(Modifier.height(32.dp))

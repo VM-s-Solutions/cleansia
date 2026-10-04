@@ -168,7 +168,6 @@
     <string name="home_hero2_title">Hĺbkové upratovanie + okná v jednom</string>
 
     <!-- Home — trust strip -->
-    <string name="home_trust_insured">Poistené</string>
     <string name="home_trust_same_day">Dnes</string>
 
     <!-- Home — popular packages -->
@@ -550,7 +549,6 @@
     <string name="help_faq_a2">Pri rezervácii pridajte pokyny ku vstupu (napr. kód pri dverách, miesto kľúča). Upratovačka čaká 15 minút po začiatku upratovania a skúsi vám zavolať. Ak sa ani potom nedostane dnu, rezervácia sa zruší a účtuje sa plná cena.</string>
     <string name="help_faq_q3">Sú upratovačky poistené?</string>
     <string name="help_faq_a3">Áno. Všetky upratovačky Cleansia sú poistené až do výšky %1$s na rezerváciu.</string>
-    <string name="help_faq_a3_no_figure">Áno. Všetky upratovačky Cleansia sú poistené.</string>
     <string name="help_faq_q4">Môžem zmeniť termín?</string>
     <string name="help_faq_a4">Zatiaľ nie — termín rezervácie sa nedá zmeniť. Zrušte ju v záložke Objednávky a objednajte si nový termín; kým rezerváciu neprijme žiadna upratovačka, zrušenie je zadarmo.</string>
     <string name="help_faq_q5">Čo je zahrnuté v štandardnom upratovaní?</string>
@@ -640,7 +638,6 @@
     <string name="booking_save_address">Uložiť túto adresu</string>
     <string name="booking_set_as_default">Nastaviť ako predvolenú</string>
     <string name="booking_trust_insured">Poistené až do %1$s</string>
-    <string name="booking_trust_insured_no_figure">Poistené</string>
 
     <string name="booking_pick_service">Vyberte službu</string>
     <string name="booking_or_package">Alebo zvoľte balíček</string>

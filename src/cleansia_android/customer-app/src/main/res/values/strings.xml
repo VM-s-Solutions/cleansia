@@ -164,7 +164,6 @@
     <string name="home_hero2_title">Deep clean + windows combo</string>
 
     <!-- Home — trust strip -->
-    <string name="home_trust_insured">Insured</string>
     <string name="home_trust_same_day">Same-day</string>
 
     <!-- Home — popular packages (tap-to-book) -->
@@ -550,7 +549,6 @@
     <string name="help_faq_a2">Add access instructions when booking (e.g., door code, key location). The cleaner waits 15 minutes past the start time and tries to call you. If they still can\'t get in, the booking is cancelled and the full price is charged.</string>
     <string name="help_faq_q3">Are cleaners insured?</string>
     <string name="help_faq_a3">Yes. All Cleansia cleaners are covered by insurance up to %1$s per booking.</string>
-    <string name="help_faq_a3_no_figure">Yes. All Cleansia cleaners are covered by insurance.</string>
     <string name="help_faq_q4">Can I change the date or time?</string>
     <string name="help_faq_a4">Not yet — a booking can\'t be moved. Cancel it from the Orders tab and book a new time; cancelling is free while no cleaner has taken the booking.</string>
     <string name="help_faq_q5">What\'s included in a standard cleaning?</string>
@@ -642,7 +640,6 @@
     <string name="booking_save_address">Save this address</string>
     <string name="booking_set_as_default">Set as default</string>
     <string name="booking_trust_insured">Insured up to %1$s</string>
-    <string name="booking_trust_insured_no_figure">Insured</string>
 
     <string name="booking_pick_service">Pick a service</string>
     <string name="booking_or_package">Or choose a package</string>

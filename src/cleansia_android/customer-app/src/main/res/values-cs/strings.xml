@@ -168,7 +168,6 @@
     <string name="home_hero2_title">Hloubkový úklid + okna v jednom</string>
 
     <!-- Home — trust strip -->
-    <string name="home_trust_insured">Pojištěno</string>
     <string name="home_trust_same_day">Dnes</string>
 
     <!-- Home — popular packages -->
@@ -553,7 +552,6 @@
     <string name="help_faq_a2">Při rezervaci přidejte pokyny ke vstupu (např. kód u dveří, místo klíče). Uklízeč čeká 15 minut po začátku úklidu a zkusí vám zavolat. Pokud se ani pak nedostane dovnitř, rezervace se zruší a účtuje se plná cena.</string>
     <string name="help_faq_q3">Jsou uklízeči pojištěni?</string>
     <string name="help_faq_a3">Ano. Všichni uklízeči Cleansia jsou pojištěni do výše %1$s na rezervaci.</string>
-    <string name="help_faq_a3_no_figure">Ano. Všichni uklízeči Cleansia jsou pojištěni.</string>
     <string name="help_faq_q4">Můžu změnit termín?</string>
     <string name="help_faq_a4">Zatím ne — termín rezervace změnit nejde. Zrušte ji v záložce Objednávky a objednejte si nový termín; dokud rezervaci nepřijme žádný uklízeč, je zrušení zdarma.</string>
     <string name="help_faq_q5">Co je zahrnuto ve standardním úklidu?</string>
@@ -643,7 +641,6 @@
     <string name="booking_save_address">Uložit tuto adresu</string>
     <string name="booking_set_as_default">Nastavit jako výchozí</string>
     <string name="booking_trust_insured">Pojištěno až do %1$s</string>
-    <string name="booking_trust_insured_no_figure">Pojištěno</string>
 
     <string name="booking_pick_service">Vyberte službu</string>
     <string name="booking_or_package">Nebo zvolte balíček</string>

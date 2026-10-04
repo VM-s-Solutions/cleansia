@@ -168,7 +168,6 @@
     <string name="home_hero2_title">Глибоке прибирання + вікна разом</string>
 
     <!-- Home — trust strip -->
-    <string name="home_trust_insured">Застраховано</string>
     <string name="home_trust_same_day">Сьогодні</string>
 
     <!-- Home — popular packages -->
@@ -550,7 +549,6 @@
     <string name="help_faq_a2">Додайте інструкції щодо доступу при бронюванні (напр. код від дверей, місце ключа). Клінер чекає 15 хвилин після початку прибирання і намагається вам зателефонувати. Якщо й тоді не вдасться потрапити всередину, бронювання скасовується і стягується повна вартість.</string>
     <string name="help_faq_q3">Чи застраховані клінери?</string>
     <string name="help_faq_a3">Так. Усі клінери Cleansia застраховані до %1$s на бронювання.</string>
-    <string name="help_faq_a3_no_figure">Так. Усі клінери Cleansia застраховані.</string>
     <string name="help_faq_q4">Чи можна змінити час?</string>
     <string name="help_faq_a4">Поки що ні — перенести бронювання не можна. Скасуйте його у вкладці Замовлення та забронюйте новий час; поки жоден клінер не взяв бронювання, скасування безкоштовне.</string>
     <string name="help_faq_q5">Що включено у стандартне прибирання?</string>
@@ -640,7 +638,6 @@
     <string name="booking_save_address">Зберегти цю адресу</string>
     <string name="booking_set_as_default">Встановити за замовчуванням</string>
     <string name="booking_trust_insured">Застраховано до %1$s</string>
-    <string name="booking_trust_insured_no_figure">Застраховано</string>
 
     <string name="booking_pick_service">Виберіть послугу</string>
     <string name="booking_or_package">Або виберіть пакет</string>

@@ -168,7 +168,6 @@
     <string name="home_hero2_title">Глубокая уборка + окна вместе</string>
 
     <!-- Home — trust strip -->
-    <string name="home_trust_insured">Застраховано</string>
     <string name="home_trust_same_day">Сегодня</string>
 
     <!-- Home — popular packages -->
@@ -550,7 +549,6 @@
     <string name="help_faq_a2">Добавьте инструкции по доступу при бронировании (напр. код от двери, место ключа). Клинер ждёт 15 минут после начала уборки и пытается вам позвонить. Если и тогда не удастся попасть внутрь, бронирование отменяется и взимается полная стоимость.</string>
     <string name="help_faq_q3">Застрахованы ли клинеры?</string>
     <string name="help_faq_a3">Да. Все клинеры Cleansia застрахованы до %1$s на бронирование.</string>
-    <string name="help_faq_a3_no_figure">Да. Все клинеры Cleansia застрахованы.</string>
     <string name="help_faq_q4">Можно ли изменить время?</string>
     <string name="help_faq_a4">Пока нет — перенести бронирование нельзя. Отмените его во вкладке Заказы и забронируйте новое время; пока ни один клинер не взял бронирование, отмена бесплатна.</string>
     <string name="help_faq_q5">Что входит в стандартную уборку?</string>
@@ -640,7 +638,6 @@
     <string name="booking_save_address">Сохранить этот адрес</string>
     <string name="booking_set_as_default">Сделать основным</string>
     <string name="booking_trust_insured">Застраховано до %1$s</string>
-    <string name="booking_trust_insured_no_figure">Застраховано</string>
 
     <string name="booking_pick_service">Выберите услугу</string>
     <string name="booking_or_package">Или выберите пакет</string>

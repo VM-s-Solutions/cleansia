@@ -66,14 +66,14 @@ private data class FaqItem(val qRes: Int, val answer: @Composable () -> String)
 private const val SUPPORT_EMAIL = "support@cleansia.cz"
 private const val SUPPORT_PHONE = "+420739788108"
 
-/** Answer 3 states the insurance ceiling only when the market authored one (ADR-0060 D2). */
-private fun faqs(insuranceCoverage: InsuranceCoverage?) = listOf(
+/** The insurance question is asked only when the market authored a ceiling to answer it with (ADR-0060 D2). */
+private fun faqs(insuranceCoverage: InsuranceCoverage?) = listOfNotNull(
     FaqItem(R.string.help_faq_q1) { stringResource(R.string.help_faq_a1) },
     FaqItem(R.string.help_faq_q2) { stringResource(R.string.help_faq_a2) },
-    FaqItem(R.string.help_faq_q3) {
-        insuranceCoverage?.let { coverage ->
+    insuranceCoverage?.let { coverage ->
+        FaqItem(R.string.help_faq_q3) {
             stringResource(R.string.help_faq_a3, formatOrderPrice(coverage.amount, coverage.currencyCode))
-        } ?: stringResource(R.string.help_faq_a3_no_figure)
+        }
     },
     FaqItem(R.string.help_faq_q4) { stringResource(R.string.help_faq_a4) },
     FaqItem(R.string.help_faq_q5) { stringResource(R.string.help_faq_a5) },

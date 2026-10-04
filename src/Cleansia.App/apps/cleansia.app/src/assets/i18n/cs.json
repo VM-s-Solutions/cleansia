@@ -689,15 +689,15 @@
       },
       "saved_cards": {
         "title": "Uložené karty",
-        "desc": "Karta, která zaručuje vaše rezervace s platbou v hotovosti. Strhávají se z ní jen poplatky a nezaplacená hotovost, se kterými jste při uložení souhlasili.",
-        "empty": "Nemáte uloženou kartu. Až budete příště platit v hotovosti, požádáme vás o její uložení.",
+        "desc": "Karty uložené ve vašem účtu. Kartu můžete kdykoli odebrat.",
+        "empty": "Nemáte uloženou kartu.",
         "load_error": "Uložené karty se nepodařilo načíst.",
         "card_label": "{{brand}} končící {{last4}}",
         "expires": "Platnost do {{expiry}} · pro rezervace v {{currency}}",
-        "remove_confirm": "Odebrat kartu končící {{last4}}? Při příští rezervaci s platbou v hotovosti vás znovu požádáme o uložení karty.",
+        "remove_confirm": "Odebrat kartu končící {{last4}}?",
         "remove_success": "Karta byla odebrána.",
-        "setup_success": "Karta je uložená. Teď můžete dokončit rezervaci s platbou v hotovosti.",
-        "setup_cancelled": "Žádná karta nebyla uložena. Chcete-li platit v hotovosti, uložte si kartu — nebo zaplaťte kartou."
+        "setup_success": "Karta je uložená.",
+        "setup_cancelled": "Žádná karta nebyla uložena."
       }
     },
     "services": {
@@ -1063,13 +1063,9 @@
         }
       },
       "card_capture": {
-        "title": "Uložte si kartu pro platbu v hotovosti",
-        "intro": "Rezervace s platbou v hotovosti je zaručena kartou uloženou ve vašem účtu. Uložení karty nic nestojí a uklízeči dál platíte v hotovosti.",
         "consent": {
           "card-guarantee-draft-2026-09-28": "Souhlasím, že Cleansia může z této karty, aniž by se mě pokaždé ptala, strhnout poplatek za pozdní zrušení, poplatek, když se uklízeč nedostane do mé domácnosti, hotovost, kterou jsem za rezervaci nezaplatil(a), a doplatek, který jsem schválil(a)."
-        },
-        "continue": "Uložit kartu",
-        "cancel": "Teď ne"
+        }
       },
       "save_card": {
         "label": "Uložit tuto kartu k mým dalším objednávkám."

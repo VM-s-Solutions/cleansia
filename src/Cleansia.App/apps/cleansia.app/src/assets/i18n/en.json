@@ -689,15 +689,15 @@
       },
       "saved_cards": {
         "title": "Saved cards",
-        "desc": "The card that guarantees your cash bookings. It is charged only for the fees and unpaid cash you agreed to when you saved it.",
-        "empty": "No card saved. You will be asked to save one the next time you pay in cash.",
+        "desc": "Cards saved to your account. You can remove a card at any time.",
+        "empty": "No card saved.",
         "load_error": "We couldn't load your saved cards.",
         "card_label": "{{brand}} ending in {{last4}}",
         "expires": "Expires {{expiry}} · for bookings in {{currency}}",
-        "remove_confirm": "Remove the card ending in {{last4}}? Your next cash booking will ask you to save a card again.",
+        "remove_confirm": "Remove the card ending in {{last4}}?",
         "remove_success": "Card removed.",
-        "setup_success": "Your card is saved. You can finish your cash booking now.",
-        "setup_cancelled": "No card was saved. To pay in cash, save a card — or pay by card."
+        "setup_success": "Your card is saved.",
+        "setup_cancelled": "No card was saved."
       }
     },
     "services": {
@@ -1063,13 +1063,9 @@
         }
       },
       "card_capture": {
-        "title": "Save a card to pay in cash",
-        "intro": "A cash booking is guaranteed by a card saved to your account. Saving it charges nothing, and you still pay the cleaner in cash.",
         "consent": {
           "card-guarantee-draft-2026-09-28": "I agree that Cleansia may charge this card, without asking me each time, for a late-cancellation fee, a fee when the cleaner cannot get into my home, cash I did not pay for a booking, and an extra charge I approved."
-        },
-        "continue": "Save card",
-        "cancel": "Not now"
+        }
       },
       "save_card": {
         "label": "Save this card for my next bookings."

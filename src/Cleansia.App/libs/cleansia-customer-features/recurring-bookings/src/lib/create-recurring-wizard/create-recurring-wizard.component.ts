@@ -14,7 +14,6 @@ import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { FoamEdgeComponent } from '@cleansia-customer/home';
 import {
-  CardCaptureFacade,
   DIRTINESS_LEVELS,
   DirtinessLevel,
   PaymentType,
@@ -33,7 +32,6 @@ import { ConfirmationService } from 'primeng/api';
 import { CheckboxModule } from 'primeng/checkbox';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { DatePickerModule } from 'primeng/datepicker';
-import { DialogModule } from 'primeng/dialog';
 import { RecurringBookingsFacade } from '../recurring-bookings.facade';
 import {
   DAY_OF_WEEK_CHIPS,
@@ -69,14 +67,13 @@ import {
     FoamEdgeComponent,
     DatePickerModule,
     ConfirmDialogModule,
-    DialogModule,
     CheckboxModule,
     CleansiaButtonComponent,
     CleansiaSelectComponent,
     CleansiaTextInputComponent,
     CleansiaAddressAutocompleteComponent,
   ],
-  providers: [RecurringBookingsFacade, CardCaptureFacade, ConfirmationService],
+  providers: [RecurringBookingsFacade, ConfirmationService],
   templateUrl: './create-recurring-wizard.component.html',
 })
 export class CreateRecurringWizardComponent implements OnInit {
@@ -186,7 +183,6 @@ export class CreateRecurringWizardComponent implements OnInit {
         }
       }
     }
-    this.facade.restoreParkedForm(this.route.snapshot.paramMap.get('id'));
   }
 
   // ─── The price ─────────────────────────────────────────────────────

@@ -1,11 +1,8 @@
 import { signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import {
-  CardCaptureFacade,
   ConsentType,
   CreateRecurringBookingCommand,
-  CreateSavedCardCheckoutSessionCommand,
-  CreateSavedCardCheckoutSessionResponse,
   CustomerClient,
   DeleteRecurringBookingCommand,
   DirtinessLevel,
@@ -18,7 +15,6 @@ import {
   SavedAddressDto,
   ServiceListItem,
   SetRecurringBookingActiveCommand,
-  takeCardSetupReturnUrl,
   UpdateRecurringBookingCommand,
 } from '@cleansia/customer-services';
 import {
@@ -52,7 +48,6 @@ describe('RecurringBookingsFacade', () => {
   let orderClient: { quote: jest.Mock; myServingCleaners: jest.Mock };
   let membershipClient: { getMine: jest.Mock };
   let gdprClient: { consentsGet: jest.Mock };
-  let savedCardClient: { createCheckoutSession: jest.Mock };
   let savedAddressStore: {
     addresses: ReturnType<typeof signal<SavedAddressDto[]>>;
     loaded: ReturnType<typeof signal<boolean>>;
@@ -85,17 +80,6 @@ describe('RecurringBookingsFacade', () => {
       getMine: jest.fn().mockReturnValue(of({ hasMembership: true, status: MembershipStatus.Active })),
     };
     gdprClient = { consentsGet: jest.fn().mockReturnValue(of([])) };
-    const { origin, pathname } = window.location;
-    savedCardClient = {
-      createCheckoutSession: jest.fn().mockReturnValue(
-        of(
-          CreateSavedCardCheckoutSessionResponse.fromJS({
-            savedCardId: 'card-1',
-            checkoutUrl: `${origin}${pathname}#card-setup`,
-          }),
-        ),
-      ),
-    };
     savedAddressStore = {
       addresses: signal<SavedAddressDto[]>([]),
       loaded: signal(true),
@@ -111,7 +95,6 @@ describe('RecurringBookingsFacade', () => {
     TestBed.configureTestingModule({
       providers: [
         RecurringBookingsFacade,
-        CardCaptureFacade,
         provideMockStore(),
         {
           provide: CustomerClient,
@@ -119,7 +102,6 @@ describe('RecurringBookingsFacade', () => {
             recurringBookingClient: client,
             orderClient,
             membershipClient,
-            savedCardClient,
             gdprClient,
           },
         },
@@ -1248,90 +1230,8 @@ describe('RecurringBookingsFacade', () => {
         expect(snackbar.showError).not.toHaveBeenCalled();
         expect(facade.formData().paymentType).toBeNull();
         expect(facade.cashCleared()).toBe(true);
-        expect(facade.cardCaptureVisible()).toBe(false);
       },
     );
-
-    // Owner ruling 2026-09-28: the first cash booking saves a card as its guarantee, and a schedule
-    // is refused cash the same way as a one-off booking until one is saved.
-    describe('without a saved card', () => {
-      const slovakAddress = SavedAddressDto.fromJS({ id: 'addr-1', countryId: 'svk' });
-
-      async function refusedForWantOfACard(send: jest.Mock): Promise<boolean> {
-        savedAddressStore.addresses.set([slovakAddress]);
-        orderClient.quote.mockReturnValue(of(crewOf(1)));
-        send.mockReturnValue(
-          throwError(() => ({ errors: { PaymentType: 'order.cash_requires_saved_card' } })),
-        );
-        completeForm(PaymentType.Cash);
-        return facade.submit();
-      }
-
-      function sentCardCommand(): CreateSavedCardCheckoutSessionCommand {
-        return savedCardClient.createCheckoutSession.mock.calls[0][0];
-      }
-
-      beforeEach(() => sessionStorage.clear());
-
-      it('opens the card-capture step and keeps cash on the schedule', async () => {
-        const ok = await refusedForWantOfACard(client.create);
-
-        expect(ok).toBe(false);
-        expect(facade.cardCaptureVisible()).toBe(true);
-        expect(facade.cardCaptureConsent()).toBe(false);
-        expect(facade.formData().paymentType).toBe(PaymentType.Cash);
-        expect(snackbar.showError).not.toHaveBeenCalled();
-      });
-
-      it("saves the card for the schedule address's country and comes back to the new schedule as it was", async () => {
-        await refusedForWantOfACard(client.create);
-        const left = facade.formData();
-
-        facade.setCardCaptureConsent(true);
-        facade.startCardCapture();
-
-        expect(sentCardCommand().consentAccepted).toBe(true);
-        expect(sentCardCommand().countryId).toBe('svk');
-        expect(takeCardSetupReturnUrl()).toBe('/membership/recurring/create');
-
-        facade.resetWizard();
-        facade.restoreParkedForm(null);
-
-        expect(facade.editingId()).toBeNull();
-        expect(facade.formData()).toEqual(left);
-        expect(facade.formData().startsOn).toBeInstanceOf(Date);
-      });
-
-      it('comes back to the schedule being edited, with the edits kept', async () => {
-        facade.loadForEdit(template({ id: 't1', paymentType: PaymentType.Card }));
-        await refusedForWantOfACard(client.update);
-        const left = facade.formData();
-
-        facade.setCardCaptureConsent(true);
-        facade.startCardCapture();
-
-        expect(takeCardSetupReturnUrl()).toBe('/membership/recurring/t1');
-
-        facade.resetWizard();
-        facade.restoreParkedForm('t1');
-
-        expect(facade.editingId()).toBe('t1');
-        expect(facade.formData()).toEqual(left);
-      });
-
-      it('restores nothing parked for another schedule, and reads it only once', async () => {
-        await refusedForWantOfACard(client.create);
-        facade.setCardCaptureConsent(true);
-        facade.startCardCapture();
-        facade.resetWizard();
-
-        facade.restoreParkedForm('t1');
-        facade.restoreParkedForm(null);
-
-        expect(facade.editingId()).toBeNull();
-        expect(facade.formData().paymentType).toBe(PaymentType.Card);
-      });
-    });
 
     it('prices the same selection whatever the day, the time, the cadence or the payment', async () => {
       orderClient.quote.mockReturnValue(of(crewOf(1)));

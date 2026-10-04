@@ -4,7 +4,6 @@ import { Router } from '@angular/router';
 import { UnsubscribeControlDirective } from '@cleansia/directives';
 import {
   AddressDto,
-  CardCaptureFacade,
   CategoryDto,
   chosenPackagesByService,
   CreateOrderCommand,
@@ -50,7 +49,6 @@ import { Store } from '@ngrx/store';
 import { TranslateService } from '@ngx-translate/core';
 import { toObservable, toSignal } from '@angular/core/rxjs-interop';
 import { catchError, finalize, map, of, takeUntil } from 'rxjs';
-import { OrderDraftService } from './order-draft.service';
 import { OrderMembershipFacade } from './order-membership.facade';
 import { OrderPreferredCleanerFacade } from './order-preferred-cleaner.facade';
 import { OrderPricingFacade } from './order-pricing.facade';
@@ -59,7 +57,6 @@ import { OrderSavedAddressFacade } from './order-saved-address.facade';
 import { OrderServiceAreaFacade } from './order-service-area.facade';
 import {
   CASH_REFUSALS,
-  CASH_REQUIRES_SAVED_CARD,
   CASH_UNPAID_RECEIVABLE,
   ORDER_WIZARD_INITIAL_DATA,
   OrderWizardFormData,
@@ -94,8 +91,6 @@ export class OrderWizardFacade extends UnsubscribeControlDirective {
   private readonly savedAddress = inject(OrderSavedAddressFacade);
   private readonly membership = inject(OrderMembershipFacade);
   private readonly preferredCleaner = inject(OrderPreferredCleanerFacade);
-  private readonly cardCapture = inject(CardCaptureFacade);
-  private readonly draft = inject(OrderDraftService);
   private readonly injector = inject(Injector);
   private readonly isBrowser = isPlatformBrowser(inject(PLATFORM_ID));
 
@@ -305,10 +300,6 @@ export class OrderWizardFacade extends UnsubscribeControlDirective {
   );
   readonly saveCard = signal(false);
 
-  readonly cardCaptureVisible = this.cardCapture.visible;
-  readonly cardCaptureConsent = this.cardCapture.consentAccepted;
-  readonly cardCaptureStarting = this.cardCapture.starting;
-
   // ─── Service-area (city-serviced) check ─────────────────────────
   //
   // The client-side service-area lookup lives in OrderServiceAreaFacade,
@@ -353,11 +344,6 @@ export class OrderWizardFacade extends UnsubscribeControlDirective {
       currentFormData: () => this.formData(),
       patchFormData: (partial) => this.updateFormData(partial),
     });
-    this.cardCapture.connect({
-      countryId: () => this.addressCountryId(),
-      park: () => this.draft.park(this.activeStep(), this.formData()),
-      returnUrl: () => '/' + CleansiaCustomerRoute.ORDER,
-    });
     effect(() => {
       if (this.formData().paymentType === PaymentType.Cash && cashIsRefused(this.cashEligibility())) {
         untracked(() => this.dropCash(true));
@@ -373,18 +359,6 @@ export class OrderWizardFacade extends UnsubscribeControlDirective {
 
   setSaveCard(save: boolean): void {
     this.saveCard.set(save);
-  }
-
-  setCardCaptureConsent(accepted: boolean): void {
-    this.cardCapture.setConsent(accepted);
-  }
-
-  closeCardCapture(): void {
-    this.cardCapture.close();
-  }
-
-  startCardCapture(): void {
-    this.cardCapture.start();
   }
 
   /** Never replaced by card: the customer is told and chooses again. */
@@ -1208,17 +1182,12 @@ export class OrderWizardFacade extends UnsubscribeControlDirective {
    * toast would replace that sentence — so this one only takes the code off the order, which is
    * what lets the customer submit again. Refused cash is handled the same way: taken off, and the
    * customer sent back to choose how to pay, where cash refused for an unpaid amount lists what is
-   * owed; cash refused for want of a saved card opens the step that saves one; a start outside the
-   * booking window sends them back to the time.
+   * owed; a start outside the booking window sends them back to the time.
    */
   private onCreateRefused(error: unknown): void {
     const code = extractApiErrorCode(error);
     if (code?.startsWith('promo.')) {
       this.promo.clearPromoCode();
-      return;
-    }
-    if (code === CASH_REQUIRES_SAVED_CARD) {
-      this.cardCapture.open();
       return;
     }
     if (code && CASH_REFUSALS.includes(code)) {

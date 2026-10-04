@@ -689,15 +689,15 @@
       },
       "saved_cards": {
         "title": "Uložené karty",
-        "desc": "Karta, ktorá zaručuje vaše rezervácie s platbou v hotovosti. Strhávajú sa z nej len poplatky a nezaplatená hotovosť, s ktorými ste pri uložení súhlasili.",
-        "empty": "Nemáte uloženú kartu. Keď budete nabudúce platiť v hotovosti, požiadame vás o jej uloženie.",
+        "desc": "Karty uložené vo vašom účte. Kartu môžete kedykoľvek odstrániť.",
+        "empty": "Nemáte uloženú kartu.",
         "load_error": "Uložené karty sa nepodarilo načítať.",
         "card_label": "{{brand}} končiaca {{last4}}",
         "expires": "Platnosť do {{expiry}} · pre rezervácie v {{currency}}",
-        "remove_confirm": "Odstrániť kartu končiacu {{last4}}? Pri ďalšej rezervácii s platbou v hotovosti vás znova požiadame o uloženie karty.",
+        "remove_confirm": "Odstrániť kartu končiacu {{last4}}?",
         "remove_success": "Karta bola odstránená.",
-        "setup_success": "Karta je uložená. Teraz môžete dokončiť rezerváciu s platbou v hotovosti.",
-        "setup_cancelled": "Žiadna karta nebola uložená. Ak chcete platiť v hotovosti, uložte si kartu — alebo zaplaťte kartou."
+        "setup_success": "Karta je uložená.",
+        "setup_cancelled": "Žiadna karta nebola uložená."
       }
     },
     "services": {
@@ -1063,13 +1063,9 @@
         }
       },
       "card_capture": {
-        "title": "Uložte si kartu na platbu v hotovosti",
-        "intro": "Rezervácia s platbou v hotovosti je zaručená kartou uloženou vo vašom účte. Uloženie karty nič nestojí a upratovačovi ďalej platíte v hotovosti.",
         "consent": {
           "card-guarantee-draft-2026-09-28": "Súhlasím, že Cleansia môže z tejto karty bez toho, aby sa ma zakaždým pýtala, strhnúť poplatok za neskoré zrušenie, poplatok, keď sa upratovač nedostane do mojej domácnosti, hotovosť, ktorú som za rezerváciu nezaplatil(a), a doplatok, ktorý som schválil(a)."
-        },
-        "continue": "Uložiť kartu",
-        "cancel": "Teraz nie"
+        }
       },
       "save_card": {
         "label": "Uložiť túto kartu na moje ďalšie objednávky."

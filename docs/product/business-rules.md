@@ -1842,7 +1842,8 @@ the web, Android and iOS — the same four things hold:
   dark) and a 1.5 pt border of the primary at 60 %, in place of the neutral card and hairline. The line
   is a badge straight under the service's name: a check in a circle, then the same words in semibold,
   never smaller than the row's secondary text, on the primary at 14 % (24 % in dark mode). Its corners
-  are 12, so it is a capsule on one line and a rounded box when a long package name wraps it to two.
+  (12 on the apps, 1em on the web) make it a capsule on one line and a rounded box when a long package
+  name wraps it to two.
   The words are in the primary container's ink (sky-900 in light mode, sky-100 in dark), not in the
   primary, which reads only about 3.1:1 on the badge; the ink reads 7.2:1 in light mode and 6.1:1 in
   dark. A picked row keeps its picked look where its list has one, and still carries the badge. The add

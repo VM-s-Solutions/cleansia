@@ -176,7 +176,12 @@ my next bookings*, followed by the card-guarantee consent sentence of the versio
 on the card (`SavedCard.ConsentTextVersionInForce`). A guest or a cash booking never sees it.
 `CreateOrderCommand.saveCard` is `true` only for an offered, ticked box; ticked, the card is kept
 when the payment succeeds and is listed under **Saved cards** on `/profile`, where it can be removed;
-unticked, Stripe keeps nothing. → [A saved card guarantees cash](/product/business-rules#card-guarantee)
+unticked, Stripe keeps nothing. → [The saved cards](/product/business-rules#saved-cards)
+
+**A cash booking asks for no card** (since 2026-10-04). The wizard no longer opens a card-capture step
+when the server refuses cash, because the server no longer asks for a saved card: `CardCaptureFacade`,
+the parked booking and the return through the profile are gone.
+→ [Cash needs no card](/product/business-rules#card-guarantee)
 
 ### Step 4: Review & Submit
 

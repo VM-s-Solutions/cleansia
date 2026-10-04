@@ -84,6 +84,16 @@ platform holds no configuration: correct everywhere, precise nowhere, which is e
 should be. Flattening every country to the neutral term would have cost CZ and SK the word their own
 registries use.
 
+**A Czech IČO is looked up in ARES** (since 2026-10-04). After the format check, the cleaner's save —
+the partner web profile and the apps' identification section — is refused when ARES does not hold the
+number (`validation.registration_number.not_registered`); when ARES does not answer, the save goes
+through. Approval asks again and is stricter: the business must be live and a trade licence in force,
+and an ARES outage refuses it until the admin tries again. Nothing ARES answers is stored, and no name
+is matched. The partner web shows the refusal in five languages; the Android and iOS partner apps have
+no text for it yet and show the key. Local runs and the tests switch the lookup off (`Ares:Enabled`);
+the deployed DEV hosts run as `Production` and check ARES.
+→ [The business register](/product/business-rules#business-register)
+
 ::: info Not part of the completeness check
 **Emergency contacts** are optional. **Documents** are handled separately by the registration lock.
 **There is no weekly schedule to fill in** — dispatch is a first-come pull board, and the schedule
@@ -261,9 +271,9 @@ An **optional** row is a prompt, not a gate. It is how a document type is offere
 expected-but-not-blocking; removing the row drops it from the screen entirely, clearing its required
 flag keeps the prompt and drops the gate.
 
-Seeded today: **CZ and SK** carry `IdentityCard` (required), `WorkPermit` (optional) and, since
-2026-09-28, `InsuranceDocument` (required — a cleaner is approved only with a valid liability insurance
-certificate, whichever policy the platform finally promises). The list is
+Seeded today: **CZ and SK** carry `IdentityCard` (required), `WorkPermit` (optional) and
+`InsuranceDocument` (optional since 2026-10-04: the liability insurance certificate is recommended and
+offered on the checklist, and approval does not wait for it; from 2026-09-28 it was required). The list is
 deliberately short and is not a statement about Czech or Slovak employment law — `WorkPermit` is
 optional because it applies to non-EU nationals and to nobody else, and a per-country flag cannot say
 "required for some of these people".
@@ -308,7 +318,11 @@ After the partner completes their profile and uploads required documents, an adm
 - Profile is complete (`isProfileComplete === true`)
 - Contract status is `Pending` or `Rejected` — a cleaner rejected earlier can be approved again, and
   nothing returns them to `Pending` by itself → [Business rules](/product/business-rules#employee-documents)
-- Every document type the **work country** marks required is present **and** `Approved`
+- Every document type the **work country** marks required is present **and** `Approved` (the insurance
+  certificate is optional since 2026-10-04)
+- For a Czech cleaner, ARES holds the IČO, the business has not ended and a trade licence is in force;
+  an ARES outage refuses until the admin tries again (since 2026-10-04)
+  → [The business register](/product/business-rules#business-register)
 - Every partner document in force for that market — the framework contract, the self-billing
   agreement, the data-processing agreement — is accepted at its current version
   (`employee.legal_documents_not_accepted`; none is seeded yet, so nothing is refused today)
@@ -368,7 +382,7 @@ status icon and the chevron.
 2026-10-01). The lock replaces the whole app until an admin approves, so a row that went inert at
 *Done* left a cleaner who had filled everything in with no way back to correct it — and
 *Documents: Done* means one active document, not every type the country requires, so a cleaner who had
-uploaded only an ID could not get back to add the insurance certificate approval needs. A *Done* row
+uploaded only an ID could not get back to add the insurance certificate approval then needed. A *Done* row
 keeps its *Done* label and gains a chevron: Profile opens Personal at the start of the onboarding
 chain, from which every section is one tap away on its stepper; Documents opens the documents screen; Contract
 documents opens the documents to read and accept. This holds for a **rejected** cleaner too, and **an

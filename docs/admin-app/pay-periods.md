@@ -67,7 +67,7 @@ POST /api/AdminPayPeriod/create
 ```
 
 ::: tip Automatic period creation
-A background job (`PayPeriodTimerFunction`, runs daily at 02:00 UTC) automatically creates the next period when the current one expires. Manual creation is only needed for ad-hoc periods or initial setup.
+A background job (`PayPeriodTimerFunction`, runs daily at 02:00 UTC) automatically creates the next period when the current one expires: **14 days**, starting the day after the expired one ended (since 2026-10-04; a calendar month before). Manual creation is only needed for ad-hoc periods or initial setup. → [Pay periods are 14 days](/product/business-rules#pay-periods)
 :::
 
 ## Pay Period Detail

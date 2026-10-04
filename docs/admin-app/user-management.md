@@ -221,9 +221,14 @@ The detail page and the list row offer **Approve** when `canApprove()` is `true`
 Nothing moves a rejected cleaner back to `Pending` by itself; the contract stays `Rejected` until an
 administrator approves it. → [Business rules — the papers a cleaner uploads](/product/business-rules#employee-documents)
 
-The **server** adds two more. The first is the one that bites: every document type the employee's work
+The **server** adds three more. The first is the one that bites: every document type the employee's work
 country marks required must be present **and** `Approved`. The second is pay coverage in the work
-country's currency, described under [Approve Employee](#approve-employee) below. Approval used to consult
+country's currency, described under [Approve Employee](#approve-employee) below. The third, since
+2026-10-04, is the business register: for a Czech cleaner, ARES must hold the IČO, show the business
+live and a trade licence in force, and answer at all (`validation.registration_number.not_registered`,
+`employee.business_ceased`, `employee.trade_licence_inactive`, `employee.business_registry_unavailable`,
+the last one a *try again*) → [The business register](/product/business-rules#business-register).
+Approval used to consult
 `IsProfileComplete()` alone, which excludes documents deliberately — so an admin could approve a cleaner
 who had uploaded nothing, or whose every document had been rejected, and `Approved` meant only that
 somebody had pressed the button. The refusal comes back as `employee.documents_not_approved`.
@@ -233,7 +238,7 @@ whose requirements have not been entered behaves exactly as it did before. Editi
 reaches back and re-judges anyone already approved — approval is decided at the moment it happens, and
 the requirements are an input to that decision rather than a standing property of the cleaner.
 
-### Document requirements — per country, admin-managed
+### Document requirements — per country, admin-managed {#document-requirements}
 
 One row per (country, document type), carrying a required flag and a sort order. Admin-managed rather
 than a constant on the owner's ruling: requirements change with the law, and a change that needs a
@@ -245,7 +250,10 @@ release is a change that waits for one.
 | `PUT /api/AdminEmployeeDocument/requirements` | **Upsert** on (country, type) — saving the same pair twice edits the flag |
 | `DELETE /api/AdminEmployeeDocument/requirements/{requirementId}` | Hard delete; this is configuration, not a record of anything that happened |
 
-Seeded today: CZ and SK carry `IdentityCard` (required) and `WorkPermit` (optional).
+Seeded today: CZ and SK carry `IdentityCard` (required), `WorkPermit` (optional) and `InsuranceDocument`
+(optional since 2026-10-04 — recommended, gating nothing; it was required from 2026-09-28). A database
+seeded before 2026-10-04 keeps the insurance row required until an administrator clears the flag here or
+the database is reseeded.
 
 ### Deletion requests — the only thing that removes a document
 

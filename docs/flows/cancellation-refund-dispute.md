@@ -111,10 +111,11 @@ sequenceDiagram
   A->>AD: cancel-lockout (reads the report and the photo)
   AD->>AD: Order.Cancel — by the administrator, fee 100 %, no refund,<br/>reason order.cancelled.customer_lockout
   alt paid card booking (member or guest)
-    AD->>AD: payment and applied credit kept, crew pay asked for
+    AD->>AD: payment and applied credit kept
   else signed-in customer's unpaid cash booking
     AD->>AD: credit returned, Lockout receivable for the whole price
   end
+  AD->>AD: every seat's pay asked for — its full reward
   AD->>C: the job is off
 ```
 
@@ -132,6 +133,10 @@ sequenceDiagram
   do not yet render the reason key; the e-mail states it.
 - **A guest keeps nothing back and is never charged more** — a guest always prepays (decision 13 (a)).
   → [Business rules — the lockout](/product/business-rules#lockout)
+- **Each seat on the crew is paid its full reward** (owner decision 2026-10-04): what the completed job
+  would have paid it, asked for at the confirmation on every lockout and paid whether or not the
+  customer ever pays the price. Until then the crew was paid half of the fee, once collected.
+  → [Business rules — a confirmed lockout pays the seat's reward](/product/business-rules#lockout-pay)
 
 **The cancel is written down as the server priced it.** `CancelOrder` is marked
 `customer.order.cancel` ([ADR-0062](/decisions/adr-0062)): the row that rides its commit carries the
@@ -163,6 +168,22 @@ amount     = min(requested, refundable)      refuse if ≤ 0
 
 Re-driving an existing refund row clamps it to what remains rather than issuing a second one.
 
+**An administrator's card refund needs no second step** (checked 2026-10-04). `AdminRefundOrder`,
+`IssuePartialRefund` and `ResolveDispute` with a card settlement all go through
+`IRefundService.IssueRefundAsync`, which reserves the refund row, calls Stripe in the same command and
+marks the refund done, so the money leaves when the administrator confirms the amount. A dispute settled
+in credit is on the customer's balance at once. The one manual case is a refund Stripe refuses or does
+not answer: it stays `Pending`, the hourly re-drive below does not take it, and the administrators are
+told after 24 hours to retry it from the action that asked for it.
+
+**A cash order has no card to refund.** `AdminRefundOrder` refuses it (`refund.order_not_refundable`),
+and `IssuePartialRefund` reaches the refund service, which refuses it the same way because there is no
+Stripe charge. `ResolveDispute` settles it in credit when the customer chose credit and has an account;
+otherwise it is refused and the dispute stays open. An administrator can grant credit by hand
+(*Issue credit*). A cash booking cancelled before the cash was collected has nothing to refund. Cash
+handed back to the customer outside the platform leaves no refund record
+([the revenue report's named gap](/product/business-rules#revenue-report)).
+
 **A refund that does not go through is re-driven, not forgotten** (owner ruling 2026-09-28). Until
 then a refund Stripe refused or could not be reached for stayed `Pending` for ever, and nobody retried
 it. Now:
@@ -192,9 +213,14 @@ undiscounted order with a 1,000 service and a 200 extra, the split allocates 1,0
 before any applicable processing fee, instead of the whole 1,200. The refund service still applies
 its remaining-money ceiling.
 
-**Every refund takes back its share of the order's points** (owner rulings 2026-10-03). One clawback,
-`RevokeForRefundAsync`, removes `floor(earned × returned / TotalPrice)` of the order's completion earn,
-keyed on the refund and capped at what the earn still holds; no divisor is read. Three refunds call it:
+**Every refund takes back its share of the order's points** (owner rulings 2026-10-03), **on the
+order's running total** (since 2026-10-04). One clawback, `RevokeForRefundAsync`, takes
+`floor(earned × returned so far / TotalPrice)` of the order's completion earn, less what the order's
+refunds and completion already took, keyed on the refund; no divisor is read. *Returned so far* counts
+everything the order has given back, the refund itself included. It holds the customer's owner lock
+while it reads and writes, so two refunds of one order at once cannot both take the whole share: the
+second takes what the first left. Until then each refund floored its own share, and *N* refunds could
+leave *N* − 1 points behind. Three refunds call it:
 
 - `IssuePartialRefund` passes everything the refund returned, the card leg plus the credit leg.
 - `AdminRefundOrder` passes the whole price, so a full refund takes everything the earn still holds.
@@ -211,10 +237,13 @@ settlement before the order completes finds no earn and takes nothing, so the sh
 order completes. `GrantForCompletedOrderAsync` writes the earn on the whole price and, in the same unit
 of work, a refund row of `floor(earned × returned / TotalPrice)`. *Returned* is the succeeded card
 refunds, their credit legs and dispute settlements in credit. Later refunds take their share of the
-earn, capped by what the earn still holds after that row, so a refund before completion and one after
-take back what the same two refunds would take after it. A refund that settled before the earn was
-written and is replayed after it — the same line selection submitted again — takes nothing more, because
-completion already took its share.
+earn on the running total, so a refund before completion and one after take back what one refund of
+their sum would: 255 before and 245 after keep 50 of 100 points. The completion grant takes the same
+owner lock, so a refund that settles while the order completes is counted by one of the two. A refund
+that settled before the earn was written and is replayed after it — the same line selection submitted
+again — finds nothing left to take. **Such an order can be completed** (since 2026-10-04):
+`CompleteOrder` passes a card order whose payment is `Paid`, `PartiallyRefunded` or `Refunded`, where it
+used to refuse anything but `Paid` with `order.payment_not_confirmed` and leave the crew stuck.
 
 **A full refund whose clawback failed can be run again** (since 2026-10-04). The refund seam commits
 the settlement, and with it the order's `Refunded` status, before the clawback runs. Until then a
@@ -224,7 +253,9 @@ seam answers with that refund and moves nothing. The clawback, on the same key, 
 exactly once. The refund notice is queued when the outbox holds none on its key: the first call staged it
 in the unit of work its clawback commits, so a failed clawback lost the notice too. A notice that did
 commit is not queued again, because a second row on its key would fail the commit. Any other refunded
-or unpaid order is still `refund.order_not_refundable`.
+or unpaid order is still `refund.order_not_refundable`. A re-run that has nothing left to do, its notice
+already queued and no points left to take, answers `refund.nothing_refundable` (since 2026-10-04); it
+used to answer that a refund was issued.
 → [Business rules — money constants](/product/business-rules#money-constants)
 
 ## Dispute
@@ -358,6 +389,9 @@ dispute or the order shows the three interleaved, newest first.
 | A signed-in customer cancels a cash booking late | No refund (nothing was taken); a cash-cancellation-fee receivable for the fee; no more cash bookings until it is paid through the pay link or written off. |
 | A card order is cancelled late and its fee kept | The crew's pay is asked for at the cancel: each seat's share of half the fee still held. |
 | The cleaner reports a lockout before start + 15 | `order.lockout.too_early`; the partner apps open the report at that moment. |
-| A lockout confirmed on a paid card order | Payment and applied credit kept, no refund; the crew is paid half of what the company still holds. |
-| A lockout confirmed on a signed-in customer's unpaid cash booking | Credit returned; a *Lockout* receivable for the whole price; the crew is paid when it is. |
-| A lockout confirmed on an order already refunded | The fee kept is nothing, so the crew is paid nothing (`payroll.no_collected_fee`). |
+| A lockout confirmed on a paid card order | Payment and applied credit kept, no refund; each seat is paid its full reward. |
+| A lockout confirmed on a signed-in customer's unpaid cash booking | Credit returned; a *Lockout* receivable for the whole price; each seat is paid its full reward at the confirmation, whether or not the receivable is ever paid. |
+| A lockout confirmed on an order already refunded | Each seat is still paid its full reward; no collected fee is read. |
+| Two partial refunds of one order settle at once | The second waits for the first's commit and takes only what the running total leaves. |
+| A full refund run again with nothing left to do | `refund.nothing_refundable`; no money moves and no notice is queued. |
+| A card order refunded before the job ends | The cleaner completes it; completion asks for the crew's pay and takes the points share of what was returned. |

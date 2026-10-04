@@ -74,7 +74,7 @@ with a market and is held to its company at approval.
 | `currencyCode` / `currencySymbol` | The market's currency — `CountryConfiguration.DefaultCurrencyCode` resolved to its `Currency` row |
 | `isDefault` | The pre-selection for a visitor who has chosen nothing — the flagged `CountryConfiguration.IsDefaultMarket`, else the fallback rule above. A **pre-selection, not a pricing invariant** — a client always sends the `countryId` it resolved |
 | `noShowCredit` | `Currency.NoShowCredit` — the apology credit paid in this currency when a slot arrives with no cleaner; `null` = none is paid and the copy renders its refund-only variant. CZK 250; EUR 10, PLN 40, GBP 9, USD 10 are DEV placeholders the owner replaces before activation |
-| `insuranceCoverageAmount` | `CountryConfiguration.InsuranceCoverageAmount` — the insurance ceiling the trust badge and FAQ state, a number in the market's currency; `null` = the no-figure copy renders. Every configuration is seeded `null` (owner ruling 2026-09-28) until the owner decides whose policy covers a booking and authors the figure |
+| `insuranceCoverageAmount` | `CountryConfiguration.InsuranceCoverageAmount` — the insurance ceiling the trust badge and FAQ state, a number in the market's currency; `null` = no insurance claim at all (since 2026-10-04; until then a no-figure *Insured* rendered). Every configuration is seeded `null` (owner ruling 2026-09-28) until the owner decides whose policy covers a booking and authors the figure |
 
 A client resolves its market as: stored code **if listed** → the `isDefault` row → the first row →
 persist. A stored value is only ever compared against the list, never rendered or sent. When this

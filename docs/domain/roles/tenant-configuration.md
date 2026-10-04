@@ -25,7 +25,7 @@ catalogue default, never another company's and never a value nothing reads.
 
 - **`TenantSettingCatalog`** — the closed list of keys a company may hold. Each entry is a typed
   definition (`IntTenantSetting` with `min`/`max`, `BoolTenantSetting`, and since 2026-09-19
-  `EmailTenantSetting`) carrying the key, the category and the default. Today, **sixteen keys in three
+  `EmailTenantSetting`) carrying the key, the category and the default. Today, **nineteen keys in five
   categories**: **fourteen `retention.*` keys**, including order photos (default 7 days), admin and
   cleaner audit rows (default 3 years each) and, since 2026-09-28, receipt PDFs
   (`retention.receipts.years`, default and floor **10** — the statutory period, because nothing re-renders
@@ -36,8 +36,11 @@ catalogue default, never another company's and never a value nothing reads.
   `EmailTenantSetting`, value type `Email = 3` (appended, never reordered — the type is on the wire),
   stored trimmed and lower-cased, one `@` with something on both sides, no whitespace, ≤ 150, **the
   empty string invalid**: "unset" is the row's absence and `Resolve(null)` answers `""`, which the admin
-  notifier reads as *every administrator* (ADR-0065 D3). A key outside the list is refused by the writer
-  (`tenant_setting.unknown_key`) and ignored by the readers; a value the definition rejects is refused
+  notifier reads as *every administrator* (ADR-0065 D3); the two `cash.*` keys, `cash.float_cap` (0, no
+  cap) and `cash.remittance_request_days` (30, 1–365); and since 2026-10-04 **`pay.extras_share_percent`**
+  (50, 0–100), the share of the extras' prices a job pays its crew, read by the work-contract facts and
+  the pay run → [Cleaner pay](/product/business-rules#cleaner-pay). A key outside the list is refused by
+  the writer (`tenant_setting.unknown_key`) and ignored by the readers; a value the definition rejects is refused
   (`tenant_setting.invalid_value`). A category joins by adding entries here — nowhere else.
 - **`TenantConfigurationRepository`** — filtered reads (`GetByKeyAsync`, `GetAllAsync`); the unique
   `(TenantId, Key)` index, `NULLS NOT DISTINCT`, is the arbiter of "one row per company per key".
@@ -80,7 +83,7 @@ catalogue default, never another company's and never a value nothing reads.
   field for `Email` — which refuses a malformed address client-side with the server's own
   `api.tenant_setting.invalid_value` sentence and shows *every administrator* while the row is unset);
   Reset sits behind a confirmation and only on an overridden row; either write re-reads the catalogue.
-  A spec ties the five admin locales to the backend catalogue and its three categories, so a new key
+  A spec ties the five admin locales to the backend catalogue and its five categories, so a new key
   without its copy fails the build.
 
 ## Does NOT know
@@ -125,7 +128,8 @@ catalogue default, never another company's and never a value nothing reads.
 
 - **The next category.** A non-retention setting (a pay-calculation constant, a booking window a company
   wants to move) joins by adding a definition to the catalogue and a description to five locales — the
-  `lifecycle` and `notifications` categories joined exactly that way. It does **not** join by adding a
+  `lifecycle`, `notifications`, `cash` and `pay` categories joined exactly that way. It does **not**
+  join by adding a
   second table, a second reader or a per-country arm — if a value must differ per country, it is
   `CountryConfiguration`'s and not this table's.
 - **A per-market override of a catalogue table** (ADR-0041 RB-9's routed question) is still not this.

@@ -8,7 +8,8 @@ because it does not move the money.
 ```mermaid
 flowchart LR
   A[Order completed] --> B[OrderEmployeePay row]
-  X[Fee collected on a cancelled job] --> B
+  Y[Lockout confirmed] --> B
+  X[Fee collected on a late cancellation] --> B
   B --> C[Pay period]
   C -->|close| D[EmployeeInvoice, one per currency]
   L[Cash the cleaner holds] -->|set off| D
@@ -34,8 +35,9 @@ came, so a cleaner who works a two-seat job alone is paid one seat. That is also
 spare seat and why the order seat needs a database-level arbiter — a cleaner on a seat the job does not
 need would be paid a share on top of the whole job's pay, against an unchanged customer price.
 
-The formula, why `extrasPay` is not what it sounds like, why the dirtiness term sits outside the clamp,
-and why nothing is paid for distance (`ExpensesPay` is 0 on every new row; older rows keep what they were
+The formula, what `extrasPay` holds (rooms, bathrooms and, since 2026-10-04, a company share of the
+extras booked), why the dirtiness term sits outside the clamp, and why nothing is paid for distance
+(`ExpensesPay` is 0 on every new row; older rows keep what they were
 calculated with) are in [Business rules](/product/business-rules#cleaner-pay). A rate is an amount in a
 currency, and the pay writer reads only rates in the order's currency — so every pay row is in the
 currency of the order that earned it.
@@ -47,17 +49,26 @@ read that prices the reward the contract states, and `CalculateOrderPay` pays th
 rate edited after the take reaches only jobs taken after it; a seat no contract has formed on yet is
 paid at the rates in force when its pay is calculated.
 
-**A job that did not happen can pay too** (owner ruling 2026-09-28, decision 12). When a late
-cancellation or a customer [lockout](/flows/cancellation-refund-dispute#lockout) brings the company a
-fee, `CalculateOrderPay` pays each crew member a seat's share of **half of what was collected** — kept
-from the card payment, or paid on the cash booking's receivable — and never of a fee still owed, nor more
-than the company still holds after refunds. The row is typed `CancellationFeeShare` or `LockoutFeeShare`
-(`OrderEmployeePay.LineType`; a completed job's row is `Job`), holds the share as an unclamped base with
-no rates read, and is invoiced like any other row, the invoice line saying it is a share of the fee. It
-is asked for at the cancel or the lockout confirmation of an order that took a payment, and when the
-webhook settles a cash-cancellation or lockout receivable; a cancelled order that collected nothing is
-refused with `payroll.no_collected_fee` and writes nothing.
-→ [Business rules — the crew's share of a collected fee](/product/business-rules#fee-share)
+**A job that did not happen can pay too.** Two cases, paid differently:
+
+- **A late cancellation pays half of the fee collected** (owner ruling 2026-09-28, decision 12). When
+  it brings the company a fee, `CalculateOrderPay` pays each crew member a seat's share of **half of
+  what was collected** — kept from the card payment, or paid on the cash booking's receivable — and
+  never of a fee still owed, nor more than the company still holds after refunds. The row is typed
+  `CancellationFeeShare` (`OrderEmployeePay.LineType`; a completed job's row is `Job`), holds the share
+  as an unclamped base with no rates read, and is invoiced like any other row, the invoice line saying
+  it is a share of the fee. It is asked for at the cancel of an order that took a payment, and when the
+  webhook settles a cash-cancellation-fee receivable; a cancelled order that collected nothing is
+  refused with `payroll.no_collected_fee` and writes nothing.
+  → [Business rules — the crew's share of a collected fee](/product/business-rules#fee-share)
+- **A confirmed [lockout](/flows/cancellation-refund-dispute#lockout) pays each seat its full reward**
+  (owner decision 2026-10-04): what the completed job would have paid it, from the figures frozen on the
+  seat at the take, or at the rates in force for a seat with no contract. It is asked for at the
+  confirmation, on every lockout, and paid whether or not the customer ever pays the price. The row
+  keeps the type `LockoutFeeShare` and carries the job's base, extras, dirtiness and bounds, so a later
+  bonus or deduction re-clamps it as on a job. Until then a lockout paid half of the fee collected, like
+  a late cancellation.
+  → [Business rules — a confirmed lockout pays the seat's reward](/product/business-rules#lockout-pay)
 
 **And the order is in the cleaner's currency, because the board is.** A cleaner is paid in the currency
 of the country they work in (owner ruling 2026-09-12), and `OrderVisibility.PayableTo` keeps every
@@ -142,6 +153,14 @@ from; the two figures are on the wire and on the PDF the cleaner is e-mailed.
 A paid period cannot be reopened. That is the point of the state: it is the boundary after which the
 numbers stop moving.
 
+**A period is 14 days** (owner decision 2026-10-04; a calendar month until then). The nightly close
+(`CloseExpiredPayPeriods`, 02:00, company by company) closes every open period that has ended, invoices
+it, and opens the next from the day after it ended (`PayPeriod.CreateBiWeekly`: the end is the start
+plus 13 days). When pay is calculated and no period is open, one is opened from the current day. The
+invoice is still due 14 days after issue, and the cash remittance request and the period-end reminders
+keep their own clocks. An administrator can still create a period of 7 to 31 days by hand.
+→ [Business rules — pay periods are 14 days](/product/business-rules#pay-periods)
+
 ## Approval is the last point the platform can refuse {#approval-is-the-last-refusal}
 
 An invoice is generated `Pending`, approved by an admin, and marked paid once the transfer has been
@@ -157,9 +176,9 @@ path are gated:
 set and `Status` must be `Provided`, else `payroll.invoice.payout_details_missing`. This is ADR-0034
 D7's issuance block, and it sits here rather than at generation where the ADR first put it — the ADR
 carries a dated correction banner saying so. Generation would withhold a numbered tax document the
-cleaner needs for their own filing, for up to a month; approval withholds only the admin's commitment
-to transfer, the document is issued on time, and when the cleaner supplies their details the admin
-approves the invoice that already exists. In the shipped tree the three conditions collapse to one,
+cleaner needs for their own filing, for a pay period or more; approval withholds only the admin's
+commitment to transfer, the document is issued on time, and when the cleaner supplies their details the
+admin approves the invoice that already exists. In the shipped tree the three conditions collapse to one,
 because the only writer (`UpdateBankDetails`) always stores a scheme and `Provided`; the other two are
 checked so the enum cannot quietly grow a state that passes. How a cleaner with pay rows and no record
 comes about is narrow — an admin reassignment onto an incomplete cleaner, or GDPR erasure deleting the
@@ -232,7 +251,10 @@ the job detail, the dashboard estimate and the available-jobs preview — is `Or
 per-seat figure, raised by the level, the same share `CalculateOrderPay` writes for every seat but the
 first (which also takes the residue cents). The partner web labels it *per spot*. Once the cleaner
 holds the seat, the job detail, *My jobs* and the dashboard quote that seat's contract reward from its
-frozen figures, which is what the pay row will say; the board stays at today's rates.
+frozen figures, which is what the pay row will say; the board stays at today's rates. **The estimate
+before the take leaves out the extras share** (since 2026-10-04): `OrderPayEstimator.Estimate` passes
+none, so a job with extras is quoted low until it is taken. The contract read before the take states
+the reward with the share.
 
 ## Numbering is allocated, never derived
 
@@ -291,6 +313,9 @@ already does.
 | A remittance and an invoice's set-off take the same cash at once | The per-cleaner, per-currency lock serialises them; the second reads the balance the first left and is refused, or sets off only what is left. |
 | An invoice that set cash off is cancelled | The whole set-off goes back into the ledger. |
 | A late cancellation of a paid card order | Each crew member gets a `CancellationFeeShare` row: a seat's share of half the fee the company still holds. |
-| A lockout on a cash booking whose receivable is still open | No pay row; the crew is paid when the receivable is paid, and nothing if it is written off. |
+| A lockout confirmed on a cash booking whose receivable is still open | Each seat is paid its full reward at the confirmation; whether the receivable is later paid or written off changes nothing for the crew. |
+| A lockout confirmed on a card order already refunded | Each seat is still paid its full reward; no collected fee is read. |
+| A job with one extra booked at 250, at the default share | 125 is added to the job's extras, frozen at the take and split across the seats: 62.50 each on a two-seat job, before the dirtiness level raises it. |
+| A company sets `pay.extras_share_percent` to 0 | Extras pay nothing on jobs taken after the change; a seat already taken keeps the share frozen at its take. |
 | An administrator writes a cleaner's rates from a template | Standard 0.5, experienced 0.6 or expert 0.7 of each list price — every template leaves a margin, and like every rate it describes the job, so each seat of a two-seat job earns half; the old junior/medior/senior ranks are refused. → [Business rules — per-employee rates](/product/business-rules#per-employee-rates) |
 | A rate is changed or deleted while a cleaner holds a job | The held job is paid at the figures frozen on the seat when its contract formed; only jobs taken after the change use the new rate. A deleted rate does not block the held job's pay. |

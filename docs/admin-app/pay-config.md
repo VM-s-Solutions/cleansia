@@ -25,6 +25,11 @@ When calculating pay for an order:
 
 This means an employee can have specific overrides for some services and use global rates for others.
 
+**Extras are not rated here.** A job's pay also carries a share of the prices of the extras the customer
+booked — half by default — set per company by `pay.extras_share_percent` on *Company settings*, not per
+extra or per cleaner (owner decision 2026-10-04 →
+[Cleaner pay](/product/business-rules#cleaner-pay)).
+
 The rates are resolved when a seat's contract for work forms — the cleaner's take, or their acceptance
 of an administrator's placement — and frozen on the seat, so an edit here reaches only jobs taken after
 it; a job a cleaner already holds is paid as its contract was priced (owner ruling 2026-10-03 →

@@ -63,7 +63,7 @@ grows one.
 | Entity | |
 |---|---|
 | `Tenant` | — ; referenced by `CountryConfiguration.OperatorTenantId` and by `TenantId` on all 50 stamped tables. `Auditable` (tenantless by construction); the lifecycle columns above; the company's state is the highest of *archived* (`ArchivedOn`), *frozen* (`ArchiveRequestedOn`), *deactivated* (`!IsActive`), *winding down* (`WindDownFrom`), *operating* → [Company lifecycle](/domain/roles/company-lifecycle) |
-| `TenantConfiguration` | references `Tenant`; one row per `(TenantId, Key)` (unique, `NULLS NOT DISTINCT`) holding a company's override of one of sixteen catalogued settings — fourteen `retention.*` settings (the receipt-PDF window joined on 2026-09-28), the chargeback horizon and the administrator notification mailbox; no row means the catalogue default. Written by the admin's *Company settings* page, read per company by the retention job → [TenantConfiguration](/domain/roles/tenant-configuration) |
+| `TenantConfiguration` | references `Tenant`; one row per `(TenantId, Key)` (unique, `NULLS NOT DISTINCT`) holding a company's override of one of nineteen catalogued settings — fourteen `retention.*` settings (the receipt-PDF window joined on 2026-09-28), the chargeback horizon, the administrator notification mailbox, the two `cash.*` settings and `pay.extras_share_percent` (2026-10-04); no row means the catalogue default. Written by the admin's *Company settings* page, read per company by the retention job → [TenantConfiguration](/domain/roles/tenant-configuration) |
 
 ## Identity and access
 

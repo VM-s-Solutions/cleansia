@@ -87,11 +87,13 @@ registries use.
 **A Czech IČO is looked up in ARES** (since 2026-10-04). After the format check, the cleaner's save —
 the partner web profile and the apps' identification section — is refused when ARES does not hold the
 number (`validation.registration_number.not_registered`); when ARES does not answer, the save goes
-through. Approval asks again and is stricter: the business must be live and a trade licence in force,
-and an ARES outage refuses it until the admin tries again. Nothing ARES answers is stored, and no name
-is matched. The partner web shows the refusal in five languages; the Android and iOS partner apps have
-no text for it yet and show the key. Local runs, the tests and the deployed DEV hosts switch the lookup
-off (`Ares:Enabled`); only prod checks ARES.
+through. The save asks the register of the cleaner's work country once they are approved, and before
+that of their address country, never of the business country the app sends, so it asks the register
+approval asked. Approval asks again and is stricter: the business must be live and a trade licence in
+force, and an ARES outage refuses it until the admin tries again. Nothing ARES answers is stored, and
+no name is matched. The partner web and the Android and iOS partner apps show the refusal in five
+languages. Local runs, the tests and the deployed DEV hosts switch the lookup off (`Ares:Enabled`); only
+prod checks ARES.
 → [The business register](/product/business-rules#business-register)
 
 ::: info Not part of the completeness check

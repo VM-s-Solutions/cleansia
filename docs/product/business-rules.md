@@ -976,12 +976,19 @@ under **Saved cards** on `/profile`, Android and iOS under Profile → Payments
 *Remove*. A card saved either way is listed once Stripe confirms it; one still awaiting that
 confirmation is not.
 
-**The customer web's copy no longer ties a card to cash** (since 2026-10-04). It introduces the cards
-as *Cards saved to your account*, says *No card saved.* when there is none, and *Remove* asks only to
-confirm. The capture dialog and its texts are gone. **The Android and iOS copy has not changed yet.**
-Both still introduce the card as the one that guarantees cash bookings and say what may be charged to
-it. With no card, Android says *Your first cash booking asks for one* and iOS says *Cash bookings need
-one*. Neither is true since 2026-10-04.
+**No client's copy ties a card to cash** (since 2026-10-04). The customer web introduces the cards as
+*Cards saved to your account*, says *No card saved.* when there is none, and *Remove* asks only to
+confirm; its capture dialog and texts are gone. Android and iOS introduce the card word for word as *The
+card saved to your account. It is never charged unless you pay with it, and you can remove it at any
+time.* It promises no quicker payment, because no card payment offers the saved card. With no card they
+say *You can save one the next time you pay by card*, and *Remove* says the card can be saved again the
+same way. iOS keeps *Save a card* on the same screen; its note says only that saving charges nothing,
+and its consent tick asks only to agree to saving the card. On every client the consent refusal
+(`saved_card.consent_not_accepted`) asks only for that consent, where it used to ask the customer to
+agree that fees and unpaid cash may be charged. Until then Android and iOS introduced the card as the
+one that guarantees cash bookings, listed what could be charged to it, and with no card said a cash
+booking needs one. The versioned consent sentence recorded with each saved card is unchanged
+([The texts in force lag](#legal-texts-lag)).
 
 - **Removing a card** (`DELETE api/SavedCard/Remove/{id}`, the customer's own; another's is
   `saved_card.not_found`) deactivates the row and leaves the payment method on the Stripe Customer,
@@ -1415,13 +1422,23 @@ register of economic subjects. Before the ruling, only its format (`^\d{8}$` for
   other country. A number that is not eight digits counts as not registered, with no call made. It
   reads three facts and **stores none**: the number exists (a `404` means it does not), the business
   has not ended (no `datumZaniku`), and a trade licence is in force (`stavZdrojeRzp` is `AKTIVNI`).
-  **No name is matched.** The client is a named HTTP client with the same retry and timeout as the
-  Mapbox client; an error, a timeout, a rate limit or a reply it cannot read is *unavailable*.
+  **No name is matched.** The client is a named HTTP client with a budget of its own: 12 s in all, at
+  most three attempts of 4 s. An error, a timeout, a rate limit or a reply it cannot read is
+  *unavailable*. **Since 2026-10-04 nothing wraps that budget and nothing logs the request.** Every host
+  gives each HTTP client the standard resilience handler, and until then it wrapped the lookup's own, so
+  a register that kept failing was asked twelve times in up to 30 s while a save or an approval waited.
+  The client's request logging wrote the URL, which ends in the IČO, at Information. The client now
+  drops both.
 - **The cleaner's own save checks only that the number exists.** `UpdateEmployee` (the partner web
   profile) and `UpdateIdentificationInfo` (the apps' identification section) refuse, after the format
   check, a number the register does not hold, with `validation.registration_number.not_registered`.
   **An outage lets the save through**, because the check that binds comes at approval. It runs on
   every save, so an approved cleaner cannot swap in an unchecked number either.
+- **The save asks the register approval asked** (since 2026-10-04). That is the register of the
+  cleaner's work country once they are approved, and before it the register of their address country
+  (the one `UpdateEmployee` is saving). The business country the apps send is not used: no column keeps
+  it, and until then the save asked that country's register, so an approved Czech cleaner who named any
+  other country, for which no register is consulted, could swap in any number.
 - **Approval checks all three, and an outage refuses.** `ApproveEmployee` asks the register of the work
   country the cleaner is approved for. It refuses a number the register does not hold
   (`validation.registration_number.not_registered`), an ended business (`employee.business_ceased`), no
@@ -1437,9 +1454,10 @@ register of economic subjects. Before the ruling, only its format (`^\d{8}$` for
   ([Infrastructure](/architecture/infrastructure)), so the Development settings never load there, and
   `deploy/bicep/main.bicep` sets `Ares__Enabled` on every API host: `true` on prod, `false` elsewhere.
   Until then DEV checked ARES, and a test cleaner with a made-up IČO could not be approved.
-- **What the cleaner and the administrator read.** The admin web has all four keys in its five locales,
-  the partner web has `validation.registration_number.not_registered` in its five. **The Android and
-  iOS partner apps have no text for that key yet**, so a refused save in the apps shows the raw key.
+- **What the cleaner and the administrator read.** The admin web has all four keys in its five locales.
+  The partner web and, since 2026-10-04, the Android and iOS partner apps have
+  `validation.registration_number.not_registered` in their five, worded alike; until then a refused save
+  in the apps showed the raw key. The three approval-only keys answer the admin host alone.
 
 The framework agreement in force names no register check among its approval conditions
 ([The texts in force lag](#legal-texts-lag)).
@@ -1722,6 +1740,16 @@ and nothing while the fee was owed.
   `payroll.no_pay_configuration` and writes nothing. No collected fee is read.
 - **Asked for at the confirmation, on every lockout.** `AdminCancelOrderAsLockout` asks for every crew
   member's pay on the pay queue, whether or not the order took a payment.
+- **Only that confirmation makes a lockout** (since 2026-10-04). The pay recognises one by three facts
+  that only the confirmation writes together: the order was cancelled by an administrator, a lockout
+  report is stamped on it, and its reason is the key `order.cancelled.customer_lockout`
+  (`Order.IsConfirmedLockout`). Until then it read the reason alone, and a customer's cancellation
+  carries free text as its reason. A late cancellation whose text was that key paid each seat its full
+  reward instead of its share of the fee collected, and on a cash booking skipped the wait for the fee.
+- **An erasure does not undo it** (since 2026-10-04). Anonymising the customer clears an administrator's
+  or a customer's reason text, but keeps the lockout key on a confirmed lockout, as it keeps a platform
+  reason, and keeps the report's stamp. Until then an erasure that ran before the queued pay cleared the
+  key, so the seat was paid a share of the fee on a card order, and nothing on a cash one.
 - **The row keeps the wire type `LockoutFeeShare`** (`PayLineType` 2) and carries the job's base,
   extras, dirtiness, minimum and maximum, so a later bonus or deduction re-clamps it as on a completed
   job. The order is not marked `EmployeePayCalculated`, because it was never completed.
@@ -2200,6 +2228,15 @@ the account never reached, or say nothing when the replay was what crossed a thr
 decided after the save, against the tier the account held in the database just before it, and names
 the tier saved. Only a promotion is announced. An earn that crosses a threshold while the share taken
 at completion keeps the account below it announces nothing.
+
+**Only a loyalty write takes the owner lock** (since 2026-10-04). A first grant for a customer with no
+account takes it and reads again, so two first grants land on one account
+([Loyalty — points](/flows/loyalty-and-memberships#points)). The customer's own loyalty page
+(`GetMyLoyalty`) and an administrator's lookup (`GetUserLoyaltyAccount`) read a customer with no account
+as Bronze with no points, take no lock and create nothing; the account is the first grant's to open.
+Until then both went through the same get-or-create, so on a miss a page view opened a transaction and
+held the customer's `Users` row until the request ended, and a grant or credit write for that customer
+waited behind it.
 
 **Tier floor — `LoyaltyTierConfig.MinimumOrderAmountForDiscount`.** Seeded at **1000** for every tier
 that has one. It is a platform-default-currency number, enforced only on an order in that currency; on

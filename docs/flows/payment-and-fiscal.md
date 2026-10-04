@@ -2,9 +2,10 @@
 
 Money arrives and is recorded on the payment axis — the order stays `New` until a cleaner takes it —
 and a receipt is issued once money has been received: on settlement for card, at completion for cash,
-after the cleaner has recorded the handover. The same webhook also lands a card a customer saves as the
-guarantee for cash, at a cash booking or by a tick while paying by card, and settles what a customer
-owes after the booking, which earns a receipt of its own. Almost all of the difficulty is
+after the cleaner has recorded the handover. The same webhook also lands a card a customer chooses to
+save, by a tick while paying by card or, on iOS, from Profile → Payments; since 2026-10-04 the card is
+optional, guarantees nothing and is charged only when the customer pays with it. And it settles what a
+customer owes after the booking, which earns a receipt of its own. Almost all of the difficulty is
 in making a webhook that can arrive twice, late, or out of order behave as though it arrived once.
 
 ## The path

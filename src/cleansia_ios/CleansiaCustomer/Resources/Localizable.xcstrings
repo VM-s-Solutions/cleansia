@@ -29642,31 +29642,31 @@
         "cs": {
           "stringUnit": {
             "state": "translated",
-            "value": "Karta uložená ve vašem účtu. Nic z ní nestrhneme, pokud jí sami nezaplatíte, a kdykoli ji můžete odebrat."
+            "value": "Z karet uložených ve vašem účtu nic nestrhneme, pokud jimi sami nezaplatíte, a kartu můžete kdykoli odebrat."
           }
         },
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "The card saved to your account. It is never charged unless you pay with it, and you can remove it at any time."
+            "value": "Cards saved to your account are never charged unless you pay with them, and you can remove one at any time."
           }
         },
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Карта, сохранённая в вашем аккаунте. Деньги с неё списываются, только когда вы сами ею платите, и её можно удалить в любой момент."
+            "value": "С карт, сохранённых в вашем аккаунте, деньги списываются, только когда вы сами ими платите, и карту можно удалить в любой момент."
           }
         },
         "sk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Karta uložená vo vašom účte. Nič z nej nestrhneme, ak ňou sami nezaplatíte, a kedykoľvek ju môžete odstrániť."
+            "value": "Z kariet uložených vo vašom účte nič nestrhneme, ak nimi sami nezaplatíte, a kartu môžete kedykoľvek odstrániť."
           }
         },
         "uk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Картка, збережена у вашому акаунті. Кошти з неї списуються лише тоді, коли ви самі нею платите, і її можна будь-коли видалити."
+            "value": "З карток, збережених у вашому акаунті, кошти списуються лише тоді, коли ви самі ними платите, і картку можна будь-коли видалити."
           }
         }
       }

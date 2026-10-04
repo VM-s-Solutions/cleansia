@@ -63,7 +63,8 @@ final class SavedCardTests: XCTestCase {
         XCTAssertTrue(offending.isEmpty, "the saved card is still described as the cash guarantee: \(offending)")
     }
 
-    /// No card payment offers the saved card, so saving one makes no payment quicker.
+    /// The saved-card copy makes no cash, guarantee, fee or speed claim (meeting 2026-10-04)
+    /// → /product/business-rules#saved-cards
     func testTheSavedCardCopyDoesNotPromiseQuickerCardPayments() throws {
         let offending = try savedCardCopySaying(Self.speedClaimVocabulary)
         XCTAssertTrue(offending.isEmpty, "the saved card still promises quicker payments: \(offending)")

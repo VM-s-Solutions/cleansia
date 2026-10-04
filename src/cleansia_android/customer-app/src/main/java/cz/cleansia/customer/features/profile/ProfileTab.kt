@@ -53,6 +53,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -63,6 +64,7 @@ import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -158,16 +160,18 @@ fun ProfileTab(
     var showLogoutDialog by remember { mutableStateOf(false) }
     var showCreditSheet by remember { mutableStateOf(false) }
     val scrollState = rememberScrollState()
+    var heroHeight by remember { mutableIntStateOf(0) }
 
     Column(
         modifier = modifier
             .fillMaxSize()
             .background(MaterialTheme.colorScheme.background)
-            .statusBarFade(scrollState)
+            // The fade wears the hero's top colour while the hero is under the status bar.
+            .statusBarFade(scrollState, heroTint = BrandGradients.blue().first, heroHeight = { heroHeight })
             .verticalScroll(scrollState),
     ) {
         // 1. Hero + stats card (stats overlap the hero's bottom edge)
-        Box {
+        Box(Modifier.onSizeChanged { heroHeight = it.height }) {
             ProfileHero(
                 firstName = firstName,
                 lastName = lastName,

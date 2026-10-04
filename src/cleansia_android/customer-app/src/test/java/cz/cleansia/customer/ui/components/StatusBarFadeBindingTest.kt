@@ -14,7 +14,7 @@ class StatusBarFadeBindingTest {
 
     @Test
     fun `each screen fades the viewport its own scroll state drives`() {
-        val chained = Regex("""\.statusBarFade\((\w+)\)\s*\.verticalScroll\(\1\)""")
+        val chained = Regex("""\.statusBarFade\((\w+)\b[^\n]*\)\s*\.verticalScroll\(\1\)""")
         for (screen in SCREENS) {
             assertTrue(
                 "$screen must chain .statusBarFade(state) directly before .verticalScroll(state)",
@@ -45,13 +45,30 @@ class StatusBarFadeBindingTest {
         )
     }
 
-    /** Android interpolates a gradient unpremultiplied: a fade to transparent BLACK greys the light theme. */
+    /**
+     * Profile and Plus start their scroll content with a full-bleed hero, so the fade wears the hero's top
+     * colour while the hero is under the status bar; it can only follow the hero it is told the height of.
+     */
     @Test
-    fun `the band fades to the page background at zero alpha`() {
-        val fade = source("ui/components/StatusBarFade.kt").replace(Regex("""//[^\n]*"""), "")
+    fun `the hero screens hand the fade their hero's colour and measured height`() {
+        val heroes = mapOf(
+            "features/profile/ProfileTab.kt" to "BrandGradients.blue().first",
+            "features/membership/SubscribePlusScreen.kt" to "Sky950",
+        )
+        for ((screen, tint) in heroes) {
+            val text = source(screen)
+            assertTrue(
+                "$screen must pass heroTint = $tint and heroHeight = { heroHeight }",
+                text.contains(".statusBarFade(scrollState, heroTint = $tint, heroHeight = { heroHeight })"),
+            )
+            assertTrue(
+                "$screen must measure its hero into heroHeight",
+                text.contains("onSizeChanged { heroHeight = it.height }"),
+            )
+        }
         assertTrue(
-            "StatusBarFade must end its gradient on color.copy(alpha = 0f), not Color.Transparent",
-            fade.contains("1f to color.copy(alpha = 0f)") && !fade.contains("Color.Transparent"),
+            "Home has no hero: its fade is the page colour",
+            source("features/home/HomeTab.kt").contains(".statusBarFade(scrollState)\n"),
         )
     }
 

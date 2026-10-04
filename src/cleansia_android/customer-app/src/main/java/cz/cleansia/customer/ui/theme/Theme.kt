@@ -6,7 +6,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.SideEffect
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalView
 import androidx.core.view.WindowCompat
@@ -71,7 +71,10 @@ fun CleansiaTheme(
     val colors = if (darkTheme) DarkColors else LightColors
     val view = LocalView.current
     if (!view.isInEditMode) {
-        SideEffect {
+        // When the theme changes, not after every recomposition: a screen with a hero under the status
+        // bar sets the icons itself (statusBarFade), and side effects run after every other effect in a
+        // frame, so one here would undo it.
+        DisposableEffect(darkTheme, view) {
             val window = (view.context as Activity).window
             // Both bars stay transparent so the system never paints over the
             // page: the root Surface already fills the whole window with
@@ -85,6 +88,7 @@ fun CleansiaTheme(
             val insetsController = WindowCompat.getInsetsController(window, view)
             insetsController.isAppearanceLightStatusBars = !darkTheme
             insetsController.isAppearanceLightNavigationBars = !darkTheme
+            onDispose {}
         }
     }
     MaterialTheme(

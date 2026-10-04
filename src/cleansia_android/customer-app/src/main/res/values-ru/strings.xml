@@ -655,9 +655,10 @@
     <string name="booking_in_your_package">В вашем пакете: %1$s</string>
     <string name="booking_twice_service_title">Уже есть в вашем пакете</string>
     <string name="booking_twice_service_message">Услуга %1$s входит в пакет %2$s. Если добавить её ещё раз, она будет заказана дважды: выполнена дважды и оплачена дважды.</string>
+    <string name="booking_twice_service_message_many">Услуга %1$s уже входит в пакеты %2$s. Если добавить её ещё раз, она будет заказана ещё раз: выполнена ещё раз и оплачена ещё раз.</string>
     <string name="booking_twice_service_confirm">Добавить ещё раз</string>
     <string name="booking_twice_package_title">Уже есть в вашем бронировании</string>
-    <string name="booking_twice_package_message">Пакет %1$s включает то, что вы уже добавили отдельно: %2$s. Если добавить пакет, это будет заказано дважды: выполнено дважды и оплачено дважды.</string>
+    <string name="booking_twice_package_message">Пакет %1$s включает то, что уже есть в вашем бронировании: %2$s. Если добавить пакет, это будет заказано ещё раз: выполнено ещё раз и оплачено ещё раз.</string>
     <string name="booking_twice_package_confirm">Добавить пакет</string>
     <string name="booking_your_home">Ваш дом</string>
     <string name="booking_size_limit_caption">Не более %1$d комнат и %2$d ванных комнат</string>

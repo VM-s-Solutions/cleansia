@@ -658,9 +658,10 @@
     <string name="booking_in_your_package">Ve vašem balíčku: %1$s</string>
     <string name="booking_twice_service_title">Už je ve vašem balíčku</string>
     <string name="booking_twice_service_message">Služba %1$s je součástí balíčku %2$s. Když ji přidáte znovu, objednáte ji dvakrát: provede se dvakrát a zaplatíte ji dvakrát.</string>
+    <string name="booking_twice_service_message_many">Služba %1$s je už součástí balíčků %2$s. Když ji přidáte znovu, objednáte ji ještě jednou: provede se ještě jednou a zaplatíte ji ještě jednou.</string>
     <string name="booking_twice_service_confirm">Přidat znovu</string>
     <string name="booking_twice_package_title">Už je ve vaší rezervaci</string>
-    <string name="booking_twice_package_message">Balíček %1$s obsahuje i to, co už máte v rezervaci samostatně: %2$s. Když balíček přidáte, objednáte to dvakrát: provede se to dvakrát a zaplatíte to dvakrát.</string>
+    <string name="booking_twice_package_message">Balíček %1$s obsahuje i to, co už máte v rezervaci: %2$s. Když balíček přidáte, objednáte to ještě jednou: provede se to ještě jednou a zaplatíte to ještě jednou.</string>
     <string name="booking_twice_package_confirm">Přidat balíček</string>
     <string name="booking_your_home">Váš domov</string>
     <string name="booking_size_limit_caption">Nejvýše %1$d pokojů a %2$d koupelny</string>

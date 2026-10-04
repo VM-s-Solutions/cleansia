@@ -657,9 +657,10 @@
     <string name="booking_in_your_package">In your package: %1$s</string>
     <string name="booking_twice_service_title">Already in your package</string>
     <string name="booking_twice_service_message">%1$s is part of %2$s. Adding it again books it twice: it is done twice and charged twice.</string>
+    <string name="booking_twice_service_message_many">%1$s is already part of %2$s. Adding it again books it once more: it is done once more and charged once more.</string>
     <string name="booking_twice_service_confirm">Add again</string>
     <string name="booking_twice_package_title">Already in your booking</string>
-    <string name="booking_twice_package_message">%1$s also includes what you already added separately: %2$s. Adding the package books that twice: done twice and charged twice.</string>
+    <string name="booking_twice_package_message">%1$s also includes what is already in your booking: %2$s. Adding the package books that once more: it is done once more and charged once more.</string>
     <string name="booking_twice_package_confirm">Add package</string>
     <string name="booking_your_home">Your home</string>
     <string name="booking_size_limit_caption">Up to %1$d rooms and %2$d bathrooms</string>

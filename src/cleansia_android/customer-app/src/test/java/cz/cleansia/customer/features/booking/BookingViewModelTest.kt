@@ -2824,6 +2824,52 @@ class BookingViewModelTest {
         )
     }
 
+    // R5: two chosen packages that include the same service book it again, so the second one asks too.
+    private fun kotlinx.coroutines.test.TestScope.withOverlappingPackages(): BookingViewModel {
+        catalogServicesFlow.value = listOf(service("svc-1"), service("svc-2"))
+        catalogPackagesFlow.value = listOf(packageWith("pkg-1", "svc-1"), packageWith("pkg-2", "svc-1", "svc-2"))
+        return newViewModel().also { advanceUntilIdle() }
+    }
+
+    @Test
+    fun addingAPackageThatSharesAServiceWithAChosenPackage_asksFirstThenAddsOnConfirm() = runTest {
+        val vm = withOverlappingPackages()
+        assertEquals(true, vm.togglePackage("pkg-1"))
+
+        assertEquals(false, vm.togglePackage("pkg-2"))
+
+        val pkg2 = catalogPackagesFlow.value[1]
+        assertEquals(DoubleBooking.Package(pkg2, listOf(pkg2.includedServices!![0])), vm.doubleBooking.value)
+        assertEquals(setOf("pkg-1"), vm.state.value.selectedPackageIds)
+
+        vm.confirmDoubleBooking()
+
+        assertEquals(setOf("pkg-1", "pkg-2"), vm.state.value.selectedPackageIds)
+    }
+
+    @Test
+    fun addingAServiceTwoChosenPackagesInclude_asksWithTheOnceMoreMessage() = runTest {
+        val vm = withOverlappingPackages()
+        vm.update { it.copy(selectedPackageIds = setOf("pkg-1", "pkg-2")) }
+
+        vm.toggleService("svc-1")
+
+        val pick = vm.doubleBooking.value as DoubleBooking.Service
+        assertEquals(catalogPackagesFlow.value, pick.packages)
+        assertEquals(R.string.booking_twice_service_message_many, pick.messageRes)
+        assertEquals(emptySet<String>(), vm.state.value.selectedServiceIds)
+    }
+
+    @Test
+    fun twoSeededOverlappingPackages_neverAsk() = runTest {
+        val vm = withOverlappingPackages()
+
+        vm.update { it.copy(selectedPackageIds = setOf("pkg-1", "pkg-2")) }
+
+        assertNull(vm.doubleBooking.value)
+        assertEquals(setOf("pkg-1", "pkg-2"), vm.state.value.selectedPackageIds)
+    }
+
     @Test
     fun reset_forgetsAHeldConfirm() = runTest {
         val vm = withDeepCleanPackage()

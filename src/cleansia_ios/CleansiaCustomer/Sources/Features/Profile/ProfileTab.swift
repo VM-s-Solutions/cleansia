@@ -19,8 +19,6 @@ struct ProfileTab: View {
     /// test (a money surface that must not silently regress its destination).
     static let subscribeRoute: ShellRoute = .subscribePlus
 
-    /// The account row opens the edit screen, so it carries that screen's full title. The hero chip's
-    /// label is the verb alone and would read as a bare "Edit" in a list of destinations.
     /// The hero's top colour: the status bar sits on it at rest, and the fade wears it while the hero is
     /// under the status bar. From iOS 17 the system draws the clock, signal and battery white over the
     /// hero, and on the brand blue's sky-600 they read at 4.1:1, so in light mode Profile's hero starts at
@@ -34,6 +32,8 @@ struct ProfileTab: View {
 
     private static let heroTopLight = Color(red: 3 / 255, green: 105 / 255, blue: 161 / 255)
 
+    /// The account row opens the edit screen, so it carries that screen's full title. The hero chip's
+    /// label is the verb alone and would read as a bare "Edit" in a list of destinations.
     static var editRowLabel: String {
         L10n.EditProfile.title
     }

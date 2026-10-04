@@ -38,10 +38,6 @@ struct BookingState: Equatable {
     /// unticked. Read only when the box is shown — see `BookingViewModel.alreadyConsented`.
     var termsAccepted = false
 
-    /// The card-guarantee consent, asked only while the booking needs a card captured — see
-    /// `BookingViewModel.needsCardGuarantee`. Per booking, like the terms tick.
-    var cardGuaranteeAccepted = false
-
     /// The card payment's "save this card" tick. Per booking and off by default: unticked, Stripe keeps nothing.
     var saveCard = false
 

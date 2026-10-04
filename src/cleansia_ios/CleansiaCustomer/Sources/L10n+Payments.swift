@@ -107,26 +107,10 @@ extension L10n.Booking {
         L10n.localized("booking_card_guarantee_title")
     }
 
-    static var cardGuaranteeBody: String {
-        L10n.localized("booking_card_guarantee_body")
-    }
-
     /// The draft wording the server records as `SavedCard.ConsentTextVersionInForce`; a new wording gets
     /// a new key together with a new version on the server.
     static var cardGuaranteeConsent: String {
         L10n.localized("consent_card_guarantee_draft_2026_09_28")
-    }
-
-    static var cardGuaranteeConsentRequired: String {
-        L10n.localized("booking_card_guarantee_consent_required")
-    }
-
-    static var cardGuaranteeCancelled: String {
-        L10n.localized("booking_card_guarantee_cancelled")
-    }
-
-    static var cardGuaranteePending: String {
-        L10n.localized("booking_card_guarantee_pending")
     }
 
     static var saveCard: String {

@@ -22,11 +22,6 @@ final class FakeSavedCardClient: SavedCardClient, @unchecked Sendable {
         self.removeResult = removeResult
     }
 
-    /// A customer whose cash bookings in CZK are already guaranteed.
-    static func holdingCzkCard() -> FakeSavedCardClient {
-        FakeSavedCardClient(reads: [.success([PaymentsFixtures.czkCard])])
-    }
-
     func myCards() async -> ApiResult<[SavedCard]> {
         let answer = reads[min(readCount, reads.count - 1)]
         readCount += 1

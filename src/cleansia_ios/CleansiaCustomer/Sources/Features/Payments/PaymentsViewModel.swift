@@ -7,9 +7,12 @@ struct PaymentsSnapshot: Equatable {
     let cards: [SavedCard]
 }
 
-/// What the customer owes and the card that guarantees their cash bookings.
+/// What the customer owes and the cards they saved.
 @MainActor
 final class PaymentsViewModel: ViewModel {
+    /// How long the screen waits for a just-saved card: 8 reads, `pauseBetweenCardReads` apart.
+    static let cardReads = 8
+
     @Published private(set) var state: UiState<PaymentsSnapshot> = .loading
     @Published private(set) var removeState: ActionState = .idle
     @Published private(set) var payState: ActionState = .idle
@@ -48,9 +51,8 @@ final class PaymentsViewModel: ViewModel {
         self.pauseBetweenCardReads = pauseBetweenCardReads
     }
 
-    /// Cash is refused without a usable card in the market's currency, and the recurring paths never
-    /// capture one, so this screen is where such a customer saves it. With no market known, any usable
-    /// card counts.
+    /// Offered while the customer holds no usable card in the market's currency. With no market known,
+    /// any usable card counts.
     var offersCardCapture: Bool {
         guard case let .loaded(snapshot) = state else { return false }
         guard let currencyCode else { return !snapshot.cards.contains { $0.isUsable(on: Date()) } }
@@ -155,7 +157,7 @@ final class PaymentsViewModel: ViewModel {
     }
 
     private func awaitCard(id: String) async -> [SavedCard]? {
-        for read in 0 ..< BookingViewModel.cardCaptureReads {
+        for read in 0 ..< Self.cardReads {
             if read > 0 {
                 await pauseBetweenCardReads()
             }

@@ -33,8 +33,8 @@ extension CustomerShellView {
     /// Back in the foreground with the sheet open: its time may have passed while the app was away, so it is
     /// re-checked as a plain open re-checks one. The sheet is drawn afresh too — its When step builds the day
     /// strip and the slots from the clock as it draws them, and nothing else redraws it on the way back. A
-    /// booking being sent, or paid for under Stripe's sheet, is left alone: the slide and the card guarantee
-    /// re-check before anything goes out, and a card payment's order already exists.
+    /// booking being sent, or paid for under Stripe's sheet, is left alone: the slide re-checks before anything
+    /// goes out, and a card payment's order already exists.
     func recheckOpenBooking() {
         guard !bookingVM.submitState.isSubmitting, !bookingVM.paymentSheetShowing else { return }
         if bookingVM.revalidateResumedTime() {

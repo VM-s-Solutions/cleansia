@@ -4129,41 +4129,6 @@
         }
       }
     },
-    "error.order.cash_requires_saved_card": {
-      "extractionState": "manual",
-      "localizations": {
-        "cs": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Pro platbu v hotovosti si nejdřív uložte kartu jako záruku — nebo zaplaťte kartou."
-          }
-        },
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "To pay in cash, first save a card as a guarantee — or pay by card."
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Чтобы платить наличными, сначала сохраните карту как гарантию — или оплатите картой."
-          }
-        },
-        "sk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Na platbu v hotovosti si najprv uložte kartu ako záruku — alebo zaplaťte kartou."
-          }
-        },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Щоб платити готівкою, спершу збережіть картку як гарантію — або оплатіть карткою."
-          }
-        }
-      }
-    },
     "error.order.cash_open_bookings_limit_reached": {
       "extractionState": "manual",
       "localizations": {

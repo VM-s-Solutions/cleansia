@@ -12,7 +12,14 @@
       "options": {
         "jestConfig": "libs/cleansia-customer-features/order-wizard/jest.config.ts",
         "tsConfig": "libs/cleansia-customer-features/order-wizard/tsconfig.spec.json"
-      }
+      },
+      "inputs": [
+        "default",
+        "^production",
+        "{workspaceRoot}/jest.preset.js",
+        "{workspaceRoot}/jest.polyfills.ts",
+        "{workspaceRoot}/libs/shared/assets/src/styles/pages/cleansia-customer/_wizard-shell.scss"
+      ]
     },
     "lint": { "executor": "@nx/eslint:lint" }
   }

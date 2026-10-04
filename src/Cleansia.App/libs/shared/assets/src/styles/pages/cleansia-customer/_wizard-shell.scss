@@ -43,10 +43,10 @@
   --cl-pay-icon-bg: #f1f5f9;
   --cl-pay-icon: #64748b;
   // A service a chosen package already includes, the same on every client: the brand primary over
-  // the row's card with a primary border, and a badge in the primary. The badge's text is the primary
-  // container's ink (Sky900 / Sky100, as the apps draw it): the primary itself measures 3.1 light and
-  // 3.7 dark over the badge, against the 4.5 its 13–14px text needs. The booking wizard's services step,
-  // its Plus-step suggestions and the schedule form all draw it.
+  // the row's card with a primary border, and a badge in the primary. The badge's text and its check
+  // are the primary container's ink (Sky900 / Sky100), as the apps draw both: the primary itself
+  // measures 3.1 light and 3.7 dark over the badge, against the 4.5 its 13–14px text needs. The
+  // booking wizard's services step, its Plus-step suggestions and the schedule form all draw it.
   --cl-covered-row: color-mix(in srgb, var(--cl-accent) 8%, var(--cl-surface));
   --cl-covered-line: color-mix(in srgb, var(--cl-accent) 60%, transparent);
   --cl-covered-badge: color-mix(in srgb, var(--cl-accent) 14%, transparent);
@@ -894,11 +894,10 @@
   line-height: 1.35;
   color: var(--cl-covered-ink);
 
+  // The check inherits the badge's ink, as on the apps.
   i {
     flex-shrink: 0;
     font-size: 1.05em;
-    // A graphic, so 3:1 is its floor: 3.1 light, 3.7 dark over the badge.
-    color: var(--cl-accent);
   }
 }
 

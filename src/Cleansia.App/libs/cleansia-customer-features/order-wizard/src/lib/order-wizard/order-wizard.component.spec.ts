@@ -23,6 +23,8 @@ import {
   ServiceListItem,
 } from '@cleansia/customer-services';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
+import { readFileSync } from 'fs';
+import { join } from 'path';
 import { of } from 'rxjs';
 import { OrderWizardComponent } from './order-wizard.component';
 import { OrderWizardFacade } from './order-wizard.facade';
@@ -1495,6 +1497,20 @@ describe('OrderWizardComponent (a11y)', () => {
       expect(row?.querySelector('.cl-wiz__svc-name')?.nextElementSibling).toBe(marker());
       expect(marker()?.nextElementSibling?.classList).toContain('cl-wiz__svc-desc');
       expect(addButton()?.className).toBe('cl-chip cl-wiz__svc-add');
+    });
+
+    // One ink for the badge's check and its text, as the apps draw both. jsdom loads no
+    // stylesheet, so this reads the badge's rule, which is declared an input of this test target.
+    it('draws the badge check in the badge ink, as the apps do', () => {
+      const scss = readFileSync(
+        join(__dirname, '../../../../../shared/assets/src/styles/pages/cleansia-customer/_wizard-shell.scss'),
+        'utf8',
+      );
+      const badge = scss.match(/^\.cl-wiz__svc-in-pack \{[\s\S]*?^\}/m)?.[0] ?? '';
+      const colours = (badge.match(/(?:^|\s)color:[^;]+;/g) ?? []).map((declaration) => declaration.trim());
+
+      expect(badge).toContain('i {');
+      expect([...new Set(colours)]).toEqual(['color: var(--cl-covered-ink);']);
     });
 
     it('names the package on the row and gives the add button that line as its description', async () => {

@@ -72,12 +72,20 @@ mode); `--cl-covered-line`, the accent at 60 % as a 1.5px border; `--cl-covered-
 step's row, otherwise a line between dividers, becomes a card with 18px corners
 (`cl-wiz__svc--covered`). The Plus step's suggestion card takes the tint and border
 (`cl-wiz__cross-row--covered`), and so does a schedule pick that is not picked
-(`cl-rec__pick--covered`, `_recurring-bookings.scss`). A picked pick keeps its picked look, and its badge
-sits on `--cl-surface` so it reads on the dark slab. The badge, `.cl-wiz__svc-in-pack` at all three
-sites, sits straight under the name and above the description. It is a `pi-check-circle` in the accent,
-a graphic whose floor is 3:1 (it reads 3.1:1 in light mode and 3.7:1 in dark), then the words in
-semibold `--cl-covered-ink`: 14px on the services step, whose descriptions are 14px, and 13px elsewhere.
-Measured from the rendered page in Chromium, the words read 7.20:1 in light mode and 7.02:1 in dark. A
+(`cl-rec__pick--covered`, `_recurring-bookings.scss`). A picked pick keeps its picked look, a
+`--cl-heading` slab, sky-700 in light mode and sky-300 (`#7dd3fc`) in dark. Its name, a package pick's
+price and its tick's disc take `--cl-surface`, the card's own ground, which flips with the slab, and
+the tick's check stays `--cl-heading`. Measured in Chromium, all four read 5.93:1 in light mode and
+10.37:1 in dark. Until 2026-10-05 the name and the disc were white and the price the soft accent, so
+in dark mode the name and the check read 1.67:1 and the price 1.00:1, and in light mode the price
+read 2.77:1. Hovering never repaints a picked pick's border (`:hover:not(.cl-rec__pick--on)`): the
+hover rule outranked the picked one and turned the border pale. On a picked pick the badge sits on
+`--cl-surface`, where its words read 9.46:1 in light mode and 15.06:1 in dark. The badge,
+`.cl-wiz__svc-in-pack` at all three sites, sits straight under the name and above the description. It
+is a `pi-check-circle`, then the words in semibold `--cl-covered-ink`: 14px on the services step,
+whose descriptions are 14px, and 13px elsewhere. The check takes the words' ink, as on the apps (since
+2026-10-04; it was the accent, 3.1:1 in light mode and 3.7:1 in dark). Measured from the rendered page
+in Chromium, the words and the check read 7.20:1 in light mode and 7.02:1 in dark. A
 covered row's description moves to `--cl-muted-on-tint`, since `--cl-muted` reads 4.3:1 on the tint.
 The *Add* chip, the `aria-describedby` wiring and the copy are unchanged. The `order-wizard` and
 `create-recurring-wizard` component specs assert the covered class and the badge at each site.

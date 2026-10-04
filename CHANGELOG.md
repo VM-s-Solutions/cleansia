@@ -1078,6 +1078,12 @@ need backfilling.
   mode. On iOS 16 the clock is black in light mode, and it reads on the old blue, so there the header
   keeps it. (Finding 2026-10-04.)
 
+- **Customer web — what you pick on the schedule form reads in dark mode.** In dark mode a picked
+  service or package showed its name in white on light blue, hard to read, with a tick that all but
+  vanished, and a picked package's price disappeared into the blue; in light mode that price was faint
+  too. They are now dark on the light blue in dark mode and white on the dark blue in light mode.
+  Hovering over a picked one no longer turns its border pale. (Finding 2026-10-04.)
+
 - **Customer web — deleting your account is confirmed on a red button.** The question before your
   account is deleted offered the same blue confirm button as any harmless question. It now shows the
   red, destructive button that deleting a saved card or a schedule already shows, so the risk reads

@@ -117,7 +117,7 @@ class BookingSheetDraftTest {
     fun `a booking that goes through clears the draft before navigating`() {
         assertEquals(
             "a success path no longer resets before onComplete",
-            3,
+            2,
             Regex("bookingVm\\.reset\\(\\)\\s*onComplete\\(").findAll(sheet).count(),
         )
     }

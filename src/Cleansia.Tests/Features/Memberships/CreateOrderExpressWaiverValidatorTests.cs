@@ -74,7 +74,7 @@ public class CreateOrderExpressWaiverValidatorTests
             CreateOrderTestData.Speaking(Constants.Language.English),
             Mock.Of<ICountryConfigurationRepository>(),
             Mock.Of<ILegalDocumentResolver>(),
-            SavedCards.SavedCardDoubles.Guaranteed(), Mock.Of<IReceivableRepository>());
+            Mock.Of<IReceivableRepository>());
 
     private void ArrangePricing(OrderPricingResult result)
         => _pricingCalculator

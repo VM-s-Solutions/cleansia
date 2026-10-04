@@ -7,7 +7,7 @@ import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { WizardPreferredCleanerComponent } from './components/wizard-preferred-cleaner.component';
 import { AmountDueComponent } from '@cleansia-customer/orders';
 import { CleansiaAddressAutocompleteComponent, CleansiaButtonComponent, CleansiaScrollTopComponent, CleansiaSelectComponent, CleansiaTelephoneComponent } from '@cleansia/components';
-import { CardCaptureFacade, CategoryDto, CUSTOMER_API_BASE_URL, DIRTINESS_LEVELS, DirtinessLevel, dirtinessLevelOption, GetMembershipPlansResponse, MembershipStatus, PackageListItem, PackageServiceSummary, PaymentType, QuoteOrderQuoteLine, QuotePlusSavingsQuery, SavedAddressDto, ServiceListItem } from '@cleansia/customer-services';
+import { CategoryDto, CUSTOMER_API_BASE_URL, DIRTINESS_LEVELS, DirtinessLevel, dirtinessLevelOption, GetMembershipPlansResponse, MembershipStatus, PackageListItem, PackageServiceSummary, PaymentType, QuoteOrderQuoteLine, QuotePlusSavingsQuery, SavedAddressDto, ServiceListItem } from '@cleansia/customer-services';
 import type { MapboxAddressSuggestion } from '@cleansia/services';
 import { CleansiaCustomerRoute, SnackbarService } from '@cleansia/services';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
@@ -83,7 +83,6 @@ function startOfMonth(date: Date): Date {
   ],
   templateUrl: './order-wizard.component.html',
   providers: [
-    CardCaptureFacade,
     OrderMembershipFacade,
     OrderPreferredCleanerFacade,
     OrderPricingFacade,

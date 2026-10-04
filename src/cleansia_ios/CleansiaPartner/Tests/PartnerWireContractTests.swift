@@ -298,8 +298,8 @@ final class PartnerWireContractTests: XCTestCase {
         assertRefused("lineType") { try PeriodPaySummary(noType) }
     }
 
-    /// A fee-share line pays for a job that did not happen, so it says which fee it is a share of.
-    func testEachFeeShareLineNamesTheFeeItShares() throws {
+    /// A line that pays for a job that did not happen says why.
+    func testEachLineForAJobThatDidNotHappenSaysWhy() throws {
         let lines = try PeriodPaySummary(summaryPayload()).orderPays
         var cancellation = try XCTUnwrap(summaryPayload().orderPays?[0])
         cancellation.lineType = ._1

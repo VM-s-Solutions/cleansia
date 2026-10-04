@@ -1,5 +1,7 @@
 using Cleansia.Core.AppServices.Features.Orders;
+using Cleansia.Core.AppServices.Features.TenantSettings;
 using Cleansia.Core.AppServices.Services;
+using Cleansia.Core.Domain.Configuration;
 using Cleansia.Core.Domain.EmployeePayroll;
 using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Extensions;
@@ -26,6 +28,7 @@ public sealed class WorkContractFactsBuilderTests
 
     private readonly Mock<IOrderRepository> _orderRepository = new();
     private readonly Mock<IEmployeePayConfigRepository> _payConfigRepository = new();
+    private readonly Mock<IAppConfigurationProvider> _configuration = new();
     private readonly Order _order;
 
     public WorkContractFactsBuilderTests()
@@ -67,7 +70,17 @@ public sealed class WorkContractFactsBuilderTests
             .ReturnsAsync([shared]);
     }
 
-    private WorkContractFactsBuilder CreateBuilder() => new(_orderRepository.Object, _payConfigRepository.Object);
+    private WorkContractFactsBuilder CreateBuilder() =>
+        new(_orderRepository.Object, _payConfigRepository.Object, _configuration.Object);
+
+    private void BookExtras(params decimal[] prices) =>
+        _order.AddSelectedExtras(prices.Select((price, i) =>
+            OrderExtra.Create(_order, Extra.Create($"extra-{i}", $"Extra {i}", null), price)));
+
+    private void SetExtrasShare(string percent) =>
+        _configuration
+            .Setup(c => c.GetTenantSettingAsync(TenantSettingCatalog.ExtrasSharePercentKey, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(percent);
 
     [Fact]
     public async Task The_Price_Is_The_Named_Cleaners_Reward_For_One_Of_The_Two_Seats_Not_The_Order_Total()
@@ -113,6 +126,36 @@ public sealed class WorkContractFactsBuilderTests
         var facts = await CreateBuilder().BuildAsync(OrderId, CallerId, CancellationToken.None);
 
         Assert.Equal(640m, facts!.Value.Facts.TotalPrice);
+    }
+
+    /// <summary>
+    /// Owner decision 2026-10-04: the extras booked, 200 and 150, pay the company's share of their prices
+    /// inside the job's extras - 175 at the default 50 % - so the caller's job is 800 + 175 = 975, 487.50 a seat.
+    /// </summary>
+    [Fact]
+    public async Task The_Extras_Booked_Pay_The_Default_Half_Of_Their_Prices_Inside_The_Frozen_Extras()
+    {
+        BookExtras(200m, 150m);
+
+        var (facts, jobPay) = (await CreateBuilder().BuildAsync(OrderId, CallerId, CancellationToken.None))!.Value;
+
+        Assert.Equal((800m, 175m, 0m, 0m), jobPay!.Value);
+        Assert.Equal(487.50m, facts.TotalPrice);
+    }
+
+    [Theory]
+    [InlineData("0", 0, 400)]
+    [InlineData("40", 140, 470)]
+    [InlineData("100", 350, 575)]
+    public async Task The_Extras_Share_Is_The_Companys_Setting(string percent, int jobExtrasPay, int reward)
+    {
+        BookExtras(200m, 150m);
+        SetExtrasShare(percent);
+
+        var (facts, jobPay) = (await CreateBuilder().BuildAsync(OrderId, CallerId, CancellationToken.None))!.Value;
+
+        Assert.Equal((decimal)jobExtrasPay, jobPay!.Value.jobExtrasPay);
+        Assert.Equal((decimal)reward, facts.TotalPrice);
     }
 
     [Fact]

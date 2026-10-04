@@ -30,9 +30,6 @@ export const PROMO_ERROR_FALLBACK = 'pages.order.promo.error_generic';
 /** How QuoteOrder and CreateOrder refuse a start off the server's grid, window or horizon. */
 export const OUTSIDE_BOOKING_WINDOW = 'order.cleaning_date.outside_booking_window';
 
-/** How CreateOrder refuses cash to a customer with no usable card saved in the booking's currency. */
-export const CASH_REQUIRES_SAVED_CARD = 'order.cash_requires_saved_card';
-
 /** How CreateOrder refuses cash while the customer owes an amount from an earlier booking. */
 export const CASH_UNPAID_RECEIVABLE = 'order.cash_unpaid_receivable';
 

@@ -1,6 +1,8 @@
 using Cleansia.Core.AppServices.Features.EmployeePayroll;
 using Cleansia.Core.AppServices.Features.Orders;
+using Cleansia.Core.AppServices.Features.TenantSettings;
 using Cleansia.Core.AppServices.Services.Interfaces;
+using Cleansia.Core.Domain.Configuration;
 using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.EmployeePayroll;
 using Cleansia.Core.Domain.Internationalization;
@@ -35,7 +37,7 @@ public class FrozenSeatPayTests(PostgresContainerFixture fixture) : BaseIntegrat
     public async Task A_Re_Grade_After_The_Take_Does_Not_Reprice_The_Seat()
     {
         await TestMethod(
-            arrange: SeedCompletedOneSeatHeavyOrder,
+            arrange: context => SeedCompletedOneSeatHeavyOrder(context),
             act: TakeRegradeAndPayAsync,
             assert: async (CleansiaDbContext context,
                 (decimal ContractReward, BusinessResult<CalculateOrderPay.Response> Pay) results) =>
@@ -59,6 +61,41 @@ public class FrozenSeatPayTests(PostgresContainerFixture fixture) : BaseIntegrat
                 Assert.Equal(1000m, pay.MaxPay);
                 Assert.Equal(1300m, pay.TotalPay);
                 Assert.Equal(results.ContractReward, pay.TotalPay);
+            },
+            transactional: false);
+    }
+
+    /// <summary>
+    /// Owner decision 2026-10-04: an extra booked at 350 at the company's 40 % share pays 140 inside the job's
+    /// extras. With no bounds the job is 840 + 280 + 140 = 1 260 and heavy adds 378, so the contract states and
+    /// the seat is paid 1 638, the re-grade notwithstanding.
+    /// </summary>
+    [Fact]
+    public async Task The_Extras_Booked_Are_Frozen_At_The_Companys_Share_And_Paid_As_Contracted()
+    {
+        await TestMethod(
+            arrange: async context =>
+            {
+                context.TenantConfigurations.Add(TenantConfiguration.Create(
+                    TenantSettingCatalog.ExtrasSharePercentKey, "40", category: TenantSettingCatalog.PayCategory));
+                await SeedCompletedOneSeatHeavyOrder(context, bounded: false, extraPrice: 350m);
+            },
+            act: TakeRegradeAndPayAsync,
+            assert: async (CleansiaDbContext context,
+                (decimal ContractReward, BusinessResult<CalculateOrderPay.Response> Pay) results) =>
+            {
+                Assert.True(results.Pay.IsSuccess, results.Pay.Error?.Message);
+
+                var seat = await context.Set<OrderEmployee>()
+                    .IgnoreQueryFilters()
+                    .SingleAsync(oe => oe.OrderId == OrderId);
+                Assert.Equal((decimal?)420m, seat.JobExtrasPay);
+
+                var pay = await context.Set<OrderEmployeePay>()
+                    .IgnoreQueryFilters()
+                    .SingleAsync(p => p.OrderId == OrderId);
+                Assert.Equal((840m, 420m, 378m, 1638m), (pay.BasePay, pay.ExtrasPay, pay.DirtinessPay, pay.TotalPay));
+                Assert.Equal(1638m, results.ContractReward);
             },
             transactional: false);
     }
@@ -92,7 +129,8 @@ public class FrozenSeatPayTests(PostgresContainerFixture fixture) : BaseIntegrat
         return (contractReward, pay);
     }
 
-    private static async Task SeedCompletedOneSeatHeavyOrder(CleansiaDbContext context)
+    private static async Task SeedCompletedOneSeatHeavyOrder(
+        CleansiaDbContext context, bool bounded = true, decimal? extraPrice = null)
     {
         context.Languages.Add(Language.Create("en", "English"));
 
@@ -122,7 +160,10 @@ public class FrozenSeatPayTests(PostgresContainerFixture fixture) : BaseIntegrat
             basePay: 840m,
             currencyId: CurrencyId,
             extraPerRoom: 140m);
-        rate.SetPayLimits(500m, 1000m);
+        if (bounded)
+        {
+            rate.SetPayLimits(500m, 1000m);
+        }
         context.Set<EmployeePayConfig>().Add(rate);
 
         context.Set<PayPeriod>().Add(PayPeriod.CreateBiWeekly(
@@ -143,6 +184,12 @@ public class FrozenSeatPayTests(PostgresContainerFixture fixture) : BaseIntegrat
             cancellationTerms: BookingPolicy.CancellationTermsAtBooking);
         order.Id = OrderId;
         order.AddSelectedPackages([OrderPackage.Create(order, package, 2000m)]);
+        if (extraPrice is { } price)
+        {
+            var extra = Extra.Create("frozen-pay-oven", "Inside oven", null);
+            context.Set<Extra>().Add(extra);
+            order.AddSelectedExtras([OrderExtra.Create(order, extra, price)]);
+        }
         order.UpdateEstimatedTime(120).CalculateRequiredEmployees(spareSeats: 0);
         order.SetDirtinessSurcharge(DirtinessLevel.Heavy, 600m, 0.30m);
         order.AddAssignedEmployee(OrderEmployee.Create(order, cleaner));

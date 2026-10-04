@@ -305,7 +305,7 @@ public class PayCalculatorExtensionsTests
         // 500 + 2 extra rooms x 50 = 600.
         var configs = new[] { Config(basePay: 500m, extraPerRoom: 50m) };
 
-        var seat = configs.CalculateSeatPay(rooms: 3, bathrooms: 0, Rate(DirtinessLevel.Normal), seats: 1, firstSeat: true);
+        var seat = configs.CalculateSeatPay(rooms: 3, bathrooms: 0, bookedExtrasPay: 0m, Rate(DirtinessLevel.Normal), seats: 1, firstSeat: true);
 
         Assert.Equal(500m, seat.basePay);
         Assert.Equal(100m, seat.extrasPay);
@@ -318,8 +318,8 @@ public class PayCalculatorExtensionsTests
     {
         var configs = new[] { Config(basePay: 500m, extraPerRoom: 50m) };
 
-        var first = configs.CalculateSeatPay(rooms: 3, bathrooms: 0, Rate(DirtinessLevel.Normal), seats: 2, firstSeat: true);
-        var second = configs.CalculateSeatPay(rooms: 3, bathrooms: 0, Rate(DirtinessLevel.Normal), seats: 2, firstSeat: false);
+        var first = configs.CalculateSeatPay(rooms: 3, bathrooms: 0, bookedExtrasPay: 0m, Rate(DirtinessLevel.Normal), seats: 2, firstSeat: true);
+        var second = configs.CalculateSeatPay(rooms: 3, bathrooms: 0, bookedExtrasPay: 0m, Rate(DirtinessLevel.Normal), seats: 2, firstSeat: false);
 
         Assert.Equal((250m, 50m, 300m), (first.basePay, first.extrasPay, first.totalPay));
         Assert.Equal((250m, 50m, 300m), (second.basePay, second.extrasPay, second.totalPay));
@@ -331,8 +331,8 @@ public class PayCalculatorExtensionsTests
         // 100.20 over two seats is 50.10 each; increased adds 15.03, which halves to 7.51 and a cent.
         var configs = new[] { Config(basePay: 100.20m) };
 
-        var first = configs.CalculateSeatPay(rooms: 1, bathrooms: 0, Rate(DirtinessLevel.Increased), seats: 2, firstSeat: true);
-        var second = configs.CalculateSeatPay(rooms: 1, bathrooms: 0, Rate(DirtinessLevel.Increased), seats: 2, firstSeat: false);
+        var first = configs.CalculateSeatPay(rooms: 1, bathrooms: 0, bookedExtrasPay: 0m, Rate(DirtinessLevel.Increased), seats: 2, firstSeat: true);
+        var second = configs.CalculateSeatPay(rooms: 1, bathrooms: 0, bookedExtrasPay: 0m, Rate(DirtinessLevel.Increased), seats: 2, firstSeat: false);
 
         Assert.Equal(7.52m, first.dirtinessPay);
         Assert.Equal(7.51m, second.dirtinessPay);
@@ -351,8 +351,8 @@ public class PayCalculatorExtensionsTests
         const decimal jobPay = 1100.12m;
         var configs = new[] { Config(basePay: 1000.01m, extraPerRoom: 33.37m) };
 
-        var first = configs.CalculateSeatPay(rooms: 4, bathrooms: 0, Rate(level), seats, firstSeat: true);
-        var other = configs.CalculateSeatPay(rooms: 4, bathrooms: 0, Rate(level), seats, firstSeat: false);
+        var first = configs.CalculateSeatPay(rooms: 4, bathrooms: 0, bookedExtrasPay: 0m, Rate(level), seats, firstSeat: true);
+        var other = configs.CalculateSeatPay(rooms: 4, bathrooms: 0, bookedExtrasPay: 0m, Rate(level), seats, firstSeat: false);
 
         var raisedJobPay = Math.Round(jobPay * (1m + Rate(level)), 2, MidpointRounding.AwayFromZero);
         Assert.Equal(raisedJobPay, first.totalPay + ((seats - 1) * other.totalPay));
@@ -367,7 +367,7 @@ public class PayCalculatorExtensionsTests
     {
         var configs = new[] { Config(basePay: 500m, extraPerRoom: 50m) };
 
-        var seat = configs.CalculateSeatPay(rooms: 3, bathrooms: 0, Rate(level), seats: 1, firstSeat: true);
+        var seat = configs.CalculateSeatPay(rooms: 3, bathrooms: 0, bookedExtrasPay: 0m, Rate(level), seats: 1, firstSeat: true);
 
         Assert.Equal((decimal)dirtinessPay, seat.dirtinessPay);
         Assert.Equal((decimal)totalPay, seat.totalPay);
@@ -380,7 +380,7 @@ public class PayCalculatorExtensionsTests
         // Raw 1000 capped at 800; heavy adds 30 % of the capped 800, so the cap cannot swallow it.
         var configs = new[] { Config(basePay: 1000m, maximumPay: 800m) };
 
-        var seat = configs.CalculateSeatPay(rooms: 1, bathrooms: 0, Rate(DirtinessLevel.Heavy), seats: 1, firstSeat: true);
+        var seat = configs.CalculateSeatPay(rooms: 1, bathrooms: 0, bookedExtrasPay: 0m, Rate(DirtinessLevel.Heavy), seats: 1, firstSeat: true);
 
         Assert.Equal(800m, seat.maxPay);
         Assert.Equal(240m, seat.dirtinessPay);
@@ -393,7 +393,7 @@ public class PayCalculatorExtensionsTests
         // Raw 100 floored to 300 for the job, 150 a seat; increased adds 15 % of that seat's 150.
         var configs = new[] { Config(basePay: 100m, minimumPay: 300m) };
 
-        var seat = configs.CalculateSeatPay(rooms: 1, bathrooms: 0, Rate(DirtinessLevel.Increased), seats: 2, firstSeat: false);
+        var seat = configs.CalculateSeatPay(rooms: 1, bathrooms: 0, bookedExtrasPay: 0m, Rate(DirtinessLevel.Increased), seats: 2, firstSeat: false);
 
         Assert.Equal(150m, seat.minPay);
         Assert.Equal(22.5m, seat.dirtinessPay);
@@ -411,7 +411,55 @@ public class PayCalculatorExtensionsTests
             Config(basePay: 200m, extraPerRoom: 10m, minimumPay: 100m, maximumPay: 1500m),
         };
 
-        Assert.Equal((1040m, 350m, 500m, 1500m), configs.AggregateJobPay(rooms: 3, bathrooms: 1));
+        Assert.Equal((1040m, 350m, 500m, 1500m), configs.AggregateJobPay(rooms: 3, bathrooms: 1, bookedExtrasPay: 0m));
+    }
+
+    // ── The extras the customer booked — a company share of their prices, inside the job's extras ──
+
+    [Theory]
+    [InlineData(350, 50, 175)]
+    [InlineData(333.33, 50, 166.67)]
+    [InlineData(99.99, 33, 33.00)]
+    [InlineData(450, 0, 0)]
+    [InlineData(450, 100, 450)]
+    public void BookedExtrasPay_Is_The_Share_Of_The_Extras_Prices_Rounded_To_The_Cent(
+        decimal extrasSubtotal, int sharePercent, decimal expected)
+    {
+        Assert.Equal(expected, PayCalculatorExtensions.BookedExtrasPay(extrasSubtotal, sharePercent));
+    }
+
+    [Fact]
+    public void AggregateJobPay_Adds_The_Booked_Extras_Pay_To_The_Job_Extras()
+    {
+        // 840 + 2 extra rooms x 140 = 280 for the rooms, and 175 for the extras booked.
+        var configs = new[] { Config(basePay: 840m, extraPerRoom: 140m) };
+
+        Assert.Equal((840m, 455m, 0m, 0m), configs.AggregateJobPay(rooms: 3, bathrooms: 0, bookedExtrasPay: 175m));
+    }
+
+    [Fact]
+    public void CalculateSeatPay_Splits_The_Booked_Extras_Pay_Across_The_Seats_With_The_Residue_On_The_First()
+    {
+        // 500 base and 166.67 for the extras booked; increased adds 15 % of 666.67, 100.00 rounded.
+        var configs = new[] { Config(basePay: 500m) };
+
+        var first = configs.CalculateSeatPay(rooms: 1, bathrooms: 0, bookedExtrasPay: 166.67m, Rate(DirtinessLevel.Increased), seats: 2, firstSeat: true);
+        var second = configs.CalculateSeatPay(rooms: 1, bathrooms: 0, bookedExtrasPay: 166.67m, Rate(DirtinessLevel.Increased), seats: 2, firstSeat: false);
+
+        Assert.Equal((250m, 83.34m, 50m, 383.34m), (first.basePay, first.extrasPay, first.dirtinessPay, first.totalPay));
+        Assert.Equal((250m, 83.33m, 50m, 383.33m), (second.basePay, second.extrasPay, second.dirtinessPay, second.totalPay));
+    }
+
+    [Fact]
+    public void CalculateSeatPay_A_Cap_Bounds_The_Booked_Extras_Pay_Like_The_Rooms()
+    {
+        // 800 base and 300 for the extras booked is 1 100, capped at 1 000.
+        var configs = new[] { Config(basePay: 800m, maximumPay: 1000m) };
+
+        var seat = configs.CalculateSeatPay(rooms: 1, bathrooms: 0, bookedExtrasPay: 300m, Rate(DirtinessLevel.Normal), seats: 1, firstSeat: true);
+
+        Assert.Equal(300m, seat.extrasPay);
+        Assert.Equal(1000m, seat.totalPay);
     }
 
     public static TheoryData<int, bool, DirtinessLevel, decimal, decimal> SeatsAndBounds() => new()
@@ -430,9 +478,9 @@ public class PayCalculatorExtensionsTests
         int seats, bool firstSeat, DirtinessLevel level, decimal minimumPay, decimal maximumPay)
     {
         var configs = new[] { Config(basePay: 1000.01m, extraPerRoom: 33.37m, minimumPay: minimumPay, maximumPay: maximumPay) };
-        var (jobBasePay, jobExtrasPay, jobMinPay, jobMaxPay) = configs.AggregateJobPay(rooms: 4, bathrooms: 0);
+        var (jobBasePay, jobExtrasPay, jobMinPay, jobMaxPay) = configs.AggregateJobPay(rooms: 4, bathrooms: 0, bookedExtrasPay: 0m);
 
-        var fromConfigs = configs.CalculateSeatPay(rooms: 4, bathrooms: 0, Rate(level), seats, firstSeat);
+        var fromConfigs = configs.CalculateSeatPay(rooms: 4, bathrooms: 0, bookedExtrasPay: 0m, Rate(level), seats, firstSeat);
         var fromFigures = PayCalculatorExtensions.CalculateSeatPay(
             jobBasePay, jobExtrasPay, jobMinPay, jobMaxPay, Rate(level), seats, firstSeat);
 

@@ -43,11 +43,23 @@ public class LoyaltyAccountRepository(CleansiaDbContext context)
             return existing;
         }
 
+        // Two first grants both miss above. The second waits here until the first commits, then finds its
+        // row instead of inserting another onto IX_LoyaltyAccounts_UserId.
+        await LockForUserAsync(userId, cancellationToken);
+        existing = await GetByUserIdIgnoringTenantAsync(userId, cancellationToken);
+        if (existing != null)
+        {
+            return existing;
+        }
+
         var account = LoyaltyAccount.Create(userId);
         account.TenantId = await Context.UserTenantIdAsync(userId, cancellationToken);
         Add(account);
         return account;
     }
+
+    public Task LockForUserAsync(string userId, CancellationToken cancellationToken) =>
+        Context.LockCreditOwnerAsync(userId, cancellationToken);
 
     public void AfterSave(LoyaltyAccount account, Func<LoyaltyTier?, CancellationToken, Task> afterSave)
     {

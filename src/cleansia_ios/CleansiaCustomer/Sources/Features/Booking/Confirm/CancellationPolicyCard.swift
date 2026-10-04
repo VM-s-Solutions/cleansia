@@ -89,10 +89,10 @@ private struct PolicyTier: View {
 }
 
 struct TrustBadges: View {
-    let insurance: MarketMoney?
+    let insuranceClaim: String
 
     var body: some View {
-        TrustBadge(systemImage: "checkmark.shield", text: InsuranceCopy.trustBadge(insurance))
+        TrustBadge(systemImage: "checkmark.shield", text: insuranceClaim)
             .fixedSize(horizontal: false, vertical: true)
             .padding(Spacing.m)
             .background(CleansiaColors.surface)

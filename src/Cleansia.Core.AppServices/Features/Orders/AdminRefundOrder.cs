@@ -128,6 +128,7 @@ public class AdminRefundOrder
             // Asked of the outbox, not of whether the seam resolved to an earlier refund: the notice is staged
             // with the clawback, so the clawback failure a re-run exists for lost the notice with it. A notice
             // that did commit is not queued again; a second row on its key would fail the commit.
+            var noticeQueued = false;
             if (!string.IsNullOrEmpty(order.UserId)
                 && await outboxMessageRepository.GetByQueueAndKeyAsync(
                     QueueNames.NotificationsDispatch,
@@ -153,12 +154,22 @@ public class AdminRefundOrder
                     order.TenantId,
                     refund.Value!.RefundId,
                     cancellationToken);
+                noticeQueued = true;
             }
 
             // Last, because the clawback flushes the unit of work to collapse a duplicate on its key. A full
             // refund hands it the whole price, so it takes everything earlier refunds left of the earn.
-            await loyaltyService.RevokeForRefundAsync(
+            var revoked = await loyaltyService.RevokeForRefundAsync(
                 order.Id, order.TotalPrice, result.RefundKey, adminId, cancellationToken);
+
+            // A re-run moved no money, and found the notice sent and the points already taken: there was
+            // nothing left for it to do, and the admin is told so rather than that a refund was issued.
+            if (result.ResolvedToExisting && !noticeQueued && !revoked)
+            {
+                return BusinessResult.Failure<Response>(new Error(
+                    nameof(command.OrderId),
+                    BusinessErrorMessage.RefundNothingRefundable));
+            }
 
             return BusinessResult.Success(new Response(
                 OrderId: order.Id,

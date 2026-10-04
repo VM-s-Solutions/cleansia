@@ -51,7 +51,6 @@ public class CreateRecurringBooking
         private readonly IPackageRepository _packageRepository;
         private readonly IUserConsentRepository _userConsentRepository;
         private readonly ILegalDocumentResolver _legalDocumentResolver;
-        private readonly ISavedCardRepository _savedCardRepository;
         private readonly IReceivableRepository _receivableRepository;
 
         public Validator(
@@ -64,7 +63,6 @@ public class CreateRecurringBooking
             IPackageRepository packageRepository,
             IUserConsentRepository userConsentRepository,
             ILegalDocumentResolver legalDocumentResolver,
-            ISavedCardRepository savedCardRepository,
             IReceivableRepository receivableRepository)
         {
             _orderRepository = orderRepository;
@@ -76,7 +74,6 @@ public class CreateRecurringBooking
             _packageRepository = packageRepository;
             _userConsentRepository = userConsentRepository;
             _legalDocumentResolver = legalDocumentResolver;
-            _savedCardRepository = savedCardRepository;
             _receivableRepository = receivableRepository;
 
             RuleFor(x => x.TermsAccepted)
@@ -133,9 +130,7 @@ public class CreateRecurringBooking
                 .MustAsync(CashOwesNothingAsync)
                 .WithMessage(BusinessErrorMessage.OrderCashUnpaidReceivable)
                 .MustAsync(CashLeavesRoomForAnotherOpenBookingAsync)
-                .WithMessage(BusinessErrorMessage.OrderCashOpenBookingsLimitReached)
-                .MustAsync(CashIsGuaranteedBySavedCardAsync)
-                .WithMessage(BusinessErrorMessage.OrderCashRequiresSavedCard);
+                .WithMessage(BusinessErrorMessage.OrderCashOpenBookingsLimitReached);
 
             RuleFor(x => x)
                 .Must(c => c.SelectedServiceIds.Count > 0 || c.SelectedPackageIds.Count > 0)
@@ -274,29 +269,6 @@ public class CreateRecurringBooking
                 || string.IsNullOrEmpty(userId)
                 || await CustomerCashStanding.HasRoomForAnotherOpenCashBookingAsync(
                     _orderRepository, userId, cancellationToken);
-        }
-
-        /// <summary>
-        /// The card is asked for in the currency every occurrence is priced in, the saved address's
-        /// country's. A saved address the handler will refuse passes so its own not-found answer is the
-        /// one given.
-        /// </summary>
-        private async Task<bool> CashIsGuaranteedBySavedCardAsync(
-            Command command, int paymentType, CancellationToken cancellationToken)
-        {
-            var userId = _userSessionProvider.GetUserId();
-            if (paymentType != (int)PaymentType.Cash || string.IsNullOrEmpty(userId))
-            {
-                return true;
-            }
-
-            var address = await FindSavedAddressAsync(userId, command.SavedAddressId, cancellationToken);
-            return address is null
-                || await CustomerCashStanding.HoldsUsableCardAsync(
-                    _savedCardRepository,
-                    userId,
-                    (await _currencyResolutionService.ResolveCurrencyForCountryAsync(address.CountryId, cancellationToken)).Id,
-                    cancellationToken);
         }
 
         private async Task<Address?> FindSavedAddressAsync(string userId, string savedAddressId, CancellationToken cancellationToken)

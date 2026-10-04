@@ -22,7 +22,8 @@ namespace Cleansia.Core.AppServices.Features.Orders;
 /// 2026-09-28, decisions 11 and 13), also on a job the cleaner already started at the door: the booking is
 /// cancelled as the customer's, at the whole price. A card order keeps its payment and the credit applied
 /// to it, and a guest is never charged beyond the prepayment; a signed-in customer's cash booking that took
-/// no payment gets its credit back and owes the price as a lockout receivable.
+/// no payment gets its credit back and owes the price as a lockout receivable. Each seat is paid its full
+/// reward at once, whether or not that price is ever paid (owner decision 2026-10-04).
 /// → /product/business-rules#cancellation
 /// </summary>
 [AuditAction("order.cancel.lockout", ResourceType = "Order")]
@@ -118,10 +119,7 @@ public class AdminCancelOrderAsLockout
                 }
             }
 
-            if (!order.TookNoPayment)
-            {
-                CalculateOrderPay.EnqueueForCrew(order, pending);
-            }
+            CalculateOrderPay.EnqueueForCrew(order, pending);
 
             await OrderAssignmentCancellationNotifier.NotifyAssignedEmployeesOfCancellationAsync(
                 order, notificationProducer, cancellationToken);

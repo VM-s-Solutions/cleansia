@@ -132,6 +132,7 @@ token that reaches only their mailbox.
 | Case | What happens |
 |---|---|
 | Non-assigned cleaner tries to start/complete | Refused — the gate is assignment, not role. |
+| A card order an administrator refunded, partly or fully, before the job ended | The cleaner completes it (since 2026-10-04): `CompleteOrder` passes a card payment that is `Paid`, `PartiallyRefunded` or `Refunded` and still refuses `Pending` and `Failed` with `order.payment_not_confirmed`. Completion asks for the crew's pay and takes the points share of what was returned. Until then the crew was refused and only an administrator's status override closed the order, with no pay asked for and no points. → [Business rules — money constants](/product/business-rules#money-constants) |
 | Cleaner records the cash (`MarkCashCollected`) | Only while `InProgress`, and only by an approved cleaner on the crew. The order becomes `Paid` and the server stamps the amount due (`CashCollectedAmount` = total − applied credit). No receipt yet: the cash receipt is issued at completion. → [What the receipt says](/flows/payment-and-fiscal#what-the-receipt-says) |
 | The cleaner could not record the cash | An administrator records it — which assigned cleaner, when, how much (`AdminRecordCashReceived`); on an order already completed the receipt is issued then. → [Business rules — cash handover](/product/business-rules#cash-handover) |
 | A photo outside its window, or deleted after the job | Refused — `order.photo.window_closed`, `order.photo.locked`. |

@@ -173,6 +173,17 @@ class BackendKeyStringsTest {
         assertTrue("these refusals render raw: $raw", raw.isEmpty())
     }
 
+    /**
+     * `UpdateIdentificationInfo` and `UpdateEmployee` refuse an IČO the country's business register (ARES)
+     * does not hold. The approval-only register refusals answer the admin host, not this app.
+     */
+    @Test
+    fun `the business-register refusal of the cleaner's own save resolves to a sentence in all five locales`() {
+        val resName = "error_validation_registration_number_not_registered"
+        val raw = locales.filterNot { resName in declared(it) }
+        assertTrue("validation.registration_number.not_registered renders raw in $raw", raw.isEmpty())
+    }
+
     @Test
     fun `the too-early lockout refusal states the wait in all five locales`() {
         val silent = locales.filterNot { locale ->

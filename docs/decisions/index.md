@@ -101,6 +101,11 @@ occurrence asks for the terms in force, on a booking's rule. Again no arrow. Fol
 applied two of those rules where they did not reach, with no new ruling: a refund before completion
 takes its share at completion and a failed full-refund clawback can be retried (ADR-0009), and an
 occurrence cannot be paid before it is confirmed (ADR-0062).
+**[ADR-0070](./adr-0070), [ADR-0060](./adr-0060) and [ADR-0009](./adr-0009) were amended in place on
+2026-10-04** (the owner's meeting that day): cash needs no saved card and no card is charged, and a
+confirmed lockout pays each seat its full reward (ADR-0070); a market with no insurance figure makes no
+insurance claim (ADR-0060); and a refund's points clawback works on the order's running total
+(ADR-0009). None replaces a record, so there is no arrow.
 
 ## All records
 
@@ -114,7 +119,7 @@ occurrence cannot be paid before it is confirmed (ADR-0062).
 | **[ADR-0006](./adr-0006)** | Refund dispute money path ⟲ | `accepted` |
 | **[ADR-0007](./adr-0007)** | Soft delete policy | `accepted` |
 | **[ADR-0008](./adr-0008)** | Outbox table and drainer | `accepted` |
-| **[ADR-0009](./adr-0009)** | Refund policy (amended 2026-10-03: a refund's loyalty clawback is a share of what the order earned, and every refund takes it — partial, full and a dispute's; follow-up 2026-10-04: money returned before completion is taken at completion, and a failed full-refund clawback can be retried) | `accepted` |
+| **[ADR-0009](./adr-0009)** | Refund policy (amended 2026-10-03: a refund's loyalty clawback is a share of what the order earned, and every refund takes it — partial, full and a dispute's; follow-up 2026-10-04: money returned before completion is taken at completion, and a failed full-refund clawback can be retried; amended 2026-10-04: the clawback works on the order's running total) | `accepted` |
 | **[ADR-0010](./adr-0010)** | Durable consumer idempotency ⟲ | `accepted` |
 | **[ADR-0011](./adr-0011)** | Mobile apiresult contract | `accepted` |
 | **[ADR-0012](./adr-0012)** | Admin action audit log | `accepted` |
@@ -165,7 +170,7 @@ occurrence cannot be paid before it is confirmed (ADR-0062).
 | **[ADR-0057](./adr-0057)** | Confirmed means a cleaner took the job, and nothing else ⟲ (its open consequence taken by ADR-0067, 2026-09-19) | `accepted` |
 | **[ADR-0058](./adr-0058)** | A customer's market is chosen, remembered, and overridden by the address | `accepted` |
 | **[ADR-0059](./adr-0059)** | Cleansia Plus is priced per market | `accepted` |
-| **[ADR-0060](./adr-0060)** | Money figures in copy come from the market, not the translation | `accepted` |
+| **[ADR-0060](./adr-0060)** | Money figures in copy come from the market, not the translation (amended 2026-10-04: no figure, no insurance claim) | `accepted` |
 | **[ADR-0061](./adr-0061)** | Tenancy is active from day one: one tenant per operating company (amended 2026-09-14 and 2026-09-15 — the FK, `TenantAuditable`, per-company payout numbering and settings) | `accepted` |
 | **[ADR-0062](./adr-0062)** | A customer's actions are recorded for incident defence, and support reads them in the admin panel (extends ADR-0012; amended 2026-09-14 and 2026-09-15; amended 2026-10-03: confirming a recurring occurrence asks for the terms in force; follow-up 2026-10-04: an occurrence cannot be paid before it is confirmed) | `accepted` |
 | **[ADR-0063](./adr-0063)** | Legal documents are versioned by effective date, stored per market, and a consent stamps the version | `accepted` |
@@ -175,7 +180,7 @@ occurrence cannot be paid before it is confirmed (ADR-0062).
 | **[ADR-0067](./adr-0067)** | Confirmed → New when the last cleaner leaves; the administrators are told (owner ruling D2, 2026-09-19; supersedes ADR-0057's open consequence; shipped as T-0770) | `accepted` |
 | **[ADR-0068](./adr-0068)** | A contract for work per job: the text the order is booked under, the cleaner's acceptance of it, what both parties can see (owner ruling 2026-09-20; amends ADR-0063 D9 by one sentence; shipped as T-0777–T-0784; amended 2026-09-27: the company sells in its own name; amended 2026-09-29: the operating company and the cleaner are the parties, under our draft texts; amended 2026-10-03: the seat is paid the reward its contract states) | `accepted` |
 | **[ADR-0069](./adr-0069)** | The dirtiness level prices, times, crews and pays the job, and a job's pay is split across its seats (owner rulings 2026-09-28, meeting-plan decisions 28–40; changes a premise of ADR-0037 D9, whose no-spare-seat ruling stands) | `accepted` |
-| **[ADR-0070](./adr-0070)** | A saved card guarantees cash, and what a customer owes is a receivable — paid through a pay link, charged to the card only once the terms allow it; a lockout is the customer's cancellation at the whole price; the crew shares a fee once it is collected (owner rulings 2026-09-28, meeting-plan decisions 11–13, 16–18 and 24; amended 2026-10-01: a card may be saved while paying by card, and only a ticked one is kept) | `accepted` |
+| **[ADR-0070](./adr-0070)** | A saved card guarantees cash, and what a customer owes is a receivable — paid through a pay link, charged to the card only once the terms allow it; a lockout is the customer's cancellation at the whole price; the crew shares a fee once it is collected (owner rulings 2026-09-28, meeting-plan decisions 11–13, 16–18 and 24; amended 2026-10-01: a card may be saved while paying by card, and only a ticked one is kept; amended 2026-10-04: cash needs no card and none is charged, and a confirmed lockout pays each seat its reward) | `accepted` |
 
 ⟲ = superseded in whole or in part by a later record.
 

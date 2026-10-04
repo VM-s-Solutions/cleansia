@@ -168,7 +168,6 @@
     <string name="home_hero2_title">Глубокая уборка + окна вместе</string>
 
     <!-- Home — trust strip -->
-    <string name="home_trust_insured">Застраховано</string>
     <string name="home_trust_same_day">Сегодня</string>
 
     <!-- Home — popular packages -->
@@ -549,7 +548,6 @@
     <string name="help_faq_a2">Добавьте инструкции по доступу при бронировании (напр. код от двери, место ключа). Клинер ждёт 15 минут после начала уборки и пытается вам позвонить. Если и тогда не удастся попасть внутрь, бронирование отменяется и взимается полная стоимость.</string>
     <string name="help_faq_q3">Застрахованы ли клинеры?</string>
     <string name="help_faq_a3">Да. Все клинеры Cleansia застрахованы до %1$s за заказ.</string>
-    <string name="help_faq_a3_no_figure">Да. Все клинеры Cleansia застрахованы.</string>
     <string name="help_faq_q4">Можно ли изменить дату?</string>
     <string name="help_faq_a4">Заказ нельзя перенести на другую дату. Отмените его и закажите новую дату — отмена бесплатна, пока ни один клинер не взял заказ.</string>
     <string name="help_faq_q5">Что входит в стандартную уборку?</string>
@@ -639,7 +637,6 @@
     <string name="booking_save_address">Сохранить этот адрес</string>
     <string name="booking_set_as_default">Сделать основным</string>
     <string name="booking_trust_insured">Застраховано до %1$s</string>
-    <string name="booking_trust_insured_no_figure">Застраховано</string>
 
     <string name="booking_pick_service">Выберите услугу</string>
     <string name="booking_or_package">Или выберите пакет</string>
@@ -834,12 +831,7 @@
     <string name="booking_cash_pending">Можно ли платить наличными, мы подтвердим, как только будет известна цена.</string>
     <string name="booking_cash_cleared">Оплата наличными для этого заказа больше недоступна, поэтому способ оплаты не выбран. Выберите, как вы хотите платить.</string>
     <string name="booking_draft_time_changed">Выбранное время больше недоступно или изменилась его цена. Пожалуйста, выберите время снова.</string>
-    <string name="booking_card_guarantee_title">Карта как гарантия для оплаты наличными</string>
-    <string name="booking_card_guarantee_body">При первом заказе с оплатой наличными вы сохраняете карту. Сейчас ничего не списывается: за уборку вы платите наличными, как обычно.</string>
     <string name="consent_card_guarantee_draft_2026_09_28">Я согласен(на), что по моим заказам с оплатой наличными Cleansia может списать с этой карты плату за отмену, плату за непредоставление доступа, неоплаченные наличные и одобренную мной доплату.</string>
-    <string name="booking_card_guarantee_consent_required">Чтобы платить наличными, согласитесь на гарантию картой или выберите оплату картой.</string>
-    <string name="booking_card_guarantee_pending">Мы ещё подтверждаем вашу карту. Через мгновение подтвердите заказ ещё раз.</string>
-    <string name="booking_card_guarantee_cancelled">Карта не сохранена, поэтому ничего не забронировано. Сохраните карту, чтобы платить наличными, или выберите оплату картой.</string>
     <string name="booking_save_card_label">Сохранить эту карту для моих следующих заказов</string>
     <string name="booking_special_instructions_hint">Особые пожелания? (необязательно)</string>
     <string name="booking_access_instructions_hint">Как войти? (необязательно)</string>
@@ -1171,10 +1163,9 @@
     <string name="error_order_recurring_already_confirmed">Вы уже подтвердили эту уборку. Оплатите уборщику наличными в день уборки.</string>
     <string name="error_order_creation_failed">Не удалось создать бронирование. Попробуйте снова.</string>
     <string name="error_order_cash_not_available">Оплата наличными доступна только после входа в аккаунт и для заказа, с которым справится один уборщик.</string>
-    <string name="error_order_cash_requires_saved_card">Чтобы платить наличными, сначала сохраните карту как гарантию — или оплатите картой.</string>
     <string name="error_order_cash_open_bookings_limit_reached">У вас уже максимально допустимое количество неоплаченных заказов наличными. Выберите карту или снова наличные, когда один из них будет оплачен.</string>
     <string name="error_order_cash_unpaid_receivable">У вас есть неоплаченная сумма, например плата за отмену. Пока оплатите картой; наличными можно будет платить снова, когда вы погасите её в профиле в разделе Платежи.</string>
-    <string name="error_saved_card_consent_not_accepted">Прежде чем сохранить карту, согласитесь, что с неё могут списываться сборы и неоплаченные наличные.</string>
+    <string name="error_saved_card_consent_not_accepted">Прежде чем сохранить карту, отметьте согласие на её сохранение.</string>
     <string name="error_saved_card_not_found">Мы не нашли эту сохранённую карту.</string>
     <string name="error_receivable_not_found">Мы не нашли эту сумму к оплате.</string>
     <string name="error_receivable_not_open">Эта сумма уже оплачена или списана.</string>
@@ -1390,13 +1381,13 @@
     <string name="receivable_kind_top_up">Одобренная доплата</string>
     <string name="receivable_kind_other">Сумма к оплате</string>
     <string name="payments_card_title">Сохранённая карта</string>
-    <string name="payments_card_intro">Карта, которая гарантирует ваши заказы с оплатой наличными. С неё могут быть списаны плата за отмену, плата за непредоставление доступа, неоплаченные наличные или одобренная вами доплата.</string>
+    <string name="payments_card_intro">С карт, сохранённых в вашем аккаунте, деньги списываются, только когда вы сами ими платите, и карту можно удалить в любой момент.</string>
     <string name="payments_card_label">%1$s •••• %2$s</string>
     <string name="payments_card_expires">Действует до %1$02d/%2$02d · %3$s</string>
-    <string name="payments_card_empty">Карта не сохранена. Мы попросим её при первом заказе с оплатой наличными.</string>
+    <string name="payments_card_empty">Карта не сохранена. Её можно сохранить при следующей оплате картой.</string>
     <string name="payments_card_remove_action">Удалить карту</string>
     <string name="payments_card_remove_title">Удалить эту карту?</string>
-    <string name="payments_card_remove_message">При следующем заказе с оплатой наличными мы снова попросим карту.</string>
+    <string name="payments_card_remove_message">Карту можно снова сохранить при следующей оплате картой.</string>
     <string name="payments_card_remove_confirm">Удалить</string>
     <string name="payments_card_removed">Карта удалена</string>
     <string name="payments_error_message">Не удалось загрузить платежи. Проверьте подключение и попробуйте ещё раз.</string>

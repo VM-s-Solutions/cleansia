@@ -107,7 +107,8 @@ public class OrderEmployeePay : TenantAuditable
         decimal minPay = 0,
         decimal maxPay = 0,
         string? notes = null,
-        string? payBreakdown = null)
+        string? payBreakdown = null,
+        PayLineType lineType = PayLineType.Job)
     {
         if (basePay < 0)
         {
@@ -140,6 +141,7 @@ public class OrderEmployeePay : TenantAuditable
             EmployeeId = employeeId,
             PayPeriodId = payPeriodId,
             CurrencyId = currencyId,
+            LineType = lineType,
             BasePay = basePay,
             ExtrasPay = extrasPay,
             ExpensesPay = expensesPay,

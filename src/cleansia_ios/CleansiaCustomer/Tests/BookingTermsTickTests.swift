@@ -24,7 +24,6 @@ final class BookingTermsTickTests: XCTestCase {
             orderCreateClient: create,
             countryResolver: FakeCountryResolver(),
             consentClient: consent,
-            savedCardClient: FakeSavedCardClient.holdingCzkCard(),
             tokenStore: tokenStore,
             isCardPaymentAvailable: false,
             quoteDebounce: .milliseconds(400),

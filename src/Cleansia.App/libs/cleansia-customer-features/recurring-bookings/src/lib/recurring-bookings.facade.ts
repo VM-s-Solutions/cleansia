@@ -1,9 +1,7 @@
-import { isPlatformBrowser } from '@angular/common';
-import { computed, effect, inject, Injectable, Injector, PLATFORM_ID, signal, untracked } from '@angular/core';
+import { computed, effect, inject, Injectable, Injector, signal, untracked } from '@angular/core';
 import { UnsubscribeControlDirective } from '@cleansia/directives';
 import {
   AddSavedAddressCommand,
-  CardCaptureFacade,
   chosenPackagesByService,
   ConsentType,
   CreateRecurringBookingCommand,
@@ -27,7 +25,6 @@ import {
 } from '@cleansia/customer-services';
 import { CashEligibility, cashIsRefused, resolveCashEligibility } from '@cleansia/models';
 import {
-  CleansiaCustomerRoute,
   DialogService,
   extractApiErrorCode,
   SnackbarService,
@@ -68,19 +65,12 @@ export interface QuotedPrice {
 
 const ONE_DAY_MS = 24 * 60 * 60 * 1000;
 
-const PARKED_FORM_STORAGE_KEY = 'cleansia_recurring_form_parked';
-
 /** Cash refusals the customer answers on this form by paying by card. */
 const CASH_REFUSALS: readonly string[] = [
   'order.cash_not_available',
   'order.cash_unpaid_receivable',
   'order.cash_open_bookings_limit_reached',
 ];
-
-interface ParkedForm {
-  templateId: string | null;
-  data: RecurringWizardFormData;
-}
 
 function priceOf(quoted: QuoteOrderResponse): QuotedPrice {
   return {
@@ -119,8 +109,6 @@ export class RecurringBookingsFacade extends UnsubscribeControlDirective {
   private readonly savedAddressStore = inject(SavedAddressStore);
   private readonly store = inject(Store);
   private readonly injector = inject(Injector);
-  private readonly cardCapture = inject(CardCaptureFacade);
-  private readonly isBrowser = isPlatformBrowser(inject(PLATFORM_ID));
 
   // ─── List state ────────────────────────────────────────────────────
   readonly templates = signal<RecurringBookingTemplateDto[]>([]);
@@ -209,10 +197,6 @@ export class RecurringBookingsFacade extends UnsubscribeControlDirective {
    */
   private readonly alreadyConsented = signal(false);
   readonly termsAsked = computed(() => this.editingId() === null && !this.alreadyConsented());
-
-  readonly cardCaptureVisible = this.cardCapture.visible;
-  readonly cardCaptureConsent = this.cardCapture.consentAccepted;
-  readonly cardCaptureStarting = this.cardCapture.starting;
 
   // ─── Wizard state ──────────────────────────────────────────────────
   readonly activeStep = signal(1);
@@ -317,16 +301,6 @@ export class RecurringBookingsFacade extends UnsubscribeControlDirective {
   readonly missing = computed(() =>
     missingFields(this.formData(), this.editingId() === null, this.termsAsked()),
   );
-
-  constructor() {
-    super();
-    this.cardCapture.connect({
-      countryId: () => this.countryOf(this.formData().savedAddressId),
-      park: () => this.parkForm(),
-      returnUrl: () =>
-        `/${CleansiaCustomerRoute.MEMBERSHIP}/recurring/${this.editingId() ?? 'create'}`,
-    });
-  }
 
   /**
    * Bootstrap: load templates + addresses + catalog. Safe to call on every
@@ -716,52 +690,6 @@ export class RecurringBookingsFacade extends UnsubscribeControlDirective {
     if (announce) this.snackbar.showInfoTranslated('recurring_booking.cash_cleared');
   }
 
-  setCardCaptureConsent(accepted: boolean): void {
-    this.cardCapture.setConsent(accepted);
-  }
-
-  closeCardCapture(): void {
-    this.cardCapture.close();
-  }
-
-  startCardCapture(): void {
-    this.cardCapture.start();
-  }
-
-  private parkForm(): void {
-    if (!this.isBrowser) return;
-    try {
-      const parked: ParkedForm = { templateId: this.editingId(), data: this.formData() };
-      sessionStorage.setItem(PARKED_FORM_STORAGE_KEY, JSON.stringify(parked));
-    } catch {
-      // Storage refused: the customer comes back to the form as it loads, not as they left it.
-    }
-  }
-
-  /**
-   * The form as the customer left it to save a card, if it was this schedule (or a new one when
-   * `templateId` is null). Reading consumes it.
-   */
-  restoreParkedForm(templateId: string | null): void {
-    if (!this.isBrowser) return;
-    let parked: ParkedForm | null = null;
-    try {
-      const raw = sessionStorage.getItem(PARKED_FORM_STORAGE_KEY);
-      sessionStorage.removeItem(PARKED_FORM_STORAGE_KEY);
-      parked = raw ? (JSON.parse(raw) as ParkedForm) : null;
-    } catch {
-      return;
-    }
-    if (!parked?.data || parked.templateId !== templateId) return;
-    const { startsOn, endsOn } = parked.data;
-    this.editingId.set(templateId);
-    this.formData.set({
-      ...parked.data,
-      startsOn: startsOn ? new Date(startsOn) : null,
-      endsOn: endsOn ? new Date(endsOn) : null,
-    });
-  }
-
   // ─── A package and a service it already includes ──────────────────
   //
   // Booked together they book that service twice on every clean, and nothing merges them; two
@@ -1010,10 +938,6 @@ export class RecurringBookingsFacade extends UnsubscribeControlDirective {
     } catch (error: unknown) {
       // The interceptor has already said why; a generic toast would replace that sentence.
       const code = extractApiErrorCode(error);
-      if (code === 'order.cash_requires_saved_card') {
-        this.cardCapture.open();
-        return false;
-      }
       if (code && CASH_REFUSALS.includes(code)) {
         this.dropCash(false);
         return false;

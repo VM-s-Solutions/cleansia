@@ -30,8 +30,6 @@ final class BookingViewModel: ViewModel {
     @Published private(set) var marketState: MarketState = .unavailable
     /// Set when a cash choice was taken away; cleared by the customer's next choice.
     @Published internal(set) var cashCleared = false
-    /// The customer's saved cards, nil until the first read answers.
-    @Published internal(set) var savedCards: [SavedCard]?
 
     @Published private(set) var currentStep = 1
     /// A tap that would book a service twice, waiting for the customer to confirm or cancel it.
@@ -50,8 +48,6 @@ final class BookingViewModel: ViewModel {
     let paymentIntentClient: PaymentIntentClient
     let countryResolver: CountryResolver
     let consentClient: ConsentStatusClient
-    let savedCardClient: SavedCardClient
-    let pauseBetweenCardReads: () async -> Void
     let tokenStore: TokenStore
     let languageTag: () -> String
     let isCardPaymentAvailable: Bool
@@ -63,11 +59,8 @@ final class BookingViewModel: ViewModel {
     var quotedAt: Date?
     /// When the sheet last closed on this draft: the band its time was priced in when no quote for it landed.
     private var draftLeftAt: Date?
-    /// The currency of the card PaymentSheet is saving, until it is seen to land or the sheet is abandoned.
-    /// While it is set a cash booking waits for that card instead of capturing a second one.
-    var guaranteeCurrencyCode: String?
-    /// While Stripe's sheet is over the booking, paying for its order or saving its card. The sheet sets it; a
-    /// return to the foreground re-checks nothing under it (`recheckOpenBooking`).
+    /// While Stripe's sheet is over the booking, paying for its order. The sheet sets it; a return to the
+    /// foreground re-checks nothing under it (`recheckOpenBooking`).
     var paymentSheetShowing = false
     private var quoteTask: Task<Void, Never>?
     private var catalogLoad: Task<Void, Never>?
@@ -88,8 +81,6 @@ final class BookingViewModel: ViewModel {
         paymentIntentClient: PaymentIntentClient = LivePaymentIntentClient(),
         countryResolver: CountryResolver = LiveCountryResolver(),
         consentClient: ConsentStatusClient = LiveConsentStatusClient(),
-        savedCardClient: SavedCardClient = LiveSavedCardClient(),
-        pauseBetweenCardReads: @escaping () async -> Void = { _ = try? await Task.sleep(nanoseconds: 1_500_000_000) },
         tokenStore: TokenStore = CustomerBookingTokenStore.shared,
         languageTag: @escaping () -> String = { CoreL10n.languageTag },
         market: AnyPublisher<MarketState, Never> = Just(.unavailable).eraseToAnyPublisher(),
@@ -108,8 +99,6 @@ final class BookingViewModel: ViewModel {
         self.paymentIntentClient = paymentIntentClient
         self.countryResolver = countryResolver
         self.consentClient = consentClient
-        self.savedCardClient = savedCardClient
-        self.pauseBetweenCardReads = pauseBetweenCardReads
         self.tokenStore = tokenStore
         self.languageTag = languageTag
         self.isCardPaymentAvailable = isCardPaymentAvailable
@@ -128,7 +117,7 @@ final class BookingViewModel: ViewModel {
     }
 
     /// The insurance ceiling for the country the booking is priced in, in that country's currency;
-    /// nil renders the no-figure claim.
+    /// nil claims no insurance.
     var insurance: MarketMoney? {
         marketState.insurance(forCountryId: catalogCountryId)
     }
@@ -252,8 +241,6 @@ final class BookingViewModel: ViewModel {
         promoState = .idle
         referralState = .idle
         cashCleared = false
-        savedCards = nil
-        guaranteeCurrencyCode = nil
         currentStep = 1
         twiceBookedPick = nil
         lastQuoteRequest = nil

@@ -79,6 +79,18 @@ public sealed class OrderAnonymizeCustomerDataTests
         Assert.Equal(OrderCancellationReasons.CompanyWindDown, order.CancellationReason);
     }
 
+    [Fact]
+    public void A_Confirmed_Lockout_Stays_One()
+    {
+        var order = NewOrder();
+        order.ReportLockout("employee-1", "Called twice", DateTime.UtcNow);
+        order.Cancel(DateTime.UtcNow, CancelledBy.Admin, 1m, 0m, OrderCancellationReasons.CustomerLockout);
+
+        order.AnonymizeCustomerData();
+
+        Assert.True(order.IsConfirmedLockout);
+    }
+
     private static Order NewOrder() =>
         Order.Create(
             customerName: "Milada Novotna",

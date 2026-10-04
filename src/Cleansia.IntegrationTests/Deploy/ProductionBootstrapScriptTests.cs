@@ -93,7 +93,7 @@ public class ProductionBootstrapScriptTests(PostgresContainerFixture fixture) : 
 
                 Assert.Contains(
                     await context.EmployeeDocumentRequirements.Where(r => r.CountryId == czechia.Id).ToListAsync(),
-                    r => r.DocumentType == DocumentType.InsuranceDocument && r.IsRequired);
+                    r => r.DocumentType == DocumentType.InsuranceDocument && !r.IsRequired);
                 Assert.Equal(4, await context.LoyaltyTierConfigs.CountAsync());
 
                 Assert.All(OwnerTypedTables, table => Assert.Equal(0L, ownerTyped[table]));

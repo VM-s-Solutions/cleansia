@@ -10,8 +10,8 @@ namespace Cleansia.Core.AppServices.Features.Loyalty.Admin;
 
 /// <summary>
 /// Admin "look up loyalty account by user id" — the user-explicit mirror of
-/// <see cref="Loyalty.GetMyLoyalty"/>. Lazily creates the account on first
-/// read so freshly-onboarded users surface with a Bronze 0-point baseline.
+/// <see cref="Loyalty.GetMyLoyalty"/>. A user with no account yet reads as Bronze with no points, and
+/// nothing is created: the account is the first grant's to open.
 /// </summary>
 public class GetUserLoyaltyAccount
 {
@@ -50,7 +50,8 @@ public class GetUserLoyaltyAccount
     {
         public async Task<BusinessResult<Response>> Handle(Query request, CancellationToken cancellationToken)
         {
-            var account = await loyaltyAccountRepository.EnsureForUserAsync(request.UserId, cancellationToken);
+            var account = await loyaltyAccountRepository.GetByUserIdAsync(request.UserId, cancellationToken)
+                ?? LoyaltyAccount.Create(request.UserId);
 
             var allConfigs = await loyaltyTierConfigRepository.GetAllForTenantAsync(cancellationToken);
             var currentConfig = allConfigs.FirstOrDefault(c => c.Tier == account.CurrentTier);

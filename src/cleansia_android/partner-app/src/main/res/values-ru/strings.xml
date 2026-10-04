@@ -1193,6 +1193,7 @@
     <string name="error_validation_invalid_iban">Введите, пожалуйста, корректный IBAN.</string>
     <string name="error_validation_invalid_zip_code">Введите, пожалуйста, корректный почтовый индекс.</string>
     <string name="error_validation_registration_number_invalid_format">Введите действительный регистрационный номер компании для выбранной страны.</string>
+    <string name="error_validation_registration_number_not_registered">Этого идентификационного номера (IČO) нет в реестре экономических субъектов (ARES). Проверьте номер.</string>
     <string name="error_validation_must_be_positive">Должно быть положительное число.</string>
 
     <!-- Payout / bank details -->
@@ -1331,7 +1332,7 @@
     <string name="period_pay_line_deduction">Удержание %1$s</string>
     <string name="period_pay_line_deduction_reason">Удержание %1$s: %2$s</string>
     <string name="period_pay_line_cancellation_fee_share">Ваша доля сбора за позднюю отмену</string>
-    <string name="period_pay_line_lockout_fee_share">Ваша доля сбора за непредоставленный доступ</string>
+    <string name="period_pay_line_lockout_fee_share">Ваше вознаграждение за заказ, куда вы не смогли попасть</string>
     <string name="invoice_view_period_pay">Посмотреть оплату за период</string>
     <string name="photo_encode_failed">Не удалось обработать это фото. Попробуйте другое.</string>
     <string name="document_read_failed">Не удалось прочитать этот файл. Попробуйте другой.</string>

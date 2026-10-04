@@ -21,7 +21,7 @@ class HelpSupportViewModel @Inject constructor(
     private val snackbar: SnackbarController,
 ) : ViewModel() {
 
-    /** The FAQ's insurance ceiling is the chosen market's (ADR-0060 D2); null renders the no-figure answer. */
+    /** The FAQ's insurance ceiling is the chosen market's (ADR-0060 D2); null leaves the insurance question out. */
     val insuranceCoverage: StateFlow<InsuranceCoverage?> = marketRepository.state
         .map { it.selectedOrNull?.insuranceCoverage }
         .stateIn(viewModelScope, SharingStarted.Eagerly, null)

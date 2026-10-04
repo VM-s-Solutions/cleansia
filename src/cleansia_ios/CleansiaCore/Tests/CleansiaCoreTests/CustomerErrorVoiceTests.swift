@@ -55,10 +55,6 @@ final class CustomerErrorVoiceTests: XCTestCase {
             emitters: "CreateOrder, CreateRecurringBooking, UpdateRecurringBooking, ConfirmRecurringOrder"
         ),
         CustomerOnlyKey(
-            "order.cash_requires_saved_card",
-            emitters: "CreateOrder, CreateRecurringBooking, UpdateRecurringBooking, ConfirmRecurringOrder"
-        ),
-        CustomerOnlyKey(
             "order.start_passed_cannot_cancel",
             emitters: "CancelOrder, CancelGuestOrder, GetCancellationFeePreview, GetGuestCancellationFeePreview"
         ),
@@ -179,8 +175,6 @@ final class CustomerErrorVoiceTests: XCTestCase {
         "order.cash_not_available":
             "CreateOrder, CreateRecurringBooking, UpdateRecurringBooking, ConfirmRecurringOrder",
         "order.cash_open_bookings_limit_reached":
-            "CreateOrder, CreateRecurringBooking, UpdateRecurringBooking, ConfirmRecurringOrder",
-        "order.cash_requires_saved_card":
             "CreateOrder, CreateRecurringBooking, UpdateRecurringBooking, ConfirmRecurringOrder",
         "order.cash_unpaid_receivable":
             "CreateOrder, CreateRecurringBooking, UpdateRecurringBooking, ConfirmRecurringOrder",

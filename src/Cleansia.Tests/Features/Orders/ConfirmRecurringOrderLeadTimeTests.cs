@@ -69,7 +69,7 @@ public sealed class ConfirmRecurringOrderLeadTimeTests
     private ConfirmRecurringOrder.Handler Handler() => new(
         OrderAccessDoubles.Over(_orderRepository, _session),
         _orderRepository.Object,
-        SavedCards.SavedCardDoubles.Guaranteed(), Mock.Of<IReceivableRepository>(),
+        Mock.Of<ISavedCardRepository>(), Mock.Of<IReceivableRepository>(),
         Mock.Of<ICreditAccountRepository>(),
         Mock.Of<IUserRepository>(),
         _session.Object,

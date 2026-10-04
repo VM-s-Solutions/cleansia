@@ -31,7 +31,8 @@ public class GetMyLoyalty
         public async Task<BusinessResult<Response>> Handle(Query request, CancellationToken cancellationToken)
         {
             var userId = userSessionProvider.GetUserId()!;
-            var account = await loyaltyAccountRepository.EnsureForUserAsync(userId, cancellationToken);
+            var account = await loyaltyAccountRepository.GetByUserIdIgnoringTenantAsync(userId, cancellationToken)
+                ?? LoyaltyAccount.Create(userId);
 
             var allConfigs = await loyaltyTierConfigRepository.GetAllForTenantAsync(cancellationToken);
             var currentConfig = allConfigs.FirstOrDefault(c => c.Tier == account.CurrentTier);

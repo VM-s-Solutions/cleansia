@@ -280,7 +280,6 @@ public class RecurringCashEligibilityTests(PostgresContainerFixture fixture) : B
         user.Id = CustomerUserId;
         user.ConfirmEmail();
         context.Add(user);
-        context.SavedCards.Add(TestSavedCards.Usable(CustomerUserId, Czk));
 
         var plan = MembershipPlan.Create("PLUS", "Plus", 0m, true);
         context.MembershipPlans.Add(plan);

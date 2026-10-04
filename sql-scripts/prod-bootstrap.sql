@@ -598,8 +598,9 @@ ON CONFLICT ("CountryId") DO NOTHING;
 -- jurisdiction may demand is left for the admin screen to add, which is the entire reason these are
 -- rows rather than a constant.
 --
--- InsuranceDocument is required (owner ruling 2026-09-28): a cleaner is approved only with a
--- valid liability insurance certificate, whichever policy the platform finally promises.
+-- InsuranceDocument is recommended, not required (owner ruling 2026-10-04, replacing the requirement
+-- of 2026-09-28): the certificate stays on the cleaner's checklist as an optional upload and gates
+-- nothing.
 --
 -- WorkPermit is seeded NOT required on purpose. It applies to non-EU nationals and to nobody else,
 -- and a per-country flag cannot say "required for some of these people" — so it appears on the
@@ -620,7 +621,7 @@ CROSS JOIN (VALUES
   -- 1 = IdentityCard, 4 = WorkPermit, 9 = InsuranceDocument (Cleansia.Core.Domain.Enums.DocumentType)
   (1, true, 1),
   (4, false, 2),
-  (9, true, 3)
+  (9, false, 3)
 ) AS r(document_type, is_required, sort_order)
 WHERE c."IsoCode" = 'CZE'
 ON CONFLICT ("CountryId", "DocumentType") DO NOTHING;

@@ -35,15 +35,14 @@ namespace Cleansia.IntegrationTests.Features.Orders;
 /// A refusal writes nothing but its own failure audit row: no order, no status row, no guest token, no
 /// booking e-mail and no benefit reservation.
 ///
-/// <para>Owner ruling 2026-09-28 on top: the customer needs a usable card saved in the booking's currency,
-/// holds at most two cash bookings that are open and not yet paid, and owes no operating company an open
-/// receivable.</para>
+/// <para>Owner ruling 2026-09-28 on top: the customer holds at most two cash bookings that are open and not
+/// yet paid, and owes no operating company an open receivable. Owner ruling 2026-10-04: no saved card is
+/// asked for, so no customer here has one.</para>
 /// </summary>
 [Collection("PostgresCollection")]
 public class CreateOrderCashEligibilityTests(PostgresContainerFixture fixture) : BaseIntegrationTest(fixture)
 {
     private const string Czk = "currency-czk-cash-rule";
-    private const string Eur = "currency-eur-cash-rule";
     private const string TemplateId = "template-cash-rule";
     private const string Czechia = "country-cz-cash-rule";
     private const string City = "Praha";
@@ -153,23 +152,22 @@ public class CreateOrderCashEligibilityTests(PostgresContainerFixture fixture) :
             transactional: false);
     }
 
-    public enum CardOnFile { None, Usable, ExpiredLastMonth, Removed, OtherCurrencyOnly }
-
-    [Theory]
-    [InlineData(CardOnFile.None)]
-    [InlineData(CardOnFile.ExpiredLastMonth)]
-    [InlineData(CardOnFile.Removed)]
-    [InlineData(CardOnFile.OtherCurrencyOnly)]
-    public async Task A_Signed_In_Customer_Without_A_Usable_Card_In_The_Booking_Currency_Is_Refused_Cash_And_Nothing_Is_Written(
-        CardOnFile card)
+    [Fact]
+    public async Task A_Signed_In_Customer_With_No_Saved_Card_Books_Cash()
     {
         await TestMethod(
             setup: AccountSession,
-            arrange: context => SeedAsync(context, card),
+            arrange: SeedAsync,
             act: async provider => await provider.GetRequiredService<IMediator>()
                 .Send(Command(PaymentType.Cash, OneCleaner, OneCleanerPrice)),
-            assert: (CleansiaDbContext context, BusinessResult<CreateOrder.Response> result) =>
-                AssertRefusedWithNothingWritten(context, result, BusinessErrorMessage.OrderCashRequiresSavedCard),
+            assert: async (CleansiaDbContext context, BusinessResult<CreateOrder.Response> result) =>
+            {
+                Assert.True(result.IsSuccess, Describe(result));
+                Assert.Empty(await context.SavedCards.IgnoreQueryFilters().ToListAsync());
+                var order = await context.Orders.IgnoreQueryFilters().SingleAsync(o => o.Id == result.Value.Id);
+                Assert.Equal(PaymentType.Cash, order.PaymentType);
+                Assert.Equal(PaymentStatus.Pending, order.PaymentStatus);
+            },
             transactional: false);
     }
 
@@ -221,13 +219,13 @@ public class CreateOrderCashEligibilityTests(PostgresContainerFixture fixture) :
     }
 
     [Fact]
-    public async Task A_Card_Booking_Needs_Neither_A_Saved_Card_Nor_Room_Under_The_Cash_Limit()
+    public async Task A_Card_Booking_Needs_No_Room_Under_The_Cash_Limit()
     {
         await TestMethod(
             setup: AccountSession,
             arrange: async context =>
             {
-                await SeedAsync(context, CardOnFile.None);
+                await SeedAsync(context);
                 await SeedCustomerOrdersAsync(context, openUnpaidCash: 2);
             },
             act: async provider => await provider.GetRequiredService<IMediator>()
@@ -431,9 +429,7 @@ public class CreateOrderCashEligibilityTests(PostgresContainerFixture fixture) :
         return Task.CompletedTask;
     }
 
-    private static Task SeedAsync(CleansiaDbContext context) => SeedAsync(context, CardOnFile.Usable);
-
-    private static async Task SeedAsync(CleansiaDbContext context, CardOnFile card)
+    private static async Task SeedAsync(CleansiaDbContext context)
     {
         context.Languages.Add(Language.Create("en", "English"));
         TestLegalDocuments.Add(context);
@@ -477,30 +473,6 @@ public class CreateOrderCashEligibilityTests(PostgresContainerFixture fixture) :
         user.Id = CustomerUserId;
         user.ConfirmEmail();
         context.Add(user);
-
-        if (card == CardOnFile.OtherCurrencyOnly)
-        {
-            var eur = Currency.Create("EUR", "€", "Euro");
-            eur.Id = Eur;
-            context.Currencies.Add(eur);
-        }
-
-        var saved = card switch
-        {
-            CardOnFile.None => null,
-            CardOnFile.ExpiredLastMonth => TestSavedCards.Expiring(CustomerUserId, Czk, DateTime.UtcNow.AddMonths(-1)),
-            CardOnFile.OtherCurrencyOnly => TestSavedCards.Usable(CustomerUserId, Eur),
-            _ => TestSavedCards.Usable(CustomerUserId, Czk),
-        };
-        if (card == CardOnFile.Removed)
-        {
-            saved!.Deactivated(CustomerUserId, DateTimeOffset.UtcNow);
-        }
-
-        if (saved is not null)
-        {
-            context.SavedCards.Add(saved);
-        }
 
         StampUnstampedAdded(context, TestTenants.Default);
         await context.CommitAsync(CancellationToken.None);

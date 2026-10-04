@@ -296,19 +296,23 @@ public class SeededCataloguePricingTests : IAsyncLifetime
         Assert.All(configurations, c => Assert.Null(c.InsuranceCoverageAmount));
     }
 
-    /// <summary>Owner ruling 2026-09-28: a cleaner working in Czechia or Slovakia is approved only with a valid insurance certificate.</summary>
+    /// <summary>
+    /// Owner ruling 2026-10-04: insurance is recommended, not required. The certificate stays on the
+    /// checklist of a cleaner working in Czechia or Slovakia, and approval does not wait for it.
+    /// </summary>
     [Fact]
-    public async Task The_Insurance_Certificate_Is_A_Required_Cleaner_Document_In_Czechia_And_Slovakia()
+    public async Task The_Insurance_Certificate_Is_An_Optional_Cleaner_Document_In_Czechia_And_Slovakia()
     {
         await using var ctx = NewContext();
 
-        var required = await ctx.EmployeeDocumentRequirements
-            .Where(r => r.IsRequired && r.DocumentType == DocumentType.InsuranceDocument)
-            .Join(ctx.Countries, r => r.CountryId, c => c.Id, (_, c) => c.IsoCode)
-            .OrderBy(iso => iso)
+        var insurance = await ctx.EmployeeDocumentRequirements
+            .Where(r => r.DocumentType == DocumentType.InsuranceDocument)
+            .Join(ctx.Countries, r => r.CountryId, c => c.Id, (r, c) => new { c.IsoCode, r.IsRequired })
+            .OrderBy(r => r.IsoCode)
             .ToListAsync();
 
-        Assert.Equal(["CZE", "SVK"], required);
+        Assert.Equal(["CZE", "SVK"], insurance.Select(r => r.IsoCode));
+        Assert.All(insurance, r => Assert.False(r.IsRequired));
     }
 
     private sealed class FixedTenantProvider(string? tenantId) : ITenantProvider

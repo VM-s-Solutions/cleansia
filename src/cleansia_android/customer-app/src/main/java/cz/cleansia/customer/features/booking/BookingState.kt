@@ -81,9 +81,6 @@ data class BookingState(
     // The review step's terms tick. Per booking, never remembered: reset() starts the next one
     // unticked. Read only when the box is shown — see BookingViewModel.alreadyConsented.
     val termsAccepted: Boolean = false,
-    // The card-guarantee consent, asked only while the booking needs a card captured — see
-    // BookingViewModel.needsCardGuarantee. Per booking, like the terms tick.
-    val cardGuaranteeAccepted: Boolean = false,
     // "Save this card for my next bookings", offered only to a signed-in card payment — see
     // BookingViewModel.offersCardSaving. Per booking and off until ticked.
     val saveCard: Boolean = false,

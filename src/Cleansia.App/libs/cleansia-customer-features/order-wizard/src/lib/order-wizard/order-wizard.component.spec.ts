@@ -179,12 +179,6 @@ class FakeOrderWizardFacade {
   saveCardOffered = signal(false);
   saveCard = signal(false);
   setSaveCard = jest.fn((save: boolean) => this.saveCard.set(save));
-  cardCaptureVisible = signal(false);
-  cardCaptureConsent = signal(false);
-  cardCaptureStarting = signal(false);
-  setCardCaptureConsent = jest.fn((accepted: boolean) => this.cardCaptureConsent.set(accepted));
-  closeCardCapture = jest.fn(() => this.cardCaptureVisible.set(false));
-  startCardCapture = jest.fn();
 }
 
 describe('OrderWizardComponent (a11y)', () => {

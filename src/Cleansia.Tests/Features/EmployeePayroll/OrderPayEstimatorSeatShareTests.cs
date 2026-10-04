@@ -14,7 +14,8 @@ namespace Cleansia.Tests.Features.EmployeePayroll;
 /// The board and the job detail quote one seat of the job, raised by the dirtiness rate the order was
 /// booked at: the order entity (detail, dashboard) and the list projection row (board) both carry the
 /// crew size and the stored rate into the estimate, so a later change to <c>BookingPolicy</c> never
-/// re-quotes a booked job.
+/// re-quotes a booked job. Both carry the company's share of the extras booked, as the contract for work
+/// states the reward at the take.
 /// </summary>
 public class OrderPayEstimatorSeatShareTests
 {
@@ -84,11 +85,40 @@ public class OrderPayEstimatorSeatShareTests
         Assert.Equal(800m, EstimateBoard(RowBookedAt(seats: 1, DirtinessLevel.Heavy, EarlierHeavyRate)));
     }
 
-    private static decimal? EstimateDetail(Order order) =>
-        (decimal?)EstimateFor(typeof(Order)).Invoke(null, [order, EmployeeId, JobPayConfigs(), NoConfigs()]);
+    /// <summary>
+    /// 300 of extras at a 40 % share add 120 to the job's 500: one seat is quoted 620, and two seats 310
+    /// each. The contract for work states the same figure, so a board that left the share out quoted less
+    /// than the cleaner is then offered.
+    /// </summary>
+    [Theory]
+    [InlineData(1, 620)]
+    [InlineData(2, 310)]
+    public void The_Detail_Quotes_The_Share_Of_The_Extras_Booked(int seats, int expected)
+    {
+        var order = OrderBookedAt(seats, DirtinessLevel.Normal, 0m);
+        order.AddSelectedExtras([OrderExtra.Create(order, Extra.Create("windows", "Windows", null), 300m)]);
 
-    private static decimal? EstimateBoard(OrderListRow row) =>
-        (decimal?)EstimateFor(typeof(OrderListRow)).Invoke(null, [row, EmployeeId, JobPayConfigs(), NoConfigs()]);
+        Assert.Equal((decimal)expected, EstimateDetail(order, extrasSharePercent: 40));
+    }
+
+    /// <summary>The board's twin of the case above, through the list projection row.</summary>
+    [Theory]
+    [InlineData(1, 620)]
+    [InlineData(2, 310)]
+    public void The_Board_Quotes_The_Share_Of_The_Extras_Booked(int seats, int expected)
+    {
+        var row = RowBookedAt(seats, DirtinessLevel.Normal, 0m) with { ExtrasSubtotal = 300m };
+
+        Assert.Equal((decimal)expected, EstimateBoard(row, extrasSharePercent: 40));
+    }
+
+    private static decimal? EstimateDetail(Order order, int extrasSharePercent = 50) =>
+        (decimal?)EstimateFor(typeof(Order)).Invoke(
+            null, [order, EmployeeId, JobPayConfigs(), NoConfigs(), extrasSharePercent]);
+
+    private static decimal? EstimateBoard(OrderListRow row, int extrasSharePercent = 50) =>
+        (decimal?)EstimateFor(typeof(OrderListRow)).Invoke(
+            null, [row, EmployeeId, JobPayConfigs(), NoConfigs(), extrasSharePercent]);
 
     private static IReadOnlyList<EmployeePayConfig> JobPayConfigs() =>
         [EmployeePayConfig.CreateForService(ServiceId, JobPay, CurrencyId)];
@@ -131,6 +161,7 @@ public class OrderPayEstimatorSeatShareTests
             Rooms: 1,
             Bathrooms: 0,
             ExtraSlugs: [],
+            ExtrasSubtotal: 0m,
             CleaningDateTime: new DateTime(2026, 4, 1, 10, 0, 0, DateTimeKind.Utc),
             PaymentType: PaymentType.Card,
             PaymentStatus: PaymentStatus.Paid,

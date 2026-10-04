@@ -1,5 +1,4 @@
 using Cleansia.Core.AppServices.Services.Interfaces;
-using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Loyalty;
 using Cleansia.Core.Domain.Notifications;
 using Cleansia.Core.Domain.Orders;
@@ -52,6 +51,10 @@ public sealed class LoyaltyService(
             return;
         }
 
+        // A refund settling while this runs either counts in the total read below or finds the earn once
+        // this commits; without the lock it could find no earn and miss the total, and keep its points.
+        await loyaltyAccountRepository.LockForUserAsync(order.UserId, cancellationToken);
+
         // Idempotency: bail out if a prior Earn ledger entry exists for this
         // order. This protects against duplicate CompleteOrder fires (e.g.
         // pipeline retries, manual re-trigger).
@@ -62,9 +65,7 @@ public sealed class LoyaltyService(
             return;
         }
 
-        // Read before the earn row is created: a refund that settled before its OccurredOn is one this share
-        // counted, and RevokeForRefundAsync relies on that to take nothing more when the refund is replayed.
-        var returnedShare = await ShareReturnedBeforeCompletionAsync(order, pointsEarned, cancellationToken);
+        var returnedShare = ShareOf(pointsEarned, order, await ReturnedSoFarAsync(order, cancellationToken));
 
         var userId = order.UserId;
         var account = await loyaltyAccountRepository.EnsureForUserAsync(userId, cancellationToken);
@@ -146,12 +147,12 @@ public sealed class LoyaltyService(
         account.RevokePoints(pointsToRevoke, LoyaltyEarnSource.OrderCancelled, orderId, SystemActor, thresholds);
     }
 
-    public async Task RevokeForRefundAsync(
+    public async Task<bool> RevokeForRefundAsync(
         string orderId, decimal amountReturned, string refundKey, string actorId, CancellationToken cancellationToken)
     {
         if (string.IsNullOrEmpty(refundKey))
         {
-            return;
+            return false;
         }
 
         var order = await orderRepository
@@ -162,60 +163,49 @@ public sealed class LoyaltyService(
         if (order == null)
         {
             logger.LogWarning("LoyaltyService.RefundRevoke skipped — order {OrderId} not found.", orderId);
-            return;
+            return false;
         }
 
         if (string.IsNullOrEmpty(order.UserId) || order.TotalPrice <= 0m)
         {
-            return;
+            return false;
         }
+
+        // Two refunds of one order both read the running total below; serialized, the second sees what the
+        // first took and takes only the rest instead of the whole share again.
+        await loyaltyAccountRepository.LockForUserAsync(order.UserId, cancellationToken);
 
         var originalEarn = await loyaltyTransactionRepository.GetLatestForOrderSourceAsync(
             orderId, LoyaltyEarnSource.OrderCompleted, cancellationToken);
         if (originalEarn == null)
         {
-            return;
-        }
-
-        // A share of what the order EARNED, never the currency's divisor today, which an admin may have
-        // changed since completion. → /product/business-rules#money-constants
-        var requested = (int)Math.Floor(originalEarn.Points * amountReturned / order.TotalPrice);
-        if (requested <= 0)
-        {
-            return;
+            return false;
         }
 
         // Idempotency on the refund key — a replay of the same refund collapses to one revoke.
         var existingByKey = await loyaltyTransactionRepository.GetByIdempotencyKeyAsync(refundKey, cancellationToken);
         if (existingByKey != null)
         {
-            return;
+            return false;
         }
 
-        // A refund that settled before the order completed had its share taken at completion, in a row that
-        // carries no refund key; replayed after completion, it takes nothing more.
-        if (await refundRepository.GetByRefundKeyAsync(refundKey, cancellationToken)
-                is { Status: RefundStatus.Succeeded, ConfirmedOn: { } settledOn }
-            && settledOn < originalEarn.OccurredOn)
-        {
-            return;
-        }
-
-        // Cap cumulative revocation at the original earn: the order's refunds together never claw back
-        // more than was earned, and a full refund after earlier ones takes only what they left.
+        // The share of everything the order has given back so far, less what its earlier refunds and its
+        // completion already took, so the shares floor once on the total and never add past the earn. A full
+        // refund hands over the whole price and takes everything left. A share of what the order EARNED,
+        // never the currency's divisor today. → /product/business-rules#money-constants
+        var returned = Math.Max(await ReturnedSoFarAsync(order, cancellationToken), amountReturned);
         var alreadyRevoked = await loyaltyTransactionRepository.GetRevokedPointsSumForOrderSourceAsync(
             orderId, LoyaltyEarnSource.OrderPartiallyRefunded, cancellationToken);
-        var headroom = originalEarn.Points - alreadyRevoked;
-        var pointsToRevoke = Math.Min(requested, headroom);
+        var pointsToRevoke = ShareOf(originalEarn.Points, order, returned) - alreadyRevoked;
         if (pointsToRevoke <= 0)
         {
-            return;
+            return false;
         }
 
         var account = await loyaltyAccountRepository.GetByUserIdIgnoringTenantAsync(order.UserId, cancellationToken);
         if (account == null)
         {
-            return;
+            return false;
         }
 
         var thresholds = await ResolveThresholdsAsync(cancellationToken);
@@ -225,7 +215,7 @@ public sealed class LoyaltyService(
         // Flush the keyed insert HERE so a concurrent double-submit that raced past the fast-path read
         // collides on the filtered unique index and collapses, rather than surfacing a raw 500 at the
         // pipeline commit (mirrors the manual grant/revoke path).
-        await FlushCollapsingUniqueViolationAsync(cancellationToken);
+        return await FlushCollapsingUniqueViolationAsync(cancellationToken);
     }
 
     public async Task<TierDiscountResult> ResolveTierDiscountForOrderAsync(
@@ -401,15 +391,16 @@ public sealed class LoyaltyService(
     /// on the filtered UNIQUE INDEX on <c>LoyaltyTransaction.IdempotencyKey</c> HERE, where the 23505 can
     /// be caught and collapsed — not at the <c>UnitOfWorkPipelineBehavior</c> commit (which would surface a
     /// raw 500). On a unique-violation the loser rolls back ITS OWN change-tracker (each request has its own
-    /// scoped DbContext, so this discards only the loser's row, never the winner's) and returns: the side
-    /// effect lands exactly once. On a clean flush the row is persisted and Unchanged, so the pipeline's
-    /// final commit is a safe no-op.
+    /// scoped DbContext, so this discards only the loser's row, never the winner's) and returns false: the
+    /// side effect lands exactly once. On a clean flush the row is persisted and Unchanged, so the pipeline's
+    /// final commit is a safe no-op, and it returns true.
     /// </summary>
-    private async Task FlushCollapsingUniqueViolationAsync(CancellationToken cancellationToken)
+    private async Task<bool> FlushCollapsingUniqueViolationAsync(CancellationToken cancellationToken)
     {
         try
         {
             await loyaltyTransactionRepository.CommitAsync(cancellationToken);
+            return true;
         }
         catch (DbUpdateException ex) when (IsUniqueViolation(ex))
         {
@@ -419,6 +410,7 @@ public sealed class LoyaltyService(
             loyaltyTransactionRepository.Rollback();
             logger.LogInformation(
                 "Keyed loyalty grant/revoke collapsed on idempotency key (unique-violation) — replay landed exactly once.");
+            return false;
         }
     }
 
@@ -450,21 +442,19 @@ public sealed class LoyaltyService(
     }
 
     /// <summary>
-    /// The clawback's share, <c>floor(earned × returned / TotalPrice)</c>, of everything the order has
-    /// already given back: card refunds, the credit legs returned with them, and dispute settlements paid
-    /// in credit.
+    /// Everything the order has given back: card refunds, the credit legs returned with them, and dispute
+    /// settlements paid in credit, including one this unit of work is settling.
     /// </summary>
-    private async Task<int> ShareReturnedBeforeCompletionAsync(
-        Order order, int earned, CancellationToken cancellationToken)
-    {
-        var returned = await refundRepository.GetSucceededRefundTotalForOrderAsync(order.Id, cancellationToken)
-            + await creditAccountRepository.GetReturnedTotalForOrderAsync(order.Id, cancellationToken)
-            + await creditAccountRepository.GetDisputeSettledTotalForOrderAsync(order.Id, cancellationToken);
+    private async Task<decimal> ReturnedSoFarAsync(Order order, CancellationToken cancellationToken) =>
+        await refundRepository.GetSucceededRefundTotalForOrderAsync(order.Id, cancellationToken)
+        + await creditAccountRepository.GetReturnedTotalForOrderAsync(order.Id, cancellationToken)
+        + await creditAccountRepository.GetDisputeSettledTotalForOrderAsync(order.Id, cancellationToken);
 
-        return returned > 0m
+    /// <summary><c>floor(earned × returned / TotalPrice)</c>, with what is returned capped at the price.</summary>
+    private static int ShareOf(int earned, Order order, decimal returned) =>
+        returned > 0m
             ? (int)Math.Floor(earned * Math.Min(returned, order.TotalPrice) / order.TotalPrice)
             : 0;
-    }
 
     private async Task<LoyaltyTierThresholds> ResolveThresholdsAsync(CancellationToken cancellationToken)
     {

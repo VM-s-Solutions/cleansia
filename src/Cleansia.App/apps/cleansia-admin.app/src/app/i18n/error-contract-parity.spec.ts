@@ -573,6 +573,12 @@ const ADMIN_SURFACE_ERROR_KEYS: readonly string[] = [
   // ApproveEmployee: a cleaner document in force for the work country whose current version the
   // cleaner has not accepted.
   'employee.legal_documents_not_accepted',
+  // ApproveEmployee: the work country's business register (ARES for Czechia) does not hold the
+  // cleaner's IČO, says the business has ended or holds no trade licence in force, or does not answer.
+  'validation.registration_number.not_registered',
+  'employee.business_ceased',
+  'employee.trade_licence_inactive',
+  'employee.business_registry_unavailable',
   'employee_document.deletion_already_resolved',
   'employee_document.not_found',
   'payout.not_found',

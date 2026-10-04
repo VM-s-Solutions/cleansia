@@ -3,6 +3,7 @@ using Cleansia.Core.AppServices.Authentication;
 using Cleansia.Core.AppServices.Features.Orders;
 using Cleansia.Core.AppServices.Features.Orders.DTOs;
 using Cleansia.Core.AppServices.Services.Interfaces;
+using Cleansia.Core.Domain.Configuration;
 using Cleansia.Core.Domain.Auditing;
 using Cleansia.Core.Domain.Contracts;
 using Cleansia.Core.Domain.EmployeePayroll;
@@ -496,7 +497,8 @@ public class OrderDetailBrowsingCleanerRedactionTests
             Mock.Of<IUserMembershipRepository>(),
             _acceptances.Object,
             _employeeActionAuditRepository.Object,
-            new Cleansia.Core.AppServices.Services.CancellationPolicyResolver(Mock.Of<IUserMembershipRepository>(), Mock.Of<IOrderRepository>()));
+            new Cleansia.Core.AppServices.Services.CancellationPolicyResolver(Mock.Of<IUserMembershipRepository>(), Mock.Of<IOrderRepository>()),
+            Mock.Of<IAppConfigurationProvider>());
 
     private void ArrangeCommon(Order order)
     {

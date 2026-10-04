@@ -38,6 +38,8 @@ const START_PASSED_CANNOT_CANCEL = 'order.start_passed_cannot_cancel';
 /** What ConfirmRecurringOrder answers on the web for a card occurrence already begun in the mobile app. */
 const PAYMENT_BEGUN_ON_OTHER_CHANNEL = 'order.invalid_status_transition';
 
+const TERMS_NOT_ACCEPTED = 'consent.terms_not_accepted';
+
 @Injectable()
 export class OrderDetailFacade extends UnsubscribeControlDirective {
   private readonly customerClient = inject(CustomerClient);
@@ -86,7 +88,13 @@ export class OrderDetailFacade extends UnsubscribeControlDirective {
    */
   readonly alreadyConsented = signal(false);
   readonly termsAccepted = signal(false);
-  readonly termsAsked = computed(() => this.canConfirmRecurring() && !this.alreadyConsented());
+  /**
+   * The consents read covers the default market's texts and the server judges the occurrence's, so
+   * its refusal outranks a re-read.
+   */
+  private readonly termsRefused = signal(false);
+  readonly termsAsked = computed(() =>
+    this.canConfirmRecurring() && (!this.alreadyConsented() || this.termsRefused()));
   readonly confirmAwaitsTerms = computed(() => this.termsAsked() && !this.termsAccepted());
 
   /**
@@ -320,7 +328,12 @@ export class OrderDetailFacade extends UnsubscribeControlDirective {
       .pipe(
         takeUntil(this.destroyed$),
         catchError((error: unknown) => {
-          if (extractApiErrorCode(error) === PAYMENT_BEGUN_ON_OTHER_CHANNEL) this.paymentBegunInApp.set(true);
+          const code = extractApiErrorCode(error);
+          if (code === PAYMENT_BEGUN_ON_OTHER_CHANNEL) this.paymentBegunInApp.set(true);
+          if (code === TERMS_NOT_ACCEPTED) {
+            this.termsRefused.set(true);
+            this.termsAccepted.set(false);
+          }
           return of(null);
         }),
       )

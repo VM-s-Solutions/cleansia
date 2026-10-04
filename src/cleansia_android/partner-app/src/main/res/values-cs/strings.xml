@@ -1209,6 +1209,7 @@
     <string name="error_validation_invalid_iban">Zadejte prosím platný IBAN.</string>
     <string name="error_validation_invalid_zip_code">Zadejte prosím platné PSČ.</string>
     <string name="error_validation_registration_number_invalid_format">Zadejte prosím platné IČO pro vybranou zemi.</string>
+    <string name="error_validation_registration_number_not_registered">Toto IČO není v registru ekonomických subjektů (ARES). Zkontrolujte číslo.</string>
     <string name="error_validation_must_be_positive">Musí být kladné číslo.</string>
 
     <!-- Payout / bank details -->
@@ -1347,7 +1348,7 @@
     <string name="period_pay_line_deduction">Srážka %1$s</string>
     <string name="period_pay_line_deduction_reason">Srážka %1$s: %2$s</string>
     <string name="period_pay_line_cancellation_fee_share">Váš podíl z poplatku za pozdní zrušení</string>
-    <string name="period_pay_line_lockout_fee_share">Váš podíl z poplatku za neumožněný přístup</string>
+    <string name="period_pay_line_lockout_fee_share">Vaše odměna za zakázku, kam jste se nemohli dostat</string>
     <string name="invoice_view_period_pay">Zobrazit výplatu za období</string>
     <string name="photo_encode_failed">Tuto fotku se nepodařilo zpracovat. Zkuste prosím jinou.</string>
     <string name="document_read_failed">Tento soubor se nepodařilo načíst. Zkuste prosím jiný.</string>

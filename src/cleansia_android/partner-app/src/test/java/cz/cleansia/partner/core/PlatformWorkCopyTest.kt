@@ -71,6 +71,22 @@ class PlatformWorkCopyTest {
         assertEquals(emptyList<String>(), offending)
     }
 
+    /**
+     * A confirmed lockout pays the seat the reward its job's contract states, not a share of a fee, so the
+     * line names it in the contract's own words.
+     */
+    @Test
+    fun `the lockout line is the job's reward, not a share of a fee`() {
+        (listOf("values") + translations).forEach { locale ->
+            val xml = stringsXml(locale)
+            val reward = valueOf(xml, "work_contract_reward")
+            assertNotNull("$locale/strings.xml is missing work_contract_reward", reward)
+            val line = valueOf(xml, "period_pay_line_lockout_fee_share")
+            assertNotNull("$locale/strings.xml is missing period_pay_line_lockout_fee_share", line)
+            assertTrue("$locale/period_pay_line_lockout_fee_share = $line", line!!.startsWith(reward!!))
+        }
+    }
+
     @Test
     fun `the rules page is the one the partner web serves`() {
         assertEquals("https://partner.cleansia.cz/how-jobs-are-offered", HOW_JOBS_ARE_OFFERED_URL)

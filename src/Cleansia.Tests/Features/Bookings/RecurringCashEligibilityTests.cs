@@ -223,7 +223,7 @@ public class RecurringCashEligibilityTests
             Packages(),
             Cleansia.Tests.Features.Legal.CustomerConsentDoubles.Consented(),
             Mock.Of<Cleansia.Core.AppServices.Services.Interfaces.ILegalDocumentResolver>(),
-            SavedCards.SavedCardDoubles.Guaranteed(), Mock.Of<IReceivableRepository>());
+            Mock.Of<IReceivableRepository>());
 
     private UpdateRecurringBooking.Validator UpdateValidator() =>
         new(
@@ -236,7 +236,7 @@ public class RecurringCashEligibilityTests
             OrderMarketDoubles.Servicing("country-cz"),
             Services(),
             Packages(),
-            SavedCards.SavedCardDoubles.Guaranteed(), Mock.Of<IReceivableRepository>());
+            Mock.Of<IReceivableRepository>());
 
     private static CreateRecurringBooking.Command CreateCommand(
         PaymentType paymentType, IReadOnlyList<string> serviceIds, IReadOnlyList<string> packageIds) =>

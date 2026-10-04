@@ -24,7 +24,6 @@ final class BookingCashEligibilityTests: XCTestCase {
             profileClient: FakeProfileClient(),
             orderCreateClient: create,
             countryResolver: FakeCountryResolver(),
-            savedCardClient: FakeSavedCardClient.holdingCzkCard(),
             tokenStore: tokenStore,
             isCardPaymentAvailable: false,
             quoteDebounce: .milliseconds(400),
@@ -58,8 +57,7 @@ final class BookingCashEligibilityTests: XCTestCase {
         }
     }
 
-    /// Choosing cash also starts a saved-card read, so the re-quote shares the main actor with it and a
-    /// fixed number of yields can end before the quote lands; this waits for the outcome itself.
+    /// A fixed number of yields can end before the re-quote lands; this waits for the outcome itself.
     private func eventually(_ condition: () -> Bool) async {
         for _ in 0 ..< 500 {
             if condition() { return }
@@ -249,6 +247,27 @@ final class BookingCashEligibilityTests: XCTestCase {
         let outcome = await vm.submit()
 
         XCTAssertEqual(outcome, .success(orderId: "order-1", confirmationCode: "CLN-001"))
+        XCTAssertEqual(create.commands.first?.paymentType, ._1)
+    }
+
+    /// Cash is paid to the cleaner and no card stands behind it: the review step asks only the ticks every
+    /// booking asks, and the slide books with no card saved, read or captured first.
+    func testCashBooksWithNoCardSavedAndNoCardTick() async {
+        let create = FakeOrderCreateClient()
+        let (vm, _) = makeVM(requiredEmployees: 1, create: create)
+        vm.update(readyState(payment: .cash))
+        vm.update { current in
+            var next = current
+            next.earlyPerformanceRequested = true
+            return next
+        }
+        await vm.refreshQuoteForTest()
+
+        XCTAssertTrue(BookingStepGate.canContinue(step: 4, state: vm.state, alreadyConsented: true))
+        let outcome = await vm.submit()
+
+        XCTAssertEqual(outcome, .success(orderId: "order-1", confirmationCode: "CLN-001"))
+        XCTAssertEqual(create.commands.count, 1)
         XCTAssertEqual(create.commands.first?.paymentType, ._1)
     }
 

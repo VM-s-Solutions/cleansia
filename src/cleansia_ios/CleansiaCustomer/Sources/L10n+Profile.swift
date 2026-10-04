@@ -360,10 +360,6 @@ extension L10n {
             format("help_faq_a3", insuranceAmount)
         }
 
-        static var faqA3NoFigure: String {
-            localized("help_faq_a3_no_figure")
-        }
-
         static var faqQ4: String {
             localized("help_faq_q4")
         }

@@ -27,11 +27,6 @@ class CashCopyStringsTest {
         "recurring_cash_change_title",
         "recurring_cash_change_body",
         "recurring_cash_change_action",
-        "booking_card_guarantee_title",
-        "booking_card_guarantee_body",
-        "booking_card_guarantee_consent_required",
-        "booking_card_guarantee_pending",
-        "booking_card_guarantee_cancelled",
     )
 
     private val crewCounts = listOf("booking_cash_needs_card", "recurring_cash_needs_card")
@@ -109,11 +104,11 @@ class CashCopyStringsTest {
 
     /**
      * The server stamps every saved card with the version of the consent wording in force, so the text
-     * the review step shows is the resource named for that version: bumping the version on the server
+     * the save-card tick shows is the resource named for that version: bumping the version on the server
      * fails here until the new wording exists in all five locales and is the one rendered.
      */
     @Test
-    fun `the card-guarantee consent shown is the wording of the version the server records`() {
+    fun `the card-saving consent shown is the wording of the version the server records`() {
         val savedCard = File(solutionDir, "Cleansia.Core.Domain/Users/SavedCard.cs").readText()
         val version = Regex("ConsentTextVersionInForce\\s*=\\s*\"([^\"]+)\"").find(savedCard)?.groupValues?.get(1)
             ?: error("SavedCard.ConsentTextVersionInForce not found — the parser needs updating")
@@ -125,23 +120,7 @@ class CashCopyStringsTest {
         listOf("values-uk", "values-ru").forEach { locale ->
             assertTrue("$locale/$key is still English", valueOf(stringsXml(locale), key) != valueOf(stringsXml("values"), key))
         }
-        assertTrue("the review step no longer shows $key", source("features/booking/ConfirmStep.kt").contains("R.string.$key"))
-    }
-
-    @Test
-    fun `the first cash booking saves the card in PaymentSheet's setup mode and books once it lands`() {
-        val sheet = source("features/booking/BookingBottomSheet.kt")
-        assertTrue("the guarantee no longer opens PaymentSheet in setup mode", sheet.contains("cardGuaranteeSheet.presentWithSetupIntent("))
-        assertTrue("a saved card no longer books the cash order", sheet.contains("bookingVm.submitAfterCardGuarantee()"))
-        assertEquals(
-            "a cancelled or failed setup sheet no longer lets the next swipe capture afresh",
-            2,
-            Regex("bookingVm\\.abandonCardGuarantee\\(\\)").findAll(sheet).count(),
-        )
-        assertTrue(
-            "the consent is no longer shown when a card is needed",
-            source("features/booking/ConfirmStep.kt").contains("if (needsCardGuarantee)"),
-        )
+        assertTrue("the save-card tick no longer shows $key", source("ui/components/CardSavingConsent.kt").contains("R.string.$key"))
     }
 
     @Test

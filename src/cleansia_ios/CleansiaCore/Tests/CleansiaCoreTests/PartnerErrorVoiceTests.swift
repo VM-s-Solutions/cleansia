@@ -69,7 +69,11 @@ final class PartnerErrorVoiceTests: XCTestCase {
         PartnerOnlyKey("validation.payout.invalid_swift", emitters: "UpdateBankDetails"),
         PartnerOnlyKey("validation.payout.looks_like_card", emitters: "UpdateBankDetails"),
         PartnerOnlyKey("validation.payout.scheme_not_supported", emitters: "UpdateBankDetails"),
-        PartnerOnlyKey("validation.payout.swift_required", emitters: "UpdateBankDetails")
+        PartnerOnlyKey("validation.payout.swift_required", emitters: "UpdateBankDetails"),
+        PartnerOnlyKey(
+            "validation.registration_number.not_registered",
+            emitters: "UpdateEmployee, UpdateIdentificationInfo, ApproveEmployee"
+        )
     ]
 
     /// Every `BusinessErrorMessage` a partner mobile controller's command can answer with — its own
@@ -192,7 +196,8 @@ final class PartnerErrorVoiceTests: XCTestCase {
         "validation.payout.invalid_swift": "PayoutDetailsValidator",
         "validation.payout.looks_like_card": "PayoutDetailsValidator",
         "validation.payout.scheme_not_supported": "PayoutDetailsValidator",
-        "validation.payout.swift_required": "PayoutDetailsValidator"
+        "validation.payout.swift_required": "PayoutDetailsValidator",
+        "validation.registration_number.not_registered": "UpdateEmployee, UpdateIdentificationInfo"
     ]
 
     /// The words the customer catalog uses for an appointment the reader booked. A cleaner did not book

@@ -52,7 +52,8 @@ public class UpdateEmployeeDocumentIntakeTests
         _countryRepository.Object,
         _employeeRepository.Object,
         _session.Object,
-        _taxIdValidator.Object);
+        _taxIdValidator.Object,
+        BusinessRegistryDoubles.NotConsulted());
 
     private static byte[] Headed(byte[] header, long size)
     {

@@ -61,30 +61,40 @@ public static class PayCalculatorExtensions
         this IEnumerable<EmployeePayConfig> configs,
         int rooms,
         int bathrooms,
+        decimal bookedExtrasPay,
         decimal dirtinessRate,
         int seats,
         bool firstSeat)
     {
-        var (jobBasePay, jobExtrasPay, jobMinPay, jobMaxPay) = configs.AggregateJobPay(rooms, bathrooms);
+        var (jobBasePay, jobExtrasPay, jobMinPay, jobMaxPay) = configs.AggregateJobPay(rooms, bathrooms, bookedExtrasPay);
         return CalculateSeatPay(jobBasePay, jobExtrasPay, jobMinPay, jobMaxPay, dirtinessRate, seats, firstSeat);
     }
 
     /// <summary>
     /// The four figures a set of configs prices a job at, before it is split across its seats: the summed
-    /// base and extras and the aggregated clamp bounds. A seat freezes them when its contract for work forms.
+    /// base, the extras - the rooms and bathrooms and the <paramref name="bookedExtrasPay"/> - and the aggregated
+    /// clamp bounds. A seat freezes them when its contract for work forms.
     /// </summary>
     public static (decimal jobBasePay, decimal jobExtrasPay, decimal jobMinPay, decimal jobMaxPay) AggregateJobPay(
         this IEnumerable<EmployeePayConfig> configs,
         int rooms,
-        int bathrooms)
+        int bathrooms,
+        decimal bookedExtrasPay)
     {
         var configList = configs.ToList();
 
         var (jobBasePay, jobExtrasPay, _, _, _) = configList.CalculateAggregatedPay(rooms, bathrooms);
         var (jobMinPay, jobMaxPay) = configList.AggregateBounds();
 
-        return (jobBasePay, jobExtrasPay, jobMinPay, jobMaxPay);
+        return (jobBasePay, jobExtrasPay + bookedExtrasPay, jobMinPay, jobMaxPay);
     }
+
+    /// <summary>
+    /// What a job pays for the extras the customer booked (owner decision 2026-10-04): the company's
+    /// <paramref name="sharePercent"/> of their summed prices, to the cent, before the split across the seats.
+    /// </summary>
+    public static decimal BookedExtrasPay(decimal extrasSubtotal, int sharePercent) =>
+        Math.Round(extrasSubtotal * sharePercent / 100m, 2, MidpointRounding.AwayFromZero);
 
     /// <summary>
     /// One seat's pay on a job crewed by <paramref name="seats"/> cleaners (owner ruling 2026-09-28): the

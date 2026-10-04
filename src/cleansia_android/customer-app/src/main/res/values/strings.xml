@@ -164,7 +164,6 @@
     <string name="home_hero2_title">Deep clean + windows combo</string>
 
     <!-- Home — trust strip -->
-    <string name="home_trust_insured">Insured</string>
     <string name="home_trust_same_day">Same-day</string>
 
     <!-- Home — popular packages (tap-to-book) -->
@@ -549,7 +548,6 @@
     <string name="help_faq_a2">Add access instructions when booking (e.g., door code, key location). The cleaner waits 15 minutes past the start time and tries to call you. If they still can\'t get in, the booking is cancelled and the full price is charged.</string>
     <string name="help_faq_q3">Are cleaners insured?</string>
     <string name="help_faq_a3">Yes. All Cleansia cleaners are covered by insurance up to %1$s per booking.</string>
-    <string name="help_faq_a3_no_figure">Yes. All Cleansia cleaners are covered by insurance.</string>
     <string name="help_faq_q4">Can I change the date?</string>
     <string name="help_faq_a4">A booking can\'t be moved to another date. Cancel it and book the new date instead — cancelling is free while no cleaner has taken the job.</string>
     <string name="help_faq_q5">What\'s included in a standard cleaning?</string>
@@ -641,7 +639,6 @@
     <string name="booking_save_address">Save this address</string>
     <string name="booking_set_as_default">Set as default</string>
     <string name="booking_trust_insured">Insured up to %1$s</string>
-    <string name="booking_trust_insured_no_figure">Insured</string>
 
     <string name="booking_pick_service">Pick a service</string>
     <string name="booking_or_package">Or choose a package</string>
@@ -839,12 +836,7 @@
     <string name="booking_cash_pending">Whether you can pay in cash is confirmed once the price is ready.</string>
     <string name="booking_cash_cleared">Cash is no longer available for this booking, so no payment method is selected. Choose how you want to pay.</string>
     <string name="booking_draft_time_changed">The time you picked is no longer available or its price has changed. Please pick a time again.</string>
-    <string name="booking_card_guarantee_title">A card to guarantee cash bookings</string>
-    <string name="booking_card_guarantee_body">Your first cash booking saves a card. Nothing is charged now: you still pay the cleaner in cash.</string>
     <string name="consent_card_guarantee_draft_2026_09_28">I agree that Cleansia may charge this card for a cancellation fee, a lockout fee, cash I did not pay and a top-up I approved on my cash bookings.</string>
-    <string name="booking_card_guarantee_consent_required">Agree to the card guarantee to pay in cash, or choose card.</string>
-    <string name="booking_card_guarantee_pending">We\'re still confirming your card. Swipe again in a moment.</string>
-    <string name="booking_card_guarantee_cancelled">Your card wasn\'t saved, so nothing was booked. Save a card to pay in cash, or choose card.</string>
     <string name="booking_save_card_label">Save this card for my next bookings</string>
     <string name="booking_special_instructions_hint">Any special requests? (optional)</string>
     <string name="booking_access_instructions_hint">How do we get in? (optional)</string>
@@ -1183,10 +1175,9 @@
     <string name="error_order_recurring_already_confirmed">You\'ve already confirmed this cleaning. Pay the cleaner in cash on the day.</string>
     <string name="error_order_creation_failed">Couldn\'t create booking. Please try again.</string>
     <string name="error_order_cash_not_available">Cash is only available when you\'re signed in and the booking needs a single cleaner.</string>
-    <string name="error_order_cash_requires_saved_card">To pay in cash, first save a card as a guarantee — or pay by card.</string>
     <string name="error_order_cash_open_bookings_limit_reached">You already have as many unpaid cash bookings as allowed. Choose card, or pay in cash again once one of them is paid.</string>
     <string name="error_order_cash_unpaid_receivable">You have an unpaid amount with us, such as a cancellation fee. Pay by card for now; cash is available again once you settle it under Payments in your profile.</string>
-    <string name="error_saved_card_consent_not_accepted">Please agree that fees and unpaid cash may be charged to your card before saving it.</string>
+    <string name="error_saved_card_consent_not_accepted">Please tick the box agreeing to save your card before saving it.</string>
     <string name="error_saved_card_not_found">We couldn\'t find that saved card.</string>
     <string name="error_receivable_not_found">We couldn\'t find that amount due.</string>
     <string name="error_receivable_not_open">This amount has already been paid or waived.</string>
@@ -1410,13 +1401,13 @@
     <string name="receivable_kind_top_up">Approved top-up</string>
     <string name="receivable_kind_other">Amount due</string>
     <string name="payments_card_title">Saved card</string>
-    <string name="payments_card_intro">The card that guarantees your cash bookings. A cancellation fee, a lockout fee, unpaid cash or a top-up you approved may be charged to it.</string>
+    <string name="payments_card_intro">Cards saved to your account are never charged unless you pay with them, and you can remove one at any time.</string>
     <string name="payments_card_label">%1$s •••• %2$s</string>
     <string name="payments_card_expires">Expires %1$02d/%2$02d · %3$s</string>
-    <string name="payments_card_empty">No card saved. Your first cash booking asks for one.</string>
+    <string name="payments_card_empty">No card saved. You can save one the next time you pay by card.</string>
     <string name="payments_card_remove_action">Remove card</string>
     <string name="payments_card_remove_title">Remove this card?</string>
-    <string name="payments_card_remove_message">Your next cash booking will ask for a card again.</string>
+    <string name="payments_card_remove_message">You can save a card again the next time you pay by card.</string>
     <string name="payments_card_remove_confirm">Remove</string>
     <string name="payments_card_removed">Card removed</string>
     <string name="payments_error_message">We couldn\'t load your payments. Check your connection and try again.</string>

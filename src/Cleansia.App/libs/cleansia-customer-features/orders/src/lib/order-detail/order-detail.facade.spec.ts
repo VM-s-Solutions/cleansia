@@ -712,6 +712,43 @@ describe('OrderDetailFacade', () => {
 
       expect(orderClient.confirmRecurring).not.toHaveBeenCalled();
     });
+
+    // The consents read is judged for the default market; the server judges the occurrence's own.
+    it('comes back once the server refuses the confirm over the terms, and stays though the re-read says they are covered', () => {
+      gdprClient.consentsGet.mockReturnValue(
+        of([consent(ConsentType.TermsOfService), consent(ConsentType.PrivacyPolicy)]),
+      );
+      load(awaiting());
+      orderClient.confirmRecurring.mockReturnValueOnce(
+        throwError(() => ({ errors: { TermsAccepted: 'consent.terms_not_accepted' } })),
+      );
+
+      facade.confirmRecurring();
+
+      expect(gdprClient.consentsGet).toHaveBeenCalledTimes(2);
+      expect(facade.termsAsked()).toBe(true);
+      expect(facade.termsAccepted()).toBe(false);
+      expect(facade.confirmAwaitsTerms()).toBe(true);
+
+      facade.setTermsAccepted(true);
+      facade.confirmRecurring();
+
+      expect(orderClient.confirmRecurring).toHaveBeenCalledTimes(2);
+      expect((orderClient.confirmRecurring.mock.calls[1][0] as ConfirmRecurringOrderCommand).termsAccepted).toBe(true);
+    });
+
+    it('drops a tick already given when the server refuses the confirm over the terms', () => {
+      load(awaiting());
+      facade.setTermsAccepted(true);
+      orderClient.confirmRecurring.mockReturnValueOnce(
+        throwError(() => ({ errors: { TermsAccepted: 'consent.terms_not_accepted' } })),
+      );
+
+      facade.confirmRecurring();
+
+      expect(facade.termsAsked()).toBe(true);
+      expect(facade.termsAccepted()).toBe(false);
+    });
   });
 
   // Every member of a generated command is optional, so a dropped assignment type-checks.

@@ -1,4 +1,5 @@
 using Cleansia.Core.AppServices.Features.Orders;
+using Cleansia.Core.AppServices.Features.TenantSettings;
 using System.Globalization;
 using System.Reflection;
 using Cleansia.Core.Domain.EmployeePayroll;
@@ -54,7 +55,8 @@ public class OrderPayEstimatorLegacyDistanceTests
             order,
             EmployeeId,
             (IReadOnlyList<EmployeePayConfig>)new List<EmployeePayConfig> { shared, own },
-            (IReadOnlyList<EmployeePayConfig>)new List<EmployeePayConfig>()
+            (IReadOnlyList<EmployeePayConfig>)new List<EmployeePayConfig>(),
+            TenantSettingCatalog.DefaultExtrasSharePercent
         ]);
 
         // The cleaner's own rate, not the shared one: 420 + 2×30 + 2×20.

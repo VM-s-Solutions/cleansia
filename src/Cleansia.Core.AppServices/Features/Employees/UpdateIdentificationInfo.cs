@@ -6,6 +6,7 @@ using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Repositories;
 using Cleansia.Core.Domain.Services;
 using Cleansia.Infra.Common.Validations;
+using Cleansia.Infra.Services.BusinessRegistry;
 using FluentValidation;
 
 namespace Cleansia.Core.AppServices.Features.Employees;
@@ -17,16 +18,21 @@ public class UpdateIdentificationInfo
         private readonly IEmployeeRepository _employeeRepository;
         private readonly IUserSessionProvider _userSessionProvider;
         private readonly ITaxIdValidator _taxIdValidator;
+        private readonly ICountryRepository _countryRepository;
+        private readonly IBusinessRegistry _businessRegistry;
 
         public Validator(
             ICountryRepository countryRepository,
             IEmployeeRepository employeeRepository,
             IUserSessionProvider userSessionProvider,
-            ITaxIdValidator taxIdValidator)
+            ITaxIdValidator taxIdValidator,
+            IBusinessRegistry businessRegistry)
         {
             _employeeRepository = employeeRepository ?? throw new ArgumentNullException(nameof(employeeRepository));
             _userSessionProvider = userSessionProvider ?? throw new ArgumentNullException(nameof(userSessionProvider));
             _taxIdValidator = taxIdValidator ?? throw new ArgumentNullException(nameof(taxIdValidator));
+            _countryRepository = countryRepository;
+            _businessRegistry = businessRegistry;
 
             RuleFor(c => c)
                 .MustAsync(CallerIsAnEmployee)
@@ -69,6 +75,7 @@ public class UpdateIdentificationInfo
                 .WithMessage(BusinessErrorMessage.MaxLengthExceeded);
 
             RuleFor(c => c.RegistrationNumber)
+                .Cascade(CascadeMode.Stop)
                 .MustAsync(async (command, value, ct) =>
                 {
                     var result = await _taxIdValidator.ValidateRegistrationNumberAsync(
@@ -76,7 +83,23 @@ public class UpdateIdentificationInfo
                     return result.IsValid;
                 })
                 .WithMessage(BusinessErrorMessage.RegistrationNumberInvalidFormat)
+                .MustAsync(KnownToTheBusinessRegisterAsync)
+                .WithMessage(BusinessErrorMessage.RegistrationNumberNotRegistered)
                 .When(c => !string.IsNullOrWhiteSpace(c.RegistrationNumber));
+        }
+
+        private async Task<bool> KnownToTheBusinessRegisterAsync(
+            Command command, string registrationNumber, CancellationToken cancellationToken)
+        {
+            var employee = await _employeeRepository.GetByUserEmailAsync(
+                _userSessionProvider.GetUserEmail() ?? string.Empty, cancellationToken);
+
+            return employee is null || CleanerBusinessRegister.AcceptsOnSave(await CleanerBusinessRegister.LookupAsync(
+                _countryRepository,
+                _businessRegistry,
+                CleanerBusinessRegister.RegisterCountryId(employee, employee.Address?.CountryId),
+                registrationNumber,
+                cancellationToken));
         }
 
         // Not an ownership comparison — the subject is server-resolved, so there is nothing for a client

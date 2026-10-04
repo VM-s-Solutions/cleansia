@@ -23,14 +23,22 @@ public interface ILoyaltyAccountRepository : IRepository<LoyaltyAccount, string>
     Task<LoyaltyAccount?> GetByUserIdIgnoringTenantAsync(string userId, CancellationToken cancellationToken);
 
     /// <summary>
-    /// Get-or-create — lazily creates the account on first access. The new
+    /// Get-or-create, for a writer only: a reader that misses takes no lock and adds nothing. The new
     /// account is added to the change tracker; the calling handler's
     /// UnitOfWork pipeline commits. The account is ONE per user across the holding
     /// (<c>IX_LoyaltyAccounts_UserId</c>) and belongs to the user's own company: the read is past the
     /// tenant filter and a new row is stamped with the user's tenant, never with the ambient one, so a
     /// grant under another company's claim finds the same row every time instead of colliding on it.
+    /// A miss takes <see cref="LockForUserAsync"/> and reads again, so two first grants at once share one
+    /// account.
     /// </summary>
     Task<LoyaltyAccount> EnsureForUserAsync(string userId, CancellationToken cancellationToken);
+
+    /// <summary>
+    /// Serializes this customer's loyalty writes until the unit of work commits or rolls back. It is the
+    /// customer's credit owner lock, so a unit that already holds that lock holds this one.
+    /// </summary>
+    Task LockForUserAsync(string userId, CancellationToken cancellationToken);
 
     /// <summary>
     /// Runs <paramref name="afterSave"/> once this unit of work's write to <paramref name="account"/> is saved,

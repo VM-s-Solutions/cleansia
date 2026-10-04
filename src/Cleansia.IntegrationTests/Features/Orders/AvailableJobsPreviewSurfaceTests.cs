@@ -5,6 +5,7 @@ using System.Text.Json;
 using Cleansia.Core.AppServices.Authentication;
 using Cleansia.Core.AppServices.Features.Dashboard;
 using Cleansia.Core.AppServices.Features.Dashboard.DTOs;
+using Cleansia.Core.AppServices.Features.TenantSettings;
 using Cleansia.Core.Domain.Configuration;
 using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Internationalization;
@@ -241,6 +242,40 @@ public class AvailableJobsPreviewSurfaceTests(PostgresContainerFixture fixture) 
                 Assert.DoesNotContain(response.Jobs, job => job.Id == EurOrderId);
                 Assert.Equal(2, response.TotalAvailableCount);
                 Assert.Equal(PayPerJob * 2, response.TotalPotentialEarnings);
+
+                return Task.CompletedTask;
+            });
+    }
+
+    /// <summary>
+    /// The headline quotes what the contract for work would state at the take: one of the two jobs booked 250
+    /// of extras, and the company pays its cleaners 40 % of them, so the board earns 337 × 2 + 100.
+    /// </summary>
+    [Fact]
+    public async Task The_Headline_Includes_The_Companys_Share_Of_The_Extras_Booked()
+    {
+        await TestMethod(
+            setup: ReplaceWithCallerSession,
+            arrange: async (CleansiaDbContext context) =>
+            {
+                await SeedTwoPayableJobs(context);
+
+                context.TenantConfigurations.Add(TenantConfiguration.Create(
+                    TenantSettingCatalog.ExtrasSharePercentKey, "40", category: TenantSettingCatalog.PayCategory));
+                var extra = Extra.Create("windows-preview", "Windows", null);
+                context.Add(extra);
+                var order = await context.Set<Order>().SingleAsync(o => o.Id == "order-preview-000");
+                order.AddSelectedExtras([OrderExtra.Create(order, extra, 250m)]);
+
+                await context.CommitAsync(CancellationToken.None);
+            },
+            act: async provider => await provider
+                .GetRequiredService<IMediator>()
+                .Send(new GetAvailableJobsPreview.Query(Limit: 5)),
+            assert: (CleansiaDbContext _, BusinessResult<AvailableJobsPreviewResponse> result) =>
+            {
+                Assert.True(result.IsSuccess);
+                Assert.Equal(PayPerJob * 2 + 100m, result.Value!.TotalPotentialEarnings);
 
                 return Task.CompletedTask;
             });

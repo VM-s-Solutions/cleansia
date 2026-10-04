@@ -89,12 +89,13 @@ class DoubleBookingTest {
         "booking_twice_package_confirm" to emptyList(),
     )
 
+    private val resDir: File = sequenceOf(File("."), File("customer-app"), File("src/cleansia_android/customer-app"))
+        .map { File(it, "src/main/res") }
+        .firstOrNull { it.isDirectory }
+        ?: error("customer-app res not found from ${File(".").absolutePath}")
+
     @Test
     fun `the marker and both confirms are written in all five locales with their names`() {
-        val resDir = sequenceOf(File("."), File("customer-app"), File("src/cleansia_android/customer-app"))
-            .map { File(it, "src/main/res") }
-            .firstOrNull { it.isDirectory }
-            ?: error("customer-app res not found from ${File(".").absolutePath}")
         locales.forEach { locale ->
             val xml = File(resDir, "$locale/strings.xml").readText()
             placeholders.forEach { (key, names) ->
@@ -103,6 +104,20 @@ class DoubleBookingTest {
                 names.forEach { assertTrue("$locale/$key lost $it", value!!.contains(it)) }
             }
         }
+    }
+
+    /** Owner ruling 2026-10-04: Slovak calls a package "balík", as the web does. Czech keeps "balíček". */
+    @Test
+    fun `Slovak says balik, never balicek, in every module`() {
+        val android = resDir.canonicalFile.parentFile.parentFile.parentFile.parentFile
+        val found = listOf("core", "partner-app", "customer-app").flatMap { module ->
+            val dir = File(android, "$module/src/main/res/values-sk")
+            assertTrue("$module has no values-sk", dir.isDirectory)
+            dir.listFiles { file -> file.extension == "xml" }.orEmpty().flatMap { file ->
+                file.readLines().filter { it.contains("balíč", ignoreCase = true) }.map { "$module/${file.name}: ${it.trim()}" }
+            }
+        }
+        assertEquals(emptyList<String>(), found)
     }
 
     private fun service(id: String) = ServiceListItem(

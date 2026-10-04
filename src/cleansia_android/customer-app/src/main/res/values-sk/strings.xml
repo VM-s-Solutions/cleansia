@@ -172,7 +172,7 @@
     <string name="home_trust_same_day">Dnes</string>
 
     <!-- Home — popular packages -->
-    <string name="home_popular_packages_title">Obľúbené balíčky</string>
+    <string name="home_popular_packages_title">Obľúbené balíky</string>
     <string name="home_popular_packages_add_cta">Klepnúť na objednanie</string>
 
     <!-- Home — Order again quick action -->
@@ -305,7 +305,7 @@
     <string name="order_detail_duration_minutes">%1$d min</string>
     <string name="order_detail_extras">Doplnky</string>
     <string name="order_detail_services_header">Služby</string>
-    <string name="order_detail_packages_header">Balíčky</string>
+    <string name="order_detail_packages_header">Balíky</string>
     <string name="order_detail_cleaner_fallback">Upratovačka Cleansia</string>
     <string name="order_detail_subtotal">Medzisúčet</string>
     <string name="order_detail_payment_method">Spôsob platby</string>
@@ -642,8 +642,8 @@
     <string name="booking_trust_insured_no_figure">Poistené</string>
 
     <string name="booking_pick_service">Vyberte službu</string>
-    <string name="booking_or_package">Alebo zvoľte balíček</string>
-    <string name="booking_packages_featured">Odporúčané balíčky</string>
+    <string name="booking_or_package">Alebo zvoľte balík</string>
+    <string name="booking_packages_featured">Odporúčané balíky</string>
     <string name="booking_package_includes">OBSAHUJE</string>
     <string name="booking_package_includes_prefix">Obsahuje:</string>
     <string name="booking_price_from">od %1$s</string>
@@ -652,13 +652,13 @@
     <string name="details_per_room">Za izbu</string>
     <string name="details_add_to_booking">Pridať do rezervácie</string>
     <string name="details_remove_from_booking">Odobrať z rezervácie</string>
-    <string name="booking_in_your_package">Vo vašom balíčku: %1$s</string>
-    <string name="booking_twice_service_title">Už je vo vašom balíčku</string>
-    <string name="booking_twice_service_message">Služba %1$s je súčasťou balíčka %2$s. Ak ju pridáte znova, objednáte ju dvakrát: vykoná sa dvakrát a zaplatíte ju dvakrát.</string>
+    <string name="booking_in_your_package">Vo vašom balíku: %1$s</string>
+    <string name="booking_twice_service_title">Už je vo vašom balíku</string>
+    <string name="booking_twice_service_message">Služba %1$s je súčasťou balíka %2$s. Ak ju pridáte znova, objednáte ju dvakrát: vykoná sa dvakrát a zaplatíte ju dvakrát.</string>
     <string name="booking_twice_service_confirm">Pridať znova</string>
     <string name="booking_twice_package_title">Už je vo vašej rezervácii</string>
-    <string name="booking_twice_package_message">Balíček %1$s obsahuje aj to, čo už máte v rezervácii samostatne: %2$s. Ak balíček pridáte, objednáte to dvakrát: vykoná sa to dvakrát a zaplatíte to dvakrát.</string>
-    <string name="booking_twice_package_confirm">Pridať balíček</string>
+    <string name="booking_twice_package_message">Balík %1$s obsahuje aj to, čo už máte v rezervácii samostatne: %2$s. Ak balík pridáte, objednáte to dvakrát: vykoná sa to dvakrát a zaplatíte to dvakrát.</string>
+    <string name="booking_twice_package_confirm">Pridať balík</string>
     <string name="booking_your_home">Váš domov</string>
     <string name="booking_size_limit_caption">Najviac %1$d izieb a %2$d kúpeľne</string>
     <string name="booking_search_services">Hľadať služby</string>
@@ -1047,7 +1047,7 @@
     <string name="recurring_create_address_empty">Najprv si v profile uložte adresu.</string>
     <string name="recurring_create_services_label">Čo upratovať</string>
     <string name="recurring_create_services_loading">Načítavanie služieb…</string>
-    <string name="recurring_create_section_packages">Balíčky</string>
+    <string name="recurring_create_section_packages">Balíky</string>
     <string name="recurring_create_section_services">Služby</string>
     <string name="recurring_create_payment_label">Platba</string>
     <string name="recurring_create_pay_cash">Hotovosťou</string>
@@ -1156,7 +1156,7 @@
     <string name="error_order_empty">Objednávka je prázdna. Pridajte prosím aspoň jednu službu.</string>
     <string name="error_order_size_exceeds_maximum">Jedna objednávka môže zahŕňať najviac 8 izieb a 4 kúpeľne.</string>
     <string name="error_order_span_exceeds_maximum">Táto objednávka zahŕňa priveľa práce na jednu návštevu. Odstráňte prosím niektoré služby alebo balíky, prípadne si ich objednajte samostatne.</string>
-    <string name="error_order_selected_package_invalid">Jeden z vybraných balíčkov už nie je dostupný.</string>
+    <string name="error_order_selected_package_invalid">Jeden z vybraných balíkov už nie je dostupný.</string>
     <string name="error_order_selected_services_invalid">Jedna z vybraných služieb už nie je dostupná.</string>
     <string name="error_order_not_found">Rezervácia nenájdená.</string>
     <string name="error_order_no_available_spots">Pre tento termín nie sú k dispozícii žiadne upratovačky. Zvoľte iný čas.</string>
@@ -1470,7 +1470,7 @@
     <string name="error_receipt_not_found">Účtenka nebola nájdená</string>
     <string name="error_recurring_booking_ends_on_before_start">Dátum ukončenia musí byť po dátume začiatku.</string>
     <string name="error_recurring_booking_membership_required">Pravidelné upratovania sú výhodou Cleansia Plus — na ich nastavenie si aktivujte predplatné.</string>
-    <string name="error_recurring_booking_no_services_or_packages">Vyberte aspoň jednu službu alebo balíček.</string>
+    <string name="error_recurring_booking_no_services_or_packages">Vyberte aspoň jednu službu alebo balík.</string>
     <string name="error_recurring_booking_not_found">Pravidelné upratovanie sa nenašlo.</string>
     <string name="error_recurring_booking_not_owned_by_user">Toto pravidelné upratovanie patrí k inému účtu.</string>
     <string name="error_recurring_booking_saved_address_not_found">Vybraná adresa už neexistuje.</string>

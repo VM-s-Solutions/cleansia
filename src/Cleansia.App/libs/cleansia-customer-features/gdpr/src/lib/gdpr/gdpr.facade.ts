@@ -162,10 +162,11 @@ export class GdprFacade extends UnsubscribeControlDirective {
       });
   }
 
-  /** Asks on the app shell's confirm dialog, and deletes the account only on yes. */
+  /** Asks on the app shell's confirm dialog, styled as destructive, and deletes the account only on yes. */
   confirmDeleteAccount(): void {
     this.dialog
       .confirmTranslated('pages.gdpr.delete_confirm_message', 'pages.gdpr.delete_confirm_title', undefined, {
+        danger: true,
         acceptLabelKey: 'pages.gdpr.delete_confirm_yes',
       })
       .pipe(takeUntil(this.destroyed$))

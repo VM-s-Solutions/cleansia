@@ -140,7 +140,10 @@ Canonical shape (see `patterns-backend.md` for the full sample). **Every paged/l
   (`fiscal-failures-list`) and *don't* inline columns in the component or use `p-table` directly.
 - **C7.** Component is **`standalone: true` + `ChangeDetectionStrategy.OnPush`**, exposes
   `protected readonly Policy = Policy` and gates actions with `*cleansiaPermission="Policy.CanXxx"`,
-  and uses `ConfirmationService` for destructive actions.
+  and confirms a destructive action through the root **`DialogService`** — `confirmDelete(itemName?)`,
+  or `confirmTranslated(…, { danger: true })` — over the shell's one `<p-confirmDialog>` (F3–F5).
+  ✗ *Don't* provide `ConfirmationService` on a component or call its `.confirm(` (F4, F5), and don't
+  leave `danger` off a destructive confirm (the customer account deletion did until 2026-10-04).
 - **C8.** **NgRx is for genuinely cross-feature state only** (auth, user, shared catalogs). A single
   feature's list state lives in its facade's signals — **don't** mix `store.dispatch`/`store.select`
   into a feature facade that could be plain signals (✗ partner `orders`, customer `disputes` mix both).
@@ -334,9 +337,9 @@ count; flip to `add` when a run reports zero — the count is read from the run,
 |---|---|---|---|
 | **F1** | A form control in a feature template is a `<cleansia-*>` wrapper. ✗ A raw `<button>`, `<input>`, `<select>` or `<textarea>` under `libs/cleansia-{admin,partner}-features/**` or an app shell; the hidden `<input type="file">` picker is the one raw input a wrapper cannot replace. | `warn` — 4 sites on 2026-09-22 (the partner dashboard's three quick-action cards, the registration-lock button) | — |
 | **F2** | A PrimeNG widget is reached through its wrapper. ✗ `<p-button>`, `<p-select>`, `<p-multiSelect>`, `<p-checkbox>`, `<p-inputNumber>`, or the `pButton` / `pTextarea` directives, outside `libs/shared/components`. (The tag list is the camelCase spelling only — a lowercase `<p-multiselect>` is not matched; see the plate.) | `add` | — |
-| **F3** | The confirmation dialog is mounted once, by the app shell. ✗ `<p-confirmDialog>` in any template but `apps/<app>/src/app/app.component.html`. | `add` | admin `feedback-idioms.spec.ts` *"confirmation dialog"* |
-| **F4** | `ConfirmationService` is the root's. ✗ `providers: [… ConfirmationService …]` on a component — a scoped one renders into no dialog. | `add` | admin `feedback-idioms.spec.ts` |
-| **F5** | A confirmation is opened by `DialogService.confirmTranslated` / `confirmDelete`. ✗ `confirmationService.confirm(` in any file but `dialog.service.ts`. | `add` | admin `feedback-idioms.spec.ts` |
+| **F3** | The confirmation dialog is mounted once, by the app shell. ✗ `<p-confirmDialog>` in any template but `apps/<app>/src/app/app.component.html`. | `add` | admin `feedback-idioms.spec.ts` *"confirmation dialog"*; customer `confirm-dialog.spec.ts` |
+| **F4** | `ConfirmationService` is the root's. ✗ `providers: [… ConfirmationService …]` on a component — a scoped one renders into no dialog. | `add` | admin `feedback-idioms.spec.ts`; customer `confirm-dialog.spec.ts` (no feature imports `ConfirmationService` at all) |
+| **F5** | A confirmation is opened by `DialogService.confirmTranslated` / `confirmDelete`. ✗ `confirmationService.confirm(` in any file but `dialog.service.ts`. | `add` | admin `feedback-idioms.spec.ts`; customer `confirm-dialog.spec.ts` (same import ban) |
 | **F6** | `<cleansia-button>` binds `(onClick)` and `[label]`. ✗ `(clickFn)`, `[title]`, or the two inputs bound to their own default (`[buttonType]="'button'"`, `[style]="'raised-button'"`). | `warn` — 3 sites on 2026-09-22, all on the admin login's submit (the `title` / `clickFn` members stay on the component until the 46 customer binders move) | — |
 | **F7** | Control flow is `@if` / `@for`; a form field is reactive. ✗ `*ngIf=`, `*ngFor=`, `[(ngModel)]` in a feature template. | `add` | — (`cleansia-table`'s `*ngTemplateOutlet` is a shared-lib template and out of reach) |
 | **F8** | A component's teardown is `UnsubscribeControlDirective` (C1 holds the facade). ✗ A `.component.ts` under the features, the shells or `libs/shared/components` that owns `new Subject<void>()`, `inject(DestroyRef)` or `takeUntilDestroyed` without extending it. | `warn` — 27 sites on 2026-09-22 | — |

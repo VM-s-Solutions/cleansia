@@ -74,6 +74,7 @@
                     type="button"
                     class="cl-rec__pick"
                     [class.cl-rec__pick--on]="isServiceSelected(service.id ?? '')"
+                    [class.cl-rec__pick--covered]="!!inPackage"
                     [attr.aria-pressed]="isServiceSelected(service.id ?? '')"
                     (click)="toggleService(service.id ?? '')"
                   >
@@ -88,9 +89,13 @@
                       }}</span>
                       <!-- Said, not prevented: a package plus a service it includes books it twice. -->
                       @if (inPackage) {
-                        <span class="cl-rec__pick-note" data-spec-in-package>
-                          <i class="pi pi-box" aria-hidden="true"></i>
-                          {{ 'pages.order.package_overlap.in_package' | translate: { package: inPackage } }}
+                        <span class="cl-wiz__svc-in-pack" data-spec-in-package>
+                          <i class="pi pi-check-circle" aria-hidden="true"></i>
+                          <span>{{
+                            (facade.isInManyPackages(service.id ?? '')
+                              ? 'pages.order.package_overlap.in_packages'
+                              : 'pages.order.package_overlap.in_package') | translate: { package: inPackage }
+                          }}</span>
                         </span>
                       }
                     </span>
@@ -559,4 +564,3 @@
   </section>
 </div>
 
-<p-confirmDialog />

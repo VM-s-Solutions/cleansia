@@ -40,14 +40,47 @@ iOS steppers stop at the same limits and state them under the size row →
 Services and packages support **translations** -- the component reads the user's current locale to display translated names/descriptions.
 
 **A service a chosen package includes is marked, and adding the pair by hand asks first.** Under such a
-service the step prints *In your package: {package}* (`pages.order.package_overlap.in_package`), and the
-service's add button takes that line as its `aria-describedby`. `OrderWizardFacade.toggleService` and
+service the step prints *In your package: {package}* (`pages.order.package_overlap.in_package`), or
+*In your packages: {package}* (`in_packages`, the same placeholder holding the comma-joined names)
+when two or more chosen packages include it, and the service's add button takes that line as its
+`aria-describedby` (`svc-in-pack-{id}`). **The Plus step marks its suggestions the same way.** Its
+*Anything else?* list (`crossSellServices`: the first three services not chosen on their own) can offer
+a service a chosen package already holds; that row carries the same line under its name, and its *Add*
+chip takes the line as its `aria-describedby` (`cross-in-pack-{id}`). The schedule form's service picks
+are the third site; there the whole pick is the button, and the line is part of its name.
+`OrderWizardFacade.toggleService` and
 `togglePackage` ask through the shared `DialogService` before a tap adds either half of a twice-booked
-pair, with *Cancel* focused (`defaultFocus: 'reject'`); removing never asks, and the Plus step's
-suggested *Add* goes through `toggleService` too. A selection the wizard is handed (a catalogue link,
-*Order again*, a parked basket) is written through `updateFormData`, so it is only marked. Which chosen
-packages include a service is one helper the schedule form shares, `chosenPackagesByService` in
-`customer-services` (`package-overlap.ts`). → [Charging a package and a service together](/product/business-rules#charging-a-package-and-a-service-together)
+pair, with *Cancel* focused. No option puts it there: on PrimeNG 20.4 the shell's `<p-confirmDialog>`
+never applies its own `defaultFocus`, so the dialog focuses the first focusable element of the
+message, which has none, then of the footer, where *Cancel* comes before the accept button. A PrimeNG
+upgrade that starts honouring `defaultFocus` (default `'accept'`) would move focus to *Add again* or
+*Add package*. Removing never asks, and the Plus step's suggested *Add* goes through `toggleService`
+too. A service two or more chosen packages include (`isInManyPackages`, which picks both the marker and
+the question) is asked about under `service_title_many` (*Already in your packages*) with
+`service_message_many` (*"books it once more"*), and a package asks when a service
+it includes is already in the booking on its own **or** through another chosen package, never
+counting itself (`includedServicesAlreadyChosen`, since 2026-10-04). A selection the wizard is handed
+(a catalogue link, *Order again*, a parked basket) is written through `updateFormData`, so it is only
+marked. Both helpers, `chosenPackagesByService` and `includedServicesAlreadyChosen`, live in
+`customer-services` (`package-overlap.ts`) and the schedule form shares them. → [Charging a package and a service together](/product/business-rules#charging-a-package-and-a-service-together)
+
+**A covered row reads as covered at a glance** (since 2026-10-04, the apps' design, with iOS as the
+reference). The three sites draw it from four tokens beside the wizard shell's others
+(`_wizard-shell.scss`): `--cl-covered-row`, the accent mixed 8 % into `--cl-surface` (16 % in dark
+mode); `--cl-covered-line`, the accent at 60 % as a 1.5px border; `--cl-covered-badge`, the accent at
+14 % (24 % in dark mode); and `--cl-covered-ink`, `#0c4a6e` (`#e0f2fe` in dark mode). The services
+step's row, otherwise a line between dividers, becomes a card with 18px corners
+(`cl-wiz__svc--covered`). The Plus step's suggestion card takes the tint and border
+(`cl-wiz__cross-row--covered`), and so does a schedule pick that is not picked
+(`cl-rec__pick--covered`, `_recurring-bookings.scss`). A picked pick keeps its picked look, and its badge
+sits on `--cl-surface` so it reads on the dark slab. The badge, `.cl-wiz__svc-in-pack` at all three
+sites, sits straight under the name and above the description. It is a `pi-check-circle` in the accent,
+a graphic whose floor is 3:1 (it reads 3.1:1 in light mode and 3.7:1 in dark), then the words in
+semibold `--cl-covered-ink`: 14px on the services step, whose descriptions are 14px, and 13px elsewhere.
+Measured from the rendered page in Chromium, the words read 7.20:1 in light mode and 7.02:1 in dark. A
+covered row's description moves to `--cl-muted-on-tint`, since `--cl-muted` reads 4.3:1 on the tint.
+The *Add* chip, the `aria-describedby` wiring and the copy are unchanged. The `order-wizard` and
+`create-recurring-wizard` component specs assert the covered class and the badge at each site.
 
 ### Step 1: Address & Contact
 

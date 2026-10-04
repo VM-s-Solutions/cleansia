@@ -303,23 +303,30 @@ private struct BookingSheetContent: View {
         .padding(.top, Spacing.l)
     }
 
+    /// The page changes identity inside a ZStack of its own, so the page leaving stays on screen and slides out
+    /// while the next slides in. With the identity at the top of the step area, the leaving page was dropped in
+    /// one frame and only the incoming one moved.
     private var stepBody: some View {
         ZStack {
-            switch step {
-            case 1: ServicesStep(viewModel: viewModel)
-            case 2: DirtinessStep(viewModel: viewModel)
-            case 3: WhenWhereStep(
-                    viewModel: viewModel,
-                    geocoding: geocoding,
-                    mapProvider: mapProvider,
-                    serviceArea: serviceArea
-                )
-            default: ConfirmStep(viewModel: viewModel)
-            }
+            stepPage
+                .transition(stepTransition)
+                .id(step)
         }
-        .transition(stepTransition)
-        .id(step)
         .animation(.easeInOut(duration: 0.28), value: step)
+    }
+
+    @ViewBuilder private var stepPage: some View {
+        switch step {
+        case 1: ServicesStep(viewModel: viewModel)
+        case 2: DirtinessStep(viewModel: viewModel)
+        case 3: WhenWhereStep(
+                viewModel: viewModel,
+                geocoding: geocoding,
+                mapProvider: mapProvider,
+                serviceArea: serviceArea
+            )
+        default: ConfirmStep(viewModel: viewModel)
+        }
     }
 
     /// Leading and trailing follow the layout direction, so back slides the right way in either. Reduce

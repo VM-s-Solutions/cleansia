@@ -45,6 +45,7 @@ import { toObservable, toSignal } from '@angular/core/rxjs-interop';
 import { catchError, firstValueFrom, of, takeUntil } from 'rxjs';
 import {
   PricedSelection,
+  RecurrenceFrequency,
   RecurringPrefillParams,
   RecurringWizardFormData,
   RECURRING_WIZARD_INITIAL_DATA,
@@ -691,9 +692,10 @@ export class RecurringBookingsFacade extends UnsubscribeControlDirective {
 
   // ─── A package and a service it already includes ──────────────────
   //
-  // Booked together they book that service twice on every clean, and nothing merges them. So the
-  // services list marks such a service, and adding either half of the pair by hand asks first. A
-  // selection the form is handed (an order to repeat, a schedule to edit) is only marked.
+  // Booked together they book that service twice on every clean, and nothing merges them; two
+  // chosen packages that share a service do too. So the services list marks such a service, and a
+  // tap that books one again asks first. A selection the form is handed (an order to repeat, a
+  // schedule to edit, a parked form) is only marked.
   // → /product/business-rules#charging-a-package-and-a-service-together
   private readonly packagesByIncludedService = computed(() =>
     chosenPackagesByService(this.packages(), this.formData().selectedPackageIds),
@@ -704,6 +706,11 @@ export class RecurringBookingsFacade extends UnsubscribeControlDirective {
     const including = this.packagesByIncludedService().get(serviceId);
     if (!including) return null;
     return including.map((pkg) => this.catalogName(pkg) ?? '').join(', ');
+  }
+
+  /** Two or more chosen packages include the service, so its marker and question say "packages". */
+  isInManyPackages(serviceId: string): boolean {
+    return (this.packagesByIncludedService().get(serviceId)?.length ?? 0) > 1;
   }
 
   /** Removing never asks; adding a service a chosen package includes does. */
@@ -718,10 +725,16 @@ export class RecurringBookingsFacade extends UnsubscribeControlDirective {
       this.addService(id);
       return;
     }
+    // Already in two chosen packages, adding it is a third time, not "twice".
+    const many = this.isInManyPackages(id);
     this.dialog
       .confirmTranslated(
-        'pages.order.package_overlap.service_message',
-        'pages.order.package_overlap.service_title',
+        many
+          ? 'pages.order.package_overlap.service_message_many'
+          : 'pages.order.package_overlap.service_message',
+        many
+          ? 'pages.order.package_overlap.service_title_many'
+          : 'pages.order.package_overlap.service_title',
         { service: this.serviceName(id) ?? '', package: packageNames },
         { acceptLabelKey: 'pages.order.package_overlap.add_again' },
       )
@@ -731,7 +744,10 @@ export class RecurringBookingsFacade extends UnsubscribeControlDirective {
       });
   }
 
-  /** Removing never asks; adding a package that includes a service already chosen does. */
+  /**
+   * Removing never asks; adding a package that includes a service already in the form, on its own
+   * or through another chosen package, does.
+   */
   togglePackage(id: string): void {
     const chosen = this.formData().selectedPackageIds;
     if (chosen.includes(id)) {
@@ -739,7 +755,7 @@ export class RecurringBookingsFacade extends UnsubscribeControlDirective {
       return;
     }
     const pkg = this.packages().find((p) => p.id === id);
-    const overlap = includedServicesAlreadyChosen(pkg, this.formData().selectedServiceIds);
+    const overlap = includedServicesAlreadyChosen(pkg, this.packages(), this.formData());
     if (overlap.length === 0) {
       this.addPackage(id);
       return;
@@ -1030,6 +1046,46 @@ export class RecurringBookingsFacade extends UnsubscribeControlDirective {
       this.snackbar.showError(this.translate.instant('recurring_booking.toggle_failed'));
     } finally {
       this.mutatingId.set(null);
+    }
+  }
+
+  /**
+   * Asks before deleting the schedule, then deletes it and clears the form. True once the customer
+   * said yes: the form has nothing left to edit then, whether or not the delete went through (a
+   * refusal is already on the snackbar).
+   */
+  async confirmDeleteTemplate(template: RecurringBookingTemplateDto): Promise<boolean> {
+    const id = template.id;
+    if (!id) return false;
+    const confirmed = await firstValueFrom(
+      this.dialog
+        .confirmTranslated(
+          'recurring_booking.delete_dialog_compound',
+          'recurring_booking.delete_dialog_title',
+          { schedule: this.translate.instant(this.cadenceKey(template.frequency)) },
+          {
+            acceptLabelKey: 'recurring_booking.delete_dialog_confirm',
+            rejectLabelKey: 'global.cancel',
+            danger: true,
+          },
+        )
+        .pipe(takeUntil(this.destroyed$)),
+      { defaultValue: false },
+    );
+    if (!confirmed) return false;
+    await this.deleteTemplate(id);
+    this.resetWizard();
+    return true;
+  }
+
+  private cadenceKey(frequency: number): string {
+    switch (frequency as RecurrenceFrequency) {
+      case RecurrenceFrequency.Biweekly:
+        return 'recurring_booking.cadence_biweekly';
+      case RecurrenceFrequency.Monthly:
+        return 'recurring_booking.cadence_monthly';
+      default:
+        return 'recurring_booking.cadence_weekly';
     }
   }
 

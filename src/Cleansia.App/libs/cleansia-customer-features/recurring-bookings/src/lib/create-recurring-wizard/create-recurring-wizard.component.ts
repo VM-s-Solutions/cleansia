@@ -28,9 +28,7 @@ import {
 } from '@cleansia/components';
 import { MapboxAddressSuggestion } from '@cleansia/services';
 import { formatMoney, localeFor } from '@cleansia/utils';
-import { ConfirmationService } from 'primeng/api';
 import { CheckboxModule } from 'primeng/checkbox';
-import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { DatePickerModule } from 'primeng/datepicker';
 import { RecurringBookingsFacade } from '../recurring-bookings.facade';
 import {
@@ -66,14 +64,13 @@ import {
     TranslatePipe,
     FoamEdgeComponent,
     DatePickerModule,
-    ConfirmDialogModule,
     CheckboxModule,
     CleansiaButtonComponent,
     CleansiaSelectComponent,
     CleansiaTextInputComponent,
     CleansiaAddressAutocompleteComponent,
   ],
-  providers: [RecurringBookingsFacade, ConfirmationService],
+  providers: [RecurringBookingsFacade],
   templateUrl: './create-recurring-wizard.component.html',
 })
 export class CreateRecurringWizardComponent implements OnInit {
@@ -81,7 +78,6 @@ export class CreateRecurringWizardComponent implements OnInit {
   protected readonly translate = inject(TranslateService);
   private readonly router = inject(Router);
   private readonly route = inject(ActivatedRoute);
-  private readonly confirmService = inject(ConfirmationService);
   private readonly isBrowser = isPlatformBrowser(inject(PLATFORM_ID));
 
   protected readonly FREQUENCY_OPTIONS = FREQUENCY_OPTIONS;
@@ -346,36 +342,10 @@ export class CreateRecurringWizardComponent implements OnInit {
     await this.facade.toggleActive(template);
   }
 
-  confirmDelete(): void {
+  async confirmDelete(): Promise<void> {
     const template = this.editingTemplate();
-    if (!template?.id) return;
-    this.confirmService.confirm({
-      header: this.translate.instant('recurring_booking.delete_dialog_title'),
-      message: this.translate.instant('recurring_booking.delete_dialog_compound', {
-        schedule: this.translate.instant(
-          this.cadenceKey(template.frequency),
-        ),
-      }),
-      acceptLabel: this.translate.instant('recurring_booking.delete_dialog_confirm'),
-      rejectLabel: this.translate.instant('global.cancel'),
-      acceptButtonStyleClass: 'p-button-danger',
-      accept: async () => {
-        const id = template.id as string;
-        await this.facade.deleteTemplate(id);
-        this.facade.resetWizard();
-        this.router.navigate(this.listRoute);
-      },
-    });
-  }
-
-  private cadenceKey(frequency: number): string {
-    switch (frequency as RecurrenceFrequency) {
-      case RecurrenceFrequency.Biweekly:
-        return 'recurring_booking.cadence_biweekly';
-      case RecurrenceFrequency.Monthly:
-        return 'recurring_booking.cadence_monthly';
-      default:
-        return 'recurring_booking.cadence_weekly';
+    if (template && (await this.facade.confirmDeleteTemplate(template))) {
+      this.router.navigate(this.listRoute);
     }
   }
 }

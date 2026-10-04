@@ -21,11 +21,11 @@ namespace Cleansia.Core.AppServices.Services;
 /// is reviewed in a PR like everything else, and sending no longer depends on a
 /// hosted template existing in someone's SendGrid account.
 ///
-/// Substitution is deliberately literal <c>{{Key}}</c> replacement rather than a
-/// templating engine. The set uses no conditionals or loops — the per-language
-/// copy arrives already resolved from <c>EmailTemplateTranslation</c> — and a
-/// dependency that parses untrusted-looking syntax around customer data would be
-/// paying for expressiveness nothing uses.
+/// Substitution is deliberately literal <c>{{Key}}</c> replacement, in a single pass
+/// over the template, rather than a templating engine. The set uses no conditionals
+/// or loops — the per-language copy arrives already resolved from
+/// <c>EmailTemplateTranslation</c> — and a dependency that parses untrusted-looking
+/// syntax around customer data would be paying for expressiveness nothing uses.
 ///
 /// Every value is HTML-encoded, and none is markup: the copy (in-code defaults and
 /// the admin's plain-text translation rows) is text, the names and numbers are
@@ -49,20 +49,15 @@ public sealed partial class EmailTemplateRenderer : IEmailTemplateRenderer
         ArgumentNullException.ThrowIfNull(values);
 
         var template = Cache.GetOrAdd(templateName, Load);
-        var builder = new StringBuilder(template);
 
-        foreach (var (key, value) in values)
-        {
-            builder.Replace("{{" + key + "}}", HtmlEncode(value));
-        }
-
-        // Anything still in braces had no value at all — a translation row that is
-        // missing for one locale, most likely. Drop it. The alternative is a
-        // customer reading "{{Greeting}}", and an empty line is the lesser failure.
-        return Placeholder().Replace(builder.ToString(), string.Empty);
+        // One walk over the template, never over a value: a name typed as "{{SupportEmail}}"
+        // prints as typed instead of being filled by a later key. A placeholder with no value
+        // renders empty — a translation row missing for one locale, most likely — because a
+        // customer reading "{{Greeting}}" is the worse failure.
+        return Placeholder().Replace(template, match => HtmlEncode(values.GetValueOrDefault(match.Groups[1].Value)));
     }
 
-    [GeneratedRegex(@"\{\{[A-Za-z0-9_]+\}\}")]
+    [GeneratedRegex(@"\{\{([A-Za-z0-9_]+)\}\}")]
     private static partial Regex Placeholder();
 
     // Not WebUtility.HtmlEncode: it also rewrites every Latin-1 letter ("á" -> "&#225;"),

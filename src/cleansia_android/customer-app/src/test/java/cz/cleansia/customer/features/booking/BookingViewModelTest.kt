@@ -2601,6 +2601,84 @@ class BookingViewModelTest {
         )
     }
 
+    // R5: two chosen packages that include the same service book it again, so the second one asks too.
+    private fun kotlinx.coroutines.test.TestScope.withOverlappingPackages(): BookingViewModel {
+        catalogServicesFlow.value = listOf(service("svc-1"), service("svc-2"))
+        catalogPackagesFlow.value = listOf(packageWith("pkg-1", "svc-1"), packageWith("pkg-2", "svc-1", "svc-2"))
+        return newViewModel().also { advanceUntilIdle() }
+    }
+
+    @Test
+    fun addingAPackageThatSharesAServiceWithAChosenPackage_asksFirstThenAddsOnConfirm() = runTest {
+        val vm = withOverlappingPackages()
+        assertEquals(true, vm.togglePackage("pkg-1"))
+
+        assertEquals(false, vm.togglePackage("pkg-2"))
+
+        val pkg2 = catalogPackagesFlow.value[1]
+        assertEquals(DoubleBooking.Package(pkg2, listOf(pkg2.includedServices!![0])), vm.doubleBooking.value)
+        assertEquals(setOf("pkg-1"), vm.state.value.selectedPackageIds)
+
+        vm.confirmDoubleBooking()
+
+        assertEquals(setOf("pkg-1", "pkg-2"), vm.state.value.selectedPackageIds)
+    }
+
+    @Test
+    fun addingAServiceTwoChosenPackagesInclude_asksWithTheOnceMoreMessage() = runTest {
+        val vm = withOverlappingPackages()
+        vm.update { it.copy(selectedPackageIds = setOf("pkg-1", "pkg-2")) }
+
+        vm.toggleService("svc-1")
+
+        val pick = vm.doubleBooking.value as DoubleBooking.Service
+        assertEquals(catalogPackagesFlow.value, pick.packages)
+        assertEquals(R.string.booking_twice_service_message_many, pick.messageRes)
+        assertEquals(emptySet<String>(), vm.state.value.selectedServiceIds)
+    }
+
+    // S1: the confirm's title and the row's marker say "package" beside one chosen package, "packages" beside two.
+    @Test
+    fun aServiceOneChosenPackageIncludes_isTitledAndMarkedWithThePackage() = runTest {
+        val vm = withDeepCleanPackage()
+        assertEquals(true, vm.togglePackage("pkg-1"))
+
+        vm.toggleService("svc-1")
+
+        val pick = vm.doubleBooking.value as DoubleBooking.Service
+        assertEquals(R.string.booking_twice_service_title, pick.titleRes)
+        assertEquals(
+            R.string.booking_in_your_package,
+            catalogPackagesFlow.value.selectedIncluding("svc-1", vm.state.value.selectedPackageIds).inPackageMarkerRes,
+        )
+    }
+
+    @Test
+    fun aServiceTwoChosenPackagesInclude_isTitledAndMarkedWithThePackages() = runTest {
+        val vm = withOverlappingPackages()
+        vm.update { it.copy(selectedPackageIds = setOf("pkg-1", "pkg-2")) }
+
+        vm.toggleService("svc-1")
+
+        val pick = vm.doubleBooking.value as DoubleBooking.Service
+        assertEquals(R.string.booking_twice_service_title_many, pick.titleRes)
+        val packages = catalogPackagesFlow.value
+        val chosen = vm.state.value.selectedPackageIds
+        assertEquals(R.string.booking_in_your_packages, packages.selectedIncluding("svc-1", chosen).inPackageMarkerRes)
+        // Only pkg-2 includes svc-2, so its row keeps the one-package marker.
+        assertEquals(R.string.booking_in_your_package, packages.selectedIncluding("svc-2", chosen).inPackageMarkerRes)
+    }
+
+    @Test
+    fun twoSeededOverlappingPackages_neverAsk() = runTest {
+        val vm = withOverlappingPackages()
+
+        vm.update { it.copy(selectedPackageIds = setOf("pkg-1", "pkg-2")) }
+
+        assertNull(vm.doubleBooking.value)
+        assertEquals(setOf("pkg-1", "pkg-2"), vm.state.value.selectedPackageIds)
+    }
+
     @Test
     fun reset_forgetsAHeldConfirm() = runTest {
         val vm = withDeepCleanPackage()

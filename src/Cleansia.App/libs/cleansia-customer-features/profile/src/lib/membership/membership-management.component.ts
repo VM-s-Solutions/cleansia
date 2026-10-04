@@ -14,8 +14,6 @@ import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import { FoamEdgeComponent } from '@cleansia-customer/home';
 import { GetMembershipPlansResponse, GetMyMembershipResponse } from '@cleansia/customer-services';
 import { formatMoney, localeFor } from '@cleansia/utils';
-import { ConfirmDialogModule } from 'primeng/confirmdialog';
-import { ConfirmationService } from 'primeng/api';
 import { SkeletonModule } from 'primeng/skeleton';
 import { MembershipFacade } from './membership.facade';
 
@@ -31,11 +29,10 @@ const BillingInterval = { Monthly: 1, Yearly: 2 } as const;
     RouterLink,
     TranslatePipe,
     SkeletonModule,
-    ConfirmDialogModule,
     CleansiaButtonComponent,
     FoamEdgeComponent,
   ],
-  providers: [ConfirmationService, MembershipFacade],
+  providers: [MembershipFacade],
   templateUrl: './membership-management.component.html',
 })
 export class MembershipManagementComponent implements OnInit {
@@ -57,7 +54,6 @@ export class MembershipManagementComponent implements OnInit {
 
   protected readonly facade = inject(MembershipFacade);
   private readonly translate = inject(TranslateService);
-  private readonly confirmService = inject(ConfirmationService);
   private readonly router = inject(Router);
 
   // Re-expose facade signals so existing template bindings keep working.
@@ -89,16 +85,9 @@ export class MembershipManagementComponent implements OnInit {
   }
 
   confirmCancel(): void {
-    this.confirmService.confirm({
-      message: this.translate.instant(this.facade.cancelDialogMessageKey(), {
-        date: this.formatDate(this.trialEndsOn() ?? undefined),
-      }),
-      header: this.translate.instant('pages.membership.cancel_dialog_title'),
-      icon: 'pi pi-exclamation-triangle',
-      acceptLabel: this.translate.instant('pages.membership.cancel_dialog_confirm'),
-      rejectLabel: this.translate.instant('common.back'),
-      accept: () => this.facade.cancel(() => this.cancelled.emit()),
-    });
+    this.facade.confirmCancel(this.formatDate(this.trialEndsOn() ?? undefined), () =>
+      this.cancelled.emit(),
+    );
   }
 
   /** Every figure here is in the membership's own currency (ADR-0059 D2). */
@@ -138,16 +127,9 @@ export class MembershipManagementComponent implements OnInit {
   switchTo(planCode: string): void {
     const plan = this.plans().find((p) => p.code === planCode);
     if (!plan) return;
-    this.confirmService.confirm({
-      message: this.translate.instant(this.facade.switchDialogMessageKey(), {
-        price: this.formatPrice(plan.price),
-        date: this.formatDate(this.trialEndsOn() ?? undefined),
-      }),
-      header: this.translate.instant('pages.membership.switch_dialog_title'),
-      icon: 'pi pi-arrow-up-right',
-      acceptLabel: this.translate.instant(this.facade.switchConfirmKey()),
-      rejectLabel: this.translate.instant('common.back'),
-      accept: () => this.facade.swapPlan(planCode),
+    this.facade.confirmSwapPlan(planCode, {
+      price: this.formatPrice(plan.price),
+      date: this.formatDate(this.trialEndsOn() ?? undefined),
     });
   }
 

@@ -23,6 +23,8 @@ import {
   ServiceListItem,
 } from '@cleansia/customer-services';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
+import { readFileSync } from 'fs';
+import { join } from 'path';
 import { of } from 'rxjs';
 import { OrderWizardComponent } from './order-wizard.component';
 import { OrderWizardFacade } from './order-wizard.facade';
@@ -144,6 +146,7 @@ class FakeOrderWizardFacade {
   // The services step reads the "In your package" line from here, and adding or removing an item
   // is the facade's, because adding one a chosen package already includes asks first.
   packageNamesIncluding = jest.fn<string | null, [string]>(() => null);
+  isInManyPackages = jest.fn<boolean, [string]>(() => false);
   toggleService = jest.fn((id: string) => {
     const chosen = this.formData().selectedServiceIds;
     this.updateFormData({
@@ -156,6 +159,7 @@ class FakeOrderWizardFacade {
       selectedPackageIds: chosen.includes(id) ? chosen.filter((p) => p !== id) : [...chosen, id],
     });
   });
+  toggleExtra = jest.fn();
   applyAddressSuggestion = jest.fn();
   submitOrder = jest.fn();
   // Read by the component's on-destroy park, which runs on EVERY teardown — so a double without it
@@ -952,6 +956,57 @@ describe('OrderWizardComponent (a11y)', () => {
     });
   });
 
+  // The lines are the last quote's, so one can still list an item the customer already took out
+  // while the next quote is on its way. Its remove button must not put it back.
+  describe('removing a line from the summary', () => {
+    const removeButtons = () =>
+      Array.from(el.querySelectorAll<HTMLButtonElement>('.cl-wiz__summary-remove'));
+
+    function quoteLines(): void {
+      facade.quote.set(
+        QuoteOrderResponse.fromJS({
+          lines: [
+            { kind: 'service', itemId: 's-1', baseAmount: 500, unitAmount: 0, units: 0, amount: 500 },
+            { kind: 'package', itemId: 'p-1', baseAmount: 900, unitAmount: 0, units: 0, amount: 900 },
+            { kind: 'extra', itemId: 'fridge', baseAmount: 200, unitAmount: 0, units: 0, amount: 200 },
+          ],
+        }),
+      );
+      facade.displayedTotalPrice.set(1600);
+      fixture.detectChanges();
+    }
+
+    it('takes a chosen item out', async () => {
+      await setup();
+      facade.updateFormData({
+        selectedServiceIds: ['s-1'],
+        selectedPackageIds: ['p-1'],
+        extras: { fridge: true },
+      });
+      quoteLines();
+
+      removeButtons().forEach((button) => button.click());
+
+      expect(facade.formData().selectedServiceIds).toEqual([]);
+      expect(facade.formData().selectedPackageIds).toEqual([]);
+      expect(facade.toggleExtra).toHaveBeenCalledWith('fridge');
+    });
+
+    it('leaves a line for an item already taken out alone, rather than adding it back', async () => {
+      await setup();
+      quoteLines();
+
+      removeButtons().forEach((button) => button.click());
+
+      expect(removeButtons()).toHaveLength(3);
+      expect(facade.toggleService).not.toHaveBeenCalled();
+      expect(facade.togglePackage).not.toHaveBeenCalled();
+      expect(facade.toggleExtra).not.toHaveBeenCalled();
+      expect(facade.formData().selectedServiceIds).toEqual([]);
+      expect(facade.formData().selectedPackageIds).toEqual([]);
+    });
+  });
+
   describe('the summary as a bottom sheet', () => {
     const toggle = () => el.querySelector('.cl-wiz__summary-toggle') as HTMLButtonElement;
     const summary = () => el.querySelector('.cl-wiz__summary') as HTMLElement;
@@ -1413,6 +1468,43 @@ describe('OrderWizardComponent (a11y)', () => {
 
       expect(marker()).toBeNull();
       expect(addButton()?.getAttribute('aria-describedby')).toBeNull();
+      expect(el.querySelector('.cl-wiz__svc')?.classList).not.toContain('cl-wiz__svc--covered');
+    });
+
+    // Unmistakable at a glance, as on the apps: the row takes the covered look, and the marker is a
+    // check badge straight under the name, above the description. The Add stays as it is.
+    it('draws the covered row, with the badge under the name and the add left as it was', async () => {
+      await setup();
+      facade.services.set([
+        ServiceListItem.fromJS({ id: 'windows', name: 'Windows', description: 'Inside and out', basePrice: 100 }),
+      ]);
+      facade.packageNamesIncluding.mockImplementation((id: string) =>
+        id === 'windows' ? 'Deep clean' : null,
+      );
+      facade.updateFormData({ selectedPackageIds: ['deep'] });
+      fixture.detectChanges();
+
+      const row = el.querySelector('.cl-wiz__svc');
+      expect(row?.classList).toContain('cl-wiz__svc--covered');
+      expect(marker()?.classList).toContain('cl-wiz__svc-in-pack');
+      expect(marker()?.querySelector('i.pi.pi-check-circle')?.getAttribute('aria-hidden')).toBe('true');
+      expect(row?.querySelector('.cl-wiz__svc-name')?.nextElementSibling).toBe(marker());
+      expect(marker()?.nextElementSibling?.classList).toContain('cl-wiz__svc-desc');
+      expect(addButton()?.className).toBe('cl-chip cl-wiz__svc-add');
+    });
+
+    // One ink for the badge's check and its text, as the apps draw both. jsdom loads no
+    // stylesheet, so this reads the badge's rule, which is declared an input of this test target.
+    it('draws the badge check in the badge ink, as the apps do', () => {
+      const scss = readFileSync(
+        join(__dirname, '../../../../../shared/assets/src/styles/pages/cleansia-customer/_wizard-shell.scss'),
+        'utf8',
+      );
+      const badge = scss.match(/^\.cl-wiz__svc-in-pack \{[\s\S]*?^\}/m)?.[0] ?? '';
+      const colours = (badge.match(/(?:^|\s)color:[^;]+;/g) ?? []).map((declaration) => declaration.trim());
+
+      expect(badge).toContain('i {');
+      expect([...new Set(colours)]).toEqual(['color: var(--cl-covered-ink);']);
     });
 
     it('names the package on the row and gives the add button that line as its description', async () => {
@@ -1423,7 +1515,20 @@ describe('OrderWizardComponent (a11y)', () => {
       facade.updateFormData({ selectedPackageIds: ['deep'] });
       fixture.detectChanges();
 
-      expect(marker()?.textContent).toContain('pages.order.package_overlap.in_package');
+      expect(marker()?.textContent?.trim()).toBe('pages.order.package_overlap.in_package');
+      expect(addButton()?.getAttribute('aria-describedby')).toBe(marker()?.id);
+    });
+
+    it('says packages on the row and in its description when two chosen packages include it', async () => {
+      await onServicesStep();
+      facade.packageNamesIncluding.mockImplementation((id: string) =>
+        id === 'windows' ? 'Deep clean, Kitchen' : null,
+      );
+      facade.isInManyPackages.mockImplementation((id: string) => id === 'windows');
+      facade.updateFormData({ selectedPackageIds: ['deep', 'kitchen'] });
+      fixture.detectChanges();
+
+      expect(marker()?.textContent?.trim()).toBe('pages.order.package_overlap.in_packages');
       expect(addButton()?.getAttribute('aria-describedby')).toBe(marker()?.id);
     });
 
@@ -1448,11 +1553,49 @@ describe('OrderWizardComponent (a11y)', () => {
 
       const row = el.querySelector('.cl-wiz__cross-row');
       expect(row).not.toBeNull();
+      expect(row?.classList).toContain('cl-wiz__cross-row--covered');
       const crossMarker = row?.querySelector('[data-spec-in-package]');
-      expect(crossMarker?.textContent).toContain('pages.order.package_overlap.in_package');
+      expect(crossMarker?.textContent?.trim()).toBe('pages.order.package_overlap.in_package');
+      expect(crossMarker?.classList).toContain('cl-wiz__svc-in-pack');
+      expect(crossMarker?.querySelector('i.pi.pi-check-circle')).not.toBeNull();
+      expect(row?.querySelector('.cl-wiz__cross-name')?.nextElementSibling).toBe(crossMarker);
       expect(crossMarker?.id).toBe('cross-in-pack-windows');
       expect(row?.querySelector('.cl-wiz__cross-add')?.getAttribute('aria-describedby')).toBe(
         'cross-in-pack-windows',
+      );
+    });
+
+    it('leaves a Plus-step suggestion no chosen package includes plain', async () => {
+      await setup();
+      facade.services.set([makeService('windows', 'Windows'), makeService('oven', 'Oven')]);
+      facade.packageNamesIncluding.mockImplementation((id: string) =>
+        id === 'windows' ? 'Deep clean' : null,
+      );
+      facade.updateFormData({ selectedPackageIds: ['deep'] });
+      facade.activeStep.set(5);
+      fixture.detectChanges();
+
+      const [covered, plain] = Array.from(el.querySelectorAll('.cl-wiz__cross-row'));
+      expect(covered.classList).toContain('cl-wiz__cross-row--covered');
+      expect(plain.classList).not.toContain('cl-wiz__cross-row--covered');
+      expect(plain.querySelector('[data-spec-in-package]')).toBeNull();
+    });
+
+    it('says packages on the Plus-step suggestion two chosen packages include', async () => {
+      await onServicesStep();
+      facade.packageNamesIncluding.mockImplementation((id: string) =>
+        id === 'windows' ? 'Deep clean, Kitchen' : null,
+      );
+      facade.isInManyPackages.mockImplementation((id: string) => id === 'windows');
+      facade.updateFormData({ selectedPackageIds: ['deep', 'kitchen'] });
+      facade.activeStep.set(5);
+      fixture.detectChanges();
+
+      const row = el.querySelector('.cl-wiz__cross-row');
+      const crossMarker = row?.querySelector('[data-spec-in-package]');
+      expect(crossMarker?.textContent?.trim()).toBe('pages.order.package_overlap.in_packages');
+      expect(row?.querySelector('.cl-wiz__cross-add')?.getAttribute('aria-describedby')).toBe(
+        crossMarker?.id,
       );
     });
 

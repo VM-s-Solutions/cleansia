@@ -535,24 +535,23 @@
 
     <!-- Profile — help & support -->
     <string name="help_title">Довідка та підтримка</string>
-    <string name="help_contact_title">Зв’яжіться з нами</string>
+    <string name="help_contact_title">Зв\'яжіться з нами</string>
     <string name="help_call">Зателефонуйте в підтримку</string>
     <string name="help_call_desc">Пн–Нд · 8:00–20:00</string>
     <string name="help_email">Напишіть нам</string>
-    <string name="help_email_desc">support@cleansia.cz</string>
     <string name="help_call_unavailable">На цьому пристрої не можна телефонувати. Номер скопійовано.</string>
-    <string name="help_email_unavailable">Не знайдено поштового застосунку. Адресу скопійовано.</string>
-    <string name="help_faq_title">Поширені запитання</string>
+    <string name="help_email_unavailable">Поштовий застосунок не знайдено, тож адресу скопійовано.</string>
+    <string name="help_faq_title">Часті запитання</string>
     <string name="help_faq_q1">Як скасувати бронювання?</string>
-    <string name="help_faq_a1">Відкрийте бронювання у вкладці Замовлення та натисніть \"Скасувати\". Безкоштовне скасування за 24 години до початку прибирання. Протягом 15 хвилин після замовлення ви не платите нічого — для першого замовлення або з Cleansia Plus протягом 60 хвилин.</string>
-    <string name="help_faq_q2">Що робити, якщо мене не буде вдома, коли прийде клінер?</string>
+    <string name="help_faq_a1">Відкрийте бронювання на вкладці Замовлення і натисніть «Скасувати». Скасування безкоштовне за 24 години до початку прибирання. Протягом 15 хвилин після замовлення ви не платите нічого — для першого замовлення або з Cleansia Plus протягом 60 хвилин.</string>
+    <string name="help_faq_q2">Що, якщо мене не буде вдома, коли прийде клінер?</string>
     <string name="help_faq_a2">Додайте інструкції щодо доступу при бронюванні (напр. код від дверей, місце ключа). Клінер чекає 15 хвилин після початку прибирання і намагається вам зателефонувати. Якщо й тоді не вдасться потрапити всередину, бронювання скасовується і стягується повна вартість.</string>
     <string name="help_faq_q3">Чи застраховані клінери?</string>
-    <string name="help_faq_a3">Так. Усі клінери Cleansia застраховані до %1$s на бронювання.</string>
-    <string name="help_faq_q4">Чи можна змінити час?</string>
-    <string name="help_faq_a4">Поки що ні — перенести бронювання не можна. Скасуйте його у вкладці Замовлення та забронюйте новий час; поки жоден клінер не взяв бронювання, скасування безкоштовне.</string>
-    <string name="help_faq_q5">Що включено у стандартне прибирання?</string>
-    <string name="help_faq_a5">Кухня (стільниці, мийка, зовнішня частина техніки), ванні кімнати (унітаз, душ, плитка), всі підлоги, витирання пилу, загальне прибирання. Додатки, як-от чищення духовки, доступні окремо.</string>
+    <string name="help_faq_a3">Так. Усі клінери Cleansia застраховані до %1$s за бронювання.</string>
+    <string name="help_faq_q4">Чи можна змінити дату?</string>
+    <string name="help_faq_a4">Бронювання не можна перенести на іншу дату. Скасуйте його та замовте нову дату — скасування безкоштовне, поки жоден клінер не взяв замовлення.</string>
+    <string name="help_faq_q5">Що входить у стандартне прибирання?</string>
+    <string name="help_faq_a5">Кухня, ванні кімнати, усі підлоги, витирання пилу та загальне прибирання. Додатково — чищення духовки тощо.</string>
 
     <!-- Profile — appearance -->
     <string name="appearance_title">Вигляд</string>
@@ -651,11 +650,14 @@
     <string name="details_add_to_booking">Додати до бронювання</string>
     <string name="details_remove_from_booking">Видалити з бронювання</string>
     <string name="booking_in_your_package">У вашому пакеті: %1$s</string>
+    <string name="booking_in_your_packages">У ваших пакетах: %1$s</string>
     <string name="booking_twice_service_title">Уже є у вашому пакеті</string>
+    <string name="booking_twice_service_title_many">Уже є у ваших пакетах</string>
     <string name="booking_twice_service_message">Послуга %1$s входить до пакета %2$s. Якщо додати її ще раз, її буде замовлено двічі: виконано двічі й оплачено двічі.</string>
+    <string name="booking_twice_service_message_many">Послуга %1$s уже входить до пакетів %2$s. Якщо додати її ще раз, її буде замовлено ще раз: виконано ще раз і оплачено ще раз.</string>
     <string name="booking_twice_service_confirm">Додати ще раз</string>
     <string name="booking_twice_package_title">Уже є у вашому бронюванні</string>
-    <string name="booking_twice_package_message">Пакет %1$s містить те, що ви вже додали окремо: %2$s. Якщо додати пакет, це буде замовлено двічі: виконано двічі й оплачено двічі.</string>
+    <string name="booking_twice_package_message">Пакет %1$s містить те, що вже є у вашому бронюванні: %2$s. Якщо додати пакет, це буде замовлено ще раз: виконано ще раз і оплачено ще раз.</string>
     <string name="booking_twice_package_confirm">Додати пакет</string>
     <string name="booking_your_home">Ваш дім</string>
     <string name="booking_size_limit_caption">Не більше %1$d кімнат і %2$d ванних кімнат</string>

@@ -63,6 +63,32 @@ public class EmailTemplateRendererTests
     }
 
     [Fact]
+    public void A_value_holding_another_keys_placeholder_prints_as_typed_and_is_never_filled()
+    {
+        // UserName is offered before SupportEmail, as EmailService offers them. Replacing key by key
+        // filled the name's braces with the support address when SupportEmail's turn came.
+        var html = renderer.Render("email-confirmation.html", new Dictionary<string, string?>
+        {
+            ["UserName"] = "{{SupportEmail}}",
+            ["SupportEmail"] = "support@cleansia.cz",
+        });
+
+        Assert.Contains("<strong>{{SupportEmail}}</strong>", html, StringComparison.Ordinal);
+        Assert.Contains("href=\"mailto:support@cleansia.cz\"", html, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void A_value_holding_braces_no_key_names_prints_as_typed_rather_than_being_stripped()
+    {
+        var html = renderer.Render("email-confirmation.html", new Dictionary<string, string?>
+        {
+            ["UserName"] = "Ann {{Nickname}}",
+        });
+
+        Assert.Contains("<strong>Ann {{Nickname}}</strong>", html, StringComparison.Ordinal);
+    }
+
+    [Fact]
     public void A_quote_in_a_value_cannot_leave_the_attribute_it_is_written_into()
     {
         var html = renderer.Render("order-status-update.html", new Dictionary<string, string?>

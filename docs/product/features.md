@@ -17,9 +17,11 @@ the quarter hour from 08:00 to 19:45 (the part of day first — morning, afterno
 part's slots, on the web, Android and iOS alike; [the time step](/customer-app/ordering-flow#step-2-date-time)), and pay by card —
 or in cash, when signed in and the booking is a job one cleaner does alone
 ([the cash rule](/product/business-rules#cash)).
-A service that a chosen package already includes is marked *In your package*, and adding either half of
-that pair by hand asks first, because the two are both done and both charged; the booking and the
-schedule form do this on the web, Android and iOS alike
+A service that a chosen package already includes reads as covered at a glance, a tinted and outlined
+row with an *In your package* badge, and adding either half of
+that pair by hand asks first, because the two are both done and both charged; so does adding a package
+that shares a service with one already chosen. The booking and the schedule form do this on the web,
+Android and iOS alike
 ([a package and a service](/product/business-rules#charging-a-package-and-a-service-together)).
 Paying by card, a signed-in customer on web, Android or iOS may tick *Save this card for my next
 bookings*, unticked by default; only a ticked card is kept, under the card-guarantee consent, and it

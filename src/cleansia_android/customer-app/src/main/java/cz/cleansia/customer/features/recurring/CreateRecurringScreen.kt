@@ -8,6 +8,7 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.animation.togetherWith
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -80,6 +81,8 @@ import cz.cleansia.customer.features.booking.DayPartTimePicker
 import cz.cleansia.customer.features.booking.DirtinessLevelPicker
 import cz.cleansia.customer.features.booking.DoubleBookingDialog
 import cz.cleansia.customer.features.booking.InPackageMarker
+import cz.cleansia.customer.features.booking.inPackageRowBorder
+import cz.cleansia.customer.features.booking.inPackageRowFill
 import cz.cleansia.customer.features.booking.selectedIncluding
 import cz.cleansia.customer.features.booking.PreferredCleanerPicker
 import cz.cleansia.customer.features.booking.SlotState
@@ -1185,7 +1188,7 @@ private fun ServiceCard(
     onClick: () -> Unit,
 ) {
     Row(
-        modifier = selectableCardModifier(selected = selected, onClick = onClick),
+        modifier = selectableCardModifier(selected = selected, covered = inPackages.isNotEmpty(), onClick = onClick),
         verticalAlignment = Alignment.Top,
     ) {
         Column(modifier = Modifier.weight(1f)) {
@@ -1211,23 +1214,26 @@ private fun ServiceCard(
 /**
  * Shared modifier for the package + service selectable cards. Builds the
  * border + tinted background + click handler so both card variants stay
- * visually consistent without an extra wrapper composable.
+ * visually consistent without an extra wrapper composable. A service card a
+ * chosen package already books ([covered]) reads as covered until it is picked.
  */
 @Composable
-private fun selectableCardModifier(selected: Boolean, onClick: () -> Unit): Modifier {
-    val bg = if (selected) MaterialTheme.colorScheme.primary.copy(alpha = 0.06f)
-        else MaterialTheme.colorScheme.surface
-    val borderColor = if (selected) MaterialTheme.colorScheme.primary
-        else MaterialTheme.colorScheme.outlineVariant
+private fun selectableCardModifier(selected: Boolean, covered: Boolean = false, onClick: () -> Unit): Modifier {
+    val bg = when {
+        selected -> MaterialTheme.colorScheme.primary.copy(alpha = 0.06f)
+        covered -> inPackageRowFill()
+        else -> MaterialTheme.colorScheme.surface
+    }
+    val border = when {
+        selected -> BorderStroke(2.dp, MaterialTheme.colorScheme.primary)
+        covered -> inPackageRowBorder()
+        else -> BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
+    }
     return Modifier
         .fillMaxWidth()
         .clip(RoundedCornerShape(12.dp))
         .background(bg)
-        .border(
-            width = if (selected) 2.dp else 1.dp,
-            color = borderColor,
-            shape = RoundedCornerShape(12.dp),
-        )
+        .border(border, RoundedCornerShape(12.dp))
         .clickable(onClick = onClick)
         .padding(horizontal = 14.dp, vertical = 12.dp)
 }

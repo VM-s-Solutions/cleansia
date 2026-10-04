@@ -245,14 +245,14 @@ class CreateRecurringViewModel @Inject constructor(
         else _state.update { it.copy(selectedServiceIds = it.selectedServiceIds + id) }
     }
 
-    /** A removal never asks; adding a package that includes a chosen service does. */
+    /** A removal never asks; adding a package that includes a service already chosen, on its own or through another package, does. */
     fun togglePackage(id: String) {
         val s = _state.value
         if (id in s.selectedPackageIds) {
             _state.update { it.copy(selectedPackageIds = it.selectedPackageIds - id) }
             return
         }
-        val twice = doubleBookingOfPackage(id, s.selectedServiceIds, packages.value)
+        val twice = doubleBookingOfPackage(id, s.selectedServiceIds, s.selectedPackageIds, packages.value)
         if (twice != null) _doubleBooking.value = twice
         else _state.update { it.copy(selectedPackageIds = it.selectedPackageIds + id) }
     }

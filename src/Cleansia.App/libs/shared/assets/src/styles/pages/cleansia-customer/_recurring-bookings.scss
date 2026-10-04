@@ -426,6 +426,22 @@
   }
 }
 
+// A service a chosen package already includes, drawn as the booking wizard draws it (the tokens and
+// the badge, .cl-wiz__svc-in-pack, are the wizard shell's). A picked pick keeps its picked look and
+// still carries the badge, on the card's own ground so it reads on the dark slab.
+.cl-rec__pick--covered:not(.cl-rec__pick--on) {
+  background: var(--cl-covered-row);
+  border: 1.5px solid var(--cl-covered-line);
+
+  &:hover {
+    border-color: var(--cl-accent);
+  }
+}
+
+.cl-rec__pick--on .cl-wiz__svc-in-pack {
+  background: var(--cl-surface);
+}
+
 .cl-rec__pick-tick {
   flex-shrink: 0;
   display: inline-flex;

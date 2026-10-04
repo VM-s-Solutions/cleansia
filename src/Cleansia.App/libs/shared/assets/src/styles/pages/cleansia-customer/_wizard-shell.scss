@@ -42,6 +42,15 @@
   --cl-muted-on-tint: #475569;
   --cl-pay-icon-bg: #f1f5f9;
   --cl-pay-icon: #64748b;
+  // A service a chosen package already includes, the same on every client: the brand primary over
+  // the row's card with a primary border, and a badge in the primary. The badge's text and its check
+  // are the primary container's ink (Sky900 / Sky100), as the apps draw both: the primary itself
+  // measures 3.1 light and 3.7 dark over the badge, against the 4.5 its 13–14px text needs. The
+  // booking wizard's services step, its Plus-step suggestions and the schedule form all draw it.
+  --cl-covered-row: color-mix(in srgb, var(--cl-accent) 8%, var(--cl-surface));
+  --cl-covered-line: color-mix(in srgb, var(--cl-accent) 60%, transparent);
+  --cl-covered-badge: color-mix(in srgb, var(--cl-accent) 14%, transparent);
+  --cl-covered-ink: #0c4a6e;
 }
 
 :root.dark-mode {
@@ -60,6 +69,10 @@
   --cl-muted-on-tint: #94a3b8;
   --cl-pay-icon-bg: rgba(148, 163, 184, 0.14);
   --cl-pay-icon: #94a3b8;
+  // Twice the light theme's share: a step of equal ratio reads as smaller on a dark ground.
+  --cl-covered-row: color-mix(in srgb, var(--cl-accent) 16%, var(--cl-surface));
+  --cl-covered-badge: color-mix(in srgb, var(--cl-accent) 24%, transparent);
+  --cl-covered-ink: #e0f2fe;
 }
 
 %cl-wiz-measure {
@@ -843,18 +856,53 @@
   margin-top: 2px;
 }
 
-// A service a chosen package already includes: one line, the info voice, not a warning.
+// A service a chosen package already includes reads as covered at a glance: its row takes the
+// brand primary with a primary border, and the marker under its name is a badge. The Add chip keeps
+// its own look — adding is still allowed, after the confirm.
+// → /product/business-rules#charging-a-package-and-a-service-together
+.cl-wiz__svc--covered {
+  margin: 6px 0;
+  padding-inline: 16px;
+  border: 1.5px solid var(--cl-covered-line);
+  border-radius: 18px;
+  background: var(--cl-covered-row);
+}
+
+// --cl-muted is 4.3 on the covered row's tint, under the 4.5 floor.
+.cl-wiz__svc--covered .cl-wiz__svc-desc,
+.cl-wiz__cross-row--covered .cl-wiz__cross-desc {
+  color: var(--cl-muted-on-tint);
+}
+
+// The badge. Never smaller than the row's secondary text: 13px beside the Plus step's descriptions
+// and the schedule form's notes, 14px on the services step, whose descriptions are 14px.
 .cl-wiz__svc-in-pack {
   display: flex;
+  align-self: flex-start;
   align-items: center;
   gap: 6px;
-  margin-top: 4px;
+  width: fit-content;
+  max-width: 100%;
+  box-sizing: border-box;
+  margin: 6px 0 2px;
+  padding: 3px 10px 3px 7px;
+  // A capsule on one line, a rounded box when a long package name wraps it to two.
+  border-radius: 1em;
+  background: var(--cl-covered-badge);
   font-size: calc(0.8125 * var(--cl-u));
-  color: var(--cl-accent-text);
+  font-weight: 600;
+  line-height: 1.35;
+  color: var(--cl-covered-ink);
 
+  // The check inherits the badge's ink, as on the apps.
   i {
     flex-shrink: 0;
+    font-size: 1.05em;
   }
+}
+
+.cl-wiz__svc .cl-wiz__svc-in-pack {
+  font-size: calc(0.875 * var(--cl-u));
 }
 
 .cl-wiz__svc-price {
@@ -2383,6 +2431,12 @@
   background: var(--cl-surface);
   border: 1px solid var(--cl-border);
   border-radius: 18px;
+}
+
+// A suggestion a chosen package already includes, drawn as the services step draws it.
+.cl-wiz__cross-row--covered {
+  background: var(--cl-covered-row);
+  border: 1.5px solid var(--cl-covered-line);
 }
 
 .cl-wiz__cross-name {

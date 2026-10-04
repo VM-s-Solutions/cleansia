@@ -1307,7 +1307,7 @@
     <string name="error_gdpr_deletion_blocked_by_invoice">Účet zatiaľ nie je možné vymazať — existuje nevybavená faktúra.</string>
     <string name="error_gdpr_deletion_blocked_by_order">Účet zatiaľ nie je možné vymazať — existuje aktívna objednávka.</string>
     <string name="error_language_not_found">Jazyk nebol nájdený</string>
-    <string name="error_order_selected_package_invalid">Vybraný balíček je neplatný</string>
+    <string name="error_order_selected_package_invalid">Vybraný balík je neplatný</string>
     <string name="error_order_selected_services_invalid">Vybrané služby sú neplatné</string>
     <string name="error_payroll_invoice_not_found">Faktúra nebola nájdená</string>
     <string name="error_payroll_pay_period_not_found">Výplatné obdobie nebolo nájdené</string>

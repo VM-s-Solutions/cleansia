@@ -10,7 +10,7 @@ import {
   UpdateNotificationPreferencesCommand,
   UserConsentDto,
 } from '@cleansia/customer-services';
-import { SnackbarService } from '@cleansia/services';
+import { DialogService, SnackbarService } from '@cleansia/services';
 import { formatDate } from '@cleansia/utils';
 import { TranslateService } from '@ngx-translate/core';
 import { finalize, forkJoin, takeUntil } from 'rxjs';
@@ -32,6 +32,7 @@ export class GdprFacade extends UnsubscribeControlDirective {
   private readonly authService = inject(CustomerAuthService);
   private readonly translate = inject(TranslateService);
   private readonly snackbar = inject(SnackbarService);
+  private readonly dialog = inject(DialogService);
   private readonly isBrowser = isPlatformBrowser(inject(PLATFORM_ID));
   private readonly language = signal<string>(this.translate.currentLang);
 
@@ -158,6 +159,19 @@ export class GdprFacade extends UnsubscribeControlDirective {
             this.translate.instant('pages.gdpr.export_error')
           );
         },
+      });
+  }
+
+  /** Asks on the app shell's confirm dialog, styled as destructive, and deletes the account only on yes. */
+  confirmDeleteAccount(): void {
+    this.dialog
+      .confirmTranslated('pages.gdpr.delete_confirm_message', 'pages.gdpr.delete_confirm_title', undefined, {
+        danger: true,
+        acceptLabelKey: 'pages.gdpr.delete_confirm_yes',
+      })
+      .pipe(takeUntil(this.destroyed$))
+      .subscribe((confirmed) => {
+        if (confirmed) this.deleteAccount();
       });
   }
 

@@ -61,7 +61,9 @@ purpose: neither shared script creates a user at all, and `execute-sql.yml` refu
 it. The shared DEV database may run it (owner ruling 2026-09-30, until an app registration gates the
 DEV apps), and like every run it inserts only into a database with no users. Named administrators are
 promoted with `set-admin-role.sql` after they register, and `fix-deactivate-local-dev-admin.sql`
-retires the published account once one exists; the README has the steps.
+retires the published account once one exists; the README has the steps. `execute-sql.yml` refuses
+that script for PRO too, from the same list of DEV-only file names
+([CI/CD](/deployment/ci-cd#workflows-overview)).
 
 ## The Functions host's local settings are each developer's own {#functions-local-settings}
 

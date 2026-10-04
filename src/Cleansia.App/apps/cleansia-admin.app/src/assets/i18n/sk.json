@@ -40,9 +40,9 @@
       "services": "Služby",
       "service_create": "Vytvoriť službu",
       "service_edit": "Upraviť službu",
-      "packages": "Balíčky",
-      "package_create": "Vytvoriť balíček",
-      "package_edit": "Upraviť balíček",
+      "packages": "Balíky",
+      "package_create": "Vytvoriť balík",
+      "package_edit": "Upraviť balík",
       "extras": "Doplnky",
       "extra_create": "Vytvoriť doplnok",
       "extra_edit": "Upraviť doplnok",
@@ -291,7 +291,7 @@
     "invoices": "Faktúry",
     "reports": "Reporty",
     "services": "Služby",
-    "packages": "Balíčky",
+    "packages": "Balíky",
     "extras": "Doplnky",
     "admin_users": "Administrátori",
     "languages": "Jazyky",
@@ -514,7 +514,7 @@
       "add_pay_config": "Pridať prepísanie platby",
       "no_pay_configs": "Žiadne prepísanie platby pre partnera. Platia globálne sadzby.",
       "pay_config_service": "Služba",
-      "pay_config_package": "Balíček",
+      "pay_config_package": "Balík",
       "pay_config_currency": "Mena",
       "pay_config_base_pay": "Základná platba",
       "pay_config_extra_room": "Príplatok za izbu",
@@ -524,13 +524,13 @@
       "pay_config_description": "Popis",
       "grade_template": "Šablóna sadzieb",
       "services_configured": "Služby",
-      "packages_configured": "Balíčky",
+      "packages_configured": "Balíky",
       "bulk_apply_grade": "Použiť šablónu sadzieb",
-      "bulk_apply_grade_hint": "Vyberte šablónu sadzieb a menu na automatické vytvorenie konfigurácií odmien pre všetky služby a balíčky. Sadzby sa vypočítavajú zo základnej ceny pomocou násobiteľov šablón (Štandardná 0.5x, Pre skúsených 0.6x, Expertná 0.7x).",
+      "bulk_apply_grade_hint": "Vyberte šablónu sadzieb a menu na automatické vytvorenie konfigurácií odmien pre všetky služby a balíky. Sadzby sa vypočítavajú zo základnej ceny pomocou násobiteľov šablón (Štandardná 0.5x, Pre skúsených 0.6x, Expertná 0.7x).",
       "overwrite_existing": "Prepísať existujúce konfigurácie",
       "apply_to_all": "Použiť na všetko",
       "services": "Služby",
-      "packages": "Balíčky",
+      "packages": "Balíky",
       "not_configured": "Nenakonfigurované",
       "override_dialog_title": "Individuálna sadzba",
       "add_override": "Pridať sadzbu",
@@ -630,18 +630,18 @@
       "refund": {
         "title": "Vrátenie peňazí",
         "unavailable": "Vrátenie peňazí je možné iba pri dokončených objednávkach platených kartou.",
-        "no_lines": "Táto objednávka nemá žiadne služby ani balíčky na vrátenie.",
-        "select_lines": "Vyberte služby alebo balíčky na vrátenie",
+        "no_lines": "Táto objednávka nemá žiadne služby ani balíky na vrátenie.",
+        "select_lines": "Vyberte služby alebo balíky na vrátenie",
         "reason": "Dôvod vrátenia",
         "override_reason": "Odôvodnenie výnimky",
         "override_reason_hint": "Vyžaduje sa, ak lehota na vrátenie uplynula. Vysvetlite, prečo sa vrátenie vynucuje.",
         "submit": "Vrátiť peniaze",
         "success": "Peniaze boli úspešne vrátené.",
-        "package_group": "Balíček",
+        "package_group": "Balík",
         "line_kind": {
           "service": "Služba",
-          "package": "Balíček",
-          "bundled": "Služba v balíčku"
+          "package": "Balík",
+          "bundled": "Služba v balíku"
         },
         "reasons": {
           "customer_cancellation": "Zrušenie zákazníkom",
@@ -749,7 +749,7 @@
       "estimated_time": "Odhadovaný čas",
       "actual_time": "Skutočný čas",
       "completed_at": "Dokončené",
-      "selected_packages": "Vybrané balíčky",
+      "selected_packages": "Vybrané balíky",
       "selected_services": "Vybrané služby",
       "extras": "Doplnky",
       "payment_info": "Informácie o platbe",
@@ -817,7 +817,7 @@
             "location": "Miesto",
             "rooms_bathrooms": "Izby / kúpeľne",
             "services": "Služby",
-            "packages": "Balíčky",
+            "packages": "Balíky",
             "extras": "Doplnky"
           },
           "acceptance": {
@@ -1065,7 +1065,7 @@
       "delete_confirm": "Naozaj chcete zmazať túto globálnu sadzbu? Túto akciu nie je možné vrátiť späť.",
       "no_pay_configs": "Žiadne globálne sadzby nie sú nakonfigurované",
       "columns": {
-        "service": "Služba / Balíček",
+        "service": "Služba / Balík",
         "base_pay": "Základná platba",
         "per_room": "Za izbu",
         "per_bathroom": "Za kúpeľňu",
@@ -1079,9 +1079,9 @@
       "create_title": "Vytvoriť globálnu sadzbu",
       "edit_title": "Upraviť globálnu sadzbu",
       "target": "Pre čo sa táto sadzba používa",
-      "target_hint": "Vyberte službu ALEBO balíček, nie oba. Táto sadzba sa použije pre všetkých partnerov, pokiaľ nemajú vlastné prepísanie.",
+      "target_hint": "Vyberte službu ALEBO balík, nie oba. Táto sadzba sa použije pre všetkých partnerov, pokiaľ nemajú vlastné prepísanie.",
       "service": "Služba",
-      "package": "Balíček",
+      "package": "Balík",
       "currency": "Mena",
       "pay_rates": "Sadzby platby",
       "base_pay": "Základná platba",
@@ -1170,13 +1170,13 @@
       }
     },
     "package_management": {
-      "title": "Správa balíčkov",
-      "description": "Zobrazujte a spravujte upratovacie balíčky, ich ceny a zahrnuté služby",
-      "create_package": "Vytvoriť balíček",
+      "title": "Správa balíkov",
+      "description": "Zobrazujte a spravujte upratovacie balíky, ich ceny a zahrnuté služby",
+      "create_package": "Vytvoriť balík",
       "edit_package": "Upraviť",
-      "delete_package": "Odstrániť balíček",
-      "delete_confirm": "Naozaj chcete odstrániť tento balíček? Túto akciu nie je možné vrátiť späť.",
-      "no_packages": "Žiadne balíčky",
+      "delete_package": "Odstrániť balík",
+      "delete_confirm": "Naozaj chcete odstrániť tento balík? Túto akciu nie je možné vrátiť späť.",
+      "no_packages": "Žiadne balíky",
       "filters": {
         "search": "Hľadať",
         "search_placeholder": "Hľadať podľa názvu alebo popisu",
@@ -1192,25 +1192,25 @@
         "actions": "Akcie"
       },
       "messages": {
-        "load_error": "Nepodarilo sa načítať balíčky",
-        "create_success": "Balíček bol úspešne vytvorený",
-        "create_error": "Nepodarilo sa vytvoriť balíček",
-        "update_success": "Balíček bol úspešne aktualizovaný",
-        "update_error": "Nepodarilo sa aktualizovať balíček",
-        "delete_success": "Balíček bol úspešne odstránený",
-        "delete_error": "Nepodarilo sa odstrániť balíček",
-        "activate_success": "Balíček bol úspešne aktivovaný",
-        "deactivate_success": "Balíček bol úspešne deaktivovaný"
+        "load_error": "Nepodarilo sa načítať balíky",
+        "create_success": "Balík bol úspešne vytvorený",
+        "create_error": "Nepodarilo sa vytvoriť balík",
+        "update_success": "Balík bol úspešne aktualizovaný",
+        "update_error": "Nepodarilo sa aktualizovať balík",
+        "delete_success": "Balík bol úspešne odstránený",
+        "delete_error": "Nepodarilo sa odstrániť balík",
+        "activate_success": "Balík bol úspešne aktivovaný",
+        "deactivate_success": "Balík bol úspešne deaktivovaný"
       },
-      "activate_package": "Aktivovať balíček",
-      "deactivate_package": "Deaktivovať balíček",
-      "deactivate_confirm": "Deaktivovať „{{name}}“? Balíček sa skryje z rezervačného katalógu, história zostane zachovaná."
+      "activate_package": "Aktivovať balík",
+      "deactivate_package": "Deaktivovať balík",
+      "deactivate_confirm": "Deaktivovať „{{name}}“? Balík sa skryje z rezervačného katalógu, história zostane zachovaná."
     },
     "package_form": {
-      "create_title": "Vytvoriť balíček",
-      "edit_title": "Upraviť balíček",
+      "create_title": "Vytvoriť balík",
+      "edit_title": "Upraviť balík",
       "basic_info": "Základné informácie",
-      "contents": "Obsah balíčka",
+      "contents": "Obsah balíka",
       "translations": "Preklady",
       "name": "Názov",
       "description": "Popis",
@@ -1224,11 +1224,11 @@
       "weight": "Váha",
       "derived_gross": "Odvodená hrubá cena",
       "messages": {
-        "load_error": "Nepodarilo sa načítať balíček",
-        "create_success": "Balíček bol úspešne vytvorený",
-        "create_error": "Nepodarilo sa vytvoriť balíček",
-        "update_success": "Balíček bol úspešne aktualizovaný",
-        "update_error": "Nepodarilo sa aktualizovať balíček"
+        "load_error": "Nepodarilo sa načítať balík",
+        "create_success": "Balík bol úspešne vytvorený",
+        "create_error": "Nepodarilo sa vytvoriť balík",
+        "update_success": "Balík bol úspešne aktualizovaný",
+        "update_error": "Nepodarilo sa aktualizovať balík"
       },
       "tagline": "Krátky popisok na karte",
       "is_popular": "Najobľúbenejší balík"
@@ -2057,10 +2057,10 @@
       "cancelled_orders": "Zrušené objednávky",
       "growth": "Rast",
       "revenue_by_service": "Príjmy podľa služieb",
-      "revenue_by_package": "Príjmy podľa balíčkov",
+      "revenue_by_package": "Príjmy podľa balíkov",
       "revenue_by_payment_type": "Príjmy podľa typu platby",
       "service_name": "Služba",
-      "package_name": "Balíček",
+      "package_name": "Balík",
       "payment_type": "Typ platby",
       "order_count": "Objednávky",
       "total_payroll": "Celkové odmeny",
@@ -3349,7 +3349,7 @@
       "not_in_progress": "Objednávka nie je v stave spracovania",
       "payment_gateway_unavailable": "Platobná brána nie je dostupná",
       "selected_package": {
-        "invalid": "Vybraný balíček je neplatný"
+        "invalid": "Vybraný balík je neplatný"
       },
       "selected_services": {
         "invalid": "Vybrané služby sú neplatné"
@@ -3384,15 +3384,15 @@
       "slug_invalid": "Identifikátor (slug) musia byť malé písmená spojené jednotlivými pomlčkami, napr. inside-oven"
     },
     "package": {
-      "in_use": "Nie je možné odstrániť balíček, pretože sa práve používa",
+      "in_use": "Nie je možné odstrániť balík, pretože sa práve používa",
       "invalid_weight": "Váhy služieb musia byť väčšie ako nula",
-      "not_found": "Balíček nebol nájdený",
-      "update_failed": "Balíček sa nepodarilo aktualizovať"
+      "not_found": "Balík nebol nájdený",
+      "update_failed": "Balík sa nepodarilo aktualizovať"
     },
     "pay_config": {
       "already_exists": "Konfigurácia odmien už existuje",
       "base_pay_negative": "Základná odmena nesmie byť záporná",
-      "cannot_have_both": "Nie je možné mať súčasne službu aj balíček",
+      "cannot_have_both": "Nie je možné mať súčasne službu aj balík",
       "extra_per_bathroom_negative": "Príplatok za kúpeľňu nesmie byť záporný",
       "extra_per_room_negative": "Príplatok za izbu nesmie byť záporný",
       "has_order_pays": "Nie je možné odstrániť konfiguráciu odmien, ktorá má priradené platby za objednávky",
@@ -3401,7 +3401,7 @@
       "maximum_pay_negative": "Maximálna odmena nesmie byť záporná",
       "minimum_pay_negative": "Minimálna odmena nesmie byť záporná",
       "not_found": "Konfigurácia odmien nebola nájdená",
-      "service_or_package_required": "Je vyžadovaná služba alebo balíček"
+      "service_or_package_required": "Je vyžadovaná služba alebo balík"
     },
     "pay_period": {
       "already_paid": "Výplatné obdobie už bolo zaplatené",
@@ -3476,7 +3476,7 @@
     "refund": {
       "failed": "Vrátenie peňazí sa nepodarilo. Skúste to prosím znova.",
       "line_invalid": "Jedna z vybraných položiek nie je súčasťou tejto objednávky.",
-      "lines_required": "Vyberte aspoň jednu službu alebo balíček na vrátenie.",
+      "lines_required": "Vyberte aspoň jednu službu alebo balík na vrátenie.",
       "nothing_refundable": "Na tejto objednávke už nie je čo vrátiť.",
       "order_not_refundable": "Túto objednávku nie je možné vrátiť.",
       "override_reason_required": "Na vrátenie mimo povolenej lehoty sa vyžaduje odôvodnenie."

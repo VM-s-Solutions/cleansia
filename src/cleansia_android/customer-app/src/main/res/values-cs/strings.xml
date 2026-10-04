@@ -543,21 +543,20 @@
     <string name="help_call">Zavolejte podpoře</string>
     <string name="help_call_desc">Po–Ne · 8:00–20:00</string>
     <string name="help_email">Napište nám</string>
-    <string name="help_email_desc">support@cleansia.cz</string>
     <string name="help_call_unavailable">Na tomto zařízení nelze volat. Číslo je zkopírované.</string>
-    <string name="help_email_unavailable">Nenašli jsme e-mailovou aplikaci. Adresa je zkopírovaná.</string>
-    <string name="help_faq_title">Často kladené otázky</string>
-    <string name="help_faq_q1">Jak mohu zrušit rezervaci?</string>
-    <string name="help_faq_a1">Otevřete rezervaci v záložce Objednávky a klepněte na \"Zrušit\". Zrušení zdarma až 24 hodin před začátkem úklidu. Do 15 minut od objednání neplatíte nic — u první objednávky nebo s Cleansia Plus do 60 minut.</string>
-    <string name="help_faq_q2">Co když nebudu doma, když uklízeč přijde?</string>
+    <string name="help_email_unavailable">Adresa je zkopírovaná pro případ, že e-mailová aplikace není nastavená.</string>
+    <string name="help_faq_title">Časté dotazy</string>
+    <string name="help_faq_q1">Jak zruším rezervaci?</string>
+    <string name="help_faq_a1">Otevřete rezervaci na kartě Objednávky a klepněte na „Zrušit“. Zrušení je zdarma až 24 hodin před začátkem úklidu. Do 15 minut od objednání neplatíte nic — u první objednávky nebo s Cleansia Plus do 60 minut.</string>
+    <string name="help_faq_q2">Co když nebudu doma, až přijde uklízeč?</string>
     <string name="help_faq_a2">Při rezervaci přidejte pokyny ke vstupu (např. kód u dveří, místo klíče). Uklízeč čeká 15 minut po začátku úklidu a zkusí vám zavolat. Pokud se ani pak nedostane dovnitř, rezervace se zruší a účtuje se plná cena.</string>
     <string name="help_faq_q3">Jsou uklízeči pojištěni?</string>
-    <string name="help_faq_a3">Ano. Všichni uklízeči Cleansia jsou pojištěni do výše %1$s na rezervaci.</string>
+    <string name="help_faq_a3">Ano. Všichni uklízeči Cleansia jsou pojištěni až do %1$s na rezervaci.</string>
     <string name="help_faq_a3_no_figure">Ano. Všichni uklízeči Cleansia jsou pojištěni.</string>
     <string name="help_faq_q4">Můžu změnit termín?</string>
-    <string name="help_faq_a4">Zatím ne — termín rezervace změnit nejde. Zrušte ji v záložce Objednávky a objednejte si nový termín; dokud rezervaci nepřijme žádný uklízeč, je zrušení zdarma.</string>
-    <string name="help_faq_q5">Co je zahrnuto ve standardním úklidu?</string>
-    <string name="help_faq_a5">Kuchyně (pracovní plochy, dřez, exteriér spotřebičů), koupelny (toaleta, sprcha, dlažba), všechny podlahy, utírání prachu, obecný úklid. Doplňky jako čištění trouby jsou k dispozici jako příplatky.</string>
+    <string name="help_faq_a4">Rezervaci nelze přesunout na jiný termín. Zrušte ji a objednejte nový termín — zrušení je zdarma, dokud práci nepřevzal žádný uklízeč.</string>
+    <string name="help_faq_q5">Co je součástí standardního úklidu?</string>
+    <string name="help_faq_a5">Kuchyně, koupelny, všechny podlahy, utírání prachu a úklid. Extra služby jako čištění trouby jsou jako doplňky.</string>
 
     <!-- Profile — appearance -->
     <string name="appearance_title">Vzhled</string>

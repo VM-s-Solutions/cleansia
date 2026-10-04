@@ -6,6 +6,7 @@ using Cleansia.Core.Domain.Internationalization;
 using Cleansia.Core.Domain.Loyalty;
 using Cleansia.Core.Domain.Notifications;
 using Cleansia.Core.Domain.Orders;
+using Cleansia.Core.Domain.Payments;
 using Cleansia.Core.Domain.Repositories;
 using Microsoft.Extensions.Logging.Abstractions;
 using MockQueryable;
@@ -134,6 +135,38 @@ public class LoyaltyEarnAfterEarlierRefundTests
         Assert.Equal(bothAfter.Account.LifetimePoints, split.Account.LifetimePoints);
     }
 
+    /// <summary>
+    /// The same line selection submitted again after completion resolves to the refund that settled before
+    /// it, and its clawback runs again under that refund's key. Completion already took that refund's 20, so
+    /// the replay takes nothing more.
+    /// </summary>
+    [Fact]
+    public async Task A_Refund_Settled_Before_Completion_And_Replayed_After_It_Takes_Its_Share_Once()
+    {
+        const string refundKey = $"refund:{OrderId}:admin:lines";
+        var harness = new Harness { CardRefunded = 200m };
+        harness.RefundSettledOn(refundKey, DateTimeOffset.UtcNow.AddMinutes(-5));
+
+        await harness.CompleteAsync();
+        await harness.RefundAfterCompletionAsync(200m, refundKey);
+
+        Assert.Equal(80, harness.Account.LifetimePoints);
+        Assert.Equal(-20, harness.Ledger(LoyaltyEarnSource.OrderPartiallyRefunded).Single().Points);
+    }
+
+    [Fact]
+    public async Task A_Refund_Settled_After_Completion_Takes_Its_Share()
+    {
+        const string refundKey = $"refund:{OrderId}:admin:lines";
+        var harness = new Harness();
+
+        await harness.CompleteAsync();
+        harness.RefundSettledOn(refundKey, DateTimeOffset.UtcNow.AddMinutes(5));
+        await harness.RefundAfterCompletionAsync(200m, refundKey);
+
+        Assert.Equal(80, harness.Account.LifetimePoints);
+    }
+
     [Fact]
     public async Task A_Gross_Earn_Past_A_Threshold_The_Net_Does_Not_Reach_Announces_No_Promotion()
     {
@@ -166,6 +199,7 @@ public class LoyaltyEarnAfterEarlierRefundTests
         private readonly Mock<ICurrencyRepository> _currencies = new();
         private readonly Mock<IRefundRepository> _refunds = new();
         private readonly Mock<ICreditAccountRepository> _credit = new();
+        private readonly List<Refund> _settledRefunds = [];
         private Func<LoyaltyTier?, CancellationToken, Task>? _afterSave;
 
         public Harness(int startingPoints = 0)
@@ -234,6 +268,9 @@ public class LoyaltyEarnAfterEarlierRefundTests
             _refunds
                 .Setup(r => r.GetSucceededRefundTotalForOrderAsync(OrderId, It.IsAny<CancellationToken>()))
                 .ReturnsAsync(() => CardRefunded);
+            _refunds
+                .Setup(r => r.GetByRefundKeyAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync((string key, CancellationToken _) => _settledRefunds.FirstOrDefault(r => r.RefundKey == key));
             _credit
                 .Setup(r => r.GetReturnedTotalForOrderAsync(OrderId, It.IsAny<CancellationToken>()))
                 .ReturnsAsync(() => CreditReturned);
@@ -251,6 +288,11 @@ public class LoyaltyEarnAfterEarlierRefundTests
         public decimal CreditReturned { get; init; }
 
         public decimal DisputeSettledInCredit { get; init; }
+
+        public void RefundSettledOn(string refundKey, DateTimeOffset settledOn) =>
+            _settledRefunds.Add(Refund
+                .Create(OrderId, refundKey, 200m, "CZK", RefundReason.AdminDiscretion, RefundSource.AppRefund)
+                .MarkSucceeded(stripeRefundId: null, confirmedOnUtc: settledOn));
 
         public Task CompleteAsync() =>
             Service().GrantForCompletedOrderAsync(OrderId, CancellationToken.None);

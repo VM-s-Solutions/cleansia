@@ -1,4 +1,5 @@
 using Cleansia.Core.AppServices.Services.Interfaces;
+using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Loyalty;
 using Cleansia.Core.Domain.Notifications;
 using Cleansia.Core.Domain.Orders;
@@ -61,6 +62,10 @@ public sealed class LoyaltyService(
             return;
         }
 
+        // Read before the earn row is created: a refund that settled before its OccurredOn is one this share
+        // counted, and RevokeForRefundAsync relies on that to take nothing more when the refund is replayed.
+        var returnedShare = await ShareReturnedBeforeCompletionAsync(order, pointsEarned, cancellationToken);
+
         var userId = order.UserId;
         var account = await loyaltyAccountRepository.EnsureForUserAsync(userId, cancellationToken);
         var tierAsRead = account.CurrentTier;
@@ -70,12 +75,7 @@ public sealed class LoyaltyService(
         // The earn row holds the whole price's points: every later clawback takes its share of them. Money
         // given back before completion found no earn to take from, so its share is taken here, by the same
         // rule. → /product/business-rules#money-constants
-        account.RevokePoints(
-            await ShareReturnedBeforeCompletionAsync(order, pointsEarned, cancellationToken),
-            LoyaltyEarnSource.OrderPartiallyRefunded,
-            orderId,
-            SystemActor,
-            thresholds);
+        account.RevokePoints(returnedShare, LoyaltyEarnSource.OrderPartiallyRefunded, orderId, SystemActor, thresholds);
 
         // Decided once the grant is saved, not from this read: a write another request commits to the account
         // first is replayed under this one, and can take the tier past a threshold this read did not reach or
@@ -188,6 +188,15 @@ public sealed class LoyaltyService(
         // Idempotency on the refund key — a replay of the same refund collapses to one revoke.
         var existingByKey = await loyaltyTransactionRepository.GetByIdempotencyKeyAsync(refundKey, cancellationToken);
         if (existingByKey != null)
+        {
+            return;
+        }
+
+        // A refund that settled before the order completed had its share taken at completion, in a row that
+        // carries no refund key; replayed after completion, it takes nothing more.
+        if (await refundRepository.GetByRefundKeyAsync(refundKey, cancellationToken)
+                is { Status: RefundStatus.Succeeded, ConfirmedOn: { } settledOn }
+            && settledOn < originalEarn.OccurredOn)
         {
             return;
         }

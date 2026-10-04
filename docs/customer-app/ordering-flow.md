@@ -43,7 +43,12 @@ Services and packages support **translations** -- the component reads the user's
 service the step prints *In your package: {package}* (`pages.order.package_overlap.in_package`), or
 *In your packages: {package}* (`in_packages`, the same placeholder holding the comma-joined names)
 when two or more chosen packages include it, and the service's add button takes that line as its
-`aria-describedby`. `OrderWizardFacade.toggleService` and
+`aria-describedby` (`svc-in-pack-{id}`). **The Plus step marks its suggestions the same way.** Its
+*Anything else?* list (`crossSellServices`: the first three services not chosen on their own) can offer
+a service a chosen package already holds; that row carries the same line under its name, and its *Add*
+chip takes the line as its `aria-describedby` (`cross-in-pack-{id}`). The schedule form's service picks
+are the third site; there the whole pick is the button, and the line is part of its name.
+`OrderWizardFacade.toggleService` and
 `togglePackage` ask through the shared `DialogService` before a tap adds either half of a twice-booked
 pair, with *Cancel* focused. No option puts it there: on PrimeNG 20.4 the shell's `<p-confirmDialog>`
 never applies its own `defaultFocus`, so the dialog focuses the first focusable element of the

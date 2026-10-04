@@ -69,7 +69,8 @@ public class CompleteOrder
                 .WithMessage(BusinessErrorMessage.AfterPhotosRequired)
                 // Payment must be settled before an order can be completed. A cash order is settled only
                 // once the cleaner marks the cash collected (MarkCashCollected → Paid); a card order once
-                // Stripe confirms (webhook → Paid) or, when that webhook never arrives and
+                // Stripe charged the card (webhook → Paid, and it stays charged if an admin refunds part or
+                // all of it before the job ends) or, when that webhook never arrives and
                 // BookingPolicy.AllowsCash admits cash, once the cleaner settles it in cash through the
                 // same MarkCashCollected reconciliation — otherwise an admin override closes it. Two
                 // rules so each surfaces the right, actionable message: cash-not-collected tells the
@@ -204,8 +205,9 @@ public class CompleteOrder
             return order.PaymentType != PaymentType.Cash || order.PaymentStatus == PaymentStatus.Paid;
         }
 
-        // A card order may complete only once Stripe has confirmed the charge (PaymentStatus == Paid).
-        // Passes trivially for non-card orders — cash is handled by the rule above.
+        // A card order may complete only once Stripe has charged the card. A refund before the job ends,
+        // partial or full, leaves it charged: the crew did the work, and completion takes the points
+        // share of what went back. Passes trivially for non-card orders — cash is handled by the rule above.
         private async Task<bool> CardPaymentIsConfirmedIfCardPaymentAsync(string orderId, CancellationToken cancellationToken)
         {
             var order = await _orderRepository
@@ -214,7 +216,8 @@ public class CompleteOrder
 
             if (order is null) return false;
 
-            return order.PaymentType != PaymentType.Card || order.PaymentStatus == PaymentStatus.Paid;
+            return order.PaymentType != PaymentType.Card
+                || order.PaymentStatus is PaymentStatus.Paid or PaymentStatus.PartiallyRefunded or PaymentStatus.Refunded;
         }
     }
 

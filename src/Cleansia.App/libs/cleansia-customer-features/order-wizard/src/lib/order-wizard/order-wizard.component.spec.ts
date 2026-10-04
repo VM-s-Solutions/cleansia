@@ -156,6 +156,7 @@ class FakeOrderWizardFacade {
       selectedPackageIds: chosen.includes(id) ? chosen.filter((p) => p !== id) : [...chosen, id],
     });
   });
+  toggleExtra = jest.fn();
   applyAddressSuggestion = jest.fn();
   submitOrder = jest.fn();
   // Read by the component's on-destroy park, which runs on EVERY teardown — so a double without it
@@ -955,6 +956,57 @@ describe('OrderWizardComponent (a11y)', () => {
 
       expect(el.querySelector('.cl-wiz__total')?.textContent).toMatch(/1[\s\u00A0.,]?000/);
       expect(el.textContent).toContain('pages.order.price_fixed');
+    });
+  });
+
+  // The lines are the last quote's, so one can still list an item the customer already took out
+  // while the next quote is on its way. Its remove button must not put it back.
+  describe('removing a line from the summary', () => {
+    const removeButtons = () =>
+      Array.from(el.querySelectorAll<HTMLButtonElement>('.cl-wiz__summary-remove'));
+
+    function quoteLines(): void {
+      facade.quote.set(
+        QuoteOrderResponse.fromJS({
+          lines: [
+            { kind: 'service', itemId: 's-1', baseAmount: 500, unitAmount: 0, units: 0, amount: 500 },
+            { kind: 'package', itemId: 'p-1', baseAmount: 900, unitAmount: 0, units: 0, amount: 900 },
+            { kind: 'extra', itemId: 'fridge', baseAmount: 200, unitAmount: 0, units: 0, amount: 200 },
+          ],
+        }),
+      );
+      facade.displayedTotalPrice.set(1600);
+      fixture.detectChanges();
+    }
+
+    it('takes a chosen item out', async () => {
+      await setup();
+      facade.updateFormData({
+        selectedServiceIds: ['s-1'],
+        selectedPackageIds: ['p-1'],
+        extras: { fridge: true },
+      });
+      quoteLines();
+
+      removeButtons().forEach((button) => button.click());
+
+      expect(facade.formData().selectedServiceIds).toEqual([]);
+      expect(facade.formData().selectedPackageIds).toEqual([]);
+      expect(facade.toggleExtra).toHaveBeenCalledWith('fridge');
+    });
+
+    it('leaves a line for an item already taken out alone, rather than adding it back', async () => {
+      await setup();
+      quoteLines();
+
+      removeButtons().forEach((button) => button.click());
+
+      expect(removeButtons()).toHaveLength(3);
+      expect(facade.toggleService).not.toHaveBeenCalled();
+      expect(facade.togglePackage).not.toHaveBeenCalled();
+      expect(facade.toggleExtra).not.toHaveBeenCalled();
+      expect(facade.formData().selectedServiceIds).toEqual([]);
+      expect(facade.formData().selectedPackageIds).toEqual([]);
     });
   });
 

@@ -1859,8 +1859,10 @@ holds, and its *Add* asks the same question.
 The marker matches the package's `IncludedServices[].ServiceId` (`PackageServiceSummary`), which the
 package list already sent; a client given an item without it still prints the item, but neither marks
 that service nor asks about it. The web, Android and iOS word it alike in all five languages. Slovak
-calls a package *balík* on every client, here and everywhere else, and Czech *balíček* (owner ruling
-2026-10-04); until then the apps' Slovak, and older strings on the web, said *balíček* too.
+calls a package *balík* on every client and Czech *balíček* (owner ruling 2026-10-04); until then the
+apps' Slovak, and older strings on the web, said *balíček* too. One Slovak text still says *balíčky*:
+the customer terms of service in force. A text in force is never edited, so it changes only with its
+next version ([above](#legal-drafts)).
 
 ## Discounts, and the 12 % cap {#discount-cap}
 

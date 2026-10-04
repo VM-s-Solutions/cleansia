@@ -347,9 +347,10 @@ example. Deviating form: **any sentence of the shape "there are exactly N …" a
 **Enforced by:** `agents/tools/check-catalog-claims.mjs` + `.github/workflows/catalog-claims.yml`
 (T-0574) — **`T1-CI`**, blocking, both halves. It shipped `T2-ADVISORY` and was promoted on
 `docs/sprint-15-decisions` the moment its own stated condition was met: a full-corpus run reporting
-`FAILED: C1 0 · C2 0 · C3 0`. The arc is the lesson — **16** violations before T-0574 changed
-anything, **15** once it retired `enforcement.md`'s own *"Specified, NOT yet built"* banner about this
-checker, then a sweep that closed the C2 banners and the non-`roles/` citations, and finally the six
+`C1 0 · C2 0 · C3 0` (labelled `FAILED:` until 2026-10-04, `OK:` since). The arc is the lesson —
+**16** violations before T-0574 changed anything, **15** once it retired `enforcement.md`'s own
+*"Specified, NOT yet built"* banner about this checker, then a sweep that closed the C2 banners and
+the non-`roles/` citations, and finally the six
 that needed a ruling rather than an edit: five `roles/*` citations (a regenerated migration filename,
 an extracted `ResolveTimeZone`, two exhibits that *quote* their dead citation on purpose) and the C1
 disagreement over ADR-0022, resolved by amending the **ADR's** status line, because the card matched

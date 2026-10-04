@@ -106,8 +106,9 @@ scenario("a known-good card passes AND the summary states what it found", {
     expectText: [
         "C1 1 ADR status claim(s)",
         "3 citation(s)",
-        "catalog-claims FAILED: C1 0 · C2 0 · C3 0",
+        "catalog-claims OK: C1 0 · C2 0 · C3 0",
     ],
+    denyText: ["catalog-claims FAILED"],
 });
 
 // ── C1 — ADR status agreement ───────────────────────────────────────────────
@@ -119,7 +120,8 @@ scenario("C1: a card claiming `proposed` over an `accepted` ADR is RED", {
         ),
     },
     expectExit: 1,
-    expectText: ["C1", "claims ADR-0099 is `proposed`", "reads `accepted`"],
+    expectText: ["C1", "claims ADR-0099 is `proposed`", "reads `accepted`", "catalog-claims FAILED: C1 1 · C2 0 · C3 0"],
+    denyText: ["catalog-claims OK"],
 });
 
 scenario("C1: the reverse form (`an accepted ADR-0099`) is checked too", {
@@ -223,7 +225,7 @@ scenario("C3: the same citation stays green after the file GROWS", {
         "src/Fixture/Thing.cs": `${THING_CS}\n${Array.from({ length: 20 }, (_, i) => `// extra ${i}`).join("\n")}`,
     },
     expectExit: 0,
-    expectText: ["catalog-claims FAILED: C1 0 · C2 0 · C3 0"],
+    expectText: ["catalog-claims OK: C1 0 · C2 0 · C3 0"],
 });
 
 scenario("C3: a citation to a file that no longer exists is RED", {
@@ -251,7 +253,7 @@ scenario("C3: a continuation's verdict is SOFT — printed, never blocking", {
         "docs/domain/roles/fixture-card.md": GOOD_CARD.replace("`Compute` is at `Thing.cs:12`", "at `Thing.cs:12`, also `:99`"),
     },
     expectExit: 0,
-    expectText: ["C3-SOFT", "catalog-claims FAILED: C1 0 · C2 0 · C3 0"],
+    expectText: ["C3-SOFT", "catalog-claims OK: C1 0 · C2 0 · C3 0"],
 });
 
 // ── anti-vacuity ────────────────────────────────────────────────────────────
@@ -273,15 +275,16 @@ scenario("ANTI-VACUITY: an empty corpus is RED, not a silent pass", {
     args: [],
     files: { "docs/domain/roles/fixture-card.md": null },
     expectExit: 1,
-    expectText: ["P0", "REACH", "citations found: 0"],
-    denyText: ["catalog-claims FAILED: C1 0 · C2 0 · C3 0 (0 claim violation(s), 0 reach failure(s)"],
+    expectText: ["P0", "REACH", "citations found: 0", "catalog-claims FAILED: C1 0 · C2 0 · C3 0"],
+    denyText: ["catalog-claims FAILED: C1 0 · C2 0 · C3 0 (0 claim violation(s), 0 reach failure(s)", "catalog-claims OK"],
 });
 
 scenario("ANTI-VACUITY: --warn reports every claim finding and still exits 0", {
     args: ["--floors=off", "--warn"],
     files: { "docs/domain/roles/fixture-card.md": GOOD_CARD.replace("Thing.cs:5-9", "Thing.cs:5-30") },
     expectExit: 0,
-    expectText: ["C3", "cited line 30 is past the end", "[--warn: exit 0]"],
+    expectText: ["C3", "cited line 30 is past the end", "catalog-claims FAILED: C1 0 · C2 0 · C3 1", "[--warn: exit 0]"],
+    denyText: ["catalog-claims OK"],
 });
 
 // The tier applies to the catalog's baseline, never to the instrument: a run that measured nothing

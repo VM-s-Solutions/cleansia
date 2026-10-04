@@ -1,6 +1,10 @@
 # Order Wizard
 
-The order wizard is a multi-step booking flow implemented in the `@cleansia-customer/order-wizard` library. It guides customers through selecting services, entering address details, choosing a date/time, selecting payment method, and reviewing the order.
+The order wizard is a multi-step booking flow implemented in the `@cleansia-customer/order-wizard`
+library. It runs in seven steps, numbered from 0 as `activeStep` counts them and as the step rail
+above the form shows them (`OrderWizardFacade.steps`): the services and the size of the home, how
+dirty it is, the address and contact, the date and time, the payment, the Cleansia Plus offer, and the
+review.
 
 ## Architecture
 
@@ -14,30 +18,49 @@ All state is managed via Angular signals (no NgRx for wizard-local state).
 
 ## Wizard Steps
 
+| Step | Rail label | What it asks | Continue needs |
+|---|---|---|---|
+| 0 | Services | packages and services, rooms and bathrooms | a service or a package |
+| 1 | Dirtiness | how dirty the home is | a level |
+| 2 | Address | the address, the property, the entry note, the contact | a picked (or typed) address in a city that is not refused, and the four contact fields |
+| 3 | Date & Time | the day, the arrival time, how the cleaner gets in | a date, and a bookable time inside the booking window |
+| 4 | Payment | card or cash, saving the card, a promo code | a payment type that is not refused cash |
+| 5 | Cleansia Plus | whether to add Plus, and anything else to book | nothing |
+| 6 | Summary | a check of everything, the note for the cleaner, the ticks | the terms tick unless already given, and the early-start tick (*Place order*) |
+
+What a step still needs is `OrderWizardFacade.missingReasons(step)`, to which the component adds the
+time slot on step 3 and the two ticks on step 6 (`blockingReasons`). Continue, or *Place order* on
+the last step, stays on a step that still needs something and lists what, under
+`pages.order.missing.heading`. → [Step Navigation](#step-navigation)
+
 ### Step 0: Services & Packages
 
-The customer selects from available cleaning services and/or packages, and specifies the number of rooms and bathrooms.
+The customer picks packages and/or services and says how big the home is.
 
-**Data loaded on init:**
-- Services list (dispatched via `loadCustomerServices()` NgRx action)
-- Packages list (dispatched via `loadCustomerPackages()` NgRx action)
-- Countries list (for address country dropdown)
+**The catalogue is the market's.** The step lists the services and packages of the market the address
+will be in: the chosen market until the address step names a country, that country from then on
+(`loadCustomerServices(countryId)`, `loadCustomerPackages(countryId)`, and the extras overview). When
+the country changes the catalogue is read again, and a pick the new market does not offer is dropped.
+The market directory also feeds the address step's country field.
 
-**Fields:**
+**On screen.** The packages come first, as cards: a tagline, the name, a tick per service the package
+includes, the price *per clean* and a *Choose package* chip, with *Most popular* on the popular one.
+Then *Or individual services*, a priced list of names and descriptions, each with an *Add* chip. Names
+and descriptions are in the current language. The room and bathroom counts are chips, 1 to 8 and 1 to
+4: in the summary's side column on a wide window, and at the top of the step at 1100px and below
+([The order summary](#order-summary)).
 
 | Field | Type | Default | Validation |
 |---|---|---|---|
-| `selectedServiceIds` | `string[]` | `[]` | At least one service or package required |
+| `selectedServiceIds` | `string[]` | `[]` | At least one service or package (`pages.order.missing.services`) |
 | `selectedPackageIds` | `string[]` | `[]` | (combined with above) |
-| `rooms` | `number` | `1` | Minimum 1 in the picker; API maximum 8 |
-| `bathrooms` | `number` | `1` | Minimum 1 in the picker; API maximum 4 |
+| `rooms` | `number` | `1` | A chip, 1–8; API maximum 8 |
+| `bathrooms` | `number` | `1` | A chip, 1–4; API maximum 4 |
 
 The same upper limits apply to booking, price quotes, Plus-savings previews and recurring-template
 creation/update. The API returns `order.size_exceeds_maximum` when either is exceeded. The Android and
 iOS steppers stop at the same limits and state them beside the size row's *Your home* title →
 [Room selection](/flows/booking-and-pricing#room-selection-and-start-times).
-
-Services and packages support **translations** -- the component reads the user's current locale to display translated names/descriptions.
 
 **A service a chosen package includes is marked, and adding the pair by hand asks first.** Under such a
 service the step prints *In your package: {package}* (`pages.order.package_overlap.in_package`), or
@@ -90,13 +113,42 @@ covered row's description moves to `--cl-muted-on-tint`, since `--cl-muted` read
 The *Add* chip, the `aria-describedby` wiring and the copy are unchanged. The `order-wizard` and
 `create-recurring-wizard` component specs assert the covered class and the badge at each site.
 
-### Step 1: Address & Contact
+### Step 1: Dirtiness level
 
-The customer enters their delivery address and contact information.
+The customer says how dirty the home is (*How clean is your home?*). Three cards, mildest first, come
+from `DIRTINESS_LEVELS` (`customer-services`), which the home calculator shares: *Normal* with no
+surcharge, then *Increased* and *Heavy* with theirs, +15 % and +30 %, from the rates in
+`@cleansia/models`. Each card has a lead and four signs of that level, and a hint above them says to
+pick the higher of two levels when unsure. Nothing is preselected: `dirtinessLevel` is `null` until a
+card is pressed, and the step cannot be left without one (`pages.order.missing.dirtiness`). The level
+moves the price, the booked time and the cleaner's pay by the same rate →
+[The dirtiness level](/product/business-rules#dirtiness).
 
-**Authenticated users** get profile data pre-filled (name, email, phone) and can select from saved addresses stored in localStorage.
+### Step 2: Address & Contact
 
-**Fields:**
+The customer says where the clean is, what kind of home it is, how the cleaner gets in, and who to
+call.
+
+**A signed-in customer** has the name, e-mail and phone filled in from the account where the fields
+are still empty, and the default saved address chosen. The account's saved addresses (`SavedAddressStore`,
+read from the server) are chips, each with its label over its street line, beside *Enter a new
+address*. A saved address is checked only for being non-empty, because the server already validated
+it.
+
+**A new address is looked up, not typed.** A country select (the market directory, showing the chosen
+market until one is picked here; it decides the currency the booking is priced in) sits above the
+address lookup. A pick fills the street, city and postcode and the coordinates, and shows what was
+found so it can be checked; until then the step says to pick an address from the list. A city the
+service does not cover is said at once (`api.service_area.city_not_serviced`), and the step cannot be
+left; the server checks again on submit. *Cannot find the address? Enter it manually* opens street,
+city and postcode fields instead (`addressEnteredManually`), which the server geocodes on submit. A
+signed-in customer can tick *Save this address for next time* and name it. Beside the address, a map
+tile of the picked coordinates (`/api/AddressSearch/map`), and *In range* once the city is confirmed.
+
+**Then the property, the way in and the contact.** *Flat* or *House*: a flat asks for the floor and the
+flat number, a house asks for neither and clears them. *How do we get in?* is an optional note of up
+to 2000 characters, badged *Only the assigned cleaner sees it*: like the address and the phone, it is
+redacted for every cleaner but the one the order belongs to. Last, the four contact fields:
 
 | Field | Validation |
 |---|---|
@@ -108,11 +160,9 @@ The customer enters their delivery address and contact information.
 | `address.city` | Required, 2-100 chars |
 | `address.zipCode` | Required, matches `^[\d\s-]{3,20}$` |
 
-::: tip Saved Addresses
-Authenticated users can save addresses to localStorage (`cleansia_saved_addresses`). When selecting a saved address, validation is relaxed to only check non-empty values. New addresses can optionally be saved for future use.
-:::
-
-### Step 2: Date & Time
+<!-- The two ids below keep the anchors these steps had as steps 2 and 3, before the dirtiness
+     step: code comments on the web, Android and iOS point at them. -->
+### Step 3: Date & Time {#step-2-date-time}
 
 The customer picks a cleaning date and an **arrival time in 15-minute increments**, from 08:00
 through 19:45. The home calculator, web booking wizard, Android and iOS offer the same times.
@@ -183,7 +233,17 @@ waive the surcharge, metered per **calendar month** — the quote response carri
 remain.
 :::
 
-### Step 3: Payment Method
+Under the slots the step says what the chosen time costs: *This slot is express — +20% is added to the
+price*, or that Plus waives it. While an express time is on offer it also says how many waivers the
+customer has left this calendar month, or that none are left, from the server's count
+(`ExpressUpgradesRemaining`), never one the client adjusts.
+
+**How the cleaner gets in.** Below, *Getting in* offers four chips, *I will be home*, *I will hand over
+keys*, *Door code* and *Reception* (`accessMode`, stored on the order as its slug). It is optional. The
+assigned cleaner reads it with the entry note from step 2, and it is redacted with that note for every
+other cleaner.
+
+### Step 4: Payment Method {#step-3-payment-method}
 
 The customer selects between:
 
@@ -219,16 +279,75 @@ on the card (`SavedCard.ConsentTextVersionInForce`). A guest or a cash booking n
 when the payment succeeds and is listed under **Saved cards** on `/profile`, where it can be removed;
 unticked, Stripe keeps nothing. → [A saved card guarantees cash](/product/business-rules#card-guarantee)
 
-### Step 4: Review & Submit
+**When the server refuses cash at submit.** Cash refused because the customer still owes an amount
+from an earlier booking (`order.cash_unpaid_receivable`) is taken away as above, and the step shows
+the amount owed with a way to pay it (`cleansia-customer-amount-due`); leaving to pay parks the
+booking, which is waiting on the next visit → [What a customer owes](/product/business-rules#receivables).
+Cash refused for want of a saved card opens the card capture instead.
 
-A summary of the entire order is displayed. The customer can navigate back to any previous step to make changes.
+**A promo code** is for a signed-in customer: a guest is told that codes are tied to an account and
+that the booking does not need one. *Apply* asks the server once, never per keystroke. A valid code
+reads *{code} applied — you save {amount}*, or, when the customer's tier or Plus discount is larger and
+so applies instead, says that the code is valid but not applied. *Remove code* takes it off.
+→ [Discounts, and the 12 % cap](/product/business-rules#discount-cap)
 
-Beneath the terms block the step states, unconditionally — whether or not the account has consented
-before, signed in or guest — that *by confirming the order you conclude a contract for work with the
-cleaner on these terms*, linking `/work-contract` (`pages.order.work_contract_notice`). It is an
-information line, not a tick: the customer's half of that contract is the terms consent plus the
-contract text the server stamps on the order at booking; the cleaner's half is written when they take
-the job. → [Business rules — the contract for work](/product/business-rules#work-contract)
+### Step 5: Cleansia Plus
+
+The step offers Plus against this basket (*Add Cleansia Plus?*). Every figure on it is the server's.
+
+- **What Plus would save on this order**, from `QuotePlusSavings`, which applies the same 12 % cap and
+  express rules as the booking, re-asked whenever the basket changes while the step is on screen. The
+  saving is in the basket's currency and a plan's price in the market's (ADR-0058 D4), each labelled
+  with its own code. The lead also says whether the first days are free.
+- **The plans**, each with its interval and price, its trial and the price after it, *Best value* and the
+  saving against monthly where there is one, and *Start free trial* or *Choose plan*. Choosing parks
+  the booking and opens the subscribe page on that plan; a guest is sent to sign in first.
+- **The perks**, from the first plan the catalogue returns: its discount, its free-cancellation
+  window, the longer free-cancellation grace after booking, its monthly express waivers if it has any,
+  and recurring bookings.
+- **A guest** is told that membership is tied to an account, with *Sign in* and *Register*; the
+  booking is parked first, so it is still there afterwards.
+- **The way past, with the same weight**: *Not right now, thanks*, with the total the booking will cost
+  without Plus and *Continue without Plus*, which goes on to the review.
+- **Anything else?** Up to three services not yet chosen on their own (`crossSellServices`), each with
+  its price and an *Add* chip, and a link to the full price list. A service a chosen package already
+  includes is marked here as on step 0, and its *Add* asks the same question.
+
+**A market that sells no plan skips the step** (`plusUnavailable`, ADR-0059 D3): Continue and Back walk
+past it, because a step whose only content is the way past is a dead page. Opened from the step rail,
+it says *Plus is not available in your market yet* above the way past.
+
+### Step 6: Review & Submit
+
+*Check your order* restates what was chosen in five cards built from the form (`reviewCards`), each
+with *Edit*, which returns to the step that owns it:
+
+| Card | Lines |
+|---|---|
+| Services | each priced line of the quote, then the rooms and bathrooms |
+| Dirtiness | the level |
+| Address | the name, the phone and e-mail, the address with the floor and flat |
+| Date & Time | the date and time, and how the cleaner gets in |
+| Payment and membership | the payment type, an applied promo code, and the Plus plan when the account has one by now |
+
+Under them come the preferred cleaner, a Plus perk (`cleansia-wizard-preferred-cleaner`, re-read on
+every entry to this step because its answer depends on the time; → [Preferred cleaner](/product/business-rules#preferred-cleaner)),
+and the *Note for the cleaner* (`specialInstructions`, up to 2000 characters). Then the ticks:
+
+- **The terms**, *I agree to the terms of service and the processing of my personal data*, is shown
+  only to a guest, an account that has not accepted the texts in force, or one whose consent could not
+  be read; an account that has accepted them sees *You accepted our Terms of Service and Privacy
+  Policy with your account* instead. When shown, it is required, and it rides `termsAccepted` on the
+  create command.
+- **The request to start within the withdrawal period** is asked on every booking, whatever the account
+  has accepted, and is required (`pages.order.early_performance.early-performance-draft-2026-09-29`)
+  → [The request to start within the withdrawal period](/product/business-rules#early-performance).
+
+Last, the step states, unconditionally, signed in or guest, that *by confirming the order you conclude
+a contract for the cleaning with the operating company of the market where your home is, under its
+terms of service*, linking `/terms`, and that the cleaner carries it out as the company's subcontractor
+and is no party to it (`pages.order.contract_notice`). It is an information line, not a tick.
+→ [Business rules — the contract for work](/product/business-rules#work-contract)
 
 ## The order summary {#order-summary}
 
@@ -336,9 +455,13 @@ interface RebookParams {
 
 The facade provides navigation methods:
 
-- `nextStep()` -- Advance to the next step (with validation via `canProceed()`)
-- `prevStep()` -- Go back one step
-- `goToStep(n)` -- Jump to a specific step
+- `nextStep()` / `prevStep()` -- One step on or back, walking past the Plus step when the market sells
+  no plan (`stepFrom`). The component's Continue calls `nextStep()` only when nothing is missing
+  (`blockingReasons()`).
+- `goToStep(n)` -- Jump to a step, ungated in both directions. The step rail (completed steps only)
+  and the review's *Edit* use it: looking ahead at a step not yet filled in is not a mistake to prevent.
+- `submitOrder()` is the last gate. `firstIncompleteStep()` walks every step's `missingReasons` and,
+  if one is short, returns to it with its first reason in a snackbar before anything is sent.
 
 Each navigation scrolls to the top of the page (`window.scrollTo({ top: 0, behavior: 'smooth' })`).
 
@@ -350,16 +473,26 @@ interface OrderWizardFormData {
   selectedPackageIds: string[];
   rooms: number;
   bathrooms: number;
+  dirtinessLevel: DirtinessLevel | null;   // null until the customer picks one
   customerFirstName: string;
   customerLastName: string;
   customerEmail: string;
   customerPhone: string;
   address: AddressDto;
+  addressLatitude: number | null;          // from a lookup pick; null for a typed address
+  addressLongitude: number | null;
+  addressEnteredManually: boolean;
+  propertyType: 'flat' | 'house';          // decides whether floor and flat are asked; not sent
+  customerFloor: string;
+  customerApartment: string;
+  accessMode: string;                      // '' or at_home | keys_handover | door_code | reception
   cleaningDate: Date | null;
   cleaningTime: string;
-  paymentType: PaymentType | null;   // null once refused cash was taken away
+  paymentType: PaymentType | null;         // null once refused cash was taken away
   extras: Record<string, boolean>;
-  specialInstructions: string;
-  entryInstructions: string;
+  specialInstructions: string;             // the note for the cleaner, step 6
+  entryInstructions: string;               // how we get in, step 2
+  promoCode: string;
+  preferredEmployeeId: string | null;      // the Plus preferred-cleaner perk
 }
 ```

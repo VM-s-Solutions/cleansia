@@ -1889,6 +1889,24 @@ next version ([above](#legal-drafts)), and only with one made for a real change 
 this word alone would bring the booking tick back for every customer (owner ruling 2026-10-04; filed as
 T-0802).
 
+## A deactivated service or package {#deactivated-catalogue}
+
+An administrator retires a service or a package by deactivating it: a soft delete, so the row and every
+order that booked it stay, and the admin lists still show it under their active filter
+([ADR-0007](/decisions/adr-0007)). **It leaves every customer catalogue.** The service and package
+overviews the web, Android and iOS book from list only active entries, as they list only entries priced
+and paid in the market's currency.
+
+**A deactivated service stays inside every package that includes it.** What a package includes is the
+package's content, not a customer's selection, so deactivating one of its services changes nothing about
+the package. Its card still lists the service among what it includes, and an order with the package books
+it, times it and staffs it: the order gets a line for it, its minutes count toward the booked time and
+so the crew, and the order detail the customer and the cleaner read lists it. The package overview
+(`GetPackageOverview`) and the order (`OrderFactory`) read the same list on purpose: hiding the service
+from the card alone would sell a package without a service the cleaner is then sent to do. To take a
+service out of a package, an administrator edits the package. `CatalogActiveVisibilityTests` pins that
+the overview lists exactly what an order with the package books, a deactivated service among them.
+
 ## Discounts, and the 12 % cap {#discount-cap}
 
 Three sources can reduce a price: the customer's **loyalty tier**, their **Cleansia Plus** membership,

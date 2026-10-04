@@ -354,8 +354,11 @@ languages, service cities. Prices are per currency: a service, package or extra 
 per currency it is sold in, nothing converts, and an entry with no price in a currency is not offered
 in it. Extras are priced per currency like services and packages; the slug is fixed at creation
 because order lines snapshot it, so deactivating is how an extra is retired once an order references
-it. A currency is switched on deliberately — a new one starts inactive — and the platform default
-cannot be switched off. The currency form also authors the no-show apology credit paid in that
+it. A deactivated service or package leaves every customer catalogue, but a deactivated service stays
+inside the packages that include it, and books with them, until the package is edited
+([A deactivated service or package](/product/business-rules#deactivated-catalogue)). A currency is
+switched on deliberately — a new one starts inactive — and the platform default cannot be switched
+off. The currency form also authors the no-show apology credit paid in that
 currency; the country form carries the two-letter code the market chip prints and, under "Market",
 the insurance ceiling the customer copy states for that country (none is authored today); and a country cannot be switched on
 as serviced until its configuration names an active currency.

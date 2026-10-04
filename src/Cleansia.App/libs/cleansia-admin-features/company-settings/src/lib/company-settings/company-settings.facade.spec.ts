@@ -197,6 +197,21 @@ describe('CompanySettingsFacade', () => {
       expect(emailDraft.value).toBe('');
     });
 
+    it('opens the edit on enabled drafts after a busy flag left them disabled, so the e-mail is still checked', () => {
+      intDraft.disable();
+      boolDraft.disable();
+      emailDraft.disable();
+
+      facade.beginEdit(adminEmail);
+      facade.save();
+
+      expect(intDraft.enabled).toBe(true);
+      expect(boolDraft.enabled).toBe(true);
+      expect(emailDraft.enabled).toBe(true);
+      expect(snackbar.showErrorTranslated).toHaveBeenCalledWith('api.common.required');
+      expect(setMock).not.toHaveBeenCalled();
+    });
+
     it('opens an overridden e-mail row with the stored address in the e-mail draft', () => {
       getAllMock.mockReturnValue(of(catalogue(adminEmailSet)));
       facade.loadSettings();

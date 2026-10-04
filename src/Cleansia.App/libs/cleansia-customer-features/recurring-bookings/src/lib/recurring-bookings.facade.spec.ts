@@ -2,6 +2,7 @@ import { signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import {
   CardCaptureFacade,
+  ConsentType,
   CreateRecurringBookingCommand,
   CreateSavedCardCheckoutSessionCommand,
   CreateSavedCardCheckoutSessionResponse,
@@ -50,6 +51,7 @@ describe('RecurringBookingsFacade', () => {
   };
   let orderClient: { quote: jest.Mock; myServingCleaners: jest.Mock };
   let membershipClient: { getMine: jest.Mock };
+  let gdprClient: { consentsGet: jest.Mock };
   let savedCardClient: { createCheckoutSession: jest.Mock };
   let savedAddressStore: {
     addresses: ReturnType<typeof signal<SavedAddressDto[]>>;
@@ -82,6 +84,7 @@ describe('RecurringBookingsFacade', () => {
     membershipClient = {
       getMine: jest.fn().mockReturnValue(of({ hasMembership: true, status: MembershipStatus.Active })),
     };
+    gdprClient = { consentsGet: jest.fn().mockReturnValue(of([])) };
     const { origin, pathname } = window.location;
     savedCardClient = {
       createCheckoutSession: jest.fn().mockReturnValue(
@@ -117,6 +120,7 @@ describe('RecurringBookingsFacade', () => {
             orderClient,
             membershipClient,
             savedCardClient,
+            gdprClient,
           },
         },
         { provide: SavedAddressStore, useValue: savedAddressStore },
@@ -674,6 +678,7 @@ describe('RecurringBookingsFacade', () => {
         savedAddressId: 'addr-1',
         startsOn: new Date('2026-10-01T00:00:00Z'),
         earlyPerformanceRequested: true,
+        termsAccepted: true,
       });
     const stored = (dirtinessLevel?: DirtinessLevel) =>
       template({
@@ -975,6 +980,7 @@ describe('RecurringBookingsFacade', () => {
         startsOn: new Date('2026-07-01T00:00:00Z'),
         selectedServiceIds: ['s1'],
         dirtinessLevel: DirtinessLevel.Normal,
+        termsAccepted: true,
       });
     });
 
@@ -1017,6 +1023,135 @@ describe('RecurringBookingsFacade', () => {
       facade.resetWizard();
 
       expect(facade.formData().earlyPerformanceRequested).toBe(false);
+    });
+  });
+
+  // A new schedule is a new booking (owner ruling 2026-09-28): the server refuses it without the tick
+  // while either consent on record is not an acceptance of the text in force.
+  describe('the terms tick on a new schedule', () => {
+    const consent = (type: ConsentType, coversCurrentVersion = true) => ({
+      id: `c${type}`,
+      consentType: type,
+      isGranted: true,
+      grantedAt: '2026-09-14T10:00:00Z',
+      createdOn: '2026-09-14T10:00:00Z',
+      documentVersion: '2026-09-14',
+      coversCurrentVersion,
+    });
+    const bothInForce = () => [consent(ConsentType.TermsOfService), consent(ConsentType.PrivacyPolicy)];
+    const createBody = () => JSON.parse(JSON.stringify(client.create.mock.calls[0][0]));
+    const termsRefused = () =>
+      throwError(() => ({
+        detail: 'A validation problem occurred.',
+        errors: { TermsAccepted: 'consent.terms_not_accepted' },
+      }));
+
+    beforeEach(() => {
+      facade.updateFormData({
+        savedAddressId: 'addr-1',
+        startsOn: new Date('2026-07-01T00:00:00Z'),
+        selectedServiceIds: ['s1'],
+        dirtinessLevel: DirtinessLevel.Normal,
+        earlyPerformanceRequested: true,
+      });
+    });
+
+    it('is asked until the consents on record are read', () => {
+      expect(facade.termsAsked()).toBe(true);
+      expect(facade.missing()).toEqual(['terms']);
+    });
+
+    it('is not asked once both consents cover the texts in force, and asserts nothing', async () => {
+      gdprClient.consentsGet.mockReturnValue(of(bothInForce()));
+      client.create.mockReturnValue(of(template({ id: 'new' })));
+
+      facade.loadConsentState();
+      await facade.submit();
+
+      expect(facade.termsAsked()).toBe(false);
+      expect(facade.missing()).toEqual([]);
+      expect(createBody()).not.toHaveProperty('termsAccepted');
+    });
+
+    it.each([
+      {
+        what: 'the terms accepted are an older text',
+        consents: [consent(ConsentType.TermsOfService, false), consent(ConsentType.PrivacyPolicy)],
+      },
+      { what: 'only the terms are on record', consents: [consent(ConsentType.TermsOfService)] },
+    ])('is asked when $what', ({ consents }) => {
+      gdprClient.consentsGet.mockReturnValue(of(consents));
+
+      facade.loadConsentState();
+
+      expect(facade.termsAsked()).toBe(true);
+    });
+
+    it('is asked when the consents cannot be read', () => {
+      gdprClient.consentsGet.mockReturnValue(throwError(() => new Error('offline')));
+
+      facade.loadConsentState();
+
+      expect(facade.termsAsked()).toBe(true);
+    });
+
+    it('holds the schedule until ticked, then sends the tick', async () => {
+      client.create.mockReturnValue(of(template({ id: 'new' })));
+      expect(facade.missing()).toEqual(['terms']);
+
+      facade.updateFormData({ termsAccepted: true });
+      await facade.submit();
+
+      expect(facade.missing()).toEqual([]);
+      expect(createBody().termsAccepted).toBe(true);
+    });
+
+    it('sends no tick it did not ask for, however the form was left', async () => {
+      gdprClient.consentsGet.mockReturnValue(of(bothInForce()));
+      client.create.mockReturnValue(of(template({ id: 'new' })));
+      facade.loadConsentState();
+
+      facade.updateFormData({ termsAccepted: true });
+      await facade.submit();
+
+      expect(createBody()).not.toHaveProperty('termsAccepted');
+    });
+
+    it('is not asked of a schedule being edited', () => {
+      facade.loadForEdit(
+        template({
+          savedAddressId: 'addr-1',
+          selectedServiceIds: ['s1'],
+          timeOfDay: '10:00',
+          paymentType: PaymentType.Card,
+          startsOn: new Date('2026-07-01T00:00:00Z'),
+          dirtinessLevel: DirtinessLevel.Normal,
+        }),
+      );
+
+      expect(facade.termsAsked()).toBe(false);
+      expect(facade.missing()).toEqual([]);
+    });
+
+    it('asks again when the server refuses the schedule over the terms, without a second error', async () => {
+      gdprClient.consentsGet.mockReturnValue(of(bothInForce()));
+      client.create.mockReturnValue(termsRefused());
+      facade.loadConsentState();
+
+      const ok = await facade.submit();
+
+      expect(ok).toBe(false);
+      expect(facade.termsAsked()).toBe(true);
+      expect(facade.missing()).toEqual(['terms']);
+      expect(snackbar.showError).not.toHaveBeenCalled();
+    });
+
+    it('is asked again after the wizard is reset', () => {
+      facade.updateFormData({ termsAccepted: true });
+
+      facade.resetWizard();
+
+      expect(facade.formData().termsAccepted).toBe(false);
     });
   });
 

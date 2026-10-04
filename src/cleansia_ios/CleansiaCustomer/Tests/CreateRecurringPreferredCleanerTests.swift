@@ -38,6 +38,7 @@ final class CreateRecurringPreferredCleanerTests: XCTestCase {
             orderClient: FakeOrderClient(),
             quoteClient: FakeQuoteClient(),
             cleanersClient: cleaners,
+            consentClient: FakeConsentStatusClient(granted: [.termsOfService, .privacyPolicy]),
             snackbar: SnackbarController(),
             scheduler: TestScheduler.dispatch.eraseToAnyScheduler()
         )

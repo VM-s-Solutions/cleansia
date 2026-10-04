@@ -1300,6 +1300,7 @@
     <string name="loyalty_activity_view_all">Zobrazit všechnu aktivitu</string>
     <string name="loyalty_tx_earn_order">+%1$d b. — Úklid č. %2$s</string>
     <string name="loyalty_tx_revoke_order">%1$d b. — Zrušeno č. %2$s</string>
+    <string name="loyalty_tx_refund_order">%1$d b. — Vráceno č. %2$s</string>
     <string name="loyalty_tx_referral">+%1$d b. — Bonus za doporučení</string>
     <string name="loyalty_tx_manual">%1$d b. — Ruční úprava</string>
     <string name="loyalty_empty_activity">Zatím žádná aktivita. Objednejte si první úklid a začněte sbírat body.</string>

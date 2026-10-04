@@ -97,7 +97,10 @@ job figures frozen when its contract for work formed. None replaces a record, so
 Later rulings the same day added to two of them and amended a fourth: a full refund and a dispute
 refund take back their share of the points as well (ADR-0009); a plan's discount and express quota
 lock once anyone subscribes (ADR-0035); and **[ADR-0062](./adr-0062)** — confirming a recurring
-occurrence asks for the terms in force, on a booking's rule. Again no arrow.
+occurrence asks for the terms in force, on a booking's rule. Again no arrow. Follow-ups on 2026-10-04
+applied two of those rules where they did not reach, with no new ruling: a refund before completion
+takes its share at completion and a failed full-refund clawback can be retried (ADR-0009), and an
+occurrence cannot be paid before it is confirmed (ADR-0062).
 
 ## All records
 
@@ -111,7 +114,7 @@ occurrence asks for the terms in force, on a booking's rule. Again no arrow.
 | **[ADR-0006](./adr-0006)** | Refund dispute money path ⟲ | `accepted` |
 | **[ADR-0007](./adr-0007)** | Soft delete policy | `accepted` |
 | **[ADR-0008](./adr-0008)** | Outbox table and drainer | `accepted` |
-| **[ADR-0009](./adr-0009)** | Refund policy (amended 2026-10-03: a refund's loyalty clawback is a share of what the order earned, and every refund takes it — partial, full and a dispute's) | `accepted` |
+| **[ADR-0009](./adr-0009)** | Refund policy (amended 2026-10-03: a refund's loyalty clawback is a share of what the order earned, and every refund takes it — partial, full and a dispute's; follow-up 2026-10-04: money returned before completion is taken at completion, and a failed full-refund clawback can be retried) | `accepted` |
 | **[ADR-0010](./adr-0010)** | Durable consumer idempotency ⟲ | `accepted` |
 | **[ADR-0011](./adr-0011)** | Mobile apiresult contract | `accepted` |
 | **[ADR-0012](./adr-0012)** | Admin action audit log | `accepted` |
@@ -164,7 +167,7 @@ occurrence asks for the terms in force, on a booking's rule. Again no arrow.
 | **[ADR-0059](./adr-0059)** | Cleansia Plus is priced per market | `accepted` |
 | **[ADR-0060](./adr-0060)** | Money figures in copy come from the market, not the translation | `accepted` |
 | **[ADR-0061](./adr-0061)** | Tenancy is active from day one: one tenant per operating company (amended 2026-09-14 and 2026-09-15 — the FK, `TenantAuditable`, per-company payout numbering and settings) | `accepted` |
-| **[ADR-0062](./adr-0062)** | A customer's actions are recorded for incident defence, and support reads them in the admin panel (extends ADR-0012; amended 2026-09-14 and 2026-09-15; amended 2026-10-03: confirming a recurring occurrence asks for the terms in force) | `accepted` |
+| **[ADR-0062](./adr-0062)** | A customer's actions are recorded for incident defence, and support reads them in the admin panel (extends ADR-0012; amended 2026-09-14 and 2026-09-15; amended 2026-10-03: confirming a recurring occurrence asks for the terms in force; follow-up 2026-10-04: an occurrence cannot be paid before it is confirmed) | `accepted` |
 | **[ADR-0063](./adr-0063)** | Legal documents are versioned by effective date, stored per market, and a consent stamps the version | `accepted` |
 | **[ADR-0064](./adr-0064)** | A company's lifecycle: deactivation, wind-down, archive (amends ADR-0061 O-3/D1 and ADR-0058 D1 by reference) | `accepted` |
 | **[ADR-0065](./adr-0065)** | Administrators are told: an in-app feed and an e-mail per event (owner ruling D5, 2026-09-19; shipped as T-0768 / T-0769 / T-0774 / T-0775) | `accepted` |

@@ -58,6 +58,11 @@ final class OrderDetailViewModel: ViewModel {
     private var pollTask: Task<Void, Never>?
     private var eventCancellable: AnyCancellable?
     private var quoteInFlight = false
+    /// The server judges the texts in force for the visit's own market, which the consent read cannot see, so
+    /// once it refuses a confirm over the terms no later read may hide the tick again.
+    private var termsRefused = false
+
+    private static let termsNotAcceptedCode = "consent.terms_not_accepted"
 
     init(
         orderId: String,
@@ -249,8 +254,15 @@ final class OrderDetailViewModel: ViewModel {
         eventCancellable = eventBus.events
             .filter { [orderId] in $0.orderId == orderId }
             .sink { [weak self] _ in
-                Task { await self?.fetch(initial: false) }
+                Task { await self?.refetch() }
             }
+    }
+
+    /// A push can land the first copy of a visit awaiting confirmation — after a failed opening, say — and the
+    /// confirm stays closed until the consents behind it are read.
+    private func refetch() async {
+        await fetch(initial: false)
+        await loadConsentStatus()
     }
 
     // MARK: - Cancel
@@ -400,8 +412,9 @@ final class OrderDetailViewModel: ViewModel {
     /// Re-read at every opening, as the booking sheet does: the answer belongs to the account and can change
     /// under a live session.
     private func loadConsentStatus() async {
-        guard state.loadedValue?.needsConfirmation == true else { return }
-        alreadyConsented = await consentClient.holdsTermsTickConsents()
+        guard state.loadedValue?.needsConfirmation == true, !termsRefused else { return }
+        let held = await consentClient.holdsTermsTickConsents()
+        alreadyConsented = held && !termsRefused
     }
 
     /// A recurring-generated order the server marks `needsConfirmation` needs an
@@ -431,6 +444,11 @@ final class OrderDetailViewModel: ViewModel {
             }
         case let .failure(error):
             snackbar.showApiError(error)
+            if error.code == Self.termsNotAcceptedCode {
+                termsRefused = true
+                alreadyConsented = false
+                termsAccepted = false
+            }
             confirmRecurringState = .idle
         }
     }

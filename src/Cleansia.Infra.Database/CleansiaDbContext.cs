@@ -47,6 +47,8 @@ public class CleansiaDbContext : DbContext, IUnitOfWork
     // once and every later commit on the same context reuses the answer.
     private readonly Dictionary<string, bool> frozenByTenantId = new(StringComparer.Ordinal);
 
+    private readonly List<(LoyaltyAccount Account, Func<LoyaltyTier?, CancellationToken, Task> AfterSave)> afterLoyaltySaves = [];
+
     public CleansiaDbContext()
     {
     }
@@ -81,6 +83,57 @@ public class CleansiaDbContext : DbContext, IUnitOfWork
 
     public async Task CommitAsync(CancellationToken cancellationToken)
     {
+        try
+        {
+            // What runs after a loyalty save stages rows of its own, and they commit with the save or not at all.
+            if (afterLoyaltySaves.Count > 0
+                && Database.IsNpgsql()
+                && Database.CurrentTransaction is null
+                && System.Transactions.Transaction.Current is null)
+            {
+                lockTransaction = await Database.BeginTransactionAsync(cancellationToken);
+            }
+
+            var afterSaves = await SaveAsync(cancellationToken);
+            if (afterSaves.Count > 0)
+            {
+                foreach (var (afterSave, tierBefore) in afterSaves)
+                {
+                    await afterSave(tierBefore, cancellationToken);
+                }
+
+                await SaveAsync(cancellationToken);
+            }
+
+            if (lockTransaction is not null)
+            {
+                await lockTransaction.CommitAsync(cancellationToken);
+                await lockTransaction.DisposeAsync();
+                lockTransaction = null;
+            }
+        }
+        catch
+        {
+            RollbackLockTransaction();
+            throw;
+        }
+    }
+
+    internal void AfterLoyaltySave(LoyaltyAccount account, Func<LoyaltyTier?, CancellationToken, Task> afterSave)
+    {
+        afterLoyaltySaves.Add((account, afterSave));
+    }
+
+    private async Task<List<(Func<LoyaltyTier?, CancellationToken, Task> AfterSave, LoyaltyTier? TierBefore)>> SaveAsync(
+        CancellationToken cancellationToken)
+    {
+        StampAudit();
+        await RefuseFrozenBooksAsync(cancellationToken);
+        return await SaveChangesReplayingLoyaltyAsync(cancellationToken);
+    }
+
+    private void StampAudit()
+    {
         var actorId = userSessionProvider.GetUserId();
         var stateUser = string.IsNullOrWhiteSpace(actorId) ? "System" : actorId;
         var currentTime = DateTime.UtcNow;
@@ -111,23 +164,6 @@ public class CleansiaDbContext : DbContext, IUnitOfWork
                 entity.Entity.Updated(stateUser, currentTime);
             }
         }
-
-        try
-        {
-            await RefuseFrozenBooksAsync(cancellationToken);
-            await SaveChangesReplayingLoyaltyAsync(cancellationToken);
-            if (lockTransaction is not null)
-            {
-                await lockTransaction.CommitAsync(cancellationToken);
-                await lockTransaction.DisposeAsync();
-                lockTransaction = null;
-            }
-        }
-        catch
-        {
-            RollbackLockTransaction();
-            throw;
-        }
     }
 
     /// <summary>
@@ -138,16 +174,24 @@ public class CleansiaDbContext : DbContext, IUnitOfWork
     /// <para>The retry stays inside this commit on purpose: in a lock transaction EF rolls back only to its
     /// savepoint, so a lock the unit of work holds is still held when the replay saves. A retry in a caller
     /// would run after <see cref="CommitAsync"/> had rolled the lock transaction back.</para>
+    ///
+    /// <para>What waits on an account's save is handed the tier the account held in the database just before
+    /// the attempt that landed, so it judges the tier the save actually moved the account from.</para>
     /// </summary>
-    private async Task SaveChangesReplayingLoyaltyAsync(CancellationToken cancellationToken)
+    private async Task<List<(Func<LoyaltyTier?, CancellationToken, Task> AfterSave, LoyaltyTier? TierBefore)>> SaveChangesReplayingLoyaltyAsync(
+        CancellationToken cancellationToken)
     {
         const int maxAttempts = 5;
         for (var attempt = 1; ; attempt++)
         {
+            // Read before each attempt: a replay resets the account to the committed row, and the attempt that
+            // lands is saved over exactly the tiers read here.
+            var afterSaves = afterLoyaltySaves.Select(s => (s.AfterSave, TierInDatabase(s.Account))).ToList();
             try
             {
                 await SaveChangesAsync(cancellationToken);
-                return;
+                afterLoyaltySaves.Clear();
+                return afterSaves;
             }
             catch (DbUpdateConcurrencyException ex) when (attempt < maxAttempts
                 && ex.Entries.Count > 0
@@ -224,6 +268,14 @@ public class CleansiaDbContext : DbContext, IUnitOfWork
         }
 
         return true;
+    }
+
+    private LoyaltyTier? TierInDatabase(LoyaltyAccount account)
+    {
+        var entry = Entry(account);
+        return entry.State == EntityState.Added
+            ? null
+            : entry.OriginalValues.GetValue<LoyaltyTier>(nameof(LoyaltyAccount.CurrentTier));
     }
 
     /// <summary>
@@ -307,6 +359,7 @@ public class CleansiaDbContext : DbContext, IUnitOfWork
     public void Rollback()
     {
         RollbackLockTransaction();
+        afterLoyaltySaves.Clear();
         foreach (var entry in ChangeTracker.Entries())
         {
             entry.State = EntityState.Unchanged;

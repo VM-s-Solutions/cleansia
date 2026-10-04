@@ -2021,6 +2021,40 @@ and logs; it is never scaled from another currency's rate in either direction. B
 in that state earns nothing permanently, a market cannot be switched on without a divisor and an active
 one cannot have it cleared (`currency.loyalty_divisor_missing`).
 
+**Money given back before the order completes is taken at completion** (since 2026-10-04). A refund
+or a dispute settlement before completion found no earn to take from, so completion used to earn on the
+whole price and the points stayed. Completion still writes the earn on the whole `TotalPrice`, and now
+writes beside it a refund row of `floor(earned × returned / TotalPrice)`. Here *returned* is everything
+the order has given back so far: the succeeded card refunds, the credit legs returned with them, and
+dispute settlements in credit. Both rows commit together. A 1 000 CZK order earns 100 points; with 300
+returned before completion it keeps 70, and a later full refund takes those 70. The earn row itself is
+not reduced, because every later refund takes its share of it. With a reduced row, 500 refunded before
+completion and 500 after would leave 25 points instead of 0. So a refund before completion and one
+after take back what the same two refunds would take after it. With whole shares that equals one refund
+of the sum: 200 before and 300 after take 50, as one refund of 500 does. With fractional shares the
+per-refund floor still applies: 255 before and 245 after keep 51 points, while one refund of 500 keeps
+50. A refund that settled before the earn was written takes nothing more when it is replayed after
+completion, because completion already took its share.
+
+**A full refund's clawback can be run again** (since 2026-10-04). The full refund settles and marks the
+order `Refunded` before its clawback runs. A clawback that failed therefore left an order the full
+refund refused from then on, with the points kept. `AdminRefundOrder` now also accepts an order whose
+own full refund (`refund:{orderId}:admin:full`) has succeeded. The refund seam answers with that refund
+and moves no money, and the clawback, keyed on the same refund, takes what is left of the earn exactly
+once. The refund notice is sent when none is queued on its key. The first call staged it with the
+clawback, so a clawback that failed lost the notice as well; one that committed is not sent twice. An
+order refunded any other way, or whose full refund never settled, is still refused
+(`refund.order_not_refundable`).
+
+**The tier-upgrade notice names the tier that was saved** (since 2026-10-04). Two writes for one
+customer at the same moment both land, the later one replayed onto the earlier one's commit
+([Loyalty — points](/flows/loyalty-and-memberships#points)). A completion grant used to decide
+`loyalty.tier_upgrade` from its own read of the account, before any replay. It could then name a tier
+the account never reached, or say nothing when the replay was what crossed a threshold. It is now
+decided after the save, against the tier the account held in the database just before it, and names
+the tier saved. Only a promotion is announced. An earn that crosses a threshold while the share taken
+at completion keeps the account below it announces nothing.
+
 **Tier floor — `LoyaltyTierConfig.MinimumOrderAmountForDiscount`.** Seeded at **1000** for every tier
 that has one. It is a platform-default-currency number, enforced only on an order in that currency; on
 any other currency no floor applies at all. The discount is the promise and the floor only keeps it off
@@ -2591,17 +2625,36 @@ not a recurring occurrence, or no longer awaiting confirmation) passes this rule
 refusal is the one returned and another customer's order id reads like a missing one. An unconfirmed
 occurrence is still retracted an hour before its slot with no fee, as before.
 
+**An occurrence cannot be paid before it is confirmed** (since 2026-10-04). Until then
+`CreatePaymentIntent`, which opens the apps' PaymentSheet intent, would pay an occurrence still
+awaiting confirmation, so a hand-made call could skip the confirm and its terms check. It now refuses an
+occurrence with no `CustomerConfirmedAt` as `order.invalid_status_transition`, the key
+`ResumeOrderCheckout` already gives every occurrence. A confirmed occurrence (a retry after a failed
+payment included) and a one-off booking pay as before. The apps confirm first and pay after, and the
+web confirm opens its own Checkout Session, so no client changed.
+
 When the tick arrives the server grants `TermsOfService` and `PrivacyPolicy` with the document in force
 for the market, the IP and the device; nothing is parked in the browser. On registration this happens
 in the same commit as the account. On a booking, and on a recurring confirm, the signed-in customer's
 two rows move to the texts in force, or are created where none exists. A confirm does this under the
 account's own company, before either tender moves to the order's company. The web wizard, Android and
 iOS show the box when the consents on record do not cover the texts in force, and send the tick when it
-was ticked. Android's new-schedule form does the same, while the web and iOS schedule forms do not ask
-yet, so a customer behind on the version is refused there until they accept on a booking. The order
-detail on the web, Android and iOS shows the same box above the confirm of an occurrence awaiting
-confirmation, by the same rule, and holds the confirm until it is ticked
+was ticked. The new-schedule forms on the web, Android and iOS do the same; an edit asks nothing. The
+web and iOS forms have done so since 2026-10-04: until then they never sent the tick, so a customer
+behind on the version was refused with no box to tick. The order detail on the web, Android and iOS
+shows the same box above the confirm of an occurrence awaiting confirmation, by the same rule, and holds
+the confirm until it is ticked
 ([Recurring bookings](/flows/booking-and-pricing#recurring-bookings)).
+
+**A refusal over the terms shows the box at once** (since 2026-10-04). The consent read the clients
+decide by is judged for the default market, while the server judges the market of the booking's
+address, so the two can disagree. When the server refuses with `consent.terms_not_accepted`, the
+recurring confirm on Android and iOS, and the new-schedule form on the web and iOS, show the box at once,
+unticked.
+They take the refusal as the answer rather than read the consents again, because a second read could
+call the account covered and hide the box. On iOS, an order detail refreshed by a push reads the
+consents as opening the screen does, so an occurrence that first arrives that way never leaves the
+confirm disabled with no box.
 
 **What a row never holds.** A name, an email, a phone, an address line, an entry instruction, the
 text of a reason or a description, card data, a token or a live code — and not the preferred cleaner

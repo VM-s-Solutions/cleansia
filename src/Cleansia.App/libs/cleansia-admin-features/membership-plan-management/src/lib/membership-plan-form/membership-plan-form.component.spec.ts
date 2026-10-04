@@ -314,7 +314,6 @@ describe('MembershipPlanFormComponent', () => {
       expect(component.form.controls.discountPercentage.disabled).toBe(true);
       expect(component.form.controls.expressUpgradesPerMonth.disabled).toBe(true);
       expect(component.form.controls.allowsExpressUpgrade.disabled).toBe(false);
-      // A disabled control alone does not reach the shared input's DOM element.
       expect(acceptsTyping('discountPercentage')).toBe(false);
       expect(acceptsTyping('expressUpgradesPerMonth')).toBe(false);
       expect(acceptsTyping('trialPeriodDays')).toBe(true);
@@ -340,6 +339,16 @@ describe('MembershipPlanFormComponent', () => {
       expect(acceptsTyping('discountPercentage')).toBe(true);
       expect(acceptsTyping('expressUpgradesPerMonth')).toBe(true);
       expect(fixture.debugElement.query(By.css('[data-spec-benefits-locked]'))).toBeNull();
+    });
+
+    it('renders the code a plan keeps for good as an input nobody can type in', () => {
+      facade.plan.set(detail);
+      fixture.detectChanges();
+
+      expect(component.form.controls.code.disabled).toBe(true);
+      expect(inputFor('code').value).toBe('PLUS_MONTHLY');
+      expect(acceptsTyping('code')).toBe(false);
+      expect(acceptsTyping('name')).toBe(true);
     });
 
     it('shows the trial length the plan carries, not the new-plan default, and sends it back', () => {

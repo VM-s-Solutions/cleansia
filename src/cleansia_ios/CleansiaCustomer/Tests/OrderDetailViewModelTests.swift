@@ -19,6 +19,7 @@ final class OrderDetailViewModelTests: XCTestCase {
         marketStore: MarketStore? = nil,
         paymentIntent: FakePaymentIntentClient = FakePaymentIntentClient(),
         consent: FakeConsentStatusClient = FakeConsentStatusClient(),
+        eventBus: OrderEventBus = OrderEventBus(),
         pollInterval: TimeInterval = 60,
         onCreditMoved: @escaping () -> Void = {}
     ) -> OrderDetailViewModel {
@@ -30,7 +31,7 @@ final class OrderDetailViewModelTests: XCTestCase {
             membershipRepository: MembershipRepository(client: membershipClient),
             marketStore: marketStore ?? MarketFixtures.store().0,
             snackbar: SnackbarController(),
-            eventBus: OrderEventBus(),
+            eventBus: eventBus,
             paymentIntentClient: paymentIntent,
             consentClient: consent,
             liveActivity: NoopLiveActivitySync(),

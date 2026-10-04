@@ -31,6 +31,7 @@ struct LiveRecurringBookingClient: RecurringBookingClient {
             startsOn: input.startsOn,
             endsOn: nil,
             preferredEmployeeId: input.preferredEmployeeId,
+            termsAccepted: input.termsAccepted,
             dirtinessLevel: input.dirtiness.wire,
             earlyPerformanceRequested: input.earlyPerformanceRequested ? true : nil
         )

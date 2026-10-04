@@ -1297,6 +1297,7 @@
     <string name="loyalty_activity_view_all">Zobraziť celú aktivitu</string>
     <string name="loyalty_tx_earn_order">+%1$d b. — Upratovanie č. %2$s</string>
     <string name="loyalty_tx_revoke_order">%1$d b. — Zrušené č. %2$s</string>
+    <string name="loyalty_tx_refund_order">%1$d b. — Vrátené č. %2$s</string>
     <string name="loyalty_tx_referral">+%1$d b. — Bonus za odporúčanie</string>
     <string name="loyalty_tx_manual">%1$d b. — Manuálna úprava</string>
     <string name="loyalty_empty_activity">Zatiaľ žiadna aktivita. Objednajte si prvé upratovanie a začnite zbierať body.</string>

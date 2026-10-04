@@ -133,3 +133,80 @@ describe('CleansiaBaseFormInputComponent — formControlName inside a nested gro
     expect(blocks[1].querySelector('.cleansia-error-message-container')).not.toBeNull();
   });
 });
+
+@Component({
+  standalone: true,
+  imports: [ReactiveFormsModule, CleansiaTextareaComponent, CleansiaTextInputComponent],
+  template: `
+    <form [formGroup]="form">
+      <cleansia-text-input data-spec="code" label="Code" formControlName="code" />
+      <cleansia-textarea data-spec="notes" label="Notes" formControlName="notes" />
+      <cleansia-text-input data-spec="name" label="Name" formControlName="name" [disabled]="locked()" />
+    </form>
+    <cleansia-text-input data-spec="standalone" label="Standalone" [formControl]="standalone" />
+  `,
+})
+class DisabledInCodeHostComponent {
+  readonly locked = signal(false);
+  readonly form = new FormGroup({
+    code: new FormControl('PLUS'),
+    notes: new FormControl({ value: 'Shown, never sent', disabled: true }),
+    name: new FormControl('Plus'),
+  });
+  readonly standalone = new FormControl('x');
+}
+
+describe('CleansiaBaseFormInputComponent — a control disabled in code', () => {
+  let fixture: ComponentFixture<DisabledInCodeHostComponent>;
+  let host: DisabledInCodeHostComponent;
+
+  beforeEach(() => {
+    TestBed.configureTestingModule({
+      imports: [DisabledInCodeHostComponent, TranslateModule.forRoot()],
+    });
+    fixture = TestBed.createComponent(DisabledInCodeHostComponent);
+    host = fixture.componentInstance;
+    fixture.detectChanges();
+  });
+
+  function field(spec: string): HTMLInputElement | HTMLTextAreaElement {
+    return (fixture.nativeElement as HTMLElement).querySelector(
+      `[data-spec="${spec}"] input, [data-spec="${spec}"] textarea`
+    ) as HTMLInputElement | HTMLTextAreaElement;
+  }
+
+  it('renders the input disabled once the control is disabled, and editable once enabled again', () => {
+    expect(field('code').disabled).toBe(false);
+
+    host.form.controls.code.disable({ emitEvent: false });
+    fixture.detectChanges();
+    expect(field('code').disabled).toBe(true);
+
+    host.form.controls.code.enable({ emitEvent: false });
+    fixture.detectChanges();
+    expect(field('code').disabled).toBe(false);
+  });
+
+  it('renders a control created disabled as disabled from the first render', () => {
+    expect(field('notes').disabled).toBe(true);
+  });
+
+  it('renders a disabled standalone form control as disabled', () => {
+    host.standalone.disable();
+    fixture.detectChanges();
+
+    expect(field('standalone').disabled).toBe(true);
+  });
+
+  it('still disables the input and its control through the disabled input', () => {
+    host.locked.set(true);
+    fixture.detectChanges();
+    expect(field('name').disabled).toBe(true);
+    expect(host.form.controls.name.disabled).toBe(true);
+
+    host.locked.set(false);
+    fixture.detectChanges();
+    expect(field('name').disabled).toBe(false);
+    expect(host.form.controls.name.enabled).toBe(true);
+  });
+});

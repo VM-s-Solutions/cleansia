@@ -158,6 +158,18 @@ final class LoyaltyPresentationTests: XCTestCase {
 
         let manual = LoyaltyFixtures.activityItem(points: 25, source: 4, orderNumber: nil)
         XCTAssertEqual(LoyaltyPresentation.transactionKind(manual), .manual(points: 25))
+
+        let manualRevoke = LoyaltyFixtures.activityItem(points: -25, source: 6, orderNumber: nil)
+        XCTAssertEqual(LoyaltyPresentation.transactionKind(manualRevoke), .manual(points: -25))
+    }
+
+    /// A refund's clawback is a Revoke like a cancellation's, so only its source tells them apart — and it was read
+    /// as a manual adjustment, the fallback for a source this app did not know.
+    func testARefundsClawbackIsLabelledARefundNotACancellationOrAnAdjustment() {
+        let clawback = LoyaltyFixtures.activityItem(points: -37, source: 5, orderNumber: "1042")
+
+        XCTAssertEqual(clawback.type, 2, "the fixture is a Revoke row, as the server writes it")
+        XCTAssertEqual(LoyaltyPresentation.transactionKind(clawback), .refundOrder(points: -37, order: "1042"))
     }
 
     func testTransactionOrderRefFallsBackToDash() {

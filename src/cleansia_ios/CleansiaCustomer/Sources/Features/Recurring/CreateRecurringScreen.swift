@@ -32,6 +32,7 @@ struct CreateRecurringScreen: View {
             orderClient: LiveOrderClient(),
             quoteClient: LiveQuoteClient(),
             cleanersClient: LiveServingCleanersClient(),
+            consentClient: LiveConsentStatusClient(),
             snackbar: snackbar
         ))
         self.savedAddressRepository = savedAddressRepository
@@ -100,6 +101,10 @@ struct CreateRecurringScreen: View {
                     onSelect: vm.setPreferredEmployeeId
                 )
 
+                if vm.termsAsked {
+                    termsRow
+                }
+
                 if !vm.isEditing {
                     earlyPerformanceRow
                 }
@@ -148,6 +153,14 @@ struct CreateRecurringScreen: View {
             isPresented: $showAddressManager,
             onDismiss: { Task { await vm.reloadAddresses() } },
             content: { addressManager }
+        )
+    }
+
+    private var termsRow: some View {
+        CleansiaConsentCheckbox(
+            checked: Binding(get: { vm.formState.termsAccepted }, set: vm.setTermsAccepted),
+            markdown: L10n.Auth.acceptTerms,
+            toggleAccessibilityLabel: L10n.Auth.acceptTermsToggle
         )
     }
 

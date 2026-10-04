@@ -22,6 +22,13 @@ public interface ILoyaltyService
     /// for a completed order. No-op if the user is anonymous, the points
     /// would be zero, or a prior earn ledger entry exists for this order.
     /// Called from <c>CompleteOrder.Handler</c>.
+    /// <para>
+    /// Money the order gave back before it completed — card refunds, their credit legs, dispute
+    /// settlements in credit — takes back its <see cref="RevokeForRefundAsync"/> share at once:
+    /// <c>floor(earn × returned / order.TotalPrice)</c>, written as an
+    /// <see cref="LoyaltyEarnSource.OrderPartiallyRefunded"/> row beside the earn, so a refund before
+    /// completion and one after take back what the same two refunds would after it.
+    /// </para>
     /// </summary>
     Task GrantForCompletedOrderAsync(string orderId, CancellationToken cancellationToken);
 

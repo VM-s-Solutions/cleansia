@@ -166,6 +166,9 @@ export class CreateRecurringWizardComponent implements OnInit {
     // with an address select that could never fill.
     this.facade.ensureAddresses();
     this.facade.loadServingCleaners();
+    if (!this.route.snapshot.paramMap.get('id')) {
+      this.facade.loadConsentState();
+    }
 
     const prefillFlag = this.route.snapshot.queryParamMap.get('prefill');
     if (prefillFlag === 'true' && this.isBrowser) {
@@ -215,6 +218,7 @@ export class CreateRecurringWizardComponent implements OnInit {
       address: 'recurring_booking.address_label',
       startsOn: 'recurring_booking.starts_on_label',
       payment: 'recurring_booking.payment_label',
+      terms: 'recurring_booking.terms_label',
       earlyPerformance: 'recurring_booking.early_performance_label',
     };
     return this.facade

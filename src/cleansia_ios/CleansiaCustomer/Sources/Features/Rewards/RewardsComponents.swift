@@ -12,6 +12,7 @@ struct RewardsActivityRow: View {
         switch LoyaltyPresentation.transactionKind(item) {
         case let .earnOrder(points, order): L10n.Rewards.txEarnOrder(points, order)
         case let .revokeOrder(points, order): L10n.Rewards.txRevokeOrder(points, order)
+        case let .refundOrder(points, order): L10n.Rewards.txRefundOrder(points, order)
         case let .referral(points): L10n.Rewards.txReferral(points)
         case let .manual(points): L10n.Rewards.txManual(points)
         }

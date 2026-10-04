@@ -12,9 +12,11 @@ point per 10 CZK today. Every refund takes back the same share of the points tha
 returned of the price — card and credit, gross — whatever the divisor is by then (owner rulings
 2026-10-03). A partial refund takes its share. A full refund takes everything the earn still holds. A
 dispute settlement takes the share of what it returned, on the card or as credit
-([Refunds](/flows/cancellation-refund-dispute#refund)). The divisor is authored per currency on the
-admin currency form; a currency with no divisor earns nothing and logs. It is not scaled from another
-currency's rate.
+([Refunds](/flows/cancellation-refund-dispute#refund)). Money given back before the order completes
+takes its share at completion (since 2026-10-04). Completion writes the earn on the whole price and,
+beside it, a refund row of `floor(earned × returned / TotalPrice)` for everything returned so far.
+The divisor is authored per currency on the admin currency form; a currency with no divisor earns
+nothing and logs. It is not scaled from another currency's rate.
 
 **Two writes for one customer at the same moment both land** (owner decision 2026-10-03). A loyalty
 write loads the account, moves `LifetimePoints` in memory and saves the new total. When two writes
@@ -42,6 +44,22 @@ considered and not chosen. It would need its own transaction on every write path
 the ledger insert, and it would still have to recompute the tier from the stored total.
 `LoyaltyAccountConcurrentWriteTests` runs the races on a real Postgres.
 
+**The tier-upgrade notice is decided after the replay** (since 2026-10-04). A completion grant used to
+queue `loyalty.tier_upgrade` from its own read of the account, so a replay could leave it naming a tier
+the account never reached, or missing when the replay was what crossed a threshold. The grant now
+registers a step that runs after the save (`ILoyaltyAccountRepository.AfterSave`).
+`CleansiaDbContext.CommitAsync` notes the tier stored in the database before each save attempt. After
+the attempt that lands, it runs the step with that tier and saves what the step queued, the feed row
+and the push's outbox row, in the same transaction. The step announces only a promotion over that
+tier, and names the tier saved. A new account is compared with the tier it was created at. With
+Silver at 500 points and Gold at 2 000, and the grant reading an account at 450:
+
+| The grant | What commits first | After the replay | Notice for the grant |
+|---|---|---|---|
+| +100, Silver on its own read | a 200-point clawback (250) | 350, still Bronze | none |
+| +30, Bronze on its own read | another grant of 40 (490) | 520 | Silver |
+| +100, Silver on its own read | a grant of 1 500 (1 950), announced as Silver | 2 050 | Gold |
+
 **A market cannot open without one.** An order completed while its currency has no divisor earns
 nothing, permanently: the earn returns before any ledger row is written and nothing re-fires it when
 the divisor is set later, so the only remedy is a manual grant per affected customer. That is why the
@@ -51,6 +69,24 @@ as `currency.loyalty_divisor_missing`. A currency that is still switched off may
 because nothing can be booked in it. The "earns nothing and logs" branch remains as the fail-closed
 answer for a row that reaches that state anyway.
 → [Money constants](/product/business-rules#money-constants)
+
+**A clawback row reads as a refund** (since 2026-10-04). Every refund's clawback, whether partial, full
+or a dispute's, and the share taken at completion, is a `Revoke` row with the source
+`OrderPartiallyRefunded`. The points activity on the web, Android and iOS now labels a row by its
+source alone:
+
+| Source | Label |
+|---|---|
+| `OrderCompleted` | the cleaning completed |
+| `OrderCancelled` | the booking cancelled |
+| `OrderPartiallyRefunded` | *Refunded* (Android and iOS: *Refunded #N*) |
+| `Referral` | the referral bonus |
+| an administrator's grant or revoke, or a source the client does not know | a manual adjustment |
+
+Until then the web checked the row's type first and read every revoke as a cancelled booking,
+including a refund or an administrator's revoke. Android and iOS did not know the source and read a
+refund as a manual adjustment. The web label was *Partly refunded*; a full refund writes the same
+source, so it now says *Refunded* in all five languages.
 
 ## Points are not credit {#points-vs-credit}
 

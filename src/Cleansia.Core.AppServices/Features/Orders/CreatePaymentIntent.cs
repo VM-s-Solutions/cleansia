@@ -53,7 +53,9 @@ public class CreatePaymentIntent
                 .MustAsync(BeCardPaymentAsync)
                 .WithMessage(BusinessErrorMessage.InvalidEnumValue)
                 .MustAsync(NotAlreadyPaidAsync)
-                .WithMessage(BusinessErrorMessage.OrderPaymentAlreadyPaid);
+                .WithMessage(BusinessErrorMessage.OrderPaymentAlreadyPaid)
+                .MustAsync(NotAwaitingCustomerConfirmationAsync)
+                .WithMessage(BusinessErrorMessage.InvalidOrderStatusTransition);
         }
 
         private async Task<bool> BeOwnedByCallerAsync(string orderId, CancellationToken cancellationToken)
@@ -72,6 +74,14 @@ public class CreatePaymentIntent
         {
             var order = await LoadOwnOrderAsync(orderId, cancellationToken);
             return order != null && order.PaymentStatus != PaymentStatus.Paid;
+        }
+
+        // An occurrence is paid once the customer confirms it, and ConfirmRecurringOrder is where the terms in
+        // force are asked for; paying here first would step around that.
+        private async Task<bool> NotAwaitingCustomerConfirmationAsync(string orderId, CancellationToken cancellationToken)
+        {
+            var order = await LoadOwnOrderAsync(orderId, cancellationToken);
+            return order != null && (order.RecurringTemplateId == null || order.CustomerConfirmedAt != null);
         }
 
         // The caller's own order in whichever operating company the market put it (S8: pinned by the
@@ -98,7 +108,7 @@ public class CreatePaymentIntent
     {
         public async Task<BusinessResult<Response>> Handle(Command command, CancellationToken cancellationToken)
         {
-            // Ownership + payment-type + not-paid enforced by Validator.
+            // Ownership, payment type, not paid and a confirmed occurrence are enforced by the Validator.
             var order = (await orderRepository.GetByIdForOwnerAsync(
                 command.OrderId, userSessionProvider.GetUserId()!, cancellationToken))!;
 

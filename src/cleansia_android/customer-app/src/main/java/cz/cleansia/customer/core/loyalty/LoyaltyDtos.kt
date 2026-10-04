@@ -68,7 +68,7 @@ data class LoyaltyActivityItemDto(
     val type: Int = 1,
     /** Signed — positive on Earn, negative on Revoke. */
     val points: Int = 0,
-    /** 1 = OrderCompleted, 2 = OrderCancelled, 3 = Referral, 4 = ManualGrant. */
+    /** 1 = OrderCompleted, 2 = OrderCancelled, 3 = Referral, 4 = ManualGrant, 5 = OrderPartiallyRefunded, 6 = ManualRevoke. */
     val source: Int = 1,
     val orderId: String? = null,
     val orderDisplayNumber: String? = null,
@@ -129,7 +129,9 @@ enum class LoyaltyEarnSource(val value: Int) {
     OrderCompleted(1),
     OrderCancelled(2),
     Referral(3),
-    ManualGrant(4);
+    ManualGrant(4),
+    OrderPartiallyRefunded(5),
+    ManualRevoke(6);
 
     companion object {
         fun fromValue(v: Int?): LoyaltyEarnSource? = entries.firstOrNull { it.value == v }

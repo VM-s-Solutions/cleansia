@@ -1443,7 +1443,7 @@
       "tx": {
         "completed": "Upratovanie dokončené",
         "cancelled": "Objednávka zrušená",
-        "refunded": "Čiastočne vrátené",
+        "refunded": "Vrátené",
         "referral": "Bonus za odporúčanie",
         "manual": "Ručná úprava"
       }
@@ -2301,6 +2301,7 @@
     "cash_unchecked": "Nepodarilo sa overiť, či sa dá tento rozvrh platiť v hotovosti. Uložte ho o chvíľu znova alebo zvoľte kartu.",
     "payment_placeholder": "Zvoľte spôsob platby",
     "error_payment": "Zvoľte, ako sa bude rozvrh platiť.",
+    "terms_label": "Súhlas s podmienkami",
     "early_performance_label": "Žiadosť o začatie v lehote na odstúpenie",
     "error_early_performance": "Potvrďte, že chcete, aby upratovania začínali v lehote na odstúpenie.",
     "cash_change_title": "Tento rozvrh sa už nedá platiť v hotovosti",

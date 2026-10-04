@@ -27,6 +27,7 @@ final class CreateRecurringViewModelTests: XCTestCase {
             orderClient: orderClient,
             quoteClient: FakeQuoteClient(),
             cleanersClient: FakeServingCleanersClient(),
+            consentClient: FakeConsentStatusClient(granted: [.termsOfService, .privacyPolicy]),
             snackbar: snackbar ?? SnackbarController(),
             scheduler: TestScheduler.dispatch.eraseToAnyScheduler()
         )

@@ -1443,7 +1443,7 @@
       "tx": {
         "completed": "Cleaning completed",
         "cancelled": "Booking cancelled",
-        "refunded": "Partly refunded",
+        "refunded": "Refunded",
         "referral": "Referral bonus",
         "manual": "Manual adjustment"
       }
@@ -2301,6 +2301,7 @@
     "cash_unchecked": "We couldn't confirm whether this schedule can be paid in cash. Save it again in a moment, or choose card.",
     "payment_placeholder": "Choose how to pay",
     "error_payment": "Choose how the schedule is paid.",
+    "terms_label": "Agreement to the terms",
     "early_performance_label": "Request to start within the withdrawal period",
     "error_early_performance": "Confirm that you want the cleanings to start within the withdrawal period.",
     "cash_change_title": "This schedule can no longer be paid in cash",

@@ -1297,6 +1297,7 @@
     <string name="loyalty_activity_view_all">Уся активність</string>
     <string name="loyalty_tx_earn_order">+%1$d б. — Прибирання №%2$s</string>
     <string name="loyalty_tx_revoke_order">%1$d б. — Скасовано №%2$s</string>
+    <string name="loyalty_tx_refund_order">%1$d б. — Повернення №%2$s</string>
     <string name="loyalty_tx_referral">+%1$d б. — Бонус за рекомендацію</string>
     <string name="loyalty_tx_manual">%1$d б. — Ручне коригування</string>
     <string name="loyalty_empty_activity">Поки немає активності. Замовте перше прибирання, щоб почати заробляти.</string>

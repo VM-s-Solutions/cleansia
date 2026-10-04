@@ -7,6 +7,7 @@ using Cleansia.Core.Domain.Notifications;
 using Cleansia.Core.Domain.Orders;
 using Cleansia.Core.Domain.Repositories;
 using Cleansia.Core.AppServices.Services;
+using Cleansia.Core.Queue.Abstractions;
 using Cleansia.Infra.Common.Validations;
 using FluentValidation;
 using Microsoft.EntityFrameworkCore;
@@ -52,6 +53,7 @@ public class AdminRefundOrder
         ILoyaltyService loyaltyService,
         IUserSessionProvider userSessionProvider,
         INotificationProducer notificationProducer,
+        IOutboxMessageRepository outboxMessageRepository,
         IAuditContext auditContext
     ) : ICommandHandler<Command, Response>
     {
@@ -74,10 +76,21 @@ public class AdminRefundOrder
                     BusinessErrorMessage.OrderNotFound));
             }
 
+            var refundRequest = new RefundRequest(
+                order.Id,
+                order.TotalPrice,
+                RefundReason.AdminDiscretion,
+                adminId,
+                RefundRequestId: FullRefundRequestId);
+
             // Refund-only is a card money-out on a paid order. The lifecycle status is left untouched —
-            // cancellation is a separate command (AdminCancelOrder).
+            // cancellation is a separate command (AdminCancelOrder). Its own settled full refund passes
+            // again: the seam answers it with that refund and moves nothing, and it is the only way back to
+            // a clawback that failed after the refund had already settled and flipped the order to Refunded.
             if (order.PaymentType != PaymentType.Card
-                || order.PaymentStatus != PaymentStatus.Paid
+                || (order.PaymentStatus != PaymentStatus.Paid
+                    && await refundRepository.GetByRefundKeyAsync(RefundService.BuildRefundKey(refundRequest), cancellationToken)
+                        is not { Status: RefundStatus.Succeeded })
                 || !order.HasRefundableChargeSurface)
             {
                 return BusinessResult.Failure<Response>(new Error(
@@ -88,14 +101,7 @@ public class AdminRefundOrder
             var consumedBefore = await refundRepository.GetSucceededRefundTotalForOrderAsync(
                 order.Id, cancellationToken);
 
-            var refund = await refundService.IssueRefundAsync(
-                new RefundRequest(
-                    order.Id,
-                    order.TotalPrice,
-                    RefundReason.AdminDiscretion,
-                    adminId,
-                    RefundRequestId: FullRefundRequestId),
-                cancellationToken);
+            var refund = await refundService.IssueRefundAsync(refundRequest, cancellationToken);
 
             if (refund.IsFailure)
             {
@@ -119,7 +125,14 @@ public class AdminRefundOrder
                 new RefundSnapshot(order.Id, order.TotalPrice, consumedBefore, order.PaymentStatus),
                 new RefundSnapshot(order.Id, order.TotalPrice, consumed, paymentStatus));
 
-            if (!string.IsNullOrEmpty(order.UserId))
+            // Asked of the outbox, not of whether the seam resolved to an earlier refund: the notice is staged
+            // with the clawback, so the clawback failure a re-run exists for lost the notice with it. A notice
+            // that did commit is not queued again; a second row on its key would fail the commit.
+            if (!string.IsNullOrEmpty(order.UserId)
+                && await outboxMessageRepository.GetByQueueAndKeyAsync(
+                    QueueNames.NotificationsDispatch,
+                    MessageKeys.Push(order.UserId, NotificationEventCatalog.OrderRefunded, result.RefundId),
+                    cancellationToken) is null)
             {
                 await notificationProducer.NotifyAsync(
                     order.UserId,

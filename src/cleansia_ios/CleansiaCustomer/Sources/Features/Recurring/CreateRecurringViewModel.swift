@@ -19,6 +19,7 @@ struct CreateRecurringFormState: Equatable {
     var preferredEmployeeId: String?
     /// Asked of a new schedule only; the server copies the one act onto every occurrence.
     var earlyPerformanceRequested = false
+    var termsAccepted = false
 
     static let totalSteps = 3
 
@@ -143,10 +144,14 @@ final class CreateRecurringViewModel: ViewModel {
     @Published private(set) var servingCleaners: [ServingCleaner] = []
     /// A tap that would book a service twice, waiting for the customer to confirm or cancel it.
     @Published internal(set) var twiceBookedPick: TwiceBookedPick?
+    /// Both written in CreateRecurringViewModel+Terms.swift; the latch once a create is refused over the terms.
+    @Published internal(set) var termsAsked = true
+    internal(set) var termsRefused = false
 
     let sourceOrderId: String?
     let editing: RecurringTemplate?
     let events = PassthroughSubject<CreateRecurringEvent, Never>()
+    let consentClient: ConsentStatusClient
 
     private let repository: RecurringBookingRepository
     private let catalogClient: CatalogClient
@@ -172,6 +177,7 @@ final class CreateRecurringViewModel: ViewModel {
         orderClient: OrderClient,
         quoteClient: QuoteClient,
         cleanersClient: ServingCleanersClient,
+        consentClient: ConsentStatusClient,
         snackbar: SnackbarController,
         quoteDebounce: DispatchQueue.SchedulerTimeType.Stride = .milliseconds(400),
         scheduler: AnySchedulerOf<DispatchQueue> = .main
@@ -184,12 +190,14 @@ final class CreateRecurringViewModel: ViewModel {
         self.orderClient = orderClient
         self.quoteClient = quoteClient
         self.cleanersClient = cleanersClient
+        self.consentClient = consentClient
         self.snackbar = snackbar
         self.quoteDebounce = quoteDebounce
         self.scheduler = scheduler
         super.init()
         if let editing {
             formState = CreateRecurringFormState(editing)
+            termsAsked = false
         }
         startMarketWatcher()
         startQuoteWatcher()
@@ -202,7 +210,7 @@ final class CreateRecurringViewModel: ViewModel {
     /// A schedule is only ever submitted against a catalogue the customer could see: a prefilled
     /// selection that no market has vetted yet is not a booking.
     var isValid: Bool {
-        formState.isValid && isCatalogLoaded && (isEditing || formState.earlyPerformanceRequested)
+        formState.isValid && isCatalogLoaded && (isEditing || formState.earlyPerformanceRequested) && termsSatisfied
     }
 
     private var isCatalogLoaded: Bool {
@@ -252,6 +260,7 @@ final class CreateRecurringViewModel: ViewModel {
     /// and the prefill after it so the order's picks are pruned against that catalogue. A template being
     /// edited is pruned the same way: what its market no longer lists would be refused at submit.
     func load() async {
+        async let terms: Void = readTermsConsent()
         if case let .success(addresses) = await addressClient.getMine() {
             apply(addresses)
         }
@@ -265,6 +274,7 @@ final class CreateRecurringViewModel: ViewModel {
         if case let .success(cleaners) = await cleanersClient.myServingCleaners() {
             servingCleaners = cleaners
         }
+        await terms
     }
 
     func canAdvance(step: Int) -> Bool {
@@ -505,6 +515,7 @@ final class CreateRecurringViewModel: ViewModel {
             if isEditing, error.code == Self.preferredCleanerRefusalCode {
                 preferredCleanerRefused = true
             }
+            showTermsIfRefused(error)
             submitState = .error(isEditing ? L10n.Recurring.editFailed : L10n.Recurring.createFailed)
             return false
         }
@@ -542,7 +553,8 @@ final class CreateRecurringViewModel: ViewModel {
               RecurringTime.bookableTimes.contains(state.timeOfDay),
               let paymentType = state.paymentType,
               let dirtiness = state.dirtiness,
-              isEditing || state.earlyPerformanceRequested
+              isEditing || state.earlyPerformanceRequested,
+              termsSatisfied
         else { return nil }
         return CreateRecurringInput(
             frequency: state.frequency.rawValue,
@@ -557,6 +569,7 @@ final class CreateRecurringViewModel: ViewModel {
             paymentType: paymentType,
             startsOn: startsOn,
             preferredEmployeeId: state.preferredEmployeeId,
+            termsAccepted: termsAssertion,
             earlyPerformanceRequested: state.earlyPerformanceRequested
         )
     }

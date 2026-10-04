@@ -203,6 +203,13 @@ describe('CreateRecurringWizardComponent — the picked pick', () => {
     expect(whenPicked('.cl-rec__pick-tick')).toContain('color: var(--cl-heading);');
   });
 
+  // The cadence, day, rooms and bathrooms chips share the slab; white on it measured 1.7 in dark.
+  it('inks a picked chip with the card ground too', () => {
+    const picked = rule('.cl-rec__chip').match(/&--on \{([^}]*)\}/)?.[1] ?? '';
+    expect(picked).toContain('background: var(--cl-heading);');
+    expect(picked).toContain('color: var(--cl-surface);');
+  });
+
   // `:hover` outranks `--on`, so an unqualified hover turned a picked pick's border pale.
   it('keeps the picked border under the pointer', () => {
     expect(rule('.cl-rec__pick')).toContain('&:hover:not(.cl-rec__pick--on) {');

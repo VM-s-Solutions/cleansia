@@ -14,6 +14,8 @@ import {
 import { SnackbarService } from '@cleansia/services';
 import { provideMockStore } from '@ngrx/store/testing';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
+import { readFileSync } from 'fs';
+import { join } from 'path';
 import { ConfirmationService } from 'primeng/api';
 import { RecurringBookingsFacade } from '../recurring-bookings.facade';
 import { RecurringBookingsListComponent } from './recurring-bookings-list.component';
@@ -187,5 +189,19 @@ describe('RecurringBookingsListComponent — its own facade', () => {
     }).compileComponents();
 
     expect(() => TestBed.createComponent(RecurringBookingsListComponent)).not.toThrow();
+  });
+});
+
+// jsdom loads no stylesheet, so this reads the badge's rule, which is declared an input of this test
+// target. The badge is --cl-heading: Sky700 light, Sky300 dark; white on Sky300 measured 1.7.
+describe('RecurringBookingsListComponent — the Plus badge on the paywall', () => {
+  it('inks the badge with the card ground, which flips with the slab', () => {
+    const scss = readFileSync(
+      join(__dirname, '../../../../../shared/assets/src/styles/pages/cleansia-customer/_recurring-bookings.scss'),
+      'utf8',
+    );
+    const badge = scss.match(/^\.cl-rec__gate-badge \{[^}]*\}/m)?.[0] ?? '';
+    expect(badge).toContain('background: var(--cl-heading);');
+    expect(badge).toContain('color: var(--cl-surface);');
   });
 });

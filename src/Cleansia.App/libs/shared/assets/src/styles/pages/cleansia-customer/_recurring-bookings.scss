@@ -324,7 +324,9 @@
   color: var(--cl-muted);
 }
 
-// The paywall is the empty card with the product's own badge on it.
+// The paywall is the empty card with the product's own badge on it. Its ink is the card ground,
+// which flips with the heading slab: white on Sky700 (5.9), near-black on Sky300 (10.4). White on
+// the dark theme's Sky300 measured 1.7.
 .cl-rec__gate-badge {
   display: inline-flex;
   align-items: center;
@@ -336,7 +338,7 @@
   border: 1px solid var(--cl-heading);
   font-size: 0.8125rem;
   font-weight: 700;
-  color: #ffffff;
+  color: var(--cl-surface);
 }
 
 // ---- The form ---------------------------------------------------------------------------
@@ -661,10 +663,11 @@
     background: var(--cl-tint);
   }
 
+  // Inked with the card ground, as a picked pick is: white on the dark theme's Sky300 measured 1.7.
   &--on {
     background: var(--cl-heading);
     border-color: var(--cl-heading);
-    color: #ffffff;
+    color: var(--cl-surface);
   }
 
   &--grow {

@@ -1849,8 +1849,9 @@ their own, which can include one a chosen package holds, and its *Add* asks the 
 
 The marker matches the package's `IncludedServices[].ServiceId` (`PackageServiceSummary`), which the
 package list already sent; a client given an item without it still prints the item, but neither marks
-that service nor asks about it. Android and iOS word it alike in all five languages; the web words it the same, except that
-its Slovak calls a package *balík*, as the rest of its wizard does, where the apps say *balíček*.
+that service nor asks about it. The web, Android and iOS word it alike in all five languages. Slovak
+calls a package *balík* on every client, here and everywhere else, and Czech *balíček* (owner ruling
+2026-10-04); until then the apps' Slovak, and older strings on the web, said *balíček* too.
 
 ## Discounts, and the 12 % cap {#discount-cap}
 

@@ -537,6 +537,14 @@ need backfilling.
 
 ### Changed
 
+- **Customer, cleaner and admin, in Slovak — a package is a *balík*.** The apps called a package
+  *balíček* in Slovak: on Home, in the booking and its *In your package* questions, on an order, in a
+  schedule and in the package errors, and in the cleaner's app's package error. The customer, cleaner
+  and admin websites said *balíček* in their older Slovak strings, often on the same screen as
+  *Balíky*. Slovak now says *balík* (*balíky*, *balíkov*) everywhere the apps and the websites draw;
+  Czech keeps *balíček*. The Slovak terms of service still say *balíčky*: a legal text changes only
+  with a new version. (Owner ruling 2026-10-04.)
+
 - **Customer and cleaner — receipts, invoices and the legal texts name support@cleansia.cz.** The
   company's own e-mail is now support@cleansia.cz, the address the apps, the web and the e-mails
   already give for support. The terms, the privacy policy, the complaints procedure and the cleaner's

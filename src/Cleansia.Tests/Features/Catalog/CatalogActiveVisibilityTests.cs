@@ -1,9 +1,12 @@
+using Cleansia.Core.AppServices.Common;
+using Cleansia.Core.AppServices.Features.Bookings;
 using Cleansia.Core.AppServices.Features.Orders;
 using Cleansia.Core.AppServices.Features.Packages;
 using Cleansia.Core.AppServices.Features.Services;
 using Cleansia.Core.AppServices.Mappers;
 using Cleansia.Core.AppServices.Services;
 using Cleansia.Core.AppServices.Services.Interfaces;
+using Cleansia.Core.Domain.Bookings;
 using Cleansia.Core.Domain.EmployeePayroll;
 using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Internationalization;
@@ -29,6 +32,8 @@ namespace Cleansia.Tests.Features.Catalog;
 /// (the booking wizard catalog) while the row itself survives, and the admin list can target it
 /// via the IsActive filter (S10 — no global IsActive filter, admins see all by default). A deactivated
 /// service inside an ACTIVE package stays listed in that package, because an order with it books it.
+/// A customer cannot select a deactivated entry by id either, while a schedule that already holds one
+/// keeps booking it.
 /// </summary>
 public sealed class CatalogActiveVisibilityTests : IDisposable
 {
@@ -225,6 +230,90 @@ public sealed class CatalogActiveVisibilityTests : IDisposable
         }
     }
 
+    /// <summary>
+    /// The row a deactivation leaves behind still EXISTS, which is why the selection gates ask for an
+    /// active one: existence alone let a stale client select what no catalogue shows any more.
+    /// </summary>
+    [Fact]
+    public async Task ExistActiveWithIds_RefusesARetiredEntry_ThatExistWithIdsStillFinds()
+    {
+        var (activeServiceId, retiredServiceId, activePackageId, retiredPackageId) = await SeedAsync();
+
+        await using var ctx = NewContext();
+        var services = new ServiceRepository(ctx);
+        var packages = new PackageRepository(ctx);
+
+        Assert.True(await services.ExistWithIdsAsync([retiredServiceId], CancellationToken.None));
+        Assert.False(await services.ExistActiveWithIdsAsync([retiredServiceId], CancellationToken.None));
+        Assert.False(await services.ExistActiveWithIdsAsync([activeServiceId, retiredServiceId], CancellationToken.None));
+        Assert.True(await services.ExistActiveWithIdsAsync([activeServiceId, activeServiceId], CancellationToken.None));
+        Assert.False(await services.ExistActiveWithIdsAsync(["never-existed"], CancellationToken.None));
+        Assert.True(await services.ExistActiveWithIdsAsync([], CancellationToken.None));
+
+        Assert.True(await packages.ExistWithIdsAsync([retiredPackageId], CancellationToken.None));
+        Assert.False(await packages.ExistActiveWithIdsAsync([retiredPackageId], CancellationToken.None));
+        Assert.True(await packages.ExistActiveWithIdsAsync([activePackageId], CancellationToken.None));
+    }
+
+    /// <summary>
+    /// A schedule is a new booking: it may select only what CreateOrder accepts, with the same codes. It
+    /// used to take any id at all, a deactivated one included, and book it every week.
+    /// </summary>
+    [Fact]
+    public async Task A_Schedule_Cannot_Select_A_Retired_Service_Or_Package_By_Id()
+    {
+        var (activeServiceId, retiredServiceId, activePackageId, retiredPackageId) = await SeedAsync();
+
+        await using var ctx = NewContext();
+        var validator = ScheduleValidatorOver(ctx);
+
+        var retired = await validator.ValidateAsync(Schedule([retiredServiceId], [retiredPackageId]));
+        var active = await validator.ValidateAsync(Schedule([activeServiceId], [activePackageId]));
+
+        Assert.Equal(
+            new[]
+            {
+                (nameof(CreateRecurringBooking.Command.SelectedPackageIds), BusinessErrorMessage.InvalidSelectedPackage),
+                (nameof(CreateRecurringBooking.Command.SelectedServiceIds), BusinessErrorMessage.InvalidSelectedServices),
+            },
+            retired.Errors.Select(e => (e.PropertyName, e.ErrorMessage)).Order());
+        Assert.True(active.IsValid, string.Join("; ", active.Errors.Select(e => e.ErrorMessage)));
+    }
+
+    /// <summary>
+    /// The line's other side: the materialiser hands a template's ids to the factory without asking the
+    /// catalogue again, so a schedule created before the deactivation keeps booking the entry.
+    /// </summary>
+    [Fact]
+    public async Task The_Factory_Still_Books_A_Retired_Service_A_Schedule_Already_Holds()
+    {
+        var (_, retiredServiceId, _, _) = await SeedAsync();
+
+        await using var ctx = NewContext();
+        var order = await OrderFactoryOver(ctx).CreateAsync(
+            new CreateOrderInput(
+                UserId: null,
+                CustomerName: "Test Customer",
+                CustomerEmail: "customer@example.com",
+                CustomerPhone: "+420123456789",
+                Address: AddressMockFactory.Generate(),
+                Rooms: 2,
+                Bathrooms: 1,
+                SelectedExtraSlugs: [],
+                CleaningDate: DateTime.UtcNow.AddDays(3),
+                PaymentType: PaymentType.Card,
+                Currency: await ctx.Currencies.SingleAsync(),
+                SelectedServiceIds: [retiredServiceId],
+                SelectedPackageIds: [],
+                RawSubtotal: 800m,
+                NowUtc: DateTime.UtcNow,
+                ReservedExpressWaiver: null,
+                OperatorTenantId: null),
+            CancellationToken.None);
+
+        Assert.Equal(retiredServiceId, Assert.Single(order.SelectedServices).ServiceId);
+    }
+
     [Fact]
     public async Task AdminServiceFilter_IsActiveFalse_ListsOnlyRetired_NullListsAll()
     {
@@ -291,6 +380,40 @@ public sealed class CatalogActiveVisibilityTests : IDisposable
             Mock.Of<INotificationProducer>(),
             Mock.Of<IAdminNotifier>(),
             NullLogger<OrderFactory>.Instance);
+
+    /// <summary>
+    /// The real catalogue behind a schedule's validator. No session and a card payment keep every other
+    /// rule off the saved address, the consents and the cash standing, which are doubles.
+    /// </summary>
+    private static CreateRecurringBooking.Validator ScheduleValidatorOver(CleansiaDbContext ctx) =>
+        new(
+            Mock.Of<IOrderRepository>(),
+            Mock.Of<IUserSessionProvider>(),
+            Mock.Of<ISavedAddressRepository>(),
+            Mock.Of<ICurrencyResolutionService>(),
+            Mock.Of<ICountryRepository>(),
+            new ServiceRepository(ctx),
+            new PackageRepository(ctx),
+            Mock.Of<IUserConsentRepository>(),
+            Mock.Of<ILegalDocumentResolver>(),
+            Mock.Of<ISavedCardRepository>(),
+            Mock.Of<IReceivableRepository>());
+
+    private static CreateRecurringBooking.Command Schedule(
+        IReadOnlyList<string> serviceIds, IReadOnlyList<string> packageIds) =>
+        new(
+            Frequency: (int)RecurrenceFrequency.Weekly,
+            DayOfWeek: (int)System.DayOfWeek.Tuesday,
+            TimeOfDay: "09:00",
+            Rooms: 2,
+            Bathrooms: 1,
+            SavedAddressId: "saved-1",
+            SelectedServiceIds: serviceIds,
+            SelectedPackageIds: packageIds,
+            PaymentType: (int)PaymentType.Card,
+            StartsOn: DateTime.UtcNow.AddDays(3),
+            TermsAccepted: true,
+            EarlyPerformanceRequested: true);
 
     private sealed class DefaultTenantProvider : ITenantProvider
     {

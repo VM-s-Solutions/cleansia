@@ -45,10 +45,10 @@ public class CreateOrderValidatorCharacterizationTests
     public CreateOrderValidatorCharacterizationTests()
     {
         _serviceRepository
-            .Setup(r => r.ExistWithIdsAsync(It.IsAny<IEnumerable<string>>(), It.IsAny<CancellationToken>()))
+            .Setup(r => r.ExistActiveWithIdsAsync(It.IsAny<IEnumerable<string>>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(true);
         _packageRepository
-            .Setup(r => r.ExistWithIdsAsync(It.IsAny<IEnumerable<string>>(), It.IsAny<CancellationToken>()))
+            .Setup(r => r.ExistActiveWithIdsAsync(It.IsAny<IEnumerable<string>>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(true);
         // The span-cap rule reads the catalog's durations; an empty catalog is 0 minutes, which keeps
         // every case here on the side of the cap it was written for. OrderSpanCapTests owns the bound.
@@ -473,6 +473,37 @@ public class CreateOrderValidatorCharacterizationTests
         Assert.Contains(result.Errors, e =>
             e.PropertyName == nameof(CreateOrder.Command.SelectedPackageIds)
             && e.ErrorMessage == BusinessErrorMessage.InvalidSelectedPackage);
+    }
+
+    /// <summary>
+    /// An entry deactivated after a stale client picked it: the row still exists, priced and paid, so the
+    /// old existence term booked what no catalogue shows any more. Refused with the selection codes the
+    /// rebook paths already expect for a retired entry.
+    /// </summary>
+    [Fact]
+    public async Task A_Deactivated_Service_Or_Package_Selected_By_Id_Is_Refused()
+    {
+        _serviceRepository
+            .Setup(r => r.ExistWithIdsAsync(It.IsAny<IEnumerable<string>>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(true);
+        _serviceRepository
+            .Setup(r => r.ExistActiveWithIdsAsync(It.IsAny<IEnumerable<string>>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(false);
+        _packageRepository
+            .Setup(r => r.ExistWithIdsAsync(It.IsAny<IEnumerable<string>>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(true);
+        _packageRepository
+            .Setup(r => r.ExistActiveWithIdsAsync(It.IsAny<IEnumerable<string>>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(false);
+
+        var result = await CreateValidator().ValidateAsync(CreateOrderTestData.ValidCommand());
+
+        Assert.Equal(
+            BusinessErrorMessage.InvalidSelectedServices,
+            Assert.Single(result.Errors, e => e.PropertyName == nameof(CreateOrder.Command.SelectedServiceIds)).ErrorMessage);
+        Assert.Equal(
+            BusinessErrorMessage.InvalidSelectedPackage,
+            Assert.Single(result.Errors, e => e.PropertyName == nameof(CreateOrder.Command.SelectedPackageIds)).ErrorMessage);
     }
 
     /// <summary>

@@ -12,6 +12,9 @@ public interface IRepository<TEntity, in TKey> : IUnitOfWork
 
     Task<bool> ExistWithIdsAsync(IEnumerable<string> ids, CancellationToken cancellationToken);
 
+    /// <summary>Every id names a row that has not been deactivated — what a customer may still select.</summary>
+    Task<bool> ExistActiveWithIdsAsync(IEnumerable<string> ids, CancellationToken cancellationToken);
+
     Task<TEntity?> GetByIdAsync(TKey id, CancellationToken cancellationToken);
 
     IQueryable<TEntity> GetByIds(IEnumerable<TKey> ids);

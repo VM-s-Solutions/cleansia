@@ -141,6 +141,17 @@ public class CreateRecurringBooking
                 .Must(c => c.SelectedServiceIds.Count > 0 || c.SelectedPackageIds.Count > 0)
                 .WithMessage(BusinessErrorMessage.RecurringTemplateNoServicesOrPackages);
 
+            // A schedule is a new booking: it may select only what CreateOrder would accept by id, with
+            // the same codes. Asked here, once, and never by the materialiser -- a template keeps booking
+            // what it was created with if the catalogue changes later.
+            RuleFor(x => x.SelectedServiceIds)
+                .MustAsync(serviceRepository.ExistActiveWithIdsAsync)
+                .WithMessage(BusinessErrorMessage.InvalidSelectedServices);
+
+            RuleFor(x => x.SelectedPackageIds)
+                .MustAsync(packageRepository.ExistActiveWithIdsAsync)
+                .WithMessage(BusinessErrorMessage.InvalidSelectedPackage);
+
             RuleFor(x => x.StartsOn)
                 .Cascade(CascadeMode.Stop)
                 .Must(d => d.Date >= DateTime.UtcNow.Date)

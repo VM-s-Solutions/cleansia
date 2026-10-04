@@ -245,9 +245,13 @@ public class CreateOrder
             // caller NAMED another market's currency: the currency rule below refuses that with its own
             // key, and a second refusal in the address's currency would describe a market the caller
             // never asked to book in.
+            // The existence term asks for an ACTIVE entry, and reuses the codes, on the reasoning above: no
+            // client catalogue lists a deactivated entry, so an id naming one is a pick the caller was not
+            // shown. A deactivated service still inside a package is that package's content, not a
+            // selection, and books with it; a recurring template keeps materialising what it holds.
             RuleFor(x => x.SelectedServiceIds)
                 .Cascade(CascadeMode.Stop)
-                .MustAsync(serviceRepository.ExistWithIdsAsync)
+                .MustAsync(serviceRepository.ExistActiveWithIdsAsync)
                 .WithMessage(BusinessErrorMessage.InvalidSelectedServices)
                 .MustAsync(HavePayCoverageAsync)
                 .WithMessage(BusinessErrorMessage.InvalidSelectedServices)
@@ -256,7 +260,7 @@ public class CreateOrder
 
             RuleFor(x => x.SelectedPackageIds)
                 .Cascade(CascadeMode.Stop)
-                .MustAsync(packageRepository.ExistWithIdsAsync)
+                .MustAsync(packageRepository.ExistActiveWithIdsAsync)
                 .WithMessage(BusinessErrorMessage.InvalidSelectedPackage)
                 .MustAsync(HavePackagePayCoverageAsync)
                 .WithMessage(BusinessErrorMessage.InvalidSelectedPackage)

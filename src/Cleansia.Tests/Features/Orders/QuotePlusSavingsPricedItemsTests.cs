@@ -36,10 +36,10 @@ public class QuotePlusSavingsPricedItemsTests
     public QuotePlusSavingsPricedItemsTests()
     {
         _serviceRepository
-            .Setup(r => r.ExistWithIdsAsync(It.IsAny<IEnumerable<string>>(), It.IsAny<CancellationToken>()))
+            .Setup(r => r.ExistActiveWithIdsAsync(It.IsAny<IEnumerable<string>>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(true);
         _packageRepository
-            .Setup(r => r.ExistWithIdsAsync(It.IsAny<IEnumerable<string>>(), It.IsAny<CancellationToken>()))
+            .Setup(r => r.ExistActiveWithIdsAsync(It.IsAny<IEnumerable<string>>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(true);
         _currencyRepository
             .Setup(r => r.IsOfferableAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
@@ -136,7 +136,7 @@ public class QuotePlusSavingsPricedItemsTests
     public async Task Refuses_An_Unknown_Service_On_Existence_First()
     {
         _serviceRepository
-            .Setup(r => r.ExistWithIdsAsync(It.IsAny<IEnumerable<string>>(), It.IsAny<CancellationToken>()))
+            .Setup(r => r.ExistActiveWithIdsAsync(It.IsAny<IEnumerable<string>>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(false);
 
         var result = await Validator().ValidateAsync(Query(["service-ghost"], [], null, Czechia));

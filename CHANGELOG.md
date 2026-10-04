@@ -74,7 +74,7 @@ need backfilling.
   asks first.** Once you choose a package, every service it already includes stands out in the list
   of services: its row is tinted and outlined in the brand blue, with an *In your package* badge
   under its name, the same in the booking and the schedule form on every client and among the web
-  booking's Plus-step suggestions. Until 2026-10-04 the mark was a small grey line, easy to miss.
+  booking's Plus-step suggestions. Until 2026-10-04 the mark was a small line, easy to miss.
   Adding one of those services on its own, or adding a package that includes a service already in
   your booking, chosen on its own or through another package, now asks first, because that service
   is then done once more and charged once more. A service that two of

@@ -90,8 +90,17 @@ public class UpdateIdentificationInfo
 
         private async Task<bool> KnownToTheBusinessRegisterAsync(
             Command command, string registrationNumber, CancellationToken cancellationToken)
-            => CleanerBusinessRegister.AcceptsOnSave(await CleanerBusinessRegister.LookupAsync(
-                _countryRepository, _businessRegistry, command.BusinessCountryId, registrationNumber, cancellationToken));
+        {
+            var employee = await _employeeRepository.GetByUserEmailAsync(
+                _userSessionProvider.GetUserEmail() ?? string.Empty, cancellationToken);
+
+            return employee is null || CleanerBusinessRegister.AcceptsOnSave(await CleanerBusinessRegister.LookupAsync(
+                _countryRepository,
+                _businessRegistry,
+                CleanerBusinessRegister.RegisterCountryId(employee, employee.Address?.CountryId),
+                registrationNumber,
+                cancellationToken));
+        }
 
         // Not an ownership comparison — the subject is server-resolved, so there is nothing for a client
         // to get wrong. What survives is the precondition the handler dereferences.

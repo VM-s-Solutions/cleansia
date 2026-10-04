@@ -20,12 +20,14 @@ public class UpdateIdentificationInfoValidatorTests
     private const string UserEmail = "cleaner@cleansia.cz";
     private const string EmployeeId = "emp-1";
     private const string CountryId = "cz";
+    private const string SlovakiaId = "sk";
 
     private readonly Mock<ICountryRepository> _countryRepository = new();
     private readonly Mock<IEmployeeRepository> _employeeRepository = new();
     private readonly Mock<IUserSessionProvider> _session = new();
     private readonly Mock<ITaxIdValidator> _taxIdValidator = new();
     private Mock<IBusinessRegistry> _registry = BusinessRegistryDoubles.Answering(BusinessRegistryDoubles.InForce());
+    private Employee _employee = null!;
 
     private UpdateIdentificationInfo.Validator CreateValidator() => new(
         _countryRepository.Object,
@@ -39,6 +41,8 @@ public class UpdateIdentificationInfoValidatorTests
         var user = User.CreateWithPassword(UserEmail, "Password1", "First", "Last");
         var employee = Employee.CreateWithUser(user);
         employee.Id = EmployeeId;
+        employee.UpdateAddress(Address.Create("Main Street 10", "Prague", "11000", CountryId));
+        _employee = employee;
 
         _session.Setup(s => s.GetUserEmail()).Returns(UserEmail);
         _employeeRepository
@@ -48,6 +52,10 @@ public class UpdateIdentificationInfoValidatorTests
         _countryRepository
             .Setup(r => r.GetByIdAsync(CountryId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(Country.Create("Czechia", "CZE", "CZ", isServiced: true));
+        _countryRepository.Setup(r => r.ExistsAsync(SlovakiaId, It.IsAny<CancellationToken>())).ReturnsAsync(true);
+        _countryRepository
+            .Setup(r => r.GetByIdAsync(SlovakiaId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(Country.Create("Slovakia", "SVK", "SK", isServiced: true));
         _taxIdValidator
             .Setup(v => v.ValidateRegistrationNumberAsync(It.IsAny<string>(), It.IsAny<EmployeeEntityType>(), It.IsAny<string?>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(TaxIdValidationResult.Valid());
@@ -79,6 +87,46 @@ public class UpdateIdentificationInfoValidatorTests
         Assert.Equal(BusinessErrorMessage.RegistrationNumberNotRegistered, failure.ErrorMessage);
         Assert.Equal(nameof(UpdateIdentificationInfo.Command.RegistrationNumber), failure.PropertyName);
         _registry.Verify(r => r.LookupAsync("CZE", "12345678", It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    /// <summary>
+    /// The business country is the app's to send and no column keeps it, and ARES answers only for Czechia.
+    /// Naming Slovakia asked no register, so an approved cleaner could swap in any number. The register is
+    /// the one approval asked: the work country's, whatever the address or the app says.
+    /// </summary>
+    [Fact]
+    public async Task An_Approved_Cleaner_Naming_Another_Country_Is_Still_Checked_In_The_Work_Countrys_Register()
+    {
+        ArrangePassingContext();
+        _employee.AssignWorkCountry(CountryId);
+        _employee.UpdateAddress(Address.Create("Hlavna 1", "Bratislava", "81101", SlovakiaId));
+        _registry = AresOnly(BusinessRegistryRecord.NotRegistered);
+
+        var result = await CreateValidator().ValidateAsync(Valid() with { BusinessCountryId = SlovakiaId });
+
+        Assert.Equal(BusinessErrorMessage.RegistrationNumberNotRegistered, Assert.Single(result.Errors).ErrorMessage);
+        _registry.Verify(r => r.LookupAsync("CZE", "12345678", It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    [Fact]
+    public async Task A_Cleaner_Not_Yet_Approved_Is_Checked_In_The_Register_Of_Their_Address_Not_Of_The_Country_Named()
+    {
+        ArrangePassingContext();
+        _registry = AresOnly(BusinessRegistryRecord.NotRegistered);
+
+        var result = await CreateValidator().ValidateAsync(Valid() with { BusinessCountryId = SlovakiaId });
+
+        Assert.Equal(BusinessErrorMessage.RegistrationNumberNotRegistered, Assert.Single(result.Errors).ErrorMessage);
+    }
+
+    /// <summary>ARES as it answers: for a Czech number only, and nothing consulted for any other country.</summary>
+    private static Mock<IBusinessRegistry> AresOnly(BusinessRegistryRecord czechAnswer)
+    {
+        var registry = BusinessRegistryDoubles.Answering(BusinessRegistryRecord.NotConsulted);
+        registry
+            .Setup(r => r.LookupAsync("CZE", It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(czechAnswer);
+        return registry;
     }
 
     public static TheoryData<BusinessRegistryRecord> SaveableAnswers => new()

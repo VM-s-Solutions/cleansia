@@ -167,10 +167,20 @@ public class UpdateEmployee
             return employee?.EntityType == EmployeeEntityType.LegalEntity;
         }
 
+        // The address country is the one this save writes.
         private async Task<bool> KnownToTheBusinessRegisterAsync(
             Command command, string registrationNumber, CancellationToken cancellationToken)
-            => CleanerBusinessRegister.AcceptsOnSave(await CleanerBusinessRegister.LookupAsync(
-                _countryRepository, _businessRegistry, command.CountryId, registrationNumber, cancellationToken));
+        {
+            var employee = await _employeeRepository.GetByUserEmailAsync(
+                _userSessionProvider.GetUserEmail() ?? string.Empty, cancellationToken);
+
+            return employee is null || CleanerBusinessRegister.AcceptsOnSave(await CleanerBusinessRegister.LookupAsync(
+                _countryRepository,
+                _businessRegistry,
+                CleanerBusinessRegister.RegisterCountryId(employee, command.CountryId),
+                registrationNumber,
+                cancellationToken));
+        }
     }
 
     public record Command(

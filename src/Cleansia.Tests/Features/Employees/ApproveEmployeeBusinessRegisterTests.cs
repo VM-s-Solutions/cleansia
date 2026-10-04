@@ -27,6 +27,8 @@ public class ApproveEmployeeBusinessRegisterTests
     private const string EmployeeId = "emp-register";
     private const string CountryId = "country-cz-register";
     private const string Ico = "27082440";
+    private const string SlovakiaId = "country-sk-register";
+    private const string Email = "register@example.com";
 
     private static readonly string[] RegisterRefusals =
     [
@@ -38,10 +40,12 @@ public class ApproveEmployeeBusinessRegisterTests
 
     private readonly Mock<IEmployeeRepository> _employees = new();
     private readonly Mock<ICountryRepository> _countries = new();
+    private readonly Employee _employee;
 
     public ApproveEmployeeBusinessRegisterTests()
     {
         var employee = CompleteEmployee();
+        _employee = employee;
         _employees.Setup(r => r.ExistsAsync(EmployeeId, It.IsAny<CancellationToken>())).ReturnsAsync(true);
         _employees.Setup(r => r.GetByIdAsync(EmployeeId, It.IsAny<CancellationToken>())).ReturnsAsync(employee);
         _employees.Setup(r => r.GetQueryable()).Returns(new[] { employee }.AsQueryable().BuildMock());
@@ -51,6 +55,51 @@ public class ApproveEmployeeBusinessRegisterTests
         _countries.Setup(r => r.ExistsAsync(CountryId, It.IsAny<CancellationToken>())).ReturnsAsync(true);
         _countries.Setup(r => r.IsServicedAsync(CountryId, It.IsAny<CancellationToken>())).ReturnsAsync(true);
         _countries.Setup(r => r.GetByIdAsync(CountryId, It.IsAny<CancellationToken>())).ReturnsAsync(czechia);
+    }
+
+    /// <summary>
+    /// A cleaner living in Slovakia approved to work in Czechia: approval asks ARES. Their next save from the
+    /// app names Slovakia as the business country, for which no register answers, and still asks ARES, so a
+    /// number approval checked cannot be swapped for one no register was asked about.
+    /// </summary>
+    [Fact]
+    public async Task After_Approval_The_Cleaners_Own_Save_Asks_The_Register_The_Approval_Asked()
+    {
+        var slovakia = Country.Create("Slovakia", "SVK", "SK", isServiced: true);
+        slovakia.Id = SlovakiaId;
+        _countries.Setup(r => r.ExistsAsync(SlovakiaId, It.IsAny<CancellationToken>())).ReturnsAsync(true);
+        _countries.Setup(r => r.GetByIdAsync(SlovakiaId, It.IsAny<CancellationToken>())).ReturnsAsync(slovakia);
+        _employee.UpdateAddress(Address.Create("Hlavna 1", "Bratislava", "81101", SlovakiaId));
+        var asked = new List<string>();
+        var registry = new Mock<IBusinessRegistry>();
+        registry
+            .Setup(r => r.LookupAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .Callback<string, string, CancellationToken>((isoCode, _, _) => asked.Add(isoCode))
+            .ReturnsAsync(BusinessRegistryDoubles.InForce());
+
+        await ValidateAsync(registry.Object);
+        _employee.AssignWorkCountry(CountryId);
+        var save = await SaveIdentificationAsync(registry.Object, businessCountryId: SlovakiaId);
+
+        Assert.True(save.IsValid);
+        Assert.Equal(["CZE", "CZE"], asked);
+    }
+
+    private async Task<ValidationResult> SaveIdentificationAsync(IBusinessRegistry registry, string businessCountryId)
+    {
+        _employees.Setup(r => r.GetByUserEmailAsync(Email, It.IsAny<CancellationToken>())).ReturnsAsync(_employee);
+        var session = new Mock<IUserSessionProvider>();
+        session.Setup(s => s.GetUserEmail()).Returns(Email);
+        var taxIds = new Mock<ITaxIdValidator>();
+        taxIds
+            .Setup(v => v.ValidateRegistrationNumberAsync(
+                It.IsAny<string>(), It.IsAny<EmployeeEntityType>(), It.IsAny<string?>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(TaxIdValidationResult.Valid());
+
+        return await new UpdateIdentificationInfo.Validator(
+                _countries.Object, _employees.Object, session.Object, taxIds.Object, registry)
+            .ValidateAsync(new UpdateIdentificationInfo.Command(
+                EmployeeId, CountryId, "AB1234567", EmployeeEntityType.NaturalPerson, businessCountryId, Ico, null));
     }
 
     public static TheoryData<BusinessRegistryRecord, string> Refusals => new()
@@ -131,7 +180,7 @@ public class ApproveEmployeeBusinessRegisterTests
 
     private static Employee CompleteEmployee()
     {
-        var user = User.CreateWithPassword("register@example.com", "Password1", "Jana", "Nováková");
+        var user = User.CreateWithPassword(Email, "Password1", "Jana", "Nováková");
         user.Id = "user-register";
         user.Update("Jana", "Nováková", "+420111222333", new DateOnly(1990, 1, 1));
 

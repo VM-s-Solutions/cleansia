@@ -1,4 +1,5 @@
 using Cleansia.Core.Domain.Repositories;
+using Cleansia.Core.Domain.Users;
 using Cleansia.Infra.Services.BusinessRegistry;
 
 namespace Cleansia.Core.AppServices.Features.Employees;
@@ -25,6 +26,14 @@ internal static class CleanerBusinessRegister
             ? BusinessRegistryRecord.NotConsulted
             : await businessRegistry.LookupAsync(country.IsoCode, registrationNumber, cancellationToken);
     }
+
+    /// <summary>
+    /// The country whose register judges a cleaner's number on their own save: the one they are approved to
+    /// work in, which is the register approval asked, else the country of their address. Never a country the
+    /// client names for the check alone, so an approved cleaner cannot name one no register is wired for.
+    /// </summary>
+    public static string? RegisterCountryId(Employee employee, string? addressCountryId)
+        => employee.WorkCountryId ?? addressCountryId;
 
     /// <summary>
     /// A cleaner's own save refuses only a number the register does not know. A register that does not

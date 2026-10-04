@@ -7,6 +7,7 @@ using Cleansia.Core.Domain.Internationalization;
 using Cleansia.Core.Domain.Loyalty;
 using Cleansia.Core.Domain.Notifications;
 using Cleansia.Core.Domain.Orders;
+using Cleansia.Core.Domain.Payments;
 using Cleansia.Core.Domain.Repositories;
 using Cleansia.Core.Domain.Users;
 using Cleansia.Infra.Database;
@@ -21,9 +22,11 @@ using Respawn;
 namespace Cleansia.IntegrationTests.Features.Loyalty;
 
 /// <summary>
-/// Two loyalty writes for one customer at the same moment, on real Postgres. Each write reads the account,
-/// then waits at its tier-threshold read until both have read, so both start from the same totals and one
-/// of them must lose. The account's xmin token turns the loser's overwrite into a conflict, and the commit
+/// Loyalty writes for one customer at the same moment, on real Postgres. A completion grant and a refund
+/// clawback take the customer's loyalty lock, so two of them queue: the second waits for the first to commit
+/// and reads the totals it left. A write that takes no lock (an administrator's grant or revoke, a tier
+/// edit) can still race one: the loser reads the account, then waits at its tier-threshold read while the
+/// other commits. The account's xmin token turns the loser's overwrite into a conflict, and the commit
 /// replays the loser's points onto the row the winner committed: the account's total stays the sum of its
 /// ledger, its tier is the one that total earns, and a completion is announced as a promotion only when the
 /// tier it commits is above the one the winner left.
@@ -49,7 +52,7 @@ public class LoyaltyAccountConcurrentWriteTests(PostgresContainerFixture fixture
         await ResetAsync();
         await SeedAsync((OrderA, 1000m, 1000), (OrderB, 1000m, 1000));
 
-        await RaceAsync(
+        await SerializedAsync(
             service => service.RevokeForRefundAsync(OrderA, 600m, "refund:race-a", ActorId, CancellationToken.None),
             service => service.RevokeForRefundAsync(OrderB, 500m, "refund:race-b", ActorId, CancellationToken.None));
 
@@ -62,11 +65,52 @@ public class LoyaltyAccountConcurrentWriteTests(PostgresContainerFixture fixture
         await ResetAsync();
         await SeedAsync((OrderA, 1000m, 1000), (OrderC, 1500m, 0));
 
-        await RaceAsync(
+        await SerializedAsync(
             service => service.GrantForCompletedOrderAsync(OrderC, CancellationToken.None),
             service => service.RevokeForRefundAsync(OrderA, 400m, "refund:race-a", ActorId, CancellationToken.None));
 
         await AssertAccountAsync(points: 2100, completedBookings: 2, LoyaltyTier.GoldPolisher);
+    }
+
+    /// <summary>
+    /// A 1000 order earned 100 and has given back 255 and 245, and both refunds' clawbacks run at once. The
+    /// first takes floor(100 × 500 / 1000) = 50 of the running total; the second waits for it and finds
+    /// nothing left. Each refund's own share floored apart kept 51, and both reading the total unserialized
+    /// would each have taken 50.
+    /// </summary>
+    [Fact]
+    public async Task Two_Refunds_Of_One_Order_At_The_Same_Moment_Take_What_One_Refund_Of_Their_Sum_Would()
+    {
+        await ResetAsync();
+        await SeedAsync((OrderA, 1000m, 100));
+        await SeedSucceededRefundAsync(OrderA, 255m, "refund:race-a");
+        await SeedSucceededRefundAsync(OrderA, 245m, "refund:race-b");
+
+        await SerializedAsync(
+            service => service.RevokeForRefundAsync(OrderA, 255m, "refund:race-a", ActorId, CancellationToken.None),
+            service => service.RevokeForRefundAsync(OrderA, 245m, "refund:race-b", ActorId, CancellationToken.None));
+
+        await AssertAccountAsync(points: 50, completedBookings: 1, LoyaltyTier.BronzeCleaner);
+    }
+
+    /// <summary>
+    /// The order completes and reads that nothing was given back; 300 of it is refunded before the
+    /// completion commits. The refund's clawback waits for the completion and takes floor(1000 × 300 / 1000)
+    /// = 300 of the earn it finds. Unserialized it found no earn and took nothing, and the completion had
+    /// already counted nothing.
+    /// </summary>
+    [Fact]
+    public async Task A_Refund_Settling_While_The_Order_Completes_Takes_Its_Share_Once()
+    {
+        await ResetAsync();
+        await SeedAsync((OrderC, 1000m, 0));
+
+        await SerializedAsync(
+            service => service.GrantForCompletedOrderAsync(OrderC, CancellationToken.None),
+            service => service.RevokeForRefundAsync(OrderC, 300m, "refund:race-c", ActorId, CancellationToken.None),
+            whileFirstWaits: () => SeedSucceededRefundAsync(OrderC, 300m, "refund:race-c"));
+
+        await AssertAccountAsync(points: 700, completedBookings: 1, LoyaltyTier.SilverMopper);
     }
 
     /// <summary>
@@ -75,10 +119,10 @@ public class LoyaltyAccountConcurrentWriteTests(PostgresContainerFixture fixture
     /// transaction, and the ledger row the failed save sent is not sent twice.
     /// </summary>
     [Fact]
-    public async Task A_Clawback_Holding_The_Credit_Lock_Replays_Under_It_After_Losing_To_A_Grant()
+    public async Task A_Clawback_Holding_The_Credit_Lock_Replays_Under_It_After_Losing_To_A_Manual_Grant()
     {
         await ResetAsync();
-        await SeedAsync((OrderA, 1000m, 1000), (OrderC, 1500m, 0));
+        await SeedAsync((OrderA, 1000m, 1000));
         var read = NewSignal();
         var release = NewSignal();
 
@@ -92,16 +136,12 @@ public class LoyaltyAccountConcurrentWriteTests(PostgresContainerFixture fixture
         });
         await read.Task.WaitAsync(Timeout);
 
-        await using (var ctx = NewContext())
-        {
-            await NewService(ctx, () => Task.CompletedTask).GrantForCompletedOrderAsync(OrderC, CancellationToken.None);
-            await ctx.CommitAsync(CancellationToken.None);
-        }
+        await WriteAsync(ManualGrant(1500), () => Task.CompletedTask);
 
         release.SetResult();
         await clawback.WaitAsync(Timeout);
 
-        await AssertAccountAsync(points: 2100, completedBookings: 2, LoyaltyTier.GoldPolisher);
+        await AssertAccountAsync(points: 2100, completedBookings: 1, LoyaltyTier.GoldPolisher);
     }
 
     /// <summary>
@@ -135,8 +175,9 @@ public class LoyaltyAccountConcurrentWriteTests(PostgresContainerFixture fixture
     }
 
     /// <summary>
-    /// The grant read 450 points and its own 100 crossed Silver at 500, but a clawback of 200 committed
-    /// first, so the grant lands at 250 + 100 = 350. The customer is told of no tier the account never held.
+    /// The grant read 450 points and its own 100 crossed Silver at 500, but an administrator's revoke of 200
+    /// committed first, so the grant lands at 250 + 100 = 350. The customer is told of no tier the account
+    /// never held.
     /// </summary>
     [Fact]
     public async Task A_Completion_Grant_Replayed_Below_The_Threshold_It_Crossed_On_Its_Own_Read_Announces_Nothing()
@@ -146,64 +187,67 @@ public class LoyaltyAccountConcurrentWriteTests(PostgresContainerFixture fixture
 
         await LoseToAsync(
             service => service.GrantForCompletedOrderAsync(OrderC, CancellationToken.None),
-            service => service.RevokeForRefundAsync(OrderA, 200m, "refund:race-a", ActorId, CancellationToken.None));
+            service => service.RevokePointsManuallyAsync(
+                UserId, 200, LoyaltyEarnSource.ManualRevoke, null, ActorId, "race", "revoke:race",
+                CancellationToken.None));
 
         await AssertAccountAsync(points: 350, completedBookings: 2, LoyaltyTier.BronzeCleaner);
         Assert.Empty(await TiersAnnouncedAsync());
     }
 
     /// <summary>
-    /// Neither grant crosses Silver on its own read of 450: one reaches 490, the other 480. The one that
-    /// commits second lands at 490 + 30 = 520, and that replay is what crosses, so it is the one announced.
+    /// Neither write crosses Silver on its own read of 450: an administrator's grant reaches 490, the
+    /// completion 480. The completion commits second and lands at 490 + 30 = 520, and that replay is what
+    /// crosses, so it is announced.
     /// </summary>
     [Fact]
     public async Task A_Completion_Grant_Whose_Replay_Crosses_A_Threshold_Announces_The_Tier()
     {
         await ResetAsync();
-        await SeedAsync((OrderA, 450m, 450), (OrderB, 40m, 0), (OrderC, 30m, 0));
+        await SeedAsync((OrderA, 450m, 450), (OrderC, 30m, 0));
 
         await LoseToAsync(
             service => service.GrantForCompletedOrderAsync(OrderC, CancellationToken.None),
-            service => service.GrantForCompletedOrderAsync(OrderB, CancellationToken.None));
+            ManualGrant(40));
 
-        await AssertAccountAsync(points: 520, completedBookings: 3, LoyaltyTier.SilverMopper);
+        await AssertAccountAsync(points: 520, completedBookings: 2, LoyaltyTier.SilverMopper);
         Assert.Equal(new[] { (OrderC, "SilverMopper") }, await TiersAnnouncedAsync());
     }
 
     /// <summary>
-    /// The first grant takes 450 to 550 and is announced as Silver. The second read 450 and lands at
-    /// 550 + 30 = 580: above the tier it read, but in the Silver the first already announced, so it says nothing.
+    /// An administrator's grant takes 450 to 550. The completion read 450 and lands at 550 + 30 = 580: above
+    /// the tier it read, but in the Silver the account already held, so it says nothing.
     /// </summary>
     [Fact]
     public async Task A_Completion_Grant_Replayed_Into_The_Tier_The_Winner_Reached_Announces_Nothing_More()
     {
         await ResetAsync();
-        await SeedAsync((OrderA, 450m, 450), (OrderB, 100m, 0), (OrderC, 30m, 0));
+        await SeedAsync((OrderA, 450m, 450), (OrderC, 30m, 0));
 
         await LoseToAsync(
             service => service.GrantForCompletedOrderAsync(OrderC, CancellationToken.None),
-            service => service.GrantForCompletedOrderAsync(OrderB, CancellationToken.None));
+            ManualGrant(100));
 
-        await AssertAccountAsync(points: 580, completedBookings: 3, LoyaltyTier.SilverMopper);
-        Assert.Equal(new[] { (OrderB, "SilverMopper") }, await TiersAnnouncedAsync());
+        await AssertAccountAsync(points: 580, completedBookings: 2, LoyaltyTier.SilverMopper);
+        Assert.Empty(await TiersAnnouncedAsync());
     }
 
     /// <summary>
-    /// The first grant takes 450 to 1950 and is announced as Silver. The second read 450 and saw itself reach
-    /// Silver at 550, but lands at 1950 + 100 = 2050, past Gold at 2000, and is announced as the Gold it reached.
+    /// An administrator's grant takes 450 to 1950. The completion read 450 and saw itself reach Silver at
+    /// 550, but lands at 1950 + 100 = 2050, past Gold at 2000, and is announced as the Gold it reached.
     /// </summary>
     [Fact]
     public async Task A_Completion_Grant_Replayed_Past_The_Next_Threshold_Announces_The_Tier_It_Landed_On()
     {
         await ResetAsync();
-        await SeedAsync((OrderA, 450m, 450), (OrderB, 1500m, 0), (OrderC, 100m, 0));
+        await SeedAsync((OrderA, 450m, 450), (OrderC, 100m, 0));
 
         await LoseToAsync(
             service => service.GrantForCompletedOrderAsync(OrderC, CancellationToken.None),
-            service => service.GrantForCompletedOrderAsync(OrderB, CancellationToken.None));
+            ManualGrant(1500));
 
-        await AssertAccountAsync(points: 2050, completedBookings: 3, LoyaltyTier.GoldPolisher);
-        Assert.Equal(new[] { (OrderB, "SilverMopper"), (OrderC, "GoldPolisher") }, await TiersAnnouncedAsync());
+        await AssertAccountAsync(points: 2050, completedBookings: 2, LoyaltyTier.GoldPolisher);
+        Assert.Equal(new[] { (OrderC, "GoldPolisher") }, await TiersAnnouncedAsync());
     }
 
     /// <summary>
@@ -277,23 +321,6 @@ public class LoyaltyAccountConcurrentWriteTests(PostgresContainerFixture fixture
         Assert.True(result.IsSuccess);
     }
 
-    private async Task RaceAsync(Func<LoyaltyService, Task> first, Func<LoyaltyService, Task> second)
-    {
-        var firstRead = NewSignal();
-        var secondRead = NewSignal();
-        var release = NewSignal();
-
-        var writes = new[]
-        {
-            Task.Run(() => WriteAsync(first, () => Arrive(firstRead, release))),
-            Task.Run(() => WriteAsync(second, () => Arrive(secondRead, release))),
-        };
-        await Task.WhenAll(firstRead.Task, secondRead.Task).WaitAsync(Timeout);
-
-        release.SetResult();
-        await Task.WhenAll(writes).WaitAsync(Timeout);
-    }
-
     // The loser reads the account and waits there while the winner commits, so the loser's save lands on
     // the winner's row.
     private async Task LoseToAsync(Func<LoyaltyService, Task> loser, Func<LoyaltyService, Task> winner)
@@ -312,13 +339,18 @@ public class LoyaltyAccountConcurrentWriteTests(PostgresContainerFixture fixture
 
     // The first write waits at its tier read holding whatever it has locked. The second starts then, and the
     // first is let go once the second is seen waiting on a lock or has finished without one.
-    private async Task SerializedAsync(Func<LoyaltyService, Task> first, Func<LoyaltyService, Task> second)
+    private async Task SerializedAsync(
+        Func<LoyaltyService, Task> first, Func<LoyaltyService, Task> second, Func<Task>? whileFirstWaits = null)
     {
         var read = NewSignal();
         var release = NewSignal();
 
         var firstWrite = Task.Run(() => WriteAsync(first, () => Arrive(read, release)));
         await read.Task.WaitAsync(Timeout);
+        if (whileFirstWaits is not null)
+        {
+            await whileFirstWaits();
+        }
 
         var secondWrite = Task.Run(() => WriteAsync(second, () => Task.CompletedTask));
         try
@@ -345,6 +377,22 @@ public class LoyaltyAccountConcurrentWriteTests(PostgresContainerFixture fixture
         }
 
         await Task.WhenAll(firstWrite, secondWrite).WaitAsync(Timeout);
+    }
+
+    // An administrator's grant: it finds the account, takes no lock and flushes its own keyed row.
+    private static Func<LoyaltyService, Task> ManualGrant(int points) =>
+        service => service.GrantPointsManuallyAsync(
+            UserId, points, LoyaltyEarnSource.ManualGrant, null, ActorId, "race", $"grant:race:{points}",
+            CancellationToken.None);
+
+    // The money of a refund, committed before its clawback runs, as the refund seam commits it.
+    private async Task SeedSucceededRefundAsync(string orderId, decimal amount, string refundKey)
+    {
+        await using var ctx = NewContext();
+        ctx.Add(Refund
+            .Create(orderId, refundKey, amount, "CZK", RefundReason.AdminDiscretion, RefundSource.AppRefund)
+            .MarkSucceeded(stripeRefundId: null, confirmedOnUtc: DateTimeOffset.UtcNow));
+        await ctx.CommitAsync(CancellationToken.None);
     }
 
     // The service, then the commit the UnitOfWork pipeline runs after the handler.

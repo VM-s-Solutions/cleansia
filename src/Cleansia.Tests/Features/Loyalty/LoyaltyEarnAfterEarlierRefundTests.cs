@@ -6,7 +6,6 @@ using Cleansia.Core.Domain.Internationalization;
 using Cleansia.Core.Domain.Loyalty;
 using Cleansia.Core.Domain.Notifications;
 using Cleansia.Core.Domain.Orders;
-using Cleansia.Core.Domain.Payments;
 using Cleansia.Core.Domain.Repositories;
 using Microsoft.Extensions.Logging.Abstractions;
 using MockQueryable;
@@ -115,12 +114,12 @@ public class LoyaltyEarnAfterEarlierRefundTests
     }
 
     /// <summary>
-    /// With fractional shares each refund is floored on its own, before completion as after it: 255 then
-    /// 245 keeps 100 − 25 − 24 = 51, the same two refunds after completion keep 51, and one refund of 500
-    /// would keep 50. The per-refund floor is the existing clawback rule, unchanged here.
+    /// With fractional shares the clawback works on the order's running total, before completion as after
+    /// it: 255 then 245 takes floor(25.5) = 25 and then floor(100 × 500 / 1000) − 25 = 25, keeping 50 — the
+    /// 50 one refund of 500 keeps, where flooring each refund on its own kept 51.
     /// </summary>
     [Fact]
-    public async Task With_Fractional_Shares_The_Split_Takes_Back_What_The_Same_Two_Refunds_Would_After_Completion()
+    public async Task With_Fractional_Shares_The_Split_Takes_Back_What_One_Refund_Of_The_Sum_Would()
     {
         var split = new Harness { DisputeSettledInCredit = 255m };
         await split.CompleteAsync();
@@ -131,24 +130,28 @@ public class LoyaltyEarnAfterEarlierRefundTests
         await bothAfter.RefundAfterCompletionAsync(255m, "refund-before");
         await bothAfter.RefundAfterCompletionAsync(245m, "refund-after");
 
-        Assert.Equal(51, split.Account.LifetimePoints);
-        Assert.Equal(bothAfter.Account.LifetimePoints, split.Account.LifetimePoints);
+        var oneOfTheSum = new Harness();
+        await oneOfTheSum.CompleteAsync();
+        await oneOfTheSum.RefundAfterCompletionAsync(500m, "refund-sum");
+
+        Assert.Equal(50, split.Account.LifetimePoints);
+        Assert.Equal(50, bothAfter.Account.LifetimePoints);
+        Assert.Equal(50, oneOfTheSum.Account.LifetimePoints);
     }
 
     /// <summary>
     /// The same line selection submitted again after completion resolves to the refund that settled before
-    /// it, and its clawback runs again under that refund's key. Completion already took that refund's 20, so
-    /// the replay takes nothing more.
+    /// it, and its clawback runs again under that refund's key. It moves no money, so the order's total is
+    /// still the 200 completion took its 20 for, and the replay takes nothing more.
     /// </summary>
     [Fact]
     public async Task A_Refund_Settled_Before_Completion_And_Replayed_After_It_Takes_Its_Share_Once()
     {
         const string refundKey = $"refund:{OrderId}:admin:lines";
         var harness = new Harness { CardRefunded = 200m };
-        harness.RefundSettledOn(refundKey, DateTimeOffset.UtcNow.AddMinutes(-5));
 
         await harness.CompleteAsync();
-        await harness.RefundAfterCompletionAsync(200m, refundKey);
+        await harness.ReplayAfterCompletionAsync(200m, refundKey);
 
         Assert.Equal(80, harness.Account.LifetimePoints);
         Assert.Equal(-20, harness.Ledger(LoyaltyEarnSource.OrderPartiallyRefunded).Single().Points);
@@ -161,7 +164,6 @@ public class LoyaltyEarnAfterEarlierRefundTests
         var harness = new Harness();
 
         await harness.CompleteAsync();
-        harness.RefundSettledOn(refundKey, DateTimeOffset.UtcNow.AddMinutes(5));
         await harness.RefundAfterCompletionAsync(200m, refundKey);
 
         Assert.Equal(80, harness.Account.LifetimePoints);
@@ -199,7 +201,7 @@ public class LoyaltyEarnAfterEarlierRefundTests
         private readonly Mock<ICurrencyRepository> _currencies = new();
         private readonly Mock<IRefundRepository> _refunds = new();
         private readonly Mock<ICreditAccountRepository> _credit = new();
-        private readonly List<Refund> _settledRefunds = [];
+        private decimal _refundedAfterCompletion;
         private Func<LoyaltyTier?, CancellationToken, Task>? _afterSave;
 
         public Harness(int startingPoints = 0)
@@ -267,10 +269,7 @@ public class LoyaltyEarnAfterEarlierRefundTests
 
             _refunds
                 .Setup(r => r.GetSucceededRefundTotalForOrderAsync(OrderId, It.IsAny<CancellationToken>()))
-                .ReturnsAsync(() => CardRefunded);
-            _refunds
-                .Setup(r => r.GetByRefundKeyAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
-                .ReturnsAsync((string key, CancellationToken _) => _settledRefunds.FirstOrDefault(r => r.RefundKey == key));
+                .ReturnsAsync(() => CardRefunded + _refundedAfterCompletion);
             _credit
                 .Setup(r => r.GetReturnedTotalForOrderAsync(OrderId, It.IsAny<CancellationToken>()))
                 .ReturnsAsync(() => CreditReturned);
@@ -289,15 +288,18 @@ public class LoyaltyEarnAfterEarlierRefundTests
 
         public decimal DisputeSettledInCredit { get; init; }
 
-        public void RefundSettledOn(string refundKey, DateTimeOffset settledOn) =>
-            _settledRefunds.Add(Refund
-                .Create(OrderId, refundKey, 200m, "CZK", RefundReason.AdminDiscretion, RefundSource.AppRefund)
-                .MarkSucceeded(stripeRefundId: null, confirmedOnUtc: settledOn));
-
         public Task CompleteAsync() =>
             Service().GrantForCompletedOrderAsync(OrderId, CancellationToken.None);
 
-        public Task RefundAfterCompletionAsync(decimal amountReturned, string refundKey) =>
+        /// <summary>The refund's money lands first, then its clawback runs, as the refund seam commits before it.</summary>
+        public Task RefundAfterCompletionAsync(decimal amountReturned, string refundKey)
+        {
+            _refundedAfterCompletion += amountReturned;
+            return ReplayAfterCompletionAsync(amountReturned, refundKey);
+        }
+
+        /// <summary>A refund the seam resolved to an existing one: no money moves, the clawback runs again.</summary>
+        public Task ReplayAfterCompletionAsync(decimal amountReturned, string refundKey) =>
             Service().RevokeForRefundAsync(OrderId, amountReturned, refundKey, "admin-1", CancellationToken.None);
 
         public Task RunAfterSaveAsync(LoyaltyTier tierBefore) => _afterSave!(tierBefore, CancellationToken.None);

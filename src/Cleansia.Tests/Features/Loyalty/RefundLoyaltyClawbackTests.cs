@@ -15,14 +15,17 @@ namespace Cleansia.Tests.Features.Loyalty;
 
 /// <summary>
 /// The one loyalty clawback every refund of a completed order goes through — partial, full and a
-/// dispute's settlement: a refund takes back the same share of the points the order's OrderCompleted earn
-/// granted as it returned of the order's price. The method is keyed per refund, so two distinct refunds
-/// each revoke — it is not the one-shot cancel mirror that no-ops on a second call. Σ(revoked) across an
-/// order's refunds is capped at the original earn, so a full refund takes only what the others left.
+/// dispute's settlement. It works on the order's running total: the target is the same share of the
+/// points the order's OrderCompleted earn granted as the order has given back of its price in all, and a
+/// refund takes the target less what was already taken. The method is keyed per refund, so two distinct
+/// refunds each revoke — it is not the one-shot cancel mirror that no-ops on a second call — and Σ(revoked)
+/// never passes the original earn, so a full refund takes only what the others left.
 ///
-/// These are logic-level unit tests with mocked repositories: the fast-path key lookup is the mocked
-/// GetByIdempotencyKeyAsync and the concurrent-race backstop is the mocked CommitAsync throwing a wrapped
-/// 23505. A true-parallel proof against a real filtered unique index belongs to the integration suite.
+/// These are logic-level unit tests with mocked repositories: the order's money is the mocked succeeded
+/// refund total, which a refund adds to before its clawback runs, as the refund seam commits the money
+/// first; the fast-path key lookup is the mocked GetByIdempotencyKeyAsync and the concurrent-race backstop
+/// is the mocked CommitAsync throwing a wrapped 23505. The race two refunds run against each other is
+/// proven on Postgres in LoyaltyAccountConcurrentWriteTests.
 /// </summary>
 public class RefundLoyaltyClawbackTests
 {
@@ -40,6 +43,15 @@ public class RefundLoyaltyClawbackTests
     private readonly Mock<ILoyaltyTransactionRepository> _transactionRepository = new();
     private readonly Mock<INotificationProducer> _producer = new();
     private readonly Mock<ICurrencyRepository> _currencyRepository = new();
+    private readonly Mock<IRefundRepository> _refundRepository = new();
+    private decimal _returnedSoFar;
+
+    public RefundLoyaltyClawbackTests()
+    {
+        _refundRepository
+            .Setup(r => r.GetSucceededRefundTotalForOrderAsync(OrderId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(() => _returnedSoFar);
+    }
 
     private LoyaltyService CreateService() =>
         new(
@@ -48,10 +60,20 @@ public class RefundLoyaltyClawbackTests
             _tierConfigRepository.Object,
             _transactionRepository.Object,
             _currencyRepository.Object,
-            Mock.Of<IRefundRepository>(),
+            _refundRepository.Object,
             Mock.Of<ICreditAccountRepository>(),
             _producer.Object,
             NullLogger<LoyaltyService>.Instance);
+
+    /// <summary>
+    /// The refund's money lands first, then its clawback runs, as the refund seam commits before it.
+    /// <paramref name="handed"/> is what the caller passes the clawback: a full refund hands the whole price.
+    /// </summary>
+    private Task RefundAsync(LoyaltyService service, decimal moved, string refundKey, decimal? handed = null)
+    {
+        _returnedSoFar += moved;
+        return service.RevokeForRefundAsync(OrderId, handed ?? moved, refundKey, ActorId, CancellationToken.None);
+    }
 
     /// <summary>
     /// The account and the OrderCompleted ledger row the repository returns are the same grant, so the
@@ -297,17 +319,67 @@ public class RefundLoyaltyClawbackTests
         ArrangeRunningRevokedTotal(account);
 
         var service = CreateService();
-        await service.RevokeForRefundAsync(OrderId, 30m, RefundKey, ActorId, CancellationToken.None);
-        await service.RevokeForRefundAsync(OrderId, 50m, OtherRefundKey, ActorId, CancellationToken.None);
+        await RefundAsync(service, 30m, RefundKey);
+        await RefundAsync(service, 50m, OtherRefundKey);
 
-        var revokes = PartialRevokes(account);
-        Assert.Equal(2, revokes.Count);
-        Assert.Equal(8, revokes.Sum(t => -t.Points));
+        // floor(100 × 30 / 1000) = 3, then floor(100 × 80 / 1000) − 3 = 5.
+        Assert.Equal([-3, -5], PartialRevokes(account).Select(t => t.Points));
+    }
+
+    /// <summary>
+    /// Each refund's share floored on its own left a point behind: 255 and 245 of a 1000 order that earned
+    /// 100 took floor(25.5) + floor(24.5) = 49. On the running total the second takes
+    /// floor(100 × 500 / 1000) − 25 = 25, so the two take the 50 one refund of 500 would.
+    /// </summary>
+    [Fact]
+    public async Task TwoRefunds_WhoseSharesFloorApart_TakeWhatOneRefundOfTheirSumWould()
+    {
+        var account = ArrangeEarn(100);
+        ArrangeOrder(UserId, totalPrice: 1000m);
+        ArrangeNoExistingKey();
+        ArrangeTierConfigs();
+        ArrangeRunningRevokedTotal(account);
+
+        var service = CreateService();
+        await RefundAsync(service, 255m, RefundKey);
+        await RefundAsync(service, 245m, OtherRefundKey);
+
+        Assert.Equal([-25, -25], PartialRevokes(account).Select(t => t.Points));
+        Assert.Equal(50, account.LifetimePoints);
+    }
+
+    /// <summary>
+    /// What was already taken is read under the customer's lock, so a second refund of the order settling at
+    /// the same moment waits and sees the first one's points gone.
+    /// </summary>
+    [Fact]
+    public async Task TheClawback_TakesTheCustomersLock_BeforeItReadsWhatWasAlreadyTaken()
+    {
+        ArrangeEarn(100);
+        ArrangeOrder(UserId, totalPrice: 1000m);
+        ArrangeNoExistingKey();
+        ArrangeTierConfigs();
+        ArrangeCommit();
+        var calls = new List<string>();
+        _accountRepository
+            .Setup(r => r.LockForUserAsync(UserId, It.IsAny<CancellationToken>()))
+            .Callback(() => calls.Add("lock"))
+            .Returns(Task.CompletedTask);
+        _transactionRepository
+            .Setup(r => r.GetRevokedPointsSumForOrderSourceAsync(
+                OrderId, LoyaltyEarnSource.OrderPartiallyRefunded, It.IsAny<CancellationToken>()))
+            .Callback(() => calls.Add("already-taken"))
+            .ReturnsAsync(0);
+
+        await RefundAsync(CreateService(), 300m, RefundKey);
+
+        Assert.Equal(["lock", "already-taken"], calls);
     }
 
     /// <summary>
     /// Two refunds whose shares add up to more than the earn stop at the earn: 600 of a 1000 order asks
-    /// for 60 of its 100 points, and a second 600 asks for 60 more but finds only 40 left.
+    /// for 60 of its 100 points, and a second 600 brings the total past the price, so the target is the
+    /// whole earn and it finds only 40 left.
     /// </summary>
     [Fact]
     public async Task PartialRevoke_TwoRefunds_NeverTakeBackMoreThanTheEarn()
@@ -319,8 +391,8 @@ public class RefundLoyaltyClawbackTests
         ArrangeRunningRevokedTotal(account);
 
         var service = CreateService();
-        await service.RevokeForRefundAsync(OrderId, 600m, RefundKey, ActorId, CancellationToken.None);
-        await service.RevokeForRefundAsync(OrderId, 600m, OtherRefundKey, ActorId, CancellationToken.None);
+        await RefundAsync(service, 600m, RefundKey);
+        await RefundAsync(service, 600m, OtherRefundKey);
 
         Assert.Equal([-60, -40], PartialRevokes(account).Select(t => t.Points));
         Assert.Equal(0, account.LifetimePoints);
@@ -328,8 +400,9 @@ public class RefundLoyaltyClawbackTests
 
     /// <summary>
     /// A 1000 order earned 99. A partial refund of 300 takes floor(99 × 300 / 1000) = floor(29.7) = 29.
-    /// The full refund then asks for the whole price — floor(99 × 1000 / 1000) = 99 — and finds 70 left,
-    /// so it takes 70, not the 69 the remaining 700 would floor to on its own: nothing is left behind.
+    /// The full refund then returns the other 700 and hands the whole price — floor(99 × 1000 / 1000) = 99
+    /// — and finds 70 left, so it takes 70, not the 69 the remaining 700 would floor to on its own: nothing
+    /// is left behind.
     /// </summary>
     [Fact]
     public async Task FullRefund_AfterAPartialRefund_TakesOnlyWhatIsLeft()
@@ -341,8 +414,8 @@ public class RefundLoyaltyClawbackTests
         ArrangeRunningRevokedTotal(account);
 
         var service = CreateService();
-        await service.RevokeForRefundAsync(OrderId, 300m, RefundKey, ActorId, CancellationToken.None);
-        await service.RevokeForRefundAsync(OrderId, 1000m, FullRefundKey, ActorId, CancellationToken.None);
+        await RefundAsync(service, 300m, RefundKey);
+        await RefundAsync(service, 700m, FullRefundKey, handed: 1000m);
 
         Assert.Equal([-29, -70], PartialRevokes(account).Select(t => t.Points));
         Assert.Equal([RefundKey, FullRefundKey], PartialRevokes(account).Select(t => t.IdempotencyKey));
@@ -424,12 +497,13 @@ public class RefundLoyaltyClawbackTests
         ArrangeNoExistingKey();
         ArrangeTierConfigs();
 
-        // 90 already revoked under prior partials; the next refund returns half the order and asks for
-        // half the earn, 50, but only 10 of headroom remains.
+        // 900 already returned and 90 revoked under prior partials; the next refund returns 500 more, which
+        // takes the total past the price, so the target is the whole earn and only 10 of it remains.
+        _returnedSoFar = 900m;
         ArrangeAlreadyRevoked(90);
         ArrangeCommit();
 
-        await CreateService().RevokeForRefundAsync(OrderId, 500m, RefundKey, ActorId, CancellationToken.None);
+        await RefundAsync(CreateService(), 500m, RefundKey);
 
         var revoke = Assert.Single(PartialRevokes(account));
         Assert.Equal(-10, revoke.Points);

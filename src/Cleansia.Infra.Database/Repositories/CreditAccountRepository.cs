@@ -197,11 +197,18 @@ public class CreditAccountRepository(CleansiaDbContext context)
         return rows.ToDictionary(r => r.OrderId, r => r.Total);
     }
 
-    public Task<decimal> GetDisputeSettledTotalForOrderAsync(string orderId, CancellationToken cancellationToken) =>
-        context.CreditTransactions
+    // A settlement this unit of work has staged counts too: the loyalty clawback reads the total in the same
+    // unit as the settlement it is taking the points for, before the commit.
+    public async Task<decimal> GetDisputeSettledTotalForOrderAsync(string orderId, CancellationToken cancellationToken) =>
+        await context.CreditTransactions
             .AsNoTracking()
             .Where(t => t.OrderId == orderId && t.Reason == CreditTransactionReason.DisputeSettlement)
-            .SumAsync(t => t.Amount, cancellationToken);
+            .SumAsync(t => t.Amount, cancellationToken)
+        + context.ChangeTracker.Entries<CreditTransaction>()
+            .Where(e => e.State == EntityState.Added
+                && e.Entity.OrderId == orderId
+                && e.Entity.Reason == CreditTransactionReason.DisputeSettlement)
+            .Sum(e => e.Entity.Amount);
 
     public Task<CreditSpendable?> GetSpendableAsync(
         string userId, string currencyId, CancellationToken cancellationToken)

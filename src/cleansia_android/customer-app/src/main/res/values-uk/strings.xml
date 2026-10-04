@@ -653,7 +653,9 @@
     <string name="details_add_to_booking">Додати до бронювання</string>
     <string name="details_remove_from_booking">Видалити з бронювання</string>
     <string name="booking_in_your_package">У вашому пакеті: %1$s</string>
+    <string name="booking_in_your_packages">У ваших пакетах: %1$s</string>
     <string name="booking_twice_service_title">Уже є у вашому пакеті</string>
+    <string name="booking_twice_service_title_many">Уже є у ваших пакетах</string>
     <string name="booking_twice_service_message">Послуга %1$s входить до пакета %2$s. Якщо додати її ще раз, її буде замовлено двічі: виконано двічі й оплачено двічі.</string>
     <string name="booking_twice_service_message_many">Послуга %1$s уже входить до пакетів %2$s. Якщо додати її ще раз, її буде замовлено ще раз: виконано ще раз і оплачено ще раз.</string>
     <string name="booking_twice_service_confirm">Додати ще раз</string>

@@ -655,7 +655,9 @@
     <string name="details_add_to_booking">Add to booking</string>
     <string name="details_remove_from_booking">Remove from booking</string>
     <string name="booking_in_your_package">In your package: %1$s</string>
+    <string name="booking_in_your_packages">In your packages: %1$s</string>
     <string name="booking_twice_service_title">Already in your package</string>
+    <string name="booking_twice_service_title_many">Already in your packages</string>
     <string name="booking_twice_service_message">%1$s is part of %2$s. Adding it again books it twice: it is done twice and charged twice.</string>
     <string name="booking_twice_service_message_many">%1$s is already part of %2$s. Adding it again books it once more: it is done once more and charged once more.</string>
     <string name="booking_twice_service_confirm">Add again</string>

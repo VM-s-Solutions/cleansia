@@ -656,7 +656,9 @@
     <string name="details_add_to_booking">Přidat do rezervace</string>
     <string name="details_remove_from_booking">Odebrat z rezervace</string>
     <string name="booking_in_your_package">Ve vašem balíčku: %1$s</string>
+    <string name="booking_in_your_packages">Ve vašich balíčcích: %1$s</string>
     <string name="booking_twice_service_title">Už je ve vašem balíčku</string>
+    <string name="booking_twice_service_title_many">Už je ve vašich balíčcích</string>
     <string name="booking_twice_service_message">Služba %1$s je součástí balíčku %2$s. Když ji přidáte znovu, objednáte ji dvakrát: provede se dvakrát a zaplatíte ji dvakrát.</string>
     <string name="booking_twice_service_message_many">Služba %1$s je už součástí balíčků %2$s. Když ji přidáte znovu, objednáte ji ještě jednou: provede se ještě jednou a zaplatíte ji ještě jednou.</string>
     <string name="booking_twice_service_confirm">Přidat znovu</string>

@@ -88,6 +88,18 @@ class DoubleBookingTest {
         assertEquals(R.string.booking_twice_service_message, one!!.messageRes)
     }
 
+    /** S1: beside one chosen package the confirm's title and the row's marker say "package"; beside two or more, "packages". */
+    @Test
+    fun `the title and the marker name one package, and packages for two or more`() {
+        val one = doubleBookingOfService("svc-fridge", setOf("pkg-kitchen", "pkg-spring"), services, packages)!!
+        val many = doubleBookingOfService("svc-oven", setOf("pkg-kitchen", "pkg-spring"), services, packages)!!
+
+        assertEquals(R.string.booking_twice_service_title, one.titleRes)
+        assertEquals(R.string.booking_twice_service_title_many, many.titleRes)
+        assertEquals(R.string.booking_in_your_package, one.packages.inPackageMarkerRes)
+        assertEquals(R.string.booking_in_your_packages, many.packages.inPackageMarkerRes)
+    }
+
     /** R5: two chosen packages that include the same service book it again, so the second one asks too. */
     @Test
     fun `adding a package that shares a service with a chosen package names that service`() {
@@ -116,7 +128,9 @@ class DoubleBookingTest {
 
     private val placeholders = mapOf(
         "booking_in_your_package" to listOf("%1\$s"),
+        "booking_in_your_packages" to listOf("%1\$s"),
         "booking_twice_service_title" to emptyList(),
+        "booking_twice_service_title_many" to emptyList(),
         "booking_twice_service_message" to listOf("%1\$s", "%2\$s"),
         "booking_twice_service_message_many" to listOf("%1\$s", "%2\$s"),
         "booking_twice_service_confirm" to emptyList(),

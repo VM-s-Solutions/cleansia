@@ -2860,6 +2860,38 @@ class BookingViewModelTest {
         assertEquals(emptySet<String>(), vm.state.value.selectedServiceIds)
     }
 
+    // S1: the confirm's title and the row's marker say "package" beside one chosen package, "packages" beside two.
+    @Test
+    fun aServiceOneChosenPackageIncludes_isTitledAndMarkedWithThePackage() = runTest {
+        val vm = withDeepCleanPackage()
+        assertEquals(true, vm.togglePackage("pkg-1"))
+
+        vm.toggleService("svc-1")
+
+        val pick = vm.doubleBooking.value as DoubleBooking.Service
+        assertEquals(R.string.booking_twice_service_title, pick.titleRes)
+        assertEquals(
+            R.string.booking_in_your_package,
+            catalogPackagesFlow.value.selectedIncluding("svc-1", vm.state.value.selectedPackageIds).inPackageMarkerRes,
+        )
+    }
+
+    @Test
+    fun aServiceTwoChosenPackagesInclude_isTitledAndMarkedWithThePackages() = runTest {
+        val vm = withOverlappingPackages()
+        vm.update { it.copy(selectedPackageIds = setOf("pkg-1", "pkg-2")) }
+
+        vm.toggleService("svc-1")
+
+        val pick = vm.doubleBooking.value as DoubleBooking.Service
+        assertEquals(R.string.booking_twice_service_title_many, pick.titleRes)
+        val packages = catalogPackagesFlow.value
+        val chosen = vm.state.value.selectedPackageIds
+        assertEquals(R.string.booking_in_your_packages, packages.selectedIncluding("svc-1", chosen).inPackageMarkerRes)
+        // Only pkg-2 includes svc-2, so its row keeps the one-package marker.
+        assertEquals(R.string.booking_in_your_package, packages.selectedIncluding("svc-2", chosen).inPackageMarkerRes)
+    }
+
     @Test
     fun twoSeededOverlappingPackages_neverAsk() = runTest {
         val vm = withOverlappingPackages()

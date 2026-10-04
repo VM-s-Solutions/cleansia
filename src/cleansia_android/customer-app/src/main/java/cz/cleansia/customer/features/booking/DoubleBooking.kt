@@ -35,6 +35,10 @@ import cz.cleansia.customer.core.catalog.ServiceListItem
 sealed interface DoubleBooking {
     /** Adding [service], which the selected [packages] include. */
     data class Service(val service: ServiceListItem, val packages: List<PackageListItem>) : DoubleBooking {
+        /** "Already in your package" beside one package that includes it, "packages" beside two or more. */
+        val titleRes: Int
+            get() = if (packages.size > 1) R.string.booking_twice_service_title_many else R.string.booking_twice_service_title
+
         /** Beside one package that includes it the service is booked twice; beside two or more, "twice" is false. */
         val messageRes: Int
             get() = if (packages.size > 1) R.string.booking_twice_service_message_many else R.string.booking_twice_service_message
@@ -47,6 +51,10 @@ sealed interface DoubleBooking {
 /** The selected packages that include [serviceId]: what the service's row is marked with. */
 fun List<PackageListItem>.selectedIncluding(serviceId: String, selectedPackageIds: Set<String>): List<PackageListItem> =
     filter { pkg -> pkg.id in selectedPackageIds && pkg.includedServices.orEmpty().any { it.serviceId == serviceId } }
+
+/** The marker's line for these chosen packages: "In your package: …" for one, "In your packages: …" for two or more. */
+val List<PackageListItem>.inPackageMarkerRes: Int
+    get() = if (size > 1) R.string.booking_in_your_packages else R.string.booking_in_your_package
 
 /** What adding the service [serviceId] would book once more, or null when it books nothing again. */
 fun doubleBookingOfService(
@@ -97,7 +105,7 @@ fun InPackageMarker(packages: List<PackageListItem>) {
         )
         Spacer(Modifier.width(4.dp))
         Text(
-            stringResource(R.string.booking_in_your_package, names),
+            stringResource(packages.inPackageMarkerRes, names),
             style = MaterialTheme.typography.labelMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             maxLines = 2,
@@ -114,7 +122,7 @@ fun DoubleBookingDialog(pick: DoubleBooking, onConfirm: () -> Unit, onDismiss: (
     val confirm: String
     when (pick) {
         is DoubleBooking.Service -> {
-            title = stringResource(R.string.booking_twice_service_title)
+            title = stringResource(pick.titleRes)
             text = stringResource(
                 pick.messageRes,
                 localizedName(pick.service.translations, pick.service.name),

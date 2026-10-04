@@ -218,7 +218,7 @@ struct TwiceBookedAlert: ViewModifier {
 
     func body(content: Content) -> some View {
         content.alert(
-            pick.map(title) ?? "",
+            pick?.title ?? "",
             isPresented: Binding(get: { pick != nil }, set: { if !$0 { onCancel() } }),
             presenting: pick
         ) { pick in
@@ -226,13 +226,6 @@ struct TwiceBookedAlert: ViewModifier {
             Button(L10n.cancel, role: .cancel, action: onCancel)
         } message: { pick in
             Text(catalog?.twiceBookedMessage(pick, locale: locale) ?? "")
-        }
-    }
-
-    private func title(_ pick: TwiceBookedPick) -> String {
-        switch pick {
-        case .service: L10n.Booking.twiceServiceTitle
-        case .package: L10n.Booking.twicePackageTitle
         }
     }
 

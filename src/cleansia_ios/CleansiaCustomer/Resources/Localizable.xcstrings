@@ -2736,6 +2736,41 @@
         }
       }
     },
+    "booking_in_your_packages": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ve vašich balíčcích: %@"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "In your packages: %@"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "В ваших пакетах: %@"
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vo vašich balíkoch: %@"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "У ваших пакетах: %@"
+          }
+        }
+      }
+    },
     "booking_size_limit_caption": {
       "extractionState": "manual",
       "localizations": {
@@ -3117,6 +3152,41 @@
           "stringUnit": {
             "state": "translated",
             "value": "Уже є у вашому пакеті"
+          }
+        }
+      }
+    },
+    "booking_twice_service_title_many": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Už je ve vašich balíčcích"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Already in your packages"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Уже есть в ваших пакетах"
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Už je vo vašich balíkoch"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Уже є у ваших пакетах"
           }
         }
       }

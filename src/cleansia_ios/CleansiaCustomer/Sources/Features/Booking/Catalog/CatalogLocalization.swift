@@ -82,12 +82,14 @@ extension CatalogPackage {
 }
 
 extension Catalog {
-    /// The service row's "In your package: …" line, naming every selected package that includes it;
-    /// nil when none does.
+    /// The service row's "In your package: …" line — "In your packages: …" when two or more do — naming
+    /// every selected package that includes it; nil when none does.
     func inPackageNote(for serviceId: String, selectedPackageIds: Set<String>, locale: Locale) -> String? {
         let names = selectedPackages(including: serviceId, selectedPackageIds: selectedPackageIds)
             .map { $0.localizedName(for: locale) }
-        return names.isEmpty ? nil : L10n.Booking.inYourPackage(names.joined(separator: ", "))
+        guard !names.isEmpty else { return nil }
+        let joined = names.joined(separator: ", ")
+        return names.count > 1 ? L10n.Booking.inYourPackages(joined) : L10n.Booking.inYourPackage(joined)
     }
 
     /// The twice-booking confirm's message. A service already in two or more selected packages would be
@@ -114,6 +116,19 @@ extension Catalog {
                 package: package.localizedName(for: locale),
                 services: names.joined(separator: ", ")
             )
+        }
+    }
+}
+
+extension TwiceBookedPick {
+    /// The twice-booking confirm's title: a service two or more selected packages include is "already in
+    /// your packages", as its marker says.
+    var title: String {
+        switch self {
+        case let .service(_, packageIds):
+            packageIds.count > 1 ? L10n.Booking.twiceServiceTitleMany : L10n.Booking.twiceServiceTitle
+        case .package:
+            L10n.Booking.twicePackageTitle
         }
     }
 }

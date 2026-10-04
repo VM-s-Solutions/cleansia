@@ -378,8 +378,16 @@ extension L10n {
             format("booking_in_your_package", packages)
         }
 
+        static func inYourPackages(_ packages: String) -> String {
+            format("booking_in_your_packages", packages)
+        }
+
         static var twiceServiceTitle: String {
             localized("booking_twice_service_title")
+        }
+
+        static var twiceServiceTitleMany: String {
+            localized("booking_twice_service_title_many")
         }
 
         static func twiceServiceMessage(service: String, packages: String) -> String {

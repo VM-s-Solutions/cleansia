@@ -41,18 +41,20 @@ final class TwiceBookedPickTests: XCTestCase {
 
     // MARK: - The marker
 
+    /// One package is "In your package"; two or more are "In your packages".
     func testTheMarkerNamesEverySelectedPackageThatIncludesTheService() {
         let selected: Set = ["p-1", "p-2", "p-3"]
 
         XCTAssertEqual(
             catalog.inPackageNote(for: "s-1", selectedPackageIds: selected, locale: english),
-            L10n.Booking.inYourPackage("Package p-1, Package p-2")
+            L10n.Booking.inYourPackages("Package p-1, Package p-2")
         )
         XCTAssertEqual(
             catalog.inPackageNote(for: "s-2", selectedPackageIds: selected, locale: english),
             L10n.Booking.inYourPackage("Package p-1")
         )
         XCTAssertNil(catalog.inPackageNote(for: "s-3", selectedPackageIds: selected, locale: english))
+        XCTAssertNotEqual(L10n.Booking.inYourPackages("Package p-1"), L10n.Booking.inYourPackage("Package p-1"))
     }
 
     func testAPackageThatIsNotSelectedMarksNothing() {
@@ -111,7 +113,21 @@ final class TwiceBookedPickTests: XCTestCase {
         XCTAssertNil(catalog.twiceBookedPick(addingPackage: "p-2", selectedServiceIds: [], selectedPackageIds: ["p-3"]))
     }
 
-    // MARK: - The message
+    // MARK: - The title and the message
+
+    /// A service in two chosen packages is "already in your packages"; a package pick keeps its own title.
+    func testAServiceInTwoSelectedPackagesTitlesThePackagesInThePlural() {
+        XCTAssertEqual(TwiceBookedPick.service(id: "s-1", packageIds: ["p-1"]).title, L10n.Booking.twiceServiceTitle)
+        XCTAssertEqual(
+            TwiceBookedPick.service(id: "s-1", packageIds: ["p-1", "p-2"]).title,
+            L10n.Booking.twiceServiceTitleMany
+        )
+        XCTAssertEqual(
+            TwiceBookedPick.package(id: "p-1", serviceIds: ["s-1", "s-2"]).title,
+            L10n.Booking.twicePackageTitle
+        )
+        XCTAssertNotEqual(L10n.Booking.twiceServiceTitleMany, L10n.Booking.twiceServiceTitle)
+    }
 
     /// A service already in two chosen packages would be booked a third time: "twice" would be false.
     func testAServiceInTwoSelectedPackagesSaysOnceMoreNotTwice() {
@@ -172,6 +188,11 @@ final class TwiceBookedPickTests: XCTestCase {
         vm.toggleService("s-1")
 
         XCTAssertEqual(vm.twiceBookedPick, .service(id: "s-1", packageIds: ["p-1"]))
+        XCTAssertEqual(vm.twiceBookedPick?.title, L10n.Booking.twiceServiceTitle)
+        XCTAssertEqual(
+            catalog.inPackageNote(for: "s-1", selectedPackageIds: vm.state.selectedPackageIds, locale: english),
+            L10n.Booking.inYourPackage("Package p-1")
+        )
         XCTAssertEqual(vm.state.selectedServiceIds, [], "nothing is added before the customer answers")
 
         vm.cancelTwiceBooked()
@@ -235,9 +256,14 @@ final class TwiceBookedPickTests: XCTestCase {
 
         let pick = try XCTUnwrap(vm.twiceBookedPick)
         XCTAssertEqual(pick, .service(id: "s-1", packageIds: ["p-1", "p-2"]))
+        XCTAssertEqual(pick.title, L10n.Booking.twiceServiceTitleMany)
         XCTAssertEqual(
             catalog.twiceBookedMessage(pick, locale: english),
             L10n.Booking.twiceServiceMessageMany(service: "Service s-1", packages: "Package p-1, Package p-2")
+        )
+        XCTAssertEqual(
+            catalog.inPackageNote(for: "s-1", selectedPackageIds: vm.state.selectedPackageIds, locale: english),
+            L10n.Booking.inYourPackages("Package p-1, Package p-2")
         )
     }
 
@@ -289,7 +315,7 @@ final class TwiceBookedPickTests: XCTestCase {
         XCTAssertEqual(vm.state.selectedPackageIds, ["p-1", "p-2"])
         XCTAssertEqual(
             catalog.inPackageNote(for: "s-1", selectedPackageIds: vm.state.selectedPackageIds, locale: english),
-            L10n.Booking.inYourPackage("Package p-1, Package p-2")
+            L10n.Booking.inYourPackages("Package p-1, Package p-2")
         )
     }
 
@@ -331,6 +357,11 @@ final class TwiceBookedPickTests: XCTestCase {
         vm.toggleService("s-1")
 
         XCTAssertEqual(vm.twiceBookedPick, .service(id: "s-1", packageIds: ["p-2"]))
+        XCTAssertEqual(vm.twiceBookedPick?.title, L10n.Booking.twiceServiceTitle)
+        XCTAssertEqual(
+            catalog.inPackageNote(for: "s-1", selectedPackageIds: vm.formState.selectedPackageIds, locale: english),
+            L10n.Booking.inYourPackage("Package p-2")
+        )
         XCTAssertEqual(vm.formState.selectedServiceIds, [])
 
         vm.cancelTwiceBooked()
@@ -393,9 +424,14 @@ final class TwiceBookedPickTests: XCTestCase {
 
         let pick = try XCTUnwrap(vm.twiceBookedPick)
         XCTAssertEqual(pick, .service(id: "s-1", packageIds: ["p-1", "p-2"]))
+        XCTAssertEqual(pick.title, L10n.Booking.twiceServiceTitleMany)
         XCTAssertEqual(
             catalog.twiceBookedMessage(pick, locale: english),
             L10n.Booking.twiceServiceMessageMany(service: "Service s-1", packages: "Package p-1, Package p-2")
+        )
+        XCTAssertEqual(
+            catalog.inPackageNote(for: "s-1", selectedPackageIds: vm.formState.selectedPackageIds, locale: english),
+            L10n.Booking.inYourPackages("Package p-1, Package p-2")
         )
     }
 

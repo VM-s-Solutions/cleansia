@@ -119,13 +119,7 @@ final class BookingStepGateTests: XCTestCase {
     /// the direction from the step change, not from which button was tapped (docs/mobile-app/patterns.md
     /// #booking-steps).
     func testEveryStepBackSlidesBackWhateverMovedIt() throws {
-        let sheet = try String(
-            contentsOf: URL(fileURLWithPath: #filePath)
-                .deletingLastPathComponent()
-                .deletingLastPathComponent()
-                .appendingPathComponent("Sources/Features/Booking/BookingSheetView.swift"),
-            encoding: .utf8
-        ).replacingOccurrences(of: #"\s+"#, with: " ", options: .regularExpression)
+        let sheet = try sheetSource()
         XCTAssertTrue(
             sheet.contains(
                 ".onChange(of: viewModel.currentStep) { next in DispatchQueue.main.async { " +
@@ -151,5 +145,30 @@ final class BookingStepGateTests: XCTestCase {
                 sheet.contains("removal: .move(edge: forward ? .leading : .trailing)"),
             "the slide does not follow the direction of the step change"
         )
+    }
+
+    /// The page leaving slides out while the next slides in. Its identity changes inside a container that
+    /// outlives the change; with `.id` at the top of the step area the leaving page vanished in one frame
+    /// (recorded on iOS 26.3 and 16.4) and only the incoming page moved.
+    func testTheLeavingPageSlidesOutInsteadOfVanishing() throws {
+        let sheet = try sheetSource()
+        XCTAssertTrue(
+            sheet.contains(
+                "ZStack { stepPage .transition(stepTransition) .id(step) } " +
+                    ".animation(.easeInOut(duration: 0.28), value: step)"
+            ),
+            "the page's identity does not change inside a container of its own, so the leaving page is dropped"
+        )
+        XCTAssertEqual(sheet.components(separatedBy: ".id(step)").count - 1, 1, "the page carries a second identity")
+    }
+
+    private func sheetSource() throws -> String {
+        try String(
+            contentsOf: URL(fileURLWithPath: #filePath)
+                .deletingLastPathComponent()
+                .deletingLastPathComponent()
+                .appendingPathComponent("Sources/Features/Booking/BookingSheetView.swift"),
+            encoding: .utf8
+        ).replacingOccurrences(of: #"\s+"#, with: " ", options: .regularExpression)
     }
 }

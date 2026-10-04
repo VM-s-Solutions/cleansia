@@ -212,10 +212,6 @@ extension L10n {
             format("home_upsell_page_a11y", position, count)
         }
 
-        static var trustInsured: String {
-            localized("home_trust_insured")
-        }
-
         static var trustSameDay: String {
             localized("home_trust_same_day")
         }

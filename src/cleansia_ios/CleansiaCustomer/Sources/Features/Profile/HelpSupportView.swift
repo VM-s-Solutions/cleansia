@@ -11,15 +11,20 @@ struct HelpSupportView: View {
     @Environment(\.snackbarController) private var snackbar
     private let faqs: [(question: String, answer: String)]
 
-    /// `insurance` is the chosen market's ceiling; nil renders the answer without a figure.
+    /// `insurance` is the chosen market's ceiling; without one the insurance question is not asked.
     init(insurance: MarketMoney?) {
-        faqs = [
+        var faqs: [(question: String, answer: String)] = [
             (L10n.Help.faqQ1, L10n.Help.faqA1),
-            (L10n.Help.faqQ2, L10n.Help.faqA2),
-            (L10n.Help.faqQ3, InsuranceCopy.faqAnswer(insurance)),
+            (L10n.Help.faqQ2, L10n.Help.faqA2)
+        ]
+        if let answer = InsuranceCopy.faqAnswer(insurance) {
+            faqs.append((L10n.Help.faqQ3, answer))
+        }
+        faqs += [
             (L10n.Help.faqQ4, L10n.Help.faqA4),
             (L10n.Help.faqQ5, L10n.Help.faqA5)
         ]
+        self.faqs = faqs
     }
 
     var body: some View {

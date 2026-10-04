@@ -10,43 +10,49 @@ final class MarketCopyTests: XCTestCase {
     private static let locales = ["en", "cs", "sk", "uk", "ru"]
     private static let currencyWord = "CZK|Kč|EUR|€"
     private static let vettingClaim = "background|vetted|prověřen|preveren|перевірен|проверен"
+    private static let insuranceClaim = "insur|pojišt|poist|застрах"
 
     // MARK: The renderers
 
-    func testTheTrustBadgeStatesTheMarketsCeilingInItsCurrency() {
-        let text = InsuranceCopy.trustBadge(MarketMoney(amount: 1_000_000, currencyCode: "CZK"))
+    func testTheTrustBadgeStatesTheMarketsCeilingInItsCurrency() throws {
+        let text = try XCTUnwrap(InsuranceCopy.trustBadge(MarketMoney(amount: 1_000_000, currencyCode: "CZK")))
         XCTAssertEqual(text, L10n.Booking.trustInsured(OrdersFormat.price(1_000_000, currencyCode: "CZK")))
         XCTAssertTrue(text.hasSuffix(" Kč"), text)
         XCTAssertTrue(text.contains("000"), "the ceiling's digits come from the market, not the string")
     }
 
-    func testWithoutACeilingTheTrustBadgeClaimsInsuranceAndNoFigure() {
-        let text = InsuranceCopy.trustBadge(nil)
-        XCTAssertEqual(text, L10n.Booking.trustInsuredNoFigure)
-        XCTAssertNil(text.rangeOfCharacter(from: .decimalDigits), text)
+    /// A cleaner needs no insurance to be approved, so without a ceiling the market stands behind
+    /// nothing claims it.
+    func testWithoutACeilingNothingClaimsInsurance() {
+        XCTAssertNil(InsuranceCopy.trustBadge(nil))
+        XCTAssertNil(InsuranceCopy.faqAnswer(nil))
     }
 
-    func testTheFaqAnswerFollowsTheSameRule() {
-        let stated = InsuranceCopy.faqAnswer(MarketMoney(amount: 50000, currencyCode: "EUR"))
+    func testTheFaqAnswerStatesTheMarketsCeilingInItsCurrency() throws {
+        let stated = try XCTUnwrap(InsuranceCopy.faqAnswer(MarketMoney(amount: 50000, currencyCode: "EUR")))
         XCTAssertEqual(stated, L10n.Help.faqA3(OrdersFormat.price(50000, currencyCode: "EUR")))
         XCTAssertTrue(stated.contains("€"), stated)
-
-        let unstated = InsuranceCopy.faqAnswer(nil)
-        XCTAssertEqual(unstated, L10n.Help.faqA3NoFigure)
-        XCTAssertNil(unstated.rangeOfCharacter(from: .decimalDigits), unstated)
     }
 
     // MARK: The catalog
 
-    func testTheNoFigureVariantsCarryNoDigitAndNoCurrencyWordInAnyLocale() throws {
+    /// The only insurance copy left carries the market's figure, or is the question that figure answers.
+    func testNoLocaleClaimsInsuranceWithoutTheMarketsFigure() throws {
         let strings = try customerStrings()
-        for key in ["booking_trust_insured_no_figure", "help_faq_a3_no_figure"] {
+        var offenders: [String] = []
+        for (key, entry) in strings where key != "help_faq_q3" {
+            guard let localizations = (entry as? [String: Any])?["localizations"] as? [String: Any] else { continue }
             for locale in Self.locales {
-                let value = try value(of: key, locale, in: strings)
-                XCTAssertNil(value.rangeOfCharacter(from: .decimalDigits), "\(locale)/\(key) states a figure: \(value)")
-                XCTAssertFalse(matches(Self.currencyWord, value), "\(locale)/\(key) names a currency: \(value)")
+                let unit = (localizations[locale] as? [String: Any])?["stringUnit"] as? [String: Any]
+                if let value = unit?["value"] as? String,
+                   matches(Self.insuranceClaim, value.lowercased()),
+                   !value.contains("%1$@")
+                {
+                    offenders.append("\(locale)/\(key)")
+                }
             }
         }
+        XCTAssertEqual(offenders.sorted(), [], "insurance is claimed with no ceiling behind it")
     }
 
     /// The push announces the credit as different news from a plain cancellation. The credit
@@ -93,7 +99,7 @@ final class MarketCopyTests: XCTestCase {
         XCTAssertEqual(offenders, [], "money is formatted on the device from a number and a code")
     }
 
-    /// No background check exists: approval asks for an identity card and an insurance certificate only.
+    /// No background check exists, so no locale promises one.
     func testNoLocalePromisesVettedCleaners() throws {
         let strings = try customerStrings()
         var offenders: [String] = []

@@ -12,15 +12,13 @@ struct HomeSectionTitle: View {
     }
 }
 
-/// Insured / Same-day (`TrustStrip`, `HomeTab.kt:626-668`) — the
+/// Same-day (`TrustStrip`, `HomeTab.kt:626-668`) — the
 /// fallback when there is no completed order to rebook.
 struct TrustStrip: View {
     @Environment(\.locale) private var locale
 
     var body: some View {
         HStack(spacing: 0) {
-            trustItem(icon: "shield", label: L10n.Home.trustInsured)
-            divider
             trustItem(icon: "bolt", label: L10n.Home.trustSameDay)
         }
         .padding(.horizontal, Spacing.s)
@@ -31,12 +29,6 @@ struct TrustStrip: View {
                 .stroke(CleansiaColors.outlineVariant, lineWidth: 1)
         )
         .id(locale.identifier)
-    }
-
-    private var divider: some View {
-        Rectangle()
-            .fill(CleansiaColors.outlineVariant)
-            .frame(width: 1, height: 28)
     }
 
     private func trustItem(icon: String, label: String) -> some View {

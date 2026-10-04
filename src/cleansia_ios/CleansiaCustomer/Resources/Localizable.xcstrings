@@ -7115,41 +7115,6 @@
         }
       }
     },
-    "booking_trust_insured_no_figure": {
-      "extractionState": "manual",
-      "localizations": {
-        "cs": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Pojištěno"
-          }
-        },
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Insured"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Застраховано"
-          }
-        },
-        "sk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Poistené"
-          }
-        },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Застраховано"
-          }
-        }
-      }
-    },
     "booking_trust_insured": {
       "extractionState": "stale",
       "localizations": {
@@ -12505,41 +12470,6 @@
         }
       }
     },
-    "help_faq_a3_no_figure": {
-      "extractionState": "manual",
-      "localizations": {
-        "cs": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Ano. Všichni uklízeči Cleansia jsou pojištěni."
-          }
-        },
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Yes. All Cleansia cleaners are covered by insurance."
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Да. Все клинеры Cleansia застрахованы."
-          }
-        },
-        "sk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Áno. Všetci upratovači Cleansia sú poistení."
-          }
-        },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Так. Усі клінери Cleansia застраховані."
-          }
-        }
-      }
-    },
     "help_faq_a3": {
       "extractionState": "stale",
       "localizations": {
@@ -13693,41 +13623,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Ваші регулярні прибирання"
-          }
-        }
-      }
-    },
-    "home_trust_insured": {
-      "extractionState": "stale",
-      "localizations": {
-        "cs": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Pojištěno"
-          }
-        },
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Insured"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Застраховано"
-          }
-        },
-        "sk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Poistené"
-          }
-        },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Застраховано"
           }
         }
       }

@@ -57,7 +57,9 @@ struct ConfirmStep: View {
                 termsRow
                 earlyPerformanceRow
                 ContractNotice()
-                TrustBadges(insurance: viewModel.insurance)
+                if let insuranceClaim = InsuranceCopy.trustBadge(viewModel.insurance) {
+                    TrustBadges(insuranceClaim: insuranceClaim)
+                }
             }
             .padding(Spacing.l)
         }

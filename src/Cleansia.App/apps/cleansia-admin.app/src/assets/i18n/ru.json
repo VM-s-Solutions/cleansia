@@ -281,7 +281,7 @@
     "pay_line_type": {
       "job": "Заказ",
       "cancellation_fee_share": "Доля комиссии за отмену",
-      "lockout_fee_share": "Доля комиссии за недопуск"
+      "lockout_fee_share": "Вознаграждение за заказ — недопуск"
     }
   },
   "sidebar": {

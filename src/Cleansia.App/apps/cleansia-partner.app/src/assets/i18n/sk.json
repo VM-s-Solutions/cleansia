@@ -1221,7 +1221,7 @@
     "pay_line_type": {
       "job": "Zákazka",
       "cancellation_fee_share": "Váš podiel z poplatku za neskoré zrušenie",
-      "lockout_fee_share": "Váš podiel z poplatku za neumožnený prístup"
+      "lockout_fee_share": "Vaša odmena za zákazku — zákazník vás nepustil dnu"
     }
   },
   "help": {

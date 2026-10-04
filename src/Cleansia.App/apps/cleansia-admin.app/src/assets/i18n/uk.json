@@ -281,7 +281,7 @@
     "pay_line_type": {
       "job": "Замовлення",
       "cancellation_fee_share": "Частка комісії за скасування",
-      "lockout_fee_share": "Частка комісії за недопуск"
+      "lockout_fee_share": "Винагорода за замовлення — недопуск"
     }
   },
   "sidebar": {

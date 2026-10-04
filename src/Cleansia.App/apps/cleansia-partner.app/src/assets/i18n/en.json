@@ -1221,7 +1221,7 @@
     "pay_line_type": {
       "job": "Job",
       "cancellation_fee_share": "Your share of the late-cancellation fee",
-      "lockout_fee_share": "Your share of the lockout fee"
+      "lockout_fee_share": "Your reward for the job — the customer did not let you in"
     }
   },
   "help": {

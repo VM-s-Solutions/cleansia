@@ -1825,16 +1825,18 @@ It must not be "fixed" with a de-duplication.
 2026-10-03). Wherever a customer picks services and packages — the booking and the schedule form, on
 the web, Android and iOS — the same four things hold:
 
-- **A service a chosen package includes is marked** *In your package: {package}* under its name, the
-  names joined by commas when more than one chosen package includes it. The line is part of what a
-  screen reader announces for the row (on the web booking, the add button's description; on the web
-  schedule form the whole row is the button, and the line is part of its name), and the row stays
-  selectable.
+- **A service a chosen package includes is marked** *In your package: {package}* under its name, or
+  *In your packages: {packages}*, the names joined by commas, when two or more chosen packages
+  include it (the plural since 2026-10-04; until then the line said *package* over the list too).
+  Either line is part of what a screen reader announces for the row (on the web booking, the add
+  button's description; on the web schedule form the whole row is the button, and the line is part of
+  its name), and the row stays selectable.
 - **Adding that service asks first.** *Already in your package* — *"{service} is part of {package}.
   Adding it again books it twice: it is done twice and charged twice."* — with *Add again* and
   *Cancel*. When two or more chosen packages already include it, *twice* would be false, so the
-  question says *"{service} is already part of {packages}. Adding it again books it once more: it is
-  done once more and charged once more."* (since 2026-10-04; until then it said *twice* there too).
+  question is titled *Already in your packages* and says *"{service} is already part of {packages}.
+  Adding it again books it once more: it is done once more and charged once more."* (since
+  2026-10-04; until then it said *twice* there too, under the singular title).
 - **Adding a package asks the other way round** when it includes a service already in the booking,
   chosen on its own **or through another chosen package**; the package never counts against itself.
   *Already in your booking* — *"{package} also includes what is already in your booking: {services}.

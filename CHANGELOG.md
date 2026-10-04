@@ -75,7 +75,8 @@ need backfilling.
   package* in the list of services. Adding one of those services on its own, or adding a package that
   includes a service already in your booking, chosen on its own or through another package, now asks
   first, because that service is then done once more and charged once more. A service that two of
-  your packages already include is said to be booked *once more*, not *twice*. *Cancel* leaves your
+  your packages already include is marked *In your packages*, and adding it asks under *Already in
+  your packages* and says it is booked *once more*, not *twice*. *Cancel* leaves your
   choice as it was, and removing something never asks. A booking or schedule filled in for you, such
   as *Order again*, a package from Home or a booking you come back to, is only marked. This holds in
   the booking and when you set up a recurring schedule. Nothing is merged: a pair you confirm is

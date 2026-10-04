@@ -560,10 +560,13 @@ need backfilling.
   is a new version, effective 2026-10-03, so the tick comes back before your next booking; the same
   tick accepts the terms of the same date. (Owner ruling 2026-10-03.)
 
-- **Customer Android — Help lists *Email us* first, as on iOS.** Help shows *Email us* above *Call
+- **Customer Android — Help reads and is laid out as on iOS.** Help shows *Email us* above *Call
   support*, and in Czech, Slovak, Ukrainian and Russian the two rows are worded as on iOS: *Napište
   nám* and *Zavolejte podpoře* in Czech, for example, instead of *Napsat e-mail* and *Zavolat na
-  podporu*. What each row opens is unchanged. (Owner ruling 2026-10-03: iOS is the reference for this
+  podporu*. The rest of the screen follows too: the title, the frequently asked questions and their
+  answers read as on iOS in all five languages, *Email us* shows the address it opens, both contact
+  rows share one card, and each question has a card of its own under a small section label. What each
+  row opens is unchanged. (Owner rulings 2026-10-03 and 2026-10-04: iOS is the reference for this
   screen.)
 
 - **Customer Android and iOS — arrival times are grouped by part of day, as on the web.** The

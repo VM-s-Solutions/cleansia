@@ -1157,7 +1157,14 @@ the market — or from the order, on a contract for work.
   every language: iOS is the reference for this screen (owner ruling 2026-10-03). Until then Android
   listed *Call support* first, and in Czech, Slovak, Ukrainian and Russian its two titles were
   infinitives (*Napsat e-mail*, *Zavolat na podporu*) where iOS addresses the customer (*Napište nám*,
-  *Zavolejte podpoře*).
+  *Zavolejte podpoře*). Since 2026-10-04 the whole screen follows iOS (owner ruling 2026-10-04): the
+  same title, two sections under small upper-case labels, *Contact us* first with both rows in one card
+  split by a divider, then the five questions in iOS's order, each in a card of its own. Every title,
+  question, answer and notice reads as on iOS in all five languages, and *Email us* shows the address
+  it opens. Until then Android drew each contact row as a card of its own with a round icon badge, put
+  the five questions in one card with a help icon on each, and worded the title and most questions and
+  answers differently in at least one language (in Slovak the title read *Pomocník a podpora*, where
+  iOS says *Pomoc a podpora*).
 - **The registered name comes with the registration.** Whether the company is *Cleansia CZ s.r.o.* or
   *Cleansia s.r.o.* is written once, on the company record, and every text, receipt, confirmation and
   e-mail footer follows it; the footer's copyright line still reads *Cleansia s.r.o.*

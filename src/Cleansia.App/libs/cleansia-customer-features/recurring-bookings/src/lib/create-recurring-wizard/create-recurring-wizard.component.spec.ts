@@ -8,13 +8,13 @@ import {
   PackageListItem,
   PaymentType,
   PreferredCleanerOption,
+  RecurringBookingTemplateDto,
   SavedAddressDto,
   ServiceListItem,
 } from '@cleansia/customer-services';
 import { TranslateModule } from '@ngx-translate/core';
 import { readFileSync } from 'fs';
 import { join } from 'path';
-import { ConfirmationService } from 'primeng/api';
 import { DatePicker } from 'primeng/datepicker';
 import { RecurringBookingsFacade } from '../recurring-bookings.facade';
 import {
@@ -69,7 +69,7 @@ class FakeRecurringBookingsFacade {
   selectPreferredCleaner = jest.fn();
   quoteForm = jest.fn();
   prefill = jest.fn();
-  findTemplate = jest.fn(() => null);
+  findTemplate = jest.fn<RecurringBookingTemplateDto | null, [string]>(() => null);
   loadForEdit = jest.fn();
   packageName = jest.fn(() => null);
   serviceName = jest.fn(() => null);
@@ -83,7 +83,7 @@ class FakeRecurringBookingsFacade {
   saveWithoutPreferredCleaner = jest.fn();
   resetWizard = jest.fn();
   toggleActive = jest.fn();
-  deleteTemplate = jest.fn();
+  confirmDeleteTemplate = jest.fn<Promise<boolean>, [RecurringBookingTemplateDto]>();
 }
 
 // A package plus a service it already includes books that service on every clean twice. The row
@@ -113,7 +113,6 @@ describe('CreateRecurringWizardComponent — a service a chosen package already 
         set: {
           providers: [
             { provide: RecurringBookingsFacade, useValue: facade },
-            ConfirmationService,
           ],
         },
       })
@@ -175,7 +174,6 @@ describe('CreateRecurringWizardComponent — paying in cash', () => {
         set: {
           providers: [
             { provide: RecurringBookingsFacade, useValue: facade },
-            ConfirmationService,
           ],
         },
       })
@@ -284,7 +282,6 @@ describe('CreateRecurringWizardComponent — a refused preferred cleaner', () =>
         set: {
           providers: [
             { provide: RecurringBookingsFacade, useValue: facade },
-            ConfirmationService,
           ],
         },
       })
@@ -377,7 +374,6 @@ describe('CreateRecurringWizardComponent — the favourite cleaner', () => {
         set: {
           providers: [
             { provide: RecurringBookingsFacade, useValue: facade },
-            ConfirmationService,
           ],
         },
       })
@@ -459,7 +455,6 @@ describe('CreateRecurringWizardComponent — home size', () => {
         set: {
           providers: [
             { provide: RecurringBookingsFacade, useValue: new FakeRecurringBookingsFacade() },
-            ConfirmationService,
           ],
         },
       })
@@ -509,7 +504,6 @@ describe('CreateRecurringWizardComponent — how clean the home is', () => {
         set: {
           providers: [
             { provide: RecurringBookingsFacade, useValue: facade },
-            ConfirmationService,
           ],
         },
       })
@@ -583,7 +577,6 @@ describe('CreateRecurringWizardComponent — the request to start within the wit
         set: {
           providers: [
             { provide: RecurringBookingsFacade, useValue: facade },
-            ConfirmationService,
           ],
         },
       })
@@ -629,5 +622,73 @@ describe('CreateRecurringWizardComponent — the request to start within the wit
     expect(fixture.componentInstance.missingLabels()).toBe(
       'recurring_booking.early_performance_label',
     );
+  });
+});
+
+// The delete asks on the app shell's one confirm dialog, through the facade; the screen only goes
+// back to the list once the customer said yes.
+describe('CreateRecurringWizardComponent — deleting the schedule', () => {
+  let fixture: ComponentFixture<CreateRecurringWizardComponent>;
+  let facade: FakeRecurringBookingsFacade;
+  let navigate: jest.SpyInstance;
+  const schedule = RecurringBookingTemplateDto.fromJS({ id: 't1', isActive: true });
+
+  beforeEach(async () => {
+    facade = new FakeRecurringBookingsFacade();
+    facade.editingId.set('t1');
+    facade.findTemplate.mockReturnValue(schedule);
+    await TestBed.configureTestingModule({
+      imports: [CreateRecurringWizardComponent, TranslateModule.forRoot()],
+      providers: [
+        provideRouter([]),
+        provideNoopAnimations(),
+        {
+          provide: ActivatedRoute,
+          useValue: {
+            snapshot: { paramMap: { get: () => null }, queryParamMap: { get: () => null } },
+          },
+        },
+      ],
+    })
+      .overrideComponent(CreateRecurringWizardComponent, {
+        set: {
+          providers: [{ provide: RecurringBookingsFacade, useValue: facade }],
+        },
+      })
+      .compileComponents();
+    navigate = jest.spyOn(TestBed.inject(Router), 'navigate').mockResolvedValue(true);
+    fixture = TestBed.createComponent(CreateRecurringWizardComponent);
+    fixture.detectChanges();
+  });
+
+  it('hands the delete to the facade, which asks', () => {
+    facade.confirmDeleteTemplate.mockResolvedValue(false);
+    const del = fixture.nativeElement.querySelector(
+      '.cl-rec__ghost--danger',
+    ) as HTMLButtonElement | null;
+
+    del?.click();
+
+    expect(facade.confirmDeleteTemplate).toHaveBeenCalledWith(schedule);
+  });
+
+  it('goes back to the list once the customer said yes', async () => {
+    facade.confirmDeleteTemplate.mockResolvedValue(true);
+
+    await fixture.componentInstance.confirmDelete();
+
+    expect(navigate).toHaveBeenCalledWith(['/membership', 'recurring']);
+  });
+
+  it('stays on the schedule when the customer cancels', async () => {
+    facade.confirmDeleteTemplate.mockResolvedValue(false);
+
+    await fixture.componentInstance.confirmDelete();
+
+    expect(navigate).not.toHaveBeenCalled();
+  });
+
+  it('draws no confirm dialog of its own', () => {
+    expect(fixture.nativeElement.querySelector('p-confirmdialog')).toBeNull();
   });
 });

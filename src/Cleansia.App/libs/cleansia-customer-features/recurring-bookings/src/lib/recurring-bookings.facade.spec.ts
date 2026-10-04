@@ -844,6 +844,50 @@ describe('RecurringBookingsFacade', () => {
     });
   });
 
+  // Asked on the app shell's one confirm dialog, through the shared DialogService.
+  describe('confirmDeleteTemplate', () => {
+    const weekly = () => template({ id: 't1', frequency: RecurrenceFrequency.Weekly });
+
+    it('asks in the schedule\'s own words, with a red Delete and Cancel', async () => {
+      await facade.confirmDeleteTemplate(weekly());
+
+      expect(dialog.confirmTranslated).toHaveBeenCalledWith(
+        'recurring_booking.delete_dialog_compound',
+        'recurring_booking.delete_dialog_title',
+        { schedule: 'recurring_booking.cadence_weekly' },
+        {
+          acceptLabelKey: 'recurring_booking.delete_dialog_confirm',
+          rejectLabelKey: 'global.cancel',
+          danger: true,
+        },
+      );
+    });
+
+    it('deletes the schedule and clears the form once the customer says yes', async () => {
+      dialog.confirmTranslated.mockReturnValue(of(true));
+      facade.templates.set([weekly(), template({ id: 't2' })]);
+      facade.updateFormData({ selectedServiceIds: ['s1'] });
+
+      const deleted = await facade.confirmDeleteTemplate(weekly());
+
+      expect(deleted).toBe(true);
+      expect(client.delete).toHaveBeenCalledTimes(1);
+      expect(facade.templates().map((t) => t.id)).toEqual(['t2']);
+      expect(facade.formData().selectedServiceIds).toEqual([]);
+    });
+
+    it('deletes nothing when the customer cancels', async () => {
+      dialog.confirmTranslated.mockReturnValue(of(false));
+      facade.updateFormData({ selectedServiceIds: ['s1'] });
+
+      const deleted = await facade.confirmDeleteTemplate(weekly());
+
+      expect(deleted).toBe(false);
+      expect(client.delete).not.toHaveBeenCalled();
+      expect(facade.formData().selectedServiceIds).toEqual(['s1']);
+    });
+  });
+
   describe('deleteTemplate', () => {
     it('removes the template and shows success on a successful delete', async () => {
       facade.templates.set([template({ id: 't1' }), template({ id: 't2' })]);

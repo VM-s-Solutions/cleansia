@@ -11,7 +11,7 @@ import {
   resolveExpressWaiverStatus,
   SwapMembershipPlanCommand,
 } from '@cleansia/customer-services';
-import { SnackbarService } from '@cleansia/services';
+import { DialogService, SnackbarService } from '@cleansia/services';
 import { Store } from '@ngrx/store';
 import { catchError, of, takeUntil } from 'rxjs';
 
@@ -37,6 +37,7 @@ export class MembershipFacade extends UnsubscribeControlDirective {
   private readonly customerClient = inject(CustomerClient);
   private readonly client = this.customerClient.membershipClient;
   private readonly snackbar = inject(SnackbarService);
+  private readonly dialog = inject(DialogService);
   private readonly store = inject(Store);
 
   // Management state
@@ -152,6 +153,41 @@ export class MembershipFacade extends UnsubscribeControlDirective {
         const list = plans ?? [];
         this.plans.set(list);
         onLoaded?.(list);
+      });
+  }
+
+  /**
+   * Asks on the app shell's confirm dialog, and cancels only on yes. `date` is the trial's end as
+   * the screen prints it.
+   */
+  confirmCancel(date: string, onCancelled?: () => void): void {
+    this.dialog
+      .confirmTranslated(
+        this.cancelDialogMessageKey(),
+        'pages.membership.cancel_dialog_title',
+        { date },
+        {
+          acceptLabelKey: 'pages.membership.cancel_dialog_confirm',
+          rejectLabelKey: 'common.back',
+        },
+      )
+      .pipe(takeUntil(this.destroyed$))
+      .subscribe((confirmed) => {
+        if (confirmed) this.cancel(onCancelled);
+      });
+  }
+
+  /** Asks before switching to `planCode`; `price` and `date` as the screen prints them. */
+  confirmSwapPlan(planCode: string, params: { price: string; date: string }): void {
+    this.dialog
+      .confirmTranslated(this.switchDialogMessageKey(), 'pages.membership.switch_dialog_title', params, {
+        icon: 'pi pi-arrow-up-right',
+        acceptLabelKey: this.switchConfirmKey(),
+        rejectLabelKey: 'common.back',
+      })
+      .pipe(takeUntil(this.destroyed$))
+      .subscribe((confirmed) => {
+        if (confirmed) this.swapPlan(planCode);
       });
   }
 

@@ -46,6 +46,7 @@ import { toObservable, toSignal } from '@angular/core/rxjs-interop';
 import { firstValueFrom, takeUntil } from 'rxjs';
 import {
   PricedSelection,
+  RecurrenceFrequency,
   RecurringPrefillParams,
   RecurringWizardFormData,
   RECURRING_WIZARD_INITIAL_DATA,
@@ -1075,6 +1076,46 @@ export class RecurringBookingsFacade extends UnsubscribeControlDirective {
       this.snackbar.showError(this.translate.instant('recurring_booking.toggle_failed'));
     } finally {
       this.mutatingId.set(null);
+    }
+  }
+
+  /**
+   * Asks before deleting the schedule, then deletes it and clears the form. True once the customer
+   * said yes: the form has nothing left to edit then, whether or not the delete went through (a
+   * refusal is already on the snackbar).
+   */
+  async confirmDeleteTemplate(template: RecurringBookingTemplateDto): Promise<boolean> {
+    const id = template.id;
+    if (!id) return false;
+    const confirmed = await firstValueFrom(
+      this.dialog
+        .confirmTranslated(
+          'recurring_booking.delete_dialog_compound',
+          'recurring_booking.delete_dialog_title',
+          { schedule: this.translate.instant(this.cadenceKey(template.frequency)) },
+          {
+            acceptLabelKey: 'recurring_booking.delete_dialog_confirm',
+            rejectLabelKey: 'global.cancel',
+            danger: true,
+          },
+        )
+        .pipe(takeUntil(this.destroyed$)),
+      { defaultValue: false },
+    );
+    if (!confirmed) return false;
+    await this.deleteTemplate(id);
+    this.resetWizard();
+    return true;
+  }
+
+  private cadenceKey(frequency: number): string {
+    switch (frequency as RecurrenceFrequency) {
+      case RecurrenceFrequency.Biweekly:
+        return 'recurring_booking.cadence_biweekly';
+      case RecurrenceFrequency.Monthly:
+        return 'recurring_booking.cadence_monthly';
+      default:
+        return 'recurring_booking.cadence_weekly';
     }
   }
 

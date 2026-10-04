@@ -8,16 +8,17 @@ import {
   UpdateNotificationPreferencesCommand,
   UserConsentDto,
 } from '@cleansia/customer-services';
-import { SnackbarService } from '@cleansia/services';
+import { DialogService, SnackbarService } from '@cleansia/services';
 import { formatDate } from '@cleansia/utils';
 import { TranslateService } from '@ngx-translate/core';
 import { Subject, of, throwError } from 'rxjs';
 import { GdprFacade } from './gdpr.facade';
 
 describe('GdprFacade (customer)', () => {
-  let gdprClient: { consentsGet: jest.Mock };
+  let gdprClient: { consentsGet: jest.Mock; deleteAccount: jest.Mock };
   let notificationPreferencesClient: { getMine: jest.Mock; update: jest.Mock };
   let snackbar: { showSuccess: jest.Mock; showError: jest.Mock };
+  let dialog: { confirmTranslated: jest.Mock };
   let facade: GdprFacade;
 
   const grantedAt = new Date('2026-09-01T10:00:00Z');
@@ -54,12 +55,16 @@ describe('GdprFacade (customer)', () => {
 
   beforeEach(() => {
     TestBed.resetTestingModule();
-    gdprClient = { consentsGet: jest.fn().mockReturnValue(of([])) };
+    gdprClient = {
+      consentsGet: jest.fn().mockReturnValue(of([])),
+      deleteAccount: jest.fn().mockReturnValue(of(undefined)),
+    };
     notificationPreferencesClient = {
       getMine: jest.fn().mockReturnValue(of(preferences(false))),
       update: jest.fn(),
     };
     snackbar = { showSuccess: jest.fn(), showError: jest.fn() };
+    dialog = { confirmTranslated: jest.fn().mockReturnValue(of(false)) };
 
     TestBed.configureTestingModule({
       providers: [
@@ -74,6 +79,7 @@ describe('GdprFacade (customer)', () => {
           useValue: { isLoggedIn: () => true, logout: () => of(undefined) },
         },
         { provide: SnackbarService, useValue: snackbar },
+        { provide: DialogService, useValue: dialog },
         {
           provide: TranslateService,
           useValue: {
@@ -86,6 +92,35 @@ describe('GdprFacade (customer)', () => {
     });
 
     facade = TestBed.inject(GdprFacade);
+  });
+
+  // Asked on the app shell's one confirm dialog, through the shared DialogService.
+  describe('deleting the account', () => {
+    it('asks first, in the page\'s own words', () => {
+      facade.confirmDeleteAccount();
+
+      expect(dialog.confirmTranslated).toHaveBeenCalledWith(
+        'pages.gdpr.delete_confirm_message',
+        'pages.gdpr.delete_confirm_title',
+        undefined,
+        { acceptLabelKey: 'pages.gdpr.delete_confirm_yes' },
+      );
+    });
+
+    it('deletes the account once the customer says yes', () => {
+      dialog.confirmTranslated.mockReturnValue(of(true));
+
+      facade.confirmDeleteAccount();
+
+      expect(gdprClient.deleteAccount).toHaveBeenCalledTimes(1);
+      expect(snackbar.showSuccess).toHaveBeenCalledWith('pages.gdpr.delete_success');
+    });
+
+    it('deletes nothing when the customer cancels', () => {
+      facade.confirmDeleteAccount();
+
+      expect(gdprClient.deleteAccount).not.toHaveBeenCalled();
+    });
   });
 
   describe('loading the consent section', () => {

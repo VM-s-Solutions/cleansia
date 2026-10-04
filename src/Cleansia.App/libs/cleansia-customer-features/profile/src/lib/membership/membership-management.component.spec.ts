@@ -76,12 +76,14 @@ describe('MembershipManagementComponent — what cancelling or switching says', 
         },
         { provide: TranslateService, useValue: { instant, currentLang: 'en' } },
         { provide: Router, useValue: { navigate: jest.fn() } },
+        // The app root's, behind the shared confirm the facade asks through.
+        { provide: ConfirmationService, useValue: { confirm } },
       ],
     });
     TestBed.overrideComponent(MembershipManagementComponent, {
       set: {
         template: '',
-        providers: [MembershipFacade, { provide: ConfirmationService, useValue: { confirm } }],
+        providers: [MembershipFacade],
       },
     });
     const component = TestBed.createComponent(MembershipManagementComponent).componentInstance;
@@ -137,6 +139,7 @@ describe('MembershipManagementComponent — what cancelling or switching says', 
     component.switchTo('PLUS_YEARLY');
     expect(asked().message).toBe('pages.membership.switch_dialog_message');
     expect(asked().acceptLabel).toBe('pages.membership.switch_dialog_confirm');
+    expect(asked().rejectLabel).toBe('common.back');
   });
 
   it('tells a member whose renewal failed that the cancel ends it now, then toasts the same', () => {

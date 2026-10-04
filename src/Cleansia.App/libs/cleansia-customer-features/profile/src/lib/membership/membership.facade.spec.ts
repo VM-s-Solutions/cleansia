@@ -7,7 +7,7 @@ import {
   SwapMembershipPlanCommand,
 } from '@cleansia/customer-services';
 import { selectMarketCountryId } from '@cleansia/customer-stores';
-import { SnackbarService } from '@cleansia/services';
+import { DialogService, SnackbarService } from '@cleansia/services';
 import { provideMockStore } from '@ngrx/store/testing';
 import { of, throwError } from 'rxjs';
 import { MembershipFacade } from './membership.facade';
@@ -72,6 +72,8 @@ describe('MembershipFacade — express waiver state', () => {
         }),
         { provide: CustomerClient, useValue: { membershipClient } },
         { provide: SnackbarService, useValue: snackbar },
+        // The confirms are pinned by the screen's spec, through the real DialogService.
+        { provide: DialogService, useValue: {} },
       ],
     });
 

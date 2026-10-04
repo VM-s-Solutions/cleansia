@@ -2725,7 +2725,7 @@
         "sk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Vo vašom balíčku: %@"
+            "value": "Vo vašom balíku: %@"
           }
         },
         "uk": {
@@ -2900,7 +2900,7 @@
         "sk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Pridať balíček"
+            "value": "Pridať balík"
           }
         },
         "uk": {
@@ -2935,7 +2935,7 @@
         "sk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Balíček %1$@ obsahuje aj to, čo už máte v rezervácii samostatne: %2$@. Ak balíček pridáte, objednáte to dvakrát: vykoná sa to dvakrát a zaplatíte to dvakrát."
+            "value": "Balík %1$@ obsahuje aj to, čo už máte v rezervácii samostatne: %2$@. Ak balík pridáte, objednáte to dvakrát: vykoná sa to dvakrát a zaplatíte to dvakrát."
           }
         },
         "uk": {
@@ -3040,7 +3040,7 @@
         "sk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Služba %1$@ je súčasťou balíčka %2$@. Ak ju pridáte znova, objednáte ju dvakrát: vykoná sa dvakrát a zaplatíte ju dvakrát."
+            "value": "Služba %1$@ je súčasťou balíka %2$@. Ak ju pridáte znova, objednáte ju dvakrát: vykoná sa dvakrát a zaplatíte ju dvakrát."
           }
         },
         "uk": {
@@ -3075,7 +3075,7 @@
         "sk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Už je vo vašom balíčku"
+            "value": "Už je vo vašom balíku"
           }
         },
         "uk": {
@@ -4092,7 +4092,7 @@
         "sk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Odporúčané balíčky"
+            "value": "Odporúčané balíky"
           }
         },
         "uk": {
@@ -13441,7 +13441,7 @@
         "sk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Obľúbené balíčky"
+            "value": "Obľúbené balíky"
           }
         },
         "uk": {
@@ -24336,7 +24336,7 @@
         "sk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Balíčky"
+            "value": "Balíky"
           }
         },
         "uk": {
@@ -34695,7 +34695,7 @@
         "sk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Balíčky"
+            "value": "Balíky"
           }
         },
         "uk": {

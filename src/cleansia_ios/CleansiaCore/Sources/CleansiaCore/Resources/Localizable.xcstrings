@@ -4205,31 +4205,31 @@
         "cs": {
           "stringUnit": {
             "state": "translated",
-            "value": "Před uložením karty prosím potvrďte souhlas, že na ni mohou být účtovány poplatky a nezaplacená hotovost."
+            "value": "Před uložením karty prosím zaškrtněte souhlas s jejím uložením."
           }
         },
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Please agree that fees and unpaid cash may be charged to your card before saving it."
+            "value": "Please tick the box agreeing to save your card before saving it."
           }
         },
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Прежде чем сохранить карту, согласитесь, что с неё могут списываться сборы и неоплаченные наличные."
+            "value": "Прежде чем сохранить карту, отметьте согласие на её сохранение."
           }
         },
         "sk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Pred uložením karty prosím potvrďte súhlas, že na ňu môžu byť účtované poplatky a nezaplatená hotovosť."
+            "value": "Pred uložením karty prosím zaškrtnite súhlas s jej uložením."
           }
         },
         "uk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Перш ніж зберегти картку, погодьтеся, що з неї можуть стягуватися збори та неоплачена готівка."
+            "value": "Перш ніж зберегти картку, позначте згоду на її збереження."
           }
         }
       }

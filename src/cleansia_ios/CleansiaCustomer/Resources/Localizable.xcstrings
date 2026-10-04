@@ -2284,31 +2284,31 @@
         "cs": {
           "stringUnit": {
             "state": "translated",
-            "value": "Karta jako záruka plateb v hotovosti"
+            "value": "Souhlas s uložením karty"
           }
         },
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "A card to guarantee cash bookings"
+            "value": "Consent to save this card"
           }
         },
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Карта как гарантия для оплаты наличными"
+            "value": "Согласие на сохранение карты"
           }
         },
         "sk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Karta ako záruka platieb v hotovosti"
+            "value": "Súhlas s uložením karty"
           }
         },
         "uk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Картка як гарантія для оплати готівкою"
+            "value": "Згода на збереження картки"
           }
         }
       }
@@ -29642,31 +29642,31 @@
         "cs": {
           "stringUnit": {
             "state": "translated",
-            "value": "Karta, která zaručuje vaše objednávky v hotovosti. Může z ní být stržen storno poplatek, poplatek za neumožnění vstupu, nezaplacená hotovost nebo schválený doplatek."
+            "value": "Uložená pro rychlejší placení kartou. Platba z ní proběhne, jen když s ní sami zaplatíte, a kdykoli ji můžete odebrat."
           }
         },
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "The card that guarantees your cash bookings. A cancellation fee, a lockout fee, unpaid cash or a top-up you approved may be charged to it."
+            "value": "Saved to make paying by card quicker. It is charged only when you pay with it, and you can remove it at any time."
           }
         },
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Карта, которая гарантирует ваши заказы с оплатой наличными. С неё могут быть списаны плата за отмену, плата за непредоставление доступа, неоплаченные наличные или одобренная вами доплата."
+            "value": "Сохранена для более быстрой оплаты картой. Деньги с неё списываются, только когда вы сами ею платите, и её можно удалить в любой момент."
           }
         },
         "sk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Karta, ktorá zaručuje vaše objednávky v hotovosti. Môže z nej byť strhnutý stornovací poplatok, poplatok za neumožnenie vstupu, nezaplatená hotovosť alebo schválený doplatok."
+            "value": "Uložená pre rýchlejšie platenie kartou. Platba z nej prebehne, len keď ňou sami zaplatíte, a kedykoľvek ju môžete odstrániť."
           }
         },
         "uk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Картка, яка гарантує ваші замовлення з оплатою готівкою. З неї можуть бути списані плата за скасування, плата за ненадання доступу, неоплачена готівка або схвалена вами доплата."
+            "value": "Збережена для швидшої оплати карткою. Кошти з неї списуються лише тоді, коли ви самі нею платите, і її можна будь-коли видалити."
           }
         }
       }
@@ -29747,31 +29747,31 @@
         "cs": {
           "stringUnit": {
             "state": "translated",
-            "value": "Nemáte uloženou kartu. Objednávky v hotovosti ji vyžadují."
+            "value": "Nemáte uloženou kartu. Uložit ji můžete při příští platbě kartou."
           }
         },
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "No card saved. Cash bookings need one."
+            "value": "No card saved. You can save one the next time you pay by card."
           }
         },
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Карта не сохранена. Для заказов с оплатой наличными она нужна."
+            "value": "Карта не сохранена. Её можно сохранить при следующей оплате картой."
           }
         },
         "sk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Nemáte uloženú kartu. Objednávky v hotovosti ju vyžadujú."
+            "value": "Nemáte uloženú kartu. Uložiť ju môžete pri ďalšej platbe kartou."
           }
         },
         "uk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Картку не збережено. Для замовлень з оплатою готівкою вона потрібна."
+            "value": "Картку не збережено. Її можна зберегти під час наступної оплати карткою."
           }
         }
       }
@@ -29782,31 +29782,31 @@
         "cs": {
           "stringUnit": {
             "state": "translated",
-            "value": "Uložením karty se nic nestrhává: za úklid zaplatíte v hotovosti jako obvykle."
+            "value": "Uložením karty se nic nestrhává."
           }
         },
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Saving a card charges nothing: you still pay the cleaner in cash."
+            "value": "Saving a card charges nothing."
           }
         },
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "При сохранении карты ничего не списывается: за уборку вы платите наличными, как обычно."
+            "value": "При сохранении карты ничего не списывается."
           }
         },
         "sk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Uložením karty sa nič nestrháva: za upratovanie zaplatíte v hotovosti ako zvyčajne."
+            "value": "Uložením karty sa nič nestrháva."
           }
         },
         "uk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Збереження картки нічого не списує: за прибирання ви платите готівкою, як завжди."
+            "value": "Збереження картки нічого не списує."
           }
         }
       }
@@ -30027,31 +30027,31 @@
         "cs": {
           "stringUnit": {
             "state": "translated",
-            "value": "Objednávky v hotovosti vyžadují uloženou kartu. Jinou si můžete uložit zde."
+            "value": "Kartu můžete znovu uložit při příští platbě kartou."
           }
         },
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Cash bookings need a saved card. You can save another one here."
+            "value": "You can save a card again the next time you pay by card."
           }
         },
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Для заказов с оплатой наличными нужна сохранённая карта. Другую можно сохранить здесь."
+            "value": "Карту можно снова сохранить при следующей оплате картой."
           }
         },
         "sk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Objednávky v hotovosti vyžadujú uloženú kartu. Inú si môžete uložiť tu."
+            "value": "Kartu môžete znova uložiť pri ďalšej platbe kartou."
           }
         },
         "uk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Для замовлень з оплатою готівкою потрібна збережена картка. Іншу можна зберегти тут."
+            "value": "Картку можна знову зберегти під час наступної оплати карткою."
           }
         }
       }

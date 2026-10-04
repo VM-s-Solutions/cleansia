@@ -353,7 +353,8 @@ results found*) come from the bundle's `primeng.*` block through `providePrimeNg
 
 **Enforced by:** the jest theme specs — `apps/cleansia-admin.app/src/app/theme/{page-shell,list-pages,detail-pages,form-pages,dialogs,filter-drawer,feedback-idioms,shared-primitives}.spec.ts`
 and `apps/cleansia-partner.app/src/app/theme/{page-shell,list-pages,dialogs,filter-drawer,shared-primitives}.spec.ts`
-(plus `font-stack.spec.ts` in each) — **T1-CI**, `frontend-ci.yml`'s *"Unit tests (affected)"*
+(plus `font-stack.spec.ts` in each), and for the customer app's one confirmation dialog
+`apps/cleansia.app/src/app/theme/confirm-dialog.spec.ts` — **T1-CI**, `frontend-ci.yml`'s *"Unit tests (affected)"*
 step. Each spec reads the templates, models and stylesheets off disk and fails on the drift it names
 (a card width in a page stylesheet, a `toFixed(2)`, a `<p-confirmDialog` in a feature, a filled
 `success` on a detail action, a form column in pixels). The line-scannable complement is

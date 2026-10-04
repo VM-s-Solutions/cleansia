@@ -2012,15 +2012,18 @@ completion and 500 after would leave 25 points instead of 0. So a refund before 
 after take back what the same two refunds would take after it. With whole shares that equals one refund
 of the sum: 200 before and 300 after take 50, as one refund of 500 does. With fractional shares the
 per-refund floor still applies: 255 before and 245 after keep 51 points, while one refund of 500 keeps
-50.
+50. A refund that settled before the earn was written takes nothing more when it is replayed after
+completion, because completion already took its share.
 
 **A full refund's clawback can be run again** (since 2026-10-04). The full refund settles and marks the
 order `Refunded` before its clawback runs. A clawback that failed therefore left an order the full
 refund refused from then on, with the points kept. `AdminRefundOrder` now also accepts an order whose
 own full refund (`refund:{orderId}:admin:full`) has succeeded. The refund seam answers with that refund
-and moves no money, no second refund notice is sent, and the clawback, keyed on the same refund, takes
-what is left of the earn exactly once. An order refunded any other way, or whose full refund never
-settled, is still refused (`refund.order_not_refundable`).
+and moves no money, and the clawback, keyed on the same refund, takes what is left of the earn exactly
+once. The refund notice is sent when none is queued on its key. The first call staged it with the
+clawback, so a clawback that failed lost the notice as well; one that committed is not sent twice. An
+order refunded any other way, or whose full refund never settled, is still refused
+(`refund.order_not_refundable`).
 
 **The tier-upgrade notice names the tier that was saved** (since 2026-10-04). Two writes for one
 customer at the same moment both land, the later one replayed onto the earlier one's commit

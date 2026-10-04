@@ -29642,31 +29642,31 @@
         "cs": {
           "stringUnit": {
             "state": "translated",
-            "value": "Uložená pro rychlejší placení kartou. Platba z ní proběhne, jen když s ní sami zaplatíte, a kdykoli ji můžete odebrat."
+            "value": "Karta uložená ve vašem účtu. Nic z ní nestrhneme, pokud jí sami nezaplatíte, a kdykoli ji můžete odebrat."
           }
         },
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Saved to make paying by card quicker. It is charged only when you pay with it, and you can remove it at any time."
+            "value": "The card saved to your account. It is never charged unless you pay with it, and you can remove it at any time."
           }
         },
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Сохранена для более быстрой оплаты картой. Деньги с неё списываются, только когда вы сами ею платите, и её можно удалить в любой момент."
+            "value": "Карта, сохранённая в вашем аккаунте. Деньги с неё списываются, только когда вы сами ею платите, и её можно удалить в любой момент."
           }
         },
         "sk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Uložená pre rýchlejšie platenie kartou. Platba z nej prebehne, len keď ňou sami zaplatíte, a kedykoľvek ju môžete odstrániť."
+            "value": "Karta uložená vo vašom účte. Nič z nej nestrhneme, ak ňou sami nezaplatíte, a kedykoľvek ju môžete odstrániť."
           }
         },
         "uk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Збережена для швидшої оплати карткою. Кошти з неї списуються лише тоді, коли ви самі нею платите, і її можна будь-коли видалити."
+            "value": "Картка, збережена у вашому акаунті. Кошти з неї списуються лише тоді, коли ви самі нею платите, і її можна будь-коли видалити."
           }
         }
       }

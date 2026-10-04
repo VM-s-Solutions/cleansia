@@ -1072,11 +1072,11 @@ need backfilling.
 ### Fixed
 
 - **Customer Android and iOS — the clock reads clearly over Profile's header.** In light mode the
-  white clock, signal and battery sat on the light blue top of Profile's header and were faint, below
-  the contrast small text needs. Profile's header now starts a shade darker blue, at rest and under
-  the fade as the page scrolls. The blue everywhere else in the apps is unchanged, and so is dark
-  mode. On iOS 16 the clock is black in light mode, and it reads on the old blue, so there the header
-  keeps it. (Finding 2026-10-04.)
+  clock, signal and battery were faint on the light blue top of Profile's header (white on iOS, dark
+  grey on Android), below the contrast small text needs. Profile's header now starts a shade darker
+  blue, at rest and under the fade as the page scrolls, and on Android the clock turns white over it.
+  The blue everywhere else in the apps is unchanged, and so is dark mode. On iOS 16 the clock is black
+  in light mode, and it reads on the old blue, so there the header keeps it. (Finding 2026-10-04.)
 
 - **Customer web — what you pick on the schedule form reads in dark mode.** In dark mode a picked
   service or package showed its name in white on light blue, hard to read, with a tick that all but

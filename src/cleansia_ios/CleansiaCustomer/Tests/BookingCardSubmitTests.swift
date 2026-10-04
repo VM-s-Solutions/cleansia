@@ -276,7 +276,11 @@ final class BookingCardSubmitTests: XCTestCase {
             1,
             "Stripe's sheet is shown somewhere that does not hold the re-check"
         )
-        XCTAssertEqual(sheet.components(separatedBy: "await showPaymentSheet(presentation)").count - 1, 2)
+        XCTAssertEqual(
+            sheet.components(separatedBy: "await showPaymentSheet(presentation)").count - 1,
+            1,
+            "the booking pays through showPaymentSheet in one place"
+        )
         XCTAssertTrue(
             sheet.contains(
                 "vm.paymentSheetShowing = true defer { vm.paymentSheetShowing = false } " +

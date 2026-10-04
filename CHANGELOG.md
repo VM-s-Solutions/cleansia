@@ -1091,6 +1091,16 @@ need backfilling.
   on Android in the schedule form's services as well. The brand blue of the rows' fills, borders and
   ticks is unchanged, and the web already read clearly. (Finding 2026-10-04.)
 
+- **Customer — a service or package that is no longer offered can no longer be booked.** A service or
+  package the company had taken off its list was hidden everywhere, but an out-of-date app, or *Order
+  again* sent before the list had loaded, could still price and book it, and a new schedule could take
+  it and book it every week. The price, the booking and a new schedule now refuse it with *One of the
+  selected services is no longer available* (or *packages*), which every app and the website already
+  show. A schedule set up before the service was taken off keeps it, and a service that is part of a
+  package is still done with the package. **API consumer:** `QuoteOrder`, `QuotePlusSavings`,
+  `CreateOrder` and `CreateRecurringBooking` refuse a deactivated id with
+  `order.selected_services.invalid` / `order.selected_package.invalid`. (Finding 2026-10-04.)
+
 - **Customer web — deleting your account is confirmed on a red button.** The question before your
   account is deleted offered the same blue confirm button as any harmless question. It now shows the
   red, destructive button that deleting a saved card or a schedule already shows, so the risk reads

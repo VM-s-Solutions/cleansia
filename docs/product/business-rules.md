@@ -1907,6 +1907,33 @@ from the card alone would sell a package without a service the cleaner is then s
 service out of a package, an administrator edits the package. `CatalogActiveVisibilityTests` pins that
 the overview lists exactly what an order with the package books, a deactivated service among them.
 
+**A customer cannot select one by id either** (since 2026-10-05). `QuoteOrder`, `QuotePlusSavings`,
+`CreateOrder` (guest and signed-in) and `CreateRecurringBooking` ask that every selected service and
+package exists **and is active** (`ExistActiveWithIdsAsync`), and refuse one that is not with the codes
+an entry with no price or pay rate in the market's currency already gets: `order.selected_services.invalid`
+and `order.selected_package.invalid`. Every client already words both, in all five languages. Until then
+the three order gates asked only that the row exists, which a deactivated row still does, so a client
+holding an old catalogue, or an *Order again* sent before the catalogue had loaded, could price and book
+an entry no catalogue showed; a new schedule checked its selection not at all, so it also took an id
+that never existed. The clients already drop retired entries when they rebook, and the apps' rebook
+comments expected the booking to fail loudly. What it deliberately leaves alone:
+
+- **A schedule created before the deactivation keeps booking it.** The materialiser hands the
+  template's ids to `OrderFactory` without asking the catalogue again, so its occurrences still carry
+  the entry. That is also why the pay-coverage gap check over a selection does not filter by
+  `IsActive`: the template route would otherwise mint an order no rate covers.
+- **Editing a schedule does not ask.** `UpdateRecurringBooking` checks only that the selection is not
+  empty, so an edit can keep, or add, a deactivated entry. Clients send the template's whole selection
+  on every edit, so a plain check there would make a schedule holding a since-deactivated entry
+  uneditable; whether to check only the ids an edit adds is open.
+- **A deactivated service inside an active package** is the package's content, above, not a selection.
+- **The admin package editors** (`CreatePackage`, `UpdatePackage`) still accept a deactivated service
+  into a package; they ask only that it exists.
+
+`CatalogActiveVisibilityTests` pins the active check on the repository, a schedule refused a
+deactivated service and package, and the factory still booking one a schedule holds; the order and
+quote validator suites pin the three order gates.
+
 ## Discounts, and the 12 % cap {#discount-cap}
 
 Three sources can reduce a price: the customer's **loyalty tier**, their **Cleansia Plus** membership,

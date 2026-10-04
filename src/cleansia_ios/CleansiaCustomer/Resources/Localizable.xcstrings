@@ -17347,6 +17347,41 @@
         }
       }
     },
+    "loyalty_tx_refund_order": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$d b. — Vráceno č. %2$@"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$d pts — Refunded #%2$@"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$d б. — Возврат №%2$@"
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$d b. — Vrátené č. %2$@"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$d б. — Повернення №%2$@"
+          }
+        }
+      }
+    },
     "loyalty_tx_revoke_order": {
       "extractionState": "stale",
       "localizations": {

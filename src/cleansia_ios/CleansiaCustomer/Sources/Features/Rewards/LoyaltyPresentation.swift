@@ -45,6 +45,7 @@ enum TierFloorLabel: Equatable {
 enum LoyaltyTransactionKind: Equatable {
     case earnOrder(points: Int, order: String)
     case revokeOrder(points: Int, order: String)
+    case refundOrder(points: Int, order: String)
     case referral(points: Int)
     case manual(points: Int)
 }
@@ -136,6 +137,7 @@ enum LoyaltyPresentation {
         switch LoyaltyEarnSource(rawValue: item.source) {
         case .orderCompleted: return .earnOrder(points: item.points, order: order)
         case .orderCancelled: return .revokeOrder(points: item.points, order: order)
+        case .orderPartiallyRefunded: return .refundOrder(points: item.points, order: order)
         case .referral: return .referral(points: item.points)
         case .manualGrant, .none: return .manual(points: item.points)
         }

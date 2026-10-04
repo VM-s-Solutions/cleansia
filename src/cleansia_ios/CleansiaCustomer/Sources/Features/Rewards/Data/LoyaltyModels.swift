@@ -57,6 +57,8 @@ enum LoyaltyEarnSource: Int {
     case orderCancelled = 2
     case referral = 3
     case manualGrant = 4
+    /// Every refund's clawback, a full refund's included.
+    case orderPartiallyRefunded = 5
 }
 
 /// Money the platform owes the customer — not points. Points move the tier and are never spent; credit

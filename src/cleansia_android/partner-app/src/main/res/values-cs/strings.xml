@@ -1347,7 +1347,7 @@
     <string name="period_pay_line_deduction">Srážka %1$s</string>
     <string name="period_pay_line_deduction_reason">Srážka %1$s: %2$s</string>
     <string name="period_pay_line_cancellation_fee_share">Váš podíl z poplatku za pozdní zrušení</string>
-    <string name="period_pay_line_lockout_fee_share">Váš podíl z poplatku za neumožněný přístup</string>
+    <string name="period_pay_line_lockout_fee_share">Vaše odměna za zakázku, kam jste se nemohli dostat</string>
     <string name="invoice_view_period_pay">Zobrazit výplatu za období</string>
     <string name="photo_encode_failed">Tuto fotku se nepodařilo zpracovat. Zkuste prosím jinou.</string>
     <string name="document_read_failed">Tento soubor se nepodařilo načíst. Zkuste prosím jiný.</string>

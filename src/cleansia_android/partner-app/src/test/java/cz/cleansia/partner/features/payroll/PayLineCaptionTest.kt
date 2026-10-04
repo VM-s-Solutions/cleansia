@@ -14,7 +14,7 @@ class PayLineCaptionTest {
     }
 
     @Test
-    fun `each fee share names the fee it shares`() {
+    fun `each line for a job that did not happen says why`() {
         assertEquals(R.string.period_pay_line_cancellation_fee_share, payLineCaptionRes(PayLineType._1))
         assertEquals(R.string.period_pay_line_lockout_fee_share, payLineCaptionRes(PayLineType._2))
     }

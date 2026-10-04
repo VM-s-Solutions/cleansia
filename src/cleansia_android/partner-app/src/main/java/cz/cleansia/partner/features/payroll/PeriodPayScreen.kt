@@ -319,7 +319,10 @@ private fun JobRow(line: OrderPayLine, symbol: String) {
     }
 }
 
-/** A fee-share row pays for a job that did not happen, so it says which fee it is a share of. */
+/**
+ * A row that pays for a job that did not happen says why: a share of the late-cancellation fee, or the
+ * job's reward after a lockout.
+ */
 @StringRes
 internal fun payLineCaptionRes(type: PayLineType): Int? = when (type) {
     PayLineType._0 -> null

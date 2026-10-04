@@ -1331,7 +1331,7 @@
     <string name="period_pay_line_deduction">Утримання %1$s</string>
     <string name="period_pay_line_deduction_reason">Утримання %1$s: %2$s</string>
     <string name="period_pay_line_cancellation_fee_share">Ваша частка збору за пізнє скасування</string>
-    <string name="period_pay_line_lockout_fee_share">Ваша частка збору за ненаданий доступ</string>
+    <string name="period_pay_line_lockout_fee_share">Ваша винагорода за замовлення, куди ви не змогли потрапити</string>
     <string name="invoice_view_period_pay">Переглянути оплату за період</string>
     <string name="photo_encode_failed">Не вдалося обробити це фото. Спробуйте інше.</string>
     <string name="document_read_failed">Не вдалося прочитати цей файл. Спробуйте інший.</string>

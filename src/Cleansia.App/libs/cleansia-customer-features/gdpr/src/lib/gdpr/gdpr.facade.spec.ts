@@ -94,16 +94,17 @@ describe('GdprFacade (customer)', () => {
     facade = TestBed.inject(GdprFacade);
   });
 
-  // Asked on the app shell's one confirm dialog, through the shared DialogService.
+  // Asked on the app shell's one confirm dialog, through the shared DialogService, and styled as
+  // destructive — the red accept every other irreversible confirm shows.
   describe('deleting the account', () => {
-    it('asks first, in the page\'s own words', () => {
+    it('asks first, in the page\'s own words, as a destructive act', () => {
       facade.confirmDeleteAccount();
 
       expect(dialog.confirmTranslated).toHaveBeenCalledWith(
         'pages.gdpr.delete_confirm_message',
         'pages.gdpr.delete_confirm_title',
         undefined,
-        { acceptLabelKey: 'pages.gdpr.delete_confirm_yes' },
+        { danger: true, acceptLabelKey: 'pages.gdpr.delete_confirm_yes' },
       );
     });
 

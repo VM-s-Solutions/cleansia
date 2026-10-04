@@ -23,6 +23,8 @@ import {
   ServiceListItem,
 } from '@cleansia/customer-services';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
+import { readFileSync } from 'fs';
+import { join } from 'path';
 import { of } from 'rxjs';
 import { OrderWizardComponent } from './order-wizard.component';
 import { OrderWizardFacade } from './order-wizard.facade';
@@ -1472,6 +1474,43 @@ describe('OrderWizardComponent (a11y)', () => {
 
       expect(marker()).toBeNull();
       expect(addButton()?.getAttribute('aria-describedby')).toBeNull();
+      expect(el.querySelector('.cl-wiz__svc')?.classList).not.toContain('cl-wiz__svc--covered');
+    });
+
+    // Unmistakable at a glance, as on the apps: the row takes the covered look, and the marker is a
+    // check badge straight under the name, above the description. The Add stays as it is.
+    it('draws the covered row, with the badge under the name and the add left as it was', async () => {
+      await setup();
+      facade.services.set([
+        ServiceListItem.fromJS({ id: 'windows', name: 'Windows', description: 'Inside and out', basePrice: 100 }),
+      ]);
+      facade.packageNamesIncluding.mockImplementation((id: string) =>
+        id === 'windows' ? 'Deep clean' : null,
+      );
+      facade.updateFormData({ selectedPackageIds: ['deep'] });
+      fixture.detectChanges();
+
+      const row = el.querySelector('.cl-wiz__svc');
+      expect(row?.classList).toContain('cl-wiz__svc--covered');
+      expect(marker()?.classList).toContain('cl-wiz__svc-in-pack');
+      expect(marker()?.querySelector('i.pi.pi-check-circle')?.getAttribute('aria-hidden')).toBe('true');
+      expect(row?.querySelector('.cl-wiz__svc-name')?.nextElementSibling).toBe(marker());
+      expect(marker()?.nextElementSibling?.classList).toContain('cl-wiz__svc-desc');
+      expect(addButton()?.className).toBe('cl-chip cl-wiz__svc-add');
+    });
+
+    // One ink for the badge's check and its text, as the apps draw both. jsdom loads no
+    // stylesheet, so this reads the badge's rule, which is declared an input of this test target.
+    it('draws the badge check in the badge ink, as the apps do', () => {
+      const scss = readFileSync(
+        join(__dirname, '../../../../../shared/assets/src/styles/pages/cleansia-customer/_wizard-shell.scss'),
+        'utf8',
+      );
+      const badge = scss.match(/^\.cl-wiz__svc-in-pack \{[\s\S]*?^\}/m)?.[0] ?? '';
+      const colours = (badge.match(/(?:^|\s)color:[^;]+;/g) ?? []).map((declaration) => declaration.trim());
+
+      expect(badge).toContain('i {');
+      expect([...new Set(colours)]).toEqual(['color: var(--cl-covered-ink);']);
     });
 
     it('names the package on the row and gives the add button that line as its description', async () => {
@@ -1520,12 +1559,32 @@ describe('OrderWizardComponent (a11y)', () => {
 
       const row = el.querySelector('.cl-wiz__cross-row');
       expect(row).not.toBeNull();
+      expect(row?.classList).toContain('cl-wiz__cross-row--covered');
       const crossMarker = row?.querySelector('[data-spec-in-package]');
       expect(crossMarker?.textContent?.trim()).toBe('pages.order.package_overlap.in_package');
+      expect(crossMarker?.classList).toContain('cl-wiz__svc-in-pack');
+      expect(crossMarker?.querySelector('i.pi.pi-check-circle')).not.toBeNull();
+      expect(row?.querySelector('.cl-wiz__cross-name')?.nextElementSibling).toBe(crossMarker);
       expect(crossMarker?.id).toBe('cross-in-pack-windows');
       expect(row?.querySelector('.cl-wiz__cross-add')?.getAttribute('aria-describedby')).toBe(
         'cross-in-pack-windows',
       );
+    });
+
+    it('leaves a Plus-step suggestion no chosen package includes plain', async () => {
+      await setup();
+      facade.services.set([makeService('windows', 'Windows'), makeService('oven', 'Oven')]);
+      facade.packageNamesIncluding.mockImplementation((id: string) =>
+        id === 'windows' ? 'Deep clean' : null,
+      );
+      facade.updateFormData({ selectedPackageIds: ['deep'] });
+      facade.activeStep.set(5);
+      fixture.detectChanges();
+
+      const [covered, plain] = Array.from(el.querySelectorAll('.cl-wiz__cross-row'));
+      expect(covered.classList).toContain('cl-wiz__cross-row--covered');
+      expect(plain.classList).not.toContain('cl-wiz__cross-row--covered');
+      expect(plain.querySelector('[data-spec-in-package]')).toBeNull();
     });
 
     it('says packages on the Plus-step suggestion two chosen packages include', async () => {

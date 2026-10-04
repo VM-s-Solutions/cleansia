@@ -195,12 +195,16 @@ the fade below.
 
 Home, Profile and the Plus offer draw to the top edge with no navigation bar, so once their content
 scrolls up it passes under the clock and the camera cut-out. On those three screens, once the content
-has left its top, it fades out under the status bar. On iOS the fade covers the status bar alone (the
-clock, signal and battery) and ends in a short tail 8pt below it: a light blur under a see-through wash
-of the page colour, the same on every iOS version, so the content stays visible under the clock. On
-Android it is a band of the page background that reaches 24dp below the status bar. iOS changed twice
-on 2026-10-03 (owner remarks): a band of the page colour, like Android's, read as a solid white strip,
-and the system soft edge and blur that replaced it were too tall, too sharp and too opaque (below).
+has left its top, it fades out under the status bar. On iOS the fade is one solid colour, the colour
+actually behind the status bar, held at 90 % across the status bar alone (the clock, signal and
+battery) and eased to clear over a short tail 10pt below it, the same on every iOS version. On Home
+that colour is the page colour; on Profile and the Plus offer it is the hero's own colour while the
+hero is under the status bar, and the page colour once it has scrolled past. On Android it is a band
+of the page background that reaches 24dp below the status bar. iOS changed three times (owner
+remarks). On 2026-10-03 a band of the page colour, like Android's, read as a solid white strip, and
+the system soft edge and blur that replaced it were too tall, too sharp and too opaque. On 2026-10-04
+the light blur under a 40 % wash of the page colour that followed read as a white band over the Plus
+offer's navy hero, and was so see-through that the content under the clock clashed with it (below).
 Orders and Rewards keep a fixed title above their scroll view, so nothing passes under the status bar
 there.
 
@@ -214,21 +218,38 @@ first point of scroll.
   is written only when it crosses the threshold, not on every scrolled frame. A `PreferenceKey` reader
   does not work here, because the scroll view does not pass its content's preference changes to an
   `onPreferenceChange` outside it.
-- **One overlay, the same on every iOS version.** Over the scroll view lies a strip as tall as the
-  status bar plus `StatusBarFade.tail` (8pt), faded in and out with the scroll. Its fill is
-  `.ultraThinMaterial` at 40 % (`blur`) under the page colour at 40 % (`wash`). The wash moves the
-  content the way the page does, lighter in light mode and darker in dark, which keeps the clock
-  legible over a busy card; the material alone lifted dark content towards grey and left a glow at the
-  screen's edges. A gradient masks the strip: full across the top 35 % of the status bar
-  (`holdShare`), then a smoothstep falloff, sampled at nine points, to clear at the tail's end, so no
-  line marks the status bar's edge. Under Reduce Transparency the material goes and the wash alone, at
-  85 % (`solidWash`), stands in for it. The strip's reader keeps the safe area on purpose: one that
-  ignores it reports a top inset of 0, which collapses the fade to its tail. The strip takes no
-  touches, so Home's address row and the Plus offer's back arrow under it still answer.
-  `ContentSafeAreaBindingTests` pins the mask (full at the top, never rising, no step above 0.2, clear
-  at the tail's end, a tail of 6–10pt), and that the fade has no per-version branch and no system
-  edge. Checked on the iOS 26.3, 18.6 and 16.4 simulators, light and dark, with a card under the
-  clock.
+- **One solid colour, the same on every iOS version.** Over the scroll view lies a strip as tall as
+  the status bar plus `StatusBarFade.tail` (10pt), faded in and out with the scroll. Its fill is a
+  colour and no material: the blur under the colour that preceded it read as a different colour. A
+  gradient masks the strip: the colour at 90 % (`StatusBarFade.opacity`) across the whole status bar,
+  then a smoothstep falloff, sampled at nine points, to clear at the tail's end, so no line marks the
+  status bar's edge. At 90 % the content under the clock stays out of its way, and the system's clock,
+  signal and battery stay legible on it. Under Reduce Transparency the colour is drawn at 100 %. The
+  strip's reader keeps the safe area on purpose: one that ignores it reports a top inset of 0, which
+  collapses the fade to its tail. The strip takes no touches, so Home's address row and the Plus
+  offer's back arrow under it still answer.
+- **The colour behind the status bar.** Home passes nothing, and its fade is the page colour
+  (`CleansiaColors.background`). A screen with a hero at its top passes `heroTint` and marks the hero
+  with `statusBarFadeHero()`: the Plus offer passes `MembershipPalette.sky950`, the top of its navy
+  hero, and Profile passes the top stop of `BrandGradient.blue`. Profile takes its hero's colour for
+  the same reason as Plus: the page colour over its blue hero was a pale band, on which the clock
+  measured 1.7:1 in light mode. The fade wears the hero's colour while the hero reaches below the
+  fade, and cross-fades in proportion into the page colour as the hero's bottom passes up through it,
+  from the tail's end to the status bar's top (`StatusBarFade.heroShare`), so there is no jump. The
+  hero's reader writes state only while the hero's bottom is within −80 to +20pt of the status bar's
+  edge, in whole points (`heroBottomRange`), and only the fade reads it, so the content is not redrawn
+  as it scrolls. The fade wears the hero's **top** colour, not the colour of the part under it: once
+  Profile has scrolled far enough that its lighter lower gradient is behind the status bar, the band
+  reads a shade darker than the hero beneath, like a status-bar backing. On Plus, whose hero runs from
+  sky-950 to slate-900, the difference is slight. Measured from iOS 26.3 screenshots, the clock reads
+  12.1:1 over the Plus hero and 14–20:1 over the page colour, and over Profile's hero it reads as it
+  does over that hero at rest (3.3:1 in light mode, 5.8:1 in dark).
+- **What pins it.** `ContentSafeAreaBindingTests` pins the hold (90 % across the status bar), the tail
+  (8–12pt), the full-strength fallback, the cross-fade (it never rises back, and no step is larger
+  than one point's share), the reporting band, both hero screens' wiring, and that the fade has no
+  material, no per-version branch and no system edge. Checked on the iOS 26.3, 18.6 and 16.4
+  simulators, light and dark: Plus with its hero under the status bar and with content scrolled past
+  it, Profile's hero, and Home with a card under the clock.
 - **Why not iOS 26's own soft edge.** From the first to the second remark of 2026-10-03, iOS 26 drew
   the system's soft scroll edge, the one a navigation bar draws: a `safeAreaBar` stand-in 24pt tall
   with a near-clear fill, then `scrollEdgeEffectStyle(.soft, for: .top)`, because the system draws its
@@ -236,8 +257,10 @@ first point of scroll.
   over the status bar, masked to clear 24pt below it. The system draws its edge well below the status
   bar, a milky wash down to about 77pt on the iPhone 17 Pro, at a height an app cannot set, so it could
   not cover the status bar alone, and the 16–25 band ended in a visible line. Both are gone, with
-  `StatusBarFade.depth`. When checking a scroll-driven effect, use real drags:
-  `UIScrollView.setContentOffset` does not update SwiftUI geometry.
+  `StatusBarFade.depth`. When checking a scroll-driven effect, prefer real drags. In the 2026-10-03
+  checks `UIScrollView.setContentOffset` did not update SwiftUI geometry; in the 2026-10-04 checks an
+  animated `setContentOffset` did drive both the threshold and the hero cross-fade, on iOS 26.3, 18.6
+  and 16.4.
 - **Android** applies `Modifier.statusBarFade(scrollState)` (customer `ui/components/StatusBarFade.kt`)
   directly before `verticalScroll(scrollState)`, so it draws over the viewport and not over the
   scrolled content. It is visible while `scrollState.value > 0`. Home moved its status-bar padding
@@ -346,6 +369,42 @@ on Android the slide runs at zero duration when animations are removed in the sy
   a right-to-left layout would have turned around. `stepSlideDirection(forward, rtl)` now mirrors the
   sign under `LayoutDirection.Rtl`. No locale the app ships is right-to-left, so nothing changed on
   screen.
+
+## A service a chosen package covers reads as covered {#package-covered}
+
+On the booking's services step and on the schedule form, a service that a chosen package already
+includes is drawn so the customer sees at a glance that it is booked already (owner remark
+2026-10-04). The rule and its wording are in
+[Charging a package and a service together](/product/business-rules#charging-a-package-and-a-service-together).
+iOS is the reference, and Android draws the same values:
+
+| | Value |
+|---|---|
+| Row fill | the brand primary at 8 % in light mode and 16 % in dark, over the row's card |
+| Row border | 1.5 (pt or dp) of the primary at 60 %, in place of the neutral hairline; corners unchanged |
+| Badge | under the name: a check in a circle, then the copy in semibold, at most two lines, padding 8 × 4, corners 12 (a capsule on one line, a rounded box on two), on the primary at 14 % in light mode and 24 % in dark |
+| Badge ink, text and icon | `onPrimaryContainer`, sky-900 `#0C4A6E` in light mode and sky-100 `#E0F2FE` in dark |
+
+**The ink is not the primary.** sky-600 reads 4.1:1 even on white and about 3.1:1 on the badge, under
+the 4.5:1 its text needs. On the theme's own values the ink reads 7.2:1 in light mode and 6.1:1 in
+dark on a covered row, and at least 5.5:1 on a picked one. The badge is part of the row's tap target and
+of what VoiceOver and TalkBack read for it, its icon is hidden from both, and the row's add or select
+control is unchanged.
+
+- **iOS** (`Booking/Steps/ServicesStepComponents.swift`): `InPackageStyle` holds the values, and
+  `InPackageNote` is the badge (`checkmark.circle.fill` at 13pt, Nunito semibold 14, the size of the
+  row's secondary text). The booking's `ServiceRow` swaps the tint for its picked look when picked: the
+  primary container at 50 % and a 2pt primary border. The schedule form's row has no picked fill, so a
+  picked covered row keeps the tint under the primary border. `InPackageMarkerLookTests` pins the tints,
+  the border, the contrast in both schemes and both lists drawing the covered row. Checked on the iOS
+  26.3 and 16.4 simulators, light and dark: the badge text measures 5.8:1 and 4.7:1 from the
+  screenshots, whose colours run darker than the tokens.
+- **Android** (`features/booking/DoubleBooking.kt`): `inPackageRowFill()`, `inPackageRowBorder()` and
+  the badge `InPackageMarker` (`Icons.Filled.CheckCircle` at 14dp, `labelMedium` semibold, 13sp, above
+  the rows' 12sp secondary text). On both lists a picked row keeps its picked look, the 2dp primary
+  border over its existing fill, and still carries the badge. `DoubleBookingTest` measures the ink over
+  a covered and a picked row in both themes, from `LightColors` and `DarkColors` themselves, and pins
+  the tints, the border and both lists. Unlike iOS, it has not yet been checked on a screen.
 
 ## Every map is quiet, with one Cleansia pin {#maps}
 

@@ -127,8 +127,27 @@ describe('CreateRecurringWizardComponent — a service a chosen package already 
 
   const marker = () => el.querySelector('[data-spec-in-package]');
 
+  const pick = () => el.querySelector('.cl-rec__pick');
+
   it('shows no line while no chosen package includes the service', () => {
     expect(marker()).toBeNull();
+    expect(pick()?.classList).not.toContain('cl-rec__pick--covered');
+  });
+
+  // Unmistakable at a glance, as on the apps and the booking wizard: the pick takes the covered look,
+  // and the marker is the wizard's check badge under the name. The pick stays a pick.
+  it('draws the covered pick with the check badge under the name', () => {
+    facade.packageNamesIncluding.mockImplementation((id: string) =>
+      id === 'windows' ? 'Deep clean' : null,
+    );
+    facade.formData.update((d) => ({ ...d, selectedPackageIds: ['deep'] }));
+    fixture.detectChanges();
+
+    expect(pick()?.classList).toContain('cl-rec__pick--covered');
+    expect(pick()?.getAttribute('aria-pressed')).toBe('false');
+    expect(marker()?.classList).toContain('cl-wiz__svc-in-pack');
+    expect(marker()?.querySelector('i.pi.pi-check-circle')?.getAttribute('aria-hidden')).toBe('true');
+    expect(pick()?.querySelector('.cl-rec__pick-name')?.nextElementSibling).toBe(marker());
   });
 
   it('names the package inside the row, so it is read with it', () => {

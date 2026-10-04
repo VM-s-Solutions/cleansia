@@ -1,27 +1,35 @@
 package cz.cleansia.customer.features.booking
 
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Inventory2
+import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.ReadOnlyComposable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.compositeOver
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import cz.cleansia.customer.R
 import cz.cleansia.customer.core.catalog.PackageListItem
 import cz.cleansia.customer.core.catalog.PackageServiceSummary
 import cz.cleansia.customer.core.catalog.ServiceListItem
+import cz.cleansia.customer.ui.theme.isDark
 
 /**
  * A tap that books one service once more: a package and a service it includes, both chosen, or two
@@ -88,26 +96,65 @@ fun doubleBookingOfPackage(
     return if (again.isEmpty()) null else DoubleBooking.Package(pkg, again)
 }
 
+/*
+ * A service a chosen package already books reads as covered at a glance, the same on every client: its
+ * row takes the brand primary over the card with a primary border ([inPackageRowFill], [inPackageRowBorder]),
+ * and [InPackageMarker] is a badge. A picked row keeps its picked look and still carries the badge.
+ */
+
+/** How much of the brand primary a covered row's card takes; a dark card needs more to show it. */
+fun inPackageRowAlpha(dark: Boolean): Float = if (dark) 0.16f else 0.08f
+
+/** How much of the brand primary the badge lays over its row. */
+fun inPackageBadgeAlpha(dark: Boolean): Float = if (dark) 0.24f else 0.14f
+
+const val IN_PACKAGE_BORDER_ALPHA = 0.6f
+
+/** The card of a covered row that is not picked: the brand primary over the surface. */
+@Composable
+@ReadOnlyComposable
+fun inPackageRowFill(): Color = MaterialTheme.colorScheme.primary
+    .copy(alpha = inPackageRowAlpha(isDark()))
+    .compositeOver(MaterialTheme.colorScheme.surface)
+
+/** The border of a covered row that is not picked: 1.5dp of the brand primary at 60 %. */
+@Composable
+@ReadOnlyComposable
+fun inPackageRowBorder(): BorderStroke =
+    BorderStroke(1.5.dp, MaterialTheme.colorScheme.primary.copy(alpha = IN_PACKAGE_BORDER_ALPHA))
+
 /**
- * The line under a service's name while [packages], the chosen ones including it, already book it; nothing
- * for none. Drawn inside the row's clickable, so TalkBack reads it with the row, which stays selectable.
+ * The badge under a service's name while [packages], the chosen ones including it, already book it; nothing
+ * for none. Its check and text take the primary container's ink (sky-900 / sky-100), as iOS's do: the
+ * brand primary measures about 3.1:1 over the badge, under the 4.5:1 its text needs. Drawn inside the
+ * row's clickable, so TalkBack reads it with the row, which stays selectable.
  */
 @Composable
 fun InPackageMarker(packages: List<PackageListItem>) {
     if (packages.isEmpty()) return
     val names = packages.map { localizedName(it.translations, it.name) }.joinToString(", ")
-    Row(modifier = Modifier.padding(top = 2.dp), verticalAlignment = Alignment.CenterVertically) {
+    Row(
+        modifier = Modifier
+            .padding(top = 4.dp)
+            // A capsule on one line, a rounded box when a long package name wraps it to two.
+            .background(
+                MaterialTheme.colorScheme.primary.copy(alpha = inPackageBadgeAlpha(isDark())),
+                RoundedCornerShape(12.dp),
+            )
+            .padding(horizontal = 8.dp, vertical = 4.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
         Icon(
-            Icons.Filled.Inventory2,
+            Icons.Filled.CheckCircle,
             contentDescription = null,
-            tint = MaterialTheme.colorScheme.primary,
-            modifier = Modifier.size(12.dp),
+            tint = MaterialTheme.colorScheme.onPrimaryContainer,
+            modifier = Modifier.size(14.dp),
         )
         Spacer(Modifier.width(4.dp))
         Text(
             stringResource(packages.inPackageMarkerRes, names),
-            style = MaterialTheme.typography.labelMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.SemiBold),
+            color = MaterialTheme.colorScheme.onPrimaryContainer,
             maxLines = 2,
             overflow = TextOverflow.Ellipsis,
         )

@@ -117,13 +117,19 @@ struct CategoryChip: View {
 
 struct ServiceRow: View {
     @Environment(\.locale) private var locale
+    @Environment(\.colorScheme) private var colorScheme
     let service: CatalogService
     let currencyCode: String
     let selected: Bool
     /// "In your package: …" when a selected package already includes this service; part of the row's
-    /// VoiceOver label like every other line on it. The row stays selectable.
+    /// VoiceOver label like every other line on it. The row stays selectable, and reads as covered
+    /// until it is picked, when the selected look (already a primary tint) takes over.
     let inPackageNote: String?
     let onToggle: () -> Void
+
+    private var covered: Bool {
+        inPackageNote != nil && !selected
+    }
 
     var body: some View {
         Button(action: onToggle) {
@@ -141,17 +147,20 @@ struct ServiceRow: View {
                 SelectionBadge(selected: selected)
             }
             .padding(Spacing.s)
+            .background(covered ? InPackageStyle.rowTint(colorScheme) : .clear)
             .background(selected ? CleansiaColors.primaryContainer.opacity(0.5) : CleansiaColors.surface)
             .clipShape(RoundedRectangle(cornerRadius: CornerRadius.medium))
             .overlay(
                 RoundedRectangle(cornerRadius: CornerRadius.medium)
-                    .stroke(
-                        selected ? CleansiaColors.primary : CleansiaColors.outlineVariant,
-                        lineWidth: selected ? 2 : 1
-                    )
+                    .stroke(border, lineWidth: selected ? 2 : covered ? InPackageStyle.borderWidth : 1)
             )
         }
         .buttonStyle(.plain)
+    }
+
+    private var border: Color {
+        if selected { return CleansiaColors.primary }
+        return covered ? InPackageStyle.border : CleansiaColors.outlineVariant
     }
 
     private var details: some View {
@@ -188,22 +197,55 @@ struct ServiceRow: View {
     }
 }
 
-/// The one-line marker a service row carries while a selected package already includes it — the
-/// booking's services list and the recurring form's both draw it.
+/// How a service row reads while a selected package already includes it, so the customer sees at a
+/// glance that it is booked already: a primary tint replaces the row's neutral card (a picked row keeps
+/// its selected fill, already a primary tint), a primary border replaces the neutral one (the selected
+/// border wins), and the note is a badge. The booking's services list and the recurring form's both draw
+/// it; iOS is the reference the Android and web rows follow.
+enum InPackageStyle {
+    static let borderWidth: CGFloat = 1.5
+    static let border = CleansiaColors.primary.opacity(0.6)
+    /// The badge's ink, text and icon. The primary itself measures about 3.1:1 on the badge in both
+    /// schemes (sky-600 is 4.1:1 even on white), so the badge takes the primary family's ink for primary
+    /// tints, sky-900 / sky-100: about 7.2:1 light and 6.1:1 dark, 5.5:1 at worst on a picked row.
+    static let ink = CleansiaColors.onPrimaryContainer
+
+    static func rowTintOpacity(_ scheme: ColorScheme) -> Double {
+        scheme == .dark ? 0.16 : 0.08
+    }
+
+    static func badgeOpacity(_ scheme: ColorScheme) -> Double {
+        scheme == .dark ? 0.24 : 0.14
+    }
+
+    static func rowTint(_ scheme: ColorScheme) -> Color {
+        CleansiaColors.primary.opacity(rowTintOpacity(scheme))
+    }
+}
+
+/// The badge a service row carries while a selected package already includes it — "In your package: …"
+/// after a check, on a primary tint.
 struct InPackageNote: View {
+    @Environment(\.colorScheme) private var colorScheme
     let text: String
 
     var body: some View {
         HStack(alignment: .firstTextBaseline, spacing: Spacing.xxs) {
-            Image(systemName: "shippingbox.fill")
-                .font(.system(size: 11, weight: .semibold))
-                .foregroundColor(CleansiaColors.primary)
+            Image(systemName: "checkmark.circle.fill")
+                .font(.system(size: 13, weight: .semibold))
+                .foregroundColor(InPackageStyle.ink)
                 .accessibilityHidden(true)
             Text(text)
-                .font(CleansiaTypography.labelMedium)
-                .foregroundColor(CleansiaColors.onSurfaceVariant)
+                .cleansiaFont(.nunito(.semibold, size: 14))
+                .foregroundColor(InPackageStyle.ink)
                 .lineLimit(2)
         }
+        .padding(.horizontal, Spacing.xs)
+        .padding(.vertical, Spacing.xxs)
+        .background(
+            CleansiaColors.primary.opacity(InPackageStyle.badgeOpacity(colorScheme)),
+            in: RoundedRectangle(cornerRadius: CornerRadius.small)
+        )
     }
 }
 

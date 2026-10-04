@@ -71,17 +71,20 @@ need backfilling.
 ### Added
 
 - **Customer web, Android and iOS — a service already in your package is marked, and adding it twice
-  asks first.** Once you choose a package, every service it already includes is marked *In your
-  package* in the list of services. Adding one of those services on its own, or adding a package that
-  includes a service already in your booking, chosen on its own or through another package, now asks
-  first, because that service is then done once more and charged once more. A service that two of
+  asks first.** Once you choose a package, every service it already includes stands out in the list
+  of services: its row is tinted and outlined in the brand blue, with an *In your package* badge
+  under its name, the same in the booking and the schedule form on every client and among the web
+  booking's Plus-step suggestions. Until 2026-10-04 the mark was a small line, easy to miss.
+  Adding one of those services on its own, or adding a package that includes a service already in
+  your booking, chosen on its own or through another package, now asks first, because that service
+  is then done once more and charged once more. A service that two of
   your packages already include is marked *In your packages*, and adding it asks under *Already in
   your packages* and says it is booked *once more*, not *twice*. *Cancel* leaves your
   choice as it was, and removing something never asks. A booking or schedule filled in for you, such
   as *Order again*, a package from Home or a booking you come back to, is only marked. This holds in
   the booking and when you set up a recurring schedule. Nothing is merged: a pair you confirm is
   still booked twice. (Owner remark 2026-10-03; two packages that share a service, owner ruling
-  2026-10-04.)
+  2026-10-04; the tinted row and the badge, owner remark 2026-10-04.)
 
 - **Customer and cleaner, Android and iOS — the right moments are felt.** A haptic plays when a
   slide-to-confirm commits (the customer's booking, and the cleaner's contract, job-step and order-list
@@ -174,12 +177,16 @@ need backfilling.
   and the Cleansia Plus offer, content scrolled to the top of the screen fades out under the status
   bar instead of running into the clock and the camera cut-out. At rest, and while pulling down to
   refresh, nothing is drawn, so the Profile and Plus headers still reach the top edge. On iOS the fade
-  covers only the status bar and clears a few points below it: a light blur under a see-through veil
-  of the page colour, eased out with no visible edge, the same on every iOS version, so the content
-  stays visible under the clock. For part of 2026-10-03 iOS 26 used the system's own soft edge, which
-  reached well below the status bar, and iOS 16 to 25 a blur that ended in a visible line; before
-  that, iOS covered it with a solid band of the page colour. Android fades it into the page colour.
-  (Owner remark 2026-10-01; the iOS fade, owner remarks 2026-10-03.)
+  covers only the status bar and clears a few points below it, eased out with no visible edge, the
+  same on every iOS version. It is one solid colour, the colour behind the clock, nine-tenths opaque:
+  the page colour on Home, and on Profile and the Plus offer the colour of their header while it is
+  under the clock, blending into the page colour as the header scrolls away. With Reduce Transparency
+  on it is fully opaque. Until 2026-10-04 it was a light blur under a see-through veil of the page
+  colour, which read as a white band over the Plus offer's navy header and let the content under the
+  clock show through. For part of 2026-10-03 iOS 26 used the system's own soft edge, which reached
+  well below the status bar, and iOS 16 to 25 a blur that ended in a visible line; before that, iOS
+  covered it with a solid band of the page colour. Android fades it into the page colour. (Owner
+  remark 2026-10-01; the iOS fade, owner remarks 2026-10-03 and 2026-10-04.)
 
 - **A contract for work between the customer and the cleaner, per job.** Every booking is now made
   under the platform's *contract for work* text — published at `/work-contract` beside the terms and the
@@ -578,8 +585,10 @@ need backfilling.
   podporu*. The rest of the screen follows too: the title, the frequently asked questions and their
   answers read as on iOS in all five languages, *Email us* shows the address it opens, both contact
   rows share one card, and each question has a card of its own under a small section label. What each
-  row opens is unchanged. (Owner rulings 2026-10-03 and 2026-10-04: iOS is the reference for this
-  screen.)
+  row opens is unchanged. One notice differs on purpose: when *Email us* finds no mail app, Android
+  copies the address and says *No mail app found, so the address was copied.* It had said iOS's
+  reason, that your mail app might not be set up, which is not why Android copies it. (Owner rulings
+  2026-10-03 and 2026-10-04: iOS is the reference for this screen.)
 
 - **Customer Android and iOS — arrival times are grouped by part of day, as on the web.** The
   booking's time step asks for morning, afternoon or evening first, then shows that part's sixteen
@@ -1053,6 +1062,11 @@ need backfilling.
   generic English sentence that is honest about being generic, until counsel supplies each one.
 
 ### Fixed
+
+- **Customer web — deleting your account is confirmed on a red button.** The question before your
+  account is deleted offered the same blue confirm button as any harmless question. It now shows the
+  red, destructive button that deleting a saved card or a schedule already shows, so the risk reads
+  before the words do.
 
 - **Customer web — removing a line from the booking summary never puts it back.** Right after you
   took a service, a package or an extra out of the booking, the summary could still show its line

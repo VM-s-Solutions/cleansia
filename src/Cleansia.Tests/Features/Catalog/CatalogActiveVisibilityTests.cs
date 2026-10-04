@@ -1,7 +1,11 @@
+using Cleansia.Core.AppServices.Features.Orders;
 using Cleansia.Core.AppServices.Features.Packages;
 using Cleansia.Core.AppServices.Features.Services;
+using Cleansia.Core.AppServices.Mappers;
 using Cleansia.Core.AppServices.Services;
+using Cleansia.Core.AppServices.Services.Interfaces;
 using Cleansia.Core.Domain.EmployeePayroll;
+using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Internationalization;
 using Cleansia.Core.Domain.Packages;
 using Cleansia.Core.Domain.Repositories;
@@ -9,9 +13,13 @@ using Cleansia.Core.Domain.Services;
 using Cleansia.Core.Domain.Specifications;
 using Cleansia.Infra.Database;
 using Cleansia.Infra.Database.Repositories;
+using Cleansia.Tests.Features.Orders;
 using Cleansia.TestUtilities;
+using Cleansia.TestUtilities.MockDataFactories.Users;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging.Abstractions;
+using Moq;
 
 namespace Cleansia.Tests.Features.Catalog;
 
@@ -19,7 +27,8 @@ namespace Cleansia.Tests.Features.Catalog;
 /// Visibility contract over a REAL <see cref="CleansiaDbContext"/> (SQLite in-memory, real
 /// repositories): a deactivated service/package disappears from the customer-facing overview
 /// (the booking wizard catalog) while the row itself survives, and the admin list can target it
-/// via the IsActive filter (S10 — no global IsActive filter, admins see all by default).
+/// via the IsActive filter (S10 — no global IsActive filter, admins see all by default). A deactivated
+/// service inside an ACTIVE package stays listed in that package, because an order with it books it.
 /// </summary>
 public sealed class CatalogActiveVisibilityTests : IDisposable
 {
@@ -131,6 +140,91 @@ public sealed class CatalogActiveVisibilityTests : IDisposable
         Assert.NotNull(await ctx.Packages.FindAsync(retiredPackageId));
     }
 
+    /// <summary>
+    /// A package's included services on the overview are exactly the ones an order with that package
+    /// books — a deactivated service among them. Deactivating a service hides it from the service list
+    /// but leaves it inside every package that includes it, and no order step asks: the factory writes
+    /// a line for every included service, the job is timed by all of them, and the order detail the
+    /// customer and the cleaner read lists them all. Filtering the overview alone would show a package
+    /// without a service the cleaner is then sent to do. Equality, not containment, so the two sides
+    /// may change only together.
+    /// </summary>
+    [Fact]
+    public async Task DeactivatedServiceInsideAnActivePackage_IsListedByTheOverview_ExactlyAsAnOrderBooksIt()
+    {
+        await SeedAsync();
+
+        string bundleId;
+        string stillOfferedId;
+        Dictionary<string, int> minutes;
+        await using (var seed = NewContext())
+        {
+            var currency = await seed.Currencies.SingleAsync();
+            var categoryId = (await seed.ServiceCategories.SingleAsync()).Id;
+            var windows = Service.Create(categoryId, "Windows", "seeded", estimatedTime: 60);
+            var oven = Service.Create(categoryId, "Oven", "seeded", estimatedTime: 45);
+            oven.Deactivated("admin-1", DateTimeOffset.UtcNow);
+            var bundle = Package.Create("Bundle", "seeded").AddService(windows).AddService(oven);
+
+            seed.Services.AddRange(windows, oven);
+            seed.Packages.Add(bundle);
+            seed.PackagePrices.Add(PackagePrice.Create(bundle.Id, currency.Id, 1000m));
+            seed.EmployeePayConfigs.Add(EmployeePayConfig.CreateForPackage(bundle.Id, 250m, currency.Id));
+            await seed.CommitAsync(CancellationToken.None);
+
+            bundleId = bundle.Id;
+            stillOfferedId = windows.Id;
+            minutes = new() { [windows.Id] = 60, [oven.Id] = 45 };
+        }
+
+        List<string> listed;
+        await using (var ctx = NewContext())
+        {
+            var overview = await new GetPackageOverview.Handler(
+                    new PackageRepository(ctx),
+                    new PackagePriceRepository(ctx),
+                    Markets(ctx),
+                    new EmployeePayConfigRepository(ctx),
+                    new CountryRepository(ctx))
+                .Handle(new GetPackageOverview.Request(), CancellationToken.None);
+            listed = overview.Single(p => p.Id == bundleId).IncludedServices
+                .Select(s => s.ServiceId).Order().ToList();
+        }
+
+        await using (var ctx = NewContext())
+        {
+            var order = await OrderFactoryOver(ctx).CreateAsync(
+                new CreateOrderInput(
+                    UserId: null,
+                    CustomerName: "Test Customer",
+                    CustomerEmail: "customer@example.com",
+                    CustomerPhone: "+420123456789",
+                    Address: AddressMockFactory.Generate(),
+                    Rooms: 2,
+                    Bathrooms: 1,
+                    SelectedExtraSlugs: [],
+                    CleaningDate: DateTime.UtcNow.AddDays(3),
+                    PaymentType: PaymentType.Card,
+                    Currency: await ctx.Currencies.SingleAsync(),
+                    SelectedServiceIds: [],
+                    SelectedPackageIds: [bundleId],
+                    RawSubtotal: 1000m,
+                    NowUtc: DateTime.UtcNow,
+                    ReservedExpressWaiver: null,
+                    OperatorTenantId: null),
+                CancellationToken.None);
+            var booked = order.SelectedPackages.Single();
+
+            Assert.Contains(stillOfferedId, listed);
+            Assert.Equal(listed, booked.IncludedServiceLines.Select(l => l.ServiceId).Order().ToList());
+            Assert.Equal(
+                listed,
+                booked.Package.MapToDetails("CZK", booked.LineTotal).IncludedServiceItems
+                    .Select(i => i.Id).Order().ToList());
+            Assert.Equal(listed.Sum(id => minutes[id]), order.EstimatedTime);
+        }
+    }
+
     [Fact]
     public async Task AdminServiceFilter_IsActiveFalse_ListsOnlyRetired_NullListsAll()
     {
@@ -172,6 +266,31 @@ public sealed class CatalogActiveVisibilityTests : IDisposable
         Assert.Contains(all, p => p.Id == activePackageId);
         Assert.Contains(all, p => p.Id == retiredPackageId);
     }
+
+    /// <summary>
+    /// The real factory reading the real catalogue. Everything else is a double: the order is never
+    /// saved, and nothing else the factory reads changes which services it books.
+    /// </summary>
+    private static OrderFactory OrderFactoryOver(CleansiaDbContext ctx) =>
+        new(
+            Mock.Of<IOrderRepository>(),
+            new ServiceRepository(ctx),
+            new PackageRepository(ctx),
+            new ExtraRepository(ctx),
+            new ServicePriceRepository(ctx),
+            new PackagePriceRepository(ctx),
+            new ExtraPriceRepository(ctx),
+            new EmployeePayConfigRepository(ctx),
+            Mock.Of<ICompanyInfoRepository>(),
+            Mock.Of<ICountryConfigurationRepository>(),
+            Mock.Of<IVatCalculator>(),
+            Mock.Of<ILoyaltyService>(),
+            Mock.Of<IUserMembershipRepository>(),
+            NoPreferredCleanerHold.Resolver,
+            WorkContractResolvers.Resolver().Object,
+            Mock.Of<INotificationProducer>(),
+            Mock.Of<IAdminNotifier>(),
+            NullLogger<OrderFactory>.Instance);
 
     private sealed class DefaultTenantProvider : ITenantProvider
     {

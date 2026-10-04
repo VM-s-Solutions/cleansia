@@ -1161,11 +1161,17 @@ the market — or from the order, on a contract for work.
   *Zavolejte podpoře*). Since 2026-10-04 the whole screen follows iOS (owner ruling 2026-10-04): the
   same title, two sections under small upper-case labels, *Contact us* first with both rows in one card
   split by a divider, then the five questions in iOS's order, each in a card of its own. Every title,
-  question, answer and notice reads as on iOS in all five languages, and *Email us* shows the address
-  it opens. Until then Android drew each contact row as a card of its own with a round icon badge, put
-  the five questions in one card with a help icon on each, and worded the title and most questions and
-  answers differently in at least one language (in Slovak the title read *Pomocník a podpora*, where
-  iOS says *Pomoc a podpora*).
+  question, answer and notice reads as on iOS in all five languages but one, and *Email us* shows the
+  address it opens. The one is the notice when the address is copied, because the two apps copy it for
+  different reasons. iOS copies it when no Mail account is set up too, and its notice says *Address
+  copied, in case your mail app isn't set up.* Android copies it only when no app on the phone takes
+  a `mailto:` link, and its notice says *No mail app found, so the address was copied.* (since
+  2026-10-04, in all five languages; until then Android gave iOS's reason, which is false there).
+  `MarketCopyStringsTest` exempts exactly that key, `help_email_unavailable`, from the iOS-parity
+  check, and fails if it reads as iOS's again. Before 2026-10-04 Android drew each contact row as a
+  card of its own with a round icon badge, put the five questions in one card with a help icon on
+  each, and worded the title and most questions and answers differently in at least one language (in
+  Slovak the title read *Pomocník a podpora*, where iOS says *Pomoc a podpora*).
 - **The registered name comes with the registration.** Whether the company is *Cleansia CZ s.r.o.* or
   *Cleansia s.r.o.* is written once, on the company record, and every text, receipt, confirmation and
   e-mail footer follows it; the footer's copyright line still reads *Cleansia s.r.o.*
@@ -1831,6 +1837,21 @@ the web, Android and iOS — the same four things hold:
   Either line is part of what a screen reader announces for the row (on the web booking, the add
   button's description; on the web schedule form the whole row is the button, and the line is part of
   its name), and the row stays selectable.
+  **The mark reads at a glance, and looks the same on every client** (owner remark 2026-10-04; iOS is
+  the reference). The row takes a tint of the brand primary over its card (8 % in light mode, 16 % in
+  dark) and a 1.5 pt border of the primary at 60 %, in place of the row's neutral look. The line
+  is a badge straight under the service's name: a check in a circle, then the same words in semibold,
+  never smaller than the row's secondary text, on the primary at 14 % (24 % in dark mode). Its corners
+  (12 on the apps, 1em on the web) make it a capsule on one line and a rounded box when a long package
+  name wraps it to two.
+  The words are in the primary container's ink (sky-900 in light mode, sky-100 in dark), not in the
+  primary, which reads only about 3.1:1 on the badge; the ink reads 7.2:1 in light mode, and in dark
+  mode 6.1:1 on the apps and 7.0:1 on the web. A picked row keeps its picked look where its list has
+  one, and still carries the badge. The add
+  control is unchanged, so adding is still allowed after the question below. Until 2026-10-04 the line
+  was a small grey caption after a box glyph (on the web, a 13px line in the accent colour), easy to
+  read past. → [Mobile: a covered service](/mobile-app/patterns#package-covered),
+  [Web: the services step](/customer-app/ordering-flow#step-0-services-packages)
 - **Adding that service asks first.** *Already in your package* — *"{service} is part of {package}.
   Adding it again books it twice: it is done twice and charged twice."* — with *Add again* and
   *Cancel*. When two or more chosen packages already include it, *twice* would be false, so the
@@ -1864,7 +1885,9 @@ that service nor asks about it. The web, Android and iOS word it alike in all fi
 calls a package *balík* on every client and Czech *balíček* (owner ruling 2026-10-04); until then the
 apps' Slovak, and older strings on the web, said *balíček* too. One Slovak text still says *balíčky*:
 the customer terms of service in force. A text in force is never edited, so it changes only with its
-next version ([above](#legal-drafts)).
+next version ([above](#legal-drafts)), and only with one made for a real change of terms: a version for
+this word alone would bring the booking tick back for every customer (owner ruling 2026-10-04; filed as
+T-0802).
 
 ## Discounts, and the 12 % cap {#discount-cap}
 

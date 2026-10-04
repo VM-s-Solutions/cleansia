@@ -140,7 +140,10 @@ Canonical shape (see `patterns-backend.md` for the full sample). **Every paged/l
   (`fiscal-failures-list`) and *don't* inline columns in the component or use `p-table` directly.
 - **C7.** Component is **`standalone: true` + `ChangeDetectionStrategy.OnPush`**, exposes
   `protected readonly Policy = Policy` and gates actions with `*cleansiaPermission="Policy.CanXxx"`,
-  and uses `ConfirmationService` for destructive actions.
+  and confirms a destructive action through the root **`DialogService`** — `confirmDelete(itemName?)`,
+  or `confirmTranslated(…, { danger: true })` — over the shell's one `<p-confirmDialog>` (F3–F5).
+  ✗ *Don't* provide `ConfirmationService` on a component or call its `.confirm(` (F4, F5), and don't
+  leave `danger` off a destructive confirm (the customer account deletion did until 2026-10-04).
 - **C8.** **NgRx is for genuinely cross-feature state only** (auth, user, shared catalogs). A single
   feature's list state lives in its facade's signals — **don't** mix `store.dispatch`/`store.select`
   into a feature facade that could be plain signals (✗ partner `orders`, customer `disputes` mix both).

@@ -835,12 +835,7 @@
     <string name="booking_cash_pending">Zda můžete platit hotově, potvrdíme, jakmile bude známa cena.</string>
     <string name="booking_cash_cleared">Platba hotově už pro tuto objednávku není možná, a proto není vybrán žádný způsob platby. Zvolte, jak chcete platit.</string>
     <string name="booking_draft_time_changed">Vybraný čas už není dostupný nebo se změnila jeho cena. Vyberte prosím čas znovu.</string>
-    <string name="booking_card_guarantee_title">Karta jako záruka plateb v hotovosti</string>
-    <string name="booking_card_guarantee_body">Při první objednávce v hotovosti si uložíte kartu. Nic se teď nestrhává: za úklid zaplatíte v hotovosti jako obvykle.</string>
     <string name="consent_card_guarantee_draft_2026_09_28">Souhlasím, že Cleansia může u mých objednávek v hotovosti strhnout z této karty storno poplatek, poplatek za neumožnění vstupu, nezaplacenou hotovost a doplatek, který jsem schválil(a).</string>
-    <string name="booking_card_guarantee_consent_required">Pro platbu v hotovosti potvrďte souhlas se zárukou kartou, nebo zvolte platbu kartou.</string>
-    <string name="booking_card_guarantee_pending">Kartu ještě ověřujeme. Za chvíli objednávku potvrďte znovu.</string>
-    <string name="booking_card_guarantee_cancelled">Karta se neuložila, takže se nic neobjednalo. Pro platbu v hotovosti si uložte kartu, nebo zvolte platbu kartou.</string>
     <string name="booking_save_card_label">Uložit tuto kartu pro mé další objednávky</string>
     <string name="booking_special_instructions_hint">Speciální požadavky? (nepovinné)</string>
     <string name="booking_access_instructions_hint">Pokyny ke vstupu? (nepovinné)</string>
@@ -1172,7 +1167,6 @@
     <string name="error_order_recurring_already_confirmed">Tento úklid už máte potvrzený. Uklízeči zaplatíte v hotovosti v den úklidu.</string>
     <string name="error_order_creation_failed">Nelze vytvořit rezervaci. Zkuste to znovu.</string>
     <string name="error_order_cash_not_available">Platba hotově je možná jen po přihlášení a u objednávky, kterou zvládne jeden uklízeč.</string>
-    <string name="error_order_cash_requires_saved_card">Pro platbu v hotovosti si nejdřív uložte kartu jako záruku — nebo zaplaťte kartou.</string>
     <string name="error_order_cash_open_bookings_limit_reached">Už máte nejvyšší povolený počet nezaplacených objednávek v hotovosti. Zvolte kartu, nebo hotovost znovu, až bude některá z nich zaplacena.</string>
     <string name="error_order_cash_unpaid_receivable">Máte u nás nezaplacenou částku, například storno poplatek. Zatím zaplaťte kartou; v hotovosti budete moci platit znovu, až ji uhradíte v profilu v sekci Platby.</string>
     <string name="error_saved_card_consent_not_accepted">Před uložením karty prosím potvrďte souhlas, že na ni mohou být účtovány poplatky a nezaplacená hotovost.</string>

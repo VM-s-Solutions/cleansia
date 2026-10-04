@@ -837,12 +837,7 @@
     <string name="booking_cash_pending">Whether you can pay in cash is confirmed once the price is ready.</string>
     <string name="booking_cash_cleared">Cash is no longer available for this booking, so no payment method is selected. Choose how you want to pay.</string>
     <string name="booking_draft_time_changed">The time you picked is no longer available or its price has changed. Please pick a time again.</string>
-    <string name="booking_card_guarantee_title">A card to guarantee cash bookings</string>
-    <string name="booking_card_guarantee_body">Your first cash booking saves a card. Nothing is charged now: you still pay the cleaner in cash.</string>
     <string name="consent_card_guarantee_draft_2026_09_28">I agree that Cleansia may charge this card for a cancellation fee, a lockout fee, cash I did not pay and a top-up I approved on my cash bookings.</string>
-    <string name="booking_card_guarantee_consent_required">Agree to the card guarantee to pay in cash, or choose card.</string>
-    <string name="booking_card_guarantee_pending">We\'re still confirming your card. Swipe again in a moment.</string>
-    <string name="booking_card_guarantee_cancelled">Your card wasn\'t saved, so nothing was booked. Save a card to pay in cash, or choose card.</string>
     <string name="booking_save_card_label">Save this card for my next bookings</string>
     <string name="booking_special_instructions_hint">Any special requests? (optional)</string>
     <string name="booking_access_instructions_hint">How do we get in? (optional)</string>
@@ -1181,7 +1176,6 @@
     <string name="error_order_recurring_already_confirmed">You\'ve already confirmed this cleaning. Pay the cleaner in cash on the day.</string>
     <string name="error_order_creation_failed">Couldn\'t create booking. Please try again.</string>
     <string name="error_order_cash_not_available">Cash is only available when you\'re signed in and the booking needs a single cleaner.</string>
-    <string name="error_order_cash_requires_saved_card">To pay in cash, first save a card as a guarantee — or pay by card.</string>
     <string name="error_order_cash_open_bookings_limit_reached">You already have as many unpaid cash bookings as allowed. Choose card, or pay in cash again once one of them is paid.</string>
     <string name="error_order_cash_unpaid_receivable">You have an unpaid amount with us, such as a cancellation fee. Pay by card for now; cash is available again once you settle it under Payments in your profile.</string>
     <string name="error_saved_card_consent_not_accepted">Please agree that fees and unpaid cash may be charged to your card before saving it.</string>

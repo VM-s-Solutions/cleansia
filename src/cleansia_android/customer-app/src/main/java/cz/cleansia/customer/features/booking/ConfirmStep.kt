@@ -109,7 +109,6 @@ fun ConfirmStep(
     val alreadyConsented by bookingVm.alreadyConsented.collectAsStateWithLifecycle()
     val cashEligibility by bookingVm.cashEligibility.collectAsStateWithLifecycle()
     val cashClearedNotice by bookingVm.cashClearedNotice.collectAsStateWithLifecycle()
-    val needsCardGuarantee by bookingVm.needsCardGuarantee.collectAsStateWithLifecycle()
     val offersCardSaving by bookingVm.offersCardSaving.collectAsStateWithLifecycle()
     // Every money row comes from the one resolver, so this card and the sticky bar below it cannot
     // disagree with each other or with the total the order is created with.
@@ -460,13 +459,6 @@ fun ConfirmStep(
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }
-        if (needsCardGuarantee) {
-            Spacer(Modifier.height(12.dp))
-            CardGuaranteeConsent(
-                accepted = state.cardGuaranteeAccepted,
-                onAcceptedChange = { onUpdate(state.copy(cardGuaranteeAccepted = it)) },
-            )
-        }
 
         Spacer(Modifier.height(16.dp))
 
@@ -550,36 +542,6 @@ fun ConfirmStep(
             onValidate = { code -> bookingVm.validatePromoCodeNow(code) },
             // VM persisted code + state; the sheet only signals so we can close it.
             onApplied = { _, _ -> },
-        )
-    }
-}
-
-@Composable
-private fun CardGuaranteeConsent(accepted: Boolean, onAcceptedChange: (Boolean) -> Unit) {
-    Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clip(RoundedCornerShape(14.dp))
-            .border(1.dp, MaterialTheme.colorScheme.outlineVariant, RoundedCornerShape(14.dp))
-            .padding(14.dp),
-    ) {
-        Text(
-            stringResource(R.string.booking_card_guarantee_title),
-            style = MaterialTheme.typography.titleSmall,
-            color = MaterialTheme.colorScheme.onSurface,
-        )
-        Spacer(Modifier.height(4.dp))
-        Text(
-            stringResource(R.string.booking_card_guarantee_body),
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-        )
-        Spacer(Modifier.height(8.dp))
-        CleansiaConsentCheckbox(
-            checked = accepted,
-            onCheckedChange = onAcceptedChange,
-            html = stringResource(R.string.consent_card_guarantee_draft_2026_09_28),
-            modifier = Modifier.fillMaxWidth(),
         )
     }
 }

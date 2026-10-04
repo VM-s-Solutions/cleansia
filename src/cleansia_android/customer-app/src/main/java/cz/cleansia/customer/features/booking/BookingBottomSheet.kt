@@ -310,39 +310,6 @@ private fun SheetContent(
         }
     }
 
-    val cardGuaranteeSheet = com.stripe.android.paymentsheet.rememberPaymentSheet { result ->
-        when (result) {
-            is com.stripe.android.paymentsheet.PaymentSheetResult.Completed -> scope.launch {
-                when (val outcome = bookingVm.submitAfterCardGuarantee()) {
-                    is BookingSubmitOutcome.Success -> {
-                        bookingVm.reset()
-                        onComplete(outcome.response.confirmationCode, outcome.response.id)
-                    }
-                    BookingSubmitOutcome.ProfileIncomplete -> {
-                        onDismiss()
-                        onNavigateToEditProfile()
-                    }
-                    is BookingSubmitOutcome.CardPending,
-                    is BookingSubmitOutcome.CardGuaranteeNeeded,
-                    BookingSubmitOutcome.Failed,
-                    -> submitFailedCount++
-                }
-            }
-            is com.stripe.android.paymentsheet.PaymentSheetResult.Canceled -> {
-                bookingVm.abandonCardGuarantee()
-                snackbarController.showErrorKey(R.string.booking_card_guarantee_cancelled)
-                submitFailedCount++
-            }
-            is com.stripe.android.paymentsheet.PaymentSheetResult.Failed -> {
-                bookingVm.abandonCardGuarantee()
-                snackbarController.showError(
-                    result.error.localizedMessage ?: context.getString(R.string.booking_card_guarantee_cancelled),
-                )
-                submitFailedCount++
-            }
-        }
-    }
-
     // Seed the address from Home's choice whenever the sheet becomes visible OR a different preferred
     // address arrives. The content leaves composition while hidden and the saved addresses start empty,
     // so every open sees preferred?.id arrive and runs this: a blank draft takes Home's address, and a
@@ -712,28 +679,6 @@ private fun SheetContent(
                                     paymentSheet.presentWithPaymentIntent(
                                         paymentIntentClientSecret = outcome.paymentSheet.clientSecret,
                                         configuration = outcome.paymentSheet.toConfiguration(),
-                                    )
-                                }
-                                is BookingSubmitOutcome.CardGuaranteeNeeded -> {
-                                    cardGuaranteeSheet.presentWithSetupIntent(
-                                        setupIntentClientSecret = outcome.setup.setupIntentClientSecret,
-                                        configuration = com.stripe.android.paymentsheet.PaymentSheet.Configuration(
-                                            merchantDisplayName = "Cleansia",
-                                            customer = com.stripe.android.paymentsheet.PaymentSheet.CustomerConfiguration(
-                                                id = outcome.setup.customerId,
-                                                ephemeralKeySecret = outcome.setup.ephemeralKey,
-                                            ),
-                                            googlePay = com.stripe.android.paymentsheet.PaymentSheet.GooglePayConfiguration(
-                                                environment = if (cz.cleansia.customer.BuildConfig.GOOGLE_PAY_PRODUCTION) {
-                                                    com.stripe.android.paymentsheet.PaymentSheet.GooglePayConfiguration.Environment.Production
-                                                } else {
-                                                    com.stripe.android.paymentsheet.PaymentSheet.GooglePayConfiguration.Environment.Test
-                                                },
-                                                countryCode = "CZ",
-                                                currencyCode = outcome.setup.currencyCode,
-                                            ),
-                                            allowsDelayedPaymentMethods = false,
-                                        ),
                                     )
                                 }
                                 BookingSubmitOutcome.ProfileIncomplete -> {

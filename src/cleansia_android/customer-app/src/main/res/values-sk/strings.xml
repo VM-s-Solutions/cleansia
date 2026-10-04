@@ -832,12 +832,7 @@
     <string name="booking_cash_pending">Či môžete platiť v hotovosti, potvrdíme, keď bude známa cena.</string>
     <string name="booking_cash_cleared">Platba v hotovosti už pre túto objednávku nie je možná, preto nie je vybraný žiadny spôsob platby. Zvoľte, ako chcete platiť.</string>
     <string name="booking_draft_time_changed">Vybraný čas už nie je dostupný alebo sa zmenila jeho cena. Vyberte si, prosím, čas znova.</string>
-    <string name="booking_card_guarantee_title">Karta ako záruka platieb v hotovosti</string>
-    <string name="booking_card_guarantee_body">Pri prvej objednávke v hotovosti si uložíte kartu. Teraz sa nič nestrháva: za upratovanie zaplatíte v hotovosti ako zvyčajne.</string>
     <string name="consent_card_guarantee_draft_2026_09_28">Súhlasím, že Cleansia môže pri mojich objednávkach v hotovosti strhnúť z tejto karty stornovací poplatok, poplatok za neumožnenie vstupu, nezaplatenú hotovosť a doplatok, ktorý som schválil(a).</string>
-    <string name="booking_card_guarantee_consent_required">Na platbu v hotovosti potvrďte súhlas so zárukou kartou, alebo zvoľte platbu kartou.</string>
-    <string name="booking_card_guarantee_pending">Kartu ešte overujeme. O chvíľu objednávku potvrďte znova.</string>
-    <string name="booking_card_guarantee_cancelled">Karta sa neuložila, preto sa nič neobjednalo. Na platbu v hotovosti si uložte kartu, alebo zvoľte platbu kartou.</string>
     <string name="booking_save_card_label">Uložiť túto kartu pre moje ďalšie objednávky</string>
     <string name="booking_special_instructions_hint">Špeciálne požiadavky? (nepovinné)</string>
     <string name="booking_access_instructions_hint">Pokyny ku vstupu? (nepovinné)</string>
@@ -1169,7 +1164,6 @@
     <string name="error_order_recurring_already_confirmed">Toto upratovanie už máte potvrdené. Upratovačovi zaplatíte v hotovosti v deň upratovania.</string>
     <string name="error_order_creation_failed">Nie je možné vytvoriť rezerváciu. Skúste to znova.</string>
     <string name="error_order_cash_not_available">Platba v hotovosti je možná len po prihlásení a pri objednávke, ktorú zvládne jeden upratovač.</string>
-    <string name="error_order_cash_requires_saved_card">Na platbu v hotovosti si najprv uložte kartu ako záruku — alebo zaplaťte kartou.</string>
     <string name="error_order_cash_open_bookings_limit_reached">Už máte najvyšší povolený počet nezaplatených objednávok v hotovosti. Zvoľte kartu alebo hotovosť znova, keď bude niektorá z nich zaplatená.</string>
     <string name="error_order_cash_unpaid_receivable">Máte u nás nezaplatenú sumu, napríklad stornovací poplatok. Zatiaľ zaplaťte kartou; v hotovosti budete môcť platiť znova, keď ju uhradíte v profile v sekcii Platby.</string>
     <string name="error_saved_card_consent_not_accepted">Pred uložením karty prosím potvrďte súhlas, že na ňu môžu byť účtované poplatky a nezaplatená hotovosť.</string>

@@ -1431,7 +1431,7 @@
         "on_completion_note": "We add them when the booking completes — not when you place it.",
         "referral_title": "And for a referral",
         "referral_note": "When somebody you invited finishes their first clean.",
-        "clawback": "A cancelled or partly refunded booking takes its points back — which is why they land only after the clean."
+        "clawback": "A cancelled or refunded booking takes its points back — which is why they land only after the clean."
       },
       "tx": {
         "completed": "Cleaning completed",

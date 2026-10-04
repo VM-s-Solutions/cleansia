@@ -1431,7 +1431,7 @@
         "on_completion_note": "Pripíšeme ich, keď je objednávka dokončená — nie keď ju zadáte.",
         "referral_title": "A za odporúčanie",
         "referral_note": "Keď váš známy dokončí prvé upratovanie.",
-        "clawback": "Zrušená alebo čiastočne vrátená objednávka body zase odpočíta — preto sa pripisujú až po upratovaní."
+        "clawback": "Zrušená alebo vrátená objednávka body zase odpočíta — preto sa pripisujú až po upratovaní."
       },
       "tx": {
         "completed": "Upratovanie dokončené",

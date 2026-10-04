@@ -1,6 +1,7 @@
 package cz.cleansia.customer.ui.components
 
 import java.io.File
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
@@ -8,7 +9,7 @@ import org.junit.Test
  * Home, Profile and Subscribe Plus scroll their content under the status bar, and each fades it out
  * there. The modifier draws over whatever it is chained onto, so it only fades the viewport when it
  * sits directly before `verticalScroll` and reads the same scroll state. There is no Compose test
- * harness in this module, so the screens are read as source.
+ * harness in this module, so the screens, the fade and the theme are read as source.
  */
 class StatusBarFadeBindingTest {
 
@@ -72,6 +73,77 @@ class StatusBarFadeBindingTest {
         )
     }
 
+    /**
+     * The fade ends at the camera hole's bottom, the line the clock and icons are centred on, not at the
+     * status bar's inset, which runs 30 px further down on a Pixel 8 and read as a band under the clock.
+     */
+    @Test
+    fun `the fade ends at the cutout's line, not the status bar's inset`() {
+        assertTrue(
+            "statusBarFade must size the fade with statusBarFadeHeight(statusBar, cutoutExtent())",
+            fadeBody().contains("statusBarFadeHeight(statusBar, cutoutExtent())"),
+        )
+    }
+
+    /** Dark icons on the navy Plus hero read 1.35:1, so a hero screen sets them for the colour behind them. */
+    @Test
+    fun `a hero screen sets the icons to read on the colour behind them`() {
+        assertTrue(
+            "statusBarFade must call StatusBarIcons(statusBarIconsLight(behind)) when heroTint is set",
+            Regex("""if \(heroTint != null\) \{[\s\S]*?statusBarIconsLight\(behind\.value\)[\s\S]*?StatusBarIcons\(light\)""")
+                .containsMatchIn(fadeBody()),
+        )
+    }
+
+    /**
+     * The icons are set on entering composition and on resume, and handed back to the theme's on pause and
+     * on leaving, or a screen with no hero would inherit light icons on a light page.
+     */
+    @Test
+    fun `the icons are held while the screen shows and handed back when it pauses or leaves`() {
+        val icons = code(FADE).substringAfter("fun StatusBarIcons(", "")
+        assertTrue(
+            "StatusBarIcons' set() must write isAppearanceLightStatusBars = !light",
+            Regex("""fun set\(\) \{[^}]*isAppearanceLightStatusBars = !light\b""").containsMatchIn(icons),
+        )
+        assertTrue(
+            "StatusBarIcons' release() must hand back isAppearanceLightStatusBars = !themeDark",
+            Regex("""fun release\(\) \{[^}]*isAppearanceLightStatusBars = !themeDark\b""").containsMatchIn(icons),
+        )
+        assertTrue(
+            "StatusBarIcons must set() in DisposableEffect(light, themeDark) and release() on dispose",
+            Regex("""DisposableEffect\(light, themeDark\) \{\s*set\(\)\s*onDispose \{ release\(\) \}""")
+                .containsMatchIn(icons),
+        )
+        assertTrue(
+            "StatusBarIcons must set() in LifecycleResumeEffect(light, themeDark) and release() on pause or dispose",
+            Regex("""LifecycleResumeEffect\(light, themeDark\) \{\s*set\(\)\s*onPauseOrDispose \{ release\(\) \}""")
+                .containsMatchIn(icons),
+        )
+    }
+
+    /**
+     * The theme sets the icons when the theme changes, not after every recomposition: a SideEffect runs
+     * after every other effect in its frame, so it undid the icons a hero screen had just set.
+     */
+    @Test
+    fun `the theme sets the icons only when the theme changes, so a hero screen's icons stand`() {
+        val theme = code("ui/theme/Theme.kt")
+        val effect = theme.substringAfter("DisposableEffect(darkTheme", "").substringBefore("onDispose", "")
+        assertTrue(
+            "CleansiaTheme must set isAppearanceLightStatusBars = !darkTheme inside DisposableEffect(darkTheme, …)",
+            effect.contains("isAppearanceLightStatusBars = !darkTheme"),
+        )
+        assertFalse("CleansiaTheme must not set the bars in a SideEffect", theme.contains("SideEffect"))
+    }
+
+    /** statusBarFade's own body, up to where it draws: the effects it runs and the height it draws to. */
+    private fun fadeBody(): String =
+        code(FADE).substringAfter("fun Modifier.statusBarFade(", "").substringBefore("drawWithContent", "")
+
+    /** [source] without its comments, so prose that names a call is never read as the call. */
+    private fun code(path: String): String = source(path).replace(Regex("""/\*[\s\S]*?\*/|//[^\n]*"""), "")
+
     private fun source(path: String): String = sequenceOf(
         File("."),
         File("customer-app"),
@@ -82,6 +154,8 @@ class StatusBarFadeBindingTest {
         ?: error("$path not found from working dir ${File(".").absolutePath}")
 
     private companion object {
+        const val FADE = "ui/components/StatusBarFade.kt"
+
         val SCREENS = listOf(
             "features/home/HomeTab.kt",
             "features/profile/ProfileTab.kt",

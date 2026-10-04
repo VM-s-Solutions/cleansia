@@ -89,4 +89,18 @@ final class PlatformWorkCopyTests: XCTestCase {
             }
         }
     }
+
+    /// A confirmed lockout pays the seat the reward its job's contract states, not a share of a fee, so the
+    /// line names it in the contract's own words.
+    func testTheLockoutLineIsTheJobsRewardNotAShareOfAFee() throws {
+        let strings = try catalog()
+        for locale in Self.locales {
+            let reward = try XCTUnwrap(value(of: "work_contract_reward", in: strings, locale: locale), locale)
+            let line = try XCTUnwrap(
+                value(of: "period_pay_line_lockout_fee_share", in: strings, locale: locale),
+                "period_pay_line_lockout_fee_share [\(locale)] missing"
+            )
+            XCTAssertTrue(line.hasPrefix(reward), "period_pay_line_lockout_fee_share [\(locale)] = \(line)")
+        }
+    }
 }

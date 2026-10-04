@@ -172,7 +172,8 @@ private struct JobRow: View {
 }
 
 extension OrderPayLine {
-    /// A fee-share row pays for a job that did not happen, so it says which fee it is a share of.
+    /// A row that pays for a job that did not happen says why: a share of the late-cancellation fee, or the
+    /// job's reward after a lockout.
     var feeShareCaption: String? {
         switch lineType {
         case ._0: nil

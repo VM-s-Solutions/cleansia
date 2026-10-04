@@ -143,14 +143,15 @@ class MarketCopyStringsTest {
     /**
      * M5, R1: iOS's Help is the reference for this screen (owner, 2026-10-03; the whole screen,
      * 2026-10-04). Every Help string reads as iOS's in every locale — read from iOS's catalog, so the two
-     * cannot drift apart unnoticed — with only the format placeholder adapted (`%1$@` → `%1$s`).
+     * cannot drift apart unnoticed — with only the format placeholder adapted (`%1$@` → `%1$s`). The
+     * Profile row that opens the screen counts: it must not name the screen differently from its title.
      */
     @Test
     fun `every help string reads as iOS's in every locale`() {
         val catalog = Json.parseToJsonElement(File(solutionDir, IOS_CATALOG).readText()).jsonObject.getValue("strings").jsonObject
-        val iosKeys = catalog.keys.filter { it.startsWith("help_") }.toSet()
+        val iosKeys = catalog.keys.filter { it.startsWith("help_") || it == "profile_row_help" }.toSet()
         iosLanguages.forEach { (locale, language) ->
-            val android = Regex("<string name=\"(help_[^\"]+)\">(.*?)</string>").findAll(stringsXml(locale))
+            val android = Regex("<string name=\"(help_[^\"]+|profile_row_help)\">(.*?)</string>").findAll(stringsXml(locale))
                 .associate { it.groupValues[1] to unescape(it.groupValues[2]) }
             assertEquals("$locale: the Help keys differ from iOS's", iosKeys, android.keys)
             iosKeys.forEach { key ->

@@ -14,10 +14,12 @@ Cleansia runs on Microsoft Azure (West Europe region) with separate DEV and PRO 
 | Resource | DEV | PRO |
 |----------|-----|-----|
 | **App Service Plan** | Basic B2 | Standard S1 |
-| **App Service** (Customer API + SSR) | 1 instance | 1 instance |
+| **App Service** (Customer API) | 1 instance | 1 instance |
+| **App Service** (Customer SSR) | 1 instance | 1 instance |
 | **App Service** (Partner API) | 1 instance | 1 instance |
 | **App Service** (Admin API) | 1 instance | 1 instance |
-| **App Service** (Mobile API) | 1 instance | 1 instance |
+| **App Service** (Partner Mobile API) | 1 instance | 1 instance |
+| **App Service** (Customer Mobile API) | 1 instance | 1 instance |
 | **Static Web App** (Partner SPA) | Free tier | Standard |
 | **Static Web App** (Admin SPA) | Free tier | Standard |
 | **PostgreSQL Flexible Server** | Burstable B1ms | General Purpose D2s_v3 |

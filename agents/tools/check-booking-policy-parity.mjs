@@ -502,10 +502,11 @@ for (const type of LEGAL_SEED_TYPES) {
 /**
  * Insurance is recommended to a cleaner, not required for approval (owner ruling 2026-10-04, ADR-0060
  * amended), so no customer copy may say cleaners are insured unless the market's own ceiling stands
- * beside it. These two claims stated no figure and were deleted from all five locales on both
- * platforms; one coming back is the promise coming back. The figured keys stay pinned above.
+ * beside it. These three claims stated no figure (the home trust strip's item, the confirm badge and
+ * the Help answer) and were deleted from all five locales on both platforms; one coming back is the
+ * promise coming back. The figured keys stay pinned above.
  */
-const RETIRED_INSURANCE_CLAIMS = ['booking_trust_insured_no_figure', 'help_faq_a3_no_figure'];
+const RETIRED_INSURANCE_CLAIMS = ['home_trust_insured', 'booking_trust_insured_no_figure', 'help_faq_a3_no_figure'];
 const insuranceClaimIsBack = (key) =>
   `${key} is back — insurance is optional, so no copy may claim cleaners are insured without the ` +
   "market's figure (ADR-0060, amended 2026-10-04)";

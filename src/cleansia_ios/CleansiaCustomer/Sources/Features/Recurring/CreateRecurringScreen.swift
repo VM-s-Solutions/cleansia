@@ -527,13 +527,19 @@ private struct StartsSection: View {
 }
 
 private struct SelectableRow: View {
+    @Environment(\.colorScheme) private var colorScheme
     let text: String
     var badge: String?
-    /// The service's "In your package: …" line under the text, read with it.
+    /// The service's "In your package: …" badge under the text, read with it; the row reads as covered
+    /// (`InPackageStyle`).
     var inPackageNote: String?
     let selected: Bool
     var enabled = true
     let onTap: () -> Void
+
+    private var covered: Bool {
+        inPackageNote != nil
+    }
 
     var body: some View {
         Button(action: onTap) {
@@ -560,14 +566,23 @@ private struct SelectableRow: View {
             }
             .padding(Spacing.m)
             .frame(maxWidth: .infinity, alignment: .leading)
+            .background(
+                covered ? InPackageStyle.rowTint(colorScheme) : .clear,
+                in: RoundedRectangle(cornerRadius: CornerRadius.small)
+            )
             .background(CleansiaColors.surface, in: RoundedRectangle(cornerRadius: CornerRadius.small))
             .overlay(
                 RoundedRectangle(cornerRadius: CornerRadius.small)
-                    .stroke(selected ? CleansiaColors.primary : CleansiaColors.outlineVariant, lineWidth: 1)
+                    .stroke(border, lineWidth: covered ? InPackageStyle.borderWidth : 1)
             )
         }
         .buttonStyle(.plain)
         .disabled(!enabled)
         .opacity(enabled ? 1 : 0.5)
+    }
+
+    private var border: Color {
+        if selected { return CleansiaColors.primary }
+        return covered ? InPackageStyle.border : CleansiaColors.outlineVariant
     }
 }

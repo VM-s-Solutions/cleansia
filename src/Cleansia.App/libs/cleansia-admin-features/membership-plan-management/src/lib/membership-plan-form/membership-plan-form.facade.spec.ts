@@ -171,6 +171,32 @@ describe('MembershipPlanFormFacade', () => {
     expect(facade.loading()).toBe(false);
   });
 
+  describe('the subscribed-benefits lock', () => {
+    it('holds while the server says someone has subscribed to the plan', () => {
+      membershipClient.details.mockReturnValue(
+        of(MembershipPlanDetailDto.fromJS({ ...detail.toJSON(), benefitsLocked: true }))
+      );
+
+      facade.loadPlan('plan-1');
+
+      expect(facade.benefitsLocked()).toBe(true);
+    });
+
+    it('is off for a plan nobody has subscribed to', () => {
+      membershipClient.details.mockReturnValue(
+        of(MembershipPlanDetailDto.fromJS({ ...detail.toJSON(), benefitsLocked: false }))
+      );
+
+      facade.loadPlan('plan-1');
+
+      expect(facade.benefitsLocked()).toBe(false);
+    });
+
+    it('is off before the plan has loaded', () => {
+      expect(facade.benefitsLocked()).toBe(false);
+    });
+  });
+
   it('navigates back to the list when loading the detail fails', () => {
     membershipClient.details.mockReturnValue(throwError(() => new Error('x')));
 

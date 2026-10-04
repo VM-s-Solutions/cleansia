@@ -34,6 +34,7 @@ const COPY = {
         refund_success: 'A refund of {{amount}} was issued.',
         grace_note: 'Free within {{minutes}} minutes of booking.',
       },
+      cancellation_note: 'Free cancellation ran until {{hours}} hours before the clean.',
     },
   },
 };
@@ -48,6 +49,7 @@ function order(
   status: OrderStatus,
   paymentType = PaymentType.Card,
   paymentStatus = PaymentStatus.Paid,
+  freeCancellationHours?: number,
 ): OrderItem {
   return OrderItem.fromJS({
     id: ORDER_ID,
@@ -60,6 +62,7 @@ function order(
     currency: { code: 'CZK' },
     services: [],
     packages: [],
+    freeCancellationHours,
   });
 }
 
@@ -86,9 +89,10 @@ describe('OrderDetailComponent — cancelling a booking', () => {
     status: OrderStatus,
     paymentType = PaymentType.Card,
     paymentStatus = PaymentStatus.Paid,
+    freeCancellationHours?: number,
   ): Promise<void> {
     orderClient = {
-      getById: jest.fn().mockReturnValue(of(order(status, paymentType, paymentStatus))),
+      getById: jest.fn().mockReturnValue(of(order(status, paymentType, paymentStatus, freeCancellationHours))),
       cancellationPreview: jest.fn().mockReturnValue(of(preview)),
       cancel: jest.fn(),
     };
@@ -157,6 +161,20 @@ describe('OrderDetailComponent — cancelling a booking', () => {
       expect(cancelButton()).toBeNull();
     },
   );
+
+  it.each([24, 12])('states the %i-hour free-cancellation window the server resolved for this order', async (hours) => {
+    await setup(OrderStatus.Confirmed, PaymentType.Card, PaymentStatus.Paid, hours);
+
+    expect((fixture.nativeElement as HTMLElement).textContent).toContain(
+      `Free cancellation ran until ${hours} hours before the clean.`,
+    );
+  });
+
+  it('states no free-cancellation window the server did not send', async () => {
+    await setup(OrderStatus.Confirmed);
+
+    expect((fixture.nativeElement as HTMLElement).querySelector('[data-spec-free-cancellation]')).toBeNull();
+  });
 
   // Owner ruling 2026-09-24: 15 minutes, 60 for an entitled Plus member. Which one THIS customer has
   // is the server's answer on the preview; the sheet never works it out from the membership.

@@ -225,6 +225,12 @@ public static class BusinessErrorMessage
     public const string MembershipPlanDiscountOutOfRange = "membership.plan.discount_out_of_range";
     public const string MembershipPlanStripePriceAlreadyUsed = "membership.plan.stripe_price_already_used";
 
+    /// <summary>
+    /// Someone has subscribed to the plan, so its discount and express quota are the terms they were
+    /// shown and can no longer change. A different offer is a new plan, with this one deactivated.
+    /// </summary>
+    public const string MembershipPlanBenefitsLocked = "membership.plan.benefits_locked";
+
     // Saved card, the guarantee for cash bookings
     /// <summary>A card capture started without the customer's consent that fees and unpaid cash may be charged to the card.</summary>
     public const string SavedCardConsentNotAccepted = "saved_card.consent_not_accepted";

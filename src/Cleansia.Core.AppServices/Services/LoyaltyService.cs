@@ -137,7 +137,7 @@ public sealed class LoyaltyService(
         account.RevokePoints(pointsToRevoke, LoyaltyEarnSource.OrderCancelled, orderId, SystemActor, thresholds);
     }
 
-    public async Task RevokeForPartialRefundAsync(
+    public async Task RevokeForRefundAsync(
         string orderId, decimal amountReturned, string refundKey, string actorId, CancellationToken cancellationToken)
     {
         if (string.IsNullOrEmpty(refundKey))
@@ -152,7 +152,7 @@ public sealed class LoyaltyService(
 
         if (order == null)
         {
-            logger.LogWarning("LoyaltyService.PartialRevoke skipped — order {OrderId} not found.", orderId);
+            logger.LogWarning("LoyaltyService.RefundRevoke skipped — order {OrderId} not found.", orderId);
             return;
         }
 
@@ -176,15 +176,15 @@ public sealed class LoyaltyService(
             return;
         }
 
-        // Idempotency on the refund key — a replay of the same partial refund collapses to one revoke.
+        // Idempotency on the refund key — a replay of the same refund collapses to one revoke.
         var existingByKey = await loyaltyTransactionRepository.GetByIdempotencyKeyAsync(refundKey, cancellationToken);
         if (existingByKey != null)
         {
             return;
         }
 
-        // Cap cumulative revocation at the original earn so a near-full set of partial refunds can
-        // never claw back more than was earned.
+        // Cap cumulative revocation at the original earn: the order's refunds together never claw back
+        // more than was earned, and a full refund after earlier ones takes only what they left.
         var alreadyRevoked = await loyaltyTransactionRepository.GetRevokedPointsSumForOrderSourceAsync(
             orderId, LoyaltyEarnSource.OrderPartiallyRefunded, cancellationToken);
         var headroom = originalEarn.Points - alreadyRevoked;
@@ -379,7 +379,7 @@ public sealed class LoyaltyService(
 
     /// <summary>
     /// Deliberate in-service flush of a keyed loyalty grant/revoke insert (the manual admin path and the
-    /// partial-refund clawback) so a concurrent double-submit that raced past the fast-path read collides
+    /// refund clawback) so a concurrent double-submit that raced past the fast-path read collides
     /// on the filtered UNIQUE INDEX on <c>LoyaltyTransaction.IdempotencyKey</c> HERE, where the 23505 can
     /// be caught and collapsed — not at the <c>UnitOfWorkPipelineBehavior</c> commit (which would surface a
     /// raw 500). On a unique-violation the loser rolls back ITS OWN change-tracker (each request has its own
@@ -413,7 +413,7 @@ public sealed class LoyaltyService(
     /// <summary>
     /// <c>floor(amount / the currency's divisor)</c>. Zero — with a log line — when the currency has no
     /// divisor: a currency switched on before its rate was authored must not earn at another currency's
-    /// rate in either direction. The earn only; the partial-refund clawback takes a share of the earn
+    /// rate in either direction. The earn only; the refund clawback takes a share of the earn
     /// instead. → /product/business-rules#money-constants
     /// </summary>
     private async Task<int> PointsForAsync(

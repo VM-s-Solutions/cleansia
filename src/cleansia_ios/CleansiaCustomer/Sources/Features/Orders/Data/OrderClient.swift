@@ -62,7 +62,7 @@ protocol OrderClient: Sendable {
     ) async -> ApiResult<OrderReviewDto>
     func downloadReceipt(orderId: String) async -> ApiResult<URL>
     func getPhotos(orderId: String) async -> ApiResult<OrderPhotos>
-    func confirmRecurring(orderId: String) async -> ApiResult<RecurringConfirmation>
+    func confirmRecurring(orderId: String, termsAccepted: Bool?) async -> ApiResult<RecurringConfirmation>
     func cancellationQuote(orderId: String) async -> ApiResult<CancellationQuote>
 }
 
@@ -136,8 +136,8 @@ struct LiveOrderClient: OrderClient {
         }
     }
 
-    func confirmRecurring(orderId: String) async -> ApiResult<RecurringConfirmation> {
-        let command = ConfirmRecurringOrderCommand(orderId: orderId)
+    func confirmRecurring(orderId: String, termsAccepted: Bool?) async -> ApiResult<RecurringConfirmation> {
+        let command = ConfirmRecurringOrderCommand(orderId: orderId, termsAccepted: termsAccepted)
         let result = await apiResult(mapError: ApiError.fromGenerated) {
             try await CustomerOrderAPI.orderConfirmRecurring(confirmRecurringOrderCommand: command)
         }

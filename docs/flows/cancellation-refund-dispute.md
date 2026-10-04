@@ -40,7 +40,11 @@ notice are frozen on the order when it is booked (`Orders.Cancellation*`, owner 
 terms §19 keep a booking under the version accepted when it was made), so the resolver builds the
 policy from the order, never from today's `BookingPolicy`, and a later change of the ladder or of the
 Plus window reaches only bookings made after it. Who the customer is — an entitled member, a first
-booking — is still judged at the cancel, and the oops minutes are still today's.
+booking — is still judged at the cancel, and the oops minutes are still today's. **The order detail
+states the same figure** (owner ruling 2026-10-03). A customer's `GetOrderDetails` carries
+`freeCancellationHours`, resolved by `ResolveForOrderAsync` exactly as a cancel would: the order's free
+notice, or its Plus notice while the customer is entitled. The customer web's *free cancellation*
+note reads it and no longer works the figure out in the browser.
 → [Business rules — cancellation](/product/business-rules#cancellation)
 
 **After the booked start, a customer does not cancel.** With a cleaner on the job and nobody having
@@ -188,12 +192,19 @@ undiscounted order with a 1,000 service and a 200 extra, the split allocates 1,0
 before any applicable processing fee, instead of the whole 1,200. The refund service still applies
 its remaining-money ceiling.
 
-**A partial refund takes back its share of the order's points.** `IssuePartialRefund` hands the
-loyalty service everything the refund returned — the card leg plus the credit leg — and it removes
-`floor(earned × returned / TotalPrice)` of the order's completion earn, keyed on the refund and capped
-at what the earn still holds; no divisor is read (owner ruling 2026-10-03). **A full refund
-(`AdminRefundOrder`) and a dispute refund (`ResolveDispute`) take back no points today** — a known gap
-against the customer terms' §11, not a ruling.
+**Every refund takes back its share of the order's points** (owner rulings 2026-10-03). One clawback,
+`RevokeForRefundAsync`, removes `floor(earned × returned / TotalPrice)` of the order's completion earn,
+keyed on the refund and capped at what the earn still holds; no divisor is read. Three refunds call it:
+
+- `IssuePartialRefund` passes everything the refund returned, the card leg plus the credit leg.
+- `AdminRefundOrder` passes the whole price, so a full refund takes everything the earn still holds.
+- `ResolveDispute` passes what the settlement returned
+  ([below](#dispute)).
+
+The full refund and the dispute settlement call it as their **last** write. The clawback flushes the
+unit of work to collapse a duplicate on its key, so that flush commits the whole command, or discards
+a concurrent duplicate's work entirely. A refund that fails takes no points. Until the second ruling
+that day, a full refund and a dispute refund took back no points, against the customer terms' §11.
 → [Business rules — money constants](/product/business-rules#money-constants)
 
 ## Dispute
@@ -268,6 +279,14 @@ amount as requested, and that one refund's card and credit legs as what moved. A
 amount, or zero, moves nothing and simply resolves. A terminal dispute is never resolved twice
 (`dispute.already_resolved`). After an earlier complaint on the order was settled in credit, the card
 settlement is held to what the order still has left.
+
+**A settlement takes back its share of the order's points** (owner ruling 2026-10-03). As its last
+write, `ResolveDispute` hands the refund clawback what the settlement actually gave back:
+`CardRefundedAmount + CreditReturnedAmount`, or the credit issued when the customer chose credit. It
+is keyed `dispute-settlement:{disputeId}`, the key the credit ledger already uses, because a dispute
+settles once. A settlement paid in credit counts like one paid to the card; otherwise a customer could
+keep the points by choosing credit. A resolution that moved nothing takes nothing. A refused refund
+leaves the dispute open and takes nothing, so a retry passes the same key and takes the share once.
 
 **A refund never touches the cleaner's pay; a finding of fault does.** The resolution may carry
 `chargeToCleaner` — the cleaner, an amount and a written reason — which deducts from that cleaner's pay

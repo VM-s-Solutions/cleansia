@@ -409,7 +409,8 @@ public class PreferredOfferDisclosureTests
             _expressWaiverConsumer.Object,
             _userMembershipRepository.Object,
             WorkContractTestData.AcceptanceRepository().Object,
-            Mock.Of<IEmployeeActionAuditRepository>());
+            Mock.Of<IEmployeeActionAuditRepository>(),
+            new Cleansia.Core.AppServices.Services.CancellationPolicyResolver(Mock.Of<IUserMembershipRepository>(), Mock.Of<IOrderRepository>()));
 
     private static Employee NewCleaner(string employeeId)
     {

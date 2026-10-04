@@ -3,6 +3,7 @@ using Cleansia.Core.AppServices.Auditing;
 using Cleansia.Core.AppServices.Authentication;
 using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.AppServices.Features.Bookings;
+using Cleansia.Core.AppServices.Features.Legal;
 using Cleansia.Core.AppServices.Services.Interfaces;
 using Cleansia.Core.Clients.Abstractions.Stripe;
 using Cleansia.Core.Domain.Credit;
@@ -29,8 +30,9 @@ namespace Cleansia.Core.AppServices.Features.Orders;
 ///
 /// <para>Refuses orders that are not awaiting confirmation, not owned by the caller, or not linked to a
 /// template — those belong on the standard booking flow — a cash occurrence whose job needs more
-/// than one cleaner or that <see cref="CustomerCashStanding"/> does not admit, and an occurrence closer
-/// than the minimum lead time a one-off booking gets.
+/// than one cleaner or that <see cref="CustomerCashStanding"/> does not admit, an occurrence closer
+/// than the minimum lead time a one-off booking gets, and — on a booking's own rule — a customer whose
+/// consents are not to the texts in force who does not tick the terms.
 /// → /flows/booking-and-pricing#recurring-bookings</para>
 /// </summary>
 [AuditAction("customer.order.recurring.confirm", Audience = AuditAudience.Customer, ResourceType = "Order")]
@@ -42,10 +44,16 @@ public class ConfirmRecurringOrder
     /// Unticked, nothing is kept. The mobile channel takes the tick on its PaymentSheet intent
     /// (<see cref="CreatePaymentIntent"/>) instead.
     /// </param>
-    public record Command(string OrderId, bool SaveCard = false) : ICommand<Response>;
+    /// <param name="TermsAccepted">
+    /// The terms tick, asked on a booking's rule (owner ruling 2026-10-03): an occurrence is created up to a
+    /// week ahead under the terms then in force, so it is charged under the terms it is confirmed under.
+    /// Nullable so a client that never sends it is judged on the account's consents alone.
+    /// </param>
+    public record Command(string OrderId, bool SaveCard = false, bool? TermsAccepted = null) : ICommand<Response>;
 
     /// <summary>
-    /// The occurrence the customer confirmed, priced as the materializer stored it (ADR-0062 D3). On the
+    /// The occurrence the customer confirmed, priced as the materializer stored it (ADR-0062 D3), with the
+    /// terms tick as the client asserted it and the versions the occurrence is confirmed under. On the
     /// card flavour the row records the confirmation the customer initiated; the money moves on the webhook.
     /// </summary>
     public record RecurringOccurrenceConfirmationEvidence(
@@ -56,7 +64,10 @@ public class ConfirmRecurringOrder
         PaymentType PaymentType,
         DirtinessLevel DirtinessLevel,
         DateTimeOffset CleaningDateTime,
-        decimal LeadTimeHours) : ICustomerAuditPayload;
+        decimal LeadTimeHours,
+        bool? TermsAccepted,
+        string? TermsVersionAccepted,
+        string? PrivacyVersionAccepted) : ICustomerAuditPayload;
 
     /// <summary>
     /// Both flavors return the same shape. A mobile card confirm carries <see cref="ClientSecret"/> for
@@ -73,7 +84,11 @@ public class ConfirmRecurringOrder
 
     public class Validator : AbstractValidator<Command>
     {
-        public Validator(IUserSessionProvider userSessionProvider)
+        public Validator(
+            IUserSessionProvider userSessionProvider,
+            IOrderAccessService orderAccessService,
+            IUserConsentRepository userConsentRepository,
+            ILegalDocumentResolver legalDocumentResolver)
         {
             RuleFor(x => x.OrderId)
                 .NotEmpty()
@@ -82,6 +97,28 @@ public class ConfirmRecurringOrder
             RuleFor(x => x.SaveCard)
                 .Must(saveCard => !saveCard || !string.IsNullOrEmpty(userSessionProvider.GetUserId()))
                 .WithMessage(BusinessErrorMessage.SavedCardRequiresAccount);
+
+            // Judged on the order the handler loads, through the same read. One the handler refuses -- not
+            // the caller's, not an occurrence, or no longer awaiting confirmation -- passes, so its own answer
+            // is the one given and a stranger's order id is not told apart from a missing one.
+            RuleFor(x => x.TermsAccepted)
+                .MustAsync(async (command, termsAccepted, cancellationToken) =>
+                {
+                    var userId = userSessionProvider.GetUserId();
+                    var occurrence = await orderAccessService.LoadOrderForCallerAsync(command.OrderId, cancellationToken);
+                    return occurrence is null
+                        || occurrence.UserId != userId
+                        || !occurrence.AwaitsCustomerConfirmation
+                        || await CustomerLegalConsents.AssertedOrCoverTextsInForceAsync(
+                            userConsentRepository,
+                            legalDocumentResolver,
+                            termsAccepted,
+                            userId,
+                            () => Task.FromResult(occurrence.CustomerAddress?.CountryId),
+                            cancellationToken);
+                })
+                .WithMessage(BusinessErrorMessage.TermsNotAccepted)
+                .WithErrorCode(nameof(Command.TermsAccepted));
         }
     }
 
@@ -103,6 +140,9 @@ public class ConfirmRecurringOrder
         INotificationProducer notificationProducer,
         IPreferredCleanerHoldResolver preferredCleanerHoldResolver,
         IAdminNotifier adminNotifier,
+        IConsentService consentService,
+        IUserConsentRepository userConsentRepository,
+        ILegalDocumentResolver legalDocumentResolver,
         IAuditContext auditContext,
         ILogger<Handler> logger) : ICommandHandler<Command, Response>
     {
@@ -186,6 +226,12 @@ public class ConfirmRecurringOrder
                     nameof(order.PaymentType), BusinessErrorMessage.OrderCashRequiresSavedCard));
             }
 
+            // Under the account's own company, before either tender moves to the order's: a consent row is
+            // the account's, and a new one takes the company ambient when it is written.
+            var (termsVersionAccepted, privacyVersionAccepted) = await CustomerLegalConsents.RecordAsync(
+                consentService, userConsentRepository, legalDocumentResolver,
+                sessionUserId, command.TermsAccepted, order.CustomerAddress?.CountryId, cancellationToken);
+
             var result = order.PaymentType switch
             {
                 PaymentType.Cash => await HandleCashAsync(order, cancellationToken),
@@ -211,7 +257,10 @@ public class ConfirmRecurringOrder
                     PaymentType: order.PaymentType,
                     DirtinessLevel: order.DirtinessLevel,
                     CleaningDateTime: new DateTimeOffset(DateTime.SpecifyKind(order.CleaningDateTime, DateTimeKind.Utc)),
-                    LeadTimeHours: Math.Round((decimal)(order.CleaningDateTime - nowUtc).TotalHours, 2)));
+                    LeadTimeHours: Math.Round((decimal)(order.CleaningDateTime - nowUtc).TotalHours, 2),
+                    TermsAccepted: command.TermsAccepted,
+                    TermsVersionAccepted: termsVersionAccepted,
+                    PrivacyVersionAccepted: privacyVersionAccepted));
             }
 
             return result;

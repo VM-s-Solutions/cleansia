@@ -614,6 +614,13 @@ recurring cash occurrence stays `Pending` until the cash is recorded, so it owes
 cash booking). The partner-facing
 redaction blanks both as well. → [Business rules — cancellation](/product/business-rules#cancellation)
 
+One member is **the customer's only**: `freeCancellationHours` (since 2026-10-03). It is how many hours
+before the start this customer may cancel this order free. `CancellationPolicyResolver` resolves it
+exactly as the cancel does: the order's frozen `CancellationFreeHours`, or its
+`CancellationPlusFreeHours` while the customer is an entitled Plus member. It is `null` for every
+other caller, and the browsing-cleaner redaction blanks it as well, because it would reveal whether the
+customer has Plus.
+
 ---
 
 ### Lookup <Badge type="info" text="Customer + Customer Mobile" />

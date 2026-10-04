@@ -62,6 +62,9 @@ public sealed class ConfirmRecurringOrderCashEligibilityTests
         _notifications.Object,
         NoPreferredCleanerHold.Resolver,
         _adminNotifier.Object,
+        Mock.Of<IConsentService>(),
+        Legal.CustomerConsentDoubles.Consented(),
+        Mock.Of<ILegalDocumentResolver>(),
         _audit,
         NullLogger<ConfirmRecurringOrder.Handler>.Instance);
 

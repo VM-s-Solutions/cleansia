@@ -688,6 +688,9 @@ const ADMIN_SURFACE_ERROR_KEYS: readonly string[] = [
   'loyalty.reason_required',
   'loyalty.tier_config_not_found',
   'loyalty.tier_perks_json_invalid',
+  // Locked once anyone has subscribed: the discount and express quota are that subscriber's terms
+  // (UpdateMembershipPlan.Validator).
+  'membership.plan.benefits_locked',
   'membership.plan.code_already_exists',
   'membership.plan.discount_out_of_range',
   'membership.plan.not_found',

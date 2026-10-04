@@ -1,4 +1,4 @@
-import { Injectable, inject, signal } from '@angular/core';
+import { Injectable, computed, inject, signal } from '@angular/core';
 import { Router } from '@angular/router';
 import {
   AdminCurrencyClient,
@@ -52,6 +52,7 @@ export class MembershipPlanFormFacade extends UnsubscribeControlDirective {
   readonly currencies = signal<PlanCurrencyOption[]>([]);
   readonly loading = signal<boolean>(false);
   readonly saving = signal<boolean>(false);
+  readonly benefitsLocked = computed(() => this.plan()?.benefitsLocked === true);
 
   loadPlan(id: string): void {
     this.loading.set(true);

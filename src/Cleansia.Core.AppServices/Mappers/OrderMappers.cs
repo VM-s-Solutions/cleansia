@@ -247,7 +247,8 @@ public static class OrderMappers
         bool? expressWaiverForfeitedOnCancel = null,
         PreferredOfferDetails? preferredOffer = null,
         string? customerCompany = null,
-        IEnumerable<WorkContractAcceptanceDto>? workContractAcceptances = null)
+        IEnumerable<WorkContractAcceptanceDto>? workContractAcceptances = null,
+        int? freeCancellationHours = null)
     {
         var (source, applied) = ResolveAppliedDiscount(order);
         return new OrderItem(
@@ -323,7 +324,8 @@ public static class OrderMappers
             DirtinessLevel: order.DirtinessLevel,
             DirtinessSurchargeAmount: order.DirtinessSurchargeAmount,
             LockoutReportedAt: order.LockoutReportedAt,
-            LockoutCallAttempts: order.LockoutCallAttempts
+            LockoutCallAttempts: order.LockoutCallAttempts,
+            FreeCancellationHours: freeCancellationHours
         );
     }
 

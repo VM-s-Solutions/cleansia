@@ -10,7 +10,6 @@ extension BookingViewModel {
             alreadyConsented = false
             return
         }
-        let granted = await consentClient.grantedTypes()
-        alreadyConsented = granted?.isSuperset(of: SignupConsentType.signupTick) == true
+        alreadyConsented = await consentClient.holdsTermsTickConsents()
     }
 }

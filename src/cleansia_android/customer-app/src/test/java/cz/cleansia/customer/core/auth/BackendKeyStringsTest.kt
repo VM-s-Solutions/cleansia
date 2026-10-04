@@ -174,6 +174,7 @@ class BackendKeyStringsTest {
         "order.payment_gateway_unavailable",
         "order.invalid_status_transition",
         "user.not_found",
+        "consent.terms_not_accepted",
     )
 
     /**

@@ -27,6 +27,9 @@ final class OrderDetailViewModel: ViewModel {
     @Published private(set) var receiptState: ActionState = .idle
     @Published private(set) var confirmRecurringState: ActionState = .idle
     @Published private(set) var saveCard = false
+    /// Nil until the account's consents are read for a visit awaiting confirmation; a failed read is `false`.
+    @Published private(set) var alreadyConsented: Bool?
+    @Published private(set) var termsAccepted = false
     @Published private(set) var hasMembership: Bool?
     @Published private(set) var markets: MarketState = .loading
 
@@ -43,6 +46,7 @@ final class OrderDetailViewModel: ViewModel {
     private let snackbar: SnackbarController
     private let eventBus: OrderEventBus
     private let paymentIntentClient: PaymentIntentClient
+    private let consentClient: ConsentStatusClient
     private let liveActivity: OrderLiveActivitySyncing
     /// Re-reads the credit balance the Rewards and Profile screens show. Required, with no default: the
     /// balance moves here twice — a cancelled order returns the credit it spent, and confirming a card
@@ -64,6 +68,7 @@ final class OrderDetailViewModel: ViewModel {
         snackbar: SnackbarController,
         eventBus: OrderEventBus,
         paymentIntentClient: PaymentIntentClient = LivePaymentIntentClient(),
+        consentClient: ConsentStatusClient = LiveConsentStatusClient(),
         liveActivity: OrderLiveActivitySyncing = LiveActivityBridge(),
         onCreditMoved: @escaping () -> Void,
         // Active-order tracking cadence. Short so an OnTheWay → InProgress change surfaces (and the Live
@@ -81,6 +86,7 @@ final class OrderDetailViewModel: ViewModel {
         self.snackbar = snackbar
         self.eventBus = eventBus
         self.paymentIntentClient = paymentIntentClient
+        self.consentClient = consentClient
         self.liveActivity = liveActivity
         self.onCreditMoved = onCreditMoved
         self.pollInterval = pollInterval
@@ -142,6 +148,7 @@ final class OrderDetailViewModel: ViewModel {
         async let membership: Void = refreshMembership()
         async let market: Void = marketStore.refreshIfStale()
         await fetch(initial: initial)
+        await loadConsentStatus()
         await membership
         await market
     }
@@ -157,6 +164,7 @@ final class OrderDetailViewModel: ViewModel {
     func retry() async {
         state = .loading
         await fetch(initial: true)
+        await loadConsentStatus()
     }
 
     private func fetch(initial: Bool) async {
@@ -374,6 +382,28 @@ final class OrderDetailViewModel: ViewModel {
         saveCard = save
     }
 
+    /// Confirming a visit accepts the terms in force, and a visit generated days ahead can postdate the ones the
+    /// account last accepted — so the booking review's tick is asked here on the same rule.
+    var asksForTerms: Bool {
+        alreadyConsented == false
+    }
+
+    /// Closed until the consents are read, so the box never flashes up over an account that already holds them.
+    var canConfirmRecurring: Bool {
+        alreadyConsented == true || (asksForTerms && termsAccepted)
+    }
+
+    func setTermsAccepted(_ accepted: Bool) {
+        termsAccepted = accepted
+    }
+
+    /// Re-read at every opening, as the booking sheet does: the answer belongs to the account and can change
+    /// under a live session.
+    private func loadConsentStatus() async {
+        guard state.loadedValue?.needsConfirmation == true else { return }
+        alreadyConsented = await consentClient.holdsTermsTickConsents()
+    }
+
     /// A recurring-generated order the server marks `needsConfirmation` needs an
     /// explicit confirm. The backend branches on payment type: a cash response carries
     /// no `clientSecret` (confirmed, still unpaid until the cleaner takes the cash)
@@ -384,7 +414,9 @@ final class OrderDetailViewModel: ViewModel {
     func confirmRecurring() async {
         guard !orderId.isBlank, !confirmRecurringState.isSubmitting else { return }
         confirmRecurringState = .submitting
-        switch await client.confirmRecurring(orderId: orderId) {
+        // Asserted only when the box was shown and ticked; an account that saw no box asserts nothing new.
+        let terms: Bool? = asksForTerms && termsAccepted ? true : nil
+        switch await client.confirmRecurring(orderId: orderId, termsAccepted: terms) {
         case let .success(confirmation):
             if confirmation.needsPayment {
                 // The server takes the occurrence's credit before it mints the intent, so the balance has

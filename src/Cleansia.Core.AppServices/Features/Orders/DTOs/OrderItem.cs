@@ -215,5 +215,12 @@ public record OrderItem(
     /// they do. An administrator reads them to confirm the lockout, the crew to see it was reported.
     /// </summary>
     DateTime? LockoutReportedAt = null,
-    string? LockoutCallAttempts = null
+    string? LockoutCallAttempts = null,
+
+    /// <summary>
+    /// CUSTOMER-ONLY, null for every other caller: how many hours before the start this customer may cancel
+    /// this order free — the window frozen on it at booking, or its Plus window while the customer is an
+    /// entitled member. Resolved as the cancel resolves it, so the note and the fee cannot disagree.
+    /// </summary>
+    int? FreeCancellationHours = null
 );

@@ -74,6 +74,8 @@ public class OrderRedactionSurfaceTests
         // customer's and the company's.
         nameof(OrderItem.LockoutReportedAt),
         nameof(OrderItem.LockoutCallAttempts),
+        // The customer's own cancellation window tells whether they are a Plus member.
+        nameof(OrderItem.FreeCancellationHours),
     ];
 
     private static readonly string[] DetailReshaped =
@@ -438,7 +440,8 @@ public class OrderRedactionSurfaceTests
             DirtinessLevel: DirtinessLevel.Heavy,
             DirtinessSurchargeAmount: 540m,
             LockoutReportedAt: new DateTime(2026, 8, 20, 9, 20, 0, DateTimeKind.Utc),
-            LockoutCallAttempts: "Called 09:05, 09:10 and 09:15, no answer; rang the bell twice");
+            LockoutCallAttempts: "Called 09:05, 09:10 and 09:15, no answer; rang the bell twice",
+            FreeCancellationHours: 4);
 
     private static OrderListItem FullyPopulatedListItem() =>
         new(

@@ -129,6 +129,16 @@ benefits"* (§13): a member who lapsed since booking cancels under the standard 
 joined since under the Plus figure frozen on the order. The oops minutes are read from `BookingPolicy`
 at the cancel too; they only matter in the first hour after booking.
 
+**The order detail states the window that applies to that order** (owner ruling 2026-10-03). For a
+customer, `GetOrderDetails` carries `freeCancellationHours`, resolved by `CancellationPolicyResolver`
+exactly as a cancel would resolve it: the order's frozen `CancellationFreeHours`, or its
+`CancellationPlusFreeHours` while the customer is an entitled Plus member at the read. The customer
+web's note on the order detail reads that figure and shows no note when it is absent. Until
+2026-10-03 the browser worked the note out itself, from a hard-coded 24 h and the customer's
+membership. That was correct only as long as the ladder had never changed. The member is
+customer-only: it is null for every other caller, and the browsing-cleaner redaction blanks it as
+well, because it would reveal whether the customer has Plus.
+
 **A booking that took no payment records no refund.** Every cancellation records the fee rate it
 applied. The refund amount it records is what goes back — so on an order whose payment is still
 `Pending` or `Failed` (a cash booking not yet collected, a card never charged) it is **0**, whoever
@@ -541,6 +551,19 @@ live plan; the field, its admin form control, its validator rule and
 `membership.plan.free_cancellation_window_too_long` are gone. The customer reads (`GetPlans`,
 `GetMine`) still carry `freeCancellationWindowHours`, filled from the constant, so the customer web,
 Android and iOS read it unchanged. The discount and the express waivers stay per plan.
+
+**A plan's discount and express quota are fixed once anyone has subscribed to it** (owner ruling
+2026-10-03). The terms state both *for your plan when you subscribe*. From then on,
+`UpdateMembershipPlan` refuses a change to `DiscountPercentage` or `ExpressUpgradesPerMonth` with
+`membership.plan.benefits_locked`. The lock applies once any membership row exists for the plan, in any
+status and in any company, because a plan is platform catalogue. Switching *Allows express upgrade*
+either way counts as a quota change while the quota is above zero, because with the switch off a
+subscriber is shown a quota of 0. Before the first subscriber both figures stay editable. The name, the
+trial, the prices, and the switch on a zero quota are always editable. To make a different offer, an
+administrator creates a new plan and deactivates the old one. The admin plan detail carries
+`benefitsLocked`, and the form shows the two fields disabled with a note that says why. Until
+2026-10-03 either edit applied to every booking made after it, by members who had subscribed on the
+old figures.
 
 All seven resolve through **one** entitlement predicate
 (`UserMembershipRepository.EntitledForUserQuery`), so `PastDue`, `Paused`, `Cancelled` and an elapsed
@@ -1871,20 +1894,27 @@ insurance certificate**: `InsuranceDocument` is seeded as a required cleaner doc
 so approval's existing required-documents rule refuses a cleaner without an approved one.
 
 **Loyalty earn — `Currency.LoyaltyPointsDivisor`.** A completed order earns
-`floor(total / divisor)` in the order's currency, at the divisor of the day it completes. **A partial
+`floor(total / divisor)` in the order's currency, at the divisor of the day it completes. **Every
 refund takes back the same share of the points that order earned as it returned of the price** (owner
-ruling 2026-10-03): `floor(earned × returned / TotalPrice)`, where *returned* is the card leg plus the
-credit leg, gross — capped at what the order's earn still holds, floored per refund in the customer's
-favour. It reads no divisor, so an admin's divisor edit after completion cannot move it, and VAT cancels
-out of a share. That is the customer terms' *"a refund removes points in the same proportion"* (§11).
+rulings 2026-10-03): `floor(earned × returned / TotalPrice)`, where *returned* is the card leg plus the
+credit leg, gross. It is capped at what the order's earn still holds after earlier refunds, and floored
+per refund in the customer's favour. It reads no divisor, so an admin's divisor edit after completion
+cannot move it, and VAT cancels out of a share. That is the customer terms' *"a refund removes points in
+the same proportion"* (§11). There is one rule (`ILoyaltyService.RevokeForRefundAsync`), keyed per refund
+so a retried refund takes nothing twice, and three refunds call it:
+
+| Refund | *Returned* | Key |
+|---|---|---|
+| Partial (`IssuePartialRefund`) | the card leg plus the credit leg | the refund's own |
+| Full (`AdminRefundOrder`) | the whole `TotalPrice`, whatever each tender returned, so the cap takes **everything the earn still holds** | the refund's own (`refund:{orderId}:admin:full`) |
+| Dispute settlement (`ResolveDispute`) | what the settlement gave back, `CardRefundedAmount + CreditReturnedAmount` — the credit-settled one too, or a customer could keep the points by choosing credit; nothing when nothing went back | `dispute-settlement:{disputeId}`, the key the credit ledger already uses |
+
 Until 2026-10-03 the clawback divided the card leg's net by the divisor at the refund: a halved divisor
 took every point for refunding half the order, a VAT order refunded in full kept 21 of its 121 points,
-and the credit leg counted for nothing. *N* partial refunds that together return the whole price can
-leave up to *N* − 1 points behind; that is accepted rather than tracked.
-**A full refund and a dispute refund take back no points today** — `AdminRefundOrder` and
-`ResolveDispute` do not call the loyalty service, so a completed order refunded in full outside the
-partial-refund path keeps its points and the tier they reach. It is a known gap against §11, not a
-ruling. The divisor is authored per currency by the admin on the currency form, like a price;
+and the credit leg counted for nothing. A full refund and a dispute refund took back no points at all
+until the second ruling that day. *N* partial refunds that together return the whole price can
+leave up to *N* − 1 points behind; that is accepted rather than tracked. The divisor is authored per
+currency by the admin on the currency form, like a price;
 CZK is seeded at **10** — the historical "1 point per 10 CZK". A currency with no divisor earns nothing
 and logs; it is never scaled from another currency's rate in either direction. Because an order completed
 in that state earns nothing permanently, a market cannot be switched on without a divisor and an active
@@ -2371,7 +2401,7 @@ just in case (ADR-0045 D13). The acts, and the evidence each success row carries
 |---|---|---|
 | Book (signed in or guest) | `customer.order.create` | the server-computed price breakdown — total, net, VAT, currency, tier and promo and membership discounts, express surcharge and whether Plus waived it, credit applied — plus the payment type, the cleaning time and lead time, the line items by id and slug, rooms and bathrooms, the address by id, the language, whether it was a guest booking, the **cancellation policy as shown** (the figures frozen on the order — 24 h / 4 h / 25 % / 50 % today — this customer's free window and this customer's oops window — `oopsMinutesForThisCustomer`, 15 or 60, and `oopsRuleForThisCustomer`, *Standard*, *FirstBooking* or *Plus*), and the **terms tick with the terms and privacy versions the booking is made under** (`termsVersionAccepted`, `privacyVersionAccepted`: the texts in force when the box was ticked, else the versions the customer's consents hold) |
 | Cancel | `customer.order.cancel` | the fee tier, rate and amount, the refund amount (0 on an order that took no payment), the notice given in hours, the minutes since booking, the oops window applied and why (`oopsMinutesApplied` — 15 or 60 — and `oopsRuleApplied`), whether a cleaner had already accepted, the free window applied (Plus or standard), the policy figures it priced by (the order's frozen notice figures and rates since 2026-10-03, and today's `oopsMinutesStandard`, `oopsMinutesPlus` and `oopsMinutesFirstBooking` among them — a row written before 2026-09-24 carries `oopsMinutesFirstTime` instead), whether an express-waiver slot was released, whether a refund was initiated, the payment type and status, and that a reason was given (never the reason) |
-| Confirm a recurring occurrence | `customer.order.recurring.confirm` | the order, the template, the price, the currency, the payment type, the cleaning time and lead time |
+| Confirm a recurring occurrence | `customer.order.recurring.confirm` | the order, the template, the price, the currency, the payment type, the cleaning time and lead time, and since 2026-10-03 the **terms tick with the terms and privacy versions the occurrence is confirmed under** (`termsAccepted`, `termsVersionAccepted`, `privacyVersionAccepted`), as on a booking |
 | File a dispute | `customer.dispute.create` | the dispute and order ids, the reason (an enum), hours since completion against the 24 h window, the window shown, the description's length and line count (never its text), the order total and currency |
 | Register by email | `customer.account.register` | the method, the language, whether a referral code was given, the terms tick, and the terms and privacy versions in force (the effective dates of the documents shown). A Google or Apple **sign-up** writes no registration row — its proof is the two server-written consent rows with the version, plus `User.CreatedOn` — but a refused one is recorded (see the next row) |
 | Sign in — password, Google or Apple | `customer.session.login` | the method, whether "remember me" was asked, the client family the token was minted for, and whether the e-mail was confirmed — a correct password on an unconfirmed address is a success that opens no session, and the row says so. Google and Apple are recorded as the **sign-in** they are; the branch that creates a new account declines this row |
@@ -2429,30 +2459,47 @@ document again is a no-op on the row and still a row in the trail. → [ADR-0063
 text in force (`UserConsent.Covers`) when it is granted, not withdrawn and points at **that very
 document** — so a newer version, or a market's own copy, is not covered by an acceptance of the old one.
 The tick reappears whenever the customer's terms or privacy consent does not cover the text in force for
-the booking's market; no new booking or new schedule is made until they accept; bookings already made
-run on the versions they were made under. The consent reads carry `documentVersion` and
-`coversCurrentVersion` for the clients to decide the box by. The booking evidence records the version
+the booking's market; no new booking or new schedule is made, and no recurring occurrence is confirmed
+(since 2026-10-03), until they accept; bookings already made run on the versions they were made under.
+The consent reads carry `documentVersion` and `coversCurrentVersion` for the clients to decide the box
+by. The booking evidence records the version
 actually accepted, not the newest one.
 
 **Registration and booking are refused without the terms tick (owner ruling 2026-09-14, Q-AUD-L4).**
-A customer registration by e-mail must assert `termsAccepted: true`, and a booking — a one-off order
-(`CreateOrder`) or, since 2026-09-28, a new recurring schedule (`CreateRecurringBooking`) — must assert
-it **unless the signed-in customer's terms and privacy consents both cover the texts in force for the
-booking's market** (above); that customer sees no box and sends nothing, and a guest always asserts it.
+A customer registration by e-mail must assert `termsAccepted: true`. A booking must assert it too —
+a one-off order (`CreateOrder`), since 2026-09-28 a new recurring schedule (`CreateRecurringBooking`),
+and since 2026-10-03 the confirmation of a recurring occurrence (`ConfirmRecurringOrder`) — **unless the
+signed-in customer's terms and privacy consents both cover the texts in force for the booking's
+market** (above). That customer sees no box and sends nothing, and a guest always asserts it. A booking
+and a confirm are judged by one method, `CustomerLegalConsents.AssertedOrCoverTextsInForceAsync`.
 The refusal key is **`consent.terms_not_accepted`** (a missing tick and a `false` one are the same
 refusal; the failure row records it). A Google or Apple **sign-up** without the tick
 is refused as `auth.social_account_not_found` instead — on the shared sign-in-or-sign-up endpoint the
 tick is what tells the two screens apart, every sign-up screen refuses client-side first, and the
-clients read that key as "sign up first". Confirming a recurring occurrence is not gated (the template
-was accepted); an employee's registration is not gated and records no customer consent (a cleaner
-accepts their own documents → [A cleaner's own documents](#cleaner-documents)). When the tick arrives
-the server grants `TermsOfService` and `PrivacyPolicy` — on registration in the same commit as the
-account, on a booking by moving (or, where none exists, creating) the signed-in customer's two rows to
-the texts in force — with the document in force for the market, the IP and the device; nothing is
-parked in the browser. The web wizard, Android and iOS show the box when the consents on record do not
-cover the texts in force and send the tick when it was ticked; Android's new-schedule form does the
-same, while the web and iOS schedule forms do not ask yet, so a customer behind on the version is
-refused there until they accept on a booking.
+clients read that key as "sign up first". An employee's registration is not gated and records no
+customer consent (a cleaner accepts their own documents →
+[A cleaner's own documents](#cleaner-documents)).
+
+**Confirming a recurring occurrence asks for the terms in force** (owner ruling 2026-10-03, *ask at
+confirm*). An occurrence is created up to 7 days ahead, under the terms in force on that day, and the
+customer may not have accepted a newer version by the time they confirm. Until 2026-10-03 the confirm
+was not gated, on the reasoning that the template had been accepted. The confirm is judged for the
+market of the occurrence's own address. An order the confirm would refuse anyway (not the caller's,
+not a recurring occurrence, or no longer awaiting confirmation) passes this rule, so the confirm's own
+refusal is the one returned and another customer's order id reads like a missing one. An unconfirmed
+occurrence is still retracted an hour before its slot with no fee, as before.
+
+When the tick arrives the server grants `TermsOfService` and `PrivacyPolicy` with the document in force
+for the market, the IP and the device; nothing is parked in the browser. On registration this happens
+in the same commit as the account. On a booking, and on a recurring confirm, the signed-in customer's
+two rows move to the texts in force, or are created where none exists. A confirm does this under the
+account's own company, before either tender moves to the order's company. The web wizard, Android and
+iOS show the box when the consents on record do not cover the texts in force, and send the tick when it
+was ticked. Android's new-schedule form does the same, while the web and iOS schedule forms do not ask
+yet, so a customer behind on the version is refused there until they accept on a booking. The order
+detail on the web, Android and iOS shows the same box above the confirm of an occurrence awaiting
+confirmation, by the same rule, and holds the confirm until it is ticked
+([Recurring bookings](/flows/booking-and-pricing#recurring-bookings)).
 
 **What a row never holds.** A name, an email, a phone, an address line, an entry instruction, the
 text of a reason or a description, card data, a token or a live code — and not the preferred cleaner

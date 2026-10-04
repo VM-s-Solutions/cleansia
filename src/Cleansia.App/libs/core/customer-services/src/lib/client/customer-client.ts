@@ -8693,6 +8693,7 @@ export interface ICode {
 export class ConfirmRecurringOrderCommand implements IConfirmRecurringOrderCommand {
     orderId!: string | undefined;
     saveCard!: boolean;
+    termsAccepted!: boolean | undefined;
 
     constructor(data?: IConfirmRecurringOrderCommand) {
         if (data) {
@@ -8707,6 +8708,7 @@ export class ConfirmRecurringOrderCommand implements IConfirmRecurringOrderComma
         if (Data) {
             this.orderId = Data["orderId"];
             this.saveCard = Data["saveCard"];
+            this.termsAccepted = Data["termsAccepted"];
         }
     }
 
@@ -8721,6 +8723,7 @@ export class ConfirmRecurringOrderCommand implements IConfirmRecurringOrderComma
         data = typeof data === 'object' ? data : {};
         data["orderId"] = this.orderId;
         data["saveCard"] = this.saveCard;
+        data["termsAccepted"] = this.termsAccepted;
         return data;
     }
 }
@@ -8728,6 +8731,7 @@ export class ConfirmRecurringOrderCommand implements IConfirmRecurringOrderComma
 export interface IConfirmRecurringOrderCommand {
     orderId: string | undefined;
     saveCard: boolean;
+    termsAccepted: boolean | undefined;
 }
 
 export class ConfirmRecurringOrderResponse implements IConfirmRecurringOrderResponse {
@@ -13770,6 +13774,7 @@ export class OrderItem implements IOrderItem {
     dirtinessSurchargeAmount!: number;
     lockoutReportedAt!: Date | undefined;
     lockoutCallAttempts!: string | undefined;
+    freeCancellationHours!: number | undefined;
 
     constructor(data?: IOrderItem) {
         if (data) {
@@ -13885,6 +13890,7 @@ export class OrderItem implements IOrderItem {
             this.dirtinessSurchargeAmount = Data["dirtinessSurchargeAmount"];
             this.lockoutReportedAt = Data["lockoutReportedAt"] ? new Date(Data["lockoutReportedAt"].toString()) : undefined as any;
             this.lockoutCallAttempts = Data["lockoutCallAttempts"];
+            this.freeCancellationHours = Data["freeCancellationHours"];
         }
     }
 
@@ -14000,6 +14006,7 @@ export class OrderItem implements IOrderItem {
         data["dirtinessSurchargeAmount"] = this.dirtinessSurchargeAmount;
         data["lockoutReportedAt"] = this.lockoutReportedAt ? this.lockoutReportedAt.toISOString() : undefined as any;
         data["lockoutCallAttempts"] = this.lockoutCallAttempts;
+        data["freeCancellationHours"] = this.freeCancellationHours;
         return data;
     }
 }
@@ -14074,6 +14081,7 @@ export interface IOrderItem {
     dirtinessSurchargeAmount: number;
     lockoutReportedAt: Date | undefined;
     lockoutCallAttempts: string | undefined;
+    freeCancellationHours: number | undefined;
 }
 
 export class OrderListItem implements IOrderListItem {

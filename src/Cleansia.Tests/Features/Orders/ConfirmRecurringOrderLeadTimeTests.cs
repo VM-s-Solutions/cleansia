@@ -83,6 +83,9 @@ public sealed class ConfirmRecurringOrderLeadTimeTests
         Mock.Of<INotificationProducer>(),
         NoPreferredCleanerHold.Resolver,
         Mock.Of<IAdminNotifier>(),
+        Mock.Of<IConsentService>(),
+        Legal.CustomerConsentDoubles.Consented(),
+        Mock.Of<ILegalDocumentResolver>(),
         _audit,
         NullLogger<ConfirmRecurringOrder.Handler>.Instance);
 

@@ -111,7 +111,7 @@ public sealed class AuditSensitiveSnapshotTests
                 "refund-1", "refund:order-ref:admin:full", 1000m, RefundStatus.Succeeded, false)));
 
         var handler = new AdminRefundOrder.Handler(
-            orderRepository.Object, refundRepository.Object, refundService.Object,
+            orderRepository.Object, refundRepository.Object, refundService.Object, Mock.Of<ILoyaltyService>(),
             AdminSession(), Mock.Of<INotificationProducer>(), auditContext);
 
         var result = await handler.Handle(new AdminRefundOrder.Command("order-ref"), CancellationToken.None);
@@ -199,7 +199,7 @@ public sealed class AuditSensitiveSnapshotTests
         var handler = new ResolveDispute.Handler(
             disputeRepository.Object, AdminSession(), refundService.Object, Mock.Of<IRefundRepository>(),
             Mock.Of<ICreditAccountRepository>(),
-            Mock.Of<IOrderEmployeePayRepository>(), Mock.Of<INotificationProducer>(), auditContext);
+            Mock.Of<IOrderEmployeePayRepository>(), Mock.Of<ILoyaltyService>(), Mock.Of<INotificationProducer>(), auditContext);
 
         var result = await handler.Handle(
             new ResolveDispute.Command("dispute-1", 250m, "approved by ops"), CancellationToken.None);

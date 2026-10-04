@@ -243,7 +243,8 @@ public class UnpaidOrderCancellationMoneyFieldsTests
             ExpressWaiverMocks.NoConsumer().Object,
             Mock.Of<IUserMembershipRepository>(),
             acceptances.Object,
-            Mock.Of<IEmployeeActionAuditRepository>());
+            Mock.Of<IEmployeeActionAuditRepository>(),
+            new Cleansia.Core.AppServices.Services.CancellationPolicyResolver(Mock.Of<IUserMembershipRepository>(), Mock.Of<IOrderRepository>()));
 
         var result = await handler.Handle(new GetOrderDetails.Query(OrderId), CancellationToken.None);
         Assert.True(result.IsSuccess, result.Error?.Message);

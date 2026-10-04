@@ -15,6 +15,8 @@ import org.junit.Test
 import retrofit2.Response
 import cz.cleansia.customer.api.client.OrderApi as GenOrderApi
 import cz.cleansia.customer.api.model.CancellationFeeTier as GenCancellationFeeTier
+import cz.cleansia.customer.api.model.ConfirmRecurringOrderCommand as GenConfirmRecurringOrderCommand
+import cz.cleansia.customer.api.model.ConfirmRecurringOrderResponse as GenConfirmRecurringOrderResponse
 import cz.cleansia.customer.api.model.GetCancellationFeePreviewResponse as GenPreviewResponse
 
 /**
@@ -101,5 +103,27 @@ class OrderApiTest {
                 OrderApi(generated).getCancellationPreview("order-1").body()!!.tier,
             )
         }
+    }
+
+    private suspend fun confirmSentFor(termsAccepted: Boolean?): GenConfirmRecurringOrderCommand {
+        val sent = slot<GenConfirmRecurringOrderCommand>()
+        coEvery { generated.orderConfirmRecurring(confirmRecurringOrderCommand = capture(sent)) } returns
+            Response.success(GenConfirmRecurringOrderResponse(orderId = "order-1"))
+        OrderApi(generated).confirmRecurring(ConfirmRecurringOrderRequest("order-1", termsAccepted))
+        return sent.captured
+    }
+
+    /** A mapper that drops the tick still compiles, and the server then refuses every asked confirm. */
+    @Test
+    fun `the confirm carries the terms tick onto the generated command`() = runTest {
+        val sent = confirmSentFor(termsAccepted = true)
+
+        assertEquals("order-1", sent.orderId)
+        assertEquals(true, sent.termsAccepted)
+    }
+
+    @Test
+    fun `the confirm leaves the tick off when the box was not shown`() = runTest {
+        assertNull(confirmSentFor(termsAccepted = null).termsAccepted)
     }
 }

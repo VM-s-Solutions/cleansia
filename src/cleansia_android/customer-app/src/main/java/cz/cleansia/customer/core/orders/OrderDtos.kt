@@ -404,9 +404,12 @@ data class CancelOrderRequest(
     val reason: String? = null,
 )
 
-/** Mirrors backend `ConfirmRecurringOrder.Command`. */
+/** Mirrors backend `ConfirmRecurringOrder.Command`. [termsAccepted] is asserted only when the tick was shown. */
 @Serializable
-data class ConfirmRecurringOrderRequest(val orderId: String)
+data class ConfirmRecurringOrderRequest(
+    val orderId: String,
+    val termsAccepted: Boolean? = null,
+)
 
 /**
  * Mirrors backend `ConfirmRecurringOrder.Response`. Card path returns the

@@ -67,6 +67,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.annotation.StringRes
 import cz.cleansia.core.snackbar.SnackbarInsetScope
+import cz.cleansia.core.ui.components.CleansiaConsentCheckbox
 import cz.cleansia.core.ui.components.CleansiaErrorState
 import cz.cleansia.core.ui.components.SnapAnchor
 import cz.cleansia.core.ui.components.SnapSheet
@@ -145,6 +146,9 @@ fun OrderDetailScreen(
     val confirmRecurringState by viewModel.confirmRecurringState.collectAsStateWithLifecycle()
     val offersCardSaving by viewModel.offersCardSaving.collectAsStateWithLifecycle()
     val saveCard by viewModel.saveCard.collectAsStateWithLifecycle()
+    val termsAsked by viewModel.termsAsked.collectAsStateWithLifecycle()
+    val termsAccepted by viewModel.termsAccepted.collectAsStateWithLifecycle()
+    val canConfirmRecurring by viewModel.canConfirmRecurring.collectAsStateWithLifecycle()
 
     val cancelling = cancelState is ActionState.Submitting
     val cancelError = (cancelState as? ActionState.Error)?.message
@@ -291,6 +295,9 @@ fun OrderDetailScreen(
                 confirmingRecurring = confirmingRecurring,
                 offersCardSaving = offersCardSaving,
                 saveCard = saveCard,
+                termsAsked = termsAsked,
+                termsAccepted = termsAccepted,
+                canConfirmRecurring = canConfirmRecurring,
                 isDownloadingReceipt = downloadingReceipt,
                 onBack = onBack,
                 onCancel = { showCancelSheet = true },
@@ -303,6 +310,7 @@ fun OrderDetailScreen(
                 onViewPhotos = onViewPhotos,
                 onConfirmRecurring = { viewModel.confirmRecurring() },
                 onSaveCardChange = viewModel::setSaveCard,
+                onTermsAcceptedChange = viewModel::setTermsAccepted,
             )
         }
     }
@@ -395,6 +403,9 @@ private fun OrderDetailMapLayout(
     confirmingRecurring: Boolean,
     offersCardSaving: Boolean,
     saveCard: Boolean,
+    termsAsked: Boolean,
+    termsAccepted: Boolean,
+    canConfirmRecurring: Boolean,
     isDownloadingReceipt: Boolean,
     onBack: () -> Unit,
     onCancel: () -> Unit,
@@ -407,6 +418,7 @@ private fun OrderDetailMapLayout(
     onViewPhotos: () -> Unit,
     onConfirmRecurring: () -> Unit,
     onSaveCardChange: (Boolean) -> Unit,
+    onTermsAcceptedChange: (Boolean) -> Unit,
 ) {
     val status = orderStatusFromValue(order.orderStatus?.value)
     val darkTheme = isSystemInDarkTheme()
@@ -482,6 +494,9 @@ private fun OrderDetailMapLayout(
             confirmingRecurring = confirmingRecurring,
             offersCardSaving = offersCardSaving,
             saveCard = saveCard,
+            termsAsked = termsAsked,
+            termsAccepted = termsAccepted,
+            canConfirmRecurring = canConfirmRecurring,
             isDownloadingReceipt = isDownloadingReceipt,
             onCancel = onCancel,
             onReportCleanerNoShow = onReportCleanerNoShow,
@@ -493,6 +508,7 @@ private fun OrderDetailMapLayout(
             onViewPhotos = onViewPhotos,
             onConfirmRecurring = onConfirmRecurring,
             onSaveCardChange = onSaveCardChange,
+            onTermsAcceptedChange = onTermsAcceptedChange,
         )
     }
 }
@@ -531,6 +547,9 @@ private fun OrderDetailSheetContent(
     confirmingRecurring: Boolean,
     offersCardSaving: Boolean,
     saveCard: Boolean,
+    termsAsked: Boolean,
+    termsAccepted: Boolean,
+    canConfirmRecurring: Boolean,
     isDownloadingReceipt: Boolean,
     onCancel: () -> Unit,
     onReportCleanerNoShow: () -> Unit,
@@ -542,6 +561,7 @@ private fun OrderDetailSheetContent(
     onViewPhotos: () -> Unit,
     onConfirmRecurring: () -> Unit,
     onSaveCardChange: (Boolean) -> Unit,
+    onTermsAcceptedChange: (Boolean) -> Unit,
 ) {
     val showConfirmRecurringCta = order.needsConfirmation
     val hasFooter = showCancel || showCleanerNoShow || showReportIssue || showRebook || showMakeRecurring
@@ -635,8 +655,17 @@ private fun OrderDetailSheetContent(
                 if (offersCardSaving) {
                     CardSavingConsent(saved = saveCard, onSavedChange = onSaveCardChange)
                 }
+                if (termsAsked) {
+                    CleansiaConsentCheckbox(
+                        checked = termsAccepted,
+                        onCheckedChange = onTermsAcceptedChange,
+                        html = stringResource(R.string.register_terms_and_conditions),
+                        modifier = Modifier.fillMaxWidth(),
+                    )
+                }
                 ConfirmRecurringButton(
                     submitting = confirmingRecurring,
+                    enabled = canConfirmRecurring,
                     // "Confirm and pay" is false on a cash booking: ConfirmRecurringOrder's cash
                     // arm takes no payment — the cleaner collects on the day. Branch on Card so
                     // anything unexpected falls to the label that is true of BOTH flavours rather
@@ -742,12 +771,13 @@ private fun SheetGrabber() {
 @Composable
 private fun ConfirmRecurringButton(
     submitting: Boolean,
+    enabled: Boolean,
     @StringRes labelRes: Int,
     onClick: () -> Unit,
 ) {
     Button(
         onClick = onClick,
-        enabled = !submitting,
+        enabled = enabled && !submitting,
         modifier = Modifier
             .fillMaxWidth()
             .height(52.dp),
@@ -1119,6 +1149,9 @@ private fun PreviewSheet() {
                 confirmingRecurring = false,
                 offersCardSaving = false,
                 saveCard = false,
+                termsAsked = false,
+                termsAccepted = false,
+                canConfirmRecurring = true,
                 isDownloadingReceipt = false,
                 onCancel = {},
                 onReportCleanerNoShow = {},
@@ -1130,6 +1163,7 @@ private fun PreviewSheet() {
                 onViewPhotos = {},
                 onConfirmRecurring = {},
                 onSaveCardChange = {},
+                onTermsAcceptedChange = {},
             )
         }
     }

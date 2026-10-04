@@ -30,7 +30,7 @@ class PreferredOfferStub {
   locale = input<string>();
 }
 
-function occurrence(paymentType: PaymentType, needsConfirmation = true): OrderItem {
+function occurrence(paymentType: PaymentType): OrderItem {
   return OrderItem.fromJS({
     id: ORDER_ID,
     displayOrderNumber: 'ORD-1',
@@ -40,23 +40,23 @@ function occurrence(paymentType: PaymentType, needsConfirmation = true): OrderIt
     cleaningDateTime: '2026-10-09T08:00:00Z',
     totalPrice: 1200,
     currency: { code: 'CZK' },
-    needsConfirmation,
+    needsConfirmation: true,
   });
 }
 
-const consentInForce = (consentType: ConsentType) => ({
+const consent = (consentType: ConsentType, coversCurrentVersion: boolean) => ({
   consentType,
   isGranted: true,
-  coversCurrentVersion: true,
+  coversCurrentVersion,
 });
 
-describe('OrderDetailComponent — keeping the card when confirming a recurring occurrence', () => {
+describe('OrderDetailComponent — the terms tick when confirming a recurring occurrence', () => {
   let fixture: ComponentFixture<OrderDetailComponent>;
   let orderClient: { getById: jest.Mock; confirmRecurring: jest.Mock };
 
-  async function setup(booked: OrderItem, signedIn = true): Promise<void> {
+  async function setup(paymentType: PaymentType, termsCoverTextInForce: boolean): Promise<void> {
     orderClient = {
-      getById: jest.fn().mockReturnValue(of(booked)),
+      getById: jest.fn().mockReturnValue(of(occurrence(paymentType))),
       confirmRecurring: jest.fn().mockReturnValue(
         of(ConfirmRecurringOrderResponse.fromJS({ orderId: ORDER_ID })),
       ),
@@ -79,13 +79,16 @@ describe('OrderDetailComponent — keeping the card when confirming a recurring 
             orderClient,
             gdprClient: {
               consentsGet: () =>
-                of([consentInForce(ConsentType.TermsOfService), consentInForce(ConsentType.PrivacyPolicy)]),
+                of([
+                  consent(ConsentType.TermsOfService, termsCoverTextInForce),
+                  consent(ConsentType.PrivacyPolicy, true),
+                ]),
             },
             membershipClient: { getMine: () => of(null) },
             receivableClient: { getMine: () => of([]) },
           },
         },
-        { provide: CustomerAuthService, useValue: { isLoggedIn: () => signedIn } },
+        { provide: CustomerAuthService, useValue: { isLoggedIn: () => true } },
         {
           provide: SnackbarService,
           useValue: { showSuccess: jest.fn(), showError: jest.fn(), showApiError: jest.fn() },
@@ -111,49 +114,50 @@ describe('OrderDetailComponent — keeping the card when confirming a recurring 
     fixture.detectChanges();
   }
 
-  const saveCardTick = (): HTMLElement | null =>
-    (fixture.nativeElement as HTMLElement).querySelector('[data-spec-save-card]');
+  const termsTick = (): HTMLElement | null =>
+    (fixture.nativeElement as HTMLElement).querySelector('[data-spec-recurring-terms]');
+  const termsMissing = (): HTMLElement | null =>
+    (fixture.nativeElement as HTMLElement).querySelector('[data-spec-terms-missing]');
   const confirmButton = () => fixture.debugElement.query(By.css('.order-detail__actions cleansia-button'));
-  const sentSaveCard = () =>
-    (orderClient.confirmRecurring.mock.calls[0][0] as ConfirmRecurringOrderCommand).saveCard;
+  const sentTerms = () =>
+    (orderClient.confirmRecurring.mock.calls[0][0] as ConfirmRecurringOrderCommand).termsAccepted;
 
-  it('offers an unticked box with the card-guarantee consent above the confirm button', async () => {
-    await setup(occurrence(PaymentType.Card));
+  it.each([PaymentType.Cash, PaymentType.Card])(
+    'asks an account behind on the terms for an unticked tick above the confirm, and holds the confirm (payment %s)',
+    async (paymentType) => {
+      await setup(paymentType, false);
 
-    const tick = saveCardTick();
-    expect(tick?.textContent).toContain('pages.order.save_card.label');
-    expect(tick?.textContent).toContain('pages.order.card_capture.consent.card-guarantee-draft-2026-09-28');
-    expect(tick?.querySelector<HTMLInputElement>('input[type="checkbox"]')?.checked).toBe(false);
-    const position = tick?.compareDocumentPosition(confirmButton().nativeElement as Node) ?? 0;
-    expect(position & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
-  });
+      const tick = termsTick();
+      expect(tick?.textContent).toContain('pages.order.accept_terms');
+      expect(tick?.querySelector<HTMLInputElement>('input[type="checkbox"]')?.checked).toBe(false);
+      const position = tick?.compareDocumentPosition(confirmButton().nativeElement as Node) ?? 0;
+      expect(position & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+      expect(confirmButton().componentInstance.disabled()).toBe(true);
+      expect(termsMissing()?.textContent).toContain('pages.order.missing.terms');
+    },
+  );
 
-  it.each([
-    { what: 'a cash occurrence', booked: () => occurrence(PaymentType.Cash), signedIn: true },
-    { what: 'a card order not awaiting confirmation', booked: () => occurrence(PaymentType.Card, false), signedIn: true },
-    { what: 'a guest', booked: () => occurrence(PaymentType.Card), signedIn: false },
-  ])('offers no tick to $what', async ({ booked, signedIn }) => {
-    await setup(booked(), signedIn);
-
-    expect(saveCardTick()).toBeNull();
-  });
-
-  it('confirms without keeping the card while the box is unticked', async () => {
-    await setup(occurrence(PaymentType.Card));
-
-    confirmButton().triggerEventHandler('onClick', new MouseEvent('click'));
-
-    expect(sentSaveCard()).toBe(false);
-  });
-
-  it('confirms with the card kept once the customer ticks the box', async () => {
-    await setup(occurrence(PaymentType.Card));
+  it('confirms with the tick asserted once the customer ticks it', async () => {
+    await setup(PaymentType.Cash, false);
 
     fixture.debugElement
-      .query(By.css('[data-spec-save-card] p-checkbox'))
+      .query(By.css('[data-spec-recurring-terms] p-checkbox'))
       .triggerEventHandler('ngModelChange', true);
+    fixture.detectChanges();
+    expect(confirmButton().componentInstance.disabled()).toBe(false);
+    expect(termsMissing()).toBeNull();
     confirmButton().triggerEventHandler('onClick', new MouseEvent('click'));
 
-    expect(sentSaveCard()).toBe(true);
+    expect(sentTerms()).toBe(true);
+  });
+
+  it('asks nothing of an account whose consents cover the texts in force, and asserts nothing', async () => {
+    await setup(PaymentType.Cash, true);
+
+    expect(termsTick()).toBeNull();
+    expect(termsMissing()).toBeNull();
+    confirmButton().triggerEventHandler('onClick', new MouseEvent('click'));
+
+    expect(sentTerms()).toBeUndefined();
   });
 });

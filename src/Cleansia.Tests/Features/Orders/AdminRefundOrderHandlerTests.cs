@@ -29,6 +29,7 @@ public class AdminRefundOrderHandlerTests
     private readonly Mock<IOrderRepository> _orderRepository = new();
     private readonly Mock<IRefundRepository> _refundRepository = new();
     private readonly Mock<IRefundService> _refundService = new();
+    private readonly Mock<ILoyaltyService> _loyalty = new();
     private readonly Mock<IUserSessionProvider> _session = new();
     private readonly Mock<INotificationProducer> _producer = new();
 
@@ -44,6 +45,7 @@ public class AdminRefundOrderHandlerTests
             _orderRepository.Object,
             _refundRepository.Object,
             _refundService.Object,
+            _loyalty.Object,
             _session.Object,
             _producer.Object,
             _auditContext);
@@ -295,5 +297,44 @@ public class AdminRefundOrderHandlerTests
                     && subject != OrderId),
             It.IsAny<CancellationToken>()),
             Times.Once);
+    }
+
+    /// <summary>
+    /// A full refund takes back every point the order still holds (customer terms §11): it hands the
+    /// clawback the whole 1000 price — not the 600 the card leg happened to return — so the share it asks
+    /// for is the whole earn and the cap trims it to what earlier refunds left. Keyed on the refund, so a
+    /// replay takes nothing twice.
+    /// </summary>
+    [Fact]
+    public async Task Admin_FullRefund_TakesBackEveryPointLeft_KeyedOnTheRefund()
+    {
+        var order = ArrangeOrder(OrderStatus.Completed);
+        ArrangeSeamSuccess(amount: 600m);
+        ArrangeConsumedTotal(600m);
+
+        var result = await CreateHandler().Handle(
+            new AdminRefundOrder.Command(OrderId), CancellationToken.None);
+
+        Assert.True(result.IsSuccess);
+        _loyalty.Verify(l => l.RevokeForRefundAsync(
+            OrderId, order.TotalPrice, $"refund:{OrderId}:admin:full", AdminUserId, It.IsAny<CancellationToken>()),
+            Times.Once);
+        _loyalty.VerifyNoOtherCalls();
+    }
+
+    [Fact]
+    public async Task Admin_FullRefund_SeamFailure_TakesNoPoints()
+    {
+        ArrangeOrder(OrderStatus.Completed);
+        _refundService
+            .Setup(s => s.IssueRefundAsync(It.IsAny<RefundRequest>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(BusinessResult.Failure<RefundResult>(new Error(
+                "amount", BusinessErrorMessage.RefundFailed)));
+
+        var result = await CreateHandler().Handle(
+            new AdminRefundOrder.Command(OrderId), CancellationToken.None);
+
+        Assert.True(result.IsFailure);
+        _loyalty.VerifyNoOtherCalls();
     }
 }

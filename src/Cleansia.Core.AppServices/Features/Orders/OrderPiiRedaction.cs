@@ -72,6 +72,7 @@ public static class OrderPiiRedaction
             CashCollectedAmount = null,
             LockoutReportedAt = null,
             LockoutCallAttempts = null,
+            FreeCancellationHours = null,
         };
 
     /// <summary>

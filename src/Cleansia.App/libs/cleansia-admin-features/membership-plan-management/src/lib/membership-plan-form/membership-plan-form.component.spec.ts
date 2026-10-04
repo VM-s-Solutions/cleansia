@@ -2,7 +2,7 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { ActivatedRoute, Router } from '@angular/router';
 import { By } from '@angular/platform-browser';
 import { TranslateModule } from '@ngx-translate/core';
-import { signal } from '@angular/core';
+import { computed, signal } from '@angular/core';
 import { MembershipPlanDetailDto } from '@cleansia/admin-services';
 import { Subject } from 'rxjs';
 import { MembershipPlanFormComponent } from './membership-plan-form.component';
@@ -37,6 +37,7 @@ class FacadeStub {
   readonly currencies = signal<PlanCurrencyOption[]>([]);
   readonly loading = signal<boolean>(false);
   readonly saving = signal<boolean>(false);
+  readonly benefitsLocked = computed(() => this.plan()?.benefitsLocked === true);
   loadPlan = jest.fn();
   loadCurrencies = jest.fn();
   create = jest.fn();
@@ -60,6 +61,16 @@ describe('MembershipPlanFormComponent', () => {
 
   function priceBlock(code: string) {
     return component.form.controls.prices.get(code);
+  }
+
+  function inputFor(controlName: string): HTMLInputElement {
+    return fixture.debugElement.query(By.css(`[formControlName="${controlName}"] input`))
+      .nativeElement as HTMLInputElement;
+  }
+
+  function acceptsTyping(controlName: string): boolean {
+    const input = inputFor(controlName);
+    return !input.readOnly && !input.disabled;
   }
 
   async function setup(mode: 'create' | 'edit'): Promise<void> {
@@ -294,6 +305,41 @@ describe('MembershipPlanFormComponent', () => {
           prices: { CZK: { price: 199, stripePriceId: 'price_czk' } },
         })
       );
+    });
+
+    it("keeps a subscribed plan's discount and express quota as they are, says why, and sends them back unchanged", () => {
+      facade.plan.set(MembershipPlanDetailDto.fromJS({ ...detail.toJSON(), benefitsLocked: true }));
+      fixture.detectChanges();
+
+      expect(component.form.controls.discountPercentage.disabled).toBe(true);
+      expect(component.form.controls.expressUpgradesPerMonth.disabled).toBe(true);
+      expect(component.form.controls.allowsExpressUpgrade.disabled).toBe(false);
+      // A disabled control alone does not reach the shared input's DOM element.
+      expect(acceptsTyping('discountPercentage')).toBe(false);
+      expect(acceptsTyping('expressUpgradesPerMonth')).toBe(false);
+      expect(acceptsTyping('trialPeriodDays')).toBe(true);
+      const hint = fixture.debugElement.query(By.css('[data-spec-benefits-locked]'));
+      expect(hint.nativeElement.textContent).toContain(
+        'pages.membership_plans.form.field.benefits_locked_help'
+      );
+
+      component.onSave();
+
+      expect(facade.update).toHaveBeenCalledWith(
+        'plan-1',
+        expect.objectContaining({ discountPercentage: 10, expressUpgradesPerMonth: 2 })
+      );
+    });
+
+    it('leaves the discount and express quota editable on a plan nobody has subscribed to', () => {
+      facade.plan.set(MembershipPlanDetailDto.fromJS({ ...detail.toJSON(), benefitsLocked: false }));
+      fixture.detectChanges();
+
+      expect(component.form.controls.discountPercentage.enabled).toBe(true);
+      expect(component.form.controls.expressUpgradesPerMonth.enabled).toBe(true);
+      expect(acceptsTyping('discountPercentage')).toBe(true);
+      expect(acceptsTyping('expressUpgradesPerMonth')).toBe(true);
+      expect(fixture.debugElement.query(By.css('[data-spec-benefits-locked]'))).toBeNull();
     });
 
     it('shows the trial length the plan carries, not the new-plan default, and sends it back', () => {

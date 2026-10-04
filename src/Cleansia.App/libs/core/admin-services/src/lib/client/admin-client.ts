@@ -29896,6 +29896,7 @@ export class MembershipPlanDetailDto implements IMembershipPlanDetailDto {
     trialPeriodDays!: number;
     allowsExpressUpgrade!: boolean;
     expressUpgradesPerMonth!: number;
+    benefitsLocked!: boolean;
     isActive!: boolean;
     createdOn!: Date;
     updatedOn!: Date | undefined;
@@ -29926,6 +29927,7 @@ export class MembershipPlanDetailDto implements IMembershipPlanDetailDto {
             this.trialPeriodDays = Data["trialPeriodDays"];
             this.allowsExpressUpgrade = Data["allowsExpressUpgrade"];
             this.expressUpgradesPerMonth = Data["expressUpgradesPerMonth"];
+            this.benefitsLocked = Data["benefitsLocked"];
             this.isActive = Data["isActive"];
             this.createdOn = Data["createdOn"] ? new Date(Data["createdOn"].toString()) : undefined as any;
             this.updatedOn = Data["updatedOn"] ? new Date(Data["updatedOn"].toString()) : undefined as any;
@@ -29956,6 +29958,7 @@ export class MembershipPlanDetailDto implements IMembershipPlanDetailDto {
         data["trialPeriodDays"] = this.trialPeriodDays;
         data["allowsExpressUpgrade"] = this.allowsExpressUpgrade;
         data["expressUpgradesPerMonth"] = this.expressUpgradesPerMonth;
+        data["benefitsLocked"] = this.benefitsLocked;
         data["isActive"] = this.isActive;
         data["createdOn"] = this.createdOn ? this.createdOn.toISOString() : undefined as any;
         data["updatedOn"] = this.updatedOn ? this.updatedOn.toISOString() : undefined as any;
@@ -29973,6 +29976,7 @@ export interface IMembershipPlanDetailDto {
     trialPeriodDays: number;
     allowsExpressUpgrade: boolean;
     expressUpgradesPerMonth: number;
+    benefitsLocked: boolean;
     isActive: boolean;
     createdOn: Date;
     updatedOn: Date | undefined;
@@ -30574,6 +30578,7 @@ export class OrderItem implements IOrderItem {
     dirtinessSurchargeAmount!: number;
     lockoutReportedAt!: Date | undefined;
     lockoutCallAttempts!: string | undefined;
+    freeCancellationHours!: number | undefined;
 
     constructor(data?: IOrderItem) {
         if (data) {
@@ -30689,6 +30694,7 @@ export class OrderItem implements IOrderItem {
             this.dirtinessSurchargeAmount = Data["dirtinessSurchargeAmount"];
             this.lockoutReportedAt = Data["lockoutReportedAt"] ? new Date(Data["lockoutReportedAt"].toString()) : undefined as any;
             this.lockoutCallAttempts = Data["lockoutCallAttempts"];
+            this.freeCancellationHours = Data["freeCancellationHours"];
         }
     }
 
@@ -30804,6 +30810,7 @@ export class OrderItem implements IOrderItem {
         data["dirtinessSurchargeAmount"] = this.dirtinessSurchargeAmount;
         data["lockoutReportedAt"] = this.lockoutReportedAt ? this.lockoutReportedAt.toISOString() : undefined as any;
         data["lockoutCallAttempts"] = this.lockoutCallAttempts;
+        data["freeCancellationHours"] = this.freeCancellationHours;
         return data;
     }
 }
@@ -30878,6 +30885,7 @@ export interface IOrderItem {
     dirtinessSurchargeAmount: number;
     lockoutReportedAt: Date | undefined;
     lockoutCallAttempts: string | undefined;
+    freeCancellationHours: number | undefined;
 }
 
 export class OrderListItem implements IOrderListItem {

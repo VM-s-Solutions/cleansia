@@ -189,7 +189,7 @@ public class RecurringCashEligibilityTests(PostgresContainerFixture fixture) : B
             act: async provider =>
             {
                 var mediator = provider.GetRequiredService<IMediator>();
-                var confirm = await mediator.Send(new ConfirmRecurringOrder.Command(LegacyOccurrenceId));
+                var confirm = await mediator.Send(new ConfirmRecurringOrder.Command(LegacyOccurrenceId, TermsAccepted: true));
                 var cancel = await mediator.Send(new CancelOrder.Command(LegacyOccurrenceId, Reason: "cash no longer available"));
                 var update = await mediator.Send(Update(PaymentType.Card, TwoHoursAndAMinuteId));
                 var sweep = await mediator.Send(new MaterializeRecurringBookings.Command(HorizonDays: 14));

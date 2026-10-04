@@ -34,25 +34,29 @@ public interface ILoyaltyService
     Task RevokeForCancelledOrderAsync(string orderId, CancellationToken cancellationToken);
 
     /// <summary>
-    /// Proportional loyalty clawback for a single partial refund: revokes the same share of the order's
-    /// <c>OrderCompleted</c> earn as the refund returned of the price,
-    /// <c>floor(earn.Points × amountReturned / order.TotalPrice)</c>. <paramref name="amountReturned"/> is
-    /// everything the refund gave back — the card leg plus the credit leg — because the earn was on the
-    /// whole gross price. It never reads the currency's divisor, so a divisor edit after completion cannot
-    /// move it. No-op when the order earned nothing.
+    /// The loyalty clawback for one refund of a completed order — partial, full or a dispute's
+    /// settlement: revokes the same share of the order's <c>OrderCompleted</c> earn as the refund returned
+    /// of the price, <c>floor(earn.Points × amountReturned / order.TotalPrice)</c>, capped at what is left
+    /// of the earn after the order's earlier refunds. <paramref name="amountReturned"/> is everything the
+    /// refund gave back — the card leg plus the credit leg — because the earn was on the whole gross price;
+    /// a full refund passes the whole price and so takes everything that is left. It never reads the
+    /// currency's divisor, so a divisor edit after completion cannot move it. No-op when the order earned
+    /// nothing. → /product/business-rules#money-constants
     /// <para>
     /// Unlike <see cref="RevokeForCancelledOrderAsync"/> (a one-shot full mirror that no-ops on a
     /// second call), this is keyed per refund: each distinct <paramref name="refundKey"/> revokes,
     /// and the SAME key revokes at most once (idempotent — fast-path read on the key plus the filtered
-    /// unique-index backstop that collapses a concurrent double-submit). Cumulative revocation across
-    /// an order's partial refunds is capped at the original <c>OrderCompleted</c> earn magnitude, so a
-    /// near-full set of partials can never over-revoke. <c>UserId == null</c> (anonymous/legacy) is a
-    /// no-op, mirroring the earn and full-revoke skips. Keyed on
-    /// <see cref="LoyaltyEarnSource.OrderPartiallyRefunded"/> so it never collides with the cancel
-    /// mirror's <c>(orderId, OrderCancelled)</c> guard.
+    /// unique-index backstop that collapses a concurrent double-submit). <c>UserId == null</c>
+    /// (anonymous/legacy) is a no-op, mirroring the earn and full-revoke skips. Every refund's row carries
+    /// <see cref="LoyaltyEarnSource.OrderPartiallyRefunded"/>, the one source the cap sums, so it never
+    /// collides with the cancel mirror's <c>(orderId, OrderCancelled)</c> guard.
+    /// </para>
+    /// <para>
+    /// It flushes the unit of work to collapse a duplicate on the key, so a caller makes it the last write
+    /// of its command: the flush then lands the command's whole unit, or discards a duplicate's whole unit.
     /// </para>
     /// </summary>
-    Task RevokeForPartialRefundAsync(
+    Task RevokeForRefundAsync(
         string orderId, decimal amountReturned, string refundKey, string actorId, CancellationToken cancellationToken);
 
     /// <summary>

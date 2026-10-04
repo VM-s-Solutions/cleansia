@@ -129,6 +129,9 @@ public class OrderPaymentConfirmedHonestProducerTests
             _notificationProducer.Object,
             NoPreferredCleanerHold.Resolver,
             Mock.Of<IAdminNotifier>(),
+            Mock.Of<IConsentService>(),
+            Legal.CustomerConsentDoubles.Consented(),
+            Mock.Of<ILegalDocumentResolver>(),
             new AuditContext(),
             NullLogger<ConfirmRecurringOrder.Handler>.Instance);
         var result = await handler.Handle(new ConfirmRecurringOrder.Command(OrderId), CancellationToken.None);

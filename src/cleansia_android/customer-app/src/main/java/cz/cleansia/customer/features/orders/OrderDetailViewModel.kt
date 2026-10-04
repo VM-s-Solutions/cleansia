@@ -8,6 +8,8 @@ import cz.cleansia.customer.R
 import cz.cleansia.core.format.formatOrderPrice
 import cz.cleansia.core.network.ApiError
 import cz.cleansia.core.network.ApiResult
+import cz.cleansia.customer.core.consent.GdprConsentClient
+import cz.cleansia.customer.core.consent.SIGNUP_TICK_CONSENTS
 import cz.cleansia.customer.core.loyalty.LoyaltyRepository
 import cz.cleansia.customer.core.memberships.MembershipRepository
 import cz.cleansia.customer.core.notifications.OrderEventBus
@@ -109,6 +111,7 @@ class OrderDetailViewModel @Inject constructor(
     orderEventBus: OrderEventBus,
     private val loyaltyRepository: LoyaltyRepository,
     private val paymentRepository: PaymentRepository,
+    private val consentClient: GdprConsentClient,
 ) : ViewModel() {
 
     val markets = marketRepository.state
@@ -253,6 +256,34 @@ class OrderDetailViewModel @Inject constructor(
         _saveCard.value = save
     }
 
+    /**
+     * Confirming a visit books it, so it asks for the booking's terms tick on the booking's rule: shown
+     * until both consents on record cover the versions in force, and on a failed read. Read once, and
+     * only for a visit awaiting its confirmation.
+     */
+    private val _termsAsked = MutableStateFlow(true)
+    val termsAsked: StateFlow<Boolean> = _termsAsked.asStateFlow()
+
+    private var termsConsentRead: Job? = null
+
+    private val _termsAccepted = MutableStateFlow(false)
+    val termsAccepted: StateFlow<Boolean> = _termsAccepted.asStateFlow()
+
+    val canConfirmRecurring: StateFlow<Boolean> = combine(_termsAsked, _termsAccepted) { asked, accepted ->
+        !asked || accepted
+    }.stateIn(viewModelScope, SharingStarted.Eagerly, false)
+
+    fun setTermsAccepted(accepted: Boolean) {
+        _termsAccepted.value = accepted
+    }
+
+    private fun readTermsConsent() {
+        if (termsConsentRead != null) return
+        termsConsentRead = viewModelScope.launch {
+            _termsAsked.value = consentClient.grantedTypes()?.containsAll(SIGNUP_TICK_CONSENTS) != true
+        }
+    }
+
     init {
         viewModelScope.launch { marketRepository.ensureLoaded() }
         load()
@@ -300,6 +331,7 @@ class OrderDetailViewModel @Inject constructor(
             if (dto != null) {
                 readAt.value = Clock.System.now()
                 _state.value = OrderDetailUiState.Loaded(dto)
+                if (dto.needsConfirmation) readTermsConsent()
             } else if (!hadContent) {
                 // Nothing on screen and the fetch failed. The error is already
                 // surfaced as a snackbar (non-network); offer a retry.
@@ -478,9 +510,11 @@ class OrderDetailViewModel @Inject constructor(
         val id = orderId
         if (id.isNullOrBlank()) return
         if (_confirmRecurringState.value is ActionState.Submitting) return
+        if (_termsAsked.value && !_termsAccepted.value) return
+        val termsAccepted = if (_termsAsked.value) true else null
         viewModelScope.launch {
             _confirmRecurringState.value = ActionState.Submitting
-            val resp = orderRepository.confirmRecurring(id).surfaceError().getOrNull()
+            val resp = orderRepository.confirmRecurring(id, termsAccepted).surfaceError().getOrNull()
             if (resp == null) {
                 _confirmRecurringState.value = ActionState.Idle
                 return@launch

@@ -159,6 +159,9 @@ public class CancellationAcceptanceSignalTests
             _producer.Object,
             NoPreferredCleanerHold.Resolver,
             Mock.Of<IAdminNotifier>(),
+            Mock.Of<IConsentService>(),
+            Legal.CustomerConsentDoubles.Consented(),
+            Mock.Of<ILegalDocumentResolver>(),
             new AuditContext(),
             NullLogger<ConfirmRecurringOrder.Handler>.Instance);
 

@@ -68,7 +68,10 @@ class OrderApi(
 
     suspend fun confirmRecurring(body: ConfirmRecurringOrderRequest): Response<ConfirmRecurringOrderResponse> {
         val raw = orderApi.orderConfirmRecurring(
-            confirmRecurringOrderCommand = GenConfirmRecurringOrderCommand(orderId = body.orderId),
+            confirmRecurringOrderCommand = GenConfirmRecurringOrderCommand(
+                orderId = body.orderId,
+                termsAccepted = body.termsAccepted,
+            ),
         )
         return raw.mapWire { it.toAppDto() }
     }

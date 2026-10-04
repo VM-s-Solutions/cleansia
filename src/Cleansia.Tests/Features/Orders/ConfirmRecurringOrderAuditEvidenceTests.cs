@@ -57,6 +57,9 @@ public sealed class ConfirmRecurringOrderAuditEvidenceTests
             new Mock<INotificationProducer>().Object,
             NoPreferredCleanerHold.Resolver,
             Mock.Of<IAdminNotifier>(),
+            Mock.Of<IConsentService>(),
+            Legal.CustomerConsentDoubles.Consented(),
+            Mock.Of<ILegalDocumentResolver>(),
             _auditContext,
             NullLogger<ConfirmRecurringOrder.Handler>.Instance);
 
@@ -122,7 +125,7 @@ public sealed class ConfirmRecurringOrderAuditEvidenceTests
         Assert.Equal("cash", payload.GetProperty("paymentType").GetString());
         Assert.Equal("increased", payload.GetProperty("dirtinessLevel").GetString());
         Assert.InRange(payload.GetProperty("leadTimeHours").GetDecimal(), 47.9m, 48.0m);
-        Assert.Equal(8, payload.EnumerateObject().Count());
+        Assert.Equal(11, payload.EnumerateObject().Count());
     }
 
     [Fact]

@@ -137,6 +137,20 @@ public class LoyaltyAccount : TenantAuditable
         return true;
     }
 
+    /// <summary>
+    /// Lands a write on this account after another writer committed to it first. The caller has already
+    /// reset the account to the committed row; the points and completed bookings the write moved go on top,
+    /// so neither write is lost, and the tier is read again with the thresholds in force as it lands, which
+    /// may be an edit the other writer committed. The write's ledger rows are untouched: they were never
+    /// saved, and are saved with this.
+    /// </summary>
+    public void Replay(int pointsMoved, int completedBookingsMoved, LoyaltyTierThresholds thresholds)
+    {
+        LifetimePoints = Math.Max(0, LifetimePoints + pointsMoved);
+        CompletedBookingsCount = Math.Max(0, CompletedBookingsCount + completedBookingsMoved);
+        RecomputeTier(thresholds);
+    }
+
     private bool RecomputeTier(LoyaltyTierThresholds thresholds)
     {
         var newTier = thresholds.ResolveTier(LifetimePoints);

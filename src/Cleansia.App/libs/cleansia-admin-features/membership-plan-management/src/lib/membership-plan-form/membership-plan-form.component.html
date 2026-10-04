@@ -136,6 +136,7 @@
                 formControlName="discountPercentage"
                 dataType="number"
                 [required]="true"
+                [readonlyInput]="facade.benefitsLocked()"
               />
             </div>
             <div class="form-field form-field--third">
@@ -153,6 +154,14 @@
                 'pages.membership_plans.form.field.trial_days_help' | translate
               }}
             </p>
+            @if (facade.benefitsLocked()) {
+              <p class="form-hint" data-spec-benefits-locked>
+                {{
+                  'pages.membership_plans.form.field.benefits_locked_help'
+                    | translate
+                }}
+              </p>
+            }
           </div>
         </cleansia-section>
 
@@ -178,6 +187,7 @@
                 formControlName="expressUpgradesPerMonth"
                 dataType="number"
                 [required]="true"
+                [readonlyInput]="facade.benefitsLocked()"
               />
             </div>
             <p class="form-hint">

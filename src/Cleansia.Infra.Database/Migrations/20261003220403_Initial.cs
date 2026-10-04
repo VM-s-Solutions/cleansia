@@ -1389,6 +1389,7 @@ namespace Cleansia.Infra.Database.Migrations
                     CurrentTier = table.Column<int>(type: "integer", nullable: false),
                     TierAchievedOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
                     CompletedBookingsCount = table.Column<int>(type: "integer", nullable: false),
+                    xmin = table.Column<uint>(type: "xid", rowVersion: true, nullable: false),
                     IsActive = table.Column<bool>(type: "boolean", nullable: false),
                     CreatedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: false),
                     CreatedOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),

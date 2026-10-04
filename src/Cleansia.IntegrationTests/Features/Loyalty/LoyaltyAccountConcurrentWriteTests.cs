@@ -323,18 +323,34 @@ public class LoyaltyAccountConcurrentWriteTests(PostgresContainerFixture fixture
         await using var ctx = NewContext();
         var accounts = new LoyaltyAccountRepository(ctx);
         var tierConfigs = new LoyaltyTierConfigRepository(ctx);
-        var mine = await new GetMyLoyalty.Handler(
+        var mine = await WithoutWaitingOnTheGrantAsync(cancellationToken => new GetMyLoyalty.Handler(
                 accounts, tierConfigs, new TestUserSessionProvider(UserId, "loyalty-race@cleansia.test"))
-            .Handle(new GetMyLoyalty.Query(), CancellationToken.None)
-            .WaitAsync(TimeSpan.FromSeconds(10));
-        var looked = await new GetUserLoyaltyAccount.Handler(accounts, tierConfigs)
-            .Handle(new GetUserLoyaltyAccount.Query(UserId), CancellationToken.None)
-            .WaitAsync(TimeSpan.FromSeconds(10));
+            .Handle(new GetMyLoyalty.Query(), cancellationToken));
+        var looked = await WithoutWaitingOnTheGrantAsync(cancellationToken =>
+            new GetUserLoyaltyAccount.Handler(accounts, tierConfigs)
+                .Handle(new GetUserLoyaltyAccount.Query(UserId), cancellationToken));
 
         Assert.Equal((LoyaltyTier.BronzeCleaner, 0), (mine.Value!.CurrentTier, mine.Value.LifetimePoints));
         Assert.Equal((LoyaltyTier.BronzeCleaner, 0), (looked.Value!.CurrentTier, looked.Value.LifetimePoints));
         Assert.Null(ctx.Database.CurrentTransaction);
         Assert.Empty(ctx.ChangeTracker.Entries<LoyaltyAccount>());
+    }
+
+    // The bound cancels the query, not only the await: a query still queued on the grant's lock keeps its
+    // connection busy, and disposing its context would then wait on that lock for as long as the grant,
+    // disposed after it, holds it.
+    private static async Task<T> WithoutWaitingOnTheGrantAsync<T>(Func<CancellationToken, Task<T>> read)
+    {
+        using var bound = new CancellationTokenSource(TimeSpan.FromSeconds(10));
+        try
+        {
+            return await read(bound.Token);
+        }
+        catch (OperationCanceledException) when (bound.IsCancellationRequested)
+        {
+            Assert.Fail("The loyalty read waited 10 s on the lock the grant holds: a read must take no lock.");
+            return default!;
+        }
     }
 
     private static async Task EditGoldThresholdAsync(CleansiaDbContext ctx, int threshold)

@@ -1071,6 +1071,13 @@ need backfilling.
 
 ### Fixed
 
+- **Customer Android and iOS — the clock reads clearly over Profile's header.** In light mode the
+  white clock, signal and battery sat on the light blue top of Profile's header and were faint, below
+  the contrast small text needs. Profile's header now starts a shade darker blue, at rest and under
+  the fade as the page scrolls. The blue everywhere else in the apps is unchanged, and so is dark
+  mode. On iOS 16 the clock is black in light mode, and it reads on the old blue, so there the header
+  keeps it. (Finding 2026-10-04.)
+
 - **Customer web — deleting your account is confirmed on a red button.** The question before your
   account is deleted offered the same blue confirm button as any harmless question. It now shows the
   red, destructive button that deleting a saved card or a schedule already shows, so the risk reads

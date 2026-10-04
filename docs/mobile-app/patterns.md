@@ -188,6 +188,32 @@ screen, behind the clock. The two platforms get there differently, and the iOS r
   works there. The partner app's profile hub hero (`ProfileHubContent`) had the same strip and has
   used the same form since 2026-10-02; `ContentSafeAreaBindingTests` pins the bleed.
 
+**Profile's hero starts at sky-700 in light mode** (since 2026-10-05). The system's white clock and
+icons read 4.1:1 on the brand blue's top, sky-600, under the 4.5:1 their text needs. Profile alone
+now starts its gradient at sky-700 (`#0369A1`) and keeps the brand blue's sky-400 bottom. The hero's
+top, the block that bleeds above it and the fade's colour (below) all take it, and the shared brand
+blue that Home and the package cards use is unchanged. Dark mode keeps the brand blue on both
+platforms, white on sky-800 at 7.6:1.
+
+- **iOS** (`ProfileTab.heroTop`) does it from iOS 17. Before iOS 17 the system draws the clock black in
+  light mode whatever is under it, which reads 5.1:1 on sky-600 and would fall to 3.5:1 on sky-700,
+  so there the hero keeps the brand blue: the same gate as the Plus offer's fade (below). From the
+  colour values, white reads 5.93:1 on the hero's top at rest, and at least 4.86:1 scrolled, where the
+  90 % fade lies over the hero, the white avatar or the white stats card. `ContentSafeAreaBindingTests`
+  pins both, black on the brand blue before iOS 17, the gate and the wiring.
+- **Android** (`profileHeroColors`, `ProfileTab.kt`) needs no gate, because it sets the icons itself
+  (below). Measured on the emulator, the clock reads 5.40:1 at rest, where the theme's dark icons read
+  3.26:1 before, and 4.87–5.69:1 scrolled with the hero under the status bar; dark mode reads
+  6.0–7.5:1. While the hero's own bottom passes through the fade, about 40dp of scroll, the
+  cross-fade to the page colour and the icons' flip from white to dark take it through about
+  3.4–3.8:1. `ProfileHeroClockTest` pins the light top, the untouched brand blue, white at 4.5:1 or
+  better in both themes, and the wiring.
+- **Simulator screenshots run lighter than the colours.** In an iOS simulator screenshot sky-600
+  `#0284C7` is captured as `#0097D2` and sky-700 `#0369A1` as `#007DB1`, so a contrast read off one
+  comes out about a fifth low. The 3.3:1 recorded for this clock on 2026-10-04 is 4.1:1 from the colour
+  values, and the new top reads 4.60:1 at rest and 4.27–4.54:1 scrolled in the screenshots. The iOS
+  figures above are from the colour values.
+
 Content in these scroll views passes under the status bar once it scrolls, so these screens also use
 the fade below.
 
@@ -255,9 +281,10 @@ first point of scroll.
 - **The colour behind the status bar.** Home passes nothing, and its fade is the page colour
   (`CleansiaColors.background`). A screen with a hero at its top passes `heroTint` and marks the hero
   with `statusBarFadeHero()`: the Plus offer passes `MembershipPalette.sky950`, the top of its navy
-  hero, and Profile passes the top stop of `BrandGradient.blue`. Profile takes its hero's colour for
-  the same reason as Plus: the page colour over its blue hero was a pale band, on which the clock
-  measured 1.7:1 in light mode. **Before iOS 17 the Plus offer passes the page colour in light mode**
+  hero, and Profile passes its hero's top, `ProfileTab.heroTop` ([above](#full-bleed-hero)). Profile
+  takes its hero's colour for the same reason as Plus: the page colour over its blue hero was a pale
+  band, on which the clock measured 1.7:1 in light mode. **Before iOS 17 the Plus offer passes the
+  page colour in light mode**
   (`fadeHeroTint`, since 2026-10-04). The app sets no status-bar style, and before iOS 17 the system
   draws the clock, signal and battery in the colour scheme's colour whatever is under them, black in
   light mode, which read 1.7:1 on the 90 % navy in the iOS 16.4 simulator and reads 17:1 on the page
@@ -266,15 +293,14 @@ first point of scroll.
   sits at the call site, and the fade itself has no version check. The fade wears the hero's colour
   while the hero reaches below the fade, and cross-fades in proportion into the page colour as the
   hero's bottom passes up through it, from the fade's end to the top of the screen
-  (`StatusBarFade.heroShare`), so there is no jump. The
-  hero's reader writes state only while the hero's bottom is within −80 to +20pt of the status bar's
-  edge, in whole points (`heroBottomRange`), and only the fade reads it, so the content is not redrawn
-  as it scrolls. The fade wears the hero's **top** colour, not the colour of the part under it: once
-  Profile has scrolled far enough that its lighter lower gradient is behind the status bar, the band
-  reads a shade darker than the hero beneath, like a status-bar backing. On Plus, whose hero runs from
-  sky-950 to slate-900, the difference is slight. Measured from iOS 26.3 screenshots, the clock reads
-  12.1:1 over the Plus hero and 14–20:1 over the page colour, and over Profile's hero it reads as it
-  does over that hero at rest (3.3:1 in light mode, 5.8:1 in dark).
+  (`StatusBarFade.heroShare`), so there is no jump. The hero's reader writes state only while the
+  hero's bottom is within −80 to +20pt of the status bar's edge, in whole points (`heroBottomRange`),
+  and only the fade reads it, so the content is not redrawn as it scrolls. The fade wears the hero's
+  **top** colour, not the colour of the part under it: once Profile has scrolled far enough that its
+  lighter lower gradient is behind the status bar, the band reads a shade darker than the hero
+  beneath, like a status-bar backing. On Plus, whose hero runs from sky-950 to slate-900, the
+  difference is slight. Measured from iOS 26.3 screenshots, the clock reads 12.1:1 over the Plus hero
+  and 14–20:1 over the page colour; over Profile's hero, see [above](#full-bleed-hero).
 - **What pins it.** `ContentSafeAreaBindingTests` pins the end within 2pt of each measured island,
   notch and status bar, the 90 % hold over each measured clock, the 5pt ease, the full-strength
   fallback, the cross-fade over the fade's span (it never rises back, and no step is larger than one
@@ -300,7 +326,8 @@ first point of scroll.
   2026-10-05 it draws the iOS rule:
   - **One solid colour, the one behind the status bar.** Home passes no tint, and its fade is the
     page background. The Plus offer passes `Sky950`, its hero's top, and Profile its hero's top
-    colour, each with the hero's height as measured by `onSizeChanged`. The fade wears the hero's
+    colour (`profileHeroColors`, [above](#full-bleed-hero)), each with the hero's height as measured
+    by `onSizeChanged`. The fade wears the hero's
     colour while the hero's bottom reaches the fade's end, and cross-fades in proportion into the page
     colour as that bottom passes up through it to the top of the screen (`statusBarFadeHeroShare`),
     the hero's colour laid over the page in its share as iOS lays it (`statusBarFadeColor`).

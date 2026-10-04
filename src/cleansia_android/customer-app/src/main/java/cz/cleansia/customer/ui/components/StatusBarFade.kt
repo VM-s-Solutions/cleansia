@@ -88,8 +88,8 @@ fun Modifier.statusBarFade(
     }
 }
 
-/** How far above the fade's bottom the 90 % hold starts easing out to clear. */
-private val FadeEase = 6.dp
+/** How far above the fade's bottom the 90 % hold starts easing out to clear: iOS's `StatusBarFade.falloff`. */
+internal val FadeEase = 5.dp
 
 /** The colour's strength behind the clock and icons, the same as iOS's. */
 internal const val STATUS_BAR_FADE_OPACITY = 0.9f

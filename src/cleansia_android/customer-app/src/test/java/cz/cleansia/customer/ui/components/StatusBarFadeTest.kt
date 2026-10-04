@@ -2,6 +2,7 @@ package cz.cleansia.customer.ui.components
 
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.compositeOver
+import androidx.compose.ui.unit.dp
 import cz.cleansia.customer.ui.theme.Sky600
 import cz.cleansia.customer.ui.theme.Sky700
 import cz.cleansia.customer.ui.theme.Sky950
@@ -30,6 +31,11 @@ class StatusBarFadeTest {
         assertEquals(1f, stops.last().first)
         assertEquals(0f, stops.last().second.alpha, ALPHA_STEP)
         assertTrue("stops never run past the status bar", stops.all { it.first in 0f..1f })
+    }
+
+    @Test
+    fun `the ease runs over iOS's last 5 points`() {
+        assertEquals(5.dp, FadeEase)
     }
 
     @Test

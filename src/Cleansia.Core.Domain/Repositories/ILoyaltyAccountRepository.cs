@@ -23,7 +23,7 @@ public interface ILoyaltyAccountRepository : IRepository<LoyaltyAccount, string>
     Task<LoyaltyAccount?> GetByUserIdIgnoringTenantAsync(string userId, CancellationToken cancellationToken);
 
     /// <summary>
-    /// Get-or-create — lazily creates the account on first access. The new
+    /// Get-or-create, for a writer only: a reader that misses takes no lock and adds nothing. The new
     /// account is added to the change tracker; the calling handler's
     /// UnitOfWork pipeline commits. The account is ONE per user across the holding
     /// (<c>IX_LoyaltyAccounts_UserId</c>) and belongs to the user's own company: the read is past the

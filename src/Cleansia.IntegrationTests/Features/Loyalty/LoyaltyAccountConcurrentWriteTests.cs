@@ -1,4 +1,5 @@
 using System.Text.Json;
+using Cleansia.Core.AppServices.Features.Loyalty;
 using Cleansia.Core.AppServices.Features.Loyalty.Admin;
 using Cleansia.Core.AppServices.Features.Orders;
 using Cleansia.Core.AppServices.Services;
@@ -304,6 +305,36 @@ public class LoyaltyAccountConcurrentWriteTests(PostgresContainerFixture fixture
                 CancellationToken.None));
 
         await AssertAccountAsync(points: 1550, completedBookings: 1, LoyaltyTier.SilverMopper);
+    }
+
+    /// <summary>
+    /// A customer with no account yet reads their loyalty, and an administrator looks them up, while a grant
+    /// holds their loyalty lock. Both reads answer Bronze with nothing, at once: neither waits on the lock,
+    /// opens a transaction or adds an account, which is the first grant's to open.
+    /// </summary>
+    [Fact]
+    public async Task Reading_The_Loyalty_Of_A_Customer_With_No_Account_Takes_No_Lock_And_Opens_No_Account()
+    {
+        await ResetAsync();
+        await SeedWithoutAccountAsync();
+        await using var grant = NewContext();
+        await new LoyaltyAccountRepository(grant).LockForUserAsync(UserId, CancellationToken.None);
+
+        await using var ctx = NewContext();
+        var accounts = new LoyaltyAccountRepository(ctx);
+        var tierConfigs = new LoyaltyTierConfigRepository(ctx);
+        var mine = await new GetMyLoyalty.Handler(
+                accounts, tierConfigs, new TestUserSessionProvider(UserId, "loyalty-race@cleansia.test"))
+            .Handle(new GetMyLoyalty.Query(), CancellationToken.None)
+            .WaitAsync(TimeSpan.FromSeconds(10));
+        var looked = await new GetUserLoyaltyAccount.Handler(accounts, tierConfigs)
+            .Handle(new GetUserLoyaltyAccount.Query(UserId), CancellationToken.None)
+            .WaitAsync(TimeSpan.FromSeconds(10));
+
+        Assert.Equal((LoyaltyTier.BronzeCleaner, 0), (mine.Value!.CurrentTier, mine.Value.LifetimePoints));
+        Assert.Equal((LoyaltyTier.BronzeCleaner, 0), (looked.Value!.CurrentTier, looked.Value.LifetimePoints));
+        Assert.Null(ctx.Database.CurrentTransaction);
+        Assert.Empty(ctx.ChangeTracker.Entries<LoyaltyAccount>());
     }
 
     private static async Task EditGoldThresholdAsync(CleansiaDbContext ctx, int threshold)

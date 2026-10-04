@@ -39,6 +39,7 @@ import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -56,6 +57,8 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import cz.cleansia.customer.R
 import cz.cleansia.core.format.formatOrderPrice
@@ -254,6 +257,7 @@ private fun SheetContent(
     val currentStep by bookingVm.step.collectAsStateWithLifecycle()
     val canStepBack by bookingVm.canStepBack.collectAsStateWithLifecycle()
     val canPlaceOrder by bookingVm.canPlaceOrder.collectAsStateWithLifecycle()
+    val doubleBooking by bookingVm.doubleBooking.collectAsStateWithLifecycle()
     val scope = androidx.compose.runtime.rememberCoroutineScope()
 
     var showAddressManager by remember { mutableStateOf(false) }
@@ -367,6 +371,28 @@ private fun SheetContent(
     // these effects run, so a seeded open still gets the default address.
     LaunchedEffect(visible) {
         bookingVm.setSheetVisible(visible)
+        // A resumed draft's time may have passed while it was away. Only a plain open re-checks it: a
+        // seeded one resets the draft below, and a notice about a time it throws away would be noise.
+        if (visible && rebookFromOrderId == null && prefillPackageId == null && prefillSize == null) {
+            bookingVm.revalidateResumedTime()
+        }
+    }
+    // A swipe takes the sheet to Hidden before `visible` flips, so this content leaves composition
+    // without ever composing closed and the effect above never hears of the close. Leaving composition
+    // is the one thing every way out shares, so the close is recorded there too.
+    DisposableEffect(bookingVm) { onDispose { bookingVm.setSheetVisible(false) } }
+    // A sheet left open in the background comes back to a clock that has moved on, so its time is
+    // re-checked on the way back, as a plain open re-checks one. Only a start after a stop is a return:
+    // the ON_START a new observer is sent as it enters composition is not one. Nor is a booking being
+    // placed or paid re-checked: its order exists or is on its way, and a bank's 3-D Secure hop stops
+    // the host, so a slot boundary passing meanwhile would tell a paying customer to pick a time again.
+    // The submit state is read live, as the composed one stops following the flow while stopped.
+    var stopped by remember { mutableStateOf(false) }
+    LifecycleEventEffect(Lifecycle.Event.ON_STOP) { stopped = true }
+    LifecycleEventEffect(Lifecycle.Event.ON_START) {
+        val placing = bookingVm.submitState.value is cz.cleansia.customer.ui.state.ActionState.Submitting
+        if (stopped && visible && !placing && pendingCardOrder == null) bookingVm.revalidateResumedTime()
+        stopped = false
     }
 
     LaunchedEffect(visible, rebookFromOrderId) {
@@ -609,9 +635,13 @@ private fun SheetContent(
                 when (step) {
                     1 -> ServicesStep(
                         state = state,
-                        onUpdate = { next -> bookingVm.update { next } },
+                        onToggleService = bookingVm::toggleService,
+                        onTogglePackage = bookingVm::togglePackage,
                         onRoomsChange = bookingVm::setRooms,
                         onBathroomsChange = bookingVm::setBathrooms,
+                        doubleBooking = doubleBooking,
+                        onConfirmDoubleBooking = bookingVm::confirmDoubleBooking,
+                        onDismissDoubleBooking = bookingVm::dismissDoubleBooking,
                     )
                     2 -> DirtinessStep(
                         selected = state.dirtinessLevel,

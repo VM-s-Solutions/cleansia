@@ -1,5 +1,7 @@
 package cz.cleansia.customer.features.profile
 
+import cz.cleansia.core.snackbar.SnackbarController
+import cz.cleansia.customer.R
 import cz.cleansia.customer.core.market.InsuranceCoverage
 import cz.cleansia.customer.core.market.MarketListItem
 import cz.cleansia.customer.core.market.MarketRepository
@@ -7,6 +9,7 @@ import cz.cleansia.customer.core.market.MarketState
 import cz.cleansia.customer.testing.MainDispatcherRule
 import io.mockk.every
 import io.mockk.mockk
+import io.mockk.verify
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.test.runCurrent
@@ -24,6 +27,7 @@ class HelpSupportViewModelTest {
     val mainRule = MainDispatcherRule()
 
     private lateinit var marketRepository: MarketRepository
+    private val snackbar: SnackbarController = mockk(relaxed = true)
     private val marketState = MutableStateFlow<MarketState>(MarketState.Unavailable)
 
     @Before
@@ -50,7 +54,7 @@ class HelpSupportViewModelTest {
         val svk = market("SVK", "EUR", 40_000.0)
         marketState.value = MarketState.Resolved(listOf(cze, svk), selected = svk)
 
-        val vm = HelpSupportViewModel(marketRepository)
+        val vm = HelpSupportViewModel(marketRepository, snackbar)
         runCurrent()
 
         assertEquals(InsuranceCoverage(40_000.0, "EUR"), vm.insuranceCoverage.value)
@@ -58,7 +62,7 @@ class HelpSupportViewModelTest {
 
     @Test
     fun `no market or no authored ceiling means no figure`() = runTest {
-        val vm = HelpSupportViewModel(marketRepository)
+        val vm = HelpSupportViewModel(marketRepository, snackbar)
         runCurrent()
         assertEquals(null, vm.insuranceCoverage.value)
 
@@ -66,5 +70,17 @@ class HelpSupportViewModelTest {
         marketState.value = MarketState.Resolved(listOf(pol), selected = pol)
         runCurrent()
         assertEquals(null, vm.insuranceCoverage.value)
+    }
+
+    /** K2: a tap with no app to take it copies the contact; the customer is told, not left with a dead row. */
+    @Test
+    fun `no app for the contact row says the address or number was copied`() = runTest {
+        val vm = HelpSupportViewModel(marketRepository, snackbar)
+
+        vm.onEmailUnavailable()
+        verify(exactly = 1) { snackbar.showInfoKey(R.string.help_email_unavailable) }
+
+        vm.onCallUnavailable()
+        verify(exactly = 1) { snackbar.showInfoKey(R.string.help_call_unavailable) }
     }
 }

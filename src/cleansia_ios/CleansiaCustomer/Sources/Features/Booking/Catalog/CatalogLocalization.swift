@@ -80,3 +80,13 @@ extension CatalogPackage {
         return "\(prefix) \(names.prefix(2).joined(separator: ", ")) \(L10n.Booking.packageMore(names.count - 2))"
     }
 }
+
+extension Catalog {
+    /// The service row's "In your package: …" line, naming every selected package that includes it;
+    /// nil when none does.
+    func inPackageNote(for serviceId: String, selectedPackageIds: Set<String>, locale: Locale) -> String? {
+        let names = selectedPackages(including: serviceId, selectedPackageIds: selectedPackageIds)
+            .map { $0.localizedName(for: locale) }
+        return names.isEmpty ? nil : L10n.Booking.inYourPackage(names.joined(separator: ", "))
+    }
+}

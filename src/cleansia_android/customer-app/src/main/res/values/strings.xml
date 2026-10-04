@@ -537,12 +537,12 @@
     <!-- Profile — help & support -->
     <string name="help_title">Help &amp; support</string>
     <string name="help_contact_title">Contact us</string>
-    <string name="help_chat">Live chat</string>
-    <string name="help_chat_desc">Typically replies within a few minutes</string>
     <string name="help_call">Call support</string>
     <string name="help_call_desc">Mon–Sun · 8:00–20:00</string>
     <string name="help_email">Email us</string>
     <string name="help_email_desc">support@cleansia.cz</string>
+    <string name="help_call_unavailable">Calls aren\'t available on this device. Number copied.</string>
+    <string name="help_email_unavailable">No e-mail app found. Address copied.</string>
     <string name="help_faq_title">Frequently asked questions</string>
     <string name="help_faq_q1">How do I cancel my booking?</string>
     <string name="help_faq_a1">Open your booking from the Orders tab and tap \"Cancel\". Cancellations free of charge up to 24 hours before the cleaning start time. Within 15 minutes of booking you pay nothing — within 60 minutes on your first booking or with Cleansia Plus.</string>
@@ -655,6 +655,13 @@
     <string name="details_per_room">Per room</string>
     <string name="details_add_to_booking">Add to booking</string>
     <string name="details_remove_from_booking">Remove from booking</string>
+    <string name="booking_in_your_package">In your package: %1$s</string>
+    <string name="booking_twice_service_title">Already in your package</string>
+    <string name="booking_twice_service_message">%1$s is part of %2$s. Adding it again books it twice: it is done twice and charged twice.</string>
+    <string name="booking_twice_service_confirm">Add again</string>
+    <string name="booking_twice_package_title">Already in your booking</string>
+    <string name="booking_twice_package_message">%1$s also includes what you already added separately: %2$s. Adding the package books that twice: done twice and charged twice.</string>
+    <string name="booking_twice_package_confirm">Add package</string>
     <string name="booking_your_home">Your home</string>
     <string name="booking_size_limit_caption">Up to %1$d rooms and %2$d bathrooms</string>
     <string name="booking_search_services">Search services</string>
@@ -829,6 +836,7 @@
     <string name="booking_cash_needs_card">Cleaners needed for this booking: %1$d. Cash is only for bookings one cleaner handles alone, so this one is paid by card.</string>
     <string name="booking_cash_pending">Whether you can pay in cash is confirmed once the price is ready.</string>
     <string name="booking_cash_cleared">Cash is no longer available for this booking, so no payment method is selected. Choose how you want to pay.</string>
+    <string name="booking_draft_time_changed">The time you picked is no longer available or its price has changed. Please pick a time again.</string>
     <string name="booking_card_guarantee_title">A card to guarantee cash bookings</string>
     <string name="booking_card_guarantee_body">Your first cash booking saves a card. Nothing is charged now: you still pay the cleaner in cash.</string>
     <string name="consent_card_guarantee_draft_2026_09_28">I agree that Cleansia may charge this card for a cancellation fee, a lockout fee, cash I did not pay and a top-up I approved on my cash bookings.</string>

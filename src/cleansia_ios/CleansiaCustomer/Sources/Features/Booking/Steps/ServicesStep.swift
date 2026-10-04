@@ -31,7 +31,11 @@ struct ServicesStep: View {
                 CatalogContentView(
                     catalog: catalog,
                     state: viewModel.state,
-                    onUpdate: { transform in viewModel.update(transform) },
+                    twiceBookedPick: viewModel.twiceBookedPick,
+                    onToggleService: viewModel.toggleService,
+                    onTogglePackage: viewModel.togglePackage,
+                    onConfirmTwiceBooked: viewModel.confirmTwiceBooked,
+                    onCancelTwiceBooked: viewModel.cancelTwiceBooked,
                     onRoomsChange: viewModel.setRooms,
                     onBathroomsChange: viewModel.setBathrooms
                 )
@@ -45,7 +49,12 @@ private struct CatalogContentView: View {
     @Environment(\.locale) private var locale
     let catalog: Catalog
     let state: BookingState
-    let onUpdate: ((BookingState) -> BookingState) -> Void
+    let twiceBookedPick: TwiceBookedPick?
+    let onToggleService: (String) -> Void
+    /// True when the selection changed now; false when the customer is first asked to confirm.
+    let onTogglePackage: (String) -> Bool
+    let onConfirmTwiceBooked: (TwiceBookedPick) -> Void
+    let onCancelTwiceBooked: () -> Void
     let onRoomsChange: (Int) -> Void
     let onBathroomsChange: (Int) -> Void
 
@@ -84,15 +93,41 @@ private struct CatalogContentView: View {
             }
             .padding(.vertical, Spacing.s)
         }
+        // A service tapped in the list asks here; a package added from its sheet asks over the sheet,
+        // which closes only once the package is in.
+        .modifier(TwiceBookedAlert(
+            pick: servicePick,
+            catalog: catalog,
+            onConfirm: onConfirmTwiceBooked,
+            onCancel: onCancelTwiceBooked
+        ))
         .sheet(item: $detailPackage) { pkg in
             PackageDetailsSheet(
                 pkg: pkg,
                 currencyCode: catalog.currencyCode,
                 isSelected: state.selectedPackageIds.contains(pkg.id),
-                onToggle: { togglePackage(pkg.id) },
-                onDismiss: { detailPackage = nil }
+                onToggle: { if onTogglePackage(pkg.id) { detailPackage = nil } }
             )
+            .modifier(TwiceBookedAlert(
+                pick: packagePick,
+                catalog: catalog,
+                onConfirm: { pick in
+                    onConfirmTwiceBooked(pick)
+                    detailPackage = nil
+                },
+                onCancel: onCancelTwiceBooked
+            ))
         }
+    }
+
+    private var servicePick: TwiceBookedPick? {
+        if case .service = twiceBookedPick { return twiceBookedPick }
+        return nil
+    }
+
+    private var packagePick: TwiceBookedPick? {
+        if case .package = twiceBookedPick { return twiceBookedPick }
+        return nil
     }
 
     private var packagesSection: some View {
@@ -155,38 +190,17 @@ private struct CatalogContentView: View {
                         service: service,
                         currencyCode: catalog.currencyCode,
                         selected: state.selectedServiceIds.contains(service.id),
-                        onToggle: { toggleService(service.id) }
+                        inPackageNote: catalog.inPackageNote(
+                            for: service.id,
+                            selectedPackageIds: state.selectedPackageIds,
+                            locale: locale
+                        ),
+                        onToggle: { onToggleService(service.id) }
                     )
                     .padding(.horizontal, Spacing.ml)
                 }
             }
         }
-    }
-
-    private func toggleService(_ id: String) {
-        onUpdate { mutate($0) { state in
-            if state.selectedServiceIds.contains(id) {
-                state.selectedServiceIds.remove(id)
-            } else {
-                state.selectedServiceIds.insert(id)
-            }
-        } }
-    }
-
-    private func togglePackage(_ id: String) {
-        onUpdate { mutate($0) { state in
-            if state.selectedPackageIds.contains(id) {
-                state.selectedPackageIds.remove(id)
-            } else {
-                state.selectedPackageIds.insert(id)
-            }
-        } }
-    }
-
-    private func mutate(_ state: BookingState, _ change: (inout BookingState) -> Void) -> BookingState {
-        var next = state
-        change(&next)
-        return next
     }
 }
 
@@ -272,7 +286,13 @@ private struct PropertyRow: View {
             CatalogContentView(
                 catalog: catalog,
                 state: state,
-                onUpdate: { transform in state = transform(state) },
+                twiceBookedPick: nil,
+                onToggleService: { state.selectedServiceIds.formSymmetricDifference([$0]) },
+                onTogglePackage: { state.selectedPackageIds.formSymmetricDifference([$0])
+                    return true
+                },
+                onConfirmTwiceBooked: { _ in },
+                onCancelTwiceBooked: {},
                 onRoomsChange: { state.rooms = $0 },
                 onBathroomsChange: { state.bathrooms = $0 }
             )

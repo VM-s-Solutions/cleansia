@@ -238,6 +238,15 @@ in the account's language. Neither platform gets that for free outside the app's
 resolves a push's keys in the app's system language, and Android 26–32 localizes only activity
 contexts. Each closes the gap with the one shared seam in the table above. → [Which language a notification is in](/architecture/push-notifications#language)
 
+**A count takes the plural form of the language picked in the app, not the phone's.** On iOS the
+language switch points the bundles at the chosen language but never changes the process locale, so a
+catalog plural formatted with `Locale.current`, or with no locale, picks its form by the phone's
+rules. Until 2026-10-03 both iOS apps did that: an English phone running the app in Czech read
+*2 pokojů* for *2 pokoje*, in Ukrainian *5 кімнати* for *5 кімнат*, and in Russian *Нужно 5 клинера*
+for *Нужно 5 клинеров*. Each app's `L10n.plural` now formats against `CoreL10n.locale`, the locale of
+the in-app language tag (`Locale.current` only for an empty tag). Android needed no change:
+`pluralStringResource` reads the activity's resources, which carry the AppCompat in-app locale.
+
 ## Tests
 
 | Suite | Location | Run with |

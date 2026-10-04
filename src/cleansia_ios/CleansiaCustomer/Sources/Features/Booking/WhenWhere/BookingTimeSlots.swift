@@ -108,6 +108,34 @@ enum BookingTimeSlots {
         }
     }
 
+    /// The state the When step gives `time` on `date`'s day when it is `now`, or nil when it does not offer
+    /// that slot at all: the day has left the strip (it is past) or the time is not on the quarter-hour grid.
+    static func slotState(on date: Date, time: String, now: Date, calendar: Calendar = .current) -> SlotState? {
+        guard days(now: now, calendar: calendar).contains(where: { calendar.isDate($0.date, inSameDayAs: date) })
+        else { return nil }
+        return slots(for: date, now: now, calendar: calendar).first { $0.time == time }?.state
+    }
+
+    /// Whether a booking keeps its time: the When step still offers it, in the band it was in at `pricedAt` —
+    /// when the quote for it landed, or when the draft was left if none did. Inside the lead time or past it
+    /// is gone; a standard slot that slid into the express band was quoted without the surcharge, so it is
+    /// gone too. With no time chosen there is nothing to re-check. Android's `draftTimeStillHolds` is the twin.
+    static func draftTimeStillHolds(
+        on date: Date?,
+        time: String,
+        pricedAt: Date?,
+        now: Date,
+        calendar: Calendar = .current
+    ) -> Bool {
+        guard let date, !time.isEmpty else { return true }
+        guard let current = slotState(on: date, time: time, now: now, calendar: calendar),
+              current != .unavailable
+        else { return false }
+        guard let pricedAt, let whenPriced = slotState(on: date, time: time, now: pricedAt, calendar: calendar)
+        else { return true }
+        return current == whenPriced
+    }
+
     static func dayParts(_ slots: [BookingTimeSlot]) -> [DayPartSlots] {
         DayPart.allCases.map { part in DayPartSlots(part: part, slots: slots.filter { DayPart.of($0.time) == part }) }
     }

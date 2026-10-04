@@ -23,6 +23,13 @@ public enum CoreL10n {
     /// before any screen renders.
     public private(set) nonisolated(unsafe) static var languageTag: String = "en"
 
+    /// The locale a catalog PLURAL is resolved against: the in-app language's, for the reason above.
+    /// `String(format:locale:)` picks the variation by this locale's plural rules, so passing
+    /// `.current` on an English phone running the app in Ukrainian chose English forms ("5 кімнати").
+    public static var locale: Locale {
+        languageTag.isEmpty ? .current : Locale(identifier: languageTag)
+    }
+
     public static func apply(languageTag: String) {
         bundle = localizedBundle(for: languageTag)
         self.languageTag = languageTag

@@ -191,6 +191,33 @@ public sealed class AdminNotificationEmailRenderingTests
     }
 
     [Fact]
+    public async Task A_Name_With_Markup_Is_Shown_As_Text_On_The_Admin_Notification_Template()
+    {
+        var (service, capture) = BuildService([]);
+
+        await service.SendCashRemittanceRequestEmailAsync(
+            Recipient, "<b>Ann & Co</b>", 1250m, "Kč", new DateTime(2026, 10, 1, 0, 0, 0, DateTimeKind.Utc), "en", CancellationToken.None);
+
+        Assert.Contains("Hello &lt;b&gt;Ann &amp; Co&lt;/b&gt;", capture.HtmlContent, StringComparison.Ordinal);
+        Assert.DoesNotContain("<b>Ann", capture.HtmlContent, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task An_Ampersand_In_A_Row_Is_Encoded_In_The_Body_And_Left_Alone_In_The_Subject_Line()
+    {
+        var (service, capture) = BuildService(new Dictionary<string, string>
+        {
+            ["admin.dispute.filed.Subject"] = "Dispute & refund on {0}",
+        });
+
+        await service.SendAdminNotificationEmailAsync(Recipient, AdminNotificationEventCatalog.DisputeFiled, SampleArgs(AdminNotificationEventCatalog.DisputeFiled), "en", CancellationToken.None);
+
+        Assert.Equal("Dispute & refund on ORD-1A2B3C4D", capture.Subject);
+        Assert.Contains("Dispute &amp; refund on ORD-1A2B3C4D", capture.HtmlContent, StringComparison.Ordinal);
+        Assert.DoesNotContain("&amp;amp;", capture.HtmlContent, StringComparison.Ordinal);
+    }
+
+    [Fact]
     public async Task An_Unknown_Locale_Falls_Back_To_English()
     {
         var (service, capture) = BuildService([]);

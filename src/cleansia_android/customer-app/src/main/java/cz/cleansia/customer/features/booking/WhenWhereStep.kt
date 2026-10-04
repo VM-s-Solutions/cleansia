@@ -45,6 +45,8 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.compose.LifecycleEventEffect
 import cz.cleansia.customer.R
 import cz.cleansia.customer.core.memberships.ExpressWaiver
 import cz.cleansia.customer.core.memberships.ExpressWaiverStatus
@@ -83,7 +85,7 @@ internal data class DayChip(
 internal fun buildDays(locale: Locale, todayLabel: String): List<DayChip> {
     val tz = TimeZone.currentSystemDefault()
     val today = Clock.System.now().toLocalDateTime(tz).date
-    return (0..7).map { offset ->
+    return (0..BOOKING_DAYS_AHEAD).map { offset ->
         val d = today.plus(offset, DateTimeUnit.DAY)
         val label = if (offset == 0) {
             todayLabel
@@ -126,6 +128,8 @@ internal data class TimeSlot(val time: String, val state: SlotState)
 // LastWindowHour = 20). Slot states are derived from the user's selected date so "Today" never shows
 // already-passed hours as bookable; the express band itself is [BookingPricing]'s.
 private const val EXPRESS_LEAD_HOURS = 2
+/** The day strip: today and the next seven days. */
+internal const val BOOKING_DAYS_AHEAD = 7
 internal const val FIRST_WINDOW_HOUR = 8
 internal const val LAST_WINDOW_HOUR = 20
 internal const val BOOKING_SLOT_INTERVAL_MINUTES = 15
@@ -165,6 +169,41 @@ internal fun timeSlotsFor(
         }
         TimeSlot(label, state)
     }
+}
+
+/**
+ * The state the When step gives [time] on [date] at [now], or null when it does not offer that slot at
+ * all: the day has left the strip (it is past) or the time is not on the quarter-hour grid.
+ */
+internal fun slotStateAt(
+    date: LocalDate,
+    time: String,
+    now: kotlinx.datetime.Instant,
+    tz: TimeZone = TimeZone.currentSystemDefault(),
+): SlotState? {
+    val today = now.toLocalDateTime(tz).date
+    if (date < today || date > today.plus(BOOKING_DAYS_AHEAD, DateTimeUnit.DAY)) return null
+    return timeSlotsFor(date, now, tz).firstOrNull { it.time == time }?.state
+}
+
+/**
+ * Whether a booking keeps its time: the When step still offers it, in the band it was in at
+ * [pricedAt] — when the quote for it landed, or when the draft was left if none did. Inside the lead
+ * time or past it is gone; a standard slot that slid into the express band was quoted without the
+ * surcharge, so it is gone too. With no time chosen there is nothing to re-check.
+ */
+internal fun draftTimeStillHolds(
+    date: LocalDate?,
+    time: String,
+    pricedAt: kotlinx.datetime.Instant?,
+    now: kotlinx.datetime.Instant,
+    tz: TimeZone = TimeZone.currentSystemDefault(),
+): Boolean {
+    if (date == null || time.isBlank()) return true
+    val current = slotStateAt(date, time, now, tz) ?: return false
+    if (current == SlotState.Unavailable) return false
+    val whenPriced = pricedAt?.let { slotStateAt(date, time, it, tz) } ?: return true
+    return current == whenPriced
 }
 
 /**
@@ -216,7 +255,12 @@ fun WhenWhereStep(
     // no keys the strip would keep its old English labels after a language switch.
     val locale = LocalConfiguration.current.locales.get(0) ?: Locale.getDefault()
     val todayLabel = stringResource(R.string.booking_today)
-    val days = androidx.compose.runtime.remember(locale, todayLabel) { buildDays(locale, todayLabel) }
+    // The strip and the slot grid are the step's offer at the moment they were built. A step left on
+    // screen while the app was in the background comes back to a clock that has moved on — slots inside
+    // the lead time, a "Today" that is yesterday — so each return to the foreground rebuilds both.
+    var returns by androidx.compose.runtime.remember { androidx.compose.runtime.mutableIntStateOf(0) }
+    LifecycleEventEffect(Lifecycle.Event.ON_START) { returns++ }
+    val days = androidx.compose.runtime.remember(locale, todayLabel, returns) { buildDays(locale, todayLabel) }
 
     // The strip's labels are CLDR-derived, so changing the app language rebuilds every one of them.
     // The picked day's identity ([BookingState.selectedLocalDate]) is unaffected, but the label kept
@@ -297,7 +341,7 @@ fun WhenWhereStep(
 
         // Slots are derived per-day so "Today" honours real-time lead-time bands.
         val pickedDayChip = days.firstOrNull { it.localDate == state.selectedLocalDate }
-        val daySlots = androidx.compose.runtime.remember(pickedDayChip?.localDate) {
+        val daySlots = androidx.compose.runtime.remember(pickedDayChip?.localDate, returns) {
             pickedDayChip?.localDate?.let { timeSlotsFor(it) } ?: emptyList()
         }
 

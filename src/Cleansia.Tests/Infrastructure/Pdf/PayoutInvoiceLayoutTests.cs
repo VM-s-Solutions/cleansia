@@ -1,5 +1,9 @@
 using System.Globalization;
+using Cleansia.Core.AppServices.Extensions;
+using Cleansia.Core.Domain.Company;
 using Cleansia.Core.Domain.Enums;
+using Cleansia.Core.Domain.Internationalization;
+using Cleansia.Core.Domain.Users;
 using Cleansia.Infra.Services.Pdf;
 using Cleansia.Infra.Services.Pdf.Layouts;
 using Cleansia.Infra.Services.Pdf.Models;
@@ -252,6 +256,38 @@ public class PayoutInvoiceLayoutTests
         var data = Data() with { Supplier = Supplier() with { IsVatPayer = true, VatNumber = "CZ12345678" }, VatAmount = 173.55m };
 
         Assert.NotEmpty(PdfService().GenerateInvoicePdf(data, null, "CZ"));
+    }
+
+    /// <summary>
+    /// The seeded company phone is the literal <c>&lt;company_phone_number&gt;</c> until the real number is
+    /// entered (owner decision 2026-10-03). The footer prints the company's contact line as the company
+    /// record formats it, through the real mapper, and QuestPDF draws it as text with the glyph check on.
+    /// </summary>
+    [Fact]
+    public void The_Seeded_Placeholder_Phone_Reaches_The_Footer_As_Written()
+    {
+        var data = PayrollMockFactory.Invoice(payPeriod: PayrollMockFactory.OpenPeriod()).CreatePdfData(
+            Employee.CreateWithUser(User.CreateWithPassword("cleaner@cleansia.test", "12345678Test!", "Jan", "Novák")),
+            Currency.Create("CZK", "Kč", "Czech koruna"),
+            [],
+            countryContext: null,
+            companyInfo: CompanyInfo.Create(
+                "Cleansia s.r.o.", "Cleansia", "87654321", "Václavské náměstí 1", "Praha", "11000", "cz",
+                phone: "<company_phone_number>", email: "support@cleansia.cz"),
+            payoutDetails: null);
+
+        Assert.Equal("Tel: <company_phone_number> | Email: support@cleansia.cz", data.Company!.ContactInfo);
+
+        var checkedBefore = QuestPDF.Settings.CheckIfAllTextGlyphsAreAvailable;
+        QuestPDF.Settings.CheckIfAllTextGlyphsAreAvailable = true;
+        try
+        {
+            Assert.NotEmpty(PdfService().GenerateInvoicePdf(data, null, "CZ"));
+        }
+        finally
+        {
+            QuestPDF.Settings.CheckIfAllTextGlyphsAreAvailable = checkedBefore;
+        }
     }
 
     // The country's VAT setting is the CUSTOMER-order regime; a cleaner who is not registered must

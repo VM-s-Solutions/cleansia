@@ -121,6 +121,7 @@ fun ServiceDetailsSheet(
 
 /** Package details — pure information + a primary "Add to booking" / "Remove" button.
  * Unlike services, package selection happens through this sheet, not directly on the card.
+ * The caller closes it: an add that books a service twice asks over the sheet first.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -189,10 +190,7 @@ fun PackageDetailsSheet(
                 } else {
                     stringResource(R.string.details_add_to_booking)
                 },
-                onClick = {
-                    onToggle()
-                    onDismiss()
-                },
+                onClick = onToggle,
             )
             Spacer(Modifier.navigationBarsPadding())
         }

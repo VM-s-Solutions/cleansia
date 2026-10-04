@@ -1,4 +1,5 @@
 using Cleansia.Core.AppServices.Features.Legal;
+using Cleansia.Core.Domain.Company;
 
 namespace Cleansia.Tests.Features.Legal;
 
@@ -71,6 +72,29 @@ public sealed class LegalMarkdownRendererTests
 
         Assert.DoesNotContain("<img", html);
         Assert.Contains("&lt;img src=x&gt;", html);
+    }
+
+    /// <summary>
+    /// The seeded company phone is the literal <c>&lt;company_phone_number&gt;</c> until the real number is
+    /// entered (owner decision 2026-10-03). Filled in before parsing, it is text: escaped on a page, never
+    /// read as a tag that would swallow it or as a link, and printed as written in a contract PDF's text.
+    /// </summary>
+    [Fact]
+    public void The_Seeded_Placeholder_Phone_Prints_As_Written_On_A_Page_And_In_A_Pdf()
+    {
+        var seeded = LegalMarkdownRenderer.MarketPlaceholders(market: null, CompanyInfo.Create(
+            "Cleansia s.r.o.", "CLEANSIA", "12345678", "Václavské náměstí 1", "Prague", "11000", "country-cze",
+            phone: "<company_phone_number>", email: "support@cleansia.cz"));
+        const string Markdown = "## 1. The controller\n\nCleansia, e-mail {{companyEmail}}, phone {{companyPhone}} (the company).";
+
+        var html = LegalMarkdownRenderer.Render(Markdown, seeded);
+
+        Assert.Contains("<p>Cleansia, e-mail support@cleansia.cz, phone &lt;company_phone_number&gt; (the company).</p>", html);
+        Assert.DoesNotContain("<company_phone_number>", html);
+        Assert.DoesNotContain("<a", html);
+        Assert.Equal(
+            [("1. The controller", true), ("Cleansia, e-mail support@cleansia.cz, phone <company_phone_number> (the company).", false)],
+            LegalMarkdownRenderer.RenderPlainBlocks(Markdown, seeded));
     }
 
     [Fact]

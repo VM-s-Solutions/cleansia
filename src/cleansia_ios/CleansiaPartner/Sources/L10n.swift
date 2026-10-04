@@ -1,3 +1,4 @@
+import CleansiaCore
 import Foundation
 
 enum L10n {
@@ -304,5 +305,13 @@ enum L10n {
 
     static func format(_ key: String, _ args: CVarArg...) -> String {
         String(format: localized(key), arguments: args)
+    }
+
+    /// A key whose `.xcstrings` entry carries PLURAL VARIATIONS. `format` passes no locale, so the
+    /// count picked no form by the language's rules; this resolves them in the IN-APP language
+    /// (`CoreL10n.locale`), never the phone's — the in-app switch leaves `.current` on the device
+    /// language. The customer app's `L10n.plural` is the same helper.
+    static func plural(_ key: String, _ count: Int) -> String {
+        String(format: localized(key), locale: CoreL10n.locale, arguments: [count])
     }
 }

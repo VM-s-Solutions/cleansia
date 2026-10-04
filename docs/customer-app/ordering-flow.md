@@ -39,6 +39,16 @@ iOS steppers stop at the same limits and state them under the size row →
 
 Services and packages support **translations** -- the component reads the user's current locale to display translated names/descriptions.
 
+**A service a chosen package includes is marked, and adding the pair by hand asks first.** Under such a
+service the step prints *In your package: {package}* (`pages.order.package_overlap.in_package`), and the
+service's add button takes that line as its `aria-describedby`. `OrderWizardFacade.toggleService` and
+`togglePackage` ask through the shared `DialogService` before a tap adds either half of a twice-booked
+pair, with *Cancel* focused (`defaultFocus: 'reject'`); removing never asks, and the Plus step's
+suggested *Add* goes through `toggleService` too. A selection the wizard is handed (a catalogue link,
+*Order again*, a parked basket) is written through `updateFormData`, so it is only marked. Which chosen
+packages include a service is one helper the schedule form shares, `chosenPackagesByService` in
+`customer-services` (`package-overlap.ts`). → [Charging a package and a service together](/product/business-rules#charging-a-package-and-a-service-together)
+
 ### Step 1: Address & Contact
 
 The customer enters their delivery address and contact information.

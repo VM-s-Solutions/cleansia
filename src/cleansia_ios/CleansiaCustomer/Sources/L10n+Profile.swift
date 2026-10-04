@@ -324,6 +324,14 @@ extension L10n {
             localized("help_call_desc")
         }
 
+        static var emailUnavailable: String {
+            localized("help_email_unavailable")
+        }
+
+        static var callUnavailable: String {
+            localized("help_call_unavailable")
+        }
+
         static var faqTitle: String {
             localized("help_faq_title")
         }

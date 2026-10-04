@@ -18,6 +18,7 @@ import cz.cleansia.customer.core.booking.QuoteOrderResponse
 import cz.cleansia.customer.core.catalog.CatalogRepository
 import cz.cleansia.customer.core.catalog.CategoryDto
 import cz.cleansia.customer.core.catalog.PackageListItem
+import cz.cleansia.customer.core.catalog.PackageServiceSummary
 import cz.cleansia.customer.core.catalog.ServiceListItem
 import cz.cleansia.customer.core.consent.GdprConsentClient
 import cz.cleansia.customer.core.consent.SignupConsentType
@@ -35,6 +36,8 @@ import cz.cleansia.customer.core.recurring.RecurringBookingRepository
 import cz.cleansia.customer.core.recurring.CreateRecurringBookingRequest
 import cz.cleansia.customer.core.recurring.RecurringBookingTemplateDto
 import cz.cleansia.customer.core.recurring.UpdateRecurringBookingRequest
+import cz.cleansia.customer.features.booking.DoubleBooking
+import cz.cleansia.customer.features.booking.selectedIncluding
 import cz.cleansia.customer.testing.MainDispatcherRule
 import cz.cleansia.customer.ui.state.ActionState
 import io.mockk.clearMocks
@@ -1629,5 +1632,124 @@ class CreateRecurringViewModelTest {
 
         assertEquals(false, vm.termsAsked.value)
         coVerify(exactly = 0) { consentClient.grantedTypes() }
+    }
+
+    // ── a package and a service it includes ──
+    //
+    // Owner ruling: both are kept, so that service is booked twice. A tap that adds one asks first, as
+    // on the booking sheet; a removal and a seeded selection never ask
+    // (→ /product/business-rules#charging-a-package-and-a-service-together).
+
+    private fun packageWith(id: String, vararg serviceIds: String) = PackageListItem(
+        id = id,
+        name = "Package $id",
+        price = 20.0,
+        includedServices = serviceIds.map { PackageServiceSummary(name = "Service $it", serviceId = it) },
+    )
+
+    private fun kotlinx.coroutines.test.TestScope.withDeepCleanPackage(
+        orderId: String? = null,
+        templateId: String? = null,
+    ): CreateRecurringViewModel {
+        catalogServicesFlow.value = listOf(service("svc-1"), service("svc-2"))
+        catalogPackagesFlow.value = listOf(packageWith("pkg-1", "svc-1"))
+        return viewModel(orderId = orderId, templateId = templateId).also { advanceUntilIdle() }
+    }
+
+    @Test
+    fun `adding a service a chosen package includes asks first and adds nothing yet`() = runTest {
+        val vm = withDeepCleanPackage()
+        vm.togglePackage("pkg-1")
+
+        vm.toggleService("svc-1")
+
+        assertEquals(DoubleBooking.Service(service("svc-1"), catalogPackagesFlow.value), vm.doubleBooking.value)
+        assertEquals(emptySet<String>(), vm.state.value.selectedServiceIds)
+    }
+
+    @Test
+    fun `cancelling the confirm keeps the selection as it was`() = runTest {
+        val vm = withDeepCleanPackage()
+        vm.togglePackage("pkg-1")
+        vm.toggleService("svc-1")
+
+        vm.dismissDoubleBooking()
+
+        assertNull(vm.doubleBooking.value)
+        assertEquals(emptySet<String>(), vm.state.value.selectedServiceIds)
+        assertEquals(setOf("pkg-1"), vm.state.value.selectedPackageIds)
+    }
+
+    @Test
+    fun `confirming adds the service alongside the package`() = runTest {
+        val vm = withDeepCleanPackage()
+        vm.togglePackage("pkg-1")
+        vm.toggleService("svc-1")
+
+        vm.confirmDoubleBooking()
+
+        assertNull(vm.doubleBooking.value)
+        assertEquals(setOf("svc-1"), vm.state.value.selectedServiceIds)
+        assertEquals(setOf("pkg-1"), vm.state.value.selectedPackageIds)
+    }
+
+    @Test
+    fun `adding a package that includes a chosen service asks first and adds on confirm`() = runTest {
+        val vm = withDeepCleanPackage()
+        vm.toggleService("svc-1")
+
+        vm.togglePackage("pkg-1")
+
+        val pkg = catalogPackagesFlow.value.single()
+        assertEquals(DoubleBooking.Package(pkg, pkg.includedServices!!), vm.doubleBooking.value)
+        assertEquals(emptySet<String>(), vm.state.value.selectedPackageIds)
+
+        vm.confirmDoubleBooking()
+
+        assertEquals(setOf("pkg-1"), vm.state.value.selectedPackageIds)
+        assertEquals(setOf("svc-1"), vm.state.value.selectedServiceIds)
+    }
+
+    @Test
+    fun `removing either half never asks`() = runTest {
+        val vm = withDeepCleanPackage()
+        vm.toggleService("svc-1")
+        vm.togglePackage("pkg-1")
+        vm.confirmDoubleBooking()
+
+        vm.toggleService("svc-1")
+        vm.togglePackage("pkg-1")
+
+        assertNull(vm.doubleBooking.value)
+        assertEquals(emptySet<String>(), vm.state.value.selectedServiceIds)
+        assertEquals(emptySet<String>(), vm.state.value.selectedPackageIds)
+    }
+
+    @Test
+    fun `a schedule prefilled from an order never asks and its service is marked`() = runTest {
+        sourceOrder(services = listOf("svc-1"), packages = listOf("pkg-1"))
+
+        val vm = withDeepCleanPackage(orderId = "ord-7")
+
+        assertEquals(setOf("svc-1"), vm.state.value.selectedServiceIds)
+        assertEquals(setOf("pkg-1"), vm.state.value.selectedPackageIds)
+        assertNull(vm.doubleBooking.value)
+        assertEquals(
+            catalogPackagesFlow.value,
+            catalogPackagesFlow.value.selectedIncluding("svc-1", vm.state.value.selectedPackageIds),
+        )
+    }
+
+    @Test
+    fun `a schedule being edited never asks`() = runTest {
+        templatesFlow.value = listOf(
+            template.copy(selectedServiceIds = listOf("svc-1"), selectedPackageIds = listOf("pkg-1")),
+        )
+
+        val vm = withDeepCleanPackage(templateId = template.id)
+
+        assertEquals(setOf("svc-1"), vm.state.value.selectedServiceIds)
+        assertEquals(setOf("pkg-1"), vm.state.value.selectedPackageIds)
+        assertNull(vm.doubleBooking.value)
     }
 }

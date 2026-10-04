@@ -105,6 +105,61 @@ class MarketCopyStringsTest {
         }
     }
 
+    /**
+     * K2: the contact rows did nothing — the screen's handlers defaulted to `{}` and the nav host passed
+     * only `onBack`. E-mail opens the mail app on the support address, Call opens the dialer on the line
+     * the customer web footer prints, and Live chat, which has no chat behind it, is gone in every locale.
+     */
+    @Test
+    fun `the help rows open the support address and line, and the dead chat row is gone`() {
+        val help = source("features/profile/HelpSupportScreen.kt")
+        assertTrue(help.contains("private const val SUPPORT_EMAIL = \"support@cleansia.cz\""))
+        assertTrue(help.contains("private const val SUPPORT_PHONE = \"+420739788108\""))
+        assertTrue(help.contains("Intent(Intent.ACTION_SENDTO, Uri.parse(\"mailto:${'$'}SUPPORT_EMAIL\"))"))
+        assertTrue(help.contains("Intent(Intent.ACTION_DIAL, Uri.parse(\"tel:${'$'}SUPPORT_PHONE\"))"))
+        assertTrue(help.contains("viewModel.onEmailUnavailable()"))
+        assertTrue(help.contains("viewModel.onCallUnavailable()"))
+        assertFalse("the help screen still has a chat row", help.contains("onChat") || help.contains("help_chat"))
+        locales.forEach { locale ->
+            val xml = stringsXml(locale)
+            listOf("help_chat", "help_chat_desc").forEach { key ->
+                assertEquals("$locale/$key outlived the chat row", null, valueOf(xml, key))
+            }
+            listOf("help_email_unavailable", "help_call_unavailable").forEach { key ->
+                assertTrue("$locale/$key missing", !valueOf(xml, key).isNullOrBlank())
+            }
+        }
+    }
+
+    /**
+     * M5: iOS's Help is the reference for this screen (owner, 2026-10-03). Its contact rows are Email us,
+     * on the support address, then Call support, with the line's hours, in iOS's wording in every locale.
+     * Android listed the line first and worded both rows differently in cs, sk, uk and ru.
+     */
+    @Test
+    fun `the help rows follow iOS - e-mail first, then the line, in its wording`() {
+        val help = source("features/profile/HelpSupportScreen.kt")
+        val email = help.indexOf("title = stringResource(R.string.help_email),")
+        val call = help.indexOf("title = stringResource(R.string.help_call),")
+        assertTrue("the e-mail row is gone", email >= 0)
+        assertTrue("the call row is gone", call >= 0)
+        assertTrue("the line is listed before the e-mail, iOS lists the e-mail first", email < call)
+
+        val ios = mapOf(
+            "values" to listOf("Email us", "Call support", "Mon–Sun · 8:00–20:00"),
+            "values-cs" to listOf("Napište nám", "Zavolejte podpoře", "Po–Ne · 8:00–20:00"),
+            "values-sk" to listOf("Napíšte nám", "Zavolajte podpore", "Po–Ne · 8:00–20:00"),
+            "values-uk" to listOf("Напишіть нам", "Зателефонуйте в підтримку", "Пн–Нд · 8:00–20:00"),
+            "values-ru" to listOf("Напишите нам", "Позвоните в поддержку", "Пн–Вс · 8:00–20:00"),
+        )
+        ios.forEach { (locale, rows) ->
+            val xml = stringsXml(locale)
+            listOf("help_email", "help_call", "help_call_desc").zip(rows).forEach { (key, expected) ->
+                assertEquals("$locale/$key reads differently from iOS", expected, valueOf(xml, key))
+            }
+        }
+    }
+
     private fun source(path: String): String =
         File(moduleDir, "src/main/java/cz/cleansia/customer/$path").readText().replace(Regex("\\s+"), " ")
 

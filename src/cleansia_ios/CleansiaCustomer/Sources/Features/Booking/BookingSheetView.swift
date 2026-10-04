@@ -127,6 +127,9 @@ struct BookingSheetView: View {
         case .cardGuaranteePending:
             slideResetCount += 1
             snackbar.showInfo(L10n.Booking.cardGuaranteePending)
+        case .timeNoLongerHolds:
+            slideResetCount += 1
+            snackbar.showInfo(L10n.Booking.draftTimeChanged)
         case let .failed(error):
             slideResetCount += 1
             // Prefer the server's own business error — "no cleaner is available
@@ -142,11 +145,21 @@ struct BookingSheetView: View {
         }
     }
 
+    /// Stripe's sheet over the booking. The app leaves the foreground under it and comes back — a 3-D Secure
+    /// approval in the bank app, a look-up of the card number, a Face ID prompt — and the order or the card is
+    /// past the time by then, so the open booking is not re-checked while it is up.
+    private func showPaymentSheet(_ presentation: PaymentSheetPresentation) async -> PaymentSheetOutcome {
+        vm.paymentSheetShowing = true
+        defer { vm.paymentSheetShowing = false }
+        return await paymentSheet.present(presentation)
+    }
+
     private func saveCardGuarantee(_ presentation: PaymentSheetPresentation) async {
-        switch await paymentSheet.present(presentation) {
+        switch await showPaymentSheet(presentation) {
         case .completed:
             await handle(vm.submitAfterCardGuarantee())
         case .canceled, .failed:
+            vm.abandonCardGuarantee()
             slideResetCount += 1
             snackbar.showError(L10n.Booking.cardGuaranteeCancelled)
         }
@@ -157,7 +170,7 @@ struct BookingSheetView: View {
         orderId: String,
         confirmationCode: String
     ) async {
-        let outcome = await paymentSheet.present(presentation)
+        let outcome = await showPaymentSheet(presentation)
         switch BookingCardResultResolver.resolve(outcome, confirmationCode: confirmationCode) {
         case let .navigateToSuccess(code):
             // Same duplicate-order guard as the VM's cash path: clear the
@@ -187,12 +200,41 @@ private struct BookingSheetContent: View {
     let onContinue: () -> Void
     let onConfirm: () async -> Void
 
-    /// Which way the step change being drawn goes: on, the next step comes in from the trailing edge;
-    /// back, the previous one comes in from the leading edge (Android's `AnimatedContent` twin).
+    /// The direction of the last step change; the page coming in enters by it.
     @State private var movingForward = true
+    /// The step on screen. It follows the wizard's one run-loop turn behind (the `onChange` in `body`).
+    @State private var shownStep: Int
+
+    init(
+        viewModel: BookingViewModel,
+        geocoding: GeocodingService,
+        mapProvider: MapProvider,
+        serviceArea: ServiceAreaProvider?,
+        slideResetTrigger: Int,
+        onLeading: @escaping () -> Void,
+        onContinue: @escaping () -> Void,
+        onConfirm: @escaping () async -> Void
+    ) {
+        self.viewModel = viewModel
+        self.geocoding = geocoding
+        self.mapProvider = mapProvider
+        self.serviceArea = serviceArea
+        self.slideResetTrigger = slideResetTrigger
+        self.onLeading = onLeading
+        self.onContinue = onContinue
+        self.onConfirm = onConfirm
+        _shownStep = State(initialValue: viewModel.currentStep)
+    }
 
     private var step: Int {
-        viewModel.currentStep
+        shownStep
+    }
+
+    /// Which way the step change being drawn goes: on, the next step comes in from the trailing edge; back, the
+    /// previous one comes in from the leading edge (Android's `AnimatedContent` twin). While the wizard has
+    /// moved and the page has not yet, the page on screen is drawn with the way it is about to leave.
+    private var forward: Bool {
+        viewModel.currentStep == shownStep ? movingForward : viewModel.currentStep > shownStep
     }
 
     private var isLastStep: Bool {
@@ -242,12 +284,22 @@ private struct BookingSheetContent: View {
         }
         .background(CleansiaColors.background.ignoresSafeArea())
         .task { await viewModel.loadConsentStatus() }
+        // The direction is read from the step change itself, so the wizard's own step back to When — a time
+        // that stopped holding, at the slide or on a return to the foreground — slides back as the back button
+        // does. A page leaving animates with the transition it last rendered with, so the page drawn follows
+        // the wizard one turn later, once the page on screen has been drawn with the way it leaves (`forward`).
+        .onChange(of: viewModel.currentStep) { next in
+            DispatchQueue.main.async {
+                movingForward = next > shownStep
+                shownStep = next
+            }
+        }
     }
 
     private var header: some View {
         HStack(spacing: Spacing.s) {
             Button {
-                changeStep(forward: false, onLeading)
+                onLeading()
             } label: {
                 Image(systemName: step > 1 ? "chevron.left" : "xmark")
                     .font(.system(size: 17, weight: .semibold))
@@ -299,16 +351,9 @@ private struct BookingSheetContent: View {
     private var stepTransition: AnyTransition {
         if reduceMotion { return .opacity }
         return .asymmetric(
-            insertion: .move(edge: movingForward ? .trailing : .leading).combined(with: .opacity),
-            removal: .move(edge: movingForward ? .leading : .trailing).combined(with: .opacity)
+            insertion: .move(edge: forward ? .trailing : .leading).combined(with: .opacity),
+            removal: .move(edge: forward ? .leading : .trailing).combined(with: .opacity)
         )
-    }
-
-    /// The direction lands one run-loop turn before the step does. A page leaving animates with the
-    /// transition it last rendered with, so a direction set in the same update would send it the old way.
-    private func changeStep(forward: Bool, _ change: @escaping () -> Void) {
-        movingForward = forward
-        DispatchQueue.main.async(execute: change)
     }
 
     private var confirmLabel: String {
@@ -335,7 +380,7 @@ private struct BookingSheetContent: View {
                     trailingIcon: "arrow.right",
                     loading: viewModel.isQuoting,
                     enabled: canContinue,
-                    action: { changeStep(forward: true, onContinue) }
+                    action: onContinue
                 )
                 .lineLimit(1)
                 .minimumScaleFactor(0.85)

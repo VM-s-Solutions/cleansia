@@ -2631,6 +2631,41 @@
         }
       }
     },
+    "booking_draft_time_changed": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vybraný čas už není dostupný nebo se změnila jeho cena. Vyberte prosím čas znovu."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The time you picked is no longer available or its price has changed. Please pick a time again."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Выбранное время больше недоступно или изменилась его цена. Пожалуйста, выберите время снова."
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vybraný čas už nie je dostupný alebo sa zmenila jeho cena. Vyberte si, prosím, čas znova."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Обраний час більше недоступний або змінив ціну. Будь ласка, оберіть час знову."
+          }
+        }
+      }
+    },
     "booking_early_performance_toggle": {
       "extractionState": "manual",
       "localizations": {
@@ -2662,6 +2697,41 @@
           "stringUnit": {
             "state": "translated",
             "value": "Прохання розпочати прибирання протягом строку для відмови"
+          }
+        }
+      }
+    },
+    "booking_in_your_package": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ve vašem balíčku: %@"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "In your package: %@"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "В вашем пакете: %@"
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vo vašom balíčku: %@"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "У вашому пакеті: %@"
           }
         }
       }
@@ -2802,6 +2872,216 @@
           "stringUnit": {
             "state": "translated",
             "value": "К оплате картой"
+          }
+        }
+      }
+    },
+    "booking_twice_package_confirm": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Přidat balíček"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Add package"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Добавить пакет"
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pridať balíček"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Додати пакет"
+          }
+        }
+      }
+    },
+    "booking_twice_package_message": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Balíček %1$@ obsahuje i to, co už máte v rezervaci samostatně: %2$@. Když balíček přidáte, objednáte to dvakrát: provede se to dvakrát a zaplatíte to dvakrát."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$@ also includes what you already added separately: %2$@. Adding the package books that twice: done twice and charged twice."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Пакет %1$@ включает то, что вы уже добавили отдельно: %2$@. Если добавить пакет, это будет заказано дважды: выполнено дважды и оплачено дважды."
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Balíček %1$@ obsahuje aj to, čo už máte v rezervácii samostatne: %2$@. Ak balíček pridáte, objednáte to dvakrát: vykoná sa to dvakrát a zaplatíte to dvakrát."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Пакет %1$@ містить те, що ви вже додали окремо: %2$@. Якщо додати пакет, це буде замовлено двічі: виконано двічі й оплачено двічі."
+          }
+        }
+      }
+    },
+    "booking_twice_package_title": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Už je ve vaší rezervaci"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Already in your booking"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Уже есть в вашем бронировании"
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Už je vo vašej rezervácii"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Уже є у вашому бронюванні"
+          }
+        }
+      }
+    },
+    "booking_twice_service_confirm": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Přidat znovu"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Add again"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Добавить ещё раз"
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pridať znova"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Додати ще раз"
+          }
+        }
+      }
+    },
+    "booking_twice_service_message": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Služba %1$@ je součástí balíčku %2$@. Když ji přidáte znovu, objednáte ji dvakrát: provede se dvakrát a zaplatíte ji dvakrát."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$@ is part of %2$@. Adding it again books it twice: it is done twice and charged twice."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Услуга %1$@ входит в пакет %2$@. Если добавить её ещё раз, она будет заказана дважды: выполнена дважды и оплачена дважды."
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Služba %1$@ je súčasťou balíčka %2$@. Ak ju pridáte znova, objednáte ju dvakrát: vykoná sa dvakrát a zaplatíte ju dvakrát."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Послуга %1$@ входить до пакета %2$@. Якщо додати її ще раз, її буде замовлено двічі: виконано двічі й оплачено двічі."
+          }
+        }
+      }
+    },
+    "booking_twice_service_title": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Už je ve vašem balíčku"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Already in your package"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Уже есть в вашем пакете"
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Už je vo vašom balíčku"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Уже є у вашому пакеті"
           }
         }
       }
@@ -12155,6 +12435,41 @@
         }
       }
     },
+    "help_call_unavailable": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Na tomto zařízení nelze volat. Číslo je zkopírované."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Calls aren't available on this device. Number copied."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "На этом устройстве нельзя позвонить. Номер скопирован."
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Na tomto zariadení sa nedá volať. Číslo je skopírované."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "На цьому пристрої не можна телефонувати. Номер скопійовано."
+          }
+        }
+      }
+    },
     "help_contact_title": {
       "extractionState": "stale",
       "localizations": {
@@ -12221,6 +12536,41 @@
           "stringUnit": {
             "state": "translated",
             "value": "Напишіть нам"
+          }
+        }
+      }
+    },
+    "help_email_unavailable": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Adresa je zkopírovaná pro případ, že e-mailová aplikace není nastavená."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Address copied, in case your mail app isn't set up."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Адрес скопирован на случай, если почтовое приложение не настроено."
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Adresa je skopírovaná pre prípad, že e-mailová aplikácia nie je nastavená."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Адресу скопійовано на випадок, якщо поштовий застосунок не налаштовано."
           }
         }
       }

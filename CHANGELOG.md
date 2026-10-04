@@ -70,6 +70,15 @@ need backfilling.
 
 ### Added
 
+- **Customer web, Android and iOS — a service already in your package is marked, and adding it twice
+  asks first.** Once you choose a package, every service it already includes is marked *In your
+  package* in the list of services. Adding one of those services on its own, or adding a package that
+  includes a service you already added, now asks first, because booked together that service is done
+  twice and charged twice. *Cancel* leaves your choice as it was, and removing something never asks.
+  A booking or schedule filled in for you, such as *Order again*, a package from Home or a booking you
+  come back to, is only marked. This holds in the booking and when you set up a recurring schedule.
+  Nothing is merged: a pair you confirm is still booked twice. (Owner remark 2026-10-03.)
+
 - **Customer and cleaner, Android and iOS — the right moments are felt.** A haptic plays when a
   slide-to-confirm commits (the customer's booking, and the cleaner's contract, job-step and order-list
   slides) and when the result of an action is shown, success or failure. A room or bathroom stepper
@@ -160,11 +169,13 @@ need backfilling.
 - **Customer Android and iOS — content fades out under the clock as it scrolls.** On Home, Profile
   and the Cleansia Plus offer, content scrolled to the top of the screen fades out under the status
   bar instead of running into the clock and the camera cut-out. At rest, and while pulling down to
-  refresh, nothing is drawn, so the Profile and Plus headers still reach the top edge. On iOS 26 it is
-  the system's own soft edge, the one under a navigation bar, and earlier iOS versions blur the
-  content under a thin veil that clears just below the clock; until 2026-10-03 iOS covered it with a
-  solid band of the page colour instead. Android fades it into the page colour. (Owner remark
-  2026-10-01; the iOS edge and blur, owner remark 2026-10-03.)
+  refresh, nothing is drawn, so the Profile and Plus headers still reach the top edge. On iOS the fade
+  covers only the status bar and clears a few points below it: a light blur under a see-through veil
+  of the page colour, eased out with no visible edge, the same on every iOS version, so the content
+  stays visible under the clock. For part of 2026-10-03 iOS 26 used the system's own soft edge, which
+  reached well below the status bar, and iOS 16 to 25 a blur that ended in a visible line; before
+  that, iOS covered it with a solid band of the page colour. Android fades it into the page colour.
+  (Owner remark 2026-10-01; the iOS fade, owner remarks 2026-10-03.)
 
 - **A contract for work between the customer and the cleaner, per job.** Every booking is now made
   under the platform's *contract for work* text — published at `/work-contract` beside the terms and the
@@ -525,6 +536,35 @@ need backfilling.
   client sends the slot yet, so nothing displays this today. (ADR-0039)
 
 ### Changed
+
+- **Customer and cleaner — receipts, invoices and the legal texts name support@cleansia.cz.** The
+  company's own e-mail is now support@cleansia.cz, the address the apps, the web and the e-mails
+  already give for support. The terms, the privacy policy, the complaints procedure and the cleaner's
+  agreements print it, and so do the receipt, the payout invoice and the booking confirmation. They
+  printed info@cleansia.cz, so a customer saw two addresses. **Operator:** a DEV database seeded
+  before this keeps info@cleansia.cz until `sql-scripts/fix-company-contact-placeholders.sql` runs
+  on it. Production's company record is typed into the admin console. (Owner ruling 2026-10-03.)
+
+- **Customer and cleaner — the company phone reads `<company_phone_number>` until the real one is
+  entered.** The development seed's company phone was +420 123 456 789, which read like a real number
+  in the terms, the privacy policy, the cleaner's agreements, receipts, invoices and the booking
+  confirmation. It is now the visible placeholder `<company_phone_number>`. Every page and PDF prints
+  it as written, never as a link. The number Help dials and the web footer prints, +420 739 788 108,
+  is unchanged. **Operator:** enter the company's real phone in the admin console's company form; the
+  same DEV script moves a DEV database seeded before this. (Owner ruling 2026-10-03.)
+
+- **Customer — the privacy policy sends personal-data questions to privacy@cleansia.cz.** Where the
+  policy invites questions about your personal data, and where it says how to use your rights beyond
+  what the app and the website let you do, it now names privacy@cleansia.cz, the address the privacy
+  page already gave. It named the company's general address. Nothing else in the policy changed. It
+  is a new version, effective 2026-10-03, so the tick comes back before your next booking; the same
+  tick accepts the terms of the same date. (Owner ruling 2026-10-03.)
+
+- **Customer Android — Help lists *Email us* first, as on iOS.** Help shows *Email us* above *Call
+  support*, and in Czech, Slovak, Ukrainian and Russian the two rows are worded as on iOS: *Napište
+  nám* and *Zavolejte podpoře* in Czech, for example, instead of *Napsat e-mail* and *Zavolat na
+  podporu*. What each row opens is unchanged. (Owner ruling 2026-10-03: iOS is the reference for this
+  screen.)
 
 - **Customer Android and iOS — arrival times are grouped by part of day, as on the web.** The
   booking's time step asks for morning, afternoon or evening first, then shows that part's sixteen
@@ -999,6 +1039,50 @@ need backfilling.
 
 ### Fixed
 
+- **Customer iOS — a cash booking waits for the card you just saved, and never asks for another.**
+  After you saved a card to guarantee a cash booking, the booking waits for the card to reach your
+  account. When it took too long and you slid again, or the time had to be picked again first, iOS
+  opened the card form again and asked for a card you had already saved. That slide now waits for the
+  card already on its way, as Android does. A card form you closed without saving asks afresh.
+
+- **Customer Android and iOS — a booking left open asks for a new time too.** A booking left open
+  while the app was in the background, or left on the confirm step, kept its time after the time had
+  passed or come within 2 hours, and only the server refused it. The time is now checked again when you
+  come back to the app and when you place the booking, before anything is sent. A time that no longer
+  holds is cleared, the booking goes back to *When & where*, and a notice asks for a new time. Whether
+  a time has moved into the express band, 2 to 4 hours ahead, is now judged from when its price was
+  quoted, not from when the booking was closed. So a time priced without the express surcharge is never
+  booked at that price, and one priced again with it is kept. A *When & where* step left open shows
+  today's days and times again when you come back. (Owner remark 2026-10-03.)
+
+- **Customer Android and iOS — a booking you come back to asks for a new time when its time has
+  gone.** A booking swiped away and reopened with the Book button came back with the time it had, even
+  hours later. A time that had since passed, or come within 2 hours, stayed on the confirm step until
+  the server refused the booking. A time that had moved into the express band, 2 to 4 hours ahead,
+  kept a price without the express surcharge. Such a time is now cleared, with its day once the day
+  is past. The booking goes back to *When & where*, and a notice asks for a new time. A time that
+  still holds is kept, and *Order again*, a package and *See my price* start afresh as before.
+
+- **Customer, cleaner and admin — a reply to a Cleansia e-mail goes to support.** Every e-mail the
+  platform sends now has support@cleansia.cz as its reply address, so pressing Reply writes to
+  support. Until now a reply went to the address the e-mails are sent from, it@cleansia.cz, which is
+  only for sending. That covers the administrators' notification e-mails too.
+
+- **Customer Android and iOS — Help's *Email us* and *Call support* reach support.** *Email us* opens
+  the mail app on support@cleansia.cz, and *Call support* opens the dialer on +420 739 788 108, the
+  line the customer web footer prints. On a phone with no mail app, or one that cannot make calls,
+  the address or number is copied instead and a notice says so; on iOS the address is also copied
+  when no Mail account is set up. On Android neither row did anything
+  when tapped, and on iOS both were plain text. Android's *Live chat* row is gone: there is no chat.
+
+- **Customer and cleaner iOS — a count takes the right form in the app's language.** On a phone set
+  to English with the app in Czech, Slovak, Ukrainian or Russian, counts followed English plural
+  rules: *2 pokojů* instead of *2 pokoje*, *5 кімнати* instead of *5 кімнат*, *Нужно 5 клинера*
+  instead of *Нужно 5 клинеров*. For a customer that covered the rooms and bathrooms in booking and on
+  an order, and the counts on Home and Rewards. For a cleaner it covered a job's rooms, bathrooms and
+  extras, the cleaners it needs and the spots still open. Counts now follow the language chosen in the
+  app, whatever the phone is set to. Android already did.
+
 - **Cleaner Android and iOS — the registration screen's *Done* and arrow line up with their step.** On
   a step with details under it, such as missing fields or a rejection reason, the status and the
   arrow sat at the top of the row on iOS and halfway down the details on Android. They now sit beside
@@ -1301,6 +1385,12 @@ need backfilling.
   offers a retry.
 
 ### Security
+
+- **E-mails show a name as it was typed, never as markup.** Every e-mail put names and other values
+  into its page as they came. A name holding `<` or `&` broke the e-mail, and HTML typed into a name,
+  a link for instance, arrived as working HTML, in the e-mails customers, cleaners and administrators
+  get alike. Every value is now inserted as text. The links the platform builds, such as the password
+  reset and the order links, work as before.
 
 - **Customer — your own data export no longer writes your e-mail onto the request record.** The
   GDPR request row a self-export files outlives your erasure; it used to carry your live address as

@@ -4,14 +4,14 @@ import SwiftUI
 /// Package review dialog (CatalogDetailsSheet.kt `PackageDetailsSheet`): name,
 /// price, description and the included-services list, plus the primary
 /// add/remove action. Unlike services, package selection happens through this
-/// dialog rather than on the card itself.
+/// dialog rather than on the card itself. The presenter closes it: an add that
+/// books a service twice asks over the sheet first.
 struct PackageDetailsSheet: View {
     @Environment(\.locale) private var locale
     let pkg: CatalogPackage
     let currencyCode: String
     let isSelected: Bool
     let onToggle: () -> Void
-    let onDismiss: () -> Void
 
     @State private var contentHeight: CGFloat = 320
 
@@ -67,10 +67,7 @@ struct PackageDetailsSheet: View {
 
             CleansiaPrimaryButton(
                 isSelected ? L10n.Booking.removeFromBooking : L10n.Booking.addToBooking,
-                action: {
-                    onToggle()
-                    onDismiss()
-                }
+                action: onToggle
             )
         }
     }
@@ -115,14 +112,13 @@ private struct PackageSheetHeightKey: PreferenceKey {
                     price: 2500,
                     translations: [:],
                     includedServices: [
-                        CatalogPackageServiceSummary(name: "Deep cleaning", translations: [:]),
-                        CatalogPackageServiceSummary(name: "Windows", translations: [:])
+                        CatalogPackageServiceSummary(serviceId: "s-2", name: "Deep cleaning", translations: [:]),
+                        CatalogPackageServiceSummary(serviceId: "s-3", name: "Windows", translations: [:])
                     ]
                 ),
                 currencyCode: "CZK",
                 isSelected: false,
-                onToggle: {},
-                onDismiss: {}
+                onToggle: {}
             )
         }
     }

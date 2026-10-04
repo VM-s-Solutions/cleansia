@@ -210,7 +210,7 @@ had never fired at all — see [the schedule tokens](#timer-schedules) below.
 | `LiveActivityJanitor` | daily 04:00 UTC | Ends Live Activities whose orders are long finished |
 | `PruneOutbox` | daily 04:00 UTC | Deletes drained outbox rows |
 | `RetryFailedUserDeletions` | daily 05:00 UTC | Re-runs every GDPR erasure left `Failed` (or `Processing` for over 30 min), once per row per day, in its own scope per row; logs a still-failed one at Error. Under `DataRetention__Enabled` |
-| `SendPeriodEndReminders` | daily 09:00 UTC | Emails employees whose pay period ends in 3 days |
+| `SendPeriodEndReminders` | daily 09:00 UTC | Emails employees whose pay period ends in 3 days, and again when it ends in 1 |
 | `DataRetentionCleanup` | weekly, Sun 03:00 UTC | Fifteen tasks under fourteen retention settings: expired user data, old-order PII, customer/admin/cleaner audit rows (3 y per row by default), dispute text after erasure, contract- and cleaner-document-acceptance metadata, photos of completed or cancelled orders (7 d by default, held by unresolved disputes), receipt PDFs (10 y from the end of the year of issue), and expired or revoked guest access tokens. Runs **once per operating company** under that company's own settings; token expiry/revocation needs no separate setting → [Retention](/flows/gdpr-and-audit#retention) |
 
 #### Queue consumers
@@ -342,33 +342,82 @@ on production the operating company's own account (decision 49) —
 
 ### SendGrid
 
-Used for all transactional emails via Dynamic Templates.
+Delivers every transactional e-mail. SendGrid holds no template: the server renders the HTML from the
+repository's `email-templates/*.html`, embedded in `Cleansia.Core.AppServices` and filled by
+`EmailTemplateRenderer` from the e-mail type's translation rows and the e-mail's own values, and hands
+SendGrid the finished page.
+
+**Every value goes in as text.** The renderer HTML-encodes each value before it replaces its
+`{{Placeholder}}`: `&`, `<`, `>` and `"`, the four characters that can leave element text or a
+double-quoted attribute. A customer called `<b>Ann & Co</b>` reads as typed in their own e-mails; an
+administrators' notification names no person, and its values are encoded all the same. **There is no raw path**, because no value is markup: the
+copy in code and in the admin's plain-text translation rows is text, and the only values built in
+code are links (the password reset, the order and guest-tracking links, the Stripe pay link, the app
+link), each in a double-quoted `href`, where `&amp;` reads back as `&`. Markup an e-mail needs belongs
+in its template. `EmailTemplateRendererTests` pins that every placeholder in every template sits in
+element text or a double-quoted attribute, which is what makes the four characters enough. The
+apostrophe and accented letters are left as they are, which is why the renderer does not call
+`WebUtility.HtmlEncode` (it writes `á` as `&#225;`). The subject line is not HTML and is not encoded.
+Until 2026-10-03 every value went in as it came, so a name holding `<` or `&` broke the e-mail and
+markup typed into a name arrived as markup.
+
+There are ten templates, one per `EmailType` (`EmailService.TemplateFileFor`). The build fails when one
+is missing (`ValidateEmailTemplates` in the project file):
 
 | Template | Trigger |
 |----------|---------|
-| Order Confirmation | After order creation |
-| Receipt | When the receipt is issued (with PDF attachment): on settlement for card, at completion for cash; one sent after the clean has a post-service subject |
-| Cash booking | An informational e-mail when a cash booking is made or a recurring cash occurrence confirmed — the amount to pay in cash, the slot, the address, the free-cancellation window (`order-booked` on `send-email`) |
-| Pay Period Reminder | 3 days before period end |
-| Welcome Email | After registration |
-| Password Reset | On password reset request |
+| `email-confirmation.html` | An account is registered, a customer's or a cleaner's, and again when the confirmation code is resent |
+| `password-reset.html` | A password reset is requested |
+| `order-receipt.html` | When the receipt is issued (with PDF attachment): on settlement for card, at completion for cash; one sent after the clean has a post-service subject |
+| `order-status-update.html` | The booking stands, its confirmation PDF attached (`order-booked` on `send-email`): a cash booking when it is made or a recurring cash occurrence confirmed, a card booking once its payment completes. It gives the slot, the address and the free-cancellation window, and for cash the amount to pay. Then a cleaner takes the booking, starts it and completes it. A guest is told when the booking is cancelled, whoever cancelled it; a signed-in customer when an administrator cancels it because the cleaner could not get in |
+| `close-period-notification.html` | A cleaner's pay period closes, the payout invoice attached |
+| `closure-period-reminder.html` | A cleaner's pay period ends in 3 days, and again in 1 |
+| `promo-code.html` | The public site's promo form is sent for an address that has not had a code ([Public promo-code requests](/flows/loyalty-and-memberships#public-promo-code-requests)) |
+| `company-wind-down-customer.html`, `company-wind-down-cleaner.html` | A company winds down: one to its customers, one to its approved cleaners ([A company's lifecycle](/product/business-rules#company-lifecycle)) |
+| `admin-notification.html` | Something the company's administrators are told about, to its notification mailbox or else every administrator in the event's audience ([Administrators are told](/product/business-rules#admin-notifications)) |
+
+Three more e-mails reuse a template with their copy written in code rather than in translation rows.
+`order-status-update.html` carries the pay link a customer gets when their saved card could not be
+charged for what they owe. `admin-notification.html` carries the request to a cleaner to hand over cash
+they have carried longer than the company allows (`cash.remittance_request_days`, 30 days by default)
+([The company's cash in a cleaner's hands](/product/business-rules#cash-held)), and the cleaner's copy of a contract for work they accepted, its PDF attached.
+
+Every e-mail leaves through one method, `EmailService.SendRenderedAsync` (shortened here):
 
 ```csharp
-public class EmailService(ISendGridClient client) : IEmailService
+private async Task<string> SendRenderedAsync(
+    string email, string htmlContent, string subject, string logContext, CancellationToken ct,
+    byte[]? attachmentBytes = null, string? attachmentFileName = null)
 {
-    public async Task SendTemplateEmailAsync(
-        string to, string templateId, object templateData)
-    {
-        var message = new SendGridMessage();
-        message.SetFrom("noreply@cleansia.cz", "Cleansia");
-        message.AddTo(to);
-        message.SetTemplateId(templateId);
-        message.SetTemplateData(templateData);
+    var client = new SendGridClient(httpClientFactory.CreateClient("SendGrid"), sendGridConfig.ApiKey);
+    var msg = MailHelper.CreateSingleEmail(
+        new EmailAddress(sendGridConfig.AddressFrom, "Cleansia"),
+        new EmailAddress(email),
+        subject,
+        plainTextContent: null,
+        htmlContent: htmlContent);
 
-        await client.SendEmailAsync(message);
-    }
+    msg.SetReplyTo(new EmailAddress(SupportAddress)); // "support@cleansia.cz"
+
+    if (attachmentBytes is { Length: > 0 } && !string.IsNullOrWhiteSpace(attachmentFileName))
+        msg.AddAttachment(attachmentFileName, Convert.ToBase64String(attachmentBytes), "application/pdf");
+
+    var response = await client.SendEmailAsync(msg, ct);
+    if (!response.IsSuccessStatusCode)
+        await ThrowClassifiedAsync(response, email, ct); // throws EmailDeliveryException
+    // … returns SendGrid's X-Message-Id
 }
 ```
+
+- **From** is `SendGrid:AddressFrom`, shown as *Cleansia*. It only delivers mail and is never shown as
+  the contact ([Environment configuration — SendGrid](/deployment/environment-config#sendgrid)).
+- **Reply-To** is `support@cleansia.cz` on every e-mail, the same constant the support line prints, so
+  pressing Reply writes to support ([Decision 54](/product/business-rules#company-identity)).
+- **The transport** is the named `SendGrid` `HttpClient` from `IHttpClientFactory`, pooled and behind
+  the standard resilience handler. A response that is still a failure after its retries is classified,
+  counted in `IntegrationFailureMetrics` and thrown as `EmailDeliveryException`.
+- **A PDF** rides along when the caller has one: the receipt, the booking confirmation, the cleaner's
+  payout invoice at period close, the contract for work.
 
 ## Deploying onto the shared plan {#deploys}
 

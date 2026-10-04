@@ -34,6 +34,7 @@ final class CatalogLocalizationTests: XCTestCase {
             translations: ["ru": CatalogTranslation(name: "Уборка при переезде", description: nil)],
             includedServices: [
                 CatalogPackageServiceSummary(
+                    serviceId: "s1",
                     name: "Windows",
                     translations: ["ru": CatalogTranslation(name: "Окна", description: nil)]
                 )

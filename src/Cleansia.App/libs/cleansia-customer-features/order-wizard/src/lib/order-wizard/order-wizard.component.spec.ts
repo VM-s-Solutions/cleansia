@@ -141,6 +141,21 @@ class FakeOrderWizardFacade {
     this.formData.update((d) => ({ ...d, ...patch }));
   });
   prefillFromRebook = jest.fn(() => [] as string[]);
+  // The services step reads the "In your package" line from here, and adding or removing an item
+  // is the facade's, because adding one a chosen package already includes asks first.
+  packageNamesIncluding = jest.fn<string | null, [string]>(() => null);
+  toggleService = jest.fn((id: string) => {
+    const chosen = this.formData().selectedServiceIds;
+    this.updateFormData({
+      selectedServiceIds: chosen.includes(id) ? chosen.filter((s) => s !== id) : [...chosen, id],
+    });
+  });
+  togglePackage = jest.fn((id: string) => {
+    const chosen = this.formData().selectedPackageIds;
+    this.updateFormData({
+      selectedPackageIds: chosen.includes(id) ? chosen.filter((p) => p !== id) : [...chosen, id],
+    });
+  });
   applyAddressSuggestion = jest.fn();
   submitOrder = jest.fn();
   // Read by the component's on-destroy park, which runs on EVERY teardown — so a double without it
@@ -1383,6 +1398,94 @@ describe('OrderWizardComponent (a11y)', () => {
    * On a cold store it therefore checked the basket against an empty list, dropped every service
    * in it, and announced a "partially restored" draft — an emptier basket than no restore at all.
    */
+  // A package plus a service it already includes books that service twice. The row says so, and
+  // the add goes through the facade, which asks; a basket the wizard is handed is only marked.
+  describe('a service a chosen package already includes', () => {
+    const marker = () => el.querySelector('[data-spec-in-package]');
+    const addButton = () => el.querySelector<HTMLButtonElement>('[data-spec-select]');
+
+    // The previous case's basket is parked at its teardown, which runs after any afterEach here,
+    // and the next setup would restore it. Start every case from no parked basket.
+    beforeEach(() => sessionStorage.clear());
+
+    async function onServicesStep(): Promise<void> {
+      await setup();
+      facade.services.set([makeService('windows', 'Windows')]);
+      fixture.detectChanges();
+    }
+
+    it('shows no line while no chosen package includes the service', async () => {
+      await onServicesStep();
+
+      expect(marker()).toBeNull();
+      expect(addButton()?.getAttribute('aria-describedby')).toBeNull();
+    });
+
+    it('names the package on the row and gives the add button that line as its description', async () => {
+      await onServicesStep();
+      facade.packageNamesIncluding.mockImplementation((id: string) =>
+        id === 'windows' ? 'Deep clean' : null,
+      );
+      facade.updateFormData({ selectedPackageIds: ['deep'] });
+      fixture.detectChanges();
+
+      expect(marker()?.textContent).toContain('pages.order.package_overlap.in_package');
+      expect(addButton()?.getAttribute('aria-describedby')).toBe(marker()?.id);
+    });
+
+    it('hands an add to the facade, which decides whether to ask', async () => {
+      await onServicesStep();
+
+      addButton()?.click();
+
+      expect(facade.toggleService).toHaveBeenCalledWith('windows');
+    });
+
+    // The Plus step suggests services not chosen on their own, so it can suggest one the chosen
+    // package already includes; that row says so before its Add asks.
+    it('marks the Plus-step suggestion a chosen package includes, as the services step does', async () => {
+      await onServicesStep();
+      facade.packageNamesIncluding.mockImplementation((id: string) =>
+        id === 'windows' ? 'Deep clean' : null,
+      );
+      facade.updateFormData({ selectedPackageIds: ['deep'] });
+      facade.activeStep.set(5);
+      fixture.detectChanges();
+
+      const row = el.querySelector('.cl-wiz__cross-row');
+      expect(row).not.toBeNull();
+      const crossMarker = row?.querySelector('[data-spec-in-package]');
+      expect(crossMarker?.textContent).toContain('pages.order.package_overlap.in_package');
+      expect(crossMarker?.id).toBe('cross-in-pack-windows');
+      expect(row?.querySelector('.cl-wiz__cross-add')?.getAttribute('aria-describedby')).toBe(
+        'cross-in-pack-windows',
+      );
+    });
+
+    it('restores a parked package and service as they were, without asking', async () => {
+      const parked = {
+        savedAt: Date.now(),
+        step: 0,
+        data: {
+          ...ORDER_WIZARD_INITIAL_DATA,
+          selectedServiceIds: ['windows'],
+          selectedPackageIds: ['deep'],
+        },
+      };
+      await setup(() => sessionStorage.setItem('cleansia_order_draft', JSON.stringify(parked)));
+
+      facade.services.set([makeService('windows', 'Windows')]);
+      facade.packages.set([makePackage('deep', 'Deep clean')]);
+      fixture.detectChanges();
+
+      expect(facade.formData().selectedServiceIds).toEqual(['windows']);
+      expect(facade.formData().selectedPackageIds).toEqual(['deep']);
+      expect(facade.toggleService).not.toHaveBeenCalled();
+      expect(facade.togglePackage).not.toHaveBeenCalled();
+      sessionStorage.clear();
+    });
+  });
+
   describe('a parked basket', () => {
     const parked = {
       savedAt: Date.now(),

@@ -67,6 +67,12 @@ struct CreateRecurringScreen: View {
                     onTogglePackage: vm.togglePackage,
                     onRetry: { Task { await vm.retryCatalog() } }
                 )
+                .modifier(TwiceBookedAlert(
+                    pick: vm.twiceBookedPick,
+                    catalog: vm.catalogState.loadedValue,
+                    onConfirm: vm.confirmTwiceBooked,
+                    onCancel: vm.cancelTwiceBooked
+                ))
                 PropertySizeSection(
                     rooms: vm.formState.rooms,
                     bathrooms: vm.formState.bathrooms,
@@ -444,6 +450,11 @@ private struct ServicesSection: View {
             ForEach(catalog.services) { service in
                 SelectableRow(
                     text: service.localizedName(for: locale),
+                    inPackageNote: catalog.inPackageNote(
+                        for: service.id,
+                        selectedPackageIds: selectedPackageIds,
+                        locale: locale
+                    ),
                     selected: selectedServiceIds.contains(service.id)
                 ) {
                     onToggleService(service.id)
@@ -505,6 +516,8 @@ private struct StartsSection: View {
 private struct SelectableRow: View {
     let text: String
     var badge: String?
+    /// The service's "In your package: …" line under the text, read with it.
+    var inPackageNote: String?
     let selected: Bool
     var enabled = true
     let onTap: () -> Void
@@ -514,9 +527,14 @@ private struct SelectableRow: View {
             HStack(spacing: Spacing.s) {
                 Image(systemName: selected ? "checkmark.circle.fill" : "circle")
                     .foregroundColor(selected ? CleansiaColors.primary : CleansiaColors.onSurfaceVariant)
-                Text(text)
-                    .font(CleansiaTypography.bodyLarge)
-                    .foregroundColor(CleansiaColors.onSurface)
+                VStack(alignment: .leading, spacing: Spacing.xxs) {
+                    Text(text)
+                        .font(CleansiaTypography.bodyLarge)
+                        .foregroundColor(CleansiaColors.onSurface)
+                    if let inPackageNote {
+                        InPackageNote(text: inPackageNote)
+                    }
+                }
                 if let badge {
                     Text(badge)
                         .font(CleansiaTypography.labelSmall)

@@ -36,6 +36,7 @@ public sealed class LegalDocumentSeederTests : IDisposable
         (LegalDocumentType.TermsOfService, new DateOnly(2026, 10, 3)),
         (LegalDocumentType.PrivacyPolicy, new DateOnly(2026, 9, 14)),
         (LegalDocumentType.PrivacyPolicy, new DateOnly(2026, 9, 29)),
+        (LegalDocumentType.PrivacyPolicy, new DateOnly(2026, 10, 3)),
         (LegalDocumentType.WorkContract, new DateOnly(2026, 9, 20)),
         (LegalDocumentType.WorkContract, new DateOnly(2026, 9, 29)),
         (LegalDocumentType.CleanerFrameworkContract, new DateOnly(2026, 9, 29)),
@@ -315,6 +316,8 @@ public sealed class LegalDocumentSeederTests : IDisposable
     /// complaint — the market's operating company, as the terms name the seller (decision 54) — through
     /// the placeholders the read path fills from its company record, in every language, and neither
     /// carries an identity of its own: the 2026-09-14 privacy policy hard-coded an e-mail and a phone.
+    /// The one address the privacy policy writes out is the data-protection contact
+    /// (<see cref="PrivacyAddress"/>, owner decision 2026-10-03), which is not a field of the company record.
     /// Like the terms, neither names the VAT number: a company that is not a VAT payer, the launch state,
     /// holds none, so rendered from such a record the text must leave no placeholder behind.
     /// </summary>
@@ -338,7 +341,7 @@ public sealed class LegalDocumentSeederTests : IDisposable
         Assert.All(newest, r =>
         {
             Assert.Equal(CompanyPlaceholders, LegalMarkdownRenderer.PlaceholdersIn(r.ContentMarkdown).Order(StringComparer.Ordinal));
-            Assert.DoesNotContain("@cleansia", r.ContentMarkdown);
+            Assert.DoesNotContain("@cleansia", r.ContentMarkdown.Replace(PrivacyAddress, string.Empty, StringComparison.Ordinal));
             Assert.DoesNotContain("+420", r.ContentMarkdown);
             Assert.DoesNotContain("s.r.o.", r.ContentMarkdown);
 
@@ -351,6 +354,32 @@ public sealed class LegalDocumentSeederTests : IDisposable
     private static readonly string[] CompanyPlaceholders = TermsPlaceholders
         .Where(p => p != LegalMarkdownRenderer.CurrencyPlaceholder)
         .ToArray();
+
+    private const string PrivacyAddress = "privacy@cleansia.cz";
+
+    /// <summary>
+    /// Owner decision 2026-10-03: questions about personal data go to the data-protection address, as the
+    /// web privacy page and the partner GDPR copy already say. The newest privacy policy names it in both
+    /// sentences that send the reader somewhere about their data — under the controller and under their
+    /// rights — in every language, and names the company's e-mail only in the controller's identity line.
+    /// </summary>
+    [Fact]
+    public void The_Newest_Privacy_Policy_Sends_Personal_Data_Questions_To_The_Privacy_Address()
+    {
+        var newest = NewestOf(LegalDocumentType.PrivacyPolicy);
+        var companyEmail = "{{" + LegalMarkdownRenderer.CompanyEmailPlaceholder + "}}";
+
+        Assert.Equal(new[] { "cs", "en", "ru", "sk", "uk" }, newest.Select(r => r.Language).Order());
+        Assert.All(newest, r =>
+        {
+            Assert.Equal(2, Occurrences(r.ContentMarkdown, PrivacyAddress));
+            var identity = Assert.Single(r.ContentMarkdown.Split('\n'), line => line.Contains(companyEmail, StringComparison.Ordinal));
+            Assert.StartsWith("{{" + LegalMarkdownRenderer.CompanyLegalNamePlaceholder + "}}", identity);
+        });
+    }
+
+    private static int Occurrences(string text, string value) =>
+        (text.Length - text.Replace(value, string.Empty, StringComparison.Ordinal).Length) / value.Length;
 
     /// <summary>
     /// The 2026-09-14 terms promised cash on delivery to everyone; the cash rule admits it only for a

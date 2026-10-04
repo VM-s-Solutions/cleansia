@@ -54,7 +54,7 @@ failing, it does not make the secret safe.
 | `secret-scan` | PR to any branch, push to `master` | gitleaks — no new secret in the history |
 | `deploy-dev` | **Manual (`workflow_dispatch`)** | Deploy everything to DEV |
 | `deploy-pro` | Manual (`workflow_dispatch`) | Deploy everything to PRO |
-| `execute-sql` | Manual | Run ad-hoc SQL scripts. Refuses `insert_seed_data.sql` and `insert_local_dev_admin.sql` on PRO (the second compared by file name, so a relative path cannot walk around it). DEV may run `insert_local_dev_admin.sql` (owner ruling 2026-09-30, until an app registration gates the DEV apps). It opens no network window, so it cannot reach the production database once that is private ([below](#production-window)) |
+| `execute-sql` | Manual | Run ad-hoc SQL scripts. Refuses `insert_seed_data.sql`, `insert_local_dev_admin.sql` and `fix-company-contact-placeholders.sql` on PRO (the last two compared by file name, so a relative path cannot walk around them; the company-contact fix rewrites the seeded DEV company record, and production's is typed into the admin console). DEV may run `insert_local_dev_admin.sql` (owner ruling 2026-09-30, until an app registration gates the DEV apps). It opens no network window, so it cannot reach the production database once that is private ([below](#production-window)) |
 
 ## Branch Strategy
 

@@ -77,7 +77,7 @@ public sealed class LegalDocumentSeedAndReadTests(PostgresContainerFixture fixtu
                 Assert.False(second.Changed);
 
                 var documents = await context.LegalDocuments.Include(d => d.Texts).AsNoTracking().ToListAsync();
-                Assert.Equal(13, documents.Count);
+                Assert.Equal(14, documents.Count);
                 Assert.All(documents, d => Assert.Null(d.CountryId));
                 Assert.All(documents, d => Assert.Equal(LegalDocument.VersionFor(d.EffectiveFrom), d.Version));
                 Assert.All(documents, d => Assert.Equal(5, d.Texts.Count));
@@ -85,7 +85,7 @@ public sealed class LegalDocumentSeedAndReadTests(PostgresContainerFixture fixtu
                     [
                         LegalDocumentType.TermsOfService, LegalDocumentType.TermsOfService, LegalDocumentType.TermsOfService, LegalDocumentType.TermsOfService,
                         LegalDocumentType.TermsOfService,
-                        LegalDocumentType.PrivacyPolicy, LegalDocumentType.PrivacyPolicy,
+                        LegalDocumentType.PrivacyPolicy, LegalDocumentType.PrivacyPolicy, LegalDocumentType.PrivacyPolicy,
                         LegalDocumentType.WorkContract, LegalDocumentType.WorkContract,
                         LegalDocumentType.CleanerFrameworkContract, LegalDocumentType.SelfBillingAgreement,
                         LegalDocumentType.CleanerDataProcessingAgreement, LegalDocumentType.ComplaintsProcedure,
@@ -93,7 +93,7 @@ public sealed class LegalDocumentSeedAndReadTests(PostgresContainerFixture fixtu
                     documents.Select(d => d.Type).OrderBy(t => t));
                 // The contract for work and the cleaner's three documents are employee texts (decisions 45 and 47).
                 Assert.Equal(5, documents.Count(d => d.Audience == LegalDocumentAudience.Employee));
-                Assert.Equal(65, await context.LegalDocumentTexts.CountAsync());
+                Assert.Equal(70, await context.LegalDocumentTexts.CountAsync());
             },
             transactional: false);
     }

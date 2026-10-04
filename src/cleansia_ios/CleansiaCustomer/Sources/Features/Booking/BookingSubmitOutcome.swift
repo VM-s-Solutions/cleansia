@@ -29,4 +29,7 @@ enum BookingSubmitOutcome: Equatable {
     /// PaymentSheet saved the card but the server does not hold it yet; nothing was sent, and the
     /// customer slides again.
     case cardGuaranteePending
+    /// The chosen time no longer holds (`revalidateResumedTime`): it was cleared, the wizard is back on the
+    /// When step, and nothing was sent.
+    case timeNoLongerHolds
 }

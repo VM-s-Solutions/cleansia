@@ -16,6 +16,7 @@ import cz.cleansia.customer.core.catalog.CatalogRepository
 import cz.cleansia.customer.core.catalog.CategoryDto
 import cz.cleansia.customer.core.catalog.ExtraListItem
 import cz.cleansia.customer.core.catalog.PackageListItem
+import cz.cleansia.customer.core.catalog.PackageServiceSummary
 import cz.cleansia.customer.core.catalog.ServiceListItem
 import cz.cleansia.customer.core.consent.GdprConsentClient
 import cz.cleansia.customer.core.consent.SignupConsentType
@@ -34,7 +35,9 @@ import cz.cleansia.customer.core.promo.ValidatePromoCodeRequest
 import cz.cleansia.customer.core.promo.ValidatePromoCodeResponse
 import cz.cleansia.customer.core.referral.ReferralRepository
 import cz.cleansia.customer.core.referral.ValidateReferralResponse
+import cz.cleansia.customer.core.settings.AppSettings
 import cz.cleansia.customer.core.settings.AppSettingsRepository
+import cz.cleansia.customer.core.settings.LanguagePreference
 import cz.cleansia.customer.core.user.CurrentUser
 import cz.cleansia.customer.core.user.UserRepository
 import cz.cleansia.customer.testing.MainDispatcherRule
@@ -58,6 +61,10 @@ import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
 import kotlinx.datetime.Clock
 import kotlinx.datetime.Instant
+import kotlinx.datetime.LocalDate
+import kotlinx.datetime.LocalDateTime
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.toInstant
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.ResponseBody.Companion.toResponseBody
 import org.junit.Assert.assertEquals
@@ -113,6 +120,7 @@ class BookingViewModelTest {
     private val catalogExtrasFlow = MutableStateFlow<List<ExtraListItem>>(emptyList())
     private val usableCzkCard = SavedCard(id = "card-1", brand = "visa", last4 = "4242", expMonth = 12, expYear = 2099, currencyCode = "CZK")
     private val savedCardsFlow = MutableStateFlow<List<SavedCard>?>(listOf(usableCzkCard))
+    private val settingsFlow = MutableStateFlow(AppSettings())
     private val marketNotice = "Some of your picks are not offered at this address and were removed."
 
     private val networkMessage = "Check your internet connection and try again."
@@ -153,6 +161,7 @@ class BookingViewModelTest {
         consentClient = mockk()
         coEvery { consentClient.grantedTypes() } returns emptySet()
         settings = mockk()
+        every { settings.settings } returns settingsFlow
         coEvery { settings.emailLanguageTag() } returns "en"
         appContext = mockk(relaxed = true)
 
@@ -168,6 +177,7 @@ class BookingViewModelTest {
         every { appContext.getString(R.string.error_booking_sign_in_required) } returns signInMessage
         every { appContext.getString(R.string.error_booking_profile_incomplete) } returns profileIncompleteMessage
         every { appContext.getString(R.string.booking_market_items_unavailable) } returns marketNotice
+        every { appContext.getString(R.string.booking_today) } returns "Today"
         every { appContext.getString(R.string.error_generic_unknown) } returns "unknown"
         every { appContext.getString(R.string.error_generic_server) } returns "server"
         every { appContext.getString(R.string.error_generic_unauthorized) } returns "unauth"
@@ -1133,6 +1143,321 @@ class BookingViewModelTest {
         vm.reset()
         assertEquals(1, vm.step.value)
     }
+
+    /**
+     * A plain open re-checks a resumed draft's time against the When step's rules: one that no longer
+     * holds is cleared (with its day once the day has left the strip), the wizard goes back to the
+     * When step if it was past it, and the customer is told. One that holds is left alone.
+     */
+    @Test
+    fun resumingADraft_whoseTimeNoLongerHolds_clearsItAndGoesBackToTheWhenStep() = runTest {
+        val today = LocalDate(2026, 9, 10)
+        val vm = newViewModel()
+        vm.update {
+            it.copy(selectedLocalDate = today, selectedDate = "Today", selectedTime = "11:00", selectedInstant = localAt(10, 11))
+        }
+        repeat(3) { vm.nextStep() }
+        vm.setSheetVisible(false, now = localAt(10, 7))
+
+        vm.revalidateResumedTime(now = localAt(10, 10, 15))
+
+        assertEquals("", vm.state.value.selectedTime)
+        assertNull(vm.state.value.selectedInstant)
+        assertEquals("the day is still on the strip, so it stays", today, vm.state.value.selectedLocalDate)
+        assertEquals("Today", vm.state.value.selectedDate)
+        assertEquals(3, vm.step.value)
+        verify(exactly = 1) { snackbar.showInfoKey(R.string.booking_draft_time_changed) }
+    }
+
+    @Test
+    fun resumingADraft_whoseDayHasPassed_clearsTheDayToo_andAnEarlierStepStays() = runTest {
+        val vm = newViewModel()
+        vm.update { it.copy(selectedLocalDate = LocalDate(2026, 9, 9), selectedDate = "We", selectedTime = "10:00") }
+        vm.nextStep()
+
+        vm.revalidateResumedTime(now = localAt(10, 10, 15))
+
+        assertEquals("", vm.state.value.selectedTime)
+        assertNull(vm.state.value.selectedLocalDate)
+        assertEquals("", vm.state.value.selectedDate)
+        assertEquals("the customer was before the When step, so they stay there", 2, vm.step.value)
+        verify(exactly = 1) { snackbar.showInfoKey(R.string.booking_draft_time_changed) }
+    }
+
+    @Test
+    fun resumingADraft_whoseTimeStillHolds_keepsItOnTheConfirmStep() = runTest {
+        val vm = newViewModel()
+        vm.update {
+            it.copy(selectedLocalDate = LocalDate(2026, 9, 12), selectedDate = "Sa", selectedTime = "10:00", selectedInstant = localAt(12, 10))
+        }
+        repeat(3) { vm.nextStep() }
+        vm.setSheetVisible(false, now = localAt(10, 7))
+
+        vm.revalidateResumedTime(now = localAt(10, 10, 15))
+
+        assertEquals("10:00", vm.state.value.selectedTime)
+        assertEquals(localAt(12, 10), vm.state.value.selectedInstant)
+        assertEquals("a day still ahead keeps its weekday", "Sa", vm.state.value.selectedDate)
+        assertEquals(4, vm.step.value)
+        verify(exactly = 0) { snackbar.showInfoKey(R.string.booking_draft_time_changed) }
+    }
+
+    /**
+     * A day picked on the day before carries its weekday. Resumed on the day itself, Confirm read
+     * "Fr" for a clean that is today — the same weekday the When step's strip gives a week later — so
+     * a kept day is re-labelled against the moment of the resume, whether its time holds or not.
+     */
+    @Test
+    fun resumingADraft_whoseTimeStillHolds_onADayThatHasSinceBecomeToday_readsToday() = runTest {
+        val vm = newViewModel()
+        vm.update {
+            it.copy(selectedLocalDate = LocalDate(2026, 9, 11), selectedDate = "Fr", selectedTime = "18:00", selectedInstant = localAt(11, 18))
+        }
+        repeat(3) { vm.nextStep() }
+        vm.setSheetVisible(false, now = localAt(10, 20))
+
+        assertEquals(false, vm.revalidateResumedTime(now = localAt(11, 8)))
+
+        assertEquals("18:00", vm.state.value.selectedTime)
+        assertEquals("Today", vm.state.value.selectedDate)
+        assertEquals(4, vm.step.value)
+        verify(exactly = 0) { snackbar.showInfoKey(R.string.booking_draft_time_changed) }
+    }
+
+    @Test
+    fun resumingADraft_whoseTimeNoLongerHolds_onADayThatHasSinceBecomeToday_keepsTheDayAsToday() = runTest {
+        val vm = newViewModel()
+        vm.update {
+            it.copy(selectedLocalDate = LocalDate(2026, 9, 11), selectedDate = "Fr", selectedTime = "09:00", selectedInstant = localAt(11, 9))
+        }
+        repeat(3) { vm.nextStep() }
+        vm.setSheetVisible(false, now = localAt(10, 20))
+
+        assertTrue(vm.revalidateResumedTime(now = localAt(11, 8)))
+
+        assertEquals("", vm.state.value.selectedTime)
+        assertEquals(LocalDate(2026, 9, 11), vm.state.value.selectedLocalDate)
+        assertEquals("Today", vm.state.value.selectedDate)
+        assertEquals(3, vm.step.value)
+    }
+
+    /**
+     * "Today" is the in-app language's, as the strip's label is. On API 26–32 the application context
+     * resolves in the device's, so a Czech app on an English phone had Confirm's "Dnes" turn into
+     * "Today" on every same-day submit. Local unit tests run below API 33 (SDK_INT reads 0), where the
+     * context is wrapped, and the wrapped context reads Czech.
+     */
+    private fun czechApp() {
+        settingsFlow.value = AppSettings(language = LanguagePreference.Czech)
+        val czechStrings = mockk<Context>(relaxed = true)
+        every { czechStrings.getString(R.string.booking_today) } returns "Dnes"
+        every { appContext.createConfigurationContext(any()) } returns czechStrings
+    }
+
+    @Test
+    fun aSameDayTimeThatHolds_keepsTodayInTheInAppLanguage() = runTest {
+        czechApp()
+        val vm = newViewModel()
+        advanceUntilIdle()
+        vm.update {
+            it.copy(selectedLocalDate = LocalDate(2026, 9, 10), selectedDate = "Dnes", selectedTime = "17:00", selectedInstant = localAt(10, 17))
+        }
+        repeat(3) { vm.nextStep() }
+
+        assertEquals(false, vm.revalidateResumedTime(now = localAt(10, 9)))
+
+        assertEquals("17:00", vm.state.value.selectedTime)
+        assertEquals("Dnes", vm.state.value.selectedDate)
+    }
+
+    @Test
+    fun aKeptDayThatHasSinceBecomeToday_readsTodayInTheInAppLanguage() = runTest {
+        czechApp()
+        val vm = newViewModel()
+        advanceUntilIdle()
+        vm.update {
+            it.copy(selectedLocalDate = LocalDate(2026, 9, 11), selectedDate = "pá", selectedTime = "09:00", selectedInstant = localAt(11, 9))
+        }
+        repeat(3) { vm.nextStep() }
+        vm.setSheetVisible(false, now = localAt(10, 20))
+
+        assertTrue(vm.revalidateResumedTime(now = localAt(11, 8)))
+
+        assertEquals(LocalDate(2026, 9, 11), vm.state.value.selectedLocalDate)
+        assertEquals("Dnes", vm.state.value.selectedDate)
+    }
+
+    /** A booking that went through, or one a seeded open replaced, takes its close with it. */
+    @Test
+    fun reset_forgetsWhenTheLastBookingWasLeft_soTheNextDraftIsNotReadAgainstIt() = runTest {
+        val today = LocalDate(2026, 9, 10)
+        val vm = newViewModel()
+        vm.setSheetVisible(false, now = localAt(10, 8))
+        vm.reset()
+        // Express at 11:00, and quoted so; at 08:00 the same slot was standard.
+        vm.update {
+            it.copy(selectedLocalDate = today, selectedDate = "Today", selectedTime = "14:00", selectedInstant = localAt(10, 14))
+        }
+        repeat(3) { vm.nextStep() }
+
+        vm.revalidateResumedTime(now = localAt(10, 11, 10))
+
+        assertEquals("14:00", vm.state.value.selectedTime)
+        assertEquals(4, vm.step.value)
+        verify(exactly = 0) { snackbar.showInfoKey(R.string.booking_draft_time_changed) }
+    }
+
+    // An open sheet is re-checked too — on the way back to the foreground and before submit — and the band
+    // a time is judged in is the one its quote landed in, the sheet's close only when no quote did.
+
+    private var clockNow: Instant = Instant.DISTANT_PAST
+    private val testClock = object : Clock {
+        override fun now(): Instant = clockNow
+    }
+
+    /** [time] today, 10 September 2026, picked on [vm] and quoted at [at]. */
+    private suspend fun kotlinx.coroutines.test.TestScope.quoteTodayAt(vm: BookingViewModel, time: String, at: Instant) {
+        coEvery { bookingApi.quote(any()) } returns Response.success(quoteWith())
+        vm.clock = testClock
+        clockNow = at
+        val (hour, minute) = time.split(":").map(String::toInt)
+        vm.update {
+            it.copy(
+                selectedServiceIds = setOf("s-1"),
+                selectedLocalDate = LocalDate(2026, 9, 10),
+                selectedDate = "Today",
+                selectedTime = time,
+                selectedInstant = localAt(10, hour, minute),
+            )
+        }
+        advanceUntilIdle()
+    }
+
+    /** 15:00 quoted at 10:30 is standard; at 12:30 it is express already, so the close calls it unchanged at 12:45. */
+    @Test
+    fun revalidate_judgesTheBandFromWhenTheQuoteLanded_notFromWhenTheSheetClosed() = runTest {
+        val vm = newViewModel()
+        quoteTodayAt(vm, "15:00", at = localAt(10, 10, 30))
+        repeat(3) { vm.nextStep() }
+        vm.setSheetVisible(false, now = localAt(10, 12, 30))
+
+        assertTrue(vm.revalidateResumedTime(now = localAt(10, 12, 45)))
+
+        assertEquals("", vm.state.value.selectedTime)
+        assertEquals(3, vm.step.value)
+        verify(exactly = 1) { snackbar.showInfoKey(R.string.booking_draft_time_changed) }
+    }
+
+    /** Closed at 08:00, when 14:30 was standard; reopened, and 14:30 picked and quoted express at 12:00. */
+    @Test
+    fun revalidate_aTimeQuotedAfterTheSheetLastClosed_isJudgedFromItsQuote() = runTest {
+        val vm = newViewModel()
+        vm.setSheetVisible(false, now = localAt(10, 8))
+        vm.setSheetVisible(true)
+        quoteTodayAt(vm, "14:30", at = localAt(10, 12))
+        repeat(3) { vm.nextStep() }
+
+        assertEquals(false, vm.revalidateResumedTime(now = localAt(10, 12, 10)))
+
+        assertEquals("14:30", vm.state.value.selectedTime)
+        assertEquals(4, vm.step.value)
+        verify(exactly = 0) { snackbar.showInfoKey(R.string.booking_draft_time_changed) }
+    }
+
+    /** A re-quote after 15:00 went express carries the surcharge, so from then on the time holds. */
+    @Test
+    fun revalidate_aReQuoteThatLandsLater_resetsTheMomentTheTimeIsJudgedFrom() = runTest {
+        val vm = newViewModel()
+        quoteTodayAt(vm, "15:00", at = localAt(10, 10, 30))
+        repeat(3) { vm.nextStep() }
+
+        clockNow = localAt(10, 12)
+        vm.setRooms(2)
+        advanceUntilIdle()
+
+        assertEquals(false, vm.revalidateResumedTime(now = localAt(10, 12, 10)))
+        assertEquals("15:00", vm.state.value.selectedTime)
+        coVerify(exactly = 2) { bookingApi.quote(any()) }
+    }
+
+    /** The sheet's way back to the foreground (BookingSheetDraftTest) is this call with the sheet open. */
+    @Test
+    fun revalidate_onAnOpenSheet_clearsATimeThatCameInsideTheLeadTime() = runTest {
+        val vm = newViewModel()
+        vm.setSheetVisible(true)
+        quoteTodayAt(vm, "15:00", at = localAt(10, 10, 30))
+        repeat(3) { vm.nextStep() }
+
+        assertTrue(vm.revalidateResumedTime(now = localAt(10, 13, 30)))
+
+        assertEquals("", vm.state.value.selectedTime)
+        assertEquals(LocalDate(2026, 9, 10), vm.state.value.selectedLocalDate)
+        assertEquals(3, vm.step.value)
+        verify(exactly = 1) { snackbar.showInfoKey(R.string.booking_draft_time_changed) }
+    }
+
+    @Test
+    fun submit_aTimeThatNoLongerHolds_isRefusedBeforeAnythingIsSent() = runTest {
+        currentUserFlow.value = completeUser()
+        coEvery { bookingApi.create(any()) } returns Response.success(CreateOrderResponse(id = "o-1", confirmationCode = "ABC123"))
+        val vm = newViewModel()
+        quoteTodayAt(vm, "15:00", at = localAt(10, 10, 30))
+        vm.update { it.copy(paymentMethod = BookingViewModel.PAYMENT_CASH, earlyPerformanceRequested = true) }
+        repeat(3) { vm.nextStep() }
+
+        clockNow = localAt(10, 12)
+        val outcome = vm.submit()
+
+        assertEquals(BookingSubmitOutcome.Failed, outcome)
+        assertEquals("", vm.state.value.selectedTime)
+        assertEquals(3, vm.step.value)
+        verify(exactly = 1) { snackbar.showInfoKey(R.string.booking_draft_time_changed) }
+        coVerify(exactly = 1) { bookingApi.quote(any()) }
+        coVerify(exactly = 0) { userRepository.refreshCurrentUser() }
+        coVerify(exactly = 0) { bookingApi.create(any()) }
+        assertEquals(ActionState.Idle, vm.submitState.value)
+    }
+
+    @Test
+    fun submit_aTimeThatStillHolds_isSent() = runTest {
+        currentUserFlow.value = completeUser()
+        coEvery { bookingApi.create(any()) } returns Response.success(CreateOrderResponse(id = "o-1", confirmationCode = "ABC123"))
+        val vm = newViewModel()
+        quoteTodayAt(vm, "15:00", at = localAt(10, 10, 30))
+        vm.update { it.copy(paymentMethod = BookingViewModel.PAYMENT_CASH, earlyPerformanceRequested = true) }
+        repeat(3) { vm.nextStep() }
+
+        clockNow = localAt(10, 10, 50)
+        val outcome = vm.submit()
+
+        assertTrue("expected Success but was $outcome", outcome is BookingSubmitOutcome.Success)
+        coVerify(exactly = 1) { bookingApi.create(any()) }
+        verify(exactly = 0) { snackbar.showInfoKey(R.string.booking_draft_time_changed) }
+    }
+
+    /** The card PaymentSheet saved can take a while; the cash order it guarantees is re-checked like any submit. */
+    @Test
+    fun submitAfterCardGuarantee_aTimeThatNoLongerHolds_booksNothing() = runTest {
+        savedCardsFlow.value = emptyList()
+        val vm = cashReady(guaranteeAccepted = true)
+        coEvery { bookingApi.create(any()) } coAnswers { createRefusedWith("order.cash_requires_saved_card") }
+        quoteTodayAt(vm, "15:00", at = localAt(10, 10, 30))
+        clockNow = localAt(10, 10, 40)
+        assertTrue(vm.submit() is BookingSubmitOutcome.CardGuaranteeNeeded)
+
+        clockNow = localAt(10, 12)
+        val outcome = vm.submitAfterCardGuarantee()
+
+        assertEquals(BookingSubmitOutcome.Failed, outcome)
+        assertEquals("", vm.state.value.selectedTime)
+        coVerify(exactly = 1) { bookingApi.create(any()) }
+        coVerify(exactly = 0) { savedCardRepository.refresh() }
+        verify(exactly = 1) { snackbar.showInfoKey(R.string.booking_draft_time_changed) }
+    }
+
+    /** September 2026, on the device's clock — the zone the When step's rules read. */
+    private fun localAt(day: Int, hour: Int, minute: Int = 0): Instant =
+        LocalDateTime(2026, 9, day, hour, minute).toInstant(TimeZone.currentSystemDefault())
 
     // ── express waiver ──
 
@@ -2386,6 +2711,128 @@ class BookingViewModelTest {
         vm.reset()
 
         assertNull(vm.state.value.dirtinessLevel)
+    }
+
+    // ── a package and a service it includes ──
+    //
+    // Owner ruling: both are kept, so that service is booked twice. A tap that adds one asks first;
+    // a removal and a seeded selection never ask (→ /product/business-rules#charging-a-package-and-a-service-together).
+
+    private fun packageWith(id: String, vararg serviceIds: String) = PackageListItem(
+        id = id,
+        name = "Package $id",
+        price = 20.0,
+        includedServices = serviceIds.map { PackageServiceSummary(name = "Service $it", serviceId = it) },
+    )
+
+    private fun kotlinx.coroutines.test.TestScope.withDeepCleanPackage(): BookingViewModel {
+        catalogServicesFlow.value = listOf(service("svc-1"), service("svc-2"))
+        catalogPackagesFlow.value = listOf(packageWith("pkg-1", "svc-1"))
+        return newViewModel().also { advanceUntilIdle() }
+    }
+
+    @Test
+    fun addingAServiceAChosenPackageIncludes_asksFirstAndAddsNothingYet() = runTest {
+        val vm = withDeepCleanPackage()
+        vm.togglePackage("pkg-1")
+
+        vm.toggleService("svc-1")
+
+        assertEquals(DoubleBooking.Service(service("svc-1"), catalogPackagesFlow.value), vm.doubleBooking.value)
+        assertEquals(emptySet<String>(), vm.state.value.selectedServiceIds)
+    }
+
+    @Test
+    fun cancellingTheConfirm_keepsTheSelectionAsItWas() = runTest {
+        val vm = withDeepCleanPackage()
+        vm.togglePackage("pkg-1")
+        vm.toggleService("svc-1")
+
+        vm.dismissDoubleBooking()
+
+        assertNull(vm.doubleBooking.value)
+        assertEquals(emptySet<String>(), vm.state.value.selectedServiceIds)
+        assertEquals(setOf("pkg-1"), vm.state.value.selectedPackageIds)
+    }
+
+    @Test
+    fun confirming_addsTheServiceAlongsideThePackage() = runTest {
+        val vm = withDeepCleanPackage()
+        vm.togglePackage("pkg-1")
+        vm.toggleService("svc-1")
+
+        vm.confirmDoubleBooking()
+
+        assertNull(vm.doubleBooking.value)
+        assertEquals(setOf("svc-1"), vm.state.value.selectedServiceIds)
+        assertEquals(setOf("pkg-1"), vm.state.value.selectedPackageIds)
+    }
+
+    @Test
+    fun addingAPackageThatIncludesAChosenService_asksFirstThenAddsOnConfirm() = runTest {
+        val vm = withDeepCleanPackage()
+        vm.toggleService("svc-1")
+
+        // False keeps the package sheet open under the confirm.
+        assertEquals(false, vm.togglePackage("pkg-1"))
+
+        val pkg = catalogPackagesFlow.value.single()
+        assertEquals(DoubleBooking.Package(pkg, pkg.includedServices!!), vm.doubleBooking.value)
+        assertEquals(emptySet<String>(), vm.state.value.selectedPackageIds)
+
+        vm.confirmDoubleBooking()
+
+        assertEquals(setOf("pkg-1"), vm.state.value.selectedPackageIds)
+        assertEquals(setOf("svc-1"), vm.state.value.selectedServiceIds)
+    }
+
+    @Test
+    fun addingWhatNoChosenPackageIncludes_addsWithoutAsking() = runTest {
+        val vm = withDeepCleanPackage()
+        assertEquals(true, vm.togglePackage("pkg-1"))
+
+        vm.toggleService("svc-2")
+
+        assertNull(vm.doubleBooking.value)
+        assertEquals(setOf("svc-2"), vm.state.value.selectedServiceIds)
+    }
+
+    @Test
+    fun removingEitherHalf_neverAsks() = runTest {
+        val vm = withDeepCleanPackage()
+        vm.update { it.copy(selectedServiceIds = setOf("svc-1"), selectedPackageIds = setOf("pkg-1")) }
+
+        vm.toggleService("svc-1")
+        assertEquals(true, vm.togglePackage("pkg-1"))
+
+        assertNull(vm.doubleBooking.value)
+        assertEquals(emptySet<String>(), vm.state.value.selectedServiceIds)
+        assertEquals(emptySet<String>(), vm.state.value.selectedPackageIds)
+    }
+
+    @Test
+    fun aSeededSelection_neverAsksAndItsServiceIsMarked() = runTest {
+        val vm = withDeepCleanPackage()
+
+        // Order again, a Home package and a resumed draft all land through update.
+        vm.update { it.copy(selectedServiceIds = setOf("svc-1"), selectedPackageIds = setOf("pkg-1")) }
+
+        assertNull(vm.doubleBooking.value)
+        assertEquals(
+            catalogPackagesFlow.value,
+            catalogPackagesFlow.value.selectedIncluding("svc-1", vm.state.value.selectedPackageIds),
+        )
+    }
+
+    @Test
+    fun reset_forgetsAHeldConfirm() = runTest {
+        val vm = withDeepCleanPackage()
+        vm.togglePackage("pkg-1")
+        vm.toggleService("svc-1")
+
+        vm.reset()
+
+        assertNull(vm.doubleBooking.value)
     }
 
     private fun quoteWith(

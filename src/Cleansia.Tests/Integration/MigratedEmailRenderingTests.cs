@@ -52,7 +52,7 @@ public class MigratedEmailRenderingTests
     }
 
     [Fact]
-    public async Task Password_reset_carries_the_link_unescaped_by_the_renderer()
+    public async Task Password_reset_link_keeps_its_escaped_query_and_encodes_only_the_ampersand()
     {
         var (service, wire) = Build(new Dictionary<string, string>
         {
@@ -62,12 +62,29 @@ public class MigratedEmailRenderingTests
 
         await service.SendResetPasswordEmailAsync(Recipient, "Jana", "A1B2C3", "en", CancellationToken.None);
 
-        // The reset URL is built with escaped query values; the renderer is a literal
-        // substitution and must not touch them again.
-        Assert.Contains("customer%40example.com", wire.Html, StringComparison.Ordinal);
-        Assert.Contains("code=A1B2C3", wire.Html, StringComparison.Ordinal);
+        // The reset URL is built with escaped query values. In the href the renderer writes its "&" as
+        // "&amp;", which the reader's mail client reads back as "&"; the percent-escapes are untouched
+        // and nothing is encoded twice.
+        Assert.Contains(
+            "href=\"https://app.test/reset-password?email=customer%40example.com&amp;code=A1B2C3\"",
+            wire.Html,
+            StringComparison.Ordinal);
+        Assert.DoesNotContain("&amp;amp;", wire.Html, StringComparison.Ordinal);
         Assert.Contains("Choose a new password", wire.Html, StringComparison.Ordinal);
         Assert.DoesNotContain("{{", wire.Html, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task A_customer_name_with_markup_is_shown_as_text_in_the_receipt()
+    {
+        var (service, wire) = Build(new Dictionary<string, string> { ["Subject"] = "Your Order Receipt" });
+        var order = NewOrder("<b>Ann & Co</b>");
+
+        await service.SendOrderReceiptEmailAsync(Recipient, order, languageCode: "en", ct: CancellationToken.None);
+
+        Assert.Contains("&lt;b&gt;Ann &amp; Co&lt;/b&gt;", wire.Html, StringComparison.Ordinal);
+        Assert.DoesNotContain("<b>Ann", wire.Html, StringComparison.Ordinal);
+        Assert.DoesNotContain("&amp;amp;", wire.Html, StringComparison.Ordinal);
     }
 
     [Fact]
@@ -201,6 +218,36 @@ public class MigratedEmailRenderingTests
         AssertSupportLine(wire.Html);
     }
 
+    /// <summary>
+    /// Pressing Reply writes to support, not to the sender. Every e-mail leaves through the one send,
+    /// so a customer's mail, one carrying a PDF and a cleaner's mail stand for the rest. The From stays
+    /// the configured delivery address.
+    /// </summary>
+    [Fact]
+    public async Task Every_mail_replies_to_support_and_is_still_sent_from_the_sender()
+    {
+        var (service, wire) = Build(new Dictionary<string, string> { ["Subject"] = "Subject" });
+
+        await service.SendEmailConfirmationAsync(Recipient, "Jana", "483920", "cs", CancellationToken.None);
+        AssertReplyGoesToSupport(wire);
+
+        await service.SendOrderReceiptEmailAsync(
+            Recipient, NewOrder(), [0x25, 0x50, 0x44, 0x46], "receipt-42.pdf", "en", CancellationToken.None);
+        AssertReplyGoesToSupport(wire);
+
+        await service.SendPeriodClosedEmailAsync(
+            Recipient, "Petr", new DateOnly(2026, 8, 1), new DateOnly(2026, 8, 31),
+            new DateTime(2026, 9, 1, 6, 0, 0, DateTimeKind.Utc), "2026-08",
+            "en", null, null, CancellationToken.None);
+        AssertReplyGoesToSupport(wire);
+    }
+
+    private static void AssertReplyGoesToSupport(WireCapture wire)
+    {
+        Assert.Equal("support@cleansia.cz", wire.ReplyTo);
+        Assert.Equal("noreply@example.test", wire.From);
+    }
+
     private static void AssertSupportLine(string html)
     {
         Assert.Contains("<a href=\"mailto:support@cleansia.cz\">support@cleansia.cz</a>", html, StringComparison.Ordinal);
@@ -209,8 +256,8 @@ public class MigratedEmailRenderingTests
         Assert.DoesNotContain("info@cleansia.cz", html, StringComparison.Ordinal);
     }
 
-    private static Order NewOrder() => Order.Create(
-        customerName: "Jana Novakova",
+    private static Order NewOrder(string customerName = "Jana Novakova") => Order.Create(
+        customerName: customerName,
         customerEmail: Recipient,
         customerPhone: "+420000000000",
         customerAddress: Address.Create("Dlouha 12", "Praha", "11000", "cz"),
@@ -338,6 +385,8 @@ public class MigratedEmailRenderingTests
         public string Subject { get; private set; } = string.Empty;
         public string? AttachmentName { get; private set; }
         public string? AttachmentContent { get; private set; }
+        public string? From { get; private set; }
+        public string? ReplyTo { get; private set; }
 
         protected override async Task<HttpResponseMessage> SendAsync(
             HttpRequestMessage request, CancellationToken cancellationToken)
@@ -366,6 +415,9 @@ public class MigratedEmailRenderingTests
                   && personalizations[0].TryGetProperty("subject", out var personalSubject)
                     ? personalSubject.GetString() ?? string.Empty
                     : string.Empty;
+
+            From = root.TryGetProperty("from", out var from) ? from.GetProperty("email").GetString() : null;
+            ReplyTo = root.TryGetProperty("reply_to", out var replyTo) ? replyTo.GetProperty("email").GetString() : null;
 
             if (root.TryGetProperty("attachments", out var attachments) &&
                 attachments.ValueKind == JsonValueKind.Array &&

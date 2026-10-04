@@ -78,6 +78,20 @@ jobs:
             exit 1
           fi
 
+      # fix-company-contact-placeholders.sql moves a DEV database's seeded company record to the owner's
+      # 2026-10-03 contact values. Production's company record is typed into the admin console, so the
+      # script has nothing to do there and never runs there. Compared by basename, as above.
+      - name: Refuse the DEV company-contact fix against production
+        if: inputs.environment == 'PRO'
+        env:
+          SCRIPT_PATH: ${{ inputs.script_path }}
+        run: |
+          if [ "$(basename "$SCRIPT_PATH")" = "fix-company-contact-placeholders.sql" ]; then
+            echo "::error::fix-company-contact-placeholders.sql rewrites the seeded DEV company record's e-mail and phone, and never runs against PRO."
+            echo "::error::Production's company e-mail and phone are entered in the admin console (see README.md)."
+            exit 1
+          fi
+
       - name: Verify script exists
         env:
           SCRIPT_PATH: ${{ inputs.script_path }}

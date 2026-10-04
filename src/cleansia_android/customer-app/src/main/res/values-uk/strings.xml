@@ -537,12 +537,12 @@
     <!-- Profile — help & support -->
     <string name="help_title">Довідка та підтримка</string>
     <string name="help_contact_title">Зв’яжіться з нами</string>
-    <string name="help_chat">Живий чат</string>
-    <string name="help_chat_desc">Зазвичай відповідаємо за кілька хвилин</string>
-    <string name="help_call">Зателефонувати в підтримку</string>
+    <string name="help_call">Зателефонуйте в підтримку</string>
     <string name="help_call_desc">Пн–Нд · 8:00–20:00</string>
-    <string name="help_email">Написати email</string>
+    <string name="help_email">Напишіть нам</string>
     <string name="help_email_desc">support@cleansia.cz</string>
+    <string name="help_call_unavailable">На цьому пристрої не можна телефонувати. Номер скопійовано.</string>
+    <string name="help_email_unavailable">Не знайдено поштового застосунку. Адресу скопійовано.</string>
     <string name="help_faq_title">Поширені запитання</string>
     <string name="help_faq_q1">Як скасувати бронювання?</string>
     <string name="help_faq_a1">Відкрийте бронювання у вкладці Замовлення та натисніть \"Скасувати\". Безкоштовне скасування за 24 години до початку прибирання. Протягом 15 хвилин після замовлення ви не платите нічого — для першого замовлення або з Cleansia Plus протягом 60 хвилин.</string>
@@ -653,6 +653,13 @@
     <string name="details_per_room">За кімнату</string>
     <string name="details_add_to_booking">Додати до бронювання</string>
     <string name="details_remove_from_booking">Видалити з бронювання</string>
+    <string name="booking_in_your_package">У вашому пакеті: %1$s</string>
+    <string name="booking_twice_service_title">Уже є у вашому пакеті</string>
+    <string name="booking_twice_service_message">Послуга %1$s входить до пакета %2$s. Якщо додати її ще раз, її буде замовлено двічі: виконано двічі й оплачено двічі.</string>
+    <string name="booking_twice_service_confirm">Додати ще раз</string>
+    <string name="booking_twice_package_title">Уже є у вашому бронюванні</string>
+    <string name="booking_twice_package_message">Пакет %1$s містить те, що ви вже додали окремо: %2$s. Якщо додати пакет, це буде замовлено двічі: виконано двічі й оплачено двічі.</string>
+    <string name="booking_twice_package_confirm">Додати пакет</string>
     <string name="booking_your_home">Ваш дім</string>
     <string name="booking_size_limit_caption">Не більше %1$d кімнат і %2$d ванних кімнат</string>
     <string name="booking_search_services">Шукати послуги</string>
@@ -824,6 +831,7 @@
     <string name="booking_cash_needs_card">Кількість прибиральників для цього замовлення: %1$d. Готівкою можна платити лише за замовлення, з якими впорається один прибиральник, тож це замовлення сплачується карткою.</string>
     <string name="booking_cash_pending">Чи можна платити готівкою, ми підтвердимо, щойно буде відома ціна.</string>
     <string name="booking_cash_cleared">Оплата готівкою для цього замовлення більше недоступна, тому спосіб оплати не обрано. Оберіть, як ви хочете платити.</string>
+    <string name="booking_draft_time_changed">Обраний час більше недоступний або змінив ціну. Будь ласка, оберіть час знову.</string>
     <string name="booking_card_guarantee_title">Картка як гарантія для оплати готівкою</string>
     <string name="booking_card_guarantee_body">Під час першого замовлення з оплатою готівкою ви зберігаєте картку. Зараз нічого не списується: за прибирання ви платите готівкою, як завжди.</string>
     <string name="consent_card_guarantee_draft_2026_09_28">Я погоджуюся, що за моїми замовленнями з оплатою готівкою Cleansia може списати з цієї картки плату за скасування, плату за ненадання доступу, неоплачену готівку та схвалену мною доплату.</string>

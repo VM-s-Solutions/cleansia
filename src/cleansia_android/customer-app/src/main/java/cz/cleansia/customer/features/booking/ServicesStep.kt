@@ -40,6 +40,7 @@ import androidx.compose.material.icons.outlined.Search
 import androidx.compose.material.icons.outlined.Spa
 import androidx.compose.material.icons.outlined.Star
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.ColorScheme
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -83,6 +84,8 @@ import cz.cleansia.customer.ui.components.adjustableStepper
 import cz.cleansia.customer.ui.components.rememberStepperTick
 import cz.cleansia.customer.ui.theme.selectionTint
 import cz.cleansia.customer.ui.theme.Sky600
+import cz.cleansia.customer.ui.theme.Sky700
+import cz.cleansia.customer.ui.theme.isDark
 
 // Local palette for backend-driven categories. Keyed by slug so backend can add
 // new categories without code changes; unknown slugs fall back to DefaultPalette.
@@ -611,7 +614,7 @@ private fun ServiceRow(
                 Text(
                     description,
                     style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    color = rowSecondaryText(tinted = selected || covered),
                     maxLines = 2,
                     overflow = TextOverflow.Ellipsis,
                 )
@@ -622,14 +625,14 @@ private fun ServiceRow(
                 Text(
                     stringResource(R.string.booking_price_from, formatOrderPrice(service.basePrice, rowCurrency)),
                     style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold),
-                    color = MaterialTheme.colorScheme.primary,
+                    color = fromPriceInk(MaterialTheme.colorScheme, isDark()),
                 )
                 if (service.perRoomPrice > 0) {
                     Spacer(Modifier.width(6.dp))
                     Text(
                         stringResource(R.string.booking_price_per_room, formatOrderPrice(service.perRoomPrice, rowCurrency)),
                         style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        color = rowSecondaryText(tinted = selected || covered),
                     )
                 }
             }
@@ -675,6 +678,13 @@ private fun ServiceRow(
         }
     }
 }
+
+/**
+ * The "from" price's ink. The brand primary is sky-600 in light mode, 4.1:1 on a plain card and 3.6:1 on
+ * a picked row, so light mode takes sky-700 (5.9:1 / 5.2:1); the row's fills and borders keep the brand
+ * primary. Dark mode keeps it (sky-400, 5.0:1 at worst). iOS's `ServiceRow.fromPriceInk` is the twin.
+ */
+internal fun fromPriceInk(scheme: ColorScheme, dark: Boolean): Color = if (dark) scheme.primary else Sky700
 
 @Composable
 private fun PropertyCompactRow(

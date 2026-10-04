@@ -83,6 +83,7 @@ import cz.cleansia.customer.features.booking.DoubleBookingDialog
 import cz.cleansia.customer.features.booking.InPackageMarker
 import cz.cleansia.customer.features.booking.inPackageRowBorder
 import cz.cleansia.customer.features.booking.inPackageRowFill
+import cz.cleansia.customer.features.booking.rowSecondaryText
 import cz.cleansia.customer.features.booking.selectedIncluding
 import cz.cleansia.customer.features.booking.PreferredCleanerPicker
 import cz.cleansia.customer.features.booking.SizeLimitTitleRow
@@ -1200,7 +1201,7 @@ private fun ServiceCard(
                 Text(
                     text = description,
                     style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    color = rowSecondaryText(tinted = selected || inPackages.isNotEmpty()),
                 )
             }
         }

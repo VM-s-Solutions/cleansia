@@ -22,6 +22,7 @@ Cleansia runs on Microsoft Azure (West Europe region) with separate DEV and PRO 
 | **App Service** (Customer Mobile API) | 1 instance | 1 instance |
 | **Static Web App** (Partner SPA) | Free tier | Standard |
 | **Static Web App** (Admin SPA) | Free tier | Standard |
+| **Static Web App** (this documentation site, `swa-cleansia-docs-<region>-dev`) | Free tier, no custom domain | Not declared — `main.bicep` declares `docsStaticWebApp` only when `env == 'dev'` |
 | **PostgreSQL Flexible Server** | Burstable B1ms | General Purpose D2s_v3 |
 | **Storage Account** | LRS | LRS |
 | **Azure Functions** | Container on the shared App Service plan, Always On | Container on the shared App Service plan, Always On |

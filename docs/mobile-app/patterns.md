@@ -347,6 +347,42 @@ on Android the slide runs at zero duration when animations are removed in the sy
   sign under `LayoutDirection.Rtl`. No locale the app ships is right-to-left, so nothing changed on
   screen.
 
+## A service a chosen package covers reads as covered {#package-covered}
+
+On the booking's services step and on the schedule form, a service that a chosen package already
+includes is drawn so the customer sees at a glance that it is booked already (owner remark
+2026-10-04). The rule and its wording are in
+[Charging a package and a service together](/product/business-rules#charging-a-package-and-a-service-together).
+iOS is the reference, and Android draws the same values:
+
+| | Value |
+|---|---|
+| Row fill | the brand primary at 8 % in light mode and 16 % in dark, over the row's card |
+| Row border | 1.5 (pt or dp) of the primary at 60 %, in place of the neutral hairline; corners unchanged |
+| Badge | under the name: a check in a circle, then the copy in semibold, at most two lines, padding 8 × 4, corners 12 (a capsule on one line, a rounded box on two), on the primary at 14 % in light mode and 24 % in dark |
+| Badge ink, text and icon | `onPrimaryContainer`, sky-900 `#0C4A6E` in light mode and sky-100 `#E0F2FE` in dark |
+
+**The ink is not the primary.** sky-600 reads 4.1:1 even on white and about 3.1:1 on the badge, under
+the 4.5:1 its text needs. On the theme's own values the ink reads 7.2:1 in light mode and 6.1:1 in
+dark on a covered row, and at least 5.5:1 on a picked one. The badge is part of the row's tap target and
+of what VoiceOver and TalkBack read for it, its icon is hidden from both, and the row's add or select
+control is unchanged.
+
+- **iOS** (`Booking/Steps/ServicesStepComponents.swift`): `InPackageStyle` holds the values, and
+  `InPackageNote` is the badge (`checkmark.circle.fill` at 13pt, Nunito semibold 14, the size of the
+  row's secondary text). The booking's `ServiceRow` swaps the tint for its picked look when picked: the
+  primary container at 50 % and a 2pt primary border. The schedule form's row has no picked fill, so a
+  picked covered row keeps the tint under the primary border. `InPackageMarkerLookTests` pins the tints,
+  the border, the contrast in both schemes and both lists drawing the covered row. Checked on the iOS
+  26.3 and 16.4 simulators, light and dark: the badge text measures 5.8:1 and 4.7:1 from the
+  screenshots, whose colours run darker than the tokens.
+- **Android** (`features/booking/DoubleBooking.kt`): `inPackageRowFill()`, `inPackageRowBorder()` and
+  the badge `InPackageMarker` (`Icons.Filled.CheckCircle` at 14dp, `labelMedium` semibold, 13sp, above
+  the rows' 12sp secondary text). On both lists a picked row keeps its picked look, the 2dp primary
+  border over its existing fill, and still carries the badge. `DoubleBookingTest` measures the ink over
+  a covered and a picked row in both themes, from `LightColors` and `DarkColors` themselves, and pins
+  the tints, the border and both lists. Unlike iOS, it has not yet been checked on a screen.
+
 ## Every map is quiet, with one Cleansia pin {#maps}
 
 All four map surfaces in both apps show a muted base map with **no points of interest**, and their only

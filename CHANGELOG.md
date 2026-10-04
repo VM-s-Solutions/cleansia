@@ -71,17 +71,20 @@ need backfilling.
 ### Added
 
 - **Customer web, Android and iOS — a service already in your package is marked, and adding it twice
-  asks first.** Once you choose a package, every service it already includes is marked *In your
-  package* in the list of services. Adding one of those services on its own, or adding a package that
-  includes a service already in your booking, chosen on its own or through another package, now asks
-  first, because that service is then done once more and charged once more. A service that two of
+  asks first.** Once you choose a package, every service it already includes stands out in the list
+  of services: its row is tinted and outlined in the brand blue, with an *In your package* badge
+  under its name, the same in the booking and the schedule form on every client and among the web
+  booking's Plus-step suggestions. Until 2026-10-04 the mark was a small grey line, easy to miss.
+  Adding one of those services on its own, or adding a package that includes a service already in
+  your booking, chosen on its own or through another package, now asks first, because that service
+  is then done once more and charged once more. A service that two of
   your packages already include is marked *In your packages*, and adding it asks under *Already in
   your packages* and says it is booked *once more*, not *twice*. *Cancel* leaves your
   choice as it was, and removing something never asks. A booking or schedule filled in for you, such
   as *Order again*, a package from Home or a booking you come back to, is only marked. This holds in
   the booking and when you set up a recurring schedule. Nothing is merged: a pair you confirm is
   still booked twice. (Owner remark 2026-10-03; two packages that share a service, owner ruling
-  2026-10-04.)
+  2026-10-04; the tinted row and the badge, owner remark 2026-10-04.)
 
 - **Customer and cleaner, Android and iOS — the right moments are felt.** A haptic plays when a
   slide-to-confirm commits (the customer's booking, and the cleaner's contract, job-step and order-list

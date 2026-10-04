@@ -64,6 +64,24 @@ counting itself (`includedServicesAlreadyChosen`, since 2026-10-04). A selection
 marked. Both helpers, `chosenPackagesByService` and `includedServicesAlreadyChosen`, live in
 `customer-services` (`package-overlap.ts`) and the schedule form shares them. → [Charging a package and a service together](/product/business-rules#charging-a-package-and-a-service-together)
 
+**A covered row reads as covered at a glance** (since 2026-10-04, the apps' design, with iOS as the
+reference). The three sites draw it from four tokens beside the wizard shell's others
+(`_wizard-shell.scss`): `--cl-covered-row`, the accent mixed 8 % into `--cl-surface` (16 % in dark
+mode); `--cl-covered-line`, the accent at 60 % as a 1.5px border; `--cl-covered-badge`, the accent at
+14 % (24 % in dark mode); and `--cl-covered-ink`, `#0c4a6e` (`#e0f2fe` in dark mode). The services
+step's row, otherwise a line between dividers, becomes a card with 18px corners
+(`cl-wiz__svc--covered`). The Plus step's suggestion card takes the tint and border
+(`cl-wiz__cross-row--covered`), and so does a schedule pick that is not picked
+(`cl-rec__pick--covered`, `_recurring-bookings.scss`). A picked pick keeps its picked look, and its badge
+sits on `--cl-surface` so it reads on the dark slab. The badge, `.cl-wiz__svc-in-pack` at all three
+sites, sits straight under the name and above the description. It is a `pi-check-circle` in the accent,
+a graphic whose floor is 3:1 (it reads 3.1:1 in light mode and 3.7:1 in dark), then the words in
+semibold `--cl-covered-ink`: 14px on the services step, whose descriptions are 14px, and 13px elsewhere.
+Measured from the rendered page in Chromium, the words read 7.20:1 in light mode and 7.02:1 in dark. A
+covered row's description moves to `--cl-muted-on-tint`, since `--cl-muted` reads 4.3:1 on the tint.
+The *Add* chip, the `aria-describedby` wiring and the copy are unchanged. The `order-wizard` and
+`create-recurring-wizard` component specs assert the covered class and the badge at each site.
+
 ### Step 1: Address & Contact
 
 The customer enters their delivery address and contact information.

@@ -70,20 +70,87 @@ final class TwiceBookedPickTests: XCTestCase {
 
         XCTAssertNil(catalog.inPackageNote(for: "s-1", selectedPackageIds: ["p-1"], locale: english))
         XCTAssertNil(catalog.twiceBookedPick(addingService: "s-1", selectedPackageIds: ["p-1"]))
-        XCTAssertNil(catalog.twiceBookedPick(addingPackage: "p-1", selectedServiceIds: ["s-1"]))
+        XCTAssertNil(catalog.twiceBookedPick(addingPackage: "p-1", selectedServiceIds: ["s-1"], selectedPackageIds: []))
     }
 
-    func testThePickNamesWhatWouldBeBookedTwiceInCatalogueOrder() {
+    /// The packages a service is already in come in catalogue order; the services a package would book
+    /// again come in the package's own order.
+    func testThePickNamesWhatWouldBeBookedAgainInOrder() {
         XCTAssertEqual(
             catalog.twiceBookedPick(addingService: "s-1", selectedPackageIds: ["p-2", "p-1", "p-3"]),
             .service(id: "s-1", packageIds: ["p-1", "p-2"])
         )
         XCTAssertEqual(
-            catalog.twiceBookedPick(addingPackage: "p-1", selectedServiceIds: ["s-3", "s-2", "s-1"]),
+            catalog.twiceBookedPick(
+                addingPackage: "p-1",
+                selectedServiceIds: ["s-3", "s-2", "s-1"],
+                selectedPackageIds: []
+            ),
             .package(id: "p-1", serviceIds: ["s-1", "s-2"])
         )
         XCTAssertNil(catalog.twiceBookedPick(addingService: "s-3", selectedPackageIds: ["p-1", "p-2"]))
-        XCTAssertNil(catalog.twiceBookedPick(addingPackage: "p-3", selectedServiceIds: ["s-1"]))
+        XCTAssertNil(catalog.twiceBookedPick(
+            addingPackage: "p-3",
+            selectedServiceIds: ["s-1"],
+            selectedPackageIds: ["p-1"]
+        ))
+    }
+
+    /// Two chosen packages that share a service book it twice just as a package and the service on its
+    /// own do, so adding the second asks too.
+    func testAPackageOverlappingAnotherSelectedPackageIsAPick() {
+        XCTAssertEqual(
+            catalog.twiceBookedPick(addingPackage: "p-1", selectedServiceIds: [], selectedPackageIds: ["p-2"]),
+            .package(id: "p-1", serviceIds: ["s-1"])
+        )
+        XCTAssertEqual(
+            catalog.twiceBookedPick(addingPackage: "p-1", selectedServiceIds: ["s-2"], selectedPackageIds: ["p-2"]),
+            .package(id: "p-1", serviceIds: ["s-1", "s-2"]),
+            "on its own and through another package, together"
+        )
+        XCTAssertNil(catalog.twiceBookedPick(addingPackage: "p-2", selectedServiceIds: [], selectedPackageIds: ["p-3"]))
+    }
+
+    // MARK: - The message
+
+    /// A service already in two chosen packages would be booked a third time: "twice" would be false.
+    func testAServiceInTwoSelectedPackagesSaysOnceMoreNotTwice() {
+        let many = catalog.twiceBookedMessage(.service(id: "s-1", packageIds: ["p-1", "p-2"]), locale: english)
+        let one = catalog.twiceBookedMessage(.service(id: "s-1", packageIds: ["p-1"]), locale: english)
+
+        XCTAssertEqual(
+            many,
+            L10n.Booking.twiceServiceMessageMany(service: "Service s-1", packages: "Package p-1, Package p-2")
+        )
+        XCTAssertEqual(one, L10n.Booking.twiceServiceMessage(service: "Service s-1", packages: "Package p-1"))
+        XCTAssertNotEqual(
+            L10n.Booking.twiceServiceMessageMany(service: "Service s-1", packages: "Package p-1"),
+            L10n.Booking.twiceServiceMessage(service: "Service s-1", packages: "Package p-1")
+        )
+    }
+
+    /// The package's own summaries name what it repeats, so a service the catalogue does not offer on its
+    /// own, but another chosen package includes, is still named.
+    func testAPackageMessageNamesWhatItRepeatsFromItsOwnSummaries() throws {
+        let catalog = Catalog(
+            services: [CatalogFixtures.service(id: "s-1")],
+            packages: [
+                TwiceBookedPickTests.package(id: "p-a", including: ["s-9", "s-1"]),
+                TwiceBookedPickTests.package(id: "p-b", including: ["s-9"])
+            ],
+            currencyCode: "CZK",
+            defaultCurrencyCode: "CZK"
+        )
+
+        let pick = try XCTUnwrap(
+            catalog.twiceBookedPick(addingPackage: "p-a", selectedServiceIds: ["s-1"], selectedPackageIds: ["p-b"])
+        )
+
+        XCTAssertEqual(pick, .package(id: "p-a", serviceIds: ["s-9", "s-1"]))
+        XCTAssertEqual(
+            catalog.twiceBookedMessage(pick, locale: english),
+            L10n.Booking.twicePackageMessage(package: "Package p-a", services: "Included s-9, Included s-1")
+        )
     }
 
     // MARK: - The booking's services step
@@ -139,6 +206,39 @@ final class TwiceBookedPickTests: XCTestCase {
 
         XCTAssertEqual(vm.state.selectedPackageIds, ["p-2"])
         XCTAssertEqual(vm.state.selectedServiceIds, ["s-1"])
+    }
+
+    func testBookingAddingAPackageThatOverlapsAnotherSelectedPackageAsksFirst() async {
+        let vm = await bookingVM()
+        XCTAssertTrue(vm.togglePackage("p-2"))
+
+        XCTAssertFalse(vm.togglePackage("p-1"), "the sheet stays open while the customer is asked")
+        XCTAssertEqual(vm.twiceBookedPick, .package(id: "p-1", serviceIds: ["s-1"]))
+        XCTAssertEqual(vm.state.selectedPackageIds, ["p-2"])
+
+        vm.cancelTwiceBooked()
+        XCTAssertEqual(vm.state.selectedPackageIds, ["p-2"])
+
+        vm.togglePackage("p-1")
+        vm.confirmTwiceBooked(.package(id: "p-1", serviceIds: ["s-1"]))
+        XCTAssertEqual(vm.state.selectedPackageIds, ["p-1", "p-2"], "never de-duplicated")
+    }
+
+    func testBookingAddingAServiceTwoSelectedPackagesIncludeAsksWithTheOnceMoreMessage() async throws {
+        let vm = await bookingVM()
+        vm.update { var next = $0
+            next.selectedPackageIds = ["p-1", "p-2"]
+            return next
+        }
+
+        vm.toggleService("s-1")
+
+        let pick = try XCTUnwrap(vm.twiceBookedPick)
+        XCTAssertEqual(pick, .service(id: "s-1", packageIds: ["p-1", "p-2"]))
+        XCTAssertEqual(
+            catalog.twiceBookedMessage(pick, locale: english),
+            L10n.Booking.twiceServiceMessageMany(service: "Service s-1", packages: "Package p-1, Package p-2")
+        )
     }
 
     func testBookingAnAddThatBooksNothingTwiceNeverAsks() async {
@@ -265,6 +365,38 @@ final class TwiceBookedPickTests: XCTestCase {
 
         XCTAssertEqual(vm.formState.selectedPackageIds, ["p-1"])
         XCTAssertEqual(vm.formState.selectedServiceIds, ["s-2"])
+    }
+
+    func testRecurringAddingAPackageThatOverlapsAnotherSelectedPackageAsksFirst() async {
+        let vm = await recurringVM()
+        vm.togglePackage("p-2")
+        XCTAssertNil(vm.twiceBookedPick)
+
+        vm.togglePackage("p-1")
+
+        XCTAssertEqual(vm.twiceBookedPick, .package(id: "p-1", serviceIds: ["s-1"]))
+        XCTAssertEqual(vm.formState.selectedPackageIds, ["p-2"])
+
+        vm.cancelTwiceBooked()
+
+        XCTAssertNil(vm.twiceBookedPick)
+        XCTAssertEqual(vm.formState.selectedPackageIds, ["p-2"])
+    }
+
+    func testRecurringAddingAServiceTwoSelectedPackagesIncludeAsksWithTheOnceMoreMessage() async throws {
+        let vm = await recurringVM()
+        vm.togglePackage("p-1")
+        vm.togglePackage("p-2")
+        vm.confirmTwiceBooked(.package(id: "p-2", serviceIds: ["s-1"]))
+
+        vm.toggleService("s-1")
+
+        let pick = try XCTUnwrap(vm.twiceBookedPick)
+        XCTAssertEqual(pick, .service(id: "s-1", packageIds: ["p-1", "p-2"]))
+        XCTAssertEqual(
+            catalog.twiceBookedMessage(pick, locale: english),
+            L10n.Booking.twiceServiceMessageMany(service: "Service s-1", packages: "Package p-1, Package p-2")
+        )
     }
 
     func testRecurringRemovingNeverAsks() async {

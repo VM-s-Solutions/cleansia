@@ -386,6 +386,10 @@ extension L10n {
             format("booking_twice_service_message", service, packages)
         }
 
+        static func twiceServiceMessageMany(service: String, packages: String) -> String {
+            format("booking_twice_service_message_many", service, packages)
+        }
+
         static var twiceServiceConfirm: String {
             localized("booking_twice_service_confirm")
         }

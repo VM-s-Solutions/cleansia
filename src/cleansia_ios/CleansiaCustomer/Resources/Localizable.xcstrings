@@ -2917,31 +2917,31 @@
         "cs": {
           "stringUnit": {
             "state": "translated",
-            "value": "Balíček %1$@ obsahuje i to, co už máte v rezervaci samostatně: %2$@. Když balíček přidáte, objednáte to dvakrát: provede se to dvakrát a zaplatíte to dvakrát."
+            "value": "Balíček %1$@ obsahuje i to, co už máte v rezervaci: %2$@. Když balíček přidáte, objednáte to ještě jednou: provede se to ještě jednou a zaplatíte to ještě jednou."
           }
         },
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "%1$@ also includes what you already added separately: %2$@. Adding the package books that twice: done twice and charged twice."
+            "value": "%1$@ also includes what is already in your booking: %2$@. Adding the package books that once more: it is done once more and charged once more."
           }
         },
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Пакет %1$@ включает то, что вы уже добавили отдельно: %2$@. Если добавить пакет, это будет заказано дважды: выполнено дважды и оплачено дважды."
+            "value": "Пакет %1$@ включает то, что уже есть в вашем бронировании: %2$@. Если добавить пакет, это будет заказано ещё раз: выполнено ещё раз и оплачено ещё раз."
           }
         },
         "sk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Balík %1$@ obsahuje aj to, čo už máte v rezervácii samostatne: %2$@. Ak balík pridáte, objednáte to dvakrát: vykoná sa to dvakrát a zaplatíte to dvakrát."
+            "value": "Balík %1$@ obsahuje aj to, čo už máte v rezervácii: %2$@. Ak balík pridáte, objednáte to ešte raz: vykoná sa to ešte raz a zaplatíte to ešte raz."
           }
         },
         "uk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Пакет %1$@ містить те, що ви вже додали окремо: %2$@. Якщо додати пакет, це буде замовлено двічі: виконано двічі й оплачено двічі."
+            "value": "Пакет %1$@ містить те, що вже є у вашому бронюванні: %2$@. Якщо додати пакет, це буде замовлено ще раз: виконано ще раз і оплачено ще раз."
           }
         }
       }
@@ -3047,6 +3047,41 @@
           "stringUnit": {
             "state": "translated",
             "value": "Послуга %1$@ входить до пакета %2$@. Якщо додати її ще раз, її буде замовлено двічі: виконано двічі й оплачено двічі."
+          }
+        }
+      }
+    },
+    "booking_twice_service_message_many": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Služba %1$@ je už součástí balíčků %2$@. Když ji přidáte znovu, objednáte ji ještě jednou: provede se ještě jednou a zaplatíte ji ještě jednou."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$@ is already part of %2$@. Adding it again books it once more: it is done once more and charged once more."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Услуга %1$@ уже входит в пакеты %2$@. Если добавить её ещё раз, она будет заказана ещё раз: выполнена ещё раз и оплачена ещё раз."
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Služba %1$@ je už súčasťou balíkov %2$@. Ak ju pridáte znova, objednáte ju ešte raz: vykoná sa ešte raz a zaplatíte ju ešte raz."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Послуга %1$@ уже входить до пакетів %2$@. Якщо додати її ще раз, її буде замовлено ще раз: виконано ще раз і оплачено ще раз."
           }
         }
       }

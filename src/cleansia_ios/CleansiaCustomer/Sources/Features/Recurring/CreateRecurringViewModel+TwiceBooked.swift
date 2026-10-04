@@ -18,13 +18,14 @@ extension CreateRecurringViewModel {
         formState.selectedServiceIds.formSymmetricDifference([id])
     }
 
-    /// Removes the package, or adds it — unless it includes a service already selected on its own,
-    /// when the customer is asked first.
+    /// Removes the package, or adds it — unless it includes a service already in the booking, on its own
+    /// or through another selected package, when the customer is asked first.
     func togglePackage(_ id: String) {
         if !formState.selectedPackageIds.contains(id),
            let pick = catalogState.loadedValue?.twiceBookedPick(
                addingPackage: id,
-               selectedServiceIds: formState.selectedServiceIds
+               selectedServiceIds: formState.selectedServiceIds,
+               selectedPackageIds: formState.selectedPackageIds
            )
         {
             twiceBookedPick = pick

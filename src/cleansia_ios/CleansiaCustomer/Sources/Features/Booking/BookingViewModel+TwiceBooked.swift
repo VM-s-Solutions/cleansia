@@ -22,14 +22,16 @@ extension BookingViewModel {
         }
     }
 
-    /// Removes the package, or adds it — unless it includes a service already selected on its own,
-    /// when the customer is asked first. True when the selection changed now.
+    /// Removes the package, or adds it — unless it includes a service already in the booking, on its own
+    /// or through another selected package, when the customer is asked first. True when the selection
+    /// changed now.
     @discardableResult
     func togglePackage(_ id: String) -> Bool {
         if !state.selectedPackageIds.contains(id),
            let pick = catalogState.loadedValue?.twiceBookedPick(
                addingPackage: id,
-               selectedServiceIds: state.selectedServiceIds
+               selectedServiceIds: state.selectedServiceIds,
+               selectedPackageIds: state.selectedPackageIds
            )
         {
             twiceBookedPick = pick

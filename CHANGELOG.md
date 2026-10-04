@@ -73,11 +73,14 @@ need backfilling.
 - **Customer web, Android and iOS — a service already in your package is marked, and adding it twice
   asks first.** Once you choose a package, every service it already includes is marked *In your
   package* in the list of services. Adding one of those services on its own, or adding a package that
-  includes a service you already added, now asks first, because booked together that service is done
-  twice and charged twice. *Cancel* leaves your choice as it was, and removing something never asks.
-  A booking or schedule filled in for you, such as *Order again*, a package from Home or a booking you
-  come back to, is only marked. This holds in the booking and when you set up a recurring schedule.
-  Nothing is merged: a pair you confirm is still booked twice. (Owner remark 2026-10-03.)
+  includes a service already in your booking, chosen on its own or through another package, now asks
+  first, because that service is then done once more and charged once more. A service that two of
+  your packages already include is said to be booked *once more*, not *twice*. *Cancel* leaves your
+  choice as it was, and removing something never asks. A booking or schedule filled in for you, such
+  as *Order again*, a package from Home or a booking you come back to, is only marked. This holds in
+  the booking and when you set up a recurring schedule. Nothing is merged: a pair you confirm is
+  still booked twice. (Owner remark 2026-10-03; two packages that share a service, owner ruling
+  2026-10-04.)
 
 - **Customer and cleaner, Android and iOS — the right moments are felt.** A haptic plays when a
   slide-to-confirm commits (the customer's booking, and the cleaner's contract, job-step and order-list

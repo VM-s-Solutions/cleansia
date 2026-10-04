@@ -44,10 +44,13 @@ service the step prints *In your package: {package}* (`pages.order.package_overl
 service's add button takes that line as its `aria-describedby`. `OrderWizardFacade.toggleService` and
 `togglePackage` ask through the shared `DialogService` before a tap adds either half of a twice-booked
 pair, with *Cancel* focused (`defaultFocus: 'reject'`); removing never asks, and the Plus step's
-suggested *Add* goes through `toggleService` too. A selection the wizard is handed (a catalogue link,
-*Order again*, a parked basket) is written through `updateFormData`, so it is only marked. Which chosen
-packages include a service is one helper the schedule form shares, `chosenPackagesByService` in
-`customer-services` (`package-overlap.ts`). → [Charging a package and a service together](/product/business-rules#charging-a-package-and-a-service-together)
+suggested *Add* goes through `toggleService` too. A service two or more chosen packages include is
+asked about with `service_message_many` (*"books it once more"*), and a package asks when a service
+it includes is already in the booking on its own **or** through another chosen package, never
+counting itself (`includedServicesAlreadyChosen`, since 2026-10-04). A selection the wizard is handed
+(a catalogue link, *Order again*, a parked basket) is written through `updateFormData`, so it is only
+marked. Both helpers, `chosenPackagesByService` and `includedServicesAlreadyChosen`, live in
+`customer-services` (`package-overlap.ts`) and the schedule form shares them. → [Charging a package and a service together](/product/business-rules#charging-a-package-and-a-service-together)
 
 ### Step 1: Address & Contact
 

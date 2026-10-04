@@ -1814,7 +1814,8 @@ A **cash order refunded by hand has no refund record** and shows gross. → [Adm
 ## Charging a package and a service together
 
 Selecting a package **and** a service that the package already includes buys that service **twice** —
-it is performed twice, priced twice, and takes twice as long.
+it is performed twice, priced twice, and takes twice as long. Two chosen packages that include the same
+service do the same, and every further package or pick that includes it books it once more.
 
 That is an owner ruling, not a bug, and the doubled crew size and duration follow from it correctly.
 It must not be "fixed" with a de-duplication.
@@ -1830,22 +1831,29 @@ the web, Android and iOS — the same four things hold:
   selectable.
 - **Adding that service asks first.** *Already in your package* — *"{service} is part of {package}.
   Adding it again books it twice: it is done twice and charged twice."* — with *Add again* and
-  *Cancel*.
-- **Adding a package asks the other way round** when it includes a service already chosen on its
-  own. *Already in your booking* — *"{package} also includes what you already added separately:
-  {services}. Adding the package books that twice: done twice and charged twice."* The wording reads
-  the same for one service or several. — with *Add package* and *Cancel*.
-  On Android and iOS the package's details sheet stays open under the question, closes once the
-  package is in, and stays open on *Cancel*.
+  *Cancel*. When two or more chosen packages already include it, *twice* would be false, so the
+  question says *"{service} is already part of {packages}. Adding it again books it once more: it is
+  done once more and charged once more."* (since 2026-10-04; until then it said *twice* there too).
+- **Adding a package asks the other way round** when it includes a service already in the booking,
+  chosen on its own **or through another chosen package**; the package never counts against itself.
+  *Already in your booking* — *"{package} also includes what is already in your booking: {services}.
+  Adding the package books that once more: it is done once more and charged once more."* — with *Add
+  package* and *Cancel*. The wording reads the same for one service or several, and the services are
+  named from the package's own list, in its order. Until 2026-10-04 only a service chosen on its own
+  asked, so a second package sharing a service with the first doubled it without a word, and the
+  message read *"…also includes what you already added separately: {services}. Adding the package
+  books that twice: done twice and charged twice."* On Android and iOS the package's details sheet
+  stays open under the question, closes once the package is in, and stays open on *Cancel*.
 - ***Cancel* leaves the selection as it was**, and it is the way out: it is the alert's cancel action
   on iOS, Back or a tap outside answers it on Android, and on the web it is the focused button and
   Escape answers it. **Removing either half never asks.**
 
 **A selection the form is handed is only marked.** A package card on Home, the quick-size card's *See
 my price*, *Order again*, a booking resumed or parked, a schedule started from an order or opened for
-editing, and on the web a catalogue link all fill the form without a tap, so none of them asks; the
-pair shows marked, as it will be charged. The web booking's Plus step suggests services not chosen on
-their own, which can include one a chosen package holds, and its *Add* asks the same question.
+editing, and on the web a catalogue link all fill the form without a tap, so none of them asks, not
+even for two packages that share a service; the pair shows marked, as it will be charged. The web
+booking's Plus step suggests services not chosen on their own, which can include one a chosen package
+holds, and its *Add* asks the same question.
 
 The marker matches the package's `IncludedServices[].ServiceId` (`PackageServiceSummary`), which the
 package list already sent; a client given an item without it still prints the item, but neither marks

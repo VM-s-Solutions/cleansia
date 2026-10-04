@@ -1510,8 +1510,8 @@
       "iso_alpha2_help": "ISO 3166-1 alpha-2. Zákazníci ho vidia na štítku trhu.",
       "market": "Trh",
       "insurance_coverage_amount": "Poistné krytie na jednu rezerváciu",
-      "insurance_coverage_amount_placeholder": "Nechajte prázdne, ak sa nemá uvádzať žiadna suma",
-      "insurance_coverage_amount_help": "Suma v predvolenej mene krajiny, zobrazená v textoch pre zákazníkov. Prázdne znamená, že text žiadnu sumu neuvádza.",
+      "insurance_coverage_amount_placeholder": "Nechajte prázdne, aby sa poistenie neuvádzalo",
+      "insurance_coverage_amount_help": "Suma v predvolenej mene krajiny. So sumou zákaznícke aplikácie uvádzajú, že upratovači sú poistení do tejto výšky. Prázdne: aplikácie neuvádzajú, že sú upratovači poistení.",
       "market_content_unavailable": "Dostupné, hneď ako bude mať krajina konfiguráciu."
     },
     "currency_management": {

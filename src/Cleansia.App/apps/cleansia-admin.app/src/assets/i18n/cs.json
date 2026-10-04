@@ -1614,8 +1614,8 @@
       "iso_alpha2_help": "ISO 3166-1 alpha-2. Zákazníci ho vidí na štítku trhu.",
       "market": "Trh",
       "insurance_coverage_amount": "Pojistné krytí na jednu rezervaci",
-      "insurance_coverage_amount_placeholder": "Nechte prázdné, pokud se nemá uvádět žádná částka",
-      "insurance_coverage_amount_help": "Částka ve výchozí měně země, zobrazená v textech pro zákazníky. Prázdné znamená, že text žádnou částku neuvádí.",
+      "insurance_coverage_amount_placeholder": "Nechte prázdné, aby se pojištění neuvádělo",
+      "insurance_coverage_amount_help": "Částka ve výchozí měně země. S částkou zákaznické aplikace uvádějí, že jsou uklízeči pojištěni do této výše. Prázdné: aplikace neuvádějí, že jsou uklízeči pojištěni.",
       "market_content_unavailable": "Dostupné, jakmile bude mít země konfiguraci."
     },
     "currency_management": {

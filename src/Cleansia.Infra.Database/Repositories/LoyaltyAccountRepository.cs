@@ -49,6 +49,11 @@ public class LoyaltyAccountRepository(CleansiaDbContext context)
         return account;
     }
 
+    public void AfterSave(LoyaltyAccount account, Func<LoyaltyTier?, CancellationToken, Task> afterSave)
+    {
+        Context.AfterLoyaltySave(account, afterSave);
+    }
+
     public override Task<LoyaltyAccount?> GetByIdAsync(string id, CancellationToken cancellationToken)
     {
         return GetDbSet()

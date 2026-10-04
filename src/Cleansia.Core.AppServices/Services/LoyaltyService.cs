@@ -58,32 +58,28 @@ public sealed class LoyaltyService(
             return;
         }
 
-        var account = await loyaltyAccountRepository.EnsureForUserAsync(order.UserId, cancellationToken);
-        var previousTier = account.CurrentTier;
+        var userId = order.UserId;
+        var account = await loyaltyAccountRepository.EnsureForUserAsync(userId, cancellationToken);
+        var tierAsRead = account.CurrentTier;
         var thresholds = await ResolveThresholdsAsync(cancellationToken);
         account.GrantPoints(pointsEarned, LoyaltyEarnSource.OrderCompleted, orderId, SystemActor, thresholds);
 
-        // Fire `loyalty.tier_upgrade` when this grant promotes the user. Detection is by snapshot
-        // (previousTier captured pre-grant, post-grant compared) so the domain stays free of
-        // notification concerns.
-        // Only fires on UPGRADE — a revoke that demotes is silent (handled
-        // by the cancellation push if relevant).
-        if (account.CurrentTier > previousTier)
-        {
-            // The notification gates on the caller's (CompleteOrder's) commit: feed row + outbox row
-            // are written into the shared scoped unit of work and become durable only if the grant
-            // persists, so a rolled-back grant never records a phantom tier upgrade.
-            await notificationProducer.NotifyAsync(
-                order.UserId,
-                NotificationEventCatalog.LoyaltyTierUpgrade,
-                new Dictionary<string, string>
-                {
-                    ["tier"] = account.CurrentTier.ToString(),
-                },
-                order.TenantId,
-                orderId,
-                cancellationToken);
-        }
+        // Decided once the grant is saved, not from this read: a write another request commits to the account
+        // first is replayed under this one, and can take the tier past a threshold this read did not reach or
+        // keep it below one this read crossed. Only a promotion is announced.
+        loyaltyAccountRepository.AfterSave(account, (tierBefore, ct) =>
+            account.CurrentTier > (tierBefore ?? tierAsRead)
+                ? notificationProducer.NotifyAsync(
+                    userId,
+                    NotificationEventCatalog.LoyaltyTierUpgrade,
+                    new Dictionary<string, string>
+                    {
+                        ["tier"] = account.CurrentTier.ToString(),
+                    },
+                    order.TenantId,
+                    orderId,
+                    ct)
+                : Task.CompletedTask);
     }
 
     public async Task RevokeForCancelledOrderAsync(string orderId, CancellationToken cancellationToken)

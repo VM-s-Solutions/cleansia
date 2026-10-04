@@ -1,10 +1,11 @@
+using System.Text.Json;
 using Cleansia.Core.AppServices.Features.Loyalty.Admin;
 using Cleansia.Core.AppServices.Features.Orders;
 using Cleansia.Core.AppServices.Services;
-using Cleansia.Core.AppServices.Services.Interfaces;
 using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Internationalization;
 using Cleansia.Core.Domain.Loyalty;
+using Cleansia.Core.Domain.Notifications;
 using Cleansia.Core.Domain.Orders;
 using Cleansia.Core.Domain.Repositories;
 using Cleansia.Core.Domain.Users;
@@ -24,7 +25,8 @@ namespace Cleansia.IntegrationTests.Features.Loyalty;
 /// then waits at its tier-threshold read until both have read, so both start from the same totals and one
 /// of them must lose. The account's xmin token turns the loser's overwrite into a conflict, and the commit
 /// replays the loser's points onto the row the winner committed: the account's total stays the sum of its
-/// ledger, and its tier is the one that total earns.
+/// ledger, its tier is the one that total earns, and a completion is announced as a promotion only when the
+/// tier it commits is above the one the winner left.
 /// </summary>
 [Collection("PostgresCollection")]
 public class LoyaltyAccountConcurrentWriteTests(PostgresContainerFixture fixture) : BaseIntegrationTest(fixture)
@@ -133,6 +135,60 @@ public class LoyaltyAccountConcurrentWriteTests(PostgresContainerFixture fixture
     }
 
     /// <summary>
+    /// The grant read 450 points and its own 100 crossed Silver at 500, but a clawback of 200 committed
+    /// first, so the grant lands at 250 + 100 = 350. The customer is told of no tier the account never held.
+    /// </summary>
+    [Fact]
+    public async Task A_Completion_Grant_Replayed_Below_The_Threshold_It_Crossed_On_Its_Own_Read_Announces_Nothing()
+    {
+        await ResetAsync();
+        await SeedAsync((OrderA, 450m, 450), (OrderC, 100m, 0));
+
+        await LoseToAsync(
+            service => service.GrantForCompletedOrderAsync(OrderC, CancellationToken.None),
+            service => service.RevokeForRefundAsync(OrderA, 200m, "refund:race-a", ActorId, CancellationToken.None));
+
+        await AssertAccountAsync(points: 350, completedBookings: 2, LoyaltyTier.BronzeCleaner);
+        Assert.Empty(await TiersAnnouncedAsync());
+    }
+
+    /// <summary>
+    /// Neither grant crosses Silver on its own read of 450: one reaches 490, the other 480. The one that
+    /// commits second lands at 490 + 30 = 520, and that replay is what crosses, so it is the one announced.
+    /// </summary>
+    [Fact]
+    public async Task A_Completion_Grant_Whose_Replay_Crosses_A_Threshold_Announces_The_Tier()
+    {
+        await ResetAsync();
+        await SeedAsync((OrderA, 450m, 450), (OrderB, 40m, 0), (OrderC, 30m, 0));
+
+        await LoseToAsync(
+            service => service.GrantForCompletedOrderAsync(OrderC, CancellationToken.None),
+            service => service.GrantForCompletedOrderAsync(OrderB, CancellationToken.None));
+
+        await AssertAccountAsync(points: 520, completedBookings: 3, LoyaltyTier.SilverMopper);
+        Assert.Equal(new[] { (OrderC, "SilverMopper") }, await TiersAnnouncedAsync());
+    }
+
+    /// <summary>
+    /// The first grant takes 450 to 1950 and is announced as Silver. The second read 450 and saw itself reach
+    /// Silver at 550, but lands at 1950 + 100 = 2050, past Gold at 2000, and is announced as the Gold it reached.
+    /// </summary>
+    [Fact]
+    public async Task A_Completion_Grant_Replayed_Past_The_Next_Threshold_Announces_The_Tier_It_Landed_On()
+    {
+        await ResetAsync();
+        await SeedAsync((OrderA, 450m, 450), (OrderB, 1500m, 0), (OrderC, 100m, 0));
+
+        await LoseToAsync(
+            service => service.GrantForCompletedOrderAsync(OrderC, CancellationToken.None),
+            service => service.GrantForCompletedOrderAsync(OrderB, CancellationToken.None));
+
+        await AssertAccountAsync(points: 2050, completedBookings: 3, LoyaltyTier.GoldPolisher);
+        Assert.Equal(new[] { (OrderB, "SilverMopper"), (OrderC, "GoldPolisher") }, await TiersAnnouncedAsync());
+    }
+
+    /// <summary>
     /// A threshold edit re-tiers every account it moves in one commit, and each account another write
     /// committed to in the meantime conflicts. Every one of them is replayed, however many there are, and
     /// against the thresholds the edit itself is committing.
@@ -200,6 +256,22 @@ public class LoyaltyAccountConcurrentWriteTests(PostgresContainerFixture fixture
         await Task.WhenAll(writes).WaitAsync(Timeout);
     }
 
+    // The loser reads the account and waits there while the winner commits, so the loser's save lands on
+    // the winner's row.
+    private async Task LoseToAsync(Func<LoyaltyService, Task> loser, Func<LoyaltyService, Task> winner)
+    {
+        var read = NewSignal();
+        var release = NewSignal();
+
+        var losing = Task.Run(() => WriteAsync(loser, () => Arrive(read, release)));
+        await read.Task.WaitAsync(Timeout);
+
+        await WriteAsync(winner, () => Task.CompletedTask);
+
+        release.SetResult();
+        await losing.WaitAsync(Timeout);
+    }
+
     // The service, then the commit the UnitOfWork pipeline runs after the handler.
     private async Task WriteAsync(Func<LoyaltyService, Task> write, Func<Task> atTierRead)
     {
@@ -235,8 +307,41 @@ public class LoyaltyAccountConcurrentWriteTests(PostgresContainerFixture fixture
             tierConfigs.Object,
             new LoyaltyTransactionRepository(ctx),
             new CurrencyRepository(ctx),
-            Mock.Of<INotificationProducer>(),
+            new NotificationProducer(
+                new UserNotificationRepository(ctx),
+                new OutboxPendingDispatch(ctx),
+                new UserRepository(ctx),
+                NullLogger<NotificationProducer>.Instance),
             NullLogger<LoyaltyService>.Instance);
+    }
+
+    /// <summary>
+    /// The tier each committed promotion notice names, by the order it is about. The push and the feed row
+    /// are staged together, so they must name the same tiers.
+    /// </summary>
+    private async Task<IReadOnlyList<(string OrderId, string Tier)>> TiersAnnouncedAsync()
+    {
+        await using var ctx = NewContext();
+        var pushKeyPrefix = $"push:{UserId}:{NotificationEventCatalog.LoyaltyTierUpgrade}:";
+        var pushes = (await ctx.OutboxMessages.IgnoreQueryFilters().AsNoTracking()
+                .Where(m => m.MessageKey.StartsWith(pushKeyPrefix))
+                .Select(m => new { m.MessageKey, m.Body })
+                .ToListAsync())
+            .Select(m => (
+                OrderId: m.MessageKey[pushKeyPrefix.Length..],
+                Tier: JsonDocument.Parse(m.Body).RootElement
+                    .GetProperty("payload").GetProperty("args").GetProperty("tier").GetString()!))
+            .OrderBy(p => p.OrderId, StringComparer.Ordinal)
+            .ToList();
+        var feed = (await ctx.Set<UserNotification>().IgnoreQueryFilters().AsNoTracking()
+                .Where(n => n.UserId == UserId && n.EventKey == NotificationEventCatalog.LoyaltyTierUpgrade)
+                .Select(n => n.ArgsJson)
+                .ToListAsync())
+            .Select(args => JsonDocument.Parse(args).RootElement.GetProperty("tier").GetString()!)
+            .Order(StringComparer.Ordinal);
+
+        Assert.Equal(pushes.Select(p => p.Tier).Order(StringComparer.Ordinal), feed);
+        return pushes;
     }
 
     private async Task AssertAccountAsync(int points, int completedBookings, LoyaltyTier tier, string userId = UserId)

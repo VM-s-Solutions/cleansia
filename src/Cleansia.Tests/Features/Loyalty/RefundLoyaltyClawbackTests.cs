@@ -194,7 +194,7 @@ public class RefundLoyaltyClawbackTests
         ArrangeCommit();
 
         // floor(100 × 95 / 1000) = floor(9.5) = 9.
-        await CreateService().RevokeForRefundAsync(OrderId, 95m, RefundKey, ActorId, CancellationToken.None);
+        Assert.True(await CreateService().RevokeForRefundAsync(OrderId, 95m, RefundKey, ActorId, CancellationToken.None));
 
         var revoke = Assert.Single(PartialRevokes(account));
         Assert.Equal(-9, revoke.Points);
@@ -261,7 +261,7 @@ public class RefundLoyaltyClawbackTests
             .ReturnsAsync((LoyaltyTransaction?)null);
         ArrangeNoExistingKey();
 
-        await CreateService().RevokeForRefundAsync(OrderId, 500m, RefundKey, ActorId, CancellationToken.None);
+        Assert.False(await CreateService().RevokeForRefundAsync(OrderId, 500m, RefundKey, ActorId, CancellationToken.None));
 
         _accountRepository.Verify(r => r.GetByUserIdIgnoringTenantAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Never);
         _transactionRepository.Verify(r => r.CommitAsync(It.IsAny<CancellationToken>()), Times.Never);
@@ -302,8 +302,8 @@ public class RefundLoyaltyClawbackTests
             .Returns(Task.CompletedTask);
 
         var service = CreateService();
-        await service.RevokeForRefundAsync(OrderId, 100m, RefundKey, ActorId, CancellationToken.None);
-        await service.RevokeForRefundAsync(OrderId, 100m, RefundKey, ActorId, CancellationToken.None);
+        Assert.True(await service.RevokeForRefundAsync(OrderId, 100m, RefundKey, ActorId, CancellationToken.None));
+        Assert.False(await service.RevokeForRefundAsync(OrderId, 100m, RefundKey, ActorId, CancellationToken.None));
 
         var revoke = Assert.Single(PartialRevokes(account));
         Assert.Equal(-10, revoke.Points);
@@ -518,7 +518,7 @@ public class RefundLoyaltyClawbackTests
         ArrangeTierConfigs();
         ArrangeAlreadyRevoked(100);
 
-        await CreateService().RevokeForRefundAsync(OrderId, 500m, RefundKey, ActorId, CancellationToken.None);
+        Assert.False(await CreateService().RevokeForRefundAsync(OrderId, 500m, RefundKey, ActorId, CancellationToken.None));
 
         Assert.Empty(PartialRevokes(account));
         _transactionRepository.Verify(r => r.CommitAsync(It.IsAny<CancellationToken>()), Times.Never);
@@ -529,7 +529,7 @@ public class RefundLoyaltyClawbackTests
     {
         ArrangeOrder(userId: null);
 
-        await CreateService().RevokeForRefundAsync(OrderId, 100m, RefundKey, ActorId, CancellationToken.None);
+        Assert.False(await CreateService().RevokeForRefundAsync(OrderId, 100m, RefundKey, ActorId, CancellationToken.None));
 
         _accountRepository.Verify(r => r.GetByUserIdIgnoringTenantAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Never);
         _transactionRepository.Verify(r => r.CommitAsync(It.IsAny<CancellationToken>()), Times.Never);
@@ -550,10 +550,12 @@ public class RefundLoyaltyClawbackTests
                 "duplicate key value violates unique constraint",
                 new FakePostgresUniqueViolationException()));
 
-        var ex = await Record.ExceptionAsync(() =>
-            CreateService().RevokeForRefundAsync(OrderId, 100m, RefundKey, ActorId, CancellationToken.None));
+        var revoked = true;
+        var ex = await Record.ExceptionAsync(async () =>
+            revoked = await CreateService().RevokeForRefundAsync(OrderId, 100m, RefundKey, ActorId, CancellationToken.None));
 
         Assert.Null(ex);
+        Assert.False(revoked);
         _transactionRepository.Verify(r => r.CommitAsync(It.IsAny<CancellationToken>()), Times.Once);
         _transactionRepository.Verify(r => r.Rollback(), Times.Once);
     }

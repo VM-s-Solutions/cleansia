@@ -147,12 +147,12 @@ public sealed class LoyaltyService(
         account.RevokePoints(pointsToRevoke, LoyaltyEarnSource.OrderCancelled, orderId, SystemActor, thresholds);
     }
 
-    public async Task RevokeForRefundAsync(
+    public async Task<bool> RevokeForRefundAsync(
         string orderId, decimal amountReturned, string refundKey, string actorId, CancellationToken cancellationToken)
     {
         if (string.IsNullOrEmpty(refundKey))
         {
-            return;
+            return false;
         }
 
         var order = await orderRepository
@@ -163,12 +163,12 @@ public sealed class LoyaltyService(
         if (order == null)
         {
             logger.LogWarning("LoyaltyService.RefundRevoke skipped — order {OrderId} not found.", orderId);
-            return;
+            return false;
         }
 
         if (string.IsNullOrEmpty(order.UserId) || order.TotalPrice <= 0m)
         {
-            return;
+            return false;
         }
 
         // Two refunds of one order both read the running total below; serialized, the second sees what the
@@ -179,14 +179,14 @@ public sealed class LoyaltyService(
             orderId, LoyaltyEarnSource.OrderCompleted, cancellationToken);
         if (originalEarn == null)
         {
-            return;
+            return false;
         }
 
         // Idempotency on the refund key — a replay of the same refund collapses to one revoke.
         var existingByKey = await loyaltyTransactionRepository.GetByIdempotencyKeyAsync(refundKey, cancellationToken);
         if (existingByKey != null)
         {
-            return;
+            return false;
         }
 
         // The share of everything the order has given back so far, less what its earlier refunds and its
@@ -199,13 +199,13 @@ public sealed class LoyaltyService(
         var pointsToRevoke = ShareOf(originalEarn.Points, order, returned) - alreadyRevoked;
         if (pointsToRevoke <= 0)
         {
-            return;
+            return false;
         }
 
         var account = await loyaltyAccountRepository.GetByUserIdIgnoringTenantAsync(order.UserId, cancellationToken);
         if (account == null)
         {
-            return;
+            return false;
         }
 
         var thresholds = await ResolveThresholdsAsync(cancellationToken);
@@ -215,7 +215,7 @@ public sealed class LoyaltyService(
         // Flush the keyed insert HERE so a concurrent double-submit that raced past the fast-path read
         // collides on the filtered unique index and collapses, rather than surfacing a raw 500 at the
         // pipeline commit (mirrors the manual grant/revoke path).
-        await FlushCollapsingUniqueViolationAsync(cancellationToken);
+        return await FlushCollapsingUniqueViolationAsync(cancellationToken);
     }
 
     public async Task<TierDiscountResult> ResolveTierDiscountForOrderAsync(
@@ -391,15 +391,16 @@ public sealed class LoyaltyService(
     /// on the filtered UNIQUE INDEX on <c>LoyaltyTransaction.IdempotencyKey</c> HERE, where the 23505 can
     /// be caught and collapsed — not at the <c>UnitOfWorkPipelineBehavior</c> commit (which would surface a
     /// raw 500). On a unique-violation the loser rolls back ITS OWN change-tracker (each request has its own
-    /// scoped DbContext, so this discards only the loser's row, never the winner's) and returns: the side
-    /// effect lands exactly once. On a clean flush the row is persisted and Unchanged, so the pipeline's
-    /// final commit is a safe no-op.
+    /// scoped DbContext, so this discards only the loser's row, never the winner's) and returns false: the
+    /// side effect lands exactly once. On a clean flush the row is persisted and Unchanged, so the pipeline's
+    /// final commit is a safe no-op, and it returns true.
     /// </summary>
-    private async Task FlushCollapsingUniqueViolationAsync(CancellationToken cancellationToken)
+    private async Task<bool> FlushCollapsingUniqueViolationAsync(CancellationToken cancellationToken)
     {
         try
         {
             await loyaltyTransactionRepository.CommitAsync(cancellationToken);
+            return true;
         }
         catch (DbUpdateException ex) when (IsUniqueViolation(ex))
         {
@@ -409,6 +410,7 @@ public sealed class LoyaltyService(
             loyaltyTransactionRepository.Rollback();
             logger.LogInformation(
                 "Keyed loyalty grant/revoke collapsed on idempotency key (unique-violation) — replay landed exactly once.");
+            return false;
         }
     }
 

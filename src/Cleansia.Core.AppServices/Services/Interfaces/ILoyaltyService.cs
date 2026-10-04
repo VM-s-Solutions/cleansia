@@ -66,8 +66,10 @@ public interface ILoyaltyService
     /// It flushes the unit of work to collapse a duplicate on the key, so a caller makes it the last write
     /// of its command: the flush then lands the command's whole unit, or discards a duplicate's whole unit.
     /// </para>
+    /// <para>True only when it revoked points and the flush landed them; false for every no-op and for a
+    /// duplicate collapsed on the key.</para>
     /// </summary>
-    Task RevokeForRefundAsync(
+    Task<bool> RevokeForRefundAsync(
         string orderId, decimal amountReturned, string refundKey, string actorId, CancellationToken cancellationToken);
 
     /// <summary>

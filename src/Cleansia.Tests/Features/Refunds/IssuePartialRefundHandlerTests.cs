@@ -747,11 +747,11 @@ public class IssuePartialRefundHandlerTests
     {
         public decimal? LastAmountReturned { get; private set; }
 
-        public Task RevokeForRefundAsync(
+        public Task<bool> RevokeForRefundAsync(
             string orderId, decimal amountReturned, string refundKey, string actorId, CancellationToken cancellationToken)
         {
             LastAmountReturned = amountReturned;
-            return Task.CompletedTask;
+            return Task.FromResult(true);
         }
 
         public Task GrantForCompletedOrderAsync(string orderId, CancellationToken cancellationToken) => Task.CompletedTask;

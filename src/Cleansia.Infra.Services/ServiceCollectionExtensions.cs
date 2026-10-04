@@ -42,12 +42,17 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IGeocodingService, MapboxGeocodingService>();
 
         // A lookup sits on a cleaner's profile save and on an admin's approval, both waiting for it, so
-        // the whole budget is bounded rather than per attempt only.
+        // the whole budget is bounded rather than per attempt only, and the host's standard handler is
+        // removed so it cannot wrap that budget in its own retries. The request logging goes too: the
+        // URL it writes ends in the cleaner's IČO.
+#pragma warning disable EXTEXP0001 // RemoveAllResilienceHandlers is the one way to take the host's default off one client.
         services.AddHttpClient(AresBusinessRegistry.HttpClientName)
             .ConfigurePrimaryHttpMessageHandler(() => new SocketsHttpHandler
             {
                 PooledConnectionLifetime = TimeSpan.FromMinutes(5),
             })
+            .RemoveAllLoggers()
+            .RemoveAllResilienceHandlers()
             .AddResilienceHandler("ares-lookup", builder =>
             {
                 builder.AddTimeout(TimeSpan.FromSeconds(12));
@@ -62,6 +67,7 @@ public static class ServiceCollectionExtensions
                 });
                 builder.AddTimeout(TimeSpan.FromSeconds(4));
             });
+#pragma warning restore EXTEXP0001
         services.AddSingleton(provider => new AresConfig(provider.GetRequiredService<IConfiguration>()));
         services.AddScoped<IBusinessRegistry, AresBusinessRegistry>();
 

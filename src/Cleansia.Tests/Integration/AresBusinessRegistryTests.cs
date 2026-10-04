@@ -1,10 +1,15 @@
+using System.Collections.Concurrent;
 using System.Net;
 using System.Text;
 using Cleansia.Infra.Services;
 using Cleansia.Infra.Services.BusinessRegistry;
+using Cleansia.ServiceDefaults;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
+using Moq;
 
 namespace Cleansia.Tests.Integration;
 
@@ -218,6 +223,58 @@ public class AresBusinessRegistryTests
         Assert.Equal(2, handler.Urls.Count);
     }
 
+    /// <summary>
+    /// As the API hosts compose it, under the service defaults that give every client the standard handler.
+    /// A register that keeps failing is asked once and twice again, within the lookup's own 12 s. With the
+    /// standard handler around it, each of that handler's four attempts ran all three: twelve requests in up
+    /// to 30 s, on a save and an approval that wait for the answer.
+    /// </summary>
+    [Fact]
+    public async Task Under_The_Host_Defaults_A_Register_That_Keeps_Failing_Is_Asked_Three_Times()
+    {
+        var handler = new StubHandler(() => new HttpResponseMessage(HttpStatusCode.ServiceUnavailable));
+        await using var provider = HostComposition(handler, new CapturingLoggerProvider());
+        await using var scope = provider.CreateAsyncScope();
+
+        var record = await scope.ServiceProvider.GetRequiredService<IBusinessRegistry>()
+            .LookupAsync("CZE", Ico, CancellationToken.None);
+
+        Assert.Equal(BusinessRegistryRecord.Unavailable, record);
+        Assert.Equal(3, handler.Urls.Count);
+    }
+
+    /// <summary>
+    /// The HTTP client's request logging writes the URL at Information, and an ARES URL ends in the cleaner's
+    /// IČO. The registry's own refusal is still logged, so the capture is known to be listening.
+    /// </summary>
+    [Fact]
+    public async Task Under_The_Host_Defaults_No_Log_Line_Carries_The_Ico()
+    {
+        var logs = new CapturingLoggerProvider();
+        await using var provider = HostComposition(Replying(HttpStatusCode.Forbidden, "{}"), logs);
+        await using var scope = provider.CreateAsyncScope();
+
+        await scope.ServiceProvider.GetRequiredService<IBusinessRegistry>()
+            .LookupAsync("CZE", Ico, CancellationToken.None);
+
+        Assert.Contains(logs.Entries, e => e.EventId == AresBusinessRegistry.UnavailableEvent.Id);
+        Assert.DoesNotContain(logs.Entries, e => e.Message.Contains(Ico, StringComparison.Ordinal));
+    }
+
+    private static ServiceProvider HostComposition(StubHandler primary, CapturingLoggerProvider logs)
+    {
+        var configuration = new ConfigurationBuilder().Build();
+        var services = new ServiceCollection();
+        services.AddLogging(logging => logging.AddProvider(logs).SetMinimumLevel(LogLevel.Trace));
+        services.AddSingleton<IConfiguration>(configuration);
+        services.AddServiceDefaults(
+            configuration,
+            Mock.Of<IHostEnvironment>(e => e.ApplicationName == "Cleansia.Tests" && e.EnvironmentName == "Production"));
+        services.AddInfrastructureServices();
+        services.AddHttpClient(AresBusinessRegistry.HttpClientName).ConfigurePrimaryHttpMessageHandler(() => primary);
+        return services.BuildServiceProvider();
+    }
+
     private static AresBusinessRegistry Registry(StubHandler handler, AresConfig? config = null)
         => new(new StubHttpClientFactory(handler), config ?? Config(), NullLogger<AresBusinessRegistry>.Instance);
 
@@ -245,5 +302,27 @@ public class AresBusinessRegistryTests
     private sealed class StubHttpClientFactory(HttpMessageHandler handler) : IHttpClientFactory
     {
         public HttpClient CreateClient(string name) => new(handler, disposeHandler: false);
+    }
+
+    private sealed class CapturingLoggerProvider : ILoggerProvider
+    {
+        public ConcurrentQueue<(int EventId, string Message)> Entries { get; } = new();
+
+        public ILogger CreateLogger(string categoryName) => new CapturingLogger(Entries);
+
+        public void Dispose()
+        {
+        }
+
+        private sealed class CapturingLogger(ConcurrentQueue<(int EventId, string Message)> entries) : ILogger
+        {
+            public IDisposable? BeginScope<TState>(TState state) where TState : notnull => null;
+
+            public bool IsEnabled(LogLevel logLevel) => true;
+
+            public void Log<TState>(
+                LogLevel logLevel, EventId eventId, TState state, Exception? exception, Func<TState, Exception?, string> formatter)
+                => entries.Enqueue((eventId.Id, formatter(state, exception)));
+        }
     }
 }

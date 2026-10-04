@@ -585,8 +585,10 @@ need backfilling.
   podporu*. The rest of the screen follows too: the title, the frequently asked questions and their
   answers read as on iOS in all five languages, *Email us* shows the address it opens, both contact
   rows share one card, and each question has a card of its own under a small section label. What each
-  row opens is unchanged. (Owner rulings 2026-10-03 and 2026-10-04: iOS is the reference for this
-  screen.)
+  row opens is unchanged. One notice differs on purpose: when *Email us* finds no mail app, Android
+  copies the address and says *No mail app found, so the address was copied.* It had said iOS's
+  reason, that your mail app might not be set up, which is not why Android copies it. (Owner rulings
+  2026-10-03 and 2026-10-04: iOS is the reference for this screen.)
 
 - **Customer Android and iOS — arrival times are grouped by part of day, as on the web.** The
   booking's time step asks for morning, afternoon or evening first, then shows that part's sixteen

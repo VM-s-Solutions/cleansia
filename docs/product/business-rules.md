@@ -1161,11 +1161,17 @@ the market — or from the order, on a contract for work.
   *Zavolejte podpoře*). Since 2026-10-04 the whole screen follows iOS (owner ruling 2026-10-04): the
   same title, two sections under small upper-case labels, *Contact us* first with both rows in one card
   split by a divider, then the five questions in iOS's order, each in a card of its own. Every title,
-  question, answer and notice reads as on iOS in all five languages, and *Email us* shows the address
-  it opens. Until then Android drew each contact row as a card of its own with a round icon badge, put
-  the five questions in one card with a help icon on each, and worded the title and most questions and
-  answers differently in at least one language (in Slovak the title read *Pomocník a podpora*, where
-  iOS says *Pomoc a podpora*).
+  question, answer and notice reads as on iOS in all five languages but one, and *Email us* shows the
+  address it opens. The one is the notice when the address is copied, because the two apps copy it for
+  different reasons. iOS copies it when no Mail account is set up too, and its notice says *Address
+  copied, in case your mail app isn't set up.* Android copies it only when no app on the phone takes
+  a `mailto:` link, and its notice says *No mail app found, so the address was copied.* (since
+  2026-10-04, in all five languages; until then Android gave iOS's reason, which is false there).
+  `MarketCopyStringsTest` exempts exactly that key, `help_email_unavailable`, from the iOS-parity
+  check, and fails if it reads as iOS's again. Before 2026-10-04 Android drew each contact row as a
+  card of its own with a round icon badge, put the five questions in one card with a help icon on
+  each, and worded the title and most questions and answers differently in at least one language (in
+  Slovak the title read *Pomocník a podpora*, where iOS says *Pomoc a podpora*).
 - **The registered name comes with the registration.** Whether the company is *Cleansia CZ s.r.o.* or
   *Cleansia s.r.o.* is written once, on the company record, and every text, receipt, confirmation and
   e-mail footer follows it; the footer's copyright line still reads *Cleansia s.r.o.*

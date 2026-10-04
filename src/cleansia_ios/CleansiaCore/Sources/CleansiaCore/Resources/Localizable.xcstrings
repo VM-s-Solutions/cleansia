@@ -8080,6 +8080,41 @@
         }
       }
     },
+    "error.validation.registration_number.not_registered": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Toto IČO není v registru ekonomických subjektů (ARES). Zkontrolujte číslo."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This company ID (IČO) is not in the business register (ARES). Check the number."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Этого идентификационного номера (IČO) нет в реестре экономических субъектов (ARES). Проверьте номер."
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Toto IČO nie je v registri ekonomických subjektov (ARES). Skontrolujte číslo."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Цього ідентифікаційного номера (IČO) немає в реєстрі економічних суб'єктів (ARES). Перевірте номер."
+          }
+        }
+      }
+    },
     "error.wire.contract_violation": {
       "extractionState": "stale",
       "localizations": {

@@ -259,7 +259,9 @@ class OrderDetailViewModel @Inject constructor(
     /**
      * Confirming a visit books it, so it asks for the booking's terms tick on the booking's rule: shown
      * until both consents on record cover the versions in force, and on a failed read. Read once, and
-     * only for a visit awaiting its confirmation.
+     * only for a visit awaiting its confirmation. A confirm the server refuses over the terms shows it
+     * again for good: the server judges the texts in force for the visit's own market, which that read
+     * cannot see, so a re-read could hide the tick it just asked for.
      */
     private val _termsAsked = MutableStateFlow(true)
     val termsAsked: StateFlow<Boolean> = _termsAsked.asStateFlow()
@@ -414,6 +416,8 @@ class OrderDetailViewModel @Inject constructor(
         const val POLL_INTERVAL_MS = 5L * 60L * 1000L
 
         const val PAYMENT_TYPE_CARD = 2
+
+        const val TERMS_NOT_ACCEPTED = "consent.terms_not_accepted"
     }
 
     /**
@@ -514,8 +518,13 @@ class OrderDetailViewModel @Inject constructor(
         val termsAccepted = if (_termsAsked.value) true else null
         viewModelScope.launch {
             _confirmRecurringState.value = ActionState.Submitting
-            val resp = orderRepository.confirmRecurring(id, termsAccepted).surfaceError().getOrNull()
+            val result = orderRepository.confirmRecurring(id, termsAccepted).surfaceError()
+            val resp = result.getOrNull()
             if (resp == null) {
+                if ((result.errorOrNull() as? ApiError.BadRequest)?.errorKey == TERMS_NOT_ACCEPTED) {
+                    _termsAccepted.value = false
+                    _termsAsked.value = true
+                }
                 _confirmRecurringState.value = ActionState.Idle
                 return@launch
             }

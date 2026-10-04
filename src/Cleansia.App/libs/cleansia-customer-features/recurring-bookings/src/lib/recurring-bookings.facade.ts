@@ -731,10 +731,11 @@ export class RecurringBookingsFacade extends UnsubscribeControlDirective {
 
   // ─── A package and a service it already includes ──────────────────
   //
-  // Booked together they book that service twice on every clean, and nothing merges them. So the
-  // services list marks such a service, and adding either half of the pair by hand asks first. A
-  // selection the form is handed (an order to repeat, a schedule to edit, a parked form) is only
-  // marked. → /product/business-rules#charging-a-package-and-a-service-together
+  // Booked together they book that service twice on every clean, and nothing merges them; two
+  // chosen packages that share a service do too. So the services list marks such a service, and a
+  // tap that books one again asks first. A selection the form is handed (an order to repeat, a
+  // schedule to edit, a parked form) is only marked.
+  // → /product/business-rules#charging-a-package-and-a-service-together
   private readonly packagesByIncludedService = computed(() =>
     chosenPackagesByService(this.packages(), this.formData().selectedPackageIds),
   );
@@ -758,9 +759,13 @@ export class RecurringBookingsFacade extends UnsubscribeControlDirective {
       this.addService(id);
       return;
     }
+    // Already in two chosen packages, adding it is a third time, not "twice".
+    const many = (this.packagesByIncludedService().get(id)?.length ?? 0) > 1;
     this.dialog
       .confirmTranslated(
-        'pages.order.package_overlap.service_message',
+        many
+          ? 'pages.order.package_overlap.service_message_many'
+          : 'pages.order.package_overlap.service_message',
         'pages.order.package_overlap.service_title',
         { service: this.serviceName(id) ?? '', package: packageNames },
         { acceptLabelKey: 'pages.order.package_overlap.add_again' },
@@ -771,7 +776,10 @@ export class RecurringBookingsFacade extends UnsubscribeControlDirective {
       });
   }
 
-  /** Removing never asks; adding a package that includes a service already chosen does. */
+  /**
+   * Removing never asks; adding a package that includes a service already in the form, on its own
+   * or through another chosen package, does.
+   */
   togglePackage(id: string): void {
     const chosen = this.formData().selectedPackageIds;
     if (chosen.includes(id)) {
@@ -779,7 +787,7 @@ export class RecurringBookingsFacade extends UnsubscribeControlDirective {
       return;
     }
     const pkg = this.packages().find((p) => p.id === id);
-    const overlap = includedServicesAlreadyChosen(pkg, this.formData().selectedServiceIds);
+    const overlap = includedServicesAlreadyChosen(pkg, this.packages(), this.formData());
     if (overlap.length === 0) {
       this.addPackage(id);
       return;

@@ -899,6 +899,20 @@ describe('OrderWizardFacade', () => {
       expect(chosen()).toEqual({ services: ['windows'], packages: ['deep'] });
     });
 
+    // Two chosen packages already book it, so adding it is a third time: "twice" would be false.
+    it('asks with the once-more message when two chosen packages include the service', () => {
+      facade.updateFormData({ selectedPackageIds: ['deep', 'kitchen'] });
+
+      facade.toggleService('oven');
+
+      expect(dialog.confirmTranslated).toHaveBeenCalledWith(
+        'pages.order.package_overlap.service_message_many',
+        'pages.order.package_overlap.service_title',
+        { service: 'Oven', package: 'Deep clean, Kitchen' },
+        { acceptLabelKey: 'pages.order.package_overlap.add_again' },
+      );
+    });
+
     it('adds a service no chosen package includes without asking', () => {
       facade.updateFormData({ selectedPackageIds: ['deep'] });
 
@@ -920,6 +934,29 @@ describe('OrderWizardFacade', () => {
         { acceptLabelKey: 'pages.order.package_overlap.add_package' },
       );
       expect(chosen().packages).toEqual([]);
+    });
+
+    it('asks before adding a package that includes a service another chosen package already books', () => {
+      facade.updateFormData({ selectedPackageIds: ['kitchen'] });
+
+      facade.togglePackage('deep');
+
+      expect(dialog.confirmTranslated).toHaveBeenCalledWith(
+        'pages.order.package_overlap.package_message',
+        'pages.order.package_overlap.package_title',
+        { package: 'Deep clean', services: 'Oven' },
+        { acceptLabelKey: 'pages.order.package_overlap.add_package' },
+      );
+      expect(chosen().packages).toEqual(['kitchen']);
+    });
+
+    it('adds the overlapping package when the customer confirms, and keeps the other one', () => {
+      facade.updateFormData({ selectedPackageIds: ['kitchen'] });
+      dialog.confirmTranslated.mockReturnValue(of(true));
+
+      facade.togglePackage('deep');
+
+      expect(chosen()).toEqual({ services: [], packages: ['kitchen', 'deep'] });
     });
 
     it('adds the package when the customer confirms, and keeps the service', () => {
@@ -953,16 +990,17 @@ describe('OrderWizardFacade', () => {
     it('only marks a pair the wizard is handed, as Order again hands it over', () => {
       facade.prefillFromRebook({
         selectedServiceIds: ['windows'],
-        selectedPackageIds: ['deep'],
+        selectedPackageIds: ['deep', 'kitchen'],
         selectedServiceNames: ['Windows'],
-        selectedPackageNames: ['Deep clean'],
+        selectedPackageNames: ['Deep clean', 'Kitchen'],
         rooms: 2,
         bathrooms: 1,
       });
 
       expect(dialog.confirmTranslated).not.toHaveBeenCalled();
-      expect(chosen()).toEqual({ services: ['windows'], packages: ['deep'] });
+      expect(chosen()).toEqual({ services: ['windows'], packages: ['deep', 'kitchen'] });
       expect(facade.packageNamesIncluding('windows')).toBe('Deep clean');
+      expect(facade.packageNamesIncluding('oven')).toBe('Deep clean, Kitchen');
     });
   });
 

@@ -838,9 +838,10 @@
         "in_package": "In your package: {{package}}",
         "service_title": "Already in your package",
         "service_message": "{{service}} is part of {{package}}. Adding it again books it twice: it is done twice and charged twice.",
+        "service_message_many": "{{service}} is already part of {{package}}. Adding it again books it once more: it is done once more and charged once more.",
         "add_again": "Add again",
         "package_title": "Already in your booking",
-        "package_message": "{{package}} also includes what you already added separately: {{services}}. Adding the package books that twice: done twice and charged twice.",
+        "package_message": "{{package}} also includes what is already in your booking: {{services}}. Adding the package books that once more: it is done once more and charged once more.",
         "add_package": "Add package"
       },
       "packages_section_title": "Packages",

@@ -838,9 +838,10 @@
         "in_package": "Vo vašom balíku: {{package}}",
         "service_title": "Už je vo vašom balíku",
         "service_message": "Služba {{service}} je súčasťou balíka {{package}}. Ak ju pridáte znova, objednáte ju dvakrát: vykoná sa dvakrát a zaplatíte ju dvakrát.",
+        "service_message_many": "Služba {{service}} je už súčasťou balíkov {{package}}. Ak ju pridáte znova, objednáte ju ešte raz: vykoná sa ešte raz a zaplatíte ju ešte raz.",
         "add_again": "Pridať znova",
         "package_title": "Už je vo vašej rezervácii",
-        "package_message": "Balík {{package}} obsahuje aj to, čo už máte v rezervácii samostatne: {{services}}. Ak balík pridáte, objednáte to dvakrát: vykoná sa to dvakrát a zaplatíte to dvakrát.",
+        "package_message": "Balík {{package}} obsahuje aj to, čo už máte v rezervácii: {{services}}. Ak balík pridáte, objednáte to ešte raz: vykoná sa to ešte raz a zaplatíte to ešte raz.",
         "add_package": "Pridať balík"
       },
       "packages_section_title": "Balíky",

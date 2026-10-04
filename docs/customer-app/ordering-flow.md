@@ -149,7 +149,9 @@ tile of the picked coordinates (`/api/AddressSearch/map`), and *In range* once t
 **Then the property, the way in and the contact.** *Flat* or *House*: a flat asks for the floor and the
 flat number, a house asks for neither and clears them. *How do we get in?* is an optional note of up
 to 2000 characters, badged *Only the assigned cleaner sees it*: like the address and the phone, it is
-redacted for every cleaner but the one the order belongs to. Last, the four contact fields:
+redacted for every cleaner but the one the order belongs to. Last, the four contact fields. The table
+gives their rules, and those of a looked-up or typed address; a saved address is checked only for
+being non-empty:
 
 | Field | Validation |
 |---|---|

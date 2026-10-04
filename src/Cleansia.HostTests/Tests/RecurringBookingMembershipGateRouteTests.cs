@@ -5,6 +5,7 @@ using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.Domain.Bookings;
 using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Memberships;
+using Cleansia.Core.Domain.Services;
 using Cleansia.Core.Domain.Users;
 using Cleansia.HostTests.Infrastructure;
 using Microsoft.EntityFrameworkCore;
@@ -237,6 +238,15 @@ public sealed class RecurringBookingMembershipGateRouteTests(HostTestPostgresFix
             saved.Id = SavedAddressId;
             ctx.Addresses.Add(address);
             ctx.SavedAddresses.Add(saved);
+
+            // CreateRecurringBooking refuses a selection whose ids are not active catalogue rows, in the
+            // validator, before the membership gate. Without this row every Create leg answers
+            // order.selected_services.invalid and the gate is never reached. Card payment needs no price.
+            var category = ServiceCategory.Create("recur-gate", "Recur gate", "Under test");
+            ctx.Add(category);
+            var service = Service.Create(category.Id, "Recur gate clean", "Under test", 60);
+            service.Id = SeededServiceId;
+            ctx.Add(service);
 
             // The re-authored body pays cash, which needs a card saved in the address's currency.
             var card = SavedCard.Start(CustomerId, DomainSeed.CurrencyId, "cus_recur_gate", null, null);

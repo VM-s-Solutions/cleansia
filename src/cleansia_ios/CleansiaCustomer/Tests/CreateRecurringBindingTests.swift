@@ -93,6 +93,29 @@ final class CreateRecurringBindingTests: XCTestCase {
         )
     }
 
+    /// The server requires the tick on a create from an account without the texts in force; no iOS create sent it.
+    func testTheCreateCommandCarriesTheTermsTick() throws {
+        let source = try read("CleansiaCustomer/Sources/Features/Recurring/Data/RecurringBookingClient.swift")
+        let start = try XCTUnwrap(source.range(of: "func create(", options: .backwards), "no create call")
+        let end = try XCTUnwrap(source.range(of: "func update(", options: .backwards), "no update call")
+        XCTAssertTrue(
+            source[start.upperBound ..< end.lowerBound].contains("termsAccepted: input.termsAccepted"),
+            "the create command drops the terms tick"
+        )
+    }
+
+    func testTheFormAsksForTheTermsOffTheViewModelWithTheBookingsCopy() throws {
+        let source = try read(Self.screen)
+        XCTAssertTrue(source.contains("consentClient: LiveConsentStatusClient()"), "the form reads no consents")
+        XCTAssertTrue(source.contains("if vm.termsAsked {"), "the box is gated off something other than the view model")
+        XCTAssertTrue(
+            source.contains("checked: Binding(get: { vm.formState.termsAccepted }, set: vm.setTermsAccepted)"),
+            "the box is bound to nothing the submit reads"
+        )
+        XCTAssertTrue(source.contains("markdown: L10n.Auth.acceptTerms,"), "the form words the tick differently")
+        XCTAssertTrue(source.contains("toggleAccessibilityLabel: L10n.Auth.acceptTermsToggle"))
+    }
+
     func testTheScreenSpellsNoLabelItself() throws {
         let source = try read(Self.screen)
         for hardcoded in ["Rooms", "Bathrooms", "Add new"] {

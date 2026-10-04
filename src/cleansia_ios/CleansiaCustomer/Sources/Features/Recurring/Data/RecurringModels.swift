@@ -96,6 +96,7 @@ struct CreateRecurringInput: Equatable {
     let paymentType: Int
     let startsOn: Date
     let preferredEmployeeId: String?
+    let termsAccepted: Bool?
     let earlyPerformanceRequested: Bool
 }
 

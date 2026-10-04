@@ -4,6 +4,7 @@ using Cleansia.Core.AppServices.Authentication;
 using Cleansia.Core.AppServices.Features.Orders;
 using Cleansia.Core.AppServices.Services;
 using Cleansia.Core.AppServices.Services.Interfaces;
+using Cleansia.Core.Domain.Configuration;
 using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Internationalization;
 using Cleansia.Core.Domain.Memberships;
@@ -244,7 +245,8 @@ public class UnpaidOrderCancellationMoneyFieldsTests
             Mock.Of<IUserMembershipRepository>(),
             acceptances.Object,
             Mock.Of<IEmployeeActionAuditRepository>(),
-            new Cleansia.Core.AppServices.Services.CancellationPolicyResolver(Mock.Of<IUserMembershipRepository>(), Mock.Of<IOrderRepository>()));
+            new Cleansia.Core.AppServices.Services.CancellationPolicyResolver(Mock.Of<IUserMembershipRepository>(), Mock.Of<IOrderRepository>()),
+            Mock.Of<IAppConfigurationProvider>());
 
         var result = await handler.Handle(new GetOrderDetails.Query(OrderId), CancellationToken.None);
         Assert.True(result.IsSuccess, result.Error?.Message);

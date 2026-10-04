@@ -3,6 +3,7 @@ using Cleansia.Core.AppServices.Authentication;
 using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.AppServices.Features.Orders;
 using Cleansia.Core.AppServices.Services.Interfaces;
+using Cleansia.Core.Domain.Configuration;
 using Cleansia.Core.Domain.EmployeePayroll;
 using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Memberships;
@@ -204,7 +205,8 @@ public class PreferredOfferExitAgreementTests
             _userMembershipRepository.Object,
             WorkContractTestData.AcceptanceRepository().Object,
             Mock.Of<IEmployeeActionAuditRepository>(),
-            new Cleansia.Core.AppServices.Services.CancellationPolicyResolver(Mock.Of<IUserMembershipRepository>(), Mock.Of<IOrderRepository>()));
+            new Cleansia.Core.AppServices.Services.CancellationPolicyResolver(Mock.Of<IUserMembershipRepository>(), Mock.Of<IOrderRepository>()),
+            Mock.Of<IAppConfigurationProvider>());
 
     private ChoosePreferredCleaner.Handler CreateChooseHandler() =>
         new(

@@ -3,11 +3,15 @@ using System.Security.Claims;
 using Cleansia.Core.AppServices.Authentication;
 using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.AppServices.Features.Dashboard;
+using Cleansia.Core.AppServices.Features.TenantSettings;
 using Cleansia.Core.AppServices.Services.Interfaces;
+using Cleansia.Core.Domain.Configuration;
+using Cleansia.Core.Domain.EmployeePayroll;
 using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Internationalization;
 using Cleansia.Core.Domain.Orders;
 using Cleansia.Core.Domain.Repositories;
+using Cleansia.Core.Domain.Services;
 using Cleansia.TestUtilities.MockDataFactories.EmployeePayroll;
 using Cleansia.TestUtilities.MockDataFactories.Orders;
 using Cleansia.Tests.Features.Orders;
@@ -35,6 +39,7 @@ public class GetDashboardStatsHandlerTests
     private readonly Mock<IOrderAccessService> _orderAccessService = new();
     private readonly Mock<ICurrencyResolutionService> _currencyResolutionService = new();
     private readonly Mock<IUserSessionProvider> _session = new();
+    private readonly Mock<IAppConfigurationProvider> _configurationProvider = new();
 
     public GetDashboardStatsHandlerTests()
     {
@@ -103,7 +108,8 @@ public class GetDashboardStatsHandlerTests
             _payPeriodRepository.Object,
             _orderAccessService.Object,
             _currencyResolutionService.Object,
-            _session.Object)!;
+            _session.Object,
+            _configurationProvider.Object)!;
 
     private static Order CompletedOrder(string orderId, DateTime completedAtUtc, string currencyId = CzkId)
     {
@@ -203,6 +209,38 @@ public class GetDashboardStatsHandlerTests
         Assert.True(result.IsSuccess);
         Assert.Equal(500m, result.Value.TodayEarnings);
         Assert.Equal(500m, result.Value.WeekEarnings);
+    }
+
+    /// <summary>
+    /// A job completed today with no pay row and no contract on the seat is estimated at today's rates, the
+    /// company's share of its extras included: 700 + 40 % of 300 = 820.
+    /// </summary>
+    [Fact]
+    public async Task An_Uncontracted_Completed_Job_Is_Estimated_With_The_Share_Of_Its_Extras()
+    {
+        var order = CompletedOrder("dash-extras", DateTime.UtcNow.Date.AddHours(12));
+        var service = Service.Create("cat-1", "Standard clean", "Regular");
+        order.AddSelectedServices([OrderService.Create(order, service, 1000m, 0m, 1000m)]);
+        order.AddSelectedExtras([OrderExtra.Create(order, Extra.Create("windows", "Windows", null), 300m)]);
+        _orderRepository
+            .Setup(r => r.GetCompletedOrdersInEitherRangeAsync(
+                CallerEmployeeId,
+                It.IsAny<DateTime>(), It.IsAny<DateTime>(),
+                It.IsAny<DateTime>(), It.IsAny<DateTime>(),
+                It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new[] { order });
+        _payConfigRepository
+            .Setup(r => r.GetServiceConfigsForOrderAsync(
+                It.IsAny<IEnumerable<string>>(), CallerEmployeeId, It.IsAny<IReadOnlyCollection<string>>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync([EmployeePayConfig.CreateForService(service.Id, 700m, CzkId)]);
+        _configurationProvider
+            .Setup(c => c.GetTenantSettingAsync(TenantSettingCatalog.ExtrasSharePercentKey, It.IsAny<CancellationToken>()))
+            .ReturnsAsync("40");
+
+        var result = await CreateHandler().Handle(new GetDashboardStats.Query(), CancellationToken.None);
+
+        Assert.True(result.IsSuccess);
+        Assert.Equal(820m, result.Value.TodayEarnings);
     }
 
     /// <summary>

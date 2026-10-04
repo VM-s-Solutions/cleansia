@@ -15,24 +15,26 @@ namespace Cleansia.Core.AppServices.Features.Orders;
 internal static class OrderPayEstimator
 {
     /// <summary>
-    /// Returns what the given employee would earn on one seat of the given order
-    /// based on their per-employee pay configs: the seat's share of the job, raised by the dirtiness
-    /// rate the order was booked at, as <c>CalculateOrderPay</c> writes it for every seat but the first,
-    /// which also takes the cent residue. Falls back to default
-    /// configs when no per-employee override exists. Returns null when
-    /// no config matches any of the order's services / packages — the
-    /// caller treats that as "we can't quote pay, hide the chip".
+    /// Returns what the given employee would earn on one seat of the given order based on their
+    /// per-employee pay configs: the seat's share of the job, the company's
+    /// <paramref name="extrasSharePercent"/> of the extras booked included, raised by the dirtiness rate
+    /// the order was booked at, as <c>CalculateOrderPay</c> writes it for every seat but the first, which
+    /// also takes the cent residue. It is the reward the contract for work states at the take. Falls back
+    /// to default configs when no per-employee override exists. Returns null when no config matches any
+    /// of the order's services / packages — the caller treats that as "we can't quote pay, hide the chip".
     /// </summary>
     public static decimal? Estimate(
         Order order,
         string employeeId,
         IReadOnlyList<EmployeePayConfig> serviceConfigs,
-        IReadOnlyList<EmployeePayConfig> packageConfigs) =>
+        IReadOnlyList<EmployeePayConfig> packageConfigs,
+        int extrasSharePercent) =>
         Estimate(
             order.SelectedServices.Select(s => s.ServiceId).ToHashSet(),
             order.SelectedPackages.Select(p => p.PackageId).ToHashSet(),
             order.Rooms,
             order.Bathrooms,
+            PayCalculatorExtensions.BookedExtrasPay(order.SelectedExtras.Sum(e => e.UnitPrice), extrasSharePercent),
             order.RequiredEmployees,
             order.DirtinessRate,
             order.CurrencyId,
@@ -48,12 +50,14 @@ internal static class OrderPayEstimator
         OrderListRow order,
         string employeeId,
         IReadOnlyList<EmployeePayConfig> serviceConfigs,
-        IReadOnlyList<EmployeePayConfig> packageConfigs) =>
+        IReadOnlyList<EmployeePayConfig> packageConfigs,
+        int extrasSharePercent) =>
         Estimate(
             order.SelectedServices.Select(s => s.Id).ToHashSet(),
             order.SelectedPackages.Select(p => p.Id).ToHashSet(),
             order.Rooms,
             order.Bathrooms,
+            PayCalculatorExtensions.BookedExtrasPay(order.ExtrasSubtotal, extrasSharePercent),
             order.RequiredEmployees,
             order.DirtinessRate,
             order.CurrencyId,
@@ -83,13 +87,14 @@ internal static class OrderPayEstimator
         HashSet<string> orderPackageIds,
         int rooms,
         int bathrooms,
+        decimal bookedExtrasPay,
         int requiredEmployees,
         decimal dirtinessRate,
         string orderCurrencyId,
         string employeeId,
         IReadOnlyList<EmployeePayConfig> serviceConfigs,
         IReadOnlyList<EmployeePayConfig> packageConfigs) =>
-        JobPay(orderServiceIds, orderPackageIds, rooms, bathrooms, bookedExtrasPay: 0m, orderCurrencyId, employeeId, serviceConfigs, packageConfigs) is { } jobPay
+        JobPay(orderServiceIds, orderPackageIds, rooms, bathrooms, bookedExtrasPay, orderCurrencyId, employeeId, serviceConfigs, packageConfigs) is { } jobPay
             ? SeatReward(jobPay, dirtinessRate, requiredEmployees)
             : null;
 

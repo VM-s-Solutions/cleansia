@@ -3,6 +3,7 @@ using Cleansia.Core.AppServices.Authentication;
 using Cleansia.Core.AppServices.Features.Orders;
 using Cleansia.Core.AppServices.Features.Orders.DTOs;
 using Cleansia.Core.AppServices.Services;
+using Cleansia.Core.Domain.Configuration;
 using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Internationalization;
 using Cleansia.Core.Domain.Memberships;
@@ -115,7 +116,8 @@ public sealed class OrderDetailFreeCancellationHoursTests
             _memberships.Object,
             acceptances.Object,
             Mock.Of<IEmployeeActionAuditRepository>(),
-            new CancellationPolicyResolver(_memberships.Object, Mock.Of<IOrderRepository>()));
+            new CancellationPolicyResolver(_memberships.Object, Mock.Of<IOrderRepository>()),
+            Mock.Of<IAppConfigurationProvider>());
 
         var result = await handler.Handle(new GetOrderDetails.Query(OrderId), CancellationToken.None);
         Assert.True(result.IsSuccess, result.Error?.Message);

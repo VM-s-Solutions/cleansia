@@ -4,8 +4,10 @@ using System.Security.Claims;
 using Cleansia.Core.AppServices.Authentication;
 using Cleansia.Core.AppServices.Features.Orders;
 using Cleansia.Core.AppServices.Features.Orders.DTOs;
+using Cleansia.Core.AppServices.Features.TenantSettings;
 using Cleansia.Core.AppServices.Services.Interfaces;
 using Cleansia.Core.AppServices.Shared.DTOs.ResponseModels;
+using Cleansia.Core.Domain.Configuration;
 using Cleansia.Core.Domain.EmployeePayroll;
 using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Internationalization;
@@ -27,7 +29,8 @@ namespace Cleansia.Tests.Features.Orders;
 /// <summary>
 /// Owner ruling 2026-10-03, on the cleaner's order list: the crew's row shows the reward its seat's contract
 /// for work was priced at, 900, even after the cleaner's rate has moved to 700; a cleaner browsing the job is
-/// offered today's 700. The list runs the real row projection, so the frozen figures must survive it.
+/// offered today's 700. The list runs the real row projection, so the frozen figures must survive it, and so
+/// must the extras' prices the browsing cleaner's quote takes the company's share of.
 /// </summary>
 public sealed class GetPagedOrdersFrozenSeatPayTests
 {
@@ -42,6 +45,7 @@ public sealed class GetPagedOrdersFrozenSeatPayTests
     private readonly Mock<IEmployeePayConfigRepository> _payConfigRepository = new();
     private readonly Mock<IOrderEmployeePayRepository> _orderEmployeePayRepository = new();
     private readonly Mock<ICurrencyResolutionService> _currencyResolutionService = new();
+    private readonly Mock<IAppConfigurationProvider> _configurationProvider = new();
 
     private IRequestHandler<GetPagedOrders.Request, PagedData<OrderListItem>> CreateHandler()
     {
@@ -55,6 +59,7 @@ public sealed class GetPagedOrdersFrozenSeatPayTests
             _orderEmployeePayRepository.Object,
             _currencyResolutionService.Object,
             Mock.Of<IServiceScopeFactory>(),
+            _configurationProvider.Object,
             Activator.CreateInstance(typeof(NullLogger<>).MakeGenericType(handlerType)))!;
     }
 
@@ -63,6 +68,34 @@ public sealed class GetPagedOrdersFrozenSeatPayTests
     [InlineData(BrowserEmployeeId, 700)]
     public async Task A_Held_Seat_Lists_Its_Contract_Reward_And_A_Browsing_Cleaner_The_Live_Rate(
         string caller, int expectedPay)
+    {
+        var page = await ListAs(caller, extrasPrice: null);
+
+        var row = Assert.Single(page.Data!);
+        Assert.Equal((decimal)expectedPay, row.EstimatedCleanerPay);
+    }
+
+    /// <summary>
+    /// 300 of extras at the company's 40 % share: the browsing cleaner is offered 700 + 120 = 820, what the
+    /// contract for work would state; the crew keeps its frozen 900.
+    /// </summary>
+    [Theory]
+    [InlineData(CrewEmployeeId, 900)]
+    [InlineData(BrowserEmployeeId, 820)]
+    public async Task A_Browsing_Cleaner_Is_Offered_The_Companys_Share_Of_The_Extras_Booked(
+        string caller, int expectedPay)
+    {
+        _configurationProvider
+            .Setup(c => c.GetTenantSettingAsync(TenantSettingCatalog.ExtrasSharePercentKey, It.IsAny<CancellationToken>()))
+            .ReturnsAsync("40");
+
+        var page = await ListAs(caller, extrasPrice: 300m);
+
+        var row = Assert.Single(page.Data!);
+        Assert.Equal((decimal)expectedPay, row.EstimatedCleanerPay);
+    }
+
+    private async Task<PagedData<OrderListItem>> ListAs(string caller, decimal? extrasPrice)
     {
         var currency = Currency.Create("CZK", "Kč", "Czech koruna");
         currency.Id = CurrencyId;
@@ -83,6 +116,10 @@ public sealed class GetPagedOrdersFrozenSeatPayTests
         var seat = OrderEmployee.Create(order, employee);
         order.AddAssignedEmployee(seat);
         seat.FreezeJobPay((900m, 0m, 0m, 0m));
+        if (extrasPrice is { } price)
+        {
+            order.AddSelectedExtras([OrderExtra.Create(order, Extra.Create("windows", "Windows", null), price)]);
+        }
 
         _userSessionProvider
             .Setup(s => s.GetTypedUserClaim(ClaimTypes.Role))
@@ -110,9 +147,6 @@ public sealed class GetPagedOrdersFrozenSeatPayTests
             .Setup(r => r.GetTotalPayByOrderIdsAsync(It.IsAny<IReadOnlyCollection<string>>(), caller, It.IsAny<CancellationToken>()))
             .ReturnsAsync(new Dictionary<string, decimal>());
 
-        var page = await CreateHandler().Handle(new GetPagedOrders.Request(), CancellationToken.None);
-
-        var row = Assert.Single(page.Data!);
-        Assert.Equal((decimal)expectedPay, row.EstimatedCleanerPay);
+        return await CreateHandler().Handle(new GetPagedOrders.Request(), CancellationToken.None);
     }
 }

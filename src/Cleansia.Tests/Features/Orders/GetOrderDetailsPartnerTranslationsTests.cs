@@ -2,6 +2,7 @@ using System.Security.Claims;
 using Cleansia.Core.AppServices.Authentication;
 using Cleansia.Core.AppServices.Features.Orders;
 using Cleansia.Core.AppServices.Services.Interfaces;
+using Cleansia.Core.Domain.Configuration;
 using Cleansia.Core.Domain.EmployeePayroll;
 using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Orders;
@@ -50,7 +51,8 @@ public class GetOrderDetailsPartnerTranslationsTests
             Mock.Of<IUserMembershipRepository>(),
             WorkContractTestData.AcceptanceRepository().Object,
             Mock.Of<IEmployeeActionAuditRepository>(),
-            new Cleansia.Core.AppServices.Services.CancellationPolicyResolver(Mock.Of<IUserMembershipRepository>(), Mock.Of<IOrderRepository>()));
+            new Cleansia.Core.AppServices.Services.CancellationPolicyResolver(Mock.Of<IUserMembershipRepository>(), Mock.Of<IOrderRepository>()),
+            Mock.Of<IAppConfigurationProvider>());
 
     private void ArrangeEmployeeCaller(Order order)
     {

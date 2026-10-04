@@ -199,6 +199,7 @@ public class OrderRepository(CleansiaDbContext context) : BaseRepository<Order>(
                 .ThenInclude(s => s.Service)
             .Include(o => o.SelectedPackages)
                 .ThenInclude(op => op.Package)
+            .Include(o => o.SelectedExtras)
             .Where(o => o.AssignedEmployees.Any(e => e.EmployeeId == employeeId)
                 && ((o.CompletedAt >= firstStart && o.CompletedAt <= firstEnd)
                     || (o.CompletedAt >= secondStart && o.CompletedAt <= secondEnd)))

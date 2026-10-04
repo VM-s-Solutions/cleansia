@@ -4,8 +4,11 @@ using Cleansia.Core.AppServices.Authentication;
 using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.AppServices.Features.Dashboard.DTOs;
 using Cleansia.Core.AppServices.Features.Orders;
+using Cleansia.Core.AppServices.Features.TenantSettings;
 using Cleansia.Core.AppServices.Mappers;
 using Cleansia.Core.AppServices.Services.Interfaces;
+using Cleansia.Core.Domain.Configuration;
+using Cleansia.Core.Domain.Extensions;
 using Cleansia.Core.Domain.Repositories;
 using Cleansia.Infra.Common.Validations;
 using Microsoft.EntityFrameworkCore;
@@ -41,7 +44,8 @@ public class GetAvailableJobsPreview
         IOrderRepository orderRepository,
         IEmployeePayConfigRepository payConfigRepository,
         IOrderAccessService orderAccessService,
-        ICurrencyResolutionService currencyResolutionService)
+        ICurrencyResolutionService currencyResolutionService,
+        IAppConfigurationProvider configurationProvider)
         : IQueryHandler<Query, AvailableJobsPreviewResponse>
     {
         public async Task<BusinessResult<AvailableJobsPreviewResponse>> Handle(Query query, CancellationToken cancellationToken)
@@ -81,6 +85,7 @@ public class GetAvailableJobsPreview
                     // Carried for the pay estimate too: a rate is denominated, so the estimate has to
                     // know which of the caller's rates applies to THIS job.
                     o.CurrencyId,
+                    ExtrasSubtotal = o.SelectedExtras.Sum(e => e.UnitPrice),
                     ServiceIds = o.SelectedServices.Select(s => s.ServiceId).ToList(),
                     PackageIds = o.SelectedPackages.Select(p => p.PackageId).ToList(),
                     City = o.CustomerAddress!.City,
@@ -109,6 +114,9 @@ public class GetAvailableJobsPreview
                     packageIds, employeeId, currencyIds, cancellationToken);
             }
 
+            var extrasSharePercent = await configurationProvider.GetAsync(
+                TenantSettingCatalog.ExtrasSharePercent, cancellationToken);
+
             var jobs = orders.Select(o => new AvailableJobPreviewDto(
                 Id: o.Id,
                 DisplayOrderNumber: o.DisplayOrderNumber,
@@ -130,6 +138,7 @@ public class GetAvailableJobsPreview
                 o.PackageIds.ToHashSet(),
                 o.Rooms,
                 o.Bathrooms,
+                PayCalculatorExtensions.BookedExtrasPay(o.ExtrasSubtotal, extrasSharePercent),
                 o.RequiredEmployees,
                 o.DirtinessRate,
                 o.CurrencyId,

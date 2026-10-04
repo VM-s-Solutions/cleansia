@@ -144,6 +144,7 @@ class FakeOrderWizardFacade {
   // The services step reads the "In your package" line from here, and adding or removing an item
   // is the facade's, because adding one a chosen package already includes asks first.
   packageNamesIncluding = jest.fn<string | null, [string]>(() => null);
+  isInManyPackages = jest.fn<boolean, [string]>(() => false);
   toggleService = jest.fn((id: string) => {
     const chosen = this.formData().selectedServiceIds;
     this.updateFormData({
@@ -1481,7 +1482,20 @@ describe('OrderWizardComponent (a11y)', () => {
       facade.updateFormData({ selectedPackageIds: ['deep'] });
       fixture.detectChanges();
 
-      expect(marker()?.textContent).toContain('pages.order.package_overlap.in_package');
+      expect(marker()?.textContent?.trim()).toBe('pages.order.package_overlap.in_package');
+      expect(addButton()?.getAttribute('aria-describedby')).toBe(marker()?.id);
+    });
+
+    it('says packages on the row and in its description when two chosen packages include it', async () => {
+      await onServicesStep();
+      facade.packageNamesIncluding.mockImplementation((id: string) =>
+        id === 'windows' ? 'Deep clean, Kitchen' : null,
+      );
+      facade.isInManyPackages.mockImplementation((id: string) => id === 'windows');
+      facade.updateFormData({ selectedPackageIds: ['deep', 'kitchen'] });
+      fixture.detectChanges();
+
+      expect(marker()?.textContent?.trim()).toBe('pages.order.package_overlap.in_packages');
       expect(addButton()?.getAttribute('aria-describedby')).toBe(marker()?.id);
     });
 
@@ -1507,10 +1521,28 @@ describe('OrderWizardComponent (a11y)', () => {
       const row = el.querySelector('.cl-wiz__cross-row');
       expect(row).not.toBeNull();
       const crossMarker = row?.querySelector('[data-spec-in-package]');
-      expect(crossMarker?.textContent).toContain('pages.order.package_overlap.in_package');
+      expect(crossMarker?.textContent?.trim()).toBe('pages.order.package_overlap.in_package');
       expect(crossMarker?.id).toBe('cross-in-pack-windows');
       expect(row?.querySelector('.cl-wiz__cross-add')?.getAttribute('aria-describedby')).toBe(
         'cross-in-pack-windows',
+      );
+    });
+
+    it('says packages on the Plus-step suggestion two chosen packages include', async () => {
+      await onServicesStep();
+      facade.packageNamesIncluding.mockImplementation((id: string) =>
+        id === 'windows' ? 'Deep clean, Kitchen' : null,
+      );
+      facade.isInManyPackages.mockImplementation((id: string) => id === 'windows');
+      facade.updateFormData({ selectedPackageIds: ['deep', 'kitchen'] });
+      facade.activeStep.set(5);
+      fixture.detectChanges();
+
+      const row = el.querySelector('.cl-wiz__cross-row');
+      const crossMarker = row?.querySelector('[data-spec-in-package]');
+      expect(crossMarker?.textContent?.trim()).toBe('pages.order.package_overlap.in_packages');
+      expect(row?.querySelector('.cl-wiz__cross-add')?.getAttribute('aria-describedby')).toBe(
+        crossMarker?.id,
       );
     });
 

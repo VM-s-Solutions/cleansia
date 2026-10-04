@@ -868,6 +868,19 @@ describe('OrderWizardFacade', () => {
       expect(facade.packageNamesIncluding('ironing')).toBeNull();
     });
 
+    // One chosen package says "package"; two or more say "packages", on the line and the question.
+    it('says packages only for a service two or more chosen packages include', () => {
+      facade.updateFormData({ selectedPackageIds: ['deep'] });
+
+      expect(facade.isInManyPackages('oven')).toBe(false);
+
+      facade.updateFormData({ selectedPackageIds: ['deep', 'kitchen'] });
+
+      expect(facade.isInManyPackages('oven')).toBe(true);
+      expect(facade.isInManyPackages('windows')).toBe(false);
+      expect(facade.isInManyPackages('ironing')).toBe(false);
+    });
+
     it('asks before adding a service a chosen package includes, with Cancel as the default', () => {
       facade.updateFormData({ selectedPackageIds: ['deep'] });
 
@@ -900,14 +913,14 @@ describe('OrderWizardFacade', () => {
     });
 
     // Two chosen packages already book it, so adding it is a third time: "twice" would be false.
-    it('asks with the once-more message when two chosen packages include the service', () => {
+    it('asks with the once-more message and the packages title when two chosen packages include the service', () => {
       facade.updateFormData({ selectedPackageIds: ['deep', 'kitchen'] });
 
       facade.toggleService('oven');
 
       expect(dialog.confirmTranslated).toHaveBeenCalledWith(
         'pages.order.package_overlap.service_message_many',
-        'pages.order.package_overlap.service_title',
+        'pages.order.package_overlap.service_title_many',
         { service: 'Oven', package: 'Deep clean, Kitchen' },
         { acceptLabelKey: 'pages.order.package_overlap.add_again' },
       );

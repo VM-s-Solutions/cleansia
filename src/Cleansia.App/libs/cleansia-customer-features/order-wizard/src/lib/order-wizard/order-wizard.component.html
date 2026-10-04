@@ -146,7 +146,11 @@
               @if (inPackage) {
               <div class="cl-wiz__svc-in-pack" data-spec-in-package [id]="'svc-in-pack-' + service.id">
                 <i class="pi pi-box" aria-hidden="true"></i>
-                <span>{{ 'pages.order.package_overlap.in_package' | translate: { package: inPackage } }}</span>
+                <span>{{
+                  (facade.isInManyPackages(service.id!)
+                    ? 'pages.order.package_overlap.in_packages'
+                    : 'pages.order.package_overlap.in_package') | translate: { package: inPackage }
+                }}</span>
               </div>
               }
             </div>
@@ -1105,7 +1109,11 @@
               @if (inPackage) {
               <div class="cl-wiz__svc-in-pack" data-spec-in-package [id]="'cross-in-pack-' + service.id">
                 <i class="pi pi-box" aria-hidden="true"></i>
-                <span>{{ 'pages.order.package_overlap.in_package' | translate: { package: inPackage } }}</span>
+                <span>{{
+                  (facade.isInManyPackages(service.id!)
+                    ? 'pages.order.package_overlap.in_packages'
+                    : 'pages.order.package_overlap.in_package') | translate: { package: inPackage }
+                }}</span>
               </div>
               }
             </div>

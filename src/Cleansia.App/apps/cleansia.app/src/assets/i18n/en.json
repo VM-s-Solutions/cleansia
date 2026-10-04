@@ -836,7 +836,9 @@
       "package_selected": "Chosen",
       "package_overlap": {
         "in_package": "In your package: {{package}}",
+        "in_packages": "In your packages: {{package}}",
         "service_title": "Already in your package",
+        "service_title_many": "Already in your packages",
         "service_message": "{{service}} is part of {{package}}. Adding it again books it twice: it is done twice and charged twice.",
         "service_message_many": "{{service}} is already part of {{package}}. Adding it again books it once more: it is done once more and charged once more.",
         "add_again": "Add again",

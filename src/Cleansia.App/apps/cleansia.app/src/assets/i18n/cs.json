@@ -836,7 +836,9 @@
       "package_selected": "Vybráno",
       "package_overlap": {
         "in_package": "Ve vašem balíčku: {{package}}",
+        "in_packages": "Ve vašich balíčcích: {{package}}",
         "service_title": "Už je ve vašem balíčku",
+        "service_title_many": "Už je ve vašich balíčcích",
         "service_message": "Služba {{service}} je součástí balíčku {{package}}. Když ji přidáte znovu, objednáte ji dvakrát: provede se dvakrát a zaplatíte ji dvakrát.",
         "service_message_many": "Služba {{service}} je už součástí balíčků {{package}}. Když ji přidáte znovu, objednáte ji ještě jednou: provede se ještě jednou a zaplatíte ji ještě jednou.",
         "add_again": "Přidat znovu",

@@ -677,6 +677,11 @@ export class OrderWizardFacade extends UnsubscribeControlDirective {
     return including.map((pkg) => getItemTranslation(pkg, 'name', this.translate)).join(', ');
   }
 
+  /** Two or more chosen packages include the service, so its marker and question say "packages". */
+  isInManyPackages(serviceId: string): boolean {
+    return (this.packagesByIncludedService().get(serviceId)?.length ?? 0) > 1;
+  }
+
   /** Removing never asks; adding a service a chosen package includes does. */
   toggleService(id: string): void {
     const chosen = this.formData().selectedServiceIds;
@@ -691,13 +696,15 @@ export class OrderWizardFacade extends UnsubscribeControlDirective {
     }
     const service = this.services().find((s) => s.id === id);
     // Already in two chosen packages, adding it is a third time, not "twice".
-    const many = (this.packagesByIncludedService().get(id)?.length ?? 0) > 1;
+    const many = this.isInManyPackages(id);
     this.dialog
       .confirmTranslated(
         many
           ? 'pages.order.package_overlap.service_message_many'
           : 'pages.order.package_overlap.service_message',
-        'pages.order.package_overlap.service_title',
+        many
+          ? 'pages.order.package_overlap.service_title_many'
+          : 'pages.order.package_overlap.service_title',
         {
           service: service ? getItemTranslation(service, 'name', this.translate) : '',
           package: packageNames,

@@ -74,6 +74,7 @@ class FakeRecurringBookingsFacade {
   packageName = jest.fn(() => null);
   serviceName = jest.fn(() => null);
   packageNamesIncluding = jest.fn<string | null, [string]>(() => null);
+  isInManyPackages = jest.fn<boolean, [string]>(() => false);
   updateFormData = jest.fn();
   selectPayment = jest.fn();
   toggleService = jest.fn();
@@ -135,7 +136,19 @@ describe('CreateRecurringWizardComponent — a service a chosen package already 
     facade.formData.update((d) => ({ ...d, selectedPackageIds: ['deep'] }));
     fixture.detectChanges();
 
-    expect(marker()?.textContent).toContain('pages.order.package_overlap.in_package');
+    expect(marker()?.textContent?.trim()).toBe('pages.order.package_overlap.in_package');
+    expect(marker()?.closest('button')).not.toBeNull();
+  });
+
+  it('says packages inside the row when two chosen packages include the service', () => {
+    facade.packageNamesIncluding.mockImplementation((id: string) =>
+      id === 'windows' ? 'Deep clean, Kitchen' : null,
+    );
+    facade.isInManyPackages.mockImplementation((id: string) => id === 'windows');
+    facade.formData.update((d) => ({ ...d, selectedPackageIds: ['deep', 'kitchen'] }));
+    fixture.detectChanges();
+
+    expect(marker()?.textContent?.trim()).toBe('pages.order.package_overlap.in_packages');
     expect(marker()?.closest('button')).not.toBeNull();
   });
 

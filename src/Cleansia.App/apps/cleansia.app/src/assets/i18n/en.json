@@ -1440,7 +1440,7 @@
       "tx": {
         "completed": "Cleaning completed",
         "cancelled": "Booking cancelled",
-        "refunded": "Partly refunded",
+        "refunded": "Refunded",
         "referral": "Referral bonus",
         "manual": "Manual adjustment"
       }

@@ -5,9 +5,12 @@ import { provideNoopAnimations } from '@angular/platform-browser/animations';
 import { ActivatedRoute } from '@angular/router';
 import { SnackbarService } from '@cleansia/services';
 import {
+  GetLoyaltyActivityActivityItem,
   GetLoyaltyTiersTierInfo,
   GetMyLoyaltyResponse,
   GetMyReferralResponse,
+  LoyaltyEarnSource,
+  LoyaltyTransactionType,
 } from '@cleansia/customer-services';
 import { TranslateLoader, TranslateModule, TranslateService } from '@ngx-translate/core';
 import { of } from 'rxjs';
@@ -221,5 +224,68 @@ describe('RewardsComponent — the discount a tier prints', () => {
 
     expect(component.percentOf(0)).toBe(0);
     expect(component.percentOf(undefined)).toBe(0);
+  });
+});
+
+describe('RewardsComponent — what a points movement says it was', () => {
+  const movement = (type: LoyaltyTransactionType, source: LoyaltyEarnSource, points: number) =>
+    GetLoyaltyActivityActivityItem.fromJS({
+      type,
+      source,
+      points,
+      orderDisplayNumber: 'CL-2026-0301',
+      occurredOn: '2026-10-01T10:00:00Z',
+    });
+
+  async function render(activity: GetLoyaltyActivityActivityItem[]): Promise<string[]> {
+    const facade = {
+      loadAll: jest.fn(),
+      defaultCurrencyCode: signal<string | null>(null),
+      floorApplies: signal(true),
+      account: signal(GetMyLoyaltyResponse.fromJS({ currentTier: 2, lifetimePoints: 150, points: 150 })),
+      tiers: signal<GetLoyaltyTiersTierInfo[]>([]),
+      recentActivity: signal(activity),
+      referralAccount: signal(GetMyReferralResponse.fromJS({ code: 'ABC123' })),
+      loading: signal(false),
+      error: signal<string | null>(null),
+      hasLoaded: signal(true),
+      tierKey: (t: unknown) => String(t),
+    };
+
+    await TestBed.configureTestingModule({
+      imports: [RewardsComponent, TranslateModule.forRoot()],
+      providers: [
+        provideHttpClient(),
+        provideNoopAnimations(),
+        { provide: SnackbarService, useValue: { showError: jest.fn(), showSuccess: jest.fn() } },
+        { provide: ActivatedRoute, useValue: { snapshot: { queryParamMap: { get: () => null } } } },
+      ],
+    })
+      .overrideComponent(RewardsComponent, {
+        set: { providers: [{ provide: RewardsFacade, useValue: facade }] },
+      })
+      .compileComponents();
+
+    const fixture = TestBed.createComponent(RewardsComponent);
+    fixture.detectChanges();
+    return Array.from(
+      (fixture.nativeElement as HTMLElement).querySelectorAll('.cl-rwd__move-name'),
+    ).map((el) => el.textContent?.trim() ?? '');
+  }
+
+  it('reads a refund clawback as a refund, not as a cancelled booking', async () => {
+    const labels = await render([
+      movement(LoyaltyTransactionType.Revoke, LoyaltyEarnSource.OrderPartiallyRefunded, -12),
+      movement(LoyaltyTransactionType.Revoke, LoyaltyEarnSource.OrderCancelled, -170),
+      movement(LoyaltyTransactionType.Revoke, LoyaltyEarnSource.ManualRevoke, -20),
+      movement(LoyaltyTransactionType.Earn, LoyaltyEarnSource.OrderCompleted, 170),
+    ]);
+
+    expect(labels).toEqual([
+      'pages.rewards.tx.refunded',
+      'pages.rewards.tx.cancelled',
+      'pages.rewards.tx.manual',
+      'pages.rewards.tx.completed',
+    ]);
   });
 });

@@ -7,6 +7,7 @@ using Cleansia.Core.Domain.Notifications;
 using Cleansia.Core.Domain.Orders;
 using Cleansia.Core.Domain.Repositories;
 using Cleansia.Core.AppServices.Services;
+using Cleansia.Core.Queue.Abstractions;
 using Cleansia.Infra.Common.Validations;
 using FluentValidation;
 using Microsoft.EntityFrameworkCore;
@@ -52,6 +53,7 @@ public class AdminRefundOrder
         ILoyaltyService loyaltyService,
         IUserSessionProvider userSessionProvider,
         INotificationProducer notificationProducer,
+        IOutboxMessageRepository outboxMessageRepository,
         IAuditContext auditContext
     ) : ICommandHandler<Command, Response>
     {
@@ -123,9 +125,14 @@ public class AdminRefundOrder
                 new RefundSnapshot(order.Id, order.TotalPrice, consumedBefore, order.PaymentStatus),
                 new RefundSnapshot(order.Id, order.TotalPrice, consumed, paymentStatus));
 
-            // A refund the seam resolved to an earlier one moved no money now; that earlier call owns the
-            // notice, and a second enqueue of its key fails the commit on the outbox's unique index.
-            if (!result.ResolvedToExisting && !string.IsNullOrEmpty(order.UserId))
+            // Asked of the outbox, not of whether the seam resolved to an earlier refund: the notice is staged
+            // with the clawback, so the clawback failure a re-run exists for lost the notice with it. A notice
+            // that did commit is not queued again; a second row on its key would fail the commit.
+            if (!string.IsNullOrEmpty(order.UserId)
+                && await outboxMessageRepository.GetByQueueAndKeyAsync(
+                    QueueNames.NotificationsDispatch,
+                    MessageKeys.Push(order.UserId, NotificationEventCatalog.OrderRefunded, result.RefundId),
+                    cancellationToken) is null)
             {
                 await notificationProducer.NotifyAsync(
                     order.UserId,

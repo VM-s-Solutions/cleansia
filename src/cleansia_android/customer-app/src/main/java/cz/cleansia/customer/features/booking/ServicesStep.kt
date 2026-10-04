@@ -1,5 +1,6 @@
 package cz.cleansia.customer.features.booking
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -563,14 +564,24 @@ private fun ServiceRow(
     val palette = service.category.palette()
     val name = localizedName(service.translations, service.name)
     val description = localizedDescription(service.translations, service.description)
+    val covered = inPackages.isNotEmpty()
     Row(
         modifier = Modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(16.dp))
-            .background(if (selected) selectionTint() else MaterialTheme.colorScheme.surface)
+            .background(
+                when {
+                    selected -> selectionTint()
+                    covered -> inPackageRowFill()
+                    else -> MaterialTheme.colorScheme.surface
+                },
+            )
             .border(
-                width = if (selected) 2.dp else 1.dp,
-                color = if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant,
+                border = when {
+                    selected -> BorderStroke(2.dp, MaterialTheme.colorScheme.primary)
+                    covered -> inPackageRowBorder()
+                    else -> BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
+                },
                 shape = RoundedCornerShape(16.dp),
             )
             .clickable(onClick = onClick)

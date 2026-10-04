@@ -13,7 +13,7 @@ import androidx.core.view.WindowCompat
 import cz.cleansia.core.ui.theme.CleansiaShapes
 import cz.cleansia.core.ui.theme.CleansiaTypography
 
-private val LightColors = lightColorScheme(
+internal val LightColors = lightColorScheme(
     primary = Sky600,
     onPrimary = LightSurface,
     primaryContainer = Sky100,
@@ -39,7 +39,7 @@ private val LightColors = lightColorScheme(
     inverseOnSurface = Slate50,
 )
 
-private val DarkColors = darkColorScheme(
+internal val DarkColors = darkColorScheme(
     primary = Sky400, // brighter for WCAG AA on slate-900
     onPrimary = Sky900,
     primaryContainer = Sky700,

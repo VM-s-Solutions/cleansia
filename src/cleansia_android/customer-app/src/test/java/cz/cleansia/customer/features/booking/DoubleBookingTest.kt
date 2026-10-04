@@ -5,6 +5,12 @@ import cz.cleansia.customer.core.catalog.CategoryDto
 import cz.cleansia.customer.core.catalog.PackageListItem
 import cz.cleansia.customer.core.catalog.PackageServiceSummary
 import cz.cleansia.customer.core.catalog.ServiceListItem
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.compositeOver
+import androidx.compose.ui.graphics.luminance
+import cz.cleansia.customer.ui.theme.DarkColors
+import cz.cleansia.customer.ui.theme.LightColors
+import cz.cleansia.customer.ui.theme.Sky100
 import java.io.File
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -121,6 +127,65 @@ class DoubleBookingTest {
 
         assertNull(doubleBookingOfPackage("pkg-kitchen", setOf("svc-windows"), setOf("pkg-glass"), packages + glass))
     }
+
+    // ── the covered look (T1) ──
+
+    /**
+     * The badge's ink keeps 4.5:1 over the badge, in both themes, on a covered row and on one that is
+     * also picked; the brand primary would not (about 3.1:1). Measured from the schemes the app draws
+     * with, composited the way the rows lay them: the row's fill over the card, the badge's over the row.
+     */
+    @Test
+    fun `the badge reads at AA over a covered or picked row in both themes`() {
+        listOf(false to LightColors, true to DarkColors).forEach { (dark, scheme) ->
+            val covered = scheme.primary.copy(alpha = inPackageRowAlpha(dark)).compositeOver(scheme.surface)
+            val picked = if (dark) scheme.primary.copy(alpha = 0.18f).compositeOver(scheme.surface) else Sky100
+            listOf("covered" to covered, "picked" to picked).forEach { (row, fill) ->
+                val badge = scheme.primary.copy(alpha = inPackageBadgeAlpha(dark)).compositeOver(fill)
+                val theme = if (dark) "dark" else "light"
+                val ink = contrast(scheme.onPrimaryContainer, badge)
+                assertTrue("$theme $row badge ink is $ink:1", ink >= 4.5)
+            }
+        }
+    }
+
+    @Test
+    fun `a covered row takes more of the primary on a dark card, and its badge more still`() {
+        assertEquals(0.08f, inPackageRowAlpha(dark = false))
+        assertEquals(0.16f, inPackageRowAlpha(dark = true))
+        assertEquals(0.14f, inPackageBadgeAlpha(dark = false))
+        assertEquals(0.24f, inPackageBadgeAlpha(dark = true))
+        assertEquals(0.6f, IN_PACKAGE_BORDER_ALPHA)
+    }
+
+    /** There is no Compose harness in this module, so the rows and the badge are read as source. */
+    @Test
+    fun `both service lists draw a covered row until it is picked, and the badge with its check`() {
+        val booking = source("features/booking/ServicesStep.kt")
+        val recurring = source("features/recurring/CreateRecurringScreen.kt")
+        listOf(booking, recurring).forEach { screen ->
+            assertTrue(Regex("""selected -> [^>]+ covered -> inPackageRowFill\(\)""").containsMatchIn(screen))
+            assertTrue(Regex("""selected -> BorderStroke\(2\.dp, [^)]+\) covered -> inPackageRowBorder\(\)""").containsMatchIn(screen))
+        }
+        assertTrue(booking.contains("val covered = inPackages.isNotEmpty()"))
+        assertTrue(recurring.contains("selectableCardModifier(selected = selected, covered = inPackages.isNotEmpty(), onClick = onClick)"))
+
+        val marker = source("features/booking/DoubleBooking.kt").substringAfter("fun InPackageMarker(").substringBefore("fun DoubleBookingDialog(")
+        assertTrue(marker.contains("Icons.Filled.CheckCircle"))
+        assertTrue(marker.contains("RoundedCornerShape(12.dp)"))
+        assertTrue(marker.contains("labelMedium.copy(fontWeight = FontWeight.SemiBold)"))
+        assertTrue(marker.contains("tint = MaterialTheme.colorScheme.onPrimaryContainer"))
+        assertTrue(marker.contains("color = MaterialTheme.colorScheme.onPrimaryContainer"))
+        assertTrue(source("features/booking/DoubleBooking.kt").contains("BorderStroke(1.5.dp, MaterialTheme.colorScheme.primary.copy(alpha = IN_PACKAGE_BORDER_ALPHA))"))
+    }
+
+    private fun contrast(a: Color, b: Color): Double {
+        val (light, dark) = listOf(a.luminance(), b.luminance()).sortedDescending()
+        return (light + 0.05) / (dark + 0.05)
+    }
+
+    private fun source(path: String): String =
+        File(resDir.parentFile, "java/cz/cleansia/customer/$path").readText().replace(Regex("\\s+"), " ")
 
     // ── the copy ──
 

@@ -218,21 +218,14 @@ struct TwiceBookedAlert: ViewModifier {
 
     func body(content: Content) -> some View {
         content.alert(
-            pick.map(title) ?? "",
+            pick?.title ?? "",
             isPresented: Binding(get: { pick != nil }, set: { if !$0 { onCancel() } }),
             presenting: pick
         ) { pick in
             Button(confirmLabel(pick)) { onConfirm(pick) }
             Button(L10n.cancel, role: .cancel, action: onCancel)
         } message: { pick in
-            Text(message(pick))
-        }
-    }
-
-    private func title(_ pick: TwiceBookedPick) -> String {
-        switch pick {
-        case .service: L10n.Booking.twiceServiceTitle
-        case .package: L10n.Booking.twicePackageTitle
+            Text(catalog?.twiceBookedMessage(pick, locale: locale) ?? "")
         }
     }
 
@@ -241,25 +234,6 @@ struct TwiceBookedAlert: ViewModifier {
         case .service: L10n.Booking.twiceServiceConfirm
         case .package: L10n.Booking.twicePackageConfirm
         }
-    }
-
-    private func message(_ pick: TwiceBookedPick) -> String {
-        switch pick {
-        case let .service(id, packageIds):
-            L10n.Booking.twiceServiceMessage(service: serviceNames([id]), packages: packageNames(packageIds))
-        case let .package(id, serviceIds):
-            L10n.Booking.twicePackageMessage(package: packageNames([id]), services: serviceNames(serviceIds))
-        }
-    }
-
-    private func serviceNames(_ ids: [String]) -> String {
-        ids.compactMap { id in catalog?.services.first { $0.id == id }?.localizedName(for: locale) }
-            .joined(separator: ", ")
-    }
-
-    private func packageNames(_ ids: [String]) -> String {
-        ids.compactMap { id in catalog?.packages.first { $0.id == id }?.localizedName(for: locale) }
-            .joined(separator: ", ")
     }
 }
 

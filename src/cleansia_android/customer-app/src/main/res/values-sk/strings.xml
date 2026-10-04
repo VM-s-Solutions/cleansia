@@ -172,7 +172,7 @@
     <string name="home_trust_same_day">Dnes</string>
 
     <!-- Home — popular packages -->
-    <string name="home_popular_packages_title">Obľúbené balíčky</string>
+    <string name="home_popular_packages_title">Obľúbené balíky</string>
     <string name="home_popular_packages_add_cta">Klepnúť na objednanie</string>
 
     <!-- Home — Order again quick action -->
@@ -305,7 +305,7 @@
     <string name="order_detail_duration_minutes">%1$d min</string>
     <string name="order_detail_extras">Doplnky</string>
     <string name="order_detail_services_header">Služby</string>
-    <string name="order_detail_packages_header">Balíčky</string>
+    <string name="order_detail_packages_header">Balíky</string>
     <string name="order_detail_cleaner_fallback">Upratovačka Cleansia</string>
     <string name="order_detail_subtotal">Medzisúčet</string>
     <string name="order_detail_payment_method">Spôsob platby</string>
@@ -427,7 +427,7 @@
     <string name="profile_row_payment">Platobné metódy</string>
     <string name="profile_row_notifications">Upozornenia</string>
     <string name="profile_row_security">Zabezpečenie</string>
-    <string name="profile_row_help">Pomocník a podpora</string>
+    <string name="profile_row_help">Pomoc a podpora</string>
     <string name="profile_logout">Odhlásiť sa</string>
     <string name="profile_logout_dialog_title">Odhlásiť sa?</string>
     <string name="profile_logout_dialog_message">Budete odhlásený z tohto zariadenia. Vaše objednávky a odmeny zostanú vo vašom účte — stačí sa znova prihlásiť a budete pokračovať tam, kde ste skončili.</string>
@@ -535,26 +535,25 @@
     <string name="busy_subscribe_plus">Aktivujeme Cleansia Plus…</string>
 
     <!-- Profile — help & support -->
-    <string name="help_title">Pomocník a podpora</string>
+    <string name="help_title">Pomoc a podpora</string>
     <string name="help_contact_title">Kontaktujte nás</string>
     <string name="help_call">Zavolajte podpore</string>
     <string name="help_call_desc">Po–Ne · 8:00–20:00</string>
     <string name="help_email">Napíšte nám</string>
-    <string name="help_email_desc">support@cleansia.cz</string>
     <string name="help_call_unavailable">Na tomto zariadení sa nedá volať. Číslo je skopírované.</string>
-    <string name="help_email_unavailable">Nenašli sme e-mailovú aplikáciu. Adresa je skopírovaná.</string>
-    <string name="help_faq_title">Často kladené otázky</string>
-    <string name="help_faq_q1">Ako môžem zrušiť rezerváciu?</string>
-    <string name="help_faq_a1">Otvorte rezerváciu v záložke Objednávky a klepnite na \"Zrušiť\". Zrušenie zdarma až 24 hodín pred začiatkom upratovania. Do 15 minút od objednania neplatíte nič — pri prvej objednávke alebo s Cleansia Plus do 60 minút.</string>
-    <string name="help_faq_q2">Čo ak nebudem doma, keď príde upratovačka?</string>
+    <string name="help_email_unavailable">Adresa je skopírovaná pre prípad, že e-mailová aplikácia nie je nastavená.</string>
+    <string name="help_faq_title">Časté otázky</string>
+    <string name="help_faq_q1">Ako zruším rezerváciu?</string>
+    <string name="help_faq_a1">Otvorte rezerváciu na karte Objednávky a ťuknite na „Zrušiť“. Zrušenie je zdarma až 24 hodín pred začiatkom upratovania. Do 15 minút od objednania neplatíte nič — pri prvej objednávke alebo s Cleansia Plus do 60 minút.</string>
+    <string name="help_faq_q2">Čo ak nebudem doma, keď príde upratovač?</string>
     <string name="help_faq_a2">Pri rezervácii pridajte pokyny ku vstupu (napr. kód pri dverách, miesto kľúča). Upratovačka čaká 15 minút po začiatku upratovania a skúsi vám zavolať. Ak sa ani potom nedostane dnu, rezervácia sa zruší a účtuje sa plná cena.</string>
-    <string name="help_faq_q3">Sú upratovačky poistené?</string>
-    <string name="help_faq_a3">Áno. Všetky upratovačky Cleansia sú poistené až do výšky %1$s na rezerváciu.</string>
-    <string name="help_faq_a3_no_figure">Áno. Všetky upratovačky Cleansia sú poistené.</string>
+    <string name="help_faq_q3">Sú upratovači poistení?</string>
+    <string name="help_faq_a3">Áno. Všetci upratovači Cleansia sú poistení až do %1$s na rezerváciu.</string>
+    <string name="help_faq_a3_no_figure">Áno. Všetci upratovači Cleansia sú poistení.</string>
     <string name="help_faq_q4">Môžem zmeniť termín?</string>
-    <string name="help_faq_a4">Zatiaľ nie — termín rezervácie sa nedá zmeniť. Zrušte ju v záložke Objednávky a objednajte si nový termín; kým rezerváciu neprijme žiadna upratovačka, zrušenie je zadarmo.</string>
-    <string name="help_faq_q5">Čo je zahrnuté v štandardnom upratovaní?</string>
-    <string name="help_faq_a5">Kuchyňa (pracovné plochy, drez, exteriér spotrebičov), kúpeľne (toaleta, sprcha, dlažba), všetky podlahy, utieranie prachu, všeobecné upratovanie. Doplnky ako čistenie rúry sú k dispozícii ako príplatky.</string>
+    <string name="help_faq_a4">Rezerváciu nemožno presunúť na iný termín. Zrušte ju a objednajte nový termín — zrušenie je zadarmo, kým prácu neprevzal žiadny upratovač.</string>
+    <string name="help_faq_q5">Čo je súčasťou štandardného upratovania?</string>
+    <string name="help_faq_a5">Kuchyňa, kúpeľne, všetky podlahy, utieranie prachu a upratovanie. Extra služby ako čistenie rúry sú ako doplnky.</string>
 
     <!-- Profile — appearance -->
     <string name="appearance_title">Vzhľad</string>
@@ -643,8 +642,8 @@
     <string name="booking_trust_insured_no_figure">Poistené</string>
 
     <string name="booking_pick_service">Vyberte službu</string>
-    <string name="booking_or_package">Alebo zvoľte balíček</string>
-    <string name="booking_packages_featured">Odporúčané balíčky</string>
+    <string name="booking_or_package">Alebo zvoľte balík</string>
+    <string name="booking_packages_featured">Odporúčané balíky</string>
     <string name="booking_package_includes">OBSAHUJE</string>
     <string name="booking_package_includes_prefix">Obsahuje:</string>
     <string name="booking_price_from">od %1$s</string>
@@ -653,13 +652,16 @@
     <string name="details_per_room">Za izbu</string>
     <string name="details_add_to_booking">Pridať do rezervácie</string>
     <string name="details_remove_from_booking">Odobrať z rezervácie</string>
-    <string name="booking_in_your_package">Vo vašom balíčku: %1$s</string>
-    <string name="booking_twice_service_title">Už je vo vašom balíčku</string>
-    <string name="booking_twice_service_message">Služba %1$s je súčasťou balíčka %2$s. Ak ju pridáte znova, objednáte ju dvakrát: vykoná sa dvakrát a zaplatíte ju dvakrát.</string>
+    <string name="booking_in_your_package">Vo vašom balíku: %1$s</string>
+    <string name="booking_in_your_packages">Vo vašich balíkoch: %1$s</string>
+    <string name="booking_twice_service_title">Už je vo vašom balíku</string>
+    <string name="booking_twice_service_title_many">Už je vo vašich balíkoch</string>
+    <string name="booking_twice_service_message">Služba %1$s je súčasťou balíka %2$s. Ak ju pridáte znova, objednáte ju dvakrát: vykoná sa dvakrát a zaplatíte ju dvakrát.</string>
+    <string name="booking_twice_service_message_many">Služba %1$s je už súčasťou balíkov %2$s. Ak ju pridáte znova, objednáte ju ešte raz: vykoná sa ešte raz a zaplatíte ju ešte raz.</string>
     <string name="booking_twice_service_confirm">Pridať znova</string>
     <string name="booking_twice_package_title">Už je vo vašej rezervácii</string>
-    <string name="booking_twice_package_message">Balíček %1$s obsahuje aj to, čo už máte v rezervácii samostatne: %2$s. Ak balíček pridáte, objednáte to dvakrát: vykoná sa to dvakrát a zaplatíte to dvakrát.</string>
-    <string name="booking_twice_package_confirm">Pridať balíček</string>
+    <string name="booking_twice_package_message">Balík %1$s obsahuje aj to, čo už máte v rezervácii: %2$s. Ak balík pridáte, objednáte to ešte raz: vykoná sa to ešte raz a zaplatíte to ešte raz.</string>
+    <string name="booking_twice_package_confirm">Pridať balík</string>
     <string name="booking_your_home">Váš domov</string>
     <string name="booking_size_limit_caption">Najviac %1$d izieb a %2$d kúpeľne</string>
     <string name="booking_search_services">Hľadať služby</string>
@@ -1048,7 +1050,7 @@
     <string name="recurring_create_address_empty">Najprv si v profile uložte adresu.</string>
     <string name="recurring_create_services_label">Čo upratovať</string>
     <string name="recurring_create_services_loading">Načítavanie služieb…</string>
-    <string name="recurring_create_section_packages">Balíčky</string>
+    <string name="recurring_create_section_packages">Balíky</string>
     <string name="recurring_create_section_services">Služby</string>
     <string name="recurring_create_payment_label">Platba</string>
     <string name="recurring_create_pay_cash">Hotovosťou</string>
@@ -1157,7 +1159,7 @@
     <string name="error_order_empty">Objednávka je prázdna. Pridajte prosím aspoň jednu službu.</string>
     <string name="error_order_size_exceeds_maximum">Jedna objednávka môže zahŕňať najviac 8 izieb a 4 kúpeľne.</string>
     <string name="error_order_span_exceeds_maximum">Táto objednávka zahŕňa priveľa práce na jednu návštevu. Odstráňte prosím niektoré služby alebo balíky, prípadne si ich objednajte samostatne.</string>
-    <string name="error_order_selected_package_invalid">Jeden z vybraných balíčkov už nie je dostupný.</string>
+    <string name="error_order_selected_package_invalid">Jeden z vybraných balíkov už nie je dostupný.</string>
     <string name="error_order_selected_services_invalid">Jedna z vybraných služieb už nie je dostupná.</string>
     <string name="error_order_not_found">Rezervácia nenájdená.</string>
     <string name="error_order_no_available_spots">Pre tento termín nie sú k dispozícii žiadne upratovačky. Zvoľte iný čas.</string>
@@ -1472,7 +1474,7 @@
     <string name="error_receipt_not_found">Účtenka nebola nájdená</string>
     <string name="error_recurring_booking_ends_on_before_start">Dátum ukončenia musí byť po dátume začiatku.</string>
     <string name="error_recurring_booking_membership_required">Pravidelné upratovania sú výhodou Cleansia Plus — na ich nastavenie si aktivujte predplatné.</string>
-    <string name="error_recurring_booking_no_services_or_packages">Vyberte aspoň jednu službu alebo balíček.</string>
+    <string name="error_recurring_booking_no_services_or_packages">Vyberte aspoň jednu službu alebo balík.</string>
     <string name="error_recurring_booking_not_found">Pravidelné upratovanie sa nenašlo.</string>
     <string name="error_recurring_booking_not_owned_by_user">Toto pravidelné upratovanie patrí k inému účtu.</string>
     <string name="error_recurring_booking_saved_address_not_found">Vybraná adresa už neexistuje.</string>

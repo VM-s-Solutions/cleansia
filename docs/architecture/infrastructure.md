@@ -14,10 +14,12 @@ Cleansia runs on Microsoft Azure (West Europe region) with separate DEV and PRO 
 | Resource | DEV | PRO |
 |----------|-----|-----|
 | **App Service Plan** | Basic B2 | Standard S1 |
-| **App Service** (Customer API + SSR) | 1 instance | 1 instance |
+| **App Service** (Customer API) | 1 instance | 1 instance |
+| **App Service** (Customer SSR) | 1 instance | 1 instance |
 | **App Service** (Partner API) | 1 instance | 1 instance |
 | **App Service** (Admin API) | 1 instance | 1 instance |
-| **App Service** (Mobile API) | 1 instance | 1 instance |
+| **App Service** (Partner Mobile API) | 1 instance | 1 instance |
+| **App Service** (Customer Mobile API) | 1 instance | 1 instance |
 | **Static Web App** (Partner SPA) | Free tier | Standard |
 | **Static Web App** (Admin SPA) | Free tier | Standard |
 | **PostgreSQL Flexible Server** | Burstable B1ms | General Purpose D2s_v3 |
@@ -360,6 +362,14 @@ apostrophe and accented letters are left as they are, which is why the renderer 
 `WebUtility.HtmlEncode` (it writes `á` as `&#225;`). The subject line is not HTML and is not encoded.
 Until 2026-10-03 every value went in as it came, so a name holding `<` or `&` broke the e-mail and
 markup typed into a name arrived as markup.
+
+**A value is never read for placeholders.** The renderer walks the template once and replaces each
+`{{Placeholder}}` it finds with that value, encoded, or with nothing when the e-mail supplies none, so
+a placeholder in a template still never reaches a reader as braces. What a value holds is not scanned:
+a customer who types `{{SupportEmail}}` as their name is greeted with exactly that. Until 2026-10-04
+the renderer replaced the keys one after another over the whole page and then stripped any `{{Word}}`
+left, so that name was greeted with the support address, and a name like `Ann {{Nickname}}` came out
+as `Ann `. `EmailTemplateRendererTests` pins both.
 
 There are ten templates, one per `EmailType` (`EmailService.TemplateFileFor`). The build fails when one
 is missing (`ValidateEmailTemplates` in the project file):

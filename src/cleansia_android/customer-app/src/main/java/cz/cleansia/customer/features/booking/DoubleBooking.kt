@@ -24,18 +24,27 @@ import cz.cleansia.customer.core.catalog.PackageServiceSummary
 import cz.cleansia.customer.core.catalog.ServiceListItem
 
 /**
- * A tap that books one service twice: a package and a service it includes, both chosen. Both are kept,
- * so the service is done twice and charged twice. The pick is never refused or merged; the customer
- * confirms it first. Only a tap on the services step or the schedule form asks. A selection seeded
- * from elsewhere (a Home package, quick-size, Order again, a resumed draft, a schedule being edited)
- * never does, and its rows only carry the "In your package" marker.
+ * A tap that books one service once more: a package and a service it includes, both chosen, or two
+ * chosen packages that include the same service. All are kept, so the service is done and charged once
+ * per pick. The pick is never refused or merged; the customer confirms it first. Only a tap on the
+ * services step or the schedule form asks. A selection seeded from elsewhere (a Home package,
+ * quick-size, Order again, a resumed draft, a schedule being edited) never does, and its rows only
+ * carry the "In your package" marker.
  * → /product/business-rules#charging-a-package-and-a-service-together
  */
 sealed interface DoubleBooking {
     /** Adding [service], which the selected [packages] include. */
-    data class Service(val service: ServiceListItem, val packages: List<PackageListItem>) : DoubleBooking
+    data class Service(val service: ServiceListItem, val packages: List<PackageListItem>) : DoubleBooking {
+        /** "Already in your package" beside one package that includes it, "packages" beside two or more. */
+        val titleRes: Int
+            get() = if (packages.size > 1) R.string.booking_twice_service_title_many else R.string.booking_twice_service_title
 
-    /** Adding [pkg], which includes [services], already chosen on their own. */
+        /** Beside one package that includes it the service is booked twice; beside two or more, "twice" is false. */
+        val messageRes: Int
+            get() = if (packages.size > 1) R.string.booking_twice_service_message_many else R.string.booking_twice_service_message
+    }
+
+    /** Adding [pkg], which includes [services], already in the booking on their own or through another chosen package. */
     data class Package(val pkg: PackageListItem, val services: List<PackageServiceSummary>) : DoubleBooking
 }
 
@@ -43,7 +52,11 @@ sealed interface DoubleBooking {
 fun List<PackageListItem>.selectedIncluding(serviceId: String, selectedPackageIds: Set<String>): List<PackageListItem> =
     filter { pkg -> pkg.id in selectedPackageIds && pkg.includedServices.orEmpty().any { it.serviceId == serviceId } }
 
-/** What adding the service [serviceId] would book twice, or null when it books nothing twice. */
+/** The marker's line for these chosen packages: "In your package: …" for one, "In your packages: …" for two or more. */
+val List<PackageListItem>.inPackageMarkerRes: Int
+    get() = if (size > 1) R.string.booking_in_your_packages else R.string.booking_in_your_package
+
+/** What adding the service [serviceId] would book once more, or null when it books nothing again. */
 fun doubleBookingOfService(
     serviceId: String,
     selectedPackageIds: Set<String>,
@@ -55,15 +68,24 @@ fun doubleBookingOfService(
     return if (holders.isEmpty()) null else DoubleBooking.Service(service, holders)
 }
 
-/** What adding the package [packageId] would book twice, or null when it books nothing twice. */
+/**
+ * What adding the package [packageId] would book once more, or null when it books nothing again: the
+ * services it includes that are already in the booking, chosen on their own or through another chosen
+ * package, in the package's own order.
+ */
 fun doubleBookingOfPackage(
     packageId: String,
     selectedServiceIds: Set<String>,
+    selectedPackageIds: Set<String>,
     packages: List<PackageListItem>,
 ): DoubleBooking.Package? {
     val pkg = packages.firstOrNull { it.id == packageId } ?: return null
-    val twice = pkg.includedServices.orEmpty().filter { it.serviceId != null && it.serviceId in selectedServiceIds }
-    return if (twice.isEmpty()) null else DoubleBooking.Package(pkg, twice)
+    val throughPackages = packages
+        .filter { it.id != packageId && it.id in selectedPackageIds }
+        .flatMap { other -> other.includedServices.orEmpty().mapNotNull { it.serviceId } }
+    val inBooking = selectedServiceIds + throughPackages
+    val again = pkg.includedServices.orEmpty().filter { it.serviceId != null && it.serviceId in inBooking }
+    return if (again.isEmpty()) null else DoubleBooking.Package(pkg, again)
 }
 
 /**
@@ -83,7 +105,7 @@ fun InPackageMarker(packages: List<PackageListItem>) {
         )
         Spacer(Modifier.width(4.dp))
         Text(
-            stringResource(R.string.booking_in_your_package, names),
+            stringResource(packages.inPackageMarkerRes, names),
             style = MaterialTheme.typography.labelMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             maxLines = 2,
@@ -100,9 +122,9 @@ fun DoubleBookingDialog(pick: DoubleBooking, onConfirm: () -> Unit, onDismiss: (
     val confirm: String
     when (pick) {
         is DoubleBooking.Service -> {
-            title = stringResource(R.string.booking_twice_service_title)
+            title = stringResource(pick.titleRes)
             text = stringResource(
-                R.string.booking_twice_service_message,
+                pick.messageRes,
                 localizedName(pick.service.translations, pick.service.name),
                 pick.packages.map { localizedName(it.translations, it.name) }.joinToString(", "),
             )

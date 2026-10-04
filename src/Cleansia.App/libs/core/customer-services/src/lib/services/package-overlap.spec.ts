@@ -41,15 +41,43 @@ describe('chosenPackagesByService', () => {
 
 describe('includedServicesAlreadyChosen', () => {
   const deep = pkg('deep', ['windows', 'oven', 'floors']);
+  const kitchen = pkg('kitchen', ['oven', 'fridge']);
+  const catalogue = [deep, kitchen];
+  const chosen = (selectedServiceIds: string[], selectedPackageIds: string[] = []) => ({
+    selectedServiceIds,
+    selectedPackageIds,
+  });
 
   it('returns the included services that are chosen on their own, in the package order', () => {
-    const overlap = includedServicesAlreadyChosen(deep, ['floors', 'windows', 'ironing']);
+    const overlap = includedServicesAlreadyChosen(
+      deep,
+      catalogue,
+      chosen(['floors', 'windows', 'ironing']),
+    );
 
     expect(overlap.map((s) => s.serviceId)).toEqual(['windows', 'floors']);
   });
 
+  it('returns the included services another chosen package already books', () => {
+    const overlap = includedServicesAlreadyChosen(deep, catalogue, chosen([], ['kitchen']));
+
+    expect(overlap.map((s) => s.serviceId)).toEqual(['oven']);
+  });
+
+  it('names a service once when it is chosen on its own and through another package', () => {
+    const overlap = includedServicesAlreadyChosen(deep, catalogue, chosen(['oven'], ['kitchen']));
+
+    expect(overlap.map((s) => s.serviceId)).toEqual(['oven']);
+  });
+
+  it('does not count the package against itself', () => {
+    expect(includedServicesAlreadyChosen(deep, catalogue, chosen([], ['deep']))).toEqual([]);
+  });
+
   it('is empty when nothing the package includes is chosen, or the package is unknown', () => {
-    expect(includedServicesAlreadyChosen(deep, ['ironing'])).toEqual([]);
-    expect(includedServicesAlreadyChosen(undefined, ['windows'])).toEqual([]);
+    expect(includedServicesAlreadyChosen(deep, catalogue, chosen(['ironing']))).toEqual([]);
+    expect(includedServicesAlreadyChosen(undefined, catalogue, chosen(['windows'], ['kitchen']))).toEqual(
+      [],
+    );
   });
 });

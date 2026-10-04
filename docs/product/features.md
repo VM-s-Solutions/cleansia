@@ -18,8 +18,9 @@ part's slots, on the web, Android and iOS alike; [the time step](/customer-app/o
 or in cash, when signed in and the booking is a job one cleaner does alone
 ([the cash rule](/product/business-rules#cash)).
 A service that a chosen package already includes is marked *In your package*, and adding either half of
-that pair by hand asks first, because the two are both done and both charged; the booking and the
-schedule form do this on the web, Android and iOS alike
+that pair by hand asks first, because the two are both done and both charged; so does adding a package
+that shares a service with one already chosen. The booking and the schedule form do this on the web,
+Android and iOS alike
 ([a package and a service](/product/business-rules#charging-a-package-and-a-service-together)).
 Paying by card, a signed-in customer on web, Android or iOS may tick *Save this card for my next
 bookings*, unticked by default; only a ticked card is kept, under the card-guarantee consent, and it

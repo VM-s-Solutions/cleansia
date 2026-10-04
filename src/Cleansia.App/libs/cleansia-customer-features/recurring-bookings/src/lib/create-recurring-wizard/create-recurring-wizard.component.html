@@ -90,7 +90,11 @@
                       @if (inPackage) {
                         <span class="cl-rec__pick-note" data-spec-in-package>
                           <i class="pi pi-box" aria-hidden="true"></i>
-                          {{ 'pages.order.package_overlap.in_package' | translate: { package: inPackage } }}
+                          {{
+                            (facade.isInManyPackages(service.id ?? '')
+                              ? 'pages.order.package_overlap.in_packages'
+                              : 'pages.order.package_overlap.in_package') | translate: { package: inPackage }
+                          }}
                         </span>
                       }
                     </span>
@@ -558,8 +562,6 @@
     </div>
   </section>
 </div>
-
-<p-confirmDialog />
 
 <p-dialog
   [header]="'pages.order.card_capture.title' | translate"

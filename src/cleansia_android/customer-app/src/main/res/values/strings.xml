@@ -540,21 +540,20 @@
     <string name="help_call">Call support</string>
     <string name="help_call_desc">Mon–Sun · 8:00–20:00</string>
     <string name="help_email">Email us</string>
-    <string name="help_email_desc">support@cleansia.cz</string>
     <string name="help_call_unavailable">Calls aren\'t available on this device. Number copied.</string>
-    <string name="help_email_unavailable">No e-mail app found. Address copied.</string>
+    <string name="help_email_unavailable">Address copied, in case your mail app isn\'t set up.</string>
     <string name="help_faq_title">Frequently asked questions</string>
     <string name="help_faq_q1">How do I cancel my booking?</string>
-    <string name="help_faq_a1">Open your booking from the Orders tab and tap \"Cancel\". Cancellations free of charge up to 24 hours before the cleaning start time. Within 15 minutes of booking you pay nothing — within 60 minutes on your first booking or with Cleansia Plus.</string>
+    <string name="help_faq_a1">Open your booking from the Orders tab and tap \"Cancel\". Cancellations are free up to 24 hours before the cleaning start time. Within 15 minutes of booking you pay nothing — within 60 minutes on your first booking or with Cleansia Plus.</string>
     <string name="help_faq_q2">What if I\'m not home when the cleaner arrives?</string>
     <string name="help_faq_a2">Add access instructions when booking (e.g., door code, key location). The cleaner waits 15 minutes past the start time and tries to call you. If they still can\'t get in, the booking is cancelled and the full price is charged.</string>
     <string name="help_faq_q3">Are cleaners insured?</string>
     <string name="help_faq_a3">Yes. All Cleansia cleaners are covered by insurance up to %1$s per booking.</string>
     <string name="help_faq_a3_no_figure">Yes. All Cleansia cleaners are covered by insurance.</string>
-    <string name="help_faq_q4">Can I change the date or time?</string>
-    <string name="help_faq_a4">Not yet — a booking can\'t be moved. Cancel it from the Orders tab and book a new time; cancelling is free while no cleaner has taken the booking.</string>
+    <string name="help_faq_q4">Can I change the date?</string>
+    <string name="help_faq_a4">A booking can\'t be moved to another date. Cancel it and book the new date instead — cancelling is free while no cleaner has taken the job.</string>
     <string name="help_faq_q5">What\'s included in a standard cleaning?</string>
-    <string name="help_faq_a5">Kitchen (countertops, sink, appliances exterior), bathrooms (toilet, shower, tiles), all floors, dusting, general tidying. Extras like oven cleaning are available as add-ons.</string>
+    <string name="help_faq_a5">Kitchen, bathrooms, all floors, dusting, and general tidying. Extras like oven cleaning are available as add-ons.</string>
 
     <!-- Profile — appearance -->
     <string name="appearance_title">Appearance</string>
@@ -656,11 +655,14 @@
     <string name="details_add_to_booking">Add to booking</string>
     <string name="details_remove_from_booking">Remove from booking</string>
     <string name="booking_in_your_package">In your package: %1$s</string>
+    <string name="booking_in_your_packages">In your packages: %1$s</string>
     <string name="booking_twice_service_title">Already in your package</string>
+    <string name="booking_twice_service_title_many">Already in your packages</string>
     <string name="booking_twice_service_message">%1$s is part of %2$s. Adding it again books it twice: it is done twice and charged twice.</string>
+    <string name="booking_twice_service_message_many">%1$s is already part of %2$s. Adding it again books it once more: it is done once more and charged once more.</string>
     <string name="booking_twice_service_confirm">Add again</string>
     <string name="booking_twice_package_title">Already in your booking</string>
-    <string name="booking_twice_package_message">%1$s also includes what you already added separately: %2$s. Adding the package books that twice: done twice and charged twice.</string>
+    <string name="booking_twice_package_message">%1$s also includes what is already in your booking: %2$s. Adding the package books that once more: it is done once more and charged once more.</string>
     <string name="booking_twice_package_confirm">Add package</string>
     <string name="booking_your_home">Your home</string>
     <string name="booking_size_limit_caption">Up to %1$d rooms and %2$d bathrooms</string>

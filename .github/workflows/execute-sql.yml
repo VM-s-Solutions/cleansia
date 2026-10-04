@@ -64,33 +64,33 @@ jobs:
           esac
           echo "Not a development fixture — continuing."
 
-      # insert_local_dev_admin.sql mints an administrator whose password is in README.md. Owner ruling
-      # 2026-09-30: DEV may hold it until an app registration gates the DEV apps; PRO never does.
-      # Compared by basename so a path like seed/../ cannot walk around it.
-      - name: Refuse the local administrator fixture against production
+      # DEV-only scripts, one row each: file name | what it does | where production does it instead.
+      # - insert_local_dev_admin.sql mints an administrator whose password is in README.md. Owner ruling
+      #   2026-09-30: DEV may hold it until an app registration gates the DEV apps; PRO never does.
+      # - The fix-*.sql rows correct what a DEV database got from a development fixture (README.md in
+      #   sql-scripts/). Production is never built from those fixtures, so they have nothing to correct
+      #   there; they are refused all the same, so that nobody has to know that to be safe.
+      # Compared by basename so a path like seed/../ cannot walk around a row. A new DEV-only script is
+      # one more row.
+      - name: Refuse DEV-only scripts against production
         if: inputs.environment == 'PRO'
         env:
           SCRIPT_PATH: ${{ inputs.script_path }}
         run: |
-          if [ "$(basename "$SCRIPT_PATH")" = "insert_local_dev_admin.sql" ]; then
-            echo "::error::insert_local_dev_admin.sql creates an administrator whose password is published in README.md, and never runs against PRO (DEV may run it: owner ruling 2026-09-30)."
-            echo "::error::Create a named administrator with set-admin-role.sql instead (see README.md)."
-            exit 1
-          fi
-
-      # fix-company-contact-placeholders.sql moves a DEV database's seeded company record to the owner's
-      # 2026-10-03 contact values. Production's company record is typed into the admin console, so the
-      # script has nothing to do there and never runs there. Compared by basename, as above.
-      - name: Refuse the DEV company-contact fix against production
-        if: inputs.environment == 'PRO'
-        env:
-          SCRIPT_PATH: ${{ inputs.script_path }}
-        run: |
-          if [ "$(basename "$SCRIPT_PATH")" = "fix-company-contact-placeholders.sql" ]; then
-            echo "::error::fix-company-contact-placeholders.sql rewrites the seeded DEV company record's e-mail and phone, and never runs against PRO."
-            echo "::error::Production's company e-mail and phone are entered in the admin console (see README.md)."
-            exit 1
-          fi
+          NAME=$(basename "$SCRIPT_PATH")
+          while IFS='|' read -r DEV_ONLY WHAT INSTEAD; do
+            if [ "$NAME" = "$DEV_ONLY" ]; then
+              echo "::error::$DEV_ONLY $WHAT, and never runs against PRO."
+              echo "::error::$INSTEAD"
+              exit 1
+            fi
+          done <<'DEV_ONLY_SCRIPTS'
+          insert_local_dev_admin.sql|creates an administrator whose password is published in README.md (DEV may run it: owner ruling 2026-09-30)|Create a named administrator with set-admin-role.sql instead (see README.md).
+          fix-company-contact-placeholders.sql|rewrites the seeded DEV company record's e-mail and phone|Production's company e-mail and phone are entered in the admin console (see README.md).
+          fix-plus-trial-14-days.sql|gives the two seeded DEV Cleansia Plus plans their 14-day trial back|Production's plans and their trials are entered in the admin console.
+          fix-deactivate-local-dev-admin.sql|retires the published-password administrator from the shared DEV database|Production never holds that administrator: insert_local_dev_admin.sql is refused there.
+          DEV_ONLY_SCRIPTS
+          echo "Not a DEV-only script — continuing."
 
       - name: Verify script exists
         env:

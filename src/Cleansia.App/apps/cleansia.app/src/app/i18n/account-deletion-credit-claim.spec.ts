@@ -37,9 +37,9 @@ const CLAIM: Record<Locale, { credit: RegExp; forfeited: RegExp; paidOut: RegExp
   ru: { credit: /кредит/i, forfeited: /аннулир/i, paidOut: /выплатить/i },
 };
 
-/** The confirmation the customer accepts, and the section text above its button. */
+/** The confirmation the customer accepts (the facade asks it), and the section text above its button. */
 const RENDERED = [
-  { file: 'gdpr.component.ts', key: 'pages.gdpr.delete_confirm_message' },
+  { file: 'gdpr.facade.ts', key: 'pages.gdpr.delete_confirm_message' },
   { file: 'gdpr.component.html', key: 'pages.gdpr.delete_description' },
 ];
 

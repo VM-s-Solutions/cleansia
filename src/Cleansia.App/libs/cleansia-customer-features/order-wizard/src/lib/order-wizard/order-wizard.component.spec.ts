@@ -144,6 +144,7 @@ class FakeOrderWizardFacade {
   // The services step reads the "In your package" line from here, and adding or removing an item
   // is the facade's, because adding one a chosen package already includes asks first.
   packageNamesIncluding = jest.fn<string | null, [string]>(() => null);
+  isInManyPackages = jest.fn<boolean, [string]>(() => false);
   toggleService = jest.fn((id: string) => {
     const chosen = this.formData().selectedServiceIds;
     this.updateFormData({
@@ -156,6 +157,7 @@ class FakeOrderWizardFacade {
       selectedPackageIds: chosen.includes(id) ? chosen.filter((p) => p !== id) : [...chosen, id],
     });
   });
+  toggleExtra = jest.fn();
   applyAddressSuggestion = jest.fn();
   submitOrder = jest.fn();
   // Read by the component's on-destroy park, which runs on EVERY teardown — so a double without it
@@ -958,6 +960,57 @@ describe('OrderWizardComponent (a11y)', () => {
     });
   });
 
+  // The lines are the last quote's, so one can still list an item the customer already took out
+  // while the next quote is on its way. Its remove button must not put it back.
+  describe('removing a line from the summary', () => {
+    const removeButtons = () =>
+      Array.from(el.querySelectorAll<HTMLButtonElement>('.cl-wiz__summary-remove'));
+
+    function quoteLines(): void {
+      facade.quote.set(
+        QuoteOrderResponse.fromJS({
+          lines: [
+            { kind: 'service', itemId: 's-1', baseAmount: 500, unitAmount: 0, units: 0, amount: 500 },
+            { kind: 'package', itemId: 'p-1', baseAmount: 900, unitAmount: 0, units: 0, amount: 900 },
+            { kind: 'extra', itemId: 'fridge', baseAmount: 200, unitAmount: 0, units: 0, amount: 200 },
+          ],
+        }),
+      );
+      facade.displayedTotalPrice.set(1600);
+      fixture.detectChanges();
+    }
+
+    it('takes a chosen item out', async () => {
+      await setup();
+      facade.updateFormData({
+        selectedServiceIds: ['s-1'],
+        selectedPackageIds: ['p-1'],
+        extras: { fridge: true },
+      });
+      quoteLines();
+
+      removeButtons().forEach((button) => button.click());
+
+      expect(facade.formData().selectedServiceIds).toEqual([]);
+      expect(facade.formData().selectedPackageIds).toEqual([]);
+      expect(facade.toggleExtra).toHaveBeenCalledWith('fridge');
+    });
+
+    it('leaves a line for an item already taken out alone, rather than adding it back', async () => {
+      await setup();
+      quoteLines();
+
+      removeButtons().forEach((button) => button.click());
+
+      expect(removeButtons()).toHaveLength(3);
+      expect(facade.toggleService).not.toHaveBeenCalled();
+      expect(facade.togglePackage).not.toHaveBeenCalled();
+      expect(facade.toggleExtra).not.toHaveBeenCalled();
+      expect(facade.formData().selectedServiceIds).toEqual([]);
+      expect(facade.formData().selectedPackageIds).toEqual([]);
+    });
+  });
+
   describe('the summary as a bottom sheet', () => {
     const toggle = () => el.querySelector('.cl-wiz__summary-toggle') as HTMLButtonElement;
     const summary = () => el.querySelector('.cl-wiz__summary') as HTMLElement;
@@ -1429,7 +1482,20 @@ describe('OrderWizardComponent (a11y)', () => {
       facade.updateFormData({ selectedPackageIds: ['deep'] });
       fixture.detectChanges();
 
-      expect(marker()?.textContent).toContain('pages.order.package_overlap.in_package');
+      expect(marker()?.textContent?.trim()).toBe('pages.order.package_overlap.in_package');
+      expect(addButton()?.getAttribute('aria-describedby')).toBe(marker()?.id);
+    });
+
+    it('says packages on the row and in its description when two chosen packages include it', async () => {
+      await onServicesStep();
+      facade.packageNamesIncluding.mockImplementation((id: string) =>
+        id === 'windows' ? 'Deep clean, Kitchen' : null,
+      );
+      facade.isInManyPackages.mockImplementation((id: string) => id === 'windows');
+      facade.updateFormData({ selectedPackageIds: ['deep', 'kitchen'] });
+      fixture.detectChanges();
+
+      expect(marker()?.textContent?.trim()).toBe('pages.order.package_overlap.in_packages');
       expect(addButton()?.getAttribute('aria-describedby')).toBe(marker()?.id);
     });
 
@@ -1455,10 +1521,28 @@ describe('OrderWizardComponent (a11y)', () => {
       const row = el.querySelector('.cl-wiz__cross-row');
       expect(row).not.toBeNull();
       const crossMarker = row?.querySelector('[data-spec-in-package]');
-      expect(crossMarker?.textContent).toContain('pages.order.package_overlap.in_package');
+      expect(crossMarker?.textContent?.trim()).toBe('pages.order.package_overlap.in_package');
       expect(crossMarker?.id).toBe('cross-in-pack-windows');
       expect(row?.querySelector('.cl-wiz__cross-add')?.getAttribute('aria-describedby')).toBe(
         'cross-in-pack-windows',
+      );
+    });
+
+    it('says packages on the Plus-step suggestion two chosen packages include', async () => {
+      await onServicesStep();
+      facade.packageNamesIncluding.mockImplementation((id: string) =>
+        id === 'windows' ? 'Deep clean, Kitchen' : null,
+      );
+      facade.isInManyPackages.mockImplementation((id: string) => id === 'windows');
+      facade.updateFormData({ selectedPackageIds: ['deep', 'kitchen'] });
+      facade.activeStep.set(5);
+      fixture.detectChanges();
+
+      const row = el.querySelector('.cl-wiz__cross-row');
+      const crossMarker = row?.querySelector('[data-spec-in-package]');
+      expect(crossMarker?.textContent?.trim()).toBe('pages.order.package_overlap.in_packages');
+      expect(row?.querySelector('.cl-wiz__cross-add')?.getAttribute('aria-describedby')).toBe(
+        crossMarker?.id,
       );
     });
 

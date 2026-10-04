@@ -5,6 +5,7 @@ import {
   GetMembershipPlansResponse,
   GetMyMembershipResponse,
   MembershipStatus,
+  SwapMembershipPlanCommand,
 } from '@cleansia/customer-services';
 import { selectMarketCountryId } from '@cleansia/customer-stores';
 import { SnackbarService } from '@cleansia/services';
@@ -47,6 +48,7 @@ describe('MembershipManagementComponent — what cancelling or switching says', 
   let confirm: jest.Mock;
   let instant: jest.Mock;
   let showSuccessTranslated: jest.Mock;
+  let swapPlan: jest.Mock;
 
   function build(
     response: GetMyMembershipResponse,
@@ -55,6 +57,7 @@ describe('MembershipManagementComponent — what cancelling or switching says', 
     confirm = jest.fn();
     instant = jest.fn((key: string) => key);
     showSuccessTranslated = jest.fn();
+    swapPlan = jest.fn(() => of(undefined));
 
     TestBed.resetTestingModule();
     TestBed.configureTestingModule({
@@ -67,6 +70,7 @@ describe('MembershipManagementComponent — what cancelling or switching says', 
               getMine: () => of(response),
               getPlans: () => of([yearlyPlan()]),
               cancel,
+              swapPlan,
             },
           },
         },
@@ -76,12 +80,14 @@ describe('MembershipManagementComponent — what cancelling or switching says', 
         },
         { provide: TranslateService, useValue: { instant, currentLang: 'en' } },
         { provide: Router, useValue: { navigate: jest.fn() } },
+        // The app root's, behind the shared confirm the facade asks through.
+        { provide: ConfirmationService, useValue: { confirm } },
       ],
     });
     TestBed.overrideComponent(MembershipManagementComponent, {
       set: {
         template: '',
-        providers: [MembershipFacade, { provide: ConfirmationService, useValue: { confirm } }],
+        providers: [MembershipFacade],
       },
     });
     const component = TestBed.createComponent(MembershipManagementComponent).componentInstance;
@@ -137,6 +143,7 @@ describe('MembershipManagementComponent — what cancelling or switching says', 
     component.switchTo('PLUS_YEARLY');
     expect(asked().message).toBe('pages.membership.switch_dialog_message');
     expect(asked().acceptLabel).toBe('pages.membership.switch_dialog_confirm');
+    expect(asked().rejectLabel).toBe('common.back');
   });
 
   it('tells a member whose renewal failed that the cancel ends it now, then toasts the same', () => {
@@ -173,6 +180,44 @@ describe('MembershipManagementComponent — what cancelling or switching says', 
     component.confirmCancel();
     asked().accept?.();
 
+    expect(cancelled).not.toHaveBeenCalled();
+  });
+
+  // The shared dialog answers a No as `false`, so the facade's `confirmed` check is all that stands
+  // between "Back" and a cancelled or re-priced membership.
+  it('switches to the chosen plan once on yes', () => {
+    const component = build(membership());
+
+    component.switchTo('PLUS_YEARLY');
+    asked().accept?.();
+
+    expect(swapPlan).toHaveBeenCalledTimes(1);
+    const command: SwapMembershipPlanCommand = swapPlan.mock.calls[0][0];
+    expect(command.newPlanCode).toBe('PLUS_YEARLY');
+    expect(showSuccessTranslated).toHaveBeenCalledWith('pages.membership.switch_success');
+  });
+
+  it('switches nothing on No', () => {
+    const component = build(membership());
+
+    component.switchTo('PLUS_YEARLY');
+    asked().reject?.();
+
+    expect(swapPlan).not.toHaveBeenCalled();
+    expect(showSuccessTranslated).not.toHaveBeenCalled();
+  });
+
+  it('cancels nothing, toasts nothing and tells the page nothing on No', () => {
+    const cancel = jest.fn(() => of(undefined));
+    const component = build(membership(undefined, MembershipStatus.PastDue), cancel);
+    const cancelled = jest.fn();
+    component.cancelled.subscribe(cancelled);
+
+    component.confirmCancel();
+    asked().reject?.();
+
+    expect(cancel).not.toHaveBeenCalled();
+    expect(showSuccessTranslated).not.toHaveBeenCalled();
     expect(cancelled).not.toHaveBeenCalled();
   });
 });

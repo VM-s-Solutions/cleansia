@@ -540,21 +540,20 @@
     <string name="help_call">Позвоните в поддержку</string>
     <string name="help_call_desc">Пн–Вс · 8:00–20:00</string>
     <string name="help_email">Напишите нам</string>
-    <string name="help_email_desc">support@cleansia.cz</string>
     <string name="help_call_unavailable">На этом устройстве нельзя позвонить. Номер скопирован.</string>
-    <string name="help_email_unavailable">Почтовое приложение не найдено. Адрес скопирован.</string>
-    <string name="help_faq_title">Часто задаваемые вопросы</string>
-    <string name="help_faq_q1">Как отменить бронирование?</string>
-    <string name="help_faq_a1">Откройте бронирование во вкладке Заказы и нажмите \"Отменить\". Бесплатная отмена за 24 часа до начала уборки. В течение 15 минут после заказа вы не платите ничего — для первого заказа или с Cleansia Plus в течение 60 минут.</string>
-    <string name="help_faq_q2">Что делать, если меня нет дома, когда придёт клинер?</string>
+    <string name="help_email_unavailable">Адрес скопирован на случай, если почтовое приложение не настроено.</string>
+    <string name="help_faq_title">Частые вопросы</string>
+    <string name="help_faq_q1">Как отменить заказ?</string>
+    <string name="help_faq_a1">Откройте заказ на вкладке Заказы и нажмите «Отменить». Отмена бесплатна за 24 часа до начала уборки. В течение 15 минут после заказа вы не платите ничего — для первого заказа или с Cleansia Plus в течение 60 минут.</string>
+    <string name="help_faq_q2">Что если меня не будет дома, когда придёт клинер?</string>
     <string name="help_faq_a2">Добавьте инструкции по доступу при бронировании (напр. код от двери, место ключа). Клинер ждёт 15 минут после начала уборки и пытается вам позвонить. Если и тогда не удастся попасть внутрь, бронирование отменяется и взимается полная стоимость.</string>
     <string name="help_faq_q3">Застрахованы ли клинеры?</string>
-    <string name="help_faq_a3">Да. Все клинеры Cleansia застрахованы до %1$s на бронирование.</string>
+    <string name="help_faq_a3">Да. Все клинеры Cleansia застрахованы до %1$s за заказ.</string>
     <string name="help_faq_a3_no_figure">Да. Все клинеры Cleansia застрахованы.</string>
-    <string name="help_faq_q4">Можно ли изменить время?</string>
-    <string name="help_faq_a4">Пока нет — перенести бронирование нельзя. Отмените его во вкладке Заказы и забронируйте новое время; пока ни один клинер не взял бронирование, отмена бесплатна.</string>
+    <string name="help_faq_q4">Можно ли изменить дату?</string>
+    <string name="help_faq_a4">Заказ нельзя перенести на другую дату. Отмените его и закажите новую дату — отмена бесплатна, пока ни один клинер не взял заказ.</string>
     <string name="help_faq_q5">Что входит в стандартную уборку?</string>
-    <string name="help_faq_a5">Кухня (столешницы, раковина, внешняя поверхность техники), ванные (унитаз, душ, плитка), все полы, вытирание пыли, общая уборка. Дополнения вроде чистки духовки доступны отдельно.</string>
+    <string name="help_faq_a5">Кухня, ванные, все полы, протирание пыли и общая уборка. Доп. услуги вроде чистки духовки — как дополнения.</string>
 
     <!-- Profile — appearance -->
     <string name="appearance_title">Оформление</string>
@@ -654,11 +653,14 @@
     <string name="details_add_to_booking">Добавить в бронирование</string>
     <string name="details_remove_from_booking">Убрать из бронирования</string>
     <string name="booking_in_your_package">В вашем пакете: %1$s</string>
+    <string name="booking_in_your_packages">В ваших пакетах: %1$s</string>
     <string name="booking_twice_service_title">Уже есть в вашем пакете</string>
+    <string name="booking_twice_service_title_many">Уже есть в ваших пакетах</string>
     <string name="booking_twice_service_message">Услуга %1$s входит в пакет %2$s. Если добавить её ещё раз, она будет заказана дважды: выполнена дважды и оплачена дважды.</string>
+    <string name="booking_twice_service_message_many">Услуга %1$s уже входит в пакеты %2$s. Если добавить её ещё раз, она будет заказана ещё раз: выполнена ещё раз и оплачена ещё раз.</string>
     <string name="booking_twice_service_confirm">Добавить ещё раз</string>
     <string name="booking_twice_package_title">Уже есть в вашем бронировании</string>
-    <string name="booking_twice_package_message">Пакет %1$s включает то, что вы уже добавили отдельно: %2$s. Если добавить пакет, это будет заказано дважды: выполнено дважды и оплачено дважды.</string>
+    <string name="booking_twice_package_message">Пакет %1$s включает то, что уже есть в вашем бронировании: %2$s. Если добавить пакет, это будет заказано ещё раз: выполнено ещё раз и оплачено ещё раз.</string>
     <string name="booking_twice_package_confirm">Добавить пакет</string>
     <string name="booking_your_home">Ваш дом</string>
     <string name="booking_size_limit_caption">Не более %1$d комнат и %2$d ванных комнат</string>

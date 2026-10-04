@@ -266,10 +266,12 @@ commit. Corpus reach at that commit: 34 pages, 46 ADRs, 6470 indexed files, 20 A
 citations. The corpus scan shipped `--warn` because this document's own rule of thumb forbids blocking
 over a dirty baseline.
 
-**It is now `FAILED: C1 0 · C2 0 · C3 0`, so `--warn` came off `catalog-claims.yml`.** Corpus reach at
-promotion: 34 pages, 48 ADRs, 6494 indexed files, 22 status claims, 574 citations. Both halves of the
-workflow block. The tier token moved in `conventions.md`, `consistency.md` and this file in the same
-change, as the promotion contract required.
+**It is now `OK: C1 0 · C2 0 · C3 0`, so `--warn` came off `catalog-claims.yml`.** Until 2026-10-04
+that line began `FAILED:` whatever its counts, so a clean run announced a failure and exited 0; the
+word is computed now, as `check-backlog-consistency.mjs`'s is. Corpus reach at promotion: 34 pages,
+48 ADRs, 6494 indexed files, 22 status claims, 574 citations. Both halves of the workflow block. The
+tier token moved in `conventions.md`, `consistency.md` and this file in the same change, as the
+promotion contract required.
 
 **How the last 15 closed, because the shape recurs.** Every C2-FORM banner: five were given a
 `Retires when:` marker

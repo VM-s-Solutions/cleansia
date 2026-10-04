@@ -40,14 +40,24 @@ iOS steppers stop at the same limits and state them under the size row →
 Services and packages support **translations** -- the component reads the user's current locale to display translated names/descriptions.
 
 **A service a chosen package includes is marked, and adding the pair by hand asks first.** Under such a
-service the step prints *In your package: {package}* (`pages.order.package_overlap.in_package`), and the
-service's add button takes that line as its `aria-describedby`. `OrderWizardFacade.toggleService` and
+service the step prints *In your package: {package}* (`pages.order.package_overlap.in_package`), or
+*In your packages: {package}* (`in_packages`, the same placeholder holding the comma-joined names)
+when two or more chosen packages include it, and the service's add button takes that line as its
+`aria-describedby`. `OrderWizardFacade.toggleService` and
 `togglePackage` ask through the shared `DialogService` before a tap adds either half of a twice-booked
-pair, with *Cancel* focused (`defaultFocus: 'reject'`); removing never asks, and the Plus step's
-suggested *Add* goes through `toggleService` too. A selection the wizard is handed (a catalogue link,
-*Order again*, a parked basket) is written through `updateFormData`, so it is only marked. Which chosen
-packages include a service is one helper the schedule form shares, `chosenPackagesByService` in
-`customer-services` (`package-overlap.ts`). → [Charging a package and a service together](/product/business-rules#charging-a-package-and-a-service-together)
+pair, with *Cancel* focused. No option puts it there: on PrimeNG 20.4 the shell's `<p-confirmDialog>`
+never applies its own `defaultFocus`, so the dialog focuses the first focusable element of the
+message, which has none, then of the footer, where *Cancel* comes before the accept button. A PrimeNG
+upgrade that starts honouring `defaultFocus` (default `'accept'`) would move focus to *Add again* or
+*Add package*. Removing never asks, and the Plus step's suggested *Add* goes through `toggleService`
+too. A service two or more chosen packages include (`isInManyPackages`, which picks both the marker and
+the question) is asked about under `service_title_many` (*Already in your packages*) with
+`service_message_many` (*"books it once more"*), and a package asks when a service
+it includes is already in the booking on its own **or** through another chosen package, never
+counting itself (`includedServicesAlreadyChosen`, since 2026-10-04). A selection the wizard is handed
+(a catalogue link, *Order again*, a parked basket) is written through `updateFormData`, so it is only
+marked. Both helpers, `chosenPackagesByService` and `includedServicesAlreadyChosen`, live in
+`customer-services` (`package-overlap.ts`) and the schedule form shares them. → [Charging a package and a service together](/product/business-rules#charging-a-package-and-a-service-together)
 
 ### Step 1: Address & Contact
 

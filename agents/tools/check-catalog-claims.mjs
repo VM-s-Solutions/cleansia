@@ -916,8 +916,11 @@ console.log(
         `${stats.anchorOk}/${stats.anchorAttempted} hit, ${stats.anchorMiss} miss. ` +
         `It cannot decide that the lines SAY what the entry claims; that stays the reader's.`,
 );
+// The verdict is computed, not asserted: this line read "FAILED" on every run until 2026-10-04, clean
+// ones included. Same fix check-backlog-consistency.mjs took. Advisories never make it FAILED.
+const failing = failed.C1 + failed.C2 + failed.C3 + p1.length + p0.length;
 console.log(
-    `catalog-claims FAILED: C1 ${failed.C1} · C2 ${failed.C2} · C3 ${failed.C3} ` +
+    `catalog-claims ${failing ? "FAILED" : "OK"}: C1 ${failed.C1} · C2 ${failed.C2} · C3 ${failed.C3} ` +
         `(${p1.length} claim violation(s), ${p0.length} reach failure(s), ${advisories.length} advisory)` +
         (warnOnly ? " [--warn: exit 0]" : ""),
 );

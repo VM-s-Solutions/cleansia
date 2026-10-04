@@ -76,14 +76,15 @@ struct Catalog: Equatable {
     }
 }
 
-/// A pick that books a service twice, held until the customer answers: a package and a service it
+/// A pick that books a service once more, held until the customer answers: a package and a service it
 /// already includes are both done and both charged, and nothing de-duplicates them
 /// (→ /product/business-rules#charging-a-package-and-a-service-together). Only a tap that ADDS asks;
 /// a removal, and a selection seeded from elsewhere, never do.
 enum TwiceBookedPick: Equatable {
     /// Adding the service `id`, which the selected `packageIds` already include.
     case service(id: String, packageIds: [String])
-    /// Adding the package `id`, which includes the selected `serviceIds`.
+    /// Adding the package `id`, which includes the `serviceIds` already in the booking, chosen on their
+    /// own or through another selected package.
     case package(id: String, serviceIds: [String])
 }
 
@@ -96,17 +97,26 @@ extension Catalog {
         }
     }
 
-    /// What adding the service would book twice, or nil when it books nothing twice.
+    /// What adding the service would book once more, or nil when it books nothing again.
     func twiceBookedPick(addingService serviceId: String, selectedPackageIds: Set<String>) -> TwiceBookedPick? {
         let packageIds = selectedPackages(including: serviceId, selectedPackageIds: selectedPackageIds).map(\.id)
         return packageIds.isEmpty ? nil : .service(id: serviceId, packageIds: packageIds)
     }
 
-    /// What adding the package would book twice, or nil when it books nothing twice.
-    func twiceBookedPick(addingPackage packageId: String, selectedServiceIds: Set<String>) -> TwiceBookedPick? {
+    /// What adding the package would book once more, or nil when it books nothing again: the services it
+    /// includes that are already in the booking — chosen on their own, or through another selected
+    /// package — in the package's own order.
+    func twiceBookedPick(
+        addingPackage packageId: String,
+        selectedServiceIds: Set<String>,
+        selectedPackageIds: Set<String>
+    ) -> TwiceBookedPick? {
         guard let package = packages.first(where: { $0.id == packageId }) else { return nil }
-        let included = Set(package.includedServices.compactMap(\.serviceId))
-        let serviceIds = services.map(\.id).filter { selectedServiceIds.contains($0) && included.contains($0) }
+        let throughPackages = packages
+            .filter { $0.id != packageId && selectedPackageIds.contains($0.id) }
+            .flatMap { $0.includedServices.compactMap(\.serviceId) }
+        let inBooking = selectedServiceIds.union(throughPackages)
+        let serviceIds = package.includedServices.compactMap(\.serviceId).filter(inBooking.contains)
         return serviceIds.isEmpty ? nil : .package(id: packageId, serviceIds: serviceIds)
     }
 }

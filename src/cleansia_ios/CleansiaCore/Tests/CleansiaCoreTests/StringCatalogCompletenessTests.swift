@@ -178,6 +178,21 @@ final class StringCatalogCompletenessTests: XCTestCase {
         assertNoViolations(employment, "partner-facing values that speak of employment")
     }
 
+    /// Owner ruling 2026-10-04: Slovak says "balík" for a package, as the web does — never the diminutive
+    /// "balíček" (that is the Czech word, and Czech keeps it). Every inflected form shares the "balíč" stem.
+    func testSlovakCallsAPackageBalikNeverBalicek() throws {
+        var diminutive: [String] = []
+        for (catalog, entries) in try loadAll() {
+            for (key, byLocale) in entries {
+                let copy = byLocale["sk"]?.texts.joined(separator: "\n").lowercased() ?? ""
+                if copy.contains("balíč") {
+                    diminutive.append("\(catalog) · \(key) · \(copy)")
+                }
+            }
+        }
+        assertNoViolations(diminutive, "Slovak values that say \"balíček\" instead of \"balík\"")
+    }
+
     // MARK: - Loading
 
     private func loadAll() throws -> [String: [String: [String: LocalizedValue]]] {

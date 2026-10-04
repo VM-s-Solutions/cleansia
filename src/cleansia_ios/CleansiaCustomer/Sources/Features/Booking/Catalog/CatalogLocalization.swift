@@ -82,11 +82,53 @@ extension CatalogPackage {
 }
 
 extension Catalog {
-    /// The service row's "In your package: …" line, naming every selected package that includes it;
-    /// nil when none does.
+    /// The service row's "In your package: …" line — "In your packages: …" when two or more do — naming
+    /// every selected package that includes it; nil when none does.
     func inPackageNote(for serviceId: String, selectedPackageIds: Set<String>, locale: Locale) -> String? {
         let names = selectedPackages(including: serviceId, selectedPackageIds: selectedPackageIds)
             .map { $0.localizedName(for: locale) }
-        return names.isEmpty ? nil : L10n.Booking.inYourPackage(names.joined(separator: ", "))
+        guard !names.isEmpty else { return nil }
+        let joined = names.joined(separator: ", ")
+        return names.count > 1 ? L10n.Booking.inYourPackages(joined) : L10n.Booking.inYourPackage(joined)
+    }
+
+    /// The twice-booking confirm's message. A service already in two or more selected packages would be
+    /// booked a third time or more, so that case says "once more", never "twice". A package's message
+    /// names the services through its own summaries, which also cover one the catalogue does not offer
+    /// on its own but another selected package includes.
+    func twiceBookedMessage(_ pick: TwiceBookedPick, locale: Locale) -> String {
+        switch pick {
+        case let .service(id, packageIds):
+            let service = services.first { $0.id == id }?.localizedName(for: locale) ?? ""
+            let names = packageIds.compactMap { packageId in
+                packages.first { $0.id == packageId }?.localizedName(for: locale)
+            }.joined(separator: ", ")
+            return packageIds.count > 1
+                ? L10n.Booking.twiceServiceMessageMany(service: service, packages: names)
+                : L10n.Booking.twiceServiceMessage(service: service, packages: names)
+        case let .package(id, serviceIds):
+            guard let package = packages.first(where: { $0.id == id }) else { return "" }
+            let code = CatalogLocalization.languageCode(for: locale)
+            let names = package.includedServices
+                .filter { $0.serviceId.map(serviceIds.contains) ?? false }
+                .map { CatalogLocalization.name(translations: $0.translations, fallback: $0.name, languageCode: code) }
+            return L10n.Booking.twicePackageMessage(
+                package: package.localizedName(for: locale),
+                services: names.joined(separator: ", ")
+            )
+        }
+    }
+}
+
+extension TwiceBookedPick {
+    /// The twice-booking confirm's title: a service two or more selected packages include is "already in
+    /// your packages", as its marker says.
+    var title: String {
+        switch self {
+        case let .service(_, packageIds):
+            packageIds.count > 1 ? L10n.Booking.twiceServiceTitleMany : L10n.Booking.twiceServiceTitle
+        case .package:
+            L10n.Booking.twicePackageTitle
+        }
     }
 }

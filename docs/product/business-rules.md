@@ -528,7 +528,8 @@ needed a paid period and no plan could have a trial).
 - **The customer terms say so.** The terms `2026-09-30` offer the 14-day trial on either plan, one per
   account, with the first charge when it ends unless cancelled before ([The legal texts](#legal-texts)).
 - **A DEV database seeded before the ruling** keeps `0` days on both seeded plans, because the seed
-  never updates a plan that exists; `sql-scripts/fix-plus-trial-14-days.sql` sets them to 14.
+  never updates a plan that exists; `sql-scripts/fix-plus-trial-14-days.sql` sets them to 14, and
+  `execute-sql.yml` refuses it against PRO, whose plans are typed into the admin console.
 
 There are **seven** benefits:
 
@@ -1157,7 +1158,14 @@ the market — or from the order, on a contract for work.
   every language: iOS is the reference for this screen (owner ruling 2026-10-03). Until then Android
   listed *Call support* first, and in Czech, Slovak, Ukrainian and Russian its two titles were
   infinitives (*Napsat e-mail*, *Zavolat na podporu*) where iOS addresses the customer (*Napište nám*,
-  *Zavolejte podpoře*).
+  *Zavolejte podpoře*). Since 2026-10-04 the whole screen follows iOS (owner ruling 2026-10-04): the
+  same title, two sections under small upper-case labels, *Contact us* first with both rows in one card
+  split by a divider, then the five questions in iOS's order, each in a card of its own. Every title,
+  question, answer and notice reads as on iOS in all five languages, and *Email us* shows the address
+  it opens. Until then Android drew each contact row as a card of its own with a round icon badge, put
+  the five questions in one card with a help icon on each, and worded the title and most questions and
+  answers differently in at least one language (in Slovak the title read *Pomocník a podpora*, where
+  iOS says *Pomoc a podpora*).
 - **The registered name comes with the registration.** Whether the company is *Cleansia CZ s.r.o.* or
   *Cleansia s.r.o.* is written once, on the company record, and every text, receipt, confirmation and
   e-mail footer follows it; the footer's copyright line still reads *Cleansia s.r.o.*
@@ -1807,7 +1815,8 @@ A **cash order refunded by hand has no refund record** and shows gross. → [Adm
 ## Charging a package and a service together
 
 Selecting a package **and** a service that the package already includes buys that service **twice** —
-it is performed twice, priced twice, and takes twice as long.
+it is performed twice, priced twice, and takes twice as long. Two chosen packages that include the same
+service do the same, and every further package or pick that includes it books it once more.
 
 That is an owner ruling, not a bug, and the doubled crew size and duration follow from it correctly.
 It must not be "fixed" with a de-duplication.
@@ -1816,34 +1825,46 @@ It must not be "fixed" with a de-duplication.
 2026-10-03). Wherever a customer picks services and packages — the booking and the schedule form, on
 the web, Android and iOS — the same four things hold:
 
-- **A service a chosen package includes is marked** *In your package: {package}* under its name, the
-  names joined by commas when more than one chosen package includes it. The line is part of what a
-  screen reader announces for the row (on the web booking, the add button's description; on the web
-  schedule form the whole row is the button, and the line is part of its name), and the row stays
-  selectable.
+- **A service a chosen package includes is marked** *In your package: {package}* under its name, or
+  *In your packages: {packages}*, the names joined by commas, when two or more chosen packages
+  include it (the plural since 2026-10-04; until then the line said *package* over the list too).
+  Either line is part of what a screen reader announces for the row (on the web booking, the add
+  button's description; on the web schedule form the whole row is the button, and the line is part of
+  its name), and the row stays selectable.
 - **Adding that service asks first.** *Already in your package* — *"{service} is part of {package}.
   Adding it again books it twice: it is done twice and charged twice."* — with *Add again* and
-  *Cancel*.
-- **Adding a package asks the other way round** when it includes a service already chosen on its
-  own. *Already in your booking* — *"{package} also includes what you already added separately:
-  {services}. Adding the package books that twice: done twice and charged twice."* The wording reads
-  the same for one service or several. — with *Add package* and *Cancel*.
-  On Android and iOS the package's details sheet stays open under the question, closes once the
-  package is in, and stays open on *Cancel*.
+  *Cancel*. When two or more chosen packages already include it, *twice* would be false, so the
+  question is titled *Already in your packages* and says *"{service} is already part of {packages}.
+  Adding it again books it once more: it is done once more and charged once more."* (since
+  2026-10-04; until then it said *twice* there too, under the singular title).
+- **Adding a package asks the other way round** when it includes a service already in the booking,
+  chosen on its own **or through another chosen package**; the package never counts against itself.
+  *Already in your booking* — *"{package} also includes what is already in your booking: {services}.
+  Adding the package books that once more: it is done once more and charged once more."* — with *Add
+  package* and *Cancel*. The wording reads the same for one service or several, and the services are
+  named from the package's own list, in its order. Until 2026-10-04 only a service chosen on its own
+  asked, so a second package sharing a service with the first doubled it without a word, and the
+  message read *"…also includes what you already added separately: {services}. Adding the package
+  books that twice: done twice and charged twice."* On Android and iOS the package's details sheet
+  stays open under the question, closes once the package is in, and stays open on *Cancel*.
 - ***Cancel* leaves the selection as it was**, and it is the way out: it is the alert's cancel action
   on iOS, Back or a tap outside answers it on Android, and on the web it is the focused button and
   Escape answers it. **Removing either half never asks.**
 
 **A selection the form is handed is only marked.** A package card on Home, the quick-size card's *See
 my price*, *Order again*, a booking resumed or parked, a schedule started from an order or opened for
-editing, and on the web a catalogue link all fill the form without a tap, so none of them asks; the
-pair shows marked, as it will be charged. The web booking's Plus step suggests services not chosen on
-their own, which can include one a chosen package holds, and its *Add* asks the same question.
+editing, and on the web a catalogue link all fill the form without a tap, so none of them asks, not
+even for two packages that share a service; the pair shows marked, as it will be charged. The web
+booking's Plus step suggests services not chosen on their own, which can include one a chosen package
+holds, and its *Add* asks the same question.
 
 The marker matches the package's `IncludedServices[].ServiceId` (`PackageServiceSummary`), which the
 package list already sent; a client given an item without it still prints the item, but neither marks
-that service nor asks about it. Android and iOS word it alike in all five languages; the web words it the same, except that
-its Slovak calls a package *balík*, as the rest of its wizard does, where the apps say *balíček*.
+that service nor asks about it. The web, Android and iOS word it alike in all five languages. Slovak
+calls a package *balík* on every client and Czech *balíček* (owner ruling 2026-10-04); until then the
+apps' Slovak, and older strings on the web, said *balíček* too. One Slovak text still says *balíčky*:
+the customer terms of service in force. A text in force is never edited, so it changes only with its
+next version ([above](#legal-drafts)).
 
 ## Discounts, and the 12 % cap {#discount-cap}
 

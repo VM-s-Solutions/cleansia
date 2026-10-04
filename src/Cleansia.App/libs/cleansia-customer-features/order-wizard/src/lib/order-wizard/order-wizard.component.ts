@@ -1183,13 +1183,20 @@ export class OrderWizardComponent implements OnInit {
    * through the wizard to the step that added it — and by the review step that
    * is three screens away. Every kind on a quote line is something the customer
    * chose and can unchoose, so each one can be removed where they can see it.
+   *
+   * Remove only. The lines are the last quote's, so one can still show an item already taken out
+   * while the next quote is on its way; toggling that would add it back (and could ask about it).
    */
   removeLine(line: QuoteOrderQuoteLine): void {
     const id = line.itemId;
     if (!id) return;
-    if (line.kind === 'package') this.togglePackage(id);
-    else if (line.kind === 'service') this.toggleService(id);
-    else this.facade.toggleExtra(id);
+    if (line.kind === 'package') {
+      if (this.isPackageSelected(id)) this.togglePackage(id);
+    } else if (line.kind === 'service') {
+      if (this.isServiceSelected(id)) this.toggleService(id);
+    } else if (this.facade.formData().extras[id]) {
+      this.facade.toggleExtra(id);
+    }
   }
 
   /** What the remove control announces, named for the line it removes. */

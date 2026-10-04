@@ -420,6 +420,19 @@ describe('RecurringBookingsFacade', () => {
       expect(facade.packageNamesIncluding('ironing')).toBeNull();
     });
 
+    // One chosen package says "package"; two or more say "packages", on the line and the question.
+    it('says packages only for a service two or more chosen packages include', () => {
+      facade.updateFormData({ selectedPackageIds: ['deep'] });
+
+      expect(facade.isInManyPackages('oven')).toBe(false);
+
+      facade.updateFormData({ selectedPackageIds: ['deep', 'kitchen'] });
+
+      expect(facade.isInManyPackages('oven')).toBe(true);
+      expect(facade.isInManyPackages('windows')).toBe(false);
+      expect(facade.isInManyPackages('ironing')).toBe(false);
+    });
+
     it('asks before adding a service a chosen package includes, with Cancel as the default', () => {
       facade.updateFormData({ selectedPackageIds: ['deep'] });
 
@@ -451,6 +464,20 @@ describe('RecurringBookingsFacade', () => {
       expect(chosen()).toEqual({ services: ['windows'], packages: ['deep'] });
     });
 
+    // Two chosen packages already book it, so adding it is a third time: "twice" would be false.
+    it('asks with the once-more message and the packages title when two chosen packages include the service', () => {
+      facade.updateFormData({ selectedPackageIds: ['deep', 'kitchen'] });
+
+      facade.toggleService('oven');
+
+      expect(dialog.confirmTranslated).toHaveBeenCalledWith(
+        'pages.order.package_overlap.service_message_many',
+        'pages.order.package_overlap.service_title_many',
+        { service: 'Oven', package: 'Deep clean, Kitchen' },
+        { acceptLabelKey: 'pages.order.package_overlap.add_again' },
+      );
+    });
+
     it('adds a service no chosen package includes without asking', () => {
       facade.updateFormData({ selectedPackageIds: ['deep'] });
 
@@ -472,6 +499,29 @@ describe('RecurringBookingsFacade', () => {
         { acceptLabelKey: 'pages.order.package_overlap.add_package' },
       );
       expect(chosen().packages).toEqual([]);
+    });
+
+    it('asks before adding a package that includes a service another chosen package already books', () => {
+      facade.updateFormData({ selectedPackageIds: ['kitchen'] });
+
+      facade.togglePackage('deep');
+
+      expect(dialog.confirmTranslated).toHaveBeenCalledWith(
+        'pages.order.package_overlap.package_message',
+        'pages.order.package_overlap.package_title',
+        { package: 'Deep clean', services: 'Oven' },
+        { acceptLabelKey: 'pages.order.package_overlap.add_package' },
+      );
+      expect(chosen().packages).toEqual(['kitchen']);
+    });
+
+    it('adds the overlapping package when the customer confirms, and keeps the other one', () => {
+      facade.updateFormData({ selectedPackageIds: ['kitchen'] });
+      dialog.confirmTranslated.mockReturnValue(of(true));
+
+      facade.togglePackage('deep');
+
+      expect(chosen()).toEqual({ services: [], packages: ['kitchen', 'deep'] });
     });
 
     it('adds the package when the customer confirms, and keeps the service', () => {
@@ -516,12 +566,12 @@ describe('RecurringBookingsFacade', () => {
       expect(chosen()).toEqual({ services: ['windows'], packages: ['deep'] });
 
       facade.loadForEdit(
-        template({ selectedServiceIds: ['oven'], selectedPackageIds: ['kitchen'] }),
+        template({ selectedServiceIds: ['oven'], selectedPackageIds: ['kitchen', 'deep'] }),
       );
 
       expect(dialog.confirmTranslated).not.toHaveBeenCalled();
-      expect(chosen()).toEqual({ services: ['oven'], packages: ['kitchen'] });
-      expect(facade.packageNamesIncluding('oven')).toBe('Kitchen');
+      expect(chosen()).toEqual({ services: ['oven'], packages: ['kitchen', 'deep'] });
+      expect(facade.packageNamesIncluding('oven')).toBe('Deep clean, Kitchen');
     });
   });
 
@@ -809,6 +859,50 @@ describe('RecurringBookingsFacade', () => {
       await facade.toggleActive(template({ id: 't1' }));
 
       expect(client.setActive).not.toHaveBeenCalled();
+    });
+  });
+
+  // Asked on the app shell's one confirm dialog, through the shared DialogService.
+  describe('confirmDeleteTemplate', () => {
+    const weekly = () => template({ id: 't1', frequency: RecurrenceFrequency.Weekly });
+
+    it('asks in the schedule\'s own words, with a red Delete and Cancel', async () => {
+      await facade.confirmDeleteTemplate(weekly());
+
+      expect(dialog.confirmTranslated).toHaveBeenCalledWith(
+        'recurring_booking.delete_dialog_compound',
+        'recurring_booking.delete_dialog_title',
+        { schedule: 'recurring_booking.cadence_weekly' },
+        {
+          acceptLabelKey: 'recurring_booking.delete_dialog_confirm',
+          rejectLabelKey: 'global.cancel',
+          danger: true,
+        },
+      );
+    });
+
+    it('deletes the schedule and clears the form once the customer says yes', async () => {
+      dialog.confirmTranslated.mockReturnValue(of(true));
+      facade.templates.set([weekly(), template({ id: 't2' })]);
+      facade.updateFormData({ selectedServiceIds: ['s1'] });
+
+      const deleted = await facade.confirmDeleteTemplate(weekly());
+
+      expect(deleted).toBe(true);
+      expect(client.delete).toHaveBeenCalledTimes(1);
+      expect(facade.templates().map((t) => t.id)).toEqual(['t2']);
+      expect(facade.formData().selectedServiceIds).toEqual([]);
+    });
+
+    it('deletes nothing when the customer cancels', async () => {
+      dialog.confirmTranslated.mockReturnValue(of(false));
+      facade.updateFormData({ selectedServiceIds: ['s1'] });
+
+      const deleted = await facade.confirmDeleteTemplate(weekly());
+
+      expect(deleted).toBe(false);
+      expect(client.delete).not.toHaveBeenCalled();
+      expect(facade.formData().selectedServiceIds).toEqual(['s1']);
     });
   });
 

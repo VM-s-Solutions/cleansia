@@ -1,6 +1,9 @@
 package cz.cleansia.customer.core.market
 
 import java.io.File
+import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.jsonObject
+import kotlinx.serialization.json.jsonPrimitive
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
@@ -97,11 +100,17 @@ class MarketCopyStringsTest {
         assertEquals("the FAQ must not read the figured key without a figure", 1, Regex("R\\.string\\.help_faq_a3\\b[^_]").findAll(help).count())
     }
 
-    /** Owner ruling 2026-10-02: support@cleansia.cz is the one support contact a customer is shown. */
+    /**
+     * Owner ruling 2026-10-02: support@cleansia.cz is the one support contact a customer is shown. The
+     * e-mail row prints the address it opens, as iOS's prints `CleansiaWeb.contactEmail`; no locale
+     * carries a copy of it that could drift.
+     */
     @Test
     fun `the help screen names the one support address in every locale`() {
+        val help = source("features/profile/HelpSupportScreen.kt")
+        assertTrue("the e-mail row no longer prints the address it opens", help.contains("subtitle = SUPPORT_EMAIL,"))
         locales.forEach { locale ->
-            assertEquals("$locale/help_email_desc", "support@cleansia.cz", valueOf(stringsXml(locale), "help_email_desc"))
+            assertEquals("$locale/help_email_desc outlived the address constant", null, valueOf(stringsXml(locale), "help_email_desc"))
         }
     }
 
@@ -132,38 +141,76 @@ class MarketCopyStringsTest {
     }
 
     /**
-     * M5: iOS's Help is the reference for this screen (owner, 2026-10-03). Its contact rows are Email us,
-     * on the support address, then Call support, with the line's hours, in iOS's wording in every locale.
-     * Android listed the line first and worded both rows differently in cs, sk, uk and ru.
+     * M5, R1: iOS's Help is the reference for this screen (owner, 2026-10-03; the whole screen,
+     * 2026-10-04). Every Help string reads as iOS's in every locale — read from iOS's catalog, so the two
+     * cannot drift apart unnoticed — with only the format placeholder adapted (`%1$@` → `%1$s`). The
+     * Profile row that opens the screen counts: it must not name the screen differently from its title.
      */
     @Test
-    fun `the help rows follow iOS - e-mail first, then the line, in its wording`() {
-        val help = source("features/profile/HelpSupportScreen.kt")
-        val email = help.indexOf("title = stringResource(R.string.help_email),")
-        val call = help.indexOf("title = stringResource(R.string.help_call),")
-        assertTrue("the e-mail row is gone", email >= 0)
-        assertTrue("the call row is gone", call >= 0)
-        assertTrue("the line is listed before the e-mail, iOS lists the e-mail first", email < call)
-
-        val ios = mapOf(
-            "values" to listOf("Email us", "Call support", "Mon–Sun · 8:00–20:00"),
-            "values-cs" to listOf("Napište nám", "Zavolejte podpoře", "Po–Ne · 8:00–20:00"),
-            "values-sk" to listOf("Napíšte nám", "Zavolajte podpore", "Po–Ne · 8:00–20:00"),
-            "values-uk" to listOf("Напишіть нам", "Зателефонуйте в підтримку", "Пн–Нд · 8:00–20:00"),
-            "values-ru" to listOf("Напишите нам", "Позвоните в поддержку", "Пн–Вс · 8:00–20:00"),
-        )
-        ios.forEach { (locale, rows) ->
-            val xml = stringsXml(locale)
-            listOf("help_email", "help_call", "help_call_desc").zip(rows).forEach { (key, expected) ->
-                assertEquals("$locale/$key reads differently from iOS", expected, valueOf(xml, key))
+    fun `every help string reads as iOS's in every locale`() {
+        val catalog = Json.parseToJsonElement(File(solutionDir, IOS_CATALOG).readText()).jsonObject.getValue("strings").jsonObject
+        val iosKeys = catalog.keys.filter { it.startsWith("help_") || it == "profile_row_help" }.toSet()
+        iosLanguages.forEach { (locale, language) ->
+            val android = Regex("<string name=\"(help_[^\"]+|profile_row_help)\">(.*?)</string>").findAll(stringsXml(locale))
+                .associate { it.groupValues[1] to unescape(it.groupValues[2]) }
+            assertEquals("$locale: the Help keys differ from iOS's", iosKeys, android.keys)
+            iosKeys.forEach { key ->
+                val ios = catalog.getValue(key).jsonObject["localizations"]?.jsonObject?.get(language)?.jsonObject
+                    ?.get("stringUnit")?.jsonObject?.get("value")?.jsonPrimitive?.content
+                    ?: error("iOS has no $language/$key")
+                assertEquals("$locale/$key reads differently from iOS", ios.replace("\$@", "\$s"), android[key])
             }
+        }
+    }
+
+    /**
+     * R1: iOS's grouping. Two labelled sections, contact first: Email us then Call support in ONE card,
+     * split by a divider; then the five questions in iOS's order, each in a card of its own. No round
+     * icon badge behind a contact icon and no help icon on a question — iOS draws neither.
+     */
+    @Test
+    fun `the help screen keeps iOS's sections, rows and order`() {
+        val help = source("features/profile/HelpSupportScreen.kt")
+        val order = listOf(
+            "HelpSection(stringResource(R.string.help_contact_title))",
+            "title = stringResource(R.string.help_email),",
+            "HorizontalDivider(",
+            "title = stringResource(R.string.help_call),",
+            "HelpSection(stringResource(R.string.help_faq_title))",
+        ).map { it to help.indexOf(it) }
+        order.forEach { (marker, at) -> assertTrue("the Help screen lost $marker", at >= 0) }
+        assertEquals("the Help screen's sections and rows are out of iOS's order", order.sortedBy { it.second }, order)
+        assertEquals("the contact rows are not one card split by one divider", 1, Regex("HorizontalDivider\\(").findAll(help).count())
+
+        val questions = Regex("FaqItem\\(R\\.string\\.(help_faq_q\\d)\\)").findAll(help).map { it.groupValues[1] }.toList()
+        assertEquals((1..5).map { "help_faq_q$it" }, questions)
+        assertTrue("the questions are no longer one card each", help.contains("faqs.forEach { faq -> FaqRow(faq) }"))
+        assertTrue("the section labels are not upper-case as iOS's", help.contains("title.uppercase()"))
+        listOf("CircleShape", "HelpOutline").forEach { badge ->
+            assertFalse("the Help screen still draws $badge, which iOS has not", help.contains(badge))
         }
     }
 
     private fun source(path: String): String =
         File(moduleDir, "src/main/java/cz/cleansia/customer/$path").readText().replace(Regex("\\s+"), " ")
 
+    private fun unescape(value: String) =
+        value.replace("\\'", "'").replace("\\\"", "\"").replace("&lt;", "<").replace("&gt;", ">").replace("&amp;", "&")
+
+    private val solutionDir: File = generateSequence(moduleDir.absoluteFile) { it.parentFile }
+        .firstOrNull { File(it, "Cleansia.Api.sln").isFile }
+        ?: error("Cleansia.Api.sln not found above ${moduleDir.absolutePath}")
+
+    private val iosLanguages = mapOf(
+        "values" to "en",
+        "values-cs" to "cs",
+        "values-sk" to "sk",
+        "values-uk" to "uk",
+        "values-ru" to "ru",
+    )
+
     private companion object {
+        const val IOS_CATALOG = "cleansia_ios/CleansiaCustomer/Resources/Localizable.xcstrings"
         val PLACEHOLDER = Regex("%\\d+\\\$[sd]")
         val DIGIT = Regex("\\d")
         val CURRENCY_WORD = Regex("CZK|Kč|EUR|€|koru|euro|крон|євро|евро", RegexOption.IGNORE_CASE)

@@ -5483,7 +5483,7 @@
         "sk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Jeden z vybraných balíčkov už nie je dostupný."
+            "value": "Jeden z vybraných balíkov už nie je dostupný."
           }
         },
         "uk": {
@@ -6463,7 +6463,7 @@
         "sk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Vyberte aspoň jednu službu alebo balíček."
+            "value": "Vyberte aspoň jednu službu alebo balík."
           }
         },
         "uk": {

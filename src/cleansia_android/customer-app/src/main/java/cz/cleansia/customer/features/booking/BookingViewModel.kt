@@ -561,8 +561,9 @@ class BookingViewModel @Inject constructor(
     }
 
     /**
-     * The package sheet's button. A removal never asks; adding a package that includes a chosen service
-     * does. True when the selection changed now, so the sheet closes; false while the customer is asked.
+     * The package sheet's button. A removal never asks; adding a package that includes a service already
+     * in the booking, on its own or through another chosen package, does. True when the selection changed
+     * now, so the sheet closes; false while the customer is asked.
      */
     fun togglePackage(id: String): Boolean {
         val s = _state.value
@@ -570,7 +571,7 @@ class BookingViewModel @Inject constructor(
             _state.update { it.copy(selectedPackageIds = it.selectedPackageIds - id) }
             return true
         }
-        val twice = doubleBookingOfPackage(id, s.selectedServiceIds, catalogRepository.packages.value)
+        val twice = doubleBookingOfPackage(id, s.selectedServiceIds, s.selectedPackageIds, catalogRepository.packages.value)
         if (twice != null) {
             _doubleBooking.value = twice
             return false

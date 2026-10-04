@@ -73,11 +73,15 @@ need backfilling.
 - **Customer web, Android and iOS — a service already in your package is marked, and adding it twice
   asks first.** Once you choose a package, every service it already includes is marked *In your
   package* in the list of services. Adding one of those services on its own, or adding a package that
-  includes a service you already added, now asks first, because booked together that service is done
-  twice and charged twice. *Cancel* leaves your choice as it was, and removing something never asks.
-  A booking or schedule filled in for you, such as *Order again*, a package from Home or a booking you
-  come back to, is only marked. This holds in the booking and when you set up a recurring schedule.
-  Nothing is merged: a pair you confirm is still booked twice. (Owner remark 2026-10-03.)
+  includes a service already in your booking, chosen on its own or through another package, now asks
+  first, because that service is then done once more and charged once more. A service that two of
+  your packages already include is marked *In your packages*, and adding it asks under *Already in
+  your packages* and says it is booked *once more*, not *twice*. *Cancel* leaves your
+  choice as it was, and removing something never asks. A booking or schedule filled in for you, such
+  as *Order again*, a package from Home or a booking you come back to, is only marked. This holds in
+  the booking and when you set up a recurring schedule. Nothing is merged: a pair you confirm is
+  still booked twice. (Owner remark 2026-10-03; two packages that share a service, owner ruling
+  2026-10-04.)
 
 - **Customer and cleaner, Android and iOS — the right moments are felt.** A haptic plays when a
   slide-to-confirm commits (the customer's booking, and the cleaner's contract, job-step and order-list
@@ -537,6 +541,14 @@ need backfilling.
 
 ### Changed
 
+- **Customer, cleaner and admin, in Slovak — a package is a *balík*.** The apps called a package
+  *balíček* in Slovak: on Home, in the booking and its *In your package* questions, on an order, in a
+  schedule and in the package errors, and in the cleaner's app's package error. The customer, cleaner
+  and admin websites said *balíček* in their older Slovak strings, often on the same screen as
+  *Balíky*. Slovak now says *balík* (*balíky*, *balíkov*) everywhere the apps and the websites draw;
+  Czech keeps *balíček*. The Slovak terms of service still say *balíčky*: a legal text changes only
+  with a new version. (Owner ruling 2026-10-04.)
+
 - **Customer and cleaner — receipts, invoices and the legal texts name support@cleansia.cz.** The
   company's own e-mail is now support@cleansia.cz, the address the apps, the web and the e-mails
   already give for support. The terms, the privacy policy, the complaints procedure and the cleaner's
@@ -560,10 +572,13 @@ need backfilling.
   is a new version, effective 2026-10-03, so the tick comes back before your next booking; the same
   tick accepts the terms of the same date. (Owner ruling 2026-10-03.)
 
-- **Customer Android — Help lists *Email us* first, as on iOS.** Help shows *Email us* above *Call
+- **Customer Android — Help reads and is laid out as on iOS.** Help shows *Email us* above *Call
   support*, and in Czech, Slovak, Ukrainian and Russian the two rows are worded as on iOS: *Napište
   nám* and *Zavolejte podpoře* in Czech, for example, instead of *Napsat e-mail* and *Zavolat na
-  podporu*. What each row opens is unchanged. (Owner ruling 2026-10-03: iOS is the reference for this
+  podporu*. The rest of the screen follows too: the title, the frequently asked questions and their
+  answers read as on iOS in all five languages, *Email us* shows the address it opens, both contact
+  rows share one card, and each question has a card of its own under a small section label. What each
+  row opens is unchanged. (Owner rulings 2026-10-03 and 2026-10-04: iOS is the reference for this
   screen.)
 
 - **Customer Android and iOS — arrival times are grouped by part of day, as on the web.** The
@@ -1039,6 +1054,12 @@ need backfilling.
 
 ### Fixed
 
+- **Customer web — removing a line from the booking summary never puts it back.** Right after you
+  took a service, a package or an extra out of the booking, the summary could still show its line
+  until the new price arrived, and that line's remove button added the item back; for a service one
+  of your packages includes, it even asked whether to book it again. The button now only removes, and
+  on a line already taken out it does nothing.
+
 - **Customer iOS — a cash booking waits for the card you just saved, and never asks for another.**
   After you saved a card to guarantee a cash booking, the booking waits for the card to reach your
   account. When it took too long and you slid again, or the time had to be picked again first, iOS
@@ -1107,9 +1128,11 @@ need backfilling.
   the title and the caption above and below them. They used to be as wide as their text, so they
   never lined up. (Owner remark 2026-10-03.)
 
-- **Customer iOS — going back in the booking slides back.** Stepping back through the booking's
-  steps brought the previous step in from the right, as if going on. It now comes in from the left,
-  as on Android, and with Reduce Motion on the steps fade instead. (Owner remark 2026-10-03.)
+- **Customer iOS — going back in the booking slides back, and the step you leave slides out.**
+  Stepping back through the booking's steps brought the previous step in from the right, as if going
+  on. It now comes in from the left, as on Android, and with Reduce Motion on the steps fade instead.
+  The step you leave also vanished at once, going on or back, so only the incoming step moved; it now
+  slides out the other way as the next one slides in. (Owner remark 2026-10-03.)
 
 - **Customer web — the booking summary no longer takes credit off a cash booking.** With a credit
   balance, the summary showed *Your credit −X* and *To pay by card Y* whichever payment method was
@@ -1390,7 +1413,9 @@ need backfilling.
   into its page as they came. A name holding `<` or `&` broke the e-mail, and HTML typed into a name,
   a link for instance, arrived as working HTML, in the e-mails customers, cleaners and administrators
   get alike. Every value is now inserted as text. The links the platform builds, such as the password
-  reset and the order links, work as before.
+  reset and the order links, work as before. A name written like one of the e-mail's own fields,
+  `{{SupportEmail}}` for instance, is printed as typed too: it used to be filled in with the support
+  address, and any other `{{…}}` in a name disappeared.
 
 - **Customer — your own data export no longer writes your e-mail onto the request record.** The
   GDPR request row a self-export files outlives your erasure; it used to carry your live address as

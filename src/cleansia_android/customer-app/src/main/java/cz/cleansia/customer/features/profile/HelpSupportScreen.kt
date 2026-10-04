@@ -7,9 +7,8 @@ import android.content.Context
 import android.content.Intent
 import android.net.Uri
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -20,15 +19,14 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.ArrowBack
 import androidx.compose.material.icons.automirrored.outlined.ArrowForwardIos
 import androidx.compose.material.icons.outlined.Email
+import androidx.compose.material.icons.outlined.ExpandLess
 import androidx.compose.material.icons.outlined.ExpandMore
-import androidx.compose.material.icons.outlined.HelpOutline
 import androidx.compose.material.icons.outlined.Phone
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
@@ -49,6 +47,9 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.heading
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -132,63 +133,59 @@ private fun HelpSupportScreenContent(
             colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.surface),
         )
 
+        // iOS's Help is the reference for this screen (owner, 2026-10-04): two labelled sections, the
+        // contact rows in one card, then each question in a card of its own.
         Column(
             modifier = Modifier
                 .verticalScroll(rememberScrollState())
-                .padding(20.dp),
+                .padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(24.dp),
         ) {
-            // Contact options
-            Text(
-                stringResource(R.string.help_contact_title),
-                style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.SemiBold),
-                color = MaterialTheme.colorScheme.onBackground,
-            )
-            Spacer(Modifier.height(10.dp))
-
-            // E-mail first, then the line: iOS's Help is the reference for this screen (owner, 2026-10-03).
-            ContactRow(
-                icon = Icons.Outlined.Email,
-                title = stringResource(R.string.help_email),
-                subtitle = stringResource(R.string.help_email_desc),
-                onClick = onEmail,
-            )
-            Spacer(Modifier.height(8.dp))
-            ContactRow(
-                icon = Icons.Outlined.Phone,
-                title = stringResource(R.string.help_call),
-                subtitle = stringResource(R.string.help_call_desc),
-                onClick = onCall,
-            )
-
-            Spacer(Modifier.height(24.dp))
-
-            // FAQ
-            Text(
-                stringResource(R.string.help_faq_title),
-                style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.SemiBold),
-                color = MaterialTheme.colorScheme.onBackground,
-            )
-            Spacer(Modifier.height(10.dp))
-
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clip(RoundedCornerShape(16.dp))
-                    .background(MaterialTheme.colorScheme.surface)
-                    .border(1.dp, MaterialTheme.colorScheme.outlineVariant, RoundedCornerShape(16.dp)),
-            ) {
-                faqs.forEachIndexed { idx, faq ->
-                    FaqRow(faq)
-                    if (idx < faqs.lastIndex) {
-                        HorizontalDivider(
-                            modifier = Modifier.padding(start = 16.dp),
-                            color = MaterialTheme.colorScheme.outlineVariant,
-                        )
-                    }
+            HelpSection(stringResource(R.string.help_contact_title)) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clip(RoundedCornerShape(16.dp))
+                        .background(MaterialTheme.colorScheme.surface),
+                ) {
+                    ContactRow(
+                        icon = Icons.Outlined.Email,
+                        title = stringResource(R.string.help_email),
+                        subtitle = SUPPORT_EMAIL,
+                        onClick = onEmail,
+                    )
+                    HorizontalDivider(
+                        modifier = Modifier.padding(start = 56.dp),
+                        color = MaterialTheme.colorScheme.outlineVariant,
+                    )
+                    ContactRow(
+                        icon = Icons.Outlined.Phone,
+                        title = stringResource(R.string.help_call),
+                        subtitle = stringResource(R.string.help_call_desc),
+                        onClick = onCall,
+                    )
                 }
             }
-            Spacer(Modifier.height(32.dp))
+
+            HelpSection(stringResource(R.string.help_faq_title)) {
+                faqs.forEach { faq -> FaqRow(faq) }
+            }
+            Spacer(Modifier.height(8.dp))
         }
+    }
+}
+
+/** A small upper-case label over its rows, as iOS's Help draws each section. */
+@Composable
+private fun HelpSection(title: String, content: @Composable () -> Unit) {
+    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+        Text(
+            title.uppercase(),
+            style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.SemiBold),
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.semantics { heading() },
+        )
+        content()
     }
 }
 
@@ -197,25 +194,15 @@ private fun ContactRow(icon: ImageVector, title: String, subtitle: String, onCli
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .clip(RoundedCornerShape(14.dp))
-            .background(MaterialTheme.colorScheme.surface)
-            .border(1.dp, MaterialTheme.colorScheme.outlineVariant, RoundedCornerShape(14.dp))
-            .clickable(onClick = onClick)
-            .padding(14.dp),
+            .clickable(role = Role.Button, onClick = onClick)
+            .padding(16.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Box(
-            modifier = Modifier
-                .size(40.dp)
-                .background(MaterialTheme.colorScheme.primaryContainer, CircleShape),
-            contentAlignment = Alignment.Center,
-        ) {
-            Icon(icon, null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(20.dp))
-        }
-        Spacer(Modifier.width(12.dp))
+        Icon(icon, null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(24.dp))
+        Spacer(Modifier.width(16.dp))
         Column(modifier = Modifier.weight(1f)) {
-            Text(title, style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.SemiBold), color = MaterialTheme.colorScheme.onSurface)
-            Text(subtitle, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Text(title, style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onSurface)
+            Text(subtitle, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
         Icon(
             Icons.AutoMirrored.Outlined.ArrowForwardIos,
@@ -232,25 +219,21 @@ private fun FaqRow(faq: FaqItem) {
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .clickable { expanded = !expanded }
-            .padding(horizontal = 16.dp, vertical = 14.dp),
+            .clip(RoundedCornerShape(16.dp))
+            .background(MaterialTheme.colorScheme.surface)
+            .clickable(role = Role.Button) { expanded = !expanded }
+            .padding(16.dp),
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
-            Icon(
-                Icons.Outlined.HelpOutline,
-                null,
-                tint = MaterialTheme.colorScheme.primary,
-                modifier = Modifier.size(18.dp),
-            )
-            Spacer(Modifier.width(10.dp))
             Text(
                 stringResource(faq.qRes),
-                style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.SemiBold),
+                style = MaterialTheme.typography.titleMedium,
                 color = MaterialTheme.colorScheme.onSurface,
                 modifier = Modifier.weight(1f),
             )
+            Spacer(Modifier.width(8.dp))
             Icon(
-                Icons.Outlined.ExpandMore,
+                if (expanded) Icons.Outlined.ExpandLess else Icons.Outlined.ExpandMore,
                 null,
                 tint = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.size(20.dp),
@@ -262,7 +245,6 @@ private fun FaqRow(faq: FaqItem) {
                 faq.answer(),
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.padding(start = 28.dp),
             )
         }
     }

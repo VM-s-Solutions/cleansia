@@ -63,8 +63,15 @@ hero's bottom passes up through the fade. The hero's reader writes state only wi
 scrolls. Checked on the iPhone 17 (iOS 26.3), iPhone 16 (iOS 18.6) and iPhone 14 (iOS 16.4)
 simulators, light and dark: the Plus offer with the hero under the status bar and with the perks under
 it, Profile with its hero under the status bar and scrolled past it, and Home with a carousel card
-under it; the clock reads at 12:1 on the Plus hero's navy and 3.3:1 on Profile's light-mode blue, the
-contrast it already has over that hero at rest.
+under it. The app sets no status-bar style, so the clock's colour is the system's. From iOS 17 the
+system takes it from the content under the status bar: on iOS 18.6 and 26.3 the clock is white at 12:1
+on the Plus hero's navy and 3.3:1 on Profile's light-mode blue, the contrast it already has over that
+hero at rest. Before iOS 17 it follows the colour scheme whatever is under it, so on iOS 16.4 it is
+white at 12:1 on the navy in dark mode and black in light mode: 6.4:1 on Profile's blue, but 1.7:1 on a
+90 % navy band (about 7:1 on the pale band before). So on iOS 16 in light mode the Plus offer's fade
+keeps the page colour over its hero (`fadeHeroTint` in `SubscribePlusScreen`), where the black clock
+reads at 17:1; at rest, with no band, the clock there is black on the hero's own navy (1.7:1), as it
+was before the fade changed.
 
 The map backdrop remains full bleed. No navigation flow, generated API member, text or membership
 behavior changes. The decision follows SwiftUI's documented [safe-area expansion](https://developer.apple.com/documentation/swiftui/view/ignoressafearea(_:edges:)) and [clipping](https://developer.apple.com/documentation/swiftui/view/clipped(antialiased:)) behavior.

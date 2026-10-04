@@ -11,10 +11,12 @@ import SwiftUI
 /// past it, so a dark hero never wears a pale band. It is held at 90 % behind the status bar, so the
 /// content under the clock stays out of its way while the system's clock, signal and battery stay
 /// legible on it, and eased out to clear over a short tail below it, sampled at several stops so no
-/// line marks the status bar's edge. No material: a blur under the colour read as a different colour.
-/// With Reduce Transparency on, the colour is drawn at full strength. It is the same on every version:
-/// iOS 26's system soft scroll edge was tried and the system draws it well below the status bar, at a
-/// height an app cannot set.
+/// line marks the status bar's edge. The glyphs' colour is the system's: before iOS 17 it follows the
+/// colour scheme whatever is under it (black in light mode), so a screen hands over a dark `heroTint`
+/// only where the glyphs read on it (the Plus offer's `fadeHeroTint`). No material: a blur under the
+/// colour read as a different colour. With Reduce Transparency on, the colour is drawn at full
+/// strength. It is the same on every version: iOS 26's system soft scroll edge was tried and the
+/// system draws it well below the status bar, at a height an app cannot set.
 ///
 /// → /mobile-app/patterns#status-bar-fade
 struct StatusBarFadeScrollView<Content: View>: View {
@@ -131,7 +133,8 @@ enum StatusBarFade {
     /// How far below the status bar the fade's tail reaches.
     static let tail: CGFloat = 10
     /// The colour's strength behind the status bar: the content under the clock stays out of its way,
-    /// and the system's clock, signal and battery stay legible on it in light and dark mode.
+    /// and the system's clock, signal and battery stay legible on it in light and dark mode, on a
+    /// colour they read on (see the type's note on `heroTint`).
     static let opacity = 0.9
     /// The hero's bottom edge is reported only within this band around the status bar, which takes in
     /// the tallest status bar (62pt) and the tail.

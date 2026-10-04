@@ -57,7 +57,7 @@ final class ContentSafeAreaBindingTests: XCTestCase {
     /// the hero's top colour and mark the hero; Home's top is the page, so its fade is the page colour.
     func testTheHeroScreensFadeInTheirHerosColour() throws {
         let plus = try compactSource("CleansiaCustomer/Sources/Features/Membership/SubscribePlusScreen.swift")
-        XCTAssertTrue(plus.contains("StatusBarFadeScrollView(heroTint:MembershipPalette.sky950){"))
+        XCTAssertTrue(plus.contains("StatusBarFadeScrollView(heroTint:fadeHeroTint){"))
         XCTAssertTrue(plus.contains("onBack:onBack).statusBarFadeHero()"), "the Plus hero is not marked")
         let profile = try compactSource("CleansiaCustomer/Sources/Features/Profile/ProfileTab.swift")
         XCTAssertTrue(profile.contains("StatusBarFadeScrollView(heroTint:BrandGradient.blue.colors[0]){"))
@@ -69,6 +69,19 @@ final class ContentSafeAreaBindingTests: XCTestCase {
             try compactSource("CleansiaCustomer/Sources/Features/Home/HomeTab.swift")
                 .contains("StatusBarFadeScrollView{")
         )
+    }
+
+    /// The app sets no status-bar style, so before iOS 17 the system draws the clock black in light mode
+    /// whatever is under it, and black on the 90 % navy band measured 1.7:1 on iOS 16.4. The Plus fade
+    /// wears the navy only where the glyphs read on it — from iOS 17, where they follow the content, and
+    /// in dark mode, where they are white — and the page colour on iOS 16 in light mode.
+    func testThePlusFadeWearsTheNavyOnlyWhereTheClockReadsOnIt() throws {
+        let plus = try compactSource("CleansiaCustomer/Sources/Features/Membership/SubscribePlusScreen.swift")
+        XCTAssertTrue(plus.contains("@Environment(\\.colorScheme)privatevarcolorScheme"))
+        XCTAssertTrue(plus.contains(
+            "privatevarfadeHeroTint:Color{if#available(iOS17,*){returnMembershipPalette.sky950}"
+                + "returncolorScheme==.dark?MembershipPalette.sky950:CleansiaColors.background}"
+        ), "the Plus fade wears the navy under iOS 16's black light-mode clock")
     }
 
     /// The hero's colour covers the fade while the hero reaches below it and gives way to the page

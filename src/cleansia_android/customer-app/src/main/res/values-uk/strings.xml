@@ -1163,7 +1163,7 @@
     <string name="error_order_cash_not_available">Оплата готівкою можлива лише після входу в акаунт і для замовлення, з яким впорається один прибиральник.</string>
     <string name="error_order_cash_open_bookings_limit_reached">У вас уже максимально дозволена кількість неоплачених замовлень готівкою. Оберіть картку або знову готівку, коли одне з них буде оплачено.</string>
     <string name="error_order_cash_unpaid_receivable">У вас є неоплачена сума, наприклад плата за скасування. Поки що оплатіть карткою; готівкою можна буде платити знову, коли ви сплатите її в профілі в розділі Платежі.</string>
-    <string name="error_saved_card_consent_not_accepted">Перш ніж зберегти картку, погодьтеся, що з неї можуть стягуватися збори та неоплачена готівка.</string>
+    <string name="error_saved_card_consent_not_accepted">Перш ніж зберегти картку, позначте згоду на її збереження.</string>
     <string name="error_saved_card_not_found">Ми не знайшли цю збережену картку.</string>
     <string name="error_receivable_not_found">Ми не знайшли цю суму до сплати.</string>
     <string name="error_receivable_not_open">Цю суму вже сплачено або списано.</string>
@@ -1379,13 +1379,13 @@
     <string name="receivable_kind_top_up">Схвалена доплата</string>
     <string name="receivable_kind_other">Сума до сплати</string>
     <string name="payments_card_title">Збережена картка</string>
-    <string name="payments_card_intro">Картка, яка гарантує ваші замовлення з оплатою готівкою. З неї можуть бути списані плата за скасування, плата за ненадання доступу, неоплачена готівка або схвалена вами доплата.</string>
+    <string name="payments_card_intro">Збережена для швидшої оплати карткою. Кошти з неї списуються лише тоді, коли ви самі нею платите, і її можна будь-коли видалити.</string>
     <string name="payments_card_label">%1$s •••• %2$s</string>
     <string name="payments_card_expires">Дійсна до %1$02d/%2$02d · %3$s</string>
-    <string name="payments_card_empty">Картку не збережено. Ми попросимо її під час першого замовлення з оплатою готівкою.</string>
+    <string name="payments_card_empty">Картку не збережено. Її можна зберегти під час наступної оплати карткою.</string>
     <string name="payments_card_remove_action">Видалити картку</string>
     <string name="payments_card_remove_title">Видалити цю картку?</string>
-    <string name="payments_card_remove_message">Під час наступного замовлення з оплатою готівкою ми знову попросимо картку.</string>
+    <string name="payments_card_remove_message">Картку можна знову зберегти під час наступної оплати карткою.</string>
     <string name="payments_card_remove_confirm">Видалити</string>
     <string name="payments_card_removed">Картку видалено</string>
     <string name="payments_error_message">Не вдалося завантажити платежі. Перевірте з’єднання та спробуйте ще раз.</string>

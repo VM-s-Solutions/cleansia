@@ -1163,7 +1163,7 @@
     <string name="error_order_cash_not_available">Platba v hotovosti je možná len po prihlásení a pri objednávke, ktorú zvládne jeden upratovač.</string>
     <string name="error_order_cash_open_bookings_limit_reached">Už máte najvyšší povolený počet nezaplatených objednávok v hotovosti. Zvoľte kartu alebo hotovosť znova, keď bude niektorá z nich zaplatená.</string>
     <string name="error_order_cash_unpaid_receivable">Máte u nás nezaplatenú sumu, napríklad stornovací poplatok. Zatiaľ zaplaťte kartou; v hotovosti budete môcť platiť znova, keď ju uhradíte v profile v sekcii Platby.</string>
-    <string name="error_saved_card_consent_not_accepted">Pred uložením karty prosím potvrďte súhlas, že na ňu môžu byť účtované poplatky a nezaplatená hotovosť.</string>
+    <string name="error_saved_card_consent_not_accepted">Pred uložením karty prosím zaškrtnite súhlas s jej uložením.</string>
     <string name="error_saved_card_not_found">Túto uloženú kartu sme nenašli.</string>
     <string name="error_receivable_not_found">Túto dlžnú sumu sme nenašli.</string>
     <string name="error_receivable_not_open">Táto suma už bola uhradená alebo odpustená.</string>
@@ -1379,13 +1379,13 @@
     <string name="receivable_kind_top_up">Schválený doplatok</string>
     <string name="receivable_kind_other">Suma na úhradu</string>
     <string name="payments_card_title">Uložená karta</string>
-    <string name="payments_card_intro">Karta, ktorá zaručuje vaše objednávky v hotovosti. Môže z nej byť strhnutý stornovací poplatok, poplatok za neumožnenie vstupu, nezaplatená hotovosť alebo schválený doplatok.</string>
+    <string name="payments_card_intro">Uložená pre rýchlejšie platenie kartou. Platba z nej prebehne, len keď ňou sami zaplatíte, a kedykoľvek ju môžete odstrániť.</string>
     <string name="payments_card_label">%1$s •••• %2$s</string>
     <string name="payments_card_expires">Platnosť do %1$02d/%2$02d · %3$s</string>
-    <string name="payments_card_empty">Nemáte uloženú kartu. Požiadame o ňu pri prvej objednávke v hotovosti.</string>
+    <string name="payments_card_empty">Nemáte uloženú kartu. Uložiť ju môžete pri ďalšej platbe kartou.</string>
     <string name="payments_card_remove_action">Odstrániť kartu</string>
     <string name="payments_card_remove_title">Odstrániť túto kartu?</string>
-    <string name="payments_card_remove_message">Pri ďalšej objednávke v hotovosti vás o kartu požiadame znova.</string>
+    <string name="payments_card_remove_message">Kartu môžete znova uložiť pri ďalšej platbe kartou.</string>
     <string name="payments_card_remove_confirm">Odstrániť</string>
     <string name="payments_card_removed">Karta odstránená</string>
     <string name="payments_error_message">Platby sa nepodarilo načítať. Skontrolujte pripojenie a skúste to znova.</string>

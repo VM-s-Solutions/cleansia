@@ -62,6 +62,35 @@ class PaymentsCopyTest {
         }
     }
 
+    /**
+     * Cash needs no saved card and no saved card is charged (owner ruling 2026-10-04). The card-saving
+     * consent wording is versioned with the legal texts and is not part of this copy.
+     */
+    @Test
+    fun `the saved card copy neither ties the card to cash nor says fees may be charged to it`() {
+        val savedCardCopy = listOf(
+            "payments_card_intro",
+            "payments_card_empty",
+            "payments_card_remove_message",
+            "error_saved_card_consent_not_accepted",
+        )
+        val stale = mapOf(
+            "values" to listOf("cash", "guarantee", "fee"),
+            "values-cs" to listOf("hotovost", "zaruč", "poplat"),
+            "values-sk" to listOf("hotovos", "zaruč", "poplat"),
+            "values-uk" to listOf("готівк", "гарант", "збор"),
+            "values-ru" to listOf("наличн", "гарант", "сбор"),
+        )
+        val offending = locales.flatMap { locale ->
+            val xml = stringsXml(locale)
+            savedCardCopy.mapNotNull { key ->
+                val value = valueOf(xml, key).orEmpty().lowercase()
+                stale.getValue(locale).firstOrNull { it in value }?.let { "$locale/$key says \"$it\"" }
+            }
+        }
+        assertTrue("the saved card is still described as the cash guarantee: $offending", offending.isEmpty())
+    }
+
     /** The kind is an ordinal on the wire; its English `name` must never reach the screen. */
     @Test
     fun `the screen labels a debt through the kind resolver and falls back to the generic label`() {

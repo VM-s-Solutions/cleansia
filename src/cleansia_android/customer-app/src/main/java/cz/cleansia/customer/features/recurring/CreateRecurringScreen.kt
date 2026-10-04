@@ -85,6 +85,7 @@ import cz.cleansia.customer.features.booking.inPackageRowBorder
 import cz.cleansia.customer.features.booking.inPackageRowFill
 import cz.cleansia.customer.features.booking.selectedIncluding
 import cz.cleansia.customer.features.booking.PreferredCleanerPicker
+import cz.cleansia.customer.features.booking.SizeLimitTitleRow
 import cz.cleansia.customer.features.booking.SlotState
 import cz.cleansia.customer.features.booking.TimeSlot
 import cz.cleansia.customer.features.booking.localizedDescription
@@ -567,6 +568,9 @@ private fun WhatStep(
 
     Spacer(Modifier.height(24.dp))
 
+    // The caps are stated on the size section's title row, as on the one-off booking's size card.
+    SizeLimitTitleRow { SectionLabel(stringResource(R.string.booking_your_home)) }
+    Spacer(Modifier.height(8.dp))
     Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
         Column(modifier = Modifier.weight(1f)) {
             val rooms = stringResource(R.string.recurring_create_rooms_label)
@@ -586,13 +590,6 @@ private fun WhatStep(
             )
         }
     }
-    // The cap stated up front, as on the one-off booking's size row.
-    Spacer(Modifier.height(6.dp))
-    Text(
-        stringResource(R.string.booking_size_limit_caption, PropertySize.MAX_ROOMS, PropertySize.MAX_BATHROOMS),
-        style = MaterialTheme.typography.labelSmall,
-        color = MaterialTheme.colorScheme.onSurfaceVariant,
-    )
 
     Spacer(Modifier.height(24.dp))
 

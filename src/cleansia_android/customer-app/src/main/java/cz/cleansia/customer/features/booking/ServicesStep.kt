@@ -60,6 +60,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.CompositingStrategy
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.layout.FirstBaseline
+import androidx.compose.ui.layout.Layout
 import androidx.compose.ui.layout.layout
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.res.pluralStringResource
@@ -71,6 +73,7 @@ import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import cz.cleansia.core.format.formatOrderPrice
+import cz.cleansia.core.ui.theme.Spacing
 import cz.cleansia.customer.R
 import cz.cleansia.customer.core.booking.PropertySize
 import cz.cleansia.customer.core.catalog.CategoryDto
@@ -690,11 +693,15 @@ private fun PropertyCompactRow(
         // The title sits above the counters, not beside them: on a 360dp phone the two uk counters
         // ("2 кімнати", "1 ванна кімната") need more than the row's width on their own, and beside
         // them the title was squeezed to nothing. A counter that still does not fit wraps its label.
-        Text(
-            stringResource(R.string.booking_your_home),
-            style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.SemiBold),
-            color = MaterialTheme.colorScheme.primary,
-        )
+        // The caps are stated on the title's row (SizeLimitTitleRow), so the plus stopping at them reads
+        // as the rule rather than a bug.
+        SizeLimitTitleRow {
+            Text(
+                stringResource(R.string.booking_your_home),
+                style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.SemiBold),
+                color = MaterialTheme.colorScheme.primary,
+            )
+        }
         Spacer(Modifier.height(6.dp))
         // Two equal capsules filling the row with the quick-size slide's 8dp gap, from the title's
         // leading edge to the card's trailing one, and as tall as each other when one label wraps.
@@ -729,15 +736,56 @@ private fun PropertyCompactRow(
                     .fillMaxHeight(),
             )
         }
-        // The cap stated up front, so the plus stopping at it reads as the rule rather than a bug.
-        Spacer(Modifier.height(4.dp))
-        Text(
-            stringResource(R.string.booking_size_limit_caption, PropertySize.MAX_ROOMS, PropertySize.MAX_BATHROOMS),
-            style = MaterialTheme.typography.labelSmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-        )
     }
 }
+
+/**
+ * A home-size title with the size caption ("Up to 8 rooms and 4 bathrooms") at its trailing end, on its
+ * baseline, so the caps are stated beside the steppers' heading rather than under them (owner remark
+ * 2026-10-04: at the bottom it took too much room). Where the two do not fit on one line — a 320dp phone,
+ * Ukrainian or Russian, a large font — the caption takes its own line under the title, leading-aligned,
+ * never below the steppers. TalkBack reads the title, then the caption. The one-off booking's size card
+ * and the recurring form's size section both use it, as iOS's `SizeLimitTitleRow`.
+ */
+@Composable
+internal fun SizeLimitTitleRow(title: @Composable () -> Unit) {
+    Layout(
+        content = {
+            title()
+            Text(
+                stringResource(R.string.booking_size_limit_caption, PropertySize.MAX_ROOMS, PropertySize.MAX_BATHROOMS),
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        },
+        modifier = Modifier.fillMaxWidth(),
+    ) { measurables, constraints ->
+        val loose = constraints.copy(minWidth = 0, minHeight = 0)
+        val heading = measurables[0].measure(loose)
+        val caption = measurables[1].measure(loose)
+        val width = constraints.maxWidth
+        if (sizeCaptionFitsBesideTitle(heading.width, caption.width, Spacing.S.roundToPx(), width)) {
+            // Both on the title's first baseline: the taller text's baseline sets the line.
+            val baseline = maxOf(heading[FirstBaseline], caption[FirstBaseline])
+            val headingY = baseline - heading[FirstBaseline]
+            val captionY = baseline - caption[FirstBaseline]
+            layout(width, maxOf(headingY + heading.height, captionY + caption.height)) {
+                heading.placeRelative(0, headingY)
+                caption.placeRelative(width - caption.width, captionY)
+            }
+        } else {
+            val gap = Spacing.Hair.roundToPx()
+            layout(width, heading.height + gap + caption.height) {
+                heading.placeRelative(0, 0)
+                caption.placeRelative(0, heading.height + gap)
+            }
+        }
+    }
+}
+
+/** Whether the size caption fits on its title's row, at least [gap] after it, within [width]. */
+internal fun sizeCaptionFitsBesideTitle(titleWidth: Int, captionWidth: Int, gap: Int, width: Int): Boolean =
+    titleWidth + gap + captionWidth <= width
 
 /**
  * The size row's −/+ counter, iOS `PropertyStepper`'s twin: a 28dp pill whose two steps each take a

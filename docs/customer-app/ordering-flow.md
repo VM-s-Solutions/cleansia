@@ -1,10 +1,11 @@
 # Order Wizard
 
 The order wizard is a multi-step booking flow implemented in the `@cleansia-customer/order-wizard`
-library. It runs in seven steps, numbered from 0 as `activeStep` counts them and as the step rail
-above the form shows them (`OrderWizardFacade.steps`): the services and the size of the home, how
-dirty it is, the address and contact, the date and time, the payment, the Cleansia Plus offer, and the
-review.
+library. It runs in seven steps (`OrderWizardFacade.steps`), numbered here from 0 as `activeStep`
+counts them: the services and the size of the home, how dirty it is, the address and contact, the
+date and time, the payment, the Cleansia Plus offer, and the review. The step rail above the form
+shows them in this order, each as an icon and a label, and announces them to screen readers as
+steps 1 to 7 (`aria.step`).
 
 ## Architecture
 

@@ -128,15 +128,16 @@ function buildFixture(overrides = {}) {
     seedPresent: true,
     androidNoShowBody: 'Nobody could take booking #%1$s, so we refunded it and added %2$s credit towards your next clean.',
     androidInsured: 'Insured up to %1$s',
-    androidInsuredNoFigure: 'Insured',
+    /** The no-figure insurance claims, retired on 2026-10-04; `null` leaves the key out, as shipped. */
+    androidInsuredNoFigure: null,
     androidFaq: 'Covered by insurance up to %1$s per booking.',
-    androidFaqNoFigure: 'Covered by insurance.',
+    androidFaqNoFigure: null,
     androidSeasonal: null,
     iosNoShowBody: 'Nobody could take booking #%1$@, so we refunded it and added %2$@ credit towards your next clean.',
     iosInsured: 'Insured up to %1$@',
-    iosInsuredNoFigure: 'Insured',
+    iosInsuredNoFigure: null,
     iosFaq: 'Covered by insurance up to %1$@ per booking.',
-    iosFaqNoFigure: 'Covered by insurance.',
+    iosFaqNoFigure: null,
     iosSeasonal: null,
     // The platform's cancellation reasons: every declared key is mapped and localised on the three
     // clients unless the scenario drops one surface.
@@ -333,10 +334,8 @@ export const HEAVY_DIRTINESS_SURCHARGE_RATE = ${o.tsHeavyDirtinessRate};
     <string name="dirtiness_surcharge_heavy" formatted="false">${o.androidSurchargeHeavy}</string>
     <string name="notification_order_no_cleaner_refunded_body">${o.androidNoShowBody}</string>
     <string name="booking_trust_insured">${o.androidInsured}</string>
-    <string name="booking_trust_insured_no_figure">${o.androidInsuredNoFigure}</string>
-    <string name="help_faq_a3">${o.androidFaq}</string>
-    <string name="help_faq_a3_no_figure">${o.androidFaqNoFigure}</string>
-    <string name="error_order_size_exceeds_maximum">${o.androidSizeRefusal}</string>
+${o.androidInsuredNoFigure === null ? '' : `    <string name="booking_trust_insured_no_figure">${o.androidInsuredNoFigure}</string>\n`}    <string name="help_faq_a3">${o.androidFaq}</string>
+${o.androidFaqNoFigure === null ? '' : `    <string name="help_faq_a3_no_figure">${o.androidFaqNoFigure}</string>\n`}    <string name="error_order_size_exceeds_maximum">${o.androidSizeRefusal}</string>
 ${o.androidSizeCaption === null ? '' : `    <string name="booking_size_limit_caption">${o.androidSizeCaption}</string>\n`}${mapped('android-locale').map((r) => `    <string name="order_cancelled_reason_${r}">Reason ${r}</string>\n`).join('')}${o.androidSeasonal === null ? '' : `    <string name="home_seasonal_subtitle">${o.androidSeasonal}</string>\n`}</resources>`,
     );
   }
@@ -359,9 +358,9 @@ ${o.androidSizeCaption === null ? '' : `    <string name="booking_size_limit_cap
         booking_dirtiness_surcharge_heavy: { localizations: localizations(o.iosSurchargeHeavy) },
         'push.order.no_cleaner_refunded.body': { localizations: localizations(o.iosNoShowBody) },
         booking_trust_insured: { localizations: localizations(o.iosInsured) },
-        booking_trust_insured_no_figure: { localizations: localizations(o.iosInsuredNoFigure) },
+        ...(o.iosInsuredNoFigure === null ? {} : { booking_trust_insured_no_figure: { localizations: localizations(o.iosInsuredNoFigure) } }),
         help_faq_a3: { localizations: localizations(o.iosFaq) },
-        help_faq_a3_no_figure: { localizations: localizations(o.iosFaqNoFigure) },
+        ...(o.iosFaqNoFigure === null ? {} : { help_faq_a3_no_figure: { localizations: localizations(o.iosFaqNoFigure) } }),
         booking_size_limit_caption: { localizations: localizations(o.iosSizeCaption) },
         ...Object.fromEntries(
           mapped('ios-locale').map((r) => [`order_cancelled_reason_${r}`, { localizations: localizations(`Reason ${r}`) }]),
@@ -584,8 +583,32 @@ scenario(
 scenario(
   'catches an insurance claim with the ceiling baked in',
   { androidInsured: 'Insured up to 1 000 000 Kč', iosFaq: 'Covered by insurance up to 1,000,000 CZK per booking.' },
-  { code: 1, mentions: ['android/en', 'booking_trust_insured', 'ios/en', 'help_faq_a3'] },
+  {
+    code: 1,
+    mentions: ['android/en — booking_trust_insured = ', 'ios/en — help_faq_a3 = '],
+    silentAbout: ['_no_figure'],
+  },
 );
+// Insurance is optional since 2026-10-04 and no market authors a ceiling, so the claims that stated
+// none ("Insured", "Covered by insurance.") were deleted on both platforms. A tree without them
+// passes (scenario 1); either one back, on either platform, is the promise coming back.
+for (const [platform, key, override] of [
+  ['android', 'booking_trust_insured_no_figure', { androidInsuredNoFigure: 'Insured' }],
+  ['android', 'help_faq_a3_no_figure', { androidFaqNoFigure: 'Covered by insurance.' }],
+  ['ios', 'booking_trust_insured_no_figure', { iosInsuredNoFigure: 'Insured' }],
+  ['ios', 'help_faq_a3_no_figure', { iosFaqNoFigure: 'Covered by insurance.' }],
+]) {
+  const other = key === 'help_faq_a3_no_figure' ? 'booking_trust_insured_no_figure' : 'help_faq_a3_no_figure';
+  scenario(
+    `catches the no-figure insurance claim ${key} coming back on ${platform}`,
+    override,
+    {
+      code: 1,
+      mentions: [`${platform}/en — ${key} is back`, `${platform}/uk — ${key} is back`, 'insurance is optional'],
+      silentAbout: [other, `${platform === 'ios' ? 'android' : 'ios'}/`],
+    },
+  );
+}
 scenario(
   'catches the deleted seasonal card coming back',
   { androidSeasonal: 'Window + upholstery combo — +450 CZK this month' },

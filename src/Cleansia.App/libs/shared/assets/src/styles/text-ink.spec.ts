@@ -12,6 +12,7 @@ describe('the shared and partner stylesheets — text links and text buttons', (
     }).css;
   const partner = compiled('cleansia-partner.scss');
   const customer = compiled('cleansia-customer.scss');
+  const admin = compiled('cleansia-admin.scss');
 
   /** The colour every rule for exactly this selector declares. */
   const inks = (css: string, selector: string): string[] => {
@@ -41,6 +42,21 @@ describe('the shared and partner stylesheets — text links and text buttons', (
     expect(inks(partner, '.cleansia-order-details__package-header .package-price')).toEqual([
       'var(--cleansia-primary-700)',
     ]);
+  });
+
+  // The referral code dialog's "checking…" line sat on the brand Sky600 (4.1 on white, less on its
+  // tint; 3.4 after dark) and the admin's optional-price badge on Sky500 (2.8).
+  it('inks the code dialog\'s "checking" line with Sky700, and Sky300 after dark', () => {
+    expect(inks(customer, '.cleansia-code-input-dialog__status--neutral')).toEqual([
+      'var(--cleansia-primary-700)',
+    ]);
+    expect(inks(customer, ':root.dark-mode .cleansia-code-input-dialog__status--neutral')).toEqual([
+      '#7dd3fc',
+    ]);
+  });
+
+  it("inks the admin price form's optional badge with Sky700", () => {
+    expect(inks(admin, '.currency-price-block__badge--optional')).toEqual(['var(--cleansia-primary-700)']);
   });
 
   it("gives a filter chip's remove button the chip's own ink", () => {

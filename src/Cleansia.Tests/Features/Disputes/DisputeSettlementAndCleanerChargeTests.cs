@@ -249,6 +249,31 @@ public sealed class DisputeSettlementAndCleanerChargeTests
         Assert.Equal(DisputeStatus.Resolved, dispute.Status);
     }
 
+    /// <summary>
+    /// The customer's credit account sits on the books of a company frozen for archive, where a credit
+    /// write fails the whole commit and the complaint could not be settled at all. As for an erased
+    /// account, the settlement goes to the card.
+    /// </summary>
+    [Fact]
+    public async Task A_Customer_Who_Chose_Credit_Whose_Account_Is_On_A_Frozen_Companys_Books_Is_Refunded_To_The_Card()
+    {
+        var dispute = ArrangeDispute(DisputeSettlementPreference.Credit);
+        ArrangeCreditAccount();
+        _creditAccounts
+            .Setup(r => r.IsOnFrozenCompanyBooksAsync(CustomerId, "currency-czk", It.IsAny<CancellationToken>()))
+            .ReturnsAsync(true);
+
+        var result = await Handler().Handle(new ResolveDispute.Command(DisputeId, 300m, "justified"), CancellationToken.None);
+
+        Assert.True(result.IsSuccess, result.Error?.Message);
+        AssertNoCreditGranted();
+        _refunds.Verify(s => s.IssueRefundAsync(
+            It.Is<RefundRequest>(r => r.Amount == 300m && r.DisputeId == DisputeId), It.IsAny<CancellationToken>()), Times.Once);
+        Assert.Equal(300m, dispute.CardRefundedAmount);
+        Assert.Equal(0m, dispute.CreditReturnedAmount);
+        Assert.Equal(DisputeStatus.Resolved, dispute.Status);
+    }
+
     [Fact]
     public async Task A_Refund_Alone_Never_Touches_The_Cleaners_Pay()
     {

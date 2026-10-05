@@ -108,7 +108,9 @@ public sealed class CleanerNoShowCancellation(
     /// <summary>
     /// The apology credit: the amount issued, or null — without failing the cancellation — whenever it
     /// cannot honestly be given. A guest has no account to hold it; a currency with no authored
-    /// <c>Currency.NoShowCredit</c> pays none rather than borrowing another currency's figure.
+    /// <c>Currency.NoShowCredit</c> pays none rather than borrowing another currency's figure; and an
+    /// account on the books of a company frozen for archive takes no write, so issuing there would fail
+    /// the cancellation's commit and, in the sweep, every order after it.
     /// </summary>
     private async Task<decimal?> TryIssueApologyCreditAsync(
         Order order, string actorId, CancellationToken cancellationToken)
@@ -125,6 +127,15 @@ public sealed class CleanerNoShowCancellation(
                 "No apology credit on no-show order {OrderId}: none is authored for {CurrencyCode}. "
                     + "The refund was not affected.",
                 order.Id, order.Currency?.Code ?? order.CurrencyId);
+            return null;
+        }
+
+        if (await creditAccountRepository.IsOnFrozenCompanyBooksAsync(order.UserId, order.CurrencyId, cancellationToken))
+        {
+            logger.LogWarning(
+                "No apology credit on no-show order {OrderId}: the customer's credit account is on a company "
+                    + "frozen for archive. The refund was not affected.",
+                order.Id);
             return null;
         }
 

@@ -248,8 +248,9 @@ public class ResolveDispute
         /// in credit), as the card leg is by its refundable ceiling; otherwise a second dispute on a
         /// refunded order is paid again in credit.
         ///
-        /// <para>False when the customer's account is erased: credit there would be forfeited, so the
-        /// settlement goes to the card, as it does for a customer who never chose.</para>
+        /// <para>False when the customer's account is erased, or sits on the books of a company frozen for
+        /// archive: credit on the first would be forfeited, and a write to the second fails the whole
+        /// commit, so the settlement goes to the card, as it does for a customer who never chose.</para>
         /// </summary>
         private async Task<BusinessResult<bool>> SettleWithCreditAsync(
             Command request,
@@ -263,6 +264,11 @@ public class ResolveDispute
                 || amount > await OutstandingAsync(order, cancellationToken))
             {
                 return BusinessResult.Failure<bool>(new Error(nameof(request.RefundAmount), BusinessErrorMessage.InvalidRefundAmount));
+            }
+
+            if (await creditAccountRepository.IsOnFrozenCompanyBooksAsync(dispute.UserId!, order.CurrencyId, cancellationToken))
+            {
+                return BusinessResult.Success(false);
             }
 
             var account = await creditAccountRepository.EnsureForUserAsync(dispute.UserId!, order.CurrencyId, cancellationToken);

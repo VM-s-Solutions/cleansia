@@ -156,6 +156,32 @@ public class AdminCancelOrderAsNoShowTests
             order, LiveActivityEventKeys.End, It.IsAny<OrderStatusTrack>(), It.IsAny<CancellationToken>()), Times.Once);
     }
 
+    /// <summary>
+    /// The customer's credit account sits on the books of a company frozen for archive, so the apology
+    /// would fail the cancellation's commit. It is skipped; the refund and the cancellation stand, and the
+    /// customer gets the plain cancellation push, which promises no credit.
+    /// </summary>
+    [Fact]
+    public async Task A_Customer_Whose_Credit_Is_On_A_Frozen_Companys_Books_Gets_No_Apology_And_Is_Still_Refunded()
+    {
+        var order = ArrangeOrder();
+        _credit.Setup(c => c.IsOnFrozenCompanyBooksAsync(CustomerId, CzkId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(true);
+
+        var result = await ConfirmAsync();
+
+        Assert.True(result.IsSuccess, result.Error?.Message);
+        Assert.Null(result.Value!.ApologyCredit);
+        Assert.Equal(1000m, result.Value.RefundedAmount);
+        Assert.Equal(OrderStatus.Cancelled, order.CurrentStatus);
+        _credit.Verify(c => c.EnsureForUserAsync(
+            It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Never);
+        _notifications.Verify(n => n.NotifyAsync(
+            CustomerId, NotificationEventCatalog.OrderCancelled,
+            It.IsAny<Dictionary<string, string>>(), It.IsAny<string?>(), OrderId,
+            It.IsAny<CancellationToken>()), Times.Once);
+    }
+
     [Fact]
     public async Task The_Customers_Service_Not_Provided_Dispute_Is_Closed()
     {

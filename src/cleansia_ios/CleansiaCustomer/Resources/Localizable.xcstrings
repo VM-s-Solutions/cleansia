@@ -8031,31 +8031,31 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "An apology when your cleaner doesn't arrive or nobody can take your booking, a complaint you chose to settle in credit, or a goodwill gesture from us."
+            "value": "An apology when your cleaner doesn't arrive or nobody can take your booking, a complaint you chose to settle in credit, a goodwill gesture from us, or a referral reward: when someone signs up with a friend's code, both of them get credit once the new customer's first cleaning is completed."
           }
         },
         "cs": {
           "stringUnit": {
             "state": "translated",
-            "value": "Omluva, když uklízeč nedorazí nebo vaši objednávku nikdo nepřevezme, reklamace, kterou jste se rozhodli vyřešit kreditem, nebo vstřícné gesto od nás."
+            "value": "Omluva, když uklízeč nedorazí nebo vaši objednávku nikdo nepřevezme, reklamace, kterou jste se rozhodli vyřešit kreditem, vstřícné gesto od nás nebo odměna za doporučení: když se někdo zaregistruje s kódem od kamaráda, oba získají kredit, jakmile je dokončen první úklid nového zákazníka."
           }
         },
         "sk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Ospravedlnenie, keď upratovač nepríde alebo vašu objednávku nikto neprevezme, reklamácia, ktorú ste sa rozhodli vyriešiť kreditom, alebo ústretové gesto od nás."
+            "value": "Ospravedlnenie, keď upratovač nepríde alebo vašu objednávku nikto neprevezme, reklamácia, ktorú ste sa rozhodli vyriešiť kreditom, ústretové gesto od nás alebo odmena za odporúčanie: keď sa niekto zaregistruje s kódom od kamaráta, obaja získajú kredit, len čo je dokončené prvé upratovanie nového zákazníka."
           }
         },
         "uk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Вибачення, коли прибиральник не приїхав або ніхто не зміг узяти ваше замовлення, скарга, яку ви вирішили врегулювати кредитом, або жест доброї волі від нас."
+            "value": "Вибачення, коли прибиральник не приїхав або ніхто не зміг узяти ваше замовлення, скарга, яку ви вирішили врегулювати кредитом, жест доброї волі від нас або реферальна винагорода: коли хтось реєструється з кодом друга, обидва отримують кредит, щойно буде завершено перше прибирання нового клієнта."
           }
         },
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Извинение, когда уборщик не приехал или никто не смог взять ваш заказ, жалоба, которую вы решили урегулировать кредитом, или жест доброй воли от нас."
+            "value": "Извинение, когда уборщик не приехал или никто не смог взять ваш заказ, жалоба, которую вы решили урегулировать кредитом, жест доброй воли от нас или реферальное вознаграждение: когда кто-то регистрируется с кодом друга, оба получают кредит, как только будет завершена первая уборка нового клиента."
           }
         }
       }

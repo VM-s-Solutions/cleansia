@@ -372,6 +372,27 @@ final class CreditCopyTests: XCTestCase {
         }
     }
 
+    /// The customer terms of 2026-10-05 (section 9) name the referral reward as a source of credit, and a
+    /// qualified referral pays the market's credit since the owner ruling of 2026-10-04. The explainer's
+    /// "where it comes from" names it in the terms' own word, and states no amount (the test above).
+    func testTheExplainerNamesTheReferralRewardAsASourceOfCredit() throws {
+        let referral = [
+            "en": "referral reward",
+            "cs": "odměna za doporučení",
+            "sk": "odmena za odporúčanie",
+            "uk": "реферальна винагорода",
+            "ru": "реферальное вознаграждение"
+        ]
+        for (language, word) in referral {
+            L10n.bundle = try localeBundle(language)
+            let body = L10n.Credit.explainerSourceBody
+            XCTAssertTrue(
+                body.lowercased().contains(word),
+                "\(language)/credit_explainer_source_body does not name the \(word): \(body)"
+            )
+        }
+    }
+
     private func localeBundle(_ tag: String) throws -> Bundle {
         let hosts = [Bundle.main, Bundle(for: Self.self)]
         let path = hosts.lazy.compactMap { $0.path(forResource: tag, ofType: "lproj") }.first

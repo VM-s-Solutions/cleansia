@@ -1215,7 +1215,7 @@ file was still a cache hit). Two shapes do work:
   `inputs` array replaces the `targetDefaults` one (above). Proved in a scratch copy of the workspace:
   unchanged, 2/2 targets from cache; with `MaxRooms` 8 → 9 and `OopsWindowMinutesStandard` 15 → 30,
   0/2 from cache and both fail; restored, 2/2 from cache. A spec that reads another file above the
-  workspace adds a named runtime input of its own, the same way, and lists it on its target.
+  workspace hashes it the same way, in a runtime input on its own target (below).
   **It closes the cache, not `affected`.** A runtime input changes a task's hash; it adds no file to
   the project graph, so `nx affected` still selects none of these targets for a diff that touches only
   the file above the workspace, which is why CI's `nx affected -t test` does not run them on a C#-only
@@ -1225,24 +1225,35 @@ file was still a cache hit). Two shapes do work:
   uses and states in its header (`agents/tools/check-booking-policy-parity.mjs`), its own repo-root
   workflow, its self-test first.
 
-**Still undeclared, so a warm local cache can replay their pass over a changed file** (reported
-2026-10-05, not yet closed; every spec that opens a file above the workspace, swept the same day):
+**Every spec that opens a file above the workspace declares it** (since 2026-10-05, X-Ff; the list
+swept on 2026-10-05 is closed). Each of the four test targets below carries one inline runtime input in
+its own `project.json`, not a named input in `nx.json`, because no two of them read the same set. It is
+one `node -e` line that prints a SHA-256 over the paths it is given, relative to the workspace root: a
+directory contributes every `.cs` file under it, in sorted order, with `bin/` and `obj/` skipped
+(`obj/` holds `AssemblyInfo.cs`, which carries the commit and changes on every build); a named file is
+hashed whatever its type; and a path that does not exist fails the hash loudly rather than hashing
+nothing. The three targets that had no inputs of their own restate the jest defaults beside it, because
+a project-level `inputs` array replaces the `targetDefaults` one (above).
 
-- the three apps' `src/app/i18n/error-contract-parity.spec.ts`, which walk up to `Cleansia.Api.sln`
-  and read `BusinessErrorMessage.cs`, `OperatorTenantScopeBehavior.cs`, every `.cs` under
-  `Cleansia.Core.AppServices/Features` and `Common/Validators`, and their own host's controllers;
-- in `cleansia.app`: `account-deletion-credit-claim` (`RetentionDefaults.cs`),
-  `customer-contract-copy` (`Order.cs`, `SavedCard.cs`), `satisfaction-guarantee-claim`
-  (`DisputeLimits.cs`) and `loyalty-tier-claim` (`sql-scripts/prod-bootstrap.sql`);
-- in `cleansia-admin.app`: `auth/policy-map-mirror` (`PolicyBuilder.cs`, `PhysicalPolicy.cs`,
-  `AdminRoleSets.cs`, `Cleansia.Core.Domain/Enums/AdminRole.cs`), `admin-notification-copy`
-  (`AdminNotificationEventCatalog.cs`, `AdminEventCatalog.cs`), `customer-audit-action-catalogue`
-  (`GetActionTimeline.cs`, and every `.cs` under `Cleansia.Core.AppServices`) and
-  `tenant-setting-catalogue` (`TenantSettingCatalog.cs`, and the same walk);
-- in the partner `profile` lib: `profile-bank.models.spec` (`IbanCalculator.cs`).
+| Test target | Its runtime input hashes (under `src/`) | For the specs |
+|---|---|---|
+| `cleansia.app` | `Cleansia.Core.AppServices`, `Cleansia.Web.Customer/Controllers`, `Cleansia.Core.Domain/Orders/Order.cs`, `…/Users/SavedCard.cs`, `…/Disputes/DisputeLimits.cs`, and `sql-scripts/prod-bootstrap.sql` at the repo root; `bookingPolicy` stays beside it | `error-contract-parity`, `account-deletion-credit-claim` (`RetentionDefaults.cs`, in the AppServices tree), `customer-contract-copy`, `satisfaction-guarantee-claim`, `loyalty-tier-claim` |
+| `cleansia-partner.app` | `Cleansia.Core.AppServices`, `Cleansia.Web.Partner/Controllers` | `error-contract-parity` |
+| `cleansia-admin.app` | `Cleansia.Core.AppServices`, `Cleansia.Web.Admin/Controllers`, `Cleansia.Core.Domain/Enums/AdminRole.cs`, `…/Notifications/AdminNotificationEventCatalog.cs` | `error-contract-parity`, `auth/policy-map-mirror`, `admin-notification-copy`, `customer-audit-action-catalogue`, `tenant-setting-catalogue` |
+| `cleansia-partner-profile` | `Cleansia.Core.Domain/Payouts/IbanCalculator.cs` | `profile-bank.models.spec` |
 
-A runtime input that hashes what each one reads, the file or the tree it walks, would close its cache
-hole the same way.
+The AppServices tree covers every C# file those specs open there: `BusinessErrorMessage.cs`,
+`OperatorTenantScopeBehavior.cs`, the `Features` and `Common/Validators` walks, `PolicyBuilder.cs`,
+`PhysicalPolicy.cs`, `AdminRoleSets.cs`, `AdminEventCatalog.cs`, `GetActionTimeline.cs` and
+`TenantSettingCatalog.cs`. Proved in a scratch copy of the workspace with the backend sources and
+`sql-scripts` beside it: without the inputs, `IbanCalculator.cs`'s Austrian length 20 → 21 and a
+comment in the admin host's `AdminPackageController.cs` gave 2/2 targets from cache, a stale pass; with
+them, unchanged gave 2/2 from cache, the same edit 0/2 (the profile lib failed its registry-lengths
+test, the admin app re-ran and passed), and restored 2/2 from cache. A comment in `prod-bootstrap.sql`
+and in the partner host's `AuthController.cs` took the customer and partner apps from 2/2 to 0/2 from
+cache the same way (commit `5280ec4f9`). As with `bookingPolicy`, this closes the cache and not
+`nx affected`: a diff that touches only those files still selects none of these targets in CI. A new
+spec that reads above the workspace adds its paths to its target's runtime input, in the same change.
 
 **Two other shipped specs read off-project files and declare nothing, and this entry does not cover
 them** — `cleansia-brand-name.component.spec.ts` (three apps' `assets/logos`, from `components`) and

@@ -238,7 +238,7 @@ public class CancelUnfilledOrdersCreditReturnTests(PostgresContainerFixture fixt
         var (returns, account, refund, order) = await ReadAsync(userId);
         var returned = Assert.Single(returns);
         Assert.Equal(Credit, returned.Amount);
-        Assert.Equal($"credit-return:order-ended-unpaid:{OrderId}", returned.IdempotencyKey);
+        Assert.Equal($"credit-return:{RefundKey}", returned.IdempotencyKey);
         Assert.Equal(Credit + Apology, account.Balance);
         Assert.Equal(account.Balance, account.Transactions.Sum(t => t.Amount));
         Assert.Equal(RefundStatus.Pending, refund!.Status);
@@ -267,7 +267,7 @@ public class CancelUnfilledOrdersCreditReturnTests(PostgresContainerFixture fixt
     /// <summary>
     /// A timeout, a dropped connection or an open circuit escapes RefundService after its claim commit
     /// has saved the cancel, so the order is already out of every later tick. The credit comes back on
-    /// this one, once, and the card refund waits Pending on its deterministic key.
+    /// this one, once, on the refund's own key, and the card refund waits Pending on that key.
     /// </summary>
     [Theory]
     [MemberData(nameof(StripeTransportFailures))]
@@ -287,7 +287,7 @@ public class CancelUnfilledOrdersCreditReturnTests(PostgresContainerFixture fixt
         var (returns, account, refund, order) = await ReadAsync(userId);
         var returned = Assert.Single(returns);
         Assert.Equal(Credit, returned.Amount);
-        Assert.Equal($"credit-return:order-ended-unpaid:{OrderId}", returned.IdempotencyKey);
+        Assert.Equal($"credit-return:{RefundKey}", returned.IdempotencyKey);
         Assert.Single(account.Transactions, t => t.IdempotencyKey == $"cleaner-noshow:{OrderId}");
         Assert.Equal(Credit + Apology, account.Balance);
         Assert.Equal(account.Balance, account.Transactions.Sum(t => t.Amount));
@@ -475,38 +475,46 @@ public class CancelUnfilledOrdersCreditReturnTests(PostgresContainerFixture fixt
     }
 
     /// <summary>
-    /// A complaint on the order was already settled in 200 of credit when nobody turned up. Stripe refuses
-    /// the sweep's 1350 card refund of the 1800 left, and since it may yet have gone through it counts as
-    /// given back: 450 of the credit comes back now. The hourly re-drive holds the card to the 1300 still
-    /// left and returns the last 50 of credit on its own leg. 2000 goes back in all, never more.
+    /// A complaint on the order was already settled in 200 of credit when nobody turned up, so 1800 of the
+    /// 2000 is left. The sweep's 1350 card share of it reaches Stripe, which pays it, and the answer is lost
+    /// on the way back, so the refund waits Pending; the 450 credit share of the same 1800 comes back now on
+    /// the refund's own key. The hourly re-drive counts those 450 as part of its slice and asks Stripe for the
+    /// same 1350 on the same key, which Stripe answers with the refund it already made: a smaller amount would
+    /// be refused on that key every hour. 1350 + 450 + 200 is the price.
     /// </summary>
     [Fact]
-    public async Task A_No_Show_After_A_Complaint_Settled_In_Credit_Returns_No_More_Than_The_Price()
+    public async Task A_No_Show_After_A_Complaint_Settled_In_Credit_Asks_Stripe_The_Same_Amount_On_Its_Key_And_Returns_The_Price()
     {
         await ResetAsync();
         var userId = await SeedAsync(settledInCredit: 200m);
-        _stripe.SetupSequence(s => s.RefundPaymentIntentAsync(
+        var stripeCalls = new List<decimal>();
+        _stripe.Setup(s => s.RefundPaymentIntentAsync(
                 PaymentIntentId, It.IsAny<decimal>(), RefundKey, It.IsAny<CancellationToken>()))
-            .ThrowsAsync(new StripeException("card network unavailable"))
-            .Returns(Task.CompletedTask);
+            .Returns((string _, decimal amount, string _, CancellationToken _) =>
+            {
+                stripeCalls.Add(amount);
+                return stripeCalls.Count == 1
+                    ? Task.FromException(new HttpRequestException("the refund was made, the answer timed out"))
+                    : Task.CompletedTask;
+            });
 
         await SweepAsync();
 
         var (returns, _, refund, _) = await ReadAsync(userId);
         var returned = Assert.Single(returns);
         Assert.Equal(450m, returned.Amount);
-        Assert.Equal($"credit-return:order-ended-unpaid:{OrderId}", returned.IdempotencyKey);
+        Assert.Equal($"credit-return:{RefundKey}", returned.IdempotencyKey);
         Assert.Equal(RefundStatus.Pending, refund!.Status);
+        Assert.Equal(1350m, refund.Amount);
 
         var redriven = await WatchdogAsync();
 
         Assert.Equal(1, redriven.Redriven);
-        _stripe.Verify(s => s.RefundPaymentIntentAsync(
-            PaymentIntentId, 1300m, RefundKey, It.IsAny<CancellationToken>()), Times.Once);
+        Assert.Equal([1350m, 1350m], stripeCalls);
         (returns, var account, refund, _) = await ReadAsync(userId);
         Assert.Equal(RefundStatus.Succeeded, refund!.Status);
-        Assert.Equal(1300m, refund.Amount);
-        Assert.Equal(500m, returns.Sum(t => t.Amount));
+        Assert.Equal(1350m, refund.Amount);
+        Assert.Equal(450m, Assert.Single(returns).Amount);
         Assert.Equal(Total, await GivenBackAsync());
         Assert.Equal(account.Balance, account.Transactions.Sum(t => t.Amount));
     }

@@ -378,9 +378,9 @@ public sealed class RefundService(
                 settledInCredit);
 
     /// <summary>
-    /// The pure half of <see cref="HeldToWhatIsLeftAsync"/>, shared with the cancellation that returns a
-    /// pending refund's credit leg ahead of its card leg: the two must hold the same slice, or the legs
-    /// disagree about how much of the sale this refund gives back.
+    /// The pure half of <see cref="HeldToWhatIsLeftAsync"/>, shared with the cancellations that return a
+    /// pending refund's credit leg ahead of its card leg (<see cref="CreditUnwind.ReturnPendingRefundCreditLegAsync"/>):
+    /// the two must hold the same slice, or the legs disagree about how much of the sale this refund gives back.
     /// </summary>
     public static decimal HeldToWhatIsLeft(
         Order order, decimal requested, decimal cardRefunded, decimal creditReturned, decimal settledInCredit) =>

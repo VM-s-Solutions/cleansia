@@ -143,11 +143,11 @@ public sealed class ReturnUnpaidOrderCreditTests
     }
 
     /// <summary>
-    /// A paid order whose card refund is left to the re-drive: none of the card has come back yet, so all 500
-    /// of the credit does, and the re-drive holds the card to the 1300 the sale then has left.
+    /// A paid order that ends with none of its card refunded here: all 500 of the credit comes back, as the
+    /// 1800 the sale has left after the settlement covers it.
     /// </summary>
     [Fact]
-    public async Task ReturnUnpaidOrderCredit_PaidCardOrderWithItsRefundPending_ReturnsAllTheCredit()
+    public async Task ReturnUnpaidOrderCredit_PaidCardOrderWithNoCardRefunded_ReturnsAllTheCredit()
     {
         var order = NewOrder(PaymentType.Card, PaymentStatus.Paid, totalPrice: 2000m, creditApplied: 500m);
         Arrange(returned: 0m, settled: 200m);

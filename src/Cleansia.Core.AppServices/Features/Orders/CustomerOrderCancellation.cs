@@ -155,7 +155,8 @@ public sealed class CustomerOrderCancellation(
                 && (refund is null || refund.Error?.Message == BusinessErrorMessage.RefundFailed))
             {
                 refundPending = true;
-                await ReturnCreditShareAsync(request);
+                await creditAccountRepository.ReturnPendingRefundCreditLegAsync(
+                    refundRepository, order, request, cancellationToken);
             }
 
             if (refundInitiated && !guest)
@@ -167,23 +168,6 @@ public sealed class CustomerOrderCancellation(
                         ["orderNumber"] = order.DisplayOrderNumber,
                     }, order.TenantId, order.Id, cancellationToken);
             }
-        }
-
-        // The card leg waits for the re-drive; the credit leg comes back now, on the refund's own key, so
-        // the re-drive's credit leg finds it already returned. It is the credit share of the same held slice
-        // the seam froze the card row from, so the two legs give back that slice and no other.
-        async Task ReturnCreditShareAsync(RefundRequest request)
-        {
-            var alreadyReturned = await creditAccountRepository.GetReturnedTotalForOrderAsync(order.Id, cancellationToken);
-            var held = RefundService.HeldToWhatIsLeft(
-                order,
-                request.Amount,
-                await refundRepository.GetSucceededRefundTotalForOrderAsync(order.Id, cancellationToken),
-                alreadyReturned,
-                await creditAccountRepository.GetDisputeSettledTotalForOrderAsync(order.Id, cancellationToken));
-            var (_, creditShare) = RefundService.SplitAcrossTenders(order, held, alreadyReturned);
-            await creditAccountRepository.ReturnCreditAsync(
-                order, creditShare, RefundService.BuildRefundKey(request), actorId, cancellationToken);
         }
     }
 }

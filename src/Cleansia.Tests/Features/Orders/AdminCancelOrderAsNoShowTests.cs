@@ -284,10 +284,11 @@ public class AdminCancelOrderAsNoShowTests
     /// <summary>
     /// 1000 paid 700 by card and 300 in credit, with 200 already settled in credit. Stripe gave no answer on
     /// the 560 card refund, so it waits for the re-drive, but it may already have gone through: of the 800
-    /// left, 240 of credit comes back now, not all 300, and the customer can never end with more than 1000.
+    /// left, the 240 credit share comes back now on the refund's own key, so the re-drive counts it as part of
+    /// its slice and asks Stripe for the same 560 on that key.
     /// </summary>
     [Fact]
-    public async Task A_Card_Refund_Left_Pending_Counts_As_Given_Back_When_The_Credit_Comes_Back_Now()
+    public async Task A_Card_Refund_Left_Pending_Returns_Its_Credit_Share_Now_On_The_Refunds_Own_Key()
     {
         var order = ArrangeOrder();
         order.ApplyCredit(300m, CustomerId);
@@ -304,8 +305,11 @@ public class AdminCancelOrderAsNoShowTests
 
         Assert.True(result.Value!.RefundPending);
         _credit.Verify(c => c.TryReturnAsync(
-            CustomerId, CzkId, 240m, $"credit-return:order-ended-unpaid:{OrderId}", AdminId,
+            CustomerId, CzkId, 240m, $"credit-return:refund:{OrderId}:admin", AdminId,
             It.IsAny<CancellationToken>(), OrderId, It.IsAny<string?>()), Times.Once);
+        _credit.Verify(c => c.TryReturnAsync(
+            It.IsAny<string>(), It.IsAny<string>(), It.IsAny<decimal>(), $"credit-return:order-ended-unpaid:{OrderId}",
+            It.IsAny<string>(), It.IsAny<CancellationToken>(), It.IsAny<string?>(), It.IsAny<string?>()), Times.Never);
     }
 
     /// <summary>

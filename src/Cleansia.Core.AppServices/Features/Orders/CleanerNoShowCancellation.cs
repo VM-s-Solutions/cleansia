@@ -56,19 +56,27 @@ public sealed class CleanerNoShowCancellation(
             refundedAmount = await TryRefundAsync(order, actorId, cancellationToken);
         }
 
-        // A refund of the whole sale returns the applied credit on its own leg. Without one the credit
-        // comes back here, now; the re-drive of a failed refund nets off what already went back. A card
-        // refund left to the re-drive counts as given back: Stripe may already have paid it.
+        // A refund of the whole sale returns the applied credit on its own leg. One left to the re-drive
+        // returns that leg now, on its own key, so the re-drive asks Stripe for the card amount Stripe may
+        // already have paid on that key; with no refund claimed the credit comes back here, now.
         if (refundedAmount is null)
         {
+            var refund = NoShowRefund(order, actorId);
             var pending = await refundRepository.GetByRefundKeyAsync(
-                RefundService.BuildRefundKey(NoShowRefund(order, actorId)), cancellationToken);
-            await creditAccountRepository.ReturnUnpaidOrderCreditAsync(
-                order,
-                await refundRepository.GetSucceededRefundTotalForOrderAsync(order.Id, cancellationToken)
-                    + (pending is { Status: RefundStatus.Pending } ? pending.Amount : 0m),
-                actorId,
-                cancellationToken);
+                RefundService.BuildRefundKey(refund), cancellationToken);
+            if (pending is { Status: RefundStatus.Pending })
+            {
+                await creditAccountRepository.ReturnPendingRefundCreditLegAsync(
+                    refundRepository, order, refund, cancellationToken);
+            }
+            else
+            {
+                await creditAccountRepository.ReturnUnpaidOrderCreditAsync(
+                    order,
+                    await refundRepository.GetSucceededRefundTotalForOrderAsync(order.Id, cancellationToken),
+                    actorId,
+                    cancellationToken);
+            }
         }
 
         var apology = await TryIssueApologyCreditAsync(order, actorId, cancellationToken);

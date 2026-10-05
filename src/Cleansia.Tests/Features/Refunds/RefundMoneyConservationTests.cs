@@ -26,7 +26,8 @@ namespace Cleansia.Tests.Features.Refunds;
 /// seam and cancellations run over an in-memory ledger in which Stripe keeps what it was first asked on a
 /// key and refuses that key with another amount. What came back, the card refunds Stripe made plus the
 /// credit returned plus the settlements, never passes the price, and an order still paid in full when it
-/// ends gets back the price to the haléř.
+/// ends gets back the price to the haléř. Once the re-drives have run, every refund Stripe made is on record:
+/// a retry that asks another amount on a key Stripe already paid is refused there every time.
 /// </summary>
 public sealed class RefundMoneyConservationTests
 {
@@ -41,6 +42,7 @@ public sealed class RefundMoneyConservationTests
         var random = new Random(20261005);
         var over = new List<string>();
         var under = new List<string>();
+        var unrecorded = new List<string>();
         for (var i = 0; i < Orders; i++)
         {
             var world = new World(random, $"order-{i}");
@@ -53,10 +55,17 @@ public sealed class RefundMoneyConservationTests
             {
                 under.Add(world.Describe());
             }
+
+            if (world.LeftAStripeRefundUnrecorded)
+            {
+                unrecorded.Add(world.Describe());
+            }
         }
 
         Assert.True(over.Count == 0, $"{over.Count} orders gave back more than was paid:\n{string.Join('\n', over.Take(10))}");
         Assert.True(under.Count == 0, $"{under.Count} orders gave back less than was paid:\n{string.Join('\n', under.Take(10))}");
+        Assert.True(unrecorded.Count == 0,
+            $"{unrecorded.Count} orders left a refund Stripe made unrecorded:\n{string.Join('\n', unrecorded.Take(10))}");
     }
 
     private enum StripeAnswer { Pays, Unreachable, Refuses, PaysThenTimesOut }
@@ -156,6 +165,9 @@ public sealed class RefundMoneyConservationTests
             + Sum(CreditTransactionReason.DisputeSettlement);
 
         public bool MustGiveBackAll { get; private set; }
+
+        public bool LeftAStripeRefundUnrecorded =>
+            _rows.Any(r => r.Status != RefundStatus.Succeeded && _stripeRefunded.ContainsKey(r.Key));
 
         public string Describe() =>
             $"paid {Paid} received {Received}: {string.Join("; ", _steps)}";

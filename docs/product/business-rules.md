@@ -306,10 +306,11 @@ customer's inbox. A guest gets no push; the cancellation e-mail tells them what 
 > the translation; see [Money constants](#money-constants).
 >
 > **Credit the customer spent on the booking comes back exactly once.** A paid card order's full refund
-> returns it on the refund's own credit leg; the cancellation returns it itself only when no refund went
-> through — a cash or unpaid order, a refund Stripe refused, or Stripe unreachable — and only what is
-> still outstanding (applied minus already returned). A later refund of the same order nets off credit
-> already returned. The sweep commits **per order**, so an apology balance can never be written back
+> returns it on the refund's own credit leg — at once, when Stripe refused the card refund or could not
+> be reached and the card waits for the re-drive (below); the cancellation returns it itself only when no
+> card refund was claimed — a cash or unpaid order, or one with nothing left to refund to the card — and
+> only what is still outstanding (applied minus already returned). A later refund of the same order nets
+> off credit already returned. The sweep commits **per order**, so an apology balance can never be written back
 > over a later order's credit return. Until 2026-09-27 the sweep returned credit after a successful
 > refund as well, crediting a card customer twice.
 >
@@ -326,10 +327,20 @@ customer's inbox. A guest gets no push; the cancellation e-mail tells them what 
 >   card, 120 in credit) and then 200 settled in credit, gets 180 back; with 600 settled, nothing. Taking
 >   the whole settlement off the credit here would keep credit the customer is owed: the same order would
 >   get nothing back with 200 settled.
-> - **A no-show whose card refund Stripe did not complete**: the pending card refund counts as already
->   given back, because Stripe may have paid it before the call failed. 2 000 paid with 500 credit and 200
->   settled returns 450 credit at once; the re-drive then refunds 1 300 to the card and a 50 credit leg,
->   2 000 in all with the settlement → [Refund](/flows/cancellation-refund-dispute#refund).
+>
+> **A no-show whose card refund Stripe did not complete returns the credit on the refund's own key**
+> (since 2026-10-05), as a member's cancellation does ([A card refund that does not go through is owed,
+> not lost](#after-the-start)). The card refund waits `Pending` for the hourly re-drive, and Stripe may
+> already have paid it before the call failed, so the credit share of the same held slice the card row was
+> sized from comes back at once under `refund:{orderId}:admin`. The re-drive counts that leg as part of its
+> slice and asks Stripe for the same card amount on the same key. 2 000 paid with 500 credit and 200
+> settled leaves 1 800: 1 350 pending for the card and 450 in credit at once; the re-drive sends Stripe
+> 1 350 again, and with the settlement the customer has 2 000 back
+> → [Refund](/flows/cancellation-refund-dispute#refund). Until then the 450 came back under
+> `order-ended-unpaid:{orderId}`, and the re-drive, finding no leg on its own key, held the card to 1 300
+> and added a 50 credit leg. Stripe refuses a different amount on a key it has already paid, so a refund
+> that went through before its answer was lost was refused at every hourly re-drive and reported stuck
+> after 24 hours, although the money had all gone back.
 
 ### When the customer does not let the cleaner in {#lockout}
 

@@ -312,6 +312,21 @@ public sealed class MarketDirectoryRouteTests(HostTestPostgresFixture db) : Auth
     }
 
     [Fact]
+    public async Task A_zero_insurance_ceiling_is_refused_and_the_market_keeps_making_no_claim()
+    {
+        await SeedDevShapeAsync();
+        var admin = AdminClient(AdminToken());
+
+        var put = await admin.PutAsJsonAsync(
+            $"/api/AdminCountry/{CzeId}/market-content",
+            new { CountryId = CzeId, InsuranceCoverageAmount = 0m });
+
+        await HttpAssert.RejectedAsync(put, BusinessErrorMessage.MustBePositive);
+        var market = Assert.Single((await ReadMarketsAsync()).EnumerateArray());
+        Assert.Equal(JsonValueKind.Null, market.GetProperty("insuranceCoverageAmount").ValueKind);
+    }
+
+    [Fact]
     public async Task Market_content_on_a_country_with_no_configuration_is_refused()
     {
         await SeedDevShapeAsync();

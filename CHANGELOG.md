@@ -1112,11 +1112,12 @@ need backfilling.
   contrast small text needs: among them the price in a package's details, the badge on the schedule
   form, the package and *from* prices on the website, and on the apps the totals, *See all*, *Retry*,
   the referral code and the badges. Blue text is now a deeper blue in light mode on every client, and
-  on the website a lighter blue in dark mode too. Links and text buttons followed on every screen of
-  both apps, the cleaner's included, and of the customer, cleaner and admin websites: a link, the label
-  of a text or outlined button and the icon beside it, a picked chip, a dropdown's picked row, the
-  selected tab and the links in consent and legal texts, each control in one blue, a shade darker
-  again under the pointer on the websites. On the cleaner and admin websites those buttons were a
+  on the website a lighter blue in dark mode too. Links and text buttons followed, each control in one
+  blue: on every screen of both apps, the cleaner's included, a link, the label of a text or outlined
+  button and the icon beside it, a picked chip, a dropdown's picked row, the selected tab and the
+  links in consent and legal texts; on the customer, cleaner and admin websites a link, the cookie
+  notice's among them, and the label of a text, outlined or link button and the icon beside it, a
+  shade darker again under the pointer. On the cleaner and admin websites those buttons were a
   lighter blue still, the cleaner's *Contact support* on a rejected registration among them. Filled
   buttons, fills, borders and icons that stand alone keep the brand blue, and dark mode is unchanged.
   (Finding 2026-10-05; links and text buttons, owner decision 2026-10-05.)

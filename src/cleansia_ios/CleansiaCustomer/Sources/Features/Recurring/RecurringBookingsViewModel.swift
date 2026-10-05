@@ -25,12 +25,14 @@ struct RecurringListAffordances: Equatable {
     let showLapsedNotice: Bool
     let showEdit: Bool
 
-    static func of(gate: RecurringAuthoringGate, hasTemplates: Bool) -> RecurringListAffordances {
+    /// `benefitsPaused` is a past-due or paused member: the enrolment is live, but the server refuses
+    /// authoring, so the card offers no Edit — Android's `Paused` gate, which shows no Edit either.
+    static func of(gate: RecurringAuthoringGate, hasTemplates: Bool, benefitsPaused: Bool) -> RecurringListAffordances {
         RecurringListAffordances(
             showCreateAction: gate == .allowed && hasTemplates,
             showPlusUpsell: gate == .upsell && !hasTemplates,
             showLapsedNotice: gate == .upsell && hasTemplates,
-            showEdit: gate == .allowed
+            showEdit: gate == .allowed && !benefitsPaused
         )
     }
 }
@@ -42,6 +44,8 @@ final class RecurringBookingsViewModel: ViewModel {
     @Published private(set) var loaded = false
     @Published private(set) var mutatingId: String?
     @Published private(set) var hasMembership: Bool?
+    /// False until the membership lands, so a slow fetch fails open as `hasMembership` does.
+    @Published private(set) var benefitsPaused = false
     /// A schedule is priced in its saved address's country; nil until the addresses land.
     @Published private var addresses: [RecurringSavedAddress]?
     /// What each market's catalogue lists today, keyed by country (nil: the platform default).
@@ -71,6 +75,9 @@ final class RecurringBookingsViewModel: ViewModel {
         membershipRepository.$current
             .map { $0?.hasMembership }
             .assign(to: &$hasMembership)
+        membershipRepository.$current
+            .map { $0?.benefitsPaused ?? false }
+            .assign(to: &$benefitsPaused)
     }
 
     var authoring: RecurringAuthoringGate {
@@ -78,7 +85,7 @@ final class RecurringBookingsViewModel: ViewModel {
     }
 
     var affordances: RecurringListAffordances {
-        .of(gate: authoring, hasTemplates: !templates.isEmpty)
+        .of(gate: authoring, hasTemplates: !templates.isEmpty, benefitsPaused: benefitsPaused)
     }
 
     /// The schedules holding a service or package their market's catalogue no longer lists. A schedule

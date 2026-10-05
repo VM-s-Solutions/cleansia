@@ -362,6 +362,20 @@ profile's consent link 2.60 / 5.57 → 5.57 / 7.09:1; the cookie notice's link 4
 `cleansia-preset.spec.ts` pins the three inks and that the filled button and the dark theme are
 Aura's, and `text-ink.spec.ts` compiles the partner and customer stylesheets and pins every rule above.
 
+### A paused schedule's card steps back without fading its text {#paused-card}
+
+On *Recurring cleanings*, a paused schedule's card (`.cl-rec__card--paused`) keeps the card's ground
+and every ink, and steps back with a dashed edge (`--cl-field-border`) and no shadow, beside the
+*Paused* pill it already shows (since 2026-10-05, finding 2026-10-05). Until then it set
+`opacity: 0.72`, which faded the text together with the ground: in light mode the title, the price and
+*Edit* read 3.41:1, the pill 3.53:1, the line about a retired service and the price's label 2.83:1, and
+in dark mode those last two 4.15:1. Measured from the compiled customer stylesheet in Chromium, light
+/ dark, they now read 5.93 / 10.37:1 (title, price, *Edit*), 6.37 / 6.37:1 (the pill), 10.35 / 11.64:1
+(a fact) and 4.76 / 6.74:1 (the retired-service line and the price's label); an active card is
+unchanged. The apps never faded a paused card: they mark it with a badge, and its lowest text reads 4.84:1
+on Android and iOS, the badge in dark mode. The schedules list's spec reads the card's rule and requires the dashed edge, no shadow and no
+opacity on a paused card.
+
 ## i18n
 
 Translation is handled by `ngx-translate` with a custom `JsonTranslationLoader` that supports SSR. Supported locales: `cs` (Czech), `en`, `sk`, `uk`, `ru`. Locale data is registered at app initialization:

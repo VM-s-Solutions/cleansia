@@ -1134,6 +1134,12 @@ need backfilling.
   reads 4.5:1 or more in both modes, in a deeper amber, green or grey in light mode and a lighter green
   or grey in dark. The website already read clearly. (Finding 2026-10-05.)
 
+- **Customer web — a paused schedule's card reads as clearly as an active one.** On *Recurring
+  cleanings* a paused schedule's card faded everything on it, its title, price, *Edit* and the line
+  about a service no longer offered among them, to 2.8–3.5:1 in light mode. It now keeps its text at
+  full strength and steps back with a dashed edge and no shadow, beside its *Paused* label. The apps
+  never faded it. (Finding 2026-10-05.)
+
 - **Customer — a service or package that is no longer offered can no longer be booked.** A service or
   package the company had taken off its list was hidden everywhere, but an out-of-date app, or *Order
   again* sent before the list had loaded, could still price and book it, and a new schedule could take

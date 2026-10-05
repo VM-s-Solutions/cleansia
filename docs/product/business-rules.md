@@ -1921,18 +1921,47 @@ comments expected the booking to fail loudly. What it deliberately leaves alone:
 - **A schedule created before the deactivation keeps booking it.** The materialiser hands the
   template's ids to `OrderFactory` without asking the catalogue again, so its occurrences still carry
   the entry. That is also why the pay-coverage gap check over a selection does not filter by
-  `IsActive`: the template route would otherwise mint an order no rate covers.
+  `IsActive`: the template route would otherwise mint an order no rate covers. Confirming and paying
+  such an occurrence do not ask either: `ConfirmRecurringOrder`, on both channels, and
+  `CreatePaymentIntent` read no catalogue and charge the amount stored on the occurrence when it was
+  made (`AmountDueOnCard`).
 - **Editing a schedule does not ask.** `UpdateRecurringBooking` checks only that the selection is not
-  empty, so an edit can keep, or add, a deactivated entry. Clients send the template's whole selection
-  on every edit, so a plain check there would make a schedule holding a since-deactivated entry
-  uneditable; whether to check only the ids an edit adds is open.
+  empty, so an edit can keep, or add, a deactivated entry. The three schedule forms do not send one,
+  though: each trims the selection as it loads (below), so a plain check
+  there would refuse only a client that skipped the trim, an out-of-date app among them. Whether to
+  check only the ids an edit adds is open.
 - **A deactivated service inside an active package** is the package's content, above, not a selection.
 - **The admin package editors** (`CreatePackage`, `UpdatePackage`) still accept a deactivated service
   into a package; they ask only that it exists.
 
+**A schedule still booking a deactivated entry shows the customer no error** (since 2026-10-05). The
+quote refuses its selection, so every client that quotes it fails quietly:
+
+- **Its card on the web has no price.** The web's schedules list, *Recurring cleanings*, quotes each
+  card for its price per clean (`quoteTemplate`); a card whose quote is refused leaves the price out,
+  with no message. Those quotes go through the toast-suppressing client (`errorToastSuppressingHttpClient`).
+  Until 2026-10-05 they went through the shared error interceptor, so once the check above was in,
+  every visit to the list showed *One of the selected services is no longer available.* Android's and
+  iOS's schedule lists show no price on any card and quote nothing, and no client has a schedule
+  screen besides the edit form.
+- **Editing it removes the entry, with a notice.** The web (`keepSelected`), Android and iOS trim an
+  edited schedule's selection to its market's catalogue as the form loads, and tell the customer that
+  part of the selection is not offered at this address and was removed, so saving the edit takes the
+  entry off the schedule. A quote sent before the trim fails as quietly as the card's: the web form
+  shows no price, and every form leaves the cash choice undecided rather than refused. Android trims
+  since 2026-10-05, when the template is prefilled and again once the form's first catalogue lands;
+  without the trim its crew quote was refused every time, and a cash schedule could not be saved
+  (*We couldn't confirm whether this schedule can be paid in cash*).
+- **Its occurrences are confirmed and paid as any other**, from the stored price (above).
+
 `CatalogActiveVisibilityTests` pins the active check on the repository, a schedule refused a
 deactivated service and package, and the factory still booking one a schedule holds; the order and
-quote validator suites pin the three order gates.
+quote validator suites pin the three order gates. The web recurring facade spec runs the real error
+interceptor over a card refused for a deactivated service and an edit form refused for a deactivated
+package, and asserts no price and no message. Android's `CreateRecurringViewModelTest` pins an edited
+cash schedule dropping a deactivated service with the notice and saving in cash, and a template
+trimmed when the catalogue lands after it; iOS's
+`testEditingPrunesWhatTheTemplatesMarketNoLongerOffersWithANotice` pins the trim on load.
 
 ## Discounts, and the 12 % cap {#discount-cap}
 

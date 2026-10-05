@@ -901,6 +901,26 @@ The web's pills already read 4.5:1 or more, measured on the compiled bundles: th
 rows and dispute pills 4.79:1 or more in both themes, and the tracking page's hero pill 5.17:1 or more
 (Android `a9b89279d`, iOS `81ac1eeae` and `3cfefcde5`).
 
+**A partner order's payment pill reads 4.5:1 too, in both modes** (finding 2026-10-05). The partner
+order's payment card writes the payment's status in its colour on a 12 % wash of that colour over the
+card. On iOS *Pending* took the rating star's amber-500, 1.96:1 in light mode, and *Paid* green-700,
+4.27:1 in light and 2.64:1 in dark. On Android *Pending* was amber-600, 2.81:1, *Paid* green-600, 2.89:1
+in light and 3.78:1 in dark, and *Failed* and *Disputed* red-600, 4.01:1 in light and 2.85:1 in dark.
+Both apps now take the dispute pill's pairs, and the wash still follows the ink:
+
+| Status | Light mode | Dark mode |
+|---|---|---|
+| *Pending* | amber-800 `#92400E`, 5.88:1 | amber-500, 5.54:1 |
+| *Paid* | green-800 `#166534`, 5.93:1 | green-400 `#4ADE80`, 6.48:1 |
+| *Failed*, *Disputed* | the error colour, red-700, 5.28:1, as iOS already drew it | red-300, 6.05:1 |
+| *Refunded*, *Partially refunded*, and a status the app does not know | `onSurfaceVariant`, as before, 8.45:1 | 4.64:1 |
+
+The ratios are iOS's; Android's card gives the same within 0.02. The pairs are named once, for the
+partner app's other status texts too: `CleansiaColors.pendingInk` and `successInk` in iOS Core, and
+`pendingInk` on the partner's colour scheme on Android. iOS's partner
+`TextInkTests` and Android's `PaymentPresentationTest` measure every severity on its wash over the card
+in both modes (iOS `eb083ee4f`, Android `11a7a5c99`).
+
 ## Android's dialogs and menus sit on slate {#surface-roles}
 
 Material 3 draws a dialog, a menu, a date picker and a search bar on its surface-container roles, and

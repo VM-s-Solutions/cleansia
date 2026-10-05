@@ -543,7 +543,8 @@
   cursor: pointer;
   transition: background 0.16s ease, border-color 0.16s ease, color 0.16s ease;
 
-  &:hover {
+  // Not on a picked chip: `:hover` outranks `--on`, and it turned the picked border pale.
+  &:hover:not(.cl-dsp__reason--on) {
     border-color: var(--cl-border-tint);
   }
 

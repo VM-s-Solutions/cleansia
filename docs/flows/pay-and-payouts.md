@@ -158,7 +158,7 @@ numbers stop moving.
 it, and opens the next from the day after it ended (`PayPeriod.CreateBiWeekly`: the end is the start
 plus 13 days). When pay is calculated and no period is open, one is opened from the current day. The
 invoice is still due 14 days after issue, and the cash remittance request and the period-end reminders
-keep their own clocks. An administrator can still create a period of 7 to 31 days by hand.
+keep their own clocks. A period an administrator creates or edits by hand is held to 14 days too.
 → [Business rules — pay periods are 14 days](/product/business-rules#pay-periods)
 
 ## Approval is the last point the platform can refuse {#approval-is-the-last-refusal}

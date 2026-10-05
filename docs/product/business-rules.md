@@ -1037,9 +1037,13 @@ they are prepaid (decision 18 (a)) → [Cash needs no card](#card-guarantee).
   switch is false in code and deliberately absent from `Cleansia.Functions/appsettings.json`, where a
   committed value would beat the Azure app setting. **It stays off: no card is charged** (owner ruling
   2026-10-04, replacing decision 16's *until the phase-4 terms carry the lawyer's consent wording*). The
-  code is unchanged and not deleted. Were it switched on: a pay link the customer holds is closed first,
-  and one they have already paid is not charged; a customer with no usable card is not charged and the
-  receivable stays open; a frozen company's receivables are left out; a decline or the bank's demand for
+  code is kept, not deleted. Were it switched on: it charges **only a card saved under a
+  `card-guarantee-*` consent** — the consent printed with *Save this card* since
+  `saved-card-draft-2026-10-05` promises the card is never charged unless the customer pays with it, so a
+  card saved under that or any later consent is never charged, and the receivable stays open as for a
+  customer with no card; a pay link the customer holds is closed first, and one they have already paid is
+  not charged; a customer with no usable card is not charged and the receivable stays open; a frozen
+  company's receivables are left out; a decline or the bank's demand for
   authentication e-mails the customer a pay link (decision 18 (a)), unless the receivable was settled or
   written off meanwhile.
 - **Paid once.** Stripe's webhook settles a receivable under its own company, without touching the
@@ -1817,11 +1821,14 @@ locked out, as it would on completion. The framework agreement and the contract 
   ended**, so periods follow each other with no gap and no calendar alignment.
 - **The first period starts today.** When pay is calculated and the company has no open period, one is
   opened from the current day, 14 days long.
+- **By hand, 14 days too.** An administrator who creates or edits a period
+  ([Pay periods](/admin-app/pay-periods)) is held to the same length: the end must be 13 days after the
+  start (`PayPeriod.LengthInDays`), and any other span is refused (`pay_period.invalid_duration`, whose
+  text says so). Until 2026-10-05 the admin endpoints took an end 7 to 31 days after the start.
 - **What did not change.** An invoice is due 14 days after it is issued
   (`Constants.PayoutInvoice.PaymentTermsDays`). The request to hand over cash still counts
   `cash.remittance_request_days` from the first close after a balance began ([below](#cash-held)). The
-  period-end reminder still goes 3 days and 1 day before the end. An administrator may still create a
-  period by hand, of 7 to 31 days ([Pay periods](/admin-app/pay-periods)).
+  period-end reminder still goes 3 days and 1 day before the end.
 
 A period open when this shipped keeps its month and the next one is 14 days. The framework agreement,
 the self-billing agreement and the contract for work say 14 days since `2026-10-05`; their `2026-09-29`
@@ -2754,6 +2761,7 @@ currency, `Currency.ReferralCredit`: **150 Kč on a CZK booking**. Until 2026-10
 | A currency with no figure, or 0 | no credit, a warning in the log, and the referral still qualifies. Nothing is borrowed from another currency's figure |
 | Where it lands | each side's credit account in that currency, opened if absent, under a ledger row with the reason `Referral` and the key `referral:{referralId}:{side}`. From there the [customer credit](#credit) rules apply: it is spent automatically on the next card booking in that currency, at most 70 % of that booking, and expires 12 months after the account last moved |
 | An erased side | receives nothing; the other side is still paid ([Credit on a deleted account](#credit-on-account-deletion)) |
+| A side on a frozen company's books | receives nothing, no account is opened for it and the log warns; the other side is still paid and the referral qualifies, recording what each side received. Such a side's credit account in that currency sits on — or, with none, would open on — the books of a company frozen for archive (the customer's own company), and a write to those books would refuse the whole commit of the qualifying order, which may be another, active company's ([A company's lifecycle](#company-lifecycle)). The admin force-qualify skips such a side the same way |
 | Points | none. A referral earns no tier points; the `Referral` rows a points history shows are from before 2026-10-05 |
 
 **An administrator can force-qualify** a referral still waiting (`Accepted`), for one the automatic path

@@ -56,7 +56,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import cz.cleansia.core.ui.components.CleansiaPrimaryButton
 import cz.cleansia.core.ui.components.CleansiaTextButton
 import cz.cleansia.core.ui.theme.Poppins
-import cz.cleansia.core.ui.theme.primaryText
+import cz.cleansia.core.ui.theme.primaryTextOnContainer
 import cz.cleansia.customer.R
 import cz.cleansia.customer.core.devices.UserDeviceDto
 import cz.cleansia.customer.ui.state.ActionState
@@ -298,7 +298,7 @@ private fun CurrentDeviceChip() {
         Text(
             text = stringResource(R.string.devices_this_device),
             style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.SemiBold),
-            color = primaryText(),
+            color = MaterialTheme.colorScheme.primaryTextOnContainer,
         )
     }
 }

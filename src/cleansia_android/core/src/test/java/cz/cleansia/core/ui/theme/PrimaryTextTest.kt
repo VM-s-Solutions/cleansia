@@ -25,14 +25,48 @@ class PrimaryTextTest {
     private val slate50 = Color(0xFFF8FAFC)
     private val slate800 = Color(0xFF1E293B)
 
-    private val light = lightColorScheme(primary = sky600, surface = Color.White, background = slate50)
-    private val dark = darkColorScheme(primary = sky400, surface = slate800)
+    private val sky700 = Color(0xFF0369A1)
+
+    private val light = lightColorScheme(
+        primary = sky600, primaryContainer = sky100, onPrimaryContainer = Color(0xFF0C4A6E),
+        surface = Color.White, background = slate50,
+    )
+    private val dark = darkColorScheme(
+        primary = sky400, primaryContainer = sky700, onPrimaryContainer = sky100, surface = slate800,
+    )
 
     @Test
     fun `the text blue is sky-700 on a light scheme and the primary on a dark one`() {
         assertEquals(PrimaryTextLight, light.primaryText)
         assertEquals(Color(0xFF0369A1), PrimaryTextLight)
         assertEquals(sky400, dark.primaryText)
+    }
+
+    /**
+     * A badge, chip or initial on the primaryContainer wash (F-a): the dark text blue is 2.77:1 on its own
+     * container, so dark mode writes onPrimaryContainer there; light mode keeps the text blue.
+     */
+    @Test
+    fun `blue text on the primary container reads 4_5 to 1 in both schemes`() {
+        assertEquals(PrimaryTextLight, light.primaryTextOnContainer)
+        assertEquals(dark.onPrimaryContainer, dark.primaryTextOnContainer)
+        assertTrue(contrast(dark.primaryText, dark.primaryContainer) < 4.5)
+        listOf(light, dark).forEach { scheme ->
+            val ratio = contrast(scheme.primaryTextOnContainer, scheme.primaryContainer)
+            assertTrue("${"%.2f".format(ratio)}:1", ratio >= 4.5)
+        }
+    }
+
+    /** No text drawn straight on a primaryContainer fill takes the text blue or the primary. */
+    @Test
+    fun `no text on a primary-container fill takes the text blue`() {
+        val fill = Regex("""(?:background\(|color = )MaterialTheme\.colorScheme\.primaryContainer(?![.\w])""")
+        val offenders = sources.flatMap { file ->
+            fill.findAll(file.text).filter { match ->
+                calls("Text", enclosingCallBody(file.text, match.range.first)).any { BLUE_TEXT.containsMatchIn(it.args) }
+            }.map { match -> "${file.module}/${file.rel}:${file.text.substring(0, match.range.first).count { it == '\n' } + 1}" }
+        }
+        assertEquals(emptyList<String>(), offenders)
     }
 
     @Test
@@ -191,6 +225,23 @@ class PrimaryTextTest {
             Call("${file?.module}/${file?.rel}:$line", args, body, argsEnd)
         }.toList()
 
+    /** The trailing lambda of the call whose argument list holds [at] — the content drawn on that fill. */
+    private fun enclosingCallBody(text: String, at: Int): String {
+        var depth = 0
+        var i = at
+        while (i > 0) {
+            i--
+            when (text[i]) {
+                ')' -> depth++
+                '(' -> if (depth == 0) break else depth--
+            }
+        }
+        val argsEnd = closing(text, i + 1, '(', ')')
+        if (!text.substring(argsEnd).trimStart().startsWith("{")) return ""
+        val open = text.indexOf('{', argsEnd)
+        return text.substring(open + 1, closing(text, open + 1, '{', '}') - 1)
+    }
+
     private fun closing(text: String, from: Int, open: Char, close: Char): Int {
         var depth = 1
         var i = from
@@ -219,5 +270,6 @@ class PrimaryTextTest {
         val BARE_PRIMARY_CONTENT = Regex("""contentColor\s*=\s*$BARE""")
         val BARE_PRIMARY_COLOR = Regex("""(?:^|[\s,(])color\s*=\s*[^\n]*$BARE""")
         val BARE_PRIMARY_TINT = Regex("""\btint\s*=\s*$BARE""")
+        val BLUE_TEXT = Regex("""(?:^|[\s,(])color\s*=\s*[^\n]*(?:$BARE|(?<![\w.])primaryText\(\)|colorScheme\.primaryText\b)""")
     }
 }

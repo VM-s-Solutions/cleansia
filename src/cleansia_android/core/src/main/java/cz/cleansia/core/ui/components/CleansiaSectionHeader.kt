@@ -13,7 +13,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import cz.cleansia.core.ui.theme.primaryText
+import cz.cleansia.core.ui.theme.primaryTextOnContainer
 
 /**
  * Section header with optional badge pill + title + subtitle.
@@ -35,7 +35,7 @@ fun CleansiaSectionHeader(
             Text(
                 text = badge.uppercase(),
                 style = MaterialTheme.typography.labelSmall,
-                color = primaryText(),
+                color = MaterialTheme.colorScheme.primaryTextOnContainer,
                 modifier = Modifier
                     .background(
                         color = MaterialTheme.colorScheme.primaryContainer,

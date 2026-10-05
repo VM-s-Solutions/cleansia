@@ -32,6 +32,14 @@ val PrimaryTextLight = Color(0xFF0369A1)
 val ColorScheme.primaryText: Color
     get() = if (surface.luminance() < 0.5f) primary else PrimaryTextLight
 
+/**
+ * Blue text on the primaryContainer wash — a badge, a chip, an initial in its circle. A light scheme gives
+ * the text blue (sky-700 on sky-100, 5.17:1); a dark one gives onPrimaryContainer (sky-100 on sky-700,
+ * 5.17:1), because the dark text blue, sky-400, reads 2.77:1 on its own container.
+ */
+val ColorScheme.primaryTextOnContainer: Color
+    get() = if (surface.luminance() < 0.5f) onPrimaryContainer else PrimaryTextLight
+
 /** [ColorScheme.primaryText] of the theme in force. */
 @Composable
 @ReadOnlyComposable

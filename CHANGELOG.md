@@ -1092,8 +1092,8 @@ need backfilling.
   it. (Finding 2026-10-05.)
 
 - **Customer and cleaner, Android — dialogs and menus are the app's grey, not a purple one.** Every
-  question the Android apps ask, every menu, the date picker and the cleaner's order search sat on a
-  faint purple grey that matched nothing else in the apps. They now sit on the same cool grey as the
+  question the Android apps ask, every menu, the date picker and a switch that is off sat on a faint
+  purple grey that matched nothing else in the apps. They now sit on the same cool grey as the
   rest of the app, light in light mode and a raised dark slate in dark mode, close to how iOS shows
   its alerts and menus. (Finding 2026-10-05.)
 

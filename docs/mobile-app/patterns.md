@@ -905,8 +905,8 @@ rows and dispute pills 4.79:1 or more in both themes, and the tracking page's he
 
 Material 3 draws a dialog, a menu, a date picker and a search bar on its surface-container roles, and
 neither Android app's colour scheme set them, so each fell back to Material's baseline: an
-`AlertDialog` and a `DatePickerDialog` on `#ECE6F0`, a `DropdownMenu` on `#F3EDF7`, the partner
-orders' search bar on `#ECE6F0` and a switch's off track on `#E6E0E9`, a faint purple grey beside the
+`AlertDialog` and a `DatePickerDialog` on `#ECE6F0`, a `DropdownMenu` on `#F3EDF7` and a switch's off
+track on `#E6E0E9`, a faint purple grey beside the
 sky and slate of everything else (finding 2026-10-05; the snackbar's `inverseSurface` had been pinned
 for the same clash). Since 2026-10-05 both schemes in both apps set the whole ramp from slate:
 

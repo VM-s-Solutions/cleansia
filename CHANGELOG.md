@@ -1092,8 +1092,10 @@ need backfilling.
   that price was faint too. The picked how-often, day, rooms and bathrooms choices, and the Plus badge
   shown to a customer without Plus on the schedules page, were white on light blue in dark mode as
   well, and so were the picked reason on a dispute, the picked theme on Profile, the picked filter on
-  Rewards and on Orders, and the initials on Profile, on an order's cleaner and in the top bar. All of
-  them are now dark on the light blue in dark mode and white on the dark blue in light mode. Hovering
+  Rewards and on Orders, and the initials on Profile, on an order's cleaner, in the top bar and in the
+  account menu, and the *Your plan* flag on the Plus page; those last two were faint in light mode
+  too. All of them are now dark on the light blue in dark mode and white on the dark blue in light
+  mode. Hovering
   over a picked service or package, a picked reason on a dispute or a picked filter on Rewards or
   Orders no longer turns its border pale. (Finding 2026-10-04; the choices and the badge, review
   2026-10-05; the other pages, finding 2026-10-05.)

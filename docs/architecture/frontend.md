@@ -270,6 +270,13 @@ each of these drew until 2026-10-05:
 | The initials on Profile | `.customer-profile__user-avatar` |
 | A cleaner's initials on an order | `.order-detail__cleaner-avatar` |
 | The signed-in initials in the top bar, and in the drawer | `.customer-navbar__avatar` |
+| The initials in the account menu | `.customer-navbar__user-avatar` |
+| The *Your plan* flag on the Plus page | `.cl-mbr__option-flag` |
+
+The last two joined the slab later on 2026-10-05 (finding 2026-10-05). They were white on the accent,
+sky-600 in light mode (4.10:1) and sky-400 after dark (2.14:1); the account menu's initials sat on a
+sky-600 → sky-500 gradient, down to 2.77:1 at its light end, with a dark-mode gradient of its own. Both
+now read 5.93:1 and 10.37:1, and the account menu's disc is the top bar's.
 
 `customer-heading-slab.spec.ts`, in the assets project beside the stylesheets, reads every customer
 page stylesheet and the customer navbar's, finds each rule that paints its background with

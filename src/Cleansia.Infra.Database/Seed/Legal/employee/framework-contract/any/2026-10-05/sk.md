@@ -41,7 +41,7 @@ Na každú zákazku si prinášate vlastné čistiace prostriedky a vybavenie; s
 Zákazky môžete prijímať, keď spoločnosť schváli váš účet. O schválení rozhoduje človek po tom, ako overí, že:
 
 - váš profil je úplný vrátane účtu na výplatu;
-- vaše IČO je vedené vo verejnom registri podnikateľov krajiny, v ktorej budete pracovať, a vaše živnostenské oprávnenie je podľa neho aktívne;
+- tam, kde spoločnosť nahliada do verejného registra podnikateľov krajiny, v ktorej budete pracovať (v Českej republike do registra ARES), je v ňom vedené vaše IČO, vaše podnikanie podľa neho neskončilo a máte platné živnostenské oprávnenie;
 - všetky doklady, ktoré vyžaduje krajina, v ktorej budete pracovať, boli nahrané a prijaté — medzi nimi doklad totožnosti a pracovné povolenie, ak ho potrebujete;
 - prijali ste túto zmluvu, Dohodu o samofakturácii a Zmluvu o spracúvaní osobných údajov v účinnom znení; a
 - spoločnosť v danej krajine pôsobí.

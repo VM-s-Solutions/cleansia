@@ -41,7 +41,7 @@ You bring your own cleaning products and equipment to every job; they are includ
 You can take jobs once the company has approved your account. A person decides on the approval after checking that:
 
 - your profile is complete, including your payout account;
-- your company ID (IČO) is registered, and your trade licence active, in the public business register of the country you will work in;
+- where the company consults the public business register of the country you will work in (in the Czech Republic, ARES), your company ID (IČO) is registered there, your business has not ended and you hold a trade licence in force;
 - every document the country you will work in requires has been uploaded and accepted — among them an identity document and a work permit if you need one;
 - you have accepted this agreement, the Self-Billing Agreement and the Data Processing Agreement in the versions in force; and
 - the company operates in that country.

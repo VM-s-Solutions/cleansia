@@ -523,6 +523,19 @@ public sealed class LegalDocumentSeederTests : IDisposable
     [InlineData(LegalDocumentType.TermsOfService, "sk", 9, "viac, ako koľko z tohto kreditu zostáva na vašom zostatku")]
     [InlineData(LegalDocumentType.TermsOfService, "uk", 9, "більше, ніж залишилося від цього кредиту на вашому залишку")]
     [InlineData(LegalDocumentType.TermsOfService, "ru", 9, "больше, чем осталось от этого кредита на вашем остатке")]
+    // Approval asks the register of the country the cleaner is approved for, and only Czechia's is wired (ARES);
+    // it refuses a number not registered, a business that has ended and no trade licence in force (ApproveEmployee,
+    // CleanerBusinessRegister). Where no register is consulted, nothing is checked.
+    [InlineData(LegalDocumentType.CleanerFrameworkContract, "en", 5, "(in the Czech Republic, ARES)")]
+    [InlineData(LegalDocumentType.CleanerFrameworkContract, "cs", 5, "(v České republice do registru ARES)")]
+    [InlineData(LegalDocumentType.CleanerFrameworkContract, "sk", 5, "(v Českej republike do registra ARES)")]
+    [InlineData(LegalDocumentType.CleanerFrameworkContract, "uk", 5, "(у Чеській Республіці — з реєстром ARES)")]
+    [InlineData(LegalDocumentType.CleanerFrameworkContract, "ru", 5, "(в Чешской Республике — с реестром ARES)")]
+    [InlineData(LegalDocumentType.CleanerFrameworkContract, "en", 5, "your business has not ended")]
+    [InlineData(LegalDocumentType.CleanerFrameworkContract, "cs", 5, "vaše podnikání podle něj neskončilo")]
+    [InlineData(LegalDocumentType.CleanerFrameworkContract, "sk", 5, "vaše podnikanie podľa neho neskončilo")]
+    [InlineData(LegalDocumentType.CleanerFrameworkContract, "uk", 5, "ваша діяльність за ним не припинена")]
+    [InlineData(LegalDocumentType.CleanerFrameworkContract, "ru", 5, "ваша деятельность по нему не прекращена")]
     public void The_Newest_Version_States_What_The_Code_Does_As_The_2026_10_05_Review_Worded_It(
         LegalDocumentType type, string language, int section, string phrase)
     {

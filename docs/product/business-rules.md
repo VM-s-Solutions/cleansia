@@ -1214,23 +1214,27 @@ the terms `2026-10-03`, so one tick accepts both.
 **The `2026-10-06` versions carry the owner's rulings of 2026-10-05** on the referral reward, and differ
 from the versions they replace only there:
 
-- **Terms of service** (from `2026-10-05`). §9 counts two accounts of one household as one customer, so
-  a referral between them is refused, and the take-back names referring someone of one's own household
-  among the referrals that are not genuine, beside referring oneself through another account. §9's
-  referral sentence pays each side in its own currency: the friend in the currency of the booking that
-  earned the credit, the referrer in the currency of the last booking **created on their account** before
-  the credit is paid, a cancelled one and an unconfirmed Cleansia Plus visit included — the schedule
-  creates a visit ahead of the customer's confirmation, so it is not a booking the referrer placed — or,
-  with none, the friend's ([The referral reward](#referral-credit)); where no amount is set for a
-  currency, whichever of the two would be paid in it receives no referral credit, and the app shows the
-  figure of the market chosen in it. A new paragraph after the take-back lets the company hold the
-  referral credit when the two accounts appear to belong to the same person or household — a shared
-  address, phone number or e-mail inbox — until a member of its staff has reviewed the referral, without
-  undue delay; it pays once it finds the referral genuine, and otherwise refuses it and neither side
-  receives referral credit ([A referral that looks like one person is held](#referral-hold)).
+- **Terms of service** (from `2026-10-05`). §9 counts two accounts of people who live in one home — a
+  family, a couple or flatmates — as one customer, so a referral between them is refused, and the
+  take-back names referring someone one lives with among the referrals that are not genuine, beside
+  referring oneself through another account. It names the group rather than saying *household*, which the
+  Czech and Slovak civil codes (§ 115) define as people who live together **and** share their costs, so
+  it may leave out flatmates who split only the rent. §9's referral sentence pays each side in its own
+  currency: the friend in the currency of the booking that earned the credit, the referrer in the
+  currency of the last booking **created on their account** before the credit is paid, a cancelled one
+  and an unconfirmed Cleansia Plus visit included, as two separate inclusions in every language — the
+  schedule creates a visit ahead of the customer's confirmation, so it is not a booking the referrer
+  placed — or, with none, the friend's ([The referral reward](#referral-credit)); where no amount is set
+  for a currency, whichever of the two would be paid in it receives no referral credit, and the app shows
+  the figure of the market chosen in it. A new paragraph after the take-back lets the company hold the
+  referral credit when the two accounts appear to belong to the same person or to people who live in one
+  home — a shared address, phone number or e-mail inbox — until a member of its staff has reviewed the
+  referral, without undue delay; it pays once it finds the referral genuine, and otherwise refuses it and
+  neither side receives referral credit
+  ([A referral that looks like one person is held](#referral-hold)).
 - **Privacy policy** (from `2026-10-03`). One paragraph under *Your account*: when a referred customer's
   booking earns the referral credit, the two accounts are compared to check that no customer has
-  referred themselves through another account or referred someone of their own household — the addresses
+  referred themselves through another account or referred someone they live with — the addresses
   with their flat numbers in their bookings and current saved addresses, the phone numbers in their
   bookings and profiles, and the e-mail addresses of their profiles, as the hold reads them
   ([A referral that looks like one person is held](#referral-hold)). The e-mail typed on a booking is not
@@ -1616,11 +1620,14 @@ register of economic subjects. Before the ruling, only its format (`^\d{8}$` for
   trade licence in force (`employee.trade_licence_inactive`), and a register that did not answer
   (`employee.business_registry_unavailable`, *try again in a few minutes*). It runs after the profile,
   document and country rules, so those are reported first. A person is approving, so a retry is cheap.
-  **An outage is logged at `Error`** (since 2026-10-05): a lookup still unavailable once its attempts
-  are spent — an error, a timeout, a rate limit or a reply it cannot read alike — is an `Error`, so it
-  reaches Sentry as an event and an operator learns that approvals and approved cleaners' IČO changes
-  are being refused. Until then a transient failure logged a `Warning`, which reaches Sentry only as a
-  breadcrumb → [An outbound URL is personal data too](/architecture/security-rules#outbound-urls).
+  **An outage reaches Sentry through the retry.** The lookup's retry logs at `Error` its last handled
+  attempt — a server error, a rate limit or a connection failure — and every attempt that times out, and
+  Sentry turns an `Error` into an event, so an operator learns that approvals and approved cleaners' IČO
+  changes are being refused. The registry's own line for such a failure is a `Warning`, so it adds no
+  second event; a refusal (`401`, `403`), or any other `4xx` the retry does not repeat, is an `Error` of
+  its own. A reply that arrives but is not JSON is not retried and is a `Warning`, so it reaches Sentry
+  only as a breadcrumb
+  → [An outbound URL is personal data too](/architecture/security-rules#outbound-urls).
 - **A switch for development.** `Ares:Enabled` is on unless a host says otherwise, so a deployment that
   forgets the section still checks. The Development settings of the Partner, Partner Mobile and Admin
   hosts switch it off, as do the integration-test and host-test settings, so local runs and CI never
@@ -3022,9 +3029,9 @@ the same facts must get the same answer from every administrator:
 
 That a household is one customer — two people living in one flat, a couple or flatmates, are one
 customer, so a referral between them is rejected — is an owner ruling of 2026-10-05, and §9 of the
-`2026-10-06` terms says so: two accounts of one household count as one customer, and referring someone
-of one's own household is named among the referrals that are not genuine
-([The legal texts](#legal-texts)).
+`2026-10-06` terms says so: two accounts of people who live in one home — a family, a couple or
+flatmates — count as one customer, and referring someone one lives with is named among the referrals that
+are not genuine ([The legal texts](#legal-texts)).
 
 **What the customer is told.** Each referral line states only the **reader's own** figure: the chosen
 market's `referralCredit` (`Market/GetOverview`) formatted in that market's currency. The friend's lines —

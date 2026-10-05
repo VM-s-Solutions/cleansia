@@ -427,14 +427,16 @@ is the one sender. Four sinks wrote those URLs off-box, none of them a `logger.L
 hosts and the worker alike — Stripe and SendGrid included, whose dependency name is now `<METHOD> /`
 (`POST /`, `GET /`). A worker dependency the SDK types as Azure Storage (`Azure blob`, `Azure queue`) keeps its path,
 which is built from ids. A failed outbound call no longer becomes a Sentry event by itself: a failure the
-app catches and degrades reaches Sentry only when the app logs it at Error. **ARES logs every failure at
-Error once its attempts are spent** (since 2026-10-05), so an ARES outage reaches Sentry as an event: an
-unavailable register refuses an approval and an approved cleaner's changed IČO, and until then a transient
-failure logged a Warning, which reaches Sentry only as a breadcrumb, so those writes were refused with no
-operator told ([The business register](/product/business-rules#business-register)). Mapbox logs a
-credentials failure at Error and an outage at Warning, unchanged and accepted. Stripe, SendGrid and APNs
-log their failures at Error. Unhandled exceptions still reach Sentry through the ASP.NET Core
-integration.
+app catches and degrades reaches Sentry only when something logs it at Error. **A client with a retry
+strategy does**: Polly logs the last handled attempt of a spent retry — a server error, a rate limit, a
+connection failure — and every attempt that times out, at Error, before the app sees the failure. So an
+ARES outage and a Mapbox outage each reach Sentry as an event, while both log their own line for it at
+Warning; for ARES that keeps one outage of server errors to one event, the retry's, rather than two
+([The business register](/product/business-rules#business-register)). Each logs its own Error for what the
+retry does not repeat: ARES for a refusal or another `4xx`, Mapbox for a credentials failure. An ARES reply
+that arrives but is not JSON is not retried and is logged at Warning, so it reaches Sentry only as a
+breadcrumb. Stripe, SendGrid and APNs log their failures at Error. Unhandled exceptions still reach Sentry
+through the ASP.NET Core integration.
 
 **Kept on purpose.** The Mapbox degrade warnings name `{City}` and `{ZipCode}`, not the street — enough to
 see which area fails, and no more.

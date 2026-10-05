@@ -1226,12 +1226,23 @@ file was still a cache hit). Two shapes do work:
   workflow, its self-test first.
 
 **Still undeclared, so a warm local cache can replay their pass over a changed file** (reported
-2026-10-05, not yet closed): the three `apps/*/src/app/i18n/error-contract-parity.spec.ts`, which walk
-up to `Cleansia.Api.sln` to read `BusinessErrorMessage.cs`; in `cleansia.app`,
-`account-deletion-credit-claim` (`RetentionDefaults.cs`), `customer-contract-copy`,
-`satisfaction-guarantee-claim` and `loyalty-tier-claim` (`sql-scripts/prod-bootstrap.sql`); partner
-`profile-bank.models.spec`; and customer `order-cancellation-reason.spec`. A runtime input per file
-would close each one's cache hole the same way.
+2026-10-05, not yet closed; every spec that opens a file above the workspace, swept the same day):
+
+- the three apps' `src/app/i18n/error-contract-parity.spec.ts`, which walk up to `Cleansia.Api.sln`
+  and read `BusinessErrorMessage.cs`, `OperatorTenantScopeBehavior.cs`, every `.cs` under
+  `Cleansia.Core.AppServices/Features` and `Common/Validators`, and their own host's controllers;
+- in `cleansia.app`: `account-deletion-credit-claim` (`RetentionDefaults.cs`),
+  `customer-contract-copy` (`Order.cs`, `SavedCard.cs`), `satisfaction-guarantee-claim`
+  (`DisputeLimits.cs`) and `loyalty-tier-claim` (`sql-scripts/prod-bootstrap.sql`);
+- in `cleansia-admin.app`: `auth/policy-map-mirror` (`PolicyBuilder.cs`, `PhysicalPolicy.cs`,
+  `AdminRoleSets.cs`, `Cleansia.Core.Domain/Enums/AdminRole.cs`), `admin-notification-copy`
+  (`AdminNotificationEventCatalog.cs`, `AdminEventCatalog.cs`), `customer-audit-action-catalogue`
+  (`GetActionTimeline.cs`, and every `.cs` under `Cleansia.Core.AppServices`) and
+  `tenant-setting-catalogue` (`TenantSettingCatalog.cs`, and the same walk);
+- in the partner `profile` lib: `profile-bank.models.spec` (`IbanCalculator.cs`).
+
+A runtime input that hashes what each one reads, the file or the tree it walks, would close its cache
+hole the same way.
 
 **Two other shipped specs read off-project files and declare nothing, and this entry does not cover
 them** — `cleansia-brand-name.component.spec.ts` (three apps' `assets/logos`, from `components`) and

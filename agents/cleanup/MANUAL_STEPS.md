@@ -229,7 +229,10 @@ privacy policy and the complaints procedure; for cleaners the contract for work,
 cooperation agreement, the self-billing agreement and the data processing agreement. Every dated version
 under `Seed/Legal` comes in with them, so after the drop the seeder also brings in the **2026-10-05**
 terms of service, framework agreement, self-billing agreement and contract for work, in force from that
-day.
+day, and the **2026-10-06** terms of service and privacy policy, which carry the per-side referral
+currency, the same-person hold and its comparison and are in force from that day. The hold and the
+comparison process data for a purpose only the 2026-10-06 privacy policy discloses, so this branch's code
+must not reach **production** before 2026-10-06 (DEV carries test data only).
 
 Regenerating is no longer a manual step of any kind (owner ruling 2026-08-25): it is ordinary work and
 is done in the branch that needs it. **The drop remains deferred until deployment, never branch

@@ -1109,17 +1109,25 @@ dirtiness rates, +15 % and +30 % ([The dirtiness level](#dirtiness)).
 **The `2026-10-05` versions carry the owner's rulings of 2026-10-04**, and differ from the versions
 they replace only there:
 
-- **Terms of service** (from `2026-10-03`). §7 no longer makes a saved card a condition of cash. §8, until
+- **Terms of service** (from `2026-10-03`). §7 no longer makes a saved card a condition of cash, and in
+  every language counts the booking being made among the two unpaid cash bookings a customer may hold
+  at a time — *including this booking*, as `CustomerCashStanding` refuses a third. §8, until
   then *The saved card for cash bookings*, is *Amounts you owe*: a cash booking's cancellation fee or
   lockout price is owed and paid through its pay link in the app or on the website, cash is refused
   while it is owed but card is not, and no card is ever charged for it
-  ([Cash needs no card](#card-guarantee)). §9 names the referral reward as a source of credit: when a
-  customer registers with a referral code and their first booking is completed within 90 days, both
-  receive the credit the app shows for that booking's currency, under the section's credit rules. §13
+  ([Cash needs no card](#card-guarantee)). §9 names the referral reward as a source of credit: the
+  friend enters the code when creating their account or later on a booking, and when their first
+  booking to be completed is completed within 90 days of the code being accepted, both sides receive
+  the referral credit set for that booking's currency, under the section's credit rules. The company may
+  take that credit back from both when the booking is refunded or the referral was not genuine, never
+  more than the credit it granted nor more than the balance in that currency holds at the time — the
+  smaller of the two — so no balance goes below zero ([The referral reward](#referral-credit)). §13
   and §14 send a card refund within 3 days, where they said 5 working days, and return credit at once.
 - **Framework agreement** (from `2026-09-29`). §5 drops the insurance certificate from approval and adds
-  the business-register check ([The business register](#business-register)). §8, §10 and §16 settle after
-  each 14-day pay period ([Pay periods are 14 days](#pay-periods)). §9 adds the extras share to the
+  the business-register check only where the company consults the register of the country the cleaner
+  will work in — in Czechia ARES: the company ID (IČO) is registered there, the business has not ended
+  and a trade licence is in force ([The business register](#business-register)). §8, §10 and §16
+  settle after each 14-day pay period ([Pay periods are 14 days](#pay-periods)). §9 adds the extras share to the
   reward ([Cleaner pay](#cleaner-pay)) and pays a confirmed lockout the seat's full reward
   ([A confirmed lockout pays the seat's reward](#lockout-pay)); a late cancellation still pays half of
   the fee collected. §11 recommends the insurance instead of requiring it, and §16 no longer ends the
@@ -1830,9 +1838,9 @@ locked out, as it would on completion. The framework agreement and the contract 
   `cash.remittance_request_days` from the first close after a balance began ([below](#cash-held)). The
   period-end reminder still goes 3 days and 1 day before the end.
 
-A period open when this shipped keeps its month and the next one is 14 days. The framework agreement,
-the self-billing agreement and the contract for work say 14 days since `2026-10-05`; their `2026-09-29`
-versions said monthly ([The legal texts](#legal-texts)).
+A period open when this shipped keeps its month and the next one is 14 days. The framework agreement and
+the self-billing agreement say 14 days since `2026-10-05`, and the contract for work no longer says
+monthly; their `2026-09-29` versions said monthly ([The legal texts](#legal-texts)).
 
 ### Rates are per currency {#rates-per-currency}
 

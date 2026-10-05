@@ -134,7 +134,11 @@ receivable today: `ChargeOpenReceivables` (every 15 minutes) does nothing unless
 (owner ruling). The code is kept, and the failure branch above is dormant. When it is on, the charge
 is a PaymentIntent with `off_session` and `confirm` on the saved card, keyed on the receivable and its
 attempt; the sweep closes a pay link the customer holds before it charges, and does not charge one
-they have already paid through it.
+they have already paid through it. Even then it charges only a card saved under a `card-guarantee-*`
+consent: a card saved under `saved-card-draft-2026-10-05` or any later consent was promised it is never
+charged unless the customer pays with it, so the sweep treats it like no card, counts the attempt and
+leaves the receivable open for the customer's pay link
+→ [Business rules — what a customer owes](/product/business-rules#receivables).
 
 **The pay link is one per receivable at a time.** `CreateReceivablePayLink` hands back the session
 recorded on the receivable while Stripe reports it open and unexpired, and otherwise opens a new one

@@ -1004,6 +1004,7 @@
     <string name="recurring_cash_change_title">Tento rozvrh sa už nedá platiť v hotovosti</string>
     <string name="recurring_cash_change_body">Každé upratovanie potrebuje viac ako jedného upratovača a v hotovosti sa dá platiť len za upratovania, ktoré zvládne jeden upratovač, preto sa z neho neobjednávajú žiadne nové upratovania, kým ho nezmeníte. Prepnite ho na platbu kartou alebo vyberte služby či balíky, ktoré zvládne jeden upratovač. Upratovanie, ktoré je z neho už objednané, môžete v Objednávkach zrušiť zadarmo, kým ho neprijme žiadny upratovač.</string>
     <string name="recurring_cash_change_action">Upraviť rozvrh</string>
+    <string name="recurring_card_item_no_longer_offered">Obsahuje službu, ktorú už neponúkame — upravte objednávku</string>
     <string name="recurring_bookings_pause">Pozastaviť</string>
     <string name="recurring_bookings_resume">Obnoviť</string>
     <string name="recurring_bookings_delete">Zmazať</string>

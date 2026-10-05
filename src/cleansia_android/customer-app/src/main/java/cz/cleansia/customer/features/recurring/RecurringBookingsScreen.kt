@@ -24,6 +24,7 @@ import androidx.compose.material.icons.outlined.AutoAwesome
 import androidx.compose.material.icons.outlined.CalendarMonth
 import androidx.compose.material.icons.outlined.DeleteOutline
 import androidx.compose.material.icons.outlined.Edit
+import androidx.compose.material.icons.outlined.Info
 import androidx.compose.material.icons.outlined.LocationOn
 import androidx.compose.material.icons.outlined.Pause
 import androidx.compose.material.icons.outlined.PlayArrow
@@ -90,6 +91,7 @@ fun RecurringBookingsScreen(
     val loaded by viewModel.loaded.collectAsStateWithLifecycle()
     val mutating by viewModel.mutating.collectAsStateWithLifecycle()
     val authoring by viewModel.authoring.collectAsStateWithLifecycle()
+    val noLongerOffered by viewModel.noLongerOffered.collectAsStateWithLifecycle()
     val pullState = rememberPullToRefreshState()
 
     val affordances = RecurringListAffordances.of(authoring, templates.isNotEmpty())
@@ -165,6 +167,7 @@ fun RecurringBookingsScreen(
                 ) {
                     TemplateList(
                         templates = templates,
+                        noLongerOffered = noLongerOffered,
                         mutating = mutating,
                         showLapsedNotice = affordances.showLapsedNotice,
                         showPausedNotice = affordances.showPausedNotice,
@@ -197,6 +200,7 @@ fun RecurringBookingsScreen(
 @Composable
 private fun TemplateList(
     templates: List<RecurringBookingTemplateDto>,
+    noLongerOffered: Set<String>,
     mutating: String?,
     showLapsedNotice: Boolean,
     showPausedNotice: Boolean,
@@ -220,6 +224,7 @@ private fun TemplateList(
         items(templates, key = { it.id }) { template ->
             TemplateCard(
                 template = template,
+                holdsRetiredEntry = template.id in noLongerOffered,
                 isMutating = mutating == template.id,
                 showEdit = showEdit,
                 onToggleActive = { onToggleActive(template) },
@@ -366,11 +371,13 @@ private fun BenefitsPausedNotice(modifier: Modifier = Modifier) {
 
 /**
  * Recurring schedule card: tinted header with the cadence and status badge, then the slot and address,
- * and how to fix a schedule that needs a payment change. -> /flows/booking-and-pricing#recurring-bookings
+ * a line when the schedule holds an entry its market no longer offers, and how to fix a schedule that
+ * needs a payment change. -> /flows/booking-and-pricing#recurring-bookings
  */
 @Composable
 private fun TemplateCard(
     template: RecurringBookingTemplateDto,
+    holdsRetiredEntry: Boolean,
     isMutating: Boolean,
     showEdit: Boolean,
     onToggleActive: () -> Unit,
@@ -472,6 +479,23 @@ private fun TemplateCard(
                     Spacer(Modifier.width(10.dp))
                     Text(
                         text = template.addressLine,
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+            }
+            if (holdsRetiredEntry) {
+                Spacer(Modifier.height(8.dp))
+                Row(verticalAlignment = Alignment.Top) {
+                    Icon(
+                        Icons.Outlined.Info,
+                        contentDescription = null,
+                        modifier = Modifier.size(18.dp),
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                    Spacer(Modifier.width(10.dp))
+                    Text(
+                        text = stringResource(R.string.recurring_card_item_no_longer_offered),
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )

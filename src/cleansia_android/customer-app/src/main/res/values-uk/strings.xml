@@ -1004,6 +1004,7 @@
     <string name="recurring_cash_change_title">Цей розклад більше не можна оплачувати готівкою</string>
     <string name="recurring_cash_change_body">Для кожного прибирання потрібен більш ніж один прибиральник, а готівкою можна платити лише за прибирання, з якими впорається один прибиральник, тому нові прибирання за ним не замовляються, доки ви його не зміните. Переведіть його на оплату карткою або оберіть послуги чи пакети, з якими впорається один прибиральник. Прибирання, яке вже замовлено за ним, можна безкоштовно скасувати в Замовленнях, поки його не взяв жоден прибиральник.</string>
     <string name="recurring_cash_change_action">Змінити розклад</string>
+    <string name="recurring_card_item_no_longer_offered">Містить послугу, яку ми більше не пропонуємо — змініть бронювання</string>
     <string name="recurring_bookings_pause">Призупинити</string>
     <string name="recurring_bookings_resume">Відновити</string>
     <string name="recurring_bookings_delete">Видалити</string>

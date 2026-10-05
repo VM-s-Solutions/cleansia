@@ -1004,6 +1004,7 @@
     <string name="recurring_cash_change_title">Это расписание больше нельзя оплачивать наличными</string>
     <string name="recurring_cash_change_body">Для каждой уборки нужно больше одного уборщика, а наличными можно платить только за уборки, с которыми справится один уборщик, поэтому новые уборки по нему не заказываются, пока вы его не измените. Переведите его на оплату картой или выберите услуги либо пакеты, с которыми справится один уборщик. Уборку, которая уже заказана по нему, можно бесплатно отменить в Заказах, пока её не взял ни один уборщик.</string>
     <string name="recurring_cash_change_action">Изменить расписание</string>
+    <string name="recurring_card_item_no_longer_offered">Содержит услугу, которую мы больше не предлагаем — измените бронирование</string>
     <string name="recurring_bookings_pause">Приостановить</string>
     <string name="recurring_bookings_resume">Возобновить</string>
     <string name="recurring_bookings_delete">Удалить</string>

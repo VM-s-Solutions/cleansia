@@ -368,7 +368,7 @@ private fun ProgressCard(
                 totalSteps,
             ),
             style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.SemiBold),
-            color = MaterialTheme.colorScheme.primary,
+            color = primaryText(),
             textAlign = TextAlign.Center,
             modifier = Modifier.fillMaxWidth(),
         )
@@ -524,7 +524,7 @@ private fun StepRowView(step: StepRow, onFixStep: (NavRoute) -> Unit) {
                     step.status == StepStatus.Done -> Text(
                         text = stringResource(R.string.registration_lock_step_complete),
                         style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.primary,
+                        color = primaryText(),
                     )
                     isActionable -> Text(
                         text = stringResource(ctaLabelRes),

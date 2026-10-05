@@ -43,6 +43,7 @@ import cz.cleansia.core.ui.components.CleansiaPrimaryButton
 import cz.cleansia.core.ui.components.HtmlContentView
 import cz.cleansia.core.ui.state.ActionState
 import cz.cleansia.core.ui.theme.Spacing
+import cz.cleansia.core.ui.theme.primaryText
 import cz.cleansia.partner.R
 import cz.cleansia.partner.data.orders.WorkContract
 import cz.cleansia.partner.data.orders.WorkContractAcceptanceFacts
@@ -238,7 +239,7 @@ private fun JobFacts(facts: WorkContractJobFacts) {
                 Text(
                     text = formatOrderPrice(facts.reward, facts.currencyCode),
                     style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold),
-                    color = MaterialTheme.colorScheme.primary,
+                    color = primaryText(),
                 )
             }
         }

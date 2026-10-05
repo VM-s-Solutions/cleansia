@@ -212,7 +212,7 @@ private fun HeroCard(invoice: InvoiceDetail) {
             Text(
                 text = stringResource(R.string.invoice_hero_total),
                 style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.SemiBold),
-                color = MaterialTheme.colorScheme.primary,
+                color = primaryText(),
             )
             Spacer(Modifier.height(2.dp))
             Text(
@@ -251,7 +251,7 @@ private fun BreakdownCard(invoice: InvoiceDetail) {
         Text(
             text = stringResource(R.string.invoice_breakdown_section),
             style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.SemiBold),
-            color = MaterialTheme.colorScheme.primary,
+            color = primaryText(),
         )
         Spacer(Modifier.height(Spacing.S))
 
@@ -307,7 +307,7 @@ private fun PeriodCard(
                 Text(
                     text = stringResource(R.string.invoice_period_label),
                     style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.SemiBold),
-                    color = MaterialTheme.colorScheme.primary,
+                    color = primaryText(),
                 )
                 Text(
                     text = period,
@@ -398,7 +398,7 @@ private fun ReferencesCard(
             Text(
                 text = stringResource(R.string.invoice_references_section),
                 style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.SemiBold),
-                color = MaterialTheme.colorScheme.primary,
+                color = primaryText(),
             )
         }
         Spacer(Modifier.height(Spacing.M))
@@ -461,7 +461,7 @@ private fun NotesCard(invoice: InvoiceDetail) {
             Text(
                 text = stringResource(R.string.invoice_notes),
                 style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.SemiBold),
-                color = MaterialTheme.colorScheme.primary,
+                color = primaryText(),
             )
         }
         Spacer(Modifier.height(Spacing.M))

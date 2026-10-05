@@ -182,6 +182,30 @@ class PrimaryTextTest {
         assertTrue(source("partner-app", "features/orders/PhotosSection.kt").contains("val tint = primaryText()"))
     }
 
+    /**
+     * The partner app's informational blue text — card eyebrows, pay amounts, the selected segment, step
+     * counters, initials, status words — reads in the text blue as its links do (owner, 2026-10-05, Y3); an
+     * icon on the same line takes the same ink. Fills, borders and standalone icons keep the primary.
+     */
+    @Test
+    fun `no partner-app text draws in the bare primary`() {
+        val offenders = sources.filter { it.module == "partner-app" }.flatMap { file ->
+            calls("Text", file.text, file).filter { BARE_PRIMARY_COLOR.containsMatchIn(it.args) }
+        }
+        assertEquals(emptyList<String>(), offenders.map { it.where })
+        // Texts whose ink arrives through a value rather than their own `color =`.
+        listOf(
+            "features/orders/PaymentCard.kt" to Regex("""valueColor = primaryText\(\)"""),
+            "features/orders/OrdersListScreen.kt" to Regex("""starts_soon\),\s*tint = primaryText\(\)"""),
+            "features/dashboard/DashboardScreen.kt" to Regex("""val color = if \(up\) primaryText\(\)"""),
+            "features/profile/DocumentsSectionScreen.kt" to Regex("""document_status_approved\) to primaryText\(\)"""),
+            "features/orders/OrderStatusProgressBar.kt" to Regex("""StepState\.Current -> primaryText\(\)"""),
+            "features/profile/LegalDocumentsScreen.kt" to Regex("""tint = if \(accepted\) primaryText\(\)"""),
+            "features/orders/PendingOffersCard.kt" to Regex("""Icons\.Outlined\.Schedule,\s*contentDescription = null,\s*tint = primaryText\(\)"""),
+            "features/orders/PendingOffersScreen.kt" to Regex("""Icons\.Outlined\.Schedule,\s*contentDescription = null,\s*tint = primaryText\(\)"""),
+        ).forEach { (path, ink) -> assertTrue(path, ink.containsMatchIn(source("partner-app", path))) }
+    }
+
     // ── source reading ──
 
     private class SourceFile(val module: String, val rel: String, val text: String)

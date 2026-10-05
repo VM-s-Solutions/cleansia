@@ -308,7 +308,7 @@ private fun SegmentChip(
             Text(
                 text = label,
                 style = MaterialTheme.typography.labelLarge,
-                color = if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
+                color = if (selected) primaryText() else MaterialTheme.colorScheme.onSurfaceVariant,
                 fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Medium,
             )
         }
@@ -579,7 +579,7 @@ private fun AvailableOrderRow(
                     Text(
                         text = formatMoney(pay, currencySymbol),
                         style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
-                        color = MaterialTheme.colorScheme.primary,
+                        color = primaryText(),
                     )
                     Text(
                         text = stringResource(R.string.you_earn),
@@ -656,7 +656,7 @@ private fun AvailableOrderRow(
                         DecisionBadge(
                             icon = Icons.Outlined.Schedule,
                             label = stringResource(R.string.starts_soon),
-                            tint = MaterialTheme.colorScheme.primary,
+                            tint = primaryText(),
                         )
                     }
                 }
@@ -895,7 +895,7 @@ private fun ActiveOrderRow(
                 Text(
                     text = formatMoney(order.estimatedCleanerPay ?: 0.0, order.currency?.symbol),
                     style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold),
-                    color = MaterialTheme.colorScheme.primary,
+                    color = primaryText(),
                 )
                 if (swipeConfig == null) {
                     Icon(
@@ -1043,7 +1043,7 @@ private fun SummaryStat(label: String, value: String) {
         Text(
             text = value,
             style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold),
-            color = MaterialTheme.colorScheme.primary,
+            color = primaryText(),
         )
         Text(
             text = label,
@@ -1083,7 +1083,7 @@ private fun HistoryRow(order: OrderListItem, onClick: () -> Unit) {
             Text(
                 text = formatMoney(order.estimatedCleanerPay ?: 0.0, order.currency?.symbol),
                 style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold),
-                color = MaterialTheme.colorScheme.primary,
+                color = primaryText(),
             )
         }
     }

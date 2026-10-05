@@ -54,6 +54,7 @@ import cz.cleansia.core.ui.components.CleansiaTextButton
 import cz.cleansia.core.ui.components.MascotEmptyState
 import cz.cleansia.core.ui.state.ActionState
 import cz.cleansia.core.ui.theme.Spacing
+import cz.cleansia.core.ui.theme.primaryText
 import cz.cleansia.partner.R
 import cz.cleansia.partner.data.orders.PendingOffer
 import cz.cleansia.partner.ui.theme.CleansiaPartnerTheme
@@ -294,7 +295,7 @@ private fun PendingOfferCard(
             Text(
                 text = formatOrderPrice(offer.totalPrice, offer.currencyCode),
                 style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
-                color = MaterialTheme.colorScheme.primary,
+                color = primaryText(),
             )
         }
 
@@ -372,13 +373,13 @@ fun ReservedForYouRow(respondByUtc: String, nowMillis: Long = System.currentTime
         Icon(
             imageVector = Icons.Outlined.Schedule,
             contentDescription = null,
-            tint = MaterialTheme.colorScheme.primary,
+            tint = primaryText(),
             modifier = Modifier.size(16.dp),
         )
         Text(
             text = reservedUntilLabel(respondByUtc, nowMillis),
             style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.SemiBold),
-            color = MaterialTheme.colorScheme.primary,
+            color = primaryText(),
         )
     }
 }

@@ -40,6 +40,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import cz.cleansia.core.ui.theme.primaryText
 import cz.cleansia.partner.R
 import cz.cleansia.partner.api.model.OrderStatus
 
@@ -251,7 +252,7 @@ private fun StepLabel(
 ) {
     val color = when (state) {
         StepState.Past -> GreenPast
-        StepState.Current -> MaterialTheme.colorScheme.primary
+        StepState.Current -> primaryText()
         StepState.Future -> MaterialTheme.colorScheme.onSurfaceVariant
     }
     // Per Foodora pattern: same Text treatment for every step, no

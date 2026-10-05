@@ -325,7 +325,7 @@ private fun CompactGreetingBar(
                 Text(
                     text = todaysStateLine(todaysJobsCount),
                     style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold),
-                    color = MaterialTheme.colorScheme.primary,
+                    color = primaryText(),
                 )
             }
         }
@@ -436,7 +436,7 @@ private fun NextJobHero(order: OrderListItem, onClick: () -> Unit) {
             Text(
                 text = label,
                 style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.SemiBold),
-                color = MaterialTheme.colorScheme.primary,
+                color = primaryText(),
             )
             Spacer(Modifier.height(2.dp))
             Text(
@@ -560,7 +560,7 @@ private fun AvailableWorkHero(
             Text(
                 text = stringResource(R.string.dash_available_work_label),
                 style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.SemiBold),
-                color = MaterialTheme.colorScheme.primary,
+                color = primaryText(),
             )
             Spacer(Modifier.height(2.dp))
             Text(
@@ -764,7 +764,7 @@ private fun WeeklyEarningsHero(stats: DashboardStats?, onClick: () -> Unit) {
                 Text(
                     text = stringResource(R.string.dash_earnings_week),
                     style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.SemiBold),
-                    color = MaterialTheme.colorScheme.primary,
+                    color = primaryText(),
                     // fill = false so the label takes only what it needs and yields the rest, rather
                     // than claiming half a row it does not use.
                     modifier = Modifier.weight(1f, fill = false),
@@ -1047,7 +1047,7 @@ private fun RatingColumn(stats: DashboardStats?) {
 private fun MonthDeltaChip(thisMonth: Int, lastMonth: Int) {
     val delta = computeMonthDelta(thisMonth, lastMonth) ?: return
     val up = delta >= 0
-    val color = if (up) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.error
+    val color = if (up) primaryText() else MaterialTheme.colorScheme.error
     Row(
         modifier = Modifier
             .clip(CircleShape)

@@ -44,6 +44,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import cz.cleansia.core.ui.theme.Spacing
+import cz.cleansia.core.ui.theme.primaryText
 import cz.cleansia.partner.R
 import cz.cleansia.partner.features.orders.OnboardingChainState
 import cz.cleansia.partner.features.orders.ProfileSection
@@ -129,7 +130,7 @@ fun OnboardingChainHeader(
                         state.totalSteps,
                     ),
                     style = MaterialTheme.typography.labelLarge,
-                    color = MaterialTheme.colorScheme.primary,
+                    color = primaryText(),
                 )
                 Spacer(Modifier.width(Spacing.S))
                 // Truncates before the counter does: losing "Complete your profile" costs nothing,

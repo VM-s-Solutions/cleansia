@@ -54,6 +54,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import cz.cleansia.core.ui.components.MascotEmptyState
 import cz.cleansia.core.ui.components.SudsRefreshIndicator
 import cz.cleansia.core.ui.theme.Spacing
+import cz.cleansia.core.ui.theme.primaryText
 import cz.cleansia.partner.R
 import cz.cleansia.partner.data.invoices.Invoice
 import cz.cleansia.partner.features.main.MainBottomNavInset
@@ -273,7 +274,7 @@ private fun SummaryCard(invoices: List<Invoice>) {
             Text(
                 text = stringResource(R.string.invoices_summary_label),
                 style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.SemiBold),
-                color = MaterialTheme.colorScheme.primary,
+                color = primaryText(),
             )
             Spacer(Modifier.height(2.dp))
             Text(
@@ -348,7 +349,7 @@ private fun InvoiceCard(invoice: Invoice, onClick: () -> Unit) {
                 Text(
                     text = stringResource(R.string.invoice_card_total),
                     style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.SemiBold),
-                    color = MaterialTheme.colorScheme.primary,
+                    color = primaryText(),
                 )
                 Spacer(Modifier.height(2.dp))
                 Text(

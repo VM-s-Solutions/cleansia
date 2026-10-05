@@ -23,6 +23,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import cz.cleansia.core.ui.components.CleansiaPrimaryButton
 import cz.cleansia.core.ui.state.ActionState
 import cz.cleansia.core.ui.theme.Spacing
+import cz.cleansia.core.ui.theme.primaryText
 import cz.cleansia.partner.R
 import cz.cleansia.partner.ui.theme.CleansiaPartnerTheme
 import kotlin.math.roundToInt
@@ -135,7 +136,7 @@ private fun RadiusSlider(
         Text(
             text = stringResource(R.string.job_radius_value, radiusKm),
             style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
-            color = MaterialTheme.colorScheme.primary,
+            color = primaryText(),
         )
         Slider(
             value = radiusKm.toFloat(),

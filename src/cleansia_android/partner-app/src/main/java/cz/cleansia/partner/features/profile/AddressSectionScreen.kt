@@ -45,6 +45,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import cz.cleansia.core.location.GeocodedAddress
 import cz.cleansia.core.ui.components.CleansiaPrimaryButton
 import cz.cleansia.core.ui.theme.Spacing
+import cz.cleansia.core.ui.theme.primaryText
 import cz.cleansia.partner.R
 import cz.cleansia.partner.features.orders.ProfileSection
 
@@ -348,7 +349,7 @@ private fun WhyRow(text: String) {
         Text(
             text = "•",
             style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.primary,
+            color = primaryText(),
         )
         Spacer(Modifier.width(8.dp))
         Text(

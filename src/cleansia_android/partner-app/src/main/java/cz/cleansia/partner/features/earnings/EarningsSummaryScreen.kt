@@ -48,6 +48,7 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import cz.cleansia.core.ui.theme.Spacing
+import cz.cleansia.core.ui.theme.primaryText
 import cz.cleansia.partner.R
 import cz.cleansia.partner.data.dashboard.DashboardStats
 import cz.cleansia.partner.data.payroll.CashHeld
@@ -164,7 +165,7 @@ private fun HeadlineEarningsCard(stats: DashboardStats?) {
             Text(
                 text = stringResource(R.string.earnings_current_period),
                 style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.SemiBold),
-                color = MaterialTheme.colorScheme.primary,
+                color = primaryText(),
             )
             Spacer(Modifier.height(2.dp))
             Text(
@@ -288,7 +289,7 @@ private fun PayPeriodCard(stats: DashboardStats) {
                 Text(
                     text = stringResource(R.string.earnings_pay_period),
                     style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.SemiBold),
-                    color = MaterialTheme.colorScheme.primary,
+                    color = primaryText(),
                 )
                 Text(
                     text = "${formatShort(start)} – ${formatShort(end)}",
@@ -355,7 +356,7 @@ private fun CashHeldCard(cashHeld: List<CashHeld>) {
                 Text(
                     text = stringResource(R.string.earnings_cash_held_title),
                     style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.SemiBold),
-                    color = MaterialTheme.colorScheme.primary,
+                    color = primaryText(),
                 )
                 Text(
                     text = stringResource(R.string.earnings_cash_held_subtitle),

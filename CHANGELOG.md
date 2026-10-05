@@ -1080,6 +1080,12 @@ need backfilling.
 
 ### Fixed
 
+- **Customer and admin websites — two more blue labels read clearly.** While the website checks the
+  referral code you type at sign-up, *Checking the code…* was a light blue on a light-blue band, 3.7:1,
+  and 2.8:1 in dark mode. In the admin's package and service forms, the *Optional* tag beside a
+  currency's price was 2.8:1. Both now take the deeper blue of the other blue text, 5.4:1 and 5.9:1,
+  and the checking line a light blue in dark mode, 7.0:1. (Finding 2026-10-05.)
+
 - **Admin — the package form's title follows a language switch.** Switching the admin's language
   with the package form open left its title, *Create Package* or *Edit Package*, in the old language
   until the form was opened again; the rest of the form already switched. The title now switches with

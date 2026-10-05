@@ -393,8 +393,18 @@ button takes the button's ink, so no control shows two blues. The apps follow th
   [the partner app's other blue text](/mobile-app/patterns#brand-text-ink)): 4.10 → 5.93:1, beside a
   name already on sky-700. A sweep of the compiled partner bundle found no other blue text under
   4.5:1 but icons and two shared labels, the code dialog's *checking* line and the price form's
-  *Optional* badge. `.service-item__revenue`, which the finding named, styles nothing: the
+  *Optional* badge (next). `.service-item__revenue`, which the finding named, styles nothing: the
   dashboard's top-services revenue is a `<cleansia-label color="primary">`, slate on white.
+- **Two shared labels** (finding 2026-10-05). The code dialog's neutral status, *Checking the code…*
+  under the customer sign-up's referral code (`.cleansia-code-input-dialog__status--neutral` in
+  `cleansia-dialog.component.scss`), was sky-600 on a light-blue tint in both themes; it takes
+  `--cleansia-primary-700` in light mode and sky-300 `#7dd3fc` after dark, 3.73 → 5.41:1 and 2.83 →
+  6.97:1. The admin price form's *Optional* currency badge, on the package and the service forms
+  (`.currency-price-block__badge--optional` in `_form-page.scss`), was sky-500 text on white and takes
+  the text ink, 2.77 → 5.93:1; its see-through ground and outline still keep it quieter than the
+  *Required* badge (5.17:1). `text-ink.spec.ts` compiles the customer and admin bundles and pins both,
+  light and dark. The same dialog's success and error lines read under 4.5:1 too, and are not part of
+  this (reported 2026-10-05).
 
 Measured in Chromium on the running dev servers, at rest / under the pointer: a PrimeNG text, outlined
 or link button's label and icon 2.77 / 2.60 → 5.93 / 7.09:1 (a link under the pointer 7.56:1); the

@@ -79,6 +79,7 @@ describe('RewardsComponent — the discount a tier prints', () => {
       tiers: signal(options.tiers ?? tiersWithFractions),
       recentActivity: signal([]),
       referralAccount: signal(GetMyReferralResponse.fromJS({ code: 'ABC123' })),
+      referralCreditAmount: signal<string | null>(null),
       loading: signal(false),
       error: signal<string | null>(null),
       hasLoaded: signal(true),
@@ -246,6 +247,7 @@ describe('RewardsComponent — what a points movement says it was', () => {
       tiers: signal<GetLoyaltyTiersTierInfo[]>([]),
       recentActivity: signal(activity),
       referralAccount: signal(GetMyReferralResponse.fromJS({ code: 'ABC123' })),
+      referralCreditAmount: signal<string | null>(null),
       loading: signal(false),
       error: signal<string | null>(null),
       hasLoaded: signal(true),
@@ -287,5 +289,81 @@ describe('RewardsComponent — what a points movement says it was', () => {
       'pages.rewards.tx.manual',
       'pages.rewards.tx.completed',
     ]);
+  });
+});
+
+describe('RewardsComponent — what the invite card promises', () => {
+  const DICTIONARY = {
+    pages: {
+      rewards: {
+        referral: {
+          section_title: 'Invite friends — {{amount}} each',
+          section_title_no_amount: 'Invite friends',
+          subtitle: 'You each get {{amount}} in credit.',
+          subtitle_no_amount: 'Share your code.',
+          when_credited: 'We add the credit once they finish their first clean.',
+        },
+      },
+    },
+  };
+
+  async function renderCard(referralCreditAmount: string | null): Promise<string> {
+    const facade = {
+      loadAll: jest.fn(),
+      defaultCurrencyCode: signal<string | null>(null),
+      floorApplies: signal(true),
+      account: signal(GetMyLoyaltyResponse.fromJS({ currentTier: 2, lifetimePoints: 150, points: 150 })),
+      tiers: signal<GetLoyaltyTiersTierInfo[]>([]),
+      recentActivity: signal([]),
+      referralAccount: signal(GetMyReferralResponse.fromJS({ code: 'FRIENDS' })),
+      referralCreditAmount: signal(referralCreditAmount),
+      loading: signal(false),
+      error: signal<string | null>(null),
+      hasLoaded: signal(true),
+      tierKey: (t: unknown) => String(t),
+    };
+
+    await TestBed.configureTestingModule({
+      imports: [
+        RewardsComponent,
+        TranslateModule.forRoot({
+          loader: { provide: TranslateLoader, useValue: { getTranslation: () => of(DICTIONARY) } },
+        }),
+      ],
+      providers: [
+        provideHttpClient(),
+        provideNoopAnimations(),
+        { provide: SnackbarService, useValue: { showError: jest.fn(), showSuccess: jest.fn() } },
+        { provide: ActivatedRoute, useValue: { snapshot: { queryParamMap: { get: () => null } } } },
+      ],
+    })
+      .overrideComponent(RewardsComponent, {
+        set: { providers: [{ provide: RewardsFacade, useValue: facade }] },
+      })
+      .compileComponents();
+
+    TestBed.inject(TranslateService).use('en');
+    const fixture = TestBed.createComponent(RewardsComponent);
+    fixture.detectChanges();
+    const card = (fixture.nativeElement as HTMLElement).querySelector('.cl-rwd__split > .cl-rwd__card');
+    return (card?.textContent ?? '').replace(/\s+/g, ' ').trim();
+  }
+
+  it('states the credit the market pays, as the facade formatted it', async () => {
+    const card = await renderCard('150 Kč');
+
+    expect(card).toContain('Invite friends — 150 Kč each');
+    expect(card).toContain('You each get 150 Kč in credit.');
+    expect(card).toContain('We add the credit once they finish their first clean.');
+  });
+
+  it('names no amount and promises no credit in a market that pays none', async () => {
+    const card = await renderCard(null);
+
+    expect(card).toContain('Invite friends');
+    expect(card).toContain('Share your code.');
+    expect(card).not.toMatch(/\d/);
+    expect(card).not.toContain('credit');
+    expect(card).not.toContain('{{');
   });
 });

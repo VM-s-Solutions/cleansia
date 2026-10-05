@@ -7,12 +7,27 @@ import {
   ValidateReferralQuery,
   ValidateReferralResponse,
 } from '@cleansia/customer-services';
-import { selectMarketCountryId } from '@cleansia/customer-stores';
+import {
+  selectMarketCountryId,
+  selectMarketCurrencyCode,
+  selectMarketReferralCredit,
+} from '@cleansia/customer-stores';
 import { SnackbarService, extractApiErrorCode } from '@cleansia/services';
+import { formatMoney } from '@cleansia/utils';
 import { MockStore, provideMockStore } from '@ngrx/store/testing';
-import { TranslateService } from '@ngx-translate/core';
-import { Subject, of, throwError } from 'rxjs';
+import { TranslateModule, TranslateService } from '@ngx-translate/core';
+import { EMPTY, Subject, of, throwError } from 'rxjs';
 import { RegisterFacade } from './register.facade';
+
+const translateStub = { instant: (k: string) => k, currentLang: 'en', onLangChange: EMPTY };
+
+function marketSelectors(countryId: string | null, referralCredit: number | null = null, currencyCode: string | null = null) {
+  return [
+    { selector: selectMarketCountryId, value: countryId },
+    { selector: selectMarketReferralCredit, value: referralCredit },
+    { selector: selectMarketCurrencyCode, value: currencyCode },
+  ];
+}
 
 describe('RegisterFacade — referral landing capture (/r/{code})', () => {
   let facade: RegisterFacade;
@@ -54,13 +69,13 @@ describe('RegisterFacade — referral landing capture (/r/{code})', () => {
       providers: [
         RegisterFacade,
         provideMockStore({
-          selectors: [{ selector: selectMarketCountryId, value: null }],
+          selectors: marketSelectors(null),
         }),
         { provide: Router, useValue: { navigate: jest.fn() } },
         { provide: CustomerAuthService, useValue: authService },
         { provide: CustomerClient, useValue: { referralClient } },
         { provide: SnackbarService, useValue: snackbar },
-        { provide: TranslateService, useValue: { instant: (k: string) => k } },
+        { provide: TranslateService, useValue: translateStub },
       ],
     });
 
@@ -202,7 +217,7 @@ describe('RegisterFacade — the chosen market', () => {
       providers: [
         RegisterFacade,
         provideMockStore({
-          selectors: [{ selector: selectMarketCountryId, value: 'svk-id' }],
+          selectors: marketSelectors('svk-id'),
         }),
         { provide: Router, useValue: { navigate: jest.fn() } },
         { provide: CustomerAuthService, useValue: authService },
@@ -211,7 +226,7 @@ describe('RegisterFacade — the chosen market', () => {
           provide: SnackbarService,
           useValue: { showError: jest.fn(), showApiError: jest.fn(), showSuccessTranslated: jest.fn() },
         },
-        { provide: TranslateService, useValue: { instant: (k: string) => k } },
+        { provide: TranslateService, useValue: translateStub },
       ],
     });
 
@@ -296,13 +311,13 @@ describe('RegisterFacade — Sign in with Apple', () => {
       providers: [
         RegisterFacade,
         provideMockStore({
-          selectors: [{ selector: selectMarketCountryId, value: null }],
+          selectors: marketSelectors(null),
         }),
         { provide: Router, useValue: router },
         { provide: CustomerAuthService, useValue: authService },
         { provide: CustomerClient, useValue: { referralClient: { validate: jest.fn() } } },
         { provide: SnackbarService, useValue: snackbar },
-        { provide: TranslateService, useValue: { instant: (k: string) => k } },
+        { provide: TranslateService, useValue: translateStub },
       ],
     });
 
@@ -392,13 +407,13 @@ describe('RegisterFacade — the consent ticked at signup', () => {
       providers: [
         RegisterFacade,
         provideMockStore({
-          selectors: [{ selector: selectMarketCountryId, value: null }],
+          selectors: marketSelectors(null),
         }),
         { provide: Router, useValue: router },
         { provide: CustomerAuthService, useValue: authService },
         { provide: CustomerClient, useValue: { referralClient: { validate: jest.fn() } } },
         { provide: SnackbarService, useValue: snackbar },
-        { provide: TranslateService, useValue: { instant: (k: string) => k } },
+        { provide: TranslateService, useValue: translateStub },
       ],
     });
 
@@ -500,13 +515,13 @@ describe('RegisterFacade — the consent ticked at a social signup', () => {
       providers: [
         RegisterFacade,
         provideMockStore({
-          selectors: [{ selector: selectMarketCountryId, value: null }],
+          selectors: marketSelectors(null),
         }),
         { provide: Router, useValue: router },
         { provide: CustomerAuthService, useValue: authService },
         { provide: CustomerClient, useValue: { referralClient: { validate: jest.fn() } } },
         { provide: SnackbarService, useValue: snackbar },
-        { provide: TranslateService, useValue: { instant: (k: string) => k } },
+        { provide: TranslateService, useValue: translateStub },
       ],
     });
 
@@ -581,5 +596,46 @@ describe('RegisterFacade — the consent ticked at a social signup', () => {
 
     tick(false);
     expect(facade.termsAccepted()).toBe(false);
+  });
+});
+
+// The referral credit is `Currency.ReferralCredit` carried by the browsed market (ADR-0060): the
+// dialog copy holds a placeholder and this is the figure that fills it.
+describe('RegisterFacade — the referral credit the code dialog states', () => {
+  function setup(referralCredit: number | null, currencyCode: string | null): RegisterFacade {
+    TestBed.configureTestingModule({
+      imports: [TranslateModule.forRoot()],
+      providers: [
+        RegisterFacade,
+        provideMockStore({ selectors: marketSelectors('cze-id', referralCredit, currencyCode) }),
+        { provide: Router, useValue: { navigate: jest.fn() } },
+        { provide: CustomerAuthService, useValue: {} },
+        { provide: CustomerClient, useValue: { referralClient: { validate: jest.fn() } } },
+        { provide: SnackbarService, useValue: {} },
+      ],
+    });
+    TestBed.inject(TranslateService).use('cs');
+    return TestBed.inject(RegisterFacade);
+  }
+
+  it('formats the market figure in its currency for the language being read', () => {
+    const facade = setup(150, 'CZK');
+
+    expect(facade.referralCreditAmount()).toBe(formatMoney(150, 'CZK', 'cs-CZ'));
+
+    TestBed.inject(TranslateService).use('en');
+    expect(facade.referralCreditAmount()).toBe(formatMoney(150, 'CZK', 'en-US'));
+  });
+
+  it('is null in a market that pays no referral credit, so the dialog names no amount', () => {
+    expect(setup(null, 'EUR').referralCreditAmount()).toBeNull();
+  });
+
+  it('is null for a zero figure, which the server treats as paying none', () => {
+    expect(setup(0, 'CZK').referralCreditAmount()).toBeNull();
+  });
+
+  it('is null when no market resolved', () => {
+    expect(setup(150, null).referralCreditAmount()).toBeNull();
   });
 });

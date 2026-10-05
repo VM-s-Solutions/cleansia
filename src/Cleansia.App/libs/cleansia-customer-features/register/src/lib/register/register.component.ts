@@ -28,7 +28,12 @@ import { Store } from '@ngrx/store';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import { InputTextModule } from 'primeng/inputtext';
 import { RegisterFacade, ReferralUiState } from './register.facade';
-import { checkIfPasswordsValid, PasswordCheck } from './register.models';
+import {
+  checkIfPasswordsValid,
+  PasswordCheck,
+  referralHelperCopy,
+  referralSuccessCopy,
+} from './register.models';
 
 /** Map backend ReferralValidationError → i18n key, with a generic fallback. */
 const REFERRAL_ERROR_KEYS: Record<string, string> = {
@@ -126,8 +131,12 @@ export class RegisterComponent implements OnInit, AfterViewInit {
    */
   protected readonly referralDialogState = computed<CodeDialogResult>(() => {
     const state = this.facade.referralState();
-    return referralStateToDialog(state, this.translate);
+    return referralStateToDialog(state, this.facade.referralCreditAmount(), this.translate);
   });
+
+  protected readonly referralHelper = computed(() =>
+    referralHelperCopy(this.facade.referralCreditAmount())
+  );
 
   /**
    * Inline note under the referral row for a code that arrived pre-applied
@@ -308,6 +317,7 @@ export class RegisterComponent implements OnInit, AfterViewInit {
 
 function referralStateToDialog(
   state: ReferralUiState,
+  creditAmount: string | null,
   translate: TranslateService,
 ): CodeDialogResult {
   switch (state.kind) {
@@ -316,14 +326,8 @@ function referralStateToDialog(
     case 'validating':
       return { kind: 'validating' };
     case 'valid': {
-      const name = state.referrerFirstName?.trim();
-      const messageKey = name
-        ? 'auth.register.referral.dialog_success_named'
-        : 'auth.register.referral.dialog_success';
-      return {
-        kind: 'valid',
-        successMessage: translate.instant(messageKey, { name: name ?? '' }),
-      };
+      const copy = referralSuccessCopy(state.referrerFirstName, creditAmount);
+      return { kind: 'valid', successMessage: translate.instant(copy.key, copy.params) };
     }
     case 'invalid': {
       const key =

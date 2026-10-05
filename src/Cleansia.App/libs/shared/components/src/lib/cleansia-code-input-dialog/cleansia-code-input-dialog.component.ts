@@ -74,6 +74,7 @@ export class CleansiaCodeInputDialogComponent {
   readonly titleKey = input.required<string>();
   readonly inputLabelKey = input.required<string>();
   readonly helperKey = input.required<string>();
+  readonly helperParams = input<Record<string, unknown>>({});
   readonly cancelKey = input<string>('pages.order.promo.dialog_cancel');
   readonly applyKey = input<string>('pages.order.promo.dialog_apply');
   readonly doneKey = input<string>('pages.order.promo.dialog_done');

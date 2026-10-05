@@ -27,7 +27,7 @@
     </p-floatlabel>
 
     <p class="cleansia-code-input-dialog__helper">
-      {{ helperKey() | translate }}
+      {{ helperKey() | translate: helperParams() }}
     </p>
 
     @switch (state().kind) {

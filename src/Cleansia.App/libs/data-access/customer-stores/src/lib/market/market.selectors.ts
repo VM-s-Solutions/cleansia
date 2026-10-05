@@ -33,6 +33,11 @@ export const selectMarketNoShowCredit = createSelector(
   (market: MarketListItem | null) => market?.noShowCredit ?? null
 );
 
+export const selectMarketReferralCredit = createSelector(
+  selectMarket,
+  (market: MarketListItem | null) => market?.referralCredit ?? null
+);
+
 export const selectMarketLoadFailed = createSelector(
   selectCustomerMarketState,
   (state: CustomerMarketState) => state.loadFailed

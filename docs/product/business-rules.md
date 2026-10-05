@@ -2130,9 +2130,9 @@ the service exists, which a deactivated row still does.
 **A customer cannot select one by id either** (since 2026-10-05). `QuoteOrder`, `QuotePlusSavings`,
 `CreateOrder` (guest and signed-in) and `CreateRecurringBooking` ask that every selected service and
 package exists **and is active** (`ExistActiveWithIdsAsync`), `UpdateRecurringBooking` asks it of every
-one an edit adds (below), and they refuse one that is not with the codes
-an entry with no price or pay rate in the market's currency already gets: `order.selected_services.invalid`
-and `order.selected_package.invalid`. Every client already words both, in all five languages. Until then
+one an edit adds (below), and they refuse one that is not with the codes an entry with no price or pay
+rate in the market's currency already gets: `order.selected_services.invalid` and
+`order.selected_package.invalid`. Every client already words both, in all five languages. Until then
 the three order gates asked only that the row exists, which a deactivated row still does, so a client
 holding an old catalogue, or an *Order again* sent before the catalogue had loaded, could price and book
 an entry no catalogue showed; a new schedule checked its selection not at all, so it also took an id
@@ -2150,9 +2150,9 @@ comments expected the booking to fail loudly. What it deliberately leaves alone:
 - **Editing a schedule keeps what it holds, and asks about what it adds** (owner ruling 2026-10-05).
   `UpdateRecurringBooking` asks that every service and package id the edit adds, one the stored
   template does not hold, is active, and refuses one that is not, or one that never existed, with the
-  codes above. An id the template already holds passes even if it was deactivated since, so an edit of
-  the time or the address does not cost the customer an entry the schedule keeps booking. The template
-  is read for the caller only, and one they do not own holds nothing for them, so every id is asked.
+  codes above. An id the template already holds passes even if it was deactivated since, so the server
+  never refuses an edit over an entry the schedule already books. The template is read for the caller
+  only, and one they do not own holds nothing for them, so every id is asked.
   Until 2026-10-05 the edit checked only that the selection was not empty, so it could add a
   deactivated entry, or an id that never existed, and the schedule then booked it every week. The
   three schedule forms trim the selection as they load (below), so a held entry comes back to the
@@ -2216,9 +2216,9 @@ schedules list says why:
 deactivated service and package, an edit refused a deactivated or unknown entry it adds but allowed to
 keep one the schedule holds, a new package refused a deactivated or unknown service, a package edit
 refused one it adds but allowed to keep one the package includes, and the factory still booking one a
-schedule holds; the order and quote validator suites pin the three order gates. The web recurring facade spec runs the real error
-interceptor over a card refused for a deactivated service and an edit form refused for a deactivated
-package, and asserts no price and no message. Android's `CreateRecurringViewModelTest` pins an edited
+schedule holds; the order and quote validator suites pin the three order gates. The web recurring
+facade spec runs the real error interceptor over a card refused for a deactivated service and an edit
+form refused for a deactivated package, and asserts no price and no message. Android's `CreateRecurringViewModelTest` pins an edited
 cash schedule dropping a deactivated service with the notice and saving in cash, and a template
 trimmed when the catalogue lands after it; iOS's
 `testEditingPrunesWhatTheTemplatesMarketNoLongerOffersWithANotice` pins the trim on load. The card's

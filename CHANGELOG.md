@@ -1153,7 +1153,10 @@ need backfilling.
   (on Android also while its benefits are paused), says only *Includes a service no longer offered*. Opening it to edit removes the service, now on Android as on iOS and the website,
   and says *Some of this schedule's choices are no longer offered and were removed*. It used to say
   they were not offered at this address, though nobody had changed the address, and on the website the
-  service was usually not removed at all. A service that is part of a package is still done with the
+  service was usually not removed at all. When you do move the schedule to an address in another
+  country, what that country does not offer is removed with *Some of your selection is not offered
+  at this address*, now on the website too when you move it before the schedule's own list has
+  loaded, where it said *no longer offered* until 2026-10-05. A service that is part of a package is still done with the
   package. **API consumer:** `QuoteOrder`, `QuotePlusSavings`,
   `CreateOrder` and `CreateRecurringBooking` refuse a deactivated id, and `UpdateRecurringBooking` a
   deactivated or unknown id the edit adds to the stored schedule, with `order.selected_services.invalid`

@@ -137,6 +137,22 @@ class RewardsTabViewModelTest {
         assertEquals(false, vm.tierFloorApplies.value)
     }
 
+    /** The invite card and the share text state the referral credit of the market the customer chose. */
+    @Test
+    fun `the referral copy follows the chosen market, and none is known before the directory resolves`() = runTest {
+        val vm = viewModel()
+        runCurrent()
+        assertEquals(null, vm.selectedMarket.value)
+
+        marketState.value = cz.cleansia.customer.core.market.MarketState.Resolved(listOf(cze, svk), selected = cze)
+        runCurrent()
+        assertEquals(cze, vm.selectedMarket.value)
+
+        marketState.value = cz.cleansia.customer.core.market.MarketState.Resolved(listOf(cze, svk), selected = svk)
+        runCurrent()
+        assertEquals(svk, vm.selectedMarket.value)
+    }
+
     @Test
     fun `the exposed flows mirror the repositories`() = runTest {
         val vm = viewModel()

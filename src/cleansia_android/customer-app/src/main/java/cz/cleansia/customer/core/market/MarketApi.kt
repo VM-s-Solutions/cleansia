@@ -27,7 +27,7 @@ class MarketApi(
 
 /**
  * Every identity and label field refuses: the id is what readers send, the codes are what the chip
- * and the rows print, and `isDefault` decides the pre-selection. The two copy figures are nullable by
+ * and the rows print, and `isDefault` decides the pre-selection. The copy figures are nullable by
  * design (ADR-0060) and stay so.
  */
 private fun GenMarketListItem.toAppDto(): MarketListItem =
@@ -42,6 +42,7 @@ private fun GenMarketListItem.toAppDto(): MarketListItem =
         currencySymbol = currencySymbol.required("currencySymbol"),
         isDefault = isDefault.required("isDefault"),
         noShowCredit = noShowCredit,
+        referralCredit = referralCredit,
         insuranceCoverageAmount = insuranceCoverageAmount,
     )
 

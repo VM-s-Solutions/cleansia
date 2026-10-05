@@ -109,6 +109,7 @@ class MarketWireTest {
         assertEquals(true, cze.isDefault)
         assertEquals(250.0, cze.noShowCredit!!, 0.0)
         assertEquals(1_000_000.0, cze.insuranceCoverageAmount!!, 0.0)
+        assertEquals(150.0, cze.referralCredit!!, 0.0)
     }
 
     @Test
@@ -116,14 +117,15 @@ class MarketWireTest {
         REQUIRED.forEach { field -> refuses(field) { markets(withFirstRow { it - field }) } }
     }
 
-    /** ADR-0060: both copy figures are nullable by design — null means the no-figure copy renders. */
+    /** ADR-0060: the copy figures are nullable by design — null means the no-figure copy renders. */
     @Test
     fun theCopyFiguresStayNullableWithoutRefusing() = runTest {
-        val list = markets(withFirstRow { it - "noShowCredit" - "insuranceCoverageAmount" })
+        val list = markets(withFirstRow { it - "noShowCredit" - "insuranceCoverageAmount" - "referralCredit" })
 
         assertNotNull(list)
         assertNull(list!!.first().noShowCredit)
         assertNull(list.first().insuranceCoverageAmount)
+        assertNull(list.first().referralCredit)
     }
 
     @Test
@@ -177,6 +179,7 @@ class MarketWireTest {
             "currencySymbol",
             "isDefault",
             "noShowCredit",
+            "referralCredit",
             "insuranceCoverageAmount",
         )
 
@@ -204,6 +207,7 @@ class MarketWireTest {
                 "currencySymbol": "Kč",
                 "isDefault": true,
                 "noShowCredit": 250.00,
+                "referralCredit": 150.00,
                 "insuranceCoverageAmount": 1000000.00
               },
               {
@@ -217,6 +221,7 @@ class MarketWireTest {
                 "currencySymbol": "€",
                 "isDefault": false,
                 "noShowCredit": null,
+                "referralCredit": null,
                 "insuranceCoverageAmount": null
               }
             ]

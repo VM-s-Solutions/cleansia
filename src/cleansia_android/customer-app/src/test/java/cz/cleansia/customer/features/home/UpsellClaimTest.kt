@@ -57,7 +57,7 @@ class UpsellClaimTest {
         RegexOption.IGNORE_CASE,
     )
 
-    /** `ReferralPolicy`: both sides are paid once the friend's first order is completed. */
+    /** A referral pays both sides once the friend's first order is completed. */
     private val completedStem = mapOf(
         "values" to "completed",
         "values-cs" to "dokončen",
@@ -96,6 +96,7 @@ class UpsellClaimTest {
         "home_trust_insured",
         "booking_trust_insured_no_figure",
         "help_faq_a3_no_figure",
+        "home_upsell_chip_points",
     )
 
     /** No cleaner is background-checked. */
@@ -191,55 +192,87 @@ class UpsellClaimTest {
         assertEquals(emptyList<String>(), claims)
     }
 
-    /** The rows known to state the referral reward, so the sweep below cannot pass by finding none. */
-    private val referralRewardKeys = listOf(
-        "booking_referral_code_dialog_helper",
-        "booking_referral_code_dialog_success_named",
-        "booking_referral_code_dialog_success",
-        "loyalty_referral_subtitle",
-        "loyalty_referral_share_text",
+    /**
+     * The rows that state the referral reward → the placeholder the market's credit takes in each, and
+     * the twin that renders when the market pays none. The credit is the market currency's
+     * `ReferralCredit`, formatted on device; a null or zero figure pays nothing, so the twin promises nothing.
+     */
+    private val referralRewardRows = mapOf(
+        "home_upsell_referral_desc" to ("%1\$s" to "home_upsell_referral_desc_generic"),
+        "booking_referral_code_dialog_helper" to ("%1\$s" to "booking_referral_code_dialog_helper_no_figure"),
+        "booking_referral_code_dialog_success_named" to ("%2\$s" to "booking_referral_code_dialog_success_named_no_figure"),
+        "booking_referral_code_dialog_success" to ("%1\$s" to "booking_referral_code_dialog_success_no_figure"),
+        "loyalty_referral_subtitle" to ("%1\$s" to "loyalty_referral_subtitle_no_figure"),
+        "loyalty_referral_share_text" to ("%1\$s" to "loyalty_referral_share_text_no_figure"),
     )
 
+    private val creditStem = mapOf(
+        "values" to "credit",
+        "values-cs" to "kredit",
+        "values-sk" to "kredit",
+        "values-uk" to "кредит",
+        "values-ru" to "кредит",
+    )
+
+    private val pointsStem = mapOf(
+        "values" to Regex("\\bpoints?\\b|\\bpts\\b", RegexOption.IGNORE_CASE),
+        "values-cs" to Regex("bod", RegexOption.IGNORE_CASE),
+        "values-sk" to Regex("bod", RegexOption.IGNORE_CASE),
+        "values-uk" to Regex("бал", RegexOption.IGNORE_CASE),
+        "values-ru" to Regex("балл", RegexOption.IGNORE_CASE),
+    )
+
+    private val currencyWord = Regex("CZK|Kč|EUR|€|koru|euro|крон|євро|евро", RegexOption.IGNORE_CASE)
+
     @Test
-    fun `every referral reward waits for the friend's first completed cleaning`() {
-        val points = Regex("public\\s+const\\s+int\\s+PointsPerSide\\s*=\\s*(\\d+)\\s*;")
-            .find(File(solutionDir, "Cleansia.Core.AppServices/Features/Orders/ReferralPolicy.cs").readText())
-            ?.groupValues?.get(1)
-            ?: error("ReferralPolicy.PointsPerSide not found — the parser needs updating")
+    fun `every referral reward is the market's credit and waits for the friend's first completed cleaning`() {
+        val placeholder = Regex("%\\d+\\$[sd]")
         locales.forEach { locale ->
-            val completed = completedStem.getValue(locale)
-            val rewards = strings(locale).filterValues { Regex("\\b$points\\b").containsMatchIn(it) }
-            assertTrue(
-                "$locale: the sweep missed a known referral reward, found only ${rewards.keys}",
-                rewards.keys.containsAll(referralRewardKeys),
-            )
-            rewards.forEach { (key, value) ->
-                assertTrue("$locale/$key does not wait for a completed cleaning — $value", value.contains(completed, ignoreCase = true))
+            val declared = strings(locale)
+            referralRewardRows.forEach { (key, row) ->
+                val value = declared[key] ?: error("$locale/$key is missing")
+                val bare = placeholder.replace(value, "")
+                assertTrue("$locale/$key does not take the market's credit as ${row.first} — $value", value.contains(row.first))
+                assertTrue("$locale/$key names a number of its own — $value", bare.none { it.isDigit() })
+                assertTrue("$locale/$key names a currency of its own — $value", !currencyWord.containsMatchIn(bare))
+                assertTrue("$locale/$key does not call the reward credit — $value", value.contains(creditStem.getValue(locale), ignoreCase = true))
+                assertTrue("$locale/$key does not wait for a completed cleaning — $value", value.contains(completedStem.getValue(locale), ignoreCase = true))
             }
             val waiting = plurals(locale)["loyalty_referral_stats_waiting"] ?: error("$locale/loyalty_referral_stats_waiting is missing")
             waiting.forEach { item ->
-                assertTrue("$locale/loyalty_referral_stats_waiting does not wait for a completed cleaning — $item", item.contains(completed, ignoreCase = true))
+                assertTrue("$locale/loyalty_referral_stats_waiting does not wait for a completed cleaning — $item", item.contains(completedStem.getValue(locale), ignoreCase = true))
             }
         }
     }
 
-    /** The carousel states the server's `pointsPerReferral`, so its rows carry the count and no figure of their own. */
     @Test
-    fun `the carousel's referral reward is the server's and waits for a completed cleaning`() {
+    fun `a market that pays no referral credit is promised none`() {
         val placeholder = Regex("%\\d+\\$[sd]")
         locales.forEach { locale ->
-            val completed = completedStem.getValue(locale)
-            val generic = strings(locale)["home_upsell_referral_desc_generic"] ?: error("$locale/home_upsell_referral_desc_generic is missing")
-            assertTrue("$locale/home_upsell_referral_desc_generic does not wait for a completed cleaning — $generic", generic.contains(completed, ignoreCase = true))
-            assertTrue("$locale/home_upsell_referral_desc_generic names a figure — $generic", generic.none { it.isDigit() })
-            val items = plurals(locale)["home_upsell_referral_desc"] ?: error("$locale/home_upsell_referral_desc is missing")
-            items.forEach { item ->
-                assertTrue("$locale/home_upsell_referral_desc lost its count — $item", item.contains("%1\$d"))
-                assertTrue("$locale/home_upsell_referral_desc names a number of its own — $item", placeholder.replace(item, "").none { it.isDigit() })
-                assertTrue("$locale/home_upsell_referral_desc does not wait for a completed cleaning — $item", item.contains(completed, ignoreCase = true))
+            val declared = strings(locale)
+            referralRewardRows.values.forEach { (_, twin) ->
+                val value = declared[twin] ?: error("$locale/$twin is missing")
+                assertTrue("$locale/$twin names a figure — $value", placeholder.replace(value, "").none { it.isDigit() })
+                assertTrue("$locale/$twin promises credit — $value", !value.contains(creditStem.getValue(locale), ignoreCase = true))
+                assertTrue("$locale/$twin promises points — $value", !pointsStem.getValue(locale).containsMatchIn(value))
             }
-            val title = strings(locale)["home_upsell_referral_title"] ?: error("$locale/home_upsell_referral_title is missing")
-            assertTrue("$locale/home_upsell_referral_title states a reward of its own — $title", title.none { it.isDigit() })
+        }
+    }
+
+    /** The points ledger's own line and the code field's example are the referral rows outside the reward. */
+    private val referralRowsOutsideTheReward = setOf("loyalty_tx_referral", "referral_code_field_placeholder")
+
+    @Test
+    fun `no referral row still promises points or states a figure of its own`() {
+        val placeholder = Regex("%\\d+\\$[sd]")
+        locales.forEach { locale ->
+            val rows = strings(locale).filterKeys { "referral" in it && it !in referralRowsOutsideTheReward } +
+                plurals(locale).filterKeys { "referral" in it }.mapValues { it.value.joinToString(" | ") }
+            rows.forEach { (key, value) ->
+                assertTrue("$locale/$key names a number of its own — $value", placeholder.replace(value, "").none { it.isDigit() })
+                assertTrue("$locale/$key still promises points — $value", !pointsStem.getValue(locale).containsMatchIn(value))
+            }
+            assertTrue("$locale/home_upsell_referral_desc is still a points plural", "home_upsell_referral_desc" !in plurals(locale))
         }
     }
 
@@ -319,7 +352,7 @@ class UpsellClaimTest {
         "home_upsell_express_today_desc" to listOf("%1\$d"),
         "home_upsell_times_desc" to listOf("%1\$s", "%2\$s"),
         "home_upsell_chip_percent_off" to listOf("%1\$d"),
-        "home_upsell_chip_points" to listOf("%1\$d"),
+        "home_upsell_chip_credit" to listOf("%1\$s"),
         "home_upsell_chip_hours" to listOf("%1\$d"),
         "home_upsell_chip_minutes" to listOf("%1\$d"),
         "home_upsell_chip_times" to listOf("%1\$d"),

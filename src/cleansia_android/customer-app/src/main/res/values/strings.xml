@@ -140,7 +140,7 @@
     <string name="home_upsell_setup_recurring_desc">Weekly, fortnightly or monthly, on the day and time you pick.</string>
     <string name="home_upsell_plus_desc">Take %1$d%% off every cleaning and request your favorite cleaner.</string>
     <string name="home_upsell_plus_desc_generic">Book recurring cleanings and request your favorite cleaner.</string>
-    <string name="home_upsell_referral_desc_generic">You both get points once their first cleaning is completed.</string>
+    <string name="home_upsell_referral_desc_generic">Send a friend your code to enter when they sign up.</string>
     <string name="home_upsell_plus_cancel_title">Free cancellation up to %1$d h before</string>
     <string name="home_upsell_plus_cancel_desc">One of your Plus benefits, on every booking you make.</string>
     <string name="home_upsell_express_today_title">Book as little as %1$d h ahead</string>
@@ -151,14 +151,11 @@
     <string name="home_upsell_times_title">Choose your exact arrival time</string>
     <string name="home_upsell_times_desc">Morning, afternoon or evening, any time from %1$s to %2$s.</string>
     <string name="home_upsell_chip_percent_off">−%1$d%%</string>
-    <string name="home_upsell_chip_points">+%1$d</string>
+    <string name="home_upsell_chip_credit">+%1$s</string>
     <string name="home_upsell_chip_hours">%1$d h</string>
     <string name="home_upsell_chip_minutes">%1$d min</string>
     <string name="home_upsell_chip_times">%1$d×</string>
-    <plurals name="home_upsell_referral_desc">
-        <item quantity="one">You both get %1$d point once their first cleaning is completed.</item>
-        <item quantity="other">You both get %1$d points once their first cleaning is completed.</item>
-    </plurals>
+    <string name="home_upsell_referral_desc">You both get %1$s credit once their first cleaning is completed.</string>
 
     <string name="home_hero2_top">Spring is here</string>
     <string name="home_hero2_title">Deep clean + windows combo</string>
@@ -813,18 +810,21 @@
     <string name="booking_referral_code_row_applied">%1$s applied</string>
     <string name="booking_referral_code_row_clear">Remove</string>
     <string name="booking_referral_code_dialog_title">Enter referral code</string>
-    <string name="booking_referral_code_dialog_helper">Have a friend\'s code? Both of you earn 150 bonus tier-points after your first completed cleaning.</string>
+    <string name="booking_referral_code_dialog_helper">Have a friend\'s code? Both of you get %1$s credit after your first completed cleaning.</string>
+    <string name="booking_referral_code_dialog_helper_no_figure">Have a friend\'s code? Enter it here.</string>
     <string name="booking_referral_code_dialog_apply">Apply</string>
     <string name="booking_referral_code_dialog_cancel">Cancel</string>
     <string name="booking_referral_code_dialog_done">Done</string>
-    <string name="booking_referral_code_dialog_success_named">Code from %1$s accepted — you\'ll both get 150 bonus points after your first completed cleaning.</string>
+    <string name="booking_referral_code_dialog_success_named">Code from %1$s accepted — you\'ll both get %2$s credit after your first completed cleaning.</string>
+    <string name="booking_referral_code_dialog_success_named_no_figure">Code from %1$s accepted.</string>
 
     <!-- Plus: pre-request a favorite cleaner -->
     <string name="booking_preferred_cleaner_title">Request your favorite cleaner</string>
     <string name="booking_preferred_cleaner_subtitle">Plus benefit · choose someone who\'s cleaned for you before</string>
     <string name="booking_preferred_cleaner_dialog_title">Pick a cleaner</string>
     <string name="booking_preferred_cleaner_clear">Clear preferred cleaner</string>
-    <string name="booking_referral_code_dialog_success">Code accepted — you\'ll both get 150 bonus points after your first completed cleaning.</string>
+    <string name="booking_referral_code_dialog_success">Code accepted — you\'ll both get %1$s credit after your first completed cleaning.</string>
+    <string name="booking_referral_code_dialog_success_no_figure">Code accepted.</string>
 
     <string name="booking_payment_method">How do you want to pay?</string>
     <string name="booking_pay_card">Card</string>
@@ -1306,7 +1306,7 @@
     <string name="loyalty_tx_earn_order">+%1$d pts — Cleaning #%2$s</string>
     <string name="loyalty_tx_revoke_order">%1$d pts — Cancelled #%2$s</string>
     <string name="loyalty_tx_refund_order">%1$d pts — Refunded #%2$s</string>
-    <string name="loyalty_tx_referral">+%1$d pts — Referral bonus</string>
+    <string name="loyalty_tx_referral">%1$d pts — Referral bonus</string>
     <string name="loyalty_tx_manual">%1$d pts — Manual adjustment</string>
     <string name="loyalty_empty_activity">No activity yet. Book your first cleaning to start earning.</string>
     <string name="loyalty_error_load">Couldn\'t load your rewards. Try again.</string>
@@ -1314,12 +1314,14 @@
 
     <!-- Loyalty Phase C — Referrals -->
     <string name="loyalty_referral_section_title">Invite friends</string>
-    <string name="loyalty_referral_subtitle">Share your code. Your friend and you each get 150 bonus points after their first completed cleaning.</string>
+    <string name="loyalty_referral_subtitle">Share your code. Your friend and you each get %1$s credit after their first completed cleaning.</string>
+    <string name="loyalty_referral_subtitle_no_figure">Share your code with friends to enter when they sign up.</string>
     <string name="loyalty_referral_code_label">Your code</string>
     <string name="loyalty_referral_share_button">Share</string>
     <string name="loyalty_referral_copy_button">Copy</string>
     <string name="loyalty_referral_copied_toast">Code copied</string>
-    <string name="loyalty_referral_share_text">Get 150 bonus points after your first completed Cleansia cleaning! Use my code %1$s at signup: %2$s</string>
+    <string name="loyalty_referral_share_text">Get %1$s credit after your first completed Cleansia cleaning! Use my code %2$s at signup: %3$s</string>
+    <string name="loyalty_referral_share_text_no_figure">Join me on Cleansia! Use my code %1$s at signup: %2$s</string>
     <string name="loyalty_referral_stats_empty">Be the first — share your code</string>
     <string name="loyalty_referral_stats_qualified">%1$d friend joined · %2$d qualified</string>
     <string name="loyalty_referral_share_failed">Couldn\'t open share. Code copied to clipboard.</string>

@@ -142,7 +142,7 @@
     <string name="home_upsell_setup_recurring_desc">Týdně, jednou za dva týdny nebo měsíčně, v den a čas dle vás.</string>
     <string name="home_upsell_plus_desc">Sleva %1$d %% na každý úklid a váš oblíbený uklízeč na přání.</string>
     <string name="home_upsell_plus_desc_generic">Pravidelné úklidy a váš oblíbený uklízeč na přání.</string>
-    <string name="home_upsell_referral_desc_generic">Oba získáte body po jeho prvním dokončeném úklidu.</string>
+    <string name="home_upsell_referral_desc_generic">Pošlete kamarádovi svůj kód, který zadá při registraci.</string>
     <string name="home_upsell_plus_cancel_title">Zrušení zdarma až %1$d h předem</string>
     <string name="home_upsell_plus_cancel_desc">Jedna z výhod Plus, u každé vaší objednávky.</string>
     <string name="home_upsell_express_today_title">Objednávejte už %1$d h předem</string>
@@ -153,16 +153,11 @@
     <string name="home_upsell_times_title">Zvolte si přesný čas příjezdu</string>
     <string name="home_upsell_times_desc">Dopoledne, odpoledne i večer, kdykoli od %1$s do %2$s.</string>
     <string name="home_upsell_chip_percent_off">−%1$d %%</string>
-    <string name="home_upsell_chip_points">+%1$d</string>
+    <string name="home_upsell_chip_credit">+%1$s</string>
     <string name="home_upsell_chip_hours">%1$d h</string>
     <string name="home_upsell_chip_minutes">%1$d min</string>
     <string name="home_upsell_chip_times">%1$d×</string>
-    <plurals name="home_upsell_referral_desc">
-        <item quantity="one">Oba získáte %1$d bod po jeho prvním dokončeném úklidu.</item>
-        <item quantity="few">Oba získáte %1$d body po jeho prvním dokončeném úklidu.</item>
-        <item quantity="many">Oba získáte %1$d bodu po jeho prvním dokončeném úklidu.</item>
-        <item quantity="other">Oba získáte %1$d bodů po jeho prvním dokončeném úklidu.</item>
-    </plurals>
+    <string name="home_upsell_referral_desc">Oba získáte kredit %1$s po jeho prvním dokončeném úklidu.</string>
 
     <string name="home_hero2_top">Jaro je tu</string>
     <string name="home_hero2_title">Hloubkový úklid + okna v jednom</string>
@@ -811,18 +806,21 @@
     <string name="booking_referral_code_row_applied">%1$s uplatněno</string>
     <string name="booking_referral_code_row_clear">Odebrat</string>
     <string name="booking_referral_code_dialog_title">Zadejte kód doporučení</string>
-    <string name="booking_referral_code_dialog_helper">Máte kód od kamaráda? Po vašem prvním dokončeném úklidu oba získáte 150 bonusových bodů.</string>
+    <string name="booking_referral_code_dialog_helper">Máte kód od kamaráda? Po vašem prvním dokončeném úklidu oba získáte kredit %1$s.</string>
+    <string name="booking_referral_code_dialog_helper_no_figure">Máte kód od kamaráda? Zadejte ho zde.</string>
     <string name="booking_referral_code_dialog_apply">Použít</string>
     <string name="booking_referral_code_dialog_cancel">Zrušit</string>
     <string name="booking_referral_code_dialog_done">Hotovo</string>
-    <string name="booking_referral_code_dialog_success_named">Kód od %1$s přijat — po vašem prvním dokončeném úklidu oba získáte 150 bonusových bodů.</string>
+    <string name="booking_referral_code_dialog_success_named">Kód od %1$s přijat — po vašem prvním dokončeném úklidu oba získáte kredit %2$s.</string>
+    <string name="booking_referral_code_dialog_success_named_no_figure">Kód od %1$s přijat.</string>
 
     <!-- Plus: pre-request a favorite cleaner -->
     <string name="booking_preferred_cleaner_title">Vyberte si oblíbeného uklízeče</string>
     <string name="booking_preferred_cleaner_subtitle">Výhoda Plus · vyberte někoho, kdo už u vás uklízel</string>
     <string name="booking_preferred_cleaner_dialog_title">Vyberte uklízeče</string>
     <string name="booking_preferred_cleaner_clear">Zrušit výběr uklízeče</string>
-    <string name="booking_referral_code_dialog_success">Kód přijat — po vašem prvním dokončeném úklidu oba získáte 150 bonusových bodů.</string>
+    <string name="booking_referral_code_dialog_success">Kód přijat — po vašem prvním dokončeném úklidu oba získáte kredit %1$s.</string>
+    <string name="booking_referral_code_dialog_success_no_figure">Kód přijat.</string>
 
     <string name="booking_payment_method">Jak chcete platit?</string>
     <string name="booking_pay_card">Kartou</string>
@@ -1292,7 +1290,7 @@
     <string name="loyalty_tx_earn_order">+%1$d b. — Úklid č. %2$s</string>
     <string name="loyalty_tx_revoke_order">%1$d b. — Zrušeno č. %2$s</string>
     <string name="loyalty_tx_refund_order">%1$d b. — Vráceno č. %2$s</string>
-    <string name="loyalty_tx_referral">+%1$d b. — Bonus za doporučení</string>
+    <string name="loyalty_tx_referral">%1$d b. — Bonus za doporučení</string>
     <string name="loyalty_tx_manual">%1$d b. — Ruční úprava</string>
     <string name="loyalty_empty_activity">Zatím žádná aktivita. Objednejte si první úklid a začněte sbírat body.</string>
     <string name="loyalty_error_load">Odměny se nepodařilo načíst. Zkuste to znovu.</string>
@@ -1300,12 +1298,14 @@
 
     <!-- Loyalty Phase C — Referrals -->
     <string name="loyalty_referral_section_title">Pozvěte přátele</string>
-    <string name="loyalty_referral_subtitle">Sdílejte svůj kód. Kamarád i vy získáte každý 150 bonusových bodů po jeho prvním dokončeném úklidu.</string>
+    <string name="loyalty_referral_subtitle">Sdílejte svůj kód. Kamarád i vy získáte každý kredit %1$s po jeho prvním dokončeném úklidu.</string>
+    <string name="loyalty_referral_subtitle_no_figure">Sdílejte svůj kód s kamarády, ať ho zadají při registraci.</string>
     <string name="loyalty_referral_code_label">Váš kód</string>
     <string name="loyalty_referral_share_button">Sdílet</string>
     <string name="loyalty_referral_copy_button">Kopírovat</string>
     <string name="loyalty_referral_copied_toast">Kód zkopírován</string>
-    <string name="loyalty_referral_share_text">Získejte 150 bonusových bodů po prvním dokončeném úklidu Cleansia! Použijte můj kód %1$s při registraci: %2$s</string>
+    <string name="loyalty_referral_share_text">Získejte kredit %1$s po prvním dokončeném úklidu Cleansia! Použijte můj kód %2$s při registraci: %3$s</string>
+    <string name="loyalty_referral_share_text_no_figure">Přidejte se ke Cleansia! Použijte můj kód %1$s při registraci: %2$s</string>
     <string name="loyalty_referral_stats_empty">Buďte první — sdílejte svůj kód</string>
     <string name="loyalty_referral_stats_qualified">%1$d přítel se připojil · %2$d kvalifikováno</string>
     <string name="loyalty_referral_share_failed">Sdílení se nepodařilo otevřít. Kód byl zkopírován.</string>

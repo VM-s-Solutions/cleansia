@@ -24,7 +24,6 @@ data class ReferralAccountDto(
     val timesUsed: Int,
     val qualifiedCount: Int,
     val acceptedCount: Int,
-    val pointsPerReferral: Int,
 )
 
 /** Mirrors backend `GetMyReferrals` paged list item. */
@@ -37,7 +36,9 @@ data class ReferralListItemDto(
     val status: Int,
     val acceptedOn: String? = null,
     val firstQualifyingOrderOn: String? = null,
-    val pointsAwardedToReferrer: Int? = null,
+    /** Credit this referral paid the referrer, in [creditCurrencyCode]; null until it qualifies. */
+    val creditAwardedToReferrer: Double? = null,
+    val creditCurrencyCode: String? = null,
 )
 
 @Serializable

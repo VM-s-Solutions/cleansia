@@ -101,7 +101,9 @@ import cz.cleansia.core.ui.components.SudsRefreshIndicator
 import cz.cleansia.customer.core.market.MarketListItem
 import cz.cleansia.customer.core.market.MarketState
 import cz.cleansia.customer.core.market.countryId
+import cz.cleansia.customer.core.market.formattedReferralCredit
 import cz.cleansia.customer.core.market.offersAChoice
+import cz.cleansia.customer.core.market.selectedOrNull
 import cz.cleansia.customer.features.booking.localizedName
 import cz.cleansia.customer.features.recurring.ScheduleStatus
 import cz.cleansia.core.ui.theme.Poppins
@@ -256,6 +258,7 @@ fun HomeTab(
     val creditHere = credit?.balances?.firstOrNull {
         it.balance > 0.0 && homeCurrency != null && it.currencyCode.equals(homeCurrency, ignoreCase = true)
     }
+    val referralCredit = marketState.selectedOrNull?.formattedReferralCredit()
     androidx.compose.runtime.LaunchedEffect(marketCountryId) {
         if (packages.isEmpty() || catalogRepo.countryId.value != marketCountryId) viewModel.refreshCatalog()
     }
@@ -425,7 +428,7 @@ fun HomeTab(
                 creditShare = credit?.maxShareOfOrder ?: 0.0,
                 expressRemaining = expressRemaining,
                 referralCode = referralAccount?.code?.takeIf { it.isNotBlank() },
-                referralPoints = referralAccount?.pointsPerReferral?.takeIf { it > 0 },
+                referralCredit = referralCredit,
                 onTurnOnNotifications = onTurnOnNotifications,
                 onSubscribePlus = onSubscribePlus,
                 onBookCleaning = onBookCleaning,
@@ -434,6 +437,7 @@ fun HomeTab(
                     cz.cleansia.customer.features.rewards.shareReferralOrFallback(
                         context,
                         code,
+                        referralCredit,
                         viewModel::onReferralShareUnavailable,
                     )
                 },
@@ -731,8 +735,8 @@ private fun SmartUpsellCarousel(
     expressRemaining: Int,
     /** The customer's referral code once it has loaded; null falls back to opening Rewards. */
     referralCode: String?,
-    /** The points each side of a referral gets, from the server; null until the referral account loads. */
-    referralPoints: Int?,
+    /** The chosen market's referral credit, formatted; null when the market pays none or is not known yet. */
+    referralCredit: String?,
     onTurnOnNotifications: () -> Unit,
     onSubscribePlus: () -> Unit,
     onBookCleaning: () -> Unit,
@@ -847,16 +851,15 @@ private fun SmartUpsellCarousel(
                 onClick = onSubscribePlus,
             )
             // The CTA says "Share my code", so the card shares it; until the code has loaded it
-            // opens Rewards, where the code appears. The points are the server's.
+            // opens Rewards, where the code appears.
             UpsellKind.Referral -> UpsellSlide(
                 kind = kind,
                 top = stringResource(R.string.home_upsell_referral_top),
                 title = stringResource(R.string.home_upsell_referral_title),
-                description = referralPoints
-                    ?.let { pluralStringResource(R.plurals.home_upsell_referral_desc, it, it) }
+                description = referralCredit?.let { stringResource(R.string.home_upsell_referral_desc, it) }
                     ?: stringResource(R.string.home_upsell_referral_desc_generic),
                 chipIcon = Icons.Outlined.CardGiftcard,
-                chipText = referralPoints?.let { stringResource(R.string.home_upsell_chip_points, it) },
+                chipText = referralCredit?.let { stringResource(R.string.home_upsell_chip_credit, it) },
                 cta = stringResource(R.string.home_upsell_referral_cta),
                 gradient = cyanGradient,
                 onClick = { referralCode?.let(onShareReferral) ?: onOpenReferral() },

@@ -6,6 +6,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.luminance
 import cz.cleansia.core.ui.theme.primaryText
+import cz.cleansia.customer.ui.theme.Amber800
+import cz.cleansia.customer.ui.theme.Green400
+import cz.cleansia.customer.ui.theme.Green800
 import cz.cleansia.customer.ui.theme.Slate300
 import cz.cleansia.customer.ui.theme.Slate600
 import cz.cleansia.customer.ui.theme.WarningStar
@@ -37,7 +40,3 @@ internal fun disputeStatusInk(statusValue: Int?, scheme: ColorScheme): Color {
         else -> if (dark) Slate300 else Slate600    // Closed, and a status this build does not know
     }
 }
-
-private val Amber800 = Color(0xFF92400E)
-private val Green800 = Color(0xFF166534)
-private val Green400 = Color(0xFF4ADE80)

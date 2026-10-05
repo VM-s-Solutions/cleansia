@@ -47,15 +47,17 @@ val ErrorBg = Color(0xFFFEE2E2)
 val ErrorText = Color(0xFFB91C1C)
 val WarningStar = Color(0xFFF59E0B)
 
+// Order and invoice status pills: a solid fill and its label, the same in both schemes. Every pair reads
+// 4.5:1 or more — white on sky-600 was 4.10:1, sky-900 on sky-400 4.42:1 and slate-500 on slate-100 4.34:1.
 val StatusPendingBg = Sky100
 val StatusPendingText = Sky700
-val StatusConfirmedBg = Sky600
+val StatusConfirmedBg = Sky700
 val StatusConfirmedText = Color.White
 val StatusInProgressBg = Sky400
-val StatusInProgressText = Sky900
+val StatusInProgressText = Sky950
 val StatusCompletedBg = SuccessBg
 val StatusCompletedText = SuccessText
 val StatusCancelledBg = Slate100
-val StatusCancelledText = Slate500
+val StatusCancelledText = Slate600
 val StatusFailedBg = ErrorBg
 val StatusFailedText = ErrorText

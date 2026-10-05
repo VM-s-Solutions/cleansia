@@ -497,7 +497,7 @@ private fun TemplateCard(
                     )
                     Spacer(Modifier.width(10.dp))
                     Text(
-                        text = stringResource(R.string.recurring_card_item_no_longer_offered),
+                        text = stringResource(retiredEntryLine(showEdit)),
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )

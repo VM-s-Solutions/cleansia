@@ -1,5 +1,6 @@
 package cz.cleansia.customer.features.recurring
 
+import cz.cleansia.customer.R
 import cz.cleansia.customer.core.memberships.GetMyMembershipResponse
 import cz.cleansia.customer.core.memberships.MembershipStatus
 import org.junit.Assert.assertEquals
@@ -97,6 +98,28 @@ class RecurringAuthoringTest {
         assertFalse(affordances.showPlusUpsell)
         assertFalse(affordances.showCreateAction)
         assertFalse(affordances.showPausedNotice)
+    }
+
+    /**
+     * A schedule that still holds a retired entry says so on its card. Only a card that offers Edit tells
+     * the customer to edit; a lapsed or paused member's card has no Edit to point at.
+     */
+    @Test
+    fun `a card with Edit says to edit, and one without only says what the schedule holds`() {
+        assertEquals(R.string.recurring_card_item_no_longer_offered, retiredEntryLine(showEdit = true))
+        assertEquals(R.string.recurring_card_item_no_longer_offered_no_edit, retiredEntryLine(showEdit = false))
+    }
+
+    @Test
+    fun `a lapsed or paused member's card gets the line without the edit hint`() {
+        mapOf(
+            RecurringAuthoringGate.Allowed to R.string.recurring_card_item_no_longer_offered,
+            RecurringAuthoringGate.Upsell to R.string.recurring_card_item_no_longer_offered_no_edit,
+            RecurringAuthoringGate.Paused to R.string.recurring_card_item_no_longer_offered_no_edit,
+        ).forEach { (gate, line) ->
+            val affordances = RecurringListAffordances.of(gate, hasTemplates = true)
+            assertEquals(gate.name, line, retiredEntryLine(affordances.showEdit))
+        }
     }
 
     private fun member(hasMembership: Boolean, status: MembershipStatus? = null) =

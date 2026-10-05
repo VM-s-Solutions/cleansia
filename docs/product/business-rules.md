@@ -2925,22 +2925,25 @@ address, no phone — and an inbox of their own matches nothing, so two fresh ac
 paid; a deliberately misspelt street or an invented flat gets past the address too. Such a referral can
 still be taken back as not genuine ([above](#referral-credit)). Holding every referral whose referrer has
 no history was weighed and refused: it would hold every genuine referral from someone who shared their
-code before booking. **The card part of the ruling is outstanding.** The ruling named the card as well;
-no card is compared. The two ways to add it are the owner's to choose: the brand, last four digits and
-expiry of the two accounts' saved cards (no new data, saved cards only), or Stripe's card fingerprint
-captured on every paid order (a new column and a Stripe read per order).
+code before booking. **No card is compared — owner ruling 2026-10-05.** The ruling named the card as
+well; the owner deferred it until held referrals show self-referrals getting past the address, phone and
+inbox. The two ways to add it then: the brand, last four digits and expiry of the two accounts' saved
+cards (no new data, saved cards only), or Stripe's card fingerprint captured on every paid order (a new
+column and a Stripe read per order).
 
 **How an administrator decides a held referral.** The terms promise a review without undue delay, and
 the same facts must get the same answer from every administrator:
 
 - **Release** when the shared address is the friend's own home — it is on the friend's orders or saved
   addresses — and the referrer's order there was placed before the code was accepted (a gift); or when
-  the match is a phone or an address only, the account names differ, and nothing else matches.
+  the match is a phone only, the two accounts book different homes, the names differ, and nothing else
+  matches.
 - **Reject** when both accounts book the same flat as their own home — one household is one customer;
   when the e-mail inbox matches; or when the qualifying booking has been refunded (`Refunded` or
   `PartiallyRefunded`), as §9 of the terms already allows.
 
-That a household is one customer is a default the owner may overrule.
+That a household is one customer — two people living in one flat, a couple or flatmates, are one
+customer, so a referral between them is rejected — is an owner ruling of 2026-10-05.
 
 **What the customer is told.** Each referral line states only the **reader's own** figure: the chosen
 market's `referralCredit` (`Market/GetOverview`) formatted in that market's currency. The friend's lines —

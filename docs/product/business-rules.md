@@ -1923,8 +1923,9 @@ comments expected the booking to fail loudly. What it deliberately leaves alone:
   the entry. That is also why the pay-coverage gap check over a selection does not filter by
   `IsActive`: the template route would otherwise mint an order no rate covers. Confirming and paying
   such an occurrence do not ask either: `ConfirmRecurringOrder`, on both channels, and
-  `CreatePaymentIntent` read no catalogue and charge the amount stored on the occurrence when it was
-  made (`AmountDueOnCard`).
+  `CreatePaymentIntent` read no catalogue. They charge the occurrence's stored price (`TotalPrice`, set
+  when the materialiser made it), less any credit the card confirm takes (`AmountDueOnCard`)
+  → [Payment and fiscal](/flows/payment-and-fiscal#amounts-are-never-reconciled-and-do-not-need-to-be).
 - **Editing a schedule does not ask.** `UpdateRecurringBooking` checks only that the selection is not
   empty, so an edit can keep, or add, a deactivated entry. The three schedule forms do not send one,
   though: each trims the selection as it loads (below), so a plain check

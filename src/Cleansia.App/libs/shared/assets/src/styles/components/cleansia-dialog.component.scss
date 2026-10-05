@@ -196,14 +196,16 @@ $primary-hover: #0284c7;
       color: var(--cleansia-primary-700);
     }
 
+    // The "applied" and "invalid" lines are text on their own tints: green-800 (6.2) and red-700
+    // (5.5), not the 600s (2.9 and 4.1; green-700 is 4.4 on the tint). After dark, the 300s below.
     &--success {
       background: rgba(22, 163, 74, 0.12);
-      color: #16a34a;
+      color: var(--cleansia-success-800);
     }
 
     &--error {
       background: rgba(220, 38, 38, 0.1);
-      color: #dc2626;
+      color: var(--cleansia-error-700);
     }
   }
 
@@ -247,5 +249,13 @@ $primary-hover: #0284c7;
 
   .cleansia-code-input-dialog__status--neutral {
     color: #7dd3fc;
+  }
+
+  .cleansia-code-input-dialog__status--success {
+    color: #86efac;
+  }
+
+  .cleansia-code-input-dialog__status--error {
+    color: #fca5a5;
   }
 }

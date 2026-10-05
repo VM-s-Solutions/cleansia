@@ -55,6 +55,17 @@ describe('the shared and partner stylesheets — text links and text buttons', (
     ]);
   });
 
+  // The applied and invalid lines sat on green-600 and red-600: 2.9 and 4.1 on their tints, 3.8 and
+  // 2.9 after dark. Green-700 is 4.4 on its tint, so the applied line takes green-800.
+  it("inks the code dialog's applied and invalid lines to read on their tints, after dark too", () => {
+    expect(inks(customer, '.cleansia-code-input-dialog__status--success')).toEqual([
+      'var(--cleansia-success-800)',
+    ]);
+    expect(inks(customer, '.cleansia-code-input-dialog__status--error')).toEqual(['var(--cleansia-error-700)']);
+    expect(inks(customer, ':root.dark-mode .cleansia-code-input-dialog__status--success')).toEqual(['#86efac']);
+    expect(inks(customer, ':root.dark-mode .cleansia-code-input-dialog__status--error')).toEqual(['#fca5a5']);
+  });
+
   it("inks the admin price form's optional badge with Sky700", () => {
     expect(inks(admin, '.currency-price-block__badge--optional')).toEqual(['var(--cleansia-primary-700)']);
   });

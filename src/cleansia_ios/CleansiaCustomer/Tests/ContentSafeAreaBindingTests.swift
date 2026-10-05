@@ -134,6 +134,56 @@ final class ContentSafeAreaBindingTests: XCTestCase {
         }
     }
 
+    /// From iOS 17 the system draws the clock white or black from what is under it, and over Profile's
+    /// proportional cross-fade it kept it white until the fade was nearly as light as 0.5, down to 2.2:1
+    /// (finding 2026-10-05). With a dark hero over the light page the hero's share now steps over those
+    /// shades: on every share the fade is either dark enough for the white clock at 4.5:1 over white content,
+    /// or, over the hero itself, light enough that the system draws it black. It jumps across once, at the
+    /// band's middle, never back, and leaves every share outside the band alone.
+    func testTheHerosShareStepsOverTheShadesTheClockCannotBeReadOn() {
+        let page = StatusBarFade.rgb(CleansiaColors.background, .light)
+        let white = SIMD3<Double>(1, 1, 1)
+        for (name, tint) in [("Profile", ProfileTab.heroTop(.light)), ("Plus", MembershipPalette.sky950)] {
+            let hero = StatusBarFade.rgb(tint, .light)
+            var previous = 1.0
+            var jumps = 0
+            for step in stride(from: 1000, through: 0, by: -1) {
+                let share = Double(step) / 1000
+                let stepped = StatusBarFade.legibleShare(share, hero: hero, page: page)
+                let overWhite = StatusBarFade.fade(stepped, hero: hero, page: page, over: white)
+                let overHero = StatusBarFade.fade(stepped, hero: hero, page: page, over: hero)
+                XCTAssertTrue(
+                    contrast(white, overWhite) >= 4.5
+                        || StatusBarFade.luminance(overHero) >= StatusBarFade.blackClockFloor,
+                    "\(name) at \(share): the clock is white on a shade it cannot be read on"
+                )
+                XCTAssertLessThanOrEqual(stepped, previous, "\(name): the hero's colour flickers back")
+                if previous - stepped > 0.05 { jumps += 1 }
+                previous = stepped
+            }
+            XCTAssertEqual(jumps, 1, name)
+            XCTAssertEqual(StatusBarFade.legibleShare(1, hero: hero, page: page), 1, name)
+            XCTAssertEqual(StatusBarFade.legibleShare(0, hero: hero, page: page), 0, name)
+            XCTAssertEqual(StatusBarFade.legibleShare(0.98, hero: hero, page: page), 0.98, name)
+            XCTAssertEqual(StatusBarFade.legibleShare(0.1, hero: hero, page: page), 0.1, name)
+        }
+    }
+
+    /// No band to step over: a dark page (dark mode), where the clock is white on every shade, and a hero
+    /// too light for the white clock (the brand blue Profile keeps before iOS 17, where the clock is black).
+    func testTheShareKeepsItsProportionWhereNoShadeIsIllegible() {
+        let cases: [(name: String, scheme: ColorScheme)] = [("Profile", .dark), ("Plus", .dark), ("brand blue", .light)]
+        let tints = [ProfileTab.heroTop(.dark), MembershipPalette.sky950, BrandGradient.blue.colors[0]]
+        for ((name, scheme), tint) in zip(cases, tints) {
+            let hero = StatusBarFade.rgb(tint, scheme)
+            let page = StatusBarFade.rgb(CleansiaColors.background, scheme)
+            for step in 0 ... 100 {
+                let share = Double(step) / 100
+                XCTAssertEqual(StatusBarFade.legibleShare(share, hero: hero, page: page), share, "\(name) at \(share)")
+            }
+        }
+    }
+
     /// The hero's reader reports only near the status bar, in whole points — enough for the tallest
     /// status bar and the fade — so scrolling elsewhere never redraws the fade.
     func testTheHeroIsReportedOnlyNearTheStatusBar() {
@@ -264,8 +314,10 @@ final class ContentSafeAreaBindingTests: XCTestCase {
         XCTAssertTrue(fade.contains("StatusBarFade.stops(height:height,reduceTransparency:reduceTransparency)"))
         XCTAssertTrue(fade.contains(".frame(height:height).offset(y:-top)"), "the fade is not as tall as its rule")
         XCTAssertTrue(fade.contains(
-            "CleansiaColors.backgroundifletheroTint{"
-                + "heroTint.opacity(StatusBarFade.heroShare(heroBottom:heroBottom,safeTop:top,height:height))}"
+            "CleansiaColors.backgroundifletheroTint{heroTint.opacity(StatusBarFade.legibleShare("
+                + "StatusBarFade.heroShare(heroBottom:heroBottom,safeTop:top,height:height),"
+                + "hero:StatusBarFade.rgb(heroTint,colorScheme),"
+                + "page:StatusBarFade.rgb(CleansiaColors.background,colorScheme)))}"
         ))
         XCTAssertTrue(fade.contains(".allowsHitTesting(false).accessibilityHidden(true)"))
     }

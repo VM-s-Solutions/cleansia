@@ -8,8 +8,9 @@ import SwiftUI
 /// The fade is one solid colour, the colour actually behind the status bar: the page colour, or — on a
 /// screen with a hero at its top (`heroTint`, the hero marked `statusBarFadeHero()`) — the hero's top
 /// colour while the hero is under the status bar, cross-faded into the page colour as the hero scrolls
-/// past it, so a dark hero never wears a pale band. It reaches only as far as the status bar's content
-/// (the Dynamic Island's or the notch's bottom, or a home-button phone's status bar; see
+/// past it, so a dark hero never wears a pale band, and stepped over the mid shades on which the system's
+/// clock would read under 4.5:1 (`StatusBarFade.legibleShare`). It reaches only as far as the status bar's
+/// content (the Dynamic Island's or the notch's bottom, or a home-button phone's status bar; see
 /// `StatusBarFade.height`), held at 90 % behind the clock, signal and battery, so the content under
 /// them stays out of their way, and eased out to clear over its last few points, sampled at several
 /// stops so no line marks its end. The glyphs' colour is the system's: before iOS 17 it follows the
@@ -70,6 +71,7 @@ private struct StatusBarFadeBand: View {
     let heroTint: Color?
     @Binding var heroBottom: CGFloat
     @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
+    @Environment(\.colorScheme) private var colorScheme
 
     var body: some View {
         GeometryReader { proxy in
@@ -78,7 +80,11 @@ private struct StatusBarFadeBand: View {
             ZStack {
                 CleansiaColors.background
                 if let heroTint {
-                    heroTint.opacity(StatusBarFade.heroShare(heroBottom: heroBottom, safeTop: top, height: height))
+                    heroTint.opacity(StatusBarFade.legibleShare(
+                        StatusBarFade.heroShare(heroBottom: heroBottom, safeTop: top, height: height),
+                        hero: StatusBarFade.rgb(heroTint, colorScheme),
+                        page: StatusBarFade.rgb(CleansiaColors.background, colorScheme)
+                    ))
                 }
             }
             .mask(LinearGradient(
@@ -197,6 +203,65 @@ enum StatusBarFade {
     /// `height - safeTop` there.
     static func heroShare(heroBottom: CGFloat, safeTop: CGFloat, height: CGFloat) -> Double {
         Double(min(max((heroBottom + safeTop) / max(height, 1), 0), 1))
+    }
+
+    typealias RGB = SIMD3<Double>
+
+    /// The darkest fade the system's white clock reads 4.5:1 on, and the lightest under which it may still
+    /// draw it white. From iOS 17 the system takes the clock's colour from the content under it, and it kept
+    /// the clock white over Profile's cross-fade until the fade was nearly as light as 0.5 (luminance, in the
+    /// simulator), so between the two the clock read as low as 2.2:1 (finding 2026-10-05).
+    static let whiteClockLimit = 1.05 / 4.5 - 0.05
+    static let blackClockFloor = 0.6
+
+    /// The hero's share of the fade, stepped over the shades the clock cannot be read on: with a dark hero
+    /// over a light page the share keeps its proportion outside them and jumps across them at their middle,
+    /// from the darkest share on which the white clock still reads 4.5:1 (the fade at 90 % over white content)
+    /// to the lightest on which the fade over the hero itself is light enough for the system to draw it black
+    /// (13:1 or more). A light hero, a dark page (dark mode) or a page colour with no hero has no such shades.
+    static func legibleShare(_ share: Double, hero: RGB, page: RGB) -> Double {
+        let overWhite = { (share: Double) in luminance(fade(share, hero: hero, page: page, over: RGB(1, 1, 1))) }
+        let overHero = { (share: Double) in luminance(fade(share, hero: hero, page: page, over: hero)) }
+        guard overWhite(1) <= whiteClockLimit, overHero(0) >= blackClockFloor else { return share }
+        let dark = crossing(of: overWhite, at: whiteClockLimit).upper
+        let light = crossing(of: overHero, at: blackClockFloor).lower
+        guard share > light, share < dark else { return share }
+        return share >= (dark + light) / 2 ? dark : light
+    }
+
+    /// The fade's colour at `share`, held at `opacity` over the content under it.
+    static func fade(_ share: Double, hero: RGB, page: RGB, over content: RGB) -> RGB {
+        (hero * share + page * (1 - share)) * opacity + content * (1 - opacity)
+    }
+
+    static func luminance(_ color: RGB) -> Double {
+        let linear = [color.x, color.y, color.z].map { $0 <= 0.04045 ? $0 / 12.92 : pow(($0 + 0.055) / 1.055, 2.4) }
+        return 0.2126 * linear[0] + 0.7152 * linear[1] + 0.0722 * linear[2]
+    }
+
+    static func rgb(_ color: Color, _ scheme: ColorScheme) -> RGB {
+        let traits = UITraitCollection(userInterfaceStyle: scheme == .dark ? .dark : .light)
+        var red: CGFloat = 0
+        var green: CGFloat = 0
+        var blue: CGFloat = 0
+        var alpha: CGFloat = 0
+        UIColor(color).resolvedColor(with: traits).getRed(&red, green: &green, blue: &blue, alpha: &alpha)
+        return RGB(Double(red), Double(green), Double(blue))
+    }
+
+    /// Where a luminance that falls as the hero's share rises reaches `target`, bracketed to a thousandth
+    /// of a share: above it at `lower`, at or below it at `upper`.
+    private static func crossing(
+        of luminance: (Double) -> Double,
+        at target: Double
+    ) -> (lower: Double, upper: Double) {
+        var lower = 0.0
+        var upper = 1.0
+        for _ in 0 ..< 10 {
+            let middle = (lower + upper) / 2
+            if luminance(middle) > target { lower = middle } else { upper = middle }
+        }
+        return (lower, upper)
     }
 
     /// The fade's mask: held across the status bar's content, then a smoothstep falloff over its last

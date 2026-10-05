@@ -1070,6 +1070,7 @@
     <string name="recurring_edit_submit">Save changes</string>
     <string name="recurring_edit_success">Recurring schedule updated.</string>
     <string name="recurring_edit_load_failed">Couldn\'t load this schedule. Go back and try again.</string>
+    <string name="recurring_selection_no_longer_offered">Some of this schedule\'s choices are no longer offered and were removed.</string>
     <string name="preferred_cleaner_schedule_refused">We can no longer ask your favourite cleaner first on this schedule — for example, because its address is now in another country. You can save it without them, and each cleaning will then open to our whole team.</string>
     <string name="preferred_cleaner_schedule_save_without">Save without your favourite cleaner</string>
     <string name="recurring_edit_notice_title">What saving this changes</string>

@@ -18,6 +18,13 @@ class RecurringNoLongerOfferedCopyTest {
             "values-uk" to "Містить послугу, яку ми більше не пропонуємо — змініть бронювання",
             "values-ru" to "Содержит услугу, которую мы больше не предлагаем — измените бронирование",
         ),
+        "recurring_selection_no_longer_offered" to mapOf(
+            "values" to "Some of this schedule's choices are no longer offered and were removed.",
+            "values-cs" to "Část výběru této opakované objednávky už nenabízíme, proto byla odebrána.",
+            "values-sk" to "Časť výberu tejto opakovanej objednávky už neponúkame, preto bola odobratá.",
+            "values-uk" to "Частину вибору цього регулярного бронювання більше не пропонуємо, тож її прибрано.",
+            "values-ru" to "Часть выбора этого регулярного бронирования больше не предлагается, поэтому она убрана.",
+        ),
     )
 
     private val resDir: File = sequenceOf(

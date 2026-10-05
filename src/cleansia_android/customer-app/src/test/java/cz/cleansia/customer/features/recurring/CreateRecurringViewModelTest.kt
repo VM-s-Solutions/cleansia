@@ -128,6 +128,7 @@ class CreateRecurringViewModelTest {
         every { addressRepo.addresses } returns addressesFlow
         every { recurringRepo.templates } returns templatesFlow
         every { appContext.getString(R.string.booking_market_items_unavailable) } returns marketNotice
+        every { appContext.getString(R.string.recurring_selection_no_longer_offered) } returns retiredNotice
     }
 
     private fun viewModel(orderId: String? = null, templateId: String? = null) =
@@ -298,6 +299,8 @@ class CreateRecurringViewModelTest {
     private val plusRefusal = "Recurring cleanings are a Cleansia Plus benefit — subscribe to set one up."
 
     private val marketNotice = "Some of your picks are not offered at this address and were removed."
+
+    private val retiredNotice = "Some of this schedule's choices are no longer offered and were removed."
 
     private fun address(serverId: String, countryId: String?, isDefault: Boolean = false) = UserAddress(
         id = serverId,
@@ -521,7 +524,8 @@ class CreateRecurringViewModelTest {
         advanceUntilIdle()
 
         assertEquals(setOf("svc-7"), vm.state.value.selectedServiceIds)
-        verify(exactly = 1) { snackbar.showInfo(marketNotice) }
+        verify(exactly = 1) { snackbar.showInfo(retiredNotice) }
+        verify(exactly = 0) { snackbar.showInfo(marketNotice) }
         assertEquals(CashEligibility.Available, vm.cashEligibility.value)
 
         vm.submit()
@@ -556,7 +560,80 @@ class CreateRecurringViewModelTest {
 
         assertEquals(setOf("svc-7"), vm.state.value.selectedServiceIds)
         assertEquals(setOf("pkg-3"), vm.state.value.selectedPackageIds)
+        verify(exactly = 1) { snackbar.showInfo(retiredNotice) }
+        verify(exactly = 0) { snackbar.showInfo(marketNotice) }
+    }
+
+    // W2: the edit form's load-time trim is a retirement, not the address's market; the market message
+    // stays for a trim the customer's own address change causes.
+
+    @Test
+    fun `a retry that lands the first catalogue for a schedule being edited says the entry is no longer offered`() = runTest {
+        templatesFlow.value = listOf(editableTemplate)
+        coEvery { catalogRepo.refresh(any()) } returns ApiResult.Error(ApiError.Network("boom"))
+        val vm = viewModel(templateId = "tpl-1")
+        advanceUntilIdle()
+        assertEquals(RecurringCatalogState.Error, vm.catalogState.value)
+
+        coEvery { catalogRepo.refresh(null) } coAnswers {
+            loadedCatalogue(countryId = null, services = listOf("svc-7"), packages = emptyList())
+            ApiResult.Success(Unit)
+        }
+        vm.retryCatalog()
+        advanceUntilIdle()
+
+        assertEquals(emptySet<String>(), vm.state.value.selectedPackageIds)
+        verify(exactly = 1) { snackbar.showInfo(retiredNotice) }
+        verify(exactly = 0) { snackbar.showInfo(marketNotice) }
+    }
+
+    /** The form opens on the chosen market; the schedule's own address then reads its market, and that read judges it. */
+    @Test
+    fun `a schedule being edited in another market is judged by its own market's catalogue as no longer offered`() = runTest {
+        addressesFlow.value = listOf(address("addr-sk", "svk-id"))
+        templatesFlow.value = listOf(editableTemplate.copy(savedAddressId = "addr-sk"))
+        slovakCatalogue(service("svc-7"))
+
+        val vm = viewModel(templateId = "tpl-1")
+        advanceUntilIdle()
+
+        coVerify(exactly = 1) { catalogRepo.refresh("svk-id") }
+        assertEquals(setOf("svc-7"), vm.state.value.selectedServiceIds)
+        assertEquals(emptySet<String>(), vm.state.value.selectedPackageIds)
+        verify(exactly = 1) { snackbar.showInfo(retiredNotice) }
+        verify(exactly = 0) { snackbar.showInfo(marketNotice) }
+    }
+
+    @Test
+    fun `moving a schedule being edited to another market's address says the market message`() = runTest {
+        addressesFlow.value = listOf(address("addr-9", countryId = null), address("addr-sk", "svk-id"))
+        editing(editableTemplate)
+        slovakCatalogue(service("svc-1"))
+        val vm = viewModel(templateId = "tpl-1")
+        advanceUntilIdle()
+        verify(exactly = 0) { snackbar.showInfo(any<String>()) }
+
+        vm.setSavedAddressId("addr-sk")
+        advanceUntilIdle()
+
+        assertEquals(emptySet<String>(), vm.state.value.selectedServiceIds)
+        assertEquals(emptySet<String>(), vm.state.value.selectedPackageIds)
         verify(exactly = 1) { snackbar.showInfo(marketNotice) }
+        verify(exactly = 0) { snackbar.showInfo(retiredNotice) }
+    }
+
+    /** A new schedule prefilled from an order keeps the market message: the order may have been priced elsewhere. */
+    @Test
+    fun `a new schedule never says no longer offered`() = runTest {
+        addressesFlow.value = listOf(address("addr-sk", "svk-id", isDefault = true))
+        slovakCatalogue(service("s-1"))
+        sourceOrder(services = listOf("s-1", "s-2"))
+
+        viewModel(orderId = "ord-7")
+        advanceUntilIdle()
+
+        verify(exactly = 1) { snackbar.showInfo(marketNotice) }
+        verify(exactly = 0) { snackbar.showInfo(retiredNotice) }
     }
 
     /**

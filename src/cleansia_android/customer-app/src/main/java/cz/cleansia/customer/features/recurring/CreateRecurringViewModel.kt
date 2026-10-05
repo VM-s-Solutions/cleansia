@@ -173,6 +173,13 @@ class CreateRecurringViewModel @Inject constructor(
     /** A cash choice was taken away because it stopped being allowed; cleared by the next choice. */
     private val _cashCleared = MutableStateFlow(false)
 
+    /**
+     * The customer has moved the schedule to an address of their choosing. Until then a schedule being
+     * edited is judged in its own market, where an entry it holds and the catalogue no longer lists has
+     * been retired rather than never offered there.
+     */
+    private var addressPicked = false
+
     /** Said only while cash is still not available; a selection that allows it again needs no warning. */
     val cashClearedNotice: StateFlow<Boolean> = combine(_cashCleared, cashEligibility) { cleared, cash ->
         cleared && cash != CashEligibility.Available
@@ -236,7 +243,10 @@ class CreateRecurringViewModel @Inject constructor(
     fun setRooms(n: Int) { _state.update { it.copy(rooms = n.coerceIn(0, PropertySize.MAX_ROOMS)) } }
     fun setBathrooms(n: Int) { _state.update { it.copy(bathrooms = n.coerceIn(0, PropertySize.MAX_BATHROOMS)) } }
     fun setDirtinessLevel(level: DirtinessLevel) { _state.update { it.copy(dirtinessLevel = level) } }
-    fun setSavedAddressId(id: String) { _state.update { it.copy(savedAddressId = id) } }
+    fun setSavedAddressId(id: String) {
+        if (id != _state.value.savedAddressId) addressPicked = true
+        _state.update { it.copy(savedAddressId = id) }
+    }
 
     /** A removal never asks; adding a service a chosen package includes does (see [DoubleBooking]). */
     fun toggleService(id: String) {
@@ -524,6 +534,11 @@ class CreateRecurringViewModel @Inject constructor(
     private suspend fun isCatalogueForSelectedMarket(): Boolean =
         catalogRepo.loaded.value && catalogRepo.countryId.value == resolveCountryId(_state.value.savedAddressId)
 
+    /**
+     * Drops what the catalogue on hand does not list. A schedule being edited, still at its own address,
+     * loses only what its market has stopped offering, and says so; anywhere else the address chose a
+     * market that does not offer the pick, which is the booking wizard's message.
+     */
     private fun pruneSelectionToCatalogue() {
         val services = catalogRepo.services.value.map { it.id }.toSet()
         val packages = catalogRepo.packages.value.map { it.id }.toSet()
@@ -536,7 +551,13 @@ class CreateRecurringViewModel @Inject constructor(
             dropped = kept != s
             kept
         }
-        if (dropped) snackbar.showInfo(appContext.getString(R.string.booking_market_items_unavailable))
+        if (!dropped) return
+        val notice = if (isEditing && !addressPicked) {
+            R.string.recurring_selection_no_longer_offered
+        } else {
+            R.string.booking_market_items_unavailable
+        }
+        snackbar.showInfo(appContext.getString(notice))
     }
 
     /**

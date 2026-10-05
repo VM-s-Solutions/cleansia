@@ -1060,6 +1060,7 @@
     <string name="recurring_edit_submit">Зберегти зміни</string>
     <string name="recurring_edit_success">Розклад оновлено.</string>
     <string name="recurring_edit_load_failed">Не вдалося завантажити цей розклад. Поверніться назад і спробуйте знову.</string>
+    <string name="recurring_selection_no_longer_offered">Частину вибору цього регулярного бронювання більше не пропонуємо, тож її прибрано.</string>
     <string name="preferred_cleaner_schedule_refused">Для цього розкладу ми більше не можемо попросити вашого улюбленого клінера першим — наприклад, тому що адреса прибирання тепер в іншій країні. Ви можете зберегти розклад без нього, і тоді кожне прибирання буде відкрите для всієї нашої команди.</string>
     <string name="preferred_cleaner_schedule_save_without">Зберегти без улюбленого клінера</string>
     <string name="recurring_edit_notice_title">Що зміниться після збереження</string>

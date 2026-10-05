@@ -38,13 +38,16 @@ public class GetMyReferralsHandlerTests
     private static Referral QualifiedReferral(User? referred)
     {
         var referral = Referral.CreateAccepted(UserId, "referred-1", "code-1", "system");
-        referral.MarkQualified("order-1", "czk", 150m, 120m, "system");
+        referral.MarkQualified("order-1", "czk", 150m, "eur", 6m, "system");
         referral.Id = "ref-1";
         var prop = typeof(Referral).GetProperty(nameof(Referral.Referred))!;
         prop.SetValue(referral, referred);
         var czk = Currency.Create("CZK", "Kč", "Czech koruna");
         czk.Id = "czk";
-        typeof(Referral).GetProperty(nameof(Referral.CreditCurrency))!.SetValue(referral, czk);
+        var eur = Currency.Create("EUR", "€", "Euro");
+        eur.Id = "eur";
+        typeof(Referral).GetProperty(nameof(Referral.ReferrerCreditCurrency))!.SetValue(referral, czk);
+        typeof(Referral).GetProperty(nameof(Referral.ReferredCreditCurrency))!.SetValue(referral, eur);
         return referral;
     }
 
@@ -91,6 +94,29 @@ public class GetMyReferralsHandlerTests
         Assert.Equal("Iva", row.ReferredFirstName);
         Assert.Equal(ReferralStatus.Qualified, row.Status);
         Assert.NotNull(row.FirstQualifyingOrderOn);
+        Assert.Equal(150m, row.CreditAwardedToReferrer);
+        Assert.Equal("CZK", row.CreditCurrencyCode);
+    }
+
+    /// <summary>
+    /// The inviter reads their own grant, so the currency shown beside it is the one the inviter was paid in,
+    /// not the friend's, when the two differ.
+    /// </summary>
+    [Fact]
+    public async Task The_Currency_Shown_Is_The_Inviters_Own_When_The_Sides_Were_Paid_In_Different_Ones()
+    {
+        _session.Setup(s => s.GetUserId()).Returns(UserId);
+        _repository
+            .Setup(r => r.GetCountAsync(It.IsAny<Expression<Func<Referral, bool>>>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(1);
+        _repository
+            .Setup(r => r.GetPagedSort<Cleansia.Core.Domain.Sorting.ReferralSort>(
+                It.IsAny<int>(), It.IsAny<int>(), It.IsAny<Expression<Func<Referral, bool>>>(), It.IsAny<IEnumerable<SortDefinition>>()))
+            .Returns(new[] { QualifiedReferral(referred: null) }.AsQueryable().BuildMock());
+
+        var result = await Handle(new GetMyReferrals.Request());
+
+        var row = Assert.Single(result.Data);
         Assert.Equal(150m, row.CreditAwardedToReferrer);
         Assert.Equal("CZK", row.CreditCurrencyCode);
     }

@@ -42,10 +42,17 @@ public class ReferralEntityConfiguration : TenantAuditableEntityConfiguration<Re
             .HasPrecision(18, 2);
         builder.Property(r => r.CreditAwardedToReferred)
             .HasPrecision(18, 2);
-        builder.Property(r => r.CreditCurrencyId)
+        builder.Property(r => r.ReferrerCreditCurrencyId)
+            .HasMaxLength(26)
+            .IsRequired(false);
+        builder.Property(r => r.ReferredCreditCurrencyId)
             .HasMaxLength(26)
             .IsRequired(false);
         builder.Property(r => r.AwardedOn);
+
+        builder.Property(r => r.HoldReasons)
+            .HasMaxLength(32)
+            .IsRequired(false);
 
         // FKs to two distinct Users — Restrict so neither side is hard-deletable
         // while a referral relationship exists.
@@ -66,7 +73,7 @@ public class ReferralEntityConfiguration : TenantAuditableEntityConfiguration<Re
 
         // Optional FK to the qualifying order — Restrict so a completed order
         // can't be hard-deleted while it's recorded as someone's qualifying
-        // order. Nullable for Accepted / Expired rows.
+        // order. Null until a first order completes, whether it paid or was held.
         builder.HasOne(r => r.FirstQualifyingOrder)
             .WithMany()
             .HasForeignKey(r => r.FirstQualifyingOrderId)
@@ -74,10 +81,16 @@ public class ReferralEntityConfiguration : TenantAuditableEntityConfiguration<Re
             .IsRequired(false);
 
         // Restrict, like every other money row's currency: a currency a referral was paid in is not
-        // deletable. Currency carries no collection back, so the unnamed WithMany() maps this key.
-        builder.HasOne(r => r.CreditCurrency)
+        // deletable. Currency carries no collection back, so the unnamed WithMany() maps each key.
+        builder.HasOne(r => r.ReferrerCreditCurrency)
             .WithMany()
-            .HasForeignKey(r => r.CreditCurrencyId)
+            .HasForeignKey(r => r.ReferrerCreditCurrencyId)
+            .OnDelete(DeleteBehavior.Restrict)
+            .IsRequired(false);
+
+        builder.HasOne(r => r.ReferredCreditCurrency)
+            .WithMany()
+            .HasForeignKey(r => r.ReferredCreditCurrencyId)
             .OnDelete(DeleteBehavior.Restrict)
             .IsRequired(false);
 

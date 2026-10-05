@@ -67,6 +67,7 @@ public sealed class AdminNotificationEmailRenderingTests
             "refundFailures" => "1",
             "periodsClosed" => "1",
             "archivedOn" => "2026-10-01",
+            "referralId" => "referral-1",
             _ => throw new ArgumentOutOfRangeException(nameof(eventKey), name, "No sample for this arg."),
         }, StringComparer.Ordinal);
 

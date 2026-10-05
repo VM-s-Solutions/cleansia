@@ -15,8 +15,8 @@ export function formatReferralCredit(row: AdminReferralListItem, translate: Tran
     return translate.instant('pages.loyalty_referrals.not_yet');
   }
   return translate.instant('pages.loyalty_referrals.credit_format', {
-    referrer: formatAdminCredit(row.creditAwardedToReferrer, row.creditCurrencyCode, translate.currentLang),
-    referred: formatAdminCredit(row.creditAwardedToReferred, row.creditCurrencyCode, translate.currentLang),
+    referrer: formatAdminCredit(row.creditAwardedToReferrer, row.referrerCreditCurrencyCode, translate.currentLang),
+    referred: formatAdminCredit(row.creditAwardedToReferred, row.referredCreditCurrencyCode, translate.currentLang),
   });
 }
 

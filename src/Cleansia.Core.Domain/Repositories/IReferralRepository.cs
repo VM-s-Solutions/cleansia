@@ -24,10 +24,19 @@ public interface IReferralRepository : IRepository<Referral, string>
 
     /// <summary>
     /// Background expiry sweep: returns Accepted referrals whose AcceptedOn
-    /// is older than the cutoff. Caller flips them to Expired.
+    /// is older than the cutoff and that are not held for review. Caller flips them to Expired.
     /// </summary>
     Task<IReadOnlyList<Referral>> GetExpirableAsync(
         DateTimeOffset cutoff, CancellationToken cancellationToken);
+
+    /// <summary>
+    /// The contact details an account holds with every company, as stored: the address and flat of each
+    /// of its orders in any status and of each saved address it has not deleted, the phone on those orders
+    /// and on its profile, and its e-mail.
+    /// </summary>
+    Task<(IReadOnlyList<(string CountryId, string ZipCode, string City, string Street, string? Apartment)> Addresses,
+        IReadOnlyList<string> Phones,
+        string? Email)> GetContactFootprintAsync(string userId, CancellationToken cancellationToken);
 
     /// <summary>
     /// Admin-side paged list across all users with optional filters on

@@ -400,6 +400,7 @@ public class CleansiaDbContext : DbContext, IUnitOfWork
         ApplyRefreshTokenConcurrencyToken(modelBuilder);
         ApplyMembershipConcurrencyToken(modelBuilder);
         ApplyLoyaltyAccountConcurrencyToken(modelBuilder);
+        ApplyReferralConcurrencyToken(modelBuilder);
 
         ApplyTenantQueryFilters(modelBuilder);
     }
@@ -450,6 +451,18 @@ public class CleansiaDbContext : DbContext, IUnitOfWork
         // A later loyalty write conflicts instead of overwriting an earlier one's points; the commit
         // replays it (SaveChangesReplayingLoyaltyAsync).
         modelBuilder.Entity<LoyaltyAccount>()
+            .Property<uint>("xmin")
+            .ValueGeneratedOnAddOrUpdate()
+            .IsConcurrencyToken();
+    }
+
+    private void ApplyReferralConcurrencyToken(ModelBuilder modelBuilder)
+    {
+        if (Database.ProviderName != "Npgsql.EntityFrameworkCore.PostgreSQL") return;
+
+        // A release and a rejection of one held referral each read it held; without the token both commit
+        // and the row ends rejected with the release's grants standing. The later commit conflicts instead.
+        modelBuilder.Entity<Referral>()
             .Property<uint>("xmin")
             .ValueGeneratedOnAddOrUpdate()
             .IsConcurrencyToken();

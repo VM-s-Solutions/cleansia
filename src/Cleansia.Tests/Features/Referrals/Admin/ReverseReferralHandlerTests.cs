@@ -10,9 +10,10 @@ using Moq;
 namespace Cleansia.Tests.Features.Referrals.Admin;
 
 /// <summary>
-/// The admin reversal takes back, per side, the referral credit the ledger shows was granted under that
-/// side's key — and on a balance that no longer holds it all, only what is left (owner default
-/// 2026-10-04): a balance never goes negative, and the debit row records what was taken. A retry on the
+/// The admin reversal takes back, per side and in that side's own currency, the referral credit the ledger
+/// shows was granted under that side's key — and on a balance that no longer holds it all, only what is left
+/// (owner default 2026-10-04): a balance never goes negative, and the debit row records what was taken. A held
+/// referral is rejected through the same command: nothing was paid, so nothing is taken. A retry on the
 /// already-Reversed row is a guarded no-op.
 /// </summary>
 public class ReverseReferralHandlerTests
@@ -21,6 +22,7 @@ public class ReverseReferralHandlerTests
     private const string ReferrerUserId = "referrer-1";
     private const string ReferredUserId = "referred-1";
     private const string CzkId = "czk";
+    private const string EurId = "eur";
     private const string ActorId = "admin-1";
     private const string Reason = "self-referral ring remediation #88";
 
@@ -34,7 +36,10 @@ public class ReverseReferralHandlerTests
         _userSession.Setup(s => s.GetUserId()).Returns(ActorId);
         var czk = Currency.Create("CZK", "Kč", "Czech koruna");
         czk.Id = CzkId;
+        var eur = Currency.Create("EUR", "€", "Euro");
+        eur.Id = EurId;
         _currencies.Setup(c => c.GetByIdAsync(CzkId, It.IsAny<CancellationToken>())).ReturnsAsync(czk);
+        _currencies.Setup(c => c.GetByIdAsync(EurId, It.IsAny<CancellationToken>())).ReturnsAsync(eur);
         _credit.Setup(c => c.TryDebitAsync(
                 It.IsAny<string>(), It.IsAny<decimal>(), It.IsAny<CreditTransactionReason>(), It.IsAny<string>(),
                 It.IsAny<string>(), It.IsAny<CancellationToken>(), It.IsAny<string?>(), It.IsAny<string?>()))
@@ -48,14 +53,27 @@ public class ReverseReferralHandlerTests
         _userSession.Object,
         NullLogger<ReverseReferral.Handler>.Instance);
 
-    private Referral QualifiedReferral(decimal? toReferrer = 150m, decimal? toReferred = 150m)
+    private Referral Arranged(Referral referral)
     {
-        var referral = Referral.CreateAccepted(ReferrerUserId, ReferredUserId, "code-1", "system");
-        referral.MarkQualified("order-1", CzkId, toReferrer, toReferred, "system");
         referral.Id = ReferralId;
         _referralRepository.Setup(r => r.GetByIdAsync(ReferralId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(referral);
         return referral;
+    }
+
+    private Referral QualifiedReferral(
+        decimal? toReferrer = 150m, decimal? toReferred = 150m, string referrerCurrencyId = CzkId, string referredCurrencyId = CzkId)
+    {
+        var referral = Referral.CreateAccepted(ReferrerUserId, ReferredUserId, "code-1", "system");
+        referral.MarkQualified("order-1", referrerCurrencyId, toReferrer, referredCurrencyId, toReferred, "system");
+        return Arranged(referral);
+    }
+
+    private Referral HeldReferral()
+    {
+        var referral = Referral.CreateAccepted(ReferrerUserId, ReferredUserId, "code-1", "system");
+        referral.HoldForReview("order-1", Referral.HoldReasonPhone, "system");
+        return Arranged(referral);
     }
 
     private void Granted(string side, decimal amount) =>
@@ -63,13 +81,13 @@ public class ReverseReferralHandlerTests
                 $"referral:{ReferralId}:{side}", CreditTransactionReason.Referral, It.IsAny<CancellationToken>()))
             .ReturnsAsync(amount);
 
-    private void Holds(string userId, decimal balance) =>
-        _credit.Setup(c => c.GetSpendableAsync(userId, CzkId, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new CreditSpendable($"account-{userId}", balance, CzkId, null));
+    private void Holds(string userId, decimal balance, string currencyId = CzkId) =>
+        _credit.Setup(c => c.GetSpendableAsync(userId, currencyId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new CreditSpendable($"account-{userId}-{currencyId}", balance, currencyId, null));
 
-    private void VerifyTaken(string userId, string side, decimal amount) =>
+    private void VerifyTaken(string userId, string side, decimal amount, string currencyId = CzkId) =>
         _credit.Verify(c => c.TryDebitAsync(
-            $"account-{userId}", amount, CreditTransactionReason.ReferralReversed,
+            $"account-{userId}-{currencyId}", amount, CreditTransactionReason.ReferralReversed,
             $"referral-reverse:{ReferralId}:{side}", ActorId, It.IsAny<CancellationToken>(), null, Reason), Times.Once);
 
     [Fact]
@@ -84,12 +102,34 @@ public class ReverseReferralHandlerTests
         var result = await CreateHandler().Handle(new ReverseReferral.Command(ReferralId, Reason), CancellationToken.None);
 
         Assert.True(result.IsSuccess);
-        Assert.Equal(new ReverseReferral.Response(ReferralId, 150m, 150m, "CZK"), result.Value);
+        Assert.Equal(new ReverseReferral.Response(ReferralId, 150m, "CZK", 150m, "CZK"), result.Value);
         Assert.Equal(ReferralStatus.Reversed, referral.Status);
         VerifyTaken(ReferrerUserId, "referrer", 150m);
         VerifyTaken(ReferredUserId, "referred", 150m);
         _credit.Verify(c => c.LockForUserAsync(ReferrerUserId, It.IsAny<CancellationToken>()), Times.Once);
         _credit.Verify(c => c.LockForUserAsync(ReferredUserId, It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    /// <summary>
+    /// The inviter was paid in koruna and the friend in euros: each grant is taken back from the balance in the
+    /// currency it was paid in, and the answer names each side's currency.
+    /// </summary>
+    [Fact]
+    public async Task Each_Side_Is_Debited_In_The_Currency_It_Was_Paid_In()
+    {
+        QualifiedReferral(toReferrer: 150m, toReferred: 6m, referrerCurrencyId: CzkId, referredCurrencyId: EurId);
+        Granted("referrer", 150m);
+        Granted("referred", 6m);
+        Holds(ReferrerUserId, 400m, CzkId);
+        Holds(ReferredUserId, 6m, EurId);
+
+        var result = await CreateHandler().Handle(new ReverseReferral.Command(ReferralId, Reason), CancellationToken.None);
+
+        Assert.Equal(new ReverseReferral.Response(ReferralId, 150m, "CZK", 6m, "EUR"), result.Value);
+        VerifyTaken(ReferrerUserId, "referrer", 150m, CzkId);
+        VerifyTaken(ReferredUserId, "referred", 6m, EurId);
+        _credit.Verify(c => c.GetSpendableAsync(ReferredUserId, CzkId, It.IsAny<CancellationToken>()), Times.Never);
+        _credit.Verify(c => c.GetSpendableAsync(ReferrerUserId, EurId, It.IsAny<CancellationToken>()), Times.Never);
     }
 
     [Fact]
@@ -103,7 +143,7 @@ public class ReverseReferralHandlerTests
 
         var result = await CreateHandler().Handle(new ReverseReferral.Command(ReferralId, Reason), CancellationToken.None);
 
-        Assert.Equal(new ReverseReferral.Response(ReferralId, 150m, 40m, "CZK"), result.Value);
+        Assert.Equal(new ReverseReferral.Response(ReferralId, 150m, "CZK", 40m, "CZK"), result.Value);
         VerifyTaken(ReferredUserId, "referred", 40m);
     }
 
@@ -118,18 +158,18 @@ public class ReverseReferralHandlerTests
 
         var result = await CreateHandler().Handle(new ReverseReferral.Command(ReferralId, Reason), CancellationToken.None);
 
-        Assert.Equal(new ReverseReferral.Response(ReferralId, 150m, 0m, "CZK"), result.Value);
+        Assert.Equal(new ReverseReferral.Response(ReferralId, 150m, "CZK", 0m, "CZK"), result.Value);
         _credit.Verify(c => c.TryDebitAsync(
-            "account-referred-1", It.IsAny<decimal>(), It.IsAny<CreditTransactionReason>(), It.IsAny<string>(),
+            $"account-{ReferredUserId}-{CzkId}", It.IsAny<decimal>(), It.IsAny<CreditTransactionReason>(), It.IsAny<string>(),
             It.IsAny<string>(), It.IsAny<CancellationToken>(), It.IsAny<string?>(), It.IsAny<string?>()), Times.Never);
     }
 
     /// <summary>
-    /// The ledger, not the row's recorded figure, decides what a side was given: a side erased at
-    /// qualification has no grant under its key, so nothing is taken from it.
+    /// A side erased at qualification was paid nothing and carries no currency: nothing is asked of its ledger
+    /// or its balance, and the answer names no currency for it.
     /// </summary>
     [Fact]
-    public async Task A_Side_With_No_Grant_On_The_Ledger_Gives_Up_Nothing()
+    public async Task A_Side_That_Was_Paid_Nothing_Is_Skipped_And_Named_With_No_Currency()
     {
         QualifiedReferral(toReferrer: null);
         Granted("referred", 150m);
@@ -137,8 +177,10 @@ public class ReverseReferralHandlerTests
 
         var result = await CreateHandler().Handle(new ReverseReferral.Command(ReferralId, Reason), CancellationToken.None);
 
-        Assert.Equal(new ReverseReferral.Response(ReferralId, 0m, 150m, "CZK"), result.Value);
+        Assert.Equal(new ReverseReferral.Response(ReferralId, 0m, null, 150m, "CZK"), result.Value);
         _credit.Verify(c => c.LockForUserAsync(ReferrerUserId, It.IsAny<CancellationToken>()), Times.Never);
+        _credit.Verify(c => c.GetAmountAsync(
+            $"referral:{ReferralId}:referrer", It.IsAny<CreditTransactionReason>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 
     [Fact]
@@ -148,8 +190,22 @@ public class ReverseReferralHandlerTests
 
         var result = await CreateHandler().Handle(new ReverseReferral.Command(ReferralId, Reason), CancellationToken.None);
 
-        Assert.Equal(new ReverseReferral.Response(ReferralId, 0m, 0m, null), result.Value);
+        Assert.Equal(new ReverseReferral.Response(ReferralId, 0m, null, 0m, null), result.Value);
         Assert.Equal(ReferralStatus.Reversed, referral.Status);
+        _credit.VerifyNoOtherCalls();
+    }
+
+    [Fact]
+    public async Task Rejecting_A_Held_Referral_Reverses_It_And_Takes_Nothing()
+    {
+        var referral = HeldReferral();
+
+        var result = await CreateHandler().Handle(new ReverseReferral.Command(ReferralId, Reason), CancellationToken.None);
+
+        Assert.True(result.IsSuccess);
+        Assert.Equal(new ReverseReferral.Response(ReferralId, 0m, null, 0m, null), result.Value);
+        Assert.Equal(ReferralStatus.Reversed, referral.Status);
+        Assert.Equal(Referral.HoldReasonPhone, referral.HoldReasons);
         _credit.VerifyNoOtherCalls();
     }
 
@@ -177,12 +233,9 @@ public class ReverseReferralHandlerTests
     }
 
     [Fact]
-    public async Task Reverse_NonQualifiedReferral_IsRejected()
+    public async Task Reverse_An_Accepted_Referral_That_Is_Not_Held_IsRejected()
     {
-        var referral = Referral.CreateAccepted(ReferrerUserId, ReferredUserId, "code-1", "system");
-        referral.Id = ReferralId;
-        _referralRepository.Setup(r => r.GetByIdAsync(ReferralId, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(referral);
+        Arranged(Referral.CreateAccepted(ReferrerUserId, ReferredUserId, "code-1", "system"));
 
         var result = await CreateHandler().Handle(new ReverseReferral.Command(ReferralId, Reason), CancellationToken.None);
 

@@ -210,9 +210,16 @@ what is named against the id before it:
   its index) and `AwardedOn`. Still **89** tables and **53** with the `Tenants` FK;
   `has-pending-model-changes` reports none, and the three backend suites ran green at it
   (7786 / 766 / 418).
+- **`20261005082345`** (2026-10-05, branch `fix/meeting-2026-10-05-followups`, each referral side paid in
+  its own currency, and the same-person hold): `Referrals` drops `CreditCurrencyId` and its index and gains
+  `ReferrerCreditCurrencyId` and `ReferredCreditCurrencyId` (`varchar(26)` NULL, each an FK into
+  `Currencies`, Restrict, with its index) and `HoldReasons` (`varchar(32)` NULL), and maps the Postgres
+  `xmin` system column as a concurrency token (no DDL; the Designer and the snapshot carry it). Still
+  **89** tables and **53** with the `Tenants` FK; `has-pending-model-changes` reports none, and the three
+  backend suites ran green at it (8025 / 789 / 428).
 
-**The one owed drop belongs to `20261005010454`** (it renews the one owed for `20261003220403`), and
-the coordinator runs it right before the DEV deploy of `feature/meeting-2026-10-04-batch2`: a DEV database whose
+**The one owed drop belongs to `20261005082345`** (it renews the one owed for `20261005010454`), and
+the coordinator runs it right before the DEV deploy of `fix/meeting-2026-10-05-followups`: a DEV database whose
 `__EFMigrationsHistory` records any earlier id replays the whole create script against tables that
 already exist. The legal texts need no extra step — every host seeds them at start, and since
 `b34dff07` a fresh Development database is seeded once more in the boot that migrates it (the factory

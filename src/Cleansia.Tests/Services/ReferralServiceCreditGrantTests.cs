@@ -1,4 +1,5 @@
 using Cleansia.Core.AppServices.Services;
+using Cleansia.Core.AppServices.Services.Interfaces;
 using Cleansia.Core.Domain.Credit;
 using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Internationalization;
@@ -14,9 +15,10 @@ using Moq;
 namespace Cleansia.Tests.Services;
 
 /// <summary>
-/// Owner ruling 2026-10-04: a referral pays CREDIT, not points — the completing order's
-/// <c>Currency.ReferralCredit</c> to the inviter and to the invited friend, each in that order's
-/// currency, under one ledger key per side.
+/// Owner rulings 2026-10-04 and 2026-10-05: a referral pays CREDIT, not points, and each side is paid in the
+/// currency it books in — the invited friend in the completing order's currency, the inviter in the currency
+/// of their own most recent order of any status, or the friend's when they have never booked — each the
+/// <c>Currency.ReferralCredit</c> of that side's currency, under one ledger key per side.
 /// </summary>
 public class ReferralServiceCreditGrantTests
 {
@@ -24,6 +26,7 @@ public class ReferralServiceCreditGrantTests
     private const string ReferralId = "referral-1";
     private const string CzkId = "czk";
     private const string EurId = "eur";
+    private const string PlnId = "pln";
 
     private readonly Mock<IReferralRepository> _referrals = new();
     private readonly Mock<IOrderRepository> _orders = new();
@@ -49,6 +52,10 @@ public class ReferralServiceCreditGrantTests
                     ? existing
                     : _accounts[key] = CreditAccount.Create(userId, currencyId, "system");
             });
+        _referrals
+            .Setup(r => r.GetContactFootprintAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((string userId, CancellationToken _) =>
+                (Array.Empty<(string, string, string, string, string?)>(), Array.Empty<string>(), $"{userId}@cleansia.test"));
     }
 
     private ReferralService Service() => new(
@@ -56,6 +63,7 @@ public class ReferralServiceCreditGrantTests
         _referrals.Object,
         _orders.Object,
         _credit.Object,
+        Mock.Of<IAdminNotifier>(),
         Mock.Of<IUnitOfWork>(),
         NullLogger<ReferralService>.Instance);
 
@@ -67,7 +75,7 @@ public class ReferralServiceCreditGrantTests
         return currency;
     }
 
-    private Referral Arrange(string referrerId, string referredId, Currency currency)
+    private Referral Arrange(string referrerId, string referredId, Currency currency, params (Currency Currency, int DaysAgo)[] referrerOrders)
     {
         var order = OrderMockFactory.Generate(
             new OrderMockFactory.OrderPartial { Id = OrderId, UserId = referredId }, currency: currency);
@@ -76,6 +84,14 @@ public class ReferralServiceCreditGrantTests
             .ReturnsAsync(order);
         _orders.Setup(o => o.GetQueryableForOwner(referredId))
             .Returns(new[] { order }.AsQueryable().BuildMock());
+
+        var booked = referrerOrders.Select(o =>
+        {
+            var row = OrderMockFactory.Generate(new OrderMockFactory.OrderPartial { UserId = referrerId }, currency: o.Currency);
+            row.Created("customer", DateTime.UtcNow.AddDays(-o.DaysAgo));
+            return row;
+        }).ToList();
+        _orders.Setup(o => o.GetQueryableForOwner(referrerId)).Returns(booked.AsQueryable().BuildMock());
 
         var referral = Referral.CreateAccepted(referrerId, referredId, "code-1", "system");
         referral.Id = ReferralId;
@@ -88,9 +104,10 @@ public class ReferralServiceCreditGrantTests
         Assert.Single(_accounts[$"{userId}:{currencyId}"].Transactions);
 
     [Fact]
-    public async Task Both_Sides_Receive_The_Orders_Referral_Credit_In_The_Orders_Currency()
+    public async Task Both_Sides_Receive_The_Orders_Referral_Credit_When_Both_Book_In_Its_Currency()
     {
-        var referral = Arrange("referrer", "referred", NewCurrency(CzkId, "CZK", 150m));
+        var czk = NewCurrency(CzkId, "CZK", 150m);
+        var referral = Arrange("referrer", "referred", czk, (czk, 10));
 
         await Service().ProcessOrderCompletedAsync(OrderId, "referred", CancellationToken.None);
 
@@ -109,16 +126,35 @@ public class ReferralServiceCreditGrantTests
         Assert.Equal(OrderId, referral.FirstQualifyingOrderId);
         Assert.Equal(150m, referral.CreditAwardedToReferrer);
         Assert.Equal(150m, referral.CreditAwardedToReferred);
-        Assert.Equal(CzkId, referral.CreditCurrencyId);
+        Assert.Equal(CzkId, referral.ReferrerCreditCurrencyId);
+        Assert.Equal(CzkId, referral.ReferredCreditCurrencyId);
         Assert.NotNull(referral.AwardedOn);
     }
 
     /// <summary>
-    /// The figure and the account both follow the ORDER's currency: a friend who first books in euros
-    /// pays both sides the euro figure, into euro balances, never the koruna one.
+    /// The friend first books in euros; the inviter's own latest booking is in koruna. Each is paid the
+    /// figure of the currency they book in, into a balance in that currency.
     /// </summary>
     [Fact]
-    public async Task A_Euro_Order_Pays_The_Euro_Figure_Into_Euro_Accounts()
+    public async Task Each_Side_Is_Paid_The_Figure_Of_The_Currency_It_Books_In()
+    {
+        var czk = NewCurrency(CzkId, "CZK", 150m);
+        var eur = NewCurrency(EurId, "EUR", 6m);
+        var referral = Arrange("referrer", "referred", eur, (eur, 40), (czk, 3));
+
+        await Service().ProcessOrderCompletedAsync(OrderId, "referred", CancellationToken.None);
+
+        Assert.Equal(150m, SingleGrant("referrer", CzkId).Amount);
+        Assert.Equal(6m, SingleGrant("referred", EurId).Amount);
+        Assert.Equal(["referred:eur", "referrer:czk"], _accounts.Keys.Order(StringComparer.Ordinal));
+        Assert.Equal(CzkId, referral.ReferrerCreditCurrencyId);
+        Assert.Equal(EurId, referral.ReferredCreditCurrencyId);
+        Assert.Equal(150m, referral.CreditAwardedToReferrer);
+        Assert.Equal(6m, referral.CreditAwardedToReferred);
+    }
+
+    [Fact]
+    public async Task An_Inviter_Who_Never_Booked_Is_Paid_In_The_Friends_Currency()
     {
         var referral = Arrange("referrer", "referred", NewCurrency(EurId, "EUR", 6m));
 
@@ -126,8 +162,31 @@ public class ReferralServiceCreditGrantTests
 
         Assert.Equal(6m, SingleGrant("referrer", EurId).Amount);
         Assert.Equal(6m, SingleGrant("referred", EurId).Amount);
-        Assert.Equal(EurId, referral.CreditCurrencyId);
+        Assert.Equal(EurId, referral.ReferrerCreditCurrencyId);
+        Assert.Equal(EurId, referral.ReferredCreditCurrencyId);
         Assert.DoesNotContain(_accounts.Keys, key => key.EndsWith($":{CzkId}", StringComparison.Ordinal));
+    }
+
+    /// <summary>
+    /// A side whose currency carries no referral figure is paid nothing; the other side is still paid in its
+    /// own currency, and the referral still qualifies.
+    /// </summary>
+    [Fact]
+    public async Task A_Side_Whose_Currency_Has_No_Figure_Gets_Nothing_And_The_Other_Is_Still_Paid()
+    {
+        var pln = NewCurrency(PlnId, "PLN", null);
+        var referral = Arrange("referrer", "referred", NewCurrency(CzkId, "CZK", 150m), (pln, 5));
+
+        await Service().ProcessOrderCompletedAsync(OrderId, "referred", CancellationToken.None);
+
+        Assert.Equal(["referred"], _ensured);
+        Assert.Equal(150m, SingleGrant("referred", CzkId).Amount);
+        Assert.Null(referral.CreditAwardedToReferrer);
+        Assert.Null(referral.ReferrerCreditCurrencyId);
+        Assert.Equal(150m, referral.CreditAwardedToReferred);
+        Assert.Equal(CzkId, referral.ReferredCreditCurrencyId);
+        Assert.Equal(ReferralStatus.Qualified, referral.Status);
+        Assert.NotNull(referral.AwardedOn);
     }
 
     [Theory]
@@ -142,7 +201,8 @@ public class ReferralServiceCreditGrantTests
         Assert.Equal(ReferralStatus.Qualified, referral.Status);
         Assert.Null(referral.CreditAwardedToReferrer);
         Assert.Null(referral.CreditAwardedToReferred);
-        Assert.Null(referral.CreditCurrencyId);
+        Assert.Null(referral.ReferrerCreditCurrencyId);
+        Assert.Null(referral.ReferredCreditCurrencyId);
         Assert.Null(referral.AwardedOn);
         Assert.Empty(_ensured);
     }
@@ -157,6 +217,7 @@ public class ReferralServiceCreditGrantTests
 
         Assert.Equal(150m, SingleGrant("referred", CzkId).Amount);
         Assert.Null(referral.CreditAwardedToReferrer);
+        Assert.Null(referral.ReferrerCreditCurrencyId);
         Assert.Equal(150m, referral.CreditAwardedToReferred);
         Assert.Equal(ReferralStatus.Qualified, referral.Status);
     }
@@ -164,22 +225,24 @@ public class ReferralServiceCreditGrantTests
     /// <summary>
     /// A write to a frozen company's books fails the whole commit, and this one is the completing order's —
     /// another, active company's. The side whose account sits on the frozen books is paid nothing and no
-    /// account is opened for it; the other side is paid and the referral qualifies.
+    /// account is opened for it; the other side is paid and the referral qualifies. The books asked about are
+    /// those of the side's OWN currency.
     /// </summary>
     [Fact]
-    public async Task A_Side_On_A_Frozen_Companys_Books_Receives_Nothing_And_The_Other_Is_Still_Paid()
+    public async Task A_Side_On_A_Frozen_Companys_Books_In_Its_Own_Currency_Receives_Nothing_And_The_Other_Is_Still_Paid()
     {
+        var czk = NewCurrency(CzkId, "CZK", 150m);
         _credit
             .Setup(c => c.IsOnFrozenCompanyBooksAsync("referrer", CzkId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(true);
-        var referral = Arrange("referrer", "referred", NewCurrency(CzkId, "CZK", 150m));
+        var referral = Arrange("referrer", "referred", NewCurrency(EurId, "EUR", 6m), (czk, 2));
 
         await Service().ProcessOrderCompletedAsync(OrderId, "referred", CancellationToken.None);
 
         Assert.Equal(["referred"], _ensured);
-        Assert.Equal(150m, SingleGrant("referred", CzkId).Amount);
+        Assert.Equal(6m, SingleGrant("referred", EurId).Amount);
         Assert.Null(referral.CreditAwardedToReferrer);
-        Assert.Equal(150m, referral.CreditAwardedToReferred);
+        Assert.Equal(6m, referral.CreditAwardedToReferred);
         Assert.Equal(ReferralStatus.Qualified, referral.Status);
     }
 

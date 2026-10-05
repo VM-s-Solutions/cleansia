@@ -36,13 +36,16 @@ public class GetPagedReferralsHandlerTests
     private static Referral QualifiedReferral(User? referrer, User? referred)
     {
         var referral = Referral.CreateAccepted("referrer-1", "referred-1", "code-1", "system");
-        referral.MarkQualified("order-1", "czk", 150m, 120m, "system");
+        referral.MarkQualified("order-1", "czk", 150m, "eur", 6m, "system");
         referral.Id = "ref-1";
         SetNav(referral, nameof(Referral.Referrer), referrer);
         SetNav(referral, nameof(Referral.Referred), referred);
         var czk = Currency.Create("CZK", "Kč", "Czech koruna");
         czk.Id = "czk";
-        SetNav(referral, nameof(Referral.CreditCurrency), czk);
+        var eur = Currency.Create("EUR", "€", "Euro");
+        eur.Id = "eur";
+        SetNav(referral, nameof(Referral.ReferrerCreditCurrency), czk);
+        SetNav(referral, nameof(Referral.ReferredCreditCurrency), eur);
         return referral;
     }
 
@@ -84,8 +87,32 @@ public class GetPagedReferralsHandlerTests
         Assert.Equal(ReferralStatus.Qualified, row.Status);
         Assert.NotNull(row.FirstQualifyingOrderOn);
         Assert.Equal(150m, row.CreditAwardedToReferrer);
-        Assert.Equal(120m, row.CreditAwardedToReferred);
-        Assert.Equal("CZK", row.CreditCurrencyCode);
+        Assert.Equal("CZK", row.ReferrerCreditCurrencyCode);
+        Assert.Equal(6m, row.CreditAwardedToReferred);
+        Assert.Equal("EUR", row.ReferredCreditCurrencyCode);
+        Assert.Null(row.HoldReasons);
+    }
+
+    [Fact]
+    public async Task A_Held_Row_Carries_Its_Hold_Reasons()
+    {
+        var held = Referral.CreateAccepted("referrer-1", "referred-1", "code-1", "system");
+        held.HoldForReview("order-1", "address,phone", "system");
+        _repository
+            .Setup(r => r.GetCountAsync(It.IsAny<Expression<Func<Referral, bool>>>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(1);
+        _repository
+            .Setup(r => r.GetPagedSort<Cleansia.Core.Domain.Sorting.ReferralSort>(
+                It.IsAny<int>(), It.IsAny<int>(), It.IsAny<Expression<Func<Referral, bool>>>(), It.IsAny<IEnumerable<SortDefinition>>()))
+            .Returns(new[] { held }.AsQueryable().BuildMock());
+
+        var result = await Handle(new GetPagedReferrals.Request());
+
+        var row = Assert.Single(result.Data);
+        Assert.Equal(ReferralStatus.Accepted, row.Status);
+        Assert.Equal("address,phone", row.HoldReasons);
+        Assert.Null(row.ReferrerCreditCurrencyCode);
+        Assert.Null(row.ReferredCreditCurrencyCode);
     }
 
     [Fact]
@@ -129,10 +156,46 @@ public class GetPagedReferralsHandlerTests
         Assert.NotNull(captured);
         var predicate = captured!.Compile();
         var reversed = Referral.CreateAccepted("a", "b", "c", "system");
-        reversed.MarkQualified("o", "czk", 1m, 1m, "system");
+        reversed.MarkQualified("o", "czk", 1m, "czk", 1m, "system");
         reversed.Reverse("system");
         var accepted = Referral.CreateAccepted("d", "e", "f", "system");
         Assert.True(predicate(reversed));
         Assert.False(predicate(accepted));
+    }
+
+    /// <summary>
+    /// Held is the Accepted row with hold reasons: neither a plain Accepted row nor one released (Qualified) or
+    /// rejected (Reversed) after a hold, which keeps its reasons as history.
+    /// </summary>
+    [Theory]
+    [InlineData(true, true, false, false, false)]
+    [InlineData(false, false, true, true, true)]
+    public async Task Held_Filter_Reaches_Specification(bool held, bool matchesHeld, bool matchesAccepted, bool matchesReleased, bool matchesRejected)
+    {
+        Expression<Func<Referral, bool>>? captured = null;
+        _repository
+            .Setup(r => r.GetCountAsync(It.IsAny<Expression<Func<Referral, bool>>>(), It.IsAny<CancellationToken>()))
+            .Callback<Expression<Func<Referral, bool>>?, CancellationToken>((f, _) => captured = f)
+            .ReturnsAsync(0);
+        _repository
+            .Setup(r => r.GetPagedSort<Cleansia.Core.Domain.Sorting.ReferralSort>(
+                It.IsAny<int>(), It.IsAny<int>(), It.IsAny<Expression<Func<Referral, bool>>>(), It.IsAny<IEnumerable<SortDefinition>>()))
+            .Returns(Array.Empty<Referral>().AsQueryable().BuildMock());
+
+        await Handle(new GetPagedReferrals.Request { Filter = new ReferralFilter(Held: held) });
+
+        var predicate = captured!.Compile();
+        var heldRow = Referral.CreateAccepted("a", "b", "c", "system");
+        heldRow.HoldForReview("o", Referral.HoldReasonAddress, "system");
+        var released = Referral.CreateAccepted("a", "b", "c", "system");
+        released.HoldForReview("o", Referral.HoldReasonAddress, "system");
+        released.ForceQualify("czk", 1m, "czk", 1m, "admin");
+        var rejected = Referral.CreateAccepted("a", "b", "c", "system");
+        rejected.HoldForReview("o", Referral.HoldReasonAddress, "system");
+        rejected.Reverse("admin");
+        Assert.Equal(matchesHeld, predicate(heldRow));
+        Assert.Equal(matchesAccepted, predicate(Referral.CreateAccepted("d", "e", "f", "system")));
+        Assert.Equal(matchesReleased, predicate(released));
+        Assert.Equal(matchesRejected, predicate(rejected));
     }
 }

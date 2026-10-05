@@ -2905,6 +2905,12 @@
               "title": "Spoločnosť archivovaná",
               "body": "Knihy boli zapečatené dňa {{archivedOn}}."
             }
+          },
+          "referral": {
+            "held": {
+              "title": "Odporúčanie čaká na preskúmanie",
+              "body": "Odporúčanie bolo pozastavené, pretože sa zdá, že oba účty patria tej istej osobe. Otvorte Odporúčania, vyfiltrujte pozastavené a odporúčanie uvoľnite, alebo zamietnite."
+            }
           }
         }
       }

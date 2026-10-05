@@ -16,7 +16,12 @@ const money = (value: number, code: string, locale: string) => formatMoney(value
 
 describe('formatReferralCredit', () => {
   it('prints both grants in the currency they were paid in, for the language being read', () => {
-    const paid = row({ creditAwardedToReferrer: 150, creditAwardedToReferred: 150, creditCurrencyCode: 'CZK' });
+    const paid = row({
+      creditAwardedToReferrer: 150,
+      referrerCreditCurrencyCode: 'CZK',
+      creditAwardedToReferred: 150,
+      referredCreditCurrencyCode: 'CZK',
+    });
 
     expect(formatReferralCredit(paid, translateStub('cs'))).toBe(
       `${money(150, 'CZK', 'cs-CZ')} / ${money(150, 'CZK', 'cs-CZ')}`,
@@ -28,9 +33,22 @@ describe('formatReferralCredit', () => {
   });
 
   it('prints a side that received nothing as zero beside the side that was paid', () => {
-    const oneSided = row({ creditAwardedToReferrer: 7.5, creditCurrencyCode: 'EUR' });
+    const oneSided = row({ creditAwardedToReferrer: 7.5, referrerCreditCurrencyCode: 'EUR' });
 
-    expect(formatReferralCredit(oneSided, translateStub('en'))).toBe('€7.50 / €0.00');
+    expect(formatReferralCredit(oneSided, translateStub('en'))).toBe('€7.50 / 0.00');
+  });
+
+  it('prints each side in its own currency when the two were paid in different ones', () => {
+    const crossMarket = row({
+      creditAwardedToReferrer: 150,
+      referrerCreditCurrencyCode: 'CZK',
+      creditAwardedToReferred: 6,
+      referredCreditCurrencyCode: 'EUR',
+    });
+
+    expect(formatReferralCredit(crossMarket, translateStub('en'))).toBe(
+      `${money(150, 'CZK', 'en-US')} / ${money(6, 'EUR', 'en-US')}`,
+    );
   });
 
   it('says not yet when neither side has been credited', () => {
@@ -38,7 +56,12 @@ describe('formatReferralCredit', () => {
   });
 
   it('is the credit column the referrals table renders', () => {
-    const paid = row({ creditAwardedToReferrer: 150, creditAwardedToReferred: 150, creditCurrencyCode: 'CZK' });
+    const paid = row({
+      creditAwardedToReferrer: 150,
+      referrerCreditCurrencyCode: 'CZK',
+      creditAwardedToReferred: 150,
+      referredCreditCurrencyCode: 'CZK',
+    });
     const column = getReferralTableColumns(translateStub('en')).find((c) => c.id === 'creditAwarded');
 
     expect(column?.header).toBe('pages.loyalty_referrals.column.credit_awarded');

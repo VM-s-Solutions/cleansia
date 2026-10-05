@@ -15,7 +15,7 @@ public static class ReferralMappers
             AcceptedOn: referral.AcceptedOn,
             FirstQualifyingOrderOn: referral.FirstQualifyingOrderOn,
             CreditAwardedToReferrer: referral.CreditAwardedToReferrer,
-            CreditCurrencyCode: referral.CreditCurrency?.Code);
+            CreditCurrencyCode: referral.ReferrerCreditCurrency?.Code);
     }
 
     public static AdminReferralListItem MapToAdminListItem(this Referral referral)
@@ -30,7 +30,9 @@ public static class ReferralMappers
             AcceptedOn: referral.AcceptedOn,
             FirstQualifyingOrderOn: referral.FirstQualifyingOrderOn,
             CreditAwardedToReferrer: referral.CreditAwardedToReferrer,
+            ReferrerCreditCurrencyCode: referral.ReferrerCreditCurrency?.Code,
             CreditAwardedToReferred: referral.CreditAwardedToReferred,
-            CreditCurrencyCode: referral.CreditCurrency?.Code);
+            ReferredCreditCurrencyCode: referral.ReferredCreditCurrency?.Code,
+            HoldReasons: referral.HoldReasons);
     }
 }

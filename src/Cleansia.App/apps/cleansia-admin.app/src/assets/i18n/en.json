@@ -2905,6 +2905,12 @@
               "title": "Company archived",
               "body": "The books were sealed on {{archivedOn}}."
             }
+          },
+          "referral": {
+            "held": {
+              "title": "A referral is held for review",
+              "body": "A referral was held because the two accounts appear to belong to the same person. Open Referrals, filter by Held, and release or reject it."
+            }
           }
         }
       }

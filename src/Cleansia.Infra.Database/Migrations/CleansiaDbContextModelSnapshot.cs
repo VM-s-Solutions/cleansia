@@ -3194,10 +3194,6 @@ namespace Cleansia.Infra.Database.Migrations
                         .HasPrecision(18, 2)
                         .HasColumnType("numeric(18,2)");
 
-                    b.Property<string>("CreditCurrencyId")
-                        .HasMaxLength(26)
-                        .HasColumnType("character varying(26)");
-
                     b.Property<string>("DeactivatedBy")
                         .HasMaxLength(255)
                         .HasColumnType("character varying(255)");
@@ -3212,6 +3208,10 @@ namespace Cleansia.Infra.Database.Migrations
                     b.Property<DateTimeOffset?>("FirstQualifyingOrderOn")
                         .HasColumnType("timestamp with time zone");
 
+                    b.Property<string>("HoldReasons")
+                        .HasMaxLength(32)
+                        .HasColumnType("character varying(32)");
+
                     b.Property<bool>("IsActive")
                         .HasColumnType("boolean");
 
@@ -3220,8 +3220,16 @@ namespace Cleansia.Infra.Database.Migrations
                         .HasMaxLength(26)
                         .HasColumnType("character varying(26)");
 
+                    b.Property<string>("ReferredCreditCurrencyId")
+                        .HasMaxLength(26)
+                        .HasColumnType("character varying(26)");
+
                     b.Property<string>("ReferredUserId")
                         .IsRequired()
+                        .HasMaxLength(26)
+                        .HasColumnType("character varying(26)");
+
+                    b.Property<string>("ReferrerCreditCurrencyId")
                         .HasMaxLength(26)
                         .HasColumnType("character varying(26)");
 
@@ -3245,16 +3253,24 @@ namespace Cleansia.Infra.Database.Migrations
                     b.Property<DateTimeOffset?>("UpdatedOn")
                         .HasColumnType("timestamp with time zone");
 
-                    b.HasKey("Id");
+                    b.Property<uint>("xmin")
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("xid")
+                        .HasColumnName("xmin");
 
-                    b.HasIndex("CreditCurrencyId");
+                    b.HasKey("Id");
 
                     b.HasIndex("FirstQualifyingOrderId");
 
                     b.HasIndex("ReferralCodeId");
 
+                    b.HasIndex("ReferredCreditCurrencyId");
+
                     b.HasIndex("ReferredUserId")
                         .IsUnique();
+
+                    b.HasIndex("ReferrerCreditCurrencyId");
 
                     b.HasIndex("ReferrerUserId");
 
@@ -7749,11 +7765,6 @@ namespace Cleansia.Infra.Database.Migrations
 
             modelBuilder.Entity("Cleansia.Core.Domain.Loyalty.Referral", b =>
                 {
-                    b.HasOne("Cleansia.Core.Domain.Internationalization.Currency", "CreditCurrency")
-                        .WithMany()
-                        .HasForeignKey("CreditCurrencyId")
-                        .OnDelete(DeleteBehavior.Restrict);
-
                     b.HasOne("Cleansia.Core.Domain.Orders.Order", "FirstQualifyingOrder")
                         .WithMany()
                         .HasForeignKey("FirstQualifyingOrderId")
@@ -7765,11 +7776,21 @@ namespace Cleansia.Infra.Database.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
+                    b.HasOne("Cleansia.Core.Domain.Internationalization.Currency", "ReferredCreditCurrency")
+                        .WithMany()
+                        .HasForeignKey("ReferredCreditCurrencyId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
                     b.HasOne("Cleansia.Core.Domain.Users.User", "Referred")
                         .WithMany()
                         .HasForeignKey("ReferredUserId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
+
+                    b.HasOne("Cleansia.Core.Domain.Internationalization.Currency", "ReferrerCreditCurrency")
+                        .WithMany()
+                        .HasForeignKey("ReferrerCreditCurrencyId")
+                        .OnDelete(DeleteBehavior.Restrict);
 
                     b.HasOne("Cleansia.Core.Domain.Users.User", "Referrer")
                         .WithMany()
@@ -7783,15 +7804,17 @@ namespace Cleansia.Infra.Database.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
-                    b.Navigation("CreditCurrency");
-
                     b.Navigation("FirstQualifyingOrder");
 
                     b.Navigation("ReferralCode");
 
                     b.Navigation("Referred");
 
+                    b.Navigation("ReferredCreditCurrency");
+
                     b.Navigation("Referrer");
+
+                    b.Navigation("ReferrerCreditCurrency");
                 });
 
             modelBuilder.Entity("Cleansia.Core.Domain.Loyalty.ReferralCode", b =>

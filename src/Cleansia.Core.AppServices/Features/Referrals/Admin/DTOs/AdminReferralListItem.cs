@@ -5,7 +5,8 @@ namespace Cleansia.Core.AppServices.Features.Referrals.Admin.DTOs;
 /// <summary>
 /// Admin row shape for the all-referrals table — exposes both party emails
 /// (full email rather than first-name only as in the customer-facing list)
-/// for ops/support diagnostics.
+/// for ops/support diagnostics. Each side's grant carries its own currency;
+/// <see cref="HoldReasons"/> on an Accepted row means it is held for review.
 /// </summary>
 public record AdminReferralListItem(
     string Id,
@@ -17,5 +18,7 @@ public record AdminReferralListItem(
     DateTimeOffset AcceptedOn,
     DateTimeOffset? FirstQualifyingOrderOn,
     decimal? CreditAwardedToReferrer,
+    string? ReferrerCreditCurrencyCode,
     decimal? CreditAwardedToReferred,
-    string? CreditCurrencyCode);
+    string? ReferredCreditCurrencyCode,
+    string? HoldReasons);

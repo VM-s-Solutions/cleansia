@@ -30,7 +30,7 @@ function dto(overrides: Partial<UserNotificationDto> = {}): UserNotificationDto 
 }
 
 describe('the admin event catalogue mirror', () => {
-  it('pins the fourteen keys the backend catalogue declares, in its order', () => {
+  it('pins the fifteen keys the backend catalogue declares, in its order', () => {
     expect(ADMIN_NOTIFICATION_EVENT_KEYS).toEqual([
       'admin.order.new',
       'admin.order.crew_lost',
@@ -46,6 +46,7 @@ describe('the admin event catalogue mirror', () => {
       'admin.company.wind_down_requested',
       'admin.company.wind_down_run',
       'admin.company.archived',
+      'admin.referral.held',
     ]);
   });
 
@@ -77,6 +78,7 @@ describe('the admin event catalogue mirror', () => {
       NotificationFamily.Company,
       NotificationFamily.Company,
       NotificationFamily.Company,
+      NotificationFamily.Referral,
     ]);
     for (const family of families) {
       expect(NOTIFICATION_FAMILY_ICONS[family]).toMatch(/^pi pi-/);
@@ -179,6 +181,10 @@ describe('getNotificationRoute', () => {
       expect(getNotificationRoute(key, {})).toEqual(['company-lifecycle']);
     }
   );
+
+  it('a held referral opens the referrals page', () => {
+    expect(getNotificationRoute('admin.referral.held', { referralId: 'r-1' })).toEqual(['loyalty/referrals']);
+  });
 
   it('has nowhere to go when the id the link needs is missing, or the key is unknown', () => {
     expect(getNotificationRoute('admin.order.new', {})).toBeNull();

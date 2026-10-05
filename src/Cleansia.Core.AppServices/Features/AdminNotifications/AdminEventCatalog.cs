@@ -46,6 +46,8 @@ public static class AdminEventCatalog
             ["cancelled", "refunded", "refundFailures", "periodsClosed"]),
         new(AdminNotificationEventCatalog.CompanyArchived, PhysicalPolicy.AdministratorOnly,
             ["archivedOn"]),
+        new(AdminNotificationEventCatalog.ReferralHeld, PhysicalPolicy.SupportOrAbove,
+            ["referralId"]),
     ];
 
     private static readonly IReadOnlyDictionary<string, Entry> ByKey =

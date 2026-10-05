@@ -6,9 +6,11 @@ using Cleansia.Core.Domain.Credit;
 using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Internationalization;
 using Cleansia.Core.Domain.Loyalty;
+using Cleansia.Core.Domain.Notifications;
 using Cleansia.Core.Domain.Orders;
 using Cleansia.Core.Domain.Repositories;
 using Cleansia.Core.Domain.Users;
+using Cleansia.Core.Queue.Abstractions;
 using Cleansia.Infra.Database;
 using Cleansia.Infra.Database.Repositories;
 using Cleansia.TestUtilities;
@@ -20,9 +22,11 @@ using Respawn;
 namespace Cleansia.IntegrationTests.Features.Referrals;
 
 /// <summary>
-/// The referral reward is credit (owner ruling 2026-10-04), against real Postgres: the grant, the admin
-/// force-qualify and the admin reversal all move money through <c>CreditAccounts</c>, and the reversal's
-/// debit is the conditional UPDATE no in-memory provider runs. Every test also holds the ledger
+/// The referral reward is credit (owner rulings 2026-10-04 and 2026-10-05), against real Postgres: the grant,
+/// the admin force-qualify and the admin reversal all move money through <c>CreditAccounts</c>, each side in
+/// the currency it books in, and the reversal's debit is the conditional UPDATE no in-memory provider runs. A
+/// referral whose two accounts look like one person is held instead, across companies, and the referral row's
+/// version makes a release and a rejection of one held row exclusive. Every test also holds the ledger
 /// invariant <c>Balance == SUM(Transactions.Amount)</c>.
 /// </summary>
 [Collection("PostgresCollection")]
@@ -32,7 +36,9 @@ public class ReferralCreditTests(PostgresContainerFixture fixture) : BaseIntegra
     private const string CountryId = "country-cze-referral";
     private const string CzkId = "currency-czk-referral";
     private const string EurId = "currency-eur-referral";
+    private const string PlnId = "currency-pln-referral";
     private const string OrderId = "order-referral-first";
+    private const string ReferrerOrderId = "order-referral-inviter";
     private const string Reason = "referral ring";
     private static readonly DateTimeOffset FrozenOn = new(2026, 10, 1, 8, 0, 0, TimeSpan.Zero);
 
@@ -60,7 +66,7 @@ public class ReferralCreditTests(PostgresContainerFixture fixture) : BaseIntegra
         await SeedTenantRegistryAsync(conn);
     }
 
-    private static Currency NewCurrency(string id, string code, bool isDefault, decimal referralCredit)
+    private static Currency NewCurrency(string id, string code, bool isDefault, decimal? referralCredit)
     {
         var currency = Currency.Create(code, code, code);
         currency.Id = id;
@@ -70,17 +76,59 @@ public class ReferralCreditTests(PostgresContainerFixture fixture) : BaseIntegra
         return currency;
     }
 
+    private static Order NewOrder(
+        string id, string userId, string company, string currencyId, Address address, string phone, bool completed)
+    {
+        var order = Order.Create(
+            customerName: "A Customer",
+            customerEmail: $"{userId}@cleansia.test",
+            customerPhone: phone,
+            customerAddress: address,
+            rooms: 1,
+            bathrooms: 1,
+            cleaningDateTime: DateTime.UtcNow.AddHours(-3),
+            paymentType: PaymentType.Cash,
+            totalPrice: 1000m,
+            currencyId: currencyId,
+            paymentStatus: PaymentStatus.Paid,
+            userId: userId,
+            cancellationTerms: BookingPolicy.CancellationTermsAtBooking);
+        order.Id = id;
+        order.TenantId = company;
+        order.SetMaxEmployees(1);
+        order.AddOrderStatus(OrderStatusTrack.Create(OrderStatus.New, order));
+        if (completed)
+        {
+            order.AddOrderStatus(OrderStatusTrack.Create(OrderStatus.Completed, order));
+        }
+
+        return order;
+    }
+
+    private static Address NewAddress(string street, string zip, string company)
+    {
+        var address = Address.Create(street, "Prague", zip, CountryId);
+        address.TenantId = company;
+        return address;
+    }
+
     /// <summary>
     /// Inviter, invited friend and the accepted referral between them, each customer on their company and
     /// the referral on the inviter's; with <paramref name="orderCurrencyId"/>, also the friend's first order
-    /// in that currency, on the friend's company, completed unless <paramref name="completed"/> is false.
+    /// in that currency, on the friend's company, completed unless <paramref name="completed"/> is false; with
+    /// <paramref name="referrerOrderCurrencyId"/>, an earlier order of the inviter's own on their company.
     /// </summary>
     private async Task<(string ReferrerId, string ReferredId, string ReferralId)> SeedAsync(
         string? orderCurrencyId,
         bool eraseReferrer = false,
         string referrerCompany = TestTenants.Default,
         string referredCompany = TestTenants.Default,
-        bool completed = true)
+        bool completed = true,
+        string? referrerOrderCurrencyId = null,
+        string referrerStreet = "9 Other St",
+        string referrerZip = "11000",
+        string friendStreet = "123 Main St",
+        string friendZip = "11000")
     {
         await using var ctx = NewContext();
         ctx.Languages.Add(Language.Create("en", "English"));
@@ -89,7 +137,8 @@ public class ReferralCreditTests(PostgresContainerFixture fixture) : BaseIntegra
         ctx.Countries.Add(country);
         ctx.Currencies.AddRange(
             NewCurrency(CzkId, "CZK", isDefault: true, referralCredit: 150m),
-            NewCurrency(EurId, "EUR", isDefault: false, referralCredit: 6m));
+            NewCurrency(EurId, "EUR", isDefault: false, referralCredit: 6m),
+            NewCurrency(PlnId, "PLN", isDefault: false, referralCredit: null));
 
         var referrer = User.CreateWithPassword("referrer@cleansia.test", "Seed-Password-123", "Referring", "Friend");
         referrer.TenantId = referrerCompany;
@@ -104,34 +153,20 @@ public class ReferralCreditTests(PostgresContainerFixture fixture) : BaseIntegra
         referral.TenantId = referrerCompany;
         ctx.Referrals.Add(referral);
 
+        if (referrerOrderCurrencyId is not null)
+        {
+            var own = NewOrder(
+                ReferrerOrderId, referrer.Id, referrerCompany, referrerOrderCurrencyId,
+                NewAddress(referrerStreet, referrerZip, referrerCompany), "+420 601 111 222", completed: false);
+            own.Created("customer", DateTime.UtcNow.AddDays(-20));
+            ctx.Orders.Add(own);
+        }
+
         if (orderCurrencyId is not null)
         {
-            var address = Address.Create("123 Main St", "Prague", "11000", CountryId);
-            address.TenantId = referredCompany;
-            var order = Order.Create(
-                customerName: "Invited Friend",
-                customerEmail: "referred@cleansia.test",
-                customerPhone: "+420000000000",
-                customerAddress: address,
-                rooms: 1,
-                bathrooms: 1,
-                cleaningDateTime: DateTime.UtcNow.AddHours(-3),
-                paymentType: PaymentType.Cash,
-                totalPrice: 1000m,
-                currencyId: orderCurrencyId,
-                paymentStatus: PaymentStatus.Paid,
-                userId: referred.Id,
-                cancellationTerms: BookingPolicy.CancellationTermsAtBooking);
-            order.Id = OrderId;
-            order.TenantId = referredCompany;
-            order.SetMaxEmployees(1);
-            order.AddOrderStatus(OrderStatusTrack.Create(OrderStatus.New, order));
-            if (completed)
-            {
-                order.AddOrderStatus(OrderStatusTrack.Create(OrderStatus.Completed, order));
-            }
-
-            ctx.Orders.Add(order);
+            ctx.Orders.Add(NewOrder(
+                OrderId, referred.Id, referredCompany, orderCurrencyId,
+                NewAddress(friendStreet, friendZip, referredCompany), "+420 000 000 000", completed));
         }
 
         if (eraseReferrer)
@@ -144,11 +179,19 @@ public class ReferralCreditTests(PostgresContainerFixture fixture) : BaseIntegra
         return (referrer.Id, referred.Id, referral.Id);
     }
 
+    private static AdminNotifier Notifier(CleansiaDbContext ctx) => new(
+        new UserRepository(ctx),
+        new UserNotificationRepository(ctx),
+        new AppConfigurationProvider(ctx),
+        new OutboxPendingDispatch(ctx),
+        NullLogger<AdminNotifier>.Instance);
+
     private static ReferralService Service(CleansiaDbContext ctx) => new(
         new ReferralCodeRepository(ctx),
         new ReferralRepository(ctx),
         new OrderRepository(ctx),
         new CreditAccountRepository(ctx),
+        Notifier(ctx),
         ctx,
         NullLogger<ReferralService>.Instance);
 
@@ -179,15 +222,24 @@ public class ReferralCreditTests(PostgresContainerFixture fixture) : BaseIntegra
         await ctx.CommitAsync(CancellationToken.None);
     }
 
+    private static ForceQualifyReferral.Handler ForceQualifyHandler(CleansiaDbContext ctx) => new(
+        new ReferralRepository(ctx),
+        Service(ctx),
+        new OrderRepository(ctx),
+        new CurrencyRepository(ctx),
+        new TestUserSessionProvider(AdminId, "admin@cleansia.test"));
+
+    private static ReverseReferral.Handler ReverseHandler(CleansiaDbContext ctx) => new(
+        new ReferralRepository(ctx),
+        new CreditAccountRepository(ctx),
+        new CurrencyRepository(ctx),
+        new TestUserSessionProvider(AdminId, "admin@cleansia.test"),
+        NullLogger<ReverseReferral.Handler>.Instance);
+
     private async Task<ForceQualifyReferral.Response> ForceQualifyAsync(string referralId)
     {
         await using var ctx = NewContext();
-        var result = await new ForceQualifyReferral.Handler(
-                new ReferralRepository(ctx),
-                Service(ctx),
-                new OrderRepository(ctx),
-                new CurrencyRepository(ctx),
-                new TestUserSessionProvider(AdminId, "admin@cleansia.test"))
+        var result = await ForceQualifyHandler(ctx)
             .Handle(new ForceQualifyReferral.Command(referralId, Reason), CancellationToken.None);
         Assert.True(result.IsSuccess, result.Error?.Message);
         await ctx.CommitAsync(CancellationToken.None);
@@ -197,12 +249,7 @@ public class ReferralCreditTests(PostgresContainerFixture fixture) : BaseIntegra
     private async Task<ReverseReferral.Response> ReverseAsync(string referralId)
     {
         await using var ctx = NewContext();
-        var result = await new ReverseReferral.Handler(
-                new ReferralRepository(ctx),
-                new CreditAccountRepository(ctx),
-                new CurrencyRepository(ctx),
-                new TestUserSessionProvider(AdminId, "admin@cleansia.test"),
-                NullLogger<ReverseReferral.Handler>.Instance)
+        var result = await ReverseHandler(ctx)
             .Handle(new ReverseReferral.Command(referralId, Reason), CancellationToken.None);
         Assert.True(result.IsSuccess, result.Error?.Message);
         await ctx.CommitAsync(CancellationToken.None);
@@ -224,6 +271,14 @@ public class ReferralCreditTests(PostgresContainerFixture fixture) : BaseIntegra
     {
         await using var ctx = NewContext();
         return await ctx.Referrals.IgnoreQueryFilters().AsNoTracking().SingleAsync(r => r.Id == referralId);
+    }
+
+    private async Task HoldAsync(string referralId)
+    {
+        await using var ctx = NewContext();
+        var referral = await ctx.Referrals.IgnoreQueryFilters().SingleAsync(r => r.Id == referralId);
+        referral.HoldForReview(OrderId, Referral.HoldReasonAddress, "system");
+        await ctx.CommitAsync(CancellationToken.None);
     }
 
     [Fact]
@@ -249,8 +304,38 @@ public class ReferralCreditTests(PostgresContainerFixture fixture) : BaseIntegra
 
         var referral = await ReferralAsync(referralId);
         Assert.Equal(ReferralStatus.Qualified, referral.Status);
-        Assert.Equal(EurId, referral.CreditCurrencyId);
+        Assert.Equal(EurId, referral.ReferrerCreditCurrencyId);
+        Assert.Equal(EurId, referral.ReferredCreditCurrencyId);
         Assert.Equal(6m, referral.CreditAwardedToReferrer);
+        Assert.Equal(6m, referral.CreditAwardedToReferred);
+    }
+
+    /// <summary>
+    /// The inviter books in koruna with another company; the friend's first booking is in euros. Each side's
+    /// balance opens in its own currency, the inviter's on their own company, and the inviter's booking is
+    /// found although it is not the ambient company's.
+    /// </summary>
+    [Fact]
+    public async Task A_Cross_Currency_Referral_Pays_Each_Side_In_Its_Own_Currency_Across_Companies()
+    {
+        await ResetAsync();
+        var (referrerId, referredId, referralId) = await SeedAsync(
+            orderCurrencyId: EurId, referrerCompany: TestTenants.Second, referrerOrderCurrencyId: CzkId);
+
+        await CompleteAsync(referredId);
+
+        var inviter = Assert.Single(await AccountsAsync(referrerId));
+        Assert.Equal(CzkId, inviter.CurrencyId);
+        Assert.Equal(TestTenants.Second, inviter.TenantId);
+        Assert.Equal(150m, inviter.Balance);
+        var friend = Assert.Single(await AccountsAsync(referredId));
+        Assert.Equal(EurId, friend.CurrencyId);
+        Assert.Equal(6m, friend.Balance);
+        var referral = await ReferralAsync(referralId);
+        Assert.Equal(ReferralStatus.Qualified, referral.Status);
+        Assert.Equal(CzkId, referral.ReferrerCreditCurrencyId);
+        Assert.Equal(EurId, referral.ReferredCreditCurrencyId);
+        Assert.Equal(150m, referral.CreditAwardedToReferrer);
         Assert.Equal(6m, referral.CreditAwardedToReferred);
     }
 
@@ -266,6 +351,7 @@ public class ReferralCreditTests(PostgresContainerFixture fixture) : BaseIntegra
         Assert.Equal(150m, Assert.Single(await AccountsAsync(referredId)).Balance);
         var referral = await ReferralAsync(referralId);
         Assert.Null(referral.CreditAwardedToReferrer);
+        Assert.Null(referral.ReferrerCreditCurrencyId);
         Assert.Equal(150m, referral.CreditAwardedToReferred);
     }
 
@@ -361,7 +447,7 @@ public class ReferralCreditTests(PostgresContainerFixture fixture) : BaseIntegra
 
         var response = await ForceQualifyAsync(referralId);
 
-        Assert.Equal(new ForceQualifyReferral.Response(referralId, 150m, 0m, "CZK"), response);
+        Assert.Equal(new ForceQualifyReferral.Response(referralId, 150m, "CZK", 0m, "CZK"), response);
         Assert.Equal(150m, Assert.Single(await AccountsAsync(referrerId)).Balance);
         var frozen = Assert.Single(await AccountsAsync(referredId));
         Assert.Equal(0m, frozen.Balance);
@@ -373,16 +459,17 @@ public class ReferralCreditTests(PostgresContainerFixture fixture) : BaseIntegra
     }
 
     [Fact]
-    public async Task Force_Qualify_Credits_Both_Sides_In_The_Currency_Of_The_Friends_Latest_Order()
+    public async Task Force_Qualify_Credits_Each_Side_In_The_Currency_It_Books_In()
     {
         await ResetAsync();
-        var (referrerId, referredId, referralId) = await SeedAsync(orderCurrencyId: EurId);
+        var (referrerId, referredId, referralId) = await SeedAsync(
+            orderCurrencyId: EurId, referrerOrderCurrencyId: CzkId, completed: false);
 
         var response = await ForceQualifyAsync(referralId);
 
-        Assert.Equal(new ForceQualifyReferral.Response(referralId, 6m, 6m, "EUR"), response);
-        Assert.Equal(6m, Assert.Single(await AccountsAsync(referrerId)).Balance);
-        Assert.Equal(6m, Assert.Single(await AccountsAsync(referredId)).Balance);
+        Assert.Equal(new ForceQualifyReferral.Response(referralId, 150m, "CZK", 6m, "EUR"), response);
+        Assert.Equal(CzkId, Assert.Single(await AccountsAsync(referrerId)).CurrencyId);
+        Assert.Equal(EurId, Assert.Single(await AccountsAsync(referredId)).CurrencyId);
         Assert.Equal(ReferralStatus.Qualified, (await ReferralAsync(referralId)).Status);
     }
 
@@ -394,7 +481,7 @@ public class ReferralCreditTests(PostgresContainerFixture fixture) : BaseIntegra
 
         var response = await ForceQualifyAsync(referralId);
 
-        Assert.Equal(new ForceQualifyReferral.Response(referralId, 150m, 150m, "CZK"), response);
+        Assert.Equal(new ForceQualifyReferral.Response(referralId, 150m, "CZK", 150m, "CZK"), response);
         Assert.Equal(CzkId, Assert.Single(await AccountsAsync(referrerId)).CurrencyId);
     }
 
@@ -407,7 +494,7 @@ public class ReferralCreditTests(PostgresContainerFixture fixture) : BaseIntegra
 
         var response = await ReverseAsync(referralId);
 
-        Assert.Equal(new ReverseReferral.Response(referralId, 150m, 150m, "CZK"), response);
+        Assert.Equal(new ReverseReferral.Response(referralId, 150m, "CZK", 150m, "CZK"), response);
         foreach (var (userId, side) in new[] { (referrerId, "referrer"), (referredId, "referred") })
         {
             var account = Assert.Single(await AccountsAsync(userId));
@@ -418,6 +505,21 @@ public class ReferralCreditTests(PostgresContainerFixture fixture) : BaseIntegra
         }
 
         Assert.Equal(ReferralStatus.Reversed, (await ReferralAsync(referralId)).Status);
+    }
+
+    [Fact]
+    public async Task Reverse_Of_A_Cross_Currency_Referral_Takes_Each_Grant_Back_In_Its_Own_Currency()
+    {
+        await ResetAsync();
+        var (referrerId, referredId, referralId) = await SeedAsync(
+            orderCurrencyId: EurId, referrerOrderCurrencyId: CzkId);
+        await CompleteAsync(referredId);
+
+        var response = await ReverseAsync(referralId);
+
+        Assert.Equal(new ReverseReferral.Response(referralId, 150m, "CZK", 6m, "EUR"), response);
+        Assert.Equal(0m, Assert.Single(await AccountsAsync(referrerId)).Balance);
+        Assert.Equal(0m, Assert.Single(await AccountsAsync(referredId)).Balance);
     }
 
     [Fact]
@@ -436,11 +538,206 @@ public class ReferralCreditTests(PostgresContainerFixture fixture) : BaseIntegra
 
         var response = await ReverseAsync(referralId);
 
-        Assert.Equal(new ReverseReferral.Response(referralId, 150m, 50m, "CZK"), response);
+        Assert.Equal(new ReverseReferral.Response(referralId, 150m, "CZK", 50m, "CZK"), response);
         var spent = Assert.Single(await AccountsAsync(referredId));
         Assert.Equal(0m, spent.Balance);
         Assert.Equal(-50m, Assert.Single(spent.Transactions, t => t.Reason == CreditTransactionReason.ReferralReversed).Amount);
         Assert.Equal(0m, Assert.Single(await AccountsAsync(referrerId)).Balance);
+    }
+
+    /// <summary>
+    /// The inviter booked the home with their company, the friend with another: each company has its own row
+    /// for it, typed differently. The friend's first completion is held, nobody is paid, and the support staff
+    /// of the referral's company — not the ambient one — are told.
+    /// </summary>
+    [Fact]
+    public async Task One_Home_Booked_With_Two_Companies_Holds_The_Referral_And_Tells_The_Referrals_Company()
+    {
+        await ResetAsync();
+        var (referrerId, referredId, referralId) = await SeedAsync(
+            orderCurrencyId: CzkId,
+            referrerCompany: TestTenants.Second,
+            referrerOrderCurrencyId: CzkId,
+            referrerStreet: "Vinohradská 12",
+            referrerZip: "120 00",
+            friendStreet: "vinohradska 12",
+            friendZip: "12000");
+        await using (var ctx = NewContext())
+        {
+            var support = User.CreateWithPassword(
+                "support@cleansia.test", "Seed-Password-123", "Sup", "Port", UserProfile.Administrator, adminRole: AdminRole.Support);
+            support.TenantId = TestTenants.Second;
+            support.ConfirmEmail();
+            ctx.Users.Add(support);
+            await ctx.CommitAsync(CancellationToken.None);
+
+            var addressIds = await ctx.Orders.IgnoreQueryFilters()
+                .Where(o => o.Id == OrderId || o.Id == ReferrerOrderId)
+                .Select(o => o.CustomerAddressId)
+                .ToListAsync();
+            Assert.Equal(2, addressIds.Distinct().Count());
+        }
+
+        await CompleteAsync(referredId);
+
+        var referral = await ReferralAsync(referralId);
+        Assert.Equal(ReferralStatus.Accepted, referral.Status);
+        Assert.Equal(Referral.HoldReasonAddress, referral.HoldReasons);
+        Assert.Equal(OrderId, referral.FirstQualifyingOrderId);
+        Assert.Empty(await AccountsAsync(referrerId));
+        Assert.Empty(await AccountsAsync(referredId));
+
+        await using var verify = NewContext();
+        var told = Assert.Single(await verify.Set<UserNotification>().IgnoreQueryFilters()
+            .Where(n => n.EventKey == AdminNotificationEventCatalog.ReferralHeld).ToListAsync());
+        Assert.Equal(TestTenants.Second, told.TenantId);
+        Assert.Contains(referralId, told.ArgsJson, StringComparison.Ordinal);
+        var email = Assert.Single(await verify.OutboxMessages.IgnoreQueryFilters()
+            .Where(m => m.QueueName == QueueNames.SendEmail).ToListAsync());
+        Assert.Equal(TestTenants.Second, email.TenantId);
+    }
+
+    /// <summary>
+    /// A saved address the inviter deleted is not theirs any more: it is not compared. The same address still
+    /// saved is.
+    /// </summary>
+    [Theory]
+    [InlineData(true, ReferralStatus.Accepted)]
+    [InlineData(false, ReferralStatus.Qualified)]
+    public async Task Only_A_Saved_Address_The_Inviter_Still_Keeps_Is_Compared(bool stillSaved, ReferralStatus expected)
+    {
+        await ResetAsync();
+        var (referrerId, referredId, referralId) = await SeedAsync(orderCurrencyId: CzkId);
+        await using (var ctx = NewContext())
+        {
+            var home = NewAddress("123 Main St", "110 00", TestTenants.Default);
+            ctx.Addresses.Add(home);
+            var saved = SavedAddress.Create(referrerId, home.Id, "Home", isDefault: true);
+            saved.TenantId = TestTenants.Default;
+            saved.IsActive = stillSaved;
+            ctx.SavedAddresses.Add(saved);
+            await ctx.CommitAsync(CancellationToken.None);
+        }
+
+        await CompleteAsync(referredId);
+
+        var referral = await ReferralAsync(referralId);
+        Assert.Equal(expected, referral.Status);
+        Assert.Equal(stillSaved ? Referral.HoldReasonAddress : null, referral.HoldReasons);
+        Assert.Equal(stillSaved ? 0 : 1, (await AccountsAsync(referrerId)).Count);
+    }
+
+    [Theory]
+    [InlineData(true, ReferralStatus.Accepted)]
+    [InlineData(false, ReferralStatus.Expired)]
+    public async Task The_Expiry_Sweep_Leaves_A_Held_Referral_Waiting(bool held, ReferralStatus expected)
+    {
+        await ResetAsync();
+        var (_, _, referralId) = await SeedAsync(orderCurrencyId: CzkId);
+        if (held)
+        {
+            await HoldAsync(referralId);
+        }
+
+        await using (var ctx = NewContext())
+        {
+            await ctx.Database.ExecuteSqlInterpolatedAsync(
+                $"""UPDATE "Referrals" SET "AcceptedOn" = now() - interval '100 days' WHERE "Id" = {referralId}""");
+            await Service(ctx).ExpireStaleReferralsAsync(CancellationToken.None);
+            await ctx.CommitAsync(CancellationToken.None);
+        }
+
+        Assert.Equal(expected, (await ReferralAsync(referralId)).Status);
+    }
+
+    [Fact]
+    public async Task Releasing_A_Held_Referral_Pays_Both_Sides_Against_The_Held_Order()
+    {
+        await ResetAsync();
+        var (referrerId, referredId, referralId) = await SeedAsync(orderCurrencyId: EurId);
+        await HoldAsync(referralId);
+
+        var response = await ForceQualifyAsync(referralId);
+
+        Assert.Equal(new ForceQualifyReferral.Response(referralId, 6m, "EUR", 6m, "EUR"), response);
+        foreach (var userId in new[] { referrerId, referredId })
+        {
+            var grant = Assert.Single(Assert.Single(await AccountsAsync(userId)).Transactions);
+            Assert.Equal(OrderId, grant.OrderId);
+        }
+
+        var referral = await ReferralAsync(referralId);
+        Assert.Equal(ReferralStatus.Qualified, referral.Status);
+        Assert.Equal(OrderId, referral.FirstQualifyingOrderId);
+        Assert.Equal(Referral.HoldReasonAddress, referral.HoldReasons);
+    }
+
+    [Fact]
+    public async Task Rejecting_A_Held_Referral_Pays_Nothing_And_Ends_It()
+    {
+        await ResetAsync();
+        var (referrerId, referredId, referralId) = await SeedAsync(orderCurrencyId: CzkId);
+        await HoldAsync(referralId);
+
+        var response = await ReverseAsync(referralId);
+
+        Assert.Equal(new ReverseReferral.Response(referralId, 0m, null, 0m, null), response);
+        Assert.Empty(await AccountsAsync(referrerId));
+        Assert.Empty(await AccountsAsync(referredId));
+        Assert.Equal(ReferralStatus.Reversed, (await ReferralAsync(referralId)).Status);
+    }
+
+    /// <summary>
+    /// Two administrators act on one held referral at once: one releases it, the other rejects it, each having
+    /// read it held. Whichever commits second conflicts on the row's version and rolls back, so the row never
+    /// ends rejected with both grants standing.
+    /// </summary>
+    [Fact]
+    public async Task A_Release_And_A_Rejection_Of_One_Held_Referral_Cannot_Both_Commit()
+    {
+        await ResetAsync();
+        var (referrerId, referredId, referralId) = await SeedAsync(orderCurrencyId: CzkId);
+        await HoldAsync(referralId);
+
+        await using var releasing = NewContext();
+        await using var rejecting = NewContext();
+        var released = await ForceQualifyHandler(releasing)
+            .Handle(new ForceQualifyReferral.Command(referralId, Reason), CancellationToken.None);
+        var rejected = await ReverseHandler(rejecting)
+            .Handle(new ReverseReferral.Command(referralId, Reason), CancellationToken.None);
+        Assert.True(released.IsSuccess, released.Error?.Message);
+        Assert.True(rejected.IsSuccess, rejected.Error?.Message);
+
+        await releasing.CommitAsync(CancellationToken.None);
+        await Assert.ThrowsAsync<DbUpdateConcurrencyException>(() => rejecting.CommitAsync(CancellationToken.None));
+
+        Assert.Equal(ReferralStatus.Qualified, (await ReferralAsync(referralId)).Status);
+        var ledger = (await AccountsAsync(referrerId)).Concat(await AccountsAsync(referredId))
+            .SelectMany(a => a.Transactions).ToList();
+        Assert.Equal(2, ledger.Count(t => t.Reason == CreditTransactionReason.Referral));
+        Assert.DoesNotContain(ledger, t => t.Reason == CreditTransactionReason.ReferralReversed);
+    }
+
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public async Task A_Currency_One_Side_Of_A_Referral_Was_Paid_In_Is_In_Use(bool referrerSide)
+    {
+        await ResetAsync();
+        var (_, _, referralId) = await SeedAsync(orderCurrencyId: null);
+        await using (var ctx = NewContext())
+        {
+            Assert.False(await new CurrencyRepository(ctx).IsInUseAsync(PlnId, CancellationToken.None));
+            var referral = await ctx.Referrals.IgnoreQueryFilters().SingleAsync(r => r.Id == referralId);
+            referral.ForceQualify(
+                referrerCurrencyId: PlnId, creditToReferrer: referrerSide ? 10m : null,
+                referredCurrencyId: PlnId, creditToReferred: referrerSide ? null : 10m,
+                actorId: AdminId);
+            await ctx.CommitAsync(CancellationToken.None);
+        }
+
+        await using var verify = NewContext();
+        Assert.True(await new CurrencyRepository(verify).IsInUseAsync(PlnId, CancellationToken.None));
     }
 
     private sealed class FixedTenantProvider(string? tenantId) : ITenantProvider

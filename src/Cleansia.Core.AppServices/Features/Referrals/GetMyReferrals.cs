@@ -45,7 +45,7 @@ public class GetMyReferrals
             var items = await referralRepository
                 .GetPagedSort<ReferralSort>(request.Offset, request.Limit, filter, ResolveSort(request))
                 .Include(r => r.Referred)
-                .Include(r => r.CreditCurrency)
+                .Include(r => r.ReferrerCreditCurrency)
                 .AsNoTracking()
                 .Select(referral => referral.MapToMyListItem())
                 .ToListAsync(cancellationToken);

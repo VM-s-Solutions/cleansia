@@ -151,8 +151,9 @@ describe('ReferralsListFacade', () => {
         ReverseReferralResponse.fromJS({
           referralId: 'ref-1',
           creditTakenFromReferrer: 150,
+          referrerCurrencyCode: 'CZK',
           creditTakenFromReferred: 40.5,
-          currencyCode: 'CZK',
+          referredCurrencyCode: 'CZK',
         })
       )
     );
@@ -186,8 +187,9 @@ describe('ReferralsListFacade', () => {
         ReverseReferralResponse.fromJS({
           referralId: 'ref-1',
           creditTakenFromReferrer: 0,
+          referrerCurrencyCode: null,
           creditTakenFromReferred: 0,
-          currencyCode: null,
+          referredCurrencyCode: null,
         })
       )
     );
@@ -222,8 +224,9 @@ describe('ReferralsListFacade', () => {
         ForceQualifyReferralResponse.fromJS({
           referralId: 'ref-2',
           creditGrantedToReferrer: 150,
+          referrerCurrencyCode: 'CZK',
           creditGrantedToReferred: 150,
-          currencyCode: 'CZK',
+          referredCurrencyCode: 'CZK',
         })
       )
     );

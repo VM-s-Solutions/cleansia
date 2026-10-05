@@ -6,15 +6,15 @@ using Cleansia.Core.Domain.Loyalty;
 using Cleansia.Core.Domain.Repositories;
 using Cleansia.Infra.Common.Validations;
 using FluentValidation;
-using Microsoft.EntityFrameworkCore;
 
 namespace Cleansia.Core.AppServices.Features.Referrals.Admin;
 
 /// <summary>
 /// Admin force-qualify of a legitimate referral stuck in Accepted (e.g. the
-/// qualifying order completed but the automatic path missed it). Credits both
-/// sides the way the automatic path does and marks the referral Qualified with
-/// the admin as actor.
+/// qualifying order completed but the automatic path missed it), and the release
+/// of one held for review. Credits each side in the currency it books in, the way
+/// the automatic path does — a held referral's friend in the currency of the held
+/// order, against that order — and marks the referral Qualified with the admin as actor.
 /// <para>
 /// Idempotency (ADR-0002, S7a): each side's grant carries the same per-(referral, side)
 /// ledger key the automatic path uses, so the two paths can never both pay a side. The
@@ -29,8 +29,9 @@ public class ForceQualifyReferral
     public record Response(
         string ReferralId,
         decimal CreditGrantedToReferrer,
+        string ReferrerCurrencyCode,
         decimal CreditGrantedToReferred,
-        string CurrencyCode);
+        string ReferredCurrencyCode);
 
     public class Validator : AbstractValidator<Command>
     {
@@ -77,36 +78,41 @@ public class ForceQualifyReferral
             }
 
             var actorId = userSessionProvider.GetUserId() ?? string.Empty;
-            var currency = await ResolveMarketCurrencyAsync(referral.ReferredUserId, cancellationToken);
+            var referredCurrency = await HeldOrderCurrencyAsync(referral, cancellationToken)
+                ?? await referralService.GetBookingCurrencyAsync(referral.ReferredUserId, cancellationToken)
+                ?? await currencyRepository.GetDefaultAsync(cancellationToken);
+            var referrerCurrency = await referralService.GetBookingCurrencyAsync(referral.ReferrerUserId, cancellationToken)
+                ?? referredCurrency;
 
             var (toReferrer, toReferred) = await referralService.AwardCreditAsync(
-                referral, currency.Id, currency.ReferralCredit, orderId: null, actorId, command.Reason, cancellationToken);
+                referral, referrerCurrency, referredCurrency, referral.FirstQualifyingOrderId, actorId, command.Reason,
+                cancellationToken);
 
             referral.ForceQualify(
-                creditCurrencyId: currency.Id,
+                referrerCurrencyId: referrerCurrency.Id,
                 creditToReferrer: toReferrer,
+                referredCurrencyId: referredCurrency.Id,
                 creditToReferred: toReferred,
                 actorId: actorId);
 
             return BusinessResult.Success(new Response(
-                referral.Id, toReferrer ?? 0m, toReferred ?? 0m, currency.Code));
+                referral.Id, toReferrer ?? 0m, referrerCurrency.Code, toReferred ?? 0m, referredCurrency.Code));
         }
 
         /// <summary>
-        /// The market the referred customer books in — their latest order's currency — or the platform
-        /// default for one who has never booked.
+        /// The currency of the order a held referral was held on, while that order still names the friend —
+        /// erasure takes their name off it. Null for a referral that was never held.
         /// </summary>
-        private async Task<Currency> ResolveMarketCurrencyAsync(string referredUserId, CancellationToken cancellationToken)
+        private async Task<Currency?> HeldOrderCurrencyAsync(Referral referral, CancellationToken cancellationToken)
         {
-            var latestCurrencyId = await orderRepository.GetQueryableForOwner(referredUserId)
-                .OrderByDescending(o => o.CreatedOn)
-                .Select(o => o.CurrencyId)
-                .FirstOrDefaultAsync(cancellationToken);
+            if (referral.FirstQualifyingOrderId is null)
+            {
+                return null;
+            }
 
-            var latest = latestCurrencyId is null
-                ? null
-                : await currencyRepository.GetByIdAsync(latestCurrencyId, cancellationToken);
-            return latest ?? await currencyRepository.GetDefaultAsync(cancellationToken);
+            var held = await orderRepository.GetOwnerAndCurrencyAsync(
+                referral.FirstQualifyingOrderId, referral.ReferredUserId, cancellationToken);
+            return held is null ? null : await currencyRepository.GetByIdAsync(held.CurrencyId, cancellationToken);
         }
     }
 }

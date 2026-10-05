@@ -167,10 +167,10 @@ export class ReferralsListFacade extends UnsubscribeControlDirective {
       )
       .subscribe((response) => {
         if (response) {
-          if (response.currencyCode) {
+          if (response.referrerCurrencyCode || response.referredCurrencyCode) {
             this.snackbar.showSuccessTranslated('pages.loyalty_referrals.intervention.success_reverse', {
-              referrer: formatAdminCredit(response.creditTakenFromReferrer, response.currencyCode, this.lang()),
-              referred: formatAdminCredit(response.creditTakenFromReferred, response.currencyCode, this.lang()),
+              referrer: formatAdminCredit(response.creditTakenFromReferrer, response.referrerCurrencyCode, this.lang()),
+              referred: formatAdminCredit(response.creditTakenFromReferred, response.referredCurrencyCode, this.lang()),
             });
           } else {
             this.snackbar.showSuccessTranslated(
@@ -206,8 +206,8 @@ export class ReferralsListFacade extends UnsubscribeControlDirective {
       .subscribe((response) => {
         if (response) {
           this.snackbar.showSuccessTranslated('pages.loyalty_referrals.intervention.success_force_qualify', {
-            referrer: formatAdminCredit(response.creditGrantedToReferrer, response.currencyCode, this.lang()),
-            referred: formatAdminCredit(response.creditGrantedToReferred, response.currencyCode, this.lang()),
+            referrer: formatAdminCredit(response.creditGrantedToReferrer, response.referrerCurrencyCode, this.lang()),
+            referred: formatAdminCredit(response.creditGrantedToReferred, response.referredCurrencyCode, this.lang()),
           });
           this.loadReferrals();
           onSuccess?.();

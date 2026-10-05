@@ -1114,6 +1114,43 @@ public class RefundServiceTests
     }
 
     /// <summary>
+    /// A member cancelled a 1000 sale paid 700 by card and 300 in credit, with 200 settled in credit, while
+    /// Stripe was down: the row froze 560 and 240 of credit came back on the refund's key. A complaint was then
+    /// settled in 300 more, and the member cancels again. 1000 less the 500 settled leaves 500 for this refund,
+    /// of which 240 is already back, so the card gets 260 and no second leg is paid, not the 350 card share of
+    /// the 500 with the 240 on top: the customer ends with exactly the price.
+    /// </summary>
+    [Fact]
+    public async Task IssueRefund_RetryAfterItsCreditLegCameBack_AndAFurtherSettlement_CardTakesOnlyWhatTheSliceHasLeftAfterTheLeg()
+    {
+        var order = CreateCardPaidOrder(1000m);
+        order.ApplyCredit(300m, "user-1");
+        ArrangeOrder(order);
+        ArrangeConsumed(0m);
+        ArrangeSettledInCredit(500m);
+        var refundKey = $"refund:{OrderId}:cancel";
+        ArrangeCreditReturned(forOrder: 240m, refundKey, onRefundKey: 240m);
+        var pending = Refund.Create(
+            OrderId, refundKey, 560m, "CZK", RefundReason.CustomerCancellation, RefundSource.AppRefund);
+        _refundRepository
+            .Setup(r => r.GetByRefundKeyAsync(refundKey, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(pending);
+        _refundRepository
+            .Setup(r => r.CommitAsync(It.IsAny<CancellationToken>()))
+            .Returns(Task.CompletedTask);
+
+        var result = await CreateService().IssueRefundAsync(
+            RequestFor(RefundReason.CustomerCancellation, 1000m), CancellationToken.None);
+
+        Assert.True(result.IsSuccess, result.Error?.Message);
+        Assert.Equal(260m, _stripe.LastAmount);
+        Assert.Equal(260m, pending.Amount);
+        _creditAccountRepository.Verify(r => r.TryReturnAsync(
+            It.IsAny<string>(), It.IsAny<string>(), It.IsAny<decimal>(), It.IsAny<string>(), It.IsAny<string>(),
+            It.IsAny<CancellationToken>(), It.IsAny<string?>(), It.IsAny<string?>()), Times.Never);
+    }
+
+    /// <summary>
     /// After the cancellation above returned 240 of credit on the refund's key, a second complaint was settled
     /// in 300 more. 1000 less the 500 settled leaves 500 for this refund, of which 240 has already come back
     /// in credit, so the card gets 260 and the customer ends with exactly the price.

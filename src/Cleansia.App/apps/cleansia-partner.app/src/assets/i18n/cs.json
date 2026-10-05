@@ -1016,7 +1016,10 @@
       "already_rejected": "Partner již byl zamítnut",
       "job_radius_out_of_range": "Zadaný dojezdový okruh je mimo povolený rozsah",
       "legal_entity_not_accepted": "Úklidoví pracovníci s námi spolupracují jako fyzické osoby; firmu zde nelze registrovat",
-      "legal_documents_not_accepted": "Než začnete přijímat zakázky, přijměte ve svém profilu aktuální verzi svých smluvních dokumentů."
+      "legal_documents_not_accepted": "Než začnete přijímat zakázky, přijměte ve svém profilu aktuální verzi svých smluvních dokumentů.",
+      "business_ceased": "Podle registru ekonomických subjektů (ARES) podnikání vedené pod tímto IČO zaniklo. Zadejte IČO, pod kterým stále podnikáte.",
+      "trade_licence_inactive": "Podle registru ekonomických subjektů (ARES) není pod tímto IČO platné živnostenské oprávnění. Zkontrolujte číslo, nebo si nejprve obnovte živnostenské oprávnění.",
+      "business_registry_unavailable": "Registr ekonomických subjektů (ARES) se nepodařilo kontaktovat, takže vaše nové IČO nelze ověřit a nic se neuložilo. Zkuste to znovu za několik minut."
     },
     "employee_document": {
       "not_found": "Dokument nenalezen",

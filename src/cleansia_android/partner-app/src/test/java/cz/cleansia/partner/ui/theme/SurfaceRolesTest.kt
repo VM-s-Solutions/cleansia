@@ -170,6 +170,23 @@ class SurfaceRolesTest {
         )
     }
 
+    /**
+     * A filled button writes onPrimary on the primary (Z7): in dark mode sky-900 on sky-400 read 4.42:1, so the
+     * label is sky-950 (6.48:1). Light mode keeps white on sky-600, the brand fill the owner kept for filled buttons.
+     */
+    @Test
+    fun `a filled button's label reads 4_5 to 1 on the dark primary, light mode unchanged`() {
+        assertEquals(Sky950, DarkColors.onPrimary)
+        assertEquals(Color.White, LightColors.onPrimary)
+        val ratio = contrast(DarkColors.onPrimary, DarkColors.primary)
+        assertTrue("dark onPrimary on primary: ${"%.2f".format(ratio)}:1", ratio >= 4.5)
+        assertTrue(contrast(Sky900, Sky400) < 4.5)
+        // The slide-to-commit track is a filled control: its label is onPrimary on the primary (Z6's twin).
+        val slide = File(sourceRoot(), "features/orders/SlideToCommit.kt").readText()
+        assertTrue(slide.contains(".background(MaterialTheme.colorScheme.primary)"))
+        assertTrue(Regex("""text = idleLabel,\s*style = [^\n]+\n\s*color = MaterialTheme\.colorScheme\.onPrimary\.copy\(""").containsMatchIn(slide))
+    }
+
     /** The argument list of the call whose `(` ends just before [from], up to its matching `)`. */
     private fun argumentsFrom(text: String, from: Int): String {
         var depth = 1

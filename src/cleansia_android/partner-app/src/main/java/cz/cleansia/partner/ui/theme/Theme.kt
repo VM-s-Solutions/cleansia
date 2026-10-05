@@ -60,7 +60,8 @@ internal val LightColors = lightColorScheme(
 
 internal val DarkColors = darkColorScheme(
     primary = Sky400,
-    onPrimary = Sky900,
+    // A filled button's label: sky-900 read 4.42:1 on sky-400, sky-950 reads 6.48:1. Light mode keeps white.
+    onPrimary = Sky950,
     primaryContainer = Sky700,
     onPrimaryContainer = Sky100,
     secondary = Sky300,

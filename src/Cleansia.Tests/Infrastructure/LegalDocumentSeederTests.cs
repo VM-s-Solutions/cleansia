@@ -432,8 +432,9 @@ public sealed class LegalDocumentSeederTests : IDisposable
 
     /// <summary>
     /// Owner rulings 2026-10-04: a referral earns both customers credit once the referred customer's first
-    /// booking is completed within the referral window, and a card refund is sent within 3 days. The newest
-    /// terms state the window in the credit section, as the days the referral policy counts, and the refund
+    /// booking is completed within the referral window, counted from the code's acceptance, and a card refund
+    /// is sent within 3 days. The newest terms state the window in the credit section, as the days the
+    /// referral policy counts — once, so the window has one figure and one starting point — and the refund
     /// days in the cancellation and no-cleaner sections, each as the only day figure there, in every language.
     /// </summary>
     [Fact]
@@ -493,6 +494,58 @@ public sealed class LegalDocumentSeederTests : IDisposable
         Assert.Equal(new[] { "cs", "en", "ru", "sk", "uk" }, newest.Select(r => r.Language).Order());
         Assert.All(newest, r => Assert.DoesNotContain(retired[r.Language], r.ContentMarkdown.ReplaceLineEndings("\n")));
     }
+
+    /// <summary>
+    /// The review of 2026-10-05 corrected the 2026-10-05 versions in place — allowed, because they are not in
+    /// force yet — so that each states what the code does. The wording it replaced survives in no file, so each
+    /// row quotes a phrase the section must now state in that language, and fails against the replaced wording.
+    /// </summary>
+    [Theory]
+    // A cash booking is refused once the customer holds MaxOpenUnpaidCashBookings open and unpaid
+    // (CustomerCashStanding): the two include the new one, as en, uk and ru already said.
+    [InlineData(LegalDocumentType.TermsOfService, "cs", 7, "včetně této objednávky")]
+    [InlineData(LegalDocumentType.TermsOfService, "sk", 7, "vrátane tejto objednávky")]
+    // A code is accepted at registration (Register) or later on a booking (OrderLateReferralAcceptor) ...
+    [InlineData(LegalDocumentType.TermsOfService, "en", 9, "or later on a booking")]
+    [InlineData(LegalDocumentType.TermsOfService, "cs", 9, "nebo později u objednávky")]
+    [InlineData(LegalDocumentType.TermsOfService, "sk", 9, "alebo neskôr pri objednávke")]
+    [InlineData(LegalDocumentType.TermsOfService, "uk", 9, "або пізніше в замовленні")]
+    [InlineData(LegalDocumentType.TermsOfService, "ru", 9, "или позже в заказе")]
+    // ... and the window runs from Referral.AcceptedOn (ReferralService.ProcessOrderCompletedAsync), not registration ...
+    [InlineData(LegalDocumentType.TermsOfService, "en", 9, "days of the code being accepted")]
+    [InlineData(LegalDocumentType.TermsOfService, "cs", 9, "dní od přijetí kódu")]
+    [InlineData(LegalDocumentType.TermsOfService, "sk", 9, "dní od prijatia kódu")]
+    [InlineData(LegalDocumentType.TermsOfService, "uk", 9, "днів після прийняття коду")]
+    [InlineData(LegalDocumentType.TermsOfService, "ru", 9, "дней после принятия кода")]
+    // ... and a reversal takes back min(grant, balance) from each side (ReverseReferral), never more.
+    [InlineData(LegalDocumentType.TermsOfService, "en", 9, "more than what is left of that credit on your balance")]
+    [InlineData(LegalDocumentType.TermsOfService, "cs", 9, "víc, než kolik z tohoto kreditu zbývá na vašem zůstatku")]
+    [InlineData(LegalDocumentType.TermsOfService, "sk", 9, "viac, ako koľko z tohto kreditu zostáva na vašom zostatku")]
+    [InlineData(LegalDocumentType.TermsOfService, "uk", 9, "більше, ніж залишилося від цього кредиту на вашому залишку")]
+    [InlineData(LegalDocumentType.TermsOfService, "ru", 9, "больше, чем осталось от этого кредита на вашем остатке")]
+    public void The_Newest_Version_States_What_The_Code_Does_As_The_2026_10_05_Review_Worded_It(
+        LegalDocumentType type, string language, int section, string phrase)
+    {
+        Assert.Contains(phrase, SectionOf(type, language, section));
+    }
+
+    /// <summary>
+    /// The wording the review of 2026-10-05 retired must not come back: the cs and sk payment sections made
+    /// "not more than two unpaid cash bookings" a precondition, which admits a third, after a stray "further".
+    /// </summary>
+    [Theory]
+    [InlineData(LegalDocumentType.TermsOfService, "cs", 7, "nemáte více než dvě")]
+    [InlineData(LegalDocumentType.TermsOfService, "cs", 7, "v hotovosti dále")]
+    [InlineData(LegalDocumentType.TermsOfService, "sk", 7, "nemáte viac ako dve")]
+    [InlineData(LegalDocumentType.TermsOfService, "sk", 7, "v hotovosti ďalej")]
+    public void The_Newest_Version_Carries_None_Of_The_Wording_The_2026_10_05_Review_Retired(
+        LegalDocumentType type, string language, int section, string phrase)
+    {
+        Assert.DoesNotContain(phrase, SectionOf(type, language, section));
+    }
+
+    private static string SectionOf(LegalDocumentType type, string language, int section) =>
+        string.Join("\n\n", BlocksOf(NewestOf(type).Single(r => r.Language == language).ContentMarkdown, section));
 
     /// <summary>The blocks of the section at <paramref name="section"/>, counted by its <c>## </c> heading from 1.</summary>
     private static string[] BlocksOf(string markdown, int section) =>

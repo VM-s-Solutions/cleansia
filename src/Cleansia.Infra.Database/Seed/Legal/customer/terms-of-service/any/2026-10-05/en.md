@@ -72,7 +72,9 @@ While an amount is owed, you cannot book cash; you can still book and pay by car
 
 Credit is a balance in your account that the company grants, for example as an apology when a cleaner does not arrive, as a goodwill gesture, as the settlement of a complaint for which you chose credit, or as a referral reward.
 
-If a friend registers with your referral code and completes their first booking within 90 days of registering, you both receive credit in the amount shown in the app for that booking's currency. The rules of this section apply to that credit.
+A friend can enter your referral code when creating their account, or later on a booking made with their account. A customer can be referred only once, and cannot use their own code. If, within 90 days of the code being accepted, one of their bookings is completed and none of their bookings has been completed before it, you both receive the referral credit set for that booking's currency; the app shows the figure for the market chosen in it. The rules of this section apply to that credit.
+
+The company may take back the referral credit from both of you if the booking that earned it is refunded, or if the referral was not genuine — for example, when a customer refers themselves through another account or otherwise breaks the rules of this section. It never takes back more than what is left of that credit on your balance in its currency, so your balance never goes below zero.
 
 If a booking you paid partly with credit is cancelled or refunded, the amount returned is split between your balance and your card in the same proportion as you paid the price: all the credit you spent returns when nothing is kept, and only a proportional part of it when a fee is kept or only part of the price is refunded.
 

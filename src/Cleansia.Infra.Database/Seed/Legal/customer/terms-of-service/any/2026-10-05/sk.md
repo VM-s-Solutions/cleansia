@@ -58,7 +58,7 @@ Platíte kartou prostredníctvom nášho platobného poskytovateľa Stripe, a to
 
 V hotovosti môžete platiť, len ak ste prihlásení a objednávku zvládne jeden upratovač. Cenu zaplatíte v hotovosti upratovačovi po upratovaní. Upratovač ju prijíma v mene spoločnosti, takže zaplatením upratovačovi je váš dlh voči spoločnosti uhradený. Na objednávku platenú v hotovosti nemožno použiť kredit.
 
-S platbou v hotovosti ďalej môžete objednávať, len ak žiadnej prevádzkovej spoločnosti nedlhujete žiadnu sumu (článok 8) a nemáte viac ako dve nezaplatené hotovostné objednávky súčasne.
+S platbou v hotovosti môžete objednávať, len ak žiadnej prevádzkovej spoločnosti nedlhujete žiadnu sumu (článok 8) a ak budete mať vrátane tejto objednávky súčasne najviac dve nezaplatené hotovostné objednávky.
 
 Doklad vystavíme v mene spoločnosti, hneď ako platbu dostaneme: pri platbe kartou po jej dokončení, pri platbe v hotovosti potom, ako upratovač platbu zaznamená a upratovanie je dokončené. Doklad vám pošleme e-mailom.
 
@@ -72,7 +72,9 @@ Kým sumu dlhujete, nemôžete objednávať s platbou v hotovosti; kartou objedn
 
 Kredit je zostatok na vašom účte, ktorý spoločnosť poskytuje napríklad ako ospravedlnenie, keď upratovač nepríde, ako prejav dobrej vôle, ako vybavenie reklamácie, pri ktorej ste zvolili kredit, alebo ako odmenu za odporúčanie.
 
-Ak sa s vaším odporúčacím kódom zaregistruje osoba, ktorú ste odporučili, a jej prvá objednávka bude do 90 dní od registrácie dokončená, dostanete kredit vy aj ona, a to vo výške uvedenej v aplikácii pre menu tejto objednávky. Na tento kredit sa vzťahujú pravidlá tohto článku.
+Osoba, ktorú odporučíte, môže váš odporúčací kód zadať pri registrácii alebo neskôr pri objednávke vytvorenej zo svojho účtu. Každý zákazník môže byť odporučený len raz a nemôže použiť svoj vlastný kód. Ak bude do 90 dní od prijatia kódu dokončená niektorá z jej objednávok a ak pred ňou nebola dokončená žiadna iná jej objednávka, dostanete vy aj ona kredit za odporúčanie stanovený pre menu tejto objednávky; jeho výšku ukazuje aplikácia pre zvolený trh. Na tento kredit sa vzťahujú pravidlá tohto článku.
+
+Spoločnosť môže kredit za odporúčanie vám obom odobrať, ak sa za objednávku, za ktorú bol poskytnutý, vrátia peniaze, alebo ak odporúčanie nebolo skutočné — napríklad keď zákazník odporučí sám seba prostredníctvom iného účtu alebo inak poruší pravidlá tohto článku. Nikdy neodoberie viac, ako koľko z tohto kreditu zostáva na vašom zostatku v jeho mene, takže sa váš zostatok nikdy nedostane pod nulu.
 
 Ak je objednávka, ktorú ste sčasti zaplatili kreditom, zrušená alebo sa za ňu vracajú peniaze, vrátená suma sa rozdelí medzi váš zostatok a vašu kartu v rovnakom pomere, v akom ste cenu zaplatili: celý použitý kredit sa vráti, keď si spoločnosť nič neponechá, a len jeho pomerná časť, keď si ponechá poplatok alebo sa vracia len časť ceny.
 

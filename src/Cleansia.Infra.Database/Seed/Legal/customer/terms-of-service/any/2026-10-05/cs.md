@@ -58,7 +58,7 @@ Platíte kartou prostřednictvím našeho platebního poskytovatele Stripe, a to
 
 V hotovosti můžete platit, jen pokud jste přihlášeni a objednávku zvládne jeden uklízeč. Cenu zaplatíte v hotovosti uklízeči po úklidu. Uklízeč ji přijímá jménem společnosti, takže zaplacením uklízeči je váš dluh vůči společnosti uhrazen. Na objednávku placenou v hotovosti nelze použít kredit.
 
-S platbou v hotovosti dále můžete objednávat, jen pokud žádné provozní společnosti nedlužíte žádnou částku (článek 8) a nemáte více než dvě nezaplacené hotovostní objednávky současně.
+S platbou v hotovosti můžete objednávat, jen pokud žádné provozní společnosti nedlužíte žádnou částku (článek 8) a pokud budete mít včetně této objednávky současně nejvýše dvě nezaplacené hotovostní objednávky.
 
 Doklad vystavíme jménem společnosti, jakmile platbu obdržíme: při platbě kartou po jejím dokončení, při platbě v hotovosti poté, co uklízeč platbu zaznamená a úklid je dokončen. Doklad vám zašleme e-mailem.
 
@@ -72,7 +72,9 @@ Dokud částku dlužíte, nemůžete objednávat s platbou v hotovosti; kartou o
 
 Kredit je zůstatek na vašem účtu, který společnost poskytuje například jako omluvu, když uklízeč nedorazí, jako projev dobré vůle, jako vyřízení reklamace, u které jste zvolili kredit, nebo jako odměnu za doporučení.
 
-Pokud se s vaším doporučovacím kódem zaregistruje osoba, kterou jste doporučili, a její první objednávka bude do 90 dní od registrace dokončena, dostanete kredit vy i ona, a to ve výši uvedené v aplikaci pro měnu této objednávky. Na tento kredit se vztahují pravidla tohoto článku.
+Osoba, kterou doporučíte, může váš doporučovací kód zadat při registraci nebo později u objednávky vytvořené ze svého účtu. Každý zákazník může být doporučen jen jednou a nemůže použít svůj vlastní kód. Bude-li do 90 dní od přijetí kódu dokončena některá z jejích objednávek a nebyla-li před ní dokončena žádná jiná její objednávka, dostanete vy i ona kredit za doporučení stanovený pro měnu této objednávky; jeho výši ukazuje aplikace pro zvolený trh. Na tento kredit se vztahují pravidla tohoto článku.
+
+Společnost může kredit za doporučení vám oběma odebrat, pokud se za objednávku, za kterou byl poskytnut, vrátí peníze, nebo pokud doporučení nebylo skutečné — například když zákazník doporučí sám sebe prostřednictvím jiného účtu nebo jinak poruší pravidla tohoto článku. Nikdy neodebere víc, než kolik z tohoto kreditu zbývá na vašem zůstatku v jeho měně, takže se váš zůstatek nikdy nedostane pod nulu.
 
 Je-li objednávka, kterou jste zčásti zaplatili kreditem, zrušena nebo se za ni vracejí peníze, vrácená částka se rozdělí mezi váš zůstatek a vaši kartu ve stejném poměru, v jakém jste cenu zaplatili: celý použitý kredit se vrátí, když si společnost nic neponechá, a jen jeho poměrná část, když si ponechá poplatek nebo se vrací jen část ceny.
 

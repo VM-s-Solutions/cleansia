@@ -798,6 +798,15 @@ scenario(
     silentAbout: ['android/'],
   },
 );
+scenario(
+  'an Android twin that is gone is a finding, not a silent pass',
+  { androidReferralPatch: { home_upsell_referral_desc_generic: null } },
+  {
+    code: 1,
+    mentions: ['android/en — home_upsell_referral_desc_generic is missing', 'android/uk — home_upsell_referral_desc_generic is missing'],
+    silentAbout: ['ios/'],
+  },
+);
 // Ukrainian points are "бали"; a line that puts the credit on the customer's "баланс" is honest copy.
 scenario(
   'does not read a balance as points',

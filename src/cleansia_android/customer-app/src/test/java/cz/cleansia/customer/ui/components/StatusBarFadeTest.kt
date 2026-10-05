@@ -83,6 +83,41 @@ class StatusBarFadeTest {
         assertEquals(63, statusBarFadeHeight(statusBar = 63, cutout = 0f..90f))
     }
 
+    // W-F4: API 28-30 have no cutout path, so a phone there with a camera in its top edge fell back to the
+    // status bar's inset, below the clock's line. Its bounding rectangles give the same line.
+
+    @Test
+    fun `from API 31 the cutout is its own path`() {
+        val extent = cutoutExtentFor(sdk = 31, pathBounds = { 29.5f..102f }, boundingRects = { listOf(0f..132f) })
+        assertEquals(29.5f..102f, extent)
+        assertEquals(102, statusBarFadeHeight(statusBar = 132, cutout = extent))
+        assertEquals(29.5f..102f, cutoutExtentFor(sdk = 35, pathBounds = { 29.5f..102f }, boundingRects = { null }))
+    }
+
+    @Test
+    fun `on API 28 to 30 the cutout is the span of its bounding rectangles`() {
+        listOf(28, 29, 30).forEach { sdk ->
+            val extent = cutoutExtentFor(sdk, pathBounds = { error("no cutout path below API 31") }, boundingRects = { listOf(29f..102f) })
+            assertEquals("API $sdk", 29f..102f, extent)
+            assertEquals("API $sdk", 102, statusBarFadeHeight(statusBar = 132, cutout = extent))
+        }
+        // Two holes side by side span both; no cutout, or an empty list, is none.
+        assertEquals(20f..96f, cutoutExtentFor(30, { null }, { listOf(30f..96f, 20f..90f) }))
+        assertNull(cutoutExtentFor(30, { null }, { emptyList() }))
+        assertNull(cutoutExtentFor(30, { null }, { null }))
+        // A cutout at the bottom of the screen as well is not the clock's line: the inset stands, as from 31.
+        assertEquals(132, statusBarFadeHeight(132, cutoutExtentFor(30, { null }, { listOf(0f..90f, 2300f..2400f) })))
+    }
+
+    @Test
+    fun `below API 28 there is no cutout to read and the fade ends at the inset`() {
+        listOf(26, 27).forEach { sdk ->
+            val extent = cutoutExtentFor(sdk, pathBounds = { error("no cutout path") }, boundingRects = { error("no cutout API") })
+            assertNull("API $sdk", extent)
+            assertEquals("API $sdk", 63, statusBarFadeHeight(statusBar = 63, cutout = extent))
+        }
+    }
+
     @Test
     fun `the hero's share is whole while it reaches the fade's bottom and none once it has passed`() {
         assertEquals(1f, statusBarFadeHeroShare(heroBottom = 600, height = 74))

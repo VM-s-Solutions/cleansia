@@ -1,5 +1,6 @@
 package cz.cleansia.customer.ui.components
 
+import android.annotation.SuppressLint
 import android.app.Activity
 import android.graphics.RectF
 import android.os.Build
@@ -115,16 +116,37 @@ internal fun statusBarFadeHeight(statusBar: Int, cutout: ClosedFloatingPointRang
         statusBar
     }
 
-/**
- * The top and bottom of the display's cutout path, from API 31, which is the camera hole itself rather
- * than the rectangle the status bar is sized by; null without one.
- */
+/** The display's cutout, top to bottom, read for the API level the device runs ([cutoutExtentFor]). */
+@SuppressLint("NewApi") // cutoutExtentFor reads each only on the API level that has it.
 @Composable
 private fun cutoutExtent(): ClosedFloatingPointRange<Float>? {
-    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.S) return null
-    val path = LocalView.current.rootWindowInsets?.displayCutout?.cutoutPath ?: return null
-    val bounds = RectF().also { path.computeBounds(it, true) }
-    return bounds.top..bounds.bottom
+    val insets = LocalView.current.rootWindowInsets
+    return cutoutExtentFor(
+        sdk = Build.VERSION.SDK_INT,
+        pathBounds = {
+            insets?.displayCutout?.cutoutPath
+                ?.let { path -> RectF().also { path.computeBounds(it, true) } }
+                ?.let { it.top..it.bottom }
+        },
+        boundingRects = { insets?.displayCutout?.boundingRects?.map { it.top.toFloat()..it.bottom.toFloat() } },
+    )
+}
+
+/**
+ * The top and bottom of the display's cutout; null without one. From API 31 it is the cutout's own path,
+ * the camera hole itself rather than the rectangle the status bar is sized by. On API 28–30, which have
+ * no path, it is the span of the cutout's bounding rectangles, so a phone there with a camera in its top
+ * edge ends the fade on the hole's line too rather than below the clock. Below 28 there is no cutout API.
+ */
+internal fun cutoutExtentFor(
+    sdk: Int,
+    pathBounds: () -> ClosedFloatingPointRange<Float>?,
+    boundingRects: () -> List<ClosedFloatingPointRange<Float>>?,
+): ClosedFloatingPointRange<Float>? = when {
+    sdk >= Build.VERSION_CODES.S -> pathBounds()
+    sdk >= Build.VERSION_CODES.P ->
+        boundingRects()?.takeIf { it.isNotEmpty() }?.let { rects -> rects.minOf { it.start }..rects.maxOf { it.endInclusive } }
+    else -> null
 }
 
 /**

@@ -1267,7 +1267,7 @@
     <string name="credit_none">Teď nemáte žádný kredit. Pokud se úklid nepovede, kredit, který vám dáme, uvidíte tady.</string>
     <string name="credit_explainer_title">Jak funguje kredit</string>
     <string name="credit_explainer_source_title">Odkud se bere</string>
-    <string name="credit_explainer_source_body">Omluva, když uklízeč nedorazí nebo vaši objednávku nikdo nepřevezme, reklamace, kterou jste se rozhodli vyřešit kreditem, nebo vstřícné gesto od nás.</string>
+    <string name="credit_explainer_source_body">Omluva, když uklízeč nedorazí nebo vaši objednávku nikdo nepřevezme, reklamace, kterou jste se rozhodli vyřešit kreditem, vstřícné gesto od nás nebo odměna za doporučení: když se někdo zaregistruje s kódem od kamaráda, oba získají kredit, jakmile je dokončen první úklid nového zákazníka.</string>
     <string name="credit_explainer_spend_title">Jak se čerpá</string>
     <string name="credit_explainer_spend_body">Automaticky, na vaši příští objednávku placenou kartou ve stejné měně, až do výše %1$d %% její ceny. Zbytek vždy zaplatíte kartou.</string>
     <string name="credit_explainer_points_title">Kredit nejsou body</string>

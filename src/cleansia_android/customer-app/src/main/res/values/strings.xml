@@ -1283,7 +1283,7 @@
     <string name="credit_none">No credit right now. If a clean goes wrong, credit we give you shows up here.</string>
     <string name="credit_explainer_title">How credit works</string>
     <string name="credit_explainer_source_title">Where it comes from</string>
-    <string name="credit_explainer_source_body">An apology when your cleaner doesn\'t arrive or nobody can take your booking, a complaint you chose to settle in credit, or a goodwill gesture from us.</string>
+    <string name="credit_explainer_source_body">An apology when your cleaner doesn\'t arrive or nobody can take your booking, a complaint you chose to settle in credit, a goodwill gesture from us, or a referral reward: when someone signs up with a friend\'s code, both of them get credit once the new customer\'s first cleaning is completed.</string>
     <string name="credit_explainer_spend_title">How it\'s spent</string>
     <string name="credit_explainer_spend_body">Automatically, on your next card booking in the same currency, up to %1$d%% of it. The card always pays the rest.</string>
     <string name="credit_explainer_points_title">Credit isn\'t points</string>

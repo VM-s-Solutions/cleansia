@@ -84,6 +84,29 @@ class CreditCopyStringsTest {
         }
     }
 
+    /**
+     * The customer terms of 2026-10-05 (section 9) name the referral reward as a source of credit, and a
+     * qualified referral pays the market's credit since the owner ruling of 2026-10-04. The explainer's
+     * "where it comes from" names it in the terms' own word, and states no amount (the test above).
+     */
+    @Test
+    fun `the explainer names the referral reward as a source of credit`() {
+        val referral = mapOf(
+            "values" to "referral reward",
+            "values-cs" to "odměna za doporučení",
+            "values-sk" to "odmena za odporúčanie",
+            "values-uk" to "реферальна винагорода",
+            "values-ru" to "реферальное вознаграждение",
+        )
+        referral.forEach { (locale, word) ->
+            val value = valueOf(stringsXml(locale), "credit_explainer_source_body")!!
+            assertTrue(
+                "$locale/credit_explainer_source_body does not name the $word: $value",
+                value.contains(word, ignoreCase = true),
+            )
+        }
+    }
+
     @Test
     fun `the share and the date are the server's figures, never a number of the copy's own`() {
         locales.forEach { locale ->

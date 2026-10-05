@@ -11,7 +11,7 @@ import { RegisterComponent } from './register.component';
 import { RegisterFacade, ReferralUiState } from './register.facade';
 
 /**
- * The sign-up referral dialog states what each side is credited in the browsed market, as the facade
+ * The sign-up referral dialog states what the new customer is credited in the browsed market, as the facade
  * formatted it (`referralCreditAmount`), and a market that pays none reads the `_no_amount` lines.
  * `register.models.spec.ts` pins the key choice; this pins that the page hands the helpers the
  * facade's figure rather than one of its own. -> /product/business-rules#money-constants
@@ -25,11 +25,11 @@ describe('RegisterComponent — what the referral dialog promises', () => {
         referral: {
           row_title: 'Referral code',
           dialog_title: 'Enter referral code',
-          dialog_helper: 'You each get {{amount}} in credit.',
+          dialog_helper: 'You get {{amount}} in credit.',
           dialog_helper_no_amount: 'Enter the code here.',
-          dialog_success: 'Code accepted — {{amount}} each.',
+          dialog_success: 'Code accepted — you get {{amount}}.',
           dialog_success_no_amount: 'Code accepted.',
-          dialog_success_named: 'Code from {{name}} accepted — {{amount}} each.',
+          dialog_success_named: 'Code from {{name}} accepted — you get {{amount}}.',
           dialog_success_named_no_amount: 'Code from {{name}} accepted.',
         },
       },
@@ -101,20 +101,20 @@ describe('RegisterComponent — what the referral dialog promises', () => {
   it('states the facade credit in the helper line', async () => {
     const { helper } = await renderDialog('6,00 €', { kind: 'idle' });
 
-    expect(helper).toBe('You each get 6,00 € in credit.');
+    expect(helper).toBe('You get 6,00 € in credit.');
   });
 
   it('states the facade credit when the code is accepted, naming the referrer', async () => {
     const { helper, status } = await renderDialog('6,00 €', { kind: 'valid', referrerFirstName: 'Petra' });
 
-    expect(helper).toBe('You each get 6,00 € in credit.');
-    expect(status).toBe('Code from Petra accepted — 6,00 € each.');
+    expect(helper).toBe('You get 6,00 € in credit.');
+    expect(status).toBe('Code from Petra accepted — you get 6,00 €.');
   });
 
   it('states the facade credit when the code is accepted without a referrer name', async () => {
     const { status } = await renderDialog('6,00 €', { kind: 'valid', referrerFirstName: null });
 
-    expect(status).toBe('Code accepted — 6,00 € each.');
+    expect(status).toBe('Code accepted — you get 6,00 €.');
   });
 
   it('reads the no-amount lines in a market that pays none', async () => {

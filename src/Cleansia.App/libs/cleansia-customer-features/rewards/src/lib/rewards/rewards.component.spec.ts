@@ -297,9 +297,9 @@ describe('RewardsComponent — what the invite card promises', () => {
     pages: {
       rewards: {
         referral: {
-          section_title: 'Invite friends — {{amount}} each',
+          section_title: 'Invite friends — get {{amount}}',
           section_title_no_amount: 'Invite friends',
-          subtitle: 'You each get {{amount}} in credit.',
+          subtitle: 'You get {{amount}} in credit.',
           subtitle_no_amount: 'Share your code.',
           when_credited: 'We add the credit once they finish their first clean.',
         },
@@ -352,8 +352,8 @@ describe('RewardsComponent — what the invite card promises', () => {
   it('states the credit the market pays, as the facade formatted it', async () => {
     const card = await renderCard('150 Kč');
 
-    expect(card).toContain('Invite friends — 150 Kč each');
-    expect(card).toContain('You each get 150 Kč in credit.');
+    expect(card).toContain('Invite friends — get 150 Kč');
+    expect(card).toContain('You get 150 Kč in credit.');
     expect(card).toContain('We add the credit once they finish their first clean.');
   });
 

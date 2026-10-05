@@ -7,11 +7,11 @@ type Locale = (typeof LOCALES)[number];
 const I18N_DIR = join(__dirname, '../../assets/i18n');
 
 /**
- * A qualified referral credits each side the order currency's `Currency.ReferralCredit` — money,
- * authored per currency, and no longer 150 tier points (owner ruling 2026-10-04). So the copy
- * carries `{{amount}}` where it states the credit, the page formats the market's figure into it,
- * and a market with no figure reads a sibling `_no_amount` line that names no amount and promises
- * no credit. -> /product/business-rules#money-constants
+ * A qualified referral credits each side the `Currency.ReferralCredit` of the currency that side
+ * books in (owner rulings 2026-10-04 and 2026-10-05), so the two figures can differ. The copy
+ * carries `{{amount}}` where it states the reader's own credit, the page formats the chosen
+ * market's figure into it, and a market with no figure reads a sibling `_no_amount` line that names
+ * no amount and promises no credit. -> /product/business-rules#referral-credit
  */
 const NAMESPACES: string[][] = [
   ['auth', 'register', 'referral'],
@@ -48,6 +48,16 @@ const REFERRAL_WORD: Record<Locale, RegExp> = {
   sk: /odporúč/i,
   uk: /запрош|рефера/i,
   ru: /приглаш|рефера/i,
+};
+
+const wholeWord = (words: string): RegExp => new RegExp(`(?<!\\p{L})(?:${words})(?!\\p{L})`, 'iu');
+
+const SHARED_FIGURE_CLAIM: Record<Locale, RegExp> = {
+  en: wholeWord('each|both'),
+  cs: wholeWord('oba|obě|každý|každá'),
+  sk: wholeWord('obaja|obe|každý|každá'),
+  uk: wholeWord('обоє|обидва|обидві|кожен|кожна|кожному'),
+  ru: wholeWord('оба|обе|каждый|каждая|каждому'),
 };
 
 const CURRENCY_WORDS = /\b(CZK|EUR|PLN|GBP|USD)\b|Kč|€|zł|£|\$/;
@@ -96,6 +106,15 @@ describe('the referral copy states the market credit, never a fixed figure or po
     const missing = WITH_AMOUNT.filter((key) => !value(bundle, key).includes('{{amount}}'));
 
     expect({ locale, missing }).toEqual({ locale, missing: [] });
+  });
+
+  it.each(LOCALES)('promises the reader only their own figure, never one figure to both sides, in %s', (locale) => {
+    const bundle = readLocale(locale);
+    const offending = WITH_AMOUNT.filter((key) => SHARED_FIGURE_CLAIM[locale].test(value(bundle, key))).map(
+      (key) => `${key}: ${value(bundle, key)}`,
+    );
+
+    expect({ locale, offending }).toEqual({ locale, offending: [] });
   });
 
   it.each(LOCALES)('bakes no figure and names no currency in the referral namespaces, in %s', (locale) => {

@@ -70,8 +70,8 @@ public interface IReferralService
     /// <summary>
     /// Issue <paramref name="amount"/> in <paramref name="currencyId"/> to the inviter and to the invited
     /// friend, one ledger row per side under a per-referral key. Answers what each side received: null for
-    /// an erased side, and for both when the amount is null or not positive. Holds both owners' credit
-    /// locks until the unit of work commits.
+    /// an erased side or one whose account is on a company frozen for archive, and for both when the amount
+    /// is null or not positive. Holds the paid owners' credit locks until the unit of work commits.
     /// </summary>
     Task<(decimal? ToReferrer, decimal? ToReferred)> AwardCreditAsync(
         Referral referral,

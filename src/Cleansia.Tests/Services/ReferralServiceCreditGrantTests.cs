@@ -161,6 +161,28 @@ public class ReferralServiceCreditGrantTests
         Assert.Equal(ReferralStatus.Qualified, referral.Status);
     }
 
+    /// <summary>
+    /// A write to a frozen company's books fails the whole commit, and this one is the completing order's —
+    /// another, active company's. The side whose account sits on the frozen books is paid nothing and no
+    /// account is opened for it; the other side is paid and the referral qualifies.
+    /// </summary>
+    [Fact]
+    public async Task A_Side_On_A_Frozen_Companys_Books_Receives_Nothing_And_The_Other_Is_Still_Paid()
+    {
+        _credit
+            .Setup(c => c.IsOnFrozenCompanyBooksAsync("referrer", CzkId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(true);
+        var referral = Arrange("referrer", "referred", NewCurrency(CzkId, "CZK", 150m));
+
+        await Service().ProcessOrderCompletedAsync(OrderId, "referred", CancellationToken.None);
+
+        Assert.Equal(["referred"], _ensured);
+        Assert.Equal(150m, SingleGrant("referred", CzkId).Amount);
+        Assert.Null(referral.CreditAwardedToReferrer);
+        Assert.Equal(150m, referral.CreditAwardedToReferred);
+        Assert.Equal(ReferralStatus.Qualified, referral.Status);
+    }
+
     [Fact]
     public async Task A_Second_Completion_Pays_Nobody_Again()
     {

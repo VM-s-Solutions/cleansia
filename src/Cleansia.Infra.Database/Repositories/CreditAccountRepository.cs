@@ -76,6 +76,19 @@ public class CreditAccountRepository(CleansiaDbContext context)
         return account;
     }
 
+    public async Task<bool> IsOnFrozenCompanyBooksAsync(
+        string userId, string currencyId, CancellationToken cancellationToken)
+    {
+        var companyId = await GetQueryableIgnoringTenant()
+                .Where(a => a.UserId == userId && a.CurrencyId == currencyId)
+                .Select(a => a.TenantId)
+                .FirstOrDefaultAsync(cancellationToken)
+            ?? await context.UserTenantIdAsync(userId, cancellationToken);
+
+        return companyId is not null
+            && await context.Tenants.AnyAsync(t => t.Id == companyId && t.ArchiveRequestedOn != null, cancellationToken);
+    }
+
     public async Task<bool> TryReturnAsync(
         string userId,
         string currencyId,

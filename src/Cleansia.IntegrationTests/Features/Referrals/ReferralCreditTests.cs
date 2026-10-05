@@ -34,6 +34,7 @@ public class ReferralCreditTests(PostgresContainerFixture fixture) : BaseIntegra
     private const string EurId = "currency-eur-referral";
     private const string OrderId = "order-referral-first";
     private const string Reason = "referral ring";
+    private static readonly DateTimeOffset FrozenOn = new(2026, 10, 1, 8, 0, 0, TimeSpan.Zero);
 
     private CleansiaDbContext NewContext()
     {
@@ -70,11 +71,16 @@ public class ReferralCreditTests(PostgresContainerFixture fixture) : BaseIntegra
     }
 
     /// <summary>
-    /// Inviter, invited friend and the accepted referral between them; with <paramref name="orderCurrencyId"/>,
-    /// also the friend's first order in that currency, completed.
+    /// Inviter, invited friend and the accepted referral between them, each customer on their company and
+    /// the referral on the inviter's; with <paramref name="orderCurrencyId"/>, also the friend's first order
+    /// in that currency, on the friend's company, completed unless <paramref name="completed"/> is false.
     /// </summary>
     private async Task<(string ReferrerId, string ReferredId, string ReferralId)> SeedAsync(
-        string? orderCurrencyId, bool eraseReferrer = false)
+        string? orderCurrencyId,
+        bool eraseReferrer = false,
+        string referrerCompany = TestTenants.Default,
+        string referredCompany = TestTenants.Default,
+        bool completed = true)
     {
         await using var ctx = NewContext();
         ctx.Languages.Add(Language.Create("en", "English"));
@@ -86,21 +92,27 @@ public class ReferralCreditTests(PostgresContainerFixture fixture) : BaseIntegra
             NewCurrency(EurId, "EUR", isDefault: false, referralCredit: 6m));
 
         var referrer = User.CreateWithPassword("referrer@cleansia.test", "Seed-Password-123", "Referring", "Friend");
+        referrer.TenantId = referrerCompany;
         var referred = User.CreateWithPassword("referred@cleansia.test", "Seed-Password-123", "Invited", "Friend");
+        referred.TenantId = referredCompany;
         ctx.Users.AddRange(referrer, referred);
 
         var code = ReferralCode.Generate(referrer.Id, "RFCRDT", "system");
+        code.TenantId = referrerCompany;
         ctx.ReferralCodes.Add(code);
         var referral = Referral.CreateAccepted(referrer.Id, referred.Id, code.Id, "system");
+        referral.TenantId = referrerCompany;
         ctx.Referrals.Add(referral);
 
         if (orderCurrencyId is not null)
         {
+            var address = Address.Create("123 Main St", "Prague", "11000", CountryId);
+            address.TenantId = referredCompany;
             var order = Order.Create(
                 customerName: "Invited Friend",
                 customerEmail: "referred@cleansia.test",
                 customerPhone: "+420000000000",
-                customerAddress: Address.Create("123 Main St", "Prague", "11000", CountryId),
+                customerAddress: address,
                 rooms: 1,
                 bathrooms: 1,
                 cleaningDateTime: DateTime.UtcNow.AddHours(-3),
@@ -111,9 +123,14 @@ public class ReferralCreditTests(PostgresContainerFixture fixture) : BaseIntegra
                 userId: referred.Id,
                 cancellationTerms: BookingPolicy.CancellationTermsAtBooking);
             order.Id = OrderId;
+            order.TenantId = referredCompany;
             order.SetMaxEmployees(1);
             order.AddOrderStatus(OrderStatusTrack.Create(OrderStatus.New, order));
-            order.AddOrderStatus(OrderStatusTrack.Create(OrderStatus.Completed, order));
+            if (completed)
+            {
+                order.AddOrderStatus(OrderStatusTrack.Create(OrderStatus.Completed, order));
+            }
+
             ctx.Orders.Add(order);
         }
 
@@ -139,6 +156,20 @@ public class ReferralCreditTests(PostgresContainerFixture fixture) : BaseIntegra
     {
         await using var ctx = NewContext();
         await Service(ctx).ProcessOrderCompletedAsync(OrderId, referredId, CancellationToken.None);
+        await ctx.CommitAsync(CancellationToken.None);
+    }
+
+    /// <summary>
+    /// Freezes the company for archive (ADR-0064 D3) the way its administrators reach it: wound down,
+    /// deactivated, then the archive requested.
+    /// </summary>
+    private async Task FreezeAsync(string companyId)
+    {
+        await using var ctx = NewContext();
+        var company = await ctx.Tenants.SingleAsync(t => t.Id == companyId);
+        company.RequestWindDown(new DateOnly(2026, 9, 1), AdminId, FrozenOn.AddDays(-30));
+        company.Deactivate(AdminId, FrozenOn.AddDays(-15));
+        company.RequestArchive(AdminId, FrozenOn);
         await ctx.CommitAsync(CancellationToken.None);
     }
 
@@ -230,6 +261,79 @@ public class ReferralCreditTests(PostgresContainerFixture fixture) : BaseIntegra
         var referral = await ReferralAsync(referralId);
         Assert.Null(referral.CreditAwardedToReferrer);
         Assert.Equal(150m, referral.CreditAwardedToReferred);
+    }
+
+    /// <summary>
+    /// The inviter's company is frozen for archive and the friend's first order belongs to another, active
+    /// company. The completion of that order commits - the order's own status with it - and pays the friend;
+    /// the inviter, whose account would open on the frozen company's books, receives nothing, and the
+    /// referral qualifies with what was paid.
+    /// </summary>
+    [Fact]
+    public async Task A_Frozen_Inviters_Company_Does_Not_Stop_The_Friends_Company_Completing_And_Paying_The_Friend()
+    {
+        await ResetAsync();
+        var (referrerId, referredId, referralId) = await SeedAsync(
+            orderCurrencyId: CzkId, referrerCompany: TestTenants.Second, completed: false);
+        await FreezeAsync(TestTenants.Second);
+
+        await using (var ctx = NewContext())
+        {
+            var order = await ctx.Orders.Include(o => o.OrderStatusHistory).SingleAsync(o => o.Id == OrderId);
+            order.AddOrderStatus(OrderStatusTrack.Create(OrderStatus.Completed, order));
+            await Service(ctx).ProcessOrderCompletedAsync(OrderId, referredId, CancellationToken.None);
+            await ctx.CommitAsync(CancellationToken.None);
+        }
+
+        await using (var ctx = NewContext())
+        {
+            var order = await ctx.Orders.IgnoreQueryFilters().AsNoTracking()
+                .Include(o => o.OrderStatusHistory).SingleAsync(o => o.Id == OrderId);
+            Assert.Contains(order.OrderStatusHistory, h => h.Status == OrderStatus.Completed);
+        }
+
+        Assert.Empty(await AccountsAsync(referrerId));
+        var paid = Assert.Single(await AccountsAsync(referredId));
+        Assert.Equal(TestTenants.Default, paid.TenantId);
+        Assert.Equal(150m, paid.Balance);
+        var referral = await ReferralAsync(referralId);
+        Assert.Equal(ReferralStatus.Qualified, referral.Status);
+        Assert.Null(referral.CreditAwardedToReferrer);
+        Assert.Equal(150m, referral.CreditAwardedToReferred);
+    }
+
+    /// <summary>
+    /// The force-qualify path through the same grant, with the friend's existing account on a frozen
+    /// company's books: the inviter's active company commits, the inviter is paid, and the frozen account is
+    /// left exactly as it was.
+    /// </summary>
+    [Fact]
+    public async Task Force_Qualify_Leaves_An_Account_On_A_Frozen_Companys_Books_Untouched_And_Pays_The_Other_Side()
+    {
+        await ResetAsync();
+        var (referrerId, referredId, referralId) = await SeedAsync(
+            orderCurrencyId: null, referredCompany: TestTenants.Second);
+        await using (var ctx = NewContext())
+        {
+            var held = CreditAccount.Create(referredId, CzkId, "seed");
+            held.TenantId = TestTenants.Second;
+            ctx.CreditAccounts.Add(held);
+            await ctx.CommitAsync(CancellationToken.None);
+        }
+
+        await FreezeAsync(TestTenants.Second);
+
+        var response = await ForceQualifyAsync(referralId);
+
+        Assert.Equal(new ForceQualifyReferral.Response(referralId, 150m, 0m, "CZK"), response);
+        Assert.Equal(150m, Assert.Single(await AccountsAsync(referrerId)).Balance);
+        var frozen = Assert.Single(await AccountsAsync(referredId));
+        Assert.Equal(0m, frozen.Balance);
+        Assert.Empty(frozen.Transactions);
+        var referral = await ReferralAsync(referralId);
+        Assert.Equal(ReferralStatus.Qualified, referral.Status);
+        Assert.Equal(150m, referral.CreditAwardedToReferrer);
+        Assert.Null(referral.CreditAwardedToReferred);
     }
 
     [Fact]

@@ -46,6 +46,15 @@ public interface ICreditAccountRepository : IRepository<CreditAccount, string>
         string userId, string currencyId, CancellationToken cancellationToken);
 
     /// <summary>
+    /// Whether the customer's account in <paramref name="currencyId"/> — or, with none, the one
+    /// <see cref="EnsureForUserAsync"/> would open, on the customer's own company — sits on the books of a
+    /// company frozen for archive (ADR-0064 D3). Any write to such an account fails the whole commit it
+    /// rides in, whichever company that commit is for.
+    /// </summary>
+    Task<bool> IsOnFrozenCompanyBooksAsync(
+        string userId, string currencyId, CancellationToken cancellationToken);
+
+    /// <summary>
     /// Balance, currency and account id only, untracked - the checkout read, which needs to know how
     /// much is spendable and in what currency, and nothing else. Returns null when the customer has no
     /// account, which is the common case and must NOT create one: a booking is not a reason to open a

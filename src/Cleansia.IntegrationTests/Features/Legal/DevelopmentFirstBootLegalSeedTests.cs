@@ -86,7 +86,7 @@ public sealed class DevelopmentFirstBootLegalSeedTests(PostgresContainerFixture 
                 LegalDocumentType.PrivacyPolicy, LegalDocumentType.PrivacyPolicy, LegalDocumentType.PrivacyPolicy,
                 LegalDocumentType.WorkContract, LegalDocumentType.WorkContract,
                 LegalDocumentType.CleanerFrameworkContract, LegalDocumentType.CleanerFrameworkContract,
-                LegalDocumentType.SelfBillingAgreement,
+                LegalDocumentType.SelfBillingAgreement, LegalDocumentType.SelfBillingAgreement,
                 LegalDocumentType.CleanerDataProcessingAgreement, LegalDocumentType.ComplaintsProcedure,
             ],
             documents.Select(d => d.Type).Order());

@@ -44,6 +44,7 @@ public sealed class LegalDocumentSeederTests : IDisposable
         (LegalDocumentType.CleanerFrameworkContract, new DateOnly(2026, 9, 29)),
         (LegalDocumentType.CleanerFrameworkContract, new DateOnly(2026, 10, 5)),
         (LegalDocumentType.SelfBillingAgreement, new DateOnly(2026, 9, 29)),
+        (LegalDocumentType.SelfBillingAgreement, new DateOnly(2026, 10, 5)),
         (LegalDocumentType.CleanerDataProcessingAgreement, new DateOnly(2026, 9, 29)),
         (LegalDocumentType.ComplaintsProcedure, new DateOnly(2026, 9, 29)),
     ];
@@ -473,6 +474,9 @@ public sealed class LegalDocumentSeederTests : IDisposable
     [InlineData(LegalDocumentType.CleanerFrameworkContract, "2026-09-29", 11, 2)] // insurance kept, its certificate shown
     [InlineData(LegalDocumentType.CleanerFrameworkContract, "2026-09-29", 16, 2)] // losing the insurance ends the agreement at once
     [InlineData(LegalDocumentType.CleanerFrameworkContract, "2026-09-29", 16, 3)] // the last rewards at the next monthly settlement
+    [InlineData(LegalDocumentType.SelfBillingAgreement, "2026-09-29", 2, 1)]      // invoices for completed jobs and any fee share
+    [InlineData(LegalDocumentType.SelfBillingAgreement, "2026-09-29", 3, 1)]      // invoiced after each monthly pay period
+    [InlineData(LegalDocumentType.SelfBillingAgreement, "2026-09-29", 3, 2)]      // the invoice lists any fee share
     public void The_Newest_Version_Carries_None_Of_The_Wording_The_2026_10_04_Rulings_Retired(
         LegalDocumentType type, string replaced, int section, int block)
     {

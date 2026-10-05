@@ -246,7 +246,7 @@ private fun StepNode(
             text = label,
             style = labelStyle.copy(fontWeight = weight, fontSize = labelStyle.fontSize * (1f - 0.1f * shrinkSteps)),
             color = when (state) {
-                StepNodeState.Current -> colors.primary
+                StepNodeState.Current -> colors.primaryText
                 StepNodeState.Done -> colors.onSurface
                 StepNodeState.Upcoming -> colors.onSurfaceVariant
             },

@@ -232,7 +232,7 @@ class PrimaryTextTest {
     @Test
     fun `no partner-app text draws in the bare primary`() {
         val offenders = sources.filter { it.module == "partner-app" }.flatMap { file ->
-            calls("Text", file.text, file).filter { BARE_PRIMARY_COLOR.containsMatchIn(it.args) }
+            calls("Text", file.text, file).filter { NAMES_PRIMARY.containsMatchIn(it.args) }
         }
         assertEquals(emptyList<String>(), offenders.map { it.where })
         // Texts whose ink arrives through a value rather than their own `color =`.
@@ -354,6 +354,8 @@ class PrimaryTextTest {
         val BARE_PRIMARY_CONTENT = Regex("""contentColor\s*=\s*$BARE""")
         val BARE_PRIMARY_COLOR = Regex("""(?:^|[\s,(])color\s*=\s*[^\n]*$BARE""")
         val BARE_PRIMARY_TINT = Regex("""\btint\s*=\s*$BARE""")
+        /** The primary under any of the names a screen holds the scheme by (`colors.primary` in a `when` too). */
+        val NAMES_PRIMARY = Regex("""\b(?:colorScheme|colors|scheme)\.primary(?![A-Za-z])(?!\.copy)""")
         val LABEL_ARG = Regex("""(?:^|[\s,(])label\s*=""")
         val FOCUSED_LABEL_INK = Regex("""\bfocusedLabelColor\s*=\s*primaryText\(\)""")
         val BLUE_TINT = Regex("""\btint\s*=\s*[^\n]*(?:$BARE|(?<![\w.])primaryText\(\)|colorScheme\.primaryText\b)""")

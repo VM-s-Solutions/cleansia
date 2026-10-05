@@ -169,8 +169,8 @@ being non-empty:
 | `address.city` | Required, 2-100 chars |
 | `address.zipCode` | Required, matches `^[\d\s-]{3,20}$` |
 
-<!-- The two ids below keep the anchors these steps had as steps 2 and 3, before the dirtiness
-     step: code comments on the web, Android and iOS point at them. -->
+<!-- Code comments on the web, Android and iOS point at the Step 3 id below, and other docs pages at
+     it and at Step 4's: rename either only together with every pointer to it. -->
 ### Step 3: Date & Time {#step-3-date-time}
 
 The customer picks a cleaning date and an **arrival time in 15-minute increments**, from 08:00

@@ -271,6 +271,33 @@ export class RecurringBookingsFacade extends UnsubscribeControlDirective {
     );
   });
 
+  /**
+   * A schedule just loaded for edit, until the list priced for its address has judged its selection.
+   * What that list no longer offers was retired after the schedule was saved, so it goes with a notice
+   * of its own: "not offered at this address" answers the customer changing the address, which nobody
+   * did here. The store's own trim waits for this one. → /product/business-rules#deactivated-catalogue
+   */
+  private readonly loadedSelectionUnjudged = signal(false);
+  private readonly loadedSelectionEffect = effect(() => {
+    if (!this.loadedSelectionUnjudged() || this.addressesLoading()) return;
+    const offered = this.offeredIn(this.addressCountryId());
+    if (!offered) return;
+    untracked(() => {
+      this.loadedSelectionUnjudged.set(false);
+      const { selectedServiceIds, selectedPackageIds } = this.formData();
+      const keptServiceIds = selectedServiceIds.filter((id) => offered.services.has(id));
+      const keptPackageIds = selectedPackageIds.filter((id) => offered.packages.has(id));
+      if (
+        keptServiceIds.length === selectedServiceIds.length &&
+        keptPackageIds.length === selectedPackageIds.length
+      ) {
+        return;
+      }
+      this.updateFormData({ selectedServiceIds: keptServiceIds, selectedPackageIds: keptPackageIds });
+      this.snackbar.showInfoTranslated('recurring_booking.selection_no_longer_offered');
+    });
+  });
+
   /** An order's selection waiting for the list it can be checked against. */
   private readonly pendingPrefill = signal<RecurringPrefillParams | null>(null);
   private readonly prefillEffect = effect(() => {
@@ -558,6 +585,7 @@ export class RecurringBookingsFacade extends UnsubscribeControlDirective {
     field: 'selectedServiceIds' | 'selectedPackageIds',
     offered: Set<string | undefined>,
   ): void {
+    if (this.loadedSelectionUnjudged()) return;
     const selected = this.formData()[field];
     const kept = selected.filter((id) => offered.has(id));
     if (kept.length === selected.length) return;
@@ -680,6 +708,7 @@ export class RecurringBookingsFacade extends UnsubscribeControlDirective {
   /** Load an existing template into the form so the same screen can edit it. */
   loadForEdit(template: RecurringBookingTemplateDto): void {
     this.editingId.set(template.id ?? null);
+    this.loadedSelectionUnjudged.set(true);
     this.formData.set({
       frequency: template.frequency,
       dayOfWeek: template.dayOfWeek,
@@ -848,6 +877,7 @@ export class RecurringBookingsFacade extends UnsubscribeControlDirective {
     this.cashCleared.set(false);
     this.preferredCleanerRefused.set(false);
     this.submitAttempted.set(false);
+    this.loadedSelectionUnjudged.set(false);
     this.formData.set({ ...RECURRING_WIZARD_INITIAL_DATA });
   }
 

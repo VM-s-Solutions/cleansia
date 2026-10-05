@@ -332,6 +332,95 @@ describe('RecurringBookingsFacade', () => {
     });
   });
 
+  // A schedule opened for edit is trimmed to what its market lists today. What goes was retired since
+  // the schedule was saved, which "not offered at this address" would misstate: nobody changed the
+  // address. That message stays for the customer changing it.
+  describe('a schedule loaded for edit loses what its market no longer lists', () => {
+    const slovakAddress = SavedAddressDto.fromJS({ id: 'addr-sk', countryId: 'svk' });
+    const czechAddress = SavedAddressDto.fromJS({ id: 'addr-cz', countryId: 'cze' });
+    const listed = (countryId: string | null, services: string[], packages: string[]) => {
+      store.overrideSelector(selectCustomerServicesCatalogue, {
+        services: services.map((id) => ServiceListItem.fromJS({ id })),
+        countryId,
+      });
+      store.overrideSelector(selectCustomerPackagesCatalogue, {
+        packages: packages.map((id) => PackageListItem.fromJS({ id })),
+        countryId,
+      });
+      store.refreshState();
+      TestBed.flushEffects();
+    };
+    const stored = template({
+      savedAddressId: 'addr-sk',
+      selectedServiceIds: ['s1', 'retired-service'],
+      selectedPackageIds: ['p1', 'retired-package'],
+    });
+    const selection = () => ({
+      services: facade.formData().selectedServiceIds,
+      packages: facade.formData().selectedPackageIds,
+    });
+
+    beforeEach(() => savedAddressStore.addresses.set([slovakAddress, czechAddress]));
+
+    it('drops it as the form loads and says it is no longer offered', async () => {
+      await facade.initialize();
+      listed('svk', ['s1'], ['p1']);
+
+      facade.loadForEdit(stored);
+      TestBed.flushEffects();
+
+      expect(selection()).toEqual({ services: ['s1'], packages: ['p1'] });
+      expect(snackbar.showInfoTranslated).toHaveBeenCalledTimes(1);
+      expect(snackbar.showInfoTranslated).toHaveBeenCalledWith('recurring_booking.selection_no_longer_offered');
+    });
+
+    it("waits for the list priced for the schedule's address, and still says no longer offered", async () => {
+      await facade.initialize();
+      facade.loadForEdit(stored);
+      TestBed.flushEffects();
+      expect(selection()).toEqual({
+        services: ['s1', 'retired-service'],
+        packages: ['p1', 'retired-package'],
+      });
+
+      listed('svk', ['s1'], ['p1']);
+
+      expect(selection()).toEqual({ services: ['s1'], packages: ['p1'] });
+      expect(snackbar.showInfoTranslated).toHaveBeenCalledTimes(1);
+      expect(snackbar.showInfoTranslated).toHaveBeenCalledWith('recurring_booking.selection_no_longer_offered');
+    });
+
+    it('says nothing when the market still lists everything', async () => {
+      await facade.initialize();
+      listed('svk', ['s1', 'retired-service'], ['p1', 'retired-package']);
+
+      facade.loadForEdit(stored);
+      TestBed.flushEffects();
+
+      expect(selection().services).toHaveLength(2);
+      expect(snackbar.showInfoTranslated).not.toHaveBeenCalled();
+    });
+
+    it('still says "not offered at this address" when the customer then moves it', async () => {
+      await facade.initialize();
+      listed('svk', ['s1', 'retired-service'], ['p1', 'retired-package']);
+      facade.loadForEdit(stored);
+      TestBed.flushEffects();
+
+      facade.updateFormData({ savedAddressId: 'addr-cz' });
+      TestBed.flushEffects();
+      listed('cze', ['s1'], ['p1']);
+
+      expect(selection()).toEqual({ services: ['s1'], packages: ['p1'] });
+      expect(snackbar.showInfoTranslated).toHaveBeenCalledWith(
+        'pages.order.wizard.catalogue_changed_for_country',
+      );
+      expect(snackbar.showInfoTranslated).not.toHaveBeenCalledWith(
+        'recurring_booking.selection_no_longer_offered',
+      );
+    });
+  });
+
   // "Make this recurring" arrives with the order's services before the customer has touched the
   // address, and the default-priced list lands before the one priced for their address. Checking
   // the prefill against the first list and again against the second told the customer twice.

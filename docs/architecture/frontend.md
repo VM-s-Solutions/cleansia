@@ -251,6 +251,30 @@ providePrimeNG({
 });
 ```
 
+### A blue slab on the customer site takes the card's ground as its ink {#heading-slab-ink}
+
+A picked chip or choice, and an initials disc, on the customer site is a slab of `--cl-heading`, the
+heading blue: sky-700 `#0369a1` in light mode and sky-300 `#7dd3fc` in dark. Its label takes
+`--cl-surface`, the card's own ground, which flips with the slab: white on sky-700 in light mode, and
+`#0f1b2d` on sky-300 in dark. Both read 5.93:1 in light mode and 10.37:1 in dark, measured from the
+compiled customer stylesheet in Chromium. A literal white reads 1.67:1 on the dark slab, which is what
+each of these drew until 2026-10-05:
+
+| Element | Rule |
+|---|---|
+| The schedule form's picked pick and picked chips, and the Plus badge on the schedules list | `cl-rec__pick--on`, `cl-rec__chip--on`, `cl-rec__gate-badge` → [the services step](/customer-app/ordering-flow#step-0-services-packages) |
+| The dispute form's picked reason | `.cl-dsp__reason--on` |
+| Profile's picked theme, its icon included | `.customer-profile__segment--on` |
+| Rewards' picked activity filter | `.cl-rwd__chip--on` |
+| Orders' picked filter | `.customer-orders__chip--on` |
+| The initials on Profile | `.customer-profile__user-avatar` |
+| A cleaner's initials on an order | `.order-detail__cleaner-avatar` |
+| The signed-in initials in the top bar, and in the drawer | `.customer-navbar__avatar` |
+
+`customer-heading-slab.spec.ts`, in the assets project beside the stylesheets, reads every customer
+page stylesheet and the customer navbar's, finds each rule that paints its background with
+`--cl-heading` and sets an ink, and fails unless that ink is `--cl-surface`.
+
 ## i18n
 
 Translation is handled by `ngx-translate` with a custom `JsonTranslationLoader` that supports SSR. Supported locales: `cs` (Czech), `en`, `sk`, `uk`, `ru`. Locale data is registered at app initialization:

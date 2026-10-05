@@ -106,7 +106,9 @@ read 2.77:1. Two more picked elements sit on the same slab and take the same ink
 the schedule form's picked chips (`cl-rec__chip--on`: cadence, day, rooms and bathrooms) and the Plus
 badge, star included, on the schedules list's paywall (`cl-rec__gate-badge`). They read 5.93:1 in
 light mode and 10.37:1 in dark, where their white read 1.67:1; the `create-recurring-wizard` and
-`recurring-bookings-list` specs pin each one's ink. Hovering never repaints a picked pick's border (`:hover:not(.cl-rec__pick--on)`): the
+`recurring-bookings-list` specs pin each one's ink. Every other slab on the customer site takes the same
+ink since 2026-10-05, and a spec over the customer stylesheets holds them all to it
+→ [A blue slab takes the card's ground as its ink](/architecture/frontend#heading-slab-ink). Hovering never repaints a picked pick's border (`:hover:not(.cl-rec__pick--on)`): the
 hover rule outranked the picked one and turned the border pale. On a picked pick the badge sits on
 `--cl-surface`, where its words read 9.46:1 in light mode and 15.06:1 in dark. The badge,
 `.cl-wiz__svc-in-pack` at all three sites, sits straight under the name and above the description. It

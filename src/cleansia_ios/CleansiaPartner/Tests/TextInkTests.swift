@@ -1,4 +1,7 @@
+import CleansiaPartnerApi
+import SwiftUI
 import XCTest
+@testable import CleansiaPartner
 
 /// Text links and text buttons take the text ink, not the primary (owner decision 2026-10-05): the light-mode
 /// primary, sky-600, reads 4.10:1 on white, under the 4.5:1 floor for text, so they take
@@ -108,7 +111,30 @@ final class TextInkTests: XCTestCase {
         let badge = try compactSource("Earnings/InvoiceStatusBadge.swift")
         XCTAssertTrue(badge.contains("case._1:CleansiaColors.primaryContainer"))
         XCTAssertTrue(badge
-            .contains("privatevarforeground:Color{switchstatus{case._1:CleansiaColors.primaryTextOnContainer"))
+            .contains("varforeground:Color{switchstatus{case._1:CleansiaColors.primaryTextOnContainer"))
+    }
+
+    /// Every invoice status pill's label reads 4.5:1 or more on its fill in both modes (finding 2026-10-05):
+    /// "Approved" was white on the light primary, sky-600 (4.10:1), and the dark primary's ink on sky-400
+    /// (4.42:1); it is white on sky-700 in both modes now, as Android's.
+    func testEveryInvoiceStatusPillReadsOnItsFillInBothModes() {
+        let statuses: [EmployeeInvoiceStatus?] = EmployeeInvoiceStatus.allCases + [nil]
+        for style in [UIUserInterfaceStyle.light, .dark] {
+            for status in statuses {
+                let badge = InvoiceStatusBadge(status: status)
+                XCTAssertGreaterThanOrEqual(
+                    contrast(rgb(badge.foreground, style), rgb(badge.background, style)),
+                    4.5,
+                    "\(String(describing: status)), style \(style.rawValue)"
+                )
+            }
+            let approved = InvoiceStatusBadge(status: ._2)
+            XCTAssertEqual(
+                contrast(rgb(approved.foreground, style), rgb(approved.background, style)),
+                5.93,
+                accuracy: 0.01
+            )
+        }
     }
 
     /// The partner app's informational blue text — card eyebrows, pay amounts, step counters and names, status
@@ -180,6 +206,25 @@ final class TextInkTests: XCTestCase {
             }
         }
         return found
+    }
+
+    private func rgb(_ color: Color, _ style: UIUserInterfaceStyle) -> SIMD3<Double> {
+        var red: CGFloat = 0
+        var green: CGFloat = 0
+        var blue: CGFloat = 0
+        var alpha: CGFloat = 0
+        UIColor(color).resolvedColor(with: UITraitCollection(userInterfaceStyle: style))
+            .getRed(&red, green: &green, blue: &blue, alpha: &alpha)
+        return SIMD3(Double(red), Double(green), Double(blue))
+    }
+
+    private func contrast(_ first: SIMD3<Double>, _ second: SIMD3<Double>) -> Double {
+        func luminance(_ color: SIMD3<Double>) -> Double {
+            let linear = [color.x, color.y, color.z].map { $0 <= 0.04045 ? $0 / 12.92 : pow(($0 + 0.055) / 1.055, 2.4) }
+            return 0.2126 * linear[0] + 0.7152 * linear[1] + 0.0722 * linear[2]
+        }
+        let (lighter, darker) = (max(luminance(first), luminance(second)), min(luminance(first), luminance(second)))
+        return (lighter + 0.05) / (darker + 0.05)
     }
 
     private func parens(_ line: String) -> Int {

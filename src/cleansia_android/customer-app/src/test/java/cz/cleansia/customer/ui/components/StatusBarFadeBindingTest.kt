@@ -85,6 +85,21 @@ class StatusBarFadeBindingTest {
         )
     }
 
+    /** W-F3: the hero's share is moved out of the shades no icon reads on before it colours the fade. */
+    @Test
+    fun `the fade's colour takes the legible share, judged once per hero and page`() {
+        val body = fadeBody()
+        assertTrue(
+            "statusBarFade must remember statusBarFadeIllegibleShares(page, it) for its hero",
+            body.contains("remember(heroTint, page) { heroTint?.let { statusBarFadeIllegibleShares(page, it) } }"),
+        )
+        assertTrue(
+            "statusBarFade must colour the fade with statusBarFadeLegibleShare(statusBarFadeHeroShare(…), illegible)",
+            Regex("""heroShare = statusBarFadeLegibleShare\(\s*statusBarFadeHeroShare\(currentHeroHeight\(\) - scrollState\.value, height\),\s*illegible,\s*\)""")
+                .containsMatchIn(body),
+        )
+    }
+
     /** Dark icons on the navy Plus hero read 1.35:1, so a hero screen sets them for the colour behind them. */
     @Test
     fun `a hero screen sets the icons to read on the colour behind them`() {

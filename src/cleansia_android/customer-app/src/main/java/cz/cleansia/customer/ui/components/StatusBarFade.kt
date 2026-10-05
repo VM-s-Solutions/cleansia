@@ -29,6 +29,7 @@ import androidx.core.view.WindowCompat
 import androidx.lifecycle.compose.LifecycleResumeEffect
 import cz.cleansia.customer.ui.theme.isDark
 import kotlin.math.ceil
+import kotlin.math.roundToInt
 
 /**
  * Fades scrolled content out under the status bar on a screen that draws edge to edge with no top
@@ -39,9 +40,11 @@ import kotlin.math.ceil
  * on a screen whose scroll content starts with a full-bleed hero ([heroTint], its top colour, and
  * [heroHeight], its measured height in px) — the hero's colour while the hero is under the status
  * bar, cross-faded into the page background as the hero's bottom passes up through it, so a dark hero
- * never wears a pale band. It is held at 90 % behind the clock and icons and eased out to clear by the
- * clock's line ([statusBarFadeHeight]), with no tail below it. While a hero is on the screen the status
- * bar's icons are set light or dark to read on that colour ([statusBarIconsLight]).
+ * never wears a pale band. The cross-fade steps over the shades on which neither the light nor the dark
+ * icons read 4.5:1 ([statusBarFadeLegibleShare]), so the clock stays legible through the whole scroll.
+ * It is held at 90 % behind the clock and icons and eased out to clear by the clock's line
+ * ([statusBarFadeHeight]), with no tail below it. While a hero is on the screen the status bar's icons
+ * are set light or dark to read on that colour ([statusBarIconsLight]).
  *
  * It shows only once the content has left its top. At rest the full-bleed Profile and Plus heroes
  * paint the status-bar strip themselves, and a pull-to-refresh never moves the scroll value. Drawing
@@ -61,12 +64,16 @@ fun Modifier.statusBarFade(
     val ease = with(LocalDensity.current) { FadeEase.toPx() }
     val page = MaterialTheme.colorScheme.background
     val currentHeroHeight by rememberUpdatedState(heroHeight)
-    val behind = remember(scrollState, heroTint, page, height) {
+    val illegible = remember(heroTint, page) { heroTint?.let { statusBarFadeIllegibleShares(page, it) } }
+    val behind = remember(scrollState, heroTint, page, height, illegible) {
         derivedStateOf {
             statusBarFadeColor(
                 page = page,
                 heroTint = heroTint,
-                heroShare = statusBarFadeHeroShare(currentHeroHeight() - scrollState.value, height),
+                heroShare = statusBarFadeLegibleShare(
+                    statusBarFadeHeroShare(currentHeroHeight() - scrollState.value, height),
+                    illegible,
+                ),
             )
         }
     }
@@ -131,6 +138,49 @@ internal fun statusBarFadeHeroShare(heroBottom: Int, height: Int): Float =
 /** The hero's colour laid over the page in [heroShare], as iOS lays it; the page alone without a hero. */
 internal fun statusBarFadeColor(page: Color, heroTint: Color?, heroShare: Float): Color =
     heroTint?.copy(alpha = heroShare)?.compositeOver(page) ?: page
+
+/** The steps a hero's share is judged in: an sRGB colour keeps its alpha in eight bits. */
+private const val SHARE_STEPS = 255
+
+/**
+ * The hero shares whose fade colour neither the light nor the dark icons read 4.5:1 on
+ * ([statusBarClockReads]), from the first to the last; null when every share reads, as on a dark page.
+ * A dark hero cross-faded into a light page passes through them: the clock dipped to 3.1:1 on Profile.
+ */
+internal fun statusBarFadeIllegibleShares(page: Color, heroTint: Color): ClosedFloatingPointRange<Float>? {
+    val illegible = (0..SHARE_STEPS).map { it.toFloat() / SHARE_STEPS }.filterNot { share ->
+        val color = statusBarFadeColor(page, heroTint, share)
+        statusBarClockReads(color, light = true, heroTint) || statusBarClockReads(color, light = false, heroTint)
+    }
+    return if (illegible.isEmpty()) null else illegible.first()..illegible.last()
+}
+
+/**
+ * [heroShare] on the eight-bit step the colour will hold, moved out of [illegible] to the legible step
+ * past its nearer edge: the colour jumps across those shades in one pixel of scroll rather than passing
+ * through them, and the icons flip with it ([statusBarIconsLight]). Every other share is left as it is.
+ */
+internal fun statusBarFadeLegibleShare(heroShare: Float, illegible: ClosedFloatingPointRange<Float>?): Float {
+    val share = (heroShare * SHARE_STEPS).roundToInt().toFloat() / SHARE_STEPS
+    if (illegible == null || share !in illegible) return share
+    val step = 1f / SHARE_STEPS
+    val darker = share - illegible.start >= illegible.endInclusive - share
+    return (if (darker) illegible.endInclusive + step else illegible.start - step).coerceIn(0f, 1f)
+}
+
+/**
+ * Whether the clock reads 4.5:1 in [light] icons over the fade in [color], whatever shows through the
+ * fade's last 10 %: white under the light icons, the hero itself ([heroTint]) under the dark ones.
+ */
+internal fun statusBarClockReads(color: Color, light: Boolean, heroTint: Color): Boolean {
+    val behind = color.copy(alpha = STATUS_BAR_FADE_OPACITY).compositeOver(if (light) Color.White else heroTint)
+    val icons = if (light) Color.White else DarkStatusBarIcons.compositeOver(behind)
+    val (lighter, darker) = listOf(icons.luminance(), behind.luminance()).sortedDescending()
+    return (lighter + 0.05f) / (darker + 0.05f) >= 4.5f
+}
+
+/** The system's dark status-bar icons: black at 60 %. */
+private val DarkStatusBarIcons = Color.Black.copy(alpha = 0.6f)
 
 /**
  * The fade's stops over its [height]: [color] held at 90 % down to [ease] above the

@@ -5,9 +5,12 @@ import androidx.compose.ui.graphics.compositeOver
 import androidx.compose.ui.unit.dp
 import cz.cleansia.customer.ui.theme.Sky600
 import cz.cleansia.customer.ui.theme.Sky700
+import cz.cleansia.customer.ui.theme.Sky800
 import cz.cleansia.customer.ui.theme.Sky950
 import cz.cleansia.customer.ui.theme.Slate50
 import cz.cleansia.customer.ui.theme.Slate900
+import org.junit.Assert.assertNotNull
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
@@ -117,6 +120,66 @@ class StatusBarFadeTest {
         assertTrue(statusBarIconsLight(Slate900))
         assertFalse(statusBarIconsLight(Slate50))
         assertFalse(statusBarIconsLight(Color.White))
+    }
+
+    // W-F3: a dark hero cross-faded into a light page passed through shades neither icon colour reads
+    // 4.5:1 on; Profile's clock measured 3.1:1 over about 50 px of scroll on the Pixel 8 emulator.
+
+    /** Profile's and Subscribe Plus's heroes over their pages, light and dark. */
+    private val heroes = mapOf(
+        "Profile, light" to (Sky700 to Slate50),
+        "Plus, light" to (Sky950 to Slate50),
+        "Profile, dark" to (Sky800 to Slate900),
+        "Plus, dark" to (Sky950 to Slate900),
+    )
+
+    @Test
+    fun `a dark hero over the light page passes through shades no icon reads 4_5 to 1 on`() {
+        val illegible = statusBarFadeIllegibleShares(Slate50, Sky700)
+        assertNotNull(illegible)
+        val middle = statusBarFadeColor(Slate50, Sky700, (illegible!!.start + illegible.endInclusive) / 2)
+        assertFalse(statusBarClockReads(middle, light = true, Sky700))
+        assertFalse(statusBarClockReads(middle, light = false, Sky700))
+    }
+
+    @Test
+    fun `on a dark page every share reads, so nothing is skipped`() {
+        assertNull(statusBarFadeIllegibleShares(Slate900, Sky800))
+        assertNull(statusBarFadeIllegibleShares(Slate900, Sky950))
+    }
+
+    @Test
+    fun `the clock reads 4_5 to 1 in the icons it is given at every share of the scroll`() {
+        heroes.forEach { (screen, colours) ->
+            val (hero, page) = colours
+            val illegible = statusBarFadeIllegibleShares(page, hero)
+            (0..1000).map { it / 1000f }.forEach { share ->
+                val color = statusBarFadeColor(page, hero, statusBarFadeLegibleShare(share, illegible))
+                assertTrue(
+                    "$screen: the clock is under 4.5:1 at share $share",
+                    statusBarClockReads(color, light = statusBarIconsLight(color), hero),
+                )
+            }
+        }
+    }
+
+    @Test
+    fun `outside the skipped shades the cross-fade is left as it was`() {
+        val illegible = statusBarFadeIllegibleShares(Slate50, Sky700)!!
+        assertEquals(1f, statusBarFadeLegibleShare(1f, illegible))
+        assertEquals(0f, statusBarFadeLegibleShare(0f, illegible))
+        val below = illegible.start / 2
+        assertEquals(below, statusBarFadeLegibleShare(below, illegible), 1f / 255)
+        assertEquals(0.5f, statusBarFadeLegibleShare(0.5f, null), 1f / 255)
+    }
+
+    @Test
+    fun `the colour jumps across the skipped shades once and never back`() {
+        val illegible = statusBarFadeIllegibleShares(Slate50, Sky700)!!
+        val shares = (1000 downTo 0).map { statusBarFadeLegibleShare(it / 1000f, illegible) }
+        shares.zipWithNext { a, b -> assertTrue("the share only falls as the hero scrolls away", b <= a) }
+        assertTrue(shares.none { it in illegible })
+        assertEquals(1, shares.zipWithNext().count { (a, b) -> a > illegible.endInclusive && b < illegible.start })
     }
 
     private companion object {

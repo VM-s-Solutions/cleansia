@@ -33,6 +33,8 @@ class FakeRecurringBookingsFacade {
   packageName = jest.fn(() => null);
   nextRun = jest.fn((): Date | null => null);
   holdsRetiredEntry = jest.fn(() => false);
+  // Reads the list as the real one does, so the screen's effect follows it.
+  readScheduleMarkets = jest.fn(() => this.templates());
 }
 
 const schedule = (id: string, requiresPaymentMethodChange: boolean) =>
@@ -153,6 +155,16 @@ describe('RecurringBookingsListComponent — a schedule holding something no lon
     fixture.detectChanges();
 
     expect(line()).toBeNull();
+  });
+
+  it('has the markets read again when the schedules land', () => {
+    fixture.detectChanges();
+    expect(facade.readScheduleMarkets).toHaveBeenCalledTimes(1);
+
+    facade.templates.set([schedule('t-new', false)]);
+    fixture.detectChanges();
+
+    expect(facade.readScheduleMarkets).toHaveBeenCalledTimes(2);
   });
 });
 

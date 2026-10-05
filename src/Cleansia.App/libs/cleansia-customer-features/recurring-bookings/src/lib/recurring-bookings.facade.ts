@@ -13,12 +13,14 @@ import {
   GetMyServingCleanersResponse,
   includedServicesAlreadyChosen,
   MembershipStatus,
+  PackageClient,
   PackageListItem,
   PaymentType,
   PreferredCleanerOption,
   QuoteOrderCommand,
   QuoteOrderResponse,
   RecurringBookingTemplateDto,
+  ServiceClient,
   ServiceListItem,
   SetRecurringBookingActiveCommand,
   toPreferredCleanerOptions,
@@ -66,6 +68,12 @@ export interface QuotedPrice {
   currency: string | null;
 }
 
+/** The ids one market's catalogue lists today. */
+interface ListedIds {
+  services: Set<string | undefined>;
+  packages: Set<string | undefined>;
+}
+
 const ONE_DAY_MS = 24 * 60 * 60 * 1000;
 
 /** Cash refusals the customer answers on this form by paying by card. */
@@ -111,6 +119,16 @@ export class RecurringBookingsFacade extends UnsubscribeControlDirective {
     errorToastSuppressingHttpClient(),
     inject(CUSTOMER_API_BASE_URL, { optional: true }) ?? 'http://localhost:5003',
   );
+  // Each market a listed schedule is priced in is read straight from the API, so the catalogue the
+  // store and the form share stays theirs, and quietly: nothing in it is the customer's to act on.
+  private readonly quietServiceClient = new ServiceClient(
+    errorToastSuppressingHttpClient(),
+    inject(CUSTOMER_API_BASE_URL, { optional: true }) ?? 'http://localhost:5003',
+  );
+  private readonly quietPackageClient = new PackageClient(
+    errorToastSuppressingHttpClient(),
+    inject(CUSTOMER_API_BASE_URL, { optional: true }) ?? 'http://localhost:5003',
+  );
   private readonly orderClient = this.customerClient.orderClient;
   private readonly membershipClient = this.customerClient.membershipClient;
   private readonly snackbar = inject(SnackbarService);
@@ -126,6 +144,9 @@ export class RecurringBookingsFacade extends UnsubscribeControlDirective {
   readonly listLoaded = signal(false);
   /** Id of the template currently being mutated (pause/resume/delete), or null. */
   readonly mutatingId = signal<string | null>(null);
+  /** What each market a listed schedule is priced in lists today; '' keys the platform default. */
+  private readonly listedByMarket = signal<Record<string, ListedIds>>({});
+  private readonly marketsAsked = new Set<string>();
 
   // ─── The entitlement ───────────────────────────────────────────────
   // `CreateRecurringBooking` refuses a caller without Plus
@@ -280,13 +301,17 @@ export class RecurringBookingsFacade extends UnsubscribeControlDirective {
   private readonly loadedSelectionUnjudged = signal(false);
   private readonly loadedSelectionEffect = effect(() => {
     if (!this.loadedSelectionUnjudged() || this.addressesLoading()) return;
-    const offered = this.offeredIn(this.addressCountryId());
-    if (!offered) return;
+    const countryId = this.addressCountryId();
+    const { services, countryId: servicesFor } = this.servicesCatalogue();
+    const { packages, countryId: packagesFor } = this.packagesCatalogue();
+    if (countryId === null || servicesFor !== countryId || packagesFor !== countryId) return;
     untracked(() => {
       this.loadedSelectionUnjudged.set(false);
+      const offeredServices = new Set(services.map((s) => s.id));
+      const offeredPackages = new Set(packages.map((p) => p.id));
       const { selectedServiceIds, selectedPackageIds } = this.formData();
-      const keptServiceIds = selectedServiceIds.filter((id) => offered.services.has(id));
-      const keptPackageIds = selectedPackageIds.filter((id) => offered.packages.has(id));
+      const keptServiceIds = selectedServiceIds.filter((id) => offeredServices.has(id));
+      const keptPackageIds = selectedPackageIds.filter((id) => offeredPackages.has(id));
       if (
         keptServiceIds.length === selectedServiceIds.length &&
         keptPackageIds.length === selectedPackageIds.length
@@ -504,36 +529,52 @@ export class RecurringBookingsFacade extends UnsubscribeControlDirective {
   }
 
   /**
-   * What one market's catalogue lists, or null until the list priced for that market is the one in
-   * the store — the only list a schedule's selection can be judged against.
+   * Whether a schedule still holds a service or package its market's catalogue no longer lists. The
+   * server refuses to price such a schedule, so its card has no figure, and this is what tells the
+   * customer why. Judged against the schedule's own market once `readScheduleMarkets` has read it,
+   * never on a guess. → /product/business-rules#deactivated-catalogue
    */
-  private offeredIn(
-    countryId: string | null,
-  ): { services: Set<string | undefined>; packages: Set<string | undefined> } | null {
-    const services = this.servicesCatalogue();
-    const packages = this.packagesCatalogue();
-    if (countryId === null || services.countryId !== countryId || packages.countryId !== countryId) {
-      return null;
-    }
-    return {
-      services: new Set(services.services.map((s) => s.id)),
-      packages: new Set(packages.packages.map((p) => p.id)),
-    };
+  holdsRetiredEntry(template: RecurringBookingTemplateDto): boolean {
+    const address = this.savedAddresses().find((a) => a.id === template.savedAddressId);
+    const listed = address ? this.listedByMarket()[address.countryId || ''] : undefined;
+    if (!listed) return false;
+    return (
+      (template.selectedServiceIds ?? []).some((id) => !listed.services.has(id)) ||
+      (template.selectedPackageIds ?? []).some((id) => !listed.packages.has(id))
+    );
   }
 
   /**
-   * Whether a schedule still holds a service or package its market's catalogue no longer lists. The
-   * server refuses to price such a schedule, so its card has no figure, and this is what tells the
-   * customer why. Judged only once that market's catalogue has landed, never on a guess.
-   * → /product/business-rules#deactivated-catalogue
+   * Reads, once per screen, the catalogue of every market the listed schedules are priced in (the
+   * country of each one's saved address, the platform default for an address with none), as iOS
+   * and Android do. A market whose read fails stays unjudged.
    */
-  holdsRetiredEntry(template: RecurringBookingTemplateDto): boolean {
-    const offered = this.offeredIn(this.countryOf(template.savedAddressId));
-    if (!offered) return false;
-    return (
-      (template.selectedServiceIds ?? []).some((id) => !offered.services.has(id)) ||
-      (template.selectedPackageIds ?? []).some((id) => !offered.packages.has(id))
-    );
+  readScheduleMarkets(): void {
+    for (const template of this.templates()) {
+      const address = this.savedAddresses().find((a) => a.id === template.savedAddressId);
+      if (!address) continue;
+      const market = address.countryId || '';
+      if (this.marketsAsked.has(market)) continue;
+      this.marketsAsked.add(market);
+      this.readMarket(market);
+    }
+  }
+
+  private async readMarket(market: string): Promise<void> {
+    const countryId = market || undefined;
+    try {
+      const [services, packages] = await Promise.all([
+        firstValueFrom(this.quietServiceClient.getOverview(countryId).pipe(takeUntil(this.destroyed$))),
+        firstValueFrom(this.quietPackageClient.getOverview(countryId).pipe(takeUntil(this.destroyed$))),
+      ]);
+      const listed: ListedIds = {
+        services: new Set((services ?? []).map((s) => s.id)),
+        packages: new Set((packages ?? []).map((p) => p.id)),
+      };
+      this.listedByMarket.update((all) => ({ ...all, [market]: listed }));
+    } catch {
+      // Unjudged: its cards say nothing rather than guess.
+    }
   }
 
   /**

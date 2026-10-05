@@ -1097,19 +1097,22 @@ need backfilling.
 - **Customer — a service or package that is no longer offered can no longer be booked.** A service or
   package the company had taken off its list was hidden everywhere, but an out-of-date app, or *Order
   again* sent before the list had loaded, could still price and book it, and a new schedule could take
-  it and book it every week. The price, the booking and a new schedule now refuse it with *One of the
-  selected services is no longer available* (or *packages*), which every app and the website already
-  show. A schedule set up before the service was taken off keeps it, and its visits are confirmed and
-  paid as before; nothing shows an error for it. Its card on the list of schedules now says
-  *Includes a service no longer offered — edit to update*, on the website, Android and iOS alike,
-  and on the website that card shows no price. Opening it to edit removes the service, now on Android
-  as on iOS and the website, and says *Some of this schedule's choices are no longer offered and were
-  removed*. It used to say they were not offered at this address, though nobody had changed the
-  address, and on the website the service was usually not removed at all. A service that is part of a
-  package is still done with the package. **API consumer:** `QuoteOrder`, `QuotePlusSavings`, `CreateOrder` and
-  `CreateRecurringBooking` refuse a deactivated id with `order.selected_services.invalid` /
-  `order.selected_package.invalid`. (Finding 2026-10-04; the schedule's card and edit, review
-  2026-10-05; the card's line and the edit's notice, owner ruling 2026-10-05.)
+  it and book it every week, as could a change to a schedule. The price, the booking, a new schedule
+  and a change that adds it to a schedule now refuse it with *One of the selected services is no
+  longer available* (or *packages*), which every app and the website already show. A schedule set up
+  before the service was taken off keeps it, and its visits are confirmed and paid as before; nothing
+  shows an error for it. Its card on the list of schedules now says *Includes a service no longer
+  offered — edit to update*, on the website, Android and iOS alike, and on the website that card
+  shows no price. Opening it to edit removes the service, now on Android as on iOS and the website,
+  and says *Some of this schedule's choices are no longer offered and were removed*. It used to say
+  they were not offered at this address, though nobody had changed the address, and on the website the
+  service was usually not removed at all. A service that is part of a package is still done with the
+  package. **API consumer:** `QuoteOrder`, `QuotePlusSavings`,
+  `CreateOrder` and `CreateRecurringBooking` refuse a deactivated id, and `UpdateRecurringBooking` a
+  deactivated or unknown id the edit adds to the stored schedule, with `order.selected_services.invalid`
+  / `order.selected_package.invalid`; an id the schedule already holds passes. (Finding 2026-10-04;
+  the schedule's card and edit, review 2026-10-05; the card's line, the edit's notice and the edit's
+  check, owner ruling 2026-10-05.)
 
 - **Customer web — deleting your account is confirmed on a red button.** The question before your
   account is deleted offered the same blue confirm button as any harmless question. It now shows the

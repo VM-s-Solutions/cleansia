@@ -2119,7 +2119,8 @@ the overview lists exactly what an order with the package books, a deactivated s
 
 **A customer cannot select one by id either** (since 2026-10-05). `QuoteOrder`, `QuotePlusSavings`,
 `CreateOrder` (guest and signed-in) and `CreateRecurringBooking` ask that every selected service and
-package exists **and is active** (`ExistActiveWithIdsAsync`), and refuse one that is not with the codes
+package exists **and is active** (`ExistActiveWithIdsAsync`), `UpdateRecurringBooking` asks it of every
+one an edit adds (below), and they refuse one that is not with the codes
 an entry with no price or pay rate in the market's currency already gets: `order.selected_services.invalid`
 and `order.selected_package.invalid`. Every client already words both, in all five languages. Until then
 the three order gates asked only that the row exists, which a deactivated row still does, so a client
@@ -2136,11 +2137,16 @@ comments expected the booking to fail loudly. What it deliberately leaves alone:
   `CreatePaymentIntent` read no catalogue. They charge the occurrence's stored price (`TotalPrice`, set
   when the materialiser made it), less any credit the card confirm takes (`AmountDueOnCard`)
   → [Payment and fiscal](/flows/payment-and-fiscal#amounts-are-never-reconciled-and-do-not-need-to-be).
-- **Editing a schedule does not ask.** `UpdateRecurringBooking` checks only that the selection is not
-  empty, so an edit can keep, or add, a deactivated entry. The three schedule forms do not send one,
-  though: each trims the selection as it loads (below), so a plain check
-  there would refuse only a client that skipped the trim, an out-of-date app among them. Whether to
-  check only the ids an edit adds is open.
+- **Editing a schedule keeps what it holds, and asks about what it adds** (owner ruling 2026-10-05).
+  `UpdateRecurringBooking` asks that every service and package id the edit adds, one the stored
+  template does not hold, is active, and refuses one that is not, or one that never existed, with the
+  codes above. An id the template already holds passes even if it was deactivated since, so an edit of
+  the time or the address does not cost the customer an entry the schedule keeps booking. The template
+  is read for the caller only, and one they do not own holds nothing for them, so every id is asked.
+  Until 2026-10-05 the edit checked only that the selection was not empty, so it could add a
+  deactivated entry, or an id that never existed, and the schedule then booked it every week. The
+  three schedule forms trim the selection as they load (below), so a held entry comes back to the
+  server only from a client that skipped the trim, an out-of-date app among them, and is kept.
 - **A deactivated service inside an active package** is the package's content, above, not a selection.
 - **The admin package editors** (`CreatePackage`, `UpdatePackage`) still accept a deactivated service
   into a package; they ask only that it exists.
@@ -2199,7 +2205,8 @@ schedules list says why:
 - **Its occurrences are confirmed and paid as any other**, from the stored price (above).
 
 `CatalogActiveVisibilityTests` pins the active check on the repository, a schedule refused a
-deactivated service and package, and the factory still booking one a schedule holds; the order and
+deactivated service and package, an edit refused a deactivated or unknown entry it adds but allowed to
+keep one the schedule holds, and the factory still booking one a schedule holds; the order and
 quote validator suites pin the three order gates. The web recurring facade spec runs the real error
 interceptor over a card refused for a deactivated service and an edit form refused for a deactivated
 package, and asserts no price and no message. Android's `CreateRecurringViewModelTest` pins an edited

@@ -374,8 +374,8 @@ languages, service cities. Prices are per currency: a service, package or extra 
 per currency it is sold in, nothing converts, and an entry with no price in a currency is not offered
 in it. Extras are priced per currency like services and packages; the slug is fixed at creation
 because order lines snapshot it, so deactivating is how an extra is retired once an order references
-it. A deactivated service or package leaves every customer catalogue, and a quote, a booking or a new
-schedule that names it anyway is refused; a deactivated service stays inside the packages that
+it. A deactivated service or package leaves every customer catalogue, and a quote, a booking, a new
+schedule or a schedule edit that adds it anyway is refused; a deactivated service stays inside the packages that
 include it, and books with them, until the package is edited
 ([A deactivated service or package](/product/business-rules#deactivated-catalogue)). A currency is
 switched on deliberately — a new one starts inactive — and the platform default cannot be switched

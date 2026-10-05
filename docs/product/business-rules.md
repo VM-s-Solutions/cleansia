@@ -297,7 +297,7 @@ not gone through (the hourly re-drive owns it), `order.no_cleaner_nothing_charge
 payment; all three carry the credit as `amount`. With no apology the plain `order.cancelled`, which
 promises nothing: for a currency with no figure, and since 2026-10-05 for a customer whose credit sits on
 the books of a company frozen for archive, where the apology is skipped and logged rather than failing the
-cancellation's commit — the refund and the credit return are unaffected. All four render on Android and iOS and land in the
+cancellation's commit — the card refund is unaffected, and the applied credit is not returned onto those books either ([A company's lifecycle](#company-lifecycle)). All four render on Android and iOS and land in the
 customer's inbox. A guest gets no push; the cancellation e-mail tells them what happened to the money
 ([When the platform cancels](#platform-cancellation)).
 

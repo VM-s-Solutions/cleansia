@@ -8,6 +8,10 @@ public enum CleansiaColors {
     public static let primaryText = Color.dynamic(light: Palette.sky700, dark: Palette.sky400)
     public static let onPrimary = Color.dynamic(light: .white, dark: Palette.sky900)
     public static let primaryContainer = Color.dynamic(light: Palette.sky100, dark: Palette.sky700)
+    /// The brand blue for TEXT on `primaryContainer` — a badge, a chip, an initial on its disc: sky-700 in
+    /// light mode, as `primaryText` (5.17:1 on sky-100), and sky-100 in dark mode, where the container is
+    /// sky-700 and `primaryText`'s sky-400 reads 2.77:1 (5.17:1).
+    public static let primaryTextOnContainer = Color.dynamic(light: Palette.sky700, dark: Palette.sky100)
     public static let onPrimaryContainer = Color.dynamic(light: Palette.sky900, dark: Palette.sky100)
 
     public static let secondary = Color.dynamic(light: Palette.sky400, dark: Palette.sky300)

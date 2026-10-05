@@ -271,7 +271,7 @@ private struct SavedAddressRow: View {
                     if address.isDefault {
                         Text(L10n.AddressManager.defaultBadge)
                             .font(CleansiaTypography.labelSmall)
-                            .foregroundColor(CleansiaColors.primaryText)
+                            .foregroundColor(CleansiaColors.primaryTextOnContainer)
                             .padding(.horizontal, Spacing.xs)
                             .padding(.vertical, 2)
                             .background(

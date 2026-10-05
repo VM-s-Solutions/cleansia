@@ -86,6 +86,19 @@ final class TextInkTests: XCTestCase {
         }
     }
 
+    /// Blue text on the primary container takes its text ink, which reads 4.5:1 in both modes (finding
+    /// 2026-10-05: the primary read 3.57:1 on sky-100 in light mode and 2.77:1 on sky-700 in dark).
+    func testTheBadgesOnThePrimaryContainerTakeItsTextInk() throws {
+        XCTAssertTrue(try compactSource("Devices/DevicesView.swift").contains(
+            "Text(L10n.Devices.thisDevice).font(CleansiaTypography.labelSmall)"
+                + ".foregroundColor(CleansiaColors.primaryTextOnContainer)"
+        ))
+        let badge = try compactSource("Earnings/InvoiceStatusBadge.swift")
+        XCTAssertTrue(badge.contains("case._1:CleansiaColors.primaryContainer"))
+        XCTAssertTrue(badge
+            .contains("privatevarforeground:Color{switchstatus{case._1:CleansiaColors.primaryTextOnContainer"))
+    }
+
     private func compactSource(_ path: String) throws -> String {
         let url = URL(fileURLWithPath: #filePath)
             .deletingLastPathComponent()

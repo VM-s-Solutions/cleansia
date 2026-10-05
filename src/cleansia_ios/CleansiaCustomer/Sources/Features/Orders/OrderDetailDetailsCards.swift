@@ -225,7 +225,7 @@ private struct CleanerRow: View {
                 .overlay(
                     Text(String(displayName.prefix(1)).uppercased())
                         .font(CleansiaTypography.titleMedium)
-                        .foregroundColor(CleansiaColors.primaryText)
+                        .foregroundColor(CleansiaColors.primaryTextOnContainer)
                 )
             VStack(alignment: .leading, spacing: 0) {
                 Text(displayName)

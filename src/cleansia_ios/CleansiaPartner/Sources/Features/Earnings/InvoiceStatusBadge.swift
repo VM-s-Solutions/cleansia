@@ -29,7 +29,7 @@ struct InvoiceStatusBadge: View {
 
     private var foreground: Color {
         switch status {
-        case ._1: CleansiaColors.primary
+        case ._1: CleansiaColors.primaryTextOnContainer
         case ._2: CleansiaColors.onPrimary
         case ._3: CleansiaColors.successText
         case ._4, ._5: CleansiaColors.error

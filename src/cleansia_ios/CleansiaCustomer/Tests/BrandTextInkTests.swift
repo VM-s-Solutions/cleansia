@@ -107,6 +107,42 @@ final class BrandTextInkTests: XCTestCase {
         }
     }
 
+    /// Dark mode: on the primary container (sky-700 there) the text ink's sky-400 read 2.77:1, so the
+    /// default-address badges, the "This device" chip and the cleaner's initial take the container's text ink,
+    /// sky-100 in dark (5.17:1) and unchanged in light (finding 2026-10-05).
+    func testTheBadgesOnThePrimaryContainerTakeItsTextInk() throws {
+        let sites: [(path: String, snippet: String)] = [
+            ("Addresses/AddressManagerView.swift", "Text(L10n.AddressManager.defaultBadge)"),
+            (
+                "Booking/WhenWhere/AddressPicker/BookingSavedAddressChooser.swift",
+                "Text(L10n.AddressManager.defaultBadge)"
+            ),
+            ("Profile/CustomerDevicesView.swift", "Text(L10n.Devices.thisDevice)"),
+            ("Orders/OrderDetailDetailsCards.swift", "Text(String(displayName.prefix(1)).uppercased())")
+        ]
+        for site in sites {
+            let source = try compactSource(site.path)
+            let text = try XCTUnwrap(source.range(of: site.snippet), site.path)
+            let modifiers = source[text.upperBound...].prefix(120)
+            XCTAssertTrue(
+                modifiers.contains(".foregroundColor(CleansiaColors.primaryTextOnContainer)"),
+                "\(site.path): \(modifiers)"
+            )
+        }
+        let dark = UITraitCollection(userInterfaceStyle: .dark)
+        func darkRGB(_ color: Color) -> RGB {
+            var red: CGFloat = 0
+            var green: CGFloat = 0
+            var blue: CGFloat = 0
+            var alpha: CGFloat = 0
+            UIColor(color).resolvedColor(with: dark).getRed(&red, green: &green, blue: &blue, alpha: &alpha)
+            return RGB(Double(red), Double(green), Double(blue))
+        }
+        let container = darkRGB(CleansiaColors.primaryContainer)
+        XCTAssertGreaterThanOrEqual(contrast(darkRGB(CleansiaColors.primaryTextOnContainer), container), 4.5)
+        XCTAssertLessThan(contrast(darkRGB(CleansiaColors.primaryText), container), 4.5)
+    }
+
     // MARK: - Helpers
 
     private typealias RGB = SIMD3<Double>

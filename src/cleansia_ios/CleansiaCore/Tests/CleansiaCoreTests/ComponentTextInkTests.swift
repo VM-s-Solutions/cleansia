@@ -1,5 +1,7 @@
 import Foundation
+import SwiftUI
 import XCTest
+@testable import CleansiaCore
 
 /// The shared components draw text links and text-button labels in the text ink, not the primary (owner
 /// decision 2026-10-05, both apps): the light-mode primary, sky-600, reads 4.10:1 on white, under the 4.5:1
@@ -49,6 +51,44 @@ final class ComponentTextInkTests: XCTestCase {
         let wash = mix(0x0284C7, 0.12, over: 0xFFFFFF)
         XCTAssertGreaterThanOrEqual(contrast(rgb(0x0369A1), wash), 4.5)
         XCTAssertLessThan(contrast(rgb(0x0284C7), wash), 4.5, "the primary is not a text colour on the wash")
+    }
+
+    /// Blue text on the primary container reads 4.5:1 in both modes (finding 2026-10-05): in dark mode the
+    /// container is sky-700, where the text ink's sky-400 read 2.77:1, so badge text takes
+    /// `primaryTextOnContainer` (sky-100 in dark, the text ink's sky-700 in light). The section header's badge
+    /// is one.
+    func testBadgeTextOnThePrimaryContainerReadsInBothModes() throws {
+        for style in [UIUserInterfaceStyle.light, .dark] {
+            let container = resolved(CleansiaColors.primaryContainer, style)
+            XCTAssertGreaterThanOrEqual(
+                contrast(resolved(CleansiaColors.primaryTextOnContainer, style), container),
+                4.5
+            )
+        }
+        XCTAssertEqual(
+            contrast(
+                resolved(CleansiaColors.primaryTextOnContainer, .dark),
+                resolved(CleansiaColors.primaryContainer, .dark)
+            ),
+            5.17,
+            accuracy: 0.01
+        )
+        XCTAssertLessThan(
+            contrast(resolved(CleansiaColors.primaryText, .dark), resolved(CleansiaColors.primaryContainer, .dark)),
+            4.5,
+            "the text ink reads on the dark container after all"
+        )
+        let light = resolved(CleansiaColors.primaryTextOnContainer, .light)
+        XCTAssertEqual(
+            contrast(light, resolved(CleansiaColors.primaryText, .light)),
+            1,
+            accuracy: 0.001,
+            "light changed"
+        )
+        XCTAssertTrue(
+            try compactSource("Components/CleansiaSectionHeader.swift")
+                .contains(".foregroundColor(CleansiaColors.primaryTextOnContainer).padding(.horizontal,Spacing.s)")
+        )
     }
 
     // MARK: - Helpers
@@ -104,6 +144,16 @@ final class ComponentTextInkTests: XCTestCase {
 
     private func parens(_ line: String) -> Int {
         line.filter { $0 == "(" }.count - line.filter { $0 == ")" }.count
+    }
+
+    private func resolved(_ color: Color, _ style: UIUserInterfaceStyle) -> RGB {
+        let traits = UITraitCollection(userInterfaceStyle: style)
+        var red: CGFloat = 0
+        var green: CGFloat = 0
+        var blue: CGFloat = 0
+        var alpha: CGFloat = 0
+        UIColor(color).resolvedColor(with: traits).getRed(&red, green: &green, blue: &blue, alpha: &alpha)
+        return RGB(Double(red), Double(green), Double(blue))
     }
 
     private func rgb(_ hex: UInt32) -> RGB {

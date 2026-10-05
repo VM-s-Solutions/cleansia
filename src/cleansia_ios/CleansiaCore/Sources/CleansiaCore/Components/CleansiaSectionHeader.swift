@@ -23,7 +23,7 @@ public struct CleansiaSectionHeader: View {
             if let badge {
                 Text(badge.uppercased())
                     .font(CleansiaTypography.labelSmall)
-                    .foregroundColor(CleansiaColors.primaryText)
+                    .foregroundColor(CleansiaColors.primaryTextOnContainer)
                     .padding(.horizontal, Spacing.s)
                     .padding(.vertical, Spacing.xxs)
                     .background(CleansiaColors.primaryContainer)

@@ -955,8 +955,29 @@ and the text ink reads 5.42:1 on the light dialog. `SurfaceRolesTest` in each ap
 surface role to be one of the app's slates, the dialog and menu containers above, and 4.5:1 for
 `onSurface`, `onSurfaceVariant`, the text ink and the error colour on both; the partner app's
 `LightColors` and `DarkColors` became `internal`, as the customer app's were, so the test can read them
-(`7871948ce`). Material's other baseline roles are not covered by this: the partner scheme does not
-set `tertiary`, which some partner screens read (reported 2026-10-05).
+(`7871948ce`).
+
+**The partner scheme sets the tertiary roles too, from amber** (finding 2026-10-05). Left unset, they
+were Material's baseline mauve, `#7D5260` (`#EFB8C8` in dark) with containers `#FFD8E4` / `#633B48`,
+and showed on a pending document, the registration lock's pending row, the address form's note that a
+city is outside the serviced area, and three notices. Since 2026-10-05:
+
+| Role | Light | Dark |
+|---|---|---|
+| `tertiary` / `onTertiary` | amber-800 / white, 7.09:1 | amber-500 / amber-950, 6.97:1 |
+| `tertiaryContainer` / `onTertiaryContainer` | amber-100 / amber-900, 8.15:1 | amber-900 / amber-100, 8.15:1 |
+
+The three notices on `tertiaryContainer`, the contract-pending card, the contract sheet's notice and a
+legal text's *updated* note, read amber now, as iOS draws them. The status sites no longer read the
+slot; each names the colour it means: a pending document and the outside-the-serviced-area note take
+`pendingInk` ([above](#brand-text-ink)), and the registration lock's pending hourglass and *awaiting
+review* line take `onSurfaceVariant`, as iOS's step row draws them. iOS draws its own outside-the-area
+note in the lighter amber-500, about 2:1 in light mode (reported 2026-10-05). The partner's
+`SurfaceRolesTest` requires the four roles to be the app's ambers at 4.5:1 or more and finds no partner
+screen drawing in the bare `tertiary` (Android `0ae302746`). The customer scheme still leaves the
+tertiary roles unset, so Home's milestone card, an order's discount chip and the address manager's
+unserviced-city icon show the mauve on Android, and iOS's customer `tertiaryContainer` copies it on
+purpose (reported 2026-10-05).
 
 ## Every map is quiet, with one Cleansia pin {#maps}
 

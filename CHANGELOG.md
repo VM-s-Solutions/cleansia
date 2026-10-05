@@ -1137,8 +1137,10 @@ need backfilling.
   brand blue of the apps and the customer website, 4.1:1, and a shade darker under the pointer; so is
   the *OK* on the cookie notice, on all three websites. The label of the field you are typing in, and
   on the admin website the label of the open tab, now take the deeper blue of the other blue text,
-  5.9:1, where they read 4.1:1 and 2.8:1. The customer website looks the same as before, and its dark
-  mode is unchanged. (Owner decision 2026-10-05.)
+  5.9:1, where they read 4.1:1 and 2.8:1. On the customer website the filled buttons look the same as
+  before, since they were already this blue; a ticked box, a picked date and the border of the field
+  you are in take the brand blue there too, as the cookie notice's *OK* does, and its dark mode is
+  unchanged. (Owner decision 2026-10-05.)
 
 - **Customer Android and iOS — the clock reads clearly over Profile's header.** In light mode the
   clock, signal and battery were faint on the light blue top of Profile's header (white on iOS, dark

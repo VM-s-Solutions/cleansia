@@ -263,8 +263,11 @@ strip's underline. Under the pointer it goes a step darker, to sky-700, and pres
 then the preset left the primary on Aura's default, sky-500 `#0ea5e9`, so every filled button on the
 partner and admin sites was white on sky-500, 2.77:1 (the partner *Login*, the admin *Create*). White
 on sky-600 reads 4.10:1, the pair the apps' and the customer site's filled buttons already used. The
-customer site had painted its own filled buttons sky-600 in `_home-design.scss`, so it looks the same
-as before; its dark theme is untouched, and the primary there stays sky-400.
+customer site had painted its own filled buttons sky-600 in `_home-design.scss`, so its filled buttons
+look the same as before. What it leaves to the preset moved from sky-500 to sky-600 as on the other
+two sites: a ticked `p-checkbox` (the order wizard, the recurring wizard, an order's detail), a picked
+date and a focused field's border, each Aura's `{primary.color}`, and the cookie notice's *OK*
+(below). Its dark theme is untouched, and the primary there stays sky-400.
 
 Text drawn from the primary takes the text ink, `{primary.700}` (sky-700), in the light scheme, as
 [links and text buttons](#link-ink) do:

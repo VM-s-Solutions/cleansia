@@ -66,6 +66,16 @@ describe('the shared and partner stylesheets — text links and text buttons', (
     expect(inks(customer, ':root.dark-mode .cleansia-code-input-dialog__status--error')).toEqual(['#fca5a5']);
   });
 
+  // The partner dashboard's green figures were emerald-500 #10b981: 2.1 on the order summary's blue
+  // wash, 2.4 on the earnings summary. Green-700 is 4.1 on the wash; green-800 reads 5.8.
+  it.each([
+    ['a success label (the completion rate, a positive growth)', '.cleansia-label--success'],
+    ["the order chart's success value", '.summary-item__value--success'],
+    ["the earnings chart's positive value", '.summary-item__value--positive'],
+  ])('inks %s with green-800', (_, selector) => {
+    expect(inks(partner, selector)).toEqual(['var(--cleansia-success-800)']);
+  });
+
   it("inks the admin price form's optional badge with Sky700", () => {
     expect(inks(admin, '.currency-price-block__badge--optional')).toEqual(['var(--cleansia-primary-700)']);
   });

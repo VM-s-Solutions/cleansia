@@ -50,8 +50,10 @@
     color: var(--cleansia-text-secondary, #6b7280);
   }
 
+  // A green figure on the dashboard's summaries: green-800, 5.8 on the order summary's blue wash
+  // (green-700 is 4.1 there; emerald-500 was 2.1).
   &--success {
-    color: #10b981;
+    color: var(--cleansia-success-800);
   }
 
   &--danger {

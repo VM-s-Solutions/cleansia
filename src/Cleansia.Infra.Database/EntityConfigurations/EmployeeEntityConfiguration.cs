@@ -14,8 +14,16 @@ public class EmployeeEntityConfiguration : TenantAuditableEntityConfiguration<Em
             .IsRequired()
             .HasDefaultValue(Core.Domain.Enums.EmployeeEntityType.NaturalPerson);
 
+        // Approval asks the register about the number it loaded, which can take seconds, and a Pending
+        // cleaner's save checks less than approval does. Either write that commits second was judged
+        // against a row that no longer holds, so it is refused at commit rather than leaving an approved
+        // cleaner on a number nobody checked at approval grade.
         builder.Property(e => e.RegistrationNumber)
-            .HasMaxLength(50);
+            .HasMaxLength(50)
+            .IsConcurrencyToken();
+
+        builder.Property(e => e.ContractStatus)
+            .IsConcurrencyToken();
 
         builder.Property(e => e.LegalEntityName)
             .HasMaxLength(200);

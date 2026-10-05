@@ -12,7 +12,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace Cleansia.Infra.Database.Migrations
 {
     [DbContext(typeof(CleansiaDbContext))]
-    [Migration("20261005082345_Initial")]
+    [Migration("20261005201452_Initial")]
     partial class Initial
     {
         /// <inheritdoc />
@@ -6250,6 +6250,7 @@ namespace Cleansia.Infra.Database.Migrations
                         .HasDefaultValue(0);
 
                     b.Property<int>("ContractStatus")
+                        .IsConcurrencyToken()
                         .HasColumnType("integer");
 
                     b.Property<string>("CreatedBy")
@@ -6313,6 +6314,7 @@ namespace Cleansia.Infra.Database.Migrations
                         .HasColumnType("character varying(50)");
 
                     b.Property<string>("RegistrationNumber")
+                        .IsConcurrencyToken()
                         .HasMaxLength(50)
                         .HasColumnType("character varying(50)");
 

@@ -217,9 +217,15 @@ what is named against the id before it:
   `xmin` system column as a concurrency token (no DDL; the Designer and the snapshot carry it). Still
   **89** tables and **53** with the `Tenants` FK; `has-pending-model-changes` reports none, and the three
   backend suites ran green at it (8025 / 789 / 428).
+- **`20261005201452`** (2026-10-05, branch `fix/findings-2026-10-06`, a cleaner's save and an approval
+  that race): `Employees.RegistrationNumber` and `Employees.ContractStatus` become per-property concurrency
+  tokens, the `Orders.CurrentStatus` idiom. No DDL: the body is byte-identical to `20261005082345`, and the
+  Designer and the snapshot gain the two `IsConcurrencyToken()` lines. Still **89** tables and **53** with
+  the `Tenants` FK; `has-pending-model-changes` reports none, and the three backend suites ran green at it
+  (8161 / 803 / 428).
 
-**The one owed drop belongs to `20261005082345`** (it renews the one owed for `20261005010454`), and
-the coordinator runs it right before the DEV deploy of `fix/meeting-2026-10-05-followups`: a DEV database whose
+**The one owed drop belongs to `20261005201452`** (it renews the one owed for `20261005082345`), and
+the coordinator runs it right before the DEV deploy of `fix/findings-2026-10-06`: a DEV database whose
 `__EFMigrationsHistory` records any earlier id replays the whole create script against tables that
 already exist. The legal texts need no extra step — every host seeds them at start, and since
 `b34dff07` a fresh Development database is seeded once more in the boot that migrates it (the factory

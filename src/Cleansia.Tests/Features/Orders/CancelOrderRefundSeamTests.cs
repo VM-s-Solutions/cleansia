@@ -257,6 +257,29 @@ public class CancelOrderRefundSeamTests
         VerifyNoRefundNotice();
     }
 
+    /// <summary>
+    /// A complaint on the order was already settled in 200 of credit. With the card refund left pending,
+    /// the credit share that comes back now nets that settlement off: 100 of the 300 applied, not 300.
+    /// </summary>
+    [Fact]
+    public async Task A_Stripe_Outage_After_A_Complaint_Settled_In_Credit_Returns_The_Credit_Share_Net_Of_It()
+    {
+        var order = ArrangeCardPaidPendingOrder();
+        order.ApplyCredit(300m, UserId);
+        _creditAccountRepository
+            .Setup(c => c.GetDisputeSettledTotalForOrderAsync(OrderId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(200m);
+        _refundService
+            .Setup(s => s.IssueRefundAsync(It.IsAny<RefundRequest>(), It.IsAny<CancellationToken>()))
+            .ThrowsAsync(new HttpRequestException("connection reset"));
+
+        var result = await CreateHandler().Handle(new CancelOrder.Command(OrderId, null), CancellationToken.None);
+
+        Assert.True(result.IsSuccess);
+        Assert.True(result.Value!.RefundPending);
+        VerifyCreditShareReturnedOnTheRefundKey(order, 100m);
+    }
+
     [Fact]
     public async Task A_Refund_That_Went_Through_Is_Not_Pending()
     {

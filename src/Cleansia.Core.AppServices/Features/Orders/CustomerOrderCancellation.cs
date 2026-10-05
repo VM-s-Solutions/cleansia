@@ -169,8 +169,8 @@ public sealed class CustomerOrderCancellation(
         // the re-drive's credit leg finds it already returned.
         async Task ReturnCreditShareAsync(RefundRequest request)
         {
-            var alreadyReturned = await creditAccountRepository.GetReturnedTotalForOrderAsync(
-                order.Id, cancellationToken);
+            var alreadyReturned = await creditAccountRepository.GetReturnedTotalForOrderAsync(order.Id, cancellationToken)
+                + await creditAccountRepository.GetDisputeSettledTotalForOrderAsync(order.Id, cancellationToken);
             var (_, creditShare) = RefundService.SplitAcrossTenders(order, request.Amount, alreadyReturned);
             await creditAccountRepository.ReturnCreditAsync(
                 order, creditShare, RefundService.BuildRefundKey(request), actorId, cancellationToken);

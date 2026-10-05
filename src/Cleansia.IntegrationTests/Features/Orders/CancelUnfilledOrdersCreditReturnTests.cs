@@ -75,7 +75,9 @@ public class CancelUnfilledOrdersCreditReturnTests(PostgresContainerFixture fixt
     /// card order.
     /// </summary>
     private async Task<string> SeedAsync(
-        PaymentType paymentType = PaymentType.Card, PaymentStatus paymentStatus = PaymentStatus.Paid)
+        PaymentType paymentType = PaymentType.Card,
+        PaymentStatus paymentStatus = PaymentStatus.Paid,
+        decimal settledInCredit = 0m)
     {
         string userId;
         await using (var ctx = NewContext())
@@ -100,6 +102,12 @@ public class CancelUnfilledOrdersCreditReturnTests(PostgresContainerFixture fixt
         {
             var account = await new CreditAccountRepository(ctx).EnsureForUserAsync(userId, CzkId, CancellationToken.None);
             account!.Issue(Credit, CreditTransactionReason.Goodwill, "seed-grant", "seed", note: "n");
+            if (settledInCredit > 0m)
+            {
+                account.Issue(
+                    settledInCredit, CreditTransactionReason.DisputeSettlement, "dispute-settlement:dispute-earlier",
+                    "admin", orderId: OrderId, disputeId: "dispute-earlier");
+            }
 
             var order = Order.Create(
                 customerName: "Unfilled Credit",
@@ -426,6 +434,100 @@ public class CancelUnfilledOrdersCreditReturnTests(PostgresContainerFixture fixt
             .SingleAsync(a => a.UserId == userId && a.CurrencyId == CzkId);
         Assert.Equal(balance.Transactions.Sum(t => t.Amount), balance.Balance);
         Assert.Equal(3 * (Credit + Apology), balance.Balance);
+    }
+
+    private async Task<RedrivePendingRefunds.Response> WatchdogAsync()
+    {
+        await using (var ctx = NewContext())
+        {
+            await ctx.Database.ExecuteSqlRawAsync(
+                "UPDATE \"Refunds\" SET \"CreatedOn\" = NOW() - INTERVAL '2 hours'");
+        }
+
+        await using var watchdogContext = NewContext();
+        var watchdog = new RedrivePendingRefunds.Handler(
+            new RefundRepository(watchdogContext),
+            NewRefundService(watchdogContext),
+            new NotificationProducer(new UserNotificationRepository(watchdogContext), new OutboxPendingDispatch(watchdogContext), new UserRepository(watchdogContext), NullLogger<NotificationProducer>.Instance),
+            Mock.Of<IAdminNotifier>(),
+            new UserNotificationRepository(watchdogContext),
+            new FixedTenantProvider(TestTenants.Default),
+            watchdogContext,
+            NullLogger<RedrivePendingRefunds.Handler>.Instance);
+        var result = await watchdog.Handle(new RedrivePendingRefunds.Command(), CancellationToken.None);
+        Assert.True(result.IsSuccess, result.Error?.Message);
+        return result.Value!;
+    }
+
+    private async Task<decimal> GivenBackAsync()
+    {
+        await using var ctx = NewContext();
+        var card = await ctx.Refunds.IgnoreQueryFilters().AsNoTracking()
+            .Where(r => r.OrderId == OrderId && r.Status == RefundStatus.Succeeded)
+            .SumAsync(r => r.Amount);
+        var credit = await ctx.CreditTransactions.IgnoreQueryFilters().AsNoTracking()
+            .Where(t => t.OrderId == OrderId
+                && (t.Reason == CreditTransactionReason.OrderPaymentReturned
+                    || t.Reason == CreditTransactionReason.DisputeSettlement))
+            .SumAsync(t => t.Amount);
+        return card + credit;
+    }
+
+    /// <summary>
+    /// A complaint on the order was already settled in 200 of credit when nobody turned up. Stripe refuses
+    /// the sweep's refund, so the applied credit comes back now net of the settlement, 300 of the 500; the
+    /// hourly re-drive then holds the card to what the sale has left. 2000 goes back in all, never more.
+    /// </summary>
+    [Fact]
+    public async Task A_No_Show_After_A_Complaint_Settled_In_Credit_Returns_No_More_Than_The_Price()
+    {
+        await ResetAsync();
+        var userId = await SeedAsync(settledInCredit: 200m);
+        _stripe.SetupSequence(s => s.RefundPaymentIntentAsync(
+                PaymentIntentId, It.IsAny<decimal>(), RefundKey, It.IsAny<CancellationToken>()))
+            .ThrowsAsync(new StripeException("card network unavailable"))
+            .Returns(Task.CompletedTask);
+
+        await SweepAsync();
+
+        var (returns, _, refund, _) = await ReadAsync(userId);
+        var returned = Assert.Single(returns);
+        Assert.Equal(300m, returned.Amount);
+        Assert.Equal($"credit-return:order-ended-unpaid:{OrderId}", returned.IdempotencyKey);
+        Assert.Equal(RefundStatus.Pending, refund!.Status);
+
+        var redriven = await WatchdogAsync();
+
+        Assert.Equal(1, redriven.Redriven);
+        _stripe.Verify(s => s.RefundPaymentIntentAsync(
+            PaymentIntentId, 1300m, RefundKey, It.IsAny<CancellationToken>()), Times.Once);
+        (returns, var account, refund, _) = await ReadAsync(userId);
+        Assert.Equal(RefundStatus.Succeeded, refund!.Status);
+        Assert.Equal(1300m, refund.Amount);
+        Assert.Equal(500m, returns.Sum(t => t.Amount));
+        Assert.Equal(Total, await GivenBackAsync());
+        Assert.Equal(account.Balance, account.Transactions.Sum(t => t.Amount));
+    }
+
+    [Fact]
+    public async Task A_No_Show_Whose_Whole_Price_Was_Settled_In_Credit_Returns_Nothing_More()
+    {
+        await ResetAsync();
+        var userId = await SeedAsync(settledInCredit: Total);
+
+        var response = await SweepAsync();
+        var redriven = await WatchdogAsync();
+
+        Assert.Equal(1, response.CancelledCount);
+        Assert.Equal(0, response.RefundedCount);
+        Assert.Equal(0, redriven.Redriven);
+        _stripe.VerifyNoOtherCalls();
+        var (returns, account, refund, order) = await ReadAsync(userId);
+        Assert.Null(refund);
+        Assert.Empty(returns);
+        Assert.Equal(Total, await GivenBackAsync());
+        Assert.Equal(account.Balance, account.Transactions.Sum(t => t.Amount));
+        Assert.Equal(OrderStatus.Cancelled, order.CurrentStatus);
     }
 
     private sealed class FixedTenantProvider(string? tenantId) : ITenantProvider

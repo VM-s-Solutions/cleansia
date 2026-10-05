@@ -9,7 +9,6 @@ using Cleansia.Core.Domain.Disputes;
 using Cleansia.Core.Domain.EmployeePayroll;
 using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Orders;
-using Cleansia.Core.Domain.Payments;
 using Cleansia.Core.Domain.Repositories;
 using Cleansia.Infra.Common.Validations;
 using Moq;
@@ -166,66 +165,49 @@ public sealed class DisputeSettlementAndCleanerChargeTests
     }
 
     /// <summary>
-    /// An earlier complaint on the order was settled in credit, which is on neither tender the refund
-    /// seam bounds. Once the whole order went back that way, the next complaint has nothing left to
-    /// refund to the card.
+    /// An earlier complaint on the order was settled in 400 of credit. The administrator's 1000 goes to the
+    /// refund seam as decided, which holds every refund to what the order has left; the dispute records
+    /// what the seam actually sent.
     /// </summary>
     [Fact]
-    public async Task A_Card_Settlement_After_The_Whole_Order_Was_Settled_In_Credit_Is_Refused()
+    public async Task A_Card_Settlement_After_Part_Of_The_Order_Was_Settled_In_Credit_Passes_The_Amount_To_The_Seam()
+    {
+        var dispute = ArrangeDispute(DisputeSettlementPreference.CardRefund);
+        ArrangeSettledInCredit(400m);
+        _refunds
+            .Setup(s => s.IssueRefundAsync(It.IsAny<RefundRequest>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(BusinessResult.Success(new RefundResult(
+                "refund-1", $"refund:{OrderId}:dispute:{DisputeId}", 600m, RefundStatus.Succeeded, false)));
+
+        var result = await Handler().Handle(new ResolveDispute.Command(DisputeId, 1000m, "justified"), CancellationToken.None);
+
+        Assert.True(result.IsSuccess, result.Error?.Message);
+        _refunds.Verify(s => s.IssueRefundAsync(
+            It.Is<RefundRequest>(r => r.Amount == 1000m && r.DisputeId == DisputeId), It.IsAny<CancellationToken>()), Times.Once);
+        Assert.Equal(1000m, dispute.RefundAmount);
+        Assert.Equal(600m, dispute.CardRefundedAmount);
+    }
+
+    [Fact]
+    public async Task A_Card_Settlement_The_Seam_Finds_Nothing_Left_For_Leaves_The_Dispute_Pending()
     {
         var dispute = ArrangeDispute(DisputeSettlementPreference.CardRefund);
         ArrangeSettledInCredit(1000m);
+        _refunds
+            .Setup(s => s.IssueRefundAsync(It.IsAny<RefundRequest>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(BusinessResult.Failure<RefundResult>(
+                new Error(nameof(RefundRequest.Amount), BusinessErrorMessage.RefundNothingRefundable)));
 
         var result = await Handler().Handle(new ResolveDispute.Command(DisputeId, 1000m, "justified"), CancellationToken.None);
 
         Assert.True(result.IsFailure);
         Assert.Equal(BusinessErrorMessage.RefundNothingRefundable, result.Error!.Message);
-        _refunds.Verify(s => s.IssueRefundAsync(It.IsAny<RefundRequest>(), It.IsAny<CancellationToken>()), Times.Never);
+        _refunds.Verify(s => s.IssueRefundAsync(
+            It.Is<RefundRequest>(r => r.Amount == 1000m && r.DisputeId == DisputeId), It.IsAny<CancellationToken>()), Times.Once);
         Assert.Equal(DisputeStatus.Pending, dispute.Status);
-    }
-
-    [Fact]
-    public async Task A_Card_Settlement_After_Part_Of_The_Order_Was_Settled_In_Credit_Refunds_Only_What_Is_Left()
-    {
-        var dispute = ArrangeDispute(DisputeSettlementPreference.CardRefund);
-        ArrangeSettledInCredit(400m);
-
-        var result = await Handler().Handle(new ResolveDispute.Command(DisputeId, 1000m, "justified"), CancellationToken.None);
-
-        Assert.True(result.IsSuccess, result.Error?.Message);
-        _refunds.Verify(s => s.IssueRefundAsync(
-            It.Is<RefundRequest>(r => r.Amount == 600m && r.DisputeId == DisputeId), It.IsAny<CancellationToken>()), Times.Once);
-        Assert.Equal(1000m, dispute.RefundAmount);
-        Assert.Equal(600m, dispute.CardRefundedAmount);
-    }
-
-    /// <summary>
-    /// The card refund went through and the resolution was lost, so the same resolution runs again. What
-    /// is left now counts this dispute's own refund, but the seam answers the replay with that refund and
-    /// moves nothing, so the replay is not held to it.
-    /// </summary>
-    [Fact]
-    public async Task A_Replay_Of_The_Disputes_Own_Card_Refund_Still_Resolves()
-    {
-        var dispute = ArrangeDispute(DisputeSettlementPreference.CardRefund);
-        ArrangeSettledInCredit(400m);
-        _refundRows
-            .Setup(r => r.GetSucceededRefundTotalForOrderAsync(OrderId, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(600m);
-        var ownRefund = Refund.Create(
-                OrderId, $"refund:{OrderId}:dispute:{DisputeId}", 600m, "CZK",
-                RefundReason.DisputeResolution, RefundSource.AppRefund, disputeId: DisputeId)
-            .MarkSucceeded(stripeRefundId: null, confirmedOnUtc: DateTimeOffset.UtcNow);
-        _refundRows
-            .Setup(r => r.GetByRefundKeyAsync($"refund:{OrderId}:dispute:{DisputeId}", It.IsAny<CancellationToken>()))
-            .ReturnsAsync(ownRefund);
-
-        var result = await Handler().Handle(new ResolveDispute.Command(DisputeId, 600m, "justified"), CancellationToken.None);
-
-        Assert.True(result.IsSuccess, result.Error?.Message);
-        _refunds.Verify(s => s.IssueRefundAsync(
-            It.Is<RefundRequest>(r => r.DisputeId == DisputeId), It.IsAny<CancellationToken>()), Times.Once);
-        Assert.Equal(DisputeStatus.Resolved, dispute.Status);
+        Assert.Null(dispute.CardRefundedAmount);
+        AssertNoCreditGranted();
+        _loyalty.VerifyNoOtherCalls();
     }
 
     /// <summary>

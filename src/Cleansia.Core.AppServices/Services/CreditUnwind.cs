@@ -67,7 +67,9 @@ public static class CreditUnwind
     /// without the card being charged — the stale-order sweep, the recurring auto-cancel, an expired
     /// Stripe session, or a customer cancelling before they paid — or ended with no card refund of its
     /// own here: a no-show cancellation whose refund is left to the re-drive, or a platform cancellation
-    /// of an order already partly refunded. A partial refund's credit leg is not returned twice.
+    /// of an order already partly refunded. A partial refund's credit leg is not returned twice, and a
+    /// complaint on the order already settled in credit counts as credit given back, so the order never
+    /// returns more than the credit it took.
     ///
     /// <para><b>All of it, with no cancellation fee taken out.</b> On an unpaid order the platform
     /// collects nothing: there is no charge surface, so the fee the assessor computed is unrecoverable
@@ -90,9 +92,10 @@ public static class CreditUnwind
         }
 
         var alreadyReturned = await creditAccountRepository.GetReturnedTotalForOrderAsync(order.Id, cancellationToken);
+        var settledInCredit = await creditAccountRepository.GetDisputeSettledTotalForOrderAsync(order.Id, cancellationToken);
         return await creditAccountRepository.ReturnCreditAsync(
             order,
-            order.CreditAppliedAmount - alreadyReturned,
+            order.CreditAppliedAmount - alreadyReturned - settledInCredit,
             $"order-ended-unpaid:{order.Id}",
             actorId,
             cancellationToken);

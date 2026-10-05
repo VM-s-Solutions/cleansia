@@ -385,10 +385,18 @@ first point of scroll.
   - **It ends at the clock's line**, the bottom of the display cutout's path (`cutoutPath`, API 31 and
     later), which is the camera hole itself and the line the system centres the clock and icons on
     (`statusBarFadeHeight`). The status-bar inset is not that line: on the Pixel 8 emulator it is
-    132px, while the clock and icons span 50–81px and the hole ends at 102px. With no cutout inside the
-    status bar, or below API 31, the fade ends at the status bar's bottom; on a cutout phone running
-    API 26–30 it therefore still ends below the clock line. Until 2026-10-05 the band covered the
-    status bar and a 24dp tail, 195px on the emulator, which hid Home's address line.
+    132px, while the clock and icons span 50–81px and the hole ends at 102px. `cutoutExtentFor` picks
+    the reader by API level. From API 31 it is the cutout's path. On API 28–30, which have no path, it
+    is the span of the cutout's bounding rectangles (`DisplayCutout.getBoundingRects()`, since
+    2026-10-05), so a phone there with a camera in its top edge also ends the fade on the cutout's line
+    rather than below the clock. Below API 28 there is no cutout API, and the fade ends at the status
+    bar's bottom, as it does with no cutout inside the status bar. `statusBarFadeHeight` decides, the
+    same for both readers, whether the span is the clock's line (inside the status bar) or not (a side
+    cutout in landscape). The rectangle is not the hole itself: on a Pixel 5 emulator at API 30 with a
+    top cutout it runs 0–136px against a 145px status bar, so the fade ends at 136px, where it ended at
+    145px before; that is the closest line the system offers below API 31. Checked on emulated cutouts
+    only, not on a real API 28–30 phone. Until 2026-10-05 the band covered the status bar and a 24dp
+    tail, 195px on the emulator, which hid Home's address line.
   - **The icons follow the colour.** On a screen with a hero, the status bar's icons are set light
     while the fade's colour has a relative luminance under 0.25 (`statusBarIconsLight`). A light theme
     draws them in 60 % black (`#636465` measured on the page), which reads better than white only on a
@@ -407,7 +415,8 @@ first point of scroll.
     14.1–14.2:1 scrolled, where it read 5.7:1 on the old white band. Plus in dark mode reads
     14.1–14.8:1, and Home 5.7:1 in light mode and 17.9:1 in dark as before, with the fade ending 30px
     higher. `StatusBarFadeTest` pins the hold, the ease and its 5dp, the single colour, the end line
-    and the cutout rule, the cross-fade, the step (the shades exist for a dark hero over the light
+    and the cutout rule (one test per API branch: the path from 31, the rectangles' span on 28–30,
+    neither below 28), the cross-fade, the step (the shades exist for a dark hero over the light
     page and not over a dark one; at every share from 0 to 1 the clock reads 4.5:1 in the icons it is
     given, for Profile and Plus in both themes; one jump, never back) and the icon rule;
     `StatusBarFadeBindingTest` pins each screen's wiring, that the fade is coloured with the stepped

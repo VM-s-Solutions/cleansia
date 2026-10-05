@@ -182,7 +182,8 @@ need backfilling.
   page colour as the header scrolls away. It ends at the clock's line and eases out over its last few
   points with no visible edge. On iOS that line is the bottom of the Dynamic Island or the notch, or
   of the status bar on a phone with a Home button, the same on every iOS version; on Android it is the
-  bottom of the camera cut-out, or of the status bar on a phone without one. On Android the clock and
+  bottom of the camera cut-out (on Android 9 to 11, of the rectangle the phone reports around it), or
+  of the status bar on a phone without one or on Android 8. On Android the clock and
   icons turn white over the Plus and Profile headers while the header is under them. On iOS 16 in
   light mode, where the clock is always black, the Plus offer's fade is the page colour instead. With
   Reduce Transparency on, the iOS fade is fully opaque. Until 2026-10-05 the iOS fade reached past the

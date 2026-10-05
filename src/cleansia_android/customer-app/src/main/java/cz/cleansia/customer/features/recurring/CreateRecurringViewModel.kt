@@ -598,8 +598,12 @@ class CreateRecurringViewModel @Inject constructor(
                 dirtinessLevel = template.dirtinessLevel,
             )
             // An entry taken off the list since the schedule was made is refused by the quote, which
-            // would leave the crew, and so cash, unknown for good (iOS prunes the same way).
-            if (isCatalogueForSelectedMarket()) pruneSelectionToCatalogue()
+            // would leave the crew, and so cash, unknown for good. Only the form's own read judges it,
+            // as on iOS: a template that lands while that read is in flight is pruned when it lands,
+            // never against an older catalogue cached before the entry was offered.
+            if (_catalogState.value is RecurringCatalogState.Loaded && isCatalogueForSelectedMarket()) {
+                pruneSelectionToCatalogue()
+            }
         }
     }
 

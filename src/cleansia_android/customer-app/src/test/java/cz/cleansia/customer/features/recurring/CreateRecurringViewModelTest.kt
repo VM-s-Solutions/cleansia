@@ -559,6 +559,33 @@ class CreateRecurringViewModelTest {
         verify(exactly = 1) { snackbar.showInfo(marketNotice) }
     }
 
+    /**
+     * Home's catalogue can outlive a service launched since: a template landing while the form's own
+     * read is in flight waits for it, as iOS's load() does, so an active entry is never dropped.
+     */
+    @Test
+    fun `a schedule being edited is not pruned against an older cached catalogue while the form reads its own`() = runTest {
+        loadedCatalogue(countryId = null, services = listOf("svc-7"), packages = listOf("pkg-3"))
+        templatesFlow.value = listOf(editableTemplate.copy(selectedServiceIds = listOf("svc-7", "svc-new")))
+        val entry = CompletableDeferred<Unit>()
+        coEvery { catalogRepo.refresh(null) } coAnswers {
+            entry.await()
+            catalogServicesFlow.value = listOf(service("svc-7"), service("svc-new"))
+            ApiResult.Success(Unit)
+        }
+
+        val vm = viewModel(templateId = "tpl-1")
+        advanceUntilIdle()
+        assertEquals(setOf("svc-7", "svc-new"), vm.state.value.selectedServiceIds)
+
+        entry.complete(Unit)
+        advanceUntilIdle()
+
+        assertEquals(setOf("svc-7", "svc-new"), vm.state.value.selectedServiceIds)
+        assertEquals(setOf("pkg-3"), vm.state.value.selectedPackageIds)
+        verify(exactly = 0) { snackbar.showInfo(any<String>()) }
+    }
+
     @Test
     fun `edit mode refreshes when the template is not cached yet`() = runTest {
         coEvery { recurringRepo.refresh() } coAnswers {

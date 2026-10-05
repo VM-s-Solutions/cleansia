@@ -21,6 +21,8 @@ final class RewardsViewModel: ViewModel {
     /// The tier floor is a platform-default-currency figure (business rules, money constants):
     /// stated only when the chosen market's currency is that one, and labelled with it.
     @Published private(set) var tierFloor: TierFloorLabel = .applies(currencyCode: nil)
+    /// What the invite card and its share text promise: the chosen market's referral credit.
+    @Published private(set) var referralCredit: MarketMoney?
 
     private let loyaltyRepository: LoyaltyRepository
     private let referralRepository: RewardsReferralRepository
@@ -49,6 +51,7 @@ final class RewardsViewModel: ViewModel {
                 )
             }
             .assign(to: &$tierFloor)
+        marketStore.$state.map(\.referralCredit).assign(to: &$referralCredit)
         if let content = currentContent() {
             state = .loaded(content)
         }

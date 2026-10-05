@@ -282,6 +282,7 @@ private struct OrdersEmptyView: View {
             currencyCode: "CZK",
             isDefault: true,
             noShowCredit: nil,
+            referralCredit: nil,
             insuranceCoverageAmount: nil
         )
 

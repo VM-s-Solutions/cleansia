@@ -149,9 +149,3 @@ enum LoyaltyPresentation {
         return .qualified(accepted: accepted, qualified: qualified)
     }
 }
-
-enum RewardsShare {
-    static func message(code: String) -> String {
-        L10n.Rewards.referralShareText(code, CleansiaWeb.referralLink(code: code))
-    }
-}

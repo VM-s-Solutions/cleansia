@@ -3,6 +3,8 @@ import SwiftUI
 
 struct ReferralCodeSheet: View {
     let initialCode: String
+    /// The chosen market's referral credit; nil promises no reward.
+    let credit: MarketMoney?
     let onValidate: (String) async -> ReferralCodeState
     let onDismiss: () -> Void
 
@@ -12,10 +14,12 @@ struct ReferralCodeSheet: View {
 
     init(
         initialCode: String,
+        credit: MarketMoney?,
         onValidate: @escaping (String) async -> ReferralCodeState,
         onDismiss: @escaping () -> Void
     ) {
         self.initialCode = initialCode
+        self.credit = credit
         self.onValidate = onValidate
         self.onDismiss = onDismiss
         _code = State(initialValue: initialCode.trimmingCharacters(in: .whitespacesAndNewlines).uppercased())
@@ -67,21 +71,14 @@ struct ReferralCodeSheet: View {
     private var resultBlock: some View {
         switch localState {
         case .idle:
-            CodeSheetMessage.helper(L10n.Booking.referralDialogHelper)
+            CodeSheetMessage.helper(ReferralCopy.dialogHelper(credit))
         case .validating:
             CodeSheetMessage.validating(L10n.Booking.promoValidating)
         case let .valid(name):
-            CodeSheetMessage.success(successText(name))
+            CodeSheetMessage.success(ReferralCopy.dialogSuccess(referrer: name, credit: credit))
         case let .invalid(error):
             CodeSheetMessage.error(L10n.Booking.referralError(error))
         }
-    }
-
-    private func successText(_ name: String?) -> String {
-        if let name, !name.isBlank {
-            return L10n.Booking.referralDialogSuccessNamed(name)
-        }
-        return L10n.Booking.referralDialogSuccess
     }
 
     private func resetIfResolved() {

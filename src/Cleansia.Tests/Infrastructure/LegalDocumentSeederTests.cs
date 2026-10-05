@@ -527,9 +527,12 @@ public sealed class LegalDocumentSeederTests : IDisposable
     /// </summary>
     [Theory]
     // A cash booking is refused once the customer holds MaxOpenUnpaidCashBookings open and unpaid
-    // (CustomerCashStanding): the two include the new one, as en, uk and ru already said.
+    // (CustomerCashStanding): the two include the new one, and every language says so.
+    [InlineData(LegalDocumentType.TermsOfService, "en", 7, "no more than two unpaid cash bookings at a time, counting this one")]
     [InlineData(LegalDocumentType.TermsOfService, "cs", 7, "včetně této objednávky")]
     [InlineData(LegalDocumentType.TermsOfService, "sk", 7, "vrátane tejto objednávky")]
+    [InlineData(LegalDocumentType.TermsOfService, "uk", 7, "не більше двох неоплачених готівкових замовлень одночасно, включно з цим")]
+    [InlineData(LegalDocumentType.TermsOfService, "ru", 7, "не более двух неоплаченных заказов с оплатой наличными одновременно, включая этот")]
     // A code is accepted at registration (Register) or later on a booking (OrderLateReferralAcceptor) ...
     [InlineData(LegalDocumentType.TermsOfService, "en", 9, "or later on a booking")]
     [InlineData(LegalDocumentType.TermsOfService, "cs", 9, "nebo později u objednávky")]
@@ -542,12 +545,13 @@ public sealed class LegalDocumentSeederTests : IDisposable
     [InlineData(LegalDocumentType.TermsOfService, "sk", 9, "dní od prijatia kódu")]
     [InlineData(LegalDocumentType.TermsOfService, "uk", 9, "днів після прийняття коду")]
     [InlineData(LegalDocumentType.TermsOfService, "ru", 9, "дней после принятия кода")]
-    // ... and a reversal takes back min(grant, balance) from each side (ReverseReferral), never more.
-    [InlineData(LegalDocumentType.TermsOfService, "en", 9, "more than what is left of that credit on your balance")]
-    [InlineData(LegalDocumentType.TermsOfService, "cs", 9, "víc, než kolik z tohoto kreditu zbývá na vašem zůstatku")]
-    [InlineData(LegalDocumentType.TermsOfService, "sk", 9, "viac, ako koľko z tohto kreditu zostáva na vašom zostatku")]
-    [InlineData(LegalDocumentType.TermsOfService, "uk", 9, "більше, ніж залишилося від цього кредиту на вашому залишку")]
-    [InlineData(LegalDocumentType.TermsOfService, "ru", 9, "больше, чем осталось от этого кредита на вашем остатке")]
+    // ... and a reversal takes back min(grant, balance) from each side (ReverseReferral): the whole balance in
+    // the credit's currency counts, not only what is left of the grant.
+    [InlineData(LegalDocumentType.TermsOfService, "en", 9, "more than the referral credit it gave you, nor more than your balance in that credit's currency holds at the time")]
+    [InlineData(LegalDocumentType.TermsOfService, "cs", 9, "víc než kredit za doporučení, který vám poskytla, ani víc, než kolik je v tu chvíli na vašem zůstatku v měně tohoto kreditu")]
+    [InlineData(LegalDocumentType.TermsOfService, "sk", 9, "viac než kredit za odporúčanie, ktorý vám poskytla, ani viac, ako koľko je v tej chvíli na vašom zostatku v mene tohto kreditu")]
+    [InlineData(LegalDocumentType.TermsOfService, "uk", 9, "ні більше за реферальний кредит, який вам надала, ні більше, ніж на той момент є на вашому залишку у валюті цього кредиту")]
+    [InlineData(LegalDocumentType.TermsOfService, "ru", 9, "ни больше реферального кредита, который вам предоставила, ни больше, чем в этот момент есть на вашем остатке в валюте этого кредита")]
     // Approval asks the register of the country the cleaner is approved for, and only Czechia's is wired (ARES);
     // it refuses a number not registered, a business that has ended and no trade licence in force (ApproveEmployee,
     // CleanerBusinessRegister). Where no register is consulted, nothing is checked.
@@ -569,13 +573,20 @@ public sealed class LegalDocumentSeederTests : IDisposable
 
     /// <summary>
     /// The wording the review of 2026-10-05 retired must not come back: the cs and sk payment sections made
-    /// "not more than two unpaid cash bookings" a precondition, which admits a third, after a stray "further".
+    /// "not more than two unpaid cash bookings" a precondition, which admits a third, after a stray "further";
+    /// and the credit section capped a reversal at what is left of the grant, where the code takes up to the
+    /// whole balance in that currency.
     /// </summary>
     [Theory]
     [InlineData(LegalDocumentType.TermsOfService, "cs", 7, "nemáte více než dvě")]
     [InlineData(LegalDocumentType.TermsOfService, "cs", 7, "v hotovosti dále")]
     [InlineData(LegalDocumentType.TermsOfService, "sk", 7, "nemáte viac ako dve")]
     [InlineData(LegalDocumentType.TermsOfService, "sk", 7, "v hotovosti ďalej")]
+    [InlineData(LegalDocumentType.TermsOfService, "en", 9, "what is left of that credit")]
+    [InlineData(LegalDocumentType.TermsOfService, "cs", 9, "kolik z tohoto kreditu zbývá")]
+    [InlineData(LegalDocumentType.TermsOfService, "sk", 9, "koľko z tohto kreditu zostáva")]
+    [InlineData(LegalDocumentType.TermsOfService, "uk", 9, "залишилося від цього кредиту")]
+    [InlineData(LegalDocumentType.TermsOfService, "ru", 9, "осталось от этого кредита")]
     public void The_Newest_Version_Carries_None_Of_The_Wording_The_2026_10_05_Review_Retired(
         LegalDocumentType type, string language, int section, string phrase)
     {

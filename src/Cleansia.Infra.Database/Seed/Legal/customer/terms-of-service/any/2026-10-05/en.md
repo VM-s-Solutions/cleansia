@@ -58,7 +58,7 @@ You pay by card, through our payment provider Stripe, when you book.
 
 You can pay in cash only when you are signed in and the booking needs one cleaner. You pay the price in cash to the cleaner after the cleaning. The cleaner collects it on behalf of the company, so paying the cleaner settles what you owe the company. Credit cannot be used on a cash booking.
 
-For a cash booking you also need no unpaid amount owed to any operating company (section 8) and no more than two unpaid cash bookings at a time.
+For a cash booking you also need no unpaid amount owed to any operating company (section 8) and no more than two unpaid cash bookings at a time, counting this one.
 
 We issue a receipt in the company's name once the payment has been received: for a card payment when it is completed, and for cash once the cleaner has recorded the payment and the cleaning is completed. We send the receipt by e-mail.
 
@@ -74,7 +74,7 @@ Credit is a balance in your account that the company grants, for example as an a
 
 A friend can enter your referral code when creating their account, or later on a booking made with their account. A customer can be referred only once, and cannot use their own code. If, within 90 days of the code being accepted, one of their bookings is completed and none of their bookings has been completed before it, you both receive the referral credit set for that booking's currency; the app shows the figure for the market chosen in it. The rules of this section apply to that credit.
 
-The company may take back the referral credit from both of you if the booking that earned it is refunded, or if the referral was not genuine — for example, when a customer refers themselves through another account or otherwise breaks the rules of this section. It never takes back more than what is left of that credit on your balance in its currency, so your balance never goes below zero.
+The company may take back the referral credit from both of you if the booking that earned it is refunded, or if the referral was not genuine — for example, when a customer refers themselves through another account or otherwise breaks the rules of this section. It never takes back more than the referral credit it gave you, nor more than your balance in that credit's currency holds at the time, so your balance never goes below zero.
 
 If a booking you paid partly with credit is cancelled or refunded, the amount returned is split between your balance and your card in the same proportion as you paid the price: all the credit you spent returns when nothing is kept, and only a proportional part of it when a fee is kept or only part of the price is refunded.
 

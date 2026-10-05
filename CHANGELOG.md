@@ -183,10 +183,10 @@ need backfilling.
   points with no visible edge. On iOS that line is the bottom of the Dynamic Island or the notch, or
   of the status bar on a phone with a Home button, the same on every iOS version; on Android it is the
   bottom of the camera cut-out (on Android 9 to 11, of the rectangle the phone reports around it), or
-  of the status bar on a phone without one or on Android 8. On Android the clock and
-  icons turn white over the Plus and Profile headers while the header is under them. On iOS 16 in
-  light mode, where the clock is always black, the Plus offer's fade is the page colour instead. With
-  Reduce Transparency on, the iOS fade is fully opaque. Until 2026-10-05 the iOS fade reached past the
+  of the status bar on a phone without one or on Android 8. The clock and icons turn white over the
+  Plus and Profile headers while the header is under them, on Android and, since 2026-10-05, on iOS,
+  where iOS 16 in light mode used to draw the clock black and so the Plus offer's fade was the page
+  colour there. With Reduce Transparency on, the iOS fade is fully opaque. Until 2026-10-05 the iOS fade reached past the
   island, to about 21 points below it on an iPhone 17 Pro, and Android covered the status bar and a
   strip below it with a solid band of the page colour, which read as a white band over the Plus and
   Profile headers. Until 2026-10-04 iOS drew a light blur under a see-through veil of the page
@@ -1076,12 +1076,15 @@ need backfilling.
   clock, signal and battery were faint on the light blue top of Profile's header (white on iOS, dark
   grey on Android), below the contrast small text needs. Profile's header now starts a shade darker
   blue, at rest and under the fade as the page scrolls, and on Android the clock turns white over it.
-  The blue everywhere else in the apps is unchanged, and so is dark mode. On iOS 16 the clock is black
-  in light mode, and it reads on the old blue, so there the header keeps it. While the header of
+  The blue everywhere else in the apps is unchanged, and so is dark mode. While the header of
   Profile or of the Plus offer scrolls out from under the clock, the colour behind the clock no longer
   passes through the in-between blues it could not be read on: it moves past them in one step, and the
-  clock turns from white to dark at that moment. (Finding 2026-10-04; the header scrolling away,
-  finding 2026-10-05.)
+  clock turns from white to dark at that moment. On iOS the clock is now kept white while either
+  header is behind it, on every version. Until 2026-10-05 the system chose: it sometimes drew the clock
+  black over Profile's darker blue as the page scrolled, and on iOS 16 in light mode it was black
+  whatever was under it, faint on the Plus offer's navy header, so there Profile's header kept the old
+  blue; it now starts on the darker blue on iOS 16 too. (Finding 2026-10-04; the header scrolling
+  away, finding 2026-10-05; the clock kept white, owner decision 2026-10-05.)
 
 - **Customer web — what you pick, and your initials, read in dark mode.** In dark mode a picked
   service or package on the schedule form showed its name in white on light blue, hard to read, with a

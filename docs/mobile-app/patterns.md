@@ -195,20 +195,19 @@ top, the block that bleeds above it and the fade's colour (below) all take it, a
 blue that Home and the package cards use is unchanged. Dark mode keeps the brand blue on both
 platforms, white on sky-800 at 7.6:1.
 
-- **iOS** (`ProfileTab.heroTop`) does it from iOS 17. Before iOS 17 the system draws the clock black in
-  light mode whatever is under it, which reads 5.1:1 on sky-600 and would fall to 3.5:1 on sky-700,
-  so there the hero keeps the brand blue: the same gate as the Plus offer's fade (below). From the
-  colour values, white reads 5.93:1 on the hero's top at rest, and at least 4.86:1 scrolled, where the
-  90 % fade lies over the hero, the white avatar or the white stats card. `ContentSafeAreaBindingTests`
-  pins both, black on the brand blue before iOS 17, the gate and the wiring. While the hero's own
-  bottom passes up through the fade, the fade steps over the blues the clock cannot be read on
-  (since 2026-10-05, [below](#status-bar-fade)). One dip is left, and it is the system's: at 130–150pt
-  of scroll, with the hero still under the whole fade, the system sometimes draws the clock black on
-  the 90 % sky-700 fade, when the avatar or the white stats card is under or just below it, and black
-  reads 4.0–4.3:1 there from the colour values (5.45 and 4.92:1 in the screenshots). The app sets no
-  status-bar style, so the choice is the system's. A status-bar style set from Profile, or a fade
-  darker than the hero's top, would change it, and either departs from the colour actually behind the
-  status bar, so it is left for the owner (reported 2026-10-05).
+- **iOS** (`ProfileTab.heroTop`) does it on every version, because Profile asks for the white clock
+  while its hero is behind it (`StatusBarStyleBridge`, since 2026-10-05, [below](#status-bar-fade)).
+  Until then it did it from iOS 17 only: before iOS 17 the system draws the clock black in light mode
+  whatever is under it, 5.1:1 on sky-600 and 3.5:1 on sky-700, so there the hero kept the brand blue.
+  From the colour values, white reads 5.93:1 on the hero's top at rest, and at least 4.86:1 scrolled
+  while the 90 % fade lies over the hero, the white avatar or the white stats card. While the hero's
+  own bottom passes up through the fade, the fade steps over the blues the clock cannot be read on
+  ([below](#status-bar-fade)). The dip the system chose is gone: until 2026-10-05, at 130–150pt of
+  scroll, with the hero still under the whole fade, it sometimes drew the clock black on the 90 %
+  sky-700 fade when the avatar or the white stats card was under or just below it, 4.0–4.3:1 from the
+  colour values (5.45 and 4.92:1 in the screenshots), and the owner ruled that the clock is forced
+  white while the hero is behind it (2026-10-05). `ContentSafeAreaBindingTests` pins the light hero's
+  top with no version check, and the wiring.
 - **Android** (`profileHeroColors`, `ProfileTab.kt`) needs no gate, because it sets the icons itself
   (below). Measured on the emulator, the clock reads 5.40:1 at rest, where the theme's dark icons read
   3.26:1 before, and 4.87–5.69:1 scrolled with the hero under the status bar; dark mode reads
@@ -312,14 +311,11 @@ first point of scroll.
   with `statusBarFadeHero()`: the Plus offer passes `MembershipPalette.sky950`, the top of its navy
   hero, and Profile passes its hero's top, `ProfileTab.heroTop` ([above](#full-bleed-hero)). Profile
   takes its hero's colour for the same reason as Plus: the page colour over its blue hero was a pale
-  band, on which the clock measured 1.7:1 in light mode. **Before iOS 17 the Plus offer passes the
-  page colour in light mode**
-  (`fadeHeroTint`, since 2026-10-04). The app sets no status-bar style, and before iOS 17 the system
-  draws the clock, signal and battery in the colour scheme's colour whatever is under them, black in
-  light mode, which read 1.7:1 on the 90 % navy in the iOS 16.4 simulator and reads 17:1 on the page
-  colour. From iOS 17 the system takes their colour from the content and draws them white on the navy
-  (12:1), and in dark mode they are white on every version, so there the fade stays navy. The gate
-  sits at the call site, and the fade itself has no version check. The fade wears the hero's colour
+  band, on which the clock measured 1.7:1 in light mode. Both pass their hero's colour on every iOS
+  version, because the screen asks for the white clock while the hero is behind it (below). From
+  2026-10-04 until that change the Plus offer passed the page colour before iOS 17 in light mode
+  (`fadeHeroTint`, gone): the system then drew the clock, signal and battery black whatever was under
+  them, which read 1.7:1 on the 90 % navy in the iOS 16.4 simulator. The fade wears the hero's colour
   while the hero reaches below the fade, and cross-fades in proportion into the page colour as the
   hero's bottom passes up through it, from the fade's end to the top of the screen
   (`StatusBarFade.heroShare`), stepping once over the shades the clock cannot be read on (below). The
@@ -336,18 +332,40 @@ first point of scroll.
   it, and it kept the clock white over a dark hero's cross-fade until the fade was nearly as light as
   0.5 luminance. In proportion all the way, the cross-fade from a dark hero into the light page took
   the clock to 2.21:1 on Profile and 2.22:1 on the Plus offer (screenshots, at 190pt and 365pt of
-  scroll; finding 2026-10-05). The share now keeps its proportion outside those shades and jumps across
+  scroll; finding 2026-10-05). The share keeps its proportion outside those shades and jumps across
   them at their middle: from the darkest share on which the white clock still reads 4.5:1, the fade at
   90 % over white content (`whiteClockLimit`), to the lightest on which the fade over the hero itself
   is light enough, luminance 0.6, that the system draws the clock black at 13:1 or more
   (`blackClockFloor`). Profile's sky-700 over the page steps between shares 0.956 and 0.210, the Plus
-  offer's navy between 0.689 and 0.130. A dark page (dark mode), and a hero too light for the white
-  clock (Profile's brand blue before iOS 17, where the clock is black), have no such shades and keep
-  the plain proportion. Measured again in light mode on the iPhone 17 (iOS 26.3), every 5–10pt:
-  Profile's clock reads 3.60:1 at worst in the screenshots (4.5:1 from the colour values), then black
-  at 16:1; the Plus offer's 3.53:1 at worst (4.5:1), then 17:1. Dark mode is unchanged, 4.63:1 or more
-  on Profile in the screenshots. The one dip left on Profile is the system's choice of a black clock
-  before the hero leaves the fade ([above](#full-bleed-hero)).
+  offer's navy between 0.689 and 0.130. A dark page (dark mode), or a hero too light for the white
+  clock, has no such shades and keeps the plain proportion. Measured again in light mode on the
+  iPhone 17 (iOS 26.3), every 5–10pt: Profile's clock reads 3.60:1 at worst in the screenshots (4.5:1
+  from the colour values), then black at 16:1; the Plus offer's 3.53:1 at worst (4.5:1), then 17:1.
+  Dark mode is unchanged, 4.63:1 or more on Profile in the screenshots.
+- **The clock is asked for white while the hero is behind it** (owner decision 2026-10-05). Until then
+  the app set no status-bar style, so the clock, signal and battery were the system's: before iOS 17
+  black in light mode whatever was under them, and from iOS 17 taken from the content, which at
+  130–150pt of Profile drew them black on the 90 % sky-700 fade, about 4.1:1
+  ([above](#full-bleed-hero)). `StatusBarStyleBridge` (`StatusBarFadeScrollView.swift`) is a
+  `UIViewControllerRepresentable` whose controller answers `preferredStatusBarStyle`: the SwiftUI
+  hosting controllers hand `childForStatusBarStyle` down to it, logged and measured on iOS 16.4, 18.6
+  and 26.3. `.toolbarColorScheme(.dark, for: .navigationBar)` was tried first, and does nothing while
+  the navigation bar is hidden, as it is on these screens. On a screen with a hero the band mounts the
+  bridge and asks for `.lightContent` while `StatusBarFade.asksForWhiteClock` holds, that is while the
+  fade at the drawn share reads 4.5:1 for the white clock over white content, and for the system's
+  default once the page colour has taken over, where the step above has made the fade light enough
+  for the black clock. Dark mode asks for white throughout. The Plus offer's states with no plan to
+  price (loading, an error, none in the market), whose navy hero does not scroll, ask for white
+  throughout. Home has no hero and no bridge, so its clock stays the system's. Measured every 5–10pt
+  across Profile (0–300pt) and the Plus offer (0–520pt), light and dark, on the iPhone 17 (iOS 26.3),
+  iPhone 16 (18.6) and iPhone 14 Pro (16.4) simulators. From the colour values, white on the hero at
+  rest reads 5.93:1 on Profile and 13.88:1 on the Plus offer, white at worst 4.50:1 at the share where
+  the fade steps across, and black 13.0:1 or more after it; in dark mode white throughout, at least
+  5.97:1 on Profile and 10.31:1 on the Plus offer. In the screenshots, which run lighter
+  ([above](#full-bleed-hero)): white 3.60:1 at worst on Profile and 3.48:1 on the Plus offer (16.4),
+  black 16.25:1 or more, and 4.58:1 or more in dark mode. On iOS 16.4 the Plus hero at rest went from a
+  black clock at 1.74:1 to white at 12.07:1, and its reduced hero from black to white at 13.28:1. On no
+  runtime is the clock black on a hero-coloured fade.
 - **What pins it.** `ContentSafeAreaBindingTests` pins the end within 2pt of each measured island,
   notch and status bar, the ten notch phones above among them, the mask at each measured clock's
   baseline (0.85 or more, 0.5 or more under a notch), the 5pt ease, the full-strength
@@ -355,11 +373,15 @@ first point of scroll.
   no step is larger than one point's share), the step over the illegible shades (for Profile and the Plus offer, every share from
   1 to 0 reads 4.5:1 for the white clock or is light enough for the black one, with one jump and never
   back; shares outside the shades and the cases with none are left alone, and the band draws the
-  stepped share), the reporting band, both hero screens' wiring, the Plus offer's iOS 16 gate, and
-  that the fade has no material, no per-version branch and no system edge. Checked on the iOS 26.3,
-  18.6 and 16.4 simulators, light and dark: Plus with its hero under the status bar and with content
-  scrolled past it, Profile's hero, and Home with a card under the clock; the end line also on the
-  iPhone 16e and the iPhone SE.
+  stepped share), the reporting band, both hero screens' wiring, the clock each drawn share asks for
+  (when white is asked it reads 4.5:1 or more over white content, otherwise the fade is light enough
+  for black; dark mode always asks for white; a light hero is left to the system), the bridge's
+  controller answering `.lightContent` or `.default`, the band handing the bridge the share it paints,
+  the reduced Plus hero mounting it, Profile's light hero top with no version check and the Plus offer
+  with no `fadeHeroTint`, and that the fade has no material, no per-version branch and no system edge.
+  Checked on the iOS 26.3, 18.6 and 16.4 simulators, light and dark: Plus with its hero under the
+  status bar and with content scrolled past it, Profile's hero, and Home with a card under the clock;
+  the end line also on the iPhone 16e and the iPhone SE.
 - **Why not iOS 26's own soft edge.** From the first to the second remark of 2026-10-03, iOS 26 drew
   the system's soft scroll edge, the one a navigation bar draws: a `safeAreaBar` stand-in 24pt tall
   with a near-clear fill, then `scrollEdgeEffectStyle(.soft, for: .top)`, because the system draws its
@@ -425,8 +447,8 @@ first point of scroll.
     them and hands them back to the theme's on pause or dispose, because Profile leaves composition
     only once Plus has entered. `CleansiaTheme` sets the bars in a `DisposableEffect(darkTheme)`, not a
     `SideEffect`: side effects run after every other effect in a frame, so it undid the screen's
-    setting. Android sets the icons itself, so it needs no iOS 16 exception: the Plus fade is navy in
-    light mode on every version.
+    setting. Android sets the icons itself, as iOS asks for them since 2026-10-05, so on both the Plus
+    fade is navy in light mode on every version.
   - **Home pads inside the scroll.** Home moved its status-bar padding inside the scroll, so the
     address bar starts below the status bar at rest and then scrolls under the fade. That leaves
     Home's `PullToRefreshBox` filling the whole screen, so its indicator pads `WindowInsets.statusBars`

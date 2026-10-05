@@ -432,6 +432,18 @@ public sealed class RefundService(
     private async Task ReturnCreditShareAsync(
         Order order, decimal creditShare, string refundKey, string actorId, CancellationToken cancellationToken)
     {
+        // The return is raw SQL, which the frozen-books commit guard cannot see.
+        if (creditShare > 0m
+            && !string.IsNullOrEmpty(order.UserId)
+            && await creditAccountRepository.IsOnFrozenCompanyBooksAsync(order.UserId, order.CurrencyId, cancellationToken))
+        {
+            logger.LogWarning(
+                "No credit return of {Amount} for order {OrderId} on refund key {RefundKey}: the customer's credit "
+                    + "account is on a company frozen for archive, whose credit is written off. The card refund was not affected.",
+                creditShare, order.Id, refundKey);
+            return;
+        }
+
         var returned = await creditAccountRepository.ReturnCreditAsync(
             order, creditShare, refundKey, actorId, cancellationToken);
 

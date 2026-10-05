@@ -58,9 +58,14 @@ public enum CleansiaColors {
     /// (customer `ProfileTab.kt`). The hexes are the source of truth and the testable surface — a
     /// `Color` → `UIColor` roundtrip is trait-dependent on the iOS-16 floor, they are not.
     public static let onFixedWhite = Color(hex: onFixedWhiteHex)
+    /// The text ink for the same fixed-white surface: sky-700, 5.93:1 in both schemes, where the light-mode
+    /// brand blue is 4.10:1, under the 4.5:1 floor for the 18pt initials. The customer app's avatars take
+    /// it, as Android's customer `ProfileTab.kt` does; the partner app keeps `onFixedWhite`.
+    public static let primaryTextOnFixedWhite = Color(hex: primaryTextOnFixedWhiteHex)
 
     static let fixedWhiteHex: UInt32 = 0xFFFFFF
     static let onFixedWhiteHex: UInt32 = 0x0284C7
+    static let primaryTextOnFixedWhiteHex: UInt32 = 0x0369A1
 
     public static let successText = Palette.successText
     public static let successBg = Palette.successBg

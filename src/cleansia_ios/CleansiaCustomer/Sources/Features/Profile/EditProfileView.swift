@@ -183,6 +183,7 @@ private struct AvatarField: View {
                         diameter: 96,
                         strokeWidth: 1,
                         strokeColor: CleansiaColors.outlineVariant,
+                        initialsInk: CleansiaColors.primaryTextOnFixedWhite,
                         onLoadFailure: onLoadFailure,
                         onLoadSuccess: onLoadSuccess
                     )

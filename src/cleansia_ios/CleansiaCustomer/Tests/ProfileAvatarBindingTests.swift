@@ -18,6 +18,18 @@ final class ProfileAvatarBindingTests: XCTestCase {
         }
     }
 
+    /// The disc is white in both themes, and the light-mode brand blue Core defaults to is 4.10:1 on it, so
+    /// both customer surfaces name the fixed text ink (sky-700, 5.93:1), as Android does (finding 2026-10-05).
+    func testBothAvatarSurfacesDrawTheInitialsInTheFixedTextInk() throws {
+        for consumer in Self.consumers {
+            let source = try read(consumer)
+            XCTAssertTrue(
+                source.contains("initialsInk: CleansiaColors.primaryTextOnFixedWhite,"),
+                "\(consumer) draws the initials in the brand blue's 4.10:1"
+            )
+        }
+    }
+
     func testNeitherSurfaceDrawsItsOwnInitialsDisc() throws {
         for consumer in Self.consumers {
             let source = try read(consumer)

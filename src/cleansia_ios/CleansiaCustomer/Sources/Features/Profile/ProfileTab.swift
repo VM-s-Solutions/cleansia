@@ -365,6 +365,7 @@ private struct HeroGradient: View {
                 display: AvatarDisplay.resolve(photo: user?.profilePhoto, edit: .unchanged),
                 initials: user?.initials ?? "",
                 cache: avatarCache,
+                initialsInk: CleansiaColors.primaryTextOnFixedWhite,
                 onLoadFailure: onAvatarLoadFailure,
                 onLoadSuccess: onAvatarLoadSuccess
             )

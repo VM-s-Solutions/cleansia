@@ -223,6 +223,10 @@ work that depends on it and commit the client with the DTO — never flag it. Mi
 A backend contract change needs **both** halves, and they are separate tools. Neither is hard to run;
 the reason they get flagged rather than run is the policy above, not the difficulty.
 
+On a Mac the hosts need a container engine (Colima), the client formatters need GNU sed
+(`brew install gnu-sed`), and macOS's AirPlay Receiver also listens on :5000 — see
+[Local orchestration — on a Mac](docs/architecture/local-orchestration.md#colima).
+
 ```bash
 # Web — all three NSwag clients at once, then a typecheck. Needs the three API hosts up
 # (partner :5000, admin :5001, customer :5003).

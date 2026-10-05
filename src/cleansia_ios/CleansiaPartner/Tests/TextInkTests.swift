@@ -129,8 +129,9 @@ final class TextInkTests: XCTestCase {
     }
 
     /// Every invoice status pill's label reads 4.5:1 or more on its fill in both modes (finding 2026-10-05):
-    /// "Approved" was white on the light primary, sky-600 (4.10:1), and the dark primary's ink on sky-400
-    /// (4.42:1); it is white on sky-700 in both modes now, as Android's.
+    /// "Approved" was white on the light primary, sky-600 (4.10:1), and the dark primary's ink, sky-900, on
+    /// sky-400 (4.42:1); it is white on sky-700 in light mode (5.93:1) and sky-950 on sky-400 in dark (6.48:1).
+    /// Its dark fill stays apart from Pending's, the container, which is sky-700 there.
     func testEveryInvoiceStatusPillReadsOnItsFillInBothModes() {
         let statuses: [EmployeeInvoiceStatus?] = EmployeeInvoiceStatus.allCases + [nil]
         for style in [UIUserInterfaceStyle.light, .dark] {
@@ -145,8 +146,13 @@ final class TextInkTests: XCTestCase {
             let approved = InvoiceStatusBadge(status: ._2)
             XCTAssertEqual(
                 contrast(rgb(approved.foreground, style), rgb(approved.background, style)),
-                5.93,
+                style == .dark ? 6.48 : 5.93,
                 accuracy: 0.01
+            )
+            XCTAssertGreaterThan(
+                contrast(rgb(approved.background, style), rgb(InvoiceStatusBadge(status: ._1).background, style)),
+                1.5,
+                "Approved and Pending share a fill, style \(style.rawValue)"
             )
         }
     }

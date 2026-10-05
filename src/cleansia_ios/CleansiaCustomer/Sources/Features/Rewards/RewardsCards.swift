@@ -84,7 +84,7 @@ private struct TierStatusBadge: View {
         case .current:
             Text(L10n.Rewards.statusCurrent)
                 .font(CleansiaTypography.labelSmall)
-                .foregroundColor(CleansiaColors.primary)
+                .foregroundColor(CleansiaColors.primaryText)
                 .padding(.horizontal, Spacing.xs)
                 .padding(.vertical, Spacing.xxs)
                 .background(CleansiaColors.primary.opacity(0.14), in: Capsule())
@@ -137,7 +137,7 @@ struct InviteFriendsCard: View {
                 } label: {
                     Text(referral.code)
                         .cleansiaFont(CleansiaTypography.headlineSmall)
-                        .foregroundColor(CleansiaColors.primary)
+                        .foregroundColor(CleansiaColors.primaryText)
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, Spacing.m)
                         .background(

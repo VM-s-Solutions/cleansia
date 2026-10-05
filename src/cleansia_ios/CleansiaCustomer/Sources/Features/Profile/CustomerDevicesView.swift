@@ -176,7 +176,7 @@ private struct CurrentDeviceChip: View {
     var body: some View {
         Text(L10n.Devices.thisDevice)
             .font(CleansiaTypography.labelSmall)
-            .foregroundColor(CleansiaColors.primary)
+            .foregroundColor(CleansiaColors.primaryText)
             .padding(.horizontal, 10)
             .padding(.vertical, 3)
             .background(CleansiaColors.primaryContainer)

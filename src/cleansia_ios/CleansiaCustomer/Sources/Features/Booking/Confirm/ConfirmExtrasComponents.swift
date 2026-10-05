@@ -69,7 +69,9 @@ struct PreferredCleanerPicker: View {
                             .foregroundColor(CleansiaColors.onSurface)
                         Text(selected?.fullName ?? L10n.Booking.preferredCleanerSubtitle)
                             .font(CleansiaTypography.labelMedium)
-                            .foregroundColor(selected == nil ? CleansiaColors.onSurfaceVariant : CleansiaColors.primary)
+                            .foregroundColor(
+                                selected == nil ? CleansiaColors.onSurfaceVariant : CleansiaColors.primaryText
+                            )
                     }
                     Spacer()
                     if selected == nil {
@@ -161,7 +163,7 @@ private struct CleanerRow: View {
                     Text(cleaner.fullName.prefix(1).uppercased())
                         .font(CleansiaTypography.titleMedium)
                         .fontWeight(.bold)
-                        .foregroundColor(CleansiaColors.primary)
+                        .foregroundColor(CleansiaColors.primaryText)
                 }
                 Text(cleaner.fullName)
                     .font(CleansiaTypography.bodyLarge)

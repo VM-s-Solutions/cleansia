@@ -198,7 +198,7 @@ private struct AvatarField: View {
                         .foregroundColor(CleansiaColors.onSurface)
                     Text(display.isImage ? L10n.EditProfile.photoChange : L10n.EditProfile.photoAdd)
                         .font(CleansiaTypography.bodyMedium)
-                        .foregroundColor(CleansiaColors.primary)
+                        .foregroundColor(CleansiaColors.primaryText)
                 }
                 Spacer(minLength: 0)
             }

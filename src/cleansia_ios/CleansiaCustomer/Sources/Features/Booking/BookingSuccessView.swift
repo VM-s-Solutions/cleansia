@@ -95,7 +95,7 @@ struct BookingSuccessView: View {
             Text(code)
                 .font(CleansiaTypography.titleLarge)
                 .fontWeight(.bold)
-                .foregroundColor(CleansiaColors.primary)
+                .foregroundColor(CleansiaColors.primaryText)
                 .textSelection(.enabled)
         }
         .padding(.vertical, 10)

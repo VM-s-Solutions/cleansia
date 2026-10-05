@@ -169,7 +169,7 @@ struct ServiceRow: View {
     /// a covered or picked row, so light mode takes sky-700 (5.9:1 / 5.4:1); the primary stays the brand
     /// colour of the row's fills and borders. Dark mode keeps it (sky-400, 5.0:1 at worst).
     static func fromPriceInk(_ scheme: ColorScheme) -> Color {
-        scheme == .dark ? CleansiaColors.primary : sky700
+        scheme == .dark ? CleansiaColors.primary : CleansiaColors.primaryText
     }
 
     /// The secondary text's ink. On a covered or picked (`tinted`) row in dark mode slate-400 measures
@@ -179,7 +179,6 @@ struct ServiceRow: View {
         scheme == .dark && tinted ? slate300 : CleansiaColors.onSurfaceVariant
     }
 
-    private static let sky700 = Color(red: 3 / 255, green: 105 / 255, blue: 161 / 255)
     private static let slate300 = Color(red: 203 / 255, green: 213 / 255, blue: 225 / 255)
 
     var body: some View {

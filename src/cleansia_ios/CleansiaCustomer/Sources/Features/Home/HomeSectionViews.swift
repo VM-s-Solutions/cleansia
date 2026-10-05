@@ -66,7 +66,7 @@ struct OrderAgainCard: View {
                 VStack(alignment: .leading, spacing: Spacing.hair) {
                     Text(L10n.Home.orderAgainTitle)
                         .font(CleansiaTypography.labelMedium)
-                        .foregroundColor(CleansiaColors.primary)
+                        .foregroundColor(CleansiaColors.primaryText)
                     Text(HomeSections.recentBookingTitle(
                         order,
                         fallback: L10n.Home.orderAgainFallbackTitle,
@@ -146,7 +146,7 @@ private struct RecurringScheduleRow: View {
                 VStack(alignment: .leading, spacing: Spacing.hair) {
                     Text(L10n.Recurring.cadence(template.frequency))
                         .font(CleansiaTypography.labelMedium)
-                        .foregroundColor(CleansiaColors.primary)
+                        .foregroundColor(CleansiaColors.primaryText)
                     Text(L10n.Recurring.dayAtTime(
                         RecurringWeekday.label(template.dayOfWeek, locale: locale),
                         template.timeOfDay
@@ -222,7 +222,7 @@ private struct PopularPackageCard: View {
                     .padding(.top, 10)
                 Text(L10n.Home.popularPackagesAddCta)
                     .font(CleansiaTypography.labelSmall)
-                    .foregroundColor(CleansiaColors.primary)
+                    .foregroundColor(CleansiaColors.primaryText)
                     .padding(.top, Spacing.xxs)
             }
             .padding(14)

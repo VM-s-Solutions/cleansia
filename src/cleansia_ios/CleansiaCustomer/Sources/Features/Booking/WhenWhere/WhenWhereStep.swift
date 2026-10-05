@@ -258,7 +258,11 @@ private struct ExpressWaiverNote: View {
         case .none:
             EmptyView()
         case .available:
-            note(icon: "bolt.fill", text: L10n.Booking.expressWaiverAvailable(remaining), tint: CleansiaColors.primary)
+            note(
+                icon: "bolt.fill",
+                text: L10n.Booking.expressWaiverAvailable(remaining),
+                tint: CleansiaColors.primaryText
+            )
         case .exhausted:
             note(icon: "info.circle", text: L10n.Booking.expressWaiverUsed, tint: CleansiaColors.onSurfaceVariant)
         }
@@ -382,7 +386,7 @@ private struct DayPartButton: View {
                 HStack(spacing: Spacing.xxs) {
                     Text(name)
                         .font(CleansiaTypography.labelLarge)
-                        .foregroundColor(active ? CleansiaColors.primary : CleansiaColors.onSurface)
+                        .foregroundColor(active ? CleansiaColors.primaryText : CleansiaColors.onSurface)
                         .multilineTextAlignment(.center)
                     if holdsSelection {
                         Circle()

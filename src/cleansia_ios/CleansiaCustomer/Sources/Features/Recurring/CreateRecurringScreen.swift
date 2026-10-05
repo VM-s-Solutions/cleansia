@@ -561,7 +561,7 @@ private struct SelectableRow: View {
                 if let badge {
                     Text(badge)
                         .font(CleansiaTypography.labelSmall)
-                        .foregroundColor(CleansiaColors.primary)
+                        .foregroundColor(CleansiaColors.primaryText)
                         .padding(.horizontal, Spacing.xs)
                         .padding(.vertical, 2)
                         .background(CleansiaColors.primaryContainer.opacity(0.4), in: Capsule())

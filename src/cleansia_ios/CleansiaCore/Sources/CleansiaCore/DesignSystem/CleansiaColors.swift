@@ -2,6 +2,10 @@ import SwiftUI
 
 public enum CleansiaColors {
     public static let primary = Color.dynamic(light: Palette.sky600, dark: Palette.sky400)
+    /// The brand blue for TEXT on a light surface: sky-600 reads 4.10:1 on white, under the 4.5:1 floor,
+    /// so text takes sky-700 in light mode (5.93:1); dark mode keeps the primary's sky-400. Fills, borders,
+    /// icons and buttons keep `primary`.
+    public static let primaryText = Color.dynamic(light: Palette.sky700, dark: Palette.sky400)
     public static let onPrimary = Color.dynamic(light: .white, dark: Palette.sky900)
     public static let primaryContainer = Color.dynamic(light: Palette.sky100, dark: Palette.sky700)
     public static let onPrimaryContainer = Color.dynamic(light: Palette.sky900, dark: Palette.sky100)

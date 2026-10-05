@@ -38,7 +38,7 @@ struct PackageDetailsSheet: View {
                     .foregroundColor(CleansiaColors.onSurface)
                 Text(BookingPricing.formatTotal(pkg.price, currencyCode: currencyCode))
                     .font(CleansiaTypography.titleMedium)
-                    .foregroundColor(CleansiaColors.primary)
+                    .foregroundColor(CleansiaColors.primaryText)
             }
 
             if let description = pkg.localizedDescription(for: locale), !description.isEmpty {

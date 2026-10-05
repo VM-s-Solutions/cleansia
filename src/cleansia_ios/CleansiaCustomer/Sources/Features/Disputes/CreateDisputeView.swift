@@ -357,7 +357,7 @@ private struct PickedEvidenceRow: View {
         case .uploaded:
             Text(L10n.Disputes.evidenceUploaded)
                 .font(CleansiaTypography.labelSmall)
-                .foregroundColor(CleansiaColors.primary)
+                .foregroundColor(CleansiaColors.primaryText)
         case .failed:
             Text(L10n.Disputes.evidenceUploadFailed)
                 .font(CleansiaTypography.labelSmall)

@@ -62,6 +62,9 @@ android {
 //  - BundledFontCoverageTest reads the res/font binaries: a unit test has no
 //    Resources, and the compiled resources are not on its runtime classpath,
 //    so swapping a TTF changes nothing this task hashes.
+//  - PrimaryTextTest, SystemDialogUsageTest and CleansiaMapUsageTest read BOTH
+//    apps' Kotlin sources: they guard how the apps call :core's widgets, so a
+//    change to an app alone is exactly the change they exist to catch.
 tasks.withType<Test>().configureEach {
     inputs.files(
         fileTree("$rootDir/customer-app/src/main/res") { include("values*/strings.xml") },
@@ -72,6 +75,13 @@ tasks.withType<Test>().configureEach {
 
     inputs.files(fileTree("src/main/res/font"))
         .withPropertyName("bundledFonts")
+        .withPathSensitivity(PathSensitivity.RELATIVE)
+
+    inputs.files(
+        fileTree("$rootDir/customer-app/src/main/java"),
+        fileTree("$rootDir/partner-app/src/main/java"),
+    )
+        .withPropertyName("appSources")
         .withPathSensitivity(PathSensitivity.RELATIVE)
 }
 

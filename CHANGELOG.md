@@ -1143,9 +1143,14 @@ need backfilling.
   off the list could still be put into a new package, or added to one, and every booking of that
   package then included it. Creating a package with such a service, or adding one to a package, is now
   refused with *Service not found*. A service a package already includes stays in it when you edit the
-  package, as before. The package form still lists every service, those taken off the list among
-  them, so the refusal comes when you save. **API consumer:** `CreatePackage` refuses a deactivated
-  service, and `UpdatePackage` one the edit adds, with `service.not_found`. (Finding 2026-10-05.)
+  package, as before. The package form now marks a service taken off the list *(Inactive)*, in the
+  list of services and among the chosen ones, and does not let you pick it, with a note under the
+  list saying why; one the package already includes stays, marked, and can be removed and put back.
+  The list of packages marks a package that includes one *Includes an inactive service*. Until then
+  the form listed every service unmarked, and the refusal came only when you saved. **API
+  consumer:** `CreatePackage` refuses a deactivated service, and `UpdatePackage` one the edit adds,
+  with `service.not_found`; the admin list of packages now fills each package's `includedServices`,
+  which it always returned empty. (Finding 2026-10-05; the marks, owner decision 2026-10-05.)
 
 - **Customer web — deleting your account is confirmed on a red button.** The question before your
   account is deleted offered the same blue confirm button as any harmless question. It now shows the

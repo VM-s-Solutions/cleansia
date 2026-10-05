@@ -2122,10 +2122,27 @@ asks that every service is active (`ExistActiveWithIdsAsync`), and `UpdatePackag
 service the edit adds, so a service deactivated after it was added stays in the package, as above,
 and an edit of the package's price or wording does not force it out. Both refuse with the key they
 already used for a service that does not exist, `service.not_found`, which the admin reads as
-*Service not found* and which does not say the service was deactivated. The admin package form lists
-every service, deactivated ones among them (`loadAvailableServices` reads them with no active filter),
-so picking one is refused only when the form is saved. Until 2026-10-05 both editors asked only that
-the service exists, which a deactivated row still does.
+*Service not found* and which does not say the service was deactivated. Until 2026-10-05 both editors
+asked only that the service exists, which a deactivated row still does.
+
+**The admin marks a deactivated service, and does not offer it to add** (owner decision 2026-10-05:
+mark retired services, do not hide them). The package form's service picker labels one with the
+admin's own status word, *Name (Inactive)* (`enums.active_status.inactive`), and offers it disabled,
+so it cannot be picked. One the loaded package already includes stays enabled, so it can be taken out
+and put back, which is what `UpdatePackage` allows. The chips of the chosen services and their weight
+rows carry the same label, and a hint under the picker, shown only when some service is deactivated,
+says why (`pages.package_form.retired_services_hint`, five languages). The list of packages shows
+*Includes an inactive service* beside the name of a package that includes one
+(`pages.package_management.includes_inactive_service`). Both read which services are deactivated from
+the services list's own filter (`AdminService` get-paged with `Filter.IsActive=false`), because neither
+a listed service (`ServiceListItem`) nor a package's included one (`PackageServiceSummary`) carries an
+active flag, and both are shared with the customer web and the mobile APIs. The form reads it beside
+the full list and the package list once, with the currency, before the page; a read that fails marks
+nothing, and the server still refuses the add. The admin list of packages now carries what each one
+includes (`GetPagedPackages` loads `IncludedServices`, as `GetPackageOverview` does); until then that
+list's `IncludedServices` was always empty, which no admin screen had read. Until 2026-10-05 the form
+listed every service unmarked (`loadAvailableServices` reads them with no active filter), so picking a
+deactivated one was refused only when the form was saved, as *Service not found*.
 
 **A customer cannot select one by id either** (since 2026-10-05). `QuoteOrder`, `QuotePlusSavings`,
 `CreateOrder` (guest and signed-in) and `CreateRecurringBooking` ask that every selected service and
@@ -2228,9 +2245,11 @@ schedules list says why:
 `CatalogActiveVisibilityTests` pins the active check on the repository, a schedule refused a
 deactivated service and package, an edit refused a deactivated or unknown entry it adds but allowed to
 keep one the schedule holds, a new package refused a deactivated or unknown service, a package edit
-refused one it adds but allowed to keep one the package includes, and the factory still booking one a
-schedule holds; the order and quote validator suites pin the three order gates. The web recurring
-facade spec runs the real error interceptor over a card refused for a deactivated service and an edit
+refused one it adds but allowed to keep one the package includes, the admin list of packages listing
+what each one includes, a deactivated service among them, and the factory still booking one a
+schedule holds; the admin package form's and list's specs pin the label, the disabled and the
+enabled option, the hint, the list's pill and a failed read marking nothing; the order and quote
+validator suites pin the three order gates. The web recurring facade spec runs the real error interceptor over a card refused for a deactivated service and an edit
 form refused for a deactivated package, and asserts no price and no message. Android's `CreateRecurringViewModelTest` pins an edited
 cash schedule dropping a deactivated service with the notice and saving in cash, and a template
 trimmed when the catalogue lands after it; iOS's

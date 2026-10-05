@@ -3294,9 +3294,9 @@
       "work_country_operator_mismatch": "The work country belongs to another operating company.",
       "weekly_limit_reason_required": "Write why this cleaner is limited. They are shown the reason.",
       "legal_documents_not_accepted": "This cleaner has not yet accepted the current version of every contract document in force for their work country.",
-      "business_ceased": "The business register (ARES) shows this cleaner's business (IČO) has ended, so they cannot be approved.",
-      "trade_licence_inactive": "The business register (ARES) shows no trade licence in force for this cleaner, so they cannot be approved.",
-      "business_registry_unavailable": "The business register (ARES) could not be reached to check this cleaner's IČO. Try approving again in a few minutes."
+      "business_ceased": "The business register (ARES) shows the business under this IČO has ended.",
+      "trade_licence_inactive": "The business register (ARES) shows no trade licence in force under this IČO.",
+      "business_registry_unavailable": "The business register (ARES) could not be reached to check this IČO. Try again in a few minutes."
     },
     "employee_document": {
       "deletion_already_resolved": "This deletion request has already been answered.",
@@ -3582,6 +3582,7 @@
         "swift_required": "The bank is in a different country than the partner's work country, so the bank's SWIFT/BIC code is also required."
       },
       "registration_number": {
+        "invalid_format": "This company ID (IČO) does not match the format required in the cleaner's country, or is missing where that country requires one.",
         "not_registered": "This company ID (IČO) is not in the business register (ARES). Check the number."
       }
     },

@@ -3294,9 +3294,9 @@
       "work_country_operator_mismatch": "Pracovná krajina patrí inej prevádzkovej spoločnosti.",
       "weekly_limit_reason_required": "Napíšte, prečo tohto upratovača obmedzujete. Dôvod sa mu zobrazí.",
       "legal_documents_not_accepted": "Tento upratovač zatiaľ neprijal aktuálnu verziu všetkých zmluvných dokumentov platných pre krajinu výkonu jeho práce.",
-      "business_ceased": "Podľa registra ARES podnikanie tohto upratovača (IČO) zaniklo, preto ho nemožno schváliť.",
-      "trade_licence_inactive": "Podľa registra ARES nemá tento upratovač platné živnostenské oprávnenie, preto ho nemožno schváliť.",
-      "business_registry_unavailable": "Register ARES sa nepodarilo kontaktovať, takže IČO tohto upratovača nemožno overiť. Skúste schválenie zopakovať o niekoľko minút."
+      "business_ceased": "Podľa registra ARES podnikanie pod týmto IČO zaniklo.",
+      "trade_licence_inactive": "Podľa registra ARES nie je pod týmto IČO platné živnostenské oprávnenie.",
+      "business_registry_unavailable": "Register ARES sa nepodarilo kontaktovať, takže toto IČO nemožno overiť. Skúste to znova o niekoľko minút."
     },
     "employee_document": {
       "deletion_already_resolved": "Táto žiadosť o vymazanie už bola vybavená.",
@@ -3582,6 +3582,7 @@
         "swift_required": "Banka je v inej krajine, než v ktorej partner pracuje, preto je potrebný aj SWIFT/BIC kód banky."
       },
       "registration_number": {
+        "invalid_format": "Toto IČO nezodpovedá formátu požadovanému v krajine upratovača, alebo chýba, hoci ho táto krajina vyžaduje.",
         "not_registered": "Toto IČO nie je v registri ekonomických subjektov (ARES). Skontrolujte číslo."
       }
     },

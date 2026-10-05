@@ -387,6 +387,14 @@ button takes the button's ink, so no control shows two blues. The apps follow th
   white.
 - **The customer site's** links already took sky-700 ([above](#accent-text)); only its add-address
   row's hover moved.
+- **The partner order's package price** (`.cleansia-order-details__package-header .package-price`)
+  takes `--cleansia-primary-700` since a later change the same day, with the partner apps'
+  informational blue text (owner decision 2026-10-05,
+  [the partner app's other blue text](/mobile-app/patterns#brand-text-ink)): 4.10 → 5.93:1, beside a
+  name already on sky-700. A sweep of the compiled partner bundle found no other blue text under
+  4.5:1 but icons and two shared labels, the code dialog's *checking* line and the price form's
+  *Optional* badge. `.service-item__revenue`, which the finding named, styles nothing: the
+  dashboard's top-services revenue is a `<cleansia-label color="primary">`, slate on white.
 
 Measured in Chromium on the running dev servers, at rest / under the pointer: a PrimeNG text, outlined
 or link button's label and icon 2.77 / 2.60 → 5.93 / 7.09:1 (a link under the pointer 7.56:1); the

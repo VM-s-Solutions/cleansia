@@ -424,10 +424,11 @@ duplicate a `:core` component.
 > defect until someone measures it** — the same shape as the `onError`-on-`error` collapse above, and
 > neither is visible in the theme the author develops in.
 
-> **Blue TEXT takes the text ink, never the primary (finding 2026-10-05; links and text buttons,
-> owner decision 2026-10-05):** the light primary, sky-600, reads 4.10:1 on white and less on every
-> tint, under the 4.5:1 text needs. In both apps a `Text` in the brand blue, a link and a text or
-> outlined button's blue label takes **`CleansiaColors.primaryText`** (iOS, Core) or
+> **Blue TEXT takes the text ink, never the primary (finding 2026-10-05; links and text buttons, and
+> the partner app's informational text, owner decisions 2026-10-05):** the light primary, sky-600,
+> reads 4.10:1 on white and less on every tint, under the 4.5:1 text needs. In both apps a `Text` in
+> the brand blue — an eyebrow, a pay amount, a step counter, a badge's label, a clock line — a link and
+> a text or outlined button's blue label takes **`CleansiaColors.primaryText`** (iOS, Core) or
 > **`primaryText()`** / `ColorScheme.primaryText` (Android, `:core` `ui/theme/BrandColors.kt`): sky-700
 > in light mode, the primary in dark. An icon inside the same link or button takes the same ink, so no
 > control shows two blues. Text drawn straight on `primaryContainer` takes **`primaryTextOnContainer`**
@@ -435,8 +436,11 @@ duplicate a `:core` component.
 > 2.77:1 on the sky-700 container. Fills, washes, borders, toggles, progress tints, standalone icons and filled
 > buttons keep `primary`. Source scans fail on a new blue `Text` or button label in the primary:
 > `BrandTextInkTests` (iOS customer), `ComponentTextInkTests` (iOS Core), `TextInkTests` (iOS partner),
-> `PrimaryTextTest` (Android `:core`, all three modules) and `PrimaryTextContrastTest` (Android
-> customer). → `docs/mobile-app/patterns.md#brand-text-ink`
+> `PrimaryTextTest` (Android `:core`, all three modules; its partner guard finds the primary under
+> `colorScheme.`, `colors.` and `scheme.` alike, so holding the scheme in a local does not hide one) and
+> `PrimaryTextContrastTest` (Android customer). A text whose ink arrives through a value (a badge's
+> tint, a `when` over the step) is out of a scan's reach, so each of those is pinned by name in the
+> same suites. → `docs/mobile-app/patterns.md#brand-text-ink`
 
 > **A re-rendered SAS-backed image — the ONE way (T-0449):** `AsyncImage` stays right for a URL a
 > screen shows once (order photos, dispute evidence). It is wrong for an image the session re-renders —

@@ -1080,6 +1080,17 @@ need backfilling.
 
 ### Fixed
 
+- **Cleaner Android, iOS and website — the blue labels in the cleaner's app are easier to read.** Blue
+  text in the cleaner's app that is not a link was still the lighter brand blue, faint in light mode:
+  the labels on the dashboard, earnings, invoice and pay cards, the pay on each job in the orders list,
+  on an offer and in the contract, *Starts soon*, the month's change on the dashboard, an offer's
+  *Yours until …* and its clock, which sat beside a darker button, the onboarding step and its count,
+  the checklist's progress, the *accepted* line on a legal document and the job radius's distance,
+  and on Android the picked orders tab, the picked language and a cleaner's initials. They now take the
+  deeper blue of the other blue text in light mode, as the links already did, and on the cleaner
+  website so does a package's price on an order. Buttons, fills, borders and icons keep the brand
+  blue, and dark mode is unchanged. (Owner decision 2026-10-05.)
+
 - **Cleaner and admin websites — buttons are the brand blue, and a focused field's label and the open
   tab read clearly.** The filled buttons on the cleaner and admin websites, *Log in* and *Create* among
   them, were a lighter blue than everywhere else, with their white text at 2.8:1. They are now the

@@ -143,7 +143,14 @@
       ],
       "options": {
         "jestConfig": "apps/cleansia.app/jest.config.ts"
-      }
+      },
+      "inputs": [
+        "default",
+        "^production",
+        "{workspaceRoot}/jest.preset.js",
+        "{workspaceRoot}/jest.polyfills.ts",
+        "bookingPolicy"
+      ]
     },
     "serve-static": {
       "continuous": true,

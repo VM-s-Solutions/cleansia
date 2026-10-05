@@ -407,6 +407,31 @@ measured rather than argued. **What the shape still cannot see** is a secret und
 credential word in it (`Payload`, `Handle`); no name heuristic reaches that, and a value-shaped leg was
 tried and dropped — nothing in the wire surface carries a statically discoverable example value to read.
 
+### An outbound URL is personal data too {#outbound-urls}
+
+**The platform's own calls out carry personal data in the URL path**: the Mapbox search URL ends in the
+address the customer typed and the static-map URL in coordinates, the ARES lookup ends in the cleaner's
+IČO, and the APNs call in the device's live-activity push token. Three sinks wrote that URL off-box, none
+of them a `logger.Log*` call in our code (closed 2026-10-05):
+
+| Sink | What it wrote | Control |
+|---|---|---|
+| The HTTP client factory's request logging | the method and full URL, at Information, and a logging scope around the call | `.RemoveAllLoggers()` on the `Mapbox`, ARES and APNs named clients (`Infra.Services` and `Infra.Clients/Apns`). A config level would need six files and an environment variable could override it; this cannot be overridden |
+| The OpenTelemetry `HttpClient` span | `url.full` — shipped to Sentry (traces sampled at 0.2) and to Application Insights as the dependency | `RedactOutboundUrl` in both `AddServiceDefaults` overloads (`ServiceDefaults/Extensions.cs`): every outbound span keeps `scheme://authority` only. An **enrich**, not a filter, because `UseAzureMonitor` assigns `FilterHttpRequestMessage` after it runs; `Authority`, not `GetLeftPart`, which would keep user info. It covers **every** client, fail-closed, so the next one needs no list entry |
+| Sentry's own HTTP message handler | a Sentry event for a failed call carrying the request URL, and an `http` breadcrumb with the full URL — query string included — on every call, riding on any later error event in the same request | `DisableSentryHttpMessageHandler = true` in `ConfigureSentry`, beside `SendDefaultPii = false`; OpenTelemetry already traces these calls, and Sentry documents the setting for that case |
+
+**What it costs.** Application Insights triages a dependency by host, method and status only — Stripe and
+SendGrid included, whose dependency name is now `GET /`. A failed outbound call no longer becomes a Sentry
+event by itself: a failure the app catches and degrades reaches Sentry only when the app logs it at Error
+(Mapbox does for a credentials failure, and logs an outage at Warning). Unhandled exceptions still reach
+Sentry through the ASP.NET Core integration.
+
+**Kept on purpose.** The Mapbox degrade warnings name `{City}` and `{ZipCode}`, not the street — enough to
+see which area fails, and no more. **Not covered yet:** the Functions worker builds no OpenTelemetry
+pipeline, so its classic Application Insights dependency collector would record the APNs URL, push token
+included, once APNs is provisioned; that needs its own telemetry initializer in the change that turns APNs
+on.
+
 ## S7 — Idempotency on side-effecting commands
 
 Any command that creates a Stripe charge/subscription, sends an email, grants loyalty points,

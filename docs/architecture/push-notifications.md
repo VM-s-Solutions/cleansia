@@ -298,9 +298,10 @@ The in-app feed has **three** audiences, and the host controller sets which one 
 count or mark-read a row of their partner-app feed. The customer and partner keysets are lists that
 trail their clients' templates (a key belongs in a keyset only once the audience's clients render it,
 or the badge counts a row the app drops unrendered). **The admin keyset is the catalogue by
-construction** — `NotificationFeedEventKeys.Admin = AdminNotificationEventCatalog.All`, the thirteen
-`admin.*` keys ([ADR-0065](/decisions/adr-0065); the not-started alert and the two refund alerts joined
-on 2026-09-28) — because the console is built to render every key of its catalogue, and a spec walks the
+construction** — `NotificationFeedEventKeys.Admin = AdminNotificationEventCatalog.All`, the fifteen
+`admin.*` keys ([ADR-0065](/decisions/adr-0065); the not-started alert, the two refund alerts and the
+lockout report joined on 2026-09-28, and `admin.referral.held` — Support and above, args `[referralId]`,
+routed to *Referrals* in the console — on 2026-10-05) — because the console is built to render every key of its catalogue, and a spec walks the
 C# file so a key added on the server fails the admin build without its five-locale sentence and its
 entry in the console's mirror (`ADMIN_NOTIFICATION_EVENT_KEYS`).
 

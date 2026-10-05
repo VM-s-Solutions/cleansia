@@ -229,8 +229,9 @@ case-insensitive), `Symbol`, `Name`, `IsDefault` (a filtered unique index holds 
 (the market switch — a new currency is born switched off), `LoyaltyPointsDivisor` (how much of the
 currency earns one point; required before the market can be switched on), `NoShowCredit` (the
 apology credit paid on an order in this currency when its slot arrives with no cleaner; null = none —
-not an activation gate) and `ReferralCredit` (the credit each side of a referral receives when the
-friend's first order in this currency completes; null or 0 = none — not an activation gate either).
+not an activation gate) and `ReferralCredit` (the credit a side of a referral receives when it books in
+this currency — the friend's first completed order, the referrer's latest order; null or 0 = none for
+that side — not an activation gate either).
 → [Platform expandability](/architecture/platform-expandability#market-switch)
 
 **A market is not an entity.** It is a `Country` that is serviced, whose `CountryConfiguration.DefaultCurrencyCode`
@@ -311,7 +312,8 @@ erDiagram
   MembershipPlanPrice }o--|| MembershipPlan : "MembershipPlan"
   MembershipPlanPrice }o--|| Currency : "Currency"
   Referral }o--|| ReferralCode : "ReferralCode"
-  Referral }o--o| Currency : "CreditCurrency"
+  Referral }o--o| Currency : "ReferrerCreditCurrency"
+  Referral }o--o| Currency : "ReferredCreditCurrency"
   PromoCodeRedemption }o--|| PromoCode : "PromoCode"
   MembershipBenefitUsage }o--|| UserMembership : "UserMembership"
 ```
@@ -330,7 +332,7 @@ membership is tenant-scoped. → [ADR-0059](/decisions/adr-0059)
 | `LoyaltyTransaction` | — |
 | `LoyaltyTierConfig` | — ; **tenantless** since [ADR-0061](/decisions/adr-0061) D7 — the brand's programme, sold identically by every operator (the `MembershipPlan` sibling); unique `Tier` |
 | `ReferralCode` | references `User` |
-| `Referral` | references `CreditCurrency` (`Currency`, nullable, Restrict), `FirstQualifyingOrder`, `ReferralCode`, `Referred`, `Referrer`; `CreditAwardedToReferrer` and `CreditAwardedToReferred` (`numeric(18,2)`, nullable) record the credit each side was paid, in `CreditCurrency`, which stays null when neither side was paid (since 2026-10-05; until then the row recorded points) → [The referral reward](/product/business-rules#referral-credit) |
+| `Referral` | references `ReferrerCreditCurrency` and `ReferredCreditCurrency` (`Currency`, each nullable, Restrict), `FirstQualifyingOrder`, `ReferralCode`, `Referred`, `Referrer`; `CreditAwardedToReferrer` and `CreditAwardedToReferred` (`numeric(18,2)`, nullable) record the credit each side was paid, each in its own side's currency, which stays null for a side paid nothing (since 2026-10-05; until then the row recorded points, and then one currency for both sides). `HoldReasons` (`varchar(32)`, nullable) — `address`, `phone`, `email`, comma-joined — marks an `Accepted` referral held for an administrator and stays as history after the release or the rejection. The Postgres `xmin` is its concurrency token, so a release and a rejection of one held referral cannot both commit → [The referral reward](/product/business-rules#referral-credit), [the hold](/product/business-rules#referral-hold) |
 | `PromoCode` | references `Currency`; stamped — a code gives away the operator's money, and a sitewide campaign fans out to its operator's users only |
 | `PromoCodeRedemption` | references `Order`, `PromoCode`, `User` |
 | `MembershipPlan` | — (no price column) |

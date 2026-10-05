@@ -350,24 +350,33 @@ A referral code is randomly generated, never derived from a name — which is al
 alone. You cannot redeem your own code, and you cannot be referred twice.
 
 **A qualified referral pays both sides credit, not points** (owner ruling 2026-10-04, since
-2026-10-05). Until then each side received 150 tier points.
+2026-10-05), **each side in the currency it books in** (owner ruling 2026-10-05). Until 2026-10-05 each
+side received 150 tier points.
 
 1. **The code.** A customer's code is created the first time they open it (`GetMyReferral`).
 2. **Accepted.** A new customer enters it at registration (`Auth/Register`), or on a booking when they
    have accepted no code before (`CreateOrder`). The `Referral` row starts `Accepted`, stamped with
    the time.
-3. **Qualified.** When that customer's first order completes (`CompleteOrder` →
-   `ReferralService.ProcessOrderCompletedAsync`) within 90 days of the acceptance, both sides are paid
-   `Currency.ReferralCredit` of the **order's** currency into their credit accounts in that currency,
-   under the ledger keys `referral:{referralId}:referrer` and `referral:{referralId}:referred`. The
-   referral becomes `Qualified` and records each side's amount and the currency; the code's
-   qualified-friends counter goes up. A currency with no figure, or 0, pays nothing and the referral
-   still qualifies.
+3. **Qualified, or held.** When that customer's first order completes (`CompleteOrder` →
+   `ReferralService.ProcessOrderCompletedAsync`) within 90 days of the acceptance, the two accounts are
+   compared first. When they share a home, a phone number or an e-mail inbox, the referral is **held**:
+   it stays `Accepted` with its reasons (`HoldReasons`) and the order recorded, nothing is paid, it never
+   expires, and the company's administrators are told (`admin.referral.held`). Otherwise both sides are
+   paid `Currency.ReferralCredit`, each in its own currency — the friend in the **order's**, the
+   referrer in that of their own latest order of any status, or the order's when they have never
+   booked — into their credit accounts in those currencies, under the ledger keys
+   `referral:{referralId}:referrer` and `referral:{referralId}:referred`. The referral becomes
+   `Qualified` and records each side's amount and currency; the code's qualified-friends counter goes
+   up. A side whose currency has no figure, or 0, is paid nothing, the other side is paid, and the
+   referral still qualifies.
 4. **Not qualified.** Past the 90 days the referral is `Expired` and pays nothing; the daily
-   `ExpireStaleReferrals` sweeps the ones no order reached. An order that is not the customer's first
-   completed one leaves the referral `Accepted` until it expires.
+   `ExpireStaleReferrals` sweeps the ones no order reached, never a held one. An order that is not the
+   customer's first completed one leaves the referral `Accepted` until it expires.
 5. **Interventions.** An administrator can force-qualify an `Accepted` referral, or reverse a
-   `Qualified` one, taking back only what each side's balance still holds.
+   `Qualified` one, taking back only what each side's balance still holds in its own currency. A held
+   referral is **released** by the force-qualify, which pays the friend in the held order's currency,
+   or **rejected** by the reversal, which takes nothing because nothing was paid and leaves it
+   `Reversed`. The referral's `xmin` token lets only one of the two commit.
 
 Each grant holds that customer's credit lock until the commit, and the two sides are locked in the
 order of their user ids, so two grants to the same pair cannot each hold the lock the other waits on.
@@ -395,8 +404,11 @@ case that order does not cover. → [Business rules — the referral reward](/pr
 | An admin edits a subscribed plan's discount or express quota | Refused, `membership.plan.benefits_locked`; the name, the trial and the prices still save. |
 | A revoke takes the total below the current tier's threshold | The tier drops to the one the total now reaches, and its achieved date moves with it. |
 | Order in a currency with no points divisor | Unreachable through the admin surface — activation refuses without a divisor and an active currency cannot have it cleared (`currency.loyalty_divisor_missing`). A row that reaches the state anyway earns nothing and logs a warning; nothing is borrowed from another currency's rate. |
-| Self-referral | Refused. |
-| A referral qualifies on an order in a currency with no `ReferralCredit` | `Qualified`, nothing paid, a warning logged; nothing is borrowed from another currency's figure. |
+| Self-referral | The customer's own code is refused. A second account of the same person or household is held for an administrator when the two share a home (flats recorded on both and different spare neighbours), a phone number or an e-mail inbox. A referrer with no order, saved address or phone and an inbox of their own matches nothing and is paid; the credit can still be taken back as not genuine. |
+| A held referral nobody decides | Stays held: it never expires and is never released by itself. The alert and the *Held* filter are the prompts. |
+| A release and a reject of one held referral at once | The second commit fails on the referral's `xmin` token and rolls back whole, ledger rows included. |
+| A referral qualifies on an order in a currency with no `ReferralCredit` | The friend is paid nothing and a warning is logged; the referrer is paid if their own currency has a figure, and the referral is `Qualified`. Nothing is borrowed from another currency's figure. |
+| The referrer books in another currency than the friend | Each is paid its own currency's figure, the referrer's read from their latest order when the credit is paid. |
 | One side of a referral has been erased | That side receives nothing; the other is paid. |
 | A referral grant retried | Rejected by the credit ledger's idempotency key, which the force-qualify shares, so the two never both pay a side. |
 | A referral reversed after the credit was spent | Each side gives up what its balance still holds, never more; the balance never goes negative. |

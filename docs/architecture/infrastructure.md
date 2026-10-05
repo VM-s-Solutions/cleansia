@@ -739,6 +739,7 @@ private static bool ConfigureSentry(SentryOptions options, string? dsn)
 
     options.Dsn = dsn;
     options.SendDefaultPii = false;
+    options.DisableSentryHttpMessageHandler = true;
     options.AttachStacktrace = true;
     options.AutoSessionTracking = true;
     options.TracesSampleRate = 0.2;
@@ -748,7 +749,10 @@ private static bool ConfigureSentry(SentryOptions options, string? dsn)
 ```
 
 The empty-DSN branch is deliberate, not a bug — it is what keeps a host with no DSN from failing to
-boot. `TracesSampleRate` and `SendDefaultPii` are fixed in code, not read from configuration.
+boot. `TracesSampleRate` and `SendDefaultPii` are fixed in code, not read from configuration. Sentry's
+HTTP handler is off (since 2026-10-05): it recorded every outbound URL — an IČO, a typed address, a push
+token — as a breadcrumb, and the OpenTelemetry span already traces the call with its path redacted
+→ [An outbound URL is personal data too](/architecture/security-rules#outbound-urls).
 
 Every committed `appsettings*.json` sets `"Dsn": ""`. In Azure the value arrives from Key Vault as the
 `Sentry__Dsn` app setting on the five APIs and the Functions app, populated by CI from the `SENTRY_DSN`

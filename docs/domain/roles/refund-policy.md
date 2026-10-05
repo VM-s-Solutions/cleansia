@@ -21,7 +21,10 @@ non-refunded fee only on pure goodwill — `RefundReason.AdminDiscretion`).
 ## Does NOT know
 - **How the Stripe refund is sent** — that is `IRefundService` (ADR-0006 D1).
 - **The refundable ceiling** — the seam clamps `Amount` to `amountCharged − Σ(succeeded refunds)`
-  (ADR-0006 D2). `RefundPolicy` is policy, not the money primitive.
+  (ADR-0006 D2), and since 2026-10-05 first holds the requested slice of the sale to what the order has
+  left once a complaint settled in credit is counted: the card leg is `min(card ceiling, card share of
+  min(requested, TotalPrice − card refunded − credit returned − settled in credit))`
+  → [Refund](/flows/cancellation-refund-dispute#refund). `RefundPolicy` is policy, not the money primitive.
 - **How a line's amount is allocated** — the share-of-`TotalPrice` allocation (ADR-0009 D2) is the caller's
   computation, not the policy's; the policy gates *whether and on what fee terms*, not *how much per line*.
 - **Discount / express-surcharge math** — computed once, at booking, from `ResolveLoy003Discount` to

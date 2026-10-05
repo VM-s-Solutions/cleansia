@@ -155,18 +155,37 @@ only from that order's history.
 
 ## Refund
 
-A refund is bounded by what is left, and the bound is computed rather than trusted:
+A refund is bounded by what is left, and the bound is computed rather than trusted. Everything an order
+gives back — card refunds, credit returned with them or on its own, and complaints settled in credit —
+never adds up to more than its `TotalPrice`:
 
 ```
-refundable = order.TotalPrice − already consumed
-amount     = min(requested, refundable)      refuse if ≤ 0
+settled  = complaints on the order settled in credit
+slice    = requested                                          when settled = 0
+         = min(requested, TotalPrice − card refunded
+                          − credit returned − settled)        otherwise
+credit   = min(credit share of slice, credit applied − credit already returned)
+card     = min(card ceiling, slice − credit)                  refuse if the slice is ≤ 0
 ```
+
+The slice is split between the card and the credit in the proportion the price was paid, so a held
+refund keeps the proportion the terms promise. A 2 000 order paid with 500 credit, after a 400 complaint
+settled in credit, is refunded 1 200 to the card and 400 to the balance — with the settlement, 2 000 in
+all. **The hold applies wherever money leaves** (since 2026-10-05): `RefundService`, the one seam
+every card refund passes, for an administrator's full or partial refund, a cancellation and a dispute's card settlement; and
+the credit-only returns — an unpaid order's credit, a cancellation's credit leg when its refund did not go
+through — count the settled amount as credit already returned. Until then only a dispute's card
+settlement was held, and a full refund after a complaint settled in credit paid the settled part out again.
+An order with no settlement is refunded exactly as before.
 
 **The Stripe call happens before the status flips.** A failed call therefore leaves no phantom
 `Refunded` — the order keeps its real state and the caller gets a failure. The status becomes
 `Refunded` or `PartiallyRefunded` depending on whether the total is now covered.
 
-Re-driving an existing refund row clamps it to what remains rather than issuing a second one.
+Re-driving an existing refund row clamps it to what remains rather than issuing a second one. A re-drive
+on an order with no settlement keeps its exact amount, so Stripe sees the same parameters on the same
+key; one held below its row's amount is clamped, or marked `Failed` with `refund.nothing_refundable`
+when nothing is left for the card.
 
 **An administrator's card refund needs no second step** (checked 2026-10-04). `AdminRefundOrder`,
 `IssuePartialRefund` and `ResolveDispute` with a card settlement all go through
@@ -329,7 +348,8 @@ what remains, whatever amount the retry names. The money moves once: the dispute
 amount as requested, and that one refund's card and credit legs as what moved. A resolution with no
 amount, or zero, moves nothing and simply resolves. A terminal dispute is never resolved twice
 (`dispute.already_resolved`). After an earlier complaint on the order was settled in credit, the card
-settlement is held to what the order still has left.
+settlement is held to what the order still has left, by the seam, like every other refund
+([Refund](#refund)).
 
 **A settlement takes back its share of the order's points** (owner ruling 2026-10-03). As its last
 write, `ResolveDispute` hands the refund clawback what the settlement actually gave back:
@@ -372,6 +392,8 @@ dispute or the order shows the three interleaved, newest first.
 | Case | What happens |
 |---|---|
 | Refund more than was paid | Clamped to what remains; refused at zero. |
+| Refund after a complaint settled in credit | Held to what the sale has left once the settlement is counted, split between card and credit in proportion; nothing is paid out twice. |
+| A no-show confirmed after its complaint was settled in credit | The confirmation's card refund is held like any other and is smaller than the full card payment the terms promise; resolve such a complaint with no amount and let the confirmation pay ([dispute settlement](/product/business-rules#dispute-settlement)). |
 | Stripe refund call fails | No status change. The order is not left claiming a refund that never happened. |
 | Refund requested twice | The second resolves to the existing row rather than issuing again. |
 | Cancel after the cleaner is on the way, before the start | Allowed; the fee ladder decides the cost. |

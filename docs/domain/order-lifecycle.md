@@ -76,7 +76,10 @@ more. Two producers stopped writing it:
 > nobody** (the cleaner stays assigned until somebody takes the seat), and a reassign or a cover swap
 > **replaces** — remove then add, never a release. An order past `Confirmed` is never walked back: a
 > drop at `OnTheWay` or `InProgress` leaves the status where it is (a cleaner may be in the home) and
-> the company's administrators are told instead. Two releases racing on one order can still leave
+> the company's administrators are told instead. A drop is checked against the order's status at
+> commit (since 2026-10-05: it touches the order row, so the `CurrentStatus` token is compared), so a
+> drop racing a status change — a lockout confirmed in the same instant — is refused and the seat keeps
+> the lockout reward. Two releases racing on one order can still leave
 > `Confirmed` with nobody on it — `CurrentStatus` is the only concurrency token and neither commit
 > changes it — which is why every sweep, reminder and validator keeps reading `AssignedEmployees`:
 > **the crew is the fact, the status its summary.** `CancellationAssessor` does exactly that, and did

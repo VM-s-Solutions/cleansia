@@ -286,8 +286,10 @@ and gets the refund only.
 **The push says what happened to the money.** When the apology was issued: `order.no_cleaner_refunded`
 when the card refund went through, `order.no_cleaner_refund_pending` when a card refund is owed and has
 not gone through (the hourly re-drive owns it), `order.no_cleaner_nothing_charged` when the order took no
-payment; all three carry the credit as `amount`. With no apology — a currency with no figure — the
-plain `order.cancelled`, which promises nothing. All four render on Android and iOS and land in the
+payment; all three carry the credit as `amount`. With no apology the plain `order.cancelled`, which
+promises nothing: for a currency with no figure, and since 2026-10-05 for a customer whose credit sits on
+the books of a company frozen for archive, where the apology is skipped and logged rather than failing the
+cancellation's commit — the refund and the credit return are unaffected. All four render on Android and iOS and land in the
 customer's inbox. A guest gets no push; the cancellation e-mail tells them what happened to the money
 ([When the platform cancels](#platform-cancellation)).
 
@@ -388,6 +390,13 @@ search step current again in between and no message saying why. Accepted as stat
 a new confirmation, and the e-mail is true when it is sent. No "your cleaner left, we are looking for
 another" message exists.
 
+**A drop is checked against the order's status at commit** (since 2026-10-05). The drop touches the
+order row, so the commit compares the order's `CurrentStatus` token, and a drop racing a status change —
+an administrator confirming the customer's lockout in the same instant — is refused and rolls back whole:
+the seat stays on the crew and keeps the [lockout reward](#lockout-pay), so a confirmed lockout pays
+exactly the seats on the crew when it committed. The cleaner who loses gets an unmapped error once, and a
+retry reads the cancelled order and is refused `order.not_confirmed`.
+
 **No invariant is claimed.** Two releases racing on one order — two same-window drops on a two-seat
 job, a drop racing a rejection — can still leave `Confirmed` with nobody on it, because `CurrentStatus`
 is the only concurrency token and neither commit changes it. Every sweep therefore keeps reading the
@@ -464,11 +473,23 @@ web offers the money back rather than a card refund.
   keyed `dispute-settlement:{disputeId}`, linked to the order and the dispute), recorded as the
   dispute's `CreditReturnedAmount`. A credit settlement must be whole cents and no more than what the
   order has not already given back — card refunds, credit returned, earlier complaints settled in
-  credit — else `dispute.invalid_refund_amount`; a later card settlement on the same order is held to
-  what is left the same way. An erased account cannot hold credit, so its settlement goes to the card.
+  credit — else `dispute.invalid_refund_amount`. **Any later refund or credit return on the same order
+  is held to what is left the same way** (since 2026-10-05): an administrator's full or partial refund,
+  a cancellation's, a dispute's card settlement and a credit return alone. The held part is still split
+  between card and credit in the proportion the price was paid, and a refund with nothing left is
+  `refund.nothing_refundable`. Until then only a dispute's card settlement was held, and a full refund
+  after a complaint settled in credit paid the settled part out a second time. An erased account cannot
+  hold credit, nor can one on the books of a company frozen for archive; both settle to the card (on a
+  cash order that is `refund.order_not_refundable`).
 - **An administrator cannot settle with credit any other way.** *Issue credit* refuses the reason
   *Dispute settlement* (`credit.dispute_settlement_not_issuable`), and the admin dialog no longer offers
   it.
+- **A no-show is settled by its confirmation, not by the complaint.** When the one cleaner on a booking
+  did not come, the administrator confirms the no-show — which refunds the card in full, returns the
+  applied credit, pays the apology and closes the open *service not provided* dispute
+  ([the no-show](#when-the-cleaner-cancels-or-no-shows)) — and does not settle the complaint with an
+  amount first: a settlement in credit is subtracted from what the confirmation can still refund, while
+  the terms in force promise the card back in full.
 
 ### A cleaner is charged for a complaint only when found at fault {#dispute-cleaner-charge}
 
@@ -1090,16 +1111,16 @@ one of them is our own draft until the lawyer delivers** ([below](#legal-drafts)
 
 | Text | Audience | In force | Who is bound, and how |
 |---|---|---|---|
-| Terms of service | customer | `2026-10-05` | the customer's contract with the operating company of the market the home is in, concluded at booking — a card booking once its payment completes. Accepted by the tick at registration and at booking, and again before the next booking when a newer version applies ([What is recorded about a customer](#customer-record)); shown at `/terms` |
-| Privacy policy | customer | `2026-10-03` | the operating company is the controller; accepted with the terms, and again before the next booking when a newer version applies; shown at `/privacy` |
+| Terms of service | customer | `2026-10-06` | the customer's contract with the operating company of the market the home is in, concluded at booking — a card booking once its payment completes. Accepted by the tick at registration and at booking, and again before the next booking when a newer version applies ([What is recorded about a customer](#customer-record)); shown at `/terms` |
+| Privacy policy | customer | `2026-10-06` | the operating company is the controller; accepted with the terms, and again before the next booking when a newer version applies; shown at `/privacy` |
 | Complaints procedure | customer | `2026-09-29` | read, never accepted; shown at `/complaints` on the customer web and linked from its footer |
 | Framework cooperation agreement, self-billing agreement | employee | `2026-10-05` | the cleaner's agreements with the operating company of the market they work in, each accepted in the partner apps → [A cleaner's own documents](#cleaner-documents) |
 | Data-processing agreement | employee | `2026-09-29` | the cleaner's third agreement with the same company, accepted the same way |
 | Contract for work | employee | `2026-10-05` | one per seat of a job, between the operating company and the cleaner, stamped on the order at booking and accepted at the take → [The contract for work](#work-contract) |
 
 Earlier versions stay in the database as the texts earlier customers and orders were bound by: the
-terms `2026-09-14`, `2026-09-27`, `2026-09-29`, `2026-09-30` and `2026-10-03`, the privacy policy
-`2026-09-14` and `2026-09-29`, the framework and self-billing agreements `2026-09-29`, and the contract
+terms `2026-09-14`, `2026-09-27`, `2026-09-29`, `2026-09-30`, `2026-10-03` and `2026-10-05`, the
+privacy policy `2026-09-14`, `2026-09-29` and `2026-10-03`, the framework and self-billing agreements `2026-09-29`, and the contract
 for work `2026-09-29` and `2026-09-20`, the latter naming the customer and the cleaner as its
 parties. The terms `2026-09-30` differ from `2026-09-29` only where Plus is concerned: they offer the
 free trial, and the Plus cancellation terms follow having the Plus benefits rather than a paid
@@ -1149,6 +1170,34 @@ the company's general contact. The address is written into the text, not filled 
 a second operating company's market would print it too. Like any newer version, it brings the tick
 back before a customer's next booking ([below](#customer-record)). It took effect on the same day as
 the terms `2026-10-03`, so one tick accepts both.
+
+**The `2026-10-06` versions carry the owner's rulings of 2026-10-05** on the referral reward, and differ
+from the versions they replace only there:
+
+- **Terms of service** (from `2026-10-05`). §9's referral sentence pays each side in its own currency:
+  the friend in the currency of the booking that earned the credit, the referrer in the currency of the
+  last booking they placed before the credit is paid, a cancelled one included, or, with none, the
+  friend's; where no amount is set for a currency, whichever of the two would be paid in it receives no
+  referral credit, and the app shows the figure of the market chosen in it. A new paragraph after the
+  take-back lets the company hold the referral credit when the two accounts appear to belong to the same
+  person or household — a shared address, phone number or e-mail inbox — until a member of its staff has
+  reviewed the referral, without undue delay; it pays once it finds the referral genuine, and otherwise
+  refuses it and neither side receives referral credit ([A referral that looks like one person is
+  held](#referral-hold)).
+- **Privacy policy** (from `2026-10-03`). One paragraph under *Your account*: when a referred customer's
+  booking earns the referral credit, the addresses with their flat numbers, the phone numbers and the
+  e-mail addresses of the two accounts — in their bookings, their current saved addresses and their
+  profiles — are compared to see whether they belong to the same person or household. A match only holds
+  the referral until a member of staff reviews it, and the comparison decides nothing by itself. The
+  legal basis is the legitimate interest in preventing abuse of the referral reward.
+
+Both take effect on the same day, so one tick accepts both. The hold and the comparison read data for a
+purpose only the `2026-10-06` privacy policy discloses, so the code that holds a referral must not reach
+production before that day. Like every text here they are our draft ([below](#legal-drafts)), and four
+points in them are put to the lawyer: the per-side currency sentence; the hold paragraph, where *without
+undue delay* is an operational promise that a fixed period such as 14 days could replace; the comparison
+paragraph and its legitimate-interest basis; and whether, once a second operating company exists, one
+company's referral check may read another company's customer data.
 
 ### The seller is named from the company record {#company-identity}
 
@@ -1485,11 +1534,29 @@ register of economic subjects. Before the ruling, only its format (`^\d{8}$` for
   a register that kept failing was asked twelve times in up to 30 s while a save or an approval waited.
   The client's request logging wrote the URL, which ends in the IČO, at Information. The client now
   drops both.
-- **The cleaner's own save checks only that the number exists.** `UpdateEmployee` (the partner web
+- **The cleaner's own save checks that the number exists.** `UpdateEmployee` (the partner web
   profile) and `UpdateIdentificationInfo` (the apps' identification section) refuse, after the format
   check, a number the register does not hold, with `validation.registration_number.not_registered`.
-  **An outage lets the save through**, because the check that binds comes at approval. It runs on
-  every save, so an approved cleaner cannot swap in an unchecked number either.
+  **An outage lets the save through**, because the check that binds comes at approval.
+- **An approved cleaner who changes the number gets approval's check** (owner ruling 2026-10-05). When
+  the cleaner's contract is `Approved` and the number on the save differs from the stored one — compared
+  trimmed, so a spacing change is not a change — the save is held to everything approval refuses: a
+  number the register does not hold, an ended business (`employee.business_ceased`), no trade licence in
+  force (`employee.trade_licence_inactive`) and a register that does not answer
+  (`employee.business_registry_unavailable`, *try again in a few minutes*). The refusal fails the whole
+  save and writes nothing — on the partner web that is the whole profile, not just the IČO. Until then an
+  approved cleaner could swap in a number whose business had ended. Re-saving the same number, and a
+  `Pending` or `Rejected` cleaner's change, keep the existence check alone, because approval runs the
+  full one before the cleaner can work.
+- **An administrator's edit judges only a changed number** (since 2026-10-05). `AdminUpdateEmployee`
+  used to write the IČO with no check at all. Now a number that differs from the stored one is checked
+  first for its format in the register country — the work country, else the address country being
+  saved, else the stored one — refusing `validation.registration_number.invalid_format`, which also
+  refuses a blank number where the country requires one, so an administrator cannot clear a required
+  IČO; then in that country's register, approval-grade for an approved cleaner and the existence check
+  alone for anyone else. A number the edit does not change is not judged: the admin web resends the
+  stored number with every section it saves, and judging it would hold every unrelated edit on the
+  register.
 - **The save asks the register approval asked** (since 2026-10-04). That is the register of the
   cleaner's work country once they are approved, and before it the register of their address country
   (the one `UpdateEmployee` is saving). The business country the apps send is not used: no column keeps
@@ -1510,10 +1577,14 @@ register of economic subjects. Before the ruling, only its format (`^\d{8}$` for
   ([Infrastructure](/architecture/infrastructure)), so the Development settings never load there, and
   `deploy/bicep/main.bicep` sets `Ares__Enabled` on every API host: `true` on prod, `false` elsewhere.
   Until then DEV checked ARES, and a test cleaner with a made-up IČO could not be approved.
-- **What the cleaner and the administrator read.** The admin web has all four keys in its five locales.
-  The partner web and, since 2026-10-04, the Android and iOS partner apps have
-  `validation.registration_number.not_registered` in their five, worded alike; until then a refused save
-  in the apps showed the raw key. The three approval-only keys answer the admin host alone.
+- **What the cleaner and the administrator read.** The admin web has all four keys and
+  `validation.registration_number.invalid_format` in its five locales, the three approval keys worded
+  for an edit as well as an approval (since 2026-10-05). The partner web and, since 2026-10-04, the
+  Android and iOS partner apps have `validation.registration_number.not_registered` in their five, worded
+  alike; until then a refused save in the apps showed the raw key. The three approval keys answer the
+  admin host's approval and edit and, since 2026-10-05, the cleaner's own save on the partner hosts
+  (`UpdateEmployee`, `UpdateIdentificationInfo`), so the partner web and both partner apps carry them
+  too, in five locales and in the cleaner's voice.
 
 The framework agreement names the register check among its approval conditions since `2026-10-05`
 (§5); its `2026-09-29` version did not ([The legal texts](#legal-texts)).
@@ -1563,10 +1634,10 @@ up is somebody else's morning. → [Push notifications](/architecture/push-notif
 
 ## Administrators are told {#admin-notifications}
 
-**Fourteen things the platform can prove happened reach the company's administrators through an in-app
+**Fifteen things the platform can prove happened reach the company's administrators through an in-app
 feed and an e-mail, both** (owner ruling 2026-09-19, [ADR-0065](/decisions/adr-0065): *"both in-app and
 email"*; the not-started alert, the two refund alerts and the lockout report were added by the rulings
-of 2026-09-28). Until then nothing told an administrator anything: a failed erasure was an Error log line, a
+of 2026-09-28, the held referral by the ruling of 2026-10-05). Until then nothing told an administrator anything: a failed erasure was an Error log line, a
 chargeback was a dispute row nobody opened, an order that lost its crew was re-advertised to cleaners
 only. One writer, `IAdminNotifier`, turns an event into one feed row per administrator of the **named**
 company and one e-mail per recipient address, inside the same unit of work as the event — so the rows
@@ -1590,13 +1661,14 @@ an administrator may also hold cannot render these keys.
 | `admin.company.wind_down_requested` | an administrator sets the company's last day of service (a re-run announces nothing) | the date |
 | `admin.company.wind_down_run` | a wind-down run **that did something** — cancelled, refunded, failed a refund or closed a period; a run that moved nothing is not news | the four counts |
 | `admin.company.archived` | the company's books are sealed — the one event written on a frozen company, which the account surface admits | the day |
+| `admin.referral.held` | a referral's first qualifying order completed, but the two accounts look like one person or household, so nothing was paid and the referral waits for an administrator to release or reject it — once per referral → [the hold](#referral-hold) | the referral |
 
 **Who.** Every active, e-mail-confirmed, non-anonymised administrator of the event's company **whose
 role is in the event's audience** — read by the company **argument**, never by whatever tenant happens to
 be ambient at a webhook or a job — gets their own feed row with their own read state, so the first
 administrator who glances at the bell does not silence it for everyone. The audience is one of the
 administrator sets ([ADR-0066](/decisions/adr-0066) D8): the order, dispute and payment events, a
-lost crew, a cleaner not started and a lockout report reach **Support and above**; a failed erasure retry reaches **Manager and above**; the three
+lost crew, a cleaner not started, a lockout report and a held referral reach **Support and above**; a failed erasure retry reaches **Manager and above**; the three
 company milestones reach **Administrators only**; a **chargeback and a stuck refund reach every role**, a
 chargeback matched to an order or not — Support answers the customer or the bank, the Accountant
 reconciles the money. The e-mail fan-out below is over the same
@@ -1832,7 +1904,9 @@ locked out, as it would on completion. The framework agreement and the contract 
 - **By hand, 14 days too.** An administrator who creates or edits a period
   ([Pay periods](/admin-app/pay-periods)) is held to the same length: the end must be 13 days after the
   start (`PayPeriod.LengthInDays`), and any other span is refused (`pay_period.invalid_duration`, whose
-  text says so). Until 2026-10-05 the admin endpoints took an end 7 to 31 days after the start.
+  text says so). Until 2026-10-05 the admin endpoints took an end 7 to 31 days after the start. The
+  admin web's create dialog asks for the start only and fills the end in, 13 days later; until
+  2026-10-05 its *Create* button sent nothing.
 - **What did not change.** An invoice is due 14 days after it is issued
   (`Constants.PayoutInvoice.PaymentTermsDays`). The request to hand over cash still counts
   `cash.remittance_request_days` from the first close after a balance began ([below](#cash-held)). The
@@ -2213,9 +2287,11 @@ in every locale.
 
 **Referral credit — `Currency.ReferralCredit`.** The credit each side of a qualified referral receives
 (owner ruling 2026-10-04). Authored per currency on the admin currency form, like the no-show credit;
-CZK is seeded at **150**, and EUR, PLN, GBP and USD at nothing. A referral is paid in the currency of
-the friend's completed order, from that currency's figure; a currency with none, or with 0, pays no
-referral credit and logs a warning, and the referral still qualifies. Nothing is scaled from another
+CZK is seeded at **150**, and EUR, PLN, GBP and USD at nothing. Each side is paid from the figure of
+the currency it books in — the friend that of their completed order, the referrer that of their latest
+order (owner ruling 2026-10-05); a side whose currency has none, or 0, receives no referral credit and the
+log warns, the other side is still paid, and the referral still qualifies. So until the owner authors a
+figure for a second currency, a side booking in it receives nothing. Nothing is scaled from another
 currency's figure. It is not an activation gate. The form refuses a negative figure
 (`validation.must_be_positive`), and saving it empty clears it. **No locale string states the figure**:
 every client formats the market's `referralCredit` into the copy, and a market with none reads copy
@@ -2230,7 +2306,10 @@ keeps it — see [Cleansia Plus](#cleansia-plus).
 customer copy (the mobile trust badge and FAQ), a number in the country's `DefaultCurrencyCode`, per
 country because a policy is written per jurisdiction. Authored on the admin country form's Market
 section. **No market states a figure** (owner ruling 2026-09-28, replacing the 1 000 000 CZK seeded
-for CZE on 2026-09-13): every configuration is seeded null. **Without a figure, no client says the
+for CZE on 2026-09-13): every configuration is seeded null. **A figure is above zero, and an empty field
+is no claim** (since 2026-10-05): `UpdateCountryMarketContent` refuses 0 or less
+(`validation.must_be_positive`) and the admin form a figure below 1, because the apps would print 0 as
+*Insured up to 0*. Until then 0 was accepted. **Without a figure, no client says the
 cleaners are insured** (owner ruling 2026-10-04). Until then Android and iOS read *Insured*, with no
 figure, on the Home trust strip, on the confirm step's trust badge and in the Help FAQ's *Are cleaners
 insured?*. Now the Home trust strip shows only *Same-day*, and the badge and the FAQ question appear
@@ -2644,6 +2723,12 @@ What the archive does, at the click: **the books freeze** — from that commit o
 company's books is refused (`tenant.archived`, HTTP 409): a late review, a receipt edit, a goodwill credit,
 a pay calculation arriving late, a Stripe event for a frozen company's order — the last two are recorded
 as dead letters for operations (Stripe is always answered 200, never asked to retry) and never applied.
+**Another company's work is not refused for it.** A customer's credit accounts follow the customer's own
+company, so another, active company's booking can owe credit to an account on the frozen books; that
+write is left out rather than failing the other company's commit: the no-show apology is skipped, a
+complaint the customer chose to settle in credit is settled to the card instead, and a referral side is
+paid nothing ([The referral reward](#referral-credit)). A goodwill credit from the frozen company's own
+administrators is still refused.
 Then, in the background, **a sealed bundle** is written to the `company-archives` storage container under
 the company's id and the freeze instant: the ledgers as one JSON Lines file per table (orders as the
 two-year retention sweep leaves them — no name, contact, street, instruction or note; status history; pay
@@ -2755,53 +2840,140 @@ restored, and the admin console's erasure and *Retry* confirmations say it is wr
 ## The referral reward {#referral-credit}
 
 **A qualified referral pays both sides credit, not points** (owner ruling 2026-10-04, since
-2026-10-05). A customer enters a friend's code at registration, or on a booking when they have not
-accepted one before. When that customer's first completed order completes within **90 days** of
-accepting the code (`ReferralPolicy.QualifyingWindowDays`), the referral qualifies. The customer who
-shared the code and the customer who used it each receive the credit of the completed order's
-currency, `Currency.ReferralCredit`: **150 Kč on a CZK booking**. Until 2026-10-05 each side received
-150 tier points instead, which moved the tier and paid nothing.
+2026-10-05), **each side in the currency it books in** (owner ruling 2026-10-05). A customer enters a
+friend's code at registration, or on a booking when they have not accepted one before. When that
+customer's first completed order completes within **90 days** of accepting the code
+(`ReferralPolicy.QualifyingWindowDays`), the referral qualifies — unless the two accounts look like one
+person or household, when it is held for an administrator instead ([below](#referral-hold)). The friend
+who used the code receives `Currency.ReferralCredit` of the completed order's currency, and the
+customer who shared it the figure of the currency they book in: **150 Kč on a CZK booking**. Until
+2026-10-05 each side received 150 tier points instead, which moved the tier and paid nothing; until the
+2026-10-05 ruling both sides were paid in the friend's order's currency.
 
 | Rule | Value |
 |---|---|
-| How much | the order currency's `ReferralCredit`, the same to both sides; CZK 150, the other seeded currencies none → [Money constants](#money-constants) |
-| In which currency | the currency of the order that qualified the referral, for both sides, a referrer whose own market is elsewhere included. Each side can spend it only on a booking in that currency |
-| A currency with no figure, or 0 | no credit, a warning in the log, and the referral still qualifies. Nothing is borrowed from another currency's figure |
-| Where it lands | each side's credit account in that currency, opened if absent, under a ledger row with the reason `Referral` and the key `referral:{referralId}:{side}`. From there the [customer credit](#credit) rules apply: it is spent automatically on the next card booking in that currency, at most 70 % of that booking, and expires 12 months after the account last moved |
+| How much | each side's own currency's `ReferralCredit`, so the two figures can differ; CZK 150, the other seeded currencies none → [Money constants](#money-constants) |
+| The friend's currency | the currency of the order that qualified the referral |
+| The referrer's currency | the currency of the referrer's **latest order of any status**, by creation time and across companies — a cancelled one included, an abandoned card checkout the stale sweep cancelled too — read **when the credit is paid**, so on an administrator's release it is read at the release. A referrer who has never booked is paid in the friend's currency. The same rule (`ReferralService.GetBookingCurrencyAsync`) serves the force-qualify. Each side can spend its credit only on a booking in that currency |
+| A currency with no figure, or 0 | that side receives nothing and the log warns, naming the side and the currency; the other side is still paid and the referral still qualifies. Nothing is borrowed from another currency's figure |
+| Where it lands | each side's credit account in its own currency, opened if absent, under a ledger row with the reason `Referral` and the key `referral:{referralId}:{side}`. Both rows carry the friend's order id, so the referrer's row can name an order in another currency; every reader of order-keyed credit filters by reason, so nothing sums across currencies. From there the [customer credit](#credit) rules apply: it is spent automatically on the next card booking in that currency, at most 70 % of that booking, and expires 12 months after the account last moved. The referral records each side's amount and currency (`ReferrerCreditCurrencyId`, `ReferredCreditCurrencyId`), a side paid nothing having none |
 | An erased side | receives nothing; the other side is still paid ([Credit on a deleted account](#credit-on-account-deletion)) |
-| A side on a frozen company's books | receives nothing, no account is opened for it and the log warns; the other side is still paid and the referral qualifies, recording what each side received. Such a side's credit account in that currency sits on — or, with none, would open on — the books of a company frozen for archive (the customer's own company), and a write to those books would refuse the whole commit of the qualifying order, which may be another, active company's ([A company's lifecycle](#company-lifecycle)). The admin force-qualify skips such a side the same way |
+| A side on a frozen company's books | receives nothing, no account is opened for it and the log warns; the other side is still paid and the referral qualifies, recording what each side received. Such a side's credit account in its own currency sits on — or, with none, would open on — the books of a company frozen for archive (the customer's own company), and a write to those books would refuse the whole commit of the qualifying order, which may be another, active company's ([A company's lifecycle](#company-lifecycle)). The admin force-qualify skips such a side the same way |
 | Points | none. A referral earns no tier points; the `Referral` rows a points history shows are from before 2026-10-05 |
 
 **An administrator can force-qualify** a referral still waiting (`Accepted`), for one the automatic path
-missed. There is no completed order to read the currency from, so it pays in the currency of the
-referred customer's **latest order of any status**, a cancelled one included, or in the platform
-default currency when they have never booked, at that currency's figure. Each side's grant carries the
-key the automatic path uses, so the two can never both pay a side, and a referral that is no longer
+missed. With no completed order to read, the friend is paid in the currency of their own **latest order
+of any status**, a cancelled one included, or in the platform default currency when they have never
+booked; the referrer by the rule above, falling back to the friend's currency. Each side's grant carries
+the key the automatic path uses, so the two can never both pay a side, and a referral that is no longer
 `Accepted` is refused (`referral.not_accepted`).
 
 **Reversing a referral takes back what the ledger shows was granted, and no more than the balance
 still holds** (owner default 2026-10-04). An administrator reverses a `Qualified` referral; per side,
 the reversal reads the `Referral` grant under that side's key, and debits the smaller of the grant and
-the side's balance in that currency, under a `ReferralReversed` row (`referral-reverse:{referralId}:{side}`).
-Credit never goes negative: a side whose balance in that currency holds less than the grant gives up
-the whole balance and no more, and the log records the shortfall. The referral is then `Reversed` for good, and a second reversal is
-refused (`referral.not_qualified`). The amounts recorded on the referral stay as the record of the
-grant.
+the side's balance **in that side's own currency**, under a `ReferralReversed` row
+(`referral-reverse:{referralId}:{side}`); a side that was paid nothing is skipped and its currency comes
+back empty. Credit never goes negative: a side whose balance in that currency holds less than the grant
+gives up the whole balance and no more, and the log records the shortfall. The referral is then
+`Reversed` for good, and a second reversal is refused (`referral.not_qualified`). The amounts recorded
+on the referral stay as the record of the grant.
 
-**What the customer is told.** The customer web's sign-up referral dialog and rewards invite card, and
-the Android and iOS Home referral card, referral-code sheet, Rewards invite section and share text,
-state the chosen market's `referralCredit` (`Market/GetOverview`) formatted in that market's
-currency. A market with none renders a twin of each line that names no amount and promises no
-credit. No locale string states the figure or promises points, in any of the five languages on the
-three clients; `check-booking-policy-parity.mjs` pins each line's slot and each twin. The figure shown
-is the **chosen market's**, while the credit is paid in the **order's** currency, so the two differ
-when the friend's order is in another currency than the market the reader has chosen. The customer
-terms name the referral as a source of
-credit from their `2026-10-05` version ([The legal texts](#legal-texts)).
+### A referral that looks like one person is held {#referral-hold}
 
-**What the administrator sees.** The currency form edits the figure. The referral lists, the reverse
-dialog and the notices after a force-qualify or a reversal show the credit with its currency, and the
-customer's credit ledger labels the two rows *Referral* and *Referral reversed*.
+**Owner ruling 2026-10-05: the self-referral guard.** Until then the only check compared the two user
+ids, so a customer who opened a second account with their own code was paid twice. Now, once the window
+and first-completion checks pass and before anything is paid, the completion compares the two accounts.
+Each account's **footprint** is read past the tenant filter, because the two may be customers of
+different companies: the homes on its orders of any status (street, city, ZIP and country, with the
+flat) and on its **current** saved addresses — one the customer deleted is not compared — the phone
+typed on each order and on the profile, and the profile e-mail. An order the erasure has taken off the
+account is not in it. Three signals, each a reason:
+
+| Reason | Matches when |
+|---|---|
+| `address` | the two accounts share a home: the same country, the same ZIP once only its letters and digits are kept (`120 00` = `12000`), and the same city and street once accents, case and spacing are set aside (`Vinohradská 12` = `vinohradska  12`). The flat spares neighbours only when **both** flats are recorded and differ once reduced to letters and digits (`3A` = `3 a`, but `3A` ≠ `5`); a flat missing on either side counts as the same home |
+| `phone` | two numbers end in the same nine digits (`+420 777 123 456` = `777123456`); a number with fewer than nine digits — an erased one has none — is not compared |
+| `email` | the two profile e-mails are one mailbox: lower-cased, a `+tag` dropped, and on Gmail (`gmail.com`, `googlemail.com`) the dots dropped too (`j.novak@gmail.com` = `jnovak+2@googlemail.com`, but `jan.novak@seznam.cz` ≠ `jannovak@seznam.cz`); an erased address is never compared |
+
+**A held referral** stays `Accepted` with `HoldReasons` set — the reasons as comma-joined slugs — and its
+qualifying order recorded. It is not a new status: nothing is paid, the code's qualified-friends counter
+does not move, and the customer apps, which read `Accepted`, show the friend as still waiting, so nothing
+tips off a self-referrer and nothing on the customer wire changed. It **never expires** (the expiry sweep
+skips it) and is **never released by itself**; a replayed completion is a no-op and sends no second alert.
+The company's administrators are told once, `admin.referral.held` with the referral's id, in the feed and
+by e-mail, Support and above ([Administrators are told](#admin-notifications)). The log names the referral
+and the reason slugs, never an address, a number or an inbox.
+
+- **Release** is the force-qualify. On a held referral it pays the friend in the currency of the **held
+  order** — or, when that order no longer names the friend (an erasure takes the name off), of their
+  latest order, else the platform default — and the referrer by the rule above, read at the release;
+  both grants carry the held order's id. An erased friend is paid nothing, as anywhere. The referral
+  becomes `Qualified` and keeps its reasons as history.
+- **Reject** is the reversal, which accepts a held referral as well as a `Qualified` one. Nothing was
+  paid, so nothing is taken, and both currencies come back empty; the referral becomes `Reversed` and
+  keeps its reasons. A referral `Accepted` and not held is still refused (`referral.not_qualified`).
+- **One of the two wins.** The referral row carries the Postgres `xmin` concurrency token, so when two
+  administrators release and reject the same held referral at once, the second commit fails and rolls
+  back whole, its ledger rows included; that administrator sees an error and reloads. The same token
+  keeps a completion's hold from overwriting an administrator's force-qualify of the same `Accepted`
+  row. What the token cannot see is a reject sent later from a list loaded before a release: the server
+  cannot tell a *Reject* from a *Reverse*, so it takes back what the release paid, and the admin web's
+  notice says what was taken back.
+
+**It is a deterrent, not proof, and the gap is named.** A referrer with no history — no order, no saved
+address, no phone — and an inbox of their own matches nothing, so two fresh accounts at one home are
+paid; a deliberately misspelt street or an invented flat gets past the address too. Such a referral can
+still be taken back as not genuine ([above](#referral-credit)). Holding every referral whose referrer has
+no history was weighed and refused: it would hold every genuine referral from someone who shared their
+code before booking. **The card part of the ruling is outstanding.** The ruling named the card as well;
+no card is compared. The two ways to add it are the owner's to choose: the brand, last four digits and
+expiry of the two accounts' saved cards (no new data, saved cards only), or Stripe's card fingerprint
+captured on every paid order (a new column and a Stripe read per order).
+
+**How an administrator decides a held referral.** The terms promise a review without undue delay, and
+the same facts must get the same answer from every administrator:
+
+- **Release** when the shared address is the friend's own home — it is on the friend's orders or saved
+  addresses — and the referrer's order there was placed before the code was accepted (a gift); or when
+  the match is a phone or an address only, the account names differ, and nothing else matches.
+- **Reject** when both accounts book the same flat as their own home — one household is one customer;
+  when the e-mail inbox matches; or when the qualifying booking has been refunded (`Refunded` or
+  `PartiallyRefunded`), as §9 of the terms already allows.
+
+That a household is one customer is a default the owner may overrule.
+
+**What the customer is told.** Each referral line states only the **reader's own** figure: the chosen
+market's `referralCredit` (`Market/GetOverview`) formatted in that market's currency. The friend's lines —
+the customer web's sign-up referral dialog and the apps' referral-code sheet — say what the friend gets
+after their first cleaning; the referrer's — the web rewards invite card, the apps' Home referral card
+and Rewards invite section — say what the referrer gets, and that the friend gets credit where their
+market offers it. No line names one figure for both sides. The invite a referrer shares from either app
+names **no figure in any market**: the friend reads it in their own market, so the figured share text is
+gone and its no-figure twin is sent everywhere. A market with none renders a twin of each line that names
+no amount and promises no credit. No locale string states the figure or promises points, in any of the
+five languages on the three clients; `check-booking-policy-parity.mjs` pins each line's slot and twin,
+the reader's-figure-only wording (each locale's *each* and *both* words, and the distributive *по* before
+the figure in Ukrainian and Russian) and the figured invite's absence. The figure shown is the chosen
+market's, and each side is paid in the currency it books in, so the figure is right whenever the reader
+books in the chosen market; a referrer whose latest booking is in another market is paid that market's
+figure, or nothing where it has none. No line mentions the hold. The customer terms name the referral as
+a source of credit from their `2026-10-05` version, and state the per-side currency and the hold from
+their `2026-10-06` version, whose privacy policy names the comparison ([The legal texts](#legal-texts)).
+
+**What the administrator sees.** The currency form edits the figure. *Referrals* (sidebar *Loyalty*,
+`/loyalty/referrals`) lists every referral; its status filter has *Held* beside *Accepted*, and
+*Accepted* shows the held rows too. A held row carries a *Held* chip with its reasons (*same address*,
+*same phone number*, *same e-mail inbox*) and offers **Release** and **Reject**, where an `Accepted` row
+offers *Force-qualify* and a `Qualified` one *Reverse* (`CanInterveneReferral`, Support and above). Each
+side's credit prints in its own currency, and a side paid nothing as *—*. Each dialog's hint states what
+it pays or takes, per side, and the notice after it what moved. The customer's credit ledger labels the
+two rows *Referral* and *Referral reversed*. The customer detail's referral tables still show a held
+referral as plain *Accepted*, without its reasons. On the admin wire, `GET api/AdminReferral/get-paged`
+takes `held` (`true`: held rows only; `false`: every other row), the row carries `holdReasons` and a
+currency code per side (`referrerCreditCurrencyCode`, `referredCreditCurrencyCode`), and the
+force-qualify and reverse responses carry one per side too (`referrerCurrencyCode`,
+`referredCurrencyCode`; on a reversal a side that was paid nothing has none). The customer's own `GetMyReferrals` keeps `creditCurrencyCode`, now the
+referrer's own currency.
 → [Loyalty — referrals](/flows/loyalty-and-memberships#referrals)
 
 ## Consents, cookies and fonts {#consents}

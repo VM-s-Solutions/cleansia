@@ -141,11 +141,13 @@
       padding: 0.875rem 1.25rem;
     }
 
+    // A filled button: the brand blue, Sky600, at its lightest (white on Sky500 read 2.77), and a
+    // step darker under the pointer, as every filled button is.
     &--accept {
       background: linear-gradient(
         135deg,
-        var(--cleansia-primary-500) 0%,
-        var(--cleansia-primary-600) 100%
+        var(--cleansia-primary-600) 0%,
+        var(--cleansia-primary-700) 100%
       );
       color: white;
       box-shadow: 0 3px 10px rgba(var(--cleansia-primary-rgb), 0.25);
@@ -153,8 +155,8 @@
       &:hover {
         background: linear-gradient(
           135deg,
-          var(--cleansia-primary-600) 0%,
-          var(--cleansia-primary-700) 100%
+          var(--cleansia-primary-700) 0%,
+          var(--cleansia-primary-800) 100%
         );
         transform: translateY(-1px);
         box-shadow: 0 4px 14px rgba(var(--cleansia-primary-rgb), 0.35);

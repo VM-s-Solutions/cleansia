@@ -72,6 +72,26 @@ describe('the shared and partner stylesheets — text links and text buttons', (
     expect(inks(customer, ':root.dark-mode .cl-rec__add-address:hover')).toEqual(['var(--cl-accent)']);
   });
 
+  // The notice's OK is a filled button: white on the brand blue, Sky600 at its lightest (it started
+  // at Sky500, 2.77), a step darker under the pointer. Light theme; after dark it keeps its own.
+  it("paints the cookie notice's OK button from Sky600, a step darker under the pointer", () => {
+    const background = (css: string, selector: string): string[] => {
+      const escaped = selector.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      return Array.from(
+        css.matchAll(new RegExp(`(?:^|\\n)${escaped}\\s*\\{([^}]*)\\}`, 'g')),
+        ([, body]) => body.match(/background:\s*([^;]+)/)?.[1].trim() ?? ''
+      ).filter(Boolean);
+    };
+    for (const css of [partner, customer]) {
+      expect(background(css, '.cleansia-cookie-consent__btn--accept')).toEqual([
+        'linear-gradient(135deg, var(--cleansia-primary-600) 0%, var(--cleansia-primary-700) 100%)',
+      ]);
+      expect(background(css, '.cleansia-cookie-consent__btn--accept:hover')).toEqual([
+        'linear-gradient(135deg, var(--cleansia-primary-700) 0%, var(--cleansia-primary-800) 100%)',
+      ]);
+    }
+  });
+
   it('keeps the cookie notice link a light blue after dark', () => {
     expect(inks(customer, ':root.dark-mode .cleansia-cookie-consent__link')).toEqual(['#7dd3fc']);
     expect(inks(customer, ':root.dark-mode .cleansia-cookie-consent__link:hover')).toEqual(['#bae6fd']);

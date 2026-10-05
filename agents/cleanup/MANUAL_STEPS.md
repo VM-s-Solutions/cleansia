@@ -235,10 +235,15 @@ privacy policy and the complaints procedure; for cleaners the contract for work,
 cooperation agreement, the self-billing agreement and the data processing agreement. Every dated version
 under `Seed/Legal` comes in with them, so after the drop the seeder also brings in the **2026-10-05**
 terms of service, framework agreement, self-billing agreement and contract for work, in force from that
-day, and the **2026-10-06** terms of service and privacy policy, which carry the per-side referral
-currency, the same-person hold and its comparison and are in force from that day. The hold and the
-comparison process data for a purpose only the 2026-10-06 privacy policy discloses, so this branch's code
-must not reach **production** before 2026-10-06 (DEV carries test data only).
+day, the **2026-10-06** terms of service and privacy policy, which carry the per-side referral
+currency, the same-person hold and its comparison and are in force from that day, and the **2026-10-07**
+terms of service (`d2fbe8363`), which carry the owner's rulings of 2026-10-06 — the cash cap counted as
+upcoming bookings, an unpaid door price as an amount owed, and no new booking while anything is owed —
+and are in force from that day. The hold and the comparison process data for a purpose only the
+2026-10-06 privacy policy discloses, and the booking ban and the door report (`4613974f7`, `8365129a6`)
+act on rules only the 2026-10-07 terms state, while the 2026-10-06 terms promise that card bookings stay
+open, so this branch's code must not reach **production** before **2026-10-07** (DEV carries test data
+only). The integration and host seed counts are 21 documents and 105 texts.
 
 Regenerating is no longer a manual step of any kind (owner ruling 2026-08-25): it is ordinary work and
 is done in the branch that needs it. **The drop remains deferred until deployment, never branch

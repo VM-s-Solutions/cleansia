@@ -142,6 +142,7 @@ public class RevokedDeviceDirectoryRefresherTests
         public Task RemoveForSubjectAsync(string userId, CancellationToken cancellationToken) => throw new NotSupportedException();
         public Task<bool> ExistsAsync(string id, CancellationToken cancellationToken) => throw new NotSupportedException();
         public Task<bool> ExistWithIdsAsync(IEnumerable<string> ids, CancellationToken cancellationToken) => throw new NotSupportedException();
+        public Task<bool> ExistActiveWithIdsAsync(IEnumerable<string> ids, CancellationToken cancellationToken) => throw new NotSupportedException();
         public Task<Device?> GetByIdAsync(string id, CancellationToken cancellationToken) => throw new NotSupportedException();
         public IQueryable<Device> GetByIds(IEnumerable<string> ids) => throw new NotSupportedException();
         public IQueryable<Device> GetPagedSort<TSort>(int offset, int limit, Expression<Func<Device, bool>> filter, SortDefinition sort) where TSort : BaseSort<Device> => throw new NotSupportedException();

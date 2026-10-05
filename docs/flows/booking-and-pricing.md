@@ -264,17 +264,31 @@ typed into the admin catalogue, so for now the size moves the price and not the 
 
 **No client offers a size the server refuses, and the mobile apps say where it stops.** Every picker
 stops at 8 rooms and 4 bathrooms. On Android and iOS both stepper buttons stop at the bounds: the plus
-greys at the cap, and the minus greys at the floor, 1 on a one-off booking and 0 on a schedule. Under
-the size row of both flows the apps state the limit, *Up to 8 rooms and 4 bathrooms*
-(`booking_size_limit_caption`, rendered from the two constants rather than written into the
-translation). The steppers used to stop at the cap without saying why, and the one-off minus looked
-live at 1 (owner ruling 2026-10-01):
+greys at the cap, and the minus greys at the floor, 1 on a one-off booking and 0 on a schedule. Both
+flows state the limit, *Up to 8 rooms and 4 bathrooms* (`booking_size_limit_caption`, rendered from
+the two constants rather than written into the translation). The steppers used to stop at the cap
+without saying why, and the one-off minus looked live at 1 (owner ruling 2026-10-01):
 
 | Picker | Rooms | Bathrooms |
 |---|---|---|
 | One-off booking — web, Android, iOS | 1 – 8 | 1 – 4 |
 | Recurring schedule — web | 1 – 8 | 1 – 4 |
 | Recurring schedule — Android, iOS | 0 – 8 | 0 – 4 |
+
+**The caption sits on the *Your home* title's row, at its trailing end** (owner remark 2026-10-04,
+since 2026-10-05). It is on the title's first baseline, in the same small secondary style it had, and
+the steppers follow directly under the row, so the card is a line shorter. Where the title and the
+caption do not fit on one line, as on a 320pt (320dp) phone in Ukrainian or Russian or at a large
+text size, the caption takes its own line directly under the title, leading-aligned, and never goes
+back below the steppers. VoiceOver and TalkBack read the title, then the caption. Both apps lay it out
+in a `SizeLimitTitleRow`, the same in both flows: on iOS a `ViewThatFits` that tries the one-line row
+first, on Android a `Layout` that keeps the caption beside the title while the two fit with at least
+12dp between them (`sizeCaptionFitsBesideTitle`). The schedule form's size section had no title, only
+its *Rooms* and *Bathrooms* labels, so it now opens with a *Your home* title row carrying the caption
+(the booking's `booking_your_home` string), with the two counters under it. Until then the caption was
+a line of its own under the steppers in both flows. `PropertySizeTests` (iOS) and `PropertySizeTest`
+(Android) pin that each flow states the caps once, on its title's row, above the steppers, and the
+fit rule.
 
 **On the one-off booking's size row, the *Your home* title sits above the two steppers** on Android
 and iOS (since 2026-10-02). The steppers used to sit beside the title, which left no room once
@@ -330,6 +344,7 @@ time and the express window still apply to the exact selected instant, including
 | A 120-minute selection at *Increased* or *Heavy* | 156 or 192 booked minutes: two cleaners, so card only. |
 | Booked span over 24 h | Refused, judged on the booked time with the level and the size in it. See [why that bound exists](/product/business-rules#maximum-booked-duration-24-h-and-it-is-not-about-calendars). |
 | A package **and** a service the package includes | Charged twice, performed twice, takes twice as long. Owner ruling — not a bug, and not to be de-duplicated. Every client marks such a service *In your package* and asks before either half is added by hand; two chosen packages that share a service charge it twice the same way, and adding the second asks too; a selection the form is handed is only marked → [Charging a package and a service together](/product/business-rules#charging-a-package-and-a-service-together). |
+| A deactivated service or package selected by id, from an out-of-date app or an *Order again* sent before the catalogue loaded | Refused on the quote, the Plus preview, the booking and a new schedule, `order.selected_services.invalid` / `order.selected_package.invalid`, since 2026-10-05. A schedule created before the deactivation keeps booking it, and its occurrences are confirmed and paid from their stored price; its web card shows no price and no message, and editing it removes the entry with a notice. A deactivated service inside a package books with the package → [A deactivated service or package](/product/business-rules#deactivated-catalogue). |
 | Guest, no account | Allowed **on the web**, by card. The order is keyed on the email address, and the customer later finds it via order lookup. The audit row has no user; an admin reaches it from the order's history. The customer mobile host's create route requires a session, so an anonymous call there is `401` and creates nothing → [CreateOrder](/api/orders#createorder). |
 | Cash from a guest, or on a booking that needs two cleaners or more | Refused, `order.cash_not_available`, before anything is reserved, debited or dispatched. 120 booked minutes is one cleaner; 121 is two. |
 | An unknown language code on the booking | Refused (`CreateOrder.Validator` carries the `LanguageValidator`, the `Register` idiom) — the audit row records `language`, and an unrecognised code is not evidence of anything. No shipped client sends one outside the five seeded codes. |

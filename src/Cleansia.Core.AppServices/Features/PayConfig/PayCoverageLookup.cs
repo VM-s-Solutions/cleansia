@@ -96,10 +96,10 @@ public static class PayCoverageLookup
 
     /// <summary>
     /// Gaps over one booking's selection, asked platform-wide because the order lands on EVERY
-    /// cleaner's board. Deliberately not filtered by <c>IsActive</c>: a deactivated entry is still
-    /// bookable by id today (<c>ExistWithIdsAsync</c> carries no active term) and a recurring template
-    /// holds its ids in a JSON column with no FK, so gating on the active catalogue here would leave
-    /// both routes able to mint an unquotable order.
+    /// cleaner's board. Deliberately not filtered by <c>IsActive</c>: a customer can no longer select a
+    /// deactivated entry, but a recurring template created before the deactivation still books it
+    /// (its ids sit in a JSON column with no FK, and the materialiser does not re-ask), so gating on the
+    /// active catalogue here would leave that route able to mint an unquotable order.
     /// </summary>
     public static async Task<IReadOnlyList<PayCoverageTarget>> FindSelectionGapsAsync(
         IServiceRepository serviceRepository,

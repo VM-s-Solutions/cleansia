@@ -5,7 +5,9 @@ import {
   chosenPackagesByService,
   ConsentType,
   CreateRecurringBookingCommand,
+  CUSTOMER_API_BASE_URL,
   CustomerClient,
+  CustomerOrderClient,
   DeleteRecurringBookingCommand,
   DirtinessLevel,
   GetMyServingCleanersResponse,
@@ -26,6 +28,7 @@ import {
 import { CashEligibility, cashIsRefused, resolveCashEligibility } from '@cleansia/models';
 import {
   DialogService,
+  errorToastSuppressingHttpClient,
   extractApiErrorCode,
   SnackbarService,
 } from '@cleansia/services';
@@ -101,6 +104,13 @@ export class RecurringBookingsFacade extends UnsubscribeControlDirective {
   // customer plans around, so it is QUOTED rather than recomputed here — the
   // discount stack (membership, loyalty tier, promo) lives behind this endpoint
   // and a second implementation of it would disagree the first time one moved.
+  // Built over the toast-suppressing HttpClient, not taken from CustomerClient, because these
+  // quotes fail SILENTLY: the server refuses a service or package retired since the schedule
+  // was made, and that leaves the card without a price rather than a red toast on every visit.
+  private readonly quoteClient = new CustomerOrderClient(
+    errorToastSuppressingHttpClient(),
+    inject(CUSTOMER_API_BASE_URL, { optional: true }) ?? 'http://localhost:5003',
+  );
   private readonly orderClient = this.customerClient.orderClient;
   private readonly membershipClient = this.customerClient.membershipClient;
   private readonly snackbar = inject(SnackbarService);
@@ -546,7 +556,7 @@ export class RecurringBookingsFacade extends UnsubscribeControlDirective {
     command.cleaningDate = undefined;
     try {
       return (
-        (await firstValueFrom(this.orderClient.quote(command).pipe(takeUntil(this.destroyed$)))) ??
+        (await firstValueFrom(this.quoteClient.quote(command).pipe(takeUntil(this.destroyed$)))) ??
         null
       );
     } catch {

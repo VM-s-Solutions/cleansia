@@ -1,7 +1,9 @@
 package cz.cleansia.customer.core.booking
 
+import cz.cleansia.customer.features.booking.sizeCaptionFitsBesideTitle
 import java.io.File
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
@@ -62,15 +64,46 @@ class PropertySizeTest {
         }
     }
 
+    /**
+     * The caps are stated, not only enforced, on the size title's row above the steppers (owner remark
+     * 2026-10-04: at the bottom the caption took too much room), and only there.
+     */
     @Test
-    fun `both booking flows state the caps under their size steppers`() {
-        listOf("features/booking/ServicesStep.kt", "features/recurring/CreateRecurringScreen.kt").forEach { file ->
-            val flat = source(file).replace(Regex("\\s+"), " ")
+    fun `both booking flows state the caps on their size title's row, above the steppers`() {
+        mapOf(
+            "features/booking/ServicesStep.kt" to "private fun PropertyCompactRow(",
+            "features/recurring/CreateRecurringScreen.kt" to "private fun WhatStep(",
+        ).forEach { (file, section) ->
+            val body = source(file).substringAfter(section).replace(Regex("\\s+"), " ")
+            val title = body.indexOf("SizeLimitTitleRow {")
+            assertTrue("$file no longer states the caps on its size title's row", title >= 0)
             assertTrue(
-                "$file no longer states the caps under its steppers",
-                flat.contains("R.string.booking_size_limit_caption, PropertySize.MAX_ROOMS, PropertySize.MAX_BATHROOMS"),
+                "$file's size title is no longer \"Your home\"",
+                body.substring(title).substringBefore("}").contains("R.string.booking_your_home"),
+            )
+            assertTrue(
+                "$file states the caps under its steppers",
+                title < body.indexOf("PropertySize.MAX_ROOMS"),
             )
         }
+        val caption = "R.string.booking_size_limit_caption, PropertySize.MAX_ROOMS, PropertySize.MAX_BATHROOMS"
+        val services = source("features/booking/ServicesStep.kt").replace(Regex("\\s+"), " ")
+        assertTrue("the title row no longer states the caps", services.substringAfter("fun SizeLimitTitleRow(").contains(caption))
+        assertEquals("the caps are stated twice", 1, Regex(Regex.escape(caption)).findAll(services).count())
+        assertFalse(
+            "the recurring form states the caps a second time",
+            source("features/recurring/CreateRecurringScreen.kt").contains("booking_size_limit_caption"),
+        )
+    }
+
+    /** The caption shares the title's row while both fit, with at least the gap between them. */
+    @Test
+    fun `the caption sits beside the title while both fit and drops under it when they do not`() {
+        assertTrue(sizeCaptionFitsBesideTitle(titleWidth = 200, captionWidth = 400, gap = 32, width = 900))
+        assertTrue(sizeCaptionFitsBesideTitle(titleWidth = 200, captionWidth = 400, gap = 32, width = 632))
+        assertFalse(sizeCaptionFitsBesideTitle(titleWidth = 200, captionWidth = 400, gap = 32, width = 631))
+        // A caption measured at the full width (it wrapped) never fits beside anything.
+        assertFalse(sizeCaptionFitsBesideTitle(titleWidth = 200, captionWidth = 672, gap = 32, width = 672))
     }
 
     /**

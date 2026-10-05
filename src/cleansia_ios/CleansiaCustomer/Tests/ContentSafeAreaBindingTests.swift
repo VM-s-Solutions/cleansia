@@ -1,3 +1,4 @@
+import CleansiaCore
 import SwiftUI
 import XCTest
 @testable import CleansiaCustomer
@@ -21,9 +22,9 @@ final class ContentSafeAreaBindingTests: XCTestCase {
     func testTheScrollingHeroesPaintTheirOwnStatusBarStrip() throws {
         let profile = try compactSource("CleansiaCustomer/Sources/Features/Profile/ProfileTab.swift")
         XCTAssertTrue(profile.contains(
-            "VStack(spacing:0){BrandGradient.blue.colors[0].frame(height:heroBleed)"
-                + "LinearGradient(colors:BrandGradient.blue.colors,startPoint:.top,endPoint:.bottom)}"
-                + ".padding(.top,-heroBleed)"
+            "VStack(spacing:0){ProfileTab.heroTop(colorScheme).frame(height:heroBleed)"
+                + "LinearGradient(colors:[ProfileTab.heroTop(colorScheme),BrandGradient.blue.colors[1]],"
+                + "startPoint:.top,endPoint:.bottom)}.padding(.top,-heroBleed)"
         ))
         let plus = try compactSource("CleansiaCustomer/Sources/Features/Membership/SubscribePlusScreen.swift")
         XCTAssertTrue(plus.contains(
@@ -60,7 +61,7 @@ final class ContentSafeAreaBindingTests: XCTestCase {
         XCTAssertTrue(plus.contains("StatusBarFadeScrollView(heroTint:fadeHeroTint){"))
         XCTAssertTrue(plus.contains("onBack:onBack).statusBarFadeHero()"), "the Plus hero is not marked")
         let profile = try compactSource("CleansiaCustomer/Sources/Features/Profile/ProfileTab.swift")
-        XCTAssertTrue(profile.contains("StatusBarFadeScrollView(heroTint:BrandGradient.blue.colors[0]){"))
+        XCTAssertTrue(profile.contains("StatusBarFadeScrollView(heroTint:Self.heroTop(colorScheme)){"))
         XCTAssertTrue(
             profile.contains("onAvatarLoadSuccess:onAvatarLoadSuccess).statusBarFadeHero()"),
             "the Profile hero is not marked"
@@ -84,38 +85,68 @@ final class ContentSafeAreaBindingTests: XCTestCase {
         ), "the Plus fade wears the navy under iOS 16's black light-mode clock")
     }
 
+    /// The status bar sits on Profile's hero at rest and on the fade in the hero's top colour once scrolled,
+    /// so the clock must read on that colour (finding 2026-10-04: white on the brand blue's sky-600, 4.1:1).
+    /// From iOS 17 the clock is white over the hero in both schemes; before it, black in light mode, which
+    /// keeps the brand blue (a darker top would drop it to 3.5:1). The shared brand blue is not changed.
+    func testTheClockReadsOnProfilesHeroAtLeastAt4_5() throws {
+        let white = SIMD3<Double>(1, 1, 1)
+        for style in [UIUserInterfaceStyle.light, .dark] {
+            let top = rgb(ProfileTab.heroTop(style == .dark ? .dark : .light), style)
+            XCTAssertGreaterThanOrEqual(contrast(white, top), 4.5, "\(style) at rest (iOS 17+ in light)")
+            // Scrolled, the fade wears the top colour at 90 % over whatever passes under it — at worst the
+            // white avatar or stats card.
+            let fade = top * StatusBarFade.opacity + white * (1 - StatusBarFade.opacity)
+            XCTAssertGreaterThanOrEqual(contrast(white, fade), 4.5, "\(style) scrolled, over white content")
+        }
+        let brandTop = try XCTUnwrap(BrandGradient.blue.stops.first)
+        XCTAssertEqual(brandTop.light, 0x0284C7, "the shared brand blue changed")
+        XCTAssertGreaterThanOrEqual(contrast(SIMD3<Double>(0, 0, 0), hex(brandTop.light)), 4.5, "light, iOS 16")
+        XCTAssertGreaterThanOrEqual(contrast(white, hex(brandTop.dark)), 4.5, "dark, iOS 16")
+        let profile = try compactSource("CleansiaCustomer/Sources/Features/Profile/ProfileTab.swift")
+        XCTAssertTrue(profile.contains(
+            "if#available(iOS17,*),scheme==.light{returnheroTopLight}returnBrandGradient.blue.colors[0]"
+        ), "before iOS 17 the black light-mode clock would sit on the darker top")
+    }
+
     /// The hero's colour covers the fade while the hero reaches below it and gives way to the page
-    /// colour, in proportion and without a jump, as the hero's bottom passes up through it.
+    /// colour, in proportion and without a jump, as the hero's bottom passes up through it. The hero's
+    /// bottom is in the scroll view's space (0 at the safe area's top), where the fade spans
+    /// `-top ... height - top`.
     func testTheHerosColourCrossFadesIntoThePageColourAsTheHeroScrollsPast() {
-        for top: CGFloat in [20, 47, 62] {
-            let span = top + StatusBarFade.tail
-            XCTAssertEqual(StatusBarFade.heroShare(heroBottom: 400, statusBar: top), 1)
-            XCTAssertEqual(StatusBarFade.heroShare(heroBottom: StatusBarFade.tail, statusBar: top), 1)
-            XCTAssertEqual(StatusBarFade.heroShare(heroBottom: -top, statusBar: top), 0)
-            XCTAssertEqual(StatusBarFade.heroShare(heroBottom: -400, statusBar: top), 0)
-            XCTAssertEqual(
-                StatusBarFade.heroShare(heroBottom: StatusBarFade.tail - span / 2, statusBar: top),
-                0.5,
-                accuracy: 0.0001
-            )
+        for top: CGFloat in [20, 47, 59, 62] {
+            let height = StatusBarFade.height(safeTop: top)
+            func share(_ bottom: CGFloat) -> Double {
+                StatusBarFade.heroShare(heroBottom: bottom, safeTop: top, height: height)
+            }
+            XCTAssertEqual(share(400), 1)
+            XCTAssertEqual(share(height - top), 1, "the hero still under the whole fade does not fill it")
+            XCTAssertEqual(share(-top), 0)
+            XCTAssertEqual(share(-400), 0)
+            XCTAssertEqual(share(height / 2 - top), 0.5, accuracy: 0.0001)
             var previous = 0.0
-            for bottom in stride(from: -top, through: StatusBarFade.tail, by: 1) {
-                let share = StatusBarFade.heroShare(heroBottom: bottom, statusBar: top)
-                XCTAssertGreaterThanOrEqual(share, previous, "the hero's colour flickers back")
-                XCTAssertLessThanOrEqual(share - previous, 1 / span + 0.0001, "the cross-fade jumps")
-                previous = share
+            for bottom in stride(from: -top, through: height - top, by: 1) {
+                let next = share(bottom)
+                XCTAssertGreaterThanOrEqual(next, previous, "the hero's colour flickers back")
+                XCTAssertLessThanOrEqual(next - previous, 1 / height + 0.0001, "the cross-fade jumps")
+                previous = next
             }
         }
     }
 
     /// The hero's reader reports only near the status bar, in whole points — enough for the tallest
-    /// status bar and the tail — so scrolling elsewhere never redraws the fade.
+    /// status bar and the fade — so scrolling elsewhere never redraws the fade.
     func testTheHeroIsReportedOnlyNearTheStatusBar() {
         XCTAssertEqual(StatusBarFade.heroBottom(maxY: 512.4), StatusBarFade.heroBottomRange.upperBound)
         XCTAssertEqual(StatusBarFade.heroBottom(maxY: -700), StatusBarFade.heroBottomRange.lowerBound)
         XCTAssertEqual(StatusBarFade.heroBottom(maxY: -12.4), -12)
         XCTAssertLessThanOrEqual(StatusBarFade.heroBottomRange.lowerBound, -62)
-        XCTAssertGreaterThanOrEqual(StatusBarFade.heroBottomRange.upperBound, StatusBarFade.tail)
+        for top: CGFloat in [20, 47, 59, 62] {
+            XCTAssertGreaterThanOrEqual(
+                StatusBarFade.heroBottomRange.upperBound,
+                StatusBarFade.height(safeTop: top) - top
+            )
+        }
     }
 
     /// At rest the heroes reach the top untouched and a pull-to-refresh moves the content down, so only
@@ -128,15 +159,49 @@ final class ContentSafeAreaBindingTests: XCTestCase {
         XCTAssertTrue(StatusBarFade.isScrolled(contentMinY: -400))
     }
 
-    /// The fade covers the status bar and a short tail, nothing more: one colour held at about 90 % across
-    /// the status bar (owner remark 2026-10-04: the 40 % wash was too see-through), then eased to clear
-    /// over the tail with no step a line could show at — the stops never rise, fall by little at a time
-    /// and end clear at the tail's end.
-    func testTheFadeHoldsAcrossTheStatusBarAndEasesOutOverAShortTail() {
-        XCTAssertTrue((8 ... 12).contains(StatusBarFade.tail), "the tail below the status bar is not short")
+    /// The status bar's content measured in the simulators, in points from the screen's top (2026-10-05):
+    /// the safe area's top, the bottom of the Dynamic Island, the notch or a home-button phone's status
+    /// bar, and the bottom of the clock's digits.
+    private struct MeasuredPhone {
+        let name: String
+        let safeTop: CGFloat
+        let housingBottom: CGFloat
+        let clockBottom: CGFloat
+    }
+
+    private let measuredPhones = [
+        MeasuredPhone(name: "iPhone 17 Pro, iOS 26.3", safeTop: 62, housingBottom: 50.67, clockBottom: 39),
+        MeasuredPhone(name: "iPhone 16, iOS 18.6", safeTop: 59, housingBottom: 48, clockBottom: 35.67),
+        MeasuredPhone(name: "iPhone 14 Pro, iOS 16.4", safeTop: 59, housingBottom: 48, clockBottom: 35.67),
+        MeasuredPhone(name: "iPhone 16e (notch), iOS 18.6", safeTop: 47, housingBottom: 33.67, clockBottom: 30.67),
+        MeasuredPhone(name: "iPhone SE 3rd gen, iOS 16.4", safeTop: 20, housingBottom: 20, clockBottom: 15.5)
+    ]
+
+    /// The fade ends where the status bar's content does — the Dynamic Island's bottom, the notch's, or a
+    /// home-button phone's status bar's (owner remark 2026-10-04: it reached 10pt below the safe area's
+    /// top, 72pt on an iPhone 17 Pro, far under the island) — within 2pt on every phone measured.
+    func testTheFadeEndsAtTheBottomOfTheIslandTheNotchOrTheStatusBar() {
+        for phone in measuredPhones {
+            XCTAssertEqual(
+                StatusBarFade.height(safeTop: phone.safeTop),
+                phone.housingBottom,
+                accuracy: 2,
+                phone.name
+            )
+            XCTAssertLessThan(StatusBarFade.height(safeTop: phone.safeTop), phone.safeTop + 0.01, phone.name)
+        }
+        XCTAssertEqual(StatusBarFade.height(safeTop: 0), 0, "a hidden status bar keeps a fade")
+    }
+
+    /// One colour held at about 90 % over the clock, signal and battery (owner remark 2026-10-04: the 40 %
+    /// wash was too see-through), then eased to clear by the fade's end over its last few points with no
+    /// step a line could show at: the stops never rise, fall by little at a time and end clear.
+    func testTheFadeHoldsOverTheClockAndEasesOutByItsEnd() {
+        XCTAssertTrue((3 ... 8).contains(StatusBarFade.falloff), "the ease at the end is not a few points")
         XCTAssertEqual(StatusBarFade.opacity, 0.9, accuracy: 0.02)
-        for top: CGFloat in [20, 47, 59, 62] {
-            let stops = StatusBarFade.stops(statusBar: top)
+        for phone in measuredPhones {
+            let height = StatusBarFade.height(safeTop: phone.safeTop)
+            let stops = StatusBarFade.stops(height: height)
             let alphas = stops.map { UIColor($0.color).cgColor.alpha }
             let locations = stops.map(\.location)
             XCTAssertGreaterThanOrEqual(stops.count, 8, "too few stops for an eased curve")
@@ -146,10 +211,15 @@ final class ContentSafeAreaBindingTests: XCTestCase {
             XCTAssertEqual(alphas[1], StatusBarFade.opacity, accuracy: 0.001, "the hold is not even")
             XCTAssertEqual(alphas.last ?? 1, 0, accuracy: 0.001)
             XCTAssertEqual(
-                locations[1],
-                top / (top + StatusBarFade.tail),
+                locations[1] * height,
+                height - StatusBarFade.falloff,
                 accuracy: 0.0001,
-                "the falloff does not start at the status bar's edge"
+                "the ease does not start a few points above the fade's end"
+            )
+            XCTAssertGreaterThanOrEqual(
+                alpha(at: phone.clockBottom / height, stops: stops),
+                0.85,
+                "\(phone.name): the content under the clock's digits is not held back"
             )
             for (earlier, later) in zip(stops, stops.dropFirst()) {
                 XCTAssertLessThanOrEqual(earlier.location, later.location)
@@ -162,7 +232,7 @@ final class ContentSafeAreaBindingTests: XCTestCase {
 
     /// With Reduce Transparency on, the colour is drawn at full strength behind the status bar.
     func testReduceTransparencyDrawsTheColourAtFullStrength() {
-        let stops = StatusBarFade.stops(statusBar: 59, reduceTransparency: true)
+        let stops = StatusBarFade.stops(height: StatusBarFade.height(safeTop: 59), reduceTransparency: true)
         XCTAssertEqual(UIColor(stops[0].color).cgColor.alpha, 1, accuracy: 0.001)
         XCTAssertEqual(UIColor(stops[1].color).cgColor.alpha, 1, accuracy: 0.001)
         XCTAssertEqual(UIColor(stops.last?.color ?? .black).cgColor.alpha, 0, accuracy: 0.001)
@@ -176,12 +246,47 @@ final class ContentSafeAreaBindingTests: XCTestCase {
         XCTAssertFalse(fade.contains("scrollEdgeEffect"), "the system edge is back")
         XCTAssertFalse(fade.contains("Material"), "a material is back under the colour")
         XCTAssertTrue(fade.contains("@Environment(\\.accessibilityReduceTransparency)"))
-        XCTAssertTrue(fade.contains("StatusBarFade.stops(statusBar:top,reduceTransparency:reduceTransparency)"))
+        XCTAssertTrue(fade.contains("letheight=StatusBarFade.height(safeTop:top)"))
+        XCTAssertTrue(fade.contains("StatusBarFade.stops(height:height,reduceTransparency:reduceTransparency)"))
+        XCTAssertTrue(fade.contains(".frame(height:height).offset(y:-top)"), "the fade is not as tall as its rule")
         XCTAssertTrue(fade.contains(
             "CleansiaColors.backgroundifletheroTint{"
-                + "heroTint.opacity(StatusBarFade.heroShare(heroBottom:heroBottom,statusBar:top))}"
+                + "heroTint.opacity(StatusBarFade.heroShare(heroBottom:heroBottom,safeTop:top,height:height))}"
         ))
         XCTAssertTrue(fade.contains(".allowsHitTesting(false).accessibilityHidden(true)"))
+    }
+
+    private func rgb(_ color: Color, _ style: UIUserInterfaceStyle) -> SIMD3<Double> {
+        let resolved = UIColor(color).resolvedColor(with: UITraitCollection(userInterfaceStyle: style))
+        var red: CGFloat = 0
+        var green: CGFloat = 0
+        var blue: CGFloat = 0
+        var alpha: CGFloat = 0
+        resolved.getRed(&red, green: &green, blue: &blue, alpha: &alpha)
+        return SIMD3(Double(red), Double(green), Double(blue))
+    }
+
+    private func hex(_ value: UInt32) -> SIMD3<Double> {
+        SIMD3(Double((value >> 16) & 0xFF), Double((value >> 8) & 0xFF), Double(value & 0xFF)) / 255
+    }
+
+    private func contrast(_ first: SIMD3<Double>, _ second: SIMD3<Double>) -> Double {
+        func luminance(_ color: SIMD3<Double>) -> Double {
+            let linear = [color.x, color.y, color.z].map { $0 <= 0.04045 ? $0 / 12.92 : pow(($0 + 0.055) / 1.055, 2.4) }
+            return 0.2126 * linear[0] + 0.7152 * linear[1] + 0.0722 * linear[2]
+        }
+        let (lighter, darker) = (max(luminance(first), luminance(second)), min(luminance(first), luminance(second)))
+        return (lighter + 0.05) / (darker + 0.05)
+    }
+
+    /// The mask's alpha at `location`, linearly between its stops as the gradient draws it.
+    private func alpha(at location: CGFloat, stops: [Gradient.Stop]) -> CGFloat {
+        for (earlier, later) in zip(stops, stops.dropFirst()) where location <= later.location {
+            let from = UIColor(earlier.color).cgColor.alpha, to = UIColor(later.color).cgColor.alpha
+            let span = later.location - earlier.location
+            return span <= 0 ? to : from + (to - from) * (location - earlier.location) / span
+        }
+        return UIColor(stops.last?.color ?? .clear).cgColor.alpha
     }
 
     private func assertOnlyBackgroundsExtendUnderTheStatusBar(_ path: String) throws {

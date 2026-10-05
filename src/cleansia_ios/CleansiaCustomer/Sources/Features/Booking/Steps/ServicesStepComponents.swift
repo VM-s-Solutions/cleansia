@@ -85,6 +85,40 @@ struct PropertyStepper: View {
     }
 }
 
+/// A home-size title with the size caption ("Up to 8 rooms and 4 bathrooms") at its trailing end, on
+/// its baseline, so the caps are stated beside the steppers' heading rather than under them (owner remark
+/// 2026-10-04). Where the two do not fit on one line — a 320pt phone, Ukrainian or Russian, large text —
+/// the caption drops to its own line under the title, leading-aligned; never below the steppers.
+/// VoiceOver reads the title, then the caption. The one-off booking's size card and the recurring form's
+/// size section both use it, so the fit rule is the same in both.
+struct SizeLimitTitleRow<Title: View>: View {
+    private let title: Title
+
+    init(@ViewBuilder title: () -> Title) {
+        self.title = title()
+    }
+
+    var body: some View {
+        ViewThatFits(in: .horizontal) {
+            HStack(alignment: .firstTextBaseline, spacing: Spacing.s) {
+                title
+                Spacer(minLength: 0)
+                caption
+            }
+            VStack(alignment: .leading, spacing: Spacing.hair) {
+                title
+                caption
+            }
+        }
+    }
+
+    private var caption: some View {
+        Text(L10n.Booking.sizeLimitCaption)
+            .font(CleansiaTypography.labelSmall)
+            .foregroundColor(CleansiaColors.onSurfaceVariant)
+    }
+}
+
 struct CategoryChip: View {
     let label: String
     let systemImage: String
@@ -131,6 +165,23 @@ struct ServiceRow: View {
         inPackageNote != nil && !selected
     }
 
+    /// The "from" price's ink. The primary is sky-600 in light mode, 4.1:1 on the plain card and 3.7:1 on
+    /// a covered or picked row, so light mode takes sky-700 (5.9:1 / 5.4:1); the primary stays the brand
+    /// colour of the row's fills and borders. Dark mode keeps it (sky-400, 5.0:1 at worst).
+    static func fromPriceInk(_ scheme: ColorScheme) -> Color {
+        scheme == .dark ? CleansiaColors.primary : sky700
+    }
+
+    /// The secondary text's ink. On a covered or picked (`tinted`) row in dark mode slate-400 measures
+    /// 4.2:1, so those rows take slate-300 (7.2:1); the plain row (5.7:1) and light mode (slate-700, 9.4:1
+    /// at worst) keep the theme's.
+    static func secondaryInk(_ scheme: ColorScheme, tinted: Bool) -> Color {
+        scheme == .dark && tinted ? slate300 : CleansiaColors.onSurfaceVariant
+    }
+
+    private static let sky700 = Color(red: 3 / 255, green: 105 / 255, blue: 161 / 255)
+    private static let slate300 = Color(red: 203 / 255, green: 213 / 255, blue: 225 / 255)
+
     var body: some View {
         Button(action: onToggle) {
             HStack(alignment: .top, spacing: Spacing.s) {
@@ -175,17 +226,17 @@ struct ServiceRow: View {
             if let description = service.localizedDescription(for: locale), !description.isEmpty {
                 Text(description)
                     .font(CleansiaTypography.bodyMedium)
-                    .foregroundColor(CleansiaColors.onSurfaceVariant)
+                    .foregroundColor(Self.secondaryInk(colorScheme, tinted: selected || covered))
                     .lineLimit(2)
             }
             HStack(spacing: Spacing.xxs) {
                 Text(L10n.Booking.priceFrom(price(service.basePrice)))
                     .font(CleansiaTypography.labelLarge)
-                    .foregroundColor(CleansiaColors.primary)
+                    .foregroundColor(Self.fromPriceInk(colorScheme))
                 if service.perRoomPrice > 0 {
                     Text(L10n.Booking.pricePerRoom(price(service.perRoomPrice)))
                         .font(CleansiaTypography.bodyMedium)
-                        .foregroundColor(CleansiaColors.onSurfaceVariant)
+                        .foregroundColor(Self.secondaryInk(colorScheme, tinted: selected || covered))
                 }
             }
         }

@@ -149,6 +149,51 @@ class DoubleBookingTest {
         }
     }
 
+    /**
+     * The rows' secondary text (description, per-room price) and the "from" price keep 4.5:1 on every row
+     * a service list draws, in both themes (U-5): a plain card, a covered row, a picked one in the booking
+     * sheet (Sky100, or 18 % of the primary over the page or the card) and in the recurring form (6 %).
+     * The theme's slate-400 measured 4.2:1 on a dark covered row, and the sky-600 primary 3.6:1 as text
+     * on a light picked one.
+     */
+    @Test
+    fun `the secondary text and the from price read at AA on every service row in both themes`() {
+        listOf(false to LightColors, true to DarkColors).forEach { (dark, scheme) ->
+            val theme = if (dark) "dark" else "light"
+            val rows = listOf(
+                Triple("plain", false, scheme.surface),
+                Triple("covered", true, scheme.primary.copy(alpha = inPackageRowAlpha(dark)).compositeOver(scheme.surface)),
+                Triple(
+                    "picked on the page",
+                    true,
+                    if (dark) scheme.primary.copy(alpha = 0.18f).compositeOver(scheme.background) else Sky100,
+                ),
+                Triple(
+                    "picked on a card",
+                    true,
+                    if (dark) scheme.primary.copy(alpha = 0.18f).compositeOver(scheme.surface) else Sky100,
+                ),
+                Triple("picked in the recurring form", true, scheme.primary.copy(alpha = 0.06f).compositeOver(scheme.background)),
+            )
+            rows.forEach { (row, tinted, fill) ->
+                val secondary = contrast(rowSecondaryText(scheme, dark, tinted), fill)
+                assertTrue("$theme $row secondary text is $secondary:1", secondary >= 4.5)
+                val price = contrast(fromPriceInk(scheme, dark), fill)
+                assertTrue("$theme $row from price is $price:1", price >= 4.5)
+            }
+        }
+    }
+
+    /** Only the text changes: the primary stays the brand colour of the fills, borders and the tick. */
+    @Test
+    fun `the service rows draw their text in the text-safe inks`() {
+        val booking = source("features/booking/ServicesStep.kt").substringAfter("private fun ServiceRow(").substringBefore("fun fromPriceInk(")
+        assertEquals(2, Regex(Regex.escape("color = rowSecondaryText(tinted = selected || covered)")).findAll(booking).count())
+        assertTrue(booking.contains("color = fromPriceInk(MaterialTheme.colorScheme, isDark())"))
+        val recurring = source("features/recurring/CreateRecurringScreen.kt").substringAfter("private fun ServiceCard(").substringBefore("private fun selectableCardModifier(")
+        assertTrue(recurring.contains("color = rowSecondaryText(tinted = selected || inPackages.isNotEmpty())"))
+    }
+
     @Test
     fun `a covered row takes more of the primary on a dark card, and its badge more still`() {
         assertEquals(0.08f, inPackageRowAlpha(dark = false))

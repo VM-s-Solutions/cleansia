@@ -364,8 +364,13 @@ private struct PropertySizeSection: View {
     let onRoomsChange: (Int) -> Void
     let onBathroomsChange: (Int) -> Void
 
+    /// The caps are stated on the section's title row, as on the one-off booking's size card
+    /// (`SizeLimitTitleRow`); the room and bathroom counters follow under it.
     var body: some View {
-        VStack(alignment: .leading, spacing: Spacing.xs) {
+        VStack(alignment: .leading, spacing: Spacing.s) {
+            SizeLimitTitleRow {
+                SectionLabel(text: L10n.Booking.yourHome)
+            }
             HStack(alignment: .top, spacing: Spacing.s) {
                 counter(
                     label: L10n.Recurring.createRoomsLabel,
@@ -380,9 +385,6 @@ private struct PropertySizeSection: View {
                     onChange: onBathroomsChange
                 )
             }
-            Text(L10n.Booking.sizeLimitCaption)
-                .font(CleansiaTypography.labelSmall)
-                .foregroundColor(CleansiaColors.onSurfaceVariant)
         }
     }
 

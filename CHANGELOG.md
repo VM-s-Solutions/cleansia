@@ -176,17 +176,25 @@ need backfilling.
 - **Customer Android and iOS — content fades out under the clock as it scrolls.** On Home, Profile
   and the Cleansia Plus offer, content scrolled to the top of the screen fades out under the status
   bar instead of running into the clock and the camera cut-out. At rest, and while pulling down to
-  refresh, nothing is drawn, so the Profile and Plus headers still reach the top edge. On iOS the fade
-  covers only the status bar and clears a few points below it, eased out with no visible edge, the
-  same on every iOS version. It is one solid colour, the colour behind the clock, nine-tenths opaque:
-  the page colour on Home, and on Profile and the Plus offer the colour of their header while it is
-  under the clock, blending into the page colour as the header scrolls away. With Reduce Transparency
-  on it is fully opaque. Until 2026-10-04 it was a light blur under a see-through veil of the page
+  refresh, nothing is drawn, so the Profile and Plus headers still reach the top edge. The fade is one
+  solid colour, the colour behind the clock, nine-tenths opaque: the page colour on Home, and on
+  Profile and the Plus offer the colour of their header while it is under the clock, blending into the
+  page colour as the header scrolls away. It ends at the clock's line and eases out over its last few
+  points with no visible edge. On iOS that line is the bottom of the Dynamic Island or the notch, or
+  of the status bar on a phone with a Home button, the same on every iOS version; on Android it is the
+  bottom of the camera cut-out, or of the status bar on a phone without one. On Android the clock and
+  icons turn white over the Plus and Profile headers while the header is under them. On iOS 16 in
+  light mode, where the clock is always black, the Plus offer's fade is the page colour instead. With
+  Reduce Transparency on, the iOS fade is fully opaque. Until 2026-10-05 the iOS fade reached past the
+  island, to about 21 points below it on an iPhone 17 Pro, and Android covered the status bar and a
+  strip below it with a solid band of the page colour, which read as a white band over the Plus and
+  Profile headers. Until 2026-10-04 iOS drew a light blur under a see-through veil of the page
   colour, which read as a white band over the Plus offer's navy header and let the content under the
   clock show through. For part of 2026-10-03 iOS 26 used the system's own soft edge, which reached
   well below the status bar, and iOS 16 to 25 a blur that ended in a visible line; before that, iOS
-  covered it with a solid band of the page colour. Android fades it into the page colour. (Owner
-  remark 2026-10-01; the iOS fade, owner remarks 2026-10-03 and 2026-10-04.)
+  covered it with a solid band of the page colour. (Owner remark
+  2026-10-01; the iOS fade, owner remarks 2026-10-03 and 2026-10-04; its height and Android following
+  iOS, owner remark and ruling 2026-10-04.)
 
 - **A contract for work between the customer and the cleaner, per job.** Every booking is now made
   under the platform's *contract for work* text — published at `/work-contract` beside the terms and the
@@ -1063,6 +1071,42 @@ need backfilling.
 
 ### Fixed
 
+- **Customer Android and iOS — the clock reads clearly over Profile's header.** In light mode the
+  clock, signal and battery were faint on the light blue top of Profile's header (white on iOS, dark
+  grey on Android), below the contrast small text needs. Profile's header now starts a shade darker
+  blue, at rest and under the fade as the page scrolls, and on Android the clock turns white over it.
+  The blue everywhere else in the apps is unchanged, and so is dark mode. On iOS 16 the clock is black
+  in light mode, and it reads on the old blue, so there the header keeps it. (Finding 2026-10-04.)
+
+- **Customer web — what you pick on the schedule form reads in dark mode.** In dark mode a picked
+  service or package showed its name in white on light blue, hard to read, with a tick that all but
+  vanished, and a picked package's price disappeared into the blue; in light mode that price was faint
+  too. The picked how-often, day, rooms and bathrooms choices, and the Plus badge shown to a customer
+  without Plus on the schedules page, were white on light blue in dark mode as well. All of them are
+  now dark on the light blue in dark mode and white on the dark blue in light mode. Hovering over a
+  picked service or package no longer turns its border pale. (Finding 2026-10-04; the choices and the
+  badge, review 2026-10-05.)
+
+- **Customer Android and iOS — a service's price and description are easier to read.** In booking's
+  list of services, the blue *from* price was faint in light mode, most of all on a row your package
+  covers or you have picked, and in dark mode the description and per-room price on those rows were
+  faint too. The price is now a deeper blue in light mode, and that text a lighter grey in dark mode,
+  on Android in the schedule form's services as well. The brand blue of the rows' fills, borders and
+  ticks is unchanged, and the web already read clearly. (Finding 2026-10-04.)
+
+- **Customer — a service or package that is no longer offered can no longer be booked.** A service or
+  package the company had taken off its list was hidden everywhere, but an out-of-date app, or *Order
+  again* sent before the list had loaded, could still price and book it, and a new schedule could take
+  it and book it every week. The price, the booking and a new schedule now refuse it with *One of the
+  selected services is no longer available* (or *packages*), which every app and the website already
+  show. A schedule set up before the service was taken off keeps it, and its visits are confirmed and
+  paid as before; nothing shows an error for it. On the website its card on *Recurring cleanings*
+  shows no price, and opening it to edit removes the service with a notice, now on Android as on iOS
+  and the website. A service that is part of a package is still done with the package. **API
+  consumer:** `QuoteOrder`, `QuotePlusSavings`, `CreateOrder` and `CreateRecurringBooking` refuse a
+  deactivated id with `order.selected_services.invalid` / `order.selected_package.invalid`.
+  (Finding 2026-10-04; the schedule's card and edit, review 2026-10-05.)
+
 - **Customer web — deleting your account is confirmed on a red button.** The question before your
   account is deleted offered the same blue confirm button as any harmless question. It now shows the
   red, destructive button that deleting a saved card or a schedule already shows, so the risk reads
@@ -1190,10 +1234,13 @@ need backfilling.
   a tap on its words, so a tap on the empty part of the field did nothing: the cleaner's market,
   document type and country fields, and the customer's dispute reason. (Owner remark 2026-10-01.)
 
-- **Customer Android and iOS — the size steppers say where they stop.** Under the room and bathroom
-  steppers, both apps now say *Up to 8 rooms and 4 bathrooms*; the steppers used to stop at the cap
-  without saying why. On a one-off booking the minus button greys at 1, where it used to look live.
-  (Owner ruling 2026-10-01.)
+- **Customer Android and iOS — the size steppers say where they stop.** Above the room and bathroom
+  steppers, both apps now say *Up to 8 rooms and 4 bathrooms*, in the top-right corner beside *Your
+  home*, or on its own line under *Your home* when the two do not fit side by side; the steppers used
+  to stop at the cap without saying why. The schedule form's size section gains a *Your home* title to
+  carry it. On a one-off booking the minus button greys at 1, where it used to look live. Until
+  2026-10-05 the line sat under the steppers. (Owner ruling 2026-10-01; its place, owner remark
+  2026-10-04.)
 
 - **Customer iOS — the busy card's shadow sits on its edge.** While a booking or a Plus activation is
   submitted, the card with the cleaning mascot cast a grey halo around the mascot and the message. Only

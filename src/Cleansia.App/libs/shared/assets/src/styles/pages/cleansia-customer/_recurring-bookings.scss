@@ -324,7 +324,9 @@
   color: var(--cl-muted);
 }
 
-// The paywall is the empty card with the product's own badge on it.
+// The paywall is the empty card with the product's own badge on it. Its ink is the card ground,
+// which flips with the heading slab: white on Sky700 (5.9), near-black on Sky300 (10.4). White on
+// the dark theme's Sky300 measured 1.7.
 .cl-rec__gate-badge {
   display: inline-flex;
   align-items: center;
@@ -336,7 +338,7 @@
   border: 1px solid var(--cl-heading);
   font-size: 0.8125rem;
   font-weight: 700;
-  color: #ffffff;
+  color: var(--cl-surface);
 }
 
 // ---- The form ---------------------------------------------------------------------------
@@ -411,10 +413,14 @@
   cursor: pointer;
   transition: border-color 0.16s ease, background 0.16s ease;
 
-  &:hover {
+  // Not on a picked pick: `:hover` outranks `--on`, and it turned the picked border pale.
+  &:hover:not(.cl-rec__pick--on) {
     border-color: var(--cl-border-tint);
   }
 
+  // The slab is the heading colour, Sky700 light and Sky300 dark, so its ink is the card's own
+  // ground, which flips with it: white on Sky700 (5.9), near-black on Sky300 (10.4). White on the
+  // dark theme's Sky300 measured 1.7.
   &--on {
     background: var(--cl-heading);
     border: 2px solid var(--cl-heading);
@@ -453,8 +459,8 @@
   border: 2px solid var(--cl-border);
 
   .cl-rec__pick--on & {
-    background: #ffffff;
-    border-color: #ffffff;
+    background: var(--cl-surface);
+    border-color: var(--cl-surface);
     color: var(--cl-heading);
   }
 
@@ -477,17 +483,19 @@
   color: var(--cl-ink, #0f172a);
 
   .cl-rec__pick--on & {
-    color: #ffffff;
+    color: var(--cl-surface);
   }
 }
 
+// A package pick's price. On a picked pick it takes the slab's ink as the name does: the accent it
+// used measured 2.8 light and 1.0 dark there.
 .cl-rec__pick-note {
   margin-top: 1px;
   font-size: 0.8125rem;
   color: var(--cl-muted);
 
   .cl-rec__pick--on & {
-    color: var(--cl-accent-soft);
+    color: var(--cl-surface);
   }
 }
 
@@ -655,10 +663,11 @@
     background: var(--cl-tint);
   }
 
+  // Inked with the card ground, as a picked pick is: white on the dark theme's Sky300 measured 1.7.
   &--on {
     background: var(--cl-heading);
     border-color: var(--cl-heading);
-    color: #ffffff;
+    color: var(--cl-surface);
   }
 
   &--grow {

@@ -227,6 +227,7 @@ public sealed class DbIdempotencyGuardPersistenceTests : IDisposable
         public Task<bool> HasProcessedAsync(string messageKey, CancellationToken ct) => Task.FromResult(false);
         public Task<bool> ExistsAsync(string id, CancellationToken ct) => Task.FromResult(false);
         public Task<bool> ExistWithIdsAsync(IEnumerable<string> ids, CancellationToken ct) => Task.FromResult(false);
+        public Task<bool> ExistActiveWithIdsAsync(IEnumerable<string> ids, CancellationToken ct) => Task.FromResult(false);
         public Task<ProcessedMessage?> GetByIdAsync(string id, CancellationToken ct) => Task.FromResult<ProcessedMessage?>(null);
         public IQueryable<ProcessedMessage> GetByIds(IEnumerable<string> ids) => Array.Empty<ProcessedMessage>().AsQueryable();
         public IQueryable<ProcessedMessage> GetPagedSort<TSort>(int offset, int limit, System.Linq.Expressions.Expression<Func<ProcessedMessage, bool>> filter, Core.Domain.Sorting.Common.SortDefinition sort) where TSort : Core.Domain.Sorting.Common.BaseSort<ProcessedMessage> => Array.Empty<ProcessedMessage>().AsQueryable();

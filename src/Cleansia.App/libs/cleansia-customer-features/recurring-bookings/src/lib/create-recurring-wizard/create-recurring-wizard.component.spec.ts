@@ -174,6 +174,42 @@ describe('CreateRecurringWizardComponent — a service a chosen package already 
   });
 });
 
+// jsdom loads no stylesheet, so these read the pick's rules, which are declared an input of this
+// test target. The picked slab is --cl-heading: Sky700 light, Sky300 dark.
+describe('CreateRecurringWizardComponent — the picked pick', () => {
+  const scss = readFileSync(
+    join(__dirname, '../../../../../shared/assets/src/styles/pages/cleansia-customer/_recurring-bookings.scss'),
+    'utf8',
+  );
+  const rule = (selector: string): string =>
+    scss.match(new RegExp(`^${selector.replace(/\./g, '\\.')} \\{[\\s\\S]*?^\\}`, 'm'))?.[0] ?? '';
+  const whenPicked = (selector: string): string =>
+    rule(selector).match(/\.cl-rec__pick--on & \{([^}]*)\}/)?.[1] ?? '';
+
+  // White on the dark theme's Sky300 measured 1.7 and the price's accent 1.0. The card's ground
+  // flips with the slab, so it reads on both: 5.9 light, 10.4 dark.
+  it('inks the name, the price and the tick with the card ground, which flips with the slab', () => {
+    expect(rule('.cl-rec__pick')).toContain('background: var(--cl-heading);');
+    expect(whenPicked('.cl-rec__pick-name')).toContain('color: var(--cl-surface);');
+    expect(whenPicked('.cl-rec__pick-note')).toContain('color: var(--cl-surface);');
+    expect(whenPicked('.cl-rec__pick-tick')).toContain('background: var(--cl-surface);');
+    expect(whenPicked('.cl-rec__pick-tick')).toContain('color: var(--cl-heading);');
+  });
+
+  // The cadence, day, rooms and bathrooms chips share the slab; white on it measured 1.7 in dark.
+  it('inks a picked chip with the card ground too', () => {
+    const picked = rule('.cl-rec__chip').match(/&--on \{([^}]*)\}/)?.[1] ?? '';
+    expect(picked).toContain('background: var(--cl-heading);');
+    expect(picked).toContain('color: var(--cl-surface);');
+  });
+
+  // `:hover` outranks `--on`, so an unqualified hover turned a picked pick's border pale.
+  it('keeps the picked border under the pointer', () => {
+    expect(rule('.cl-rec__pick')).toContain('&:hover:not(.cl-rec__pick--on) {');
+    expect(rule('.cl-rec__pick')).not.toMatch(/&:hover \{/);
+  });
+});
+
 // Cash is refused unless one cleaner does each clean. The select is the only thing that keeps a
 // refused cash pick off screen — the facade ignores it, so an enabled option would show Cash on a
 // schedule saved on card.

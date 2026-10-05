@@ -199,6 +199,11 @@ class CreateRecurringViewModel @Inject constructor(
         // dropped and the picks pruned against the wrong catalogue.
         viewModelScope.launch {
             loadCatalog(marketRepo.ensureLoaded().countryId)
+            // A prefill that landed first is judged by the catalogue now; the watcher below reloads
+            // nothing for the market this one already prices, so it would never prune it.
+            if (_catalogState.value is RecurringCatalogState.Loaded && isCatalogueForSelectedMarket()) {
+                pruneSelectionToCatalogue()
+            }
             _state
                 .map { it.savedAddressId }
                 .distinctUntilChanged()
@@ -592,6 +597,13 @@ class CreateRecurringViewModel @Inject constructor(
                 preferredEmployeeId = template.preferredEmployeeId,
                 dirtinessLevel = template.dirtinessLevel,
             )
+            // An entry taken off the list since the schedule was made is refused by the quote, which
+            // would leave the crew, and so cash, unknown for good. Only the form's own read judges it,
+            // as on iOS: a template that lands while that read is in flight is pruned when it lands,
+            // never against an older catalogue cached before the entry was offered.
+            if (_catalogState.value is RecurringCatalogState.Loaded && isCatalogueForSelectedMarket()) {
+                pruneSelectionToCatalogue()
+            }
         }
     }
 

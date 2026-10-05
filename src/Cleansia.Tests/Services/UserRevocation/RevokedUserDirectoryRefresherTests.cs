@@ -145,6 +145,7 @@ public class RevokedUserDirectoryRefresherTests
         public Task<int> DeleteStaleAsync(DateTimeOffset olderThan, CancellationToken cancellationToken) => throw new NotSupportedException();
         public Task<bool> ExistsAsync(string id, CancellationToken cancellationToken) => throw new NotSupportedException();
         public Task<bool> ExistWithIdsAsync(IEnumerable<string> ids, CancellationToken cancellationToken) => throw new NotSupportedException();
+        public Task<bool> ExistActiveWithIdsAsync(IEnumerable<string> ids, CancellationToken cancellationToken) => throw new NotSupportedException();
         public Task<RefreshToken?> GetByIdAsync(string id, CancellationToken cancellationToken) => throw new NotSupportedException();
         public IQueryable<RefreshToken> GetByIds(IEnumerable<string> ids) => throw new NotSupportedException();
         public IQueryable<RefreshToken> GetPagedSort<TSort>(int offset, int limit, Expression<Func<RefreshToken, bool>> filter, SortDefinition sort) where TSort : BaseSort<RefreshToken> => throw new NotSupportedException();

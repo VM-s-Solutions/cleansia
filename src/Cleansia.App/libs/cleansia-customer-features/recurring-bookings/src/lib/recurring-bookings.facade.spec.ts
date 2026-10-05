@@ -1,9 +1,12 @@
+import { provideHttpClient, withInterceptors } from '@angular/common/http';
+import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import {
   ConsentType,
   CreateRecurringBookingCommand,
   CustomerClient,
+  CustomerOrderClient,
   DeleteRecurringBookingCommand,
   DirtinessLevel,
   GetMyServingCleanersResponse,
@@ -27,7 +30,7 @@ import {
   selectCustomerServicesCatalogue,
   selectMarketCountryId,
 } from '@cleansia/customer-stores';
-import { DialogService, SnackbarService } from '@cleansia/services';
+import { DialogService, HttpErrorInterceptorFn, SnackbarService } from '@cleansia/services';
 import { Action } from '@ngrx/store';
 import { provideMockStore, MockStore } from '@ngrx/store/testing';
 import { TranslateService } from '@ngx-translate/core';
@@ -46,6 +49,7 @@ describe('RecurringBookingsFacade', () => {
     delete: jest.Mock;
   };
   let orderClient: { quote: jest.Mock; myServingCleaners: jest.Mock };
+  let quoteRoute: jest.SpyInstance;
   let membershipClient: { getMine: jest.Mock };
   let gdprClient: { consentsGet: jest.Mock };
   let savedAddressStore: {
@@ -76,6 +80,11 @@ describe('RecurringBookingsFacade', () => {
       delete: jest.fn().mockReturnValue(of(undefined)),
     };
     orderClient = { quote: jest.fn(), myServingCleaners: jest.fn().mockReturnValue(of([])) };
+    // The facade quotes through its own toast-suppressing client, not CustomerClient's, so the
+    // generated client's quote is routed to the mock the cases below arm.
+    quoteRoute = jest
+      .spyOn(CustomerOrderClient.prototype, 'quote')
+      .mockImplementation((body) => orderClient.quote(body));
     membershipClient = {
       getMine: jest.fn().mockReturnValue(of({ hasMembership: true, status: MembershipStatus.Active })),
     };
@@ -94,6 +103,8 @@ describe('RecurringBookingsFacade', () => {
 
     TestBed.configureTestingModule({
       providers: [
+        provideHttpClient(),
+        provideHttpClientTesting(),
         RecurringBookingsFacade,
         provideMockStore(),
         {
@@ -120,6 +131,8 @@ describe('RecurringBookingsFacade', () => {
     store.overrideSelector(selectMarketCountryId, null);
     facade = TestBed.inject(RecurringBookingsFacade);
   });
+
+  afterEach(() => quoteRoute.mockRestore());
 
   // A failed renewal keeps the enrolment alive, but the server refuses a schedule while it is unpaid.
   it('shows a member whose renewal payment failed the paywall, not the list', async () => {
@@ -1762,5 +1775,86 @@ describe('RecurringBookingsFacade', () => {
       expect(command).toBeInstanceOf(DeleteRecurringBookingCommand);
       expect(command.toJSON()).toEqual({ templateId: 't1' });
     });
+  });
+});
+
+// The server refuses to quote a service or package retired since the schedule was made, so such a
+// schedule has no price to state. These run the real interceptor chain: a card without a price is
+// honest, the shared error toast on every visit to the list is not.
+describe('RecurringBookingsFacade — a quote the server refuses', () => {
+  let facade: RecurringBookingsFacade;
+  let httpMock: HttpTestingController;
+  let showError: jest.Mock;
+
+  /** The blob read resolves on the FileReader's load event, which is a macrotask behind the flush. */
+  const flushAsyncErrorHandling = async (): Promise<void> => {
+    for (let tick = 0; tick < 5; tick++) {
+      await new Promise((resolve) => setTimeout(resolve, 0));
+    }
+  };
+
+  const refuse = async (pending: Promise<void>, field: string, code: string): Promise<void> => {
+    httpMock
+      .expectOne((request) => request.url.endsWith('/api/Order/Quote'))
+      .flush(new Blob([JSON.stringify({ errors: { [field]: code } })], { type: 'application/json' }), {
+        status: 400,
+        statusText: 'Bad Request',
+      });
+    await pending;
+    await flushAsyncErrorHandling();
+  };
+
+  beforeEach(() => {
+    showError = jest.fn();
+    TestBed.configureTestingModule({
+      providers: [
+        provideHttpClient(withInterceptors([HttpErrorInterceptorFn])),
+        provideHttpClientTesting(),
+        RecurringBookingsFacade,
+        provideMockStore({
+          selectors: [
+            { selector: selectCustomerServices, value: [] },
+            { selector: selectCustomerPackages, value: [] },
+            { selector: selectCustomerServicesCatalogue, value: { services: [], countryId: null } },
+            { selector: selectCustomerPackagesCatalogue, value: { packages: [], countryId: null } },
+            { selector: selectMarketCountryId, value: null },
+          ],
+        }),
+        {
+          provide: SavedAddressStore,
+          useValue: { addresses: signal<SavedAddressDto[]>([]), loaded: signal(true), refresh: jest.fn() },
+        },
+        {
+          provide: SnackbarService,
+          useValue: { showError, showSuccess: jest.fn(), showInfoTranslated: jest.fn() },
+        },
+        { provide: DialogService, useValue: {} },
+        { provide: TranslateService, useValue: { instant: (k: string) => k, currentLang: 'en' } },
+      ],
+    });
+    httpMock = TestBed.inject(HttpTestingController);
+    facade = TestBed.inject(RecurringBookingsFacade);
+  });
+
+  afterEach(() => httpMock.verify());
+
+  it('leaves the card of a schedule with a retired service without a price, and says nothing', async () => {
+    const pending = facade.quoteTemplate(
+      RecurringBookingTemplateDto.fromJS({ id: 't1', selectedServiceIds: ['retired'], rooms: 2, bathrooms: 1 }),
+    );
+
+    await refuse(pending, 'SelectedServiceIds', 'order.selected_services.invalid');
+
+    expect(facade.templatePrices()).toEqual({});
+    expect(showError).not.toHaveBeenCalled();
+  });
+
+  it('leaves the edit form of a schedule with a retired package without a price, and says nothing', async () => {
+    facade.updateFormData({ selectedPackageIds: ['retired'] });
+
+    await refuse(facade.quoteForm(), 'SelectedPackageIds', 'order.selected_package.invalid');
+
+    expect(facade.formPrice()).toBeNull();
+    expect(showError).not.toHaveBeenCalled();
   });
 });

@@ -2099,6 +2099,80 @@ next version ([above](#legal-drafts)), and only with one made for a real change 
 this word alone would bring the booking tick back for every customer (owner ruling 2026-10-04; filed as
 T-0802).
 
+## A deactivated service or package {#deactivated-catalogue}
+
+An administrator retires a service or a package by deactivating it: a soft delete, so the row and every
+order that booked it stay, and the admin lists still show it under their active filter
+([ADR-0007](/decisions/adr-0007)). **It leaves every customer catalogue.** The service and package
+overviews the web, Android and iOS book from list only active entries, as they list only entries priced
+and paid in the market's currency.
+
+**A deactivated service stays inside every package that includes it.** What a package includes is the
+package's content, not a customer's selection, so deactivating one of its services changes nothing about
+the package. Its card still lists the service among what it includes, and an order with the package books
+it, times it and staffs it: the order gets a line for it, its minutes count toward the booked time and
+so the crew, and the order detail the customer and the cleaner read lists it. The package overview
+(`GetPackageOverview`) and the order (`OrderFactory`) read the same list on purpose: hiding the service
+from the card alone would sell a package without a service the cleaner is then sent to do. To take a
+service out of a package, an administrator edits the package. `CatalogActiveVisibilityTests` pins that
+the overview lists exactly what an order with the package books, a deactivated service among them.
+
+**A customer cannot select one by id either** (since 2026-10-05). `QuoteOrder`, `QuotePlusSavings`,
+`CreateOrder` (guest and signed-in) and `CreateRecurringBooking` ask that every selected service and
+package exists **and is active** (`ExistActiveWithIdsAsync`), and refuse one that is not with the codes
+an entry with no price or pay rate in the market's currency already gets: `order.selected_services.invalid`
+and `order.selected_package.invalid`. Every client already words both, in all five languages. Until then
+the three order gates asked only that the row exists, which a deactivated row still does, so a client
+holding an old catalogue, or an *Order again* sent before the catalogue had loaded, could price and book
+an entry no catalogue showed; a new schedule checked its selection not at all, so it also took an id
+that never existed. The clients already drop retired entries when they rebook, and the apps' rebook
+comments expected the booking to fail loudly. What it deliberately leaves alone:
+
+- **A schedule created before the deactivation keeps booking it.** The materialiser hands the
+  template's ids to `OrderFactory` without asking the catalogue again, so its occurrences still carry
+  the entry. That is also why the pay-coverage gap check over a selection does not filter by
+  `IsActive`: the template route would otherwise mint an order no rate covers. Confirming and paying
+  such an occurrence do not ask either: `ConfirmRecurringOrder`, on both channels, and
+  `CreatePaymentIntent` read no catalogue. They charge the occurrence's stored price (`TotalPrice`, set
+  when the materialiser made it), less any credit the card confirm takes (`AmountDueOnCard`)
+  → [Payment and fiscal](/flows/payment-and-fiscal#amounts-are-never-reconciled-and-do-not-need-to-be).
+- **Editing a schedule does not ask.** `UpdateRecurringBooking` checks only that the selection is not
+  empty, so an edit can keep, or add, a deactivated entry. The three schedule forms do not send one,
+  though: each trims the selection as it loads (below), so a plain check
+  there would refuse only a client that skipped the trim, an out-of-date app among them. Whether to
+  check only the ids an edit adds is open.
+- **A deactivated service inside an active package** is the package's content, above, not a selection.
+- **The admin package editors** (`CreatePackage`, `UpdatePackage`) still accept a deactivated service
+  into a package; they ask only that it exists.
+
+**A schedule still booking a deactivated entry shows the customer no error.** The quote refuses its
+selection, so every client that quotes it fails quietly:
+
+- **Its card on the web has no price.** The web's schedules list, *Recurring cleanings*, quotes each
+  card for its price per clean (`quoteTemplate`); a card whose quote is refused leaves the price out,
+  with no message. Those quotes go through the toast-suppressing client (`errorToastSuppressingHttpClient`),
+  since the shared error interceptor would otherwise toast the refusal (*One of the selected services
+  is no longer available.*) on every visit to the list. Android's and iOS's schedule lists show no
+  price on any card and quote nothing, and no client has a schedule screen besides the edit form.
+- **Editing it removes the entry, with a notice.** The web (`keepSelected`), Android and iOS trim an
+  edited schedule's selection to its market's catalogue as the form loads, and tell the customer that
+  part of the selection is not offered at this address and was removed, so saving the edit takes the
+  entry off the schedule. A quote sent before the trim fails as quietly as the card's: the web form
+  shows no price, and every form leaves the cash choice undecided rather than refused. Android trims
+  when the template is prefilled and again once the form's first catalogue lands, because an untrimmed
+  selection's crew quote is refused and a cash save would be held back (*We couldn't confirm whether
+  this schedule can be paid in cash*).
+- **Its occurrences are confirmed and paid as any other**, from the stored price (above).
+
+`CatalogActiveVisibilityTests` pins the active check on the repository, a schedule refused a
+deactivated service and package, and the factory still booking one a schedule holds; the order and
+quote validator suites pin the three order gates. The web recurring facade spec runs the real error
+interceptor over a card refused for a deactivated service and an edit form refused for a deactivated
+package, and asserts no price and no message. Android's `CreateRecurringViewModelTest` pins an edited
+cash schedule dropping a deactivated service with the notice and saving in cash, and a template
+trimmed when the catalogue lands after it; iOS's
+`testEditingPrunesWhatTheTemplatesMarketNoLongerOffersWithANotice` pins the trim on load.
+
 ## Discounts, and the 12 % cap {#discount-cap}
 
 Three sources can reduce a price: the customer's **loyalty tier**, their **Cleansia Plus** membership,

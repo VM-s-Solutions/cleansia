@@ -41,6 +41,7 @@ public sealed class LegalDocumentSeederTests : IDisposable
         (LegalDocumentType.PrivacyPolicy, new DateOnly(2026, 10, 3)),
         (LegalDocumentType.WorkContract, new DateOnly(2026, 9, 20)),
         (LegalDocumentType.WorkContract, new DateOnly(2026, 9, 29)),
+        (LegalDocumentType.WorkContract, new DateOnly(2026, 10, 5)),
         (LegalDocumentType.CleanerFrameworkContract, new DateOnly(2026, 9, 29)),
         (LegalDocumentType.CleanerFrameworkContract, new DateOnly(2026, 10, 5)),
         (LegalDocumentType.SelfBillingAgreement, new DateOnly(2026, 9, 29)),
@@ -477,6 +478,8 @@ public sealed class LegalDocumentSeederTests : IDisposable
     [InlineData(LegalDocumentType.SelfBillingAgreement, "2026-09-29", 2, 1)]      // invoices for completed jobs and any fee share
     [InlineData(LegalDocumentType.SelfBillingAgreement, "2026-09-29", 3, 1)]      // invoiced after each monthly pay period
     [InlineData(LegalDocumentType.SelfBillingAgreement, "2026-09-29", 3, 2)]      // the invoice lists any fee share
+    [InlineData(LegalDocumentType.WorkContract, "2026-09-29", 4, 2)]              // paid on the monthly invoice
+    [InlineData(LegalDocumentType.WorkContract, "2026-09-29", 7, 1)]              // a lockout pays a share of the fee
     public void The_Newest_Version_Carries_None_Of_The_Wording_The_2026_10_04_Rulings_Retired(
         LegalDocumentType type, string replaced, int section, int block)
     {

@@ -1080,6 +1080,12 @@ need backfilling.
 
 ### Fixed
 
+- **Customer and cleaner, Android and iOS — the label of the field you are typing in reads clearly.**
+  While you type in a field, its label sits above it in blue, and that blue was faint in light mode,
+  4.1:1 on the field. It is now the deeper blue of the other blue text, 5.9:1, in both apps, the promo
+  code, referral code, cancellation notes and review fields on Android included. The field's blue
+  outline is unchanged, and so is dark mode. (Finding 2026-10-05.)
+
 - **Customer and cleaner, Android and iOS — icons on a light-blue circle stand out in dark mode.** In
   dark mode the blue icons inside the light-blue circles and cards, on Home, Payments, the list of
   your devices, an order's call button, the cleaner's earnings and invoices and, on Android, the

@@ -427,8 +427,9 @@ duplicate a `:core` component.
 > **Blue TEXT takes the text ink, never the primary (finding 2026-10-05; links and text buttons, and
 > the partner app's informational text, owner decisions 2026-10-05):** the light primary, sky-600,
 > reads 4.10:1 on white and less on every tint, under the 4.5:1 text needs. In both apps a `Text` in
-> the brand blue — an eyebrow, a pay amount, a step counter, a badge's label, a clock line — a link and
-> a text or outlined button's blue label takes **`CleansiaColors.primaryText`** (iOS, Core) or
+> the brand blue — an eyebrow, a pay amount, a step counter, a badge's label, a clock line, a focused
+> field's floating label (whose focus border and caret keep the primary) — a link and a text or
+> outlined button's blue label takes **`CleansiaColors.primaryText`** (iOS, Core) or
 > **`primaryText()`** / `ColorScheme.primaryText` (Android, `:core` `ui/theme/BrandColors.kt`): sky-700
 > in light mode, the primary in dark. An icon inside the same link or button takes the same ink, so no
 > control shows two blues. Text drawn straight on `primaryContainer` takes **`primaryTextOnContainer`**

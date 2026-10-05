@@ -768,6 +768,19 @@ value-carried sites (iOS `f61aec326`, Android `d605de047` and `b50c9044f`). The 
 blue text under 4.5:1, an order's package price, moved with it
 ([links and text buttons](/architecture/frontend#link-ink)).
 
+**A focused field's floating label takes it too** (finding 2026-10-05). The shared text field and phone
+field, `CleansiaTextField` and `CleansiaPhoneInput` in iOS Core and in Android's `:core`, drew the
+focused label in the primary: 4.10:1 on the field's white and 3.91:1 on the page under a see-through
+field. In both apps, on both platforms, it now takes the text ink, 5.93:1 and 5.67:1, while the focus
+border and the caret keep the primary; a disabled field or one in error is unchanged, and so is dark
+mode, the text ink being the primary there. Four customer screens on Android draw Material's field
+directly, the promo code and referral code sheets, a cancellation's notes and a review's comment, and
+take the same label ink. iOS's `ComponentTextInkTests` pins both fields' focused label and border;
+Android's `PrimaryTextTest` fails a labelled `OutlinedTextField` or `TextField` in any module that does
+not set `focusedLabelColor = primaryText()`. Read off the iOS 26.3 screenshots, the label went from
+3.30 to 4.60:1 (iOS `463c44776`, Android `a0406cc0d`). The partner and admin websites' floating label
+moved with [the web's primary](/architecture/frontend#web-primary).
+
 **Blue text on the light-blue container has an ink of its own in dark mode** (finding 2026-10-05).
 `primaryContainer` is sky-100 in light mode and sky-700 in dark, and the text ink on it reads 5.17:1 in
 light mode but 2.77:1 in dark, sky-400 on sky-700. Text drawn straight on that container takes

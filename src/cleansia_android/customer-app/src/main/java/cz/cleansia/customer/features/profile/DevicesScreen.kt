@@ -56,6 +56,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import cz.cleansia.core.ui.components.CleansiaPrimaryButton
 import cz.cleansia.core.ui.components.CleansiaTextButton
 import cz.cleansia.core.ui.theme.Poppins
+import cz.cleansia.core.ui.theme.primaryIconOnContainer
 import cz.cleansia.core.ui.theme.primaryTextOnContainer
 import cz.cleansia.customer.R
 import cz.cleansia.customer.core.devices.UserDeviceDto
@@ -232,7 +233,7 @@ private fun DeviceCard(
             Icon(
                 imageVector = platformIcon(device.platform),
                 contentDescription = null,
-                tint = MaterialTheme.colorScheme.primary,
+                tint = MaterialTheme.colorScheme.primaryIconOnContainer,
                 modifier = Modifier.size(22.dp),
             )
         }

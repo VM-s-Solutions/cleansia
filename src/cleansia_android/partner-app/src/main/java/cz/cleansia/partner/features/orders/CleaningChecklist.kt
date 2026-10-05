@@ -28,6 +28,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
+import cz.cleansia.core.ui.theme.primaryText
 import cz.cleansia.partner.R
 import cz.cleansia.partner.api.model.OrderItem
 
@@ -154,7 +155,7 @@ private fun ChecklistProgressRow(
             Text(
                 text = stringResource(R.string.checklist_progress, doneCount, total),
                 style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
-                color = if (allDone) MaterialTheme.colorScheme.primary
+                color = if (allDone) primaryText()
                     else MaterialTheme.colorScheme.onSurface,
             )
             if (allDone) {
@@ -194,7 +195,7 @@ private fun ChecklistProgressRow(
             Text(
                 text = stringResource(R.string.checklist_all_done_hint),
                 style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.SemiBold),
-                color = MaterialTheme.colorScheme.primary,
+                color = primaryText(),
             )
         }
     }

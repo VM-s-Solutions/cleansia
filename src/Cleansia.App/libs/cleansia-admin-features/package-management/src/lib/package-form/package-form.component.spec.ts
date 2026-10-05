@@ -27,7 +27,7 @@ import {
   CleansiaTitleComponent,
 } from '@cleansia/components';
 import { SnackbarService } from '@cleansia/services';
-import { TranslateModule } from '@ngx-translate/core';
+import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { Tab, TabList, TabPanel, TabPanels, Tabs } from 'primeng/tabs';
 import { PackageFormComponent } from './package-form.component';
 import { PackageFormFacade } from './package-form.facade';
@@ -400,6 +400,24 @@ describe('PackageFormComponent', () => {
     expect(component.activeLanguage()).toBe('en');
   });
 
+  // The title was read once through translate.instant and memoized, so a language switched while the
+  // form was open left the page titled in the old one until it was reopened.
+  it('retitles the page when the language changes while the form is open', () => {
+    const translate = TestBed.inject(TranslateService);
+    translate.setTranslation('en', { pages: { package_form: { create_title: 'Create Package' } } });
+    translate.setTranslation('cs', { pages: { package_form: { create_title: 'Vytvořit balíček' } } });
+    const title = () =>
+      (fixture.debugElement.query(By.directive(TitleStub)).componentInstance as TitleStub).title();
+
+    translate.use('en');
+    fixture.detectChanges();
+    expect(title()).toBe('Create Package');
+
+    translate.use('cs');
+    fixture.detectChanges();
+    expect(title()).toBe('Vytvořit balíček');
+  });
+
   it("keeps the user's chosen language when the list re-emits", () => {
     facade.languages.set([
       { code: 'cs', name: 'Cestina' },
@@ -578,6 +596,28 @@ describe('PackageFormComponent (edit mode, real facade)', () => {
     expect(facade.derivedGrosses().map((g) => g.gross)).toEqual([
       833.33, 166.67,
     ]);
+  });
+
+  it("relabels a retired service's status when the language changes while the form is open", () => {
+    const translate = TestBed.inject(TranslateService);
+    translate.setTranslation('en', { enums: { active_status: { inactive: 'Inactive' } } });
+    translate.setTranslation('cs', { enums: { active_status: { inactive: 'Neaktivní' } } });
+    translate.use('en');
+    services$.next({ data: [SERVICE_A, SERVICE_B], total: 2 });
+    retired$.next({ data: [SERVICE_B], total: 1 });
+    fixture.detectChanges();
+    const labels = () =>
+      (
+        fixture.debugElement.query(By.directive(MultiSelectStub)).componentInstance as MultiSelectStub
+      )
+        .options()
+        .map((option) => (option as { label: string }).label);
+
+    expect(labels()).toEqual(['Windows', 'Floors (Inactive)']);
+
+    translate.use('cs');
+    fixture.detectChanges();
+    expect(labels()).toEqual(['Windows', 'Floors (Neaktivní)']);
   });
 
   it('marks the retired service the package includes and keeps it removable, but cannot add another', () => {

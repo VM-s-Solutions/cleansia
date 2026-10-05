@@ -45,6 +45,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.foundation.text.KeyboardOptions
 import cz.cleansia.core.format.formatOrderPrice
+import cz.cleansia.core.ui.theme.primaryText
 import cz.cleansia.customer.R
 import cz.cleansia.customer.core.promo.PromoCodeError
 import cz.cleansia.customer.ui.theme.ErrorText
@@ -132,6 +133,7 @@ fun PromoCodeBottomSheet(
                     focusedBorderColor = borderColor,
                     unfocusedBorderColor = borderColor,
                     cursorColor = MaterialTheme.colorScheme.primary,
+                    focusedLabelColor = primaryText(),
                 ),
             )
             Spacer(Modifier.height(10.dp))

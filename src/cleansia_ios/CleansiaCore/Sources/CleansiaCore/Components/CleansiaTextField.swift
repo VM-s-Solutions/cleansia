@@ -133,10 +133,12 @@ public struct CleansiaTextField: View {
         }
     }
 
+    /// A focused field's label is text, so it takes the text ink (4.5:1 or more on the field); its 2pt border
+    /// keeps the primary.
     private var floatingLabelColor: Color {
         if !enabled { return CleansiaColors.disabledInk }
         if isError { return CleansiaColors.error }
-        return focused ? CleansiaColors.primary : CleansiaColors.onSurfaceVariant
+        return focused ? CleansiaColors.primaryText : CleansiaColors.onSurfaceVariant
     }
 
     private var restingLabelColor: Color {

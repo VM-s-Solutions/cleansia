@@ -8,7 +8,54 @@ cd src
 dotnet run --project Cleansia.AppHost
 ```
 
-Everything below is a decision the AppHost encodes. Each of them was a bug first.
+It needs a Docker engine for Postgres and the storage emulator; on a Mac that is Colima
+([below](#colima)). Everything else below is a decision the AppHost encodes. Each of them was a bug
+first.
+
+## On a Mac the container engine is Colima {#colima}
+
+On a Mac, Docker runs through **Colima**, a Lima VM with the Docker engine inside, not Docker Desktop
+(set up 2026-10-05). The AppHost's containers, and the Testcontainers Postgres that
+`Cleansia.IntegrationTests` and `Cleansia.HostTests` start, both run on it, so those two suites run on
+the Mac and not only in CI.
+
+```bash
+brew install colima docker
+colima start      # once per boot; `colima status` shows the engine and its socket
+```
+
+`colima start` creates the `colima` Docker context and makes it current (`docker context ls` marks it),
+so the `docker` CLI, and Aspire through it, find the engine with nothing else set. The default profile
+is 2 CPUs, 2 GiB of memory and a 100 GiB disk, on Apple's Virtualization.framework with virtiofs
+mounts. Testcontainers is pointed at it by two variables in the shell that runs the tests:
+
+```bash
+export DOCKER_HOST="unix://$HOME/.colima/default/docker.sock"
+export TESTCONTAINERS_DOCKER_SOCKET_OVERRIDE=/var/run/docker.sock
+cd src
+dotnet test Cleansia.IntegrationTests/Cleansia.IntegrationTests.csproj -c Release
+dotnet test Cleansia.HostTests/Cleansia.HostTests.csproj -c Release
+```
+
+The first is the socket on the Mac. The second is the socket's path *inside* the VM, which
+Testcontainers mounts into its clean-up container; the Mac's path does not exist in there.
+
+`Cleansia.HostTests` boots several hundred hosts, and each one watches its appsettings files. On macOS a
+watcher is an FSEvents stream, and after a few hundred the system refuses new ones; a refused watcher
+reports a change at once, the configuration re-registers synchronously, and the test host dies of a
+stack overflow (a run stopped at test 289 of 428). The suite therefore switches to polling watchers before
+its first host starts (`PollingFileWatchers`, a module initializer setting
+`DOTNET_USE_POLLING_FILE_WATCHER`), so it runs to the end on a Mac with nothing set by hand. Linux CI
+uses inotify and never hit it.
+
+**Regenerating the web clients on a Mac** needs the APIs up, so this engine, and two more things since
+2026-10-05. The three `nswag-*.json` documents pin `"runtime": "Net100"`, the .NET the repo builds on:
+NSwag 14.7.1 refuses a document whose runtime differs from its own process's, and the `Net80` they
+pinned could not run where only .NET 10 is installed. And the client formatters rename with GNU sed's
+`\L` and `\U`, which macOS's own sed writes as a literal `L` or `U` while still exiting 0, mangling
+every name it renames; on macOS the formatters call `gsed` (`brew install gnu-sed`) and refuse with a
+message when it is missing. With the five APIs up, `npm run generate-clients` then regenerates all three
+clients byte-identical to the committed ones.
 
 ## Ports are pinned {#azurite-ports}
 
@@ -33,6 +80,17 @@ target fixed numbers:
 | Partner Mobile API | 5002 |
 | Customer API | 5003 |
 | Customer Mobile API | 5004 |
+
+**On a Mac, port 5000 is also AirPlay Receiver's.** From macOS 12 the system's AirPlay Receiver
+(`ControlCenter`) listens on 5000, and on 7000, on every interface, so `lsof -i :5000` names it even
+with nothing of ours running. It does not stop the Partner API: the AppHost binds the API to
+`localhost`, and a listener on the loopback address takes the loopback's connections from one on every
+interface, so `http://localhost:5000` reaches the API while it runs (checked on macOS 15.7 with a .NET
+listener on `127.0.0.1:5000` and `[::1]:5000`; the partner client regenerated through it). While the
+Partner API is **not** running, `localhost:5000` answers `403 Forbidden` with `Server: AirTunes/…`. That
+is not an authentication failure: it is the sign the API is down, and it is what the partner web's dev
+proxy, the partner NSwag run and `curl` all get. A tool that binds every interface on 5000 fails while
+AirPlay Receiver is on; it is switched off under System Settings → General → AirDrop & Handoff.
 
 ## Blob containers are declared, not created on demand {#blob-containers}
 

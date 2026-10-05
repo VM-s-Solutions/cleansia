@@ -128,7 +128,7 @@ private struct DeviceCard: View {
                     .fill(CleansiaColors.primaryContainer)
                     .frame(width: 44, height: 44)
                 Image(systemName: platformIcon(device.platform))
-                    .foregroundColor(CleansiaColors.primary)
+                    .foregroundColor(CleansiaColors.primaryIconOnContainer)
             }
             VStack(alignment: .leading, spacing: 2) {
                 HStack(spacing: Spacing.s) {

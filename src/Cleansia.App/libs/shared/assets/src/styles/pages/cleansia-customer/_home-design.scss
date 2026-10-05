@@ -559,11 +559,11 @@ button.cl-link {
 }
 
 // ---- The shared button, corrected ------------------------------------------
-// `<cleansia-button severity="primary">` paints PrimeNG's sky-500, and white on
-// sky-500 is 2.77 against a 4.5 floor. PrimeNG's dark theme separately repaints
-// the label navy, which put dark blue on blue at 2.31. Both are colour, both
-// are the same fix everywhere, and three page stylesheets had each grown a
-// private copy of it. Scoped to the customer app by this file's only importer.
+// `<cleansia-button severity="primary">` painted PrimeNG's sky-500 (white on it
+// 2.77) until the shared preset took the light primary to sky-600, as here.
+// PrimeNG's dark theme still repaints the fill sky-400 and the label navy, which
+// put dark blue on blue at 2.31, so the site keeps its one blue after dark too.
+// Scoped to the customer app by this file's only importer.
 .p-button.p-button-primary {
   background: #{$primary};
   border-color: #{$primary};

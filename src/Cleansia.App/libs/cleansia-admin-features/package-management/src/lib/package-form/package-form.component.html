@@ -10,7 +10,15 @@
             [outlined]="true"
             (onClick)="onCancel()"
           />
-          <cleansia-title [title]="pageTitle()" [level]="1" />
+          <cleansia-title
+            [title]="
+              (isEditMode()
+                ? 'pages.package_form.edit_title'
+                : 'pages.package_form.create_title'
+              ) | translate
+            "
+            [level]="1"
+          />
         </div>
       </div>
     </div>

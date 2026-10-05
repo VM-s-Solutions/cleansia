@@ -23,6 +23,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import cz.cleansia.core.format.formatOrderPrice
+import cz.cleansia.core.ui.theme.primaryText
 import cz.cleansia.partner.R
 import cz.cleansia.partner.api.model.OrderItem
 
@@ -60,7 +61,7 @@ fun PaymentCard(
                     label = stringResource(R.string.payment_tier_discount),
                     value = "-${formatOrderPrice(it, currencyCode)}",
                     emphasis = false,
-                    valueColor = MaterialTheme.colorScheme.primary,
+                    valueColor = primaryText(),
                 )
             }
             order.membershipDiscountAmount?.takeIf { it > 0 }?.let {
@@ -69,7 +70,7 @@ fun PaymentCard(
                     label = stringResource(R.string.payment_membership_discount),
                     value = "-${formatOrderPrice(it, currencyCode)}",
                     emphasis = false,
-                    valueColor = MaterialTheme.colorScheme.primary,
+                    valueColor = primaryText(),
                 )
             }
             order.promoDiscountAmount?.takeIf { it > 0 }?.let {
@@ -78,7 +79,7 @@ fun PaymentCard(
                     label = stringResource(R.string.payment_promo_discount),
                     value = "-${formatOrderPrice(it, currencyCode)}",
                     emphasis = false,
-                    valueColor = MaterialTheme.colorScheme.primary,
+                    valueColor = primaryText(),
                 )
             }
             Spacer(Modifier.height(10.dp))
@@ -140,7 +141,7 @@ private fun PaymentRow(
                 MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.ExtraBold)
             else
                 MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Medium),
-            color = if (emphasis) MaterialTheme.colorScheme.primary else valueColor,
+            color = if (emphasis) primaryText() else valueColor,
         )
     }
 }

@@ -42,7 +42,7 @@ struct JobRadiusControl: View {
         VStack(alignment: .leading, spacing: Spacing.xxs) {
             Text(L10n.JobRadius.value(form.kilometres))
                 .font(CleansiaTypography.titleLarge)
-                .foregroundColor(CleansiaColors.primary)
+                .foregroundColor(CleansiaColors.primaryText)
             Slider(
                 value: Binding(get: { Double(form.kilometres) }, set: onKilometresChange),
                 in: Double(JobRadiusBounds.minimumKm) ... Double(JobRadiusBounds.maximumKm),

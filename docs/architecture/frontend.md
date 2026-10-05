@@ -240,16 +240,55 @@ Each feature module follows the pattern: **Component + Facade + Models**. The Fa
 
 ## Theming
 
-PrimeNG is configured with a custom `CleansiaPreset` theme:
+PrimeNG is configured with a custom `CleansiaPreset` theme (`libs/shared/assets/src/lib/cleansia-preset.ts`),
+which all three apps read:
 
 ```typescript
 providePrimeNG({
   theme: {
     preset: CleansiaPreset,
-    options: { darkModeSelector: '.dark-mode' },
+    options: { darkModeSelector: '.dark-mode' }, // the customer site; partner and admin pass false
   },
 });
 ```
+
+The customer site switches to its dark theme with the `.dark-mode` class. The partner and admin sites
+pass `darkModeSelector: false`, so they have no dark theme.
+
+### The primary is sky-600 on all three sites {#web-primary}
+
+Since 2026-10-05 (owner decision) the preset's light primary is the brand blue the apps use, sky-600
+`#0284c7`, with white on it: a filled button, a checkbox, a selected date, a focus border and a tab
+strip's underline. Under the pointer it goes a step darker, to sky-700, and pressed to sky-800. Until
+then the preset left the primary on Aura's default, sky-500 `#0ea5e9`, so every filled button on the
+partner and admin sites was white on sky-500, 2.77:1 (the partner *Login*, the admin *Create*). White
+on sky-600 reads 4.10:1, the pair the apps' and the customer site's filled buttons already used. The
+customer site had painted its own filled buttons sky-600 in `_home-design.scss`, so its filled buttons
+look the same as before. What it leaves to the preset moved from sky-500 to sky-600 as on the other
+two sites: a ticked `p-checkbox` (the order wizard, the recurring wizard, an order's detail), a picked
+date and a focused field's border, each Aura's `{primary.color}`, and the cookie notice's *OK*
+(below). Its dark theme is untouched, and the primary there stays sky-400.
+
+Text drawn from the primary takes the text ink, `{primary.700}` (sky-700), in the light scheme, as
+[links and text buttons](#link-ink) do:
+
+- **A focused field's floating label** (`formField.floatLabelFocusColor`), which Aura inks sky-600,
+  4.10:1 on white.
+- **The open tab's label** (`tabs.tab.activeColor`), in the admin's tab strips, which was the sky-500
+  primary, 2.77:1. Its underline keeps the primary.
+
+The cookie notice's *OK* is a filled button on all three sites, with a gradient of its own in
+`cleansia-cookie-consent.component.scss`: sky-600 → sky-700, and sky-700 → sky-800 under the pointer,
+where it ran sky-500 → sky-600. Its dark-mode gradient is unchanged.
+
+Measured in Chromium on the running dev servers, at rest / under the pointer: the partner *Login* and
+the admin *Create* 2.77 / 4.10 → 4.10 / 5.93:1; the cookie notice's *OK*, at the light end of its
+gradient, 2.77 / 4.10 → 4.10 / 5.93:1; a focused floating label (the partner sign-in, the admin package
+form) 4.10 → 5.93:1; the admin's open tab 2.77 → 5.93:1, an inactive one 4.76:1 as before. The
+customer *Log In* reads 4.10 / 5.93:1 before and after. `cleansia-preset.spec.ts` pins the light
+primary and its two darker steps, the label and tab inks, the untouched dark theme and tab underline,
+and computes every light blue text ink in the preset at 4.5:1 or better on white from the preset's
+own ramp; `text-ink.spec.ts` pins the cookie notice's gradients in the partner and customer bundles.
 
 ### A blue slab on the customer site takes the card's ground as its ink {#heading-slab-ink}
 
@@ -351,6 +390,24 @@ button takes the button's ink, so no control shows two blues. The apps follow th
   white.
 - **The customer site's** links already took sky-700 ([above](#accent-text)); only its add-address
   row's hover moved.
+- **The partner order's package price** (`.cleansia-order-details__package-header .package-price`)
+  takes `--cleansia-primary-700` since a later change the same day, with the partner apps'
+  informational blue text (owner decision 2026-10-05,
+  [the partner app's other blue text](/mobile-app/patterns#brand-text-ink)): 4.10 → 5.93:1, beside a
+  name already on sky-700. A sweep of the compiled partner bundle found no other blue text under
+  4.5:1 but icons and two shared labels, the code dialog's *checking* line and the price form's
+  *Optional* badge (next). `.service-item__revenue`, which the finding named, styles nothing: the
+  dashboard's top-services revenue is a `<cleansia-label color="primary">`, slate on white.
+- **Two shared labels** (finding 2026-10-05). The code dialog's neutral status, *Checking the code…*
+  under the customer sign-up's referral code (`.cleansia-code-input-dialog__status--neutral` in
+  `cleansia-dialog.component.scss`), was sky-600 on a light-blue tint in both themes; it takes
+  `--cleansia-primary-700` in light mode and sky-300 `#7dd3fc` after dark, 3.73 → 5.41:1 and 2.83 →
+  6.97:1. The admin price form's *Optional* currency badge, on the package and the service forms
+  (`.currency-price-block__badge--optional` in `_form-page.scss`), was sky-500 text on white and takes
+  the text ink, 2.77 → 5.93:1; its see-through ground and outline still keep it quieter than the
+  *Required* badge (5.17:1). `text-ink.spec.ts` compiles the customer and admin bundles and pins both,
+  light and dark. The same dialog's success and error lines read under 4.5:1 too, and are not part of
+  this (reported 2026-10-05).
 
 Measured in Chromium on the running dev servers, at rest / under the pointer: a PrimeNG text, outlined
 or link button's label and icon 2.77 / 2.60 → 5.93 / 7.09:1 (a link under the pointer 7.56:1); the
@@ -359,8 +416,9 @@ forgot-password links 4.10 / 4.10 → 5.93 / 7.56:1; the breadcrumb 4.10 / 5.93 
 profile's consent link 2.60 / 5.57 → 5.57 / 7.09:1; the cookie notice's link 4.10 / 5.93 → 5.93 /
 7.56:1 in light mode and 3.59 / 2.47 → 8.81 / 11.06:1 in dark; *show help* 3.70 / 4.90 → 5.37 /
 6.25:1; a filter chip's × 3.84 → 5.57:1; the add-address row under the pointer 4.10 → 7.56:1.
-`cleansia-preset.spec.ts` pins the three inks and that the filled button and the dark theme are
-Aura's, and `text-ink.spec.ts` compiles the partner and customer stylesheets and pins every rule above.
+`cleansia-preset.spec.ts` pins the three inks and the untouched dark theme (and, since the primary
+moved, the sky-600 filled button, [above](#web-primary)), and `text-ink.spec.ts` compiles the partner
+and customer stylesheets and pins every rule above.
 
 ### A paused schedule's card steps back without fading its text {#paused-card}
 

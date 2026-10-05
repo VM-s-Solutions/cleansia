@@ -61,7 +61,7 @@ struct OrderAgainCard: View {
                         .frame(width: 44, height: 44)
                     Image(systemName: "arrow.clockwise")
                         .font(.system(size: 20))
-                        .foregroundColor(CleansiaColors.primary)
+                        .foregroundColor(CleansiaColors.primaryIconOnContainer)
                 }
                 VStack(alignment: .leading, spacing: Spacing.hair) {
                     Text(L10n.Home.orderAgainTitle)
@@ -212,7 +212,7 @@ private struct PopularPackageCard: View {
                         .frame(width: 40, height: 40)
                     Image(systemName: "bubbles.and.sparkles")
                         .font(.system(size: 18))
-                        .foregroundColor(CleansiaColors.primary)
+                        .foregroundColor(CleansiaColors.primaryIconOnContainer)
                 }
                 Text(package.localizedName(for: locale))
                     .font(CleansiaTypography.labelLarge)

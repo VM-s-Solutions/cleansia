@@ -57,6 +57,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import cz.cleansia.core.ui.components.CleansiaPrimaryButton
 import cz.cleansia.core.ui.theme.Spacing
+import cz.cleansia.core.ui.theme.primaryIconOnContainer
 import cz.cleansia.core.ui.theme.primaryText
 import cz.cleansia.partner.R
 import cz.cleansia.partner.data.invoices.InvoiceDetail
@@ -212,7 +213,7 @@ private fun HeroCard(invoice: InvoiceDetail) {
             Text(
                 text = stringResource(R.string.invoice_hero_total),
                 style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.SemiBold),
-                color = MaterialTheme.colorScheme.primary,
+                color = primaryText(),
             )
             Spacer(Modifier.height(2.dp))
             Text(
@@ -251,7 +252,7 @@ private fun BreakdownCard(invoice: InvoiceDetail) {
         Text(
             text = stringResource(R.string.invoice_breakdown_section),
             style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.SemiBold),
-            color = MaterialTheme.colorScheme.primary,
+            color = primaryText(),
         )
         Spacer(Modifier.height(Spacing.S))
 
@@ -307,7 +308,7 @@ private fun PeriodCard(
                 Text(
                     text = stringResource(R.string.invoice_period_label),
                     style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.SemiBold),
-                    color = MaterialTheme.colorScheme.primary,
+                    color = primaryText(),
                 )
                 Text(
                     text = period,
@@ -398,7 +399,7 @@ private fun ReferencesCard(
             Text(
                 text = stringResource(R.string.invoice_references_section),
                 style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.SemiBold),
-                color = MaterialTheme.colorScheme.primary,
+                color = primaryText(),
             )
         }
         Spacer(Modifier.height(Spacing.M))
@@ -461,7 +462,7 @@ private fun NotesCard(invoice: InvoiceDetail) {
             Text(
                 text = stringResource(R.string.invoice_notes),
                 style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.SemiBold),
-                color = MaterialTheme.colorScheme.primary,
+                color = primaryText(),
             )
         }
         Spacer(Modifier.height(Spacing.M))
@@ -592,7 +593,7 @@ private fun IconHalo(icon: ImageVector) {
         Icon(
             imageVector = icon,
             contentDescription = null,
-            tint = MaterialTheme.colorScheme.primary,
+            tint = MaterialTheme.colorScheme.primaryIconOnContainer,
             modifier = Modifier.size(22.dp),
         )
     }

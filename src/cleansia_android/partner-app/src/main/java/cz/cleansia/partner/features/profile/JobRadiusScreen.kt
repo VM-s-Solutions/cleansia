@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Slider
 import androidx.compose.material3.Switch
+import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -23,6 +24,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import cz.cleansia.core.ui.components.CleansiaPrimaryButton
 import cz.cleansia.core.ui.state.ActionState
 import cz.cleansia.core.ui.theme.Spacing
+import cz.cleansia.core.ui.theme.primaryText
 import cz.cleansia.partner.R
 import cz.cleansia.partner.ui.theme.CleansiaPartnerTheme
 import kotlin.math.roundToInt
@@ -121,7 +123,15 @@ private fun LimitToggleRow(
             modifier = Modifier.weight(1f),
         )
         Spacer(Modifier.width(Spacing.M))
-        Switch(checked = enabled, onCheckedChange = onChange, enabled = interactive)
+        Switch(
+            checked = enabled,
+            onCheckedChange = onChange,
+            enabled = interactive,
+            colors = SwitchDefaults.colors(
+                uncheckedThumbColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                uncheckedBorderColor = MaterialTheme.colorScheme.onSurfaceVariant,
+            ),
+        )
     }
 }
 
@@ -135,7 +145,7 @@ private fun RadiusSlider(
         Text(
             text = stringResource(R.string.job_radius_value, radiusKm),
             style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
-            color = MaterialTheme.colorScheme.primary,
+            color = primaryText(),
         )
         Slider(
             value = radiusKm.toFloat(),

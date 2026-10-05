@@ -24,6 +24,7 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.foundation.text.KeyboardOptions
+import cz.cleansia.core.ui.theme.primaryText
 
 /**
  * Float-label text field — matches the web's `cleansia-text-input [floatVariant]="'on'"` pattern.
@@ -87,7 +88,7 @@ fun CleansiaTextField(
         colors = OutlinedTextFieldDefaults.colors(
             focusedBorderColor = MaterialTheme.colorScheme.primary,
             unfocusedBorderColor = MaterialTheme.colorScheme.outline,
-            focusedLabelColor = MaterialTheme.colorScheme.primary,
+            focusedLabelColor = primaryText(),
             cursorColor = MaterialTheme.colorScheme.primary,
             focusedContainerColor = if (transparentContainer) Color.Transparent
             else MaterialTheme.colorScheme.surface,

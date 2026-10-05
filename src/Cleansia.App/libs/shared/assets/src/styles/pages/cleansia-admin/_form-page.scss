@@ -147,10 +147,11 @@ cleansia-multiselect .p-floatlabel-on label {
     color: var(--cleansia-primary-700);
 
     // An inactive currency may be priced and is not required, so its badge must not read as an
-    // unmet obligation: same size, quieter ground.
+    // unmet obligation: same size, quieter ground. The quiet is in the ground, not the ink: its
+    // words keep the text ink, Sky700 (Sky500 read 2.8).
     &--optional {
       background: transparent;
-      color: var(--cleansia-primary-500);
+      color: var(--cleansia-primary-700);
       border: 1px solid var(--cleansia-primary-200);
     }
   }

@@ -52,6 +52,7 @@ import androidx.compose.ui.unit.dp
 import cz.cleansia.core.format.formatOrderPrice
 import cz.cleansia.core.ui.components.CleansiaChip
 import cz.cleansia.core.ui.components.CleansiaTextLink
+import cz.cleansia.core.ui.theme.primaryText
 import cz.cleansia.customer.R
 import cz.cleansia.customer.ui.theme.WarningStar
 
@@ -199,6 +200,7 @@ fun CancelOrderSheet(
                     colors = TextFieldDefaults.colors(
                         focusedContainerColor = MaterialTheme.colorScheme.surface,
                         unfocusedContainerColor = MaterialTheme.colorScheme.surface,
+                        focusedLabelColor = primaryText(),
                     ),
                 )
             }

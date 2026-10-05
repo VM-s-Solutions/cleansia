@@ -63,10 +63,38 @@ class PrimaryTextTest {
         val fill = Regex("""(?:background\(|color = )MaterialTheme\.colorScheme\.primaryContainer(?![.\w])""")
         val offenders = sources.flatMap { file ->
             fill.findAll(file.text).filter { match ->
-                textsOnFill(file.text, match.range.first).any { BLUE_TEXT.containsMatchIn(it) }
+                drawnOnFill("Text", file.text, match.range.first).any { BLUE_TEXT.containsMatchIn(it) }
             }.map { match -> "${file.module}/${file.rel}:${file.text.substring(0, match.range.first).count { it == '\n' } + 1}" }
         }
         assertEquals(emptyList<String>(), offenders)
+    }
+
+    /**
+     * An icon on the primaryContainer disc (F2): the dark primary, sky-400, is 2.77:1 on its own container,
+     * under the 3:1 a graphic needs, so dark mode draws onPrimaryContainer there; light mode keeps the primary.
+     */
+    @Test
+    fun `an icon on the primary container reads 3 to 1 in both schemes, light mode unchanged`() {
+        assertEquals(light.primary, light.primaryIconOnContainer)
+        assertEquals(dark.onPrimaryContainer, dark.primaryIconOnContainer)
+        assertTrue(contrast(dark.primary, dark.primaryContainer) < 3.0)
+        listOf(light, dark).forEach { scheme ->
+            val ratio = contrast(scheme.primaryIconOnContainer, scheme.primaryContainer)
+            assertTrue("${"%.2f".format(ratio)}:1", ratio >= 3.0)
+        }
+    }
+
+    /** No icon drawn straight on a primaryContainer fill takes the primary or the text blue: both are sky-400 in dark mode. */
+    @Test
+    fun `no icon on a primary-container fill takes the primary`() {
+        val fill = Regex("""(?:background\(|color = )MaterialTheme\.colorScheme\.primaryContainer(?![.\w])""")
+        val offenders = sources.flatMap { file ->
+            fill.findAll(file.text).filter { match ->
+                drawnOnFill("Icon", file.text, match.range.first).any { BLUE_TINT.containsMatchIn(it) }
+            }.map { match -> "${file.module}/${file.rel}:${file.text.substring(0, match.range.first).count { it == '\n' } + 1}" }
+        }
+        assertEquals(emptyList<String>(), offenders)
+        assertTrue(sources.count { it.text.contains("tint = MaterialTheme.colorScheme.primaryIconOnContainer") } >= 15)
     }
 
     @Test
@@ -122,6 +150,20 @@ class PrimaryTextTest {
                 )
         }
         assertEquals(emptyList<String>(), offenders.map { it.where })
+    }
+
+    /**
+     * A focused field's floating label is text (F3). Material draws it in the primary unless told otherwise,
+     * 4.10:1 on white in light mode, so every labelled field — the shared CleansiaTextField and
+     * CleansiaPhoneInput, and the few screens that use Material's field directly — gives it the text blue.
+     */
+    @Test
+    fun `no focused field label is left on the primary`() {
+        val offenders = (calls("OutlinedTextField") + calls("TextField")).filter { call ->
+            LABEL_ARG.containsMatchIn(call.args) && !FOCUSED_LABEL_INK.containsMatchIn(call.args)
+        }
+        assertEquals(emptyList<String>(), offenders.map { it.where })
+        assertTrue(calls("OutlinedTextField").count { LABEL_ARG.containsMatchIn(it.args) } >= 6)
     }
 
     @Test
@@ -182,6 +224,30 @@ class PrimaryTextTest {
         assertTrue(source("partner-app", "features/orders/PhotosSection.kt").contains("val tint = primaryText()"))
     }
 
+    /**
+     * The partner app's informational blue text — card eyebrows, pay amounts, the selected segment, step
+     * counters, initials, status words — reads in the text blue as its links do (owner, 2026-10-05, Y3); an
+     * icon on the same line takes the same ink. Fills, borders and standalone icons keep the primary.
+     */
+    @Test
+    fun `no partner-app text draws in the bare primary`() {
+        val offenders = sources.filter { it.module == "partner-app" }.flatMap { file ->
+            calls("Text", file.text, file).filter { NAMES_PRIMARY.containsMatchIn(it.args) }
+        }
+        assertEquals(emptyList<String>(), offenders.map { it.where })
+        // Texts whose ink arrives through a value rather than their own `color =`.
+        listOf(
+            "features/orders/PaymentCard.kt" to Regex("""valueColor = primaryText\(\)"""),
+            "features/orders/OrdersListScreen.kt" to Regex("""starts_soon\),\s*tint = primaryText\(\)"""),
+            "features/dashboard/DashboardScreen.kt" to Regex("""val color = if \(up\) primaryText\(\)"""),
+            "features/profile/DocumentsSectionScreen.kt" to Regex("""document_status_approved\) to primaryText\(\)"""),
+            "features/orders/OrderStatusProgressBar.kt" to Regex("""StepState\.Current -> primaryText\(\)"""),
+            "features/profile/LegalDocumentsScreen.kt" to Regex("""tint = if \(accepted\) primaryText\(\)"""),
+            "features/orders/PendingOffersCard.kt" to Regex("""Icons\.Outlined\.Schedule,\s*contentDescription = null,\s*tint = primaryText\(\)"""),
+            "features/orders/PendingOffersScreen.kt" to Regex("""Icons\.Outlined\.Schedule,\s*contentDescription = null,\s*tint = primaryText\(\)"""),
+        ).forEach { (path, ink) -> assertTrue(path, ink.containsMatchIn(source("partner-app", path))) }
+    }
+
     // ── source reading ──
 
     private class SourceFile(val module: String, val rel: String, val text: String)
@@ -229,18 +295,18 @@ class PrimaryTextTest {
         }.toList()
 
     /**
-     * The argument lists of the texts drawn on the fill at [at]: the Text calls in the trailing lambda of the
-     * call whose argument list holds it — or, when that call is a `Text` wearing the fill in its own
-     * `Modifier.background(...)` (CleansiaSectionHeader's badge), that Text itself.
+     * The argument lists of the [name] calls (texts, icons) drawn on the fill at [at]: those in the trailing
+     * lambda of the call whose argument list holds it — or, when that call is itself a [name] wearing the fill
+     * in its own `Modifier.background(...)` (CleansiaSectionHeader's badge), that call.
      */
-    private fun textsOnFill(text: String, at: Int): List<String> {
+    private fun drawnOnFill(name: String, text: String, at: Int): List<String> {
         var open = enclosingParen(text, at)
         if (callee(text, open) == "background") open = enclosingParen(text, open)
         val argsEnd = closing(text, open + 1, '(', ')')
-        if (callee(text, open) == "Text") return listOf(text.substring(open + 1, argsEnd - 1))
+        if (callee(text, open) == name) return listOf(text.substring(open + 1, argsEnd - 1))
         if (!text.substring(argsEnd).trimStart().startsWith("{")) return emptyList()
         val brace = text.indexOf('{', argsEnd)
-        return calls("Text", text.substring(brace + 1, closing(text, brace + 1, '{', '}') - 1)).map { it.args }
+        return calls(name, text.substring(brace + 1, closing(text, brace + 1, '{', '}') - 1)).map { it.args }
     }
 
     /** The `(` of the call whose argument list holds [at]. */
@@ -288,6 +354,11 @@ class PrimaryTextTest {
         val BARE_PRIMARY_CONTENT = Regex("""contentColor\s*=\s*$BARE""")
         val BARE_PRIMARY_COLOR = Regex("""(?:^|[\s,(])color\s*=\s*[^\n]*$BARE""")
         val BARE_PRIMARY_TINT = Regex("""\btint\s*=\s*$BARE""")
+        /** The primary under any of the names a screen holds the scheme by (`colors.primary` in a `when` too). */
+        val NAMES_PRIMARY = Regex("""\b(?:colorScheme|colors|scheme)\.primary(?![A-Za-z])(?!\.copy)""")
+        val LABEL_ARG = Regex("""(?:^|[\s,(])label\s*=""")
+        val FOCUSED_LABEL_INK = Regex("""\bfocusedLabelColor\s*=\s*primaryText\(\)""")
+        val BLUE_TINT = Regex("""\btint\s*=\s*[^\n]*(?:$BARE|(?<![\w.])primaryText\(\)|colorScheme\.primaryText\b)""")
         val BLUE_TEXT = Regex("""(?:^|[\s,(])color\s*=\s*[^\n]*(?:$BARE|(?<![\w.])primaryText\(\)|colorScheme\.primaryText\b)""")
     }
 }

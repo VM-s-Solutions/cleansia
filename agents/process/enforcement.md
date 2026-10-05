@@ -5,20 +5,25 @@ plan and the current state for turning the team's conventions into **machine-che
 consistency survives even when an agent (or human) doesn't read carefully. The principle:
 **deterministic beats diligent.** Anything a tool can check, a tool should check.
 
-> ## ⚠️ WHAT CAN ACTUALLY FAIL A BUILD — corrected 2026-08-13. Read this before trusting any `T1-CI` token below.
+> ## ⚠️ WHAT CAN ACTUALLY FAIL A BUILD — corrected 2026-08-13, re-checked against `.github/workflows/` 2026-10-05. Read this before trusting any `T1-CI` token below.
 >
-> **Three checkers gate a pull request. Five do not.**
+> **Four checkers gate a pull request. Five do not.**
 >
 > | Checker | Gates a PR? | Where |
 > |---|---|---|
 > | `check-docs-refs.mjs` | **yes, blocking** | `docs-ci.yml` — with its own self-test blocking first |
 > | `check-catalog-claims.mjs` | **yes, blocking** | `docs-ci.yml` — with its own self-test blocking first |
 > | `check-ios-symbols.mjs` | **yes, blocking** | `ios-symbols-ci.yml` — with its own self-test blocking first |
+> | `check-booking-policy-parity.mjs` | **yes, blocking** | `booking-policy-parity.yml` — with its own self-test blocking first |
 > | `check-consistency.mjs` | no | on demand only |
 > | `check-module-boundaries.mjs` | no | on demand only |
 > | `check-available-status-parity.mjs` | no | on demand only |
 > | `check-nx-project-registration.mjs` | no | on demand only |
 > | `check-backlog-consistency.mjs` | no | on demand only |
+>
+> One more runs in CI without gating a pull request: `deploy-pro.yml` runs `check-legal-drafts.mjs`, its
+> self-test first, before a production deploy. The other scripts under `agents/tools/` are measuring
+> tools, not gates, and no workflow runs them.
 >
 > This banner previously read *"FOUR CI GATES WERE REMOVED"* and named `catalog-claims.yml`,
 > `module-boundaries.yml`, `offerability-parity.yml` and `nx-project-registration.yml`. **It was wrong in
@@ -29,13 +34,15 @@ consistency survives even when an agent (or human) doesn't read carefully. The p
 > had been met for a phase without anyone noticing, which is the failure mode this whole document is
 > about.
 >
-> **How to read a `T1-CI` token below.** If it names a checker in the top two rows, it is accurate. If it
+> **How to read a `T1-CI` token below.** If it names a checker in a `yes, blocking` row, it is accurate. If it
 > names one of the other five, or cites `catalog-claims.yml` / `module-boundaries.yml` /
 > `offerability-parity.yml` / `nx-project-registration.yml` — **none of which exist** — treat the rule as
 > `T2-ADVISORY`: a convention a human upholds. `conventions.md` §*"The price of a law"* is explicit that a
 > tier naming a mechanism that cannot fail a build is not `T1-CI`. The 53 individual tokens are not
 > rewritten here, because that would assert a tier nobody has re-decided; **this table is the
-> correction**, and it applies to all of them at once.
+> correction**, and it applies to all of them at once. The *citations* were corrected (2026-10-05): a
+> sentence on this page or under `agents/knowledge/` that named one of those four files as running a
+> checker now names the workflow that does, or says that none does.
 >
 > **What the five ungated checkers would still catch, so the trade stays visible:** customer→partner
 > module-boundary regressions, offerability-status drift between the C# source of truth and eight client
@@ -50,7 +57,7 @@ consistency survives even when an agent (or human) doesn't read carefully. The p
 > count of tree instances** — is what this paragraph now obeys, as the iOS row below already does.
 >
 > **Retires when:** the set of `node agents/tools/check-*.mjs` steps under `.github/workflows/` stops
-> matching the two `yes, blocking` rows above.
+> matching the four `yes, blocking` rows above and `deploy-pro.yml`'s legal-drafts steps.
 
 ## What's mechanical today
 
@@ -61,8 +68,8 @@ consistency survives even when an agent (or human) doesn't read carefully. The p
 | Formatting/style (C#) | `/.editorconfig` (root) | file-scoped namespaces, braces, unused usings, nullability warnings | **added — surfaces as warnings** |
 | Formatting/style (TS) | `src/Cleansia.App/.editorconfig` + ESLint (`eslint.config.mjs`) | TS formatting + lint | **present** |
 | Project-specific rules | `agents/tools/check-consistency.mjs` | the A/B/C/D/E rules in `knowledge/consistency.md` no linter knows | **added — run by Reviewer** (in **no** CI workflow yet — verified: zero hits under `.github/`) |
-| Cross-stack offerability parity (ADR-0037 D7 layer 2) | `agents/tools/check-available-status-parity.mjs` (CI: `offerability-parity.yml`) | the canonical C# `OrderAvailability.OfferableStatuses` vs all 8 partner-client status literals — **query literals AND take-button gates** — across TS, Kotlin **and Swift** | **live in CI — T1-CI** (its own repo-root workflow; baseline now empty — all 8 surfaces gated strictly) |
-| Catalog-claim liveness (T-0574) | `agents/tools/check-catalog-claims.mjs` (CI: `catalog-claims.yml`) | the three writer obligations of `conventions.md` §"A claim about the tree carries its own retirement condition" — ADR status agreement, `Retires when:` conditions, `file:line` resolution — over `agents/knowledge/**` + `agents/process/**`, triggered on the **cited** trees (`src/**`, `docs/**`) as well as the citing one | **`T1-CI`** on both halves — corpus scan promoted off `--warn` when the sweep drove the baseline 16 → 0; self-test blocking from day one (zero-baseline by construction). A **reach failure exits 1 even under `--warn`**, so no invocation of this tool can report clean while blind. C3B stays advisory and is not in the exit code. |
+| Cross-stack offerability parity (ADR-0037 D7 layer 2) | `agents/tools/check-available-status-parity.mjs` (no workflow runs it) | the canonical C# `OrderAvailability.OfferableStatuses` vs all 8 partner-client status literals — **query literals AND take-button gates** — across TS, Kotlin **and Swift** | **on demand only — `T2-ADVISORY`.** Its repo-root workflow, `offerability-parity.yml`, was deleted on 2026-08-11 by owner instruction and nothing replaced it (the banner above). Baseline empty — all 8 surfaces compared strictly when it is run |
+| Catalog-claim liveness (T-0574) | `agents/tools/check-catalog-claims.mjs` (CI: `docs-ci.yml`) | the three writer obligations of `conventions.md` §"A claim about the tree carries its own retirement condition" — ADR status agreement, `Retires when:` conditions, `file:line` resolution — over `agents/knowledge/**` + `agents/process/**`, triggered on the **cited** trees (`src/**`, `docs/**`) as well as the citing one | **`T1-CI`** on both halves — corpus scan promoted off `--warn` when the sweep drove the baseline 16 → 0; self-test blocking from day one (zero-baseline by construction). A **reach failure exits 1 even under `--warn`**, so no invocation of this tool can report clean while blind. C3B stays advisory and is not in the exit code. |
 | iOS (Swift) | `swiftformat --lint` + `swiftlint lint --strict` (pinned 0.60.1 / 0.65.0) + 3 XCTest schemes (CI: `ios-ci.yml`) | formatting, lint, and whatever the guard tests assert. **`check-consistency.mjs` covers NO Swift** — its walker globs `.cs`/`.ts`/`.kt` only | **live in CI — T1-CI** (lint + tests). **Project-specific rules exist**, declared under `custom_rules:` in `src/cleansia_ios/.swiftlint.yml` — each `severity: error` and therefore CI-blocking under `--strict`. **Read the file for the roster; it is not enumerated here.** This sentence said "two" for one afternoon: it was corrected from "none" at 17:05 and a third rule landed at 18:32, which is the decay class `conventions.md` §"A claim about the tree carries its own retirement condition" exists to stop — and its own shape rule, *never enumerate a count of tree instances*, is what this sentence now obeys. ⚠️ **A `custom_rule` only reaches what `included:` lints** (`:1-10`): `CleansiaCore/Sources`, `CleansiaCore/Tests`, `CleansiaPartner/Sources`, `CleansiaPartner/Tests`, `CleansiaPartner/NotificationService`, `CleansiaCustomer/Sources`, `CleansiaCustomer/Tests`, `CleansiaCustomer/LiveActivity`, `CleansiaCustomer/NotificationService` (the app tests and the three extension folders since F-I12, `6541b256b`, 2026-10-02) — a folder missing from that list is outside every rule |
 
 ## The consistency checker — `agents/tools/check-consistency.mjs`
@@ -175,30 +182,35 @@ that is a live defect, ADR-0037 D0 row 10).
 
 ```bash
 node agents/tools/check-available-status-parity.mjs             # strict — any divergence exits 1
-node agents/tools/check-available-status-parity.mjs --baseline  # what CI runs (see below)
+node agents/tools/check-available-status-parity.mjs --baseline  # strict except the baseline (see below)
 node agents/tools/check-available-status-parity.test.mjs        # the guard's own acceptance test
 ```
 
-Three properties make it a real T1-CI gate rather than the "test with no trigger" the panel rejected:
+Three properties were to make it a real T1-CI gate rather than the "test with no trigger" the panel
+rejected. **The first is gone, so today it is that test:** no workflow runs it, and its tier is
+`T2-ADVISORY` (the gate table at the top of this page).
 
-- **It is outside the Nx workspace and has its own repo-root workflow** (`offerability-parity.yml`,
-  triggered on `Cleansia.Core.Domain` + `Cleansia.App` + both mobile trees). `frontend-ci`'s
-  `nx affected -t test` selects **zero** projects on a Kotlin/Swift/C#-only diff, and even when
-  selected Nx would serve a **cached green** because those trees are not declarable inputs;
-  `backend-ci` excludes both mobile trees. Being uncacheable is structural here, not configured.
+- **It is outside the Nx workspace, so only a repo-root workflow of its own can gate it.** That
+  workflow, `offerability-parity.yml` (triggered on `Cleansia.Core.Domain` + `Cleansia.App` + both
+  mobile trees), was deleted on 2026-08-11 by owner instruction, and none runs the checker today.
+  `frontend-ci`'s `nx affected -t test` selects **zero** projects on a Kotlin/Swift/C#-only diff, and
+  even when selected Nx would serve a **cached green** because those trees are not declarable inputs;
+  `backend-ci` excludes both mobile trees. Being uncacheable is structural here, not configured. A
+  workflow for it would take the shape `booking-policy-parity.yml` has, the one live gate of this kind.
 - **A moved or renamed surface is a hard `P0` failure, never a silent pass.** Every surface is
   anchored, and an anchor that matches nothing — or matches but yields zero status tokens — fails.
   A green run means the tool *read* all ten files.
-- **Its acceptance test runs in CI.** `check-available-status-parity.test.mjs` copies the ten files to
-  a throwaway root, mutates one literal, and asserts red — including one scenario that widens the
+- **Its acceptance test runs wherever the checker is run** — in no CI job today.
+  `check-available-status-parity.test.mjs` copies the ten files to a throwaway root, mutates one
+  literal, and asserts red — including one scenario that widens the
   **canonical C#** floor and asserts the mobile clients go red, which is what proves the check parses
   the domain rule instead of carrying its own copy of the answer.
 
 **The baseline is empty, and that is what "it self-invalidates" bought.** It held four entries —
 ADR-0037 D4 rows 5/9/10/11, the partner-web half of T-0530 — each pinning a surface by its **exact**
 divergent set. An entry matches only that exact set, so a baselined surface that drifts further **or
-that gets fixed** both turn CI red; the four were therefore deleted in the same change that fixed the
-four surfaces, which is the only exit an entry has. All eight surfaces are now gated strictly. The
+that gets fixed** both turn a run red; the four were therefore deleted in the same change that fixed the
+four surfaces, which is the only exit an entry has. All eight surfaces are now compared strictly. The
 summary line always prints the count; the tool never prints a bare `OK`.
 
 ## The catalog-claim liveness check — `agents/tools/check-catalog-claims.mjs`
@@ -239,13 +251,15 @@ loosely mis-attributed line numbers across table rows, and a mis-bound finding i
 of a finding. Deviating form 4 (*"there are exactly N …"*) is **not** mechanized: separating a count of
 tree instances from a count of domain facts (*"two independent axes"*) needs a reader.
 
-**Shape — cross-stack, its own repo-root workflow.** No stack's CI watches `agents/`, so no existing
-workflow can host this: `backend-ci` / `frontend-ci` / `ios-ci` / `android-ci` all trigger on `src/`
-subtrees, and `nx affected` selects zero projects for a markdown-only diff. Same structural argument
-ADR-0037 D7 recorded for `check-available-status-parity.mjs`, and the same answer — a dependency-free
-Node script **outside the Nx workspace** with its own workflow, triggered on `agents/**` **and** on the
-`src/` trees the citations point into (a citation rots when the *cited* file changes, not when the
-catalog does — that trigger is the whole check, not a nicety).
+**Shape — cross-stack, in a repo-root workflow that watches `agents/`.** No stack's CI watches
+`agents/`, so none of them can host this: `backend-ci` / `frontend-ci` / `ios-ci` / `android-ci` all
+trigger on `src/` subtrees, and `nx affected` selects zero projects for a markdown-only diff. Same
+structural argument ADR-0037 D7 recorded for `check-available-status-parity.mjs`, and the same answer —
+a dependency-free Node script **outside the Nx workspace**, run by a workflow triggered on `agents/**`
+**and** on the `src/` trees the citations point into (a citation rots when the *cited* file changes, not
+when the catalog does — that trigger is the whole check, not a nicety). That workflow was its own
+`catalog-claims.yml` until 2026-08-11; since 2026-08-13 it is `docs-ci.yml`, which runs on every pull
+request and on a push to `master` that touches `docs/**`, `src/**` or `agents/**`.
 
 **Anti-vacuity (ADR-0032 D3), as built.** Every run prints what it FOUND, not only what failed — the
 corpus, ADR and indexed-file counts, and the claims found per obligation — and five things make an
@@ -266,7 +280,8 @@ commit. Corpus reach at that commit: 34 pages, 46 ADRs, 6470 indexed files, 20 A
 citations. The corpus scan shipped `--warn` because this document's own rule of thumb forbids blocking
 over a dirty baseline.
 
-**It is now `OK: C1 0 · C2 0 · C3 0`, so `--warn` came off `catalog-claims.yml`.** Until 2026-10-04
+**It is now `OK: C1 0 · C2 0 · C3 0`, so `--warn` came off `catalog-claims.yml`** (deleted 2026-08-11;
+the step has run, without `--warn`, in `docs-ci.yml` since 2026-08-13). Until 2026-10-04
 that line began `FAILED:` whatever its counts, so a clean run announced a failure and exited 0; the
 word is computed now, as `check-backlog-consistency.mjs`'s is. Corpus reach at promotion: 34 pages,
 48 ADRs, 6494 indexed files, 22 status claims, 574 citations. Both halves of the workflow block. The
@@ -298,7 +313,8 @@ the next person to move it is told what else moves.
 1. ✅ the checker + its acceptance test (`check-catalog-claims.mjs` / `.test.mjs`, 22 scenarios);
 2. ✅ the **sweep** — deliberately NOT done inside T-0574, because fixing the corpus in the same change
    would have hidden whether the checker works;
-3. ✅ the repo-root workflow (`.github/workflows/catalog-claims.yml`), now blocking;
+3. ✅ the CI steps, now blocking: the checker in `.github/workflows/docs-ci.yml` since 2026-08-13 and its
+   self-test since 2026-08-14 (its own `catalog-claims.yml` was deleted on 2026-08-11);
 4. ✅ **reviewer-check 5 "Catalog-edit routing"** now carries a fifth test: re-read the banners and
    citations of the **whole file** a hunk touches, not just the hunk — the sixth instance was a false
    sentence that survived a pass over its own page — and paste the checker's summary line into the
@@ -348,7 +364,7 @@ not of *which tool* runs it** — a `check-consistency.mjs` rule promoted into a
   iOS: a SwiftLint `custom_rules` entry, or an XCTest guard in one of the three schemes CI runs.
   **Cross-stack** (a rule no single stack's CI can see): a plain Node script outside the Nx workspace
   with **its own repo-root workflow** triggered on every tree it reads — the
-  `check-available-status-parity.mjs` / `offerability-parity.yml` shape. Do not reach for a Jest spec:
+  `check-booking-policy-parity.mjs` / `booking-policy-parity.yml` shape. Do not reach for a Jest spec:
   ADR-0037 D7 records why one cannot work here (`nx affected` selects nothing, and Nx caches a green).
 - **T2-ADVISORY** — reports, never sets the exit code. `check-consistency.mjs` sits here today on
   **every** stack (it is in no `.github/` workflow), including its warn-only rules (E9).
@@ -370,7 +386,7 @@ not of *which tool* runs it** — a `check-consistency.mjs` rule promoted into a
       **be careful** — which is what the six already had. The answer is mechanical and specified as a
       new `T1-CI` gate: `conventions.md` §*"A claim about the tree carries its own retirement
       condition"* + `consistency.md` §*"Catalog claims about the tree"*, enforced by
-      `agents/tools/check-catalog-claims.mjs` (CI: `catalog-claims.yml`, T-0574) — **`T1-CI`**,
+      `agents/tools/check-catalog-claims.mjs` (CI: `docs-ci.yml`, T-0574) — **`T1-CI`**,
       blocking, on both the corpus scan and the self-test. See §*"The catalog-claim liveness check"*
       below for the baseline it was promoted over and the three kinds of rot the sweep had to tell
       apart to get there.

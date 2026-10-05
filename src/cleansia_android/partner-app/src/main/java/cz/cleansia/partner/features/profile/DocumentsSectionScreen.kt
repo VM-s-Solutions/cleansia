@@ -60,6 +60,7 @@ import cz.cleansia.core.ui.components.CleansiaErrorState
 import cz.cleansia.core.ui.components.CleansiaTextButton
 import cz.cleansia.core.ui.components.CleansiaTextField
 import cz.cleansia.core.ui.theme.Spacing
+import cz.cleansia.core.ui.theme.primaryText
 import cz.cleansia.partner.R
 import cz.cleansia.partner.api.model.DocumentStatus
 import cz.cleansia.partner.api.model.DocumentType
@@ -524,7 +525,7 @@ private fun DocumentRow(
 private fun StatusBadge(status: DocumentStatus?) {
     val (label, color) = when (status) {
         DocumentStatus._1 -> stringResource(R.string.document_status_pending) to MaterialTheme.colorScheme.tertiary
-        DocumentStatus._2 -> stringResource(R.string.document_status_approved) to MaterialTheme.colorScheme.primary
+        DocumentStatus._2 -> stringResource(R.string.document_status_approved) to primaryText()
         DocumentStatus._3 -> stringResource(R.string.document_status_rejected) to MaterialTheme.colorScheme.error
         null -> "—" to MaterialTheme.colorScheme.onSurfaceVariant
     }

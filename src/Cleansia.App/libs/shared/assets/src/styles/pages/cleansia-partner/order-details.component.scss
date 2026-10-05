@@ -272,11 +272,12 @@
       margin: 0;
     }
 
+    // A figure, read rather than pressed: the text ink, Sky700, beside the Sky700 name.
     .package-price {
       font-size: 1.3rem;
       font-weight: 700;
       font-variant-numeric: tabular-nums;
-      color: var(--cleansia-primary-600);
+      color: var(--cleansia-primary-700);
     }
 
     @media (max-width: 768px) {

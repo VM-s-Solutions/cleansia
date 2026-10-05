@@ -39,7 +39,7 @@ private struct HeadlineEarningsCard: View {
             VStack(alignment: .leading, spacing: Spacing.hair) {
                 Text(L10n.Earnings.currentPeriod)
                     .font(CleansiaTypography.labelMedium)
-                    .foregroundColor(CleansiaColors.primary)
+                    .foregroundColor(CleansiaColors.primaryText)
                 Text(EarningsFormat.wholeMoney(stats.currentPeriodEarnings, currencyCode: stats.currencyCode))
                     .cleansiaFont(CleansiaTypography.headlineMedium)
                     .foregroundColor(CleansiaColors.onSurface)
@@ -145,7 +145,7 @@ private struct PayPeriodCardView: View {
                 VStack(alignment: .leading, spacing: Spacing.hair) {
                     Text(L10n.Earnings.payPeriod)
                         .font(CleansiaTypography.labelMedium)
-                        .foregroundColor(CleansiaColors.primary)
+                        .foregroundColor(CleansiaColors.primaryText)
                     Text(rangeLine)
                         .font(CleansiaTypography.titleMedium)
                         .foregroundColor(CleansiaColors.onSurface)
@@ -193,7 +193,7 @@ private struct CashHeldCard: View {
                 VStack(alignment: .leading, spacing: Spacing.hair) {
                     Text(L10n.Earnings.cashHeldTitle)
                         .font(CleansiaTypography.labelMedium)
-                        .foregroundColor(CleansiaColors.primary)
+                        .foregroundColor(CleansiaColors.primaryText)
                     Text(L10n.Earnings.cashHeldSubtitle)
                         .font(CleansiaTypography.labelSmall)
                         .foregroundColor(CleansiaColors.onSurfaceVariant)

@@ -32,6 +32,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
+import cz.cleansia.core.ui.theme.primaryIconOnContainer
 import cz.cleansia.core.ui.theme.primaryTextOnContainer
 import cz.cleansia.customer.R
 import cz.cleansia.core.format.formatOrderDateTime
@@ -356,7 +357,7 @@ internal fun AssignedCleanersCard(employees: List<AssignedEmployeeDto>) {
                         Icon(
                             Icons.Outlined.Phone,
                             contentDescription = null,
-                            tint = MaterialTheme.colorScheme.primary,
+                            tint = MaterialTheme.colorScheme.primaryIconOnContainer,
                             modifier = Modifier.size(18.dp),
                         )
                     }

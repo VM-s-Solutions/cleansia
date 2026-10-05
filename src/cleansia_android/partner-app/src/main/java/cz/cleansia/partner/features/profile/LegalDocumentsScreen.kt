@@ -48,6 +48,7 @@ import cz.cleansia.core.ui.components.CleansiaPrimaryButton
 import cz.cleansia.core.ui.components.HtmlContentView
 import cz.cleansia.core.ui.state.ActionState
 import cz.cleansia.core.ui.theme.Spacing
+import cz.cleansia.core.ui.theme.primaryText
 import cz.cleansia.partner.R
 import cz.cleansia.partner.api.model.LegalDocumentType
 import cz.cleansia.partner.data.profile.CleanerLegalDocument
@@ -169,7 +170,7 @@ private fun AcceptanceLine(document: CleanerLegalDocument) {
         Icon(
             imageVector = if (accepted) Icons.Outlined.CheckCircle else Icons.Outlined.ErrorOutline,
             contentDescription = null,
-            tint = if (accepted) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.error,
+            tint = if (accepted) primaryText() else MaterialTheme.colorScheme.error,
             modifier = Modifier.size(14.dp),
         )
         Spacer(Modifier.width(4.dp))
@@ -185,7 +186,7 @@ private fun AcceptanceLine(document: CleanerLegalDocument) {
                 else -> stringResource(R.string.legal_documents_awaiting)
             },
             style = MaterialTheme.typography.bodySmall.copy(fontWeight = FontWeight.Medium),
-            color = if (accepted) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.error,
+            color = if (accepted) primaryText() else MaterialTheme.colorScheme.error,
         )
     }
 }

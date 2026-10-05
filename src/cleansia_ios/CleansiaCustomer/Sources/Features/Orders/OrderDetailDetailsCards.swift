@@ -242,7 +242,7 @@ private struct CleanerRow: View {
                 Link(destination: url) {
                     Image(systemName: "phone.fill")
                         .font(.system(size: 16))
-                        .foregroundColor(CleansiaColors.primary)
+                        .foregroundColor(CleansiaColors.primaryIconOnContainer)
                         .frame(width: 36, height: 36)
                         .background(CleansiaColors.primaryContainer, in: Circle())
                 }

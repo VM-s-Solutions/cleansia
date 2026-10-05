@@ -644,7 +644,7 @@ buttons included, and keep the primary for fills, borders, standalone icons and 
 |---|---|---|---|
 | iOS | `CleansiaColors.primaryText` (Core) | sky-700 `#0369A1`, 5.93:1 on white | sky-400, the primary, unchanged |
 | Android | `ColorScheme.primaryText`, or `primaryText()` for the theme in force (`:core`, `cz.cleansia.core.ui.theme`, `BrandColors.kt`) | sky-700 `#0369A1` | the theme's primary, sky-400, unchanged |
-| Web | `--cl-accent-text` on the customer site; the shared PrimeNG preset's text, outlined and link buttons on all three sites | sky-700; a link or a text button goes to sky-800 under the pointer | sky-300 on the customer site → [Blue text on the customer site](/architecture/frontend#accent-text), [links and text buttons](/architecture/frontend#link-ink) |
+| Web | `--cl-accent-text` on the customer site; the shared PrimeNG preset's text, outlined and link buttons, focused floating label and open tab on all three sites | sky-700; a link or a text button goes to sky-800 under the pointer | sky-300 on the customer site → [Blue text on the customer site](/architecture/frontend#accent-text), [links and text buttons](/architecture/frontend#link-ink), [the primary](/architecture/frontend#web-primary) |
 
 The two texts the finding named moved on both apps: the package details sheet's price, 4.10 to 5.93:1,
 and the schedule form's default-address badge, 3.88 to 5.62:1 on iOS (on 40 % sky-100) and 3.38 to
@@ -688,7 +688,8 @@ the partner app alike:
 - **The avatar's initials** on iOS are sky-700 on the white disc in both apps
   (`CleansiaColors.primaryTextOnFixedWhite`, 5.93:1 in both modes); `onFixedWhite`, the sky-600 the
   partner app still drew, is gone. Android's customer avatar already drew sky-700. Android's partner
-  avatar is a different design, initials in the primary on a 40 % container disc, and is unchanged.
+  avatar is a different design, initials on a 40 % container disc; they kept the primary here and
+  take the text ink since the partner sweep below.
 
 **One ink per control.** An icon inside a link or a button takes its label's ink, so no control shows
 two blues. **What keeps the primary**: filled buttons (a white label on sky-600), fills and washes,
@@ -697,12 +698,13 @@ tick box and the wordmark. Dark mode is unchanged on both platforms, the text in
 primary. On iOS a circular spinner with no tint of its own follows the shell's tint, so it is sky-700
 in light mode now, and so are the accents of iOS 16–18's compact date picker. Blue text in the partner
 app that is neither a link nor a button, section labels, pay amounts and the selected segment among
-them, still draws the primary (reported 2026-10-05).
+them, kept the primary in this change, and takes the text ink since the partner sweep below.
 
 Measured in light mode, before and after, from the token values: on white (cards, sheets, the
 dropdown, the avatar disc, a legal page) 4.10 to 5.93:1, on the page 3.91 to 5.67:1, on a picked
 chip's 12 % wash 3.52 to 5.10:1, on the contact chips' 10 % wash 3.61 to 5.23:1, on the add-photo
-tile's 8 % 3.70 to 5.37:1, on Material's dialog surface 3.34 to 4.84:1, on iOS 26's tab bar 3.58 to
+tile's 8 % 3.70 to 5.37:1, on Material's dialog surface 3.34 to 4.84:1 (5.42:1 on Android's slate
+dialog since [the surface roles](#surface-roles) were set), on iOS 26's tab bar 3.58 to
 5.19:1 and on iOS 16–18's 3.89 to 5.64:1. Read off iOS 26.3 screenshots, which run lighter (below): a
 text link 3.18 to 4.43:1, a picked chip 2.83 to 3.94:1 and the selected tab 3.21 to 4.51:1. Measured
 on the Android emulator: a dialog's text button 3.34 to 4.84:1, a picked chip on the page 3.37 to
@@ -727,6 +729,59 @@ lists every site (iOS `688cf6160`, Android `48f0749c8`).
   *DEFAULT* badge 3.37 to 4.89:1, the *MOST POPULAR* badge 3.51 to 5.08:1 and *Add new address* 3.91
   to 5.67:1.
 
+**The partner app's other blue text takes it too** (owner decision 2026-10-05: *"Go"*). After the
+links and buttons above, about forty labels in the partner app that are neither still drew the
+primary, on both platforms: 4.10:1 on a white card, 3.91:1 on the page and 3.51:1 on a 12 % wash of
+itself, and on an offer the clock sat beside a sky-700 call to action. Since 2026-10-05 the partner
+app's informational blue text takes the text ink as well, on Android and iOS alike, and fills,
+borders, standalone icons and filled buttons keep the primary:
+
+- **Card eyebrows and section labels**: the dashboard's *This week* and the hero row's label;
+  earnings' current period, pay period and cash held; the invoices summary and each card's total; the
+  invoice's hero, breakdown, period, references and notes; period pay's hero, breakdown and jobs, and
+  each job's fee caption. On Android also the dashboard's next-job and available-work labels and the
+  greeting's line for today.
+- **Pay amounts**: the orders list's available, active and history rows and its summary figures, the
+  pending offer's total, the work contract's reward, and the payment card's discounts and total. On
+  iOS also the compact order row and the order detail's pay.
+- **Badges and clocks**: *Starts soon* and the month's change on the dashboard, whose washes follow
+  their ink, and an offer's *Yours until …* line with its clock (on Android both clocks, on the card
+  and on the offers screen).
+- **Onboarding and profile**: the onboarding chain's step counter and the current step's name (the
+  step's node keeps the primary), the checklist's done count and its hint, the legal *accepted* line and its
+  check, the registration lock's *Complete* (on Android also its progress line), the job radius's
+  distance and the address screen's reasons.
+- **Android only**: the orders list's selected segment, the language picker's selected row, a
+  document's *Approved*, the progress bar's current step and the avatar's initials on Profile and
+  personal details. iOS draws the segments as a system segmented control, marks the picked language
+  with a checkmark icon, which keeps the primary, and already drew its avatar initials in sky-700.
+
+Measured in light mode from the token values: on a white card 4.10 to 5.93:1, on the page 3.91 to
+5.67:1, *Starts soon* on its wash 3.51 to 4.97:1 (4.98:1 on iOS), an offer's clock on its 8 % tint
+3.37 to 4.89:1 on Android and 3.56 to 5.15:1 on iOS, and the month's change 3.37 to 4.78:1 on Android.
+Dark mode is unchanged, the text ink there being the primary. Read off the iOS 26.3 screenshots, which
+run lighter, *This week* went from 3.30 to 4.60:1 and the month's change from 2.92 to 4.01:1. iOS's
+partner `TextInkTests` scans the partner sources so that no `Text` names the primary in its own
+modifier chain (31 did) and pins the texts whose ink arrives through a value; Android's
+`PrimaryTextTest` (`:core`) reads the partner module so that no `Text` takes the bare primary, under
+any name a screen holds the scheme by (`colorScheme`, `colors`, `scheme`), and pins the same
+value-carried sites (iOS `f61aec326`, Android `d605de047` and `b50c9044f`). The partner website's one
+blue text under 4.5:1, an order's package price, moved with it
+([links and text buttons](/architecture/frontend#link-ink)).
+
+**A focused field's floating label takes it too** (finding 2026-10-05). The shared text field and phone
+field, `CleansiaTextField` and `CleansiaPhoneInput` in iOS Core and in Android's `:core`, drew the
+focused label in the primary: 4.10:1 on the field's white and 3.91:1 on the page under a see-through
+field. In both apps, on both platforms, it now takes the text ink, 5.93:1 and 5.67:1, while the focus
+border and the caret keep the primary; a disabled field or one in error is unchanged, and so is dark
+mode, the text ink being the primary there. Four customer screens on Android draw Material's field
+directly, the promo code and referral code sheets, a cancellation's notes and a review's comment, and
+take the same label ink. iOS's `ComponentTextInkTests` pins both fields' focused label and border;
+Android's `PrimaryTextTest` fails a labelled `OutlinedTextField` or `TextField` in any module that does
+not set `focusedLabelColor = primaryText()`. Read off the iOS 26.3 screenshots, the label went from
+3.30 to 4.60:1 (iOS `463c44776`, Android `a0406cc0d`). The partner and admin websites' floating label
+moved with [the web's primary](/architecture/frontend#web-primary).
+
 **Blue text on the light-blue container has an ink of its own in dark mode** (finding 2026-10-05).
 `primaryContainer` is sky-100 in light mode and sky-700 in dark, and the text ink on it reads 5.17:1 in
 light mode but 2.77:1 in dark, sky-400 on sky-700. Text drawn straight on that container takes
@@ -745,13 +800,37 @@ primary, 3.57:1 in light mode and 2.77:1 in dark, and read 5.17:1 in both. Left 
 they already clear 4.5:1: Android's default-address badges, which sit on a 12 % primary wash and not on
 the container (5.43:1 in dark), the fills washed from the container at 35–60 % (4.89–6.03:1), the
 schedule form's badge on iOS's 40 % container (4.89:1), and the web's badges (5.17:1 or more in both
-themes, [Blue text on the customer site](/architecture/frontend#accent-text)). Icons on the container,
-which need 3:1, are not part of this, and in dark mode the primary's glyphs on its discs read 2.77:1
-(reported 2026-10-05). iOS's `ComponentTextInkTests` checks the token at 4.5:1 or more on the container
-in both modes, and `BrandTextInkTests` and the partner's `TextInkTests` pin the sites; Android's
-`PrimaryTextTest` pins the token's two values and reads all three modules, so that no `Text` drawn
-straight on a `primaryContainer` fill takes the text ink or the primary (iOS `235136257`, Android
-`59c1d05f9`).
+themes, [Blue text on the customer site](/architecture/frontend#accent-text)). Icons on the container
+are not part of this; they have a token of their own (below). iOS's `ComponentTextInkTests` checks the
+token at 4.5:1 or more on the container in both modes, and `BrandTextInkTests` and the partner's
+`TextInkTests` pin the sites; Android's `PrimaryTextTest` pins the token's two values and reads all
+three modules, so that no `Text` drawn straight on a `primaryContainer` fill takes the text ink or the
+primary (iOS `235136257`, Android `59c1d05f9`).
+
+**An icon on the light-blue container reads 3:1 or more in dark mode too** (finding 2026-10-05). An
+icon needs 3:1, and the primary's glyph on a `primaryContainer` disc read 3.57:1 in light mode (sky-600
+on sky-100) but 2.77:1 in dark (sky-400 on sky-700). An icon drawn on a full container disc or card
+now takes `CleansiaColors.primaryIconOnContainer` (iOS Core) or `ColorScheme.primaryIconOnContainer`
+(Android `:core`, `BrandColors.kt`), the icon twin of the text token above: the primary in light mode,
+so light mode is unchanged, and sky-100 `#E0F2FE` (`onPrimaryContainer`) in dark, 5.17:1 on sky-700. It
+takes:
+
+- in the customer app, on both platforms: Home's recent booking, *Order again* and popular package
+  cards, the leading icon on Payments, the platform icon on the devices list and the call button on an
+  order; on Android also the option discs of Market, Language and Appearance and the Notifications
+  rows; on iOS also Edit Profile's booking hint and the pin on a saved address's row, in the address
+  manager and the booking's address chooser (Android draws those rows on a 60 % container, which
+  already reads 4.07:1 or more);
+- in the partner app, on both platforms: the icon halo on earnings, invoices, an invoice and period
+  pay, the dashboard's weekly earnings disc and the platform icon on the devices list; on Android also
+  the registration lock's hero and step halos, which iOS draws on the page.
+
+A wash of the container at 30–60 % already reads 4.07:1 or more in dark mode and keeps the primary.
+iOS's `ComponentTextInkTests` measures the token at 3:1 or more on the container in both modes, 5.17:1
+in dark, and the bare primary under 3:1 there, and `BrandTextInkTests` and the partner's
+`TextInkTests` pin each site; Android's `PrimaryTextTest` measures the token in both schemes and reads
+all three modules, so that no `Icon` drawn on a `primaryContainer` fill takes the primary or the text
+ink (iOS `55c63e444`, Android `425dda614`).
 
 **A dispute's status pill reads 4.5:1 for every status, in both modes** (finding 2026-10-05). The pill
 writes its label in the status's ink on a 14 % wash of that ink over the card, on the list row and the
@@ -776,6 +855,78 @@ from 2.51 to 5.04:1 in dark; measured on the Android emulator, *Pending* went fr
 the card in both modes (iOS `96a1ea10e`, Android `a6b1b9942`). The web's pills already read 4.5:1 or
 more: the customer's 4.79:1 or more in both themes, the admin's shared status badge 4.51:1 at its
 lowest, the warning tone.
+
+**An order's and an invoice's status pill read 4.5:1 too, in both modes** (finding 2026-10-05). The
+two platforms draw these pills differently, and that split predates the fix:
+
+- **Android, customer**: an order's pill writes its label in the status's colour on a 14–16 % wash of
+  it, the dispute pill's shape, and the timeline's dot takes the same colour. *New* and *Pending*
+  (amber-500) and *In progress* (sky-400) read 1.93:1 in light mode, *Confirmed* (sky-600) 3.43:1 in
+  light and 3.04:1 in dark, and *Completed* and *Cancelled* 2.57 and 2.67:1 in dark.
+  `orderStatusColor` now goes through `orderStatusInk(status, scheme)` (`OrderFormatters.kt`), a light
+  and a dark ink per status:
+
+  | Status | Light mode | Dark mode |
+  |---|---|---|
+  | *New*, *Pending* | amber-800 `#92400E` | amber-500 |
+  | *Confirmed* | the text ink, sky-700 | the text ink, sky-400 |
+  | *On the way*, *In progress* | sky-800 `#075985` | sky-300 `#7DD3FC` |
+  | *Completed* | green-800 `#166534` | green-400 `#4ADE80` |
+  | *Cancelled*, and a status the app does not know | slate-600 `#475569` | slate-300 `#CBD5E1` |
+
+  The lowest now reads 4.68:1, *Confirmed* on its 16 % wash in light mode. On the emulator, light mode:
+  *New* 1.93 to 5.69:1, *Confirmed* 3.43 to 4.82:1, *On the way* and *In progress* 1.93 to 6.06:1,
+  *Completed* 4.14 to 5.72:1, *Cancelled* 3.99 to 6.12:1; dark: *Confirmed* 3.04 to 5.18:1,
+  *Completed* 2.57 to 6.21:1, *Cancelled* 2.67 to 6.92:1. `OrderStatusInkTest` checks every status,
+  both washes and both schemes.
+- **Android, partner**: `OrderStatusPill` and `InvoiceStatusBadge` are solid pills, the same in both
+  schemes. *Confirmed* and *Approved* are white on sky-700 (4.10 to 5.93:1; they were on sky-600),
+  *In progress* sky-950 on sky-400 (4.42 to 6.48:1; the label was sky-900) and *Cancelled* slate-600
+  on slate-100 (4.34 to 6.92:1; the label was slate-500). *Pending*, *Paid*, *Disputed* and *Rejected*
+  already passed. `StatusPillContrastTest` checks every pair.
+- **iOS, both apps' order pills**: no change. Core's `OrderStatusBadge` writes the label in
+  `onSurface` on a 14 % wash of the status colour, 13.46:1 or more in light mode and 8.55:1 in dark;
+  the failing pairs above exist only on Android.
+- **iOS, the partner invoice's *Approved***: it was a solid primary pill, white on sky-600 in light
+  mode (4.10:1) and sky-900 on sky-400 in dark (4.42:1). It is white on sky-700 in light mode, 5.93:1,
+  and sky-950 on sky-400 in dark, 6.48:1. Dark mode keeps the sky-400 fill because iOS's *Pending*
+  sits on `primaryContainer`, sky-700 there, so a sky-700 *Approved* matched it exactly (1.00:1 fill
+  on fill) and the two read apart only by their words; it is 2.77:1 now. Android's *Approved* is
+  sky-700 in both schemes, which it can afford because its *Pending* is a light sky-100 pill in both.
+  The partner's `TextInkTests` checks every invoice status, and none, at 4.5:1 or more in both modes,
+  and that *Approved*'s fill differs from *Pending*'s.
+
+The web's pills already read 4.5:1 or more, measured on the compiled bundles: the partner and admin
+`<cleansia-status-badge>` 4.51:1 at its lowest (warning) and 4.57:1 (success), the customer's order
+rows and dispute pills 4.79:1 or more in both themes, and the tracking page's hero pill 5.17:1 or more
+(Android `a9b89279d`, iOS `81ac1eeae` and `3cfefcde5`).
+
+## Android's dialogs and menus sit on slate {#surface-roles}
+
+Material 3 draws a dialog, a menu, a date picker and a search bar on its surface-container roles, and
+neither Android app's colour scheme set them, so each fell back to Material's baseline: an
+`AlertDialog` and a `DatePickerDialog` on `#ECE6F0`, a `DropdownMenu` on `#F3EDF7` and a switch's off
+track on `#E6E0E9`, a faint purple grey beside the
+sky and slate of everything else (finding 2026-10-05; the snackbar's `inverseSurface` had been pinned
+for the same clash). Since 2026-10-05 both schemes in both apps set the whole ramp from slate:
+
+| Role | Light | Dark |
+|---|---|---|
+| `surfaceContainerLowest` | white | slate-900 |
+| `surfaceContainerLow` | slate-50 | slate-800 |
+| `surfaceContainer` (a menu), `surfaceContainerHigh` (a dialog, a date picker) | slate-100 `#F1F5F9`, the light grey of an iOS alert | `#283548`, the scheme's raised slate, one step above the slate-800 card |
+| `surfaceContainerHighest` (a switch's off track) | slate-200 | slate-700 |
+| `surfaceBright` | white | slate-700 |
+| `surfaceDim` | slate-200 | slate-900 |
+
+The bottom sheets already passed their surface and are unchanged. Every text a dialog or a menu carries
+reads 4.5:1 or more on its container, the lowest being the secondary text on the dark dialog, 4.84:1,
+and the text ink reads 5.42:1 on the light dialog. `SurfaceRolesTest` in each app requires every
+surface role to be one of the app's slates, the dialog and menu containers above, and 4.5:1 for
+`onSurface`, `onSurfaceVariant`, the text ink and the error colour on both; the partner app's
+`LightColors` and `DarkColors` became `internal`, as the customer app's were, so the test can read them
+(`7871948ce`). Material's other baseline roles are not covered by this: the partner scheme does not
+set `tertiary`, which some partner screens read (reported 2026-10-05).
 
 ## Every map is quiet, with one Cleansia pin {#maps}
 

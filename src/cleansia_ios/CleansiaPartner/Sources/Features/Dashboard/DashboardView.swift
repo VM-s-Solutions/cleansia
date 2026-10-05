@@ -360,7 +360,7 @@ private struct HeroRowCard: View {
                     if let label {
                         Text(label)
                             .font(CleansiaTypography.labelMedium)
-                            .foregroundColor(CleansiaColors.primary)
+                            .foregroundColor(CleansiaColors.primaryText)
                     }
                     Text(title)
                         .font(CleansiaTypography.titleMedium)

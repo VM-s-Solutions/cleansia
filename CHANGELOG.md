@@ -557,6 +557,14 @@ need backfilling.
 
 ### Changed
 
+- **Customer iOS — a schedule offers no *Edit* while your Plus benefits are paused.** When a Plus
+  renewal payment fails, your benefits are paused until it goes through or you cancel, and a schedule
+  cannot be changed meanwhile. The iOS app still offered *Edit* on each schedule, and *Change the
+  schedule* on one that can no longer be paid in cash, and saving the change was then refused. It now
+  hides them, as Android does, and a schedule that includes a service no longer offered says so
+  without *edit to update*. You can still pause, resume and delete a schedule. (Owner decision
+  2026-10-05.)
+
 - **Customer, cleaner and admin, in Slovak — a package is a *balík*.** The apps called a package
   *balíček* in Slovak: on Home, in the booking and its *In your package* questions, on an order, in a
   schedule and in the package errors, and in the cleaner's app's package error. The customer, cleaner
@@ -1072,6 +1080,68 @@ need backfilling.
 
 ### Fixed
 
+- **Customer and admin websites — two more blue labels read clearly.** While the website checks the
+  referral code you type at sign-up, *Checking the code…* was a light blue on a light-blue band, 3.7:1,
+  and 2.8:1 in dark mode. In the admin's package and service forms, the *Optional* tag beside a
+  currency's price was 2.8:1. Both now take the deeper blue of the other blue text, 5.4:1 and 5.9:1,
+  and the checking line a light blue in dark mode, 7.0:1. (Finding 2026-10-05.)
+
+- **Admin — the package form's title follows a language switch.** Switching the admin's language
+  with the package form open left its title, *Create Package* or *Edit Package*, in the old language
+  until the form was opened again; the rest of the form already switched. The title now switches with
+  it. (Finding 2026-10-05.)
+
+- **Customer and cleaner, Android — dialogs and menus are the app's grey, not a purple one.** Every
+  question the Android apps ask, every menu, the date picker and a switch that is off sat on a faint
+  purple grey that matched nothing else in the apps. They now sit on the same cool grey as the
+  rest of the app, light in light mode and a raised dark slate in dark mode, close to how iOS shows
+  its alerts and menus. (Finding 2026-10-05.)
+
+- **Customer and cleaner, Android and iOS — the label of the field you are typing in reads clearly.**
+  While you type in a field, its label sits above it in blue, and that blue was faint in light mode,
+  4.1:1 on the field. It is now the deeper blue of the other blue text, 5.9:1, in both apps, the promo
+  code, referral code, cancellation notes and review fields on Android included. The field's blue
+  outline is unchanged, and so is dark mode. (Finding 2026-10-05.)
+
+- **Customer and cleaner, Android and iOS — icons on a light-blue circle stand out in dark mode.** In
+  dark mode the blue icons inside the light-blue circles and cards, on Home, Payments, the list of
+  your devices, an order's call button, the cleaner's earnings and invoices and, on Android, the
+  Language, Market, Appearance and Notifications settings and the cleaner's registration steps, were
+  light blue on a darker blue, 2.8:1. They are now a very pale blue there, 5.2:1. Light mode is
+  unchanged. (Finding 2026-10-05.)
+
+- **Customer and cleaner, Android and iOS — an order's and an invoice's status reads clearly.** On
+  Android the status on a customer's order was faint: *New* and *In progress* read 1.9:1 in light
+  mode, *Confirmed* 3.4:1, and *Completed* and *Cancelled* about 2.6:1 in dark mode. Every status now
+  reads 4.5:1 or more in both modes, in a deeper amber, blue, green or grey in light mode and a lighter
+  one in dark. In the cleaner's app *Confirmed* on an order (Android) and *Approved* on an invoice
+  (Android and iOS) were white on the lighter brand blue, 4.1:1, and on Android *In progress* and
+  *Cancelled* were just under the contrast small text needs; they now read 5.9:1 or more. The
+  customer's statuses on iOS and every status on the websites already read clearly. (Finding
+  2026-10-05.)
+
+- **Cleaner Android, iOS and website — the blue labels in the cleaner's app are easier to read.** Blue
+  text in the cleaner's app that is not a link was still the lighter brand blue, faint in light mode:
+  the labels on the dashboard, earnings, invoice and pay cards, the pay on each job in the orders list,
+  on an offer and in the contract, *Starts soon*, the month's change on the dashboard, an offer's
+  *Yours until …* and its clock, which sat beside a darker button, the onboarding step and its count,
+  the checklist's progress, the *accepted* line on a legal document and the job radius's distance,
+  and on Android the picked orders tab, the picked language and a cleaner's initials. They now take the
+  deeper blue of the other blue text in light mode, as the links already did, and on the cleaner
+  website so does a package's price on an order. Buttons, fills, borders and icons keep the brand
+  blue, and dark mode is unchanged. (Owner decision 2026-10-05.)
+
+- **Cleaner and admin websites — buttons are the brand blue, and a focused field's label and the open
+  tab read clearly.** The filled buttons on the cleaner and admin websites, *Log in* and *Create* among
+  them, were a lighter blue than everywhere else, with their white text at 2.8:1. They are now the
+  brand blue of the apps and the customer website, 4.1:1, and a shade darker under the pointer; so is
+  the *OK* on the cookie notice, on all three websites. The label of the field you are typing in, and
+  on the admin website the label of the open tab, now take the deeper blue of the other blue text,
+  5.9:1, where they read 4.1:1 and 2.8:1. On the customer website the filled buttons look the same as
+  before, since they were already this blue; a ticked box, a picked date and the border of the field
+  you are in take the brand blue there too, as the cookie notice's *OK* does, and its dark mode is
+  unchanged. (Owner decision 2026-10-05.)
+
 - **Customer Android and iOS — the clock reads clearly over Profile's header.** In light mode the
   clock, signal and battery were faint on the light blue top of Profile's header (white on iOS, dark
   grey on Android), below the contrast small text needs. Profile's header now starts a shade darker
@@ -1152,7 +1222,7 @@ need backfilling.
   shows an error for it. Its card on the list of schedules now says *Includes a service no longer
   offered — edit to update*, on the website, Android and iOS alike, and on the website that card
   shows no price. On the apps a card that offers no *Edit*, because the customer's Plus has lapsed
-  (on Android also while its benefits are paused), says only *Includes a service no longer offered*. Opening it to edit removes the service, now on Android as on iOS and the website,
+  or its benefits are paused, says only *Includes a service no longer offered*. Opening it to edit removes the service, now on Android as on iOS and the website,
   and says *Some of this schedule's choices are no longer offered and were removed*. It used to say
   they were not offered at this address, though nobody had changed the address, and on the website the
   service was usually not removed at all. When you do move the schedule to an address in another

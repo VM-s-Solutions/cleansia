@@ -98,6 +98,7 @@ import cz.cleansia.core.format.formatOrderDateTime
 import cz.cleansia.core.format.formatOrderPrice
 import cz.cleansia.core.ui.components.CleansiaChip
 import cz.cleansia.core.ui.components.SudsRefreshIndicator
+import cz.cleansia.core.ui.theme.primaryIconOnContainer
 import cz.cleansia.core.ui.theme.primaryText
 import cz.cleansia.customer.core.market.MarketListItem
 import cz.cleansia.customer.core.market.MarketState
@@ -1532,7 +1533,7 @@ private fun OrderAgainCard(order: OrderListItemDto, onClick: () -> Unit) {
                 .background(MaterialTheme.colorScheme.primaryContainer, CircleShape),
             contentAlignment = Alignment.Center,
         ) {
-            Icon(Icons.Outlined.Refresh, null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(22.dp))
+            Icon(Icons.Outlined.Refresh, null, tint = MaterialTheme.colorScheme.primaryIconOnContainer, modifier = Modifier.size(22.dp))
         }
         Spacer(Modifier.width(12.dp))
         Column(modifier = Modifier.weight(1f)) {
@@ -1745,7 +1746,7 @@ private fun PopularPackageCard(
             Icon(
                 Icons.Outlined.CleaningServices,
                 null,
-                tint = MaterialTheme.colorScheme.primary,
+                tint = MaterialTheme.colorScheme.primaryIconOnContainer,
                 modifier = Modifier.size(20.dp),
             )
         }
@@ -1854,7 +1855,7 @@ private fun RecentBookingRow(
             Icon(
                 Icons.Outlined.CleaningServices,
                 null,
-                tint = MaterialTheme.colorScheme.primary,
+                tint = MaterialTheme.colorScheme.primaryIconOnContainer,
                 modifier = Modifier.size(20.dp),
             )
         }

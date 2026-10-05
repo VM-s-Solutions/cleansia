@@ -55,6 +55,7 @@ import cz.cleansia.core.ui.components.CleansiaPrimaryButton
 import cz.cleansia.core.ui.components.CleansiaTextButton
 import cz.cleansia.core.ui.state.ActionState
 import cz.cleansia.core.ui.theme.Spacing
+import cz.cleansia.core.ui.theme.primaryIconOnContainer
 import cz.cleansia.core.ui.theme.primaryTextOnContainer
 import cz.cleansia.partner.R
 import cz.cleansia.partner.core.devices.UserDeviceDto
@@ -314,7 +315,7 @@ private fun IconHalo(icon: ImageVector) {
         Icon(
             imageVector = icon,
             contentDescription = null,
-            tint = MaterialTheme.colorScheme.primary,
+            tint = MaterialTheme.colorScheme.primaryIconOnContainer,
             modifier = Modifier.size(22.dp),
         )
     }

@@ -73,6 +73,7 @@ import cz.cleansia.core.settings.AppLocale
 import cz.cleansia.core.ui.components.CleansiaTextButton
 import cz.cleansia.core.ui.components.SudsRefreshIndicator
 import cz.cleansia.core.ui.theme.Spacing
+import cz.cleansia.core.ui.theme.primaryIconOnContainer
 import cz.cleansia.core.ui.theme.primaryText
 import cz.cleansia.partner.LocalAppSettings
 import cz.cleansia.partner.R
@@ -274,7 +275,7 @@ private fun LockHeroIcon() {
         Icon(
             imageVector = Icons.Outlined.Lock,
             contentDescription = null,
-            tint = MaterialTheme.colorScheme.primary,
+            tint = MaterialTheme.colorScheme.primaryIconOnContainer,
             modifier = Modifier.size(36.dp),
         )
     }
@@ -368,7 +369,7 @@ private fun ProgressCard(
                 totalSteps,
             ),
             style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.SemiBold),
-            color = MaterialTheme.colorScheme.primary,
+            color = primaryText(),
             textAlign = TextAlign.Center,
             modifier = Modifier.fillMaxWidth(),
         )
@@ -415,7 +416,7 @@ private fun IconHalo(icon: ImageVector) {
         Icon(
             imageVector = icon,
             contentDescription = null,
-            tint = MaterialTheme.colorScheme.primary,
+            tint = MaterialTheme.colorScheme.primaryIconOnContainer,
             modifier = Modifier.size(22.dp),
         )
     }
@@ -524,7 +525,7 @@ private fun StepRowView(step: StepRow, onFixStep: (NavRoute) -> Unit) {
                     step.status == StepStatus.Done -> Text(
                         text = stringResource(R.string.registration_lock_step_complete),
                         style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.primary,
+                        color = primaryText(),
                     )
                     isActionable -> Text(
                         text = stringResource(ctaLabelRes),

@@ -40,6 +40,7 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import cz.cleansia.core.ui.theme.Poppins
+import cz.cleansia.core.ui.theme.primaryIconOnContainer
 import cz.cleansia.customer.R
 import cz.cleansia.customer.core.market.MarketListItem
 import cz.cleansia.customer.core.market.MarketState
@@ -133,7 +134,7 @@ private fun MarketRow(
             Icon(
                 Icons.Outlined.Map,
                 null,
-                tint = MaterialTheme.colorScheme.primary,
+                tint = MaterialTheme.colorScheme.primaryIconOnContainer,
                 modifier = Modifier.size(18.dp),
             )
         }

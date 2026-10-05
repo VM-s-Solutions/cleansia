@@ -12,6 +12,11 @@ public enum CleansiaColors {
     /// light mode, as `primaryText` (5.17:1 on sky-100), and sky-100 in dark mode, where the container is
     /// sky-700 and `primaryText`'s sky-400 reads 2.77:1 (5.17:1).
     public static let primaryTextOnContainer = Color.dynamic(light: Palette.sky700, dark: Palette.sky100)
+    /// The brand blue for an ICON on `primaryContainer` — a halo, a row's leading disc, a round call button:
+    /// the primary in light mode (sky-600 on sky-100, 3.57:1), sky-100 in dark mode, where the container is
+    /// sky-700 and the primary's sky-400 reads 2.77:1, under the 3:1 a graphic needs (5.17:1). Android's
+    /// `primaryIconOnContainer` is the same pair.
+    public static let primaryIconOnContainer = Color.dynamic(light: Palette.sky600, dark: Palette.sky100)
     public static let onPrimaryContainer = Color.dynamic(light: Palette.sky900, dark: Palette.sky100)
 
     public static let secondary = Color.dynamic(light: Palette.sky400, dark: Palette.sky300)

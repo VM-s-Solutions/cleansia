@@ -52,16 +52,7 @@ val ErrorBg = Color(0xFFFEE2E2)    // red-100
 val ErrorText = Color(0xFFB91C1C)  // red-700
 val WarningStar = Color(0xFFF59E0B) // amber-500
 
-// ─── Order status pills ───
-val StatusPendingBg = Sky100
-val StatusPendingText = Sky700
-val StatusConfirmedBg = Sky600
-val StatusConfirmedText = Color.White
-val StatusInProgressBg = Sky400
-val StatusInProgressText = Sky900
-val StatusCompletedBg = SuccessBg
-val StatusCompletedText = SuccessText
-val StatusCancelledBg = Slate100
-val StatusCancelledText = Slate500
-val StatusFailedBg = ErrorBg
-val StatusFailedText = ErrorText
+// ─── Status inks — a pill's label on its own wash, light mode's darker and dark mode's lighter step ───
+val Amber800 = Color(0xFF92400E)
+val Green800 = Color(0xFF166534)
+val Green400 = Color(0xFF4ADE80)

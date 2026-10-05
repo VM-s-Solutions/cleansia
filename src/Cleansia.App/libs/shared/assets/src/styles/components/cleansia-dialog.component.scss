@@ -189,9 +189,11 @@ $primary-hover: #0284c7;
       font-size: 1rem;
     }
 
+    // The "checking…" line is blue text on a light-blue tint: the text ink, Sky700, not the brand
+    // Sky600 (4.1 on white, less on the tint). After dark it is Sky300, below.
     &--neutral {
       background: rgba(56, 189, 248, 0.12);
-      color: #0284c7;
+      color: var(--cleansia-primary-700);
     }
 
     &--success {
@@ -241,5 +243,9 @@ $primary-hover: #0284c7;
         i { color: #38bdf8; }
       }
     }
+  }
+
+  .cleansia-code-input-dialog__status--neutral {
+    color: #7dd3fc;
   }
 }

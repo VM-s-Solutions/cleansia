@@ -43,6 +43,7 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.foundation.text.KeyboardOptions
+import cz.cleansia.core.ui.theme.primaryText
 import cz.cleansia.customer.R
 import cz.cleansia.customer.core.referral.ReferralValidationError
 import cz.cleansia.customer.ui.theme.ErrorText
@@ -133,6 +134,7 @@ fun ReferralCodeBottomSheet(
                     focusedBorderColor = borderColor,
                     unfocusedBorderColor = borderColor,
                     cursorColor = MaterialTheme.colorScheme.primary,
+                    focusedLabelColor = primaryText(),
                 ),
             )
             Spacer(Modifier.height(10.dp))

@@ -36,6 +36,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import cz.cleansia.core.settings.AppLocale
 import cz.cleansia.core.ui.theme.Spacing
+import cz.cleansia.core.ui.theme.primaryText
 import cz.cleansia.partner.R
 import cz.cleansia.partner.core.settings.LanguageLabels
 import cz.cleansia.partner.core.settings.LanguagePreference
@@ -193,7 +194,7 @@ private fun PickerRow(
             style = MaterialTheme.typography.bodyLarge.copy(
                 fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Normal,
             ),
-            color = if (isSelected) MaterialTheme.colorScheme.primary
+            color = if (isSelected) primaryText()
             else MaterialTheme.colorScheme.onSurface,
             modifier = Modifier.weight(1f),
         )

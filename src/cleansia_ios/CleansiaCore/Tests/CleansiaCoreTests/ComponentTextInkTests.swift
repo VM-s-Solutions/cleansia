@@ -46,6 +46,25 @@ final class ComponentTextInkTests: XCTestCase {
         XCTAssertTrue(activity.contains("?CleansiaColors.primary.opacity(0.22):CleansiaColors.primary)"), "the bar")
     }
 
+    /// A focused field's floating label is text: it takes the text ink, 5.93:1 on the field's white where the
+    /// primary read 4.10:1 (finding 2026-10-05); the focus border and the caret keep the primary.
+    func testAFocusedFieldsLabelTakesTheTextInkAndItsBorderKeepsThePrimary() throws {
+        for path in ["Components/CleansiaTextField.swift", "Components/CleansiaPhoneInput.swift"] {
+            let field = try compactSource(path)
+            XCTAssertTrue(
+                field.contains("privatevarfloatingLabelColor:Color{")
+                    && field.contains("returnfocused?CleansiaColors.primaryText:CleansiaColors.onSurfaceVariant}"),
+                "\(path): the focused label"
+            )
+            XCTAssertTrue(
+                field.contains("returnfocused?CleansiaColors.primary:CleansiaColors.outline}"),
+                "\(path): the focus border"
+            )
+        }
+        XCTAssertGreaterThanOrEqual(contrast(rgb(0x0369A1), rgb(0xFFFFFF)), 4.5)
+        XCTAssertLessThan(contrast(rgb(0x0284C7), rgb(0xFFFFFF)), 4.5, "the primary reads on the field after all")
+    }
+
     /// A picked chip's label sits on a 12 % primary wash over the card, its lowest ground.
     func testThePickedChipsLabelReadsOnItsWash() {
         let wash = mix(0x0284C7, 0.12, over: 0xFFFFFF)
@@ -88,6 +107,40 @@ final class ComponentTextInkTests: XCTestCase {
         XCTAssertTrue(
             try compactSource("Components/CleansiaSectionHeader.swift")
                 .contains(".foregroundColor(CleansiaColors.primaryTextOnContainer).padding(.horizontal,Spacing.s)")
+        )
+    }
+
+    /// An icon on the primary container reads 3:1 or more in both modes (finding 2026-10-05): in dark mode the
+    /// container is sky-700, where the primary's sky-400 read 2.77:1, so icons on it take
+    /// `primaryIconOnContainer` (sky-100 in dark, 5.17:1; the primary itself in light, 3.57:1, unchanged).
+    func testIconsOnThePrimaryContainerReadInBothModes() {
+        for style in [UIUserInterfaceStyle.light, .dark] {
+            XCTAssertGreaterThanOrEqual(
+                contrast(
+                    resolved(CleansiaColors.primaryIconOnContainer, style),
+                    resolved(CleansiaColors.primaryContainer, style)
+                ),
+                3
+            )
+        }
+        XCTAssertEqual(
+            contrast(
+                resolved(CleansiaColors.primaryIconOnContainer, .dark),
+                resolved(CleansiaColors.primaryContainer, .dark)
+            ),
+            5.17,
+            accuracy: 0.01
+        )
+        XCTAssertLessThan(
+            contrast(resolved(CleansiaColors.primary, .dark), resolved(CleansiaColors.primaryContainer, .dark)),
+            3,
+            "the primary reads on the dark container after all"
+        )
+        XCTAssertEqual(
+            contrast(resolved(CleansiaColors.primaryIconOnContainer, .light), resolved(CleansiaColors.primary, .light)),
+            1,
+            accuracy: 0.001,
+            "light changed"
         )
     }
 

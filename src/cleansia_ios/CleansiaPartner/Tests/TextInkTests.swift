@@ -1,4 +1,7 @@
+import CleansiaPartnerApi
+import SwiftUI
 import XCTest
+@testable import CleansiaPartner
 
 /// Text links and text buttons take the text ink, not the primary (owner decision 2026-10-05): the light-mode
 /// primary, sky-600, reads 4.10:1 on white, under the 4.5:1 floor for text, so they take
@@ -108,15 +111,154 @@ final class TextInkTests: XCTestCase {
         let badge = try compactSource("Earnings/InvoiceStatusBadge.swift")
         XCTAssertTrue(badge.contains("case._1:CleansiaColors.primaryContainer"))
         XCTAssertTrue(badge
-            .contains("privatevarforeground:Color{switchstatus{case._1:CleansiaColors.primaryTextOnContainer"))
+            .contains("varforeground:Color{switchstatus{case._1:CleansiaColors.primaryTextOnContainer"))
     }
 
-    private func compactSource(_ path: String) throws -> String {
-        let url = URL(fileURLWithPath: #filePath)
+    /// Dark mode: an icon in the primary on the primary container (sky-400 on sky-700) read 2.77:1, under the
+    /// 3:1 a graphic needs, so the halo's icon and the devices' platform icon take the container's icon ink,
+    /// sky-100 in dark and the primary in light (finding 2026-10-05).
+    func testTheIconsOnThePrimaryContainerTakeItsIconInk() throws {
+        XCTAssertTrue(try compactSource("Dashboard/DashboardCards.swift").contains(
+            "Image(systemName:systemImage).font(.system(size:22))"
+                + ".foregroundColor(CleansiaColors.primaryIconOnContainer).frame(width:44,height:44)"
+                + ".background(CleansiaColors.primaryContainer)"
+        ), "IconHalo")
+        XCTAssertTrue(try compactSource("Devices/DevicesView.swift").contains(
+            "Image(systemName:platformIcon(device.platform)).foregroundColor(CleansiaColors.primaryIconOnContainer)"
+        ))
+    }
+
+    /// Every invoice status pill's label reads 4.5:1 or more on its fill in both modes (finding 2026-10-05):
+    /// "Approved" was white on the light primary, sky-600 (4.10:1), and the dark primary's ink, sky-900, on
+    /// sky-400 (4.42:1); it is white on sky-700 in light mode (5.93:1) and sky-950 on sky-400 in dark (6.48:1).
+    /// Its dark fill stays apart from Pending's, the container, which is sky-700 there.
+    func testEveryInvoiceStatusPillReadsOnItsFillInBothModes() {
+        let statuses: [EmployeeInvoiceStatus?] = EmployeeInvoiceStatus.allCases + [nil]
+        for style in [UIUserInterfaceStyle.light, .dark] {
+            for status in statuses {
+                let badge = InvoiceStatusBadge(status: status)
+                XCTAssertGreaterThanOrEqual(
+                    contrast(rgb(badge.foreground, style), rgb(badge.background, style)),
+                    4.5,
+                    "\(String(describing: status)), style \(style.rawValue)"
+                )
+            }
+            let approved = InvoiceStatusBadge(status: ._2)
+            XCTAssertEqual(
+                contrast(rgb(approved.foreground, style), rgb(approved.background, style)),
+                style == .dark ? 6.48 : 5.93,
+                accuracy: 0.01
+            )
+            XCTAssertGreaterThan(
+                contrast(rgb(approved.background, style), rgb(InvoiceStatusBadge(status: ._1).background, style)),
+                1.5,
+                "Approved and Pending share a fill, style \(style.rawValue)"
+            )
+        }
+    }
+
+    /// The partner app's informational blue text — card eyebrows, pay amounts, step counters and names, status
+    /// words, the address "why" bullets — reads in the text ink as its links do (owner decision 2026-10-05, Y3):
+    /// no partner `Text` names the primary in its own modifier chain.
+    func testNoPartnerTextIsDrawnInThePrimary() throws {
+        let found = try primaryTexts()
+
+        XCTAssertTrue(found.isEmpty, found.map { "\($0.file): \($0.text)" }.joined(separator: "\n"))
+    }
+
+    /// The texts whose ink arrives through a value rather than their own `.foregroundColor`, and the icons on
+    /// the same line as one of them.
+    func testTheTextsInkedThroughAValueTakeTheTextInk() throws {
+        XCTAssertTrue(
+            try compactSource("Dashboard/DashboardCards.swift")
+                .contains("isUp?CleansiaColors.primaryText:CleansiaColors.error"),
+            "the month delta chip"
+        )
+        XCTAssertTrue(
+            try compactSource("Orders/OrdersListComponents.swift")
+                .contains("label:L10n.Orders.startsSoon,tint:CleansiaColors.primaryText"),
+            "Starts soon"
+        )
+        XCTAssertTrue(try compactSource("Profile/OnboardingChainHeader.swift")
+            .contains("privatevarlabelColor:Color{switchstate{case.current:CleansiaColors.primaryText"))
+        XCTAssertTrue(try compactSource("Profile/LegalDocuments/LegalDocumentsView.swift")
+            .contains(".foregroundColor(document.isAccepted?CleansiaColors.primaryText:CleansiaColors.error)"))
+        XCTAssertTrue(try compactSource("Orders/PendingOfferComponents.swift").contains(
+            "Image(systemName:\"clock\").font(.system(size:14)).foregroundColor(CleansiaColors.primaryText)"
+        ), "the clock beside \"Yours until\"")
+        XCTAssertTrue(
+            try compactSource("Profile/Address/AddressSectionView.swift")
+                .contains("case.inServicedCity:CleansiaColors.primaryText"),
+            "\"We service jobs in {city}\": its message, icon and wash share one tint"
+        )
+    }
+
+    private var featureSources: URL {
+        URL(fileURLWithPath: #filePath)
             .deletingLastPathComponent()
             .deletingLastPathComponent()
             .appendingPathComponent("Sources/Features")
-            .appendingPathComponent(path)
-        return try String(contentsOf: url, encoding: .utf8).components(separatedBy: .whitespacesAndNewlines).joined()
+    }
+
+    /// Every `Text(…)` whose own modifier chain sets a primary foreground (Core's `ComponentTextInkTests` scan).
+    private func primaryTexts() throws -> [(file: String, text: String)] {
+        let files = try XCTUnwrap(FileManager.default.enumerator(at: featureSources, includingPropertiesForKeys: nil))
+            .compactMap { $0 as? URL }
+            .filter { $0.pathExtension == "swift" }
+        XCTAssertGreaterThan(files.count, 50, "the partner sources were not found")
+        let primary = try NSRegularExpression(pattern: #"CleansiaColors\.primary(?![A-Za-z])"#)
+        var found: [(file: String, text: String)] = []
+        for file in files {
+            let lines = try String(contentsOf: file, encoding: .utf8)
+                .components(separatedBy: .newlines)
+                .map { $0.trimmingCharacters(in: .whitespaces) }
+            for (index, line) in lines.enumerated() where line.hasPrefix("Text(") {
+                var depth = parens(line)
+                var cursor = index + 1
+                while depth > 0, cursor < lines.count {
+                    depth += parens(lines[cursor])
+                    cursor += 1
+                }
+                while cursor < lines.count, depth > 0 || lines[cursor].hasPrefix(".") {
+                    let modifier = lines[cursor]
+                    let range = NSRange(modifier.startIndex..., in: modifier)
+                    if modifier.hasPrefix(".foregroundColor("), primary.firstMatch(in: modifier, range: range) != nil {
+                        found.append((file.lastPathComponent, line))
+                    }
+                    depth += parens(modifier)
+                    cursor += 1
+                }
+            }
+        }
+        return found
+    }
+
+    private func rgb(_ color: Color, _ style: UIUserInterfaceStyle) -> SIMD3<Double> {
+        var red: CGFloat = 0
+        var green: CGFloat = 0
+        var blue: CGFloat = 0
+        var alpha: CGFloat = 0
+        UIColor(color).resolvedColor(with: UITraitCollection(userInterfaceStyle: style))
+            .getRed(&red, green: &green, blue: &blue, alpha: &alpha)
+        return SIMD3(Double(red), Double(green), Double(blue))
+    }
+
+    private func contrast(_ first: SIMD3<Double>, _ second: SIMD3<Double>) -> Double {
+        func luminance(_ color: SIMD3<Double>) -> Double {
+            let linear = [color.x, color.y, color.z].map { $0 <= 0.04045 ? $0 / 12.92 : pow(($0 + 0.055) / 1.055, 2.4) }
+            return 0.2126 * linear[0] + 0.7152 * linear[1] + 0.0722 * linear[2]
+        }
+        let (lighter, darker) = (max(luminance(first), luminance(second)), min(luminance(first), luminance(second)))
+        return (lighter + 0.05) / (darker + 0.05)
+    }
+
+    private func parens(_ line: String) -> Int {
+        line.filter { $0 == "(" }.count - line.filter { $0 == ")" }.count
+    }
+
+    private func compactSource(_ path: String) throws -> String {
+        try String(contentsOf: featureSources.appendingPathComponent(path), encoding: .utf8)
+            .components(separatedBy: .whitespacesAndNewlines)
+            .joined()
     }
 }

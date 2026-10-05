@@ -98,7 +98,7 @@ struct OrderChipsRow: View {
                     DecisionBadge(icon: "flame.fill", label: L10n.Orders.topPay, tint: CleansiaColors.error)
                 }
                 if isStartingSoon {
-                    DecisionBadge(icon: "clock", label: L10n.Orders.startsSoon, tint: CleansiaColors.primary)
+                    DecisionBadge(icon: "clock", label: L10n.Orders.startsSoon, tint: CleansiaColors.primaryText)
                 }
             }
         }
@@ -169,7 +169,7 @@ struct CompactOrderRowContent: View {
             Spacer()
             Text(OrdersFormat.pay(order))
                 .font(CleansiaTypography.titleMedium)
-                .foregroundColor(CleansiaColors.primary)
+                .foregroundColor(CleansiaColors.primaryText)
             Image(systemName: "chevron.right")
                 .font(.system(size: 12))
                 .foregroundColor(CleansiaColors.onSurfaceVariant)

@@ -121,7 +121,7 @@ fun PendingOffersCardContent(
             Icon(
                 imageVector = Icons.Outlined.Schedule,
                 contentDescription = null,
-                tint = MaterialTheme.colorScheme.primary,
+                tint = primaryText(),
                 modifier = Modifier.size(16.dp),
             )
             Text(

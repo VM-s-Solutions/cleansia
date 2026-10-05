@@ -73,6 +73,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import cz.cleansia.core.ui.components.CleansiaTextButton
 import cz.cleansia.core.ui.theme.Spacing
+import cz.cleansia.core.ui.theme.primaryText
 import cz.cleansia.partner.R
 import cz.cleansia.partner.api.model.ContractStatus
 import cz.cleansia.partner.api.model.EmployeeItem
@@ -420,7 +421,7 @@ private fun InitialsAvatar(initials: String) {
                 fontWeight = FontWeight.Bold,
                 fontSize = 28.sp,
             ),
-            color = MaterialTheme.colorScheme.primary,
+            color = primaryText(),
         )
     }
 }

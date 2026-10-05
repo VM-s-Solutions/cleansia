@@ -47,6 +47,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import cz.cleansia.core.ui.theme.primaryText
 import cz.cleansia.customer.R
 import cz.cleansia.core.ui.components.CleansiaChip
 import cz.cleansia.customer.core.orders.OrderReviewDto
@@ -237,6 +238,7 @@ fun SubmitReviewSheet(
                 colors = TextFieldDefaults.colors(
                     focusedContainerColor = MaterialTheme.colorScheme.surface,
                     unfocusedContainerColor = MaterialTheme.colorScheme.surface,
+                    focusedLabelColor = primaryText(),
                 ),
             )
 

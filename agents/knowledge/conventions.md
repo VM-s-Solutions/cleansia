@@ -1,11 +1,13 @@
 # Conventions & Quality Bars
 
-> ## ⚠️ TWO CHECKERS GATE A PR. FIVE DO NOT. — corrected 2026-08-13
+> ## ⚠️ FOUR CHECKERS GATE A PR. FIVE DO NOT. — corrected 2026-08-13, re-checked 2026-10-05
 >
-> Blocking in `docs-ci.yml`, each preceded by its own blocking self-test: **`check-docs-refs.mjs`** and
-> **`check-catalog-claims.mjs`**. Everything else — `check-consistency`, `check-module-boundaries`,
-> `check-available-status-parity`, `check-nx-project-registration`, `check-backlog-consistency` — runs
-> only when someone remembers.
+> Blocking, each preceded by its own blocking self-test: **`check-docs-refs.mjs`** and
+> **`check-catalog-claims.mjs`** in `docs-ci.yml`, **`check-ios-symbols.mjs`** in `ios-symbols-ci.yml`
+> and **`check-booking-policy-parity.mjs`** in `booking-policy-parity.yml`. (`deploy-pro.yml` also runs
+> `check-legal-drafts.mjs`, before a production deploy, not on a PR.) Everything else —
+> `check-consistency`, `check-module-boundaries`, `check-available-status-parity`,
+> `check-nx-project-registration`, `check-backlog-consistency` — runs only when someone remembers.
 >
 > This banner used to read *"FOUR CI GATES WERE REMOVED"*. It was wrong in both directions:
 > `check-catalog-claims` came back and blocks, and `check-consistency` was never gated in the first
@@ -344,10 +346,10 @@ grep, and the **test** (which is normative) keeps deciding the next case even wh
 (which is only descriptive) is stale. `consistency.md` §"Post-commit ordering" limb (a) is the worked
 example. Deviating form: **any sentence of the shape "there are exactly N …" about code**.
 
-**Enforced by:** `agents/tools/check-catalog-claims.mjs` + `.github/workflows/catalog-claims.yml`
-(T-0574) — **`T1-CI`**, blocking, both halves. It shipped `T2-ADVISORY` and was promoted on
-`docs/sprint-15-decisions` the moment its own stated condition was met: a full-corpus run reporting
-`C1 0 · C2 0 · C3 0` (labelled `FAILED:` until 2026-10-04, `OK:` since). The arc is the lesson —
+**Enforced by:** `agents/tools/check-catalog-claims.mjs` + its self-test, both run by
+`.github/workflows/docs-ci.yml` (T-0574) — **`T1-CI`**, blocking, both halves. It shipped
+`T2-ADVISORY` and was promoted on `docs/sprint-15-decisions` the moment its own stated condition was
+met: a full-corpus run reporting `C1 0 · C2 0 · C3 0` (labelled `FAILED:` until 2026-10-04, `OK:` since). The arc is the lesson —
 **16** violations before T-0574 changed anything, **15** once it retired `enforcement.md`'s own
 *"Specified, NOT yet built"* banner about this checker, then a sweep that closed the C2 banners and
 the non-`roles/` citations, and finally the six
@@ -367,10 +369,12 @@ compiler: parse `agents/knowledge/**/*.md` +
 `- **Status:**` line → fail on disagreement; (2) a `Retires when: <path> exists` marker → `fs.existsSync`
 → fail if it exists; (3) every `` `Path.ext:N` `` / `:N-M` citation → file exists **and** has ≥ M lines
 → fail otherwise. It takes the **cross-stack** shape ADR-0032 §D and `enforcement.md` prescribe — a
-dependency-free Node script **outside the Nx workspace with its own repo-root workflow**, the
-`check-available-status-parity.mjs` / `offerability-parity.yml` mold — because **no stack's CI watches
-`agents/`**, so no existing workflow can host it. Like that check, it must fail loudly when its corpus
-is empty or an anchor matches nothing; a green run must mean it *read* the pages.
+dependency-free Node script **outside the Nx workspace, run by a repo-root workflow**, the
+`check-available-status-parity.mjs` mold — because **no stack's CI watches `agents/`**, so no stack's
+workflow can host it. Its own `catalog-claims.yml` was deleted on 2026-08-11, as the offerability
+check's `offerability-parity.yml` was; since 2026-08-13 it runs in `docs-ci.yml`, which watches
+`agents/**`. Like that check, it must fail loudly when its corpus is empty or an anchor matches
+nothing; a green run must mean it *read* the pages.
 
 **Why the blocking tier is still `(gate pending:)` and not `T1-CI`:** `enforcement.md`'s zero-baseline
 rule. Six instances were fixed on 2026-08-09; the remaining role cards and catalog pages were not

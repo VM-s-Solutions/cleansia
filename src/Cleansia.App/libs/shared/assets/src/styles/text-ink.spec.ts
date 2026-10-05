@@ -12,6 +12,7 @@ describe('the shared and partner stylesheets — text links and text buttons', (
     }).css;
   const partner = compiled('cleansia-partner.scss');
   const customer = compiled('cleansia-customer.scss');
+  const admin = compiled('cleansia-admin.scss');
 
   /** The colour every rule for exactly this selector declares. */
   const inks = (css: string, selector: string): string[] => {
@@ -33,6 +34,29 @@ describe('the shared and partner stylesheets — text links and text buttons', (
   ])('inks %s with Sky700, and Sky800 under the pointer', (_, selector) => {
     expect(inks(partner, selector)).toEqual(['var(--cleansia-primary-700)']);
     expect(inks(partner, `${selector}:hover`)).toEqual(['var(--cleansia-primary-800)']);
+  });
+
+  // Blue text that is read, not pressed, takes the same ink: the order's package price sat on the
+  // brand Sky600 (4.1) beside a Sky700 name.
+  it("inks the partner order's package price with Sky700", () => {
+    expect(inks(partner, '.cleansia-order-details__package-header .package-price')).toEqual([
+      'var(--cleansia-primary-700)',
+    ]);
+  });
+
+  // The referral code dialog's "checking…" line sat on the brand Sky600 (4.1 on white, less on its
+  // tint; 3.4 after dark) and the admin's optional-price badge on Sky500 (2.8).
+  it('inks the code dialog\'s "checking" line with Sky700, and Sky300 after dark', () => {
+    expect(inks(customer, '.cleansia-code-input-dialog__status--neutral')).toEqual([
+      'var(--cleansia-primary-700)',
+    ]);
+    expect(inks(customer, ':root.dark-mode .cleansia-code-input-dialog__status--neutral')).toEqual([
+      '#7dd3fc',
+    ]);
+  });
+
+  it("inks the admin price form's optional badge with Sky700", () => {
+    expect(inks(admin, '.currency-price-block__badge--optional')).toEqual(['var(--cleansia-primary-700)']);
   });
 
   it("gives a filter chip's remove button the chip's own ink", () => {
@@ -70,6 +94,26 @@ describe('the shared and partner stylesheets — text links and text buttons', (
     expect(inks(customer, '.cl-rec__add-address')).toEqual(['var(--cl-heading)']);
     expect(inks(customer, '.cl-rec__add-address:hover')).toEqual(['#075985']);
     expect(inks(customer, ':root.dark-mode .cl-rec__add-address:hover')).toEqual(['var(--cl-accent)']);
+  });
+
+  // The notice's OK is a filled button: white on the brand blue, Sky600 at its lightest (it started
+  // at Sky500, 2.77), a step darker under the pointer. Light theme; after dark it keeps its own.
+  it("paints the cookie notice's OK button from Sky600, a step darker under the pointer", () => {
+    const background = (css: string, selector: string): string[] => {
+      const escaped = selector.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      return Array.from(
+        css.matchAll(new RegExp(`(?:^|\\n)${escaped}\\s*\\{([^}]*)\\}`, 'g')),
+        ([, body]) => body.match(/background:\s*([^;]+)/)?.[1].trim() ?? ''
+      ).filter(Boolean);
+    };
+    for (const css of [partner, customer]) {
+      expect(background(css, '.cleansia-cookie-consent__btn--accept')).toEqual([
+        'linear-gradient(135deg, var(--cleansia-primary-600) 0%, var(--cleansia-primary-700) 100%)',
+      ]);
+      expect(background(css, '.cleansia-cookie-consent__btn--accept:hover')).toEqual([
+        'linear-gradient(135deg, var(--cleansia-primary-700) 0%, var(--cleansia-primary-800) 100%)',
+      ]);
+    }
   });
 
   it('keeps the cookie notice link a light blue after dark', () => {

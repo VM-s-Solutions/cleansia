@@ -195,7 +195,7 @@ private struct ServiceAreaRow: View {
     private var tint: Color {
         switch status {
         case .unknown: CleansiaColors.onSurfaceVariant
-        case .inServicedCity: CleansiaColors.primary
+        case .inServicedCity: CleansiaColors.primaryText
         // iOS has no `tertiary`; warningStar is the app's amber, and this state is advisory
         // rather than a refusal — the cleaner can still work, just not at this address.
         case .outsideServicedCity: CleansiaColors.warningStar
@@ -258,7 +258,7 @@ private struct WhyRow: View {
     var body: some View {
         HStack(alignment: .top, spacing: Spacing.xs) {
             Text(verbatim: "•")
-                .foregroundColor(CleansiaColors.primary)
+                .foregroundColor(CleansiaColors.primaryText)
             Text(text)
                 .font(CleansiaTypography.bodyMedium)
                 .foregroundColor(CleansiaColors.onSurface)

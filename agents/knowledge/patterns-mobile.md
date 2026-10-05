@@ -424,19 +424,35 @@ duplicate a `:core` component.
 > defect until someone measures it** — the same shape as the `onError`-on-`error` collapse above, and
 > neither is visible in the theme the author develops in.
 
-> **Blue TEXT takes the text ink, never the primary (finding 2026-10-05; links and text buttons,
-> owner decision 2026-10-05):** the light primary, sky-600, reads 4.10:1 on white and less on every
-> tint, under the 4.5:1 text needs. In both apps a `Text` in the brand blue, a link and a text or
+> **Blue TEXT takes the text ink, never the primary (finding 2026-10-05; links and text buttons, and
+> the partner app's informational text, owner decisions 2026-10-05):** the light primary, sky-600,
+> reads 4.10:1 on white and less on every tint, under the 4.5:1 text needs. In both apps a `Text` in
+> the brand blue — an eyebrow, a pay amount, a step counter, a badge's label, a clock line, a focused
+> field's floating label (whose focus border and caret keep the primary) — a link and a text or
 > outlined button's blue label takes **`CleansiaColors.primaryText`** (iOS, Core) or
 > **`primaryText()`** / `ColorScheme.primaryText` (Android, `:core` `ui/theme/BrandColors.kt`): sky-700
 > in light mode, the primary in dark. An icon inside the same link or button takes the same ink, so no
 > control shows two blues. Text drawn straight on `primaryContainer` takes **`primaryTextOnContainer`**
 > instead (both platforms): the same sky-700 in light mode, sky-100 in dark, where the text ink reads
-> 2.77:1 on the sky-700 container. Fills, washes, borders, toggles, progress tints, standalone icons and filled
+> 2.77:1 on the sky-700 container. An **icon** on a full `primaryContainer` disc or card takes
+> **`primaryIconOnContainer`** (both platforms, since 2026-10-05): the primary in light mode, sky-100
+> in dark, where the primary's glyph read 2.77:1, under the 3:1 a graphic needs. Fills, washes, borders, toggles, progress tints, standalone icons and filled
 > buttons keep `primary`. Source scans fail on a new blue `Text` or button label in the primary:
 > `BrandTextInkTests` (iOS customer), `ComponentTextInkTests` (iOS Core), `TextInkTests` (iOS partner),
-> `PrimaryTextTest` (Android `:core`, all three modules) and `PrimaryTextContrastTest` (Android
-> customer). → `docs/mobile-app/patterns.md#brand-text-ink`
+> `PrimaryTextTest` (Android `:core`, all three modules; its partner guard finds the primary under
+> `colorScheme.`, `colors.` and `scheme.` alike, so holding the scheme in a local does not hide one) and
+> `PrimaryTextContrastTest` (Android customer). A text whose ink arrives through a value (a badge's
+> tint, a `when` over the step) is out of a scan's reach, so each of those is pinned by name in the
+> same suites. → `docs/mobile-app/patterns.md#brand-text-ink`
+
+> **An Android colour scheme sets every Material 3 surface role (finding 2026-10-05):** a role the
+> scheme leaves unset falls back to Material's baseline purple grey, and nothing on the developer's
+> screen says so, because only a dialog, a menu, a date picker, a search bar or a switch track reads
+> those roles. Both apps' `LightColors` / `DarkColors` set `surfaceContainerLowest…Highest`,
+> `surfaceBright` and `surfaceDim` from the slate family; `SurfaceRolesTest` (customer and partner)
+> fails a role outside it and a text under 4.5:1 on the dialog or menu container. A component that
+> reads another unset role (`tertiary` in the partner app, today) shows the same baseline colour.
+> → `docs/mobile-app/patterns.md#surface-roles`
 
 > **A re-rendered SAS-backed image — the ONE way (T-0449):** `AsyncImage` stays right for a URL a
 > screen shows once (order photos, dispute evidence). It is wrong for an image the session re-renders —

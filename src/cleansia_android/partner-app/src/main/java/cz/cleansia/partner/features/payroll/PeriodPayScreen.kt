@@ -44,6 +44,8 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import cz.cleansia.core.ui.components.CleansiaPrimaryButton
 import cz.cleansia.core.ui.theme.Spacing
+import cz.cleansia.core.ui.theme.primaryIconOnContainer
+import cz.cleansia.core.ui.theme.primaryText
 import cz.cleansia.partner.R
 import cz.cleansia.partner.api.model.PayLineType
 import cz.cleansia.partner.data.payroll.OrderPayLine
@@ -160,7 +162,7 @@ private fun HeroCard(summary: PeriodPaySummary, symbol: String) {
             Text(
                 text = stringResource(R.string.period_pay_hero_label),
                 style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.SemiBold),
-                color = MaterialTheme.colorScheme.primary,
+                color = primaryText(),
             )
             Spacer(Modifier.height(2.dp))
             Text(
@@ -200,7 +202,7 @@ private fun BreakdownCard(summary: PeriodPaySummary, symbol: String) {
         Text(
             text = stringResource(R.string.period_pay_breakdown_section),
             style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.SemiBold),
-            color = MaterialTheme.colorScheme.primary,
+            color = primaryText(),
         )
         Spacer(Modifier.height(Spacing.S))
 
@@ -247,7 +249,7 @@ private fun JobsCard(orderPays: List<OrderPayLine>, symbol: String) {
         Text(
             text = stringResource(R.string.period_pay_jobs_section),
             style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.SemiBold),
-            color = MaterialTheme.colorScheme.primary,
+            color = primaryText(),
         )
         Spacer(Modifier.height(Spacing.S))
 
@@ -290,7 +292,7 @@ private fun JobRow(line: OrderPayLine, symbol: String) {
                 Text(
                     text = stringResource(caption),
                     style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.primary,
+                    color = primaryText(),
                 )
             }
             formatDate(line.createdOn)?.let { date ->
@@ -371,7 +373,7 @@ private fun IconHalo(icon: ImageVector) {
         Icon(
             imageVector = icon,
             contentDescription = null,
-            tint = MaterialTheme.colorScheme.primary,
+            tint = MaterialTheme.colorScheme.primaryIconOnContainer,
             modifier = Modifier.size(22.dp),
         )
     }

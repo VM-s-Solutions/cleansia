@@ -216,7 +216,7 @@ private struct BookingHintBanner: View {
     var body: some View {
         HStack(alignment: .top, spacing: Spacing.s) {
             Image(systemName: "info.circle.fill")
-                .foregroundColor(CleansiaColors.primary)
+                .foregroundColor(CleansiaColors.primaryIconOnContainer)
             Text(L10n.EditProfile.bookingHint)
                 .font(CleansiaTypography.bodyMedium)
                 .foregroundColor(CleansiaColors.onPrimaryContainer)

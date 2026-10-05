@@ -1034,9 +1034,10 @@ violations to 117 (91 `cross-scope` + 7 `untagged-project`). That is why there i
 tag-vocabulary list to maintain: the vocabulary is enforced by the constraint table itself, through
 the consumers, and a hand-kept list of legal tags would only be a second thing to keep in sync.
 
-**Enforced by:** `agents/tools/check-module-boundaries.mjs` + its 21-scenario self-test —
-**T1-CI** (`.github/workflows/module-boundaries.yml`, its own repo-root workflow with no
-`continue-on-error`; an empty or partial eslint walk is a hard failure, not a pass).
+**Enforced by:** `agents/tools/check-module-boundaries.mjs` + its 21-scenario self-test — **on demand
+only**: no workflow runs it. Its repo-root workflow, `module-boundaries.yml`, was deleted on 2026-08-11
+by owner instruction, so read the tier as `T2-ADVISORY` (`agents/process/enforcement.md`'s gate table).
+An empty or partial eslint walk is a hard failure, not a pass, whenever it is run.
 
 **The table lives in exactly one file — `src/Cleansia.App/eslint.module-boundaries.config.mjs` —
 because it has to be spread from two.** The root `eslint.config.mjs` lints only the projects that have
@@ -1060,9 +1061,11 @@ it either: an untagged project is unconstrained, i.e. the same hole with a proje
 **Enforced by:** `agents/tools/check-nx-project-registration.mjs` + its self-test — it walks `libs/`
 for three independent witnesses (`src/index.ts`, `project.json`, the `tsconfig.base.json` alias) and
 requires them to agree, and treats **any enumeration coming back empty as a hard failure** rather
-than a pass — **T1-CI** (`.github/workflows/nx-project-registration.yml`, its own repo-root workflow:
-`frontend-ci`'s lint step is `continue-on-error: true`, and `nx affected` can never select a project
-that does not exist). Tags are asserted by **presence** only, and deliberately: the tag *vocabulary*
+than a pass — **on demand only**: no workflow runs it. Its repo-root workflow,
+`nx-project-registration.yml`, was deleted on 2026-08-11 by owner instruction, so read the tier as
+`T2-ADVISORY` (`agents/process/enforcement.md`'s gate table). It needs a workflow of its own to gate
+anything: `frontend-ci`'s lint step is `continue-on-error: true`, and `nx affected` can never select a
+project that does not exist. Tags are asserted by **presence** only, and deliberately: the tag *vocabulary*
 needs no list of its own, because a mistyped `scope:` is caught by every consumer of the mistyped lib
 (measured — see "A mistyped scope tag cannot hide" above).
 

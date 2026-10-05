@@ -241,7 +241,7 @@ final class RecurringBookingsViewModelTests: XCTestCase {
     // MARK: - The affordance table
 
     func testANonMemberWithSchedulesGetsTheLapsedNoticeAndNoCreateAffordance() {
-        let affordances = RecurringListAffordances.of(gate: .upsell, hasTemplates: true)
+        let affordances = RecurringListAffordances.of(gate: .upsell, hasTemplates: true, benefitsPaused: false)
 
         XCTAssertFalse(affordances.showCreateAction)
         XCTAssertFalse(affordances.showEdit)
@@ -250,7 +250,7 @@ final class RecurringBookingsViewModelTests: XCTestCase {
     }
 
     func testANonMemberWithNoSchedulesGetsTheUpsellInsteadOfTheCreateCta() {
-        let affordances = RecurringListAffordances.of(gate: .upsell, hasTemplates: false)
+        let affordances = RecurringListAffordances.of(gate: .upsell, hasTemplates: false, benefitsPaused: false)
 
         XCTAssertTrue(affordances.showPlusUpsell)
         XCTAssertFalse(affordances.showCreateAction)
@@ -259,7 +259,7 @@ final class RecurringBookingsViewModelTests: XCTestCase {
     }
 
     func testAMemberWithSchedulesGetsCreateAndEditAndNoUpsellCopy() {
-        let affordances = RecurringListAffordances.of(gate: .allowed, hasTemplates: true)
+        let affordances = RecurringListAffordances.of(gate: .allowed, hasTemplates: true, benefitsPaused: false)
 
         XCTAssertTrue(affordances.showCreateAction)
         XCTAssertTrue(affordances.showEdit)
@@ -267,9 +267,39 @@ final class RecurringBookingsViewModelTests: XCTestCase {
         XCTAssertFalse(affordances.showLapsedNotice)
     }
 
+    /// A paused or past-due member's enrolment is live but the server refuses authoring, so their card
+    /// offers no Edit, as Android's `Paused` gate (owner decision 2026-10-05).
+    func testAPausedMemberGetsNoEdit() {
+        for hasTemplates in [true, false] {
+            let affordances = RecurringListAffordances.of(
+                gate: .allowed,
+                hasTemplates: hasTemplates,
+                benefitsPaused: true
+            )
+
+            XCTAssertFalse(affordances.showEdit, "hasTemplates=\(hasTemplates)")
+        }
+    }
+
+    func testAPausedMembersCardsOfferNoEditAndAPaidUpMembersDo() async {
+        let client = FakeRecurringBookingClient()
+        client.mineResults = [.success([RecurringFixtures.template()])]
+        let (paused, _, _) = makeVM(client: client, membership: MembershipFixtures.pastDue)
+        await paused.load()
+        let activeClient = FakeRecurringBookingClient()
+        activeClient.mineResults = [.success([RecurringFixtures.template()])]
+        let (active, _, _) = makeVM(client: activeClient, membership: MembershipFixtures.active)
+        await active.load()
+
+        XCTAssertTrue(paused.benefitsPaused)
+        XCTAssertFalse(paused.affordances.showEdit)
+        XCTAssertFalse(paused.affordances.showLapsedNotice)
+        XCTAssertTrue(active.affordances.showEdit)
+    }
+
     /// Nothing replaces the empty state for a member, so its own create CTA renders.
     func testAMemberWithNoSchedulesKeepsTheEmptyStateCreateCta() {
-        let affordances = RecurringListAffordances.of(gate: .allowed, hasTemplates: false)
+        let affordances = RecurringListAffordances.of(gate: .allowed, hasTemplates: false, benefitsPaused: false)
 
         XCTAssertFalse(affordances.showPlusUpsell)
         XCTAssertFalse(affordances.showCreateAction)
@@ -278,8 +308,8 @@ final class RecurringBookingsViewModelTests: XCTestCase {
     // MARK: - The retired entry's line
 
     /// The line sends the customer to the edit form only where the card offers Edit (owner decision
-    /// 2026-10-05): a member gets "— edit to update", a lapsed member, whose card has no Edit, the plain
-    /// fact, in all five languages.
+    /// 2026-10-05): a member gets "— edit to update", a lapsed or paused member, whose card has no Edit,
+    /// the plain fact, in all five languages.
     func testTheRetiredLineAsksForAnEditOnlyWhereTheCardOffersOne() throws {
         let expected: [String: (edit: String, noEdit: String)] = [
             "en": ("Includes a service no longer offered — edit to update", "Includes a service no longer offered"),
@@ -297,14 +327,16 @@ final class RecurringBookingsViewModelTests: XCTestCase {
                 "Содержит услугу, которую мы больше не предлагаем"
             )
         ]
-        let member = RecurringListAffordances.of(gate: .allowed, hasTemplates: true)
-        let lapsed = RecurringListAffordances.of(gate: .upsell, hasTemplates: true)
+        let member = RecurringListAffordances.of(gate: .allowed, hasTemplates: true, benefitsPaused: false)
+        let lapsed = RecurringListAffordances.of(gate: .upsell, hasTemplates: true, benefitsPaused: false)
+        let paused = RecurringListAffordances.of(gate: .allowed, hasTemplates: true, benefitsPaused: true)
         let restore = L10n.bundle
         defer { L10n.bundle = restore }
         for (language, lines) in expected {
             L10n.bundle = try localeBundle(language)
             XCTAssertEqual(L10n.Recurring.cardItemNoLongerOffered(canEdit: member.showEdit), lines.edit, language)
             XCTAssertEqual(L10n.Recurring.cardItemNoLongerOffered(canEdit: lapsed.showEdit), lines.noEdit, language)
+            XCTAssertEqual(L10n.Recurring.cardItemNoLongerOffered(canEdit: paused.showEdit), lines.noEdit, language)
         }
     }
 

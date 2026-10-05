@@ -55,6 +55,7 @@ import cz.cleansia.core.ui.components.CleansiaPhoneInput
 import cz.cleansia.core.ui.components.CleansiaPrimaryButton
 import cz.cleansia.core.ui.components.CleansiaTextField
 import cz.cleansia.core.ui.theme.Spacing
+import cz.cleansia.core.ui.theme.primaryText
 import cz.cleansia.partner.R
 import cz.cleansia.partner.features.media.rememberPhotoSourcePicker
 import java.time.Instant
@@ -288,7 +289,7 @@ private fun AvatarPreviewContent(
                         fontWeight = FontWeight.Bold,
                         fontSize = 36.sp,
                     ),
-                    color = MaterialTheme.colorScheme.primary,
+                    color = primaryText(),
                 )
             }
             if (busy) {

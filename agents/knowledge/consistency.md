@@ -704,8 +704,8 @@ temporary implementation shipped ahead of its end state carries, on the changed 
 > the corpus and on its own self-test. It shipped `T2-ADVISORY` because the baseline it measured
 > (**16**, then **15** at `d8f357f1`) was not zero, and claiming a blocking tier over a dirty baseline
 > would break the very rule being enforced. The `docs/sprint-15-decisions` sweep drove it to
-> `C1 0 · C2 0 · C3 0`, so `--warn` came off `.github/workflows/catalog-claims.yml` in the same
-> change. The split it encoded still holds and is worth keeping in view — `--warn` was advisory about
+> `C1 0 · C2 0 · C3 0`, so `--warn` came off `catalog-claims.yml` in the same change (that workflow was
+> deleted on 2026-08-11; the step has run in `.github/workflows/docs-ci.yml` since 2026-08-13). The split it encoded still holds and is worth keeping in view — `--warn` was advisory about
 > the **catalog** and blocking about the **tool**, because a checker reporting zero violations while
 > blind is the defect it exists to close. Rule and the rejected alternatives: `conventions.md`
 > §*"A claim about the tree carries its own retirement condition"*.

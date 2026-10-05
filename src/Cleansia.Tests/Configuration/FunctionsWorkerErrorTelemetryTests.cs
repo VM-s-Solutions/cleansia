@@ -76,6 +76,21 @@ public class FunctionsWorkerErrorTelemetryTests
         Assert.Equal(LogLevel.Error, options.MinimumEventLevel);
     }
 
+    /// <summary>
+    /// Sentry's handler on every factory client would turn a failed call into an event carrying the request
+    /// URL, and record each call as a breadcrumb with the full URL; an APNs URL ends in a push token.
+    /// </summary>
+    [Fact]
+    public void SentryAddsNoHandlerToTheWorkersHttpClients()
+    {
+        var options = WorkerLogging(SampleDsn)
+            .BuildServiceProvider()
+            .GetRequiredService<IOptions<SentryLoggingOptions>>()
+            .Value;
+
+        Assert.True(options.DisableSentryHttpMessageHandler);
+    }
+
     [Theory]
     [InlineData(null)]
     [InlineData("")]

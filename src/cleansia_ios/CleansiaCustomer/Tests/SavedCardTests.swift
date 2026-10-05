@@ -53,11 +53,11 @@ final class SavedCardTests: XCTestCase {
         let key = "consent_" + version.replacingOccurrences(of: "-", with: "_")
 
         XCTAssertNotEqual(L10n.localized(key), key, "\(key) is not in the catalog")
-        XCTAssertEqual(L10n.Booking.cardGuaranteeConsent, L10n.localized(key))
+        XCTAssertEqual(L10n.Booking.savedCardConsent, L10n.localized(key))
     }
 
     /// Cash needs no saved card and nothing charges one (→ /product/business-rules#card-guarantee). The
-    /// consent sentence printed with the tick is the versioned wording held above, and is not read here.
+    /// consent sentence printed with the tick is read too, in the version the server records.
     func testTheSavedCardCopyNeitherTiesTheCardToCashNorSaysFeesMayBeChargedToIt() throws {
         let offending = try savedCardCopySaying(Self.cashGuaranteeVocabulary)
         XCTAssertTrue(offending.isEmpty, "the saved card is still described as the cash guarantee: \(offending)")
@@ -98,6 +98,7 @@ final class SavedCardTests: XCTestCase {
             CoreL10n.apply(languageTag: language)
             var copy = Self.savedCardCopy.map { ($0, L10n.localized($0)) }
             copy.append((consentRefusal.code ?? "", ApiErrorLocalizer().message(for: consentRefusal)))
+            copy.append(("savedCardConsent", L10n.Booking.savedCardConsent))
             for (key, value) in copy {
                 XCTAssertNotEqual(value, key, "\(key) is not in the \(language) catalog")
                 if let word = stems.first(where: { value.lowercased().contains($0) }) {

@@ -834,7 +834,7 @@
     <string name="booking_cash_pending">Zda můžete platit hotově, potvrdíme, jakmile bude známa cena.</string>
     <string name="booking_cash_cleared">Platba hotově už pro tuto objednávku není možná, a proto není vybrán žádný způsob platby. Zvolte, jak chcete platit.</string>
     <string name="booking_draft_time_changed">Vybraný čas už není dostupný nebo se změnila jeho cena. Vyberte prosím čas znovu.</string>
-    <string name="consent_card_guarantee_draft_2026_09_28">Souhlasím, že Cleansia může u mých objednávek v hotovosti strhnout z této karty storno poplatek, poplatek za neumožnění vstupu, nezaplacenou hotovost a doplatek, který jsem schválil(a).</string>
+    <string name="consent_saved_card_draft_2026_10_05">Souhlasím, že Cleansia uloží tuto kartu do mého účtu. Nic z ní nestrhne, pokud jí nezaplatím, a kartu mohu kdykoli odebrat.</string>
     <string name="booking_save_card_label">Uložit tuto kartu pro mé další objednávky</string>
     <string name="booking_special_instructions_hint">Speciální požadavky? (nepovinné)</string>
     <string name="booking_access_instructions_hint">Pokyny ke vstupu? (nepovinné)</string>

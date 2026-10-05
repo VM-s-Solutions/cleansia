@@ -836,7 +836,7 @@
     <string name="booking_cash_pending">Whether you can pay in cash is confirmed once the price is ready.</string>
     <string name="booking_cash_cleared">Cash is no longer available for this booking, so no payment method is selected. Choose how you want to pay.</string>
     <string name="booking_draft_time_changed">The time you picked is no longer available or its price has changed. Please pick a time again.</string>
-    <string name="consent_card_guarantee_draft_2026_09_28">I agree that Cleansia may charge this card for a cancellation fee, a lockout fee, cash I did not pay and a top-up I approved on my cash bookings.</string>
+    <string name="consent_saved_card_draft_2026_10_05">I agree that Cleansia saves this card to my account. It is never charged unless I pay with it, and I can remove it at any time.</string>
     <string name="booking_save_card_label">Save this card for my next bookings</string>
     <string name="booking_special_instructions_hint">Any special requests? (optional)</string>
     <string name="booking_access_instructions_hint">How do we get in? (optional)</string>

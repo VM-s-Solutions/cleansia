@@ -253,7 +253,7 @@ private struct AddCardBlock: View {
             SectionIntro(text: L10n.Payments.cardAddNote)
             CleansiaConsentCheckbox(
                 checked: Binding(get: { consentAccepted }, set: onConsentChanged),
-                markdown: L10n.Booking.cardGuaranteeConsent,
+                markdown: L10n.Booking.savedCardConsent,
                 toggleAccessibilityLabel: L10n.Booking.cardGuaranteeTitle
             )
             CleansiaPrimaryButton(

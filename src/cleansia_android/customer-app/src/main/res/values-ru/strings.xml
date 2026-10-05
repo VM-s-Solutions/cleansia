@@ -831,7 +831,7 @@
     <string name="booking_cash_pending">Можно ли платить наличными, мы подтвердим, как только будет известна цена.</string>
     <string name="booking_cash_cleared">Оплата наличными для этого заказа больше недоступна, поэтому способ оплаты не выбран. Выберите, как вы хотите платить.</string>
     <string name="booking_draft_time_changed">Выбранное время больше недоступно или изменилась его цена. Пожалуйста, выберите время снова.</string>
-    <string name="consent_card_guarantee_draft_2026_09_28">Я согласен(на), что по моим заказам с оплатой наличными Cleansia может списать с этой карты плату за отмену, плату за непредоставление доступа, неоплаченные наличные и одобренную мной доплату.</string>
+    <string name="consent_saved_card_draft_2026_10_05">Я соглашаюсь, что Cleansia сохранит эту карту в моём аккаунте. Деньги с неё списываются, только когда я ею плачу, и я могу удалить её в любой момент.</string>
     <string name="booking_save_card_label">Сохранить эту карту для моих следующих заказов</string>
     <string name="booking_special_instructions_hint">Особые пожелания? (необязательно)</string>
     <string name="booking_access_instructions_hint">Как войти? (необязательно)</string>

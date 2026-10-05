@@ -230,7 +230,7 @@ public static class BusinessErrorMessage
     public const string MembershipPlanBenefitsLocked = "membership.plan.benefits_locked";
 
     // Saved card, the guarantee for cash bookings
-    /// <summary>A card capture started without the customer's consent that fees and unpaid cash may be charged to the card.</summary>
+    /// <summary>A card capture started without the customer's consent to save the card.</summary>
     public const string SavedCardConsentNotAccepted = "saved_card.consent_not_accepted";
     /// <summary>No active card of the caller's has this id; another customer's card answers the same, so its existence is not revealed.</summary>
     public const string SavedCardNotFound = "saved_card.not_found";

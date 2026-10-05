@@ -3191,37 +3191,37 @@
         }
       }
     },
-    "consent_card_guarantee_draft_2026_09_28": {
+    "consent_saved_card_draft_2026_10_05": {
       "extractionState": "manual",
       "localizations": {
         "cs": {
           "stringUnit": {
             "state": "translated",
-            "value": "Souhlasím, že Cleansia může u mých objednávek v hotovosti strhnout z této karty storno poplatek, poplatek za neumožnění vstupu, nezaplacenou hotovost a doplatek, který jsem schválil(a)."
+            "value": "Souhlasím, že Cleansia uloží tuto kartu do mého účtu. Nic z ní nestrhne, pokud jí nezaplatím, a kartu mohu kdykoli odebrat."
           }
         },
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "I agree that Cleansia may charge this card for a cancellation fee, a lockout fee, cash I did not pay and a top-up I approved on my cash bookings."
+            "value": "I agree that Cleansia saves this card to my account. It is never charged unless I pay with it, and I can remove it at any time."
           }
         },
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Я согласен(на), что по моим заказам с оплатой наличными Cleansia может списать с этой карты плату за отмену, плату за непредоставление доступа, неоплаченные наличные и одобренную мной доплату."
+            "value": "Я соглашаюсь, что Cleansia сохранит эту карту в моём аккаунте. Деньги с неё списываются, только когда я ею плачу, и я могу удалить её в любой момент."
           }
         },
         "sk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Súhlasím, že Cleansia môže pri mojich objednávkach v hotovosti strhnúť z tejto karty stornovací poplatok, poplatok za neumožnenie vstupu, nezaplatenú hotovosť a doplatok, ktorý som schválil(a)."
+            "value": "Súhlasím, že Cleansia uloží túto kartu do môjho účtu. Nič z nej nestrhne, ak ňou nezaplatím, a kartu môžem kedykoľvek odstrániť."
           }
         },
         "uk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Я погоджуюся, що за моїми замовленнями з оплатою готівкою Cleansia може списати з цієї картки плату за скасування, плату за ненадання доступу, неоплачену готівку та схвалену мною доплату."
+            "value": "Я погоджуюся, що Cleansia збереже цю картку в моєму акаунті. Кошти з неї списуються лише тоді, коли я нею плачу, і я можу будь-коли її видалити."
           }
         }
       }

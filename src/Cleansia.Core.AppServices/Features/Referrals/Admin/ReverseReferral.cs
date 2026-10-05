@@ -22,10 +22,14 @@ namespace Cleansia.Core.AppServices.Features.Referrals.Admin;
 /// guard (must be Qualified or held) makes a second invocation on an already-reversed row a guarded no-op
 /// business error — never a double clawback.
 /// </para>
+/// <para>
+/// The command carries the hold state the administrator saw. A rejection sent from a held row, reaching a
+/// referral released since, is refused rather than taking back grants nobody chose to take back.
+/// </para>
 /// </summary>
 public class ReverseReferral
 {
-    public record Command(string ReferralId, string Reason) : ICommand<Response>;
+    public record Command(string ReferralId, string Reason, bool ExpectHeld) : ICommand<Response>;
 
     public record Response(
         string ReferralId,
@@ -77,6 +81,12 @@ public class ReverseReferral
             {
                 return BusinessResult.Failure<Response>(
                     new Error(nameof(command.ReferralId), BusinessErrorMessage.ReferralNotQualified));
+            }
+
+            if (held != command.ExpectHeld)
+            {
+                return BusinessResult.Failure<Response>(
+                    new Error(nameof(command.ExpectHeld), BusinessErrorMessage.ReferralHoldChanged));
             }
 
             var actorId = userSessionProvider.GetUserId() ?? string.Empty;

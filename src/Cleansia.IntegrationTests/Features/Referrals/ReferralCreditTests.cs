@@ -1,3 +1,4 @@
+using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.AppServices.Features.Orders;
 using Cleansia.Core.AppServices.Features.Referrals.Admin;
 using Cleansia.Core.AppServices.Services;
@@ -236,21 +237,21 @@ public class ReferralCreditTests(PostgresContainerFixture fixture) : BaseIntegra
         new TestUserSessionProvider(AdminId, "admin@cleansia.test"),
         NullLogger<ReverseReferral.Handler>.Instance);
 
-    private async Task<ForceQualifyReferral.Response> ForceQualifyAsync(string referralId)
+    private async Task<ForceQualifyReferral.Response> ForceQualifyAsync(string referralId, bool expectHeld = false)
     {
         await using var ctx = NewContext();
         var result = await ForceQualifyHandler(ctx)
-            .Handle(new ForceQualifyReferral.Command(referralId, Reason), CancellationToken.None);
+            .Handle(new ForceQualifyReferral.Command(referralId, Reason, expectHeld), CancellationToken.None);
         Assert.True(result.IsSuccess, result.Error?.Message);
         await ctx.CommitAsync(CancellationToken.None);
         return result.Value!;
     }
 
-    private async Task<ReverseReferral.Response> ReverseAsync(string referralId)
+    private async Task<ReverseReferral.Response> ReverseAsync(string referralId, bool expectHeld = false)
     {
         await using var ctx = NewContext();
         var result = await ReverseHandler(ctx)
-            .Handle(new ReverseReferral.Command(referralId, Reason), CancellationToken.None);
+            .Handle(new ReverseReferral.Command(referralId, Reason, expectHeld), CancellationToken.None);
         Assert.True(result.IsSuccess, result.Error?.Message);
         await ctx.CommitAsync(CancellationToken.None);
         return result.Value!;
@@ -657,7 +658,7 @@ public class ReferralCreditTests(PostgresContainerFixture fixture) : BaseIntegra
         var (referrerId, referredId, referralId) = await SeedAsync(orderCurrencyId: EurId);
         await HoldAsync(referralId);
 
-        var response = await ForceQualifyAsync(referralId);
+        var response = await ForceQualifyAsync(referralId, expectHeld: true);
 
         Assert.Equal(new ForceQualifyReferral.Response(referralId, 6m, "EUR", 6m, "EUR"), response);
         foreach (var userId in new[] { referrerId, referredId })
@@ -679,7 +680,7 @@ public class ReferralCreditTests(PostgresContainerFixture fixture) : BaseIntegra
         var (referrerId, referredId, referralId) = await SeedAsync(orderCurrencyId: CzkId);
         await HoldAsync(referralId);
 
-        var response = await ReverseAsync(referralId);
+        var response = await ReverseAsync(referralId, expectHeld: true);
 
         Assert.Equal(new ReverseReferral.Response(referralId, 0m, null, 0m, null), response);
         Assert.Empty(await AccountsAsync(referrerId));
@@ -702,9 +703,9 @@ public class ReferralCreditTests(PostgresContainerFixture fixture) : BaseIntegra
         await using var releasing = NewContext();
         await using var rejecting = NewContext();
         var released = await ForceQualifyHandler(releasing)
-            .Handle(new ForceQualifyReferral.Command(referralId, Reason), CancellationToken.None);
+            .Handle(new ForceQualifyReferral.Command(referralId, Reason, ExpectHeld: true), CancellationToken.None);
         var rejected = await ReverseHandler(rejecting)
-            .Handle(new ReverseReferral.Command(referralId, Reason), CancellationToken.None);
+            .Handle(new ReverseReferral.Command(referralId, Reason, ExpectHeld: true), CancellationToken.None);
         Assert.True(released.IsSuccess, released.Error?.Message);
         Assert.True(rejected.IsSuccess, rejected.Error?.Message);
 
@@ -716,6 +717,61 @@ public class ReferralCreditTests(PostgresContainerFixture fixture) : BaseIntegra
             .SelectMany(a => a.Transactions).ToList();
         Assert.Equal(2, ledger.Count(t => t.Reason == CreditTransactionReason.Referral));
         Assert.DoesNotContain(ledger, t => t.Reason == CreditTransactionReason.ReferralReversed);
+    }
+
+    /// <summary>
+    /// One administrator releases a held referral while another has the rejection dialog open on the same held
+    /// row. The release commits first and pays both sides; the rejection, sent for a held row, is refused
+    /// instead of taking back grants nobody chose to take back.
+    /// </summary>
+    [Fact]
+    public async Task A_Rejection_Sent_From_The_Held_Row_After_It_Was_Released_Is_Refused_And_The_Grants_Stand()
+    {
+        await ResetAsync();
+        var (referrerId, referredId, referralId) = await SeedAsync(orderCurrencyId: CzkId);
+        await HoldAsync(referralId);
+        await ForceQualifyAsync(referralId, expectHeld: true);
+
+        await using (var ctx = NewContext())
+        {
+            var rejected = await ReverseHandler(ctx)
+                .Handle(new ReverseReferral.Command(referralId, Reason, ExpectHeld: true), CancellationToken.None);
+            Assert.True(rejected.IsFailure);
+            Assert.Equal(BusinessErrorMessage.ReferralHoldChanged, rejected.Error!.Message);
+            await ctx.CommitAsync(CancellationToken.None);
+        }
+
+        Assert.Equal(ReferralStatus.Qualified, (await ReferralAsync(referralId)).Status);
+        Assert.Equal(150m, Assert.Single(await AccountsAsync(referrerId)).Balance);
+        Assert.Equal(150m, Assert.Single(await AccountsAsync(referredId)).Balance);
+    }
+
+    /// <summary>
+    /// The force-qualify dialog was opened on a row that was not held; the friend's first order completed on a
+    /// shared home before it was sent. The force-qualify is refused, so the hold's reason is not paid past unseen.
+    /// </summary>
+    [Fact]
+    public async Task A_Force_Qualify_Sent_From_A_Row_Not_Yet_Held_Is_Refused_Once_The_Referral_Is_Held()
+    {
+        await ResetAsync();
+        var (referrerId, referredId, referralId) = await SeedAsync(
+            orderCurrencyId: CzkId, referrerOrderCurrencyId: CzkId, referrerStreet: "123 Main St");
+        await CompleteAsync(referredId);
+
+        await using (var ctx = NewContext())
+        {
+            var forced = await ForceQualifyHandler(ctx)
+                .Handle(new ForceQualifyReferral.Command(referralId, Reason, ExpectHeld: false), CancellationToken.None);
+            Assert.True(forced.IsFailure);
+            Assert.Equal(BusinessErrorMessage.ReferralHoldChanged, forced.Error!.Message);
+            await ctx.CommitAsync(CancellationToken.None);
+        }
+
+        var referral = await ReferralAsync(referralId);
+        Assert.Equal(ReferralStatus.Accepted, referral.Status);
+        Assert.Equal(Referral.HoldReasonAddress, referral.HoldReasons);
+        Assert.Empty(await AccountsAsync(referrerId));
+        Assert.Empty(await AccountsAsync(referredId));
     }
 
     [Theory]

@@ -21,10 +21,14 @@ namespace Cleansia.Core.AppServices.Features.Referrals.Admin;
 /// status guard (must be Accepted) makes a second invocation on an already-Qualified row
 /// a guarded no-op business error — never a double grant.
 /// </para>
+/// <para>
+/// The command carries the hold state the administrator saw. A force-qualify sent from a row that was not
+/// held, reaching a referral held since, is refused rather than paying past a hold nobody reviewed.
+/// </para>
 /// </summary>
 public class ForceQualifyReferral
 {
-    public record Command(string ReferralId, string Reason) : ICommand<Response>;
+    public record Command(string ReferralId, string Reason, bool ExpectHeld) : ICommand<Response>;
 
     public record Response(
         string ReferralId,
@@ -75,6 +79,13 @@ public class ForceQualifyReferral
             {
                 return BusinessResult.Failure<Response>(
                     new Error(nameof(command.ReferralId), BusinessErrorMessage.ReferralNotAccepted));
+            }
+
+            var held = referral.HoldReasons is not null;
+            if (held != command.ExpectHeld)
+            {
+                return BusinessResult.Failure<Response>(
+                    new Error(nameof(command.ExpectHeld), BusinessErrorMessage.ReferralHoldChanged));
             }
 
             var actorId = userSessionProvider.GetUserId() ?? string.Empty;

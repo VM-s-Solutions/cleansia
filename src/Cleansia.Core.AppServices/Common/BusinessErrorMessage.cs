@@ -747,6 +747,8 @@ public static class BusinessErrorMessage
     public const string ReferralNotQualified = "referral.not_qualified";
     public const string ReferralNotAccepted = "referral.not_accepted";
     public const string ReferralReasonRequired = "referral.reason_required";
+    /// <summary>The referral was held, or stopped being held, after the administrator's list was loaded.</summary>
+    public const string ReferralHoldChanged = "referral.hold_changed";
 
     // Legal documents
     public const string LegalDocumentNotFound = "legal.document_not_found";

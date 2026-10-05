@@ -14,7 +14,7 @@ namespace Cleansia.Tests.Features.Referrals.Admin;
 /// shows was granted under that side's key — and on a balance that no longer holds it all, only what is left
 /// (owner default 2026-10-04): a balance never goes negative, and the debit row records what was taken. A held
 /// referral is rejected through the same command: nothing was paid, so nothing is taken. A retry on the
-/// already-Reversed row is a guarded no-op.
+/// already-Reversed row is a guarded no-op, and an action sent for a hold state the row no longer has is refused.
 /// </summary>
 public class ReverseReferralHandlerTests
 {
@@ -45,6 +45,9 @@ public class ReverseReferralHandlerTests
                 It.IsAny<string>(), It.IsAny<CancellationToken>(), It.IsAny<string?>(), It.IsAny<string?>()))
             .ReturnsAsync(true);
     }
+
+    private static readonly ReverseReferral.Command Reverse = new(ReferralId, Reason, ExpectHeld: false);
+    private static readonly ReverseReferral.Command Reject = new(ReferralId, Reason, ExpectHeld: true);
 
     private ReverseReferral.Handler CreateHandler() => new(
         _referralRepository.Object,
@@ -99,7 +102,7 @@ public class ReverseReferralHandlerTests
         Holds(ReferrerUserId, 400m);
         Holds(ReferredUserId, 150m);
 
-        var result = await CreateHandler().Handle(new ReverseReferral.Command(ReferralId, Reason), CancellationToken.None);
+        var result = await CreateHandler().Handle(Reverse, CancellationToken.None);
 
         Assert.True(result.IsSuccess);
         Assert.Equal(new ReverseReferral.Response(ReferralId, 150m, "CZK", 150m, "CZK"), result.Value);
@@ -123,7 +126,7 @@ public class ReverseReferralHandlerTests
         Holds(ReferrerUserId, 400m, CzkId);
         Holds(ReferredUserId, 6m, EurId);
 
-        var result = await CreateHandler().Handle(new ReverseReferral.Command(ReferralId, Reason), CancellationToken.None);
+        var result = await CreateHandler().Handle(Reverse, CancellationToken.None);
 
         Assert.Equal(new ReverseReferral.Response(ReferralId, 150m, "CZK", 6m, "EUR"), result.Value);
         VerifyTaken(ReferrerUserId, "referrer", 150m, CzkId);
@@ -141,7 +144,7 @@ public class ReverseReferralHandlerTests
         Holds(ReferrerUserId, 150m);
         Holds(ReferredUserId, 40m);
 
-        var result = await CreateHandler().Handle(new ReverseReferral.Command(ReferralId, Reason), CancellationToken.None);
+        var result = await CreateHandler().Handle(Reverse, CancellationToken.None);
 
         Assert.Equal(new ReverseReferral.Response(ReferralId, 150m, "CZK", 40m, "CZK"), result.Value);
         VerifyTaken(ReferredUserId, "referred", 40m);
@@ -156,7 +159,7 @@ public class ReverseReferralHandlerTests
         Holds(ReferrerUserId, 150m);
         Holds(ReferredUserId, 0m);
 
-        var result = await CreateHandler().Handle(new ReverseReferral.Command(ReferralId, Reason), CancellationToken.None);
+        var result = await CreateHandler().Handle(Reverse, CancellationToken.None);
 
         Assert.Equal(new ReverseReferral.Response(ReferralId, 150m, "CZK", 0m, "CZK"), result.Value);
         _credit.Verify(c => c.TryDebitAsync(
@@ -175,7 +178,7 @@ public class ReverseReferralHandlerTests
         Granted("referred", 150m);
         Holds(ReferredUserId, 150m);
 
-        var result = await CreateHandler().Handle(new ReverseReferral.Command(ReferralId, Reason), CancellationToken.None);
+        var result = await CreateHandler().Handle(Reverse, CancellationToken.None);
 
         Assert.Equal(new ReverseReferral.Response(ReferralId, 0m, null, 150m, "CZK"), result.Value);
         _credit.Verify(c => c.LockForUserAsync(ReferrerUserId, It.IsAny<CancellationToken>()), Times.Never);
@@ -188,7 +191,7 @@ public class ReverseReferralHandlerTests
     {
         var referral = QualifiedReferral(toReferrer: null, toReferred: null);
 
-        var result = await CreateHandler().Handle(new ReverseReferral.Command(ReferralId, Reason), CancellationToken.None);
+        var result = await CreateHandler().Handle(Reverse, CancellationToken.None);
 
         Assert.Equal(new ReverseReferral.Response(ReferralId, 0m, null, 0m, null), result.Value);
         Assert.Equal(ReferralStatus.Reversed, referral.Status);
@@ -200,12 +203,50 @@ public class ReverseReferralHandlerTests
     {
         var referral = HeldReferral();
 
-        var result = await CreateHandler().Handle(new ReverseReferral.Command(ReferralId, Reason), CancellationToken.None);
+        var result = await CreateHandler().Handle(Reject, CancellationToken.None);
 
         Assert.True(result.IsSuccess);
         Assert.Equal(new ReverseReferral.Response(ReferralId, 0m, null, 0m, null), result.Value);
         Assert.Equal(ReferralStatus.Reversed, referral.Status);
         Assert.Equal(Referral.HoldReasonPhone, referral.HoldReasons);
+        _credit.VerifyNoOtherCalls();
+    }
+
+    /// <summary>
+    /// A rejection sent from the held row reaches a referral another administrator released meanwhile: it is
+    /// Qualified now, its hold reasons kept as history, both grants paid. Taking those grants back is a reversal
+    /// nobody chose, so it is refused and nothing is taken.
+    /// </summary>
+    [Fact]
+    public async Task A_Rejection_Sent_While_The_Referral_Was_Held_Is_Refused_Once_It_Was_Released()
+    {
+        var referral = HeldReferral();
+        referral.ForceQualify(CzkId, 150m, CzkId, 150m, "admin-2");
+        Granted("referrer", 150m);
+        Granted("referred", 150m);
+        Holds(ReferrerUserId, 150m);
+        Holds(ReferredUserId, 150m);
+
+        var result = await CreateHandler().Handle(Reject, CancellationToken.None);
+
+        Assert.True(result.IsFailure);
+        Assert.Equal(BusinessErrorMessage.ReferralHoldChanged, result.Error!.Message);
+        Assert.Equal(nameof(ReverseReferral.Command.ExpectHeld), result.Error.Code);
+        Assert.Equal(ReferralStatus.Qualified, referral.Status);
+        _credit.VerifyNoOtherCalls();
+    }
+
+    [Fact]
+    public async Task A_Reversal_Sent_For_A_Referral_That_Is_Held_Is_Refused_And_Takes_Nothing()
+    {
+        var referral = HeldReferral();
+
+        var result = await CreateHandler().Handle(Reverse, CancellationToken.None);
+
+        Assert.True(result.IsFailure);
+        Assert.Equal(BusinessErrorMessage.ReferralHoldChanged, result.Error!.Message);
+        Assert.Equal(nameof(ReverseReferral.Command.ExpectHeld), result.Error.Code);
+        Assert.Equal(ReferralStatus.Accepted, referral.Status);
         _credit.VerifyNoOtherCalls();
     }
 
@@ -218,11 +259,11 @@ public class ReverseReferralHandlerTests
         Holds(ReferrerUserId, 150m);
         Holds(ReferredUserId, 150m);
 
-        var first = await CreateHandler().Handle(new ReverseReferral.Command(ReferralId, Reason), CancellationToken.None);
+        var first = await CreateHandler().Handle(Reverse, CancellationToken.None);
         Assert.True(first.IsSuccess);
         Assert.Equal(ReferralStatus.Reversed, referral.Status);
 
-        var second = await CreateHandler().Handle(new ReverseReferral.Command(ReferralId, Reason), CancellationToken.None);
+        var second = await CreateHandler().Handle(Reverse, CancellationToken.None);
 
         Assert.True(second.IsFailure);
         Assert.Equal(BusinessErrorMessage.ReferralNotQualified, second.Error!.Message);
@@ -237,7 +278,7 @@ public class ReverseReferralHandlerTests
     {
         Arranged(Referral.CreateAccepted(ReferrerUserId, ReferredUserId, "code-1", "system"));
 
-        var result = await CreateHandler().Handle(new ReverseReferral.Command(ReferralId, Reason), CancellationToken.None);
+        var result = await CreateHandler().Handle(Reverse, CancellationToken.None);
 
         Assert.True(result.IsFailure);
         Assert.Equal(BusinessErrorMessage.ReferralNotQualified, result.Error!.Message);
@@ -250,7 +291,7 @@ public class ReverseReferralHandlerTests
     {
         QualifiedReferral();
 
-        await CreateHandler().Handle(new ReverseReferral.Command(ReferralId, Reason), CancellationToken.None);
+        await CreateHandler().Handle(Reverse, CancellationToken.None);
 
         _referralRepository.Verify(r => r.CommitAsync(It.IsAny<CancellationToken>()), Times.Never);
     }

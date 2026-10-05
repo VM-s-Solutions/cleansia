@@ -26682,6 +26682,7 @@ export interface IFiscalFailureDto {
 export class ForceQualifyReferralCommand implements IForceQualifyReferralCommand {
     referralId!: string | undefined;
     reason!: string | undefined;
+    expectHeld!: boolean;
 
     constructor(data?: IForceQualifyReferralCommand) {
         if (data) {
@@ -26696,6 +26697,7 @@ export class ForceQualifyReferralCommand implements IForceQualifyReferralCommand
         if (Data) {
             this.referralId = Data["referralId"];
             this.reason = Data["reason"];
+            this.expectHeld = Data["expectHeld"];
         }
     }
 
@@ -26710,6 +26712,7 @@ export class ForceQualifyReferralCommand implements IForceQualifyReferralCommand
         data = typeof data === 'object' ? data : {};
         data["referralId"] = this.referralId;
         data["reason"] = this.reason;
+        data["expectHeld"] = this.expectHeld;
         return data;
     }
 }
@@ -26717,6 +26720,7 @@ export class ForceQualifyReferralCommand implements IForceQualifyReferralCommand
 export interface IForceQualifyReferralCommand {
     referralId: string | undefined;
     reason: string | undefined;
+    expectHeld: boolean;
 }
 
 export class ForceQualifyReferralResponse implements IForceQualifyReferralResponse {
@@ -35215,6 +35219,7 @@ export interface IRevenueReportDto {
 export class ReverseReferralCommand implements IReverseReferralCommand {
     referralId!: string | undefined;
     reason!: string | undefined;
+    expectHeld!: boolean;
 
     constructor(data?: IReverseReferralCommand) {
         if (data) {
@@ -35229,6 +35234,7 @@ export class ReverseReferralCommand implements IReverseReferralCommand {
         if (Data) {
             this.referralId = Data["referralId"];
             this.reason = Data["reason"];
+            this.expectHeld = Data["expectHeld"];
         }
     }
 
@@ -35243,6 +35249,7 @@ export class ReverseReferralCommand implements IReverseReferralCommand {
         data = typeof data === 'object' ? data : {};
         data["referralId"] = this.referralId;
         data["reason"] = this.reason;
+        data["expectHeld"] = this.expectHeld;
         return data;
     }
 }
@@ -35250,6 +35257,7 @@ export class ReverseReferralCommand implements IReverseReferralCommand {
 export interface IReverseReferralCommand {
     referralId: string | undefined;
     reason: string | undefined;
+    expectHeld: boolean;
 }
 
 export class ReverseReferralResponse implements IReverseReferralResponse {

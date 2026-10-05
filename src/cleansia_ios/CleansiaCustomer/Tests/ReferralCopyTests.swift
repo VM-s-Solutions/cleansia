@@ -35,8 +35,7 @@ final class ReferralCopyTests: XCTestCase {
             slot: "%2$@",
             twin: "booking_referral_code_dialog_success_named_no_figure"
         ),
-        RewardRow(key: "loyalty_referral_subtitle", slot: "%1$@", twin: "loyalty_referral_subtitle_no_figure"),
-        RewardRow(key: "loyalty_referral_share_text", slot: "%1$@", twin: "loyalty_referral_share_text_no_figure")
+        RewardRow(key: "loyalty_referral_subtitle", slot: "%1$@", twin: "loyalty_referral_subtitle_no_figure")
     ]
 
     /// Both sides are credited once the friend's first order is completed.
@@ -57,6 +56,15 @@ final class ReferralCopyTests: XCTestCase {
         "ru": "балл"
     ]
     private static let currencyWord = "CZK|Kč|EUR|€|koru|euro|крон|євро|евро"
+
+    /// Each side is paid the credit of the currency it books in, so the two figures can differ.
+    private static let sharedFigureClaim = [
+        "en": "each|both",
+        "cs": "oba|obě|každý|každá",
+        "sk": "obaja|obe|každý|každá",
+        "uk": "обоє|обидва|обидві|обом|кожен|кожна|кожному",
+        "ru": "оба|обе|каждый|каждая|каждому"
+    ]
 
     private var restoreBundle: Bundle?
 
@@ -121,18 +129,18 @@ final class ReferralCopyTests: XCTestCase {
         )
     }
 
-    func testTheShareTextCarriesTheCodeAndTheLandingLinkWithOrWithoutAFigure() {
+    func testTheShareTextCarriesTheCodeAndTheLandingLinkButNeverTheInvitersFigure() throws {
         let link = CleansiaWeb.referralLink(code: "ABC123")
-        let amount = ReferralCopy.amount(Self.credit)
+        let message = ReferralCopy.shareMessage(code: "ABC123")
+        XCTAssertEqual(message, L10n.Rewards.referralShareTextNoFigure("ABC123", link))
+        XCTAssertTrue(message.contains("ABC123") && message.contains(link), message)
 
-        let stated = ReferralCopy.shareMessage(code: "ABC123", credit: Self.credit)
-        XCTAssertEqual(stated, L10n.Rewards.referralShareText(amount, "ABC123", link))
-        XCTAssertTrue(stated.contains("ABC123") && stated.contains(link) && stated.contains(amount), stated)
-
-        let bare = ReferralCopy.shareMessage(code: "ABC123", credit: nil)
-        XCTAssertEqual(bare, L10n.Rewards.referralShareTextNoFigure("ABC123", link))
-        XCTAssertTrue(bare.contains("ABC123") && bare.contains(link), bare)
-        XCTAssertFalse(bare.contains(amount), bare)
+        for language in Self.languages {
+            XCTAssertNil(
+                try catalog(language)["loyalty_referral_share_text"],
+                "\(language) still ships a share text that tells the friend the inviter's figure"
+            )
+        }
     }
 
     // MARK: The catalog
@@ -150,6 +158,19 @@ final class ReferralCopyTests: XCTestCase {
                 XCTAssertFalse(Self.matches(bare, Self.currencyWord), "\(site) names a currency: \(value)")
                 XCTAssertTrue(Self.matches(value, credit), "\(site) does not call the reward credit: \(value)")
                 XCTAssertTrue(Self.matches(value, completed), "\(site) does not wait for the cleaning: \(value)")
+            }
+        }
+    }
+
+    func testEachLinePromisesTheReaderOnlyTheirOwnFigure() throws {
+        try forEachLanguage { language in
+            let shared = try XCTUnwrap(Self.sharedFigureClaim[language])
+            for row in Self.rewardRows {
+                let value = L10n.localized(row.key)
+                XCTAssertFalse(
+                    Self.matches(value, Self.wholeWord(shared)),
+                    "\(language)/\(row.key) promises one figure to both sides: \(value)"
+                )
             }
         }
     }
@@ -196,6 +217,10 @@ final class ReferralCopyTests: XCTestCase {
 
     private static func withoutSlots(_ text: String) -> String {
         text.replacingOccurrences(of: #"%\d+\$(ll)?[@d]"#, with: "", options: .regularExpression)
+    }
+
+    private static func wholeWord(_ words: String) -> String {
+        #"(?<!\p{L})(?:"# + words + #")(?!\p{L})"#
     }
 
     private static func matches(_ text: String, _ pattern: String) -> Bool {

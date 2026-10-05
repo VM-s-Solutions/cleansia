@@ -2511,6 +2511,7 @@
       "filter": {
         "status_all": "All statuses",
         "status_accepted": "Accepted",
+        "status_held": "Held",
         "status_qualified": "Qualified",
         "status_expired": "Expired",
         "date_from": "From",
@@ -2535,17 +2536,29 @@
       },
       "credit_format": "{{referrer}} / {{referred}}",
       "not_yet": "—",
+      "held": "Held: {{reasons}}",
+      "hold_reason": {
+        "address": "same address",
+        "phone": "same phone number",
+        "email": "same e-mail inbox"
+      },
       "empty": "No referrals yet",
       "loading": "Loading...",
       "actions": {
         "reverse": "Reverse referral",
-        "force_qualify": "Force-qualify referral"
+        "force_qualify": "Force-qualify referral",
+        "release": "Release referral",
+        "reject": "Reject referral"
       },
       "intervention": {
         "title_reverse": "Reverse referral",
         "title_force_qualify": "Force-qualify referral",
+        "title_release": "Release held referral",
+        "title_reject": "Reject held referral",
         "hint_reverse": "Takes back the referral credit from both parties — only as much of it as each balance still holds — and marks the referral as reversed. The reason is stored in the audit ledger.",
-        "hint_force_qualify": "Marks the referral as qualified and credits both parties the referral credit of the currency of the referred customer's latest order, or of the platform default currency. The reason is stored in the audit ledger.",
+        "hint_force_qualify": "Marks the referral as qualified and credits each party the referral credit of the currency it books in: the referred customer that of their latest order, or of the platform default currency; the referrer that of their latest order, or of the referred customer's currency. A party whose currency has no referral credit set receives nothing. The reason is stored in the audit ledger.",
+        "hint_release": "Finds the referral genuine and pays it: the referred customer the referral credit of the held order's currency, the referrer that of the currency of their latest order, or of the referred customer's when they have none. A party whose currency has no referral credit set receives nothing. The referral becomes qualified. The reason is stored in the audit ledger.",
+        "hint_reject": "Refuses the referral: neither party receives referral credit, and the referral is marked as reversed with its hold reasons kept on record. The reason is stored in the audit ledger.",
         "summary_reverse": "Granted on qualification: {{credit}} (referrer / referred).",
         "field": {
           "reason": "Reason",
@@ -2553,9 +2566,12 @@
         },
         "submit_reverse": "Reverse",
         "submit_force_qualify": "Qualify",
+        "submit_release": "Release",
+        "submit_reject": "Reject",
         "success_reverse": "Referral reversed. Credit taken back: {{referrer}} from the referrer, {{referred}} from the referred customer.",
         "success_reverse_no_credit": "Referral reversed. No credit had been granted, so none was taken back.",
-        "success_force_qualify": "Referral qualified. Credit granted: {{referrer}} to the referrer, {{referred}} to the referred customer."
+        "success_force_qualify": "Referral qualified. Credit granted: {{referrer}} to the referrer, {{referred}} to the referred customer.",
+        "success_reject": "Referral rejected. No referral credit was paid."
       }
     },
     "sitewide_push": {
@@ -2907,6 +2923,12 @@
               "title": "Company archived",
               "body": "The books were sealed on {{archivedOn}}."
             }
+          },
+          "referral": {
+            "held": {
+              "title": "A referral is held for review",
+              "body": "A referral was held because the two accounts appear to belong to the same person. Open Referrals, filter by Held, and release or reject it."
+            }
           }
         }
       }
@@ -3100,6 +3122,7 @@
       "load_error": "Failed to load pay periods",
       "load_detail_error": "Failed to load pay period details",
       "close_success": "Pay period closed successfully",
+      "create_success": "Pay period created",
       "close_error": "Failed to close pay period"
     }
   },
@@ -3274,9 +3297,9 @@
       "work_country_operator_mismatch": "The work country belongs to another operating company.",
       "weekly_limit_reason_required": "Write why this cleaner is limited. They are shown the reason.",
       "legal_documents_not_accepted": "This cleaner has not yet accepted the current version of every contract document in force for their work country.",
-      "business_ceased": "The business register (ARES) shows this cleaner's business (IČO) has ended, so they cannot be approved.",
-      "trade_licence_inactive": "The business register (ARES) shows no trade licence in force for this cleaner, so they cannot be approved.",
-      "business_registry_unavailable": "The business register (ARES) could not be reached to check this cleaner's IČO. Try approving again in a few minutes."
+      "business_ceased": "The business register (ARES) shows the business under this IČO has ended.",
+      "trade_licence_inactive": "The business register (ARES) shows no trade licence in force under this IČO.",
+      "business_registry_unavailable": "The business register (ARES) could not be reached to check this IČO. Try again in a few minutes."
     },
     "employee_document": {
       "deletion_already_resolved": "This deletion request has already been answered.",
@@ -3476,6 +3499,7 @@
     },
     "referral": {
       "action_failed": "The referral action failed. Try again.",
+      "hold_changed": "This referral was held or released since the list was loaded. The list now shows its current state — review it again.",
       "not_accepted": "The referral is not in the accepted state.",
       "not_found": "Referral not found.",
       "not_qualified": "The referral is not in the qualified state.",
@@ -3562,6 +3586,7 @@
         "swift_required": "The bank is in a different country than the partner's work country, so the bank's SWIFT/BIC code is also required."
       },
       "registration_number": {
+        "invalid_format": "This company ID (IČO) does not match the format required in the cleaner's country, or is missing where that country requires one.",
         "not_registered": "This company ID (IČO) is not in the business register (ARES). Check the number."
       }
     },

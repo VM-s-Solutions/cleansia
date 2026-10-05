@@ -116,7 +116,7 @@ public class AutoCancelStaleRecurringOrders
                         // when it was materialized it has to come back. Inside the loop for the same
                         // tenant-stamping reason as the commit below.
                         await creditAccountRepository.ReturnUnpaidOrderCreditAsync(
-                            order, SystemActor, cancellationToken);
+                            order, cardRefunded: 0m, SystemActor, cancellationToken);
 
                         // Fee-free by this sweep's own rule, and now it says so on the order.
                         order.Cancel(

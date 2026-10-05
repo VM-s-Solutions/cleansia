@@ -244,6 +244,29 @@ public class AresBusinessRegistryTests
     }
 
     /// <summary>
+    /// A register that keeps failing reaches Sentry, which makes an event of an Error log, exactly once: the
+    /// lookup's retry logs its last handled attempt at Error. The registry's own line for that failure is a
+    /// Warning, so one outage does not raise a second event for the same refusal.
+    /// </summary>
+    [Fact]
+    public async Task Under_The_Host_Defaults_A_Register_That_Keeps_Failing_Is_One_Error_And_It_Is_The_Retrys()
+    {
+        var logs = new CapturingLoggerProvider();
+        await using var provider = HostComposition(
+            new StubHandler(() => new HttpResponseMessage(HttpStatusCode.ServiceUnavailable)), logs);
+        await using var scope = provider.CreateAsyncScope();
+
+        var record = await scope.ServiceProvider.GetRequiredService<IBusinessRegistry>()
+            .LookupAsync("CZE", Ico, CancellationToken.None);
+
+        Assert.Equal(BusinessRegistryRecord.Unavailable, record);
+        var error = Assert.Single(logs.Entries, e => e.Level >= LogLevel.Error);
+        Assert.Equal("Polly", error.Category);
+        var registryLine = Assert.Single(logs.Entries, e => e.EventId == AresBusinessRegistry.UnavailableEvent.Id);
+        Assert.Equal(LogLevel.Warning, registryLine.Level);
+    }
+
+    /// <summary>
     /// The HTTP client's request logging writes the URL at Information, and an ARES URL ends in the cleaner's
     /// IČO. The registry's own refusal is still logged, so the capture is known to be listening.
     /// </summary>
@@ -306,15 +329,16 @@ public class AresBusinessRegistryTests
 
     private sealed class CapturingLoggerProvider : ILoggerProvider
     {
-        public ConcurrentQueue<(int EventId, string Message)> Entries { get; } = new();
+        public ConcurrentQueue<(string Category, LogLevel Level, int EventId, string Message)> Entries { get; } = new();
 
-        public ILogger CreateLogger(string categoryName) => new CapturingLogger(Entries);
+        public ILogger CreateLogger(string categoryName) => new CapturingLogger(categoryName, Entries);
 
         public void Dispose()
         {
         }
 
-        private sealed class CapturingLogger(ConcurrentQueue<(int EventId, string Message)> entries) : ILogger
+        private sealed class CapturingLogger(
+            string category, ConcurrentQueue<(string Category, LogLevel Level, int EventId, string Message)> entries) : ILogger
         {
             public IDisposable? BeginScope<TState>(TState state) where TState : notnull => null;
 
@@ -322,7 +346,7 @@ public class AresBusinessRegistryTests
 
             public void Log<TState>(
                 LogLevel logLevel, EventId eventId, TState state, Exception? exception, Func<TState, Exception?, string> formatter)
-                => entries.Enqueue((eventId.Id, formatter(state, exception)));
+                => entries.Enqueue((category, logLevel, eventId.Id, formatter(state, exception)));
         }
     }
 }

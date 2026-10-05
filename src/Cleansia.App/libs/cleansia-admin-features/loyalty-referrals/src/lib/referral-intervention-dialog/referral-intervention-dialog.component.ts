@@ -14,13 +14,11 @@ import {
 } from '@cleansia/components';
 import { TranslatePipe } from '@ngx-translate/core';
 import { DialogModule } from 'primeng/dialog';
-
-export type ReferralInterventionMode = 'reverse' | 'forceQualify';
-
-export interface ReferralInterventionSubmit {
-  mode: ReferralInterventionMode;
-  reason: string;
-}
+import {
+  REFERRAL_INTERVENTION_COPY,
+  ReferralInterventionMode,
+  ReferralInterventionSubmit,
+} from './referral-intervention-dialog.models';
 
 const REASON_MAX = 500;
 
@@ -58,25 +56,11 @@ export class ReferralInterventionDialogComponent {
     }),
   });
 
-  readonly headerKey = computed(() =>
-    this.mode() === 'reverse'
-      ? 'pages.loyalty_referrals.intervention.title_reverse'
-      : 'pages.loyalty_referrals.intervention.title_force_qualify'
-  );
-
-  readonly hintKey = computed(() =>
-    this.mode() === 'reverse'
-      ? 'pages.loyalty_referrals.intervention.hint_reverse'
-      : 'pages.loyalty_referrals.intervention.hint_force_qualify'
-  );
-
-  readonly submitKey = computed(() =>
-    this.mode() === 'reverse'
-      ? 'pages.loyalty_referrals.intervention.submit_reverse'
-      : 'pages.loyalty_referrals.intervention.submit_force_qualify'
-  );
-
-  readonly destructive = computed(() => this.mode() === 'reverse');
+  private readonly copy = computed(() => REFERRAL_INTERVENTION_COPY[this.mode()]);
+  readonly headerKey = computed(() => this.copy().titleKey);
+  readonly hintKey = computed(() => this.copy().hintKey);
+  readonly submitKey = computed(() => this.copy().submitKey);
+  readonly destructive = computed(() => this.copy().destructive);
 
   readonly reverseSummary = computed(() => (this.mode() === 'reverse' ? this.credit() : null));
 

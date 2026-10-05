@@ -122,6 +122,12 @@ public class DropOrder
 
             order.UnassignEmployee(employeeId);
 
+            // Removing a seat changes no order column, so without the touch the order's row stays out of
+            // the commit and its CurrentStatus concurrency token is never compared. A drop decided on a
+            // status another writer has since moved — a lockout confirmed in the same instant, which pays
+            // the crew it loaded — would then land anyway; touched, the stale drop rolls back whole.
+            order.Updated(employeeId, nowUtc);
+
             // A live hold makes the order invisible to EVERYONE but its beneficiary, for up to 12
             // hours. Leaving one standing after its own beneficiary walks away would take the seat
             // this command just freed and hide it from the entire board — the exact opposite of

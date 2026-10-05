@@ -1,11 +1,16 @@
+using System.Globalization;
 using System.Security.Cryptography;
+using System.Text;
 using Cleansia.Core.AppServices.Features.Orders;
 using Cleansia.Core.AppServices.Services.Interfaces;
 using Cleansia.Core.Domain.Credit;
 using Cleansia.Core.Domain.Enums;
+using Cleansia.Core.Domain.Internationalization;
 using Cleansia.Core.Domain.Loyalty;
+using Cleansia.Core.Domain.Notifications;
 using Cleansia.Core.Domain.Repositories;
 using Cleansia.Core.Domain.SeedWork;
+using Cleansia.Core.Domain.Users;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 
@@ -14,8 +19,9 @@ using Cleansia.Core.AppServices.Common;
 namespace Cleansia.Core.AppServices.Services;
 
 /// <summary>
-/// Coordinates referral-code generation + acceptance, and the symmetric credit
-/// grants when an invitee completes their first order. Mirrors the
+/// Coordinates referral-code generation + acceptance, and the credit grants
+/// when an invitee completes their first order — or the hold for review when
+/// the two accounts look like one person. Mirrors the
 /// <see cref="LoyaltyService"/> shape: handlers call into this, the service
 /// keeps the business rules.
 /// </summary>
@@ -24,6 +30,7 @@ public sealed class ReferralService(
     IReferralRepository referralRepository,
     IOrderRepository orderRepository,
     ICreditAccountRepository creditAccountRepository,
+    IAdminNotifier adminNotifier,
     IUnitOfWork unitOfWork,
     ILogger<ReferralService> logger) : IReferralService
 {
@@ -198,9 +205,9 @@ public sealed class ReferralService(
             return;
         }
 
-        // Idempotency: if we've already qualified or expired, no work to do.
+        // Idempotency: if we've already qualified, expired or held it, no work to do.
         // A second CompleteOrder fire for the same order would land here.
-        if (referral.Status != ReferralStatus.Accepted)
+        if (referral.Status != ReferralStatus.Accepted || referral.HoldReasons is not null)
         {
             return;
         }
@@ -226,13 +233,39 @@ public sealed class ReferralService(
             return;
         }
 
+        var referredCurrency = order.Currency;
+        var referrerCurrency = await GetBookingCurrencyAsync(referral.ReferrerUserId, cancellationToken) ?? referredCurrency;
+
+        var eitherSideCanBePaid = referrerCurrency?.ReferralCredit > 0m || referredCurrency?.ReferralCredit > 0m;
+        var holdReasons = eitherSideCanBePaid ? await SamePersonReasonsAsync(referral, cancellationToken) : null;
+        if (holdReasons is not null)
+        {
+            referral.HoldForReview(orderId, holdReasons, SystemActor);
+            if (!string.IsNullOrEmpty(referral.TenantId))
+            {
+                await adminNotifier.NotifyAsync(
+                    new AdminEvent(
+                        AdminNotificationEventCatalog.ReferralHeld,
+                        referral.TenantId,
+                        Subject: referral.Id,
+                        Args: new Dictionary<string, string> { ["referralId"] = referral.Id }),
+                    cancellationToken);
+            }
+
+            logger.LogWarning(
+                "Referral {ReferralId} is held for review: the two accounts share {HoldReasons}.",
+                referral.Id, holdReasons);
+            return;
+        }
+
         var (toReferrer, toReferred) = await AwardCreditAsync(
-            referral, order.CurrencyId, order.Currency?.ReferralCredit, orderId, SystemActor, note: null, cancellationToken);
+            referral, referrerCurrency, referredCurrency, orderId, SystemActor, note: null, cancellationToken);
 
         referral.MarkQualified(
             firstQualifyingOrderId: orderId,
-            creditCurrencyId: order.CurrencyId,
+            referrerCurrencyId: referrerCurrency?.Id,
             creditToReferrer: toReferrer,
+            referredCurrencyId: referredCurrency?.Id,
             creditToReferred: toReferred,
             actorId: SystemActor);
 
@@ -241,32 +274,45 @@ public sealed class ReferralService(
         referral.ReferralCode?.RecordUse(SystemActor);
     }
 
+    public async Task<Currency?> GetBookingCurrencyAsync(string userId, CancellationToken cancellationToken) =>
+        await orderRepository.GetQueryableForOwner(userId)
+            .OrderByDescending(o => o.CreatedOn)
+            .Select(o => o.Currency)
+            .FirstOrDefaultAsync(cancellationToken);
+
     public async Task<(decimal? ToReferrer, decimal? ToReferred)> AwardCreditAsync(
         Referral referral,
-        string currencyId,
-        decimal? amount,
+        Currency? referrerCurrency,
+        Currency? referredCurrency,
         string? orderId,
         string actorId,
         string? note,
         CancellationToken cancellationToken)
     {
-        if (amount is null or <= 0m)
-        {
-            logger.LogWarning(
-                "Referral {ReferralId} qualified with no credit: none is authored for currency {CurrencyId}.",
-                referral.Id, currencyId);
-            return (null, null);
-        }
-
         decimal? toReferrer = null;
         decimal? toReferred = null;
 
         // Each grant holds its owner's credit lock until commit; one fixed order keeps two grants to the
         // same pair from each holding the lock the other waits on.
-        var sides = new[] { (Side: ReferrerSide, UserId: referral.ReferrerUserId), (Side: ReferredSide, UserId: referral.ReferredUserId) }
+        var sides = new[]
+            {
+                (Side: ReferrerSide, UserId: referral.ReferrerUserId, Currency: referrerCurrency),
+                (Side: ReferredSide, UserId: referral.ReferredUserId, Currency: referredCurrency),
+            }
             .OrderBy(s => s.UserId, StringComparer.Ordinal);
-        foreach (var (side, userId) in sides)
+        foreach (var (side, userId, currency) in sides)
         {
+            if (currency?.ReferralCredit is not > 0m)
+            {
+                logger.LogWarning(
+                    "Referral {ReferralId}: no referral credit is authored for currency {CurrencyId}; the {Side} receives none.",
+                    referral.Id, currency?.Id, side);
+                continue;
+            }
+
+            var amount = currency.ReferralCredit.Value;
+            var currencyId = currency.Id;
+
             // A write to a frozen company's books fails the whole commit, and that commit is the qualifying
             // order's, which may be another, active company's: that side is skipped like an erased one.
             if (await creditAccountRepository.IsOnFrozenCompanyBooksAsync(userId, currencyId, cancellationToken))
@@ -286,7 +332,7 @@ public sealed class ReferralService(
             }
 
             account.Issue(
-                amount: amount.Value,
+                amount: amount,
                 reason: CreditTransactionReason.Referral,
                 idempotencyKey: CreditKey(referral.Id, side),
                 issuedBy: actorId,
@@ -308,6 +354,88 @@ public sealed class ReferralService(
 
     /// <summary>The ledger key of one side's referral grant; the reversal reads the grant back by it.</summary>
     internal static string CreditKey(string referralId, string side) => $"referral:{referralId}:{side}";
+
+    /// <summary>
+    /// What the two accounts share, as comma-joined hold-reason slugs, or null when nothing does. A deterrent
+    /// against referring oneself, not proof: a home must match once case, accents, spacing and the ZIP's
+    /// punctuation are set aside, and is not shared when both flats are recorded and differ; a phone must end in
+    /// the same nine digits; an inbox must be the same mailbox once a "+" tag, and on Gmail the dots, are dropped.
+    /// </summary>
+    private async Task<string?> SamePersonReasonsAsync(Referral referral, CancellationToken cancellationToken)
+    {
+        var referrer = await referralRepository.GetContactFootprintAsync(referral.ReferrerUserId, cancellationToken);
+        var referred = await referralRepository.GetContactFootprintAsync(referral.ReferredUserId, cancellationToken);
+        var reasons = new List<string>();
+
+        var referrerHomes = referrer.Addresses.Select(Home).ToList();
+        if (referred.Addresses.Select(Home).Any(home => referrerHomes.Any(other =>
+                other.Key == home.Key && (other.Flat.Length == 0 || home.Flat.Length == 0 || other.Flat == home.Flat))))
+        {
+            reasons.Add(Referral.HoldReasonAddress);
+        }
+
+        var referrerPhones = referrer.Phones.Select(PhoneTail).OfType<string>().ToHashSet(StringComparer.Ordinal);
+        if (referred.Phones.Select(PhoneTail).Any(tail => tail is not null && referrerPhones.Contains(tail)))
+        {
+            reasons.Add(Referral.HoldReasonPhone);
+        }
+
+        var referrerMailbox = Mailbox(referrer.Email);
+        if (referrerMailbox is not null && referrerMailbox == Mailbox(referred.Email))
+        {
+            reasons.Add(Referral.HoldReasonEmail);
+        }
+
+        return reasons.Count == 0 ? null : string.Join(',', reasons);
+    }
+
+    private static (string Key, string Flat) Home(
+        (string CountryId, string ZipCode, string City, string Street, string? Apartment) address) =>
+        ($"{address.CountryId}|{LettersAndDigits(address.ZipCode)}|{Words(address.City)}|{Words(address.Street)}",
+            LettersAndDigits(address.Apartment));
+
+    private static string LettersAndDigits(string? value) =>
+        new string((value ?? string.Empty).Where(char.IsLetterOrDigit).ToArray()).ToUpperInvariant();
+
+    private static string Words(string value)
+    {
+        var unaccented = new string(value.Normalize(NormalizationForm.FormD)
+            .Where(c => CharUnicodeInfo.GetUnicodeCategory(c) != UnicodeCategory.NonSpacingMark)
+            .ToArray());
+        return string.Join(' ', unaccented.Split((char[]?)null, StringSplitOptions.RemoveEmptyEntries)).ToUpperInvariant();
+    }
+
+    private static string? PhoneTail(string phone)
+    {
+        var digits = new string(phone.Where(char.IsAsciiDigit).ToArray());
+        return digits.Length < 9 ? null : digits[^9..];
+    }
+
+    private static string? Mailbox(string? email)
+    {
+        var address = email?.Trim().ToLowerInvariant();
+        var at = address?.LastIndexOf('@') ?? -1;
+        if (address is null || at <= 0 || address.EndsWith(User.AnonymisedEmailSuffix, StringComparison.Ordinal))
+        {
+            return null;
+        }
+
+        var local = address[..at];
+        var domain = address[(at + 1)..];
+        var tag = local.IndexOf('+');
+        if (tag >= 0)
+        {
+            local = local[..tag];
+        }
+
+        if (domain is "gmail.com" or "googlemail.com")
+        {
+            local = local.Replace(".", string.Empty, StringComparison.Ordinal);
+            domain = "gmail.com";
+        }
+
+        return local.Length == 0 ? null : $"{local}@{domain}";
+    }
 
     public async Task ExpireStaleReferralsAsync(CancellationToken cancellationToken)
     {

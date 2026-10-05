@@ -15537,9 +15537,10 @@ export interface IAdminReferralClient {
      * @param dateTo (optional) 
      * @param offset (optional) 
      * @param limit (optional) 
+     * @param held (optional) 
      * @return OK
      */
-    getPaged(status?: ReferralStatus | undefined, dateFrom?: Date | undefined, dateTo?: Date | undefined, offset?: number | undefined, limit?: number | undefined): Observable<PagedDataOfAdminReferralListItem>;
+    getPaged(status?: ReferralStatus | undefined, dateFrom?: Date | undefined, dateTo?: Date | undefined, offset?: number | undefined, limit?: number | undefined, held?: boolean | undefined): Observable<PagedDataOfAdminReferralListItem>;
     /**
      * @return OK
      */
@@ -15575,9 +15576,10 @@ export class AdminReferralClient implements IAdminReferralClient {
      * @param dateTo (optional) 
      * @param offset (optional) 
      * @param limit (optional) 
+     * @param held (optional) 
      * @return OK
      */
-    getPaged(status?: ReferralStatus | undefined, dateFrom?: Date | undefined, dateTo?: Date | undefined, offset?: number | undefined, limit?: number | undefined): Observable<PagedDataOfAdminReferralListItem> {
+    getPaged(status?: ReferralStatus | undefined, dateFrom?: Date | undefined, dateTo?: Date | undefined, offset?: number | undefined, limit?: number | undefined, held?: boolean | undefined): Observable<PagedDataOfAdminReferralListItem> {
         let url = this.baseUrl + "/api/AdminReferral/get-paged?";
         if (status === null)
             throw new globalThis.Error("The parameter 'status' cannot be null.");
@@ -15599,6 +15601,10 @@ export class AdminReferralClient implements IAdminReferralClient {
             throw new globalThis.Error("The parameter 'limit' cannot be null.");
         else if (limit !== undefined)
             url += "limit=" + encodeURIComponent("" + limit) + "&";
+        if (held === null)
+            throw new globalThis.Error("The parameter 'held' cannot be null.");
+        else if (held !== undefined)
+            url += "held=" + encodeURIComponent("" + held) + "&";
         url = url.replace(/[?&]$/, "");
 
         let options : any = {
@@ -19950,8 +19956,10 @@ export class AdminReferralListItem implements IAdminReferralListItem {
     acceptedOn!: Date;
     firstQualifyingOrderOn!: Date | undefined;
     creditAwardedToReferrer!: number | undefined;
+    referrerCreditCurrencyCode!: string | undefined;
     creditAwardedToReferred!: number | undefined;
-    creditCurrencyCode!: string | undefined;
+    referredCreditCurrencyCode!: string | undefined;
+    holdReasons!: string | undefined;
 
     constructor(data?: IAdminReferralListItem) {
         if (data) {
@@ -19973,8 +19981,10 @@ export class AdminReferralListItem implements IAdminReferralListItem {
             this.acceptedOn = Data["acceptedOn"] ? new Date(Data["acceptedOn"].toString()) : undefined as any;
             this.firstQualifyingOrderOn = Data["firstQualifyingOrderOn"] ? new Date(Data["firstQualifyingOrderOn"].toString()) : undefined as any;
             this.creditAwardedToReferrer = Data["creditAwardedToReferrer"];
+            this.referrerCreditCurrencyCode = Data["referrerCreditCurrencyCode"];
             this.creditAwardedToReferred = Data["creditAwardedToReferred"];
-            this.creditCurrencyCode = Data["creditCurrencyCode"];
+            this.referredCreditCurrencyCode = Data["referredCreditCurrencyCode"];
+            this.holdReasons = Data["holdReasons"];
         }
     }
 
@@ -19996,8 +20006,10 @@ export class AdminReferralListItem implements IAdminReferralListItem {
         data["acceptedOn"] = this.acceptedOn ? this.acceptedOn.toISOString() : undefined as any;
         data["firstQualifyingOrderOn"] = this.firstQualifyingOrderOn ? this.firstQualifyingOrderOn.toISOString() : undefined as any;
         data["creditAwardedToReferrer"] = this.creditAwardedToReferrer;
+        data["referrerCreditCurrencyCode"] = this.referrerCreditCurrencyCode;
         data["creditAwardedToReferred"] = this.creditAwardedToReferred;
-        data["creditCurrencyCode"] = this.creditCurrencyCode;
+        data["referredCreditCurrencyCode"] = this.referredCreditCurrencyCode;
+        data["holdReasons"] = this.holdReasons;
         return data;
     }
 }
@@ -20012,8 +20024,10 @@ export interface IAdminReferralListItem {
     acceptedOn: Date;
     firstQualifyingOrderOn: Date | undefined;
     creditAwardedToReferrer: number | undefined;
+    referrerCreditCurrencyCode: string | undefined;
     creditAwardedToReferred: number | undefined;
-    creditCurrencyCode: string | undefined;
+    referredCreditCurrencyCode: string | undefined;
+    holdReasons: string | undefined;
 }
 
 export class AdminRefundOrderCommand implements IAdminRefundOrderCommand {
@@ -26668,6 +26682,7 @@ export interface IFiscalFailureDto {
 export class ForceQualifyReferralCommand implements IForceQualifyReferralCommand {
     referralId!: string | undefined;
     reason!: string | undefined;
+    expectHeld!: boolean;
 
     constructor(data?: IForceQualifyReferralCommand) {
         if (data) {
@@ -26682,6 +26697,7 @@ export class ForceQualifyReferralCommand implements IForceQualifyReferralCommand
         if (Data) {
             this.referralId = Data["referralId"];
             this.reason = Data["reason"];
+            this.expectHeld = Data["expectHeld"];
         }
     }
 
@@ -26696,6 +26712,7 @@ export class ForceQualifyReferralCommand implements IForceQualifyReferralCommand
         data = typeof data === 'object' ? data : {};
         data["referralId"] = this.referralId;
         data["reason"] = this.reason;
+        data["expectHeld"] = this.expectHeld;
         return data;
     }
 }
@@ -26703,13 +26720,15 @@ export class ForceQualifyReferralCommand implements IForceQualifyReferralCommand
 export interface IForceQualifyReferralCommand {
     referralId: string | undefined;
     reason: string | undefined;
+    expectHeld: boolean;
 }
 
 export class ForceQualifyReferralResponse implements IForceQualifyReferralResponse {
     referralId!: string | undefined;
     creditGrantedToReferrer!: number;
+    referrerCurrencyCode!: string | undefined;
     creditGrantedToReferred!: number;
-    currencyCode!: string | undefined;
+    referredCurrencyCode!: string | undefined;
 
     constructor(data?: IForceQualifyReferralResponse) {
         if (data) {
@@ -26724,8 +26743,9 @@ export class ForceQualifyReferralResponse implements IForceQualifyReferralRespon
         if (Data) {
             this.referralId = Data["referralId"];
             this.creditGrantedToReferrer = Data["creditGrantedToReferrer"];
+            this.referrerCurrencyCode = Data["referrerCurrencyCode"];
             this.creditGrantedToReferred = Data["creditGrantedToReferred"];
-            this.currencyCode = Data["currencyCode"];
+            this.referredCurrencyCode = Data["referredCurrencyCode"];
         }
     }
 
@@ -26740,8 +26760,9 @@ export class ForceQualifyReferralResponse implements IForceQualifyReferralRespon
         data = typeof data === 'object' ? data : {};
         data["referralId"] = this.referralId;
         data["creditGrantedToReferrer"] = this.creditGrantedToReferrer;
+        data["referrerCurrencyCode"] = this.referrerCurrencyCode;
         data["creditGrantedToReferred"] = this.creditGrantedToReferred;
-        data["currencyCode"] = this.currencyCode;
+        data["referredCurrencyCode"] = this.referredCurrencyCode;
         return data;
     }
 }
@@ -26749,8 +26770,9 @@ export class ForceQualifyReferralResponse implements IForceQualifyReferralRespon
 export interface IForceQualifyReferralResponse {
     referralId: string | undefined;
     creditGrantedToReferrer: number;
+    referrerCurrencyCode: string | undefined;
     creditGrantedToReferred: number;
-    currencyCode: string | undefined;
+    referredCurrencyCode: string | undefined;
 }
 
 export class GdprExportAddressDto implements IGdprExportAddressDto {
@@ -35197,6 +35219,7 @@ export interface IRevenueReportDto {
 export class ReverseReferralCommand implements IReverseReferralCommand {
     referralId!: string | undefined;
     reason!: string | undefined;
+    expectHeld!: boolean;
 
     constructor(data?: IReverseReferralCommand) {
         if (data) {
@@ -35211,6 +35234,7 @@ export class ReverseReferralCommand implements IReverseReferralCommand {
         if (Data) {
             this.referralId = Data["referralId"];
             this.reason = Data["reason"];
+            this.expectHeld = Data["expectHeld"];
         }
     }
 
@@ -35225,6 +35249,7 @@ export class ReverseReferralCommand implements IReverseReferralCommand {
         data = typeof data === 'object' ? data : {};
         data["referralId"] = this.referralId;
         data["reason"] = this.reason;
+        data["expectHeld"] = this.expectHeld;
         return data;
     }
 }
@@ -35232,13 +35257,15 @@ export class ReverseReferralCommand implements IReverseReferralCommand {
 export interface IReverseReferralCommand {
     referralId: string | undefined;
     reason: string | undefined;
+    expectHeld: boolean;
 }
 
 export class ReverseReferralResponse implements IReverseReferralResponse {
     referralId!: string | undefined;
     creditTakenFromReferrer!: number;
+    referrerCurrencyCode!: string | undefined;
     creditTakenFromReferred!: number;
-    currencyCode!: string | undefined;
+    referredCurrencyCode!: string | undefined;
 
     constructor(data?: IReverseReferralResponse) {
         if (data) {
@@ -35253,8 +35280,9 @@ export class ReverseReferralResponse implements IReverseReferralResponse {
         if (Data) {
             this.referralId = Data["referralId"];
             this.creditTakenFromReferrer = Data["creditTakenFromReferrer"];
+            this.referrerCurrencyCode = Data["referrerCurrencyCode"];
             this.creditTakenFromReferred = Data["creditTakenFromReferred"];
-            this.currencyCode = Data["currencyCode"];
+            this.referredCurrencyCode = Data["referredCurrencyCode"];
         }
     }
 
@@ -35269,8 +35297,9 @@ export class ReverseReferralResponse implements IReverseReferralResponse {
         data = typeof data === 'object' ? data : {};
         data["referralId"] = this.referralId;
         data["creditTakenFromReferrer"] = this.creditTakenFromReferrer;
+        data["referrerCurrencyCode"] = this.referrerCurrencyCode;
         data["creditTakenFromReferred"] = this.creditTakenFromReferred;
-        data["currencyCode"] = this.currencyCode;
+        data["referredCurrencyCode"] = this.referredCurrencyCode;
         return data;
     }
 }
@@ -35278,8 +35307,9 @@ export class ReverseReferralResponse implements IReverseReferralResponse {
 export interface IReverseReferralResponse {
     referralId: string | undefined;
     creditTakenFromReferrer: number;
+    referrerCurrencyCode: string | undefined;
     creditTakenFromReferred: number;
-    currencyCode: string | undefined;
+    referredCurrencyCode: string | undefined;
 }
 
 export enum ReviewTag {

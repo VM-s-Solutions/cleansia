@@ -25,6 +25,7 @@ public sealed class AdminNotificationEventCatalogTests
         "requestId", "day",
         "windDownFrom", "cancelled", "refunded", "refundFailures", "periodsClosed",
         "archivedOn",
+        "referralId",
     };
 
     private static readonly Regex IdentityOrFreeText = new(
@@ -89,6 +90,7 @@ public sealed class AdminNotificationEventCatalogTests
     [InlineData(AdminNotificationEventCatalog.CompanyWindDownRequested, PhysicalPolicy.AdministratorOnly)]
     [InlineData(AdminNotificationEventCatalog.CompanyWindDownRun, PhysicalPolicy.AdministratorOnly)]
     [InlineData(AdminNotificationEventCatalog.CompanyArchived, PhysicalPolicy.AdministratorOnly)]
+    [InlineData(AdminNotificationEventCatalog.ReferralHeld, PhysicalPolicy.SupportOrAbove)]
     public void Every_Entry_Names_The_Administrator_Set_It_Is_Told_To(string key, string audience)
     {
         Assert.Equal(audience, AdminEventCatalog.Find(key).Audience);

@@ -1,3 +1,4 @@
+using Cleansia.Core.Domain.Internationalization;
 using Cleansia.Core.Domain.Loyalty;
 
 namespace Cleansia.Core.AppServices.Services.Interfaces;
@@ -60,27 +61,35 @@ public interface IReferralService
 
     /// <summary>
     /// Called from <c>CompleteOrder.Handler</c>. If the user has a pending
-    /// (Accepted) referral and this is their first completed order within
-    /// the qualifying window, credits both sides the order currency's
-    /// <c>ReferralCredit</c> and flips the referral to Qualified. Idempotent —
-    /// safe to call twice for the same orderId.
+    /// (Accepted, not held) referral and this is their first completed order within
+    /// the qualifying window, either holds it for an administrator — when the two
+    /// accounts share an address, a phone or an inbox — or credits each side the
+    /// <c>ReferralCredit</c> of the currency it books in and flips the referral to
+    /// Qualified. Idempotent — safe to call twice for the same orderId.
     /// </summary>
     Task ProcessOrderCompletedAsync(string orderId, string? userId, CancellationToken cancellationToken);
 
     /// <summary>
-    /// Issue <paramref name="amount"/> in <paramref name="currencyId"/> to the inviter and to the invited
-    /// friend, one ledger row per side under a per-referral key. Answers what each side received: null for
-    /// an erased side or one whose account is on a company frozen for archive, and for both when the amount
-    /// is null or not positive. Holds the paid owners' credit locks until the unit of work commits.
+    /// Issue the inviter the <c>ReferralCredit</c> of <paramref name="referrerCurrency"/> and the invited
+    /// friend that of <paramref name="referredCurrency"/>, one ledger row per side under a per-referral key.
+    /// Answers what each side received: null for a side whose currency is null or has no positive figure,
+    /// for an erased side, and for one whose account is on a company frozen for archive. Holds the paid
+    /// owners' credit locks until the unit of work commits.
     /// </summary>
     Task<(decimal? ToReferrer, decimal? ToReferred)> AwardCreditAsync(
         Referral referral,
-        string currencyId,
-        decimal? amount,
+        Currency? referrerCurrency,
+        Currency? referredCurrency,
         string? orderId,
         string actorId,
         string? note,
         CancellationToken cancellationToken);
+
+    /// <summary>
+    /// The currency a customer books in: that of their most recent order in any status, with any company.
+    /// Null for a customer who has never booked.
+    /// </summary>
+    Task<Currency?> GetBookingCurrencyAsync(string userId, CancellationToken cancellationToken);
 
     /// <summary>
     /// Background sweep — flip Referrals past the 90-day window from

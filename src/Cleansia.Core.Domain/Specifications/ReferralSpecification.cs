@@ -10,6 +10,7 @@ public class ReferralSpecification : BaseSpecification<string?>, ISpecification<
     public ReferralStatus? Status { get; set; }
     public DateTimeOffset? AcceptedFrom { get; set; }
     public DateTimeOffset? AcceptedTo { get; set; }
+    public bool? Held { get; set; }
 
     public Expression<Func<Referral, bool>> SatisfiedBy()
     {
@@ -45,6 +46,13 @@ public class ReferralSpecification : BaseSpecification<string?>, ISpecification<
             specification &= new DirectSpecification<Referral>(x => x.AcceptedOn <= AcceptedTo.Value);
         }
 
+        if (Held.HasValue)
+        {
+            specification &= Held.Value
+                ? new DirectSpecification<Referral>(x => x.Status == ReferralStatus.Accepted && x.HoldReasons != null)
+                : new DirectSpecification<Referral>(x => x.Status != ReferralStatus.Accepted || x.HoldReasons == null);
+        }
+
         return specification.SatisfiedBy();
     }
 
@@ -52,12 +60,14 @@ public class ReferralSpecification : BaseSpecification<string?>, ISpecification<
         string? referrerUserId = null,
         ReferralStatus? status = null,
         DateTimeOffset? acceptedFrom = null,
-        DateTimeOffset? acceptedTo = null) =>
+        DateTimeOffset? acceptedTo = null,
+        bool? held = null) =>
         new()
         {
             ReferrerUserId = referrerUserId,
             Status = status,
             AcceptedFrom = acceptedFrom,
-            AcceptedTo = acceptedTo
+            AcceptedTo = acceptedTo,
+            Held = held
         };
 }

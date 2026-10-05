@@ -8,6 +8,7 @@ using Cleansia.Core.Domain.Services;
 using Cleansia.Infra.Common.Validations;
 using Cleansia.Infra.Services.BusinessRegistry;
 using FluentValidation;
+using FluentValidation.Results;
 
 namespace Cleansia.Core.AppServices.Features.Employees;
 
@@ -83,23 +84,35 @@ public class UpdateIdentificationInfo
                     return result.IsValid;
                 })
                 .WithMessage(BusinessErrorMessage.RegistrationNumberInvalidFormat)
-                .MustAsync(KnownToTheBusinessRegisterAsync)
-                .WithMessage(BusinessErrorMessage.RegistrationNumberNotRegistered)
+                .CustomAsync(RefuseWhatTheRegisterRefusesAsync)
                 .When(c => !string.IsNullOrWhiteSpace(c.RegistrationNumber));
         }
 
-        private async Task<bool> KnownToTheBusinessRegisterAsync(
-            Command command, string registrationNumber, CancellationToken cancellationToken)
+        private async Task RefuseWhatTheRegisterRefusesAsync(
+            string registrationNumber, ValidationContext<Command> context, CancellationToken cancellationToken)
         {
             var employee = await _employeeRepository.GetByUserEmailAsync(
                 _userSessionProvider.GetUserEmail() ?? string.Empty, cancellationToken);
+            if (employee is null)
+            {
+                return;
+            }
 
-            return employee is null || CleanerBusinessRegister.AcceptsOnSave(await CleanerBusinessRegister.LookupAsync(
+            var record = await CleanerBusinessRegister.LookupAsync(
                 _countryRepository,
                 _businessRegistry,
                 CleanerBusinessRegister.RegisterCountryId(employee, employee.Address?.CountryId),
                 registrationNumber,
-                cancellationToken));
+                cancellationToken);
+
+            var refusal = CleanerBusinessRegister.Refusal(
+                record,
+                approvalGrade: employee.ContractStatus == ContractStatus.Approved
+                    && CleanerBusinessRegister.Changes(employee, registrationNumber));
+            if (refusal is not null)
+            {
+                context.AddFailure(new ValidationFailure(nameof(Command.RegistrationNumber), refusal));
+            }
         }
 
         // Not an ownership comparison — the subject is server-resolved, so there is nothing for a client

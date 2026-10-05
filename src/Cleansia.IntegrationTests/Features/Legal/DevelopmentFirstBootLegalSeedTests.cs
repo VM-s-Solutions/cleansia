@@ -82,8 +82,8 @@ public sealed class DevelopmentFirstBootLegalSeedTests(PostgresContainerFixture 
         Assert.Equal(
             [
                 LegalDocumentType.TermsOfService, LegalDocumentType.TermsOfService, LegalDocumentType.TermsOfService, LegalDocumentType.TermsOfService,
-                LegalDocumentType.TermsOfService, LegalDocumentType.TermsOfService,
-                LegalDocumentType.PrivacyPolicy, LegalDocumentType.PrivacyPolicy, LegalDocumentType.PrivacyPolicy,
+                LegalDocumentType.TermsOfService, LegalDocumentType.TermsOfService, LegalDocumentType.TermsOfService,
+                LegalDocumentType.PrivacyPolicy, LegalDocumentType.PrivacyPolicy, LegalDocumentType.PrivacyPolicy, LegalDocumentType.PrivacyPolicy,
                 LegalDocumentType.WorkContract, LegalDocumentType.WorkContract, LegalDocumentType.WorkContract,
                 LegalDocumentType.CleanerFrameworkContract, LegalDocumentType.CleanerFrameworkContract,
                 LegalDocumentType.SelfBillingAgreement, LegalDocumentType.SelfBillingAgreement,
@@ -95,7 +95,10 @@ public sealed class DevelopmentFirstBootLegalSeedTests(PostgresContainerFixture 
                 ? LegalDocumentAudience.Employee
                 : LegalDocumentAudience.Customer,
             d.Audience));
-        Assert.All(documents, d => Assert.True(d.IsInForceOn(today), $"{d.Type} {d.Version} is not in force"));
+        // A version dated ahead is seeded on the same pass and comes into force on its date with no deploy, so
+        // what the boot must leave is one version of every document in force today, not every version in force.
+        Assert.All(documents.GroupBy(d => d.Type), versions => Assert.True(
+            versions.Any(d => d.IsInForceOn(today)), $"no {versions.Key} version is in force"));
 
         Assert.All(
             documents.Where(d => d.Type == LegalDocumentType.WorkContract),

@@ -538,12 +538,16 @@ for (const locale of LOCALES) {
 }
 
 // ─── 3b. The referral reward is the market's credit, never a figure or points (owner ruling 2026-10-04) ────
-// A qualified referral pays both sides `Currency.ReferralCredit` of the order's currency. It used to pay
-// 150 tier points, and every locale on three clients stated the 150 as a literal. Now each client
-// formats the chosen market's figure into the row's slot, and renders the row's twin for a market with
-// none. So a row carries its slot and bakes in no figure, no currency and no points; its twin exists in
-// every locale and promises neither credit nor points. A twin may keep the row's other slots (a name, a
-// code, a link), so only the web twin, whose credit slot has a name of its own, is checked for the slot.
+// A qualified referral pays each side the `Currency.ReferralCredit` of the currency that side books in
+// (owner ruling 2026-10-05), so the two figures can differ. It used to pay 150 tier points, and every
+// locale on three clients stated the 150 as a literal. Now each client formats the chosen market's
+// figure into the row's slot, and renders the row's twin for a market with none. So a row carries its
+// slot and bakes in no figure, no currency and no points, and it states the READER's figure only — never
+// one figure for both sides; its twin exists in every locale and promises neither credit nor points. A
+// twin may keep the row's other slots (a name, a code, a link), so only the web twin, whose credit slot
+// has a name of its own, is checked for the slot. The mobile invite is read by the friend, in a market
+// that may not be the referrer's, so it names no figure at all: the figured share text is retired and its
+// no-figure twin is sent everywhere. → /product/business-rules#referral-credit
 
 /** How each locale names points, and how it names credit. */
 const POINTS_WORD = { en: /\bpoints?\b|\bpts\b/i, cs: /\bbod/i, sk: /\bbod/i, ru: /балл/i, uk: /бал(?!ан)/i };
@@ -564,15 +568,42 @@ const MOBILE_REFERRAL_ROWS = [
   ['booking_referral_code_dialog_success', 1, 'booking_referral_code_dialog_success_no_figure'],
   ['booking_referral_code_dialog_success_named', 2, 'booking_referral_code_dialog_success_named_no_figure'],
   ['loyalty_referral_subtitle', 1, 'loyalty_referral_subtitle_no_figure'],
-  ['loyalty_referral_share_text', 1, 'loyalty_referral_share_text_no_figure'],
 ];
-/** Rendered in every market, figure or none, so held like a twin. The iOS one read "earn 150 points each". */
-const MOBILE_REFERRAL_HEADINGS = ['loyalty_referral_section_title'];
+/**
+ * Rendered in every market, figure or none, so held like a twin. The iOS heading read "earn 150 points
+ * each"; the share text is the invite the friend reads, sent without a figure in every market.
+ */
+const MOBILE_REFERRAL_ALWAYS_SHOWN = ['loyalty_referral_section_title', 'loyalty_referral_share_text_no_figure'];
+/** The figured invite: it told the friend the referrer's market figure, which is not what the friend is paid. */
+const RETIRED_REFERRAL_SHARE_TEXT = 'loyalty_referral_share_text';
+
+/**
+ * How each locale says one figure is paid to both sides — "you each get", "oba získáte", "отримаєте по
+ * %1$s". Whole words only, so Slovak "obe" does not fire inside "obed", and the distributive "по" only
+ * where it stands before the credit's slot.
+ */
+const wholeWord = (words) => `(?<!\\p{L})(?:${words})(?!\\p{L})`;
+const DISTRIBUTIVE_SLOT = '(?<!\\p{L})по\\s*(?:%\\d|\\{\\{)';
+const SHARED_FIGURE_CLAIM = {
+  en: new RegExp(wholeWord('each|both'), 'iu'),
+  cs: new RegExp(wholeWord('oba|obě|oběma|každý|každá'), 'iu'),
+  sk: new RegExp(wholeWord('obaja|obe|obom|každý|každá'), 'iu'),
+  uk: new RegExp(`${wholeWord('обоє|обидва|обидві|обом|кожен|кожна|кожному')}|${DISTRIBUTIVE_SLOT}`, 'iu'),
+  ru: new RegExp(`${wholeWord('оба|обе|обоим|каждый|каждая|каждому')}|${DISTRIBUTIVE_SLOT}`, 'iu'),
+};
 
 function pinReferralRow(where, key, value, locale, placeholder) {
   pinPlaceholderCopy(where, key, value, { placeholder });
-  if (value !== null && value !== undefined && POINTS_WORD[locale].test(value)) {
+  if (value === null || value === undefined) return;
+  if (POINTS_WORD[locale].test(value)) {
     note(where, `${key} = "${value}" promises points — a referral pays the market's credit`);
+  }
+  if (SHARED_FIGURE_CLAIM[locale].test(value)) {
+    note(
+      where,
+      `${key} = "${value}" promises one figure to both sides — each side is paid in the currency it ` +
+        "books in, so a row states only the reader's own",
+    );
   }
 }
 
@@ -604,10 +635,15 @@ for (const locale of LOCALES) {
     pinReferralRow(`ios/${locale}`, row, iosString(iosCatalog, row, locale), locale, `%${slot}$@`);
     pinReferralTwin(`ios/${locale}`, twin, iosString(iosCatalog, twin, locale), locale);
   }
-  for (const key of MOBILE_REFERRAL_HEADINGS) {
+  for (const key of MOBILE_REFERRAL_ALWAYS_SHOWN) {
     pinReferralTwin(`android/${locale}`, key, androidString(dir, key), locale);
     pinReferralTwin(`ios/${locale}`, key, iosString(iosCatalog, key, locale), locale);
   }
+  const shareTextIsBack =
+    `${RETIRED_REFERRAL_SHARE_TEXT} is back — the friend reads the invite in their own market, so it ` +
+    'names no figure (owner ruling 2026-10-05)';
+  if (androidString(dir, RETIRED_REFERRAL_SHARE_TEXT) !== null) note(`android/${locale}`, shareTextIsBack);
+  if (iosString(iosCatalog, RETIRED_REFERRAL_SHARE_TEXT, locale) !== null) note(`ios/${locale}`, shareTextIsBack);
 }
 
 // ─── 4. Every platform cancellation reason renders as a sentence in the three customer clients ────
@@ -824,7 +860,8 @@ if (findings.length) {
       `a home of up to ${policy.MaxRooms} rooms and ${policy.MaxBathrooms} bathrooms on every picker, refusal and caption; ` +
       `money figures in copy come from the market; ` +
       `the referral credit comes from the market on ${WEB_REFERRAL_ROWS.length} web and ` +
-      `${MOBILE_REFERRAL_ROWS.length} mobile row(s), each with its no-figure twin; ` +
+      `${MOBILE_REFERRAL_ROWS.length} mobile row(s), each with its no-figure twin and the reader's figure only; ` +
+      `the mobile invite names no figure; ` +
       `legal seed ${seedVersions} carries the placeholders; ` +
       `${reasons.length - REASONS_NOT_YET_RENDERED.size} cancellation reason(s) render on every client`,
   );

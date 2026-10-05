@@ -108,6 +108,11 @@ insurance claim, and a referral pays both sides a credit authored per currency i
 stated from the market in the copy (ADR-0060); and a refund's points clawback works on the order's
 running total (ADR-0009). None replaces a record, so there is no arrow.
 
+**[ADR-0060](./adr-0060) and [ADR-0067](./adr-0067) were amended in place on 2026-10-05**: each side of a
+referral is paid in the currency it books in, the copy states only the reader's own figure and the app
+invite none, and an insurance figure must be above zero (ADR-0060); a drop racing a status change such as
+a confirmed lockout is refused at commit (ADR-0067 D8). Neither replaces a record.
+
 ## All records
 
 | | Decision | Status |

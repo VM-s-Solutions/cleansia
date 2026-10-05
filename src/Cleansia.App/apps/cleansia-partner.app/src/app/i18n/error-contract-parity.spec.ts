@@ -556,6 +556,11 @@ const PARTNER_SURFACE_ERROR_KEYS: readonly string[] = [
   'validation.registration_number.invalid_format',
   // The same save, refused when the country's business register (ARES for Czechia) does not hold the IČO.
   'validation.registration_number.not_registered',
+  // An approved cleaner who changes the IČO is held to approval's register check on that save. The
+  // keys are emitted from CleanerBusinessRegister, which the controller walk does not read.
+  'employee.business_ceased',
+  'employee.business_registry_unavailable',
+  'employee.trade_licence_inactive',
   // User account
   'user.email_confirmed',
   'user.existing_email',

@@ -31,7 +31,7 @@ public abstract class AuthzHostTestBase : IAsyncLifetime
     protected AuthzHostTestBase(HostTestPostgresFixture db)
     {
         Db = db;
-        _admin = new(() => new HostTestApplicationFactory<Cleansia.Web.Admin.Program>(db.ConnectionString));
+        _admin = new(() => new HostTestApplicationFactory<Cleansia.Web.Admin.Program>(db.ConnectionString, ConfigureAdminHostServices));
         _partner = new(() => new HostTestApplicationFactory<Cleansia.Web.Partner.Program>(db.ConnectionString, ConfigurePartnerHostServices));
         _customer = new(() => new HostTestApplicationFactory<Cleansia.Web.Customer.Program>(db.ConnectionString, ConfigureCustomerHostServices));
         _mobile = new(() => new HostTestApplicationFactory<Cleansia.Web.Mobile.Partner.Program>(db.ConnectionString, ConfigureMobileHostServices));
@@ -74,6 +74,10 @@ public abstract class AuthzHostTestBase : IAsyncLifetime
     }
 
     protected virtual void ConfigureMobileHostServices(IServiceCollection services)
+    {
+    }
+
+    protected virtual void ConfigureAdminHostServices(IServiceCollection services)
     {
     }
 

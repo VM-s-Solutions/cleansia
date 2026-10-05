@@ -96,6 +96,7 @@
           </form>
         </cleansia-filter-drawer>
         <cleansia-button
+          *cleansiaPermission="Policy.CanCreatePayPeriod"
           [label]="'pay_periods.create_new' | translate"
           icon="pi pi-plus"
           severity="primary"
@@ -146,16 +147,16 @@
       <div class="form-field">
         <cleansia-calendar
           [label]="'pay_periods.list.columns.start_date' | translate"
-          [ngModel]="createStartDate()"
-          (ngModelChange)="createStartDate.set($event)"
+          [ngModel]="facade.createStartDate()"
+          (ngModelChange)="facade.setCreateStartDate($event)"
           appendTo="body"
         />
       </div>
       <div class="form-field">
         <cleansia-calendar
           [label]="'pay_periods.list.columns.end_date' | translate"
-          [ngModel]="createEndDate()"
-          (ngModelChange)="createEndDate.set($event)"
+          [ngModel]="facade.createEndDate()"
+          [disabled]="true"
           appendTo="body"
         />
       </div>
@@ -171,7 +172,8 @@
     <cleansia-button
       [label]="'global.actions.create' | translate"
       severity="primary"
-      [disabled]="!createStartDate() || !createEndDate()"
+      [disabled]="!facade.createStartDate() || facade.creating()"
+      [loading]="facade.creating()"
       (onClick)="createPayPeriod()"
     />
   </ng-template>

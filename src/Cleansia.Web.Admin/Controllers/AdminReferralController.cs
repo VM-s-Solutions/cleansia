@@ -28,13 +28,14 @@ public class AdminReferralController(IMediator mediator) : ApiController(mediato
         [FromQuery] DateTimeOffset? dateTo,
         [FromQuery] int offset = 0,
         [FromQuery] int limit = 20,
+        [FromQuery] bool? held = null,
         CancellationToken cancellationToken = default)
     {
         var request = new GetPagedReferrals.Request
         {
             Offset = offset,
             Limit = limit,
-            Filter = new ReferralFilter(status, dateFrom, dateTo)
+            Filter = new ReferralFilter(status, dateFrom, dateTo, held)
         };
         var result = await Mediator.Send(request, cancellationToken);
         return Ok(result);

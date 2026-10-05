@@ -1016,7 +1016,10 @@
       "already_rejected": "Partner has already been rejected",
       "job_radius_out_of_range": "The travel radius you entered is outside the allowed range",
       "legal_entity_not_accepted": "Cleaners work with us as natural persons; a company cannot be registered here",
-      "legal_documents_not_accepted": "Accept the current version of your contract documents in your profile before taking jobs."
+      "legal_documents_not_accepted": "Accept the current version of your contract documents in your profile before taking jobs.",
+      "business_ceased": "The business register (ARES) shows that the business under this company ID (IČO) has ended. Enter the IČO of a business that is still trading.",
+      "trade_licence_inactive": "The business register (ARES) shows no trade licence in force under this company ID (IČO). Check the number, or renew your trade licence first.",
+      "business_registry_unavailable": "We could not reach the business register (ARES) to check your new company ID (IČO), so nothing was saved. Try again in a few minutes."
     },
     "employee_document": {
       "not_found": "Document not found",

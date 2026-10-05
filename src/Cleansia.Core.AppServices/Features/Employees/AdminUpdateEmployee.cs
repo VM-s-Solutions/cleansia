@@ -6,9 +6,12 @@ using Cleansia.Core.AppServices.Common.Validators;
 using Cleansia.Core.AppServices.Services.Interfaces;
 using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Repositories;
+using Cleansia.Core.Domain.Services;
 using Cleansia.Core.Domain.Users;
 using Cleansia.Infra.Common.Validations;
+using Cleansia.Infra.Services.BusinessRegistry;
 using FluentValidation;
+using FluentValidation.Results;
 
 namespace Cleansia.Core.AppServices.Features.Employees;
 
@@ -19,7 +22,9 @@ public class AdminUpdateEmployee
     {
         public Validator(
             ICountryRepository countryRepository,
-            IEmployeeRepository employeeRepository)
+            IEmployeeRepository employeeRepository,
+            ITaxIdValidator taxIdValidator,
+            IBusinessRegistry businessRegistry)
         {
             RuleFor(c => c.EmployeeId)
                 .NotEmpty().WithMessage(BusinessErrorMessage.Required)
@@ -58,9 +63,42 @@ public class AdminUpdateEmployee
                 .WithMessage(BusinessErrorMessage.NotExistingCountryWithId)
                 .When(c => !string.IsNullOrWhiteSpace(c.CountryId));
 
+            // Only a number this edit changes is judged: the admin web resends the stored one with every
+            // section it saves, so judging an untouched number would hold every unrelated edit on the register.
             RuleFor(c => c.RegistrationNumber)
+                .Cascade(CascadeMode.Stop)
                 .MaximumLength(50).WithMessage(BusinessErrorMessage.MaxLengthExceeded)
-                .When(c => !string.IsNullOrWhiteSpace(c.RegistrationNumber));
+                .CustomAsync(async (registrationNumber, context, cancellationToken) =>
+                {
+                    var command = context.InstanceToValidate;
+                    var employee = await employeeRepository.GetByIdAsync(command.EmployeeId, cancellationToken);
+                    if (employee is null || !CleanerBusinessRegister.Changes(employee, registrationNumber))
+                    {
+                        return;
+                    }
+
+                    var countryId = CleanerBusinessRegister.RegisterCountryId(
+                        employee, command.CountryId ?? employee.Address?.CountryId);
+
+                    var format = await taxIdValidator.ValidateRegistrationNumberAsync(
+                        countryId ?? string.Empty, command.EntityType ?? employee.EntityType, registrationNumber, cancellationToken);
+                    if (!format.IsValid)
+                    {
+                        context.AddFailure(new ValidationFailure(
+                            nameof(Command.RegistrationNumber), BusinessErrorMessage.RegistrationNumberInvalidFormat));
+                        return;
+                    }
+
+                    var record = await CleanerBusinessRegister.LookupAsync(
+                        countryRepository, businessRegistry, countryId, registrationNumber!, cancellationToken);
+                    var refusal = CleanerBusinessRegister.Refusal(
+                        record, approvalGrade: employee.ContractStatus == ContractStatus.Approved);
+                    if (refusal is not null)
+                    {
+                        context.AddFailure(new ValidationFailure(nameof(Command.RegistrationNumber), refusal));
+                    }
+                })
+                .When(c => c.RegistrationNumber is not null);
 
             RuleFor(c => c.LegalEntityName)
                 .MaximumLength(200).WithMessage(BusinessErrorMessage.MaxLengthExceeded)

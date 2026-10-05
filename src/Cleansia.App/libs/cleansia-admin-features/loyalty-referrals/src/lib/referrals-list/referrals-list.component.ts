@@ -24,13 +24,14 @@ import {
 } from '@cleansia/components';
 import { PermissionService, Policy } from '@cleansia/services';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
+import { ReferralInterventionDialogComponent } from '../referral-intervention-dialog/referral-intervention-dialog.component';
 import {
-  ReferralInterventionDialogComponent,
   ReferralInterventionMode,
   ReferralInterventionSubmit,
-} from '../referral-intervention-dialog/referral-intervention-dialog.component';
+} from '../referral-intervention-dialog/referral-intervention-dialog.models';
 import { ReferralsListFacade } from './referrals-list.facade';
 import {
+  formatHoldReasons,
   formatReferralCredit,
   getReferralInterventionActions,
   getReferralTableColumns,
@@ -83,6 +84,8 @@ export class ReferralsListComponent implements OnInit {
           canIntervene: this.permissionService.hasPolicy(Policy.CanInterveneReferral),
           onReverse: (row) => this.openIntervention(row, 'reverse'),
           onForceQualify: (row) => this.openIntervention(row, 'forceQualify'),
+          onRelease: (row) => this.openIntervention(row, 'release'),
+          onReject: (row) => this.openIntervention(row, 'reject'),
         },
         this.translate
       ),
@@ -91,6 +94,10 @@ export class ReferralsListComponent implements OnInit {
 
   ngOnInit(): void {
     this.facade.loadReferrals();
+  }
+
+  holdReasons(row: AdminReferralListItem): string | null {
+    return formatHoldReasons(row, this.translate);
   }
 
   onPageChange(event: PaginationState): void {
@@ -115,10 +122,19 @@ export class ReferralsListComponent implements OnInit {
     if (!id) return;
 
     const close = () => this.onDialogVisibleChange(false);
-    if (payload.mode === 'reverse') {
-      this.facade.reverseReferral(id, payload.reason, close);
-    } else {
-      this.facade.forceQualifyReferral(id, payload.reason, close);
+    switch (payload.mode) {
+      case 'reverse':
+        this.facade.reverseReferral(id, payload.reason, close);
+        break;
+      case 'reject':
+        this.facade.rejectReferral(id, payload.reason, close);
+        break;
+      case 'forceQualify':
+        this.facade.forceQualifyReferral(id, payload.reason, close);
+        break;
+      case 'release':
+        this.facade.releaseReferral(id, payload.reason, close);
+        break;
     }
   }
 }

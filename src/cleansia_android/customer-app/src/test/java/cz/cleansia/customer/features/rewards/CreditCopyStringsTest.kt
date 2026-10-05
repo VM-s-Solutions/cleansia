@@ -85,8 +85,8 @@ class CreditCopyStringsTest {
     }
 
     /**
-     * The customer terms of 2026-10-05 (section 9) name the referral reward as a source of credit, and a
-     * qualified referral pays the market's credit since the owner ruling of 2026-10-04. A market may pay
+     * The customer terms of 2026-10-06 (section 9) name the referral reward as a source of credit, and a
+     * qualified referral pays each side the credit of the currency it books in. A market may pay
      * none (`Currency.ReferralCredit` null), and the explainer shows in every market, so it names the
      * reward in the terms' own word only where the market offers one: no amount (the test above), no
      * promise, no entry point.

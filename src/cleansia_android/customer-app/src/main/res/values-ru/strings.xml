@@ -157,7 +157,7 @@
     <string name="home_upsell_chip_hours">%1$d ч</string>
     <string name="home_upsell_chip_minutes">%1$d мин</string>
     <string name="home_upsell_chip_times">%1$d×</string>
-    <string name="home_upsell_referral_desc">Вы оба получите %1$s кредита после его первой завершённой уборки.</string>
+    <string name="home_upsell_referral_desc">Вы получите %1$s кредита после первой завершённой уборки друга, а друг — кредит, если его предлагают на его рынке.</string>
 
     <string name="home_hero2_top">Весна уже здесь</string>
     <string name="home_hero2_title">Глубокая уборка + окна вместе</string>
@@ -803,12 +803,12 @@
     <string name="booking_referral_code_row_applied">%1$s применён</string>
     <string name="booking_referral_code_row_clear">Удалить</string>
     <string name="booking_referral_code_dialog_title">Введите реферальный код</string>
-    <string name="booking_referral_code_dialog_helper">Есть код от друга? Оба получите %1$s кредита после вашей первой завершённой уборки.</string>
+    <string name="booking_referral_code_dialog_helper">Есть код от друга? Вы получите %1$s кредита после вашей первой завершённой уборки.</string>
     <string name="booking_referral_code_dialog_helper_no_figure">Есть код от друга? Введите его здесь.</string>
     <string name="booking_referral_code_dialog_apply">Применить</string>
     <string name="booking_referral_code_dialog_cancel">Отмена</string>
     <string name="booking_referral_code_dialog_done">Готово</string>
-    <string name="booking_referral_code_dialog_success_named">Код от %1$s принят — оба получите %2$s кредита после вашей первой завершённой уборки.</string>
+    <string name="booking_referral_code_dialog_success_named">Код от %1$s принят — вы получите %2$s кредита после вашей первой завершённой уборки.</string>
     <string name="booking_referral_code_dialog_success_named_no_figure">Код от %1$s принят.</string>
 
     <!-- Plus: pre-request a favorite cleaner -->
@@ -816,7 +816,7 @@
     <string name="booking_preferred_cleaner_subtitle">Преимущество Plus · выберите того, кто уже у вас убирал</string>
     <string name="booking_preferred_cleaner_dialog_title">Выберите клинера</string>
     <string name="booking_preferred_cleaner_clear">Сбросить выбор клинера</string>
-    <string name="booking_referral_code_dialog_success">Код принят — оба получите %1$s кредита после вашей первой завершённой уборки.</string>
+    <string name="booking_referral_code_dialog_success">Код принят — вы получите %1$s кредита после вашей первой завершённой уборки.</string>
     <string name="booking_referral_code_dialog_success_no_figure">Код принят.</string>
 
     <string name="booking_payment_method">Как хотите оплатить?</string>
@@ -1298,13 +1298,12 @@
 
     <!-- Loyalty Phase C — Referrals -->
     <string name="loyalty_referral_section_title">Пригласите друзей</string>
-    <string name="loyalty_referral_subtitle">Поделитесь своим кодом. Друг и вы получите по %1$s кредита после его первой завершённой уборки.</string>
+    <string name="loyalty_referral_subtitle">Поделитесь своим кодом. После первой завершённой уборки друга вы получите %1$s кредита, а друг — кредит, если его предлагают на его рынке.</string>
     <string name="loyalty_referral_subtitle_no_figure">Поделитесь своим кодом с друзьями — они введут его при регистрации.</string>
     <string name="loyalty_referral_code_label">Ваш код</string>
     <string name="loyalty_referral_share_button">Поделиться</string>
     <string name="loyalty_referral_copy_button">Копировать</string>
     <string name="loyalty_referral_copied_toast">Код скопирован</string>
-    <string name="loyalty_referral_share_text">Получите %1$s кредита после первой завершённой уборки Cleansia! Используйте мой код %2$s при регистрации: %3$s</string>
     <string name="loyalty_referral_share_text_no_figure">Присоединяйтесь к Cleansia! Используйте мой код %1$s при регистрации: %2$s</string>
     <string name="loyalty_referral_stats_empty">Будьте первым — поделитесь кодом</string>
     <string name="loyalty_referral_stats_qualified">%1$d друг присоединился · %2$d квалифицированы</string>

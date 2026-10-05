@@ -2976,8 +2976,11 @@ namespace Cleansia.Infra.Database.Migrations
                     FirstQualifyingOrderId = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: true),
                     CreditAwardedToReferrer = table.Column<decimal>(type: "numeric(18,2)", precision: 18, scale: 2, nullable: true),
                     CreditAwardedToReferred = table.Column<decimal>(type: "numeric(18,2)", precision: 18, scale: 2, nullable: true),
-                    CreditCurrencyId = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: true),
+                    ReferrerCreditCurrencyId = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: true),
+                    ReferredCreditCurrencyId = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: true),
                     AwardedOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true),
+                    HoldReasons = table.Column<string>(type: "character varying(32)", maxLength: 32, nullable: true),
+                    xmin = table.Column<uint>(type: "xid", rowVersion: true, nullable: false),
                     IsActive = table.Column<bool>(type: "boolean", nullable: false),
                     CreatedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: false),
                     CreatedOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
@@ -2991,8 +2994,14 @@ namespace Cleansia.Infra.Database.Migrations
                 {
                     table.PrimaryKey("PK_Referrals", x => x.Id);
                     table.ForeignKey(
-                        name: "FK_Referrals_Currencies_CreditCurrencyId",
-                        column: x => x.CreditCurrencyId,
+                        name: "FK_Referrals_Currencies_ReferredCreditCurrencyId",
+                        column: x => x.ReferredCreditCurrencyId,
+                        principalTable: "Currencies",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_Referrals_Currencies_ReferrerCreditCurrencyId",
+                        column: x => x.ReferrerCreditCurrencyId,
                         principalTable: "Currencies",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Restrict);
@@ -4726,11 +4735,6 @@ namespace Cleansia.Infra.Database.Migrations
                 unique: true);
 
             migrationBuilder.CreateIndex(
-                name: "IX_Referrals_CreditCurrencyId",
-                table: "Referrals",
-                column: "CreditCurrencyId");
-
-            migrationBuilder.CreateIndex(
                 name: "IX_Referrals_FirstQualifyingOrderId",
                 table: "Referrals",
                 column: "FirstQualifyingOrderId");
@@ -4741,10 +4745,20 @@ namespace Cleansia.Infra.Database.Migrations
                 column: "ReferralCodeId");
 
             migrationBuilder.CreateIndex(
+                name: "IX_Referrals_ReferredCreditCurrencyId",
+                table: "Referrals",
+                column: "ReferredCreditCurrencyId");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_Referrals_ReferredUserId",
                 table: "Referrals",
                 column: "ReferredUserId",
                 unique: true);
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Referrals_ReferrerCreditCurrencyId",
+                table: "Referrals",
+                column: "ReferrerCreditCurrencyId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_Referrals_ReferrerUserId",

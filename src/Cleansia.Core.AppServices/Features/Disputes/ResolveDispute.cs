@@ -1,7 +1,6 @@
 using Cleansia.Core.AppServices.Abstractions;
 using Cleansia.Core.AppServices.Auditing;
 using Cleansia.Core.AppServices.Common;
-using Cleansia.Core.AppServices.Services;
 using Cleansia.Core.AppServices.Services.Interfaces;
 using Cleansia.Core.Domain.Credit;
 using Cleansia.Core.Domain.Disputes;
@@ -154,21 +153,14 @@ public class ResolveDispute
 
             if (request.RefundAmount is > 0m && creditSettled is null)
             {
-                var refundRequest = await HeldToWhatIsLeftAsync(
+                var refund = await refundService.IssueRefundAsync(
                     new RefundRequest(
                         dispute.OrderId,
                         request.RefundAmount.Value,
                         RefundReason.DisputeResolution,
                         actorId,
                         DisputeId: dispute.Id),
-                    dispute,
                     cancellationToken);
-                if (refundRequest is null)
-                {
-                    return BusinessResult.Failure(new Error(nameof(request.RefundAmount), BusinessErrorMessage.RefundNothingRefundable));
-                }
-
-                var refund = await refundService.IssueRefundAsync(refundRequest, cancellationToken);
 
                 if (refund.IsFailure)
                 {
@@ -248,8 +240,9 @@ public class ResolveDispute
         /// in credit), as the card leg is by its refundable ceiling; otherwise a second dispute on a
         /// refunded order is paid again in credit.
         ///
-        /// <para>False when the customer's account is erased: credit there would be forfeited, so the
-        /// settlement goes to the card, as it does for a customer who never chose.</para>
+        /// <para>False when the customer's account is erased, or sits on the books of a company frozen for
+        /// archive: credit on the first would be forfeited, and a write to the second fails the whole
+        /// commit, so the settlement goes to the card, as it does for a customer who never chose.</para>
         /// </summary>
         private async Task<BusinessResult<bool>> SettleWithCreditAsync(
             Command request,
@@ -263,6 +256,11 @@ public class ResolveDispute
                 || amount > await OutstandingAsync(order, cancellationToken))
             {
                 return BusinessResult.Failure<bool>(new Error(nameof(request.RefundAmount), BusinessErrorMessage.InvalidRefundAmount));
+            }
+
+            if (await creditAccountRepository.IsOnFrozenCompanyBooksAsync(dispute.UserId!, order.CurrencyId, cancellationToken))
+            {
+                return BusinessResult.Success(false);
             }
 
             var account = await creditAccountRepository.EnsureForUserAsync(dispute.UserId!, order.CurrencyId, cancellationToken);
@@ -280,29 +278,6 @@ public class ResolveDispute
                 disputeId: dispute.Id);
 
             return BusinessResult.Success(true);
-        }
-
-        /// <summary>
-        /// The card settlement, held to what the order has left once an earlier complaint on it was settled
-        /// in credit; null when nothing is left. The seam bounds each tender by what that tender gave back,
-        /// and settlement credit is on neither, so the order could otherwise go back once in credit and
-        /// again to the card.
-        ///
-        /// <para>A replay of this dispute's own settled refund passes untouched: what is left already
-        /// counts it, and the seam answers the replay with that refund and moves nothing.</para>
-        /// </summary>
-        private async Task<RefundRequest?> HeldToWhatIsLeftAsync(
-            RefundRequest refundRequest, Dispute dispute, CancellationToken cancellationToken)
-        {
-            if (await creditAccountRepository.GetDisputeSettledTotalForOrderAsync(dispute.OrderId, cancellationToken) <= 0m
-                || await refundRepository.GetByRefundKeyAsync(RefundService.BuildRefundKey(refundRequest), cancellationToken)
-                    is { Status: RefundStatus.Succeeded })
-            {
-                return refundRequest;
-            }
-
-            var left = dispute.Order is { } order ? await OutstandingAsync(order, cancellationToken) : 0m;
-            return left > 0m ? refundRequest with { Amount = Math.Min(refundRequest.Amount, left) } : null;
         }
 
         private async Task<decimal> OutstandingAsync(Order order, CancellationToken cancellationToken) =>

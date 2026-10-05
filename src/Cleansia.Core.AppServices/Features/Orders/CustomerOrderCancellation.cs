@@ -77,7 +77,11 @@ public sealed class CustomerOrderCancellation(
 
         if (paymentStatusAtCancel != PaymentStatus.Paid && !refundInitiated)
         {
-            await creditAccountRepository.ReturnUnpaidOrderCreditAsync(order, actorId, cancellationToken);
+            await creditAccountRepository.ReturnUnpaidOrderCreditAsync(
+                order,
+                await refundRepository.GetSucceededRefundTotalForOrderAsync(order.Id, cancellationToken),
+                actorId,
+                cancellationToken);
         }
 
         if (!order.TookNoPayment && assessment.FeeAmount > 0m)
@@ -151,7 +155,8 @@ public sealed class CustomerOrderCancellation(
                 && (refund is null || refund.Error?.Message == BusinessErrorMessage.RefundFailed))
             {
                 refundPending = true;
-                await ReturnCreditShareAsync(request);
+                await creditAccountRepository.ReturnPendingRefundCreditLegAsync(
+                    refundRepository, order, request, cancellationToken);
             }
 
             if (refundInitiated && !guest)
@@ -163,17 +168,6 @@ public sealed class CustomerOrderCancellation(
                         ["orderNumber"] = order.DisplayOrderNumber,
                     }, order.TenantId, order.Id, cancellationToken);
             }
-        }
-
-        // The card leg waits for the re-drive; the credit leg comes back now, on the refund's own key, so
-        // the re-drive's credit leg finds it already returned.
-        async Task ReturnCreditShareAsync(RefundRequest request)
-        {
-            var alreadyReturned = await creditAccountRepository.GetReturnedTotalForOrderAsync(
-                order.Id, cancellationToken);
-            var (_, creditShare) = RefundService.SplitAcrossTenders(order, request.Amount, alreadyReturned);
-            await creditAccountRepository.ReturnCreditAsync(
-                order, creditShare, RefundService.BuildRefundKey(request), actorId, cancellationToken);
         }
     }
 }

@@ -180,6 +180,31 @@ describe('CountryFormComponent', () => {
       );
     });
 
+    it('refuses a zero ceiling and saves nothing', () => {
+      facade.country.set(detail(true, 1000000));
+      fixture.detectChanges();
+
+      component.form.controls.insuranceCoverageAmount.setValue('0' as unknown as number);
+      component.onSave();
+
+      expect(component.form.controls.insuranceCoverageAmount.hasError('min')).toBe(true);
+      expect(facade.updateCountry).not.toHaveBeenCalled();
+    });
+
+    it('accepts a ceiling of 1', () => {
+      facade.country.set(detail(true, 1000000));
+      fixture.detectChanges();
+
+      component.form.controls.insuranceCoverageAmount.setValue('1' as unknown as number);
+      component.onSave();
+
+      expect(facade.updateCountry).toHaveBeenCalledWith(
+        'country-1',
+        expect.anything(),
+        { insuranceCoverageAmount: 1 }
+      );
+    });
+
     it('lets a legacy country without an alpha-2 code be renamed, and still refuses a malformed one', () => {
       facade.country.set(CountryDetailDto.fromJS({ ...detail(false), isoAlpha2: '' }));
       fixture.detectChanges();

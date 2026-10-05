@@ -138,6 +138,20 @@ public class RefundServiceTests
             .ReturnsAsync(consumed);
     }
 
+    private void ArrangeSettledInCredit(decimal settled)
+    {
+        _creditAccountRepository
+            .Setup(r => r.GetDisputeSettledTotalForOrderAsync(OrderId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(settled);
+    }
+
+    private static RefundRequest RequestFor(RefundReason reason, decimal amount) => reason switch
+    {
+        RefundReason.DisputeResolution => new RefundRequest(OrderId, amount, reason, ActorId, DisputeId: "dispute-2"),
+        RefundReason.AdminDiscretion => new RefundRequest(OrderId, amount, reason, ActorId, RefundRequestId: "full"),
+        _ => new RefundRequest(OrderId, amount, reason, ActorId),
+    };
+
     private void CaptureAddedRefund(out List<Refund> added)
     {
         var captured = new List<Refund>();
@@ -408,13 +422,15 @@ public class RefundServiceTests
         ArrangeConsumed(500m);
         CaptureAddedRefund(out _);
         var creditKey = $"credit-return:refund:{OrderId}:dispute:dispute-1";
+        var creditMoved = 0m;
         _creditAccountRepository
             .Setup(r => r.TryReturnAsync("user-1", order.CurrencyId, 160m, creditKey, ActorId,
                 It.IsAny<CancellationToken>(), OrderId, null))
+            .Callback(() => creditMoved = 160m)
             .ReturnsAsync(true);
         _creditAccountRepository
             .Setup(r => r.GetReturnedAmountAsync(creditKey, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(160m);
+            .ReturnsAsync(() => creditMoved);
 
         var result = await CreateService().IssueRefundAsync(
             new RefundRequest(OrderId, 800m, RefundReason.DisputeResolution, ActorId, DisputeId: "dispute-1"),
@@ -828,6 +844,388 @@ public class RefundServiceTests
         Assert.True(result.IsSuccess);
         Assert.True(result.Value!.ResolvedToExisting);
         Assert.Equal(0, _stripe.RefundCallCount);
+    }
+
+    /// <summary>
+    /// A 1000 sale with a complaint already settled in 300 of credit has 700 left to give back, whichever
+    /// action asks for the whole price.
+    /// </summary>
+    [Theory]
+    [InlineData(RefundReason.AdminDiscretion)]
+    [InlineData(RefundReason.DisputeResolution)]
+    [InlineData(RefundReason.ServiceNotRendered)]
+    [InlineData(RefundReason.CustomerCancellation)]
+    public async Task IssueRefund_AfterAComplaintSettledInCredit_SendsTheCardOnlyWhatTheSaleHasLeft(RefundReason reason)
+    {
+        var order = CreateCardPaidOrder(1000m);
+        ArrangeOrder(order);
+        ArrangeNoExistingRefund();
+        ArrangeConsumed(0m);
+        ArrangeSettledInCredit(300m);
+        CaptureAddedRefund(out var added);
+
+        var result = await CreateService().IssueRefundAsync(RequestFor(reason, 1000m), CancellationToken.None);
+
+        Assert.True(result.IsSuccess, result.Error?.Message);
+        Assert.Equal(1, _stripe.RefundCallCount);
+        Assert.Equal(700m, _stripe.LastAmount);
+        Assert.Equal(700m, result.Value!.Amount);
+        var row = Assert.Single(added);
+        Assert.Equal(700m, row.Amount);
+        Assert.Equal(RefundStatus.Succeeded, row.Status);
+        Assert.Equal(PaymentStatus.PartiallyRefunded, order.PaymentStatus);
+    }
+
+    [Theory]
+    [InlineData(RefundReason.AdminDiscretion)]
+    [InlineData(RefundReason.DisputeResolution)]
+    [InlineData(RefundReason.ServiceNotRendered)]
+    [InlineData(RefundReason.CustomerCancellation)]
+    public async Task IssueRefund_WholePriceSettledInCredit_IsNothingRefundable_NoRowNoStripe(RefundReason reason)
+    {
+        var order = CreateCardPaidOrder(1000m);
+        ArrangeOrder(order);
+        ArrangeNoExistingRefund();
+        ArrangeConsumed(0m);
+        ArrangeSettledInCredit(1000m);
+        CaptureAddedRefund(out var added);
+
+        var result = await CreateService().IssueRefundAsync(RequestFor(reason, 1000m), CancellationToken.None);
+
+        Assert.True(result.IsFailure);
+        Assert.Equal(BusinessErrorMessage.RefundNothingRefundable, result.Error!.Message);
+        Assert.Empty(added);
+        Assert.Equal(0, _stripe.RefundCallCount);
+        Assert.Equal(PaymentStatus.Paid, order.PaymentStatus);
+        _creditAccountRepository.Verify(r => r.TryReturnAsync(
+            It.IsAny<string>(), It.IsAny<string>(), It.IsAny<decimal>(), It.IsAny<string>(), It.IsAny<string>(),
+            It.IsAny<CancellationToken>(), It.IsAny<string?>(), It.IsAny<string?>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task IssueRefund_RequestWithinWhatIsLeft_IsNotReduced()
+    {
+        var order = CreateCardPaidOrder(1000m);
+        ArrangeOrder(order);
+        ArrangeNoExistingRefund();
+        ArrangeConsumed(0m);
+        ArrangeSettledInCredit(300m);
+        CaptureAddedRefund(out var added);
+
+        var result = await CreateService().IssueRefundAsync(
+            new RefundRequest(OrderId, 400m, RefundReason.AdminDiscretion, ActorId, RefundRequestId: "rr-1"),
+            CancellationToken.None);
+
+        Assert.True(result.IsSuccess, result.Error?.Message);
+        Assert.Equal(400m, _stripe.LastAmount);
+        Assert.Equal(400m, Assert.Single(added).Amount);
+    }
+
+    /// <summary>
+    /// A 2000 sale paid 500 in credit and 1500 by card, with 400 already settled in credit, has 1600 left.
+    /// It goes back in the mix it was paid in: 1200 to the card and 400 to the balance.
+    /// </summary>
+    [Fact]
+    public async Task IssueRefund_CardAndCreditOrder_HeldSliceIsSplitInProportion()
+    {
+        var order = CreateCardPaidOrder(2000m);
+        order.ApplyCredit(500m, "user-1");
+        ArrangeOrder(order);
+        ArrangeNoExistingRefund();
+        ArrangeConsumed(0m);
+        ArrangeSettledInCredit(400m);
+        CaptureAddedRefund(out var added);
+        var creditKey = $"credit-return:refund:{OrderId}:admin:full";
+
+        var result = await CreateService().IssueRefundAsync(
+            RequestFor(RefundReason.AdminDiscretion, 2000m), CancellationToken.None);
+
+        Assert.True(result.IsSuccess, result.Error?.Message);
+        Assert.Equal(1200m, _stripe.LastAmount);
+        Assert.Equal(1200m, Assert.Single(added).Amount);
+        _creditAccountRepository.Verify(r => r.TryReturnAsync(
+            "user-1", order.CurrencyId, 400m, creditKey, ActorId, It.IsAny<CancellationToken>(), OrderId, null), Times.Once);
+        _creditAccountRepository.Verify(r => r.TryReturnAsync(
+            It.IsAny<string>(), It.IsAny<string>(), It.IsAny<decimal>(), It.IsAny<string>(), It.IsAny<string>(),
+            It.IsAny<CancellationToken>(), It.IsAny<string?>(), It.IsAny<string?>()), Times.Once);
+        Assert.Equal(PaymentStatus.PartiallyRefunded, order.PaymentStatus);
+    }
+
+    [Fact]
+    public async Task IssueRefund_PendingRowFromBeforeTheSettlement_IsClampedToTheHeldCardShare()
+    {
+        var order = CreateCardPaidOrder(1000m);
+        ArrangeOrder(order);
+        ArrangeConsumed(0m);
+        ArrangeSettledInCredit(300m);
+        var key = $"refund:{OrderId}:cancel";
+        var pending = Refund.Create(
+            OrderId, key, 1000m, "CZK", RefundReason.CustomerCancellation, RefundSource.AppRefund);
+        _refundRepository
+            .Setup(r => r.GetByRefundKeyAsync(key, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(pending);
+        _refundRepository
+            .Setup(r => r.CommitAsync(It.IsAny<CancellationToken>()))
+            .Returns(Task.CompletedTask);
+
+        var result = await CreateService().IssueRefundAsync(
+            new RefundRequest(OrderId, 1000m, RefundReason.CustomerCancellation, ActorId), CancellationToken.None);
+
+        Assert.True(result.IsSuccess, result.Error?.Message);
+        Assert.Equal(700m, _stripe.LastAmount);
+        Assert.Equal(700m, pending.Amount);
+        Assert.Equal(RefundStatus.Succeeded, pending.Status);
+        _refundRepository.Verify(r => r.Add(It.IsAny<Refund>()), Times.Never);
+    }
+
+    /// <summary>
+    /// The dispute's own card refund went through and its resolution was lost, so the same resolution runs
+    /// again. What is left now counts that very refund, so the replay must be answered with it before the
+    /// hold is applied, or it would read as nothing refundable.
+    /// </summary>
+    [Fact]
+    public async Task IssueRefund_ReplayOfItsOwnSucceededRefund_AfterASettlementInCredit_ResolvesToIt()
+    {
+        var order = CreateCardPaidOrder(1000m);
+        ArrangeOrder(order);
+        ArrangeConsumed(600m);
+        ArrangeSettledInCredit(400m);
+        var refundKey = $"refund:{OrderId}:dispute:dispute-2";
+        var own = Refund.Create(
+                OrderId, refundKey, 600m, "CZK", RefundReason.DisputeResolution, RefundSource.AppRefund, disputeId: "dispute-2")
+            .MarkSucceeded(stripeRefundId: null, confirmedOnUtc: DateTimeOffset.UtcNow);
+        _refundRepository
+            .Setup(r => r.GetByRefundKeyAsync(refundKey, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(own);
+
+        var result = await CreateService().IssueRefundAsync(
+            RequestFor(RefundReason.DisputeResolution, 600m), CancellationToken.None);
+
+        Assert.True(result.IsSuccess, result.Error?.Message);
+        Assert.True(result.Value!.ResolvedToExisting);
+        Assert.Equal(600m, result.Value.Amount);
+        Assert.Equal(0, _stripe.RefundCallCount);
+    }
+
+    [Fact]
+    public async Task Redrive_AfterASettlementInCredit_ClampsToWhatIsLeft()
+    {
+        var order = CreateCardPaidOrder(1000m);
+        ArrangeOrder(order);
+        ArrangeConsumed(0m);
+        ArrangeSettledInCredit(300m);
+        var refund = ArrangePendingRefund(order, 1000m, $"refund:{OrderId}:admin");
+
+        var result = await CreateService().RedriveAsync(refund.Id, "system", CancellationToken.None);
+
+        Assert.True(result.IsSuccess, result.Error?.Message);
+        Assert.Equal(700m, _stripe.LastAmount);
+        Assert.Equal(700m, refund.Amount);
+        Assert.Equal(RefundStatus.Succeeded, refund.Status);
+        Assert.Equal(PaymentStatus.PartiallyRefunded, order.PaymentStatus);
+    }
+
+    [Fact]
+    public async Task Redrive_WhenASettlementCoveredThePrice_ClosesTheRow()
+    {
+        var order = CreateCardPaidOrder(1000m);
+        ArrangeOrder(order);
+        ArrangeConsumed(0m);
+        ArrangeSettledInCredit(1000m);
+        var refund = ArrangePendingRefund(order, 1000m, $"refund:{OrderId}:admin");
+
+        var result = await CreateService().RedriveAsync(refund.Id, "system", CancellationToken.None);
+
+        Assert.True(result.IsFailure);
+        Assert.Equal(BusinessErrorMessage.RefundNothingRefundable, result.Error!.Message);
+        Assert.Equal(RefundStatus.Failed, refund.Status);
+        Assert.Equal(0, _stripe.RefundCallCount);
+        Assert.Equal(PaymentStatus.Paid, order.PaymentStatus);
+    }
+
+    private void ArrangeCreditReturned(decimal forOrder, string refundKey, decimal onRefundKey)
+    {
+        _creditAccountRepository
+            .Setup(r => r.GetReturnedTotalForOrderAsync(OrderId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(forOrder);
+        _creditAccountRepository
+            .Setup(r => r.GetReturnedAmountAsync($"credit-return:{refundKey}", It.IsAny<CancellationToken>()))
+            .ReturnsAsync(onRefundKey);
+    }
+
+    /// <summary>
+    /// A member cancelled a 1000 sale paid 700 by card and 300 in credit, with 200 already settled in credit,
+    /// while Stripe was down. The seam froze 560 on the card from the 800 left, and the credit share of that
+    /// 800, 240, came back at once on the refund's own key. The re-drive refunds the same 560, so Stripe sees
+    /// the same parameters on the same key, and 560 + 240 + 200 is the whole price.
+    /// </summary>
+    [Fact]
+    public async Task Redrive_AfterASettlement_DoesNotCountItsOwnReturnedCreditLegAsGoneElsewhere()
+    {
+        var order = CreateCardPaidOrder(1000m);
+        order.ApplyCredit(300m, "user-1");
+        ArrangeOrder(order);
+        ArrangeConsumed(0m);
+        ArrangeSettledInCredit(200m);
+        var refundKey = $"refund:{OrderId}:cancel";
+        ArrangeCreditReturned(forOrder: 240m, refundKey, onRefundKey: 240m);
+        var refund = ArrangePendingRefund(order, 560m, refundKey);
+
+        var result = await CreateService().RedriveAsync(refund.Id, "system", CancellationToken.None);
+
+        Assert.True(result.IsSuccess, result.Error?.Message);
+        Assert.Equal(560m, _stripe.LastAmount);
+        Assert.Equal(560m, refund.Amount);
+        Assert.Equal(RefundStatus.Succeeded, refund.Status);
+    }
+
+    /// <summary>
+    /// An admin's full refund of 2000 (500 credit, 400 settled) went through at Stripe for 1200 and its credit
+    /// leg of 400 came back, but the record of it was lost. The retry finds its row still pending and sends
+    /// Stripe the same 1200 on the same key rather than a smaller amount Stripe would refuse.
+    /// </summary>
+    [Fact]
+    public async Task IssueRefund_RetryAfterItsCreditLegCameBack_SendsStripeTheSameAmount()
+    {
+        var order = CreateCardPaidOrder(2000m);
+        order.ApplyCredit(500m, "user-1");
+        ArrangeOrder(order);
+        ArrangeConsumed(0m);
+        ArrangeSettledInCredit(400m);
+        var refundKey = $"refund:{OrderId}:admin:full";
+        ArrangeCreditReturned(forOrder: 400m, refundKey, onRefundKey: 400m);
+        var pending = Refund.Create(
+            OrderId, refundKey, 1200m, "CZK", RefundReason.AdminDiscretion, RefundSource.AppRefund);
+        _refundRepository
+            .Setup(r => r.GetByRefundKeyAsync(refundKey, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(pending);
+        _refundRepository
+            .Setup(r => r.CommitAsync(It.IsAny<CancellationToken>()))
+            .Returns(Task.CompletedTask);
+
+        var result = await CreateService().IssueRefundAsync(
+            RequestFor(RefundReason.AdminDiscretion, 2000m), CancellationToken.None);
+
+        Assert.True(result.IsSuccess, result.Error?.Message);
+        Assert.Equal(1200m, _stripe.LastAmount);
+        Assert.Equal(1200m, pending.Amount);
+        Assert.Equal(RefundStatus.Succeeded, pending.Status);
+    }
+
+    /// <summary>
+    /// A member cancelled a 1000 sale paid 700 by card and 300 in credit, with 200 settled in credit, while
+    /// Stripe was down: the row froze 560 and 240 of credit came back on the refund's key. A complaint was then
+    /// settled in 300 more, and the member cancels again. 1000 less the 500 settled leaves 500 for this refund,
+    /// of which 240 is already back, so the card gets 260 and no second leg is paid, not the 350 card share of
+    /// the 500 with the 240 on top: the customer ends with exactly the price.
+    /// </summary>
+    [Fact]
+    public async Task IssueRefund_RetryAfterItsCreditLegCameBack_AndAFurtherSettlement_CardTakesOnlyWhatTheSliceHasLeftAfterTheLeg()
+    {
+        var order = CreateCardPaidOrder(1000m);
+        order.ApplyCredit(300m, "user-1");
+        ArrangeOrder(order);
+        ArrangeConsumed(0m);
+        ArrangeSettledInCredit(500m);
+        var refundKey = $"refund:{OrderId}:cancel";
+        ArrangeCreditReturned(forOrder: 240m, refundKey, onRefundKey: 240m);
+        var pending = Refund.Create(
+            OrderId, refundKey, 560m, "CZK", RefundReason.CustomerCancellation, RefundSource.AppRefund);
+        _refundRepository
+            .Setup(r => r.GetByRefundKeyAsync(refundKey, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(pending);
+        _refundRepository
+            .Setup(r => r.CommitAsync(It.IsAny<CancellationToken>()))
+            .Returns(Task.CompletedTask);
+
+        var result = await CreateService().IssueRefundAsync(
+            RequestFor(RefundReason.CustomerCancellation, 1000m), CancellationToken.None);
+
+        Assert.True(result.IsSuccess, result.Error?.Message);
+        Assert.Equal(260m, _stripe.LastAmount);
+        Assert.Equal(260m, pending.Amount);
+        _creditAccountRepository.Verify(r => r.TryReturnAsync(
+            It.IsAny<string>(), It.IsAny<string>(), It.IsAny<decimal>(), It.IsAny<string>(), It.IsAny<string>(),
+            It.IsAny<CancellationToken>(), It.IsAny<string?>(), It.IsAny<string?>()), Times.Never);
+    }
+
+    /// <summary>
+    /// After the cancellation above returned 240 of credit on the refund's key, a second complaint was settled
+    /// in 300 more. 1000 less the 500 settled leaves 500 for this refund, of which 240 has already come back
+    /// in credit, so the card gets 260 and the customer ends with exactly the price.
+    /// </summary>
+    [Fact]
+    public async Task Redrive_AfterAFurtherSettlement_CardTakesWhatIsLeftAfterTheCreditLegAlreadyReturned()
+    {
+        var order = CreateCardPaidOrder(1000m);
+        order.ApplyCredit(300m, "user-1");
+        ArrangeOrder(order);
+        ArrangeConsumed(0m);
+        ArrangeSettledInCredit(500m);
+        var refundKey = $"refund:{OrderId}:cancel";
+        ArrangeCreditReturned(forOrder: 240m, refundKey, onRefundKey: 240m);
+        var refund = ArrangePendingRefund(order, 560m, refundKey);
+
+        var result = await CreateService().RedriveAsync(refund.Id, "system", CancellationToken.None);
+
+        Assert.True(result.IsSuccess, result.Error?.Message);
+        Assert.Equal(260m, _stripe.LastAmount);
+        Assert.Equal(260m, refund.Amount);
+    }
+
+    /// <summary>
+    /// A 1000 sale, 600 in credit and 400 by card, was cancelled while Stripe was down: all 600 of the credit
+    /// came back on the refund's key. Since then another refund took 150 off the card and a complaint was
+    /// settled in 50 of credit. The card ceiling leaves 250, but 600 of this refund is already back, so the
+    /// card gets the 200 that brings the sale to exactly 1000, not 250.
+    /// </summary>
+    [Fact]
+    public async Task Redrive_HoldsItsCardAndItsReturnedCreditLegTogether_AfterTheCardCeilingClamp()
+    {
+        var order = CreateCardPaidOrder(1000m);
+        order.ApplyCredit(600m, "user-1");
+        ArrangeOrder(order);
+        ArrangeConsumed(150m);
+        ArrangeSettledInCredit(50m);
+        var refundKey = $"refund:{OrderId}:cancel";
+        ArrangeCreditReturned(forOrder: 600m, refundKey, onRefundKey: 600m);
+        var refund = ArrangePendingRefund(order, 400m, refundKey);
+
+        var result = await CreateService().RedriveAsync(refund.Id, "system", CancellationToken.None);
+
+        Assert.True(result.IsSuccess, result.Error?.Message);
+        Assert.Equal(200m, _stripe.LastAmount);
+        Assert.Equal(200m, refund.Amount);
+    }
+
+    /// <summary>
+    /// The customer's credit account is on the books of a company frozen for archive. A raw-SQL return would
+    /// write a balance onto those sealed books past the frozen-books guard, so the credit leg is written off,
+    /// as that company's credit is when it closes, and the card leg still goes back.
+    /// </summary>
+    [Fact]
+    public async Task IssueRefund_CreditLegOnAFrozenCompanysBooks_IsWrittenOff_AndTheCardStillRefunds()
+    {
+        var order = CreateCardPaidOrder(2000m);
+        order.ApplyCredit(500m, "user-1");
+        ArrangeOrder(order);
+        ArrangeNoExistingRefund();
+        ArrangeConsumed(0m);
+        CaptureAddedRefund(out var added);
+        _creditAccountRepository
+            .Setup(r => r.IsOnFrozenCompanyBooksAsync("user-1", order.CurrencyId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(true);
+
+        var result = await CreateService().IssueRefundAsync(
+            RequestFor(RefundReason.DisputeResolution, 400m), CancellationToken.None);
+
+        Assert.True(result.IsSuccess, result.Error?.Message);
+        Assert.Equal(300m, _stripe.LastAmount);
+        Assert.Equal(RefundStatus.Succeeded, Assert.Single(added).Status);
+        Assert.Equal(0m, result.Value!.CreditReturned);
+        _creditAccountRepository.Verify(r => r.TryReturnAsync(
+            It.IsAny<string>(), It.IsAny<string>(), It.IsAny<decimal>(), It.IsAny<string>(), It.IsAny<string>(),
+            It.IsAny<CancellationToken>(), It.IsAny<string?>(), It.IsAny<string?>()), Times.Never);
     }
 
     private sealed class RecordingStripeClient : IStripeClient

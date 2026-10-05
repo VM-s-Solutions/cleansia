@@ -1194,6 +1194,9 @@
     <string name="error_validation_invalid_zip_code">Введіть, будь ласка, дійсний поштовий індекс.</string>
     <string name="error_validation_registration_number_invalid_format">Введіть дійсний реєстраційний номер компанії для обраної країни.</string>
     <string name="error_validation_registration_number_not_registered">Цього ідентифікаційного номера (IČO) немає в реєстрі економічних суб\'єктів (ARES). Перевірте номер.</string>
+    <string name="error_employee_business_ceased">За даними реєстру економічних суб\'єктів (ARES), підприємницьку діяльність під цим ідентифікаційним номером (IČO) припинено. Введіть IČO діяльності, яка ще триває.</string>
+    <string name="error_employee_trade_licence_inactive">За даними реєстру економічних суб\'єктів (ARES), під цим ідентифікаційним номером (IČO) немає чинного дозволу на підприємницьку діяльність. Перевірте номер або спершу поновіть дозвіл.</string>
+    <string name="error_employee_business_registry_unavailable">Не вдалося зв\'язатися з реєстром економічних суб\'єктів (ARES), щоб перевірити ваш новий ідентифікаційний номер (IČO), тому нічого не збережено. Спробуйте ще раз за кілька хвилин.</string>
     <string name="error_validation_must_be_positive">Має бути додатне число.</string>
 
     <!-- Payout / bank details -->

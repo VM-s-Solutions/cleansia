@@ -7,6 +7,7 @@ using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Internationalization;
 using Cleansia.Core.Domain.Notifications;
 using Cleansia.Core.Domain.Orders;
+using Cleansia.Core.Domain.Payments;
 using Cleansia.Core.Domain.Repositories;
 using Cleansia.Core.Domain.Users;
 using Cleansia.Core.Queue.Abstractions;
@@ -36,6 +37,7 @@ public class AdminCancelOrderAsNoShowTests
     private readonly Mock<IUserSessionProvider> _session = new();
     private readonly Mock<ICreditAccountRepository> _credit = new();
     private readonly Mock<IRefundService> _refunds = new();
+    private readonly Mock<IRefundRepository> _refundRows = new();
     private readonly Mock<INotificationProducer> _notifications = new();
     private readonly Mock<ILiveActivityProducer> _liveActivity = new();
     private readonly Mock<IExpressWaiverConsumer> _waiver = ExpressWaiverMocks.NoConsumer();
@@ -63,6 +65,7 @@ public class AdminCancelOrderAsNoShowTests
         new CleanerNoShowCancellation(
             _credit.Object,
             _refunds.Object,
+            _refundRows.Object,
             _notifications.Object,
             new GuestOrderAccessTokenIssuer(Mock.Of<IGuestOrderAccessTokenRepository>()),
             Mock.Of<IPendingDispatch>(),
@@ -154,6 +157,32 @@ public class AdminCancelOrderAsNoShowTests
         _waiver.Verify(w => w.ReleaseForOrderAsync(OrderId, It.IsAny<CancellationToken>()), Times.Once);
         _liveActivity.Verify(l => l.NotifyOrderTransitionAsync(
             order, LiveActivityEventKeys.End, It.IsAny<OrderStatusTrack>(), It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    /// <summary>
+    /// The customer's credit account sits on the books of a company frozen for archive, so the apology
+    /// would fail the cancellation's commit. It is skipped; the refund and the cancellation stand, and the
+    /// customer gets the plain cancellation push, which promises no credit.
+    /// </summary>
+    [Fact]
+    public async Task A_Customer_Whose_Credit_Is_On_A_Frozen_Companys_Books_Gets_No_Apology_And_Is_Still_Refunded()
+    {
+        var order = ArrangeOrder();
+        _credit.Setup(c => c.IsOnFrozenCompanyBooksAsync(CustomerId, CzkId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(true);
+
+        var result = await ConfirmAsync();
+
+        Assert.True(result.IsSuccess, result.Error?.Message);
+        Assert.Null(result.Value!.ApologyCredit);
+        Assert.Equal(1000m, result.Value.RefundedAmount);
+        Assert.Equal(OrderStatus.Cancelled, order.CurrentStatus);
+        _credit.Verify(c => c.EnsureForUserAsync(
+            It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Never);
+        _notifications.Verify(n => n.NotifyAsync(
+            CustomerId, NotificationEventCatalog.OrderCancelled,
+            It.IsAny<Dictionary<string, string>>(), It.IsAny<string?>(), OrderId,
+            It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Fact]
@@ -250,5 +279,59 @@ public class AdminCancelOrderAsNoShowTests
             CustomerId, NotificationEventCatalog.OrderNoCleanerNothingCharged,
             It.IsAny<Dictionary<string, string>>(), It.IsAny<string?>(), OrderId,
             It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    /// <summary>
+    /// 1000 paid 700 by card and 300 in credit, with 200 already settled in credit. Stripe gave no answer on
+    /// the 560 card refund, so it waits for the re-drive, but it may already have gone through: of the 800
+    /// left, the 240 credit share comes back now on the refund's own key, so the re-drive counts it as part of
+    /// its slice and asks Stripe for the same 560 on that key.
+    /// </summary>
+    [Fact]
+    public async Task A_Card_Refund_Left_Pending_Returns_Its_Credit_Share_Now_On_The_Refunds_Own_Key()
+    {
+        var order = ArrangeOrder();
+        order.ApplyCredit(300m, CustomerId);
+        _refunds.Setup(r => r.IssueRefundAsync(It.IsAny<RefundRequest>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(BusinessResult.Failure<RefundResult>(
+                new Error(nameof(RefundRequest.Amount), BusinessErrorMessage.RefundFailed)));
+        _refundRows.Setup(r => r.GetByRefundKeyAsync($"refund:{OrderId}:admin", It.IsAny<CancellationToken>()))
+            .ReturnsAsync(Refund.Create(
+                OrderId, $"refund:{OrderId}:admin", 560m, "CZK", RefundReason.ServiceNotRendered, RefundSource.AppRefund));
+        _credit.Setup(c => c.GetDisputeSettledTotalForOrderAsync(OrderId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(200m);
+
+        var result = await ConfirmAsync();
+
+        Assert.True(result.Value!.RefundPending);
+        _credit.Verify(c => c.TryReturnAsync(
+            CustomerId, CzkId, 240m, $"credit-return:refund:{OrderId}:admin", AdminId,
+            It.IsAny<CancellationToken>(), OrderId, It.IsAny<string?>()), Times.Once);
+        _credit.Verify(c => c.TryReturnAsync(
+            It.IsAny<string>(), It.IsAny<string>(), It.IsAny<decimal>(), $"credit-return:order-ended-unpaid:{OrderId}",
+            It.IsAny<string>(), It.IsAny<CancellationToken>(), It.IsAny<string?>(), It.IsAny<string?>()), Times.Never);
+    }
+
+    /// <summary>
+    /// The order was partly refunded, 560 by card and 240 in credit of 800, and a complaint was settled in 150
+    /// of credit. Of the 1000 sale 50 is left, so 50 of the 60 credit still out comes back, not all 60.
+    /// </summary>
+    [Fact]
+    public async Task A_Partly_Refunded_Order_Gets_Back_No_More_Credit_Than_The_Sale_Has_Left_After_Its_Card_Refunds()
+    {
+        var order = ArrangeOrder(paymentStatus: PaymentStatus.PartiallyRefunded);
+        order.ApplyCredit(300m, CustomerId);
+        _refundRows.Setup(r => r.GetSucceededRefundTotalForOrderAsync(OrderId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(560m);
+        _credit.Setup(c => c.GetReturnedTotalForOrderAsync(OrderId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(240m);
+        _credit.Setup(c => c.GetDisputeSettledTotalForOrderAsync(OrderId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(150m);
+
+        await ConfirmAsync();
+
+        _credit.Verify(c => c.TryReturnAsync(
+            CustomerId, CzkId, 50m, $"credit-return:order-ended-unpaid:{OrderId}", AdminId,
+            It.IsAny<CancellationToken>(), OrderId, It.IsAny<string?>()), Times.Once);
     }
 }

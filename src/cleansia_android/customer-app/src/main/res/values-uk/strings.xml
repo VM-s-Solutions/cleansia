@@ -157,7 +157,7 @@
     <string name="home_upsell_chip_hours">%1$d год</string>
     <string name="home_upsell_chip_minutes">%1$d хв</string>
     <string name="home_upsell_chip_times">%1$d×</string>
-    <string name="home_upsell_referral_desc">Обом по %1$s кредиту після першого завершеного прибирання друга.</string>
+    <string name="home_upsell_referral_desc">Ви отримаєте %1$s кредиту після першого завершеного прибирання друга, а друг — кредит, якщо його пропонують на його ринку.</string>
 
     <string name="home_hero2_top">Весна вже тут</string>
     <string name="home_hero2_title">Глибоке прибирання + вікна разом</string>
@@ -803,12 +803,12 @@
     <string name="booking_referral_code_row_applied">%1$s застосовано</string>
     <string name="booking_referral_code_row_clear">Видалити</string>
     <string name="booking_referral_code_dialog_title">Введіть реферальний код</string>
-    <string name="booking_referral_code_dialog_helper">Маєте код від друга? Обидва отримаєте %1$s кредиту після вашого першого завершеного прибирання.</string>
+    <string name="booking_referral_code_dialog_helper">Маєте код від друга? Ви отримаєте %1$s кредиту після вашого першого завершеного прибирання.</string>
     <string name="booking_referral_code_dialog_helper_no_figure">Маєте код від друга? Введіть його тут.</string>
     <string name="booking_referral_code_dialog_apply">Застосувати</string>
     <string name="booking_referral_code_dialog_cancel">Скасувати</string>
     <string name="booking_referral_code_dialog_done">Готово</string>
-    <string name="booking_referral_code_dialog_success_named">Код від %1$s прийнято — обидва отримаєте %2$s кредиту після вашого першого завершеного прибирання.</string>
+    <string name="booking_referral_code_dialog_success_named">Код від %1$s прийнято — ви отримаєте %2$s кредиту після вашого першого завершеного прибирання.</string>
     <string name="booking_referral_code_dialog_success_named_no_figure">Код від %1$s прийнято.</string>
 
     <!-- Plus: pre-request a favorite cleaner -->
@@ -816,7 +816,7 @@
     <string name="booking_preferred_cleaner_subtitle">Перевага Plus · виберіть когось, хто вже у вас прибирав</string>
     <string name="booking_preferred_cleaner_dialog_title">Виберіть клінера</string>
     <string name="booking_preferred_cleaner_clear">Скасувати вибір клінера</string>
-    <string name="booking_referral_code_dialog_success">Код прийнято — обидва отримаєте %1$s кредиту після вашого першого завершеного прибирання.</string>
+    <string name="booking_referral_code_dialog_success">Код прийнято — ви отримаєте %1$s кредиту після вашого першого завершеного прибирання.</string>
     <string name="booking_referral_code_dialog_success_no_figure">Код прийнято.</string>
 
     <string name="booking_payment_method">Як хочете платити?</string>
@@ -1298,13 +1298,12 @@
 
     <!-- Loyalty Phase C — Referrals -->
     <string name="loyalty_referral_section_title">Запросіть друзів</string>
-    <string name="loyalty_referral_subtitle">Поділіться своїм кодом. Друг і ви отримаєте по %1$s кредиту після його першого завершеного прибирання.</string>
+    <string name="loyalty_referral_subtitle">Поділіться своїм кодом. Після першого завершеного прибирання друга ви отримаєте %1$s кредиту, а друг — кредит, якщо його пропонують на його ринку.</string>
     <string name="loyalty_referral_subtitle_no_figure">Поділіться своїм кодом із друзями — вони введуть його під час реєстрації.</string>
     <string name="loyalty_referral_code_label">Ваш код</string>
     <string name="loyalty_referral_share_button">Поділитися</string>
     <string name="loyalty_referral_copy_button">Копіювати</string>
     <string name="loyalty_referral_copied_toast">Код скопійовано</string>
-    <string name="loyalty_referral_share_text">Отримайте %1$s кредиту після першого завершеного прибирання Cleansia! Використайте мій код %2$s при реєстрації: %3$s</string>
     <string name="loyalty_referral_share_text_no_figure">Приєднуйтеся до Cleansia! Використайте мій код %1$s при реєстрації: %2$s</string>
     <string name="loyalty_referral_stats_empty">Будьте першим — поділіться кодом</string>
     <string name="loyalty_referral_stats_qualified">%1$d друг приєднався · %2$d кваліфіковані</string>

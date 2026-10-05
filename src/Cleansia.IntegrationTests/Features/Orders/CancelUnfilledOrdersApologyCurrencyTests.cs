@@ -125,6 +125,7 @@ public class CancelUnfilledOrdersApologyCurrencyTests(PostgresContainerFixture f
             new CleanerNoShowCancellation(
                 new CreditAccountRepository(ctx),
                 new NoRefunds(),
+                new RefundRepository(ctx),
                 new NotificationProducer(new UserNotificationRepository(ctx), new OutboxPendingDispatch(ctx), new UserRepository(ctx), Microsoft.Extensions.Logging.Abstractions.NullLogger<NotificationProducer>.Instance),
                 new GuestOrderAccessTokenIssuer(new GuestOrderAccessTokenRepository(ctx)),
                 new OutboxPendingDispatch(ctx),
@@ -206,6 +207,64 @@ public class CancelUnfilledOrdersApologyCurrencyTests(PostgresContainerFixture f
             .IgnoreQueryFilters()
             .FirstAsync(a => a.UserId == userId && a.CurrencyId == CzkId);
         Assert.Equal(250m, czk.Balance);
+    }
+
+    /// <summary>
+    /// The customer belongs to a company frozen for archive (ADR-0064 D3), so the account an apology opens
+    /// sits on sealed books and its write fails the commit of an order another company runs. Before, that
+    /// ended the sweep at the first such order on every tick, and nothing after it was ever cancelled. The
+    /// apology is skipped instead: both orders are cancelled, nothing is credited, and the push promises
+    /// nothing.
+    /// </summary>
+    [Fact]
+    public async Task A_Customer_Of_A_Frozen_Company_Does_Not_Stop_The_Sweep()
+    {
+        await ResetAsync();
+        string userId;
+        await using (var ctx = NewContext())
+        {
+            ctx.Languages.Add(Language.Create("en", "English"));
+            var country = Country.Create("Czechia", "CZE", "CZ", isServiced: true);
+            country.Id = CountryId;
+            ctx.Countries.Add(country);
+            ctx.Currencies.Add(NewCurrency(CzkId, "CZK", isDefault: true, noShowCredit: 250m));
+            var user = User.CreateWithPassword("frozen-apology@cleansia.test", "Seed-Password-123", "Frozen", "Customer");
+            user.TenantId = TestTenants.Second;
+            ctx.Users.Add(user);
+            ctx.Orders.AddRange(
+                UnfilledCashOrder("order-frozen-apology-1", CzkId, user.Id),
+                UnfilledCashOrder("order-frozen-apology-2", CzkId, user.Id));
+            await ctx.CommitAsync(CancellationToken.None);
+            userId = user.Id;
+        }
+
+        await using (var ctx = NewContext())
+        {
+            var company = await ctx.Tenants.SingleAsync(t => t.Id == TestTenants.Second);
+            var frozenOn = new DateTimeOffset(2026, 10, 1, 8, 0, 0, TimeSpan.Zero);
+            company.RequestWindDown(new DateOnly(2026, 9, 1), "admin-frozen-apology", frozenOn.AddDays(-30));
+            company.Deactivate("admin-frozen-apology", frozenOn.AddDays(-15));
+            company.RequestArchive("admin-frozen-apology", frozenOn);
+            await ctx.CommitAsync(CancellationToken.None);
+        }
+
+        var response = await SweepAsync();
+
+        Assert.Equal(2, response.CancelledCount);
+        Assert.Equal(0, response.CreditedCount);
+
+        await using var verify = NewContext();
+        var orders = await verify.Orders.IgnoreQueryFilters().ToListAsync();
+        Assert.Equal(2, orders.Count);
+        Assert.All(orders, o => Assert.Equal(OrderStatus.Cancelled, o.CurrentStatus));
+        Assert.False(await verify.CreditAccounts.IgnoreQueryFilters().AnyAsync(a => a.UserId == userId));
+        var pushes = await verify.OutboxMessages
+            .IgnoreQueryFilters()
+            .Where(m => m.QueueName == QueueNames.NotificationsDispatch)
+            .Select(m => m.Body)
+            .ToListAsync();
+        Assert.Equal(2, pushes.Count(b => b.Contains(NotificationEventCatalog.OrderCancelled)));
+        Assert.DoesNotContain(pushes, b => b.Contains(NotificationEventCatalog.OrderNoCleanerNothingCharged));
     }
 
     /// <summary>Every order here is cash, so a refund call would be a bug rather than a Stripe round trip.</summary>

@@ -11,26 +11,32 @@ using Microsoft.Extensions.Logging;
 namespace Cleansia.Core.AppServices.Features.Referrals.Admin;
 
 /// <summary>
-/// Admin reversal of a fraudulent / refunded Qualified referral. Takes back, per side, the referral
-/// credit the ledger shows was granted under that side's key, and flips the referral to the terminal
-/// Reversed status. A balance that no longer holds the whole grant gives up only what is left (owner
-/// default 2026-10-04): credit never goes negative, and the debit row records what was taken.
+/// Admin reversal of a fraudulent / refunded Qualified referral, and the rejection of one held for review.
+/// Takes back, per side and in the currency that side was paid in, the referral credit the ledger shows was
+/// granted under that side's key, and flips the referral to the terminal Reversed status. A held referral
+/// paid nothing, so nothing is taken. A balance that no longer holds the whole grant gives up only what is
+/// left (owner default 2026-10-04): credit never goes negative, and the debit row records what was taken.
 /// <para>
 /// Idempotency (ADR-0002, S7a): each side's debit uses a DETERMINISTIC key derived from the referral id,
 /// so a retry of the SAME logical reversal collapses onto exactly one debit row per side. The status
-/// guard (must be Qualified) makes a second invocation on an already-reversed row a guarded no-op
+/// guard (must be Qualified or held) makes a second invocation on an already-reversed row a guarded no-op
 /// business error — never a double clawback.
+/// </para>
+/// <para>
+/// The command carries the hold state the administrator saw. A rejection sent from a held row, reaching a
+/// referral released since, is refused rather than taking back grants nobody chose to take back.
 /// </para>
 /// </summary>
 public class ReverseReferral
 {
-    public record Command(string ReferralId, string Reason) : ICommand<Response>;
+    public record Command(string ReferralId, string Reason, bool ExpectHeld) : ICommand<Response>;
 
     public record Response(
         string ReferralId,
         decimal CreditTakenFromReferrer,
+        string? ReferrerCurrencyCode,
         decimal CreditTakenFromReferred,
-        string? CurrencyCode);
+        string? ReferredCurrencyCode);
 
     public class Validator : AbstractValidator<Command>
     {
@@ -68,48 +74,60 @@ public class ReverseReferral
                     nameof(command.ReferralId), BusinessErrorMessage.ReferralNotFound));
             }
 
-            // Idempotency guard (ADR-0002): only a Qualified referral can be reversed. A retry on an
+            // Idempotency guard (ADR-0002): only a Qualified or a held referral can be reversed. A retry on an
             // already-Reversed row lands here and returns a guarded error — no second clawback.
-            if (referral.Status != ReferralStatus.Qualified)
+            var held = referral.Status == ReferralStatus.Accepted && referral.HoldReasons is not null;
+            if (referral.Status != ReferralStatus.Qualified && !held)
             {
                 return BusinessResult.Failure<Response>(
                     new Error(nameof(command.ReferralId), BusinessErrorMessage.ReferralNotQualified));
             }
 
+            if (held != command.ExpectHeld)
+            {
+                return BusinessResult.Failure<Response>(
+                    new Error(nameof(command.ExpectHeld), BusinessErrorMessage.ReferralHoldChanged));
+            }
+
             var actorId = userSessionProvider.GetUserId() ?? string.Empty;
             decimal fromReferrer = 0m;
             decimal fromReferred = 0m;
-            string? currencyCode = null;
+            string? referrerCurrencyCode = null;
+            string? referredCurrencyCode = null;
 
-            if (referral.CreditCurrencyId is not null)
-            {
-                // Same owner-lock order as the grant, so a reversal and a grant to the same pair queue.
-                var sides = new[]
-                    {
-                        (Side: ReferralService.ReferrerSide, UserId: referral.ReferrerUserId),
-                        (Side: ReferralService.ReferredSide, UserId: referral.ReferredUserId),
-                    }
-                    .OrderBy(s => s.UserId, StringComparer.Ordinal);
-                foreach (var (side, userId) in sides)
+            // Same owner-lock order as the grant, so a reversal and a grant to the same pair queue.
+            var sides = new[]
                 {
-                    var taken = await TakeBackAsync(
-                        referral, referral.CreditCurrencyId, side, userId, actorId, command.Reason, cancellationToken);
-                    if (side == ReferralService.ReferrerSide)
-                    {
-                        fromReferrer = taken;
-                    }
-                    else
-                    {
-                        fromReferred = taken;
-                    }
+                    (Side: ReferralService.ReferrerSide, UserId: referral.ReferrerUserId, CurrencyId: referral.ReferrerCreditCurrencyId),
+                    (Side: ReferralService.ReferredSide, UserId: referral.ReferredUserId, CurrencyId: referral.ReferredCreditCurrencyId),
+                }
+                .OrderBy(s => s.UserId, StringComparer.Ordinal);
+            foreach (var (side, userId, currencyId) in sides)
+            {
+                if (currencyId is null)
+                {
+                    continue;
                 }
 
-                currencyCode = (await currencyRepository.GetByIdAsync(referral.CreditCurrencyId, cancellationToken))?.Code;
+                var taken = await TakeBackAsync(
+                    referral, currencyId, side, userId, actorId, command.Reason, cancellationToken);
+                var currencyCode = (await currencyRepository.GetByIdAsync(currencyId, cancellationToken))?.Code;
+                if (side == ReferralService.ReferrerSide)
+                {
+                    fromReferrer = taken;
+                    referrerCurrencyCode = currencyCode;
+                }
+                else
+                {
+                    fromReferred = taken;
+                    referredCurrencyCode = currencyCode;
+                }
             }
 
             referral.Reverse(actorId);
 
-            return BusinessResult.Success(new Response(referral.Id, fromReferrer, fromReferred, currencyCode));
+            return BusinessResult.Success(new Response(
+                referral.Id, fromReferrer, referrerCurrencyCode, fromReferred, referredCurrencyCode));
         }
 
         private async Task<decimal> TakeBackAsync(

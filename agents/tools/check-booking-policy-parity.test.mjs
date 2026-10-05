@@ -46,30 +46,33 @@ function write(root, rel, contents) {
 
 /** §3b — the web's referral rows and their twins, as shipped. */
 const WEB_REFERRAL = {
-  'auth.register.referral.dialog_helper': "Have a friend's code? You each get {{amount}} in credit after your first cleaning.",
+  'auth.register.referral.dialog_helper': "Have a friend's code? You get {{amount}} in credit after your first cleaning.",
   'auth.register.referral.dialog_helper_no_amount': "Have a friend's code? Enter it here.",
-  'auth.register.referral.dialog_success': "Code accepted — you'll each get {{amount}} in credit after your first cleaning.",
+  'auth.register.referral.dialog_success': "Code accepted — you'll get {{amount}} in credit after your first cleaning.",
   'auth.register.referral.dialog_success_no_amount': 'Code accepted.',
-  'auth.register.referral.dialog_success_named': "Code from {{name}} accepted — you'll each get {{amount}} in credit after your first cleaning.",
+  'auth.register.referral.dialog_success_named': "Code from {{name}} accepted — you'll get {{amount}} in credit after your first cleaning.",
   'auth.register.referral.dialog_success_named_no_amount': 'Code from {{name}} accepted.',
-  'pages.rewards.referral.section_title': 'Invite friends — {{amount}} in credit each',
+  'pages.rewards.referral.section_title': 'Invite friends — get {{amount}} in credit',
   'pages.rewards.referral.section_title_no_amount': 'Invite friends',
-  'pages.rewards.referral.subtitle': 'Share your code. When a friend finishes their first cleaning, you each get {{amount}} in credit towards your next bookings.',
+  'pages.rewards.referral.subtitle': 'Share your code. When a friend finishes their first cleaning, you get {{amount}} in credit towards your next bookings, and they get credit where their market offers it.',
   'pages.rewards.referral.subtitle_no_amount': 'Share your code with friends who could use a cleaning.',
 };
-/** §3b — Android's referral rows, twins and heading, as shipped; iOS carries the same keys with `%@` slots. */
+/**
+ * §3b — Android's referral rows, twins, heading and invite, as shipped; iOS carries the same keys with
+ * `%@` slots. Each row states the reader's own figure, and the figured invite `loyalty_referral_share_text`
+ * is retired on both platforms, so the fixture leaves it out.
+ */
 const ANDROID_REFERRAL = {
-  home_upsell_referral_desc: 'You both get %1$s credit once their first cleaning is completed.',
+  home_upsell_referral_desc: 'You get %1$s credit once their first cleaning is completed, and they get credit where their market offers it.',
   home_upsell_referral_desc_generic: 'Send a friend your code to enter when they sign up.',
-  booking_referral_code_dialog_helper: "Have a friend\\'s code? Both of you get %1$s credit after your first completed cleaning.",
+  booking_referral_code_dialog_helper: "Have a friend\\'s code? You get %1$s credit after your first completed cleaning.",
   booking_referral_code_dialog_helper_no_figure: "Have a friend\\'s code? Enter it here.",
-  booking_referral_code_dialog_success: "Code accepted — you\\'ll both get %1$s credit after your first completed cleaning.",
+  booking_referral_code_dialog_success: "Code accepted — you\\'ll get %1$s credit after your first completed cleaning.",
   booking_referral_code_dialog_success_no_figure: 'Code accepted.',
-  booking_referral_code_dialog_success_named: "Code from %1$s accepted — you\\'ll both get %2$s credit after your first completed cleaning.",
+  booking_referral_code_dialog_success_named: "Code from %1$s accepted — you\\'ll get %2$s credit after your first completed cleaning.",
   booking_referral_code_dialog_success_named_no_figure: 'Code from %1$s accepted.',
-  loyalty_referral_subtitle: 'Share your code. Your friend and you each get %1$s credit after their first completed cleaning.',
+  loyalty_referral_subtitle: "Share your code. When a friend\\'s first cleaning is completed, you get %1$s credit, and they get credit where their market offers it.",
   loyalty_referral_subtitle_no_figure: 'Share your code with friends to enter when they sign up.',
-  loyalty_referral_share_text: 'Get %1$s credit after your first completed Cleansia cleaning! Use my code %2$s at signup: %3$s',
   loyalty_referral_share_text_no_figure: 'Join me on Cleansia! Use my code %1$s at signup: %2$s',
   loyalty_referral_section_title: 'Invite friends',
 };
@@ -690,10 +693,95 @@ scenario(
 // Until the ruling a referral paid 150 tier points, and every client said so as a literal. It pays
 // `Currency.ReferralCredit` now: each row carries the credit's slot, and the twin a market with no figure
 // reads promises nothing. Every drift case below exits 0 under a checker without §3b.
+//
+// Since the owner ruling of 2026-10-05 each side is paid in the currency it books in, so the two figures
+// can differ: a row states only the reader's own, and the mobile invite — read by the friend, in their
+// own market — names no figure at all. Those scenarios exit 0 under the checker of 2026-10-04.
 scenario(
   'states that the referral rows are pinned',
   {},
-  { code: 0, mentions: ['the referral credit comes from the market on 5 web and 6 mobile row(s)'] },
+  {
+    code: 0,
+    mentions: [
+      "the referral credit comes from the market on 5 web and 5 mobile row(s), each with its no-figure twin and the reader's figure only",
+      'the mobile invite names no figure',
+    ],
+  },
+);
+scenario(
+  'catches a web row promising one figure to both sides again',
+  { webReferralPatch: { 'auth.register.referral.dialog_helper': "Have a friend's code? You each get {{amount}} in credit after your first cleaning." } },
+  {
+    code: 1,
+    mentions: ['web/en — auth.register.referral.dialog_helper = ', 'promises one figure to both sides'],
+    silentAbout: ['does not carry the {{amount}} placeholder', 'android/', 'ios/'],
+  },
+);
+scenario(
+  'reads a shared-figure claim in its own locale',
+  { androidReferralPatch: { loyalty_referral_subtitle: 'Sdílejte svůj kód. Po prvním dokončeném úklidu kamaráda oba získáte kredit %1$s.' } },
+  {
+    code: 1,
+    mentions: ['android/cs — loyalty_referral_subtitle = ', 'promises one figure to both sides'],
+    silentAbout: ['android/en —', 'android/sk —', 'android/uk —', 'android/ru —', 'ios/'],
+  },
+);
+// The old Ukrainian and Russian subtitles said "you will each get" with a distributive "по" before the
+// figure and no "each" word at all; the platform lexicons of 2026-10-05 let it through on iOS.
+scenario(
+  'catches the distributive "по" before the credit slot in Ukrainian and Russian',
+  { iosReferralPatch: { loyalty_referral_subtitle: 'Друг і ви отримаєте по %1$@ кредиту після його першого завершеного прибирання.' } },
+  {
+    code: 1,
+    mentions: ['ios/uk — loyalty_referral_subtitle = ', 'ios/ru — loyalty_referral_subtitle = ', 'promises one figure to both sides'],
+    silentAbout: ['ios/en —', 'ios/cs —', 'ios/sk —', 'android/'],
+  },
+);
+scenario(
+  'does not read a "по" away from the credit slot as a shared figure',
+  { webReferralPatch: { 'pages.rewards.referral.subtitle': 'Надішліть код по телефону — ви отримаєте кредит {{amount}}, а друг теж отримає кредит.' } },
+  { code: 0 },
+);
+scenario(
+  'catches the figured invite coming back on Android',
+  { androidReferralPatch: { loyalty_referral_share_text: 'Get %1$s credit after your first completed Cleansia cleaning! Use my code %2$s at signup: %3$s' } },
+  {
+    code: 1,
+    mentions: ['android/en — loyalty_referral_share_text is back', 'android/uk — loyalty_referral_share_text is back', 'names no figure'],
+    silentAbout: ['ios/'],
+  },
+);
+scenario(
+  'catches the figured invite coming back on iOS',
+  { iosReferralPatch: { loyalty_referral_share_text: 'Get %1$@ credit after your first completed Cleansia cleaning! Use my code %2$@ at signup: %3$@' } },
+  {
+    code: 1,
+    mentions: ['ios/en — loyalty_referral_share_text is back', 'ios/ru — loyalty_referral_share_text is back'],
+    silentAbout: ['android/'],
+  },
+);
+scenario(
+  'catches the invite that is sent everywhere naming a figure',
+  { androidReferralPatch: { loyalty_referral_share_text_no_figure: 'Get 150 Kč credit after your first Cleansia cleaning! Use my code %1$s at signup: %2$s' } },
+  {
+    code: 1,
+    mentions: [
+      'android/en — loyalty_referral_share_text_no_figure = ',
+      'bakes a figure in (150)',
+      'names a currency',
+      'promises credit',
+    ],
+    silentAbout: ['ios/', 'web/'],
+  },
+);
+scenario(
+  'an invite that is gone is a finding, not a silent pass',
+  { iosReferralPatch: { loyalty_referral_share_text_no_figure: null } },
+  {
+    code: 1,
+    mentions: ['ios/en — loyalty_referral_share_text_no_figure is missing', 'ios/uk — loyalty_referral_share_text_no_figure is missing'],
+    silentAbout: ['android/'],
+  },
 );
 scenario(
   'catches the web sign-up dialog promising 150 bonus points again',
@@ -747,15 +835,6 @@ scenario(
   'catches a web twin that renders the amount',
   { webReferralPatch: { 'pages.rewards.referral.section_title_no_amount': 'Invite friends — {{amount}} each' } },
   { code: 1, mentions: ['web/en — pages.rewards.referral.section_title_no_amount = ', 'carries the {{amount}} slot'] },
-);
-scenario(
-  'catches the Android share text with the reward baked in',
-  { androidReferralPatch: { loyalty_referral_share_text: 'Get 150 Kč credit after your first completed Cleansia cleaning! Use my code %1$s at signup: %2$s' } },
-  {
-    code: 1,
-    mentions: ['android/en — loyalty_referral_share_text = ', 'bakes a figure in (150)', 'names a currency'],
-    silentAbout: ['web/', 'ios/'],
-  },
 );
 scenario(
   'catches the Android named success taking the credit in the name slot',

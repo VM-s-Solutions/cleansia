@@ -38,12 +38,17 @@ public class UpdateCountryMarketContentValidatorTests
         Assert.Equal(nameof(UpdateCountryMarketContent.Command.CountryId), error.PropertyName);
     }
 
+    /// <summary>
+    /// A figure of zero would be printed as "insured up to 0"; a market that makes no insurance claim
+    /// leaves the figure empty.
+    /// </summary>
     [Theory]
     [InlineData(-1.0, false)]
-    [InlineData(0.0, true)]
+    [InlineData(0.0, false)]
+    [InlineData(0.01, true)]
     [InlineData(null, true)]
     [InlineData(1000000.0, true)]
-    public async Task The_Figure_Is_Zero_Or_More_When_Set(double? amount, bool valid)
+    public async Task The_Figure_Is_Above_Zero_When_Set(double? amount, bool valid)
     {
         var result = await Validator().ValidateAsync(
             new UpdateCountryMarketContent.Command(ConfiguredCountryId, (decimal?)amount));

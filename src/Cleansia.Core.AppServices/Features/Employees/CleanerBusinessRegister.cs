@@ -1,3 +1,4 @@
+using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.Domain.Repositories;
 using Cleansia.Core.Domain.Users;
 using Cleansia.Infra.Services.BusinessRegistry;
@@ -9,7 +10,7 @@ namespace Cleansia.Core.AppServices.Features.Employees;
 /// country it is judged against. A blank number or a country the platform does not know consults
 /// nothing, so the rule that owns the field is the one that refuses it.
 /// </summary>
-internal static class CleanerBusinessRegister
+public static class CleanerBusinessRegister
 {
     public static async Task<BusinessRegistryRecord> LookupAsync(
         ICountryRepository countryRepository,
@@ -36,9 +37,21 @@ internal static class CleanerBusinessRegister
         => employee.WorkCountryId ?? addressCountryId;
 
     /// <summary>
-    /// A cleaner's own save refuses only a number the register does not know. A register that does not
-    /// answer lets the save through: the check that binds is the one at approval.
+    /// The refusal a register answer earns. Approval grade, which approval itself and an approved cleaner's
+    /// changed number are held to, refuses an ended business, a business with no trade licence in force and
+    /// a register that does not answer, because a person is there to try again. Any other save refuses only
+    /// a number the register does not hold; approval judges the rest before the cleaner can work.
     /// </summary>
-    public static bool AcceptsOnSave(BusinessRegistryRecord record)
-        => record.Answer != BusinessRegistryAnswer.NotRegistered;
+    public static string? Refusal(BusinessRegistryRecord record, bool approvalGrade) => record switch
+    {
+        { Answer: BusinessRegistryAnswer.NotRegistered } => BusinessErrorMessage.RegistrationNumberNotRegistered,
+        _ when !approvalGrade => null,
+        { Answer: BusinessRegistryAnswer.Unavailable } => BusinessErrorMessage.EmployeeBusinessRegistryUnavailable,
+        { Answer: BusinessRegistryAnswer.Registered, Ceased: true } => BusinessErrorMessage.EmployeeBusinessCeased,
+        { Answer: BusinessRegistryAnswer.Registered, TradeLicenceActive: false } => BusinessErrorMessage.EmployeeTradeLicenceInactive,
+        _ => null,
+    };
+
+    public static bool Changes(Employee employee, string? registrationNumber)
+        => !string.Equals(employee.RegistrationNumber?.Trim(), registrationNumber?.Trim(), StringComparison.Ordinal);
 }

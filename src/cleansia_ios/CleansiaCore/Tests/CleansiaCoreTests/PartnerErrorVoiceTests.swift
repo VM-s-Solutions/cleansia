@@ -72,7 +72,19 @@ final class PartnerErrorVoiceTests: XCTestCase {
         PartnerOnlyKey("validation.payout.swift_required", emitters: "UpdateBankDetails"),
         PartnerOnlyKey(
             "validation.registration_number.not_registered",
-            emitters: "UpdateEmployee, UpdateIdentificationInfo, ApproveEmployee"
+            emitters: "UpdateEmployee, UpdateIdentificationInfo, ApproveEmployee, AdminUpdateEmployee"
+        ),
+        PartnerOnlyKey(
+            "employee.business_ceased",
+            emitters: "UpdateEmployee, UpdateIdentificationInfo, ApproveEmployee, AdminUpdateEmployee"
+        ),
+        PartnerOnlyKey(
+            "employee.trade_licence_inactive",
+            emitters: "UpdateEmployee, UpdateIdentificationInfo, ApproveEmployee, AdminUpdateEmployee"
+        ),
+        PartnerOnlyKey(
+            "employee.business_registry_unavailable",
+            emitters: "UpdateEmployee, UpdateIdentificationInfo, ApproveEmployee, AdminUpdateEmployee"
         )
     ]
 
@@ -111,11 +123,14 @@ final class PartnerErrorVoiceTests: XCTestCase {
         "device.not_found": "RevokeDevice",
         "dispute.max_length_exceeded": "UpdateBankDetails, UpdateEmployee, UpdateIdentificationInfo",
         "email.invalid_format": "BaseAuthValidator, UserEmailValidator",
+        "employee.business_ceased": "UpdateEmployee, UpdateIdentificationInfo",
+        "employee.business_registry_unavailable": "UpdateEmployee, UpdateIdentificationInfo",
         "employee.legal_documents_not_accepted": "TakeOrder",
         "employee.not_allowed_to_update": "UpdateAddressInfo, UpdateBankDetails, UpdateEmergencyContact +4 more",
         "employee.not_approved": "CompleteOrder, MarkCashCollected, StartOrder +1 more",
         "employee.not_found": "GetAvailableJobsPreview, GetDashboardStats, GetEarningsAnalytics +14 more",
         "employee.profile_incomplete": "CompleteOrder, TakeOrder",
+        "employee.trade_licence_inactive": "UpdateEmployee, UpdateIdentificationInfo",
         "employee_document.deletion_already_requested": "RequestMyDocumentDeletion",
         "employee_document.duplicate_file": "SaveMyDocuments, ReplaceMyDocument",
         "employee_document.not_found": "DownloadMyDocument",

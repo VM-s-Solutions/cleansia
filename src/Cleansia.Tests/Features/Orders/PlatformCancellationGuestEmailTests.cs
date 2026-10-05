@@ -108,6 +108,7 @@ public sealed class PlatformCancellationGuestEmailTests
     private PlatformOrderCancellation Cancellation() =>
         new(
             _refunds.Object,
+            Mock.Of<IRefundRepository>(),
             Mock.Of<ICreditAccountRepository>(),
             Mock.Of<ILoyaltyService>(),
             Mock.Of<INotificationProducer>(),

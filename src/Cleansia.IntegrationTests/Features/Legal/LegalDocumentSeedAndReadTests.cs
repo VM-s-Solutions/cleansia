@@ -77,15 +77,15 @@ public sealed class LegalDocumentSeedAndReadTests(PostgresContainerFixture fixtu
                 Assert.False(second.Changed);
 
                 var documents = await context.LegalDocuments.Include(d => d.Texts).AsNoTracking().ToListAsync();
-                Assert.Equal(18, documents.Count);
+                Assert.Equal(20, documents.Count);
                 Assert.All(documents, d => Assert.Null(d.CountryId));
                 Assert.All(documents, d => Assert.Equal(LegalDocument.VersionFor(d.EffectiveFrom), d.Version));
                 Assert.All(documents, d => Assert.Equal(5, d.Texts.Count));
                 Assert.Equal(
                     [
                         LegalDocumentType.TermsOfService, LegalDocumentType.TermsOfService, LegalDocumentType.TermsOfService, LegalDocumentType.TermsOfService,
-                        LegalDocumentType.TermsOfService, LegalDocumentType.TermsOfService,
-                        LegalDocumentType.PrivacyPolicy, LegalDocumentType.PrivacyPolicy, LegalDocumentType.PrivacyPolicy,
+                        LegalDocumentType.TermsOfService, LegalDocumentType.TermsOfService, LegalDocumentType.TermsOfService,
+                        LegalDocumentType.PrivacyPolicy, LegalDocumentType.PrivacyPolicy, LegalDocumentType.PrivacyPolicy, LegalDocumentType.PrivacyPolicy,
                         LegalDocumentType.WorkContract, LegalDocumentType.WorkContract, LegalDocumentType.WorkContract,
                         LegalDocumentType.CleanerFrameworkContract, LegalDocumentType.CleanerFrameworkContract,
                         LegalDocumentType.SelfBillingAgreement, LegalDocumentType.SelfBillingAgreement,
@@ -94,7 +94,7 @@ public sealed class LegalDocumentSeedAndReadTests(PostgresContainerFixture fixtu
                     documents.Select(d => d.Type).OrderBy(t => t));
                 // The contract for work and the cleaner's three documents are employee texts (decisions 45 and 47).
                 Assert.Equal(8, documents.Count(d => d.Audience == LegalDocumentAudience.Employee));
-                Assert.Equal(90, await context.LegalDocumentTexts.CountAsync());
+                Assert.Equal(100, await context.LegalDocumentTexts.CountAsync());
             },
             transactional: false);
     }
@@ -191,7 +191,8 @@ public sealed class LegalDocumentSeedAndReadTests(PostgresContainerFixture fixtu
             {
                 var mediator = provider.GetRequiredService<IMediator>();
                 var versions = await mediator.Send(new AdminGetLegalVersions.Query(Type: LegalDocumentType.TermsOfService));
-                var terms = versions.Value.First();
+                // Newest first, and a version dated ahead is listed before it is in force: read the one in force.
+                var terms = versions.Value.Single(v => v.IsInForce);
                 var czech = await mediator.Send(new AdminGetLegalDocument.Query(terms.Id, "cs"));
                 var missing = await mediator.Send(new AdminGetLegalDocument.Query("01ARZ3NDEKTSV4RRFFQ69G5FAV", "cs"));
                 return (terms, czech, missing);

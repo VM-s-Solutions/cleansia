@@ -29,7 +29,7 @@ public class UpdateCountryMarketContent
                 .WithMessage(BusinessErrorMessage.CountryConfigurationMissing);
 
             RuleFor(x => x.InsuranceCoverageAmount)
-                .GreaterThanOrEqualTo(0m)
+                .GreaterThan(0m)
                 .When(x => x.InsuranceCoverageAmount.HasValue)
                 .WithMessage(BusinessErrorMessage.MustBePositive);
         }

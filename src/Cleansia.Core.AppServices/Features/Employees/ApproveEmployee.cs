@@ -166,8 +166,8 @@ public class ApproveEmployee
 
             // The binding check of the cleaner's registration number, in the register of the country they
             // are approved for: it exists, the business has not ended and a trade licence is in force. A
-            // register that does not answer refuses, unlike the cleaner's own save, because a person is
-            // here to try again. After the profile, document and country rules, so those report first.
+            // register that does not answer refuses, because a person is here to try again. After the
+            // profile, document and country rules, so those report first.
             RuleFor(x => x)
                 .CustomAsync(async (command, context, cancellationToken) =>
                 {
@@ -186,14 +186,7 @@ public class ApproveEmployee
                         countryRepository, businessRegistry, command.WorkCountryId,
                         employee.RegistrationNumber ?? string.Empty, cancellationToken);
 
-                    var refusal = record switch
-                    {
-                        { Answer: BusinessRegistryAnswer.NotRegistered } => BusinessErrorMessage.RegistrationNumberNotRegistered,
-                        { Answer: BusinessRegistryAnswer.Unavailable } => BusinessErrorMessage.EmployeeBusinessRegistryUnavailable,
-                        { Answer: BusinessRegistryAnswer.Registered, Ceased: true } => BusinessErrorMessage.EmployeeBusinessCeased,
-                        { Answer: BusinessRegistryAnswer.Registered, TradeLicenceActive: false } => BusinessErrorMessage.EmployeeTradeLicenceInactive,
-                        _ => null,
-                    };
+                    var refusal = CleanerBusinessRegister.Refusal(record, approvalGrade: true);
 
                     if (refusal is not null)
                     {

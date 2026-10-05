@@ -331,11 +331,12 @@ first point of scroll.
     colour while the hero's bottom reaches the fade's end, and cross-fades in proportion into the page
     colour as that bottom passes up through it to the top of the screen (`statusBarFadeHeroShare`),
     the hero's colour laid over the page in its share as iOS lays it (`statusBarFadeColor`).
-  - **Held at 90 %, eased out over its last 6dp, with no tail** (`STATUS_BAR_FADE_OPACITY`,
-    `FadeEase`, a smoothstep sampled at nine points). Every stop is the one colour at some alpha:
-    Android interpolates gradient colours unpremultiplied, so a stop of `Color.Transparent`, which is
-    transparent black, passed through greys and tinted the light theme (2026-10-02). iOS eases over
-    5pt; the one-unit difference is known and left as it is.
+  - **Held at 90 %, eased out over its last 5dp, with no tail** (`STATUS_BAR_FADE_OPACITY`,
+    `FadeEase`, a smoothstep sampled at nine points). 5dp is iOS's `StatusBarFade.falloff`, chosen so
+    the ease starts below the clock; until 2026-10-05 Android eased over 6dp. Every stop is the one
+    colour at some alpha: Android interpolates gradient colours unpremultiplied, so a stop of
+    `Color.Transparent`, which is transparent black, passed through greys and tinted the light theme
+    (2026-10-02).
   - **It ends at the clock's line**, the bottom of the display cutout's path (`cutoutPath`, API 31 and
     later), which is the camera hole itself and the line the system centres the clock and icons on
     (`statusBarFadeHeight`). The status-bar inset is not that line: on the Pixel 8 emulator it is
@@ -360,10 +361,9 @@ first point of scroll.
     went from 1.35:1 to 14.2:1 at rest, where white icons replace the theme's dark ones, and reads
     14.1–14.2:1 scrolled, where it read 5.7:1 on the old white band. Plus in dark mode reads
     14.1–14.8:1, and Home 5.7:1 in light mode and 17.9:1 in dark as before, with the fade ending 30px
-    higher. `StatusBarFadeTest` pins the
-    hold, the ease, the single colour, the end line and the cutout rule, the cross-fade and the icon
-    rule; `StatusBarFadeBindingTest` pins each screen's wiring, Home's padding and refresh indicator,
-    and both heroes' tint and height.
+    higher. `StatusBarFadeTest` pins the hold, the ease and its 5dp, the single colour, the end line
+    and the cutout rule, the cross-fade and the icon rule; `StatusBarFadeBindingTest` pins each
+    screen's wiring, Home's padding and refresh indicator, and both heroes' tint and height.
 
 ## A booking swiped away keeps its draft {#booking-draft}
 

@@ -17,6 +17,18 @@ final class TextInkTests: XCTestCase {
         )
     }
 
+    /// The registration lock's stack is mounted beside the shell, not inside it, so it carries the shell's tint
+    /// itself: without it the profile sections it pushes drew their back buttons in iOS's own blue, 4.0:1 on
+    /// white, where the same sections reached from Profile draw the text ink (finding 2026-10-05).
+    func testTheRegistrationLocksStackTakesTheShellsTint() throws {
+        let source = try compactSource("RegistrationLock/RegistrationLockView.swift")
+        let stack = try XCTUnwrap(
+            source.range(of: ".navigationDestination(for:ProfileRoute.self,destination:sectionDestination)}")
+        )
+        let task = try XCTUnwrap(source.range(of: ".task{", range: stack.upperBound ..< source.endIndex))
+        XCTAssertTrue(source[stack.upperBound ..< task.lowerBound].contains(".tint(CleansiaColors.primaryText)"))
+    }
+
     /// Each site's label, and the icon beside it where it has one, named in the text ink.
     private static let sites: [(path: String, snippet: String)] = [
         (

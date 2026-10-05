@@ -79,10 +79,6 @@ struct CustomerShellView: View {
                 bookFab
             }
         }
-        // The text ink, not the primary: the tint draws the selected tab's icon and label together, the back
-        // buttons and the toolbar's text buttons, all of them text (sky-600 is 4.10:1 on white). Fills that
-        // take a tint (the toggles, the progress bars) name the primary themselves.
-        .tint(CleansiaColors.primaryText)
         .sheet(isPresented: $model.isBookingPresented, onDismiss: {
             bookingFromFab = false
             bookingVM.draftLeft()
@@ -124,6 +120,13 @@ struct CustomerShellView: View {
             )
             .snackbarHost(snackbar, bottomInset: Spacing.m)
         }
+        // The text ink, not the primary: the tint draws the selected tab's icon and label together, the back
+        // buttons and the toolbar's text buttons, all of them text (sky-600 is 4.10:1 on white). Fills that
+        // take a tint (the toggles, the progress bars) name the primary themselves. Applied AFTER the sheets:
+        // a sheet takes its environment from where `.sheet` is attached, so a tint set before it never reaches
+        // the booking sheet or the address manager, and their text buttons (the preferred-cleaner Back) were
+        // drawn in iOS's own blue, 4.0:1 on white.
+        .tint(CleansiaColors.primaryText)
         .onChange(of: model.selection) { _ in
             if model.resolveSelection() { openBooking() }
         }

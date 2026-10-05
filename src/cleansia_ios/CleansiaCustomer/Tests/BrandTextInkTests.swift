@@ -73,10 +73,7 @@ final class BrandTextInkTests: XCTestCase {
     /// rows' plus glyph, which share their label's button.
     func testTheTextButtonsAndTheirIconsTakeTheTextInk() throws {
         let shell = try compactSource("Shell/CustomerShellView.swift")
-        XCTAssertTrue(
-            shell.contains(".tint(CleansiaColors.primaryText).sheet(isPresented:$model.isBookingPresented"),
-            "the tab bar's tint"
-        )
+        XCTAssertTrue(shell.contains(".tint(CleansiaColors.primaryText)"), "the tab bar's tint")
         XCTAssertFalse(shell.contains(".tint(CleansiaColors.primary)"))
         XCTAssertTrue(
             try compactSource("Home/NotificationsInboxSheet.swift")
@@ -105,6 +102,27 @@ final class BrandTextInkTests: XCTestCase {
                 "\(path): the plus glyph no longer shares its label's row"
             )
         }
+    }
+
+    /// A sheet takes its environment from where `.sheet` is attached, so the shell's tint sits after its two
+    /// sheets. Set before them, it never reached the booking sheet or the address manager, and the
+    /// preferred-cleaner list the booking sheet opens drew its toolbar Back in iOS's own blue, 4.0:1 on white
+    /// (finding 2026-10-05). That Back names no ink of its own; it takes the shell's.
+    func testTheShellsSheetsAndTheirTextButtonsSitInsideItsTint() throws {
+        let shell = try compactSource("Shell/CustomerShellView.swift")
+        let tint = try XCTUnwrap(shell.range(of: ".tint(CleansiaColors.primaryText)"))
+        for sheet in [
+            ".sheet(isPresented:$model.isBookingPresented",
+            ".sheet(isPresented:$model.isAddressManagerPresented"
+        ] {
+            let attached = try XCTUnwrap(shell.range(of: sheet), sheet)
+            XCTAssertLessThan(attached.lowerBound, tint.lowerBound, "\(sheet) is attached outside the tint")
+        }
+        XCTAssertTrue(
+            try compactSource("Booking/Confirm/ConfirmExtrasComponents.swift")
+                .contains("ToolbarItem(placement:.cancellationAction){Button(L10n.Booking.back,action:onDismiss)}"),
+            "the preferred-cleaner Back"
+        )
     }
 
     /// Dark mode: on the primary container (sky-700 there) the text ink's sky-400 read 2.77:1, so the

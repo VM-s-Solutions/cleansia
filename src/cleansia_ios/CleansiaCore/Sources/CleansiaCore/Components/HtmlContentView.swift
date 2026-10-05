@@ -2,14 +2,16 @@ import Foundation
 import SwiftUI
 
 /// Wraps a server-rendered HTML fragment (a legal text) in a document styled in the app's ink. The
-/// hexes are `onSurface` / `primary`'s light and dark pairs written out, because a `WKWebView`
-/// stylesheet cannot read a SwiftUI `Color`; the media query lets the page follow the scheme the view
-/// hands the web view.
+/// hexes are `onSurface` / `primary` / `primaryText`'s light and dark pairs written out, because a
+/// `WKWebView` stylesheet cannot read a SwiftUI `Color`; the media query lets the page follow the scheme
+/// the view hands the web view. The quote rule takes the primary, a link the text ink (sky-700 in light
+/// mode, where the primary's sky-600 is 4.10:1 on white); dark mode is the primary's sky-400 for both.
 enum HtmlDocument {
     static let inkLightHex = "#0F172A"
     static let inkDarkHex = "#E2E8F0"
     static let accentLightHex = "#0284C7"
     static let accentDarkHex = "#38BDF8"
+    static let linkLightHex = "#0369A1"
 
     static func wrap(_ fragment: String) -> String {
         """
@@ -24,7 +26,7 @@ enum HtmlDocument {
           p, li { margin: 0 0 10px; }
           blockquote { margin: 0 0 12px; padding: 8px 12px; border-left: 3px solid \(accentLightHex);
                        opacity: 0.85; }
-          a { color: \(accentLightHex); }
+          a { color: \(linkLightHex); }
           @media (prefers-color-scheme: dark) {
             body { color: \(inkDarkHex); }
             blockquote { border-left-color: \(accentDarkHex); }

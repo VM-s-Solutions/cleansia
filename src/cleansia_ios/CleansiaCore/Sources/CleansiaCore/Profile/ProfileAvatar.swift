@@ -3,8 +3,8 @@
 
     /// The one avatar disc on this platform — every hero and every edit screen draws the same surface at
     /// a different size. The disc is a fixed white cut-out in both themes, so the initials ink is a pinned
-    /// colour and never an adaptive token (`AvatarDiscBindingTests` reads this file): `onFixedWhite` unless
-    /// the caller names another (the customer app passes `primaryTextOnFixedWhite`, as on Android).
+    /// colour and never an adaptive token (`AvatarDiscBindingTests` reads this file): the text ink for that
+    /// surface, `primaryTextOnFixedWhite`, in both apps.
     ///
     /// The photo is cached under its blob NAME: the URL beside it is a per-request SAS that changes every
     /// time the profile is fetched, so a URL-keyed cache re-downloads the same face on every read.
@@ -15,7 +15,6 @@
         private let diameter: CGFloat
         private let strokeWidth: CGFloat
         private let strokeColor: Color
-        private let initialsInk: Color
         private let onLoadFailure: (ProfilePhoto) -> Void
         private let onLoadSuccess: () -> Void
 
@@ -28,7 +27,6 @@
             diameter: CGFloat = 72,
             strokeWidth: CGFloat = 3,
             strokeColor: Color = .white.opacity(0.35),
-            initialsInk: Color = CleansiaColors.onFixedWhite,
             onLoadFailure: @escaping (ProfilePhoto) -> Void = { _ in },
             onLoadSuccess: @escaping () -> Void = {}
         ) {
@@ -38,7 +36,6 @@
             self.diameter = diameter
             self.strokeWidth = strokeWidth
             self.strokeColor = strokeColor
-            self.initialsInk = initialsInk
             self.onLoadFailure = onLoadFailure
             self.onLoadSuccess = onLoadSuccess
         }
@@ -59,7 +56,7 @@
                     .fill(Color.white)
                 Text(initials)
                     .cleansiaFont(CleansiaTypography.headlineSmall)
-                    .foregroundColor(initialsInk)
+                    .foregroundColor(CleansiaColors.primaryTextOnFixedWhite)
             }
         }
 

@@ -196,7 +196,7 @@ private struct AddPhotoTile: View {
                         Text(L10n.Orders.addPhoto)
                             .font(CleansiaTypography.labelSmall)
                     }
-                    .foregroundColor(CleansiaColors.primary)
+                    .foregroundColor(CleansiaColors.primaryText)
                 }
             }
             .frame(width: 80, height: 80)

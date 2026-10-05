@@ -35,19 +35,13 @@ final class ConsentMarkdownTests: XCTestCase {
         XCTAssertEqual(linked.first?.text, "Terms of Service")
     }
 
-    /// The links take the colour the caller names (the customer's contract notice passes the text ink,
-    /// finding 2026-10-05); unnamed, the primary, which the consent checkbox and the partner app keep.
-    func testLinkedRunsTakeTheNamedColourAndThePrimaryByDefault() {
+    /// The links take the text ink in both apps (owner decision 2026-10-05): the primary's sky-600 is 4.10:1
+    /// on white.
+    func testLinkedRunsTakeTheTextInk() {
         let markdown = "I agree to the [Terms of Service](cleansia://terms) and [Privacy Policy](cleansia://privacy)"
-        func linkColors(_ styled: AttributedString) -> [Color?] {
-            styled.runs.filter { $0.link != nil }.map(\.swiftUI.foregroundColor)
-        }
+        let colors = ConsentMarkdown.styled(markdown).runs.filter { $0.link != nil }.map(\.swiftUI.foregroundColor)
 
-        XCTAssertEqual(linkColors(ConsentMarkdown.styled(markdown)), [CleansiaColors.primary, CleansiaColors.primary])
-        XCTAssertEqual(
-            linkColors(ConsentMarkdown.styled(markdown, linkColor: CleansiaColors.primaryText)),
-            [CleansiaColors.primaryText, CleansiaColors.primaryText]
-        )
+        XCTAssertEqual(colors, [CleansiaColors.primaryText, CleansiaColors.primaryText])
     }
 
     func testTranslatedSentenceKeepsItsMarkupAndTargets() {

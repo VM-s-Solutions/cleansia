@@ -79,7 +79,10 @@ struct CustomerShellView: View {
                 bookFab
             }
         }
-        .tint(CleansiaColors.primary)
+        // The text ink, not the primary: the tint draws the selected tab's icon and label together, the back
+        // buttons and the toolbar's text buttons, all of them text (sky-600 is 4.10:1 on white). Fills that
+        // take a tint (the toggles, the progress bars) name the primary themselves.
+        .tint(CleansiaColors.primaryText)
         .sheet(isPresented: $model.isBookingPresented, onDismiss: {
             bookingFromFab = false
             bookingVM.draftLeft()

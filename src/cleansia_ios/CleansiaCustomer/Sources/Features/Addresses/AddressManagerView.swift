@@ -193,10 +193,9 @@ private struct AddressListPane: View {
                 Image(systemName: "plus")
                 Text(L10n.AddressManager.add)
                     .font(CleansiaTypography.bodyLarge)
-                    .foregroundColor(CleansiaColors.primaryText)
                 Spacer()
             }
-            .foregroundColor(CleansiaColors.primary)
+            .foregroundColor(CleansiaColors.primaryText)
             .padding(Spacing.m)
             .overlay(
                 RoundedRectangle(cornerRadius: CornerRadius.medium)

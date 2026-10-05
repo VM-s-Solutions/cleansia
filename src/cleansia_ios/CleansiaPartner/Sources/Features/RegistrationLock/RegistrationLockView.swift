@@ -395,7 +395,7 @@ private struct StepRow: View {
                     if isRejected {
                         Text(L10n.RegistrationLock.actionContactSupport)
                             .font(CleansiaTypography.labelMedium)
-                            .foregroundColor(CleansiaColors.primary)
+                            .foregroundColor(CleansiaColors.primaryText)
                             .padding(.top, Spacing.xs)
                     }
                 }

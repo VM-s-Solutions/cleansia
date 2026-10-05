@@ -176,7 +176,10 @@ struct PartnerShellView: View {
             .tabItem { Label(ShellTab.profile.label, systemImage: ShellTab.profile.systemImage) }
             .tag(ShellTab.profile)
         }
-        .tint(CleansiaColors.primary)
+        // The text ink, not the primary: the tint draws the selected tab's icon and label together, the back
+        // buttons and the toolbar's text buttons, all of them text (sky-600 is 4.10:1 on white). Fills that
+        // take a tint (the toggle, the slider, the progress bars) name the primary themselves.
+        .tint(CleansiaColors.primaryText)
     }
 }
 
@@ -193,7 +196,7 @@ struct PartnerShellView: View {
                 PlaceholderDestination(systemImage: ShellTab.profile.systemImage, text: "Profile")
                     .tabItem { Label(ShellTab.profile.label, systemImage: ShellTab.profile.systemImage) }
             }
-            .tint(CleansiaColors.primary)
+            .tint(CleansiaColors.primaryText)
         }
     }
 #endif

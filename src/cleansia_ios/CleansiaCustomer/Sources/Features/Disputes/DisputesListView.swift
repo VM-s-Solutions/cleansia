@@ -28,7 +28,7 @@ struct DisputesListView: View {
                     Button(action: startCreate) {
                         Label(L10n.Disputes.listFabNew, systemImage: "plus")
                     }
-                    .tint(CleansiaColors.primary)
+                    .tint(CleansiaColors.primaryText)
                 }
             }
             .task { await vm.onAppear() }

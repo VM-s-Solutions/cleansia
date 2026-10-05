@@ -151,7 +151,7 @@ private struct OnboardingLanguageMenu: View {
                 Image(systemName: "chevron.down")
                     .font(.system(size: 11, weight: .semibold))
             }
-            .foregroundColor(CleansiaColors.primary)
+            .foregroundColor(CleansiaColors.primaryText)
             .contentShape(Rectangle())
         }
         .accessibilityLabel(L10n.Profile.language)

@@ -33,7 +33,8 @@ public struct CleansiaChip: View {
         Button(action: action) {
             Text(label)
                 .font(CleansiaTypography.bodyMedium)
-                .foregroundColor(isSelected ? CleansiaColors.primary : CleansiaColors.onSurface)
+                // The picked label takes the text ink (4.5:1 on its 12 % tint); the tint and border keep the primary.
+                .foregroundColor(isSelected ? CleansiaColors.primaryText : CleansiaColors.onSurface)
                 // Truncate rather than wrap — same rule as the buttons, same as the Android twin.
                 .lineLimit(1)
                 .padding(.horizontal, Spacing.s)

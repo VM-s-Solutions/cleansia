@@ -1,0 +1,97 @@
+import XCTest
+
+/// Text links and text buttons take the text ink, not the primary (owner decision 2026-10-05): the light-mode
+/// primary, sky-600, reads 4.10:1 on white, under the 4.5:1 floor for text, so they take
+/// `CleansiaColors.primaryText` (sky-700, 5.93:1; dark mode is the primary's sky-400 either way). An icon
+/// inside the same control takes its label's ink, so no control shows two blues; fills, borders, filled
+/// buttons and standalone icons keep the primary. These are the partner app's own text buttons; the shared
+/// ones (`CleansiaTextLink`, the chip, the dropdown, the reveal panel) are pinned in Core.
+final class TextInkTests: XCTestCase {
+    func testTheTabBarAndTheToolbarsTextButtonsTakeTheTextInk() throws {
+        let shell = try compactSource("Shell/PartnerShellView.swift")
+        XCTAssertTrue(shell.contains(".tint(CleansiaColors.primaryText)}}"), "the tab bar's tint")
+        XCTAssertFalse(shell.contains(".tint(CleansiaColors.primary)"))
+        XCTAssertTrue(
+            try compactSource("Notifications/NotificationsInboxSheet.swift")
+                .contains("Button(L10n.NotificationsInbox.close){dismiss()}.tint(CleansiaColors.primaryText)")
+        )
+    }
+
+    /// Each site's label, and the icon beside it where it has one, named in the text ink.
+    private static let sites: [(path: String, snippet: String)] = [
+        (
+            "Dashboard/DashboardCards.swift",
+            "Text(L10n.Dashboard.earningsViewDetails).font(CleansiaTypography.labelMedium)"
+                + ".foregroundColor(CleansiaColors.primaryText)Image(systemName:\"arrow.right\")"
+                + ".font(.system(size:12)).foregroundColor(CleansiaColors.primaryText)"
+        ),
+        (
+            "Profile/ProfileAvatarField.swift",
+            "Text(L10n.Profile.photoAdd).font(CleansiaTypography.labelLarge)"
+                + ".foregroundColor(CleansiaColors.primaryText)"
+        ),
+        (
+            "Earnings/InvoiceDetailContent.swift",
+            "Text(L10n.Invoices.viewPeriodPay).font(CleansiaTypography.bodyLarge)"
+                + ".foregroundColor(CleansiaColors.primaryText)Spacer()Image(systemName:\"chevron.right\")"
+                + ".foregroundColor(CleansiaColors.primaryText)"
+        ),
+        (
+            "Orders/OrderDetailCards.swift",
+            "Label(label,systemImage:icon).font(CleansiaTypography.labelLarge)"
+                + ".foregroundColor(CleansiaColors.primaryText)"
+        ),
+        (
+            "Orders/OrderDetailCards.swift",
+            "Label(L10n.Orders.copyInstruction,systemImage:\"doc.on.doc\").font(CleansiaTypography.labelMedium)"
+                + ".foregroundColor(CleansiaColors.primaryText)"
+        ),
+        (
+            "Orders/OrdersListContent.swift",
+            "Button(L10n.Orders.locationPromptAction,action:onEnable).font(CleansiaTypography.labelLarge)"
+                + ".foregroundColor(CleansiaColors.primaryText)"
+        ),
+        (
+            "Orders/OrdersListContent.swift",
+            "Image(systemName:\"chevron.down\").font(.system(size:12))}"
+                + ".foregroundColor(CleansiaColors.primaryText)"
+        ),
+        (
+            "Onboarding/OnboardingView.swift",
+            "Image(systemName:\"chevron.down\").font(.system(size:11,weight:.semibold))}"
+                + ".foregroundColor(CleansiaColors.primaryText)"
+        ),
+        (
+            "Orders/PendingOffersCard.swift",
+            "Text(L10n.Offers.cardCta).font(CleansiaTypography.labelLarge)"
+                + ".foregroundColor(CleansiaColors.primaryText)Image(systemName:\"arrow.right\")"
+                + ".font(.system(size:13)).foregroundColor(CleansiaColors.primaryText)"
+        ),
+        (
+            "RegistrationLock/RegistrationLockView.swift",
+            "Text(L10n.RegistrationLock.actionContactSupport).font(CleansiaTypography.labelMedium)"
+                + ".foregroundColor(CleansiaColors.primaryText)"
+        ),
+        (
+            "Orders/PhotosSection.swift",
+            "Text(L10n.Orders.addPhoto).font(CleansiaTypography.labelSmall)}"
+                + ".foregroundColor(CleansiaColors.primaryText)"
+        )
+    ]
+
+    func testTheTextButtonsAndTheIconsBesideThemTakeTheTextInk() throws {
+        for site in Self.sites {
+            let source = try compactSource(site.path)
+            XCTAssertTrue(source.contains(site.snippet), "\(site.path): \(site.snippet.prefix(60))")
+        }
+    }
+
+    private func compactSource(_ path: String) throws -> String {
+        let url = URL(fileURLWithPath: #filePath)
+            .deletingLastPathComponent()
+            .deletingLastPathComponent()
+            .appendingPathComponent("Sources/Features")
+            .appendingPathComponent(path)
+        return try String(contentsOf: url, encoding: .utf8).components(separatedBy: .whitespacesAndNewlines).joined()
+    }
+}

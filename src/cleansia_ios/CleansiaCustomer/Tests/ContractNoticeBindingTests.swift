@@ -24,9 +24,10 @@ final class ContractNoticeBindingTests: XCTestCase {
 
     func testTheNoticeReadsTheCatalogSentenceThroughTheSharedMarkup() throws {
         let source = try read(Self.confirmStep)
-        XCTAssertTrue(source.contains(
-            "ConsentMarkdown.styled(L10n.Booking.contractNotice, linkColor: CleansiaColors.primaryText)"
-        ), "the notice's links are not drawn in the text ink (sky-600 on the page is 3.91:1)")
+        XCTAssertTrue(
+            source.contains("ConsentMarkdown.styled(L10n.Booking.contractNotice)"),
+            "the notice no longer reads the sentence through the shared markup, which draws links in the text ink"
+        )
         XCTAssertTrue(source.contains(".tint(CleansiaColors.primaryText)"))
         XCTAssertFalse(source.contains("workContract"), "the confirm step still names the contract for work")
     }

@@ -53,7 +53,7 @@ public struct CleansiaConsentCheckbox: View {
             Text(sentence)
                 .font(CleansiaTypography.bodyMedium)
                 .foregroundColor(CleansiaColors.onSurface)
-                .tint(CleansiaColors.primary)
+                .tint(CleansiaColors.primaryText)
                 .fixedSize(horizontal: false, vertical: true)
                 .frame(maxWidth: .infinity, alignment: .leading)
         }

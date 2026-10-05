@@ -257,7 +257,7 @@ private struct TemplateCard: View {
                     CardAction(
                         label: L10n.Recurring.edit,
                         systemImage: "square.and.pencil",
-                        tint: CleansiaColors.primary,
+                        tint: CleansiaColors.primaryText,
                         disabled: isMutating,
                         action: onEdit
                     )
@@ -265,7 +265,7 @@ private struct TemplateCard: View {
                 CardAction(
                     label: template.isActive ? L10n.Recurring.pause : L10n.Recurring.resume,
                     systemImage: template.isActive ? "pause.circle" : "play.circle",
-                    tint: CleansiaColors.primary,
+                    tint: CleansiaColors.primaryText,
                     disabled: isMutating,
                     action: onToggle
                 )

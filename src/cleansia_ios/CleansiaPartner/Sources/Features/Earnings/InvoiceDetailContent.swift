@@ -140,10 +140,10 @@ private struct PeriodCard: View {
                     HStack {
                         Text(L10n.Invoices.viewPeriodPay)
                             .font(CleansiaTypography.bodyLarge)
-                            .foregroundColor(CleansiaColors.primary)
+                            .foregroundColor(CleansiaColors.primaryText)
                         Spacer()
                         Image(systemName: "chevron.right")
-                            .foregroundColor(CleansiaColors.primary)
+                            .foregroundColor(CleansiaColors.primaryText)
                     }
                     .padding(.top, Spacing.m)
                 }

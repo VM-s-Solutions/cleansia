@@ -273,20 +273,40 @@ first point of scroll.
 - **It ends at the island's line, by a measured rule.** The system reports neither the Dynamic Island
   nor the notch, and the status-bar frame it does report (`statusBarManager.statusBarFrame`)
   overshoots both: 54pt over islands that end at 48pt or 50.7pt, and 47pt over the iPhone 16e's
-  notch, which ends at 33.7pt. The top of the safe area, though, sits a near-constant 11–13.3pt below
-  the island or the notch, so on a phone with either the fade ends 12pt above the safe area's top
-  (`StatusBarFade.housingClearance`). A phone whose safe area starts 20pt down or less is a
-  home-button phone, and the fade covers its whole 20pt status bar (`StatusBarFade.classicStatusBar`).
-  Measured in the simulators with a red page scrolled under the fade and the screenshot masked to show
-  the housing, the fade's end against the housing's bottom is 50.0 / 50.7pt on the iPhone 17 Pro
-  (iOS 26.3), 47.0 / 48.0pt on the iPhone 16 (18.6) and the iPhone 14 Pro (16.4), 35.0 / 33.7pt on the
-  iPhone 16e (18.6), and 20 / 20pt on the iPhone SE, 3rd generation (16.4): within 2pt on each. The
-  5pt falloff fits under the clock on all of them. The clock's digits end 11pt above an island's
-  bottom, but only 3pt above the 16e's notch and 4.5pt above the SE's status bar, where the mask is
-  still over 85 %. The rule is measured on those five only; the iPhone X and XS (a 44pt safe area) and
-  the 12 and 13 mini (50pt) were not checked. Between the island's or the notch's bottom and the safe
-  area's top, a strip of about 11–13pt beside the housing, scrolled content now shows unfaded; that is
-  what the owner asked for.
+  notch, which ends at 33.7pt. The top of the safe area, though, sits a near-constant 11–11.3pt below
+  an island, so on an island phone the fade ends 12pt above the safe area's top
+  (`StatusBarFade.housingClearance`). Below a notch the gap is wider and varies with the phone: 14pt
+  under the X's 44pt safe area, 13.3–15pt under 47 and 48pt, and 12.5–16pt under the minis' 50pt. So
+  on a notch phone the clearance is read from the safe area's top
+  (`StatusBarFade.clearance(safeTop:)`, since 2026-10-05): 12pt over 44pt, 13.5pt over 47 and 48pt,
+  and 14.25pt over the minis' 50pt, midway between the 12 mini's notch and the 13 mini's, which share
+  that safe area. An island's safe area starts at 59pt or deeper and keeps 12pt. A phone whose safe
+  area starts 20pt down or less is a home-button phone, and the fade covers its whole 20pt status bar
+  (`StatusBarFade.classicStatusBar`). Measured in the simulators with a red page scrolled under the
+  fade and the screenshot masked to show the housing, in points (the minis' screenshots are 2.88px to
+  the point):
+
+  | Phone (iOS) | Safe area's top | Housing's bottom | Fade's end | Until 2026-10-05 |
+  |---|---|---|---|---|
+  | iPhone 17 Pro (26.3) | 62 | 50.7 | 50.0 | the same |
+  | iPhone 16 (18.6), iPhone 14 Pro (16.4) | 59 | 48.0 | 47.0 | the same |
+  | iPhone X (16.4), XS (18.6), 11 Pro (18.6) | 44 | 30.0 | 32.0 | the same |
+  | iPhone 12 (18.6) | 47 | 32.0 | 33.67 | 35.0 |
+  | iPhone 13 (26.3), iPhone 16e (18.6) | 47 | 33.67 | 33.67 | 35.0 |
+  | iPhone XR (16.4), 11 (18.6) | 48 | 33.0 | 34.5 | 36.0 |
+  | iPhone 12 mini (18.6 and 26.3) | 50 | 34.03 | 35.76 | 38.19 |
+  | iPhone 13 mini (26.3) | 50 | 37.5 | 35.76 | 38.19 |
+  | iPhone SE, 3rd generation (16.4) | 20 | 20 | 20 | the same |
+
+  Every end now lies within 2pt of its line. The X, XS and 11 Pro end exactly 2pt below the notch,
+  the most the rule allows, so their 12pt stands; the 12, XR, 11 and 12 mini ended 3–4.2pt below it
+  before. The fade's 5pt ease begins below the clock on an island phone, whose digits end 11pt above
+  the island's bottom, and on the SE, whose digits end 4.5pt above its status bar's: the mask at the
+  digits' baseline is 0.85 or more there. A notch's digits end only 1–4.9pt above the notch, so on a
+  notch phone the ease begins above their lowest rows, and the mask at their baseline is 0.52–0.80
+  (0.74 on the X and XS, unchanged). Between the island's or the notch's bottom and the safe area's
+  top, a strip of about 11–14pt beside the housing, scrolled content shows unfaded; that is what the
+  owner asked for.
 - **The colour behind the status bar.** Home passes nothing, and its fade is the page colour
   (`CleansiaColors.background`). A screen with a hero at its top passes `heroTint` and marks the hero
   with `statusBarFadeHero()`: the Plus offer passes `MembershipPalette.sky950`, the top of its navy
@@ -329,7 +349,8 @@ first point of scroll.
   on Profile in the screenshots. The one dip left on Profile is the system's choice of a black clock
   before the hero leaves the fade ([above](#full-bleed-hero)).
 - **What pins it.** `ContentSafeAreaBindingTests` pins the end within 2pt of each measured island,
-  notch and status bar, the 90 % hold over each measured clock, the 5pt ease, the full-strength
+  notch and status bar, the ten notch phones above among them, the mask at each measured clock's
+  baseline (0.85 or more, 0.5 or more under a notch), the 5pt ease, the full-strength
   fallback, the cross-fade over the fade's span (it never rises back, and outside the stepped shades
   no step is larger than one point's share), the step over the illegible shades (for Profile and the Plus offer, every share from
   1 to 0 reads 4.5:1 for the white clock or is light enough for the black one, with one jump and never

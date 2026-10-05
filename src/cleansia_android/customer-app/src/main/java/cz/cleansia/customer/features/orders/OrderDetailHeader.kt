@@ -42,12 +42,12 @@ import cz.cleansia.core.format.formatOrderDateTime
 import cz.cleansia.core.format.formatOrderPrice
 import cz.cleansia.core.ui.components.OrderTrackerBar as CoreOrderTrackerBar
 import cz.cleansia.core.ui.theme.Spacing
+import cz.cleansia.core.ui.theme.primaryText
 import cz.cleansia.customer.R
 import cz.cleansia.customer.core.orders.OrderDetailDto
 import cz.cleansia.customer.ui.format.orderStatusColor
 import kotlinx.coroutines.delay
 import java.time.Instant
-import cz.cleansia.customer.ui.theme.primaryText
 
 /**
  * The sheet header, in four parts: a pinned identity row, then a headline, the five-phase tracker glued

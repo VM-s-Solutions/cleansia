@@ -30,6 +30,7 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import cz.cleansia.core.ui.theme.Spacing
+import cz.cleansia.core.ui.theme.primaryText
 import cz.cleansia.partner.R
 import cz.cleansia.partner.core.settings.LanguageLabels
 import cz.cleansia.partner.core.settings.LanguagePreference
@@ -51,7 +52,7 @@ internal fun LanguageChooser(
     onSelect: (LanguagePreference) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val tint = MaterialTheme.colorScheme.primary
+    val tint = primaryText()
     var expanded by remember { mutableStateOf(false) }
     val systemLabel = stringResource(R.string.language_system)
     val label = LanguageLabels.nativeName(selected) ?: systemLabel
@@ -98,7 +99,7 @@ internal fun LanguageChooser(
                                 fontWeight = if (option == selected) FontWeight.SemiBold else FontWeight.Normal,
                             ),
                             color = if (option == selected) {
-                                MaterialTheme.colorScheme.primary
+                                tint
                             } else {
                                 MaterialTheme.colorScheme.onSurface
                             },

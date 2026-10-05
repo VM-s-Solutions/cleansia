@@ -55,6 +55,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import cz.cleansia.core.ui.theme.primaryText
 import cz.cleansia.customer.R
 import cz.cleansia.customer.core.market.MarketState
 import cz.cleansia.core.format.formatOrderDateRange
@@ -68,7 +69,6 @@ import cz.cleansia.core.ui.theme.Poppins
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import cz.cleansia.customer.features.main.MainShellBottomClearance
-import cz.cleansia.customer.ui.theme.primaryText
 
 /**
  * Orders tab — lists the signed-in user's cleaning orders with filter chips,

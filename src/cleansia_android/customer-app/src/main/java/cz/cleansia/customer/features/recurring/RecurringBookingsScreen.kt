@@ -59,13 +59,14 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import cz.cleansia.core.ui.components.CleansiaTextButton
 import cz.cleansia.core.ui.components.SudsRefreshIndicator
+import cz.cleansia.core.ui.theme.primaryText
 import cz.cleansia.customer.R
 import cz.cleansia.customer.core.recurring.RecurrenceFrequency
 import cz.cleansia.customer.core.recurring.RecurringBookingTemplateDto
 import java.time.format.TextStyle
 import java.util.Locale
-import cz.cleansia.customer.ui.theme.primaryText
 
 /**
  * List of the user's recurring booking templates with pause/resume + delete
@@ -516,7 +517,7 @@ private fun TemplateCard(
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
                 if (showEdit) {
-                    TextButton(
+                    CleansiaTextButton(
                         onClick = onEdit,
                         enabled = !isMutating,
                         contentPadding = PaddingValues(0.dp),
@@ -584,7 +585,7 @@ private fun CardAction(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    TextButton(
+    CleansiaTextButton(
         onClick = onClick,
         enabled = enabled,
         modifier = modifier,
@@ -643,7 +644,7 @@ private fun DeleteScheduleDialog(
             ) { Text(stringResource(R.string.recurring_bookings_delete_dialog_confirm)) }
         },
         dismissButton = {
-            TextButton(onClick = onDismiss) { Text(stringResource(R.string.common_back)) }
+            CleansiaTextButton(onClick = onDismiss) { Text(stringResource(R.string.common_back)) }
         },
         text = {
             Column {

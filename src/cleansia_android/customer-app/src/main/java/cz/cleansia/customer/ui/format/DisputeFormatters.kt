@@ -3,10 +3,10 @@ package cz.cleansia.customer.ui.format
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
+import cz.cleansia.core.ui.theme.primaryText
 import cz.cleansia.customer.ui.theme.StatusCancelledText
 import cz.cleansia.customer.ui.theme.SuccessText
 import cz.cleansia.customer.ui.theme.WarningStar
-import cz.cleansia.customer.ui.theme.primaryText
 
 /**
  * Colour keyed off the backend dispute status VALUE, which is 1-indexed — amber while pending, sky

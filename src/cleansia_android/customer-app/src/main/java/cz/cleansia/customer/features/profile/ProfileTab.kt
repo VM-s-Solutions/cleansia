@@ -71,6 +71,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import cz.cleansia.core.ui.components.CleansiaTextButton
 import cz.cleansia.customer.R
 import cz.cleansia.core.format.formatOrderPrice
 import cz.cleansia.customer.core.loyalty.CreditDto
@@ -283,7 +284,7 @@ fun ProfileTab(
                 ) { Text(stringResource(R.string.profile_logout_dialog_confirm)) }
             },
             dismissButton = {
-                TextButton(onClick = { showLogoutDialog = false }) {
+                CleansiaTextButton(onClick = { showLogoutDialog = false }) {
                     Text(stringResource(R.string.profile_logout_dialog_cancel))
                 }
             },

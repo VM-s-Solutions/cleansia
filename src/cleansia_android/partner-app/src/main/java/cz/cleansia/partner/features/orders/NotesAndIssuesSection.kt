@@ -55,6 +55,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import cz.cleansia.core.ui.components.CleansiaOutlinedButton
 import cz.cleansia.core.ui.components.CleansiaPrimaryButton
+import cz.cleansia.core.ui.components.CleansiaTextButton
 import cz.cleansia.core.ui.components.CleansiaTextField
 import cz.cleansia.core.ui.theme.Spacing
 import cz.cleansia.partner.R
@@ -415,7 +416,7 @@ private fun ConfirmDeleteDialog(
             ) { Text(stringResource(R.string.delete)) }
         },
         dismissButton = {
-            TextButton(onClick = onDismiss) { Text(stringResource(R.string.cancel)) }
+            CleansiaTextButton(onClick = onDismiss) { Text(stringResource(R.string.cancel)) }
         },
     )
 }

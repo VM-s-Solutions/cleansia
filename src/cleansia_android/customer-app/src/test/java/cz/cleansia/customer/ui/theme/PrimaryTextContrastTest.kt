@@ -3,15 +3,18 @@ package cz.cleansia.customer.ui.theme
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.compositeOver
 import androidx.compose.ui.graphics.luminance
+import cz.cleansia.core.ui.theme.primaryText
 import java.io.File
+import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
 /**
  * Brand-blue TEXT reads 4.5:1 in light mode (W-F2). The light primary, sky-600, is 4.10:1 on white and
- * under that on every tinted ground blue text sits on, so text takes [primaryText] — sky-700 in light
- * mode — while fills, borders, icons and buttons keep the primary. There is no Compose test harness in
- * this module, so the screens are read as source.
+ * under that on every tinted ground blue text sits on, so text — a text or outlined button's label too
+ * (X1) — takes `primaryText()` from `:core`, sky-700 in light mode, while fills, borders, filled buttons
+ * and standalone icons keep the primary. There is no Compose test harness in this module, so the screens
+ * are read as source.
  */
 class PrimaryTextContrastTest {
 
@@ -41,16 +44,14 @@ class PrimaryTextContrastTest {
 
     @Test
     fun `the text token is sky-700 in light mode and the primary in dark`() {
-        val token = source("ui/theme/BrandGradients.kt")
-        assertTrue(
-            token.contains("fun primaryText(): Color = if (isDark()) androidx.compose.material3.MaterialTheme.colorScheme.primary else Sky700"),
-        )
+        assertEquals(Sky700, LightColors.primaryText)
+        assertEquals(DarkColors.primary, DarkColors.primaryText)
         assertTrue("dark mode's primary clears 4.5:1 on its surfaces", contrast(Sky400, Slate800) >= 4.5)
     }
 
     /**
-     * No Text in the customer app takes the bare primary (or sky-600) as its colour. The Cleansia wordmark is
-     * a logotype, which WCAG exempts, and a label inside a Material button keeps the button's colour.
+     * No Text in the customer app takes the bare primary (or sky-600) as its colour, a button's label
+     * included. The Cleansia wordmark is a logotype, which WCAG exempts.
      */
     @Test
     fun `no customer-app text is coloured with the bare primary`() {
@@ -62,7 +63,7 @@ class PrimaryTextContrastTest {
             TEXT_CALL.findAll(text).forEach { call ->
                 val args = argumentsFrom(text, call.range.last + 1)
                 val color = COLOR_ARG.find(args)?.groupValues?.get(1).orEmpty()
-                if (BARE_PRIMARY.containsMatchIn(color) && !insideButton(text, call.range.first)) {
+                if (BARE_PRIMARY.containsMatchIn(color)) {
                     offenders += "$rel:${text.lineNumberAt(call.range.first)}"
                 }
             }
@@ -84,10 +85,6 @@ class PrimaryTextContrastTest {
         return text.substring(from, (i - 1).coerceAtLeast(from))
     }
 
-    /** A Text that is the content of a Material button: its label keeps the button's colour. */
-    private fun insideButton(text: String, at: Int): Boolean =
-        BUTTON_OPEN.findAll(text.substring((at - 600).coerceAtLeast(0), at)).any()
-
     private fun String.lineNumberAt(index: Int) = substring(0, index).count { it == '\n' } + 1
 
     private fun contrast(a: Color, b: Color): Double {
@@ -100,15 +97,10 @@ class PrimaryTextContrastTest {
         .firstOrNull { it.isDirectory }
         ?: error("customer-app sources not found from working dir ${File(".").absolutePath}")
 
-    private fun source(path: String): String = File(sourceRoot(), path).readText()
-
     private companion object {
         val EXEMPT_FILES = setOf("ui/components/CleansiaBrandWordmark.kt")
         val TEXT_CALL = Regex("""(?<![\w.])Text\(""")
         val COLOR_ARG = Regex("""(?:^|[\s,(])color\s*=\s*([^\n]*(?:\n\s*else[^\n]*)?)""")
         val BARE_PRIMARY = Regex("""colorScheme\.primary(?![A-Za-z])(?!\.copy)|\bSky600\b""")
-
-        /** An unclosed `…Button(…) {` just above the Text. */
-        val BUTTON_OPEN = Regex("""(?:OutlinedButton|TextButton|Button)\([^{}]*\)\s*\{[^{}]*$""")
     }
 }

@@ -49,6 +49,7 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import cz.cleansia.core.ui.components.CleansiaDestructiveButton
+import cz.cleansia.core.ui.components.CleansiaTextButton
 import cz.cleansia.core.ui.state.ActionState
 import cz.cleansia.core.ui.theme.Spacing
 import cz.cleansia.partner.R
@@ -207,7 +208,7 @@ fun DeleteAccountScreen(
                 ) { Text(stringResource(R.string.delete_account_confirm_yes)) }
             },
             dismissButton = {
-                TextButton(onClick = { confirming = false }) { Text(stringResource(R.string.cancel)) }
+                CleansiaTextButton(onClick = { confirming = false }) { Text(stringResource(R.string.cancel)) }
             },
         )
     }

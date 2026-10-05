@@ -98,6 +98,7 @@ import cz.cleansia.core.format.formatOrderDateTime
 import cz.cleansia.core.format.formatOrderPrice
 import cz.cleansia.core.ui.components.CleansiaChip
 import cz.cleansia.core.ui.components.SudsRefreshIndicator
+import cz.cleansia.core.ui.theme.primaryText
 import cz.cleansia.customer.core.market.MarketListItem
 import cz.cleansia.customer.core.market.MarketState
 import cz.cleansia.customer.core.market.countryId
@@ -129,7 +130,6 @@ import cz.cleansia.customer.ui.format.orderStatusColor
 import cz.cleansia.customer.ui.theme.CleansiaTheme
 import cz.cleansia.customer.ui.theme.SuccessText
 import cz.cleansia.customer.ui.theme.WarningStar
-import cz.cleansia.customer.ui.theme.primaryText
 import cz.cleansia.customer.features.main.MainShellBottomClearance
 import cz.cleansia.customer.ui.components.statusBarFade
 import kotlin.math.roundToInt

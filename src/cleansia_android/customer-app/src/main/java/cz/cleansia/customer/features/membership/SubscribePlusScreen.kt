@@ -63,6 +63,7 @@ import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import cz.cleansia.core.format.formatOrderPrice
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import cz.cleansia.core.ui.theme.primaryText
 import cz.cleansia.customer.core.market.selectedOrNull
 import cz.cleansia.customer.core.memberships.MembershipPlanDto
 import cz.cleansia.customer.core.memberships.trialDaysOn
@@ -74,7 +75,6 @@ import cz.cleansia.customer.R
 import cz.cleansia.customer.ui.theme.Sky400
 import cz.cleansia.customer.ui.theme.Sky950
 import cz.cleansia.customer.ui.theme.Slate900
-import cz.cleansia.customer.ui.theme.primaryText
 import kotlinx.coroutines.launch
 import cz.cleansia.customer.ui.components.statusBarFade
 

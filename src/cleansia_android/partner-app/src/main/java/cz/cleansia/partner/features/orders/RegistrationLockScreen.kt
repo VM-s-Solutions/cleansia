@@ -70,8 +70,10 @@ import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.Lifecycle
 import cz.cleansia.core.settings.AppLocale
+import cz.cleansia.core.ui.components.CleansiaTextButton
 import cz.cleansia.core.ui.components.SudsRefreshIndicator
 import cz.cleansia.core.ui.theme.Spacing
+import cz.cleansia.core.ui.theme.primaryText
 import cz.cleansia.partner.LocalAppSettings
 import cz.cleansia.partner.R
 import cz.cleansia.partner.features.settings.LanguageChooser
@@ -254,7 +256,7 @@ fun RegistrationLockScreen(
                 ) { Text(stringResource(R.string.registration_lock_sign_out)) }
             },
             dismissButton = {
-                TextButton(onClick = { confirmingSignOut = false }) { Text(stringResource(R.string.cancel)) }
+                CleansiaTextButton(onClick = { confirmingSignOut = false }) { Text(stringResource(R.string.cancel)) }
             },
         )
     }
@@ -527,7 +529,7 @@ private fun StepRowView(step: StepRow, onFixStep: (NavRoute) -> Unit) {
                     isActionable -> Text(
                         text = stringResource(ctaLabelRes),
                         style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.primary,
+                        color = primaryText(),
                         fontWeight = FontWeight.Medium,
                     )
                     step.status == StepStatus.Pending -> Text(

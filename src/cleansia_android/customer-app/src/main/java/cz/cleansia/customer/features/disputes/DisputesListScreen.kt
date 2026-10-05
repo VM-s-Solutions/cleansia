@@ -52,6 +52,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import cz.cleansia.core.ui.theme.primaryText
 import cz.cleansia.customer.R
 import cz.cleansia.customer.core.disputes.DisputeListItemDto
 import cz.cleansia.core.format.formatOrderDateTime
@@ -60,7 +61,6 @@ import cz.cleansia.core.ui.components.CleansiaPrimaryButton
 import cz.cleansia.core.ui.components.SudsRefreshIndicator
 import cz.cleansia.core.snackbar.SnackbarController
 import cz.cleansia.core.ui.theme.Poppins
-import cz.cleansia.customer.ui.theme.primaryText
 
 /**
  * The user's disputes, with infinite scroll and pull-to-refresh. Reached from the profile tab and from

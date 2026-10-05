@@ -57,6 +57,7 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import cz.cleansia.core.ui.components.CleansiaErrorState
+import cz.cleansia.core.ui.components.CleansiaTextButton
 import cz.cleansia.core.ui.components.CleansiaTextField
 import cz.cleansia.core.ui.theme.Spacing
 import cz.cleansia.partner.R
@@ -395,12 +396,12 @@ private fun ReplaceDialog(
             }
         },
         confirmButton = {
-            TextButton(onClick = { onConfirm(description) }, enabled = !isUploading) {
+            CleansiaTextButton(onClick = { onConfirm(description) }, enabled = !isUploading) {
                 Text(stringResource(R.string.document_replace))
             }
         },
         dismissButton = {
-            TextButton(onClick = onDismiss) { Text(stringResource(R.string.cancel)) }
+            CleansiaTextButton(onClick = onDismiss) { Text(stringResource(R.string.cancel)) }
         },
     )
 }
@@ -440,7 +441,7 @@ private fun RequestDeletionDialog(
             ) { Text(stringResource(R.string.document_request_deletion)) }
         },
         dismissButton = {
-            TextButton(onClick = onDismiss) { Text(stringResource(R.string.cancel)) }
+            CleansiaTextButton(onClick = onDismiss) { Text(stringResource(R.string.cancel)) }
         },
     )
 }
@@ -615,7 +616,7 @@ private fun UploadDialog(
             },
             confirmButton = {},
             dismissButton = {
-                TextButton(onClick = onDismiss) { Text(stringResource(R.string.cancel)) }
+                CleansiaTextButton(onClick = onDismiss) { Text(stringResource(R.string.cancel)) }
             },
         )
     } else {
@@ -635,12 +636,12 @@ private fun UploadDialog(
                 }
             },
             confirmButton = {
-                TextButton(onClick = { onConfirm(type, description) }, enabled = !isUploading) {
+                CleansiaTextButton(onClick = { onConfirm(type, description) }, enabled = !isUploading) {
                     Text(stringResource(R.string.save))
                 }
             },
             dismissButton = {
-                TextButton(onClick = onDismiss) { Text(stringResource(R.string.cancel)) }
+                CleansiaTextButton(onClick = onDismiss) { Text(stringResource(R.string.cancel)) }
             },
         )
     }

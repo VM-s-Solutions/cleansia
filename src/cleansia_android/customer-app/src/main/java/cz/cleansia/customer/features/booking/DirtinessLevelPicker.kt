@@ -36,11 +36,11 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import cz.cleansia.core.ui.theme.primaryText
 import cz.cleansia.customer.R
 import cz.cleansia.customer.core.booking.DirtinessLevel
 import cz.cleansia.customer.ui.theme.CleansiaTheme
 import cz.cleansia.customer.ui.theme.selectionTint
-import cz.cleansia.customer.ui.theme.primaryText
 
 @StringRes
 internal fun DirtinessLevel.titleRes(): Int = when (this) {

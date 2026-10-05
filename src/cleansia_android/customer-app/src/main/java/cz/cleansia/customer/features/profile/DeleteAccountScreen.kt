@@ -50,6 +50,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
+import cz.cleansia.core.ui.components.CleansiaTextButton
 import cz.cleansia.customer.R
 import cz.cleansia.core.ui.components.CleansiaDestructiveButton
 import cz.cleansia.core.ui.theme.Poppins
@@ -248,7 +249,7 @@ fun DeleteAccountScreen(
                 ) { Text(stringResource(R.string.delete_account_dialog_confirm)) }
             },
             dismissButton = {
-                TextButton(onClick = { confirming = false }) { Text(stringResource(R.string.common_cancel)) }
+                CleansiaTextButton(onClick = { confirming = false }) { Text(stringResource(R.string.common_cancel)) }
             },
         )
     }

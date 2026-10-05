@@ -52,6 +52,7 @@ import coil3.request.CachePolicy
 import coil3.request.ImageRequest
 import coil3.request.crossfade
 import cz.cleansia.core.ui.theme.Spacing
+import cz.cleansia.core.ui.theme.primaryText
 import cz.cleansia.partner.BuildConfig
 import cz.cleansia.partner.R
 import cz.cleansia.partner.features.media.rememberPhotoSourcePicker
@@ -323,7 +324,7 @@ private fun PhotoTile(
 @Composable
 private fun AddPhotoTile(isUploading: Boolean, onClick: () -> Unit) {
     val borderColor = MaterialTheme.colorScheme.primary
-    val tint = MaterialTheme.colorScheme.primary
+    val tint = primaryText()
     val bg = MaterialTheme.colorScheme.primary.copy(alpha = 0.08f)
 
     Box(

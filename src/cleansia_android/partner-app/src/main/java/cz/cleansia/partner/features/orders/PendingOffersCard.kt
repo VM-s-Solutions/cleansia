@@ -31,6 +31,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewModelScope
 import cz.cleansia.core.ui.theme.Spacing
+import cz.cleansia.core.ui.theme.primaryText
 import cz.cleansia.partner.R
 import cz.cleansia.partner.data.orders.OrdersRepository
 import cz.cleansia.partner.ui.theme.CleansiaPartnerTheme
@@ -132,12 +133,12 @@ fun PendingOffersCardContent(
             Text(
                 text = stringResource(R.string.offers_card_cta),
                 style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.SemiBold),
-                color = MaterialTheme.colorScheme.primary,
+                color = primaryText(),
             )
             Icon(
                 imageVector = Icons.AutoMirrored.Outlined.ArrowForward,
                 contentDescription = null,
-                tint = MaterialTheme.colorScheme.primary,
+                tint = primaryText(),
                 modifier = Modifier.size(16.dp),
             )
         }

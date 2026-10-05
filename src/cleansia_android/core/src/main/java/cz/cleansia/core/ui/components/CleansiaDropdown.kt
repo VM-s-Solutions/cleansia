@@ -44,6 +44,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
 import cz.cleansia.core.R
+import cz.cleansia.core.ui.theme.primaryText
 
 /**
  * One option in a [CleansiaDropdown]. [id] is what the caller stores
@@ -294,7 +295,7 @@ private fun DropdownOptionRow(
             style = MaterialTheme.typography.bodyLarge.copy(
                 fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Normal,
             ),
-            color = if (isSelected) MaterialTheme.colorScheme.primary
+            color = if (isSelected) primaryText()
             else MaterialTheme.colorScheme.onSurface,
             modifier = Modifier.weight(1f),
         )
@@ -302,7 +303,8 @@ private fun DropdownOptionRow(
             Icon(
                 imageVector = Icons.Outlined.Check,
                 contentDescription = null,
-                tint = MaterialTheme.colorScheme.primary,
+                // The row's label and its check are one control, so one ink.
+                tint = primaryText(),
                 modifier = Modifier.size(20.dp),
             )
         }

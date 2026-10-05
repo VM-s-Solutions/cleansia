@@ -32,6 +32,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
+import cz.cleansia.core.ui.theme.primaryText
 import cz.cleansia.customer.R
 import cz.cleansia.core.format.formatOrderDateTime
 import cz.cleansia.core.format.formatOrderPrice
@@ -42,7 +43,6 @@ import cz.cleansia.customer.core.orders.OrderServiceDetailsDto
 import cz.cleansia.customer.features.booking.localizedDescription
 import cz.cleansia.customer.features.booking.localizedName
 import cz.cleansia.customer.features.booking.titleRes
-import cz.cleansia.customer.ui.theme.primaryText
 
 /* ── Cleaning details ── */
 

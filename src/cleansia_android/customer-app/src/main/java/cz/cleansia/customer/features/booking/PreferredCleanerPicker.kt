@@ -26,7 +26,6 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -40,10 +39,11 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import cz.cleansia.core.ui.components.CleansiaTextButton
+import cz.cleansia.core.ui.theme.primaryText
 import cz.cleansia.customer.R
 import cz.cleansia.customer.core.memberships.benefitsPaused
 import cz.cleansia.customer.core.orders.ServingCleanerDto
-import cz.cleansia.customer.ui.theme.primaryText
 
 /**
  * Plus-only picker that lets the customer pre-request a cleaner they've
@@ -179,7 +179,7 @@ fun PreferredCleanerPicker(
                 }
             },
             confirmButton = {
-                TextButton(onClick = { dialogOpen = false }) { Text(stringResource(R.string.common_back)) }
+                CleansiaTextButton(onClick = { dialogOpen = false }) { Text(stringResource(R.string.common_back)) }
             },
         )
     }

@@ -46,6 +46,7 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import cz.cleansia.core.format.formatOrderPrice
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import cz.cleansia.core.ui.components.CleansiaTextButton
 import cz.cleansia.customer.R
 import cz.cleansia.customer.core.memberships.ExpressWaiverStatus
 import cz.cleansia.customer.core.memberships.benefitsPaused
@@ -145,7 +146,7 @@ fun MembershipManagementCard(
                 ) { Text(stringResource(R.string.membership_cancel_dialog_confirm)) }
             },
             dismissButton = {
-                TextButton(onClick = { showCancelDialog = false }) { Text(stringResource(R.string.common_back)) }
+                CleansiaTextButton(onClick = { showCancelDialog = false }) { Text(stringResource(R.string.common_back)) }
             },
         )
     }
@@ -171,7 +172,7 @@ fun MembershipManagementCard(
                 )
             },
             confirmButton = {
-                TextButton(
+                CleansiaTextButton(
                     onClick = {
                         showSwitchDialog = false
                         viewModel.swapPlan(yearlyPlan.code)
@@ -179,7 +180,7 @@ fun MembershipManagementCard(
                 ) { Text(stringResource(R.string.membership_switch_dialog_confirm)) }
             },
             dismissButton = {
-                TextButton(onClick = { showSwitchDialog = false }) { Text(stringResource(R.string.common_back)) }
+                CleansiaTextButton(onClick = { showSwitchDialog = false }) { Text(stringResource(R.string.common_back)) }
             },
         )
     }
@@ -468,11 +469,9 @@ private fun ActiveCard(
                     modifier = Modifier
                         .align(Alignment.CenterHorizontally)
                         .height(36.dp),
+                    colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error),
                 ) {
-                    Text(
-                        text = stringResource(R.string.membership_cancel_action),
-                        color = MaterialTheme.colorScheme.error,
-                    )
+                    Text(text = stringResource(R.string.membership_cancel_action))
                 }
             }
         }
@@ -551,11 +550,9 @@ private fun PastDueCard(
                     modifier = Modifier
                         .align(Alignment.CenterHorizontally)
                         .height(36.dp),
+                    colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error),
                 ) {
-                    Text(
-                        text = stringResource(R.string.membership_cancel_action),
-                        color = MaterialTheme.colorScheme.error,
-                    )
+                    Text(text = stringResource(R.string.membership_cancel_action))
                 }
             }
         }

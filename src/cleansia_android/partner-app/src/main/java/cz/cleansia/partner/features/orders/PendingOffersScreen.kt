@@ -50,6 +50,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import cz.cleansia.core.format.formatOrderDateRange
 import cz.cleansia.core.format.formatOrderPrice
 import cz.cleansia.core.ui.components.CleansiaPrimaryButton
+import cz.cleansia.core.ui.components.CleansiaTextButton
 import cz.cleansia.core.ui.components.MascotEmptyState
 import cz.cleansia.core.ui.state.ActionState
 import cz.cleansia.core.ui.theme.Spacing
@@ -125,7 +126,7 @@ fun PendingOffersScreen(
                 ) { Text(stringResource(R.string.offer_decline_cta)) }
             },
             dismissButton = {
-                TextButton(onClick = { pendingDecline = null }) { Text(stringResource(R.string.cancel)) }
+                CleansiaTextButton(onClick = { pendingDecline = null }) { Text(stringResource(R.string.cancel)) }
             },
         )
     }
@@ -235,7 +236,7 @@ fun OfferRefusalDialog(refusal: OfferRefusal, onDismiss: () -> Unit) {
         },
         text = { Text(stringResource(copy.bodyRes, refusal.reason)) },
         confirmButton = {
-            TextButton(onClick = onDismiss) { Text(stringResource(R.string.ok)) }
+            CleansiaTextButton(onClick = onDismiss) { Text(stringResource(R.string.ok)) }
         },
     )
 }
@@ -339,7 +340,7 @@ private fun PendingOfferCard(
             modifier = Modifier.fillMaxWidth(),
         )
         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Center) {
-            TextButton(onClick = onDecline, enabled = !actionsLocked) {
+            CleansiaTextButton(onClick = onDecline, enabled = !actionsLocked) {
                 Text(stringResource(R.string.offer_decline))
             }
         }

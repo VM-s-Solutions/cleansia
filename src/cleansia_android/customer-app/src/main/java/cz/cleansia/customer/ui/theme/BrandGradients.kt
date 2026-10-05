@@ -73,14 +73,6 @@ fun isDark(): Boolean {
 }
 
 /**
- * Brand blue for TEXT. The light primary, sky-600, reads 4.10:1 on white and 3.91:1 on the page, under
- * WCAG AA's 4.5:1, so light-mode text is sky-700 (5.93:1 on white); the dark primary, sky-400, already
- * clears it on the slate surfaces. Fills, borders, icons and buttons keep the primary.
- */
-@Composable @ReadOnlyComposable
-fun primaryText(): Color = if (isDark()) androidx.compose.material3.MaterialTheme.colorScheme.primary else Sky700
-
-/**
  * Background tint for "selected" UI states (service cards, address rows,
  * payment-method rows). In light mode we want the familiar pale Sky-100 fill.
  * In dark mode we use a low-alpha primary overlay so the selection reads as

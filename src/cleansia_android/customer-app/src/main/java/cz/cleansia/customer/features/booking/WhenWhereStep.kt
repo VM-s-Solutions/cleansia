@@ -47,11 +47,11 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LifecycleEventEffect
+import cz.cleansia.core.ui.theme.primaryText
 import cz.cleansia.customer.R
 import cz.cleansia.customer.core.memberships.ExpressWaiver
 import cz.cleansia.customer.core.memberships.ExpressWaiverStatus
 import cz.cleansia.customer.ui.theme.selectionTint
-import cz.cleansia.customer.ui.theme.primaryText
 import kotlinx.datetime.Clock
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.LocalDateTime

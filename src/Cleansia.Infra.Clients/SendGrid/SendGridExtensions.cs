@@ -14,13 +14,17 @@ public static class SendGridExtensions
 
     public static IServiceCollection AddSendGrid(this IServiceCollection services)
     {
-        // ADR-0005 D1 — SendGrid's HTTP transport is sourced from a pooled, named IHttpClientFactory
-        // client so it inherits the standard resilience handler + OTel HttpClientInstrumentation
-        // instead of newing a fresh SendGridClient socket per send. The standard handler retries
-        // Transient (5xx/408/429) and does NOT retry 401/403/4xx — folding in the hand-rolled
-        // EmailService Polly (D1.2). Mirrors FiscalServiceCollectionExtensions.cs:54-55.
+        // ADR-0005 D1 — SendGrid's HTTP transport is a pooled, named IHttpClientFactory client with
+        // OTel HttpClientInstrumentation and the standard resilience handler as its only pipeline,
+        // instead of newing a fresh SendGridClient socket per send. It retries Transient
+        // (5xx/408/429) and does NOT retry 401/403/4xx (D1.2). The send is a keyless POST, so a 202
+        // lost to a timeout can deliver a mail twice; the retry stays, because the inline senders
+        // swallow a failed send and a short outage would otherwise lose the mail outright.
+#pragma warning disable EXTEXP0001 // RemoveAllResilienceHandlers is the one way to take the host's default off one client.
         services.AddHttpClient(HttpClientName)
+            .RemoveAllResilienceHandlers()
             .AddStandardResilienceHandler();
+#pragma warning restore EXTEXP0001
 
         services.AddTransient<ISendGridClientFactory, SendGridClientFactory>(provider =>
         {

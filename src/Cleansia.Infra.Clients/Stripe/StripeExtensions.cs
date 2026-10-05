@@ -17,14 +17,15 @@ public static class StripeExtensions
 
     public static IServiceCollection AddStripe(this IServiceCollection services, IConfiguration configuration, IHostEnvironment env)
     {
-        // ADR-0005 D1 — Stripe's HTTP transport is sourced from a pooled, named IHttpClientFactory
-        // client so it inherits the standard resilience handler + OTel HttpClientInstrumentation
-        // (ServiceDefaults applies AddHttpClientInstrumentation to factory clients), instead of the
-        // SDK newing a fresh socket per call. Mirrors FiscalServiceCollectionExtensions.cs:54-55 and
-        // the named "Mapbox" client. AddStandardResilienceHandler is explicit here so the registration
-        // owns its resilience contract even outside a host that calls ConfigureHttpClientDefaults.
+        // ADR-0005 D1 — Stripe's HTTP transport is a pooled, named IHttpClientFactory client, so it
+        // carries OTel HttpClientInstrumentation and its own standard resilience handler instead of
+        // the SDK newing a fresh socket per call. That handler is the client's only pipeline in every
+        // host: the host default would otherwise wrap it and ask a failing Stripe four times four.
+#pragma warning disable EXTEXP0001 // RemoveAllResilienceHandlers is the one way to take the host's default off one client.
         services.AddHttpClient(HttpClientName)
+            .RemoveAllResilienceHandlers()
             .AddStandardResilienceHandler();
+#pragma warning restore EXTEXP0001
 
         // Let DI inject IStripeConfig + IHttpClientFactory + ILogger; the hand-built lambda is no
         // longer needed now that the factory depends on the IHttpClientFactory transport (ADR-0005 D1).

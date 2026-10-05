@@ -8,13 +8,15 @@ public static class ApnsExtensions
 {
     public static IServiceCollection AddApns(this IServiceCollection services)
     {
-        // ADR-0005 D1 — the HTTP/2 APNs transport is a pooled, named IHttpClientFactory client so it
-        // inherits the standard resilience handler + OTel HttpClientInstrumentation, instead of newing a
-        // socket per send. Mirrors the "Stripe"/"SendGrid" named clients. No request logging: the URL ends in
-        // the activity's push token.
+        // ADR-0005 D1 — the HTTP/2 APNs transport is a pooled, named IHttpClientFactory client with OTel
+        // HttpClientInstrumentation and the standard resilience handler as its only pipeline, instead of
+        // newing a socket per send. No request logging: the URL ends in the activity's push token.
+#pragma warning disable EXTEXP0001 // RemoveAllResilienceHandlers is the one way to take the host's default off one client.
         services.AddHttpClient(ApnsLiveActivityClient.HttpClientName)
             .RemoveAllLoggers()
+            .RemoveAllResilienceHandlers()
             .AddStandardResilienceHandler();
+#pragma warning restore EXTEXP0001
 
         services.TryAddSingleton(TimeProvider.System);
 

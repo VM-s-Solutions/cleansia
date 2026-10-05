@@ -1424,7 +1424,7 @@
       "discount_cap": "Sleva ze stupně a sleva z Cleansia Plus se sčítají, ale dohromady nejvýš {{cap}} % z ceny. Nejvyšší stupeň na tenhle strop dosáhne sám — Plus mu slevu dál nezvedne.",
       "recent_title": "Poslední pohyby",
       "history_title": "Historie bodů",
-      "history_lead": "Každý pohyb na vašem kontě. Kladné za dokončené úklidy a doporučení, záporné za zrušené objednávky.",
+      "history_lead": "Každý pohyb na vašem kontě. Kladné za dokončené úklidy, záporné za zrušené objednávky.",
       "filter_all": "Vše",
       "filter_earned": "Získané",
       "filter_deducted": "Odečtené",

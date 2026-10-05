@@ -42,6 +42,14 @@ const POINTS_CLAIM: Record<Locale, RegExp> = {
   ru: /балл/i,
 };
 
+const REFERRAL_WORD: Record<Locale, RegExp> = {
+  en: /referr/i,
+  cs: /doporuč/i,
+  sk: /odporúč/i,
+  uk: /запрош|рефера/i,
+  ru: /приглаш|рефера/i,
+};
+
 const CURRENCY_WORDS = /\b(CZK|EUR|PLN|GBP|USD)\b|Kč|€|zł|£|\$/;
 const CREDIT_WORD: Record<Locale, RegExp> = {
   en: /credit/i,
@@ -107,6 +115,18 @@ describe('the referral copy states the market credit, never a fixed figure or po
     const how = Object.keys(block(bundle, ['pages', 'rewards', 'how'])).filter((key) => key.startsWith('referral'));
 
     expect({ locale, offending, how }).toEqual({ locale, offending: [], how: [] });
+  });
+
+  // The points history keeps the old referral rows, but a referral earns no points any more, so its
+  // lead does not name referrals among what earns them.
+  it.each(LOCALES)('the points history lead names no referral among what earns points, in %s', (locale) => {
+    const lead = value(readLocale(locale), 'pages.rewards.history_lead');
+
+    expect({ locale, written: lead.trim().length > 0, referral: REFERRAL_WORD[locale].test(lead) }).toEqual({
+      locale,
+      written: true,
+      referral: false,
+    });
   });
 
   it.each(LOCALES)('names no amount and promises no credit in the no-figure lines, in %s', (locale) => {

@@ -1424,7 +1424,7 @@
       "discount_cap": "A tier discount and a Cleansia Plus discount add up — but to at most {{cap}}% of the price together. The top tier reaches that ceiling on its own, so Plus adds nothing on top of it.",
       "recent_title": "Recent movements",
       "history_title": "Points history",
-      "history_lead": "Every movement on your account. Positive for finished cleans and referrals, negative for cancellations.",
+      "history_lead": "Every movement on your account. Positive for finished cleans, negative for cancellations.",
       "filter_all": "All",
       "filter_earned": "Earned",
       "filter_deducted": "Deducted",

@@ -104,8 +104,9 @@ occurrence cannot be paid before it is confirmed (ADR-0062).
 **[ADR-0070](./adr-0070), [ADR-0060](./adr-0060) and [ADR-0009](./adr-0009) were amended in place on
 2026-10-04** (the owner's meeting that day): cash needs no saved card and no card is charged, and a
 confirmed lockout pays each seat its full reward (ADR-0070); a market with no insurance figure makes no
-insurance claim (ADR-0060); and a refund's points clawback works on the order's running total
-(ADR-0009). None replaces a record, so there is no arrow.
+insurance claim, and a referral pays both sides a credit authored per currency instead of 150 points,
+stated from the market in the copy (ADR-0060); and a refund's points clawback works on the order's
+running total (ADR-0009). None replaces a record, so there is no arrow.
 
 ## All records
 
@@ -170,7 +171,7 @@ insurance claim (ADR-0060); and a refund's points clawback works on the order's 
 | **[ADR-0057](./adr-0057)** | Confirmed means a cleaner took the job, and nothing else ⟲ (its open consequence taken by ADR-0067, 2026-09-19) | `accepted` |
 | **[ADR-0058](./adr-0058)** | A customer's market is chosen, remembered, and overridden by the address | `accepted` |
 | **[ADR-0059](./adr-0059)** | Cleansia Plus is priced per market | `accepted` |
-| **[ADR-0060](./adr-0060)** | Money figures in copy come from the market, not the translation (amended 2026-10-04: no figure, no insurance claim) | `accepted` |
+| **[ADR-0060](./adr-0060)** | Money figures in copy come from the market, not the translation (amended 2026-10-04: no figure, no insurance claim; and the referral reward is a per-currency credit, not points) | `accepted` |
 | **[ADR-0061](./adr-0061)** | Tenancy is active from day one: one tenant per operating company (amended 2026-09-14 and 2026-09-15 — the FK, `TenantAuditable`, per-company payout numbering and settings) | `accepted` |
 | **[ADR-0062](./adr-0062)** | A customer's actions are recorded for incident defence, and support reads them in the admin panel (extends ADR-0012; amended 2026-09-14 and 2026-09-15; amended 2026-10-03: confirming a recurring occurrence asks for the terms in force; follow-up 2026-10-04: an occurrence cannot be paid before it is confirmed) | `accepted` |
 | **[ADR-0063](./adr-0063)** | Legal documents are versioned by effective date, stored per market, and a consent stamps the version | `accepted` |

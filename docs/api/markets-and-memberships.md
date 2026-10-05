@@ -62,6 +62,7 @@ with a market and is held to its company at approval.
     "currencySymbol": "Kč",
     "isDefault": true,
     "noShowCredit": 250.00,
+    "referralCredit": 150.00,
     "insuranceCoverageAmount": null
   }
 ]
@@ -74,6 +75,7 @@ with a market and is held to its company at approval.
 | `currencyCode` / `currencySymbol` | The market's currency — `CountryConfiguration.DefaultCurrencyCode` resolved to its `Currency` row |
 | `isDefault` | The pre-selection for a visitor who has chosen nothing — the flagged `CountryConfiguration.IsDefaultMarket`, else the fallback rule above. A **pre-selection, not a pricing invariant** — a client always sends the `countryId` it resolved |
 | `noShowCredit` | `Currency.NoShowCredit` — the apology credit paid in this currency when a slot arrives with no cleaner; `null` = none is paid and the copy renders its refund-only variant. CZK 250; EUR 10, PLN 40, GBP 9, USD 10 are DEV placeholders the owner replaces before activation |
+| `referralCredit` | `Currency.ReferralCredit` — the credit each side of a referral receives when the friend's first order, in this currency, is completed; `null` or `0` = none, and the referral copy renders its twin that promises nothing. CZK 150, the other seeded currencies `null` (since 2026-10-05) → [The referral reward](/product/business-rules#referral-credit) |
 | `insuranceCoverageAmount` | `CountryConfiguration.InsuranceCoverageAmount` — the insurance ceiling the trust badge and FAQ state, a number in the market's currency; `null` = no insurance claim at all (since 2026-10-04; until then a no-figure *Insured* rendered). Every configuration is seeded `null` (owner ruling 2026-09-28) until the owner decides whose policy covers a booking and authors the figure |
 
 A client resolves its market as: stored code **if listed** → the `isDefault` row → the first row →
@@ -311,11 +313,11 @@ flagged market `isDefault` as soon as it is listed. No body: the route id is the
 
 ---
 
-## Admin — currency no-show credit <Badge type="info" text="Admin" />
+## Admin — currency no-show and referral credit <Badge type="info" text="Admin" />
 
 ```
-POST /api/AdminCurrency/create               { "code": "EUR", "symbol": "€", "name": "Euro", "loyaltyPointsDivisor": null, "noShowCredit": null }
-PUT  /api/AdminCurrency/update/{currencyId}  { "currencyId": "…", "code": "CZK", "symbol": "Kč", "name": "Czech koruna", "loyaltyPointsDivisor": 10, "noShowCredit": 250 }
+POST /api/AdminCurrency/create               { "code": "EUR", "symbol": "€", "name": "Euro", "loyaltyPointsDivisor": null, "noShowCredit": null, "referralCredit": null }
+PUT  /api/AdminCurrency/update/{currencyId}  { "currencyId": "…", "code": "CZK", "symbol": "Kč", "name": "Czech koruna", "loyaltyPointsDivisor": 10, "noShowCredit": 250, "referralCredit": 150 }
 ```
 
 **Auth:** `CanCreateCurrency` / `CanUpdateCurrency`
@@ -326,6 +328,12 @@ in full and sends the plain cancellation push). It must be positive when set (`M
 Unlike the loyalty divisor it is **not** an activation gate — a market may open without an apology
 credit. `AdminCurrencyDetailDto` and `AdminCurrencyListItem` carry it back; the `CurrencyListItem` /
 `CurrencyDetailDto` that travel on order rows do not.
+
+`referralCredit` is the credit each side of a referral receives when the friend's first order **in
+this currency** is completed (since 2026-10-05). `null` and `0` both pay none, and the referral still
+qualifies; only a negative figure is refused (`MustBePositive`). It is not an activation gate either,
+and both admin DTOs carry it back. The update writes every figure it is sent, so an update that omits
+`referralCredit` clears it. → [The referral reward](/product/business-rules#referral-credit)
 
 ---
 

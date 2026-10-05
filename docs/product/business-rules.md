@@ -2196,6 +2196,16 @@ Amendment A2).
 `check-booking-policy-parity.mjs` pins the *absence* of a figure and the presence of the placeholder
 in every locale.
 
+**Referral credit — `Currency.ReferralCredit`.** The credit each side of a qualified referral receives
+(owner ruling 2026-10-04). Authored per currency on the admin currency form, like the no-show credit;
+CZK is seeded at **150**, and EUR, PLN, GBP and USD at nothing. A referral is paid in the currency of
+the friend's completed order, from that currency's figure; a currency with none, or with 0, pays no
+referral credit and logs a warning, and the referral still qualifies. Nothing is scaled from another
+currency's figure. It is not an activation gate. The form refuses a negative figure
+(`validation.must_be_positive`), and saving it empty clears it. **No locale string states the figure**:
+every client formats the market's `referralCredit` into the copy, and a market with none reads copy
+that promises nothing. → [The referral reward](#referral-credit)
+
 **Plus prices — `MembershipPlanPrice`.** One row per (plan, currency) carrying the charge for one
 billing period and the Stripe Price id; CZK 199 / 2 030 seeded, no EUR rows. A plan with no row in a
 currency is not on sale in that market; a subscription is created in the chosen market's currency and
@@ -2362,7 +2372,8 @@ landing-page default is the configuration flagged `IsDefaultMarket`, moved only 
 `PUT api/AdminCountry/{id}/default-market` ([ADR-0058](/decisions/adr-0058) amendment); the default
 currency reaches the pre-selection only as the logged fallback when nothing is flagged. Promotion is
 still an owner-level event, and those two items plus "flag the new default market" are the checklist
-for it. (The no-show credit is not on the list — it is authored per currency and does not move.)
+for it. (The no-show and referral credits are not on the list — they are authored per currency and
+do not move.)
 
 ## What "price" means at each stage {#price-stages}
 
@@ -2657,7 +2668,7 @@ never spent → [Points are not credit](/flows/loyalty-and-memberships#points-vs
 
 | Rule | Value |
 |---|---|
-| Where it comes from | the apology when the cleaner does not arrive or nobody takes the job (`Currency.NoShowCredit`, [above](#money-constants)); a justified complaint the customer chose to settle in credit ([disputes](#dispute-settlement)); an administrator's goodwill grant |
+| Where it comes from | the apology when the cleaner does not arrive or nobody takes the job (`Currency.NoShowCredit`, [above](#money-constants)); a justified complaint the customer chose to settle in credit ([disputes](#dispute-settlement)); a qualified referral, to both sides ([below](#referral-credit)); an administrator's goodwill grant |
 | How it is spent | **automatically**, on the customer's next **card** booking in the **same currency** — a one-off at `CreateOrder`, a recurring occurrence when the customer confirms it. There is no *spend it now* control |
 | How much of one booking | at most **70 %** of the booking's total (`BookingPolicy.MaxCreditShareOfOrder`), rounded **down** to whole cents. The card always pays the rest |
 | When it comes back | when the booking it paid for is refunded or cancelled, exactly once → [above](#when-the-cleaner-cancels-or-no-shows) |
@@ -2712,7 +2723,7 @@ pays out (owner ruling 2026-09-05) — and an erased account can never spend it.
   the balance exactly as it was.
 - **No credit comes back afterwards.** Every writer that puts credit on an account — the credit share
   of a refund or a cancellation, an expired checkout's compensation, a goodwill grant, the no-show
-  apology — checks the owner under the same lock the erasure takes, and moves nothing onto an erased
+  apology, the referral reward — checks the owner under the same lock the erasure takes, and moves nothing onto an erased
   (anonymised and deactivated) account and opens no new one for it. An account that is merely
   inactive still receives credit.
 - **Card refunds are unchanged.** A refund still returns its card share to the card; the credit share
@@ -2725,6 +2736,57 @@ Android and iOS deletion screens warn that unused credit is forfeited and cannot
 restored, and the admin console's erasure and *Retry* confirmations say it is written off.
 → [GDPR — erasure](/flows/gdpr-and-audit#erasure-is-anonymise-in-place),
 [Customer credit in the admin console](/admin-app/user-management#customer-credit)
+
+## The referral reward {#referral-credit}
+
+**A qualified referral pays both sides credit, not points** (owner ruling 2026-10-04, since
+2026-10-05). A customer enters a friend's code at registration, or on a booking when they have not
+accepted one before. When that customer's first completed order completes within **90 days** of
+accepting the code (`ReferralPolicy.QualifyingWindowDays`), the referral qualifies. The customer who
+shared the code and the customer who used it each receive the credit of the completed order's
+currency, `Currency.ReferralCredit`: **150 Kč on a CZK booking**. Until 2026-10-05 each side received
+150 tier points instead, which moved the tier and paid nothing.
+
+| Rule | Value |
+|---|---|
+| How much | the order currency's `ReferralCredit`, the same to both sides; CZK 150, the other seeded currencies none → [Money constants](#money-constants) |
+| In which currency | the currency of the order that qualified the referral, for both sides, a referrer whose own market is elsewhere included. Each side can spend it only on a booking in that currency |
+| A currency with no figure, or 0 | no credit, a warning in the log, and the referral still qualifies. Nothing is borrowed from another currency's figure |
+| Where it lands | each side's credit account in that currency, opened if absent, under a ledger row with the reason `Referral` and the key `referral:{referralId}:{side}`. From there the [customer credit](#credit) rules apply: it is spent automatically on the next card booking in that currency, at most 70 % of that booking, and expires 12 months after the account last moved |
+| An erased side | receives nothing; the other side is still paid ([Credit on a deleted account](#credit-on-account-deletion)) |
+| Points | none. A referral earns no tier points; the `Referral` rows a points history shows are from before 2026-10-05 |
+
+**An administrator can force-qualify** a referral still waiting (`Accepted`), for one the automatic path
+missed. There is no completed order to read the currency from, so it pays in the currency of the
+referred customer's **latest order of any status**, a cancelled one included, or in the platform
+default currency when they have never booked, at that currency's figure. Each side's grant carries the
+key the automatic path uses, so the two can never both pay a side, and a referral that is no longer
+`Accepted` is refused (`referral.not_accepted`).
+
+**Reversing a referral takes back what the ledger shows was granted, and no more than the balance
+still holds** (owner default 2026-10-04). An administrator reverses a `Qualified` referral; per side,
+the reversal reads the `Referral` grant under that side's key, and debits the smaller of the grant and
+the side's balance in that currency, under a `ReferralReversed` row (`referral-reverse:{referralId}:{side}`).
+Credit never goes negative: a side that has already spent the credit gives up only what is left, and
+the log records the shortfall. The referral is then `Reversed` for good, and a second reversal is
+refused (`referral.not_qualified`). The amounts recorded on the referral stay as the record of the
+grant.
+
+**What the customer is told.** The customer web's sign-up referral dialog and rewards invite card, and
+the Android and iOS Home referral card, referral-code sheet, Rewards invite section and share text,
+state the chosen market's `referralCredit` (`Market/GetOverview`) formatted in that market's
+currency. A market with none renders a twin of each line that names no amount and promises no
+credit. No locale string states the figure or promises points, in any of the five languages on the
+three clients; `check-booking-policy-parity.mjs` pins each line's slot and each twin. The figure shown
+is the **chosen market's**, while the credit is paid in the **order's** currency, so the two differ
+when the friend's order is in another currency than the market the reader has chosen. The customer
+terms name the referral as a source of
+credit from their `2026-10-05` version ([The legal texts](#legal-texts)).
+
+**What the administrator sees.** The currency form edits the figure. The referral lists, the reverse
+dialog and the notices after a force-qualify or a reversal show the credit with its currency, and the
+customer's credit ledger labels the two rows *Referral* and *Referral reversed*.
+→ [Loyalty — referrals](/flows/loyalty-and-memberships#referrals)
 
 ## Consents, cookies and fonts {#consents}
 

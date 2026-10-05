@@ -163,13 +163,19 @@ public class ReferralCreditTests(PostgresContainerFixture fixture) : BaseIntegra
     /// Freezes the company for archive (ADR-0064 D3) the way its administrators reach it: wound down,
     /// deactivated, then the archive requested.
     /// </summary>
-    private async Task FreezeAsync(string companyId)
+    private Task FreezeAsync(string companyId) => DeactivateAsync(companyId, requestArchive: true);
+
+    private async Task DeactivateAsync(string companyId, bool requestArchive)
     {
         await using var ctx = NewContext();
         var company = await ctx.Tenants.SingleAsync(t => t.Id == companyId);
         company.RequestWindDown(new DateOnly(2026, 9, 1), AdminId, FrozenOn.AddDays(-30));
         company.Deactivate(AdminId, FrozenOn.AddDays(-15));
-        company.RequestArchive(AdminId, FrozenOn);
+        if (requestArchive)
+        {
+            company.RequestArchive(AdminId, FrozenOn);
+        }
+
         await ctx.CommitAsync(CancellationToken.None);
     }
 
@@ -299,6 +305,36 @@ public class ReferralCreditTests(PostgresContainerFixture fixture) : BaseIntegra
         var referral = await ReferralAsync(referralId);
         Assert.Equal(ReferralStatus.Qualified, referral.Status);
         Assert.Null(referral.CreditAwardedToReferrer);
+        Assert.Equal(150m, referral.CreditAwardedToReferred);
+    }
+
+    /// <summary>
+    /// Deactivated is not frozen: only a company whose archive is requested refuses writes to its books, so an
+    /// inviter whose company is deactivated, with no archive requested, is still paid the referral credit on it.
+    /// </summary>
+    [Fact]
+    public async Task A_Deactivated_Inviters_Company_Not_Frozen_For_Archive_Still_Pays_The_Inviter()
+    {
+        await ResetAsync();
+        var (referrerId, referredId, referralId) = await SeedAsync(
+            orderCurrencyId: CzkId, referrerCompany: TestTenants.Second);
+        await DeactivateAsync(TestTenants.Second, requestArchive: false);
+        await using (var ctx = NewContext())
+        {
+            var company = await ctx.Tenants.AsNoTracking().SingleAsync(t => t.Id == TestTenants.Second);
+            Assert.False(company.IsActive);
+            Assert.False(company.IsFrozen);
+        }
+
+        await CompleteAsync(referredId);
+
+        var inviter = Assert.Single(await AccountsAsync(referrerId));
+        Assert.Equal(TestTenants.Second, inviter.TenantId);
+        Assert.Equal(150m, inviter.Balance);
+        Assert.Equal(150m, Assert.Single(await AccountsAsync(referredId)).Balance);
+        var referral = await ReferralAsync(referralId);
+        Assert.Equal(ReferralStatus.Qualified, referral.Status);
+        Assert.Equal(150m, referral.CreditAwardedToReferrer);
         Assert.Equal(150m, referral.CreditAwardedToReferred);
     }
 

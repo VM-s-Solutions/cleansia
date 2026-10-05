@@ -275,6 +275,37 @@ each of these drew until 2026-10-05:
 page stylesheet and the customer navbar's, finds each rule that paints its background with
 `--cl-heading` and sets an ink, and fails unless that ink is `--cl-surface`.
 
+### Blue text on the customer site takes `--cl-accent-text` {#accent-text}
+
+The brand primary, sky-600 `#0284c7`, reads 4.10:1 on white, under the 4.5:1 text needs, and where a
+stylesheet uses the fixed SCSS `$primary` it stays sky-600 in dark mode too, 4.22:1 on the dark card.
+Since 2026-10-05 (finding 2026-10-05) blue **text** on the customer site takes `--cl-accent-text`:
+sky-700 `#0369a1` in light mode and sky-300 `#7dd3fc` in dark. The token lives in the customer palette
+in `_home-design.scss`, beside `--cl-accent`; until then it was the booking wizard's own. Fills,
+borders, icons and buttons keep the primary, as on the apps
+([Blue text is sky-700](/mobile-app/patterns#brand-text-ink)). Measured from the compiled customer
+stylesheet in Chromium, light / dark:
+
+| Text | Rule | Before | After |
+|---|---|---|---|
+| The booking's package card price, the booking's total | `.cl-wiz__pack-price`, `.cl-wiz__total` | 4.10 / 4.22 | 5.93 / 10.37 |
+| Home's *from* price on a service | `.cl-services__price` | 4.10 / 4.22 | 5.93 / 10.37 |
+| The hero quote's amount | `.cl-quote__price strong`, `.cl-quote__amount` | 4.10 / 8.07 | 5.93 / 10.37 |
+| The price on a catalogue package, the Plus page, an order's total, a schedule's summary, a Rewards tier's discount, the tracking page's total | `.cl-cat-pkg__price`, `.cl-plusp__price`, `.order-detail__total-amount`, `.cl-rec__summary-price`, `.cl-rwd__tier-discount`, `.cl-trk__total` | 4.10 / 8.07 | 5.93 / 10.37 |
+| A legal page's section number | `.cl-lgl__num` (was `--cl-accent-soft`) | 2.06 / 9.10 | 5.71 / 9.10 |
+| The top bar's active link, and a link on hover | `cleansia-customer-navbar.component.scss` | 3.94 light | 5.71 light (dark has its own rule) |
+| The sign-in link on hover | `cleansia-customer-navbar.component.scss` | 3.94 / 3.70 | 5.71 / 9.10 |
+| The user's role in the account menu | `cleansia-customer-navbar.component.scss` | 4.10 light | 5.93 light (dark has its own rule) |
+
+The rules that used `--cl-accent` (sky-400 after dark, 8.07:1) now read sky-300 there, a lighter blue
+that both pass. Left in the primary on purpose: the inverse and Plus call-to-action buttons
+(`.cl-btn--inverse`, `.cl-plus__cta`), every icon, and the schedule form's add-address row on hover,
+whose resting ink is already sky-700, so the same token would leave no hover cue. PrimeNG's text
+buttons and links take the shared preset's sky-600, and that preset is shared with the partner and
+admin sites, so they are not part of this. `customer-accent-text.spec.ts`, in the assets project,
+compiles the customer stylesheet and requires `var(--cl-accent-text)` on each site above, and the token
+in both themes.
+
 ## i18n
 
 Translation is handled by `ngx-translate` with a custom `JsonTranslationLoader` that supports SSR. Supported locales: `cs` (Czech), `en`, `sk`, `uk`, `ru`. Locale data is registered at app initialization:

@@ -38,7 +38,8 @@ From `customer-app/ui/theme/Color.kt` and `CleansiaColors.swift`.
 | **Headings, top-bar titles** | `Sky700` | **`#0369A1`** — the file's own comment reads *"brand secondary, top-bar title"* |
 | Deep heading / footer ground | `Sky900` | `#0C4A6E` |
 | Darkest brand | `Sky950` | `#082F49` |
-| **Primary action** | `Sky600` | `#0284C7` |
+| **Primary action** | `Sky600` | `#0284C7` — fills, borders, icons and buttons; **never text**, 4.10:1 on white |
+| **Blue text** — prices, links, small labels | `Sky700` | **`#0369A1`** in light mode (5.93:1 on white): `CleansiaColors.primaryText` (iOS), `primaryText()` (Android customer), `--cl-accent-text` (customer web, sky-300 in dark) |
 | Dark-mode primary, gradient end | `Sky400` | `#38BDF8` |
 | Container / chip fill | `Sky100` | `#E0F2FE` |
 | Tinted section ground | `Sky50` | `#F0F9FF` |
@@ -314,6 +315,7 @@ Ratings become legitimate when `OrderReview` has rows and the page renders the a
 **Parity**
 - [ ] Headings are `Sky700 #0369A1` — not black, not slate
 - [ ] Primary action is `Sky600`, buttons are pills at 40/48/56
+- [ ] Blue text is `Sky700` in light mode (the text ink), never the `Sky600` primary
 - [ ] Poppins headings + Nunito body, Cyrillic fallback intact (customer web and the apps; the
       back-office web is Nunito-only — §2.3, default in force since 2026-09-20)
 - [ ] Radius from `6/12/16/24/32`; spacing from the 8-pt scale (on the web the radius is a

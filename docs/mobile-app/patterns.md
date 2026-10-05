@@ -529,6 +529,64 @@ A plain row keeps the theme's secondary colour in both modes, 5.7:1 in dark.
   more, and a covered row's description takes `--cl-muted-on-tint`
   ([the services step](/customer-app/ordering-flow#step-0-services-packages)).
 
+Since 2026-10-05 the light *from* price is one case of the general rule below: iOS's
+`ServiceRow.fromPriceInk` reads `CleansiaColors.primaryText` in light mode, and Android's `fromPriceInk`
+draws the same sky-700.
+
+## Blue text is sky-700, not the brand primary {#brand-text-ink}
+
+The brand primary in light mode, sky-600 `#0284C7`, reads 4.10:1 on white and 3.91:1 on the page, and
+less on the tints blue labels sit on, under the 4.5:1 that text needs (finding 2026-10-05). Since
+2026-10-05 the customer apps, like the customer web, draw blue **text** in an ink of its own, and keep
+the primary for fills, borders, icons and buttons:
+
+| Client | Text ink | Light mode | Dark mode |
+|---|---|---|---|
+| iOS | `CleansiaColors.primaryText` (Core) | sky-700 `#0369A1`, 5.93:1 on white | sky-400, the primary, unchanged |
+| Android | `primaryText()` (customer `ui/theme/BrandGradients.kt`) | sky-700 `#0369A1` | the theme's primary, sky-400, unchanged |
+| Web | `--cl-accent-text` | sky-700 | sky-300 → [Blue text on the customer site](/architecture/frontend#accent-text) |
+
+The two texts the finding named moved on both apps: the package details sheet's price, 4.10 to 5.93:1,
+and the schedule form's default-address badge, 3.88 to 5.62:1 on iOS (on 40 % sky-100) and 3.38 to
+4.89:1 on Android (on the primary at 12 %). A sweep of each customer app moved every other text drawn
+in the primary: prices and totals, the confirmation code, *Order again*, *See all*, *Manage*, *View
+all*, *Retry*, the add-address rows' label, the picked day part and arrival time, the default, current
+tier and Plus badges, the referral code, the dispute pill for *in review* and *waiting*, a cleaner's
+initial, *This device* and the Plus offer's social-proof headline among them. The lowest after reads
+4.58:1, a cleaner's initial on the primary at 20 %. Each app's commit lists every site with its ratio
+before and after (iOS `81ef1bafb` and `89b5361f9`, Android `302a0fa6a`). The dispute pill and, on
+Android, the *Current* tier pill draw their 14 % wash from the ink, so the wash is now sky-700 at
+14 %, a shade darker.
+
+**What keeps the primary**, and where it is text still reads 4.10:1 in light mode:
+
+- **Both apps**: fills, borders, icons, progress tints and the wordmark.
+- **iOS**: the shared button components (`CleansiaTextLink`, `CleansiaOutlinedButton`,
+  `CleansiaPrimaryButton`), the schedule cards' *Edit*, *Pause* and *Resume*, and the tab bar, whose
+  native `TabView` tints a tab's icon and label together. The shared Core components the partner app
+  draws too are left as they were: the selected chip and dropdown option, the reveal panel, the section
+  header's action, the consent text's links (the booking's contract notice among them), the Live
+  Activity card and the Profile avatar's initials (`onFixedWhite`).
+- **Android**: the labels inside Material `TextButton` and `OutlinedButton` (the schedule card's
+  *Change the schedule*, *Get Cleansia Plus*, dialog buttons, *Edit review*), and the shared `:core`
+  widgets the partner app draws too: the consent checkbox's links, the selected chip and dropdown row,
+  the section header, the error state's retry, `CleansiaButton`'s text variant and HTML content links.
+
+So the apps differ in three places: Android draws the selected tab's label, the Profile avatar's
+initials (sky-700 on the circle that is white in both themes) and the booking's contract-notice link
+in the text ink, where iOS keeps the primary.
+
+- **iOS**: `BrandTextInkTests` checks the token at 4.5:1 or more on every ground those texts sit on,
+  pins the texts whose colour comes from a helper, and scans the customer sources so that no `Text`
+  is drawn in the primary. Checked on the iPhone 17 Pro (iOS 26.3) simulator, whose screenshots run
+  lighter than the colours (sky-600 is captured as `#0097D2`, sky-700 as `#007DB1`): the price read
+  3.30 to 4.60:1 there, the badge 3.17 to 4.41:1.
+- **Android**: `PrimaryTextContrastTest` pins sky-700 at 4.5:1 or more on every light ground those
+  texts sit on and the token's two values, and reads the customer sources so that no `Text` takes the
+  bare primary or sky-600 again; 39 did before. Measured on the emulator: the package sheet's price
+  4.10 to 5.93:1, the schedule form's *DEFAULT* badge 3.37 to 4.89:1, the *MOST POPULAR* badge 3.51 to
+  5.08:1 and *Add new address* 3.91 to 5.67:1.
+
 ## Every map is quiet, with one Cleansia pin {#maps}
 
 All four map surfaces in both apps show a muted base map with **no points of interest**, and their only

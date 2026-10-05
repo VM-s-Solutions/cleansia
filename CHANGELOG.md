@@ -1096,6 +1096,14 @@ need backfilling.
   on Android in the schedule form's services as well. The brand blue of the rows' fills, borders and
   ticks is unchanged, and the web already read clearly. (Finding 2026-10-04.)
 
+- **Customer web, Android and iOS — blue text is easier to read.** Prices, totals, links and small
+  labels in the brand blue were faint in light mode, under the contrast small text needs: among them
+  the price in a package's details, the badge on the schedule form, the package and *from* prices on
+  the website, and on the apps the totals, *See all*, *Retry*, the referral code and the badges. Blue
+  text is now a deeper blue in light mode on every client, and on the website a lighter blue in dark
+  mode too. The brand blue of buttons, fills, borders and icons is unchanged, and on the apps some
+  shared buttons and controls keep it. (Finding 2026-10-05.)
+
 - **Customer — a service or package that is no longer offered can no longer be booked.** A service or
   package the company had taken off its list was hidden everywhere, but an out-of-date app, or *Order
   again* sent before the list had loaded, could still price and book it, and a new schedule could take

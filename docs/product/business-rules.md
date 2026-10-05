@@ -2205,8 +2205,9 @@ schedules list says why:
   paused): its gate reads only `hasMembership`, which the server answers `true` for a live enrolment,
   so the form opens and the server refuses the save (`recurring_booking.membership_required`). The
   web has no second wording because it needs none: its list shows the cards only to an active member,
-  and anyone else sees the Plus page in their place, so every card it draws has *Edit*; its edit route
-  admits the same members (`customerMembershipGuard`).
+  and anyone else sees in their place a Plus paywall on the list itself, with links to the Plus page
+  (the list route has no guard and does not redirect), so every card it draws has *Edit*; its edit
+  route admits the same members (`customerMembershipGuard`).
 - **Its card on the web has no price.** The web's schedules list, *Recurring cleanings*, quotes each
   card for its price per clean (`quoteTemplate`); a card whose quote is refused leaves the price out,
   with no message of its own, the line above being the explanation. Those quotes go through the

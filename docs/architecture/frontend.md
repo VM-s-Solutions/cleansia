@@ -279,7 +279,10 @@ Text drawn from the primary takes the text ink, `{primary.700}` (sky-700), in th
 
 The cookie notice's *OK* is a filled button on all three sites, with a gradient of its own in
 `cleansia-cookie-consent.component.scss`: sky-600 → sky-700, and sky-700 → sky-800 under the pointer,
-where it ran sky-500 → sky-600. Its dark-mode gradient is unchanged.
+where it ran sky-500 → sky-600. After dark, on the customer site, its white label sat on sky-400 →
+sky-500, 2.14:1 at the light end and 2.77:1 at the other, 2.77 / 4.10:1 under the pointer; since a
+later finding the same day the dark gradient is one step deeper than the light one, sky-700 → sky-800,
+and sky-800 → sky-900 under the pointer, 5.93 / 7.56:1 at rest and 7.56 / 9.46:1 under the pointer.
 
 Measured in Chromium on the running dev servers, at rest / under the pointer: the partner *Login* and
 the admin *Create* 2.77 / 4.10 → 4.10 / 5.93:1; the cookie notice's *OK*, at the light end of its

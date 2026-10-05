@@ -78,6 +78,30 @@ extension CreateRecurringViewModelTests {
         XCTAssertEqual(events, [.selectionPrunedForMarket])
     }
 
+    /// The same move made while the first catalogue read had failed: the retry lands the new market's
+    /// catalogue, and what it trims is the move's, not entries the schedule's own market retired.
+    func testARetryAfterMovingAnEditedScheduleToAnotherMarketKeepsTheMarketNotice() async {
+        let catalog = FakeCatalogClient(result: .failure(ApiError(code: "x")))
+        let (vm, _) = makeVM(
+            editing: RecurringFixtures.template(selectedServiceIds: ["s-1", "s-2"], savedAddressId: "addr-cz"),
+            catalog: catalog,
+            addressClient: twoMarkets()
+        )
+        var events: [CreateRecurringEvent] = []
+        vm.events.sink { events.append($0) }.store(in: &cancellables)
+        await vm.load()
+        vm.setSavedAddressId("addr-sk")
+        await drain()
+        XCTAssertEqual(events, [])
+
+        catalog.result = .success(CatalogFixtures.slovak)
+        await vm.retryCatalog()
+
+        XCTAssertEqual(catalog.requestedCountryIds.last, "svk")
+        XCTAssertEqual(vm.formState.selectedServiceIds, ["s-1"])
+        XCTAssertEqual(events, [.selectionPrunedForMarket])
+    }
+
     func testEditingATemplateTheMarketFullyOffersRaisesNoNotice() async {
         let (vm, _) = makeVM(editing: RecurringFixtures.template())
         var events: [CreateRecurringEvent] = []

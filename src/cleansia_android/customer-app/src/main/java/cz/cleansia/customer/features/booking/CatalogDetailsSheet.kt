@@ -33,6 +33,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import cz.cleansia.core.format.formatOrderPrice
+import cz.cleansia.core.ui.theme.primaryText
 import cz.cleansia.customer.R
 import cz.cleansia.customer.core.catalog.PackageListItem
 import cz.cleansia.customer.core.catalog.ServiceListItem
@@ -158,7 +159,7 @@ fun PackageDetailsSheet(
             Text(
                 formatOrderPrice(pkg.price, pkg.currencyCode ?: currencyCode),
                 style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold),
-                color = MaterialTheme.colorScheme.primary,
+                color = primaryText(),
             )
 
             if (!description.isNullOrBlank()) {

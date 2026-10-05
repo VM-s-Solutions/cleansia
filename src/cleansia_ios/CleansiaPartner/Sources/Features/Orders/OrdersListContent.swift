@@ -115,7 +115,7 @@ private struct LocationPromptRow: View {
             Spacer()
             Button(L10n.Orders.locationPromptAction, action: onEnable)
                 .font(CleansiaTypography.labelLarge)
-                .foregroundColor(CleansiaColors.primary)
+                .foregroundColor(CleansiaColors.primaryText)
                 .buttonStyle(.plain)
         }
     }
@@ -142,7 +142,7 @@ private struct AvailableSummaryRow: View {
                         .font(CleansiaTypography.labelLarge)
                     Image(systemName: "chevron.down").font(.system(size: 12))
                 }
-                .foregroundColor(CleansiaColors.primary)
+                .foregroundColor(CleansiaColors.primaryText)
             }
         }
         .ordersRow()

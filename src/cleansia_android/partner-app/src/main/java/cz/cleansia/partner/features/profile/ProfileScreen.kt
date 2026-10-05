@@ -71,6 +71,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import cz.cleansia.core.ui.components.CleansiaTextButton
 import cz.cleansia.core.ui.theme.Spacing
 import cz.cleansia.partner.R
 import cz.cleansia.partner.api.model.ContractStatus
@@ -340,7 +341,7 @@ fun ProfileScreen(
                 ) { Text(stringResource(R.string.profile_logout_dialog_confirm)) }
             },
             dismissButton = {
-                TextButton(onClick = { showLogoutDialog = false }) {
+                CleansiaTextButton(onClick = { showLogoutDialog = false }) {
                     Text(stringResource(R.string.profile_logout_dialog_cancel))
                 }
             },

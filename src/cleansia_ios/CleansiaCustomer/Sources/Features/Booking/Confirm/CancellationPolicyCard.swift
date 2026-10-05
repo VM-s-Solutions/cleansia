@@ -10,7 +10,7 @@ struct CancellationPolicyCard: View {
             if let plusHours = policy.plusFreeHours {
                 Text(L10n.Booking.cancelPlusSubtitle(plusHours))
                     .font(CleansiaTypography.labelMedium)
-                    .foregroundColor(CleansiaColors.primary)
+                    .foregroundColor(CleansiaColors.primaryText)
             }
             PolicyTier(
                 label: L10n.Booking.cancelTier1WhenPlus(policy.freeHours),
@@ -58,7 +58,7 @@ struct CancellationPolicyCard: View {
                 Text(L10n.Booking.cancelPlusBadge)
                     .font(CleansiaTypography.labelSmall)
                     .fontWeight(.bold)
-                    .foregroundColor(CleansiaColors.primary)
+                    .foregroundColor(CleansiaColors.primaryText)
                     .padding(.horizontal, Spacing.xs)
                     .padding(.vertical, 3)
                     .background(CleansiaColors.primary.opacity(0.12))

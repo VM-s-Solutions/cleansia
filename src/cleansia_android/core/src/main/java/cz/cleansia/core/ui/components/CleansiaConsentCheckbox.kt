@@ -22,6 +22,7 @@ import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.Dp
 import cz.cleansia.core.R
 import cz.cleansia.core.ui.theme.Spacing
+import cz.cleansia.core.ui.theme.primaryText
 
 /**
  * A consent row whose sentence carries tappable legal links.
@@ -47,8 +48,8 @@ fun CleansiaConsentCheckbox(
 ) {
     // Colour + underline are set as link styles rather than on the whole Text:
     // a Text-level colour would flatten the links into body copy, and colour
-    // alone is not an accessible affordance.
-    val linkColor = MaterialTheme.colorScheme.primary
+    // alone is not an accessible affordance. Links take the text blue; the checkbox keeps the primary.
+    val linkColor = primaryText()
     val sentence = remember(html, linkColor) {
         ConsentMarkup.annotated(
             html,

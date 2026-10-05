@@ -11,10 +11,10 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.ColorScheme
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.ReadOnlyComposable
 import androidx.compose.ui.Alignment
@@ -25,10 +25,12 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import cz.cleansia.core.ui.components.CleansiaTextButton
 import cz.cleansia.customer.R
 import cz.cleansia.customer.core.catalog.PackageListItem
 import cz.cleansia.customer.core.catalog.PackageServiceSummary
 import cz.cleansia.customer.core.catalog.ServiceListItem
+import cz.cleansia.customer.ui.theme.Slate300
 import cz.cleansia.customer.ui.theme.isDark
 
 /**
@@ -117,6 +119,20 @@ fun inPackageRowFill(): Color = MaterialTheme.colorScheme.primary
     .copy(alpha = inPackageRowAlpha(isDark()))
     .compositeOver(MaterialTheme.colorScheme.surface)
 
+/**
+ * The secondary text on a service row (its description, the per-room price). On a covered or picked
+ * ([tinted]) row in dark mode the theme's slate-400 measures 4.2:1, under the 4.5:1 its text needs, so
+ * those rows take slate-300 (7.2:1); a plain row (5.7:1) and light mode (slate-700, 9:1 at worst) keep the
+ * theme's. iOS's `ServiceRow.secondaryInk` is the twin.
+ */
+fun rowSecondaryText(scheme: ColorScheme, dark: Boolean, tinted: Boolean): Color =
+    if (dark && tinted) Slate300 else scheme.onSurfaceVariant
+
+/** [rowSecondaryText] in the current theme. */
+@Composable
+@ReadOnlyComposable
+fun rowSecondaryText(tinted: Boolean): Color = rowSecondaryText(MaterialTheme.colorScheme, isDark(), tinted)
+
 /** The border of a covered row that is not picked: 1.5dp of the brand primary at 60 %. */
 @Composable
 @ReadOnlyComposable
@@ -191,7 +207,7 @@ fun DoubleBookingDialog(pick: DoubleBooking, onConfirm: () -> Unit, onDismiss: (
         onDismissRequest = onDismiss,
         title = { Text(title) },
         text = { Text(text) },
-        confirmButton = { TextButton(onClick = onConfirm) { Text(confirm) } },
-        dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.common_cancel)) } },
+        confirmButton = { CleansiaTextButton(onClick = onConfirm) { Text(confirm) } },
+        dismissButton = { CleansiaTextButton(onClick = onDismiss) { Text(stringResource(R.string.common_cancel)) } },
     )
 }

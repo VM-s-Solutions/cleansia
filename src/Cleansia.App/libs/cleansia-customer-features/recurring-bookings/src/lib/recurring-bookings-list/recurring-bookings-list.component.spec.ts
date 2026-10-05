@@ -1,3 +1,4 @@
+import { provideHttpClient } from '@angular/common/http';
 import { signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
@@ -13,6 +14,8 @@ import {
 import { SnackbarService } from '@cleansia/services';
 import { provideMockStore } from '@ngrx/store/testing';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
+import { readFileSync } from 'fs';
+import { join } from 'path';
 import { ConfirmationService } from 'primeng/api';
 import { RecurringBookingsFacade } from '../recurring-bookings.facade';
 import { RecurringBookingsListComponent } from './recurring-bookings-list.component';
@@ -29,6 +32,9 @@ class FakeRecurringBookingsFacade {
   serviceName = jest.fn(() => null);
   packageName = jest.fn(() => null);
   nextRun = jest.fn((): Date | null => null);
+  holdsRetiredEntry = jest.fn(() => false);
+  // Reads the list as the real one does, so the screen's effect follows it.
+  readScheduleMarkets = jest.fn(() => this.templates());
 }
 
 const schedule = (id: string, requiresPaymentMethodChange: boolean) =>
@@ -113,6 +119,55 @@ describe('RecurringBookingsListComponent — a schedule that can no longer be pa
   });
 });
 
+// The server refuses to price a schedule holding a retired entry, so its card has no price; this
+// line is why. The facade decides; the card only says it.
+describe('RecurringBookingsListComponent — a schedule holding something no longer offered', () => {
+  let fixture: ComponentFixture<RecurringBookingsListComponent>;
+  let facade: FakeRecurringBookingsFacade;
+
+  beforeEach(async () => {
+    facade = new FakeRecurringBookingsFacade();
+    await TestBed.configureTestingModule({
+      imports: [RecurringBookingsListComponent, TranslateModule.forRoot()],
+      providers: [provideRouter([])],
+    })
+      .overrideComponent(RecurringBookingsListComponent, {
+        set: { providers: [{ provide: RecurringBookingsFacade, useValue: facade }] },
+      })
+      .compileComponents();
+    fixture = TestBed.createComponent(RecurringBookingsListComponent);
+  });
+
+  const line = (): Element | null =>
+    (fixture.nativeElement as HTMLElement).querySelector('.cl-rec__card [data-spec-retired]');
+
+  it('says so on its card', () => {
+    facade.holdsRetiredEntry.mockReturnValue(true);
+    facade.templates.set([schedule('t-retired', false)]);
+    fixture.detectChanges();
+
+    expect(facade.holdsRetiredEntry).toHaveBeenCalledWith(facade.templates()[0]);
+    expect(line()?.textContent?.trim()).toBe('recurring_booking.card_item_no_longer_offered');
+  });
+
+  it('says nothing on a schedule that holds nothing retired', () => {
+    facade.templates.set([schedule('t-listed', false)]);
+    fixture.detectChanges();
+
+    expect(line()).toBeNull();
+  });
+
+  it('has the markets read again when the schedules land', () => {
+    fixture.detectChanges();
+    expect(facade.readScheduleMarkets).toHaveBeenCalledTimes(1);
+
+    facade.templates.set([schedule('t-new', false)]);
+    fixture.detectChanges();
+
+    expect(facade.readScheduleMarkets).toHaveBeenCalledTimes(2);
+  });
+});
+
 describe('RecurringBookingsListComponent — the next cleaning date', () => {
   let fixture: ComponentFixture<RecurringBookingsListComponent>;
   let facade: FakeRecurringBookingsFacade;
@@ -180,9 +235,42 @@ describe('RecurringBookingsListComponent — its own facade', () => {
         { provide: SnackbarService, useValue: {} },
         // The app root's, behind the shared confirm the facade asks through.
         ConfirmationService,
+        // The app root's, under the toast-suppressing client the facade quotes through.
+        provideHttpClient(),
       ],
     }).compileComponents();
 
     expect(() => TestBed.createComponent(RecurringBookingsListComponent)).not.toThrow();
+  });
+});
+
+// jsdom loads no stylesheet, so this reads the badge's rule, which is declared an input of this test
+// target. The badge is --cl-heading: Sky700 light, Sky300 dark; white on Sky300 measured 1.7.
+describe('RecurringBookingsListComponent — the Plus badge on the paywall', () => {
+  it('inks the badge with the card ground, which flips with the slab', () => {
+    const scss = readFileSync(
+      join(__dirname, '../../../../../shared/assets/src/styles/pages/cleansia-customer/_recurring-bookings.scss'),
+      'utf8',
+    );
+    const badge = scss.match(/^\.cl-rec__gate-badge \{[^}]*\}/m)?.[0] ?? '';
+    expect(badge).toContain('background: var(--cl-heading);');
+    expect(badge).toContain('color: var(--cl-surface);');
+  });
+});
+
+// jsdom loads no stylesheet, so this reads the card's rule (an input of this test target). An opacity
+// on the paused card faded every line of it, the text with its ground: 2.8–3.5:1 in light mode.
+describe('RecurringBookingsListComponent — a paused schedule', () => {
+  it('marks the card with its edge, not by fading it', () => {
+    const scss = readFileSync(
+      join(__dirname, '../../../../../shared/assets/src/styles/pages/cleansia-customer/_recurring-bookings.scss'),
+      'utf8',
+    );
+    const card = scss.match(/^\.cl-rec__card \{[\s\S]*?^\}/m)?.[0] ?? '';
+    const paused = card.match(/&--paused \{([^}]*)\}/)?.[1] ?? '';
+
+    expect(paused).toContain('border: 1px dashed var(--cl-field-border);');
+    expect(paused).toContain('box-shadow: none;');
+    expect(paused).not.toMatch(/opacity/);
   });
 });

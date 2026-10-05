@@ -95,13 +95,13 @@
   }
 
   &__link {
-    color: var(--cleansia-primary-600);
+    color: var(--cleansia-primary-700);
     font-weight: 600;
     text-decoration: none;
     transition: all 0.2s ease;
 
     &:hover {
-      color: var(--cleansia-primary-700);
+      color: var(--cleansia-primary-800);
       text-decoration: underline;
     }
   }
@@ -201,6 +201,15 @@
 
     &__actions {
       border-top-color: #334155;
+    }
+
+    // After dark the link keeps a light blue: Sky300 on the slate card, Sky200 under the pointer.
+    &__link {
+      color: #7dd3fc;
+
+      &:hover {
+        color: #bae6fd;
+      }
     }
 
     &__btn {

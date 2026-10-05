@@ -12,7 +12,15 @@
       "options": {
         "jestConfig": "libs/cleansia-customer-features/recurring-bookings/jest.config.ts",
         "tsConfig": "libs/cleansia-customer-features/recurring-bookings/tsconfig.spec.json"
-      }
+      },
+      "inputs": [
+        "default",
+        "^production",
+        "{workspaceRoot}/jest.preset.js",
+        "{workspaceRoot}/jest.polyfills.ts",
+        "{workspaceRoot}/libs/shared/assets/src/styles/pages/cleansia-customer/_recurring-bookings.scss",
+        "bookingPolicy"
+      ]
     },
     "lint": { "executor": "@nx/eslint:lint" }
   }

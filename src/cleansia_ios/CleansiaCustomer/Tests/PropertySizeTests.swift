@@ -1,3 +1,5 @@
+import CleansiaCore
+import SwiftUI
 import XCTest
 @testable import CleansiaCustomer
 
@@ -28,16 +30,30 @@ final class PropertySizeTests: XCTestCase {
         }
     }
 
-    /// The caps are stated, not only enforced: both flows carry the caption under their size row, and
-    /// the one-off minus stops at 1 the way the plus stops at the cap.
-    func testBothBookingFlowsStateTheCapAndTheOneOffMinusStopsAtOne() throws {
-        for path in [
-            "CleansiaCustomer/Sources/Features/Booking/Steps/ServicesStep.swift",
-            "CleansiaCustomer/Sources/Features/Recurring/CreateRecurringScreen.swift"
+    /// The caps are stated, not only enforced: both flows carry the caption on their size title's row,
+    /// above the steppers (owner remark 2026-10-04: at the bottom it took too much room), and the one-off
+    /// minus stops at 1 the way the plus stops at the cap.
+    func testBothBookingFlowsStateTheCapOnTheTitlesRowAndTheOneOffMinusStopsAtOne() throws {
+        for (path, size) in [
+            ("CleansiaCustomer/Sources/Features/Booking/Steps/ServicesStep.swift", "struct PropertyRow"),
+            ("CleansiaCustomer/Sources/Features/Recurring/CreateRecurringScreen.swift", "struct PropertySizeSection")
         ] {
             let source = try String(contentsOf: Self.iosRoot().appendingPathComponent(path), encoding: .utf8)
-            XCTAssertTrue(source.contains("L10n.Booking.sizeLimitCaption"), "\(path) does not state the cap")
+            let section = try XCTUnwrap(source.range(of: size), "\(path) has no size section")
+            let body = source[section.lowerBound...]
+            let title = try XCTUnwrap(body.range(of: "SizeLimitTitleRow {"), "\(path) does not state the cap")
+            XCTAssertTrue(body[title.upperBound...].contains("L10n.Booking.yourHome"), "\(path): no home title")
+            let steppers = try XCTUnwrap(body.range(of: "maximum: PropertySize.maxRooms"))
+            XCTAssertLessThan(title.lowerBound, steppers.lowerBound, "\(path) states the cap under the steppers")
+            XCTAssertFalse(source.contains("Text(L10n.Booking.sizeLimitCaption)"), "\(path) states the cap twice")
         }
+        let row = try String(
+            contentsOf: Self.iosRoot().appendingPathComponent(
+                "CleansiaCustomer/Sources/Features/Booking/Steps/ServicesStepComponents.swift"
+            ),
+            encoding: .utf8
+        )
+        XCTAssertTrue(row.contains("Text(L10n.Booking.sizeLimitCaption)"))
         let oneOff = try String(
             contentsOf: Self.iosRoot().appendingPathComponent(
                 "CleansiaCustomer/Sources/Features/Booking/Steps/ServicesStep.swift"
@@ -68,6 +84,59 @@ final class PropertySizeTests: XCTestCase {
             XCTAssertTrue(caption.contains("\(PropertySize.maxRooms)"), "\(language): \(caption)")
             XCTAssertTrue(caption.contains("\(PropertySize.maxBathrooms)"), "\(language): \(caption)")
         }
+    }
+
+    /// The caption sits on the title's row, trailing, wherever the two fit on one line, and drops to its
+    /// own line under the title where they do not — a 320pt phone in Ukrainian — rather than squeezing
+    /// either of them.
+    @MainActor
+    func testTheCaptionSharesTheTitlesRowWhereItFitsAndDropsUnderItWhereItDoesNot() throws {
+        let restore = L10n.bundle
+        defer { L10n.bundle = restore }
+        // The size card's content width on an iPhone 17 Pro (402pt less the step's 20pt and the card's
+        // 12pt padding on each side) and on a 320pt phone.
+        let wide: CGFloat = 338
+        let narrow: CGFloat = 256
+        for (language, width, fits) in [("en", wide, true), ("uk", wide, true), ("uk", narrow, false)] {
+            L10n.bundle = try Self.bundle(language)
+            let title = Text(L10n.Booking.yourHome).font(CleansiaTypography.labelLarge)
+            let titleHeight = Self.height(of: title, width: width)
+            let captionHeight = Self.height(
+                of: Text(L10n.Booking.sizeLimitCaption).font(CleansiaTypography.labelSmall),
+                width: width
+            )
+            let row = Self.height(of: SizeLimitTitleRow { title }, width: width)
+            if fits {
+                XCTAssertLessThan(
+                    row,
+                    titleHeight + captionHeight / 2,
+                    "\(language) at \(width)pt: the caption left the title's row though both fit"
+                )
+            } else {
+                XCTAssertGreaterThanOrEqual(
+                    row,
+                    titleHeight + captionHeight - 1,
+                    "\(language) at \(width)pt: the caption stayed on a row too narrow for both"
+                )
+            }
+        }
+    }
+
+    @MainActor
+    private static func height(of view: some View, width: CGFloat) -> CGFloat {
+        UIHostingController(rootView: view)
+            .sizeThatFits(in: CGSize(width: width, height: .greatestFiniteMagnitude))
+            .height
+    }
+
+    private static func bundle(_ language: String) throws -> Bundle {
+        let path = try XCTUnwrap(
+            [Bundle.main, Bundle(for: PropertySizeTests.self)].lazy
+                .compactMap { $0.path(forResource: language, ofType: "lproj") }
+                .first,
+            "no \(language).lproj in the built bundle"
+        )
+        return try XCTUnwrap(Bundle(path: path))
     }
 
     private static func policyInt(_ name: String) throws -> Int {

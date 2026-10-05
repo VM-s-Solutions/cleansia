@@ -38,10 +38,10 @@ public class QuotePlusSavingsSpanCapTests
     public QuotePlusSavingsSpanCapTests()
     {
         _serviceRepository
-            .Setup(r => r.ExistWithIdsAsync(It.IsAny<IEnumerable<string>>(), It.IsAny<CancellationToken>()))
+            .Setup(r => r.ExistActiveWithIdsAsync(It.IsAny<IEnumerable<string>>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(true);
         _packageRepository
-            .Setup(r => r.ExistWithIdsAsync(It.IsAny<IEnumerable<string>>(), It.IsAny<CancellationToken>()))
+            .Setup(r => r.ExistActiveWithIdsAsync(It.IsAny<IEnumerable<string>>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(true);
         _currencyRepository
             .Setup(r => r.IsOfferableAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))

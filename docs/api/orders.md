@@ -250,8 +250,11 @@ failure is reported:
 The two currency rules head the chain, and sit in this chain rather than in a rule of their own,
 because the calculator throws on a currency it cannot price in: a separate rule would not stop the two
 price rules from running it, and a 400 would become a 500. Separately from this chain, a selected
-service or package with no price row in the address country's currency fails as
-`order.selected_services.invalid` / `order.selected_package.invalid`.
+service or package that does not exist, is deactivated, or has no price row in the address country's
+currency fails as `order.selected_services.invalid` / `order.selected_package.invalid`. The active
+term is since 2026-10-05; until then a deactivated entry passed, because its row still exists. A
+deactivated service inside a selected package is the package's content and books with it.
+→ [A deactivated service or package](/product/business-rules#deactivated-catalogue)
 
 The two promo rules are last and they **refuse the booking** rather than silently dropping the code: a
 customer who applied a code and was shown a discounted price must not be charged the full price
@@ -342,9 +345,9 @@ market list failed to load sends. Whichever way it resolves, the currency must b
 quote in — switched on and carrying at least one catalogue price row — or the quote is refused as
 `currency.invalid`. The response's `currencyId` / `currencyCode` say which one was used. Prices are
 authored per currency and nothing converts, so a selected service or package with no price row in
-that currency is refused as `order.selected_services.invalid` / `order.selected_package.invalid`; an
-extra without one is dropped from the extras subtotal. `QuotePlusSavings` takes the same two fields
-and resolves them the same way.
+that currency is refused as `order.selected_services.invalid` / `order.selected_package.invalid`, as is
+one that does not exist or is deactivated; an extra without a price row is dropped from the extras
+subtotal. `QuotePlusSavings` takes the same two fields and resolves them the same way.
 
 **Response:**
 
@@ -419,8 +422,8 @@ validator refuses before the calculator can throw:
 
 | Rule | Error key |
 |---|---|
-| Every selected service exists **and** has a price row in the resolved currency | `order.selected_services.invalid` |
-| Every selected package exists **and** has a price row in the resolved currency | `order.selected_package.invalid` |
+| Every selected service exists, is active, **and** has a price row in the resolved currency | `order.selected_services.invalid` |
+| Every selected package exists, is active, **and** has a price row in the resolved currency | `order.selected_package.invalid` |
 | `countryId`, if named, is a serviced country | `country.not_serviced` |
 | The resolved currency (named `currencyId`, else the country's, else the platform default) is offerable | `currency.invalid` |
 | Booked estimate ≤ `MaxBookableOrderSpanHours` (24 h) | `order.span_exceeds_maximum` |

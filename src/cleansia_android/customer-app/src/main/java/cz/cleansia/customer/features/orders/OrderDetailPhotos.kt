@@ -30,6 +30,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
+import cz.cleansia.core.ui.theme.primaryText
 import cz.cleansia.customer.R
 import cz.cleansia.customer.core.orders.OrderPhotosResponse
 
@@ -67,13 +68,13 @@ internal fun PhotosSection(
                 Text(
                     text = stringResource(R.string.order_photos_view_button),
                     style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.SemiBold),
-                    color = MaterialTheme.colorScheme.primary,
+                    color = primaryText(),
                 )
                 Spacer(Modifier.width(4.dp))
                 Icon(
                     Icons.AutoMirrored.Outlined.ArrowForward,
                     contentDescription = null,
-                    tint = MaterialTheme.colorScheme.primary,
+                    tint = primaryText(),
                     modifier = Modifier.size(16.dp),
                 )
             }

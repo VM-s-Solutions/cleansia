@@ -129,7 +129,7 @@ $nav-band: 96px;
 
     &--active,
     &--active:hover {
-      color: $primary;
+      color: var(--cl-accent-text, #0369a1);
 
       &::after {
         transform: scaleX(1);
@@ -148,8 +148,9 @@ $nav-band: 96px;
     min-width: 34px;
     aspect-ratio: 1;
     border-radius: 999px;
+    // --cl-surface, not white: --cl-heading turns sky-300 after dark, where white measured 1.7.
     background: var(--cl-heading, #0369a1);
-    color: #fff;
+    color: var(--cl-surface, #fff);
     font-family: var(--font-heading, inherit);
     font-weight: 700;
     font-size: 13px;
@@ -352,12 +353,14 @@ $nav-band: 96px;
     border-bottom: 1px solid var(--surface-border, #e2e8f0);
   }
 
+  // The top bar's disc: white on the Sky600→Sky500 gradient read 4.1 at one end and 2.8 at the
+  // other (2.1 after dark, at Sky400). The slab's ink is the card ground, which flips with it.
   &__user-avatar {
     width: 36px;
     height: 36px;
     border-radius: 50%;
-    background: linear-gradient(135deg, #0284c7, #0ea5e9);
-    color: #fff;
+    background: var(--cl-heading, #0369a1);
+    color: var(--cl-surface, #fff);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -407,7 +410,7 @@ $nav-band: 96px;
   &__user-role {
     font-size: 0.6875rem;
     font-weight: 500;
-    color: $primary;
+    color: var(--cl-accent-text, #0369a1);
     margin-top: 2px;
   }
 
@@ -601,10 +604,6 @@ body:has(.customer-navbar) .cleansia-dev-banner.cleansia-dev-banner.cleansia-dev
       }
     }
 
-    &__user-avatar {
-      background: linear-gradient(135deg, #0284c7, #38bdf8);
-    }
-
     &__user-role {
       color: #38bdf8;
     }
@@ -664,7 +663,7 @@ body:has(.customer-navbar) .cleansia-dev-banner.cleansia-dev-banner.cleansia-dev
 
     &:hover,
     &--active {
-      color: #0284c7;
+      color: var(--cl-accent-text, #0369a1);
     }
   }
 
@@ -689,7 +688,7 @@ body:has(.customer-navbar) .cleansia-dev-banner.cleansia-dev-banner.cleansia-dev
     text-decoration: none;
 
     &:hover {
-      color: #0284c7;
+      color: var(--cl-accent-text, #0369a1);
     }
   }
 
@@ -881,13 +880,11 @@ html.cl-menu-open .customer-navbar {
   min-width: 0;
   padding: 0 4px;
 
-  // --cl-surface, not white: --cl-heading turns sky-300 after dark.
   .customer-navbar__avatar {
     width: 44px;
     height: 44px;
     min-width: 44px;
     font-size: 15px;
-    color: var(--cl-surface);
   }
 }
 

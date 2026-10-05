@@ -31,7 +31,6 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.LocalTextStyle
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberDatePickerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -48,6 +47,7 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import cz.cleansia.core.ui.components.CleansiaTextButton
 import cz.cleansia.customer.R
 import cz.cleansia.customer.core.user.CurrentUser
 import cz.cleansia.core.ui.components.CleansiaPrimaryButton
@@ -138,7 +138,7 @@ fun ProfileOnboardingScreen(
                 loading = saving,
             )
             Spacer(Modifier.height(6.dp))
-            TextButton(
+            CleansiaTextButton(
                 onClick = onSkip,
                 enabled = !saving,
             ) {
@@ -319,7 +319,7 @@ private fun OnboardingDateField(
         DatePickerDialog(
             onDismissRequest = { showPicker = false },
             confirmButton = {
-                TextButton(
+                CleansiaTextButton(
                     onClick = {
                         state.selectedDateMillis?.let { millis ->
                             val fmt = SimpleDateFormat("yyyy-MM-dd", Locale.US).apply {
@@ -332,7 +332,7 @@ private fun OnboardingDateField(
                 ) { Text(stringResource(R.string.common_save)) }
             },
             dismissButton = {
-                TextButton(onClick = { showPicker = false }) {
+                CleansiaTextButton(onClick = { showPicker = false }) {
                     Text(stringResource(R.string.common_cancel))
                 }
             },

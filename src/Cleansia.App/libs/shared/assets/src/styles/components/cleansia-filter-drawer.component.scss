@@ -232,7 +232,8 @@ cleansia-filter-chips {
     border: none;
     border-radius: 50%;
     background: transparent;
-    color: var(--cleansia-primary-600);
+    // The chip's own ink, so the chip is one blue.
+    color: var(--cleansia-primary-700);
     cursor: pointer;
     transition: background-color 0.15s ease, color 0.15s ease;
 

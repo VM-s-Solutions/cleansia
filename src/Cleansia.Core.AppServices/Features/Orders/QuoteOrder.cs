@@ -188,19 +188,19 @@ public class QuoteOrder
                 .WithMessage(BusinessErrorMessage.CleaningDateOutsideBookingWindow)
                 .When(x => x.CleaningDate.HasValue);
 
-            // Existence, then a price row in the currency being quoted in. The second term reuses the
-            // selection code deliberately -- see CreateOrder.Validator: an entry with no row in this
-            // currency is one the wizard never offered in this market, and the calculator throws on it.
+            // Active existence, then a price row in the currency being quoted in -- CreateOrder's terms
+            // and codes, see its validator: a deactivated entry, or one with no row in this currency, is
+            // one the wizard never offered here, and a quote must not price what the booking refuses.
             RuleFor(x => x.SelectedServiceIds)
                 .Cascade(CascadeMode.Stop)
-                .MustAsync(serviceRepository.ExistWithIdsAsync)
+                .MustAsync(serviceRepository.ExistActiveWithIdsAsync)
                 .WithMessage(BusinessErrorMessage.InvalidSelectedServices)
                 .MustAsync(ArePricedInQuoteCurrencyAsync)
                 .WithMessage(BusinessErrorMessage.InvalidSelectedServices);
 
             RuleFor(x => x.SelectedPackageIds)
                 .Cascade(CascadeMode.Stop)
-                .MustAsync(packageRepository.ExistWithIdsAsync)
+                .MustAsync(packageRepository.ExistActiveWithIdsAsync)
                 .WithMessage(BusinessErrorMessage.InvalidSelectedPackage)
                 .MustAsync(ArePackagesPricedInQuoteCurrencyAsync)
                 .WithMessage(BusinessErrorMessage.InvalidSelectedPackage);

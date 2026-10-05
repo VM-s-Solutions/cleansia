@@ -2,8 +2,9 @@
     import SwiftUI
 
     /// The one avatar disc on this platform — every hero and every edit screen draws the same surface at
-    /// a different size. The disc is a fixed white cut-out in both themes, so the initials ink is the
-    /// pinned light-mode pair and never an adaptive token (`AvatarDiscBindingTests` reads this file).
+    /// a different size. The disc is a fixed white cut-out in both themes, so the initials ink is a pinned
+    /// colour and never an adaptive token (`AvatarDiscBindingTests` reads this file): the text ink for that
+    /// surface, `primaryTextOnFixedWhite`, in both apps.
     ///
     /// The photo is cached under its blob NAME: the URL beside it is a per-request SAS that changes every
     /// time the profile is fetched, so a URL-keyed cache re-downloads the same face on every read.
@@ -55,7 +56,7 @@
                     .fill(Color.white)
                 Text(initials)
                     .cleansiaFont(CleansiaTypography.headlineSmall)
-                    .foregroundColor(CleansiaColors.onFixedWhite)
+                    .foregroundColor(CleansiaColors.primaryTextOnFixedWhite)
             }
         }
 

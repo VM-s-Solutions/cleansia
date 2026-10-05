@@ -2244,6 +2244,177 @@ next version ([above](#legal-drafts)), and only with one made for a real change 
 this word alone would bring the booking tick back for every customer (owner ruling 2026-10-04; filed as
 T-0802).
 
+## A deactivated service or package {#deactivated-catalogue}
+
+An administrator retires a service or a package by deactivating it: a soft delete, so the row and every
+order that booked it stay, and the admin lists still show it under their active filter
+([ADR-0007](/decisions/adr-0007)). **It leaves every customer catalogue.** The service and package
+overviews the web, Android and iOS book from list only active entries, as they list only entries priced
+and paid in the market's currency.
+
+**A deactivated service stays inside every package that includes it.** What a package includes is the
+package's content, not a customer's selection, so deactivating one of its services changes nothing about
+the package. Its card still lists the service among what it includes, and an order with the package books
+it, times it and staffs it: the order gets a line for it, its minutes count toward the booked time and
+so the crew, and the order detail the customer and the cleaner read lists it. The package overview
+(`GetPackageOverview`) and the order (`OrderFactory`) read the same list on purpose: hiding the service
+from the card alone would sell a package without a service the cleaner is then sent to do. To take a
+service out of a package, an administrator edits the package. `CatalogActiveVisibilityTests` pins that
+the overview lists exactly what an order with the package books, a deactivated service among them.
+
+**An administrator cannot put a deactivated service into a package** (since 2026-10-05). `CreatePackage`
+asks that every service is active (`ExistActiveWithIdsAsync`), and `UpdatePackage` asks it of every
+service the edit adds, so a service deactivated after it was added stays in the package, as above,
+and an edit of the package's price or wording does not force it out. Both refuse with the key they
+already used for a service that does not exist, `service.not_found`, which the admin reads as
+*Service not found* and which does not say the service was deactivated. Until 2026-10-05 both editors
+asked only that the service exists, which a deactivated row still does.
+
+**The admin marks a deactivated service, and does not offer it to add** (owner decision 2026-10-05:
+mark retired services, do not hide them). The package form's service picker labels one with the
+admin's own status word, *Name (Inactive)* (`enums.active_status.inactive`), and offers it disabled,
+so it cannot be picked. One the loaded package already includes stays enabled, so it can be taken out
+and put back, which is what `UpdatePackage` allows. The chips of the chosen services and their weight
+rows carry the same label, and a hint under the picker, shown only when some service is deactivated,
+says why (`pages.package_form.retired_services_hint`, five languages). The list of packages shows
+*Includes an inactive service* beside the name of a package that includes one
+(`pages.package_management.includes_inactive_service`). Both read which services are deactivated from
+the services list's own filter (`AdminService` get-paged with `Filter.IsActive=false`), because neither
+a listed service (`ServiceListItem`) nor a package's included one (`PackageServiceSummary`) carries an
+active flag, and both are shared with the customer web and the mobile APIs. The form reads it beside
+the full list and the package list once, with the currency, before the page; a read that fails marks
+nothing, and the server still refuses the add. The admin list of packages now carries what each one
+includes (`GetPagedPackages` loads `IncludedServices`, as `GetPackageOverview` does); until then that
+list's `IncludedServices` was always empty, which no admin screen had read. Until 2026-10-05 the form
+listed every service unmarked (`loadAvailableServices` reads them with no active filter), so picking a
+deactivated one was refused only when the form was saved, as *Service not found*.
+
+**A customer cannot select one by id either** (since 2026-10-05). `QuoteOrder`, `QuotePlusSavings`,
+`CreateOrder` (guest and signed-in) and `CreateRecurringBooking` ask that every selected service and
+package exists **and is active** (`ExistActiveWithIdsAsync`), `UpdateRecurringBooking` asks it of every
+one an edit adds (below), and they refuse one that is not with the codes an entry with no price or pay
+rate in the market's currency already gets: `order.selected_services.invalid` and
+`order.selected_package.invalid`. Every client already words both, in all five languages. Until then
+the three order gates asked only that the row exists, which a deactivated row still does, so a client
+holding an old catalogue, or an *Order again* sent before the catalogue had loaded, could price and book
+an entry no catalogue showed; a new schedule checked its selection not at all, so it also took an id
+that never existed. The clients already drop retired entries when they rebook, and the apps' rebook
+comments expected the booking to fail loudly. What it deliberately leaves alone:
+
+- **A schedule created before the deactivation keeps booking it.** The materialiser hands the
+  template's ids to `OrderFactory` without asking the catalogue again, so its occurrences still carry
+  the entry. That is also why the pay-coverage gap check over a selection does not filter by
+  `IsActive`: the template route would otherwise mint an order no rate covers. Confirming and paying
+  such an occurrence do not ask either: `ConfirmRecurringOrder`, on both channels, and
+  `CreatePaymentIntent` read no catalogue. They charge the occurrence's stored price (`TotalPrice`, set
+  when the materialiser made it), less any credit the card confirm takes (`AmountDueOnCard`)
+  → [Payment and fiscal](/flows/payment-and-fiscal#amounts-are-never-reconciled-and-do-not-need-to-be).
+- **Editing a schedule keeps what it holds, and asks about what it adds** (owner ruling 2026-10-05).
+  `UpdateRecurringBooking` asks that every service and package id the edit adds, one the stored
+  template does not hold, is active, and refuses one that is not, or one that never existed, with the
+  codes above. An id the template already holds passes even if it was deactivated since, so the server
+  never refuses an edit over an entry the schedule already books. The template is read for the caller
+  only, and one they do not own holds nothing for them, so every id is asked.
+  Until 2026-10-05 the edit checked only that the selection was not empty, so it could add a
+  deactivated entry, or an id that never existed, and the schedule then booked it every week. The
+  three schedule forms trim the selection as they load (below), so a held entry comes back to the
+  server only from a client that skipped the trim, an out-of-date app among them, and is kept.
+- **A deactivated service inside an active package** is the package's content, above, not a selection.
+
+**A schedule still booking a deactivated entry says so on its card, and shows the customer no
+error.** The quote refuses its selection, so every client that quotes it fails quietly, and the
+schedules list says why:
+
+- **Its card says so** (owner ruling 2026-10-05). On the web, Android and iOS the schedule's card on
+  the schedules list carries one line in the list's secondary hint style, an info icon and *Includes
+  a service no longer offered — edit to update* (`recurring_booking.card_item_no_longer_offered` on
+  the web, `recurring_card_item_no_longer_offered` on the apps, five languages). It says "a service"
+  for a package too, the owner's wording. The rule is the same on every client: the schedule's
+  selected service or package ids include one that the current customer catalogue of the schedule's
+  market does not list. That market is the country of the schedule's saved address, or the platform
+  default for an address with none, and its overviews list only active entries priced in its
+  currency, which is what the quote asks of a selection. Each list reads those overviews itself,
+  quietly, once for each market its schedules are priced in, on every visit (and on Android and iOS
+  on every pull to refresh). It reads them straight from the API, so the catalogue that Home, the
+  booking and the form share is left alone. A schedule is judged only once its own market has been
+  read: before that read succeeds, or while the list does not know the schedule's saved address, its
+  card says nothing rather than guess.
+- **A card with no *Edit* says it without pointing at one** (owner decision 2026-10-05): *Includes a
+  service no longer offered* (`recurring_card_item_no_longer_offered_no_edit`, five languages). On
+  Android a customer whose Plus has lapsed or whose benefits are paused, and on iOS one whose Plus
+  has lapsed, has no *Edit* on the card, and each app picks the wording from the condition that draws
+  the card's *Edit*: Android's `retiredEntryLine(showEdit)` (`RecurringAuthoring.kt`), iOS's
+  `L10n.Recurring.cardItemNoLongerOffered(canEdit:)` from `RecurringListAffordances.showEdit`. Until
+  then their line said *edit to update* too, a step they could take only once Plus was back. iOS
+  still shows *Edit*, and so the first wording, to a member whose benefits are paused (past due or
+  paused): its gate reads only `hasMembership`, which the server answers `true` for a live enrolment,
+  so the form opens and the server refuses the save (`recurring_booking.membership_required`). The
+  web has no second wording because it needs none: its list shows the cards only to an active member,
+  and anyone else sees in their place a Plus paywall on the list itself, with links to the Plus page
+  (the list route has no guard and does not redirect), so every card it draws has *Edit*; its edit
+  route admits the same members (`customerMembershipGuard`).
+- **Its card on the web has no price.** The web's schedules list, *Recurring cleanings*, quotes each
+  card for its price per clean (`quoteTemplate`); a card whose quote is refused leaves the price out,
+  with no message of its own, the line above being the explanation. Those quotes go through the
+  toast-suppressing client (`errorToastSuppressingHttpClient`), since the shared error interceptor
+  would otherwise toast the refusal (*One of the selected services is no longer available.*) on every
+  visit to the list. Android's and iOS's schedule lists show no price on any card and quote nothing,
+  and no client has a schedule screen besides the edit form.
+- **Editing it removes the entry, with a notice that it is no longer offered.** The web, Android and
+  iOS trim an edited schedule's selection to its market's catalogue as the form loads, so saving the
+  edit takes the entry off the schedule, and that trim says *Some of this schedule's choices are no
+  longer offered and were removed.* (`recurring_booking.selection_no_longer_offered` on the web,
+  `recurring_selection_no_longer_offered` on the apps, five languages; owner ruling 2026-10-05).
+  Until 2026-10-05 it gave the booking's market message, that part of the selection *is not offered
+  at this address*, which blamed an address nobody had changed. That message stays where it is true:
+  a trim the customer causes by moving the schedule to an address in another market, every trim of a
+  new schedule (blank, or filled in from an order priced elsewhere), and the booking's own. The web
+  marks a schedule loaded for edit as unjudged and judges it once, as soon as both lists priced for
+  its address are in the store (`loadedSelectionUnjudged`); its market trim (`keepSelected`) waits
+  until then. Until 2026-10-05 the web had only that market trim, which ran when a list landed after
+  the schedule, so in the usual order, the list first, a retired entry was not dropped and went back
+  to the server on save. A pick of a different address ends that load-time check, whether in the
+  form's address select or its inline new-address form (both go through
+  `RecurringBookingsFacade.pickAddress`), so a trim after the move gives the market message even when
+  the customer moved before the schedule's own list had landed; picking the address the schedule
+  already has changes nothing. Until 2026-10-05 a move made that early still got *no longer offered*
+  on the web. Android raises the notice for a
+  trim while the edited schedule is still at its own address, whichever read lands it (the entry
+  read, a retry, or the read of the schedule's own market), and the market message once the customer
+  has picked another address. iOS does the same: it remembers whether the customer has picked an
+  address, so a retry after a failed read says *no longer offered* only while the schedule is still at
+  its own address, and the market message once the customer has moved it to another market's address.
+  So the three clients answer a move the same way. A quote sent before the
+  trim fails as quietly as the card's: the web form shows no price, and every form leaves the cash
+  choice undecided rather than refused. Android trims when the template is prefilled and again once
+  the form's first catalogue lands, because an untrimmed selection's crew quote is refused and a cash
+  save would be held back (*We couldn't confirm whether this schedule can be paid in cash*).
+- **Its occurrences are confirmed and paid as any other**, from the stored price (above).
+
+`CatalogActiveVisibilityTests` pins the active check on the repository, a schedule refused a
+deactivated service and package, an edit refused a deactivated or unknown entry it adds but allowed to
+keep one the schedule holds, a new package refused a deactivated or unknown service, a package edit
+refused one it adds but allowed to keep one the package includes, the admin list of packages listing
+what each one includes, a deactivated service among them, and the factory still booking one a
+schedule holds; the admin package form's and list's specs pin the label, the disabled and the
+enabled option, the hint, the list's pill and a failed read marking nothing; the order and quote
+validator suites pin the three order gates. The web recurring facade spec runs the real error interceptor over a card refused for a deactivated service and an edit
+form refused for a deactivated package, and asserts no price and no message. Android's `CreateRecurringViewModelTest` pins an edited
+cash schedule dropping a deactivated service with the notice and saving in cash, and a template
+trimmed when the catalogue lands after it; iOS's
+`testEditingPrunesWhatTheTemplatesMarketNoLongerOffersWithANotice` pins the trim on load. The card's
+line is pinned on each client for a retired service, a retired package, everything listed, and a
+market not yet read or an address the list does not know: the web's recurring facade and list
+specs, Android's `RecurringBookingsViewModelTest` (with `RecurringNoLongerOfferedCopyTest` holding
+the copy verbatim in all five languages) and iOS's `RecurringBookingsViewModelTests`; all three also
+pin that each schedule is judged against its own market's catalogue. Both apps pin the two wordings:
+a card with *Edit* reads the first and one without it the second, for a member, a lapsed member and,
+on Android, a paused one (Android's `RecurringAuthoringTest`, with the new copy in
+`RecurringNoLongerOfferedCopyTest`; iOS's `RecurringBookingsViewModelTests`, in all five languages). The edit's notice is pinned the
+same way: a trim on load says *no longer offered* and a trim after an address change the market
+message, in the web's recurring facade spec (with the list landing before the schedule and after
+it, and a move to another address before the schedule's own list has landed), Android's `CreateRecurringViewModelTest` and iOS's `CreateRecurringViewModelTests+Edit`.
+
 ## Discounts, and the 12 % cap {#discount-cap}
 
 Three sources can reduce a price: the customer's **loyalty tier**, their **Cleansia Plus** membership,

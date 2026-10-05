@@ -2304,7 +2304,9 @@
     "error_early_performance": "Confirm that you want the cleanings to start within the withdrawal period.",
     "cash_change_title": "This schedule can no longer be paid in cash",
     "cash_change_body": "Each clean needs more than one cleaner, and cash is only for cleans one cleaner handles alone, so no new cleanings are booked from it until you change it. Switch it to card, or pick services or packages one cleaner can do. A cleaning already booked from it can be cancelled free of charge in Orders while no cleaner has taken it.",
-    "cash_change_action": "Change the schedule"
+    "cash_change_action": "Change the schedule",
+    "card_item_no_longer_offered": "Includes a service no longer offered — edit to update",
+    "selection_no_longer_offered": "Some of this schedule's choices are no longer offered and were removed."
   },
   "preferred_cleaner": {
     "title": "Request your favourite cleaner",

@@ -61,11 +61,15 @@ public class UpdatePackage
                 .Must(prices => prices!.Values.All(p => p >= 0))
                 .WithMessage(BusinessErrorMessage.MustBePositive);
 
+            // Only the services the edit ADDS must be active: one the package already includes stays even if
+            // retired since. → /product/business-rules#deactivated-catalogue
             RuleFor(x => x.ServiceIds)
-                .MustAsync(async (serviceIds, ct) =>
+                .MustAsync(async (command, serviceIds, ct) =>
                 {
                     if (serviceIds == null || serviceIds.Count == 0) return true;
-                    return await serviceRepository.ExistWithIdsAsync(serviceIds, ct);
+                    var included = (await packageRepository.GetByIdAsync(command.PackageId, ct))?
+                        .IncludedServices.Select(ps => ps.ServiceId) ?? [];
+                    return await serviceRepository.ExistActiveWithIdsAsync(serviceIds.Except(included), ct);
                 })
                 .WithMessage(BusinessErrorMessage.ServiceNotFound);
 

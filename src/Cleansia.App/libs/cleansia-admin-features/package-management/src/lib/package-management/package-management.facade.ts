@@ -13,7 +13,7 @@ import { UnsubscribeControlDirective } from '@cleansia/directives';
 import { CleansiaAdminRoute, DialogService, SnackbarService } from '@cleansia/services';
 import { TranslateService } from '@ngx-translate/core';
 import { currentLanguage, formatMoney, localeFor } from '@cleansia/utils';
-import { catchError, filter, finalize, map, Observable, of, switchMap, takeUntil, tap } from 'rxjs';
+import { catchError, filter, finalize, forkJoin, map, Observable, of, switchMap, takeUntil, tap } from 'rxjs';
 import { CatalogStatusFilter, mapStatusFilterToIsActive } from './package-management.models';
 
 export interface PackageFilterParams {
@@ -96,6 +96,12 @@ export class PackageManagementFacade extends UnsubscribeControlDirective {
    */
   readonly defaultCurrencyCode = signal<string | null>(null);
 
+  /**
+   * The services an administrator has deactivated, read once with the currency: a package that still
+   * includes one is marked in the list. Null until known. → /product/business-rules#deactivated-catalogue
+   */
+  readonly retiredServiceIds = signal<ReadonlySet<string> | null>(null);
+
   constructor() {
     super();
     this.filters.connect(this.destroyed$);
@@ -115,7 +121,25 @@ export class PackageManagementFacade extends UnsubscribeControlDirective {
             tap((code) => this.defaultCurrencyCode.set(code))
           );
 
-    currency$
+    // A service list row carries no active flag, so the list's own filter answers which are retired. A
+    // failed read marks nothing rather than holding the packages back.
+    const retired$: Observable<unknown> =
+      this.retiredServiceIds() !== null
+        ? of(null)
+        : this.adminClient.adminServiceClient.getPaged(undefined, false, undefined, 0, 1000).pipe(
+            catchError(() => of(null)),
+            tap((response) =>
+              this.retiredServiceIds.set(
+                new Set(
+                  (response?.data ?? [])
+                    .map((service) => service.id)
+                    .filter((id): id is string => Boolean(id))
+                )
+              )
+            )
+          );
+
+    forkJoin([currency$, retired$])
       .pipe(
         switchMap(() =>
           this.adminClient.adminPackageClient.getPaged(
@@ -161,6 +185,13 @@ export class PackageManagementFacade extends UnsubscribeControlDirective {
     this.currentFilter.set(filter);
     this.currentOffset.set(0);
     this.loadPackages();
+  }
+
+  includesRetiredService(pkg: PackageListItem): boolean {
+    const retired = this.retiredServiceIds();
+    return (pkg.includedServices ?? []).some(
+      (service) => !!service.serviceId && !!retired?.has(service.serviceId)
+    );
   }
 
   formatCurrency(value: number | undefined): string {

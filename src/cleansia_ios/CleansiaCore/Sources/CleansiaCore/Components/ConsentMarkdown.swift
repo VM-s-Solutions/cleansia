@@ -47,6 +47,7 @@ public enum ConsentMarkdown {
     /// The rendered sentence with its links coloured and underlined on the runs
     /// themselves: a `Text`-level `foregroundColor` would otherwise flatten the
     /// links into body copy, and colour alone is not an accessible affordance.
+    /// Links take the text ink, as on Android: the primary's sky-600 is 4.10:1 on white.
     public static func styled(
         _ markdown: String,
         targets: [String: URL] = ConsentLink.targets
@@ -54,7 +55,7 @@ public enum ConsentMarkdown {
         var styled = attributed(markdown, targets: targets)
         let linked = styled.runs.compactMap { $0.link == nil ? nil : $0.range }
         for range in linked {
-            styled[range].foregroundColor = CleansiaColors.primary
+            styled[range].foregroundColor = CleansiaColors.primaryText
             styled[range].underlineStyle = .single
         }
         return styled

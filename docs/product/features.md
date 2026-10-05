@@ -14,7 +14,7 @@ stays hidden and the chip is a plain label. → [Business rules — the market](
 **Booking** — browse the service catalogue and packages, pick rooms and bathrooms (up to 8 and 4, which
 the Android and iOS apps state under the size steppers) and extras, choose a date and an arrival time on
 the quarter hour from 08:00 to 19:45 (the part of day first — morning, afternoon or evening — then that
-part's slots, on the web, Android and iOS alike; [the time step](/customer-app/ordering-flow#step-2-date-time)), and pay by card —
+part's slots, on the web, Android and iOS alike; [the time step](/customer-app/ordering-flow#step-3-date-time)), and pay by card —
 or in cash, when signed in and the booking is a job one cleaner does alone
 ([the cash rule](/product/business-rules#cash)).
 A service that a chosen package already includes reads as covered at a glance, a tinted and outlined
@@ -39,7 +39,9 @@ confirmed individually, so a single occurrence can be skipped without cancelling
 schedule is priced in the currency of its saved address's country, like a one-off booking, and every
 wizard -- web, Android and iOS -- offers only what that market sells. A cash schedule must stay a
 one-cleaner job: one that grows past it books nothing until the customer moves it to card or a smaller
-selection, and the web, Android and iOS schedule lists say so. →
+selection, and the web, Android and iOS schedule lists say so. A schedule that still holds a service
+or package its market no longer offers keeps booking it, and its card on the same three lists says
+so ([A deactivated service or package](/product/business-rules#deactivated-catalogue)). →
 [Recurring bookings](/flows/booking-and-pricing#recurring-bookings)
 
 **Choosing a cleaner** — nominate a preferred cleaner, who gets first refusal for a bounded window
@@ -378,8 +380,13 @@ languages, service cities. Prices are per currency: a service, package or extra 
 per currency it is sold in, nothing converts, and an entry with no price in a currency is not offered
 in it. Extras are priced per currency like services and packages; the slug is fixed at creation
 because order lines snapshot it, so deactivating is how an extra is retired once an order references
-it. A currency is switched on deliberately — a new one starts inactive — and the platform default
-cannot be switched off. The currency form also authors the no-show apology credit paid in that
+it. A deactivated service or package leaves every customer catalogue, and a quote, a booking, a new
+schedule or a schedule edit that adds it anyway is refused; a deactivated service stays inside the
+packages that include it, and books with them, until the package is edited, and cannot be put into a
+package: the package form marks it *(Inactive)* and offers it disabled, and the list of packages marks
+a package that includes one ([A deactivated service or package](/product/business-rules#deactivated-catalogue)). A currency is
+switched on deliberately — a new one starts inactive — and the platform default cannot be switched
+off. The currency form also authors the no-show apology credit paid in that
 currency and the referral credit each side of a referral receives in it; the country form carries the two-letter code the market chip prints and, under "Market",
 the insurance ceiling the customer copy states for that country (none is authored today); and a country cannot be switched on
 as serviced until its configuration names an active currency.

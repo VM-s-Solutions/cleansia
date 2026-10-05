@@ -106,7 +106,7 @@ public struct LiveActivityCompactReadout: View {
         if let range = model.liveRange {
             Text(timerInterval: range, countsDown: true)
                 .font(.caption2.weight(.semibold).monospacedDigit())
-                .foregroundColor(CleansiaColors.primary)
+                .foregroundColor(CleansiaColors.primaryText)
                 .frame(maxWidth: 44)
                 .multilineTextAlignment(.trailing)
         } else if let caption = model.card.timeCaption {
@@ -182,7 +182,7 @@ public struct LiveActivityClock: View {
             // than a slightly smaller readout.
             Text(instant, style: .time)
                 .font(.system(compact ? .caption : .title3, design: .rounded).weight(.bold).monospacedDigit())
-                .foregroundColor(CleansiaColors.primary)
+                .foregroundColor(CleansiaColors.primaryText)
                 .lineLimit(1)
                 .minimumScaleFactor(compact ? 0.7 : 1)
         }
@@ -279,7 +279,7 @@ public struct LiveActivityStepperBar: View {
         let leg = step.leg(at: position)
         return Text(step.label)
             .font(.system(size: 9, weight: leg == .current ? .semibold : .regular))
-            .foregroundColor(leg == .upcoming ? .secondary : CleansiaColors.primary)
+            .foregroundColor(leg == .upcoming ? .secondary : CleansiaColors.primaryText)
             .lineLimit(1)
             .minimumScaleFactor(0.6)
             .frame(maxWidth: .infinity)

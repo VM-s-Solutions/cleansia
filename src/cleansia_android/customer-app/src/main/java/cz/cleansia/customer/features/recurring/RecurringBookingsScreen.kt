@@ -24,6 +24,7 @@ import androidx.compose.material.icons.outlined.AutoAwesome
 import androidx.compose.material.icons.outlined.CalendarMonth
 import androidx.compose.material.icons.outlined.DeleteOutline
 import androidx.compose.material.icons.outlined.Edit
+import androidx.compose.material.icons.outlined.Info
 import androidx.compose.material.icons.outlined.LocationOn
 import androidx.compose.material.icons.outlined.Pause
 import androidx.compose.material.icons.outlined.PlayArrow
@@ -58,7 +59,9 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import cz.cleansia.core.ui.components.CleansiaTextButton
 import cz.cleansia.core.ui.components.SudsRefreshIndicator
+import cz.cleansia.core.ui.theme.primaryText
 import cz.cleansia.customer.R
 import cz.cleansia.customer.core.recurring.RecurrenceFrequency
 import cz.cleansia.customer.core.recurring.RecurringBookingTemplateDto
@@ -90,6 +93,7 @@ fun RecurringBookingsScreen(
     val loaded by viewModel.loaded.collectAsStateWithLifecycle()
     val mutating by viewModel.mutating.collectAsStateWithLifecycle()
     val authoring by viewModel.authoring.collectAsStateWithLifecycle()
+    val noLongerOffered by viewModel.noLongerOffered.collectAsStateWithLifecycle()
     val pullState = rememberPullToRefreshState()
 
     val affordances = RecurringListAffordances.of(authoring, templates.isNotEmpty())
@@ -165,6 +169,7 @@ fun RecurringBookingsScreen(
                 ) {
                     TemplateList(
                         templates = templates,
+                        noLongerOffered = noLongerOffered,
                         mutating = mutating,
                         showLapsedNotice = affordances.showLapsedNotice,
                         showPausedNotice = affordances.showPausedNotice,
@@ -197,6 +202,7 @@ fun RecurringBookingsScreen(
 @Composable
 private fun TemplateList(
     templates: List<RecurringBookingTemplateDto>,
+    noLongerOffered: Set<String>,
     mutating: String?,
     showLapsedNotice: Boolean,
     showPausedNotice: Boolean,
@@ -220,6 +226,7 @@ private fun TemplateList(
         items(templates, key = { it.id }) { template ->
             TemplateCard(
                 template = template,
+                holdsRetiredEntry = template.id in noLongerOffered,
                 isMutating = mutating == template.id,
                 showEdit = showEdit,
                 onToggleActive = { onToggleActive(template) },
@@ -328,7 +335,7 @@ private fun LapsedPlusNotice(onSubscribe: () -> Unit) {
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
         Spacer(Modifier.height(8.dp))
-        androidx.compose.material3.TextButton(
+        CleansiaTextButton(
             onClick = onSubscribe,
             contentPadding = PaddingValues(0.dp),
         ) {
@@ -366,11 +373,13 @@ private fun BenefitsPausedNotice(modifier: Modifier = Modifier) {
 
 /**
  * Recurring schedule card: tinted header with the cadence and status badge, then the slot and address,
- * and how to fix a schedule that needs a payment change. -> /flows/booking-and-pricing#recurring-bookings
+ * a line when the schedule holds an entry its market no longer offers, and how to fix a schedule that
+ * needs a payment change. -> /flows/booking-and-pricing#recurring-bookings
  */
 @Composable
 private fun TemplateCard(
     template: RecurringBookingTemplateDto,
+    holdsRetiredEntry: Boolean,
     isMutating: Boolean,
     showEdit: Boolean,
     onToggleActive: () -> Unit,
@@ -423,7 +432,7 @@ private fun TemplateCard(
             Text(
                 text = cadenceLabel,
                 style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.SemiBold),
-                color = if (booksCleanings) accent else MaterialTheme.colorScheme.onSurfaceVariant,
+                color = if (booksCleanings) primaryText() else MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.weight(1f),
             )
             val badge = when (status) {
@@ -477,6 +486,23 @@ private fun TemplateCard(
                     )
                 }
             }
+            if (holdsRetiredEntry) {
+                Spacer(Modifier.height(8.dp))
+                Row(verticalAlignment = Alignment.Top) {
+                    Icon(
+                        Icons.Outlined.Info,
+                        contentDescription = null,
+                        modifier = Modifier.size(18.dp),
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                    Spacer(Modifier.width(10.dp))
+                    Text(
+                        text = stringResource(retiredEntryLine(showEdit)),
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+            }
             if (template.requiresPaymentMethodChange) {
                 Spacer(Modifier.height(12.dp))
                 Text(
@@ -491,7 +517,7 @@ private fun TemplateCard(
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
                 if (showEdit) {
-                    TextButton(
+                    CleansiaTextButton(
                         onClick = onEdit,
                         enabled = !isMutating,
                         contentPadding = PaddingValues(0.dp),
@@ -559,7 +585,7 @@ private fun CardAction(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    TextButton(
+    CleansiaTextButton(
         onClick = onClick,
         enabled = enabled,
         modifier = modifier,
@@ -618,7 +644,7 @@ private fun DeleteScheduleDialog(
             ) { Text(stringResource(R.string.recurring_bookings_delete_dialog_confirm)) }
         },
         dismissButton = {
-            TextButton(onClick = onDismiss) { Text(stringResource(R.string.common_back)) }
+            CleansiaTextButton(onClick = onDismiss) { Text(stringResource(R.string.common_back)) }
         },
         text = {
             Column {

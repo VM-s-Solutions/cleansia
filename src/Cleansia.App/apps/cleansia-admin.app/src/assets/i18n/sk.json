@@ -1204,7 +1204,8 @@
       },
       "activate_package": "Aktivovať balík",
       "deactivate_package": "Deaktivovať balík",
-      "deactivate_confirm": "Deaktivovať „{{name}}“? Balík sa skryje z rezervačného katalógu, história zostane zachovaná."
+      "deactivate_confirm": "Deaktivovať „{{name}}“? Balík sa skryje z rezervačného katalógu, história zostane zachovaná.",
+      "includes_inactive_service": "Obsahuje neaktívnu službu"
     },
     "package_form": {
       "create_title": "Vytvoriť balík",
@@ -1231,7 +1232,8 @@
         "update_error": "Nepodarilo sa aktualizovať balík"
       },
       "tagline": "Krátky popisok na karte",
-      "is_popular": "Najobľúbenejší balík"
+      "is_popular": "Najobľúbenejší balík",
+      "retired_services_hint": "Služby označené „{{status}}“ sú deaktivované a do balíka ich pridať nemožno. Služba, ktorú balík už obsahuje, v ňom zostane, kým ju neodoberiete."
     },
     "extra_management": {
       "title": "Doplnky",

@@ -358,7 +358,7 @@
   font-weight: 700;
   font-size: calc(1.625 * var(--cl-u));
   letter-spacing: -0.5px;
-  color: var(--cl-accent);
+  color: var(--cl-accent-text);
 }
 
 .cl-rwd__tier--mine .cl-rwd__tier-discount {
@@ -550,14 +550,17 @@
   cursor: pointer;
   transition: background 0.16s ease, border-color 0.16s ease, color 0.16s ease;
 
-  &:hover {
+  // Not on a picked chip: `:hover` outranks `--on`, and it turned the picked border pale.
+  &:hover:not(.cl-rwd__chip--on) {
     border-color: var(--cl-border-tint);
   }
 
+  // The slab is --cl-heading, Sky700 light and Sky300 dark, so the ink is the card ground, which
+  // flips with it: white on Sky700 (5.9), near-black on Sky300 (10.4). White measured 1.7 in dark.
   &--on {
     background: var(--cl-heading);
     border-color: var(--cl-heading);
-    color: #fff;
+    color: var(--cl-surface);
   }
 
   &:focus-visible {

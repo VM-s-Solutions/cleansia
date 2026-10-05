@@ -32,6 +32,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import cz.cleansia.core.ui.theme.primaryText
 import cz.cleansia.partner.ui.theme.CleansiaPartnerTheme
 
 /**
@@ -97,7 +98,9 @@ private fun NavSlot(
     modifier: Modifier = Modifier,
 ) {
     val isSelected = tab == selected
-    val color = if (isSelected) MaterialTheme.colorScheme.primary
+    // The selected tab's icon and label are one control, so one ink: the text blue. The pill under them
+    // is a fill and keeps the primary.
+    val color = if (isSelected) MaterialTheme.colorScheme.primaryText
     else MaterialTheme.colorScheme.onSurfaceVariant
 
     val dotWidth by animateDpAsState(

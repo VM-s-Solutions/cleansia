@@ -73,6 +73,39 @@ keeps the page colour over its hero (`fadeHeroTint` in `SubscribePlusScreen`), w
 reads at 17:1; at rest, with no band, the clock there is black on the hero's own navy (1.7:1), as it
 was before the fade changed.
 
+### 2026-10-05 — the fade ends at the island's line
+
+Owner remark 2026-10-04: the fade was too tall. It covered the whole top safe area and a 10pt tail, 72pt
+on an iPhone 17 Pro, well below the Dynamic Island. It now ends where the status bar's content does: the
+Dynamic Island's bottom, the notch's bottom, or a home-button phone's 20pt status bar
+(`StatusBarFade.height`). The system reports neither housing, and the status-bar frame it does report
+overshoots both: 54pt over an island ending at 48pt (iPhone 16, iOS 18.6; iPhone 14 Pro, iOS 16.4) or
+50.7pt (iPhone 17 Pro, iOS 26.3), and 47pt over the iPhone 16e's notch, which ends at 33.7pt. The safe
+area's top, though, sits 11–13.3pt below the housing on all four, so the fade ends 12pt above it
+(`StatusBarFade.housingClearance`). A home-button phone, whose safe area's top is its 20pt status bar,
+keeps all of it. Measured with a scratch probe in the simulators, a red page scrolled under the fade
+and the screenshot masked to show the housing: the fade's end against the housing's bottom is 50.0 /
+50.7pt on the 17 Pro, 47.0 / 48.0pt on the 16 and the 14 Pro, 35.0 / 33.7pt on the 16e and 20 / 20pt on
+the iPhone SE (3rd generation, iOS 16.4). The colour holds at 90 % over the clock, signal and battery
+and eases to clear over the last 5pt (`StatusBarFade.falloff`): the clock's digits end 11pt above an
+island's bottom but only 3pt above the notch's and 4.5pt above the SE's status bar's, so the mask is
+still over 85 % at their baseline on every phone measured. The colour rule, the hero cross-fade, the
+iOS 16 light-mode exception on the Plus offer and Reduce Transparency are unchanged.
+
+### 2026-10-05 — the clock over Profile's hero
+
+Finding 2026-10-04: from iOS 17 the system draws the clock white over Profile's hero, and on the brand
+blue's sky-600 top it read at 3.3:1 in the simulator's screenshots (4.1:1 from the colour values).
+Profile's hero now starts at sky-700 in light mode (`ProfileTab.heroTop`): 5.9:1 at rest, and at least
+4.9:1 scrolled, where the fade wears that colour at 90 % over the hero, the avatar or the stats card
+(4.6:1 at rest and 4.3–4.5:1 scrolled in the simulator's screenshots, which render these blues lighter
+than their values). The bleed above the hero, the gradient's top stop and the fade's `heroTint` all take
+it; the gradient's bottom stop and the shared `BrandGradient.blue` are unchanged. Before iOS 17 the clock
+is black in light mode whatever is under it, which reads at 5.1:1 on sky-600 and would fall to 3.5:1 on
+sky-700, so there the hero keeps the brand blue; dark mode keeps it on every version (white on
+sky-800, 7.6:1). Checked on the iPhone 17 Pro (iOS 26.3), iPhone 16 (18.6) and iPhone 14 Pro (16.4)
+simulators, light and dark, at rest and scrolled.
+
 The map backdrop remains full bleed. No navigation flow, generated API member, text or membership
 behavior changes. The decision follows SwiftUI's documented [safe-area expansion](https://developer.apple.com/documentation/swiftui/view/ignoressafearea(_:edges:)) and [clipping](https://developer.apple.com/documentation/swiftui/view/clipped(antialiased:)) behavior.
 

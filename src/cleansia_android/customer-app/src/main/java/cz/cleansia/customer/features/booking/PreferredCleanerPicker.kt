@@ -26,7 +26,6 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -40,6 +39,8 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import cz.cleansia.core.ui.components.CleansiaTextButton
+import cz.cleansia.core.ui.theme.primaryText
 import cz.cleansia.customer.R
 import cz.cleansia.customer.core.memberships.benefitsPaused
 import cz.cleansia.customer.core.orders.ServingCleanerDto
@@ -133,7 +134,7 @@ fun PreferredCleanerPicker(
             Text(
                 text = selected?.fullName ?: stringResource(R.string.booking_preferred_cleaner_subtitle),
                 style = MaterialTheme.typography.bodySmall,
-                color = if (selected != null) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
+                color = if (selected != null) primaryText() else MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }
         if (selected != null) {
@@ -178,7 +179,7 @@ fun PreferredCleanerPicker(
                 }
             },
             confirmButton = {
-                TextButton(onClick = { dialogOpen = false }) { Text(stringResource(R.string.common_back)) }
+                CleansiaTextButton(onClick = { dialogOpen = false }) { Text(stringResource(R.string.common_back)) }
             },
         )
     }
@@ -218,7 +219,7 @@ private fun CleanerRow(
             Text(
                 text = cleaner.fullName.take(1).uppercase(),
                 style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
-                color = MaterialTheme.colorScheme.primary,
+                color = primaryText(),
             )
         }
         Spacer(Modifier.width(12.dp))

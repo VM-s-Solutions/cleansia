@@ -7,7 +7,7 @@ import {
 } from '@cleansia/admin-services';
 import { SnackbarService } from '@cleansia/services';
 import { TranslateService } from '@ngx-translate/core';
-import { of, throwError } from 'rxjs';
+import { EMPTY, of, throwError } from 'rxjs';
 import { PackageFormData, PackageFormFacade } from './package-form.facade';
 
 // The keys a refusal resolves to; anything else falls back, as an untranslated code does in the app.
@@ -30,6 +30,7 @@ describe('PackageFormFacade', () => {
   let navigate: jest.Mock;
   let getLanguagesMock: jest.Mock;
   let getCurrenciesMock: jest.Mock;
+  let getServicesMock: jest.Mock;
 
   const formData: PackageFormData = {
     name: 'Move-out bundle',
@@ -55,10 +56,13 @@ describe('PackageFormFacade', () => {
     getLanguagesMock = jest.fn().mockReturnValue(of([]));
     getCurrenciesMock = jest.fn().mockReturnValue(of([]));
 
+    getServicesMock = jest.fn().mockReturnValue(of({ data: [], total: 0 }));
+
     const adminClient = {
       adminPackageClient: { update: updateMock, create: createMock },
       adminLanguageClient: { getOverview: getLanguagesMock },
       adminCurrencyClient: { getOverview: getCurrenciesMock },
+      adminServiceClient: { getPaged: getServicesMock },
     };
 
     TestBed.configureTestingModule({
@@ -69,7 +73,14 @@ describe('PackageFormFacade', () => {
         {
           provide: TranslateService,
           useValue: {
-            instant: (k: string) => (TRANSLATED.has(k) ? `${k} (translated)` : k),
+            instant: (k: string) =>
+              k === 'enums.active_status.inactive'
+                ? 'Inactive'
+                : TRANSLATED.has(k)
+                  ? `${k} (translated)`
+                  : k,
+            currentLang: 'en',
+            onLangChange: EMPTY,
           },
         },
         { provide: Router, useValue: { navigate } },
@@ -90,6 +101,64 @@ describe('PackageFormFacade', () => {
       { label: 'Windows', value: 'svc-a' },
       { label: '', value: 'svc-b' },
     ]);
+  });
+
+  /**
+   * A retired service stays in the picker, marked, because a package may still include one; picking
+   * one to ADD was refused only when the form was saved, as "Service not found".
+   */
+  describe('a retired service', () => {
+    const WINDOWS = { id: 'svc-a', name: 'Windows' };
+    const OVEN = { id: 'svc-r', name: 'Oven' };
+
+    it('is offered marked Inactive and disabled, so it cannot be added', () => {
+      facade.availableServices.set([WINDOWS, OVEN] as never);
+      facade.retiredServiceIds.set(new Set(['svc-r']));
+
+      expect(facade.serviceOptions()).toEqual([
+        { label: 'Windows', value: 'svc-a' },
+        { label: 'Oven (Inactive)', value: 'svc-r', disabled: true },
+      ]);
+      expect(facade.hasRetiredServices()).toBe(true);
+    });
+
+    it('stays enabled while the package includes it, so it can be taken out and put back', () => {
+      facade.availableServices.set([WINDOWS, OVEN] as never);
+      facade.retiredServiceIds.set(new Set(['svc-r']));
+      facade.pkg.set({ includedServices: [{ ...OVEN, priceWeight: 1 }] } as never);
+
+      expect(facade.serviceOptions()).toEqual([
+        { label: 'Windows', value: 'svc-a' },
+        { label: 'Oven (Inactive)', value: 'svc-r' },
+      ]);
+      expect(facade.serviceLabels().get('svc-r')).toBe('Oven (Inactive)');
+    });
+
+    it("is read from the services list's own inactive filter", () => {
+      getServicesMock.mockImplementation((_search: unknown, isActive: unknown) =>
+        of({ data: isActive === false ? [OVEN] : [WINDOWS, OVEN], total: 0 })
+      );
+
+      facade.loadAvailableServices();
+
+      expect(getServicesMock).toHaveBeenCalledWith(undefined, false, undefined, 0, 1000);
+      expect(facade.availableServices()).toEqual([WINDOWS, OVEN]);
+      expect([...facade.retiredServiceIds()]).toEqual(['svc-r']);
+    });
+
+    it('is not marked when that read fails, and the picker still lists every service', () => {
+      getServicesMock.mockImplementation((_search: unknown, isActive: unknown) =>
+        isActive === false ? throwError(() => new Error('offline')) : of({ data: [WINDOWS, OVEN], total: 0 })
+      );
+
+      facade.loadAvailableServices();
+
+      expect(facade.hasRetiredServices()).toBe(false);
+      expect(facade.serviceOptions()).toEqual([
+        { label: 'Windows', value: 'svc-a' },
+        { label: 'Oven', value: 'svc-r' },
+      ]);
+    });
   });
 
   it('derives grosses that sum exactly to the package price for weights 3/1', () => {

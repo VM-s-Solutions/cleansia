@@ -147,6 +147,8 @@ struct CreateRecurringScreen: View {
             switch event {
             case .selectionPrunedForMarket:
                 snackbar.showInfo(L10n.Booking.marketSelectionPruned)
+            case .selectionNoLongerOffered:
+                snackbar.showInfo(L10n.Recurring.selectionNoLongerOffered)
             }
         }
         .sheet(
@@ -347,7 +349,7 @@ private struct AddAddressRow: View {
                     .font(CleansiaTypography.bodyLarge)
                 Spacer()
             }
-            .foregroundColor(CleansiaColors.primary)
+            .foregroundColor(CleansiaColors.primaryText)
             .padding(Spacing.m)
             .overlay(
                 RoundedRectangle(cornerRadius: CornerRadius.small)
@@ -364,8 +366,13 @@ private struct PropertySizeSection: View {
     let onRoomsChange: (Int) -> Void
     let onBathroomsChange: (Int) -> Void
 
+    /// The caps are stated on the section's title row, as on the one-off booking's size card
+    /// (`SizeLimitTitleRow`); the room and bathroom counters follow under it.
     var body: some View {
-        VStack(alignment: .leading, spacing: Spacing.xs) {
+        VStack(alignment: .leading, spacing: Spacing.s) {
+            SizeLimitTitleRow {
+                SectionLabel(text: L10n.Booking.yourHome)
+            }
             HStack(alignment: .top, spacing: Spacing.s) {
                 counter(
                     label: L10n.Recurring.createRoomsLabel,
@@ -380,9 +387,6 @@ private struct PropertySizeSection: View {
                     onChange: onBathroomsChange
                 )
             }
-            Text(L10n.Booking.sizeLimitCaption)
-                .font(CleansiaTypography.labelSmall)
-                .foregroundColor(CleansiaColors.onSurfaceVariant)
         }
     }
 
@@ -557,7 +561,7 @@ private struct SelectableRow: View {
                 if let badge {
                     Text(badge)
                         .font(CleansiaTypography.labelSmall)
-                        .foregroundColor(CleansiaColors.primary)
+                        .foregroundColor(CleansiaColors.primaryText)
                         .padding(.horizontal, Spacing.xs)
                         .padding(.vertical, 2)
                         .background(CleansiaColors.primaryContainer.opacity(0.4), in: Capsule())

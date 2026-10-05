@@ -36,6 +36,7 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import cz.cleansia.core.ui.theme.primaryText
 import cz.cleansia.customer.R
 import cz.cleansia.customer.core.booking.DirtinessLevel
 import cz.cleansia.customer.ui.theme.CleansiaTheme
@@ -178,7 +179,7 @@ private fun LevelCard(level: DirtinessLevel, selected: Boolean, onClick: () -> U
                 color = if (level == DirtinessLevel.Normal) {
                     MaterialTheme.colorScheme.onSurfaceVariant
                 } else {
-                    MaterialTheme.colorScheme.primary
+                    primaryText()
                 },
             )
             if (selected) {

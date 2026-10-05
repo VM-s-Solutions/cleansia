@@ -32,10 +32,10 @@ struct WeeklyEarningsCard: View {
                     HStack(spacing: Spacing.xxs) {
                         Text(L10n.Dashboard.earningsViewDetails)
                             .font(CleansiaTypography.labelMedium)
-                            .foregroundColor(CleansiaColors.primary)
+                            .foregroundColor(CleansiaColors.primaryText)
                         Image(systemName: "arrow.right")
                             .font(.system(size: 12))
-                            .foregroundColor(CleansiaColors.primary)
+                            .foregroundColor(CleansiaColors.primaryText)
                     }
                     .padding(.top, Spacing.xs)
                 }

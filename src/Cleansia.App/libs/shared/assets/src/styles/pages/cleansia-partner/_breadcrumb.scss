@@ -14,13 +14,13 @@
 %breadcrumb-link {
   font-size: 0.875rem;
   font-weight: 500;
-  color: var(--cleansia-primary-600);
+  color: var(--cleansia-primary-700);
   cursor: pointer;
   text-decoration: none;
   transition: color 0.15s ease;
 
   &:hover {
-    color: var(--cleansia-primary-700);
+    color: var(--cleansia-primary-800);
     text-decoration: underline;
   }
 }

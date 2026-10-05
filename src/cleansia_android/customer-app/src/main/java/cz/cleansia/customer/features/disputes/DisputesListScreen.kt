@@ -52,6 +52,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import cz.cleansia.core.ui.theme.primaryText
 import cz.cleansia.customer.R
 import cz.cleansia.customer.core.disputes.DisputeListItemDto
 import cz.cleansia.core.format.formatOrderDateTime
@@ -319,7 +320,7 @@ private fun ErrorState(onRetry: () -> Unit) {
         Text(
             text = stringResource(R.string.dispute_list_error_retry),
             style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.SemiBold),
-            color = MaterialTheme.colorScheme.primary,
+            color = primaryText(),
             modifier = Modifier
                 .clip(RoundedCornerShape(999.dp))
                 .clickable(onClick = onRetry)

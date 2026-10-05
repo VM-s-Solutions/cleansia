@@ -216,6 +216,17 @@ extension L10n {
             localized("recurring_cash_change_action")
         }
 
+        /// The card's line for a schedule holding a retired entry. It sends the customer to the edit form only
+        /// where the card offers one: a lapsed member, whose card has no Edit, reads the plain fact.
+        static func cardItemNoLongerOffered(canEdit: Bool) -> String {
+            localized(canEdit ? "recurring_card_item_no_longer_offered" :
+                "recurring_card_item_no_longer_offered_no_edit")
+        }
+
+        static var selectionNoLongerOffered: String {
+            localized("recurring_selection_no_longer_offered")
+        }
+
         static var createStartsLabel: String {
             localized("recurring_create_starts_label")
         }

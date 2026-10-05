@@ -163,7 +163,7 @@ private struct ContactChip: View {
     private var chip: some View {
         Label(label, systemImage: icon)
             .font(CleansiaTypography.labelLarge)
-            .foregroundColor(CleansiaColors.primary)
+            .foregroundColor(CleansiaColors.primaryText)
             .padding(.horizontal, Spacing.s)
             .padding(.vertical, Spacing.xs)
             .frame(maxWidth: .infinity)
@@ -395,7 +395,7 @@ struct CopyInstructionButton: View {
         } label: {
             Label(L10n.Orders.copyInstruction, systemImage: "doc.on.doc")
                 .font(CleansiaTypography.labelMedium)
-                .foregroundColor(CleansiaColors.primary)
+                .foregroundColor(CleansiaColors.primaryText)
         }
         .buttonStyle(.plain)
         .accessibilityLabel(L10n.Orders.copyInstruction)

@@ -37,6 +37,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import cz.cleansia.core.ui.theme.primaryText
 import cz.cleansia.customer.R
 import cz.cleansia.core.format.formatOrderDateRange
 import cz.cleansia.core.format.formatOrderPrice
@@ -191,7 +192,7 @@ fun BookingSuccessScreen(
                     Text(
                         confirmationCode,
                         style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold),
-                        color = MaterialTheme.colorScheme.primary,
+                        color = primaryText(),
                         textAlign = TextAlign.Center,
                     )
                 }

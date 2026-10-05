@@ -40,6 +40,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -62,6 +63,7 @@ import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import cz.cleansia.core.format.formatOrderPrice
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import cz.cleansia.core.ui.theme.primaryText
 import cz.cleansia.customer.core.market.selectedOrNull
 import cz.cleansia.customer.core.memberships.MembershipPlanDto
 import cz.cleansia.customer.core.memberships.trialDaysOn
@@ -155,6 +157,7 @@ fun SubscribePlusScreen(
     var ctaBarHeight by remember { mutableStateOf(0.dp) }
     val density = LocalDensity.current
     val scrollState = rememberScrollState()
+    var heroHeight by remember { mutableIntStateOf(0) }
 
     Box(modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) {
         // Scrollable content sits behind the sticky CTA bar and is padded by its height so the last
@@ -162,7 +165,9 @@ fun SubscribePlusScreen(
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .statusBarFade(scrollState)
+                // The fade wears the hero's navy while the hero is under the status bar, and the icons
+                // turn light on it.
+                .statusBarFade(scrollState, heroTint = Sky950, heroHeight = { heroHeight })
                 .verticalScroll(scrollState)
                 .padding(bottom = ctaBarHeight),
         ) {
@@ -173,6 +178,7 @@ fun SubscribePlusScreen(
                 onSelectPlan = { selectedPlanCode = it },
                 selectedPlan = selectedPlan,
                 trialDays = trialDays,
+                modifier = Modifier.onSizeChanged { heroHeight = it.height },
             )
 
             Spacer(Modifier.height(20.dp))
@@ -317,6 +323,7 @@ private fun HeroBlock(
     onSelectPlan: (String) -> Unit,
     selectedPlan: MembershipPlanDto?,
     trialDays: Int,
+    modifier: Modifier = Modifier,
 ) {
     val currencyCode = selectedPlan?.currencyCode
     // Annual: lead with the year price (no per-month split — keeps pricing
@@ -330,7 +337,7 @@ private fun HeroBlock(
         R.string.membership_plan_per_month
     }
     Box(
-        modifier = Modifier
+        modifier = modifier
             .fillMaxWidth()
             .background(
                 Brush.verticalGradient(
@@ -605,7 +612,7 @@ private fun SocialProofTile() {
             Text(
                 text = stringResource(R.string.membership_social_proof_headline),
                 style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold),
-                color = MaterialTheme.colorScheme.primary,
+                color = primaryText(),
             )
             Text(
                 text = stringResource(R.string.membership_social_proof_sub),

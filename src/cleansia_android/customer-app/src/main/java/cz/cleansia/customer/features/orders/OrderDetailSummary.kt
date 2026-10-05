@@ -20,6 +20,7 @@ import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
 import cz.cleansia.core.format.formatOrderDateRange
 import cz.cleansia.core.format.formatOrderPrice
+import cz.cleansia.core.ui.theme.primaryText
 import cz.cleansia.customer.BuildConfig
 import cz.cleansia.customer.R
 import cz.cleansia.customer.core.booking.DirtinessLevel
@@ -89,7 +90,7 @@ internal fun PriceBreakdownCard(order: OrderDetailDto) {
             Text(
                 text = formatOrderPrice(order.totalPrice, currencyCode),
                 style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
-                color = MaterialTheme.colorScheme.primary,
+                color = primaryText(),
             )
         }
         // Credit is a tender, not a discount: the total stays the size of the sale, and these two

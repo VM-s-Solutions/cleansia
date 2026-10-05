@@ -147,6 +147,18 @@ public class UpdateRecurringBooking
                 .Must(c => c.SelectedServiceIds.Count > 0 || c.SelectedPackageIds.Count > 0)
                 .WithMessage(BusinessErrorMessage.RecurringTemplateNoServicesOrPackages);
 
+            // Only the ids the edit ADDS must be active, with CreateRecurringBooking's codes; one the stored
+            // template already holds passes even if retired since. → /product/business-rules#deactivated-catalogue
+            RuleFor(x => x.SelectedServiceIds)
+                .MustAsync((command, ids, ct) => AddsOnlyActiveAsync(
+                    command.TemplateId, ids, t => t.SelectedServiceIds, _serviceRepository.ExistActiveWithIdsAsync, ct))
+                .WithMessage(BusinessErrorMessage.InvalidSelectedServices);
+
+            RuleFor(x => x.SelectedPackageIds)
+                .MustAsync((command, ids, ct) => AddsOnlyActiveAsync(
+                    command.TemplateId, ids, t => t.SelectedPackageIds, _packageRepository.ExistActiveWithIdsAsync, ct))
+                .WithMessage(BusinessErrorMessage.InvalidSelectedPackage);
+
             RuleFor(x => x.StartsOn)
                 .Must(d => !BookingPolicy.IsBeyondBookingHorizon(d, DateTime.UtcNow))
                 .WithMessage(BusinessErrorMessage.CleaningDateOutsideBookingWindow);
@@ -192,6 +204,20 @@ public class UpdateRecurringBooking
             var cleanerCurrency = await _currencyResolutionService.ResolveCurrencyForServingEmployeeAsync(
                 userId, employeeId, cancellationToken);
             return cleanerCurrency?.Id == orderCurrency.Id;
+        }
+
+        /// <summary>A template the caller does not own holds nothing for them, so every id is asked.</summary>
+        private async Task<bool> AddsOnlyActiveAsync(
+            string templateId,
+            IReadOnlyList<string> ids,
+            Func<RecurringBookingTemplate, IReadOnlyCollection<string>> held,
+            Func<IEnumerable<string>, CancellationToken, Task<bool>> existActiveWithIdsAsync,
+            CancellationToken cancellationToken)
+        {
+            var template = await _templateRepository.GetByIdForOwnerAsync(
+                templateId, _userSessionProvider.GetUserId() ?? string.Empty, cancellationToken);
+            var added = template is null ? ids : ids.Except(held(template)).ToList();
+            return await existActiveWithIdsAsync(added, cancellationToken);
         }
 
         private async Task<bool> CashIsAvailableForSelectionAsync(

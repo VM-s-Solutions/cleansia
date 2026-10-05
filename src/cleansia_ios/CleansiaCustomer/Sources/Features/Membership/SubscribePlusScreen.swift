@@ -4,7 +4,6 @@ import SwiftUI
 struct SubscribePlusScreen: View {
     @StateObject private var vm: MembershipViewModel
     @Environment(\.snackbarController) private var snackbar
-    @Environment(\.colorScheme) private var colorScheme
     private let paymentSheet: PaymentSheetPresenting
     private let onBack: () -> Void
     private let onSubscribed: () -> Void
@@ -98,9 +97,9 @@ struct SubscribePlusScreen: View {
     }
 
     private func offer(_ plans: [MembershipPlan]) -> some View {
-        // The hero is navy, so the status-bar fade wears its top colour until it has scrolled past,
-        // wherever the clock reads on navy (`fadeHeroTint`).
-        StatusBarFadeScrollView(heroTint: fadeHeroTint) {
+        // The hero is navy, so the status-bar fade wears its top colour until it has scrolled past, with
+        // the white clock asked for while it does.
+        StatusBarFadeScrollView(heroTint: MembershipPalette.sky950) {
             VStack(alignment: .leading, spacing: Spacing.l) {
                 HeroBlock(
                     plans: plans,
@@ -130,20 +129,9 @@ struct SubscribePlusScreen: View {
         }
     }
 
-    /// The colour the status-bar fade wears over the navy hero. The app sets no status-bar style, so
-    /// before iOS 17 the system draws the clock, signal and battery in the colour scheme's colour whatever
-    /// is under them: black in light mode, which measured 1.7:1 on the 90 % navy band. There the fade
-    /// keeps the page colour, which the black clock reads on. From iOS 17 the system takes the glyphs'
-    /// colour from the content under them, and in dark mode they are white on every version, so there it
-    /// wears the navy. The page colour is passed rather than no tint, so the hero's position is still
-    /// reported and a switch to dark mode lands on the right share at once.
-    private var fadeHeroTint: Color {
-        if #available(iOS 17, *) { return MembershipPalette.sky950 }
-        return colorScheme == .dark ? MembershipPalette.sky950 : CleansiaColors.background
-    }
-
     /// The hero's identity row alone over the gradient — what stays when there is no plan to price:
-    /// no headline, no price, no switcher, no perks, no CTA.
+    /// no headline, no price, no switcher, no perks, no CTA. It does not scroll, so the navy is always under
+    /// the status bar and the white clock is asked for (before iOS 17 the system's is black in light mode).
     private func reducedHero(@ViewBuilder below: () -> some View) -> some View {
         VStack(spacing: 0) {
             HeroTopRow(onBack: onBack)
@@ -152,6 +140,7 @@ struct SubscribePlusScreen: View {
                 .padding(.top, Spacing.ml)
                 .frame(maxWidth: .infinity)
                 .background(MembershipPalette.heroGradient.ignoresSafeArea(.container, edges: .top))
+                .background(StatusBarStyleBridge(lightContent: true))
             below()
                 .padding(.horizontal, Spacing.xl)
         }
@@ -394,7 +383,7 @@ private struct SocialProofTile: View {
             VStack(alignment: .leading, spacing: Spacing.hair) {
                 Text(L10n.Membership.socialProofHeadline)
                     .font(CleansiaTypography.titleMedium)
-                    .foregroundColor(CleansiaColors.primary)
+                    .foregroundColor(CleansiaColors.primaryText)
                 Text(L10n.Membership.socialProofSub)
                     .font(CleansiaTypography.bodyMedium)
                     .foregroundColor(CleansiaColors.onSurfaceVariant)

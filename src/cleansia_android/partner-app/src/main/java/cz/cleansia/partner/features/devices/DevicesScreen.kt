@@ -52,8 +52,10 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import cz.cleansia.core.ui.components.CleansiaPrimaryButton
+import cz.cleansia.core.ui.components.CleansiaTextButton
 import cz.cleansia.core.ui.state.ActionState
 import cz.cleansia.core.ui.theme.Spacing
+import cz.cleansia.core.ui.theme.primaryTextOnContainer
 import cz.cleansia.partner.R
 import cz.cleansia.partner.core.devices.UserDeviceDto
 import java.time.LocalDate
@@ -126,7 +128,7 @@ fun DevicesScreen(
                 }
             },
             dismissButton = {
-                TextButton(onClick = { deviceToRevoke = null }) { Text(stringResource(R.string.cancel)) }
+                CleansiaTextButton(onClick = { deviceToRevoke = null }) { Text(stringResource(R.string.cancel)) }
             },
         )
     }
@@ -296,7 +298,7 @@ private fun CurrentDeviceChip() {
         Text(
             text = stringResource(R.string.devices_this_device),
             style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.SemiBold),
-            color = MaterialTheme.colorScheme.primary,
+            color = MaterialTheme.colorScheme.primaryTextOnContainer,
         )
     }
 }

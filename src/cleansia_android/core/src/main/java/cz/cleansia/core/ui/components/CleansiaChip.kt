@@ -16,6 +16,7 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import cz.cleansia.core.ui.theme.primaryText
 
 /**
  * A selectable pill. The one chip the customer app draws, wherever it offers a short closed set of
@@ -43,7 +44,8 @@ fun CleansiaChip(
                  else MaterialTheme.colorScheme.outlineVariant
     val bg = if (isSelected) MaterialTheme.colorScheme.primary.copy(alpha = 0.12f)
              else MaterialTheme.colorScheme.surface
-    val labelColor = if (isSelected) MaterialTheme.colorScheme.primary
+    // The picked label takes the text blue; the border and the wash keep the primary.
+    val labelColor = if (isSelected) primaryText()
                      else MaterialTheme.colorScheme.onSurface
     Box(
         modifier = modifier

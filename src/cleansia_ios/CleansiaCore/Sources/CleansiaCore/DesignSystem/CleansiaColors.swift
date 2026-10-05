@@ -2,8 +2,16 @@ import SwiftUI
 
 public enum CleansiaColors {
     public static let primary = Color.dynamic(light: Palette.sky600, dark: Palette.sky400)
+    /// The brand blue for TEXT on a light surface: sky-600 reads 4.10:1 on white, under the 4.5:1 floor,
+    /// so text takes sky-700 in light mode (5.93:1); dark mode keeps the primary's sky-400. Fills, borders,
+    /// icons and buttons keep `primary`.
+    public static let primaryText = Color.dynamic(light: Palette.sky700, dark: Palette.sky400)
     public static let onPrimary = Color.dynamic(light: .white, dark: Palette.sky900)
     public static let primaryContainer = Color.dynamic(light: Palette.sky100, dark: Palette.sky700)
+    /// The brand blue for TEXT on `primaryContainer` — a badge, a chip, an initial on its disc: sky-700 in
+    /// light mode, as `primaryText` (5.17:1 on sky-100), and sky-100 in dark mode, where the container is
+    /// sky-700 and `primaryText`'s sky-400 reads 2.77:1 (5.17:1).
+    public static let primaryTextOnContainer = Color.dynamic(light: Palette.sky700, dark: Palette.sky100)
     public static let onPrimaryContainer = Color.dynamic(light: Palette.sky900, dark: Palette.sky100)
 
     public static let secondary = Color.dynamic(light: Palette.sky400, dark: Palette.sky300)
@@ -46,17 +54,17 @@ public enum CleansiaColors {
     public static let errorContainer = Color.dynamic(light: Palette.errorBg, dark: Palette.darkErrorContainer)
     public static let onErrorContainer = Color.dynamic(light: Palette.errorText, dark: Palette.darkOnErrorContainer)
 
-    /// Content colour for a surface that is deliberately theme-INVARIANT — the profile-hero avatar
-    /// disc, which reads as a cut-out in the brand gradient and stays white in both schemes. Because
-    /// the surface never adapts, its ink must not either: `primary` resolves to sky400 in dark and
-    /// measures 2.14:1 on white, under the WCAG 3:1 large-text floor, so this pins the light-mode
-    /// brand blue (4.10:1 in both schemes). Android pins the same colour for the same reason
-    /// (customer `ProfileTab.kt`). The hexes are the source of truth and the testable surface — a
-    /// `Color` → `UIColor` roundtrip is trait-dependent on the iOS-16 floor, they are not.
-    public static let onFixedWhite = Color(hex: onFixedWhiteHex)
+    /// The text ink for a surface that is deliberately theme-INVARIANT — the avatar disc, which reads as
+    /// a cut-out in the brand gradient and stays white in both schemes. Because the surface never adapts,
+    /// its ink must not either: `primary` resolves to sky400 in dark and measures 2.14:1 on white, and the
+    /// light-mode brand blue is 4.10:1, under the 4.5:1 floor for the 18pt initials. So this pins sky-700,
+    /// 5.93:1 in both schemes, in both apps; Android's customer `ProfileTab.kt` pins the same colour. The
+    /// hexes are the source of truth and the testable surface — a `Color` → `UIColor` roundtrip is
+    /// trait-dependent on the iOS-16 floor, they are not.
+    public static let primaryTextOnFixedWhite = Color(hex: primaryTextOnFixedWhiteHex)
 
     static let fixedWhiteHex: UInt32 = 0xFFFFFF
-    static let onFixedWhiteHex: UInt32 = 0x0284C7
+    static let primaryTextOnFixedWhiteHex: UInt32 = 0x0369A1
 
     public static let successText = Palette.successText
     public static let successBg = Palette.successBg

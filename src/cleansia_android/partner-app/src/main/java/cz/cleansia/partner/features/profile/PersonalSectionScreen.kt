@@ -23,7 +23,6 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.SelectableDates
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberDatePickerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -40,6 +39,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.ui.layout.ContentScale
 import coil3.compose.AsyncImage
+import cz.cleansia.core.ui.components.CleansiaTextButton
 import cz.cleansia.core.ui.components.CleansiaTextLink
 import androidx.compose.foundation.layout.fillMaxSize
 import cz.cleansia.core.ui.state.ActionState
@@ -226,7 +226,7 @@ private fun AvatarPreview(
             title = { Text(stringResource(R.string.profile_avatar_picker_unavailable_title)) },
             text = { Text(stringResource(R.string.profile_avatar_picker_unavailable_message)) },
             confirmButton = {
-                TextButton(onClick = { pickerUnavailable = false }) { Text(stringResource(android.R.string.ok)) }
+                CleansiaTextButton(onClick = { pickerUnavailable = false }) { Text(stringResource(android.R.string.ok)) }
             },
         )
     }
@@ -438,7 +438,7 @@ private fun BirthDateField(
         DatePickerDialog(
             onDismissRequest = { showDialog = false },
             confirmButton = {
-                TextButton(onClick = {
+                CleansiaTextButton(onClick = {
                     val millis = datePickerState.selectedDateMillis
                     if (millis != null) {
                         val picked = Instant.ofEpochMilli(millis)
@@ -450,7 +450,7 @@ private fun BirthDateField(
                 }) { Text(stringResource(R.string.confirm)) }
             },
             dismissButton = {
-                TextButton(onClick = { showDialog = false }) {
+                CleansiaTextButton(onClick = { showDialog = false }) {
                     Text(stringResource(R.string.cancel))
                 }
             },

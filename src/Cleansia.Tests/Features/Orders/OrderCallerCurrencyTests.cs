@@ -58,13 +58,13 @@ public class OrderCallerCurrencyTests
     public OrderCallerCurrencyTests()
     {
         _serviceRepository
-            .Setup(r => r.ExistWithIdsAsync(It.IsAny<IEnumerable<string>>(), It.IsAny<CancellationToken>()))
+            .Setup(r => r.ExistActiveWithIdsAsync(It.IsAny<IEnumerable<string>>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(true);
         _serviceRepository
             .Setup(r => r.GetByIds(It.IsAny<IEnumerable<string>>()))
             .Returns(Array.Empty<Service>().AsQueryable().BuildMock());
         _packageRepository
-            .Setup(r => r.ExistWithIdsAsync(It.IsAny<IEnumerable<string>>(), It.IsAny<CancellationToken>()))
+            .Setup(r => r.ExistActiveWithIdsAsync(It.IsAny<IEnumerable<string>>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(true);
         // The span-cap rule and the handler both read the catalogue through GetByIds; an async-capable
         // empty query keeps them off the subject of this suite.
@@ -285,6 +285,55 @@ public class OrderCallerCurrencyTests
         var result = await QuoteValidator().ValidateAsync(Quote(null, Czechia));
 
         Assert.True(result.IsValid, string.Join("; ", result.Errors.Select(e => e.ErrorMessage)));
+    }
+
+    /// <summary>
+    /// An entry deactivated after the customer picked it: its row still exists, priced in the market, so
+    /// the old existence term let both quote surfaces price a basket the booking then refuses. The same
+    /// selection codes CreateOrder gives.
+    /// </summary>
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public async Task Both_Quotes_Refuse_A_Deactivated_Entry_With_The_Selection_Code(bool isService)
+    {
+        ArrangeRetired(isService);
+        string[] services = isService ? ["service-1"] : [];
+        string[] packages = isService ? [] : ["package-1"];
+        var (property, code) = isService
+            ? (nameof(QuoteOrder.Command.SelectedServiceIds), BusinessErrorMessage.InvalidSelectedServices)
+            : (nameof(QuoteOrder.Command.SelectedPackageIds), BusinessErrorMessage.InvalidSelectedPackage);
+
+        var quote = await QuoteValidator().ValidateAsync(
+            new QuoteOrder.Command(services, packages, Rooms: 2, Bathrooms: 1, CurrencyId: null, CountryId: Czechia));
+        var plus = await PlusValidator().ValidateAsync(
+            new QuotePlusSavings.Query(services, packages, Rooms: 2, Bathrooms: 1, PlanCode: "plus-monthly",
+                CurrencyId: null, CountryId: Czechia));
+
+        Assert.Equal(code, Assert.Single(quote.Errors, e => e.PropertyName == property).ErrorMessage);
+        Assert.Equal(code, Assert.Single(plus.Errors, e => e.PropertyName == property).ErrorMessage);
+    }
+
+    /// <summary>The row exists — the old term's answer — but is not active.</summary>
+    private void ArrangeRetired(bool isService)
+    {
+        if (isService)
+        {
+            _serviceRepository
+                .Setup(r => r.ExistWithIdsAsync(It.IsAny<IEnumerable<string>>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(true);
+            _serviceRepository
+                .Setup(r => r.ExistActiveWithIdsAsync(It.IsAny<IEnumerable<string>>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(false);
+            return;
+        }
+
+        _packageRepository
+            .Setup(r => r.ExistWithIdsAsync(It.IsAny<IEnumerable<string>>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(true);
+        _packageRepository
+            .Setup(r => r.ExistActiveWithIdsAsync(It.IsAny<IEnumerable<string>>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(false);
     }
 
     // ---------------------------------------------------------------- QuotePlusSavings

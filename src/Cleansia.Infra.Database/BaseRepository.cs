@@ -32,6 +32,16 @@ public abstract class BaseRepository<TEntity>(CleansiaDbContext context) : IRepo
         return count == ids.Count();
     }
 
+    public async Task<bool> ExistActiveWithIdsAsync(IEnumerable<string> ids, CancellationToken cancellationToken)
+    {
+        ids = ids.Distinct().ToArray();
+        var count = await GetQueryable()
+            .Where(e => e.IsActive && ids.Contains(e.Id))
+            .CountAsync(cancellationToken);
+
+        return count == ids.Count();
+    }
+
     public virtual Task<TEntity?> GetByIdAsync(string id, CancellationToken cancellationToken)
     {
         var query = GetQueryable();

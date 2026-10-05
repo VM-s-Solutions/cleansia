@@ -9,7 +9,9 @@ extension CreateRecurringViewModelTests {
     // MARK: - Edit mode
 
     /// A template is pruned against its market's catalogue on first load, the way Android's
-    /// `followMarket` prunes it: a pick the catalogue no longer lists would be refused at submit.
+    /// `followMarket` prunes it: a pick the catalogue no longer lists would be refused at submit. The
+    /// customer moved no market, so the notice says the entries are no longer offered rather than
+    /// that the address does not offer them.
     func testEditingPrunesWhatTheTemplatesMarketNoLongerOffersWithANotice() async {
         let template = RecurringFixtures.template(selectedServiceIds: ["s-1", "retired"])
         let (vm, _) = makeVM(editing: template)
@@ -19,8 +21,85 @@ extension CreateRecurringViewModelTests {
         await vm.load()
 
         XCTAssertEqual(vm.formState.selectedServiceIds, ["s-1"])
-        XCTAssertEqual(events, [.selectionPrunedForMarket])
+        XCTAssertEqual(events, [.selectionNoLongerOffered])
         XCTAssertTrue(vm.isValid)
+    }
+
+    func testEditingATemplateHoldingARetiredPackageSaysItIsNoLongerOffered() async {
+        let template = RecurringFixtures.template(selectedPackageIds: ["p-1", "p-retired"])
+        let (vm, _) = makeVM(editing: template)
+        var events: [CreateRecurringEvent] = []
+        vm.events.sink { events.append($0) }.store(in: &cancellables)
+
+        await vm.load()
+
+        XCTAssertEqual(vm.formState.selectedPackageIds, ["p-1"])
+        XCTAssertEqual(events, [.selectionNoLongerOffered])
+    }
+
+    /// A retry lands the first catalogue the edited schedule is checked against: still its own market's.
+    func testARetriedFirstCatalogueSaysTheEditedSchedulesEntriesAreNoLongerOffered() async {
+        let catalog = FakeCatalogClient(result: .failure(ApiError(code: "x")))
+        let (vm, _) = makeVM(
+            editing: RecurringFixtures.template(selectedServiceIds: ["s-1", "retired"]),
+            catalog: catalog
+        )
+        var events: [CreateRecurringEvent] = []
+        vm.events.sink { events.append($0) }.store(in: &cancellables)
+        await vm.load()
+        XCTAssertEqual(events, [])
+
+        catalog.result = .success(CatalogFixtures.populated)
+        await vm.retryCatalog()
+
+        XCTAssertEqual(vm.formState.selectedServiceIds, ["s-1"])
+        XCTAssertEqual(events, [.selectionNoLongerOffered])
+    }
+
+    /// Moving an edited schedule to an address in another market is the customer's own change, and
+    /// what that market does not offer is said the way the booking says it.
+    func testMovingAnEditedScheduleToAnotherMarketKeepsTheMarketNotice() async {
+        let catalog = FakeCatalogClient(result: .success(CatalogFixtures.populated))
+        let (vm, _) = makeVM(
+            editing: RecurringFixtures.template(selectedServiceIds: ["s-1", "s-2"], savedAddressId: "addr-cz"),
+            catalog: catalog,
+            addressClient: twoMarkets()
+        )
+        var events: [CreateRecurringEvent] = []
+        vm.events.sink { events.append($0) }.store(in: &cancellables)
+        await vm.load()
+        XCTAssertEqual(events, [])
+
+        catalog.result = .success(CatalogFixtures.slovak)
+        vm.setSavedAddressId("addr-sk")
+        await drain()
+
+        XCTAssertEqual(vm.formState.selectedServiceIds, ["s-1"])
+        XCTAssertEqual(events, [.selectionPrunedForMarket])
+    }
+
+    /// The same move made while the first catalogue read had failed: the retry lands the new market's
+    /// catalogue, and what it trims is the move's, not entries the schedule's own market retired.
+    func testARetryAfterMovingAnEditedScheduleToAnotherMarketKeepsTheMarketNotice() async {
+        let catalog = FakeCatalogClient(result: .failure(ApiError(code: "x")))
+        let (vm, _) = makeVM(
+            editing: RecurringFixtures.template(selectedServiceIds: ["s-1", "s-2"], savedAddressId: "addr-cz"),
+            catalog: catalog,
+            addressClient: twoMarkets()
+        )
+        var events: [CreateRecurringEvent] = []
+        vm.events.sink { events.append($0) }.store(in: &cancellables)
+        await vm.load()
+        vm.setSavedAddressId("addr-sk")
+        await drain()
+        XCTAssertEqual(events, [])
+
+        catalog.result = .success(CatalogFixtures.slovak)
+        await vm.retryCatalog()
+
+        XCTAssertEqual(catalog.requestedCountryIds.last, "svk")
+        XCTAssertEqual(vm.formState.selectedServiceIds, ["s-1"])
+        XCTAssertEqual(events, [.selectionPrunedForMarket])
     }
 
     func testEditingATemplateTheMarketFullyOffersRaisesNoNotice() async {

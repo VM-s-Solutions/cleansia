@@ -71,6 +71,7 @@ import cz.cleansia.core.format.formatOrderPrice
 import cz.cleansia.core.location.CleansiaMapPin
 import cz.cleansia.core.location.CleansiaMapStyle
 import cz.cleansia.core.ui.components.CleansiaErrorState
+import cz.cleansia.core.ui.components.CleansiaTextButton
 import cz.cleansia.core.ui.theme.Spacing
 import cz.cleansia.partner.R
 import cz.cleansia.core.ui.state.ActionState
@@ -187,7 +188,7 @@ fun OrderDetailScreen(
                             ) { Text(stringResource(R.string.offer_decline_cta)) }
                         },
                         dismissButton = {
-                            TextButton(onClick = { decliningOffer = false }) { Text(stringResource(R.string.cancel)) }
+                            CleansiaTextButton(onClick = { decliningOffer = false }) { Text(stringResource(R.string.cancel)) }
                         },
                     )
                 }
@@ -232,7 +233,7 @@ fun OrderDetailScreen(
                             )
                         },
                         confirmButton = {
-                            TextButton(
+                            CleansiaTextButton(
                                 onClick = {
                                     confirmingCash = false
                                     viewModel.markCashCollected()
@@ -242,7 +243,7 @@ fun OrderDetailScreen(
                             }
                         },
                         dismissButton = {
-                            TextButton(onClick = { confirmingCash = false }) { Text(stringResource(R.string.cancel)) }
+                            CleansiaTextButton(onClick = { confirmingCash = false }) { Text(stringResource(R.string.cancel)) }
                         },
                     )
                 }
@@ -286,7 +287,7 @@ fun OrderDetailScreen(
             title = { Text(stringResource(R.string.order_removal_title)) },
             text = { Text(stringResource(R.string.order_removal_message, reason)) },
             confirmButton = {
-                TextButton(onClick = viewModel::dismissRemovalReason) { Text(stringResource(R.string.ok)) }
+                CleansiaTextButton(onClick = viewModel::dismissRemovalReason) { Text(stringResource(R.string.ok)) }
             },
         )
     }
@@ -856,7 +857,7 @@ private fun StickyActionFooter(
             )
             if (preferredOffer != null && !isMine) {
                 Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Center) {
-                    TextButton(onClick = onDeclineOffer, enabled = inFlight == null) {
+                    CleansiaTextButton(onClick = onDeclineOffer, enabled = inFlight == null) {
                         Text(stringResource(R.string.offer_decline))
                     }
                 }

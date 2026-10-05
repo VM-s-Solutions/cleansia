@@ -20,6 +20,8 @@ struct RecurringBookingsScreen: View {
         _vm = StateObject(wrappedValue: RecurringBookingsViewModel(
             repository: repository,
             membershipRepository: membershipRepository,
+            addressClient: LiveRecurringSavedAddressClient(),
+            catalogClient: LiveCatalogClient(),
             snackbar: snackbar
         ))
         self.onCreateNew = onCreateNew
@@ -66,6 +68,7 @@ struct RecurringBookingsScreen: View {
         } else {
             TemplateList(
                 templates: vm.templates,
+                noLongerOfferedIds: vm.noLongerOfferedIds,
                 mutatingId: vm.mutatingId,
                 showLapsedNotice: vm.affordances.showLapsedNotice,
                 showEdit: vm.affordances.showEdit,
@@ -85,6 +88,7 @@ struct RecurringBookingsScreen: View {
 
 private struct TemplateList: View {
     let templates: [RecurringTemplate]
+    let noLongerOfferedIds: Set<String>
     let mutatingId: String?
     let showLapsedNotice: Bool
     let showEdit: Bool
@@ -102,6 +106,7 @@ private struct TemplateList: View {
                 ForEach(templates) { template in
                     TemplateCard(
                         template: template,
+                        holdsRetiredEntry: noLongerOfferedIds.contains(template.id),
                         isMutating: mutatingId == template.id,
                         showEdit: showEdit,
                         onEdit: { onEdit(template) },
@@ -195,6 +200,7 @@ private struct RecurringEmptyState: View {
 private struct TemplateCard: View {
     @Environment(\.locale) private var locale
     let template: RecurringTemplate
+    let holdsRetiredEntry: Bool
     let isMutating: Bool
     let showEdit: Bool
     let onEdit: () -> Void
@@ -238,6 +244,9 @@ private struct TemplateCard: View {
                     .font(CleansiaTypography.bodyMedium)
                     .foregroundColor(CleansiaColors.onSurfaceVariant)
             }
+            if holdsRetiredEntry {
+                PaymentNote(systemImage: "info.circle", text: L10n.Recurring.cardItemNoLongerOffered(canEdit: showEdit))
+            }
             if template.requiresPaymentMethodChange {
                 PaymentChangeNotice(showChangeAction: showEdit, onChange: onEdit)
             }
@@ -248,7 +257,7 @@ private struct TemplateCard: View {
                     CardAction(
                         label: L10n.Recurring.edit,
                         systemImage: "square.and.pencil",
-                        tint: CleansiaColors.primary,
+                        tint: CleansiaColors.primaryText,
                         disabled: isMutating,
                         action: onEdit
                     )
@@ -256,7 +265,7 @@ private struct TemplateCard: View {
                 CardAction(
                     label: template.isActive ? L10n.Recurring.pause : L10n.Recurring.resume,
                     systemImage: template.isActive ? "pause.circle" : "play.circle",
-                    tint: CleansiaColors.primary,
+                    tint: CleansiaColors.primaryText,
                     disabled: isMutating,
                     action: onToggle
                 )

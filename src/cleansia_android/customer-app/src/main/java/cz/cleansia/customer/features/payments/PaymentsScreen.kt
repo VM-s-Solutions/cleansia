@@ -59,6 +59,7 @@ import cz.cleansia.core.format.formatOrderPrice
 import cz.cleansia.core.ui.components.CleansiaButtonSize
 import cz.cleansia.core.ui.components.CleansiaOutlinedButton
 import cz.cleansia.core.ui.components.CleansiaPrimaryButton
+import cz.cleansia.core.ui.components.CleansiaTextButton
 import cz.cleansia.core.ui.state.ActionState
 import cz.cleansia.core.ui.theme.Poppins
 import cz.cleansia.customer.R
@@ -112,7 +113,7 @@ fun PaymentsScreen(
                 ) { Text(stringResource(R.string.payments_card_remove_confirm)) }
             },
             dismissButton = {
-                TextButton(onClick = { cardToRemove = null }) { Text(stringResource(R.string.common_cancel)) }
+                CleansiaTextButton(onClick = { cardToRemove = null }) { Text(stringResource(R.string.common_cancel)) }
             },
         )
     }

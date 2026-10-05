@@ -45,6 +45,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import cz.cleansia.core.ui.theme.primaryText
 import cz.cleansia.customer.R
 import cz.cleansia.customer.core.loyalty.LoyaltyActivityItemDto
 import cz.cleansia.core.ui.components.SudsRefreshIndicator
@@ -229,7 +230,7 @@ private fun ErrorState(onRetry: () -> Unit) {
         Text(
             stringResource(R.string.loyalty_retry),
             style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.SemiBold),
-            color = MaterialTheme.colorScheme.primary,
+            color = primaryText(),
             modifier = Modifier
                 .clip(RoundedCornerShape(999.dp))
                 .clickable(onClick = onRetry)

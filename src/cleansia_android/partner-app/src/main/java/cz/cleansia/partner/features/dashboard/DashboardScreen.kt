@@ -70,6 +70,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import cz.cleansia.core.money.CurrencySymbols
 import cz.cleansia.core.ui.theme.Spacing
+import cz.cleansia.core.ui.theme.primaryText
 import cz.cleansia.partner.R
 import cz.cleansia.partner.api.model.OrderListItem
 import cz.cleansia.partner.api.model.OrderStatus
@@ -823,13 +824,13 @@ private fun WeeklyEarningsHero(stats: DashboardStats?, onClick: () -> Unit) {
                 Text(
                     text = stringResource(R.string.dash_earnings_view_details),
                     style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.SemiBold),
-                    color = MaterialTheme.colorScheme.primary,
+                    color = primaryText(),
                 )
                 Spacer(Modifier.width(4.dp))
                 Icon(
                     imageVector = Icons.AutoMirrored.Outlined.ArrowForward,
                     contentDescription = null,
-                    tint = MaterialTheme.colorScheme.primary,
+                    tint = primaryText(),
                     modifier = Modifier.size(16.dp),
                 )
             }

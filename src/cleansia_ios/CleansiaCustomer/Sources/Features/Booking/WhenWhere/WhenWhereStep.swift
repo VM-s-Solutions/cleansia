@@ -258,7 +258,11 @@ private struct ExpressWaiverNote: View {
         case .none:
             EmptyView()
         case .available:
-            note(icon: "bolt.fill", text: L10n.Booking.expressWaiverAvailable(remaining), tint: CleansiaColors.primary)
+            note(
+                icon: "bolt.fill",
+                text: L10n.Booking.expressWaiverAvailable(remaining),
+                tint: CleansiaColors.primaryText
+            )
         case .exhausted:
             note(icon: "info.circle", text: L10n.Booking.expressWaiverUsed, tint: CleansiaColors.onSurfaceVariant)
         }
@@ -279,7 +283,7 @@ private struct ExpressWaiverNote: View {
 }
 
 /// Three part-of-day buttons, each with its first and last arrival, over a 4 × 4 grid of the chosen part's
-/// slots — the web wizard's time step (→ /customer-app/ordering-flow#step-2-date-time) and Android's
+/// slots — the web wizard's time step (→ /customer-app/ordering-flow#step-3-date-time) and Android's
 /// `DayPartTimePicker`. Choosing a part never changes the booked time; it only changes which sixteen
 /// slots are on screen. The step opens on the part holding the booked time, which carries a dot while
 /// another part is browsed; a part with nothing bookable is disabled, and so is a slot inside the lead
@@ -382,7 +386,7 @@ private struct DayPartButton: View {
                 HStack(spacing: Spacing.xxs) {
                     Text(name)
                         .font(CleansiaTypography.labelLarge)
-                        .foregroundColor(active ? CleansiaColors.primary : CleansiaColors.onSurface)
+                        .foregroundColor(active ? CleansiaColors.primaryText : CleansiaColors.onSurface)
                         .multilineTextAlignment(.center)
                     if holdsSelection {
                         Circle()
@@ -428,7 +432,7 @@ private struct TimeSlotChip: View {
     }
 
     private var textColor: Color {
-        if selected { return CleansiaColors.primary }
+        if selected { return CleansiaColors.primaryText }
         return enabled ? CleansiaColors.onSurface : CleansiaColors.onSurface.opacity(0.38)
     }
 

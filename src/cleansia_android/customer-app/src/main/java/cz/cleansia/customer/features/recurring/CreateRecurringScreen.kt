@@ -38,6 +38,7 @@ import androidx.compose.material.icons.outlined.CreditCard
 import androidx.compose.material.icons.outlined.Payments
 import androidx.compose.material.icons.outlined.Remove
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.DatePicker
 import androidx.compose.material3.DatePickerDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -47,7 +48,6 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.rememberDatePickerState
 import androidx.compose.runtime.Composable
@@ -67,6 +67,8 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import cz.cleansia.core.ui.components.CleansiaTextButton
+import cz.cleansia.core.ui.theme.primaryText
 import cz.cleansia.customer.ui.components.adjustableStepper
 import cz.cleansia.customer.ui.components.rememberStepperTick
 import cz.cleansia.customer.R
@@ -83,8 +85,10 @@ import cz.cleansia.customer.features.booking.DoubleBookingDialog
 import cz.cleansia.customer.features.booking.InPackageMarker
 import cz.cleansia.customer.features.booking.inPackageRowBorder
 import cz.cleansia.customer.features.booking.inPackageRowFill
+import cz.cleansia.customer.features.booking.rowSecondaryText
 import cz.cleansia.customer.features.booking.selectedIncluding
 import cz.cleansia.customer.features.booking.PreferredCleanerPicker
+import cz.cleansia.customer.features.booking.SizeLimitTitleRow
 import cz.cleansia.customer.features.booking.SlotState
 import cz.cleansia.customer.features.booking.TimeSlot
 import cz.cleansia.customer.features.booking.localizedDescription
@@ -457,6 +461,7 @@ private fun WizardBottomBar(
                 onClick = onSaveWithoutPreferredCleaner,
                 enabled = !submitting,
                 modifier = Modifier.fillMaxWidth(),
+                colors = ButtonDefaults.outlinedButtonColors(contentColor = primaryText()),
             ) {
                 Text(text = stringResource(R.string.preferred_cleaner_schedule_save_without))
             }
@@ -471,6 +476,7 @@ private fun WizardBottomBar(
                     onClick = onPrevious,
                     enabled = !submitting,
                     modifier = Modifier.weight(1f).defaultMinSize(minHeight = 54.dp),
+                    colors = ButtonDefaults.outlinedButtonColors(contentColor = primaryText()),
                 ) {
                     Text(
                         text = stringResource(R.string.recurring_create_back),
@@ -567,6 +573,9 @@ private fun WhatStep(
 
     Spacer(Modifier.height(24.dp))
 
+    // The caps are stated on the size section's title row, as on the one-off booking's size card.
+    SizeLimitTitleRow { SectionLabel(stringResource(R.string.booking_your_home)) }
+    Spacer(Modifier.height(8.dp))
     Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
         Column(modifier = Modifier.weight(1f)) {
             val rooms = stringResource(R.string.recurring_create_rooms_label)
@@ -586,13 +595,6 @@ private fun WhatStep(
             )
         }
     }
-    // The cap stated up front, as on the one-off booking's size row.
-    Spacer(Modifier.height(6.dp))
-    Text(
-        stringResource(R.string.booking_size_limit_caption, PropertySize.MAX_ROOMS, PropertySize.MAX_BATHROOMS),
-        style = MaterialTheme.typography.labelSmall,
-        color = MaterialTheme.colorScheme.onSurfaceVariant,
-    )
 
     Spacer(Modifier.height(24.dp))
 
@@ -808,7 +810,7 @@ private fun FrequencyOptionCard(
                 Text(
                     text = label,
                     style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.SemiBold),
-                    color = if (selected) MaterialTheme.colorScheme.primary
+                    color = if (selected) primaryText()
                         else MaterialTheme.colorScheme.onSurface,
                 )
                 if (badgeLabel != null) {
@@ -816,7 +818,7 @@ private fun FrequencyOptionCard(
                     Text(
                         text = badgeLabel,
                         style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
-                        color = MaterialTheme.colorScheme.primary,
+                        color = primaryText(),
                         modifier = Modifier
                             .clip(RoundedCornerShape(6.dp))
                             .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.12f))
@@ -895,7 +897,7 @@ private fun DayChip(
     }
     val borderColor = if (isSelected) MaterialTheme.colorScheme.primary
         else MaterialTheme.colorScheme.outlineVariant
-    val textColor = if (isSelected) MaterialTheme.colorScheme.primary
+    val textColor = if (isSelected) primaryText()
         else MaterialTheme.colorScheme.onSurface
 
     Box(
@@ -1000,7 +1002,7 @@ private fun SavedAddressPicker(
                     Text(
                         text = stringResource(R.string.recurring_create_address_default),
                         style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
-                        color = MaterialTheme.colorScheme.primary,
+                        color = primaryText(),
                         modifier = Modifier
                             .clip(RoundedCornerShape(6.dp))
                             .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.12f))
@@ -1028,14 +1030,14 @@ private fun SavedAddressPicker(
             Icon(
                 Icons.Outlined.Add,
                 contentDescription = null,
-                tint = MaterialTheme.colorScheme.primary,
+                tint = primaryText(),
                 modifier = Modifier.size(18.dp),
             )
             Spacer(Modifier.width(8.dp))
             Text(
                 text = stringResource(R.string.recurring_create_address_add_new),
                 style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold),
-                color = MaterialTheme.colorScheme.primary,
+                color = primaryText(),
             )
         }
     }
@@ -1057,7 +1059,7 @@ private fun CatalogRetryBlock(text: String, onRetry: () -> Unit) {
         Text(
             text = stringResource(R.string.booking_catalog_retry),
             style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.SemiBold),
-            color = MaterialTheme.colorScheme.primary,
+            color = primaryText(),
             modifier = Modifier
                 .clip(RoundedCornerShape(999.dp))
                 .clickable(onClick = onRetry)
@@ -1203,7 +1205,7 @@ private fun ServiceCard(
                 Text(
                     text = description,
                     style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    color = rowSecondaryText(tinted = selected || inPackages.isNotEmpty()),
                 )
             }
         }
@@ -1391,7 +1393,7 @@ private fun StartsOnPicker(isoValue: String, latestDate: LocalDate?, onChange: (
         Text(
             text = stringResource(R.string.recurring_create_starts_change),
             style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.SemiBold),
-            color = MaterialTheme.colorScheme.primary,
+            color = primaryText(),
         )
     }
 
@@ -1405,7 +1407,7 @@ private fun StartsOnPicker(isoValue: String, latestDate: LocalDate?, onChange: (
         DatePickerDialog(
             onDismissRequest = { dialogOpen = false },
             confirmButton = {
-                TextButton(onClick = {
+                CleansiaTextButton(onClick = {
                     val ms = pickerState.selectedDateMillis
                     if (ms != null) {
                         val utcDate = Instant.fromEpochMilliseconds(ms).toLocalDateTime(TimeZone.UTC).date
@@ -1415,7 +1417,7 @@ private fun StartsOnPicker(isoValue: String, latestDate: LocalDate?, onChange: (
                 }) { Text(stringResource(R.string.common_ok)) }
             },
             dismissButton = {
-                TextButton(onClick = { dialogOpen = false }) {
+                CleansiaTextButton(onClick = { dialogOpen = false }) {
                     Text(stringResource(R.string.common_back))
                 }
             },

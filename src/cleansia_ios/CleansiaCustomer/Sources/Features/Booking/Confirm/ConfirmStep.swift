@@ -237,7 +237,7 @@ private struct ContractNotice: View {
         Text(ConsentMarkdown.styled(L10n.Booking.contractNotice))
             .font(CleansiaTypography.bodyMedium)
             .foregroundColor(CleansiaColors.onSurfaceVariant)
-            .tint(CleansiaColors.primary)
+            .tint(CleansiaColors.primaryText)
             .fixedSize(horizontal: false, vertical: true)
             .frame(maxWidth: .infinity, alignment: .leading)
     }

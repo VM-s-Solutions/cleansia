@@ -1,3 +1,4 @@
+import { TemplateRef } from '@angular/core';
 import { PackageListItem } from '@cleansia/admin-services';
 import { TableColumn, TableAction } from '@cleansia/components';
 import { PermissionService, Policy } from '@cleansia/services';
@@ -25,7 +26,9 @@ export function getPackageTableDefinition(
   },
   translate: TranslateService,
   permissions: PermissionService,
-  formatCurrency: (value: number | undefined) => string
+  formatCurrency: (value: number | undefined) => string,
+  // The name, and a marker when the package still includes a retired service.
+  nameTemplate?: TemplateRef<PackageListItem>
 ): { columns: TableColumn<PackageListItem>[]; actions: TableAction<PackageListItem>[] } {
   return {
     columns: [
@@ -34,7 +37,9 @@ export function getPackageTableDefinition(
         field: 'name',
         header: translate.instant('pages.package_management.columns.name'),
         sortable: true,
-        width: '25%',
+        customTemplate: nameTemplate,
+        // Wide enough for the marker beside a name; the description gives up the room.
+        width: '35%',
       },
       {
         id: 'description',
@@ -48,7 +53,7 @@ export function getPackageTableDefinition(
             ? row.description.substring(0, 100) + '...'
             : row.description;
         },
-        width: '40%',
+        width: '30%',
       },
       {
         id: 'price',

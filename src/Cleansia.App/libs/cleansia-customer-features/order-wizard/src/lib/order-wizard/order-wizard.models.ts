@@ -255,7 +255,7 @@ export function getFieldError(
 
 // ── Time helpers ────────────────────────────────────────────
 //
-// Arrival times are shared with the home calculator. See /customer-app/ordering-flow#step-2-date-time.
+// Arrival times are shared with the home calculator. See /customer-app/ordering-flow#step-3-date-time.
 
 /** Window duration shown to the customer. Keep in sync with backend BookingPolicy. */
 export const WINDOW_DURATION_MINUTES = 60;

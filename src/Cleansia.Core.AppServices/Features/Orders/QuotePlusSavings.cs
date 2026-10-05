@@ -97,19 +97,19 @@ public static class QuotePlusSavings
                 .LessThanOrEqualTo(BookingPolicy.MaxBathrooms)
                 .WithMessage(BusinessErrorMessage.OrderSizeExceedsMaximum);
 
-            // Existence, then a price row in the currency being quoted in -- the same two terms as
+            // Active existence, then a price row in the currency being quoted in -- the same two terms as
             // QuoteOrder, because this query prices the same basket and the calculator throws on an
             // entry with no row in the resolved currency.
             RuleFor(x => x.SelectedServiceIds)
                 .Cascade(CascadeMode.Stop)
-                .MustAsync(serviceRepository.ExistWithIdsAsync)
+                .MustAsync(serviceRepository.ExistActiveWithIdsAsync)
                 .WithMessage(BusinessErrorMessage.InvalidSelectedServices)
                 .MustAsync(ArePricedInQuoteCurrencyAsync)
                 .WithMessage(BusinessErrorMessage.InvalidSelectedServices);
 
             RuleFor(x => x.SelectedPackageIds)
                 .Cascade(CascadeMode.Stop)
-                .MustAsync(packageRepository.ExistWithIdsAsync)
+                .MustAsync(packageRepository.ExistActiveWithIdsAsync)
                 .WithMessage(BusinessErrorMessage.InvalidSelectedPackage)
                 .MustAsync(ArePackagesPricedInQuoteCurrencyAsync)
                 .WithMessage(BusinessErrorMessage.InvalidSelectedPackage);

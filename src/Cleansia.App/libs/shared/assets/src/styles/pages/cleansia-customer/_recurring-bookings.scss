@@ -125,11 +125,13 @@
   border: 1px solid var(--cl-border);
   box-shadow: 0 2px 10px rgba(12, 74, 110, 0.06);
 
-  // A paused schedule is still a schedule: it dims, it does not grey out, and
-  // it keeps every figure legible — the customer paused it on purpose and will
-  // come back to it.
+  // A paused schedule is still a schedule: it steps back, it does not grey out,
+  // and it keeps every figure legible — the customer paused it on purpose and
+  // will come back to it. A dashed edge and no lift, beside its Paused pill; not
+  // an opacity, which faded every line of the card to 2.8–3.5:1.
   &--paused {
-    opacity: 0.72;
+    border: 1px dashed var(--cl-field-border);
+    box-shadow: none;
   }
 }
 
@@ -324,7 +326,9 @@
   color: var(--cl-muted);
 }
 
-// The paywall is the empty card with the product's own badge on it.
+// The paywall is the empty card with the product's own badge on it. Its ink is the card ground,
+// which flips with the heading slab: white on Sky700 (5.9), near-black on Sky300 (10.4). White on
+// the dark theme's Sky300 measured 1.7.
 .cl-rec__gate-badge {
   display: inline-flex;
   align-items: center;
@@ -336,7 +340,7 @@
   border: 1px solid var(--cl-heading);
   font-size: 0.8125rem;
   font-weight: 700;
-  color: #ffffff;
+  color: var(--cl-surface);
 }
 
 // ---- The form ---------------------------------------------------------------------------
@@ -411,10 +415,14 @@
   cursor: pointer;
   transition: border-color 0.16s ease, background 0.16s ease;
 
-  &:hover {
+  // Not on a picked pick: `:hover` outranks `--on`, and it turned the picked border pale.
+  &:hover:not(.cl-rec__pick--on) {
     border-color: var(--cl-border-tint);
   }
 
+  // The slab is the heading colour, Sky700 light and Sky300 dark, so its ink is the card's own
+  // ground, which flips with it: white on Sky700 (5.9), near-black on Sky300 (10.4). White on the
+  // dark theme's Sky300 measured 1.7.
   &--on {
     background: var(--cl-heading);
     border: 2px solid var(--cl-heading);
@@ -453,8 +461,8 @@
   border: 2px solid var(--cl-border);
 
   .cl-rec__pick--on & {
-    background: #ffffff;
-    border-color: #ffffff;
+    background: var(--cl-surface);
+    border-color: var(--cl-surface);
     color: var(--cl-heading);
   }
 
@@ -477,17 +485,19 @@
   color: var(--cl-ink, #0f172a);
 
   .cl-rec__pick--on & {
-    color: #ffffff;
+    color: var(--cl-surface);
   }
 }
 
+// A package pick's price. On a picked pick it takes the slab's ink as the name does: the accent it
+// used measured 2.8 light and 1.0 dark there.
 .cl-rec__pick-note {
   margin-top: 1px;
   font-size: 0.8125rem;
   color: var(--cl-muted);
 
   .cl-rec__pick--on & {
-    color: var(--cl-accent-soft);
+    color: var(--cl-surface);
   }
 }
 
@@ -564,14 +574,20 @@
   color: var(--cl-heading);
   cursor: pointer;
 
+  // A step darker under the pointer, as a text link goes: Sky800, where the accent was Sky600 and
+  // lighter than the rest ink (4.1). After dark the rest is Sky300 and the step the accent, Sky400.
   &:hover {
-    color: var(--cl-accent);
+    color: $primary-darker;
   }
 
   &:focus-visible {
     outline: 2px solid var(--cl-accent);
     outline-offset: 3px;
   }
+}
+
+:root.dark-mode .cl-rec__add-address:hover {
+  color: var(--cl-accent);
 }
 
 .cl-rec__new-address {
@@ -655,10 +671,11 @@
     background: var(--cl-tint);
   }
 
+  // Inked with the card ground, as a picked pick is: white on the dark theme's Sky300 measured 1.7.
   &--on {
     background: var(--cl-heading);
     border-color: var(--cl-heading);
-    color: #ffffff;
+    color: var(--cl-surface);
   }
 
   &--grow {
@@ -712,7 +729,7 @@
   font-weight: 700;
   font-size: 1.875rem;
   font-variant-numeric: tabular-nums;
-  color: var(--cl-accent);
+  color: var(--cl-accent-text);
 }
 
 .cl-rec__summary-note {

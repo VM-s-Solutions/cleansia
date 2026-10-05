@@ -1,5 +1,7 @@
 package cz.cleansia.customer.features.recurring
 
+import androidx.annotation.StringRes
+import cz.cleansia.customer.R
 import cz.cleansia.customer.core.memberships.GetMyMembershipResponse
 import cz.cleansia.customer.core.memberships.benefitsPaused
 import cz.cleansia.customer.core.recurring.RecurringBookingTemplateDto
@@ -54,6 +56,15 @@ data class RecurringListAffordances(
         )
     }
 }
+
+/**
+ * The card line for a schedule that still holds a service or package its market no longer offers. It says
+ * "edit to update" only where the card offers Edit; a lapsed or paused member has no Edit, so their line
+ * only says what the schedule holds.
+ */
+@StringRes
+fun retiredEntryLine(showEdit: Boolean): Int =
+    if (showEdit) R.string.recurring_card_item_no_longer_offered else R.string.recurring_card_item_no_longer_offered_no_edit
 
 /** Whether a schedule books cleanings, and if not, why. */
 enum class ScheduleStatus {

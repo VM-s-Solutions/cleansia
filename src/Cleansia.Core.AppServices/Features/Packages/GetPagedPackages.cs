@@ -35,8 +35,12 @@ public class GetPagedPackages
             var filter = specification.SatisfiedBy();
 
             var totalItems = await packageRepository.GetCountAsync(filter, cancellationToken);
+            // What each package includes rides along, so the admin list can mark a package that still
+            // includes a retired service. → /product/business-rules#deactivated-catalogue
             var items = await packageRepository
                 .GetPagedSort<PackageSort>(request.Offset, request.Limit, filter, request.Sort.MapToDomain())
+                .Include(p => p.IncludedServices)
+                    .ThenInclude(ps => ps.Service)
                 .AsNoTracking()
                 .ToListAsync(cancellationToken);
 

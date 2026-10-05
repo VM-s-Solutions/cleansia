@@ -9,6 +9,7 @@ struct ProfileTab: View {
     /// The credit read the Rewards card shares; nil (not landed, or failed) hides the row.
     @ObservedObject var loyalty: LoyaltyRepository
     @Environment(\.locale) private var locale
+    @Environment(\.colorScheme) private var colorScheme
     let avatarCache: RemoteImageCache
     let onOpen: (ShellRoute) -> Void
     let onSignOut: () -> Void
@@ -17,6 +18,17 @@ struct ProfileTab: View {
     /// subscribe flow — NOT Edit Profile. Held as a value so it's guarded by a
     /// test (a money surface that must not silently regress its destination).
     static let subscribeRoute: ShellRoute = .subscribePlus
+
+    /// The hero's top colour: the status bar sits on it at rest, and the fade wears it while the hero is
+    /// under the status bar, where the screen asks for the white clock, signal and battery
+    /// (`StatusBarStyleBridge`). On the brand blue's sky-600 they read at 4.1:1, so in light mode Profile's
+    /// hero starts at sky-700 (5.9:1) on every version; dark mode keeps the brand blue (white on sky-800,
+    /// 7.6:1). The shared `BrandGradient.blue` is unchanged.
+    static func heroTop(_ scheme: ColorScheme) -> Color {
+        scheme == .light ? heroTopLight : BrandGradient.blue.colors[0]
+    }
+
+    private static let heroTopLight = Color(red: 3 / 255, green: 105 / 255, blue: 161 / 255)
 
     /// The account row opens the edit screen, so it carries that screen's full title. The hero chip's
     /// label is the verb alone and would read as a bare "Edit" in a list of destinations.
@@ -35,7 +47,7 @@ struct ProfileTab: View {
         ZStack {
             CleansiaColors.background.ignoresSafeArea()
             // The hero is brand blue, so the status-bar fade wears its top colour until it has scrolled past.
-            StatusBarFadeScrollView(heroTint: BrandGradient.blue.colors[0]) {
+            StatusBarFadeScrollView(heroTint: Self.heroTop(colorScheme)) {
                 VStack(spacing: Spacing.l) {
                     ProfileHeader(
                         user: profileVM.currentUser,
@@ -337,6 +349,7 @@ private struct ProfileStatsCard: View {
 }
 
 private struct HeroGradient: View {
+    @Environment(\.colorScheme) private var colorScheme
     let user: CurrentUserProfile?
     let tier: String
     let avatarCache: RemoteImageCache
@@ -382,11 +395,16 @@ private struct HeroGradient: View {
         // `ignoresSafeArea` here has nothing left to ignore, and the gradient stopped at the status-bar
         // line. So the background paints upward past the hero's own frame instead: the gradient keeps
         // exactly the hero's bounds (its colours unchanged) and a block of its first stop fills the
-        // status-bar strip and the rubber-band overscroll above it.
+        // status-bar strip and the rubber-band overscroll above it. Its top is `ProfileTab.heroTop`, darker
+        // than the brand blue where the white clock sits on it.
         .background(alignment: .bottom) {
             VStack(spacing: 0) {
-                BrandGradient.blue.colors[0].frame(height: heroBleed)
-                LinearGradient(colors: BrandGradient.blue.colors, startPoint: .top, endPoint: .bottom)
+                ProfileTab.heroTop(colorScheme).frame(height: heroBleed)
+                LinearGradient(
+                    colors: [ProfileTab.heroTop(colorScheme), BrandGradient.blue.colors[1]],
+                    startPoint: .top,
+                    endPoint: .bottom
+                )
             }
             .padding(.top, -heroBleed)
         }

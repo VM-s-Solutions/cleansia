@@ -1204,7 +1204,8 @@
       },
       "activate_package": "Activate Package",
       "deactivate_package": "Deactivate Package",
-      "deactivate_confirm": "Deactivate “{{name}}”? It will be hidden from the customer booking catalog; history is kept."
+      "deactivate_confirm": "Deactivate “{{name}}”? It will be hidden from the customer booking catalog; history is kept.",
+      "includes_inactive_service": "Includes an inactive service"
     },
     "package_form": {
       "create_title": "Create Package",
@@ -1231,7 +1232,8 @@
         "update_error": "Failed to update package"
       },
       "tagline": "Card tagline",
-      "is_popular": "Most popular package"
+      "is_popular": "Most popular package",
+      "retired_services_hint": "Services marked “{{status}}” are deactivated and cannot be added to a package. One the package already includes stays in it until you remove it."
     },
     "extra_management": {
       "title": "Extras",

@@ -17,7 +17,16 @@
       "options": {
         "jestConfig": "libs/cleansia-partner-features/profile/jest.config.ts",
         "tsConfig": "libs/cleansia-partner-features/profile/tsconfig.spec.json"
-      }
+      },
+      "inputs": [
+        "default",
+        "^production",
+        "{workspaceRoot}/jest.preset.js",
+        "{workspaceRoot}/jest.polyfills.ts",
+        {
+          "runtime": "node -e \"const c=require('crypto'),f=require('fs'),p=require('path'),h=c.createHash('sha256');const w=x=>f.statSync(x).isDirectory()?f.readdirSync(x).sort().flatMap(e=>['bin','obj'].includes(e)?[]:w(p.join(x,e))):[x];for(const r of process.argv.slice(1))for(const x of w(r))if(x===r||x.endsWith('.cs'))h.update(x).update(f.readFileSync(x));process.stdout.write(h.digest('hex'))\" ../Cleansia.Core.Domain/Payouts/IbanCalculator.cs"
+        }
+      ]
     },
     "lint": {
       "executor": "@nx/eslint:lint"

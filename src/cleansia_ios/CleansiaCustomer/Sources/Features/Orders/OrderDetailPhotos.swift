@@ -22,10 +22,10 @@ struct OrderPhotosSection: View {
                     Spacer()
                     Text(L10n.OrderPhotos.viewButton)
                         .font(CleansiaTypography.labelLarge)
-                        .foregroundColor(CleansiaColors.primary)
+                        .foregroundColor(CleansiaColors.primaryText)
                     Image(systemName: "chevron.right")
                         .font(.system(size: 12, weight: .semibold))
-                        .foregroundColor(CleansiaColors.primary)
+                        .foregroundColor(CleansiaColors.primaryText)
                 }
                 HStack(spacing: Spacing.xs) {
                     PhotoCountPill(text: L10n.OrderPhotos.summaryBefore(gallery.beforeCount))

@@ -5,18 +5,22 @@ import {
   chosenPackagesByService,
   ConsentType,
   CreateRecurringBookingCommand,
+  CUSTOMER_API_BASE_URL,
   CustomerClient,
+  CustomerOrderClient,
   DeleteRecurringBookingCommand,
   DirtinessLevel,
   GetMyServingCleanersResponse,
   includedServicesAlreadyChosen,
   MembershipStatus,
+  PackageClient,
   PackageListItem,
   PaymentType,
   PreferredCleanerOption,
   QuoteOrderCommand,
   QuoteOrderResponse,
   RecurringBookingTemplateDto,
+  ServiceClient,
   ServiceListItem,
   SetRecurringBookingActiveCommand,
   toPreferredCleanerOptions,
@@ -26,6 +30,7 @@ import {
 import { CashEligibility, cashIsRefused, resolveCashEligibility } from '@cleansia/models';
 import {
   DialogService,
+  errorToastSuppressingHttpClient,
   extractApiErrorCode,
   SnackbarService,
 } from '@cleansia/services';
@@ -61,6 +66,12 @@ import {
 export interface QuotedPrice {
   amount: number;
   currency: string | null;
+}
+
+/** The ids one market's catalogue lists today. */
+interface ListedIds {
+  services: Set<string | undefined>;
+  packages: Set<string | undefined>;
 }
 
 const ONE_DAY_MS = 24 * 60 * 60 * 1000;
@@ -101,6 +112,23 @@ export class RecurringBookingsFacade extends UnsubscribeControlDirective {
   // customer plans around, so it is QUOTED rather than recomputed here — the
   // discount stack (membership, loyalty tier, promo) lives behind this endpoint
   // and a second implementation of it would disagree the first time one moved.
+  // Built over the toast-suppressing HttpClient, not taken from CustomerClient, because these
+  // quotes fail SILENTLY: the server refuses a service or package retired since the schedule
+  // was made, and that leaves the card without a price rather than a red toast on every visit.
+  private readonly quoteClient = new CustomerOrderClient(
+    errorToastSuppressingHttpClient(),
+    inject(CUSTOMER_API_BASE_URL, { optional: true }) ?? 'http://localhost:5003',
+  );
+  // Each market a listed schedule is priced in is read straight from the API, so the catalogue the
+  // store and the form share stays theirs, and quietly: nothing in it is the customer's to act on.
+  private readonly quietServiceClient = new ServiceClient(
+    errorToastSuppressingHttpClient(),
+    inject(CUSTOMER_API_BASE_URL, { optional: true }) ?? 'http://localhost:5003',
+  );
+  private readonly quietPackageClient = new PackageClient(
+    errorToastSuppressingHttpClient(),
+    inject(CUSTOMER_API_BASE_URL, { optional: true }) ?? 'http://localhost:5003',
+  );
   private readonly orderClient = this.customerClient.orderClient;
   private readonly membershipClient = this.customerClient.membershipClient;
   private readonly snackbar = inject(SnackbarService);
@@ -116,6 +144,9 @@ export class RecurringBookingsFacade extends UnsubscribeControlDirective {
   readonly listLoaded = signal(false);
   /** Id of the template currently being mutated (pause/resume/delete), or null. */
   readonly mutatingId = signal<string | null>(null);
+  /** What each market a listed schedule is priced in lists today; '' keys the platform default. */
+  private readonly listedByMarket = signal<Record<string, ListedIds>>({});
+  private readonly marketsAsked = new Set<string>();
 
   // ─── The entitlement ───────────────────────────────────────────────
   // `CreateRecurringBooking` refuses a caller without Plus
@@ -261,6 +292,37 @@ export class RecurringBookingsFacade extends UnsubscribeControlDirective {
     );
   });
 
+  /**
+   * A schedule just loaded for edit, until the list priced for its address has judged its selection.
+   * What that list no longer offers was retired after the schedule was saved, so it goes with a notice
+   * of its own: "not offered at this address" answers the customer changing the address, which nobody
+   * did here. The store's own trim waits for this one. → /product/business-rules#deactivated-catalogue
+   */
+  private readonly loadedSelectionUnjudged = signal(false);
+  private readonly loadedSelectionEffect = effect(() => {
+    if (!this.loadedSelectionUnjudged() || this.addressesLoading()) return;
+    const countryId = this.addressCountryId();
+    const { services, countryId: servicesFor } = this.servicesCatalogue();
+    const { packages, countryId: packagesFor } = this.packagesCatalogue();
+    if (countryId === null || servicesFor !== countryId || packagesFor !== countryId) return;
+    untracked(() => {
+      this.loadedSelectionUnjudged.set(false);
+      const offeredServices = new Set(services.map((s) => s.id));
+      const offeredPackages = new Set(packages.map((p) => p.id));
+      const { selectedServiceIds, selectedPackageIds } = this.formData();
+      const keptServiceIds = selectedServiceIds.filter((id) => offeredServices.has(id));
+      const keptPackageIds = selectedPackageIds.filter((id) => offeredPackages.has(id));
+      if (
+        keptServiceIds.length === selectedServiceIds.length &&
+        keptPackageIds.length === selectedPackageIds.length
+      ) {
+        return;
+      }
+      this.updateFormData({ selectedServiceIds: keptServiceIds, selectedPackageIds: keptPackageIds });
+      this.snackbar.showInfoTranslated('recurring_booking.selection_no_longer_offered');
+    });
+  });
+
   /** An order's selection waiting for the list it can be checked against. */
   private readonly pendingPrefill = signal<RecurringPrefillParams | null>(null);
   private readonly prefillEffect = effect(() => {
@@ -394,8 +456,20 @@ export class RecurringBookingsFacade extends UnsubscribeControlDirective {
 
     const created = await this.savedAddressStore.add(command);
     if (!created?.id) return false;
-    this.updateFormData({ savedAddressId: created.id });
+    this.pickAddress(created.id);
     return true;
+  }
+
+  /**
+   * The customer's own choice of address, from the select or the inline form. Once they have moved
+   * the schedule, a trim answers that move, so it says the address message: "no longer offered" is
+   * for a schedule still at its own address. Without this, a move made before the schedule's own
+   * list had landed was judged by the load-time check and called retired. Android and iOS remember
+   * the pick the same way.
+   */
+  pickAddress(id: string | null): void {
+    if (id !== this.formData().savedAddressId) this.loadedSelectionUnjudged.set(false);
+    this.updateFormData({ savedAddressId: id });
   }
 
   async refreshMembership(): Promise<void> {
@@ -467,6 +541,55 @@ export class RecurringBookingsFacade extends UnsubscribeControlDirective {
   }
 
   /**
+   * Whether a schedule still holds a service or package its market's catalogue no longer lists. The
+   * server refuses to price such a schedule, so its card has no figure, and this is what tells the
+   * customer why. Judged against the schedule's own market once `readScheduleMarkets` has read it,
+   * never on a guess. → /product/business-rules#deactivated-catalogue
+   */
+  holdsRetiredEntry(template: RecurringBookingTemplateDto): boolean {
+    const address = this.savedAddresses().find((a) => a.id === template.savedAddressId);
+    const listed = address ? this.listedByMarket()[address.countryId || ''] : undefined;
+    if (!listed) return false;
+    return (
+      (template.selectedServiceIds ?? []).some((id) => !listed.services.has(id)) ||
+      (template.selectedPackageIds ?? []).some((id) => !listed.packages.has(id))
+    );
+  }
+
+  /**
+   * Reads, once per screen, the catalogue of every market the listed schedules are priced in (the
+   * country of each one's saved address, the platform default for an address with none), as iOS
+   * and Android do. A market whose read fails stays unjudged.
+   */
+  readScheduleMarkets(): void {
+    for (const template of this.templates()) {
+      const address = this.savedAddresses().find((a) => a.id === template.savedAddressId);
+      if (!address) continue;
+      const market = address.countryId || '';
+      if (this.marketsAsked.has(market)) continue;
+      this.marketsAsked.add(market);
+      this.readMarket(market);
+    }
+  }
+
+  private async readMarket(market: string): Promise<void> {
+    const countryId = market || undefined;
+    try {
+      const [services, packages] = await Promise.all([
+        firstValueFrom(this.quietServiceClient.getOverview(countryId).pipe(takeUntil(this.destroyed$))),
+        firstValueFrom(this.quietPackageClient.getOverview(countryId).pipe(takeUntil(this.destroyed$))),
+      ]);
+      const listed: ListedIds = {
+        services: new Set((services ?? []).map((s) => s.id)),
+        packages: new Set((packages ?? []).map((p) => p.id)),
+      };
+      this.listedByMarket.update((all) => ({ ...all, [market]: listed }));
+    } catch {
+      // Unjudged: its cards say nothing rather than guess.
+    }
+  }
+
+  /**
    * The catalogue is priced per market and the server withholds what has no price in the
    * address country's currency, so it is read for the chosen market first and again for every
    * country the chosen saved address names. A selection the new list no longer offers would make
@@ -515,6 +638,7 @@ export class RecurringBookingsFacade extends UnsubscribeControlDirective {
     field: 'selectedServiceIds' | 'selectedPackageIds',
     offered: Set<string | undefined>,
   ): void {
+    if (this.loadedSelectionUnjudged()) return;
     const selected = this.formData()[field];
     const kept = selected.filter((id) => offered.has(id));
     if (kept.length === selected.length) return;
@@ -546,7 +670,7 @@ export class RecurringBookingsFacade extends UnsubscribeControlDirective {
     command.cleaningDate = undefined;
     try {
       return (
-        (await firstValueFrom(this.orderClient.quote(command).pipe(takeUntil(this.destroyed$)))) ??
+        (await firstValueFrom(this.quoteClient.quote(command).pipe(takeUntil(this.destroyed$)))) ??
         null
       );
     } catch {
@@ -637,6 +761,7 @@ export class RecurringBookingsFacade extends UnsubscribeControlDirective {
   /** Load an existing template into the form so the same screen can edit it. */
   loadForEdit(template: RecurringBookingTemplateDto): void {
     this.editingId.set(template.id ?? null);
+    this.loadedSelectionUnjudged.set(true);
     this.formData.set({
       frequency: template.frequency,
       dayOfWeek: template.dayOfWeek,
@@ -805,6 +930,7 @@ export class RecurringBookingsFacade extends UnsubscribeControlDirective {
     this.cashCleared.set(false);
     this.preferredCleanerRefused.set(false);
     this.submitAttempted.set(false);
+    this.loadedSelectionUnjudged.set(false);
     this.formData.set({ ...RECURRING_WIZARD_INITIAL_DATA });
   }
 

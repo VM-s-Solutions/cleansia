@@ -101,6 +101,15 @@
               (valueChanges)="onServiceSelectionChange($event)"
             />
           </div>
+          @if (facade.hasRetiredServices()) {
+          <p class="form-hint">
+            {{
+              'pages.package_form.retired_services_hint'
+                | translate
+                  : { status: ('enums.active_status.inactive' | translate) }
+            }}
+          </p>
+          }
         </div>
 
         @if (facade.weightRows().length > 0) {
@@ -114,7 +123,7 @@
             <div class="form-field form-field--third">
               <cleansia-text-input
                 [id]="'weight-' + row.id"
-                [label]="row.name"
+                [label]="facade.serviceLabels().get(row.id) ?? row.name"
                 dataType="number"
                 [ngModel]="row.weight"
                 [ngModelOptions]="{ standalone: true }"

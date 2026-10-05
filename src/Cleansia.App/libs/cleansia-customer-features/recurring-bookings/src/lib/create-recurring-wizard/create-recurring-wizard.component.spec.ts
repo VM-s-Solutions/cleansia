@@ -3,6 +3,7 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 import { provideNoopAnimations } from '@angular/platform-browser/animations';
 import { ActivatedRoute, provideRouter, Router } from '@angular/router';
+import { CleansiaSelectComponent } from '@cleansia/components';
 import {
   DirtinessLevel,
   PackageListItem,
@@ -71,6 +72,7 @@ class FakeRecurringBookingsFacade {
   packageNamesIncluding = jest.fn<string | null, [string]>(() => null);
   isInManyPackages = jest.fn<boolean, [string]>(() => false);
   updateFormData = jest.fn();
+  pickAddress = jest.fn();
   selectPayment = jest.fn();
   toggleService = jest.fn();
   togglePackage = jest.fn();
@@ -171,6 +173,42 @@ describe('CreateRecurringWizardComponent — a service a chosen package already 
     el.querySelector<HTMLButtonElement>('.cl-rec__pick')?.click();
 
     expect(facade.toggleService).toHaveBeenCalledWith('windows');
+  });
+});
+
+// jsdom loads no stylesheet, so these read the pick's rules, which are declared an input of this
+// test target. The picked slab is --cl-heading: Sky700 light, Sky300 dark.
+describe('CreateRecurringWizardComponent — the picked pick', () => {
+  const scss = readFileSync(
+    join(__dirname, '../../../../../shared/assets/src/styles/pages/cleansia-customer/_recurring-bookings.scss'),
+    'utf8',
+  );
+  const rule = (selector: string): string =>
+    scss.match(new RegExp(`^${selector.replace(/\./g, '\\.')} \\{[\\s\\S]*?^\\}`, 'm'))?.[0] ?? '';
+  const whenPicked = (selector: string): string =>
+    rule(selector).match(/\.cl-rec__pick--on & \{([^}]*)\}/)?.[1] ?? '';
+
+  // White on the dark theme's Sky300 measured 1.7 and the price's accent 1.0. The card's ground
+  // flips with the slab, so it reads on both: 5.9 light, 10.4 dark.
+  it('inks the name, the price and the tick with the card ground, which flips with the slab', () => {
+    expect(rule('.cl-rec__pick')).toContain('background: var(--cl-heading);');
+    expect(whenPicked('.cl-rec__pick-name')).toContain('color: var(--cl-surface);');
+    expect(whenPicked('.cl-rec__pick-note')).toContain('color: var(--cl-surface);');
+    expect(whenPicked('.cl-rec__pick-tick')).toContain('background: var(--cl-surface);');
+    expect(whenPicked('.cl-rec__pick-tick')).toContain('color: var(--cl-heading);');
+  });
+
+  // The cadence, day, rooms and bathrooms chips share the slab; white on it measured 1.7 in dark.
+  it('inks a picked chip with the card ground too', () => {
+    const picked = rule('.cl-rec__chip').match(/&--on \{([^}]*)\}/)?.[1] ?? '';
+    expect(picked).toContain('background: var(--cl-heading);');
+    expect(picked).toContain('color: var(--cl-surface);');
+  });
+
+  // `:hover` outranks `--on`, so an unqualified hover turned a picked pick's border pale.
+  it('keeps the picked border under the pointer', () => {
+    expect(rule('.cl-rec__pick')).toContain('&:hover:not(.cl-rec__pick--on) {');
+    expect(rule('.cl-rec__pick')).not.toMatch(/&:hover \{/);
   });
 });
 
@@ -800,5 +838,58 @@ describe('CreateRecurringWizardComponent — the terms tick', () => {
       'pages.order.missing.terms',
     );
     expect(fixture.componentInstance.missingLabels()).toBe('recurring_booking.terms_label');
+  });
+});
+
+// The customer's pick of address goes through the facade's pickAddress, which remembers that they
+// moved the schedule: a trim after a move says the address message, not "no longer offered". Set
+// straight into the form, the move made before the schedule's own list landed read as a retirement.
+describe('CreateRecurringWizardComponent — the address', () => {
+  let fixture: ComponentFixture<CreateRecurringWizardComponent>;
+  let facade: FakeRecurringBookingsFacade;
+
+  beforeEach(async () => {
+    facade = new FakeRecurringBookingsFacade();
+    await TestBed.configureTestingModule({
+      imports: [CreateRecurringWizardComponent, TranslateModule.forRoot()],
+      providers: [
+        provideRouter([]),
+        provideNoopAnimations(),
+        {
+          provide: ActivatedRoute,
+          useValue: {
+            snapshot: { paramMap: { get: () => null }, queryParamMap: { get: () => null } },
+          },
+        },
+      ],
+    })
+      .overrideComponent(CreateRecurringWizardComponent, {
+        set: {
+          providers: [{ provide: RecurringBookingsFacade, useValue: facade }],
+        },
+      })
+      .compileComponents();
+    fixture = TestBed.createComponent(CreateRecurringWizardComponent);
+    fixture.detectChanges();
+  });
+
+  const addressSelect = () =>
+    fixture.debugElement
+      .queryAll(By.directive(CleansiaSelectComponent))
+      .find(
+        (select) =>
+          (select.componentInstance as CleansiaSelectComponent).label() ===
+          'recurring_booking.address_label',
+      );
+
+  it("hands the customer's pick to the facade as a pick, not a form write", () => {
+    facade.updateFormData.mockClear();
+
+    addressSelect()?.triggerEventHandler('ngModelChange', 'addr-cz');
+
+    expect(facade.pickAddress).toHaveBeenCalledWith('addr-cz');
+    expect(facade.updateFormData).not.toHaveBeenCalledWith(
+      expect.objectContaining({ savedAddressId: expect.anything() }),
+    );
   });
 });

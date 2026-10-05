@@ -71,6 +71,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil3.compose.AsyncImage
 import coil3.request.ImageRequest
 import coil3.size.Size
+import cz.cleansia.core.ui.theme.primaryText
 import cz.cleansia.customer.R
 import cz.cleansia.customer.core.disputes.DisputeDetailsDto
 import cz.cleansia.customer.core.disputes.DisputeEvidenceDto
@@ -738,7 +739,7 @@ private fun ErrorState(
         Text(
             text = stringResource(R.string.common_back),
             style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.SemiBold),
-            color = MaterialTheme.colorScheme.primary,
+            color = primaryText(),
             modifier = Modifier
                 .clip(RoundedCornerShape(999.dp))
                 .clickable(onClick = onBack)

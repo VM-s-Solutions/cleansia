@@ -66,6 +66,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import cz.cleansia.core.ui.theme.primaryText
 import cz.cleansia.customer.R
 import cz.cleansia.customer.core.disputes.DisputeSettlement
 import cz.cleansia.customer.ui.state.ActionState
@@ -468,7 +469,7 @@ private fun PickedEvidenceRow(
                 EvidenceUploadState.Uploaded -> Text(
                     text = stringResource(R.string.dispute_evidence_uploaded),
                     style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.primary,
+                    color = primaryText(),
                 )
                 EvidenceUploadState.Failed -> Text(
                     text = stringResource(R.string.dispute_evidence_upload_failed),

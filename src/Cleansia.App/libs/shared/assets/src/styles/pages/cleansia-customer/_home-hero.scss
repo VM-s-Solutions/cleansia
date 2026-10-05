@@ -276,7 +276,7 @@ cleansia-hero {
     font-weight: 700;
     line-height: 1.08;
     letter-spacing: -1.1px;
-    color: $primary;
+    color: var(--cl-accent-text);
     font-variant-numeric: tabular-nums;
     margin-top: 0.25rem;
   }
@@ -498,7 +498,7 @@ cleansia-hero {
     font-size: 38px;
     line-height: 1.08;
     letter-spacing: -1.1px;
-    color: var(--cl-accent);
+    color: var(--cl-accent-text);
     margin-top: 4px;
   }
 }
@@ -563,7 +563,7 @@ cleansia-hero {
   font-size: calc(2.25 * var(--cl-u)); // 36px
   line-height: 1.08;
   letter-spacing: -1.1px;
-  color: $primary;
+  color: var(--cl-accent-text);
   margin-top: 4px;
 
   &--empty {

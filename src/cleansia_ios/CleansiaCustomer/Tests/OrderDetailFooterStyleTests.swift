@@ -16,11 +16,26 @@ final class OrderDetailFooterStyleTests: XCTestCase {
     /// Make recurring row directly above it on a completed order, leaving the two
     /// separable only by reading their labels.
     func testReportIssueNoLongerMatchesTheMakeRecurringRowAboveIt() {
-        XCTAssertEqual(OrderDetailFooterStyle.makeRecurring.tint, CleansiaColors.primary)
+        XCTAssertEqual(OrderDetailFooterStyle.makeRecurring.tint, CleansiaColors.primaryText)
         XCTAssertNotEqual(
             OrderDetailFooterStyle.reportIssue.tint,
             OrderDetailFooterStyle.makeRecurring.tint
         )
+    }
+
+    /// Make recurring is an outlined text button: its label and icon take the text ink (sky-600 is 4.10:1
+    /// on white) and its outline keeps the primary (owner decision 2026-10-05).
+    func testMakeRecurringDrawsItsLabelInTheTextInkInsideAPrimaryOutline() throws {
+        let root = URL(fileURLWithPath: #filePath).deletingLastPathComponent().deletingLastPathComponent()
+        let source = try String(
+            contentsOf: root.appendingPathComponent("Sources/Features/Orders/OrderDetailView.swift"),
+            encoding: .utf8
+        ).components(separatedBy: .whitespacesAndNewlines).joined()
+
+        XCTAssertNotEqual(OrderDetailFooterStyle.makeRecurring.tint, CleansiaColors.primary)
+        XCTAssertTrue(source.contains(
+            "contentColor:OrderDetailFooterStyle.makeRecurring.tint,borderColor:CleansiaColors.primary,"
+        ))
     }
 
     /// Cancel and Report issue now share one tint, and Confirmed is the single

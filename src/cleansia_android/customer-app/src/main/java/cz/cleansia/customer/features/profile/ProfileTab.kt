@@ -53,6 +53,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -63,12 +64,14 @@ import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import cz.cleansia.core.ui.components.CleansiaTextButton
 import cz.cleansia.customer.R
 import cz.cleansia.core.format.formatOrderPrice
 import cz.cleansia.customer.core.loyalty.CreditDto
@@ -78,8 +81,9 @@ import cz.cleansia.customer.ui.theme.BrandGradients
 import cz.cleansia.customer.ui.theme.CleansiaTheme
 import cz.cleansia.core.ui.theme.Poppins
 import cz.cleansia.core.ui.theme.Spacing
-import cz.cleansia.customer.ui.theme.Sky600
+import cz.cleansia.customer.ui.theme.Sky700
 import cz.cleansia.customer.ui.theme.asList
+import cz.cleansia.customer.ui.theme.isDark
 import kotlinx.datetime.toJavaLocalDateTime
 import kotlinx.datetime.toLocalDateTime
 import cz.cleansia.customer.features.main.MainShellBottomClearance
@@ -158,16 +162,19 @@ fun ProfileTab(
     var showLogoutDialog by remember { mutableStateOf(false) }
     var showCreditSheet by remember { mutableStateOf(false) }
     val scrollState = rememberScrollState()
+    var heroHeight by remember { mutableIntStateOf(0) }
+    val heroColors = profileHeroColors(isDark(), BrandGradients.blue())
 
     Column(
         modifier = modifier
             .fillMaxSize()
             .background(MaterialTheme.colorScheme.background)
-            .statusBarFade(scrollState)
+            // The fade wears the hero's top colour while the hero is under the status bar.
+            .statusBarFade(scrollState, heroTint = heroColors.first, heroHeight = { heroHeight })
             .verticalScroll(scrollState),
     ) {
         // 1. Hero + stats card (stats overlap the hero's bottom edge)
-        Box {
+        Box(Modifier.onSizeChanged { heroHeight = it.height }) {
             ProfileHero(
                 firstName = firstName,
                 lastName = lastName,
@@ -277,7 +284,7 @@ fun ProfileTab(
                 ) { Text(stringResource(R.string.profile_logout_dialog_confirm)) }
             },
             dismissButton = {
-                TextButton(onClick = { showLogoutDialog = false }) {
+                CleansiaTextButton(onClick = { showLogoutDialog = false }) {
                     Text(stringResource(R.string.profile_logout_dialog_cancel))
                 }
             },
@@ -289,6 +296,16 @@ fun ProfileTab(
 // bound now that the label is a verb alone: en needs 0.26, ru needs 0.54 — more than the name can
 // spare — so ru ellipsizes below ~376dp by design.
 private const val EditChipMaxWidthFraction = 0.45f
+
+/**
+ * The hero's gradient: the brand blue, except that in light mode it starts at sky-700. The status bar sits
+ * on the hero's top at rest and on the fade in that colour once scrolled, and its white clock and icons
+ * read at 3.9:1 on the brand blue's sky-600 there; on sky-700, 5.0:1 at the clock's lowest pixel. Dark mode
+ * keeps the brand blue (white on sky-800, 7.3:1). The shared brand blue is unchanged; iOS's
+ * `ProfileTab.heroTop` is the twin.
+ */
+internal fun profileHeroColors(dark: Boolean, brand: Pair<Color, Color>): Pair<Color, Color> =
+    if (dark) brand else Sky700 to brand.second
 
 // The gradient runs edge to edge under the status bar and the row starts this far below it. iOS pads
 // its hero by the same 48 inside the safe area and paints the background up through the status bar.
@@ -311,7 +328,7 @@ private fun ProfileHero(
     BoxWithConstraints(
         modifier = Modifier
             .fillMaxWidth()
-            .background(brush = Brush.verticalGradient(BrandGradients.blue().asList()))
+            .background(brush = Brush.verticalGradient(profileHeroColors(isDark(), BrandGradients.blue()).asList()))
             .padding(
                 start = Spacing.ML,
                 end = Spacing.ML,
@@ -334,10 +351,10 @@ private fun ProfileHero(
             ) {
                 ProfileAvatarContent(
                     initials = initials,
-                    // The circle is fixed white in both themes, so the initials pin the light-mode
-                    // brand blue; the theme-adaptive primary drops to 2.1:1 against it in dark.
+                    // The circle is fixed white in both themes, so the initials pin the light-mode text
+                    // blue, sky-700 (5.93:1); the theme-adaptive primary drops to 2.1:1 against it in dark.
                     initialsStyle = MaterialTheme.typography.headlineSmall,
-                    initialsColor = Sky600,
+                    initialsColor = Sky700,
                     photo = photo,
                     onLoadFailed = onAvatarLoadFailed,
                     onLoadSucceeded = onAvatarLoadSucceeded,

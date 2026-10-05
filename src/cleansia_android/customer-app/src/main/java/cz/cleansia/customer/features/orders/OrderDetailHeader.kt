@@ -42,6 +42,7 @@ import cz.cleansia.core.format.formatOrderDateTime
 import cz.cleansia.core.format.formatOrderPrice
 import cz.cleansia.core.ui.components.OrderTrackerBar as CoreOrderTrackerBar
 import cz.cleansia.core.ui.theme.Spacing
+import cz.cleansia.core.ui.theme.primaryText
 import cz.cleansia.customer.R
 import cz.cleansia.customer.core.orders.OrderDetailDto
 import cz.cleansia.customer.ui.format.orderStatusColor
@@ -350,7 +351,7 @@ internal fun OrderFactsStrip(
             Text(
                 text = formatOrderPrice(order.totalPrice, currencyCode),
                 style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
-                color = MaterialTheme.colorScheme.primary,
+                color = primaryText(),
             )
         }
     }

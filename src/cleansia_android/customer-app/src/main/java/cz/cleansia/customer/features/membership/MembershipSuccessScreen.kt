@@ -42,6 +42,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import cz.cleansia.customer.R
 import cz.cleansia.core.ui.components.CleansiaPrimaryButton
+import cz.cleansia.core.ui.components.CleansiaTextButton
 import cz.cleansia.customer.ui.theme.SuccessText
 
 /**
@@ -176,7 +177,7 @@ fun MembershipSuccessScreen(
             Spacer(Modifier.height(8.dp))
             // Secondary — plain "I'm done here" exit. TextButton-style so the
             // recurring CTA stays the dominant choice.
-            androidx.compose.material3.TextButton(
+            CleansiaTextButton(
                 onClick = onPrimary,
                 modifier = Modifier.fillMaxWidth(),
             ) {

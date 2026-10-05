@@ -59,6 +59,8 @@ import kotlinx.datetime.LocalDateTime
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.atStartOfDayIn
 import kotlinx.datetime.toInstant
+import okhttp3.MediaType.Companion.toMediaType
+import okhttp3.ResponseBody.Companion.toResponseBody
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
@@ -126,6 +128,7 @@ class CreateRecurringViewModelTest {
         every { addressRepo.addresses } returns addressesFlow
         every { recurringRepo.templates } returns templatesFlow
         every { appContext.getString(R.string.booking_market_items_unavailable) } returns marketNotice
+        every { appContext.getString(R.string.recurring_selection_no_longer_offered) } returns retiredNotice
     }
 
     private fun viewModel(orderId: String? = null, templateId: String? = null) =
@@ -297,6 +300,8 @@ class CreateRecurringViewModelTest {
 
     private val marketNotice = "Some of your picks are not offered at this address and were removed."
 
+    private val retiredNotice = "Some of this schedule's choices are no longer offered and were removed."
+
     private fun address(serverId: String, countryId: String?, isDefault: Boolean = false) = UserAddress(
         id = serverId,
         serverId = serverId,
@@ -461,9 +466,16 @@ class CreateRecurringViewModelTest {
         dirtinessLevel = DirtinessLevel.Heavy,
     )
 
+    /** The schedule being edited, cached, in a catalogue that still lists everything it books. */
+    private fun editing(template: RecurringBookingTemplateDto) {
+        catalogServicesFlow.value = template.selectedServiceIds.map(::service)
+        catalogPackagesFlow.value = template.selectedPackageIds.map(::pkg)
+        templatesFlow.value = listOf(template)
+    }
+
     @Test
     fun `edit mode prefills every field from the cached template`() = runTest {
-        templatesFlow.value = listOf(editableTemplate)
+        editing(editableTemplate)
 
         val vm = viewModel(templateId = "tpl-1")
         advanceUntilIdle()
@@ -481,6 +493,174 @@ class CreateRecurringViewModelTest {
         assertEquals(2, state.paymentType)
         assertEquals("2026-09-15T00:00:00Z", state.startsOnIso)
         assertEquals(DirtinessLevel.Heavy, state.dirtinessLevel)
+        verify(exactly = 0) { snackbar.showInfo(any<String>()) }
+    }
+
+    /**
+     * QuoteOrder refuses an entry taken off the list (5a6b9333a), so a form still holding one never
+     * learns the crew: cash stayed "confirmed once the price is ready" and its save was held back for
+     * good. The edit drops it with the notice, as iOS and the web do, and the cash edit goes out.
+     */
+    @Test
+    fun `editing a cash schedule drops a service no longer listed and still saves in cash`() = runTest {
+        catalogServicesFlow.value = listOf(service("svc-7"))
+        catalogPackagesFlow.value = listOf(pkg("pkg-3"))
+        templatesFlow.value = listOf(
+            editableTemplate.copy(
+                selectedServiceIds = listOf("svc-7", "svc-retired"),
+                paymentType = CreateRecurringViewModel.PAYMENT_CASH,
+            ),
+        )
+        coEvery { bookingApi.quote(any()) } answers {
+            if ("svc-retired" in firstArg<QuoteOrderCommand>().selectedServiceIds) {
+                Response.error(400, "{}".toResponseBody("application/problem+json".toMediaType()))
+            } else {
+                Response.success(crewQuote(1))
+            }
+        }
+        coEvery { recurringRepo.update(any()) } returns ApiResult.Success(editableTemplate)
+
+        val vm = viewModel(templateId = "tpl-1")
+        advanceUntilIdle()
+
+        assertEquals(setOf("svc-7"), vm.state.value.selectedServiceIds)
+        verify(exactly = 1) { snackbar.showInfo(retiredNotice) }
+        verify(exactly = 0) { snackbar.showInfo(marketNotice) }
+        assertEquals(CashEligibility.Available, vm.cashEligibility.value)
+
+        vm.submit()
+        advanceUntilIdle()
+
+        val request = slot<UpdateRecurringBookingRequest>()
+        coVerify(exactly = 1) { recurringRepo.update(capture(request)) }
+        assertEquals(listOf("svc-7"), request.captured.selectedServiceIds)
+        assertEquals(CreateRecurringViewModel.PAYMENT_CASH, request.captured.paymentType)
+        verify(exactly = 0) { snackbar.showErrorKey(R.string.recurring_cash_unchecked) }
+    }
+
+    /** No catalogue on hand when the template lands: the entry read judges it once it does. */
+    @Test
+    fun `a schedule being edited before any catalogue has loaded is pruned when it lands`() = runTest {
+        templatesFlow.value = listOf(editableTemplate.copy(selectedPackageIds = listOf("pkg-3", "pkg-retired")))
+        val entry = CompletableDeferred<Unit>()
+        coEvery { catalogRepo.refresh(null) } coAnswers {
+            entry.await()
+            catalogServicesFlow.value = listOf(service("svc-7"))
+            catalogPackagesFlow.value = listOf(pkg("pkg-3"))
+            catalogLoadedFlow.value = true
+            ApiResult.Success(Unit)
+        }
+
+        val vm = viewModel(templateId = "tpl-1")
+        advanceUntilIdle()
+        assertEquals(setOf("pkg-3", "pkg-retired"), vm.state.value.selectedPackageIds)
+
+        entry.complete(Unit)
+        advanceUntilIdle()
+
+        assertEquals(setOf("svc-7"), vm.state.value.selectedServiceIds)
+        assertEquals(setOf("pkg-3"), vm.state.value.selectedPackageIds)
+        verify(exactly = 1) { snackbar.showInfo(retiredNotice) }
+        verify(exactly = 0) { snackbar.showInfo(marketNotice) }
+    }
+
+    // W2: the edit form's load-time trim is a retirement, not the address's market; the market message
+    // stays for a trim the customer's own address change causes.
+
+    @Test
+    fun `a retry that lands the first catalogue for a schedule being edited says the entry is no longer offered`() = runTest {
+        templatesFlow.value = listOf(editableTemplate)
+        coEvery { catalogRepo.refresh(any()) } returns ApiResult.Error(ApiError.Network("boom"))
+        val vm = viewModel(templateId = "tpl-1")
+        advanceUntilIdle()
+        assertEquals(RecurringCatalogState.Error, vm.catalogState.value)
+
+        coEvery { catalogRepo.refresh(null) } coAnswers {
+            loadedCatalogue(countryId = null, services = listOf("svc-7"), packages = emptyList())
+            ApiResult.Success(Unit)
+        }
+        vm.retryCatalog()
+        advanceUntilIdle()
+
+        assertEquals(emptySet<String>(), vm.state.value.selectedPackageIds)
+        verify(exactly = 1) { snackbar.showInfo(retiredNotice) }
+        verify(exactly = 0) { snackbar.showInfo(marketNotice) }
+    }
+
+    /** The form opens on the chosen market; the schedule's own address then reads its market, and that read judges it. */
+    @Test
+    fun `a schedule being edited in another market is judged by its own market's catalogue as no longer offered`() = runTest {
+        addressesFlow.value = listOf(address("addr-sk", "svk-id"))
+        templatesFlow.value = listOf(editableTemplate.copy(savedAddressId = "addr-sk"))
+        slovakCatalogue(service("svc-7"))
+
+        val vm = viewModel(templateId = "tpl-1")
+        advanceUntilIdle()
+
+        coVerify(exactly = 1) { catalogRepo.refresh("svk-id") }
+        assertEquals(setOf("svc-7"), vm.state.value.selectedServiceIds)
+        assertEquals(emptySet<String>(), vm.state.value.selectedPackageIds)
+        verify(exactly = 1) { snackbar.showInfo(retiredNotice) }
+        verify(exactly = 0) { snackbar.showInfo(marketNotice) }
+    }
+
+    @Test
+    fun `moving a schedule being edited to another market's address says the market message`() = runTest {
+        addressesFlow.value = listOf(address("addr-9", countryId = null), address("addr-sk", "svk-id"))
+        editing(editableTemplate)
+        slovakCatalogue(service("svc-1"))
+        val vm = viewModel(templateId = "tpl-1")
+        advanceUntilIdle()
+        verify(exactly = 0) { snackbar.showInfo(any<String>()) }
+
+        vm.setSavedAddressId("addr-sk")
+        advanceUntilIdle()
+
+        assertEquals(emptySet<String>(), vm.state.value.selectedServiceIds)
+        assertEquals(emptySet<String>(), vm.state.value.selectedPackageIds)
+        verify(exactly = 1) { snackbar.showInfo(marketNotice) }
+        verify(exactly = 0) { snackbar.showInfo(retiredNotice) }
+    }
+
+    /** A new schedule prefilled from an order keeps the market message: the order may have been priced elsewhere. */
+    @Test
+    fun `a new schedule never says no longer offered`() = runTest {
+        addressesFlow.value = listOf(address("addr-sk", "svk-id", isDefault = true))
+        slovakCatalogue(service("s-1"))
+        sourceOrder(services = listOf("s-1", "s-2"))
+
+        viewModel(orderId = "ord-7")
+        advanceUntilIdle()
+
+        verify(exactly = 1) { snackbar.showInfo(marketNotice) }
+        verify(exactly = 0) { snackbar.showInfo(retiredNotice) }
+    }
+
+    /**
+     * Home's catalogue can outlive a service launched since: a template landing while the form's own
+     * read is in flight waits for it, as iOS's load() does, so an active entry is never dropped.
+     */
+    @Test
+    fun `a schedule being edited is not pruned against an older cached catalogue while the form reads its own`() = runTest {
+        loadedCatalogue(countryId = null, services = listOf("svc-7"), packages = listOf("pkg-3"))
+        templatesFlow.value = listOf(editableTemplate.copy(selectedServiceIds = listOf("svc-7", "svc-new")))
+        val entry = CompletableDeferred<Unit>()
+        coEvery { catalogRepo.refresh(null) } coAnswers {
+            entry.await()
+            catalogServicesFlow.value = listOf(service("svc-7"), service("svc-new"))
+            ApiResult.Success(Unit)
+        }
+
+        val vm = viewModel(templateId = "tpl-1")
+        advanceUntilIdle()
+        assertEquals(setOf("svc-7", "svc-new"), vm.state.value.selectedServiceIds)
+
+        entry.complete(Unit)
+        advanceUntilIdle()
+
+        assertEquals(setOf("svc-7", "svc-new"), vm.state.value.selectedServiceIds)
+        assertEquals(setOf("pkg-3"), vm.state.value.selectedPackageIds)
+        verify(exactly = 0) { snackbar.showInfo(any<String>()) }
     }
 
     @Test
@@ -499,7 +679,7 @@ class CreateRecurringViewModelTest {
 
     @Test
     fun `edit mode submits an update carrying the template id and never creates`() = runTest {
-        templatesFlow.value = listOf(editableTemplate)
+        editing(editableTemplate)
         coEvery { recurringRepo.update(any()) } returns ApiResult.Success(editableTemplate)
 
         val vm = viewModel(templateId = "tpl-1")
@@ -527,7 +707,7 @@ class CreateRecurringViewModelTest {
 
     @Test
     fun `edit mode update failure surfaces ActionState Error`() = runTest {
-        templatesFlow.value = listOf(editableTemplate)
+        editing(editableTemplate)
         coEvery { recurringRepo.update(any()) } returns
             ApiResult.Error(ApiError.Server(statusCode = 500, message = "server boom"))
 
@@ -554,7 +734,7 @@ class CreateRecurringViewModelTest {
 
     @Test
     fun `edit mode echoes the stored end date back so the update cannot erase it`() = runTest {
-        templatesFlow.value = listOf(editableTemplate.copy(endsOn = "2026-12-31T00:00:00Z"))
+        editing(editableTemplate.copy(endsOn = "2026-12-31T00:00:00Z"))
         coEvery { recurringRepo.update(any()) } returns ApiResult.Success(editableTemplate)
 
         val vm = viewModel(templateId = "tpl-1")
@@ -574,7 +754,7 @@ class CreateRecurringViewModelTest {
     @OptIn(ExperimentalMaterial3Api::class)
     @Test
     fun `edit mode offers no start on or after the stored end date`() = runTest {
-        templatesFlow.value = listOf(editableTemplate.copy(endsOn = "2026-12-31T00:00:00Z"))
+        editing(editableTemplate.copy(endsOn = "2026-12-31T00:00:00Z"))
 
         val vm = viewModel(templateId = "tpl-1")
         advanceUntilIdle()
@@ -590,7 +770,7 @@ class CreateRecurringViewModelTest {
     @OptIn(ExperimentalMaterial3Api::class)
     @Test
     fun `a schedule with no end date leaves the start open after today`() = runTest {
-        templatesFlow.value = listOf(editableTemplate)
+        editing(editableTemplate)
 
         val vm = viewModel(templateId = "tpl-1")
         advanceUntilIdle()
@@ -641,7 +821,7 @@ class CreateRecurringViewModelTest {
 
     @Test
     fun `edit mode echoes the stored favourite cleaner back so the update cannot erase it`() = runTest {
-        templatesFlow.value = listOf(editableTemplate.copy(preferredEmployeeId = "emp-7"))
+        editing(editableTemplate.copy(preferredEmployeeId = "emp-7"))
         coEvery { recurringRepo.update(any()) } returns ApiResult.Success(editableTemplate)
 
         val vm = viewModel(templateId = "tpl-1")
@@ -657,7 +837,7 @@ class CreateRecurringViewModelTest {
 
     @Test
     fun `a refused favourite cleaner is kept and offered back, and nothing is resent on its own`() = runTest {
-        templatesFlow.value = listOf(editableTemplate.copy(preferredEmployeeId = "emp-7"))
+        editing(editableTemplate.copy(preferredEmployeeId = "emp-7"))
         coEvery { recurringRepo.update(any()) } returns notEligible
 
         val vm = viewModel(templateId = "tpl-1")
@@ -674,7 +854,7 @@ class CreateRecurringViewModelTest {
 
     @Test
     fun `saving without the favourite cleaner resends the same update with only the cleaner cleared`() = runTest {
-        templatesFlow.value = listOf(editableTemplate.copy(preferredEmployeeId = "emp-7", endsOn = "2026-12-31T00:00:00Z"))
+        editing(editableTemplate.copy(preferredEmployeeId = "emp-7", endsOn = "2026-12-31T00:00:00Z"))
         val sent = mutableListOf<UpdateRecurringBookingRequest>()
         coEvery { recurringRepo.update(capture(sent)) } returnsMany listOf(notEligible, ApiResult.Success(editableTemplate))
         val vm = viewModel(templateId = "tpl-1")
@@ -770,7 +950,7 @@ class CreateRecurringViewModelTest {
 
     @Test
     fun `an edit sends the favourite cleaner the customer changed to, and none once cleared`() = runTest {
-        templatesFlow.value = listOf(editableTemplate.copy(preferredEmployeeId = "emp-7"))
+        editing(editableTemplate.copy(preferredEmployeeId = "emp-7"))
         val sent = mutableListOf<UpdateRecurringBookingRequest>()
         coEvery { recurringRepo.update(capture(sent)) } returns ApiResult.Success(editableTemplate)
         val vm = viewModel(templateId = "tpl-1")
@@ -805,7 +985,7 @@ class CreateRecurringViewModelTest {
 
     @Test
     fun `submit failure shows the backend message, not a generic key`() = runTest {
-        templatesFlow.value = listOf(editableTemplate)
+        editing(editableTemplate)
         coEvery { recurringRepo.update(any()) } returns
             ApiResult.Error(ApiError.BadRequest(message = plusRefusal, errorKey = "recurring_booking.membership_required"))
 
@@ -837,7 +1017,7 @@ class CreateRecurringViewModelTest {
 
     @Test
     fun `submit failure on a transport error stays silent — the interceptor owns that toast`() = runTest {
-        templatesFlow.value = listOf(editableTemplate)
+        editing(editableTemplate)
         coEvery { recurringRepo.update(any()) } returns
             ApiResult.Error(ApiError.Network("Check your internet connection and try again."))
 
@@ -1167,7 +1347,7 @@ class CreateRecurringViewModelTest {
 
     @Test
     fun `a stored start off the grid goes back only once an offered start is picked`() = runTest {
-        templatesFlow.value = listOf(editableTemplate.copy(timeOfDay = "03:07"))
+        editing(editableTemplate.copy(timeOfDay = "03:07"))
         coEvery { recurringRepo.update(any()) } returns ApiResult.Success(editableTemplate)
 
         val vm = viewModel(templateId = "tpl-1")
@@ -1450,7 +1630,7 @@ class CreateRecurringViewModelTest {
     @Test
     fun `editing a cash schedule that now needs two cleaners takes cash away`() = runTest {
         crewOf(2)
-        templatesFlow.value = listOf(editableTemplate.copy(paymentType = CreateRecurringViewModel.PAYMENT_CASH))
+        editing(editableTemplate.copy(paymentType = CreateRecurringViewModel.PAYMENT_CASH))
 
         val vm = viewModel(templateId = "tpl-1")
         advanceUntilIdle()
@@ -1465,7 +1645,7 @@ class CreateRecurringViewModelTest {
     @Test
     fun `the edit goes out once the customer picks card`() = runTest {
         crewOf(2)
-        templatesFlow.value = listOf(editableTemplate.copy(paymentType = CreateRecurringViewModel.PAYMENT_CASH))
+        editing(editableTemplate.copy(paymentType = CreateRecurringViewModel.PAYMENT_CASH))
         coEvery { recurringRepo.update(any()) } returns ApiResult.Success(editableTemplate)
         val vm = viewModel(templateId = "tpl-1")
         advanceUntilIdle()

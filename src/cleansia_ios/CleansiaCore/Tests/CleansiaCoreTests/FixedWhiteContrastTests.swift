@@ -8,10 +8,14 @@ import XCTest
 /// arithmetic to the two heroes that render it is `AvatarDiscBindingTests` below — without it these
 /// constants would only model a surface, never observe one.
 final class FixedWhiteContrastTests: XCTestCase {
-    func testInkClearsTheLargeTextFloorAgainstTheFixedWhiteSurface() {
-        let ratio = contrastRatio(CleansiaColors.onFixedWhiteHex, CleansiaColors.fixedWhiteHex)
-        XCTAssertGreaterThanOrEqual(ratio, largeTextFloor)
-        XCTAssertEqual(ratio, 4.095, accuracy: 0.001)
+    /// The initials ink in both apps (finding 2026-10-05, owner decision 2026-10-05 for the partner app): the
+    /// 18pt semibold initials are not large text in WCAG's terms, so they take the 4.5:1 floor, which the
+    /// light-mode brand blue misses.
+    func testTheTextInkClearsTheBodyTextFloorAgainstTheFixedWhiteSurface() {
+        let ratio = contrastRatio(CleansiaColors.primaryTextOnFixedWhiteHex, CleansiaColors.fixedWhiteHex)
+        XCTAssertGreaterThanOrEqual(ratio, 4.5)
+        XCTAssertEqual(ratio, 5.93, accuracy: 0.01)
+        XCTAssertEqual(contrastRatio(lightPrimary, CleansiaColors.fixedWhiteHex), 4.095, accuracy: 0.001)
     }
 
     func testTheAdaptivePrimaryWouldMissTheFloorOnThatSurface() {
@@ -54,9 +58,10 @@ final class AvatarDiscBindingTests: XCTestCase {
     ]
 
     private static let discInks: [String: UInt32] = [
-        "CleansiaColors.onFixedWhite": CleansiaColors.onFixedWhiteHex
+        "CleansiaColors.primaryTextOnFixedWhite": CleansiaColors.primaryTextOnFixedWhiteHex
     ]
 
+    /// Both apps draw the initials in the one ink the disc names; no caller can pass another.
     func testTheHeroDiscPairsAMeasuredInkWithAMeasuredFill() throws {
         for hero in Self.heroes {
             let block = try discBlock(of: hero)
@@ -69,8 +74,8 @@ final class AvatarDiscBindingTests: XCTestCase {
             let ink = try XCTUnwrap(inks.first.flatMap { Self.discInks[$0] }, unmeasured(hero, inks))
 
             let ratio = contrastRatio(ink, fill)
-            XCTAssertGreaterThanOrEqual(ratio, largeTextFloor, "\(hero): initials measure \(ratio):1 on the disc")
-            XCTAssertEqual(ratio, 4.095, accuracy: 0.001, hero)
+            XCTAssertGreaterThanOrEqual(ratio, 4.5, "\(hero): initials measure \(ratio):1 on the disc")
+            XCTAssertEqual(ratio, 5.93, accuracy: 0.01, hero)
         }
     }
 
@@ -178,8 +183,11 @@ final class AvatarDiscBindingTests: XCTestCase {
     }
 }
 
-/// WCAG 2.x 1.4.3 floor for large text — the headline-small initials qualify.
+/// WCAG 2.x 1.4.3 floor for large text.
 private let largeTextFloor = 3.0
+
+/// sky600 — the light-mode brand blue the initials were drawn in before.
+private let lightPrimary: UInt32 = 0x0284C7
 
 /// sky400 — what the theme-adaptive `CleansiaColors.primary` resolves to in dark mode.
 private let adaptivePrimaryDark: UInt32 = 0x38BDF8

@@ -20,14 +20,12 @@ struct ProfileTab: View {
     static let subscribeRoute: ShellRoute = .subscribePlus
 
     /// The hero's top colour: the status bar sits on it at rest, and the fade wears it while the hero is
-    /// under the status bar. From iOS 17 the system draws the clock, signal and battery white over the
-    /// hero, and on the brand blue's sky-600 they read at 4.1:1, so in light mode Profile's hero starts at
-    /// sky-700 (5.9:1). Before iOS 17 they are black in light mode whatever is under them (5.1:1 on
-    /// sky-600, 3.5:1 on sky-700), so there the hero keeps the brand blue, as dark mode does on every
-    /// version (white on sky-800, 7.6:1). The shared `BrandGradient.blue` is unchanged.
+    /// under the status bar, where the screen asks for the white clock, signal and battery
+    /// (`StatusBarStyleBridge`). On the brand blue's sky-600 they read at 4.1:1, so in light mode Profile's
+    /// hero starts at sky-700 (5.9:1) on every version; dark mode keeps the brand blue (white on sky-800,
+    /// 7.6:1). The shared `BrandGradient.blue` is unchanged.
     static func heroTop(_ scheme: ColorScheme) -> Color {
-        if #available(iOS 17, *), scheme == .light { return heroTopLight }
-        return BrandGradient.blue.colors[0]
+        scheme == .light ? heroTopLight : BrandGradient.blue.colors[0]
     }
 
     private static let heroTopLight = Color(red: 3 / 255, green: 105 / 255, blue: 161 / 255)

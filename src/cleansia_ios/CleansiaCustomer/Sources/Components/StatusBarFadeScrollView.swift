@@ -1,5 +1,6 @@
 import CleansiaCore
 import SwiftUI
+import UIKit
 
 /// A vertical scroll view whose content fades out under the status bar once it scrolls — for the
 /// screens that hide the navigation bar (Home, Profile, the Plus offer). Shown only once the content
@@ -13,12 +14,14 @@ import SwiftUI
 /// content (the Dynamic Island's or the notch's bottom, or a home-button phone's status bar; see
 /// `StatusBarFade.height`), held at 90 % behind the clock, signal and battery, so the content under
 /// them stays out of their way, and eased out to clear over its last few points, sampled at several
-/// stops so no line marks its end. The glyphs' colour is the system's: before iOS 17 it follows the
-/// colour scheme whatever is under it (black in light mode), so a screen hands over a dark `heroTint`
-/// only where the glyphs read on it (the Plus offer's `fadeHeroTint`). No material: a blur under the
-/// colour read as a different colour. With Reduce Transparency on, the colour is drawn at full
-/// strength. It is the same on every version: iOS 26's system soft scroll edge was tried and the
-/// system draws it well below the status bar, at a height an app cannot set.
+/// stops so no line marks its end. On a screen with a hero the glyphs are asked for white while the fade
+/// is dark enough for them (`StatusBarFade.asksForWhiteClock`, through `StatusBarStyleBridge`) and left
+/// to the system once the page colour has taken over; the system alone drew them black on Profile's
+/// 90 % sky-700 from iOS 17 when white content was under it, and black in light mode whatever was under
+/// them before iOS 17. No material: a blur under the colour read as a different colour. With Reduce
+/// Transparency on, the colour is drawn at full strength. It is the same on every version: iOS 26's
+/// system soft scroll edge was tried and the system draws it well below the status bar, at a height an
+/// app cannot set.
 ///
 /// → /mobile-app/patterns#status-bar-fade
 struct StatusBarFadeScrollView<Content: View>: View {
@@ -77,14 +80,24 @@ private struct StatusBarFadeBand: View {
         GeometryReader { proxy in
             let top = proxy.safeAreaInsets.top
             let height = StatusBarFade.height(safeTop: top)
+            let page = StatusBarFade.rgb(CleansiaColors.background, colorScheme)
+            let hero = heroTint.map { StatusBarFade.rgb($0, colorScheme) }
+            let share = hero.map { StatusBarFade.legibleShare(
+                StatusBarFade.heroShare(heroBottom: heroBottom, safeTop: top, height: height),
+                hero: $0,
+                page: page
+            ) } ?? 0
             ZStack {
                 CleansiaColors.background
                 if let heroTint {
-                    heroTint.opacity(StatusBarFade.legibleShare(
-                        StatusBarFade.heroShare(heroBottom: heroBottom, safeTop: top, height: height),
-                        hero: StatusBarFade.rgb(heroTint, colorScheme),
-                        page: StatusBarFade.rgb(CleansiaColors.background, colorScheme)
-                    ))
+                    heroTint.opacity(share)
+                }
+            }
+            .background {
+                if let hero {
+                    StatusBarStyleBridge(
+                        lightContent: StatusBarFade.asksForWhiteClock(share: share, hero: hero, page: page)
+                    )
                 }
             }
             .mask(LinearGradient(
@@ -101,6 +114,45 @@ private struct StatusBarFadeBand: View {
         }
         .allowsHitTesting(false)
         .accessibilityHidden(true)
+    }
+}
+
+/// Asks UIKit for the status bar's style from inside the SwiftUI hierarchy: a hosting controller hands the
+/// question down to the child controller a representable adds (`childForStatusBarStyle`), measured on
+/// iOS 16.4, 18.6 and 26.3. `.toolbarColorScheme` reaches no further than a visible navigation bar, and
+/// these screens hide theirs. White while `lightContent`; otherwise the system's own choice. The Plus offer's
+/// states with no plan to price, whose navy hero does not scroll, ask for white throughout.
+struct StatusBarStyleBridge: UIViewControllerRepresentable {
+    let lightContent: Bool
+
+    func makeUIViewController(context _: Context) -> Controller {
+        Controller()
+    }
+
+    func updateUIViewController(_ controller: Controller, context _: Context) {
+        controller.lightContent = lightContent
+    }
+
+    final class Controller: UIViewController {
+        var lightContent = false {
+            didSet {
+                if lightContent != oldValue { setNeedsStatusBarAppearanceUpdate() }
+            }
+        }
+
+        override var preferredStatusBarStyle: UIStatusBarStyle {
+            lightContent ? .lightContent : .default
+        }
+
+        override func loadView() {
+            view = UIView()
+            view.isUserInteractionEnabled = false
+        }
+
+        override func didMove(toParent parent: UIViewController?) {
+            super.didMove(toParent: parent)
+            setNeedsStatusBarAppearanceUpdate()
+        }
     }
 }
 
@@ -235,6 +287,16 @@ enum StatusBarFade {
         let light = crossing(of: overHero, at: blackClockFloor).lower
         guard share > light, share < dark else { return share }
         return share >= (dark + light) / 2 ? dark : light
+    }
+
+    /// Whether the fade at the drawn `share` reads 4.5:1 for the white clock over the lightest content that
+    /// can pass under it (white), so the screen may ask for it rather than leave the choice to the system
+    /// (owner decision 2026-10-05: from iOS 17 the system drew it black on Profile's 90 % sky-700, 4.1:1,
+    /// and before iOS 17 it is black in light mode whatever is under it). At rest the hero itself is under
+    /// the clock, darker than the fade over white. A light share is left to the system: `legibleShare` has
+    /// made it light enough for the black clock.
+    static func asksForWhiteClock(share: Double, hero: RGB, page: RGB) -> Bool {
+        luminance(fade(share, hero: hero, page: page, over: RGB(1, 1, 1))) <= whiteClockLimit
     }
 
     /// The fade's colour at `share`, held at `opacity` over the content under it.

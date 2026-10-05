@@ -1195,11 +1195,43 @@ unconditional production builds in `frontend-ci.yml` exist for the same reason.
 
 Write the input with the guard, in the same change, whenever you pin a shared lib to a generated client
 this way. When the file a spec reads lives **above** the workspace root (`src/Cleansia.App`) — a C#
-domain rule, a Kotlin or Swift literal — an Nx input cannot name it at all, and the house shape is the
-one `.github/workflows/offerability-parity.yml` uses and states in its header: a dependency-free Node
-checker outside the workspace, its own repo-root workflow, its self-test first. The three
-`apps/*/src/app/i18n/error-contract-parity.spec.ts` sit in exactly that un-declarable position — they
-walk up to `Cleansia.Api.sln` to read `BusinessErrorMessage.cs`.
+domain rule, a Kotlin or Swift literal — a **file** input cannot name it: Nx hashes only files inside
+the workspace, and `{workspaceRoot}/../…` is **silently ignored** (measured 2026-10-05: an edit to the
+file was still a cache hit). Two shapes do work:
+
+- **A `runtime` named input that hashes the file** (since 2026-10-05, W-F7). `nx.json` declares
+  `namedInputs.bookingPolicy`, whose command prints the SHA-256 of
+  `../Cleansia.Core.AppServices/Features/Orders/BookingPolicy.cs`; Nx runs it from the workspace root,
+  also when it is started from a subdirectory, and folds its output into the hash:
+
+  ```jsonc
+  "bookingPolicy": [{ "runtime": "node -e \"process.stdout.write(require('crypto').createHash('sha256').update(require('fs').readFileSync('../Cleansia.Core.AppServices/Features/Orders/BookingPolicy.cs')).digest('hex'))\"" }]
+  ```
+
+  The two test targets whose specs read that file list it: `cleansia.app`
+  (`cancellation-grace-claim.spec.ts`, the three Oops-window minutes) and
+  `cleansia-customer-recurring-bookings` (the create-recurring-wizard spec, `MaxRooms` and
+  `MaxBathrooms`). The app's target restates the jest defaults beside it, because a project-level
+  `inputs` array replaces the `targetDefaults` one (above). Proved in a scratch copy of the workspace:
+  unchanged, 2/2 targets from cache; with `MaxRooms` 8 → 9 and `OopsWindowMinutesStandard` 15 → 30,
+  0/2 from cache and both fail; restored, 2/2 from cache. A spec that reads another file above the
+  workspace adds a named runtime input of its own, the same way, and lists it on its target.
+  **It closes the cache, not `affected`.** A runtime input changes a task's hash; it adds no file to
+  the project graph, so `nx affected` still selects none of these targets for a diff that touches only
+  the file above the workspace, which is why CI's `nx affected -t test` does not run them on a C#-only
+  change. For `BookingPolicy.cs` the checker below is what runs on such a diff.
+- **A dependency-free Node checker outside the workspace**, when the check must run on any diff to
+  the file, or spans trees no single workspace sees: the shape `.github/workflows/booking-policy-parity.yml`
+  uses and states in its header (`agents/tools/check-booking-policy-parity.mjs`), its own repo-root
+  workflow, its self-test first.
+
+**Still undeclared, so a warm local cache can replay their pass over a changed file** (reported
+2026-10-05, not yet closed): the three `apps/*/src/app/i18n/error-contract-parity.spec.ts`, which walk
+up to `Cleansia.Api.sln` to read `BusinessErrorMessage.cs`; in `cleansia.app`,
+`account-deletion-credit-claim` (`RetentionDefaults.cs`), `customer-contract-copy`,
+`satisfaction-guarantee-claim` and `loyalty-tier-claim` (`sql-scripts/prod-bootstrap.sql`); partner
+`profile-bank.models.spec`; and customer `order-cancellation-reason.spec`. A runtime input per file
+would close each one's cache hole the same way.
 
 **Two other shipped specs read off-project files and declare nothing, and this entry does not cover
 them** — `cleansia-brand-name.component.spec.ts` (three apps' `assets/logos`, from `components`) and

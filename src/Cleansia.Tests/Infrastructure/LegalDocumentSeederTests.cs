@@ -611,7 +611,7 @@ public sealed class LegalDocumentSeederTests : IDisposable
     [InlineData("sk", "ona v mene tejto objednávky")]
     [InlineData("uk", "друг — у валюті цього замовлення")]
     [InlineData("ru", "друг — в валюте этого заказа")]
-    [InlineData("en", "a cancelled one included")]
+    [InlineData("en", "a cancelled one and an unconfirmed Cleansia Plus visit included")]
     [InlineData("cs", "a to i zrušené")]
     [InlineData("sk", "a to aj zrušenej")]
     [InlineData("uk", "навіть якщо його скасовано")]
@@ -651,6 +651,60 @@ public sealed class LegalDocumentSeederTests : IDisposable
     [InlineData("en", "If the two accounts appear")]
     [InlineData("cs", "Pokud se zdá, že oba účty")]
     public void The_Newest_Terms_Carry_None_Of_The_Single_Currency_Referral_Wording(string language, string phrase)
+    {
+        Assert.DoesNotContain(phrase, SectionOf(LegalDocumentType.TermsOfService, language, 9));
+    }
+
+    /// <summary>
+    /// Owner ruling 2026-10-05: one household is one customer, so a referral between two of its accounts is
+    /// refused — an administrator rejects a referral held on a shared flat (ReverseReferral). Section 9 states it
+    /// as a rule and lists referring someone of one's own household among the referrals that are not genuine, so
+    /// the hold paragraph, which pays only a genuine referral, refuses it. The referrer is paid in the currency of
+    /// the newest booking on their account by creation time, of any status, a Cleansia Plus visit the schedule
+    /// created and the customer has not yet confirmed included (ReferralService.GetBookingCurrencyAsync), so every
+    /// language says "created on your account" rather than "placed by you".
+    /// </summary>
+    [Theory]
+    [InlineData("en", "Two accounts of one household count as one customer, so a referral between them is refused.")]
+    [InlineData("cs", "Dva účty téže domácnosti se považují za jednoho zákazníka, proto se doporučení mezi nimi odmítá.")]
+    [InlineData("sk", "Dva účty tej istej domácnosti sa považujú za jedného zákazníka, preto sa odporúčanie medzi nimi odmieta.")]
+    [InlineData("uk", "Два облікові записи одного домогосподарства вважаються одним клієнтом, тому реферальне запрошення між ними відхиляється.")]
+    [InlineData("ru", "Две учётные записи одного домохозяйства считаются одним клиентом, поэтому реферальное приглашение между ними отклоняется.")]
+    [InlineData("en", "refers someone of their own household")]
+    [InlineData("cs", "doporučí někoho ze své domácnosti")]
+    [InlineData("sk", "odporučí niekoho zo svojej domácnosti")]
+    [InlineData("uk", "запросив когось зі свого домогосподарства")]
+    [InlineData("ru", "пригласил кого-то из своего домохозяйства")]
+    [InlineData("en", "the last booking created on your account before the credit is paid")]
+    [InlineData("cs", "poslední objednávky vytvořené na vašem účtu před poskytnutím kreditu")]
+    [InlineData("sk", "poslednej objednávky vytvorenej na vašom účte pred poskytnutím kreditu")]
+    [InlineData("uk", "останнього замовлення, створеного у вашому обліковому записі до надання кредиту")]
+    [InlineData("ru", "последнего заказа, созданного в вашей учётной записи до предоставления кредита")]
+    [InlineData("cs", "dosud nepotvrzené návštěvy Cleansia Plus")]
+    [InlineData("sk", "ešte nepotvrdenej návštevy Cleansia Plus")]
+    [InlineData("uk", "ще не підтверджений візит Cleansia Plus")]
+    [InlineData("ru", "ещё не подтверждённый визит Cleansia Plus")]
+    public void The_Newest_Terms_Refuse_A_Referral_Within_One_Household_And_Name_The_Referrer_Currency_As_The_Code_Reads_It(
+        string language, string phrase)
+    {
+        Assert.Contains(phrase, SectionOf(LegalDocumentType.TermsOfService, language, 9));
+    }
+
+    /// <summary>
+    /// The first 2026-10-06 wording paid the referrer in the currency of the last booking "you placed" in English,
+    /// Ukrainian and Russian, which leaves out a visit the Plus schedule created, and in every language fell back
+    /// on the friend's currency when "you" had placed or created none; that wording must not come back.
+    /// </summary>
+    [Theory]
+    [InlineData("en", "the last booking you placed")]
+    [InlineData("en", "if you have placed none")]
+    [InlineData("cs", "pokud jste žádnou nevytvořili")]
+    [InlineData("sk", "ak ste žiadnu nevytvorili")]
+    [InlineData("uk", "яке ви оформили до надання кредиту")]
+    [InlineData("uk", "якщо ви не оформили жодного")]
+    [InlineData("ru", "оформленного вами до предоставления кредита")]
+    [InlineData("ru", "если вы не оформили ни одного")]
+    public void The_Newest_Terms_Carry_None_Of_The_Placed_By_You_Referral_Wording(string language, string phrase)
     {
         Assert.DoesNotContain(phrase, SectionOf(LegalDocumentType.TermsOfService, language, 9));
     }

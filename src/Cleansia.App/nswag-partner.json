@@ -1,5 +1,5 @@
 {
-  "runtime": "Net80",
+  "runtime": "Net100",
   "documentGenerator": {
     "fromDocument": {
       "url": "http://localhost:5000/swagger/v1/swagger.json",

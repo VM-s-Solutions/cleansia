@@ -19,14 +19,20 @@ the same key.
 
 - **`CancelAsync(order, actorId, cancelledBy, reasonKey, refundReason, ct)`** →
   `PlatformOrderCancellationResult(RefundAmount, Refund)`. `order.Cancel(now, cancelledBy, feeRate: 0,
-  refundAmount: TotalPrice, reason)` — which records a refund of **0** instead on an order that took no
-  payment (`Order.TookNoPayment`: `Pending` or `Failed`) — and an `OrderStatusTrack` append;
+  refundAmount, reason)`, where `refundAmount` is what this cancellation gives back
+  (`RefundService.LeftToGiveBackAsync` on the key the refund reason derives, since 2026-10-06): the whole
+  price on an order nothing came back from, the rest of the sale on one already partly refunded. `Cancel`
+  records **0** instead on an order that took no payment (`Order.TookNoPayment`: `Pending` or `Failed`).
+  Then an `OrderStatusTrack` append;
   `ILiveActivityProducer` end-push unconditionally beside the append; then, for a card order that is
-  `Paid` with a refundable charge surface, `RefundAsync` — otherwise, when not `Paid`,
-  `ICreditAccountRepository.ReturnUnpaidOrderCreditAsync`, passed the order's succeeded card refunds from
-  `IRefundRepository` (since 2026-10-05): an order that took no payment gets its credit back less any
-  complaint settled in credit, and one already partly refunded the credit the sale still owes after its
-  card refunds, credit returned and settlements
+  `Paid` or, since 2026-10-06, `PartiallyRefunded`, with a refundable charge surface, `RefundAsync`,
+  which asks the seam for the price and lets it hold the refund to what the sale has left on each tender
+  — otherwise, when not `Paid`, `ICreditAccountRepository.ReturnUnpaidOrderCreditAsync`, passed the order's
+  card refunds from `IRefundRepository`, confirmed or pending (`RefundService.CardRefundedOrOwedAsync`,
+  since 2026-10-06; confirmed only since 2026-10-05): an order that took no payment gets its credit back
+  less any complaint settled in credit, the card term ignored, and one already refunded in full, or with
+  no charge surface, the credit the sale still owes after its card refunds, credit returned and
+  settlements
   → [Business rules — the credit return](/product/business-rules#when-the-cleaner-cancels-or-no-shows);
   `IExpressWaiverConsumer.ReleaseForOrderAsync` unconditionally;
   `OrderAssignmentCancellationNotifier` for every assigned cleaner;
@@ -77,8 +83,8 @@ the same key.
    body lifted from `AdminCancelOrder.Handler`; the handler's old money assertions live on in the
    service's tests. The guest step's two, `GuestOrderAccessTokenIssuer` and `IPendingDispatch`, came
    later (2026-09-28) and have no counterpart in the old handler.
-3. **The refund is attempted only on a card order that is `Paid` with a charge surface**; any order not
-   `Paid` gets its credit back. An order that took no payment (`Pending` or `Failed` — a cash booking not
+3. **The refund is attempted only on a card order that is `Paid` or `PartiallyRefunded` with a charge
+   surface** (`PartiallyRefunded` since 2026-10-06); any other order not `Paid` gets its credit back. An order that took no payment (`Pending` or `Failed` — a cash booking not
    yet collected, a card never charged) records a refund of **0** on the row, and the admin cancel's
    `RefundAmount` reads the row, so it reports 0 too. Since 2026-09-28 a confirmed recurring cash
    occurrence stays `Pending` until the cash is recorded, so it records 0 like any cash booking; cash is

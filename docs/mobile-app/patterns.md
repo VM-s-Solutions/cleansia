@@ -19,6 +19,18 @@ snackbar.
 **A network failure stays silent at the call site** — the network interceptor owns that toast, and
 showing both produces two messages for one failure.
 
+**A refusal that needs a screen of its own is looked for among every key, never compared with the
+first one.** A `400` body carries its keys in an `errors` map, and whole-command rules share one wire code
+(on `CreateOrder` the chain's root name), so two of them failing together arrive `; `-joined under it. The
+first value alone is the wrong question. Since 2026-10-06 iOS's `ApiError` keeps every key, split on
+`; `, in `keys`, and `carries(_:)` asks among them; Android's `ApiErrorParser.errorsByField`, which the
+customer order and schedule repositories now keep on `ApiError.BadRequest`, is read the same way. The
+case that needed it is `order.unpaid_receivable`, which opens a *Pay now* dialog instead of a snackbar
+([What a customer owes](/product/business-rules#receivables)); on the Android recurring confirm the same
+change brought the terms re-ask after `consent.terms_not_accepted` to life, which the view model handled
+but never received. iOS's `ApiError.code` is still the first value, unsplit, so two whole-command
+refusals at once fall back to the raw text there.
+
 ## What counts as a real network failure {#cancellation-noise}
 
 When a screen unmounts mid-fetch — a fast tab switch, a pop on forced sign-out, the app backgrounding —

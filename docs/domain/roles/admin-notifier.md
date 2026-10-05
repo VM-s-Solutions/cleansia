@@ -6,8 +6,9 @@
 > remaining sites) and T-0769 (the admin web bell and page); the ninth event rides T-0770 (ADR-0067), the
 > tenth — a chargeback that matches no order — shipped 2026-09-28, the eleventh to fourteenth — a job
 > not started, a refund stuck, a refund to retry, a lockout reported — with the owner rulings of
-> 2026-09-28, and the fifteenth — a referral held for review — with the ruling of 2026-10-05. The
-> files that are the role: `Core.Domain/Notifications/AdminNotificationEventCatalog.cs` (the fifteen keys) ·
+> 2026-09-28, the fifteenth — a referral held for review — with the ruling of 2026-10-05, and the
+> sixteenth — a customer who did not pay the cash at the door — with the ruling of 2026-10-06. The
+> files that are the role: `Core.Domain/Notifications/AdminNotificationEventCatalog.cs` (the sixteen keys) ·
 > `Core.AppServices/Features/AdminNotifications/AdminEventCatalog.cs` (per key: the audience and the exact
 > arg set, in e-mail order) · `Core.AppServices/Services/{IAdminNotifier,AdminNotifier}.cs` ·
 > `Core.AppServices/Services/EmailService.AdminNotification.cs` (the copy, five locales) ·
@@ -25,7 +26,7 @@ failing e-mail can never fail the command, and nothing the notifier reads depend
 
 ## Collaborators
 
-- **`AdminNotificationEventCatalog`** (Domain) — the fifteen `admin.*` keys and `All`; `NotificationFeedEventKeys.Admin`
+- **`AdminNotificationEventCatalog`** (Domain) — the sixteen `admin.*` keys and `All`; `NotificationFeedEventKeys.Admin`
   **is** `All`, so the feed audience `NotificationFeedAudience.Admin = 2` serves the catalogue by
   construction. Disjoint from the customer and partner keysets; `IsFeedEvent` does not know them, so the
   push seam cannot write an admin row. Every key maps to `null` in `GetCategoryFor`: no category, nothing
@@ -35,7 +36,7 @@ failing e-mail can never fail the command, and nothing the notifier reads depend
   throws on an undeclared or a missing arg, so the copy and the site cannot disagree on what `{1}` is and a
   site cannot smuggle a name in. `Audience` is the **name of an administrator set** (ADR-0066 D8) — never a
   policy, because the notifier filters rows, not principals: order events, disputes, payment failures,
-  crew lost, a cleaner not started, a lockout reported and a referral held → `SupportOrAbove`; erasure failures → `ManagerOrAbove`; the three
+  crew lost, a cleaner not started, a lockout reported, a door non-payment and a referral held → `SupportOrAbove`; erasure failures → `ManagerOrAbove`; the three
   company milestones → `AdministratorOnly`; **`admin.dispute.chargeback`, `admin.dispute.chargeback_unmatched`,
   `admin.payment.refund_stuck` and `admin.payment.refund_needs_retry` → `AdminOnly`, every role** — Support
   answers the customer or the bank, the Accountant reconciles the money, so the Accountant's bell is not
@@ -92,9 +93,13 @@ failing e-mail can never fail the command, and nothing the notifier reads depend
   · `CleanerNoShow.AlertAsync` (`admin.order.cleaner_not_started`, shared by `SendCleanerJobReminders`' third arm,
   `ReportGuestCleanerNoShow` and `CreateDispute`'s *service not provided* filing on a staffed job nobody
   started; subject the order id, guarded by `AnyForEventAsync` on `orderId`, so whichever comes first raises it
-  and the order's e-mail outbox key is written once) · `RedrivePendingRefunds` (`admin.payment.refund_stuck` /
-  `refund_needs_retry` once a refund is 24 h old; subject the refund id, guarded by `AnyForEventAsync` on
-  `orderId`, inside the per-company loop and its per-row commit)
+  and the order's e-mail outbox key is written once) · `ReportCashNotPaid` (`admin.order.cash_not_paid`, the
+  cleaner's door non-payment report; subject the order id, args `orderNumber`, `amount`, `orderId`; no guard
+  is needed, because the report needs the order in progress and leaves it completed) ·
+  `RedrivePendingRefunds` (`admin.payment.refund_stuck` /
+  `refund_needs_retry` once a refund is 24 h old — since 2026-10-06 `refund_needs_retry` also for a guest's
+  cancellation refund left pending on a booking that went ahead, which is never re-driven; subject the refund
+  id, guarded by `AnyForEventAsync` on `orderId`, inside the per-company loop and its per-row commit)
   · `RetryFailedUserDeletions` (subject `{requestId}:{day}`, in a fresh scope with the override set and its own
   commit — the failing walk's scope is discarded by design) · `WindDownCompany` (only when a date is set;
   subject `{tenantId}:{requestInstant}`) · `CompanyWindDownService` (only when `cancelled + refunded +
@@ -111,7 +116,7 @@ failing e-mail can never fail the command, and nothing the notifier reads depend
 - **The admin web** — `AdminNotificationBadgeService` polls `unread-count` every 60 s while the document is
   visible and stamps the badge on the sidebar's *Notifications* entry (first in the list); the
   `/notifications` page renders each row from `pages.notifications.events.<key>.*`, deep-links by event
-  family (order/payment — the refund alerts included → order detail, dispute → dispute detail, erasure → data protection, company →
+  family (order/payment — the refund alerts and the door non-payment included → order detail, dispute → dispute detail, erasure → data protection, company →
   company lifecycle), marks read on click, and marks all read up to the newest row's `createdOn` plus one
   millisecond (the column is microsecond-resolution).
 
@@ -147,7 +152,7 @@ failing e-mail can never fail the command, and nothing the notifier reads depend
 5. **Each site calls once, inside the business write's unit of work, and a redelivery adds nothing**: the
    Stripe short-circuit for the webhook arms; the candidate predicate for the daily retry; the counts guard
    for the wind-down run; `AnyForEventAsync` for the decline, the archive, the not-started alert and the
-   two refund alerts.
+   two refund alerts; the order's own status for the door non-payment, which a completed order refuses.
 6. **The four admin routes answer 401 anonymous, 403 to an Employee token, 200 to an administrator**; a
    mark-read on another administrator's row is refused; a mark-read writes **no** `AdminActionAudits` row.
 7. **The settings page's `Email` branch** refuses a malformed address client-side with the server's

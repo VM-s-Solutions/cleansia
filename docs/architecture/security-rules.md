@@ -434,12 +434,33 @@ ARES outage and a Mapbox outage each reach Sentry as an event, while both log th
 Warning; for ARES that keeps one outage of server errors to one event, the retry's, rather than two
 ([The business register](/product/business-rules#business-register)). Each logs its own Error for what the
 retry does not repeat: ARES for a refusal or another `4xx`, Mapbox for a credentials failure. An ARES reply
-that arrives but is not JSON is not retried and is logged at Warning, so it reaches Sentry only as a
-breadcrumb. Stripe, SendGrid and APNs log their failures at Error. Unhandled exceptions still reach Sentry
-through the ASP.NET Core integration.
+that arrives but cannot be read — a `200` that is not JSON — is classed `Permanent` since 2026-10-06: it is
+not retried, because the retry repeats only HTTP failures, and the registry logs it once at Error, so it
+reaches Sentry as an event of its own (until then it was `Transient`, at Warning, a breadcrumb only).
+Stripe, SendGrid and APNs log their failures at Error. Since 2026-10-06 each outbound client runs its own
+resilience pipeline as its only one, so one spent retry is one Error, not one per stacked layer
+([Infrastructure — one resilience pipeline per client](/architecture/infrastructure#outbound-resilience)).
+Unhandled exceptions still reach Sentry through the ASP.NET Core integration.
 
 **Kept on purpose.** The Mapbox degrade warnings name `{City}` and `{ZipCode}`, not the street — enough to
 see which area fails, and no more.
+
+### An inbound query string is personal data too {#inbound-query}
+
+**The calls in carry personal data in the query**: the guest access token on `api/Order/Lookup?token=`, the
+typed address on `api/AddressSearch/search?q=`, home coordinates on `api/AddressSearch/map?lat=&lng=`, and
+an administrator's search for a name, e-mail or phone in the paged lists. Two sinks wrote it off-box
+(closed 2026-10-06):
+
+| Sink | What it wrote | Control |
+|---|---|---|
+| The request line of `RequestLoggingMiddleware`, on all five API hosts | `{Path}{QueryString}` at Information, every value raw except one whose name contained *email*; on DEV it reached Application Insights and rode Sentry events as a breadcrumb, on production it is one log level from live | `QueryParamValueRegex` in each of the five copies: every value becomes `***REDACTED***`, every name stays, as the OpenTelemetry server span already shows it |
+| Sentry's request context, on every event and transaction | the raw query string, and every inbound header but the cookie — the client IP, the CSRF token, the device id, the original URL the front end forwards — none of which `SendDefaultPii = false` covers | `WithoutRequestDetail` in `ConfigureSentry`, in both `SetBeforeSend` and `SetBeforeSendTransaction`: the query string cleared and only `User-Agent`, `Content-Type`, `Accept` and `Accept-Language` kept. An allowlist, because the platform decides which proxy headers arrive |
+
+ASP.NET Core's *Request starting* line is held at Warning by every host's settings, the OpenTelemetry span
+redacts query values by default, and neither HTTP logging nor Serilog is used. The request line still
+prints the client IP at Information; S6 does not list it, and it is an open owner question
+→ [Request logging — the query string](/architecture/request-logging#query-string).
 
 ## S7 — Idempotency on side-effecting commands
 

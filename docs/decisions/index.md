@@ -113,6 +113,12 @@ referral is paid in the currency it books in, the copy states only the reader's 
 invite none, and an insurance figure must be above zero (ADR-0060); a drop racing a status change such as
 a confirmed lockout is refused at commit (ADR-0067 D8). Neither replaces a record.
 
+**[ADR-0070](./adr-0070) and [ADR-0005](./adr-0005) were amended in place on 2026-10-06**: an amount owed
+refuses every new booking, cash or card, and a cash price the customer did not pay at the door becomes one,
+reported by the cleaner (ADR-0070 — 18 (a) reversed to 18 (b), D8 lifted for unpaid cash); each outbound
+client runs one resilience pipeline, and SendGrid's keyless send stays retried against D1.2 (ADR-0005).
+Neither replaces a record, so there is no arrow.
+
 ## All records
 
 | | Decision | Status |
@@ -121,7 +127,7 @@ a confirmed lockout is refused at commit (ADR-0067 D8). Neither replaces a recor
 | **[ADR-0002](./adr-0002)** | Outbox dispatch contract ⟲ | `accepted` |
 | **[ADR-0003](./adr-0003)** | Partitioned rate limiting | `accepted` |
 | **[ADR-0004](./adr-0004)** | Fiscal receipt idempotency boundary | `accepted` |
-| **[ADR-0005](./adr-0005)** | Integration resilience contract | `accepted` |
+| **[ADR-0005](./adr-0005)** | Integration resilience contract (amended 2026-10-06: one pipeline per client; SendGrid's keyless send stays retried) | `accepted` |
 | **[ADR-0006](./adr-0006)** | Refund dispute money path ⟲ | `accepted` |
 | **[ADR-0007](./adr-0007)** | Soft delete policy | `accepted` |
 | **[ADR-0008](./adr-0008)** | Outbox table and drainer | `accepted` |
@@ -186,7 +192,7 @@ a confirmed lockout is refused at commit (ADR-0067 D8). Neither replaces a recor
 | **[ADR-0067](./adr-0067)** | Confirmed → New when the last cleaner leaves; the administrators are told (owner ruling D2, 2026-09-19; supersedes ADR-0057's open consequence; shipped as T-0770) | `accepted` |
 | **[ADR-0068](./adr-0068)** | A contract for work per job: the text the order is booked under, the cleaner's acceptance of it, what both parties can see (owner ruling 2026-09-20; amends ADR-0063 D9 by one sentence; shipped as T-0777–T-0784; amended 2026-09-27: the company sells in its own name; amended 2026-09-29: the operating company and the cleaner are the parties, under our draft texts; amended 2026-10-03: the seat is paid the reward its contract states) | `accepted` |
 | **[ADR-0069](./adr-0069)** | The dirtiness level prices, times, crews and pays the job, and a job's pay is split across its seats (owner rulings 2026-09-28, meeting-plan decisions 28–40; changes a premise of ADR-0037 D9, whose no-spare-seat ruling stands) | `accepted` |
-| **[ADR-0070](./adr-0070)** | A saved card guarantees cash, and what a customer owes is a receivable — paid through a pay link, charged to the card only once the terms allow it; a lockout is the customer's cancellation at the whole price; the crew shares a fee once it is collected (owner rulings 2026-09-28, meeting-plan decisions 11–13, 16–18 and 24; amended 2026-10-01: a card may be saved while paying by card, and only a ticked one is kept; amended 2026-10-04: cash needs no card and none is charged, and a confirmed lockout pays each seat its reward) | `accepted` |
+| **[ADR-0070](./adr-0070)** | A saved card guarantees cash, and what a customer owes is a receivable — paid through a pay link, charged to the card only once the terms allow it; a lockout is the customer's cancellation at the whole price; the crew shares a fee once it is collected (owner rulings 2026-09-28, meeting-plan decisions 11–13, 16–18 and 24; amended 2026-10-01: a card may be saved while paying by card, and only a ticked one is kept; amended 2026-10-04: cash needs no card and none is charged, and a confirmed lockout pays each seat its reward; amended 2026-10-06: an amount owed refuses every booking, and a door non-payment is owed) | `accepted` |
 
 ⟲ = superseded in whole or in part by a later record.
 

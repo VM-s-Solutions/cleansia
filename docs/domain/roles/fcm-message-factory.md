@@ -49,6 +49,13 @@ byte-stable data-only payload + `AndroidConfig` for Android, plus an APNs-scoped
 - A new event key may enter the display map **only after** its loc-keys ship in BOTH iOS apps'
   main-bundle `Localizable.xcstrings` (client-first rule, ADR-0025 D2) — otherwise version-skew
   renders a raw key on the lock screen.
+- **`order.cash_not_paid` is the next one in** (owner ruling 2026-10-06, the door non-payment). Both iOS
+  bundles carry `push.order.cash_not_paid.title|body` since `d3aa991bc` and `223db7c6a`, so the rule above
+  is met. It is not in the map yet: until it is, the push is data-only and an iOS customer sees nothing.
+  Its entry is `["orderNumber", "amount"]`, which makes it the fourth key `amount` rides — the price owed,
+  formatted by `MoneyText.Format` like the no-show credit — and it joins the pinned lists in
+  `FcmMessageFactoryTests` in the same change
+  → [Push notifications — the door non-payment push](/architecture/push-notifications#cash-not-paid).
 - **Day-one catalog gate (ADR-0025 D5, CH-2):** the map must not go live before the first public
   release of both iOS apps carrying the full 23-event catalog — both AppDelegates already register
   FCM tokens, so a catalog-less build + live map = raw `push.*` keys on lock screens.

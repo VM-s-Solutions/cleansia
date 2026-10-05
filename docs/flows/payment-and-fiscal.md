@@ -221,7 +221,11 @@ sale's is issued when the payment settles. A cash sale's is issued **at completi
 has recorded the cash, by the completion fallback that issues one to any order still without it; an
 administrator's override to `Completed` and an administrator's *record cash received* on a completed
 order issue it too. A cash booking, a confirmed recurring cash occurrence and an unpaid card order get
-none, and neither does a cancelled cash order, which is never paid. The `FiscalReconciliation` timer
+none, and neither does a cancelled cash order, which is never paid. Nor does a cash order the cleaner
+reported unpaid at the door (since 2026-10-06): it completes with its payment pending, its price is an
+`UnpaidCash` receivable whose payment earns a fee receipt labelled *Unpaid cash payment*, and an
+administrator's *record cash received* on it issues the sale receipt instead
+→ [Business rules — when the customer does not pay at the door](/product/business-rules#cash-not-paid). The `FiscalReconciliation` timer
 re-sends the issue for a `Paid` order whose receipt never landed, but not while collected cash waits for
 the completion. The PDF is stored and the customer's download serves that stored copy.
 → [Business rules — cash is paid when the cleaner records it](/product/business-rules#cash-handover)

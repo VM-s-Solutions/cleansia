@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Slider
 import androidx.compose.material3.Switch
+import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -122,7 +123,15 @@ private fun LimitToggleRow(
             modifier = Modifier.weight(1f),
         )
         Spacer(Modifier.width(Spacing.M))
-        Switch(checked = enabled, onCheckedChange = onChange, enabled = interactive)
+        Switch(
+            checked = enabled,
+            onCheckedChange = onChange,
+            enabled = interactive,
+            colors = SwitchDefaults.colors(
+                uncheckedThumbColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                uncheckedBorderColor = MaterialTheme.colorScheme.onSurfaceVariant,
+            ),
+        )
     }
 }
 

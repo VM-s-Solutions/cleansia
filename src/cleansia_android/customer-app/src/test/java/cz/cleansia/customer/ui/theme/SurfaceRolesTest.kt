@@ -5,6 +5,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.graphics.toArgb
 import cz.cleansia.core.ui.theme.primaryText
+import java.io.File
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -67,8 +68,68 @@ class SurfaceRolesTest {
         }
     }
 
+    /**
+     * Material draws an off switch's thumb and border in `outline` and its track in surfaceContainerHighest,
+     * and here those are the same slate (slate-200 light, slate-700 dark), so a switch left on the default off
+     * colours shows a plain pill with no thumb. Every Switch takes onSurfaceVariant for its off thumb and
+     * border instead, which reads 3:1 on either off track the app draws: the default one, and the
+     * surfaceVariant one the address form passes. There is no Compose test harness in this module, so the
+     * switches are read as source.
+     */
+    @Test
+    fun `an off switch's thumb reads 3 to 1 on its track in both schemes`() {
+        listOf("light" to LightColors, "dark" to DarkColors).forEach { (name, scheme) ->
+            listOf("surfaceContainerHighest" to scheme.surfaceContainerHighest, "surfaceVariant" to scheme.surfaceVariant)
+                .forEach { (track, ground) ->
+                    val ratio = contrast(scheme.onSurfaceVariant, ground)
+                    assertTrue("$name off thumb on $track: ${"%.2f".format(ratio)}:1", ratio >= 3.0)
+                }
+        }
+    }
+
+    @Test
+    fun `every switch passes its own off thumb and border`() {
+        val root = sourceRoot()
+        val offenders = mutableListOf<String>()
+        root.walkTopDown().filter { it.isFile && it.extension == "kt" }.forEach { file ->
+            val text = file.readText()
+            SWITCH_CALL.findAll(text).forEach { call ->
+                val args = argumentsFrom(text, call.range.last + 1)
+                if (!OFF_THUMB.containsMatchIn(args) || !OFF_BORDER.containsMatchIn(args)) {
+                    offenders += "${file.relativeTo(root).path}:${text.substring(0, call.range.first).count { it == '\n' } + 1}"
+                }
+            }
+        }
+        assertTrue("a Switch on the default off thumb and border: $offenders", offenders.isEmpty())
+    }
+
+    /** The argument list of the call whose `(` ends just before [from], up to its matching `)`. */
+    private fun argumentsFrom(text: String, from: Int): String {
+        var depth = 1
+        var i = from
+        while (i < text.length && depth > 0) {
+            when (text[i]) {
+                '(' -> depth++
+                ')' -> depth--
+            }
+            i++
+        }
+        return text.substring(from, (i - 1).coerceAtLeast(from))
+    }
+
+    private fun sourceRoot(): File = sequenceOf(File("."), File("customer-app"), File("src/cleansia_android/customer-app"))
+        .map { File(it, "src/main/java/cz/cleansia/customer") }
+        .firstOrNull { it.isDirectory }
+        ?: error("customer-app sources not found from working dir ${File(".").absolutePath}")
+
     private fun contrast(a: Color, b: Color): Double {
         val (hi, lo) = listOf(a.luminance(), b.luminance()).sortedDescending()
         return (hi + 0.05) / (lo + 0.05)
+    }
+
+    private companion object {
+        val SWITCH_CALL = Regex("""(?<![\w.])Switch\(""")
+        val OFF_THUMB = Regex("""uncheckedThumbColor\s*=\s*MaterialTheme\.colorScheme\.onSurfaceVariant\b""")
+        val OFF_BORDER = Regex("""uncheckedBorderColor\s*=\s*MaterialTheme\.colorScheme\.onSurfaceVariant\b""")
     }
 }

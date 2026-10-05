@@ -135,10 +135,6 @@ extension L10n {
             localized("loyalty_referral_copied_toast")
         }
 
-        static func referralShareText(_ credit: String, _ code: String, _ url: String) -> String {
-            format("loyalty_referral_share_text", credit, code, url)
-        }
-
         static func referralShareTextNoFigure(_ code: String, _ url: String) -> String {
             format("loyalty_referral_share_text_no_figure", code, url)
         }

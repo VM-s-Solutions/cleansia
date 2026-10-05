@@ -22,10 +22,8 @@ enum ReferralCopy {
         credit.map { L10n.Rewards.referralSubtitle(amount($0)) } ?? L10n.Rewards.referralSubtitleNoFigure
     }
 
-    static func shareMessage(code: String, credit: MarketMoney?) -> String {
-        let link = CleansiaWeb.referralLink(code: code)
-        return credit.map { L10n.Rewards.referralShareText(amount($0), code, link) }
-            ?? L10n.Rewards.referralShareTextNoFigure(code, link)
+    static func shareMessage(code: String) -> String {
+        L10n.Rewards.referralShareTextNoFigure(code, CleansiaWeb.referralLink(code: code))
     }
 
     static func upsellDescription(_ credit: MarketMoney?) -> String {

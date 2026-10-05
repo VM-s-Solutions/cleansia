@@ -58,27 +58,6 @@ struct CreateRecurringFormState: Equatable {
     }
 }
 
-extension UpdateRecurringInput {
-    init(_ input: CreateRecurringInput, templateId: String, endsOn: Date?, preferredEmployeeId: String?) {
-        self.init(
-            templateId: templateId,
-            frequency: input.frequency,
-            dayOfWeek: input.dayOfWeek,
-            timeOfDay: input.timeOfDay,
-            rooms: input.rooms,
-            bathrooms: input.bathrooms,
-            dirtiness: input.dirtiness,
-            savedAddressId: input.savedAddressId,
-            selectedServiceIds: input.selectedServiceIds,
-            selectedPackageIds: input.selectedPackageIds,
-            paymentType: input.paymentType,
-            startsOn: input.startsOn,
-            endsOn: endsOn,
-            preferredEmployeeId: preferredEmployeeId
-        )
-    }
-}
-
 /// What the form's quote prices. The day, the time and the way to pay move no money.
 struct RecurringPricedSelection: Equatable {
     let serviceIds: [String]
@@ -142,6 +121,8 @@ final class CreateRecurringViewModel: ViewModel {
     /// The server no longer accepts the schedule's favourite cleaner. The cleaner is kept until the
     /// customer chooses to save without them.
     @Published private(set) var preferredCleanerRefused = false
+    /// The server refused the schedule because the customer owes a company money; the screen offers Payments.
+    @Published private(set) var owesMoney = false
     @Published private(set) var servingCleaners: [ServingCleaner] = []
     /// A tap that would book a service twice, waiting for the customer to confirm or cancel it.
     @Published internal(set) var twiceBookedPick: TwiceBookedPick?
@@ -479,6 +460,10 @@ final class CreateRecurringViewModel: ViewModel {
         await save(keepingPreferredCleaner: true)
     }
 
+    func dismissOwesMoney() {
+        owesMoney = false
+    }
+
     /// The customer's own answer to a refused favourite cleaner, never taken on their behalf.
     func saveWithoutPreferredCleaner() async -> Bool {
         await save(keepingPreferredCleaner: false)
@@ -511,6 +496,10 @@ final class CreateRecurringViewModel: ViewModel {
             submitState = .idle
             snackbar.showSuccess(isEditing ? L10n.Recurring.editSuccess : L10n.Recurring.createSuccess)
             return true
+        case let .failure(error) where error.refusesForUnpaidAmount:
+            owesMoney = true
+            submitState = .idle
+            return false
         case let .failure(error):
             snackbar.showApiError(error)
             if error.code == CashEligibility.refusalCode {

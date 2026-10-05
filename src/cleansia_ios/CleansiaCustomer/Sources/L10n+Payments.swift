@@ -26,6 +26,14 @@ extension L10n {
             localized("payments_pay_action")
         }
 
+        static var unpaidTitle: String {
+            localized("unpaid_receivable_title")
+        }
+
+        static var unpaidPay: String {
+            localized("unpaid_receivable_pay")
+        }
+
         static func kind(_ kind: Receivable.Kind) -> String {
             switch kind {
             case .cancellationFee: localized("receivable_kind_cancellation_fee")

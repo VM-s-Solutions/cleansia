@@ -21,6 +21,7 @@ final class OrderDetailViewModelTests: XCTestCase {
         consent: FakeConsentStatusClient = FakeConsentStatusClient(),
         eventBus: OrderEventBus = OrderEventBus(),
         pollInterval: TimeInterval = 60,
+        snackbar: SnackbarController = SnackbarController(),
         onCreditMoved: @escaping () -> Void = {}
     ) -> OrderDetailViewModel {
         let repo = OrderRepository(client: client)
@@ -30,7 +31,7 @@ final class OrderDetailViewModelTests: XCTestCase {
             repository: repo,
             membershipRepository: MembershipRepository(client: membershipClient),
             marketStore: marketStore ?? MarketFixtures.store().0,
-            snackbar: SnackbarController(),
+            snackbar: snackbar,
             eventBus: eventBus,
             paymentIntentClient: paymentIntent,
             consentClient: consent,

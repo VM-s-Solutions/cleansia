@@ -4,11 +4,18 @@ public struct ApiError: Error, Equatable {
     public let code: String?
     public let message: String?
     public let httpStatus: Int?
+    /// Every business key the response carried, `code` being only the first of them.
+    public let keys: [String]
 
-    public init(code: String? = nil, message: String? = nil, httpStatus: Int? = nil) {
+    public init(code: String? = nil, message: String? = nil, httpStatus: Int? = nil, keys: [String] = []) {
         self.code = code
         self.message = message
         self.httpStatus = httpStatus
+        self.keys = keys
+    }
+
+    public func carries(_ key: String) -> Bool {
+        code == key || keys.contains(key)
     }
 }
 
@@ -43,7 +50,8 @@ public extension ApiError {
         return ApiError(
             code: problem?.firstErrorKey ?? problem?.errorCode ?? problem?.type,
             message: problem?.detail ?? problem?.title ?? raw ?? fallbackMessage,
-            httpStatus: httpStatus
+            httpStatus: httpStatus,
+            keys: problem?.allErrorKeys ?? []
         )
     }
 }

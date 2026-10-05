@@ -29464,31 +29464,31 @@
         "cs": {
           "stringUnit": {
             "state": "translated",
-            "value": "Uhraďte dlužnou částku a budete moci znovu platit v hotovosti. Objednávek placených kartou se to netýká."
+            "value": "Uhraďte dlužnou částku a budete moci znovu objednávat. Dokud není uhrazena, nelze vytvořit žádnou novou objednávku, v hotovosti ani kartou; objednávky, které už máte, zůstávají."
           }
         },
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Pay what you owe to book in cash again. Card bookings are not affected."
+            "value": "Pay what you owe to book again. Until it is paid, no new booking can be made, by cash or by card; bookings you already have are kept."
           }
         },
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Погасите задолженность, чтобы снова платить наличными. Заказов с оплатой картой это не касается."
+            "value": "Погасите задолженность, чтобы снова оформлять заказы. Пока она не оплачена, новый заказ нельзя оформить ни с оплатой наличными, ни картой; заказы, которые у вас уже есть, сохраняются."
           }
         },
         "sk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Uhraďte dlžnú sumu a budete môcť znova platiť v hotovosti. Objednávok platených kartou sa to netýka."
+            "value": "Uhraďte dlžnú sumu a budete môcť znova objednávať. Kým nie je uhradená, nemožno vytvoriť žiadnu novú objednávku, v hotovosti ani kartou; objednávky, ktoré už máte, zostávajú."
           }
         },
         "uk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Сплатіть заборгованість, щоб знову платити готівкою. Замовлень з оплатою карткою це не стосується."
+            "value": "Сплатіть заборгованість, щоб знову оформлювати замовлення. Доки її не сплачено, нове замовлення не можна оформити ні з оплатою готівкою, ні карткою; замовлення, які у вас уже є, зберігаються."
           }
         }
       }
@@ -29559,6 +29559,76 @@
           "stringUnit": {
             "state": "translated",
             "value": "Сплатити"
+          }
+        }
+      }
+    },
+    "unpaid_receivable_title": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Máte částku k úhradě"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "You have an amount to pay"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "У вас есть сумма к оплате"
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Máte sumu na úhradu"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "У вас є сума до сплати"
+          }
+        }
+      }
+    },
+    "unpaid_receivable_pay": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zaplatit teď"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pay now"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Оплатить сейчас"
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zaplatiť teraz"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Сплатити зараз"
           }
         }
       }
@@ -31799,6 +31869,76 @@
           "stringUnit": {
             "state": "translated",
             "value": "Замовлення скасовано"
+          }
+        }
+      }
+    },
+    "push.order.cash_not_paid.title": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Platba v hotovosti nebyla přijata"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cash payment not received"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Оплата наличными не получена"
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Platba v hotovosti nebola prijatá"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Оплату готівкою не отримано"
+          }
+        }
+      }
+    },
+    "push.order.cash_not_paid.body": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Objednávka #%1$@ je dokončena, ale uklízeč neobdržel platbu v hotovosti. Dlužíte %2$@; uhradíte ji v profilu v sekci Platby. Do té doby nemůžete vytvořit novou objednávku."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Booking #%1$@ is completed, but the cleaner did not receive the cash payment. You owe %2$@; pay it under Payments in your profile. Until then you can't make a new booking."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Заказ #%1$@ выполнен, но уборщик не получил оплату наличными. Вы должны %2$@; оплатить можно в профиле в разделе Платежи. До этого новый заказ оформить нельзя."
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Objednávka #%1$@ je dokončená, ale upratovač nedostal platbu v hotovosti. Dlhujete %2$@; uhradíte ju v profile v sekcii Platby. Dovtedy nemôžete vytvoriť novú objednávku."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Замовлення #%1$@ виконано, але прибиральник не отримав оплату готівкою. Ви винні %2$@; сплатити можна в профілі в розділі Платежі. Доти нове замовлення оформити не можна."
           }
         }
       }

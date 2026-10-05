@@ -103,6 +103,16 @@ final class CustomerNotificationDeepLinkTests: XCTestCase {
         }
     }
 
+    /// The debt is paid under Payments; the order page has nothing to pay with, so the order id is not followed.
+    func testCashNotPaidOpensPaymentsWhereTheAmountIsPaid() {
+        for orderId in ["ord-1", nil] {
+            XCTAssertEqual(
+                CustomerNotificationDeepLink.resolve(eventKey: "order.cash_not_paid", orderId: orderId, disputeId: nil),
+                .payments
+            )
+        }
+    }
+
     func testLoyaltyTierUpgradeResolvesToRewardsActivity() {
         XCTAssertEqual(
             CustomerNotificationDeepLink.resolve(eventKey: "loyalty.tier_upgrade", orderId: nil, disputeId: nil),

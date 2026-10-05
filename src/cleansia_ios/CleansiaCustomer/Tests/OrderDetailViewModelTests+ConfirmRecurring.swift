@@ -172,6 +172,28 @@ extension OrderDetailViewModelTests {
         XCTAssertEqual(creditReads, 0)
     }
 
+    /// A debt refuses the confirmation whatever the tender: the screen offers the way to pay it instead of a
+    /// snackbar, and no card payment is started.
+    func testAConfirmRefusedForAnUnpaidAmountOffersTheWayToPayIt() async {
+        let client = FakeOrderClient()
+        client.detailResults = [.success(recurringOccurrence(paymentType: 2))]
+        client.confirmRecurringResult = .failure(ApiError(code: "order.unpaid_receivable", httpStatus: 400))
+        let intent = FakePaymentIntentClient()
+        let snackbar = SnackbarController()
+        let vm = makeVM(client: client, paymentIntent: intent, snackbar: snackbar)
+        await vm.load()
+
+        await vm.confirmRecurring()
+
+        XCTAssertTrue(vm.owesMoney)
+        XCTAssertEqual(vm.confirmRecurringState, .idle)
+        XCTAssertNil(snackbar.current)
+        XCTAssertEqual(intent.callCount, 0)
+
+        vm.dismissOwesMoney()
+        XCTAssertFalse(vm.owesMoney)
+    }
+
     func testConfirmRecurringFailureStaysIdle() async {
         let client = FakeOrderClient()
         client.detailResults = [.success(OrderFixtures.detail(statusValue: 1))]

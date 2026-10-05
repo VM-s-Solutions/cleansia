@@ -23,6 +23,8 @@ enum CustomerPushTapRouting {
             Plan(tab: .profile, routes: [])
         case .rewardsActivity:
             Plan(tab: .rewards, routes: [.rewardsActivity])
+        case .payments:
+            Plan(tab: .profile, routes: [.payments])
         }
     }
 }

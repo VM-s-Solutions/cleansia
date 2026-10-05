@@ -47,7 +47,7 @@ final class CustomerErrorVoiceTests: XCTestCase {
             emitters: "CreateOrder, CreateRecurringBooking, UpdateRecurringBooking, ConfirmRecurringOrder"
         ),
         CustomerOnlyKey(
-            "order.cash_unpaid_receivable",
+            "order.unpaid_receivable",
             emitters: "CreateOrder, CreateRecurringBooking, UpdateRecurringBooking, ConfirmRecurringOrder"
         ),
         CustomerOnlyKey(
@@ -176,8 +176,6 @@ final class CustomerErrorVoiceTests: XCTestCase {
             "CreateOrder, CreateRecurringBooking, UpdateRecurringBooking, ConfirmRecurringOrder",
         "order.cash_open_bookings_limit_reached":
             "CreateOrder, CreateRecurringBooking, UpdateRecurringBooking, ConfirmRecurringOrder",
-        "order.cash_unpaid_receivable":
-            "CreateOrder, CreateRecurringBooking, UpdateRecurringBooking, ConfirmRecurringOrder",
         "order.cleaner_already_started": "ReportGuestCleanerNoShow",
         "order.cleaning_date.below_lead_time": "CreateOrder",
         "order.cleaning_date.future": "CreateOrder",
@@ -206,6 +204,8 @@ final class CustomerErrorVoiceTests: XCTestCase {
         "order.start_time_not_reached": "ReportGuestCleanerNoShow",
         "order.total_price.not_match": "CreateOrder",
         "order.total_price.positive": "CreateOrder",
+        "order.unpaid_receivable":
+            "CreateOrder, CreateRecurringBooking, UpdateRecurringBooking, ConfirmRecurringOrder",
         "promo.below_minimum_order_amount": "CreateOrder",
         "promo.currency_mismatch": "CreateOrder",
         "promo.expired": "CreateOrder",
@@ -254,6 +254,16 @@ final class CustomerErrorVoiceTests: XCTestCase {
         "sk": "expres",
         "uk": "експрес",
         "ru": "экспресс"
+    ]
+
+    /// The words the debt and cash-cap refusals are read for: where the amount is paid, the tender a debt no
+    /// longer leaves open, and the bookings the cap counts.
+    private static let debtVocabulary = [
+        DebtWords(locale: "en", payments: "payments", card: "card", upcoming: "upcoming"),
+        DebtWords(locale: "cs", payments: "platby", card: "kart", upcoming: "nadcházející"),
+        DebtWords(locale: "sk", payments: "platby", card: "kart", upcoming: "nadchádzajúc"),
+        DebtWords(locale: "uk", payments: "платежі", card: "картк", upcoming: "майбутн"),
+        DebtWords(locale: "ru", payments: "платежи", card: "карт", upcoming: "предстоящ")
     ]
 
     override func tearDown() {
@@ -309,6 +319,24 @@ final class CustomerErrorVoiceTests: XCTestCase {
         }
     }
 
+    /// A debt refuses every new booking, cash or card (owner ruling 2026-10-06), so the refusal names Payments,
+    /// where the amount is paid, and no longer sends the customer to the card.
+    func testTheDebtRefusalPointsToPaymentsAndNeverToTheCard() {
+        for words in Self.debtVocabulary {
+            let resolved = resolve("order.unpaid_receivable", locale: words.locale).lowercased()
+            XCTAssertTrue(resolved.contains(words.payments), "\(words.locale) never names Payments: \(resolved)")
+            XCTAssertFalse(resolved.contains(words.card), "\(words.locale) still offers the card: \(resolved)")
+        }
+    }
+
+    /// The cap counts cash bookings not yet paid at the door, which are the upcoming ones, not defaults.
+    func testTheCashCapRefusalCountsTheUpcomingBookings() {
+        for words in Self.debtVocabulary {
+            let cap = resolve("order.cash_open_bookings_limit_reached", locale: words.locale).lowercased()
+            XCTAssertTrue(cap.contains(words.upcoming), "\(words.locale) reads as a count of defaults: \(cap)")
+        }
+    }
+
     func testTheLocalizerReachesTheExpressWaiverCopyThroughTheServerErrorKey() {
         CoreL10n.bundle = CoreL10n.localizedBundle(for: "en")
         let error = ApiError(
@@ -340,6 +368,13 @@ final class CustomerErrorVoiceTests: XCTestCase {
         let listing = violations.sorted().map { "  • \($0)" }.joined(separator: "\n")
         XCTFail("\(violations.count) \(what):\n\(listing)", file: file, line: line)
     }
+}
+
+private struct DebtWords {
+    let locale: String
+    let payments: String
+    let card: String
+    let upcoming: String
 }
 
 private struct CustomerOnlyKey {

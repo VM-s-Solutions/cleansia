@@ -54,6 +54,7 @@ extension BookingViewModel {
         // every one of them already ships translated in five locales.
         let createResult = await orderCreateClient.create(command)
         guard case let .success(order) = createResult else {
+            if createResult.apiErrorOrNil?.refusesForUnpaidAmount == true { return .owesMoney }
             takeCashAwayIfServerRefused(createResult.apiErrorOrNil)
             return .failed(createResult.apiErrorOrNil)
         }

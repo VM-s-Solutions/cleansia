@@ -557,13 +557,16 @@ need backfilling.
 
 ### Changed
 
-- **Customer iOS — a schedule offers no *Edit* while your Plus benefits are paused.** When a Plus
-  renewal payment fails, your benefits are paused until it goes through or you cancel, and a schedule
-  cannot be changed meanwhile. The iOS app still offered *Edit* on each schedule, and *Change the
-  schedule* on one that can no longer be paid in cash, and saving the change was then refused. It now
-  hides them, as Android does, and a schedule that includes a service no longer offered says so
-  without *edit to update*. You can still pause, resume and delete a schedule. (Owner decision
-  2026-10-05.)
+- **Customer iOS — while your Plus benefits are paused, your schedules say so and offer nothing that
+  would be refused.** When a Plus renewal payment fails, your benefits are paused until it goes
+  through or you cancel, and no schedule can be set up or changed meanwhile. The iOS app still offered
+  *Edit* on each schedule, *Change the schedule* on one that can no longer be paid in cash, and the
+  button to set up a new schedule, both below your schedules and on the empty screen, and each was
+  then refused. It now hides them all, as Android does, and a schedule that includes a service no
+  longer offered says so without *edit to update*. In their place your schedules screen says
+  *Recurring paused — Plus payment failed*, and that your schedules book no new cleanings until a
+  retried payment goes through, in Android's words. You can still pause, resume and delete a
+  schedule. (Owner decisions 2026-10-05.)
 
 - **Customer, cleaner and admin, in Slovak — a package is a *balík*.** The apps called a package
   *balíček* in Slovak: on Home, in the booking and its *In your package* questions, on an order, in a

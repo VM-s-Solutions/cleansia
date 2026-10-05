@@ -655,9 +655,10 @@ double-billed subscription and had no way to cancel. The lifecycle read
 
 - **The customer sees it.** `GetMyMembership` returns `hasMembership: true` with `status: PastDue`, and
   the web, Android and iOS show *payment failed, benefits paused* with a cancel; the web's benefit gates
-  read an active status, not `hasMembership` alone, and Android refuses recurring authoring to a
-  past-due or paused member with a paused notice. iOS hides a schedule's *Edit* from them since
-  2026-10-05 ([A deactivated service or package](#deactivated-catalogue)).
+  read an active status, not `hasMembership` alone, and Android and iOS refuse recurring authoring to
+  a past-due or paused member: their schedules list offers no *Create* and no *Edit*, and says
+  *Recurring paused — Plus payment failed*. iOS has done so since 2026-10-05
+  ([A deactivated service or package](#deactivated-catalogue)).
 - **Each failed attempt is a notice.** Stripe's `invoice.payment_failed` sends `membership.payment_failed`
   to the member, keyed on the Stripe event and non-mutable; Android and iOS carry its copy and it lands
   in the customer's inbox. A failure that lands after the member cancelled is ignored.
@@ -2347,21 +2348,32 @@ schedules list says why:
   *Edit*: Android's `retiredEntryLine(showEdit)` (`RecurringAuthoring.kt`), iOS's
   `L10n.Recurring.cardItemNoLongerOffered(canEdit:)` from `RecurringListAffordances.showEdit`. Until
   then their line said *edit to update* too, a step they could take only once Plus was back.
-- **A paused member's card has no *Edit* on iOS either** (owner decision 2026-10-05: *"Hide"*). A
-  past-due or paused member keeps a live enrolment, so `GetMyMembership` answers `hasMembership: true`,
-  while the server refuses them authoring (`recurring_booking.membership_required`). Android's list
-  resolves them to its `Paused` gate and has never shown them *Edit*. iOS read only `hasMembership`,
-  so until 2026-10-05 their cards offered *Edit*, the form opened and the save was refused, and a card
-  holding a retired entry read *… — edit to update*. iOS's `RecurringListAffordances.of` now also
-  takes the membership's `benefitsPaused`, and shows *Edit* only to a member who is allowed to author
-  and whose benefits are not paused. The card's one `showEdit` also draws the cash schedule's *Change
-  the schedule* and picks the retired entry's wording, so those match Android's too. `benefitsPaused`
-  is `false` until the membership has loaded, so a slow read leaves *Edit* showing, as `hasMembership`
-  does. Pause, resume and delete stay on both apps: the server gates only creating and editing a
-  schedule on Plus. Two differences from
-  Android remain on iOS for such a member, reported and not changed: the list still offers to create
-  a schedule (the bottom button and the empty state's), which the server refuses, and it has no notice
-  that the benefits are paused.
+- **A paused member's schedules list on iOS is Android's** (owner decisions 2026-10-05: *"Hide"*,
+  then *"Match android"*). A past-due or paused member keeps a live enrolment, so `GetMyMembership`
+  answers `hasMembership: true`, while the server refuses them authoring
+  (`recurring_booking.membership_required`). Android's list resolves them to its `Paused` gate: no
+  *Create*, no *Edit*, no Plus upsell, and a notice that the benefits are paused. iOS read only
+  `hasMembership`, so until 2026-10-05 its cards offered *Edit*, the form opened and the save was
+  refused, a card holding a retired entry read *… — edit to update*, and the list offered to create a
+  schedule, from the bottom button and from the empty state, which the server refused too. iOS's
+  `RecurringAuthoringGate` now has Android's `paused` case, which a live enrolment with
+  `benefitsPaused` set resolves to, and `RecurringListAffordances.of` is Android's table: *Create* and
+  *Edit* only for `allowed`, the upsell and the lapsed notice only for a non-member, and the
+  benefits-paused notice for `paused`. The notice, *Recurring paused — Plus payment failed* over *We
+  couldn't charge your Plus renewal, so your recurring schedules book no new cleanings, and none can be
+  added or changed. …* (`recurring_paused_notice_title` and `_body`, Android's copy in all five
+  languages), sits above the cards, or in place of the empty state and its create button when there
+  are none. It offers no subscribe action, since the server refuses a second subscription while this
+  one lives. The card's one `showEdit` also draws the cash schedule's *Change the schedule* and picks
+  the retired entry's wording, so those match Android's too. `benefitsPaused` is `false` until the
+  membership has loaded, and an answer not yet landed resolves to `allowed`, so a slow read leaves
+  *Create* and *Edit* showing, as `hasMembership` does. Pause, resume and delete stay on both apps:
+  the server gates only creating and editing a schedule on Plus. One difference from Android remains
+  on iOS for such a member, reported and not changed: an order's detail still offers *Make this
+  recurring* (`OrderDetailViewModel` resolves the gate without `benefitsPaused`), which Android hides
+  and the server refuses. iOS's `RecurringBookingsViewModelTests` pins the gate, the table, a past-due
+  member's list with schedules and without, the notice ahead of the empty state, and the notice's copy
+  against Android's in every language.
 - **The web has no second wording because it needs none:** its list shows the cards only to an active member,
   and anyone else sees in their place a Plus paywall on the list itself, with links to the Plus page
   (the list route has no guard and does not redirect), so every card it draws has *Edit*; its edit

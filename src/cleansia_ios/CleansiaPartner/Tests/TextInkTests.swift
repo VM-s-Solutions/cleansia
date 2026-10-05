@@ -1,3 +1,4 @@
+import CleansiaCore
 import CleansiaPartnerApi
 import SwiftUI
 import XCTest
@@ -191,6 +192,33 @@ final class TextInkTests: XCTestCase {
                 .contains("case.inServicedCity:CleansiaColors.primaryText"),
             "\"We service jobs in {city}\": its message, icon and wash share one tint"
         )
+    }
+
+    /// The payment pill writes its status in its tint on a 12 % wash of that tint over the card. Every severity
+    /// reads 4.5:1 or more on it in both modes (finding 2026-10-05: "Pending" in the warning star read 1.96:1
+    /// in light mode, "Settled" in `successText` 4.27:1 light and 2.64:1 dark). Android's pill takes the same inks.
+    func testEveryPaymentStatusPillReadsOnItsWashInBothModes() throws {
+        let pill = try compactSource("Orders/OrderDetailCards.swift")
+        XCTAssertTrue(pill.contains(
+            "switchPaymentPresentation.statusSeverity(statusCode){case.success:CleansiaColors.successInk"
+                + "case.warning:CleansiaColors.pendingInkcase.error:CleansiaColors.error"
+                + "case.neutral:CleansiaColors.onSurfaceVariant}"
+        ))
+        XCTAssertTrue(pill.contains(".foregroundColor(tint).padding(.horizontal,Spacing.xs)"))
+        XCTAssertTrue(pill.contains(".background(tint.opacity(0.12),in:Capsule())"))
+        let inks = [
+            CleansiaColors.successInk, CleansiaColors.pendingInk, CleansiaColors.error, CleansiaColors.onSurfaceVariant
+        ]
+        for style in [UIUserInterfaceStyle.light, .dark] {
+            let card = rgb(CleansiaColors.surface, style)
+            for ink in inks {
+                let label = rgb(ink, style)
+                XCTAssertGreaterThanOrEqual(contrast(label, label * 0.12 + card * 0.88), 4.5, "style \(style.rawValue)")
+            }
+        }
+        let card = rgb(CleansiaColors.surface, .light)
+        let star = rgb(CleansiaColors.warningStar, .light)
+        XCTAssertLessThan(contrast(star, star * 0.12 + card * 0.88), 2, "the warning star reads on its wash after all")
     }
 
     private var featureSources: URL {

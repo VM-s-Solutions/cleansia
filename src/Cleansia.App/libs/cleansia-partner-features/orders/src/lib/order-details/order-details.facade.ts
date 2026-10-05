@@ -9,11 +9,13 @@ import {
   OrderItem,
   OrderStatus,
   PartnerClient,
+  ReportCashNotPaidCommand,
   ReportOrderIssueCommand,
   StartOrderCommand,
 } from '@cleansia/partner-services';
 import * as OrderActions from '@cleansia/partner-stores';
 import {
+  DialogService as ConfirmDialogService,
   errorToastSuppressingHttpClient,
   extractApiErrorCode,
   SnackbarService,
@@ -44,6 +46,7 @@ import {
 } from '../components/work-contract-dialog';
 import {
   canMarkCashCollected,
+  canReportCashNotPaid,
   cashCollectionRefusal,
   formatCurrency,
 } from './order-details.helpers';
@@ -57,6 +60,7 @@ export class OrderDetailsFacade extends UnsubscribeControlDirective {
   private readonly snackbarService = inject(SnackbarService);
   private readonly translateService = inject(TranslateService);
   private readonly dialogService = inject(DialogService);
+  private readonly confirmDialog = inject(ConfirmDialogService);
   private readonly store = inject(Store);
   private readonly actions$ = inject(Actions);
   // A cleaner who was never taken off the order answers order.not_found here, which is no error to them.
@@ -579,6 +583,81 @@ export class OrderDetailsFacade extends UnsubscribeControlDirective {
         // answer from the server a re-read would most likely fail too and blank the sheet.
         catchError((error) => {
           if (extractApiErrorCode(error)) {
+            this.loadOrderDetails(orderId);
+          }
+          return of(null);
+        }),
+        finalize(() => this.loading.set(false))
+      )
+      .subscribe();
+  }
+
+  openReportCashNotPaidDialog(): void {
+    const order = this.orderDetails();
+    const orderId = order?.id;
+    const employeeId = this.currentEmployeeId();
+
+    if (!order || !orderId || !employeeId) {
+      this.snackbarService.showErrorTranslated(
+        'global.messages.orders.invalid_request'
+      );
+      return;
+    }
+
+    if (!canReportCashNotPaid(order, employeeId)) {
+      this.snackbarService.showErrorTranslated(
+        'pages.order_details.cash_not_paid.gating_error'
+      );
+      return;
+    }
+
+    this.confirmDialog
+      .confirmTranslated(
+        'pages.order_details.cash_not_paid.confirm_message',
+        'pages.order_details.cash_not_paid.confirm_title',
+        undefined,
+        {
+          danger: true,
+          icon: 'pi pi-exclamation-triangle',
+          acceptLabelKey: 'pages.order_details.cash_not_paid.confirm_action',
+        }
+      )
+      .pipe(takeUntil(this.destroyed$))
+      .subscribe((confirmed) => {
+        if (confirmed) {
+          this.reportCashNotPaid(orderId, order.currency?.code);
+        }
+      });
+  }
+
+  private reportCashNotPaid(orderId: string, currencyCode: string | undefined): void {
+    this.loading.set(true);
+
+    const command = new ReportCashNotPaidCommand();
+    command.orderId = orderId;
+
+    this.partnerClient.orderClient
+      .reportCashNotPaid(command)
+      .pipe(
+        takeUntil(this.destroyed$),
+        tap((response) => {
+          this.snackbarService.showSuccessTranslated(
+            'global.messages.orders.cash_not_paid_reported',
+            {
+              amount: formatCurrency(
+                response.amountOwed,
+                currencyCode,
+                this.translateService.currentLang
+              ),
+            }
+          );
+          this.loadOrderDetails(orderId);
+        }),
+        catchError((error) => {
+          const code = extractApiErrorCode(error);
+          if (code === ACCEPTANCE_REQUIRED) {
+            this.openAcceptWorkContractDialog();
+          } else if (code) {
             this.loadOrderDetails(orderId);
           }
           return of(null);

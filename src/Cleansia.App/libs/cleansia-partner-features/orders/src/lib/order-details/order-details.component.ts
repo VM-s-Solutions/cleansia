@@ -41,6 +41,7 @@ import {
   canUploadAfterPhotos,
   canAddNoteOrIssue,
   canMarkCashCollected,
+  canReportCashNotPaid,
   canAcceptWorkContract,
   customerDetailsClosedNoticeKey,
   findCallerWorkContractAcceptance,
@@ -235,6 +236,13 @@ export class OrderDetailsComponent implements OnInit {
     return canMarkCashCollected(order, eid);
   });
 
+  protected readonly canReportCashNotPaid = computed((): boolean => {
+    const order = this.orderDetails();
+    const eid = this.currentEmployeeId();
+    if (!order || !eid) return false;
+    return canReportCashNotPaid(order, eid);
+  });
+
   constructor() {
     effect(() => {
       const orderDetails = this.orderDetails();
@@ -316,6 +324,14 @@ export class OrderDetailsComponent implements OnInit {
 
   protected openMarkCashCollected(): void {
     this.facade.openMarkCashCollectedDialog();
+  }
+
+  protected openReportCashNotPaid(): void {
+    if (!this.hasAfterPhotos()) {
+      this.facade.warnMissingAfterPhotos();
+      return;
+    }
+    this.facade.openReportCashNotPaidDialog();
   }
 
   protected onLockoutReported(): void {

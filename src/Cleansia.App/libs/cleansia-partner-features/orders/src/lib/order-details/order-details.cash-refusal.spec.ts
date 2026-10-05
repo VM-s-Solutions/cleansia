@@ -9,7 +9,7 @@ import { HttpErrorInterceptorFn } from '@cleansia/services';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { Actions } from '@ngrx/effects';
 import { Store } from '@ngrx/store';
-import { MessageService } from 'primeng/api';
+import { ConfirmationService, MessageService } from 'primeng/api';
 import { DialogService } from 'primeng/dynamicdialog';
 import { readFileSync } from 'fs';
 import { join } from 'path';
@@ -61,6 +61,7 @@ describe.each(LOCALES)('a refused cash collection, read in %s', (locale) => {
         OrderDetailsFacade,
         { provide: MessageService, useValue: { add, clear: jest.fn() } },
         { provide: DialogService, useValue: { open: jest.fn() } },
+        ConfirmationService,
         { provide: Store, useValue: { dispatch: jest.fn() } },
         { provide: Actions, useValue: EMPTY },
       ],

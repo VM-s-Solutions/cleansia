@@ -448,6 +448,13 @@
       "mark_cash_collected_confirm_warning": "This marks the order as paid and cannot be undone.",
       "mark_cash_collected_confirm_action": "Yes, cash collected",
       "mark_cash_collected_gating_error": "Cash can only be collected while the order is in progress and not yet paid",
+      "cash_not_paid": {
+        "action": "Customer did not pay",
+        "confirm_title": "The customer did not pay?",
+        "confirm_message": "Report this only if the customer paid you nothing for the cleaning. The order is completed and its price becomes an amount the customer owes the company. The customer is told at once and cannot book again until it is paid, and an administrator is alerted. You receive your reward for the order as usual. Only an administrator can undo this.",
+        "confirm_action": "Yes, the customer did not pay",
+        "gating_error": "This can be reported only for a cash order in progress that has not been paid yet"
+      },
       "complete_missing_after_photos": "Order cannot be completed without after photos",
       "work_contract": {
         "accepted_line": "You accepted the contract for work on {{date}}, version {{version}}",
@@ -715,6 +722,7 @@
         "invalid_request": "Invalid request. Missing required information.",
         "order_started": "Order started successfully.",
         "cash_collected": "Cash collected. The order is marked as paid.",
+        "cash_not_paid_reported": "Reported. The order is completed and the customer owes {{amount}}.",
         "failed_to_start": "Failed to start order. Please try again.",
         "print_failed": "Failed to print order. Please try again.",
         "receipt_not_available": "Receipt is not available for this order.",

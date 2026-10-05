@@ -12,6 +12,7 @@ import {
 import {
   canAcceptWorkContract,
   canMarkCashCollected,
+  canReportCashNotPaid,
   canTakeOrder,
   canUploadAfterPhotos,
   canUploadBeforePhotos,
@@ -254,6 +255,71 @@ describe('collecting cash', () => {
       )
     ).toBe('api.credit.cash_not_collectable_on_credit_order');
     expect(cashCollectionRefusal(jobSheet({ paymentType: PaymentType.Card }))).toBeNull();
+  });
+});
+
+describe('a customer who did not pay at the door', () => {
+  interface JobSheet {
+    orderStatus?: number;
+    paymentStatus?: number;
+    paymentType?: number;
+    employeeId?: string;
+  }
+
+  const reportable = (overrides: JobSheet): boolean =>
+    canReportCashNotPaid(
+      OrderItem.fromJS({
+        orderStatus: { value: overrides.orderStatus ?? OrderStatus.InProgress },
+        paymentStatus: { value: overrides.paymentStatus ?? PaymentStatus.Pending },
+        paymentType: { value: overrides.paymentType ?? PaymentType.Cash },
+        assignedEmployees: [{ employeeId: overrides.employeeId ?? EMPLOYEE_ID }],
+      }),
+      EMPLOYEE_ID
+    );
+
+  it('is offered to the crew of a cash order in progress that is still awaiting payment', () => {
+    expect(reportable({})).toBe(true);
+  });
+
+  it('is not offered on a card order', () => {
+    expect(reportable({ paymentType: PaymentType.Card })).toBe(false);
+  });
+
+  it.each([
+    PaymentStatus.Paid,
+    PaymentStatus.Failed,
+    PaymentStatus.Refunded,
+    PaymentStatus.PartiallyRefunded,
+    PaymentStatus.Disputed,
+  ])('is not offered once nothing is left to pay at the door, status %s', (status) => {
+    expect(reportable({ paymentStatus: status })).toBe(false);
+  });
+
+  it.each([
+    OrderStatus.New,
+    OrderStatus.Confirmed,
+    OrderStatus.OnTheWay,
+    OrderStatus.Completed,
+    OrderStatus.Cancelled,
+  ])('is not offered outside the work itself, status %s', (status) => {
+    expect(reportable({ orderStatus: status })).toBe(false);
+  });
+
+  it('is not offered to a cleaner who is not on the crew', () => {
+    expect(reportable({ employeeId: 'emp-2' })).toBe(false);
+  });
+
+  it.each(PARTNER_LOCALES)('%s carries the action, its confirmation and what it reports', (locale) => {
+    expect(
+      missingIn(locale, [
+        'pages.order_details.cash_not_paid.action',
+        'pages.order_details.cash_not_paid.confirm_title',
+        'pages.order_details.cash_not_paid.confirm_message',
+        'pages.order_details.cash_not_paid.confirm_action',
+        'pages.order_details.cash_not_paid.gating_error',
+        'global.messages.orders.cash_not_paid_reported',
+      ])
+    ).toEqual([]);
   });
 });
 

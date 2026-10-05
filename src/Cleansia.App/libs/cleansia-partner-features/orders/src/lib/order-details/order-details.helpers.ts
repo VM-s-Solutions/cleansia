@@ -241,6 +241,17 @@ export function canMarkCashCollected(order: OrderItem, employeeId: string): bool
   );
 }
 
+// Mirrors ReportCashNotPaid's gates on the job sheet: a cash order in progress that is still awaiting
+// payment, reported by a cleaner on its crew. The after photo is the page's to check, the contract the server's.
+export function canReportCashNotPaid(order: OrderItem, employeeId: string): boolean {
+  return (
+    order.orderStatus?.value === OrderStatus.InProgress &&
+    order.paymentType?.value === PaymentType.Cash &&
+    order.paymentStatus?.value === PaymentStatus.Pending &&
+    isEmployeeAssigned(order.assignedEmployees, employeeId)
+  );
+}
+
 // The caller's contract for work is the row of their own seat: the acceptance names the seat,
 // the crew entry names the cleaner, and the two meet on the seat id.
 export function findCallerWorkContractAcceptance(

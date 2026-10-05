@@ -10,7 +10,7 @@ import { HttpErrorInterceptorFn, SUPPRESS_ERROR_TOAST } from '@cleansia/services
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { Actions } from '@ngrx/effects';
 import { Store } from '@ngrx/store';
-import { MessageService } from 'primeng/api';
+import { ConfirmationService, MessageService } from 'primeng/api';
 import { DialogService } from 'primeng/dynamicdialog';
 import { readFileSync } from 'fs';
 import { join } from 'path';
@@ -66,6 +66,7 @@ describe('the order a cleaner was taken off', () => {
         OrderDetailsFacade,
         { provide: MessageService, useValue: { add, clear: jest.fn() } },
         { provide: DialogService, useValue: { open: jest.fn() } },
+        ConfirmationService,
         { provide: Store, useValue: { dispatch: jest.fn() } },
         { provide: Actions, useValue: EMPTY },
       ],

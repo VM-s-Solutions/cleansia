@@ -2509,6 +2509,7 @@
       "filter": {
         "status_all": "All statuses",
         "status_accepted": "Accepted",
+        "status_held": "Held",
         "status_qualified": "Qualified",
         "status_expired": "Expired",
         "date_from": "From",
@@ -2533,17 +2534,29 @@
       },
       "credit_format": "{{referrer}} / {{referred}}",
       "not_yet": "—",
+      "held": "Held: {{reasons}}",
+      "hold_reason": {
+        "address": "same address",
+        "phone": "same phone number",
+        "email": "same e-mail inbox"
+      },
       "empty": "No referrals yet",
       "loading": "Loading...",
       "actions": {
         "reverse": "Reverse referral",
-        "force_qualify": "Force-qualify referral"
+        "force_qualify": "Force-qualify referral",
+        "release": "Release referral",
+        "reject": "Reject referral"
       },
       "intervention": {
         "title_reverse": "Reverse referral",
         "title_force_qualify": "Force-qualify referral",
+        "title_release": "Release held referral",
+        "title_reject": "Reject held referral",
         "hint_reverse": "Takes back the referral credit from both parties — only as much of it as each balance still holds — and marks the referral as reversed. The reason is stored in the audit ledger.",
-        "hint_force_qualify": "Marks the referral as qualified and credits both parties the referral credit of the currency of the referred customer's latest order, or of the platform default currency. The reason is stored in the audit ledger.",
+        "hint_force_qualify": "Marks the referral as qualified and credits each party the referral credit of the currency it books in: the referred customer that of their latest order, or of the platform default currency; the referrer that of their latest order, or of the referred customer's currency. A party whose currency has no referral credit set receives nothing. The reason is stored in the audit ledger.",
+        "hint_release": "Finds the referral genuine and pays it: the referred customer the referral credit of the held order's currency, the referrer that of the currency of their latest order, or of the referred customer's when they have none. A party whose currency has no referral credit set receives nothing. The referral becomes qualified. The reason is stored in the audit ledger.",
+        "hint_reject": "Refuses the referral: neither party receives referral credit, and the referral is marked as reversed with its hold reasons kept on record. The reason is stored in the audit ledger.",
         "summary_reverse": "Granted on qualification: {{credit}} (referrer / referred).",
         "field": {
           "reason": "Reason",
@@ -2551,9 +2564,12 @@
         },
         "submit_reverse": "Reverse",
         "submit_force_qualify": "Qualify",
+        "submit_release": "Release",
+        "submit_reject": "Reject",
         "success_reverse": "Referral reversed. Credit taken back: {{referrer}} from the referrer, {{referred}} from the referred customer.",
         "success_reverse_no_credit": "Referral reversed. No credit had been granted, so none was taken back.",
-        "success_force_qualify": "Referral qualified. Credit granted: {{referrer}} to the referrer, {{referred}} to the referred customer."
+        "success_force_qualify": "Referral qualified. Credit granted: {{referrer}} to the referrer, {{referred}} to the referred customer.",
+        "success_reject": "Referral rejected. No referral credit was paid."
       }
     },
     "sitewide_push": {

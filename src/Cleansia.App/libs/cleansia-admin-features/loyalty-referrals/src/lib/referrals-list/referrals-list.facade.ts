@@ -18,6 +18,7 @@ import { formatAdminCredit } from './referrals-list.models';
 export type ReferralStatusFilter =
   | 'all'
   | 'accepted'
+  | 'held'
   | 'qualified'
   | 'expired'
   | 'reversed';
@@ -31,6 +32,7 @@ export interface ReferralFilterParams {
 const STATUS_FILTER_LABEL_KEYS: Readonly<Record<ReferralStatusFilter, string>> = {
   all: 'pages.loyalty_referrals.filter.status_all',
   accepted: 'pages.loyalty_referrals.filter.status_accepted',
+  held: 'pages.loyalty_referrals.filter.status_held',
   qualified: 'pages.loyalty_referrals.filter.status_qualified',
   expired: 'pages.loyalty_referrals.filter.status_expired',
   reversed: 'pages.loyalty_referrals.filter.status_reversed',
@@ -108,6 +110,7 @@ export class ReferralsListFacade extends UnsubscribeControlDirective {
     this.loading.set(true);
     const filter = this.currentFilter();
     const status = this.toServerStatus(filter.status);
+    const held = filter.status === 'held' ? true : undefined;
 
     this.adminClient.adminReferralClient
       .getPaged(
@@ -115,7 +118,8 @@ export class ReferralsListFacade extends UnsubscribeControlDirective {
         filter.dateFrom,
         filter.dateTo,
         this.currentOffset(),
-        this.currentLimit()
+        this.currentLimit(),
+        held
       )
       .pipe(
         takeUntil(this.destroyed$),
@@ -145,11 +149,16 @@ export class ReferralsListFacade extends UnsubscribeControlDirective {
     this.loadReferrals();
   }
 
-  reverseReferral(
-    referralId: string,
-    reason: string,
-    onSuccess?: () => void
-  ): void {
+  reverseReferral(referralId: string, reason: string, onSuccess?: () => void): void {
+    this.takeBack(referralId, reason, 'pages.loyalty_referrals.intervention.success_reverse_no_credit', onSuccess);
+  }
+
+  /** Rejects a held referral through reverse: nothing was paid, so nothing is taken back. */
+  rejectReferral(referralId: string, reason: string, onSuccess?: () => void): void {
+    this.takeBack(referralId, reason, 'pages.loyalty_referrals.intervention.success_reject', onSuccess);
+  }
+
+  private takeBack(referralId: string, reason: string, nothingTakenKey: string, onSuccess?: () => void): void {
     const trimmed = reason.trim();
     if (!referralId || !trimmed || this.intervening()) return;
 
@@ -173,21 +182,16 @@ export class ReferralsListFacade extends UnsubscribeControlDirective {
               referred: formatAdminCredit(response.creditTakenFromReferred, response.referredCurrencyCode, this.lang()),
             });
           } else {
-            this.snackbar.showSuccessTranslated(
-              'pages.loyalty_referrals.intervention.success_reverse_no_credit'
-            );
+            this.snackbar.showSuccessTranslated(nothingTakenKey);
           }
-          this.loadReferrals();
           onSuccess?.();
         }
+        this.loadReferrals();
       });
   }
 
-  forceQualifyReferral(
-    referralId: string,
-    reason: string,
-    onSuccess?: () => void
-  ): void {
+  /** Force-qualifies an accepted referral, and releases a held one. */
+  forceQualifyReferral(referralId: string, reason: string, onSuccess?: () => void): void {
     const trimmed = reason.trim();
     if (!referralId || !trimmed || this.intervening()) return;
 
@@ -209,20 +213,12 @@ export class ReferralsListFacade extends UnsubscribeControlDirective {
             referrer: formatAdminCredit(response.creditGrantedToReferrer, response.referrerCurrencyCode, this.lang()),
             referred: formatAdminCredit(response.creditGrantedToReferred, response.referredCurrencyCode, this.lang()),
           });
-          this.loadReferrals();
           onSuccess?.();
         }
+        this.loadReferrals();
       });
   }
 
-  /**
-   * Maps the UI status filter to the backend ReferralStatus enum.
-   * - all       => undefined (no filter)
-   * - accepted  => ReferralStatus.Accepted
-   * - qualified => ReferralStatus.Qualified
-   * - expired   => ReferralStatus.Expired
-   * - reversed  => ReferralStatus.Reversed
-   */
   private toServerStatus(
     status: ReferralStatusFilter | undefined
   ): ReferralStatus | undefined {
@@ -235,6 +231,7 @@ export class ReferralsListFacade extends UnsubscribeControlDirective {
         return ReferralStatus.Expired;
       case 'reversed':
         return ReferralStatus.Reversed;
+      case 'held':
       case 'all':
       default:
         return undefined;

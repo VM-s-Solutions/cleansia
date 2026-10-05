@@ -2509,6 +2509,7 @@
       "filter": {
         "status_all": "Všetky stavy",
         "status_accepted": "Prijaté",
+        "status_held": "Pozastavené",
         "status_qualified": "Kvalifikované",
         "status_expired": "Expirované",
         "date_from": "Od",
@@ -2533,17 +2534,29 @@
       },
       "credit_format": "{{referrer}} / {{referred}}",
       "not_yet": "—",
+      "held": "Pozastavené: {{reasons}}",
+      "hold_reason": {
+        "address": "rovnaká adresa",
+        "phone": "rovnaké telefónne číslo",
+        "email": "rovnaká e-mailová schránka"
+      },
       "empty": "Zatiaľ žiadne odporúčania",
       "loading": "Načítavanie...",
       "actions": {
         "reverse": "Stornovať odporúčanie",
-        "force_qualify": "Manuálne uznať odporúčanie"
+        "force_qualify": "Manuálne uznať odporúčanie",
+        "release": "Uvoľniť odporúčanie",
+        "reject": "Zamietnuť odporúčanie"
       },
       "intervention": {
         "title_reverse": "Stornovať odporúčanie",
         "title_force_qualify": "Manuálne uznať odporúčanie",
+        "title_release": "Uvoľniť pozastavené odporúčanie",
+        "title_reject": "Zamietnuť pozastavené odporúčanie",
         "hint_reverse": "Odoberie obom stranám kredit za odporúčanie — len toľko, koľko ho na zostatku ešte zostáva — a označí odporúčanie ako stornované. Dôvod sa uloží do auditného záznamu.",
-        "hint_force_qualify": "Označí odporúčanie ako uznané a obom stranám pripíše kredit za odporúčanie v mene poslednej objednávky odporúčaného zákazníka, prípadne vo východiskovej mene platformy. Dôvod sa uloží do auditného záznamu.",
+        "hint_force_qualify": "Označí odporúčanie ako uznané a každej strane pripíše kredit za odporúčanie v mene, v ktorej objednáva: odporúčanému zákazníkovi v mene jeho poslednej objednávky, prípadne vo východiskovej mene platformy; odporúčajúcemu v mene jeho poslednej objednávky, prípadne v mene odporúčaného zákazníka. Strana, pre ktorej menu nie je kredit za odporúčanie stanovený, nedostane nič. Dôvod sa uloží do auditného záznamu.",
+        "hint_release": "Uzná odporúčanie za skutočné a vyplatí ho: odporúčanému zákazníkovi kredit za odporúčanie v mene pozastavenej objednávky, odporúčajúcemu v mene jeho poslednej objednávky, prípadne v mene odporúčaného zákazníka, ak žiadnu objednávku nemá. Strana, pre ktorej menu nie je kredit za odporúčanie stanovený, nedostane nič. Odporúčanie sa označí ako uznané. Dôvod sa uloží do auditného záznamu.",
+        "hint_reject": "Odmietne odporúčanie: žiadna zo strán nedostane kredit za odporúčanie a odporúčanie sa označí ako stornované, dôvody pozastavenia zostanú zaznamenané. Dôvod sa uloží do auditného záznamu.",
         "summary_reverse": "Udelené pri uznaní: {{credit}} (odporúčajúci / odporúčaný).",
         "field": {
           "reason": "Dôvod",
@@ -2551,9 +2564,12 @@
         },
         "submit_reverse": "Stornovať",
         "submit_force_qualify": "Uznať",
+        "submit_release": "Uvoľniť",
+        "submit_reject": "Zamietnuť",
         "success_reverse": "Odporúčanie stornované. Odobratý kredit: {{referrer}} odporúčajúcemu, {{referred}} odporúčanému.",
         "success_reverse_no_credit": "Odporúčanie stornované. Žiadny kredit nebol udelený, takže sa nič neodoberalo.",
-        "success_force_qualify": "Odporúčanie uznané. Pripísaný kredit: {{referrer}} odporúčajúcemu, {{referred}} odporúčanému."
+        "success_force_qualify": "Odporúčanie uznané. Pripísaný kredit: {{referrer}} odporúčajúcemu, {{referred}} odporúčanému.",
+        "success_reject": "Odporúčanie zamietnuté. Kredit za odporúčanie nebol vyplatený."
       }
     },
     "sitewide_push": {

@@ -9,15 +9,33 @@ export function formatAdminCredit(value: number | undefined, currencyCode: strin
   return formatMoney(value ?? 0, currencyCode, localeFor(lang), { fractionDigits: 2 });
 }
 
-/** Referrer / referred, as credited on qualification; a dash until either side was paid. */
+/** Referrer / referred, each in the currency it was paid in; a dash for a side that was paid nothing. */
 export function formatReferralCredit(row: AdminReferralListItem, translate: TranslateService): string {
+  const notYet = translate.instant('pages.loyalty_referrals.not_yet');
   if (row.creditAwardedToReferrer == null && row.creditAwardedToReferred == null) {
-    return translate.instant('pages.loyalty_referrals.not_yet');
+    return notYet;
   }
+  const side = (value: number | undefined, currencyCode: string | undefined) =>
+    currencyCode ? formatAdminCredit(value, currencyCode, translate.currentLang) : notYet;
   return translate.instant('pages.loyalty_referrals.credit_format', {
-    referrer: formatAdminCredit(row.creditAwardedToReferrer, row.referrerCreditCurrencyCode, translate.currentLang),
-    referred: formatAdminCredit(row.creditAwardedToReferred, row.referredCreditCurrencyCode, translate.currentLang),
+    referrer: side(row.creditAwardedToReferrer, row.referrerCreditCurrencyCode),
+    referred: side(row.creditAwardedToReferred, row.referredCreditCurrencyCode),
   });
+}
+
+export function isHeldReferral(row: AdminReferralListItem): boolean {
+  return row.status === ReferralStatus.Accepted && !!row.holdReasons;
+}
+
+/** The translated reasons a held referral waits for an administrator on; null when it is not held. */
+export function formatHoldReasons(row: AdminReferralListItem, translate: TranslateService): string | null {
+  if (!isHeldReferral(row)) return null;
+  return (row.holdReasons ?? '')
+    .split(',')
+    .map((slug) => slug.trim())
+    .filter((slug) => slug.length > 0)
+    .map((slug) => translate.instant(`pages.loyalty_referrals.hold_reason.${slug}`))
+    .join(', ');
 }
 
 export function getReferralTableColumns(
@@ -81,6 +99,8 @@ export function getReferralInterventionActions(
     canIntervene: boolean;
     onReverse: (row: AdminReferralListItem) => void;
     onForceQualify: (row: AdminReferralListItem) => void;
+    onRelease: (row: AdminReferralListItem) => void;
+    onReject: (row: AdminReferralListItem) => void;
   },
   translate: TranslateService
 ): TableAction<AdminReferralListItem>[] {
@@ -95,18 +115,24 @@ export function getReferralInterventionActions(
     },
     {
       icon: 'pi pi-check-circle',
-      tooltip: translate.instant(
-        'pages.loyalty_referrals.actions.force_qualify'
-      ),
+      tooltip: translate.instant('pages.loyalty_referrals.actions.force_qualify'),
       color: 'success',
-      visible: (row) => row.status === ReferralStatus.Accepted,
+      visible: (row) => row.status === ReferralStatus.Accepted && !isHeldReferral(row),
       onClick: (row) => defs.onForceQualify(row),
+    },
+    {
+      icon: 'pi pi-check-circle',
+      tooltip: translate.instant('pages.loyalty_referrals.actions.release'),
+      color: 'success',
+      visible: (row) => isHeldReferral(row),
+      onClick: (row) => defs.onRelease(row),
+    },
+    {
+      icon: 'pi pi-ban',
+      tooltip: translate.instant('pages.loyalty_referrals.actions.reject'),
+      color: 'danger',
+      visible: (row) => isHeldReferral(row),
+      onClick: (row) => defs.onReject(row),
     },
   ];
 }
-
-/**
- * Backend BusinessErrorMessage code -> i18n key, explicit because the
- * intervention path is money-adjacent (mirrors the disputes-management map).
- */
-

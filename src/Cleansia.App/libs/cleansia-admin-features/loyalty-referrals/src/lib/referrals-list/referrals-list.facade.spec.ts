@@ -45,7 +45,7 @@ describe('ReferralsListFacade', () => {
 
   beforeEach(() => {
     referralClient = {
-      getPaged: jest.fn(),
+      getPaged: jest.fn().mockReturnValue(of(page)),
       reverse: jest.fn(),
       forceQualify: jest.fn(),
     };
@@ -117,6 +117,35 @@ describe('ReferralsListFacade', () => {
           value: 'pages.loyalty_referrals.filter.status_qualified',
         },
       ]);
+    });
+
+    it('asks the server for held referrals alone under the held filter, with no status of its own', () => {
+      facade.filterForm.patchValue({ status: 'held' });
+      jest.advanceTimersByTime(500);
+
+      const args = referralClient.getPaged.mock.calls.at(-1);
+      expect(args?.[0]).toBeUndefined();
+      expect(args?.[5]).toBe(true);
+      expect(facade.filters.chips()).toEqual([
+        {
+          key: 'status',
+          label: 'pages.loyalty_referrals.filter.status',
+          value: 'pages.loyalty_referrals.filter.status_held',
+        },
+      ]);
+    });
+
+    it('leaves the hold out of every other filter, so accepted still lists the held rows', () => {
+      facade.filterForm.patchValue({ status: 'accepted' });
+      jest.advanceTimersByTime(500);
+
+      const args = referralClient.getPaged.mock.calls.at(-1);
+      expect(args?.[0]).toBe(ReferralStatus.Accepted);
+      expect(args?.[5]).toBeUndefined();
+    });
+
+    it('offers the held filter among the statuses', () => {
+      expect(facade.statusFilterOptions().map((option) => option.value)).toContain('held');
     });
 
     it('sends the date range and shows it as one chip that clears both dates', () => {
@@ -281,10 +310,94 @@ describe('ReferralsListFacade', () => {
     expect(snackbar.showErrorTranslated).not.toHaveBeenCalled();
   });
 
+  it('rejects a held referral through reverse, says nothing was paid, and reloads', () => {
+    referralClient.reverse.mockReturnValue(
+      of(
+        ReverseReferralResponse.fromJS({
+          referralId: 'ref-3',
+          creditTakenFromReferrer: 0,
+          referrerCurrencyCode: null,
+          creditTakenFromReferred: 0,
+          referredCurrencyCode: null,
+        })
+      )
+    );
+    referralClient.getPaged.mockReturnValue(of(page));
+    const onSuccess = jest.fn();
+
+    facade.rejectReferral('ref-3', '  same flat, one household  ', onSuccess);
+
+    const [id, command] = referralClient.reverse.mock.calls[0];
+    expect(id).toBe('ref-3');
+    expect(command).toBeInstanceOf(ReverseReferralCommand);
+    expect(command.toJSON()).toEqual({
+      referralId: 'ref-3',
+      reason: 'same flat, one household',
+    });
+    expect(snackbar.showSuccessTranslated).toHaveBeenCalledWith(
+      'pages.loyalty_referrals.intervention.success_reject'
+    );
+    expect(referralClient.getPaged).toHaveBeenCalledTimes(1);
+    expect(onSuccess).toHaveBeenCalledTimes(1);
+    expect(facade.intervening()).toBe(false);
+  });
+
+  it('says what was taken back when a rejection lands on a referral another administrator had already released', () => {
+    referralClient.reverse.mockReturnValue(
+      of(
+        ReverseReferralResponse.fromJS({
+          referralId: 'ref-3',
+          creditTakenFromReferrer: 150,
+          referrerCurrencyCode: 'CZK',
+          creditTakenFromReferred: 150,
+          referredCurrencyCode: 'CZK',
+        })
+      )
+    );
+    referralClient.getPaged.mockReturnValue(of(page));
+
+    facade.rejectReferral('ref-3', 'reason', jest.fn());
+
+    expect(snackbar.showSuccessTranslated).toHaveBeenCalledWith(
+      'pages.loyalty_referrals.intervention.success_reverse',
+      { referrer: czk(150), referred: czk(150) }
+    );
+  });
+
+  it('does not call reverse to reject with a blank reason', () => {
+    facade.rejectReferral('ref-3', '   ', jest.fn());
+    expect(referralClient.reverse).not.toHaveBeenCalled();
+  });
+
+  it('re-reads the list when an intervention is refused, and keeps the dialog open', () => {
+    referralClient.getPaged.mockReturnValue(of(page));
+    referralClient.forceQualify.mockReturnValue(
+      throwError(() => ({ result: { detail: 'referral.not_accepted' } }))
+    );
+    referralClient.reverse.mockReturnValue(
+      throwError(() => ({ result: { detail: 'referral.not_qualified' } }))
+    );
+    const onSuccess = jest.fn();
+
+    facade.forceQualifyReferral('ref-2', 'reason', onSuccess);
+    expect(referralClient.getPaged).toHaveBeenCalledTimes(1);
+
+    facade.rejectReferral('ref-3', 'reason', onSuccess);
+    expect(referralClient.getPaged).toHaveBeenCalledTimes(2);
+
+    facade.reverseReferral('ref-1', 'reason', onSuccess);
+    expect(referralClient.getPaged).toHaveBeenCalledTimes(3);
+
+    expect(onSuccess).not.toHaveBeenCalled();
+    expect(snackbar.showSuccessTranslated).not.toHaveBeenCalled();
+    expect(facade.intervening()).toBe(false);
+  });
+
   it('ignores a second intervention while one is in flight', () => {
     facade.intervening.set(true);
 
     facade.reverseReferral('ref-1', 'reason', jest.fn());
+    facade.rejectReferral('ref-3', 'reason', jest.fn());
     facade.forceQualifyReferral('ref-2', 'reason', jest.fn());
 
     expect(referralClient.reverse).not.toHaveBeenCalled();

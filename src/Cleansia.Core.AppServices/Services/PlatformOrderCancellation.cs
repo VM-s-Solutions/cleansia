@@ -28,14 +28,15 @@ public sealed class PlatformOrderCancellation(
         RefundReason refundReason,
         CancellationToken cancellationToken)
     {
-        // A platform cancellation is not a customer-fault cancellation — no cancellation fee, full refund.
-        var refundAmount = order.TotalPrice;
-
+        // A platform cancellation is not a customer-fault cancellation — no cancellation fee, full refund:
+        // everything the sale has not already given back.
+        var refundKey = RefundService.BuildRefundKey(new RefundRequest(order.Id, order.TotalPrice, refundReason, actorId));
         order.Cancel(
             cancelledAtUtc: DateTime.UtcNow,
             cancelledBy: cancelledBy,
             feeRate: 0m,
-            refundAmount: refundAmount,
+            refundAmount: await RefundService.LeftToGiveBackAsync(
+                refundRepository, creditAccountRepository, order, refundKey, cancellationToken),
             reason: reason);
         var transition = OrderStatusTrack.Create(OrderStatus.Cancelled, order);
         order.AddOrderStatus(transition);
@@ -47,15 +48,15 @@ public sealed class PlatformOrderCancellation(
 
         var refund = PlatformRefundOutcome.NotAttempted;
         if (order.PaymentType == PaymentType.Card
-            && order.PaymentStatus == PaymentStatus.Paid
-            && refundAmount > 0m
+            && order.PaymentStatus is PaymentStatus.Paid or PaymentStatus.PartiallyRefunded
+            && order.TotalPrice > 0m
             && order.HasRefundableChargeSurface)
         {
             refund = await RefundAsync(order, actorId, refundReason, cancellationToken);
         }
         else if (order.PaymentStatus != PaymentStatus.Paid)
         {
-            // No card refund here - the card was never charged, or has already been partly refunded - but
+            // No card refund here - the card was never charged, or has already been refunded in full - but
             // credit WAS taken at checkout. A platform cancellation is fee-free, so whatever of it has
             // not already come back on a refund's credit leg comes back now.
             await creditAccountRepository.ReturnUnpaidOrderCreditAsync(

@@ -90,10 +90,14 @@ public class MemberCancellationRefundRedriveTests(PostgresContainerFixture fixtu
         await using (var ctx = NewContext())
         {
             var account = await new CreditAccountRepository(ctx).EnsureForUserAsync(userId, CzkId, CancellationToken.None);
-            account!.Issue(credit, CreditTransactionReason.Goodwill, "seed-grant", "seed", note: "n");
+            if (credit > 0m)
+            {
+                account!.Issue(credit, CreditTransactionReason.Goodwill, "seed-grant", "seed", note: "n");
+            }
+
             if (settledInCredit > 0m)
             {
-                account.Issue(
+                account!.Issue(
                     settledInCredit, CreditTransactionReason.DisputeSettlement, "dispute-settlement:dispute-earlier",
                     "admin", orderId: OrderId, disputeId: "dispute-earlier");
             }
@@ -120,9 +124,12 @@ public class MemberCancellationRefundRedriveTests(PostgresContainerFixture fixtu
             ctx.Orders.Add(order);
             await ctx.CommitAsync(CancellationToken.None);
 
-            Assert.True(await new CreditAccountRepository(ctx).TryDebitAsync(
-                account.Id, credit, CreditTransactionReason.OrderPayment, $"order-payment-{OrderId}", userId,
-                CancellationToken.None, orderId: OrderId));
+            if (credit > 0m)
+            {
+                Assert.True(await new CreditAccountRepository(ctx).TryDebitAsync(
+                    account!.Id, credit, CreditTransactionReason.OrderPayment, $"order-payment-{OrderId}", userId,
+                    CancellationToken.None, orderId: OrderId));
+            }
         }
 
         return userId;
@@ -302,6 +309,83 @@ public class MemberCancellationRefundRedriveTests(PostgresContainerFixture fixtu
             Assert.Equal(1000m, refund.Amount + creditReturned + settled);
             Assert.Equal(account.Balance, account.Transactions.Sum(t => t.Amount));
         }
+    }
+
+    private async Task PartlyRefundAsync(decimal amount)
+    {
+        await using var ctx = NewContext();
+        var partial = await NewRefundService(ctx).IssueRefundAsync(
+            new RefundRequest(OrderId, amount, RefundReason.AdminDiscretion, "admin", RefundRequestId: "partial-1"),
+            CancellationToken.None);
+        Assert.True(partial.IsSuccess, partial.Error?.Message);
+        var order = await ctx.Orders.IgnoreQueryFilters().AsNoTracking().SingleAsync(o => o.Id == OrderId);
+        Assert.Equal(PaymentStatus.PartiallyRefunded, order.PaymentStatus);
+    }
+
+    /// <summary>
+    /// 1000 by card, of which an admin already refunded 300. A free cancellation sends the card the 700 still
+    /// on the charge, which ends the order refunded, and records 700 as what the cancellation gave back.
+    /// </summary>
+    [Fact]
+    public async Task A_Free_Cancel_Of_A_Partly_Refunded_Card_Order_Refunds_The_Rest_Of_The_Card()
+    {
+        await ResetAsync();
+        var userId = await SeedAsync(total: 1000m, credit: 0m);
+        await PartlyRefundAsync(300m);
+
+        var response = await CancelAsync(userId);
+
+        Assert.True(response.RefundInitiated);
+        Assert.Equal(700m, response.RefundAmount);
+        Assert.Equal(700m, response.ActualRefundAmount);
+        _stripe.Verify(s => s.RefundPaymentIntentAsync(
+            PaymentIntentId, 700m, RefundKey, It.IsAny<CancellationToken>()), Times.Once);
+        await using var ctx = NewContext();
+        var order = await ctx.Orders.IgnoreQueryFilters().AsNoTracking().SingleAsync(o => o.Id == OrderId);
+        Assert.Equal(PaymentStatus.Refunded, order.PaymentStatus);
+        Assert.Equal(700m, order.CancellationRefundAmount);
+        Assert.Equal(1000m, await ctx.Refunds.IgnoreQueryFilters().AsNoTracking()
+            .Where(r => r.Status == RefundStatus.Succeeded).SumAsync(r => r.Amount));
+    }
+
+    /// <summary>
+    /// 1000 paid 700 by card and 300 in credit, with a complaint settled in credit and an admin's partial refund
+    /// split across both tenders. A free cancellation gives back what the sale has left in the same mix, so the
+    /// customer ends with exactly the 1000 paid: after a partial of 400 and 200 settled, 280 card and 120 credit;
+    /// after a partial of 800 and 150 settled, 35 card and 15 credit.
+    /// </summary>
+    [Theory]
+    [InlineData(200, 400, 280, 120)]
+    [InlineData(150, 800, 35, 15)]
+    public async Task A_Free_Cancel_Of_A_Partly_Refunded_Card_And_Credit_Order_Gives_Back_The_Rest_Of_The_Sale(
+        int settledInCredit, int partial, int card, int credit)
+    {
+        await ResetAsync();
+        var userId = await SeedAsync(total: 1000m, credit: 300m, settledInCredit: settledInCredit);
+        await PartlyRefundAsync(partial);
+
+        var response = await CancelAsync(userId);
+
+        Assert.True(response.RefundInitiated);
+        Assert.Equal(card + credit, response.RefundAmount);
+        Assert.Equal(card, response.ActualRefundAmount);
+        _stripe.Verify(s => s.RefundPaymentIntentAsync(
+            PaymentIntentId, card, RefundKey, It.IsAny<CancellationToken>()), Times.Once);
+        await using var ctx = NewContext();
+        var order = await ctx.Orders.IgnoreQueryFilters().AsNoTracking().SingleAsync(o => o.Id == OrderId);
+        Assert.Equal(card + credit, order.CancellationRefundAmount);
+        var cardRefunded = await ctx.Refunds.IgnoreQueryFilters().AsNoTracking()
+            .Where(r => r.Status == RefundStatus.Succeeded).SumAsync(r => r.Amount);
+        var account = await ctx.CreditAccounts.IgnoreQueryFilters().AsNoTracking()
+            .Include(a => a.Transactions)
+            .SingleAsync(a => a.UserId == userId && a.CurrencyId == CzkId);
+        var returnedOnTheCancellation = account.Transactions
+            .Where(t => t.IdempotencyKey == $"credit-return:{RefundKey}").Sum(t => t.Amount);
+        var creditReturned = account.Transactions
+            .Where(t => t.Reason == CreditTransactionReason.OrderPaymentReturned).Sum(t => t.Amount);
+        Assert.Equal(credit, returnedOnTheCancellation);
+        Assert.Equal(1000m, cardRefunded + creditReturned + settledInCredit);
+        Assert.Equal(account.Balance, account.Transactions.Sum(t => t.Amount));
     }
 
     private sealed class FixedTenantProvider(string? tenantId) : ITenantProvider

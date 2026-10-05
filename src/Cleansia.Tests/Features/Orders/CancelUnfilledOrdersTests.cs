@@ -5,6 +5,7 @@ using Cleansia.Core.Domain.Credit;
 using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Internationalization;
 using Cleansia.Core.Domain.Orders;
+using Cleansia.Core.Domain.Payments;
 using Cleansia.Core.Domain.Repositories;
 using Cleansia.Core.Domain.SeedWork;
 using Cleansia.Core.Domain.Users;
@@ -43,6 +44,7 @@ public class CancelUnfilledOrdersTests
     private readonly Mock<IOrderRepository> _orders = new();
     private readonly Mock<ICreditAccountRepository> _credit = new();
     private readonly Mock<IRefundService> _refunds = new();
+    private readonly Mock<IRefundRepository> _refundRows = new();
     private readonly Mock<INotificationProducer> _notifications = new();
     private readonly Mock<IGuestOrderAccessTokenRepository> _guestTokens = new();
     private readonly List<(string Queue, string Key, object Message)> _enqueued = [];
@@ -165,11 +167,18 @@ public class CancelUnfilledOrdersTests
 
     private CancelUnfilledOrders.Handler Handler() =>
         new(_orders.Object,
-            new CleanerNoShowCancellation(_credit.Object, _refunds.Object, Mock.Of<IRefundRepository>(), _notifications.Object,
+            new CleanerNoShowCancellation(_credit.Object, _refunds.Object, _refundRows.Object, _notifications.Object,
                 new GuestOrderAccessTokenIssuer(_guestTokens.Object), new RecordingDispatch(_enqueued),
                 new CapturingLogger<CleanerNoShowCancellation>(_log)),
             _tenants.Object, _uow.Object,
             new CapturingLogger<CancelUnfilledOrders.Handler>(_log));
+
+    /// <summary>The seam claims its row before it asks Stripe, so a refund that did not go through waits on it.</summary>
+    private void ArrangeClaimedRefundRow(Order order) =>
+        _refundRows.Setup(r => r.GetByRefundKeyAsync($"refund:{order.Id}:admin", It.IsAny<CancellationToken>()))
+            .ReturnsAsync(Refund.Create(
+                order.Id, $"refund:{order.Id}:admin", order.TotalPrice, "CZK", RefundReason.ServiceNotRendered,
+                RefundSource.AppRefund));
 
     private Task<BusinessResult<CancelUnfilledOrders.Response>> Sweep() =>
         Handler().Handle(new CancelUnfilledOrders.Command(), default);
@@ -741,6 +750,7 @@ public class CancelUnfilledOrdersTests
         _refunds.Setup(r => r.IssueRefundAsync(It.IsAny<RefundRequest>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(BusinessResult.Failure<RefundResult>(
                 new Error(nameof(RefundRequest.Amount), BusinessErrorMessage.RefundFailed)));
+        ArrangeClaimedRefundRow(order);
         Arrange(order);
 
         await Sweep();
@@ -754,6 +764,7 @@ public class CancelUnfilledOrdersTests
         var order = UnfilledOrder();
         _refunds.Setup(r => r.IssueRefundAsync(It.IsAny<RefundRequest>(), It.IsAny<CancellationToken>()))
             .ThrowsAsync(new HttpRequestException("connection reset"));
+        ArrangeClaimedRefundRow(order);
         Arrange(order);
 
         await Sweep();

@@ -101,8 +101,9 @@ public static class CreditUnwind
     /// Give back ALL of an order's credit that has not already come back, because the order ended
     /// without the card being charged — the stale-order sweep, the recurring auto-cancel, an expired
     /// Stripe session, or a customer cancelling before they paid — or ended with no card refund of its
-    /// own here: a no-show cancellation whose card refund could not be claimed, or a platform cancellation
-    /// of an order already partly refunded. A partial refund's credit leg is not returned twice. A refund
+    /// own here: a no-show cancellation whose card refund found nothing left, a fee-bearing customer
+    /// cancellation of an order already partly refunded, or a cancellation of an order already refunded in
+    /// full. A partial refund's credit leg is not returned twice. A refund
     /// claimed and left pending returns its credit leg on its own key instead
     /// (<see cref="ReturnPendingRefundCreditLegAsync"/>).
     ///

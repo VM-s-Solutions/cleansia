@@ -320,7 +320,7 @@ public class GuestOrderCancellationTests(PostgresContainerFixture fixture) : Bas
         {
             var result = await provider.GetRequiredService<IMediator>().Send(GuestCommand());
             Assert.True(result.IsSuccess, result.Error?.Message);
-            Assert.Equal(1000m, result.Value.RefundAmount);
+            Assert.Equal(400m, result.Value.RefundAmount);
             Assert.Equal(400m, result.Value.ActualRefundAmount);
             var body = await provider.GetRequiredService<CleansiaDbContext>().OutboxMessages.IgnoreQueryFilters()
                 .Where(x => x.QueueName == QueueNames.SendEmail).Select(x => x.Body).SingleAsync();

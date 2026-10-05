@@ -29,8 +29,8 @@ namespace Cleansia.Tests.Features.Refunds;
 /// real refund seam and cancellations run over an in-memory ledger in which Stripe keeps what it was first
 /// asked on a key and refuses that key with another amount, and has no cap of its own, so the platform's
 /// ceilings are what is proven. What came back, the card refunds Stripe made plus the credit returned plus
-/// the settlements, never passes the price, and an order still paid in full when it ends gets back the price
-/// to the haléř. Once the retries have run, every refund Stripe made is on record:
+/// the settlements, never passes the price, and an order that ends still paid, in full or in part, gets back
+/// the price to the haléř. Once the retries have run, every refund Stripe made is on record:
 /// a retry that asks another amount on a key Stripe already paid is refused there every time.
 /// </summary>
 public sealed class RefundMoneyConservationTests
@@ -204,8 +204,8 @@ public sealed class RefundMoneyConservationTests
                 }
             }
 
-            MustGiveBackAll = Order.PaymentStatus == PaymentStatus.Paid;
-            _steps.Add($"{ending} with Stripe {answer}{(MustGiveBackAll ? " while paid" : "")}");
+            MustGiveBackAll = Order.PaymentStatus is PaymentStatus.Paid or PaymentStatus.PartiallyRefunded;
+            _steps.Add($"{ending} with Stripe {answer}{(MustGiveBackAll ? $" while {Order.PaymentStatus}" : "")}");
             await EndAsync(ending, answer, loseTheRecord);
 
             if (answer is StripeAnswer.Unreachable or StripeAnswer.Refuses && _random.Next(3) == 0)

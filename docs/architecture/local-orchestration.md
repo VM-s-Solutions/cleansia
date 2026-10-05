@@ -40,6 +40,14 @@ dotnet test Cleansia.HostTests/Cleansia.HostTests.csproj -c Release
 The first is the socket on the Mac. The second is the socket's path *inside* the VM, which
 Testcontainers mounts into its clean-up container; the Mac's path does not exist in there.
 
+`Cleansia.HostTests` boots several hundred hosts, and each one watches its appsettings files. On macOS a
+watcher is an FSEvents stream, and after a few hundred the system refuses new ones; a refused watcher
+reports a change at once, the configuration re-registers synchronously, and the test host dies of a
+stack overflow (a run stopped at test 289 of 428). The suite therefore switches to polling watchers before
+its first host starts (`PollingFileWatchers`, a module initializer setting
+`DOTNET_USE_POLLING_FILE_WATCHER`), so it runs to the end on a Mac with nothing set by hand. Linux CI
+uses inotify and never hit it.
+
 **Regenerating the web clients on a Mac** needs the APIs up, so this engine, and two more things since
 2026-10-05. The three `nswag-*.json` documents pin `"runtime": "Net100"`, the .NET the repo builds on:
 NSwag 14.7.1 refuses a document whose runtime differs from its own process's, and the `Net80` they

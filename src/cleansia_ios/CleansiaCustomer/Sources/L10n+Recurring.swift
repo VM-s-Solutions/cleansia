@@ -216,6 +216,14 @@ extension L10n {
             localized("recurring_cash_change_action")
         }
 
+        static var cardItemNoLongerOffered: String {
+            localized("recurring_card_item_no_longer_offered")
+        }
+
+        static var selectionNoLongerOffered: String {
+            localized("recurring_selection_no_longer_offered")
+        }
+
         static var createStartsLabel: String {
             localized("recurring_create_starts_label")
         }

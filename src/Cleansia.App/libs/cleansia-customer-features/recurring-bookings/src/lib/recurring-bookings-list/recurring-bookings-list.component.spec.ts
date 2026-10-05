@@ -32,6 +32,9 @@ class FakeRecurringBookingsFacade {
   serviceName = jest.fn(() => null);
   packageName = jest.fn(() => null);
   nextRun = jest.fn((): Date | null => null);
+  holdsRetiredEntry = jest.fn(() => false);
+  // Reads the list as the real one does, so the screen's effect follows it.
+  readScheduleMarkets = jest.fn(() => this.templates());
 }
 
 const schedule = (id: string, requiresPaymentMethodChange: boolean) =>
@@ -113,6 +116,55 @@ describe('RecurringBookingsListComponent — a schedule that can no longer be pa
     const pill = card.querySelector('.cl-rec__pill') as HTMLElement;
     expect(pill.textContent?.trim()).toBe('recurring_booking.status_active');
     expect(pill.classList).toContain('cl-rec__pill--on');
+  });
+});
+
+// The server refuses to price a schedule holding a retired entry, so its card has no price; this
+// line is why. The facade decides; the card only says it.
+describe('RecurringBookingsListComponent — a schedule holding something no longer offered', () => {
+  let fixture: ComponentFixture<RecurringBookingsListComponent>;
+  let facade: FakeRecurringBookingsFacade;
+
+  beforeEach(async () => {
+    facade = new FakeRecurringBookingsFacade();
+    await TestBed.configureTestingModule({
+      imports: [RecurringBookingsListComponent, TranslateModule.forRoot()],
+      providers: [provideRouter([])],
+    })
+      .overrideComponent(RecurringBookingsListComponent, {
+        set: { providers: [{ provide: RecurringBookingsFacade, useValue: facade }] },
+      })
+      .compileComponents();
+    fixture = TestBed.createComponent(RecurringBookingsListComponent);
+  });
+
+  const line = (): Element | null =>
+    (fixture.nativeElement as HTMLElement).querySelector('.cl-rec__card [data-spec-retired]');
+
+  it('says so on its card', () => {
+    facade.holdsRetiredEntry.mockReturnValue(true);
+    facade.templates.set([schedule('t-retired', false)]);
+    fixture.detectChanges();
+
+    expect(facade.holdsRetiredEntry).toHaveBeenCalledWith(facade.templates()[0]);
+    expect(line()?.textContent?.trim()).toBe('recurring_booking.card_item_no_longer_offered');
+  });
+
+  it('says nothing on a schedule that holds nothing retired', () => {
+    facade.templates.set([schedule('t-listed', false)]);
+    fixture.detectChanges();
+
+    expect(line()).toBeNull();
+  });
+
+  it('has the markets read again when the schedules land', () => {
+    fixture.detectChanges();
+    expect(facade.readScheduleMarkets).toHaveBeenCalledTimes(1);
+
+    facade.templates.set([schedule('t-new', false)]);
+    fixture.detectChanges();
+
+    expect(facade.readScheduleMarkets).toHaveBeenCalledTimes(2);
   });
 });
 

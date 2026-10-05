@@ -6,6 +6,7 @@ import androidx.compose.ui.graphics.Color
 import cz.cleansia.customer.ui.theme.StatusCancelledText
 import cz.cleansia.customer.ui.theme.SuccessText
 import cz.cleansia.customer.ui.theme.WarningStar
+import cz.cleansia.customer.ui.theme.primaryText
 
 /**
  * Colour keyed off the backend dispute status VALUE, which is 1-indexed — amber while pending, sky
@@ -17,7 +18,7 @@ import cz.cleansia.customer.ui.theme.WarningStar
 @Composable
 fun disputeStatusColor(statusValue: Int?): Color = when (statusValue) {
     1 -> WarningStar                                // Pending
-    2, 3 -> MaterialTheme.colorScheme.primary       // UnderReview / WaitingForResponse
+    2, 3 -> primaryText()                           // UnderReview / WaitingForResponse
     4 -> SuccessText                                // Resolved
     5 -> StatusCancelledText                        // Closed
     6 -> MaterialTheme.colorScheme.error            // Escalated

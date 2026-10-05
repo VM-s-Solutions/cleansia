@@ -106,7 +106,7 @@ enum CodeSheetMessage {
             Text(text)
                 .font(CleansiaTypography.bodyMedium)
                 .fontWeight(.semibold)
-                .foregroundColor(CleansiaColors.primary)
+                .foregroundColor(CleansiaColors.primaryText)
         }
     }
 

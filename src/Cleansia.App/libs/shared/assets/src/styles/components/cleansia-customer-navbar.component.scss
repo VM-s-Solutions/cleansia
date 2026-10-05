@@ -129,7 +129,7 @@ $nav-band: 96px;
 
     &--active,
     &--active:hover {
-      color: $primary;
+      color: var(--cl-accent-text, #0369a1);
 
       &::after {
         transform: scaleX(1);
@@ -148,8 +148,9 @@ $nav-band: 96px;
     min-width: 34px;
     aspect-ratio: 1;
     border-radius: 999px;
+    // --cl-surface, not white: --cl-heading turns sky-300 after dark, where white measured 1.7.
     background: var(--cl-heading, #0369a1);
-    color: #fff;
+    color: var(--cl-surface, #fff);
     font-family: var(--font-heading, inherit);
     font-weight: 700;
     font-size: 13px;
@@ -407,7 +408,7 @@ $nav-band: 96px;
   &__user-role {
     font-size: 0.6875rem;
     font-weight: 500;
-    color: $primary;
+    color: var(--cl-accent-text, #0369a1);
     margin-top: 2px;
   }
 
@@ -664,7 +665,7 @@ body:has(.customer-navbar) .cleansia-dev-banner.cleansia-dev-banner.cleansia-dev
 
     &:hover,
     &--active {
-      color: #0284c7;
+      color: var(--cl-accent-text, #0369a1);
     }
   }
 
@@ -689,7 +690,7 @@ body:has(.customer-navbar) .cleansia-dev-banner.cleansia-dev-banner.cleansia-dev
     text-decoration: none;
 
     &:hover {
-      color: #0284c7;
+      color: var(--cl-accent-text, #0369a1);
     }
   }
 
@@ -881,13 +882,11 @@ html.cl-menu-open .customer-navbar {
   min-width: 0;
   padding: 0 4px;
 
-  // --cl-surface, not white: --cl-heading turns sky-300 after dark.
   .customer-navbar__avatar {
     width: 44px;
     height: 44px;
     min-width: 44px;
     font-size: 15px;
-    color: var(--cl-surface);
   }
 }
 

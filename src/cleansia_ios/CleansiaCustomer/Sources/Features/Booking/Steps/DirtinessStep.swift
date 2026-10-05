@@ -47,7 +47,7 @@ private struct DirtinessCard: View {
                     Spacer(minLength: Spacing.xs)
                     Text(L10n.Booking.dirtinessRate(level))
                         .font(CleansiaTypography.labelLarge)
-                        .foregroundColor(CleansiaColors.primary)
+                        .foregroundColor(CleansiaColors.primaryText)
                 }
                 Text(L10n.Booking.dirtinessLead(level))
                     .font(CleansiaTypography.bodyMedium)

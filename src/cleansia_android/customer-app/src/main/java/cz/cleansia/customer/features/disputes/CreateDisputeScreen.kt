@@ -69,6 +69,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import cz.cleansia.customer.R
 import cz.cleansia.customer.core.disputes.DisputeSettlement
 import cz.cleansia.customer.ui.state.ActionState
+import cz.cleansia.customer.ui.theme.primaryText
 
 /**
  * CreateDisputeScreen — "Report an issue" full-screen form. Reached from two
@@ -468,7 +469,7 @@ private fun PickedEvidenceRow(
                 EvidenceUploadState.Uploaded -> Text(
                     text = stringResource(R.string.dispute_evidence_uploaded),
                     style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.primary,
+                    color = primaryText(),
                 )
                 EvidenceUploadState.Failed -> Text(
                     text = stringResource(R.string.dispute_evidence_upload_failed),

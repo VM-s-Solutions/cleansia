@@ -85,6 +85,30 @@ class StatusBarFadeBindingTest {
         )
     }
 
+    /** W-F4: the device's own API level picks the reader, and API 28-30 read the cutout's bounding rectangles. */
+    @Test
+    fun `the cutout is read for the API level the device runs`() {
+        val reader = code(FADE).substringAfter("private fun cutoutExtent(", "").substringBefore("\n}\n", "")
+        assertTrue("cutoutExtent must pass sdk = Build.VERSION.SDK_INT", reader.contains("sdk = Build.VERSION.SDK_INT"))
+        assertTrue("cutoutExtent must read the cutout path", reader.contains("displayCutout?.cutoutPath"))
+        assertTrue("cutoutExtent must read the bounding rectangles", reader.contains("displayCutout?.boundingRects"))
+    }
+
+    /** W-F3: the hero's share is moved out of the shades no icon reads on before it colours the fade. */
+    @Test
+    fun `the fade's colour takes the legible share, judged once per hero and page`() {
+        val body = fadeBody()
+        assertTrue(
+            "statusBarFade must remember statusBarFadeIllegibleShares(page, it) for its hero",
+            body.contains("remember(heroTint, page) { heroTint?.let { statusBarFadeIllegibleShares(page, it) } }"),
+        )
+        assertTrue(
+            "statusBarFade must colour the fade with statusBarFadeLegibleShare(statusBarFadeHeroShare(…), illegible)",
+            Regex("""heroShare = statusBarFadeLegibleShare\(\s*statusBarFadeHeroShare\(currentHeroHeight\(\) - scrollState\.value, height\),\s*illegible,\s*\)""")
+                .containsMatchIn(body),
+        )
+    }
+
     /** Dark icons on the navy Plus hero read 1.35:1, so a hero screen sets them for the colour behind them. */
     @Test
     fun `a hero screen sets the icons to read on the colour behind them`() {

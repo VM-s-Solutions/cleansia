@@ -109,6 +109,7 @@ import cz.cleansia.customer.R
 import cz.cleansia.customer.core.data.AddressRepository
 import cz.cleansia.customer.core.data.UserAddress
 import cz.cleansia.customer.ui.theme.isDark
+import cz.cleansia.customer.ui.theme.primaryText
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.debounce
@@ -340,7 +341,7 @@ private fun ListPane(
                 Text(
                     stringResource(R.string.address_manager_add),
                     style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.SemiBold),
-                    color = MaterialTheme.colorScheme.primary,
+                    color = primaryText(),
                 )
             }
 
@@ -443,7 +444,7 @@ private fun SavedAddressRow(
                         Text(
                             stringResource(R.string.booking_address_default),
                             style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.SemiBold),
-                            color = MaterialTheme.colorScheme.primary,
+                            color = primaryText(),
                         )
                     }
                 }

@@ -183,6 +183,7 @@ private struct AvatarField: View {
                         diameter: 96,
                         strokeWidth: 1,
                         strokeColor: CleansiaColors.outlineVariant,
+                        initialsInk: CleansiaColors.primaryTextOnFixedWhite,
                         onLoadFailure: onLoadFailure,
                         onLoadSuccess: onLoadSuccess
                     )
@@ -198,7 +199,7 @@ private struct AvatarField: View {
                         .foregroundColor(CleansiaColors.onSurface)
                     Text(display.isImage ? L10n.EditProfile.photoChange : L10n.EditProfile.photoAdd)
                         .font(CleansiaTypography.bodyMedium)
-                        .foregroundColor(CleansiaColors.primary)
+                        .foregroundColor(CleansiaColors.primaryText)
                 }
                 Spacer(minLength: 0)
             }

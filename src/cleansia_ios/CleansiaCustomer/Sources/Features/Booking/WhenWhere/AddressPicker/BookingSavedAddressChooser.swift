@@ -229,6 +229,7 @@ private struct SavedAddressListPane: View {
                 Image(systemName: "plus")
                 Text(L10n.AddressManager.add)
                     .font(CleansiaTypography.bodyLarge)
+                    .foregroundColor(CleansiaColors.primaryText)
                 Spacer()
             }
             .foregroundColor(CleansiaColors.primary)
@@ -281,7 +282,7 @@ private struct ChooserAddressRow: View {
                     if address.isDefault {
                         Text(L10n.AddressManager.defaultBadge)
                             .font(CleansiaTypography.labelSmall)
-                            .foregroundColor(CleansiaColors.primary)
+                            .foregroundColor(CleansiaColors.primaryText)
                             .padding(.horizontal, Spacing.xs)
                             .padding(.vertical, 2)
                             .background(

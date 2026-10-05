@@ -105,6 +105,7 @@ import java.time.format.DateTimeFormatter
 import java.time.format.FormatStyle
 import java.time.format.TextStyle
 import java.util.Locale
+import cz.cleansia.customer.ui.theme.primaryText
 
 /**
  * Multi-step create-recurring wizard, mirroring the booking sheet's step indicator and transitions.
@@ -806,7 +807,7 @@ private fun FrequencyOptionCard(
                 Text(
                     text = label,
                     style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.SemiBold),
-                    color = if (selected) MaterialTheme.colorScheme.primary
+                    color = if (selected) primaryText()
                         else MaterialTheme.colorScheme.onSurface,
                 )
                 if (badgeLabel != null) {
@@ -814,7 +815,7 @@ private fun FrequencyOptionCard(
                     Text(
                         text = badgeLabel,
                         style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
-                        color = MaterialTheme.colorScheme.primary,
+                        color = primaryText(),
                         modifier = Modifier
                             .clip(RoundedCornerShape(6.dp))
                             .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.12f))
@@ -893,7 +894,7 @@ private fun DayChip(
     }
     val borderColor = if (isSelected) MaterialTheme.colorScheme.primary
         else MaterialTheme.colorScheme.outlineVariant
-    val textColor = if (isSelected) MaterialTheme.colorScheme.primary
+    val textColor = if (isSelected) primaryText()
         else MaterialTheme.colorScheme.onSurface
 
     Box(
@@ -998,7 +999,7 @@ private fun SavedAddressPicker(
                     Text(
                         text = stringResource(R.string.recurring_create_address_default),
                         style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
-                        color = MaterialTheme.colorScheme.primary,
+                        color = primaryText(),
                         modifier = Modifier
                             .clip(RoundedCornerShape(6.dp))
                             .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.12f))
@@ -1033,7 +1034,7 @@ private fun SavedAddressPicker(
             Text(
                 text = stringResource(R.string.recurring_create_address_add_new),
                 style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold),
-                color = MaterialTheme.colorScheme.primary,
+                color = primaryText(),
             )
         }
     }
@@ -1055,7 +1056,7 @@ private fun CatalogRetryBlock(text: String, onRetry: () -> Unit) {
         Text(
             text = stringResource(R.string.booking_catalog_retry),
             style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.SemiBold),
-            color = MaterialTheme.colorScheme.primary,
+            color = primaryText(),
             modifier = Modifier
                 .clip(RoundedCornerShape(999.dp))
                 .clickable(onClick = onRetry)
@@ -1389,7 +1390,7 @@ private fun StartsOnPicker(isoValue: String, latestDate: LocalDate?, onChange: (
         Text(
             text = stringResource(R.string.recurring_create_starts_change),
             style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.SemiBold),
-            color = MaterialTheme.colorScheme.primary,
+            color = primaryText(),
         )
     }
 

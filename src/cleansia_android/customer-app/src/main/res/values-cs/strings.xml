@@ -1007,6 +1007,7 @@
     <string name="recurring_cash_change_title">Tento rozvrh už nelze platit hotově</string>
     <string name="recurring_cash_change_body">Každý úklid potřebuje více než jednoho uklízeče a hotově lze platit jen úklidy, které zvládne jeden uklízeč, proto se z něj neobjednávají žádné nové úklidy, dokud ho nezměníte. Přepněte ho na platbu kartou nebo vyberte služby či balíčky, které zvládne jeden uklízeč. Úklid, který už je z něj objednaný, můžete v Objednávkách zrušit zdarma, dokud ho nepřijme žádný uklízeč.</string>
     <string name="recurring_cash_change_action">Upravit rozvrh</string>
+    <string name="recurring_card_item_no_longer_offered">Obsahuje službu, kterou už nenabízíme — upravte objednávku</string>
     <string name="recurring_bookings_pause">Pozastavit</string>
     <string name="recurring_bookings_resume">Obnovit</string>
     <string name="recurring_bookings_delete">Smazat</string>
@@ -1062,6 +1063,7 @@
     <string name="recurring_edit_submit">Uložit změny</string>
     <string name="recurring_edit_success">Rozvrh byl aktualizován.</string>
     <string name="recurring_edit_load_failed">Tento rozvrh se nepodařilo načíst. Vraťte se zpět a zkuste to znovu.</string>
+    <string name="recurring_selection_no_longer_offered">Část výběru této opakované objednávky už nenabízíme, proto byla odebrána.</string>
     <string name="preferred_cleaner_schedule_refused">U tohoto rozvrhu už nemůžeme vašeho oblíbeného uklízeče požádat jako prvního — například proto, že adresa úklidu je teď v jiné zemi. Rozvrh můžete uložit bez něj a každý úklid se pak otevře celému našemu týmu.</string>
     <string name="preferred_cleaner_schedule_save_without">Uložit bez oblíbeného uklízeče</string>
     <string name="recurring_edit_notice_title">Co se uložením změní</string>

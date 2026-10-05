@@ -122,10 +122,11 @@ struct RecurringCrew: Equatable {
 }
 
 enum CreateRecurringEvent: Equatable {
-    /// Part of the selection is not offered in the picked address's market — the address moved the
-    /// schedule there, or the order it was prefilled from was priced elsewhere; the selection was
-    /// cut down to what the catalogue for that market lists.
+    /// Part of the selection is not offered in the picked address's market: the customer picked an address
+    /// there, or the order a new schedule was prefilled from was priced elsewhere.
     case selectionPrunedForMarket
+    /// The edited schedule held entries its own market no longer offers; the customer picked no address.
+    case selectionNoLongerOffered
 }
 
 @MainActor
@@ -163,6 +164,7 @@ final class CreateRecurringViewModel: ViewModel {
     private let quoteDebounce: DispatchQueue.SchedulerTimeType.Stride
     private let scheduler: AnySchedulerOf<DispatchQueue>
     private var catalogCountryId: String?
+    private var addressPicked = false
     private var marketReload: Task<Void, Never>?
     private var quoteTask: Task<Void, Never>?
     private var quoteSequence = 0
@@ -382,13 +384,14 @@ final class CreateRecurringViewModel: ViewModel {
         isCatalogLoaded && catalogCountryId == selectedCountryId
     }
 
+    /// Until the customer picks an address, what an edited schedule's own market drops is no longer offered.
     private func pruneSelection(notListedIn catalog: Catalog) {
         let services = formState.selectedServiceIds.intersection(catalog.services.map(\.id))
         let packages = formState.selectedPackageIds.intersection(catalog.packages.map(\.id))
         guard services != formState.selectedServiceIds || packages != formState.selectedPackageIds else { return }
         formState.selectedServiceIds = services
         formState.selectedPackageIds = packages
-        events.send(.selectionPrunedForMarket)
+        events.send(isEditing && !addressPicked ? .selectionNoLongerOffered : .selectionPrunedForMarket)
     }
 
     /// Re-read the list after the inline address manager closes — an address
@@ -446,6 +449,7 @@ final class CreateRecurringViewModel: ViewModel {
     }
 
     func setSavedAddressId(_ id: String) {
+        if id != formState.savedAddressId { addressPicked = true }
         formState.savedAddressId = id
     }
 

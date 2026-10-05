@@ -69,6 +69,7 @@ import cz.cleansia.customer.ui.components.CardSavingConsent
 import cz.cleansia.customer.ui.theme.CleansiaTheme
 import cz.cleansia.customer.ui.theme.selectionTint
 import cz.cleansia.customer.ui.theme.SuccessText
+import cz.cleansia.customer.ui.theme.primaryText
 
 @Composable
 fun ConfirmStep(
@@ -346,7 +347,7 @@ fun ConfirmStep(
                 Text(
                     formatOrderPrice(summary.total, currencyCode),
                     style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
-                    color = MaterialTheme.colorScheme.primary,
+                    color = primaryText(),
                 )
             }
             // Credit applies automatically to a card booking, so the customer is told here rather
@@ -375,7 +376,7 @@ fun ConfirmStep(
                     Text(
                         formatOrderPrice(summary.dueOnCard, currencyCode),
                         style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Bold),
-                        color = MaterialTheme.colorScheme.primary,
+                        color = primaryText(),
                     )
                 }
                 Text(
@@ -549,7 +550,7 @@ fun ConfirmStep(
 @Composable
 private fun ContractNotice(modifier: Modifier = Modifier) {
     val html = stringResource(R.string.booking_contract_notice)
-    val linkColor = MaterialTheme.colorScheme.primary
+    val linkColor = primaryText()
     val sentence = remember(html, linkColor) {
         ConsentMarkup.annotated(
             html,
@@ -684,7 +685,7 @@ private fun CancellationPolicyCard(
                 Text(
                     stringResource(R.string.booking_cancel_plus_badge),
                     style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
-                    color = MaterialTheme.colorScheme.primary,
+                    color = primaryText(),
                     modifier = Modifier
                         .clip(RoundedCornerShape(8.dp))
                         .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.12f))
@@ -697,7 +698,7 @@ private fun CancellationPolicyCard(
             Text(
                 text = stringResource(R.string.booking_cancel_plus_subtitle, plusFreeHours),
                 style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.primary,
+                color = primaryText(),
             )
         }
         Spacer(Modifier.height(8.dp))
@@ -890,7 +891,7 @@ private fun ExtrasCard(
                 Text(
                     formatOrderPrice(extra.price, currencyCode),
                     style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold),
-                    color = if (isSelected) MaterialTheme.colorScheme.primary
+                    color = if (isSelected) primaryText()
                             else MaterialTheme.colorScheme.onSurface,
                 )
             }

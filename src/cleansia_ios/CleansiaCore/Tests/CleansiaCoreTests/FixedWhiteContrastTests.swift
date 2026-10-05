@@ -14,6 +14,15 @@ final class FixedWhiteContrastTests: XCTestCase {
         XCTAssertEqual(ratio, 4.095, accuracy: 0.001)
     }
 
+    /// The customer app's initials ink (finding 2026-10-05): the 18pt semibold initials are not large text
+    /// in WCAG's terms, so they take the 4.5:1 floor, which the light-mode brand blue misses.
+    func testTheTextInkClearsTheBodyTextFloorAgainstTheFixedWhiteSurface() {
+        let ratio = contrastRatio(CleansiaColors.primaryTextOnFixedWhiteHex, CleansiaColors.fixedWhiteHex)
+        XCTAssertGreaterThanOrEqual(ratio, 4.5)
+        XCTAssertEqual(ratio, 5.93, accuracy: 0.01)
+        XCTAssertLessThan(contrastRatio(CleansiaColors.onFixedWhiteHex, CleansiaColors.fixedWhiteHex), 4.5)
+    }
+
     func testTheAdaptivePrimaryWouldMissTheFloorOnThatSurface() {
         let ratio = contrastRatio(adaptivePrimaryDark, CleansiaColors.fixedWhiteHex)
         XCTAssertLessThan(ratio, largeTextFloor)
@@ -57,16 +66,21 @@ final class AvatarDiscBindingTests: XCTestCase {
         "CleansiaColors.onFixedWhite": CleansiaColors.onFixedWhiteHex
     ]
 
+    /// The initials take the caller's `initialsInk`; the default, which the partner app draws, is the pair
+    /// measured here. The customer app's ink is pinned at its two call sites (`ProfileAvatarBindingTests`)
+    /// and measured in `FixedWhiteContrastTests`.
     func testTheHeroDiscPairsAMeasuredInkWithAMeasuredFill() throws {
         for hero in Self.heroes {
             let block = try discBlock(of: hero)
             let fills = arguments(of: ".fill(", in: block)
             let inks = arguments(of: ".foregroundColor(", in: block)
             XCTAssertEqual(fills.count, 1, "\(hero): expected exactly one disc fill, found \(fills)")
-            XCTAssertEqual(inks.count, 1, "\(hero): expected exactly one initials ink, found \(inks)")
+            XCTAssertEqual(inks, ["initialsInk"], "\(hero): the initials no longer take the caller's ink")
+            let source = try String(contentsOf: iosRoot().appendingPathComponent(hero), encoding: .utf8)
+            let defaults = Self.discInks.keys.filter { source.contains("initialsInk: Color = \($0),") }
 
             let fill = try XCTUnwrap(fills.first.flatMap { Self.discFills[$0] }, unmeasured(hero, fills))
-            let ink = try XCTUnwrap(inks.first.flatMap { Self.discInks[$0] }, unmeasured(hero, inks))
+            let ink = try XCTUnwrap(defaults.first.flatMap { Self.discInks[$0] }, unmeasured(hero, defaults))
 
             let ratio = contrastRatio(ink, fill)
             XCTAssertGreaterThanOrEqual(ratio, largeTextFloor, "\(hero): initials measure \(ratio):1 on the disc")

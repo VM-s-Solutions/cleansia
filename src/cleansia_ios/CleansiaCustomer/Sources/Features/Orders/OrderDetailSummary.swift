@@ -195,7 +195,7 @@ struct OrderPriceBreakdownCard: View {
                 Spacer()
                 Text(OrdersFormat.price(breakdown.total, currencyCode: breakdown.currencyCode))
                     .font(CleansiaTypography.titleLarge)
-                    .foregroundColor(CleansiaColors.primary)
+                    .foregroundColor(CleansiaColors.primaryText)
             }
             if breakdown.paidWithCredit > 0 {
                 OrderInfoRow(
@@ -240,7 +240,7 @@ struct OrderHeroFactsStrip: View {
                 Spacer(minLength: Spacing.xs)
                 Text(OrdersFormat.price(facts.total, currencyCode: facts.currencyCode))
                     .font(CleansiaTypography.titleMedium)
-                    .foregroundColor(CleansiaColors.primary)
+                    .foregroundColor(CleansiaColors.primaryText)
                 if let struck = facts.struckSubtotal {
                     Text(OrdersFormat.price(struck, currencyCode: facts.currencyCode))
                         .font(CleansiaTypography.labelSmall)

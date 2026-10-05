@@ -68,6 +68,7 @@ import cz.cleansia.core.ui.theme.Poppins
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import cz.cleansia.customer.features.main.MainShellBottomClearance
+import cz.cleansia.customer.ui.theme.primaryText
 
 /**
  * Orders tab — lists the signed-in user's cleaning orders with filter chips,
@@ -585,7 +586,7 @@ private fun OrdersError(onRetry: () -> Unit) {
         Text(
             text = stringResource(R.string.orders_error_retry),
             style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.SemiBold),
-            color = MaterialTheme.colorScheme.primary,
+            color = primaryText(),
             modifier = Modifier
                 .clip(RoundedCornerShape(999.dp))
                 .clickable(onClick = onRetry)

@@ -44,7 +44,7 @@ Order Wizard → submitOrder() → orderClient.createOrder()
 Only a signed-in customer whose booking needs one cleaner reaches this path: the wizard offers cash on
 no other booking, and the server refuses it with `order.cash_not_available`, in which case the wizard
 clears the choice and goes back to the payment step. A guest's booking is always the card path above.
-→ [Order wizard — payment method](/customer-app/ordering-flow#step-3-payment-method)
+→ [Order wizard — payment method](/customer-app/ordering-flow#step-4-payment-method)
 
 ## Guest Order Tracking
 

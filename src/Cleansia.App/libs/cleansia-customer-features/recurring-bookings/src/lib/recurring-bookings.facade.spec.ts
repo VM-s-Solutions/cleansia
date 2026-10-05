@@ -11,11 +11,13 @@ import {
   DirtinessLevel,
   GetMyServingCleanersResponse,
   MembershipStatus,
+  PackageClient,
   PackageListItem,
   PaymentType,
   QuoteOrderResponse,
   RecurringBookingTemplateDto,
   SavedAddressDto,
+  ServiceClient,
   ServiceListItem,
   SetRecurringBookingActiveCommand,
   UpdateRecurringBookingCommand,
@@ -264,6 +266,211 @@ describe('RecurringBookingsFacade', () => {
 
       expect(facade.formData().selectedServiceIds).toEqual(['s1']);
       expect(snackbar.showInfoTranslated).not.toHaveBeenCalled();
+    });
+  });
+
+  // The server refuses to price a schedule holding a service or package retired since it was saved,
+  // so its card has no price; the card says why. Each schedule is judged against the catalogue of its
+  // own market, read for the list, and never before that read has landed.
+  describe('a schedule holding something its market no longer lists', () => {
+    const addresses = [
+      SavedAddressDto.fromJS({ id: 'addr-cz', countryId: 'cze' }),
+      SavedAddressDto.fromJS({ id: 'addr-cz-2', countryId: 'cze' }),
+      SavedAddressDto.fromJS({ id: 'addr-sk', countryId: 'svk' }),
+      SavedAddressDto.fromJS({ id: 'addr-none' }),
+    ];
+    const catalogues: Record<string, { services: string[]; packages: string[] }> = {
+      cze: { services: ['s1'], packages: ['p1'] },
+      svk: { services: ['s-sk'], packages: [] },
+      default: { services: ['s1'], packages: [] },
+    };
+    let servicesRead: jest.SpyInstance;
+    let packagesRead: jest.SpyInstance;
+    const schedule = (id: string, selection: Partial<RecurringBookingTemplateDto>) =>
+      template({ id, savedAddressId: 'addr-cz', selectedServiceIds: [], selectedPackageIds: [], ...selection });
+    const read = async (...schedules: RecurringBookingTemplateDto[]) => {
+      facade.templates.set(schedules);
+      facade.readScheduleMarkets();
+      await Promise.resolve();
+      await Promise.resolve();
+    };
+
+    beforeEach(() => {
+      savedAddressStore.addresses.set(addresses);
+      servicesRead = jest
+        .spyOn(ServiceClient.prototype, 'getOverview')
+        .mockImplementation((countryId) =>
+          of(catalogues[countryId ?? 'default'].services.map((id) => ServiceListItem.fromJS({ id }))),
+        );
+      packagesRead = jest
+        .spyOn(PackageClient.prototype, 'getOverview')
+        .mockImplementation((countryId) =>
+          of(catalogues[countryId ?? 'default'].packages.map((id) => PackageListItem.fromJS({ id }))),
+        );
+    });
+
+    afterEach(() => {
+      servicesRead.mockRestore();
+      packagesRead.mockRestore();
+    });
+
+    it('is said of a schedule holding a retired service', async () => {
+      const holding = schedule('t1', { selectedServiceIds: ['s1', 'gone'] });
+      await read(holding);
+
+      expect(facade.holdsRetiredEntry(holding)).toBe(true);
+    });
+
+    it('is said of a schedule holding a retired package', async () => {
+      const holding = schedule('t1', { selectedPackageIds: ['p1', 'gone'] });
+      await read(holding);
+
+      expect(facade.holdsRetiredEntry(holding)).toBe(true);
+    });
+
+    it('is not said when the market still lists everything the schedule holds', async () => {
+      const listed = schedule('t1', { selectedServiceIds: ['s1'], selectedPackageIds: ['p1'] });
+      await read(listed);
+
+      expect(facade.holdsRetiredEntry(listed)).toBe(false);
+    });
+
+    it("is not said while the schedule's market has not been read, or when the read failed", async () => {
+      const holding = schedule('t1', { selectedServiceIds: ['gone'] });
+      facade.templates.set([holding]);
+      expect(facade.holdsRetiredEntry(holding)).toBe(false);
+
+      servicesRead.mockReturnValue(throwError(() => new Error('offline')));
+      await read(holding);
+
+      expect(facade.holdsRetiredEntry(holding)).toBe(false);
+    });
+
+    it('is not said of a schedule whose address, and so whose market, is unknown', async () => {
+      const orphan = schedule('t1', { savedAddressId: 'addr-gone', selectedServiceIds: ['gone'] });
+      await read(orphan);
+
+      expect(servicesRead).not.toHaveBeenCalled();
+      expect(facade.holdsRetiredEntry(orphan)).toBe(false);
+    });
+
+    it("judges each schedule against its own market's catalogue, not the one the store holds", async () => {
+      store.overrideSelector(selectCustomerServicesCatalogue, {
+        services: [ServiceListItem.fromJS({ id: 's-sk' })],
+        countryId: 'cze',
+      });
+      store.refreshState();
+      const czech = schedule('t-cz', { selectedServiceIds: ['s-sk'] });
+      const slovak = schedule('t-sk', { savedAddressId: 'addr-sk', selectedServiceIds: ['s-sk'] });
+      const noCountry = schedule('t-none', { savedAddressId: 'addr-none', selectedServiceIds: ['s1'] });
+      await read(czech, slovak, noCountry);
+
+      expect(facade.holdsRetiredEntry(czech)).toBe(true);
+      expect(facade.holdsRetiredEntry(slovak)).toBe(false);
+      expect(facade.holdsRetiredEntry(noCountry)).toBe(false);
+    });
+
+    it('reads each market once, the platform default for an address with no country', async () => {
+      const schedules = [
+        schedule('t1', {}),
+        schedule('t2', { savedAddressId: 'addr-cz-2' }),
+        schedule('t3', { savedAddressId: 'addr-sk' }),
+        schedule('t4', { savedAddressId: 'addr-none' }),
+      ];
+      await read(...schedules);
+      await read(...schedules);
+
+      expect(servicesRead.mock.calls.map(([countryId]) => countryId)).toEqual(['cze', 'svk', undefined]);
+      expect(packagesRead.mock.calls.map(([countryId]) => countryId)).toEqual(['cze', 'svk', undefined]);
+    });
+  });
+
+  // A schedule opened for edit is trimmed to what its market lists today. What goes was retired since
+  // the schedule was saved, which "not offered at this address" would misstate: nobody changed the
+  // address. That message stays for the customer changing it.
+  describe('a schedule loaded for edit loses what its market no longer lists', () => {
+    const slovakAddress = SavedAddressDto.fromJS({ id: 'addr-sk', countryId: 'svk' });
+    const czechAddress = SavedAddressDto.fromJS({ id: 'addr-cz', countryId: 'cze' });
+    const listed = (countryId: string | null, services: string[], packages: string[]) => {
+      store.overrideSelector(selectCustomerServicesCatalogue, {
+        services: services.map((id) => ServiceListItem.fromJS({ id })),
+        countryId,
+      });
+      store.overrideSelector(selectCustomerPackagesCatalogue, {
+        packages: packages.map((id) => PackageListItem.fromJS({ id })),
+        countryId,
+      });
+      store.refreshState();
+      TestBed.flushEffects();
+    };
+    const stored = template({
+      savedAddressId: 'addr-sk',
+      selectedServiceIds: ['s1', 'retired-service'],
+      selectedPackageIds: ['p1', 'retired-package'],
+    });
+    const selection = () => ({
+      services: facade.formData().selectedServiceIds,
+      packages: facade.formData().selectedPackageIds,
+    });
+
+    beforeEach(() => savedAddressStore.addresses.set([slovakAddress, czechAddress]));
+
+    it('drops it as the form loads and says it is no longer offered', async () => {
+      await facade.initialize();
+      listed('svk', ['s1'], ['p1']);
+
+      facade.loadForEdit(stored);
+      TestBed.flushEffects();
+
+      expect(selection()).toEqual({ services: ['s1'], packages: ['p1'] });
+      expect(snackbar.showInfoTranslated).toHaveBeenCalledTimes(1);
+      expect(snackbar.showInfoTranslated).toHaveBeenCalledWith('recurring_booking.selection_no_longer_offered');
+    });
+
+    it("waits for the list priced for the schedule's address, and still says no longer offered", async () => {
+      await facade.initialize();
+      facade.loadForEdit(stored);
+      TestBed.flushEffects();
+      expect(selection()).toEqual({
+        services: ['s1', 'retired-service'],
+        packages: ['p1', 'retired-package'],
+      });
+
+      listed('svk', ['s1'], ['p1']);
+
+      expect(selection()).toEqual({ services: ['s1'], packages: ['p1'] });
+      expect(snackbar.showInfoTranslated).toHaveBeenCalledTimes(1);
+      expect(snackbar.showInfoTranslated).toHaveBeenCalledWith('recurring_booking.selection_no_longer_offered');
+    });
+
+    it('says nothing when the market still lists everything', async () => {
+      await facade.initialize();
+      listed('svk', ['s1', 'retired-service'], ['p1', 'retired-package']);
+
+      facade.loadForEdit(stored);
+      TestBed.flushEffects();
+
+      expect(selection().services).toHaveLength(2);
+      expect(snackbar.showInfoTranslated).not.toHaveBeenCalled();
+    });
+
+    it('still says "not offered at this address" when the customer then moves it', async () => {
+      await facade.initialize();
+      listed('svk', ['s1', 'retired-service'], ['p1', 'retired-package']);
+      facade.loadForEdit(stored);
+      TestBed.flushEffects();
+
+      facade.updateFormData({ savedAddressId: 'addr-cz' });
+      TestBed.flushEffects();
+      listed('cze', ['s1'], ['p1']);
+
+      expect(selection()).toEqual({ services: ['s1'], packages: ['p1'] });
+      expect(snackbar.showInfoTranslated).toHaveBeenCalledWith(
+        'pages.order.wizard.catalogue_changed_for_country',
+      );
+      expect(snackbar.showInfoTranslated).not.toHaveBeenCalledWith(
+        'recurring_booking.selection_no_longer_offered',
+      );
     });
   });
 

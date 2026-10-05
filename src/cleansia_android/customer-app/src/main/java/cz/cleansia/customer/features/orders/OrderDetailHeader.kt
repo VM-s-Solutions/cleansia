@@ -47,6 +47,7 @@ import cz.cleansia.customer.core.orders.OrderDetailDto
 import cz.cleansia.customer.ui.format.orderStatusColor
 import kotlinx.coroutines.delay
 import java.time.Instant
+import cz.cleansia.customer.ui.theme.primaryText
 
 /**
  * The sheet header, in four parts: a pinned identity row, then a headline, the five-phase tracker glued
@@ -350,7 +351,7 @@ internal fun OrderFactsStrip(
             Text(
                 text = formatOrderPrice(order.totalPrice, currencyCode),
                 style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
-                color = MaterialTheme.colorScheme.primary,
+                color = primaryText(),
             )
         }
     }

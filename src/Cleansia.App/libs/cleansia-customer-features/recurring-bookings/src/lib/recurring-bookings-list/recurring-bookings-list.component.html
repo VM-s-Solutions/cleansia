@@ -115,6 +115,14 @@
                     }
                   </div>
 
+                  <!-- The server refuses to price a retired entry, so this is why the card has no figure. -->
+                  @if (facade.holdsRetiredEntry(template)) {
+                    <p class="cl-rec__hint" data-spec-retired>
+                      <i class="pi pi-info-circle" aria-hidden="true"></i>
+                      {{ 'recurring_booking.card_item_no_longer_offered' | translate }}
+                    </p>
+                  }
+
                   <!--
                     A cash schedule that now needs more than one cleaner is skipped, not switched
                     to card, so it books nothing until the customer changes it.

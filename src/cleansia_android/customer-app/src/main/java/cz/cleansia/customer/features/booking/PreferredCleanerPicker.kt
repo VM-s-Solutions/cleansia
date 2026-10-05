@@ -43,6 +43,7 @@ import androidx.compose.ui.unit.dp
 import cz.cleansia.customer.R
 import cz.cleansia.customer.core.memberships.benefitsPaused
 import cz.cleansia.customer.core.orders.ServingCleanerDto
+import cz.cleansia.customer.ui.theme.primaryText
 
 /**
  * Plus-only picker that lets the customer pre-request a cleaner they've
@@ -133,7 +134,7 @@ fun PreferredCleanerPicker(
             Text(
                 text = selected?.fullName ?: stringResource(R.string.booking_preferred_cleaner_subtitle),
                 style = MaterialTheme.typography.bodySmall,
-                color = if (selected != null) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
+                color = if (selected != null) primaryText() else MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }
         if (selected != null) {
@@ -218,7 +219,7 @@ private fun CleanerRow(
             Text(
                 text = cleaner.fullName.take(1).uppercase(),
                 style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
-                color = MaterialTheme.colorScheme.primary,
+                color = primaryText(),
             )
         }
         Spacer(Modifier.width(12.dp))

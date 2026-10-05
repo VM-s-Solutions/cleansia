@@ -22,7 +22,6 @@
 
 :root {
   --cl-wiz-ground: #f8fbfe;
-  --cl-accent-text: #0369a1;
   --cl-panel-border: #e0f2fe;
   --cl-panel-border-strong: #bae6fd;
   --cl-blocked-bg: #fffbeb;
@@ -55,7 +54,6 @@
 
 :root.dark-mode {
   --cl-wiz-ground: #0b1626;
-  --cl-accent-text: #7dd3fc;
   // The light theme's Sky100 hairline is a glare on a near-black panel.
   --cl-panel-border: rgba(56, 189, 248, 0.24);
   --cl-panel-border-strong: rgba(56, 189, 248, 0.36);
@@ -371,7 +369,7 @@
   font-weight: 700;
   font-size: 34px;
   line-height: 1.08;
-  color: $primary;
+  color: var(--cl-accent-text);
   margin-top: 4px;
   font-variant-numeric: tabular-nums;
 }
@@ -819,7 +817,7 @@
   font-family: $font-heading;
   font-weight: 700;
   font-size: calc(1.5 * var(--cl-u)); // 24px
-  color: $primary;
+  color: var(--cl-accent-text);
 }
 
 .cl-wiz__pack-cta {

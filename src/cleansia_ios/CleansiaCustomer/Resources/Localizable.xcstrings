@@ -33899,6 +33899,41 @@
         }
       }
     },
+    "recurring_card_item_no_longer_offered": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Obsahuje službu, kterou už nenabízíme — upravte objednávku"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Includes a service no longer offered — edit to update"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Содержит услугу, которую мы больше не предлагаем — измените бронирование"
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Obsahuje službu, ktorú už neponúkame — upravte objednávku"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Містить послугу, яку ми більше не пропонуємо — змініть бронювання"
+          }
+        }
+      }
+    },
     "recurring_cash_change_action": {
       "extractionState": "manual",
       "localizations": {
@@ -35469,6 +35504,41 @@
           "stringUnit": {
             "state": "translated",
             "value": "Зберегти без улюбленого клінера"
+          }
+        }
+      }
+    },
+    "recurring_selection_no_longer_offered": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Část výběru této opakované objednávky už nenabízíme, proto byla odebrána."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Some of this schedule's choices are no longer offered and were removed."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Часть выбора этого регулярного бронирования больше не предлагается, поэтому она убрана."
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Časť výberu tejto opakovanej objednávky už neponúkame, preto bola odobratá."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Частину вибору цього регулярного бронювання більше не пропонуємо, тож її прибрано."
           }
         }
       }

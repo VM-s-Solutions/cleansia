@@ -37,6 +37,7 @@ import cz.cleansia.customer.R
 import cz.cleansia.customer.core.catalog.PackageListItem
 import cz.cleansia.customer.core.catalog.ServiceListItem
 import cz.cleansia.core.ui.components.CleansiaPrimaryButton
+import cz.cleansia.customer.ui.theme.primaryText
 
 /** Opens the service details sheet. Service tap-to-select happens on the row body;
  * this sheet is pure information — no toggle affordance inside. Close on scrim tap
@@ -158,7 +159,7 @@ fun PackageDetailsSheet(
             Text(
                 formatOrderPrice(pkg.price, pkg.currencyCode ?: currencyCode),
                 style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold),
-                color = MaterialTheme.colorScheme.primary,
+                color = primaryText(),
             )
 
             if (!description.isNullOrBlank()) {

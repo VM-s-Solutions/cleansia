@@ -1,5 +1,6 @@
 package cz.cleansia.customer.ui.components
 
+import android.annotation.SuppressLint
 import android.app.Activity
 import android.graphics.RectF
 import android.os.Build
@@ -29,6 +30,7 @@ import androidx.core.view.WindowCompat
 import androidx.lifecycle.compose.LifecycleResumeEffect
 import cz.cleansia.customer.ui.theme.isDark
 import kotlin.math.ceil
+import kotlin.math.roundToInt
 
 /**
  * Fades scrolled content out under the status bar on a screen that draws edge to edge with no top
@@ -39,9 +41,11 @@ import kotlin.math.ceil
  * on a screen whose scroll content starts with a full-bleed hero ([heroTint], its top colour, and
  * [heroHeight], its measured height in px) — the hero's colour while the hero is under the status
  * bar, cross-faded into the page background as the hero's bottom passes up through it, so a dark hero
- * never wears a pale band. It is held at 90 % behind the clock and icons and eased out to clear by the
- * clock's line ([statusBarFadeHeight]), with no tail below it. While a hero is on the screen the status
- * bar's icons are set light or dark to read on that colour ([statusBarIconsLight]).
+ * never wears a pale band. The cross-fade steps over the shades on which neither the light nor the dark
+ * icons read 4.5:1 ([statusBarFadeLegibleShare]), so the clock stays legible through the whole scroll.
+ * It is held at 90 % behind the clock and icons and eased out to clear by the clock's line
+ * ([statusBarFadeHeight]), with no tail below it. While a hero is on the screen the status bar's icons
+ * are set light or dark to read on that colour ([statusBarIconsLight]).
  *
  * It shows only once the content has left its top. At rest the full-bleed Profile and Plus heroes
  * paint the status-bar strip themselves, and a pull-to-refresh never moves the scroll value. Drawing
@@ -61,12 +65,16 @@ fun Modifier.statusBarFade(
     val ease = with(LocalDensity.current) { FadeEase.toPx() }
     val page = MaterialTheme.colorScheme.background
     val currentHeroHeight by rememberUpdatedState(heroHeight)
-    val behind = remember(scrollState, heroTint, page, height) {
+    val illegible = remember(heroTint, page) { heroTint?.let { statusBarFadeIllegibleShares(page, it) } }
+    val behind = remember(scrollState, heroTint, page, height, illegible) {
         derivedStateOf {
             statusBarFadeColor(
                 page = page,
                 heroTint = heroTint,
-                heroShare = statusBarFadeHeroShare(currentHeroHeight() - scrollState.value, height),
+                heroShare = statusBarFadeLegibleShare(
+                    statusBarFadeHeroShare(currentHeroHeight() - scrollState.value, height),
+                    illegible,
+                ),
             )
         }
     }
@@ -108,22 +116,44 @@ internal fun statusBarFadeHeight(statusBar: Int, cutout: ClosedFloatingPointRang
         statusBar
     }
 
-/**
- * The top and bottom of the display's cutout path, from API 31, which is the camera hole itself rather
- * than the rectangle the status bar is sized by; null without one.
- */
+/** The display's cutout, top to bottom, read for the API level the device runs ([cutoutExtentFor]). */
+@SuppressLint("NewApi") // cutoutExtentFor reads each only on the API level that has it.
 @Composable
 private fun cutoutExtent(): ClosedFloatingPointRange<Float>? {
-    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.S) return null
-    val path = LocalView.current.rootWindowInsets?.displayCutout?.cutoutPath ?: return null
-    val bounds = RectF().also { path.computeBounds(it, true) }
-    return bounds.top..bounds.bottom
+    val insets = LocalView.current.rootWindowInsets
+    return cutoutExtentFor(
+        sdk = Build.VERSION.SDK_INT,
+        pathBounds = {
+            insets?.displayCutout?.cutoutPath
+                ?.let { path -> RectF().also { path.computeBounds(it, true) } }
+                ?.let { it.top..it.bottom }
+        },
+        boundingRects = { insets?.displayCutout?.boundingRects?.map { it.top.toFloat()..it.bottom.toFloat() } },
+    )
+}
+
+/**
+ * The top and bottom of the display's cutout; null without one. From API 31 it is the cutout's own path,
+ * the camera hole itself rather than the rectangle the status bar is sized by. On API 28–30, which have
+ * no path, it is the span of the cutout's bounding rectangles, so a phone there with a camera in its top
+ * edge ends the fade on the hole's line too rather than below the clock. Below 28 there is no cutout API.
+ */
+internal fun cutoutExtentFor(
+    sdk: Int,
+    pathBounds: () -> ClosedFloatingPointRange<Float>?,
+    boundingRects: () -> List<ClosedFloatingPointRange<Float>>?,
+): ClosedFloatingPointRange<Float>? = when {
+    sdk >= Build.VERSION_CODES.S -> pathBounds()
+    sdk >= Build.VERSION_CODES.P ->
+        boundingRects()?.takeIf { it.isNotEmpty() }?.let { rects -> rects.minOf { it.start }..rects.maxOf { it.endInclusive } }
+    else -> null
 }
 
 /**
  * How much of the fade wears the hero's colour, from the hero's bottom edge measured from the top of
  * the screen: all of it while the hero still reaches the fade's bottom ([height]), none once it has
- * passed above the screen's top, and in proportion between, so the page colour takes over with no jump.
+ * passed above the screen's top, and in proportion between. This is the raw share; the drawn one steps
+ * over the shades the status-bar icons cannot be read on ([statusBarFadeLegibleShare]).
  */
 internal fun statusBarFadeHeroShare(heroBottom: Int, height: Int): Float =
     (heroBottom.toFloat() / height.coerceAtLeast(1)).coerceIn(0f, 1f)
@@ -131,6 +161,49 @@ internal fun statusBarFadeHeroShare(heroBottom: Int, height: Int): Float =
 /** The hero's colour laid over the page in [heroShare], as iOS lays it; the page alone without a hero. */
 internal fun statusBarFadeColor(page: Color, heroTint: Color?, heroShare: Float): Color =
     heroTint?.copy(alpha = heroShare)?.compositeOver(page) ?: page
+
+/** The steps a hero's share is judged in: an sRGB colour keeps its alpha in eight bits. */
+private const val SHARE_STEPS = 255
+
+/**
+ * The hero shares whose fade colour neither the light nor the dark icons read 4.5:1 on
+ * ([statusBarClockReads]), from the first to the last; null when every share reads, as on a dark page.
+ * A dark hero cross-faded into a light page passes through them: the clock dipped to 3.1:1 on Profile.
+ */
+internal fun statusBarFadeIllegibleShares(page: Color, heroTint: Color): ClosedFloatingPointRange<Float>? {
+    val illegible = (0..SHARE_STEPS).map { it.toFloat() / SHARE_STEPS }.filterNot { share ->
+        val color = statusBarFadeColor(page, heroTint, share)
+        statusBarClockReads(color, light = true, heroTint) || statusBarClockReads(color, light = false, heroTint)
+    }
+    return if (illegible.isEmpty()) null else illegible.first()..illegible.last()
+}
+
+/**
+ * [heroShare] on the eight-bit step the colour will hold, moved out of [illegible] to the legible step
+ * past its nearer edge: the colour jumps across those shades in one pixel of scroll rather than passing
+ * through them, and the icons flip with it ([statusBarIconsLight]). Every other share is left as it is.
+ */
+internal fun statusBarFadeLegibleShare(heroShare: Float, illegible: ClosedFloatingPointRange<Float>?): Float {
+    val share = (heroShare * SHARE_STEPS).roundToInt().toFloat() / SHARE_STEPS
+    if (illegible == null || share !in illegible) return share
+    val step = 1f / SHARE_STEPS
+    val darker = share - illegible.start >= illegible.endInclusive - share
+    return (if (darker) illegible.endInclusive + step else illegible.start - step).coerceIn(0f, 1f)
+}
+
+/**
+ * Whether the clock reads 4.5:1 in [light] icons over the fade in [color], whatever shows through the
+ * fade's last 10 %: white under the light icons, the hero itself ([heroTint]) under the dark ones.
+ */
+internal fun statusBarClockReads(color: Color, light: Boolean, heroTint: Color): Boolean {
+    val behind = color.copy(alpha = STATUS_BAR_FADE_OPACITY).compositeOver(if (light) Color.White else heroTint)
+    val icons = if (light) Color.White else DarkStatusBarIcons.compositeOver(behind)
+    val (lighter, darker) = listOf(icons.luminance(), behind.luminance()).sortedDescending()
+    return (lighter + 0.05f) / (darker + 0.05f) >= 4.5f
+}
+
+/** The system's dark status-bar icons: black at 60 %. */
+private val DarkStatusBarIcons = Color.Black.copy(alpha = 0.6f)
 
 /**
  * The fade's stops over its [height]: [color] held at 90 % down to [ease] above the

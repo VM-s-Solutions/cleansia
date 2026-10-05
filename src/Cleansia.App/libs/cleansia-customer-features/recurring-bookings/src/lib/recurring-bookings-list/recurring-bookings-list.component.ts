@@ -63,6 +63,9 @@ export class RecurringBookingsListComponent implements OnInit {
     }
   });
 
+  /** Each market a schedule is priced in, read once, so its card can say it holds a retired entry. */
+  private readonly marketsEffect = effect(() => this.facade.readScheduleMarkets());
+
   ngOnInit(): void {
     this.facade.initialize();
   }

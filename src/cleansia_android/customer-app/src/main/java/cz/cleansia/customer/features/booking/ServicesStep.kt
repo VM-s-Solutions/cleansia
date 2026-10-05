@@ -86,6 +86,7 @@ import cz.cleansia.customer.ui.theme.selectionTint
 import cz.cleansia.customer.ui.theme.Sky600
 import cz.cleansia.customer.ui.theme.Sky700
 import cz.cleansia.customer.ui.theme.isDark
+import cz.cleansia.customer.ui.theme.primaryText
 
 // Local palette for backend-driven categories. Keyed by slug so backend can add
 // new categories without code changes; unknown slugs fall back to DefaultPalette.
@@ -709,7 +710,7 @@ private fun PropertyCompactRow(
             Text(
                 stringResource(R.string.booking_your_home),
                 style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.SemiBold),
-                color = MaterialTheme.colorScheme.primary,
+                color = primaryText(),
             )
         }
         Spacer(Modifier.height(6.dp))
@@ -931,7 +932,7 @@ private fun ErrorState(onRetry: () -> Unit) {
         Text(
             stringResource(R.string.booking_catalog_retry),
             style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.SemiBold),
-            color = MaterialTheme.colorScheme.primary,
+            color = primaryText(),
             modifier = Modifier
                 .clip(RoundedCornerShape(999.dp))
                 .clickable(onClick = onRetry)
@@ -963,7 +964,7 @@ private fun EmptyCatalogState(onRetry: () -> Unit) {
         Text(
             stringResource(R.string.booking_catalog_retry),
             style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.SemiBold),
-            color = MaterialTheme.colorScheme.primary,
+            color = primaryText(),
             modifier = Modifier
                 .clip(RoundedCornerShape(999.dp))
                 .clickable(onClick = onRetry)

@@ -49,6 +49,7 @@ import cz.cleansia.core.ui.components.CleansiaOutlinedButton
 import cz.cleansia.core.ui.components.CleansiaPrimaryButton
 import cz.cleansia.customer.ui.theme.CleansiaTheme
 import cz.cleansia.customer.ui.theme.SuccessText
+import cz.cleansia.customer.ui.theme.primaryText
 
 /**
  * State of a single timeline row. `Done` rows are checked off, `Active`
@@ -191,7 +192,7 @@ fun BookingSuccessScreen(
                     Text(
                         confirmationCode,
                         style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold),
-                        color = MaterialTheme.colorScheme.primary,
+                        color = primaryText(),
                         textAlign = TextAlign.Center,
                     )
                 }

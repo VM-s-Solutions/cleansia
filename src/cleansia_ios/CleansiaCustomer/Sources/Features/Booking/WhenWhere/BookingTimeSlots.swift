@@ -27,7 +27,7 @@ struct BookingTimeSlot: Equatable, Identifiable {
 }
 
 /// The part of day the time step asks for first — the web wizard's `dayParts`: each holds the arrival
-/// times whose hour falls in its range, sixteen quarter hours apiece. → /customer-app/ordering-flow#step-2-date-time
+/// times whose hour falls in its range, sixteen quarter hours apiece. → /customer-app/ordering-flow#step-3-date-time
 enum DayPart: CaseIterable, Equatable {
     case morning
     case afternoon

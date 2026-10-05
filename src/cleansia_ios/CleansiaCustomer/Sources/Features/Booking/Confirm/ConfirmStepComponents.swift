@@ -55,7 +55,7 @@ private struct ExtraRow: View {
                 Text(BookingPricing.formatTotal(extra.price, currencyCode: currencyCode))
                     .font(CleansiaTypography.bodyMedium)
                     .fontWeight(.semibold)
-                    .foregroundColor(selected ? CleansiaColors.primary : CleansiaColors.onSurface)
+                    .foregroundColor(selected ? CleansiaColors.primaryText : CleansiaColors.onSurface)
             }
             .padding(.horizontal, Spacing.s)
             .padding(.vertical, Spacing.s)
@@ -247,7 +247,7 @@ private struct AmountRow: View {
     private var labelColor: Color {
         switch emphasis {
         case .normal: CleansiaColors.onSurfaceVariant
-        case .success: CleansiaColors.primary
+        case .success: CleansiaColors.primaryText
         case .total: CleansiaColors.onSurface
         }
     }
@@ -255,8 +255,8 @@ private struct AmountRow: View {
     private var valueColor: Color {
         switch emphasis {
         case .normal: CleansiaColors.onSurface
-        case .success: CleansiaColors.primary
-        case .total: CleansiaColors.primary
+        case .success: CleansiaColors.primaryText
+        case .total: CleansiaColors.primaryText
         }
     }
 }
@@ -396,7 +396,7 @@ struct CodeEntryRow: View {
                 if hasApplied {
                     Text(appliedText(appliedCode.uppercased()))
                         .font(CleansiaTypography.labelMedium)
-                        .foregroundColor(CleansiaColors.primary)
+                        .foregroundColor(CleansiaColors.primaryText)
                 }
             }
             Spacer(minLength: Spacing.s)

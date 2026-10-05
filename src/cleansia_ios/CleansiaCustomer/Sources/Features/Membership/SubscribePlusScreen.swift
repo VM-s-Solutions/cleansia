@@ -394,7 +394,7 @@ private struct SocialProofTile: View {
             VStack(alignment: .leading, spacing: Spacing.hair) {
                 Text(L10n.Membership.socialProofHeadline)
                     .font(CleansiaTypography.titleMedium)
-                    .foregroundColor(CleansiaColors.primary)
+                    .foregroundColor(CleansiaColors.primaryText)
                 Text(L10n.Membership.socialProofSub)
                     .font(CleansiaTypography.bodyMedium)
                     .foregroundColor(CleansiaColors.onSurfaceVariant)

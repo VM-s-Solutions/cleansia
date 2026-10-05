@@ -68,6 +68,7 @@ import cz.cleansia.customer.features.profile.ProfileTab
 import cz.cleansia.customer.features.profile.ProfileViewModel
 import cz.cleansia.customer.features.rewards.RewardsTab
 import cz.cleansia.customer.ui.theme.CleansiaTheme
+import cz.cleansia.customer.ui.theme.primaryText
 
 enum class MainTab { Home, Orders, Rewards, Profile }
 
@@ -527,7 +528,7 @@ private fun NavSlot(
         Text(
             stringResource(labelRes),
             style = MaterialTheme.typography.labelSmall.copy(fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Normal),
-            color = color,
+            color = if (isSelected) primaryText() else color,
             maxLines = 1,
             overflow = TextOverflow.Ellipsis,
             textAlign = TextAlign.Center,

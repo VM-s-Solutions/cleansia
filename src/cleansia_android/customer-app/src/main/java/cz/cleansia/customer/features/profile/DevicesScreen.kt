@@ -59,6 +59,7 @@ import cz.cleansia.customer.R
 import cz.cleansia.customer.core.devices.UserDeviceDto
 import cz.cleansia.customer.ui.state.ActionState
 import cz.cleansia.customer.ui.theme.CleansiaTheme
+import cz.cleansia.customer.ui.theme.primaryText
 import java.time.LocalDate
 import java.time.ZoneId
 import java.time.ZonedDateTime
@@ -296,7 +297,7 @@ private fun CurrentDeviceChip() {
         Text(
             text = stringResource(R.string.devices_this_device),
             style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.SemiBold),
-            color = MaterialTheme.colorScheme.primary,
+            color = primaryText(),
         )
     }
 }

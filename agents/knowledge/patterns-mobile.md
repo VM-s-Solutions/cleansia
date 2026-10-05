@@ -411,14 +411,25 @@ duplicate a `:core` component.
 > are a fixed `Color.white` in **both** schemes, so `CleansiaColors.primary` resolved to sky400 on them
 > and measured **2.14:1** — under the WCAG **3:1** large-text floor — while light mode stayed fine at
 > 4.10:1, which is why it survived review. **Pin the light-mode value; do not make the surface adaptive:**
-> the disc is a deliberate cut-out in the brand gradient and Android's customer hero pins `Sky600` for
-> the same reason (`ProfileTab.kt`), so adapting the disc would open a fresh divergence while closing a
-> defect. Core owns the pinned pair — **`CleansiaColors.onFixedWhite`**, derived from the internal
+> the disc is a deliberate cut-out in the brand gradient and Android's customer hero pins a light-mode
+> value for the same reason (`ProfileTab.kt`: `Sky600` until 2026-10-05, now `Sky700`, the text ink
+> below, at 5.93:1, where iOS's `onFixedWhite` is still sky-600 at 4.10:1), so adapting the disc would
+> open a fresh divergence while closing a defect. Core owns the pinned pair — **`CleansiaColors.onFixedWhite`**, derived from the internal
 > `fixedWhiteHex`/`onFixedWhiteHex` so `FixedWhiteContrastTests` can pin the **ratio** from the hexes
 > (a `Color` → `UIColor` roundtrip is trait-dependent on the iOS-16 floor — the `BrandGradientTests`
 > rule). The generalizable law: **an adaptive foreground over a hardcoded background is a contrast
 > defect until someone measures it** — the same shape as the `onError`-on-`error` collapse above, and
 > neither is visible in the theme the author develops in.
+
+> **Blue TEXT takes the text ink, never the primary (finding 2026-10-05):** the light primary, sky-600,
+> reads 4.10:1 on white and less on every tint, under the 4.5:1 text needs. In the customer apps a
+> `Text` in the brand blue takes **`CleansiaColors.primaryText`** (iOS, Core) or **`primaryText()`**
+> (Android, customer `ui/theme/BrandGradients.kt`): sky-700 in light mode, the primary in dark. Fills,
+> borders, icons, progress tints and buttons keep `primary`. Each app has a source scan that fails on a
+> new customer `Text` drawn in the primary — `BrandTextInkTests` (iOS) and `PrimaryTextContrastTest`
+> (Android) — so a new blue label either takes the token or names itself as a button. The shared Core
+> and `:core` widgets still draw text in the primary because the partner app draws them too; changing
+> one is a partner-visible change, not a drive-by. → `docs/mobile-app/patterns.md#brand-text-ink`
 
 > **A re-rendered SAS-backed image — the ONE way (T-0449):** `AsyncImage` stays right for a URL a
 > screen shows once (order photos, dispute evidence). It is wrong for an image the session re-renders —

@@ -222,7 +222,7 @@ private struct PropertyRow: View {
             SizeLimitTitleRow {
                 Text(L10n.Booking.yourHome)
                     .font(CleansiaTypography.labelLarge)
-                    .foregroundColor(CleansiaColors.primary)
+                    .foregroundColor(CleansiaColors.primaryText)
             }
             .padding(.bottom, Spacing.hair)
             HStack(spacing: Spacing.xs) {

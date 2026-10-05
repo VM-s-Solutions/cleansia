@@ -1014,6 +1014,7 @@
     <string name="recurring_cash_change_title">This schedule can no longer be paid in cash</string>
     <string name="recurring_cash_change_body">Each clean needs more than one cleaner, and cash is only for cleans one cleaner handles alone, so no new cleanings are booked from it until you change it. Switch it to card, or pick services or packages one cleaner can do. A cleaning already booked from it can be cancelled free of charge in Orders while no cleaner has taken it.</string>
     <string name="recurring_cash_change_action">Change the schedule</string>
+    <string name="recurring_card_item_no_longer_offered">Includes a service no longer offered — edit to update</string>
     <string name="recurring_bookings_pause">Pause</string>
     <string name="recurring_bookings_resume">Resume</string>
     <string name="recurring_bookings_delete">Delete</string>
@@ -1069,6 +1070,7 @@
     <string name="recurring_edit_submit">Save changes</string>
     <string name="recurring_edit_success">Recurring schedule updated.</string>
     <string name="recurring_edit_load_failed">Couldn\'t load this schedule. Go back and try again.</string>
+    <string name="recurring_selection_no_longer_offered">Some of this schedule\'s choices are no longer offered and were removed.</string>
     <string name="preferred_cleaner_schedule_refused">We can no longer ask your favourite cleaner first on this schedule — for example, because its address is now in another country. You can save it without them, and each cleaning will then open to our whole team.</string>
     <string name="preferred_cleaner_schedule_save_without">Save without your favourite cleaner</string>
     <string name="recurring_edit_notice_title">What saving this changes</string>

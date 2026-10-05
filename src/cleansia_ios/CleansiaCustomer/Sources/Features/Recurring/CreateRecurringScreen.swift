@@ -147,6 +147,8 @@ struct CreateRecurringScreen: View {
             switch event {
             case .selectionPrunedForMarket:
                 snackbar.showInfo(L10n.Booking.marketSelectionPruned)
+            case .selectionNoLongerOffered:
+                snackbar.showInfo(L10n.Recurring.selectionNoLongerOffered)
             }
         }
         .sheet(
@@ -345,6 +347,7 @@ private struct AddAddressRow: View {
                 Image(systemName: "plus")
                 Text(L10n.Recurring.createAddressAddNew)
                     .font(CleansiaTypography.bodyLarge)
+                    .foregroundColor(CleansiaColors.primaryText)
                 Spacer()
             }
             .foregroundColor(CleansiaColors.primary)
@@ -559,7 +562,7 @@ private struct SelectableRow: View {
                 if let badge {
                     Text(badge)
                         .font(CleansiaTypography.labelSmall)
-                        .foregroundColor(CleansiaColors.primary)
+                        .foregroundColor(CleansiaColors.primaryText)
                         .padding(.horizontal, Spacing.xs)
                         .padding(.vertical, 2)
                         .background(CleansiaColors.primaryContainer.opacity(0.4), in: Capsule())

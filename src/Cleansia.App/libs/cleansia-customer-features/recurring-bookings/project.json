@@ -18,7 +18,8 @@
         "^production",
         "{workspaceRoot}/jest.preset.js",
         "{workspaceRoot}/jest.polyfills.ts",
-        "{workspaceRoot}/libs/shared/assets/src/styles/pages/cleansia-customer/_recurring-bookings.scss"
+        "{workspaceRoot}/libs/shared/assets/src/styles/pages/cleansia-customer/_recurring-bookings.scss",
+        "bookingPolicy"
       ]
     },
     "lint": { "executor": "@nx/eslint:lint" }

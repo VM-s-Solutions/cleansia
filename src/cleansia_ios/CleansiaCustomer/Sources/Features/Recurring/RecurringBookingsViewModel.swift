@@ -42,18 +42,28 @@ final class RecurringBookingsViewModel: ViewModel {
     @Published private(set) var loaded = false
     @Published private(set) var mutatingId: String?
     @Published private(set) var hasMembership: Bool?
+    /// A schedule is priced in its saved address's country; nil until the addresses land.
+    @Published private var addresses: [RecurringSavedAddress]?
+    /// What each market's catalogue lists today, keyed by country (nil: the platform default).
+    @Published private var catalogues: [String?: Catalog] = [:]
 
     private let repository: RecurringBookingRepository
     private let membershipRepository: MembershipRepository
+    private let addressClient: RecurringSavedAddressClient
+    private let catalogClient: CatalogClient
     private let snackbar: SnackbarController
 
     init(
         repository: RecurringBookingRepository,
         membershipRepository: MembershipRepository,
+        addressClient: RecurringSavedAddressClient,
+        catalogClient: CatalogClient,
         snackbar: SnackbarController
     ) {
         self.repository = repository
         self.membershipRepository = membershipRepository
+        self.addressClient = addressClient
+        self.catalogClient = catalogClient
         self.snackbar = snackbar
         super.init()
         repository.$templates.assign(to: &$templates)
@@ -71,12 +81,41 @@ final class RecurringBookingsViewModel: ViewModel {
         .of(gate: authoring, hasTemplates: !templates.isEmpty)
     }
 
+    /// The schedules holding a service or package their market's catalogue no longer lists. A schedule
+    /// whose market's catalogue has not been read is not judged: the card says nothing rather than guess.
+    var noLongerOfferedIds: Set<String> {
+        Set(templates.filter { template in
+            guard let address = addresses?.first(where: { $0.id == template.savedAddressId }),
+                  let catalog = catalogues[address.countryId]
+            else { return false }
+            return !Set(template.selectedServiceIds).isSubset(of: catalog.services.map(\.id))
+                || !Set(template.selectedPackageIds).isSubset(of: catalog.packages.map(\.id))
+        }.map(\.id))
+    }
+
     func load() async {
         loading = true
         defer { loading = false }
         await refreshMembership()
         if case let .failure(error) = await repository.refresh() {
             snackbar.showApiError(error)
+        }
+        await readCatalogues()
+    }
+
+    /// Re-read on every visit, one catalogue per market the schedules are priced in. A read that fails
+    /// leaves what was last read; a market never read stays unjudged. Nothing here is the customer's
+    /// to act on, so a failure is silent.
+    private func readCatalogues() async {
+        guard !templates.isEmpty, case let .success(list) = await addressClient.getMine() else { return }
+        addresses = list
+        let markets = Set(templates.compactMap { template in
+            list.first { $0.id == template.savedAddressId }
+        }.map(\.countryId))
+        for countryId in markets {
+            if case let .success(catalog) = await catalogClient.loadCatalog(countryId: countryId) {
+                catalogues[countryId] = catalog
+            }
         }
     }
 

@@ -267,19 +267,50 @@ public class RedrivePendingRefundsTests
 
     /// <summary>
     /// A guest's refund is claimed before the cancel. When Stripe cannot be reached the request fails and
-    /// the booking stays live; re-driving that claim would refund a clean that still happens, and a day
-    /// later there is still nothing owed to tell anybody about.
+    /// the booking stays live, so re-driving that claim would refund a clean that still happens. But a
+    /// timeout can come after Stripe took the refund, and every later refund on the order counts the claim
+    /// as money already on its way back, so a day later the administrators are asked to check it in Stripe
+    /// and retry it themselves.
     /// </summary>
     [Fact]
-    public async Task A_Refund_Whose_Cancel_Never_Committed_Is_Neither_Redriven_Nor_Raised()
+    public async Task A_Refund_Whose_Cancel_Never_Committed_Is_Raised_For_A_Retry_But_Never_Redriven()
     {
         Arrange(PendingRefund("order-1", TimeSpan.FromHours(25), userId: null, orderCancelled: false));
 
         var result = await RunAsync();
 
         Assert.Equal(0, result.Value!.Redriven);
-        Assert.Equal(0, result.Value.Alerted);
+        Assert.Equal(1, result.Value.Alerted);
         _refundService.Verify(s => s.RedriveAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Never);
+        var alert = Assert.Single(_raised);
+        Assert.Equal(AdminNotificationEventCatalog.RefundNeedsRetry, alert.Key);
+        Assert.Equal("order-1", alert.Args["orderId"]);
+    }
+
+    [Fact]
+    public async Task A_Refund_Whose_Cancel_Never_Committed_Raises_Nothing_Inside_The_Day()
+    {
+        Arrange(PendingRefund("order-1", TimeSpan.FromHours(2), userId: null, orderCancelled: false));
+
+        var result = await RunAsync();
+
+        Assert.Equal(0, result.Value!.Alerted);
+        Assert.Empty(_raised);
+        _refundService.Verify(s => s.RedriveAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task A_Refund_Whose_Cancel_Never_Committed_Is_Raised_Once_Not_Every_Hour()
+    {
+        Arrange(PendingRefund("order-1", TimeSpan.FromHours(30), userId: null, orderCancelled: false));
+        _userNotifications
+            .Setup(r => r.AnyForEventAsync(TenantId, AdminNotificationEventCatalog.RefundNeedsRetry, "orderId", "order-1",
+                It.IsAny<CancellationToken>()))
+            .ReturnsAsync(true);
+
+        var result = await RunAsync();
+
+        Assert.Equal(0, result.Value!.Alerted);
         Assert.Empty(_raised);
     }
 

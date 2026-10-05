@@ -329,9 +329,20 @@ This matches the partner app's mobile UX, providing a consistent experience acro
 
 The language switcher is centralized in the sidebar navigation. Individual page-level language switchers have been removed in favor of this single, consistent location across all admin pages.
 
-A switch re-renders the page that is open, so every label on it reads through `TranslatePipe` in the
-template, or through a signal that reads the current language, never through a one-off
-`translate.instant` kept in a field or a `computed` that does not depend on the language. The package
-form's title was such a `computed`, so until 2026-10-05 it stayed in the old language until the form
-was reopened; it goes through the pipe now, and `package-form.component.spec.ts` switches the language
-with the form open and expects the title and a retired service's *(Inactive)* label to follow.
+A switch changes the language in place: the switcher calls `translate.use` and nothing else, with no
+reload and no navigation, so only a label that reads the language again follows it. The rule for a
+label is therefore to read through `TranslatePipe` in the template, or through a signal that reads the
+current language, never through a one-off `translate.instant` kept in a field or in a `computed` that
+does not depend on the language; such a label keeps the language it was first read in until the page
+is opened again. The package form's title was such a `computed`, so until 2026-10-05 it stayed in the
+old language until the form was reopened; it goes through the pipe now, and
+`package-form.component.spec.ts` switches the language with the form open and expects the title and a
+retired service's *(Inactive)* label to follow.
+
+Reported 2026-10-05, not fixed: on other admin pages thirteen `computed`s still build a label from
+`translate.instant` this way, and their labels stay in the old language until the page is reopened.
+Eleven are page titles, the `pageTitle` of the extra, country, currency, service, membership-plan,
+promo-code, company-info, language, admin-user and pay-config forms, and the e-mail type detail's
+fallback title (shown when the type has no display name). The other two are the promo-code form's
+`typeOptions`, the two discount types in its type picker, and the user loyalty detail's
+`headerTitle`.

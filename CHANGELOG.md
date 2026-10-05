@@ -1101,13 +1101,19 @@ need backfilling.
   on Android in the schedule form's services as well. The brand blue of the rows' fills, borders and
   ticks is unchanged, and the web already read clearly. (Finding 2026-10-04.)
 
-- **Customer web, Android and iOS — blue text is easier to read.** Prices, totals, links and small
-  labels in the brand blue were faint in light mode, under the contrast small text needs: among them
-  the price in a package's details, the badge on the schedule form, the package and *from* prices on
-  the website, and on the apps the totals, *See all*, *Retry*, the referral code and the badges. Blue
-  text is now a deeper blue in light mode on every client, and on the website a lighter blue in dark
-  mode too. The brand blue of buttons, fills, borders and icons is unchanged, and on the apps some
-  shared buttons and controls keep it. (Finding 2026-10-05.)
+- **Customer and cleaner, web, Android and iOS — blue text, links and text buttons are easier to
+  read.** Prices, totals, links and small labels in the brand blue were faint in light mode, under the
+  contrast small text needs: among them the price in a package's details, the badge on the schedule
+  form, the package and *from* prices on the website, and on the apps the totals, *See all*, *Retry*,
+  the referral code and the badges. Blue text is now a deeper blue in light mode on every client, and
+  on the website a lighter blue in dark mode too. Links and text buttons followed on every screen of
+  both apps, the cleaner's included, and of the customer, cleaner and admin websites: a link, the label
+  of a text or outlined button and the icon beside it, a picked chip, a dropdown's picked row, the
+  selected tab and the links in consent and legal texts, each control in one blue, a shade darker
+  again under the pointer on the websites. On the cleaner and admin websites those buttons were a
+  lighter blue still, the cleaner's *Contact support* on a rejected registration among them. Filled
+  buttons, fills, borders and icons that stand alone keep the brand blue, and dark mode is unchanged.
+  (Finding 2026-10-05; links and text buttons, owner decision 2026-10-05.)
 
 - **Customer — a service or package that is no longer offered can no longer be booked.** A service or
   package the company had taken off its list was hidden everywhere, but an out-of-date app, or *Order

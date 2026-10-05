@@ -299,12 +299,51 @@ stylesheet in Chromium, light / dark:
 
 The rules that used `--cl-accent` (sky-400 after dark, 8.07:1) now read sky-300 there, a lighter blue
 that both pass. Left in the primary on purpose: the inverse and Plus call-to-action buttons
-(`.cl-btn--inverse`, `.cl-plus__cta`), every icon, and the schedule form's add-address row on hover,
-whose resting ink is already sky-700, so the same token would leave no hover cue. PrimeNG's text
-buttons and links take the shared preset's sky-600, and that preset is shared with the partner and
-admin sites, so they are not part of this. `customer-accent-text.spec.ts`, in the assets project,
-compiles the customer stylesheet and requires `var(--cl-accent-text)` on each site above, and the token
-in both themes.
+(`.cl-btn--inverse`, `.cl-plus__cta`) and every icon. The schedule form's add-address row rests in
+sky-700 and goes a step darker under the pointer, to sky-800, since 2026-10-05; until then it went to
+the lighter sky-600 (4.10:1), and after dark it still goes from sky-300 to the accent, sky-400.
+PrimeNG's text buttons and links come from the preset the partner and admin sites share, and take
+sky-700 there since 2026-10-05 ([below](#link-ink)). `customer-accent-text.spec.ts`, in the assets
+project, compiles the customer stylesheet and requires `var(--cl-accent-text)` on each site above, and
+the token in both themes.
+
+### Links and text buttons take sky-700 on all three sites {#link-ink}
+
+Since 2026-10-05 (owner decision: *"go to the darker, but so that it still feels natural"*) a text link,
+and the label of a text, outlined or link button, is sky-700 `#0369a1` in light mode on the customer,
+partner and admin sites, and goes a step darker, sky-800 `#075985`, under the pointer and while
+pressed. Until then the shared PrimeNG preset left those three buttons on the light theme's primary,
+sky-500 `#0ea5e9`, 2.77:1 on white, and the shared and partner link styles drew sky-600 (4.10:1) or
+sky-500. Filled buttons, fills, borders and standalone icons keep the brand blue, and an icon inside a
+button takes the button's ink, so no control shows two blues. The apps follow the same rule
+([Blue text is sky-700](/mobile-app/patterns#brand-text-ink)).
+
+- **The preset** (`libs/shared/assets/src/lib/cleansia-preset.ts`), read by all three apps: in the
+  light scheme the text and outlined primary buttons' colour is `{primary.700}`, and the link button's
+  is `{primary.700}` with `{primary.800}` on hover and press. The dark theme is untouched, so the
+  customer site keeps its light blue there. PrimeNG has no hover ink for a text or an outlined button,
+  so `cleansia-button.component.scss` sets `--p-button-text-primary-color` and
+  `--p-button-outlined-primary-color` to `--p-primary-800` on a hovered or pressed one, in light mode
+  only.
+- **The shared and partner link styles**: the sign-in card's links (the partner and admin sign-in),
+  the partner register and forgot-password links, the partner detail breadcrumb, the partner profile's
+  consent link, the cookie notice's link (with its own sky-300 after dark, where sky-600 read 3.59:1),
+  the help card's *show help*, a filter chip's remove ×, which now takes the chip's own sky-700, and a
+  sortable table header with its arrow on hover. The partner registration lock's raised *Contact
+  support* button gets a white face: the text ink reads 4.44:1 on the rejected row's pink and 5.93:1 on
+  white.
+- **The customer site's** links already took sky-700 ([above](#accent-text)); only its add-address
+  row's hover moved.
+
+Measured in Chromium on the running dev servers, at rest / under the pointer: a PrimeNG text, outlined
+or link button's label and icon 2.77 / 2.60 → 5.93 / 7.09:1 (a link under the pointer 7.56:1); the
+registration lock's *Contact support* 2.08 / 2.60 → 5.93 / 7.09:1; the sign-in card's, register and
+forgot-password links 4.10 / 4.10 → 5.93 / 7.56:1; the breadcrumb 4.10 / 5.93 → 5.93 / 7.56:1; the
+profile's consent link 2.60 / 5.57 → 5.57 / 7.09:1; the cookie notice's link 4.10 / 5.93 → 5.93 /
+7.56:1 in light mode and 3.59 / 2.47 → 8.81 / 11.06:1 in dark; *show help* 3.70 / 4.90 → 5.37 /
+6.25:1; a filter chip's × 3.84 → 5.57:1; the add-address row under the pointer 4.10 → 7.56:1.
+`cleansia-preset.spec.ts` pins the three inks and that the filled button and the dark theme are
+Aura's, and `text-ink.spec.ts` compiles the partner and customer stylesheets and pins every rule above.
 
 ## i18n
 

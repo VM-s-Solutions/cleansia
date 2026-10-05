@@ -615,14 +615,14 @@ draws the same sky-700.
 
 The brand primary in light mode, sky-600 `#0284C7`, reads 4.10:1 on white and 3.91:1 on the page, and
 less on the tints blue labels sit on, under the 4.5:1 that text needs (finding 2026-10-05). Since
-2026-10-05 the customer apps, like the customer web, draw blue **text** in an ink of its own, and keep
-the primary for fills, borders, icons and buttons:
+2026-10-05 both apps, like the websites, draw blue **text** in an ink of its own, links and text
+buttons included, and keep the primary for fills, borders, standalone icons and filled buttons:
 
 | Client | Text ink | Light mode | Dark mode |
 |---|---|---|---|
 | iOS | `CleansiaColors.primaryText` (Core) | sky-700 `#0369A1`, 5.93:1 on white | sky-400, the primary, unchanged |
-| Android | `primaryText()` (customer `ui/theme/BrandGradients.kt`) | sky-700 `#0369A1` | the theme's primary, sky-400, unchanged |
-| Web | `--cl-accent-text` | sky-700 | sky-300 → [Blue text on the customer site](/architecture/frontend#accent-text) |
+| Android | `ColorScheme.primaryText`, or `primaryText()` for the theme in force (`:core`, `cz.cleansia.core.ui.theme`, `BrandColors.kt`) | sky-700 `#0369A1` | the theme's primary, sky-400, unchanged |
+| Web | `--cl-accent-text` on the customer site; the shared PrimeNG preset's text, outlined and link buttons on all three sites | sky-700; a link or a text button goes to sky-800 under the pointer | sky-300 on the customer site → [Blue text on the customer site](/architecture/frontend#accent-text), [links and text buttons](/architecture/frontend#link-ink) |
 
 The two texts the finding named moved on both apps: the package details sheet's price, 4.10 to 5.93:1,
 and the schedule form's default-address badge, 3.88 to 5.62:1 on iOS (on 40 % sky-100) and 3.38 to
@@ -636,34 +636,74 @@ before and after (iOS `81ef1bafb` and `89b5361f9`, Android `302a0fa6a`). The dis
 Android, the *Current* tier pill draw their 14 % wash from the ink, so the wash is now sky-700 at
 14 %, a shade darker.
 
-**What keeps the primary**, and where it is text still reads 4.10:1 in light mode:
+**Links and text buttons take it too, in both apps** (owner decision 2026-10-05: *"go to the darker,
+but so that it still feels natural"*). After the sweep above the shared Core and `:core` components,
+every text button and the whole partner app still drew the primary. Since then, in the customer and
+the partner app alike:
 
-- **Both apps**: fills, borders, icons, progress tints and the wordmark.
-- **iOS**: the shared button components (`CleansiaTextLink`, `CleansiaOutlinedButton`,
-  `CleansiaPrimaryButton`), the schedule cards' *Edit*, *Pause* and *Resume*, and the tab bar, whose
-  native `TabView` tints a tab's icon and label together. The shared Core components the partner app
-  draws too are left as they were: the selected chip and dropdown option, the reveal panel, the section
-  header's action, the consent text's links (the booking's contract notice among them), the Live
-  Activity card and the Profile avatar's initials (`onFixedWhite`).
-- **Android**: the labels inside Material `TextButton` and `OutlinedButton` (the schedule card's
-  *Change the schedule*, *Get Cleansia Plus*, dialog buttons, *Edit review*), and the shared `:core`
-  widgets the partner app draws too: the consent checkbox's links, the selected chip and dropdown row,
-  the section header, the error state's retry, `CleansiaButton`'s text variant and HTML content links.
+- **The shared components**: a text link (`CleansiaTextLink`), a picked chip's label (its 12 % wash and
+  border keep the primary), a dropdown's picked row and its check, the section header's badge, the
+  consent text's links (the booking's contract notice among them) and an HTML legal text's links
+  (iOS `HtmlDocument.linkLightHex`; the quote rule keeps the primary). On iOS also the reveal panel's
+  *Show* and *Hide* with its chevron and lock, and the Live Activity's clock, countdown and step labels,
+  whose wordmark, bar and dots keep the primary; on Android also the error state's back link.
+- **Text and outlined buttons.** Android's text button is `:core`'s `CleansiaTextButton`, Material's
+  `TextButton` with its content in the text ink. The 54 that drew Material's default ink (dialog
+  actions, card actions, inline *Edit*s) use it, and `CleansiaTextLink` is built on it; a destructive
+  one keeps Material's `TextButton` in its own red. iOS's shell tint is the text ink, so the back
+  buttons and the toolbars' text buttons take it, and so do the schedule card's *Edit*, *Pause* and
+  *Resume*. An outlined button's label is `onSurface` by default on both platforms, and since this
+  change so is the leading icon of Android's `CleansiaOutlinedButton`, as on iOS. An outlined button
+  with a blue label, *Make this recurring* among them, draws its label and icon in the text ink inside
+  a primary outline.
+- **The selected tab**, its icon and label in one ink, in both apps on both platforms. The pill under an
+  Android tab is a fill and keeps the primary.
+- **The partner app's links**, each with its icon: the earnings card's *View details*, *View period
+  pay*, *Add photo* and the add-photo tile, the order's call and navigate chips, *Copy instruction*,
+  the location prompt's action, the job-radius card's buttons, the available-jobs sort menu, the
+  language chooser and its picked row, the pending offers card's call to action and the rejected
+  registration step's *Contact support*.
+- **The avatar's initials** on iOS are sky-700 on the white disc in both apps
+  (`CleansiaColors.primaryTextOnFixedWhite`, 5.93:1 in both modes); `onFixedWhite`, the sky-600 the
+  partner app still drew, is gone. Android's customer avatar already drew sky-700. Android's partner
+  avatar is a different design, initials in the primary on a 40 % container disc, and is unchanged.
 
-So the apps differ in three places: Android draws the selected tab's label, the Profile avatar's
-initials (sky-700 on the circle that is white in both themes) and the booking's contract-notice link
-in the text ink, where iOS keeps the primary.
+**One ink per control.** An icon inside a link or a button takes its label's ink, so no control shows
+two blues. **What keeps the primary**: filled buttons (a white label on sky-600), fills and washes,
+borders and outlines, toggles, sliders and progress bars, standalone icons, the consent checkbox's
+tick box and the wordmark. Dark mode is unchanged on both platforms, the text ink there being the
+primary. On iOS a circular spinner with no tint of its own follows the shell's tint, so it is sky-700
+in light mode now, and so are the accents of iOS 16–18's compact date picker. Blue text in the partner
+app that is neither a link nor a button, section labels, pay amounts and the selected segment among
+them, still draws the primary (reported 2026-10-05).
+
+Measured in light mode, before and after, from the token values: on white (cards, sheets, the
+dropdown, the avatar disc, a legal page) 4.10 to 5.93:1, on the page 3.91 to 5.67:1, on a picked
+chip's 12 % wash 3.52 to 5.10:1, on the contact chips' 10 % wash 3.61 to 5.23:1, on the add-photo
+tile's 8 % 3.70 to 5.37:1, on Material's dialog surface 3.34 to 4.84:1, on iOS 26's tab bar 3.58 to
+5.19:1 and on iOS 16–18's 3.89 to 5.64:1. Read off iOS 26.3 screenshots, which run lighter (below): a
+text link 3.18 to 4.43:1, a picked chip 2.83 to 3.94:1 and the selected tab 3.21 to 4.51:1. Measured
+on the Android emulator: a dialog's text button 3.34 to 4.84:1, a picked chip on the page 3.37 to
+4.89:1, the call chip 3.45 to 5.00:1 and the selected tab's icon 4.10 to 5.93:1. Each app's commit
+lists every site (iOS `688cf6160`, Android `48f0749c8`).
 
 - **iOS**: `BrandTextInkTests` checks the token at 4.5:1 or more on every ground those texts sit on,
   pins the texts whose colour comes from a helper, and scans the customer sources so that no `Text`
-  is drawn in the primary. Checked on the iPhone 17 Pro (iOS 26.3) simulator, whose screenshots run
-  lighter than the colours (sky-600 is captured as `#0097D2`, sky-700 as `#007DB1`): the price read
-  3.30 to 4.60:1 there, the badge 3.17 to 4.41:1.
-- **Android**: `PrimaryTextContrastTest` pins sky-700 at 4.5:1 or more on every light ground those
-  texts sit on and the token's two values, and reads the customer sources so that no `Text` takes the
-  bare primary or sky-600 again; 39 did before. Measured on the emulator: the package sheet's price
-  4.10 to 5.93:1, the schedule form's *DEFAULT* badge 3.37 to 4.89:1, the *MOST POPULAR* badge 3.51 to
-  5.08:1 and *Add new address* 3.91 to 5.67:1.
+  is drawn in the primary. `ComponentTextInkTests` (Core) finds no shared `Text` drawn in the primary
+  but the wordmark's fallback, and pins the icons beside a text-ink label and the chrome that keeps
+  the primary; the partner app's `TextInkTests` pins its sites. Checked on the iPhone 17 Pro (iOS 26.3)
+  simulator, whose screenshots run lighter than the colours (sky-600 is captured as `#0097D2`, sky-700
+  as `#007DB1`): the price read 3.30 to 4.60:1 there, the badge 3.17 to 4.41:1.
+- **Android**: `PrimaryTextTest` (`:core`) pins the token's two values and 4.5:1 on every ground a link
+  or a label sits on, the legal text's link and quote colours, and reads all three modules' sources:
+  no `TextButton` on Material's default ink, no outlined button whose label or icon rides it, no
+  button content and no `:core` text in the bare primary, both selected tabs in one ink, and the
+  partner links with their icons. `PrimaryTextContrastTest` (customer) pins sky-700 at 4.5:1 or more
+  on every light ground the customer's texts sit on, reads the customer sources so that no `Text`
+  takes the bare primary or sky-600 again (39 did before), and no longer exempts labels inside
+  buttons. Measured on the emulator: the package sheet's price 4.10 to 5.93:1, the schedule form's
+  *DEFAULT* badge 3.37 to 4.89:1, the *MOST POPULAR* badge 3.51 to 5.08:1 and *Add new address* 3.91
+  to 5.67:1.
 
 ## Every map is quiet, with one Cleansia pin {#maps}
 

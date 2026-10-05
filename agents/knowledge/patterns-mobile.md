@@ -445,6 +445,15 @@ duplicate a `:core` component.
 > tint, a `when` over the step) is out of a scan's reach, so each of those is pinned by name in the
 > same suites. → `docs/mobile-app/patterns.md#brand-text-ink`
 
+> **An Android colour scheme sets every Material 3 surface role (finding 2026-10-05):** a role the
+> scheme leaves unset falls back to Material's baseline purple grey, and nothing on the developer's
+> screen says so, because only a dialog, a menu, a date picker, a search bar or a switch track reads
+> those roles. Both apps' `LightColors` / `DarkColors` set `surfaceContainerLowest…Highest`,
+> `surfaceBright` and `surfaceDim` from the slate family; `SurfaceRolesTest` (customer and partner)
+> fails a role outside it and a text under 4.5:1 on the dialog or menu container. A component that
+> reads another unset role (`tertiary` in the partner app, today) shows the same baseline colour.
+> → `docs/mobile-app/patterns.md#surface-roles`
+
 > **A re-rendered SAS-backed image — the ONE way (T-0449):** `AsyncImage` stays right for a URL a
 > screen shows once (order photos, dispute evidence). It is wrong for an image the session re-renders —
 > the avatar — because every blob URL this backend returns is **re-signed per fetch**, so a URL-keyed

@@ -703,7 +703,8 @@ them, kept the primary in this change, and takes the text ink since the partner 
 Measured in light mode, before and after, from the token values: on white (cards, sheets, the
 dropdown, the avatar disc, a legal page) 4.10 to 5.93:1, on the page 3.91 to 5.67:1, on a picked
 chip's 12 % wash 3.52 to 5.10:1, on the contact chips' 10 % wash 3.61 to 5.23:1, on the add-photo
-tile's 8 % 3.70 to 5.37:1, on Material's dialog surface 3.34 to 4.84:1, on iOS 26's tab bar 3.58 to
+tile's 8 % 3.70 to 5.37:1, on Material's dialog surface 3.34 to 4.84:1 (5.42:1 on Android's slate
+dialog since [the surface roles](#surface-roles) were set), on iOS 26's tab bar 3.58 to
 5.19:1 and on iOS 16–18's 3.89 to 5.64:1. Read off iOS 26.3 screenshots, which run lighter (below): a
 text link 3.18 to 4.43:1, a picked chip 2.83 to 3.94:1 and the selected tab 3.21 to 4.51:1. Measured
 on the Android emulator: a dialog's text button 3.34 to 4.84:1, a picked chip on the page 3.37 to
@@ -899,6 +900,33 @@ The web's pills already read 4.5:1 or more, measured on the compiled bundles: th
 `<cleansia-status-badge>` 4.51:1 at its lowest (warning) and 4.57:1 (success), the customer's order
 rows and dispute pills 4.79:1 or more in both themes, and the tracking page's hero pill 5.17:1 or more
 (Android `a9b89279d`, iOS `81ac1eeae` and `3cfefcde5`).
+
+## Android's dialogs and menus sit on slate {#surface-roles}
+
+Material 3 draws a dialog, a menu, a date picker and a search bar on its surface-container roles, and
+neither Android app's colour scheme set them, so each fell back to Material's baseline: an
+`AlertDialog` and a `DatePickerDialog` on `#ECE6F0`, a `DropdownMenu` on `#F3EDF7`, the partner
+orders' search bar on `#ECE6F0` and a switch's off track on `#E6E0E9`, a faint purple grey beside the
+sky and slate of everything else (finding 2026-10-05; the snackbar's `inverseSurface` had been pinned
+for the same clash). Since 2026-10-05 both schemes in both apps set the whole ramp from slate:
+
+| Role | Light | Dark |
+|---|---|---|
+| `surfaceContainerLowest` | white | slate-900 |
+| `surfaceContainerLow` | slate-50 | slate-800 |
+| `surfaceContainer` (a menu), `surfaceContainerHigh` (a dialog, a date picker) | slate-100 `#F1F5F9`, the light grey of an iOS alert | `#283548`, the scheme's raised slate, one step above the slate-800 card |
+| `surfaceContainerHighest` (a switch's off track) | slate-200 | slate-700 |
+| `surfaceBright` | white | slate-700 |
+| `surfaceDim` | slate-200 | slate-900 |
+
+The bottom sheets already passed their surface and are unchanged. Every text a dialog or a menu carries
+reads 4.5:1 or more on its container, the lowest being the secondary text on the dark dialog, 4.84:1,
+and the text ink reads 5.42:1 on the light dialog. `SurfaceRolesTest` in each app requires every
+surface role to be one of the app's slates, the dialog and menu containers above, and 4.5:1 for
+`onSurface`, `onSurfaceVariant`, the text ink and the error colour on both; the partner app's
+`LightColors` and `DarkColors` became `internal`, as the customer app's were, so the test can read them
+(`7871948ce`). Material's other baseline roles are not covered by this: the partner scheme does not
+set `tertiary`, which some partner screens read (reported 2026-10-05).
 
 ## Every map is quiet, with one Cleansia pin {#maps}
 

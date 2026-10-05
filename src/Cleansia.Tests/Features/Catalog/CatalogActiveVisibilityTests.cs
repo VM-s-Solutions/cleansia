@@ -396,7 +396,6 @@ public sealed class CatalogActiveVisibilityTests : IDisposable
             new PackageRepository(ctx),
             Mock.Of<IUserConsentRepository>(),
             Mock.Of<ILegalDocumentResolver>(),
-            Mock.Of<ISavedCardRepository>(),
             Mock.Of<IReceivableRepository>());
 
     private static CreateRecurringBooking.Command Schedule(

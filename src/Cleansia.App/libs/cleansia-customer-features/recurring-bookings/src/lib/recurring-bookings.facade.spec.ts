@@ -1811,7 +1811,6 @@ describe('RecurringBookingsFacade — a quote the server refuses', () => {
         provideHttpClient(withInterceptors([HttpErrorInterceptorFn])),
         provideHttpClientTesting(),
         RecurringBookingsFacade,
-        CardCaptureFacade,
         provideMockStore({
           selectors: [
             { selector: selectCustomerServices, value: [] },

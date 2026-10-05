@@ -4,6 +4,7 @@ using Cleansia.Config.Health;
 using Cleansia.Core.AppServices.Authentication;
 using Cleansia.Functions.Core;
 using Cleansia.Functions.Middleware;
+using Cleansia.Functions.Telemetry;
 using Cleansia.ServiceDefaults;
 using Microsoft.Azure.Functions.Worker;
 using Microsoft.Extensions.Configuration;
@@ -32,8 +33,7 @@ var host = new HostBuilder()
     .ConfigureLogging((context, logging) => logging.AddSentryMonitoring(context.Configuration))
     .ConfigureServices((context, services) =>
     {
-        services.AddApplicationInsightsTelemetryWorkerService();
-        services.ConfigureFunctionsApplicationInsights();
+        services.AddWorkerApplicationInsights();
         services.AddHttpContextAccessor();
 
         // eagerlyReloadNpgsqlTypeCatalog: this worker is the one host whose triggers can fire before

@@ -155,18 +155,53 @@ only from that order's history.
 
 ## Refund
 
-A refund is bounded by what is left, and the bound is computed rather than trusted:
+A refund is bounded by what is left, and the bound is computed rather than trusted. Everything an order
+gives back — card refunds, credit returned with them or on its own, and complaints settled in credit —
+never adds up to more than its `TotalPrice`:
 
 ```
-refundable = order.TotalPrice − already consumed
-amount     = min(requested, refundable)      refuse if ≤ 0
+settled  = complaints on the order settled in credit
+own leg  = credit already returned on this refund's own key
+returned = credit returned on the order − own leg
+slice    = requested                                          when settled = 0
+         = min(requested, TotalPrice − card refunded
+                          − returned − settled)               otherwise
+credit   = min(credit share of slice, credit applied − returned)
+card     = min(card ceiling, slice − credit)                  refuse if the slice is ≤ 0
+         when own leg > 0: card = min(that, slice − own leg), and no credit leg is paid
 ```
+
+The slice is split between the card and the credit in the proportion the price was paid, so a held
+refund keeps the proportion the terms promise. A 2 000 order paid with 500 credit, after a 400 complaint
+settled in credit, is refunded 1 200 to the card and 400 to the balance — with the settlement, 2 000 in
+all. **The hold applies wherever money leaves** (since 2026-10-05): `RefundService`, the one seam
+every card refund passes, for an administrator's full or partial refund, a cancellation and a dispute's card settlement; and
+the credit-only returns. A member's cancellation or a no-show that cannot reach Stripe returns at once the
+credit share of the same held slice its pending card row was sized from. An order that ends with no card refund of
+its own gets its credit back under `order-ended-unpaid:{orderId}`, counting a settlement by what the
+order took: in full off the credit when it took no payment, and otherwise holding the credit to what the
+sale has left after card refunds, credit returned and settlements
+→ [Business rules — the credit return](/product/business-rules#when-the-cleaner-cancels-or-no-shows).
+Until then only a dispute's card settlement was held, and a full refund after a complaint settled in
+credit paid the settled part out again. An order with no settlement is refunded exactly as before.
+
+**A refund's own credit leg is part of its slice** (since 2026-10-05). A refund whose credit leg already
+came back on its key — a member's cancellation or a no-show while Stripe was down, or an administrator's refund whose
+record of success was lost after Stripe and the leg had both gone through — does not count that leg as
+credit returned elsewhere. Its card share is what the slice has left after the leg, no second leg is
+paid, and the card and the leg together are held against what the sale has left. When nothing has moved
+since the first attempt, the retry sends Stripe the amount it sent before on the same key; a different
+amount on a key Stripe already paid is refused. Until then the retry counted its own leg twice: the admin full
+refund of 2 000 paid with 500 credit and 400 settled retried 1 100 to the card where it had asked 1 200.
 
 **The Stripe call happens before the status flips.** A failed call therefore leaves no phantom
 `Refunded` — the order keeps its real state and the caller gets a failure. The status becomes
 `Refunded` or `PartiallyRefunded` depending on whether the total is now covered.
 
-Re-driving an existing refund row clamps it to what remains rather than issuing a second one.
+Re-driving an existing refund row clamps it to what remains rather than issuing a second one. A re-drive
+on an order with no settlement keeps its exact amount, so Stripe sees the same parameters on the same
+key; one held below its row's amount is clamped, or marked `Failed` with `refund.nothing_refundable`
+when nothing is left for the card.
 
 **An administrator's card refund needs no second step** (checked 2026-10-04). `AdminRefundOrder`,
 `IssuePartialRefund` and `ResolveDispute` with a card settlement all go through
@@ -190,16 +225,29 @@ it. Now:
 
 - **The cancellation survives Stripe.** A signed-in customer's cancel that cannot reach Stripe, or whose refund
   Stripe refuses, still cancels: the `Pending` refund row stays for the re-drive, the credit share goes
-  back at once on the refund's key, and the response says `refundPending: true`. The unfilled sweep and
-  the admin no-show do the same and say *refund pending* in their push. A guest's cancel still fails on
-  a transport fault, so the guest can retry it.
+  back at once on the refund's key, and the response says `refundPending: true`. That credit is the
+  credit share of the same held slice the card row was sized from: a 1 000 order paid with 300 credit,
+  200 of it settled in credit, cancelled free, leaves 560 pending for the card and returns 240 in credit
+  now; the re-drive sends Stripe the same 560, and with the settlement the customer has 1 000 back. A
+  guest's cancel still fails on a transport fault, so the guest can retry it.
+- **The no-show survives Stripe too.** The unfilled sweep and the admin no-show leave the `Pending` row
+  the same way, say *refund pending* in their push, and return the credit share at once on the refund's
+  own key (since 2026-10-05), cut from the same held slice as the card row: a 2 000 order paid with 500
+  credit, after a 200 complaint settled in credit, leaves 1 350 pending for the card and returns 450 credit
+  now; the re-drive sends Stripe the same 1 350 on the same key — with the settlement, exactly 2 000. Until
+  then the credit came back under the order's own key (`order-ended-unpaid:{orderId}`), and the re-drive
+  asked 1 300 on a key Stripe may already have paid 1 350, which Stripe refuses every time. With no refund
+  claimed — nothing left for the card, or no charge surface — the credit still comes back under the
+  order's key.
 - **The hourly re-drive** (`RedrivePendingRefunds`, on the existing hourly tick of
   `AutoCancelStaleRecurringOrders`, so no new timer) takes every `Pending` app refund older than 30
   minutes, per company, and re-drives a **cancelled order's own** refund through
-  `IRefundService.RedriveAsync`: the row's own refund key, clamped to what the order can still return,
-  with the credit leg on the same key through the proportional split, so a credit leg already returned
-  is never returned twice. On success the customer gets `order.refunded`. A refund with nothing left to
-  return is closed; a transport fault on one row is caught and the next run tries again.
+  `IRefundService.RedriveAsync`: the row's own refund key, clamped to what the order can still return.
+  The row keeps only the card leg, so the slice it refunds is read back: its card amount plus a credit leg
+  already returned on its key, which is not returned again, or, with none on the key, through the
+  proportion the split applied, with the credit leg paid on the same key. On success the customer gets
+  `order.refunded`. A refund with nothing left to return is closed; a transport fault on one row is
+  caught and the next run tries again.
 - **After 24 hours the administrators are told**, once per order: `admin.payment.refund_stuck` for a
   cancelled order's refund the re-drive keeps trying, `admin.payment.refund_needs_retry` for any other —
   a dispute's, an administrator's or a partial refund, which carries its own key segment, belongs to the
@@ -329,7 +377,8 @@ what remains, whatever amount the retry names. The money moves once: the dispute
 amount as requested, and that one refund's card and credit legs as what moved. A resolution with no
 amount, or zero, moves nothing and simply resolves. A terminal dispute is never resolved twice
 (`dispute.already_resolved`). After an earlier complaint on the order was settled in credit, the card
-settlement is held to what the order still has left.
+settlement is held to what the order still has left, by the seam, like every other refund
+([Refund](#refund)).
 
 **A settlement takes back its share of the order's points** (owner ruling 2026-10-03). As its last
 write, `ResolveDispute` hands the refund clawback what the settlement actually gave back:
@@ -372,11 +421,16 @@ dispute or the order shows the three interleaved, newest first.
 | Case | What happens |
 |---|---|
 | Refund more than was paid | Clamped to what remains; refused at zero. |
+| Refund after a complaint settled in credit | Held to what the sale has left once the settlement is counted, split between card and credit in proportion; nothing is paid out twice. |
+| A no-show confirmed after its complaint was settled in credit | The confirmation's card refund is held like any other and is smaller than the full card payment the terms promise; resolve such a complaint with no amount and let the confirmation pay ([dispute settlement](/product/business-rules#dispute-settlement)). |
 | Stripe refund call fails | No status change. The order is not left claiming a refund that never happened. |
 | Refund requested twice | The second resolves to the existing row rather than issuing again. |
+| A refund retried after its credit leg came back on its key | The leg counts as part of the refund's slice: Stripe is asked for the same amount on the same key, no second leg is paid, and card and leg together never pass what the sale has left. |
+| Any credit return for a customer on a frozen company's books | Skipped — a refund's credit leg, a cancellation's, an ended order's, a failed checkout's; the card share still goes back, and an order that ends later does not write it either ([Business rules — a company's lifecycle](/product/business-rules#company-lifecycle)). |
 | Cancel after the cleaner is on the way, before the start | Allowed; the fee ladder decides the cost. |
 | Cancel after the booked start, cleaner assigned, job not started | Refused, `order.start_passed_cannot_cancel`; the customer reports that the cleaner did not arrive, and an administrator confirms the no-show. |
-| Stripe unreachable during a signed-in customer's cancel | The order is cancelled, the refund stays `Pending` for the hourly re-drive, the credit share returns now, and the response says `refundPending`. |
+| Stripe unreachable during a signed-in customer's cancel | The order is cancelled, the refund stays `Pending` for the hourly re-drive, the credit share of the same held slice returns now, and the response says `refundPending`. |
+| Stripe unreachable during a no-show confirmation or the unfilled sweep | The order is cancelled, the refund stays `Pending`, and the credit share of the same held slice returns now on the refund's key; the re-drive asks Stripe for the same card amount on that key, and the total is never more than the price. |
 | A refund still `Pending` after 24 h | The administrators are told once — `admin.payment.refund_stuck` or `admin.payment.refund_needs_retry`. |
 | Cancel by someone who does not own the order | Refused — the handler checks `order.UserId`. The probe is recorded: a failure row on the caller with `order.not_found` and the probed order as its resource. |
 | Dispute resolved outside the guard | Cannot happen from application code; the checker fails the build. |

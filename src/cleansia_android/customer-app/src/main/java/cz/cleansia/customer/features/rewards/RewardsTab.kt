@@ -1042,7 +1042,7 @@ private fun InviteFriendsCard(
     }
 
     val onShare: () -> Unit = {
-        shareReferralOrFallback(context, code, referralCredit, onShareUnavailable)
+        shareReferralOrFallback(context, code, onShareUnavailable)
     }
 
     Column(
@@ -1182,12 +1182,10 @@ private fun copyToClipboard(context: android.content.Context, code: String) {
 internal fun shareReferralOrFallback(
     context: android.content.Context,
     code: String,
-    referralCredit: String?,
     onShareUnavailable: () -> Unit,
 ) {
     val landingUrl = "https://cleansia.cz/r/$code"
-    val message = referralCredit?.let { context.getString(R.string.loyalty_referral_share_text, it, code, landingUrl) }
-        ?: context.getString(R.string.loyalty_referral_share_text_no_figure, code, landingUrl)
+    val message = context.getString(R.string.loyalty_referral_share_text_no_figure, code, landingUrl)
     val send = android.content.Intent(android.content.Intent.ACTION_SEND).apply {
         type = "text/plain"
         putExtra(android.content.Intent.EXTRA_TEXT, message)

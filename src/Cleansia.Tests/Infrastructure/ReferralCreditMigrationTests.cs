@@ -13,9 +13,10 @@ using Microsoft.EntityFrameworkCore.Migrations.Operations;
 namespace Cleansia.Tests.Infrastructure;
 
 /// <summary>
-/// The committed <c>Initial</c> migration builds the referral credit the model maps (owner ruling
-/// 2026-10-04): the two tables the change touched carry exactly the model's columns, the money columns
-/// are <c>numeric(18,2)</c>, and a referral's credit currency is a Restrict key into Currencies.
+/// The committed <c>Initial</c> migration builds the referral credit the model maps (owner rulings
+/// 2026-10-04 and 2026-10-05): the two tables the change touched carry exactly the model's columns, the
+/// money columns are <c>numeric(18,2)</c>, each side's credit currency is a Restrict key into Currencies,
+/// and the hold reasons are a short nullable text.
 /// </summary>
 public sealed class ReferralCreditMigrationTests : IDisposable
 {
@@ -54,7 +55,10 @@ public sealed class ReferralCreditMigrationTests : IDisposable
         var table = StoreObjectIdentifier.Table(entity.GetTableName()!);
         var mapped = entity.GetProperties().Select(p => p.GetColumnName(table)!).Order(StringComparer.Ordinal);
 
-        var created = Table(entity.GetTableName()!).Columns.Select(c => c.Name).Order(StringComparer.Ordinal);
+        // xmin is Postgres's row version: the migration declares it, the SQLite model this test builds cannot.
+        var created = Table(entity.GetTableName()!).Columns.Select(c => c.Name)
+            .Where(name => name != "xmin")
+            .Order(StringComparer.Ordinal);
 
         Assert.Equal(mapped, created);
     }
@@ -71,14 +75,34 @@ public sealed class ReferralCreditMigrationTests : IDisposable
         Assert.True(column.IsNullable);
     }
 
-    [Fact]
-    public void A_Referrals_Credit_Currency_Is_A_Restrict_Key_Into_Currencies()
+    [Theory]
+    [InlineData(nameof(Referral.ReferrerCreditCurrencyId))]
+    [InlineData(nameof(Referral.ReferredCreditCurrencyId))]
+    public void Each_Sides_Credit_Currency_Is_A_Restrict_Key_Into_Currencies(string columnName)
     {
         var foreignKey = Assert.Single(
             Table("Referrals").ForeignKeys,
-            fk => fk.Columns.SequenceEqual([nameof(Referral.CreditCurrencyId)]));
+            fk => fk.Columns.SequenceEqual([columnName]));
 
         Assert.Equal("Currencies", foreignKey.PrincipalTable);
         Assert.Equal(ReferentialAction.Restrict, foreignKey.OnDelete);
+        Assert.True(Table("Referrals").Columns.Single(c => c.Name == columnName).IsNullable);
+    }
+
+    [Fact]
+    public void The_Hold_Reasons_Are_A_Nullable_Varchar_32()
+    {
+        var column = Table("Referrals").Columns.Single(c => c.Name == nameof(Referral.HoldReasons));
+
+        Assert.Equal("character varying(32)", column.ColumnType);
+        Assert.True(column.IsNullable);
+    }
+
+    [Fact]
+    public void The_Migration_Maps_A_Referrals_Row_Version()
+    {
+        var xmin = Table("Referrals").Columns.Single(c => c.Name == "xmin");
+
+        Assert.True(xmin.IsRowVersion);
     }
 }

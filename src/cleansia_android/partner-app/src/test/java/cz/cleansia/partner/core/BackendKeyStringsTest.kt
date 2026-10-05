@@ -175,13 +175,24 @@ class BackendKeyStringsTest {
 
     /**
      * `UpdateIdentificationInfo` and `UpdateEmployee` refuse an IČO the country's business register (ARES)
-     * does not hold. The approval-only register refusals answer the admin host, not this app.
+     * does not hold, and an approved cleaner's changed IČO gets approval's full register check.
      */
     @Test
-    fun `the business-register refusal of the cleaner's own save resolves to a sentence in all five locales`() {
-        val resName = "error_validation_registration_number_not_registered"
-        val raw = locales.filterNot { resName in declared(it) }
-        assertTrue("validation.registration_number.not_registered renders raw in $raw", raw.isEmpty())
+    fun `every business-register refusal of the cleaner's own save resolves to a sentence in all five locales`() {
+        val keys = listOf(
+            "validation.registration_number.not_registered",
+            "employee.business_ceased",
+            "employee.trade_licence_inactive",
+            "employee.business_registry_unavailable",
+        )
+        val raw = locales.flatMap { locale ->
+            val declared = declared(locale)
+            keys
+                .map { it to "error_" + it.replace('.', '_').lowercase() }
+                .filterNot { (_, resName) -> resName in declared }
+                .map { (key, resName) -> "$locale/$resName ($key)" }
+        }
+        assertTrue("these refusals render raw: $raw", raw.isEmpty())
     }
 
     @Test

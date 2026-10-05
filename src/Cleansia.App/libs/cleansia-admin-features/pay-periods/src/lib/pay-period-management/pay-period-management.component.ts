@@ -23,7 +23,8 @@ import {
   CleansiaTableComponent,
   CleansiaTitleComponent,
 } from '@cleansia/components';
-import { CleansiaAdminRoute } from '@cleansia/services';
+import { CleansiaPermissionDirective } from '@cleansia/directives';
+import { CleansiaAdminRoute, Policy } from '@cleansia/services';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import { DialogModule } from 'primeng/dialog';
 import { DialogService } from 'primeng/dynamicdialog';
@@ -49,6 +50,7 @@ import {
     CleansiaStatusBadgeComponent,
     CleansiaFilterDrawerComponent,
     CleansiaFilterChipsComponent,
+    CleansiaPermissionDirective,
     DialogModule,
     FormsModule,
     ReactiveFormsModule,
@@ -66,6 +68,7 @@ export class PayPeriodManagementComponent implements OnInit {
   private readonly statusTemplate = viewChild<TemplateRef<PayPeriodDto>>('statusTemplate');
 
   readonly PayPeriodStatus = PayPeriodStatus;
+  protected readonly Policy = Policy;
 
   protected readonly table = computed(() => {
     this.facade.lang();
@@ -82,8 +85,6 @@ export class PayPeriodManagementComponent implements OnInit {
   });
 
   showCreateDialog = signal(false);
-  createStartDate = signal<Date | null>(null);
-  createEndDate = signal<Date | null>(null);
 
   ngOnInit(): void {
     this.facade.loadPayPeriods();
@@ -102,9 +103,8 @@ export class PayPeriodManagementComponent implements OnInit {
   }
 
   openCreateDialog(): void {
+    this.facade.setCreateStartDate(null);
     this.showCreateDialog.set(true);
-    this.createStartDate.set(null);
-    this.createEndDate.set(null);
   }
 
   closeCreateDialog(): void {
@@ -112,12 +112,6 @@ export class PayPeriodManagementComponent implements OnInit {
   }
 
   createPayPeriod(): void {
-    const startDate = this.createStartDate();
-    const endDate = this.createEndDate();
-    if (!startDate || !endDate) return;
-
-    // TODO: Wire up to admin client create pay period endpoint once available
-    console.warn('Create pay period not yet wired to backend', { startDate, endDate });
-    this.closeCreateDialog();
+    this.facade.createPayPeriod(() => this.closeCreateDialog());
   }
 }

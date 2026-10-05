@@ -28,7 +28,7 @@ public class ReferralInterventionValidatorTests
         repo.Setup(r => r.ExistsAsync(It.IsAny<string>(), It.IsAny<CancellationToken>())).ReturnsAsync(false);
         var validator = new ReverseReferral.Validator(repo.Object);
 
-        var result = await validator.ValidateAsync(new ReverseReferral.Command("missing", "reason"));
+        var result = await validator.ValidateAsync(new ReverseReferral.Command("missing", "reason", ExpectHeld: false));
 
         Assert.False(result.IsValid);
         Assert.Contains(result.Errors, e =>
@@ -43,7 +43,7 @@ public class ReferralInterventionValidatorTests
     {
         var validator = new ReverseReferral.Validator(RepoWithExisting().Object);
 
-        var result = await validator.ValidateAsync(new ReverseReferral.Command(ReferralId, reason!));
+        var result = await validator.ValidateAsync(new ReverseReferral.Command(ReferralId, reason!, ExpectHeld: false));
 
         Assert.False(result.IsValid);
         Assert.Contains(result.Errors, e =>
@@ -56,7 +56,7 @@ public class ReferralInterventionValidatorTests
     {
         var validator = new ReverseReferral.Validator(RepoWithExisting().Object);
 
-        var result = await validator.ValidateAsync(new ReverseReferral.Command(ReferralId, "self-referral ring"));
+        var result = await validator.ValidateAsync(new ReverseReferral.Command(ReferralId, "self-referral ring", ExpectHeld: false));
 
         Assert.True(result.IsValid);
     }
@@ -68,7 +68,7 @@ public class ReferralInterventionValidatorTests
     {
         var validator = new ForceQualifyReferral.Validator(RepoWithExisting().Object);
 
-        var result = await validator.ValidateAsync(new ForceQualifyReferral.Command(ReferralId, reason!));
+        var result = await validator.ValidateAsync(new ForceQualifyReferral.Command(ReferralId, reason!, ExpectHeld: false));
 
         Assert.False(result.IsValid);
         Assert.Contains(result.Errors, e =>
@@ -81,7 +81,7 @@ public class ReferralInterventionValidatorTests
     {
         var validator = new ForceQualifyReferral.Validator(RepoWithExisting().Object);
 
-        var result = await validator.ValidateAsync(new ForceQualifyReferral.Command(ReferralId, "legit qualifying order"));
+        var result = await validator.ValidateAsync(new ForceQualifyReferral.Command(ReferralId, "legit qualifying order", ExpectHeld: false));
 
         Assert.True(result.IsValid);
     }

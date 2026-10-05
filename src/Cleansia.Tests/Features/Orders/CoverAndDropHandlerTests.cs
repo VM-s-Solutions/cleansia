@@ -319,6 +319,22 @@ public class CoverAndDropHandlerTests
     }
 
     /// <summary>
+    /// A drop that leaves a crew changes no order column, so without the stamp the order's row is not in
+    /// the commit and its CurrentStatus concurrency token is never compared against a status another
+    /// writer moved meanwhile. → DropOrderLockoutRaceTests
+    /// </summary>
+    [Fact]
+    public async Task DroppingOneSeatOfTwoStampsTheOrderSoItsStatusIsCheckedAtCommit()
+    {
+        var order = OrderWith(EmployeeId, OtherEmployeeId);
+        Arrange(order);
+
+        await DropHandler().Handle(new DropOrder.Command(OrderId), default);
+
+        Assert.NotNull(order.UpdatedOn);
+    }
+
+    /// <summary>
     /// Past Confirmed the platform never walks the status back — a cleaner may be standing in the home —
     /// and no sweep selects an unstaffed OnTheWay order. The alarm is the only thing that fires, and it
     /// says which status the crew was lost at so the sentence can say the clean was under way.

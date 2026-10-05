@@ -308,11 +308,20 @@ public static class BusinessErrorMessage
     /// the cleaner has not accepted its current version: approval and the take refuse.
     /// </summary>
     public const string EmployeeLegalDocumentsNotAccepted = "employee.legal_documents_not_accepted";
-    /// <summary>The business register says the cleaner's business has ended: approval refuses.</summary>
+    /// <summary>
+    /// The business register says the cleaner's business has ended: approval refuses, and so does a save that
+    /// changes an approved cleaner's registration number, by the cleaner or an admin.
+    /// </summary>
     public const string EmployeeBusinessCeased = "employee.business_ceased";
-    /// <summary>The business register holds no trade licence in force for the cleaner: approval refuses.</summary>
+    /// <summary>
+    /// The business register holds no trade licence in force for the cleaner: approval refuses, and so does a
+    /// save that changes an approved cleaner's registration number.
+    /// </summary>
     public const string EmployeeTradeLicenceInactive = "employee.trade_licence_inactive";
-    /// <summary>The business register did not answer; approval waits for it and the admin tries again.</summary>
+    /// <summary>
+    /// The business register did not answer; approval, or a save that changes an approved cleaner's
+    /// registration number, waits for it and the caller tries again.
+    /// </summary>
     public const string EmployeeBusinessRegistryUnavailable = "employee.business_registry_unavailable";
     // The order-action approval gate: a cleaner who is not Approved (rejected, still pending, or
     // terminated) may not take/start/complete an order.
@@ -738,6 +747,8 @@ public static class BusinessErrorMessage
     public const string ReferralNotQualified = "referral.not_qualified";
     public const string ReferralNotAccepted = "referral.not_accepted";
     public const string ReferralReasonRequired = "referral.reason_required";
+    /// <summary>The referral was held, or stopped being held, after the administrator's list was loaded.</summary>
+    public const string ReferralHoldChanged = "referral.hold_changed";
 
     // Legal documents
     public const string LegalDocumentNotFound = "legal.document_not_found";

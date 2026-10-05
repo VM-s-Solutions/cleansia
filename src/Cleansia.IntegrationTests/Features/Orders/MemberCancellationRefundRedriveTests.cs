@@ -67,7 +67,7 @@ public class MemberCancellationRefundRedriveTests(PostgresContainerFixture fixtu
         await SeedTenantRegistryAsync(conn);
     }
 
-    private async Task<string> SeedAsync()
+    private async Task<string> SeedAsync(decimal total = Total, decimal credit = Credit, decimal settledInCredit = 0m)
     {
         string userId;
         await using (var ctx = NewContext())
@@ -90,7 +90,13 @@ public class MemberCancellationRefundRedriveTests(PostgresContainerFixture fixtu
         await using (var ctx = NewContext())
         {
             var account = await new CreditAccountRepository(ctx).EnsureForUserAsync(userId, CzkId, CancellationToken.None);
-            account!.Issue(Credit, CreditTransactionReason.Goodwill, "seed-grant", "seed", note: "n");
+            account!.Issue(credit, CreditTransactionReason.Goodwill, "seed-grant", "seed", note: "n");
+            if (settledInCredit > 0m)
+            {
+                account.Issue(
+                    settledInCredit, CreditTransactionReason.DisputeSettlement, "dispute-settlement:dispute-earlier",
+                    "admin", orderId: OrderId, disputeId: "dispute-earlier");
+            }
 
             var order = Order.Create(
                 customerName: "Member Redrive",
@@ -101,21 +107,21 @@ public class MemberCancellationRefundRedriveTests(PostgresContainerFixture fixtu
                 bathrooms: 1,
                 cleaningDateTime: DateTime.UtcNow.AddDays(10),
                 paymentType: PaymentType.Card,
-                totalPrice: Total,
+                totalPrice: total,
                 currencyId: CzkId,
                 paymentStatus: PaymentStatus.Paid,
                 userId: userId,
                 cancellationTerms: BookingPolicy.CancellationTermsAtBooking);
             order.Id = OrderId;
             order.SetMaxEmployees(1);
-            order.ApplyCredit(Credit, userId);
+            order.ApplyCredit(credit, userId);
             order.AssignStripePaymentIntentId(PaymentIntentId);
             order.AddOrderStatus(OrderStatusTrack.Create(OrderStatus.New, order));
             ctx.Orders.Add(order);
             await ctx.CommitAsync(CancellationToken.None);
 
             Assert.True(await new CreditAccountRepository(ctx).TryDebitAsync(
-                account.Id, Credit, CreditTransactionReason.OrderPayment, $"order-payment-{OrderId}", userId,
+                account.Id, credit, CreditTransactionReason.OrderPayment, $"order-payment-{OrderId}", userId,
                 CancellationToken.None, orderId: OrderId));
         }
 
@@ -239,6 +245,61 @@ public class MemberCancellationRefundRedriveTests(PostgresContainerFixture fixtu
                 .SingleAsync(a => a.UserId == userId && a.CurrencyId == CzkId);
             Assert.Single(account.Transactions, t => t.Reason == CreditTransactionReason.OrderPaymentReturned);
             Assert.Equal(Credit, account.Balance);
+            Assert.Equal(account.Balance, account.Transactions.Sum(t => t.Amount));
+        }
+    }
+
+    /// <summary>
+    /// The same cancellation of a 1000 sale paid 700 by card and 300 in credit, after a complaint on it was
+    /// settled in 200 of credit. 800 is left: the seam freezes the card's 560 and the credit's 240 comes back
+    /// at once on the refund's key. Whether the first call failed at Stripe or timed out after Stripe took it,
+    /// the re-drive sends the same 560 on the same key, and the customer ends with exactly the 1000 paid.
+    /// </summary>
+    [Theory]
+    [MemberData(nameof(StripeFailures))]
+    public async Task After_A_Complaint_Settled_In_Credit_The_Redrive_Repeats_The_Same_Card_Amount_And_The_Customer_Gets_The_Price(
+        Exception failure)
+    {
+        await ResetAsync();
+        var userId = await SeedAsync(total: 1000m, credit: 300m, settledInCredit: 200m);
+        var stripeCalls = new List<decimal>();
+        _stripe.Setup(s => s.RefundPaymentIntentAsync(
+                PaymentIntentId, It.IsAny<decimal>(), RefundKey, It.IsAny<CancellationToken>()))
+            .Callback<string, decimal, string, CancellationToken>((_, amount, _, _) => stripeCalls.Add(amount))
+            .Returns(() => stripeCalls.Count == 1 ? Task.FromException(failure) : Task.CompletedTask);
+
+        var response = await CancelAsync(userId);
+
+        Assert.True(response.RefundPending);
+        await using (var ctx = NewContext())
+        {
+            var refund = await ctx.Refunds.IgnoreQueryFilters().AsNoTracking().SingleAsync();
+            Assert.Equal(RefundStatus.Pending, refund.Status);
+            Assert.Equal(560m, refund.Amount);
+            var returned = await ctx.CreditTransactions.AsNoTracking()
+                .SingleAsync(t => t.OrderId == OrderId && t.Reason == CreditTransactionReason.OrderPaymentReturned);
+            Assert.Equal(240m, returned.Amount);
+            Assert.Equal($"credit-return:{RefundKey}", returned.IdempotencyKey);
+        }
+
+        var redrive = await RedriveAsync();
+
+        Assert.Equal(1, redrive.Redriven);
+        Assert.Equal([560m, 560m], stripeCalls);
+        await using (var ctx = NewContext())
+        {
+            var refund = await ctx.Refunds.IgnoreQueryFilters().AsNoTracking().SingleAsync();
+            Assert.Equal(RefundStatus.Succeeded, refund.Status);
+            Assert.Equal(560m, refund.Amount);
+            var account = await ctx.CreditAccounts.IgnoreQueryFilters().AsNoTracking()
+                .Include(a => a.Transactions)
+                .SingleAsync(a => a.UserId == userId && a.CurrencyId == CzkId);
+            var creditReturned = account.Transactions
+                .Where(t => t.Reason == CreditTransactionReason.OrderPaymentReturned).Sum(t => t.Amount);
+            var settled = account.Transactions
+                .Where(t => t.Reason == CreditTransactionReason.DisputeSettlement).Sum(t => t.Amount);
+            Assert.Equal(240m, creditReturned);
+            Assert.Equal(1000m, refund.Amount + creditReturned + settled);
             Assert.Equal(account.Balance, account.Transactions.Sum(t => t.Amount));
         }
     }

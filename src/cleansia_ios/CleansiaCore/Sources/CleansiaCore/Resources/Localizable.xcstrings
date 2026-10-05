@@ -1786,6 +1786,76 @@
         }
       }
     },
+    "error.employee.business_ceased": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Podle registru ekonomických subjektů (ARES) podnikání pod tímto IČO zaniklo. Zadejte IČO podnikání, které stále trvá."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The business register (ARES) shows that the business under this company ID (IČO) has ended. Enter the IČO of a business that is still trading."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "По данным реестра экономических субъектов (ARES), предпринимательская деятельность под этим идентификационным номером (IČO) прекращена. Введите IČO деятельности, которая ещё ведётся."
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Podľa registra ekonomických subjektov (ARES) podnikanie pod týmto IČO zaniklo. Zadajte IČO podnikania, ktoré stále trvá."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "За даними реєстру економічних суб'єктів (ARES), підприємницьку діяльність під цим ідентифікаційним номером (IČO) припинено. Введіть IČO діяльності, яка ще триває."
+          }
+        }
+      }
+    },
+    "error.employee.business_registry_unavailable": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Registr ekonomických subjektů (ARES) se nepodařilo kontaktovat, takže nové IČO nešlo ověřit a nic se neuložilo. Zkuste to znovu za několik minut."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "We could not reach the business register (ARES) to check your new company ID (IČO), so nothing was saved. Try again in a few minutes."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Не удалось связаться с реестром экономических субъектов (ARES), чтобы проверить ваш новый идентификационный номер (IČO), поэтому ничего не сохранено. Попробуйте ещё раз через несколько минут."
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Register ekonomických subjektov (ARES) sa nepodarilo kontaktovať, takže nové IČO nebolo možné overiť a nič sa neuložilo. Skúste to znova o niekoľko minút."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Не вдалося зв'язатися з реєстром економічних суб'єктів (ARES), щоб перевірити ваш новий ідентифікаційний номер (IČO), тому нічого не збережено. Спробуйте ще раз за кілька хвилин."
+          }
+        }
+      }
+    },
     "error.employee.documents_missing": {
       "extractionState": "stale",
       "localizations": {
@@ -2062,6 +2132,41 @@
           "stringUnit": {
             "state": "translated",
             "value": "Перед прийняттям замовлень заповніть свій профіль."
+          }
+        }
+      }
+    },
+    "error.employee.trade_licence_inactive": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Podle registru ekonomických subjektů (ARES) není pod tímto IČO platné živnostenské oprávnění. Zkontrolujte číslo, nebo si nejprve obnovte živnostenské oprávnění."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The business register (ARES) shows no trade licence in force under this company ID (IČO). Check the number, or renew your trade licence first."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "По данным реестра экономических субъектов (ARES), под этим идентификационным номером (IČO) нет действующего разрешения на предпринимательскую деятельность. Проверьте номер или сначала возобновите разрешение."
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Podľa registra ekonomických subjektov (ARES) nie je pod týmto IČO platné živnostenské oprávnenie. Skontrolujte číslo, alebo si najprv obnovte živnostenské oprávnenie."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "За даними реєстру економічних суб'єктів (ARES), під цим ідентифікаційним номером (IČO) немає чинного дозволу на підприємницьку діяльність. Перевірте номер або спершу поновіть дозвіл."
           }
         }
       }

@@ -75,7 +75,7 @@ with a market and is held to its company at approval.
 | `currencyCode` / `currencySymbol` | The market's currency — `CountryConfiguration.DefaultCurrencyCode` resolved to its `Currency` row |
 | `isDefault` | The pre-selection for a visitor who has chosen nothing — the flagged `CountryConfiguration.IsDefaultMarket`, else the fallback rule above. A **pre-selection, not a pricing invariant** — a client always sends the `countryId` it resolved |
 | `noShowCredit` | `Currency.NoShowCredit` — the apology credit paid in this currency when a slot arrives with no cleaner; `null` = none is paid and the copy renders its refund-only variant. CZK 250; EUR 10, PLN 40, GBP 9, USD 10 are DEV placeholders the owner replaces before activation |
-| `referralCredit` | `Currency.ReferralCredit` — the credit each side of a referral receives when the friend's first order, in this currency, is completed; `null` or `0` = none, and the referral copy renders its twin that promises nothing. CZK 150, the other seeded currencies `null` (since 2026-10-05) → [The referral reward](/product/business-rules#referral-credit) |
+| `referralCredit` | `Currency.ReferralCredit` — the credit a side of a referral receives when it books in this currency: the friend when their first completed order is in it, the referrer when their latest order is (since 2026-10-05 each side has its own currency); `null` or `0` = none, and the referral copy renders its twin that promises nothing. The copy states it as the reader's own figure only. CZK 150, the other seeded currencies `null` (since 2026-10-05) → [The referral reward](/product/business-rules#referral-credit) |
 | `insuranceCoverageAmount` | `CountryConfiguration.InsuranceCoverageAmount` — the insurance ceiling the trust badge and FAQ state, a number in the market's currency; `null` = no insurance claim at all (since 2026-10-04; until then a no-figure *Insured* rendered). Every configuration is seeded `null` (owner ruling 2026-09-28) until the owner decides whose policy covers a booking and authors the figure |
 
 A client resolves its market as: stored code **if listed** → the `isDefault` row → the first row →
@@ -270,7 +270,8 @@ Authors the one per-country copy figure: the insurance ceiling per booking, a nu
 default currency, `null` for none — and with none no client claims insurance at all (owner ruling
 2026-10-04; until then a no-figure *Insured* rendered). The country must already have a configuration row —
 `country.configuration_missing` otherwise (creating one needs a currency, a language and a VAT rate,
-which is not this command's business). A negative amount is `MustBePositive`.
+which is not this command's business). Zero or a negative amount is `MustBePositive` (since
+2026-10-05; until then 0 was accepted, and the apps would have printed *Insured up to 0*).
 
 `GET /api/AdminCountry/details/{countryId}` returns `insuranceCoverageAmount`, `hasConfiguration` and
 `isDefaultMarket` alongside `isoCode`, `isoAlpha2`, `name` and `isServiced`; the admin country form
@@ -329,9 +330,10 @@ Unlike the loyalty divisor it is **not** an activation gate — a market may ope
 credit. `AdminCurrencyDetailDto` and `AdminCurrencyListItem` carry it back; the `CurrencyListItem` /
 `CurrencyDetailDto` that travel on order rows do not.
 
-`referralCredit` is the credit each side of a referral receives when the friend's first order **in
-this currency** is completed (since 2026-10-05). `null` and `0` both pay none, and the referral still
-qualifies; only a negative figure is refused (`MustBePositive`). It is not an activation gate either,
+`referralCredit` is the credit a side of a referral receives **in this currency** (since 2026-10-05):
+the friend when their first completed order is in it, the referrer when their latest order is, so one
+referral can pay two currencies' figures. `null` and `0` both pay that side none, the other side is
+still paid, and the referral still qualifies; only a negative figure is refused (`MustBePositive`). It is not an activation gate either,
 and both admin DTOs carry it back. The update writes every figure it is sent, so an update that omits
 `referralCredit` clears it. → [The referral reward](/product/business-rules#referral-credit)
 

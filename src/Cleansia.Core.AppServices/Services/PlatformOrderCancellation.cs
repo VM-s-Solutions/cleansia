@@ -11,6 +11,7 @@ namespace Cleansia.Core.AppServices.Services;
 
 public sealed class PlatformOrderCancellation(
     IRefundService refundService,
+    IRefundRepository refundRepository,
     ICreditAccountRepository creditAccountRepository,
     ILoyaltyService loyaltyService,
     INotificationProducer notificationProducer,
@@ -57,7 +58,11 @@ public sealed class PlatformOrderCancellation(
             // No card refund here - the card was never charged, or has already been partly refunded - but
             // credit WAS taken at checkout. A platform cancellation is fee-free, so whatever of it has
             // not already come back on a refund's credit leg comes back now.
-            await creditAccountRepository.ReturnUnpaidOrderCreditAsync(order, actorId, cancellationToken);
+            await creditAccountRepository.ReturnUnpaidOrderCreditAsync(
+                order,
+                await refundRepository.GetSucceededRefundTotalForOrderAsync(order.Id, cancellationToken),
+                actorId,
+                cancellationToken);
         }
 
         // Unconditionally, even with a cleaner assigned: a platform cancellation is OUR action, not the

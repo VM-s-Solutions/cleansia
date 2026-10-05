@@ -171,7 +171,7 @@ struct InviteFriendsCard: View {
                 .font(CleansiaTypography.bodyMedium)
                 .foregroundColor(CleansiaColors.onSurfaceVariant)
 
-            ShareLink(item: ReferralCopy.shareMessage(code: referral.code, credit: credit)) {
+            ShareLink(item: ReferralCopy.shareMessage(code: referral.code)) {
                 HStack(spacing: Spacing.xs) {
                     Image(systemName: "square.and.arrow.up")
                         .font(.system(size: 16))

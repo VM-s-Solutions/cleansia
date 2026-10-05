@@ -21,6 +21,7 @@ namespace Cleansia.Core.AppServices.Features.Orders;
 public sealed class CleanerNoShowCancellation(
     ICreditAccountRepository creditAccountRepository,
     IRefundService refundService,
+    IRefundRepository refundRepository,
     INotificationProducer notificationProducer,
     GuestOrderAccessTokenIssuer guestAccessTokenIssuer,
     IPendingDispatch pending,
@@ -55,11 +56,27 @@ public sealed class CleanerNoShowCancellation(
             refundedAmount = await TryRefundAsync(order, actorId, cancellationToken);
         }
 
-        // A refund of the whole sale returns the applied credit on its own leg. Without one the credit
-        // comes back here, now; the re-drive of a failed refund nets off what already went back.
+        // A refund of the whole sale returns the applied credit on its own leg. One left to the re-drive
+        // returns that leg now, on its own key, so the re-drive asks Stripe for the card amount Stripe may
+        // already have paid on that key; with no refund claimed the credit comes back here, now.
         if (refundedAmount is null)
         {
-            await creditAccountRepository.ReturnUnpaidOrderCreditAsync(order, actorId, cancellationToken);
+            var refund = NoShowRefund(order, actorId);
+            var pending = await refundRepository.GetByRefundKeyAsync(
+                RefundService.BuildRefundKey(refund), cancellationToken);
+            if (pending is { Status: RefundStatus.Pending })
+            {
+                await creditAccountRepository.ReturnPendingRefundCreditLegAsync(
+                    refundRepository, order, refund, cancellationToken);
+            }
+            else
+            {
+                await creditAccountRepository.ReturnUnpaidOrderCreditAsync(
+                    order,
+                    await refundRepository.GetSucceededRefundTotalForOrderAsync(order.Id, cancellationToken),
+                    actorId,
+                    cancellationToken);
+            }
         }
 
         var apology = await TryIssueApologyCreditAsync(order, actorId, cancellationToken);
@@ -72,6 +89,9 @@ public sealed class CleanerNoShowCancellation(
         return new Outcome(transition, refundedAmount, refundPending, apology);
     }
 
+    private static RefundRequest NoShowRefund(Order order, string actorId) =>
+        new(order.Id, order.TotalPrice, RefundReason.ServiceNotRendered, actorId);
+
     /// <summary>
     /// The full card refund: what it returned, or null when it did not go through. A failure is logged
     /// for a person and carried on from — the cancellation is still right, and the pending refund row is
@@ -82,9 +102,7 @@ public sealed class CleanerNoShowCancellation(
         BusinessResult<RefundResult> refund;
         try
         {
-            refund = await refundService.IssueRefundAsync(
-                new RefundRequest(order.Id, order.TotalPrice, RefundReason.ServiceNotRendered, actorId),
-                cancellationToken);
+            refund = await refundService.IssueRefundAsync(NoShowRefund(order, actorId), cancellationToken);
         }
         catch (Exception ex) when (RefundService.IsStripeTransportFailure(ex, cancellationToken))
         {
@@ -108,7 +126,9 @@ public sealed class CleanerNoShowCancellation(
     /// <summary>
     /// The apology credit: the amount issued, or null — without failing the cancellation — whenever it
     /// cannot honestly be given. A guest has no account to hold it; a currency with no authored
-    /// <c>Currency.NoShowCredit</c> pays none rather than borrowing another currency's figure.
+    /// <c>Currency.NoShowCredit</c> pays none rather than borrowing another currency's figure; and an
+    /// account on the books of a company frozen for archive takes no write, so issuing there would fail
+    /// the cancellation's commit and, in the sweep, every order after it.
     /// </summary>
     private async Task<decimal?> TryIssueApologyCreditAsync(
         Order order, string actorId, CancellationToken cancellationToken)
@@ -125,6 +145,15 @@ public sealed class CleanerNoShowCancellation(
                 "No apology credit on no-show order {OrderId}: none is authored for {CurrencyCode}. "
                     + "The refund was not affected.",
                 order.Id, order.Currency?.Code ?? order.CurrencyId);
+            return null;
+        }
+
+        if (await creditAccountRepository.IsOnFrozenCompanyBooksAsync(order.UserId, order.CurrencyId, cancellationToken))
+        {
+            logger.LogWarning(
+                "No apology credit on no-show order {OrderId}: the customer's credit account is on a company "
+                    + "frozen for archive. The refund was not affected.",
+                order.Id);
             return null;
         }
 

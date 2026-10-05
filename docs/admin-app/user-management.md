@@ -133,6 +133,14 @@ PUT /api/AdminEmployee/{employeeId}/update
 
 This sends the updated employee data to the backend, which validates and persists the changes.
 
+**A changed IČO is checked; an untouched one is not** (since 2026-10-05). Every section the page saves
+resends the stored registration number, so only a number that differs from the stored one is judged:
+first its format in the register country — the work country, else the address country — refused with
+`validation.registration_number.invalid_format` (a required IČO cannot be cleared), then that country's
+register, with approval's four refusals for an approved cleaner and only *not registered* for anyone
+else. Until then the edit wrote any number unchecked.
+→ [The business register](/product/business-rules#business-register)
+
 ## Document Approval Workflow
 
 Each uploaded document goes through a review process:

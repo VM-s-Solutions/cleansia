@@ -11,7 +11,9 @@ namespace Cleansia.Core.Domain.Loyalty;
 /// <see cref="ReferralStatus.Accepted"/> state when the invitee redeems a
 /// code (at signup or first booking); flips to <see cref="ReferralStatus.Qualified"/>
 /// on the invitee's first completed order; flips to <see cref="ReferralStatus.Expired"/>
-/// after the 90-day qualifying window if no order has been completed.
+/// after the 90-day qualifying window if no order has been completed. A first completed order
+/// whose two accounts look like one person leaves it <see cref="ReferralStatus.Accepted"/> with
+/// <see cref="HoldReasons"/> set: held for an administrator, never expired, never paid until released.
 /// </summary>
 public class Referral : TenantAuditable
 {
@@ -45,12 +47,28 @@ public class Referral : TenantAuditable
     /// <summary>The credit issued to the invited friend on qualification; null when that side received none.</summary>
     public decimal? CreditAwardedToReferred { get; private set; }
 
-    /// <summary>The currency both grants are denominated in; null when neither side was paid.</summary>
+    /// <summary>The currency the inviter's grant is denominated in; null when that side received none.</summary>
     [MaxLength(26)]
-    public string? CreditCurrencyId { get; private set; }
-    public Currency? CreditCurrency { get; private set; }
+    public string? ReferrerCreditCurrencyId { get; private set; }
+    public Currency? ReferrerCreditCurrency { get; private set; }
+
+    /// <summary>The currency the invited friend's grant is denominated in; null when that side received none.</summary>
+    [MaxLength(26)]
+    public string? ReferredCreditCurrencyId { get; private set; }
+    public Currency? ReferredCreditCurrency { get; private set; }
 
     public DateTimeOffset? AwardedOn { get; private set; }
+
+    /// <summary>
+    /// Why the first completed order paid nothing: comma-joined <c>HoldReason*</c> slugs. Null when the
+    /// referral was never held; kept as history once an administrator releases or rejects it.
+    /// </summary>
+    [MaxLength(32)]
+    public string? HoldReasons { get; private set; }
+
+    public const string HoldReasonAddress = "address";
+    public const string HoldReasonPhone = "phone";
+    public const string HoldReasonEmail = "email";
 
     // Private constructor for EF Core
     private Referral() { }
@@ -103,13 +121,26 @@ public class Referral : TenantAuditable
     /// </summary>
     public void MarkQualified(
         string firstQualifyingOrderId,
-        string? creditCurrencyId,
+        string? referrerCurrencyId,
         decimal? creditToReferrer,
+        string? referredCurrencyId,
         decimal? creditToReferred,
         string actorId)
     {
         FirstQualifyingOrderId = firstQualifyingOrderId;
-        Qualify(creditCurrencyId, creditToReferrer, creditToReferred, actorId);
+        Qualify(referrerCurrencyId, creditToReferrer, referredCurrencyId, creditToReferred, actorId);
+    }
+
+    /// <summary>
+    /// The first qualifying order completed, but the two accounts appear to be one person: nothing is
+    /// paid, and the referral stays <see cref="ReferralStatus.Accepted"/> until an administrator releases
+    /// it (<see cref="ForceQualify"/>) or rejects it (<see cref="Reverse"/>).
+    /// </summary>
+    public void HoldForReview(string qualifyingOrderId, string reasons, string actorId)
+    {
+        FirstQualifyingOrderId = qualifyingOrderId;
+        HoldReasons = reasons;
+        Updated(actorId, DateTimeOffset.UtcNow);
     }
 
     /// <summary>
@@ -123,36 +154,41 @@ public class Referral : TenantAuditable
     }
 
     /// <summary>
-    /// Admin force-qualify of a legitimate referral stuck in Accepted, where no
-    /// qualifying order is being recorded (so <see cref="FirstQualifyingOrderId"/>
-    /// stays null — there is no Order to FK to). Records the credit each side was
-    /// issued for the audit trail. Idempotency is enforced upstream (caller checks
-    /// <see cref="Status"/> before calling).
+    /// Admin force-qualify of a legitimate referral stuck in Accepted, or the release of a held one.
+    /// <see cref="FirstQualifyingOrderId"/> is left as it is: null when no qualifying order was recorded,
+    /// the held order on a release. Records the credit each side was issued, and its currency, for the
+    /// audit trail. Idempotency is enforced upstream (caller checks <see cref="Status"/> before calling).
     /// </summary>
     public void ForceQualify(
-        string? creditCurrencyId,
+        string? referrerCurrencyId,
         decimal? creditToReferrer,
+        string? referredCurrencyId,
         decimal? creditToReferred,
         string actorId)
     {
-        Qualify(creditCurrencyId, creditToReferrer, creditToReferred, actorId);
+        Qualify(referrerCurrencyId, creditToReferrer, referredCurrencyId, creditToReferred, actorId);
     }
 
-    private void Qualify(string? creditCurrencyId, decimal? creditToReferrer, decimal? creditToReferred, string actorId)
+    private void Qualify(
+        string? referrerCurrencyId,
+        decimal? creditToReferrer,
+        string? referredCurrencyId,
+        decimal? creditToReferred,
+        string actorId)
     {
         var now = DateTimeOffset.UtcNow;
-        var awarded = creditToReferrer is not null || creditToReferred is not null;
         Status = ReferralStatus.Qualified;
         FirstQualifyingOrderOn = now;
-        CreditCurrencyId = awarded ? creditCurrencyId : null;
+        ReferrerCreditCurrencyId = creditToReferrer is null ? null : referrerCurrencyId;
+        ReferredCreditCurrencyId = creditToReferred is null ? null : referredCurrencyId;
         CreditAwardedToReferrer = creditToReferrer;
         CreditAwardedToReferred = creditToReferred;
-        AwardedOn = awarded ? now : null;
+        AwardedOn = creditToReferrer is not null || creditToReferred is not null ? now : null;
         Updated(actorId, now);
     }
 
     /// <summary>
-    /// Admin reversal of a previously-Qualified referral. Flips the status to
+    /// Admin reversal of a previously-Qualified referral, or the rejection of a held one. Flips the status to
     /// the terminal <see cref="ReferralStatus.Reversed"/>; the grants recorded on
     /// the row (<see cref="CreditAwardedToReferrer"/> / <see cref="CreditAwardedToReferred"/>)
     /// are kept for the audit trail, and the caller takes the credit back from the

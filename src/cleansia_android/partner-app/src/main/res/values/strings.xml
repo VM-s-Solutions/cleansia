@@ -1220,6 +1220,9 @@
     <string name="error_validation_invalid_zip_code">Please enter a valid ZIP code.</string>
     <string name="error_validation_registration_number_invalid_format">Please enter a valid company registration number for the selected country.</string>
     <string name="error_validation_registration_number_not_registered">This company ID (IČO) is not in the business register (ARES). Check the number.</string>
+    <string name="error_employee_business_ceased">The business register (ARES) shows that the business under this company ID (IČO) has ended. Enter the IČO of a business that is still trading.</string>
+    <string name="error_employee_trade_licence_inactive">The business register (ARES) shows no trade licence in force under this company ID (IČO). Check the number, or renew your trade licence first.</string>
+    <string name="error_employee_business_registry_unavailable">We could not reach the business register (ARES) to check your new company ID (IČO), so nothing was saved. Try again in a few minutes.</string>
     <string name="error_validation_must_be_positive">Must be a positive number.</string>
 
     <!-- Payout / bank details -->

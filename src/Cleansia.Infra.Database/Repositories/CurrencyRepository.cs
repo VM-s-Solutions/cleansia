@@ -84,7 +84,8 @@ public class CurrencyRepository(CleansiaDbContext context) : BaseRepository<Curr
             return true;
 
         // A referral paid in the currency (Restrict, tenant-scoped).
-        if (await Context.Referrals.IgnoreQueryFilters().AnyAsync(r => r.CreditCurrencyId == currencyId, cancellationToken))
+        if (await Context.Referrals.IgnoreQueryFilters()
+                .AnyAsync(r => r.ReferrerCreditCurrencyId == currencyId || r.ReferredCreditCurrencyId == currencyId, cancellationToken))
             return true;
 
         // A Stripe Customer opened to bill the currency (Restrict, tenant-scoped like the membership).

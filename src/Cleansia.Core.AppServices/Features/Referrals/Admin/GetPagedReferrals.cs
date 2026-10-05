@@ -30,7 +30,8 @@ public class GetPagedReferrals
             var specification = ReferralSpecification.Create(
                 status: request.Filter?.Status,
                 acceptedFrom: request.Filter?.DateFrom,
-                acceptedTo: request.Filter?.DateTo);
+                acceptedTo: request.Filter?.DateTo,
+                held: request.Filter?.Held);
 
             var filter = specification.SatisfiedBy();
 
@@ -39,7 +40,8 @@ public class GetPagedReferrals
                 .GetPagedSort<ReferralSort>(request.Offset, request.Limit, filter, ResolveSort(request))
                 .Include(r => r.Referrer)
                 .Include(r => r.Referred)
-                .Include(r => r.CreditCurrency)
+                .Include(r => r.ReferrerCreditCurrency)
+                .Include(r => r.ReferredCreditCurrency)
                 .AsNoTracking()
                 .Select(referral => referral.MapToAdminListItem())
                 .ToListAsync(cancellationToken);

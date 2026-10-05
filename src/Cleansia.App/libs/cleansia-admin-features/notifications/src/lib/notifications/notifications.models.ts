@@ -27,6 +27,7 @@ export const ADMIN_NOTIFICATION_EVENT_KEYS = [
   'admin.company.wind_down_requested',
   'admin.company.wind_down_run',
   'admin.company.archived',
+  'admin.referral.held',
 ] as const;
 
 export type AdminNotificationEventKey = (typeof ADMIN_NOTIFICATION_EVENT_KEYS)[number];
@@ -53,6 +54,7 @@ export enum NotificationFamily {
   Payment = 'payment',
   Erasure = 'erasure',
   Company = 'company',
+  Referral = 'referral',
   Unknown = 'unknown',
 }
 
@@ -62,6 +64,7 @@ export const NOTIFICATION_FAMILY_ICONS: Record<NotificationFamily, string> = {
   [NotificationFamily.Payment]: 'pi pi-credit-card',
   [NotificationFamily.Erasure]: 'pi pi-shield',
   [NotificationFamily.Company]: 'pi pi-building',
+  [NotificationFamily.Referral]: 'pi pi-users',
   [NotificationFamily.Unknown]: 'pi pi-bell',
 };
 
@@ -148,6 +151,8 @@ export function getNotificationRoute(eventKey: string | undefined, args: Notific
       return [CleansiaAdminRoute.DATA_PROTECTION];
     case NotificationFamily.Company:
       return [CleansiaAdminRoute.COMPANY_LIFECYCLE];
+    case NotificationFamily.Referral:
+      return [CleansiaAdminRoute.LOYALTY_REFERRALS];
     default:
       return null;
   }

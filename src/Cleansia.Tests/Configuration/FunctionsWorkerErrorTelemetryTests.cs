@@ -1,4 +1,5 @@
 using Cleansia.Functions.Middleware;
+using Cleansia.Functions.Telemetry;
 using Cleansia.ServiceDefaults;
 using Microsoft.Azure.Functions.Worker;
 using Microsoft.Extensions.Configuration;
@@ -76,6 +77,21 @@ public class FunctionsWorkerErrorTelemetryTests
         Assert.Equal(LogLevel.Error, options.MinimumEventLevel);
     }
 
+    /// <summary>
+    /// Sentry's handler on every factory client would turn a failed call into an event carrying the request
+    /// URL, and record each call as a breadcrumb with the full URL; an APNs URL ends in a push token.
+    /// </summary>
+    [Fact]
+    public void SentryAddsNoHandlerToTheWorkersHttpClients()
+    {
+        var options = WorkerLogging(SampleDsn)
+            .BuildServiceProvider()
+            .GetRequiredService<IOptions<SentryLoggingOptions>>()
+            .Value;
+
+        Assert.True(options.DisableSentryHttpMessageHandler);
+    }
+
     [Theory]
     [InlineData(null)]
     [InlineData("")]
@@ -94,17 +110,18 @@ public class FunctionsWorkerErrorTelemetryTests
     }
 
     /// <summary>
-    /// The leg the App Insights outage lived in — correct code on a path nothing called. Neither half of
+    /// The leg the App Insights outage lived in — correct code on a path nothing called. None of
     /// this wiring is reachable from a test of the extension alone, because the host is top-level
     /// statements; the assertion is therefore on the source the container actually runs.
     /// </summary>
     [Fact]
-    public void TheWorkerHostWiresBothHalves()
+    public void TheWorkerHostWiresItsTelemetry()
     {
         var program = File.ReadAllText(RepoPath("src", "Cleansia.Functions", "Program.cs"));
 
         Assert.Contains(nameof(Extensions.AddSentryMonitoring), program, StringComparison.Ordinal);
         Assert.Contains(nameof(FunctionInvocationErrorMiddleware), program, StringComparison.Ordinal);
+        Assert.Contains(nameof(WorkerApplicationInsights.AddWorkerApplicationInsights), program, StringComparison.Ordinal);
     }
 
     /// <summary>

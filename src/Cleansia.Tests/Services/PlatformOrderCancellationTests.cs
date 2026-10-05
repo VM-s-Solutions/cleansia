@@ -40,6 +40,7 @@ public class PlatformOrderCancellationTests
     private PlatformOrderCancellation CreateService() =>
         new(
             _refundService.Object,
+            Mock.Of<IRefundRepository>(),
             _creditAccountRepository.Object,
             _loyaltyService.Object,
             _producer.Object,

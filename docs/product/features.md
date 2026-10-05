@@ -146,9 +146,11 @@ Which cards show, most relevant first:
 - Cleansia Plus, for a customer who is not a member. It names the discount of the headline plan, the
   monthly one, from the plans the server lists.
 - The referral card. *Share my code* opens the share sheet with the customer's code once it has
-  loaded, and Rewards until then. It states the credit each side gets, the chosen market's
-  `referralCredit` in its currency, and for a market with none it only asks the customer to send the
-  code (since 2026-10-05; until then it stated the server's points per referral).
+  loaded, and Rewards until then. It states the credit the customer gets, the chosen market's
+  `referralCredit` in its currency, and that the friend gets credit where their market offers it; for a
+  market with none it only asks the customer to send the code (since 2026-10-05; until then it stated
+  the server's points per referral, and until the ruling of 2026-10-05 one figure for both sides). The
+  invite the share sheet sends names no figure.
 - Four *Did you know?* cards fill the row after referral:
   - *Free cancellation up to N h before*, for a Plus member whose benefits are not paused, with N the
     plan's own window. iOS shows it only while that window is shorter than the standard 24 h. Android
@@ -182,7 +184,8 @@ discount, the referral slide the server's points per referral instead of a liter
 *Book as little as 2 h ahead* slide `BookingPolicy`'s lead times, without calling express same-day;
 since 2026-10-05 a referral pays credit, not points, and every referral line on the web, Android and
 iOS states the market's referral credit in its currency, or for a market with none a line that
-promises nothing ([The referral reward](/product/business-rules#referral-credit));
+promises nothing — the reader's own figure only, since each side is paid in the currency it books in,
+with no figure in the invite the apps share ([The referral reward](/product/business-rules#referral-credit));
 and strings that promised a free
 add-on, tier perks or a satisfaction guarantee the platform does not give are deleted. Each retired
 claim is pinned absent by a test in every locale.
@@ -192,8 +195,10 @@ claim is pinned absent by a test in every locale.
 The tier follows the current points total both ways: points taken back — a refund's clawback, an
 administrator's revoke — can lower it, and the web rewards page says the tier follows the total. As
 seeded, a tier's perks are the welcome badge and, above the first tier, its discount. A referral earns
-no points: once the friend's first cleaning is completed, both get credit, 150 Kč on a CZK booking
-(since 2026-10-05), and the web rewards page no longer lists referrals among the ways to earn points.
+no points: once the friend's first cleaning is completed, both get credit, each in the currency they
+book in, 150 Kč in CZK (since 2026-10-05), and the web rewards page no longer lists referrals among the
+ways to earn points. A referral whose two accounts share a home, a phone number or an e-mail inbox is
+held for an administrator to release or reject, and reads as still waiting to both customers.
 → [Loyalty — tiers](/flows/loyalty-and-memberships#tiers),
 [the referral reward](/product/business-rules#referral-credit)
 
@@ -258,7 +263,8 @@ approval. An incomplete profile or an unapproved contract blocks work, deliberat
 requires the required documents to exist and be accepted rather than just a button press. The insurance
 certificate is recommended, not required (since 2026-10-04). A Czech company ID (IČO) is looked up in the
 ARES business register: the cleaner's own save refuses a number ARES does not hold, and approval also
-needs the business live and a trade licence in force
+needs the business live and a trade licence in force — as does an approved cleaner's change of the
+number, and an administrator's edit of an approved cleaner's number (since 2026-10-05)
 ([the business register](/product/business-rules#business-register)). While the
 apps' lock screen waits for that approval, every finished section stays open from it — to correct a
 detail or add the second document the country asks for — and an edit does not resubmit the
@@ -385,8 +391,10 @@ currency and the referral credit each side of a referral receives in it; the cou
 the insurance ceiling the customer copy states for that country (none is authored today); and a country cannot be switched on
 as serviced until its configuration names an active currency.
 
-**Growth** — promo codes, referral programme (each referral's credit with its currency; force-qualify
-and reverse), loyalty tiers, membership plans (a price and a Stripe
+**Growth** — promo codes, referral programme (each side's credit in its own currency; force-qualify
+and reverse; a *Held* filter, and release or reject of a referral held as one person or household;
+each refused, and the list reloaded, when the hold changed since the list was loaded),
+loyalty tiers, membership plans (a price and a Stripe
 Price id per currency, any currency optional — a plan unpriced in a market is simply not on sale
 there — and the free-trial length in days, 14 on a new plan and 0 for none, shown in the plan list),
 site-wide push campaigns, email templates.

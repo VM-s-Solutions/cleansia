@@ -4,9 +4,10 @@
 > D5, 2026-09-19: *"both in-app and email"*). Shipped as T-0768 (the notifier's feed half, the admin feed
 > routes, the first event), T-0774 (the e-mail channel, the template, the mailbox key), T-0775 (the seven
 > remaining sites) and T-0769 (the admin web bell and page); the ninth event rides T-0770 (ADR-0067), the
-> tenth — a chargeback that matches no order — shipped 2026-09-28, and the eleventh to thirteenth — a job
-> not started, a refund stuck, a refund to retry — with the owner rulings of 2026-09-28. The
-> files that are the role: `Core.Domain/Notifications/AdminNotificationEventCatalog.cs` (the thirteen keys) ·
+> tenth — a chargeback that matches no order — shipped 2026-09-28, the eleventh to fourteenth — a job
+> not started, a refund stuck, a refund to retry, a lockout reported — with the owner rulings of
+> 2026-09-28, and the fifteenth — a referral held for review — with the ruling of 2026-10-05. The
+> files that are the role: `Core.Domain/Notifications/AdminNotificationEventCatalog.cs` (the fifteen keys) ·
 > `Core.AppServices/Features/AdminNotifications/AdminEventCatalog.cs` (per key: the audience and the exact
 > arg set, in e-mail order) · `Core.AppServices/Services/{IAdminNotifier,AdminNotifier}.cs` ·
 > `Core.AppServices/Services/EmailService.AdminNotification.cs` (the copy, five locales) ·
@@ -24,7 +25,7 @@ failing e-mail can never fail the command, and nothing the notifier reads depend
 
 ## Collaborators
 
-- **`AdminNotificationEventCatalog`** (Domain) — the thirteen `admin.*` keys and `All`; `NotificationFeedEventKeys.Admin`
+- **`AdminNotificationEventCatalog`** (Domain) — the fifteen `admin.*` keys and `All`; `NotificationFeedEventKeys.Admin`
   **is** `All`, so the feed audience `NotificationFeedAudience.Admin = 2` serves the catalogue by
   construction. Disjoint from the customer and partner keysets; `IsFeedEvent` does not know them, so the
   push seam cannot write an admin row. Every key maps to `null` in `GetCategoryFor`: no category, nothing
@@ -34,7 +35,7 @@ failing e-mail can never fail the command, and nothing the notifier reads depend
   throws on an undeclared or a missing arg, so the copy and the site cannot disagree on what `{1}` is and a
   site cannot smuggle a name in. `Audience` is the **name of an administrator set** (ADR-0066 D8) — never a
   policy, because the notifier filters rows, not principals: order events, disputes, payment failures,
-  crew lost and a cleaner not started → `SupportOrAbove`; erasure failures → `ManagerOrAbove`; the three
+  crew lost, a cleaner not started, a lockout reported and a referral held → `SupportOrAbove`; erasure failures → `ManagerOrAbove`; the three
   company milestones → `AdministratorOnly`; **`admin.dispute.chargeback`, `admin.dispute.chargeback_unmatched`,
   `admin.payment.refund_stuck` and `admin.payment.refund_needs_retry` → `AdminOnly`, every role** — Support
   answers the customer or the bank, the Accountant reconciles the money, so the Accountant's bell is not

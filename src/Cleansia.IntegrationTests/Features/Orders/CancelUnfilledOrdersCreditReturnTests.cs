@@ -75,7 +75,9 @@ public class CancelUnfilledOrdersCreditReturnTests(PostgresContainerFixture fixt
     /// card order.
     /// </summary>
     private async Task<string> SeedAsync(
-        PaymentType paymentType = PaymentType.Card, PaymentStatus paymentStatus = PaymentStatus.Paid)
+        PaymentType paymentType = PaymentType.Card,
+        PaymentStatus paymentStatus = PaymentStatus.Paid,
+        decimal settledInCredit = 0m)
     {
         string userId;
         await using (var ctx = NewContext())
@@ -100,6 +102,12 @@ public class CancelUnfilledOrdersCreditReturnTests(PostgresContainerFixture fixt
         {
             var account = await new CreditAccountRepository(ctx).EnsureForUserAsync(userId, CzkId, CancellationToken.None);
             account!.Issue(Credit, CreditTransactionReason.Goodwill, "seed-grant", "seed", note: "n");
+            if (settledInCredit > 0m)
+            {
+                account.Issue(
+                    settledInCredit, CreditTransactionReason.DisputeSettlement, "dispute-settlement:dispute-earlier",
+                    "admin", orderId: OrderId, disputeId: "dispute-earlier");
+            }
 
             var order = Order.Create(
                 customerName: "Unfilled Credit",
@@ -155,6 +163,7 @@ public class CancelUnfilledOrdersCreditReturnTests(PostgresContainerFixture fixt
             new CleanerNoShowCancellation(
                 new CreditAccountRepository(ctx),
                 NewRefundService(ctx),
+                new RefundRepository(ctx),
                 new NotificationProducer(new UserNotificationRepository(ctx), new OutboxPendingDispatch(ctx), new UserRepository(ctx), NullLogger<NotificationProducer>.Instance),
                 new GuestOrderAccessTokenIssuer(new GuestOrderAccessTokenRepository(ctx)),
                 new OutboxPendingDispatch(ctx),
@@ -229,7 +238,7 @@ public class CancelUnfilledOrdersCreditReturnTests(PostgresContainerFixture fixt
         var (returns, account, refund, order) = await ReadAsync(userId);
         var returned = Assert.Single(returns);
         Assert.Equal(Credit, returned.Amount);
-        Assert.Equal($"credit-return:order-ended-unpaid:{OrderId}", returned.IdempotencyKey);
+        Assert.Equal($"credit-return:{RefundKey}", returned.IdempotencyKey);
         Assert.Equal(Credit + Apology, account.Balance);
         Assert.Equal(account.Balance, account.Transactions.Sum(t => t.Amount));
         Assert.Equal(RefundStatus.Pending, refund!.Status);
@@ -258,7 +267,7 @@ public class CancelUnfilledOrdersCreditReturnTests(PostgresContainerFixture fixt
     /// <summary>
     /// A timeout, a dropped connection or an open circuit escapes RefundService after its claim commit
     /// has saved the cancel, so the order is already out of every later tick. The credit comes back on
-    /// this one, once, and the card refund waits Pending on its deterministic key.
+    /// this one, once, on the refund's own key, and the card refund waits Pending on that key.
     /// </summary>
     [Theory]
     [MemberData(nameof(StripeTransportFailures))]
@@ -278,7 +287,7 @@ public class CancelUnfilledOrdersCreditReturnTests(PostgresContainerFixture fixt
         var (returns, account, refund, order) = await ReadAsync(userId);
         var returned = Assert.Single(returns);
         Assert.Equal(Credit, returned.Amount);
-        Assert.Equal($"credit-return:order-ended-unpaid:{OrderId}", returned.IdempotencyKey);
+        Assert.Equal($"credit-return:{RefundKey}", returned.IdempotencyKey);
         Assert.Single(account.Transactions, t => t.IdempotencyKey == $"cleaner-noshow:{OrderId}");
         Assert.Equal(Credit + Apology, account.Balance);
         Assert.Equal(account.Balance, account.Transactions.Sum(t => t.Amount));
@@ -426,6 +435,109 @@ public class CancelUnfilledOrdersCreditReturnTests(PostgresContainerFixture fixt
             .SingleAsync(a => a.UserId == userId && a.CurrencyId == CzkId);
         Assert.Equal(balance.Transactions.Sum(t => t.Amount), balance.Balance);
         Assert.Equal(3 * (Credit + Apology), balance.Balance);
+    }
+
+    private async Task<RedrivePendingRefunds.Response> WatchdogAsync()
+    {
+        await using (var ctx = NewContext())
+        {
+            await ctx.Database.ExecuteSqlRawAsync(
+                "UPDATE \"Refunds\" SET \"CreatedOn\" = NOW() - INTERVAL '2 hours'");
+        }
+
+        await using var watchdogContext = NewContext();
+        var watchdog = new RedrivePendingRefunds.Handler(
+            new RefundRepository(watchdogContext),
+            NewRefundService(watchdogContext),
+            new NotificationProducer(new UserNotificationRepository(watchdogContext), new OutboxPendingDispatch(watchdogContext), new UserRepository(watchdogContext), NullLogger<NotificationProducer>.Instance),
+            Mock.Of<IAdminNotifier>(),
+            new UserNotificationRepository(watchdogContext),
+            new FixedTenantProvider(TestTenants.Default),
+            watchdogContext,
+            NullLogger<RedrivePendingRefunds.Handler>.Instance);
+        var result = await watchdog.Handle(new RedrivePendingRefunds.Command(), CancellationToken.None);
+        Assert.True(result.IsSuccess, result.Error?.Message);
+        return result.Value!;
+    }
+
+    private async Task<decimal> GivenBackAsync()
+    {
+        await using var ctx = NewContext();
+        var card = await ctx.Refunds.IgnoreQueryFilters().AsNoTracking()
+            .Where(r => r.OrderId == OrderId && r.Status == RefundStatus.Succeeded)
+            .SumAsync(r => r.Amount);
+        var credit = await ctx.CreditTransactions.IgnoreQueryFilters().AsNoTracking()
+            .Where(t => t.OrderId == OrderId
+                && (t.Reason == CreditTransactionReason.OrderPaymentReturned
+                    || t.Reason == CreditTransactionReason.DisputeSettlement))
+            .SumAsync(t => t.Amount);
+        return card + credit;
+    }
+
+    /// <summary>
+    /// A complaint on the order was already settled in 200 of credit when nobody turned up, so 1800 of the
+    /// 2000 is left. The sweep's 1350 card share of it reaches Stripe, which pays it, and the answer is lost
+    /// on the way back, so the refund waits Pending; the 450 credit share of the same 1800 comes back now on
+    /// the refund's own key. The hourly re-drive counts those 450 as part of its slice and asks Stripe for the
+    /// same 1350 on the same key, which Stripe answers with the refund it already made: a smaller amount would
+    /// be refused on that key every hour. 1350 + 450 + 200 is the price.
+    /// </summary>
+    [Fact]
+    public async Task A_No_Show_After_A_Complaint_Settled_In_Credit_Asks_Stripe_The_Same_Amount_On_Its_Key_And_Returns_The_Price()
+    {
+        await ResetAsync();
+        var userId = await SeedAsync(settledInCredit: 200m);
+        var stripeCalls = new List<decimal>();
+        _stripe.Setup(s => s.RefundPaymentIntentAsync(
+                PaymentIntentId, It.IsAny<decimal>(), RefundKey, It.IsAny<CancellationToken>()))
+            .Returns((string _, decimal amount, string _, CancellationToken _) =>
+            {
+                stripeCalls.Add(amount);
+                return stripeCalls.Count == 1
+                    ? Task.FromException(new HttpRequestException("the refund was made, the answer timed out"))
+                    : Task.CompletedTask;
+            });
+
+        await SweepAsync();
+
+        var (returns, _, refund, _) = await ReadAsync(userId);
+        var returned = Assert.Single(returns);
+        Assert.Equal(450m, returned.Amount);
+        Assert.Equal($"credit-return:{RefundKey}", returned.IdempotencyKey);
+        Assert.Equal(RefundStatus.Pending, refund!.Status);
+        Assert.Equal(1350m, refund.Amount);
+
+        var redriven = await WatchdogAsync();
+
+        Assert.Equal(1, redriven.Redriven);
+        Assert.Equal([1350m, 1350m], stripeCalls);
+        (returns, var account, refund, _) = await ReadAsync(userId);
+        Assert.Equal(RefundStatus.Succeeded, refund!.Status);
+        Assert.Equal(1350m, refund.Amount);
+        Assert.Equal(450m, Assert.Single(returns).Amount);
+        Assert.Equal(Total, await GivenBackAsync());
+        Assert.Equal(account.Balance, account.Transactions.Sum(t => t.Amount));
+    }
+
+    [Fact]
+    public async Task A_No_Show_Whose_Whole_Price_Was_Settled_In_Credit_Returns_Nothing_More()
+    {
+        await ResetAsync();
+        var userId = await SeedAsync(settledInCredit: Total);
+
+        var response = await SweepAsync();
+        var redriven = await WatchdogAsync();
+
+        Assert.Equal(1, response.CancelledCount);
+        Assert.Equal(0, response.RefundedCount);
+        Assert.Equal(0, redriven.Redriven);
+        _stripe.VerifyNoOtherCalls();
+        var (returns, account, refund, order) = await ReadAsync(userId);
+        Assert.Null(refund);
+        Assert.Empty(returns);
+        Assert.Equal(Total, await GivenBackAsync());
+        Assert.Equal(account.Balance, account.Transactions.Sum(t => t.Amount));
+        Assert.Equal(OrderStatus.Cancelled, order.CurrentStatus);
     }
 
     private sealed class FixedTenantProvider(string? tenantId) : ITenantProvider

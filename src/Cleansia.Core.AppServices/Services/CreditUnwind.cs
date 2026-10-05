@@ -1,3 +1,4 @@
+using Cleansia.Core.AppServices.Services.Interfaces;
 using Cleansia.Core.Domain.Orders;
 using Cleansia.Core.Domain.Repositories;
 
@@ -26,13 +27,19 @@ public static class CreditUnwind
 
     /// <summary>
     /// Return <paramref name="amount"/> of <paramref name="order"/>'s applied credit to the customer's
-    /// balance. False means no movement: an ordinary retry, erased account, or no applied credit.
+    /// balance. False means no movement: an ordinary retry, erased account, no applied credit, or an
+    /// account on the books of a company frozen for archive.
     ///
     /// <para><paramref name="keyDiscriminator"/> must be DETERMINISTIC on the domain inputs, never a
     /// Guid or a timestamp: it is the whole idempotency story. A refund passes its own already-
     /// deterministic RefundKey; a cancellation passes the order id.</para>
+    ///
+    /// <para><b>Never onto frozen books.</b> The return is raw SQL, which the frozen-books commit guard
+    /// cannot see, and a frozen company's credit is written off when it closes. Checked here because every
+    /// return passes here: a leg skipped at one end of an order leaves no ledger row, so the next end of the
+    /// same order finds that credit still owed and comes back through this same check.</para>
     /// </summary>
-    public static Task<bool> ReturnCreditAsync(
+    public static async Task<bool> ReturnCreditAsync(
         this ICreditAccountRepository creditAccountRepository,
         Order order,
         decimal amount,
@@ -40,12 +47,14 @@ public static class CreditUnwind
         string actorId,
         CancellationToken cancellationToken)
     {
-        if (amount <= 0m || string.IsNullOrEmpty(order.UserId))
+        if (amount <= 0m
+            || string.IsNullOrEmpty(order.UserId)
+            || await creditAccountRepository.IsOnFrozenCompanyBooksAsync(order.UserId, order.CurrencyId, cancellationToken))
         {
-            return Task.FromResult(false);
+            return false;
         }
 
-        return creditAccountRepository.TryReturnAsync(
+        return await creditAccountRepository.TryReturnAsync(
             userId: order.UserId,
             currencyId: order.CurrencyId,
             amount: amount,
@@ -53,6 +62,31 @@ public static class CreditUnwind
             actorId: actorId,
             cancellationToken: cancellationToken,
             orderId: order.Id);
+    }
+
+    /// <summary>
+    /// Return now the credit leg of a refund whose card leg is left <c>Pending</c> for the re-drive, on the
+    /// refund's own key. It is the credit share of the same held slice the refund seam froze the card row
+    /// from, so the re-drive reads it back as part of that slice and asks Stripe for the same amount on the
+    /// same key, which Stripe may already have paid; a different amount there is refused every time.
+    /// </summary>
+    public static async Task<bool> ReturnPendingRefundCreditLegAsync(
+        this ICreditAccountRepository creditAccountRepository,
+        IRefundRepository refundRepository,
+        Order order,
+        RefundRequest request,
+        CancellationToken cancellationToken)
+    {
+        var alreadyReturned = await creditAccountRepository.GetReturnedTotalForOrderAsync(order.Id, cancellationToken);
+        var held = RefundService.HeldToWhatIsLeft(
+            order,
+            request.Amount,
+            await refundRepository.GetSucceededRefundTotalForOrderAsync(order.Id, cancellationToken),
+            alreadyReturned,
+            await creditAccountRepository.GetDisputeSettledTotalForOrderAsync(order.Id, cancellationToken));
+        var (_, creditShare) = RefundService.SplitAcrossTenders(order, held, alreadyReturned);
+        return await creditAccountRepository.ReturnCreditAsync(
+            order, creditShare, RefundService.BuildRefundKey(request), request.ActorId, cancellationToken);
     }
 
     /// <summary>What the credit leg of the refund keyed <paramref name="refundKey"/> put back.</summary>
@@ -66,8 +100,16 @@ public static class CreditUnwind
     /// Give back ALL of an order's credit that has not already come back, because the order ended
     /// without the card being charged — the stale-order sweep, the recurring auto-cancel, an expired
     /// Stripe session, or a customer cancelling before they paid — or ended with no card refund of its
-    /// own here: a no-show cancellation whose refund is left to the re-drive, or a platform cancellation
-    /// of an order already partly refunded. A partial refund's credit leg is not returned twice.
+    /// own here: a no-show cancellation whose card refund could not be claimed, or a platform cancellation
+    /// of an order already partly refunded. A partial refund's credit leg is not returned twice. A refund
+    /// claimed and left pending returns its credit leg on its own key instead
+    /// (<see cref="ReturnPendingRefundCreditLegAsync"/>).
+    ///
+    /// <para><b>Never more than was paid.</b> A complaint settled in credit gave part of the sale back on
+    /// neither tender. On an order that took no payment the credit is all that was paid, so the settlement
+    /// comes off it in full. On one that took a card payment the whole price was paid, so the credit is held
+    /// to what the sale has left after <paramref name="cardRefunded"/>, the credit already returned and the
+    /// settlement; netting the settlement off the credit there would keep credit the customer is owed.</para>
     ///
     /// <para><b>All of it, with no cancellation fee taken out.</b> On an unpaid order the platform
     /// collects nothing: there is no charge surface, so the fee the assessor computed is unrecoverable
@@ -81,6 +123,7 @@ public static class CreditUnwind
     public static async Task<bool> ReturnUnpaidOrderCreditAsync(
         this ICreditAccountRepository creditAccountRepository,
         Order order,
+        decimal cardRefunded,
         string actorId,
         CancellationToken cancellationToken)
     {
@@ -90,9 +133,13 @@ public static class CreditUnwind
         }
 
         var alreadyReturned = await creditAccountRepository.GetReturnedTotalForOrderAsync(order.Id, cancellationToken);
+        var settledInCredit = await creditAccountRepository.GetDisputeSettledTotalForOrderAsync(order.Id, cancellationToken);
+        var paid = order.TookNoPayment ? order.CreditAppliedAmount : order.TotalPrice;
         return await creditAccountRepository.ReturnCreditAsync(
             order,
-            order.CreditAppliedAmount - alreadyReturned,
+            Math.Min(
+                order.CreditAppliedAmount - alreadyReturned,
+                paid - cardRefunded - alreadyReturned - settledInCredit),
             $"order-ended-unpaid:{order.Id}",
             actorId,
             cancellationToken);

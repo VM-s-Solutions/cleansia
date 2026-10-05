@@ -136,6 +136,116 @@ public class UpdateEmployeeValidatorTests
         Assert.True(result.IsValid);
     }
 
+    private const string StoredNumber = "87654321";
+
+    private void ArrangeApprovedCleanerWithAStoredNumber(string storedNumber = StoredNumber)
+    {
+        ArrangePassingContext();
+        _employee.UpdateBusinessIdentity(EmployeeEntityType.NaturalPerson, storedNumber, legalEntityName: null);
+        _employee.AssignWorkCountry(CountryId);
+        _employee.Approve(approvedByUserId: "admin-1");
+    }
+
+    public static TheoryData<BusinessRegistryRecord, string> ApprovalRefusals => new()
+    {
+        { new BusinessRegistryRecord(BusinessRegistryAnswer.Registered, Ceased: true, TradeLicenceActive: true), BusinessErrorMessage.EmployeeBusinessCeased },
+        { new BusinessRegistryRecord(BusinessRegistryAnswer.Registered, Ceased: false, TradeLicenceActive: false), BusinessErrorMessage.EmployeeTradeLicenceInactive },
+        { BusinessRegistryRecord.Unavailable, BusinessErrorMessage.EmployeeBusinessRegistryUnavailable },
+        { BusinessRegistryRecord.NotRegistered, BusinessErrorMessage.RegistrationNumberNotRegistered },
+    };
+
+    /// <summary>
+    /// Owner ruling 2026-10-05: a cleaner already approved who swaps in another company ID passes approval's
+    /// full register check on that save, an outage included, and the whole profile save is refused with it.
+    /// </summary>
+    [Theory]
+    [MemberData(nameof(ApprovalRefusals))]
+    public async Task An_Approved_Cleaner_Changing_The_Number_Is_Held_To_The_Approval_Check(
+        BusinessRegistryRecord record, string refusal)
+    {
+        ArrangeApprovedCleanerWithAStoredNumber();
+        _registry = BusinessRegistryDoubles.Answering(record);
+
+        var result = await CreateValidator().ValidateAsync(Valid());
+
+        var failure = Assert.Single(result.Errors);
+        Assert.Equal(refusal, failure.ErrorMessage);
+        Assert.Equal(nameof(UpdateEmployee.Command.RegistrationNumber), failure.PropertyName);
+        _registry.Verify(r => r.LookupAsync("CZE", "12345678", It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    public static TheoryData<BusinessRegistryRecord> AnswersOnlyApprovalRefuses => new()
+    {
+        new BusinessRegistryRecord(BusinessRegistryAnswer.Registered, Ceased: true, TradeLicenceActive: true),
+        new BusinessRegistryRecord(BusinessRegistryAnswer.Registered, Ceased: false, TradeLicenceActive: false),
+        BusinessRegistryRecord.Unavailable,
+    };
+
+    [Theory]
+    [MemberData(nameof(AnswersOnlyApprovalRefuses))]
+    public async Task An_Approved_Cleaner_Resaving_The_Stored_Number_Is_Judged_Only_On_Existence(BusinessRegistryRecord record)
+    {
+        ArrangeApprovedCleanerWithAStoredNumber(storedNumber: "12345678");
+        _registry = BusinessRegistryDoubles.Answering(record);
+
+        var result = await CreateValidator().ValidateAsync(Valid());
+
+        Assert.True(result.IsValid);
+    }
+
+    [Theory]
+    [InlineData(" 12345678")]
+    [InlineData("12345678 ")]
+    public async Task A_Whitespace_Only_Difference_Is_Not_A_Change(string storedNumber)
+    {
+        ArrangeApprovedCleanerWithAStoredNumber(storedNumber);
+        _registry = BusinessRegistryDoubles.Answering(
+            new BusinessRegistryRecord(BusinessRegistryAnswer.Registered, Ceased: true, TradeLicenceActive: true));
+
+        var result = await CreateValidator().ValidateAsync(Valid());
+
+        Assert.True(result.IsValid);
+    }
+
+    [Fact]
+    public async Task A_Rejected_Cleaner_Changing_The_Number_Is_Judged_Only_On_Existence()
+    {
+        ArrangePassingContext();
+        _employee.UpdateBusinessIdentity(EmployeeEntityType.NaturalPerson, StoredNumber, legalEntityName: null);
+        _employee.Reject(rejectedByUserId: "admin-1", reason: "documents");
+        _registry = BusinessRegistryDoubles.Answering(
+            new BusinessRegistryRecord(BusinessRegistryAnswer.Registered, Ceased: true, TradeLicenceActive: true));
+
+        var result = await CreateValidator().ValidateAsync(Valid());
+
+        Assert.True(result.IsValid);
+    }
+
+    [Fact]
+    public async Task An_Approved_Cleaner_Changing_The_Number_Where_No_Register_Is_Asked_Saves()
+    {
+        ArrangeApprovedCleanerWithAStoredNumber();
+        _registry = BusinessRegistryDoubles.Answering(BusinessRegistryRecord.NotConsulted);
+
+        var result = await CreateValidator().ValidateAsync(Valid());
+
+        Assert.True(result.IsValid);
+    }
+
+    [Fact]
+    public async Task An_Approved_Cleaners_Number_In_The_Wrong_Format_Is_Not_Taken_To_The_Register()
+    {
+        ArrangeApprovedCleanerWithAStoredNumber();
+        _taxIdValidator
+            .Setup(v => v.ValidateRegistrationNumberAsync(It.IsAny<string>(), It.IsAny<EmployeeEntityType>(), It.IsAny<string?>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(TaxIdValidationResult.Invalid(BusinessErrorMessage.RegistrationNumberInvalidFormat));
+
+        var result = await CreateValidator().ValidateAsync(Valid());
+
+        Assert.Equal(BusinessErrorMessage.RegistrationNumberInvalidFormat, Assert.Single(result.Errors).ErrorMessage);
+        _registry.VerifyNoOtherCalls();
+    }
+
     [Fact]
     public async Task A_Number_In_The_Wrong_Format_Is_Not_Taken_To_The_Register()
     {

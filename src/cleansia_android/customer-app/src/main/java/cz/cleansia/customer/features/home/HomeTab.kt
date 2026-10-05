@@ -438,7 +438,6 @@ fun HomeTab(
                     cz.cleansia.customer.features.rewards.shareReferralOrFallback(
                         context,
                         code,
-                        referralCredit,
                         viewModel::onReferralShareUnavailable,
                     )
                 },

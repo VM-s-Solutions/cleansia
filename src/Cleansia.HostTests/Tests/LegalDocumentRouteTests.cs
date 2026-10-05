@@ -46,8 +46,8 @@ public sealed class LegalDocumentRouteTests(HostTestPostgresFixture db) : AuthzH
 
         var documents = await QueryAsync(ctx => ctx.LegalDocuments.Include(d => d.Texts).AsNoTracking().ToListAsync());
 
-        Assert.Equal(18, documents.Count);
-        Assert.Equal(6, documents.Count(d => d.Type == LegalDocumentType.TermsOfService));
+        Assert.Equal(20, documents.Count);
+        Assert.Equal(7, documents.Count(d => d.Type == LegalDocumentType.TermsOfService));
         Assert.Contains(documents, d => d.Type == LegalDocumentType.WorkContract);
         Assert.All(documents, d => Assert.Equal(
             d.Type == LegalDocumentType.WorkContract || LegalDocument.CleanerConsentTypeFor(d.Type) is not null
@@ -161,8 +161,8 @@ public sealed class LegalDocumentRouteTests(HostTestPostgresFixture db) : AuthzH
 
         HttpAssert.IsOk(versions);
         using var list = JsonDocument.Parse(await versions.Content.ReadAsStringAsync());
-        // Three privacy versions are seeded (2026-09-14, 2026-09-29 and 2026-10-03); exactly one of them is in force.
-        Assert.Equal(3, list.RootElement.GetArrayLength());
+        // Four privacy versions are seeded (2026-09-14, 2026-09-29, 2026-10-03 and 2026-10-06); exactly one of them is in force.
+        Assert.Equal(4, list.RootElement.GetArrayLength());
         var version = Assert.Single(list.RootElement.EnumerateArray(), v => v.GetProperty("isInForce").GetBoolean());
         Assert.Equal(5, version.GetProperty("texts").GetArrayLength());
 

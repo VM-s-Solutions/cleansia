@@ -9,6 +9,7 @@ using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using OpenTelemetry;
+using OpenTelemetry.Instrumentation.Http;
 using OpenTelemetry.Metrics;
 using OpenTelemetry.Trace;
 using Sentry;
@@ -64,7 +65,7 @@ public static class Extensions
                 tracing
                     .AddSource(environment.ApplicationName)
                     .AddAspNetCoreInstrumentation()
-                    .AddHttpClientInstrumentation()
+                    .AddHttpClientInstrumentation(RedactOutboundUrl)
                     .AddSentry();
             });
 
@@ -144,6 +145,10 @@ public static class Extensions
 
         options.Dsn = dsn;
         options.SendDefaultPii = false;
+        // Sentry's handler on every factory client turns a failed call into an event carrying the request URL
+        // and records each call as a breadcrumb with the full URL: an IČO, a typed address, a push token. The
+        // OTel span already traces these calls, path redacted, which is the case this setting exists for.
+        options.DisableSentryHttpMessageHandler = true;
         options.AttachStacktrace = true;
         options.AutoSessionTracking = true;
         options.TracesSampleRate = 0.2;
@@ -188,13 +193,25 @@ public static class Extensions
                 tracing
                     .AddSource(builder.Environment.ApplicationName)
                     .AddAspNetCoreInstrumentation()
-                    .AddHttpClientInstrumentation();
+                    .AddHttpClientInstrumentation(RedactOutboundUrl);
             });
 
         AddTelemetryExporters(builder.Services, builder.Configuration);
 
         return builder;
     }
+
+    // An outbound span keeps the host and never the path, which can hold an IČO, a typed address, coordinates
+    // or a push token. Enrich rather than Filter: UseAzureMonitor assigns FilterHttpRequestMessage after this
+    // runs. Authority rather than GetLeftPart(UriPartial.Authority), which keeps userinfo.
+    private static void RedactOutboundUrl(HttpClientTraceInstrumentationOptions options) =>
+        options.EnrichWithHttpRequestMessage = (activity, request) =>
+        {
+            if (request.RequestUri is { } uri)
+            {
+                activity.SetTag("url.full", $"{uri.Scheme}://{uri.Authority}");
+            }
+        };
 
     /// <summary>
     /// Where the OTel pipeline is SHIPPED, for both <c>AddServiceDefaults</c> overloads.

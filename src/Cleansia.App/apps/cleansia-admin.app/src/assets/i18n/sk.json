@@ -2511,6 +2511,7 @@
       "filter": {
         "status_all": "Všetky stavy",
         "status_accepted": "Prijaté",
+        "status_held": "Pozastavené",
         "status_qualified": "Kvalifikované",
         "status_expired": "Expirované",
         "date_from": "Od",
@@ -2535,17 +2536,29 @@
       },
       "credit_format": "{{referrer}} / {{referred}}",
       "not_yet": "—",
+      "held": "Pozastavené: {{reasons}}",
+      "hold_reason": {
+        "address": "rovnaká adresa",
+        "phone": "rovnaké telefónne číslo",
+        "email": "rovnaká e-mailová schránka"
+      },
       "empty": "Zatiaľ žiadne odporúčania",
       "loading": "Načítavanie...",
       "actions": {
         "reverse": "Stornovať odporúčanie",
-        "force_qualify": "Manuálne uznať odporúčanie"
+        "force_qualify": "Manuálne uznať odporúčanie",
+        "release": "Uvoľniť odporúčanie",
+        "reject": "Zamietnuť odporúčanie"
       },
       "intervention": {
         "title_reverse": "Stornovať odporúčanie",
         "title_force_qualify": "Manuálne uznať odporúčanie",
+        "title_release": "Uvoľniť pozastavené odporúčanie",
+        "title_reject": "Zamietnuť pozastavené odporúčanie",
         "hint_reverse": "Odoberie obom stranám kredit za odporúčanie — len toľko, koľko ho na zostatku ešte zostáva — a označí odporúčanie ako stornované. Dôvod sa uloží do auditného záznamu.",
-        "hint_force_qualify": "Označí odporúčanie ako uznané a obom stranám pripíše kredit za odporúčanie v mene poslednej objednávky odporúčaného zákazníka, prípadne vo východiskovej mene platformy. Dôvod sa uloží do auditného záznamu.",
+        "hint_force_qualify": "Označí odporúčanie ako uznané a každej strane pripíše kredit za odporúčanie v mene, v ktorej objednáva: odporúčanému zákazníkovi v mene jeho poslednej objednávky, prípadne vo východiskovej mene platformy; odporúčajúcemu v mene jeho poslednej objednávky, prípadne v mene odporúčaného zákazníka. Strana, pre ktorej menu nie je kredit za odporúčanie stanovený, nedostane nič. Dôvod sa uloží do auditného záznamu.",
+        "hint_release": "Uzná odporúčanie za skutočné a vyplatí ho: odporúčanému zákazníkovi kredit za odporúčanie v mene pozastavenej objednávky, odporúčajúcemu v mene jeho poslednej objednávky, prípadne v mene odporúčaného zákazníka, ak žiadnu objednávku nemá. Strana, pre ktorej menu nie je kredit za odporúčanie stanovený, nedostane nič. Odporúčanie sa označí ako uznané. Dôvod sa uloží do auditného záznamu.",
+        "hint_reject": "Odmietne odporúčanie: žiadna zo strán nedostane kredit za odporúčanie a odporúčanie sa označí ako stornované, dôvody pozastavenia zostanú zaznamenané. Dôvod sa uloží do auditného záznamu.",
         "summary_reverse": "Udelené pri uznaní: {{credit}} (odporúčajúci / odporúčaný).",
         "field": {
           "reason": "Dôvod",
@@ -2553,9 +2566,12 @@
         },
         "submit_reverse": "Stornovať",
         "submit_force_qualify": "Uznať",
+        "submit_release": "Uvoľniť",
+        "submit_reject": "Zamietnuť",
         "success_reverse": "Odporúčanie stornované. Odobratý kredit: {{referrer}} odporúčajúcemu, {{referred}} odporúčanému.",
         "success_reverse_no_credit": "Odporúčanie stornované. Žiadny kredit nebol udelený, takže sa nič neodoberalo.",
-        "success_force_qualify": "Odporúčanie uznané. Pripísaný kredit: {{referrer}} odporúčajúcemu, {{referred}} odporúčanému."
+        "success_force_qualify": "Odporúčanie uznané. Pripísaný kredit: {{referrer}} odporúčajúcemu, {{referred}} odporúčanému.",
+        "success_reject": "Odporúčanie zamietnuté. Kredit za odporúčanie nebol vyplatený."
       }
     },
     "sitewide_push": {
@@ -2907,6 +2923,12 @@
               "title": "Spoločnosť archivovaná",
               "body": "Knihy boli zapečatené dňa {{archivedOn}}."
             }
+          },
+          "referral": {
+            "held": {
+              "title": "Odporúčanie čaká na preskúmanie",
+              "body": "Odporúčanie bolo pozastavené, pretože sa zdá, že oba účty patria tej istej osobe. Otvorte Odporúčania, vyfiltrujte pozastavené a odporúčanie uvoľnite, alebo zamietnite."
+            }
           }
         }
       }
@@ -3100,6 +3122,7 @@
       "load_error": "Nepodarilo sa načítať výplatné obdobia",
       "load_detail_error": "Nepodarilo sa načítať detail výplatného obdobia",
       "close_success": "Výplatné obdobie bolo úspešne uzavreté",
+      "create_success": "Výplatné obdobie bolo vytvorené",
       "close_error": "Nepodarilo sa uzavrieť výplatné obdobie"
     }
   },
@@ -3274,9 +3297,9 @@
       "work_country_operator_mismatch": "Pracovná krajina patrí inej prevádzkovej spoločnosti.",
       "weekly_limit_reason_required": "Napíšte, prečo tohto upratovača obmedzujete. Dôvod sa mu zobrazí.",
       "legal_documents_not_accepted": "Tento upratovač zatiaľ neprijal aktuálnu verziu všetkých zmluvných dokumentov platných pre krajinu výkonu jeho práce.",
-      "business_ceased": "Podľa registra ARES podnikanie tohto upratovača (IČO) zaniklo, preto ho nemožno schváliť.",
-      "trade_licence_inactive": "Podľa registra ARES nemá tento upratovač platné živnostenské oprávnenie, preto ho nemožno schváliť.",
-      "business_registry_unavailable": "Register ARES sa nepodarilo kontaktovať, takže IČO tohto upratovača nemožno overiť. Skúste schválenie zopakovať o niekoľko minút."
+      "business_ceased": "Podľa registra ARES podnikanie pod týmto IČO zaniklo.",
+      "trade_licence_inactive": "Podľa registra ARES nie je pod týmto IČO platné živnostenské oprávnenie.",
+      "business_registry_unavailable": "Register ARES sa nepodarilo kontaktovať, takže toto IČO nemožno overiť. Skúste to znova o niekoľko minút."
     },
     "employee_document": {
       "deletion_already_resolved": "Táto žiadosť o vymazanie už bola vybavená.",
@@ -3476,6 +3499,7 @@
     },
     "referral": {
       "action_failed": "Akcia s odporúčaním sa nepodarila. Skúste to znova.",
+      "hold_changed": "Odporúčanie bolo medzitým pozastavené alebo uvoľnené. Zoznam teraz ukazuje jeho aktuálny stav — posúďte ho znova.",
       "not_accepted": "Odporúčanie nie je v stave „prijaté“.",
       "not_found": "Odporúčanie sa nenašlo.",
       "not_qualified": "Odporúčanie nie je v stave „uznané“.",
@@ -3562,6 +3586,7 @@
         "swift_required": "Banka je v inej krajine, než v ktorej partner pracuje, preto je potrebný aj SWIFT/BIC kód banky."
       },
       "registration_number": {
+        "invalid_format": "Toto IČO nezodpovedá formátu požadovanému v krajine upratovača, alebo chýba, hoci ho táto krajina vyžaduje.",
         "not_registered": "Toto IČO nie je v registri ekonomických subjektov (ARES). Skontrolujte číslo."
       }
     },

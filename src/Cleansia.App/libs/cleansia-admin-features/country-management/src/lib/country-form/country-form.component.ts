@@ -73,7 +73,7 @@ export class CountryFormComponent implements OnInit, OnDestroy {
     isoAlpha2: ['', [Validators.required, Validators.pattern(ISO_ALPHA2_PATTERN)]],
     name: ['', [Validators.required, Validators.maxLength(50)]],
     insuranceCoverageAmount: this.fb.control<number | null>(null, [
-      Validators.min(0),
+      Validators.min(1),
     ]),
   });
 

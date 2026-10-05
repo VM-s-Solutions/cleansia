@@ -3,25 +3,24 @@ using Cleansia.Core.AppServices.Features.Referrals.Admin;
 using Cleansia.Core.AppServices.Services.Interfaces;
 using Cleansia.Core.Domain.Internationalization;
 using Cleansia.Core.Domain.Loyalty;
-using Cleansia.Core.Domain.Orders;
 using Cleansia.Core.Domain.Repositories;
-using Cleansia.TestUtilities.MockDataFactories.Orders;
-using MockQueryable;
 using Moq;
 
 namespace Cleansia.Tests.Features.Referrals.Admin;
 
 /// <summary>
-/// An Accepted referral the admin deems legitimate is qualified and both sides are credited the way the
-/// automatic path credits them (owner ruling 2026-10-04): the referral credit of the referred customer's
-/// market currency — the currency of their latest order — or of the platform default when they have
-/// never booked. A retry on the already-Qualified row is a guarded no-op.
+/// An Accepted referral the admin deems legitimate — or a held one the admin releases — is qualified and each
+/// side is credited the way the automatic path credits it (owner rulings 2026-10-04 and 2026-10-05): the friend
+/// in the currency of the held order, else of their latest order, else the platform default; the inviter in the
+/// currency of their own latest order, else the friend's. A retry on the already-Qualified row is a guarded no-op,
+/// and an action sent for a hold state the row no longer has is refused.
 /// </summary>
 public class ForceQualifyReferralHandlerTests
 {
     private const string ReferralId = "ref-2";
     private const string ReferrerUserId = "referrer-2";
     private const string ReferredUserId = "referred-2";
+    private const string HeldOrderId = "order-held-2";
     private const string ActorId = "admin-1";
     private const string Reason = "qualifying order completed but auto-path missed it";
 
@@ -41,11 +40,10 @@ public class ForceQualifyReferralHandlerTests
         _currencies.Setup(c => c.GetByIdAsync(_eur.Id, It.IsAny<CancellationToken>())).ReturnsAsync(_eur);
         _referralService
             .Setup(s => s.AwardCreditAsync(
-                It.IsAny<Referral>(), It.IsAny<string>(), It.IsAny<decimal?>(), It.IsAny<string?>(),
+                It.IsAny<Referral>(), It.IsAny<Currency?>(), It.IsAny<Currency?>(), It.IsAny<string?>(),
                 It.IsAny<string>(), It.IsAny<string?>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync((Referral _, string _, decimal? amount, string? _, string _, string? _, CancellationToken _) =>
-                (amount, amount));
-        BookedOrders();
+            .ReturnsAsync((Referral _, Currency? referrer, Currency? referred, string? _, string _, string? _, CancellationToken _) =>
+                (referrer?.ReferralCredit, referred?.ReferralCredit));
     }
 
     private static Currency NewCurrency(string id, string code, decimal referralCredit)
@@ -56,17 +54,11 @@ public class ForceQualifyReferralHandlerTests
         return currency;
     }
 
-    private void BookedOrders(params (Currency Currency, DateTime CreatedOn)[] orders)
-    {
-        var rows = orders.Select(o =>
-        {
-            var order = OrderMockFactory.Generate(
-                new OrderMockFactory.OrderPartial { UserId = ReferredUserId }, currency: o.Currency);
-            order.Created("customer", o.CreatedOn);
-            return order;
-        }).ToList();
-        _orders.Setup(r => r.GetQueryableForOwner(ReferredUserId)).Returns(rows.AsQueryable().BuildMock());
-    }
+    private void BooksIn(string userId, Currency currency) =>
+        _referralService.Setup(s => s.GetBookingCurrencyAsync(userId, It.IsAny<CancellationToken>())).ReturnsAsync(currency);
+
+    private static readonly ForceQualifyReferral.Command ForceQualify = new(ReferralId, Reason, ExpectHeld: false);
+    private static readonly ForceQualifyReferral.Command Release = new(ReferralId, Reason, ExpectHeld: true);
 
     private ForceQualifyReferral.Handler CreateHandler() => new(
         _referralRepository.Object, _referralService.Object, _orders.Object, _currencies.Object, _userSession.Object);
@@ -80,35 +72,59 @@ public class ForceQualifyReferralHandlerTests
         return referral;
     }
 
-    [Fact]
-    public async Task Both_Sides_Are_Credited_In_The_Currency_Of_The_Referred_Customers_Latest_Order()
+    private Referral HeldReferral(Currency? heldOrderCurrency)
     {
         var referral = AcceptedReferral();
-        BookedOrders((_czk, DateTime.UtcNow.AddDays(-30)), (_eur, DateTime.UtcNow.AddDays(-2)));
-
-        var result = await CreateHandler().Handle(new ForceQualifyReferral.Command(ReferralId, Reason), CancellationToken.None);
-
-        Assert.True(result.IsSuccess);
-        Assert.Equal(new ForceQualifyReferral.Response(ReferralId, 6m, 6m, "EUR"), result.Value);
-        Assert.Equal(ReferralStatus.Qualified, referral.Status);
-        Assert.Equal("eur", referral.CreditCurrencyId);
-        Assert.Equal(6m, referral.CreditAwardedToReferrer);
-        Assert.Equal(6m, referral.CreditAwardedToReferred);
-        Assert.Null(referral.FirstQualifyingOrderId);
-        _referralService.Verify(s => s.AwardCreditAsync(
-            referral, "eur", 6m, null, ActorId, Reason, It.IsAny<CancellationToken>()), Times.Once);
+        referral.HoldForReview(HeldOrderId, Referral.HoldReasonAddress, "system");
+        _orders.Setup(o => o.GetOwnerAndCurrencyAsync(HeldOrderId, ReferredUserId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(heldOrderCurrency is null ? null : new OrderOwnerAndCurrency(ReferredUserId, heldOrderCurrency.Id));
+        return referral;
     }
 
     [Fact]
-    public async Task A_Referred_Customer_Who_Never_Booked_Is_Credited_In_The_Platform_Default()
+    public async Task Each_Side_Is_Credited_In_The_Currency_It_Books_In()
+    {
+        var referral = AcceptedReferral();
+        BooksIn(ReferrerUserId, _czk);
+        BooksIn(ReferredUserId, _eur);
+
+        var result = await CreateHandler().Handle(ForceQualify, CancellationToken.None);
+
+        Assert.True(result.IsSuccess);
+        Assert.Equal(new ForceQualifyReferral.Response(ReferralId, 150m, "CZK", 6m, "EUR"), result.Value);
+        Assert.Equal(ReferralStatus.Qualified, referral.Status);
+        Assert.Equal("czk", referral.ReferrerCreditCurrencyId);
+        Assert.Equal("eur", referral.ReferredCreditCurrencyId);
+        Assert.Equal(150m, referral.CreditAwardedToReferrer);
+        Assert.Equal(6m, referral.CreditAwardedToReferred);
+        Assert.Null(referral.FirstQualifyingOrderId);
+        _referralService.Verify(s => s.AwardCreditAsync(
+            referral, _czk, _eur, null, ActorId, Reason, It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    [Fact]
+    public async Task An_Inviter_Who_Never_Booked_Is_Credited_In_The_Friends_Currency()
+    {
+        var referral = AcceptedReferral();
+        BooksIn(ReferredUserId, _eur);
+
+        var result = await CreateHandler().Handle(ForceQualify, CancellationToken.None);
+
+        Assert.Equal(new ForceQualifyReferral.Response(ReferralId, 6m, "EUR", 6m, "EUR"), result.Value);
+        Assert.Equal("eur", referral.ReferrerCreditCurrencyId);
+    }
+
+    [Fact]
+    public async Task Neither_Side_Having_Booked_Credits_Both_In_The_Platform_Default()
     {
         var referral = AcceptedReferral();
 
-        var result = await CreateHandler().Handle(new ForceQualifyReferral.Command(ReferralId, Reason), CancellationToken.None);
+        var result = await CreateHandler().Handle(ForceQualify, CancellationToken.None);
 
         Assert.True(result.IsSuccess);
-        Assert.Equal(new ForceQualifyReferral.Response(ReferralId, 150m, 150m, "CZK"), result.Value);
-        Assert.Equal("czk", referral.CreditCurrencyId);
+        Assert.Equal(new ForceQualifyReferral.Response(ReferralId, 150m, "CZK", 150m, "CZK"), result.Value);
+        Assert.Equal("czk", referral.ReferrerCreditCurrencyId);
+        Assert.Equal("czk", referral.ReferredCreditCurrencyId);
     }
 
     [Fact]
@@ -117,14 +133,87 @@ public class ForceQualifyReferralHandlerTests
         var referral = AcceptedReferral();
         _referralService
             .Setup(s => s.AwardCreditAsync(
-                referral, "czk", 150m, null, ActorId, Reason, It.IsAny<CancellationToken>()))
+                referral, _czk, _czk, null, ActorId, Reason, It.IsAny<CancellationToken>()))
             .ReturnsAsync(((decimal?)null, (decimal?)150m));
 
-        var result = await CreateHandler().Handle(new ForceQualifyReferral.Command(ReferralId, Reason), CancellationToken.None);
+        var result = await CreateHandler().Handle(ForceQualify, CancellationToken.None);
 
-        Assert.Equal(new ForceQualifyReferral.Response(ReferralId, 0m, 150m, "CZK"), result.Value);
+        Assert.Equal(new ForceQualifyReferral.Response(ReferralId, 0m, "CZK", 150m, "CZK"), result.Value);
         Assert.Null(referral.CreditAwardedToReferrer);
+        Assert.Null(referral.ReferrerCreditCurrencyId);
         Assert.Equal(150m, referral.CreditAwardedToReferred);
+    }
+
+    /// <summary>
+    /// Releasing a held referral pays the friend in the currency of the order that was held, not of whatever
+    /// they booked since, and both grants name that order. The row keeps its order and its hold reasons.
+    /// </summary>
+    [Fact]
+    public async Task Releasing_A_Held_Referral_Pays_The_Friend_In_The_Held_Orders_Currency_Against_That_Order()
+    {
+        var referral = HeldReferral(heldOrderCurrency: _eur);
+        BooksIn(ReferredUserId, _czk);
+        BooksIn(ReferrerUserId, _czk);
+
+        var result = await CreateHandler().Handle(Release, CancellationToken.None);
+
+        Assert.True(result.IsSuccess);
+        Assert.Equal(new ForceQualifyReferral.Response(ReferralId, 150m, "CZK", 6m, "EUR"), result.Value);
+        Assert.Equal(ReferralStatus.Qualified, referral.Status);
+        Assert.Equal(HeldOrderId, referral.FirstQualifyingOrderId);
+        Assert.Equal(Referral.HoldReasonAddress, referral.HoldReasons);
+        Assert.Equal("eur", referral.ReferredCreditCurrencyId);
+        _referralService.Verify(s => s.AwardCreditAsync(
+            referral, _czk, _eur, HeldOrderId, ActorId, Reason, It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    /// <summary>
+    /// The friend was erased while the referral was held: the held order no longer names them, and they have no
+    /// bookings. The release does not fail; the inviter is paid in their own currency.
+    /// </summary>
+    [Fact]
+    public async Task Releasing_After_The_Friend_Was_Erased_Pays_The_Inviter_In_Their_Own_Currency()
+    {
+        var referral = HeldReferral(heldOrderCurrency: null);
+        BooksIn(ReferrerUserId, _eur);
+        _referralService
+            .Setup(s => s.AwardCreditAsync(referral, _eur, _czk, HeldOrderId, ActorId, Reason, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(((decimal?)6m, (decimal?)null));
+
+        var result = await CreateHandler().Handle(Release, CancellationToken.None);
+
+        Assert.True(result.IsSuccess);
+        Assert.Equal(new ForceQualifyReferral.Response(ReferralId, 6m, "EUR", 0m, "CZK"), result.Value);
+        Assert.Equal("eur", referral.ReferrerCreditCurrencyId);
+        Assert.Null(referral.ReferredCreditCurrencyId);
+        Assert.Equal(ReferralStatus.Qualified, referral.Status);
+    }
+
+    /// <summary>
+    /// The administrator acts on the row as the list showed it. A force-qualify sent from a row that was not
+    /// held reaches a referral held since — the friend's first order completed while the dialog was open — and
+    /// a release reaches one that is not held: either is refused, pays nobody and leaves the row as it is, so
+    /// the hold's reasons are never paid past unseen.
+    /// </summary>
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public async Task An_Action_Sent_For_A_Hold_State_The_Referral_No_Longer_Has_Is_Refused_And_Pays_Nobody(bool heldNow)
+    {
+        var referral = heldNow ? HeldReferral(heldOrderCurrency: _czk) : AcceptedReferral();
+        BooksIn(ReferrerUserId, _czk);
+        BooksIn(ReferredUserId, _czk);
+
+        var result = await CreateHandler().Handle(heldNow ? ForceQualify : Release, CancellationToken.None);
+
+        Assert.True(result.IsFailure);
+        Assert.Equal(BusinessErrorMessage.ReferralHoldChanged, result.Error!.Message);
+        Assert.Equal(nameof(ForceQualifyReferral.Command.ExpectHeld), result.Error.Code);
+        Assert.Equal(ReferralStatus.Accepted, referral.Status);
+        Assert.Null(referral.AwardedOn);
+        _referralService.Verify(s => s.AwardCreditAsync(
+            It.IsAny<Referral>(), It.IsAny<Currency?>(), It.IsAny<Currency?>(), It.IsAny<string?>(),
+            It.IsAny<string>(), It.IsAny<string?>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 
     [Fact]
@@ -132,16 +221,16 @@ public class ForceQualifyReferralHandlerTests
     {
         AcceptedReferral();
 
-        var first = await CreateHandler().Handle(new ForceQualifyReferral.Command(ReferralId, Reason), CancellationToken.None);
+        var first = await CreateHandler().Handle(ForceQualify, CancellationToken.None);
         Assert.True(first.IsSuccess);
 
-        var second = await CreateHandler().Handle(new ForceQualifyReferral.Command(ReferralId, Reason), CancellationToken.None);
+        var second = await CreateHandler().Handle(ForceQualify, CancellationToken.None);
 
         Assert.True(second.IsFailure);
         Assert.Equal(BusinessErrorMessage.ReferralNotAccepted, second.Error!.Message);
         Assert.Equal(nameof(ForceQualifyReferral.Command.ReferralId), second.Error.Code);
         _referralService.Verify(s => s.AwardCreditAsync(
-            It.IsAny<Referral>(), It.IsAny<string>(), It.IsAny<decimal?>(), It.IsAny<string?>(),
+            It.IsAny<Referral>(), It.IsAny<Currency?>(), It.IsAny<Currency?>(), It.IsAny<string?>(),
             It.IsAny<string>(), It.IsAny<string?>(), It.IsAny<CancellationToken>()), Times.Once);
     }
 
@@ -150,7 +239,7 @@ public class ForceQualifyReferralHandlerTests
     {
         AcceptedReferral();
 
-        await CreateHandler().Handle(new ForceQualifyReferral.Command(ReferralId, Reason), CancellationToken.None);
+        await CreateHandler().Handle(ForceQualify, CancellationToken.None);
 
         _referralRepository.Verify(r => r.CommitAsync(It.IsAny<CancellationToken>()), Times.Never);
     }

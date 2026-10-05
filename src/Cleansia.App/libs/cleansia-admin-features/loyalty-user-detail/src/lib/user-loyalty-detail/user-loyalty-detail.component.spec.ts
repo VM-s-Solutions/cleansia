@@ -539,8 +539,9 @@ describe('UserLoyaltyDetailComponent — credit section', () => {
     const component = renderFixture(noAccount()).componentInstance;
     const paid = AdminReferralListItem.fromJS({
       creditAwardedToReferrer: 150,
+      referrerCreditCurrencyCode: 'CZK',
       creditAwardedToReferred: 150,
-      creditCurrencyCode: 'CZK',
+      referredCreditCurrencyCode: 'CZK',
     });
     const czk = formatMoney(150, 'CZK', 'en-US', { fractionDigits: 2 });
 

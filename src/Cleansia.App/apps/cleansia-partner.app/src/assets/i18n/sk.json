@@ -1016,7 +1016,10 @@
       "already_rejected": "Partner už bol zamietnutý",
       "job_radius_out_of_range": "Zadaný dojazdový okruh je mimo povoleného rozsahu",
       "legal_entity_not_accepted": "Upratovači s nami spolupracujú ako fyzické osoby; firmu tu nie je možné registrovať",
-      "legal_documents_not_accepted": "Skôr než začnete prijímať zákazky, prijmite vo svojom profile aktuálnu verziu svojich zmluvných dokumentov."
+      "legal_documents_not_accepted": "Skôr než začnete prijímať zákazky, prijmite vo svojom profile aktuálnu verziu svojich zmluvných dokumentov.",
+      "business_ceased": "Podľa registra ekonomických subjektov (ARES) podnikanie vedené pod týmto IČO zaniklo. Zadajte IČO, pod ktorým stále podnikáte.",
+      "trade_licence_inactive": "Podľa registra ekonomických subjektov (ARES) pod týmto IČO nie je platné živnostenské oprávnenie. Skontrolujte číslo alebo si najprv obnovte živnostenské oprávnenie.",
+      "business_registry_unavailable": "Register ekonomických subjektov (ARES) sa nepodarilo kontaktovať, takže vaše nové IČO nemožno overiť a nič sa neuložilo. Skúste to znova o niekoľko minút."
     },
     "employee_document": {
       "not_found": "Dokument nenájdený",

@@ -49,11 +49,16 @@ Active filters are displayed as chips above the table. Click the X on a chip to 
 
 ### Create New Pay Period
 
-The "Create New Pay Period" button opens a dialog (right-side drawer pattern matching the filter drawer):
+The "Create New Pay Period" button — shown only to a role with `CanCreatePayPeriod`, Accountant and
+above — opens a modal dialog:
 
 1. Pick a **Start Date** via the date picker
-2. Pick an **End Date** via the date picker
+2. The **End Date** fills in by itself, 13 days after the start, and cannot be edited
 3. Click **Create**
+
+On success a toast says the period was created and the list is read again. A refusal — an overlap with
+an existing period is `pay_period.overlapping_period` — is shown as an error and the dialog stays open.
+Until 2026-10-05 the dialog took both dates and its *Create* button sent nothing.
 
 The new period is created in `Open` status. The backend accepts only a 14-day period, start and end inclusive: the end date must be 13 days after the start date, and any other span is refused with `pay_period.invalid_duration`. An edit is held to the same length → [Business rules — pay periods are 14 days](/product/business-rules#pay-periods).
 
@@ -113,15 +118,17 @@ Available when status is `Open`. Clicking "Close Period" prompts for confirmatio
 
 API call:
 ```
-PUT /api/AdminPayPeriod/close
+POST /api/AdminPayPeriod/close
 {
   "payPeriodId": "...",
-  "notes": "Closed for monthly payroll cut-off"
+  "notes": "Closed for the pay-period cut-off"
 }
 ```
 
 ::: warning
-Once closed, a period cannot be reopened. Make sure all order pays have been calculated before closing.
+Make sure all order pays have been calculated before closing. A closed period can be reopened from its
+detail page (`POST /api/AdminPayPeriod/reopen`, `CanReopenPayPeriod`, Accountant and above), which sets it
+back to `Open`; a period already paid cannot be (`pay_period.already_paid`).
 :::
 
 ## Background Job

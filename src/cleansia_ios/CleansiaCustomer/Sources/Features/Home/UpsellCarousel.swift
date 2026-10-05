@@ -126,7 +126,7 @@ struct UpsellCarousel: View {
                 }
             )
         case let .shareReferral(code):
-            ShareLink(item: ReferralCopy.shareMessage(code: code, credit: inputs.referralCredit)) {
+            ShareLink(item: ReferralCopy.shareMessage(code: code)) {
                 UpsellSlideFace(slide: slide)
             }
             .buttonStyle(.plain)

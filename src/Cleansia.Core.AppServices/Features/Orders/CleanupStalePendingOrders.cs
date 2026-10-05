@@ -126,7 +126,7 @@ public class CleanupStalePendingOrders
                     // stamped by the commit below with THIS group's tenant. Deferring it would stamp
                     // every group with whichever tenant was processed last.
                     await creditAccountRepository.ReturnUnpaidOrderCreditAsync(
-                        order, SystemActor, cancellationToken);
+                        order, cardRefunded: 0m, SystemActor, cancellationToken);
 
                     if (!string.IsNullOrEmpty(order.UserId))
                     {

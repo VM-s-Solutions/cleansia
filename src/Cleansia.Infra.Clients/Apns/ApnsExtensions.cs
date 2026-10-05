@@ -10,8 +10,10 @@ public static class ApnsExtensions
     {
         // ADR-0005 D1 — the HTTP/2 APNs transport is a pooled, named IHttpClientFactory client so it
         // inherits the standard resilience handler + OTel HttpClientInstrumentation, instead of newing a
-        // socket per send. Mirrors the "Stripe"/"SendGrid" named clients.
+        // socket per send. Mirrors the "Stripe"/"SendGrid" named clients. No request logging: the URL ends in
+        // the activity's push token.
         services.AddHttpClient(ApnsLiveActivityClient.HttpClientName)
+            .RemoveAllLoggers()
             .AddStandardResilienceHandler();
 
         services.TryAddSingleton(TimeProvider.System);

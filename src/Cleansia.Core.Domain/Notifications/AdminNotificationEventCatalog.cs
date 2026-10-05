@@ -22,6 +22,7 @@ public static class AdminNotificationEventCatalog
     public const string CompanyWindDownRequested = "admin.company.wind_down_requested";
     public const string CompanyWindDownRun = "admin.company.wind_down_run";
     public const string CompanyArchived = "admin.company.archived";
+    public const string ReferralHeld = "admin.referral.held";
 
     public static readonly IReadOnlyList<string> All =
     [
@@ -39,5 +40,6 @@ public static class AdminNotificationEventCatalog
         CompanyWindDownRequested,
         CompanyWindDownRun,
         CompanyArchived,
+        ReferralHeld,
     ];
 }

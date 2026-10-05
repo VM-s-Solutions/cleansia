@@ -139,6 +139,8 @@ public sealed partial class EmailService
                 ["admin.company.wind_down_run.Body"] = "Cancelled {0}, refunded {1}, refund failures {2}, pay periods closed {3}.",
                 ["admin.company.archived.Subject"] = "Company archived",
                 ["admin.company.archived.Body"] = "The books were sealed on {0}.",
+                ["admin.referral.held.Subject"] = "A referral is held for review",
+                ["admin.referral.held.Body"] = "A referral was held because the two accounts appear to belong to the same person. Open Referrals in the console, filter by Held, and release or reject it.",
             },
             ["cs"] = new Dictionary<string, string>(StringComparer.Ordinal)
             {
@@ -178,6 +180,8 @@ public sealed partial class EmailService
                 ["admin.company.wind_down_run.Body"] = "Zrušeno {0}, vráceno {1}, neúspěšných vrácení {2}, uzavřených výplatních období {3}.",
                 ["admin.company.archived.Subject"] = "Společnost byla archivována",
                 ["admin.company.archived.Body"] = "Účetnictví bylo uzavřeno dne {0}.",
+                ["admin.referral.held.Subject"] = "Doporučení čeká na přezkoumání",
+                ["admin.referral.held.Body"] = "Doporučení bylo pozastaveno, protože se zdá, že oba účty patří téže osobě. Otevřete v konzoli Doporučení, vyfiltrujte pozastavená a doporučení uvolněte, nebo zamítněte.",
             },
             ["sk"] = new Dictionary<string, string>(StringComparer.Ordinal)
             {
@@ -217,6 +221,8 @@ public sealed partial class EmailService
                 ["admin.company.wind_down_run.Body"] = "Zrušené {0}, vrátené {1}, neúspešné vrátenia {2}, uzavreté výplatné obdobia {3}.",
                 ["admin.company.archived.Subject"] = "Spoločnosť bola archivovaná",
                 ["admin.company.archived.Body"] = "Účtovníctvo bolo uzavreté dňa {0}.",
+                ["admin.referral.held.Subject"] = "Odporúčanie čaká na preskúmanie",
+                ["admin.referral.held.Body"] = "Odporúčanie bolo pozastavené, pretože sa zdá, že oba účty patria tej istej osobe. Otvorte v konzole Odporúčania, vyfiltrujte pozastavené a odporúčanie uvoľnite, alebo zamietnite.",
             },
             ["uk"] = new Dictionary<string, string>(StringComparer.Ordinal)
             {
@@ -256,6 +262,8 @@ public sealed partial class EmailService
                 ["admin.company.wind_down_run.Body"] = "Скасовано {0}, повернуто {1}, невдалих повернень {2}, закритих розрахункових періодів {3}.",
                 ["admin.company.archived.Subject"] = "Компанію заархівовано",
                 ["admin.company.archived.Body"] = "Облік було закрито {0}.",
+                ["admin.referral.held.Subject"] = "Реферал затримано для перевірки",
+                ["admin.referral.held.Body"] = "Реферал затримано, бо обидва облікові записи, схоже, належать одній особі. Відкрийте в консолі «Реферали», відфільтруйте затримані та підтвердьте або відхиліть його.",
             },
             ["ru"] = new Dictionary<string, string>(StringComparer.Ordinal)
             {
@@ -295,6 +303,8 @@ public sealed partial class EmailService
                 ["admin.company.wind_down_run.Body"] = "Отменено {0}, возвращено {1}, неудачных возвратов {2}, закрытых расчётных периодов {3}.",
                 ["admin.company.archived.Subject"] = "Компания заархивирована",
                 ["admin.company.archived.Body"] = "Учёт был закрыт {0}.",
+                ["admin.referral.held.Subject"] = "Реферал задержан для проверки",
+                ["admin.referral.held.Body"] = "Реферал задержан, так как оба аккаунта, похоже, принадлежат одному человеку. Откройте в консоли «Рефералы», отфильтруйте задержанные и подтвердите или отклоните его.",
             },
         };
 }

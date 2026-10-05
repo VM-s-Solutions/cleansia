@@ -141,7 +141,8 @@ it is.
 ```csharp
 order.UpdatePaymentStatus(PaymentStatus.Failed);
 order.AddOrderStatus(OrderStatusTrack.Create(OrderStatus.Cancelled, order));
-await creditAccountRepository.ReturnUnpaidOrderCreditAsync(order, SystemActor, cancellationToken);
+await creditAccountRepository.ReturnUnpaidOrderCreditAsync(
+    order, cardRefunded: 0m, SystemActor, cancellationToken);
 ```
 
 ## Idempotency

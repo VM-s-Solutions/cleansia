@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.CreditCard
+import androidx.compose.material3.ColorScheme
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -19,6 +20,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -26,6 +28,9 @@ import cz.cleansia.core.format.formatOrderPrice
 import cz.cleansia.core.ui.theme.primaryText
 import cz.cleansia.partner.R
 import cz.cleansia.partner.api.model.OrderItem
+import cz.cleansia.partner.ui.theme.Green400
+import cz.cleansia.partner.ui.theme.Green800
+import cz.cleansia.partner.ui.theme.pendingInk
 
 /**
  * Payment summary. Renders a discount breakdown only when one applies, otherwise total and method, to
@@ -155,12 +160,7 @@ private fun PaymentRow(
  */
 @Composable
 private fun PaymentStatusPill(statusCode: Int?) {
-    val tint = when (PaymentPresentation.severity(statusCode)) {
-        PaymentSeverity.Success -> Color(0xFF16A34A)
-        PaymentSeverity.Warning -> Color(0xFFD97706)
-        PaymentSeverity.Error -> Color(0xFFDC2626)
-        PaymentSeverity.Neutral -> MaterialTheme.colorScheme.onSurfaceVariant
-    }
+    val tint = paymentStatusInk(PaymentPresentation.severity(statusCode), MaterialTheme.colorScheme)
     val label = PaymentPresentation.statusLabel(statusCode)
     Box(
         modifier = Modifier
@@ -172,5 +172,20 @@ private fun PaymentStatusPill(statusCode: Int?) {
             style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.SemiBold),
             color = tint,
         )
+    }
+}
+
+/**
+ * The pill's label colour for [scheme], which is also its 12 % wash. Each reads 4.5:1 or more on that wash
+ * over the card in both schemes: the fixed amber-600, green-600 and red-600 it used to take were 2.81, 2.89
+ * and 4.01:1 in light mode, and the green and the red 3.78 and 2.85:1 in dark.
+ */
+internal fun paymentStatusInk(severity: PaymentSeverity, scheme: ColorScheme): Color {
+    val dark = scheme.surface.luminance() < 0.5f
+    return when (severity) {
+        PaymentSeverity.Success -> if (dark) Green400 else Green800
+        PaymentSeverity.Warning -> scheme.pendingInk
+        PaymentSeverity.Error -> scheme.error
+        PaymentSeverity.Neutral -> scheme.onSurfaceVariant
     }
 }

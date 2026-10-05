@@ -1,27 +1,27 @@
 import { join } from 'path';
 import { compile } from 'sass';
 
+const compiled = (entry: string): string =>
+  compile(join(__dirname, entry), {
+    quietDeps: true,
+    loadPaths: [join(__dirname, '../../../../../node_modules')],
+  }).css;
+const partner = compiled('cleansia-partner.scss');
+const customer = compiled('cleansia-customer.scss');
+const admin = compiled('cleansia-admin.scss');
+
+/** The colour every rule for exactly this selector declares. */
+const inks = (css: string, selector: string): string[] => {
+  const escaped = selector.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const rules = css.matchAll(new RegExp(`(?:^[ \\t]*|,\\s*)${escaped}\\s*(?:,[^{]*)?\\{([^}]*)\\}`, 'gm'));
+  return Array.from(rules, ([, body]) => body.match(/(?:^|;)\s*color:\s*([^;]+)/)?.[1].trim() ?? '')
+    .filter(Boolean);
+};
+
 // A text link or a text button is blue TEXT on a light ground, so it takes the text ink, Sky700
 // (5.9 on white), never the brand Sky600 (4.1) or Sky500 (2.8); under the pointer it goes a step
 // darker, Sky800 (7.6). Fills, borders and standalone icons keep the brand blue.
 describe('the shared and partner stylesheets — text links and text buttons', () => {
-  const compiled = (entry: string): string =>
-    compile(join(__dirname, entry), {
-      quietDeps: true,
-      loadPaths: [join(__dirname, '../../../../../node_modules')],
-    }).css;
-  const partner = compiled('cleansia-partner.scss');
-  const customer = compiled('cleansia-customer.scss');
-  const admin = compiled('cleansia-admin.scss');
-
-  /** The colour every rule for exactly this selector declares. */
-  const inks = (css: string, selector: string): string[] => {
-    const escaped = selector.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-    const rules = css.matchAll(new RegExp(`(?:^[ \\t]*|,\\s*)${escaped}\\s*(?:,[^{]*)?\\{([^}]*)\\}`, 'gm'));
-    return Array.from(rules, ([, body]) => body.match(/(?:^|;)\s*color:\s*([^;]+)/)?.[1].trim() ?? '')
-      .filter(Boolean);
-  };
-
   it.each([
     ['the sign-in card links (partner and admin)', '.cleansia-login a'],
     ['the partner register page links', '.cleansia-register a'],
@@ -147,5 +147,30 @@ describe('the shared and partner stylesheets — text links and text buttons', (
   it('keeps the cookie notice link a light blue after dark', () => {
     expect(inks(customer, ':root.dark-mode .cleansia-cookie-consent__link')).toEqual(['#7dd3fc']);
     expect(inks(customer, ':root.dark-mode .cleansia-cookie-consent__link:hover')).toEqual(['#bae6fd']);
+  });
+});
+
+// A standalone icon needs 3:1 on its ground. These sat on Sky400 (2.0 to 2.1) and Sky500 (2.4 to
+// 2.6) over white cards and pale blue tints; they take the brand blue, Sky600 (3.5 at the lowest).
+describe('the partner and admin stylesheets — standalone icons', () => {
+  it.each([
+    ['the help card dismiss X', '.cleansia-help-card__dismiss'],
+    ['the help card step arrow', '.cleansia-help-card__step-arrow i'],
+    ['the info dialog icon', '.cleansia-dialog__icon--info i'],
+    ["the order activity's note icon", '.cleansia-order-details__activity-icon--note'],
+    ['an empty section icon', '.empty-state i'],
+    ['the document dropzone icon', '.doc-upload__dropzone-icon'],
+    ['the invoice banner meta icons', '.invoice-detail-banner__meta-item i'],
+    ['the order header meta icons', '.cleansia-order-details__status-banner .order-header-meta__item i'],
+  ])('paints %s with Sky600', (_, selector) => {
+    expect(inks(partner, selector)).toEqual(['var(--cleansia-primary-600)']);
+  });
+
+  it('paints the not-found icon with Sky600', () => {
+    expect(inks(partner, '.not-found-state__icon i')).toEqual(['var(--cleansia-primary-600, #0284c7)']);
+  });
+
+  it("paints the admin pay-config banner's info icon with Sky600", () => {
+    expect(inks(admin, '.cleansia-pay-config-management__info-banner i')).toEqual(['var(--cleansia-primary-600)']);
   });
 });

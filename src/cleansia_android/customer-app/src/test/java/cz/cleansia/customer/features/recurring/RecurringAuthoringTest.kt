@@ -3,6 +3,7 @@ package cz.cleansia.customer.features.recurring
 import cz.cleansia.customer.R
 import cz.cleansia.customer.core.memberships.GetMyMembershipResponse
 import cz.cleansia.customer.core.memberships.MembershipStatus
+import java.io.File
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
@@ -120,6 +121,22 @@ class RecurringAuthoringTest {
             val affordances = RecurringListAffordances.of(gate, hasTemplates = true)
             assertEquals(gate.name, line, retiredEntryLine(affordances.showEdit))
         }
+    }
+
+    /** The two tests above hold only if the card asks for its line with its own Edit affordance. */
+    @Test
+    fun `the card picks the retired-entry line from its own Edit affordance`() {
+        val screen = sequenceOf(File("."), File("customer-app"), File("src/cleansia_android/customer-app"))
+            .map { File(it, "src/main/java/cz/cleansia/customer/features/recurring/RecurringBookingsScreen.kt") }
+            .firstOrNull { it.isFile }
+            ?: error("RecurringBookingsScreen.kt not found from working dir ${File(".").absolutePath}")
+        val card = screen.readText().substringAfter("private fun TemplateCard(").substringBefore("private fun CardAction(")
+
+        assertTrue("the card stopped picking its line by its own showEdit", card.contains("stringResource(retiredEntryLine(showEdit))"))
+        assertFalse(
+            "the card names the line that points at Edit, whatever its affordance",
+            card.contains("stringResource(R.string.recurring_card_item_no_longer_offered)"),
+        )
     }
 
     private fun member(hasMembership: Boolean, status: MembershipStatus? = null) =

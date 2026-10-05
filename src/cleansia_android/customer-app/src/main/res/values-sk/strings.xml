@@ -1264,7 +1264,7 @@
     <string name="credit_none">Teraz nemáte žiadny kredit. Ak sa upratovanie nepodarí, kredit, ktorý vám dáme, uvidíte tu.</string>
     <string name="credit_explainer_title">Ako funguje kredit</string>
     <string name="credit_explainer_source_title">Odkiaľ sa berie</string>
-    <string name="credit_explainer_source_body">Ospravedlnenie, keď upratovač nepríde alebo vašu objednávku nikto neprevezme, reklamácia, ktorú ste sa rozhodli vyriešiť kreditom, ústretové gesto od nás alebo odmena za odporúčanie: keď sa niekto zaregistruje s kódom od kamaráta, obaja získajú kredit, len čo je dokončené prvé upratovanie nového zákazníka.</string>
+    <string name="credit_explainer_source_body">Ospravedlnenie, keď upratovač nepríde alebo vašu objednávku nikto neprevezme, reklamácia, ktorú ste sa rozhodli vyriešiť kreditom, ústretové gesto od nás alebo odmena za odporúčanie, ak sa na vašom trhu ponúka.</string>
     <string name="credit_explainer_spend_title">Ako sa čerpá</string>
     <string name="credit_explainer_spend_body">Automaticky, na vašu ďalšiu objednávku platenú kartou v rovnakej mene, až do výšky %1$d %% jej ceny. Zvyšok vždy zaplatíte kartou.</string>
     <string name="credit_explainer_points_title">Kredit nie sú body</string>

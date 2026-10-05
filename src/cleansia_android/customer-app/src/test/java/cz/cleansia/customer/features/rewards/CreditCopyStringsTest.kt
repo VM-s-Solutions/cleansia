@@ -86,17 +86,19 @@ class CreditCopyStringsTest {
 
     /**
      * The customer terms of 2026-10-05 (section 9) name the referral reward as a source of credit, and a
-     * qualified referral pays the market's credit since the owner ruling of 2026-10-04. The explainer's
-     * "where it comes from" names it in the terms' own word, and states no amount (the test above).
+     * qualified referral pays the market's credit since the owner ruling of 2026-10-04. A market may pay
+     * none (`Currency.ReferralCredit` null), and the explainer shows in every market, so it names the
+     * reward in the terms' own word only where the market offers one: no amount (the test above), no
+     * promise, no entry point.
      */
     @Test
-    fun `the explainer names the referral reward as a source of credit`() {
+    fun `the explainer names the referral reward as a source of credit only where the market offers one`() {
         val referral = mapOf(
-            "values" to "referral reward",
-            "values-cs" to "odměna za doporučení",
-            "values-sk" to "odmena za odporúčanie",
-            "values-uk" to "реферальна винагорода",
-            "values-ru" to "реферальное вознаграждение",
+            "values" to "referral reward where your market offers one",
+            "values-cs" to "odměna za doporučení, pokud se na vašem trhu nabízí",
+            "values-sk" to "odmena za odporúčanie, ak sa na vašom trhu ponúka",
+            "values-uk" to "реферальна винагорода, якщо її пропонують на вашому ринку",
+            "values-ru" to "реферальное вознаграждение, если его предлагают на вашем рынке",
         )
         referral.forEach { (locale, word) ->
             val value = valueOf(stringsXml(locale), "credit_explainer_source_body")!!

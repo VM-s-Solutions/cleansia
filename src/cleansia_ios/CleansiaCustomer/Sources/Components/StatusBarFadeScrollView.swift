@@ -88,7 +88,11 @@ private struct StatusBarFadeBand: View {
                 }
             }
             .mask(LinearGradient(
-                stops: StatusBarFade.stops(height: height, reduceTransparency: reduceTransparency),
+                stops: StatusBarFade.stops(
+                    height: height,
+                    falloff: StatusBarFade.falloff(safeTop: top),
+                    reduceTransparency: reduceTransparency
+                ),
                 startPoint: .top,
                 endPoint: .bottom
             ))
@@ -149,11 +153,6 @@ enum StatusBarFade {
     /// each. The X, XS and 11 Pro's 44pt safe area sits 14pt below their notch, so 12pt ends 2pt under it,
     /// the most the rule allows; a deeper notch safe area takes more (`clearance(safeTop:)`).
     static let housingClearance: CGFloat = 12
-    /// The eased run at the fade's end. There is little room under the clock: its row ends 11pt above an
-    /// island's bottom and 4.5pt above a home-button phone's status bar's, where the mask is still over 85 %
-    /// at its baseline. A notch's clock ends only 1–4.9pt above the notch, so there the ease begins above
-    /// the digits' lowest rows and the mask at their baseline is 0.52–0.80.
-    static let falloff: CGFloat = 5
     /// The colour's strength behind the status bar: the content under the clock stays out of its way,
     /// and the system's clock, signal and battery stay legible on it in light and dark mode, on a
     /// colour they read on (see the type's note on `heroTint`).
@@ -179,6 +178,15 @@ enum StatusBarFade {
     /// notch ends `clearance(safeTop:)` above the safe area's top; a home-button phone, at its 20pt status bar.
     static func height(safeTop: CGFloat) -> CGFloat {
         safeTop > classicStatusBar ? safeTop - clearance(safeTop: safeTop) : max(safeTop, 0)
+    }
+
+    /// The eased run at the fade's end. There is little room under the clock: its row ends 11pt above an
+    /// island's bottom and 4.5pt above a home-button phone's status bar's, so 5pt keeps the mask over 85 %
+    /// at its baseline there. A notch's clock ends only 1–4.9pt above the notch, where 5pt would begin the
+    /// ease above the digits' lowest rows (0.52 at their baseline on the iPhone 12 mini), so a notch phone's
+    /// 44 to 52pt safe area eases over 3pt, which keeps the mask at 0.87 or more at the digits' baseline.
+    static func falloff(safeTop: CGFloat) -> CGFloat {
+        (44 ... 52).contains(safeTop) ? 3 : 5
     }
 
     /// How far above the safe area's top the status bar's content ends. The notch phones' safe areas, 44 to
@@ -265,9 +273,9 @@ enum StatusBarFade {
     }
 
     /// The fade's mask: held across the status bar's content, then a smoothstep falloff over its last
-    /// `falloff` points to clear at its end, sampled at eight points so the eased curve shows no seam.
-    /// Reduce Transparency holds it full.
-    static func stops(height: CGFloat, reduceTransparency: Bool = false) -> [Gradient.Stop] {
+    /// `falloff` points (`falloff(safeTop:)`) to clear at its end, sampled at eight points so the eased
+    /// curve shows no seam. Reduce Transparency holds it full.
+    static func stops(height: CGFloat, falloff: CGFloat, reduceTransparency: Bool = false) -> [Gradient.Stop] {
         let peak = reduceTransparency ? 1 : opacity
         let hold = max(height - falloff, 0) / max(height, 1)
         let samples = 8

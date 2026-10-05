@@ -227,7 +227,8 @@ final class ContentSafeAreaBindingTests: XCTestCase {
     ]
 
     /// The notch phones (2026-10-05). A notch's clock ends only 1–4.9pt above the notch, so the ease at the
-    /// fade's end begins above the digits' lowest rows on them: the mask at their baseline is 0.52–0.80.
+    /// fade's end is shorter on them (`StatusBarFade.falloff(safeTop:)`), to begin at or under the digits'
+    /// baseline as it does under an island.
     private let measuredNotchPhones = [
         MeasuredPhone(name: "iPhone X, iOS 16.4", safeTop: 44, housingBottom: 30, clockBottom: 28.33),
         MeasuredPhone(name: "iPhone XS, iOS 18.6", safeTop: 44, housingBottom: 30, clockBottom: 28.33),
@@ -259,13 +260,16 @@ final class ContentSafeAreaBindingTests: XCTestCase {
 
     /// One colour held at about 90 % over the clock, signal and battery (owner remark 2026-10-04: the 40 %
     /// wash was too see-through), then eased to clear by the fade's end over its last few points with no
-    /// step a line could show at: the stops never rise, fall by little at a time and end clear.
+    /// step a line could show at: the stops never rise, fall by little at a time and end clear. The content
+    /// under the clock's digits is held back on every phone, notch phones included (finding 2026-10-05: a
+    /// 5pt ease under a notch left 0.52–0.80 at the digits' baseline).
     func testTheFadeHoldsOverTheClockAndEasesOutByItsEnd() {
-        XCTAssertTrue((3 ... 8).contains(StatusBarFade.falloff), "the ease at the end is not a few points")
         XCTAssertEqual(StatusBarFade.opacity, 0.9, accuracy: 0.02)
         for phone in measuredPhones + measuredNotchPhones {
             let height = StatusBarFade.height(safeTop: phone.safeTop)
-            let stops = StatusBarFade.stops(height: height)
+            let falloff = StatusBarFade.falloff(safeTop: phone.safeTop)
+            XCTAssertTrue((3 ... 8).contains(falloff), "\(phone.name): the ease at the end is not a few points")
+            let stops = StatusBarFade.stops(height: height, falloff: falloff)
             let alphas = stops.map { UIColor($0.color).cgColor.alpha }
             let locations = stops.map(\.location)
             XCTAssertGreaterThanOrEqual(stops.count, 8, "too few stops for an eased curve")
@@ -276,13 +280,13 @@ final class ContentSafeAreaBindingTests: XCTestCase {
             XCTAssertEqual(alphas.last ?? 1, 0, accuracy: 0.001)
             XCTAssertEqual(
                 locations[1] * height,
-                height - StatusBarFade.falloff,
+                height - falloff,
                 accuracy: 0.0001,
                 "the ease does not start a few points above the fade's end"
             )
             XCTAssertGreaterThanOrEqual(
                 alpha(at: phone.clockBottom / height, stops: stops),
-                measuredNotchPhones.contains { $0.name == phone.name } ? 0.5 : 0.85,
+                0.85,
                 "\(phone.name): the content under the clock's digits is not held back"
             )
             for (earlier, later) in zip(stops, stops.dropFirst()) {
@@ -296,7 +300,11 @@ final class ContentSafeAreaBindingTests: XCTestCase {
 
     /// With Reduce Transparency on, the colour is drawn at full strength behind the status bar.
     func testReduceTransparencyDrawsTheColourAtFullStrength() {
-        let stops = StatusBarFade.stops(height: StatusBarFade.height(safeTop: 59), reduceTransparency: true)
+        let stops = StatusBarFade.stops(
+            height: StatusBarFade.height(safeTop: 59),
+            falloff: StatusBarFade.falloff(safeTop: 59),
+            reduceTransparency: true
+        )
         XCTAssertEqual(UIColor(stops[0].color).cgColor.alpha, 1, accuracy: 0.001)
         XCTAssertEqual(UIColor(stops[1].color).cgColor.alpha, 1, accuracy: 0.001)
         XCTAssertEqual(UIColor(stops.last?.color ?? .black).cgColor.alpha, 0, accuracy: 0.001)
@@ -311,7 +319,10 @@ final class ContentSafeAreaBindingTests: XCTestCase {
         XCTAssertFalse(fade.contains("Material"), "a material is back under the colour")
         XCTAssertTrue(fade.contains("@Environment(\\.accessibilityReduceTransparency)"))
         XCTAssertTrue(fade.contains("letheight=StatusBarFade.height(safeTop:top)"))
-        XCTAssertTrue(fade.contains("StatusBarFade.stops(height:height,reduceTransparency:reduceTransparency)"))
+        XCTAssertTrue(fade.contains(
+            "StatusBarFade.stops(height:height,falloff:StatusBarFade.falloff(safeTop:top),"
+                + "reduceTransparency:reduceTransparency)"
+        ))
         XCTAssertTrue(fade.contains(".frame(height:height).offset(y:-top)"), "the fade is not as tall as its rule")
         XCTAssertTrue(fade.contains(
             "CleansiaColors.backgroundifletheroTint{heroTint.opacity(StatusBarFade.legibleShare("

@@ -450,7 +450,7 @@ private fun StepRowView(step: StepRow, onFixStep: (NavRoute) -> Unit) {
         StepStatus.Done ->
             Icons.Outlined.CheckCircle to MaterialTheme.colorScheme.primary
         StepStatus.Pending ->
-            Icons.Outlined.HourglassEmpty to MaterialTheme.colorScheme.tertiary
+            Icons.Outlined.HourglassEmpty to MaterialTheme.colorScheme.onSurfaceVariant
         StepStatus.Missing ->
             Icons.Outlined.Cancel to MaterialTheme.colorScheme.error
     }
@@ -536,7 +536,7 @@ private fun StepRowView(step: StepRow, onFixStep: (NavRoute) -> Unit) {
                     step.status == StepStatus.Pending -> Text(
                         text = stringResource(R.string.registration_lock_approval_awaiting_review),
                         style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.tertiary,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                 }
             }

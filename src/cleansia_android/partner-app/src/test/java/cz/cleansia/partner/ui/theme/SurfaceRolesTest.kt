@@ -2,6 +2,7 @@ package cz.cleansia.partner.ui.theme
 
 import androidx.compose.material3.ColorScheme
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.compositeOver
 import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.graphics.toArgb
 import cz.cleansia.core.ui.theme.primaryText
@@ -99,6 +100,76 @@ class SurfaceRolesTest {
         assertTrue("a Switch on the default off thumb and border: $offenders", offenders.isEmpty())
     }
 
+    /**
+     * Left unset, the tertiary roles are M3's baseline mauve (#7D5260 / #EFB8C8, containers #FFD8E4 / #633B48),
+     * which showed on the documents' "Pending", the registration lock's pending row, the service-area note and
+     * the contract and legal notices (Z4). They are the app's amber now, and each pair reads 4.5:1.
+     */
+    @Test
+    fun `the tertiary roles are the app's amber, not Material's mauve baseline`() {
+        val ambers = setOf(Amber100, Amber800, Amber900, Amber950, WarningStar, LightSurface)
+        listOf("light" to LightColors, "dark" to DarkColors).forEach { (name, scheme) ->
+            mapOf(
+                "tertiary" to scheme.tertiary,
+                "onTertiary" to scheme.onTertiary,
+                "tertiaryContainer" to scheme.tertiaryContainer,
+                "onTertiaryContainer" to scheme.onTertiaryContainer,
+            ).forEach { (role, color) ->
+                assertTrue("$name $role is #${"%08X".format(color.toArgb())}", color in ambers)
+            }
+            mapOf(
+                "onTertiary on tertiary" to (scheme.onTertiary to scheme.tertiary),
+                "onTertiaryContainer on tertiaryContainer" to (scheme.onTertiaryContainer to scheme.tertiaryContainer),
+                "tertiary on the card" to (scheme.tertiary to scheme.surface),
+            ).forEach { (pair, colors) ->
+                val ratio = contrast(colors.first, colors.second)
+                assertTrue("$name $pair: ${"%.2f".format(ratio)}:1", ratio >= 4.5)
+            }
+        }
+    }
+
+    /** A pending status reads 4.5:1 on the card and on the 8 % and 12 % washes it sits on, in both schemes. */
+    @Test
+    fun `the pending ink reads 4_5 to 1 on the card and on its own wash`() {
+        assertEquals(Amber800, LightColors.pendingInk)
+        assertEquals(WarningStar, DarkColors.pendingInk)
+        listOf("light" to LightColors, "dark" to DarkColors).forEach { (name, scheme) ->
+            val ink = scheme.pendingInk
+            listOf(0f, 0.08f, 0.12f).forEach { alpha ->
+                val ratio = contrast(ink, ink.copy(alpha = alpha).compositeOver(scheme.surface))
+                assertTrue("$name pending on a ${(alpha * 100).toInt()} % wash: ${"%.2f".format(ratio)}:1", ratio >= 4.5)
+            }
+        }
+    }
+
+    /**
+     * The sites name what they mean, as iOS does, rather than the tertiary slot: a pending document and the
+     * outside-the-serviced-city note take the pending amber; the registration lock's awaiting-review row is
+     * drawn in onSurfaceVariant, as iOS's StepRow draws it.
+     */
+    @Test
+    fun `no partner screen draws in the bare tertiary slot`() {
+        val root = sourceRoot()
+        val offenders = mutableListOf<String>()
+        root.walkTopDown().filter { it.isFile && it.extension == "kt" }.forEach { file ->
+            val text = file.readText()
+            BARE_TERTIARY.findAll(text).forEach { match ->
+                offenders += "${file.relativeTo(root).path}:${text.substring(0, match.range.first).count { it == '\n' } + 1}"
+            }
+        }
+        assertTrue("the bare tertiary slot: $offenders", offenders.isEmpty())
+        val documents = File(root, "features/profile/DocumentsSectionScreen.kt").readText()
+        assertTrue(documents.contains("document_status_pending) to MaterialTheme.colorScheme.pendingInk"))
+        val address = File(root, "features/profile/AddressSectionScreen.kt").readText()
+        assertTrue(Regex("""OutsideServicedCity -> Triple\(\s*Icons\.Outlined\.Info,\s*MaterialTheme\.colorScheme\.pendingInk,""").containsMatchIn(address))
+        val lock = File(root, "features/orders/RegistrationLockScreen.kt").readText()
+        assertTrue(lock.contains("Icons.Outlined.HourglassEmpty to MaterialTheme.colorScheme.onSurfaceVariant"))
+        assertTrue(
+            Regex("""registration_lock_approval_awaiting_review\),\s*style = [^\n]+\n\s*color = MaterialTheme\.colorScheme\.onSurfaceVariant,""")
+                .containsMatchIn(lock),
+        )
+    }
+
     /** The argument list of the call whose `(` ends just before [from], up to its matching `)`. */
     private fun argumentsFrom(text: String, from: Int): String {
         var depth = 1
@@ -127,5 +198,6 @@ class SurfaceRolesTest {
         val SWITCH_CALL = Regex("""(?<![\w.])Switch\(""")
         val OFF_THUMB = Regex("""uncheckedThumbColor\s*=\s*MaterialTheme\.colorScheme\.onSurfaceVariant\b""")
         val OFF_BORDER = Regex("""uncheckedBorderColor\s*=\s*MaterialTheme\.colorScheme\.onSurfaceVariant\b""")
+        val BARE_TERTIARY = Regex("""colorScheme\.tertiary(?![A-Za-z])""")
     }
 }

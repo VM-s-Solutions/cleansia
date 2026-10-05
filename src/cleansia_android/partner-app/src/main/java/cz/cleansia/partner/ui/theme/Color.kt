@@ -70,6 +70,11 @@ val Amber800 = Color(0xFF92400E)
 val Green800 = Color(0xFF166534)
 val Green400 = Color(0xFF4ADE80)
 
+// The rest of that amber, for the scheme's tertiary roles: what the app means by pending and by an advisory note.
+val Amber100 = Color(0xFFFEF3C7)
+val Amber900 = Color(0xFF78350F)
+val Amber950 = Color(0xFF451A03)
+
 /**
  * "Pending" as text or a glyph: amber-800 in light mode, the warning amber-500 in dark. Each reads 4.5:1 or
  * more on the card and on its own 12 % wash; amber-500 is 2.15:1 on white and 1.96:1 on that wash.

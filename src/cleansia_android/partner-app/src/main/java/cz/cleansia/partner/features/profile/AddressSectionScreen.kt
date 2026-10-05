@@ -48,6 +48,7 @@ import cz.cleansia.core.ui.theme.Spacing
 import cz.cleansia.core.ui.theme.primaryText
 import cz.cleansia.partner.R
 import cz.cleansia.partner.features.orders.ProfileSection
+import cz.cleansia.partner.ui.theme.pendingInk
 
 /**
  * Address section v2 — the cleaner picks their home address on a
@@ -252,7 +253,7 @@ private fun ServiceAreaRow(status: ServiceAreaStatus) {
         )
         ServiceAreaStatus.OutsideServicedCity -> Triple(
             Icons.Outlined.Info,
-            MaterialTheme.colorScheme.tertiary,
+            MaterialTheme.colorScheme.pendingInk,
             stringResource(R.string.address_service_area_outside_serviced_city),
         )
         ServiceAreaStatus.CountryNotServiced -> Triple(

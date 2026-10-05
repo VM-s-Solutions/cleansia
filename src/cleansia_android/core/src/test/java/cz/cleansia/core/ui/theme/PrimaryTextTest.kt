@@ -152,6 +152,20 @@ class PrimaryTextTest {
         assertEquals(emptyList<String>(), offenders.map { it.where })
     }
 
+    /**
+     * A focused field's floating label is text (F3). Material draws it in the primary unless told otherwise,
+     * 4.10:1 on white in light mode, so every labelled field — the shared CleansiaTextField and
+     * CleansiaPhoneInput, and the few screens that use Material's field directly — gives it the text blue.
+     */
+    @Test
+    fun `no focused field label is left on the primary`() {
+        val offenders = (calls("OutlinedTextField") + calls("TextField")).filter { call ->
+            LABEL_ARG.containsMatchIn(call.args) && !FOCUSED_LABEL_INK.containsMatchIn(call.args)
+        }
+        assertEquals(emptyList<String>(), offenders.map { it.where })
+        assertTrue(calls("OutlinedTextField").count { LABEL_ARG.containsMatchIn(it.args) } >= 6)
+    }
+
     @Test
     fun `no button's content is coloured with the bare primary`() {
         val offenders = BUTTONS.flatMap { name -> calls(name) }.filter { call ->
@@ -340,6 +354,8 @@ class PrimaryTextTest {
         val BARE_PRIMARY_CONTENT = Regex("""contentColor\s*=\s*$BARE""")
         val BARE_PRIMARY_COLOR = Regex("""(?:^|[\s,(])color\s*=\s*[^\n]*$BARE""")
         val BARE_PRIMARY_TINT = Regex("""\btint\s*=\s*$BARE""")
+        val LABEL_ARG = Regex("""(?:^|[\s,(])label\s*=""")
+        val FOCUSED_LABEL_INK = Regex("""\bfocusedLabelColor\s*=\s*primaryText\(\)""")
         val BLUE_TINT = Regex("""\btint\s*=\s*[^\n]*(?:$BARE|(?<![\w.])primaryText\(\)|colorScheme\.primaryText\b)""")
         val BLUE_TEXT = Regex("""(?:^|[\s,(])color\s*=\s*[^\n]*(?:$BARE|(?<![\w.])primaryText\(\)|colorScheme\.primaryText\b)""")
     }

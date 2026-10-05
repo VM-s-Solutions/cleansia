@@ -18,6 +18,7 @@ import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.unit.dp
 import androidx.compose.foundation.text.KeyboardOptions
 import com.google.i18n.phonenumbers.PhoneNumberUtil
+import cz.cleansia.core.ui.theme.primaryText
 import java.util.Locale
 
 /**
@@ -68,7 +69,7 @@ fun CleansiaPhoneInput(
         colors = OutlinedTextFieldDefaults.colors(
             focusedBorderColor = MaterialTheme.colorScheme.primary,
             unfocusedBorderColor = MaterialTheme.colorScheme.outline,
-            focusedLabelColor = MaterialTheme.colorScheme.primary,
+            focusedLabelColor = primaryText(),
             cursorColor = MaterialTheme.colorScheme.primary,
             focusedContainerColor = if (transparentContainer) Color.Transparent
             else MaterialTheme.colorScheme.surface,

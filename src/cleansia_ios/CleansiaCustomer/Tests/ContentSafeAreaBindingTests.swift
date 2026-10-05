@@ -173,15 +173,29 @@ final class ContentSafeAreaBindingTests: XCTestCase {
         MeasuredPhone(name: "iPhone 17 Pro, iOS 26.3", safeTop: 62, housingBottom: 50.67, clockBottom: 39),
         MeasuredPhone(name: "iPhone 16, iOS 18.6", safeTop: 59, housingBottom: 48, clockBottom: 35.67),
         MeasuredPhone(name: "iPhone 14 Pro, iOS 16.4", safeTop: 59, housingBottom: 48, clockBottom: 35.67),
-        MeasuredPhone(name: "iPhone 16e (notch), iOS 18.6", safeTop: 47, housingBottom: 33.67, clockBottom: 30.67),
         MeasuredPhone(name: "iPhone SE 3rd gen, iOS 16.4", safeTop: 20, housingBottom: 20, clockBottom: 15.5)
+    ]
+
+    /// The notch phones (2026-10-05). A notch's clock ends only 1–4.9pt above the notch, so the ease at the
+    /// fade's end begins above the digits' lowest rows on them: the mask at their baseline is 0.52–0.80.
+    private let measuredNotchPhones = [
+        MeasuredPhone(name: "iPhone X, iOS 16.4", safeTop: 44, housingBottom: 30, clockBottom: 28.33),
+        MeasuredPhone(name: "iPhone XS, iOS 18.6", safeTop: 44, housingBottom: 30, clockBottom: 28.33),
+        MeasuredPhone(name: "iPhone 11 Pro, iOS 18.6", safeTop: 44, housingBottom: 30, clockBottom: 28.33),
+        MeasuredPhone(name: "iPhone 12, iOS 18.6", safeTop: 47, housingBottom: 32, clockBottom: 30.67),
+        MeasuredPhone(name: "iPhone 13, iOS 26.3", safeTop: 47, housingBottom: 33.67, clockBottom: 30.67),
+        MeasuredPhone(name: "iPhone 16e, iOS 18.6", safeTop: 47, housingBottom: 33.67, clockBottom: 30.67),
+        MeasuredPhone(name: "iPhone XR, iOS 16.4", safeTop: 48, housingBottom: 33, clockBottom: 30.5),
+        MeasuredPhone(name: "iPhone 11, iOS 18.6", safeTop: 48, housingBottom: 33, clockBottom: 30.5),
+        MeasuredPhone(name: "iPhone 12 mini, iOS 18.6 and 26.3", safeTop: 50, housingBottom: 34.03, clockBottom: 32.99),
+        MeasuredPhone(name: "iPhone 13 mini, iOS 26.3", safeTop: 50, housingBottom: 37.5, clockBottom: 32.64)
     ]
 
     /// The fade ends where the status bar's content does — the Dynamic Island's bottom, the notch's, or a
     /// home-button phone's status bar's (owner remark 2026-10-04: it reached 10pt below the safe area's
     /// top, 72pt on an iPhone 17 Pro, far under the island) — within 2pt on every phone measured.
     func testTheFadeEndsAtTheBottomOfTheIslandTheNotchOrTheStatusBar() {
-        for phone in measuredPhones {
+        for phone in measuredPhones + measuredNotchPhones {
             XCTAssertEqual(
                 StatusBarFade.height(safeTop: phone.safeTop),
                 phone.housingBottom,
@@ -199,7 +213,7 @@ final class ContentSafeAreaBindingTests: XCTestCase {
     func testTheFadeHoldsOverTheClockAndEasesOutByItsEnd() {
         XCTAssertTrue((3 ... 8).contains(StatusBarFade.falloff), "the ease at the end is not a few points")
         XCTAssertEqual(StatusBarFade.opacity, 0.9, accuracy: 0.02)
-        for phone in measuredPhones {
+        for phone in measuredPhones + measuredNotchPhones {
             let height = StatusBarFade.height(safeTop: phone.safeTop)
             let stops = StatusBarFade.stops(height: height)
             let alphas = stops.map { UIColor($0.color).cgColor.alpha }
@@ -218,7 +232,7 @@ final class ContentSafeAreaBindingTests: XCTestCase {
             )
             XCTAssertGreaterThanOrEqual(
                 alpha(at: phone.clockBottom / height, stops: stops),
-                0.85,
+                measuredNotchPhones.contains { $0.name == phone.name } ? 0.5 : 0.85,
                 "\(phone.name): the content under the clock's digits is not held back"
             )
             for (earlier, later) in zip(stops, stops.dropFirst()) {

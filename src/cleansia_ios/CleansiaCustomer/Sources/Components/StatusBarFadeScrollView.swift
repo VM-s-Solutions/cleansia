@@ -135,16 +135,18 @@ private extension EnvironmentValues {
 enum StatusBarFade {
     /// A home-button phone's status bar, its whole height the clock's row; its safe area's top is the same.
     static let classicStatusBar: CGFloat = 20
-    /// How far above the safe area's top the Dynamic Island or the notch ends. Neither is reported by the
-    /// system, and the status-bar frame it does report overshoots both (54pt over an island that ends at
-    /// 48–50.7pt, 47pt over the iPhone 16e's notch that ends at 33.7pt). The safe area's top sits a
-    /// near-constant distance below them: measured in the simulators, 11.3pt on the iPhone 17 Pro (iOS 26.3),
-    /// 11pt on the iPhone 16 (18.6) and 14 Pro (16.4), 13.3pt on the 16e (18.6), so 12pt lands within
-    /// 1.3pt of each.
+    /// How far above the safe area's top the Dynamic Island ends, and the notch over a 44pt safe area.
+    /// Neither is reported by the system, and the status-bar frame it does report overshoots both (54pt over
+    /// an island that ends at 48–50.7pt, 47pt over the iPhone 16e's notch that ends at 33.7pt). The safe
+    /// area's top sits a near-constant distance below an island: measured in the simulators, 11.3pt on the
+    /// iPhone 17 Pro (iOS 26.3), 11pt on the iPhone 16 (18.6) and 14 Pro (16.4), so 12pt lands within 1pt of
+    /// each. The X, XS and 11 Pro's 44pt safe area sits 14pt below their notch, so 12pt ends 2pt under it,
+    /// the most the rule allows; a deeper notch safe area takes more (`clearance(safeTop:)`).
     static let housingClearance: CGFloat = 12
     /// The eased run at the fade's end. There is little room under the clock: its row ends 11pt above an
-    /// island's bottom, but 3–4.5pt above a notch's or a home-button phone's status bar's, so 5pt eases
-    /// out below the clock on every phone measured (the mask is still over 85 % at its baseline).
+    /// island's bottom and 4.5pt above a home-button phone's status bar's, where the mask is still over 85 %
+    /// at its baseline. A notch's clock ends only 1–4.9pt above the notch, so there the ease begins above
+    /// the digits' lowest rows and the mask at their baseline is 0.52–0.80.
     static let falloff: CGFloat = 5
     /// The colour's strength behind the status bar: the content under the clock stays out of its way,
     /// and the system's clock, signal and battery stay legible on it in light and dark mode, on a
@@ -168,9 +170,24 @@ enum StatusBarFade {
 
     /// How tall the fade is, from the screen's top edge: to the bottom of the status bar's content (owner
     /// remark 2026-10-04: the clock and the island's line, no further). A phone with a Dynamic Island or a
-    /// notch ends `housingClearance` above the safe area's top; a home-button phone, at its 20pt status bar.
+    /// notch ends `clearance(safeTop:)` above the safe area's top; a home-button phone, at its 20pt status bar.
     static func height(safeTop: CGFloat) -> CGFloat {
-        safeTop > classicStatusBar ? safeTop - housingClearance : max(safeTop, 0)
+        safeTop > classicStatusBar ? safeTop - clearance(safeTop: safeTop) : max(safeTop, 0)
+    }
+
+    /// How far above the safe area's top the status bar's content ends. The notch phones' safe areas, 44 to
+    /// 50pt, sit further below their notch the deeper they are, measured in the simulators (2026-10-05).
+    /// 47pt over the 12's notch (32pt) and the 13 and 16e's (33.7pt), and 48pt over the XR and 11's (33pt),
+    /// take 13.5pt: 1.5pt under the lower notch, keeping what it can of the ease below the clock. 50pt is
+    /// both the 12 mini's (over a 34pt notch) and the 13 mini's (37.5pt), so 14.25pt ends midway, 1.75pt
+    /// from each. 12pt had ended 3–4pt under the 12, XR, 11 and 12 mini's notch. An island's safe area
+    /// starts at 59pt or deeper.
+    static func clearance(safeTop: CGFloat) -> CGFloat {
+        switch safeTop {
+        case 46 ..< 49: housingClearance + 1.5
+        case 49 ... 52: housingClearance + 2.25
+        default: housingClearance
+        }
     }
 
     /// How much of the fade wears the hero's colour: all of it while the hero still reaches below the

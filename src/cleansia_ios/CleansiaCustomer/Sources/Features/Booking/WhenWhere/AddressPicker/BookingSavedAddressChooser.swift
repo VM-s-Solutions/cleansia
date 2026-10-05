@@ -271,7 +271,7 @@ private struct ChooserAddressRow: View {
                     .fill(CleansiaColors.primaryContainer)
                     .frame(width: 40, height: 40)
                 Image(systemName: "mappin.and.ellipse")
-                    .foregroundColor(CleansiaColors.primary)
+                    .foregroundColor(CleansiaColors.primaryIconOnContainer)
             }
             VStack(alignment: .leading, spacing: 2) {
                 HStack(spacing: Spacing.xs) {

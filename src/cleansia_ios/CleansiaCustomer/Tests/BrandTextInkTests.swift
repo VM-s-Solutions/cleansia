@@ -161,6 +161,35 @@ final class BrandTextInkTests: XCTestCase {
         XCTAssertLessThan(contrast(darkRGB(CleansiaColors.primaryText), container), 4.5)
     }
 
+    /// Dark mode: an icon drawn in the primary on the primary container (sky-400 on sky-700) read 2.77:1, under
+    /// the 3:1 a graphic needs, so the icons on a full container disc or card take its icon ink, sky-100 in dark
+    /// and the primary in light (finding 2026-10-05; the ink is measured in Core's `ComponentTextInkTests`).
+    func testTheIconsOnThePrimaryContainerTakeItsIconInk() throws {
+        let sites: [(path: String, snippet: String)] = [
+            ("Home/HomeSecondarySections.swift", "Image(systemName:\"bubbles.and.sparkles\")"),
+            ("Home/HomeSectionViews.swift", "Image(systemName:\"arrow.clockwise\")"),
+            ("Home/HomeSectionViews.swift", "Image(systemName:\"bubbles.and.sparkles\")"),
+            ("Payments/PaymentsView.swift", "Image(systemName:systemName)"),
+            ("Profile/CustomerDevicesView.swift", "Image(systemName:platformIcon(device.platform))"),
+            ("Orders/OrderDetailDetailsCards.swift", "Image(systemName:\"phone.fill\")"),
+            ("Profile/EditProfileView.swift", "Image(systemName:\"info.circle.fill\")"),
+            ("Addresses/AddressManagerView.swift", "Image(systemName:\"mappin.and.ellipse\")"),
+            (
+                "Booking/WhenWhere/AddressPicker/BookingSavedAddressChooser.swift",
+                "Image(systemName:\"mappin.and.ellipse\")"
+            )
+        ]
+        for site in sites {
+            let source = try compactSource(site.path)
+            let image = try XCTUnwrap(source.range(of: site.snippet), "\(site.path): \(site.snippet)")
+            let modifiers = source[image.upperBound...].prefix(80)
+            XCTAssertTrue(
+                modifiers.contains(".foregroundColor(CleansiaColors.primaryIconOnContainer)"),
+                "\(site.path): \(modifiers)"
+            )
+        }
+    }
+
     // MARK: - Helpers
 
     private typealias RGB = SIMD3<Double>

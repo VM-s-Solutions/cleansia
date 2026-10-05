@@ -218,7 +218,7 @@ struct IconHalo: View {
     var body: some View {
         Image(systemName: systemImage)
             .font(.system(size: 22))
-            .foregroundColor(CleansiaColors.primary)
+            .foregroundColor(CleansiaColors.primaryIconOnContainer)
             .frame(width: 44, height: 44)
             .background(CleansiaColors.primaryContainer)
             .clipShape(Circle())

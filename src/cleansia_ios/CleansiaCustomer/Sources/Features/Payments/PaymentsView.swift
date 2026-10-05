@@ -279,7 +279,7 @@ private struct LeadingIcon: View {
                 .fill(CleansiaColors.primaryContainer)
                 .frame(width: 44, height: 44)
             Image(systemName: systemName)
-                .foregroundColor(CleansiaColors.primary)
+                .foregroundColor(CleansiaColors.primaryIconOnContainer)
         }
     }
 }

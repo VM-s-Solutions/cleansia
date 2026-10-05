@@ -47,7 +47,7 @@ private struct RecentBookingRow: View {
                         .frame(width: 40, height: 40)
                     Image(systemName: "bubbles.and.sparkles")
                         .font(.system(size: 18))
-                        .foregroundColor(CleansiaColors.primary)
+                        .foregroundColor(CleansiaColors.primaryIconOnContainer)
                 }
                 VStack(alignment: .leading, spacing: Spacing.hair) {
                     HStack(spacing: Spacing.xs) {

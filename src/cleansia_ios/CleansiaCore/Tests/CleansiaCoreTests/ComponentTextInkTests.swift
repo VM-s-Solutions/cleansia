@@ -91,6 +91,40 @@ final class ComponentTextInkTests: XCTestCase {
         )
     }
 
+    /// An icon on the primary container reads 3:1 or more in both modes (finding 2026-10-05): in dark mode the
+    /// container is sky-700, where the primary's sky-400 read 2.77:1, so icons on it take
+    /// `primaryIconOnContainer` (sky-100 in dark, 5.17:1; the primary itself in light, 3.57:1, unchanged).
+    func testIconsOnThePrimaryContainerReadInBothModes() {
+        for style in [UIUserInterfaceStyle.light, .dark] {
+            XCTAssertGreaterThanOrEqual(
+                contrast(
+                    resolved(CleansiaColors.primaryIconOnContainer, style),
+                    resolved(CleansiaColors.primaryContainer, style)
+                ),
+                3
+            )
+        }
+        XCTAssertEqual(
+            contrast(
+                resolved(CleansiaColors.primaryIconOnContainer, .dark),
+                resolved(CleansiaColors.primaryContainer, .dark)
+            ),
+            5.17,
+            accuracy: 0.01
+        )
+        XCTAssertLessThan(
+            contrast(resolved(CleansiaColors.primary, .dark), resolved(CleansiaColors.primaryContainer, .dark)),
+            3,
+            "the primary reads on the dark container after all"
+        )
+        XCTAssertEqual(
+            contrast(resolved(CleansiaColors.primaryIconOnContainer, .light), resolved(CleansiaColors.primary, .light)),
+            1,
+            accuracy: 0.001,
+            "light changed"
+        )
+    }
+
     // MARK: - Helpers
 
     private typealias RGB = SIMD3<Double>

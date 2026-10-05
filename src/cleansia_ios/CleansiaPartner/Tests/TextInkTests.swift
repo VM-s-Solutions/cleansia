@@ -114,6 +114,20 @@ final class TextInkTests: XCTestCase {
             .contains("varforeground:Color{switchstatus{case._1:CleansiaColors.primaryTextOnContainer"))
     }
 
+    /// Dark mode: an icon in the primary on the primary container (sky-400 on sky-700) read 2.77:1, under the
+    /// 3:1 a graphic needs, so the halo's icon and the devices' platform icon take the container's icon ink,
+    /// sky-100 in dark and the primary in light (finding 2026-10-05).
+    func testTheIconsOnThePrimaryContainerTakeItsIconInk() throws {
+        XCTAssertTrue(try compactSource("Dashboard/DashboardCards.swift").contains(
+            "Image(systemName:systemImage).font(.system(size:22))"
+                + ".foregroundColor(CleansiaColors.primaryIconOnContainer).frame(width:44,height:44)"
+                + ".background(CleansiaColors.primaryContainer)"
+        ), "IconHalo")
+        XCTAssertTrue(try compactSource("Devices/DevicesView.swift").contains(
+            "Image(systemName:platformIcon(device.platform)).foregroundColor(CleansiaColors.primaryIconOnContainer)"
+        ))
+    }
+
     /// Every invoice status pill's label reads 4.5:1 or more on its fill in both modes (finding 2026-10-05):
     /// "Approved" was white on the light primary, sky-600 (4.10:1), and the dark primary's ink on sky-400
     /// (4.42:1); it is white on sky-700 in both modes now, as Android's.

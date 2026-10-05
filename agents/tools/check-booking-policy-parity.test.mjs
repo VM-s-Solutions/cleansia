@@ -44,6 +44,37 @@ function write(root, rel, contents) {
   writeFileSync(path, contents, 'utf8');
 }
 
+/** §3b — the web's referral rows and their twins, as shipped. */
+const WEB_REFERRAL = {
+  'auth.register.referral.dialog_helper': "Have a friend's code? You each get {{amount}} in credit after your first cleaning.",
+  'auth.register.referral.dialog_helper_no_amount': "Have a friend's code? Enter it here.",
+  'auth.register.referral.dialog_success': "Code accepted — you'll each get {{amount}} in credit after your first cleaning.",
+  'auth.register.referral.dialog_success_no_amount': 'Code accepted.',
+  'auth.register.referral.dialog_success_named': "Code from {{name}} accepted — you'll each get {{amount}} in credit after your first cleaning.",
+  'auth.register.referral.dialog_success_named_no_amount': 'Code from {{name}} accepted.',
+  'pages.rewards.referral.section_title': 'Invite friends — {{amount}} in credit each',
+  'pages.rewards.referral.section_title_no_amount': 'Invite friends',
+  'pages.rewards.referral.subtitle': 'Share your code. When a friend finishes their first cleaning, you each get {{amount}} in credit towards your next bookings.',
+  'pages.rewards.referral.subtitle_no_amount': 'Share your code with friends who could use a cleaning.',
+};
+/** §3b — Android's referral rows, twins and heading, as shipped; iOS carries the same keys with `%@` slots. */
+const ANDROID_REFERRAL = {
+  home_upsell_referral_desc: 'You both get %1$s credit once their first cleaning is completed.',
+  home_upsell_referral_desc_generic: 'Send a friend your code to enter when they sign up.',
+  booking_referral_code_dialog_helper: "Have a friend\\'s code? Both of you get %1$s credit after your first completed cleaning.",
+  booking_referral_code_dialog_helper_no_figure: "Have a friend\\'s code? Enter it here.",
+  booking_referral_code_dialog_success: "Code accepted — you\\'ll both get %1$s credit after your first completed cleaning.",
+  booking_referral_code_dialog_success_no_figure: 'Code accepted.',
+  booking_referral_code_dialog_success_named: "Code from %1$s accepted — you\\'ll both get %2$s credit after your first completed cleaning.",
+  booking_referral_code_dialog_success_named_no_figure: 'Code from %1$s accepted.',
+  loyalty_referral_subtitle: 'Share your code. Your friend and you each get %1$s credit after their first completed cleaning.',
+  loyalty_referral_subtitle_no_figure: 'Share your code with friends to enter when they sign up.',
+  loyalty_referral_share_text: 'Get %1$s credit after your first completed Cleansia cleaning! Use my code %2$s at signup: %3$s',
+  loyalty_referral_share_text_no_figure: 'Join me on Cleansia! Use my code %1$s at signup: %2$s',
+  loyalty_referral_section_title: 'Invite friends',
+};
+const toIos = (value) => value.replace(/\$s/g, '$@').replace(/\\'/g, "'");
+
 /** A fixture repository whose four trees all agree with its BookingPolicy. */
 function buildFixture(overrides = {}) {
   const root = mkdtempSync(join(tmpdir(), 'booking-policy-parity-'));
@@ -164,7 +195,29 @@ function buildFixture(overrides = {}) {
     androidSizeCaption: 'Up to %1$d rooms and %2$d bathrooms',
     iosSizeCaption: 'Up to %1$lld rooms and %2$lld bathrooms',
     iosCorePresent: true,
+    /** §3b — per-key changes over the shipped referral copy; a key set to `null` is left out. */
+    webReferralPatch: {},
+    androidReferralPatch: {},
+    iosReferralPatch: {},
     ...overrides,
+  };
+
+  const webReferral = { ...WEB_REFERRAL, ...o.webReferralPatch };
+  const androidReferral = { ...ANDROID_REFERRAL, ...o.androidReferralPatch };
+  const iosReferral = {
+    ...Object.fromEntries(Object.entries(ANDROID_REFERRAL).map(([key, value]) => [key, toIos(value)])),
+    ...o.iosReferralPatch,
+  };
+  /** Places each dotted web key into the locale bundle. */
+  const withWebReferral = (bundle) => {
+    for (const [dotted, value] of Object.entries(webReferral)) {
+      if (value === null) continue;
+      const parts = dotted.split('.');
+      let node = bundle;
+      for (const part of parts.slice(0, -1)) node = node[part] ??= {};
+      node[parts[parts.length - 1]] = value;
+    }
+    return bundle;
   };
 
   write(root, 'src/Cleansia.Core.AppServices/Features/Orders/BookingPolicy.cs', `
@@ -276,7 +329,7 @@ export const HEAVY_DIRTINESS_SURCHARGE_RATE = ${o.tsHeavyDirtinessRate};
     write(
       root,
       `src/Cleansia.App/apps/cleansia.app/src/assets/i18n/${locale}.json`,
-      JSON.stringify({
+      JSON.stringify(withWebReferral({
         api: {
           order: { size_exceeds_maximum: o.webSizeRefusal },
         },
@@ -318,7 +371,7 @@ export const HEAVY_DIRTINESS_SURCHARGE_RATE = ${o.tsHeavyDirtinessRate};
             ),
           },
         },
-      }, null, 2),
+      }), null, 2),
     );
 
     write(
@@ -338,7 +391,7 @@ export const HEAVY_DIRTINESS_SURCHARGE_RATE = ${o.tsHeavyDirtinessRate};
     <string name="booking_trust_insured">${o.androidInsured}</string>
 ${o.androidInsuredNoFigure === null ? '' : `    <string name="booking_trust_insured_no_figure">${o.androidInsuredNoFigure}</string>\n`}    <string name="help_faq_a3">${o.androidFaq}</string>
 ${o.androidFaqNoFigure === null ? '' : `    <string name="help_faq_a3_no_figure">${o.androidFaqNoFigure}</string>\n`}${o.androidHomeInsured === null ? '' : `    <string name="home_trust_insured">${o.androidHomeInsured}</string>\n`}    <string name="error_order_size_exceeds_maximum">${o.androidSizeRefusal}</string>
-${o.androidSizeCaption === null ? '' : `    <string name="booking_size_limit_caption">${o.androidSizeCaption}</string>\n`}${mapped('android-locale').map((r) => `    <string name="order_cancelled_reason_${r}">Reason ${r}</string>\n`).join('')}${o.androidSeasonal === null ? '' : `    <string name="home_seasonal_subtitle">${o.androidSeasonal}</string>\n`}</resources>`,
+${o.androidSizeCaption === null ? '' : `    <string name="booking_size_limit_caption">${o.androidSizeCaption}</string>\n`}${mapped('android-locale').map((r) => `    <string name="order_cancelled_reason_${r}">Reason ${r}</string>\n`).join('')}${o.androidSeasonal === null ? '' : `    <string name="home_seasonal_subtitle">${o.androidSeasonal}</string>\n`}${Object.entries(androidReferral).filter(([, value]) => value !== null).map(([key, value]) => `    <string name="${key}">${value}</string>\n`).join('')}</resources>`,
     );
   }
 
@@ -369,6 +422,11 @@ ${o.androidSizeCaption === null ? '' : `    <string name="booking_size_limit_cap
           mapped('ios-locale').map((r) => [`order_cancelled_reason_${r}`, { localizations: localizations(`Reason ${r}`) }]),
         ),
         ...(o.iosSeasonal === null ? {} : { home_seasonal_subtitle: { localizations: localizations(o.iosSeasonal) } }),
+        ...Object.fromEntries(
+          Object.entries(iosReferral)
+            .filter(([, value]) => value !== null)
+            .map(([key, value]) => [key, { localizations: localizations(value) }]),
+        ),
       },
     }, null, 2),
   );
@@ -626,6 +684,125 @@ scenario(
   'says nothing about the we_cancel_desc line, which quotes no amount',
   {},
   { code: 0, silentAbout: ['we_cancel_desc'] },
+);
+
+// ─── 2b'. The referral reward is the market's credit, never a figure or points (owner ruling 2026-10-04) ────
+// Until the ruling a referral paid 150 tier points, and every client said so as a literal. It pays
+// `Currency.ReferralCredit` now: each row carries the credit's slot, and the twin a market with no figure
+// reads promises nothing. Every drift case below exits 0 under a checker without §3b.
+scenario(
+  'states that the referral rows are pinned',
+  {},
+  { code: 0, mentions: ['the referral credit comes from the market on 5 web and 6 mobile row(s)'] },
+);
+scenario(
+  'catches the web sign-up dialog promising 150 bonus points again',
+  { webReferralPatch: { 'auth.register.referral.dialog_helper': "Have a friend's code? You'll both get 150 bonus points after your first cleaning." } },
+  {
+    code: 1,
+    mentions: [
+      'web/en — auth.register.referral.dialog_helper = ',
+      'does not carry the {{amount}} placeholder',
+      'bakes a figure in (150)',
+      'promises points',
+    ],
+    silentAbout: ['android/', 'ios/'],
+  },
+);
+scenario(
+  'catches a web referral row that names the currency beside its slot',
+  { webReferralPatch: { 'pages.rewards.referral.section_title': 'Invite friends — {{amount}} CZK in credit each' } },
+  {
+    code: 1,
+    mentions: ['web/en — pages.rewards.referral.section_title = ', 'names a currency'],
+    silentAbout: ['does not carry the {{amount}} placeholder'],
+  },
+);
+scenario(
+  'reads a referral row for points in its own locale',
+  { webReferralPatch: { 'pages.rewards.referral.subtitle': 'Sdílejte kód — {{amount}} a body navíc.' } },
+  {
+    code: 1,
+    mentions: ['web/cs — pages.rewards.referral.subtitle = ', 'web/sk — pages.rewards.referral.subtitle = ', 'promises points'],
+    silentAbout: ['web/en —', 'web/ru —', 'web/uk —'],
+  },
+);
+scenario(
+  'a web twin missing from the locale files is a finding, not a silent pass',
+  { webReferralPatch: { 'pages.rewards.referral.subtitle_no_amount': null } },
+  {
+    code: 1,
+    mentions: [
+      'web/en — pages.rewards.referral.subtitle_no_amount is missing',
+      'web/uk — pages.rewards.referral.subtitle_no_amount is missing',
+    ],
+  },
+);
+scenario(
+  'catches a web twin that still promises the credit',
+  { webReferralPatch: { 'auth.register.referral.dialog_success_no_amount': 'Code accepted — your credit follows your first cleaning.' } },
+  { code: 1, mentions: ['web/en — auth.register.referral.dialog_success_no_amount = ', 'promises credit'] },
+);
+scenario(
+  'catches a web twin that renders the amount',
+  { webReferralPatch: { 'pages.rewards.referral.section_title_no_amount': 'Invite friends — {{amount}} each' } },
+  { code: 1, mentions: ['web/en — pages.rewards.referral.section_title_no_amount = ', 'carries the {{amount}} slot'] },
+);
+scenario(
+  'catches the Android share text with the reward baked in',
+  { androidReferralPatch: { loyalty_referral_share_text: 'Get 150 Kč credit after your first completed Cleansia cleaning! Use my code %1$s at signup: %2$s' } },
+  {
+    code: 1,
+    mentions: ['android/en — loyalty_referral_share_text = ', 'bakes a figure in (150)', 'names a currency'],
+    silentAbout: ['web/', 'ios/'],
+  },
+);
+scenario(
+  'catches the Android named success taking the credit in the name slot',
+  { androidReferralPatch: { booking_referral_code_dialog_success_named: "Code accepted — you\\'ll both get %1$s credit after your first completed cleaning." } },
+  { code: 1, mentions: ['android/en — booking_referral_code_dialog_success_named = ', 'does not carry the %2$s placeholder'] },
+);
+scenario(
+  'catches an Android twin that promises points',
+  { androidReferralPatch: { loyalty_referral_subtitle_no_figure: 'Share your code and collect points when friends sign up.' } },
+  { code: 1, mentions: ['android/en — loyalty_referral_subtitle_no_figure = ', 'promises points'], silentAbout: ['ios/'] },
+);
+scenario(
+  'catches the iOS heading that promised 150 points each',
+  { iosReferralPatch: { loyalty_referral_section_title: 'Invite friends — earn 150 points each' } },
+  {
+    code: 1,
+    mentions: ['ios/en — loyalty_referral_section_title = ', 'bakes a figure in (150)', 'promises points'],
+    silentAbout: ['android/'],
+  },
+);
+scenario(
+  'catches an iOS row that states a figure instead of the slot',
+  { iosReferralPatch: { home_upsell_referral_desc: 'You both get 150 Kč credit once their first cleaning is completed.' } },
+  {
+    code: 1,
+    mentions: [
+      'ios/en — home_upsell_referral_desc = ',
+      'does not carry the %1$@ placeholder',
+      'bakes a figure in (150)',
+      'names a currency',
+    ],
+  },
+);
+scenario(
+  'an iOS twin that is gone is a finding, not a silent pass',
+  { iosReferralPatch: { home_upsell_referral_desc_generic: null } },
+  {
+    code: 1,
+    mentions: ['ios/en — home_upsell_referral_desc_generic is missing', 'ios/uk — home_upsell_referral_desc_generic is missing'],
+    silentAbout: ['android/'],
+  },
+);
+// Ukrainian points are "бали"; a line that puts the credit on the customer's "баланс" is honest copy.
+scenario(
+  'does not read a balance as points',
+  { webReferralPatch: { 'pages.rewards.referral.subtitle': 'Поділіться кодом — кредит {{amount}} зарахуємо на ваш баланс.' } },
+  { code: 0 },
 );
 
 // ─── 2c. The legal seed carries the market placeholders and no baked money (ADR-0060 D4) ────

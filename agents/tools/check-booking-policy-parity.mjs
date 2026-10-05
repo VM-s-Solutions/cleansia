@@ -537,6 +537,79 @@ for (const locale of LOCALES) {
   }
 }
 
+// ─── 3b. The referral reward is the market's credit, never a figure or points (owner ruling 2026-10-04) ────
+// A qualified referral pays both sides `Currency.ReferralCredit` of the order's currency. It used to pay
+// 150 tier points, and every locale on three clients stated the 150 as a literal. Now each client
+// formats the chosen market's figure into the row's slot, and renders the row's twin for a market with
+// none. So a row carries its slot and bakes in no figure, no currency and no points; its twin exists in
+// every locale and promises neither credit nor points. A twin may keep the row's other slots (a name, a
+// code, a link), so only the web twin, whose credit slot has a name of its own, is checked for the slot.
+
+/** How each locale names points, and how it names credit. */
+const POINTS_WORD = { en: /\bpoints?\b|\bpts\b/i, cs: /\bbod/i, sk: /\bbod/i, ru: /балл/i, uk: /бал(?!ан)/i };
+const CREDIT_WORD = { en: /credit/i, cs: /kredit/i, sk: /kredit/i, ru: /кредит/i, uk: /кредит/i };
+
+/** The web rows that state the referral credit, each with the twin a market with no figure reads. */
+const WEB_REFERRAL_ROWS = [
+  ['auth.register.referral.dialog_helper', 'auth.register.referral.dialog_helper_no_amount'],
+  ['auth.register.referral.dialog_success', 'auth.register.referral.dialog_success_no_amount'],
+  ['auth.register.referral.dialog_success_named', 'auth.register.referral.dialog_success_named_no_amount'],
+  ['pages.rewards.referral.section_title', 'pages.rewards.referral.section_title_no_amount'],
+  ['pages.rewards.referral.subtitle', 'pages.rewards.referral.subtitle_no_amount'],
+];
+/** The same on Android and iOS, under one key name: the row, the position of the credit's slot, the twin. */
+const MOBILE_REFERRAL_ROWS = [
+  ['home_upsell_referral_desc', 1, 'home_upsell_referral_desc_generic'],
+  ['booking_referral_code_dialog_helper', 1, 'booking_referral_code_dialog_helper_no_figure'],
+  ['booking_referral_code_dialog_success', 1, 'booking_referral_code_dialog_success_no_figure'],
+  ['booking_referral_code_dialog_success_named', 2, 'booking_referral_code_dialog_success_named_no_figure'],
+  ['loyalty_referral_subtitle', 1, 'loyalty_referral_subtitle_no_figure'],
+  ['loyalty_referral_share_text', 1, 'loyalty_referral_share_text_no_figure'],
+];
+/** Rendered in every market, figure or none, so held like a twin. The iOS one read "earn 150 points each". */
+const MOBILE_REFERRAL_HEADINGS = ['loyalty_referral_section_title'];
+
+function pinReferralRow(where, key, value, locale, placeholder) {
+  pinPlaceholderCopy(where, key, value, { placeholder });
+  if (value !== null && value !== undefined && POINTS_WORD[locale].test(value)) {
+    note(where, `${key} = "${value}" promises points — a referral pays the market's credit`);
+  }
+}
+
+function pinReferralTwin(where, key, value, locale, { amountSlot } = {}) {
+  pinPlaceholderCopy(where, key, value);
+  if (value === null || value === undefined) return;
+  if (amountSlot && value.includes(amountSlot)) {
+    note(where, `${key} = "${value}" carries the ${amountSlot} slot — it renders for a market with no figure`);
+  }
+  if (CREDIT_WORD[locale].test(value)) {
+    note(where, `${key} = "${value}" promises credit — it renders for a market that pays none`);
+  }
+  if (POINTS_WORD[locale].test(value)) {
+    note(where, `${key} = "${value}" promises points — a referral pays the market's credit`);
+  }
+}
+
+for (const locale of LOCALES) {
+  const web = JSON.parse(read(join(WEB_I18N, `${locale}.json`)));
+  const webValue = (dotted) => dotted.split('.').reduce((node, part) => node?.[part], web);
+  for (const [row, twin] of WEB_REFERRAL_ROWS) {
+    pinReferralRow(`web/${locale}`, row, webValue(row), locale, '{{amount}}');
+    pinReferralTwin(`web/${locale}`, twin, webValue(twin), locale, { amountSlot: '{{amount}}' });
+  }
+  const dir = ANDROID_DIRS[locale];
+  for (const [row, slot, twin] of MOBILE_REFERRAL_ROWS) {
+    pinReferralRow(`android/${locale}`, row, androidString(dir, row), locale, `%${slot}$s`);
+    pinReferralTwin(`android/${locale}`, twin, androidString(dir, twin), locale);
+    pinReferralRow(`ios/${locale}`, row, iosString(iosCatalog, row, locale), locale, `%${slot}$@`);
+    pinReferralTwin(`ios/${locale}`, twin, iosString(iosCatalog, twin, locale), locale);
+  }
+  for (const key of MOBILE_REFERRAL_HEADINGS) {
+    pinReferralTwin(`android/${locale}`, key, androidString(dir, key), locale);
+    pinReferralTwin(`ios/${locale}`, key, iosString(iosCatalog, key, locale), locale);
+  }
+}
+
 // ─── 4. Every platform cancellation reason renders as a sentence in the three customer clients ────
 // `OrderCancellationReasons` is a cross-assembly contract: the sweeps write the key and each client
 // maps it to copy in five locales. A key added on the server without its three maps reaches the
@@ -749,7 +822,10 @@ if (findings.length) {
       `from ${policy.ExpressLeadTimeHours} h, window ${policy.FirstWindowHour}:00–${policy.LastWindowHour}:00; ` +
       `dirtiness +${increasedDirtinessPct}%/+${heavyDirtinessPct}%; ` +
       `a home of up to ${policy.MaxRooms} rooms and ${policy.MaxBathrooms} bathrooms on every picker, refusal and caption; ` +
-      `money figures in copy come from the market; legal seed ${seedVersions} carries the placeholders; ` +
+      `money figures in copy come from the market; ` +
+      `the referral credit comes from the market on ${WEB_REFERRAL_ROWS.length} web and ` +
+      `${MOBILE_REFERRAL_ROWS.length} mobile row(s), each with its no-figure twin; ` +
+      `legal seed ${seedVersions} carries the placeholders; ` +
       `${reasons.length - REASONS_NOT_YET_RENDERED.size} cancellation reason(s) render on every client`,
   );
 }

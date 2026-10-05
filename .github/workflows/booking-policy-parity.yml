@@ -12,9 +12,11 @@ name: Booking policy parity
 # separately claimed a 4-hour booking floor against a 2-hour one. Every CI job was green throughout,
 # because no existing job can see all four trees at once:
 #
-#   - frontend-ci.yml runs `nx affected`. A C#/Kotlin/Swift-only diff selects ZERO Nx projects, and
-#     Nx inputs cannot reference paths above src/Cleansia.App, so BookingPolicy.cs is not a declared
-#     input — a Jest spec would replay a CACHED PASS over drifted copy.
+#   - frontend-ci.yml runs `nx affected`. A C#/Kotlin/Swift-only diff selects ZERO Nx projects. The
+#     two Jest specs that read BookingPolicy.cs hash it through a runtime input (nx.json
+#     `bookingPolicy`, since 2026-10-05), so a warm cache no longer replays their pass over a changed
+#     policy; but a runtime input adds no file to the project graph, so `nx affected` still selects
+#     neither for a diff to BookingPolicy.cs alone, and neither reads the Kotlin or Swift copy.
 #   - backend-ci.yml explicitly excludes src/cleansia_android/** and src/cleansia_ios/**.
 #   - android-ci and ios-ci are Gradle and Xcode. Neither reads C#.
 #

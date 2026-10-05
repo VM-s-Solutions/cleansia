@@ -13,17 +13,20 @@
  *
  * WHY A PLAIN NODE SCRIPT OUTSIDE THE NX WORKSPACE (ADR-0037 D7 ruling 1-3, amended by CH-M7):
  *   - `frontend-ci.yml` runs `nx affected -t test`; a Kotlin/Swift/C#-only diff selects ZERO Nx
- *     projects, so a Jest spec would not run at all — and if it were selected, `nx.json` declares
- *     `@nx/jest:jest` inputs as `{projectRoot}/**\/*` with an EMPTY `sharedGlobals`, and Nx inputs
- *     cannot reference paths above the workspace root (`src/Cleansia.App`). `OrderAvailability.cs`,
- *     `OrdersListViewModel.kt` and `OrdersListLogic.swift` are therefore NOT declared inputs: the
- *     spec would replay a CACHED PASS over a drifted literal.
+ *     projects, so a Jest spec would not run at all. A file input cannot name `OrderAvailability.cs`,
+ *     `OrdersListViewModel.kt` or `OrdersListLogic.swift`: Nx hashes only files inside the workspace
+ *     root (`src/Cleansia.App`) and silently ignores `{workspaceRoot}/../…`. A runtime input that
+ *     hashed them would stop a warm cache replaying a pass over a drifted literal (the shape the specs
+ *     reading C# have used since 2026-10-05, `agents/knowledge/patterns-frontend.md`), but it adds no
+ *     file to the project graph, so `nx affected` would still select nothing for such a diff.
  *   - `backend-ci.yml` explicitly EXCLUDES `src/cleansia_android/**` and `src/cleansia_ios/**`.
  *   - `android-ci` / `ios-ci` are Gradle/Xcode and cannot read C#.
  * Living outside the Nx workspace removes the cache hazard BY CONSTRUCTION rather than by
- * configuration. It has its OWN repo-root workflow (`.github/workflows/offerability-parity.yml`)
- * triggering on all four trees, so it is never behind `nx affected` and never coupled to
- * `frontend-ci`'s deliberately narrow paths scope.
+ * configuration. NO WORKFLOW RUNS IT TODAY: `.github/workflows/` has no offerability workflow, and
+ * the checker runs on demand only (the gate table in `agents/process/enforcement.md`). A workflow for
+ * it would take the shape `.github/workflows/booking-policy-parity.yml` has: its own repo-root
+ * workflow, triggered on all four trees and running the self-test first, so it is never behind
+ * `nx affected` and never coupled to `frontend-ci`'s deliberately narrow paths scope.
  *
  * IT COVERS BUTTON GATES, NOT ONLY QUERY LITERALS (ADR-0037 D7 ruling 4 / CH-X5). The query decides
  * what is LISTED, the button decides what is CLICKABLE, and the ADR's whole thesis is that those must

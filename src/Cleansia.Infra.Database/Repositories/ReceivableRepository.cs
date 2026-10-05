@@ -25,6 +25,12 @@ public class ReceivableRepository(CleansiaDbContext context)
             .ToListAsync(cancellationToken);
     }
 
+    public Task<Receivable?> GetUnpaidCashForOrderAsync(string orderId, CancellationToken cancellationToken)
+    {
+        return GetQueryable()
+            .FirstOrDefaultAsync(r => r.OrderId == orderId && r.Kind == ReceivableKind.UnpaidCash, cancellationToken);
+    }
+
     public Task<Receivable?> GetByIdIgnoringTenantAsync(string id, CancellationToken cancellationToken)
     {
         return GetQueryableIgnoringTenant()

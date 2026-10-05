@@ -252,37 +252,7 @@ public class CompleteOrder
                 return BusinessResult.Failure<Response>(new Error(nameof(command.OrderId), BusinessErrorMessage.OrderNotFound));
             }
 
-            // Derive actual completion time when the caller doesn't
-            // supply it. Source of truth is the InProgress entry in
-            // OrderStatusHistory — that's when the cleaner tapped
-            // "Slide to start" so `now - that timestamp` is the
-            // genuine work duration. We round up to 1 minute on
-            // very fast (<60s) completions so a Completed order
-            // always has a non-zero ActualCompletionTime for invoice
-            // / analytics math.
-            var actualMinutes = command.ActualCompletionTimeMinutes.GetValueOrDefault();
-            if (actualMinutes <= 0)
-            {
-                var startedAt = order.OrderStatusHistory
-                    .Where(osh => osh.Status == OrderStatus.InProgress)
-                    .OrderBy(osh => osh.CreatedOn)
-                    .Select(osh => (DateTimeOffset?)osh.CreatedOn)
-                    .FirstOrDefault();
-                if (startedAt.HasValue)
-                {
-                    var elapsed = DateTimeOffset.UtcNow - startedAt.Value;
-                    actualMinutes = Math.Max(1, (int)Math.Round(elapsed.TotalMinutes));
-                }
-                else
-                {
-                    // No InProgress entry means the order skipped the
-                    // Start step (admin override?) — fall back to the
-                    // order's estimated time as a sane default. Domain
-                    // validation below will still reject if it ends up
-                    // <=0, but in practice EstimatedTime is always set.
-                    actualMinutes = Math.Max(1, order.EstimatedTime);
-                }
-            }
+            var actualMinutes = ActualMinutes(order, command.ActualCompletionTimeMinutes);
 
             order.CompleteOrder(actualMinutes, command.CompletionNotes);
 
@@ -357,6 +327,29 @@ public class CompleteOrder
                 NewStatus: OrderStatus.Completed,
                 ActualCompletionTime: actualMinutes
             ));
+        }
+
+        /// <summary>
+        /// The stated minutes, or else the time since the InProgress entry, which is when the cleaner slid to
+        /// start, rounded up to one minute so a completed order always has a non-zero duration for invoice and
+        /// analytics math. An order that skipped the start (an admin override) falls back to its estimate.
+        /// </summary>
+        internal static int ActualMinutes(Order order, int? statedMinutes)
+        {
+            if (statedMinutes is > 0)
+            {
+                return statedMinutes.Value;
+            }
+
+            var startedAt = order.OrderStatusHistory
+                .Where(osh => osh.Status == OrderStatus.InProgress)
+                .OrderBy(osh => osh.CreatedOn)
+                .Select(osh => (DateTimeOffset?)osh.CreatedOn)
+                .FirstOrDefault();
+
+            return startedAt.HasValue
+                ? Math.Max(1, (int)Math.Round((DateTimeOffset.UtcNow - startedAt.Value).TotalMinutes))
+                : Math.Max(1, order.EstimatedTime);
         }
     }
 }

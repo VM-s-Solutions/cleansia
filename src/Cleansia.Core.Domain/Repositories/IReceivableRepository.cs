@@ -10,6 +10,9 @@ public interface IReceivableRepository : IRepository<Receivable, string>
     /// <summary>What the customer owes any operating company and has not settled, with its order and currency, oldest first.</summary>
     Task<IReadOnlyList<Receivable>> GetOpenForUserAsync(string userId, CancellationToken cancellationToken);
 
+    /// <summary>The price of the order the customer did not pay the cleaner at the door, in any status, or null.</summary>
+    Task<Receivable?> GetUnpaidCashForOrderAsync(string orderId, CancellationToken cancellationToken);
+
     /// <summary>
     /// A receivable of any company with its order, the order's crew and its currency: the Stripe webhook and
     /// the customer's pay link carry no company of their own.

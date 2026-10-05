@@ -266,6 +266,17 @@ public static class NotificationEventCatalog
     /// </summary>
     public const string OrderNoCleanerNothingCharged = "order.no_cleaner_nothing_charged";
 
+    /// <summary>
+    /// Customer-targeted: the cleaner reported that the cash for a finished cleaning was not paid, so the
+    /// price is now owed and no new booking is taken until it is paid (owner ruling 2026-10-06). Args:
+    /// <c>orderNumber</c> (loc) + <c>amount</c> (loc, the price owed with its currency's symbol) +
+    /// <c>orderId</c> (deep link to the order, where it is paid). Non-mutable (GetCategoryFor returns null):
+    /// a debt that blocks every booking is not a notice the customer may silence. Data-only until both
+    /// customer apps render it, after which it joins <see cref="NotificationFeedEventKeys.Customer"/> and
+    /// the APNs display map.
+    /// </summary>
+    public const string OrderCashNotPaid = "order.cash_not_paid";
+
     public static NotificationCategory? GetCategoryFor(string eventKey) => eventKey switch
     {
         OrderPaymentConfirmed => NotificationCategory.OrderUpdates,

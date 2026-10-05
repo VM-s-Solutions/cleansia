@@ -168,6 +168,39 @@ public class ReceivableWebhookTests
             It.IsAny<string>()), Times.Never);
     }
 
+    /// <summary>
+    /// The cleaner was paid when they reported that the customer did not pay at the door, under the same
+    /// outbox key a second request would collide on.
+    /// </summary>
+    [Fact]
+    public async Task A_Paid_Unpaid_Cash_Receivable_Asks_For_Its_Fee_Receipt_And_No_Crew_Pay()
+    {
+        var order = _receivable.Order!;
+        order.TenantId = TenantId;
+        order.AddAssignedEmployee(OrderEmployee.Create(
+            order, ValidatorTestHelpers.BuildEmployee("emp-door", ContractStatus.Approved)));
+        var unpaidCash = Receivable.ForUnpaidCash(order);
+        unpaidCash.TenantId = TenantId;
+        typeof(Receivable).GetProperty(nameof(Receivable.Order))!.SetValue(unpaidCash, order);
+        _receivables
+            .Setup(r => r.GetByIdIgnoringTenantAsync(unpaidCash.Id, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(unpaidCash);
+
+        var result = await DeliverAsync(PayLinkCompleted("evt_link_door", unpaidCash.Id, "pi_door"));
+
+        Assert.True(result.IsSuccess);
+        Assert.True(unpaidCash.IsPaid);
+        Assert.Equal(PaymentStatus.Pending, order.PaymentStatus);
+        _pending.Verify(p => p.Enqueue(
+            QueueNames.GenerateReceipt,
+            It.Is<QueueEnvelope<GenerateReceiptMessage>>(e => e.Payload.ReceivableId == unpaidCash.Id),
+            MessageKeys.FeeReceipt(unpaidCash.Id)), Times.Once);
+        _pending.Verify(p => p.Enqueue(
+            QueueNames.CalculateOrderPay,
+            It.IsAny<QueueEnvelope<CalculateOrderPayMessage>>(),
+            It.IsAny<string>()), Times.Never);
+    }
+
     [Fact]
     public async Task A_Successful_Off_Session_Charge_Settles_Its_Receivable_And_Leaves_The_Orders_Sale_Alone()
     {

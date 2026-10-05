@@ -6,6 +6,7 @@ using Cleansia.Core.AppServices.Features.Orders;
 using Cleansia.Core.AppServices.Services.Interfaces;
 using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Orders;
+using Cleansia.Core.Domain.Payments;
 using Cleansia.Core.Domain.Repositories;
 using Cleansia.Core.Domain.SeedWork;
 using Cleansia.Core.Queue.Abstractions;
@@ -15,12 +16,12 @@ using Microsoft.Extensions.Logging;
 namespace Cleansia.Functions.Core.Handlers;
 
 /// <summary>
-/// Realizes every e-mail the send-email queue carries, off the request path. The queue holds seven
+/// Realizes every e-mail the send-email queue carries, off the request path. The queue holds eight
 /// payload shapes told apart by their <c>messageType</c> discriminator: the bare
 /// <see cref="SendEmailMessage"/> (no discriminator; confirmation, reset, promo and the two wind-down
 /// notices, resolved by <see cref="EmailType"/>), the guest order cancellation, the booking
-/// confirmation, the admin notification, the receivable pay link, the lockout cancellation and the
-/// cleaner's copy of a contract for work. Each is sent via the existing
+/// confirmation, the admin notification, the receivable pay link, the lockout cancellation, the cash a
+/// customer did not pay at the door and the cleaner's copy of a contract for work. Each is sent via the existing
 /// <see cref="IEmailService"/> in the language the producer chose.
 ///
 /// Idempotent via <see cref="IIdempotencyGuard"/> in ACT-THEN-CLAIM mode (at-least-once): non-claiming
@@ -59,6 +60,7 @@ public class SendEmailHandler(
         SendAdminNotificationEmailMessage? adminMessage;
         SendReceivablePayLinkEmailMessage? payLinkMessage;
         SendOrderLockoutEmailMessage? lockoutMessage;
+        SendOrderCashNotPaidEmailMessage? cashNotPaidMessage;
         SendWorkContractEmailMessage? workContractMessage;
         string? discriminatedTenantId;
         try
@@ -79,6 +81,8 @@ public class SendEmailHandler(
                 ? payload.Deserialize<SendReceivablePayLinkEmailMessage>(JsonOptions) : null;
             lockoutMessage = messageType == SendOrderLockoutEmailMessage.Discriminator
                 ? payload.Deserialize<SendOrderLockoutEmailMessage>(JsonOptions) : null;
+            cashNotPaidMessage = messageType == SendOrderCashNotPaidEmailMessage.Discriminator
+                ? payload.Deserialize<SendOrderCashNotPaidEmailMessage>(JsonOptions) : null;
             workContractMessage = messageType == SendWorkContractEmailMessage.Discriminator
                 ? payload.Deserialize<SendWorkContractEmailMessage>(JsonOptions) : null;
             discriminatedTenantId = root.TryGetProperty("tenantId", out var tenant) && tenant.ValueKind == JsonValueKind.String ? tenant.GetString() : null;
@@ -111,6 +115,11 @@ public class SendEmailHandler(
         if (lockoutMessage is not null)
         {
             await SendOrderLockoutAsync(lockoutMessage, discriminatedTenantId, ct);
+            return;
+        }
+        if (cashNotPaidMessage is not null)
+        {
+            await SendOrderCashNotPaidAsync(cashNotPaidMessage, discriminatedTenantId, ct);
             return;
         }
         if (workContractMessage is not null)
@@ -407,21 +416,8 @@ public class SendEmailHandler(
         if (await idempotencyGuard.HasProcessedAsync(key, ct)) return;
 
         tenantProvider.SetTenantOverride(tenantId);
-        var receivable = await receivableRepository.GetByIdAsync(message.ReceivableId, ct);
-        if (receivable is not { IsOpen: true })
+        if (await OpenReceivableWithItsOrderAsync(message.ReceivableId, "Pay-link", ct) is not ({ } receivable, { } order))
         {
-            logger.LogInformation("Pay-link e-mail for receivable {ReceivableId} not sent: it is no longer open", message.ReceivableId);
-            return;
-        }
-
-        var order = await orderRepository.GetQueryable()
-            .Include(o => o.Currency).Include(o => o.CustomerAddress).Include(o => o.User)
-            .AsNoTracking()
-            .FirstOrDefaultAsync(o => o.Id == receivable.OrderId, ct);
-        if (order is null || string.IsNullOrWhiteSpace(order.CustomerEmail)
-            || order.CustomerEmail == AnonymizationMarker.Value)
-        {
-            logger.LogWarning("Discarding pay-link e-mail: order {OrderId} has no eligible destination", receivable.OrderId);
             return;
         }
 
@@ -435,6 +431,62 @@ public class SendEmailHandler(
         {
             logger.LogWarning(ex, "Pay-link e-mail sent for receivable {ReceivableId}, but its delivery claim failed", receivable.Id);
         }
+    }
+
+    // Act-then-claim like the shapes beside it. A price paid or written off before the send is not chased.
+    private async Task SendOrderCashNotPaidAsync(
+        SendOrderCashNotPaidEmailMessage message, string? envelopeTenantId, CancellationToken ct)
+    {
+        var tenantId = envelopeTenantId ?? message.TenantId;
+        if (string.IsNullOrWhiteSpace(message.ReceivableId) || string.IsNullOrWhiteSpace(tenantId))
+        {
+            logger.LogWarning("Discarding cash-not-paid e-mail with no receivable or operator");
+            return;
+        }
+        var key = MessageKeys.OrderCashNotPaidEmail(message.ReceivableId);
+        if (await idempotencyGuard.HasProcessedAsync(key, ct)) return;
+
+        tenantProvider.SetTenantOverride(tenantId);
+        if (await OpenReceivableWithItsOrderAsync(message.ReceivableId, "Cash-not-paid", ct) is not ({ } receivable, { } order))
+        {
+            return;
+        }
+
+        var languageCode = EmailLocale.Resolve(order.LanguageCode ?? order.User?.PreferredLanguageCode ?? message.LanguageCode);
+        await emailService.SendOrderCashNotPaidEmailAsync(order.CustomerEmail, order, receivable, languageCode, ct);
+        try
+        {
+            await idempotencyGuard.MarkProcessedAsync(key, ct);
+        }
+        catch (Exception ex)
+        {
+            logger.LogWarning(ex, "Cash-not-paid e-mail sent for receivable {ReceivableId}, but its delivery claim failed", receivable.Id);
+        }
+    }
+
+    /// <summary>The receivable while it is still owed, with the order whose customer can be e-mailed about it.</summary>
+    private async Task<(Receivable Receivable, Order Order)?> OpenReceivableWithItsOrderAsync(
+        string receivableId, string emailName, CancellationToken ct)
+    {
+        var receivable = await receivableRepository.GetByIdAsync(receivableId, ct);
+        if (receivable is not { IsOpen: true })
+        {
+            logger.LogInformation("{EmailName} e-mail for receivable {ReceivableId} not sent: it is no longer open", emailName, receivableId);
+            return null;
+        }
+
+        var order = await orderRepository.GetQueryable()
+            .Include(o => o.Currency).Include(o => o.CustomerAddress).Include(o => o.User)
+            .AsNoTracking()
+            .FirstOrDefaultAsync(o => o.Id == receivable.OrderId, ct);
+        if (order is null || string.IsNullOrWhiteSpace(order.CustomerEmail)
+            || order.CustomerEmail == AnonymizationMarker.Value)
+        {
+            logger.LogWarning("Discarding {EmailName} e-mail: order {OrderId} has no eligible destination", emailName, receivable.OrderId);
+            return null;
+        }
+
+        return (receivable, order);
     }
 
     // Act-then-claim like the shapes beside it: the send is the only thing that may throw, and it

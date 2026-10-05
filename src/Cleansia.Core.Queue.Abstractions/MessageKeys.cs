@@ -29,6 +29,9 @@ public static class MessageKeys
     /// <summary>One lockout cancellation email per signed-in customer's order.</summary>
     public static string OrderLockoutEmail(string orderId) => $"email:order-lockout:{orderId}";
 
+    /// <summary>One e-mail per price a customer did not pay the cleaner at the door.</summary>
+    public static string OrderCashNotPaidEmail(string receivableId) => $"email:order-cash-not-paid:{receivableId}";
+
     /// <summary>generate-receipt → <c>receipt:{OrderId}</c> (one receipt per order).</summary>
     public static string Receipt(string orderId) => $"receipt:{orderId}";
 

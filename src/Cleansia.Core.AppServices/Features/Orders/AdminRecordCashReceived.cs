@@ -18,11 +18,15 @@ namespace Cleansia.Core.AppServices.Features.Orders;
 /// 2026-09-28): which assigned cleaner took the cash, when, and how much. The order is then paid exactly
 /// as the cleaner's own <see cref="MarkCashCollected"/> would have paid it, so the cleaner can complete
 /// it; on an order an administrator already completed, the cash receipt is issued here, because that is
-/// the moment both of its dates exist. → /flows/payment-and-fiscal
+/// the moment both of its dates exist. On an order the cleaner reported unpaid (owner ruling 2026-10-06) it
+/// closes the price owed in the same commit, written off as paid in cash, and it is refused once that price
+/// was paid online, so the customer never pays twice. → /flows/payment-and-fiscal
 /// </summary>
 [AuditAction("order.cash.record", ResourceType = "Order")]
 public class AdminRecordCashReceived
 {
+    public const string PaidInCashNote = "Paid in cash";
+
     public record Command(string OrderId, string EmployeeId, DateTime ReceivedAt, decimal Amount) : ICommand<Response>;
 
     public record Response(string OrderId, PaymentStatus PaymentStatus);
@@ -31,7 +35,7 @@ public class AdminRecordCashReceived
     {
         private readonly IOrderRepository _orderRepository;
 
-        public Validator(IOrderRepository orderRepository, TimeProvider timeProvider)
+        public Validator(IOrderRepository orderRepository, IReceivableRepository receivableRepository, TimeProvider timeProvider)
         {
             _orderRepository = orderRepository;
 
@@ -55,6 +59,8 @@ public class AdminRecordCashReceived
                 .WithMessage(BusinessErrorMessage.OrderCashAlreadyCollected)
                 .MustAsync(async (orderId, ct) =>
                     (await LoadAsync(orderId, ct))?.PaymentStatus is PaymentStatus.Pending or PaymentStatus.Failed)
+                .WithMessage(BusinessErrorMessage.OrderPaymentNotOutstanding)
+                .MustAsync(async (orderId, ct) => (await receivableRepository.GetUnpaidCashForOrderAsync(orderId, ct))?.IsPaid != true)
                 .WithMessage(BusinessErrorMessage.OrderPaymentNotOutstanding);
 
             RuleFor(x => x.EmployeeId)
@@ -113,7 +119,13 @@ public class AdminRecordCashReceived
         }
     }
 
-    public class Handler(IOrderRepository orderRepository, ICashLedgerRepository cashLedgerRepository, IPendingDispatch pending)
+    public class Handler(
+        IOrderRepository orderRepository,
+        ICashLedgerRepository cashLedgerRepository,
+        IReceivableRepository receivableRepository,
+        IUserSessionProvider userSessionProvider,
+        TimeProvider timeProvider,
+        IPendingDispatch pending)
         : ICommandHandler<Command, Response>
     {
         public async Task<BusinessResult<Response>> Handle(Command command, CancellationToken cancellationToken)
@@ -133,6 +145,10 @@ public class AdminRecordCashReceived
 
             order.MarkCashCollected(command.EmployeeId, command.ReceivedAt.ToUniversalTime(), command.Amount);
             cashLedgerRepository.Add(CashLedgerEntry.ForCollection(order));
+            if (await receivableRepository.GetUnpaidCashForOrderAsync(order.Id, cancellationToken) is { IsOpen: true } debt)
+            {
+                debt.WriteOff(userSessionProvider.GetUserId()!, PaidInCashNote, timeProvider.GetUtcNow());
+            }
 
             if (order.CurrentStatus == OrderStatus.Completed && order.Receipt is null)
             {

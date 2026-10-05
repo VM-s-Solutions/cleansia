@@ -52,6 +52,12 @@ public class MessageKeyTests
     }
 
     [Fact]
+    public void OrderCashNotPaidEmail_Key_Follows_Frozen_Formula()
+    {
+        Assert.Equal("email:order-cash-not-paid:RECEIVABLE-1", MessageKeys.OrderCashNotPaidEmail("RECEIVABLE-1"));
+    }
+
+    [Fact]
     public void Push_Key_Follows_Frozen_Formula_With_Subject()
     {
         Assert.Equal(

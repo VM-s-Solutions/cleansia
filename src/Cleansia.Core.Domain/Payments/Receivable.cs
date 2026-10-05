@@ -10,8 +10,8 @@ namespace Cleansia.Core.Domain.Payments;
 /// <summary>
 /// Money a customer owes the company on one order beyond what the order collected (owner ruling
 /// 2026-09-28, decision 17): a late cancellation fee on a cash booking, a lockout fee, unpaid cash or an
-/// approved top-up. While one is open the customer books no cash (decision 18), and an administrator may
-/// write it off. <see cref="Attempts"/> counts the charges tried on the saved card. It is paid through
+/// approved top-up. While one is open the customer makes no new booking (owner ruling 2026-10-06), and an
+/// administrator may write it off. <see cref="Attempts"/> counts the charges tried on the saved card. It is paid through
 /// the customer's pay link or an off-session charge, and its payment earns a fee receipt of its own; the
 /// order's sale, its charge surface and its refunds are never touched by it.
 /// </summary>
@@ -73,6 +73,10 @@ public class Receivable : TenantAuditable
         Open(order, ReceivableKind.CashCancellationFee, fee);
 
     public static Receivable ForLockout(Order order, decimal fee) => Open(order, ReceivableKind.Lockout, fee);
+
+    /// <summary>The price the customer did not pay the cleaner at the door: what the cleaner would have collected.</summary>
+    public static Receivable ForUnpaidCash(Order order) =>
+        Open(order, ReceivableKind.UnpaidCash, order.TotalPrice - order.CreditAppliedAmount);
 
     private static Receivable Open(Order order, ReceivableKind kind, decimal amount) =>
         new()

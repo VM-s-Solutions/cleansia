@@ -27,13 +27,16 @@ public class AdminRecordCashReceivedTests
     private readonly Mock<IOrderRepository> _orderRepository = new();
     private readonly Mock<IPendingDispatch> _pending = new();
     private readonly Mock<ICashLedgerRepository> _cashLedger = new();
+    private readonly Mock<IReceivableRepository> _receivables = new();
+    private readonly Mock<IUserSessionProvider> _session = new();
 
-    private AdminRecordCashReceived.Handler Handler() => new(_orderRepository.Object, _cashLedger.Object, _pending.Object);
+    private AdminRecordCashReceived.Handler Handler() => new(
+        _orderRepository.Object, _cashLedger.Object, _receivables.Object, _session.Object, new StubTimeProvider(Now), _pending.Object);
 
     private AdminRecordCashReceived.Validator Validator()
     {
         _orderRepository.Setup(r => r.ExistsAsync(It.IsAny<string>(), It.IsAny<CancellationToken>())).ReturnsAsync(true);
-        return new AdminRecordCashReceived.Validator(_orderRepository.Object, new StubTimeProvider(Now));
+        return new AdminRecordCashReceived.Validator(_orderRepository.Object, _receivables.Object, new StubTimeProvider(Now));
     }
 
     private static AdminRecordCashReceived.Command Command(
@@ -204,6 +207,64 @@ public class AdminRecordCashReceivedTests
         var result = await Validator().ValidateAsync(Command());
 
         Assert.True(result.IsValid, string.Join(", ", result.Errors.Select(e => e.ErrorMessage)));
+    }
+
+    /// <summary>
+    /// Owner ruling 2026-10-06: the customer who did not pay at the door pays the cleaner after all, and the
+    /// administrator records it. The debt the report opened closes in the same commit, written off by the
+    /// administrator as paid in cash, so the customer can book again and is never asked twice.
+    /// </summary>
+    [Fact]
+    public async Task Recording_The_Cash_On_An_Order_Whose_Price_Is_Owed_Closes_The_Debt()
+    {
+        const string AdminId = "admin-door";
+        var order = ArrangeOrder(history: [OrderStatus.New, OrderStatus.Confirmed, OrderStatus.InProgress, OrderStatus.Completed]);
+        var debt = OweTheDoorPrice(order);
+        _session.Setup(s => s.GetUserId()).Returns(AdminId);
+
+        var result = await Handler().Handle(Command(), CancellationToken.None);
+
+        Assert.True(result.IsSuccess, result.Error?.Message);
+        Assert.Equal(PaymentStatus.Paid, order.PaymentStatus);
+        Assert.Equal(
+            (ReceivableStatus.WrittenOff, AdminId, AdminRecordCashReceived.PaidInCashNote, (DateTimeOffset?)new DateTimeOffset(Now)),
+            (debt.Status, debt.WrittenOffByUserId, debt.WriteOffNote, debt.WrittenOffOn));
+        _pending.Verify(p => p.Enqueue(
+            QueueNames.GenerateReceipt, It.IsAny<It.IsAnyType>(), MessageKeys.Receipt(OrderId)), Times.Once);
+    }
+
+    /// <summary>A debt already settled through its pay link is money the customer paid once; cash on top would be twice.</summary>
+    [Fact]
+    public async Task Cash_Is_Refused_On_An_Order_Whose_Price_Was_Already_Paid_Online()
+    {
+        var order = ArrangeOrder(history: [OrderStatus.New, OrderStatus.Confirmed, OrderStatus.InProgress, OrderStatus.Completed]);
+        OweTheDoorPrice(order).MarkPaid("pi_door", DateTimeOffset.UtcNow);
+
+        var result = await Validator().ValidateAsync(Command());
+
+        Assert.Equal(BusinessErrorMessage.OrderPaymentNotOutstanding, Assert.Single(result.Errors).ErrorMessage);
+    }
+
+    [Fact]
+    public async Task A_Debt_Written_Off_Before_The_Cash_Is_Recorded_Is_Left_As_It_Is()
+    {
+        var order = ArrangeOrder(history: [OrderStatus.New, OrderStatus.Confirmed, OrderStatus.InProgress, OrderStatus.Completed]);
+        var debt = OweTheDoorPrice(order);
+        debt.WriteOff("manager-door", "Wrong report", DateTimeOffset.UtcNow.AddDays(-1));
+
+        var valid = await Validator().ValidateAsync(Command());
+        var result = await Handler().Handle(Command(), CancellationToken.None);
+
+        Assert.True(valid.IsValid, string.Join(", ", valid.Errors.Select(e => e.ErrorMessage)));
+        Assert.True(result.IsSuccess, result.Error?.Message);
+        Assert.Equal(("manager-door", "Wrong report"), (debt.WrittenOffByUserId, debt.WriteOffNote));
+    }
+
+    private Receivable OweTheDoorPrice(Order order)
+    {
+        var debt = Receivable.ForUnpaidCash(order);
+        _receivables.Setup(r => r.GetUnpaidCashForOrderAsync(OrderId, It.IsAny<CancellationToken>())).ReturnsAsync(debt);
+        return debt;
     }
 
     private sealed class StubTimeProvider(DateTimeOffset now) : TimeProvider

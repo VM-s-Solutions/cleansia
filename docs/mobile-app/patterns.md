@@ -709,6 +709,24 @@ on the Android emulator: a dialog's text button 3.34 to 4.84:1, a picked chip on
 4.89:1, the call chip 3.45 to 5.00:1 and the selected tab's icon 4.10 to 5.93:1. Each app's commit
 lists every site (iOS `688cf6160`, Android `48f0749c8`).
 
+- **iOS**: `BrandTextInkTests` checks the token at 4.5:1 or more on every ground those texts sit on,
+  pins the texts whose colour comes from a helper, and scans the customer sources so that no `Text`
+  is drawn in the primary. `ComponentTextInkTests` (Core) finds no shared `Text` drawn in the primary
+  but the wordmark's fallback, and pins the icons beside a text-ink label and the chrome that keeps
+  the primary; the partner app's `TextInkTests` pins its sites. Checked on the iPhone 17 Pro (iOS 26.3)
+  simulator, whose screenshots run lighter than the colours (sky-600 is captured as `#0097D2`, sky-700
+  as `#007DB1`): the price read 3.30 to 4.60:1 there, the badge 3.17 to 4.41:1.
+- **Android**: `PrimaryTextTest` (`:core`) pins the token's two values and 4.5:1 on every ground a link
+  or a label sits on, the legal text's link and quote colours, and reads all three modules' sources:
+  no `TextButton` on Material's default ink, no outlined button whose label or icon rides it, no
+  button content and no `:core` text in the bare primary, both selected tabs in one ink, and the
+  partner links with their icons. `PrimaryTextContrastTest` (customer) pins sky-700 at 4.5:1 or more
+  on every light ground the customer's texts sit on, reads the customer sources so that no `Text`
+  takes the bare primary or sky-600 again (39 did before), and no longer exempts labels inside
+  buttons. Measured on the emulator: the package sheet's price 4.10 to 5.93:1, the schedule form's
+  *DEFAULT* badge 3.37 to 4.89:1, the *MOST POPULAR* badge 3.51 to 5.08:1 and *Add new address* 3.91
+  to 5.67:1.
+
 **Blue text on the light-blue container has an ink of its own in dark mode** (finding 2026-10-05).
 `primaryContainer` is sky-100 in light mode and sky-700 in dark, and the text ink on it reads 5.17:1 in
 light mode but 2.77:1 in dark, sky-400 on sky-700. Text drawn straight on that container takes
@@ -758,24 +776,6 @@ from 2.51 to 5.04:1 in dark; measured on the Android emulator, *Pending* went fr
 the card in both modes (iOS `96a1ea10e`, Android `a6b1b9942`). The web's pills already read 4.5:1 or
 more: the customer's 4.79:1 or more in both themes, the admin's shared status badge 4.51:1 at its
 lowest, the warning tone.
-
-- **iOS**: `BrandTextInkTests` checks the token at 4.5:1 or more on every ground those texts sit on,
-  pins the texts whose colour comes from a helper, and scans the customer sources so that no `Text`
-  is drawn in the primary. `ComponentTextInkTests` (Core) finds no shared `Text` drawn in the primary
-  but the wordmark's fallback, and pins the icons beside a text-ink label and the chrome that keeps
-  the primary; the partner app's `TextInkTests` pins its sites. Checked on the iPhone 17 Pro (iOS 26.3)
-  simulator, whose screenshots run lighter than the colours (sky-600 is captured as `#0097D2`, sky-700
-  as `#007DB1`): the price read 3.30 to 4.60:1 there, the badge 3.17 to 4.41:1.
-- **Android**: `PrimaryTextTest` (`:core`) pins the token's two values and 4.5:1 on every ground a link
-  or a label sits on, the legal text's link and quote colours, and reads all three modules' sources:
-  no `TextButton` on Material's default ink, no outlined button whose label or icon rides it, no
-  button content and no `:core` text in the bare primary, both selected tabs in one ink, and the
-  partner links with their icons. `PrimaryTextContrastTest` (customer) pins sky-700 at 4.5:1 or more
-  on every light ground the customer's texts sit on, reads the customer sources so that no `Text`
-  takes the bare primary or sky-600 again (39 did before), and no longer exempts labels inside
-  buttons. Measured on the emulator: the package sheet's price 4.10 to 5.93:1, the schedule form's
-  *DEFAULT* badge 3.37 to 4.89:1, the *MOST POPULAR* badge 3.51 to 5.08:1 and *Add new address* 3.91
-  to 5.67:1.
 
 ## Every map is quiet, with one Cleansia pin {#maps}
 

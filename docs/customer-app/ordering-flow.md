@@ -102,7 +102,11 @@ price and its tick's disc take `--cl-surface`, the card's own ground, which flip
 the tick's check stays `--cl-heading`. Measured in Chromium, all four read 5.93:1 in light mode and
 10.37:1 in dark. Until 2026-10-05 the name and the disc were white and the price the soft accent, so
 in dark mode the name and the check read 1.67:1 and the price 1.00:1, and in light mode the price
-read 2.77:1. Hovering never repaints a picked pick's border (`:hover:not(.cl-rec__pick--on)`): the
+read 2.77:1. Two more picked elements sit on the same slab and take the same ink since 2026-10-05:
+the schedule form's picked chips (`cl-rec__chip--on`: cadence, day, rooms and bathrooms) and the Plus
+badge, star included, on the schedules list's paywall (`cl-rec__gate-badge`). They read 5.93:1 in
+light mode and 10.37:1 in dark, where their white read 1.67:1; the `create-recurring-wizard` and
+`recurring-bookings-list` specs pin each one's ink. Hovering never repaints a picked pick's border (`:hover:not(.cl-rec__pick--on)`): the
 hover rule outranked the picked one and turned the border pale. On a picked pick the badge sits on
 `--cl-surface`, where its words read 9.46:1 in light mode and 15.06:1 in dark. The badge,
 `.cl-wiz__svc-in-pack` at all three sites, sits straight under the name and above the description. It

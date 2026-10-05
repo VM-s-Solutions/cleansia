@@ -1081,8 +1081,11 @@ need backfilling.
 - **Customer web — what you pick on the schedule form reads in dark mode.** In dark mode a picked
   service or package showed its name in white on light blue, hard to read, with a tick that all but
   vanished, and a picked package's price disappeared into the blue; in light mode that price was faint
-  too. They are now dark on the light blue in dark mode and white on the dark blue in light mode.
-  Hovering over a picked one no longer turns its border pale. (Finding 2026-10-04.)
+  too. The picked how-often, day, rooms and bathrooms choices, and the Plus badge shown to a customer
+  without Plus on the schedules page, were white on light blue in dark mode as well. All of them are
+  now dark on the light blue in dark mode and white on the dark blue in light mode. Hovering over a
+  picked service or package no longer turns its border pale. (Finding 2026-10-04; the choices and the
+  badge, review 2026-10-05.)
 
 - **Customer Android and iOS — a service's price and description are easier to read.** In booking's
   list of services, the blue *from* price was faint in light mode, most of all on a row your package

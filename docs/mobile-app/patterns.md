@@ -709,6 +709,32 @@ on the Android emulator: a dialog's text button 3.34 to 4.84:1, a picked chip on
 4.89:1, the call chip 3.45 to 5.00:1 and the selected tab's icon 4.10 to 5.93:1. Each app's commit
 lists every site (iOS `688cf6160`, Android `48f0749c8`).
 
+**Blue text on the light-blue container has an ink of its own in dark mode** (finding 2026-10-05).
+`primaryContainer` is sky-100 in light mode and sky-700 in dark, and the text ink on it reads 5.17:1 in
+light mode but 2.77:1 in dark, sky-400 on sky-700. Text drawn straight on that container takes
+`CleansiaColors.primaryTextOnContainer` (iOS Core) or `ColorScheme.primaryTextOnContainer` (Android
+`:core`): sky-700 in light mode, as the text ink, and sky-100 `#E0F2FE` in dark, 5.17:1 on sky-700. It
+takes:
+
+- in both apps, *This device* on the devices list, and the shared section header's badge, which has no
+  caller today;
+- in the customer app, the initial of an order's cleaner, and on iOS the default-address badge in the
+  address manager and in the booking's saved-address chooser;
+- in the partner app on iOS, the *Pending* invoice badge.
+
+The customer's read 2.77 to 5.17:1 in dark mode and are unchanged in light. The partner's drew the
+primary, 3.57:1 in light mode and 2.77:1 in dark, and read 5.17:1 in both. Left as they are, because
+they already clear 4.5:1: Android's default-address badges, which sit on a 12 % primary wash and not on
+the container (5.43:1 in dark), the fills washed from the container at 35–60 % (4.89–6.03:1), the
+schedule form's badge on iOS's 40 % container (4.89:1), and the web's badges (5.17:1 or more in both
+themes, [Blue text on the customer site](/architecture/frontend#accent-text)). Icons on the container,
+which need 3:1, are not part of this, and in dark mode the primary's glyphs on its discs read 2.77:1
+(reported 2026-10-05). iOS's `ComponentTextInkTests` checks the token at 4.5:1 or more on the container
+in both modes, and `BrandTextInkTests` and the partner's `TextInkTests` pin the sites; Android's
+`PrimaryTextTest` pins the token's two values and reads all three modules, so that no `Text` drawn
+straight on a `primaryContainer` fill takes the text ink or the primary (iOS `235136257`, Android
+`59c1d05f9`).
+
 - **iOS**: `BrandTextInkTests` checks the token at 4.5:1 or more on every ground those texts sit on,
   pins the texts whose colour comes from a helper, and scans the customer sources so that no `Text`
   is drawn in the primary. `ComponentTextInkTests` (Core) finds no shared `Text` drawn in the primary

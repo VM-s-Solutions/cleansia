@@ -430,7 +430,9 @@ duplicate a `:core` component.
 > outlined button's blue label takes **`CleansiaColors.primaryText`** (iOS, Core) or
 > **`primaryText()`** / `ColorScheme.primaryText` (Android, `:core` `ui/theme/BrandColors.kt`): sky-700
 > in light mode, the primary in dark. An icon inside the same link or button takes the same ink, so no
-> control shows two blues. Fills, washes, borders, toggles, progress tints, standalone icons and filled
+> control shows two blues. Text drawn straight on `primaryContainer` takes **`primaryTextOnContainer`**
+> instead (both platforms): the same sky-700 in light mode, sky-100 in dark, where the text ink reads
+> 2.77:1 on the sky-700 container. Fills, washes, borders, toggles, progress tints, standalone icons and filled
 > buttons keep `primary`. Source scans fail on a new blue `Text` or button label in the primary:
 > `BrandTextInkTests` (iOS customer), `ComponentTextInkTests` (iOS Core), `TextInkTests` (iOS partner),
 > `PrimaryTextTest` (Android `:core`, all three modules) and `PrimaryTextContrastTest` (Android

@@ -1118,6 +1118,13 @@ need backfilling.
   buttons, fills, borders and icons that stand alone keep the brand blue, and dark mode is unchanged.
   (Finding 2026-10-05; links and text buttons, owner decision 2026-10-05.)
 
+- **Customer and cleaner, Android and iOS — blue text on a light-blue badge reads in dark mode.** In
+  dark mode *This device* on the list of your devices and the initial of an order's cleaner, and on
+  iOS the *Default* badge on a saved address, were light blue on a darker blue, 2.8:1. They are now a
+  very pale blue there, 5.2:1. In the cleaner apps *This device*, and on iOS the *Pending* badge on an
+  invoice, were faint in light mode too, 3.6:1, and now read 5.2:1 in both modes. Light mode is
+  otherwise unchanged, and the website already read clearly. (Finding 2026-10-05.)
+
 - **Customer — a service or package that is no longer offered can no longer be booked.** A service or
   package the company had taken off its list was hidden everywhere, but an out-of-date app, or *Order
   again* sent before the list had loaded, could still price and book it, and a new schedule could take

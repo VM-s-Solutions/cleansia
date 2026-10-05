@@ -157,7 +157,7 @@
     <string name="home_upsell_chip_hours">%1$d h</string>
     <string name="home_upsell_chip_minutes">%1$d min</string>
     <string name="home_upsell_chip_times">%1$d×</string>
-    <string name="home_upsell_referral_desc">Obaja získate kredit %1$s po dokončení jeho prvého upratovania.</string>
+    <string name="home_upsell_referral_desc">Získate kredit %1$s po dokončení jeho prvého upratovania a kamarát dostane kredit, ak sa na jeho trhu ponúka.</string>
 
     <string name="home_hero2_top">Jar je tu</string>
     <string name="home_hero2_title">Hĺbkové upratovanie + okná v jednom</string>
@@ -803,12 +803,12 @@
     <string name="booking_referral_code_row_applied">%1$s uplatnené</string>
     <string name="booking_referral_code_row_clear">Odobrať</string>
     <string name="booking_referral_code_dialog_title">Zadajte kód odporúčania</string>
-    <string name="booking_referral_code_dialog_helper">Máte kód od kamaráta? Po vašom prvom dokončenom upratovaní obaja získate kredit %1$s.</string>
+    <string name="booking_referral_code_dialog_helper">Máte kód od kamaráta? Po vašom prvom dokončenom upratovaní získate kredit %1$s.</string>
     <string name="booking_referral_code_dialog_helper_no_figure">Máte kód od kamaráta? Zadajte ho sem.</string>
     <string name="booking_referral_code_dialog_apply">Použiť</string>
     <string name="booking_referral_code_dialog_cancel">Zrušiť</string>
     <string name="booking_referral_code_dialog_done">Hotovo</string>
-    <string name="booking_referral_code_dialog_success_named">Kód od %1$s prijatý — po vašom prvom dokončenom upratovaní obaja získate kredit %2$s.</string>
+    <string name="booking_referral_code_dialog_success_named">Kód od %1$s prijatý — po vašom prvom dokončenom upratovaní získate kredit %2$s.</string>
     <string name="booking_referral_code_dialog_success_named_no_figure">Kód od %1$s prijatý.</string>
 
     <!-- Plus: pre-request a favorite cleaner -->
@@ -816,7 +816,7 @@
     <string name="booking_preferred_cleaner_subtitle">Výhoda Plus · vyberte niekoho, kto u vás už upratoval</string>
     <string name="booking_preferred_cleaner_dialog_title">Vyberte upratovačku</string>
     <string name="booking_preferred_cleaner_clear">Zrušiť výber upratovačky</string>
-    <string name="booking_referral_code_dialog_success">Kód prijatý — po vašom prvom dokončenom upratovaní obaja získate kredit %1$s.</string>
+    <string name="booking_referral_code_dialog_success">Kód prijatý — po vašom prvom dokončenom upratovaní získate kredit %1$s.</string>
     <string name="booking_referral_code_dialog_success_no_figure">Kód prijatý.</string>
 
     <string name="booking_payment_method">Ako chcete platiť?</string>
@@ -1295,13 +1295,12 @@
 
     <!-- Loyalty Phase C — Referrals -->
     <string name="loyalty_referral_section_title">Pozvite priateľov</string>
-    <string name="loyalty_referral_subtitle">Zdieľajte svoj kód. Kamarát aj vy získate každý kredit %1$s po jeho prvom dokončenom upratovaní.</string>
+    <string name="loyalty_referral_subtitle">Zdieľajte svoj kód. Po prvom dokončenom upratovaní kamaráta získate kredit %1$s a on dostane kredit, ak sa na jeho trhu ponúka.</string>
     <string name="loyalty_referral_subtitle_no_figure">Zdieľajte svoj kód s kamarátmi, nech ho zadajú pri registrácii.</string>
     <string name="loyalty_referral_code_label">Váš kód</string>
     <string name="loyalty_referral_share_button">Zdieľať</string>
     <string name="loyalty_referral_copy_button">Kopírovať</string>
     <string name="loyalty_referral_copied_toast">Kód skopírovaný</string>
-    <string name="loyalty_referral_share_text">Získajte kredit %1$s po prvom dokončenom upratovaní Cleansia! Použite môj kód %2$s pri registrácii: %3$s</string>
     <string name="loyalty_referral_share_text_no_figure">Pridajte sa ku Cleansia! Použite môj kód %1$s pri registrácii: %2$s</string>
     <string name="loyalty_referral_stats_empty">Buďte prvý — zdieľajte svoj kód</string>
     <string name="loyalty_referral_stats_qualified">%1$d priateľ sa pripojil · %2$d kvalifikovaných</string>

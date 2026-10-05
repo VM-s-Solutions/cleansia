@@ -97,6 +97,7 @@ class UpsellClaimTest {
         "booking_trust_insured_no_figure",
         "help_faq_a3_no_figure",
         "home_upsell_chip_points",
+        "loyalty_referral_share_text",
     )
 
     /** No cleaner is background-checked. */
@@ -194,7 +195,7 @@ class UpsellClaimTest {
 
     /**
      * The rows that state the referral reward → the placeholder the market's credit takes in each, and
-     * the twin that renders when the market pays none. The credit is the market currency's
+     * the twin that renders when the market pays none. The credit is the chosen market currency's
      * `ReferralCredit`, formatted on device; a null or zero figure pays nothing, so the twin promises nothing.
      */
     private val referralRewardRows = mapOf(
@@ -203,8 +204,24 @@ class UpsellClaimTest {
         "booking_referral_code_dialog_success_named" to ("%2\$s" to "booking_referral_code_dialog_success_named_no_figure"),
         "booking_referral_code_dialog_success" to ("%1\$s" to "booking_referral_code_dialog_success_no_figure"),
         "loyalty_referral_subtitle" to ("%1\$s" to "loyalty_referral_subtitle_no_figure"),
-        "loyalty_referral_share_text" to ("%1\$s" to "loyalty_referral_share_text_no_figure"),
     )
+
+    /** The friend reads the share text in their own market, so it is sent without a figure everywhere. */
+    private val referralShareText = "loyalty_referral_share_text_no_figure"
+
+    /**
+     * Each side is paid the credit of the currency it books in, so the two figures can differ and a row
+     * may state only the reader's own.
+     */
+    private val sharedFigureClaim = mapOf(
+        "values" to "each|both",
+        "values-cs" to "oba|obě|každý|každá",
+        "values-sk" to "obaja|obe|každý|každá",
+        "values-uk" to "обоє|обидва|обидві|обом|кожен|кожна|кожному",
+        "values-ru" to "оба|обе|обоим|каждый|каждая|каждому",
+    ).mapValues { (_, words) ->
+        Regex("(?<!\\p{L})(?:$words)(?!\\p{L})|(?<!\\p{L})по %\\d", RegexOption.IGNORE_CASE)
+    }
 
     private val creditStem = mapOf(
         "values" to "credit",
@@ -246,11 +263,24 @@ class UpsellClaimTest {
     }
 
     @Test
+    fun `every referral reward row promises the reader only their own figure`() {
+        val claims = locales.flatMap { locale ->
+            val declared = strings(locale)
+            val claim = sharedFigureClaim.getValue(locale)
+            referralRewardRows.keys.mapNotNull { key ->
+                val value = declared[key] ?: return@mapNotNull "$locale/$key is missing"
+                if (claim.containsMatchIn(value)) "$locale/$key: $value" else null
+            }
+        }
+        assertEquals(emptyList<String>(), claims)
+    }
+
+    @Test
     fun `a market that pays no referral credit is promised none`() {
         val placeholder = Regex("%\\d+\\$[sd]")
         locales.forEach { locale ->
             val declared = strings(locale)
-            referralRewardRows.values.forEach { (_, twin) ->
+            (referralRewardRows.values.map { it.second } + referralShareText).forEach { twin ->
                 val value = declared[twin] ?: error("$locale/$twin is missing")
                 assertTrue("$locale/$twin names a figure — $value", placeholder.replace(value, "").none { it.isDigit() })
                 assertTrue("$locale/$twin promises credit — $value", !value.contains(creditStem.getValue(locale), ignoreCase = true))

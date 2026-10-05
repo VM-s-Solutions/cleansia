@@ -33934,6 +33934,41 @@
         }
       }
     },
+    "recurring_card_item_no_longer_offered_no_edit": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Obsahuje službu, kterou už nenabízíme"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Includes a service no longer offered"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Содержит услугу, которую мы больше не предлагаем"
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Obsahuje službu, ktorú už neponúkame"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Містить послугу, яку ми більше не пропонуємо"
+          }
+        }
+      }
+    },
     "recurring_cash_change_action": {
       "extractionState": "manual",
       "localizations": {

@@ -275,6 +275,58 @@ final class RecurringBookingsViewModelTests: XCTestCase {
         XCTAssertFalse(affordances.showCreateAction)
     }
 
+    // MARK: - The retired entry's line
+
+    /// The line sends the customer to the edit form only where the card offers Edit (owner decision
+    /// 2026-10-05): a member gets "— edit to update", a lapsed or paused member, whose card has no Edit,
+    /// the plain fact, in all five languages.
+    func testTheRetiredLineAsksForAnEditOnlyWhereTheCardOffersOne() throws {
+        let expected: [String: (edit: String, noEdit: String)] = [
+            "en": ("Includes a service no longer offered — edit to update", "Includes a service no longer offered"),
+            "cs": (
+                "Obsahuje službu, kterou už nenabízíme — upravte objednávku",
+                "Obsahuje službu, kterou už nenabízíme"
+            ),
+            "sk": ("Obsahuje službu, ktorú už neponúkame — upravte objednávku", "Obsahuje službu, ktorú už neponúkame"),
+            "uk": (
+                "Містить послугу, яку ми більше не пропонуємо — змініть бронювання",
+                "Містить послугу, яку ми більше не пропонуємо"
+            ),
+            "ru": (
+                "Содержит услугу, которую мы больше не предлагаем — измените бронирование",
+                "Содержит услугу, которую мы больше не предлагаем"
+            )
+        ]
+        let member = RecurringListAffordances.of(gate: .allowed, hasTemplates: true)
+        let lapsed = RecurringListAffordances.of(gate: .upsell, hasTemplates: true)
+        let restore = L10n.bundle
+        defer { L10n.bundle = restore }
+        for (language, lines) in expected {
+            L10n.bundle = try localeBundle(language)
+            XCTAssertEqual(L10n.Recurring.cardItemNoLongerOffered(canEdit: member.showEdit), lines.edit, language)
+            XCTAssertEqual(L10n.Recurring.cardItemNoLongerOffered(canEdit: lapsed.showEdit), lines.noEdit, language)
+        }
+    }
+
+    /// The card picks the line from the same `showEdit` that draws its Edit action.
+    func testTheCardPicksTheLineFromItsOwnEditAffordance() throws {
+        let root = URL(fileURLWithPath: #filePath).deletingLastPathComponent().deletingLastPathComponent()
+        let source = try String(
+            contentsOf: root.appendingPathComponent("Sources/Features/Recurring/RecurringBookingsScreen.swift"),
+            encoding: .utf8
+        ).components(separatedBy: .whitespacesAndNewlines).joined()
+
+        XCTAssertTrue(source.contains("text:L10n.Recurring.cardItemNoLongerOffered(canEdit:showEdit)"))
+        XCTAssertTrue(source.contains("ifshowEdit{CardAction(label:L10n.Recurring.edit,"))
+    }
+
+    private func localeBundle(_ tag: String) throws -> Bundle {
+        let hosts = [Bundle.main, Bundle(for: Self.self)]
+        let path = hosts.lazy.compactMap { $0.path(forResource: tag, ofType: "lproj") }.first
+        let resolved = try XCTUnwrap(path, "no \(tag).lproj in the built bundle")
+        return try XCTUnwrap(Bundle(path: resolved), "\(tag).lproj at \(resolved) is not a bundle")
+    }
+
     // MARK: - Binding lifetime
 
     /// Both repositories are session-lived singletons and are deliberately held past the

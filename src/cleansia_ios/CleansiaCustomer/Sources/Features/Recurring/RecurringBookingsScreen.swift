@@ -245,7 +245,7 @@ private struct TemplateCard: View {
                     .foregroundColor(CleansiaColors.onSurfaceVariant)
             }
             if holdsRetiredEntry {
-                PaymentNote(systemImage: "info.circle", text: L10n.Recurring.cardItemNoLongerOffered)
+                PaymentNote(systemImage: "info.circle", text: L10n.Recurring.cardItemNoLongerOffered(canEdit: showEdit))
             }
             if template.requiresPaymentMethodChange {
                 PaymentChangeNotice(showChangeAction: showEdit, onChange: onEdit)

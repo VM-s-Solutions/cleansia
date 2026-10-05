@@ -186,6 +186,11 @@ final class TextInkTests: XCTestCase {
         XCTAssertTrue(try compactSource("Orders/PendingOfferComponents.swift").contains(
             "Image(systemName:\"clock\").font(.system(size:14)).foregroundColor(CleansiaColors.primaryText)"
         ), "the clock beside \"Yours until\"")
+        XCTAssertTrue(
+            try compactSource("Profile/Address/AddressSectionView.swift")
+                .contains("case.inServicedCity:CleansiaColors.primaryText"),
+            "\"We service jobs in {city}\": its message, icon and wash share one tint"
+        )
     }
 
     private var featureSources: URL {

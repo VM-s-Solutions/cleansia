@@ -35,6 +35,14 @@ describe('the shared and partner stylesheets — text links and text buttons', (
     expect(inks(partner, `${selector}:hover`)).toEqual(['var(--cleansia-primary-800)']);
   });
 
+  // Blue text that is read, not pressed, takes the same ink: the order's package price sat on the
+  // brand Sky600 (4.1) beside a Sky700 name.
+  it("inks the partner order's package price with Sky700", () => {
+    expect(inks(partner, '.cleansia-order-details__package-header .package-price')).toEqual([
+      'var(--cleansia-primary-700)',
+    ]);
+  });
+
   it("gives a filter chip's remove button the chip's own ink", () => {
     expect(inks(partner, '.cleansia-filter-chips__chip')).toEqual(['var(--cleansia-primary-700)']);
     expect(inks(partner, '.cleansia-filter-chips__remove')).toEqual(['var(--cleansia-primary-700)']);

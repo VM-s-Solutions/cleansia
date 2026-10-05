@@ -1,0 +1,74 @@
+package cz.cleansia.partner.ui.theme
+
+import androidx.compose.material3.ColorScheme
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.luminance
+import androidx.compose.ui.graphics.toArgb
+import cz.cleansia.core.ui.theme.primaryText
+import org.junit.Assert.assertEquals
+import org.junit.Assert.assertTrue
+import org.junit.Test
+
+/**
+ * Material draws a dialog and a date picker on surfaceContainerHigh, a menu on surfaceContainer, a bottom
+ * sheet on surfaceContainerLow and a switch's off track on surfaceContainerHighest. Left unset, those are
+ * M3's purple-tinted baseline greys (#ECE6F0 for a dialog, #F3EDF7 for a menu), so every surface role comes
+ * from the app's slate family instead (F4), and the text a dialog or a menu carries reads 4.5:1 on it.
+ */
+class SurfaceRolesTest {
+
+    private val slates = setOf(
+        Color.White, Slate50, Slate100, Slate200, Slate300, Slate400, Slate500, Slate600, Slate700, Slate800,
+        Slate900, DarkSurfaceElevated,
+    )
+
+    private fun roles(scheme: ColorScheme) = mapOf(
+        "surface" to scheme.surface,
+        "surfaceContainerLowest" to scheme.surfaceContainerLowest,
+        "surfaceContainerLow" to scheme.surfaceContainerLow,
+        "surfaceContainer" to scheme.surfaceContainer,
+        "surfaceContainerHigh" to scheme.surfaceContainerHigh,
+        "surfaceContainerHighest" to scheme.surfaceContainerHighest,
+        "surfaceBright" to scheme.surfaceBright,
+        "surfaceDim" to scheme.surfaceDim,
+    )
+
+    @Test
+    fun `every surface role is one of the app's slates, not Material's purple baseline`() {
+        listOf("light" to LightColors, "dark" to DarkColors).forEach { (name, scheme) ->
+            roles(scheme).forEach { (role, color) ->
+                assertTrue("$name $role is #${"%08X".format(color.toArgb())}", color in slates)
+            }
+        }
+    }
+
+    @Test
+    fun `a dialog and a menu sit on slate-100 in light mode and on the elevated slate in dark`() {
+        assertEquals(Slate100, LightColors.surfaceContainerHigh)
+        assertEquals(Slate100, LightColors.surfaceContainer)
+        assertEquals(DarkSurfaceElevated, DarkColors.surfaceContainerHigh)
+        assertEquals(DarkSurfaceElevated, DarkColors.surfaceContainer)
+    }
+
+    @Test
+    fun `a dialog's and a menu's text reads 4_5 to 1 on them in both schemes`() {
+        listOf("light" to LightColors, "dark" to DarkColors).forEach { (name, scheme) ->
+            listOf("dialog" to scheme.surfaceContainerHigh, "menu" to scheme.surfaceContainer).forEach { (where, ground) ->
+                mapOf(
+                    "onSurface" to scheme.onSurface,
+                    "onSurfaceVariant" to scheme.onSurfaceVariant,
+                    "the text blue" to scheme.primaryText,
+                    "error" to scheme.error,
+                ).forEach { (ink, color) ->
+                    val ratio = contrast(color, ground)
+                    assertTrue("$name $where $ink: ${"%.2f".format(ratio)}:1", ratio >= 4.5)
+                }
+            }
+        }
+    }
+
+    private fun contrast(a: Color, b: Color): Double {
+        val (hi, lo) = listOf(a.luminance(), b.luminance()).sortedDescending()
+        return (hi + 0.05) / (lo + 0.05)
+    }
+}

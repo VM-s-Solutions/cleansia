@@ -37,6 +37,17 @@ internal val LightColors = lightColorScheme(
     // ours: a near-black pill on a light page.
     inverseSurface = Slate900,
     inverseOnSurface = Slate50,
+    // The surface-container ramp, for the same reason: unset, a dialog (High) is M3's
+    // #ECE6F0 and a menu (Container) #F3EDF7. Ours is the slate family, the dialog and
+    // menu on slate-100 — the light grey of an iOS alert — and the highest step (a
+    // switch's off track) on slate-200.
+    surfaceContainerLowest = LightSurface,
+    surfaceContainerLow = Slate50,
+    surfaceContainer = Slate100,
+    surfaceContainerHigh = Slate100,
+    surfaceContainerHighest = Slate200,
+    surfaceBright = LightSurface,
+    surfaceDim = Slate200,
 )
 
 internal val DarkColors = darkColorScheme(
@@ -61,6 +72,15 @@ internal val DarkColors = darkColorScheme(
     // Mirror of the light scheme: a near-white pill on the slate-900 page.
     inverseSurface = Slate50,
     inverseOnSurface = Slate900,
+    // A dialog and a menu sit one step above the slate-800 card, on the elevated slate the
+    // dark scheme already uses for surfaceVariant, as an iOS alert sits above its page.
+    surfaceContainerLowest = DarkBackground,
+    surfaceContainerLow = DarkSurface,
+    surfaceContainer = DarkSurfaceElevated,
+    surfaceContainerHigh = DarkSurfaceElevated,
+    surfaceContainerHighest = Slate700,
+    surfaceBright = Slate700,
+    surfaceDim = DarkBackground,
 )
 
 @Composable

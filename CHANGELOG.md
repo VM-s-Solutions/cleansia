@@ -557,6 +557,14 @@ need backfilling.
 
 ### Changed
 
+- **Customer iOS — a schedule offers no *Edit* while your Plus benefits are paused.** When a Plus
+  renewal payment fails, your benefits are paused until it goes through or you cancel, and a schedule
+  cannot be changed meanwhile. The iOS app still offered *Edit* on each schedule, and *Change the
+  schedule* on one that can no longer be paid in cash, and saving the change was then refused. It now
+  hides them, as Android does, and a schedule that includes a service no longer offered says so
+  without *edit to update*. You can still pause, resume and delete a schedule. (Owner decision
+  2026-10-05.)
+
 - **Customer, cleaner and admin, in Slovak — a package is a *balík*.** The apps called a package
   *balíček* in Slovak: on Home, in the booking and its *In your package* questions, on an order, in a
   schedule and in the package errors, and in the cleaner's app's package error. The customer, cleaner
@@ -1161,7 +1169,7 @@ need backfilling.
   shows an error for it. Its card on the list of schedules now says *Includes a service no longer
   offered — edit to update*, on the website, Android and iOS alike, and on the website that card
   shows no price. On the apps a card that offers no *Edit*, because the customer's Plus has lapsed
-  (on Android also while its benefits are paused), says only *Includes a service no longer offered*. Opening it to edit removes the service, now on Android as on iOS and the website,
+  or its benefits are paused, says only *Includes a service no longer offered*. Opening it to edit removes the service, now on Android as on iOS and the website,
   and says *Some of this schedule's choices are no longer offered and were removed*. It used to say
   they were not offered at this address, though nobody had changed the address, and on the website the
   service was usually not removed at all. When you do move the schedule to an address in another

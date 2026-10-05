@@ -584,7 +584,8 @@ double-billed subscription and had no way to cancel. The lifecycle read
 - **The customer sees it.** `GetMyMembership` returns `hasMembership: true` with `status: PastDue`, and
   the web, Android and iOS show *payment failed, benefits paused* with a cancel; the web's benefit gates
   read an active status, not `hasMembership` alone, and Android refuses recurring authoring to a
-  past-due or paused member with a paused notice.
+  past-due or paused member with a paused notice. iOS hides a schedule's *Edit* from them since
+  2026-10-05 ([A deactivated service or package](#deactivated-catalogue)).
 - **Each failed attempt is a notice.** Stripe's `invoice.payment_failed` sends `membership.payment_failed`
   to the member, keyed on the Stripe event and non-mutable; Android and iOS carry its copy and it lands
   in the customer's inbox. A failure that lands after the member cancelled is ignored.
@@ -2196,15 +2197,27 @@ schedules list says why:
   card says nothing rather than guess.
 - **A card with no *Edit* says it without pointing at one** (owner decision 2026-10-05): *Includes a
   service no longer offered* (`recurring_card_item_no_longer_offered_no_edit`, five languages). On
-  Android a customer whose Plus has lapsed or whose benefits are paused, and on iOS one whose Plus
-  has lapsed, has no *Edit* on the card, and each app picks the wording from the condition that draws
-  the card's *Edit*: Android's `retiredEntryLine(showEdit)` (`RecurringAuthoring.kt`), iOS's
+  Android and iOS a customer whose Plus has lapsed or whose benefits are paused (past due or paused)
+  has no *Edit* on the card, and each app picks the wording from the condition that draws the card's
+  *Edit*: Android's `retiredEntryLine(showEdit)` (`RecurringAuthoring.kt`), iOS's
   `L10n.Recurring.cardItemNoLongerOffered(canEdit:)` from `RecurringListAffordances.showEdit`. Until
-  then their line said *edit to update* too, a step they could take only once Plus was back. iOS
-  still shows *Edit*, and so the first wording, to a member whose benefits are paused (past due or
-  paused): its gate reads only `hasMembership`, which the server answers `true` for a live enrolment,
-  so the form opens and the server refuses the save (`recurring_booking.membership_required`). The
-  web has no second wording because it needs none: its list shows the cards only to an active member,
+  then their line said *edit to update* too, a step they could take only once Plus was back.
+- **A paused member's card has no *Edit* on iOS either** (owner decision 2026-10-05: *"Hide"*). A
+  past-due or paused member keeps a live enrolment, so `GetMyMembership` answers `hasMembership: true`,
+  while the server refuses them authoring (`recurring_booking.membership_required`). Android's list
+  resolves them to its `Paused` gate and has never shown them *Edit*. iOS read only `hasMembership`,
+  so until 2026-10-05 their cards offered *Edit*, the form opened and the save was refused, and a card
+  holding a retired entry read *… — edit to update*. iOS's `RecurringListAffordances.of` now also
+  takes the membership's `benefitsPaused`, and shows *Edit* only to a member who is allowed to author
+  and whose benefits are not paused. The card's one `showEdit` also draws the cash schedule's *Change
+  the schedule* and picks the retired entry's wording, so those match Android's too. `benefitsPaused`
+  is `false` until the membership has loaded, so a slow read leaves *Edit* showing, as `hasMembership`
+  does. Pause, resume and delete stay on both apps: the server gates only creating and editing a
+  schedule on Plus. Two differences from
+  Android remain on iOS for such a member, reported and not changed: the list still offers to create
+  a schedule (the bottom button and the empty state's), which the server refuses, and it has no notice
+  that the benefits are paused.
+- **The web has no second wording because it needs none:** its list shows the cards only to an active member,
   and anyone else sees in their place a Plus paywall on the list itself, with links to the Plus page
   (the list route has no guard and does not redirect), so every card it draws has *Edit*; its edit
   route admits the same members (`customerMembershipGuard`).

@@ -1119,7 +1119,8 @@ need backfilling.
   notice's among them, and the label of a text, outlined or link button and the icon beside it, a
   shade darker again under the pointer. On the cleaner and admin websites those buttons were a
   lighter blue still, the cleaner's *Contact support* on a rejected registration among them. Filled
-  buttons, fills, borders and icons that stand alone keep the brand blue, and dark mode is unchanged.
+  buttons, fills, borders and icons that stand alone keep the brand blue, and dark mode is unchanged,
+  except the cookie notice's link on the customer website, which now reads clearly there too.
   (Finding 2026-10-05; links and text buttons, owner decision 2026-10-05.)
 
 - **Customer and cleaner, Android and iOS — blue text on a light-blue badge reads in dark mode.** In

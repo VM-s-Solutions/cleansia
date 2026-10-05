@@ -109,10 +109,7 @@ class CashCopyStringsTest {
      */
     @Test
     fun `the card-saving consent shown is the wording of the version the server records`() {
-        val savedCard = File(solutionDir, "Cleansia.Core.Domain/Users/SavedCard.cs").readText()
-        val version = Regex("ConsentTextVersionInForce\\s*=\\s*\"([^\"]+)\"").find(savedCard)?.groupValues?.get(1)
-            ?: error("SavedCard.ConsentTextVersionInForce not found — the parser needs updating")
-        val key = "consent_" + version.replace('-', '_')
+        val key = "consent_" + consentVersionInForce().replace('-', '_')
 
         locales.forEach { locale ->
             assertTrue("$locale/$key is missing or blank", valueOf(stringsXml(locale), key)?.isNotBlank() == true)
@@ -121,6 +118,31 @@ class CashCopyStringsTest {
             assertTrue("$locale/$key is still English", valueOf(stringsXml(locale), key) != valueOf(stringsXml("values"), key))
         }
         assertTrue("the save-card tick no longer shows $key", source("ui/components/CardSavingConsent.kt").contains("R.string.$key"))
+    }
+
+    /** No saved card is charged for a fee or unpaid cash (owner ruling 2026-10-04), so its consent names neither. */
+    @Test
+    fun `the card-saving consent in force names no cash, guarantee or fee`() {
+        val stems = mapOf(
+            "values" to listOf("cash", "guarantee", "fee"),
+            "values-cs" to listOf("hotovost", "zaruč", "poplat"),
+            "values-sk" to listOf("hotovos", "zaruč", "poplat"),
+            "values-uk" to listOf("готівк", "гарант", "збор"),
+            "values-ru" to listOf("наличн", "гарант", "сбор"),
+        )
+        val key = "consent_" + consentVersionInForce().replace('-', '_')
+
+        val offending = locales.mapNotNull { locale ->
+            val value = valueOf(stringsXml(locale), key).orEmpty().lowercase()
+            stems.getValue(locale).firstOrNull { it in value }?.let { "$locale/$key says \"$it\"" }
+        }
+        assertTrue("the card-saving consent still names what a saved card used to guarantee: $offending", offending.isEmpty())
+    }
+
+    private fun consentVersionInForce(): String {
+        val savedCard = File(solutionDir, "Cleansia.Core.Domain/Users/SavedCard.cs").readText()
+        return Regex("ConsentTextVersionInForce\\s*=\\s*\"([^\"]+)\"").find(savedCard)?.groupValues?.get(1)
+            ?: error("SavedCard.ConsentTextVersionInForce not found — the parser needs updating")
     }
 
     @Test

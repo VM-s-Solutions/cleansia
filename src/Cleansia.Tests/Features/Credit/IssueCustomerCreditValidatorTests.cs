@@ -179,6 +179,21 @@ public class IssueCustomerCreditValidatorTests
             .WithErrorMessage(BusinessErrorMessage.CreditDisputeSettlementNotIssuable);
     }
 
+    /// <summary>
+    /// The referral credit and its reversal are written by the referral programme alone, keyed per
+    /// referral so a reversal can find the grant; a hand-issued row under either reason has no such key.
+    /// </summary>
+    [Theory]
+    [InlineData(CreditTransactionReason.Referral)]
+    [InlineData(CreditTransactionReason.ReferralReversed)]
+    public async Task TheReferralReasonsAreNotIssuedByHand(CreditTransactionReason reason)
+    {
+        var result = await ValidatorFor().TestValidateAsync(Valid(reason: reason));
+
+        result.ShouldHaveValidationErrorFor(x => x.Reason)
+            .WithErrorMessage(BusinessErrorMessage.CreditReasonNotIssuable);
+    }
+
     [Fact]
     public async Task AnUnknownReasonIsRefused()
     {

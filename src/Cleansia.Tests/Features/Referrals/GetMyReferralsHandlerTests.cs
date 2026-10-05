@@ -2,6 +2,7 @@ using System.Linq.Expressions;
 using System.Reflection;
 using Cleansia.Core.AppServices.Features.Referrals;
 using Cleansia.Core.AppServices.Shared.DTOs.ResponseModels;
+using Cleansia.Core.Domain.Internationalization;
 using Cleansia.Core.Domain.Loyalty;
 using Cleansia.Core.Domain.Repositories;
 using Cleansia.Core.Domain.Sorting.Common;
@@ -37,10 +38,13 @@ public class GetMyReferralsHandlerTests
     private static Referral QualifiedReferral(User? referred)
     {
         var referral = Referral.CreateAccepted(UserId, "referred-1", "code-1", "system");
-        referral.MarkQualified("order-1", 150, 120, "system");
+        referral.MarkQualified("order-1", "czk", 150m, 120m, "system");
         referral.Id = "ref-1";
         var prop = typeof(Referral).GetProperty(nameof(Referral.Referred))!;
         prop.SetValue(referral, referred);
+        var czk = Currency.Create("CZK", "Kč", "Czech koruna");
+        czk.Id = "czk";
+        typeof(Referral).GetProperty(nameof(Referral.CreditCurrency))!.SetValue(referral, czk);
         return referral;
     }
 
@@ -87,7 +91,8 @@ public class GetMyReferralsHandlerTests
         Assert.Equal("Iva", row.ReferredFirstName);
         Assert.Equal(ReferralStatus.Qualified, row.Status);
         Assert.NotNull(row.FirstQualifyingOrderOn);
-        Assert.Equal(150, row.PointsAwardedToReferrer);
+        Assert.Equal(150m, row.CreditAwardedToReferrer);
+        Assert.Equal("CZK", row.CreditCurrencyCode);
     }
 
     [Fact]

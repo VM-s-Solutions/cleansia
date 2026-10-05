@@ -19,6 +19,12 @@ public enum CreditTransactionReason
     /// <summary>An admin issued goodwill credit outside any dispute.</summary>
     Goodwill = 3,
 
+    /// <summary>
+    /// A referral qualified: both the inviter and the invited friend are paid. The amount is
+    /// <c>Currency.ReferralCredit</c>, authored per currency.
+    /// </summary>
+    Referral = 4,
+
     /// <summary>Spent against an order at checkout.</summary>
     OrderPayment = 10,
 
@@ -30,4 +36,10 @@ public enum CreditTransactionReason
     /// The ledger note records which reason applied.
     /// </summary>
     Expired = 12,
+
+    /// <summary>
+    /// An admin reversed a qualified referral and took back what its <see cref="Referral"/> grant gave,
+    /// no more than the balance still held.
+    /// </summary>
+    ReferralReversed = 13,
 }

@@ -1669,7 +1669,9 @@
         "update_error": "Nepodařilo se aktualizovat měnu"
       },
       "no_show_credit": "Omluvný kredit za nedostavení se",
-      "no_show_credit_placeholder": "např. 250 pro CZK — pokud pole necháte prázdné, v této měně se žádný kredit nevyplácí"
+      "no_show_credit_placeholder": "např. 250 pro CZK — pokud pole necháte prázdné, v této měně se žádný kredit nevyplácí",
+      "referral_credit": "Kredit za doporučení (každé straně)",
+      "referral_credit_placeholder": "např. 150 pro CZK — pokud pole necháte prázdné nebo zadáte 0, doporučení v této měně žádný kredit nevyplácí"
     },
     "company_info": {
       "bank_account_number": "Číslo účtu",
@@ -2462,6 +2464,8 @@
           "dispute_settlement": "Vyřízení reklamace",
           "cleaner_no_show": "Nedostavení üklidové pracovnice",
           "goodwill": "Vstřícný krok",
+          "referral": "Doporučení",
+          "referral_reversed": "Stornované doporučení",
           "order_payment": "Čerpáno na objednávku",
           "order_payment_returned": "Vráceno ze zrušené objednávky",
           "unknown": "Jiné",
@@ -2519,7 +2523,7 @@
         "status": "Stav",
         "accepted_on": "Přijato dne",
         "qualified_on": "Kvalifikováno dne",
-        "points_awarded": "Udělené body"
+        "credit_awarded": "Udělený kredit (doporučující / doporučený)"
       },
       "status": {
         "Accepted": "Přijato",
@@ -2527,7 +2531,7 @@
         "Expired": "Vypršelo",
         "Reversed": "Stornováno"
       },
-      "points_format": "{{referrer}} / {{referred}}",
+      "credit_format": "{{referrer}} / {{referred}}",
       "not_yet": "—",
       "empty": "Zatím žádná doporučení",
       "loading": "Načítání...",
@@ -2538,16 +2542,18 @@
       "intervention": {
         "title_reverse": "Stornovat doporučení",
         "title_force_qualify": "Ručně uznat doporučení",
-        "hint_reverse": "Odebere body udělené oběma stranám a označí doporučení jako stornované. Důvod se uloží do auditního záznamu.",
-        "hint_force_qualify": "Označí doporučení jako uznané a udělí body oběma stranám. Důvod se uloží do auditního záznamu.",
+        "hint_reverse": "Odebere oběma stranám kredit za doporučení — jen tolik, kolik ho na zůstatku ještě zbývá — a označí doporučení jako stornované. Důvod se uloží do auditního záznamu.",
+        "hint_force_qualify": "Označí doporučení jako uznané a oběma stranám připíše kredit za doporučení v měně poslední objednávky doporučeného zákazníka, případně ve výchozí měně platformy. Důvod se uloží do auditního záznamu.",
+        "summary_reverse": "Uděleno při uznání: {{credit}} (doporučující / doporučený).",
         "field": {
           "reason": "Důvod",
-          "reason_help": "Povinné. Viditelné ve věrnostním deníku."
+          "reason_help": "Povinné. Uloží se jako poznámka k pohybu kreditu u každé ze stran."
         },
         "submit_reverse": "Stornovat",
         "submit_force_qualify": "Uznat",
-        "success_reverse": "Doporučení stornováno a body odebrány",
-        "success_force_qualify": "Doporučení uznáno a body uděleny"
+        "success_reverse": "Doporučení stornováno. Odebraný kredit: {{referrer}} doporučujícímu, {{referred}} doporučenému.",
+        "success_reverse_no_credit": "Doporučení stornováno. Žádný kredit nebyl udělen, takže se nic neodebíralo.",
+        "success_force_qualify": "Doporučení uznáno. Připsaný kredit: {{referrer}} doporučujícímu, {{referred}} doporučenému."
       }
     },
     "sitewide_push": {
@@ -3406,7 +3412,7 @@
     "pay_period": {
       "already_paid": "Platební období již bylo zaplaceno",
       "has_order_pays": "Nelze smazat platební období, které má přiřazené platby objednávek",
-      "invalid_duration": "Neplatná délka platebního období",
+      "invalid_duration": "Platební období trvá přesně 14 dní: datum konce musí být 13 dní po datu začátku",
       "not_closed": "Platební období není uzavřeno",
       "overlapping_period": "Platební období se překrývá s existujícím obdobím"
     },

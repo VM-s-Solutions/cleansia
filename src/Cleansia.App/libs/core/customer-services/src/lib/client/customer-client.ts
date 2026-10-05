@@ -12299,7 +12299,6 @@ export class GetMyReferralResponse implements IGetMyReferralResponse {
     timesUsed!: number;
     qualifiedCount!: number;
     acceptedCount!: number;
-    pointsPerReferral!: number;
 
     constructor(data?: IGetMyReferralResponse) {
         if (data) {
@@ -12316,7 +12315,6 @@ export class GetMyReferralResponse implements IGetMyReferralResponse {
             this.timesUsed = Data["timesUsed"];
             this.qualifiedCount = Data["qualifiedCount"];
             this.acceptedCount = Data["acceptedCount"];
-            this.pointsPerReferral = Data["pointsPerReferral"];
         }
     }
 
@@ -12333,7 +12331,6 @@ export class GetMyReferralResponse implements IGetMyReferralResponse {
         data["timesUsed"] = this.timesUsed;
         data["qualifiedCount"] = this.qualifiedCount;
         data["acceptedCount"] = this.acceptedCount;
-        data["pointsPerReferral"] = this.pointsPerReferral;
         return data;
     }
 }
@@ -12343,7 +12340,6 @@ export interface IGetMyReferralResponse {
     timesUsed: number;
     qualifiedCount: number;
     acceptedCount: number;
-    pointsPerReferral: number;
 }
 
 export class GetMyReferralsReferralListItem implements IGetMyReferralsReferralListItem {
@@ -12352,7 +12348,8 @@ export class GetMyReferralsReferralListItem implements IGetMyReferralsReferralLi
     status!: ReferralStatus;
     acceptedOn!: Date;
     firstQualifyingOrderOn!: Date | undefined;
-    pointsAwardedToReferrer!: number | undefined;
+    creditAwardedToReferrer!: number | undefined;
+    creditCurrencyCode!: string | undefined;
 
     constructor(data?: IGetMyReferralsReferralListItem) {
         if (data) {
@@ -12370,7 +12367,8 @@ export class GetMyReferralsReferralListItem implements IGetMyReferralsReferralLi
             this.status = Data["status"];
             this.acceptedOn = Data["acceptedOn"] ? new Date(Data["acceptedOn"].toString()) : undefined as any;
             this.firstQualifyingOrderOn = Data["firstQualifyingOrderOn"] ? new Date(Data["firstQualifyingOrderOn"].toString()) : undefined as any;
-            this.pointsAwardedToReferrer = Data["pointsAwardedToReferrer"];
+            this.creditAwardedToReferrer = Data["creditAwardedToReferrer"];
+            this.creditCurrencyCode = Data["creditCurrencyCode"];
         }
     }
 
@@ -12388,7 +12386,8 @@ export class GetMyReferralsReferralListItem implements IGetMyReferralsReferralLi
         data["status"] = this.status;
         data["acceptedOn"] = this.acceptedOn ? this.acceptedOn.toISOString() : undefined as any;
         data["firstQualifyingOrderOn"] = this.firstQualifyingOrderOn ? this.firstQualifyingOrderOn.toISOString() : undefined as any;
-        data["pointsAwardedToReferrer"] = this.pointsAwardedToReferrer;
+        data["creditAwardedToReferrer"] = this.creditAwardedToReferrer;
+        data["creditCurrencyCode"] = this.creditCurrencyCode;
         return data;
     }
 }
@@ -12399,7 +12398,8 @@ export interface IGetMyReferralsReferralListItem {
     status: ReferralStatus;
     acceptedOn: Date;
     firstQualifyingOrderOn: Date | undefined;
-    pointsAwardedToReferrer: number | undefined;
+    creditAwardedToReferrer: number | undefined;
+    creditCurrencyCode: string | undefined;
 }
 
 export class GetMyServingCleanersResponse implements IGetMyServingCleanersResponse {
@@ -13280,6 +13280,7 @@ export class MarketListItem implements IMarketListItem {
     currencySymbol!: string | undefined;
     isDefault!: boolean;
     noShowCredit!: number | undefined;
+    referralCredit!: number | undefined;
     insuranceCoverageAmount!: number | undefined;
 
     constructor(data?: IMarketListItem) {
@@ -13309,6 +13310,7 @@ export class MarketListItem implements IMarketListItem {
             this.currencySymbol = Data["currencySymbol"];
             this.isDefault = Data["isDefault"];
             this.noShowCredit = Data["noShowCredit"];
+            this.referralCredit = Data["referralCredit"];
             this.insuranceCoverageAmount = Data["insuranceCoverageAmount"];
         }
     }
@@ -13338,6 +13340,7 @@ export class MarketListItem implements IMarketListItem {
         data["currencySymbol"] = this.currencySymbol;
         data["isDefault"] = this.isDefault;
         data["noShowCredit"] = this.noShowCredit;
+        data["referralCredit"] = this.referralCredit;
         data["insuranceCoverageAmount"] = this.insuranceCoverageAmount;
         return data;
     }
@@ -13354,6 +13357,7 @@ export interface IMarketListItem {
     currencySymbol: string | undefined;
     isDefault: boolean;
     noShowCredit: number | undefined;
+    referralCredit: number | undefined;
     insuranceCoverageAmount: number | undefined;
 }
 

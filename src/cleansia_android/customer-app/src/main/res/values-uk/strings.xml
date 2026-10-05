@@ -142,7 +142,7 @@
     <string name="home_upsell_setup_recurring_desc">Щотижня, раз на два тижні чи щомісяця, у ваш день і час.</string>
     <string name="home_upsell_plus_desc">Знижка %1$d%% на кожне прибирання та улюблений прибиральник на запит.</string>
     <string name="home_upsell_plus_desc_generic">Регулярні прибирання і ваш улюблений прибиральник на запит.</string>
-    <string name="home_upsell_referral_desc_generic">Обом бали після першого завершеного прибирання друга.</string>
+    <string name="home_upsell_referral_desc_generic">Надішліть другові свій код — він введе його під час реєстрації.</string>
     <string name="home_upsell_plus_cancel_title">Безкоштовне скасування за %1$d год до прибирання</string>
     <string name="home_upsell_plus_cancel_desc">Одна з переваг Plus, для кожного вашого замовлення.</string>
     <string name="home_upsell_express_today_title">Замовляйте вже за %1$d год</string>
@@ -153,16 +153,11 @@
     <string name="home_upsell_times_title">Оберіть точний час прибуття</string>
     <string name="home_upsell_times_desc">Ранок, день чи вечір, будь-коли з %1$s до %2$s.</string>
     <string name="home_upsell_chip_percent_off">−%1$d%%</string>
-    <string name="home_upsell_chip_points">+%1$d</string>
+    <string name="home_upsell_chip_credit">+%1$s</string>
     <string name="home_upsell_chip_hours">%1$d год</string>
     <string name="home_upsell_chip_minutes">%1$d хв</string>
     <string name="home_upsell_chip_times">%1$d×</string>
-    <plurals name="home_upsell_referral_desc">
-        <item quantity="one">Обом по %1$d балу після першого завершеного прибирання друга.</item>
-        <item quantity="few">Обом по %1$d бали після першого завершеного прибирання друга.</item>
-        <item quantity="many">Обом по %1$d балів після першого завершеного прибирання друга.</item>
-        <item quantity="other">Обом по %1$d бала після першого завершеного прибирання друга.</item>
-    </plurals>
+    <string name="home_upsell_referral_desc">Обом по %1$s кредиту після першого завершеного прибирання друга.</string>
 
     <string name="home_hero2_top">Весна вже тут</string>
     <string name="home_hero2_title">Глибоке прибирання + вікна разом</string>
@@ -808,18 +803,21 @@
     <string name="booking_referral_code_row_applied">%1$s застосовано</string>
     <string name="booking_referral_code_row_clear">Видалити</string>
     <string name="booking_referral_code_dialog_title">Введіть реферальний код</string>
-    <string name="booking_referral_code_dialog_helper">Маєте код від друга? Обидва отримаєте 150 бонусних балів після вашого першого завершеного прибирання.</string>
+    <string name="booking_referral_code_dialog_helper">Маєте код від друга? Обидва отримаєте %1$s кредиту після вашого першого завершеного прибирання.</string>
+    <string name="booking_referral_code_dialog_helper_no_figure">Маєте код від друга? Введіть його тут.</string>
     <string name="booking_referral_code_dialog_apply">Застосувати</string>
     <string name="booking_referral_code_dialog_cancel">Скасувати</string>
     <string name="booking_referral_code_dialog_done">Готово</string>
-    <string name="booking_referral_code_dialog_success_named">Код від %1$s прийнято — обидва отримаєте 150 бонусних балів після вашого першого завершеного прибирання.</string>
+    <string name="booking_referral_code_dialog_success_named">Код від %1$s прийнято — обидва отримаєте %2$s кредиту після вашого першого завершеного прибирання.</string>
+    <string name="booking_referral_code_dialog_success_named_no_figure">Код від %1$s прийнято.</string>
 
     <!-- Plus: pre-request a favorite cleaner -->
     <string name="booking_preferred_cleaner_title">Запросити улюбленого клінера</string>
     <string name="booking_preferred_cleaner_subtitle">Перевага Plus · виберіть когось, хто вже у вас прибирав</string>
     <string name="booking_preferred_cleaner_dialog_title">Виберіть клінера</string>
     <string name="booking_preferred_cleaner_clear">Скасувати вибір клінера</string>
-    <string name="booking_referral_code_dialog_success">Код прийнято — обидва отримаєте 150 бонусних балів після вашого першого завершеного прибирання.</string>
+    <string name="booking_referral_code_dialog_success">Код прийнято — обидва отримаєте %1$s кредиту після вашого першого завершеного прибирання.</string>
+    <string name="booking_referral_code_dialog_success_no_figure">Код прийнято.</string>
 
     <string name="booking_payment_method">Як хочете платити?</string>
     <string name="booking_pay_card">Карткою</string>
@@ -831,7 +829,7 @@
     <string name="booking_cash_pending">Чи можна платити готівкою, ми підтвердимо, щойно буде відома ціна.</string>
     <string name="booking_cash_cleared">Оплата готівкою для цього замовлення більше недоступна, тому спосіб оплати не обрано. Оберіть, як ви хочете платити.</string>
     <string name="booking_draft_time_changed">Обраний час більше недоступний або змінив ціну. Будь ласка, оберіть час знову.</string>
-    <string name="consent_card_guarantee_draft_2026_09_28">Я погоджуюся, що за моїми замовленнями з оплатою готівкою Cleansia може списати з цієї картки плату за скасування, плату за ненадання доступу, неоплачену готівку та схвалену мною доплату.</string>
+    <string name="consent_saved_card_draft_2026_10_05">Я погоджуюся, що Cleansia збереже цю картку в моєму акаунті. Кошти з неї списуються лише тоді, коли я нею плачу, і я можу будь-коли її видалити.</string>
     <string name="booking_save_card_label">Зберегти цю картку для моїх наступних замовлень</string>
     <string name="booking_special_instructions_hint">Особливі побажання? (необов’язково)</string>
     <string name="booking_access_instructions_hint">Як увійти? (необов’язково)</string>
@@ -1266,7 +1264,7 @@
     <string name="credit_none">Зараз кредиту немає. Якщо з прибиранням щось піде не так, кредит, який ми нарахуємо, з’явиться тут.</string>
     <string name="credit_explainer_title">Як працює кредит</string>
     <string name="credit_explainer_source_title">Звідки він береться</string>
-    <string name="credit_explainer_source_body">Вибачення, коли прибиральник не приїхав або ніхто не зміг узяти ваше замовлення, скарга, яку ви вирішили врегулювати кредитом, або жест доброї волі від нас.</string>
+    <string name="credit_explainer_source_body">Вибачення, коли прибиральник не приїхав або ніхто не зміг узяти ваше замовлення, скарга, яку ви вирішили врегулювати кредитом, жест доброї волі від нас або реферальна винагорода, якщо її пропонують на вашому ринку.</string>
     <string name="credit_explainer_spend_title">Як він витрачається</string>
     <string name="credit_explainer_spend_body">Автоматично, на наступне замовлення з оплатою карткою в тій самій валюті — до %1$d%% його вартості. Решту завжди сплачує картка.</string>
     <string name="credit_explainer_points_title">Кредит — це не бали</string>
@@ -1289,7 +1287,7 @@
     <string name="loyalty_tx_earn_order">+%1$d б. — Прибирання №%2$s</string>
     <string name="loyalty_tx_revoke_order">%1$d б. — Скасовано №%2$s</string>
     <string name="loyalty_tx_refund_order">%1$d б. — Повернення №%2$s</string>
-    <string name="loyalty_tx_referral">+%1$d б. — Бонус за рекомендацію</string>
+    <string name="loyalty_tx_referral">%1$d б. — Бонус за рекомендацію</string>
     <string name="loyalty_tx_manual">%1$d б. — Ручне коригування</string>
     <string name="loyalty_empty_activity">Поки немає активності. Замовте перше прибирання, щоб почати заробляти.</string>
     <string name="loyalty_error_load">Не вдалося завантажити винагороди. Спробуйте знову.</string>
@@ -1297,12 +1295,14 @@
 
     <!-- Loyalty Phase C — Referrals -->
     <string name="loyalty_referral_section_title">Запросіть друзів</string>
-    <string name="loyalty_referral_subtitle">Поділіться своїм кодом. Друг і ви отримаєте по 150 бонусних балів після його першого завершеного прибирання.</string>
+    <string name="loyalty_referral_subtitle">Поділіться своїм кодом. Друг і ви отримаєте по %1$s кредиту після його першого завершеного прибирання.</string>
+    <string name="loyalty_referral_subtitle_no_figure">Поділіться своїм кодом із друзями — вони введуть його під час реєстрації.</string>
     <string name="loyalty_referral_code_label">Ваш код</string>
     <string name="loyalty_referral_share_button">Поділитися</string>
     <string name="loyalty_referral_copy_button">Копіювати</string>
     <string name="loyalty_referral_copied_toast">Код скопійовано</string>
-    <string name="loyalty_referral_share_text">Отримайте 150 бонусних балів після першого завершеного прибирання Cleansia! Використайте мій код %1$s при реєстрації: %2$s</string>
+    <string name="loyalty_referral_share_text">Отримайте %1$s кредиту після першого завершеного прибирання Cleansia! Використайте мій код %2$s при реєстрації: %3$s</string>
+    <string name="loyalty_referral_share_text_no_figure">Приєднуйтеся до Cleansia! Використайте мій код %1$s при реєстрації: %2$s</string>
     <string name="loyalty_referral_stats_empty">Будьте першим — поділіться кодом</string>
     <string name="loyalty_referral_stats_qualified">%1$d друг приєднався · %2$d кваліфіковані</string>
     <string name="loyalty_referral_share_failed">Не вдалося поділитися. Код скопійовано в буфер.</string>

@@ -1,7 +1,9 @@
+using System.Globalization;
 using System.Text.RegularExpressions;
 using Cleansia.Core.AppServices.Features.Legal;
 using Cleansia.Core.AppServices.Features.Orders;
 using Cleansia.Core.Domain.Company;
+using Cleansia.Core.Domain.EmployeePayroll;
 using Cleansia.Core.Domain.Internationalization;
 using Cleansia.Core.Domain.Legal;
 using Cleansia.Core.Domain.Repositories;
@@ -34,13 +36,17 @@ public sealed class LegalDocumentSeederTests : IDisposable
         (LegalDocumentType.TermsOfService, new DateOnly(2026, 9, 29)),
         (LegalDocumentType.TermsOfService, new DateOnly(2026, 9, 30)),
         (LegalDocumentType.TermsOfService, new DateOnly(2026, 10, 3)),
+        (LegalDocumentType.TermsOfService, new DateOnly(2026, 10, 5)),
         (LegalDocumentType.PrivacyPolicy, new DateOnly(2026, 9, 14)),
         (LegalDocumentType.PrivacyPolicy, new DateOnly(2026, 9, 29)),
         (LegalDocumentType.PrivacyPolicy, new DateOnly(2026, 10, 3)),
         (LegalDocumentType.WorkContract, new DateOnly(2026, 9, 20)),
         (LegalDocumentType.WorkContract, new DateOnly(2026, 9, 29)),
+        (LegalDocumentType.WorkContract, new DateOnly(2026, 10, 5)),
         (LegalDocumentType.CleanerFrameworkContract, new DateOnly(2026, 9, 29)),
+        (LegalDocumentType.CleanerFrameworkContract, new DateOnly(2026, 10, 5)),
         (LegalDocumentType.SelfBillingAgreement, new DateOnly(2026, 9, 29)),
+        (LegalDocumentType.SelfBillingAgreement, new DateOnly(2026, 10, 5)),
         (LegalDocumentType.CleanerDataProcessingAgreement, new DateOnly(2026, 9, 29)),
         (LegalDocumentType.ComplaintsProcedure, new DateOnly(2026, 9, 29)),
     ];
@@ -425,7 +431,181 @@ public sealed class LegalDocumentSeederTests : IDisposable
 
     private const int PlusTrialDays = 14;
 
-    private static readonly Regex DayPhrase = new(@"(\d+)\s+(?:days|dní|днів|дней)", RegexOptions.IgnoreCase);
+    /// <summary>
+    /// Owner rulings 2026-10-04: a referral earns both customers credit once the referred customer's first
+    /// booking is completed within the referral window, counted from the code's acceptance, and a card refund
+    /// is sent within 3 days. The newest terms state the window in the credit section, as the days the
+    /// referral policy counts — once, so the window has one figure and one starting point — and the refund
+    /// days in the cancellation and no-cleaner sections, each as the only day figure there, in every language.
+    /// </summary>
+    [Fact]
+    public void The_Newest_Terms_State_The_Referral_Window_And_The_Refund_Days_In_Every_Language()
+    {
+        var newest = NewestTerms();
+
+        Assert.Equal(new[] { "cs", "en", "ru", "sk", "uk" }, newest.Select(r => r.Language).Order());
+        Assert.All(newest, r =>
+        {
+            Assert.Equal(new[] { ReferralPolicy.QualifyingWindowDays }, DaysIn(r.ContentMarkdown, section: 9));
+            Assert.Equal(new[] { CardRefundDays }, DaysIn(r.ContentMarkdown, section: 13));
+            Assert.Equal(new[] { CardRefundDays }, DaysIn(r.ContentMarkdown, section: 14));
+        });
+    }
+
+    private const int CardRefundDays = 3;
+
+    /// <summary>
+    /// Owner decision 2026-10-04: a pay period runs 14 days, and the cleaner is settled and invoiced after each
+    /// one. The newest framework agreement states it in its settlement section and the newest self-billing
+    /// agreement in its invoicing section, as the days a pay period runs, each as the only day figure there and
+    /// with no word for a month, in every language.
+    /// </summary>
+    [Theory]
+    [InlineData(LegalDocumentType.CleanerFrameworkContract, 10)]
+    [InlineData(LegalDocumentType.SelfBillingAgreement, 3)]
+    public void The_Newest_Cleaner_Agreements_Settle_After_Each_14_Day_Pay_Period_In_Every_Language(
+        LegalDocumentType type, int section)
+    {
+        var newest = NewestOf(type);
+
+        Assert.Equal(new[] { "cs", "en", "ru", "sk", "uk" }, newest.Select(r => r.Language).Order());
+        Assert.All(newest, r =>
+        {
+            Assert.Equal(new[] { PayPeriod.LengthInDays }, DaysIn(r.ContentMarkdown, section));
+            Assert.DoesNotMatch(MonthWord, SectionOf(type, r.Language, section));
+        });
+    }
+
+    private static readonly Regex MonthWord = new(@"month|měsí|mesač|mesia|місяц|місяч|месяц|месяч", RegexOptions.IgnoreCase);
+
+    /// <summary>
+    /// The owner's rulings of 2026-10-04 retire wording from the version each text replaces, and the newest
+    /// version must carry none of it in any language. Each row names one block of the replaced version (its
+    /// heading is block 0, then each paragraph or list) by the position of its section, which every language
+    /// shares, and its comment says what that block said.
+    /// </summary>
+    [Theory]
+    [InlineData(LegalDocumentType.TermsOfService, "2026-10-03", 7, 3)]            // cash needs a card saved as a guarantee
+    [InlineData(LegalDocumentType.TermsOfService, "2026-10-03", 8, 0)]            // "The saved card for cash bookings"
+    [InlineData(LegalDocumentType.TermsOfService, "2026-10-03", 8, 1)]            // the card may be charged without asking
+    [InlineData(LegalDocumentType.TermsOfService, "2026-10-03", 8, 2)]            // a failed charge, and no cash without a card
+    [InlineData(LegalDocumentType.TermsOfService, "2026-10-03", 13, 5)]           // refunds within 5 working days
+    [InlineData(LegalDocumentType.TermsOfService, "2026-10-03", 14, 2)]           // a no-cleaner refund within 5 working days
+    [InlineData(LegalDocumentType.CleanerFrameworkContract, "2026-09-29", 5, 2)]  // approval needs the insurance certificate
+    [InlineData(LegalDocumentType.CleanerFrameworkContract, "2026-09-29", 8, 2)]  // cash held after a monthly settlement
+    [InlineData(LegalDocumentType.CleanerFrameworkContract, "2026-09-29", 9, 1)]  // the reward without the extras
+    [InlineData(LegalDocumentType.CleanerFrameworkContract, "2026-09-29", 9, 3)]  // a lockout pays half of the fee collected
+    [InlineData(LegalDocumentType.CleanerFrameworkContract, "2026-09-29", 10, 0)] // "Monthly settlement"
+    [InlineData(LegalDocumentType.CleanerFrameworkContract, "2026-09-29", 10, 1)] // settled after each monthly pay period
+    [InlineData(LegalDocumentType.CleanerFrameworkContract, "2026-09-29", 11, 1)] // the claim as if every cleaner were insured
+    [InlineData(LegalDocumentType.CleanerFrameworkContract, "2026-09-29", 11, 2)] // insurance kept, its certificate shown
+    [InlineData(LegalDocumentType.CleanerFrameworkContract, "2026-09-29", 16, 2)] // losing the insurance ends the agreement at once
+    [InlineData(LegalDocumentType.CleanerFrameworkContract, "2026-09-29", 16, 3)] // the last rewards at the next monthly settlement
+    [InlineData(LegalDocumentType.SelfBillingAgreement, "2026-09-29", 2, 1)]      // invoices for completed jobs and any fee share
+    [InlineData(LegalDocumentType.SelfBillingAgreement, "2026-09-29", 3, 1)]      // invoiced after each monthly pay period
+    [InlineData(LegalDocumentType.SelfBillingAgreement, "2026-09-29", 3, 2)]      // the invoice lists any fee share
+    [InlineData(LegalDocumentType.WorkContract, "2026-09-29", 4, 2)]              // paid on the monthly invoice
+    [InlineData(LegalDocumentType.WorkContract, "2026-09-29", 7, 1)]              // a lockout pays a share of the fee
+    public void The_Newest_Version_Carries_None_Of_The_Wording_The_2026_10_04_Rulings_Retired(
+        LegalDocumentType type, string replaced, int section, int block)
+    {
+        var all = LegalSeedResource.ReadAll().Where(r => r.Type == type).ToList();
+        var retired = all
+            .Where(r => r.EffectiveFrom == DateOnly.Parse(replaced, CultureInfo.InvariantCulture))
+            .ToDictionary(r => r.Language, r => BlocksOf(r.ContentMarkdown, section)[block]);
+        var newest = NewestOf(type);
+
+        Assert.Equal(new[] { "cs", "en", "ru", "sk", "uk" }, retired.Keys.Order());
+        Assert.Equal(new[] { "cs", "en", "ru", "sk", "uk" }, newest.Select(r => r.Language).Order());
+        Assert.All(newest, r => Assert.DoesNotContain(retired[r.Language], r.ContentMarkdown.ReplaceLineEndings("\n")));
+    }
+
+    /// <summary>
+    /// The review of 2026-10-05 corrected the 2026-10-05 versions in place — allowed, because they are not in
+    /// force yet — so that each states what the code does. The wording it replaced survives in no file, so each
+    /// row quotes a phrase the section must now state in that language, and fails against the replaced wording.
+    /// </summary>
+    [Theory]
+    // A cash booking is refused once the customer holds MaxOpenUnpaidCashBookings open and unpaid
+    // (CustomerCashStanding): the two include the new one, and every language says so.
+    [InlineData(LegalDocumentType.TermsOfService, "en", 7, "no more than two unpaid cash bookings at a time, counting this one")]
+    [InlineData(LegalDocumentType.TermsOfService, "cs", 7, "včetně této objednávky")]
+    [InlineData(LegalDocumentType.TermsOfService, "sk", 7, "vrátane tejto objednávky")]
+    [InlineData(LegalDocumentType.TermsOfService, "uk", 7, "не більше двох неоплачених готівкових замовлень одночасно, включно з цим")]
+    [InlineData(LegalDocumentType.TermsOfService, "ru", 7, "не более двух неоплаченных заказов с оплатой наличными одновременно, включая этот")]
+    // A code is accepted at registration (Register) or later on a booking (OrderLateReferralAcceptor) ...
+    [InlineData(LegalDocumentType.TermsOfService, "en", 9, "or later on a booking")]
+    [InlineData(LegalDocumentType.TermsOfService, "cs", 9, "nebo později u objednávky")]
+    [InlineData(LegalDocumentType.TermsOfService, "sk", 9, "alebo neskôr pri objednávke")]
+    [InlineData(LegalDocumentType.TermsOfService, "uk", 9, "або пізніше в замовленні")]
+    [InlineData(LegalDocumentType.TermsOfService, "ru", 9, "или позже в заказе")]
+    // ... and the window runs from Referral.AcceptedOn (ReferralService.ProcessOrderCompletedAsync), not registration ...
+    [InlineData(LegalDocumentType.TermsOfService, "en", 9, "days of the code being accepted")]
+    [InlineData(LegalDocumentType.TermsOfService, "cs", 9, "dní od přijetí kódu")]
+    [InlineData(LegalDocumentType.TermsOfService, "sk", 9, "dní od prijatia kódu")]
+    [InlineData(LegalDocumentType.TermsOfService, "uk", 9, "днів після прийняття коду")]
+    [InlineData(LegalDocumentType.TermsOfService, "ru", 9, "дней после принятия кода")]
+    // ... and a reversal takes back min(grant, balance) from each side (ReverseReferral): the whole balance in
+    // the credit's currency counts, not only what is left of the grant.
+    [InlineData(LegalDocumentType.TermsOfService, "en", 9, "more than the referral credit it gave you, nor more than your balance in that credit's currency holds at the time")]
+    [InlineData(LegalDocumentType.TermsOfService, "cs", 9, "víc než kredit za doporučení, který vám poskytla, ani víc, než kolik je v tu chvíli na vašem zůstatku v měně tohoto kreditu")]
+    [InlineData(LegalDocumentType.TermsOfService, "sk", 9, "viac než kredit za odporúčanie, ktorý vám poskytla, ani viac, ako koľko je v tej chvíli na vašom zostatku v mene tohto kreditu")]
+    [InlineData(LegalDocumentType.TermsOfService, "uk", 9, "ні більше за реферальний кредит, який вам надала, ні більше, ніж на той момент є на вашому залишку у валюті цього кредиту")]
+    [InlineData(LegalDocumentType.TermsOfService, "ru", 9, "ни больше реферального кредита, который вам предоставила, ни больше, чем в этот момент есть на вашем остатке в валюте этого кредита")]
+    // Approval asks the register of the country the cleaner is approved for, and only Czechia's is wired (ARES);
+    // it refuses a number not registered, a business that has ended and no trade licence in force (ApproveEmployee,
+    // CleanerBusinessRegister). Where no register is consulted, nothing is checked.
+    [InlineData(LegalDocumentType.CleanerFrameworkContract, "en", 5, "(in the Czech Republic, ARES)")]
+    [InlineData(LegalDocumentType.CleanerFrameworkContract, "cs", 5, "(v České republice do registru ARES)")]
+    [InlineData(LegalDocumentType.CleanerFrameworkContract, "sk", 5, "(v Českej republike do registra ARES)")]
+    [InlineData(LegalDocumentType.CleanerFrameworkContract, "uk", 5, "(у Чеській Республіці — з реєстром ARES)")]
+    [InlineData(LegalDocumentType.CleanerFrameworkContract, "ru", 5, "(в Чешской Республике — с реестром ARES)")]
+    [InlineData(LegalDocumentType.CleanerFrameworkContract, "en", 5, "your business has not ended")]
+    [InlineData(LegalDocumentType.CleanerFrameworkContract, "cs", 5, "vaše podnikání podle něj neskončilo")]
+    [InlineData(LegalDocumentType.CleanerFrameworkContract, "sk", 5, "vaše podnikanie podľa neho neskončilo")]
+    [InlineData(LegalDocumentType.CleanerFrameworkContract, "uk", 5, "ваша діяльність за ним не припинена")]
+    [InlineData(LegalDocumentType.CleanerFrameworkContract, "ru", 5, "ваша деятельность по нему не прекращена")]
+    public void The_Newest_Version_States_What_The_Code_Does_As_The_2026_10_05_Review_Worded_It(
+        LegalDocumentType type, string language, int section, string phrase)
+    {
+        Assert.Contains(phrase, SectionOf(type, language, section));
+    }
+
+    /// <summary>
+    /// The wording the review of 2026-10-05 retired must not come back: the cs and sk payment sections made
+    /// "not more than two unpaid cash bookings" a precondition, which admits a third, after a stray "further";
+    /// and the credit section capped a reversal at what is left of the grant, where the code takes up to the
+    /// whole balance in that currency.
+    /// </summary>
+    [Theory]
+    [InlineData(LegalDocumentType.TermsOfService, "cs", 7, "nemáte více než dvě")]
+    [InlineData(LegalDocumentType.TermsOfService, "cs", 7, "v hotovosti dále")]
+    [InlineData(LegalDocumentType.TermsOfService, "sk", 7, "nemáte viac ako dve")]
+    [InlineData(LegalDocumentType.TermsOfService, "sk", 7, "v hotovosti ďalej")]
+    [InlineData(LegalDocumentType.TermsOfService, "en", 9, "what is left of that credit")]
+    [InlineData(LegalDocumentType.TermsOfService, "cs", 9, "kolik z tohoto kreditu zbývá")]
+    [InlineData(LegalDocumentType.TermsOfService, "sk", 9, "koľko z tohto kreditu zostáva")]
+    [InlineData(LegalDocumentType.TermsOfService, "uk", 9, "залишилося від цього кредиту")]
+    [InlineData(LegalDocumentType.TermsOfService, "ru", 9, "осталось от этого кредита")]
+    public void The_Newest_Version_Carries_None_Of_The_Wording_The_2026_10_05_Review_Retired(
+        LegalDocumentType type, string language, int section, string phrase)
+    {
+        Assert.DoesNotContain(phrase, SectionOf(type, language, section));
+    }
+
+    private static string SectionOf(LegalDocumentType type, string language, int section) =>
+        string.Join("\n\n", BlocksOf(NewestOf(type).Single(r => r.Language == language).ContentMarkdown, section));
+
+    /// <summary>The blocks of the section at <paramref name="section"/>, counted by its <c>## </c> heading from 1.</summary>
+    private static string[] BlocksOf(string markdown, int section) =>
+        markdown.ReplaceLineEndings("\n").Split("\n## ")[section].Trim().Split("\n\n");
+
+    private static int[] DaysIn(string markdown, int section) =>
+        DayPhrase.Matches(string.Join("\n\n", BlocksOf(markdown, section)))
+            .Select(m => int.Parse(m.Groups[1].Value, CultureInfo.InvariantCulture))
+            .ToArray();
+
+    private static readonly Regex DayPhrase = new(@"(\d+)\s+(?:days|dní|днів|дні|дней)", RegexOptions.IgnoreCase);
 
     private static readonly Regex MinutePhrase = new(@"(\d+)\s+(?:min|хвилин|минут)", RegexOptions.IgnoreCase);
 

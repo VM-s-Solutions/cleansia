@@ -45,14 +45,14 @@ export class RewardsComponent implements OnInit {
   protected readonly LoyaltyTier = LoyaltyTier;
 
   /**
-   * The three things a customer has to know before a points balance means
+   * The things a customer has to know before a points balance means
    * anything, in the order the board puts them. Copy only — every rule they
-   * describe is enforced on the server. -> /product/business-rules
+   * describe is enforced on the server. A referral pays credit, not points,
+   * so it is not one of them. -> /product/business-rules
    */
   protected readonly howItWorks = [
     { key: 'rate', icon: 'pi pi-star' },
     { key: 'on_completion', icon: 'pi pi-check-circle' },
-    { key: 'referral', icon: 'pi pi-gift' },
   ] as const;
 
   /**

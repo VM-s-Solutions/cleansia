@@ -45,7 +45,7 @@ The write's ledger rows were never saved, so they are saved once with the replay
 the sum of the ledger. The retry sits in the commit rather than in `LoyaltyService` because a refund
 with a credit leg still holds the credit lock when its clawback flushes. Only inside the commit is the
 replay saved under that lock. The same retry covers every loyalty write the pipeline commits: the
-completion grant, the cancellation revoke, referrals and tier edits. An atomic SQL increment was
+completion grant, the cancellation revoke and tier edits. An atomic SQL increment was
 considered and not chosen. It would need its own transaction on every write path to stay atomic with
 the ledger insert, and it would still have to recompute the tier from the stored total.
 `LoyaltyAccountConcurrentWriteTests` runs the races on a real Postgres.
@@ -104,7 +104,7 @@ source alone:
 | `OrderCompleted` | the cleaning completed |
 | `OrderCancelled` | the booking cancelled |
 | `OrderPartiallyRefunded` | *Refunded* (Android and iOS: *Refunded #N*) |
-| `Referral` | the referral bonus |
+| `Referral` | the referral bonus — a row written before 2026-10-05, when a referral still paid points |
 | an administrator's grant or revoke, or a source the client does not know | a manual adjustment |
 
 Until then the web checked the row's type first and read every revoke as a cancelled booking,
@@ -121,9 +121,9 @@ A customer holds two balances, and they do different things.
 | | Points (`LoyaltyAccount`) | Credit (`CreditAccount`) |
 |---|---|---|
 | What it is | a count with no currency | money the platform owes the customer, one account per currency |
-| Earned by | a completed order, a qualified referral, an administrator's grant | the no-show or no-cleaner apology, a complaint settled in credit, goodwill |
+| Earned by | a completed order, an administrator's grant | the no-show or no-cleaner apology, a complaint settled in credit, a qualified referral (both sides, since 2026-10-05), goodwill |
 | Spent | never; nothing redeems points | automatically, on the next card booking in the same currency, up to the server's share of it; a refunded or cancelled booking gives back what it spent |
-| Taken back | a refund's clawback (partial, full or a dispute's), a cancelled order's points, a reversed referral, an administrator's revoke | account deletion, the operating company's deactivation, an administrator's *Expire credit* |
+| Taken back | a refund's clawback (partial, full or a dispute's), a cancelled order's points, an administrator's revoke | a reversed referral, as much as the balance still holds; account deletion, the operating company's deactivation, an administrator's *Expire credit* |
 | Expires | never | 12 months after the last movement |
 | What it changes | the tier, and through it the tier discount | what the card is asked for |
 
@@ -135,8 +135,8 @@ bookings. → [Business rules — customer credit](/product/business-rules#credi
 
 **A tier follows the points total, both ways.** `LoyaltyAccount` recomputes its tier from
 `LifetimePoints` against the tier thresholds every time points move. A grant can raise it, and a revoke
-lowers the total and can lower the tier. Revokes include a refund's clawback, an
-administrator's manual revoke and a reversed referral. Nothing ratchets. The web rewards page says so:
+lowers the total and can lower the tier. Revokes include a refund's clawback and an
+administrator's manual revoke; a reversed referral takes back credit, not points. Nothing ratchets. The web rewards page says so:
 the ladder states that the tier follows the current points total, and the balance note says a tier can
 drop.
 
@@ -349,6 +349,32 @@ idempotency key. This flow does not look up whether the address has a registered
 A referral code is randomly generated, never derived from a name — which is also why erasure leaves it
 alone. You cannot redeem your own code, and you cannot be referred twice.
 
+**A qualified referral pays both sides credit, not points** (owner ruling 2026-10-04, since
+2026-10-05). Until then each side received 150 tier points.
+
+1. **The code.** A customer's code is created the first time they open it (`GetMyReferral`).
+2. **Accepted.** A new customer enters it at registration (`Auth/Register`), or on a booking when they
+   have accepted no code before (`CreateOrder`). The `Referral` row starts `Accepted`, stamped with
+   the time.
+3. **Qualified.** When that customer's first order completes (`CompleteOrder` →
+   `ReferralService.ProcessOrderCompletedAsync`) within 90 days of the acceptance, both sides are paid
+   `Currency.ReferralCredit` of the **order's** currency into their credit accounts in that currency,
+   under the ledger keys `referral:{referralId}:referrer` and `referral:{referralId}:referred`. The
+   referral becomes `Qualified` and records each side's amount and the currency; the code's
+   qualified-friends counter goes up. A currency with no figure, or 0, pays nothing and the referral
+   still qualifies.
+4. **Not qualified.** Past the 90 days the referral is `Expired` and pays nothing; the daily
+   `ExpireStaleReferrals` sweeps the ones no order reached. An order that is not the customer's first
+   completed one leaves the referral `Accepted` until it expires.
+5. **Interventions.** An administrator can force-qualify an `Accepted` referral, or reverse a
+   `Qualified` one, taking back only what each side's balance still holds.
+
+Each grant holds that customer's credit lock until the commit, and the two sides are locked in the
+order of their user ids, so two grants to the same pair cannot each hold the lock the other waits on.
+The completion's own points grant has taken the completing customer's lock before the referral runs,
+so two crossed referrals (each customer referred the other) completing at the same moment are the one
+case that order does not cover. → [Business rules — the referral reward](/product/business-rules#referral-credit)
+
 ## Edge cases
 
 | Case | What happens |
@@ -370,3 +396,7 @@ alone. You cannot redeem your own code, and you cannot be referred twice.
 | A revoke takes the total below the current tier's threshold | The tier drops to the one the total now reaches, and its achieved date moves with it. |
 | Order in a currency with no points divisor | Unreachable through the admin surface — activation refuses without a divisor and an active currency cannot have it cleared (`currency.loyalty_divisor_missing`). A row that reaches the state anyway earns nothing and logs a warning; nothing is borrowed from another currency's rate. |
 | Self-referral | Refused. |
+| A referral qualifies on an order in a currency with no `ReferralCredit` | `Qualified`, nothing paid, a warning logged; nothing is borrowed from another currency's figure. |
+| One side of a referral has been erased | That side receives nothing; the other is paid. |
+| A referral grant retried | Rejected by the credit ledger's idempotency key, which the force-qualify shares, so the two never both pay a side. |
+| A referral reversed after the credit was spent | Each side gives up what its balance still holds, never more; the balance never goes negative. |

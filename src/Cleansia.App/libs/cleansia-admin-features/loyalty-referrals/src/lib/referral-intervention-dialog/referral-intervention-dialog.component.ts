@@ -45,6 +45,8 @@ export class ReferralInterventionDialogComponent {
   readonly visibleChange = output<boolean>();
 
   readonly mode = input<ReferralInterventionMode>('reverse');
+  /** The credit the referral paid, formatted "referrer / referred"; null when nothing was paid. */
+  readonly credit = input<string | null>(null);
   readonly submitting = input<boolean>(false);
 
   readonly submitForm = output<ReferralInterventionSubmit>();
@@ -75,6 +77,8 @@ export class ReferralInterventionDialogComponent {
   );
 
   readonly destructive = computed(() => this.mode() === 'reverse');
+
+  readonly reverseSummary = computed(() => (this.mode() === 'reverse' ? this.credit() : null));
 
   reset(): void {
     this.form.reset({ reason: '' });

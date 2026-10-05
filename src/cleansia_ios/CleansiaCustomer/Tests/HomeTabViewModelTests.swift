@@ -130,15 +130,17 @@ final class HomeTabViewModelTests: XCTestCase {
         XCTAssertEqual(vm.upsellInputs.referralCode, "JOIN50")
     }
 
-    /// The referral slide's points are the server's `pointsPerReferral`, unknown until the account loads.
-    func testTheReferralSlideStatesTheServersPointsOnceTheyHaveLoaded() async {
-        let referrals = RewardsReferralRepository(client: referralClient)
-        let vm = makeViewModel(referralRepository: referrals)
-        XCTAssertNil(vm.upsellInputs.referralPoints)
+    /// The referral slide states the chosen market's credit, in its currency, and follows a change of market.
+    func testTheReferralSlideStatesTheChosenMarketsCredit() async {
+        let none = await makeViewModel(marketStore: MarketFixtures.unavailable())
+        XCTAssertNil(none.upsellInputs.referralCredit)
 
-        await referrals.refresh()
+        let store = await MarketFixtures.resolved()
+        let vm = makeViewModel(marketStore: store)
+        XCTAssertEqual(vm.upsellInputs.referralCredit, MarketMoney(amount: 150, currencyCode: "CZK"))
 
-        XCTAssertEqual(vm.upsellInputs.referralPoints, ReferralFixtures.account().pointsPerReferral)
+        store.select(isoCode: "SVK")
+        XCTAssertNil(vm.upsellInputs.referralCredit, "Slovakia authors no referral credit")
     }
 
     /// The Plus slide names the headline plan's discount; none before the plans arrive.

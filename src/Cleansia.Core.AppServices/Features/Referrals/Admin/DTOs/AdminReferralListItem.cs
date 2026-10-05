@@ -16,5 +16,6 @@ public record AdminReferralListItem(
     ReferralStatus Status,
     DateTimeOffset AcceptedOn,
     DateTimeOffset? FirstQualifyingOrderOn,
-    int? PointsAwardedToReferrer,
-    int? PointsAwardedToReferred);
+    decimal? CreditAwardedToReferrer,
+    decimal? CreditAwardedToReferred,
+    string? CreditCurrencyCode);

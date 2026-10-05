@@ -20,7 +20,7 @@ namespace Cleansia.Core.AppServices.Features.SavedCards;
 /// </summary>
 public class CreateSavedCardSetupIntent
 {
-    /// <param name="ConsentAccepted">The customer ticked the consent that fees and unpaid cash may be charged to the card.</param>
+    /// <param name="ConsentAccepted">The customer ticked the consent to save the card, which is never charged unless they pay with it.</param>
     /// <param name="CountryId">The market the card guarantees bookings in; null is the platform default market.</param>
     public record Command(bool ConsentAccepted, string? CountryId = null) : ICommand<Response>;
 

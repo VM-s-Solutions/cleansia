@@ -10,9 +10,12 @@ import {
   ReverseReferralResponse,
 } from '@cleansia/admin-services';
 import { SnackbarService } from '@cleansia/services';
+import { formatMoney } from '@cleansia/utils';
 import { TranslateService } from '@ngx-translate/core';
 import { EMPTY, of, throwError } from 'rxjs';
 import { ReferralsListFacade } from './referrals-list.facade';
+
+const czk = (value: number) => formatMoney(value, 'CZK', 'cs-CZ', { fractionDigits: 2 });
 
 describe('ReferralsListFacade', () => {
   let facade: ReferralsListFacade;
@@ -147,8 +150,9 @@ describe('ReferralsListFacade', () => {
       of(
         ReverseReferralResponse.fromJS({
           referralId: 'ref-1',
-          pointsRevokedFromReferrer: 100,
-          pointsRevokedFromReferred: 50,
+          creditTakenFromReferrer: 150,
+          creditTakenFromReferred: 40.5,
+          currencyCode: 'CZK',
         })
       )
     );
@@ -168,11 +172,32 @@ describe('ReferralsListFacade', () => {
       reason: 'fraud ring',
     });
     expect(snackbar.showSuccessTranslated).toHaveBeenCalledWith(
-      'pages.loyalty_referrals.intervention.success_reverse'
+      'pages.loyalty_referrals.intervention.success_reverse',
+      { referrer: czk(150), referred: czk(40.5) }
     );
     expect(referralClient.getPaged).toHaveBeenCalledTimes(1);
     expect(onSuccess).toHaveBeenCalledTimes(1);
     expect(facade.intervening()).toBe(false);
+  });
+
+  it('says no credit was taken back when the reversed referral had paid none', () => {
+    referralClient.reverse.mockReturnValue(
+      of(
+        ReverseReferralResponse.fromJS({
+          referralId: 'ref-1',
+          creditTakenFromReferrer: 0,
+          creditTakenFromReferred: 0,
+          currencyCode: null,
+        })
+      )
+    );
+    referralClient.getPaged.mockReturnValue(of(page));
+
+    facade.reverseReferral('ref-1', 'fraud ring', jest.fn());
+
+    expect(snackbar.showSuccessTranslated).toHaveBeenCalledWith(
+      'pages.loyalty_referrals.intervention.success_reverse_no_credit'
+    );
   });
 
   it('does not call reverse with a blank reason', () => {
@@ -196,8 +221,9 @@ describe('ReferralsListFacade', () => {
       of(
         ForceQualifyReferralResponse.fromJS({
           referralId: 'ref-2',
-          pointsGrantedToReferrer: 100,
-          pointsGrantedToReferred: 50,
+          creditGrantedToReferrer: 150,
+          creditGrantedToReferred: 150,
+          currencyCode: 'CZK',
         })
       )
     );
@@ -214,7 +240,8 @@ describe('ReferralsListFacade', () => {
       reason: 'legit order confirmed',
     });
     expect(snackbar.showSuccessTranslated).toHaveBeenCalledWith(
-      'pages.loyalty_referrals.intervention.success_force_qualify'
+      'pages.loyalty_referrals.intervention.success_force_qualify',
+      { referrer: czk(150), referred: czk(150) }
     );
     expect(onSuccess).toHaveBeenCalledTimes(1);
   });

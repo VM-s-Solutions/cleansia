@@ -2,7 +2,7 @@ import CleansiaCore
 import CleansiaCustomerApi
 import Foundation
 
-/// A country a customer may browse in, with the currency its prices are stated in and the two copy
+/// A country a customer may browse in, with the currency its prices are stated in and the copy
 /// figures authored for it (`Market/GetOverview`).
 struct Market: Equatable, Identifiable {
     let countryId: String
@@ -14,6 +14,8 @@ struct Market: Equatable, Identifiable {
     let currencyCode: String
     let isDefault: Bool
     let noShowCredit: Double?
+    /// What each side of a referral is credited in this currency; null or zero pays none.
+    let referralCredit: Double?
     let insuranceCoverageAmount: Double?
 
     var id: String {
@@ -69,6 +71,7 @@ extension Market {
         currencyCode = try dto.currencyCode.requireNonBlank("currencyCode")
         isDefault = try dto.isDefault.require("isDefault")
         noShowCredit = dto.noShowCredit
+        referralCredit = dto.referralCredit
         insuranceCoverageAmount = dto.insuranceCoverageAmount
     }
 }

@@ -138,9 +138,9 @@ extension L10n {
             localized("home_upsell_plus_desc_generic")
         }
 
-        /// The server's `pointsPerReferral`.
-        static func upsellReferralDesc(_ points: Int) -> String {
-            plural("home_upsell_referral_desc", points)
+        /// The chosen market's referral credit, formatted in its currency.
+        static func upsellReferralDesc(_ credit: String) -> String {
+            format("home_upsell_referral_desc", credit)
         }
 
         static var upsellReferralDescGeneric: String {
@@ -191,8 +191,8 @@ extension L10n {
             format("home_upsell_chip_percent_off", percent)
         }
 
-        static func upsellChipPoints(_ points: Int) -> String {
-            format("home_upsell_chip_points", points)
+        static func upsellChipCredit(_ credit: String) -> String {
+            format("home_upsell_chip_credit", credit)
         }
 
         static func upsellChipHours(_ hours: Int) -> String {

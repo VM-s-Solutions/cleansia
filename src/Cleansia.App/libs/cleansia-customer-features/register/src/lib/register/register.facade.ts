@@ -1,4 +1,4 @@
-import { inject, Injectable, signal } from '@angular/core';
+import { computed, inject, Injectable, signal } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { FormControl, FormGroup, Validators } from '@angular/forms';
 import { Router } from '@angular/router';
@@ -9,8 +9,14 @@ import {
   JwtTokenResponse,
   ValidateReferralQuery,
 } from '@cleansia/customer-services';
-import { loadCustomerUser, selectMarketCountryId } from '@cleansia/customer-stores';
+import {
+  loadCustomerUser,
+  selectMarketCountryId,
+  selectMarketCurrencyCode,
+  selectMarketReferralCredit,
+} from '@cleansia/customer-stores';
 import { CleansiaCustomerRoute, SnackbarService } from '@cleansia/services';
+import { currentLanguage, formatMarketCredit } from '@cleansia/utils';
 import { Store } from '@ngrx/store';
 import { TranslateService } from '@ngx-translate/core';
 import { firstValueFrom, map, takeUntil } from 'rxjs';
@@ -62,6 +68,18 @@ export class RegisterFacade extends UnsubscribeControlDirective {
   // facade owns its own contract.
   readonly referralCode = signal('');
   readonly referralState = signal<ReferralUiState>({ kind: 'idle' });
+
+  private readonly marketReferralCredit = toSignal(this.store.select(selectMarketReferralCredit), {
+    initialValue: null,
+  });
+  private readonly marketCurrencyCode = toSignal(this.store.select(selectMarketCurrencyCode), {
+    initialValue: null,
+  });
+  private readonly lang = currentLanguage(this.translate);
+  /** What each side of a referral is credited in the browsed market, or null when it pays none. */
+  readonly referralCreditAmount = computed(() =>
+    formatMarketCredit(this.marketReferralCredit(), this.marketCurrencyCode(), this.lang()),
+  );
 
   /**
    * Apply-button handler from the referral dialog. Single backend call, no

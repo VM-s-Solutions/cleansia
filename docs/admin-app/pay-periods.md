@@ -55,14 +55,14 @@ The "Create New Pay Period" button opens a dialog (right-side drawer pattern mat
 2. Pick an **End Date** via the date picker
 3. Click **Create**
 
-The new period is created in `Open` status. The backend validates that the period length is between 7 and 31 days.
+The new period is created in `Open` status. The backend accepts only a 14-day period, start and end inclusive: the end date must be 13 days after the start date, and any other span is refused with `pay_period.invalid_duration`. An edit is held to the same length → [Business rules — pay periods are 14 days](/product/business-rules#pay-periods).
 
 API call:
 ```
 POST /api/AdminPayPeriod/create
 {
   "startDate": "2026-04-01",
-  "endDate": "2026-04-15"
+  "endDate": "2026-04-14"
 }
 ```
 

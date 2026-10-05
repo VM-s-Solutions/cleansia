@@ -19,15 +19,17 @@ namespace Cleansia.Tests.Features.Receivables;
 
 /// <summary>
 /// The off-session charge sweep (owner ruling 2026-09-28, decisions 16 to 18). Switched off, it reads and
-/// charges nothing — the state it ships in until the terms carry the consent wording. Switched on, it
-/// charges each open receivable once to the customer's usable card in its currency, the attempt committed
-/// before the call; a pay link the customer holds is closed first, and one they have already paid is not
+/// charges nothing — the state it stays in, since the owner ruled on 2026-10-04 that no saved card is charged.
+/// Switched on, it charges each open receivable once to the customer's usable card in its currency saved under
+/// a card-guarantee consent, the attempt committed before the call; a card saved under any other consent is
+/// never charged; a pay link the customer holds is closed first, and one they have already paid is not
 /// charged again; a customer with no usable card is not charged, and a declined charge leaves the
 /// receivable open for the failure webhook's pay link. With card payments switched off it refuses.
 /// </summary>
 public class ChargeOpenReceivablesTests
 {
     private const string TenantId = "tenant-sweep";
+    private const string CardGuaranteeConsent = "card-guarantee-draft-2026-09-28";
 
     private readonly Mock<IPaymentsConfig> _payments = new();
     private readonly Mock<IStripeConfig> _stripeConfig = new();
@@ -93,9 +95,10 @@ public class ChargeOpenReceivablesTests
         return receivable;
     }
 
-    private void CustomerHoldsCard(int expYear)
+    private void CustomerHoldsCard(int expYear, string consentTextVersion = CardGuaranteeConsent)
     {
         var card = SavedCard.Start(_receivable.UserId, _receivable.CurrencyId, "cus_owing", null, null);
+        typeof(SavedCard).GetProperty(nameof(SavedCard.ConsentTextVersion))!.SetValue(card, consentTextVersion);
         card.Capture("pm_owing", "visa", "4242", 12, expYear);
         _savedCards
             .Setup(r => r.GetCapturedForUserInCurrencyAsync(_receivable.UserId, _receivable.CurrencyId, It.IsAny<CancellationToken>()))
@@ -174,6 +177,28 @@ public class ChargeOpenReceivablesTests
         Assert.True(result.IsSuccess);
         Assert.Equal(new ChargeOpenReceivables.Response(1, 0), result.Value);
         Assert.Equal(1, _receivable.Attempts);
+        Assert.True(_receivable.IsOpen);
+        _stripe.VerifyNoOtherCalls();
+    }
+
+    /// <summary>
+    /// The consent printed with Save this card since <c>saved-card-draft-2026-10-05</c> promises the card is
+    /// never charged unless the customer pays with it. Only the card-guarantee consents ever allowed a charge
+    /// with the customer absent, so a card saved under the consent in force, or any later one, is not charged
+    /// even with the switch on, and the receivable stays open for the customer's pay link.
+    /// </summary>
+    [Theory]
+    [InlineData(SavedCard.ConsentTextVersionInForce)]
+    [InlineData("saved-card-2026-11-02")]
+    public async Task A_Card_Saved_Under_A_Consent_Other_Than_The_Card_Guarantee_Is_Never_Charged(string consentTextVersion)
+    {
+        CustomerHoldsCard(DateTime.UtcNow.Year + 2, consentTextVersion);
+
+        var result = await Handler().Handle(new ChargeOpenReceivables.Command(), CancellationToken.None);
+
+        Assert.True(result.IsSuccess);
+        Assert.Equal(new ChargeOpenReceivables.Response(1, 0), result.Value);
+        Assert.Equal(new[] { "commit attempt 1" }, _sequence);
         Assert.True(_receivable.IsOpen);
         _stripe.VerifyNoOtherCalls();
     }

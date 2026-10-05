@@ -1,5 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 using Cleansia.Core.Domain.Common;
+using Cleansia.Core.Domain.Internationalization;
 using Cleansia.Core.Domain.Orders;
 using Cleansia.Core.Domain.Users;
 
@@ -38,11 +39,18 @@ public class Referral : TenantAuditable
     public string? FirstQualifyingOrderId { get; private set; }
     public Order? FirstQualifyingOrder { get; private set; }
 
-    public int? PointsAwardedToReferrer { get; private set; }
+    /// <summary>The credit issued to the inviter on qualification; null when that side received none.</summary>
+    public decimal? CreditAwardedToReferrer { get; private set; }
 
-    public int? PointsAwardedToReferred { get; private set; }
+    /// <summary>The credit issued to the invited friend on qualification; null when that side received none.</summary>
+    public decimal? CreditAwardedToReferred { get; private set; }
 
-    public DateTimeOffset? PointsAwardedOn { get; private set; }
+    /// <summary>The currency both grants are denominated in; null when neither side was paid.</summary>
+    [MaxLength(26)]
+    public string? CreditCurrencyId { get; private set; }
+    public Currency? CreditCurrency { get; private set; }
+
+    public DateTimeOffset? AwardedOn { get; private set; }
 
     // Private constructor for EF Core
     private Referral() { }
@@ -89,28 +97,24 @@ public class Referral : TenantAuditable
 
     /// <summary>
     /// Mark this referral as qualified after the invitee's first completed
-    /// order. Records the order id and the symmetric point grants for the
+    /// order. Records the order id and the credit each side was issued for the
     /// admin/audit trail. Idempotency is enforced upstream (caller checks
     /// <see cref="Status"/> before calling).
     /// </summary>
     public void MarkQualified(
         string firstQualifyingOrderId,
-        int pointsToReferrer,
-        int pointsToReferred,
+        string? creditCurrencyId,
+        decimal? creditToReferrer,
+        decimal? creditToReferred,
         string actorId)
     {
-        Status = ReferralStatus.Qualified;
-        FirstQualifyingOrderOn = DateTimeOffset.UtcNow;
         FirstQualifyingOrderId = firstQualifyingOrderId;
-        PointsAwardedToReferrer = pointsToReferrer;
-        PointsAwardedToReferred = pointsToReferred;
-        PointsAwardedOn = DateTimeOffset.UtcNow;
-        Updated(actorId, DateTimeOffset.UtcNow);
+        Qualify(creditCurrencyId, creditToReferrer, creditToReferred, actorId);
     }
 
     /// <summary>
     /// Mark this referral as expired (90-day window elapsed without a
-    /// qualifying order). No points are granted.
+    /// qualifying order). No credit is granted.
     /// </summary>
     public void MarkExpired(string actorId)
     {
@@ -121,27 +125,38 @@ public class Referral : TenantAuditable
     /// <summary>
     /// Admin force-qualify of a legitimate referral stuck in Accepted, where no
     /// qualifying order is being recorded (so <see cref="FirstQualifyingOrderId"/>
-    /// stays null — there is no Order to FK to). Records the symmetric grants for
-    /// the audit trail. Idempotency is enforced upstream (caller checks
+    /// stays null — there is no Order to FK to). Records the credit each side was
+    /// issued for the audit trail. Idempotency is enforced upstream (caller checks
     /// <see cref="Status"/> before calling).
     /// </summary>
-    public void ForceQualify(int pointsToReferrer, int pointsToReferred, string actorId)
+    public void ForceQualify(
+        string? creditCurrencyId,
+        decimal? creditToReferrer,
+        decimal? creditToReferred,
+        string actorId)
     {
+        Qualify(creditCurrencyId, creditToReferrer, creditToReferred, actorId);
+    }
+
+    private void Qualify(string? creditCurrencyId, decimal? creditToReferrer, decimal? creditToReferred, string actorId)
+    {
+        var now = DateTimeOffset.UtcNow;
+        var awarded = creditToReferrer is not null || creditToReferred is not null;
         Status = ReferralStatus.Qualified;
-        FirstQualifyingOrderOn = DateTimeOffset.UtcNow;
-        PointsAwardedToReferrer = pointsToReferrer;
-        PointsAwardedToReferred = pointsToReferred;
-        PointsAwardedOn = DateTimeOffset.UtcNow;
-        Updated(actorId, DateTimeOffset.UtcNow);
+        FirstQualifyingOrderOn = now;
+        CreditCurrencyId = awarded ? creditCurrencyId : null;
+        CreditAwardedToReferrer = creditToReferrer;
+        CreditAwardedToReferred = creditToReferred;
+        AwardedOn = awarded ? now : null;
+        Updated(actorId, now);
     }
 
     /// <summary>
     /// Admin reversal of a previously-Qualified referral. Flips the status to
-    /// the terminal <see cref="ReferralStatus.Reversed"/>; the symmetric point
-    /// grants recorded on the row (<see cref="PointsAwardedToReferrer"/> /
-    /// <see cref="PointsAwardedToReferred"/>) are kept for the audit trail and
-    /// clawed back by the caller through the loyalty manual-revoke path.
-    /// Idempotency is enforced upstream (caller checks <see cref="Status"/>
+    /// the terminal <see cref="ReferralStatus.Reversed"/>; the grants recorded on
+    /// the row (<see cref="CreditAwardedToReferrer"/> / <see cref="CreditAwardedToReferred"/>)
+    /// are kept for the audit trail, and the caller takes the credit back from the
+    /// ledger. Idempotency is enforced upstream (caller checks <see cref="Status"/>
     /// before calling).
     /// </summary>
     public void Reverse(string actorId)

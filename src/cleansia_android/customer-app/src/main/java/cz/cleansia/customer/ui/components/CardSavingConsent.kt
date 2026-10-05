@@ -17,7 +17,7 @@ import androidx.compose.ui.unit.dp
 import cz.cleansia.core.ui.components.CleansiaConsentCheckbox
 import cz.cleansia.customer.R
 
-/** A card kept here guarantees cash bookings too, so the guarantee wording it is saved under is shown with the tick. */
+/** The tick saves the card under the consent wording the server records, so that wording is shown with it. */
 @Composable
 fun CardSavingConsent(saved: Boolean, onSavedChange: (Boolean) -> Unit) {
     Column(
@@ -35,7 +35,7 @@ fun CardSavingConsent(saved: Boolean, onSavedChange: (Boolean) -> Unit) {
         )
         Spacer(Modifier.height(4.dp))
         Text(
-            stringResource(R.string.consent_card_guarantee_draft_2026_09_28),
+            stringResource(R.string.consent_saved_card_draft_2026_10_05),
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )

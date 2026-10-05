@@ -54,8 +54,8 @@ struct UpsellSlide: Equatable, Identifiable {
         /// The member's free-cancellation window when it is a benefit (shorter than the standard one);
         /// 0 for a non-member, a member whose benefits are paused, or a plan with no shorter window.
         var memberCancellationHours = 0
-        /// The points each side of a referral gets, from the server; nil until the referral account loads.
-        var referralPoints: Int?
+        /// What each side of a referral is credited in the chosen market; nil names no reward.
+        var referralCredit: MarketMoney?
     }
 
     let kind: Kind
@@ -190,7 +190,7 @@ struct UpsellSlide: Equatable, Identifiable {
                 "star",
                 inputs.plusDiscountPercent > 0 ? L10n.Home.upsellChipPercentOff(inputs.plusDiscountPercent) : nil
             )
-        case .referral: ("gift", inputs.referralPoints.map(L10n.Home.upsellChipPoints))
+        case .referral: ("gift", ReferralCopy.upsellChip(inputs.referralCredit))
         case .plusCancellation: ("calendar.badge.checkmark", L10n.Home.upsellChipHours(inputs.memberCancellationHours))
         case .expressToday: ("bolt.fill", L10n.Home.upsellChipHours(Int(BookingPricing.expressLeadHours)))
         case .rewards: ("trophy", nil)
@@ -258,12 +258,10 @@ struct UpsellSlide: Equatable, Identifiable {
                 cta: trial ? L10n.Home.upsellPlusCtaTrial : L10n.Home.upsellPlusCta
             )
         case .referral:
-            // The points are the server's; until they load the line names none.
-            let reward = inputs.referralPoints.map(L10n.Home.upsellReferralDesc)
             return Copy(
                 top: L10n.Home.upsellReferralTop,
                 title: L10n.Home.upsellReferralTitle,
-                description: reward ?? L10n.Home.upsellReferralDescGeneric,
+                description: ReferralCopy.upsellDescription(inputs.referralCredit),
                 cta: L10n.Home.upsellReferralCta
             )
         case .plusCancellation:

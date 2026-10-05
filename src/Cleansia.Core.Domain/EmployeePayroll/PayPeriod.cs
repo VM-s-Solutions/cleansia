@@ -6,6 +6,9 @@ namespace Cleansia.Core.Domain.EmployeePayroll;
 
 public class PayPeriod : TenantAuditable
 {
+    /// <summary>A pay period runs this many days, start and end inclusive (owner decision 2026-10-04).</summary>
+    public const int LengthInDays = 14;
+
     [Required]
     public DateOnly StartDate { get; private set; }
 
@@ -54,7 +57,7 @@ public class PayPeriod : TenantAuditable
 
     public static PayPeriod CreateBiWeekly(DateOnly startDate, string? notes = null)
     {
-        var endDate = startDate.AddDays(13); // 14 days total (inclusive)
+        var endDate = startDate.AddDays(LengthInDays - 1);
         return Create(startDate, endDate, notes);
     }
 

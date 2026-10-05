@@ -75,7 +75,6 @@ class ReferralRepositoryTest {
         timesUsed = 4,
         qualifiedCount = 2,
         acceptedCount = acceptedCount,
-        pointsPerReferral = 200,
     )
 
     // ── refresh() ──

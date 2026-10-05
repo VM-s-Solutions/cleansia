@@ -46,6 +46,15 @@ public interface ICreditAccountRepository : IRepository<CreditAccount, string>
         string userId, string currencyId, CancellationToken cancellationToken);
 
     /// <summary>
+    /// Whether the customer's account in <paramref name="currencyId"/> — or, with none, the one
+    /// <see cref="EnsureForUserAsync"/> would open, on the customer's own company — sits on the books of a
+    /// company frozen for archive (ADR-0064 D3). Any write to such an account fails the whole commit it
+    /// rides in, whichever company that commit is for.
+    /// </summary>
+    Task<bool> IsOnFrozenCompanyBooksAsync(
+        string userId, string currencyId, CancellationToken cancellationToken);
+
+    /// <summary>
     /// Balance, currency and account id only, untracked - the checkout read, which needs to know how
     /// much is spendable and in what currency, and nothing else. Returns null when the customer has no
     /// account, which is the common case and must NOT create one: a booking is not a reason to open a
@@ -121,6 +130,13 @@ public interface ICreditAccountRepository : IRepository<CreditAccount, string>
 
     /// <summary>What one return key put back on a balance; zero when the key was never used.</summary>
     Task<decimal> GetReturnedAmountAsync(string idempotencyKey, CancellationToken cancellationToken);
+
+    /// <summary>
+    /// What the ledger row under this key and reason moved, signed; zero when there is none. The referral
+    /// reversal reads each side's grant back by its key.
+    /// </summary>
+    Task<decimal> GetAmountAsync(
+        string idempotencyKey, CreditTransactionReason reason, CancellationToken cancellationToken);
 
     /// <summary>
     /// The batch form of <see cref="GetReturnedTotalForOrderAsync"/>: Σ

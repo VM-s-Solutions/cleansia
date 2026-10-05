@@ -38,8 +38,7 @@ extension GetMyReferralResponse {
             code: code.requireNonBlank("code"),
             timesUsed: timesUsed.require("timesUsed"),
             qualifiedCount: qualifiedCount.require("qualifiedCount"),
-            acceptedCount: acceptedCount.require("acceptedCount"),
-            pointsPerReferral: pointsPerReferral.require("pointsPerReferral")
+            acceptedCount: acceptedCount.require("acceptedCount")
         )
     }
 }
@@ -48,8 +47,9 @@ extension GetMyReferralResponse {
 /// default of `1` reports a friend who earned the reward as one who merely signed up. Nothing here
 /// is summed client-side, but the list has no rollup to protect and no identity worth dropping a row
 /// over: a status the client cannot read is a row it cannot render honestly.
-/// `pointsAwardedToReferrer` is `int?` by design — null until the referral qualifies.
-private extension GetMyReferralsReferralListItem {
+/// The credit and its currency are nullable by design — null until the referral qualifies, and on one that
+/// paid nothing — and an amount is a credit only with the unit it was paid in.
+extension GetMyReferralsReferralListItem {
     func toDomain() throws -> ReferralListItem {
         try ReferralListItem(
             id: id,
@@ -57,7 +57,9 @@ private extension GetMyReferralsReferralListItem {
             status: status.require("status").rawValue,
             acceptedOn: acceptedOn,
             firstQualifyingOrderOn: firstQualifyingOrderOn,
-            pointsAwardedToReferrer: pointsAwardedToReferrer
+            creditAwarded: creditAwardedToReferrer.flatMap { amount in
+                creditCurrencyCode.flatMap { $0.isBlank ? nil : MarketMoney(amount: amount, currencyCode: $0) }
+            }
         )
     }
 }

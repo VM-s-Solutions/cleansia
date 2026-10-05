@@ -1,4 +1,4 @@
-import { formatMoney, localeFor } from './money-formatters.utils';
+import { formatMarketCredit, formatMoney, localeFor } from './money-formatters.utils';
 
 /** Digits only, so the assertion survives the locale's choice of grouping character. */
 const digits = (s: string) => s.replace(/\D/g, '');
@@ -74,5 +74,26 @@ describe('localeFor', () => {
     expect(localeFor('de')).toBe('en-US');
     expect(localeFor(undefined)).toBe('en-US');
     expect(localeFor('')).toBe('en-US');
+  });
+});
+
+describe('formatMarketCredit', () => {
+  it('formats the figure in the market currency for the language being read', () => {
+    expect(formatMarketCredit(150, 'CZK', 'cs')).toBe(formatMoney(150, 'CZK', 'cs-CZ'));
+    expect(formatMarketCredit(150, 'CZK', 'cs')).toMatch(/^150\sKč$/);
+    expect(formatMarketCredit(7.5, 'EUR', 'en')).toBe('€7.50');
+  });
+
+  it('answers null when the market authors no figure, so the copy can name no amount', () => {
+    expect(formatMarketCredit(null, 'CZK', 'cs')).toBeNull();
+    expect(formatMarketCredit(undefined, 'CZK', 'cs')).toBeNull();
+    expect(formatMarketCredit(0, 'CZK', 'cs')).toBeNull();
+    expect(formatMarketCredit(-10, 'CZK', 'cs')).toBeNull();
+  });
+
+  it('answers null when no market resolved, rather than printing a bare number', () => {
+    expect(formatMarketCredit(150, null, 'cs')).toBeNull();
+    expect(formatMarketCredit(150, undefined, 'cs')).toBeNull();
+    expect(formatMarketCredit(150, '', 'cs')).toBeNull();
   });
 });

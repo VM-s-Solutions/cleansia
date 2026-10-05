@@ -64,6 +64,7 @@ namespace Cleansia.Infra.Database.Migrations
                     IsDefault = table.Column<bool>(type: "boolean", nullable: false),
                     LoyaltyPointsDivisor = table.Column<decimal>(type: "numeric(18,2)", precision: 18, scale: 2, nullable: true),
                     NoShowCredit = table.Column<decimal>(type: "numeric(18,2)", precision: 18, scale: 2, nullable: true),
+                    ReferralCredit = table.Column<decimal>(type: "numeric(18,2)", precision: 18, scale: 2, nullable: true),
                     IsActive = table.Column<bool>(type: "boolean", nullable: false),
                     CreatedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: false),
                     CreatedOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
@@ -2973,9 +2974,10 @@ namespace Cleansia.Infra.Database.Migrations
                     AcceptedOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
                     FirstQualifyingOrderOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true),
                     FirstQualifyingOrderId = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: true),
-                    PointsAwardedToReferrer = table.Column<int>(type: "integer", nullable: true),
-                    PointsAwardedToReferred = table.Column<int>(type: "integer", nullable: true),
-                    PointsAwardedOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true),
+                    CreditAwardedToReferrer = table.Column<decimal>(type: "numeric(18,2)", precision: 18, scale: 2, nullable: true),
+                    CreditAwardedToReferred = table.Column<decimal>(type: "numeric(18,2)", precision: 18, scale: 2, nullable: true),
+                    CreditCurrencyId = table.Column<string>(type: "character varying(26)", maxLength: 26, nullable: true),
+                    AwardedOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true),
                     IsActive = table.Column<bool>(type: "boolean", nullable: false),
                     CreatedBy = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: false),
                     CreatedOn = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
@@ -2988,6 +2990,12 @@ namespace Cleansia.Infra.Database.Migrations
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_Referrals", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_Referrals_Currencies_CreditCurrencyId",
+                        column: x => x.CreditCurrencyId,
+                        principalTable: "Currencies",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
                     table.ForeignKey(
                         name: "FK_Referrals_Orders_FirstQualifyingOrderId",
                         column: x => x.FirstQualifyingOrderId,
@@ -4716,6 +4724,11 @@ namespace Cleansia.Infra.Database.Migrations
                 table: "ReferralCodes",
                 column: "UserId",
                 unique: true);
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Referrals_CreditCurrencyId",
+                table: "Referrals",
+                column: "CreditCurrencyId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_Referrals_FirstQualifyingOrderId",

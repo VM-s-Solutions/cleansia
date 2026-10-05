@@ -3191,37 +3191,37 @@
         }
       }
     },
-    "consent_card_guarantee_draft_2026_09_28": {
+    "consent_saved_card_draft_2026_10_05": {
       "extractionState": "manual",
       "localizations": {
         "cs": {
           "stringUnit": {
             "state": "translated",
-            "value": "Souhlasím, že Cleansia může u mých objednávek v hotovosti strhnout z této karty storno poplatek, poplatek za neumožnění vstupu, nezaplacenou hotovost a doplatek, který jsem schválil(a)."
+            "value": "Souhlasím, že Cleansia uloží tuto kartu do mého účtu. Nic z ní nestrhne, pokud jí nezaplatím, a kartu mohu kdykoli odebrat."
           }
         },
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "I agree that Cleansia may charge this card for a cancellation fee, a lockout fee, cash I did not pay and a top-up I approved on my cash bookings."
+            "value": "I agree that Cleansia saves this card to my account. It is never charged unless I pay with it, and I can remove it at any time."
           }
         },
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Я согласен(на), что по моим заказам с оплатой наличными Cleansia может списать с этой карты плату за отмену, плату за непредоставление доступа, неоплаченные наличные и одобренную мной доплату."
+            "value": "Я соглашаюсь, что Cleansia сохранит эту карту в моём аккаунте. Деньги с неё списываются, только когда я ею плачу, и я могу удалить её в любой момент."
           }
         },
         "sk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Súhlasím, že Cleansia môže pri mojich objednávkach v hotovosti strhnúť z tejto karty stornovací poplatok, poplatok za neumožnenie vstupu, nezaplatenú hotovosť a doplatok, ktorý som schválil(a)."
+            "value": "Súhlasím, že Cleansia uloží túto kartu do môjho účtu. Nič z nej nestrhne, ak ňou nezaplatím, a kartu môžem kedykoľvek odstrániť."
           }
         },
         "uk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Я погоджуюся, що за моїми замовленнями з оплатою готівкою Cleansia може списати з цієї картки плату за скасування, плату за ненадання доступу, неоплачену готівку та схвалену мною доплату."
+            "value": "Я погоджуюся, що Cleansia збереже цю картку в моєму акаунті. Кошти з неї списуються лише тоді, коли я нею плачу, і я можу будь-коли її видалити."
           }
         }
       }
@@ -5264,31 +5264,66 @@
         "cs": {
           "stringUnit": {
             "state": "translated",
-            "value": "Máte kód od kamaráda? Po vašem prvním dokončeném úklidu oba získáte 150 bonusových bodů."
+            "value": "Máte kód od kamaráda? Po vašem prvním dokončeném úklidu oba získáte kredit %1$@."
           }
         },
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Have a friend's code? Both of you earn 150 bonus tier-points after your first completed cleaning."
+            "value": "Have a friend's code? Both of you get %1$@ credit after your first completed cleaning."
           }
         },
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Есть код от друга? Оба получите 150 бонусных баллов после вашей первой завершённой уборки."
+            "value": "Есть код от друга? Оба получите %1$@ кредита после вашей первой завершённой уборки."
           }
         },
         "sk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Máte kód od kamaráta? Po vašom prvom dokončenom upratovaní obaja získate 150 bonusových bodov."
+            "value": "Máte kód od kamaráta? Po vašom prvom dokončenom upratovaní obaja získate kredit %1$@."
           }
         },
         "uk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Маєте код від друга? Обидва отримаєте 150 бонусних балів після вашого першого завершеного прибирання."
+            "value": "Маєте код від друга? Обидва отримаєте %1$@ кредиту після вашого першого завершеного прибирання."
+          }
+        }
+      }
+    },
+    "booking_referral_code_dialog_helper_no_figure": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Máte kód od kamaráda? Zadejte ho zde."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Have a friend's code? Enter it here."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Есть код от друга? Введите его здесь."
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Máte kód od kamaráta? Zadajte ho sem."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Маєте код від друга? Введіть його тут."
           }
         }
       }
@@ -5299,31 +5334,66 @@
         "cs": {
           "stringUnit": {
             "state": "translated",
-            "value": "Kód přijat — po vašem prvním dokončeném úklidu oba získáte 150 bonusových bodů."
+            "value": "Kód přijat — po vašem prvním dokončeném úklidu oba získáte kredit %1$@."
           }
         },
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Code accepted — you'll both get 150 bonus points after your first completed cleaning."
+            "value": "Code accepted — you'll both get %1$@ credit after your first completed cleaning."
           }
         },
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Код принят — оба получите 150 бонусных баллов после вашей первой завершённой уборки."
+            "value": "Код принят — оба получите %1$@ кредита после вашей первой завершённой уборки."
           }
         },
         "sk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Kód prijatý — po vašom prvom dokončenom upratovaní obaja získate 150 bonusových bodov."
+            "value": "Kód prijatý — po vašom prvom dokončenom upratovaní obaja získate kredit %1$@."
           }
         },
         "uk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Код прийнято — обидва отримаєте 150 бонусних балів після вашого першого завершеного прибирання."
+            "value": "Код прийнято — обидва отримаєте %1$@ кредиту після вашого першого завершеного прибирання."
+          }
+        }
+      }
+    },
+    "booking_referral_code_dialog_success_no_figure": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kód přijat."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Code accepted."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Код принят."
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kód prijatý."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Код прийнято."
           }
         }
       }
@@ -5334,31 +5404,66 @@
         "cs": {
           "stringUnit": {
             "state": "translated",
-            "value": "Kód od %1$@ přijat — po vašem prvním dokončeném úklidu oba získáte 150 bonusových bodů."
+            "value": "Kód od %1$@ přijat — po vašem prvním dokončeném úklidu oba získáte kredit %2$@."
           }
         },
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Code from %1$@ accepted — you'll both get 150 bonus points after your first completed cleaning."
+            "value": "Code from %1$@ accepted — you'll both get %2$@ credit after your first completed cleaning."
           }
         },
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Код от %1$@ принят — оба получите 150 бонусных баллов после вашей первой завершённой уборки."
+            "value": "Код от %1$@ принят — оба получите %2$@ кредита после вашей первой завершённой уборки."
           }
         },
         "sk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Kód od %1$@ prijatý — po vašom prvom dokončenom upratovaní obaja získate 150 bonusových bodov."
+            "value": "Kód od %1$@ prijatý — po vašom prvom dokončenom upratovaní obaja získate kredit %2$@."
           }
         },
         "uk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Код від %1$@ прийнято — обидва отримаєте 150 бонусних балів після вашого першого завершеного прибирання."
+            "value": "Код від %1$@ прийнято — обидва отримаєте %2$@ кредиту після вашого першого завершеного прибирання."
+          }
+        }
+      }
+    },
+    "booking_referral_code_dialog_success_named_no_figure": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kód od %1$@ přijat."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Code from %1$@ accepted."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Код от %1$@ принят."
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kód od %1$@ prijatý."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Код від %1$@ прийнято."
           }
         }
       }
@@ -7926,31 +8031,31 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "An apology when your cleaner doesn't arrive or nobody can take your booking, a complaint you chose to settle in credit, or a goodwill gesture from us."
+            "value": "An apology when your cleaner doesn't arrive or nobody can take your booking, a complaint you chose to settle in credit, a goodwill gesture from us, or a referral reward where your market offers one."
           }
         },
         "cs": {
           "stringUnit": {
             "state": "translated",
-            "value": "Omluva, když uklízeč nedorazí nebo vaši objednávku nikdo nepřevezme, reklamace, kterou jste se rozhodli vyřešit kreditem, nebo vstřícné gesto od nás."
+            "value": "Omluva, když uklízeč nedorazí nebo vaši objednávku nikdo nepřevezme, reklamace, kterou jste se rozhodli vyřešit kreditem, vstřícné gesto od nás nebo odměna za doporučení, pokud se na vašem trhu nabízí."
           }
         },
         "sk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Ospravedlnenie, keď upratovač nepríde alebo vašu objednávku nikto neprevezme, reklamácia, ktorú ste sa rozhodli vyriešiť kreditom, alebo ústretové gesto od nás."
+            "value": "Ospravedlnenie, keď upratovač nepríde alebo vašu objednávku nikto neprevezme, reklamácia, ktorú ste sa rozhodli vyriešiť kreditom, ústretové gesto od nás alebo odmena za odporúčanie, ak sa na vašom trhu ponúka."
           }
         },
         "uk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Вибачення, коли прибиральник не приїхав або ніхто не зміг узяти ваше замовлення, скарга, яку ви вирішили врегулювати кредитом, або жест доброї волі від нас."
+            "value": "Вибачення, коли прибиральник не приїхав або ніхто не зміг узяти ваше замовлення, скарга, яку ви вирішили врегулювати кредитом, жест доброї волі від нас або реферальна винагорода, якщо її пропонують на вашому ринку."
           }
         },
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Извинение, когда уборщик не приехал или никто не смог взять ваш заказ, жалоба, которую вы решили урегулировать кредитом, или жест доброй воли от нас."
+            "value": "Извинение, когда уборщик не приехал или никто не смог взять ваш заказ, жалоба, которую вы решили урегулировать кредитом, жест доброй воли от нас или реферальное вознаграждение, если его предлагают на вашем рынке."
           }
         }
       }
@@ -13907,37 +14012,37 @@
         }
       }
     },
-    "home_upsell_chip_points": {
+    "home_upsell_chip_credit": {
       "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "+%1$lld"
+            "value": "+%1$@"
           }
         },
         "cs": {
           "stringUnit": {
             "state": "translated",
-            "value": "+%1$lld"
+            "value": "+%1$@"
           }
         },
         "sk": {
           "stringUnit": {
             "state": "translated",
-            "value": "+%1$lld"
+            "value": "+%1$@"
           }
         },
         "uk": {
           "stringUnit": {
             "state": "translated",
-            "value": "+%1$lld"
+            "value": "+%1$@"
           }
         },
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "+%1$lld"
+            "value": "+%1$@"
           }
         }
       }
@@ -14894,141 +14999,33 @@
       "extractionState": "manual",
       "localizations": {
         "en": {
-          "variations": {
-            "plural": {
-              "one": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "You both get %1$lld point once their first cleaning is completed."
-                }
-              },
-              "other": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "You both get %1$lld points once their first cleaning is completed."
-                }
-              }
-            }
+          "stringUnit": {
+            "state": "translated",
+            "value": "You both get %1$@ credit once their first cleaning is completed."
           }
         },
         "cs": {
-          "variations": {
-            "plural": {
-              "one": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "Oba získáte %1$lld bod po jeho prvním dokončeném úklidu."
-                }
-              },
-              "few": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "Oba získáte %1$lld body po jeho prvním dokončeném úklidu."
-                }
-              },
-              "many": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "Oba získáte %1$lld bodu po jeho prvním dokončeném úklidu."
-                }
-              },
-              "other": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "Oba získáte %1$lld bodů po jeho prvním dokončeném úklidu."
-                }
-              }
-            }
+          "stringUnit": {
+            "state": "translated",
+            "value": "Oba získáte kredit %1$@ po jeho prvním dokončeném úklidu."
           }
         },
         "sk": {
-          "variations": {
-            "plural": {
-              "one": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "Obaja získate %1$lld bod po dokončení jeho prvého upratovania."
-                }
-              },
-              "few": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "Obaja získate %1$lld body po dokončení jeho prvého upratovania."
-                }
-              },
-              "many": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "Obaja získate %1$lld bodu po dokončení jeho prvého upratovania."
-                }
-              },
-              "other": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "Obaja získate %1$lld bodov po dokončení jeho prvého upratovania."
-                }
-              }
-            }
+          "stringUnit": {
+            "state": "translated",
+            "value": "Obaja získate kredit %1$@ po dokončení jeho prvého upratovania."
           }
         },
         "uk": {
-          "variations": {
-            "plural": {
-              "one": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "Обом по %1$lld балу після першого завершеного прибирання друга."
-                }
-              },
-              "few": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "Обом по %1$lld бали після першого завершеного прибирання друга."
-                }
-              },
-              "many": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "Обом по %1$lld балів після першого завершеного прибирання друга."
-                }
-              },
-              "other": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "Обом по %1$lld бала після першого завершеного прибирання друга."
-                }
-              }
-            }
+          "stringUnit": {
+            "state": "translated",
+            "value": "Обом по %1$@ кредиту після першого завершеного прибирання друга."
           }
         },
         "ru": {
-          "variations": {
-            "plural": {
-              "one": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "Вы оба получите %1$lld балл после его первой завершённой уборки."
-                }
-              },
-              "few": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "Вы оба получите %1$lld балла после его первой завершённой уборки."
-                }
-              },
-              "many": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "Вы оба получите %1$lld баллов после его первой завершённой уборки."
-                }
-              },
-              "other": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "Вы оба получите %1$lld балла после его первой завершённой уборки."
-                }
-              }
-            }
+          "stringUnit": {
+            "state": "translated",
+            "value": "Вы оба получите %1$@ кредита после его первой завершённой уборки."
           }
         }
       }
@@ -15039,31 +15036,31 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "You both get points once their first cleaning is completed."
+            "value": "Send a friend your code to enter when they sign up."
           }
         },
         "cs": {
           "stringUnit": {
             "state": "translated",
-            "value": "Oba získáte body po jeho prvním dokončeném úklidu."
+            "value": "Pošlete kamarádovi svůj kód, který zadá při registraci."
           }
         },
         "sk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Obaja získate body po dokončení jeho prvého upratovania."
+            "value": "Pošlite kamarátovi svoj kód, ktorý zadá pri registrácii."
           }
         },
         "uk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Обом бали після першого завершеного прибирання друга."
+            "value": "Надішліть другові свій код — він введе його під час реєстрації."
           }
         },
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Вы оба получите баллы после его первой завершённой уборки."
+            "value": "Отправьте другу свой код — он введёт его при регистрации."
           }
         }
       }
@@ -16406,31 +16403,31 @@
         "cs": {
           "stringUnit": {
             "state": "translated",
-            "value": "Pozvěte přátele — získejte 150 bodů za každého"
+            "value": "Pozvěte přátele"
           }
         },
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Invite friends — earn 150 points each"
+            "value": "Invite friends"
           }
         },
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Пригласите друзей — получите 150 баллов за каждого"
+            "value": "Пригласите друзей"
           }
         },
         "sk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Pozvite priateľov — získajte 150 bodov za každého"
+            "value": "Pozvite priateľov"
           }
         },
         "uk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Запросіть друзів — отримайте 150 балів за кожного"
+            "value": "Запросіть друзів"
           }
         }
       }
@@ -16476,31 +16473,66 @@
         "cs": {
           "stringUnit": {
             "state": "translated",
-            "value": "Získejte 150 bonusových bodů po svém prvním dokončeném úklidu Cleansia! Použijte můj kód %1$@ při registraci: %2$@"
+            "value": "Získejte kredit %1$@ po prvním dokončeném úklidu Cleansia! Použijte můj kód %2$@ při registraci: %3$@"
           }
         },
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Get 150 bonus points once your first Cleansia cleaning is completed! Use my code %1$@ at signup: %2$@"
+            "value": "Get %1$@ credit after your first completed Cleansia cleaning! Use my code %2$@ at signup: %3$@"
           }
         },
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Получите 150 бонусных баллов после своей первой завершённой уборки Cleansia! Используйте мой код %1$@ при регистрации: %2$@"
+            "value": "Получите %1$@ кредита после первой завершённой уборки Cleansia! Используйте мой код %2$@ при регистрации: %3$@"
           }
         },
         "sk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Získajte 150 bonusových bodov po svojom prvom dokončenom upratovaní Cleansia! Použite môj kód %1$@ pri registrácii: %2$@"
+            "value": "Získajte kredit %1$@ po prvom dokončenom upratovaní Cleansia! Použite môj kód %2$@ pri registrácii: %3$@"
           }
         },
         "uk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Отримайте 150 бонусних балів після свого першого завершеного прибирання Cleansia! Використайте мій код %1$@ при реєстрації: %2$@"
+            "value": "Отримайте %1$@ кредиту після першого завершеного прибирання Cleansia! Використайте мій код %2$@ при реєстрації: %3$@"
+          }
+        }
+      }
+    },
+    "loyalty_referral_share_text_no_figure": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Přidejte se ke Cleansia! Použijte můj kód %1$@ při registraci: %2$@"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Join me on Cleansia! Use my code %1$@ at signup: %2$@"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Присоединяйтесь к Cleansia! Используйте мой код %1$@ при регистрации: %2$@"
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pridajte sa ku Cleansia! Použite môj kód %1$@ pri registrácii: %2$@"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Приєднуйтеся до Cleansia! Використайте мій код %1$@ при реєстрації: %2$@"
           }
         }
       }
@@ -16723,31 +16755,66 @@
         "cs": {
           "stringUnit": {
             "state": "translated",
-            "value": "Sdílejte svůj kód. Po jejich prvním dokončeném úklidu získají 150 bonusových bodů, vy také."
+            "value": "Sdílejte svůj kód. Kamarád i vy získáte každý kredit %1$@ po jeho prvním dokončeném úklidu."
           }
         },
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Share your code. Once their first cleaning is completed, they get 150 bonus points and so do you."
+            "value": "Share your code. Your friend and you each get %1$@ credit after their first completed cleaning."
           }
         },
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Поделитесь своим кодом. После их первой завершённой уборки они получат 150 бонусных баллов, вы тоже."
+            "value": "Поделитесь своим кодом. Друг и вы получите по %1$@ кредита после его первой завершённой уборки."
           }
         },
         "sk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Zdieľajte svoj kód. Po ich prvom dokončenom upratovaní získajú 150 bonusových bodov, vy tiež."
+            "value": "Zdieľajte svoj kód. Kamarát aj vy získate každý kredit %1$@ po jeho prvom dokončenom upratovaní."
           }
         },
         "uk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Поділіться своїм кодом. Після їхнього першого завершеного прибирання вони отримають 150 бонусних балів, ви теж."
+            "value": "Поділіться своїм кодом. Друг і ви отримаєте по %1$@ кредиту після його першого завершеного прибирання."
+          }
+        }
+      }
+    },
+    "loyalty_referral_subtitle_no_figure": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sdílejte svůj kód s kamarády, ať ho zadají při registraci."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Share your code with friends to enter when they sign up."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Поделитесь своим кодом с друзьями — они введут его при регистрации."
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zdieľajte svoj kód s kamarátmi, nech ho zadajú pri registrácii."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Поділіться своїм кодом із друзями — вони введуть його під час реєстрації."
           }
         }
       }
@@ -17178,31 +17245,31 @@
         "cs": {
           "stringUnit": {
             "state": "translated",
-            "value": "+%1$d b. — Bonus za doporučení"
+            "value": "%1$d b. — Bonus za doporučení"
           }
         },
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "+%1$d pts — Referral bonus"
+            "value": "%1$d pts — Referral bonus"
           }
         },
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "+%1$d б. — Бонус за рекомендацию"
+            "value": "%1$d б. — Бонус за рекомендацию"
           }
         },
         "sk": {
           "stringUnit": {
             "state": "translated",
-            "value": "+%1$d b. — Bonus za odporúčanie"
+            "value": "%1$d b. — Bonus za odporúčanie"
           }
         },
         "uk": {
           "stringUnit": {
             "state": "translated",
-            "value": "+%1$d б. — Бонус за рекомендацію"
+            "value": "%1$d б. — Бонус за рекомендацію"
           }
         }
       }

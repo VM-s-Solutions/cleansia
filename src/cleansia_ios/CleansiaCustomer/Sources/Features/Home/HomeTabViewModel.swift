@@ -34,8 +34,8 @@ final class HomeTabViewModel: ViewModel {
     @Published private(set) var marketCurrencyCode: String?
     @Published private(set) var catalogCurrencyCode: String?
     @Published private(set) var referralCode: String?
-    /// The points each side of a referral gets, the server's; nil until the referral account loads.
-    @Published private(set) var referralPoints: Int?
+    /// What each side of a referral is credited in the chosen market; nil names no reward.
+    @Published private(set) var referralCredit: MarketMoney?
     /// The system does not let this app alert. Re-read on Home entry and every foreground, so turning
     /// notifications on in Settings removes the carousel's slide on return.
     @Published private(set) var notificationsOff = false
@@ -108,9 +108,7 @@ final class HomeTabViewModel: ViewModel {
         referralRepository.$account
             .map { $0.flatMap { $0.code.isBlank ? nil : $0.code } }
             .assign(to: &$referralCode)
-        referralRepository.$account
-            .map { $0.flatMap { $0.pointsPerReferral > 0 ? $0.pointsPerReferral : nil } }
-            .assign(to: &$referralPoints)
+        marketStore.$state.map(\.referralCredit).assign(to: &$referralCredit)
         startFirstPaintWatcher()
     }
 
@@ -143,7 +141,7 @@ final class HomeTabViewModel: ViewModel {
             referralCode: referralCode,
             plusDiscountPercent: plusDiscountPercent,
             memberCancellationHours: memberCancellationHours,
-            referralPoints: referralPoints
+            referralCredit: referralCredit
         )
     }
 

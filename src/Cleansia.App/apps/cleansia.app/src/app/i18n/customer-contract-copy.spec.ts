@@ -20,6 +20,19 @@ function findSolutionDir(): string {
 
 const ORDER_ENTITY = join(findSolutionDir(), 'Cleansia.Core.Domain/Orders/Order.cs');
 const SAVED_CARD_ENTITY = join(findSolutionDir(), 'Cleansia.Core.Domain/Users/SavedCard.cs');
+const SAVE_CARD_TEMPLATES = [
+  'Cleansia.App/libs/cleansia-customer-features/order-wizard/src/lib/order-wizard/order-wizard.component.html',
+  'Cleansia.App/libs/cleansia-customer-features/orders/src/lib/order-detail/order-detail.component.html',
+];
+
+/** No saved card is charged for a fee or unpaid cash (owner ruling 2026-10-04), so its consent names neither. */
+const CASH_GUARANTEE_CLAIM: Record<Locale, string[]> = {
+  en: ['cash', 'guarantee', 'fee'],
+  cs: ['hotovost', 'zaruč', 'poplat'],
+  sk: ['hotovos', 'zaruč', 'poplat'],
+  uk: ['готівк', 'гарант', 'збор'],
+  ru: ['наличн', 'гарант', 'сбор'],
+};
 
 function earlyPerformanceVersionInForce(): string {
   const match = readFileSync(ORDER_ENTITY, 'utf8').match(
@@ -120,7 +133,7 @@ describe('the customer contract copy in every locale', () => {
     }
   });
 
-  it('the save-card tick at payment carries the card-guarantee consent of the version the server records', () => {
+  it('the save-card tick at payment carries the saved-card consent of the version the server records', () => {
     const version = savedCardConsentVersionInForce();
     for (const locale of LOCALES) {
       const bundle = readLocale(locale);
@@ -135,6 +148,27 @@ describe('the customer contract copy in every locale', () => {
         .map((path) => path.join('.'));
 
       expect({ locale, empty }).toEqual({ locale, empty: [] });
+    }
+  });
+
+  it('every save-card tick renders the consent of the version the server records', () => {
+    const key = `'pages.order.card_capture.consent.${savedCardConsentVersionInForce()}'`;
+    for (const template of SAVE_CARD_TEMPLATES) {
+      const markup = readFileSync(join(findSolutionDir(), template), 'utf8');
+
+      expect({ template, renders: markup.includes(key) }).toEqual({ template, renders: true });
+    }
+  });
+
+  it('the saved-card consent in force names no cash, guarantee or fee', () => {
+    const version = savedCardConsentVersionInForce();
+    for (const locale of LOCALES) {
+      const consent = String(
+        leaf(readLocale(locale), ['pages', 'order', 'card_capture', 'consent', version]),
+      ).toLowerCase();
+      const says = CASH_GUARANTEE_CLAIM[locale].filter((stem) => consent.includes(stem));
+
+      expect({ locale, says }).toEqual({ locale, says: [] });
     }
   });
 });

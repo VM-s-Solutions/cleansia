@@ -39,6 +39,7 @@ public class GetPagedReferrals
                 .GetPagedSort<ReferralSort>(request.Offset, request.Limit, filter, ResolveSort(request))
                 .Include(r => r.Referrer)
                 .Include(r => r.Referred)
+                .Include(r => r.CreditCurrency)
                 .AsNoTracking()
                 .Select(referral => referral.MapToAdminListItem())
                 .ToListAsync(cancellationToken);

@@ -111,6 +111,7 @@ class MarketWireTest {
             "currencySymbol",
             "isDefault",
             "noShowCredit",
+            "referralCredit",
             "insuranceCoverageAmount",
         )
 

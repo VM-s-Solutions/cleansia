@@ -37,7 +37,7 @@ public class PayPeriodValidatorTests
     }
 
     private static readonly DateOnly Start = new(2026, 1, 1);
-    private static readonly DateOnly End = new(2026, 1, 15);
+    private static readonly DateOnly End = new(2026, 1, 14);
 
     // ── CreatePayPeriod ──────────────────────────────────────────────
 
@@ -89,19 +89,29 @@ public class PayPeriodValidatorTests
             && e.ErrorMessage == BusinessErrorMessage.InvalidDate);
     }
 
-    [Fact]
-    public async Task Create_Duration_Too_Short_Fails_InvalidDuration()
+    /// <summary>
+    /// The framework agreement and the self-billing agreement settle after each pay period of 14 days
+    /// (owner decision 2026-10-04), so a period an administrator creates by hand is 14 days, start and end
+    /// inclusive, and nothing else: a week, a 13- or 15-day span and a month are all refused.
+    /// </summary>
+    [Theory]
+    [InlineData(4)]
+    [InlineData(7)]
+    [InlineData(13)]
+    [InlineData(15)]
+    [InlineData(31)]
+    public async Task Create_A_Period_Not_Of_14_Days_Fails_InvalidDuration(int days)
     {
         ArrangeConfirmedSession();
         _payPeriodRepository
             .Setup(r => r.HasOverlappingPeriodAsync(It.IsAny<DateOnly>(), It.IsAny<DateOnly>(), null, It.IsAny<CancellationToken>()))
             .ReturnsAsync(false);
 
-        var result = await CreateValidator().ValidateAsync(ValidCreate() with { EndDate = Start.AddDays(3) });
+        var result = await CreateValidator().ValidateAsync(ValidCreate() with { EndDate = Start.AddDays(days - 1) });
 
-        Assert.Contains(result.Errors, e =>
-            e.PropertyName == nameof(CreatePayPeriod.Command.EndDate)
-            && e.ErrorMessage == BusinessErrorMessage.InvalidDuration);
+        var error = Assert.Single(result.Errors);
+        Assert.Equal(nameof(CreatePayPeriod.Command.EndDate), error.PropertyName);
+        Assert.Equal(BusinessErrorMessage.InvalidDuration, error.ErrorMessage);
     }
 
     [Fact]
@@ -225,6 +235,26 @@ public class PayPeriodValidatorTests
         Assert.Contains(result.Errors, e =>
             e.PropertyName == nameof(UpdatePayPeriod.Command.PayPeriodId)
             && e.ErrorMessage == BusinessErrorMessage.PayPeriodNotOpen);
+    }
+
+    [Theory]
+    [InlineData(7)]
+    [InlineData(13)]
+    [InlineData(15)]
+    [InlineData(31)]
+    public async Task Update_To_A_Period_Not_Of_14_Days_Fails_InvalidDuration(int days)
+    {
+        ArrangeConfirmedSession();
+        ArrangeOpenPeriod();
+        _payPeriodRepository
+            .Setup(r => r.HasOverlappingPeriodAsync(It.IsAny<DateOnly>(), It.IsAny<DateOnly>(), PayPeriodId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(false);
+
+        var result = await UpdateValidator().ValidateAsync(ValidUpdate() with { EndDate = Start.AddDays(days - 1) });
+
+        var error = Assert.Single(result.Errors);
+        Assert.Equal(nameof(UpdatePayPeriod.Command.EndDate), error.PropertyName);
+        Assert.Equal(BusinessErrorMessage.InvalidDuration, error.ErrorMessage);
     }
 
     [Fact]

@@ -47,24 +47,6 @@ final class UpsellClaimTests: XCTestCase {
     private static let cancelAnytimeClaim =
         #"cancel any\s?time|kdykoli|kedykoľvek|будь-коли|в любое время|в любой момент"#
 
-    /// `ReferralPolicy`: both sides are paid once the friend's first order is completed.
-    private static let completedStem = [
-        "en": "completed",
-        "cs": "dokončen",
-        "sk": "dokončen",
-        "uk": "завершен",
-        "ru": "завершённ"
-    ]
-
-    /// Every line that tells the customer the referral points, so every line that says when they arrive.
-    private static let referralRewardKeys = [
-        "booking_referral_code_dialog_helper",
-        "booking_referral_code_dialog_success",
-        "booking_referral_code_dialog_success_named",
-        "loyalty_referral_subtitle",
-        "loyalty_referral_share_text"
-    ]
-
     private var restoreBundle: Bundle?
 
     override func setUp() {
@@ -114,43 +96,6 @@ final class UpsellClaimTests: XCTestCase {
         }
     }
 
-    func testEveryReferralRewardWaitsForTheFriendsFirstCompletedCleaning() throws {
-        let points = try Self.referralPointsPerSide()
-        try forEachLanguage { language in
-            let stem = try XCTUnwrap(Self.completedStem[language])
-            for key in Self.referralRewardKeys {
-                let value = L10n.localized(key)
-                XCTAssertTrue(
-                    value.contains(String(points)),
-                    "\(key) does not state \(points) points in \(language): \(value)"
-                )
-                XCTAssertNotNil(
-                    value.range(of: stem, options: .caseInsensitive),
-                    "\(key) does not wait for a completed cleaning in \(language): \(value)"
-                )
-            }
-        }
-    }
-
-    /// The carousel states the server's `pointsPerReferral`, so its rows carry the count and no figure of
-    /// their own, and still say the points wait for the friend's first completed cleaning.
-    func testTheCarouselsReferralRewardIsTheServersAndWaitsForACompletedCleaning() throws {
-        try forEachLanguage { language in
-            let stem = try XCTUnwrap(Self.completedStem[language])
-            for points in [1, 2, 5, 175] {
-                let line = L10n.Home.upsellReferralDesc(points)
-                XCTAssertTrue(line.contains(String(points)), "\(language) drops the count: \(line)")
-                XCTAssertNil(Self.digitsBeyond(line, String(points)), "\(language) names a number: \(line)")
-                XCTAssertNotNil(line.range(of: stem, options: .caseInsensitive), "\(language): \(line)")
-            }
-            let generic = L10n.Home.upsellReferralDescGeneric
-            XCTAssertNil(generic.rangeOfCharacter(from: .decimalDigits), "\(language): \(generic)")
-            XCTAssertNotNil(generic.range(of: stem, options: .caseInsensitive), "\(language): \(generic)")
-            let title = L10n.localized("home_upsell_referral_title")
-            XCTAssertNil(title.rangeOfCharacter(from: .decimalDigits), "the title states a reward in \(language)")
-        }
-    }
-
     /// The rows that state no figure at all: their facts are the server's or the booking's, carried elsewhere.
     private static let carouselFigureFree = [
         "home_upsell_did_you_know",
@@ -187,7 +132,7 @@ final class UpsellClaimTests: XCTestCase {
                 (L10n.Home.upsellExpressTodayDesc(5), ["5"]),
                 (L10n.Home.upsellTimesDesc("§", "¶"), ["§", "¶"]),
                 (L10n.Home.upsellChipPercentOff(7), ["7"]),
-                (L10n.Home.upsellChipPoints(175), ["175"]),
+                (L10n.Home.upsellChipCredit("§"), ["§"]),
                 (L10n.Home.upsellChipHours(6), ["6"]),
                 (L10n.Home.upsellChipMinutes(9), ["9"]),
                 (L10n.Home.upsellChipTimes(3), ["3"])
@@ -427,23 +372,6 @@ final class UpsellClaimTests: XCTestCase {
 
     private static func matches(_ text: String, _ pattern: String) -> Bool {
         text.range(of: pattern, options: [.regularExpression, .caseInsensitive]) != nil
-    }
-
-    private static func referralPointsPerSide() throws -> Int {
-        let policy = URL(fileURLWithPath: #filePath)
-            .deletingLastPathComponent()
-            .deletingLastPathComponent()
-            .deletingLastPathComponent()
-            .deletingLastPathComponent()
-            .appendingPathComponent("Cleansia.Core.AppServices/Features/Orders/ReferralPolicy.cs")
-        let source = try String(contentsOf: policy, encoding: .utf8)
-        let regex = try NSRegularExpression(pattern: #"public\s+const\s+int\s+PointsPerSide\s*=\s*(\d+)\s*;"#)
-        let match = try XCTUnwrap(
-            regex.firstMatch(in: source, range: NSRange(source.startIndex..., in: source)),
-            "ReferralPolicy.PointsPerSide not found — the parser needs updating"
-        )
-        let digits = try XCTUnwrap(Range(match.range(at: 1), in: source))
-        return try XCTUnwrap(Int(source[digits]))
     }
 
     private func catalog(_ language: String) throws -> [String: String] {

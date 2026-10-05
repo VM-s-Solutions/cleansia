@@ -69,6 +69,7 @@ export class CurrencyFormComponent implements OnInit, OnDestroy {
     noShowCredit: this.fb.control<number | null>(null, [
       Validators.min(0.01),
     ]),
+    referralCredit: this.fb.control<number | null>(null, [Validators.min(0)]),
   });
 
   private currencyLoadEffect = effect(() => {
@@ -104,6 +105,7 @@ export class CurrencyFormComponent implements OnInit, OnDestroy {
     name?: string;
     loyaltyPointsDivisor?: number;
     noShowCredit?: number;
+    referralCredit?: number;
   }): void {
     this.form.patchValue({
       code: currency.code ?? '',
@@ -111,6 +113,7 @@ export class CurrencyFormComponent implements OnInit, OnDestroy {
       name: currency.name ?? '',
       loyaltyPointsDivisor: currency.loyaltyPointsDivisor ?? null,
       noShowCredit: currency.noShowCredit ?? null,
+      referralCredit: currency.referralCredit ?? null,
     });
   }
 
@@ -128,6 +131,7 @@ export class CurrencyFormComponent implements OnInit, OnDestroy {
       name: formValue.name,
       loyaltyPointsDivisor: this.numberOrNull(formValue.loyaltyPointsDivisor),
       noShowCredit: this.numberOrNull(formValue.noShowCredit),
+      referralCredit: this.numberOrNull(formValue.referralCredit),
     };
 
     if (this.isEditMode()) {

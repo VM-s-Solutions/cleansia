@@ -240,7 +240,7 @@ public sealed class AdminRoleAssignmentRouteTests(HostTestPostgresFixture db) : 
             $"/api/v1/AdminGdpr/export/{CustomerId}", content: null));
         HttpAssert.IsOk(await As(AccountantId, AccountantEmail, AdminRole.Accountant).PostAsJsonAsync(
             "/api/AdminPayPeriod/create",
-            new { startDate = "2026-03-01", endDate = "2026-03-15", notes = (string?)null }));
+            new { startDate = "2026-03-01", endDate = "2026-03-14", notes = (string?)null }));
 
         var rows = await QueryAsync(ctx => ctx.AdminActionAudits.IgnoreQueryFilters().Where(a => a.Success).ToListAsync());
         Assert.Equal(AdminRole.Manager, Assert.Single(rows, r => r.ActorId == ManagerId).ActorAdminRole);

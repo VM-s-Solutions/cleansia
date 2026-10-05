@@ -364,6 +364,22 @@ public class CurrencyUniqueIndexTests(PostgresContainerFixture fixture) : BaseIn
         Assert.Equal("PLN", (await verify.Currencies.SingleAsync()).Code);
     }
 
+    [Fact]
+    public async Task A_Created_Currency_Keeps_The_Referral_Credit_It_Was_Authored_With()
+    {
+        await ResetAsync();
+
+        await using (var ctx = NewContext())
+        {
+            var result = await CreateAsync(ctx, new CreateCurrency.Command("PLN", "zł", "Polish złoty", ReferralCredit: 25m));
+
+            Assert.True(result.IsSuccess, $"CreateCurrency failed with: {result.Error?.Message}");
+        }
+
+        await using var verify = NewContext();
+        Assert.Equal(25m, (await verify.Currencies.SingleAsync()).ReferralCredit);
+    }
+
     /// <summary>
     /// <c>CreateCurrency.Handler</c> is internal and no project has InternalsVisibleTo, so it is built
     /// reflectively — the same way GetPagedServicesHandlerTests reaches its handler.

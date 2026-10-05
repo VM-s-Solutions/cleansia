@@ -63,6 +63,8 @@ import kotlinx.coroutines.launch
 @Composable
 fun ReferralCodeBottomSheet(
     initialCode: String,
+    /** The chosen market's referral credit, formatted; null states no reward. */
+    referralCredit: String?,
     onDismiss: () -> Unit,
     onValidate: suspend (code: String) -> ReferralCodeUiState,
     onApplied: (validatedCode: String, referrerFirstName: String?) -> Unit,
@@ -135,7 +137,7 @@ fun ReferralCodeBottomSheet(
             )
             Spacer(Modifier.height(10.dp))
 
-            ResultBlock(state = localState)
+            ResultBlock(state = localState, referralCredit = referralCredit)
 
             Spacer(Modifier.height(20.dp))
 
@@ -219,11 +221,12 @@ fun ReferralCodeBottomSheet(
 }
 
 @Composable
-private fun ResultBlock(state: ReferralCodeUiState) {
+private fun ResultBlock(state: ReferralCodeUiState, referralCredit: String?) {
     when (state) {
         ReferralCodeUiState.Idle -> {
             Text(
-                text = stringResource(R.string.booking_referral_code_dialog_helper),
+                text = referralCredit?.let { stringResource(R.string.booking_referral_code_dialog_helper, it) }
+                    ?: stringResource(R.string.booking_referral_code_dialog_helper_no_figure),
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
@@ -244,10 +247,12 @@ private fun ResultBlock(state: ReferralCodeUiState) {
         }
         is ReferralCodeUiState.Valid -> {
             val name = state.referrerFirstName?.takeIf { it.isNotBlank() }
-            val message = if (name != null) {
-                stringResource(R.string.booking_referral_code_dialog_success_named, name)
-            } else {
-                stringResource(R.string.booking_referral_code_dialog_success)
+            val message = when {
+                name != null && referralCredit != null ->
+                    stringResource(R.string.booking_referral_code_dialog_success_named, name, referralCredit)
+                name != null -> stringResource(R.string.booking_referral_code_dialog_success_named_no_figure, name)
+                referralCredit != null -> stringResource(R.string.booking_referral_code_dialog_success, referralCredit)
+                else -> stringResource(R.string.booking_referral_code_dialog_success_no_figure)
             }
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Icon(

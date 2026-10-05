@@ -170,8 +170,13 @@
     <div class="cl-rwd__split">
       @if (facade.referralAccount()?.code; as code) {
       <section class="cl-rwd__card">
-        <h2 class="cl-rwd__card-title">{{ 'pages.rewards.referral.section_title' | translate }}</h2>
-        <p class="cl-rwd__card-lead">{{ 'pages.rewards.referral.subtitle' | translate }}</p>
+        @if (facade.referralCreditAmount(); as amount) {
+        <h2 class="cl-rwd__card-title">{{ 'pages.rewards.referral.section_title' | translate: { amount: amount } }}</h2>
+        <p class="cl-rwd__card-lead">{{ 'pages.rewards.referral.subtitle' | translate: { amount: amount } }}</p>
+        } @else {
+        <h2 class="cl-rwd__card-title">{{ 'pages.rewards.referral.section_title_no_amount' | translate }}</h2>
+        <p class="cl-rwd__card-lead">{{ 'pages.rewards.referral.subtitle_no_amount' | translate }}</p>
+        }
 
         <div class="cl-rwd__code-row">
           <span class="cl-rwd__code cl-num">{{ code }}</span>
@@ -182,7 +187,9 @@
             (clickFn)="copyReferralCode(code)"
           />
         </div>
+        @if (facade.referralCreditAmount()) {
         <p class="cl-rwd__card-lead">{{ 'pages.rewards.referral.when_credited' | translate }}</p>
+        }
       </section>
       }
 

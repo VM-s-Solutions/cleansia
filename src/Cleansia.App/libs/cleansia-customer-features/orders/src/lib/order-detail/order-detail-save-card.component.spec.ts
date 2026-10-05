@@ -117,12 +117,12 @@ describe('OrderDetailComponent — keeping the card when confirming a recurring 
   const sentSaveCard = () =>
     (orderClient.confirmRecurring.mock.calls[0][0] as ConfirmRecurringOrderCommand).saveCard;
 
-  it('offers an unticked box with the card-guarantee consent above the confirm button', async () => {
+  it('offers an unticked box with the saved-card consent above the confirm button', async () => {
     await setup(occurrence(PaymentType.Card));
 
     const tick = saveCardTick();
     expect(tick?.textContent).toContain('pages.order.save_card.label');
-    expect(tick?.textContent).toContain('pages.order.card_capture.consent.card-guarantee-draft-2026-09-28');
+    expect(tick?.textContent).toContain('pages.order.card_capture.consent.saved-card-draft-2026-10-05');
     expect(tick?.querySelector<HTMLInputElement>('input[type="checkbox"]')?.checked).toBe(false);
     const position = tick?.compareDocumentPosition(confirmButton().nativeElement as Node) ?? 0;
     expect(position & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();

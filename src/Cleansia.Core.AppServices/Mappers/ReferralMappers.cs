@@ -14,7 +14,8 @@ public static class ReferralMappers
             Status: referral.Status,
             AcceptedOn: referral.AcceptedOn,
             FirstQualifyingOrderOn: referral.FirstQualifyingOrderOn,
-            PointsAwardedToReferrer: referral.PointsAwardedToReferrer);
+            CreditAwardedToReferrer: referral.CreditAwardedToReferrer,
+            CreditCurrencyCode: referral.CreditCurrency?.Code);
     }
 
     public static AdminReferralListItem MapToAdminListItem(this Referral referral)
@@ -28,7 +29,8 @@ public static class ReferralMappers
             Status: referral.Status,
             AcceptedOn: referral.AcceptedOn,
             FirstQualifyingOrderOn: referral.FirstQualifyingOrderOn,
-            PointsAwardedToReferrer: referral.PointsAwardedToReferrer,
-            PointsAwardedToReferred: referral.PointsAwardedToReferred);
+            CreditAwardedToReferrer: referral.CreditAwardedToReferrer,
+            CreditAwardedToReferred: referral.CreditAwardedToReferred,
+            CreditCurrencyCode: referral.CreditCurrency?.Code);
     }
 }

@@ -178,6 +178,25 @@ final class MarketStoreTests: XCTestCase {
         XCTAssertNil(MarketState.unavailable.insurance(forCountryId: "cze"))
     }
 
+    /// A referral is credited in money, so the figure the copy states is the chosen market's, in its
+    /// currency — and none where the market authors none or pays zero, or before a market is known.
+    func testTheReferralCreditIsTheChosenMarketsInItsCurrencyOrNone() async {
+        let store = await MarketFixtures.resolved()
+        XCTAssertEqual(store.state.referralCredit, MarketMoney(amount: 150, currencyCode: "CZK"))
+
+        store.select(isoCode: "SVK")
+        XCTAssertNil(store.state.referralCredit, "no credit authored")
+
+        let zero = MarketFixtures.market(
+            countryId: "pol", isoCode: "POL", isoAlpha2: "PL", name: "Poland", currencyCode: "PLN", referralCredit: 0
+        )
+        let paysNone = await MarketFixtures.resolved([zero], selected: zero)
+        XCTAssertNil(paysNone.state.referralCredit, "zero pays none")
+
+        XCTAssertNil(MarketState.loading.referralCredit)
+        XCTAssertNil(MarketState.unavailable.referralCredit)
+    }
+
     func testTheDefaultCurrencyIsTheFlaggedRows() async {
         let store = await MarketFixtures.resolved(selected: MarketFixtures.slovakia)
         XCTAssertEqual(store.state.defaultCurrencyCode, "CZK")

@@ -198,16 +198,18 @@ final class UpsellSlideTests: XCTestCase {
         XCTAssertEqual(loaded.action, .shareReferral(code: "JOIN50"))
     }
 
-    /// The points are the server's `pointsPerReferral`; before they load the slide names none.
-    func testTheReferralSlideStatesTheServersPoints() throws {
-        let waiting = try slide(.referral, in: UpsellSlide.slides(Inputs(isPlus: true)))
-        XCTAssertEqual(waiting.description, L10n.Home.upsellReferralDescGeneric)
-        XCTAssertNil(waiting.chipText)
+    /// The reward is the chosen market's credit in its currency; with none known the slide names none.
+    func testTheReferralSlideStatesTheMarketsCredit() throws {
+        let unknown = try slide(.referral, in: UpsellSlide.slides(Inputs(isPlus: true)))
+        XCTAssertEqual(unknown.description, L10n.Home.upsellReferralDescGeneric)
+        XCTAssertNil(unknown.chipText)
 
-        let loaded = try slide(.referral, in: UpsellSlide.slides(Inputs(isPlus: true, referralPoints: 175)))
-        XCTAssertEqual(loaded.description, L10n.Home.upsellReferralDesc(175))
-        XCTAssertEqual(loaded.chipText, L10n.Home.upsellChipPoints(175))
-        XCTAssertTrue(loaded.description.contains("175"))
+        let credit = MarketMoney(amount: 175, currencyCode: "EUR")
+        let known = try slide(.referral, in: UpsellSlide.slides(Inputs(isPlus: true, referralCredit: credit)))
+        let amount = OrdersFormat.price(175, currencyCode: "EUR")
+        XCTAssertEqual(known.description, L10n.Home.upsellReferralDesc(amount))
+        XCTAssertEqual(known.chipText, L10n.Home.upsellChipCredit(amount))
+        XCTAssertTrue(known.description.contains(amount), known.description)
     }
 
     func testTheFactSlidesStateTheMembershipsAndTheBookingsFigures() throws {

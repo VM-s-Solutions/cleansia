@@ -104,6 +104,7 @@ private struct TierStatusBadge: View {
 
 struct InviteFriendsCard: View {
     let referral: ReferralAccount
+    let credit: MarketMoney?
     let onCopyCode: (String) -> Void
 
     private var statsLine: String {
@@ -126,7 +127,7 @@ struct InviteFriendsCard: View {
                     .font(CleansiaTypography.titleMedium)
                     .foregroundColor(CleansiaColors.onBackground)
             }
-            Text(L10n.Rewards.referralSubtitle)
+            Text(ReferralCopy.rewardsSubtitle(credit))
                 .font(CleansiaTypography.bodyMedium)
                 .foregroundColor(CleansiaColors.onSurfaceVariant)
 
@@ -170,7 +171,7 @@ struct InviteFriendsCard: View {
                 .font(CleansiaTypography.bodyMedium)
                 .foregroundColor(CleansiaColors.onSurfaceVariant)
 
-            ShareLink(item: RewardsShare.message(code: referral.code)) {
+            ShareLink(item: ReferralCopy.shareMessage(code: referral.code, credit: credit)) {
                 HStack(spacing: Spacing.xs) {
                     Image(systemName: "square.and.arrow.up")
                         .font(.system(size: 16))

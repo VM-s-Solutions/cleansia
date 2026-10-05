@@ -1,5 +1,4 @@
 using Cleansia.Core.AppServices.Abstractions;
-using Cleansia.Core.AppServices.Features.Orders;
 using Cleansia.Core.AppServices.Services.Interfaces;
 using Cleansia.Core.Domain.Loyalty;
 using Cleansia.Core.Domain.Repositories;
@@ -15,8 +14,7 @@ public class GetMyReferral
         string Code,
         int TimesUsed,
         int QualifiedCount,
-        int AcceptedCount,
-        int PointsPerReferral);
+        int AcceptedCount);
 
     public class Handler(
         IReferralService referralService,
@@ -37,8 +35,7 @@ public class GetMyReferral
                 Code: code.Code,
                 TimesUsed: code.TimesUsed,
                 QualifiedCount: qualified,
-                AcceptedCount: accepted,
-                PointsPerReferral: ReferralPolicy.PointsPerSide);
+                AcceptedCount: accepted);
 
             return BusinessResult.Success(response);
         }

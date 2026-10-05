@@ -9993,10 +9993,6 @@
           "acceptedCount": {
             "type": "integer",
             "format": "int32"
-          },
-          "pointsPerReferral": {
-            "type": "integer",
-            "format": "int32"
           }
         },
         "additionalProperties": false
@@ -10024,9 +10020,13 @@
             "format": "date-time",
             "nullable": true
           },
-          "pointsAwardedToReferrer": {
-            "type": "integer",
-            "format": "int32",
+          "creditAwardedToReferrer": {
+            "type": "number",
+            "format": "double",
+            "nullable": true
+          },
+          "creditCurrencyCode": {
+            "type": "string",
             "nullable": true
           }
         },
@@ -10559,6 +10559,11 @@
             "type": "boolean"
           },
           "noShowCredit": {
+            "type": "number",
+            "format": "double",
+            "nullable": true
+          },
+          "referralCredit": {
             "type": "number",
             "format": "double",
             "nullable": true

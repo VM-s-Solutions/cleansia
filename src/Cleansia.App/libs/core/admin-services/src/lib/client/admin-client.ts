@@ -18905,6 +18905,7 @@ export class AdminCurrencyDetailDto implements IAdminCurrencyDetailDto {
     isActive!: boolean;
     loyaltyPointsDivisor!: number | undefined;
     noShowCredit!: number | undefined;
+    referralCredit!: number | undefined;
 
     constructor(data?: IAdminCurrencyDetailDto) {
         if (data) {
@@ -18925,6 +18926,7 @@ export class AdminCurrencyDetailDto implements IAdminCurrencyDetailDto {
             this.isActive = Data["isActive"];
             this.loyaltyPointsDivisor = Data["loyaltyPointsDivisor"];
             this.noShowCredit = Data["noShowCredit"];
+            this.referralCredit = Data["referralCredit"];
         }
     }
 
@@ -18945,6 +18947,7 @@ export class AdminCurrencyDetailDto implements IAdminCurrencyDetailDto {
         data["isActive"] = this.isActive;
         data["loyaltyPointsDivisor"] = this.loyaltyPointsDivisor;
         data["noShowCredit"] = this.noShowCredit;
+        data["referralCredit"] = this.referralCredit;
         return data;
     }
 }
@@ -18958,6 +18961,7 @@ export interface IAdminCurrencyDetailDto {
     isActive: boolean;
     loyaltyPointsDivisor: number | undefined;
     noShowCredit: number | undefined;
+    referralCredit: number | undefined;
 }
 
 export class AdminCurrencyListItem implements IAdminCurrencyListItem {
@@ -18969,6 +18973,7 @@ export class AdminCurrencyListItem implements IAdminCurrencyListItem {
     isActive!: boolean;
     loyaltyPointsDivisor!: number | undefined;
     noShowCredit!: number | undefined;
+    referralCredit!: number | undefined;
 
     constructor(data?: IAdminCurrencyListItem) {
         if (data) {
@@ -18989,6 +18994,7 @@ export class AdminCurrencyListItem implements IAdminCurrencyListItem {
             this.isActive = Data["isActive"];
             this.loyaltyPointsDivisor = Data["loyaltyPointsDivisor"];
             this.noShowCredit = Data["noShowCredit"];
+            this.referralCredit = Data["referralCredit"];
         }
     }
 
@@ -19009,6 +19015,7 @@ export class AdminCurrencyListItem implements IAdminCurrencyListItem {
         data["isActive"] = this.isActive;
         data["loyaltyPointsDivisor"] = this.loyaltyPointsDivisor;
         data["noShowCredit"] = this.noShowCredit;
+        data["referralCredit"] = this.referralCredit;
         return data;
     }
 }
@@ -19022,6 +19029,7 @@ export interface IAdminCurrencyListItem {
     isActive: boolean;
     loyaltyPointsDivisor: number | undefined;
     noShowCredit: number | undefined;
+    referralCredit: number | undefined;
 }
 
 export class AdminCustomerListItem implements IAdminCustomerListItem {
@@ -19941,8 +19949,9 @@ export class AdminReferralListItem implements IAdminReferralListItem {
     status!: ReferralStatus;
     acceptedOn!: Date;
     firstQualifyingOrderOn!: Date | undefined;
-    pointsAwardedToReferrer!: number | undefined;
-    pointsAwardedToReferred!: number | undefined;
+    creditAwardedToReferrer!: number | undefined;
+    creditAwardedToReferred!: number | undefined;
+    creditCurrencyCode!: string | undefined;
 
     constructor(data?: IAdminReferralListItem) {
         if (data) {
@@ -19963,8 +19972,9 @@ export class AdminReferralListItem implements IAdminReferralListItem {
             this.status = Data["status"];
             this.acceptedOn = Data["acceptedOn"] ? new Date(Data["acceptedOn"].toString()) : undefined as any;
             this.firstQualifyingOrderOn = Data["firstQualifyingOrderOn"] ? new Date(Data["firstQualifyingOrderOn"].toString()) : undefined as any;
-            this.pointsAwardedToReferrer = Data["pointsAwardedToReferrer"];
-            this.pointsAwardedToReferred = Data["pointsAwardedToReferred"];
+            this.creditAwardedToReferrer = Data["creditAwardedToReferrer"];
+            this.creditAwardedToReferred = Data["creditAwardedToReferred"];
+            this.creditCurrencyCode = Data["creditCurrencyCode"];
         }
     }
 
@@ -19985,8 +19995,9 @@ export class AdminReferralListItem implements IAdminReferralListItem {
         data["status"] = this.status;
         data["acceptedOn"] = this.acceptedOn ? this.acceptedOn.toISOString() : undefined as any;
         data["firstQualifyingOrderOn"] = this.firstQualifyingOrderOn ? this.firstQualifyingOrderOn.toISOString() : undefined as any;
-        data["pointsAwardedToReferrer"] = this.pointsAwardedToReferrer;
-        data["pointsAwardedToReferred"] = this.pointsAwardedToReferred;
+        data["creditAwardedToReferrer"] = this.creditAwardedToReferrer;
+        data["creditAwardedToReferred"] = this.creditAwardedToReferred;
+        data["creditCurrencyCode"] = this.creditCurrencyCode;
         return data;
     }
 }
@@ -20000,8 +20011,9 @@ export interface IAdminReferralListItem {
     status: ReferralStatus;
     acceptedOn: Date;
     firstQualifyingOrderOn: Date | undefined;
-    pointsAwardedToReferrer: number | undefined;
-    pointsAwardedToReferred: number | undefined;
+    creditAwardedToReferrer: number | undefined;
+    creditAwardedToReferred: number | undefined;
+    creditCurrencyCode: string | undefined;
 }
 
 export class AdminRefundOrderCommand implements IAdminRefundOrderCommand {
@@ -22372,6 +22384,7 @@ export class CreateCurrencyCommand implements ICreateCurrencyCommand {
     name!: string | undefined;
     loyaltyPointsDivisor!: number | undefined;
     noShowCredit!: number | undefined;
+    referralCredit!: number | undefined;
 
     constructor(data?: ICreateCurrencyCommand) {
         if (data) {
@@ -22389,6 +22402,7 @@ export class CreateCurrencyCommand implements ICreateCurrencyCommand {
             this.name = Data["name"];
             this.loyaltyPointsDivisor = Data["loyaltyPointsDivisor"];
             this.noShowCredit = Data["noShowCredit"];
+            this.referralCredit = Data["referralCredit"];
         }
     }
 
@@ -22406,6 +22420,7 @@ export class CreateCurrencyCommand implements ICreateCurrencyCommand {
         data["name"] = this.name;
         data["loyaltyPointsDivisor"] = this.loyaltyPointsDivisor;
         data["noShowCredit"] = this.noShowCredit;
+        data["referralCredit"] = this.referralCredit;
         return data;
     }
 }
@@ -22416,6 +22431,7 @@ export interface ICreateCurrencyCommand {
     name: string | undefined;
     loyaltyPointsDivisor: number | undefined;
     noShowCredit: number | undefined;
+    referralCredit: number | undefined;
 }
 
 export class CreateCurrencyResponse implements ICreateCurrencyResponse {
@@ -23594,9 +23610,11 @@ export enum CreditTransactionReason {
     DisputeSettlement = 1,
     CleanerNoShow = 2,
     Goodwill = 3,
+    Referral = 4,
     OrderPayment = 10,
     OrderPaymentReturned = 11,
     Expired = 12,
+    ReferralReversed = 13,
 }
 
 export class CurrencyDetailDto implements ICurrencyDetailDto {
@@ -26689,8 +26707,9 @@ export interface IForceQualifyReferralCommand {
 
 export class ForceQualifyReferralResponse implements IForceQualifyReferralResponse {
     referralId!: string | undefined;
-    pointsGrantedToReferrer!: number;
-    pointsGrantedToReferred!: number;
+    creditGrantedToReferrer!: number;
+    creditGrantedToReferred!: number;
+    currencyCode!: string | undefined;
 
     constructor(data?: IForceQualifyReferralResponse) {
         if (data) {
@@ -26704,8 +26723,9 @@ export class ForceQualifyReferralResponse implements IForceQualifyReferralRespon
     init(Data?: any) {
         if (Data) {
             this.referralId = Data["referralId"];
-            this.pointsGrantedToReferrer = Data["pointsGrantedToReferrer"];
-            this.pointsGrantedToReferred = Data["pointsGrantedToReferred"];
+            this.creditGrantedToReferrer = Data["creditGrantedToReferrer"];
+            this.creditGrantedToReferred = Data["creditGrantedToReferred"];
+            this.currencyCode = Data["currencyCode"];
         }
     }
 
@@ -26719,16 +26739,18 @@ export class ForceQualifyReferralResponse implements IForceQualifyReferralRespon
     toJSON(data?: any) {
         data = typeof data === 'object' ? data : {};
         data["referralId"] = this.referralId;
-        data["pointsGrantedToReferrer"] = this.pointsGrantedToReferrer;
-        data["pointsGrantedToReferred"] = this.pointsGrantedToReferred;
+        data["creditGrantedToReferrer"] = this.creditGrantedToReferrer;
+        data["creditGrantedToReferred"] = this.creditGrantedToReferred;
+        data["currencyCode"] = this.currencyCode;
         return data;
     }
 }
 
 export interface IForceQualifyReferralResponse {
     referralId: string | undefined;
-    pointsGrantedToReferrer: number;
-    pointsGrantedToReferred: number;
+    creditGrantedToReferrer: number;
+    creditGrantedToReferred: number;
+    currencyCode: string | undefined;
 }
 
 export class GdprExportAddressDto implements IGdprExportAddressDto {
@@ -35214,8 +35236,9 @@ export interface IReverseReferralCommand {
 
 export class ReverseReferralResponse implements IReverseReferralResponse {
     referralId!: string | undefined;
-    pointsRevokedFromReferrer!: number;
-    pointsRevokedFromReferred!: number;
+    creditTakenFromReferrer!: number;
+    creditTakenFromReferred!: number;
+    currencyCode!: string | undefined;
 
     constructor(data?: IReverseReferralResponse) {
         if (data) {
@@ -35229,8 +35252,9 @@ export class ReverseReferralResponse implements IReverseReferralResponse {
     init(Data?: any) {
         if (Data) {
             this.referralId = Data["referralId"];
-            this.pointsRevokedFromReferrer = Data["pointsRevokedFromReferrer"];
-            this.pointsRevokedFromReferred = Data["pointsRevokedFromReferred"];
+            this.creditTakenFromReferrer = Data["creditTakenFromReferrer"];
+            this.creditTakenFromReferred = Data["creditTakenFromReferred"];
+            this.currencyCode = Data["currencyCode"];
         }
     }
 
@@ -35244,16 +35268,18 @@ export class ReverseReferralResponse implements IReverseReferralResponse {
     toJSON(data?: any) {
         data = typeof data === 'object' ? data : {};
         data["referralId"] = this.referralId;
-        data["pointsRevokedFromReferrer"] = this.pointsRevokedFromReferrer;
-        data["pointsRevokedFromReferred"] = this.pointsRevokedFromReferred;
+        data["creditTakenFromReferrer"] = this.creditTakenFromReferrer;
+        data["creditTakenFromReferred"] = this.creditTakenFromReferred;
+        data["currencyCode"] = this.currencyCode;
         return data;
     }
 }
 
 export interface IReverseReferralResponse {
     referralId: string | undefined;
-    pointsRevokedFromReferrer: number;
-    pointsRevokedFromReferred: number;
+    creditTakenFromReferrer: number;
+    creditTakenFromReferred: number;
+    currencyCode: string | undefined;
 }
 
 export enum ReviewTag {
@@ -37006,6 +37032,7 @@ export class UpdateCurrencyCommand implements IUpdateCurrencyCommand {
     name!: string | undefined;
     loyaltyPointsDivisor!: number | undefined;
     noShowCredit!: number | undefined;
+    referralCredit!: number | undefined;
 
     constructor(data?: IUpdateCurrencyCommand) {
         if (data) {
@@ -37024,6 +37051,7 @@ export class UpdateCurrencyCommand implements IUpdateCurrencyCommand {
             this.name = Data["name"];
             this.loyaltyPointsDivisor = Data["loyaltyPointsDivisor"];
             this.noShowCredit = Data["noShowCredit"];
+            this.referralCredit = Data["referralCredit"];
         }
     }
 
@@ -37042,6 +37070,7 @@ export class UpdateCurrencyCommand implements IUpdateCurrencyCommand {
         data["name"] = this.name;
         data["loyaltyPointsDivisor"] = this.loyaltyPointsDivisor;
         data["noShowCredit"] = this.noShowCredit;
+        data["referralCredit"] = this.referralCredit;
         return data;
     }
 }
@@ -37053,6 +37082,7 @@ export interface IUpdateCurrencyCommand {
     name: string | undefined;
     loyaltyPointsDivisor: number | undefined;
     noShowCredit: number | undefined;
+    referralCredit: number | undefined;
 }
 
 export class UpdateCurrencyResponse implements IUpdateCurrencyResponse {

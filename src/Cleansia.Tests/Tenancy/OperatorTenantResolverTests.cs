@@ -151,5 +151,5 @@ public sealed class OperatorTenantResolverTests
 
     private static MarketListItem Listed(string iso, bool isDefault) => new(
         CountryId: iso, IsoCode: iso, IsoAlpha2: iso[..2], Name: iso, Translations: new Dictionary<string, Translation>(),
-        CurrencyId: "cur", CurrencyCode: "CZK", CurrencySymbol: "Kč", IsDefault: isDefault, NoShowCredit: null, InsuranceCoverageAmount: null);
+        CurrencyId: "cur", CurrencyCode: "CZK", CurrencySymbol: "Kč", IsDefault: isDefault, NoShowCredit: null, ReferralCredit: null, InsuranceCoverageAmount: null);
 }

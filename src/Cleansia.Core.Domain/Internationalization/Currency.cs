@@ -48,6 +48,19 @@ public class Currency : Auditable
         NoShowCredit = amount;
     }
 
+    /// <summary>
+    /// The credit BOTH sides of a referral receive when the invited friend's first order, priced in THIS
+    /// currency, is completed (owner ruling 2026-10-04). Authored per currency like
+    /// <see cref="NoShowCredit"/>; null or zero pays no referral credit in this currency and the referral
+    /// still qualifies. CZK is seeded at 150. → /product/business-rules#money-constants
+    /// </summary>
+    public decimal? ReferralCredit { get; private set; }
+
+    public void SetReferralCredit(decimal? amount)
+    {
+        ReferralCredit = amount;
+    }
+
     public static Currency Create(string code, string symbol, string name) => new()
     {
         Code = Canonical(code),

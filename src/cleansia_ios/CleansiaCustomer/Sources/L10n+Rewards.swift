@@ -115,8 +115,12 @@ extension L10n {
             localized("loyalty_referral_section_title")
         }
 
-        static var referralSubtitle: String {
-            localized("loyalty_referral_subtitle")
+        static func referralSubtitle(_ credit: String) -> String {
+            format("loyalty_referral_subtitle", credit)
+        }
+
+        static var referralSubtitleNoFigure: String {
+            localized("loyalty_referral_subtitle_no_figure")
         }
 
         static var referralShareButton: String {
@@ -131,8 +135,12 @@ extension L10n {
             localized("loyalty_referral_copied_toast")
         }
 
-        static func referralShareText(_ code: String, _ url: String) -> String {
-            format("loyalty_referral_share_text", code, url)
+        static func referralShareText(_ credit: String, _ code: String, _ url: String) -> String {
+            format("loyalty_referral_share_text", credit, code, url)
+        }
+
+        static func referralShareTextNoFigure(_ code: String, _ url: String) -> String {
+            format("loyalty_referral_share_text_no_figure", code, url)
         }
 
         static var referralStatsEmpty: String {

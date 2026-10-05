@@ -1565,7 +1565,9 @@
         "update_error": "Nepodarilo sa aktualizovať menu"
       },
       "no_show_credit": "Ospravedlňujúci kredit za nedostavenie sa",
-      "no_show_credit_placeholder": "napr. 250 pre CZK — ak pole necháte prázdne, v tejto mene sa žiadny kredit nevypláca"
+      "no_show_credit_placeholder": "napr. 250 pre CZK — ak pole necháte prázdne, v tejto mene sa žiadny kredit nevypláca",
+      "referral_credit": "Kredit za odporúčanie (každej strane)",
+      "referral_credit_placeholder": "napr. 150 pre CZK — ak pole necháte prázdne alebo zadáte 0, odporúčania v tejto mene žiadny kredit nevyplácajú"
     },
     "company_info": {
       "bank_account_number": "Číslo bankového účtu",
@@ -2462,6 +2464,8 @@
           "dispute_settlement": "Vybavenie reklamácie",
           "cleaner_no_show": "Nedostavenie sa upratovačky",
           "goodwill": "Ústretový krok",
+          "referral": "Odporúčanie",
+          "referral_reversed": "Stornované odporúčanie",
           "order_payment": "Čerpané na objednávku",
           "order_payment_returned": "Vrátené zo zrušenej objednávky",
           "unknown": "Iné",
@@ -2519,7 +2523,7 @@
         "status": "Stav",
         "accepted_on": "Prijaté dňa",
         "qualified_on": "Kvalifikované dňa",
-        "points_awarded": "Udelené body"
+        "credit_awarded": "Udelený kredit (odporúčajúci / odporúčaný)"
       },
       "status": {
         "Accepted": "Prijaté",
@@ -2527,7 +2531,7 @@
         "Expired": "Expirované",
         "Reversed": "Stornované"
       },
-      "points_format": "{{referrer}} / {{referred}}",
+      "credit_format": "{{referrer}} / {{referred}}",
       "not_yet": "—",
       "empty": "Zatiaľ žiadne odporúčania",
       "loading": "Načítavanie...",
@@ -2538,16 +2542,18 @@
       "intervention": {
         "title_reverse": "Stornovať odporúčanie",
         "title_force_qualify": "Manuálne uznať odporúčanie",
-        "hint_reverse": "Odoberie body udelené obom stranám a označí odporúčanie ako stornované. Dôvod sa uloží do auditného záznamu.",
-        "hint_force_qualify": "Označí odporúčanie ako uznané a udelí body obom stranám. Dôvod sa uloží do auditného záznamu.",
+        "hint_reverse": "Odoberie obom stranám kredit za odporúčanie — len toľko, koľko ho na zostatku ešte zostáva — a označí odporúčanie ako stornované. Dôvod sa uloží do auditného záznamu.",
+        "hint_force_qualify": "Označí odporúčanie ako uznané a obom stranám pripíše kredit za odporúčanie v mene poslednej objednávky odporúčaného zákazníka, prípadne vo východiskovej mene platformy. Dôvod sa uloží do auditného záznamu.",
+        "summary_reverse": "Udelené pri uznaní: {{credit}} (odporúčajúci / odporúčaný).",
         "field": {
           "reason": "Dôvod",
-          "reason_help": "Povinné. Viditeľné vo vernostnom denníku."
+          "reason_help": "Povinné. Uloží sa ako poznámka k pohybu kreditu pri každej zo strán."
         },
         "submit_reverse": "Stornovať",
         "submit_force_qualify": "Uznať",
-        "success_reverse": "Odporúčanie stornované a body odobraté",
-        "success_force_qualify": "Odporúčanie uznané a body udelené"
+        "success_reverse": "Odporúčanie stornované. Odobratý kredit: {{referrer}} odporúčajúcemu, {{referred}} odporúčanému.",
+        "success_reverse_no_credit": "Odporúčanie stornované. Žiadny kredit nebol udelený, takže sa nič neodoberalo.",
+        "success_force_qualify": "Odporúčanie uznané. Pripísaný kredit: {{referrer}} odporúčajúcemu, {{referred}} odporúčanému."
       }
     },
     "sitewide_push": {
@@ -3406,7 +3412,7 @@
     "pay_period": {
       "already_paid": "Výplatné obdobie už bolo zaplatené",
       "has_order_pays": "Nie je možné odstrániť výplatné obdobie, ktoré má priradené platby za objednávky",
-      "invalid_duration": "Neplatná dĺžka výplatného obdobia",
+      "invalid_duration": "Výplatné obdobie trvá presne 14 dní: dátum konca musí byť 13 dní po dátume začiatku",
       "not_closed": "Výplatné obdobie nie je uzavreté",
       "overlapping_period": "Výplatné obdobie sa prekrýva s existujúcim obdobím"
     },

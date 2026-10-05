@@ -30,7 +30,11 @@ import {
   ReferralInterventionSubmit,
 } from '../referral-intervention-dialog/referral-intervention-dialog.component';
 import { ReferralsListFacade } from './referrals-list.facade';
-import { getReferralInterventionActions, getReferralTableColumns } from './referrals-list.models';
+import {
+  formatReferralCredit,
+  getReferralInterventionActions,
+  getReferralTableColumns,
+} from './referrals-list.models';
 
 @Component({
   selector: 'cleansia-admin-referrals-list',
@@ -59,16 +63,21 @@ export class ReferralsListComponent implements OnInit {
   protected readonly facade = inject(ReferralsListFacade);
 
   private readonly statusTemplate = viewChild<TemplateRef<AdminReferralListItem>>('statusTemplate');
-  private readonly pointsTemplate = viewChild<TemplateRef<AdminReferralListItem>>('pointsTemplate');
 
   readonly dialogVisible = signal<boolean>(false);
   readonly dialogMode = signal<ReferralInterventionMode>('reverse');
-  private interventionTarget: AdminReferralListItem | null = null;
+  private readonly interventionTarget = signal<AdminReferralListItem | null>(null);
+  protected readonly interventionCredit = computed(() => {
+    this.facade.lang();
+    const row = this.interventionTarget();
+    if (!row || (row.creditAwardedToReferrer == null && row.creditAwardedToReferred == null)) return null;
+    return formatReferralCredit(row, this.translate);
+  });
 
   protected readonly table = computed(() => {
     this.facade.lang();
     return {
-      columns: getReferralTableColumns(this.translate, this.statusTemplate(), this.pointsTemplate()),
+      columns: getReferralTableColumns(this.translate, this.statusTemplate()),
       actions: getReferralInterventionActions(
         {
           canIntervene: this.permissionService.hasPolicy(Policy.CanInterveneReferral),
@@ -89,7 +98,7 @@ export class ReferralsListComponent implements OnInit {
   }
 
   openIntervention(row: AdminReferralListItem, mode: ReferralInterventionMode): void {
-    this.interventionTarget = row;
+    this.interventionTarget.set(row);
     this.dialogMode.set(mode);
     this.dialogVisible.set(true);
   }
@@ -97,12 +106,12 @@ export class ReferralsListComponent implements OnInit {
   onDialogVisibleChange(value: boolean): void {
     this.dialogVisible.set(value);
     if (!value) {
-      this.interventionTarget = null;
+      this.interventionTarget.set(null);
     }
   }
 
   onInterventionSubmit(payload: ReferralInterventionSubmit): void {
-    const id = this.interventionTarget?.id;
+    const id = this.interventionTarget()?.id;
     if (!id) return;
 
     const close = () => this.onDialogVisibleChange(false);
@@ -111,15 +120,5 @@ export class ReferralsListComponent implements OnInit {
     } else {
       this.facade.forceQualifyReferral(id, payload.reason, close);
     }
-  }
-
-  formatPointsAwarded(row: AdminReferralListItem): string {
-    if (row.pointsAwardedToReferrer == null && row.pointsAwardedToReferred == null) {
-      return this.translate.instant('pages.loyalty_referrals.not_yet');
-    }
-    return this.translate.instant('pages.loyalty_referrals.points_format', {
-      referrer: row.pointsAwardedToReferrer ?? 0,
-      referred: row.pointsAwardedToReferred ?? 0,
-    });
   }
 }

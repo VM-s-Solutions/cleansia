@@ -1,3 +1,4 @@
+import { readFileSync, readdirSync } from 'fs';
 import { join } from 'path';
 import { compile } from 'sass';
 
@@ -172,5 +173,70 @@ describe('the partner and admin stylesheets — standalone icons', () => {
 
   it("paints the admin pay-config banner's info icon with Sky600", () => {
     expect(inks(admin, '.cleansia-pay-config-management__info-banner i')).toEqual(['var(--cleansia-primary-600)']);
+  });
+});
+
+// PrimeNG 20 names its primary --p-primary-color. --primary-color is declared nowhere, so a border or
+// an icon reading it fell back to Tailwind's #3b82f6, or lost its colour to its parent's. Borders and
+// icons take the PrimeNG primary (Sky600; Sky400 after dark); blue text takes the text ink, Sky700.
+describe('the shared styles — the primary they read exists', () => {
+  const sources = (dir: string): string[] =>
+    readdirSync(dir, { withFileTypes: true }).flatMap((entry) => {
+      const path = join(dir, entry.name);
+      if (entry.isDirectory()) return sources(path);
+      return /\.(scss|ts)$/.test(entry.name) && !entry.name.endsWith('.spec.ts') ? [path] : [];
+    });
+
+  it('reads --primary-color nowhere', () => {
+    const readers = sources(join(__dirname, '../../..')).filter((path) =>
+      /var\(--primary-color\b/.test(readFileSync(path, 'utf8')),
+    );
+
+    expect(readers).toEqual([]);
+  });
+
+  it.each([
+    ['under the pointer', ':hover:not(.disabled)'],
+    ['focused', ':focus:not(.disabled)'],
+    ['with a file dragged over it', '.drag-over'],
+  ])("edges the file drop area with the PrimeNG primary %s", (_, state) => {
+    const escaped = `.cleansia-file-component .file-upload-area${state}`.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    expect(customer).toMatch(new RegExp(`\\n${escaped} \\{\\s*border-color: var\\(--p-primary-color\\);`));
+  });
+
+  it("rings the focused file drop area with the brand blue", () => {
+    expect(customer).toMatch(
+      /\.file-upload-area:focus:not\(\.disabled\) \{[^}]*box-shadow: 0 0 0 2px rgba\(var\(--cleansia-primary-rgb\), 0\.2\)/,
+    );
+  });
+
+  it.each([
+    ['a picked file', '.cleansia-file-component .selected-files .files-list .file-item .file-info .file-icon'],
+    ['an address suggestion', '.cleansia-address-autocomplete__suggestion i'],
+  ])("paints %s's icon with the PrimeNG primary", (_, selector) => {
+    expect(inks(customer, selector)).toEqual(['var(--p-primary-color)']);
+  });
+
+  it.each([
+    ["the order photos' counts", '.order-photos__count-value'],
+    ["the order photos' upload progress", '.order-photos__upload-progress'],
+    ['the actual time beside the estimate', '.time-comparison-item--actual .time-comparison-item__value'],
+  ])('inks %s with Sky700', (_, selector) => {
+    expect(inks(partner, selector)).toEqual(['var(--cleansia-primary-700)']);
+  });
+
+  it('edges and rings the code boxes with the brand blue, not Tailwind blue', () => {
+    const source = readFileSync(
+      join(__dirname, '../../../components/src/lib/cleansia-code-input/cleansia-code-input.component.ts'),
+      'utf8',
+    );
+
+    expect(source.match(/border-color: var\(--p-primary-color\);/g)).toHaveLength(2);
+    expect(source).toContain('box-shadow: 0 0 0 2px rgba(var(--cleansia-primary-rgb), 0.15);');
+    expect(source).not.toMatch(/#3b82f6|59, 130, 246/);
+  });
+
+  it('carries no rule for the order chart revenue no template draws', () => {
+    expect(partner).not.toContain('.service-item__revenue');
   });
 });

@@ -293,6 +293,19 @@ primary and its two darker steps, the label and tab inks, the untouched dark the
 and computes every light blue text ink in the preset at 4.5:1 or better on white from the preset's
 own ramp; `text-ink.spec.ts` pins the cookie notice's gradients in the partner and customer bundles.
 
+**`--primary-color` is not a token.** PrimeNG 20 names its primary `--p-primary-color`, and nothing
+declares `--primary-color`, so until 2026-10-05 (finding 2026-10-05) eleven shared declarations that
+read it each lost their colour, measured in Chromium on the running apps. The code boxes' focused and
+filled borders and an address suggestion's icon fell back to Tailwind's `#3b82f6`. The file drop
+area's border under the pointer, focused and with a file dragged over it, and a picked file's icon,
+went to the text colour, black or white after dark, which also cancelled the customer site's own
+accent border under the pointer, and its focus ring, read from `--primary-color-alpha-20`, dropped to
+none. The partner order photos' count and upload line took their parent's black. Borders and icons
+now read `--p-primary-color`, sky-600 (4.10:1 on white) and sky-400 after dark on the customer site
+(6.83–8.07:1); the focus rings are `rgba(var(--cleansia-primary-rgb), …)`; and the blue text takes the
+text ink, `--cleansia-primary-700`, 5.93:1. `text-ink.spec.ts` pins each site and fails on a read of
+`--primary-color` anywhere under `libs/shared`.
+
 ### A blue slab on the customer site takes the card's ground as its ink {#heading-slab-ink}
 
 A picked chip or choice, and an initials disc, on the customer site is a slab of `--cl-heading`, the
@@ -399,8 +412,9 @@ button takes the button's ink, so no control shows two blues. The apps follow th
   [the partner app's other blue text](/mobile-app/patterns#brand-text-ink)): 4.10 → 5.93:1, beside a
   name already on sky-700. A sweep of the compiled partner bundle found no other blue text under
   4.5:1 but icons and two shared labels, the code dialog's *checking* line and the price form's
-  *Optional* badge (next). `.service-item__revenue`, which the finding named, styles nothing: the
-  dashboard's top-services revenue is a `<cleansia-label color="primary">`, slate on white.
+  *Optional* badge (next). `.service-item__revenue`, which the finding named, styled nothing: the
+  dashboard's top-services revenue is a `<cleansia-label color="primary">`, slate on white. The rule
+  was deleted later on 2026-10-05.
 - **Two shared labels** (finding 2026-10-05). The code dialog's neutral status, *Checking the code…*
   under the customer sign-up's referral code (`.cleansia-code-input-dialog__status--neutral` in
   `cleansia-dialog.component.scss`), was sky-600 on a light-blue tint in both themes; it takes

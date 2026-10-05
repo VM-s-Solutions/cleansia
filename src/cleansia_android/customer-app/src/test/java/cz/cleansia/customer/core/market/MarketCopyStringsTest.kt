@@ -57,7 +57,7 @@ class MarketCopyStringsTest {
     }
 
     @Test
-    fun `the trust badge and FAQ take the ceiling as a formatted amount and carry a no-figure twin`() {
+    fun `the trust badge and FAQ take the ceiling as a formatted amount`() {
         locales.forEach { locale ->
             val xml = stringsXml(locale)
             listOf("booking_trust_insured", "help_faq_a3").forEach { key ->
@@ -65,11 +65,6 @@ class MarketCopyStringsTest {
                 assertTrue("$locale lost $key", value != null)
                 assertTrue("$locale/$key takes no formatted amount: \"$value\"", value!!.contains("%1\$s"))
                 assertNoFigure(locale, key, value)
-
-                val twin = valueOf(xml, "${key}_no_figure")
-                assertTrue("$locale lost ${key}_no_figure", twin != null)
-                assertFalse("$locale/${key}_no_figure carries a placeholder: \"$twin\"", PLACEHOLDER.containsMatchIn(twin!!))
-                assertNoFigure(locale, "${key}_no_figure", twin)
             }
         }
     }
@@ -86,19 +81,25 @@ class MarketCopyStringsTest {
         assertFalse("HomeTab still reads home_seasonal_*", homeTab.contains("home_seasonal"))
     }
 
-    /** The renderers format the market's figure with the shared formatter and fall to the no-figure key. */
+    /**
+     * A cleaner needs no insurance to be approved, so insurance is claimed only with the ceiling the market
+     * authored, formatted with the shared formatter; without one the badge and the FAQ question are left out.
+     */
     @Test
-    fun `both renderers bind the figure to the market and the no-figure twin to its absence`() {
+    fun `both renderers claim insurance only with the market's figure`() {
         val confirm = source("features/booking/ConfirmStep.kt")
         assertTrue(confirm.contains("viewModel.insuranceCoverage.collectAsStateWithLifecycle()"))
+        assertTrue(confirm.contains("insuranceCoverage?.let { coverage -> Row("))
         assertTrue(confirm.contains("R.string.booking_trust_insured, formatOrderPrice(coverage.amount, coverage.currencyCode)"))
-        assertTrue(confirm.contains("R.string.booking_trust_insured_no_figure"))
+        assertFalse("the confirm step still claims insurance without a figure", confirm.contains("_no_figure"))
 
         val help = source("features/profile/HelpSupportScreen.kt")
         assertTrue(help.contains("viewModel.insuranceCoverage.collectAsStateWithLifecycle()"))
+        assertTrue(help.contains("insuranceCoverage?.let { coverage -> FaqItem(R.string.help_faq_q3)"))
         assertTrue(help.contains("R.string.help_faq_a3, formatOrderPrice(coverage.amount, coverage.currencyCode)"))
-        assertTrue(help.contains("R.string.help_faq_a3_no_figure"))
-        assertEquals("the FAQ must not read the figured key without a figure", 1, Regex("R\\.string\\.help_faq_a3\\b[^_]").findAll(help).count())
+        assertFalse("the FAQ still answers the insurance question without a figure", help.contains("_no_figure"))
+
+        assertFalse("the home trust strip still claims insurance", source("features/home/HomeTab.kt").contains("home_trust_insured"))
     }
 
     /**

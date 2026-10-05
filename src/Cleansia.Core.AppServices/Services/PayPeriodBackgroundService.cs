@@ -96,14 +96,7 @@ public class PayPeriodBackgroundService : IPayPeriodBackgroundService
 
         if (hasOpen) return;
 
-        // Pick a monthly window anchored on today. Matches the cadence the
-        // close-and-rollover job uses (newStartDate = previousEndDate + 1,
-        // newEndDate = +1 month -1 day), so once timer-driven rollover kicks
-        // in the seam is invisible.
-        var startDate = DateOnly.FromDateTime(DateTime.UtcNow);
-        var endDate = startDate.AddMonths(1).AddDays(-1);
-
-        var period = PayPeriod.Create(startDate, endDate);
+        var period = PayPeriod.CreateBiWeekly(DateOnly.FromDateTime(DateTime.UtcNow));
         _payPeriodRepository.Add(period);
         await _unitOfWork.CommitAsync(cancellationToken);
 
@@ -213,10 +206,7 @@ public class PayPeriodBackgroundService : IPayPeriodBackgroundService
 
         if (!hasActivePeriod)
         {
-            var newStartDate = period.EndDate.AddDays(1);
-            var newEndDate = newStartDate.AddMonths(1).AddDays(-1);
-
-            var newPeriod = PayPeriod.Create(newStartDate, newEndDate);
+            var newPeriod = PayPeriod.CreateBiWeekly(period.EndDate.AddDays(1));
             _payPeriodRepository.Add(newPeriod);
 
             _logger.LogInformation(

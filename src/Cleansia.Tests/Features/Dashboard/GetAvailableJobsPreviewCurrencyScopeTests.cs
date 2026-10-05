@@ -4,7 +4,9 @@ using System.Reflection;
 using Cleansia.Core.AppServices.Authentication;
 using Cleansia.Core.AppServices.Features.Dashboard;
 using Cleansia.Core.AppServices.Features.Dashboard.DTOs;
+using Cleansia.Core.AppServices.Features.TenantSettings;
 using Cleansia.Core.AppServices.Services.Interfaces;
+using Cleansia.Core.Domain.Configuration;
 using Cleansia.Core.Domain.EmployeePayroll;
 using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Internationalization;
@@ -83,6 +85,31 @@ public class GetAvailableJobsPreviewCurrencyScopeTests
         Assert.Equal(expected, result.Value!.TotalPotentialEarnings);
     }
 
+    /// <summary>
+    /// The headline quotes what the contract for work would: the job's 13 plus the company's 40 % of the
+    /// 10 of extras booked.
+    /// </summary>
+    [Fact]
+    public async Task The_Headline_Includes_The_Companys_Share_Of_The_Extras_Booked()
+    {
+        var service = Service.Create("category-scope", "Deep clean", "Payable", 120);
+        service.Id = ServiceId;
+        var order = NewOfferableOrder("order-eur-extras", EurId, totalPrice: 150m, service);
+        order.AddSelectedExtras([OrderExtra.Create(order, Extra.Create("windows", "Windows", null), 10m)]);
+        var configuration = new Mock<IAppConfigurationProvider>();
+        configuration
+            .Setup(c => c.GetTenantSettingAsync(TenantSettingCatalog.ExtrasSharePercentKey, It.IsAny<CancellationToken>()))
+            .ReturnsAsync("40");
+
+        var handler = CreateHandler([order], paidIn: EurId, configuration.Object);
+
+        var result = await (Task<BusinessResult<AvailableJobsPreviewResponse>>)HandleMethod.Invoke(
+            handler, [new GetAvailableJobsPreview.Query(Limit: 5), CancellationToken.None])!;
+
+        Assert.True(result.IsSuccess);
+        Assert.Equal(17m, result.Value!.TotalPotentialEarnings);
+    }
+
     // The handler is internal, as every query handler in this folder is; the dashboard sibling test
     // reaches its (public) handler the same Activator way.
     private static readonly Type HandlerType =
@@ -90,7 +117,8 @@ public class GetAvailableJobsPreviewCurrencyScopeTests
 
     private static readonly MethodInfo HandleMethod = HandlerType.GetMethod("Handle")!;
 
-    private static object CreateHandler(IReadOnlyList<Order> orders, string paidIn)
+    private static object CreateHandler(
+        IReadOnlyList<Order> orders, string paidIn, IAppConfigurationProvider? configuration = null)
     {
         var orderRepository = new Mock<IOrderRepository>();
         orderRepository.Setup(r => r.GetQueryable()).Returns(orders.AsQueryable().BuildMock());
@@ -122,7 +150,8 @@ public class GetAvailableJobsPreviewCurrencyScopeTests
             orderRepository.Object,
             payConfigs.Object,
             accessService.Object,
-            resolver.Object)!;
+            resolver.Object,
+            configuration ?? Mock.Of<IAppConfigurationProvider>())!;
     }
 
     private static Order NewOfferableOrder(string id, string currencyId, decimal totalPrice, Service service)

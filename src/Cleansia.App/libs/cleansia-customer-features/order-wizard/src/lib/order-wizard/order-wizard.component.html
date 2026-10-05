@@ -817,7 +817,7 @@
 
         <!--
           The consent is the card-guarantee wording, keyed by the version the server records on the
-          saved card: a card kept here also guarantees a later cash booking.
+          saved card.
         -->
         @if (facade.saveCardOffered()) {
         <label class="cl-wiz__consent" data-spec-save-card>
@@ -1590,47 +1590,6 @@
       [title]="'pages.order.rebook_warning.continue' | translate"
       [severity]="'primary'"
       (clickFn)="showRebookWarning.set(false)"
-    />
-  </ng-template>
-</p-dialog>
-
-<p-dialog
-  [header]="'pages.order.card_capture.title' | translate"
-  [visible]="facade.cardCaptureVisible()"
-  (visibleChange)="!$event && facade.closeCardCapture()"
-  [modal]="true"
-  [closable]="true"
-  [style]="{ width: '480px' }"
-  [breakpoints]="{ '500px': '95vw' }"
-  styleClass="cleansia-dialog"
->
-  <div class="cleansia-dialog__body">
-    <div class="cleansia-dialog__icon cleansia-dialog__icon--info">
-      <i class="pi pi-credit-card"></i>
-    </div>
-    <p class="cleansia-dialog__text">{{ 'pages.order.card_capture.intro' | translate }}</p>
-    <label class="cl-wiz__consent">
-      <p-checkbox
-        [ngModel]="facade.cardCaptureConsent()"
-        (ngModelChange)="facade.setCardCaptureConsent($event)"
-        [binary]="true"
-        inputId="wizard-card-consent"
-      />
-      <span>{{ 'pages.order.card_capture.consent.card-guarantee-draft-2026-09-28' | translate }}</span>
-    </label>
-  </div>
-  <ng-template #footer>
-    <cleansia-button
-      [title]="'pages.order.card_capture.cancel' | translate"
-      [severity]="'secondary'"
-      (clickFn)="facade.closeCardCapture()"
-    />
-    <cleansia-button
-      [title]="'pages.order.card_capture.continue' | translate"
-      [severity]="'primary'"
-      [loading]="facade.cardCaptureStarting()"
-      [disabled]="!facade.cardCaptureConsent()"
-      (clickFn)="facade.startCardCapture()"
     />
   </ng-template>
 </p-dialog>

@@ -168,7 +168,6 @@
     <string name="home_hero2_title">Глибоке прибирання + вікна разом</string>
 
     <!-- Home — trust strip -->
-    <string name="home_trust_insured">Застраховано</string>
     <string name="home_trust_same_day">Сьогодні</string>
 
     <!-- Home — popular packages -->
@@ -549,7 +548,6 @@
     <string name="help_faq_a2">Додайте інструкції щодо доступу при бронюванні (напр. код від дверей, місце ключа). Клінер чекає 15 хвилин після початку прибирання і намагається вам зателефонувати. Якщо й тоді не вдасться потрапити всередину, бронювання скасовується і стягується повна вартість.</string>
     <string name="help_faq_q3">Чи застраховані клінери?</string>
     <string name="help_faq_a3">Так. Усі клінери Cleansia застраховані до %1$s за бронювання.</string>
-    <string name="help_faq_a3_no_figure">Так. Усі клінери Cleansia застраховані.</string>
     <string name="help_faq_q4">Чи можна змінити дату?</string>
     <string name="help_faq_a4">Бронювання не можна перенести на іншу дату. Скасуйте його та замовте нову дату — скасування безкоштовне, поки жоден клінер не взяв замовлення.</string>
     <string name="help_faq_q5">Що входить у стандартне прибирання?</string>
@@ -639,7 +637,6 @@
     <string name="booking_save_address">Зберегти цю адресу</string>
     <string name="booking_set_as_default">Встановити за замовчуванням</string>
     <string name="booking_trust_insured">Застраховано до %1$s</string>
-    <string name="booking_trust_insured_no_figure">Застраховано</string>
 
     <string name="booking_pick_service">Виберіть послугу</string>
     <string name="booking_or_package">Або виберіть пакет</string>
@@ -834,12 +831,7 @@
     <string name="booking_cash_pending">Чи можна платити готівкою, ми підтвердимо, щойно буде відома ціна.</string>
     <string name="booking_cash_cleared">Оплата готівкою для цього замовлення більше недоступна, тому спосіб оплати не обрано. Оберіть, як ви хочете платити.</string>
     <string name="booking_draft_time_changed">Обраний час більше недоступний або змінив ціну. Будь ласка, оберіть час знову.</string>
-    <string name="booking_card_guarantee_title">Картка як гарантія для оплати готівкою</string>
-    <string name="booking_card_guarantee_body">Під час першого замовлення з оплатою готівкою ви зберігаєте картку. Зараз нічого не списується: за прибирання ви платите готівкою, як завжди.</string>
     <string name="consent_card_guarantee_draft_2026_09_28">Я погоджуюся, що за моїми замовленнями з оплатою готівкою Cleansia може списати з цієї картки плату за скасування, плату за ненадання доступу, неоплачену готівку та схвалену мною доплату.</string>
-    <string name="booking_card_guarantee_consent_required">Щоб платити готівкою, погодьтеся на гарантію карткою або оберіть оплату карткою.</string>
-    <string name="booking_card_guarantee_pending">Ми ще підтверджуємо вашу картку. За мить підтвердьте замовлення ще раз.</string>
-    <string name="booking_card_guarantee_cancelled">Картку не збережено, тому нічого не заброньовано. Збережіть картку, щоб платити готівкою, або оберіть оплату карткою.</string>
     <string name="booking_save_card_label">Зберегти цю картку для моїх наступних замовлень</string>
     <string name="booking_special_instructions_hint">Особливі побажання? (необов’язково)</string>
     <string name="booking_access_instructions_hint">Як увійти? (необов’язково)</string>
@@ -1171,10 +1163,9 @@
     <string name="error_order_recurring_already_confirmed">Ви вже підтвердили це прибирання. Сплатіть прибиральнику готівкою в день прибирання.</string>
     <string name="error_order_creation_failed">Не вдалося створити бронювання. Спробуйте знову.</string>
     <string name="error_order_cash_not_available">Оплата готівкою можлива лише після входу в акаунт і для замовлення, з яким впорається один прибиральник.</string>
-    <string name="error_order_cash_requires_saved_card">Щоб платити готівкою, спершу збережіть картку як гарантію — або оплатіть карткою.</string>
     <string name="error_order_cash_open_bookings_limit_reached">У вас уже максимально дозволена кількість неоплачених замовлень готівкою. Оберіть картку або знову готівку, коли одне з них буде оплачено.</string>
     <string name="error_order_cash_unpaid_receivable">У вас є неоплачена сума, наприклад плата за скасування. Поки що оплатіть карткою; готівкою можна буде платити знову, коли ви сплатите її в профілі в розділі Платежі.</string>
-    <string name="error_saved_card_consent_not_accepted">Перш ніж зберегти картку, погодьтеся, що з неї можуть стягуватися збори та неоплачена готівка.</string>
+    <string name="error_saved_card_consent_not_accepted">Перш ніж зберегти картку, позначте згоду на її збереження.</string>
     <string name="error_saved_card_not_found">Ми не знайшли цю збережену картку.</string>
     <string name="error_receivable_not_found">Ми не знайшли цю суму до сплати.</string>
     <string name="error_receivable_not_open">Цю суму вже сплачено або списано.</string>
@@ -1390,13 +1381,13 @@
     <string name="receivable_kind_top_up">Схвалена доплата</string>
     <string name="receivable_kind_other">Сума до сплати</string>
     <string name="payments_card_title">Збережена картка</string>
-    <string name="payments_card_intro">Картка, яка гарантує ваші замовлення з оплатою готівкою. З неї можуть бути списані плата за скасування, плата за ненадання доступу, неоплачена готівка або схвалена вами доплата.</string>
+    <string name="payments_card_intro">З карток, збережених у вашому акаунті, кошти списуються лише тоді, коли ви самі ними платите, і картку можна будь-коли видалити.</string>
     <string name="payments_card_label">%1$s •••• %2$s</string>
     <string name="payments_card_expires">Дійсна до %1$02d/%2$02d · %3$s</string>
-    <string name="payments_card_empty">Картку не збережено. Ми попросимо її під час першого замовлення з оплатою готівкою.</string>
+    <string name="payments_card_empty">Картку не збережено. Її можна зберегти під час наступної оплати карткою.</string>
     <string name="payments_card_remove_action">Видалити картку</string>
     <string name="payments_card_remove_title">Видалити цю картку?</string>
-    <string name="payments_card_remove_message">Під час наступного замовлення з оплатою готівкою ми знову попросимо картку.</string>
+    <string name="payments_card_remove_message">Картку можна знову зберегти під час наступної оплати карткою.</string>
     <string name="payments_card_remove_confirm">Видалити</string>
     <string name="payments_card_removed">Картку видалено</string>
     <string name="payments_error_message">Не вдалося завантажити платежі. Перевірте з’єднання та спробуйте ще раз.</string>

@@ -25,8 +25,8 @@ public interface ILoyaltyService
     /// <para>
     /// Money the order gave back before it completed — card refunds, their credit legs, dispute
     /// settlements in credit — takes back its <see cref="RevokeForRefundAsync"/> share at once:
-    /// <c>floor(earn × returned / order.TotalPrice)</c>, written as an
-    /// <see cref="LoyaltyEarnSource.OrderPartiallyRefunded"/> row beside the earn, so a refund before
+    /// <c>floor(earn × returned / order.TotalPrice)</c>, read under the customer's loyalty lock and written
+    /// as an <see cref="LoyaltyEarnSource.OrderPartiallyRefunded"/> row beside the earn, so a refund before
     /// completion and one after take back what the same two refunds would after it.
     /// </para>
     /// </summary>
@@ -42,28 +42,34 @@ public interface ILoyaltyService
 
     /// <summary>
     /// The loyalty clawback for one refund of a completed order — partial, full or a dispute's
-    /// settlement: revokes the same share of the order's <c>OrderCompleted</c> earn as the refund returned
-    /// of the price, <c>floor(earn.Points × amountReturned / order.TotalPrice)</c>, capped at what is left
-    /// of the earn after the order's earlier refunds. <paramref name="amountReturned"/> is everything the
-    /// refund gave back — the card leg plus the credit leg — because the earn was on the whole gross price;
-    /// a full refund passes the whole price and so takes everything that is left. It never reads the
-    /// currency's divisor, so a divisor edit after completion cannot move it. No-op when the order earned
-    /// nothing. → /product/business-rules#money-constants
+    /// settlement. It works on the order's running total: the target is the same share of the
+    /// <c>OrderCompleted</c> earn as the order has given back of its price in all,
+    /// <c>floor(earn.Points × returned / order.TotalPrice)</c>, and it revokes the target less what the
+    /// order's earlier refunds and its completion already took, so split refunds take what one refund of
+    /// their sum would. <c>returned</c> is every card refund, credit leg and dispute settlement in credit
+    /// the order has seen, this one included, and never less than <paramref name="amountReturned"/>:
+    /// everything this refund gave back, gross, because the earn was on the whole gross price. A full
+    /// refund passes the whole price and so takes everything that is left. It never reads the currency's
+    /// divisor, so a divisor edit after completion cannot move it. No-op when the order earned nothing.
+    /// It holds the customer's loyalty lock, so two refunds of one order cannot both take the same target.
+    /// → /product/business-rules#money-constants
     /// <para>
     /// Unlike <see cref="RevokeForCancelledOrderAsync"/> (a one-shot full mirror that no-ops on a
     /// second call), this is keyed per refund: each distinct <paramref name="refundKey"/> revokes,
     /// and the SAME key revokes at most once (idempotent — fast-path read on the key plus the filtered
     /// unique-index backstop that collapses a concurrent double-submit). <c>UserId == null</c>
     /// (anonymous/legacy) is a no-op, mirroring the earn and full-revoke skips. Every refund's row carries
-    /// <see cref="LoyaltyEarnSource.OrderPartiallyRefunded"/>, the one source the cap sums, so it never
-    /// collides with the cancel mirror's <c>(orderId, OrderCancelled)</c> guard.
+    /// <see cref="LoyaltyEarnSource.OrderPartiallyRefunded"/>, the one source what was already taken is
+    /// summed from, so it never collides with the cancel mirror's <c>(orderId, OrderCancelled)</c> guard.
     /// </para>
     /// <para>
     /// It flushes the unit of work to collapse a duplicate on the key, so a caller makes it the last write
     /// of its command: the flush then lands the command's whole unit, or discards a duplicate's whole unit.
     /// </para>
+    /// <para>True only when it revoked points and the flush landed them; false for every no-op and for a
+    /// duplicate collapsed on the key.</para>
     /// </summary>
-    Task RevokeForRefundAsync(
+    Task<bool> RevokeForRefundAsync(
         string orderId, decimal amountReturned, string refundKey, string actorId, CancellationToken cancellationToken);
 
     /// <summary>

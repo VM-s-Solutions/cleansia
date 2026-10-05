@@ -281,7 +281,7 @@
     "pay_line_type": {
       "job": "Zakázka",
       "cancellation_fee_share": "Podíl z poplatku za zrušení",
-      "lockout_fee_share": "Podíl z poplatku za znemožněný vstup"
+      "lockout_fee_share": "Odměna za zakázku — znemožněný vstup"
     }
   },
   "sidebar": {
@@ -714,7 +714,7 @@
         "lockout": {
           "action": "Potvrdit znemožněný vstup",
           "context": "Použijte, když uklízeč nahlásil, že se nemůže dostat dovnitř. Před potvrzením zkontrolujte fotografii vchodu a jeho pokusy o volání.",
-          "confirm": "Rezervace se zruší jako vstup znemožněný zákazníkem za plnou cenu. Objednávka placená kartou si ponechá platbu i uplatněný kredit; nezaplacená hotovostní rezervace přihlášeného zákazníka dluží plnou cenu jako pohledávku; host nedostane nic zpět a nic dalšího se mu neúčtuje. Tým dostane svůj podíl z poplatku, jakmile bude vybrán. Akci nelze vrátit zpět.",
+          "confirm": "Rezervace se zruší jako vstup znemožněný zákazníkem za plnou cenu. Objednávka placená kartou si ponechá platbu i uplatněný kredit; nezaplacená hotovostní rezervace přihlášeného zákazníka dluží plnou cenu jako pohledávku; host nedostane nic zpět a nic dalšího se mu neúčtuje. Každý uklízeč v týmu dostane plnou odměnu za zakázku, ať už zákazník zaplatí, nebo ne. Akci nelze vrátit zpět.",
           "submit": "Potvrdit znemožněný vstup",
           "success": "Objednávka byla zrušena jako znemožněný vstup za {{fee}}. {{receivable}}",
           "receivable_opened": "Zákazník dluží {{amount}}, zaznamenáno jako pohledávka.",
@@ -1614,8 +1614,8 @@
       "iso_alpha2_help": "ISO 3166-1 alpha-2. Zákazníci ho vidí na štítku trhu.",
       "market": "Trh",
       "insurance_coverage_amount": "Pojistné krytí na jednu rezervaci",
-      "insurance_coverage_amount_placeholder": "Nechte prázdné, pokud se nemá uvádět žádná částka",
-      "insurance_coverage_amount_help": "Částka ve výchozí měně země, zobrazená v textech pro zákazníky. Prázdné znamená, že text žádnou částku neuvádí.",
+      "insurance_coverage_amount_placeholder": "Nechte prázdné, aby se pojištění neuvádělo",
+      "insurance_coverage_amount_help": "Částka ve výchozí měně země. S částkou zákaznické aplikace uvádějí, že jsou uklízeči pojištěni do této výše. Prázdné: aplikace neuvádějí, že jsou uklízeči pojištěni.",
       "market_content_unavailable": "Dostupné, jakmile bude mít země konfiguraci."
     },
     "currency_management": {
@@ -1975,7 +1975,8 @@
         "retention": "Uchovávání dat",
         "lifecycle": "Životní cyklus společnosti",
         "notifications": "Notifikace",
-        "cash": "Hotovost u uklízečů"
+        "cash": "Hotovost u uklízečů",
+        "pay": "Odměny uklízečů"
       },
       "descriptions": {
         "retention": {
@@ -2031,6 +2032,9 @@
         "cash": {
           "float_cap": "Nejvyšší částka hotovosti, kterou smí uklízeč držet v jedné měně; nad ní se mu hotovostní zakázky skryjí a uvidí proč. 0 znamená bez limitu",
           "remittance_request_days": "Počet dní, po které smí uklízeč držet hotovost, jež mu zůstala po uzávěrce platebního období, než bude požádán o její odevzdání (1–365)"
+        },
+        "pay": {
+          "extras_share_percent": "Procento z cen doplňků objednaných zákazníkem, které se přičte k odměně uklízečů za zakázku; dělí se rovným dílem mezi místa a pevně se určí, když uklízeč zakázku přijme (0–100)"
         }
       }
     },
@@ -3261,7 +3265,10 @@
       "weekly_limit_invalid": "Týdenní limit zakázek musí být alespoň 1, nebo prázdný pro neomezený počet",
       "work_country_operator_mismatch": "Pracovní země patří jiné provozní společnosti.",
       "weekly_limit_reason_required": "Napište, proč tohoto uklízeče omezujete. Důvod se mu zobrazí.",
-      "legal_documents_not_accepted": "Tento uklízeč zatím nepřijal aktuální verzi všech smluvních dokumentů platných pro zemi výkonu jeho práce."
+      "legal_documents_not_accepted": "Tento uklízeč zatím nepřijal aktuální verzi všech smluvních dokumentů platných pro zemi výkonu jeho práce.",
+      "business_ceased": "Podle registru ARES podnikání tohoto uklízeče (IČO) zaniklo, proto ho nelze schválit.",
+      "trade_licence_inactive": "Podle registru ARES nemá tento uklízeč platné živnostenské oprávnění, proto ho nelze schválit.",
+      "business_registry_unavailable": "Registr ARES se nepodařilo kontaktovat, takže IČO tohoto uklízeče nelze ověřit. Zkuste schválení zopakovat za několik minut."
     },
     "employee_document": {
       "deletion_already_resolved": "Tato žádost o smazání již byla vyřízena.",
@@ -3545,6 +3552,9 @@
         "looks_like_card": "Vypadá to jako číslo platební karty. Zadejte místo toho číslo bankovního účtu.",
         "scheme_not_supported": "Výplaty na tento typ účtu zatím nejsou podporovány",
         "swift_required": "Banka je v jiné zemi, než ve které partner pracuje, proto je nutný také SWIFT/BIC kód banky."
+      },
+      "registration_number": {
+        "not_registered": "Toto IČO není v registru ekonomických subjektů (ARES). Zkontrolujte číslo."
       }
     },
     "review": {

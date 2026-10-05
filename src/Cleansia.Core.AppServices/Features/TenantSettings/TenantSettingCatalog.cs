@@ -11,7 +11,8 @@ namespace Cleansia.Core.AppServices.Features.TenantSettings;
 /// administrator (ADR-0065 D3) — empty, its default, means every administrator. The cash entries are the
 /// cash a cleaner may hold before cash jobs are hidden from them — 0, its default, is no cap — and the
 /// days a balance carried past a pay-period close may last before the cleaner is asked to hand it over
-/// (owner ruling 2026-09-28, decisions 23 and 25).
+/// (owner ruling 2026-09-28, decisions 23 and 25). The pay entry is the share of the extras' prices a job pays
+/// its crew (owner decision 2026-10-04).
 /// </summary>
 public static class TenantSettingCatalog
 {
@@ -23,6 +24,8 @@ public static class TenantSettingCatalog
 
     public const string CashCategory = "cash";
 
+    public const string PayCategory = "pay";
+
     public const string ChargebackHorizonDaysKey = "lifecycle.chargeback_horizon_days";
 
     public const string AdminNotificationEmailKey = "notifications.admin_email";
@@ -31,9 +34,13 @@ public static class TenantSettingCatalog
 
     public const string CashRemittanceRequestDaysKey = "cash.remittance_request_days";
 
+    public const string ExtrasSharePercentKey = "pay.extras_share_percent";
+
     public const int DefaultCashRemittanceRequestDays = 30;
     private const int MaxCashFloatCap = 10_000_000;
     private const int MaxCashRemittanceRequestDays = 365;
+
+    public const int DefaultExtrasSharePercent = 50;
 
     // Card networks let a cardholder dispute a charge for 120 days and longer on some reason codes; a
     // chargeback on a sealed company is a books event the freeze would refuse, so the archive waits.
@@ -102,6 +109,9 @@ public static class TenantSettingCatalog
     public static readonly IntTenantSetting CashRemittanceRequestDays = new(
         CashRemittanceRequestDaysKey, CashCategory, DefaultCashRemittanceRequestDays, min: 1, max: MaxCashRemittanceRequestDays);
 
+    public static readonly IntTenantSetting ExtrasSharePercent = new(
+        ExtrasSharePercentKey, PayCategory, DefaultExtrasSharePercent, min: 0, max: 100);
+
     public static readonly IReadOnlyList<TenantSettingDefinition> All =
     [
         ExpiredCodesEnabled,
@@ -122,6 +132,7 @@ public static class TenantSettingCatalog
         AdminNotificationEmail,
         CashFloatCap,
         CashRemittanceRequestDays,
+        ExtrasSharePercent,
     ];
 
     private static readonly IReadOnlyDictionary<string, TenantSettingDefinition> ByKey =

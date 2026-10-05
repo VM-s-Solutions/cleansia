@@ -406,8 +406,9 @@ same slot states the When step draws, at three moments:
   inactive, such as Control Center. It is the shell's `scenePhase` because inside a sheet it stops
   updating on iOS 16. The check changes nothing while the time holds, so the two triggers come to the
   same.
-- **Just before submit**, in `submit()` and in the submit that follows a card guarantee, before
-  anything is sent: no profile read, no quote, no card capture, no order.
+- **Just before submit**, in `submit()`, before anything is sent: no profile read, no quote, no order.
+  (Until 2026-10-04 it also ran in the submit that followed a cash booking's card capture, which is
+  gone.)
 
 The time holds while the When step still offers it, which means its day is not past and it is not
 inside the 2 h lead time, and while it is in the band it was in when its price was quoted. That moment

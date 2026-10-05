@@ -908,7 +908,8 @@
       "date_must_be_in_past": "Dátum musí byť v minulosti",
       "invalid_age": "Neplatný vek",
       "registration_number": {
-        "invalid_format": "Neplatný formát IČO pre vybranú krajinu"
+        "invalid_format": "Neplatný formát IČO pre vybranú krajinu",
+        "not_registered": "Toto IČO nie je v registri ekonomických subjektov (ARES). Skontrolujte číslo."
       },
       "must_be_positive": "Hodnota musí byť kladná",
       "page_size_exceeded": "Veľkosť stránky nesmie prekročiť 100",
@@ -1220,7 +1221,7 @@
     "pay_line_type": {
       "job": "Zákazka",
       "cancellation_fee_share": "Váš podiel z poplatku za neskoré zrušenie",
-      "lockout_fee_share": "Váš podiel z poplatku za neumožnený prístup"
+      "lockout_fee_share": "Vaša odmena za zákazku — zákazník vás nepustil dnu"
     }
   },
   "help": {

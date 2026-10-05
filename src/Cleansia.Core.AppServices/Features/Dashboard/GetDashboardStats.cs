@@ -6,7 +6,9 @@ using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.AppServices.Extensions;
 using Cleansia.Core.AppServices.Features.Dashboard.DTOs;
 using Cleansia.Core.AppServices.Features.Orders;
+using Cleansia.Core.AppServices.Features.TenantSettings;
 using Cleansia.Core.AppServices.Services.Interfaces;
+using Cleansia.Core.Domain.Configuration;
 using Cleansia.Core.Domain.EmployeePayroll;
 using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Repositories;
@@ -26,7 +28,8 @@ public class GetDashboardStats
         IPayPeriodRepository payPeriodRepository,
         IOrderAccessService orderAccessService,
         ICurrencyResolutionService currencyResolutionService,
-        IUserSessionProvider userSessionProvider)
+        IUserSessionProvider userSessionProvider,
+        IAppConfigurationProvider configurationProvider)
         : IQueryHandler<Query, DashboardStatsDto>
     {
         // Payroll runs ~5 business days after the period closes. Sane default
@@ -147,6 +150,7 @@ public class GetDashboardStats
             IReadOnlyList<EmployeePayConfig> packageConfigs = Array.Empty<EmployeePayConfig>();
             IReadOnlyDictionary<string, decimal> bookedPayByOrderId =
                 new Dictionary<string, decimal>(0);
+            var extrasSharePercent = 0;
             if (allCompletedOrders.Count > 0)
             {
                 // Every order left is in the display currency, so only its rates are needed.
@@ -165,13 +169,15 @@ public class GetDashboardStats
                 var allOrderIds = allCompletedOrders.Select(o => o.Id).ToList();
                 bookedPayByOrderId = await orderEmployeePayRepository.GetTotalPayByOrderIdsAsync(
                     allOrderIds, employeeId, cancellationToken);
+                extrasSharePercent = await configurationProvider.GetAsync(
+                    TenantSettingCatalog.ExtrasSharePercent, cancellationToken);
             }
 
             decimal SumWindow(IEnumerable<Cleansia.Core.Domain.Orders.Order> windowOrders) => windowOrders.Sum(o =>
                 bookedPayByOrderId.TryGetValue(o.Id, out var booked)
                     ? booked
                     : OrderPayEstimator.ContractReward(o, employeeId)
-                        ?? OrderPayEstimator.Estimate(o, employeeId, serviceConfigs, packageConfigs)
+                        ?? OrderPayEstimator.Estimate(o, employeeId, serviceConfigs, packageConfigs, extrasSharePercent)
                         ?? 0m);
 
             var todayEarnings = SumWindow(todayCompletedOrderRows);

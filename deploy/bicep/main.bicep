@@ -595,6 +595,10 @@ var apiBaseSettings = union({
   // /architecture/request-logging documents that as load-bearing in both directions. Prod stays at
   // Warning regardless.
   Logging__LogLevel__Cleansia: env == 'prod' ? 'Warning' : 'Information'
+  // The ARES business-register check (/product/business-rules#business-register) defaults on, and the
+  // Development settings that switch it off never load here, because every deployed host runs as
+  // Production. DEV skips it so test cleaners with made-up IČOs can be approved (owner default).
+  Ares__Enabled: env == 'prod' ? 'true' : 'false'
 }, storageSettings, sendGridSettings, containerStartSettings)
 
 // FCM push dispatch — the Functions queue consumer is the ONLY dispatcher; FcmPushDispatcher is a

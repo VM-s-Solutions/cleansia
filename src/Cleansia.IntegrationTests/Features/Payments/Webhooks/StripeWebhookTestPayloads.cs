@@ -54,6 +54,38 @@ internal static class StripeWebhookTestPayloads
         """;
     }
 
+    /// <summary>A customer's pay link for a receivable, paid: a payment session naming the receivable only.</summary>
+    public static string ReceivablePayLinkCompletedBody(string eventId, string receivableId, string paymentIntentId)
+    {
+        var created = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
+        return $$"""
+        {
+          "id": "{{eventId}}",
+          "object": "event",
+          "api_version": "2024-06-20",
+          "type": "checkout.session.completed",
+          "created": {{created}},
+          "livemode": false,
+          "pending_webhooks": 0,
+          "request": null,
+          "data": {
+            "object": {
+              "id": "cs_test_pay_link",
+              "object": "checkout.session",
+              "payment_status": "paid",
+              "status": "complete",
+              "mode": "payment",
+              "payment_intent": "{{paymentIntentId}}",
+              "metadata": {
+                "ReceivableId": "{{receivableId}}"
+              }
+            },
+            "previous_attributes": null
+          }
+        }
+        """;
+    }
+
     public static string SubscriptionCreatedBody(
         string eventId, string subscriptionId, string userId, string planCode, string currency = "czk")
     {

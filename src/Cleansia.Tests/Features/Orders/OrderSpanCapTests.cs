@@ -309,7 +309,7 @@ public class OrderSpanCapTests
             CreateOrderTestData.Speaking(Constants.Language.English),
             Mock.Of<ICountryConfigurationRepository>(),
             Mock.Of<ILegalDocumentResolver>(),
-            SavedCards.SavedCardDoubles.Guaranteed(), Mock.Of<IReceivableRepository>());
+            Mock.Of<IReceivableRepository>());
 
     /// <summary>Anonymous, so the factory stays off the loyalty/membership lookups.</summary>
     private static CreateOrderInput Input() =>

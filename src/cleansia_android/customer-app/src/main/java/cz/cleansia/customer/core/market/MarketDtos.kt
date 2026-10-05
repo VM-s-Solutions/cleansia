@@ -22,7 +22,7 @@ data class MarketListItem(
     val isDefault: Boolean,
     /** Apology credit paid on a no-show in this market's currency; null = none authored. */
     val noShowCredit: Double? = null,
-    /** Insurance ceiling stated in customer copy, in [currencyCode]; null = the no-figure copy renders. */
+    /** Insurance ceiling stated in customer copy, in [currencyCode]; null = no insurance claim renders. */
     val insuranceCoverageAmount: Double? = null,
 )
 

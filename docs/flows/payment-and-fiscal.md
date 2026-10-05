@@ -2,9 +2,10 @@
 
 Money arrives and is recorded on the payment axis — the order stays `New` until a cleaner takes it —
 and a receipt is issued once money has been received: on settlement for card, at completion for cash,
-after the cleaner has recorded the handover. The same webhook also lands a card a customer saves as the
-guarantee for cash, at a cash booking or by a tick while paying by card, and settles what a customer
-owes after the booking, which earns a receipt of its own. Almost all of the difficulty is
+after the cleaner has recorded the handover. The same webhook also lands a card a customer chooses to
+save, by a tick while paying by card or, on iOS, from Profile → Payments; since 2026-10-04 the card is
+optional, guarantees nothing and is charged only when the customer pays with it. And it settles what a
+customer owes after the booking, which earns a receipt of its own. Almost all of the difficulty is
 in making a webhook that can arrive twice, late, or out of order behave as though it arrived once.
 
 ## The path
@@ -74,7 +75,7 @@ pass the same signature check and event-id stamp.
 
 | Event | What happens |
 |---|---|
-| `setup_intent.succeeded`, or `checkout.session.completed` of a setup-mode session | The saved card lands: brand, last four and expiry are read from Stripe onto the `SavedCards` row the capture started, and the customer's earlier card in that currency is retired. A second event for the same capture — a web capture raises both — changes nothing; one naming no saved card, or one already captured or removed, is ignored. → [Business rules — a saved card guarantees cash](/product/business-rules#card-guarantee) |
+| `setup_intent.succeeded`, or `checkout.session.completed` of a setup-mode session | The saved card lands: brand, last four and expiry are read from Stripe onto the `SavedCards` row the capture started, and the customer's earlier card in that currency is retired. A second event for the same capture — a web capture raises both — changes nothing; one naming no saved card, or one already captured or removed, is ignored. Since 2026-10-04 only iOS's *Save a card* under Profile → Payments starts such a capture: the cash path no longer captures a card on any client. → [Business rules — the saved cards](/product/business-rules#saved-cards) |
 | `checkout.session.completed` of a booking's payment-mode session, or `payment_intent.succeeded`, carrying `SavedCardId` | The card the customer ticked to keep lands the same way, read from the PaymentIntent and only when it succeeded with `setup_future_usage=off_session`. **Which event then settles the order depends on the channel.** An app's intent carries the `OrderId` as well, so its `payment_intent.succeeded` goes on to the order and settles it like any card payment. A web payment raises both events, and the PaymentIntent behind the web's Checkout Session carries `SavedCardId` but no `OrderId`: whichever event arrives first lands the card and the second finds it already captured, but only `checkout.session.completed` settles the web order — the intent's event lands the card and stops there. → [Business rules — saving a card while paying](/product/business-rules#save-card) |
 | `checkout.session.completed` of a receivable's pay link | The receivable is paid, under its own company. The session names the receivable (`ReceivableId`) and **never an `OrderId`**, so the order path cannot mistake the fee for the booking's sale; the order's payment status, charge surface and refunds are untouched. |
 | `payment_intent.succeeded` of an off-session charge | The same, for a charge on the saved card. |
@@ -122,14 +123,16 @@ cancels the old one with Stripe's reason `duplicate`; that cancellation leaves t
 edge case above), and an old intent Stripe will not cancel — one already paid, say — refuses the new
 one with `order.payment_gateway_unavailable` rather than risk a second charge.
 
-A paid receivable asks for its [fee receipt](#fee-receipt) and, when it is a cancellation or lockout
-fee, for the crew's share of it → [Business rules — what a customer owes](/product/business-rules#receivables).
+A paid receivable asks for its [fee receipt](#fee-receipt) and, when it is a cash-cancellation fee, for
+the crew's share of it → [Business rules — what a customer owes](/product/business-rules#receivables).
+A lockout's crew is paid its full reward at the confirmation, not from the receivable
+([Business rules — a confirmed lockout pays the seat's reward](/product/business-rules#lockout-pay)).
 
 **The off-session charges stay switched off.** Only the customer's own pay link moves money on a
 receivable today: `ChargeOpenReceivables` (every 15 minutes) does nothing unless
-`Payments:OffSessionChargesEnabled` is true, and it stays false until the phase-4 terms carry the
-lawyer's consent wording. The failure branch above is dormant until then. When it is on, the charge is
-a PaymentIntent with `off_session` and `confirm` on the saved card, keyed on the receivable and its
+`Payments:OffSessionChargesEnabled` is true, and it stays false: since 2026-10-04 no card is charged
+(owner ruling). The code is kept, and the failure branch above is dormant. When it is on, the charge
+is a PaymentIntent with `off_session` and `confirm` on the saved card, keyed on the receivable and its
 attempt; the sweep closes a pay link the customer holds before it charges, and does not charge one
 they have already paid through it.
 

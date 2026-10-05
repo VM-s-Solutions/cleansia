@@ -1,7 +1,9 @@
 using System.Security.Claims;
 using Cleansia.Core.AppServices.Authentication;
 using Cleansia.Core.AppServices.Features.Orders;
+using Cleansia.Core.AppServices.Features.TenantSettings;
 using Cleansia.Core.AppServices.Services.Interfaces;
+using Cleansia.Core.Domain.Configuration;
 using Cleansia.Core.Domain.Contracts;
 using Cleansia.Core.Domain.EmployeePayroll;
 using Cleansia.Core.Domain.Enums;
@@ -35,6 +37,7 @@ public sealed class GetOrderDetailsWorkContractTests
     private readonly Mock<IOrderPhotoRepository> _orderPhotoRepository = new();
     private readonly Mock<IWorkContractAcceptanceRepository> _acceptanceRepository = new();
     private readonly Mock<IExpressWaiverConsumer> _expressWaiverConsumer = ExpressWaiverMocks.NoConsumer();
+    private readonly Mock<IAppConfigurationProvider> _configurationProvider = new();
 
     private GetOrderDetails.Handler CreateHandler() =>
         new(
@@ -50,7 +53,8 @@ public sealed class GetOrderDetailsWorkContractTests
             Mock.Of<IUserMembershipRepository>(),
             _acceptanceRepository.Object,
             Mock.Of<IEmployeeActionAuditRepository>(),
-            new Cleansia.Core.AppServices.Services.CancellationPolicyResolver(Mock.Of<IUserMembershipRepository>(), Mock.Of<IOrderRepository>()));
+            new Cleansia.Core.AppServices.Services.CancellationPolicyResolver(Mock.Of<IUserMembershipRepository>(), Mock.Of<IOrderRepository>()),
+            _configurationProvider.Object);
 
     private (Order Order, OrderEmployee Seat) ArrangeEmployeeCaller(string caller, bool entitled)
     {
@@ -168,5 +172,29 @@ public sealed class GetOrderDetailsWorkContractTests
 
         Assert.True(result.IsSuccess, result.Error?.Message);
         Assert.Equal((decimal)expectedPay, result.Value!.EstimatedCleanerPay);
+    }
+
+    /// <summary>
+    /// A cleaner browsing a job with 300 of extras, at the company's 40 % share, is quoted 700 + 120 = 820,
+    /// the reward the contract for work would state at the take.
+    /// </summary>
+    [Fact]
+    public async Task A_Browsing_Cleaner_Is_Quoted_The_Companys_Share_Of_The_Extras_Booked()
+    {
+        var (order, _) = ArrangeEmployeeCaller(BrowserEmployeeId, entitled: false);
+        var service = Service.Create("cat-1", "Standard clean", "Regular");
+        order.AddSelectedServices([OrderService.Create(order, service, 1000m, 0m, 1000m)]);
+        order.AddSelectedExtras([OrderExtra.Create(order, Extra.Create("windows", "Windows", null), 300m)]);
+        _payConfigRepository
+            .Setup(r => r.GetServiceConfigsForOrderAsync(It.IsAny<IEnumerable<string>>(), BrowserEmployeeId, It.IsAny<IReadOnlyCollection<string>>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync([EmployeePayConfig.CreateForService(service.Id, 700m, order.CurrencyId)]);
+        _configurationProvider
+            .Setup(c => c.GetTenantSettingAsync(TenantSettingCatalog.ExtrasSharePercentKey, It.IsAny<CancellationToken>()))
+            .ReturnsAsync("40");
+
+        var result = await CreateHandler().Handle(new GetOrderDetails.Query(OrderId), CancellationToken.None);
+
+        Assert.True(result.IsSuccess, result.Error?.Message);
+        Assert.Equal(820m, result.Value!.EstimatedCleanerPay);
     }
 }

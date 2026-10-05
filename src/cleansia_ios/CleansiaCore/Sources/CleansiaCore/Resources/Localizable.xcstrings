@@ -4129,41 +4129,6 @@
         }
       }
     },
-    "error.order.cash_requires_saved_card": {
-      "extractionState": "manual",
-      "localizations": {
-        "cs": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Pro platbu v hotovosti si nejdřív uložte kartu jako záruku — nebo zaplaťte kartou."
-          }
-        },
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "To pay in cash, first save a card as a guarantee — or pay by card."
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Чтобы платить наличными, сначала сохраните карту как гарантию — или оплатите картой."
-          }
-        },
-        "sk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Na platbu v hotovosti si najprv uložte kartu ako záruku — alebo zaplaťte kartou."
-          }
-        },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Щоб платити готівкою, спершу збережіть картку як гарантію — або оплатіть карткою."
-          }
-        }
-      }
-    },
     "error.order.cash_open_bookings_limit_reached": {
       "extractionState": "manual",
       "localizations": {
@@ -4240,31 +4205,31 @@
         "cs": {
           "stringUnit": {
             "state": "translated",
-            "value": "Před uložením karty prosím potvrďte souhlas, že na ni mohou být účtovány poplatky a nezaplacená hotovost."
+            "value": "Před uložením karty prosím zaškrtněte souhlas s jejím uložením."
           }
         },
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Please agree that fees and unpaid cash may be charged to your card before saving it."
+            "value": "Please tick the box agreeing to save your card before saving it."
           }
         },
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Прежде чем сохранить карту, согласитесь, что с неё могут списываться сборы и неоплаченные наличные."
+            "value": "Прежде чем сохранить карту, отметьте согласие на её сохранение."
           }
         },
         "sk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Pred uložením karty prosím potvrďte súhlas, že na ňu môžu byť účtované poplatky a nezaplatená hotovosť."
+            "value": "Pred uložením karty prosím zaškrtnite súhlas s jej uložením."
           }
         },
         "uk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Перш ніж зберегти картку, погодьтеся, що з неї можуть стягуватися збори та неоплачена готівка."
+            "value": "Перш ніж зберегти картку, позначте згоду на її збереження."
           }
         }
       }
@@ -8111,6 +8076,41 @@
           "stringUnit": {
             "state": "translated",
             "value": "Введіть дійсний реєстраційний номер компанії для обраної країни."
+          }
+        }
+      }
+    },
+    "error.validation.registration_number.not_registered": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Toto IČO není v registru ekonomických subjektů (ARES). Zkontrolujte číslo."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This company ID (IČO) is not in the business register (ARES). Check the number."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Этого идентификационного номера (IČO) нет в реестре экономических субъектов (ARES). Проверьте номер."
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Toto IČO nie je v registri ekonomických subjektov (ARES). Skontrolujte číslo."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Цього ідентифікаційного номера (IČO) немає в реєстрі економічних суб'єктів (ARES). Перевірте номер."
           }
         }
       }

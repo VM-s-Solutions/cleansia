@@ -184,10 +184,18 @@ public class AdminCancelOrderAsLockoutTests
         Assert.Equal(PaymentStatus.Pending, order.PaymentStatus);
     }
 
-    [Fact]
-    public async Task A_Card_Order_Whose_Payment_Is_Kept_Asks_For_The_Crews_Share_Of_The_Fee()
+    /// <summary>
+    /// Owner decision 2026-10-04: the crew is paid its reward once the lockout is confirmed, whether the
+    /// payment was kept, the price is still owed on a receivable, or a guest's cash booking owes nothing.
+    /// </summary>
+    [Theory]
+    [InlineData(PaymentType.Card, PaymentStatus.Paid, CustomerId)]
+    [InlineData(PaymentType.Cash, PaymentStatus.Pending, CustomerId)]
+    [InlineData(PaymentType.Cash, PaymentStatus.Pending, null)]
+    public async Task The_Confirmation_Asks_For_The_Crews_Reward_At_Once(
+        PaymentType paymentType, PaymentStatus paymentStatus, string? userId)
     {
-        ArrangeOrder();
+        ArrangeOrder(status: OrderStatus.Confirmed, paymentType: paymentType, paymentStatus: paymentStatus, userId: userId);
 
         await ConfirmAsync();
 
@@ -196,19 +204,6 @@ public class AdminCancelOrderAsLockoutTests
             It.Is<QueueEnvelope<CalculateOrderPayMessage>>(e => e.TenantId == TenantId
                 && e.Payload.OrderId == OrderId && e.Payload.EmployeeId == EmployeeId),
             MessageKeys.Pay(OrderId, EmployeeId)), Times.Once);
-    }
-
-    [Fact]
-    public async Task An_Unpaid_Cash_Booking_Asks_For_No_Share_While_Its_Lockout_Fee_Is_Owed()
-    {
-        ArrangeOrder(status: OrderStatus.Confirmed, paymentType: PaymentType.Cash, paymentStatus: PaymentStatus.Pending);
-
-        await ConfirmAsync();
-
-        Assert.Single(_opened);
-        _pending.Verify(p => p.Enqueue(
-            QueueNames.CalculateOrderPay, It.IsAny<QueueEnvelope<CalculateOrderPayMessage>>(), It.IsAny<string>()),
-            Times.Never);
     }
 
     [Fact]

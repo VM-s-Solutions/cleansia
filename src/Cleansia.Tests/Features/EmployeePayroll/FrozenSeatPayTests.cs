@@ -1,7 +1,9 @@
 using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.AppServices.Features.EmployeePayroll;
 using Cleansia.Core.AppServices.Features.Orders;
+using Cleansia.Core.AppServices.Features.TenantSettings;
 using Cleansia.Core.AppServices.Services;
+using Cleansia.Core.Domain.Configuration;
 using Cleansia.Core.Domain.EmployeePayroll;
 using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Orders;
@@ -36,8 +38,10 @@ public class FrozenSeatPayTests
     private readonly Mock<IEmployeePayConfigRepository> _payConfigs = new();
     private readonly Mock<IPayPeriodRepository> _payPeriods = new();
     private readonly Mock<IOrderEmployeePayRepository> _pays = new();
+    private readonly Mock<IAppConfigurationProvider> _configuration = new();
     private readonly List<OrderEmployeePay> _written = [];
     private IReadOnlyList<EmployeePayConfig> _rates = [];
+    private string? _extrasSharePercent;
 
     public FrozenSeatPayTests()
     {
@@ -53,6 +57,9 @@ public class FrozenSeatPayTests
             .Setup(r => r.GetActivePeriodAsync(It.IsAny<CancellationToken>()))
             .ReturnsAsync(PayPeriod.CreateBiWeekly(DateOnly.FromDateTime(DateTime.UtcNow.Date.AddDays(-3))));
         _pays.Setup(r => r.Add(It.IsAny<OrderEmployeePay>())).Callback<OrderEmployeePay>(_written.Add);
+        _configuration
+            .Setup(c => c.GetTenantSettingAsync(TenantSettingCatalog.ExtrasSharePercentKey, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(() => _extrasSharePercent);
     }
 
     private static IReadOnlyList<EmployeePayConfig> RatesAtTheTake()
@@ -105,7 +112,7 @@ public class FrozenSeatPayTests
     /// <summary>What the acceptor does at the take: price the contract and freeze its figures on the seat.</summary>
     private async Task<decimal> TakeAsync(Order order, string employeeId)
     {
-        var (facts, jobPay) = (await new WorkContractFactsBuilder(_orders.Object, _payConfigs.Object)
+        var (facts, jobPay) = (await new WorkContractFactsBuilder(_orders.Object, _payConfigs.Object, _configuration.Object)
             .BuildAsync(OrderId, employeeId, CancellationToken.None))!.Value;
         Seat(order, employeeId).FreezeJobPay(jobPay!.Value);
         return facts.TotalPrice;
@@ -120,7 +127,8 @@ public class FrozenSeatPayTests
             _pays.Object,
             Mock.Of<IReceivableRepository>(),
             Mock.Of<IRefundRepository>(),
-            Mock.Of<ICreditAccountRepository>());
+            Mock.Of<ICreditAccountRepository>(),
+            _configuration.Object);
 
         var result = await handler.Handle(new CalculateOrderPay.Command(OrderId, employeeId), CancellationToken.None);
 
@@ -211,6 +219,45 @@ public class FrozenSeatPayTests
 
         Assert.Equal(1100m, pay.TotalPay);
     }
+
+    /// <summary>
+    /// Owner decision 2026-10-04: an extra booked at 400 pays half its price, 200, inside the job's extras. At
+    /// the re-grade's unbounded rates the job is 600 + 200 + 200 = 1 000, heavy adds 300, so the contract states
+    /// 1 300; the company lowering its share to 0 after the take does not reprice the seat.
+    /// </summary>
+    [Fact]
+    public async Task The_Extras_Booked_Are_Frozen_At_The_Take_And_Paid_As_The_Contract_States()
+    {
+        var order = ArrangeCompletedOrder(BookedHeavyRate, CleanerId);
+        BookExtra(order, 400m);
+        _rates = RatesAfterTheRegrade();
+        var contractReward = await TakeAsync(order, CleanerId);
+
+        _extrasSharePercent = "0";
+        var pay = await PayAsync(CleanerId);
+
+        Assert.Equal(1300m, contractReward);
+        Assert.Equal((600m, 400m, 300m, 1300m), (pay.BasePay, pay.ExtrasPay, pay.DirtinessPay, pay.TotalPay));
+    }
+
+    /// <summary>
+    /// At a 25 % share the extra booked at 400 pays 100: 600 + 200 + 100 = 900, heavy adds 270, 1 170.
+    /// </summary>
+    [Fact]
+    public async Task A_Seat_With_No_Contract_Is_Paid_The_Extras_Booked_At_The_Share_In_Force()
+    {
+        var order = ArrangeCompletedOrder(BookedHeavyRate, CleanerId);
+        BookExtra(order, 400m);
+        _extrasSharePercent = "25";
+
+        _rates = RatesAfterTheRegrade();
+        var pay = await PayAsync(CleanerId);
+
+        Assert.Equal((600m, 300m, 270m, 1170m), (pay.BasePay, pay.ExtrasPay, pay.DirtinessPay, pay.TotalPay));
+    }
+
+    private static void BookExtra(Order order, decimal price) =>
+        order.AddSelectedExtras([OrderExtra.Create(order, Extra.Create("inside-oven", "Inside oven", null), price)]);
 
     [Fact]
     public async Task A_Seat_Paid_From_Its_Contract_Needs_No_Rate_Today()

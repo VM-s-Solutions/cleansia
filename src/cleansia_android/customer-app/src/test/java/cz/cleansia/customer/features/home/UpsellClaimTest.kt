@@ -93,21 +93,21 @@ class UpsellClaimTest {
         "home_trust_vetted",
         "booking_trust_vetted",
         "home_hero_slide1_subtitle",
+        "home_trust_insured",
+        "booking_trust_insured_no_figure",
+        "help_faq_a3_no_figure",
     )
 
-    /** No cleaner is background-checked: approval asks for an identity card and an insurance certificate. */
+    /** No cleaner is background-checked. */
     private val vettingClaim = Regex(
         "vetted|background|prověř|prever|перевірен|перевірк|проверен",
         RegexOption.IGNORE_CASE,
     )
 
     private val trustKeys = listOf(
-        "home_trust_insured",
         "booking_trust_insured",
-        "booking_trust_insured_no_figure",
         "help_faq_q3",
         "help_faq_a3",
-        "help_faq_a3_no_figure",
     )
 
     private val cancelStem = mapOf(

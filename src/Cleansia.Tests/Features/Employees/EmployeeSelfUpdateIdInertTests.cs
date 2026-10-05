@@ -74,7 +74,8 @@ public class EmployeeSelfUpdateIdInertTests
         new UpdateEmergencyContact.Command(employeeId, "ICE", "+420777000000"));
 
     private Task<ValidationResult> ValidateIdentificationInfoAsync(string? employeeId) => ValidateAsync(
-        new UpdateIdentificationInfo.Validator(_countries.Object, _employees.Object, _session.Object, _taxIds.Object),
+        new UpdateIdentificationInfo.Validator(
+            _countries.Object, _employees.Object, _session.Object, _taxIds.Object, BusinessRegistryDoubles.NotConsulted()),
         new UpdateIdentificationInfo.Command(
             employeeId, CountryId, "AB12345", EmployeeEntityType.NaturalPerson, CountryId, "12345678", null));
 

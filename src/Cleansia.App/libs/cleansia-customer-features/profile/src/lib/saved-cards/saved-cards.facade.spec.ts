@@ -1,11 +1,5 @@
 import { TestBed } from '@angular/core/testing';
-import { Router } from '@angular/router';
-import {
-  CustomerClient,
-  rememberCardSetupReturnUrl,
-  RemoveSavedCardResponse,
-  SavedCardDto,
-} from '@cleansia/customer-services';
+import { CustomerClient, RemoveSavedCardResponse, SavedCardDto } from '@cleansia/customer-services';
 import { SnackbarService } from '@cleansia/services';
 import { of, Subject, throwError } from 'rxjs';
 import { SavedCardsFacade } from './saved-cards.facade';
@@ -14,7 +8,6 @@ describe('SavedCardsFacade', () => {
   let facade: SavedCardsFacade;
   let savedCardClient: { getMine: jest.Mock; remove: jest.Mock };
   let snackbar: { showSuccessTranslated: jest.Mock; showInfoTranslated: jest.Mock };
-  let router: { navigateByUrl: jest.Mock };
 
   const visa = SavedCardDto.fromJS({
     id: 'card-1',
@@ -31,15 +24,12 @@ describe('SavedCardsFacade', () => {
       remove: jest.fn().mockReturnValue(of(RemoveSavedCardResponse.fromJS({ savedCardId: 'card-1' }))),
     };
     snackbar = { showSuccessTranslated: jest.fn(), showInfoTranslated: jest.fn() };
-    router = { navigateByUrl: jest.fn().mockResolvedValue(true) };
-    sessionStorage.clear();
 
     TestBed.configureTestingModule({
       providers: [
         SavedCardsFacade,
         { provide: CustomerClient, useValue: { savedCardClient } },
         { provide: SnackbarService, useValue: snackbar },
-        { provide: Router, useValue: router },
       ],
     });
 
@@ -129,40 +119,26 @@ describe('SavedCardsFacade', () => {
     });
   });
 
-  describe('the return from the card-capture step', () => {
-    it('says the card is saved and goes back to the page the capture started from', () => {
-      rememberCardSetupReturnUrl('/order');
-
+  describe("the return from Stripe's card setup", () => {
+    it('says the card is saved and lists the cards', () => {
       facade.init('success');
 
       expect(snackbar.showSuccessTranslated).toHaveBeenCalledWith('pages.profile.saved_cards.setup_success');
-      expect(router.navigateByUrl).toHaveBeenCalledWith('/order', { replaceUrl: true });
-      expect(savedCardClient.getMine).not.toHaveBeenCalled();
-    });
-
-    it('says no card was saved and goes back to the schedule the capture started from', () => {
-      rememberCardSetupReturnUrl('/membership/recurring/create');
-
-      facade.init('cancel');
-
-      expect(snackbar.showInfoTranslated).toHaveBeenCalledWith('pages.profile.saved_cards.setup_cancelled');
-      expect(router.navigateByUrl).toHaveBeenCalledWith('/membership/recurring/create', { replaceUrl: true });
-    });
-
-    it('stays on the profile and lists the cards when no page was remembered', () => {
-      facade.init('success');
-
-      expect(snackbar.showSuccessTranslated).toHaveBeenCalledWith('pages.profile.saved_cards.setup_success');
-      expect(router.navigateByUrl).not.toHaveBeenCalled();
       expect(savedCardClient.getMine).toHaveBeenCalledTimes(1);
     });
 
-    it('stays on the profile for any other value', () => {
-      rememberCardSetupReturnUrl('/order');
+    it('says no card was saved and lists the cards', () => {
+      facade.init('cancel');
 
+      expect(snackbar.showInfoTranslated).toHaveBeenCalledWith('pages.profile.saved_cards.setup_cancelled');
+      expect(savedCardClient.getMine).toHaveBeenCalledTimes(1);
+    });
+
+    it('says nothing for any other value, and lists the cards', () => {
       facade.init('elsewhere');
 
-      expect(router.navigateByUrl).not.toHaveBeenCalled();
+      expect(snackbar.showSuccessTranslated).not.toHaveBeenCalled();
+      expect(snackbar.showInfoTranslated).not.toHaveBeenCalled();
       expect(savedCardClient.getMine).toHaveBeenCalledTimes(1);
     });
   });

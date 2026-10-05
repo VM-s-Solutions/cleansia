@@ -3,9 +3,11 @@ using Cleansia.Core.AppServices.Abstractions;
 using Cleansia.Core.AppServices.Authentication;
 using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.AppServices.Features.Orders.DTOs;
+using Cleansia.Core.AppServices.Features.TenantSettings;
 using Cleansia.Core.AppServices.Mappers;
 using Cleansia.Core.AppServices.Services.Interfaces;
 using Cleansia.Core.Domain.Auditing;
+using Cleansia.Core.Domain.Configuration;
 using Cleansia.Core.Domain.EmployeePayroll;
 using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Orders;
@@ -46,7 +48,8 @@ public class GetOrderDetails
         IUserMembershipRepository userMembershipRepository,
         IWorkContractAcceptanceRepository workContractAcceptanceRepository,
         IEmployeeActionAuditRepository employeeActionAuditRepository,
-        ICancellationPolicyResolver cancellationPolicyResolver) : IQueryHandler<Query, OrderItem>
+        ICancellationPolicyResolver cancellationPolicyResolver,
+        IAppConfigurationProvider configurationProvider) : IQueryHandler<Query, OrderItem>
     {
         public async Task<BusinessResult<OrderItem>> Handle(Query query, CancellationToken cancellationToken)
         {
@@ -122,7 +125,11 @@ public class GetOrderDetails
                         }
 
                         estimatedCleanerPay = OrderPayEstimator.Estimate(
-                            order, callerEmployeeId, serviceConfigs, packageConfigs);
+                            order,
+                            callerEmployeeId,
+                            serviceConfigs,
+                            packageConfigs,
+                            await configurationProvider.GetAsync(TenantSettingCatalog.ExtrasSharePercent, cancellationToken));
                     }
                 }
             }

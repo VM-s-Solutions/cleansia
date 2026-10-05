@@ -57,13 +57,6 @@ class FakeRecurringBookingsFacade {
   missing = signal<MissingField[]>([]);
   termsAsked = signal(false);
   formPrice = signal(null);
-  cardCaptureVisible = signal(false);
-  cardCaptureConsent = signal(false);
-  cardCaptureStarting = signal(false);
-  setCardCaptureConsent = jest.fn();
-  closeCardCapture = jest.fn();
-  startCardCapture = jest.fn();
-  restoreParkedForm = jest.fn();
   initialize = jest.fn();
   ensureAddresses = jest.fn();
   loadServingCleaners = jest.fn();
@@ -257,10 +250,6 @@ describe('CreateRecurringWizardComponent — paying in cash', () => {
     fixture.componentInstance.paymentOptions().find((option) => option.value === PaymentType.Cash);
   const cardOption = () =>
     fixture.componentInstance.paymentOptions().find((option) => option.value === PaymentType.Card);
-
-  it('picks up a new schedule the customer left to save a card', () => {
-    expect(facade.restoreParkedForm).toHaveBeenCalledWith(null);
-  });
 
   it('disables the cash option whenever the facade says cash cannot be chosen', () => {
     facade.cashSelectable.set(false);

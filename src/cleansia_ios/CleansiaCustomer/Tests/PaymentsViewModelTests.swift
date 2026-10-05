@@ -3,7 +3,7 @@ import Combine
 import XCTest
 @testable import CleansiaCustomer
 
-/// What the customer owes, paid through a pay link, and the card that guarantees their cash bookings.
+/// What the customer owes, paid through a pay link, and the cards they saved.
 @MainActor
 final class PaymentsViewModelTests: XCTestCase {
     private var cards: FakeSavedCardClient!
@@ -122,8 +122,6 @@ final class PaymentsViewModelTests: XCTestCase {
 
     // MARK: - Saving a card here
 
-    /// A recurring cash booking never captures a card, so without one saved it is refused and this
-    /// screen is the only place to save it.
     func testTheCardIsOfferedOnlyWithoutAUsableOneInTheMarketsCurrency() async {
         let expired = PaymentsFixtures.card(id: "card-old", currencyCode: "CZK", expMonth: 1, expYear: 2020)
         let euro = PaymentsFixtures.card(id: "card-eur", currencyCode: "EUR")
@@ -131,7 +129,7 @@ final class PaymentsViewModelTests: XCTestCase {
         cards.reads = [.success([expired, euro])]
         let czech = makeVM(currencyCode: "CZK")
         await czech.load()
-        XCTAssertTrue(czech.offersCardCapture, "an expired card and a card in another currency guarantee nothing")
+        XCTAssertTrue(czech.offersCardCapture, "an expired card and a card in another currency are not usable")
 
         let slovak = makeVM(currencyCode: "EUR")
         await slovak.load()
@@ -199,7 +197,7 @@ final class PaymentsViewModelTests: XCTestCase {
 
         await vm.cardSheetFinished(.completed)
 
-        XCTAssertEqual(cards.readCount, 1 + BookingViewModel.cardCaptureReads)
+        XCTAssertEqual(cards.readCount, 1 + PaymentsViewModel.cardReads)
         XCTAssertEqual(vm.state.loadedValue?.cards, [])
         XCTAssertEqual(snackbar.current?.text, L10n.Payments.cardAddPending)
         XCTAssertEqual(vm.addCardState, .idle)
@@ -207,7 +205,7 @@ final class PaymentsViewModelTests: XCTestCase {
         await vm.addCard()
         await vm.cardSheetFinished(.canceled)
 
-        XCTAssertEqual(cards.readCount, 1 + BookingViewModel.cardCaptureReads, "a closed sheet waited for a card")
+        XCTAssertEqual(cards.readCount, 1 + PaymentsViewModel.cardReads, "a closed sheet waited for a card")
         XCTAssertEqual(snackbar.current?.text, L10n.Payments.cardAddCancelled)
         XCTAssertEqual(vm.addCardState, .idle)
     }

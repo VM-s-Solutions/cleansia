@@ -34,7 +34,7 @@ enum MarketState: Equatable {
     }
 
     /// The insurance ceiling authored for a country, in that country's currency — nil when the
-    /// country is not a listed market or no ceiling is authored, which renders the no-figure copy.
+    /// country is not a listed market or no ceiling is authored, which claims no insurance.
     func insurance(forCountryId countryId: String?) -> MarketMoney? {
         guard let countryId,
               let market = markets.first(where: { $0.countryId == countryId }),

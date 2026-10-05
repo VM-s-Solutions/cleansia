@@ -12,9 +12,12 @@ point per 10 CZK today. Every refund takes back the same share of the points tha
 returned of the price — card and credit, gross — whatever the divisor is by then (owner rulings
 2026-10-03). A partial refund takes its share. A full refund takes everything the earn still holds. A
 dispute settlement takes the share of what it returned, on the card or as credit
-([Refunds](/flows/cancellation-refund-dispute#refund)). Money given back before the order completes
-takes its share at completion (since 2026-10-04). Completion writes the earn on the whole price and,
-beside it, a refund row of `floor(earned × returned / TotalPrice)` for everything returned so far.
+([Refunds](/flows/cancellation-refund-dispute#refund)). Since 2026-10-04 the share is worked on the
+order's running total: each refund takes `floor(earned × returned so far / TotalPrice)`, less what the
+order's refunds and completion already took, so split refunds floor once and keep what one refund of
+their sum would. Money given back before the order completes takes its share at completion (since
+2026-10-04). Completion writes the earn on the whole price and, beside it, a refund row for everything
+returned so far, by the same rule.
 The divisor is authored per currency on the admin currency form; a currency with no divisor earns
 nothing and logs. It is not scaled from another currency's rate.
 
@@ -22,7 +25,10 @@ nothing and logs. It is not scaled from another currency's rate.
 write loads the account, moves `LifetimePoints` in memory and saves the new total. When two writes
 read the same total — two refund clawbacks, or a clawback and a completion grant — the later commit
 used to overwrite the earlier one's points, and the tier those points reached, while both ledger rows
-landed. `LoyaltyAccount` now carries the Postgres `xmin` concurrency token, registered the way
+landed. (Since 2026-10-04 those two pairs no longer race at all: the clawback and the completion grant
+take the customer's owner lock and queue behind each other, below. The replay still covers every other
+pair, an administrator's grant or revoke against either of them included.) `LoyaltyAccount` now
+carries the Postgres `xmin` concurrency token, registered the way
 `UserMemberships` registers it, so the later write conflicts instead. The commit
 (`CleansiaDbContext.CommitAsync`) then does the following, up to five attempts:
 
@@ -43,6 +49,24 @@ completion grant, the cancellation revoke, referrals and tier edits. An atomic S
 considered and not chosen. It would need its own transaction on every write path to stay atomic with
 the ledger insert, and it would still have to recompute the tier from the stored total.
 `LoyaltyAccountConcurrentWriteTests` runs the races on a real Postgres.
+
+**A refund clawback and a completion grant hold the customer's owner lock** (since 2026-10-04). Both
+take the row lock on the customer's `Users` row that the credit ledger already takes
+(`ILoyaltyAccountRepository.LockForUserAsync`, a `FOR NO KEY UPDATE` held until the commit, on Postgres
+only), before they read the order's running total. Two refunds of one order therefore take the whole
+share once between them, and a refund settling while the order completes is counted by one of the two.
+Without it, two clawbacks each read the same headroom, and a refund settling during completion found no
+earn while the completion counted no refund, so its points were kept. On Postgres the tests now prove
+the second waits; the tests of a write lost to an overwrite race an administrator's grant or revoke
+instead, which takes no lock on an existing account.
+
+**Two first grants for a customer with no loyalty account land on one account** (since 2026-10-04). The
+account is unique per customer. `EnsureForUserAsync` used to add one whenever it found none, so two
+first grants at once both inserted and the second commit failed on the unique index (`23505`): a 500
+that rolled back the whole completion. On a miss it now takes the same owner lock and reads again, so
+the second waits for the first commit and finds its account. A Testcontainers test runs a first
+completion and an administrator's grant at once: one account, 1 500 + 50 points; without the lock it
+fails with `23505`.
 
 **The tier-upgrade notice is decided after the replay** (since 2026-10-04). A completion grant used to
 queue `loyalty.tier_upgrade` from its own read of the account, so a replay could leave it naming a tier
@@ -86,7 +110,9 @@ source alone:
 Until then the web checked the row's type first and read every revoke as a cancelled booking,
 including a refund or an administrator's revoke. Android and iOS did not know the source and read a
 refund as a manual adjustment. The web label was *Partly refunded*; a full refund writes the same
-source, so it now says *Refunded* in all five languages.
+source, so it now says *Refunded* in all five languages. The web's *How it works* line says the same
+since 2026-10-04: *A cancelled or refunded booking takes its points back*, where it said *partly
+refunded*.
 
 ## Points are not credit {#points-vs-credit}
 
@@ -337,7 +363,9 @@ alone. You cannot redeem your own code, and you cannot be referred twice.
 | Webhook names a currency the platform does not know | Nothing is provisioned; an error is logged. |
 | Points granted twice by a retry | Rejected by the idempotency index. |
 | Two loyalty writes for one customer commit at once | The later one conflicts on the account's `xmin` token, is replayed on top of the committed total and saved again; both writes' points land and the tier is the one the total reaches. |
-| Several refunds on one order — a partial refund, then a dispute settlement | Each takes its share of the earn under its own key; the cap stops them together at what the order earned. |
+| Several refunds on one order — a partial refund, then a dispute settlement | Each takes, under its own key, the share of the running total that earlier refunds have not taken; together they never pass what the order earned, and they floor once. |
+| Two refunds of one order at the same moment | The second waits on the customer's owner lock and takes only what the first left. |
+| Two first grants for a customer with no loyalty account | The second waits on the owner lock and lands on the account the first created. |
 | An admin edits a subscribed plan's discount or express quota | Refused, `membership.plan.benefits_locked`; the name, the trial and the prices still save. |
 | A revoke takes the total below the current tier's threshold | The tier drops to the one the total now reaches, and its achieved date moves with it. |
 | Order in a currency with no points divisor | Unreachable through the admin surface — activation refuses without a divisor and an active currency cannot have it cleared (`currency.loyalty_divisor_missing`). A row that reaches the state anyway earns nothing and logs a warning; nothing is borrowed from another currency's rate. |

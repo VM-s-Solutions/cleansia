@@ -49,14 +49,14 @@ public class BookingSizeBoundsTests
                     Bookings.CatalogueDoubles.Services(), Bookings.CatalogueDoubles.Packages(),
                     Cleansia.Tests.Features.Legal.CustomerConsentDoubles.Consented(),
                     Mock.Of<Cleansia.Core.AppServices.Services.Interfaces.ILegalDocumentResolver>(),
-                    SavedCards.SavedCardDoubles.Guaranteed(), Mock.Of<IReceivableRepository>()),
+                    Mock.Of<IReceivableRepository>()),
                 new CreateRecurringBooking.Command(1, 1, "10:00", rooms, bathrooms, "address", [], [], 1, DateTime.UtcNow)),
             "recurring-update" => await ValidateSize(new UpdateRecurringBooking.Validator(
                     Mock.Of<IRecurringBookingTemplateRepository>(), Mock.Of<IUserMembershipRepository>(),
                     Mock.Of<IUserSessionProvider>(), Mock.Of<IOrderRepository>(), Mock.Of<ISavedAddressRepository>(),
                     Mock.Of<ICurrencyResolutionService>(), Mock.Of<ICountryRepository>(),
                     Bookings.CatalogueDoubles.Services(), Bookings.CatalogueDoubles.Packages(),
-                    SavedCards.SavedCardDoubles.Guaranteed(), Mock.Of<IReceivableRepository>()),
+                    Mock.Of<IReceivableRepository>()),
                 new UpdateRecurringBooking.Command("template", 1, 1, "10:00", rooms, bathrooms,
                     "address", [], [], 1, DateTime.UtcNow)),
             _ => throw new ArgumentOutOfRangeException(nameof(endpoint)),
@@ -95,7 +95,7 @@ public class BookingSizeBoundsTests
         Mock.Of<IPromoCodeService>(), Mock.Of<IOperatorTenantResolver>(), Mock.Of<ITenantProvider>(),
         Mock.Of<IUserConsentRepository>(), Mock.Of<ILanguageRepository>(),
         Mock.Of<ICountryConfigurationRepository>(), Mock.Of<ILegalDocumentResolver>(),
-        SavedCards.SavedCardDoubles.Guaranteed(), Mock.Of<IReceivableRepository>());
+        Mock.Of<IReceivableRepository>());
 
     private static Task<ValidationResult> ValidateSize<T>(IValidator<T> validator, T request) =>
         validator.ValidateAsync(request, options => options.IncludeProperties("Rooms", "Bathrooms"));

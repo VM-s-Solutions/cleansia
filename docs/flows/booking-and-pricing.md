@@ -130,6 +130,15 @@ submitted with and clear it there rather than send it. If the server still refus
 the choice (the web wizard returns to the payment step); Android shows the refusal and leaves the choice
 for the customer to change. → [Business rules — paying in cash](/product/business-rules#cash)
 
+**Beyond the crew, the customer's standing decides, and no card is asked for.** A signed-in customer
+with an open receivable is refused `order.cash_unpaid_receivable`, and one holding two open unpaid cash
+bookings `order.cash_open_bookings_limit_reached`; `CreateRecurringBooking`, `UpdateRecurringBooking`
+and `ConfirmRecurringOrder` ask the same. Since 2026-10-04 (owner ruling) a cash booking needs no saved
+card and no card is charged: `order.cash_requires_saved_card` is gone, and so is every client's card
+step on the cash path — the web wizard's and schedule form's card capture, Android's guarantee tick
+and setup sheet, and iOS's capture before booking. A cash slide or submit books at once.
+→ [Business rules — cash needs no card](/product/business-rules#card-guarantee)
+
 ## The booking leaves a row, and so does a refused one
 
 `CreateOrder` is marked `customer.order.create` ([ADR-0062](/decisions/adr-0062)), so the same commit
@@ -395,12 +404,14 @@ customer is asked to accept the version in force at the confirm.
   booking's reason until the box is ticked. Android disables the button the same way. iOS keeps the
   box hidden and the button disabled until the consents are read, so the box never flashes over an
   account that holds them.
-- **A refusal over the terms shows the box at once** on Android and iOS (since 2026-10-04). The
-  consent read is judged for the default market and the confirm for the occurrence's own, so an account
-  the read called covered can still be refused `consent.terms_not_accepted`. Until then the box stayed
-  hidden until the screen was reopened. The box now appears at once, unticked, and stays for the
+- **A refusal over the terms shows the box at once** on the web, Android and iOS (since 2026-10-04).
+  The consent read is judged for the default market and the confirm for the occurrence's own, so an
+  account the read called covered can still be refused `consent.terms_not_accepted`. Until then the box
+  stayed hidden until the screen was reopened. The box now appears at once, unticked, and stays for the
   screen's life, and the next confirm sends the tick. The apps do not read the consents again, because
-  that read would still say covered and hide the box. On iOS, a refresh triggered by a push reads the
+  that read would still say covered and hide the box. The web order detail does read them again after
+  the refusal, as it reloads the order, so its facade keeps the refusal for as long as the page is open
+  and shows the box whatever that read says. On iOS, a refresh triggered by a push reads the
   consents as opening the screen does, so an occurrence that first arrives by a push no longer leaves
   the confirm disabled with no box.
 - **An occurrence is not paid before it is confirmed** (since 2026-10-04). `CreatePaymentIntent`

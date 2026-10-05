@@ -281,7 +281,7 @@
     "pay_line_type": {
       "job": "Job",
       "cancellation_fee_share": "Share of a cancellation fee",
-      "lockout_fee_share": "Share of a lockout fee"
+      "lockout_fee_share": "Job reward — customer lockout"
     }
   },
   "sidebar": {
@@ -714,7 +714,7 @@
         "lockout": {
           "action": "Confirm customer lockout",
           "context": "Use this when the cleaner reported that they could not get in. Check the entrance photo and the calls they made before you confirm.",
-          "confirm": "This cancels the booking as a customer lockout at the whole price. A card order keeps its payment and any credit applied to it; a signed-in customer's unpaid cash booking owes the whole price as a receivable; a guest keeps nothing back and is never charged more. The crew is paid its share of the fee once it is collected. It cannot be undone.",
+          "confirm": "This cancels the booking as a customer lockout at the whole price. A card order keeps its payment and any credit applied to it; a signed-in customer's unpaid cash booking owes the whole price as a receivable; a guest keeps nothing back and is never charged more. Each cleaner on the crew is paid their full reward for the job, whether or not the customer ever pays. It cannot be undone.",
           "submit": "Confirm lockout",
           "success": "Order cancelled as a customer lockout at {{fee}}. {{receivable}}",
           "receivable_opened": "The customer owes {{amount}}, recorded as a receivable.",
@@ -1510,8 +1510,8 @@
       "iso_alpha2_help": "ISO 3166-1 alpha-2. Customers see it on the market chip.",
       "market": "Market",
       "insurance_coverage_amount": "Insurance coverage per booking",
-      "insurance_coverage_amount_placeholder": "Leave empty to state no figure",
-      "insurance_coverage_amount_help": "A number in the country's default currency, shown in customer copy. Empty means the copy names no figure.",
+      "insurance_coverage_amount_placeholder": "Leave empty and the apps do not mention insurance",
+      "insurance_coverage_amount_help": "A number in the country's default currency. With a figure, the customer apps say cleaners are insured up to it. Empty: the apps do not say cleaners are insured.",
       "market_content_unavailable": "Available once the country has a configuration."
     },
     "currency_management": {
@@ -1871,7 +1871,8 @@
         "retention": "Data retention",
         "lifecycle": "Company lifecycle",
         "notifications": "Notifications",
-        "cash": "Cash held by cleaners"
+        "cash": "Cash held by cleaners",
+        "pay": "Cleaner pay"
       },
       "descriptions": {
         "retention": {
@@ -1927,6 +1928,9 @@
         "cash": {
           "float_cap": "The most cash a cleaner may hold in one currency; above it, cash jobs are hidden from them with the reason shown. 0 means no cap",
           "remittance_request_days": "Days a cleaner may keep cash still held after a pay-period close before they are asked to hand it over (1–365)"
+        },
+        "pay": {
+          "extras_share_percent": "Percentage of the prices of the extras a customer books that is added to the job's pay for its cleaners, split equally across the seats and fixed when a cleaner takes the job (0–100)"
         }
       }
     },
@@ -3261,7 +3265,10 @@
       "weekly_limit_invalid": "The weekly order limit must be at least 1, or empty for no limit",
       "work_country_operator_mismatch": "The work country belongs to another operating company.",
       "weekly_limit_reason_required": "Write why this cleaner is limited. They are shown the reason.",
-      "legal_documents_not_accepted": "This cleaner has not yet accepted the current version of every contract document in force for their work country."
+      "legal_documents_not_accepted": "This cleaner has not yet accepted the current version of every contract document in force for their work country.",
+      "business_ceased": "The business register (ARES) shows this cleaner's business (IČO) has ended, so they cannot be approved.",
+      "trade_licence_inactive": "The business register (ARES) shows no trade licence in force for this cleaner, so they cannot be approved.",
+      "business_registry_unavailable": "The business register (ARES) could not be reached to check this cleaner's IČO. Try approving again in a few minutes."
     },
     "employee_document": {
       "deletion_already_resolved": "This deletion request has already been answered.",
@@ -3545,6 +3552,9 @@
         "looks_like_card": "That looks like a payment card number. Enter the bank account number instead.",
         "scheme_not_supported": "Payouts to this kind of account are not supported yet",
         "swift_required": "The bank is in a different country than the partner's work country, so the bank's SWIFT/BIC code is also required."
+      },
+      "registration_number": {
+        "not_registered": "This company ID (IČO) is not in the business register (ARES). Check the number."
       }
     },
     "review": {

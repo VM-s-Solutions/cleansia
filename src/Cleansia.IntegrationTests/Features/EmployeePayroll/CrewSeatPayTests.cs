@@ -92,6 +92,40 @@ public class CrewSeatPayTests(PostgresContainerFixture fixture) : BaseIntegratio
             });
     }
 
+    /// <summary>
+    /// Owner decision 2026-10-04: an extra booked at 250 pays the company's default half of its price, 125,
+    /// inside the job's extras. The job is 333.33 + 125 = 458.33 and heavy adds 137.50 (30 %, rounded): the
+    /// first seat is paid 166.67 + 62.50 + 68.75 and the second 166.66 + 62.50 + 68.75.
+    /// </summary>
+    [Fact]
+    public async Task Each_Seat_Is_Paid_Its_Share_Of_The_Extras_Booked()
+    {
+        await TestMethod(
+            arrange: context => SeedCompletedTwoSeatHeavyOrder(context, bookedRate: 0.30m, extraPrice: 250m),
+            act: PayBothSeatsSecondFirst,
+            assert: async (CleansiaDbContext context,
+                (BusinessResult<CalculateOrderPay.Response> First, BusinessResult<CalculateOrderPay.Response> Second) results) =>
+            {
+                Assert.True(results.First.IsSuccess, results.First.Error?.Message);
+                Assert.True(results.Second.IsSuccess, results.Second.Error?.Message);
+
+                var pays = await context.Set<OrderEmployeePay>()
+                    .IgnoreQueryFilters()
+                    .Where(p => p.OrderId == _orderId)
+                    .ToDictionaryAsync(p => p.EmployeeId);
+
+                var first = pays[_firstSeatEmployeeId];
+                Assert.Equal(
+                    (166.67m, 62.50m, 68.75m, 297.92m),
+                    (first.BasePay, first.ExtrasPay, first.DirtinessPay, first.TotalPay));
+
+                var second = pays[_secondSeatEmployeeId];
+                Assert.Equal(
+                    (166.66m, 62.50m, 68.75m, 297.91m),
+                    (second.BasePay, second.ExtrasPay, second.DirtinessPay, second.TotalPay));
+            });
+    }
+
     private static async Task<(BusinessResult<CalculateOrderPay.Response> First, BusinessResult<CalculateOrderPay.Response> Second)>
         PayBothSeatsSecondFirst(IServiceProvider provider)
     {
@@ -101,7 +135,8 @@ public class CrewSeatPayTests(PostgresContainerFixture fixture) : BaseIntegratio
         return (first, second);
     }
 
-    private static async Task SeedCompletedTwoSeatHeavyOrder(CleansiaDbContext context, decimal bookedRate)
+    private static async Task SeedCompletedTwoSeatHeavyOrder(
+        CleansiaDbContext context, decimal bookedRate, decimal? extraPrice = null)
     {
         context.Languages.Add(Language.Create("en", "English"));
 
@@ -143,6 +178,12 @@ public class CrewSeatPayTests(PostgresContainerFixture fixture) : BaseIntegratio
             paymentStatus: PaymentStatus.Paid,
             cancellationTerms: BookingPolicy.CancellationTermsAtBooking);
         order.AddSelectedPackages([OrderPackage.Create(order, package, 2400m)]);
+        if (extraPrice is { } price)
+        {
+            var extra = Extra.Create("crew-pay-oven", "Inside oven", null);
+            context.Set<Extra>().Add(extra);
+            order.AddSelectedExtras([OrderExtra.Create(order, extra, price)]);
+        }
         order.UpdateEstimatedTime(240).CalculateRequiredEmployees(spareSeats: 0);
         order.SetDirtinessSurcharge(DirtinessLevel.Heavy, 2400m * bookedRate, bookedRate);
         order.AddAssignedEmployee(OrderEmployee.Create(order, firstCleaner));

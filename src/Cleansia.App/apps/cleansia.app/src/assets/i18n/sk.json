@@ -689,15 +689,15 @@
       },
       "saved_cards": {
         "title": "Uložené karty",
-        "desc": "Karta, ktorá zaručuje vaše rezervácie s platbou v hotovosti. Strhávajú sa z nej len poplatky a nezaplatená hotovosť, s ktorými ste pri uložení súhlasili.",
-        "empty": "Nemáte uloženú kartu. Keď budete nabudúce platiť v hotovosti, požiadame vás o jej uloženie.",
+        "desc": "Karty uložené vo vašom účte. Kartu môžete kedykoľvek odstrániť.",
+        "empty": "Nemáte uloženú kartu.",
         "load_error": "Uložené karty sa nepodarilo načítať.",
         "card_label": "{{brand}} končiaca {{last4}}",
         "expires": "Platnosť do {{expiry}} · pre rezervácie v {{currency}}",
-        "remove_confirm": "Odstrániť kartu končiacu {{last4}}? Pri ďalšej rezervácii s platbou v hotovosti vás znova požiadame o uloženie karty.",
+        "remove_confirm": "Odstrániť kartu končiacu {{last4}}?",
         "remove_success": "Karta bola odstránená.",
-        "setup_success": "Karta je uložená. Teraz môžete dokončiť rezerváciu s platbou v hotovosti.",
-        "setup_cancelled": "Žiadna karta nebola uložená. Ak chcete platiť v hotovosti, uložte si kartu — alebo zaplaťte kartou."
+        "setup_success": "Karta je uložená.",
+        "setup_cancelled": "Žiadna karta nebola uložená."
       }
     },
     "services": {
@@ -1066,13 +1066,9 @@
         }
       },
       "card_capture": {
-        "title": "Uložte si kartu na platbu v hotovosti",
-        "intro": "Rezervácia s platbou v hotovosti je zaručená kartou uloženou vo vašom účte. Uloženie karty nič nestojí a upratovačovi ďalej platíte v hotovosti.",
         "consent": {
           "card-guarantee-draft-2026-09-28": "Súhlasím, že Cleansia môže z tejto karty bez toho, aby sa ma zakaždým pýtala, strhnúť poplatok za neskoré zrušenie, poplatok, keď sa upratovač nedostane do mojej domácnosti, hotovosť, ktorú som za rezerváciu nezaplatil(a), a doplatok, ktorý som schválil(a)."
-        },
-        "continue": "Uložiť kartu",
-        "cancel": "Teraz nie"
+        }
       },
       "save_card": {
         "label": "Uložiť túto kartu na moje ďalšie objednávky."
@@ -1438,7 +1434,7 @@
         "on_completion_note": "Pripíšeme ich, keď je objednávka dokončená — nie keď ju zadáte.",
         "referral_title": "A za odporúčanie",
         "referral_note": "Keď váš známy dokončí prvé upratovanie.",
-        "clawback": "Zrušená alebo čiastočne vrátená objednávka body zase odpočíta — preto sa pripisujú až po upratovaní."
+        "clawback": "Zrušená alebo vrátená objednávka body zase odpočíta — preto sa pripisujú až po upratovaní."
       },
       "tx": {
         "completed": "Upratovanie dokončené",
@@ -1996,7 +1992,6 @@
       },
       "payment_gateway_unavailable": "Platby sú dočasne nedostupné. Skúste to prosím o chvíľu.",
       "cash_not_available": "Platba v hotovosti je možná len po prihlásení a pri objednávke, ktorú zvládne jeden upratovač.",
-      "cash_requires_saved_card": "Na platbu v hotovosti si najprv uložte kartu ako záruku — alebo zaplaťte kartou.",
       "cash_open_bookings_limit_reached": "Už máte najvyšší povolený počet nezaplatených objednávok v hotovosti. Zvoľte kartu alebo hotovosť znova, keď bude niektorá z nich zaplatená.",
       "cash_unpaid_receivable": "Máte u nás nezaplatenú sumu, napríklad stornovací poplatok. Zatiaľ zaplaťte kartou; v hotovosti budete môcť platiť znova, keď bude uhradená.",
       "country_operator_mismatch": "Túto adresu obsluhuje iná spoločnosť Cleansia, preto ju tu nie je možné objednať.",
@@ -2110,7 +2105,7 @@
       }
     },
     "saved_card": {
-      "consent_not_accepted": "Pred uložením karty prosím potvrďte súhlas, že na ňu môžu byť účtované poplatky a nezaplatená hotovosť.",
+      "consent_not_accepted": "Pred uložením karty prosím potvrďte svoj súhlas.",
       "not_found": "Túto uloženú kartu sme nenašli.",
       "requires_account": "Na uloženie karty na ďalšie objednávky sa prihláste."
     },

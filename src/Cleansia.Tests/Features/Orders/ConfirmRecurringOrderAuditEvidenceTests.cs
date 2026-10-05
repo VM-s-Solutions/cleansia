@@ -43,7 +43,7 @@ public sealed class ConfirmRecurringOrderAuditEvidenceTests
         new(
             OrderAccessDoubles.Over(_orderRepository, _session),
             _orderRepository.Object,
-            SavedCards.SavedCardDoubles.Guaranteed(), Mock.Of<IReceivableRepository>(),
+            Mock.Of<ISavedCardRepository>(), Mock.Of<IReceivableRepository>(),
             new Mock<ICreditAccountRepository>().Object,
             new Mock<IUserRepository>().Object,
             _session.Object,

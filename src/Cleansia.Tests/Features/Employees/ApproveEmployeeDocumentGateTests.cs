@@ -136,7 +136,7 @@ public class ApproveEmployeeDocumentGateTests
             _employees.Object, _countries.Object, _services.Object, _packages.Object,
             _payConfigs.Object, _requirements.Object, currencyResolution.Object,
             Mock.Of<IOperatorTenantResolver>(), Mock.Of<ITenantProvider>(),
-            legalDocumentResolver, userConsentRepository);
+            legalDocumentResolver, userConsentRepository, BusinessRegistryDoubles.NotConsulted());
 
         return await validator.ValidateAsync(
             new ApproveEmployee.Command(EmployeeId, CountryId), CancellationToken.None);

@@ -41,6 +41,7 @@ public class OrderPayEstimatorCurrencyTests
             new HashSet<string>(),
             2,
             1,
+            0m,
             1,
             0m,
             orderCurrencyId,

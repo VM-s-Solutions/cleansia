@@ -71,6 +71,7 @@ public class PayCoverageEstimatorAgreementTests
             packageIds.ToHashSet(),
             2,
             1,
+            0m,
             1,
             0m,
             // The order's currency. The estimator narrows to it, and the configs above are all created

@@ -74,11 +74,15 @@ against the deleted row.
 **What anonymising an order clears.** `Order.AnonymizeCustomerData` — used by the erasure and by the
 order-PII sweep — blanks the customer's name, e-mail and phone, the notes and instructions, the floor,
 the flat number, the access mode and the cancellation reason, and anonymises the order's reviews, notes
-and issues; the address is replaced with a copy as above. **One reason is kept:** when the platform
-cancelled the order (`CancelledBy.System`) its reason is a code such as
-`order.cancelled.company_wind_down`, not anything a person wrote, and the company wind-down finds the
-orders whose refund it still has to retry by that code. A reason a customer or an administrator wrote is
-always cleared.
+and issues; the address is replaced with a copy as above. **Two reasons are kept**, each a code rather
+than anything a person wrote. When the platform cancelled the order (`CancelledBy.System`), its reason,
+such as `order.cancelled.company_wind_down`, stays, and the company wind-down finds the orders whose
+refund it still has to retry by that code. On a lockout an administrator confirmed (cancelled by an
+administrator, with `LockoutReportedAt` stamped), the key `order.cancelled.customer_lockout` stays
+(since 2026-10-04), because the crew's queued pay recognises the confirmed lockout by it; until then an
+erasure that ran first turned the reward into a fee share on a card order and into nothing on a cash
+one → [A confirmed lockout pays the seat's reward](/product/business-rules#lockout-pay). Any other
+reason a customer or an administrator wrote is cleared, the lockout key typed by a customer included.
 
 **An erased guest booking loses its access keys with its personal data.** The ended guest orders
 in the walk have every live token revoked before anonymisation, staged into the same commit. A live
@@ -116,7 +120,8 @@ resolution notes — is *not* blanked at erasure any more: the erasure stamps `D
 = now + retention.dispute_text.years` (default 3, floor > 0) and leaves it readable for defence of a
 claim; the weekly sweep's `DisputeText` task blanks it once the stamp is past and clears the stamp. The
 evidence **files** still go at erasure (they are not text) and the evidence rows are blanked. The
-cancellation reason goes with the order's other customer fields, unless the platform wrote it (above).
+cancellation reason goes with the order's other customer fields, unless the platform wrote it or it is
+a confirmed lockout's key (above).
 The consent rows are withdrawn, and keep their IP, user agent,
 version and document id. A **guest's** booking placed with the account's e-mail is reached by that
 e-mail (above) — the one link there is, since a guest booking is never attached to an account later —

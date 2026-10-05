@@ -156,7 +156,8 @@ public class ApproveEmployeePayCoverageTests
             _payConfigs.Object, _documentRequirements.Object, _currencyResolution.Object,
             Mock.Of<IOperatorTenantResolver>(), Mock.Of<ITenantProvider>(),
             Mock.Of<ILegalDocumentResolver>(),
-            Mock.Of<IUserConsentRepository>());
+            Mock.Of<IUserConsentRepository>(),
+            BusinessRegistryDoubles.NotConsulted());
     }
 
     private ApproveEmployee.Handler CreateHandler()

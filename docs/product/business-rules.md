@@ -349,8 +349,10 @@ e-mails carry a lockout reason line, in five locales, that states the whole pric
 — so the e-mail is where the customer reads why. The Android and iOS Help FAQ state the 15-minute wait
 and that a lockout costs the full price.
 
-The crew is paid half of the fee once the company has collected it
-→ [The crew's share of a collected fee](#fee-share).
+**Each seat on the crew is paid its full reward** (owner decision 2026-10-04), exactly what the job
+would have paid it, and paid always. That includes a cash customer who never pays the price. Until
+then the crew was paid half of the fee once the company had collected it.
+→ [A confirmed lockout pays the seat's reward](#lockout-pay).
 
 ### When the last cleaner leaves {#crew-lost}
 
@@ -801,9 +803,9 @@ order, the quote and the cash rule below all call it: 120 booked minutes is one 
 AllowsCash = signedIn && RequiredEmployees == 1        # BookingPolicy.AllowsCash
 ```
 
-Beyond that rule, the customer's own standing decides (owner rulings 2026-09-28): no debt, at most two
-open unpaid cash bookings, and a card saved as the guarantee
-→ [A saved card guarantees cash](#card-guarantee).
+Beyond that rule, the customer's own standing decides (owner rulings 2026-09-28): no debt and at most
+two open unpaid cash bookings. **No saved card is asked for, and no card is charged** (owner ruling
+2026-10-04) → [Cash needs no card](#card-guarantee).
 
 - **The crew is the server's, from the duration.** `RequiredEmployees` is computed from the selected
   services and packages, the home's size and the [dirtiness level](#dirtiness) exactly as the order will
@@ -871,59 +873,48 @@ cleaner has the money:
   only occurrences still awaiting that confirmation (`Order.AwaitsCustomerConfirmation`).
 → [What the receipt says](/flows/payment-and-fiscal#what-the-receipt-says)
 
-### A saved card guarantees cash {#card-guarantee}
+### Cash needs no card {#card-guarantee}
 
-**Owner rulings 2026-09-28 (decisions 16 and 24).** A card booking secures its fee by being paid up
-front — a late cancellation keeps the fee out of the refund. A cash booking had nothing behind it: its
-fee was owed and uncollectable. Now a signed-in customer books cash only while they meet three more
-conditions, asked in this order after the one-cleaner rule (`CustomerCashStanding`):
+**Owner rulings 2026-09-28 (decisions 18 (a) and 24), and 2026-10-04.** A signed-in customer books cash
+only while they meet two more conditions, asked in this order after the one-cleaner rule
+(`CustomerCashStanding`):
 
 | # | The customer must | Else |
 |---|---|---|
 | 1 | owe no operating company an open receivable → [What a customer owes](#receivables) | `order.cash_unpaid_receivable` |
 | 2 | hold fewer than **2** open unpaid cash bookings (`BookingPolicy.MaxOpenUnpaidCashBookings`) | `order.cash_open_bookings_limit_reached` |
-| 3 | hold a **usable card saved in the booking's currency** | `order.cash_requires_saved_card` |
 
 - **Where it is asked.** `CreateOrder`, `CreateRecurringBooking` and `UpdateRecurringBooking` in their
   validators — on `CreateOrder` inside the price chain, after `order.cash_not_available` and before the
   promo rules, so a refused booking has moved nothing — and `ConfirmRecurringOrder` in its handler,
-  after the crew rule. A recurring schedule is judged in its saved address's currency, an occurrence in
-  its own. Card bookings need none of it, and a guest was already refused cash.
+  after the crew rule. Card bookings need none of it, and a guest was already refused cash.
 - **Open unpaid** is cash, payment `Pending`, neither cancelled nor completed; a recurring occurrence
   counts from the customer's confirmation, and the one being confirmed does not count. The debt and the
   limit are both counted **across every operating company**. There is **no amount ceiling** (decision
-  24): the one-cleaner rule already bounds the price, and the card is the rest of the guarantee.
-- **Usable** is captured, not removed, and not past the end of its expiry month
-  (`SavedCard.IsUsableOn`). A card in another currency does not count.
+  24): the one-cleaner rule already bounds the price.
 
-**A customer is asked for a card at any cash booking made while they hold no usable card in its
-currency, and nothing is charged.** The customer ticks a consent that a late-cancellation fee, a lockout fee, unpaid cash and an
-approved top-up may be charged to the card (decision 17); no tick is `saved_card.consent_not_accepted`.
-The server writes a `SavedCards` row with the consent evidence — the wording's version, the IP and the
-device — before the capture starts, on the customer's Stripe Customer for the market's currency, which
-is also the Customer Cleansia Plus bills. The version is `SavedCard.ConsentTextVersionInForce`,
-`card-guarantee-draft-2026-09-28`, a draft until the lawyer's wording arrives and bumped with every
-change to it, so each card records the text it was saved under. The web goes through a setup-mode Stripe
-Checkout Session (`POST api/SavedCard/CreateCheckoutSession`), the apps through a card-only SetupIntent
-in PaymentSheet (`POST api/SavedCard/CreateSetupIntent`). The card lands on the row when Stripe's
-webhook reports it → [Payment and fiscal](/flows/payment-and-fiscal#saved-cards-and-receivables), and
-the customer's earlier card in that currency is retired, so one card per currency is live. A customer
-who ticked *Save this card for my next bookings* on an earlier card booking in that currency already
-holds a card there and, while it stays usable, is asked for nothing ([below](#save-card)).
+**No saved card is asked for, and no card is charged** (owner ruling 2026-10-04). Until then a third
+condition asked for a usable card saved in the booking's currency (`order.cash_requires_saved_card`).
+The card was captured at the first cash booking, under a consent that a late-cancellation fee, a
+lockout fee, unpaid cash and an approved top-up could be charged to it (decisions 16 and 17). The
+condition, `CustomerCashStanding.HoldsUsableCardAsync` and the error key are gone from the server and
+from every client's translations and parity lists. So is every client's capture step on the cash path:
 
-- **Where each client captures.** The customer web asks `CreateOrder` — or the schedule form's create
-  or update — first, and opens a card-capture step on `order.cash_requires_saved_card`: it parks the
-  booking or the schedule, sends the customer through Stripe, and brings them back to it as they left
-  it. Android does the same at the one-off booking; iOS reads the saved cards before it books and
-  captures when it finds no usable one. Both then wait for the card to land (eight reads, 1.5 s apart)
-  before they book, and iOS also offers *Save a card* under Profile → Payments. On both apps a card
-  that has not landed by then books nothing: the customer is told it is still being saved and slides
-  again. That slide, like one after a time that stopped holding meanwhile, waits for the same card the
-  same way and never opens a second capture. A setup sheet cancelled or failed saved nothing, so the
-  next slide captures afresh at once. Until 2026-10-04 iOS's next slide read the cards, found none
-  usable yet and opened a second capture. The other two
-  refusals take cash off and send the customer back to choose how to pay; on the web, a debt refusal
-  lists what is owed with *Pay now*.
+- **The customer web** no longer opens a card-capture step from the order wizard or the schedule form,
+  and no longer parks a booking or a schedule to bring the customer back after Stripe.
+- **Android** no longer shows the guarantee tick on the review step, reads the saved cards when cash is
+  chosen, opens a setup sheet or waits for a saved card to land.
+- **iOS** no longer reads the saved cards before it books, shows the guarantee box or captures a card.
+
+A cash slide now books at once. The two refusals that remain behave as before; on the web, a debt
+refusal lists what is owed with *Pay now*. What a cash booking leaves owing is a receivable, paid through
+its pay link or written off ([What a customer owes](#receivables)). The off-session charge that could
+have taken it from a saved card stays switched off.
+
+**Saved cards stay** (owner ruling 2026-10-04). A signed-in customer still keeps a card by ticking *Save
+this card for my next bookings* on a card payment ([below](#save-card)), lists it and can remove it
+([below](#saved-cards)). On iOS, *Save a card* under Profile → Payments still saves one through a setup
+sheet, under the same consent. Nothing on the platform charges a saved card today.
 
 #### Saving a card while paying by card {#save-card}
 
@@ -935,12 +926,14 @@ is the only way a card payment keeps a card:
 | | Ticked | Unticked |
 |---|---|---|
 | Asked of Stripe | the payment, on the customer's Stripe Customer for the booking's currency, with `setup_future_usage=off_session` and the row's `SavedCardId` | the payment alone, with no `setup_future_usage` and no `SavedCardId` — on the web on no Stripe Customer, on the apps on the account's own Stripe Customer |
-| Recorded before the redirect or the sheet | a `SavedCards` row with the consent evidence — `SavedCard.ConsentTextVersionInForce`, the IP and the device — as the cash capture records it | no `SavedCards` row; on the apps, a Stripe Customer created and recorded on the account when it had none |
-| Once the payment succeeds | the card lands on the row, the customer's earlier card in that currency is retired, and the card is listed and guarantees cash bookings in that currency | no card, here or at Stripe: Stripe attaches it to no Customer. An app payment stays in the history of the account's Stripe Customer it was made on |
+| Recorded before the redirect or the sheet | a `SavedCards` row with the consent evidence — `SavedCard.ConsentTextVersionInForce`, the IP and the device | no `SavedCards` row; on the apps, a Stripe Customer created and recorded on the account when it had none |
+| Once the payment succeeds | the card lands on the row, the customer's earlier card in that currency is retired, and the card is listed | no card, here or at Stripe: Stripe attaches it to no Customer. An app payment stays in the history of the account's Stripe Customer it was made on |
 
 - **The tick is the consent.** There is no second box: the sentence printed with it is the
-  card-guarantee wording of the version the row records, so a ticked card may be charged for exactly
-  what a card saved for cash may ([What a customer owes](#receivables)). The web sends the tick as
+  card-guarantee wording of the version the row records. That wording still says the company may charge
+  the card for fees and unpaid cash. Since 2026-10-04 nothing does
+  ([Cash needs no card](#card-guarantee)), and the sentence is reworded with the next legal texts
+  ([below](#legal-texts-lag)). The web sends the tick as
   `CreateOrder`'s `saveCard`, `true` only for an offered, ticked box; the apps send it as
   `CreatePaymentIntent`'s `saveCard` (`POST api/Payment/CreatePaymentIntent`), because a mobile booking
   has no charge surface until then. Both default to `false`.
@@ -984,11 +977,19 @@ under **Saved cards** on `/profile`, Android and iOS under Profile → Payments
 *Remove*. A card saved either way is listed once Stripe confirms it; one still awaiting that
 confirmation is not.
 
-The section's copy did not change with the tick. On all three clients it introduces the card as the one
-that guarantees cash bookings and says what may be charged to it, and with no card it says a cash
-booking asks for one — *You will be asked to save one the next time you pay in cash* on the web, *Your
-first cash booking asks for one* on Android, *Cash bookings need one* on iOS. It does not mention the
-tick. Both lines stay true of a ticked card, which is that guarantee too.
+**No client's copy ties a card to cash** (since 2026-10-04). The customer web introduces the cards as
+*Cards saved to your account*, says *No card saved.* when there is none, and *Remove* asks only to
+confirm; its capture dialog and texts are gone. Android and iOS introduce the card word for word as *The
+card saved to your account. It is never charged unless you pay with it, and you can remove it at any
+time.* It promises no quicker payment, because no card payment offers the saved card. With no card they
+say *You can save one the next time you pay by card*, and *Remove* says the card can be saved again the
+same way. iOS keeps *Save a card* on the same screen; its note says only that saving charges nothing,
+and its consent tick asks only to agree to saving the card. On every client the consent refusal
+(`saved_card.consent_not_accepted`) asks only for that consent, where it used to ask the customer to
+agree that fees and unpaid cash may be charged. Until then Android and iOS introduced the card as the
+one that guarantees cash bookings, listed what could be charged to it, and with no card said a cash
+booking needs one. The versioned consent sentence recorded with each saved card is unchanged
+([The texts in force lag](#legal-texts-lag)).
 
 - **Removing a card** (`DELETE api/SavedCard/Remove/{id}`, the customer's own; another's is
   `saved_card.not_found`) deactivates the row and leaves the payment method on the Stripe Customer,
@@ -996,7 +997,8 @@ tick. Both lines stay true of a ticked card, which is that guarantee too.
   active row names. It works the same whichever way the card was saved.
 - **Erasure deletes the saved cards** with the per-currency Stripe Customers they hang on.
 
-→ [ADR-0070](/decisions/adr-0070), and its [amendment of 2026-10-01](/decisions/adr-0070#amended-2026-10-01)
+→ [ADR-0070](/decisions/adr-0070), and its amendments of [2026-10-01](/decisions/adr-0070#amended-2026-10-01)
+and [2026-10-04](/decisions/adr-0070#amended-2026-10-04)
 
 ## What a customer owes {#receivables}
 
@@ -1015,7 +1017,7 @@ A free cancellation, a card booking and a guest open none: a card booking keeps 
 refund, and a guest always prepays.
 
 **While one is open, the customer books no cash** — with any company; card bookings stay open, since
-they are prepaid (decision 18 (a)) → [A saved card guarantees cash](#card-guarantee).
+they are prepaid (decision 18 (a)) → [Cash needs no card](#card-guarantee).
 
 **How it is paid.**
 
@@ -1027,23 +1029,31 @@ they are prepaid (decision 18 (a)) → [A saved card guarantees cash](#card-guar
   (`receivable.not_open`); another customer's is `receivable.not_found`. The customer web shows the
   amount due on the order's page and, when cash is refused for a debt, on the payment step; Android and
   iOS under Profile → Payments.
-- **By an off-session charge on the saved card — built, and switched off.** `ChargeOpenReceivables`
-  (Functions, every 15 minutes) charges each open receivable **once** to the customer's usable card in
-  its currency, with the customer absent, company by company, the attempt committed before the call. It
-  does nothing unless `Payments:OffSessionChargesEnabled` is true; the switch is false in code and
-  deliberately absent from `Cleansia.Functions/appsettings.json`, where a committed value would beat the
-  Azure app setting. **It stays off until the phase-4 terms carry the lawyer's consent wording**
-  (decision 16). Once on: a pay link the customer holds is closed first, and one they have already paid
-  is not charged; a customer with no usable card is not charged and the receivable stays open; a frozen
-  company's receivables are left out; a decline or the bank's demand for authentication e-mails the
-  customer a pay link (decision 18 (a)), unless the receivable was settled or written off meanwhile.
+- **By an off-session charge on the saved card — built, and switched off for good.**
+  `ChargeOpenReceivables` (Functions, every 15 minutes) charges each open receivable **once** to the
+  customer's usable card in its currency, with the customer absent, company by company, the attempt
+  committed before the call. It does nothing unless `Payments:OffSessionChargesEnabled` is true; the
+  switch is false in code and deliberately absent from `Cleansia.Functions/appsettings.json`, where a
+  committed value would beat the Azure app setting. **It stays off: no card is charged** (owner ruling
+  2026-10-04, replacing decision 16's *until the phase-4 terms carry the lawyer's consent wording*). The
+  code is unchanged and not deleted. Were it switched on: a pay link the customer holds is closed first,
+  and one they have already paid is not charged; a customer with no usable card is not charged and the
+  receivable stays open; a frozen company's receivables are left out; a decline or the bank's demand for
+  authentication e-mails the customer a pay link (decision 18 (a)), unless the receivable was settled or
+  written off meanwhile.
 - **Paid once.** Stripe's webhook settles a receivable under its own company, without touching the
   order's payment status, charge surface or refunds; a second payment of one already paid is refunded
   in full. A receivable written off and then paid anyway is paid — the money is the company's.
   → [Payment and fiscal](/flows/payment-and-fiscal#saved-cards-and-receivables)
 - **Its payment earns a fee receipt** of its own, next to the order's sale receipt
-  → [Payment and fiscal](/flows/payment-and-fiscal#fee-receipt); and a paid cancellation or lockout fee
-  pays the crew their share → [The crew's share of a collected fee](#fee-share).
+  → [Payment and fiscal](/flows/payment-and-fiscal#fee-receipt); and a paid cancellation fee pays the
+  crew their share → [The crew's share of a collected fee](#fee-share). A lockout's crew is paid at the
+  confirmation, whether its receivable is paid or not
+  → [A confirmed lockout pays the seat's reward](#lockout-pay). A paid lockout receivable asks for no
+  pay (since 2026-10-04). It used to ask for the crew's pay again under the key the confirmation had
+  used, which the outbox holds for at least 14 days, so the webhook's commit failed on that key's
+  unique index on every Stripe retry: the payment was never recorded and the customer stayed blocked
+  from cash.
 
 **Administrators** list the company's receivables — Orders → Receivables, filtered by status, kind,
 customer or order (`GET api/AdminReceivable/get-paged`, any administrator) — and write an open one off
@@ -1208,8 +1218,27 @@ Android and iOS clients, keyed by the version the server records
 no banner, `check-legal-drafts.mjs` reads only the seed tree, and nothing else in the production deploy
 checks them — so **they have to be checked by hand before launch**. The lawyer's wording replaces each
 as a new wording key on all three clients plus a bump of that constant, not a seed folder. The
-off-session charge on a saved card stays switched off until the terms carry the lawyer's consent
-wording → [What a customer owes](#receivables).
+off-session charge on a saved card stays switched off: since 2026-10-04 no card is charged
+→ [What a customer owes](#receivables).
+
+### The texts in force lag the rulings of 2026-10-04 {#legal-texts-lag}
+
+**The platform follows the owner's rulings of 2026-10-04, and the texts in force do not yet.** A
+version in force is never edited, and the new dated versions that carry these rulings come in the next
+change. Until they are seeded, the texts customers and cleaners accept still say:
+
+| Text in force | Still says | What the platform does since 2026-10-04 |
+|---|---|---|
+| Terms of service `2026-10-03`, §7 and §8 | a cash booking needs a card saved as a guarantee, which the company may charge without asking for a cash booking's fees, unpaid cash and an approved top-up; a failed charge is followed by a pay link | cash needs no card, and no card is charged → [Cash needs no card](#card-guarantee) |
+| The card-guarantee consent, `card-guarantee-draft-2026-09-28`, printed with *Save this card* on the clients | the card may be charged for those fees and unpaid cash | nothing charges a saved card |
+| Framework agreement `2026-09-29`, §8, §10 and §16; self-billing agreement `2026-09-29`, §3; contract for work `2026-09-29` | rewards are settled monthly, on an invoice after each monthly pay period | a pay period is 14 days → [Pay periods are 14 days](#pay-periods) |
+| Framework agreement §5, §11 and §16 | approval needs a certificate of liability insurance, the cleaner keeps that insurance, and losing it ends the agreement at once | the certificate is recommended and gates nothing → [The papers a cleaner uploads](#employee-documents) |
+| Framework agreement §9; contract for work; self-billing agreement §2 and §3 | a cleaner who is not let in is paid half of the fee collected, and nothing on a fee still owed | a confirmed lockout pays the seat's full reward, always → [A confirmed lockout pays the seat's reward](#lockout-pay) |
+| Framework agreement §9 | the reward follows the rates for the services and packages, the rooms and bathrooms and the dirtiness | it also carries a company share of the extras booked → [Cleaner pay](#cleaner-pay) |
+| Framework agreement §5 | the approval conditions, with no business-register check | approval also asks the register whether a Czech IČO exists, the business is live and a trade licence is in force → [The business register](#business-register) |
+
+As with every new version, a cleaner accepts the new agreements before their next take and a customer
+the new terms before their next booking ([above](#legal-drafts)).
 
 ## The contract for work {#work-contract}
 
@@ -1332,6 +1361,9 @@ no text in force would gate nothing.
   agreement:* the cleaner processes customer data and home photos for the company, keeps no copies —
   job photos only through the app's camera — and loses access 24 hours after completion
   ([Photos](#photos-and-access)), with one penalty for intentional or grossly negligent misuse.
+  Two of those lines no longer describe the platform: since 2026-10-04 a pay period is 14 days and the
+  insurance certificate is optional. The agreements also still pay a lockout half of the fee collected
+  ([The texts in force lag](#legal-texts-lag)).
 
 - **Reading and accepting.** `GET Employee/GetMyLegalDocuments` (both partner hosts) lists the documents
   in force for the cleaner's work market — their address's market until they are approved — with the
@@ -1384,6 +1416,65 @@ above, which are accepted in the app, never uploaded.
   `Rejected` contract and **Reject** only on a `Pending` one. **There is no automatic return to
   `Pending`:** uploading documents or completing the profile leaves the contract `Rejected` until an
   administrator approves it.
+- **The insurance certificate is recommended, not required** (owner ruling 2026-10-04, replacing the
+  requirement of 2026-09-28). `InsuranceDocument` is seeded as an **optional** requirement for Czechia
+  in `prod-bootstrap.sql`, and the DEV seed copies Czechia's rows to Slovakia. It stays on the cleaner's
+  checklist as a prompt and gates nothing: approval reads only the required rows. The seed inserts with
+  `ON CONFLICT DO NOTHING`, so a database seeded before the ruling keeps the row required until it is
+  reseeded or an administrator clears the flag on the document-requirements screen
+  ([Document requirements](/admin-app/user-management#document-requirements)).
+  The framework agreement in force still requires the certificate
+  ([The texts in force lag](#legal-texts-lag)).
+
+## The cleaner's business is checked in its register {#business-register}
+
+**Owner ruling 2026-10-04.** A Czech cleaner's company ID (IČO) is looked up in ARES, the Czech
+register of economic subjects. Before the ruling, only its format (`^\d{8}$` for Czechia) was checked.
+
+- **One lookup.** `IBusinessRegistry` answers for the country whose register holds the number;
+  `AresBusinessRegistry` asks ARES only for a Czech number (country `CZE`) and consults nothing for any
+  other country. A number that is not eight digits counts as not registered, with no call made. It
+  reads three facts and **stores none**: the number exists (a `404` means it does not), the business
+  has not ended (no `datumZaniku`), and a trade licence is in force (`stavZdrojeRzp` is `AKTIVNI`).
+  **No name is matched.** The client is a named HTTP client with a budget of its own: 12 s in all, at
+  most three attempts of 4 s. An error, a timeout, a rate limit or a reply it cannot read is
+  *unavailable*. **Since 2026-10-04 nothing wraps that budget and nothing logs the request.** Every host
+  gives each HTTP client the standard resilience handler, and until then it wrapped the lookup's own, so
+  a register that kept failing was asked twelve times in up to 30 s while a save or an approval waited.
+  The client's request logging wrote the URL, which ends in the IČO, at Information. The client now
+  drops both.
+- **The cleaner's own save checks only that the number exists.** `UpdateEmployee` (the partner web
+  profile) and `UpdateIdentificationInfo` (the apps' identification section) refuse, after the format
+  check, a number the register does not hold, with `validation.registration_number.not_registered`.
+  **An outage lets the save through**, because the check that binds comes at approval. It runs on
+  every save, so an approved cleaner cannot swap in an unchecked number either.
+- **The save asks the register approval asked** (since 2026-10-04). That is the register of the
+  cleaner's work country once they are approved, and before it the register of their address country
+  (the one `UpdateEmployee` is saving). The business country the apps send is not used: no column keeps
+  it, and until then the save asked that country's register, so an approved Czech cleaner who named any
+  other country, for which no register is consulted, could swap in any number.
+- **Approval checks all three, and an outage refuses.** `ApproveEmployee` asks the register of the work
+  country the cleaner is approved for. It refuses a number the register does not hold
+  (`validation.registration_number.not_registered`), an ended business (`employee.business_ceased`), no
+  trade licence in force (`employee.trade_licence_inactive`), and a register that did not answer
+  (`employee.business_registry_unavailable`, *try again in a few minutes*). It runs after the profile,
+  document and country rules, so those are reported first. A person is approving, so a retry is cheap.
+- **A switch for development.** `Ares:Enabled` is on unless a host says otherwise, so a deployment that
+  forgets the section still checks. The Development settings of the Partner, Partner Mobile and Admin
+  hosts switch it off, as do the integration-test and host-test settings, so local runs and CI never
+  call ares.gov.cz. Switched off, nothing is consulted and both the save and approval pass, so
+  `12345678`, which ARES does not hold, is approved on a local run. **The deployed DEV hosts skip
+  ARES too** (since 2026-10-04, owner default). They run as `Production`
+  ([Infrastructure](/architecture/infrastructure)), so the Development settings never load there, and
+  `deploy/bicep/main.bicep` sets `Ares__Enabled` on every API host: `true` on prod, `false` elsewhere.
+  Until then DEV checked ARES, and a test cleaner with a made-up IČO could not be approved.
+- **What the cleaner and the administrator read.** The admin web has all four keys in its five locales.
+  The partner web and, since 2026-10-04, the Android and iOS partner apps have
+  `validation.registration_number.not_registered` in their five, worded alike; until then a refused save
+  in the apps showed the raw key. The three approval-only keys answer the admin host alone.
+
+The framework agreement in force names no register check among its approval conditions
+([The texts in force lag](#legal-texts-lag)).
 
 ## Photos, and the customer's details after the job {#photos-and-access}
 
@@ -1506,6 +1597,7 @@ the rate the order was booked at (`Order.DirtinessRate`) after the clamp:
 jobBase     = Σ config.BasePay                                  # one config per service / package
 jobExtras   = Σ (config.ExtraPerRoom × max(0, rooms - 1))       # the FIRST room is inside BasePay
             + Σ (config.ExtraPerBathroom × bathrooms)
+            + round(Σ OrderExtra.UnitPrice × share / 100, 2)    # the extras booked; pay.extras_share_percent
 jobMin      = max(config.MinimumPay > 0)     # the strongest guarantee wins; 0 = no bound
 jobMax      = min(config.MaximumPay > 0)     # the tightest cap wins;        0 = no bound
 jobDirt     = round(clamp(jobBase + jobExtras, jobMin, jobMax) × Order.DirtinessRate, 2)
@@ -1541,8 +1633,18 @@ and the completion re-priced contracted work and the self-billed invoice disagre
 
 Six things that surprise people:
 
-- **`extrasPay` is rooms and bathrooms, not the extras the customer bought.** The order's extra lines
-  (`OrderExtra`) are read by nothing on this path; they earn the cleaner no pay.
+- **`extrasPay` carries a share of the extras the customer bought** (owner decision 2026-10-04). Until
+  then it was rooms and bathrooms only, and an extra earned the cleaner nothing. The job's extras now
+  also carry the company's share of the prices the order froze for its extras (`OrderExtra.UnitPrice`):
+  `round(Σ prices × pay.extras_share_percent / 100, 2)`, rounded half away from zero. The share is a
+  company setting, `pay.extras_share_percent` in the *pay* category of Company settings: a whole number
+  from 0 to 100, default **50**, the standard rate template's 0.5. Because it rides `jobExtras`, it is
+  frozen on the seat at the take with the other job figures, split equally across the seats with the
+  cent residue on the first, sits inside the clamp, is raised by the dirtiness level, and is paid on the
+  existing *Extras* line. The contract for work states the reward with it, so the pay row is what the
+  contract said; a seat with no contract is paid at the share in force when its pay is calculated.
+  Two seats of a job whose base is 333.33, with one extra booked at 250: the share is 125, the job
+  458.33, *Heavy* adds 137.50, and the seats are paid 297.92 and 297.91. No schema or wire change.
 - **A cleaner is not paid for distance** (owner ruling 2026-09-24). Neither calculator path in
   `PayCalculatorExtensions`, nor any pay estimate or preview, reads a kilometre rate or a travel
   distance: every new pay row carries `ExpensesPay = 0` and a breakdown with no distance term (`Base`,
@@ -1571,7 +1673,11 @@ Six things that surprise people:
   the first seat's residue cents — and the partner web labels it *per spot*. On a job the cleaner
   holds, the job detail, *My jobs* and the dashboard (a completed job not yet paid included) quote
   their own seat's contract reward from its frozen figures; an open job is quoted at today's rates,
-  because an offer is made at them. My Pay carries the term as
+  because an offer is made at them. **An open job's quote includes the extras share** (since
+  2026-10-04): `OrderPayEstimator.Estimate` adds the company's `pay.extras_share_percent` of the extras
+  booked on the board, the job detail, the dashboard estimate and the preview, so each quotes the reward
+  the contract the cleaner reads before the take (`GetWorkContractPreview`) states. Until then it passed
+  none, and a job with extras was quoted low until it was taken. My Pay carries the term as
   `dirtinessPay` on each row and `totalDirtinessPay` on the period summary, and the partner web, Android
   and iOS show it in the pay breakdown. → [Pay and payouts](/flows/pay-and-payouts)
 
@@ -1595,42 +1701,101 @@ the unlinked manual deduction is unchanged → [A cleaner is charged only when f
 
 ### The crew's share of a collected fee {#fee-share}
 
-**Owner ruling 2026-09-28 (decision 12).** A late cancellation or a [lockout](#lockout) pays the
-cleaners who lost the job **half of the fee** (`BookingPolicy.CleanerFeeShareRate = 0.50`) — **once the
-company has collected it**, never on a fee that is still owed. Until then the company kept every fee.
+**Owner ruling 2026-09-28 (decision 12).** A late cancellation pays the cleaners who lost the job
+**half of the fee** (`BookingPolicy.CleanerFeeShareRate = 0.50`) — **once the company has collected
+it**, never on a fee that is still owed. Until then the company kept every fee. A
+[lockout](#lockout) was paid the same way until 2026-10-04, and now pays each seat its full reward
+([below](#lockout-pay)).
 
 ```
 collected = on an order that took a payment:
               max(0, min(TotalPrice − the cancellation refund,
                          TotalPrice − succeeded card refunds − credit returned on it))
             on an order that took no payment:
-              Σ its paid cash-cancellation-fee and lockout receivables
+              Σ its paid cash-cancellation-fee receivables
 seat      = share(collected × 0.50)    # over RequiredEmployees, the residue on the first seat, as job pay is
 ```
 
 - **When it is asked for.** At a customer's cancellation of an order that took a payment and owes a
-  fee, signed in or guest; at an administrator's lockout confirmation of an order that took a payment;
-  and when the webhook settles a cash-cancellation or lockout receivable. Each asks for every crew
-  member's pay on the existing pay queue, as a completion does.
-- **Never more than the company still holds.** An order refunded before it was cancelled or locked out
-  pays nothing, and one partly refunded pays on what is left: a late cancellation at 50 % of a 1 000
-  order after a 700 refund pays its one seat 150, half of the 300 still held. A cancellation refund
-  still waiting for its re-drive does not lower the figure — the first term keeps it to the fee. A
-  cancelled order that collected nothing writes no row (`payroll.no_collected_fee`, which only the queue
-  consumer sees and logs).
-- **A pay line of its own.** The row's `LineType` is `CancellationFeeShare` or `LockoutFeeShare`
-  (`PayLineType`, beside `Job`; wire integers 0–2, append-only). Its base is the seat's share with no
-  rates read and no clamp. The self-billed invoice line says it is a share of the fee — in Czech for a
-  Czech cleaner, in English elsewhere — and My Pay on the partner web, Android and iOS, like the admin
-  invoice, names each line's type.
-- Two seats of a 666.66 fee are paid 166.67 and 166.66; a paid 900 lockout receivable pays one seat 450,
-  as a lockout share.
+  fee, signed in or guest, and when the webhook settles a cash-cancellation-fee receivable. Each asks
+  for every crew member's pay on the existing pay queue, as a completion does.
+- **Never more than the company still holds.** An order refunded before it was cancelled pays nothing,
+  and one partly refunded pays on what is left: a late cancellation at 50 % of a 1 000 order after a
+  700 refund pays its one seat 150, half of the 300 still held. A cancellation refund still waiting for
+  its re-drive does not lower the figure — the first term keeps it to the fee. A cancelled order that
+  collected nothing writes no row (`payroll.no_collected_fee`, which only the queue consumer sees and
+  logs).
+- **A pay line of its own.** The row's `LineType` is `CancellationFeeShare` (`PayLineType`, beside
+  `Job` and `LockoutFeeShare`; wire integers 0–2, append-only). Its base is the seat's share with no
+  rates read and no clamp. The self-billed invoice line says it is a share of the late-cancellation fee
+  — in Czech for a Czech cleaner, in English elsewhere — and My Pay on the partner web, Android and iOS,
+  like the admin invoice, names each line's type.
+- Two seats of a 666.66 fee are paid 166.67 and 166.66; a paid 400 cash-cancellation fee receivable
+  pays one seat 200.
 - **The share in force when the fee is collected.** Unlike job pay, the share is not frozen when the
-  contract for work forms: `CleanerFeeShareRate` is read when the pay is asked for — at the cancel, the
-  lockout confirmation or the receivable's settlement, which can be weeks later — and stored nowhere
-  (owner ruling 2026-10-03, left as it is and written down). It is a constant and the framework
-  agreement states *half* in words (§9), so it moves only with a deploy and a new framework version,
-  and the ADR that makes that change decides what a fee owed before it but collected after receives.
+  contract for work forms: `CleanerFeeShareRate` is read when the pay is asked for — at the cancel or
+  the receivable's settlement, which can be weeks later — and stored nowhere (owner ruling 2026-10-03,
+  left as it is and written down). It is a constant and the framework agreement states *half* in words
+  (§9), so it moves only with a deploy and a new framework version, and the ADR that makes that change
+  decides what a fee owed before it but collected after receives.
+
+### A confirmed lockout pays the seat's reward {#lockout-pay}
+
+**Owner decision 2026-10-04.** Once an administrator confirms a [lockout](#lockout), each seat on the
+crew is paid **what the completed job would have paid it**, and paid always: on a paid card order, on a
+cash booking whose lockout receivable is still open or was written off, on a guest's booking, and on an
+order refunded before the lockout. Until then a lockout paid half of the fee the company had collected,
+and nothing while the fee was owed.
+
+- **The amount is the job's.** A seat whose contract for work formed is paid from the four figures
+  frozen on it at the take, with the order's `DirtinessRate`, `RequiredEmployees` and the first-seat
+  residue. A seat with no contract, such as a placement the cleaner never accepted, is paid at the
+  rates in force, the extras share included. One with no rate in the order's currency is refused
+  `payroll.no_pay_configuration` and writes nothing. No collected fee is read.
+- **Asked for at the confirmation, on every lockout.** `AdminCancelOrderAsLockout` asks for every crew
+  member's pay on the pay queue, whether or not the order took a payment.
+- **Only that confirmation makes a lockout** (since 2026-10-04). The pay recognises one by three facts
+  that only the confirmation writes together: the order was cancelled by an administrator, a lockout
+  report is stamped on it, and its reason is the key `order.cancelled.customer_lockout`
+  (`Order.IsConfirmedLockout`). Until then it read the reason alone, and a customer's cancellation
+  carries free text as its reason. A late cancellation whose text was that key paid each seat its full
+  reward instead of its share of the fee collected, and on a cash booking skipped the wait for the fee.
+- **An erasure does not undo it** (since 2026-10-04). Anonymising the customer clears an administrator's
+  or a customer's reason text, but keeps the lockout key on a confirmed lockout, as it keeps a platform
+  reason, and keeps the report's stamp. Until then an erasure that ran before the queued pay cleared the
+  key, so the seat was paid a share of the fee on a card order, and nothing on a cash one.
+- **The row keeps the wire type `LockoutFeeShare`** (`PayLineType` 2) and carries the job's base,
+  extras, dirtiness, minimum and maximum, so a later bonus or deduction re-clamps it as on a completed
+  job. The order is not marked `EmployeePayCalculated`, because it was never completed.
+- **What the line is called.** The copy now names the job's reward: *Your reward for the job — the
+  customer did not let you in* on the partner web, *Your reward for a job you could not get into* on
+  Android and iOS, *Job reward — customer lockout* in the admin console, in five languages each, and
+  *Job reward, customer lockout — order* (*Odměna za zakázku, znemožněný vstup — objednávka*) on the
+  self-billed invoice PDF, which until the same day still printed *Share of the fee for denied access*.
+
+A one-seat job frozen at a base of 500 and extras of 100, at *Normal*, pays 600 when the cleaner is
+locked out, as it would on completion. The framework agreement in force still says a lockout pays half
+of the fee collected ([The texts in force lag](#legal-texts-lag)).
+
+### Pay periods are 14 days {#pay-periods}
+
+**Owner decision 2026-10-04.** A pay period runs **14 days**, start and end inclusive
+(`PayPeriod.CreateBiWeekly`: the end is the start + 13). Until then it ran a calendar month.
+
+- **The nightly close rolls it.** `CloseExpiredPayPeriods` (02:00, company by company) closes every open
+  period that has ended, invoices it, and opens the next one from **the day after the closed one
+  ended**, so periods follow each other with no gap and no calendar alignment.
+- **The first period starts today.** When pay is calculated and the company has no open period, one is
+  opened from the current day, 14 days long.
+- **What did not change.** An invoice is due 14 days after it is issued
+  (`Constants.PayoutInvoice.PaymentTermsDays`). The request to hand over cash still counts
+  `cash.remittance_request_days` from the first close after a balance began ([below](#cash-held)). The
+  period-end reminder still goes 3 days and 1 day before the end. An administrator may still create a
+  period by hand, of 7 to 31 days ([Pay periods](/admin-app/pay-periods)).
+
+A period open when this shipped keeps its month and the next one is 14 days. The framework agreement,
+the self-billing agreement and the contract for work in force still say monthly
+([The texts in force lag](#legal-texts-lag)).
 
 ### Rates are per currency {#rates-per-currency}
 
@@ -2084,19 +2249,33 @@ keeps it — see [Cleansia Plus](#cleansia-plus).
 customer copy (the mobile trust badge and FAQ), a number in the country's `DefaultCurrencyCode`, per
 country because a policy is written per jurisdiction. Authored on the admin country form's Market
 section. **No market states a figure** (owner ruling 2026-09-28, replacing the 1 000 000 CZK seeded
-for CZE on 2026-09-13): every configuration is seeded null, so the copy reads "Insured" with no figure
-until the owner decides whose policy covers a booking — the cleaner's own or the company's — and at
-what amount, and authors it on the country form. The "background-checked" and "vetted" claims are gone
-from every client. **Whichever policy it becomes, a cleaner is approved only with a valid liability
-insurance certificate**: `InsuranceDocument` is seeded as a required cleaner document for CZE and SVK,
-so approval's existing required-documents rule refuses a cleaner without an approved one.
+for CZE on 2026-09-13): every configuration is seeded null. **Without a figure, no client says the
+cleaners are insured** (owner ruling 2026-10-04). Until then Android and iOS read *Insured*, with no
+figure, on the Home trust strip, on the confirm step's trust badge and in the Help FAQ's *Are cleaners
+insured?*. Now the Home trust strip shows only *Same-day*, and the badge and the FAQ question appear
+only for a market with a figure, as *Insured up to …*. The three no-figure strings are deleted in all
+five languages; the customer web never made the claim. The field and the figured copy stay for the day
+the owner decides whose policy covers a booking, the cleaner's own or the company's, and at what
+amount. The "background-checked" and "vetted" claims are gone from every client. **A cleaner is
+approved without a liability insurance certificate** (owner ruling 2026-10-04, replacing the
+requirement of 2026-09-28): it is recommended, not required
+→ [The papers a cleaner uploads](#employee-documents).
 
 **Loyalty earn — `Currency.LoyaltyPointsDivisor`.** A completed order earns
 `floor(total / divisor)` in the order's currency, at the divisor of the day it completes. **Every
 refund takes back the same share of the points that order earned as it returned of the price** (owner
-rulings 2026-10-03): `floor(earned × returned / TotalPrice)`, where *returned* is the card leg plus the
-credit leg, gross. It is capped at what the order's earn still holds after earlier refunds, and floored
-per refund in the customer's favour. It reads no divisor, so an admin's divisor edit after completion
+rulings 2026-10-03), **worked on the order's running total** (since 2026-10-04):
+
+```
+target = floor(earned × min(returned so far, TotalPrice) / TotalPrice)
+taken  = target − the points this order's refunds and completion already took back     # never below 0
+```
+
+*Returned so far* is everything the order has given back, gross: the succeeded card refunds, the credit
+legs returned with them, and dispute settlements in credit, counting a settlement the same command has
+staged and not yet saved, because a dispute settled in credit takes its points before its commit. A
+refund also hands in its own amount and the larger figure is used, so a full refund, which hands in the
+whole price, takes everything left. It reads no divisor, so an admin's divisor edit after completion
 cannot move it, and VAT cancels out of a share. That is the customer terms' *"a refund removes points in
 the same proportion"* (§11). There is one rule (`ILoyaltyService.RevokeForRefundAsync`), keyed per refund
 so a retried refund takes nothing twice, and three refunds call it:
@@ -2104,14 +2283,22 @@ so a retried refund takes nothing twice, and three refunds call it:
 | Refund | *Returned* | Key |
 |---|---|---|
 | Partial (`IssuePartialRefund`) | the card leg plus the credit leg | the refund's own |
-| Full (`AdminRefundOrder`) | the whole `TotalPrice`, whatever each tender returned, so the cap takes **everything the earn still holds** | the refund's own (`refund:{orderId}:admin:full`) |
+| Full (`AdminRefundOrder`) | the whole `TotalPrice`, whatever each tender returned, so it takes **everything the earn still holds** | the refund's own (`refund:{orderId}:admin:full`) |
 | Dispute settlement (`ResolveDispute`) | what the settlement gave back, `CardRefundedAmount + CreditReturnedAmount` — the credit-settled one too, or a customer could keep the points by choosing credit; nothing when nothing went back | `dispute-settlement:{disputeId}`, the key the credit ledger already uses |
+
+**Two refunds of one order cannot both take the whole share.** The clawback takes the customer's owner
+lock before it reads the running total, the same `Users`-row lock the credit ledger takes, held until the
+commit, and the completion grant takes it too. A second refund therefore reads what the first took, and
+a refund that settles while the order completes is either counted by the completion or finds its earn.
+Until 2026-10-04 each refund floored its own share, capped at what the earn still held. *N* refunds
+that together returned the whole price could leave up to *N* − 1 points behind: 255 then 245 of a
+1 000 order that earned 100 kept 51, where one refund of 500 keeps 50. A refund settling during the
+completion could also keep its points. The shares now floor once, on the total, so 255 then 245 keep 50.
 
 Until 2026-10-03 the clawback divided the card leg's net by the divisor at the refund: a halved divisor
 took every point for refunding half the order, a VAT order refunded in full kept 21 of its 121 points,
 and the credit leg counted for nothing. A full refund and a dispute refund took back no points at all
-until the second ruling that day. *N* partial refunds that together return the whole price can
-leave up to *N* − 1 points behind; that is accepted rather than tracked. The divisor is authored per
+until the second ruling that day. The divisor is authored per
 currency by the admin on the currency form, like a price;
 CZK is seeded at **10** — the historical "1 point per 10 CZK". A currency with no divisor earns nothing
 and logs; it is never scaled from another currency's rate in either direction. Because an order completed
@@ -2121,17 +2308,22 @@ one cannot have it cleared (`currency.loyalty_divisor_missing`).
 **Money given back before the order completes is taken at completion** (since 2026-10-04). A refund
 or a dispute settlement before completion found no earn to take from, so completion used to earn on the
 whole price and the points stayed. Completion still writes the earn on the whole `TotalPrice`, and now
-writes beside it a refund row of `floor(earned × returned / TotalPrice)`. Here *returned* is everything
-the order has given back so far: the succeeded card refunds, the credit legs returned with them, and
-dispute settlements in credit. Both rows commit together. A 1 000 CZK order earns 100 points; with 300
-returned before completion it keeps 70, and a later full refund takes those 70. The earn row itself is
-not reduced, because every later refund takes its share of it. With a reduced row, 500 refunded before
-completion and 500 after would leave 25 points instead of 0. So a refund before completion and one
-after take back what the same two refunds would take after it. With whole shares that equals one refund
-of the sum: 200 before and 300 after take 50, as one refund of 500 does. With fractional shares the
-per-refund floor still applies: 255 before and 245 after keep 51 points, while one refund of 500 keeps
-50. A refund that settled before the earn was written takes nothing more when it is replayed after
-completion, because completion already took its share.
+writes beside it a refund row for the target on what the order has given back so far, by the rule
+above. Both rows commit together. A 1 000 CZK order earns 100 points; with 300 returned before
+completion it keeps 70, and refunds of the rest after it take those 70. The earn row itself is not
+reduced, because every later refund takes its share of it on the running total. So a refund before
+completion and one after take back what one refund of their sum would: 200 before and 300 after take
+50, and so do 255 before and 245 after (25 at completion, 25 after). A refund that settled before the
+earn was written finds nothing left to take when it is replayed after completion.
+
+**A card order refunded before the job ends can be completed** (since 2026-10-04). `CompleteOrder`
+passes a card order whose payment is `Paid`, `PartiallyRefunded` or `Refunded`; `Pending` and `Failed`
+are still refused with `order.payment_not_confirmed`, and the cash rule is unchanged. Until then an
+administrator's refund before the end, partial or full, left the crew refused at completion, and only
+an administrator's status override could close the order. That override asks for no crew pay and
+grants no points, so the share above was never taken. Now a 1 000 CZK order refunded 200 before the end
+completes, asks for its crew's pay, and writes the earn of 100 with a refund row of −20; refunded 1 000,
+the row is −100.
 
 **A full refund's clawback can be run again** (since 2026-10-04). The full refund settles and marks the
 order `Refunded` before its clawback runs. A clawback that failed therefore left an order the full
@@ -2141,7 +2333,10 @@ and moves no money, and the clawback, keyed on the same refund, takes what is le
 once. The refund notice is sent when none is queued on its key. The first call staged it with the
 clawback, so a clawback that failed lost the notice as well; one that committed is not sent twice. An
 order refunded any other way, or whose full refund never settled, is still refused
-(`refund.order_not_refundable`).
+(`refund.order_not_refundable`). **A re-run with nothing left to do is refused** (since 2026-10-04): when
+the notice was already queued and the clawback finds no points left to take, `AdminRefundOrder` answers
+`refund.nothing_refundable`, where it used to answer that a refund was issued. A first full refund
+succeeds whatever the clawback finds.
 
 **The tier-upgrade notice names the tier that was saved** (since 2026-10-04). Two writes for one
 customer at the same moment both land, the later one replayed onto the earlier one's commit
@@ -2151,6 +2346,15 @@ the account never reached, or say nothing when the replay was what crossed a thr
 decided after the save, against the tier the account held in the database just before it, and names
 the tier saved. Only a promotion is announced. An earn that crosses a threshold while the share taken
 at completion keeps the account below it announces nothing.
+
+**Only a loyalty write takes the owner lock** (since 2026-10-04). A first grant for a customer with no
+account takes it and reads again, so two first grants land on one account
+([Loyalty — points](/flows/loyalty-and-memberships#points)). The customer's own loyalty page
+(`GetMyLoyalty`) and an administrator's lookup (`GetUserLoyaltyAccount`) read a customer with no account
+as Bronze with no points, take no lock and create nothing; the account is the first grant's to open.
+Until then both went through the same get-or-create, so on a miss a page view opened a transaction and
+held the customer's `Users` row until the request ended, and a grant or credit write for that customer
+waited behind it.
 
 **Tier floor — `LoyaltyTierConfig.MinimumOrderAmountForDiscount`.** Seeded at **1000** for every tier
 that has one. It is a platform-default-currency number, enforced only on an order in that currency; on
@@ -2289,8 +2493,10 @@ the list is retried on the next navigation.
 [ADR-0060](/decisions/adr-0060)). A locale string carries a placeholder, never an amount or a
 currency word; the client formats the market's figure in the market's currency. The two figures are
 the no-show credit (per currency) and the insurance ceiling (per country), both on the market row;
-the terms page states the market's currency code; a market with no figure gets the copy variant that
-names none. The parity checker fails any locale that types a figure back in.
+the terms page states the market's currency code; a market whose currency has no no-show credit gets
+the copy variant that names none, and a market with no insurance ceiling makes no insurance claim at
+all (owner ruling 2026-10-04) → [Insurance ceiling](#money-constants). The parity checker fails any
+locale that types a figure back in.
 
 **A market has an operating company** (owner ruling 2026-09-13, [ADR-0061](/decisions/adr-0061):
 *"We'll make a holding company and more companies under it for each region"*). Each market is served
@@ -2578,7 +2784,7 @@ the only marketing channel.**
   accepted version and date, and the promo push preference as the marketing consent. Two more acts sit
   beside them, recorded on what they govern rather than as consent rows: the request to start within
   the withdrawal period, on every booking ([below](#early-performance)), and the card-guarantee consent,
-  on the saved card ([A saved card guarantees cash](#card-guarantee)).
+  on the saved card ([The saved cards](#saved-cards)), which since 2026-10-04 no cash booking asks for.
 - **Necessary cookies only.** The customer, partner and admin web apps show a necessary-only cookie
   notice — no accept, no decline, no categories — and the customer banner no longer writes consent
   rows.
@@ -2832,7 +3038,10 @@ for 3 years then delete — cleaner and better for defence"*): the description, 
 resolution notes stay readable under a stamp the erasure sets, and the weekly sweep blanks them once
 it is past; the evidence files still go at erasure. The cancellation reason is cleared with the
 order's other customer fields — unless the platform wrote it, because a platform reason is a code
-(`order.cancelled.company_wind_down`), not personal data, and the wind-down retries its refunds by it.
+(`order.cancelled.company_wind_down`), not personal data, and the wind-down retries its refunds by it;
+or, since 2026-10-04, unless it is the key `order.cancelled.customer_lockout` on a lockout an
+administrator confirmed (`LockoutReportedAt` stamped), because the crew's pay recognises the lockout by
+it → [A confirmed lockout pays the seat's reward](#lockout-pay).
 **Every saved address goes**, inactive ones included, and an address the subject only ever saved is
 deleted unless another customer's order, saved address or employee record still uses it.
 → [GDPR — erasure](/flows/gdpr-and-audit#erasure-is-anonymise-in-place)

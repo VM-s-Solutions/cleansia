@@ -6,9 +6,9 @@ namespace Cleansia.Core.AppServices.Features.Orders.DTOs;
 /// <summary>
 /// Server-side projection shape for the order LIST queries — exactly the columns the
 /// <see cref="OrderListItem"/> mapper reads plus the sidecar fields the list handlers need
-/// (assignee ids for the ownership mask, each seat's frozen pay figures for the caller's own reward,
-/// address id for the geocode backfill). Never leaves the backend; the wire DTO stays
-/// <see cref="OrderListItem"/>.
+/// (assignee ids for the ownership mask, each seat's frozen pay figures for the caller's own reward, the
+/// extras' summed prices for the pay estimate, address id for the geocode backfill). Never leaves the
+/// backend; the wire DTO stays <see cref="OrderListItem"/>.
 /// </summary>
 public sealed record OrderListRow(
     string Id,
@@ -22,6 +22,7 @@ public sealed record OrderListRow(
     // Slugs, not a slug->bool map: an order's extras are rows now, and a row means selected. The DTO
     // boundary still emits { slug: true } so no client or mobile spec moves.
     IReadOnlyCollection<string> ExtraSlugs,
+    decimal ExtrasSubtotal,
     DateTime CleaningDateTime,
     PaymentType PaymentType,
     PaymentStatus PaymentStatus,

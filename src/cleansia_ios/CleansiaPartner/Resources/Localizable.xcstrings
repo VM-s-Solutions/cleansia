@@ -15317,31 +15317,31 @@
         "cs": {
           "stringUnit": {
             "state": "translated",
-            "value": "Váš podíl z poplatku za neumožněný přístup"
+            "value": "Vaše odměna za zakázku, kam jste se nemohli dostat"
           }
         },
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Your share of the lockout fee"
+            "value": "Your reward for a job you could not get into"
           }
         },
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Ваша доля сбора за непредоставленный доступ"
+            "value": "Ваше вознаграждение за заказ, куда вы не смогли попасть"
           }
         },
         "sk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Váš podiel z poplatku za neumožnený prístup"
+            "value": "Vaša odmena za zákazku, kam ste sa nemohli dostať"
           }
         },
         "uk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Ваша частка збору за ненаданий доступ"
+            "value": "Ваша винагорода за замовлення, куди ви не змогли потрапити"
           }
         }
       }

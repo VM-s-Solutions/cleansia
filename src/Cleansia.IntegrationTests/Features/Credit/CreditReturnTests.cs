@@ -281,6 +281,31 @@ public class CreditReturnTests(PostgresContainerFixture fixture) : BaseIntegrati
     }
 
     /// <summary>
+    /// A dispute settled in credit takes its loyalty points in the same unit of work, before the commit, so
+    /// the settlement it is staging counts beside the ones already committed.
+    /// </summary>
+    [Fact]
+    public async Task TheDisputeSettledTotalCountsASettlementThisUnitOfWorkHasStaged()
+    {
+        await ResetAsync();
+        var (userId, currencyId) = await SeedCustomerAsync(100m);
+        await using (var seed = NewContext())
+        {
+            var account = await new CreditAccountRepository(seed).EnsureForUserAsync(userId, currencyId, CancellationToken.None);
+            account!.Issue(250m, CreditTransactionReason.DisputeSettlement, "dispute-settlement:d1", ActorId, orderId: OrderId, disputeId: "d1");
+            await seed.CommitAsync(CancellationToken.None);
+        }
+
+        await using var ctx = NewContext();
+        var repo = new CreditAccountRepository(ctx);
+        var staging = await repo.EnsureForUserAsync(userId, currencyId, CancellationToken.None);
+        staging!.Issue(60m, CreditTransactionReason.DisputeSettlement, "dispute-settlement:d2", ActorId, orderId: OrderId, disputeId: "d2");
+        staging.Issue(40m, CreditTransactionReason.DisputeSettlement, "dispute-settlement:d3", ActorId, orderId: "other-order", disputeId: "d3");
+
+        Assert.Equal(310m, await repo.GetDisputeSettledTotalForOrderAsync(OrderId, CancellationToken.None));
+    }
+
+    /// <summary>
     /// THE ONE THAT WOULD ROT SILENTLY. Both the debit and the return are raw SQL that bypasses the
     /// entity, so neither runs <c>CreditAccount.Touch()</c> — they set <c>ExpiresOn</c> themselves.
     ///

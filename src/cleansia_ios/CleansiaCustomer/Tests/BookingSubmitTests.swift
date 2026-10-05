@@ -24,7 +24,6 @@ final class BookingSubmitTests: XCTestCase {
             profileClient: profile,
             orderCreateClient: create,
             countryResolver: country,
-            savedCardClient: FakeSavedCardClient.holdingCzkCard(),
             tokenStore: tokenStore,
             languageTag: { [unowned self] in languageTag },
             isCardPaymentAvailable: cardAvailable,

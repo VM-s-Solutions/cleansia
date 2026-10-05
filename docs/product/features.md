@@ -26,7 +26,9 @@ Android and iOS alike
 Paying by card, a signed-in customer on web, Android or iOS may tick *Save this card for my next
 bookings*, unticked by default; only a ticked card is kept, under the card-guarantee consent, and it
 is listed with the customer's saved cards, where it can be removed
-([a saved card](/product/business-rules#card-guarantee)). On the web, book as a guest with no account,
+([the saved cards](/product/business-rules#saved-cards)). A cash booking asks for no card, and no card
+is ever charged (since 2026-10-04 → [cash needs no card](/product/business-rules#card-guarantee)). On
+the web, book as a guest with no account,
 paying by card; the Android and iOS apps book for a signed-in customer only. Get a live price quote
 before committing, including whether an
 express surcharge applies and whether a membership waives it. Before the address step the catalogue and the quote are in the chosen
@@ -161,9 +163,10 @@ replaced the plain *Book* card, which repeated the Book button.
 **Honest copy** — the money figures in the customer copy (the apology credit when a cleaner never
 comes, the insurance ceiling on the mobile trust badge and FAQ, the currency named in the terms) come
 from the market, not from the translation; a market with no figure gets the sentence without one — and
-since 2026-09-28 no market carries an insurance figure. No client claims the cleaners are
-background-checked or vetted, promises a reschedule button, advertises a welcome discount or says the
-supplies are eco products; the cleaner brings the supplies, included in the price. The
+since 2026-09-28 no market carries an insurance figure. Since 2026-10-04 a market with no insurance
+figure gets no insurance claim at all: no client says the cleaners are insured. No client claims the
+cleaners are background-checked or vetted, promises a reschedule button, advertises a welcome discount
+or says the supplies are eco products; the cleaner brings the supplies, included in the price. The
 copy promises only what the platform does (since 2026-09-28): the web catalogue's trust chip says
 *24 h to report a problem* — the dispute window — instead of *100 % Satisfaction*; the web order
 detail has no *Track live* button, which only went back; the mobile referral slide says both sides
@@ -242,7 +245,11 @@ years.
 
 **Onboarding** — register, upload the documents your country asks for, add payout details, wait for
 approval. An incomplete profile or an unapproved contract blocks work, deliberately, and approval now
-requires the required documents to exist and be accepted rather than just a button press. While the
+requires the required documents to exist and be accepted rather than just a button press. The insurance
+certificate is recommended, not required (since 2026-10-04). A Czech company ID (IČO) is looked up in the
+ARES business register: the cleaner's own save refuses a number ARES does not hold, and approval also
+needs the business live and a trade licence in force
+([the business register](/product/business-rules#business-register)). While the
 apps' lock screen waits for that approval, every finished section stays open from it — to correct a
 detail or add the second document the country asks for — and an edit does not resubmit the
 application. The decision is pushed to the cleaner either way, and a rejection shows the
@@ -286,9 +293,12 @@ time, a notice about two hours before each one, and a nudge close to the start f
 has not set off. The nudge stops the moment they mark themselves on the way. None of the three can be
 silenced: they are about work the cleaner already accepted.
 
-**Getting paid** — see pay per job, per pay period, and download invoices. A job pays its service and
-package rates plus rooms and bathrooms, within the rates' floor and cap; nothing is paid for travel
-distance → [Business rules — cleaner pay](/product/business-rules#cleaner-pay). Payout details are the
+**Getting paid** — see pay per job, per 14-day pay period, and download invoices. A job pays its
+service and package rates plus rooms and bathrooms and a company share of the extras booked (half by
+default), within the rates' floor and cap; nothing is paid for travel distance
+→ [Business rules — cleaner pay](/product/business-rules#cleaner-pay). A job the customer did not let
+the cleaner into pays its full reward once an administrator confirms the lockout
+→ [the lockout's pay](/product/business-rules#lockout-pay). Payout details are the
 cleaner's own to read in full. A period that holds pay in more than one currency (reachable only
 through an admin reassignment) shows a currency switch on My Pay, derived from the period's pay rows —
 an open period offers it before any invoice exists, and a cancelled invoice's currency is not offered.

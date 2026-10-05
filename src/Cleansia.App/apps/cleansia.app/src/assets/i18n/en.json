@@ -689,15 +689,15 @@
       },
       "saved_cards": {
         "title": "Saved cards",
-        "desc": "The card that guarantees your cash bookings. It is charged only for the fees and unpaid cash you agreed to when you saved it.",
-        "empty": "No card saved. You will be asked to save one the next time you pay in cash.",
+        "desc": "Cards saved to your account. You can remove a card at any time.",
+        "empty": "No card saved.",
         "load_error": "We couldn't load your saved cards.",
         "card_label": "{{brand}} ending in {{last4}}",
         "expires": "Expires {{expiry}} · for bookings in {{currency}}",
-        "remove_confirm": "Remove the card ending in {{last4}}? Your next cash booking will ask you to save a card again.",
+        "remove_confirm": "Remove the card ending in {{last4}}?",
         "remove_success": "Card removed.",
-        "setup_success": "Your card is saved. You can finish your cash booking now.",
-        "setup_cancelled": "No card was saved. To pay in cash, save a card — or pay by card."
+        "setup_success": "Your card is saved.",
+        "setup_cancelled": "No card was saved."
       }
     },
     "services": {
@@ -1066,13 +1066,9 @@
         }
       },
       "card_capture": {
-        "title": "Save a card to pay in cash",
-        "intro": "A cash booking is guaranteed by a card saved to your account. Saving it charges nothing, and you still pay the cleaner in cash.",
         "consent": {
           "card-guarantee-draft-2026-09-28": "I agree that Cleansia may charge this card, without asking me each time, for a late-cancellation fee, a fee when the cleaner cannot get into my home, cash I did not pay for a booking, and an extra charge I approved."
-        },
-        "continue": "Save card",
-        "cancel": "Not now"
+        }
       },
       "save_card": {
         "label": "Save this card for my next bookings."
@@ -1438,7 +1434,7 @@
         "on_completion_note": "We add them when the booking completes — not when you place it.",
         "referral_title": "And for a referral",
         "referral_note": "When somebody you invited finishes their first clean.",
-        "clawback": "A cancelled or partly refunded booking takes its points back — which is why they land only after the clean."
+        "clawback": "A cancelled or refunded booking takes its points back — which is why they land only after the clean."
       },
       "tx": {
         "completed": "Cleaning completed",
@@ -1996,7 +1992,6 @@
       },
       "payment_gateway_unavailable": "Payments are temporarily unavailable. Please try again shortly.",
       "cash_not_available": "Cash is only available when you're signed in and the booking needs a single cleaner.",
-      "cash_requires_saved_card": "To pay in cash, first save a card as a guarantee — or pay by card.",
       "cash_open_bookings_limit_reached": "You already have as many unpaid cash bookings as allowed. Choose card, or pay in cash again once one of them is paid.",
       "cash_unpaid_receivable": "You have an unpaid amount with us, such as a cancellation fee. Pay by card for now; cash is available again once it is settled.",
       "country_operator_mismatch": "This address is served by another Cleansia company, so it can't be booked here.",
@@ -2110,7 +2105,7 @@
       }
     },
     "saved_card": {
-      "consent_not_accepted": "Please agree that fees and unpaid cash may be charged to your card before saving it.",
+      "consent_not_accepted": "Please confirm your consent before saving your card.",
       "not_found": "We couldn't find that saved card.",
       "requires_account": "Sign in to save your card for your next bookings."
     },

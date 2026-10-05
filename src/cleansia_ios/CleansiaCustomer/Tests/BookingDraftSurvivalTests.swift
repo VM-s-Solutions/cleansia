@@ -358,7 +358,6 @@ final class BookingDraftSurvivalTests: XCTestCase {
             profileClient: profile,
             orderCreateClient: create,
             countryResolver: FakeCountryResolver(),
-            savedCardClient: FakeSavedCardClient.holdingCzkCard(),
             tokenStore: FakeTokenStore.signedIn(),
             isCardPaymentAvailable: false,
             quoteDebounce: .milliseconds(400),

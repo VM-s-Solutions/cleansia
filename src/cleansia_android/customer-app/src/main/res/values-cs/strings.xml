@@ -168,7 +168,6 @@
     <string name="home_hero2_title">Hloubkový úklid + okna v jednom</string>
 
     <!-- Home — trust strip -->
-    <string name="home_trust_insured">Pojištěno</string>
     <string name="home_trust_same_day">Dnes</string>
 
     <!-- Home — popular packages -->
@@ -552,7 +551,6 @@
     <string name="help_faq_a2">Při rezervaci přidejte pokyny ke vstupu (např. kód u dveří, místo klíče). Uklízeč čeká 15 minut po začátku úklidu a zkusí vám zavolat. Pokud se ani pak nedostane dovnitř, rezervace se zruší a účtuje se plná cena.</string>
     <string name="help_faq_q3">Jsou uklízeči pojištěni?</string>
     <string name="help_faq_a3">Ano. Všichni uklízeči Cleansia jsou pojištěni až do %1$s na rezervaci.</string>
-    <string name="help_faq_a3_no_figure">Ano. Všichni uklízeči Cleansia jsou pojištěni.</string>
     <string name="help_faq_q4">Můžu změnit termín?</string>
     <string name="help_faq_a4">Rezervaci nelze přesunout na jiný termín. Zrušte ji a objednejte nový termín — zrušení je zdarma, dokud práci nepřevzal žádný uklízeč.</string>
     <string name="help_faq_q5">Co je součástí standardního úklidu?</string>
@@ -642,7 +640,6 @@
     <string name="booking_save_address">Uložit tuto adresu</string>
     <string name="booking_set_as_default">Nastavit jako výchozí</string>
     <string name="booking_trust_insured">Pojištěno až do %1$s</string>
-    <string name="booking_trust_insured_no_figure">Pojištěno</string>
 
     <string name="booking_pick_service">Vyberte službu</string>
     <string name="booking_or_package">Nebo zvolte balíček</string>
@@ -837,12 +834,7 @@
     <string name="booking_cash_pending">Zda můžete platit hotově, potvrdíme, jakmile bude známa cena.</string>
     <string name="booking_cash_cleared">Platba hotově už pro tuto objednávku není možná, a proto není vybrán žádný způsob platby. Zvolte, jak chcete platit.</string>
     <string name="booking_draft_time_changed">Vybraný čas už není dostupný nebo se změnila jeho cena. Vyberte prosím čas znovu.</string>
-    <string name="booking_card_guarantee_title">Karta jako záruka plateb v hotovosti</string>
-    <string name="booking_card_guarantee_body">Při první objednávce v hotovosti si uložíte kartu. Nic se teď nestrhává: za úklid zaplatíte v hotovosti jako obvykle.</string>
     <string name="consent_card_guarantee_draft_2026_09_28">Souhlasím, že Cleansia může u mých objednávek v hotovosti strhnout z této karty storno poplatek, poplatek za neumožnění vstupu, nezaplacenou hotovost a doplatek, který jsem schválil(a).</string>
-    <string name="booking_card_guarantee_consent_required">Pro platbu v hotovosti potvrďte souhlas se zárukou kartou, nebo zvolte platbu kartou.</string>
-    <string name="booking_card_guarantee_pending">Kartu ještě ověřujeme. Za chvíli objednávku potvrďte znovu.</string>
-    <string name="booking_card_guarantee_cancelled">Karta se neuložila, takže se nic neobjednalo. Pro platbu v hotovosti si uložte kartu, nebo zvolte platbu kartou.</string>
     <string name="booking_save_card_label">Uložit tuto kartu pro mé další objednávky</string>
     <string name="booking_special_instructions_hint">Speciální požadavky? (nepovinné)</string>
     <string name="booking_access_instructions_hint">Pokyny ke vstupu? (nepovinné)</string>
@@ -1174,10 +1166,9 @@
     <string name="error_order_recurring_already_confirmed">Tento úklid už máte potvrzený. Uklízeči zaplatíte v hotovosti v den úklidu.</string>
     <string name="error_order_creation_failed">Nelze vytvořit rezervaci. Zkuste to znovu.</string>
     <string name="error_order_cash_not_available">Platba hotově je možná jen po přihlášení a u objednávky, kterou zvládne jeden uklízeč.</string>
-    <string name="error_order_cash_requires_saved_card">Pro platbu v hotovosti si nejdřív uložte kartu jako záruku — nebo zaplaťte kartou.</string>
     <string name="error_order_cash_open_bookings_limit_reached">Už máte nejvyšší povolený počet nezaplacených objednávek v hotovosti. Zvolte kartu, nebo hotovost znovu, až bude některá z nich zaplacena.</string>
     <string name="error_order_cash_unpaid_receivable">Máte u nás nezaplacenou částku, například storno poplatek. Zatím zaplaťte kartou; v hotovosti budete moci platit znovu, až ji uhradíte v profilu v sekci Platby.</string>
-    <string name="error_saved_card_consent_not_accepted">Před uložením karty prosím potvrďte souhlas, že na ni mohou být účtovány poplatky a nezaplacená hotovost.</string>
+    <string name="error_saved_card_consent_not_accepted">Před uložením karty prosím zaškrtněte souhlas s jejím uložením.</string>
     <string name="error_saved_card_not_found">Tuto uloženou kartu jsme nenašli.</string>
     <string name="error_receivable_not_found">Tuto dlužnou částku jsme nenašli.</string>
     <string name="error_receivable_not_open">Tato částka už byla uhrazena nebo prominuta.</string>
@@ -1393,13 +1384,13 @@
     <string name="receivable_kind_top_up">Schválený doplatek</string>
     <string name="receivable_kind_other">Částka k úhradě</string>
     <string name="payments_card_title">Uložená karta</string>
-    <string name="payments_card_intro">Karta, která zaručuje vaše objednávky v hotovosti. Může z ní být stržen storno poplatek, poplatek za neumožnění vstupu, nezaplacená hotovost nebo schválený doplatek.</string>
+    <string name="payments_card_intro">Z karet uložených ve vašem účtu nic nestrhneme, pokud jimi sami nezaplatíte, a kartu můžete kdykoli odebrat.</string>
     <string name="payments_card_label">%1$s •••• %2$s</string>
     <string name="payments_card_expires">Platnost do %1$02d/%2$02d · %3$s</string>
-    <string name="payments_card_empty">Nemáte uloženou kartu. Požádáme o ni při první objednávce v hotovosti.</string>
+    <string name="payments_card_empty">Nemáte uloženou kartu. Uložit ji můžete při příští platbě kartou.</string>
     <string name="payments_card_remove_action">Odebrat kartu</string>
     <string name="payments_card_remove_title">Odebrat tuto kartu?</string>
-    <string name="payments_card_remove_message">Při další objednávce v hotovosti vás o kartu požádáme znovu.</string>
+    <string name="payments_card_remove_message">Kartu můžete znovu uložit při příští platbě kartou.</string>
     <string name="payments_card_remove_confirm">Odebrat</string>
     <string name="payments_card_removed">Karta odebrána</string>
     <string name="payments_error_message">Platby se nepodařilo načíst. Zkontrolujte připojení a zkuste to znovu.</string>

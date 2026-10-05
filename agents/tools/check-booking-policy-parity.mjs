@@ -499,14 +499,27 @@ for (const type of LEGAL_SEED_TYPES) {
   }
 }
 
+/**
+ * Insurance is recommended to a cleaner, not required for approval (owner ruling 2026-10-04, ADR-0060
+ * amended), so no customer copy may say cleaners are insured unless the market's own ceiling stands
+ * beside it. These three claims stated no figure (the home trust strip's item, the confirm badge and
+ * the Help answer) and were deleted from all five locales on both platforms; one coming back is the
+ * promise coming back. The figured keys stay pinned above.
+ */
+const RETIRED_INSURANCE_CLAIMS = ['home_trust_insured', 'booking_trust_insured_no_figure', 'help_faq_a3_no_figure'];
+const insuranceClaimIsBack = (key) =>
+  `${key} is back — insurance is optional, so no copy may claim cleaners are insured without the ` +
+  "market's figure (ADR-0060, amended 2026-10-04)";
+
 for (const [locale, dir] of Object.entries(ANDROID_DIRS)) {
   // The push carries the credit as its second loc-arg, formatted by the server in the credit's
   // own currency (owner ruling 2026-09-13; ADR-0025 D3 widened for this one event).
   pinPlaceholderCopy(`android/${locale}`, 'notification_order_no_cleaner_refunded_body', androidString(dir, 'notification_order_no_cleaner_refunded_body'), { placeholder: '%2$s' });
   pinPlaceholderCopy(`android/${locale}`, 'booking_trust_insured', androidString(dir, 'booking_trust_insured'), { placeholder: '%1$s' });
-  pinPlaceholderCopy(`android/${locale}`, 'booking_trust_insured_no_figure', androidString(dir, 'booking_trust_insured_no_figure'));
   pinPlaceholderCopy(`android/${locale}`, 'help_faq_a3', androidString(dir, 'help_faq_a3'), { placeholder: '%1$s' });
-  pinPlaceholderCopy(`android/${locale}`, 'help_faq_a3_no_figure', androidString(dir, 'help_faq_a3_no_figure'));
+  for (const key of RETIRED_INSURANCE_CLAIMS) {
+    if (androidString(dir, key) !== null) note(`android/${locale}`, insuranceClaimIsBack(key));
+  }
   if (androidString(dir, 'home_seasonal_subtitle') !== null) {
     note(`android/${locale}`, 'home_seasonal_subtitle is back — the seasonal card was deleted (ADR-0060 D2)');
   }
@@ -515,9 +528,10 @@ for (const [locale, dir] of Object.entries(ANDROID_DIRS)) {
 for (const locale of LOCALES) {
   pinPlaceholderCopy(`ios/${locale}`, 'push.order.no_cleaner_refunded.body', iosString(iosCatalog, 'push.order.no_cleaner_refunded.body', locale), { placeholder: '%2$@' });
   pinPlaceholderCopy(`ios/${locale}`, 'booking_trust_insured', iosString(iosCatalog, 'booking_trust_insured', locale), { placeholder: '%1$@' });
-  pinPlaceholderCopy(`ios/${locale}`, 'booking_trust_insured_no_figure', iosString(iosCatalog, 'booking_trust_insured_no_figure', locale));
   pinPlaceholderCopy(`ios/${locale}`, 'help_faq_a3', iosString(iosCatalog, 'help_faq_a3', locale), { placeholder: '%1$@' });
-  pinPlaceholderCopy(`ios/${locale}`, 'help_faq_a3_no_figure', iosString(iosCatalog, 'help_faq_a3_no_figure', locale));
+  for (const key of RETIRED_INSURANCE_CLAIMS) {
+    if (iosString(iosCatalog, key, locale) !== null) note(`ios/${locale}`, insuranceClaimIsBack(key));
+  }
   if (iosString(iosCatalog, 'home_seasonal_subtitle', locale) !== null) {
     note(`ios/${locale}`, 'home_seasonal_subtitle is back — the seasonal card was deleted (ADR-0060 D2)');
   }

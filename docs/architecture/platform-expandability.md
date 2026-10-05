@@ -808,7 +808,8 @@ The scaffolding is deliberately built so each axis flips on independently:
       not on sale in that market (ADR-0059); nothing gates on it.
    8. **Optional — the market content:** `NoShowCredit` on the currency form (null = no apology credit
       is paid in that currency) and `InsuranceCoverageAmount` on the country form's Market section
-      (null = the copy names no figure) (ADR-0060). Nothing gates on either.
+      (null = no client claims insurance at all, owner ruling 2026-10-04) (ADR-0060). Nothing gates
+      on either.
    9. **Flip `Country.IsServiced`**, with `CountryInvoiceConfig` in place — **gate 2**:
       `SetCountryServiced(true)` refuses `country.market_not_ready` unless the configuration from
       step 2 names a currency that step 6 switched on, because `Country/GetServiced` feeds the

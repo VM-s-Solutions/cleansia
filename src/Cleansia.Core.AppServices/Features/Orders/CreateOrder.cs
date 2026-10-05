@@ -49,7 +49,6 @@ public class CreateOrder
         private readonly IUserConsentRepository _userConsentRepository;
         private readonly ICountryConfigurationRepository _countryConfigurationRepository;
         private readonly ILegalDocumentResolver _legalDocumentResolver;
-        private readonly ISavedCardRepository _savedCardRepository;
         private readonly IReceivableRepository _receivableRepository;
 
         public Validator(
@@ -72,12 +71,10 @@ public class CreateOrder
             ILanguageRepository languageRepository,
             ICountryConfigurationRepository countryConfigurationRepository,
             ILegalDocumentResolver legalDocumentResolver,
-            ISavedCardRepository savedCardRepository,
             IReceivableRepository receivableRepository)
         {
             _countryConfigurationRepository = countryConfigurationRepository;
             _legalDocumentResolver = legalDocumentResolver;
-            _savedCardRepository = savedCardRepository;
             _receivableRepository = receivableRepository;
             _operatorTenantResolver = operatorTenantResolver;
             _tenantProvider = tenantProvider;
@@ -307,9 +304,6 @@ public class CreateOrder
                 .WithErrorCode(nameof(Command.PaymentType))
                 .MustAsync(CashLeavesRoomForAnotherOpenBookingAsync)
                 .WithMessage(BusinessErrorMessage.OrderCashOpenBookingsLimitReached)
-                .WithErrorCode(nameof(Command.PaymentType))
-                .MustAsync(CashIsGuaranteedBySavedCardAsync)
-                .WithMessage(BusinessErrorMessage.OrderCashRequiresSavedCard)
                 .WithErrorCode(nameof(Command.PaymentType))
                 .Must(PromoNamesASignedInCustomer)
                 .WithMessage(BusinessErrorMessage.PromoRequiresAccount)
@@ -705,11 +699,7 @@ public class CreateOrder
                    signedIn: !IsGuest(),
                    OrderDuration.RequiredEmployees(CachedPricing(context).EstimatedDurationMinutes));
 
-        /// <summary>
-        /// Past <see cref="CashIsAvailable"/> only a signed-in customer's cash booking remains. The debt and
-        /// the limit are asked before the card, so a customer who could not book cash even with a card is
-        /// not sent to save one first.
-        /// </summary>
+        /// <summary>Past <see cref="CashIsAvailable"/> only a signed-in customer's cash booking remains.</summary>
         private async Task<bool> CashOwesNothingAsync(Command command, CancellationToken cancellationToken)
             => command.PaymentType != PaymentType.Cash
                || await CustomerCashStanding.OwesNothingAsync(
@@ -720,15 +710,6 @@ public class CreateOrder
             => command.PaymentType != PaymentType.Cash
                || await CustomerCashStanding.HasRoomForAnotherOpenCashBookingAsync(
                    _orderRepository, _userSessionProvider.GetUserId()!, cancellationToken);
-
-        private async Task<bool> CashIsGuaranteedBySavedCardAsync(
-            Command command, Command _, ValidationContext<Command> context, CancellationToken cancellationToken)
-            => command.PaymentType != PaymentType.Cash
-               || await CustomerCashStanding.HoldsUsableCardAsync(
-                   _savedCardRepository,
-                   _userSessionProvider.GetUserId()!,
-                   await ResolveOrderCurrencyIdAsync(command, context, cancellationToken),
-                   cancellationToken);
 
         // The promo rule cannot pick its message up front: which refusal applies is only known after
         // the preview inside the predicate. So the predicate hands the resolved message key to the rule

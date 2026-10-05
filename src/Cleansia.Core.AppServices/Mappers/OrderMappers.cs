@@ -44,6 +44,7 @@ public static class OrderMappers
             o.Rooms,
             o.Bathrooms,
             o.SelectedExtras.Select(e => e.Slug).ToList(),
+            o.SelectedExtras.Sum(e => e.UnitPrice),
             o.CleaningDateTime,
             o.PaymentType,
             o.PaymentStatus,

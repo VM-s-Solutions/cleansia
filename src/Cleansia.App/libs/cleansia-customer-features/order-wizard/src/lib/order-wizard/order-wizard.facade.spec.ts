@@ -2,7 +2,6 @@ import { PLATFORM_ID, signal, WritableSignal } from '@angular/core';
 import { fakeAsync, TestBed, tick } from '@angular/core/testing';
 import { Router } from '@angular/router';
 import {
-  CardCaptureFacade,
   CustomerAuthService,
   CustomerClient,
   DirtinessLevel,
@@ -31,7 +30,6 @@ import { CleansiaCustomerRoute, DialogService, SnackbarService } from '@cleansia
 import { provideMockStore, MockStore } from '@ngrx/store/testing';
 import { TranslateService } from '@ngx-translate/core';
 import { of, Subject, throwError } from 'rxjs';
-import { OrderDraftService } from './order-draft.service';
 import { OrderMembershipFacade } from './order-membership.facade';
 import { OrderPreferredCleanerFacade } from './order-preferred-cleaner.facade';
 import { OrderPricingFacade } from './order-pricing.facade';
@@ -59,8 +57,6 @@ describe('OrderWizardFacade', () => {
   let userClient: { getCurrent: jest.Mock };
   let apiClient: { serviceCity: jest.Mock };
   let membershipClient: { getMine: jest.Mock; getPlans: jest.Mock };
-  let savedCardClient: { createCheckoutSession: jest.Mock };
-  let draft: { park: jest.Mock };
   let authService: { isLoggedIn: jest.Mock };
   let signedIn: WritableSignal<boolean>;
   let snackbar: { showError: jest.Mock; showInfoTranslated: jest.Mock };
@@ -108,10 +104,6 @@ describe('OrderWizardFacade', () => {
       getMine: jest.fn().mockReturnValue(of({ hasMembership: false })),
       getPlans: jest.fn().mockReturnValue(of([])),
     };
-    savedCardClient = {
-      createCheckoutSession: jest.fn().mockReturnValue(of({ savedCardId: 'card-1', checkoutUrl: 'https://checkout.stripe.test/setup' })),
-    };
-    draft = { park: jest.fn() };
     // Backed by a signal, as the real service is: a computed that reads a bare jest.fn has no
     // dependency to re-run on, so sign-in and sign-out would be invisible to it.
     signedIn = signal(false);
@@ -131,7 +123,6 @@ describe('OrderWizardFacade', () => {
 
     TestBed.configureTestingModule({
       providers: [
-        CardCaptureFacade,
         OrderMembershipFacade,
         OrderPreferredCleanerFacade,
         OrderPricingFacade,
@@ -152,10 +143,8 @@ describe('OrderWizardFacade', () => {
             userClient,
             apiClient,
             membershipClient,
-            savedCardClient,
           },
         },
-        { provide: OrderDraftService, useValue: draft },
         { provide: CustomerAuthService, useValue: authService },
         { provide: GuestOrderService, useValue: guestOrderService },
         { provide: SnackbarService, useValue: snackbar },
@@ -1795,7 +1784,6 @@ describe('OrderWizardFacade', () => {
         expect(snackbar.showError).not.toHaveBeenCalled();
         expect(facade.formData().paymentType).toBeNull();
         expect(facade.activeStep()).toBe(4);
-        expect(facade.cardCaptureVisible()).toBe(false);
       },
     );
 
@@ -1814,42 +1802,6 @@ describe('OrderWizardFacade', () => {
       await facade.submitOrder();
 
       expect(facade.cashOwed()).toBe(owed);
-    });
-
-    describe('without a saved card', () => {
-      async function refusedForWantOfACard(): Promise<void> {
-        signedIn.set(true);
-        completeOrder();
-        await quoted();
-        facade.selectPaymentType(PaymentType.Cash);
-        facade.activeStep.set(6);
-        orderClient.createOrder.mockReturnValue(
-          throwError(() => ({ errors: { PaymentType: 'order.cash_requires_saved_card' } })),
-        );
-        await facade.submitOrder();
-      }
-
-      it('opens the card-capture step and keeps cash on the booking', async () => {
-        await refusedForWantOfACard();
-
-        expect(facade.cardCaptureVisible()).toBe(true);
-        expect(facade.cardCaptureConsent()).toBe(false);
-        expect(facade.formData().paymentType).toBe(PaymentType.Cash);
-        expect(snackbar.showError).not.toHaveBeenCalled();
-      });
-
-      it('saves the card for the booking country and parks the booking where it was refused', async () => {
-        await refusedForWantOfACard();
-
-        facade.setCardCaptureConsent(true);
-        facade.startCardCapture();
-
-        const command = savedCardClient.createCheckoutSession.mock.calls[0][0];
-        expect(command.consentAccepted).toBe(true);
-        expect(command.countryId).toBe('cz');
-        expect(draft.park).toHaveBeenCalledWith(6, facade.formData());
-        expect(draft.park.mock.calls[0][1].paymentType).toBe(PaymentType.Cash);
-      });
     });
   });
 

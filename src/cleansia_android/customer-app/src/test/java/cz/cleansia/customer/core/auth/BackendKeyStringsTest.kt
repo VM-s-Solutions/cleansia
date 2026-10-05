@@ -170,7 +170,6 @@ class BackendKeyStringsTest {
         "order.cash_not_available",
         "order.cash_unpaid_receivable",
         "order.cash_open_bookings_limit_reached",
-        "order.cash_requires_saved_card",
         "order.payment_gateway_unavailable",
         "order.invalid_status_transition",
         "user.not_found",
@@ -178,14 +177,12 @@ class BackendKeyStringsTest {
     )
 
     /**
-     * Beyond the one-cleaner rule, cash needs no open receivable, room under the open unpaid cash
-     * bookings and a usable card saved in the booking's currency (owner ruling 2026-09-28). Refused on
-     * `CreateOrder`, both recurring writes and `ConfirmRecurringOrder`.
+     * Beyond the one-cleaner rule, cash needs no open receivable and room under the open unpaid cash
+     * bookings. Refused on `CreateOrder`, both recurring writes and `ConfirmRecurringOrder`.
      */
     private val cashStandingKeys = listOf(
         "order.cash_unpaid_receivable",
         "order.cash_open_bookings_limit_reached",
-        "order.cash_requires_saved_card",
     )
 
     /** Every refusal `SavedCard/CreateSetupIntent` and `SavedCard/Remove` can answer. */

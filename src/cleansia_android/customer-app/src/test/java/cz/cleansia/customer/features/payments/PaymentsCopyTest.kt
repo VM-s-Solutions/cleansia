@@ -62,6 +62,42 @@ class PaymentsCopyTest {
         }
     }
 
+    /**
+     * Cash needs no saved card and no saved card is charged (owner ruling 2026-10-04). The card-saving
+     * consent wording is versioned with the legal texts and is not part of this copy.
+     */
+    @Test
+    fun `the saved card copy neither ties the card to cash nor says fees may be charged to it`() {
+        val offending = savedCardCopySaying(
+            mapOf(
+                "values" to listOf("cash", "guarantee", "fee"),
+                "values-cs" to listOf("hotovost", "zaruč", "poplat"),
+                "values-sk" to listOf("hotovos", "zaruč", "poplat"),
+                "values-uk" to listOf("готівк", "гарант", "збор"),
+                "values-ru" to listOf("наличн", "гарант", "сбор"),
+            ),
+        )
+        assertTrue("the saved card is still described as the cash guarantee: $offending", offending.isEmpty())
+    }
+
+    /**
+     * The saved-card copy makes no cash, guarantee, fee or speed claim (meeting 2026-10-04)
+     * → /product/business-rules#saved-cards
+     */
+    @Test
+    fun `the saved card copy does not promise quicker card payments`() {
+        val offending = savedCardCopySaying(
+            mapOf(
+                "values" to listOf("quick", "fast", "speed"),
+                "values-cs" to listOf("rychl"),
+                "values-sk" to listOf("rýchl"),
+                "values-uk" to listOf("швидк", "швидш"),
+                "values-ru" to listOf("быстр"),
+            ),
+        )
+        assertTrue("the saved card still promises quicker payments: $offending", offending.isEmpty())
+    }
+
     /** The kind is an ordinal on the wire; its English `name` must never reach the screen. */
     @Test
     fun `the screen labels a debt through the kind resolver and falls back to the generic label`() {
@@ -71,6 +107,20 @@ class PaymentsCopyTest {
             screen.contains("receivableKindLabelRes(receivable.kind) ?: R.string.receivable_kind_other"),
         )
     }
+
+    private fun savedCardCopySaying(stems: Map<String, List<String>>): List<String> =
+        locales.flatMap { locale ->
+            val xml = stringsXml(locale)
+            listOf(
+                "payments_card_intro",
+                "payments_card_empty",
+                "payments_card_remove_message",
+                "error_saved_card_consent_not_accepted",
+            ).mapNotNull { key ->
+                val value = valueOf(xml, key).orEmpty().lowercase()
+                stems.getValue(locale).firstOrNull { it in value }?.let { "$locale/$key says \"$it\"" }
+            }
+        }
 
     private fun stringsXml(locale: String): String {
         val file = File(moduleDir, "src/main/res/$locale/strings.xml")

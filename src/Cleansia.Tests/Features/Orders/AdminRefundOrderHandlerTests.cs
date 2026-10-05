@@ -57,7 +57,8 @@ public class AdminRefundOrderHandlerTests
 
     private Order ArrangeOrder(
         OrderStatus latestStatus = OrderStatus.Confirmed,
-        PaymentStatus paymentStatus = PaymentStatus.Paid)
+        PaymentStatus paymentStatus = PaymentStatus.Paid,
+        string? userId = OwnerUserId)
     {
         var currency = Currency.Create("CZK", "Kč", "Czech Koruna");
         var order = Order.Create(
@@ -72,7 +73,7 @@ public class AdminRefundOrderHandlerTests
             totalPrice: 1000m,
             currencyId: currency.Id,
             paymentStatus: paymentStatus,
-            userId: OwnerUserId,
+            userId: userId,
             cancellationTerms: BookingPolicy.CancellationTermsAtBooking);
         order.Id = OrderId;
         order.SetCurrency(currency);
@@ -361,7 +362,7 @@ public class AdminRefundOrderHandlerTests
 
     /// <summary>
     /// The first call's notice committed, so the re-run queues none: a second row on its key would fail the
-    /// commit on the outbox's unique index.
+    /// commit on the outbox's unique index. Its clawback takes the points the failed one left, so it succeeds.
     /// </summary>
     [Fact]
     public async Task Admin_FullRefund_Rerun_Whose_Notice_Is_Already_Queued_Sends_No_Second_One()
@@ -370,10 +371,8 @@ public class AdminRefundOrderHandlerTests
         ArrangeOwnFullRefund(RefundStatus.Succeeded);
         ArrangeSeamSuccess(amount: 1000m, resolvedToExisting: true);
         ArrangeConsumedTotal(1000m);
-        var pushKey = MessageKeys.Push(OwnerUserId, NotificationEventCatalog.OrderRefunded, "refund-1");
-        _outbox
-            .Setup(o => o.GetByQueueAndKeyAsync(QueueNames.NotificationsDispatch, pushKey, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(OutboxMessage.Create(QueueNames.NotificationsDispatch, pushKey, "{}", "tenant-1"));
+        ArrangeNoticeAlreadyQueued();
+        ArrangeClawbackTakes(true);
 
         var result = await CreateHandler().Handle(
             new AdminRefundOrder.Command(OrderId), CancellationToken.None);
@@ -388,6 +387,83 @@ public class AdminRefundOrderHandlerTests
                 It.IsAny<CancellationToken>()),
             Times.Never);
     }
+
+    /// <summary>
+    /// A re-run after everything landed: the seam answers with the settled refund and moves no money, the
+    /// notice is already queued and the clawback finds nothing left to take. It used to answer that a refund
+    /// was issued; it is refused, saying there is nothing left to refund.
+    /// </summary>
+    [Fact]
+    public async Task Admin_FullRefund_Rerun_With_Nothing_Left_To_Do_Is_Refused()
+    {
+        ArrangeOrder(OrderStatus.Completed, paymentStatus: PaymentStatus.Refunded);
+        ArrangeOwnFullRefund(RefundStatus.Succeeded);
+        ArrangeSeamSuccess(amount: 1000m, resolvedToExisting: true);
+        ArrangeConsumedTotal(1000m);
+        ArrangeNoticeAlreadyQueued();
+        ArrangeClawbackTakes(false);
+
+        var result = await CreateHandler().Handle(
+            new AdminRefundOrder.Command(OrderId), CancellationToken.None);
+
+        Assert.True(result.IsFailure);
+        Assert.Equal(BusinessErrorMessage.RefundNothingRefundable, result.Error!.Message);
+        _loyalty.Verify(l => l.RevokeForRefundAsync(
+            OrderId, 1000m, $"refund:{OrderId}:admin:full", AdminUserId, It.IsAny<CancellationToken>()),
+            Times.Once);
+    }
+
+    /// <summary>
+    /// A guest's order has no notice to send and no points to take, so its re-run has nothing to do at all.
+    /// </summary>
+    [Fact]
+    public async Task Admin_FullRefund_Rerun_On_A_Guest_Order_Is_Refused()
+    {
+        ArrangeOrder(OrderStatus.Completed, paymentStatus: PaymentStatus.Refunded, userId: null);
+        ArrangeOwnFullRefund(RefundStatus.Succeeded);
+        ArrangeSeamSuccess(amount: 1000m, resolvedToExisting: true);
+        ArrangeConsumedTotal(1000m);
+
+        var result = await CreateHandler().Handle(
+            new AdminRefundOrder.Command(OrderId), CancellationToken.None);
+
+        Assert.True(result.IsFailure);
+        Assert.Equal(BusinessErrorMessage.RefundNothingRefundable, result.Error!.Message);
+    }
+
+    /// <summary>
+    /// The first refund always answers that it was issued, whatever the clawback finds: an order that never
+    /// completed has no points to take, and the money still went back.
+    /// </summary>
+    [Fact]
+    public async Task Admin_FullRefund_First_Run_Succeeds_When_The_Clawback_Has_Nothing_To_Take()
+    {
+        ArrangeOrder(OrderStatus.Confirmed);
+        ArrangeSeamSuccess(amount: 1000m);
+        ArrangeConsumedTotal(1000m);
+        ArrangeNoticeAlreadyQueued();
+        ArrangeClawbackTakes(false);
+
+        var result = await CreateHandler().Handle(
+            new AdminRefundOrder.Command(OrderId), CancellationToken.None);
+
+        Assert.True(result.IsSuccess, result.Error?.Message);
+        Assert.True(result.Value!.RefundInitiated);
+    }
+
+    private void ArrangeNoticeAlreadyQueued()
+    {
+        var pushKey = MessageKeys.Push(OwnerUserId, NotificationEventCatalog.OrderRefunded, "refund-1");
+        _outbox
+            .Setup(o => o.GetByQueueAndKeyAsync(QueueNames.NotificationsDispatch, pushKey, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(OutboxMessage.Create(QueueNames.NotificationsDispatch, pushKey, "{}", "tenant-1"));
+    }
+
+    private void ArrangeClawbackTakes(bool tookPoints) =>
+        _loyalty
+            .Setup(l => l.RevokeForRefundAsync(
+                It.IsAny<string>(), It.IsAny<decimal>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(tookPoints);
 
     /// <summary>
     /// Only the order's own settled full refund reopens the command. An order refunded some other way —

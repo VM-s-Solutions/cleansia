@@ -89,6 +89,37 @@ public class CompleteOrderValidatorTests
         Assert.DoesNotContain(result.Errors, e => e.ErrorMessage == BusinessErrorMessage.OrderCashNotCollected);
     }
 
+    /// <summary>
+    /// A card order refunded in part or in full before the job ends was still charged, and the crew did the
+    /// work. It used to be refused as unconfirmed, so only an admin override could close it, and that pays no
+    /// one and grants no points.
+    /// </summary>
+    [Theory]
+    [InlineData(PaymentStatus.Paid)]
+    [InlineData(PaymentStatus.PartiallyRefunded)]
+    [InlineData(PaymentStatus.Refunded)]
+    public async Task When_Card_Order_Was_Charged_Then_Valid_Even_If_Refunded_Since(PaymentStatus paymentStatus)
+    {
+        ArrangeCompletableOrder(ContractStatus.Approved, PaymentType.Card, paymentStatus);
+
+        var result = await _validator.ValidateAsync(new CompleteOrder.Command(OrderId));
+
+        Assert.True(result.IsValid, string.Join(", ", result.Errors.Select(e => e.ErrorMessage)));
+    }
+
+    [Theory]
+    [InlineData(PaymentStatus.Pending)]
+    [InlineData(PaymentStatus.Failed)]
+    public async Task When_Card_Order_Was_Never_Charged_Then_OrderPaymentNotConfirmed(PaymentStatus paymentStatus)
+    {
+        ArrangeCompletableOrder(ContractStatus.Approved, PaymentType.Card, paymentStatus);
+
+        var result = await _validator.ValidateAsync(new CompleteOrder.Command(OrderId));
+
+        Assert.False(result.IsValid);
+        Assert.Contains(result.Errors, e => e.ErrorMessage == BusinessErrorMessage.OrderPaymentNotConfirmed);
+    }
+
     [Fact]
     public async Task When_Cash_Order_Collected_Then_Valid()
     {

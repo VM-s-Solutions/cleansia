@@ -3,10 +3,12 @@ using System.Security.Claims;
 using Cleansia.Core.AppServices.Authentication;
 using Cleansia.Core.AppServices.Features.Orders.DTOs;
 using Cleansia.Core.AppServices.Features.Orders.Filters;
+using Cleansia.Core.AppServices.Features.TenantSettings;
 using Cleansia.Core.AppServices.Mappers;
 using Cleansia.Core.AppServices.Services.Interfaces;
 using Cleansia.Core.AppServices.Shared.DTOs.RequestModels;
 using Cleansia.Core.AppServices.Shared.DTOs.ResponseModels;
+using Cleansia.Core.Domain.Configuration;
 using Cleansia.Core.Domain.EmployeePayroll;
 using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Extensions;
@@ -37,6 +39,7 @@ public class GetPagedOrders
         IOrderEmployeePayRepository orderEmployeePayRepository,
         ICurrencyResolutionService currencyResolutionService,
         IServiceScopeFactory serviceScopeFactory,
+        IAppConfigurationProvider configurationProvider,
         ILogger<Handler> logger)
         : IRequestHandler<Request, PagedData<OrderListItem>>
     {
@@ -135,6 +138,7 @@ public class GetPagedOrders
             IReadOnlyList<EmployeePayConfig> packageConfigsForCaller = Array.Empty<EmployeePayConfig>();
             IReadOnlyDictionary<string, decimal> existingPayByOrderId =
                 new Dictionary<string, decimal>(0);
+            var extrasSharePercent = 0;
             if (!isAdmin && !string.IsNullOrEmpty(callerEmployeeId) && (serviceIdsAcrossPage.Count > 0 || packageIdsAcrossPage.Count > 0))
             {
                 // EVERY currency on the page, in one read. Narrowing to a single currency here would
@@ -154,6 +158,8 @@ public class GetPagedOrders
                 var orderIds = orders.Select(o => o.Id).ToList();
                 existingPayByOrderId = await orderEmployeePayRepository.GetTotalPayByOrderIdsAsync(
                     orderIds, callerEmployeeId, cancellationToken);
+                extrasSharePercent = await configurationProvider.GetAsync(
+                    TenantSettingCatalog.ExtrasSharePercent, cancellationToken);
             }
 
             // EstimatedCleanerPay sort runs after we materialize the page —
@@ -180,7 +186,8 @@ public class GetPagedOrders
                     decimal? estimatedCleanerPay = existingPayByOrderId.TryGetValue(order.Id, out var booked)
                         ? booked
                         : OrderPayEstimator.ContractReward(order, callerEmployeeId)
-                            ?? OrderPayEstimator.Estimate(order, callerEmployeeId, serviceConfigsForCaller, packageConfigsForCaller);
+                            ?? OrderPayEstimator.Estimate(
+                                order, callerEmployeeId, serviceConfigsForCaller, packageConfigsForCaller, extrasSharePercent);
                     dto = dto with { EstimatedCleanerPay = estimatedCleanerPay };
                 }
 

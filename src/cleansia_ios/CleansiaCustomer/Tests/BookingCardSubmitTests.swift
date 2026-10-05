@@ -21,7 +21,6 @@ final class BookingCardSubmitTests: XCTestCase {
             orderCreateClient: create,
             paymentIntentClient: paymentIntent,
             countryResolver: FakeCountryResolver(),
-            savedCardClient: FakeSavedCardClient.holdingCzkCard(),
             tokenStore: tokenStore,
             isCardPaymentAvailable: cardAvailable,
             quoteDebounce: .milliseconds(400),
@@ -248,7 +247,7 @@ final class BookingCardSubmitTests: XCTestCase {
 
     /// A 3-D Secure approval in the bank app, or a Face ID prompt, comes back to the foreground under Stripe's
     /// sheet. A booking being sent or paid for is not re-checked then: clearing its time would send an order
-    /// already placed back to the When step, or fail a card guarantee as a network error.
+    /// already placed back to the When step.
     func testABookingBeingSentOrPaidForIsNotReCheckedOnTheWayBack() throws {
         let features = URL(fileURLWithPath: #filePath)
             .deletingLastPathComponent()
@@ -277,7 +276,11 @@ final class BookingCardSubmitTests: XCTestCase {
             1,
             "Stripe's sheet is shown somewhere that does not hold the re-check"
         )
-        XCTAssertEqual(sheet.components(separatedBy: "await showPaymentSheet(presentation)").count - 1, 2)
+        XCTAssertEqual(
+            sheet.components(separatedBy: "await showPaymentSheet(presentation)").count - 1,
+            1,
+            "the booking pays through showPaymentSheet in one place"
+        )
         XCTAssertTrue(
             sheet.contains(
                 "vm.paymentSheetShowing = true defer { vm.paymentSheetShowing = false } " +

@@ -3497,6 +3497,7 @@
     },
     "referral": {
       "action_failed": "Akce s doporučením se nezdařila. Zkuste to znovu.",
+      "hold_changed": "Doporučení bylo mezitím pozastaveno nebo uvolněno. Seznam teď ukazuje jeho aktuální stav — posuďte ho znovu.",
       "not_accepted": "Doporučení není ve stavu „přijaté“.",
       "not_found": "Doporučení nebylo nalezeno.",
       "not_qualified": "Doporučení není ve stavu „uznané“.",

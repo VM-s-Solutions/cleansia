@@ -200,6 +200,7 @@ describe('ReferralsListFacade', () => {
     expect(command.toJSON()).toEqual({
       referralId: 'ref-1',
       reason: 'fraud ring',
+      expectHeld: false,
     });
     expect(snackbar.showSuccessTranslated).toHaveBeenCalledWith(
       'pages.loyalty_referrals.intervention.success_reverse',
@@ -270,12 +271,71 @@ describe('ReferralsListFacade', () => {
     expect(command.toJSON()).toEqual({
       referralId: 'ref-2',
       reason: 'legit order confirmed',
+      expectHeld: false,
     });
     expect(snackbar.showSuccessTranslated).toHaveBeenCalledWith(
       'pages.loyalty_referrals.intervention.success_force_qualify',
       { referrer: czk(150), referred: czk(150) }
     );
     expect(onSuccess).toHaveBeenCalledTimes(1);
+  });
+
+  it('releases a held referral through force-qualify, saying it saw the hold, and reloads on success', () => {
+    referralClient.forceQualify.mockReturnValue(
+      of(
+        ForceQualifyReferralResponse.fromJS({
+          referralId: 'ref-4',
+          creditGrantedToReferrer: 150,
+          referrerCurrencyCode: 'CZK',
+          creditGrantedToReferred: 150,
+          referredCurrencyCode: 'CZK',
+        })
+      )
+    );
+    referralClient.getPaged.mockReturnValue(of(page));
+    const onSuccess = jest.fn();
+
+    facade.releaseReferral('ref-4', '  separate flats, checked  ', onSuccess);
+
+    const [id, command] = referralClient.forceQualify.mock.calls[0];
+    expect(id).toBe('ref-4');
+    expect(command).toBeInstanceOf(ForceQualifyReferralCommand);
+    expect(command.toJSON()).toEqual({
+      referralId: 'ref-4',
+      reason: 'separate flats, checked',
+      expectHeld: true,
+    });
+    expect(snackbar.showSuccessTranslated).toHaveBeenCalledWith(
+      'pages.loyalty_referrals.intervention.success_force_qualify',
+      { referrer: czk(150), referred: czk(150) }
+    );
+    expect(referralClient.getPaged).toHaveBeenCalledTimes(1);
+    expect(onSuccess).toHaveBeenCalledTimes(1);
+    expect(facade.intervening()).toBe(false);
+  });
+
+  it('does not call force-qualify to release with a blank reason', () => {
+    facade.releaseReferral('ref-4', '   ', jest.fn());
+    expect(referralClient.forceQualify).not.toHaveBeenCalled();
+  });
+
+  it('re-reads the list when the hold changed since it was loaded, so the row shows where it stands', () => {
+    const holdChanged = () => throwError(() => ({ result: { detail: 'referral.hold_changed' } }));
+    referralClient.getPaged.mockReturnValue(of(page));
+    referralClient.forceQualify.mockReturnValue(holdChanged());
+    referralClient.reverse.mockReturnValue(holdChanged());
+    const onSuccess = jest.fn();
+
+    facade.forceQualifyReferral('ref-2', 'reason', onSuccess);
+    expect(referralClient.getPaged).toHaveBeenCalledTimes(1);
+
+    facade.rejectReferral('ref-3', 'reason', onSuccess);
+    expect(referralClient.getPaged).toHaveBeenCalledTimes(2);
+
+    expect(onSuccess).not.toHaveBeenCalled();
+    expect(snackbar.showSuccessTranslated).not.toHaveBeenCalled();
+    expect(snackbar.showErrorTranslated).not.toHaveBeenCalled();
+    expect(facade.intervening()).toBe(false);
   });
 
   it('leaves the referral.not_accepted refusal to the interceptor toast on force-qualify failure', () => {
@@ -333,6 +393,7 @@ describe('ReferralsListFacade', () => {
     expect(command.toJSON()).toEqual({
       referralId: 'ref-3',
       reason: 'same flat, one household',
+      expectHeld: true,
     });
     expect(snackbar.showSuccessTranslated).toHaveBeenCalledWith(
       'pages.loyalty_referrals.intervention.success_reject'
@@ -399,6 +460,7 @@ describe('ReferralsListFacade', () => {
     facade.reverseReferral('ref-1', 'reason', jest.fn());
     facade.rejectReferral('ref-3', 'reason', jest.fn());
     facade.forceQualifyReferral('ref-2', 'reason', jest.fn());
+    facade.releaseReferral('ref-4', 'reason', jest.fn());
 
     expect(referralClient.reverse).not.toHaveBeenCalled();
     expect(referralClient.forceQualify).not.toHaveBeenCalled();

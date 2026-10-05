@@ -130,8 +130,10 @@ export class ReferralsListComponent implements OnInit {
         this.facade.rejectReferral(id, payload.reason, close);
         break;
       case 'forceQualify':
-      case 'release':
         this.facade.forceQualifyReferral(id, payload.reason, close);
+        break;
+      case 'release':
+        this.facade.releaseReferral(id, payload.reason, close);
         break;
     }
   }

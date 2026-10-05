@@ -150,15 +150,21 @@ export class ReferralsListFacade extends UnsubscribeControlDirective {
   }
 
   reverseReferral(referralId: string, reason: string, onSuccess?: () => void): void {
-    this.takeBack(referralId, reason, 'pages.loyalty_referrals.intervention.success_reverse_no_credit', onSuccess);
+    this.takeBack(referralId, reason, false, 'pages.loyalty_referrals.intervention.success_reverse_no_credit', onSuccess);
   }
 
   /** Rejects a held referral through reverse: nothing was paid, so nothing is taken back. */
   rejectReferral(referralId: string, reason: string, onSuccess?: () => void): void {
-    this.takeBack(referralId, reason, 'pages.loyalty_referrals.intervention.success_reject', onSuccess);
+    this.takeBack(referralId, reason, true, 'pages.loyalty_referrals.intervention.success_reject', onSuccess);
   }
 
-  private takeBack(referralId: string, reason: string, nothingTakenKey: string, onSuccess?: () => void): void {
+  private takeBack(
+    referralId: string,
+    reason: string,
+    expectHeld: boolean,
+    nothingTakenKey: string,
+    onSuccess?: () => void
+  ): void {
     const trimmed = reason.trim();
     if (!referralId || !trimmed || this.intervening()) return;
 
@@ -166,6 +172,7 @@ export class ReferralsListFacade extends UnsubscribeControlDirective {
     const command = new ReverseReferralCommand();
     command.referralId = referralId;
     command.reason = trimmed;
+    command.expectHeld = expectHeld;
 
     this.adminClient.adminReferralClient
       .reverse(referralId, command)
@@ -190,8 +197,16 @@ export class ReferralsListFacade extends UnsubscribeControlDirective {
       });
   }
 
-  /** Force-qualifies an accepted referral, and releases a held one. */
   forceQualifyReferral(referralId: string, reason: string, onSuccess?: () => void): void {
+    this.qualify(referralId, reason, false, onSuccess);
+  }
+
+  /** Releases a held referral through force-qualify, which pays it. */
+  releaseReferral(referralId: string, reason: string, onSuccess?: () => void): void {
+    this.qualify(referralId, reason, true, onSuccess);
+  }
+
+  private qualify(referralId: string, reason: string, expectHeld: boolean, onSuccess?: () => void): void {
     const trimmed = reason.trim();
     if (!referralId || !trimmed || this.intervening()) return;
 
@@ -199,6 +214,7 @@ export class ReferralsListFacade extends UnsubscribeControlDirective {
     const command = new ForceQualifyReferralCommand();
     command.referralId = referralId;
     command.reason = trimmed;
+    command.expectHeld = expectHeld;
 
     this.adminClient.adminReferralClient
       .forceQualify(referralId, command)

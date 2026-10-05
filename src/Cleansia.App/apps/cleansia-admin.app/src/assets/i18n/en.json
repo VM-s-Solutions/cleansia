@@ -3497,6 +3497,7 @@
     },
     "referral": {
       "action_failed": "The referral action failed. Try again.",
+      "hold_changed": "This referral was held or released since the list was loaded. The list now shows its current state — review it again.",
       "not_accepted": "The referral is not in the accepted state.",
       "not_found": "Referral not found.",
       "not_qualified": "The referral is not in the qualified state.",

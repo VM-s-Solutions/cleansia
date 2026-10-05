@@ -711,6 +711,7 @@ const ADMIN_SURFACE_ERROR_KEYS: readonly string[] = [
   'promo.not_found',
   'promo.percent_out_of_range',
   'promo.validity_range_invalid',
+  'referral.hold_changed',
   'referral.not_accepted',
   'referral.not_found',
   'referral.not_qualified',

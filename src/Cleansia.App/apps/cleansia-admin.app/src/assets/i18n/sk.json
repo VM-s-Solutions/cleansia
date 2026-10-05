@@ -3497,6 +3497,7 @@
     },
     "referral": {
       "action_failed": "Akcia s odporúčaním sa nepodarila. Skúste to znova.",
+      "hold_changed": "Odporúčanie bolo medzitým pozastavené alebo uvoľnené. Zoznam teraz ukazuje jeho aktuálny stav — posúďte ho znova.",
       "not_accepted": "Odporúčanie nie je v stave „prijaté“.",
       "not_found": "Odporúčanie sa nenašlo.",
       "not_qualified": "Odporúčanie nie je v stave „uznané“.",

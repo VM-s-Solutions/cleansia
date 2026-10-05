@@ -411,26 +411,33 @@ tried and dropped — nothing in the wire surface carries a statically discovera
 
 **The platform's own calls out carry personal data in the URL path**: the Mapbox search URL ends in the
 address the customer typed and the static-map URL in coordinates, the ARES lookup ends in the cleaner's
-IČO, and the APNs call in the device's live-activity push token. Three sinks wrote that URL off-box, none
-of them a `logger.Log*` call in our code (closed 2026-10-05):
+IČO, and the APNs call in the device's live-activity push token. The five API hosts call Mapbox and ARES;
+APNs is called only from the Functions worker, whose dispatch consumer (`SendLiveActivityUpdateHandler`)
+is the one sender. Four sinks wrote those URLs off-box, none of them a `logger.Log*` call in our code
+(closed 2026-10-05):
 
 | Sink | What it wrote | Control |
 |---|---|---|
-| The HTTP client factory's request logging | the method and full URL, at Information, and a logging scope around the call | `.RemoveAllLoggers()` on the `Mapbox`, ARES and APNs named clients (`Infra.Services` and `Infra.Clients/Apns`). A config level would need six files and an environment variable could override it; this cannot be overridden |
-| The OpenTelemetry `HttpClient` span | `url.full` — shipped to Sentry (traces sampled at 0.2) and to Application Insights as the dependency | `RedactOutboundUrl` in both `AddServiceDefaults` overloads (`ServiceDefaults/Extensions.cs`): every outbound span keeps `scheme://authority` only. An **enrich**, not a filter, because `UseAzureMonitor` assigns `FilterHttpRequestMessage` after it runs; `Authority`, not `GetLeftPart`, which would keep user info. It covers **every** client, fail-closed, so the next one needs no list entry |
-| Sentry's own HTTP message handler | a Sentry event for a failed call carrying the request URL, and an `http` breadcrumb with the full URL — query string included — on every call, riding on any later error event in the same request | `DisableSentryHttpMessageHandler = true` in `ConfigureSentry`, beside `SendDefaultPii = false`; OpenTelemetry already traces these calls, and Sentry documents the setting for that case |
+| The HTTP client factory's request logging, on every host | the method and full URL, at Information, and a logging scope around the call | `.RemoveAllLoggers()` on the `Mapbox`, ARES and APNs named clients (`Infra.Services` and `Infra.Clients/Apns`). A config level would need six files and an environment variable could override it; this cannot be overridden |
+| The OpenTelemetry `HttpClient` span, on the five API hosts | `url.full` — the Mapbox and ARES URLs — shipped to Sentry (traces sampled at 0.2) and to Application Insights as the dependency. The push token never went through it: the API hosts do not call APNs, and the worker builds no OpenTelemetry pipeline | `RedactOutboundUrl` in both `AddServiceDefaults` overloads (`ServiceDefaults/Extensions.cs`): every outbound span keeps `scheme://authority` only. An **enrich**, not a filter, because `UseAzureMonitor` assigns `FilterHttpRequestMessage` after it runs; `Authority`, not `GetLeftPart`, which would keep user info. It covers **every** client, fail-closed, so the next one needs no list entry |
+| Sentry's own HTTP message handler, on every host | a Sentry event for a failed call carrying the request URL, and an `http` breadcrumb with the full URL — query string included — on every call, riding on any later error event in the same request | `DisableSentryHttpMessageHandler = true` in `ConfigureSentry`, beside `SendDefaultPii = false`, which the API hosts and the worker both use; OpenTelemetry already traces the API hosts' calls, and Sentry documents the setting for that case |
+| The Functions worker's classic Application Insights dependency collector — the worker is the one process that calls APNs | every outbound call as a dependency named `POST /3/device/<token>`, with the full URL, push token included, as its `Data` | `OutboundDependencyUrlRedaction`, an `ITelemetryInitializer` registered by `AddWorkerApplicationInsights` (`src/Cleansia.Functions/Telemetry`): every dependency whose type starts with `Http` keeps `scheme://authority` as its `Data` and `<METHOD> /` as its name, as the API hosts' spans do. An **initializer**, not a processor, so Live Metrics, which reads the processor chain, never sees the path either. It covers every HTTP client in the worker, fail-closed, and is in place before APNs is provisioned rather than waiting for that change |
 
-**What it costs.** Application Insights triages a dependency by host, method and status only — Stripe and
-SendGrid included, whose dependency name is now `GET /`. A failed outbound call no longer becomes a Sentry
-event by itself: a failure the app catches and degrades reaches Sentry only when the app logs it at Error
-(Mapbox does for a credentials failure, and logs an outage at Warning). Unhandled exceptions still reach
-Sentry through the ASP.NET Core integration.
+**What it costs.** Application Insights triages a dependency by host, method and status only, on the API
+hosts and the worker alike — Stripe and SendGrid included, whose dependency name is now `<METHOD> /`
+(`POST /`, `GET /`). A worker dependency the SDK types as Azure Storage (`Azure blob`, `Azure queue`) keeps its path,
+which is built from ids. A failed outbound call no longer becomes a Sentry event by itself: a failure the
+app catches and degrades reaches Sentry only when the app logs it at Error. **ARES logs every failure at
+Error once its attempts are spent** (since 2026-10-05), so an ARES outage reaches Sentry as an event: an
+unavailable register refuses an approval and an approved cleaner's changed IČO, and until then a transient
+failure logged a Warning, which reaches Sentry only as a breadcrumb, so those writes were refused with no
+operator told ([The business register](/product/business-rules#business-register)). Mapbox logs a
+credentials failure at Error and an outage at Warning, unchanged and accepted. Stripe, SendGrid and APNs
+log their failures at Error. Unhandled exceptions still reach Sentry through the ASP.NET Core
+integration.
 
 **Kept on purpose.** The Mapbox degrade warnings name `{City}` and `{ZipCode}`, not the street — enough to
-see which area fails, and no more. **Not covered yet:** the Functions worker builds no OpenTelemetry
-pipeline, so its classic Application Insights dependency collector would record the APNs URL, push token
-included, once APNs is provisioned; that needs its own telemetry initializer in the change that turns APNs
-on.
+see which area fails, and no more.
 
 ## S7 — Idempotency on side-effecting commands
 

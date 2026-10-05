@@ -175,6 +175,14 @@ the credit share of the order comes back at once on the refund's own key, and th
 says `refundPending: true`; the customer web reads it as a refund still pending. A guest's cancel still
 fails on a Stripe transport fault so the guest can retry it. → [Refund](/flows/cancellation-refund-dispute#refund)
 
+**The two legs are cut from one slice** (since 2026-10-05). The credit that comes back at once is the
+credit share of the same slice the pending card row was sized from: after a complaint settled in credit,
+the slice the sale has left once the settlement is counted. A 1 000 order paid with 300 credit, 200 of it
+settled in credit, cancelled free while Stripe is down, gets 560 to the card, pending, and 240 in credit
+at once; the re-drive then asks Stripe for the same 560 on the same key, and with the settlement the
+customer has 1 000 back. The re-drive counts the 240 as part of its own slice, not as credit returned
+elsewhere ([A justified complaint is settled to the card](#dispute-settlement)).
+
 ### A guest cancels under the same policy
 
 The guest cancellation API needs the booking’s **access token** — the one the guest's e-mail link
@@ -304,6 +312,24 @@ customer's inbox. A guest gets no push; the cancellation e-mail tells them what 
 > already returned. The sweep commits **per order**, so an apology balance can never be written back
 > over a later order's credit return. Until 2026-09-27 the sweep returned credit after a successful
 > refund as well, crediting a card customer twice.
+>
+> **A complaint settled in credit is counted, by what the order took** (since 2026-10-05). This credit
+> return, under the key `order-ended-unpaid:{orderId}` (`CreditUnwind.ReturnUnpaidOrderCreditAsync`),
+> serves every order that ends with no card refund of its own:
+>
+> - **An order that took no payment** (`Order.TookNoPayment`): the credit is all that was paid, so a
+>   settlement comes off it in full. 500 applied with 400 settled returns 100.
+> - **An order that took a card payment** — one already partly refunded, then cancelled by the
+>   customer, an administrator, a company wind-down or a no-show: the whole price was paid, so the credit is held to
+>   what the sale has left after the card refunds, the credit already returned and the settlements, never
+>   more than the credit still outstanding. A 1 000 order paid with 300 credit, refunded 400 (280 to the
+>   card, 120 in credit) and then 200 settled in credit, gets 180 back; with 600 settled, nothing. Taking
+>   the whole settlement off the credit here would keep credit the customer is owed: the same order would
+>   get nothing back with 200 settled.
+> - **A no-show whose card refund Stripe did not complete**: the pending card refund counts as already
+>   given back, because Stripe may have paid it before the call failed. 2 000 paid with 500 credit and 200
+>   settled returns 450 credit at once; the re-drive then refunds 1 300 to the card and a 50 credit leg,
+>   2 000 in all with the settlement → [Refund](/flows/cancellation-refund-dispute#refund).
 
 ### When the customer does not let the cleaner in {#lockout}
 
@@ -478,9 +504,23 @@ web offers the money back rather than a card refund.
   a cancellation's, a dispute's card settlement and a credit return alone. The held part is still split
   between card and credit in the proportion the price was paid, and a refund with nothing left is
   `refund.nothing_refundable`. Until then only a dispute's card settlement was held, and a full refund
-  after a complaint settled in credit paid the settled part out a second time. An erased account cannot
+  after a complaint settled in credit paid the settled part out a second time. An unpaid order's credit
+  return counts the settlement by what the order took ([the credit
+  return](#when-the-cleaner-cancels-or-no-shows)). An erased account cannot
   hold credit, nor can one on the books of a company frozen for archive; both settle to the card (on a
-  cash order that is `refund.order_not_refundable`).
+  cash order that is `refund.order_not_refundable`). For a customer on a frozen company's books, the
+  card settlement's credit leg is skipped and only its card share goes back
+  ([A company's lifecycle](#company-lifecycle)).
+- **A refund retried after its credit leg came back asks Stripe for the same amount** (since
+  2026-10-05). A member's cancellation while Stripe is down returns its credit leg at once, and an
+  administrator's refund whose record of success was lost has returned its leg before the retry. That
+  leg is part of the refund's own slice, not credit returned elsewhere: the card takes what the slice
+  has left after it, no second leg is paid, and the card and the leg together are held against what the
+  sale has left, so a settlement made since still cannot push the total past the price. When nothing has
+  moved since, the retry sends Stripe the amount it sent before, on the same key. Until then the retry
+  counted its own leg twice and lowered the card share: a 2 000 order paid with 500 credit and 400
+  settled in credit, refunded in full, retried 1 100 to the card where it had asked 1 200, which Stripe
+  refuses on that key when it already paid.
 - **An administrator cannot settle with credit any other way.** *Issue credit* refuses the reason
   *Dispute settlement* (`credit.dispute_settlement_not_issuable`), and the admin dialog no longer offers
   it.
@@ -1174,22 +1214,30 @@ the terms `2026-10-03`, so one tick accepts both.
 **The `2026-10-06` versions carry the owner's rulings of 2026-10-05** on the referral reward, and differ
 from the versions they replace only there:
 
-- **Terms of service** (from `2026-10-05`). §9's referral sentence pays each side in its own currency:
-  the friend in the currency of the booking that earned the credit, the referrer in the currency of the
-  last booking they placed before the credit is paid, a cancelled one included, or, with none, the
-  friend's; where no amount is set for a currency, whichever of the two would be paid in it receives no
-  referral credit, and the app shows the figure of the market chosen in it. A new paragraph after the
-  take-back lets the company hold the referral credit when the two accounts appear to belong to the same
-  person or household — a shared address, phone number or e-mail inbox — until a member of its staff has
-  reviewed the referral, without undue delay; it pays once it finds the referral genuine, and otherwise
-  refuses it and neither side receives referral credit ([A referral that looks like one person is
-  held](#referral-hold)).
+- **Terms of service** (from `2026-10-05`). §9 counts two accounts of one household as one customer, so
+  a referral between them is refused, and the take-back names referring someone of one's own household
+  among the referrals that are not genuine, beside referring oneself through another account. §9's
+  referral sentence pays each side in its own currency: the friend in the currency of the booking that
+  earned the credit, the referrer in the currency of the last booking **created on their account** before
+  the credit is paid, a cancelled one and an unconfirmed Cleansia Plus visit included — the schedule
+  creates a visit ahead of the customer's confirmation, so it is not a booking the referrer placed — or,
+  with none, the friend's ([The referral reward](#referral-credit)); where no amount is set for a
+  currency, whichever of the two would be paid in it receives no referral credit, and the app shows the
+  figure of the market chosen in it. A new paragraph after the take-back lets the company hold the
+  referral credit when the two accounts appear to belong to the same person or household — a shared
+  address, phone number or e-mail inbox — until a member of its staff has reviewed the referral, without
+  undue delay; it pays once it finds the referral genuine, and otherwise refuses it and neither side
+  receives referral credit ([A referral that looks like one person is held](#referral-hold)).
 - **Privacy policy** (from `2026-10-03`). One paragraph under *Your account*: when a referred customer's
-  booking earns the referral credit, the addresses with their flat numbers, the phone numbers and the
-  e-mail addresses of the two accounts — in their bookings, their current saved addresses and their
-  profiles — are compared to see whether they belong to the same person or household. A match only holds
-  the referral until a member of staff reviews it, and the comparison decides nothing by itself. The
-  legal basis is the legitimate interest in preventing abuse of the referral reward.
+  booking earns the referral credit, the two accounts are compared to check that no customer has
+  referred themselves through another account or referred someone of their own household — the addresses
+  with their flat numbers in their bookings and current saved addresses, the phone numbers in their
+  bookings and profiles, and the e-mail addresses of their profiles, as the hold reads them
+  ([A referral that looks like one person is held](#referral-hold)). The e-mail typed on a booking is not
+  compared, and the policy does not say it is. A match only holds the referral until a member of staff
+  reviews it, and the comparison decides nothing by itself. The legal basis is the legitimate interest in
+  preventing abuse of the referral reward. The code makes no comparison for a referral that can pay
+  neither side ([the hold](#referral-hold)).
 
 Both take effect on the same day, so one tick accepts both. The hold and the comparison read data for a
 purpose only the `2026-10-06` privacy policy discloses, so the code that holds a referral must not reach
@@ -1568,6 +1616,11 @@ register of economic subjects. Before the ruling, only its format (`^\d{8}$` for
   trade licence in force (`employee.trade_licence_inactive`), and a register that did not answer
   (`employee.business_registry_unavailable`, *try again in a few minutes*). It runs after the profile,
   document and country rules, so those are reported first. A person is approving, so a retry is cheap.
+  **An outage is logged at `Error`** (since 2026-10-05): a lookup still unavailable once its attempts
+  are spent — an error, a timeout, a rate limit or a reply it cannot read alike — is an `Error`, so it
+  reaches Sentry as an event and an operator learns that approvals and approved cleaners' IČO changes
+  are being refused. Until then a transient failure logged a `Warning`, which reaches Sentry only as a
+  breadcrumb → [An outbound URL is personal data too](/architecture/security-rules#outbound-urls).
 - **A switch for development.** `Ares:Enabled` is on unless a host says otherwise, so a deployment that
   forgets the section still checks. The Development settings of the Partner, Partner Mobile and Admin
   hosts switch it off, as do the integration-test and host-test settings, so local runs and CI never
@@ -1661,7 +1714,7 @@ an administrator may also hold cannot render these keys.
 | `admin.company.wind_down_requested` | an administrator sets the company's last day of service (a re-run announces nothing) | the date |
 | `admin.company.wind_down_run` | a wind-down run **that did something** — cancelled, refunded, failed a refund or closed a period; a run that moved nothing is not news | the four counts |
 | `admin.company.archived` | the company's books are sealed — the one event written on a frozen company, which the account surface admits | the day |
-| `admin.referral.held` | a referral's first qualifying order completed, but the two accounts look like one person or household, so nothing was paid and the referral waits for an administrator to release or reject it — once per referral → [the hold](#referral-hold) | the referral |
+| `admin.referral.held` | a referral's first qualifying order completed, but the two accounts look like one person or household, so nothing was paid and the referral waits for an administrator to release or reject it — once per referral, and only for a referral that can pay at least one side: when neither side's currency carries a referral figure, the accounts are not compared and nobody is told → [the hold](#referral-hold) | the referral |
 
 **Who.** Every active, e-mail-confirmed, non-anonymised administrator of the event's company **whose
 role is in the event's audience** — read by the company **argument**, never by whatever tenant happens to
@@ -2729,6 +2782,15 @@ write is left out rather than failing the other company's commit: the no-show ap
 complaint the customer chose to settle in credit is settled to the card instead, and a referral side is
 paid nothing ([The referral reward](#referral-credit)). A goodwill credit from the frozen company's own
 administrators is still refused.
+**A refund's credit leg is not returned onto frozen books** (since 2026-10-05). The leg is written by raw
+SQL, which the frozen-books guard cannot see, so `RefundService` checks the customer's credit account
+first: on a frozen company's books the leg is skipped and logged as a warning, and the card share still
+goes back. That credit is written off, as the terms' §9 writes off unused credit once the company
+closes. A 2 000 order paid with 500 credit, whose 400 complaint settlement goes to the card for such a
+customer, refunds 300 to the card and returns nothing to the sealed account, where until then it put
+100 back. **Only the refund seam checks so far.** The other raw-SQL credit returns — a member's
+cancellation's immediate credit leg, the unpaid order's credit return, and the credit a booking puts
+back when its payment could not be started — can still write a balance onto frozen books.
 Then, in the background, **a sealed bundle** is written to the `company-archives` storage container under
 the company's id and the freeze instant: the ledgers as one JSON Lines file per table (orders as the
 two-year retention sweep leaves them — no name, contact, street, instruction or note; status history; pay
@@ -2854,7 +2916,7 @@ customer who shared it the figure of the currency they book in: **150 Kč on a C
 |---|---|
 | How much | each side's own currency's `ReferralCredit`, so the two figures can differ; CZK 150, the other seeded currencies none → [Money constants](#money-constants) |
 | The friend's currency | the currency of the order that qualified the referral |
-| The referrer's currency | the currency of the referrer's **latest order of any status**, by creation time and across companies — a cancelled one included, an abandoned card checkout the stale sweep cancelled too — read **when the credit is paid**, so on an administrator's release it is read at the release. A referrer who has never booked is paid in the friend's currency. The same rule (`ReferralService.GetBookingCurrencyAsync`) serves the force-qualify. Each side can spend its credit only on a booking in that currency |
+| The referrer's currency | the currency of the referrer's **latest order of any status**, by creation time and across companies — a cancelled one included, an abandoned card checkout the stale sweep cancelled too, and a Cleansia Plus visit the schedule created ahead that the referrer has not confirmed yet — read **when the credit is paid**, so on an administrator's release it is read at the release. A referrer who has never booked is paid in the friend's currency. The same rule (`ReferralService.GetBookingCurrencyAsync`) serves the force-qualify. Each side can spend its credit only on a booking in that currency |
 | A currency with no figure, or 0 | that side receives nothing and the log warns, naming the side and the currency; the other side is still paid and the referral still qualifies. Nothing is borrowed from another currency's figure |
 | Where it lands | each side's credit account in its own currency, opened if absent, under a ledger row with the reason `Referral` and the key `referral:{referralId}:{side}`. Both rows carry the friend's order id, so the referrer's row can name an order in another currency; every reader of order-keyed credit filters by reason, so nothing sums across currencies. From there the [customer credit](#credit) rules apply: it is spent automatically on the next card booking in that currency, at most 70 % of that booking, and expires 12 months after the account last moved. The referral records each side's amount and currency (`ReferrerCreditCurrencyId`, `ReferredCreditCurrencyId`), a side paid nothing having none |
 | An erased side | receives nothing; the other side is still paid ([Credit on a deleted account](#credit-on-account-deletion)) |
@@ -2882,7 +2944,12 @@ on the referral stay as the record of the grant.
 
 **Owner ruling 2026-10-05: the self-referral guard.** Until then the only check compared the two user
 ids, so a customer who opened a second account with their own code was paid twice. Now, once the window
-and first-completion checks pass and before anything is paid, the completion compares the two accounts.
+and first-completion checks pass and before anything is paid, the completion compares the two accounts
+— **when at least one side can be paid**. Both sides' currencies are resolved first, by the rules
+[above](#referral-credit); when neither carries a positive `ReferralCredit`, the accounts are not
+compared, no administrator is told, and the referral qualifies with nothing paid, as it would have
+without the hold. Holding it would alert an administrator to a release and a reject that both pay
+nothing, and leave the friend shown as waiting until someone acted.
 Each account's **footprint** is read past the tenant filter, because the two may be customers of
 different companies: the homes on its orders of any status (street, city, ZIP and country, with the
 flat) and on its **current** saved addresses — one the customer deleted is not compared — the phone
@@ -2916,9 +2983,18 @@ and the reason slugs, never an address, a number or an inbox.
   administrators release and reject the same held referral at once, the second commit fails and rolls
   back whole, its ledger rows included; that administrator sees an error and reloads. The same token
   keeps a completion's hold from overwriting an administrator's force-qualify of the same `Accepted`
-  row. What the token cannot see is a reject sent later from a list loaded before a release: the server
-  cannot tell a *Reject* from a *Reverse*, so it takes back what the release paid, and the admin web's
-  notice says what was taken back.
+  row.
+- **An action carries the hold state the administrator saw** (since 2026-10-05). The token decides two
+  commits that overlap; it cannot see a request sent after the change from a list loaded before it.
+  Force-qualify, release, reverse and reject each send `expectHeld`, the hold state the row showed — the
+  admin web sends *not held* for a force-qualify and a reverse, *held* for a release and a reject — and
+  the server compares it with the referral it loads, after the status checks. A referral held since the
+  list was loaded refuses a force-qualify, and one released since refuses a reject, with
+  `referral.hold_changed`, as does any action whose `expectHeld` does not match the row; the list reloads
+  and the administrator reviews the row again. A second release of a released referral is still refused
+  by its status (`referral.not_accepted`). Until then a force-qualify sent from a list loaded before the friend's first order
+  completed paid past a hold nobody reviewed, and a reject sent after another administrator's release
+  was read as a reverse and took back what the release paid. Both are closed.
 
 **It is a deterrent, not proof, and the gap is named.** A referrer with no history — no order, no saved
 address, no phone — and an inbox of their own matches nothing, so two fresh accounts at one home are
@@ -2939,11 +3015,16 @@ the same facts must get the same answer from every administrator:
   the match is a phone only, the two accounts book different homes, the names differ, and nothing else
   matches.
 - **Reject** when both accounts book the same flat as their own home — one household is one customer;
-  when the e-mail inbox matches; or when the qualifying booking has been refunded (`Refunded` or
-  `PartiallyRefunded`), as §9 of the terms already allows.
+  when the e-mail inbox matches; or when the qualifying booking has been refunded in full (`Refunded`),
+  as §9 of the terms allows. A partly refunded one (`PartiallyRefunded`) is not a ground on its own: §9
+  lets the company take the referral credit back when the booking that earned it *is refunded*, and
+  treats a booking of which only part of the price is refunded apart.
 
 That a household is one customer — two people living in one flat, a couple or flatmates, are one
-customer, so a referral between them is rejected — is an owner ruling of 2026-10-05.
+customer, so a referral between them is rejected — is an owner ruling of 2026-10-05, and §9 of the
+`2026-10-06` terms says so: two accounts of one household count as one customer, and referring someone
+of one's own household is named among the referrals that are not genuine
+([The legal texts](#legal-texts)).
 
 **What the customer is told.** Each referral line states only the **reader's own** figure: the chosen
 market's `referralCredit` (`Market/GetOverview`) formatted in that market's currency. The friend's lines —
@@ -2969,11 +3050,16 @@ their `2026-10-06` version, whose privacy policy names the comparison ([The lega
 *same phone number*, *same e-mail inbox*) and offers **Release** and **Reject**, where an `Accepted` row
 offers *Force-qualify* and a `Qualified` one *Reverse* (`CanInterveneReferral`, Support and above). Each
 side's credit prints in its own currency, and a side paid nothing as *—*. Each dialog's hint states what
-it pays or takes, per side, and the notice after it what moved. The customer's credit ledger labels the
+it pays or takes, per side, and the notice after it what moved. When the hold changed since the list
+loaded, the action is refused with its own message in all five languages (`api.referral.hold_changed`:
+the referral was held or released since the list was loaded, review it again) and the list reloads
+([above](#referral-hold)). The customer's credit ledger labels the
 two rows *Referral* and *Referral reversed*. The customer detail's referral tables still show a held
 referral as plain *Accepted*, without its reasons. On the admin wire, `GET api/AdminReferral/get-paged`
 takes `held` (`true`: held rows only; `false`: every other row), the row carries `holdReasons` and a
-currency code per side (`referrerCreditCurrencyCode`, `referredCreditCurrencyCode`), and the
+currency code per side (`referrerCreditCurrencyCode`, `referredCreditCurrencyCode`), the force-qualify
+and reverse commands carry `expectHeld` (absent reads as *not held*, so a release or a reject without
+it is refused), and the
 force-qualify and reverse responses carry one per side too (`referrerCurrencyCode`,
 `referredCurrencyCode`; on a reversal a side that was paid nothing has none). The customer's own `GetMyReferrals` keeps `creditCurrencyCode`, now the
 referrer's own currency.

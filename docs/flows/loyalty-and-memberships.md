@@ -358,8 +358,10 @@ side received 150 tier points.
    have accepted no code before (`CreateOrder`). The `Referral` row starts `Accepted`, stamped with
    the time.
 3. **Qualified, or held.** When that customer's first order completes (`CompleteOrder` →
-   `ReferralService.ProcessOrderCompletedAsync`) within 90 days of the acceptance, the two accounts are
-   compared first. When they share a home, a phone number or an e-mail inbox, the referral is **held**:
+   `ReferralService.ProcessOrderCompletedAsync`) within 90 days of the acceptance, both sides'
+   currencies are resolved and, when at least one carries a referral figure, the two accounts are
+   compared first; when neither does, nothing is compared and the referral qualifies with nothing paid.
+   When they share a home, a phone number or an e-mail inbox, the referral is **held**:
    it stays `Accepted` with its reasons (`HoldReasons`) and the order recorded, nothing is paid, it never
    expires, and the company's administrators are told (`admin.referral.held`). Otherwise both sides are
    paid `Currency.ReferralCredit`, each in its own currency — the friend in the **order's**, the
@@ -376,7 +378,11 @@ side received 150 tier points.
    `Qualified` one, taking back only what each side's balance still holds in its own currency. A held
    referral is **released** by the force-qualify, which pays the friend in the held order's currency,
    or **rejected** by the reversal, which takes nothing because nothing was paid and leaves it
-   `Reversed`. The referral's `xmin` token lets only one of the two commit.
+   `Reversed`. The referral's `xmin` token lets only one of the two commit. Each of the four actions
+   carries the hold state the administrator's row showed (`expectHeld`: *not held* for a force-qualify
+   and a reverse, *held* for a release and a reject), and the server refuses it with
+   `referral.hold_changed` when the referral was held or released since the list was loaded; the admin
+   web reloads the list so the administrator reviews the row again.
 
 Each grant holds that customer's credit lock until the commit, and the two sides are locked in the
 order of their user ids, so two grants to the same pair cannot each hold the lock the other waits on.
@@ -407,6 +413,8 @@ case that order does not cover. → [Business rules — the referral reward](/pr
 | Self-referral | The customer's own code is refused. A second account of the same person or household is held for an administrator when the two share a home (flats recorded on both and different spare neighbours), a phone number or an e-mail inbox. A referrer with no order, saved address or phone and an inbox of their own matches nothing and is paid; the credit can still be taken back as not genuine. |
 | A held referral nobody decides | Stays held: it never expires and is never released by itself. The alert and the *Held* filter are the prompts. |
 | A release and a reject of one held referral at once | The second commit fails on the referral's `xmin` token and rolls back whole, ledger rows included. |
+| An intervention sent from a list loaded before the referral was held or released | Refused, `referral.hold_changed`: a force-qualify does not pay past a hold nobody reviewed, and a reject after another administrator's release takes back nothing. The list reloads. |
+| A same-household referral where neither side's currency has a referral figure | Not compared, not held, nobody told; it qualifies with nothing paid. |
 | A referral qualifies on an order in a currency with no `ReferralCredit` | The friend is paid nothing and a warning is logged; the referrer is paid if their own currency has a figure, and the referral is `Qualified`. Nothing is borrowed from another currency's figure. |
 | The referrer books in another currency than the friend | Each is paid its own currency's figure, the referrer's read from their latest order when the credit is paid. |
 | One side of a referral has been erased | That side receives nothing; the other is paid. |

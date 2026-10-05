@@ -385,7 +385,8 @@ the insurance ceiling the customer copy states for that country (none is authore
 as serviced until its configuration names an active currency.
 
 **Growth** — promo codes, referral programme (each side's credit in its own currency; force-qualify
-and reverse; a *Held* filter, and release or reject of a referral held as one person or household),
+and reverse; a *Held* filter, and release or reject of a referral held as one person or household;
+each refused, and the list reloaded, when the hold changed since the list was loaded),
 loyalty tiers, membership plans (a price and a Stripe
 Price id per currency, any currency optional — a plan unpriced in a market is simply not on sale
 there — and the free-trial length in days, 14 on a new plan and 0 for none, shown in the plan list),

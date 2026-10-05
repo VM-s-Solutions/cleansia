@@ -23,8 +23,12 @@ the same key.
   payment (`Order.TookNoPayment`: `Pending` or `Failed`) — and an `OrderStatusTrack` append;
   `ILiveActivityProducer` end-push unconditionally beside the append; then, for a card order that is
   `Paid` with a refundable charge surface, `RefundAsync` — otherwise, when not `Paid`,
-  `ICreditAccountRepository.ReturnUnpaidOrderCreditAsync` (the credit taken at checkout is the only money
-  the customer paid); `IExpressWaiverConsumer.ReleaseForOrderAsync` unconditionally;
+  `ICreditAccountRepository.ReturnUnpaidOrderCreditAsync`, passed the order's succeeded card refunds from
+  `IRefundRepository` (since 2026-10-05): an order that took no payment gets its credit back less any
+  complaint settled in credit, and one already partly refunded the credit the sale still owes after its
+  card refunds, credit returned and settlements
+  → [Business rules — the credit return](/product/business-rules#when-the-cleaner-cancels-or-no-shows);
+  `IExpressWaiverConsumer.ReleaseForOrderAsync` unconditionally;
   `OrderAssignmentCancellationNotifier` for every assigned cleaner;
   `ILoyaltyService.RevokeForCancelledOrderAsync`; last, `GuestCancellationEmail.EnqueueAsync` — on a
   guest order only (no `UserId`), `GuestOrderAccessTokenIssuer.RevokeAsync` retires every token the

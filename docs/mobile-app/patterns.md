@@ -818,6 +818,51 @@ the card in both modes (iOS `96a1ea10e`, Android `a6b1b9942`). The web's pills a
 more: the customer's 4.79:1 or more in both themes, the admin's shared status badge 4.51:1 at its
 lowest, the warning tone.
 
+**An order's and an invoice's status pill read 4.5:1 too, in both modes** (finding 2026-10-05). The
+two platforms draw these pills differently, and that split predates the fix:
+
+- **Android, customer**: an order's pill writes its label in the status's colour on a 14–16 % wash of
+  it, the dispute pill's shape, and the timeline's dot takes the same colour. *New* and *Pending*
+  (amber-500) and *In progress* (sky-400) read 1.93:1 in light mode, *Confirmed* (sky-600) 3.43:1 in
+  light and 3.04:1 in dark, and *Completed* and *Cancelled* 2.57 and 2.67:1 in dark.
+  `orderStatusColor` now goes through `orderStatusInk(status, scheme)` (`OrderFormatters.kt`), a light
+  and a dark ink per status:
+
+  | Status | Light mode | Dark mode |
+  |---|---|---|
+  | *New*, *Pending* | amber-800 `#92400E` | amber-500 |
+  | *Confirmed* | the text ink, sky-700 | the text ink, sky-400 |
+  | *On the way*, *In progress* | sky-800 `#075985` | sky-300 `#7DD3FC` |
+  | *Completed* | green-800 `#166534` | green-400 `#4ADE80` |
+  | *Cancelled*, and a status the app does not know | slate-600 `#475569` | slate-300 `#CBD5E1` |
+
+  The lowest now reads 4.68:1, *Confirmed* on its 16 % wash in light mode. On the emulator, light mode:
+  *New* 1.93 to 5.69:1, *Confirmed* 3.43 to 4.82:1, *On the way* and *In progress* 1.93 to 6.06:1,
+  *Completed* 4.14 to 5.72:1, *Cancelled* 3.99 to 6.12:1; dark: *Confirmed* 3.04 to 5.18:1,
+  *Completed* 2.57 to 6.21:1, *Cancelled* 2.67 to 6.92:1. `OrderStatusInkTest` checks every status,
+  both washes and both schemes.
+- **Android, partner**: `OrderStatusPill` and `InvoiceStatusBadge` are solid pills, the same in both
+  schemes. *Confirmed* and *Approved* are white on sky-700 (4.10 to 5.93:1; they were on sky-600),
+  *In progress* sky-950 on sky-400 (4.42 to 6.48:1; the label was sky-900) and *Cancelled* slate-600
+  on slate-100 (4.34 to 6.92:1; the label was slate-500). *Pending*, *Paid*, *Disputed* and *Rejected*
+  already passed. `StatusPillContrastTest` checks every pair.
+- **iOS, both apps' order pills**: no change. Core's `OrderStatusBadge` writes the label in
+  `onSurface` on a 14 % wash of the status colour, 13.46:1 or more in light mode and 8.55:1 in dark;
+  the failing pairs above exist only on Android.
+- **iOS, the partner invoice's *Approved***: it was a solid primary pill, white on sky-600 in light
+  mode (4.10:1) and sky-900 on sky-400 in dark (4.42:1). It is white on sky-700 in light mode, 5.93:1,
+  and sky-950 on sky-400 in dark, 6.48:1. Dark mode keeps the sky-400 fill because iOS's *Pending*
+  sits on `primaryContainer`, sky-700 there, so a sky-700 *Approved* matched it exactly (1.00:1 fill
+  on fill) and the two read apart only by their words; it is 2.77:1 now. Android's *Approved* is
+  sky-700 in both schemes, which it can afford because its *Pending* is a light sky-100 pill in both.
+  The partner's `TextInkTests` checks every invoice status, and none, at 4.5:1 or more in both modes,
+  and that *Approved*'s fill differs from *Pending*'s.
+
+The web's pills already read 4.5:1 or more, measured on the compiled bundles: the partner and admin
+`<cleansia-status-badge>` 4.51:1 at its lowest (warning) and 4.57:1 (success), the customer's order
+rows and dispute pills 4.79:1 or more in both themes, and the tracking page's hero pill 5.17:1 or more
+(Android `a9b89279d`, iOS `81ac1eeae` and `3cfefcde5`).
+
 ## Every map is quiet, with one Cleansia pin {#maps}
 
 All four map surfaces in both apps show a muted base map with **no points of interest**, and their only

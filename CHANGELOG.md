@@ -1080,6 +1080,16 @@ need backfilling.
 
 ### Fixed
 
+- **Customer and cleaner, Android and iOS — an order's and an invoice's status reads clearly.** On
+  Android the status on a customer's order was faint: *New* and *In progress* read 1.9:1 in light
+  mode, *Confirmed* 3.4:1, and *Completed* and *Cancelled* about 2.6:1 in dark mode. Every status now
+  reads 4.5:1 or more in both modes, in a deeper amber, blue, green or grey in light mode and a lighter
+  one in dark. In the cleaner's app *Confirmed* on an order (Android) and *Approved* on an invoice
+  (Android and iOS) were white on the lighter brand blue, 4.1:1, and on Android *In progress* and
+  *Cancelled* were just under the contrast small text needs; they now read 5.9:1 or more. The
+  customer's statuses on iOS and every status on the websites already read clearly. (Finding
+  2026-10-05.)
+
 - **Cleaner Android, iOS and website — the blue labels in the cleaner's app are easier to read.** Blue
   text in the cleaner's app that is not a link was still the lighter brand blue, faint in light mode:
   the labels on the dashboard, earnings, invoice and pay cards, the pay on each job in the orders list,

@@ -89,35 +89,6 @@ public class AresBusinessRegistryTests
         Assert.Equal(BusinessRegistryRecord.Unavailable, record);
     }
 
-    /// <summary>
-    /// An unavailable register refuses approval and an approved cleaner's changed IČO, so every failure that
-    /// reaches the registry, its retries already spent, is an Error: the level at which a log becomes a Sentry
-    /// event. A Warning is a breadcrumb, and an outage would refuse those writes with nobody told.
-    /// </summary>
-    [Theory]
-    [InlineData("503")]
-    [InlineData("500")]
-    [InlineData("429")]
-    [InlineData("403")]
-    [InlineData("400")]
-    [InlineData("timeout")]
-    [InlineData("connection refused")]
-    public async Task A_Register_That_Does_Not_Answer_Is_Logged_As_An_Error(string failure)
-    {
-        var handler = failure switch
-        {
-            "timeout" => Throwing(new TaskCanceledException("timed out")),
-            "connection refused" => Throwing(new HttpRequestException("connection refused")),
-            _ => Replying((HttpStatusCode)int.Parse(failure), "{}"),
-        };
-        var logger = new LevelRecordingLogger();
-
-        var record = await Registry(handler, logger: logger).LookupAsync("CZE", Ico, CancellationToken.None);
-
-        Assert.Equal(BusinessRegistryRecord.Unavailable, record);
-        Assert.Equal((LogLevel.Error, AresBusinessRegistry.UnavailableEvent.Id), Assert.Single(logger.Entries));
-    }
-
     [Fact]
     public async Task A_Reply_That_Is_Not_Json_Is_Unavailable()
     {
@@ -273,6 +244,29 @@ public class AresBusinessRegistryTests
     }
 
     /// <summary>
+    /// A register that keeps failing reaches Sentry, which makes an event of an Error log, exactly once: the
+    /// lookup's retry logs its last handled attempt at Error. The registry's own line for that failure is a
+    /// Warning, so one outage does not raise a second event for the same refusal.
+    /// </summary>
+    [Fact]
+    public async Task Under_The_Host_Defaults_A_Register_That_Keeps_Failing_Is_One_Error_And_It_Is_The_Retrys()
+    {
+        var logs = new CapturingLoggerProvider();
+        await using var provider = HostComposition(
+            new StubHandler(() => new HttpResponseMessage(HttpStatusCode.ServiceUnavailable)), logs);
+        await using var scope = provider.CreateAsyncScope();
+
+        var record = await scope.ServiceProvider.GetRequiredService<IBusinessRegistry>()
+            .LookupAsync("CZE", Ico, CancellationToken.None);
+
+        Assert.Equal(BusinessRegistryRecord.Unavailable, record);
+        var error = Assert.Single(logs.Entries, e => e.Level >= LogLevel.Error);
+        Assert.Equal("Polly", error.Category);
+        var registryLine = Assert.Single(logs.Entries, e => e.EventId == AresBusinessRegistry.UnavailableEvent.Id);
+        Assert.Equal(LogLevel.Warning, registryLine.Level);
+    }
+
+    /// <summary>
     /// The HTTP client's request logging writes the URL at Information, and an ARES URL ends in the cleaner's
     /// IČO. The registry's own refusal is still logged, so the capture is known to be listening.
     /// </summary>
@@ -304,9 +298,8 @@ public class AresBusinessRegistryTests
         return services.BuildServiceProvider();
     }
 
-    private static AresBusinessRegistry Registry(
-        StubHandler handler, AresConfig? config = null, ILogger<AresBusinessRegistry>? logger = null)
-        => new(new StubHttpClientFactory(handler), config ?? Config(), logger ?? NullLogger<AresBusinessRegistry>.Instance);
+    private static AresBusinessRegistry Registry(StubHandler handler, AresConfig? config = null)
+        => new(new StubHttpClientFactory(handler), config ?? Config(), NullLogger<AresBusinessRegistry>.Instance);
 
     private static AresConfig Config(params (string Key, string Value)[] settings)
         => new(new ConfigurationBuilder()
@@ -334,30 +327,18 @@ public class AresBusinessRegistryTests
         public HttpClient CreateClient(string name) => new(handler, disposeHandler: false);
     }
 
-    private sealed class LevelRecordingLogger : ILogger<AresBusinessRegistry>
-    {
-        public List<(LogLevel Level, int EventId)> Entries { get; } = [];
-
-        public IDisposable? BeginScope<TState>(TState state) where TState : notnull => null;
-
-        public bool IsEnabled(LogLevel logLevel) => true;
-
-        public void Log<TState>(
-            LogLevel logLevel, EventId eventId, TState state, Exception? exception, Func<TState, Exception?, string> formatter)
-            => Entries.Add((logLevel, eventId.Id));
-    }
-
     private sealed class CapturingLoggerProvider : ILoggerProvider
     {
-        public ConcurrentQueue<(int EventId, string Message)> Entries { get; } = new();
+        public ConcurrentQueue<(string Category, LogLevel Level, int EventId, string Message)> Entries { get; } = new();
 
-        public ILogger CreateLogger(string categoryName) => new CapturingLogger(Entries);
+        public ILogger CreateLogger(string categoryName) => new CapturingLogger(categoryName, Entries);
 
         public void Dispose()
         {
         }
 
-        private sealed class CapturingLogger(ConcurrentQueue<(int EventId, string Message)> entries) : ILogger
+        private sealed class CapturingLogger(
+            string category, ConcurrentQueue<(string Category, LogLevel Level, int EventId, string Message)> entries) : ILogger
         {
             public IDisposable? BeginScope<TState>(TState state) where TState : notnull => null;
 
@@ -365,7 +346,7 @@ public class AresBusinessRegistryTests
 
             public void Log<TState>(
                 LogLevel logLevel, EventId eventId, TState state, Exception? exception, Func<TState, Exception?, string> formatter)
-                => entries.Enqueue((eventId.Id, formatter(state, exception)));
+                => entries.Enqueue((category, logLevel, eventId.Id, formatter(state, exception)));
         }
     }
 }

@@ -81,9 +81,10 @@ public sealed class AresBusinessRegistry(
     {
         IntegrationFailureMetrics.Record(HttpClientName, failureClass);
 
-        // Error for a transient failure too: its retries are spent, and an unavailable register refuses
-        // approval-grade writes, so an outage that logged a Warning would refuse them with nobody alerted.
-        logger.LogError(UnavailableEvent, exception, "ARES lookup unavailable: {FailureClass}.", failureClass);
+        var level = failureClass is IntegrationFailureClass.AuthConfig or IntegrationFailureClass.Permanent
+            ? LogLevel.Error
+            : LogLevel.Warning;
+        logger.Log(level, UnavailableEvent, exception, "ARES lookup unavailable: {FailureClass}.", failureClass);
 
         return BusinessRegistryRecord.Unavailable;
     }

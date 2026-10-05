@@ -84,6 +84,7 @@ public class MaterializeRecurringBookingTemplate
         IOrderPricingCalculator pricingCalculator,
         IOrderFactory orderFactory,
         IUserMembershipRepository userMembershipRepository,
+        IReceivableRepository receivableRepository,
         IOperatorTenantResolver operatorTenantResolver,
         ITenantProvider tenantProvider,
         IUnitOfWork unitOfWork,
@@ -151,6 +152,15 @@ public class MaterializeRecurringBookingTemplate
                     "Template {TemplateId} skipped: its start {TimeOfDay} is outside the bookable window. "
                     + "The schedule is preserved and resumes once its owner moves it to a bookable time",
                     template.Id, template.TimeOfDay);
+                return BusinessResult.Success(new Response(0));
+            }
+
+            if (!await CustomerCashStanding.OwesNothingAsync(receivableRepository, template.UserId, cancellationToken))
+            {
+                logger.LogInformation(
+                    "Template {TemplateId} skipped: its owner owes an open receivable. "
+                    + "The schedule is preserved and resumes once it is paid or written off",
+                    template.Id);
                 return BusinessResult.Success(new Response(0));
             }
 

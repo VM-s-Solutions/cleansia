@@ -133,6 +133,7 @@ public class RecurringMaterializationRequiresPaidMembershipTests
             _pricingCalculator.Object,
             _orderFactory.Object,
             _memberships.Object,
+            Mock.Of<IReceivableRepository>(),
             OrderMarketDoubles.OperatedBy("cleansia-cz"),
             _tenantProvider.Object,
             _unitOfWork.Object,

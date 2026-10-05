@@ -29,10 +29,11 @@ namespace Cleansia.Core.AppServices.Features.Orders;
 /// records the cash, so its receipt is issued at completion and the customer gets the booking e-mail.
 ///
 /// <para>Refuses orders that are not awaiting confirmation, not owned by the caller, or not linked to a
-/// template — those belong on the standard booking flow — a cash occurrence whose job needs more
-/// than one cleaner or that <see cref="CustomerCashStanding"/> does not admit, an occurrence closer
-/// than the minimum lead time a one-off booking gets, and — on a booking's own rule — a customer whose
-/// consents are not to the texts in force who does not tick the terms.
+/// template — those belong on the standard booking flow — an occurrence closer than the minimum lead time
+/// a one-off booking gets, any occurrence of a customer who owes money, a cash occurrence whose job needs
+/// more than one cleaner or that has no room under the cash limit (<see cref="CustomerCashStanding"/>),
+/// and — on a booking's own rule — a customer whose consents are not to the texts in force who does not
+/// tick the terms.
 /// → /flows/booking-and-pricing#recurring-bookings</para>
 /// </summary>
 [AuditAction("customer.order.recurring.confirm", Audience = AuditAudience.Customer, ResourceType = "Order")]
@@ -192,6 +193,12 @@ public class ConfirmRecurringOrder
                     nameof(order.CleaningDateTime), BusinessErrorMessage.CleaningDateBelowLeadTime));
             }
 
+            if (!await CustomerCashStanding.OwesNothingAsync(receivableRepository, sessionUserId, cancellationToken))
+            {
+                return BusinessResult.Failure<Response>(new Error(
+                    nameof(command.OrderId), BusinessErrorMessage.OrderUnpaidReceivable));
+            }
+
             // An occurrence materialized before the one-cleaner cash rule. It is neither confirmed as cash
             // nor switched to card: the customer cancels it (free while nobody has taken it) and moves the
             // template to card. → /flows/booking-and-pricing#recurring-bookings
@@ -200,14 +207,6 @@ public class ConfirmRecurringOrder
             {
                 return BusinessResult.Failure<Response>(new Error(
                     nameof(order.PaymentType), BusinessErrorMessage.OrderCashNotAvailable));
-            }
-
-            if (order.PaymentType == PaymentType.Cash
-                && !await CustomerCashStanding.OwesNothingAsync(
-                    receivableRepository, sessionUserId, cancellationToken))
-            {
-                return BusinessResult.Failure<Response>(new Error(
-                    nameof(order.PaymentType), BusinessErrorMessage.OrderCashUnpaidReceivable));
             }
 
             if (order.PaymentType == PaymentType.Cash

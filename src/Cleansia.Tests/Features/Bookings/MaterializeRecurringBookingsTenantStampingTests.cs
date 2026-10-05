@@ -241,6 +241,7 @@ public sealed class MaterializeRecurringBookingsTenantStampingTests : IDisposabl
         // Czech address is company A's market, the Slovak one company B's.
         services.AddScoped(_ => OrderMarketDoubles.Operators((CzechiaId, TenantA), (SlovakiaId, TenantB)));
         services.AddScoped<INotificationProducer>(_ => Mock.Of<INotificationProducer>());
+        services.AddScoped<IReceivableRepository>(_ => Mock.Of<IReceivableRepository>());
         services.AddScoped<MaterializeRecurringBookingTemplate.Handler>();
 
         // Only the one command the sweep sends. Registering the real MediatR would drag the whole

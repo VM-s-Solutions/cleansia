@@ -5,6 +5,7 @@ using Cleansia.Core.AppServices.Features.Addresses.DTOs;
 using Cleansia.Core.AppServices.Features.Orders;
 using Cleansia.Core.AppServices.Services.Interfaces;
 using Cleansia.Core.Domain.Configuration;
+using Cleansia.Core.Domain.Credit;
 using Cleansia.Core.Domain.EmployeePayroll;
 using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Internationalization;
@@ -36,8 +37,9 @@ namespace Cleansia.IntegrationTests.Features.Orders;
 /// booking e-mail and no benefit reservation.
 ///
 /// <para>Owner ruling 2026-09-28 on top: the customer holds at most two cash bookings that are open and not
-/// yet paid, and owes no operating company an open receivable. Owner ruling 2026-10-04: no saved card is
-/// asked for, so no customer here has one.</para>
+/// yet paid. Owner ruling 2026-10-04: no saved card is asked for, so no customer here has one. Owner ruling
+/// 2026-10-06: a customer owing any operating company an open receivable makes no new booking at all, cash
+/// or card; a guest booking under the same e-mail is not matched to the account.</para>
 /// </summary>
 [Collection("PostgresCollection")]
 public class CreateOrderCashEligibilityTests(PostgresContainerFixture fixture) : BaseIntegrationTest(fixture)
@@ -246,17 +248,50 @@ public class CreateOrderCashEligibilityTests(PostgresContainerFixture fixture) :
             arrange: async context =>
             {
                 await SeedAsync(context);
-                await SeedReceivableAsync(context, TestTenants.Second, writtenOff: false);
+                await SeedReceivableAsync(context, TestTenants.Second);
             },
             act: async provider => await provider.GetRequiredService<IMediator>()
                 .Send(Command(PaymentType.Cash, OneCleaner, OneCleanerPrice)),
             assert: async (CleansiaDbContext context, BusinessResult<CreateOrder.Response> result) =>
             {
-                Assert.True(result.IsFailure);
-                var refusal = Assert.Single(Assert.IsAssignableFrom<IValidationResult>(result).Errors);
-                Assert.Equal(BusinessErrorMessage.OrderCashUnpaidReceivable, refusal.Message);
-                Assert.Equal(nameof(CreateOrder.Command.PaymentType), refusal.Code);
+                AssertRefusedForTheDebt(result);
                 Assert.Equal(1, await context.Orders.IgnoreQueryFilters().CountAsync());
+            },
+            transactional: false);
+    }
+
+    /// <summary>
+    /// Refused before the handler: the member's express slot stays unspent, their credit untouched, and
+    /// nothing is written but the refusal's own audit row.
+    /// </summary>
+    [Fact]
+    public async Task A_Plus_Member_Owing_Another_Company_Is_Refused_A_Card_Booking_And_Keeps_Their_Express_Slot_And_Credit()
+    {
+        var slot = ExpressBookingSlot.Next();
+        string accountId = null!;
+        await TestMethod(
+            setup: AccountSession,
+            arrange: async context =>
+            {
+                await SeedPlusMemberAsync(context);
+                await ExpressBookingSlot.PutMarketInZoneAsync(context, Czechia, slot.TimeZoneId);
+                accountId = await SeedCreditAsync(context, 300m);
+                await SeedReceivableAsync(context, TestTenants.Second);
+            },
+            act: async provider => await provider.GetRequiredService<IMediator>()
+                .Send(Command(PaymentType.Card, OneCleaner, OneCleanerPrice, slot.CleaningUtc)),
+            assert: async (CleansiaDbContext context, BusinessResult<CreateOrder.Response> result) =>
+            {
+                AssertRefusedForTheDebt(result);
+                Assert.Equal(1, await context.Orders.IgnoreQueryFilters().CountAsync());
+                Assert.Empty(await context.MembershipBenefitUsages.IgnoreQueryFilters().ToListAsync());
+                Assert.Empty(await context.OutboxMessages.IgnoreQueryFilters().ToListAsync());
+                var account = await context.CreditAccounts.IgnoreQueryFilters().AsNoTracking().SingleAsync(a => a.Id == accountId);
+                Assert.Equal(300m, account.Balance);
+                Assert.Single(await context.CreditTransactions.IgnoreQueryFilters().Where(t => t.CreditAccountId == accountId).ToListAsync());
+                var audit = Assert.Single(await context.CustomerActionAudits.IgnoreQueryFilters().ToListAsync());
+                Assert.False(audit.Success);
+                Assert.Equal(BusinessErrorMessage.OrderUnpaidReceivable, audit.ErrorCode);
             },
             transactional: false);
     }
@@ -269,7 +304,7 @@ public class CreateOrderCashEligibilityTests(PostgresContainerFixture fixture) :
             arrange: async context =>
             {
                 await SeedAsync(context);
-                await SeedReceivableAsync(context, TestTenants.Default, writtenOff: true);
+                await SeedReceivableAsync(context, TestTenants.Default, r => r.WriteOff("admin-cash-rule", "Goodwill", DateTimeOffset.UtcNow));
             },
             act: async provider => await provider.GetRequiredService<IMediator>()
                 .Send(Command(PaymentType.Cash, OneCleaner, OneCleanerPrice)),
@@ -282,14 +317,14 @@ public class CreateOrderCashEligibilityTests(PostgresContainerFixture fixture) :
     }
 
     [Fact]
-    public async Task A_Customer_Owing_An_Open_Receivable_Still_Books_By_Card()
+    public async Task A_Paid_Receivable_Leaves_Card_Open()
     {
         await TestMethod(
             setup: AccountSession,
             arrange: async context =>
             {
                 await SeedAsync(context);
-                await SeedReceivableAsync(context, TestTenants.Default, writtenOff: false);
+                await SeedReceivableAsync(context, TestTenants.Second, r => r.MarkPaid("pi_cash_rule", DateTimeOffset.UtcNow));
             },
             act: async provider => await provider.GetRequiredService<IMediator>()
                 .Send(Command(PaymentType.Card, OneCleaner, OneCleanerPrice)),
@@ -299,6 +334,38 @@ public class CreateOrderCashEligibilityTests(PostgresContainerFixture fixture) :
                 return Task.CompletedTask;
             },
             transactional: false);
+    }
+
+    /// <summary>
+    /// A guest is not matched to the account by e-mail: refusing here would tell an anonymous caller which
+    /// addresses owe money, and a guest prepays by card anyway.
+    /// </summary>
+    [Fact]
+    public async Task A_Guest_Card_Booking_Under_The_E_Mail_Of_An_Account_That_Owes_Is_Accepted()
+    {
+        await TestMethod(
+            setup: GuestSession,
+            arrange: async context =>
+            {
+                await SeedAsync(context);
+                await SeedReceivableAsync(context, TestTenants.Default);
+            },
+            act: async provider => await provider.GetRequiredService<IMediator>()
+                .Send(Command(PaymentType.Card, OneCleaner, OneCleanerPrice)),
+            assert: (CleansiaDbContext _, BusinessResult<CreateOrder.Response> result) =>
+            {
+                Assert.True(result.IsSuccess, Describe(result));
+                return Task.CompletedTask;
+            },
+            transactional: false);
+    }
+
+    private static void AssertRefusedForTheDebt(BusinessResult<CreateOrder.Response> result)
+    {
+        Assert.True(result.IsFailure, Describe(result));
+        var refusal = Assert.Single(Assert.IsAssignableFrom<IValidationResult>(result).Errors);
+        Assert.Equal(BusinessErrorMessage.OrderUnpaidReceivable, refusal.Message);
+        Assert.NotEqual(nameof(CreateOrder.Command.PaymentType), refusal.Code);
     }
 
     private static Task AssertRefusedAndNothingWritten(
@@ -353,21 +420,31 @@ public class CreateOrderCashEligibilityTests(PostgresContainerFixture fixture) :
         await context.CommitAsync(CancellationToken.None);
     }
 
-    /// <summary>A cash booking the customer cancelled late, and the fee it left owing to <paramref name="tenantId"/>.</summary>
-    private static async Task SeedReceivableAsync(CleansiaDbContext context, string tenantId, bool writtenOff)
+    /// <summary>
+    /// A cash booking the customer cancelled late, and the fee it left owing to <paramref name="tenantId"/>,
+    /// open unless <paramref name="settle"/> closes it.
+    /// </summary>
+    private static async Task SeedReceivableAsync(CleansiaDbContext context, string tenantId, Action<Receivable>? settle = null)
     {
         var cancelled = EarlierOrder(
             DateTime.UtcNow.Date.AddDays(-2).AddHours(9), PaymentType.Cash, PaymentStatus.Pending, OrderStatus.Cancelled);
         var receivable = Receivable.ForCashCancellationFee(cancelled, 225m);
-        if (writtenOff)
-        {
-            receivable.WriteOff("admin-cash-rule", "Goodwill", DateTimeOffset.UtcNow);
-        }
+        settle?.Invoke(receivable);
 
         context.Orders.Add(cancelled);
         context.Receivables.Add(receivable);
         StampUnstampedAdded(context, tenantId);
         await context.CommitAsync(CancellationToken.None);
+    }
+
+    private static async Task<string> SeedCreditAsync(CleansiaDbContext context, decimal balance)
+    {
+        var account = CreditAccount.Create(CustomerUserId, Czk, "seed-cash-rule");
+        account.Issue(balance, CreditTransactionReason.Goodwill, "seed:" + account.Id, "seed-cash-rule");
+        context.CreditAccounts.Add(account);
+        StampUnstampedAdded(context, TestTenants.Default);
+        await context.CommitAsync(CancellationToken.None);
+        return account.Id;
     }
 
     private static Order EarlierOrder(

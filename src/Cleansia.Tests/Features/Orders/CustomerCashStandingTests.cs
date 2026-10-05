@@ -94,20 +94,21 @@ public sealed class CustomerCashStandingTests
         AssertValid(await ValidateUpdate(PaymentType.Cash));
     }
 
-    [Fact]
-    public async Task A_Cash_Schedule_Is_Refused_While_The_Customer_Owes_An_Open_Receivable()
+    [Theory]
+    [InlineData(PaymentType.Cash)]
+    [InlineData(PaymentType.Card)]
+    public async Task A_Schedule_In_Either_Tender_Is_Refused_While_The_Customer_Owes_An_Open_Receivable(PaymentType paymentType)
     {
         OweAnOpenReceivable();
 
-        AssertRefusedWith(BusinessErrorMessage.OrderCashUnpaidReceivable, await ValidateCreate(PaymentType.Cash));
-        AssertRefusedWith(BusinessErrorMessage.OrderCashUnpaidReceivable, await ValidateUpdate(PaymentType.Cash));
+        AssertRefusedForTheDebt(await ValidateCreate(paymentType));
+        AssertRefusedForTheDebt(await ValidateUpdate(paymentType));
     }
 
     [Fact]
-    public async Task A_Card_Schedule_Needs_Neither_Room_Under_The_Cash_Limit_Nor_A_Settled_Receivable()
+    public async Task A_Card_Schedule_Needs_No_Room_Under_The_Cash_Limit()
     {
         ArrangeCustomerOrders(openUnpaidCash: 2);
-        OweAnOpenReceivable();
 
         AssertValid(await ValidateCreate(PaymentType.Card));
         AssertValid(await ValidateUpdate(PaymentType.Card));
@@ -142,17 +143,27 @@ public sealed class CustomerCashStandingTests
         _pending.VerifyNoOtherCalls();
     }
 
-    [Fact]
-    public async Task Confirming_A_Cash_Occurrence_Is_Refused_While_The_Customer_Owes_An_Open_Receivable()
+    /// <summary>
+    /// Refused before the consent is recorded and before Stripe is asked for anything: strict doubles of
+    /// both fail the confirmation if either is touched.
+    /// </summary>
+    [Theory]
+    [InlineData(PaymentType.Cash)]
+    [InlineData(PaymentType.Card)]
+    public async Task Confirming_An_Occurrence_In_Either_Tender_Is_Refused_While_The_Customer_Owes_An_Open_Receivable(
+        PaymentType paymentType)
     {
         OweAnOpenReceivable();
-        var occurrence = ArrangeOccurrence();
+        var occurrence = ArrangeOccurrence(paymentType);
 
-        var result = await ConfirmHandler().Handle(new ConfirmRecurringOrder.Command(OccurrenceId), CancellationToken.None);
+        var result = await ConfirmHandler(
+                stripe: new Mock<IStripeClient>(MockBehavior.Strict).Object,
+                consents: new Mock<IConsentService>(MockBehavior.Strict).Object)
+            .Handle(new ConfirmRecurringOrder.Command(OccurrenceId, TermsAccepted: true), CancellationToken.None);
 
         Assert.True(result.IsFailure);
-        Assert.Equal(BusinessErrorMessage.OrderCashUnpaidReceivable, result.Error!.Message);
-        Assert.Equal(nameof(Order.PaymentType), result.Error.Code);
+        Assert.Equal(BusinessErrorMessage.OrderUnpaidReceivable, result.Error!.Message);
+        Assert.Equal(nameof(ConfirmRecurringOrder.Command.OrderId), result.Error.Code);
         Assert.Null(occurrence.CustomerConfirmedAt);
         _pending.VerifyNoOtherCalls();
     }
@@ -198,9 +209,9 @@ public sealed class CustomerCashStandingTests
         ]);
     }
 
-    private Order ArrangeOccurrence()
+    private Order ArrangeOccurrence(PaymentType paymentType = PaymentType.Cash)
     {
-        var order = CustomerOrder(PaymentType.Cash, PaymentStatus.Pending, OrderStatus.New, TemplateId);
+        var order = CustomerOrder(paymentType, PaymentStatus.Pending, OrderStatus.New, TemplateId);
         order.Id = OccurrenceId;
         order.TenantId = "company-of-the-order";
         order.SetCurrency(Czk);
@@ -283,7 +294,8 @@ public sealed class CustomerCashStandingTests
                 PaymentType: (int)paymentType,
                 StartsOn: DateTime.UtcNow.AddDays(3)));
 
-    private ConfirmRecurringOrder.Handler ConfirmHandler(ISavedCardRepository? savedCards = null) => new(
+    private ConfirmRecurringOrder.Handler ConfirmHandler(
+        ISavedCardRepository? savedCards = null, IStripeClient? stripe = null, IConsentService? consents = null) => new(
         OrderAccessDoubles.Over(_orders, _session),
         _orders.Object,
         savedCards ?? Mock.Of<ISavedCardRepository>(),
@@ -292,7 +304,7 @@ public sealed class CustomerCashStandingTests
         Mock.Of<IUserRepository>(),
         _session.Object,
         Mock.Of<ITenantProvider>(),
-        Mock.Of<IStripeClient>(),
+        stripe ?? Mock.Of<IStripeClient>(),
         new StripeConfig(new ConfigurationBuilder().Build()),
         Mock.Of<IStripeCustomerResolver>(),
         Mock.Of<IRequestMetadataProvider>(),
@@ -301,7 +313,7 @@ public sealed class CustomerCashStandingTests
         Mock.Of<INotificationProducer>(),
         NoPreferredCleanerHold.Resolver,
         Mock.Of<IAdminNotifier>(),
-        Mock.Of<IConsentService>(),
+        consents ?? Mock.Of<IConsentService>(),
         Legal.CustomerConsentDoubles.Consented(),
         Mock.Of<ILegalDocumentResolver>(),
         new AuditContext(),
@@ -312,6 +324,14 @@ public sealed class CustomerCashStandingTests
         var error = Assert.Single(result.Errors);
         Assert.Equal(key, error.ErrorMessage);
         Assert.Equal(nameof(CreateRecurringBooking.Command.PaymentType), error.PropertyName);
+    }
+
+    /// <summary>The refusal is the booking's, not the tender's.</summary>
+    private static void AssertRefusedForTheDebt(ValidationResult result)
+    {
+        var error = Assert.Single(result.Errors);
+        Assert.Equal(BusinessErrorMessage.OrderUnpaidReceivable, error.ErrorMessage);
+        Assert.NotEqual(nameof(CreateRecurringBooking.Command.PaymentType), error.PropertyName);
     }
 
     private static void AssertValid(ValidationResult result) =>

@@ -242,6 +242,7 @@ public sealed class RecurringSweepPerTemplateIsolationTests : IDisposable
         // correctly generates nothing and their real subject never runs.
         services.AddScoped(_ => EntitledMemberships());
         services.AddScoped<INotificationProducer>(_ => Mock.Of<INotificationProducer>());
+        services.AddScoped<IReceivableRepository>(_ => Mock.Of<IReceivableRepository>());
         services.AddScoped<MaterializeRecurringBookingTemplate.Handler>();
 
         services.AddScoped<IMediator>(sp =>

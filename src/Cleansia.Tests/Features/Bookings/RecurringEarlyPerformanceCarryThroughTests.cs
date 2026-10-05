@@ -159,6 +159,7 @@ public class RecurringEarlyPerformanceCarryThroughTests
             _pricingCalculator.Object,
             _orderFactory.Object,
             _memberships.Object,
+            Mock.Of<IReceivableRepository>(),
             OrderMarketDoubles.OperatedBy("cleansia-cz"),
             Mock.Of<ITenantProvider>(),
             Mock.Of<IUnitOfWork>(),

@@ -792,6 +792,17 @@ partner `SlideToCommit`, a filled track whose label is a filled button's. Core's
 `ComponentTextInkTests` pins the label, track and thumb and measures the label on its wash in both
 modes (iOS `d6acb7cb6`).
 
+**A filled button's label reads 4.5:1 in dark mode** (finding 2026-10-05). `onPrimary` was sky-900 in
+dark mode, in iOS Core and in both Android schemes: 4.42:1 on the dark primary, sky-400. It is the label
+and spinner of every filled button, the prominent slide-to-confirm's label and Android's partner
+`SlideToCommit`'s, the subtle slide's thumb glyph on iOS, Android's partner in-progress banner, and the
+glyphs on primary fills, selected chips and day pills, the FAB and badges among them. It is sky-950
+`#082F49` now, 6.48:1, in both apps on both platforms. Light mode keeps white on sky-600, 4.10:1, the
+pair the owner kept for filled buttons. Every `onPrimary` site sits on the primary or on the brand
+gradient, all lighter than sky-950, so none reads lower. Core's `ComponentTextInkTests` and each
+Android app's `SurfaceRolesTest` measure the dark pair and pin light mode to white, and the partner's
+also pins `SlideToCommit`'s label to it (iOS `18ffe5ecf`, Android `36b2acf40`).
+
 **Blue text on the light-blue container has an ink of its own in dark mode** (finding 2026-10-05).
 `primaryContainer` is sky-100 in light mode and sky-700 in dark, and the text ink on it reads 5.17:1 in
 light mode but 2.77:1 in dark, sky-400 on sky-700. Text drawn straight on that container takes

@@ -1,13 +1,28 @@
 import { TemplateRef } from '@angular/core';
 import { AdminReferralListItem, ReferralStatus } from '@cleansia/admin-services';
 import { TableAction, TableColumn } from '@cleansia/components';
-import { formatDate } from '@cleansia/utils';
+import { formatDate, formatMoney, localeFor } from '@cleansia/utils';
 import { TranslateService } from '@ngx-translate/core';
+
+/** A credit amount the way the admin tables print money: in its currency, two decimals. */
+export function formatAdminCredit(value: number | undefined, currencyCode: string | undefined, lang: string): string {
+  return formatMoney(value ?? 0, currencyCode, localeFor(lang), { fractionDigits: 2 });
+}
+
+/** Referrer / referred, as credited on qualification; a dash until either side was paid. */
+export function formatReferralCredit(row: AdminReferralListItem, translate: TranslateService): string {
+  if (row.creditAwardedToReferrer == null && row.creditAwardedToReferred == null) {
+    return translate.instant('pages.loyalty_referrals.not_yet');
+  }
+  return translate.instant('pages.loyalty_referrals.credit_format', {
+    referrer: formatAdminCredit(row.creditAwardedToReferrer, row.creditCurrencyCode, translate.currentLang),
+    referred: formatAdminCredit(row.creditAwardedToReferred, row.creditCurrencyCode, translate.currentLang),
+  });
+}
 
 export function getReferralTableColumns(
   translate: TranslateService,
-  statusTemplate?: TemplateRef<AdminReferralListItem>,
-  pointsTemplate?: TemplateRef<AdminReferralListItem>
+  statusTemplate?: TemplateRef<AdminReferralListItem>
 ): TableColumn<AdminReferralListItem>[] {
   const day = (value?: Date) =>
     formatDate(value, translate.currentLang) || translate.instant('pages.loyalty_referrals.not_yet');
@@ -51,11 +66,11 @@ export function getReferralTableColumns(
       width: '12%',
     },
     {
-      id: 'pointsAwarded',
+      id: 'creditAwarded',
       field: 'creditAwardedToReferrer',
-      header: translate.instant('pages.loyalty_referrals.column.points_awarded'),
+      header: translate.instant('pages.loyalty_referrals.column.credit_awarded'),
       numeric: true,
-      customTemplate: pointsTemplate,
+      getValue: (row) => formatReferralCredit(row, translate),
       width: '14%',
     },
   ];

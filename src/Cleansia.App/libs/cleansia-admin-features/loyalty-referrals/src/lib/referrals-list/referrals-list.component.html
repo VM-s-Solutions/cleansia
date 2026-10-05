@@ -77,14 +77,11 @@
   [visible]="dialogVisible()"
   (visibleChange)="onDialogVisibleChange($event)"
   [mode]="dialogMode()"
+  [credit]="interventionCredit()"
   [submitting]="facade.intervening()"
   (submitForm)="onInterventionSubmit($event)"
 />
 
 <ng-template #statusTemplate let-row>
   <cleansia-status-badge kind="referral" [value]="row.status" />
-</ng-template>
-
-<ng-template #pointsTemplate let-row>
-  {{ formatPointsAwarded(row) }}
 </ng-template>

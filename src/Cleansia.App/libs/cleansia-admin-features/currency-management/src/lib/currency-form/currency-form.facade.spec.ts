@@ -28,6 +28,7 @@ describe('CurrencyFormFacade', () => {
     name: 'Czech koruna',
     loyaltyPointsDivisor: null,
     noShowCredit: null,
+    referralCredit: null,
   };
 
   beforeEach(() => {
@@ -151,6 +152,33 @@ describe('CurrencyFormFacade', () => {
       expect(created.toJSON().noShowCredit).toBeUndefined();
       expect(updated.toJSON().noShowCredit).toBeUndefined();
       expect(JSON.stringify(updated)).not.toContain('noShowCredit');
+    });
+
+    // The referral credit is what each side of a qualified referral is paid in this currency.
+    // UpdateCurrency reads an absent figure as null and clears it, so the form must send the
+    // figure it shows — a save that dropped it would stop every referral in the currency paying.
+    it('serializes the referral credit on create and update when typed', () => {
+      facade.createCurrency({ ...formData, referralCredit: 150 });
+      facade.updateCurrency('cur-1', { ...formData, referralCredit: 150 });
+
+      const created: CreateCurrencyCommand = createMock.mock.calls[0][0];
+      const updated: UpdateCurrencyCommand = updateMock.mock.calls[0][1];
+      expect(created.toJSON().referralCredit).toBe(150);
+      expect(updated.toJSON().referralCredit).toBe(150);
+    });
+
+    it('sends a zero referral credit, which the server accepts as paying none', () => {
+      facade.updateCurrency('cur-1', { ...formData, referralCredit: 0 });
+
+      const updated: UpdateCurrencyCommand = updateMock.mock.calls[0][1];
+      expect(updated.toJSON().referralCredit).toBe(0);
+    });
+
+    it('omits the referral credit when left blank, so the server clears it', () => {
+      facade.updateCurrency('cur-1', formData);
+
+      const updated: UpdateCurrencyCommand = updateMock.mock.calls[0][1];
+      expect(JSON.stringify(updated)).not.toContain('referralCredit');
     });
   });
 });

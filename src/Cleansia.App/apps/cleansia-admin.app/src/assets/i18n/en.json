@@ -1565,7 +1565,9 @@
         "update_error": "Failed to update currency"
       },
       "no_show_credit": "No-show apology credit",
-      "no_show_credit_placeholder": "e.g. 250 for CZK — leave empty and no credit is paid in this currency"
+      "no_show_credit_placeholder": "e.g. 250 for CZK — leave empty and no credit is paid in this currency",
+      "referral_credit": "Referral credit (each side)",
+      "referral_credit_placeholder": "e.g. 150 for CZK — leave empty or enter 0 and referrals pay no credit in this currency"
     },
     "company_info": {
       "bank_account_number": "Bank Account Number",
@@ -2462,6 +2464,8 @@
           "dispute_settlement": "Dispute settlement",
           "cleaner_no_show": "Cleaner no-show",
           "goodwill": "Goodwill",
+          "referral": "Referral",
+          "referral_reversed": "Referral reversed",
           "order_payment": "Spent on a booking",
           "order_payment_returned": "Returned from a cancelled booking",
           "unknown": "Other",
@@ -2519,7 +2523,7 @@
         "status": "Status",
         "accepted_on": "Accepted on",
         "qualified_on": "Qualified on",
-        "points_awarded": "Points awarded"
+        "credit_awarded": "Credit awarded (referrer / referred)"
       },
       "status": {
         "Accepted": "Accepted",
@@ -2527,7 +2531,7 @@
         "Expired": "Expired",
         "Reversed": "Reversed"
       },
-      "points_format": "{{referrer}} / {{referred}}",
+      "credit_format": "{{referrer}} / {{referred}}",
       "not_yet": "—",
       "empty": "No referrals yet",
       "loading": "Loading...",
@@ -2538,16 +2542,18 @@
       "intervention": {
         "title_reverse": "Reverse referral",
         "title_force_qualify": "Force-qualify referral",
-        "hint_reverse": "Revokes the points granted to both parties and marks the referral as reversed. The reason is stored in the audit ledger.",
-        "hint_force_qualify": "Marks the referral as qualified and grants the points to both parties. The reason is stored in the audit ledger.",
+        "hint_reverse": "Takes back the referral credit from both parties — only as much of it as each balance still holds — and marks the referral as reversed. The reason is stored in the audit ledger.",
+        "hint_force_qualify": "Marks the referral as qualified and credits both parties the referral credit of the currency of the referred customer's latest order, or of the platform default currency. The reason is stored in the audit ledger.",
+        "summary_reverse": "Granted on qualification: {{credit}} (referrer / referred).",
         "field": {
           "reason": "Reason",
-          "reason_help": "Required. Visible in the loyalty ledger."
+          "reason_help": "Required. Recorded as the note on each side's credit ledger entry."
         },
         "submit_reverse": "Reverse",
         "submit_force_qualify": "Qualify",
-        "success_reverse": "Referral reversed and points clawed back",
-        "success_force_qualify": "Referral qualified and points granted"
+        "success_reverse": "Referral reversed. Credit taken back: {{referrer}} from the referrer, {{referred}} from the referred customer.",
+        "success_reverse_no_credit": "Referral reversed. No credit had been granted, so none was taken back.",
+        "success_force_qualify": "Referral qualified. Credit granted: {{referrer}} to the referrer, {{referred}} to the referred customer."
       }
     },
     "sitewide_push": {

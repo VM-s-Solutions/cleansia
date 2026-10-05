@@ -46,8 +46,8 @@ public sealed class LegalDocumentRouteTests(HostTestPostgresFixture db) : AuthzH
 
         var documents = await QueryAsync(ctx => ctx.LegalDocuments.Include(d => d.Texts).AsNoTracking().ToListAsync());
 
-        Assert.Equal(20, documents.Count);
-        Assert.Equal(7, documents.Count(d => d.Type == LegalDocumentType.TermsOfService));
+        Assert.Equal(21, documents.Count);
+        Assert.Equal(8, documents.Count(d => d.Type == LegalDocumentType.TermsOfService));
         Assert.Contains(documents, d => d.Type == LegalDocumentType.WorkContract);
         Assert.All(documents, d => Assert.Equal(
             d.Type == LegalDocumentType.WorkContract || LegalDocument.CleanerConsentTypeFor(d.Type) is not null

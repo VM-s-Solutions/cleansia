@@ -703,7 +703,7 @@
         },
         "record_cash": {
           "action": "Zaznamenať prijatú hotovosť",
-          "context": "Použite, keď upratovač prevzal hotovosť, ale nemohol ju zaznamenať vo svojej aplikácii. Objednávka sa tým stane zaplatenou, takže ju upratovač môže dokončiť; ak už je dokončená, účtenka sa vystaví hneď.",
+          "context": "Použite, keď upratovač prevzal hotovosť, ale nemohol ju zaznamenať vo svojej aplikácii. Objednávka sa tým stane zaplatenou, takže ju upratovač môže dokončiť; ak už je dokončená, účtenka sa vystaví hneď. Ak upratovač nahlásil, že zákazník nezaplatil, týmto sa zároveň uzavrie suma, ktorú zákazník dlhuje; keď ju zákazník zaplatil online, hotovosť zaznamenať nemožno.",
           "no_cleaner": "Na tejto zakázke nikto nie je. Najprv na ňu priraďte upratovača, ktorý hotovosť prevzal.",
           "cleaner": "Upratovač, ktorý hotovosť prevzal",
           "received_at": "Prijaté",
@@ -2874,6 +2874,10 @@
             "lockout_reported": {
               "title": "Upratovač sa nemôže dostať dnu",
               "body": "Upratovač pri objednávke {{orderNumber}}, objednanej na {{cleaningDateTime}}, hlási, že sa nemôže dostať dnu. Skontrolujte fotografiu vchodu a jeho pokusy o volanie; ak ho zákazník nepustil dnu, zrušte ju ako nesprístupnenie zákazníkom."
+            },
+            "cash_not_paid": {
+              "title": "Zákazník nezaplatil v hotovosti",
+              "body": "Upratovač pri objednávke {{orderNumber}} hlási, že mu zákazník nezaplatil {{amount}} v hotovosti. Objednávka je dokončená a upratovač dostane odmenu; zákazník teraz dlhuje {{amount}} a kým nezaplatí, nemôže objednávať. Ak hlásenie nie je pravdivé, manažér dlh odpíše; ak zákazník upratovačovi zaplatí dodatočne, zaznamenajte pri objednávke prijatú hotovosť."
             }
           },
           "dispute": {

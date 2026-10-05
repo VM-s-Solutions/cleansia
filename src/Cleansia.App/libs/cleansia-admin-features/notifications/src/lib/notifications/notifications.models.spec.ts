@@ -30,12 +30,13 @@ function dto(overrides: Partial<UserNotificationDto> = {}): UserNotificationDto 
 }
 
 describe('the admin event catalogue mirror', () => {
-  it('pins the fifteen keys the backend catalogue declares, in its order', () => {
+  it('pins the sixteen keys the backend catalogue declares, in its order', () => {
     expect(ADMIN_NOTIFICATION_EVENT_KEYS).toEqual([
       'admin.order.new',
       'admin.order.crew_lost',
       'admin.order.cleaner_not_started',
       'admin.order.lockout_reported',
+      'admin.order.cash_not_paid',
       'admin.dispute.filed',
       'admin.dispute.chargeback',
       'admin.dispute.chargeback_unmatched',
@@ -64,6 +65,7 @@ describe('the admin event catalogue mirror', () => {
   it('sorts every key into a family the page has an icon for', () => {
     const families = ADMIN_NOTIFICATION_EVENT_KEYS.map(getNotificationFamily);
     expect(families).toEqual([
+      NotificationFamily.Order,
       NotificationFamily.Order,
       NotificationFamily.Order,
       NotificationFamily.Order,
@@ -160,6 +162,7 @@ describe('getNotificationRoute', () => {
     'admin.order.crew_lost',
     'admin.order.cleaner_not_started',
     'admin.order.lockout_reported',
+    'admin.order.cash_not_paid',
     'admin.payment.failed',
     'admin.payment.refund_stuck',
     'admin.payment.refund_needs_retry',

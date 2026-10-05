@@ -2783,8 +2783,8 @@ key the automatic path uses, so the two can never both pay a side, and a referra
 still holds** (owner default 2026-10-04). An administrator reverses a `Qualified` referral; per side,
 the reversal reads the `Referral` grant under that side's key, and debits the smaller of the grant and
 the side's balance in that currency, under a `ReferralReversed` row (`referral-reverse:{referralId}:{side}`).
-Credit never goes negative: a side that has already spent the credit gives up only what is left, and
-the log records the shortfall. The referral is then `Reversed` for good, and a second reversal is
+Credit never goes negative: a side whose balance in that currency holds less than the grant gives up
+the whole balance and no more, and the log records the shortfall. The referral is then `Reversed` for good, and a second reversal is
 refused (`referral.not_qualified`). The amounts recorded on the referral stay as the record of the
 grant.
 

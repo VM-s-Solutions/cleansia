@@ -94,6 +94,20 @@ final class ComponentTextInkTests: XCTestCase {
         )
     }
 
+    /// A filled button's label reads 4.5:1 on its dark-mode fill (finding 2026-10-05): sky-900 on the dark
+    /// primary's sky-400 read 4.42:1, so dark mode takes sky-950 (6.48:1). Light mode is unchanged, white.
+    func testTheFilledButtonsLabelReadsOnItsDarkFill() throws {
+        XCTAssertEqual(
+            contrast(resolved(CleansiaColors.onPrimary, .dark), resolved(CleansiaColors.primary, .dark)),
+            6.48,
+            accuracy: 0.01
+        )
+        XCTAssertLessThan(contrast(rgb(0x0C4A6E), rgb(0x38BDF8)), 4.5, "sky-900 reads on sky-400 after all")
+        XCTAssertEqual(contrast(resolved(CleansiaColors.onPrimary, .light), rgb(0xFFFFFF)), 1, accuracy: 0.001)
+        let button = try compactSource("Components/CleansiaButton.swift")
+        XCTAssertTrue(button.contains(".foregroundColor(CleansiaColors.onPrimary).background(CleansiaColors.primary"))
+    }
+
     /// Blue text on the primary container reads 4.5:1 in both modes (finding 2026-10-05): in dark mode the
     /// container is sky-700, where the text ink's sky-400 read 2.77:1, so badge text takes
     /// `primaryTextOnContainer` (sky-100 in dark, the text ink's sky-700 in light). The section header's badge

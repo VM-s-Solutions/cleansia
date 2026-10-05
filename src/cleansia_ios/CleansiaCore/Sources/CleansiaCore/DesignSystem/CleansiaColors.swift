@@ -6,7 +6,9 @@ public enum CleansiaColors {
     /// so text takes sky-700 in light mode (5.93:1); dark mode keeps the primary's sky-400. Fills, borders,
     /// icons and buttons keep `primary`.
     public static let primaryText = Color.dynamic(light: Palette.sky700, dark: Palette.sky400)
-    public static let onPrimary = Color.dynamic(light: .white, dark: Palette.sky900)
+    /// Dark mode takes sky-950, 6.48:1 on the dark primary's sky-400, where sky-900 read 4.42:1 — every filled
+    /// button's label. Light mode keeps white on the brand blue.
+    public static let onPrimary = Color.dynamic(light: .white, dark: Palette.sky950)
     public static let primaryContainer = Color.dynamic(light: Palette.sky100, dark: Palette.sky700)
     /// The brand blue for TEXT on `primaryContainer` — a badge, a chip, an initial on its disc: sky-700 in
     /// light mode, as `primaryText` (5.17:1 on sky-100), and sky-100 in dark mode, where the container is

@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Text.RegularExpressions;
 using Cleansia.Core.AppServices.Features.Legal;
 using Cleansia.Core.AppServices.Features.Orders;
@@ -34,6 +35,7 @@ public sealed class LegalDocumentSeederTests : IDisposable
         (LegalDocumentType.TermsOfService, new DateOnly(2026, 9, 29)),
         (LegalDocumentType.TermsOfService, new DateOnly(2026, 9, 30)),
         (LegalDocumentType.TermsOfService, new DateOnly(2026, 10, 3)),
+        (LegalDocumentType.TermsOfService, new DateOnly(2026, 10, 5)),
         (LegalDocumentType.PrivacyPolicy, new DateOnly(2026, 9, 14)),
         (LegalDocumentType.PrivacyPolicy, new DateOnly(2026, 9, 29)),
         (LegalDocumentType.PrivacyPolicy, new DateOnly(2026, 10, 3)),
@@ -425,7 +427,65 @@ public sealed class LegalDocumentSeederTests : IDisposable
 
     private const int PlusTrialDays = 14;
 
-    private static readonly Regex DayPhrase = new(@"(\d+)\s+(?:days|dní|днів|дней)", RegexOptions.IgnoreCase);
+    /// <summary>
+    /// Owner rulings 2026-10-04: a referral earns both customers credit once the referred customer's first
+    /// booking is completed within the referral window, and a card refund is sent within 3 days. The newest
+    /// terms state the window in the credit section, as the days the referral policy counts, and the refund
+    /// days in the cancellation and no-cleaner sections, each as the only day figure there, in every language.
+    /// </summary>
+    [Fact]
+    public void The_Newest_Terms_State_The_Referral_Window_And_The_Refund_Days_In_Every_Language()
+    {
+        var newest = NewestTerms();
+
+        Assert.Equal(new[] { "cs", "en", "ru", "sk", "uk" }, newest.Select(r => r.Language).Order());
+        Assert.All(newest, r =>
+        {
+            Assert.Equal(new[] { ReferralPolicy.QualifyingWindowDays }, DaysIn(r.ContentMarkdown, section: 9));
+            Assert.Equal(new[] { CardRefundDays }, DaysIn(r.ContentMarkdown, section: 13));
+            Assert.Equal(new[] { CardRefundDays }, DaysIn(r.ContentMarkdown, section: 14));
+        });
+    }
+
+    private const int CardRefundDays = 3;
+
+    /// <summary>
+    /// The owner's rulings of 2026-10-04 retire wording from the version each text replaces, and the newest
+    /// version must carry none of it in any language. Each row names one block of the replaced version (its
+    /// heading is block 0, then each paragraph or list) by the position of its section, which every language
+    /// shares, and its comment says what that block said.
+    /// </summary>
+    [Theory]
+    [InlineData(LegalDocumentType.TermsOfService, "2026-10-03", 7, 3)]            // cash needs a card saved as a guarantee
+    [InlineData(LegalDocumentType.TermsOfService, "2026-10-03", 8, 0)]            // "The saved card for cash bookings"
+    [InlineData(LegalDocumentType.TermsOfService, "2026-10-03", 8, 1)]            // the card may be charged without asking
+    [InlineData(LegalDocumentType.TermsOfService, "2026-10-03", 8, 2)]            // a failed charge, and no cash without a card
+    [InlineData(LegalDocumentType.TermsOfService, "2026-10-03", 13, 5)]           // refunds within 5 working days
+    [InlineData(LegalDocumentType.TermsOfService, "2026-10-03", 14, 2)]           // a no-cleaner refund within 5 working days
+    public void The_Newest_Version_Carries_None_Of_The_Wording_The_2026_10_04_Rulings_Retired(
+        LegalDocumentType type, string replaced, int section, int block)
+    {
+        var all = LegalSeedResource.ReadAll().Where(r => r.Type == type).ToList();
+        var retired = all
+            .Where(r => r.EffectiveFrom == DateOnly.Parse(replaced, CultureInfo.InvariantCulture))
+            .ToDictionary(r => r.Language, r => BlocksOf(r.ContentMarkdown, section)[block]);
+        var newest = NewestOf(type);
+
+        Assert.Equal(new[] { "cs", "en", "ru", "sk", "uk" }, retired.Keys.Order());
+        Assert.Equal(new[] { "cs", "en", "ru", "sk", "uk" }, newest.Select(r => r.Language).Order());
+        Assert.All(newest, r => Assert.DoesNotContain(retired[r.Language], r.ContentMarkdown.ReplaceLineEndings("\n")));
+    }
+
+    /// <summary>The blocks of the section at <paramref name="section"/>, counted by its <c>## </c> heading from 1.</summary>
+    private static string[] BlocksOf(string markdown, int section) =>
+        markdown.ReplaceLineEndings("\n").Split("\n## ")[section].Trim().Split("\n\n");
+
+    private static int[] DaysIn(string markdown, int section) =>
+        DayPhrase.Matches(string.Join("\n\n", BlocksOf(markdown, section)))
+            .Select(m => int.Parse(m.Groups[1].Value, CultureInfo.InvariantCulture))
+            .ToArray();
+
+    private static readonly Regex DayPhrase = new(@"(\d+)\s+(?:days|dní|днів|дні|дней)", RegexOptions.IgnoreCase);
 
     private static readonly Regex MinutePhrase = new(@"(\d+)\s+(?:min|хвилин|минут)", RegexOptions.IgnoreCase);
 

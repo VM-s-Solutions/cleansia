@@ -70,7 +70,8 @@ internal static class RequestLoggingHarness
         string method = "GET",
         string? authenticatedUserId = null,
         Stream? requestBody = null,
-        Action? onNextInvoked = null)
+        Action? onNextInvoked = null,
+        string? queryString = null)
     {
         if (requestBody is not null && requestJson is not null)
         {
@@ -100,6 +101,11 @@ internal static class RequestLoggingHarness
 
         context.Request.Method = method;
         context.Request.Path = path;
+        if (queryString is not null)
+        {
+            context.Request.QueryString = new QueryString(queryString);
+        }
+
         context.Request.Body = requestBody
             ?? (requestJson is null
                 ? new MemoryStream()

@@ -232,7 +232,7 @@ public partial class RequestLoggingMiddleware(RequestDelegate next, ILogger<Requ
     private static string RedactQueryString(QueryString queryString)
     {
         if (!queryString.HasValue) return string.Empty;
-        return EmailQueryParamRegex().Replace(queryString.Value!, "$1***REDACTED***");
+        return QueryParamValueRegex().Replace(queryString.Value!, "$1***REDACTED***");
     }
 
     private static bool IsSensitivePath(PathString path)
@@ -339,6 +339,6 @@ public partial class RequestLoggingMiddleware(RequestDelegate next, ILogger<Requ
         RegexOptions.IgnoreCase | RegexOptions.Compiled)]
     private static partial Regex ContactIdentityFieldRegex();
 
-    [GeneratedRegex(@"([?&][^=&]*email[^=&]*=)[^&]*", RegexOptions.IgnoreCase | RegexOptions.Compiled)]
-    private static partial Regex EmailQueryParamRegex();
+    [GeneratedRegex(@"([?&][^=&]*=)[^&]*")]
+    private static partial Regex QueryParamValueRegex();
 }

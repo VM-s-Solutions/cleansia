@@ -41,6 +41,7 @@ public sealed class LegalDocumentSeederTests : IDisposable
         (LegalDocumentType.PrivacyPolicy, new DateOnly(2026, 9, 14)),
         (LegalDocumentType.PrivacyPolicy, new DateOnly(2026, 9, 29)),
         (LegalDocumentType.PrivacyPolicy, new DateOnly(2026, 10, 3)),
+        (LegalDocumentType.PrivacyPolicy, new DateOnly(2026, 10, 6)),
         (LegalDocumentType.WorkContract, new DateOnly(2026, 9, 20)),
         (LegalDocumentType.WorkContract, new DateOnly(2026, 9, 29)),
         (LegalDocumentType.WorkContract, new DateOnly(2026, 10, 5)),
@@ -652,6 +653,31 @@ public sealed class LegalDocumentSeederTests : IDisposable
     public void The_Newest_Terms_Carry_None_Of_The_Single_Currency_Referral_Wording(string language, string phrase)
     {
         Assert.DoesNotContain(phrase, SectionOf(LegalDocumentType.TermsOfService, language, 9));
+    }
+
+    /// <summary>
+    /// Owner ruling 2026-10-05: before the referral credit is paid, the two accounts' addresses with their flats,
+    /// phone numbers and e-mail addresses are compared to keep a customer from referring themselves, and a match
+    /// only holds the referral for a person to review. The newest privacy policy says so under its account
+    /// heading — the first subsection of section 2 — with what is compared and that the comparison decides nothing
+    /// by itself, in every language; the 2026-10-03 policy named no such use of account data.
+    /// </summary>
+    [Theory]
+    [InlineData("en", "the addresses with their flat numbers, the phone numbers and the e-mail addresses")]
+    [InlineData("cs", "adresy včetně čísel bytů, telefonní čísla a e-mailové adresy")]
+    [InlineData("sk", "adresy vrátane čísel bytov, telefónne čísla a e-mailové adresy")]
+    [InlineData("uk", "адреси разом із номерами квартир, номери телефонів і адреси електронної пошти")]
+    [InlineData("ru", "адреса вместе с номерами квартир, номера телефонов и адреса электронной почты")]
+    [InlineData("en", "the comparison decides nothing by itself")]
+    [InlineData("cs", "samotné porovnání o ničem nerozhoduje")]
+    [InlineData("sk", "samotné porovnanie o ničom nerozhoduje")]
+    [InlineData("uk", "саме порівняння нічого не вирішує")]
+    [InlineData("ru", "само сравнение ничего не решает")]
+    public void The_Newest_Privacy_Policy_Names_The_Referral_Comparison_Under_The_Account(string language, string phrase)
+    {
+        var account = SectionOf(LegalDocumentType.PrivacyPolicy, language, 2).Split("\n### ")[1];
+
+        Assert.Contains(phrase, account);
     }
 
     private static string SectionOf(LegalDocumentType type, string language, int section) =>

@@ -83,7 +83,7 @@ public sealed class DevelopmentFirstBootLegalSeedTests(PostgresContainerFixture 
             [
                 LegalDocumentType.TermsOfService, LegalDocumentType.TermsOfService, LegalDocumentType.TermsOfService, LegalDocumentType.TermsOfService,
                 LegalDocumentType.TermsOfService, LegalDocumentType.TermsOfService, LegalDocumentType.TermsOfService,
-                LegalDocumentType.PrivacyPolicy, LegalDocumentType.PrivacyPolicy, LegalDocumentType.PrivacyPolicy,
+                LegalDocumentType.PrivacyPolicy, LegalDocumentType.PrivacyPolicy, LegalDocumentType.PrivacyPolicy, LegalDocumentType.PrivacyPolicy,
                 LegalDocumentType.WorkContract, LegalDocumentType.WorkContract, LegalDocumentType.WorkContract,
                 LegalDocumentType.CleanerFrameworkContract, LegalDocumentType.CleanerFrameworkContract,
                 LegalDocumentType.SelfBillingAgreement, LegalDocumentType.SelfBillingAgreement,

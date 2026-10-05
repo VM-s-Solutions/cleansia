@@ -44,6 +44,10 @@
 
   --cl-accent: #{$primary};
   --cl-accent-soft: #{$primary-accent};
+  // The brand blue for TEXT. The primary itself, Sky600, measures 4.1 on white against the 4.5 text
+  // needs, so blue text takes Sky700 (5.9) in light mode and Sky300 (10.4 on the dark card) after
+  // dark; fills, borders, icons and buttons keep the primary.
+  --cl-accent-text: #{$primary-dark};
 
   // The hero's radial ground, and the fill the foam edge cuts INTO the section
   // below it. The foam is a shape, so its fill must equal whatever the next
@@ -158,6 +162,7 @@
 
   --cl-accent: #38bdf8;
   --cl-accent-soft: #7dd3fc;
+  --cl-accent-text: #7dd3fc;
 
   --cl-hero-1: #12304d;
   --cl-hero-2: #0e2439;

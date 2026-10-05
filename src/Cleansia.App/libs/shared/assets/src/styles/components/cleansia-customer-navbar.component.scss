@@ -129,7 +129,7 @@ $nav-band: 96px;
 
     &--active,
     &--active:hover {
-      color: $primary;
+      color: var(--cl-accent-text, #0369a1);
 
       &::after {
         transform: scaleX(1);
@@ -408,7 +408,7 @@ $nav-band: 96px;
   &__user-role {
     font-size: 0.6875rem;
     font-weight: 500;
-    color: $primary;
+    color: var(--cl-accent-text, #0369a1);
     margin-top: 2px;
   }
 
@@ -665,7 +665,7 @@ body:has(.customer-navbar) .cleansia-dev-banner.cleansia-dev-banner.cleansia-dev
 
     &:hover,
     &--active {
-      color: #0284c7;
+      color: var(--cl-accent-text, #0369a1);
     }
   }
 
@@ -690,7 +690,7 @@ body:has(.customer-navbar) .cleansia-dev-banner.cleansia-dev-banner.cleansia-dev
     text-decoration: none;
 
     &:hover {
-      color: #0284c7;
+      color: var(--cl-accent-text, #0369a1);
     }
   }
 

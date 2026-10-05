@@ -174,7 +174,7 @@ class FakeOrderWizardFacade {
   cashReason = signal<{ key: string; params: Record<string, number> } | null>(null);
   cashNeedsAccount = signal(false);
   cashClearedNotice = signal(false);
-  cashOwed = signal(false);
+  owesUnpaidAmount = signal(false);
   selectPaymentType = jest.fn((paymentType: PaymentType) => this.updateFormData({ paymentType }));
   saveCardOffered = signal(false);
   saveCard = signal(false);
@@ -814,15 +814,15 @@ describe('OrderWizardComponent (a11y)', () => {
     });
   });
 
-  describe('cash refused for an unpaid amount', () => {
+  describe('a booking refused for an unpaid amount', () => {
     afterEach(() => sessionStorage.clear());
 
-    it('says nothing about an unpaid amount until the server refuses cash for one', async () => {
+    it('says nothing about an unpaid amount until the server refuses the booking for one', async () => {
       await setup();
       facade.activeStep.set(4);
       fixture.detectChanges();
 
-      expect(el.textContent).not.toContain('pages.order.cash_owed');
+      expect(el.textContent).not.toContain('pages.order.unpaid_owed');
       expect(el.querySelector('cleansia-customer-amount-due')).toBeNull();
       expect(receivableClient.getMine).not.toHaveBeenCalled();
     });
@@ -830,10 +830,10 @@ describe('OrderWizardComponent (a11y)', () => {
     it('says why and lists what is owed, and parks the booking before the pay link opens', async () => {
       await setup();
       facade.activeStep.set(4);
-      facade.cashOwed.set(true);
+      facade.owesUnpaidAmount.set(true);
       fixture.detectChanges();
 
-      expect(el.textContent).toContain('pages.order.cash_owed');
+      expect(el.textContent).toContain('pages.order.unpaid_owed');
       const row = fixture.debugElement.query(By.css('.customer-amount-due__row'));
       expect(row.nativeElement.textContent).toContain('CL-1001');
 

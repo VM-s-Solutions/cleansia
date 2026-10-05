@@ -1032,7 +1032,7 @@
       "cash_needs_card": "Cleaners needed for this booking: {{count}}. Cash is only for bookings one cleaner handles alone, so this one is paid by card.",
       "cash_pending": "Whether you can pay in cash is confirmed once the price is ready.",
       "cash_cleared": "Cash is no longer available for this booking, so no payment method is selected. Choose how you want to pay.",
-      "cash_owed": "Cash is not available while an amount from an earlier booking is unpaid. Pay it below and this booking will be waiting when you come back to book — or pay this booking by card now.",
+      "unpaid_owed": "You owe an amount from an earlier booking, so this booking cannot be made yet, by card or in cash. Pay it below and this booking will be waiting when you come back.",
       "cash_sign_in": "Sign in",
       "plus_perk_grace": "60 minutes after every booking to cancel free, instead of 15 minutes",
       "dirtiness": {
@@ -1241,12 +1241,13 @@
         "note_card": "This cleaning is part of your repeat booking. Confirm it and pay securely by card. If it isn't confirmed in time, it's cancelled free of charge.",
         "note_cash": "This cleaning is part of your repeat booking. Confirm it and pay the cleaner in cash on the day. If it isn't confirmed in time, it's cancelled free of charge.",
         "success": "Booking confirmed",
-        "begun_in_app": "You started paying for this cleaning in the mobile app. Please finish the payment there."
+        "begun_in_app": "You started paying for this cleaning in the mobile app. Please finish the payment there.",
+        "owed": "This cleaning can be confirmed once what you owe is paid. You can pay it under Amount due on this page."
       }
     },
     "amount_due": {
       "title": "Amount due",
-      "intro": "Until it is paid, you cannot book with cash. Bookings paid by card are not affected.",
+      "intro": "Until it is paid, you cannot make a new booking or confirm a repeat visit, by card or in cash. Bookings you already have are kept.",
       "after_payment": "Just paid? It can take a minute before it disappears from here.",
       "pay": "Pay now",
       "load_error": "We couldn't check whether you owe anything.",
@@ -1995,8 +1996,8 @@
       },
       "payment_gateway_unavailable": "Payments are temporarily unavailable. Please try again shortly.",
       "cash_not_available": "Cash is only available when you're signed in and the booking needs a single cleaner.",
-      "cash_open_bookings_limit_reached": "You already have as many unpaid cash bookings as allowed. Choose card, or pay in cash again once one of them is paid.",
-      "cash_unpaid_receivable": "You have an unpaid amount with us, such as a cancellation fee. Pay by card for now; cash is available again once it is settled.",
+      "cash_open_bookings_limit_reached": "You already have as many cash bookings not yet paid as allowed — in practice, your upcoming cash bookings. Pay this one by card, or book with cash again once one of them has been paid.",
+      "unpaid_receivable": "You owe us an amount from an earlier booking, such as a cancellation fee or a cleaning that was not paid for. Until it is paid, you cannot make or confirm a booking, by card or in cash.",
       "country_operator_mismatch": "This address is served by another Cleansia company, so it can't be booked here.",
       "payment": {
         "already_paid": "This order has already been paid."
@@ -2297,6 +2298,7 @@
     "cash_pending": "Whether this schedule can be paid in cash is confirmed once the price is ready.",
     "cash_cleared": "Cash is no longer available for this schedule, so no payment method is selected. Choose how you want to pay.",
     "cash_unchecked": "We couldn't confirm whether this schedule can be paid in cash. Save it again in a moment, or choose card.",
+    "owed": "You owe an amount from an earlier booking, so a repeat booking cannot be saved until it is paid, by card or in cash. You can pay it below.",
     "payment_placeholder": "Choose how to pay",
     "error_payment": "Choose how the schedule is paid.",
     "terms_label": "Agreement to the terms",

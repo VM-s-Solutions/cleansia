@@ -5,7 +5,9 @@ import { provideNoopAnimations } from '@angular/platform-browser/animations';
 import { ActivatedRoute, provideRouter, Router } from '@angular/router';
 import { CleansiaSelectComponent } from '@cleansia/components';
 import {
+  CustomerClient,
   DirtinessLevel,
+  MyReceivableDto,
   PackageListItem,
   PaymentType,
   PreferredCleanerOption,
@@ -17,6 +19,7 @@ import { TranslateModule } from '@ngx-translate/core';
 import { readFileSync } from 'fs';
 import { join } from 'path';
 import { DatePicker } from 'primeng/datepicker';
+import { of } from 'rxjs';
 import { RecurringBookingsFacade } from '../recurring-bookings.facade';
 import {
   MissingField,
@@ -41,6 +44,7 @@ class FakeRecurringBookingsFacade {
   cashSelectable = signal(true);
   cashReason = signal<{ key: string; params: Record<string, number> } | null>(null);
   cashClearedNotice = signal(false);
+  owesUnpaidAmount = signal(false);
   preferredCleanerRefused = signal(false);
   servingCleanersLoading = signal(false);
   preferredCleanerVisible = signal(false);
@@ -313,6 +317,66 @@ describe('CreateRecurringWizardComponent — paying in cash', () => {
     facade.pricedSelection.set({ ...NOTHING_PRICED, serviceIds: ['s1'] });
     fixture.detectChanges();
     expect(facade.quoteForm).toHaveBeenCalledTimes(2);
+  });
+});
+
+describe('CreateRecurringWizardComponent — a schedule refused for an unpaid amount', () => {
+  let fixture: ComponentFixture<CreateRecurringWizardComponent>;
+  let facade: FakeRecurringBookingsFacade;
+  let el: HTMLElement;
+  let getMine: jest.Mock;
+
+  beforeEach(async () => {
+    facade = new FakeRecurringBookingsFacade();
+    getMine = jest.fn().mockReturnValue(
+      of([
+        MyReceivableDto.fromJS({
+          id: 'rcv-1',
+          orderId: 'o-1',
+          displayOrderNumber: 'CL-1001',
+          kind: { value: 3, name: 'UnpaidCash' },
+          amount: 900,
+          currencyCode: 'CZK',
+        }),
+      ]),
+    );
+    await TestBed.configureTestingModule({
+      imports: [CreateRecurringWizardComponent, TranslateModule.forRoot()],
+      providers: [
+        provideRouter([]),
+        provideNoopAnimations(),
+        { provide: CustomerClient, useValue: { receivableClient: { getMine, createPayLink: jest.fn() } } },
+        {
+          provide: ActivatedRoute,
+          useValue: {
+            snapshot: { paramMap: { get: () => null }, queryParamMap: { get: () => null } },
+          },
+        },
+      ],
+    })
+      .overrideComponent(CreateRecurringWizardComponent, {
+        set: {
+          providers: [{ provide: RecurringBookingsFacade, useValue: facade }],
+        },
+      })
+      .compileComponents();
+    fixture = TestBed.createComponent(CreateRecurringWizardComponent);
+    el = fixture.nativeElement;
+    fixture.detectChanges();
+  });
+
+  it('says nothing and reads nothing owed until the server refuses the schedule for it', () => {
+    expect(el.querySelector('[data-spec-owed]')).toBeNull();
+    expect(el.querySelector('cleansia-customer-amount-due')).toBeNull();
+    expect(getMine).not.toHaveBeenCalled();
+  });
+
+  it('says why and lists what is owed with a way to pay it', () => {
+    facade.owesUnpaidAmount.set(true);
+    fixture.detectChanges();
+
+    expect(el.querySelector('[data-spec-owed]')?.textContent).toContain('recurring_booking.owed');
+    expect(el.querySelector('.customer-amount-due__row')?.textContent).toContain('CL-1001');
   });
 });
 

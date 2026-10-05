@@ -466,6 +466,16 @@
           </section>
         }
 
+        @if (facade.owesUnpaidAmount()) {
+          <section class="cl-rec__section" data-spec-owed>
+            <p class="cl-rec__error" role="alert">
+              <i class="pi pi-exclamation-circle" aria-hidden="true"></i>
+              {{ 'recurring_booking.owed' | translate }}
+            </p>
+            <cleansia-customer-amount-due />
+          </section>
+        }
+
         <!-- ── What it costs, and the two ways out ───────────────────── -->
         <div class="cl-rec__summary">
           <div class="cl-rec__summary-main">

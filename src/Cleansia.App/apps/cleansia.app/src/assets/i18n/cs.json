@@ -1032,7 +1032,7 @@
       "cash_needs_card": "Počet uklízečů potřebných pro tuto objednávku: {{count}}. Hotově lze platit jen objednávky, které zvládne jeden uklízeč, tuto proto zaplatíte kartou.",
       "cash_pending": "Zda můžete platit hotově, potvrdíme, jakmile bude známa cena.",
       "cash_cleared": "Platba hotově už pro tuto objednávku není možná, a proto není vybrán žádný způsob platby. Zvolte, jak chcete platit.",
-      "cash_owed": "Platba v hotovosti není možná, dokud není uhrazena částka z dřívější rezervace. Zaplaťte ji níže a tato rezervace na vás počká, až se k objednávce vrátíte — nebo tuto rezervaci zaplaťte hned kartou.",
+      "unpaid_owed": "Dlužíte částku z dřívější rezervace, proto tuto rezervaci zatím nelze vytvořit, kartou ani v hotovosti. Zaplaťte ji níže a tato rezervace na vás počká, až se vrátíte.",
       "cash_sign_in": "Přihlásit se",
       "plus_perk_grace": "60 minut po každé objednávce na bezplatné zrušení místo 15 minut",
       "dirtiness": {
@@ -1241,12 +1241,13 @@
         "note_card": "Tento úklid je součástí vaší opakované rezervace. Potvrďte ho a zaplaťte bezpečně kartou. Pokud ho včas nepotvrdíte, bude zdarma zrušen.",
         "note_cash": "Tento úklid je součástí vaší opakované rezervace. Potvrďte ho a uklízeči zaplaťte v hotovosti v den úklidu. Pokud ho včas nepotvrdíte, bude zdarma zrušen.",
         "success": "Rezervace potvrzena",
-        "begun_in_app": "Platbu za tento úklid jste začali v mobilní aplikaci. Dokončete ji prosím tam."
+        "begun_in_app": "Platbu za tento úklid jste začali v mobilní aplikaci. Dokončete ji prosím tam.",
+        "owed": "Tento úklid půjde potvrdit, až uhradíte dlužnou částku. Zaplatit ji můžete v části Dlužná částka na této stránce."
       }
     },
     "amount_due": {
       "title": "Dlužná částka",
-      "intro": "Dokud nebude uhrazena, nelze objednávat s platbou v hotovosti. Rezervací placených kartou se to netýká.",
+      "intro": "Dokud nebude uhrazena, nelze vytvořit novou rezervaci ani potvrdit opakovaný úklid, kartou ani v hotovosti. Rezervace, které už máte, zůstávají.",
       "after_payment": "Právě jste zaplatili? Může chvíli trvat, než odsud zmizí.",
       "pay": "Zaplatit",
       "load_error": "Nepodařilo se ověřit, zda nám něco dlužíte.",
@@ -1995,8 +1996,8 @@
       },
       "payment_gateway_unavailable": "Platby jsou dočasně nedostupné. Zkuste to prosím za chvíli.",
       "cash_not_available": "Platba hotově je možná jen po přihlášení a u objednávky, kterou zvládne jeden uklízeč.",
-      "cash_open_bookings_limit_reached": "Už máte nejvyšší povolený počet nezaplacených objednávek v hotovosti. Zvolte kartu, nebo hotovost znovu, až bude některá z nich zaplacena.",
-      "cash_unpaid_receivable": "Máte u nás nezaplacenou částku, například storno poplatek. Zatím zaplaťte kartou; v hotovosti budete moci platit znovu, až bude uhrazena.",
+      "cash_open_bookings_limit_reached": "Už máte nejvyšší povolený počet rezervací v hotovosti, které ještě nejsou zaplacené — v praxi vaše nadcházející rezervace v hotovosti. Tuto zaplaťte kartou, nebo si v hotovosti objednejte znovu, až bude některá z nich zaplacena.",
+      "unpaid_receivable": "Dlužíte nám částku z dřívější rezervace, například storno poplatek nebo nezaplacený úklid. Dokud nebude uhrazena, nemůžete vytvořit ani potvrdit rezervaci, kartou ani v hotovosti.",
       "country_operator_mismatch": "Tuto adresu obsluhuje jiná společnost Cleansia, proto ji zde nelze objednat.",
       "payment": {
         "already_paid": "Tato objednávka už byla zaplacena."
@@ -2297,6 +2298,7 @@
     "cash_pending": "Zda lze tento rozvrh platit hotově, potvrdíme, jakmile bude známa cena.",
     "cash_cleared": "Platba hotově už pro tento rozvrh není možná, a proto není vybrán žádný způsob platby. Zvolte, jak chcete platit.",
     "cash_unchecked": "Nepodařilo se ověřit, zda lze tento rozvrh platit hotově. Uložte ho za chvíli znovu, nebo zvolte kartu.",
+    "owed": "Dlužíte částku z dřívější rezervace, proto opakovanou rezervaci nelze uložit, dokud nebude uhrazena, kartou ani v hotovosti. Zaplatit ji můžete níže.",
     "payment_placeholder": "Zvolte způsob platby",
     "error_payment": "Zvolte, jak se bude rozvrh platit.",
     "terms_label": "Souhlas s podmínkami",

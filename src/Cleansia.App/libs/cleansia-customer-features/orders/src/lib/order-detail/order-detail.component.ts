@@ -19,11 +19,9 @@ import {
   OrderStatus,
   PaymentStatus,
   PaymentType,
-} from '@cleansia/customer-services';
-import {
   RECURRING_PREFILL_STORAGE_KEY,
   RecurringPrefillParams,
-} from '@cleansia-customer/recurring-bookings';
+} from '@cleansia/customer-services';
 import { CleansiaCustomerRoute } from '@cleansia/services';
 import { clearOnBackForwardRestore, formatMoney, localeFor } from '@cleansia/utils';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
@@ -131,6 +129,7 @@ export class OrderDetailComponent implements OnInit {
   readonly canConfirmRecurring = this.facade.canConfirmRecurring;
   readonly recurringPaymentBegunInApp = this.facade.recurringPaymentBegunInApp;
   readonly confirmingRecurring = this.facade.confirmingRecurring;
+  readonly confirmRefusedForDebt = this.facade.confirmRefusedForDebt;
   readonly saveCardOffered = this.facade.saveCardOffered;
   readonly saveCard = this.facade.saveCard;
   readonly termsAsked = this.facade.termsAsked;

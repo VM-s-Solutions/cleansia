@@ -1598,21 +1598,66 @@ describe('RecurringBookingsFacade', () => {
       expect(facade.cashCleared()).toBe(true);
     });
 
-    it.each(['order.cash_unpaid_receivable', 'order.cash_open_bookings_limit_reached'])(
-      'takes cash off the form when the server refuses it with %s, leaving the interceptor toast alone',
-      async (code) => {
-        orderClient.quote.mockReturnValue(of(crewOf(1)));
-        client.create.mockReturnValue(throwError(() => ({ errors: { PaymentType: code } })));
-        completeForm(PaymentType.Cash);
+    it('takes cash off the form when the server refuses it with the open-bookings limit, leaving the interceptor toast alone', async () => {
+      orderClient.quote.mockReturnValue(of(crewOf(1)));
+      client.create.mockReturnValue(
+        throwError(() => ({ errors: { PaymentType: 'order.cash_open_bookings_limit_reached' } })),
+      );
+      completeForm(PaymentType.Cash);
+
+      const ok = await facade.submit();
+
+      expect(ok).toBe(false);
+      expect(snackbar.showError).not.toHaveBeenCalled();
+      expect(facade.formData().paymentType).toBeNull();
+      expect(facade.cashCleared()).toBe(true);
+      expect(facade.owesUnpaidAmount()).toBe(false);
+    });
+
+    describe('a schedule refused while the customer owes an amount', () => {
+      const owing = () => throwError(() => ({ errors: { '': 'order.unpaid_receivable' } }));
+
+      it.each([PaymentType.Card, PaymentType.Cash])(
+        'lists what is owed and keeps payment type %s, leaving the interceptor toast alone',
+        async (paymentType) => {
+          orderClient.quote.mockReturnValue(of(crewOf(1)));
+          client.create.mockReturnValue(owing());
+          completeForm(paymentType);
+
+          expect(facade.owesUnpaidAmount()).toBe(false);
+          const ok = await facade.submit();
+
+          expect(ok).toBe(false);
+          expect(facade.owesUnpaidAmount()).toBe(true);
+          expect(facade.formData().paymentType).toBe(paymentType);
+          expect(facade.cashCleared()).toBe(false);
+          expect(snackbar.showError).not.toHaveBeenCalled();
+        },
+      );
+
+      it('lists what is owed when an edit is refused for it', async () => {
+        client.update.mockReturnValue(owing());
+        facade.loadForEdit(template({ id: 't1', paymentType: PaymentType.Card }));
+        completeForm(PaymentType.Card);
 
         const ok = await facade.submit();
 
         expect(ok).toBe(false);
+        expect(facade.owesUnpaidAmount()).toBe(true);
         expect(snackbar.showError).not.toHaveBeenCalled();
-        expect(facade.formData().paymentType).toBeNull();
-        expect(facade.cashCleared()).toBe(true);
-      },
-    );
+      });
+
+      it('stops listing it once a save goes through', async () => {
+        client.create.mockReturnValueOnce(owing()).mockReturnValueOnce(of(template({ id: 't-new' })));
+        completeForm(PaymentType.Card);
+
+        await facade.submit();
+        const ok = await facade.submit();
+
+        expect(ok).toBe(true);
+        expect(facade.owesUnpaidAmount()).toBe(false);
+      });
+    });
 
     it('prices the same selection whatever the day, the time, the cadence or the payment', async () => {
       orderClient.quote.mockReturnValue(of(crewOf(1)));

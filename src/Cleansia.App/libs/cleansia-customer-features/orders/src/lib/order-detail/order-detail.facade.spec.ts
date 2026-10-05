@@ -502,6 +502,41 @@ describe('OrderDetailFacade', () => {
       expect(facade.confirmingRecurring()).toBe(false);
       expect(facade.canConfirmRecurring()).toBe(true);
       expect(facade.recurringPaymentBegunInApp()).toBe(false);
+      expect(facade.confirmRefusedForDebt()).toBe(false);
+    });
+
+    it.each([PaymentType.Card, PaymentType.Cash])(
+      'points a %s occurrence refused for an unpaid amount to what is owed, and keeps Confirm on offer',
+      (type) => {
+        facade.order.set(occurrence(type));
+        orderClient.confirmRecurring.mockReturnValue(
+          throwError(refusal('OrderId', 'order.unpaid_receivable')),
+        );
+        orderClient.getById.mockReturnValue(of(occurrence(type)));
+
+        expect(facade.confirmRefusedForDebt()).toBe(false);
+        facade.confirmRecurring();
+
+        expect(facade.confirmRefusedForDebt()).toBe(true);
+        expect(facade.confirmingRecurring()).toBe(false);
+        expect(facade.canConfirmRecurring()).toBe(true);
+        expect(snackbar.showSuccess).not.toHaveBeenCalled();
+      },
+    );
+
+    it('stops pointing to what is owed once a confirm goes through', () => {
+      facade.order.set(occurrence(PaymentType.Cash));
+      orderClient.confirmRecurring.mockReturnValueOnce(
+        throwError(refusal('OrderId', 'order.unpaid_receivable')),
+      );
+      orderClient.getById.mockReturnValue(of(occurrence(PaymentType.Cash)));
+
+      facade.confirmRecurring();
+      facade.setTermsAccepted(true);
+      facade.confirmRecurring();
+
+      expect(facade.confirmRefusedForDebt()).toBe(false);
+      expect(snackbar.showSuccess).toHaveBeenCalledWith('pages.order_detail.recurring_confirm.success');
     });
 
     describe('keeping the card for the next bookings', () => {

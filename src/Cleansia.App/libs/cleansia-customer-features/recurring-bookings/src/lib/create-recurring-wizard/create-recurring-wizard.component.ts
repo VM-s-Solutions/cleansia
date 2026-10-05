@@ -13,6 +13,7 @@ import {
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { FoamEdgeComponent } from '@cleansia-customer/home';
+import { AmountDueComponent } from '@cleansia-customer/orders';
 import {
   DIRTINESS_LEVELS,
   DirtinessLevel,
@@ -63,6 +64,7 @@ import {
     RouterLink,
     TranslatePipe,
     FoamEdgeComponent,
+    AmountDueComponent,
     DatePickerModule,
     CheckboxModule,
     CleansiaButtonComponent,

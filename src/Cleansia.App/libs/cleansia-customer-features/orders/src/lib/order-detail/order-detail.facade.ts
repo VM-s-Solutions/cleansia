@@ -40,6 +40,9 @@ const PAYMENT_BEGUN_ON_OTHER_CHANNEL = 'order.invalid_status_transition';
 
 const TERMS_NOT_ACCEPTED = 'consent.terms_not_accepted';
 
+/** How ConfirmRecurringOrder refuses either tender while the customer owes an amount from an earlier booking. */
+const UNPAID_RECEIVABLE = 'order.unpaid_receivable';
+
 @Injectable()
 export class OrderDetailFacade extends UnsubscribeControlDirective {
   private readonly customerClient = inject(CustomerClient);
@@ -66,6 +69,8 @@ export class OrderDetailFacade extends UnsubscribeControlDirective {
 
   readonly confirmingRecurring = signal(false);
   private readonly paymentBegunInApp = signal(false);
+  /** The last confirm was refused because the customer owes an amount; the page then lists all of it. */
+  readonly confirmRefusedForDebt = signal(false);
 
   /**
    * The server keeps one payment surface per order, so a card occurrence begun in the mobile app is
@@ -323,6 +328,7 @@ export class OrderDetailFacade extends UnsubscribeControlDirective {
     command.saveCard = this.saveCardOffered() && this.saveCard();
     command.termsAccepted = this.termsAsked() && this.termsAccepted() ? true : undefined;
     this.confirmingRecurring.set(true);
+    this.confirmRefusedForDebt.set(false);
     this.customerClient.orderClient
       .confirmRecurring(command)
       .pipe(
@@ -330,6 +336,7 @@ export class OrderDetailFacade extends UnsubscribeControlDirective {
         catchError((error: unknown) => {
           const code = extractApiErrorCode(error);
           if (code === PAYMENT_BEGUN_ON_OTHER_CHANNEL) this.paymentBegunInApp.set(true);
+          if (code === UNPAID_RECEIVABLE) this.confirmRefusedForDebt.set(true);
           if (code === TERMS_NOT_ACCEPTED) {
             this.termsRefused.set(true);
             this.termsAccepted.set(false);

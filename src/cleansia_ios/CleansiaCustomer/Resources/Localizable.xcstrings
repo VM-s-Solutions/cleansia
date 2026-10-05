@@ -35508,6 +35508,41 @@
         }
       }
     },
+    "recurring_selection_no_longer_offered": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Část výběru této opakované objednávky už nenabízíme, proto byla odebrána."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Some of this schedule's choices are no longer offered and were removed."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Часть выбора этого регулярного бронирования больше не предлагается, поэтому она убрана."
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Časť výberu tejto opakovanej objednávky už neponúkame, preto bola odobratá."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Частину вибору цього регулярного бронювання більше не пропонуємо, тож її прибрано."
+          }
+        }
+      }
+    },
     "recurring_status_needs_change": {
       "extractionState": "manual",
       "localizations": {

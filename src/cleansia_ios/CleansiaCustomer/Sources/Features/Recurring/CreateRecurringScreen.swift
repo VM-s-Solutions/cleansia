@@ -147,6 +147,8 @@ struct CreateRecurringScreen: View {
             switch event {
             case .selectionPrunedForMarket:
                 snackbar.showInfo(L10n.Booking.marketSelectionPruned)
+            case .selectionNoLongerOffered:
+                snackbar.showInfo(L10n.Recurring.selectionNoLongerOffered)
             }
         }
         .sheet(

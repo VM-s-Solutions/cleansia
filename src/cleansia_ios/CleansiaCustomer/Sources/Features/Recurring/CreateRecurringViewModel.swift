@@ -126,6 +126,8 @@ enum CreateRecurringEvent: Equatable {
     /// schedule there, or the order it was prefilled from was priced elsewhere; the selection was
     /// cut down to what the catalogue for that market lists.
     case selectionPrunedForMarket
+    /// The edited schedule held entries its own market no longer offers; the customer moved no market.
+    case selectionNoLongerOffered
 }
 
 @MainActor
@@ -266,7 +268,7 @@ final class CreateRecurringViewModel: ViewModel {
         }
         await fetchCatalog()
         if isCatalogForSelectedMarket, let catalog = catalogState.loadedValue {
-            pruneSelection(notListedIn: catalog)
+            pruneSelection(notListedIn: catalog, firstCheck: true)
         }
         if let sourceOrderId {
             await prefill(from: sourceOrderId)
@@ -286,7 +288,7 @@ final class CreateRecurringViewModel: ViewModel {
     func retryCatalog() async {
         await fetchCatalog()
         if isCatalogForSelectedMarket, let catalog = catalogState.loadedValue {
-            pruneSelection(notListedIn: catalog)
+            pruneSelection(notListedIn: catalog, firstCheck: true)
         }
     }
 
@@ -382,13 +384,14 @@ final class CreateRecurringViewModel: ViewModel {
         isCatalogLoaded && catalogCountryId == selectedCountryId
     }
 
-    private func pruneSelection(notListedIn catalog: Catalog) {
+    /// An edited schedule is first checked against its own market's catalogue: what that drops is no longer offered.
+    private func pruneSelection(notListedIn catalog: Catalog, firstCheck: Bool = false) {
         let services = formState.selectedServiceIds.intersection(catalog.services.map(\.id))
         let packages = formState.selectedPackageIds.intersection(catalog.packages.map(\.id))
         guard services != formState.selectedServiceIds || packages != formState.selectedPackageIds else { return }
         formState.selectedServiceIds = services
         formState.selectedPackageIds = packages
-        events.send(.selectionPrunedForMarket)
+        events.send(firstCheck && isEditing ? .selectionNoLongerOffered : .selectionPrunedForMarket)
     }
 
     /// Re-read the list after the inline address manager closes — an address

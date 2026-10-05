@@ -921,6 +921,16 @@ partner app's other status texts too: `CleansiaColors.pendingInk` and `successIn
 `TextInkTests` and Android's `PaymentPresentationTest` measure every severity on its wash over the card
 in both modes (iOS `eb083ee4f`, Android `11a7a5c99`).
 
+**A document's status reads 4.5:1 too** (finding 2026-10-05). The partner's documents screen writes
+each document's status, and each requirement's, in its colour on the card. On iOS *Pending* took
+amber-500, 2.15:1 on white, and *Approved* green-700, 2.92:1 on the dark card. On Android *Pending*
+took Material's baseline `tertiary`, a mauve nothing else in the app uses
+([the tertiary roles](#surface-roles)). Both apps' *Pending* now takes `pendingInk`, 7.09:1 in light
+mode and 6.81:1 in dark, and iOS's *Approved* `successInk`, 7.13:1 and 8.40:1. Android's *Approved*
+stays the text ink, 5.93:1 and 6.83:1, as it has been since the partner sweep above, so the two apps
+still draw it in different hues. *Rejected* is the error colour on both. iOS's `TextInkTests` measures
+every document status, and none, on the card in both modes (iOS `eba022747`, Android `0ae302746`).
+
 ## Android's dialogs and menus sit on slate {#surface-roles}
 
 Material 3 draws a dialog, a menu, a date picker and a search bar on its surface-container roles, and

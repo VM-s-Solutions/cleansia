@@ -275,6 +275,16 @@ each of these drew until 2026-10-05:
 page stylesheet and the customer navbar's, finds each rule that paints its background with
 `--cl-heading` and sets an ink, and fails unless that ink is `--cl-surface`.
 
+**Hovering never repaints a picked chip's border** (since 2026-10-05). A chip's `:hover` rule, two
+classes, outranked its `--on` rule, one, so hovering the picked dispute reason, Rewards filter or Orders
+filter swapped its sky-700 border (sky-300 after dark) for the pale hover tint, `#e0f2fe`, and the
+picked pill lost its edge under the pointer. Each of the three hover rules now skips the picked chip
+(`&:hover:not(.cl-dsp__reason--on)`, and the same for `.cl-rwd__chip` and `.customer-orders__chip`), as
+the schedule form's picks already did ([the services step](/customer-app/ordering-flow#step-0-services-packages));
+an unpicked chip still takes the tint. The same spec compiles the customer stylesheet, finds every
+picked chip painted with the slab, and fails on a hover rule of its base that changes the border
+without skipping it.
+
 ### Blue text on the customer site takes `--cl-accent-text` {#accent-text}
 
 The brand primary, sky-600 `#0284c7`, reads 4.10:1 on white, under the 4.5:1 text needs, and where a

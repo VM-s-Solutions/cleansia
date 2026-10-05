@@ -1094,8 +1094,9 @@ need backfilling.
   well, and so were the picked reason on a dispute, the picked theme on Profile, the picked filter on
   Rewards and on Orders, and the initials on Profile, on an order's cleaner and in the top bar. All of
   them are now dark on the light blue in dark mode and white on the dark blue in light mode. Hovering
-  over a picked service or package no longer turns its border pale. (Finding 2026-10-04; the choices
-  and the badge, review 2026-10-05; the other pages, finding 2026-10-05.)
+  over a picked service or package, a picked reason on a dispute or a picked filter on Rewards or
+  Orders no longer turns its border pale. (Finding 2026-10-04; the choices and the badge, review
+  2026-10-05; the other pages, finding 2026-10-05.)
 
 - **Customer Android and iOS — a service's price and description are easier to read.** In booking's
   list of services, the blue *from* price was faint in light mode, most of all on a row your package

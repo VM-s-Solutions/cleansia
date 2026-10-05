@@ -22,12 +22,15 @@ public static class ServiceCollectionExtensions
         // reference shape the ADR makes the rule). D1.2/D4.2 — a resilience handler retries only the
         // transient family (408/429/5xx/timeout) with exponential back-off + jitter and HONORS the
         // 429/503 Retry-After header (ShouldRetryAfterHeader), so a rate-limit window backs off rather
-        // than being swallowed to a silent null. The 5s per-attempt timeout is the original budget.
+        // than being swallowed to a silent null. The 5s per-attempt timeout is the original budget. The
+        // request logging goes: a search URL carries the typed address in its path, a static map URL the
+        // coordinates.
         services.AddHttpClient("Mapbox")
             .ConfigurePrimaryHttpMessageHandler(() => new SocketsHttpHandler
             {
                 PooledConnectionLifetime = TimeSpan.FromMinutes(5),
             })
+            .RemoveAllLoggers()
             .AddResilienceHandler("mapbox-geocode", builder =>
             {
                 builder.AddRetry(new Microsoft.Extensions.Http.Resilience.HttpRetryStrategyOptions

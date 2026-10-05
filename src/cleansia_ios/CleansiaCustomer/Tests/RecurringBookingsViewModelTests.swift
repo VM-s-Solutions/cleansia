@@ -278,8 +278,8 @@ final class RecurringBookingsViewModelTests: XCTestCase {
     // MARK: - The retired entry's line
 
     /// The line sends the customer to the edit form only where the card offers Edit (owner decision
-    /// 2026-10-05): a member gets "— edit to update", a lapsed or paused member, whose card has no Edit,
-    /// the plain fact, in all five languages.
+    /// 2026-10-05): a member gets "— edit to update", a lapsed member, whose card has no Edit, the plain
+    /// fact, in all five languages.
     func testTheRetiredLineAsksForAnEditOnlyWhereTheCardOffersOne() throws {
         let expected: [String: (edit: String, noEdit: String)] = [
             "en": ("Includes a service no longer offered — edit to update", "Includes a service no longer offered"),

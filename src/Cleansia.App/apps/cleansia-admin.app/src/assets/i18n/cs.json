@@ -3412,7 +3412,7 @@
     "pay_period": {
       "already_paid": "Platební období již bylo zaplaceno",
       "has_order_pays": "Nelze smazat platební období, které má přiřazené platby objednávek",
-      "invalid_duration": "Neplatná délka platebního období",
+      "invalid_duration": "Platební období trvá přesně 14 dní: datum konce musí být 13 dní po datu začátku",
       "not_closed": "Platební období není uzavřeno",
       "overlapping_period": "Platební období se překrývá s existujícím obdobím"
     },

@@ -1,6 +1,7 @@
 using Cleansia.Core.AppServices.Abstractions;
 using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.AppServices.Common.Validators;
+using Cleansia.Core.Domain.EmployeePayroll;
 using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Repositories;
 using Cleansia.Infra.Common.Validations;
@@ -51,11 +52,7 @@ public class UpdatePayPeriod
                 .WithMessage(BusinessErrorMessage.Required)
                 .Must((cmd, endDate) => endDate > cmd.StartDate)
                 .WithMessage(BusinessErrorMessage.InvalidDate)
-                .Must((cmd, endDate) =>
-                {
-                    var duration = endDate.DayNumber - cmd.StartDate.DayNumber;
-                    return duration is >= 7 and <= 31;
-                })
+                .Must((cmd, endDate) => endDate == cmd.StartDate.AddDays(PayPeriod.LengthInDays - 1))
                 .WithMessage(BusinessErrorMessage.InvalidDuration);
 
             RuleFor(x => x)

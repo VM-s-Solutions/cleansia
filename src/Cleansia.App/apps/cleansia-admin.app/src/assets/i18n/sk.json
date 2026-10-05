@@ -3412,7 +3412,7 @@
     "pay_period": {
       "already_paid": "Výplatné obdobie už bolo zaplatené",
       "has_order_pays": "Nie je možné odstrániť výplatné obdobie, ktoré má priradené platby za objednávky",
-      "invalid_duration": "Neplatná dĺžka výplatného obdobia",
+      "invalid_duration": "Výplatné obdobie trvá presne 14 dní: dátum konca musí byť 13 dní po dátume začiatku",
       "not_closed": "Výplatné obdobie nie je uzavreté",
       "overlapping_period": "Výplatné obdobie sa prekrýva s existujúcim obdobím"
     },

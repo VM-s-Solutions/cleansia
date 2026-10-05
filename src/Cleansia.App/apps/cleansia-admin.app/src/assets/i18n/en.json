@@ -3412,7 +3412,7 @@
     "pay_period": {
       "already_paid": "Pay period has already been paid",
       "has_order_pays": "Cannot delete pay period that has associated order pays",
-      "invalid_duration": "Invalid pay period duration",
+      "invalid_duration": "A pay period runs exactly 14 days: the end date must be 13 days after the start date",
       "not_closed": "Pay period is not closed",
       "overlapping_period": "Pay period overlaps with an existing period"
     },

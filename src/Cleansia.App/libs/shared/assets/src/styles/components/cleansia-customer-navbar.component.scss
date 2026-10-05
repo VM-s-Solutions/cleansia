@@ -148,8 +148,9 @@ $nav-band: 96px;
     min-width: 34px;
     aspect-ratio: 1;
     border-radius: 999px;
+    // --cl-surface, not white: --cl-heading turns sky-300 after dark, where white measured 1.7.
     background: var(--cl-heading, #0369a1);
-    color: #fff;
+    color: var(--cl-surface, #fff);
     font-family: var(--font-heading, inherit);
     font-weight: 700;
     font-size: 13px;
@@ -881,13 +882,11 @@ html.cl-menu-open .customer-navbar {
   min-width: 0;
   padding: 0 4px;
 
-  // --cl-surface, not white: --cl-heading turns sky-300 after dark.
   .customer-navbar__avatar {
     width: 44px;
     height: 44px;
     min-width: 44px;
     font-size: 15px;
-    color: var(--cl-surface);
   }
 }
 

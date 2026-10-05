@@ -313,8 +313,10 @@
   width: calc(3 * var(--cl-u));
   height: calc(3 * var(--cl-u));
   border-radius: 999px;
+  // The initials take the card ground, which flips with the fill: white on Sky700 (5.9), near-black
+  // on Sky300 (10.4). White measured 1.7 in dark.
   background: var(--cl-heading);
-  color: #fff;
+  color: var(--cl-surface);
   font-family: $font-heading;
   font-weight: 700;
   font-size: calc(1.0625 * var(--cl-u));

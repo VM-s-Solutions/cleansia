@@ -1210,6 +1210,9 @@
     <string name="error_validation_invalid_zip_code">Zadejte prosím platné PSČ.</string>
     <string name="error_validation_registration_number_invalid_format">Zadejte prosím platné IČO pro vybranou zemi.</string>
     <string name="error_validation_registration_number_not_registered">Toto IČO není v registru ekonomických subjektů (ARES). Zkontrolujte číslo.</string>
+    <string name="error_employee_business_ceased">Podle registru ekonomických subjektů (ARES) podnikání pod tímto IČO zaniklo. Zadejte IČO podnikání, které stále trvá.</string>
+    <string name="error_employee_trade_licence_inactive">Podle registru ekonomických subjektů (ARES) není pod tímto IČO platné živnostenské oprávnění. Zkontrolujte číslo, nebo si nejprve obnovte živnostenské oprávnění.</string>
+    <string name="error_employee_business_registry_unavailable">Registr ekonomických subjektů (ARES) se nepodařilo kontaktovat, takže nové IČO nešlo ověřit a nic se neuložilo. Zkuste to znovu za několik minut.</string>
     <string name="error_validation_must_be_positive">Musí být kladné číslo.</string>
 
     <!-- Payout / bank details -->

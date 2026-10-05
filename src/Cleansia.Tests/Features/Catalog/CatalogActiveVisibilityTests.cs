@@ -2,6 +2,7 @@ using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.AppServices.Features.Bookings;
 using Cleansia.Core.AppServices.Features.Orders;
 using Cleansia.Core.AppServices.Features.Packages;
+using Cleansia.Core.AppServices.Features.Packages.DTOs;
 using Cleansia.Core.AppServices.Features.Services;
 using Cleansia.Core.AppServices.Mappers;
 using Cleansia.Core.AppServices.Services;
@@ -34,7 +35,8 @@ namespace Cleansia.Tests.Features.Catalog;
 /// via the IsActive filter (S10 — no global IsActive filter, admins see all by default). A deactivated
 /// service inside an ACTIVE package stays listed in that package, because an order with it books it.
 /// A customer cannot select a deactivated entry by id either, while a schedule that already holds one
-/// keeps booking it and an edit of that schedule may keep it.
+/// keeps booking it and an edit of that schedule may keep it. The admin package editors hold the same
+/// line: a new package or an edit cannot add a retired service, and a package keeps one it already includes.
 /// </summary>
 public sealed class CatalogActiveVisibilityTests : IDisposable
 {
@@ -358,6 +360,51 @@ public sealed class CatalogActiveVisibilityTests : IDisposable
         Assert.Equal(retiredServiceId, Assert.Single(order.SelectedServices).ServiceId);
     }
 
+    /// <summary>
+    /// The admin package editors asked only that a service exists, which a retired one still does, so an
+    /// administrator could put a service no catalogue lists into a new package.
+    /// </summary>
+    [Fact]
+    public async Task A_New_Package_Cannot_Include_A_Retired_Or_Unknown_Service()
+    {
+        var (activeServiceId, retiredServiceId, _, _) = await SeedPackageEditorsAsync();
+
+        await using var ctx = NewContext();
+        var validator = new CreatePackage.Validator(
+            new ServiceRepository(ctx), new LanguageRepository(ctx), new CurrencyRepository(ctx));
+
+        var retired = await validator.ValidateAsync(NewPackage([activeServiceId, retiredServiceId]));
+        var unknown = await validator.ValidateAsync(NewPackage(["never-existed"]));
+        var active = await validator.ValidateAsync(NewPackage([activeServiceId]));
+
+        Assert.Equal(ServiceRefusal, retired.Errors.Select(e => (e.PropertyName, e.ErrorMessage)));
+        Assert.Equal(ServiceRefusal, unknown.Errors.Select(e => (e.PropertyName, e.ErrorMessage)));
+        Assert.True(active.IsValid, string.Join("; ", active.Errors.Select(e => e.ErrorMessage)));
+    }
+
+    /// <summary>
+    /// An edit is asked only what it ADDS: a service retired after the package took it stays inside the
+    /// package (a deactivated service stays in its packages), so editing the package's price or wording
+    /// does not force it out, while a retired or unknown service cannot be added.
+    /// </summary>
+    [Fact]
+    public async Task A_Package_Edit_Keeps_A_Retired_Service_It_Includes_But_Cannot_Add_One()
+    {
+        var (activeServiceId, retiredServiceId, holdsActiveId, holdsRetiredId) = await SeedPackageEditorsAsync();
+
+        await using var ctx = NewContext();
+        var validator = new UpdatePackage.Validator(
+            new PackageRepository(ctx), new ServiceRepository(ctx), new LanguageRepository(ctx), new CurrencyRepository(ctx));
+
+        var kept = await validator.ValidateAsync(PackageEdit(holdsRetiredId, [retiredServiceId, activeServiceId]));
+        var added = await validator.ValidateAsync(PackageEdit(holdsActiveId, [activeServiceId, retiredServiceId]));
+        var unknown = await validator.ValidateAsync(PackageEdit(holdsActiveId, ["never-existed"]));
+
+        Assert.True(kept.IsValid, string.Join("; ", kept.Errors.Select(e => e.ErrorMessage)));
+        Assert.Equal(ServiceRefusal, added.Errors.Select(e => (e.PropertyName, e.ErrorMessage)));
+        Assert.Equal(ServiceRefusal, unknown.Errors.Select(e => (e.PropertyName, e.ErrorMessage)));
+    }
+
     [Fact]
     public async Task AdminServiceFilter_IsActiveFalse_ListsOnlyRetired_NullListsAll()
     {
@@ -457,6 +504,37 @@ public sealed class CatalogActiveVisibilityTests : IDisposable
             StartsOn: DateTime.UtcNow.AddDays(3),
             TermsAccepted: true,
             EarlyPerformanceRequested: true);
+
+    private static readonly (string, string)[] ServiceRefusal =
+        [(nameof(UpdatePackage.Command.ServiceIds), BusinessErrorMessage.ServiceNotFound)];
+
+    /// <summary>
+    /// The suite's catalogue plus what the package editors' other rules read (an active language), and
+    /// two packages: one including the active service, one including the retired one.
+    /// </summary>
+    private async Task<(string ActiveServiceId, string RetiredServiceId, string HoldsActiveId, string HoldsRetiredId)>
+        SeedPackageEditorsAsync()
+    {
+        var (activeServiceId, retiredServiceId, _, _) = await SeedAsync();
+
+        await using var ctx = NewContext();
+        ctx.Languages.Add(Language.Create("en", "English"));
+        var holdsActive = Package.Create("Holds active", "seeded").AddService((await ctx.Services.FindAsync(activeServiceId))!);
+        var holdsRetired = Package.Create("Holds retired", "seeded").AddService((await ctx.Services.FindAsync(retiredServiceId))!);
+        ctx.Packages.AddRange(holdsActive, holdsRetired);
+        await ctx.CommitAsync(CancellationToken.None);
+
+        return (activeServiceId, retiredServiceId, holdsActive.Id, holdsRetired.Id);
+    }
+
+    private static readonly Dictionary<string, PackageTranslationInput> PackageTranslations =
+        new() { ["en"] = new PackageTranslationInput("Bundle", "Under test", null) };
+
+    private static CreatePackage.Command NewPackage(List<string> serviceIds) =>
+        new("Bundle", "Under test", null, false, new() { ["CZK"] = 1000m }, serviceIds, PackageTranslations);
+
+    private static UpdatePackage.Command PackageEdit(string packageId, List<string> serviceIds) =>
+        new(packageId, "Bundle", "Under test", null, false, new() { ["CZK"] = 1000m }, serviceIds, null, PackageTranslations);
 
     private const string ScheduleOwnerId = "user-schedule-edit";
 

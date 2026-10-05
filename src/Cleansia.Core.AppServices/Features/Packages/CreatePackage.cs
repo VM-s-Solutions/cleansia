@@ -51,11 +51,13 @@ public class CreatePackage
                 .Must(prices => prices!.Values.All(p => p >= 0))
                 .WithMessage(BusinessErrorMessage.MustBePositive);
 
+            // An active service only: a retired one leaves every catalogue and cannot be put into a package.
+            // → /product/business-rules#deactivated-catalogue
             RuleFor(x => x.ServiceIds)
                 .MustAsync(async (serviceIds, ct) =>
                 {
                     if (serviceIds == null || serviceIds.Count == 0) return true;
-                    return await serviceRepository.ExistWithIdsAsync(serviceIds, ct);
+                    return await serviceRepository.ExistActiveWithIdsAsync(serviceIds, ct);
                 })
                 .WithMessage(BusinessErrorMessage.ServiceNotFound);
 

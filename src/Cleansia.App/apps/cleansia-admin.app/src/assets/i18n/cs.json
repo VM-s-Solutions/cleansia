@@ -3120,6 +3120,7 @@
       "load_error": "Nepodařilo se načíst platební období",
       "load_detail_error": "Nepodařilo se načíst detail platebního období",
       "close_success": "Platební období bylo úspěšně uzavřeno",
+      "create_success": "Platební období bylo vytvořeno",
       "close_error": "Nepodařilo se uzavřít platební období"
     }
   },

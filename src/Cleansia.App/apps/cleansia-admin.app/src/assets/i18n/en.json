@@ -3120,6 +3120,7 @@
       "load_error": "Failed to load pay periods",
       "load_detail_error": "Failed to load pay period details",
       "close_success": "Pay period closed successfully",
+      "create_success": "Pay period created",
       "close_error": "Failed to close pay period"
     }
   },

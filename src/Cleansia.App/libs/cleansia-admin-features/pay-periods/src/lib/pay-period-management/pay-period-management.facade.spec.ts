@@ -2,17 +2,20 @@ import { TestBed } from '@angular/core/testing';
 import {
   AdminClient,
   ClosePayPeriodCommand,
+  CreatePayPeriodCommand,
+  CreatePayPeriodResponse,
   PayPeriodStatus,
 } from '@cleansia/admin-services';
 import { SnackbarService } from '@cleansia/services';
 import { TranslateService } from '@ngx-translate/core';
-import { EMPTY, of, throwError } from 'rxjs';
+import { EMPTY, of, Subject, throwError } from 'rxjs';
 import { PayPeriodManagementFacade } from './pay-period-management.facade';
 
 describe('PayPeriodManagementFacade', () => {
   let facade: PayPeriodManagementFacade;
   let getPagedMock: jest.Mock;
   let closeMock: jest.Mock;
+  let createMock: jest.Mock;
   let snackbar: {
     showSuccess: jest.Mock;
     showSuccessTranslated: jest.Mock;
@@ -24,6 +27,7 @@ describe('PayPeriodManagementFacade', () => {
     TestBed.resetTestingModule();
     getPagedMock = jest.fn().mockReturnValue(of({ data: [], total: 0 }));
     closeMock = jest.fn().mockReturnValue(of({ payPeriodId: 'period-1' }));
+    createMock = jest.fn().mockReturnValue(of(CreatePayPeriodResponse.fromJS({ payPeriodId: 'period-new' })));
     snackbar = {
       showSuccess: jest.fn(),
       showSuccessTranslated: jest.fn(),
@@ -37,7 +41,7 @@ describe('PayPeriodManagementFacade', () => {
         {
           provide: AdminClient,
           useValue: {
-            adminPayPeriodClient: { getPaged: getPagedMock, close: closeMock },
+            adminPayPeriodClient: { getPaged: getPagedMock, close: closeMock, create: createMock },
           },
         },
         { provide: SnackbarService, useValue: snackbar },
@@ -117,6 +121,94 @@ describe('PayPeriodManagementFacade', () => {
     closeMock.mockReturnValue(throwError(() => new Error('boom')));
     facade.closePayPeriod('period-1', 'done');
     expect(getPagedMock).toHaveBeenCalledTimes(1);
+  });
+
+  describe('create', () => {
+    const calendarDay = (date: Date | null) => (date ? [date.getFullYear(), date.getMonth() + 1, date.getDate()] : null);
+
+    it('derives the end 13 days after the start, across a month and a year end', () => {
+      expect(facade.createEndDate()).toBeNull();
+
+      facade.setCreateStartDate(new Date(2026, 9, 19));
+      expect(calendarDay(facade.createEndDate())).toEqual([2026, 11, 1]);
+
+      facade.setCreateStartDate(new Date(2026, 11, 25));
+      expect(calendarDay(facade.createEndDate())).toEqual([2027, 1, 7]);
+
+      facade.setCreateStartDate(null);
+      expect(facade.createEndDate()).toBeNull();
+    });
+
+    it('sends the start and the derived end on the wire', () => {
+      facade.setCreateStartDate(new Date(2026, 9, 19));
+
+      facade.createPayPeriod(jest.fn());
+
+      const command: CreatePayPeriodCommand = createMock.mock.calls[0][0];
+      expect(command).toBeInstanceOf(CreatePayPeriodCommand);
+      expect(command.toJSON()).toEqual({
+        startDate: '2026-10-19',
+        endDate: '2026-11-01',
+        notes: undefined,
+      });
+    });
+
+    it('toasts, closes and re-reads once the create lands', () => {
+      facade.setCreateStartDate(new Date(2026, 9, 19));
+      const onSuccess = jest.fn();
+
+      facade.createPayPeriod(onSuccess);
+
+      expect(snackbar.showSuccessTranslated).toHaveBeenCalledWith('pay_periods.messages.create_success');
+      expect(onSuccess).toHaveBeenCalledTimes(1);
+      expect(getPagedMock).toHaveBeenCalledTimes(1);
+      expect(facade.creating()).toBe(false);
+    });
+
+    it('keeps the dialog open and the list as it was when the create is refused', () => {
+      createMock.mockReturnValue(throwError(() => ({ result: { detail: 'pay_period.overlapping_period' } })));
+      facade.setCreateStartDate(new Date(2026, 9, 19));
+      const onSuccess = jest.fn();
+
+      facade.createPayPeriod(onSuccess);
+
+      expect(onSuccess).not.toHaveBeenCalled();
+      expect(snackbar.showSuccessTranslated).not.toHaveBeenCalled();
+      expect(getPagedMock).not.toHaveBeenCalled();
+      expect(facade.creating()).toBe(false);
+    });
+
+    it('sends nothing without a start date', () => {
+      const onSuccess = jest.fn();
+
+      facade.createPayPeriod(onSuccess);
+
+      expect(createMock).not.toHaveBeenCalled();
+      expect(onSuccess).not.toHaveBeenCalled();
+    });
+
+    it('holds creating while the request is in flight', () => {
+      const response$ = new Subject<CreatePayPeriodResponse>();
+      createMock.mockReturnValue(response$);
+      facade.setCreateStartDate(new Date(2026, 9, 19));
+
+      facade.createPayPeriod(jest.fn());
+      expect(facade.creating()).toBe(true);
+
+      response$.next(CreatePayPeriodResponse.fromJS({ payPeriodId: 'period-new' }));
+      response$.complete();
+      expect(facade.creating()).toBe(false);
+    });
+
+    it('sends one create while one is in flight', () => {
+      createMock.mockReturnValue(new Subject<CreatePayPeriodResponse>());
+      facade.setCreateStartDate(new Date(2026, 9, 19));
+
+      facade.createPayPeriod(jest.fn());
+      facade.createPayPeriod(jest.fn());
+
+      expect(createMock).toHaveBeenCalledTimes(1);
+    });
   });
 
   describe('command bodies on the wire', () => {

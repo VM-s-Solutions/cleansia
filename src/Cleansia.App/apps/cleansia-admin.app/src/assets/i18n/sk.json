@@ -3120,6 +3120,7 @@
       "load_error": "Nepodarilo sa načítať výplatné obdobia",
       "load_detail_error": "Nepodarilo sa načítať detail výplatného obdobia",
       "close_success": "Výplatné obdobie bolo úspešne uzavreté",
+      "create_success": "Výplatné obdobie bolo vytvorené",
       "close_error": "Nepodarilo sa uzavrieť výplatné obdobie"
     }
   },

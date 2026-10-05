@@ -4,6 +4,8 @@ import { TableColumn, TableAction } from '@cleansia/components';
 import { formatDate } from '@cleansia/utils';
 import { TranslateService } from '@ngx-translate/core';
 
+export const PAY_PERIOD_LENGTH_DAYS = 14;
+
 export interface PayPeriodFilterParams {
   status?: number;
   year?: number;

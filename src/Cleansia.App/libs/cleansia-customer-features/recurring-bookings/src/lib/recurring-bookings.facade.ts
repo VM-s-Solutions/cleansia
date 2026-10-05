@@ -456,8 +456,20 @@ export class RecurringBookingsFacade extends UnsubscribeControlDirective {
 
     const created = await this.savedAddressStore.add(command);
     if (!created?.id) return false;
-    this.updateFormData({ savedAddressId: created.id });
+    this.pickAddress(created.id);
     return true;
+  }
+
+  /**
+   * The customer's own choice of address, from the select or the inline form. Once they have moved
+   * the schedule, a trim answers that move, so it says the address message: "no longer offered" is
+   * for a schedule still at its own address. Without this, a move made before the schedule's own
+   * list had landed was judged by the load-time check and called retired. Android and iOS remember
+   * the pick the same way.
+   */
+  pickAddress(id: string | null): void {
+    if (id !== this.formData().savedAddressId) this.loadedSelectionUnjudged.set(false);
+    this.updateFormData({ savedAddressId: id });
   }
 
   async refreshMembership(): Promise<void> {

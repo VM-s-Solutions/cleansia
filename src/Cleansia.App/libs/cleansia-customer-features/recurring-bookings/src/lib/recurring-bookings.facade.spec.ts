@@ -472,6 +472,40 @@ describe('RecurringBookingsFacade', () => {
         'recurring_booking.selection_no_longer_offered',
       );
     });
+
+    // The move comes first and its market's list is the first to land: what that list trims is the
+    // move's doing, so the load-time check must not claim it.
+    it('says "not offered at this address" when the customer moves it before its own list lands', async () => {
+      await facade.initialize();
+      facade.loadForEdit(stored);
+      TestBed.flushEffects();
+
+      facade.pickAddress('addr-cz');
+      TestBed.flushEffects();
+      listed('cze', ['s1'], ['p1']);
+
+      expect(selection()).toEqual({ services: ['s1'], packages: ['p1'] });
+      expect(snackbar.showInfoTranslated).toHaveBeenCalledWith(
+        'pages.order.wizard.catalogue_changed_for_country',
+      );
+      expect(snackbar.showInfoTranslated).not.toHaveBeenCalledWith(
+        'recurring_booking.selection_no_longer_offered',
+      );
+    });
+
+    it('still says no longer offered when the customer picks the address it already has', async () => {
+      await facade.initialize();
+      facade.loadForEdit(stored);
+      TestBed.flushEffects();
+
+      facade.pickAddress('addr-sk');
+      TestBed.flushEffects();
+      listed('svk', ['s1'], ['p1']);
+
+      expect(selection()).toEqual({ services: ['s1'], packages: ['p1'] });
+      expect(snackbar.showInfoTranslated).toHaveBeenCalledTimes(1);
+      expect(snackbar.showInfoTranslated).toHaveBeenCalledWith('recurring_booking.selection_no_longer_offered');
+    });
   });
 
   // "Make this recurring" arrives with the order's services before the customer has touched the

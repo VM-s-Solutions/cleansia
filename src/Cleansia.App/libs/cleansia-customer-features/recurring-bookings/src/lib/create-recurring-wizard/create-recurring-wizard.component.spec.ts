@@ -71,6 +71,7 @@ class FakeRecurringBookingsFacade {
   packageNamesIncluding = jest.fn<string | null, [string]>(() => null);
   isInManyPackages = jest.fn<boolean, [string]>(() => false);
   updateFormData = jest.fn();
+  pickAddress = jest.fn();
   selectPayment = jest.fn();
   toggleService = jest.fn();
   togglePackage = jest.fn();

@@ -61,9 +61,10 @@ enum DocumentPresentation {
         }
     }
 
-    /// The partner app's pending/good/bad triad rather than Android's `StatusBadge`: `CleansiaColors` has no
-    /// `tertiary`. Drawn as text on the card, so each takes the ink that reads 4.5:1 or more there in both
-    /// modes: the warning star read 2.15:1 on white and `successText` 2.92:1 on the dark card.
+    /// Pending, Rejected and the empty state match Android's `StatusBadge`; Approved stays green here where
+    /// Android uses the text blue (a known split). Drawn as text on the card, so each takes the ink that reads
+    /// 4.5:1 or more there in both modes: the warning star read 2.15:1 on white and `successText` 2.92:1 on the
+    /// dark card.
     static func statusTint(_ status: DocumentStatus?) -> Color {
         switch status {
         case ._1: CleansiaColors.pendingInk

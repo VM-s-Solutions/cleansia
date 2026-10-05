@@ -932,7 +932,7 @@ is the only way a card payment keeps a card:
 - **The tick is the consent.** There is no second box: the sentence printed with it is the
   card-guarantee wording of the version the row records. That wording still says the company may charge
   the card for fees and unpaid cash. Since 2026-10-04 nothing does
-  ([Cash needs no card](#card-guarantee)), and the sentence is reworded with the next legal texts
+  ([Cash needs no card](#card-guarantee)), and the sentence is still to be reworded on the clients
   ([below](#legal-texts-lag)). The web sends the tick as
   `CreateOrder`'s `saveCard`, `true` only for an offered, ticked box; the apps send it as
   `CreatePaymentIntent`'s `saveCard` (`POST api/Payment/CreatePaymentIntent`), because a mobile booking
@@ -1085,19 +1085,48 @@ one of them is our own draft until the lawyer delivers** ([below](#legal-drafts)
 
 | Text | Audience | In force | Who is bound, and how |
 |---|---|---|---|
-| Terms of service | customer | `2026-10-03` | the customer's contract with the operating company of the market the home is in, concluded at booking — a card booking once its payment completes. Accepted by the tick at registration and at booking, and again before the next booking when a newer version applies ([What is recorded about a customer](#customer-record)); shown at `/terms` |
+| Terms of service | customer | `2026-10-05` | the customer's contract with the operating company of the market the home is in, concluded at booking — a card booking once its payment completes. Accepted by the tick at registration and at booking, and again before the next booking when a newer version applies ([What is recorded about a customer](#customer-record)); shown at `/terms` |
 | Privacy policy | customer | `2026-10-03` | the operating company is the controller; accepted with the terms, and again before the next booking when a newer version applies; shown at `/privacy` |
 | Complaints procedure | customer | `2026-09-29` | read, never accepted; shown at `/complaints` on the customer web and linked from its footer |
-| Framework cooperation agreement, self-billing agreement, data-processing agreement | employee | `2026-09-29` | the cleaner's agreements with the operating company of the market they work in, each accepted in the partner apps → [A cleaner's own documents](#cleaner-documents) |
-| Contract for work | employee | `2026-09-29` | one per seat of a job, between the operating company and the cleaner, stamped on the order at booking and accepted at the take → [The contract for work](#work-contract) |
+| Framework cooperation agreement, self-billing agreement | employee | `2026-10-05` | the cleaner's agreements with the operating company of the market they work in, each accepted in the partner apps → [A cleaner's own documents](#cleaner-documents) |
+| Data-processing agreement | employee | `2026-09-29` | the cleaner's third agreement with the same company, accepted the same way |
+| Contract for work | employee | `2026-10-05` | one per seat of a job, between the operating company and the cleaner, stamped on the order at booking and accepted at the take → [The contract for work](#work-contract) |
 
 Earlier versions stay in the database as the texts earlier customers and orders were bound by: the
-terms `2026-09-14`, `2026-09-27`, `2026-09-29` and `2026-09-30`, the privacy policy `2026-09-14` and
-`2026-09-29`, and the contract for work `2026-09-20`, which named the customer and the cleaner as its
+terms `2026-09-14`, `2026-09-27`, `2026-09-29`, `2026-09-30` and `2026-10-03`, the privacy policy
+`2026-09-14` and `2026-09-29`, the framework and self-billing agreements `2026-09-29`, and the contract
+for work `2026-09-29` and `2026-09-20`, the latter naming the customer and the cleaner as its
 parties. The terms `2026-09-30` differ from `2026-09-29` only where Plus is concerned: they offer the
 free trial, and the Plus cancellation terms follow having the Plus benefits rather than a paid
 membership ([The free trial](#plus-trial)). The terms `2026-10-03` differ from `2026-09-30` only in the
 dirtiness rates, +15 % and +30 % ([The dirtiness level](#dirtiness)).
+
+**The `2026-10-05` versions carry the owner's rulings of 2026-10-04**, and differ from the versions
+they replace only there:
+
+- **Terms of service** (from `2026-10-03`). §7 no longer makes a saved card a condition of cash. §8, until
+  then *The saved card for cash bookings*, is *Amounts you owe*: a cash booking's cancellation fee or
+  lockout price is owed and paid through its pay link in the app or on the website, cash is refused
+  while it is owed but card is not, and no card is ever charged for it
+  ([Cash needs no card](#card-guarantee)). §9 names the referral reward as a source of credit: when a
+  customer registers with a referral code and their first booking is completed within 90 days, both
+  receive the credit the app shows for that booking's currency, under the section's credit rules. §13
+  and §14 send a card refund within 3 days, where they said 5 working days, and return credit at once.
+- **Framework agreement** (from `2026-09-29`). §5 drops the insurance certificate from approval and adds
+  the business-register check ([The business register](#business-register)). §8, §10 and §16 settle after
+  each 14-day pay period ([Pay periods are 14 days](#pay-periods)). §9 adds the extras share to the
+  reward ([Cleaner pay](#cleaner-pay)) and pays a confirmed lockout the seat's full reward
+  ([A confirmed lockout pays the seat's reward](#lockout-pay)); a late cancellation still pays half of
+  the fee collected. §11 recommends the insurance instead of requiring it, and §16 no longer ends the
+  agreement when it lapses.
+- **Self-billing agreement** (from `2026-09-29`). §3 invoices after each 14-day pay period; §2 and §3
+  cover jobs completed or locked out and shares of a collected late-cancellation fee.
+- **Contract for work** (from `2026-09-29`). The price is paid on *the* invoice, not the monthly one; a
+  confirmed lockout pays the price of the work in full, and a late cancellation the share of the fee
+  collected. It applies to orders booked from 2026-10-05; an order booked earlier keeps its text.
+
+Like every new version, the terms bring the tick back before a customer's next booking, and the two
+agreements must be accepted again before a cleaner's next take ([below](#legal-drafts)).
 
 The privacy policy `2026-10-03` differs from `2026-09-29` only in where personal-data questions go
 (owner ruling 2026-10-03). The sentence under *1. The controller* that invites them, and the sentence
@@ -1223,22 +1252,16 @@ off-session charge on a saved card stays switched off: since 2026-10-04 no card 
 
 ### The texts in force lag the rulings of 2026-10-04 {#legal-texts-lag}
 
-**The platform follows the owner's rulings of 2026-10-04, and the texts in force do not yet.** A
-version in force is never edited, and the new dated versions that carry these rulings come in the next
-change. Until they are seeded, the texts customers and cleaners accept still say:
+**The seeded texts carry the owner's rulings of 2026-10-04 since their `2026-10-05` versions**
+([above](#legal-texts)): the terms of service, the framework agreement, the self-billing agreement and
+the contract for work. One wording still does not, because it is not a seeded text:
 
-| Text in force | Still says | What the platform does since 2026-10-04 |
+| Text | Still says | What the platform does since 2026-10-04 |
 |---|---|---|
-| Terms of service `2026-10-03`, §7 and §8 | a cash booking needs a card saved as a guarantee, which the company may charge without asking for a cash booking's fees, unpaid cash and an approved top-up; a failed charge is followed by a pay link | cash needs no card, and no card is charged → [Cash needs no card](#card-guarantee) |
-| The card-guarantee consent, `card-guarantee-draft-2026-09-28`, printed with *Save this card* on the clients | the card may be charged for those fees and unpaid cash | nothing charges a saved card |
-| Framework agreement `2026-09-29`, §8, §10 and §16; self-billing agreement `2026-09-29`, §3; contract for work `2026-09-29` | rewards are settled monthly, on an invoice after each monthly pay period | a pay period is 14 days → [Pay periods are 14 days](#pay-periods) |
-| Framework agreement §5, §11 and §16 | approval needs a certificate of liability insurance, the cleaner keeps that insurance, and losing it ends the agreement at once | the certificate is recommended and gates nothing → [The papers a cleaner uploads](#employee-documents) |
-| Framework agreement §9; contract for work; self-billing agreement §2 and §3 | a cleaner who is not let in is paid half of the fee collected, and nothing on a fee still owed | a confirmed lockout pays the seat's full reward, always → [A confirmed lockout pays the seat's reward](#lockout-pay) |
-| Framework agreement §9 | the reward follows the rates for the services and packages, the rooms and bathrooms and the dirtiness | it also carries a company share of the extras booked → [Cleaner pay](#cleaner-pay) |
-| Framework agreement §5 | the approval conditions, with no business-register check | approval also asks the register whether a Czech IČO exists, the business is live and a trade licence is in force → [The business register](#business-register) |
+| The card-guarantee consent, `card-guarantee-draft-2026-09-28`, printed with *Save this card* on the clients | the card may be charged for a cash booking's fees and unpaid cash | nothing charges a saved card → [Cash needs no card](#card-guarantee) |
 
-As with every new version, a cleaner accepts the new agreements before their next take and a customer
-the new terms before their next booking ([above](#legal-drafts)).
+It is reworded as a new wording key on the web, Android and iOS plus a bump of
+`SavedCard.ConsentTextVersionInForce` ([above](#legal-drafts)).
 
 ## The contract for work {#work-contract}
 
@@ -1261,7 +1284,7 @@ deleted, and an admin's placement left the same row a cleaner's own act did.
 
 | Rule | Value |
 |---|---|
-| The text an order is booked under | the **employee-audience** `WorkContract` document in force for the **address's market** on the booking day — stamped on the order once (`Orders.WorkContractDocumentId`), never changed; a booking with no text in force is **refused** (the factory throws), never booked without one. The company ↔ cleaner text is `2026-09-29`; an order booked before it keeps the `2026-09-20` text |
+| The text an order is booked under | the **employee-audience** `WorkContract` document in force for the **address's market** on the booking day — stamped on the order once (`Orders.WorkContractDocumentId`), never changed; a booking with no text in force is **refused** (the factory throws), never booked without one. The company ↔ cleaner text is `2026-10-05`; an order booked before it keeps the text in force on its booking day, `2026-09-29` or, before that, `2026-09-20` |
 | Who it names | the client through the company placeholders, filled from the company record of the order's operator when the text is shown ([above](#company-identity)); the cleaner as *you* |
 | What the customer is told | the confirm step's sentence, on every client and whether or not the account already consented: the booking concludes a contract for the cleaning with the operating company of the market where the home is, under its terms of service, and the cleaner carries it out as the company's subcontractor and is no party to it — a sentence, **not a checkbox**. There is no contract-for-work page, no order-detail line and no read for the customer |
 | When the acceptance forms | at the **take**: the cleaner reads the text and the job facts in the app and takes the job in one act; the take **carries the id of the exact text row** they read (`acceptedWorkContractTextId`), and a take without it is refused |
@@ -1350,10 +1373,12 @@ no text in force would gate nothing.
   the cleaner a self-employed contractor; the company sells cleaning in its own name and buys the work
   as a subcontract at the reward, with **no commission**; each job is its own contract for work
   ([above](#work-contract)); the cleaner is free to take no job and to work for anyone; rewards are
-  settled monthly on an invoice the company issues in the cleaner's name, with the cash they hold for
-  the company set off ([below](#cash-held)); an administrator's placement is an offer they may decline
-  without consequence ([above](#placement-is-an-offer)); the rules of *How jobs are offered*; a valid
-  liability insurance certificate before approval ([Insurance ceiling](#money-constants)); a promise not
+  settled after each 14-day pay period on an invoice the company issues in the cleaner's name, with the
+  cash they hold for the company set off ([below](#cash-held)); a confirmed lockout pays the seat's full
+  reward; an administrator's placement is an offer they may decline
+  without consequence ([above](#placement-is-an-offer)); the rules of *How jobs are offered*; approval
+  after a business-register check, with liability insurance recommended, not required
+  ([Insurance ceiling](#money-constants)); a promise not
   to work directly for customers met through the platform, for 12 months after the last job, and **no
   non-compete**; and **one** contractual penalty per breach — ten times the reward for the last job
   for that customer — instead of stacked sums. *The self-billing agreement:* the company issues the
@@ -1361,9 +1386,9 @@ no text in force would gate nothing.
   agreement:* the cleaner processes customer data and home photos for the company, keeps no copies —
   job photos only through the app's camera — and loses access 24 hours after completion
   ([Photos](#photos-and-access)), with one penalty for intentional or grossly negligent misuse.
-  Two of those lines no longer describe the platform: since 2026-10-04 a pay period is 14 days and the
-  insurance certificate is optional. The agreements also still pay a lockout half of the fee collected
-  ([The texts in force lag](#legal-texts-lag)).
+  That is the framework and self-billing agreements `2026-10-05`. Their `2026-09-29` versions settled
+  monthly, required the insurance certificate for approval and paid a lockout half of the fee collected
+  ([The legal texts](#legal-texts)).
 
 - **Reading and accepting.** `GET Employee/GetMyLegalDocuments` (both partner hosts) lists the documents
   in force for the cleaner's work market — their address's market until they are approved — with the
@@ -1423,8 +1448,8 @@ above, which are accepted in the app, never uploaded.
   `ON CONFLICT DO NOTHING`, so a database seeded before the ruling keeps the row required until it is
   reseeded or an administrator clears the flag on the document-requirements screen
   ([Document requirements](/admin-app/user-management#document-requirements)).
-  The framework agreement in force still requires the certificate
-  ([The texts in force lag](#legal-texts-lag)).
+  The framework agreement recommends the insurance since `2026-10-05`; its `2026-09-29` version
+  required the certificate ([The legal texts](#legal-texts)).
 
 ## The cleaner's business is checked in its register {#business-register}
 
@@ -1473,8 +1498,8 @@ register of economic subjects. Before the ruling, only its format (`^\d{8}$` for
   `validation.registration_number.not_registered` in their five, worded alike; until then a refused save
   in the apps showed the raw key. The three approval-only keys answer the admin host alone.
 
-The framework agreement in force names no register check among its approval conditions
-([The texts in force lag](#legal-texts-lag)).
+The framework agreement names the register check among its approval conditions since `2026-10-05`
+(§5); its `2026-09-29` version did not ([The legal texts](#legal-texts)).
 
 ## Photos, and the customer's details after the job {#photos-and-access}
 
@@ -1774,8 +1799,8 @@ and nothing while the fee was owed.
   self-billed invoice PDF, which until the same day still printed *Share of the fee for denied access*.
 
 A one-seat job frozen at a base of 500 and extras of 100, at *Normal*, pays 600 when the cleaner is
-locked out, as it would on completion. The framework agreement in force still says a lockout pays half
-of the fee collected ([The texts in force lag](#legal-texts-lag)).
+locked out, as it would on completion. The framework agreement and the contract for work say so since
+`2026-10-05`; their `2026-09-29` versions paid half of the fee collected ([The legal texts](#legal-texts)).
 
 ### Pay periods are 14 days {#pay-periods}
 
@@ -1794,8 +1819,8 @@ of the fee collected ([The texts in force lag](#legal-texts-lag)).
   period by hand, of 7 to 31 days ([Pay periods](/admin-app/pay-periods)).
 
 A period open when this shipped keeps its month and the next one is 14 days. The framework agreement,
-the self-billing agreement and the contract for work in force still say monthly
-([The texts in force lag](#legal-texts-lag)).
+the self-billing agreement and the contract for work say 14 days since `2026-10-05`; their `2026-09-29`
+versions said monthly ([The legal texts](#legal-texts)).
 
 ### Rates are per currency {#rates-per-currency}
 
@@ -2804,11 +2829,11 @@ failed order"* (owner, Q-AUD-O2).
 **The terms have a version, and the version is the date the text started applying.** The terms and
 the privacy policy are stored documents (`LegalDocuments`, one per audience, type and market, seeded
 from files in the repository at every host start), each identified by its effective date as
-`yyyy-MM-dd`. For the whole platform, in five languages, the terms and the privacy policy in force are
-`2026-10-03` and the complaints procedure `2026-09-29` — our drafts, naming the operating company as
-the seller ([The legal texts](#legal-texts)); the terms `2026-09-30`, `2026-09-29`, `2026-09-27` and
-`2026-09-14` and the privacy policy `2026-09-29` and `2026-09-14` stay as the texts earlier customers
-accepted. **A document in force
+`yyyy-MM-dd`. For the whole platform, in five languages, the terms in force are `2026-10-05`, the
+privacy policy `2026-10-03` and the complaints procedure `2026-09-29` — our drafts, naming the operating
+company as the seller ([The legal texts](#legal-texts)); the terms `2026-10-03`, `2026-09-30`,
+`2026-09-29`, `2026-09-27` and `2026-09-14` and the privacy policy `2026-09-29` and `2026-09-14` stay as
+the texts earlier customers accepted. **A document in force
 is immutable**: an edit to its file is refused with a warning, and a wording change is a new file
 under a new date, so every text a customer ever accepted stays in the database. The `/terms`,
 `/privacy` and `/complaints` pages show the version in force for the customer's market (a market's own

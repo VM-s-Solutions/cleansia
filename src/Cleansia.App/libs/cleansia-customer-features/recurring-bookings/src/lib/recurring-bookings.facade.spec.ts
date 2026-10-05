@@ -267,6 +267,71 @@ describe('RecurringBookingsFacade', () => {
     });
   });
 
+  // The server refuses to price a schedule holding a service or package retired since it was saved,
+  // so its card has no price; the card says why. Judged against the catalogue of the schedule's own
+  // market only, and never before that list has landed.
+  describe('a schedule holding something its market no longer lists', () => {
+    const czechAddress = SavedAddressDto.fromJS({ id: 'addr-cz', countryId: 'cze' });
+    const listed = (countryId: string | null, services: string[], packages: string[]) => {
+      store.overrideSelector(selectCustomerServicesCatalogue, {
+        services: services.map((id) => ServiceListItem.fromJS({ id })),
+        countryId,
+      });
+      store.overrideSelector(selectCustomerPackagesCatalogue, {
+        packages: packages.map((id) => PackageListItem.fromJS({ id })),
+        countryId,
+      });
+      store.refreshState();
+    };
+    const schedule = (selection: Partial<RecurringBookingTemplateDto>) =>
+      template({ savedAddressId: 'addr-cz', selectedServiceIds: [], selectedPackageIds: [], ...selection });
+
+    beforeEach(() => savedAddressStore.addresses.set([czechAddress]));
+
+    it('is said of a schedule holding a retired service', () => {
+      listed('cze', ['s1'], ['p1']);
+
+      expect(facade.holdsRetiredEntry(schedule({ selectedServiceIds: ['s1', 'gone'] }))).toBe(true);
+    });
+
+    it('is said of a schedule holding a retired package', () => {
+      listed('cze', ['s1'], ['p1']);
+
+      expect(facade.holdsRetiredEntry(schedule({ selectedPackageIds: ['p1', 'gone'] }))).toBe(true);
+    });
+
+    it('is not said when the market still lists everything the schedule holds', () => {
+      listed('cze', ['s1', 's2'], ['p1']);
+
+      expect(
+        facade.holdsRetiredEntry(schedule({ selectedServiceIds: ['s1'], selectedPackageIds: ['p1'] })),
+      ).toBe(false);
+    });
+
+    it("is not said while the schedule's market's catalogue has not landed", () => {
+      const holding = schedule({ selectedServiceIds: ['gone'], selectedPackageIds: ['gone'] });
+
+      listed(null, [], []);
+      expect(facade.holdsRetiredEntry(holding)).toBe(false);
+
+      listed('svk', ['s1'], ['p1']);
+      expect(facade.holdsRetiredEntry(holding)).toBe(false);
+
+      // Half a catalogue is not the catalogue.
+      store.overrideSelector(selectCustomerServicesCatalogue, { services: [], countryId: 'cze' });
+      store.refreshState();
+      expect(facade.holdsRetiredEntry(holding)).toBe(false);
+    });
+
+    it('is not said of a schedule whose address, and so whose market, is unknown', () => {
+      listed('cze', ['s1'], ['p1']);
+
+      expect(
+        facade.holdsRetiredEntry(schedule({ savedAddressId: 'addr-gone', selectedServiceIds: ['gone'] })),
+      ).toBe(false);
+    });
+  });
+
   // "Make this recurring" arrives with the order's services before the customer has touched the
   // address, and the default-priced list lands before the one priced for their address. Checking
   // the prefill against the first list and again against the second told the customer twice.

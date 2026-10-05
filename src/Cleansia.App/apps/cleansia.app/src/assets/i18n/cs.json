@@ -2304,7 +2304,8 @@
     "error_early_performance": "Potvrďte, že chcete, aby úklidy začínaly ve lhůtě pro odstoupení.",
     "cash_change_title": "Tento rozvrh už nelze platit hotově",
     "cash_change_body": "Každý úklid potřebuje více než jednoho uklízeče a hotově lze platit jen úklidy, které zvládne jeden uklízeč, proto se z něj neobjednávají žádné nové úklidy, dokud ho nezměníte. Přepněte ho na platbu kartou nebo vyberte služby či balíčky, které zvládne jeden uklízeč. Úklid, který už je z něj objednaný, můžete v Objednávkách zrušit zdarma, dokud ho nepřijme žádný uklízeč.",
-    "cash_change_action": "Upravit rozvrh"
+    "cash_change_action": "Upravit rozvrh",
+    "card_item_no_longer_offered": "Obsahuje službu, kterou už nenabízíme — upravte objednávku"
   },
   "preferred_cleaner": {
     "title": "Vyžádejte si oblíbeného uklízeče",

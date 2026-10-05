@@ -477,6 +477,39 @@ export class RecurringBookingsFacade extends UnsubscribeControlDirective {
   }
 
   /**
+   * What one market's catalogue lists, or null until the list priced for that market is the one in
+   * the store — the only list a schedule's selection can be judged against.
+   */
+  private offeredIn(
+    countryId: string | null,
+  ): { services: Set<string | undefined>; packages: Set<string | undefined> } | null {
+    const services = this.servicesCatalogue();
+    const packages = this.packagesCatalogue();
+    if (countryId === null || services.countryId !== countryId || packages.countryId !== countryId) {
+      return null;
+    }
+    return {
+      services: new Set(services.services.map((s) => s.id)),
+      packages: new Set(packages.packages.map((p) => p.id)),
+    };
+  }
+
+  /**
+   * Whether a schedule still holds a service or package its market's catalogue no longer lists. The
+   * server refuses to price such a schedule, so its card has no figure, and this is what tells the
+   * customer why. Judged only once that market's catalogue has landed, never on a guess.
+   * → /product/business-rules#deactivated-catalogue
+   */
+  holdsRetiredEntry(template: RecurringBookingTemplateDto): boolean {
+    const offered = this.offeredIn(this.countryOf(template.savedAddressId));
+    if (!offered) return false;
+    return (
+      (template.selectedServiceIds ?? []).some((id) => !offered.services.has(id)) ||
+      (template.selectedPackageIds ?? []).some((id) => !offered.packages.has(id))
+    );
+  }
+
+  /**
    * The catalogue is priced per market and the server withholds what has no price in the
    * address country's currency, so it is read for the chosen market first and again for every
    * country the chosen saved address names. A selection the new list no longer offers would make

@@ -429,13 +429,15 @@ button takes the button's ink, so no control shows two blues. The apps follow th
   red-700 (`--cleansia-error-700`) in light mode, and green-300 and red-300 after dark: 2.88 → 6.24:1
   and 4.14 → 5.54:1 in light mode, 3.80 → 8.91:1 and 2.89 → 7.36:1 in dark. The washes are unchanged,
   and the icons share their line's ink.
-- **Standalone icons on the partner and admin sites** (finding 2026-10-05). Ten were drawn in the
-  lighter sky-500 or sky-400, 2.01–2.60:1, under the 3:1 an icon needs: the help card's dismiss × and
-  step arrow, the information dialog's icon, an order activity's note icon, the admin pay settings
-  banner's icon, the empty-section and not-found icons, the document drop zone's icon, and the invoice
-  banner's and an order header's meta icons. They take the brand blue, sky-600
-  (`--cleansia-primary-600`), 3.49–4.10:1, the lowest being the dismiss × on its header tint, which
-  still goes to sky-700 under the pointer. `text-ink.spec.ts` pins each.
+- **Standalone icons on the partner and admin sites** (finding 2026-10-05). Nine drawn icons were in
+  the lighter sky-500 or sky-400, 2.01–2.60:1, under the 3:1 an icon needs: the help card's dismiss ×
+  and step arrow, an order activity's note icon, the admin pay settings banner's icon, the
+  empty-section and not-found icons, the document drop zone's icon, and the invoice banner's and an
+  order header's meta icons. They take the brand blue, sky-600 (`--cleansia-primary-600`),
+  3.49–4.10:1, the lowest being the dismiss × on its header tint, which still goes to sky-700 under the
+  pointer. The dialog's `--info` icon modifier took the same sky-600, although no template has drawn
+  it since the customer site's card-capture dialogs went with the cash path's card (2026-10-04).
+  `text-ink.spec.ts` pins each.
 
 Measured in Chromium on the running dev servers, at rest / under the pointer: a PrimeNG text, outlined
 or link button's label and icon 2.77 / 2.60 → 5.93 / 7.09:1 (a link under the pointer 7.56:1); the

@@ -1095,7 +1095,7 @@ need backfilling.
   accept its contract is the deeper blue, 5.1:1 where it was 3.5:1. In dark mode the label on a
   filled blue button, and on Android the swipe slider's, is a darker navy, 6.5:1 where it was 4.4:1.
   On the website the dashboard's green figures, the completion rate and earnings growth, read 5.8:1
-  or more where they were about 2:1; ten icons that stand alone, on an empty section, a help card, an
+  or more where they were about 2:1; eight icons that stand alone, on an empty section, a help card, an
   order and an invoice among them, are the brand blue, 3.5:1 or more where they were 2.0–2.6:1; and
   an order's photo count and upload progress, the boxes you type the e-mail code into and an address
   suggestion's pin are blue again, where they had lost their colour or fallen back to another blue.

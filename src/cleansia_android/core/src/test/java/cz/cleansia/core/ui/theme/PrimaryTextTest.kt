@@ -207,9 +207,12 @@ class PrimaryTextTest {
 
     private fun calls(name: String): List<Call> = sources.flatMap { calls(name, it.text, it) }
 
-    /** Every `name(` call in [text]: its argument list and, when it has one, its trailing lambda. */
+    /**
+     * Every `name(` call in [text], written bare or fully qualified as `androidx.compose.material3.name(`: its
+     * argument list and, when it has one, its trailing lambda.
+     */
     private fun calls(name: String, text: String, file: SourceFile? = null): List<Call> =
-        Regex("""(?<![\w.])$name\(""").findAll(text).mapNotNull { match ->
+        Regex("""(?<![\w.])(?:androidx\.compose\.material3\.)?$name\(""").findAll(text).mapNotNull { match ->
             val lineStart = text.lastIndexOf('\n', match.range.first) + 1
             if (text.substring(lineStart, match.range.first).trimStart().startsWith("import")) return@mapNotNull null
             val argsEnd = closing(text, match.range.last + 1, '(', ')')

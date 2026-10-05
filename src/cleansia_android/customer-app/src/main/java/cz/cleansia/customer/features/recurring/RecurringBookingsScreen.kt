@@ -335,7 +335,7 @@ private fun LapsedPlusNotice(onSubscribe: () -> Unit) {
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
         Spacer(Modifier.height(8.dp))
-        androidx.compose.material3.TextButton(
+        CleansiaTextButton(
             onClick = onSubscribe,
             contentPadding = PaddingValues(0.dp),
         ) {

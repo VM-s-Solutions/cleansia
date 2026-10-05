@@ -312,6 +312,33 @@ public class CancelOrderRefundSeamTests
             It.IsAny<CancellationToken>(), OrderId, It.IsAny<string?>()), Times.Once);
     }
 
+    /// <summary>
+    /// The customer's credit account sits on the books of a company frozen for archive. The credit share that
+    /// a cancellation returns at once while Stripe is down is raw SQL the frozen-books guard cannot see, so it
+    /// is not written; the cancel still completes and the card refund still waits for the re-drive.
+    /// </summary>
+    [Fact]
+    public async Task A_Stripe_Outage_Returns_No_Credit_Share_Onto_A_Frozen_Companys_Books()
+    {
+        var order = ArrangeCardPaidPendingOrder();
+        order.ApplyCredit(300m, UserId);
+        _creditAccountRepository
+            .Setup(c => c.IsOnFrozenCompanyBooksAsync(UserId, order.CurrencyId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(true);
+        _refundService
+            .Setup(s => s.IssueRefundAsync(It.IsAny<RefundRequest>(), It.IsAny<CancellationToken>()))
+            .ThrowsAsync(new HttpRequestException("connection reset"));
+
+        var result = await CreateHandler().Handle(new CancelOrder.Command(OrderId, null), CancellationToken.None);
+
+        Assert.True(result.IsSuccess);
+        Assert.Equal(OrderStatus.Cancelled, order.CurrentStatus);
+        Assert.True(result.Value!.RefundPending);
+        _creditAccountRepository.Verify(c => c.TryReturnAsync(
+            It.IsAny<string>(), It.IsAny<string>(), It.IsAny<decimal>(), It.IsAny<string>(), It.IsAny<string>(),
+            It.IsAny<CancellationToken>(), It.IsAny<string?>(), It.IsAny<string?>()), Times.Never);
+    }
+
     [Fact]
     public async Task A_Refund_That_Went_Through_Is_Not_Pending()
     {

@@ -158,4 +158,25 @@ public sealed class ReturnUnpaidOrderCreditTests
             UserId, "czk", 500m, $"credit-return:order-ended-unpaid:{OrderId}", "system",
             It.IsAny<CancellationToken>(), OrderId, It.IsAny<string?>()), Times.Once);
     }
+
+    /// <summary>
+    /// The customer's credit account sits on the books of a company frozen for archive. The return is raw SQL,
+    /// which the frozen-books commit guard cannot see, so it is not written: that company's credit is written
+    /// off when it closes.
+    /// </summary>
+    [Fact]
+    public async Task ReturnUnpaidOrderCredit_OnAFrozenCompanysBooks_ReturnsNothing()
+    {
+        var order = OrderWithCredit(500m);
+        Arrange(returned: 0m, settled: 0m);
+        _credit.Setup(c => c.IsOnFrozenCompanyBooksAsync(UserId, "czk", It.IsAny<CancellationToken>()))
+            .ReturnsAsync(true);
+
+        var moved = await _credit.Object.ReturnUnpaidOrderCreditAsync(order, cardRefunded: 0m, "system", CancellationToken.None);
+
+        Assert.False(moved);
+        _credit.Verify(c => c.TryReturnAsync(
+            It.IsAny<string>(), It.IsAny<string>(), It.IsAny<decimal>(), It.IsAny<string>(), It.IsAny<string>(),
+            It.IsAny<CancellationToken>(), It.IsAny<string?>(), It.IsAny<string?>()), Times.Never);
+    }
 }

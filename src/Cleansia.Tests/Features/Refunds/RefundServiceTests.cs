@@ -9,7 +9,6 @@ using Cleansia.Core.Domain.Payments;
 using Cleansia.Core.Domain.Repositories;
 using Cleansia.Core.Clients.Abstractions.Stripe;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
 using StripeException = Stripe.StripeException;
@@ -40,13 +39,13 @@ public class RefundServiceTests
     private readonly Mock<ICreditAccountRepository> _creditAccountRepository = new();
     private readonly RecordingStripeClient _stripe = new();
 
-    private RefundService CreateService(ILogger<RefundService>? logger = null) =>
+    private RefundService CreateService() =>
         new(
             _refundRepository.Object,
             _orderRepository.Object,
             _creditAccountRepository.Object,
             new StubStripeClientFactory(_stripe),
-            logger ?? NullLogger<RefundService>.Instance);
+            NullLogger<RefundService>.Instance);
 
     private static Order CreateCardPaidOrder(decimal totalPrice)
     {
@@ -1201,11 +1200,11 @@ public class RefundServiceTests
 
     /// <summary>
     /// The customer's credit account is on the books of a company frozen for archive. A raw-SQL return would
-    /// write a balance onto those sealed books past the frozen-books guard, so the credit leg is written off
-    /// with a warning, as that company's credit is when it closes, and the card leg still goes back.
+    /// write a balance onto those sealed books past the frozen-books guard, so the credit leg is written off,
+    /// as that company's credit is when it closes, and the card leg still goes back.
     /// </summary>
     [Fact]
-    public async Task IssueRefund_CreditLegOnAFrozenCompanysBooks_IsWrittenOffWithAWarning_AndTheCardStillRefunds()
+    public async Task IssueRefund_CreditLegOnAFrozenCompanysBooks_IsWrittenOff_AndTheCardStillRefunds()
     {
         var order = CreateCardPaidOrder(2000m);
         order.ApplyCredit(500m, "user-1");
@@ -1216,20 +1215,17 @@ public class RefundServiceTests
         _creditAccountRepository
             .Setup(r => r.IsOnFrozenCompanyBooksAsync("user-1", order.CurrencyId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(true);
-        var logger = new Mock<ILogger<RefundService>>();
 
-        var result = await CreateService(logger.Object).IssueRefundAsync(
+        var result = await CreateService().IssueRefundAsync(
             RequestFor(RefundReason.DisputeResolution, 400m), CancellationToken.None);
 
         Assert.True(result.IsSuccess, result.Error?.Message);
         Assert.Equal(300m, _stripe.LastAmount);
         Assert.Equal(RefundStatus.Succeeded, Assert.Single(added).Status);
+        Assert.Equal(0m, result.Value!.CreditReturned);
         _creditAccountRepository.Verify(r => r.TryReturnAsync(
             It.IsAny<string>(), It.IsAny<string>(), It.IsAny<decimal>(), It.IsAny<string>(), It.IsAny<string>(),
             It.IsAny<CancellationToken>(), It.IsAny<string?>(), It.IsAny<string?>()), Times.Never);
-        logger.Verify(l => l.Log(
-            LogLevel.Warning, It.IsAny<EventId>(), It.IsAny<It.IsAnyType>(), null,
-            It.IsAny<Func<It.IsAnyType, Exception?, string>>()), Times.Once);
     }
 
     private sealed class RecordingStripeClient : IStripeClient

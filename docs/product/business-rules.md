@@ -2800,15 +2800,18 @@ write is left out rather than failing the other company's commit: the no-show ap
 complaint the customer chose to settle in credit is settled to the card instead, and a referral side is
 paid nothing ([The referral reward](#referral-credit)). A goodwill credit from the frozen company's own
 administrators is still refused.
-**A refund's credit leg is not returned onto frozen books** (since 2026-10-05). The leg is written by raw
-SQL, which the frozen-books guard cannot see, so `RefundService` checks the customer's credit account
-first: on a frozen company's books the leg is skipped and logged as a warning, and the card share still
-goes back. That credit is written off, as the terms' §9 writes off unused credit once the company
-closes. A 2 000 order paid with 500 credit, whose 400 complaint settlement goes to the card for such a
-customer, refunds 300 to the card and returns nothing to the sealed account, where until then it put
-100 back. **Only the refund seam checks so far.** The other raw-SQL credit returns — a member's
-cancellation's immediate credit leg, the unpaid order's credit return, and the credit a booking puts
-back when its payment could not be started — can still write a balance onto frozen books.
+**No credit is returned onto frozen books** (since 2026-10-05). Every credit return — a refund's credit
+leg, a cancellation's immediate credit leg while Stripe is down, the credit an order that ends with no card
+refund of its own gets back, and the credit a booking puts back when its payment could not be started — is
+written by raw SQL, which the frozen-books guard cannot see. `CreditUnwind.ReturnCreditAsync`, the one
+place every return passes, checks the customer's credit account first: on a frozen company's books the
+return is skipped, and the card share still goes back. That credit is written off, as the terms' §9
+writes off unused credit once the company closes. A 2 000 order paid with 500 credit, whose 400 complaint
+settlement goes to the card for such a customer, refunds 300 to the card and returns nothing to the sealed
+account, where until then it put 100 back. A skipped return leaves no ledger row, so an order that ends
+later finds that credit still owed and is skipped the same way: the same order refunded in full by an
+administrator (1 500 to the card, the 500 leg skipped) and then cancelled writes nothing either, where
+until the check moved there the cancellation put the 500 on the sealed account.
 Then, in the background, **a sealed bundle** is written to the `company-archives` storage container under
 the company's id and the freeze instant: the ledgers as one JSON Lines file per table (orders as the
 two-year retention sweep leaves them — no name, contact, street, instruction or note; status history; pay

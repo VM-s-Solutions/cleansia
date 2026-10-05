@@ -27,13 +27,19 @@ public static class CreditUnwind
 
     /// <summary>
     /// Return <paramref name="amount"/> of <paramref name="order"/>'s applied credit to the customer's
-    /// balance. False means no movement: an ordinary retry, erased account, or no applied credit.
+    /// balance. False means no movement: an ordinary retry, erased account, no applied credit, or an
+    /// account on the books of a company frozen for archive.
     ///
     /// <para><paramref name="keyDiscriminator"/> must be DETERMINISTIC on the domain inputs, never a
     /// Guid or a timestamp: it is the whole idempotency story. A refund passes its own already-
     /// deterministic RefundKey; a cancellation passes the order id.</para>
+    ///
+    /// <para><b>Never onto frozen books.</b> The return is raw SQL, which the frozen-books commit guard
+    /// cannot see, and a frozen company's credit is written off when it closes. Checked here because every
+    /// return passes here: a leg skipped at one end of an order leaves no ledger row, so the next end of the
+    /// same order finds that credit still owed and comes back through this same check.</para>
     /// </summary>
-    public static Task<bool> ReturnCreditAsync(
+    public static async Task<bool> ReturnCreditAsync(
         this ICreditAccountRepository creditAccountRepository,
         Order order,
         decimal amount,
@@ -41,12 +47,14 @@ public static class CreditUnwind
         string actorId,
         CancellationToken cancellationToken)
     {
-        if (amount <= 0m || string.IsNullOrEmpty(order.UserId))
+        if (amount <= 0m
+            || string.IsNullOrEmpty(order.UserId)
+            || await creditAccountRepository.IsOnFrozenCompanyBooksAsync(order.UserId, order.CurrencyId, cancellationToken))
         {
-            return Task.FromResult(false);
+            return false;
         }
 
-        return creditAccountRepository.TryReturnAsync(
+        return await creditAccountRepository.TryReturnAsync(
             userId: order.UserId,
             currencyId: order.CurrencyId,
             amount: amount,

@@ -11,6 +11,7 @@ using Cleansia.Core.Domain.Internationalization;
 using Cleansia.Core.Domain.Orders;
 using Cleansia.Core.Domain.Repositories;
 using Cleansia.Core.Domain.Users;
+using Cleansia.Core.Queue.Abstractions;
 using Cleansia.Infra.Database;
 using Cleansia.Infra.Database.Repositories;
 using Cleansia.TestUtilities;
@@ -27,7 +28,9 @@ namespace Cleansia.IntegrationTests.Features.Refunds;
 /// was paid in credit. Their complaint asks for credit, which their sealed books cannot take, so its 400
 /// settlement goes to the card through the refund seam. The seam's credit leg would land on the same sealed
 /// account by raw SQL, past the frozen-books guard; it is skipped instead, as that company's credit is
-/// written off when it closes. The card share still goes back and the resolution commits.
+/// written off when it closes. The card share still goes back and the resolution commits. A leg skipped
+/// this way leaves no ledger row, so an order that ends later would find that credit still owed; that
+/// return is skipped the same way.
 /// </summary>
 [Collection("PostgresCollection")]
 public class RefundCreditLegOnFrozenBooksTests(PostgresContainerFixture fixture) : BaseIntegrationTest(fixture)
@@ -63,7 +66,7 @@ public class RefundCreditLegOnFrozenBooksTests(PostgresContainerFixture fixture)
         await SeedTenantRegistryAsync(conn);
     }
 
-    private async Task<(string UserId, string DisputeId)> SeedAsync()
+    private async Task<(string UserId, string DisputeId)> SeedAsync(OrderStatus status = OrderStatus.Completed)
     {
         string userId;
         await using (var ctx = NewContext())
@@ -107,7 +110,7 @@ public class RefundCreditLegOnFrozenBooksTests(PostgresContainerFixture fixture)
             order.Id = OrderId;
             order.ApplyCredit(500m, userId);
             order.AssignStripePaymentIntentId(PaymentIntentId);
-            order.AddOrderStatus(OrderStatusTrack.Create(OrderStatus.Completed, order));
+            order.AddOrderStatus(OrderStatusTrack.Create(status, order));
             ctx.Orders.Add(order);
             var dispute = new Dispute(
                 OrderId, userId, DisputeReason.QualityIssue, "The bathroom was not cleaned.", userId,
@@ -182,6 +185,75 @@ public class RefundCreditLegOnFrozenBooksTests(PostgresContainerFixture fixture)
         Assert.Equal(DisputeStatus.Resolved, dispute.Status);
         Assert.Equal(300m, dispute.CardRefundedAmount);
         Assert.Equal(0m, dispute.CreditReturnedAmount);
+    }
+
+    /// <summary>
+    /// An administrator's full refund of the 2000 order, still to be cleaned, refunds the 1500 card and skips
+    /// the 500 credit leg; the order then reads <c>Refunded</c> with none of its credit returned. Cancelling it
+    /// afterwards takes the return for an order that ended with no card refund of its own, which would find
+    /// those 500 still owed and write them onto the sealed account. It writes nothing, and the cancel commits.
+    /// </summary>
+    [Fact]
+    public async Task A_Credit_Leg_Skipped_On_Frozen_Books_Is_Not_Written_There_When_The_Order_Is_Cancelled_Later()
+    {
+        await ResetAsync();
+        var (userId, _) = await SeedAsync(OrderStatus.New);
+        var factory = new Mock<IStripeClientFactory>();
+        factory.Setup(f => f.CreateClient()).Returns(_stripe.Object);
+
+        await using (var ctx = NewContext())
+        {
+            var refund = await new RefundService(
+                    new RefundRepository(ctx),
+                    new OrderRepository(ctx),
+                    new CreditAccountRepository(ctx),
+                    factory.Object,
+                    NullLogger<RefundService>.Instance)
+                .IssueRefundAsync(
+                    new RefundRequest(OrderId, 2000m, RefundReason.AdminDiscretion, "admin-frozen-refund", RefundRequestId: "full"),
+                    CancellationToken.None);
+
+            Assert.True(refund.IsSuccess, refund.Error?.Message);
+            Assert.Equal(1500m, refund.Value!.Amount);
+            Assert.Equal(0m, refund.Value.CreditReturned);
+        }
+
+        await using (var ctx = NewContext())
+        {
+            var order = await new OrderRepository(ctx).GetByIdAsync(OrderId, CancellationToken.None);
+            Assert.Equal(PaymentStatus.Refunded, order!.PaymentStatus);
+            var refunds = new RefundRepository(ctx);
+            await new PlatformOrderCancellation(
+                    new RefundService(
+                        refunds, new OrderRepository(ctx), new CreditAccountRepository(ctx), factory.Object,
+                        NullLogger<RefundService>.Instance),
+                    refunds,
+                    new CreditAccountRepository(ctx),
+                    Mock.Of<ILoyaltyService>(),
+                    Mock.Of<INotificationProducer>(),
+                    Mock.Of<ILiveActivityProducer>(),
+                    Mock.Of<IExpressWaiverConsumer>(),
+                    new GuestOrderAccessTokenIssuer(new GuestOrderAccessTokenRepository(ctx)),
+                    Mock.Of<IPendingDispatch>())
+                .CancelAsync(order, "admin-frozen-refund", CancelledBy.Admin, null, RefundReason.CustomerCancellation,
+                    CancellationToken.None);
+            await ctx.CommitAsync(CancellationToken.None);
+        }
+
+        _stripe.Verify(s => s.RefundPaymentIntentAsync(
+            PaymentIntentId, 1500m, $"refund:{OrderId}:admin:full", It.IsAny<CancellationToken>()), Times.Once);
+        _stripe.VerifyNoOtherCalls();
+        await using var verify = NewContext();
+        var account = await verify.CreditAccounts.IgnoreQueryFilters().AsNoTracking()
+            .Include(a => a.Transactions)
+            .SingleAsync(a => a.UserId == userId && a.CurrencyId == CzkId);
+        Assert.DoesNotContain(account.Transactions, t => t.Reason == CreditTransactionReason.OrderPaymentReturned);
+        Assert.Equal(0m, account.Balance);
+        Assert.Equal(account.Balance, account.Transactions.Sum(t => t.Amount));
+        var cancelled = await verify.Orders.IgnoreQueryFilters().AsNoTracking()
+            .Include(o => o.OrderStatusHistory)
+            .SingleAsync(o => o.Id == OrderId);
+        Assert.Equal(OrderStatus.Cancelled, cancelled.CurrentStatus);
     }
 
     private sealed class FixedTenantProvider(string? tenantId) : ITenantProvider

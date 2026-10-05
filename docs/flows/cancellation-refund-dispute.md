@@ -426,7 +426,7 @@ dispute or the order shows the three interleaved, newest first.
 | Stripe refund call fails | No status change. The order is not left claiming a refund that never happened. |
 | Refund requested twice | The second resolves to the existing row rather than issuing again. |
 | A refund retried after its credit leg came back on its key | The leg counts as part of the refund's slice: Stripe is asked for the same amount on the same key, no second leg is paid, and card and leg together never pass what the sale has left. |
-| A credit leg for a customer on a frozen company's books | Skipped and logged; the card share still goes back ([Business rules — a company's lifecycle](/product/business-rules#company-lifecycle)). |
+| Any credit return for a customer on a frozen company's books | Skipped — a refund's credit leg, a cancellation's, an ended order's, a failed checkout's; the card share still goes back, and an order that ends later does not write it either ([Business rules — a company's lifecycle](/product/business-rules#company-lifecycle)). |
 | Cancel after the cleaner is on the way, before the start | Allowed; the fee ladder decides the cost. |
 | Cancel after the booked start, cleaner assigned, job not started | Refused, `order.start_passed_cannot_cancel`; the customer reports that the cleaner did not arrive, and an administrator confirms the no-show. |
 | Stripe unreachable during a signed-in customer's cancel | The order is cancelled, the refund stays `Pending` for the hourly re-drive, the credit share of the same held slice returns now, and the response says `refundPending`. |

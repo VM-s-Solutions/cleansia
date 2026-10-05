@@ -2173,14 +2173,29 @@ schedules list says why:
   would otherwise toast the refusal (*One of the selected services is no longer available.*) on every
   visit to the list. Android's and iOS's schedule lists show no price on any card and quote nothing,
   and no client has a schedule screen besides the edit form.
-- **Editing it removes the entry, with a notice.** The web (`keepSelected`), Android and iOS trim an
-  edited schedule's selection to its market's catalogue as the form loads, and tell the customer that
-  part of the selection is not offered at this address and was removed, so saving the edit takes the
-  entry off the schedule. A quote sent before the trim fails as quietly as the card's: the web form
-  shows no price, and every form leaves the cash choice undecided rather than refused. Android trims
-  when the template is prefilled and again once the form's first catalogue lands, because an untrimmed
-  selection's crew quote is refused and a cash save would be held back (*We couldn't confirm whether
-  this schedule can be paid in cash*).
+- **Editing it removes the entry, with a notice that it is no longer offered.** The web, Android and
+  iOS trim an edited schedule's selection to its market's catalogue as the form loads, so saving the
+  edit takes the entry off the schedule, and that trim says *Some of this schedule's choices are no
+  longer offered and were removed.* (`recurring_booking.selection_no_longer_offered` on the web,
+  `recurring_selection_no_longer_offered` on the apps, five languages; owner ruling 2026-10-05).
+  Until 2026-10-05 it gave the booking's market message, that part of the selection *is not offered
+  at this address*, which blamed an address nobody had changed. That message stays where it is true:
+  a trim the customer causes by moving the schedule to an address in another market, every trim of a
+  new schedule (blank, or filled in from an order priced elsewhere), and the booking's own. The web
+  marks a schedule loaded for edit as unjudged and judges it once, as soon as both lists priced for
+  its address are in the store (`loadedSelectionUnjudged`); its market trim (`keepSelected`) waits
+  until then. Until 2026-10-05 the web had only that market trim, which ran when a list landed after
+  the schedule, so in the usual order, the list first, a retired entry was not dropped and went back
+  to the server on save. If the customer changes the address before that first list has landed, the
+  web's trim says *no longer offered* rather than the address wording. Android raises the notice for a
+  trim while the edited schedule is still at its own address, whichever read lands it (the entry
+  read, a retry, or the read of the schedule's own market), and the market message once the customer
+  has picked another address. iOS raises it for the form's first check of an edited schedule against
+  its own market's catalogue, on load or on the retry after a failed read. A quote sent before the
+  trim fails as quietly as the card's: the web form shows no price, and every form leaves the cash
+  choice undecided rather than refused. Android trims when the template is prefilled and again once
+  the form's first catalogue lands, because an untrimmed selection's crew quote is refused and a cash
+  save would be held back (*We couldn't confirm whether this schedule can be paid in cash*).
 - **Its occurrences are confirmed and paid as any other**, from the stored price (above).
 
 `CatalogActiveVisibilityTests` pins the active check on the repository, a schedule refused a
@@ -2195,7 +2210,10 @@ line is pinned on each client for a retired service, a retired package, everythi
 market not yet read or an address the list does not know: the web's recurring facade and list
 specs, Android's `RecurringBookingsViewModelTest` (with `RecurringNoLongerOfferedCopyTest` holding
 the copy verbatim in all five languages) and iOS's `RecurringBookingsViewModelTests`; all three also
-pin that each schedule is judged against its own market's catalogue.
+pin that each schedule is judged against its own market's catalogue. The edit's notice is pinned the
+same way: a trim on load says *no longer offered* and a trim after an address change the market
+message, in the web's recurring facade spec (with the list landing before the schedule and after
+it), Android's `CreateRecurringViewModelTest` and iOS's `CreateRecurringViewModelTests+Edit`.
 
 ## Discounts, and the 12 % cap {#discount-cap}
 

@@ -42,6 +42,7 @@ import cz.cleansia.customer.core.orders.OrderServiceDetailsDto
 import cz.cleansia.customer.features.booking.localizedDescription
 import cz.cleansia.customer.features.booking.localizedName
 import cz.cleansia.customer.features.booking.titleRes
+import cz.cleansia.customer.ui.theme.primaryText
 
 /* ── Cleaning details ── */
 
@@ -317,7 +318,7 @@ internal fun AssignedCleanersCard(employees: List<AssignedEmployeeDto>) {
                     Text(
                         text = initial,
                         style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
-                        color = MaterialTheme.colorScheme.primary,
+                        color = primaryText(),
                     )
                 }
                 Spacer(Modifier.width(12.dp))

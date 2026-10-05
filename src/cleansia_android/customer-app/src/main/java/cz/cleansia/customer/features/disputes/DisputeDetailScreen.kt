@@ -85,6 +85,7 @@ import cz.cleansia.core.ui.components.CleansiaPrimaryButton
 import cz.cleansia.core.snackbar.SnackbarController
 import cz.cleansia.core.ui.theme.Poppins
 import kotlinx.coroutines.launch
+import cz.cleansia.customer.ui.theme.primaryText
 
 /**
  * Dispute detail — header, original description, message thread, inline evidence, reply bar.
@@ -738,7 +739,7 @@ private fun ErrorState(
         Text(
             text = stringResource(R.string.common_back),
             style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.SemiBold),
-            color = MaterialTheme.colorScheme.primary,
+            color = primaryText(),
             modifier = Modifier
                 .clip(RoundedCornerShape(999.dp))
                 .clickable(onClick = onBack)

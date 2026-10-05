@@ -74,6 +74,7 @@ import cz.cleansia.customer.R
 import cz.cleansia.customer.ui.theme.Sky400
 import cz.cleansia.customer.ui.theme.Sky950
 import cz.cleansia.customer.ui.theme.Slate900
+import cz.cleansia.customer.ui.theme.primaryText
 import kotlinx.coroutines.launch
 import cz.cleansia.customer.ui.components.statusBarFade
 
@@ -611,7 +612,7 @@ private fun SocialProofTile() {
             Text(
                 text = stringResource(R.string.membership_social_proof_headline),
                 style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold),
-                color = MaterialTheme.colorScheme.primary,
+                color = primaryText(),
             )
             Text(
                 text = stringResource(R.string.membership_social_proof_sub),

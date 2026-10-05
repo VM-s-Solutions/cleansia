@@ -129,6 +129,7 @@ import cz.cleansia.customer.ui.format.orderStatusColor
 import cz.cleansia.customer.ui.theme.CleansiaTheme
 import cz.cleansia.customer.ui.theme.SuccessText
 import cz.cleansia.customer.ui.theme.WarningStar
+import cz.cleansia.customer.ui.theme.primaryText
 import cz.cleansia.customer.features.main.MainShellBottomClearance
 import cz.cleansia.customer.ui.components.statusBarFade
 import kotlin.math.roundToInt
@@ -1539,7 +1540,7 @@ private fun OrderAgainCard(order: OrderListItemDto, onClick: () -> Unit) {
             Text(
                 stringResource(R.string.home_order_again_title),
                 style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.SemiBold),
-                color = MaterialTheme.colorScheme.primary,
+                color = primaryText(),
             )
             Spacer(Modifier.height(2.dp))
             Text(
@@ -1587,7 +1588,7 @@ private fun RecurringSchedulesSection(
             Text(
                 stringResource(R.string.home_recurring_section_manage),
                 style = MaterialTheme.typography.labelLarge,
-                color = MaterialTheme.colorScheme.primary,
+                color = primaryText(),
                 modifier = Modifier.clickable(onClick = onManage),
             )
         }
@@ -1651,7 +1652,7 @@ private fun RecurringScheduleRow(
             Text(
                 cadenceLabel,
                 style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.SemiBold),
-                color = accent,
+                color = if (needsChange) accent else primaryText(),
             )
             Text(
                 schedule,
@@ -1761,7 +1762,7 @@ private fun PopularPackageCard(
         Text(
             text = stringResource(R.string.home_popular_packages_add_cta),
             style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.SemiBold),
-            color = MaterialTheme.colorScheme.primary,
+            color = primaryText(),
         )
     }
 }
@@ -1783,7 +1784,7 @@ private fun RecentBookingsSection(
             Text(
                 stringResource(R.string.home_recent_see_all),
                 style = MaterialTheme.typography.labelLarge,
-                color = MaterialTheme.colorScheme.primary,
+                color = primaryText(),
                 modifier = Modifier.clickable(onClick = onSeeAll),
             )
         }

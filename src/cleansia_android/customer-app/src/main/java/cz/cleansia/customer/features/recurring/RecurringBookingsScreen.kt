@@ -65,6 +65,7 @@ import cz.cleansia.customer.core.recurring.RecurrenceFrequency
 import cz.cleansia.customer.core.recurring.RecurringBookingTemplateDto
 import java.time.format.TextStyle
 import java.util.Locale
+import cz.cleansia.customer.ui.theme.primaryText
 
 /**
  * List of the user's recurring booking templates with pause/resume + delete
@@ -430,7 +431,7 @@ private fun TemplateCard(
             Text(
                 text = cadenceLabel,
                 style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.SemiBold),
-                color = if (booksCleanings) accent else MaterialTheme.colorScheme.onSurfaceVariant,
+                color = if (booksCleanings) primaryText() else MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.weight(1f),
             )
             val badge = when (status) {

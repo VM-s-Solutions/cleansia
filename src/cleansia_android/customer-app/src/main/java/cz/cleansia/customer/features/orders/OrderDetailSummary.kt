@@ -24,6 +24,7 @@ import cz.cleansia.customer.BuildConfig
 import cz.cleansia.customer.R
 import cz.cleansia.customer.core.booking.DirtinessLevel
 import cz.cleansia.customer.core.orders.OrderDetailDto
+import cz.cleansia.customer.ui.theme.primaryText
 
 /**
  * What the customer is charged and how. The per-source discount amounts are on
@@ -89,7 +90,7 @@ internal fun PriceBreakdownCard(order: OrderDetailDto) {
             Text(
                 text = formatOrderPrice(order.totalPrice, currencyCode),
                 style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
-                color = MaterialTheme.colorScheme.primary,
+                color = primaryText(),
             )
         }
         // Credit is a tender, not a discount: the total stays the size of the sale, and these two

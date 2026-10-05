@@ -60,6 +60,7 @@ import cz.cleansia.core.ui.components.CleansiaPrimaryButton
 import cz.cleansia.core.ui.components.SudsRefreshIndicator
 import cz.cleansia.core.snackbar.SnackbarController
 import cz.cleansia.core.ui.theme.Poppins
+import cz.cleansia.customer.ui.theme.primaryText
 
 /**
  * The user's disputes, with infinite scroll and pull-to-refresh. Reached from the profile tab and from
@@ -319,7 +320,7 @@ private fun ErrorState(onRetry: () -> Unit) {
         Text(
             text = stringResource(R.string.dispute_list_error_retry),
             style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.SemiBold),
-            color = MaterialTheme.colorScheme.primary,
+            color = primaryText(),
             modifier = Modifier
                 .clip(RoundedCornerShape(999.dp))
                 .clickable(onClick = onRetry)

@@ -80,7 +80,6 @@ import cz.cleansia.customer.ui.theme.BrandGradients
 import cz.cleansia.customer.ui.theme.CleansiaTheme
 import cz.cleansia.core.ui.theme.Poppins
 import cz.cleansia.core.ui.theme.Spacing
-import cz.cleansia.customer.ui.theme.Sky600
 import cz.cleansia.customer.ui.theme.Sky700
 import cz.cleansia.customer.ui.theme.asList
 import cz.cleansia.customer.ui.theme.isDark
@@ -351,10 +350,10 @@ private fun ProfileHero(
             ) {
                 ProfileAvatarContent(
                     initials = initials,
-                    // The circle is fixed white in both themes, so the initials pin the light-mode
-                    // brand blue; the theme-adaptive primary drops to 2.1:1 against it in dark.
+                    // The circle is fixed white in both themes, so the initials pin the light-mode text
+                    // blue, sky-700 (5.93:1); the theme-adaptive primary drops to 2.1:1 against it in dark.
                     initialsStyle = MaterialTheme.typography.headlineSmall,
-                    initialsColor = Sky600,
+                    initialsColor = Sky700,
                     photo = photo,
                     onLoadFailed = onAvatarLoadFailed,
                     onLoadSucceeded = onAvatarLoadSucceeded,

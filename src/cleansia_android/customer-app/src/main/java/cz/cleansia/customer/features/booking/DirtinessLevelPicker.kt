@@ -40,6 +40,7 @@ import cz.cleansia.customer.R
 import cz.cleansia.customer.core.booking.DirtinessLevel
 import cz.cleansia.customer.ui.theme.CleansiaTheme
 import cz.cleansia.customer.ui.theme.selectionTint
+import cz.cleansia.customer.ui.theme.primaryText
 
 @StringRes
 internal fun DirtinessLevel.titleRes(): Int = when (this) {
@@ -178,7 +179,7 @@ private fun LevelCard(level: DirtinessLevel, selected: Boolean, onClick: () -> U
                 color = if (level == DirtinessLevel.Normal) {
                     MaterialTheme.colorScheme.onSurfaceVariant
                 } else {
-                    MaterialTheme.colorScheme.primary
+                    primaryText()
                 },
             )
             if (selected) {

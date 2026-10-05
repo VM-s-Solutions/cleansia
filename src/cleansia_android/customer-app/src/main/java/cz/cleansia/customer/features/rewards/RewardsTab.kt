@@ -83,6 +83,7 @@ import cz.cleansia.customer.core.referral.ReferralAccountDto
 import cz.cleansia.core.ui.components.SudsRefreshIndicator
 import cz.cleansia.core.ui.theme.Poppins
 import cz.cleansia.customer.ui.theme.SuccessText
+import cz.cleansia.customer.ui.theme.primaryText
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LifecycleEventEffect
@@ -833,7 +834,7 @@ private fun TierLadderRow(
         when {
             isCurrent -> StatusPill(
                 label = stringResource(R.string.loyalty_tier_status_current),
-                color = MaterialTheme.colorScheme.primary,
+                color = primaryText(),
             )
             isUnlocked -> Icon(
                 Icons.Outlined.CheckCircle,
@@ -931,7 +932,7 @@ private fun ActivityPreviewCard(
             Text(
                 stringResource(R.string.loyalty_activity_view_all),
                 style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.SemiBold),
-                color = MaterialTheme.colorScheme.primary,
+                color = primaryText(),
                 modifier = Modifier
                     .clip(RoundedCornerShape(8.dp))
                     .clickable(onClick = onOpenActivity)
@@ -1110,7 +1111,7 @@ private fun InviteFriendsCard(
                         fontWeight = FontWeight.Bold,
                         letterSpacing = androidx.compose.ui.unit.TextUnit(2f, androidx.compose.ui.unit.TextUnitType.Sp),
                     ),
-                    color = MaterialTheme.colorScheme.primary,
+                    color = primaryText(),
                 )
             }
             Spacer(Modifier.width(10.dp))
@@ -1243,7 +1244,7 @@ private fun LoyaltyError(onRetry: () -> Unit) {
         Text(
             stringResource(R.string.loyalty_retry),
             style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.SemiBold),
-            color = MaterialTheme.colorScheme.primary,
+            color = primaryText(),
             modifier = Modifier
                 .clip(RoundedCornerShape(999.dp))
                 .clickable(onClick = onRetry)

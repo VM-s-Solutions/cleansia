@@ -72,7 +72,7 @@ import cz.cleansia.customer.core.user.CurrentUser
 import cz.cleansia.core.ui.components.CleansiaPrimaryButton
 import cz.cleansia.customer.ui.theme.CleansiaTheme
 import cz.cleansia.core.ui.theme.Poppins
-import cz.cleansia.customer.ui.theme.Sky600
+import cz.cleansia.customer.ui.theme.primaryText
 
 /**
  * Wolt/Bolt-style edit profile:
@@ -273,7 +273,7 @@ private fun AvatarPreview(
                         fontWeight = FontWeight.Bold,
                         fontSize = 36.sp,
                     ),
-                    initialsColor = Sky600,
+                    initialsColor = primaryText(),
                     photo = photo,
                     onLoadFailed = onLoadFailed,
                     onLoadSucceeded = onLoadSucceeded,

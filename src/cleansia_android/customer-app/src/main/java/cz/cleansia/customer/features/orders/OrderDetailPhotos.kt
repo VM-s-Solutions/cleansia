@@ -32,6 +32,7 @@ import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
 import cz.cleansia.customer.R
 import cz.cleansia.customer.core.orders.OrderPhotosResponse
+import cz.cleansia.customer.ui.theme.primaryText
 
 /* ── Photos (Wave 2 Phase 5) ── */
 
@@ -67,7 +68,7 @@ internal fun PhotosSection(
                 Text(
                     text = stringResource(R.string.order_photos_view_button),
                     style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.SemiBold),
-                    color = MaterialTheme.colorScheme.primary,
+                    color = primaryText(),
                 )
                 Spacer(Modifier.width(4.dp))
                 Icon(

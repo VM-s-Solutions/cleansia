@@ -51,6 +51,7 @@ import cz.cleansia.customer.R
 import cz.cleansia.customer.core.memberships.ExpressWaiver
 import cz.cleansia.customer.core.memberships.ExpressWaiverStatus
 import cz.cleansia.customer.ui.theme.selectionTint
+import cz.cleansia.customer.ui.theme.primaryText
 import kotlinx.datetime.Clock
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.LocalDateTime
@@ -689,7 +690,7 @@ private fun DayPartChip(
             Text(
                 name,
                 style = MaterialTheme.typography.titleSmall,
-                color = (if (active) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface).copy(alpha = alpha),
+                color = (if (active) primaryText() else MaterialTheme.colorScheme.onSurface).copy(alpha = alpha),
                 textAlign = TextAlign.Center,
             )
             if (holdsSelection) {
@@ -719,7 +720,7 @@ private fun TimeSlotChip(
     val isExpress = slot.state == SlotState.Express
     val shape = RoundedCornerShape(12.dp)
     val textColor = when {
-        selected -> MaterialTheme.colorScheme.primary
+        selected -> primaryText()
         enabled -> MaterialTheme.colorScheme.onSurface
         else -> MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f)
     }

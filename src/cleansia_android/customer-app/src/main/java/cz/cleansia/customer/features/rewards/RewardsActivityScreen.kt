@@ -49,6 +49,7 @@ import cz.cleansia.customer.R
 import cz.cleansia.customer.core.loyalty.LoyaltyActivityItemDto
 import cz.cleansia.core.ui.components.SudsRefreshIndicator
 import cz.cleansia.core.ui.theme.Poppins
+import cz.cleansia.customer.ui.theme.primaryText
 
 /**
  * Full activity history screen — Loyalty Phase A (M2).
@@ -229,7 +230,7 @@ private fun ErrorState(onRetry: () -> Unit) {
         Text(
             stringResource(R.string.loyalty_retry),
             style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.SemiBold),
-            color = MaterialTheme.colorScheme.primary,
+            color = primaryText(),
             modifier = Modifier
                 .clip(RoundedCornerShape(999.dp))
                 .clickable(onClick = onRetry)

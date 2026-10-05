@@ -40,6 +40,7 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import cz.cleansia.core.settings.AppLocale
+import cz.cleansia.core.ui.theme.primaryIconOnContainer
 import cz.cleansia.customer.R
 import cz.cleansia.customer.core.settings.LanguagePreference
 import cz.cleansia.core.ui.theme.Poppins
@@ -142,7 +143,7 @@ private fun LanguageRow(
             Icon(
                 Icons.Outlined.Language,
                 null,
-                tint = MaterialTheme.colorScheme.primary,
+                tint = MaterialTheme.colorScheme.primaryIconOnContainer,
                 modifier = Modifier.size(18.dp),
             )
         }

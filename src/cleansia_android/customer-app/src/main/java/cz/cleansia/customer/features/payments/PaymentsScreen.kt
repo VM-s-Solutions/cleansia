@@ -62,6 +62,7 @@ import cz.cleansia.core.ui.components.CleansiaPrimaryButton
 import cz.cleansia.core.ui.components.CleansiaTextButton
 import cz.cleansia.core.ui.state.ActionState
 import cz.cleansia.core.ui.theme.Poppins
+import cz.cleansia.core.ui.theme.primaryIconOnContainer
 import cz.cleansia.customer.R
 import cz.cleansia.customer.core.payments.Receivable
 import cz.cleansia.customer.core.payments.SavedCard
@@ -324,7 +325,7 @@ private fun LeadingIcon(icon: ImageVector) {
         Icon(
             imageVector = icon,
             contentDescription = null,
-            tint = MaterialTheme.colorScheme.primary,
+            tint = MaterialTheme.colorScheme.primaryIconOnContainer,
             modifier = Modifier.size(22.dp),
         )
     }

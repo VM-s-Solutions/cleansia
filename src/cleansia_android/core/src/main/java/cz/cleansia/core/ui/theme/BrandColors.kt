@@ -40,6 +40,14 @@ val ColorScheme.primaryText: Color
 val ColorScheme.primaryTextOnContainer: Color
     get() = if (surface.luminance() < 0.5f) onPrimaryContainer else PrimaryTextLight
 
+/**
+ * An icon on the primaryContainer disc — a halo, a row's leading badge, a round call button. A light scheme
+ * keeps the primary (sky-600 on sky-100, 3.57:1); a dark one gives onPrimaryContainer (sky-100 on sky-700,
+ * 5.17:1), because the dark primary, sky-400, reads 2.77:1 on its own container, under the 3:1 a graphic needs.
+ */
+val ColorScheme.primaryIconOnContainer: Color
+    get() = if (surface.luminance() < 0.5f) onPrimaryContainer else primary
+
 /** [ColorScheme.primaryText] of the theme in force. */
 @Composable
 @ReadOnlyComposable

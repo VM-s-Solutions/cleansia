@@ -41,6 +41,7 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import cz.cleansia.core.ui.theme.primaryIconOnContainer
 import cz.cleansia.customer.LocalAppSettings
 import cz.cleansia.customer.R
 import cz.cleansia.customer.core.settings.AppSettingsRepository
@@ -141,7 +142,7 @@ private fun ThemeOptionRow(
                 .background(MaterialTheme.colorScheme.primaryContainer, CircleShape),
             contentAlignment = Alignment.Center,
         ) {
-            Icon(option.icon, null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(22.dp))
+            Icon(option.icon, null, tint = MaterialTheme.colorScheme.primaryIconOnContainer, modifier = Modifier.size(22.dp))
         }
         Spacer(Modifier.width(12.dp))
         Column(modifier = Modifier.weight(1f)) {

@@ -63,10 +63,38 @@ class PrimaryTextTest {
         val fill = Regex("""(?:background\(|color = )MaterialTheme\.colorScheme\.primaryContainer(?![.\w])""")
         val offenders = sources.flatMap { file ->
             fill.findAll(file.text).filter { match ->
-                textsOnFill(file.text, match.range.first).any { BLUE_TEXT.containsMatchIn(it) }
+                drawnOnFill("Text", file.text, match.range.first).any { BLUE_TEXT.containsMatchIn(it) }
             }.map { match -> "${file.module}/${file.rel}:${file.text.substring(0, match.range.first).count { it == '\n' } + 1}" }
         }
         assertEquals(emptyList<String>(), offenders)
+    }
+
+    /**
+     * An icon on the primaryContainer disc (F2): the dark primary, sky-400, is 2.77:1 on its own container,
+     * under the 3:1 a graphic needs, so dark mode draws onPrimaryContainer there; light mode keeps the primary.
+     */
+    @Test
+    fun `an icon on the primary container reads 3 to 1 in both schemes, light mode unchanged`() {
+        assertEquals(light.primary, light.primaryIconOnContainer)
+        assertEquals(dark.onPrimaryContainer, dark.primaryIconOnContainer)
+        assertTrue(contrast(dark.primary, dark.primaryContainer) < 3.0)
+        listOf(light, dark).forEach { scheme ->
+            val ratio = contrast(scheme.primaryIconOnContainer, scheme.primaryContainer)
+            assertTrue("${"%.2f".format(ratio)}:1", ratio >= 3.0)
+        }
+    }
+
+    /** No icon drawn straight on a primaryContainer fill takes the primary or the text blue: both are sky-400 in dark mode. */
+    @Test
+    fun `no icon on a primary-container fill takes the primary`() {
+        val fill = Regex("""(?:background\(|color = )MaterialTheme\.colorScheme\.primaryContainer(?![.\w])""")
+        val offenders = sources.flatMap { file ->
+            fill.findAll(file.text).filter { match ->
+                drawnOnFill("Icon", file.text, match.range.first).any { BLUE_TINT.containsMatchIn(it) }
+            }.map { match -> "${file.module}/${file.rel}:${file.text.substring(0, match.range.first).count { it == '\n' } + 1}" }
+        }
+        assertEquals(emptyList<String>(), offenders)
+        assertTrue(sources.count { it.text.contains("tint = MaterialTheme.colorScheme.primaryIconOnContainer") } >= 15)
     }
 
     @Test
@@ -253,18 +281,18 @@ class PrimaryTextTest {
         }.toList()
 
     /**
-     * The argument lists of the texts drawn on the fill at [at]: the Text calls in the trailing lambda of the
-     * call whose argument list holds it — or, when that call is a `Text` wearing the fill in its own
-     * `Modifier.background(...)` (CleansiaSectionHeader's badge), that Text itself.
+     * The argument lists of the [name] calls (texts, icons) drawn on the fill at [at]: those in the trailing
+     * lambda of the call whose argument list holds it — or, when that call is itself a [name] wearing the fill
+     * in its own `Modifier.background(...)` (CleansiaSectionHeader's badge), that call.
      */
-    private fun textsOnFill(text: String, at: Int): List<String> {
+    private fun drawnOnFill(name: String, text: String, at: Int): List<String> {
         var open = enclosingParen(text, at)
         if (callee(text, open) == "background") open = enclosingParen(text, open)
         val argsEnd = closing(text, open + 1, '(', ')')
-        if (callee(text, open) == "Text") return listOf(text.substring(open + 1, argsEnd - 1))
+        if (callee(text, open) == name) return listOf(text.substring(open + 1, argsEnd - 1))
         if (!text.substring(argsEnd).trimStart().startsWith("{")) return emptyList()
         val brace = text.indexOf('{', argsEnd)
-        return calls("Text", text.substring(brace + 1, closing(text, brace + 1, '{', '}') - 1)).map { it.args }
+        return calls(name, text.substring(brace + 1, closing(text, brace + 1, '{', '}') - 1)).map { it.args }
     }
 
     /** The `(` of the call whose argument list holds [at]. */
@@ -312,6 +340,7 @@ class PrimaryTextTest {
         val BARE_PRIMARY_CONTENT = Regex("""contentColor\s*=\s*$BARE""")
         val BARE_PRIMARY_COLOR = Regex("""(?:^|[\s,(])color\s*=\s*[^\n]*$BARE""")
         val BARE_PRIMARY_TINT = Regex("""\btint\s*=\s*$BARE""")
+        val BLUE_TINT = Regex("""\btint\s*=\s*[^\n]*(?:$BARE|(?<![\w.])primaryText\(\)|colorScheme\.primaryText\b)""")
         val BLUE_TEXT = Regex("""(?:^|[\s,(])color\s*=\s*[^\n]*(?:$BARE|(?<![\w.])primaryText\(\)|colorScheme\.primaryText\b)""")
     }
 }

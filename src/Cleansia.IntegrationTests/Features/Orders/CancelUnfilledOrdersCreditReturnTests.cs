@@ -163,6 +163,7 @@ public class CancelUnfilledOrdersCreditReturnTests(PostgresContainerFixture fixt
             new CleanerNoShowCancellation(
                 new CreditAccountRepository(ctx),
                 NewRefundService(ctx),
+                new RefundRepository(ctx),
                 new NotificationProducer(new UserNotificationRepository(ctx), new OutboxPendingDispatch(ctx), new UserRepository(ctx), NullLogger<NotificationProducer>.Instance),
                 new GuestOrderAccessTokenIssuer(new GuestOrderAccessTokenRepository(ctx)),
                 new OutboxPendingDispatch(ctx),
@@ -475,8 +476,9 @@ public class CancelUnfilledOrdersCreditReturnTests(PostgresContainerFixture fixt
 
     /// <summary>
     /// A complaint on the order was already settled in 200 of credit when nobody turned up. Stripe refuses
-    /// the sweep's refund, so the applied credit comes back now net of the settlement, 300 of the 500; the
-    /// hourly re-drive then holds the card to what the sale has left. 2000 goes back in all, never more.
+    /// the sweep's 1350 card refund of the 1800 left, and since it may yet have gone through it counts as
+    /// given back: 450 of the credit comes back now. The hourly re-drive holds the card to the 1300 still
+    /// left and returns the last 50 of credit on its own leg. 2000 goes back in all, never more.
     /// </summary>
     [Fact]
     public async Task A_No_Show_After_A_Complaint_Settled_In_Credit_Returns_No_More_Than_The_Price()
@@ -492,7 +494,7 @@ public class CancelUnfilledOrdersCreditReturnTests(PostgresContainerFixture fixt
 
         var (returns, _, refund, _) = await ReadAsync(userId);
         var returned = Assert.Single(returns);
-        Assert.Equal(300m, returned.Amount);
+        Assert.Equal(450m, returned.Amount);
         Assert.Equal($"credit-return:order-ended-unpaid:{OrderId}", returned.IdempotencyKey);
         Assert.Equal(RefundStatus.Pending, refund!.Status);
 

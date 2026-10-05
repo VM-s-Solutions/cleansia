@@ -77,7 +77,11 @@ public sealed class CustomerOrderCancellation(
 
         if (paymentStatusAtCancel != PaymentStatus.Paid && !refundInitiated)
         {
-            await creditAccountRepository.ReturnUnpaidOrderCreditAsync(order, actorId, cancellationToken);
+            await creditAccountRepository.ReturnUnpaidOrderCreditAsync(
+                order,
+                await refundRepository.GetSucceededRefundTotalForOrderAsync(order.Id, cancellationToken),
+                actorId,
+                cancellationToken);
         }
 
         if (!order.TookNoPayment && assessment.FeeAmount > 0m)
@@ -166,12 +170,18 @@ public sealed class CustomerOrderCancellation(
         }
 
         // The card leg waits for the re-drive; the credit leg comes back now, on the refund's own key, so
-        // the re-drive's credit leg finds it already returned.
+        // the re-drive's credit leg finds it already returned. It is the credit share of the same held slice
+        // the seam froze the card row from, so the two legs give back that slice and no other.
         async Task ReturnCreditShareAsync(RefundRequest request)
         {
-            var alreadyReturned = await creditAccountRepository.GetReturnedTotalForOrderAsync(order.Id, cancellationToken)
-                + await creditAccountRepository.GetDisputeSettledTotalForOrderAsync(order.Id, cancellationToken);
-            var (_, creditShare) = RefundService.SplitAcrossTenders(order, request.Amount, alreadyReturned);
+            var alreadyReturned = await creditAccountRepository.GetReturnedTotalForOrderAsync(order.Id, cancellationToken);
+            var held = RefundService.HeldToWhatIsLeft(
+                order,
+                request.Amount,
+                await refundRepository.GetSucceededRefundTotalForOrderAsync(order.Id, cancellationToken),
+                alreadyReturned,
+                await creditAccountRepository.GetDisputeSettledTotalForOrderAsync(order.Id, cancellationToken));
+            var (_, creditShare) = RefundService.SplitAcrossTenders(order, held, alreadyReturned);
             await creditAccountRepository.ReturnCreditAsync(
                 order, creditShare, RefundService.BuildRefundKey(request), actorId, cancellationToken);
         }

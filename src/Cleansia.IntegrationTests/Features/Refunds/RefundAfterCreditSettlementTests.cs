@@ -7,6 +7,7 @@ using Cleansia.Core.Domain.Credit;
 using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Internationalization;
 using Cleansia.Core.Domain.Orders;
+using Cleansia.Core.Domain.Payments;
 using Cleansia.Core.Domain.Repositories;
 using Cleansia.Core.Domain.Users;
 using Cleansia.Infra.Common.Validations;
@@ -14,6 +15,7 @@ using Cleansia.Infra.Database;
 using Cleansia.Infra.Database.Repositories;
 using Cleansia.TestUtilities;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Diagnostics;
 using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
 using Npgsql;
@@ -37,10 +39,11 @@ public class RefundAfterCreditSettlementTests(PostgresContainerFixture fixture) 
 
     private readonly Mock<IStripeClient> _stripe = new();
 
-    private CleansiaDbContext NewContext()
+    private CleansiaDbContext NewContext(params IInterceptor[] interceptors)
     {
         var options = new DbContextOptionsBuilder<CleansiaDbContext>()
             .UseNpgsql(Fixture.GetConnectionString())
+            .AddInterceptors(interceptors)
             .Options;
         return new CleansiaDbContext(
             options,
@@ -129,9 +132,10 @@ public class RefundAfterCreditSettlementTests(PostgresContainerFixture fixture) 
         return userId;
     }
 
-    private async Task<BusinessResult<RefundResult>> RefundAsync(decimal amount, string refundRequestId)
+    private async Task<BusinessResult<RefundResult>> RefundAsync(
+        decimal amount, string refundRequestId, params IInterceptor[] interceptors)
     {
-        await using var ctx = NewContext();
+        await using var ctx = NewContext(interceptors);
         var factory = new Mock<IStripeClientFactory>();
         factory.Setup(f => f.CreateClient()).Returns(_stripe.Object);
         var service = new RefundService(
@@ -253,6 +257,58 @@ public class RefundAfterCreditSettlementTests(PostgresContainerFixture fixture) 
         Assert.Equal(400m, given.CreditReturned);
         Assert.Equal(2000m, given.Total);
         Assert.Equal(given.LedgerSum, given.Balance);
+    }
+
+    /// <summary>
+    /// The admin's full refund of the 2000 sale above went through at Stripe for 1200 and its 400 credit leg
+    /// came back, but the commit recording it was lost. The retry finds the row still pending and sends Stripe
+    /// the same 1200 on the same key, which Stripe answers with the refund it already made; a smaller amount
+    /// would be refused on that key every time. 1200 + 400 + 400 is the price.
+    /// </summary>
+    [Fact]
+    public async Task A_Full_Refund_Retried_After_Its_Record_Was_Lost_Sends_Stripe_The_Same_Amount()
+    {
+        await ResetAsync();
+        var userId = await SeedAsync(total: 2000m, creditApplied: 500m, settledInCredit: 400m);
+        var stripeCalls = new List<decimal>();
+        _stripe.Setup(s => s.RefundPaymentIntentAsync(
+                PaymentIntentId, It.IsAny<decimal>(), FullKey, It.IsAny<CancellationToken>()))
+            .Callback<string, decimal, string, CancellationToken>((_, amount, _, _) => stripeCalls.Add(amount))
+            .Returns(Task.CompletedTask);
+
+        await Assert.ThrowsAsync<DbUpdateException>(() => RefundAsync(2000m, "full", new LoseTheSucceededRecord()));
+
+        await using (var ctx = NewContext())
+        {
+            var refund = await ctx.Refunds.IgnoreQueryFilters().AsNoTracking().SingleAsync();
+            Assert.Equal(RefundStatus.Pending, refund.Status);
+            Assert.Equal(1200m, refund.Amount);
+        }
+
+        var retried = await RefundAsync(2000m, "full");
+
+        Assert.True(retried.IsSuccess, retried.Error?.Message);
+        Assert.Equal([1200m, 1200m], stripeCalls);
+        var given = await ReadAsync(userId);
+        Assert.Equal(1200m, given.Card);
+        Assert.Equal(400m, given.CreditReturned);
+        Assert.Equal(2000m, given.Total);
+        Assert.Equal(given.LedgerSum, given.Balance);
+    }
+
+    private sealed class LoseTheSucceededRecord : SaveChangesInterceptor
+    {
+        public override ValueTask<InterceptionResult<int>> SavingChangesAsync(
+            DbContextEventData eventData, InterceptionResult<int> result, CancellationToken cancellationToken = default)
+        {
+            if (eventData.Context!.ChangeTracker.Entries<Refund>()
+                .Any(e => e.State == EntityState.Modified && e.Entity.Status == RefundStatus.Succeeded))
+            {
+                throw new DbUpdateException("The connection was lost before the refund was recorded.");
+            }
+
+            return ValueTask.FromResult(result);
+        }
     }
 
     private sealed class FixedTenantProvider(string? tenantId) : ITenantProvider

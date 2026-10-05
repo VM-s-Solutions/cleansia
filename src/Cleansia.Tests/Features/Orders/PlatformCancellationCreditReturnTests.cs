@@ -20,10 +20,12 @@ public sealed class PlatformCancellationCreditReturnTests
     private const string UserId = "user-platform-credit";
 
     private readonly Mock<ICreditAccountRepository> _credit = new();
+    private readonly Mock<IRefundRepository> _refunds = new();
 
     private PlatformOrderCancellation Cancellation() =>
         new(
             Mock.Of<IRefundService>(),
+            _refunds.Object,
             _credit.Object,
             Mock.Of<ILoyaltyService>(),
             Mock.Of<INotificationProducer>(),
@@ -86,5 +88,26 @@ public sealed class PlatformCancellationCreditReturnTests
         _credit.Verify(c => c.TryReturnAsync(
             It.IsAny<string>(), It.IsAny<string>(), It.IsAny<decimal>(), It.IsAny<string>(), It.IsAny<string>(),
             It.IsAny<CancellationToken>(), It.IsAny<string?>(), It.IsAny<string?>()), Times.Never);
+    }
+
+    /// <summary>
+    /// A partial refund of 800 gave back 560 by card and 240 in credit, and a complaint was settled in 150 of
+    /// credit. Of the 1000 sale 50 is left, so 50 of the 60 credit still out comes back, not all 60.
+    /// </summary>
+    [Fact]
+    public async Task A_Partly_Refunded_Order_With_A_Settlement_Is_Held_To_What_The_Sale_Has_Left_After_Its_Card_Refunds()
+    {
+        var order = CardOrder(PaymentStatus.PartiallyRefunded);
+        _refunds.Setup(r => r.GetSucceededRefundTotalForOrderAsync(order.Id, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(560m);
+        _credit.Setup(c => c.GetReturnedTotalForOrderAsync(order.Id, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(240m);
+        _credit.Setup(c => c.GetDisputeSettledTotalForOrderAsync(order.Id, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(150m);
+
+        await Cancellation().CancelAsync(order, "admin-1", CancelledBy.Admin, null,
+            RefundReason.CustomerCancellation, CancellationToken.None);
+
+        VerifyReturned(order, 50m);
     }
 }

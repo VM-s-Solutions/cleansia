@@ -59,13 +59,21 @@ public sealed class RefundService(
         // request would have its card share clamped by the ceiling while its credit share was
         // recomputed from the full CreditAppliedAmount, and a customer could be handed their credit
         // twice by asking for a full refund twice under two different purposes.
+        var creditOnThisKey = await creditAccountRepository.GetReturnedForRefundAsync(refundKey, cancellationToken);
         var creditAlreadyReturned = await creditAccountRepository.GetReturnedTotalForOrderAsync(
-            order.Id, cancellationToken);
+            order.Id, cancellationToken) - creditOnThisKey;
         var settledInCredit = await creditAccountRepository.GetDisputeSettledTotalForOrderAsync(
             order.Id, cancellationToken);
         var held = await HeldToWhatIsLeftAsync(
             order, request.Amount, creditAlreadyReturned, settledInCredit, cancellationToken);
         var split = SplitAcrossTenders(order, held, creditAlreadyReturned);
+        if (creditOnThisKey > 0m)
+        {
+            // This key's credit leg already came back and is part of the slice: the card takes only what the
+            // slice has left after it, which is the very card share it had when nothing has moved since, so
+            // Stripe sees the same amount on the same key.
+            split = (Math.Min(split.Card, held - creditOnThisKey), 0m);
+        }
 
         Refund refund;
         if (existing is not null)
@@ -191,20 +199,24 @@ public sealed class RefundService(
 
         refund.ClampAmountTo(refundable);
 
-        // The row keeps only the card leg, so the slice of the sale it refunds is read back through the
-        // same proportion SplitAcrossTenders applied; a credit leg the first attempt already returned on
-        // this key is not returned again.
-        var cardCharged = CardChargedAmount(order);
-        var slice = cardCharged > 0m
-            ? Math.Round(refund.Amount * order.TotalPrice / cardCharged, 2, MidpointRounding.AwayFromZero)
-            : refund.Amount;
+        // The row keeps only the card leg. A credit leg the first attempt already returned on this key is the
+        // rest of the slice it refunds, and is not returned again; otherwise the slice is read back through
+        // the same proportion SplitAcrossTenders applied.
+        var creditOnThisKey = await creditAccountRepository.GetReturnedForRefundAsync(
+            refund.RefundKey, cancellationToken);
         var creditAlreadyReturned = await creditAccountRepository.GetReturnedTotalForOrderAsync(
-            order.Id, cancellationToken);
+            order.Id, cancellationToken) - creditOnThisKey;
         var settledInCredit = await creditAccountRepository.GetDisputeSettledTotalForOrderAsync(
             order.Id, cancellationToken);
+        var cardCharged = CardChargedAmount(order);
+        var slice = creditOnThisKey > 0m || cardCharged <= 0m
+            ? refund.Amount + creditOnThisKey
+            : Math.Round(refund.Amount * order.TotalPrice / cardCharged, 2, MidpointRounding.AwayFromZero);
         var held = await HeldToWhatIsLeftAsync(
             order, slice, creditAlreadyReturned, settledInCredit, cancellationToken);
-        var split = SplitAcrossTenders(order, held, creditAlreadyReturned);
+        var split = creditOnThisKey > 0m
+            ? (Card: held - creditOnThisKey, Credit: 0m)
+            : SplitAcrossTenders(order, held, creditAlreadyReturned);
 
         // Only a held slice changes the row: a re-drive with nothing held keeps its exact amount, so Stripe
         // sees the same parameters on the same idempotency key.
@@ -355,19 +367,26 @@ public sealed class RefundService(
         decimal requested,
         decimal creditAlreadyReturned,
         decimal settledInCredit,
-        CancellationToken cancellationToken)
-    {
-        if (settledInCredit <= 0m)
-        {
-            return requested;
-        }
+        CancellationToken cancellationToken) =>
+        settledInCredit <= 0m
+            ? requested
+            : HeldToWhatIsLeft(
+                order,
+                requested,
+                await refundRepository.GetSucceededRefundTotalForOrderAsync(order.Id, cancellationToken),
+                creditAlreadyReturned,
+                settledInCredit);
 
-        var left = order.TotalPrice
-            - await refundRepository.GetSucceededRefundTotalForOrderAsync(order.Id, cancellationToken)
-            - creditAlreadyReturned
-            - settledInCredit;
-        return Math.Min(requested, Math.Max(0m, left));
-    }
+    /// <summary>
+    /// The pure half of <see cref="HeldToWhatIsLeftAsync"/>, shared with the cancellation that returns a
+    /// pending refund's credit leg ahead of its card leg: the two must hold the same slice, or the legs
+    /// disagree about how much of the sale this refund gives back.
+    /// </summary>
+    public static decimal HeldToWhatIsLeft(
+        Order order, decimal requested, decimal cardRefunded, decimal creditReturned, decimal settledInCredit) =>
+        settledInCredit <= 0m
+            ? requested
+            : Math.Min(requested, Math.Max(0m, order.TotalPrice - cardRefunded - creditReturned - settledInCredit));
 
     /// <summary>
     /// How a slice of the sale divides across the two tenders that settled it.

@@ -111,7 +111,7 @@ public class AdminCancelOrderAsLockout
             decimal? receivableAmount = null;
             if (order.PaymentType == PaymentType.Cash && order.TookNoPayment)
             {
-                await creditAccountRepository.ReturnUnpaidOrderCreditAsync(order, adminId, cancellationToken);
+                await creditAccountRepository.ReturnUnpaidOrderCreditAsync(order, cardRefunded: 0m, adminId, cancellationToken);
                 if (!guest && order.TotalPrice > 0m)
                 {
                     receivableRepository.Add(Receivable.ForLockout(order, order.TotalPrice));

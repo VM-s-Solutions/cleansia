@@ -67,9 +67,13 @@ public static class CreditUnwind
     /// without the card being charged — the stale-order sweep, the recurring auto-cancel, an expired
     /// Stripe session, or a customer cancelling before they paid — or ended with no card refund of its
     /// own here: a no-show cancellation whose refund is left to the re-drive, or a platform cancellation
-    /// of an order already partly refunded. A partial refund's credit leg is not returned twice, and a
-    /// complaint on the order already settled in credit counts as credit given back, so the order never
-    /// returns more than the credit it took.
+    /// of an order already partly refunded. A partial refund's credit leg is not returned twice.
+    ///
+    /// <para><b>Never more than was paid.</b> A complaint settled in credit gave part of the sale back on
+    /// neither tender. On an order that took no payment the credit is all that was paid, so the settlement
+    /// comes off it in full. On one that took a card payment the whole price was paid, so the credit is held
+    /// to what the sale has left after <paramref name="cardRefunded"/>, the credit already returned and the
+    /// settlement; netting the settlement off the credit there would keep credit the customer is owed.</para>
     ///
     /// <para><b>All of it, with no cancellation fee taken out.</b> On an unpaid order the platform
     /// collects nothing: there is no charge surface, so the fee the assessor computed is unrecoverable
@@ -83,6 +87,7 @@ public static class CreditUnwind
     public static async Task<bool> ReturnUnpaidOrderCreditAsync(
         this ICreditAccountRepository creditAccountRepository,
         Order order,
+        decimal cardRefunded,
         string actorId,
         CancellationToken cancellationToken)
     {
@@ -93,9 +98,12 @@ public static class CreditUnwind
 
         var alreadyReturned = await creditAccountRepository.GetReturnedTotalForOrderAsync(order.Id, cancellationToken);
         var settledInCredit = await creditAccountRepository.GetDisputeSettledTotalForOrderAsync(order.Id, cancellationToken);
+        var paid = order.TookNoPayment ? order.CreditAppliedAmount : order.TotalPrice;
         return await creditAccountRepository.ReturnCreditAsync(
             order,
-            order.CreditAppliedAmount - alreadyReturned - settledInCredit,
+            Math.Min(
+                order.CreditAppliedAmount - alreadyReturned,
+                paid - cardRefunded - alreadyReturned - settledInCredit),
             $"order-ended-unpaid:{order.Id}",
             actorId,
             cancellationToken);

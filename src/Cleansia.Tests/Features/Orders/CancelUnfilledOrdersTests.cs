@@ -165,7 +165,7 @@ public class CancelUnfilledOrdersTests
 
     private CancelUnfilledOrders.Handler Handler() =>
         new(_orders.Object,
-            new CleanerNoShowCancellation(_credit.Object, _refunds.Object, _notifications.Object,
+            new CleanerNoShowCancellation(_credit.Object, _refunds.Object, Mock.Of<IRefundRepository>(), _notifications.Object,
                 new GuestOrderAccessTokenIssuer(_guestTokens.Object), new RecordingDispatch(_enqueued),
                 new CapturingLogger<CleanerNoShowCancellation>(_log)),
             _tenants.Object, _uow.Object,

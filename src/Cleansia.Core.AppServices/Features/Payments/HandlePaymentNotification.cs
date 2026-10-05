@@ -457,7 +457,7 @@ public class HandlePaymentNotification
             // would lose credit for nothing. Keyed on the order id, so a re-delivered webhook and the
             // stale-order sweep that may also reach this order return it exactly once.
             await creditAccountRepository.ReturnUnpaidOrderCreditAsync(
-                order, SystemActor, cancellationToken);
+                order, cardRefunded: 0m, SystemActor, cancellationToken);
 
             if (!string.IsNullOrEmpty(order.UserId))
             {

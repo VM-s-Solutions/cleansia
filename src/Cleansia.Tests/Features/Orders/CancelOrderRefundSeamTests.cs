@@ -32,6 +32,7 @@ public class CancelOrderRefundSeamTests
     private readonly Mock<IOrderRepository> _orderRepository = new();
     private readonly Mock<IUserSessionProvider> _session = new();
     private readonly Mock<IRefundService> _refundService = new();
+    private readonly Mock<IRefundRepository> _refundRepository = new();
     private readonly Mock<ICreditAccountRepository> _creditAccountRepository = new();
     private readonly Mock<ILoyaltyService> _loyaltyService = new();
     private readonly Mock<ICancellationPolicyResolver> _policyResolver = new();
@@ -60,7 +61,7 @@ public class CancelOrderRefundSeamTests
             new CustomerOrderCancellation(
                 Mock.Of<ITenantProvider>(),
                 _refundService.Object,
-                Mock.Of<IRefundRepository>(),
+                _refundRepository.Object,
                 Mock.Of<IReceivableRepository>(),
                 _creditAccountRepository.Object,
                 _loyaltyService.Object,
@@ -258,8 +259,9 @@ public class CancelOrderRefundSeamTests
     }
 
     /// <summary>
-    /// A complaint on the order was already settled in 200 of credit. With the card refund left pending,
-    /// the credit share that comes back now nets that settlement off: 100 of the 300 applied, not 300.
+    /// A complaint on the order was already settled in 200 of credit, so 800 of the 1000 is left. The seam
+    /// froze the card's 560 share of that 800; with the card refund left pending, the credit share of the
+    /// same 800 comes back now, 240, so the re-drive's two legs and the settlement add up to the price.
     /// </summary>
     [Fact]
     public async Task A_Stripe_Outage_After_A_Complaint_Settled_In_Credit_Returns_The_Credit_Share_Net_Of_It()
@@ -277,7 +279,37 @@ public class CancelOrderRefundSeamTests
 
         Assert.True(result.IsSuccess);
         Assert.True(result.Value!.RefundPending);
-        VerifyCreditShareReturnedOnTheRefundKey(order, 100m);
+        VerifyCreditShareReturnedOnTheRefundKey(order, 240m);
+    }
+
+    /// <summary>
+    /// A partly refunded order, 560 by card and 240 in credit of 800, with a complaint settled in 150 of credit,
+    /// takes no card refund on cancelling. Of the 1000 sale 50 is left, so 50 of the 60 credit still out comes
+    /// back, not all 60.
+    /// </summary>
+    [Fact]
+    public async Task A_Partly_Refunded_Order_Gets_Back_No_More_Credit_Than_The_Sale_Has_Left_After_Its_Card_Refunds()
+    {
+        var order = ArrangeCardPaidPendingOrder();
+        order.ApplyCredit(300m, UserId);
+        order.UpdatePaymentStatus(PaymentStatus.PartiallyRefunded);
+        _refundRepository
+            .Setup(r => r.GetSucceededRefundTotalForOrderAsync(OrderId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(560m);
+        _creditAccountRepository
+            .Setup(c => c.GetReturnedTotalForOrderAsync(OrderId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(240m);
+        _creditAccountRepository
+            .Setup(c => c.GetDisputeSettledTotalForOrderAsync(OrderId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(150m);
+
+        var result = await CreateHandler().Handle(new CancelOrder.Command(OrderId, null), CancellationToken.None);
+
+        Assert.True(result.IsSuccess);
+        _refundService.Verify(s => s.IssueRefundAsync(It.IsAny<RefundRequest>(), It.IsAny<CancellationToken>()), Times.Never);
+        _creditAccountRepository.Verify(c => c.TryReturnAsync(
+            UserId, order.CurrencyId, 50m, $"credit-return:order-ended-unpaid:{OrderId}", UserId,
+            It.IsAny<CancellationToken>(), OrderId, It.IsAny<string?>()), Times.Once);
     }
 
     [Fact]

@@ -125,6 +125,7 @@ public class CancelUnfilledOrdersApologyCurrencyTests(PostgresContainerFixture f
             new CleanerNoShowCancellation(
                 new CreditAccountRepository(ctx),
                 new NoRefunds(),
+                new RefundRepository(ctx),
                 new NotificationProducer(new UserNotificationRepository(ctx), new OutboxPendingDispatch(ctx), new UserRepository(ctx), Microsoft.Extensions.Logging.Abstractions.NullLogger<NotificationProducer>.Instance),
                 new GuestOrderAccessTokenIssuer(new GuestOrderAccessTokenRepository(ctx)),
                 new OutboxPendingDispatch(ctx),

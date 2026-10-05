@@ -21,6 +21,7 @@ namespace Cleansia.Core.AppServices.Features.Orders;
 public sealed class CleanerNoShowCancellation(
     ICreditAccountRepository creditAccountRepository,
     IRefundService refundService,
+    IRefundRepository refundRepository,
     INotificationProducer notificationProducer,
     GuestOrderAccessTokenIssuer guestAccessTokenIssuer,
     IPendingDispatch pending,
@@ -56,10 +57,18 @@ public sealed class CleanerNoShowCancellation(
         }
 
         // A refund of the whole sale returns the applied credit on its own leg. Without one the credit
-        // comes back here, now; the re-drive of a failed refund nets off what already went back.
+        // comes back here, now; the re-drive of a failed refund nets off what already went back. A card
+        // refund left to the re-drive counts as given back: Stripe may already have paid it.
         if (refundedAmount is null)
         {
-            await creditAccountRepository.ReturnUnpaidOrderCreditAsync(order, actorId, cancellationToken);
+            var pending = await refundRepository.GetByRefundKeyAsync(
+                RefundService.BuildRefundKey(NoShowRefund(order, actorId)), cancellationToken);
+            await creditAccountRepository.ReturnUnpaidOrderCreditAsync(
+                order,
+                await refundRepository.GetSucceededRefundTotalForOrderAsync(order.Id, cancellationToken)
+                    + (pending is { Status: RefundStatus.Pending } ? pending.Amount : 0m),
+                actorId,
+                cancellationToken);
         }
 
         var apology = await TryIssueApologyCreditAsync(order, actorId, cancellationToken);
@@ -72,6 +81,9 @@ public sealed class CleanerNoShowCancellation(
         return new Outcome(transition, refundedAmount, refundPending, apology);
     }
 
+    private static RefundRequest NoShowRefund(Order order, string actorId) =>
+        new(order.Id, order.TotalPrice, RefundReason.ServiceNotRendered, actorId);
+
     /// <summary>
     /// The full card refund: what it returned, or null when it did not go through. A failure is logged
     /// for a person and carried on from — the cancellation is still right, and the pending refund row is
@@ -82,9 +94,7 @@ public sealed class CleanerNoShowCancellation(
         BusinessResult<RefundResult> refund;
         try
         {
-            refund = await refundService.IssueRefundAsync(
-                new RefundRequest(order.Id, order.TotalPrice, RefundReason.ServiceNotRendered, actorId),
-                cancellationToken);
+            refund = await refundService.IssueRefundAsync(NoShowRefund(order, actorId), cancellationToken);
         }
         catch (Exception ex) when (RefundService.IsStripeTransportFailure(ex, cancellationToken))
         {

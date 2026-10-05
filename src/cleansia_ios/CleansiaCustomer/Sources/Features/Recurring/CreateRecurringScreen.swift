@@ -347,6 +347,7 @@ private struct AddAddressRow: View {
                 Image(systemName: "plus")
                 Text(L10n.Recurring.createAddressAddNew)
                     .font(CleansiaTypography.bodyLarge)
+                    .foregroundColor(CleansiaColors.primaryText)
                 Spacer()
             }
             .foregroundColor(CleansiaColors.primary)

@@ -432,7 +432,7 @@ private struct TimeSlotChip: View {
     }
 
     private var textColor: Color {
-        if selected { return CleansiaColors.primary }
+        if selected { return CleansiaColors.primaryText }
         return enabled ? CleansiaColors.onSurface : CleansiaColors.onSurface.opacity(0.38)
     }
 

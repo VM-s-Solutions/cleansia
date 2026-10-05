@@ -18,7 +18,7 @@ struct RecentBookingsSection: View {
                 Button(action: onSeeAll) {
                     Text(L10n.Home.recentSeeAll)
                         .font(CleansiaTypography.labelLarge)
-                        .foregroundColor(CleansiaColors.primary)
+                        .foregroundColor(CleansiaColors.primaryText)
                 }
             }
             VStack(spacing: Spacing.xs) {

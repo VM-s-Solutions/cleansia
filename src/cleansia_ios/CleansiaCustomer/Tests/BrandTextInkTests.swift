@@ -5,7 +5,8 @@ import XCTest
 
 /// Brand-blue TEXT reads at 4.5:1 or more (finding 2026-10-05). The primary is sky-600 in light mode,
 /// 4.10:1 on white and less on every tinted ground, so text takes `CleansiaColors.primaryText`; fills,
-/// borders, icons and buttons keep the primary.
+/// borders, icons and the shared button components (`CleansiaTextLink`, `CleansiaOutlinedButton`) keep
+/// the primary. A text the app draws as its own button label ("See all", "Retry") is text, as on Android.
 final class BrandTextInkTests: XCTestCase {
     /// The light grounds the customer app draws blue text on: the card and sheet surface, the page, the
     /// primary container (the default-address and this-device badges, the cleaner's initial), the schedule
@@ -26,7 +27,8 @@ final class BrandTextInkTests: XCTestCase {
             ("12 % primary", over(primary, 0.12, surface)),
             ("14 % primary", over(primary, 0.14, surface)),
             ("20 % primary", over(primary, 0.20, surface)),
-            ("social proof", over(rgb(MembershipPalette.sky400), 0.12, page))
+            ("social proof", over(rgb(MembershipPalette.sky400), 0.12, page)),
+            ("in-review dispute pill", over(rgb(CleansiaColors.primaryText), 0.14, surface))
         ]
         let ink = rgb(CleansiaColors.primaryText)
         for (name, ground) in grounds {
@@ -36,18 +38,32 @@ final class BrandTextInkTests: XCTestCase {
         XCTAssertLessThan(contrast(primary, surface), 4.5, "the primary is not a text colour on white")
     }
 
-    /// No customer text is drawn in the primary any more. The four kept are text buttons, each the whole
-    /// label of its own button, which keep the brand colour with the rest of the buttons.
-    func testNoCustomerTextIsDrawnInThePrimaryExceptTextButtons() throws {
-        let buttons: Set = [
-            "Text(L10n.Home.recentSeeAll)",
-            "Text(L10n.Home.recurringSectionManage)",
-            "Text(L10n.Rewards.activityViewAll)",
-            "Text(retryTitle)"
-        ]
+    /// No customer `Text` sets the primary as its own colour any more.
+    func testNoCustomerTextIsDrawnInThePrimary() throws {
         let found = try primaryTexts()
 
-        XCTAssertEqual(Set(found.map(\.text)), buttons, found.map { "\($0.file): \($0.text)" }.joined(separator: "\n"))
+        XCTAssertTrue(found.isEmpty, found.map { "\($0.file): \($0.text)" }.joined(separator: "\n"))
+    }
+
+    /// The texts whose colour comes through a helper rather than their own modifier: the in-review
+    /// dispute pill, a picked arrival time, the confirm step's discount and total lines, and the add-address
+    /// rows, whose plus glyph keeps the primary from the row.
+    func testTheTextsColouredThroughAHelperTakeTheTextInk() throws {
+        XCTAssertEqual(DisputeStatusPresentation.color(2), CleansiaColors.primaryText)
+        XCTAssertEqual(DisputeStatusPresentation.color(3), CleansiaColors.primaryText)
+        let whenWhere = try compactSource("Booking/WhenWhere/WhenWhereStep.swift")
+        XCTAssertTrue(whenWhere.contains("privatevartextColor:Color{ifselected{returnCleansiaColors.primaryText}"))
+        let confirm = try compactSource("Booking/Confirm/ConfirmStepComponents.swift")
+        XCTAssertTrue(confirm.contains("case.success:CleansiaColors.primaryTextcase.total:CleansiaColors.onSurface"))
+        XCTAssertTrue(confirm.contains("case.success:CleansiaColors.primaryTextcase.total:CleansiaColors.primaryText"))
+        let addRowLabel = ".font(CleansiaTypography.bodyLarge).foregroundColor(CleansiaColors.primaryText)Spacer()"
+        for path in [
+            "Recurring/CreateRecurringScreen.swift",
+            "Booking/WhenWhere/AddressPicker/BookingSavedAddressChooser.swift",
+            "Addresses/AddressManagerView.swift"
+        ] {
+            XCTAssertTrue(try compactSource(path).contains(addRowLabel), path)
+        }
     }
 
     // MARK: - Helpers
@@ -91,6 +107,15 @@ final class BrandTextInkTests: XCTestCase {
             }
         }
         return found
+    }
+
+    private func compactSource(_ path: String) throws -> String {
+        let url = URL(fileURLWithPath: #filePath)
+            .deletingLastPathComponent()
+            .deletingLastPathComponent()
+            .appendingPathComponent("Sources/Features")
+            .appendingPathComponent(path)
+        return try String(contentsOf: url, encoding: .utf8).components(separatedBy: .whitespacesAndNewlines).joined()
     }
 
     private func parens(_ line: String) -> Int {

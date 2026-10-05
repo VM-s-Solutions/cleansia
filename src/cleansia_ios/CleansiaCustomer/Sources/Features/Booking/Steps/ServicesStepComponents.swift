@@ -467,7 +467,7 @@ struct CatalogMessageView: View {
                 Button(action: onRetry) {
                     Text(retryTitle)
                         .font(CleansiaTypography.labelLarge)
-                        .foregroundColor(CleansiaColors.primary)
+                        .foregroundColor(CleansiaColors.primaryText)
                         .padding(.horizontal, Spacing.m)
                         .padding(.vertical, Spacing.xs)
                 }

@@ -206,7 +206,7 @@ struct ActivityPreviewCard: View {
                 Button(action: onOpenActivity) {
                     Text(L10n.Rewards.activityViewAll)
                         .font(CleansiaTypography.labelLarge)
-                        .foregroundColor(CleansiaColors.primary)
+                        .foregroundColor(CleansiaColors.primaryText)
                 }
                 .buttonStyle(.plain)
                 .padding(.top, Spacing.xxs)

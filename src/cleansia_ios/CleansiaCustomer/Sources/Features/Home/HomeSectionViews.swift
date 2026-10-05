@@ -114,7 +114,7 @@ struct RecurringSchedulesSection: View {
                 Button(action: onManage) {
                     Text(L10n.Home.recurringSectionManage)
                         .font(CleansiaTypography.labelLarge)
-                        .foregroundColor(CleansiaColors.primary)
+                        .foregroundColor(CleansiaColors.primaryText)
                 }
             }
             VStack(spacing: Spacing.xs) {

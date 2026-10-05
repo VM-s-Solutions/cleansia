@@ -247,7 +247,7 @@ private struct AmountRow: View {
     private var labelColor: Color {
         switch emphasis {
         case .normal: CleansiaColors.onSurfaceVariant
-        case .success: CleansiaColors.primary
+        case .success: CleansiaColors.primaryText
         case .total: CleansiaColors.onSurface
         }
     }
@@ -255,8 +255,8 @@ private struct AmountRow: View {
     private var valueColor: Color {
         switch emphasis {
         case .normal: CleansiaColors.onSurface
-        case .success: CleansiaColors.primary
-        case .total: CleansiaColors.primary
+        case .success: CleansiaColors.primaryText
+        case .total: CleansiaColors.primaryText
         }
     }
 }

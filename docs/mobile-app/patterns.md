@@ -782,6 +782,16 @@ not set `focusedLabelColor = primaryText()`. Read off the iOS 26.3 screenshots, 
 3.30 to 4.60:1 (iOS `463c44776`, Android `a0406cc0d`). The partner and admin websites' floating label
 moved with [the web's primary](/architecture/frontend#web-primary).
 
+**The subtle slide-to-confirm's label takes it too, on iOS** (finding 2026-10-05). Core's
+`SlideToConfirm` in its default subtle style, which the partner app uses for its order actions, the
+orders list's *take* and the contract sheet, wrote its label in the primary on a 12 % wash of the
+primary, 3.52:1 in light mode. The label now takes the text ink, 5.10:1 on that wash, and the wash and
+the thumb keep the primary; dark mode reads 5.43:1, the text ink there being the primary. The
+prominent style, the customer's booking slide, is a filled track and is unchanged, and so is Android's
+partner `SlideToCommit`, a filled track whose label is a filled button's. Core's
+`ComponentTextInkTests` pins the label, track and thumb and measures the label on its wash in both
+modes (iOS `d6acb7cb6`).
+
 **Blue text on the light-blue container has an ink of its own in dark mode** (finding 2026-10-05).
 `primaryContainer` is sky-100 in light mode and sky-700 in dark, and the text ink on it reads 5.17:1 in
 light mode but 2.77:1 in dark, sky-400 on sky-700. Text drawn straight on that container takes

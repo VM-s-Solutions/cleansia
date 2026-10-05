@@ -15,10 +15,12 @@ namespace Cleansia.Core.AppServices.Features.Receivables;
 /// <summary>
 /// Charges each open receivable once to the customer's saved card, with the customer absent (owner ruling
 /// 2026-09-28, decisions 16 to 18) — and does nothing at all unless <c>Payments:OffSessionChargesEnabled</c>
-/// is on, which it stays until the terms carry the lawyer's consent wording. The outcome arrives by
+/// is on. It stays off: switching it on would contradict the owner's ruling of 2026-10-04 that no saved card
+/// is charged for a fee or unpaid cash, so it is not a step waiting on the lawyer's wording. Even switched
+/// on, it charges only a card saved under a <c>card-guarantee-*</c> consent. The outcome arrives by
 /// webhook: a success settles the receivable, a decline or an authentication demand e-mails the customer
 /// a pay link. A pay link the customer holds is closed before the charge, and one they have already paid is
-/// not charged again. A customer with no usable card in the currency is not charged, and the receivable
+/// not charged again. A customer with no such card in the currency is not charged, and the receivable
 /// stays open for their own pay link and the administrators.
 /// </summary>
 public class ChargeOpenReceivables
@@ -30,6 +32,13 @@ public class ChargeOpenReceivables
     public record Response(int Attempted, int Charged);
 
     private const int BatchSize = 50;
+
+    /// <summary>
+    /// Only the card-guarantee consents ever told the customer a saved card could be charged without them;
+    /// the consent printed with Save this card since <c>saved-card-draft-2026-10-05</c> promises it never is
+    /// unless they pay with it.
+    /// </summary>
+    private const string CardGuaranteeConsentPrefix = "card-guarantee-";
 
     public class Handler(
         IPaymentsConfig paymentsConfig,
@@ -70,7 +79,8 @@ public class ChargeOpenReceivables
 
                 var card = (await savedCardRepository.GetCapturedForUserInCurrencyAsync(
                         receivable.UserId, receivable.CurrencyId, cancellationToken))
-                    .FirstOrDefault(c => c.IsUsableOn(now));
+                    .FirstOrDefault(c => c.IsUsableOn(now)
+                        && c.ConsentTextVersion.StartsWith(CardGuaranteeConsentPrefix, StringComparison.Ordinal));
 
                 // The attempt is committed before the charge, so no later run charges it again whatever
                 // happens to the call; the attempt number keys the charge, so a retry of it replays it.
@@ -81,7 +91,7 @@ public class ChargeOpenReceivables
                 if (card is null)
                 {
                     logger.LogWarning(
-                        "Receivable {ReceivableId} has no usable saved card in its currency; left open for the customer's pay link",
+                        "Receivable {ReceivableId} has no usable card in its currency saved under a card-guarantee consent; left open for the customer's pay link",
                         receivable.Id);
                     continue;
                 }

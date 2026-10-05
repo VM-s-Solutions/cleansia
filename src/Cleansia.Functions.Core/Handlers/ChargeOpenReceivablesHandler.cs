@@ -6,8 +6,8 @@ namespace Cleansia.Functions.Core.Handlers;
 
 /// <summary>
 /// Every fifteen minutes, charge each new open receivable once to the customer's saved card. A no-op while
-/// <c>Payments:OffSessionChargesEnabled</c> is off, which is where it stays until the terms carry the
-/// consent wording for the card guarantee.
+/// <c>Payments:OffSessionChargesEnabled</c> is off, and it stays off: switching it on would contradict the
+/// owner's ruling of 2026-10-04 that no saved card is charged.
 /// </summary>
 public class ChargeOpenReceivablesHandler(
     IMediator mediator,

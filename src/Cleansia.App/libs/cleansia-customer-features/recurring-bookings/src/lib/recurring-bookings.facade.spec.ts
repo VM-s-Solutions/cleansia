@@ -58,6 +58,7 @@ describe('RecurringBookingsFacade', () => {
     addresses: ReturnType<typeof signal<SavedAddressDto[]>>;
     loaded: ReturnType<typeof signal<boolean>>;
     refresh: jest.Mock;
+    add: jest.Mock;
   };
   let snackbar: {
     showError: jest.Mock;
@@ -95,6 +96,7 @@ describe('RecurringBookingsFacade', () => {
       addresses: signal<SavedAddressDto[]>([]),
       loaded: signal(true),
       refresh: jest.fn().mockResolvedValue(true),
+      add: jest.fn(),
     };
     snackbar = {
       showError: jest.fn(),
@@ -484,6 +486,37 @@ describe('RecurringBookingsFacade', () => {
       TestBed.flushEffects();
       listed('cze', ['s1'], ['p1']);
 
+      expect(selection()).toEqual({ services: ['s1'], packages: ['p1'] });
+      expect(snackbar.showInfoTranslated).toHaveBeenCalledWith(
+        'pages.order.wizard.catalogue_changed_for_country',
+      );
+      expect(snackbar.showInfoTranslated).not.toHaveBeenCalledWith(
+        'recurring_booking.selection_no_longer_offered',
+      );
+    });
+
+    // The inline form's new address is the customer's pick as much as the select's is.
+    it('says "not offered at this address" when the customer adds a new address before its own list lands', async () => {
+      const office = SavedAddressDto.fromJS({ id: 'addr-new', countryId: 'cze' });
+      savedAddressStore.add.mockImplementation(async () => {
+        savedAddressStore.addresses.update((list) => [...list, office]);
+        return office;
+      });
+      await facade.initialize();
+      facade.loadForEdit(stored);
+      TestBed.flushEffects();
+
+      await facade.addAddress('Office', {
+        street: 'Vodičkova 1',
+        city: 'Praha',
+        zipCode: '11000',
+        latitude: 50.08,
+        longitude: 14.42,
+      });
+      TestBed.flushEffects();
+      listed('cze', ['s1'], ['p1']);
+
+      expect(facade.formData().savedAddressId).toBe('addr-new');
       expect(selection()).toEqual({ services: ['s1'], packages: ['p1'] });
       expect(snackbar.showInfoTranslated).toHaveBeenCalledWith(
         'pages.order.wizard.catalogue_changed_for_country',

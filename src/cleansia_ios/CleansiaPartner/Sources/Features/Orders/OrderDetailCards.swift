@@ -332,7 +332,7 @@ struct PaymentCard: View {
             Spacer()
             Text(OrdersFormat.money(amount, symbol: order.currencySymbol))
                 .font(emphasis ? CleansiaTypography.titleMedium : CleansiaTypography.bodyMedium)
-                .foregroundColor(emphasis ? CleansiaColors.primary : CleansiaColors.onSurface)
+                .foregroundColor(emphasis ? CleansiaColors.primaryText : CleansiaColors.onSurface)
         }
     }
 
@@ -346,7 +346,7 @@ struct PaymentCard: View {
                 Spacer()
                 Text("-\(OrdersFormat.money(amount, symbol: order.currencySymbol))")
                     .font(CleansiaTypography.bodyMedium)
-                    .foregroundColor(CleansiaColors.primary)
+                    .foregroundColor(CleansiaColors.primaryText)
             }
         }
     }

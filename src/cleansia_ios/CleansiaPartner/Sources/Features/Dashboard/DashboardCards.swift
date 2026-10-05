@@ -13,7 +13,7 @@ struct WeeklyEarningsCard: View {
                     HStack {
                         Text(L10n.Dashboard.earningsWeek)
                             .font(CleansiaTypography.labelMedium)
-                            .foregroundColor(CleansiaColors.primary)
+                            .foregroundColor(CleansiaColors.primaryText)
                         Spacer()
                         Text(jobsLine)
                             .font(CleansiaTypography.labelSmall)
@@ -192,8 +192,9 @@ private struct MonthDeltaChip: View {
         percent >= 0
     }
 
+    /// The label's ink, and its wash at 12 %: the text blue on the way up, as Android's chip.
     private var color: Color {
-        isUp ? CleansiaColors.primary : CleansiaColors.error
+        isUp ? CleansiaColors.primaryText : CleansiaColors.error
     }
 
     var body: some View {

@@ -175,7 +175,7 @@ private struct AvailableOrderRow: View {
                     VStack(alignment: .trailing, spacing: 0) {
                         Text(OrdersFormat.pay(order))
                             .font(CleansiaTypography.titleLarge)
-                            .foregroundColor(CleansiaColors.primary)
+                            .foregroundColor(CleansiaColors.primaryText)
                         Text(L10n.Orders.youEarn)
                             .font(CleansiaTypography.labelSmall)
                             .foregroundColor(CleansiaColors.onSurfaceVariant)
@@ -394,7 +394,7 @@ private struct SummaryStat: View {
         VStack(spacing: 2) {
             Text(value)
                 .cleansiaFont(CleansiaTypography.headlineSmall)
-                .foregroundColor(CleansiaColors.primary)
+                .foregroundColor(CleansiaColors.primaryText)
                 // Shrink before wrapping: the All-time filter makes six-figure totals reachable, and
                 // "118 450 Kč" already exceeds this column in every language including English.
                 .lineLimit(1)

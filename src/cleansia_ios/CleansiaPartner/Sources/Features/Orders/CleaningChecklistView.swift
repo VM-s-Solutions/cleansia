@@ -84,7 +84,7 @@ struct CleaningChecklistView: View {
             HStack {
                 Text(L10n.Orders.checklistProgress(doneCount, allItems.count))
                     .font(CleansiaTypography.titleMedium)
-                    .foregroundColor(allDone ? CleansiaColors.primary : CleansiaColors.onSurface)
+                    .foregroundColor(allDone ? CleansiaColors.primaryText : CleansiaColors.onSurface)
                 Spacer()
                 if allDone {
                     Image(systemName: "checkmark.circle.fill")
@@ -100,7 +100,7 @@ struct CleaningChecklistView: View {
             } else if allDone {
                 Text(L10n.Orders.checklistAllDoneHint)
                     .font(CleansiaTypography.labelSmall)
-                    .foregroundColor(CleansiaColors.primary)
+                    .foregroundColor(CleansiaColors.primaryText)
             }
         }
     }

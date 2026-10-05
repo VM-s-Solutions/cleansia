@@ -51,7 +51,7 @@ private struct HeroCard: View {
             VStack(alignment: .leading, spacing: Spacing.hair) {
                 Text(L10n.Invoices.heroTotal)
                     .font(CleansiaTypography.labelMedium)
-                    .foregroundColor(CleansiaColors.primary)
+                    .foregroundColor(CleansiaColors.primaryText)
                 Text(EarningsFormat.decimalMoney(invoice.totalAmount, currencyCode: invoice.currencyCode))
                     .cleansiaFont(CleansiaTypography.headlineMedium)
                     .foregroundColor(CleansiaColors.onSurface)
@@ -75,7 +75,7 @@ private struct BreakdownCard: View {
         VStack(alignment: .leading, spacing: Spacing.xs) {
             Text(L10n.Invoices.breakdownSection)
                 .font(CleansiaTypography.labelMedium)
-                .foregroundColor(CleansiaColors.primary)
+                .foregroundColor(CleansiaColors.primaryText)
 
             MoneyRow(label: L10n.Invoices.subtotal, amount: invoice.subTotal, code: invoice.currencyCode)
             if invoice.bonusAmount != 0 {
@@ -116,7 +116,7 @@ private struct PeriodCard: View {
                 VStack(alignment: .leading, spacing: Spacing.hair) {
                     Text(L10n.Invoices.periodLabel)
                         .font(CleansiaTypography.labelMedium)
-                        .foregroundColor(CleansiaColors.primary)
+                        .foregroundColor(CleansiaColors.primaryText)
                     Text(invoice.payPeriodLabel?.nilIfEmpty ?? "—")
                         .font(CleansiaTypography.titleMedium)
                         .foregroundColor(CleansiaColors.onSurface)
@@ -199,7 +199,7 @@ private struct ReferencesCard: View {
                     IconHalo(systemImage: "key")
                     Text(L10n.Invoices.referencesSection)
                         .font(CleansiaTypography.labelMedium)
-                        .foregroundColor(CleansiaColors.primary)
+                        .foregroundColor(CleansiaColors.primaryText)
                     Spacer(minLength: 0)
                 }
                 ForEach(fields, id: \.label) { field in
@@ -223,7 +223,7 @@ private struct NotesCard: View {
                     IconHalo(systemImage: "note.text")
                     Text(L10n.Invoices.notes)
                         .font(CleansiaTypography.labelMedium)
-                        .foregroundColor(CleansiaColors.primary)
+                        .foregroundColor(CleansiaColors.primaryText)
                     Spacer(minLength: 0)
                 }
                 if let admin {

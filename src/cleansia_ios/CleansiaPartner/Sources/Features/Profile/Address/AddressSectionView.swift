@@ -258,7 +258,7 @@ private struct WhyRow: View {
     var body: some View {
         HStack(alignment: .top, spacing: Spacing.xs) {
             Text(verbatim: "•")
-                .foregroundColor(CleansiaColors.primary)
+                .foregroundColor(CleansiaColors.primaryText)
             Text(text)
                 .font(CleansiaTypography.bodyMedium)
                 .foregroundColor(CleansiaColors.onSurface)

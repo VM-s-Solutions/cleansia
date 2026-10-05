@@ -63,10 +63,10 @@ struct ReservedForYouRow: View {
         HStack(spacing: Spacing.xxs) {
             Image(systemName: "clock")
                 .font(.system(size: 14))
-                .foregroundColor(CleansiaColors.primary)
+                .foregroundColor(CleansiaColors.primaryText)
             Text(OfferLabels.reservedUntil(respondByUtc, now: now))
                 .font(CleansiaTypography.labelLarge)
-                .foregroundColor(CleansiaColors.primary)
+                .foregroundColor(CleansiaColors.primaryText)
             Spacer(minLength: 0)
         }
     }

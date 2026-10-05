@@ -164,7 +164,7 @@ private struct OrderDetailCompactHeader: View {
                 if let pay = order.pay, pay > 0 {
                     Text(OrdersFormat.money(pay, symbol: order.currencySymbol))
                         .font(CleansiaTypography.titleLarge)
-                        .foregroundColor(CleansiaColors.primary)
+                        .foregroundColor(CleansiaColors.primaryText)
                         .lineLimit(1)
                         .minimumScaleFactor(0.8)
                 }

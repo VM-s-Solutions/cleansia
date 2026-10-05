@@ -68,7 +68,7 @@ struct OnboardingChainHeader: View {
         HStack(spacing: Spacing.s) {
             Text(L10n.Profile.onboardingStepProgress(currentIndex + 1, state.totalSteps))
                 .font(CleansiaTypography.labelLarge)
-                .foregroundColor(CleansiaColors.primary)
+                .foregroundColor(CleansiaColors.primaryText)
                 .fixedSize(horizontal: true, vertical: false)
             Spacer(minLength: Spacing.xs)
             // Truncates before the counter does: losing "Complete your profile" costs nothing,
@@ -217,7 +217,7 @@ private struct StepNode: View {
 
     private var labelColor: Color {
         switch state {
-        case .current: CleansiaColors.primary
+        case .current: CleansiaColors.primaryText
         case .done: CleansiaColors.onSurface
         case .upcoming: CleansiaColors.onSurfaceVariant
         }

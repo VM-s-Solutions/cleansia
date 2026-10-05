@@ -29,7 +29,7 @@ private struct HeroCard: View {
             VStack(alignment: .leading, spacing: Spacing.hair) {
                 Text(L10n.PeriodPay.heroLabel)
                     .font(CleansiaTypography.labelMedium)
-                    .foregroundColor(CleansiaColors.primary)
+                    .foregroundColor(CleansiaColors.primaryText)
                 Text(EarningsFormat.decimalMoney(summary.grandTotal, currencyCode: currencyCode))
                     .cleansiaFont(CleansiaTypography.headlineMedium)
                     .foregroundColor(CleansiaColors.onSurface)
@@ -58,7 +58,7 @@ private struct BreakdownCard: View {
         VStack(alignment: .leading, spacing: Spacing.xs) {
             Text(L10n.PeriodPay.breakdownSection)
                 .font(CleansiaTypography.labelMedium)
-                .foregroundColor(CleansiaColors.primary)
+                .foregroundColor(CleansiaColors.primaryText)
 
             MoneyRow(label: L10n.PeriodPay.base, amount: summary.totalBasePay, currencyCode: currencyCode)
             if summary.totalExtrasPay != 0 {
@@ -102,7 +102,7 @@ private struct JobsCard: View {
         VStack(alignment: .leading, spacing: Spacing.xs) {
             Text(L10n.PeriodPay.jobsSection)
                 .font(CleansiaTypography.labelMedium)
-                .foregroundColor(CleansiaColors.primary)
+                .foregroundColor(CleansiaColors.primaryText)
 
             if orderPays.isEmpty {
                 Text(L10n.PeriodPay.empty)
@@ -138,7 +138,7 @@ private struct JobRow: View {
                 if let caption = line.feeShareCaption {
                     Text(caption)
                         .font(CleansiaTypography.labelSmall)
-                        .foregroundColor(CleansiaColors.primary)
+                        .foregroundColor(CleansiaColors.primaryText)
                 }
                 if let date = EarningsFormat.shortDate(line.createdOn, locale: locale) {
                     Text(date)

@@ -41,7 +41,7 @@ private struct InvoicesSummaryCard: View {
             VStack(alignment: .leading, spacing: Spacing.hair) {
                 Text(L10n.Invoices.summaryLabel)
                     .font(CleansiaTypography.labelMedium)
-                    .foregroundColor(CleansiaColors.primary)
+                    .foregroundColor(CleansiaColors.primaryText)
                 Text(EarningsFormat.decimalMoney(total, currencyCode: currencyCode))
                     .cleansiaFont(CleansiaTypography.headlineMedium)
                     .foregroundColor(CleansiaColors.onSurface)
@@ -112,7 +112,7 @@ private struct InvoiceCard: View {
             VStack(alignment: .leading, spacing: Spacing.hair) {
                 Text(L10n.Invoices.cardTotal)
                     .font(CleansiaTypography.labelMedium)
-                    .foregroundColor(CleansiaColors.primary)
+                    .foregroundColor(CleansiaColors.primaryText)
                 Text(EarningsFormat.decimalMoney(invoice.totalAmount, currencyCode: invoice.currencyCode))
                     .font(CleansiaTypography.titleLarge)
                     .foregroundColor(CleansiaColors.onSurface)

@@ -407,7 +407,7 @@ private struct StepRow: View {
                 if step.status == .done {
                     Text(L10n.RegistrationLock.stepComplete)
                         .font(CleansiaTypography.labelMedium)
-                        .foregroundColor(CleansiaColors.primary)
+                        .foregroundColor(CleansiaColors.primaryText)
                 }
                 if isFixable(step) {
                     Image(systemName: "chevron.right")

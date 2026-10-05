@@ -187,7 +187,7 @@ private struct JobFactsCard: View {
                     // The board's formatter, so the reward reads as the job's pay does there.
                     Text(OrdersFormat.money(facts.reward, symbol: EarningsFormat.currencySymbol(facts.currencyCode)))
                         .font(CleansiaTypography.titleMedium)
-                        .foregroundColor(CleansiaColors.primary)
+                        .foregroundColor(CleansiaColors.primaryText)
                 }
             }
             if orderNumber != nil {

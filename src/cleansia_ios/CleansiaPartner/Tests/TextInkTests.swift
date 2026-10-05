@@ -111,12 +111,84 @@ final class TextInkTests: XCTestCase {
             .contains("privatevarforeground:Color{switchstatus{case._1:CleansiaColors.primaryTextOnContainer"))
     }
 
-    private func compactSource(_ path: String) throws -> String {
-        let url = URL(fileURLWithPath: #filePath)
+    /// The partner app's informational blue text — card eyebrows, pay amounts, step counters and names, status
+    /// words, the address "why" bullets — reads in the text ink as its links do (owner decision 2026-10-05, Y3):
+    /// no partner `Text` names the primary in its own modifier chain.
+    func testNoPartnerTextIsDrawnInThePrimary() throws {
+        let found = try primaryTexts()
+
+        XCTAssertTrue(found.isEmpty, found.map { "\($0.file): \($0.text)" }.joined(separator: "\n"))
+    }
+
+    /// The texts whose ink arrives through a value rather than their own `.foregroundColor`, and the icons on
+    /// the same line as one of them.
+    func testTheTextsInkedThroughAValueTakeTheTextInk() throws {
+        XCTAssertTrue(
+            try compactSource("Dashboard/DashboardCards.swift")
+                .contains("isUp?CleansiaColors.primaryText:CleansiaColors.error"),
+            "the month delta chip"
+        )
+        XCTAssertTrue(
+            try compactSource("Orders/OrdersListComponents.swift")
+                .contains("label:L10n.Orders.startsSoon,tint:CleansiaColors.primaryText"),
+            "Starts soon"
+        )
+        XCTAssertTrue(try compactSource("Profile/OnboardingChainHeader.swift")
+            .contains("privatevarlabelColor:Color{switchstate{case.current:CleansiaColors.primaryText"))
+        XCTAssertTrue(try compactSource("Profile/LegalDocuments/LegalDocumentsView.swift")
+            .contains(".foregroundColor(document.isAccepted?CleansiaColors.primaryText:CleansiaColors.error)"))
+        XCTAssertTrue(try compactSource("Orders/PendingOfferComponents.swift").contains(
+            "Image(systemName:\"clock\").font(.system(size:14)).foregroundColor(CleansiaColors.primaryText)"
+        ), "the clock beside \"Yours until\"")
+    }
+
+    private var featureSources: URL {
+        URL(fileURLWithPath: #filePath)
             .deletingLastPathComponent()
             .deletingLastPathComponent()
             .appendingPathComponent("Sources/Features")
-            .appendingPathComponent(path)
-        return try String(contentsOf: url, encoding: .utf8).components(separatedBy: .whitespacesAndNewlines).joined()
+    }
+
+    /// Every `Text(…)` whose own modifier chain sets a primary foreground (Core's `ComponentTextInkTests` scan).
+    private func primaryTexts() throws -> [(file: String, text: String)] {
+        let files = try XCTUnwrap(FileManager.default.enumerator(at: featureSources, includingPropertiesForKeys: nil))
+            .compactMap { $0 as? URL }
+            .filter { $0.pathExtension == "swift" }
+        XCTAssertGreaterThan(files.count, 50, "the partner sources were not found")
+        let primary = try NSRegularExpression(pattern: #"CleansiaColors\.primary(?![A-Za-z])"#)
+        var found: [(file: String, text: String)] = []
+        for file in files {
+            let lines = try String(contentsOf: file, encoding: .utf8)
+                .components(separatedBy: .newlines)
+                .map { $0.trimmingCharacters(in: .whitespaces) }
+            for (index, line) in lines.enumerated() where line.hasPrefix("Text(") {
+                var depth = parens(line)
+                var cursor = index + 1
+                while depth > 0, cursor < lines.count {
+                    depth += parens(lines[cursor])
+                    cursor += 1
+                }
+                while cursor < lines.count, depth > 0 || lines[cursor].hasPrefix(".") {
+                    let modifier = lines[cursor]
+                    let range = NSRange(modifier.startIndex..., in: modifier)
+                    if modifier.hasPrefix(".foregroundColor("), primary.firstMatch(in: modifier, range: range) != nil {
+                        found.append((file.lastPathComponent, line))
+                    }
+                    depth += parens(modifier)
+                    cursor += 1
+                }
+            }
+        }
+        return found
+    }
+
+    private func parens(_ line: String) -> Int {
+        line.filter { $0 == "(" }.count - line.filter { $0 == ")" }.count
+    }
+
+    private func compactSource(_ path: String) throws -> String {
+        try String(contentsOf: featureSources.appendingPathComponent(path), encoding: .utf8)
+            .components(separatedBy: .whitespacesAndNewlines)
+            .joined()
     }
 }

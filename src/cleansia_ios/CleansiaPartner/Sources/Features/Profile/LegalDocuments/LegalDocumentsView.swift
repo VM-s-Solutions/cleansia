@@ -123,7 +123,7 @@ private struct AcceptanceLine: View {
             Text(document.acceptanceLine(locale: locale))
                 .font(CleansiaTypography.labelMedium)
         }
-        .foregroundColor(document.isAccepted ? CleansiaColors.primary : CleansiaColors.error)
+        .foregroundColor(document.isAccepted ? CleansiaColors.primaryText : CleansiaColors.error)
     }
 }
 

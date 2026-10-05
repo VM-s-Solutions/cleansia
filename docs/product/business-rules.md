@@ -2207,10 +2207,11 @@ schedules list says why:
   web's trim says *no longer offered* rather than the address wording. Android raises the notice for a
   trim while the edited schedule is still at its own address, whichever read lands it (the entry
   read, a retry, or the read of the schedule's own market), and the market message once the customer
-  has picked another address. iOS raises it for the form's first check of an edited schedule, on load
-  or on the retry after a failed read, whichever market that check reads: if the customer picked an
-  address in another market while the read had failed, the retry also says *no longer offered*, as
-  on the web, because iOS does not record that the address was changed. A quote sent before the
+  has picked another address. iOS does the same: it remembers whether the customer has picked an
+  address, so a retry after a failed read says *no longer offered* only while the schedule is still at
+  its own address, and the market message once the customer has moved it to another market's address.
+  The web still says *no longer offered* when the address changes before the schedule's own catalogue
+  has landed. A quote sent before the
   trim fails as quietly as the card's: the web form shows no price, and every form leaves the cash
   choice undecided rather than refused. Android trims when the template is prefilled and again once
   the form's first catalogue lands, because an untrimmed selection's crew quote is refused and a cash

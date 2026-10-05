@@ -210,7 +210,7 @@ internal fun draftTimeStillHolds(
 /**
  * The part of day the time step asks for first, the web wizard's `dayParts`: each holds the arrival
  * times whose hour falls in [fromHour, toHour), sixteen quarter hours apiece on the 15-minute grid.
- * -> /customer-app/ordering-flow#step-2-date-time
+ * -> /customer-app/ordering-flow#step-3-date-time
  */
 internal enum class DayPart(val fromHour: Int, val toHour: Int) {
     Morning(FIRST_WINDOW_HOUR, 12),
@@ -570,7 +570,7 @@ private val ExpressOrange = androidx.compose.ui.graphics.Color(0xFFEA580C)
 
 /**
  * Three part-of-day buttons, each with its first and last arrival, over a 4 × 4 grid of the chosen
- * part's slots — the web wizard's time step (/customer-app/ordering-flow#step-2-date-time). Choosing a
+ * part's slots — the web wizard's time step (/customer-app/ordering-flow#step-3-date-time). Choosing a
  * part never changes the booked time; it only changes which sixteen slots are on screen. The step opens
  * on the part that holds the booked time, which carries a dot while another part is browsed; a part with
  * nothing bookable is disabled, and so is a slot inside the lead time. Shared with the recurring

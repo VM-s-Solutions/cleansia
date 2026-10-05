@@ -169,7 +169,7 @@ being non-empty:
 
 <!-- The two ids below keep the anchors these steps had as steps 2 and 3, before the dirtiness
      step: code comments on the web, Android and iOS point at them. -->
-### Step 3: Date & Time {#step-2-date-time}
+### Step 3: Date & Time {#step-3-date-time}
 
 The customer picks a cleaning date and an **arrival time in 15-minute increments**, from 08:00
 through 19:45. The home calculator, web booking wizard, Android and iOS offer the same times.
@@ -250,7 +250,7 @@ keys*, *Door code* and *Reception* (`accessMode`, stored on the order as its slu
 assigned cleaner reads it with the entry note from step 2, and it is redacted with that note for every
 other cleaner.
 
-### Step 4: Payment Method {#step-3-payment-method}
+### Step 4: Payment Method {#step-4-payment-method}
 
 The customer selects between:
 

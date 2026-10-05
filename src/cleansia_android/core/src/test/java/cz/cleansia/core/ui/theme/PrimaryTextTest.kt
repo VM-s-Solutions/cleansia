@@ -63,7 +63,7 @@ class PrimaryTextTest {
         val fill = Regex("""(?:background\(|color = )MaterialTheme\.colorScheme\.primaryContainer(?![.\w])""")
         val offenders = sources.flatMap { file ->
             fill.findAll(file.text).filter { match ->
-                calls("Text", enclosingCallBody(file.text, match.range.first)).any { BLUE_TEXT.containsMatchIn(it.args) }
+                textsOnFill(file.text, match.range.first).any { BLUE_TEXT.containsMatchIn(it) }
             }.map { match -> "${file.module}/${file.rel}:${file.text.substring(0, match.range.first).count { it == '\n' } + 1}" }
         }
         assertEquals(emptyList<String>(), offenders)
@@ -228,8 +228,23 @@ class PrimaryTextTest {
             Call("${file?.module}/${file?.rel}:$line", args, body, argsEnd)
         }.toList()
 
-    /** The trailing lambda of the call whose argument list holds [at] — the content drawn on that fill. */
-    private fun enclosingCallBody(text: String, at: Int): String {
+    /**
+     * The argument lists of the texts drawn on the fill at [at]: the Text calls in the trailing lambda of the
+     * call whose argument list holds it — or, when that call is a `Text` wearing the fill in its own
+     * `Modifier.background(...)` (CleansiaSectionHeader's badge), that Text itself.
+     */
+    private fun textsOnFill(text: String, at: Int): List<String> {
+        var open = enclosingParen(text, at)
+        if (callee(text, open) == "background") open = enclosingParen(text, open)
+        val argsEnd = closing(text, open + 1, '(', ')')
+        if (callee(text, open) == "Text") return listOf(text.substring(open + 1, argsEnd - 1))
+        if (!text.substring(argsEnd).trimStart().startsWith("{")) return emptyList()
+        val brace = text.indexOf('{', argsEnd)
+        return calls("Text", text.substring(brace + 1, closing(text, brace + 1, '{', '}') - 1)).map { it.args }
+    }
+
+    /** The `(` of the call whose argument list holds [at]. */
+    private fun enclosingParen(text: String, at: Int): Int {
         var depth = 0
         var i = at
         while (i > 0) {
@@ -239,11 +254,11 @@ class PrimaryTextTest {
                 '(' -> if (depth == 0) break else depth--
             }
         }
-        val argsEnd = closing(text, i + 1, '(', ')')
-        if (!text.substring(argsEnd).trimStart().startsWith("{")) return ""
-        val open = text.indexOf('{', argsEnd)
-        return text.substring(open + 1, closing(text, open + 1, '{', '}') - 1)
+        return i
     }
+
+    /** The name called at the `(` at [open]. */
+    private fun callee(text: String, open: Int): String = text.take(open).takeLastWhile { it.isLetterOrDigit() || it == '_' }
 
     private fun closing(text: String, from: Int, open: Char, close: Char): Int {
         var depth = 1

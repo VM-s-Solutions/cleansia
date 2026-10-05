@@ -111,13 +111,8 @@ public class AdminRefundOrder
             var result = refund.Value!;
             var consumed = await refundRepository.GetSucceededRefundTotalForOrderAsync(
                 order.Id, cancellationToken);
-            // Against what the CARD was charged, not the sale — RefundService.CardChargedAmount.
-            // `consumed` sums the Refunds table, which is card-only, so an order settled partly in
-            // credit could never reach the sale total and would report PartiallyRefunded for a refund
-            // that had in fact returned every tender in full.
-            var paymentStatus = consumed >= RefundService.CardChargedAmount(order)
-                ? PaymentStatus.Refunded
-                : PaymentStatus.PartiallyRefunded;
+            // What the refund seam stored on this tracked order, never a second derivation of it.
+            var paymentStatus = order.PaymentStatus;
 
             auditContext.RecordChange(
                 "Order",

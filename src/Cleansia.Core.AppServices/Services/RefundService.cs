@@ -284,14 +284,11 @@ public sealed class RefundService(
         // The credit leg is independently idempotent; an erased account receives only its card refund.
         await ReturnCreditShareAsync(order, creditShare, refundKey, actorId, cancellationToken);
 
-        // FULLY REFUNDED IS A TEST ON THE CARD LEG AGAINST THE CARD TOTAL, not against TotalPrice.
-        // GetSucceededRefundTotalForOrderAsync sums the Refunds table, which holds card refunds only —
-        // so on an order settled with 500 credit and 1500 card, comparing against 2000 could never be
-        // reached and the order would sit PartiallyRefunded forever. The split above is proportional,
-        // so the credit leg is exhausted at exactly the moment the card leg is, and this one comparison
-        // is true for both. On an order that took no credit it reduces to the original expression.
-        var cardTotal = order.TotalPrice - order.CreditAppliedAmount;
-        order.UpdatePaymentStatus(succeededConsumed + refund.Amount >= cardTotal
+        order.UpdatePaymentStatus(IsFullyRefunded(
+                order,
+                succeededConsumed + refund.Amount,
+                await creditAccountRepository.GetReturnedTotalForOrderAsync(order.Id, cancellationToken),
+                await creditAccountRepository.GetDisputeSettledTotalForOrderAsync(order.Id, cancellationToken))
             ? PaymentStatus.Refunded
             : PaymentStatus.PartiallyRefunded);
         await refundRepository.CommitAsync(cancellationToken);
@@ -353,6 +350,17 @@ public sealed class RefundService(
     /// </summary>
     public static decimal CardChargedAmount(Order order) =>
         order.TotalPrice - order.CreditAppliedAmount;
+
+    /// <summary>
+    /// Refunded once the card has given back all it took, or once the sale has nothing left to give back:
+    /// card refunds, credit returned and complaints settled in credit together reach the price. The card arm
+    /// keeps an order whose credit leg was suppressed (an erased account, frozen books) at Refunded; the sale
+    /// arm is the one a complaint settled in credit needs, because the hold stops the card short of its charge.
+    /// </summary>
+    public static bool IsFullyRefunded(
+        Order order, decimal cardRefunded, decimal creditReturned, decimal settledInCredit) =>
+        cardRefunded >= CardChargedAmount(order)
+        || cardRefunded + creditReturned + settledInCredit >= order.TotalPrice;
 
     /// <summary>
     /// The requested slice of the sale, held to what the order has not already given back.

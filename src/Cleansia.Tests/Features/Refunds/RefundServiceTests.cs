@@ -873,7 +873,31 @@ public class RefundServiceTests
         var row = Assert.Single(added);
         Assert.Equal(700m, row.Amount);
         Assert.Equal(RefundStatus.Succeeded, row.Status);
-        Assert.Equal(PaymentStatus.PartiallyRefunded, order.PaymentStatus);
+        Assert.Equal(PaymentStatus.Refunded, order.PaymentStatus);
+    }
+
+    /// <summary>
+    /// An order is refunded once the card has given back all it took, or once the sale has nothing left to
+    /// give back: card refunds, credit returned and complaints settled in credit together reach the price.
+    /// </summary>
+    [Theory]
+    [InlineData(1000, 0, 700, 0, 300, true)]
+    [InlineData(2000, 500, 1200, 400, 400, true)]
+    [InlineData(2000, 500, 1500, 0, 0, true)]
+    [InlineData(2000, 500, 750, 250, 0, false)]
+    [InlineData(2000, 500, 1500, 500, 0, true)]
+    [InlineData(2000, 500, 600, 200, 0, false)]
+    [InlineData(1000, 0, 600, 0, 300, false)]
+    public void IsFullyRefunded_WhenTheCardGaveBackItsChargeOrTheSaleHasNothingLeft(
+        int total, int creditApplied, int cardRefunded, int creditReturned, int settledInCredit, bool expected)
+    {
+        var order = CreateCardPaidOrder(total);
+        if (creditApplied > 0)
+        {
+            order.ApplyCredit(creditApplied, "user-1");
+        }
+
+        Assert.Equal(expected, RefundService.IsFullyRefunded(order, cardRefunded, creditReturned, settledInCredit));
     }
 
     [Theory]
@@ -936,6 +960,15 @@ public class RefundServiceTests
         ArrangeSettledInCredit(400m);
         CaptureAddedRefund(out var added);
         var creditKey = $"credit-return:refund:{OrderId}:admin:full";
+        var creditReturned = 0m;
+        _creditAccountRepository
+            .Setup(r => r.GetReturnedTotalForOrderAsync(OrderId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(() => creditReturned);
+        _creditAccountRepository
+            .Setup(r => r.TryReturnAsync(
+                "user-1", order.CurrencyId, 400m, creditKey, ActorId, It.IsAny<CancellationToken>(), OrderId, null))
+            .Callback(() => creditReturned = 400m)
+            .ReturnsAsync(true);
 
         var result = await CreateService().IssueRefundAsync(
             RequestFor(RefundReason.AdminDiscretion, 2000m), CancellationToken.None);
@@ -948,7 +981,7 @@ public class RefundServiceTests
         _creditAccountRepository.Verify(r => r.TryReturnAsync(
             It.IsAny<string>(), It.IsAny<string>(), It.IsAny<decimal>(), It.IsAny<string>(), It.IsAny<string>(),
             It.IsAny<CancellationToken>(), It.IsAny<string?>(), It.IsAny<string?>()), Times.Once);
-        Assert.Equal(PaymentStatus.PartiallyRefunded, order.PaymentStatus);
+        Assert.Equal(PaymentStatus.Refunded, order.PaymentStatus);
     }
 
     [Fact]
@@ -1022,7 +1055,7 @@ public class RefundServiceTests
         Assert.Equal(700m, _stripe.LastAmount);
         Assert.Equal(700m, refund.Amount);
         Assert.Equal(RefundStatus.Succeeded, refund.Status);
-        Assert.Equal(PaymentStatus.PartiallyRefunded, order.PaymentStatus);
+        Assert.Equal(PaymentStatus.Refunded, order.PaymentStatus);
     }
 
     [Fact]

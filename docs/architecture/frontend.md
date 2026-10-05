@@ -406,8 +406,12 @@ button takes the button's ink, so no control shows two blues. The apps follow th
   (`.currency-price-block__badge--optional` in `_form-page.scss`), was sky-500 text on white and takes
   the text ink, 2.77 → 5.93:1; its see-through ground and outline still keep it quieter than the
   *Required* badge (5.17:1). `text-ink.spec.ts` compiles the customer and admin bundles and pins both,
-  light and dark. The same dialog's success and error lines read under 4.5:1 too, and are not part of
-  this (reported 2026-10-05).
+  light and dark. The same dialog's *applied* and *invalid* lines, green-600 and red-600 on a 12 % and
+  a 10 % wash of themselves, read under 4.5:1 too, and since a later finding the same day take
+  green-800 (`--cleansia-success-800`; green-700, the apps' success text, reads 4.39:1 on the wash) and
+  red-700 (`--cleansia-error-700`) in light mode, and green-300 and red-300 after dark: 2.88 → 6.24:1
+  and 4.14 → 5.54:1 in light mode, 3.80 → 8.91:1 and 2.89 → 7.36:1 in dark. The washes are unchanged,
+  and the icons share their line's ink.
 
 Measured in Chromium on the running dev servers, at rest / under the pointer: a PrimeNG text, outlined
 or link button's label and icon 2.77 / 2.60 → 5.93 / 7.09:1 (a link under the pointer 7.56:1); the

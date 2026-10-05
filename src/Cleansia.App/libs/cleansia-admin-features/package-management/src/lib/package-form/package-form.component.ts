@@ -31,7 +31,7 @@ import {
   CleansiaTextInputComponent,
   CleansiaTitleComponent,
 } from '@cleansia/components';
-import { TranslatePipe, TranslateService } from '@ngx-translate/core';
+import { TranslatePipe } from '@ngx-translate/core';
 import { Tab, TabList, TabPanel, TabPanels, Tabs } from 'primeng/tabs';
 import { takeUntil } from 'rxjs';
 import { PackageFormData, PackageFormFacade } from './package-form.facade';
@@ -66,7 +66,6 @@ export class PackageFormComponent implements OnInit, OnDestroy {
   private readonly fb = inject(FormBuilder);
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
-  private readonly translate = inject(TranslateService);
   protected readonly facade = inject(PackageFormFacade);
 
   private readonly mode = signal<'create' | 'edit'>('create');
@@ -105,11 +104,6 @@ export class PackageFormComponent implements OnInit, OnDestroy {
   }
 
   readonly isEditMode = computed(() => this.mode() === 'edit');
-  readonly pageTitle = computed(() =>
-    this.isEditMode()
-      ? this.translate.instant('pages.package_form.edit_title')
-      : this.translate.instant('pages.package_form.create_title')
-  );
 
   readonly form = this.fb.nonNullable.group({
     name: ['', [Validators.required, Validators.maxLength(100)]],

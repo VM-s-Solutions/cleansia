@@ -60,7 +60,7 @@ public sealed class PlatformOrderCancellation(
             // not already come back on a refund's credit leg comes back now.
             await creditAccountRepository.ReturnUnpaidOrderCreditAsync(
                 order,
-                await refundRepository.GetSucceededRefundTotalForOrderAsync(order.Id, cancellationToken),
+                await RefundService.CardRefundedOrOwedAsync(refundRepository, order.Id, null, cancellationToken),
                 actorId,
                 cancellationToken);
         }

@@ -1261,6 +1261,107 @@ public class RefundServiceTests
             It.IsAny<CancellationToken>(), It.IsAny<string?>(), It.IsAny<string?>()), Times.Never);
     }
 
+    private void ArrangePendingElsewhere(string exceptRefundKey, decimal pending) =>
+        _refundRepository
+            .Setup(r => r.GetPendingRefundTotalForOrderAsync(OrderId, exceptRefundKey, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(pending);
+
+    /// <summary>
+    /// An admin's partial refund of 300 on the 1000 order is still pending, and Stripe may already have paid
+    /// it. A free cancellation asks for the whole price, and the card is sent only the 700 not already on its
+    /// way back; real Stripe would refuse more than that on the charge, every hour, for good.
+    /// </summary>
+    [Fact]
+    public async Task IssueRefund_Counts_Another_Keys_Pending_Refund_In_Its_Ceiling()
+    {
+        var order = CreateCardPaidOrder(1000m);
+        ArrangeOrder(order);
+        ArrangeNoExistingRefund();
+        ArrangeConsumed(0m);
+        ArrangePendingElsewhere($"refund:{OrderId}:cancel", 300m);
+        CaptureAddedRefund(out var added);
+
+        var result = await CreateService().IssueRefundAsync(
+            new RefundRequest(OrderId, 1000m, RefundReason.CustomerCancellation, ActorId), CancellationToken.None);
+
+        Assert.True(result.IsSuccess, result.Error?.Message);
+        Assert.Equal(700m, _stripe.LastAmount);
+        Assert.Equal(700m, Assert.Single(added).Amount);
+    }
+
+    /// <summary>
+    /// A 2000 sale, 500 in credit and 1500 by card. An admin's partial refund of 800 froze 600 on the card;
+    /// Stripe paid it but the answer never came back, so its 200 credit share was never returned. A complaint
+    /// was then settled in the 1400 the sale had left. The retry sends Stripe the same 600 on the same key,
+    /// which Stripe answers with the refund it already made, and returns no credit: 600 + 1400 is the price.
+    /// </summary>
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public async Task Redrive_Keeps_Its_Card_Amount_When_A_Settlement_Took_Its_Credit_Share(bool viaRedrive)
+    {
+        var order = CreateCardPaidOrder(2000m);
+        order.ApplyCredit(500m, "user-1");
+        ArrangeOrder(order);
+        ArrangeConsumed(0m);
+        ArrangeSettledInCredit(1400m);
+        var request = new RefundRequest(OrderId, 800m, RefundReason.AdminDiscretion, ActorId, RefundRequestId: "partial-1");
+        var refundKey = RefundService.BuildRefundKey(request);
+        var pending = ArrangePendingRefund(order, 600m, refundKey);
+        _refundRepository
+            .Setup(r => r.GetByRefundKeyAsync(refundKey, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(pending);
+
+        var result = viaRedrive
+            ? await CreateService().RedriveAsync(pending.Id, "system", CancellationToken.None)
+            : await CreateService().IssueRefundAsync(request, CancellationToken.None);
+
+        Assert.True(result.IsSuccess, result.Error?.Message);
+        Assert.Equal(600m, _stripe.LastAmount);
+        Assert.Equal(refundKey, _stripe.LastIdempotencyKey);
+        Assert.Equal(600m, pending.Amount);
+        Assert.Equal(RefundStatus.Succeeded, pending.Status);
+        _creditAccountRepository.Verify(r => r.TryReturnAsync(
+            It.IsAny<string>(), It.IsAny<string>(), It.IsAny<decimal>(), It.IsAny<string>(), It.IsAny<string>(),
+            It.IsAny<CancellationToken>(), It.IsAny<string?>(), It.IsAny<string?>()), Times.Never);
+    }
+
+    /// <summary>
+    /// The row being retried is not owed on top of itself: a 1000 sale with its own 600 pending and 400
+    /// settled in credit still has the 600 left for it.
+    /// </summary>
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public async Task Redrive_Does_Not_Count_Its_Own_Pending_Row(bool viaRedrive)
+    {
+        var order = CreateCardPaidOrder(1000m);
+        ArrangeOrder(order);
+        ArrangeConsumed(0m);
+        ArrangeSettledInCredit(400m);
+        var request = new RefundRequest(OrderId, 600m, RefundReason.AdminDiscretion, ActorId, RefundRequestId: "partial-1");
+        var refundKey = RefundService.BuildRefundKey(request);
+        var pending = ArrangePendingRefund(order, 600m, refundKey);
+        _refundRepository
+            .Setup(r => r.GetByRefundKeyAsync(refundKey, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(pending);
+        _refundRepository
+            .Setup(r => r.GetPendingRefundTotalForOrderAsync(OrderId, It.IsAny<string?>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(600m);
+        ArrangePendingElsewhere(refundKey, 0m);
+
+        var result = viaRedrive
+            ? await CreateService().RedriveAsync(pending.Id, "system", CancellationToken.None)
+            : await CreateService().IssueRefundAsync(request, CancellationToken.None);
+
+        Assert.True(result.IsSuccess, result.Error?.Message);
+        Assert.Equal(600m, _stripe.LastAmount);
+        _refundRepository.Verify(r => r.GetPendingRefundTotalForOrderAsync(
+            OrderId, refundKey, It.IsAny<CancellationToken>()), Times.AtLeastOnce);
+        _refundRepository.Verify(r => r.GetPendingRefundTotalForOrderAsync(
+            OrderId, It.Is<string?>(k => k != refundKey), It.IsAny<CancellationToken>()), Times.Never);
+    }
+
     private sealed class RecordingStripeClient : IStripeClient
     {
         private readonly List<string> _refundKeys = [];

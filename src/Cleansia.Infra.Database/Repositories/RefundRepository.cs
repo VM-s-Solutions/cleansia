@@ -19,6 +19,16 @@ public class RefundRepository(CleansiaDbContext context) : BaseRepository<Refund
             .SumAsync(r => r.Amount, cancellationToken);
     }
 
+    public async Task<decimal> GetPendingRefundTotalForOrderAsync(
+        string orderId, string? exceptRefundKey, CancellationToken cancellationToken)
+    {
+        return await GetDbSet()
+            .Where(r => r.OrderId == orderId
+                && r.Status == RefundStatus.Pending
+                && (exceptRefundKey == null || r.RefundKey != exceptRefundKey))
+            .SumAsync(r => r.Amount, cancellationToken);
+    }
+
     public async Task<IReadOnlyDictionary<string, decimal>> GetSucceededRefundTotalsByOrderAsync(
         IReadOnlyCollection<string> orderIds, CancellationToken cancellationToken)
     {

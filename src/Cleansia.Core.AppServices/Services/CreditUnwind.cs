@@ -77,16 +77,17 @@ public static class CreditUnwind
         RefundRequest request,
         CancellationToken cancellationToken)
     {
+        var refundKey = RefundService.BuildRefundKey(request);
         var alreadyReturned = await creditAccountRepository.GetReturnedTotalForOrderAsync(order.Id, cancellationToken);
         var held = RefundService.HeldToWhatIsLeft(
             order,
             request.Amount,
-            await refundRepository.GetSucceededRefundTotalForOrderAsync(order.Id, cancellationToken),
+            await RefundService.CardRefundedOrOwedAsync(refundRepository, order.Id, refundKey, cancellationToken),
             alreadyReturned,
             await creditAccountRepository.GetDisputeSettledTotalForOrderAsync(order.Id, cancellationToken));
         var (_, creditShare) = RefundService.SplitAcrossTenders(order, held, alreadyReturned);
         return await creditAccountRepository.ReturnCreditAsync(
-            order, creditShare, RefundService.BuildRefundKey(request), request.ActorId, cancellationToken);
+            order, creditShare, refundKey, request.ActorId, cancellationToken);
     }
 
     /// <summary>What the credit leg of the refund keyed <paramref name="refundKey"/> put back.</summary>
@@ -107,9 +108,11 @@ public static class CreditUnwind
     ///
     /// <para><b>Never more than was paid.</b> A complaint settled in credit gave part of the sale back on
     /// neither tender. On an order that took no payment the credit is all that was paid, so the settlement
-    /// comes off it in full. On one that took a card payment the whole price was paid, so the credit is held
-    /// to what the sale has left after <paramref name="cardRefunded"/>, the credit already returned and the
-    /// settlement; netting the settlement off the credit there would keep credit the customer is owed.</para>
+    /// comes off it in full, and <paramref name="cardRefunded"/> is ignored: a card never charged had no
+    /// refund paid, whatever is left pending on it. On one that took a card payment the whole price was paid,
+    /// so the credit is held to what the sale has left after <paramref name="cardRefunded"/> (confirmed or
+    /// pending), the credit already returned and the settlement; netting the settlement off the credit there
+    /// would keep credit the customer is owed.</para>
     ///
     /// <para><b>All of it, with no cancellation fee taken out.</b> On an unpaid order the platform
     /// collects nothing: there is no charge surface, so the fee the assessor computed is unrecoverable
@@ -135,11 +138,12 @@ public static class CreditUnwind
         var alreadyReturned = await creditAccountRepository.GetReturnedTotalForOrderAsync(order.Id, cancellationToken);
         var settledInCredit = await creditAccountRepository.GetDisputeSettledTotalForOrderAsync(order.Id, cancellationToken);
         var paid = order.TookNoPayment ? order.CreditAppliedAmount : order.TotalPrice;
+        var card = order.TookNoPayment ? 0m : cardRefunded;
         return await creditAccountRepository.ReturnCreditAsync(
             order,
             Math.Min(
                 order.CreditAppliedAmount - alreadyReturned,
-                paid - cardRefunded - alreadyReturned - settledInCredit),
+                paid - card - alreadyReturned - settledInCredit),
             $"order-ended-unpaid:{order.Id}",
             actorId,
             cancellationToken);

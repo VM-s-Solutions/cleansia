@@ -73,7 +73,7 @@ public sealed class CleanerNoShowCancellation(
             {
                 await creditAccountRepository.ReturnUnpaidOrderCreditAsync(
                     order,
-                    await refundRepository.GetSucceededRefundTotalForOrderAsync(order.Id, cancellationToken),
+                    await RefundService.CardRefundedOrOwedAsync(refundRepository, order.Id, null, cancellationToken),
                     actorId,
                     cancellationToken);
             }

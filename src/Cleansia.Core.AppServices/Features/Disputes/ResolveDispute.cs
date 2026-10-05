@@ -1,6 +1,7 @@
 using Cleansia.Core.AppServices.Abstractions;
 using Cleansia.Core.AppServices.Auditing;
 using Cleansia.Core.AppServices.Common;
+using Cleansia.Core.AppServices.Services;
 using Cleansia.Core.AppServices.Services.Interfaces;
 using Cleansia.Core.Domain.Credit;
 using Cleansia.Core.Domain.Disputes;
@@ -236,9 +237,9 @@ public class ResolveDispute
         /// <summary>
         /// The customer chose credit, so the settlement lands on their balance in the order's currency
         /// instead of the card. Keyed on the dispute, which settles once. Bounded by what the order has
-        /// not already given back (card refunds, credit returned to the balance, earlier complaints settled
-        /// in credit), as the card leg is by its refundable ceiling; otherwise a second dispute on a
-        /// refunded order is paid again in credit.
+        /// not already given back (card refunds, including those still pending that Stripe may already have
+        /// paid, credit returned to the balance, earlier complaints settled in credit), as the card leg is by
+        /// its refundable ceiling; otherwise a second dispute on a refunded order is paid again in credit.
         ///
         /// <para>False when the customer's account is erased, or sits on the books of a company frozen for
         /// archive: credit on the first would be forfeited, and a write to the second fails the whole
@@ -253,7 +254,8 @@ public class ResolveDispute
         {
             if (dispute.Order is not { } order
                 || decimal.Round(amount, 2) != amount
-                || amount > await OutstandingAsync(order, cancellationToken))
+                || amount > await RefundService.LeftToGiveBackAsync(
+                    refundRepository, creditAccountRepository, order, exceptRefundKey: null, cancellationToken))
             {
                 return BusinessResult.Failure<bool>(new Error(nameof(request.RefundAmount), BusinessErrorMessage.InvalidRefundAmount));
             }
@@ -279,11 +281,5 @@ public class ResolveDispute
 
             return BusinessResult.Success(true);
         }
-
-        private async Task<decimal> OutstandingAsync(Order order, CancellationToken cancellationToken) =>
-            order.TotalPrice
-            - await refundRepository.GetSucceededRefundTotalForOrderAsync(order.Id, cancellationToken)
-            - await creditAccountRepository.GetReturnedTotalForOrderAsync(order.Id, cancellationToken)
-            - await creditAccountRepository.GetDisputeSettledTotalForOrderAsync(order.Id, cancellationToken);
     }
 }

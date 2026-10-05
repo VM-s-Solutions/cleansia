@@ -165,6 +165,31 @@ public sealed class DisputeSettlementAndCleanerChargeTests
     }
 
     /// <summary>
+    /// An admin's partial refund of 600 on the 1000 order is still pending: Stripe may already have paid it,
+    /// and credit cannot be taken back once granted. A complaint settled in credit has the 400 not already on
+    /// its way back, and a cent more is refused.
+    /// </summary>
+    [Theory]
+    [InlineData(400.00, true)]
+    [InlineData(400.01, false)]
+    [InlineData(1000.00, false)]
+    public async Task A_Credit_Settlement_Counts_A_Card_Refund_Still_Pending(decimal amount, bool settled)
+    {
+        ArrangeDispute(DisputeSettlementPreference.Credit);
+        var account = ArrangeCreditAccount();
+        _refundRows
+            .Setup(r => r.GetPendingRefundTotalForOrderAsync(OrderId, null, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(600m);
+
+        var result = await Handler().Handle(new ResolveDispute.Command(DisputeId, amount, "justified"), CancellationToken.None);
+
+        Assert.Equal(settled, result.IsSuccess);
+        Assert.Equal(settled ? null : BusinessErrorMessage.InvalidRefundAmount, result.Error?.Message);
+        Assert.Equal(settled ? amount : 0m, account.Balance);
+        _refunds.VerifyNoOtherCalls();
+    }
+
+    /// <summary>
     /// An earlier complaint on the order was settled in 400 of credit. The administrator's 1000 goes to the
     /// refund seam as decided, which holds every refund to what the order has left; the dispute records
     /// what the seam actually sent.

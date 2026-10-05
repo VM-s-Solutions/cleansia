@@ -65,7 +65,7 @@ public sealed class RefundService(
         var settledInCredit = await creditAccountRepository.GetDisputeSettledTotalForOrderAsync(
             order.Id, cancellationToken);
         var held = await HeldToWhatIsLeftAsync(
-            order, request.Amount, creditAlreadyReturned, settledInCredit, cancellationToken);
+            order, request.Amount, refundKey, creditAlreadyReturned, settledInCredit, cancellationToken);
         var split = SplitAcrossTenders(order, held, creditAlreadyReturned);
         if (creditOnThisKey > 0m)
         {
@@ -75,21 +75,21 @@ public sealed class RefundService(
             split = (Math.Min(split.Card, held - creditOnThisKey), 0m);
         }
 
+        var consumed = await CardRefundedOrOwedAsync(refundRepository, order.Id, refundKey, cancellationToken);
+        var refundable = CardRefundCeiling(order, consumed);
         Refund refund;
+        var creditShare = split.Credit;
         if (existing is not null)
         {
             // A prior Pending/Failed attempt exists — reuse its row (do NOT insert a second) and re-drive
-            // Stripe with the same key below. But RE-CHECK the live refundable ceiling first: RefundKeys are
-            // per-purpose, so a different-purpose refund (e.g. an admin refund) may have SUCCEEDED since this
-            // row was created, dropping TotalPrice - consumed below the row's frozen amount. Re-driving the
-            // stale amount would over-refund; clamp it to the live ceiling (or fail if nothing remains).
-            // A row frozen before a complaint was settled in credit is held to the card share of what is left.
-            var consumed = await refundRepository.GetSucceededRefundTotalForOrderAsync(
-                order.Id, cancellationToken);
-            var refundable = CardRefundCeiling(order, consumed);
+            // Stripe with the same key below. Stripe may already have paid this row on this key and refuses
+            // a different amount there, so the row keeps its amount whenever what is left allows it: every
+            // other refund and settlement counted it as owed. The clamps below only bite on a row frozen
+            // before that was so. A complaint settled in credit since is taken from this row's credit leg,
+            // not its card.
             if (settledInCredit > 0m)
             {
-                refundable = Math.Min(refundable, split.Card);
+                refundable = Math.Min(refundable, held - creditOnThisKey);
             }
 
             if (refundable <= 0m)
@@ -100,12 +100,10 @@ public sealed class RefundService(
 
             existing.ClampAmountTo(refundable);
             refund = existing;
+            creditShare = CreditBesideCard(held, refund.Amount, split.Credit, creditOnThisKey);
         }
         else
         {
-            var consumed = await refundRepository.GetSucceededRefundTotalForOrderAsync(
-                order.Id, cancellationToken);
-            var refundable = CardRefundCeiling(order, consumed);
             var amount = Math.Min(split.Card, refundable);
             if (amount <= 0m)
             {
@@ -156,7 +154,7 @@ public sealed class RefundService(
             }
         }
 
-        return await SettleAsync(order, refund, split.Credit, request.ActorId, cancellationToken);
+        return await SettleAsync(order, refund, creditShare, request.ActorId, cancellationToken);
     }
 
     public async Task<BusinessResult<RefundResult>> RedriveAsync(
@@ -188,7 +186,7 @@ public sealed class RefundService(
                 nameof(refund.OrderId), BusinessErrorMessage.RefundOrderNotRefundable));
         }
 
-        var consumed = await refundRepository.GetSucceededRefundTotalForOrderAsync(order.Id, cancellationToken);
+        var consumed = await CardRefundedOrOwedAsync(refundRepository, order.Id, refund.RefundKey, cancellationToken);
         var refundable = CardRefundCeiling(order, consumed);
         if (refundable <= 0m)
         {
@@ -213,27 +211,35 @@ public sealed class RefundService(
             ? refund.Amount + creditOnThisKey
             : Math.Round(refund.Amount * order.TotalPrice / cardCharged, 2, MidpointRounding.AwayFromZero);
         var held = await HeldToWhatIsLeftAsync(
-            order, slice, creditAlreadyReturned, settledInCredit, cancellationToken);
-        var split = creditOnThisKey > 0m
-            ? (Card: held - creditOnThisKey, Credit: 0m)
-            : SplitAcrossTenders(order, held, creditAlreadyReturned);
+            order, slice, refund.RefundKey, creditAlreadyReturned, settledInCredit, cancellationToken);
+        var creditShare = creditOnThisKey > 0m ? 0m : SplitAcrossTenders(order, held, creditAlreadyReturned).Credit;
 
         // Only a held slice changes the row: a re-drive with nothing held keeps its exact amount, so Stripe
-        // sees the same parameters on the same idempotency key.
+        // sees the same parameters on the same idempotency key. A held slice comes off the credit leg first,
+        // for the same reason.
         if (held < slice)
         {
-            if (split.Card <= 0m)
+            var card = held - creditOnThisKey;
+            if (card <= 0m)
             {
                 refund.MarkFailed();
                 return BusinessResult.Failure<RefundResult>(new Error(
                     nameof(refund.Amount), BusinessErrorMessage.RefundNothingRefundable));
             }
 
-            refund.ClampAmountTo(split.Card);
+            refund.ClampAmountTo(card);
+            creditShare = CreditBesideCard(held, refund.Amount, creditShare, creditOnThisKey);
         }
 
-        return await SettleAsync(order, refund, split.Credit, actorId, cancellationToken);
+        return await SettleAsync(order, refund, creditShare, actorId, cancellationToken);
     }
+
+    /// <summary>
+    /// What a retried refund's credit leg returns beside its card amount: never more than the held slice
+    /// leaves after the card, and nothing once this key's leg already came back.
+    /// </summary>
+    private static decimal CreditBesideCard(decimal held, decimal card, decimal splitCredit, decimal creditOnThisKey) =>
+        creditOnThisKey > 0m ? 0m : Math.Max(0m, Math.Min(splitCredit, held - card));
 
     /// <summary>
     /// A fault on the way to Stripe rather than an answer from it: a timeout, a dropped connection, an
@@ -363,6 +369,46 @@ public sealed class RefundService(
         || cardRefunded + creditReturned + settledInCredit >= order.TotalPrice;
 
     /// <summary>
+    /// The card money an order has given back, or may already have: refunds Stripe confirmed, and refunds
+    /// still pending, which Stripe may have paid before its answer was lost. The pending refund keyed
+    /// <paramref name="exceptRefundKey"/> is left out, so a retry is not owed on top of itself.
+    /// </summary>
+    public static async Task<decimal> CardRefundedOrOwedAsync(
+        IRefundRepository refundRepository, string orderId, string? exceptRefundKey, CancellationToken cancellationToken) =>
+        await refundRepository.GetSucceededRefundTotalForOrderAsync(orderId, cancellationToken)
+        + await refundRepository.GetPendingRefundTotalForOrderAsync(orderId, exceptRefundKey, cancellationToken);
+
+    /// <summary>
+    /// What the sale has not given back on any key but <paramref name="exceptRefundKey"/>: the price, less
+    /// card refunds confirmed or pending, credit returned, and complaints settled in credit. The excepted
+    /// key's own card refund and credit leg are left out, whatever their state, so the action that owns the
+    /// key reads the same figure on a retry.
+    /// </summary>
+    public static async Task<decimal> LeftToGiveBackAsync(
+        IRefundRepository refundRepository,
+        ICreditAccountRepository creditAccountRepository,
+        Order order,
+        string? exceptRefundKey,
+        CancellationToken cancellationToken)
+    {
+        var card = await CardRefundedOrOwedAsync(refundRepository, order.Id, exceptRefundKey, cancellationToken);
+        var credit = await creditAccountRepository.GetReturnedTotalForOrderAsync(order.Id, cancellationToken);
+        if (exceptRefundKey is not null)
+        {
+            if (await refundRepository.GetByRefundKeyAsync(exceptRefundKey, cancellationToken)
+                is { Status: RefundStatus.Succeeded } own)
+            {
+                card -= own.Amount;
+            }
+
+            credit -= await creditAccountRepository.GetReturnedForRefundAsync(exceptRefundKey, cancellationToken);
+        }
+
+        return Math.Max(0m, order.TotalPrice - card - credit
+            - await creditAccountRepository.GetDisputeSettledTotalForOrderAsync(order.Id, cancellationToken));
+    }
+
+    /// <summary>
     /// The requested slice of the sale, held to what the order has not already given back.
     ///
     /// <para>A complaint settled in credit returns part of the sale on neither tender: it moves no card
@@ -373,6 +419,7 @@ public sealed class RefundService(
     private async Task<decimal> HeldToWhatIsLeftAsync(
         Order order,
         decimal requested,
+        string refundKey,
         decimal creditAlreadyReturned,
         decimal settledInCredit,
         CancellationToken cancellationToken) =>
@@ -381,7 +428,7 @@ public sealed class RefundService(
             : HeldToWhatIsLeft(
                 order,
                 requested,
-                await refundRepository.GetSucceededRefundTotalForOrderAsync(order.Id, cancellationToken),
+                await CardRefundedOrOwedAsync(refundRepository, order.Id, refundKey, cancellationToken),
                 creditAlreadyReturned,
                 settledInCredit);
 

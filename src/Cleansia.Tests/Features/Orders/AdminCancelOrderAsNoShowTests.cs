@@ -334,4 +334,29 @@ public class AdminCancelOrderAsNoShowTests
             CustomerId, CzkId, 50m, $"credit-return:order-ended-unpaid:{OrderId}", AdminId,
             It.IsAny<CancellationToken>(), OrderId, It.IsAny<string?>()), Times.Once);
     }
+
+    /// <summary>
+    /// 1000 paid 700 by card and 300 in credit, with 100 settled in credit and an admin's refund of the card's
+    /// 700 still pending, which Stripe may already have paid. The no-show's own refund finds nothing left on
+    /// the card, and the credit that comes back is held to the 200 the sale has left, not all 300.
+    /// </summary>
+    [Fact]
+    public async Task A_Card_Refund_Still_Pending_Holds_Back_The_Credit_Returned_When_The_Order_Ends()
+    {
+        var order = ArrangeOrder();
+        order.ApplyCredit(300m, CustomerId);
+        _refunds.Setup(r => r.IssueRefundAsync(It.IsAny<RefundRequest>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(BusinessResult.Failure<RefundResult>(
+                new Error(nameof(RefundRequest.Amount), BusinessErrorMessage.RefundNothingRefundable)));
+        _refundRows.Setup(r => r.GetPendingRefundTotalForOrderAsync(OrderId, null, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(700m);
+        _credit.Setup(c => c.GetDisputeSettledTotalForOrderAsync(OrderId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(100m);
+
+        await ConfirmAsync();
+
+        _credit.Verify(c => c.TryReturnAsync(
+            CustomerId, CzkId, 200m, $"credit-return:order-ended-unpaid:{OrderId}", AdminId,
+            It.IsAny<CancellationToken>(), OrderId, It.IsAny<string?>()), Times.Once);
+    }
 }

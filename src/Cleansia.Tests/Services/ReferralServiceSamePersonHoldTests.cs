@@ -50,16 +50,7 @@ public class ReferralServiceSamePersonHoldTests
 
     public ReferralServiceSamePersonHoldTests()
     {
-        var czk = Currency.Create("CZK", "Kč", "Czech koruna");
-        czk.Id = "czk";
-        czk.SetReferralCredit(150m);
-
-        var order = OrderMockFactory.Generate(
-            new OrderMockFactory.OrderPartial { Id = OrderId, UserId = ReferredId }, currency: czk);
-        order.AddOrderStatus(OrderStatusTrack.Create(OrderStatus.Completed, order));
-        _orders.Setup(o => o.GetByIdForOwnerAsync(OrderId, ReferredId, It.IsAny<CancellationToken>())).ReturnsAsync(order);
-        _orders.Setup(o => o.GetQueryableForOwner(ReferredId)).Returns(new[] { order }.AsQueryable().BuildMock());
-        _orders.Setup(o => o.GetQueryableForOwner(ReferrerId)).Returns(Array.Empty<Order>().AsQueryable().BuildMock());
+        BookIn(NewCurrency("czk", "CZK", 150m), inviter: null);
 
         _referral = Referral.CreateAccepted(ReferrerId, ReferredId, _code.Id, "system");
         _referral.Id = ReferralId;
@@ -90,6 +81,28 @@ public class ReferralServiceSamePersonHoldTests
             .Setup(n => n.NotifyAsync(It.IsAny<AdminEvent>(), It.IsAny<CancellationToken>()))
             .Callback<AdminEvent, CancellationToken>((adminEvent, _) => _told.Add(adminEvent))
             .Returns(Task.CompletedTask);
+    }
+
+    private static Currency NewCurrency(string id, string code, decimal? referralCredit)
+    {
+        var currency = Currency.Create(code, code, code);
+        currency.Id = id;
+        currency.SetReferralCredit(referralCredit);
+        return currency;
+    }
+
+    /// <summary>The friend's completing order in <paramref name="friend"/>; the inviter's one booking, if any.</summary>
+    private void BookIn(Currency friend, Currency? inviter)
+    {
+        var order = OrderMockFactory.Generate(
+            new OrderMockFactory.OrderPartial { Id = OrderId, UserId = ReferredId }, currency: friend);
+        order.AddOrderStatus(OrderStatusTrack.Create(OrderStatus.Completed, order));
+        _orders.Setup(o => o.GetByIdForOwnerAsync(OrderId, ReferredId, It.IsAny<CancellationToken>())).ReturnsAsync(order);
+        _orders.Setup(o => o.GetQueryableForOwner(ReferredId)).Returns(new[] { order }.AsQueryable().BuildMock());
+        Order[] own = inviter is null
+            ? []
+            : [OrderMockFactory.Generate(new OrderMockFactory.OrderPartial { UserId = ReferrerId }, currency: inviter)];
+        _orders.Setup(o => o.GetQueryableForOwner(ReferrerId)).Returns(own.AsQueryable().BuildMock());
     }
 
     private ReferralService Service() => new(
@@ -321,5 +334,49 @@ public class ReferralServiceSamePersonHoldTests
         Assert.Null(_referral.HoldReasons);
         Assert.Empty(_told);
         Assert.Empty(_accounts);
+    }
+
+    /// <summary>
+    /// Neither side books in a currency with a referral figure: a release and a rejection would both pay
+    /// nothing, so there is nothing for an administrator to review. The accounts are not compared, nobody is
+    /// told, and the referral qualifies with nothing paid, as it does for two strangers.
+    /// </summary>
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task A_Shared_Home_On_A_Referral_That_Can_Pay_Neither_Side_Qualifies_With_Nothing_Paid_And_Tells_Nobody(bool inviterBooked)
+    {
+        BookIn(NewCurrency("pln", "PLN", null), inviter: inviterBooked ? NewCurrency("eur", "EUR", 0m) : null);
+        _referrerAddresses.Add(At("Vinohradská 12", "Praha", "120 00"));
+        _referredAddresses.Add(At("Vinohradská 12", "Praha", "120 00"));
+
+        await CompleteAsync();
+
+        Assert.Equal(ReferralStatus.Qualified, _referral.Status);
+        Assert.Null(_referral.HoldReasons);
+        Assert.Equal(OrderId, _referral.FirstQualifyingOrderId);
+        Assert.Null(_referral.CreditAwardedToReferrer);
+        Assert.Null(_referral.CreditAwardedToReferred);
+        Assert.Null(_referral.AwardedOn);
+        Assert.Empty(_accounts);
+        Assert.Empty(_told);
+        _referrals.Verify(r => r.GetContactFootprintAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Never);
+    }
+
+    /// <summary>One side has a figure to be paid: the shared home holds the referral as it does when both have.</summary>
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public async Task A_Shared_Home_Holds_The_Referral_When_Either_Side_Could_Be_Paid(bool friendHasTheFigure)
+    {
+        var figured = NewCurrency("czk", "CZK", 150m);
+        var unfigured = NewCurrency("pln", "PLN", null);
+        BookIn(friendHasTheFigure ? figured : unfigured, inviter: friendHasTheFigure ? unfigured : figured);
+        _referrerAddresses.Add(At("Vinohradská 12", "Praha", "120 00"));
+        _referredAddresses.Add(At("Vinohradská 12", "Praha", "120 00"));
+
+        await CompleteAsync();
+
+        AssertHeld(Referral.HoldReasonAddress);
     }
 }

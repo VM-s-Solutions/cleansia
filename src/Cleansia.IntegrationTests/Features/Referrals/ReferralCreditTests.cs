@@ -274,6 +274,24 @@ public class ReferralCreditTests(PostgresContainerFixture fixture) : BaseIntegra
         return await ctx.Referrals.IgnoreQueryFilters().AsNoTracking().SingleAsync(r => r.Id == referralId);
     }
 
+    private async Task SeedSupportAsync(string company)
+    {
+        await using var ctx = NewContext();
+        var support = User.CreateWithPassword(
+            "support@cleansia.test", "Seed-Password-123", "Sup", "Port", UserProfile.Administrator, adminRole: AdminRole.Support);
+        support.TenantId = company;
+        support.ConfirmEmail();
+        ctx.Users.Add(support);
+        await ctx.CommitAsync(CancellationToken.None);
+    }
+
+    private async Task<int> ReferralHeldNoticesAsync()
+    {
+        await using var ctx = NewContext();
+        return await ctx.Set<UserNotification>().IgnoreQueryFilters()
+            .CountAsync(n => n.EventKey == AdminNotificationEventCatalog.ReferralHeld);
+    }
+
     private async Task HoldAsync(string referralId)
     {
         await using var ctx = NewContext();
@@ -563,15 +581,9 @@ public class ReferralCreditTests(PostgresContainerFixture fixture) : BaseIntegra
             referrerZip: "120 00",
             friendStreet: "vinohradska 12",
             friendZip: "12000");
+        await SeedSupportAsync(TestTenants.Second);
         await using (var ctx = NewContext())
         {
-            var support = User.CreateWithPassword(
-                "support@cleansia.test", "Seed-Password-123", "Sup", "Port", UserProfile.Administrator, adminRole: AdminRole.Support);
-            support.TenantId = TestTenants.Second;
-            support.ConfirmEmail();
-            ctx.Users.Add(support);
-            await ctx.CommitAsync(CancellationToken.None);
-
             var addressIds = await ctx.Orders.IgnoreQueryFilters()
                 .Where(o => o.Id == OrderId || o.Id == ReferrerOrderId)
                 .Select(o => o.CustomerAddressId)
@@ -772,6 +784,59 @@ public class ReferralCreditTests(PostgresContainerFixture fixture) : BaseIntegra
         Assert.Equal(Referral.HoldReasonAddress, referral.HoldReasons);
         Assert.Empty(await AccountsAsync(referrerId));
         Assert.Empty(await AccountsAsync(referredId));
+    }
+
+    /// <summary>
+    /// A shared home on a referral whose friend books in złoty, which has no referral figure. When the inviter
+    /// books in złoty too, neither side can be paid: the referral qualifies with nothing paid and support is not
+    /// told. When the inviter books in koruna, the inviter could be paid, so the referral is held and support is.
+    /// </summary>
+    [Theory]
+    [InlineData(PlnId, false)]
+    [InlineData(CzkId, true)]
+    public async Task A_Shared_Home_Is_Held_Only_When_Either_Side_Could_Be_Paid(string inviterCurrencyId, bool held)
+    {
+        await ResetAsync();
+        var (referrerId, referredId, referralId) = await SeedAsync(
+            orderCurrencyId: PlnId, referrerOrderCurrencyId: inviterCurrencyId, referrerStreet: "123 Main St");
+        await SeedSupportAsync(TestTenants.Default);
+
+        await CompleteAsync(referredId);
+
+        var referral = await ReferralAsync(referralId);
+        Assert.Equal(held ? ReferralStatus.Accepted : ReferralStatus.Qualified, referral.Status);
+        Assert.Equal(held ? Referral.HoldReasonAddress : null, referral.HoldReasons);
+        Assert.Null(referral.CreditAwardedToReferrer);
+        Assert.Null(referral.CreditAwardedToReferred);
+        Assert.Equal(held ? 1 : 0, await ReferralHeldNoticesAsync());
+        Assert.Empty(await AccountsAsync(referrerId));
+        Assert.Empty(await AccountsAsync(referredId));
+    }
+
+    /// <summary>
+    /// One side books in złoty, which has no referral figure, the other in koruna. The koruna side is paid and
+    /// the referral qualifies, whichever side it is — and so whichever side the ordinal lock order reaches first.
+    /// </summary>
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public async Task A_Side_Booking_In_A_Currency_With_No_Figure_Is_Paid_Nothing_And_The_Other_Side_Is_Paid(bool inviterLacksTheFigure)
+    {
+        await ResetAsync();
+        var (referrerId, referredId, referralId) = await SeedAsync(
+            orderCurrencyId: inviterLacksTheFigure ? CzkId : PlnId,
+            referrerOrderCurrencyId: inviterLacksTheFigure ? PlnId : CzkId);
+
+        await CompleteAsync(referredId);
+
+        var paid = Assert.Single(await AccountsAsync(inviterLacksTheFigure ? referredId : referrerId));
+        Assert.Equal(CzkId, paid.CurrencyId);
+        Assert.Equal(150m, paid.Balance);
+        Assert.Empty(await AccountsAsync(inviterLacksTheFigure ? referrerId : referredId));
+        var referral = await ReferralAsync(referralId);
+        Assert.Equal(ReferralStatus.Qualified, referral.Status);
+        Assert.Equal(inviterLacksTheFigure ? null : 150m, referral.CreditAwardedToReferrer);
+        Assert.Equal(inviterLacksTheFigure ? 150m : null, referral.CreditAwardedToReferred);
     }
 
     [Theory]

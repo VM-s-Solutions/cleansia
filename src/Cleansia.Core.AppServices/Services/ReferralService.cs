@@ -233,7 +233,11 @@ public sealed class ReferralService(
             return;
         }
 
-        var holdReasons = await SamePersonReasonsAsync(referral, cancellationToken);
+        var referredCurrency = order.Currency;
+        var referrerCurrency = await GetBookingCurrencyAsync(referral.ReferrerUserId, cancellationToken) ?? referredCurrency;
+
+        var eitherSideCanBePaid = referrerCurrency?.ReferralCredit > 0m || referredCurrency?.ReferralCredit > 0m;
+        var holdReasons = eitherSideCanBePaid ? await SamePersonReasonsAsync(referral, cancellationToken) : null;
         if (holdReasons is not null)
         {
             referral.HoldForReview(orderId, holdReasons, SystemActor);
@@ -253,9 +257,6 @@ public sealed class ReferralService(
                 referral.Id, holdReasons);
             return;
         }
-
-        var referredCurrency = order.Currency;
-        var referrerCurrency = await GetBookingCurrencyAsync(referral.ReferrerUserId, cancellationToken) ?? referredCurrency;
 
         var (toReferrer, toReferred) = await AwardCreditAsync(
             referral, referrerCurrency, referredCurrency, orderId, SystemActor, note: null, cancellationToken);

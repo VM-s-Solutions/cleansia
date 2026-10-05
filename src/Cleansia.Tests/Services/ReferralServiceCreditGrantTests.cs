@@ -169,22 +169,32 @@ public class ReferralServiceCreditGrantTests
 
     /// <summary>
     /// A side whose currency carries no referral figure is paid nothing; the other side is still paid in its
-    /// own currency, and the referral still qualifies.
+    /// own currency, and the referral still qualifies — whichever side lacks the figure, and whichever side's
+    /// grant is reached first in the ordinal lock order.
     /// </summary>
-    [Fact]
-    public async Task A_Side_Whose_Currency_Has_No_Figure_Gets_Nothing_And_The_Other_Is_Still_Paid()
+    [Theory]
+    [InlineData("user-a", "user-b", false)]
+    [InlineData("user-b", "user-a", false)]
+    [InlineData("user-a", "user-b", true)]
+    [InlineData("user-b", "user-a", true)]
+    public async Task A_Side_Whose_Currency_Has_No_Figure_Gets_Nothing_And_The_Other_Is_Still_Paid(
+        string referrerId, string referredId, bool friendLacksTheFigure)
     {
+        var czk = NewCurrency(CzkId, "CZK", 150m);
         var pln = NewCurrency(PlnId, "PLN", null);
-        var referral = Arrange("referrer", "referred", NewCurrency(CzkId, "CZK", 150m), (pln, 5));
+        var referral = friendLacksTheFigure
+            ? Arrange(referrerId, referredId, pln, (czk, 5))
+            : Arrange(referrerId, referredId, czk, (pln, 5));
+        var paidId = friendLacksTheFigure ? referrerId : referredId;
 
-        await Service().ProcessOrderCompletedAsync(OrderId, "referred", CancellationToken.None);
+        await Service().ProcessOrderCompletedAsync(OrderId, referredId, CancellationToken.None);
 
-        Assert.Equal(["referred"], _ensured);
-        Assert.Equal(150m, SingleGrant("referred", CzkId).Amount);
-        Assert.Null(referral.CreditAwardedToReferrer);
-        Assert.Null(referral.ReferrerCreditCurrencyId);
-        Assert.Equal(150m, referral.CreditAwardedToReferred);
-        Assert.Equal(CzkId, referral.ReferredCreditCurrencyId);
+        Assert.Equal([paidId], _ensured);
+        Assert.Equal(150m, SingleGrant(paidId, CzkId).Amount);
+        Assert.Equal(friendLacksTheFigure ? null : 150m, referral.CreditAwardedToReferred);
+        Assert.Equal(friendLacksTheFigure ? null : CzkId, referral.ReferredCreditCurrencyId);
+        Assert.Equal(friendLacksTheFigure ? 150m : null, referral.CreditAwardedToReferrer);
+        Assert.Equal(friendLacksTheFigure ? CzkId : null, referral.ReferrerCreditCurrencyId);
         Assert.Equal(ReferralStatus.Qualified, referral.Status);
         Assert.NotNull(referral.AwardedOn);
     }

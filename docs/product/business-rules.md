@@ -2176,13 +2176,20 @@ schedules list says why:
   on every pull to refresh). It reads them straight from the API, so the catalogue that Home, the
   booking and the form share is left alone. A schedule is judged only once its own market has been
   read: before that read succeeds, or while the list does not know the schedule's saved address, its
-  card says nothing rather than guess. On Android a customer whose Plus has lapsed or whose benefits
-  are paused, and on iOS one whose Plus has lapsed, has no *Edit* on the card, and the web's edit
-  route sends either to the Plus page (`customerMembershipGuard`, which lets only an active
-  membership through), so for them the line's *edit to update* is a step they can take only once
-  Plus is back. iOS still shows *Edit* to a member whose benefits are paused (past due or paused):
-  its gate reads only `hasMembership`, which the server answers `true` for a live enrolment, so the
-  form opens and the server refuses the save (`recurring_booking.membership_required`).
+  card says nothing rather than guess.
+- **A card with no *Edit* says it without pointing at one** (owner decision 2026-10-05): *Includes a
+  service no longer offered* (`recurring_card_item_no_longer_offered_no_edit`, five languages). On
+  Android a customer whose Plus has lapsed or whose benefits are paused, and on iOS one whose Plus
+  has lapsed, has no *Edit* on the card, and each app picks the wording from the condition that draws
+  the card's *Edit*: Android's `retiredEntryLine(showEdit)` (`RecurringAuthoring.kt`), iOS's
+  `L10n.Recurring.cardItemNoLongerOffered(canEdit:)` from `RecurringListAffordances.showEdit`. Until
+  then their line said *edit to update* too, a step they could take only once Plus was back. iOS
+  still shows *Edit*, and so the first wording, to a member whose benefits are paused (past due or
+  paused): its gate reads only `hasMembership`, which the server answers `true` for a live enrolment,
+  so the form opens and the server refuses the save (`recurring_booking.membership_required`). The
+  web has no second wording because it needs none: its list shows the cards only to an active member,
+  and anyone else sees the Plus page in their place, so every card it draws has *Edit*; its edit route
+  admits the same members (`customerMembershipGuard`).
 - **Its card on the web has no price.** The web's schedules list, *Recurring cleanings*, quotes each
   card for its price per clean (`quoteTemplate`); a card whose quote is refused leaves the price out,
   with no message of its own, the line above being the explanation. Those quotes go through the
@@ -2232,7 +2239,10 @@ line is pinned on each client for a retired service, a retired package, everythi
 market not yet read or an address the list does not know: the web's recurring facade and list
 specs, Android's `RecurringBookingsViewModelTest` (with `RecurringNoLongerOfferedCopyTest` holding
 the copy verbatim in all five languages) and iOS's `RecurringBookingsViewModelTests`; all three also
-pin that each schedule is judged against its own market's catalogue. The edit's notice is pinned the
+pin that each schedule is judged against its own market's catalogue. Both apps pin the two wordings:
+a card with *Edit* reads the first and one without it the second, for a member, a lapsed member and,
+on Android, a paused one (Android's `RecurringAuthoringTest`, with the new copy in
+`RecurringNoLongerOfferedCopyTest`; iOS's `RecurringBookingsViewModelTests`, in all five languages). The edit's notice is pinned the
 same way: a trim on load says *no longer offered* and a trim after an address change the market
 message, in the web's recurring facade spec (with the list landing before the schedule and after
 it), Android's `CreateRecurringViewModelTest` and iOS's `CreateRecurringViewModelTests+Edit`.

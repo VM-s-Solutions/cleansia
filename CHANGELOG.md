@@ -1127,7 +1127,8 @@ need backfilling.
   before the service was taken off keeps it, and its visits are confirmed and paid as before; nothing
   shows an error for it. Its card on the list of schedules now says *Includes a service no longer
   offered — edit to update*, on the website, Android and iOS alike, and on the website that card
-  shows no price. Opening it to edit removes the service, now on Android as on iOS and the website,
+  shows no price. On the apps a card that offers no *Edit*, because the customer's Plus has lapsed
+  (on Android also while its benefits are paused), says only *Includes a service no longer offered*. Opening it to edit removes the service, now on Android as on iOS and the website,
   and says *Some of this schedule's choices are no longer offered and were removed*. It used to say
   they were not offered at this address, though nobody had changed the address, and on the website the
   service was usually not removed at all. A service that is part of a package is still done with the
@@ -1136,7 +1137,7 @@ need backfilling.
   deactivated or unknown id the edit adds to the stored schedule, with `order.selected_services.invalid`
   / `order.selected_package.invalid`; an id the schedule already holds passes. (Finding 2026-10-04;
   the schedule's card and edit, review 2026-10-05; the card's line, the edit's notice and the edit's
-  check, owner ruling 2026-10-05.)
+  check, owner ruling 2026-10-05; the card without *Edit*, owner decision 2026-10-05.)
 
 - **Admin — a package can no longer take in a service that is no longer offered.** A service taken
   off the list could still be put into a new package, or added to one, and every booking of that

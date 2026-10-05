@@ -1164,8 +1164,8 @@
     <string name="error_order_recurring_already_confirmed">Вы уже подтвердили эту уборку. Оплатите уборщику наличными в день уборки.</string>
     <string name="error_order_creation_failed">Не удалось создать бронирование. Попробуйте снова.</string>
     <string name="error_order_cash_not_available">Оплата наличными доступна только после входа в аккаунт и для заказа, с которым справится один уборщик.</string>
-    <string name="error_order_cash_open_bookings_limit_reached">У вас уже максимально допустимое количество неоплаченных заказов наличными. Выберите карту или снова наличные, когда один из них будет оплачен.</string>
-    <string name="error_order_cash_unpaid_receivable">У вас есть неоплаченная сумма, например плата за отмену. Пока оплатите картой; наличными можно будет платить снова, когда вы погасите её в профиле в разделе Платежи.</string>
+    <string name="error_order_cash_open_bookings_limit_reached">У вас уже максимально допустимое количество предстоящих заказов с оплатой наличными. Наличными платят после уборки, поэтому каждый из них учитывается, пока уборка не выполнена и не оплачена. Оплатите этот заказ картой или снова выберите наличные, когда один из них будет оплачен.</string>
+    <string name="error_order_unpaid_receivable">У вас есть неоплаченная сумма, например неоплаченная уборка или плата за отмену. Пока она не оплачена, новый заказ оформить нельзя; заказы, которые у вас уже есть, сохраняются. Оплатить её можно в профиле в разделе Платежи.</string>
     <string name="error_saved_card_consent_not_accepted">Прежде чем сохранить карту, отметьте согласие на её сохранение.</string>
     <string name="error_saved_card_not_found">Мы не нашли эту сохранённую карту.</string>
     <string name="error_receivable_not_found">Мы не нашли эту сумму к оплате.</string>
@@ -1350,6 +1350,8 @@
     <string name="notification_order_no_cleaner_refund_pending_body">На заказ #%1$s не смог приехать ни один уборщик, поэтому мы его отменили. Возврат средств обрабатывается, а ещё мы начислили %2$s кредита на следующую уборку. Простите.</string>
     <string name="notification_order_no_cleaner_nothing_charged_title">Свободных уборщиков не нашлось</string>
     <string name="notification_order_no_cleaner_nothing_charged_body">На заказ #%1$s не смог приехать ни один уборщик, поэтому мы его отменили. Мы ничего с вас не списали, а ещё начислили %2$s кредита на следующую уборку. Простите.</string>
+    <string name="notification_order_cash_not_paid_title">Оплата наличными не получена</string>
+    <string name="notification_order_cash_not_paid_body">Заказ #%1$s выполнен, но уборщик не получил оплату наличными. Вы должны %2$s; оплатить можно в профиле в разделе Платежи. До этого новый заказ оформить нельзя.</string>
     <string name="notification_dispute_reply_title">Поддержка ответила</string>
     <string name="notification_dispute_reply_body">У вас новое сообщение по вашей жалобе. Нажмите, чтобы прочитать.</string>
     <string name="notification_recurring_scheduled_title">Подтвердите завтрашнюю уборку</string>
@@ -1374,9 +1376,11 @@
     <string name="profile_row_payments">Платежи</string>
     <string name="payments_title">Платежи</string>
     <string name="payments_due_title">К оплате</string>
-    <string name="payments_due_intro">Погасите задолженность, чтобы снова платить наличными. Заказов с оплатой картой это не касается.</string>
+    <string name="payments_due_intro">Погасите задолженность, чтобы снова оформлять заказы. Пока она не оплачена, новый заказ нельзя оформить ни с оплатой наличными, ни картой; заказы, которые у вас уже есть, сохраняются.</string>
     <string name="payments_due_order">Заказ %1$s</string>
     <string name="payments_pay_action">Оплатить</string>
+    <string name="unpaid_receivable_title">У вас есть сумма к оплате</string>
+    <string name="unpaid_receivable_pay">Оплатить сейчас</string>
     <string name="receivable_kind_cancellation_fee">Плата за отмену</string>
     <string name="receivable_kind_lockout">Плата за непредоставление доступа</string>
     <string name="receivable_kind_unpaid_cash">Неоплаченные наличные</string>

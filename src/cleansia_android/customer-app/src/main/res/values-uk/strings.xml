@@ -1164,8 +1164,8 @@
     <string name="error_order_recurring_already_confirmed">Ви вже підтвердили це прибирання. Сплатіть прибиральнику готівкою в день прибирання.</string>
     <string name="error_order_creation_failed">Не вдалося створити бронювання. Спробуйте знову.</string>
     <string name="error_order_cash_not_available">Оплата готівкою можлива лише після входу в акаунт і для замовлення, з яким впорається один прибиральник.</string>
-    <string name="error_order_cash_open_bookings_limit_reached">У вас уже максимально дозволена кількість неоплачених замовлень готівкою. Оберіть картку або знову готівку, коли одне з них буде оплачено.</string>
-    <string name="error_order_cash_unpaid_receivable">У вас є неоплачена сума, наприклад плата за скасування. Поки що оплатіть карткою; готівкою можна буде платити знову, коли ви сплатите її в профілі в розділі Платежі.</string>
+    <string name="error_order_cash_open_bookings_limit_reached">У вас уже максимально дозволена кількість майбутніх замовлень з оплатою готівкою. Готівкою платять після прибирання, тож кожне з них враховується, доки прибирання не виконано й не оплачено. Оплатіть це замовлення карткою або знову оберіть готівку, коли одне з них буде оплачено.</string>
+    <string name="error_order_unpaid_receivable">У вас є неоплачена сума, наприклад неоплачене прибирання або плата за скасування. Доки її не сплачено, нове замовлення оформити не можна; замовлення, які у вас уже є, зберігаються. Сплатити її можна в профілі в розділі Платежі.</string>
     <string name="error_saved_card_consent_not_accepted">Перш ніж зберегти картку, позначте згоду на її збереження.</string>
     <string name="error_saved_card_not_found">Ми не знайшли цю збережену картку.</string>
     <string name="error_receivable_not_found">Ми не знайшли цю суму до сплати.</string>
@@ -1350,6 +1350,8 @@
     <string name="notification_order_no_cleaner_refund_pending_body">На замовлення #%1$s не зміг приїхати жоден прибиральник, тому ми його скасували. Повернення коштів обробляється, а ще ми нарахували %2$s кредиту на наступне прибирання. Вибачте.</string>
     <string name="notification_order_no_cleaner_nothing_charged_title">Вільних прибиральників не знайшлося</string>
     <string name="notification_order_no_cleaner_nothing_charged_body">На замовлення #%1$s не зміг приїхати жоден прибиральник, тому ми його скасували. Ми нічого з вас не списали, а ще нарахували %2$s кредиту на наступне прибирання. Вибачте.</string>
+    <string name="notification_order_cash_not_paid_title">Оплату готівкою не отримано</string>
+    <string name="notification_order_cash_not_paid_body">Замовлення #%1$s виконано, але прибиральник не отримав оплату готівкою. Ви винні %2$s; сплатити можна в профілі в розділі Платежі. Доти нове замовлення оформити не можна.</string>
     <string name="notification_dispute_reply_title">Підтримка відповіла</string>
     <string name="notification_dispute_reply_body">У вас нове повідомлення щодо вашої скарги. Натисніть, щоб прочитати.</string>
     <string name="notification_recurring_scheduled_title">Підтвердіть завтрашнє прибирання</string>
@@ -1374,9 +1376,11 @@
     <string name="profile_row_payments">Платежі</string>
     <string name="payments_title">Платежі</string>
     <string name="payments_due_title">До сплати</string>
-    <string name="payments_due_intro">Сплатіть заборгованість, щоб знову платити готівкою. Замовлень з оплатою карткою це не стосується.</string>
+    <string name="payments_due_intro">Сплатіть заборгованість, щоб знову оформлювати замовлення. Доки її не сплачено, нове замовлення не можна оформити ні з оплатою готівкою, ні карткою; замовлення, які у вас уже є, зберігаються.</string>
     <string name="payments_due_order">Замовлення %1$s</string>
     <string name="payments_pay_action">Сплатити</string>
+    <string name="unpaid_receivable_title">У вас є сума до сплати</string>
+    <string name="unpaid_receivable_pay">Сплатити зараз</string>
     <string name="receivable_kind_cancellation_fee">Плата за скасування</string>
     <string name="receivable_kind_lockout">Плата за ненадання доступу</string>
     <string name="receivable_kind_unpaid_cash">Неоплачена готівка</string>

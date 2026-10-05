@@ -446,6 +446,32 @@ class OrderDetailViewModelTest {
         coVerify(exactly = 0) { paymentRepository.createPaymentIntent(any(), any()) }
     }
 
+    @Test
+    fun `a confirm refused for an unpaid amount offers the way to pay it instead of a snackbar`() = runTest {
+        coEvery { repository.getById(orderId) } returns ApiResult.Success(recurringCashOccurrence(needsConfirmation = true))
+        coEvery { repository.confirmRecurring(orderId, null) } returns ApiResult.Error(
+            ApiError.BadRequest(
+                message = "You have an unpaid amount with us.",
+                validationErrors = mapOf("OrderId" to listOf("order.unpaid_receivable")),
+                errorKey = "order.unpaid_receivable",
+            ),
+        )
+
+        val vm = viewModel()
+        advanceUntilIdle()
+        vm.confirmRecurring()
+        advanceUntilIdle()
+
+        assertEquals(true, vm.owesMoney.value)
+        assertEquals(ActionState.Idle, vm.confirmRecurringState.value)
+        verify(exactly = 0) { snackbar.showError(any<String>()) }
+        verify(exactly = 0) { snackbar.showError(any<ApiError>()) }
+        coVerify(exactly = 0) { paymentRepository.createPaymentIntent(any(), any()) }
+
+        vm.dismissOwesMoney()
+        assertEquals(false, vm.owesMoney.value)
+    }
+
     /** Wire value: PaymentType Card = 2. */
     private fun recurringCardOccurrence(needsConfirmation: Boolean = true) =
         recurringCashOccurrence(needsConfirmation).copy(

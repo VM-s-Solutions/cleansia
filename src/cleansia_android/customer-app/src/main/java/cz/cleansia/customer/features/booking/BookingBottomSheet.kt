@@ -113,6 +113,7 @@ fun BookingBottomSheet(
     onDismiss: () -> Unit = {},
     onComplete: (confirmationCode: String, orderId: String) -> Unit = { _, _ -> },
     onNavigateToEditProfile: () -> Unit = {},
+    onNavigateToPayments: () -> Unit = {},
     // Wave 3 Phase R1 — when non-null AND `visible` flips to true, the inner
     // content fetches the referenced order and seeds BookingState (services,
     // packages, rooms/bathrooms, address). One-shot per id (guarded inside).
@@ -143,6 +144,7 @@ fun BookingBottomSheet(
             onDismiss = onDismiss,
             onComplete = onComplete,
             onNavigateToEditProfile = onNavigateToEditProfile,
+            onNavigateToPayments = onNavigateToPayments,
             rebookFromOrderId = rebookFromOrderId,
             prefillPackageId = prefillPackageId,
             prefillSize = prefillSize,
@@ -158,6 +160,7 @@ private fun SheetWithAnchors(
     onDismiss: () -> Unit,
     onComplete: (confirmationCode: String, orderId: String) -> Unit,
     onNavigateToEditProfile: () -> Unit,
+    onNavigateToPayments: () -> Unit,
     rebookFromOrderId: String? = null,
     prefillPackageId: String? = null,
     prefillSize: Pair<Int, Int>? = null,
@@ -215,6 +218,7 @@ private fun SheetWithAnchors(
         onDismiss = onDismiss,
         onComplete = onComplete,
         onNavigateToEditProfile = onNavigateToEditProfile,
+        onNavigateToPayments = onNavigateToPayments,
         rebookFromOrderId = rebookFromOrderId,
         prefillPackageId = prefillPackageId,
         prefillSize = prefillSize,
@@ -230,6 +234,7 @@ private fun SheetContent(
     onDismiss: () -> Unit,
     onComplete: (confirmationCode: String, orderId: String) -> Unit,
     onNavigateToEditProfile: () -> Unit,
+    onNavigateToPayments: () -> Unit,
     rebookFromOrderId: String? = null,
     prefillPackageId: String? = null,
     prefillSize: Pair<Int, Int>? = null,
@@ -261,6 +266,7 @@ private fun SheetContent(
     val scope = androidx.compose.runtime.rememberCoroutineScope()
 
     var showAddressManager by remember { mutableStateOf(false) }
+    var owesMoney by remember { mutableStateOf(false) }
 
     BackHandler(enabled = visible) {
         if (canStepBack) bookingVm.previousStep() else onDismiss()
@@ -685,6 +691,10 @@ private fun SheetContent(
                                     onDismiss()
                                     onNavigateToEditProfile()
                                 }
+                                BookingSubmitOutcome.OwesMoney -> {
+                                    submitFailedCount++
+                                    owesMoney = true
+                                }
                                 BookingSubmitOutcome.Failed -> {
                                     // Bump the reset counter so the slide button
                                     // snaps back to the start. The user sees the
@@ -753,5 +763,16 @@ private fun SheetContent(
             visible = submitting,
             message = androidx.compose.ui.res.stringResource(cz.cleansia.customer.R.string.busy_booking),
         )
+
+        if (owesMoney) {
+            cz.cleansia.customer.features.payments.UnpaidReceivableDialog(
+                onPay = {
+                    owesMoney = false
+                    onDismiss()
+                    onNavigateToPayments()
+                },
+                onDismiss = { owesMoney = false },
+            )
+        }
     }
 }

@@ -32,6 +32,9 @@ class PaymentsCopyTest {
         "payments_card_removed",
         "payments_error_message",
         "payments_error_retry",
+        "error_order_unpaid_receivable",
+        "unpaid_receivable_title",
+        "unpaid_receivable_pay",
     )
 
     private val moduleDir: File = sequenceOf(
@@ -96,6 +99,42 @@ class PaymentsCopyTest {
             ),
         )
         assertTrue("the saved card still promises quicker payments: $offending", offending.isEmpty())
+    }
+
+    /**
+     * An amount owed refuses every new booking, cash or card (owner ruling 2026-10-06), so neither the
+     * amounts-due intro nor the refusal may say card bookings go ahead.
+     */
+    @Test
+    fun `no debt copy says card bookings are unaffected`() {
+        val stems = mapOf(
+            "values" to listOf("not affected", "pay by card for now"),
+            "values-cs" to listOf("netýká", "zatím zaplaťte kartou"),
+            "values-sk" to listOf("netýka", "zatiaľ zaplaťte kartou"),
+            "values-uk" to listOf("не стосується", "поки що оплатіть карткою"),
+            "values-ru" to listOf("не касается", "пока оплатите картой"),
+        )
+        val offending = locales.flatMap { locale ->
+            val xml = stringsXml(locale)
+            listOf("payments_due_intro", "error_order_unpaid_receivable").mapNotNull { key ->
+                val value = valueOf(xml, key).orEmpty().lowercase()
+                stems.getValue(locale).firstOrNull { it in value }?.let { "$locale/$key says \"$it\"" }
+            }
+        }
+        assertTrue("the debt copy still lets card bookings through: $offending", offending.isEmpty())
+    }
+
+    /** Every booking entry the server can refuse for a debt offers the way to pay it. */
+    @Test
+    fun `every booking entry answers the debt refusal with the way to pay`() {
+        listOf(
+            "features/booking/BookingBottomSheet.kt",
+            "features/recurring/CreateRecurringScreen.kt",
+            "features/orders/OrderDetailScreen.kt",
+        ).forEach { path ->
+            val source = File(moduleDir, "src/main/java/cz/cleansia/customer/$path").readText()
+            assertTrue("$path no longer offers the way to pay a debt", source.contains("UnpaidReceivableDialog("))
+        }
     }
 
     /** The kind is an ordinal on the wire; its English `name` must never reach the screen. */

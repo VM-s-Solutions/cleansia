@@ -220,6 +220,26 @@ class RecurringBookingRepositoryTest {
         verify(exactly = 0) { snackbar.showError(any<String>()) }
     }
 
+    /** The debt refusal shares its code with other whole-schedule refusals, so every key has to survive. */
+    @Test
+    fun create_givenRefusalsJoinedUnderOneCode_carriesEveryKey() = runTest {
+        val body = """
+            {"type":"ValidationError","status":400,
+             "errors":{"PaymentType":"order.cash_open_bookings_limit_reached",
+                       "AsyncPredicateValidator":"recurring_booking.no_services_or_packages; order.unpaid_receivable"}}
+        """.trimIndent().toResponseBody("application/json".toMediaType())
+        coEvery { api.create(any()) } returns Response.error(400, body)
+
+        val result = newRepo().create(createRequest())
+
+        val error = (result as ApiResult.Error).error as ApiError.BadRequest
+        assertEquals("order.cash_open_bookings_limit_reached", error.errorKey)
+        assertEquals(
+            listOf("order.cash_open_bookings_limit_reached", "recurring_booking.no_services_or_packages", "order.unpaid_receivable"),
+            error.validationErrors.orEmpty().values.flatten(),
+        )
+    }
+
     @Test
     fun update_givenHttpError_returnsError() = runTest {
         coEvery { api.update(any()) } returns Response.error(500, errorBody())

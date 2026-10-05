@@ -323,6 +323,20 @@ class OrderRepositoryTest {
         verify(exactly = 0) { snackbar.showError(any<String>()) }
     }
 
+    /** The confirm answers the debt and the terms refusals itself, so the keys have to survive the repository. */
+    @Test
+    fun confirmRecurring_givenARefusal_carriesItsKeys() = runTest {
+        val errBody = """{"status":400,"errors":{"OrderId":"order.unpaid_receivable"}}"""
+            .toResponseBody("application/json".toMediaType())
+        coEvery { api.confirmRecurring(any()) } returns Response.error(400, errBody)
+
+        val result = newRepo().confirmRecurring("o-1", termsAccepted = null)
+
+        val error = (result as ApiResult.Error).error as ApiError.BadRequest
+        assertEquals("order.unpaid_receivable", error.errorKey)
+        assertEquals(mapOf("OrderId" to listOf("order.unpaid_receivable")), error.validationErrors)
+    }
+
     // ── getCancellationPreview() ──
 
     @Test

@@ -1167,8 +1167,8 @@
     <string name="error_order_recurring_already_confirmed">Tento úklid už máte potvrzený. Uklízeči zaplatíte v hotovosti v den úklidu.</string>
     <string name="error_order_creation_failed">Nelze vytvořit rezervaci. Zkuste to znovu.</string>
     <string name="error_order_cash_not_available">Platba hotově je možná jen po přihlášení a u objednávky, kterou zvládne jeden uklízeč.</string>
-    <string name="error_order_cash_open_bookings_limit_reached">Už máte nejvyšší povolený počet nezaplacených objednávek v hotovosti. Zvolte kartu, nebo hotovost znovu, až bude některá z nich zaplacena.</string>
-    <string name="error_order_cash_unpaid_receivable">Máte u nás nezaplacenou částku, například storno poplatek. Zatím zaplaťte kartou; v hotovosti budete moci platit znovu, až ji uhradíte v profilu v sekci Platby.</string>
+    <string name="error_order_cash_open_bookings_limit_reached">Už máte nejvyšší povolený počet nadcházejících objednávek v hotovosti. Hotovost se platí až po úklidu, takže se každá počítá, dokud není uklizeno a zaplaceno. Tuto objednávku zaplaťte kartou, nebo hotovost zvolte znovu, až bude některá z nich zaplacena.</string>
+    <string name="error_order_unpaid_receivable">Máte u nás nezaplacenou částku, například nezaplacený úklid nebo storno poplatek. Dokud ji neuhradíte, nemůžete vytvořit novou objednávku; objednávky, které už máte, zůstávají. Uhradíte ji v profilu v sekci Platby.</string>
     <string name="error_saved_card_consent_not_accepted">Před uložením karty prosím zaškrtněte souhlas s jejím uložením.</string>
     <string name="error_saved_card_not_found">Tuto uloženou kartu jsme nenašli.</string>
     <string name="error_receivable_not_found">Tuto dlužnou částku jsme nenašli.</string>
@@ -1353,6 +1353,8 @@
     <string name="notification_order_no_cleaner_refund_pending_body">Na objednávku #%1$s nemohl dorazit žádný uklízeč, proto jsme ji zrušili. Vrácení peněz je na cestě a přidali jsme vám kredit %2$s na příští úklid. Omlouváme se.</string>
     <string name="notification_order_no_cleaner_nothing_charged_title">Žádný uklízeč nebyl k dispozici</string>
     <string name="notification_order_no_cleaner_nothing_charged_body">Na objednávku #%1$s nemohl dorazit žádný uklízeč, proto jsme ji zrušili. Nic jsme vám neúčtovali a přidali jsme vám kredit %2$s na příští úklid. Omlouváme se.</string>
+    <string name="notification_order_cash_not_paid_title">Platba v hotovosti nebyla přijata</string>
+    <string name="notification_order_cash_not_paid_body">Objednávka #%1$s je dokončena, ale uklízeč neobdržel platbu v hotovosti. Dlužíte %2$s; uhradíte ji v profilu v sekci Platby. Do té doby nemůžete vytvořit novou objednávku.</string>
     <string name="notification_dispute_reply_title">Podpora odpověděla</string>
     <string name="notification_dispute_reply_body">Máte novou zprávu k vaší reklamaci. Klepněte pro přečtení.</string>
     <string name="notification_recurring_scheduled_title">Potvrďte zítřejší úklid</string>
@@ -1377,9 +1379,11 @@
     <string name="profile_row_payments">Platby</string>
     <string name="payments_title">Platby</string>
     <string name="payments_due_title">K úhradě</string>
-    <string name="payments_due_intro">Uhraďte dlužnou částku a budete moci znovu platit v hotovosti. Objednávek placených kartou se to netýká.</string>
+    <string name="payments_due_intro">Uhraďte dlužnou částku a budete moci znovu objednávat. Dokud není uhrazena, nelze vytvořit žádnou novou objednávku, v hotovosti ani kartou; objednávky, které už máte, zůstávají.</string>
     <string name="payments_due_order">Objednávka %1$s</string>
     <string name="payments_pay_action">Zaplatit</string>
+    <string name="unpaid_receivable_title">Máte částku k úhradě</string>
+    <string name="unpaid_receivable_pay">Zaplatit teď</string>
     <string name="receivable_kind_cancellation_fee">Storno poplatek</string>
     <string name="receivable_kind_lockout">Poplatek za neumožnění vstupu</string>
     <string name="receivable_kind_unpaid_cash">Nezaplacená hotovost</string>

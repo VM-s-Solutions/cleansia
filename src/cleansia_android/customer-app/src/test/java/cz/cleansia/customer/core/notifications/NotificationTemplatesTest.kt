@@ -678,6 +678,67 @@ class NotificationTemplatesTest {
         }
     }
 
+    private val cashNotPaidKeys = listOf("notification_order_cash_not_paid_title", "notification_order_cash_not_paid_body")
+
+    @Test
+    fun `an unpaid door payment renders under order updates with its own copy`() {
+        val template = NotificationTemplates.templateFor("order.cash_not_paid")
+
+        assertEquals(R.string.notification_order_cash_not_paid_title, template?.titleRes)
+        assertEquals(R.string.notification_order_cash_not_paid_body, template?.bodyRes)
+        assertEquals(NotificationCategoryDto.OrderUpdates, template?.category)
+    }
+
+    @Test
+    fun `formatBody places the order number and the server-formatted amount owed`() {
+        val context = mockk<Context>()
+        val bodyRes = R.string.notification_order_cash_not_paid_body
+        every { context.getString(bodyRes, "A-1042", "1 200 Kč") } returns "A-1042 owes 1 200 Kč"
+
+        val body = NotificationTemplates.formatBody(
+            context,
+            "order.cash_not_paid",
+            bodyRes,
+            mapOf("orderId" to "ord-7", "orderNumber" to "A-1042", "amount" to "1 200 Kč"),
+        )
+
+        assertEquals("A-1042 owes 1 200 Kč", body)
+    }
+
+    /** The debt is paid on the Payments screen, not on the order, so that is where the tap lands. */
+    @Test
+    fun `a tap on an unpaid door payment opens Payments`() {
+        assertEquals(Routes.Payments, NotificationDeepLink.resolve("order.cash_not_paid", mapOf("orderId" to "ord-7")))
+        assertEquals(Routes.Payments, NotificationDeepLink.resolve("order.cash_not_paid", emptyMap()))
+    }
+
+    /** The server holds the key out of its customer keyset until both apps render it (client-first). */
+    @Test
+    fun `an unpaid door payment renders as push but stays out of the feed keyset`() {
+        assertFalse(CustomerFeedEventKeys.contains("order.cash_not_paid"))
+    }
+
+    @Test
+    fun `the unpaid door payment copy takes the order number and the amount, translated in every locale`() {
+        val english = cashNotPaidKeys.associateWith { valueOf(stringsXml("values"), it) }
+        locales.forEach { locale ->
+            val xml = stringsXml(locale)
+            cashNotPaidKeys.forEach { key ->
+                val value = valueOf(xml, key)
+                assertNotNull("$locale/strings.xml is missing $key", value)
+                if (locale != "values") assertTrue("$locale/strings.xml left $key in English", value != english[key])
+            }
+            val body = valueOf(xml, "notification_order_cash_not_paid_body")!!
+            assertEquals("$locale body slots", listOf("%1\$s", "%2\$s"), formatSlots(body))
+            assertTrue("$locale body dropped the # before the order number", body.contains("#%1\$s"))
+            assertEquals(
+                "$locale title slots",
+                emptyList<String>(),
+                formatSlots(valueOf(xml, "notification_order_cash_not_paid_title")!!),
+            )
+        }
+    }
+
     private fun stringsXml(locale: String): String {
         val file = File(resDir, "$locale/strings.xml")
         assertTrue("missing $locale/strings.xml", file.isFile)

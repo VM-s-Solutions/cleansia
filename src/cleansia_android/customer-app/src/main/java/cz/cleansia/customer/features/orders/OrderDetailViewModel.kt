@@ -25,6 +25,7 @@ import cz.cleansia.customer.core.orders.OrderReviewDto
 import cz.cleansia.customer.core.payments.PaymentRepository
 import cz.cleansia.customer.core.payments.PaymentSheetParams
 import cz.cleansia.customer.core.payments.toPaymentSheetParams
+import cz.cleansia.customer.features.payments.UnpaidReceivable
 import cz.cleansia.customer.features.recurring.RecurringAuthoringGate
 import cz.cleansia.core.snackbar.SnackbarController
 import cz.cleansia.customer.ui.state.ActionState
@@ -233,6 +234,13 @@ class OrderDetailViewModel @Inject constructor(
      */
     private val _confirmRecurringState = MutableStateFlow<ActionState>(ActionState.Idle)
     val confirmRecurringState: StateFlow<ActionState> = _confirmRecurringState.asStateFlow()
+
+    private val _owesMoney = MutableStateFlow(false)
+    val owesMoney: StateFlow<Boolean> = _owesMoney.asStateFlow()
+
+    fun dismissOwesMoney() {
+        _owesMoney.value = false
+    }
 
     private val _cardPayment = MutableSharedFlow<PaymentSheetParams>(extraBufferCapacity = 1)
     val cardPayment: SharedFlow<PaymentSheetParams> = _cardPayment.asSharedFlow()
@@ -518,7 +526,13 @@ class OrderDetailViewModel @Inject constructor(
         val termsAccepted = if (_termsAsked.value) true else null
         viewModelScope.launch {
             _confirmRecurringState.value = ActionState.Submitting
-            val result = orderRepository.confirmRecurring(id, termsAccepted).surfaceError()
+            val result = orderRepository.confirmRecurring(id, termsAccepted)
+            if (UnpaidReceivable.refuses(result.errorOrNull())) {
+                _owesMoney.value = true
+                _confirmRecurringState.value = ActionState.Idle
+                return@launch
+            }
+            result.surfaceError()
             val resp = result.getOrNull()
             if (resp == null) {
                 if ((result.errorOrNull() as? ApiError.BadRequest)?.errorKey == TERMS_NOT_ACCEPTED) {

@@ -37,6 +37,7 @@ public sealed class LegalDocumentSeederTests : IDisposable
         (LegalDocumentType.TermsOfService, new DateOnly(2026, 9, 30)),
         (LegalDocumentType.TermsOfService, new DateOnly(2026, 10, 3)),
         (LegalDocumentType.TermsOfService, new DateOnly(2026, 10, 5)),
+        (LegalDocumentType.TermsOfService, new DateOnly(2026, 10, 6)),
         (LegalDocumentType.PrivacyPolicy, new DateOnly(2026, 9, 14)),
         (LegalDocumentType.PrivacyPolicy, new DateOnly(2026, 9, 29)),
         (LegalDocumentType.PrivacyPolicy, new DateOnly(2026, 10, 3)),
@@ -591,6 +592,66 @@ public sealed class LegalDocumentSeederTests : IDisposable
         LegalDocumentType type, string language, int section, string phrase)
     {
         Assert.DoesNotContain(phrase, SectionOf(type, language, section));
+    }
+
+    /// <summary>
+    /// Owner rulings 2026-10-05, in force from the 2026-10-06 terms: each side of a referral is paid the credit
+    /// of the currency it books in — the referred customer that of the qualifying booking, the referrer that of
+    /// their latest booking of any status when the credit is paid, or the qualifying booking's when they have
+    /// none — and a side whose currency has no figure gets nothing (ReferralService.ProcessOrderCompletedAsync,
+    /// ForceQualifyReferral). A referral whose two accounts look like one person or household is held for a
+    /// person to review and may be refused (ReferralService's same-person check, release through
+    /// ForceQualifyReferral, refusal through ReverseReferral). Each row is a phrase the section must state in
+    /// that language; none of them is in the 2026-10-05 terms.
+    /// </summary>
+    [Theory]
+    [InlineData("en", "your friend in the currency of that booking")]
+    [InlineData("cs", "ona v měně této objednávky")]
+    [InlineData("sk", "ona v mene tejto objednávky")]
+    [InlineData("uk", "друг — у валюті цього замовлення")]
+    [InlineData("ru", "друг — в валюте этого заказа")]
+    [InlineData("en", "a cancelled one included")]
+    [InlineData("cs", "a to i zrušené")]
+    [InlineData("sk", "a to aj zrušenej")]
+    [InlineData("uk", "навіть якщо його скасовано")]
+    [InlineData("ru", "даже если он отменён")]
+    [InlineData("en", "whichever of you would be paid in it receives no referral credit")]
+    [InlineData("cs", "ten z vás, komu by v ní kredit náležel, kredit za doporučení nedostane")]
+    [InlineData("sk", "ten z vás, komu by v nej kredit patril, kredit za odporúčanie nedostane")]
+    [InlineData("uk", "той із вас, кому кредит належав би в цій валюті, реферального кредиту не отримає")]
+    [InlineData("ru", "тот из вас, кому кредит причитался бы в этой валюте, реферального кредита не получит")]
+    [InlineData("en", "your account and your friend's appear to belong to the same person or household")]
+    [InlineData("cs", "váš účet a účet osoby, kterou jste doporučili, patří téže osobě nebo téže domácnosti")]
+    [InlineData("sk", "váš účet a účet osoby, ktorú ste odporučili, patria tej istej osobe alebo tej istej domácnosti")]
+    [InlineData("uk", "ваш обліковий запис і обліковий запис друга належать одній і тій самій особі або одному домогосподарству")]
+    [InlineData("ru", "ваша учётная запись и учётная запись друга принадлежат одному и тому же человеку или одному домохозяйству")]
+    [InlineData("en", "without undue delay")]
+    [InlineData("cs", "bez zbytečného odkladu")]
+    [InlineData("sk", "bez zbytočného odkladu")]
+    [InlineData("uk", "без зайвої затримки")]
+    [InlineData("ru", "без неоправданной задержки")]
+    public void The_Newest_Terms_Pay_Each_Referral_Side_In_Its_Own_Currency_And_Hold_A_Same_Person_Referral(
+        string language, string phrase)
+    {
+        Assert.Contains(phrase, SectionOf(LegalDocumentType.TermsOfService, language, 9));
+    }
+
+    /// <summary>
+    /// The 2026-10-05 terms paid both sides the credit of the qualifying booking's currency; that wording must not
+    /// come back. Nor may the hold sentence first proposed on 2026-10-05, which spoke of "the two accounts" in a
+    /// section addressed to the referrer and gave the review no time frame.
+    /// </summary>
+    [Theory]
+    [InlineData("en", "set for that booking's currency")]
+    [InlineData("cs", "stanovený pro měnu této objednávky")]
+    [InlineData("sk", "stanovený pre menu tejto objednávky")]
+    [InlineData("uk", "встановлений для валюти цього замовлення")]
+    [InlineData("ru", "установленный для валюты этого заказа")]
+    [InlineData("en", "If the two accounts appear")]
+    [InlineData("cs", "Pokud se zdá, že oba účty")]
+    public void The_Newest_Terms_Carry_None_Of_The_Single_Currency_Referral_Wording(string language, string phrase)
+    {
+        Assert.DoesNotContain(phrase, SectionOf(LegalDocumentType.TermsOfService, language, 9));
     }
 
     private static string SectionOf(LegalDocumentType type, string language, int section) =>

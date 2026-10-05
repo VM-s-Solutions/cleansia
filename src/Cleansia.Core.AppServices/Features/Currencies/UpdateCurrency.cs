@@ -15,7 +15,8 @@ public class UpdateCurrency
         string Symbol,
         string Name,
         decimal? LoyaltyPointsDivisor = null,
-        decimal? NoShowCredit = null) : ICommand<Response>;
+        decimal? NoShowCredit = null,
+        decimal? ReferralCredit = null) : ICommand<Response>;
 
     public record Response(string Id);
 
@@ -84,6 +85,12 @@ public class UpdateCurrency
                 .GreaterThan(0m)
                 .When(x => x.NoShowCredit.HasValue)
                 .WithMessage(BusinessErrorMessage.MustBePositive);
+
+            // Null and zero both pay no referral credit in this currency; only a negative is refused.
+            RuleFor(x => x.ReferralCredit)
+                .GreaterThanOrEqualTo(0m)
+                .When(x => x.ReferralCredit.HasValue)
+                .WithMessage(BusinessErrorMessage.MustBePositive);
         }
     }
 
@@ -102,6 +109,7 @@ public class UpdateCurrency
             currency.Update(command.Code, command.Symbol, command.Name);
             currency.SetLoyaltyPointsDivisor(command.LoyaltyPointsDivisor);
             currency.SetNoShowCredit(command.NoShowCredit);
+            currency.SetReferralCredit(command.ReferralCredit);
 
             // Renaming a code races the same way a create does -- see CreateCurrency.
             try

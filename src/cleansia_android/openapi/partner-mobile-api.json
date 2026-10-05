@@ -9995,6 +9995,11 @@
             "format": "double",
             "nullable": true
           },
+          "referralCredit": {
+            "type": "number",
+            "format": "double",
+            "nullable": true
+          },
           "insuranceCoverageAmount": {
             "type": "number",
             "format": "double",

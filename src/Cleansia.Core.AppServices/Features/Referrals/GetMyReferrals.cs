@@ -22,7 +22,8 @@ public class GetMyReferrals
         ReferralStatus Status,
         DateTimeOffset AcceptedOn,
         DateTimeOffset? FirstQualifyingOrderOn,
-        int? PointsAwardedToReferrer);
+        decimal? CreditAwardedToReferrer,
+        string? CreditCurrencyCode);
 
     internal class Handler(
         IReferralRepository referralRepository,
@@ -44,6 +45,7 @@ public class GetMyReferrals
             var items = await referralRepository
                 .GetPagedSort<ReferralSort>(request.Offset, request.Limit, filter, ResolveSort(request))
                 .Include(r => r.Referred)
+                .Include(r => r.CreditCurrency)
                 .AsNoTracking()
                 .Select(referral => referral.MapToMyListItem())
                 .ToListAsync(cancellationToken);

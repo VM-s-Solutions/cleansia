@@ -4,8 +4,8 @@ using Cleansia.Core.Domain.Internationalization;
 namespace Cleansia.Core.AppServices.Mappers;
 
 /// <summary>
-/// Pure projections. The admin shapes add <c>IsActive</c>, <c>LoyaltyPointsDivisor</c> and
-/// <c>NoShowCredit</c>; no rate is mapped anywhere because none exists.
+/// Pure projections. The admin shapes add <c>IsActive</c>, <c>LoyaltyPointsDivisor</c>,
+/// <c>NoShowCredit</c> and <c>ReferralCredit</c>; no rate is mapped anywhere because none exists.
 /// </summary>
 public static class CurrencyMappers
 {
@@ -30,7 +30,8 @@ public static class CurrencyMappers
             IsDefault: currency.IsDefault,
             IsActive: currency.IsActive,
             LoyaltyPointsDivisor: currency.LoyaltyPointsDivisor,
-            NoShowCredit: currency.NoShowCredit);
+            NoShowCredit: currency.NoShowCredit,
+            ReferralCredit: currency.ReferralCredit);
     }
 
     /// <summary>Admin only — see <see cref="AdminCurrencyDetailDto"/>.</summary>
@@ -44,7 +45,8 @@ public static class CurrencyMappers
             IsDefault: currency.IsDefault,
             IsActive: currency.IsActive,
             LoyaltyPointsDivisor: currency.LoyaltyPointsDivisor,
-            NoShowCredit: currency.NoShowCredit);
+            NoShowCredit: currency.NoShowCredit,
+            ReferralCredit: currency.ReferralCredit);
     }
 
     public static CurrencyDetailDto MapToDetailDto(this Currency currency)

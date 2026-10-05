@@ -52,7 +52,7 @@ export function getReferralTableColumns(
     },
     {
       id: 'pointsAwarded',
-      field: 'pointsAwardedToReferrer',
+      field: 'creditAwardedToReferrer',
       header: translate.instant('pages.loyalty_referrals.column.points_awarded'),
       numeric: true,
       customTemplate: pointsTemplate,

@@ -100,6 +100,7 @@ public class ReferralRepository(CleansiaDbContext context)
             .OrderByDescending(r => r.AcceptedOn)
             .Include(r => r.Referrer)
             .Include(r => r.Referred)
+            .Include(r => r.CreditCurrency)
             .ToListAsync(cancellationToken);
     }
 }

@@ -278,6 +278,25 @@ public class SeededCataloguePricingTests : IAsyncLifetime
     }
 
     /// <summary>
+    /// Owner ruling 2026-10-04: a referral pays 150 CZK of credit to each side. The four
+    /// not-yet-operated currencies carry no referral credit until the owner authors one.
+    /// </summary>
+    [Fact]
+    public async Task Only_The_Koruna_Carries_A_Referral_Credit()
+    {
+        await using var ctx = NewContext();
+
+        var credits = await ctx.Currencies
+            .OrderBy(c => c.Code)
+            .Select(c => new { c.Code, c.ReferralCredit })
+            .ToListAsync();
+
+        Assert.Equal(
+            [("CZK", (decimal?)150m), ("EUR", null), ("GBP", null), ("PLN", null), ("USD", null)],
+            credits.Select(c => (c.Code, c.ReferralCredit)));
+    }
+
+    /// <summary>
     /// Owner rulings 2026-09-13 and 2026-09-28: CZE is the default market, and no market
     /// states an insurance figure until the owner decides whose policy covers a booking.
     /// </summary>

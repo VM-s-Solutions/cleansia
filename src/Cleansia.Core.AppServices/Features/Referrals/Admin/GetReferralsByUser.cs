@@ -1,6 +1,7 @@
 using Cleansia.Core.AppServices.Abstractions;
 using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.AppServices.Features.Referrals.Admin.DTOs;
+using Cleansia.Core.AppServices.Mappers;
 using Cleansia.Core.Domain.Repositories;
 using Cleansia.Infra.Common.Validations;
 using FluentValidation;
@@ -41,28 +42,15 @@ public class GetReferralsByUser
 
             var asReferrer = rows
                 .Where(r => r.ReferrerUserId == request.UserId)
-                .Select(r => Map(r))
+                .Select(r => r.MapToAdminListItem())
                 .ToList();
 
             var asReferred = rows
                 .Where(r => r.ReferredUserId == request.UserId)
-                .Select(r => Map(r))
+                .Select(r => r.MapToAdminListItem())
                 .ToList();
 
             return BusinessResult.Success(new Response(asReferrer, asReferred));
         }
-
-        private static AdminReferralListItem Map(Cleansia.Core.Domain.Loyalty.Referral r) =>
-            new(
-                Id: r.Id,
-                ReferrerUserId: r.ReferrerUserId,
-                ReferrerEmail: r.Referrer?.Email,
-                ReferredUserId: r.ReferredUserId,
-                ReferredEmail: r.Referred?.Email,
-                Status: r.Status,
-                AcceptedOn: r.AcceptedOn,
-                FirstQualifyingOrderOn: r.FirstQualifyingOrderOn,
-                PointsAwardedToReferrer: r.PointsAwardedToReferrer,
-                PointsAwardedToReferred: r.PointsAwardedToReferred);
     }
 }

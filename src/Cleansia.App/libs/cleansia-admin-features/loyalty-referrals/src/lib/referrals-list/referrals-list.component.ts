@@ -114,12 +114,12 @@ export class ReferralsListComponent implements OnInit {
   }
 
   formatPointsAwarded(row: AdminReferralListItem): string {
-    if (row.pointsAwardedToReferrer == null && row.pointsAwardedToReferred == null) {
+    if (row.creditAwardedToReferrer == null && row.creditAwardedToReferred == null) {
       return this.translate.instant('pages.loyalty_referrals.not_yet');
     }
     return this.translate.instant('pages.loyalty_referrals.points_format', {
-      referrer: row.pointsAwardedToReferrer ?? 0,
-      referred: row.pointsAwardedToReferred ?? 0,
+      referrer: row.creditAwardedToReferrer ?? 0,
+      referred: row.creditAwardedToReferred ?? 0,
     });
   }
 }

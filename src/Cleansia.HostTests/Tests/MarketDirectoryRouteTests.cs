@@ -382,4 +382,27 @@ public sealed class MarketDirectoryRouteTests(HostTestPostgresFixture db) : Auth
         var market = Assert.Single((await ReadMarketsAsync()).EnumerateArray());
         Assert.Equal(JsonValueKind.Null, market.GetProperty("noShowCredit").ValueKind);
     }
+
+    [Fact]
+    public async Task The_referral_credit_is_authored_per_currency_and_reaches_the_market()
+    {
+        await SeedDevShapeAsync();
+        var admin = AdminClient(AdminToken());
+
+        var negative = await admin.PutAsJsonAsync(
+            $"/api/AdminCurrency/update/{CzkId}",
+            new { CurrencyId = CzkId, Code = "CZK", Symbol = "Kč", Name = "Czech koruna", LoyaltyPointsDivisor = 10m, ReferralCredit = -1m });
+        await HttpAssert.RejectedAsync(negative, BusinessErrorMessage.MustBePositive);
+
+        var authored = await admin.PutAsJsonAsync(
+            $"/api/AdminCurrency/update/{CzkId}",
+            new { CurrencyId = CzkId, Code = "CZK", Symbol = "Kč", Name = "Czech koruna", LoyaltyPointsDivisor = 10m, ReferralCredit = 150m });
+        HttpAssert.IsOk(authored);
+
+        var detail = await BodyAsync(await admin.GetAsync($"/api/AdminCurrency/details/{CzkId}"));
+        Assert.Equal(150m, detail.GetProperty("referralCredit").GetDecimal());
+
+        var market = Assert.Single((await ReadMarketsAsync()).EnumerateArray());
+        Assert.Equal(150m, market.GetProperty("referralCredit").GetDecimal());
+    }
 }

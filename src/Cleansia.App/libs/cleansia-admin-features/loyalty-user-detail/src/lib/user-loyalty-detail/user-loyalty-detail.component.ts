@@ -385,15 +385,15 @@ export class UserLoyaltyDetailComponent
       },
       {
         id: 'points',
-        field: 'pointsAwardedToReferrer',
+        field: 'creditAwardedToReferrer',
         header: t.instant('pages.loyalty_referrals.column.points_awarded'),
         getValue: (row) =>
-          row.pointsAwardedToReferrer == null &&
-          row.pointsAwardedToReferred == null
+          row.creditAwardedToReferrer == null &&
+          row.creditAwardedToReferred == null
             ? '—'
             : t.instant('pages.loyalty_referrals.points_format', {
-                referrer: row.pointsAwardedToReferrer ?? 0,
-                referred: row.pointsAwardedToReferred ?? 0,
+                referrer: row.creditAwardedToReferrer ?? 0,
+                referred: row.creditAwardedToReferred ?? 0,
               }),
         numeric: true,
         width: '20%',

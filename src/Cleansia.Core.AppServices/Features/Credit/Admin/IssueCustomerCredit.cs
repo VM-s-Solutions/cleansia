@@ -116,6 +116,10 @@ public class IssueCustomerCredit
                 // rather than filing it as Goodwill and losing the provenance.
                 .Must(reason => reason != CreditTransactionReason.OrderPayment)
                 .WithMessage(BusinessErrorMessage.CreditReasonNotIssuable)
+                // The referral programme writes these two under a per-referral key that a reversal reads
+                // the grant back by; a hand-issued row would be a referral payment nothing can reverse.
+                .Must(reason => reason is not (CreditTransactionReason.Referral or CreditTransactionReason.ReferralReversed))
+                .WithMessage(BusinessErrorMessage.CreditReasonNotIssuable)
                 // A complaint is settled by ResolveDispute, in credit only when the customer chose it on
                 // filing (owner ruling 2026-09-28). A settlement credit issued here would be exactly the
                 // credit-instead-of-refund the customer did not ask for.

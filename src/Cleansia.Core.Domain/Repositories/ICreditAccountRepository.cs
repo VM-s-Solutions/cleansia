@@ -123,6 +123,13 @@ public interface ICreditAccountRepository : IRepository<CreditAccount, string>
     Task<decimal> GetReturnedAmountAsync(string idempotencyKey, CancellationToken cancellationToken);
 
     /// <summary>
+    /// What the ledger row under this key and reason moved, signed; zero when there is none. The referral
+    /// reversal reads each side's grant back by its key.
+    /// </summary>
+    Task<decimal> GetAmountAsync(
+        string idempotencyKey, CreditTransactionReason reason, CancellationToken cancellationToken);
+
+    /// <summary>
     /// The batch form of <see cref="GetReturnedTotalForOrderAsync"/>: Σ
     /// <see cref="CreditTransactionReason.OrderPaymentReturned"/> per order, keyed by order id; an order
     /// with none is absent. The credit leg of every refund on those orders, for the revenue report.

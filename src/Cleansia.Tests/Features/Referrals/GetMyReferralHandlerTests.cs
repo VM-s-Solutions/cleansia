@@ -1,4 +1,3 @@
-using Cleansia.Core.AppServices.Features.Orders;
 using Cleansia.Core.AppServices.Features.Referrals;
 using Cleansia.Core.AppServices.Services.Interfaces;
 using Cleansia.Core.Domain.Loyalty;
@@ -52,7 +51,6 @@ public class GetMyReferralHandlerTests
         Assert.Equal(3, result.Value.TimesUsed);
         Assert.Equal(2, result.Value.QualifiedCount);
         Assert.Equal(3, result.Value.AcceptedCount);
-        Assert.Equal(ReferralPolicy.PointsPerSide, result.Value.PointsPerReferral);
 
         // The over-fetch path is gone: the summary reads the grouped count only.
         _referralRepository.Verify(

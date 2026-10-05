@@ -52,6 +52,19 @@ class LoyaltyTransactionLabelTest {
         }
     }
 
+    /** A reversed referral took its points back as a negative row under the same source, which read "+-150". */
+    @Test
+    fun `the referral line takes its sign from the points in all five locales`() {
+        listOf("values", "values-cs", "values-sk", "values-uk", "values-ru").forEach { locale ->
+            val xml = File(moduleDir, "src/main/res/$locale/strings.xml").readText()
+            val value = Regex("""<string name="loyalty_tx_referral">([^<]*)</string>""")
+                .find(xml)?.groupValues?.get(1)
+            assertTrue("$locale is missing loyalty_tx_referral", !value.isNullOrBlank())
+            assertTrue("$locale must carry the points", value!!.contains("%1\$d"))
+            assertTrue("$locale signs the points itself — $value", !value.contains("+"))
+        }
+    }
+
     private val moduleDir: File = sequenceOf(
         File("."),
         File("customer-app"),

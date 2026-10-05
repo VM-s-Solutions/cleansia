@@ -57,9 +57,8 @@ public class AdminReferralController(IMediator mediator) : ApiController(mediato
 
     [HttpPost("reverse/{referralId}")]
     [Permission(Policy.CanInterveneReferral)]
-    // S5 / ADR-0003: narrow brute-force window on this money-adjacent loyalty
-    // mutation. Reuses the REGISTERED "auth" policy, matching the manual
-    // grant/revoke mutations whose idempotent path this clawback rides.
+    // S5 / ADR-0003: narrow brute-force window on this credit clawback. Reuses
+    // the REGISTERED "auth" policy, matching the other manual money mutations.
     [EnableRateLimiting("auth")]
     [ProducesResponseType(typeof(ReverseReferral.Response), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]

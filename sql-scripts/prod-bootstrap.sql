@@ -496,13 +496,16 @@ WHERE NOT EXISTS (
 -- NoShowCredit: the apology credit CancelUnfilledOrders pays on an order in this currency when its slot
 -- arrives with no cleaner (owner ruling 2026-09-05: 250 CZK). NULL would mean no credit in that
 -- currency -- the sweep refunds in full and sends the plain cancellation.
+--
+-- ReferralCredit: the credit the inviter and the invited friend each receive when the friend's first
+-- order in this currency is completed (owner ruling 2026-10-04: 150 CZK). NULL pays no referral credit.
 INSERT INTO public."Currencies" (
   "Id", "IsActive", "IsDefault", "CreatedBy", "CreatedOn",
   "UpdatedBy", "UpdatedOn", "DeactivatedBy",
-  "DeactivatedOn", "Code", "Symbol", "Name", "LoyaltyPointsDivisor", "NoShowCredit"
+  "DeactivatedOn", "Code", "Symbol", "Name", "LoyaltyPointsDivisor", "NoShowCredit", "ReferralCredit"
 )
 VALUES
-  (generate_ulid()::TEXT, true, true,  'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL, 'CZK', 'Kč', 'Czech Koruna', 10.00, 250.00)
+  (generate_ulid()::TEXT, true, true,  'system', CURRENT_TIMESTAMP, NULL, NULL, NULL, NULL, 'CZK', 'Kč', 'Czech Koruna', 10.00, 250.00, 150.00)
 ON CONFLICT ("Code") DO NOTHING;
 
 -- ============================================================

@@ -379,6 +379,7 @@ private struct MarketChip: View {
                         currencyCode: "CZK",
                         isDefault: true,
                         noShowCredit: 250,
+                        referralCredit: 150,
                         insuranceCoverageAmount: nil
                     ),
                     unreadCount: 3,

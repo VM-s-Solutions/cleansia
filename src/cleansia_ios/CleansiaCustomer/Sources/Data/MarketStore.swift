@@ -42,6 +42,13 @@ enum MarketState: Equatable {
         else { return nil }
         return MarketMoney(amount: amount, currencyCode: market.currencyCode)
     }
+
+    /// What each side of a referral is credited in the chosen market, in its currency — nil before the
+    /// directory resolves, or where the market authors none (null or zero pays none), which names no figure.
+    var referralCredit: MarketMoney? {
+        guard let selected, let amount = selected.referralCredit, amount > 0 else { return nil }
+        return MarketMoney(amount: amount, currencyCode: selected.currencyCode)
+    }
 }
 
 enum MarketResolution {

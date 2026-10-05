@@ -11,8 +11,11 @@ import {
   loadCustomerCurrencies,
   selectCustomerDefaultCurrencyCode,
   selectMarketCurrencyCode,
+  selectMarketReferralCredit,
 } from '@cleansia/customer-stores';
+import { formatMoney } from '@cleansia/utils';
 import { MockStore, provideMockStore } from '@ngrx/store/testing';
+import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { of, throwError } from 'rxjs';
 import { RewardsFacade } from './rewards.facade';
 
@@ -52,6 +55,7 @@ describe('RewardsFacade', () => {
     };
 
     TestBed.configureTestingModule({
+      imports: [TranslateModule.forRoot()],
       providers: [
         RewardsFacade,
         provideMockStore(),
@@ -62,7 +66,47 @@ describe('RewardsFacade', () => {
     store = TestBed.inject(MockStore);
     store.overrideSelector(selectCustomerDefaultCurrencyCode, null);
     store.overrideSelector(selectMarketCurrencyCode, null);
+    store.overrideSelector(selectMarketReferralCredit, null);
+    TestBed.inject(TranslateService).use('cs');
     facade = TestBed.inject(RewardsFacade);
+  });
+
+  // The referral credit is `Currency.ReferralCredit`, authored per currency and carried by the
+  // market (ADR-0060): the copy holds a placeholder and this is the figure that fills it.
+  describe('the referral credit the invite card states', () => {
+    it('formats the market figure in its currency for the language being read', () => {
+      store.overrideSelector(selectMarketReferralCredit, 150);
+      store.overrideSelector(selectMarketCurrencyCode, 'CZK');
+      store.refreshState();
+
+      expect(facade.referralCreditAmount()).toBe(formatMoney(150, 'CZK', 'cs-CZ'));
+    });
+
+    it('follows a language switch', () => {
+      store.overrideSelector(selectMarketReferralCredit, 150);
+      store.overrideSelector(selectMarketCurrencyCode, 'CZK');
+      store.refreshState();
+
+      TestBed.inject(TranslateService).use('en');
+
+      expect(facade.referralCreditAmount()).toBe(formatMoney(150, 'CZK', 'en-US'));
+    });
+
+    it('is null in a market that authors no figure, so the card names no amount', () => {
+      store.overrideSelector(selectMarketReferralCredit, null);
+      store.overrideSelector(selectMarketCurrencyCode, 'EUR');
+      store.refreshState();
+
+      expect(facade.referralCreditAmount()).toBeNull();
+    });
+
+    it('is null when no market resolved', () => {
+      store.overrideSelector(selectMarketReferralCredit, null);
+      store.overrideSelector(selectMarketCurrencyCode, null);
+      store.refreshState();
+
+      expect(facade.referralCreditAmount()).toBeNull();
+    });
   });
 
   // The floor is a default-currency number enforced only on default-currency orders; it is said

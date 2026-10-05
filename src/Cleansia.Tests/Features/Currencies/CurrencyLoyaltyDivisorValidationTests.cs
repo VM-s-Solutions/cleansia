@@ -143,6 +143,45 @@ public class CurrencyLoyaltyDivisorValidationTests
         Assert.Equal(valid, result.IsValid);
     }
 
+    /// <summary>
+    /// The referral credit is authored beside the apology credit (owner ruling 2026-10-04). Null and zero
+    /// both pay no referral credit in this currency; only a negative figure is refused.
+    /// </summary>
+    [Theory]
+    [InlineData(-1.0, false)]
+    [InlineData(0.0, true)]
+    [InlineData(null, true)]
+    [InlineData(150.0, true)]
+    public async Task Update_Referral_Credit_May_Not_Be_Negative(double? credit, bool valid)
+    {
+        ArrangeStored(isActive: true, divisor: 10m);
+        var command = new UpdateCurrency.Command(CurrencyId, "EUR", "€", "Euro", 10m, ReferralCredit: (decimal?)credit);
+
+        var result = await new UpdateCurrency.Validator(_currencies.Object).ValidateAsync(command);
+
+        Assert.Equal(valid, result.IsValid);
+        Assert.Equal(!valid, result.Errors.Any(e =>
+            e.PropertyName == nameof(UpdateCurrency.Command.ReferralCredit)
+            && e.ErrorMessage == BusinessErrorMessage.MustBePositive));
+    }
+
+    [Theory]
+    [InlineData(-1.0, false)]
+    [InlineData(0.0, true)]
+    [InlineData(null, true)]
+    [InlineData(150.0, true)]
+    public async Task Create_Referral_Credit_May_Not_Be_Negative(double? credit, bool valid)
+    {
+        var command = new CreateCurrency.Command("EUR", "€", "Euro", 10m, ReferralCredit: (decimal?)credit);
+
+        var result = await new CreateCurrency.Validator(_currencies.Object).ValidateAsync(command);
+
+        Assert.Equal(valid, result.IsValid);
+        Assert.Equal(!valid, result.Errors.Any(e =>
+            e.PropertyName == nameof(CreateCurrency.Command.ReferralCredit)
+            && e.ErrorMessage == BusinessErrorMessage.MustBePositive));
+    }
+
     private void ArrangeStored(bool isActive, decimal? divisor)
     {
         var currency = Currency.Create("EUR", "€", "Euro");

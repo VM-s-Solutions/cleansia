@@ -76,6 +76,19 @@ public class CreditAccountRepository(CleansiaDbContext context)
         return account;
     }
 
+    public async Task<bool> IsOnFrozenCompanyBooksAsync(
+        string userId, string currencyId, CancellationToken cancellationToken)
+    {
+        var companyId = await GetQueryableIgnoringTenant()
+                .Where(a => a.UserId == userId && a.CurrencyId == currencyId)
+                .Select(a => a.TenantId)
+                .FirstOrDefaultAsync(cancellationToken)
+            ?? await context.UserTenantIdAsync(userId, cancellationToken);
+
+        return companyId is not null
+            && await context.Tenants.AnyAsync(t => t.Id == companyId && t.ArchiveRequestedOn != null, cancellationToken);
+    }
+
     public async Task<bool> TryReturnAsync(
         string userId,
         string currencyId,
@@ -176,6 +189,13 @@ public class CreditAccountRepository(CleansiaDbContext context)
             .AsNoTracking()
             .Where(t => t.IdempotencyKey == idempotencyKey
                 && t.Reason == CreditTransactionReason.OrderPaymentReturned)
+            .SumAsync(t => t.Amount, cancellationToken);
+
+    public Task<decimal> GetAmountAsync(
+        string idempotencyKey, CreditTransactionReason reason, CancellationToken cancellationToken) =>
+        context.CreditTransactions
+            .AsNoTracking()
+            .Where(t => t.IdempotencyKey == idempotencyKey && t.Reason == reason)
             .SumAsync(t => t.Amount, cancellationToken);
 
     public async Task<IReadOnlyDictionary<string, decimal>> GetReturnedTotalsByOrderAsync(

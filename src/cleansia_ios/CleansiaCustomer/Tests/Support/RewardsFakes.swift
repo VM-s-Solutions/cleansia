@@ -120,15 +120,13 @@ enum ReferralFixtures {
     static func account(
         code: String = "ABC123",
         accepted: Int = 0,
-        qualified: Int = 0,
-        pointsPerReferral: Int = 150
+        qualified: Int = 0
     ) -> ReferralAccount {
         ReferralAccount(
             code: code,
             timesUsed: 0,
             qualifiedCount: qualified,
-            acceptedCount: accepted,
-            pointsPerReferral: pointsPerReferral
+            acceptedCount: accepted
         )
     }
 
@@ -139,7 +137,7 @@ enum ReferralFixtures {
             status: status,
             acceptedOn: nil,
             firstQualifyingOrderOn: nil,
-            pointsAwardedToReferrer: nil
+            creditAwarded: nil
         )
     }
 }

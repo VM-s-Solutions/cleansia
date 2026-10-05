@@ -61,15 +61,30 @@ public interface IReferralService
     /// <summary>
     /// Called from <c>CompleteOrder.Handler</c>. If the user has a pending
     /// (Accepted) referral and this is their first completed order within
-    /// the qualifying window, grants +150 to both sides and flips the
-    /// referral to Qualified. Idempotent — safe to call twice for the same
-    /// orderId.
+    /// the qualifying window, credits both sides the order currency's
+    /// <c>ReferralCredit</c> and flips the referral to Qualified. Idempotent —
+    /// safe to call twice for the same orderId.
     /// </summary>
     Task ProcessOrderCompletedAsync(string orderId, string? userId, CancellationToken cancellationToken);
 
     /// <summary>
+    /// Issue <paramref name="amount"/> in <paramref name="currencyId"/> to the inviter and to the invited
+    /// friend, one ledger row per side under a per-referral key. Answers what each side received: null for
+    /// an erased side or one whose account is on a company frozen for archive, and for both when the amount
+    /// is null or not positive. Holds the paid owners' credit locks until the unit of work commits.
+    /// </summary>
+    Task<(decimal? ToReferrer, decimal? ToReferred)> AwardCreditAsync(
+        Referral referral,
+        string currencyId,
+        decimal? amount,
+        string? orderId,
+        string actorId,
+        string? note,
+        CancellationToken cancellationToken);
+
+    /// <summary>
     /// Background sweep — flip Referrals past the 90-day window from
-    /// Accepted to Expired. No points granted; cosmetic data hygiene only.
+    /// Accepted to Expired. No credit granted; cosmetic data hygiene only.
     /// </summary>
     Task ExpireStaleReferralsAsync(CancellationToken cancellationToken);
 }

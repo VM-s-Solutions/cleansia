@@ -13,8 +13,11 @@ import {
   loadCustomerCurrencies,
   selectCustomerDefaultCurrencyCode,
   selectMarketCurrencyCode,
+  selectMarketReferralCredit,
 } from '@cleansia/customer-stores';
+import { currentLanguage, formatMarketCredit } from '@cleansia/utils';
 import { Store } from '@ngrx/store';
+import { TranslateService } from '@ngx-translate/core';
 import { catchError, forkJoin, of, takeUntil } from 'rxjs';
 
 /**
@@ -32,6 +35,7 @@ import { catchError, forkJoin, of, takeUntil } from 'rxjs';
 export class RewardsFacade extends UnsubscribeControlDirective {
   private readonly customerClient = inject(CustomerClient);
   private readonly store = inject(Store);
+  private readonly lang = currentLanguage(inject(TranslateService));
 
   readonly account = signal<GetMyLoyaltyResponse | null>(null);
   readonly tiers = signal<GetLoyaltyTiersTierInfo[]>([]);
@@ -64,6 +68,13 @@ export class RewardsFacade extends UnsubscribeControlDirective {
   // endpoint never breaks the rewards page itself.
   readonly referralAccount = signal<GetMyReferralResponse | null>(null);
   readonly referralAccountLoading = signal(false);
+  private readonly marketReferralCredit = toSignal(this.store.select(selectMarketReferralCredit), {
+    initialValue: null,
+  });
+  /** What each side of a referral is credited in the browsed market, or null when it pays none. */
+  readonly referralCreditAmount = computed(() =>
+    formatMarketCredit(this.marketReferralCredit(), this.marketCurrencyCode(), this.lang()),
+  );
 
   readonly loading = signal(false);
   readonly loadingMore = signal(false);

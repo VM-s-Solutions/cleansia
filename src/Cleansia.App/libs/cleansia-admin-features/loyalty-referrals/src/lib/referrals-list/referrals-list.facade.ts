@@ -13,6 +13,7 @@ import { SnackbarService } from '@cleansia/services';
 import { currentLanguage, formatDate } from '@cleansia/utils';
 import { TranslateService } from '@ngx-translate/core';
 import { catchError, finalize, of, takeUntil } from 'rxjs';
+import { formatAdminCredit } from './referrals-list.models';
 
 export type ReferralStatusFilter =
   | 'all'
@@ -166,9 +167,16 @@ export class ReferralsListFacade extends UnsubscribeControlDirective {
       )
       .subscribe((response) => {
         if (response) {
-          this.snackbar.showSuccessTranslated(
-            'pages.loyalty_referrals.intervention.success_reverse'
-          );
+          if (response.currencyCode) {
+            this.snackbar.showSuccessTranslated('pages.loyalty_referrals.intervention.success_reverse', {
+              referrer: formatAdminCredit(response.creditTakenFromReferrer, response.currencyCode, this.lang()),
+              referred: formatAdminCredit(response.creditTakenFromReferred, response.currencyCode, this.lang()),
+            });
+          } else {
+            this.snackbar.showSuccessTranslated(
+              'pages.loyalty_referrals.intervention.success_reverse_no_credit'
+            );
+          }
           this.loadReferrals();
           onSuccess?.();
         }
@@ -197,9 +205,10 @@ export class ReferralsListFacade extends UnsubscribeControlDirective {
       )
       .subscribe((response) => {
         if (response) {
-          this.snackbar.showSuccessTranslated(
-            'pages.loyalty_referrals.intervention.success_force_qualify'
-          );
+          this.snackbar.showSuccessTranslated('pages.loyalty_referrals.intervention.success_force_qualify', {
+            referrer: formatAdminCredit(response.creditGrantedToReferrer, response.currencyCode, this.lang()),
+            referred: formatAdminCredit(response.creditGrantedToReferred, response.currencyCode, this.lang()),
+          });
           this.loadReferrals();
           onSuccess?.();
         }

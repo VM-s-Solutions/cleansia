@@ -152,7 +152,6 @@ class ReferralWireTest {
         assertEquals(7, dto.timesUsed)
         assertEquals(3, dto.qualifiedCount)
         assertEquals(5, dto.acceptedCount)
-        assertEquals(200, dto.pointsPerReferral)
     }
 
     /**
@@ -182,7 +181,17 @@ class ReferralWireTest {
         assertEquals(1, page?.pageNumber)
         assertEquals(20, page?.pageSize)
         assertEquals(2, page?.total)
-        assertEquals(120, page?.data?.first()?.pointsAwardedToReferrer)
+    }
+
+    /** The credit a referral paid is money in the currency of the friend's order, so the two travel together. */
+    @Test
+    fun eachReferralKeepsTheCreditItPaidAndItsCurrency() = runTest {
+        val page = referrals(CAPTURED_REFERRALS)
+
+        assertEquals(150.0, page?.data?.first()?.creditAwardedToReferrer!!, 0.0)
+        assertEquals("CZK", page?.data?.first()?.creditCurrencyCode)
+        assertEquals(7.5, page?.data?.last()?.creditAwardedToReferrer!!, 0.0)
+        assertEquals("EUR", page?.data?.last()?.creditCurrencyCode)
     }
 
     @Test
@@ -249,25 +258,29 @@ class ReferralWireTest {
     // --- rule 5: nullable-by-design fields stay nullable ---------------------------
 
     /**
-     * `pointsAwardedToReferrer` and `firstQualifyingOrderOn` are `nullable: true`: a referral that
-     * has not qualified genuinely has no award and no qualifying order.
+     * The credit, its currency and `firstQualifyingOrderOn` are `nullable: true`: a referral that has
+     * not qualified genuinely has no award, no currency and no qualifying order.
      */
     @Test
     fun aReferralThatHasNotQualifiedYetKeepsItsNulls() = runTest {
         val page = referrals(
-            referralsWithFirstRow { (it - "pointsAwardedToReferrer") - "firstQualifyingOrderOn" },
+            referralsWithFirstRow { it - "creditAwardedToReferrer" - "creditCurrencyCode" - "firstQualifyingOrderOn" },
         )
 
-        assertNull(page?.data?.first()?.pointsAwardedToReferrer)
+        assertNull(page?.data?.first()?.creditAwardedToReferrer)
+        assertNull(page?.data?.first()?.creditCurrencyCode)
         assertNull(page?.data?.first()?.firstQualifyingOrderOn)
         assertEquals(2, page?.total)
     }
 
     @Test
     fun anExplicitNullAwardSurvivesAsNull() = runTest {
-        val page = referrals(referralsWithFirstRow { it + ("pointsAwardedToReferrer" to JsonNull) })
+        val page = referrals(
+            referralsWithFirstRow { it + ("creditAwardedToReferrer" to JsonNull) + ("creditCurrencyCode" to JsonNull) },
+        )
 
-        assertNull(page?.data?.first()?.pointsAwardedToReferrer)
+        assertNull(page?.data?.first()?.creditAwardedToReferrer)
+        assertNull(page?.data?.first()?.creditCurrencyCode)
     }
 
     // --- the refused body ---------------------------------------------------------
@@ -323,8 +336,7 @@ class ReferralWireTest {
               "code": "R7QK2M",
               "timesUsed": 7,
               "qualifiedCount": 3,
-              "acceptedCount": 5,
-              "pointsPerReferral": 200
+              "acceptedCount": 5
             }
         """.trimIndent()
 
@@ -340,7 +352,8 @@ class ReferralWireTest {
                   "status": 2,
                   "acceptedOn": "2026-06-02T10:00:00Z",
                   "firstQualifyingOrderOn": "2026-06-11T09:30:00Z",
-                  "pointsAwardedToReferrer": 120
+                  "creditAwardedToReferrer": 150.00,
+                  "creditCurrencyCode": "CZK"
                 },
                 {
                   "id": "ref-2",
@@ -348,7 +361,8 @@ class ReferralWireTest {
                   "status": 4,
                   "acceptedOn": "2026-06-04T18:20:00Z",
                   "firstQualifyingOrderOn": "2026-06-14T08:00:00Z",
-                  "pointsAwardedToReferrer": 200
+                  "creditAwardedToReferrer": 7.50,
+                  "creditCurrencyCode": "EUR"
                 }
               ]
             }
@@ -367,7 +381,6 @@ class ReferralWireTest {
             "timesUsed",
             "qualifiedCount",
             "acceptedCount",
-            "pointsPerReferral",
         )
 
         val LIST_ITEM_SPEC_PROPERTIES = setOf(
@@ -376,12 +389,13 @@ class ReferralWireTest {
             "status",
             "acceptedOn",
             "firstQualifyingOrderOn",
-            "pointsAwardedToReferrer",
+            "creditAwardedToReferrer",
+            "creditCurrencyCode",
         )
 
         val VALIDATE_SPEC_PROPERTIES = setOf("isValid", "referrerFirstName", "errorCode")
 
         val ACCOUNT_REQUIRED_NUMBERS =
-            listOf("timesUsed", "qualifiedCount", "acceptedCount", "pointsPerReferral")
+            listOf("timesUsed", "qualifiedCount", "acceptedCount")
     }
 }

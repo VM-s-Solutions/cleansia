@@ -38,9 +38,14 @@ public class ReferralEntityConfiguration : TenantAuditableEntityConfiguration<Re
             .HasMaxLength(26)
             .IsRequired(false);
 
-        builder.Property(r => r.PointsAwardedToReferrer);
-        builder.Property(r => r.PointsAwardedToReferred);
-        builder.Property(r => r.PointsAwardedOn);
+        builder.Property(r => r.CreditAwardedToReferrer)
+            .HasPrecision(18, 2);
+        builder.Property(r => r.CreditAwardedToReferred)
+            .HasPrecision(18, 2);
+        builder.Property(r => r.CreditCurrencyId)
+            .HasMaxLength(26)
+            .IsRequired(false);
+        builder.Property(r => r.AwardedOn);
 
         // FKs to two distinct Users — Restrict so neither side is hard-deletable
         // while a referral relationship exists.
@@ -65,6 +70,14 @@ public class ReferralEntityConfiguration : TenantAuditableEntityConfiguration<Re
         builder.HasOne(r => r.FirstQualifyingOrder)
             .WithMany()
             .HasForeignKey(r => r.FirstQualifyingOrderId)
+            .OnDelete(DeleteBehavior.Restrict)
+            .IsRequired(false);
+
+        // Restrict, like every other money row's currency: a currency a referral was paid in is not
+        // deletable. Currency carries no collection back, so the unnamed WithMany() maps this key.
+        builder.HasOne(r => r.CreditCurrency)
+            .WithMany()
+            .HasForeignKey(r => r.CreditCurrencyId)
             .OnDelete(DeleteBehavior.Restrict)
             .IsRequired(false);
 

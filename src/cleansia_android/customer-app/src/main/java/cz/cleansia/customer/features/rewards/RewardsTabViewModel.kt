@@ -12,9 +12,11 @@ import cz.cleansia.customer.core.loyalty.LoyaltyAccountDto
 import cz.cleansia.customer.core.loyalty.LoyaltyActivityItemDto
 import cz.cleansia.customer.core.loyalty.LoyaltyRepository
 import cz.cleansia.customer.core.loyalty.TierInfoDto
+import cz.cleansia.customer.core.market.MarketListItem
 import cz.cleansia.customer.core.market.MarketRepository
 import cz.cleansia.customer.core.market.MarketState
 import cz.cleansia.customer.core.market.defaultCurrencyCode
+import cz.cleansia.customer.core.market.selectedOrNull
 import cz.cleansia.customer.core.referral.ReferralAccountDto
 import cz.cleansia.customer.core.referral.ReferralRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -53,6 +55,11 @@ class RewardsTabViewModel @Inject constructor(
         combine(marketRepository.state, catalogRepository.currencyCode) { market, catalogDefault ->
             (market as? MarketState.Resolved)?.selected?.currencyCode ?: catalogDefault
         }.stateIn(viewModelScope, SharingStarted.Eagerly, null)
+
+    /** The chosen market, whose referral credit the invite card and its share text state. */
+    val selectedMarket: StateFlow<MarketListItem?> = marketRepository.state
+        .map { it.selectedOrNull }
+        .stateIn(viewModelScope, SharingStarted.Eagerly, null)
 
     /**
      * The tier floor is a platform-default-currency number enforced only on orders in that currency

@@ -50,7 +50,9 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import cz.cleansia.customer.R
+import cz.cleansia.customer.core.market.formattedReferralCredit
 import cz.cleansia.customer.core.referral.ReferralValidationError
 import cz.cleansia.customer.features.booking.ReferralCodeBottomSheet
 import cz.cleansia.customer.features.booking.ReferralCodeUiState
@@ -100,6 +102,7 @@ fun SignUpScreen(
     // we can render the "applied" state on the entry row vs the empty chevron.
     var referralValidated by rememberSaveable { mutableStateOf(false) }
     var referralSheetOpen by remember { mutableStateOf(false) }
+    val selectedMarket by viewModel.selectedMarket.collectAsStateWithLifecycle()
 
     val hasMinLength = PasswordPolicy.hasMinLength(password)
     val hasLetter = PasswordPolicy.hasLetter(password)
@@ -279,6 +282,7 @@ fun SignUpScreen(
     if (referralSheetOpen) {
         ReferralCodeBottomSheet(
             initialCode = referralCode,
+            referralCredit = selectedMarket?.formattedReferralCredit(),
             onDismiss = { referralSheetOpen = false },
             onValidate = { code ->
                 val normalized = code.trim().uppercase()

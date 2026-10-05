@@ -5,11 +5,10 @@ using Cleansia.Core.Domain.Internationalization;
 namespace Cleansia.Core.Domain.Users;
 
 /// <summary>
-/// A card a customer saves as the guarantee for a cash booking (owner ruling 2026-09-28, decision 16):
-/// captured through a Stripe SetupIntent on the customer's Stripe Customer for the currency, never
-/// charged at capture, and saved under consent that a cancellation fee, a lockout fee, unpaid cash and an
-/// approved top-up may be charged to it. The row is written when the capture starts, with the consent
-/// evidence; the card itself lands when Stripe reports the SetupIntent succeeded. Removal deactivates it.
+/// A card a customer saves to their account, on their Stripe Customer for the currency, under consent that
+/// it is saved and never charged unless they pay with it (owner ruling 2026-10-04: no saved card is charged
+/// for a fee or unpaid cash). The row is written when the capture starts, with the consent evidence; the
+/// card itself lands when Stripe reports the capture succeeded. Removal deactivates it.
 /// </summary>
 public class SavedCard : TenantAuditable
 {
@@ -17,7 +16,7 @@ public class SavedCard : TenantAuditable
     /// The consent wording the clients show when a card is saved. A draft until the lawyer's wording
     /// arrives; bump it with every change to that wording, so each card records the text it was saved under.
     /// </summary>
-    public const string ConsentTextVersionInForce = "card-guarantee-draft-2026-09-28";
+    public const string ConsentTextVersionInForce = "saved-card-draft-2026-10-05";
 
     [Required]
     [MaxLength(26)]

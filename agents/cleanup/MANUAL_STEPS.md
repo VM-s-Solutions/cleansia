@@ -203,14 +203,26 @@ what is named against the id before it:
   Npgsql emits no DDL; the delta against `20261003132430` is that one property in the Designer and
   the snapshot. Still **89** tables and **53** with the `Tenants` FK; `has-pending-model-changes`
   reports none, and the three backend suites ran green at it (7604 / 742 / 417).
+- **`20261005010454`** (2026-10-05, branch `feature/meeting-2026-10-04-batch2`, the referral reward as
+  credit): `Currencies.ReferralCredit` `numeric(18,2)` NULL; `Referrals` drops `PointsAwardedToReferrer`,
+  `PointsAwardedToReferred` and `PointsAwardedOn` and gains `CreditAwardedToReferrer` and
+  `CreditAwardedToReferred` (`numeric(18,2)` NULL), `CreditCurrencyId` (FK `Currencies`, Restrict, with
+  its index) and `AwardedOn`. Still **89** tables and **53** with the `Tenants` FK;
+  `has-pending-model-changes` reports none, and the three backend suites ran green at it
+  (7786 / 766 / 418).
 
-**The one owed drop belongs to `20261003220403`** (it renews the one owed for `20261003132430`), and
-the coordinator runs it right after `fix/settlement-followups-2026-10-03` merges: a DEV database whose
+**The one owed drop belongs to `20261005010454`** (it renews the one owed for `20261003220403`), and
+the coordinator runs it right before the DEV deploy of `feature/meeting-2026-10-04-batch2`: a DEV database whose
 `__EFMigrationsHistory` records any earlier id replays the whole create script against tables that
 already exist. The legal texts need no extra step — every host seeds them at start, and since
 `b34dff07` a fresh Development database is seeded once more in the boot that migrates it (the factory
-now refuses a booking with no contract text in force, so a first boot must not come up without one);
-**three** documents are seeded now (terms, privacy, work contract).
+now refuses a booking with no contract text in force, so a first boot must not come up without one).
+**Seven** document types are seeded now, in five languages each: for customers the terms of service, the
+privacy policy and the complaints procedure; for cleaners the contract for work, the framework
+cooperation agreement, the self-billing agreement and the data processing agreement. Every dated version
+under `Seed/Legal` comes in with them, so after the drop the seeder also brings in the **2026-10-05**
+terms of service, framework agreement, self-billing agreement and contract for work, in force from that
+day.
 
 Regenerating is no longer a manual step of any kind (owner ruling 2026-08-25): it is ordinary work and
 is done in the branch that needs it. **The drop remains deferred until deployment, never branch

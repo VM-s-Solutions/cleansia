@@ -4,6 +4,7 @@ using Cleansia.Core.AppServices.Features.Referrals.Admin;
 using Cleansia.Core.AppServices.Features.Referrals.Admin.DTOs;
 using Cleansia.Core.AppServices.Features.Referrals.Admin.Filters;
 using Cleansia.Core.AppServices.Shared.DTOs.ResponseModels;
+using Cleansia.Core.Domain.Internationalization;
 using Cleansia.Core.Domain.Loyalty;
 using Cleansia.Core.Domain.Repositories;
 using Cleansia.Core.Domain.Sorting.Common;
@@ -35,10 +36,13 @@ public class GetPagedReferralsHandlerTests
     private static Referral QualifiedReferral(User? referrer, User? referred)
     {
         var referral = Referral.CreateAccepted("referrer-1", "referred-1", "code-1", "system");
-        referral.MarkQualified("order-1", 150, 120, "system");
+        referral.MarkQualified("order-1", "czk", 150m, 120m, "system");
         referral.Id = "ref-1";
         SetNav(referral, nameof(Referral.Referrer), referrer);
         SetNav(referral, nameof(Referral.Referred), referred);
+        var czk = Currency.Create("CZK", "Kč", "Czech koruna");
+        czk.Id = "czk";
+        SetNav(referral, nameof(Referral.CreditCurrency), czk);
         return referral;
     }
 
@@ -79,8 +83,9 @@ public class GetPagedReferralsHandlerTests
         Assert.Equal("referred@x.test", row.ReferredEmail);
         Assert.Equal(ReferralStatus.Qualified, row.Status);
         Assert.NotNull(row.FirstQualifyingOrderOn);
-        Assert.Equal(150, row.PointsAwardedToReferrer);
-        Assert.Equal(120, row.PointsAwardedToReferred);
+        Assert.Equal(150m, row.CreditAwardedToReferrer);
+        Assert.Equal(120m, row.CreditAwardedToReferred);
+        Assert.Equal("CZK", row.CreditCurrencyCode);
     }
 
     [Fact]
@@ -124,7 +129,7 @@ public class GetPagedReferralsHandlerTests
         Assert.NotNull(captured);
         var predicate = captured!.Compile();
         var reversed = Referral.CreateAccepted("a", "b", "c", "system");
-        reversed.MarkQualified("o", 1, 1, "system");
+        reversed.MarkQualified("o", "czk", 1m, 1m, "system");
         reversed.Reverse("system");
         var accepted = Referral.CreateAccepted("d", "e", "f", "system");
         Assert.True(predicate(reversed));

@@ -102,6 +102,7 @@ public class GetMarkets
                     CurrencySymbol: currency.Symbol,
                     IsDefault: false,
                     NoShowCredit: currency.NoShowCredit,
+                    ReferralCredit: currency.ReferralCredit,
                     InsuranceCoverageAmount: configuration.InsuranceCoverageAmount);
 
                 markets.Add(market);

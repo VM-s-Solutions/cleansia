@@ -1,6 +1,7 @@
 using System.Security.Cryptography;
 using Cleansia.Core.AppServices.Features.Orders;
 using Cleansia.Core.AppServices.Services.Interfaces;
+using Cleansia.Core.Domain.Credit;
 using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Loyalty;
 using Cleansia.Core.Domain.Repositories;
@@ -13,7 +14,7 @@ using Cleansia.Core.AppServices.Common;
 namespace Cleansia.Core.AppServices.Services;
 
 /// <summary>
-/// Coordinates referral-code generation + acceptance, and the symmetric +150
+/// Coordinates referral-code generation + acceptance, and the symmetric credit
 /// grants when an invitee completes their first order. Mirrors the
 /// <see cref="LoyaltyService"/> shape: handlers call into this, the service
 /// keeps the business rules.
@@ -22,11 +23,13 @@ public sealed class ReferralService(
     IReferralCodeRepository referralCodeRepository,
     IReferralRepository referralRepository,
     IOrderRepository orderRepository,
-    ILoyaltyService loyaltyService,
+    ICreditAccountRepository creditAccountRepository,
     IUnitOfWork unitOfWork,
     ILogger<ReferralService> logger) : IReferralService
 {
     private const string SystemActor = "system";
+    internal const string ReferrerSide = "referrer";
+    internal const string ReferredSide = "referred";
     private const int CodeLength = 6;
     private const int MaxGenerationAttempts = 5;
 
@@ -223,40 +226,88 @@ public sealed class ReferralService(
             return;
         }
 
-        // Symmetric grant. Each call is idempotent on (orderId, Referral)
-        // so a re-invocation here can't double-grant. The referral path keeps
-        // its (orderId, source) key — requestId is null (the new idempotency
-        // key is only for the admin manual path).
-        await loyaltyService.GrantPointsManuallyAsync(
-            referral.ReferrerUserId,
-            ReferralPolicy.PointsPerSide,
-            LoyaltyEarnSource.Referral,
-            orderId,
-            SystemActor,
-            reason: null,
-            requestId: null,
-            cancellationToken);
-
-        await loyaltyService.GrantPointsManuallyAsync(
-            referral.ReferredUserId,
-            ReferralPolicy.PointsPerSide,
-            LoyaltyEarnSource.Referral,
-            orderId,
-            SystemActor,
-            reason: null,
-            requestId: null,
-            cancellationToken);
+        var (toReferrer, toReferred) = await AwardCreditAsync(
+            referral, order.CurrencyId, order.Currency?.ReferralCredit, orderId, SystemActor, note: null, cancellationToken);
 
         referral.MarkQualified(
             firstQualifyingOrderId: orderId,
-            pointsToReferrer: ReferralPolicy.PointsPerSide,
-            pointsToReferred: ReferralPolicy.PointsPerSide,
+            creditCurrencyId: order.CurrencyId,
+            creditToReferrer: toReferrer,
+            creditToReferred: toReferred,
             actorId: SystemActor);
 
         // Bump the inviter's "X friends qualified" counter so the Rewards
         // tab stat updates without a recount.
         referral.ReferralCode?.RecordUse(SystemActor);
     }
+
+    public async Task<(decimal? ToReferrer, decimal? ToReferred)> AwardCreditAsync(
+        Referral referral,
+        string currencyId,
+        decimal? amount,
+        string? orderId,
+        string actorId,
+        string? note,
+        CancellationToken cancellationToken)
+    {
+        if (amount is null or <= 0m)
+        {
+            logger.LogWarning(
+                "Referral {ReferralId} qualified with no credit: none is authored for currency {CurrencyId}.",
+                referral.Id, currencyId);
+            return (null, null);
+        }
+
+        decimal? toReferrer = null;
+        decimal? toReferred = null;
+
+        // Each grant holds its owner's credit lock until commit; one fixed order keeps two grants to the
+        // same pair from each holding the lock the other waits on.
+        var sides = new[] { (Side: ReferrerSide, UserId: referral.ReferrerUserId), (Side: ReferredSide, UserId: referral.ReferredUserId) }
+            .OrderBy(s => s.UserId, StringComparer.Ordinal);
+        foreach (var (side, userId) in sides)
+        {
+            // A write to a frozen company's books fails the whole commit, and that commit is the qualifying
+            // order's, which may be another, active company's: that side is skipped like an erased one.
+            if (await creditAccountRepository.IsOnFrozenCompanyBooksAsync(userId, currencyId, cancellationToken))
+            {
+                logger.LogWarning(
+                    "Referral {ReferralId}: the {Side}'s credit account is on a company frozen for archive; that side receives no credit.",
+                    referral.Id, side);
+                continue;
+            }
+
+            var account = await creditAccountRepository.EnsureForUserAsync(userId, currencyId, cancellationToken);
+            if (account is null)
+            {
+                logger.LogInformation(
+                    "Referral {ReferralId}: the {Side} has been erased and receives no credit.", referral.Id, side);
+                continue;
+            }
+
+            account.Issue(
+                amount: amount.Value,
+                reason: CreditTransactionReason.Referral,
+                idempotencyKey: CreditKey(referral.Id, side),
+                issuedBy: actorId,
+                orderId: orderId,
+                note: note);
+
+            if (side == ReferrerSide)
+            {
+                toReferrer = amount;
+            }
+            else
+            {
+                toReferred = amount;
+            }
+        }
+
+        return (toReferrer, toReferred);
+    }
+
+    /// <summary>The ledger key of one side's referral grant; the reversal reads the grant back by it.</summary>
+    internal static string CreditKey(string referralId, string side) => $"referral:{referralId}:{side}";
 
     public async Task ExpireStaleReferralsAsync(CancellationToken cancellationToken)
     {

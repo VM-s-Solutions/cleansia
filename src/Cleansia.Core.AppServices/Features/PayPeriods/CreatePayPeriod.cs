@@ -40,11 +40,7 @@ public class CreatePayPeriod
                 .WithMessage(BusinessErrorMessage.Required)
                 .Must((cmd, endDate) => endDate > cmd.StartDate)
                 .WithMessage(BusinessErrorMessage.InvalidDate)
-                .Must((cmd, endDate) =>
-                {
-                    var duration = endDate.DayNumber - cmd.StartDate.DayNumber;
-                    return duration is >= 7 and <= 31;
-                })
+                .Must((cmd, endDate) => endDate == cmd.StartDate.AddDays(PayPeriod.LengthInDays - 1))
                 .WithMessage(BusinessErrorMessage.InvalidDuration);
 
             RuleFor(x => x)

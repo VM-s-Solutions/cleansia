@@ -178,13 +178,16 @@
         "row_title": "Odporúčací kód",
         "row_applied": "{{code}} aktivované",
         "dialog_title": "Zadajte odporúčací kód",
-        "dialog_helper": "Máte kód od kamaráta? Obaja získate 150 bonusových bodov po prvom upratovaní.",
+        "dialog_helper": "Máte kód od kamaráta? Po vašom prvom upratovaní obaja získate kredit {{amount}}.",
+        "dialog_helper_no_amount": "Máte kód od kamaráta? Zadajte ho sem.",
         "dialog_apply": "Použiť",
         "dialog_cancel": "Zrušiť",
         "dialog_done": "Hotovo",
         "dialog_validating": "Overujem…",
-        "dialog_success": "Kód prijatý — obaja získate 150 bonusových bodov.",
-        "dialog_success_named": "Kód od {{name}} prijatý — obaja získate 150 bonusových bodov.",
+        "dialog_success": "Kód prijatý — po vašom prvom upratovaní obaja získate kredit {{amount}}.",
+        "dialog_success_named": "Kód od {{name}} prijatý — po vašom prvom upratovaní obaja získate kredit {{amount}}.",
+        "dialog_success_no_amount": "Kód prijatý.",
+        "dialog_success_named_no_amount": "Kód od {{name}} prijatý.",
         "error_not_found": "Odporúčací kód sa nenašiel",
         "error_self_referral": "Sám seba nemôžete odporučiť",
         "error_already_referred": "Odporúčanie ste už prijali",
@@ -1067,7 +1070,7 @@
       },
       "card_capture": {
         "consent": {
-          "card-guarantee-draft-2026-09-28": "Súhlasím, že Cleansia môže z tejto karty bez toho, aby sa ma zakaždým pýtala, strhnúť poplatok za neskoré zrušenie, poplatok, keď sa upratovač nedostane do mojej domácnosti, hotovosť, ktorú som za rezerváciu nezaplatil(a), a doplatok, ktorý som schválil(a)."
+          "saved-card-draft-2026-10-05": "Súhlasím, že Cleansia uloží túto kartu do môjho účtu. Nič z nej nestrhne, ak ňou nezaplatím, a kartu môžem kedykoľvek odstrániť."
         }
       },
       "save_card": {
@@ -1390,17 +1393,19 @@
         "platinum_sparkler": "Platinový žiarič"
       },
       "referral": {
-        "section_title": "Pozvite priateľov — získate 150 bodov každý",
-        "subtitle": "Zdieľajte svoj kód. Oni dostanú 150 bonusových bodov za prvé upratovanie a vy tiež 150.",
+        "section_title": "Pozvite priateľov — každý získate kredit {{amount}}",
+        "section_title_no_amount": "Pozvite priateľov",
+        "subtitle": "Zdieľajte svoj kód. Keď váš známy dokončí prvé upratovanie, obaja získate kredit {{amount}} na ďalšie objednávky.",
+        "subtitle_no_amount": "Zdieľajte svoj kód s priateľmi, ktorým by sa upratovanie hodilo.",
         "copy_button": "Kopírovať",
         "share_button": "Zdieľať",
-        "share_text": "Získajte 150 bonusových bodov za prvé upratovanie Cleansia! Použite môj kód {{code}} pri registrácii: {{url}}",
+        "share_text": "Objednajte si upratovanie s Cleansia — pri registrácii použite môj kód {{code}}: {{url}}",
         "copied_toast": "Kód skopírovaný",
         "share_failed": "Zdieľanie sa nepodarilo otvoriť. Kód bol skopírovaný do schránky.",
         "stats_empty": "Buďte prvý — zdieľajte svoj kód",
         "stats_waiting": "{{count}} priateľ sa pripojil — čakáme na prvú objednávku",
         "stats_qualified": "{{count}} priateľ sa pripojil · {{qualified}} kvalifikovaný",
-        "when_credited": "Body vám pripíšeme, až keď váš známy dokončí prvé upratovanie.",
+        "when_credited": "Kredit vám pripíšeme, až keď váš známy dokončí prvé upratovanie.",
         "copy": "Skopírovať"
       },
       "lead": "Za každé dokončené upratovanie zbierate body. Čím viac bodov, tým vyšší stupeň — a tým väčšia zľava na každú ďalšiu objednávku.",
@@ -1419,7 +1424,7 @@
       "discount_cap": "Zľava zo stupňa a zľava z Cleansia Plus sa sčítajú, ale dokopy najviac {{cap}} % z ceny. Najvyšší stupeň na tento strop dosiahne sám — Plus mu zľavu ďalej nezdvihne.",
       "recent_title": "Posledné pohyby",
       "history_title": "História bodov",
-      "history_lead": "Každý pohyb na vašom konte. Kladné za dokončené upratovania a odporúčania, záporné za zrušené objednávky.",
+      "history_lead": "Každý pohyb na vašom konte. Kladné za dokončené upratovania, záporné za zrušené objednávky.",
       "filter_all": "Všetko",
       "filter_earned": "Získané",
       "filter_deducted": "Odpočítané",
@@ -1432,8 +1437,6 @@
         "rate_note": "Z celkovej ceny objednávky, zaokrúhlené nadol.",
         "on_completion_title": "Až po upratovaní",
         "on_completion_note": "Pripíšeme ich, keď je objednávka dokončená — nie keď ju zadáte.",
-        "referral_title": "A za odporúčanie",
-        "referral_note": "Keď váš známy dokončí prvé upratovanie.",
         "clawback": "Zrušená alebo vrátená objednávka body zase odpočíta — preto sa pripisujú až po upratovaní."
       },
       "tx": {

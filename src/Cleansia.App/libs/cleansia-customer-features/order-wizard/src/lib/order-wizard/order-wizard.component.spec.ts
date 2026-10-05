@@ -774,7 +774,7 @@ describe('OrderWizardComponent (a11y)', () => {
         expect(saveCardTick()).toBeNull();
       });
 
-      it('offers an unticked box with the card-guarantee consent the server records', async () => {
+      it('offers an unticked box with the saved-card consent the server records', async () => {
         await setup();
         facade.activeStep.set(4);
         facade.saveCardOffered.set(true);
@@ -782,7 +782,7 @@ describe('OrderWizardComponent (a11y)', () => {
 
         expect(saveCardTick()?.textContent).toContain('pages.order.save_card.label');
         expect(saveCardTick()?.textContent).toContain(
-          'pages.order.card_capture.consent.card-guarantee-draft-2026-09-28',
+          'pages.order.card_capture.consent.saved-card-draft-2026-10-05',
         );
         expect(saveCardTick()?.querySelector<HTMLInputElement>('input[type="checkbox"]')?.checked).toBe(false);
       });

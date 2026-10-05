@@ -65,3 +65,16 @@ const LOCALE_BY_LANGUAGE: Record<string, string> = {
 export function localeFor(lang: string | undefined): string {
   return (lang && LOCALE_BY_LANGUAGE[lang]) || 'en-US';
 }
+
+/**
+ * A credit figure the market's currency authors, as money — or null when it authors none (null or
+ * zero) or no market resolved, which is the cue for copy that names no amount (ADR-0060).
+ */
+export function formatMarketCredit(
+  value: number | null | undefined,
+  currencyCode: string | null | undefined,
+  lang: string | undefined,
+): string | null {
+  if (value == null || value <= 0 || !currencyCode) return null;
+  return formatMoney(value, currencyCode, localeFor(lang));
+}

@@ -7,6 +7,8 @@ import { ActivatedRoute, Router } from '@angular/router';
 import {
   AdminClient,
   AdminGdprClient,
+  AdminReferralListItem,
+  CreditTransactionReason,
   GetReferralsByUserResponse,
   GetUserCreditCurrencyAccount,
   GetUserCreditLedgerEntry,
@@ -17,6 +19,7 @@ import {
 } from '@cleansia/admin-services';
 import { TimelineComponent } from '@cleansia/admin-features/audit-log';
 import { PermissionService, SnackbarService } from '@cleansia/services';
+import { formatMoney } from '@cleansia/utils';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { of, throwError } from 'rxjs';
 import { ExpireCreditDialogComponent } from '../expire-credit-dialog/expire-credit-dialog.component';
@@ -514,5 +517,35 @@ describe('UserLoyaltyDetailComponent — credit section', () => {
     expect(el.querySelector('cleansia-admin-audit-timeline')).toBeNull();
     expect(el.textContent).not.toContain('pages.customer_detail.timeline.title');
     expect(el.querySelector('.cleansia-user-loyalty-detail__export')).toBeTruthy();
+  });
+
+  // A qualified referral pays credit in the order's currency, and its reversal takes it back:
+  // both are ledger rows an admin reads here, so neither may fall through to "Other".
+  it('labels a referral credit and its reversal in the ledger', () => {
+    const component = renderFixture(noAccount()).componentInstance;
+
+    expect(component.creditReasonKey(CreditTransactionReason.Referral)).toBe(
+      'pages.loyalty_user_detail.credit.reason.referral'
+    );
+    expect(component.creditReasonKey(CreditTransactionReason.ReferralReversed)).toBe(
+      'pages.loyalty_user_detail.credit.reason.referral_reversed'
+    );
+  });
+
+  it('prints the referral credit in the currency it was paid in', () => {
+    const translate = TestBed.inject(TranslateService);
+    translate.setTranslation('en', { pages: { loyalty_referrals: { credit_format: '{{referrer}} / {{referred}}' } } });
+    translate.use('en');
+    const component = renderFixture(noAccount()).componentInstance;
+    const paid = AdminReferralListItem.fromJS({
+      creditAwardedToReferrer: 150,
+      creditAwardedToReferred: 150,
+      creditCurrencyCode: 'CZK',
+    });
+    const czk = formatMoney(150, 'CZK', 'en-US', { fractionDigits: 2 });
+
+    const cell = component.referralsAsReferrerColumns.find((column) => column.id === 'credit')?.getValue?.(paid);
+
+    expect(cell).toBe(`${czk} / ${czk}`);
   });
 });

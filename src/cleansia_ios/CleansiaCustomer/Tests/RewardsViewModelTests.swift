@@ -64,6 +64,25 @@ final class RewardsViewModelTests: XCTestCase {
         XCTAssertEqual(vm.tierFloor, .notApplicable)
     }
 
+    /// The invite card and its share text promise the chosen market's referral credit; none before a market
+    /// is known, and none in a market that authors none.
+    func testTheInviteCardPromisesTheChosenMarketsReferralCredit() async {
+        let (unknown, _, _) = await makeVM(
+            FakeLoyaltyClient(),
+            FakeRewardsReferralClient(),
+            marketStore: MarketFixtures.unavailable()
+        )
+        XCTAssertNil(unknown.referralCredit)
+
+        let market = await MarketFixtures.resolved()
+        let (vm, _, _) = makeVM(FakeLoyaltyClient(), FakeRewardsReferralClient(), marketStore: market)
+        XCTAssertEqual(vm.referralCredit, MarketMoney(amount: 150, currencyCode: "CZK"))
+
+        market.select(isoCode: "SVK")
+
+        XCTAssertNil(vm.referralCredit)
+    }
+
     func testLoadSurfacesLoadedWithTierProgressAndPerks() async {
         let loyalty = FakeLoyaltyClient()
         loyalty.accountResult = .success(LoyaltyFixtures.account(

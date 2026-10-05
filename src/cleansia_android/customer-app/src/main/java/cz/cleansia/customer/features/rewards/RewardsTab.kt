@@ -78,6 +78,7 @@ import cz.cleansia.customer.core.loyalty.LoyaltyEarnSource
 import cz.cleansia.customer.core.loyalty.LoyaltyTier
 import cz.cleansia.customer.core.loyalty.TierInfoDto
 import cz.cleansia.customer.core.loyalty.TierPerkDto
+import cz.cleansia.customer.core.market.formattedReferralCredit
 import cz.cleansia.customer.core.referral.ReferralAccountDto
 import cz.cleansia.core.ui.components.SudsRefreshIndicator
 import cz.cleansia.core.ui.theme.Poppins
@@ -130,6 +131,7 @@ fun RewardsTab(
     val loading by viewModel.loading.collectAsStateWithLifecycle()
     val loaded by viewModel.loaded.collectAsStateWithLifecycle()
     val referralAccount by viewModel.referralAccount.collectAsStateWithLifecycle()
+    val selectedMarket by viewModel.selectedMarket.collectAsStateWithLifecycle()
     val activityPreview by viewModel.activityPreview.collectAsStateWithLifecycle()
     val credit by viewModel.credit.collectAsStateWithLifecycle()
     val isUserRefreshing by viewModel.isUserRefreshing.collectAsStateWithLifecycle()
@@ -193,6 +195,7 @@ fun RewardsTab(
                     currencyCode = currencyCode,
                     tierFloorApplies = tierFloorApplies,
                     referralAccount = referralAccount,
+                    referralCredit = selectedMarket?.formattedReferralCredit(),
                     activityPreview = activityPreview,
                     onOpenActivity = onOpenActivity,
                     onReferralCodeCopied = viewModel::onReferralCodeCopied,
@@ -213,6 +216,7 @@ private fun LoyaltyContent(
     currencyCode: String?,
     tierFloorApplies: Boolean,
     referralAccount: ReferralAccountDto?,
+    referralCredit: String?,
     activityPreview: List<LoyaltyActivityItemDto>,
     onOpenActivity: () -> Unit,
     onReferralCodeCopied: () -> Unit,
@@ -265,6 +269,7 @@ private fun LoyaltyContent(
         if (referralAccount != null && referralAccount.code.isNotBlank()) {
             InviteFriendsCard(
                 referral = referralAccount,
+                referralCredit = referralCredit,
                 onCodeCopied = onReferralCodeCopied,
                 onShareUnavailable = onReferralShareUnavailable,
             )
@@ -1006,6 +1011,7 @@ internal fun transactionLabelRes(source: Int): Int = when (LoyaltyEarnSource.fro
 @Composable
 private fun InviteFriendsCard(
     referral: ReferralAccountDto,
+    referralCredit: String?,
     onCodeCopied: () -> Unit,
     onShareUnavailable: () -> Unit,
 ) {
@@ -1035,7 +1041,7 @@ private fun InviteFriendsCard(
     }
 
     val onShare: () -> Unit = {
-        shareReferralOrFallback(context, code, onShareUnavailable)
+        shareReferralOrFallback(context, code, referralCredit, onShareUnavailable)
     }
 
     Column(
@@ -1070,7 +1076,8 @@ private fun InviteFriendsCard(
         }
         Spacer(Modifier.height(8.dp))
         Text(
-            stringResource(R.string.loyalty_referral_subtitle),
+            referralCredit?.let { stringResource(R.string.loyalty_referral_subtitle, it) }
+                ?: stringResource(R.string.loyalty_referral_subtitle_no_figure),
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
@@ -1174,10 +1181,12 @@ private fun copyToClipboard(context: android.content.Context, code: String) {
 internal fun shareReferralOrFallback(
     context: android.content.Context,
     code: String,
+    referralCredit: String?,
     onShareUnavailable: () -> Unit,
 ) {
     val landingUrl = "https://cleansia.cz/r/$code"
-    val message = context.getString(R.string.loyalty_referral_share_text, code, landingUrl)
+    val message = referralCredit?.let { context.getString(R.string.loyalty_referral_share_text, it, code, landingUrl) }
+        ?: context.getString(R.string.loyalty_referral_share_text_no_figure, code, landingUrl)
     val send = android.content.Intent(android.content.Intent.ACTION_SEND).apply {
         type = "text/plain"
         putExtra(android.content.Intent.EXTRA_TEXT, message)

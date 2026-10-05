@@ -71,6 +71,7 @@ struct RewardsTab: View {
             RewardsContentView(
                 content: content,
                 tierFloor: vm.tierFloor,
+                referralCredit: vm.referralCredit,
                 onCopyCode: copyCode,
                 onOpenActivity: onOpenActivity
             )
@@ -88,6 +89,7 @@ struct RewardsContentView: View {
     let content: RewardsContent
     /// The tier floor's label, resolved by the ViewModel from the chosen market (ADR-0058 D4).
     let tierFloor: TierFloorLabel
+    let referralCredit: MarketMoney?
     let onCopyCode: (String) -> Void
     let onOpenActivity: () -> Void
 
@@ -119,7 +121,7 @@ struct RewardsContentView: View {
                 TierLadderCard(tiers: content.tiers, current: currentTier, floor: tierFloor)
 
                 if let referral = content.referral, !referral.code.isEmpty {
-                    InviteFriendsCard(referral: referral, onCopyCode: onCopyCode)
+                    InviteFriendsCard(referral: referral, credit: referralCredit, onCopyCode: onCopyCode)
                 }
 
                 ActivityPreviewCard(activity: content.activityPreview, onOpenActivity: onOpenActivity)
@@ -311,8 +313,7 @@ enum RewardsTierStyle {
                         code: "ABC123",
                         timesUsed: 0,
                         qualifiedCount: 1,
-                        acceptedCount: 2,
-                        pointsPerReferral: 150
+                        acceptedCount: 2
                     ),
                     activityPreview: [LoyaltyActivityItem(
                         type: 1,
@@ -324,6 +325,7 @@ enum RewardsTierStyle {
                     )]
                 ),
                 tierFloor: .applies(currencyCode: "CZK"),
+                referralCredit: MarketMoney(amount: 150, currencyCode: "CZK"),
                 onCopyCode: { _ in },
                 onOpenActivity: {}
             )

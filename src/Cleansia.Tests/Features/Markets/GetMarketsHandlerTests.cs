@@ -39,13 +39,15 @@ public class GetMarketsHandlerTests
             .ThrowsAsync(new EntityNotFoundException("Default Currency was not found"));
     }
 
-    private Currency Currency(string code, bool isActive = true, bool isDefault = false, decimal? noShowCredit = null)
+    private Currency Currency(
+        string code, bool isActive = true, bool isDefault = false, decimal? noShowCredit = null, decimal? referralCredit = null)
     {
         var currency = Cleansia.Core.Domain.Internationalization.Currency.Create(code, code, code);
         currency.Id = $"cur-{code}";
         currency.IsActive = isActive;
         currency.SetAsDefault(isDefault);
         currency.SetNoShowCredit(noShowCredit);
+        currency.SetReferralCredit(referralCredit);
         _currencies.Setup(r => r.GetByCodeAsync(code, It.IsAny<CancellationToken>())).ReturnsAsync(currency);
         if (isDefault)
         {
@@ -90,7 +92,7 @@ public class GetMarketsHandlerTests
     [Fact]
     public async Task A_Serviced_Country_On_An_Active_Currency_Is_A_Market_With_Its_Figures()
     {
-        Currency("CZK", isDefault: true, noShowCredit: 250m);
+        Currency("CZK", isDefault: true, noShowCredit: 250m, referralCredit: 150m);
         Market("Czechia", "CZE", "CZ", "CZK", insurance: 1_000_000m, isDefaultMarket: true);
 
         var markets = await Run();
@@ -103,6 +105,7 @@ public class GetMarketsHandlerTests
         Assert.Equal("CZK", czech.CurrencyCode);
         Assert.True(czech.IsDefault);
         Assert.Equal(250m, czech.NoShowCredit);
+        Assert.Equal(150m, czech.ReferralCredit);
         Assert.Equal(1_000_000m, czech.InsuranceCoverageAmount);
         Assert.DoesNotContain(_log, e => e.Level >= LogLevel.Warning);
     }

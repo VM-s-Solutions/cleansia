@@ -1,6 +1,8 @@
 package cz.cleansia.customer.core.market
 
+import cz.cleansia.core.format.formatOrderPrice
 import cz.cleansia.customer.core.catalog.TranslationDto
+import java.util.Locale
 import kotlinx.serialization.Serializable
 
 /**
@@ -22,6 +24,8 @@ data class MarketListItem(
     val isDefault: Boolean,
     /** Apology credit paid on a no-show in this market's currency; null = none authored. */
     val noShowCredit: Double? = null,
+    /** Credit each side of a referral earns, in [currencyCode]; null or zero pays none. */
+    val referralCredit: Double? = null,
     /** Insurance ceiling stated in customer copy, in [currencyCode]; null = no insurance claim renders. */
     val insuranceCoverageAmount: Double? = null,
 )
@@ -57,3 +61,7 @@ data class InsuranceCoverage(val amount: Double, val currencyCode: String)
 
 val MarketListItem.insuranceCoverage: InsuranceCoverage?
     get() = insuranceCoverageAmount?.let { InsuranceCoverage(it, currencyCode) }
+
+/** The referral credit in this market's currency (ADR-0060); null renders the copy that promises none. */
+fun MarketListItem.formattedReferralCredit(locale: Locale = Locale.getDefault()): String? =
+    referralCredit?.takeIf { it > 0.0 }?.let { formatOrderPrice(it, currencyCode, locale) }

@@ -10411,6 +10411,7 @@ export class MarketListItem implements IMarketListItem {
     currencySymbol!: string | undefined;
     isDefault!: boolean;
     noShowCredit!: number | undefined;
+    referralCredit!: number | undefined;
     insuranceCoverageAmount!: number | undefined;
 
     constructor(data?: IMarketListItem) {
@@ -10440,6 +10441,7 @@ export class MarketListItem implements IMarketListItem {
             this.currencySymbol = Data["currencySymbol"];
             this.isDefault = Data["isDefault"];
             this.noShowCredit = Data["noShowCredit"];
+            this.referralCredit = Data["referralCredit"];
             this.insuranceCoverageAmount = Data["insuranceCoverageAmount"];
         }
     }
@@ -10469,6 +10471,7 @@ export class MarketListItem implements IMarketListItem {
         data["currencySymbol"] = this.currencySymbol;
         data["isDefault"] = this.isDefault;
         data["noShowCredit"] = this.noShowCredit;
+        data["referralCredit"] = this.referralCredit;
         data["insuranceCoverageAmount"] = this.insuranceCoverageAmount;
         return data;
     }
@@ -10485,6 +10488,7 @@ export interface IMarketListItem {
     currencySymbol: string | undefined;
     isDefault: boolean;
     noShowCredit: number | undefined;
+    referralCredit: number | undefined;
     insuranceCoverageAmount: number | undefined;
 }
 

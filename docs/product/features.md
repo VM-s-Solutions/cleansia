@@ -24,7 +24,7 @@ that shares a service with one already chosen. The booking and the schedule form
 Android and iOS alike
 ([a package and a service](/product/business-rules#charging-a-package-and-a-service-together)).
 Paying by card, a signed-in customer on web, Android or iOS may tick *Save this card for my next
-bookings*, unticked by default; only a ticked card is kept, under the card-guarantee consent, and it
+bookings*, unticked by default; only a ticked card is kept, under the saved-card consent, and it
 is listed with the customer's saved cards, where it can be removed
 ([the saved cards](/product/business-rules#saved-cards)). A cash booking asks for no card, and no card
 is ever charged (since 2026-10-04 → [cash needs no card](/product/business-rules#card-guarantee)). On
@@ -144,7 +144,9 @@ Which cards show, most relevant first:
 - Cleansia Plus, for a customer who is not a member. It names the discount of the headline plan, the
   monthly one, from the plans the server lists.
 - The referral card. *Share my code* opens the share sheet with the customer's code once it has
-  loaded, and Rewards until then. It states the points each side gets, the server's figure.
+  loaded, and Rewards until then. It states the credit each side gets, the chosen market's
+  `referralCredit` in its currency, and for a market with none it only asks the customer to send the
+  code (since 2026-10-05; until then it stated the server's points per referral).
 - Four *Did you know?* cards fill the row after referral:
   - *Free cancellation up to N h before*, for a Plus member whose benefits are not paused, with N the
     plan's own window. iOS shows it only while that window is shorter than the standard 24 h. Android
@@ -161,8 +163,8 @@ Its two steppers run 1–8 rooms and 1–4 bathrooms, and *See my price* opens b
 replaced the plain *Book* card, which repeated the Book button.
 
 **Honest copy** — the money figures in the customer copy (the apology credit when a cleaner never
-comes, the insurance ceiling on the mobile trust badge and FAQ, the currency named in the terms) come
-from the market, not from the translation; a market with no figure gets the sentence without one — and
+comes, the referral credit, the insurance ceiling on the mobile trust badge and FAQ, the currency
+named in the terms) come from the market, not from the translation; a market with no figure gets the sentence without one — and
 since 2026-09-28 no market carries an insurance figure. Since 2026-10-04 a market with no insurance
 figure gets no insurance claim at all: no client says the cleaners are insured. No client claims the
 cleaners are background-checked or vetted, promises a reschedule button, advertises a welcome discount
@@ -170,12 +172,15 @@ or says the supplies are eco products; the cleaner brings the supplies, included
 copy promises only what the platform does (since 2026-09-28): the web catalogue's trust chip says
 *24 h to report a problem* — the dispute window — instead of *100 % Satisfaction*; the web order
 detail has no *Track live* button, which only went back; the mobile referral slide says both sides
-earn their points after the friend's **first completed cleaning**; the mobile credit slide states the
+get their credit after the friend's **first completed cleaning**; the mobile credit slide states the
 server's balance and share (*{balance} to spend on cleanings*, taken off the next card payment *up to
 {share} % of the order*), and the express slide the member's own waiver count and the 2–4 h window
 from `BookingPolicy` (since 2026-10-01); since 2026-10-03 the Plus slide states the headline plan's
 discount, the referral slide the server's points per referral instead of a literal 150, and the
 *Book as little as 2 h ahead* slide `BookingPolicy`'s lead times, without calling express same-day;
+since 2026-10-05 a referral pays credit, not points, and every referral line on the web, Android and
+iOS states the market's referral credit in its currency, or for a market with none a line that
+promises nothing ([The referral reward](/product/business-rules#referral-credit));
 and strings that promised a free
 add-on, tier perks or a satisfaction guarantee the platform does not give are deleted. Each retired
 claim is pinned absent by a test in every locale.
@@ -184,11 +189,14 @@ claim is pinned absent by a test in every locale.
 **Loyalty and referrals** — earn points, move through tiers, share a referral code, redeem promo codes.
 The tier follows the current points total both ways: points taken back — a refund's clawback, an
 administrator's revoke — can lower it, and the web rewards page says the tier follows the total. As
-seeded, a tier's perks are the welcome badge and, above the first tier, its discount.
-→ [Loyalty — tiers](/flows/loyalty-and-memberships#tiers)
+seeded, a tier's perks are the welcome badge and, above the first tier, its discount. A referral earns
+no points: once the friend's first cleaning is completed, both get credit, 150 Kč on a CZK booking
+(since 2026-10-05), and the web rewards page no longer lists referrals among the ways to earn points.
+→ [Loyalty — tiers](/flows/loyalty-and-memberships#tiers),
+[the referral reward](/product/business-rules#referral-credit)
 
 **Credit** — money the platform owes the customer: the apology when a cleaner never comes, a complaint
-they chose to settle in credit, an administrator's goodwill. It comes off their next card booking by
+they chose to settle in credit, a qualified referral, an administrator's goodwill. It comes off their next card booking by
 itself, never the whole of it, and expires a year after it last moved; the share and the date are the
 server's, never the copy's. The web profile rail shows the balance and its expiry date, and the web
 booking summary shows *Your credit −X* and *To pay by card Y* with card chosen; with cash, or no method
@@ -370,11 +378,12 @@ include it, and books with them, until the package is edited
 ([A deactivated service or package](/product/business-rules#deactivated-catalogue)). A currency is
 switched on deliberately — a new one starts inactive — and the platform default cannot be switched
 off. The currency form also authors the no-show apology credit paid in that
-currency; the country form carries the two-letter code the market chip prints and, under "Market",
+currency and the referral credit each side of a referral receives in it; the country form carries the two-letter code the market chip prints and, under "Market",
 the insurance ceiling the customer copy states for that country (none is authored today); and a country cannot be switched on
 as serviced until its configuration names an active currency.
 
-**Growth** — promo codes, referral programme, loyalty tiers, membership plans (a price and a Stripe
+**Growth** — promo codes, referral programme (each referral's credit with its currency; force-qualify
+and reverse), loyalty tiers, membership plans (a price and a Stripe
 Price id per currency, any currency optional — a plan unpriced in a market is simply not on sale
 there — and the free-trial length in days, 14 on a new plan and 0 for none, shown in the plan list),
 site-wide push campaigns, email templates.

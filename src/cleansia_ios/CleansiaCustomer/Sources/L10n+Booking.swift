@@ -328,8 +328,12 @@ extension L10n {
             localized("booking_referral_code_dialog_title")
         }
 
-        static var referralDialogHelper: String {
-            localized("booking_referral_code_dialog_helper")
+        static func referralDialogHelper(_ credit: String) -> String {
+            format("booking_referral_code_dialog_helper", credit)
+        }
+
+        static var referralDialogHelperNoFigure: String {
+            localized("booking_referral_code_dialog_helper_no_figure")
         }
 
         static var referralDialogApply: String {
@@ -344,12 +348,20 @@ extension L10n {
             localized("booking_referral_code_dialog_done")
         }
 
-        static func referralDialogSuccessNamed(_ name: String) -> String {
-            format("booking_referral_code_dialog_success_named", name)
+        static func referralDialogSuccessNamed(_ name: String, _ credit: String) -> String {
+            format("booking_referral_code_dialog_success_named", name, credit)
         }
 
-        static var referralDialogSuccess: String {
-            localized("booking_referral_code_dialog_success")
+        static func referralDialogSuccessNamedNoFigure(_ name: String) -> String {
+            format("booking_referral_code_dialog_success_named_no_figure", name)
+        }
+
+        static func referralDialogSuccess(_ credit: String) -> String {
+            format("booking_referral_code_dialog_success", credit)
+        }
+
+        static var referralDialogSuccessNoFigure: String {
+            localized("booking_referral_code_dialog_success_no_figure")
         }
 
         static func referralError(_ error: ReferralValidationError?) -> String {

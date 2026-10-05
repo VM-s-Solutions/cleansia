@@ -18,4 +18,5 @@ public record MarketListItem(
     string CurrencySymbol,
     bool IsDefault,
     decimal? NoShowCredit,
+    decimal? ReferralCredit,
     decimal? InsuranceCoverageAmount);

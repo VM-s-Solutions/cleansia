@@ -227,9 +227,10 @@ is a row in `ServicePrices` (`BasePrice`, `PerRoomPrice`), `PackagePrices` (`Pri
 currency is simply not sold in it. `Currency` has no exchange rate: its columns are `Code` (unique,
 case-insensitive), `Symbol`, `Name`, `IsDefault` (a filtered unique index holds exactly one), `IsActive`
 (the market switch — a new currency is born switched off), `LoyaltyPointsDivisor` (how much of the
-currency earns one point; required before the market can be switched on) and `NoShowCredit` (the
+currency earns one point; required before the market can be switched on), `NoShowCredit` (the
 apology credit paid on an order in this currency when its slot arrives with no cleaner; null = none —
-not an activation gate).
+not an activation gate) and `ReferralCredit` (the credit each side of a referral receives when the
+friend's first order in this currency completes; null or 0 = none — not an activation gate either).
 → [Platform expandability](/architecture/platform-expandability#market-switch)
 
 **A market is not an entity.** It is a `Country` that is serviced, whose `CountryConfiguration.DefaultCurrencyCode`
@@ -310,6 +311,7 @@ erDiagram
   MembershipPlanPrice }o--|| MembershipPlan : "MembershipPlan"
   MembershipPlanPrice }o--|| Currency : "Currency"
   Referral }o--|| ReferralCode : "ReferralCode"
+  Referral }o--o| Currency : "CreditCurrency"
   PromoCodeRedemption }o--|| PromoCode : "PromoCode"
   MembershipBenefitUsage }o--|| UserMembership : "UserMembership"
 ```
@@ -328,7 +330,7 @@ membership is tenant-scoped. → [ADR-0059](/decisions/adr-0059)
 | `LoyaltyTransaction` | — |
 | `LoyaltyTierConfig` | — ; **tenantless** since [ADR-0061](/decisions/adr-0061) D7 — the brand's programme, sold identically by every operator (the `MembershipPlan` sibling); unique `Tier` |
 | `ReferralCode` | references `User` |
-| `Referral` | references `FirstQualifyingOrder`, `ReferralCode`, `Referred`, `Referrer` |
+| `Referral` | references `CreditCurrency` (`Currency`, nullable, Restrict), `FirstQualifyingOrder`, `ReferralCode`, `Referred`, `Referrer`; `CreditAwardedToReferrer` and `CreditAwardedToReferred` (`numeric(18,2)`, nullable) record the credit each side was paid, in `CreditCurrency`, which stays null when neither side was paid (since 2026-10-05; until then the row recorded points) → [The referral reward](/product/business-rules#referral-credit) |
 | `PromoCode` | references `Currency`; stamped — a code gives away the operator's money, and a sitewide campaign fans out to its operator's users only |
 | `PromoCodeRedemption` | references `Order`, `PromoCode`, `User` |
 | `MembershipPlan` | — (no price column) |

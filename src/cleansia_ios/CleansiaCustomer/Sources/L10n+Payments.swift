@@ -109,8 +109,8 @@ extension L10n.Booking {
 
     /// The draft wording the server records as `SavedCard.ConsentTextVersionInForce`; a new wording gets
     /// a new key together with a new version on the server.
-    static var cardGuaranteeConsent: String {
-        L10n.localized("consent_card_guarantee_draft_2026_09_28")
+    static var savedCardConsent: String {
+        L10n.localized("consent_saved_card_draft_2026_10_05")
     }
 
     static var saveCard: String {

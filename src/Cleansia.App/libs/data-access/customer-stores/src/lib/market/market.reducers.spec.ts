@@ -8,6 +8,7 @@ import {
   selectMarketCurrencyCode,
   selectMarketLoadFailed,
   selectMarketNoShowCredit,
+  selectMarketReferralCredit,
   selectMarkets,
 } from './market.selectors';
 import { customerMarketInitialState, CustomerMarketState } from './market.state';
@@ -19,6 +20,7 @@ const CZE = MarketListItem.fromJS({
   currencyCode: 'CZK',
   isDefault: true,
   noShowCredit: 250,
+  referralCredit: 150,
   insuranceCoverageAmount: 1000000,
 });
 const SVK = MarketListItem.fromJS({
@@ -28,6 +30,7 @@ const SVK = MarketListItem.fromJS({
   currencyCode: 'EUR',
   isDefault: false,
   noShowCredit: null,
+  referralCredit: null,
   insuranceCoverageAmount: null,
 });
 
@@ -99,6 +102,8 @@ describe('market selectors', () => {
     expect(selectMarketCurrencyCode.projector(SVK)).toBe('EUR');
     expect(selectMarketNoShowCredit.projector(CZE)).toBe(250);
     expect(selectMarketNoShowCredit.projector(SVK)).toBeNull();
+    expect(selectMarketReferralCredit.projector(CZE)).toBe(150);
+    expect(selectMarketReferralCredit.projector(SVK)).toBeNull();
     expect(selectMarketLoadFailed.projector(loaded)).toBe(false);
   });
 
@@ -107,6 +112,7 @@ describe('market selectors', () => {
     expect(selectMarketCountryId.projector(null)).toBeNull();
     expect(selectMarketCurrencyCode.projector(null)).toBeNull();
     expect(selectMarketNoShowCredit.projector(null)).toBeNull();
+    expect(selectMarketReferralCredit.projector(null)).toBeNull();
     expect(selectMarketLoadFailed.projector(failed)).toBe(true);
   });
 

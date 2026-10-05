@@ -15,7 +15,8 @@ public class CreateCurrency
         string Symbol,
         string Name,
         decimal? LoyaltyPointsDivisor = null,
-        decimal? NoShowCredit = null) : ICommand<Response>;
+        decimal? NoShowCredit = null,
+        decimal? ReferralCredit = null) : ICommand<Response>;
 
     public record Response(string Id);
 
@@ -57,6 +58,11 @@ public class CreateCurrency
                 .GreaterThan(0m)
                 .When(x => x.NoShowCredit.HasValue)
                 .WithMessage(BusinessErrorMessage.MustBePositive);
+
+            RuleFor(x => x.ReferralCredit)
+                .GreaterThanOrEqualTo(0m)
+                .When(x => x.ReferralCredit.HasValue)
+                .WithMessage(BusinessErrorMessage.MustBePositive);
         }
     }
 
@@ -68,6 +74,7 @@ public class CreateCurrency
             var currency = Currency.Create(command.Code, command.Symbol, command.Name);
             currency.SetLoyaltyPointsDivisor(command.LoyaltyPointsDivisor);
             currency.SetNoShowCredit(command.NoShowCredit);
+            currency.SetReferralCredit(command.ReferralCredit);
 
             currencyRepository.Add(currency);
 

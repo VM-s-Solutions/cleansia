@@ -48,6 +48,7 @@ enum MarketFixtures {
         currencyCode: String,
         isDefault: Bool = false,
         noShowCredit: Double? = nil,
+        referralCredit: Double? = nil,
         insuranceCoverageAmount: Double? = nil,
         translations: [String: CatalogTranslation] = [:]
     ) -> Market {
@@ -60,6 +61,7 @@ enum MarketFixtures {
             currencyCode: currencyCode,
             isDefault: isDefault,
             noShowCredit: noShowCredit,
+            referralCredit: referralCredit,
             insuranceCoverageAmount: insuranceCoverageAmount
         )
     }
@@ -72,6 +74,7 @@ enum MarketFixtures {
         currencyCode: "CZK",
         isDefault: true,
         noShowCredit: 250,
+        referralCredit: 150,
         insuranceCoverageAmount: 1_000_000,
         translations: ["cs": CatalogTranslation(name: "Česko", description: nil)]
     )

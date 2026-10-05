@@ -2424,6 +2424,10 @@ namespace Cleansia.Infra.Database.Migrations
                         .HasPrecision(18, 2)
                         .HasColumnType("numeric(18,2)");
 
+                    b.Property<decimal?>("ReferralCredit")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("numeric(18,2)");
+
                     b.Property<string>("Symbol")
                         .IsRequired()
                         .HasMaxLength(10)
@@ -3171,6 +3175,9 @@ namespace Cleansia.Infra.Database.Migrations
                     b.Property<DateTimeOffset>("AcceptedOn")
                         .HasColumnType("timestamp with time zone");
 
+                    b.Property<DateTimeOffset?>("AwardedOn")
+                        .HasColumnType("timestamp with time zone");
+
                     b.Property<string>("CreatedBy")
                         .IsRequired()
                         .HasMaxLength(255)
@@ -3178,6 +3185,18 @@ namespace Cleansia.Infra.Database.Migrations
 
                     b.Property<DateTimeOffset>("CreatedOn")
                         .HasColumnType("timestamp with time zone");
+
+                    b.Property<decimal?>("CreditAwardedToReferred")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("numeric(18,2)");
+
+                    b.Property<decimal?>("CreditAwardedToReferrer")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("numeric(18,2)");
+
+                    b.Property<string>("CreditCurrencyId")
+                        .HasMaxLength(26)
+                        .HasColumnType("character varying(26)");
 
                     b.Property<string>("DeactivatedBy")
                         .HasMaxLength(255)
@@ -3195,15 +3214,6 @@ namespace Cleansia.Infra.Database.Migrations
 
                     b.Property<bool>("IsActive")
                         .HasColumnType("boolean");
-
-                    b.Property<DateTimeOffset?>("PointsAwardedOn")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<int?>("PointsAwardedToReferred")
-                        .HasColumnType("integer");
-
-                    b.Property<int?>("PointsAwardedToReferrer")
-                        .HasColumnType("integer");
 
                     b.Property<string>("ReferralCodeId")
                         .IsRequired()
@@ -3236,6 +3246,8 @@ namespace Cleansia.Infra.Database.Migrations
                         .HasColumnType("timestamp with time zone");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("CreditCurrencyId");
 
                     b.HasIndex("FirstQualifyingOrderId");
 
@@ -7737,6 +7749,11 @@ namespace Cleansia.Infra.Database.Migrations
 
             modelBuilder.Entity("Cleansia.Core.Domain.Loyalty.Referral", b =>
                 {
+                    b.HasOne("Cleansia.Core.Domain.Internationalization.Currency", "CreditCurrency")
+                        .WithMany()
+                        .HasForeignKey("CreditCurrencyId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
                     b.HasOne("Cleansia.Core.Domain.Orders.Order", "FirstQualifyingOrder")
                         .WithMany()
                         .HasForeignKey("FirstQualifyingOrderId")
@@ -7765,6 +7782,8 @@ namespace Cleansia.Infra.Database.Migrations
                         .HasForeignKey("TenantId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
+
+                    b.Navigation("CreditCurrency");
 
                     b.Navigation("FirstQualifyingOrder");
 

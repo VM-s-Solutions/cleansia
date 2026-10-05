@@ -33,6 +33,7 @@ import {
   PaginationState,
   TableColumn,
 } from '@cleansia/components';
+import { formatReferralCredit } from '@cleansia/admin-features/loyalty-referrals';
 import { CleansiaPermissionDirective } from '@cleansia/directives';
 import { Policy } from '@cleansia/services';
 import { formatDate } from '@cleansia/utils';
@@ -384,17 +385,10 @@ export class UserLoyaltyDetailComponent
         width: '20%',
       },
       {
-        id: 'points',
-        field: 'pointsAwardedToReferrer',
-        header: t.instant('pages.loyalty_referrals.column.points_awarded'),
-        getValue: (row) =>
-          row.pointsAwardedToReferrer == null &&
-          row.pointsAwardedToReferred == null
-            ? '—'
-            : t.instant('pages.loyalty_referrals.points_format', {
-                referrer: row.pointsAwardedToReferrer ?? 0,
-                referred: row.pointsAwardedToReferred ?? 0,
-              }),
+        id: 'credit',
+        field: 'creditAwardedToReferrer',
+        header: t.instant('pages.loyalty_referrals.column.credit_awarded'),
+        getValue: (row) => formatReferralCredit(row, t),
         numeric: true,
         width: '20%',
       },
@@ -509,6 +503,10 @@ export class UserLoyaltyDetailComponent
         return 'pages.loyalty_user_detail.credit.reason.cleaner_no_show';
       case CreditTransactionReason.Goodwill:
         return 'pages.loyalty_user_detail.credit.reason.goodwill';
+      case CreditTransactionReason.Referral:
+        return 'pages.loyalty_user_detail.credit.reason.referral';
+      case CreditTransactionReason.ReferralReversed:
+        return 'pages.loyalty_user_detail.credit.reason.referral_reversed';
       case CreditTransactionReason.OrderPayment:
         return 'pages.loyalty_user_detail.credit.reason.order_payment';
       case CreditTransactionReason.OrderPaymentReturned:

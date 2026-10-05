@@ -22,6 +22,7 @@ struct SignUpView: View {
             isLoading: vm.signUpState.isSubmitting,
             isSocialLoading: vm.socialState.isSubmitting,
             referralState: vm.referralState,
+            referralCredit: vm.marketState.referralCredit,
             onFirstNameChange: vm.onFirstNameChange,
             onLastNameChange: vm.onLastNameChange,
             onEmailChange: vm.onSignUpEmailChange,
@@ -44,6 +45,7 @@ private struct SignUpContent: View {
     let isLoading: Bool
     let isSocialLoading: Bool
     let referralState: ReferralCodeState
+    let referralCredit: MarketMoney?
     let onFirstNameChange: (String) -> Void
     let onLastNameChange: (String) -> Void
     let onEmailChange: (String) -> Void
@@ -215,6 +217,7 @@ private struct SignUpContent: View {
         .sheet(isPresented: $showReferralSheet) {
             ReferralCodeSheet(
                 initialCode: form.referralCode,
+                credit: referralCredit,
                 onValidate: onValidateReferral,
                 onDismiss: { showReferralSheet = false }
             )
@@ -300,6 +303,7 @@ private struct SignUpContent: View {
                 isLoading: isLoading,
                 isSocialLoading: false,
                 referralState: referralState,
+                referralCredit: MarketMoney(amount: 150, currencyCode: "CZK"),
                 onFirstNameChange: { _ in },
                 onLastNameChange: { _ in },
                 onEmailChange: { _ in },

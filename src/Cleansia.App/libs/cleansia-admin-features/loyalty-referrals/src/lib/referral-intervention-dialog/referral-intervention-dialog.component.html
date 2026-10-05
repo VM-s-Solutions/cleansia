@@ -25,6 +25,12 @@
         {{ 'pages.loyalty_referrals.intervention.field.reason_help' | translate }}
       </p>
     </div>
+
+    @if (reverseSummary(); as credit) {
+      <p class="dialog-summary">
+        {{ 'pages.loyalty_referrals.intervention.summary_reverse' | translate: { credit: credit } }}
+      </p>
+    }
   </form>
 
   <ng-template pTemplate="footer">

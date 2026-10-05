@@ -169,12 +169,50 @@ extension CustomerWireContractTests {
             code: "JANE-2026",
             timesUsed: 3,
             qualifiedCount: 2,
-            acceptedCount: 3,
-            pointsPerReferral: 250
+            acceptedCount: 3
         )
         XCTAssertEqual(try? payload.toDomain().code, "JANE-2026")
         payload.code = ""
         assertRefused("code") { try payload.toDomain() }
+    }
+
+    /// A referral pays money, so the row keeps the amount with the currency it was paid in; one that has not
+    /// qualified, or paid nothing, carries no credit — and an amount without its unit is not one.
+    func testAReferralRowCarriesTheCreditItPaidInItsCurrency() throws {
+        var payload = GetMyReferralsReferralListItem(
+            id: "ref-1",
+            referredFirstName: "Eva",
+            status: ._2,
+            acceptedOn: Date(timeIntervalSince1970: 1_780_000_000),
+            creditAwardedToReferrer: 7.5,
+            creditCurrencyCode: "EUR"
+        )
+        XCTAssertEqual(try payload.toDomain().creditAwarded, MarketMoney(amount: 7.5, currencyCode: "EUR"))
+
+        payload.creditCurrencyCode = nil
+        XCTAssertNil(try payload.toDomain().creditAwarded)
+
+        payload.creditAwardedToReferrer = nil
+        payload.creditCurrencyCode = "EUR"
+        XCTAssertNil(try payload.toDomain().creditAwarded)
+    }
+
+    // MARK: the market directory — the referral credit is authored per currency
+
+    func testAMarketCarriesItsReferralCreditAndNoneWhenUnauthored() throws {
+        var payload = MarketListItem(
+            countryId: "cze",
+            isoCode: "CZE",
+            isoAlpha2: "CZ",
+            name: "Czechia",
+            currencyCode: "CZK",
+            isDefault: true,
+            referralCredit: 150
+        )
+        XCTAssertEqual(try Market(payload).referralCredit, 150)
+
+        payload.referralCredit = nil
+        XCTAssertNil(try Market(payload).referralCredit)
     }
 
     // MARK: the saved-address picker

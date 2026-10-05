@@ -4,6 +4,7 @@ using Cleansia.Core.AppServices.Services.Interfaces;
 using Cleansia.Core.Blobs.Abstractions;
 using Cleansia.Core.Clients.Abstractions.Stripe;
 using Cleansia.Core.Domain.Company;
+using Cleansia.Core.Domain.Credit;
 using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Orders;
 using Cleansia.Core.Domain.Loyalty;
@@ -209,6 +210,7 @@ public partial class CreateOrderCallerCurrencyTests
             arrange: async context =>
             {
                 await SeedCrossOrderAsync(context);
+                (await context.Currencies.SingleAsync(c => c.Id == Eur)).SetReferralCredit(6m);
                 var referrer = User.CreateWithPassword("referrer@test.local", "Password123!", "Ref", "Errer", UserProfile.Customer);
                 referrer.Id = referrerId;
                 context.Users.Add(referrer);
@@ -243,9 +245,15 @@ public partial class CreateOrderCallerCurrencyTests
                 Assert.Equal(TestTenants.Default, referral.TenantId);
                 Assert.Equal(earlierAccountCompletion ? ReferralStatus.Accepted : ReferralStatus.Qualified, referral.Status);
                 Assert.Equal(earlierAccountCompletion ? 0 : 1, (await context.ReferralCodes.IgnoreQueryFilters().SingleAsync()).TimesUsed);
-                var ledger = await context.LoyaltyTransactions.IgnoreQueryFilters().Where(t => t.Source == LoyaltyEarnSource.Referral).ToListAsync();
+                var ledger = await context.CreditTransactions.Include(t => t.Account).IgnoreQueryFilters()
+                    .Where(t => t.Reason == CreditTransactionReason.Referral).ToListAsync();
                 Assert.Equal(earlierAccountCompletion ? 0 : 2, ledger.Count);
-                Assert.All(ledger, row => { Assert.Equal(TestTenants.Default, row.TenantId); Assert.Equal(150, row.Points); });
+                Assert.All(ledger, row =>
+                {
+                    Assert.Equal(6m, row.Amount);
+                    Assert.Equal(Eur, row.Account!.CurrencyId);
+                    Assert.Equal(TestTenants.Default, row.Account.TenantId);
+                });
             }, transactional: false);
     }
 }

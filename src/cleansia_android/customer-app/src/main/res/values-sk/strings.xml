@@ -142,7 +142,7 @@
     <string name="home_upsell_setup_recurring_desc">Týždenne, každé dva týždne alebo mesačne, v deň a čas podľa vás.</string>
     <string name="home_upsell_plus_desc">Zľava %1$d %% na každé upratovanie a obľúbený upratovač na želanie.</string>
     <string name="home_upsell_plus_desc_generic">Pravidelné upratovania a váš obľúbený upratovač na želanie.</string>
-    <string name="home_upsell_referral_desc_generic">Obaja získate body po dokončení jeho prvého upratovania.</string>
+    <string name="home_upsell_referral_desc_generic">Pošlite kamarátovi svoj kód, ktorý zadá pri registrácii.</string>
     <string name="home_upsell_plus_cancel_title">Zrušenie zadarmo až %1$d h vopred</string>
     <string name="home_upsell_plus_cancel_desc">Jedna z výhod Plus, pri každej vašej objednávke.</string>
     <string name="home_upsell_express_today_title">Objednávajte už %1$d h vopred</string>
@@ -153,16 +153,11 @@
     <string name="home_upsell_times_title">Zvoľte si presný čas príchodu</string>
     <string name="home_upsell_times_desc">Dopoludnie, popoludnie aj večer, kedykoľvek od %1$s do %2$s.</string>
     <string name="home_upsell_chip_percent_off">−%1$d %%</string>
-    <string name="home_upsell_chip_points">+%1$d</string>
+    <string name="home_upsell_chip_credit">+%1$s</string>
     <string name="home_upsell_chip_hours">%1$d h</string>
     <string name="home_upsell_chip_minutes">%1$d min</string>
     <string name="home_upsell_chip_times">%1$d×</string>
-    <plurals name="home_upsell_referral_desc">
-        <item quantity="one">Obaja získate %1$d bod po dokončení jeho prvého upratovania.</item>
-        <item quantity="few">Obaja získate %1$d body po dokončení jeho prvého upratovania.</item>
-        <item quantity="many">Obaja získate %1$d bodu po dokončení jeho prvého upratovania.</item>
-        <item quantity="other">Obaja získate %1$d bodov po dokončení jeho prvého upratovania.</item>
-    </plurals>
+    <string name="home_upsell_referral_desc">Obaja získate kredit %1$s po dokončení jeho prvého upratovania.</string>
 
     <string name="home_hero2_top">Jar je tu</string>
     <string name="home_hero2_title">Hĺbkové upratovanie + okná v jednom</string>
@@ -808,18 +803,21 @@
     <string name="booking_referral_code_row_applied">%1$s uplatnené</string>
     <string name="booking_referral_code_row_clear">Odobrať</string>
     <string name="booking_referral_code_dialog_title">Zadajte kód odporúčania</string>
-    <string name="booking_referral_code_dialog_helper">Máte kód od kamaráta? Po vašom prvom dokončenom upratovaní obaja získate 150 bonusových bodov.</string>
+    <string name="booking_referral_code_dialog_helper">Máte kód od kamaráta? Po vašom prvom dokončenom upratovaní obaja získate kredit %1$s.</string>
+    <string name="booking_referral_code_dialog_helper_no_figure">Máte kód od kamaráta? Zadajte ho sem.</string>
     <string name="booking_referral_code_dialog_apply">Použiť</string>
     <string name="booking_referral_code_dialog_cancel">Zrušiť</string>
     <string name="booking_referral_code_dialog_done">Hotovo</string>
-    <string name="booking_referral_code_dialog_success_named">Kód od %1$s prijatý — po vašom prvom dokončenom upratovaní obaja získate 150 bonusových bodov.</string>
+    <string name="booking_referral_code_dialog_success_named">Kód od %1$s prijatý — po vašom prvom dokončenom upratovaní obaja získate kredit %2$s.</string>
+    <string name="booking_referral_code_dialog_success_named_no_figure">Kód od %1$s prijatý.</string>
 
     <!-- Plus: pre-request a favorite cleaner -->
     <string name="booking_preferred_cleaner_title">Vyberte si obľúbenú upratovačku</string>
     <string name="booking_preferred_cleaner_subtitle">Výhoda Plus · vyberte niekoho, kto u vás už upratoval</string>
     <string name="booking_preferred_cleaner_dialog_title">Vyberte upratovačku</string>
     <string name="booking_preferred_cleaner_clear">Zrušiť výber upratovačky</string>
-    <string name="booking_referral_code_dialog_success">Kód prijatý — po vašom prvom dokončenom upratovaní obaja získate 150 bonusových bodov.</string>
+    <string name="booking_referral_code_dialog_success">Kód prijatý — po vašom prvom dokončenom upratovaní obaja získate kredit %1$s.</string>
+    <string name="booking_referral_code_dialog_success_no_figure">Kód prijatý.</string>
 
     <string name="booking_payment_method">Ako chcete platiť?</string>
     <string name="booking_pay_card">Kartou</string>
@@ -831,7 +829,7 @@
     <string name="booking_cash_pending">Či môžete platiť v hotovosti, potvrdíme, keď bude známa cena.</string>
     <string name="booking_cash_cleared">Platba v hotovosti už pre túto objednávku nie je možná, preto nie je vybraný žiadny spôsob platby. Zvoľte, ako chcete platiť.</string>
     <string name="booking_draft_time_changed">Vybraný čas už nie je dostupný alebo sa zmenila jeho cena. Vyberte si, prosím, čas znova.</string>
-    <string name="consent_card_guarantee_draft_2026_09_28">Súhlasím, že Cleansia môže pri mojich objednávkach v hotovosti strhnúť z tejto karty stornovací poplatok, poplatok za neumožnenie vstupu, nezaplatenú hotovosť a doplatok, ktorý som schválil(a).</string>
+    <string name="consent_saved_card_draft_2026_10_05">Súhlasím, že Cleansia uloží túto kartu do môjho účtu. Nič z nej nestrhne, ak ňou nezaplatím, a kartu môžem kedykoľvek odstrániť.</string>
     <string name="booking_save_card_label">Uložiť túto kartu pre moje ďalšie objednávky</string>
     <string name="booking_special_instructions_hint">Špeciálne požiadavky? (nepovinné)</string>
     <string name="booking_access_instructions_hint">Pokyny ku vstupu? (nepovinné)</string>
@@ -1266,7 +1264,7 @@
     <string name="credit_none">Teraz nemáte žiadny kredit. Ak sa upratovanie nepodarí, kredit, ktorý vám dáme, uvidíte tu.</string>
     <string name="credit_explainer_title">Ako funguje kredit</string>
     <string name="credit_explainer_source_title">Odkiaľ sa berie</string>
-    <string name="credit_explainer_source_body">Ospravedlnenie, keď upratovač nepríde alebo vašu objednávku nikto neprevezme, reklamácia, ktorú ste sa rozhodli vyriešiť kreditom, alebo ústretové gesto od nás.</string>
+    <string name="credit_explainer_source_body">Ospravedlnenie, keď upratovač nepríde alebo vašu objednávku nikto neprevezme, reklamácia, ktorú ste sa rozhodli vyriešiť kreditom, ústretové gesto od nás alebo odmena za odporúčanie, ak sa na vašom trhu ponúka.</string>
     <string name="credit_explainer_spend_title">Ako sa čerpá</string>
     <string name="credit_explainer_spend_body">Automaticky, na vašu ďalšiu objednávku platenú kartou v rovnakej mene, až do výšky %1$d %% jej ceny. Zvyšok vždy zaplatíte kartou.</string>
     <string name="credit_explainer_points_title">Kredit nie sú body</string>
@@ -1289,7 +1287,7 @@
     <string name="loyalty_tx_earn_order">+%1$d b. — Upratovanie č. %2$s</string>
     <string name="loyalty_tx_revoke_order">%1$d b. — Zrušené č. %2$s</string>
     <string name="loyalty_tx_refund_order">%1$d b. — Vrátené č. %2$s</string>
-    <string name="loyalty_tx_referral">+%1$d b. — Bonus za odporúčanie</string>
+    <string name="loyalty_tx_referral">%1$d b. — Bonus za odporúčanie</string>
     <string name="loyalty_tx_manual">%1$d b. — Manuálna úprava</string>
     <string name="loyalty_empty_activity">Zatiaľ žiadna aktivita. Objednajte si prvé upratovanie a začnite zbierať body.</string>
     <string name="loyalty_error_load">Odmeny sa nepodarilo načítať. Skúste to znova.</string>
@@ -1297,12 +1295,14 @@
 
     <!-- Loyalty Phase C — Referrals -->
     <string name="loyalty_referral_section_title">Pozvite priateľov</string>
-    <string name="loyalty_referral_subtitle">Zdieľajte svoj kód. Kamarát aj vy získate každý 150 bonusových bodov po jeho prvom dokončenom upratovaní.</string>
+    <string name="loyalty_referral_subtitle">Zdieľajte svoj kód. Kamarát aj vy získate každý kredit %1$s po jeho prvom dokončenom upratovaní.</string>
+    <string name="loyalty_referral_subtitle_no_figure">Zdieľajte svoj kód s kamarátmi, nech ho zadajú pri registrácii.</string>
     <string name="loyalty_referral_code_label">Váš kód</string>
     <string name="loyalty_referral_share_button">Zdieľať</string>
     <string name="loyalty_referral_copy_button">Kopírovať</string>
     <string name="loyalty_referral_copied_toast">Kód skopírovaný</string>
-    <string name="loyalty_referral_share_text">Získajte 150 bonusových bodov po prvom dokončenom upratovaní Cleansia! Použite môj kód %1$s pri registrácii: %2$s</string>
+    <string name="loyalty_referral_share_text">Získajte kredit %1$s po prvom dokončenom upratovaní Cleansia! Použite môj kód %2$s pri registrácii: %3$s</string>
+    <string name="loyalty_referral_share_text_no_figure">Pridajte sa ku Cleansia! Použite môj kód %1$s pri registrácii: %2$s</string>
     <string name="loyalty_referral_stats_empty">Buďte prvý — zdieľajte svoj kód</string>
     <string name="loyalty_referral_stats_qualified">%1$d priateľ sa pripojil · %2$d kvalifikovaných</string>
     <string name="loyalty_referral_share_failed">Zdieľanie sa nepodarilo otvoriť. Kód bol skopírovaný.</string>

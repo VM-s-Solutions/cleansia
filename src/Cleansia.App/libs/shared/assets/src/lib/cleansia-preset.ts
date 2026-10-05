@@ -77,10 +77,16 @@ export const CleansiaPreset = definePreset(Aura, {
       },
     },
     // The open tab's label is blue text too (the admin's tab strips); its underline keeps the primary.
+    // The dark entry is not optional: primeuix writes the light scheme into `:root`, and Aura's dark
+    // tabs scheme sets no label ink, so without it Sky700 would carry into the customer site's dark
+    // theme (about 3:1 on its dark surface). It restores Aura's own dark ink, the primary.
     tabs: {
       colorScheme: {
         light: {
           tab: { activeColor: '{primary.700}' },
+        },
+        dark: {
+          tab: { activeColor: '{primary.color}' },
         },
       },
     },

@@ -27,7 +27,10 @@ interface Semantic {
 interface TabsTokens {
   tab?: { activeColor?: string; activeBorderColor?: string };
   activeBar?: { background?: string };
-  colorScheme?: { light?: { tab?: { activeColor?: string } }; dark?: { tab?: unknown } };
+  colorScheme?: {
+    light?: { tab?: { activeColor?: string } };
+    dark?: { tab?: { activeColor?: string } };
+  };
 }
 
 const semanticOf = (preset: unknown): Semantic | undefined => (preset as { semantic?: Semantic }).semantic;
@@ -77,16 +80,20 @@ describe('CleansiaPreset — the light primary', () => {
 
 describe('CleansiaPreset — the open tab', () => {
   const tabs = tabsOf(CleansiaPreset);
-  const aura = tabsOf(Aura);
 
   it('inks the open tab label with Sky700 in the light theme', () => {
     expect(tabs?.colorScheme?.light?.tab?.activeColor).toBe('{primary.700}');
   });
 
-  it('keeps the underline on the primary and the dark theme as Aura draws it', () => {
-    expect(aura?.tab?.activeBorderColor).toBe('{primary.color}');
-    expect(aura?.activeBar?.background).toBe('{primary.color}');
-    expect(tabs?.colorScheme?.dark).toEqual(aura?.colorScheme?.dark);
+  // primeuix writes the light scheme into `:root`, so a light-only ink would carry into the
+  // customer site's dark theme; the dark scheme has to name the primary again itself.
+  it('gives the dark theme its own label ink, the primary', () => {
+    expect(tabs?.colorScheme?.dark?.tab?.activeColor).toBe('{primary.color}');
+  });
+
+  it('keeps the underline on the primary', () => {
+    expect(tabs?.tab?.activeBorderColor).toBe('{primary.color}');
+    expect(tabs?.activeBar?.background).toBe('{primary.color}');
   });
 });
 

@@ -1114,6 +1114,14 @@ need backfilling.
   the schedule's card and edit, review 2026-10-05; the card's line, the edit's notice and the edit's
   check, owner ruling 2026-10-05.)
 
+- **Admin — a package can no longer take in a service that is no longer offered.** A service taken
+  off the list could still be put into a new package, or added to one, and every booking of that
+  package then included it. Creating a package with such a service, or adding one to a package, is now
+  refused with *Service not found*. A service a package already includes stays in it when you edit the
+  package, as before. The package form still lists every service, those taken off the list among
+  them, so the refusal comes when you save. **API consumer:** `CreatePackage` refuses a deactivated
+  service, and `UpdatePackage` one the edit adds, with `service.not_found`. (Finding 2026-10-05.)
+
 - **Customer web — deleting your account is confirmed on a red button.** The question before your
   account is deleted offered the same blue confirm button as any harmless question. It now shows the
   red, destructive button that deleting a saved card or a schedule already shows, so the risk reads

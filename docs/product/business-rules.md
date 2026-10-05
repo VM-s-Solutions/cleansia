@@ -2117,6 +2117,16 @@ from the card alone would sell a package without a service the cleaner is then s
 service out of a package, an administrator edits the package. `CatalogActiveVisibilityTests` pins that
 the overview lists exactly what an order with the package books, a deactivated service among them.
 
+**An administrator cannot put a deactivated service into a package** (since 2026-10-05). `CreatePackage`
+asks that every service is active (`ExistActiveWithIdsAsync`), and `UpdatePackage` asks it of every
+service the edit adds, so a service deactivated after it was added stays in the package, as above,
+and an edit of the package's price or wording does not force it out. Both refuse with the key they
+already used for a service that does not exist, `service.not_found`, which the admin reads as
+*Service not found* and which does not say the service was deactivated. The admin package form lists
+every service, deactivated ones among them (`loadAvailableServices` reads them with no active filter),
+so picking one is refused only when the form is saved. Until 2026-10-05 both editors asked only that
+the service exists, which a deactivated row still does.
+
 **A customer cannot select one by id either** (since 2026-10-05). `QuoteOrder`, `QuotePlusSavings`,
 `CreateOrder` (guest and signed-in) and `CreateRecurringBooking` ask that every selected service and
 package exists **and is active** (`ExistActiveWithIdsAsync`), `UpdateRecurringBooking` asks it of every
@@ -2148,8 +2158,6 @@ comments expected the booking to fail loudly. What it deliberately leaves alone:
   three schedule forms trim the selection as they load (below), so a held entry comes back to the
   server only from a client that skipped the trim, an out-of-date app among them, and is kept.
 - **A deactivated service inside an active package** is the package's content, above, not a selection.
-- **The admin package editors** (`CreatePackage`, `UpdatePackage`) still accept a deactivated service
-  into a package; they ask only that it exists.
 
 **A schedule still booking a deactivated entry says so on its card, and shows the customer no
 error.** The quote refuses its selection, so every client that quotes it fails quietly, and the
@@ -2206,8 +2214,9 @@ schedules list says why:
 
 `CatalogActiveVisibilityTests` pins the active check on the repository, a schedule refused a
 deactivated service and package, an edit refused a deactivated or unknown entry it adds but allowed to
-keep one the schedule holds, and the factory still booking one a schedule holds; the order and
-quote validator suites pin the three order gates. The web recurring facade spec runs the real error
+keep one the schedule holds, a new package refused a deactivated or unknown service, a package edit
+refused one it adds but allowed to keep one the package includes, and the factory still booking one a
+schedule holds; the order and quote validator suites pin the three order gates. The web recurring facade spec runs the real error
 interceptor over a card refused for a deactivated service and an edit form refused for a deactivated
 package, and asserts no price and no message. Android's `CreateRecurringViewModelTest` pins an edited
 cash schedule dropping a deactivated service with the notice and saving in cash, and a template

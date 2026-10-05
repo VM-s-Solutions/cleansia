@@ -375,9 +375,9 @@ per currency it is sold in, nothing converts, and an entry with no price in a cu
 in it. Extras are priced per currency like services and packages; the slug is fixed at creation
 because order lines snapshot it, so deactivating is how an extra is retired once an order references
 it. A deactivated service or package leaves every customer catalogue, and a quote, a booking, a new
-schedule or a schedule edit that adds it anyway is refused; a deactivated service stays inside the packages that
-include it, and books with them, until the package is edited
-([A deactivated service or package](/product/business-rules#deactivated-catalogue)). A currency is
+schedule or a schedule edit that adds it anyway is refused; a deactivated service stays inside the
+packages that include it, and books with them, until the package is edited, and cannot be put into a
+package ([A deactivated service or package](/product/business-rules#deactivated-catalogue)). A currency is
 switched on deliberately — a new one starts inactive — and the platform default cannot be switched
 off. The currency form also authors the no-show apology credit paid in that
 currency and the referral credit each side of a referral receives in it; the country form carries the two-letter code the market chip prints and, under "Market",

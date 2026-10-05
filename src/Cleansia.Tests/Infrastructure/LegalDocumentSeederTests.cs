@@ -3,6 +3,7 @@ using System.Text.RegularExpressions;
 using Cleansia.Core.AppServices.Features.Legal;
 using Cleansia.Core.AppServices.Features.Orders;
 using Cleansia.Core.Domain.Company;
+using Cleansia.Core.Domain.EmployeePayroll;
 using Cleansia.Core.Domain.Internationalization;
 using Cleansia.Core.Domain.Legal;
 using Cleansia.Core.Domain.Repositories;
@@ -452,6 +453,30 @@ public sealed class LegalDocumentSeederTests : IDisposable
     }
 
     private const int CardRefundDays = 3;
+
+    /// <summary>
+    /// Owner decision 2026-10-04: a pay period runs 14 days, and the cleaner is settled and invoiced after each
+    /// one. The newest framework agreement states it in its settlement section and the newest self-billing
+    /// agreement in its invoicing section, as the days a pay period runs, each as the only day figure there and
+    /// with no word for a month, in every language.
+    /// </summary>
+    [Theory]
+    [InlineData(LegalDocumentType.CleanerFrameworkContract, 10)]
+    [InlineData(LegalDocumentType.SelfBillingAgreement, 3)]
+    public void The_Newest_Cleaner_Agreements_Settle_After_Each_14_Day_Pay_Period_In_Every_Language(
+        LegalDocumentType type, int section)
+    {
+        var newest = NewestOf(type);
+
+        Assert.Equal(new[] { "cs", "en", "ru", "sk", "uk" }, newest.Select(r => r.Language).Order());
+        Assert.All(newest, r =>
+        {
+            Assert.Equal(new[] { PayPeriod.LengthInDays }, DaysIn(r.ContentMarkdown, section));
+            Assert.DoesNotMatch(MonthWord, SectionOf(type, r.Language, section));
+        });
+    }
+
+    private static readonly Regex MonthWord = new(@"month|měsí|mesač|mesia|місяц|місяч|месяц|месяч", RegexOptions.IgnoreCase);
 
     /// <summary>
     /// The owner's rulings of 2026-10-04 retire wording from the version each text replaces, and the newest

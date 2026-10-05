@@ -46,12 +46,12 @@ import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
           caret-color: transparent;
 
           &:focus {
-            border-color: var(--primary-color, #3b82f6);
-            box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.15);
+            border-color: var(--p-primary-color);
+            box-shadow: 0 0 0 2px rgba(var(--cleansia-primary-rgb), 0.15);
           }
 
           &--filled {
-            border-color: var(--primary-color, #3b82f6);
+            border-color: var(--p-primary-color);
             background: var(--surface-hover, #f0f0f0);
             color: var(--text-color, #333);
           }

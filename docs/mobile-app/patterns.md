@@ -782,6 +782,27 @@ not set `focusedLabelColor = primaryText()`. Read off the iOS 26.3 screenshots, 
 3.30 to 4.60:1 (iOS `463c44776`, Android `a0406cc0d`). The partner and admin websites' floating label
 moved with [the web's primary](/architecture/frontend#web-primary).
 
+**The subtle slide-to-confirm's label takes it too, on iOS** (finding 2026-10-05). Core's
+`SlideToConfirm` in its default subtle style, which the partner app uses for its order actions, the
+orders list's *take* and the contract sheet, wrote its label in the primary on a 12 % wash of the
+primary, 3.52:1 in light mode. The label now takes the text ink, 5.10:1 on that wash, and the wash and
+the thumb keep the primary; dark mode reads 5.43:1, the text ink there being the primary. The
+prominent style, the customer's booking slide, is a filled track and is unchanged, and so is Android's
+partner `SlideToCommit`, a filled track whose label is a filled button's. Core's
+`ComponentTextInkTests` pins the label, track and thumb and measures the label on its wash in both
+modes (iOS `d6acb7cb6`).
+
+**A filled button's label reads 4.5:1 in dark mode** (finding 2026-10-05). `onPrimary` was sky-900 in
+dark mode, in iOS Core and in both Android schemes: 4.42:1 on the dark primary, sky-400. It is the label
+and spinner of every filled button, the prominent slide-to-confirm's label and Android's partner
+`SlideToCommit`'s, the subtle slide's thumb glyph on iOS, Android's partner in-progress banner, and the
+glyphs on primary fills, selected chips and day pills, the FAB and badges among them. It is sky-950
+`#082F49` now, 6.48:1, in both apps on both platforms. Light mode keeps white on sky-600, 4.10:1, the
+pair the owner kept for filled buttons. Every `onPrimary` site sits on the primary or on the brand
+gradient, all lighter than sky-950, so none reads lower. Core's `ComponentTextInkTests` and each
+Android app's `SurfaceRolesTest` measure the dark pair and pin light mode to white, and the partner's
+also pins `SlideToCommit`'s label to it (iOS `18ffe5ecf`, Android `36b2acf40`).
+
 **Blue text on the light-blue container has an ink of its own in dark mode** (finding 2026-10-05).
 `primaryContainer` is sky-100 in light mode and sky-700 in dark, and the text ink on it reads 5.17:1 in
 light mode but 2.77:1 in dark, sky-400 on sky-700. Text drawn straight on that container takes
@@ -901,6 +922,36 @@ The web's pills already read 4.5:1 or more, measured on the compiled bundles: th
 rows and dispute pills 4.79:1 or more in both themes, and the tracking page's hero pill 5.17:1 or more
 (Android `a9b89279d`, iOS `81ac1eeae` and `3cfefcde5`).
 
+**A partner order's payment pill reads 4.5:1 too, in both modes** (finding 2026-10-05). The partner
+order's payment card writes the payment's status in its colour on a 12 % wash of that colour over the
+card. On iOS *Pending* took the rating star's amber-500, 1.96:1 in light mode, and *Paid* green-700,
+4.27:1 in light and 2.64:1 in dark. On Android *Pending* was amber-600, 2.81:1, *Paid* green-600, 2.89:1
+in light and 3.78:1 in dark, and *Failed* and *Disputed* red-600, 4.01:1 in light and 2.85:1 in dark.
+Both apps now take the dispute pill's pairs, and the wash still follows the ink:
+
+| Status | Light mode | Dark mode |
+|---|---|---|
+| *Pending* | amber-800 `#92400E`, 5.88:1 | amber-500, 5.54:1 |
+| *Paid* | green-800 `#166534`, 5.93:1 | green-400 `#4ADE80`, 6.48:1 |
+| *Failed*, *Disputed* | the error colour, red-700, 5.28:1, as iOS already drew it | red-300, 6.05:1 |
+| *Refunded*, *Partially refunded*, and a status the app does not know | `onSurfaceVariant`, as before, 8.45:1 | 4.64:1 |
+
+The ratios are iOS's; Android's card gives the same within 0.02. The pairs are named once, for the
+partner app's other status texts too: `CleansiaColors.pendingInk` and `successInk` in iOS Core, and
+`pendingInk` on the partner's colour scheme on Android. iOS's partner
+`TextInkTests` and Android's `PaymentPresentationTest` measure every severity on its wash over the card
+in both modes (iOS `eb083ee4f`, Android `11a7a5c99`).
+
+**A document's status reads 4.5:1 too** (finding 2026-10-05). The partner's documents screen writes
+each document's status, and each requirement's, in its colour on the card. On iOS *Pending* took
+amber-500, 2.15:1 on white, and *Approved* green-700, 2.92:1 on the dark card. On Android *Pending*
+took Material's baseline `tertiary`, a mauve nothing else in the app uses
+([the tertiary roles](#surface-roles)). Both apps' *Pending* now takes `pendingInk`, 7.09:1 in light
+mode and 6.81:1 in dark, and iOS's *Approved* `successInk`, 7.13:1 and 8.40:1. Android's *Approved*
+stays the text ink, 5.93:1 and 6.83:1, as it has been since the partner sweep above, so the two apps
+still draw it in different hues. *Rejected* is the error colour on both. iOS's `TextInkTests` measures
+every document status, and none, on the card in both modes (iOS `eba022747`, Android `0ae302746`).
+
 ## Android's dialogs and menus sit on slate {#surface-roles}
 
 Material 3 draws a dialog, a menu, a date picker and a search bar on its surface-container roles, and
@@ -925,8 +976,29 @@ and the text ink reads 5.42:1 on the light dialog. `SurfaceRolesTest` in each ap
 surface role to be one of the app's slates, the dialog and menu containers above, and 4.5:1 for
 `onSurface`, `onSurfaceVariant`, the text ink and the error colour on both; the partner app's
 `LightColors` and `DarkColors` became `internal`, as the customer app's were, so the test can read them
-(`7871948ce`). Material's other baseline roles are not covered by this: the partner scheme does not
-set `tertiary`, which some partner screens read (reported 2026-10-05).
+(`7871948ce`).
+
+**The partner scheme sets the tertiary roles too, from amber** (finding 2026-10-05). Left unset, they
+were Material's baseline mauve, `#7D5260` (`#EFB8C8` in dark) with containers `#FFD8E4` / `#633B48`,
+and showed on a pending document, the registration lock's pending row, the address form's note that a
+city is outside the serviced area, and three notices. Since 2026-10-05:
+
+| Role | Light | Dark |
+|---|---|---|
+| `tertiary` / `onTertiary` | amber-800 / white, 7.09:1 | amber-500 / amber-950, 6.97:1 |
+| `tertiaryContainer` / `onTertiaryContainer` | amber-100 / amber-900, 8.15:1 | amber-900 / amber-100, 8.15:1 |
+
+The three notices on `tertiaryContainer`, the contract-pending card, the contract sheet's notice and a
+legal text's *updated* note, read amber now, as iOS draws them. The status sites no longer read the
+slot; each names the colour it means: a pending document and the outside-the-serviced-area note take
+`pendingInk` ([above](#brand-text-ink)), and the registration lock's pending hourglass and *awaiting
+review* line take `onSurfaceVariant`, as iOS's step row draws them. iOS draws its own outside-the-area
+note in the lighter amber-500, about 2:1 in light mode (reported 2026-10-05). The partner's
+`SurfaceRolesTest` requires the four roles to be the app's ambers at 4.5:1 or more and finds no partner
+screen drawing in the bare `tertiary` (Android `0ae302746`). The customer scheme still leaves the
+tertiary roles unset, so Home's milestone card, an order's discount chip and the address manager's
+unserviced-city icon show the mauve on Android, and iOS's customer `tertiaryContainer` copies it on
+purpose (reported 2026-10-05).
 
 ## Every map is quiet, with one Cleansia pin {#maps}
 

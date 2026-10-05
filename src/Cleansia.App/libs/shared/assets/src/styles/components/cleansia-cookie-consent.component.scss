@@ -214,11 +214,21 @@
       }
     }
 
+    // After dark the OK keeps its white label, a step deeper than the light theme's: Sky700 at its
+    // lightest (5.9; on Sky400 it read 2.1), and a step darker again under the pointer.
     &__btn {
       &--accept {
-        background: linear-gradient(135deg, #38bdf8 0%, #0ea5e9 100%);
+        background: linear-gradient(
+          135deg,
+          var(--cleansia-primary-700) 0%,
+          var(--cleansia-primary-800) 100%
+        );
         &:hover {
-          background: linear-gradient(135deg, #0ea5e9 0%, #0284c7 100%);
+          background: linear-gradient(
+            135deg,
+            var(--cleansia-primary-800) 0%,
+            var(--cleansia-primary-900) 100%
+          );
         }
       }
     }

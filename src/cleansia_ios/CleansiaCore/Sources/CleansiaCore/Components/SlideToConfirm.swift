@@ -160,10 +160,12 @@ public struct SlideToConfirm: View {
         }
     }
 
+    /// The subtle label is text on a 12 % primary wash, so it takes the text ink: the light primary read 3.52:1
+    /// there, sky-700 reads 5.10:1 (dark mode is sky-400 either way, 5.43:1).
     private var labelColor: Color {
         switch style {
         case .subtle:
-            CleansiaColors.primary
+            CleansiaColors.primaryText
         case .prominent:
             enabled || isBusy ? CleansiaColors.onPrimary : CleansiaColors.onSurfaceVariant
         }

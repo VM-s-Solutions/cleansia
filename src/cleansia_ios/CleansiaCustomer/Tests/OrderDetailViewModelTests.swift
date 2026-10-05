@@ -429,6 +429,17 @@ final class OrderDetailViewModelTests: XCTestCase {
         XCTAssertEqual(vm.recurringAuthoring, .allowed)
     }
 
+    /// A member whose benefits are paused could still tap "Make this recurring" here, while the schedules
+    /// list and Android withhold it and the server refuses the create.
+    func testAPausedMemberLosesTheMakeRecurringShortcut() async {
+        let vm = completedVM(membershipClient(.success(MembershipFixtures.pastDue)))
+
+        await vm.load()
+
+        XCTAssertEqual(vm.recurringAuthoring, .paused)
+        XCTAssertFalse(OrderDetailFooterActions.showMakeRecurring(._5, authoring: vm.recurringAuthoring))
+    }
+
     func testAMemberKeepsTheMakeRecurringShortcut() async {
         let vm = completedVM(membershipClient(.success(MembershipFixtures.active)))
 

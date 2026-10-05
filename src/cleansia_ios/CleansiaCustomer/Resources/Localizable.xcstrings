@@ -35333,6 +35333,76 @@
         }
       }
     },
+    "recurring_paused_notice_body": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Platbu za obnovení Plus se nepodařilo strhnout, a proto vaše rozvrhy neobjednávají žádné nové úklidy a žádný nelze přidat ani upravit. Pokud opakovaná platba projde, začnou se znovu objednávat."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "We couldn't charge your Plus renewal, so your recurring schedules book no new cleanings, and none can be added or changed. They start booking again if a retried payment goes through."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Нам не удалось списать оплату за продление Plus, поэтому ваши расписания не бронируют новых уборок, и ни одно нельзя добавить или изменить. Если повторная оплата пройдёт, они снова начнут бронировать."
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Platbu za obnovenie Plus sa nepodarilo strhnúť, a preto vaše rozvrhy neobjednávajú žiadne nové upratovania a žiadny sa nedá pridať ani upraviť. Ak opakovaná platba prejde, začnú sa znova objednávať."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Нам не вдалося списати оплату за продовження Plus, тому ваші розклади не бронюють нових прибирань, і жоден не можна додати чи змінити. Якщо повторна оплата пройде, вони знову почнуть бронювати."
+          }
+        }
+      }
+    },
+    "recurring_paused_notice_title": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Opakování pozastaveno — platba za Plus selhala"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Recurring paused — Plus payment failed"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Регулярные приостановлены — оплата Plus не прошла"
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Opakovanie pozastavené — platba za Plus zlyhala"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Регулярні призупинено — оплата Plus не вдалася"
+          }
+        }
+      }
+    },
     "recurring_plus_gate_cta": {
       "extractionState": "stale",
       "localizations": {

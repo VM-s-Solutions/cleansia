@@ -355,13 +355,14 @@ struct PaymentCard: View {
 /// Colour-coded payment-status pill: green settled, amber pending, red
 /// failed/disputed, neutral for refunds and for a status we don't map yet (the
 /// `PaymentStatusPill` parity). Label and tint both come from `PaymentPresentation`.
+/// The tint is the label and its 12 % wash, so each reads 4.5:1 or more on its wash in both modes.
 private struct PaymentStatusPill: View {
     let statusCode: Int?
 
     private var tint: Color {
         switch PaymentPresentation.statusSeverity(statusCode) {
-        case .success: CleansiaColors.successText
-        case .warning: CleansiaColors.warningStar
+        case .success: CleansiaColors.successInk
+        case .warning: CleansiaColors.pendingInk
         case .error: CleansiaColors.error
         case .neutral: CleansiaColors.onSurfaceVariant
         }

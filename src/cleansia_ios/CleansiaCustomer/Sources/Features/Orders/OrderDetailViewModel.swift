@@ -31,6 +31,7 @@ final class OrderDetailViewModel: ViewModel {
     @Published private(set) var alreadyConsented: Bool?
     @Published private(set) var termsAccepted = false
     @Published private(set) var hasMembership: Bool?
+    @Published private(set) var benefitsPaused = false
     @Published private(set) var markets: MarketState = .loading
 
     let cancelSucceeded = PassthroughSubject<OrderCancellation, Never>()
@@ -100,6 +101,9 @@ final class OrderDetailViewModel: ViewModel {
         membershipRepository.$current
             .map { $0?.hasMembership }
             .assign(to: &$hasMembership)
+        membershipRepository.$current
+            .map { $0?.benefitsPaused ?? false }
+            .assign(to: &$benefitsPaused)
         marketStore.$state.assign(to: &$markets)
         subscribeToEvents()
     }
@@ -129,9 +133,10 @@ final class OrderDetailViewModel: ViewModel {
 
     /// Gates the "Make this recurring" shortcut, from the same nullable membership the
     /// recurring list resolves. Nothing on this screen used to fetch that answer, so a
-    /// paid-up member lost the shortcut whenever no other screen had warmed the cache.
+    /// paid-up member lost the shortcut whenever no other screen had warmed the cache. A member whose
+    /// benefits are paused loses it too, as on the schedules list and on Android.
     var recurringAuthoring: RecurringAuthoringGate {
-        .resolve(hasMembership: hasMembership)
+        .resolve(hasMembership: hasMembership, benefitsPaused: benefitsPaused)
     }
 
     deinit {

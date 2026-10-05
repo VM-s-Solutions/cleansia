@@ -81,7 +81,7 @@
     color: #1f2937;
 
     &--success {
-      color: #10b981;
+      color: var(--cleansia-success-800);
     }
 
     &--danger {
@@ -156,12 +156,6 @@
   &__count {
     font-size: 0.8125rem;
     color: #6b7280;
-  }
-
-  &__revenue {
-    font-weight: 600;
-    font-size: 0.875rem;
-    color: #0284c7;
   }
 }
 

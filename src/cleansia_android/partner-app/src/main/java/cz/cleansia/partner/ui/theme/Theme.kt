@@ -23,6 +23,13 @@ internal val LightColors = lightColorScheme(
     onSecondary = LightSurface,
     secondaryContainer = Sky50,
     onSecondaryContainer = Sky900,
+    // Unset, the tertiary roles are M3's baseline mauve (#7D5260, container #FFD8E4), which showed on the
+    // contract and legal notices. Ours is the amber the app means by pending and by an advisory note, as
+    // iOS draws those notices; a pending status itself names pendingInk rather than this slot.
+    tertiary = Amber800,
+    onTertiary = LightSurface,
+    tertiaryContainer = Amber100,
+    onTertiaryContainer = Amber900,
     background = LightBackground,
     onBackground = LightTextPrimary,
     surface = LightSurface,
@@ -53,13 +60,19 @@ internal val LightColors = lightColorScheme(
 
 internal val DarkColors = darkColorScheme(
     primary = Sky400,
-    onPrimary = Sky900,
+    // A filled button's label: sky-900 read 4.42:1 on sky-400, sky-950 reads 6.48:1. Light mode keeps white.
+    onPrimary = Sky950,
     primaryContainer = Sky700,
     onPrimaryContainer = Sky100,
     secondary = Sky300,
     onSecondary = Sky900,
     secondaryContainer = Sky800,
     onSecondaryContainer = Sky100,
+    // Unset, M3's baseline mauve (#EFB8C8, container #633B48); the dark steps of the same amber.
+    tertiary = WarningStar,
+    onTertiary = Amber950,
+    tertiaryContainer = Amber900,
+    onTertiaryContainer = Amber100,
     background = DarkBackground,
     onBackground = DarkTextPrimary,
     surface = DarkSurface,

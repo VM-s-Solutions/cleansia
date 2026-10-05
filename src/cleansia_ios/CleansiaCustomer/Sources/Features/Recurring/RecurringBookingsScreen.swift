@@ -63,6 +63,14 @@ struct RecurringBookingsScreen: View {
     private var content: some View {
         if vm.affordances.showPlusUpsell {
             PlusGate(onSubscribe: onSubscribePlus)
+        } else if vm.affordances.showPausedNotice, vm.templates.isEmpty {
+            // In place of the empty state, whose create CTA the server would refuse.
+            VStack {
+                Spacer()
+                BenefitsPausedNotice()
+                Spacer()
+            }
+            .padding(Spacing.xl)
         } else if vm.templates.isEmpty {
             RecurringEmptyState(onCreateNew: onCreateNew)
         } else {
@@ -71,6 +79,7 @@ struct RecurringBookingsScreen: View {
                 noLongerOfferedIds: vm.noLongerOfferedIds,
                 mutatingId: vm.mutatingId,
                 showLapsedNotice: vm.affordances.showLapsedNotice,
+                showPausedNotice: vm.affordances.showPausedNotice,
                 showEdit: vm.affordances.showEdit,
                 onEdit: onEdit,
                 onToggle: { template in
@@ -91,6 +100,7 @@ private struct TemplateList: View {
     let noLongerOfferedIds: Set<String>
     let mutatingId: String?
     let showLapsedNotice: Bool
+    let showPausedNotice: Bool
     let showEdit: Bool
     let onEdit: (RecurringTemplate) -> Void
     let onToggle: (RecurringTemplate) -> Void
@@ -102,6 +112,9 @@ private struct TemplateList: View {
             VStack(spacing: Spacing.m) {
                 if showLapsedNotice {
                     LapsedPlusNotice(onSubscribe: onSubscribe)
+                }
+                if showPausedNotice {
+                    BenefitsPausedNotice()
                 }
                 ForEach(templates) { template in
                     TemplateCard(
@@ -136,6 +149,24 @@ private struct LapsedPlusNotice: View {
                 .font(CleansiaTypography.bodyMedium)
                 .foregroundColor(CleansiaColors.onSurfaceVariant)
             CleansiaTextLink(L10n.Recurring.plusGateCta, action: onSubscribe)
+        }
+        .padding(Spacing.m)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(CleansiaColors.surfaceVariant, in: RoundedRectangle(cornerRadius: CornerRadius.medium))
+    }
+}
+
+/// For a live enrolment whose renewal failed. It carries no subscribe action: the server refuses a second
+/// subscription while this one lives, and the subscribe screen sends such a member straight back.
+private struct BenefitsPausedNotice: View {
+    var body: some View {
+        VStack(alignment: .leading, spacing: Spacing.s) {
+            Text(L10n.Recurring.pausedNoticeTitle)
+                .font(CleansiaTypography.titleMedium)
+                .foregroundColor(CleansiaColors.onSurface)
+            Text(L10n.Recurring.pausedNoticeBody)
+                .font(CleansiaTypography.bodyMedium)
+                .foregroundColor(CleansiaColors.onSurfaceVariant)
         }
         .padding(Spacing.m)
         .frame(maxWidth: .infinity, alignment: .leading)

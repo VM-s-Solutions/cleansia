@@ -69,3 +69,14 @@
     </cleansia-section>
   </div>
 </div>
+
+<ng-template #nameTemplate let-item>
+  <div class="status-cell">
+    <span>{{ item.name }}</span>
+    @if (facade.includesRetiredService(item)) {
+    <span class="status-badge status-badge--warning">
+      {{ 'pages.package_management.includes_inactive_service' | translate }}
+    </span>
+    }
+  </div>
+</ng-template>

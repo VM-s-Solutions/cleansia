@@ -7,6 +7,7 @@ using Cleansia.Core.AppServices.Features.Services;
 using Cleansia.Core.AppServices.Mappers;
 using Cleansia.Core.AppServices.Services;
 using Cleansia.Core.AppServices.Services.Interfaces;
+using Cleansia.Core.AppServices.Shared.DTOs.ResponseModels;
 using Cleansia.Core.Domain.Bookings;
 using Cleansia.Core.Domain.EmployeePayroll;
 using Cleansia.Core.Domain.Enums;
@@ -25,6 +26,7 @@ using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
+using System.Reflection;
 
 namespace Cleansia.Tests.Features.Catalog;
 
@@ -403,6 +405,26 @@ public sealed class CatalogActiveVisibilityTests : IDisposable
         Assert.True(kept.IsValid, string.Join("; ", kept.Errors.Select(e => e.ErrorMessage)));
         Assert.Equal(ServiceRefusal, added.Errors.Select(e => (e.PropertyName, e.ErrorMessage)));
         Assert.Equal(ServiceRefusal, unknown.Errors.Select(e => (e.PropertyName, e.ErrorMessage)));
+    }
+
+    /// <summary>
+    /// The admin package list marks a package that still includes a retired service, so each row carries
+    /// what the package includes. The paged read loaded none, and every row listed an empty package.
+    /// </summary>
+    [Fact]
+    public async Task The_Admin_Package_List_Lists_What_Each_Package_Includes_A_Retired_Service_Among_Them()
+    {
+        var (activeServiceId, retiredServiceId, holdsActiveId, holdsRetiredId) = await SeedPackageEditorsAsync();
+
+        await using var ctx = NewContext();
+        var handlerType = typeof(GetPagedPackages).GetNestedType("Handler", BindingFlags.NonPublic)!;
+        var handler = Activator.CreateInstance(
+            handlerType, new PackageRepository(ctx), new PackagePriceRepository(ctx), new CurrencyRepository(ctx))!;
+        var page = await (Task<PagedData<PackageListItem>>)handlerType.GetMethod("Handle")!
+            .Invoke(handler, [new GetPagedPackages.Request(), CancellationToken.None])!;
+
+        Assert.Equal([activeServiceId], page.Data.Single(p => p.Id == holdsActiveId).IncludedServices.Select(s => s.ServiceId));
+        Assert.Equal([retiredServiceId], page.Data.Single(p => p.Id == holdsRetiredId).IncludedServices.Select(s => s.ServiceId));
     }
 
     [Fact]

@@ -1308,7 +1308,8 @@
       },
       "activate_package": "Aktivovat balíček",
       "deactivate_package": "Deaktivovat balíček",
-      "deactivate_confirm": "Deaktivovat „{{name}}“? Balíček se skryje z rezervačního katalogu, historie zůstane zachována."
+      "deactivate_confirm": "Deaktivovat „{{name}}“? Balíček se skryje z rezervačního katalogu, historie zůstane zachována.",
+      "includes_inactive_service": "Obsahuje neaktivní službu"
     },
     "package_form": {
       "create_title": "Vytvořit balíček",
@@ -1335,7 +1336,8 @@
         "update_error": "Nepodařilo se aktualizovat balíček"
       },
       "tagline": "Krátký popisek na kartě",
-      "is_popular": "Nejoblíbenější balíček"
+      "is_popular": "Nejoblíbenější balíček",
+      "retired_services_hint": "Služby označené „{{status}}“ jsou deaktivované a do balíčku je přidat nelze. Služba, kterou balíček už obsahuje, v něm zůstane, dokud ji neodeberete."
     },
     "extra_management": {
       "title": "Doplňky",

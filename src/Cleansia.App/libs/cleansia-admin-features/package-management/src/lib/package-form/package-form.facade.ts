@@ -15,6 +15,7 @@ import {
 import { ICleansiaSelectOption } from '@cleansia/components';
 import { UnsubscribeControlDirective } from '@cleansia/directives';
 import { CleansiaAdminRoute, resolveApiErrorKey, SnackbarService } from '@cleansia/services';
+import { currentLanguage } from '@cleansia/utils';
 import { TranslateService } from '@ngx-translate/core';
 import { catchError, finalize, of, takeUntil } from 'rxjs';
 import {
@@ -72,11 +73,43 @@ export class PackageFormFacade extends UnsubscribeControlDirective {
   readonly currencies = signal<CurrencyOption[]>([]);
   readonly availableServices = signal<ServiceListItem[]>([]);
 
-  readonly serviceOptions = computed<ICleansiaSelectOption[]>(() =>
-    this.availableServices()
-      .filter((service): service is ServiceListItem & { id: string } => Boolean(service.id))
-      .map((service) => ({ label: service.name ?? '', value: service.id }))
-  );
+  /**
+   * The services an administrator has deactivated. They stay listed, marked, because a package may
+   * still include one; none can be added. → /product/business-rules#deactivated-catalogue
+   */
+  readonly retiredServiceIds = signal<ReadonlySet<string>>(new Set());
+  readonly hasRetiredServices = computed(() => this.retiredServiceIds().size > 0);
+
+  private readonly lang = currentLanguage(this.translate);
+
+  /** A service's name, with the inactive status beside it when it is retired. */
+  readonly serviceLabels = computed<ReadonlyMap<string, string>>(() => {
+    this.lang();
+    const retired = this.retiredServiceIds();
+    const inactive = this.translate.instant('enums.active_status.inactive');
+    return new Map(
+      this.availableServices()
+        .filter((service): service is ServiceListItem & { id: string } => Boolean(service.id))
+        .map((service) => [
+          service.id,
+          retired.has(service.id) ? `${service.name ?? ''} (${inactive})` : service.name ?? '',
+        ])
+    );
+  });
+
+  /**
+   * A retired service is offered disabled, so it cannot be added; one the loaded package already
+   * includes stays enabled, so the administrator can take it out and put it back, as the server allows.
+   */
+  readonly serviceOptions = computed<ICleansiaSelectOption[]>(() => {
+    const retired = this.retiredServiceIds();
+    const included = new Set((this.pkg()?.includedServices ?? []).map((service) => service.id));
+    return [...this.serviceLabels()].map(([id, label]) =>
+      retired.has(id) && !included.has(id)
+        ? { label, value: id, disabled: true }
+        : { label, value: id }
+    );
+  });
 
   /**
    * Which currency the per-service gross preview is denominated in. The preview splits ONE number
@@ -230,6 +263,24 @@ export class PackageFormFacade extends UnsubscribeControlDirective {
         if (response?.data) {
           this.availableServices.set(response.data);
         }
+      });
+
+    // Which of them are retired: a service list row carries no active flag, so the list's own filter
+    // answers it. A failed read marks nothing, and the server still refuses adding a retired service.
+    this.adminClient.adminServiceClient
+      .getPaged(undefined, false, undefined, 0, 1000)
+      .pipe(
+        takeUntil(this.destroyed$),
+        catchError(() => of(null))
+      )
+      .subscribe((response) => {
+        this.retiredServiceIds.set(
+          new Set(
+            (response?.data ?? [])
+              .map((service) => service.id)
+              .filter((id): id is string => Boolean(id))
+          )
+        );
       });
   }
 

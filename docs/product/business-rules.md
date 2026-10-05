@@ -2145,15 +2145,34 @@ comments expected the booking to fail loudly. What it deliberately leaves alone:
 - **The admin package editors** (`CreatePackage`, `UpdatePackage`) still accept a deactivated service
   into a package; they ask only that it exists.
 
-**A schedule still booking a deactivated entry shows the customer no error.** The quote refuses its
-selection, so every client that quotes it fails quietly:
+**A schedule still booking a deactivated entry says so on its card, and shows the customer no
+error.** The quote refuses its selection, so every client that quotes it fails quietly, and the
+schedules list says why:
 
+- **Its card says so** (owner ruling 2026-10-05). On the web, Android and iOS the schedule's card on
+  the schedules list carries one line in the list's secondary hint style, an info icon and *Includes
+  a service no longer offered — edit to update* (`recurring_booking.card_item_no_longer_offered` on
+  the web, `recurring_card_item_no_longer_offered` on the apps, five languages). It says "a service"
+  for a package too, the owner's wording. The rule is the same on every client: the schedule's
+  selected service or package ids include one that the current customer catalogue of the schedule's
+  market does not list. That market is the country of the schedule's saved address, or the platform
+  default for an address with none, and its overviews list only active entries priced in its
+  currency, which is what the quote asks of a selection. Each list reads those overviews itself,
+  quietly, once for each market its schedules are priced in, on every visit (and on Android on every
+  pull to refresh). It reads them straight from the API, so the catalogue that Home, the booking and
+  the form share is left alone. A schedule is judged only once its own market has been read: before
+  that read succeeds, or while the list does not know the schedule's saved address, its card says
+  nothing rather than guess. On the apps a customer whose Plus has lapsed or whose benefits are
+  paused has no *Edit* on the card, and the web's edit route sends them to the Plus page
+  (`customerMembershipGuard`), so for them the line's *edit to update* is a step they can take only
+  once Plus is back.
 - **Its card on the web has no price.** The web's schedules list, *Recurring cleanings*, quotes each
   card for its price per clean (`quoteTemplate`); a card whose quote is refused leaves the price out,
-  with no message. Those quotes go through the toast-suppressing client (`errorToastSuppressingHttpClient`),
-  since the shared error interceptor would otherwise toast the refusal (*One of the selected services
-  is no longer available.*) on every visit to the list. Android's and iOS's schedule lists show no
-  price on any card and quote nothing, and no client has a schedule screen besides the edit form.
+  with no message of its own, the line above being the explanation. Those quotes go through the
+  toast-suppressing client (`errorToastSuppressingHttpClient`), since the shared error interceptor
+  would otherwise toast the refusal (*One of the selected services is no longer available.*) on every
+  visit to the list. Android's and iOS's schedule lists show no price on any card and quote nothing,
+  and no client has a schedule screen besides the edit form.
 - **Editing it removes the entry, with a notice.** The web (`keepSelected`), Android and iOS trim an
   edited schedule's selection to its market's catalogue as the form loads, and tell the customer that
   part of the selection is not offered at this address and was removed, so saving the edit takes the
@@ -2171,7 +2190,12 @@ interceptor over a card refused for a deactivated service and an edit form refus
 package, and asserts no price and no message. Android's `CreateRecurringViewModelTest` pins an edited
 cash schedule dropping a deactivated service with the notice and saving in cash, and a template
 trimmed when the catalogue lands after it; iOS's
-`testEditingPrunesWhatTheTemplatesMarketNoLongerOffersWithANotice` pins the trim on load.
+`testEditingPrunesWhatTheTemplatesMarketNoLongerOffersWithANotice` pins the trim on load. The card's
+line is pinned on each client for a retired service, a retired package, everything listed, and a
+market not yet read or an address the list does not know: the web's recurring facade and list
+specs, Android's `RecurringBookingsViewModelTest` (with `RecurringNoLongerOfferedCopyTest` holding
+the copy verbatim in all five languages) and iOS's `RecurringBookingsViewModelTests`; all three also
+pin that each schedule is judged against its own market's catalogue.
 
 ## Discounts, and the 12 % cap {#discount-cap}
 

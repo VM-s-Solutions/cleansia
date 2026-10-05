@@ -1100,12 +1100,14 @@ need backfilling.
   it and book it every week. The price, the booking and a new schedule now refuse it with *One of the
   selected services is no longer available* (or *packages*), which every app and the website already
   show. A schedule set up before the service was taken off keeps it, and its visits are confirmed and
-  paid as before; nothing shows an error for it. On the website its card on *Recurring cleanings*
-  shows no price, and opening it to edit removes the service with a notice, now on Android as on iOS
-  and the website. A service that is part of a package is still done with the package. **API
-  consumer:** `QuoteOrder`, `QuotePlusSavings`, `CreateOrder` and `CreateRecurringBooking` refuse a
-  deactivated id with `order.selected_services.invalid` / `order.selected_package.invalid`.
-  (Finding 2026-10-04; the schedule's card and edit, review 2026-10-05.)
+  paid as before; nothing shows an error for it. Its card on the list of schedules now says
+  *Includes a service no longer offered — edit to update*, on the website, Android and iOS alike,
+  and on the website that card shows no price. Opening it to edit removes the service with a notice,
+  now on Android as on iOS and the website. A service that is part of a package is still done with
+  the package. **API consumer:** `QuoteOrder`, `QuotePlusSavings`, `CreateOrder` and
+  `CreateRecurringBooking` refuse a deactivated id with `order.selected_services.invalid` /
+  `order.selected_package.invalid`. (Finding 2026-10-04; the schedule's card and edit, review
+  2026-10-05; the card's line, owner ruling 2026-10-05.)
 
 - **Customer web — deleting your account is confirmed on a red button.** The question before your
   account is deleted offered the same blue confirm button as any harmless question. It now shows the

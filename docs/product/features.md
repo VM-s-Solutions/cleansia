@@ -39,7 +39,9 @@ confirmed individually, so a single occurrence can be skipped without cancelling
 schedule is priced in the currency of its saved address's country, like a one-off booking, and every
 wizard -- web, Android and iOS -- offers only what that market sells. A cash schedule must stay a
 one-cleaner job: one that grows past it books nothing until the customer moves it to card or a smaller
-selection, and the web, Android and iOS schedule lists say so. →
+selection, and the web, Android and iOS schedule lists say so. A schedule that still holds a service
+or package its market no longer offers keeps booking it, and its card on the same three lists says
+so ([A deactivated service or package](/product/business-rules#deactivated-catalogue)). →
 [Recurring bookings](/flows/booking-and-pricing#recurring-bookings)
 
 **Choosing a cleaner** — nominate a preferred cleaner, who gets first refusal for a bounded window

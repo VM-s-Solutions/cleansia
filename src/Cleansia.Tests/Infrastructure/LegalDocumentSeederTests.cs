@@ -42,6 +42,7 @@ public sealed class LegalDocumentSeederTests : IDisposable
         (LegalDocumentType.WorkContract, new DateOnly(2026, 9, 20)),
         (LegalDocumentType.WorkContract, new DateOnly(2026, 9, 29)),
         (LegalDocumentType.CleanerFrameworkContract, new DateOnly(2026, 9, 29)),
+        (LegalDocumentType.CleanerFrameworkContract, new DateOnly(2026, 10, 5)),
         (LegalDocumentType.SelfBillingAgreement, new DateOnly(2026, 9, 29)),
         (LegalDocumentType.CleanerDataProcessingAgreement, new DateOnly(2026, 9, 29)),
         (LegalDocumentType.ComplaintsProcedure, new DateOnly(2026, 9, 29)),
@@ -462,6 +463,16 @@ public sealed class LegalDocumentSeederTests : IDisposable
     [InlineData(LegalDocumentType.TermsOfService, "2026-10-03", 8, 2)]            // a failed charge, and no cash without a card
     [InlineData(LegalDocumentType.TermsOfService, "2026-10-03", 13, 5)]           // refunds within 5 working days
     [InlineData(LegalDocumentType.TermsOfService, "2026-10-03", 14, 2)]           // a no-cleaner refund within 5 working days
+    [InlineData(LegalDocumentType.CleanerFrameworkContract, "2026-09-29", 5, 2)]  // approval needs the insurance certificate
+    [InlineData(LegalDocumentType.CleanerFrameworkContract, "2026-09-29", 8, 2)]  // cash held after a monthly settlement
+    [InlineData(LegalDocumentType.CleanerFrameworkContract, "2026-09-29", 9, 1)]  // the reward without the extras
+    [InlineData(LegalDocumentType.CleanerFrameworkContract, "2026-09-29", 9, 3)]  // a lockout pays half of the fee collected
+    [InlineData(LegalDocumentType.CleanerFrameworkContract, "2026-09-29", 10, 0)] // "Monthly settlement"
+    [InlineData(LegalDocumentType.CleanerFrameworkContract, "2026-09-29", 10, 1)] // settled after each monthly pay period
+    [InlineData(LegalDocumentType.CleanerFrameworkContract, "2026-09-29", 11, 1)] // the claim as if every cleaner were insured
+    [InlineData(LegalDocumentType.CleanerFrameworkContract, "2026-09-29", 11, 2)] // insurance kept, its certificate shown
+    [InlineData(LegalDocumentType.CleanerFrameworkContract, "2026-09-29", 16, 2)] // losing the insurance ends the agreement at once
+    [InlineData(LegalDocumentType.CleanerFrameworkContract, "2026-09-29", 16, 3)] // the last rewards at the next monthly settlement
     public void The_Newest_Version_Carries_None_Of_The_Wording_The_2026_10_04_Rulings_Retired(
         LegalDocumentType type, string replaced, int section, int block)
     {

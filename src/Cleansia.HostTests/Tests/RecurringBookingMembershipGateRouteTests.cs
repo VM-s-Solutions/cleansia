@@ -239,13 +239,18 @@ public sealed class RecurringBookingMembershipGateRouteTests(HostTestPostgresFix
             ctx.SavedAddresses.Add(saved);
 
             // CreateRecurringBooking refuses a selection whose ids are not active catalogue rows, in the
-            // validator, before the membership gate. Without this row every Create leg answers
-            // order.selected_services.invalid and the gate is never reached. Card payment needs no price.
+            // validator, before the membership gate, and UpdateRecurringBooking an edit that adds one.
+            // Without these rows every Create leg answers order.selected_services.invalid and the gate is
+            // never reached, and every Update leg answers it beside its own outcome. Card payment needs
+            // no price.
             var category = ServiceCategory.Create("recur-gate", "Recur gate", "Under test");
             ctx.Add(category);
-            var service = Service.Create(category.Id, "Recur gate clean", "Under test", 60);
-            service.Id = SeededServiceId;
-            ctx.Add(service);
+            foreach (var id in new[] { SeededServiceId, ReAuthoredServiceId })
+            {
+                var service = Service.Create(category.Id, "Recur gate clean", "Under test", 60);
+                service.Id = id;
+                ctx.Add(service);
+            }
 
             if (membership != Membership.None)
             {

@@ -10,6 +10,7 @@ using Cleansia.Core.Domain.Bookings;
 using Cleansia.Core.Domain.EmployeePayroll;
 using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Internationalization;
+using Cleansia.Core.Domain.Memberships;
 using Cleansia.Core.Domain.Packages;
 using Cleansia.Core.Domain.Repositories;
 using Cleansia.Core.Domain.Services;
@@ -33,7 +34,7 @@ namespace Cleansia.Tests.Features.Catalog;
 /// via the IsActive filter (S10 — no global IsActive filter, admins see all by default). A deactivated
 /// service inside an ACTIVE package stays listed in that package, because an order with it books it.
 /// A customer cannot select a deactivated entry by id either, while a schedule that already holds one
-/// keeps booking it.
+/// keeps booking it and an edit of that schedule may keep it.
 /// </summary>
 public sealed class CatalogActiveVisibilityTests : IDisposable
 {
@@ -281,6 +282,49 @@ public sealed class CatalogActiveVisibilityTests : IDisposable
     }
 
     /// <summary>
+    /// An edit is asked only what it ADDS, with the codes a new schedule gets: it used to take any id at
+    /// all, a retired one or one that never existed included.
+    /// </summary>
+    [Fact]
+    public async Task A_Schedule_Edit_Cannot_Add_A_Retired_Or_Unknown_Service_Or_Package()
+    {
+        var (activeServiceId, retiredServiceId, activePackageId, retiredPackageId) = await SeedAsync();
+
+        await using var ctx = NewContext();
+        var validator = ScheduleEditValidatorOver(ctx, HeldTemplate([activeServiceId], [activePackageId]));
+
+        var retired = await validator.ValidateAsync(
+            ScheduleEdit([activeServiceId, retiredServiceId], [activePackageId, retiredPackageId]));
+        var unknown = await validator.ValidateAsync(ScheduleEdit(["never-existed"], ["never-existed"]));
+
+        var refusals = new[]
+        {
+            (nameof(UpdateRecurringBooking.Command.SelectedPackageIds), BusinessErrorMessage.InvalidSelectedPackage),
+            (nameof(UpdateRecurringBooking.Command.SelectedServiceIds), BusinessErrorMessage.InvalidSelectedServices),
+        };
+        Assert.Equal(refusals, retired.Errors.Select(e => (e.PropertyName, e.ErrorMessage)).Order());
+        Assert.Equal(refusals, unknown.Errors.Select(e => (e.PropertyName, e.ErrorMessage)).Order());
+    }
+
+    /// <summary>
+    /// The other side of the same rule: an entry retired after the schedule took it stays selectable on
+    /// that schedule, so editing its time does not cost the customer what it keeps booking.
+    /// </summary>
+    [Fact]
+    public async Task A_Schedule_Edit_Keeps_A_Retired_Entry_The_Schedule_Holds_And_May_Add_An_Active_One()
+    {
+        var (activeServiceId, retiredServiceId, activePackageId, retiredPackageId) = await SeedAsync();
+
+        await using var ctx = NewContext();
+        var validator = ScheduleEditValidatorOver(ctx, HeldTemplate([retiredServiceId], [retiredPackageId]));
+
+        var result = await validator.ValidateAsync(
+            ScheduleEdit([retiredServiceId, activeServiceId], [retiredPackageId, activePackageId]));
+
+        Assert.True(result.IsValid, string.Join("; ", result.Errors.Select(e => e.ErrorMessage)));
+    }
+
+    /// <summary>
     /// The line's other side: the materialiser hands a template's ids to the factory without asking the
     /// catalogue again, so a schedule created before the deactivation keeps booking the entry.
     /// </summary>
@@ -413,6 +457,74 @@ public sealed class CatalogActiveVisibilityTests : IDisposable
             StartsOn: DateTime.UtcNow.AddDays(3),
             TermsAccepted: true,
             EarlyPerformanceRequested: true);
+
+    private const string ScheduleOwnerId = "user-schedule-edit";
+
+    /// <summary>
+    /// The real catalogue behind a schedule edit's validator, over a template the session user owns and an
+    /// entitled membership. No saved address and a card payment keep every other rule passing.
+    /// </summary>
+    private static UpdateRecurringBooking.Validator ScheduleEditValidatorOver(
+        CleansiaDbContext ctx, RecurringBookingTemplate held)
+    {
+        var templates = new Mock<IRecurringBookingTemplateRepository>();
+        templates.Setup(r => r.GetByIdForOwnerAsync(held.Id, ScheduleOwnerId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(held);
+        var session = new Mock<IUserSessionProvider>();
+        session.Setup(s => s.GetUserId()).Returns(ScheduleOwnerId);
+        var memberships = new Mock<IUserMembershipRepository>();
+        memberships.Setup(r => r.GetEntitledForUserNoTrackingAsync(ScheduleOwnerId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(UserMembership.Create(
+                ScheduleOwnerId, "plan-plus", "currency-czk", "sub_1", DateTime.UtcNow.AddDays(-1), DateTime.UtcNow.AddMonths(1)));
+        var savedAddresses = new Mock<ISavedAddressRepository>();
+        savedAddresses.Setup(r => r.GetByUserAsync(ScheduleOwnerId, It.IsAny<CancellationToken>())).ReturnsAsync([]);
+
+        return new(
+            templates.Object,
+            memberships.Object,
+            session.Object,
+            Mock.Of<IOrderRepository>(),
+            savedAddresses.Object,
+            Mock.Of<ICurrencyResolutionService>(),
+            Mock.Of<ICountryRepository>(),
+            new ServiceRepository(ctx),
+            new PackageRepository(ctx),
+            Mock.Of<IReceivableRepository>());
+    }
+
+    private static RecurringBookingTemplate HeldTemplate(
+        IReadOnlyList<string> serviceIds, IReadOnlyList<string> packageIds)
+    {
+        var template = RecurringBookingTemplate.Create(
+            userId: ScheduleOwnerId,
+            frequency: RecurrenceFrequency.Weekly,
+            dayOfWeek: System.DayOfWeek.Tuesday,
+            timeOfDay: new TimeOnly(9, 0),
+            rooms: 2,
+            bathrooms: 1,
+            savedAddressId: "saved-1",
+            selectedServiceIds: serviceIds,
+            selectedPackageIds: packageIds,
+            paymentType: PaymentType.Card,
+            startsOn: DateTime.UtcNow.AddDays(1));
+        template.Id = "template-schedule-edit";
+        return template;
+    }
+
+    private static UpdateRecurringBooking.Command ScheduleEdit(
+        IReadOnlyList<string> serviceIds, IReadOnlyList<string> packageIds) =>
+        new(
+            TemplateId: "template-schedule-edit",
+            Frequency: (int)RecurrenceFrequency.Weekly,
+            DayOfWeek: (int)System.DayOfWeek.Tuesday,
+            TimeOfDay: "10:00",
+            Rooms: 2,
+            Bathrooms: 1,
+            SavedAddressId: "saved-1",
+            SelectedServiceIds: serviceIds,
+            SelectedPackageIds: packageIds,
+            PaymentType: (int)PaymentType.Card,
+            StartsOn: DateTime.UtcNow.AddDays(3));
 
     private sealed class DefaultTenantProvider : ITenantProvider
     {

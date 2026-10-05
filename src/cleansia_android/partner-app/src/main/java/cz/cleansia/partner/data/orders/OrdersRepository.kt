@@ -14,6 +14,7 @@ import cz.cleansia.partner.api.model.OrderStatus
 import cz.cleansia.partner.api.model.PagedDataOfOrderListItem
 import cz.cleansia.partner.api.model.PendingOfferItem
 import cz.cleansia.partner.api.model.PhotoType
+import cz.cleansia.partner.api.model.ReportCashNotPaidCommand
 import cz.cleansia.partner.api.model.ReportOrderIssueCommand
 import cz.cleansia.partner.api.model.ReportOrderLockoutCommand
 import cz.cleansia.partner.api.model.SaveOrderPhotosCommand
@@ -98,6 +99,8 @@ interface OrdersRepository {
 
     suspend fun startOrder(orderId: String): ApiResult<Unit>
     suspend fun markCashCollected(orderId: String): ApiResult<Unit>
+    /** The customer paid nothing at the door: the job completes and its price becomes the customer's debt. */
+    suspend fun reportCashNotPaid(orderId: String): ApiResult<Unit>
     suspend fun notifyOnTheWay(orderId: String): ApiResult<Unit>
     suspend fun completeOrder(
         orderId: String,
@@ -349,6 +352,10 @@ class OrdersRepositoryImpl @Inject constructor(
 
     override suspend fun markCashCollected(orderId: String): ApiResult<Unit> = safeApiCall(json) {
         orderApi.orderMarkCashCollected(MarkCashCollectedCommand(orderId = orderId))
+    }.map { }.also { if (it is ApiResult.Success) invalidateOrder(orderId) }
+
+    override suspend fun reportCashNotPaid(orderId: String): ApiResult<Unit> = safeApiCall(json) {
+        orderApi.orderReportCashNotPaid(ReportCashNotPaidCommand(orderId = orderId))
     }.map { }.also { if (it is ApiResult.Success) invalidateOrder(orderId) }
 
     override suspend fun notifyOnTheWay(orderId: String): ApiResult<Unit> = safeApiCall(json) {

@@ -1,6 +1,8 @@
 package cz.cleansia.partner.features.orders
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -10,6 +12,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.PhotoCamera
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -20,6 +23,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import cz.cleansia.core.ui.components.CleansiaPrimaryButton
+import cz.cleansia.core.ui.components.CleansiaTextButton
 import cz.cleansia.partner.R
 import cz.cleansia.partner.api.model.OrderStatus
 
@@ -31,7 +35,8 @@ import cz.cleansia.partner.api.model.OrderStatus
  *   New / Confirmed, NOT mine:   "Take this job" (opens the contract sheet; the swipe is there)
  *   Confirmed (mine):            "Notify on the way" (single button)
  *   OnTheWay (mine):             Slide-to-start
- *   InProgress (mine):           "Mark cash collected" (unpaid cash) then Slide-to-complete
+ *   InProgress (mine):           "Mark cash collected" (unpaid cash, with "Customer did not pay"
+ *                                beneath it) then Slide-to-complete
  *   Completed / Cancelled:       (nothing)
  *
  * Taking is a button rather than a slide because the deliberate gesture now sits under the contract
@@ -52,8 +57,10 @@ fun OrderPrimaryAction(
     onNotifyOnTheWay: () -> Unit,
     onCompleteClick: () -> Unit,
     onCashConfirmRequested: () -> Unit,
+    onCashNotPaidRequested: () -> Unit = {},
     canComplete: Boolean = true,
     needsCashCollection: Boolean = false,
+    canReportCashNotPaid: Boolean = false,
     isPreferredOffer: Boolean = false,
     modifier: Modifier = Modifier,
 ) {
@@ -121,13 +128,21 @@ fun OrderPrimaryAction(
                         // the confirmation. The screen root owns the dialog
                         // and calls the mutation — we still spin here once it
                         // is in flight. (iOS: StickyActionFooter.swift.)
-                        CleansiaPrimaryButton(
-                            text = stringResource(R.string.order_mark_cash_collected),
-                            onClick = onCashConfirmRequested,
-                            loading = inFlight == OrderAction.MarkCashCollected,
-                            enabled = inFlight == null,
-                            modifier = modifier,
-                        )
+                        Column(modifier = modifier.fillMaxWidth()) {
+                            CleansiaPrimaryButton(
+                                text = stringResource(R.string.order_mark_cash_collected),
+                                onClick = onCashConfirmRequested,
+                                loading = inFlight == OrderAction.MarkCashCollected,
+                                enabled = inFlight == null,
+                            )
+                            if (canReportCashNotPaid) {
+                                CashNotPaidButton(
+                                    reporting = inFlight == OrderAction.ReportCashNotPaid,
+                                    enabled = inFlight == null,
+                                    onClick = onCashNotPaidRequested,
+                                )
+                            }
+                        }
                     } else {
                         SlideToCommit(
                             idleLabel = stringResource(R.string.slide_to_complete),
@@ -153,6 +168,19 @@ fun OrderPrimaryAction(
             }
         }
         else -> { /* Completed / Cancelled / null — no actions */ }
+    }
+}
+
+@Composable
+private fun CashNotPaidButton(reporting: Boolean, enabled: Boolean, onClick: () -> Unit) {
+    Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
+        if (reporting) {
+            CircularProgressIndicator(modifier = Modifier.padding(vertical = 12.dp).size(20.dp), strokeWidth = 2.dp)
+        } else {
+            CleansiaTextButton(onClick = onClick, enabled = enabled) {
+                Text(stringResource(R.string.order_cash_not_paid_action))
+            }
+        }
     }
 }
 

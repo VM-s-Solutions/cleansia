@@ -939,6 +939,12 @@
     <string name="partner_order_mark_cash_collected_confirm_message">Potvrďte, že jste od zákazníka převzali %1$s v hotovosti. Tuto akci nelze vzít zpět.</string>
     <string name="partner_order_mark_cash_collected_confirm_message_no_amount">Potvrďte, že jste od zákazníka převzali platbu v hotovosti. Tuto akci nelze vzít zpět.</string>
     <string name="partner_order_mark_cash_collected_confirm_action">Ano, hotovost přijata</string>
+    <string name="order_cash_not_paid_action">Zákazník nezaplatil</string>
+    <string name="order_cash_not_paid_confirm_title">Zákazník nezaplatil?</string>
+    <string name="order_cash_not_paid_confirm_message">Použijte jen tehdy, když zákazník nezaplatil nic. Pokud zaplatil jen část, dejte místo toho vědět společnosti. Úklid se dokončí a dostanete za něj zaplaceno. Zákazník bude dlužit %1$s, dozví se to a dokud nezaplatí, nemůže si nic dalšího objednat. Tuto akci nelze vzít zpět.</string>
+    <string name="order_cash_not_paid_confirm_message_no_amount">Použijte jen tehdy, když zákazník nezaplatil nic. Pokud zaplatil jen část, dejte místo toho vědět společnosti. Úklid se dokončí a dostanete za něj zaplaceno. Zákazník bude dlužit cenu úklidu, dozví se to a dokud nezaplatí, nemůže si nic dalšího objednat. Tuto akci nelze vzít zpět.</string>
+    <string name="order_cash_not_paid_confirm_action">Ano, nahlásit</string>
+    <string name="order_cash_not_paid_reported_toast">Nahlášeno. Úklid je dokončen a zákazník byl informován.</string>
 
     <!-- Backend error-key translations -->
     <string name="error_key_order_after_photos_required">Před dokončením zakázky pořiďte alespoň jednu fotografii \"po\".</string>

@@ -923,6 +923,12 @@
     <string name="partner_order_mark_cash_collected_confirm_message">Подтвердите, что вы получили от клиента %1$s наличными. Это действие нельзя отменить.</string>
     <string name="partner_order_mark_cash_collected_confirm_message_no_amount">Подтвердите, что вы получили от клиента оплату наличными. Это действие нельзя отменить.</string>
     <string name="partner_order_mark_cash_collected_confirm_action">Да, наличные получены</string>
+    <string name="order_cash_not_paid_action">Клиент не заплатил</string>
+    <string name="order_cash_not_paid_confirm_title">Клиент не заплатил?</string>
+    <string name="order_cash_not_paid_confirm_message">Используйте это, только если клиент ничего не заплатил. Если он заплатил только часть, вместо этого сообщите компании. Уборка будет завершена, и вам за неё заплатят. Клиент будет должен %1$s, получит об этом уведомление и не сможет ничего заказать, пока не заплатит. Это действие нельзя отменить.</string>
+    <string name="order_cash_not_paid_confirm_message_no_amount">Используйте это, только если клиент ничего не заплатил. Если он заплатил только часть, вместо этого сообщите компании. Уборка будет завершена, и вам за неё заплатят. Клиент будет должен стоимость уборки, получит об этом уведомление и не сможет ничего заказать, пока не заплатит. Это действие нельзя отменить.</string>
+    <string name="order_cash_not_paid_confirm_action">Да, сообщить</string>
+    <string name="order_cash_not_paid_reported_toast">Сообщение отправлено. Уборка завершена, клиент уведомлён.</string>
 
     <!-- Backend error-key translations -->
     <string name="error_key_order_after_photos_required">Перед завершением заказа сделайте хотя бы одну фотографию \"после\".</string>

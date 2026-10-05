@@ -29,6 +29,7 @@ class OrderDetailCallSiteTest {
     private val customerCard = source("CustomerCard.kt")
     private val detailScreen = source("OrderDetailScreen.kt")
     private val scopeCard = source("ScopeCard.kt")
+    private val primaryAction = source("OrderPrimaryAction.kt")
 
     @Test
     fun `the customer card renders whichever location arrived`() {
@@ -67,6 +68,22 @@ class OrderDetailCallSiteTest {
             "OrderDetailScreen must not read order.address directly: " +
                 rawReads.joinToString(" | ") { it.trim() },
             rawReads.isEmpty(),
+        )
+    }
+
+    @Test
+    fun `the non-payment report is offered through its gate and sent only from its confirm`() {
+        assertTrue(
+            "the footer must offer the report through cashNotPaidReportable()",
+            detailScreen.contains("canReportCashNotPaid = order.cashNotPaidReportable()"),
+        )
+        assertTrue(
+            "the action must render only under its gate",
+            primaryAction.contains("if (canReportCashNotPaid)"),
+        )
+        assertTrue(
+            "the report must be sent from the confirm dialog",
+            Regex("""confirmingCashNotPaid = false\s+viewModel\.reportCashNotPaid\(\)""").containsMatchIn(detailScreen),
         )
     }
 

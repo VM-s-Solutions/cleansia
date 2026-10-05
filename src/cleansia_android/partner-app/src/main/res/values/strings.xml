@@ -918,6 +918,12 @@
     <string name="partner_order_mark_cash_collected_confirm_message">Confirm you have taken %1$s in cash from the customer. This cannot be undone.</string>
     <string name="partner_order_mark_cash_collected_confirm_message_no_amount">Confirm you have taken the cash payment from the customer. This cannot be undone.</string>
     <string name="partner_order_mark_cash_collected_confirm_action">Yes, cash collected</string>
+    <string name="order_cash_not_paid_action">Customer did not pay</string>
+    <string name="order_cash_not_paid_confirm_title">Customer did not pay?</string>
+    <string name="order_cash_not_paid_confirm_message">Use this only if the customer paid nothing. If they paid part of it, tell the company instead. The job is completed and you are paid for it. The customer will owe %1$s, is told so and cannot book again until they pay. This cannot be undone.</string>
+    <string name="order_cash_not_paid_confirm_message_no_amount">Use this only if the customer paid nothing. If they paid part of it, tell the company instead. The job is completed and you are paid for it. The customer will owe the price of the cleaning, is told so and cannot book again until they pay. This cannot be undone.</string>
+    <string name="order_cash_not_paid_confirm_action">Yes, report it</string>
+    <string name="order_cash_not_paid_reported_toast">Reported. The job is completed and the customer has been told.</string>
 
     <!-- Backend error-key translations. Resource names follow
          `error_key_<dot-replaced-with-underscore>` per

@@ -1125,6 +1125,12 @@ need backfilling.
   invoice, were faint in light mode too, 3.6:1, and now read 5.2:1 in both modes. Light mode is
   otherwise unchanged, and the website already read clearly. (Finding 2026-10-05.)
 
+- **Customer Android and iOS — a dispute's status is easy to read.** The *Pending* label on a
+  dispute was amber on a pale amber wash, 1.9:1 in light mode, under the contrast small text needs;
+  *Resolved* was faint in dark mode, 2.6:1, and so was *Closed* on Android, 2.7:1. Every status now
+  reads 4.5:1 or more in both modes, in a deeper amber, green or grey in light mode and a lighter green
+  or grey in dark. The website already read clearly. (Finding 2026-10-05.)
+
 - **Customer — a service or package that is no longer offered can no longer be booked.** A service or
   package the company had taken off its list was hidden everywhere, but an out-of-date app, or *Order
   again* sent before the list had loaded, could still price and book it, and a new schedule could take

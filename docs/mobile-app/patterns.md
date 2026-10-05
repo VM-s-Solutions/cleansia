@@ -735,6 +735,30 @@ in both modes, and `BrandTextInkTests` and the partner's `TextInkTests` pin the 
 straight on a `primaryContainer` fill takes the text ink or the primary (iOS `235136257`, Android
 `59c1d05f9`).
 
+**A dispute's status pill reads 4.5:1 for every status, in both modes** (finding 2026-10-05). The pill
+writes its label in the status's ink on a 14 % wash of that ink over the card, on the list row and the
+detail header alike. *Pending* took the rating star's amber-500, 1.93:1 on its own wash in light mode;
+*Resolved*, green-700 in both modes, read 4.15:1 in light and 2.57:1 in dark; *Closed* read 2.66:1 in
+dark on Android and 4.47:1 on iOS; a status the app does not know, about 1.2:1. Both apps now pick a
+light and a dark ink per status, the same pairs (iOS `DisputeStatusPresentation`, Android
+`disputeStatusInk` in `DisputeFormatters.kt`), and the wash still comes from the ink:
+
+| Status | Light mode | Dark mode |
+|---|---|---|
+| *Pending* | amber-800 `#92400E`, 5.70:1 | amber-500, as before, 5.33:1 |
+| *Under review*, *Waiting for response* | the text ink, as before, 4.83:1 | the text ink, 5.21:1 |
+| *Resolved* | green-800 `#166534`, 5.75:1 | green-400 `#4ADE80`, 6.19:1 |
+| *Closed*, and a status the app does not know | slate-600 `#475569`, 6.13:1 | slate-300 `#CBD5E1`, 6.94:1 |
+| *Escalated* | the error colour, as before, 5.09:1 | 5.79:1 |
+
+Read off the iOS 26.3 screenshots, *Pending* went from 1.76 to 4.60:1 in light mode and *Resolved*
+from 2.51 to 5.04:1 in dark; measured on the Android emulator, *Pending* went from 1.93 to 5.69:1 and
+*Closed* in dark from 2.67 to 6.92:1. iOS's `DisputesListCardTests` and Android's
+`DisputeStatusInkTest` check every status, an unknown one and none at 4.5:1 or more on their wash over
+the card in both modes (iOS `96a1ea10e`, Android `a6b1b9942`). The web's pills already read 4.5:1 or
+more: the customer's 4.79:1 or more in both themes, the admin's shared status badge 4.51:1 at its
+lowest, the warning tone.
+
 - **iOS**: `BrandTextInkTests` checks the token at 4.5:1 or more on every ground those texts sit on,
   pins the texts whose colour comes from a helper, and scans the customer sources so that no `Text`
   is drawn in the primary. `ComponentTextInkTests` (Core) finds no shared `Text` drawn in the primary

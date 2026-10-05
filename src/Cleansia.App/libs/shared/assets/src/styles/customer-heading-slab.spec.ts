@@ -107,3 +107,27 @@ describe('the customer stylesheet — a picked slab under the pointer', () => {
     expect(paling).toEqual([]);
   });
 });
+
+// White on the accent: the plan flag read 4.1 light and 2.1 after dark (Sky400); the account menu's
+// avatar, on a Sky600→Sky500 gradient, 4.1 to 2.8 (2.1 after dark). Both now take the slab.
+describe('the customer stylesheet — the plan flag and the account menu avatar', () => {
+  const css = compile(join(__dirname, 'cleansia-customer.scss'), {
+    quietDeps: true,
+    loadPaths: [join(__dirname, '../../../../../node_modules')],
+  }).css;
+  const bodies = (selector: string): string[] =>
+    Array.from(css.matchAll(/([^{}]+)\{([^{}]*)\}/g))
+      .filter(([, selectors]) => selectors.split(',').some((one) => one.trim() === selector))
+      .map(([, , body]) => body);
+
+  it.each([
+    ['the membership "your plan" flag', '.cl-mbr__option-flag'],
+    ['the account menu avatar', '.customer-navbar__user-avatar'],
+  ])('paints %s with the slab and inks it with the card ground, in both themes', (_, selector) => {
+    const own = bodies(selector).join('');
+
+    expect(own).toMatch(/background: var\(--cl-heading\b/);
+    expect(own).toMatch(/(?:^|;)\s*color: var\(--cl-surface\b/);
+    expect(bodies(`:root.dark-mode ${selector}`)).toEqual([]);
+  });
+});

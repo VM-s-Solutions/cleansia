@@ -1072,6 +1072,15 @@ need backfilling.
 
 ### Fixed
 
+- **Cleaner and admin websites — buttons are the brand blue, and a focused field's label and the open
+  tab read clearly.** The filled buttons on the cleaner and admin websites, *Log in* and *Create* among
+  them, were a lighter blue than everywhere else, with their white text at 2.8:1. They are now the
+  brand blue of the apps and the customer website, 4.1:1, and a shade darker under the pointer; so is
+  the *OK* on the cookie notice, on all three websites. The label of the field you are typing in, and
+  on the admin website the label of the open tab, now take the deeper blue of the other blue text,
+  5.9:1, where they read 4.1:1 and 2.8:1. The customer website looks the same as before, and its dark
+  mode is unchanged. (Owner decision 2026-10-05.)
+
 - **Customer Android and iOS — the clock reads clearly over Profile's header.** In light mode the
   clock, signal and battery were faint on the light blue top of Profile's header (white on iOS, dark
   grey on Android), below the contrast small text needs. Profile's header now starts a shade darker

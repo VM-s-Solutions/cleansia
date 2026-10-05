@@ -644,7 +644,7 @@ buttons included, and keep the primary for fills, borders, standalone icons and 
 |---|---|---|---|
 | iOS | `CleansiaColors.primaryText` (Core) | sky-700 `#0369A1`, 5.93:1 on white | sky-400, the primary, unchanged |
 | Android | `ColorScheme.primaryText`, or `primaryText()` for the theme in force (`:core`, `cz.cleansia.core.ui.theme`, `BrandColors.kt`) | sky-700 `#0369A1` | the theme's primary, sky-400, unchanged |
-| Web | `--cl-accent-text` on the customer site; the shared PrimeNG preset's text, outlined and link buttons on all three sites | sky-700; a link or a text button goes to sky-800 under the pointer | sky-300 on the customer site → [Blue text on the customer site](/architecture/frontend#accent-text), [links and text buttons](/architecture/frontend#link-ink) |
+| Web | `--cl-accent-text` on the customer site; the shared PrimeNG preset's text, outlined and link buttons, focused floating label and open tab on all three sites | sky-700; a link or a text button goes to sky-800 under the pointer | sky-300 on the customer site → [Blue text on the customer site](/architecture/frontend#accent-text), [links and text buttons](/architecture/frontend#link-ink), [the primary](/architecture/frontend#web-primary) |
 
 The two texts the finding named moved on both apps: the package details sheet's price, 4.10 to 5.93:1,
 and the schedule form's default-address badge, 3.88 to 5.62:1 on iOS (on 40 % sky-100) and 3.38 to

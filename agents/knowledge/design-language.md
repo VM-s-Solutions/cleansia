@@ -38,8 +38,8 @@ From `customer-app/ui/theme/Color.kt` and `CleansiaColors.swift`.
 | **Headings, top-bar titles** | `Sky700` | **`#0369A1`** — the file's own comment reads *"brand secondary, top-bar title"* |
 | Deep heading / footer ground | `Sky900` | `#0C4A6E` |
 | Darkest brand | `Sky950` | `#082F49` |
-| **Primary action** | `Sky600` | `#0284C7` — fills, borders, standalone icons and filled buttons; **never text**, links and text-button labels included, 4.10:1 on white |
-| **Blue text** — prices, links, text and outlined button labels, small labels | `Sky700` | **`#0369A1`** in light mode (5.93:1 on white), one ink per control (an icon inside a link or button takes its label's ink), `Sky800` `#075985` under the pointer on the web: `CleansiaColors.primaryText` (iOS), `primaryText()` / `ColorScheme.primaryText` (Android `:core`), `--cl-accent-text` (customer web, sky-300 in dark), the shared PrimeNG preset's text, outlined and link buttons (all three web apps) → `docs/mobile-app/patterns.md#brand-text-ink` |
+| **Primary action** | `Sky600` | `#0284C7` — fills, borders, standalone icons and filled buttons; **never text**, links and text-button labels included, 4.10:1 on white. On the web it is the shared PrimeNG preset's light primary, so all three sites' filled buttons, the partner and admin sites' included, since 2026-10-05 (Aura's `Sky500` until then) → `docs/architecture/frontend.md#web-primary` |
+| **Blue text** — prices, links, text and outlined button labels, small labels | `Sky700` | **`#0369A1`** in light mode (5.93:1 on white), one ink per control (an icon inside a link or button takes its label's ink), `Sky800` `#075985` under the pointer on the web: `CleansiaColors.primaryText` (iOS), `primaryText()` / `ColorScheme.primaryText` (Android `:core`), `--cl-accent-text` (customer web, sky-300 in dark), the shared PrimeNG preset's text, outlined and link buttons, focused floating label and open tab label (all three web apps) → `docs/mobile-app/patterns.md#brand-text-ink` |
 | Dark-mode primary, gradient end | `Sky400` | `#38BDF8` |
 | Container / chip fill | `Sky100` | `#E0F2FE` |
 | Tinted section ground | `Sky50` | `#F0F9FF` |

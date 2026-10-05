@@ -710,18 +710,26 @@ public sealed class LegalDocumentSeederTests : IDisposable
     }
 
     /// <summary>
-    /// Owner ruling 2026-10-05: before the referral credit is paid, the two accounts' addresses with their flats,
-    /// phone numbers and e-mail addresses are compared to keep a customer from referring themselves, and a match
-    /// only holds the referral for a person to review. The newest privacy policy says so under its account
-    /// heading — the first subsection of section 2 — with what is compared and that the comparison decides nothing
-    /// by itself, in every language; the 2026-10-03 policy named no such use of account data.
+    /// Owner rulings 2026-10-05: before the referral credit is paid, the two accounts are compared to keep a
+    /// customer from referring themselves or someone of their own household, and a match only holds the referral
+    /// for a person to review. The newest privacy policy says so under its account heading — the first subsection
+    /// of section 2 — naming what is compared where the code reads it (ReferralRepository.GetContactFootprintAsync):
+    /// addresses with their flats from the bookings and the current saved addresses, phone numbers from the
+    /// bookings and the profiles, and the e-mail addresses of the profiles only, never the contact e-mail typed on
+    /// a booking; and that the comparison decides nothing by itself, in every language. The 2026-10-03 policy
+    /// named no such use of account data.
     /// </summary>
     [Theory]
-    [InlineData("en", "the addresses with their flat numbers, the phone numbers and the e-mail addresses")]
-    [InlineData("cs", "adresy včetně čísel bytů, telefonní čísla a e-mailové adresy")]
-    [InlineData("sk", "adresy vrátane čísel bytov, telefónne čísla a e-mailové adresy")]
-    [InlineData("uk", "адреси разом із номерами квартир, номери телефонів і адреси електронної пошти")]
-    [InlineData("ru", "адреса вместе с номерами квартир, номера телефонов и адреса электронной почты")]
+    [InlineData("en", "the addresses with their flat numbers in their bookings and current saved addresses, the phone numbers in their bookings and profiles, and the e-mail addresses in their profiles")]
+    [InlineData("cs", "adresy včetně čísel bytů v jejich objednávkách a aktuálně uložených adresách, telefonní čísla v jejich objednávkách a profilech a e-mailové adresy v jejich profilech")]
+    [InlineData("sk", "adresy vrátane čísel bytov v ich objednávkach a aktuálne uložených adresách, telefónne čísla v ich objednávkach a profiloch a e-mailové adresy v ich profiloch")]
+    [InlineData("uk", "адреси разом із номерами квартир у їхніх замовленнях і наявних збережених адресах, номери телефонів у їхніх замовленнях і профілях та адреси електронної пошти в їхніх профілях")]
+    [InlineData("ru", "адреса вместе с номерами квартир в их заказах и имеющихся сохранённых адресах, номера телефонов в их заказах и профилях и адреса электронной почты в их профилях")]
+    [InlineData("en", "or referred someone of their own household")]
+    [InlineData("cs", "ani nedoporučil někoho ze své domácnosti")]
+    [InlineData("sk", "ani neodporučil niekoho zo svojej domácnosti")]
+    [InlineData("uk", "чи не запросив когось зі свого домогосподарства")]
+    [InlineData("ru", "не пригласил ли кого-то из своего домохозяйства")]
     [InlineData("en", "the comparison decides nothing by itself")]
     [InlineData("cs", "samotné porovnání o ničem nerozhoduje")]
     [InlineData("sk", "samotné porovnanie o ničom nerozhoduje")]
@@ -732,6 +740,21 @@ public sealed class LegalDocumentSeederTests : IDisposable
         var account = SectionOf(LegalDocumentType.PrivacyPolicy, language, 2).Split("\n### ")[1];
 
         Assert.Contains(phrase, account);
+    }
+
+    /// <summary>
+    /// The first 2026-10-06 wording said the e-mail addresses held in the two accounts' bookings were compared as
+    /// well, which the code never reads; that wording must not come back.
+    /// </summary>
+    [Theory]
+    [InlineData("en", "the e-mail addresses held in")]
+    [InlineData("cs", "telefonní čísla a e-mailové adresy, které jsou")]
+    [InlineData("sk", "telefónne čísla a e-mailové adresy, ktoré sú")]
+    [InlineData("uk", "номери телефонів і адреси електронної пошти, зазначені")]
+    [InlineData("ru", "номера телефонов и адреса электронной почты, указанные")]
+    public void The_Newest_Privacy_Policy_Does_Not_Say_A_Booking_E_Mail_Is_Compared(string language, string phrase)
+    {
+        Assert.DoesNotContain(phrase, SectionOf(LegalDocumentType.PrivacyPolicy, language, 2));
     }
 
     private static string SectionOf(LegalDocumentType type, string language, int section) =>

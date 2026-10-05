@@ -241,7 +241,7 @@ final class RecurringBookingsViewModelTests: XCTestCase {
     // MARK: - The affordance table
 
     func testANonMemberWithSchedulesGetsTheLapsedNoticeAndNoCreateAffordance() {
-        let affordances = RecurringListAffordances.of(gate: .upsell, hasTemplates: true, benefitsPaused: false)
+        let affordances = RecurringListAffordances.of(gate: .upsell, hasTemplates: true)
 
         XCTAssertFalse(affordances.showCreateAction)
         XCTAssertFalse(affordances.showEdit)
@@ -250,7 +250,7 @@ final class RecurringBookingsViewModelTests: XCTestCase {
     }
 
     func testANonMemberWithNoSchedulesGetsTheUpsellInsteadOfTheCreateCta() {
-        let affordances = RecurringListAffordances.of(gate: .upsell, hasTemplates: false, benefitsPaused: false)
+        let affordances = RecurringListAffordances.of(gate: .upsell, hasTemplates: false)
 
         XCTAssertTrue(affordances.showPlusUpsell)
         XCTAssertFalse(affordances.showCreateAction)
@@ -259,7 +259,7 @@ final class RecurringBookingsViewModelTests: XCTestCase {
     }
 
     func testAMemberWithSchedulesGetsCreateAndEditAndNoUpsellCopy() {
-        let affordances = RecurringListAffordances.of(gate: .allowed, hasTemplates: true, benefitsPaused: false)
+        let affordances = RecurringListAffordances.of(gate: .allowed, hasTemplates: true)
 
         XCTAssertTrue(affordances.showCreateAction)
         XCTAssertTrue(affordances.showEdit)
@@ -267,21 +267,30 @@ final class RecurringBookingsViewModelTests: XCTestCase {
         XCTAssertFalse(affordances.showLapsedNotice)
     }
 
-    /// A paused or past-due member's enrolment is live but the server refuses authoring, so their card
-    /// offers no Edit, as Android's `Paused` gate (owner decision 2026-10-05).
-    func testAPausedMemberGetsNoEdit() {
+    /// A paused or past-due member's enrolment is live but the server refuses authoring, so they get no
+    /// Create, no Edit and no upsell, and the benefits-paused notice instead, as Android's `Paused` gate
+    /// (owner decisions 2026-10-05).
+    func testAPausedMemberGetsTheNoticeAndNoAuthoring() {
         for hasTemplates in [true, false] {
-            let affordances = RecurringListAffordances.of(
-                gate: .allowed,
-                hasTemplates: hasTemplates,
-                benefitsPaused: true
-            )
+            let affordances = RecurringListAffordances.of(gate: .paused, hasTemplates: hasTemplates)
 
+            XCTAssertTrue(affordances.showPausedNotice, "hasTemplates=\(hasTemplates)")
+            XCTAssertFalse(affordances.showCreateAction, "hasTemplates=\(hasTemplates)")
             XCTAssertFalse(affordances.showEdit, "hasTemplates=\(hasTemplates)")
+            XCTAssertFalse(affordances.showPlusUpsell, "hasTemplates=\(hasTemplates)")
+            XCTAssertFalse(affordances.showLapsedNotice, "hasTemplates=\(hasTemplates)")
         }
     }
 
-    func testAPausedMembersCardsOfferNoEditAndAPaidUpMembersDo() async {
+    func testOnlyAPausedMemberGetsTheNotice() {
+        for gate in [RecurringAuthoringGate.allowed, .upsell] {
+            for hasTemplates in [true, false] {
+                XCTAssertFalse(RecurringListAffordances.of(gate: gate, hasTemplates: hasTemplates).showPausedNotice)
+            }
+        }
+    }
+
+    func testAPausedMembersScreenOffersNoCreateOrEditAndAPaidUpMembersDoes() async {
         let client = FakeRecurringBookingClient()
         client.mineResults = [.success([RecurringFixtures.template()])]
         let (paused, _, _) = makeVM(client: client, membership: MembershipFixtures.pastDue)
@@ -292,14 +301,79 @@ final class RecurringBookingsViewModelTests: XCTestCase {
         await active.load()
 
         XCTAssertTrue(paused.benefitsPaused)
+        XCTAssertEqual(paused.authoring, .paused)
+        XCTAssertTrue(paused.affordances.showPausedNotice)
+        XCTAssertFalse(paused.affordances.showCreateAction)
         XCTAssertFalse(paused.affordances.showEdit)
         XCTAssertFalse(paused.affordances.showLapsedNotice)
+        XCTAssertEqual(active.authoring, .allowed)
+        XCTAssertTrue(active.affordances.showCreateAction)
         XCTAssertTrue(active.affordances.showEdit)
+        XCTAssertFalse(active.affordances.showPausedNotice)
+    }
+
+    /// With no schedules a paused member gets the notice in place of the empty state and its create CTA,
+    /// and no upsell: the server refuses a second subscription while this one lives.
+    func testAPausedMemberWithNoSchedulesGetsTheNoticeAndNoUpsell() async {
+        let client = FakeRecurringBookingClient()
+        client.mineResults = [.success([])]
+        let (vm, _, _) = makeVM(client: client, membership: MembershipFixtures.pastDue)
+
+        await vm.load()
+
+        XCTAssertTrue(vm.templates.isEmpty)
+        XCTAssertTrue(vm.affordances.showPausedNotice)
+        XCTAssertFalse(vm.affordances.showPlusUpsell)
+        XCTAssertFalse(vm.affordances.showCreateAction)
+    }
+
+    /// The screen's branches, in Android's order: the upsell, the paused notice in place of the empty state
+    /// (whose create CTA it hides), the empty state, the list. Read from source, as the card test below.
+    func testTheScreenPutsThePausedNoticeBeforeTheEmptyState() throws {
+        let source = try compactScreenSource()
+
+        XCTAssertTrue(source.contains(
+            "ifvm.affordances.showPlusUpsell{PlusGate(onSubscribe:onSubscribePlus)}"
+                + "elseifvm.affordances.showPausedNotice,vm.templates.isEmpty{"
+        ))
+        let paused = try XCTUnwrap(source.range(of: "elseifvm.affordances.showPausedNotice,vm.templates.isEmpty{"))
+        let empty = try XCTUnwrap(source
+            .range(of: "}elseifvm.templates.isEmpty{RecurringEmptyState(onCreateNew:onCreateNew)}"))
+        let branch = source[paused.upperBound ..< empty.lowerBound]
+        XCTAssertTrue(branch.contains("BenefitsPausedNotice()"))
+        XCTAssertFalse(branch.contains("onCreateNew"))
+        XCTAssertTrue(source.contains("ifshowPausedNotice{BenefitsPausedNotice()}"), "the notice above the list")
+        XCTAssertTrue(source
+            .contains("ifvm.affordances.showCreateAction{CleansiaPrimaryButton(L10n.Recurring.createFab"))
+    }
+
+    /// Android's copy, verbatim, in all five languages.
+    func testThePausedNoticeReadsAsAndroidsInEveryLanguage() throws {
+        let titles = [
+            "en": "Recurring paused — Plus payment failed",
+            "cs": "Opakování pozastaveno — platba za Plus selhala",
+            "sk": "Opakovanie pozastavené — platba za Plus zlyhala",
+            "uk": "Регулярні призупинено — оплата Plus не вдалася",
+            "ru": "Регулярные приостановлены — оплата Plus не прошла"
+        ]
+        let restore = L10n.bundle
+        defer { L10n.bundle = restore }
+        for (language, title) in titles {
+            L10n.bundle = try localeBundle(language)
+            XCTAssertEqual(L10n.Recurring.pausedNoticeTitle, title, language)
+            XCTAssertNotEqual(L10n.Recurring.pausedNoticeBody, "recurring_paused_notice_body", language)
+        }
+        L10n.bundle = try localeBundle("en")
+        XCTAssertEqual(
+            L10n.Recurring.pausedNoticeBody,
+            "We couldn't charge your Plus renewal, so your recurring schedules book no new cleanings, and none can "
+                + "be added or changed. They start booking again if a retried payment goes through."
+        )
     }
 
     /// Nothing replaces the empty state for a member, so its own create CTA renders.
     func testAMemberWithNoSchedulesKeepsTheEmptyStateCreateCta() {
-        let affordances = RecurringListAffordances.of(gate: .allowed, hasTemplates: false, benefitsPaused: false)
+        let affordances = RecurringListAffordances.of(gate: .allowed, hasTemplates: false)
 
         XCTAssertFalse(affordances.showPlusUpsell)
         XCTAssertFalse(affordances.showCreateAction)
@@ -327,9 +401,9 @@ final class RecurringBookingsViewModelTests: XCTestCase {
                 "Содержит услугу, которую мы больше не предлагаем"
             )
         ]
-        let member = RecurringListAffordances.of(gate: .allowed, hasTemplates: true, benefitsPaused: false)
-        let lapsed = RecurringListAffordances.of(gate: .upsell, hasTemplates: true, benefitsPaused: false)
-        let paused = RecurringListAffordances.of(gate: .allowed, hasTemplates: true, benefitsPaused: true)
+        let member = RecurringListAffordances.of(gate: .allowed, hasTemplates: true)
+        let lapsed = RecurringListAffordances.of(gate: .upsell, hasTemplates: true)
+        let paused = RecurringListAffordances.of(gate: .paused, hasTemplates: true)
         let restore = L10n.bundle
         defer { L10n.bundle = restore }
         for (language, lines) in expected {
@@ -342,14 +416,18 @@ final class RecurringBookingsViewModelTests: XCTestCase {
 
     /// The card picks the line from the same `showEdit` that draws its Edit action.
     func testTheCardPicksTheLineFromItsOwnEditAffordance() throws {
-        let root = URL(fileURLWithPath: #filePath).deletingLastPathComponent().deletingLastPathComponent()
-        let source = try String(
-            contentsOf: root.appendingPathComponent("Sources/Features/Recurring/RecurringBookingsScreen.swift"),
-            encoding: .utf8
-        ).components(separatedBy: .whitespacesAndNewlines).joined()
+        let source = try compactScreenSource()
 
         XCTAssertTrue(source.contains("text:L10n.Recurring.cardItemNoLongerOffered(canEdit:showEdit)"))
         XCTAssertTrue(source.contains("ifshowEdit{CardAction(label:L10n.Recurring.edit,"))
+    }
+
+    private func compactScreenSource() throws -> String {
+        let root = URL(fileURLWithPath: #filePath).deletingLastPathComponent().deletingLastPathComponent()
+        return try String(
+            contentsOf: root.appendingPathComponent("Sources/Features/Recurring/RecurringBookingsScreen.swift"),
+            encoding: .utf8
+        ).components(separatedBy: .whitespacesAndNewlines).joined()
     }
 
     private func localeBundle(_ tag: String) throws -> Bundle {
@@ -417,6 +495,8 @@ final class RecurringBookingsViewModelTests: XCTestCase {
         XCTAssertEqual(RecurringAuthoringGate.resolve(hasMembership: false), .upsell)
         XCTAssertEqual(RecurringAuthoringGate.resolve(hasMembership: true), .allowed)
         XCTAssertEqual(RecurringAuthoringGate.resolve(hasMembership: nil), .allowed)
+        XCTAssertEqual(RecurringAuthoringGate.resolve(hasMembership: true, benefitsPaused: true), .paused)
+        XCTAssertEqual(RecurringAuthoringGate.resolve(hasMembership: true, benefitsPaused: false), .allowed)
     }
 }
 

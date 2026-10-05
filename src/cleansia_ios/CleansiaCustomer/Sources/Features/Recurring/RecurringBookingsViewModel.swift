@@ -6,16 +6,25 @@ import Foundation
 /// `UpdateRecurringBooking` — is the paid Cleansia Plus capability. Listing, pausing,
 /// resuming and deleting one that already exists is deliberately ungated so a lapsed
 /// subscriber can always stop what is still generating billable cleanings.
+///
+/// `paused` is a live enrolment whose benefits are paused (past due or paused): the server
+/// refuses authoring and books none of its schedules, yet refuses a second subscription too,
+/// so it gets neither the create affordances nor the subscribe upsell — Android's `Paused`.
 enum RecurringAuthoringGate {
     case allowed
     case upsell
+    case paused
 
     /// A nil `hasMembership` is the answer not having landed. It resolves permissively:
     /// the server refuses an unentitled create on its own, so failing open costs a member
     /// nothing, while failing closed shows a paid-up member the upsell every time the
     /// fetch is slow or fails.
-    static func resolve(hasMembership: Bool?) -> RecurringAuthoringGate {
-        hasMembership == false ? .upsell : .allowed
+    static func resolve(hasMembership: Bool?, benefitsPaused: Bool = false) -> RecurringAuthoringGate {
+        switch hasMembership {
+        case nil: .allowed
+        case false?: .upsell
+        case true?: benefitsPaused ? .paused : .allowed
+        }
     }
 }
 
@@ -23,16 +32,16 @@ struct RecurringListAffordances: Equatable {
     let showCreateAction: Bool
     let showPlusUpsell: Bool
     let showLapsedNotice: Bool
+    let showPausedNotice: Bool
     let showEdit: Bool
 
-    /// `benefitsPaused` is a past-due or paused member: the enrolment is live, but the server refuses
-    /// authoring, so the card offers no Edit — Android's `Paused` gate, which shows no Edit either.
-    static func of(gate: RecurringAuthoringGate, hasTemplates: Bool, benefitsPaused: Bool) -> RecurringListAffordances {
+    static func of(gate: RecurringAuthoringGate, hasTemplates: Bool) -> RecurringListAffordances {
         RecurringListAffordances(
             showCreateAction: gate == .allowed && hasTemplates,
             showPlusUpsell: gate == .upsell && !hasTemplates,
             showLapsedNotice: gate == .upsell && hasTemplates,
-            showEdit: gate == .allowed && !benefitsPaused
+            showPausedNotice: gate == .paused,
+            showEdit: gate == .allowed
         )
     }
 }
@@ -81,11 +90,11 @@ final class RecurringBookingsViewModel: ViewModel {
     }
 
     var authoring: RecurringAuthoringGate {
-        .resolve(hasMembership: hasMembership)
+        .resolve(hasMembership: hasMembership, benefitsPaused: benefitsPaused)
     }
 
     var affordances: RecurringListAffordances {
-        .of(gate: authoring, hasTemplates: !templates.isEmpty, benefitsPaused: benefitsPaused)
+        .of(gate: authoring, hasTemplates: !templates.isEmpty)
     }
 
     /// The schedules holding a service or package their market's catalogue no longer lists. A schedule

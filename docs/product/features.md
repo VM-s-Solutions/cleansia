@@ -24,7 +24,7 @@ that shares a service with one already chosen. The booking and the schedule form
 Android and iOS alike
 ([a package and a service](/product/business-rules#charging-a-package-and-a-service-together)).
 Paying by card, a signed-in customer on web, Android or iOS may tick *Save this card for my next
-bookings*, unticked by default; only a ticked card is kept, under the card-guarantee consent, and it
+bookings*, unticked by default; only a ticked card is kept, under the saved-card consent, and it
 is listed with the customer's saved cards, where it can be removed
 ([the saved cards](/product/business-rules#saved-cards)). A cash booking asks for no card, and no card
 is ever charged (since 2026-10-04 → [cash needs no card](/product/business-rules#card-guarantee)). On

@@ -920,7 +920,7 @@ sheet, under the same consent. Nothing on the platform charges a saved card toda
 
 **Owner decision 2026-10-01.** A signed-in customer who pays a booking by card may tick *Save this card
 for my next bookings*. The web offers it on the payment step and Android and iOS directly under the card
-option, **unticked by default**, each with the card-guarantee consent sentence printed with it, and it
+option, **unticked by default**, each with the saved-card consent sentence printed with it, and it
 is the only way a card payment keeps a card:
 
 | | Ticked | Unticked |
@@ -929,12 +929,13 @@ is the only way a card payment keeps a card:
 | Recorded before the redirect or the sheet | a `SavedCards` row with the consent evidence — `SavedCard.ConsentTextVersionInForce`, the IP and the device | no `SavedCards` row; on the apps, a Stripe Customer created and recorded on the account when it had none |
 | Once the payment succeeds | the card lands on the row, the customer's earlier card in that currency is retired, and the card is listed | no card, here or at Stripe: Stripe attaches it to no Customer. An app payment stays in the history of the account's Stripe Customer it was made on |
 
-- **The tick is the consent.** There is no second box: the sentence printed with it is the
-  card-guarantee wording of the version the row records. That wording still says the company may charge
-  the card for fees and unpaid cash. Since 2026-10-04 nothing does
-  ([Cash needs no card](#card-guarantee)), and the sentence is still to be reworded on the clients
-  ([below](#legal-texts-lag)). The web sends the tick as
-  `CreateOrder`'s `saveCard`, `true` only for an offered, ticked box; the apps send it as
+- **The tick is the consent.** There is no second box: the sentence printed with it is the consent
+  wording of the version the row records, `saved-card-draft-2026-10-05` since 2026-10-05: the card is
+  saved to the account, never charged unless the customer pays with it, and can be removed at any time.
+  Until then it was `card-guarantee-draft-2026-09-28`, which said the company may charge the card for a
+  cash booking's fees and unpaid cash; a card saved under it keeps that version on its row, and nothing
+  charges it either ([Cash needs no card](#card-guarantee), [below](#legal-texts-lag)). The web sends
+  the tick as `CreateOrder`'s `saveCard`, `true` only for an offered, ticked box; the apps send it as
   `CreatePaymentIntent`'s `saveCard` (`POST api/Payment/CreatePaymentIntent`), because a mobile booking
   has no charge surface until then. Both default to `false`.
 - **A guest never sees it.** The clients offer it only to a signed-in customer who chose card, and
@@ -988,8 +989,8 @@ and its consent tick asks only to agree to saving the card. On every client the 
 (`saved_card.consent_not_accepted`) asks only for that consent, where it used to ask the customer to
 agree that fees and unpaid cash may be charged. Until then Android and iOS introduced the card as the
 one that guarantees cash bookings, listed what could be charged to it, and with no card said a cash
-booking needs one. The versioned consent sentence recorded with each saved card is unchanged
-([The texts in force lag](#legal-texts-lag)).
+booking needs one. The versioned consent sentence printed with the tick says the same since
+2026-10-05 ([The texts in force and the rulings](#legal-texts-lag)).
 
 - **Removing a card** (`DELETE api/SavedCard/Remove/{id}`, the customer's own; another's is
   `saved_card.not_found`) deactivates the row and leaves the payment method on the Stripe Customer,
@@ -1240,8 +1241,8 @@ accepts it before their next booking and a cleaner before their next take, while
 keeps its contract for work.
 
 **Two more wordings are our draft, and the deploy gate does not see them.** The request to start within
-the withdrawal period (`early-performance-draft-2026-09-29`) and the card-guarantee consent
-(`card-guarantee-draft-2026-09-28`) are not seeded texts: they are translation strings on the web,
+the withdrawal period (`early-performance-draft-2026-09-29`) and the saved-card consent
+(`saved-card-draft-2026-10-05`) are not seeded texts: they are translation strings on the web,
 Android and iOS clients, keyed by the version the server records
 (`Order.EarlyPerformanceConsentTextVersionInForce`, `SavedCard.ConsentTextVersionInForce`). They carry
 no banner, `check-legal-drafts.mjs` reads only the seed tree, and nothing else in the production deploy
@@ -1250,18 +1251,22 @@ as a new wording key on all three clients plus a bump of that constant, not a se
 off-session charge on a saved card stays switched off: since 2026-10-04 no card is charged
 → [What a customer owes](#receivables).
 
-### The texts in force lag the rulings of 2026-10-04 {#legal-texts-lag}
+### The texts in force and the rulings of 2026-10-04 {#legal-texts-lag}
 
-**The seeded texts carry the owner's rulings of 2026-10-04 since their `2026-10-05` versions**
-([above](#legal-texts)): the terms of service, the framework agreement, the self-billing agreement and
-the contract for work. One wording still does not, because it is not a seeded text:
+**No text in force lags the owner's rulings of 2026-10-04.** The seeded texts carry them since their
+`2026-10-05` versions ([above](#legal-texts)): the terms of service, the framework agreement, the
+self-billing agreement and the contract for work. The one wording that is not a seeded text, the consent
+printed with *Save this card* on the clients, carries them since its own 2026-10-05 version:
 
-| Text | Still says | What the platform does since 2026-10-04 |
+| Consent version | Says | In force |
 |---|---|---|
-| The card-guarantee consent, `card-guarantee-draft-2026-09-28`, printed with *Save this card* on the clients | the card may be charged for a cash booking's fees and unpaid cash | nothing charges a saved card → [Cash needs no card](#card-guarantee) |
+| `card-guarantee-draft-2026-09-28` | the card may be charged, without asking each time, for a cash booking's late-cancellation fee, lockout fee and unpaid cash, and for an approved top-up | until 2026-10-05 |
+| `saved-card-draft-2026-10-05` | the card is saved to the account, is never charged unless the customer pays with it, and can be removed at any time | since 2026-10-05 |
 
-It is reworded as a new wording key on the web, Android and iOS plus a bump of
-`SavedCard.ConsentTextVersionInForce` ([above](#legal-drafts)).
+It was reworded as a new wording key on the web, Android and iOS plus a bump of
+`SavedCard.ConsentTextVersionInForce` ([above](#legal-drafts)); the old key is gone from all three. A
+card saved under the old version keeps it on its row, and nothing charges it
+→ [Cash needs no card](#card-guarantee).
 
 ## The contract for work {#work-contract}
 
@@ -2734,7 +2739,7 @@ the only marketing channel.**
   still be withdrawn. The customer web's GDPR page shows the terms and privacy read-only with the
   accepted version and date, and the promo push preference as the marketing consent. Two more acts sit
   beside them, recorded on what they govern rather than as consent rows: the request to start within
-  the withdrawal period, on every booking ([below](#early-performance)), and the card-guarantee consent,
+  the withdrawal period, on every booking ([below](#early-performance)), and the saved-card consent,
   on the saved card ([The saved cards](#saved-cards)), which since 2026-10-04 no cash booking asks for.
 - **Necessary cookies only.** The customer, partner and admin web apps show a necessary-only cookie
   notice — no accept, no decline, no categories — and the customer banner no longer writes consent

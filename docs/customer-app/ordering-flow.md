@@ -205,7 +205,7 @@ sends refused cash; if the server still answers `order.cash_not_available`, the 
 the wizard returns to the payment step. → [Paying in cash](/product/business-rules#cash)
 
 **Saving the card.** A signed-in customer who chooses card is offered an unticked *Save this card for
-my next bookings*, followed by the card-guarantee consent sentence of the version the server records
+my next bookings*, followed by the saved-card consent sentence of the version the server records
 on the card (`SavedCard.ConsentTextVersionInForce`). A guest or a cash booking never sees it.
 `CreateOrderCommand.saveCard` is `true` only for an offered, ticked box; ticked, the card is kept
 when the payment succeeds and is listed under **Saved cards** on `/profile`, where it can be removed;

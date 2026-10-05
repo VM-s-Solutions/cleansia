@@ -612,8 +612,8 @@ public sealed class LegalDocumentSeederTests : IDisposable
     [InlineData("uk", "друг — у валюті цього замовлення")]
     [InlineData("ru", "друг — в валюте этого заказа")]
     [InlineData("en", "a cancelled one and an unconfirmed Cleansia Plus visit included")]
-    [InlineData("cs", "a to i zrušené")]
-    [InlineData("sk", "a to aj zrušenej")]
+    [InlineData("cs", "před poskytnutím kreditu, i když byla zrušena nebo jde o dosud nepotvrzenou návštěvu Cleansia Plus, a pokud")]
+    [InlineData("sk", "pred poskytnutím kreditu, aj keď bola zrušená alebo ide o ešte nepotvrdenú návštevu Cleansia Plus, a ak")]
     [InlineData("uk", "навіть якщо його скасовано")]
     [InlineData("ru", "даже если он отменён")]
     [InlineData("en", "whichever of you would be paid in it receives no referral credit")]
@@ -621,11 +621,11 @@ public sealed class LegalDocumentSeederTests : IDisposable
     [InlineData("sk", "ten z vás, komu by v nej kredit patril, kredit za odporúčanie nedostane")]
     [InlineData("uk", "той із вас, кому кредит належав би в цій валюті, реферального кредиту не отримає")]
     [InlineData("ru", "тот из вас, кому кредит причитался бы в этой валюте, реферального кредита не получит")]
-    [InlineData("en", "your account and your friend's appear to belong to the same person or household")]
-    [InlineData("cs", "váš účet a účet osoby, kterou jste doporučili, patří téže osobě nebo téže domácnosti")]
-    [InlineData("sk", "váš účet a účet osoby, ktorú ste odporučili, patria tej istej osobe alebo tej istej domácnosti")]
-    [InlineData("uk", "ваш обліковий запис і обліковий запис друга належать одній і тій самій особі або одному домогосподарству")]
-    [InlineData("ru", "ваша учётная запись и учётная запись друга принадлежат одному и тому же человеку или одному домохозяйству")]
+    [InlineData("en", "your account and your friend's appear to belong to the same person or to people who live in one home")]
+    [InlineData("cs", "váš účet a účet osoby, kterou jste doporučili, patří téže osobě nebo osobám, které bydlí v jednom bytě nebo domě")]
+    [InlineData("sk", "váš účet a účet osoby, ktorú ste odporučili, patria tej istej osobe alebo osobám, ktoré bývajú v jednom byte alebo dome")]
+    [InlineData("uk", "ваш обліковий запис і обліковий запис друга належать одній і тій самій особі або людям, які живуть в одній квартирі чи в одному будинку")]
+    [InlineData("ru", "ваша учётная запись и учётная запись друга принадлежат одному и тому же человеку или людям, которые живут в одной квартире или в одном доме")]
     [InlineData("en", "without undue delay")]
     [InlineData("cs", "bez zbytečného odkladu")]
     [InlineData("sk", "bez zbytočného odkladu")]
@@ -658,30 +658,33 @@ public sealed class LegalDocumentSeederTests : IDisposable
     /// <summary>
     /// Owner ruling 2026-10-05: one household is one customer, so a referral between two of its accounts is
     /// refused — an administrator rejects a referral held on a shared flat (ReverseReferral). Section 9 states it
-    /// as a rule and lists referring someone of one's own household among the referrals that are not genuine, so
-    /// the hold paragraph, which pays only a genuine referral, refuses it. The referrer is paid in the currency of
+    /// as a rule and lists referring someone one lives with among the referrals that are not genuine, so the hold
+    /// paragraph, which pays only a genuine referral, refuses it. It names who that is — people who live in one
+    /// home: a family, a couple or flatmates — rather than leaning on "household", which the Czech and Slovak
+    /// civil codes (§ 115) define as people who live together and share their costs, and so may leave out
+    /// flatmates who split only the rent. The referrer is paid in the currency of
     /// the newest booking on their account by creation time, of any status, a Cleansia Plus visit the schedule
     /// created and the customer has not yet confirmed included (ReferralService.GetBookingCurrencyAsync), so every
     /// language says "created on your account" rather than "placed by you".
     /// </summary>
     [Theory]
-    [InlineData("en", "Two accounts of one household count as one customer, so a referral between them is refused.")]
-    [InlineData("cs", "Dva účty téže domácnosti se považují za jednoho zákazníka, proto se doporučení mezi nimi odmítá.")]
-    [InlineData("sk", "Dva účty tej istej domácnosti sa považujú za jedného zákazníka, preto sa odporúčanie medzi nimi odmieta.")]
-    [InlineData("uk", "Два облікові записи одного домогосподарства вважаються одним клієнтом, тому реферальне запрошення між ними відхиляється.")]
-    [InlineData("ru", "Две учётные записи одного домохозяйства считаются одним клиентом, поэтому реферальное приглашение между ними отклоняется.")]
-    [InlineData("en", "refers someone of their own household")]
-    [InlineData("cs", "doporučí někoho ze své domácnosti")]
-    [InlineData("sk", "odporučí niekoho zo svojej domácnosti")]
-    [InlineData("uk", "запросив когось зі свого домогосподарства")]
-    [InlineData("ru", "пригласил кого-то из своего домохозяйства")]
+    [InlineData("en", "Two accounts of people who live in one home — a family, a couple or flatmates — count as one customer, so a referral between them is refused.")]
+    [InlineData("cs", "Dva účty osob, které bydlí v jednom bytě nebo domě (například rodina, pár nebo spolubydlící), se považují za jednoho zákazníka, a doporučení mezi nimi proto odmítneme.")]
+    [InlineData("sk", "Dva účty osôb, ktoré bývajú v jednom byte alebo dome (napríklad rodina, pár alebo spolubývajúci), sa považujú za jedného zákazníka, a odporúčanie medzi nimi preto odmietneme.")]
+    [InlineData("uk", "Два облікові записи людей, які живуть в одній квартирі чи в одному будинку (наприклад, сім’я, пара або сусіди по квартирі), вважаються одним клієнтом, тому реферальне запрошення між ними відхиляється.")]
+    [InlineData("ru", "Две учётные записи людей, которые живут в одной квартире или в одном доме (например, семья, пара или соседи по квартире), считаются одним клиентом, поэтому реферальное приглашение между ними отклоняется.")]
+    [InlineData("en", "refers someone they live with,")]
+    [InlineData("cs", "doporučí někoho, s kým bydlí,")]
+    [InlineData("sk", "odporučí niekoho, s kým býva,")]
+    [InlineData("uk", "запросив когось, з ким живе,")]
+    [InlineData("ru", "пригласил кого-то, с кем живёт,")]
     [InlineData("en", "the last booking created on your account before the credit is paid")]
     [InlineData("cs", "poslední objednávky vytvořené na vašem účtu před poskytnutím kreditu")]
     [InlineData("sk", "poslednej objednávky vytvorenej na vašom účte pred poskytnutím kreditu")]
     [InlineData("uk", "останнього замовлення, створеного у вашому обліковому записі до надання кредиту")]
     [InlineData("ru", "последнего заказа, созданного в вашей учётной записи до предоставления кредита")]
-    [InlineData("cs", "dosud nepotvrzené návštěvy Cleansia Plus")]
-    [InlineData("sk", "ešte nepotvrdenej návštevy Cleansia Plus")]
+    [InlineData("cs", "jde o dosud nepotvrzenou návštěvu Cleansia Plus")]
+    [InlineData("sk", "ide o ešte nepotvrdenú návštevu Cleansia Plus")]
     [InlineData("uk", "ще не підтверджений візит Cleansia Plus")]
     [InlineData("ru", "ещё не подтверждённый визит Cleansia Plus")]
     public void The_Newest_Terms_Refuse_A_Referral_Within_One_Household_And_Name_The_Referrer_Currency_As_The_Code_Reads_It(
@@ -710,6 +713,25 @@ public sealed class LegalDocumentSeederTests : IDisposable
     }
 
     /// <summary>
+    /// The first 2026-10-06 wording leaned on the bare noun "household", which Czech and Slovak law defines as
+    /// people who share their costs as well as a home; and in Czech and Slovak it let "cancelled" read as a word
+    /// about a Cleansia Plus visit only, one noun phrase with "not yet confirmed", where English, Ukrainian and
+    /// Russian count a cancelled booking and an unconfirmed visit apart. Neither may come back.
+    /// </summary>
+    [Theory]
+    [InlineData("en", "household")]
+    [InlineData("cs", "domácnost")]
+    [InlineData("sk", "domácnos")]
+    [InlineData("uk", "домогосподарств")]
+    [InlineData("ru", "домохозяйств")]
+    [InlineData("cs", "a to i zrušené nebo dosud nepotvrzené návštěvy")]
+    [InlineData("sk", "a to aj zrušenej alebo ešte nepotvrdenej návštevy")]
+    public void The_Newest_Terms_Carry_None_Of_The_First_Household_And_Cancelled_Visit_Wording(string language, string phrase)
+    {
+        Assert.DoesNotContain(phrase, SectionOf(LegalDocumentType.TermsOfService, language, 9));
+    }
+
+    /// <summary>
     /// Owner rulings 2026-10-05: before the referral credit is paid, the two accounts are compared to keep a
     /// customer from referring themselves or someone of their own household, and a match only holds the referral
     /// for a person to review. The newest privacy policy says so under its account heading — the first subsection
@@ -725,11 +747,16 @@ public sealed class LegalDocumentSeederTests : IDisposable
     [InlineData("sk", "adresy vrátane čísel bytov v ich objednávkach a aktuálne uložených adresách, telefónne čísla v ich objednávkach a profiloch a e-mailové adresy v ich profiloch")]
     [InlineData("uk", "адреси разом із номерами квартир у їхніх замовленнях і наявних збережених адресах, номери телефонів у їхніх замовленнях і профілях та адреси електронної пошти в їхніх профілях")]
     [InlineData("ru", "адреса вместе с номерами квартир в их заказах и имеющихся сохранённых адресах, номера телефонов в их заказах и профилях и адреса электронной почты в их профилях")]
-    [InlineData("en", "or referred someone of their own household")]
-    [InlineData("cs", "ani nedoporučil někoho ze své domácnosti")]
-    [InlineData("sk", "ani neodporučil niekoho zo svojej domácnosti")]
-    [InlineData("uk", "чи не запросив когось зі свого домогосподарства")]
-    [InlineData("ru", "не пригласил ли кого-то из своего домохозяйства")]
+    [InlineData("en", "or referred someone they live with.")]
+    [InlineData("cs", "ani nedoporučil někoho, s kým bydlí.")]
+    [InlineData("sk", "ani neodporučil niekoho, s kým býva.")]
+    [InlineData("uk", "і чи не запросив когось, з ким живе.")]
+    [InlineData("ru", "и не пригласил ли кого-то, с кем живёт.")]
+    [InlineData("en", "whether the two accounts belong to the same person or to people who live in one home")]
+    [InlineData("cs", "zda oba účty patří téže osobě nebo osobám, které bydlí v jednom bytě nebo domě")]
+    [InlineData("sk", "či oba účty patria tej istej osobe alebo osobám, ktoré bývajú v jednom byte alebo dome")]
+    [InlineData("uk", "чи належать обидва облікові записи одній і тій самій особі або людям, які живуть в одній квартирі чи в одному будинку")]
+    [InlineData("ru", "принадлежат ли обе учётные записи одному и тому же человеку или людям, которые живут в одной квартире или в одном доме")]
     [InlineData("en", "the comparison decides nothing by itself")]
     [InlineData("cs", "samotné porovnání o ničem nerozhoduje")]
     [InlineData("sk", "samotné porovnanie o ničom nerozhoduje")]
@@ -755,6 +782,24 @@ public sealed class LegalDocumentSeederTests : IDisposable
     public void The_Newest_Privacy_Policy_Does_Not_Say_A_Booking_E_Mail_Is_Compared(string language, string phrase)
     {
         Assert.DoesNotContain(phrase, SectionOf(LegalDocumentType.PrivacyPolicy, language, 2));
+    }
+
+    /// <summary>
+    /// The referral comparison names who counts as one customer as the terms do — people who live in one home —
+    /// not by the bare noun "household" the first 2026-10-06 wording used, which Czech and Slovak law reads as
+    /// people who also share their costs.
+    /// </summary>
+    [Theory]
+    [InlineData("en", "household")]
+    [InlineData("cs", "domácnost")]
+    [InlineData("sk", "domácnos")]
+    [InlineData("uk", "домогосподарств")]
+    [InlineData("ru", "домохозяйств")]
+    public void The_Newest_Privacy_Policy_Does_Not_Name_The_Referral_Comparison_By_Household(string language, string phrase)
+    {
+        var account = SectionOf(LegalDocumentType.PrivacyPolicy, language, 2).Split("\n### ")[1];
+
+        Assert.DoesNotContain(phrase, account);
     }
 
     private static string SectionOf(LegalDocumentType type, string language, int section) =>

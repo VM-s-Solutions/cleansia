@@ -328,3 +328,10 @@ This matches the partner app's mobile UX, providing a consistent experience acro
 ## Centralized Language Switcher
 
 The language switcher is centralized in the sidebar navigation. Individual page-level language switchers have been removed in favor of this single, consistent location across all admin pages.
+
+A switch re-renders the page that is open, so every label on it reads through `TranslatePipe` in the
+template, or through a signal that reads the current language, never through a one-off
+`translate.instant` kept in a field or a `computed` that does not depend on the language. The package
+form's title was such a `computed`, so until 2026-10-05 it stayed in the old language until the form
+was reopened; it goes through the pipe now, and `package-form.component.spec.ts` switches the language
+with the form open and expects the title and a retired service's *(Inactive)* label to follow.

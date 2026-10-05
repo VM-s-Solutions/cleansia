@@ -1080,6 +1080,11 @@ need backfilling.
 
 ### Fixed
 
+- **Admin — the package form's title follows a language switch.** Switching the admin's language
+  with the package form open left its title, *Create Package* or *Edit Package*, in the old language
+  until the form was opened again; the rest of the form already switched. The title now switches with
+  it. (Finding 2026-10-05.)
+
 - **Customer and cleaner, Android — dialogs and menus are the app's grey, not a purple one.** Every
   question the Android apps ask, every menu, the date picker and the cleaner's order search sat on a
   faint purple grey that matched nothing else in the apps. They now sit on the same cool grey as the

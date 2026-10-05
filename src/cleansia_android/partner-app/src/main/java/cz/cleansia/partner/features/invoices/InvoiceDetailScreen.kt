@@ -57,6 +57,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import cz.cleansia.core.ui.components.CleansiaPrimaryButton
 import cz.cleansia.core.ui.theme.Spacing
+import cz.cleansia.core.ui.theme.primaryText
 import cz.cleansia.partner.R
 import cz.cleansia.partner.data.invoices.InvoiceDetail
 import java.time.LocalDate
@@ -351,13 +352,13 @@ private fun PeriodCard(
                 Text(
                     text = stringResource(R.string.invoice_view_period_pay),
                     style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.SemiBold),
-                    color = MaterialTheme.colorScheme.primary,
+                    color = primaryText(),
                     modifier = Modifier.weight(1f),
                 )
                 Icon(
                     imageVector = Icons.AutoMirrored.Outlined.KeyboardArrowRight,
                     contentDescription = null,
-                    tint = MaterialTheme.colorScheme.primary,
+                    tint = primaryText(),
                 )
             }
         }

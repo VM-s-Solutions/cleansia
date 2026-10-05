@@ -25,7 +25,6 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -40,6 +39,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.core.content.FileProvider
+import cz.cleansia.core.ui.components.CleansiaTextButton
 import cz.cleansia.partner.R
 import java.io.File
 
@@ -174,7 +174,7 @@ fun rememberPhotoSourcePicker(
             title = { Text(stringResource(R.string.camera_permission_title)) },
             text = { Text(stringResource(R.string.camera_permission_message)) },
             confirmButton = {
-                TextButton(
+                CleansiaTextButton(
                     onClick = {
                         showPermissionDialog = false
                         context.startActivity(
@@ -187,7 +187,7 @@ fun rememberPhotoSourcePicker(
                 ) { Text(stringResource(R.string.open_settings)) }
             },
             dismissButton = {
-                TextButton(onClick = { showPermissionDialog = false }) { Text(stringResource(R.string.cancel)) }
+                CleansiaTextButton(onClick = { showPermissionDialog = false }) { Text(stringResource(R.string.cancel)) }
             },
         )
     }
@@ -198,7 +198,7 @@ fun rememberPhotoSourcePicker(
             title = { Text(stringResource(R.string.camera_unavailable)) },
             text = { Text(stringResource(R.string.job_photos_camera_only)) },
             confirmButton = {
-                TextButton(onClick = { showNoCameraDialog = false }) { Text(stringResource(android.R.string.ok)) }
+                CleansiaTextButton(onClick = { showNoCameraDialog = false }) { Text(stringResource(android.R.string.ok)) }
             },
         )
     }

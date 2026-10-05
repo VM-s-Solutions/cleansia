@@ -159,7 +159,7 @@
             transition: all 0.2s ease;
 
             &:hover {
-              color: var(--cleansia-primary-600);
+              color: var(--cleansia-primary-700);
             }
 
             .sort-icon {
@@ -169,8 +169,9 @@
               transition: all 0.2s ease;
             }
 
+            // The header is a text button: its label and its arrow take the one text ink.
             &:hover .sort-icon {
-              color: var(--cleansia-primary-600);
+              color: var(--cleansia-primary-700);
               transform: scale(1.1);
             }
           }

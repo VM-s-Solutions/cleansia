@@ -18,6 +18,13 @@ class RecurringNoLongerOfferedCopyTest {
             "values-uk" to "Містить послугу, яку ми більше не пропонуємо — змініть бронювання",
             "values-ru" to "Содержит услугу, которую мы больше не предлагаем — измените бронирование",
         ),
+        "recurring_card_item_no_longer_offered_no_edit" to mapOf(
+            "values" to "Includes a service no longer offered",
+            "values-cs" to "Obsahuje službu, kterou už nenabízíme",
+            "values-sk" to "Obsahuje službu, ktorú už neponúkame",
+            "values-uk" to "Містить послугу, яку ми більше не пропонуємо",
+            "values-ru" to "Содержит услугу, которую мы больше не предлагаем",
+        ),
         "recurring_selection_no_longer_offered" to mapOf(
             "values" to "Some of this schedule's choices are no longer offered and were removed.",
             "values-cs" to "Část výběru této opakované objednávky už nenabízíme, proto byla odebrána.",

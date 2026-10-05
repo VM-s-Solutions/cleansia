@@ -11,7 +11,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -22,6 +21,7 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.runtime.getValue
+import cz.cleansia.core.ui.components.CleansiaTextButton
 import cz.cleansia.core.ui.theme.Spacing
 import cz.cleansia.partner.R
 import cz.cleansia.partner.ui.theme.CleansiaPartnerTheme
@@ -60,10 +60,10 @@ fun JobRadiusPromptCardContent(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.End,
         ) {
-            TextButton(onClick = onKeepEveryJob) {
+            CleansiaTextButton(onClick = onKeepEveryJob) {
                 Text(stringResource(R.string.job_radius_prompt_keep_all))
             }
-            TextButton(onClick = onChooseRadius) {
+            CleansiaTextButton(onClick = onChooseRadius) {
                 Text(
                     text = stringResource(R.string.job_radius_prompt_choose),
                     fontWeight = FontWeight.SemiBold,

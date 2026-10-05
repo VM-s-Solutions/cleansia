@@ -33,6 +33,7 @@ import cz.cleansia.core.auth.TokenStore
 import cz.cleansia.core.network.ApiError
 import cz.cleansia.core.network.ApiResult
 import cz.cleansia.core.ui.components.CleansiaErrorState
+import cz.cleansia.core.ui.components.CleansiaTextButton
 import cz.cleansia.core.ui.components.WordmarkSplash
 import cz.cleansia.partner.R
 import cz.cleansia.partner.api.model.RegistrationCompletionStatus
@@ -605,7 +606,7 @@ private fun SplashGate(
                 ) { Text(stringResource(R.string.profile_logout_dialog_confirm)) }
             },
             dismissButton = {
-                TextButton(onClick = { confirmingSignOut = false }) {
+                CleansiaTextButton(onClick = { confirmingSignOut = false }) {
                     Text(stringResource(R.string.profile_logout_dialog_cancel))
                 }
             },

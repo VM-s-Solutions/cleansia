@@ -3,6 +3,7 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 import { provideNoopAnimations } from '@angular/platform-browser/animations';
 import { ActivatedRoute, provideRouter, Router } from '@angular/router';
+import { CleansiaSelectComponent } from '@cleansia/components';
 import {
   DirtinessLevel,
   PackageListItem,
@@ -71,6 +72,7 @@ class FakeRecurringBookingsFacade {
   packageNamesIncluding = jest.fn<string | null, [string]>(() => null);
   isInManyPackages = jest.fn<boolean, [string]>(() => false);
   updateFormData = jest.fn();
+  pickAddress = jest.fn();
   selectPayment = jest.fn();
   toggleService = jest.fn();
   togglePackage = jest.fn();
@@ -836,5 +838,58 @@ describe('CreateRecurringWizardComponent — the terms tick', () => {
       'pages.order.missing.terms',
     );
     expect(fixture.componentInstance.missingLabels()).toBe('recurring_booking.terms_label');
+  });
+});
+
+// The customer's pick of address goes through the facade's pickAddress, which remembers that they
+// moved the schedule: a trim after a move says the address message, not "no longer offered". Set
+// straight into the form, the move made before the schedule's own list landed read as a retirement.
+describe('CreateRecurringWizardComponent — the address', () => {
+  let fixture: ComponentFixture<CreateRecurringWizardComponent>;
+  let facade: FakeRecurringBookingsFacade;
+
+  beforeEach(async () => {
+    facade = new FakeRecurringBookingsFacade();
+    await TestBed.configureTestingModule({
+      imports: [CreateRecurringWizardComponent, TranslateModule.forRoot()],
+      providers: [
+        provideRouter([]),
+        provideNoopAnimations(),
+        {
+          provide: ActivatedRoute,
+          useValue: {
+            snapshot: { paramMap: { get: () => null }, queryParamMap: { get: () => null } },
+          },
+        },
+      ],
+    })
+      .overrideComponent(CreateRecurringWizardComponent, {
+        set: {
+          providers: [{ provide: RecurringBookingsFacade, useValue: facade }],
+        },
+      })
+      .compileComponents();
+    fixture = TestBed.createComponent(CreateRecurringWizardComponent);
+    fixture.detectChanges();
+  });
+
+  const addressSelect = () =>
+    fixture.debugElement
+      .queryAll(By.directive(CleansiaSelectComponent))
+      .find(
+        (select) =>
+          (select.componentInstance as CleansiaSelectComponent).label() ===
+          'recurring_booking.address_label',
+      );
+
+  it("hands the customer's pick to the facade as a pick, not a form write", () => {
+    facade.updateFormData.mockClear();
+
+    addressSelect()?.triggerEventHandler('ngModelChange', 'addr-cz');
+
+    expect(facade.pickAddress).toHaveBeenCalledWith('addr-cz');
+    expect(facade.updateFormData).not.toHaveBeenCalledWith(
+      expect.objectContaining({ savedAddressId: expect.anything() }),
+    );
   });
 });

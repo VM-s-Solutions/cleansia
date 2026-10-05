@@ -104,12 +104,13 @@ import cz.cleansia.core.location.ReverseGeocodingService
 import cz.cleansia.core.serviceareas.CityNameMatch
 import cz.cleansia.core.snackbar.SnackbarController
 import cz.cleansia.core.ui.components.CleansiaPrimaryButton
+import cz.cleansia.core.ui.components.CleansiaTextButton
 import cz.cleansia.core.ui.theme.Poppins
+import cz.cleansia.core.ui.theme.primaryText
 import cz.cleansia.customer.R
 import cz.cleansia.customer.core.data.AddressRepository
 import cz.cleansia.customer.core.data.UserAddress
 import cz.cleansia.customer.ui.theme.isDark
-import cz.cleansia.customer.ui.theme.primaryText
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.debounce
@@ -336,7 +337,7 @@ private fun ListPane(
                     .padding(14.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                Icon(Icons.Outlined.Add, null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(20.dp))
+                Icon(Icons.Outlined.Add, null, tint = primaryText(), modifier = Modifier.size(20.dp))
                 Spacer(Modifier.width(10.dp))
                 Text(
                     stringResource(R.string.address_manager_add),
@@ -375,7 +376,7 @@ private fun ListPane(
                 ) { Text(stringResource(R.string.common_delete)) }
             },
             dismissButton = {
-                TextButton(onClick = { deleting = null }) { Text(stringResource(R.string.common_cancel)) }
+                CleansiaTextButton(onClick = { deleting = null }) { Text(stringResource(R.string.common_cancel)) }
             },
         )
     }
@@ -521,12 +522,12 @@ private fun RenameDialog(
         title = { Text(stringResource(R.string.address_manager_rename_title)) },
         text = { LabelTextField(value = value, onValueChange = { value = it }) },
         confirmButton = {
-            TextButton(onClick = { onConfirm(value.trim()) }, enabled = value.isNotBlank()) {
+            CleansiaTextButton(onClick = { onConfirm(value.trim()) }, enabled = value.isNotBlank()) {
                 Text(stringResource(R.string.common_save))
             }
         },
         dismissButton = {
-            TextButton(onClick = onDismiss) { Text(stringResource(R.string.common_cancel)) }
+            CleansiaTextButton(onClick = onDismiss) { Text(stringResource(R.string.common_cancel)) }
         },
     )
 }

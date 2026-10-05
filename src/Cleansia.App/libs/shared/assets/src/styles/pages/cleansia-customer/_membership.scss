@@ -346,15 +346,17 @@
   color: var(--cl-muted);
 }
 
+// The slab, not the accent: white on the accent read 4.1 (Sky600) and 2.1 after dark (Sky400). The
+// ink is the card ground, which flips with the slab: white on Sky700 (5.9), #0f1b2d on Sky300 (10.4).
 .cl-mbr__option-flag {
   padding: 2px calc(0.5 * var(--cl-u));
   border-radius: 999px;
-  background: var(--cl-accent);
+  background: var(--cl-heading);
   font-size: calc(0.625 * var(--cl-u));
   font-weight: 800;
   letter-spacing: 0.06em;
   text-transform: uppercase;
-  color: #fff;
+  color: var(--cl-surface);
 }
 
 .cl-mbr__option-price {

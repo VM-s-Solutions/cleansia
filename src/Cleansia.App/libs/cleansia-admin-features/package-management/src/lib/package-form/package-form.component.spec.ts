@@ -214,6 +214,9 @@ class FacadeStub {
   readonly defaultCurrencyCode = signal<string | null>('CZK');
   readonly availableServices = signal<unknown[]>([]);
   readonly serviceOptions = signal<{ label: string; value: string }[]>([]);
+  readonly retiredServiceIds = signal<ReadonlySet<string>>(new Set());
+  readonly hasRetiredServices = signal<boolean>(false);
+  readonly serviceLabels = signal<ReadonlyMap<string, string>>(new Map());
   readonly weightRows = signal<PackageServiceWeightRow[]>([]);
   readonly derivedGrosses = signal<DerivedServiceGross[]>([]);
   loadLanguages = jest.fn();
@@ -315,6 +318,31 @@ describe('PackageFormComponent', () => {
     expect(text).toContain('75');
   });
 
+  it('tells the admin why a service is marked Inactive only when one is', () => {
+    expect(fixture.nativeElement.querySelector('.form-hint')).toBeNull();
+
+    facade.hasRetiredServices.set(true);
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.querySelector('.form-hint').textContent).toContain(
+      'pages.package_form.retired_services_hint'
+    );
+  });
+
+  it("labels a retired service's weight row with its inactive status", () => {
+    facade.serviceLabels.set(new Map([['svc-a', 'A (Inactive)']]));
+    facade.weightRows.set([{ id: 'svc-a', name: 'A', weight: 1 }]);
+    facade.derivedGrosses.set([
+      { id: 'svc-a', name: 'A', weight: 1, gross: 100 },
+    ]);
+    fixture.detectChanges();
+
+    const weightField = fixture.debugElement
+      .queryAll(By.directive(TextInputStub))
+      .find((de) => (de.componentInstance as TextInputStub).id() === 'weight-svc-a');
+    expect((weightField?.componentInstance as TextInputStub).label()).toBe('A (Inactive)');
+  });
+
   it('delegates a weight change to the facade', () => {
     component.onWeightChange('svc-a', '4');
     expect(facade.setWeight).toHaveBeenCalledWith('svc-a', 4);
@@ -410,6 +438,7 @@ describe('PackageFormComponent (edit mode, real facade)', () => {
   let component: PackageFormComponent;
   let facade: PackageFormFacade;
   let services$: ReplaySubject<{ data: typeof SERVICE_A[]; total: number }>;
+  let retired$: ReplaySubject<{ data: typeof SERVICE_A[]; total: number }>;
 
   /**
    * A self-dirtying effect spins synchronously with no cap, so a regression would hang the run
@@ -429,6 +458,7 @@ describe('PackageFormComponent (edit mode, real facade)', () => {
 
   beforeEach(async () => {
     services$ = new ReplaySubject(1);
+    retired$ = new ReplaySubject(1);
     const adminClient = {
       adminPackageClient: {
         details: jest.fn().mockReturnValue(
@@ -464,7 +494,9 @@ describe('PackageFormComponent (edit mode, real facade)', () => {
         ),
       },
       adminServiceClient: {
-        getPaged: jest.fn().mockReturnValue(services$),
+        getPaged: jest.fn((_search: unknown, isActive: unknown) =>
+          isActive === false ? retired$ : services$
+        ),
       },
     };
 
@@ -546,6 +578,22 @@ describe('PackageFormComponent (edit mode, real facade)', () => {
     expect(facade.derivedGrosses().map((g) => g.gross)).toEqual([
       833.33, 166.67,
     ]);
+  });
+
+  it('marks the retired service the package includes and keeps it removable, but cannot add another', () => {
+    const OVEN = { id: 'svc-c', name: 'Oven' };
+    services$.next({ data: [SERVICE_A, SERVICE_B, OVEN], total: 3 });
+    retired$.next({ data: [SERVICE_B, OVEN], total: 2 });
+    fixture.detectChanges();
+
+    const multiselect = fixture.debugElement.query(By.directive(MultiSelectStub))
+      .componentInstance as MultiSelectStub;
+    expect(multiselect.options()).toEqual([
+      { label: 'Windows', value: 'svc-a' },
+      { label: 'Floors (enums.active_status.inactive)', value: 'svc-b' },
+      { label: 'Oven (enums.active_status.inactive)', value: 'svc-c', disabled: true },
+    ]);
+    expect(fixture.nativeElement.querySelector('.form-hint')).not.toBeNull();
   });
 });
 

@@ -17,6 +17,7 @@ describe('PackageManagementFacade', () => {
   let activateMock: jest.Mock;
   let deleteMock: jest.Mock;
   let getOverviewMock: jest.Mock;
+  let getServicesMock: jest.Mock;
   let confirmMock: jest.Mock;
   let snackbar: {
     showSuccess: jest.Mock;
@@ -36,6 +37,7 @@ describe('PackageManagementFacade', () => {
     activateMock = jest.fn();
     deleteMock = jest.fn();
     confirmMock = jest.fn().mockReturnValue(of(true));
+    getServicesMock = jest.fn().mockReturnValue(of({ data: [], total: 0 }));
     getOverviewMock = jest.fn().mockReturnValue(
       of([{ id: 'cur-eur', code: 'EUR', isDefault: true }, { id: 'cur-czk', code: 'CZK', isDefault: false }])
     );
@@ -60,6 +62,9 @@ describe('PackageManagementFacade', () => {
             },
             adminCurrencyClient: {
               getOverview: getOverviewMock,
+            },
+            adminServiceClient: {
+              getPaged: getServicesMock,
             },
           },
         },
@@ -229,6 +234,60 @@ describe('PackageManagementFacade', () => {
 
       expect(facade.defaultCurrencyCode()).toBeNull();
       expect(facade.formatCurrency(45.1)).toBe('45,10');
+    });
+  });
+
+  /**
+   * A deactivated service stays inside every package that includes it, and nothing on the list said
+   * so: an administrator found out only by opening each package.
+   */
+  describe('a package that includes a retired service', () => {
+    const plain = PackageListItem.fromJS({
+      id: 'pkg-1',
+      name: 'Basic',
+      includedServices: [{ serviceId: 'svc-a', name: 'Windows' }],
+    });
+    const holdsRetired = PackageListItem.fromJS({
+      id: 'pkg-2',
+      name: 'Move-out',
+      includedServices: [
+        { serviceId: 'svc-a', name: 'Windows' },
+        { serviceId: 'svc-r', name: 'Oven' },
+      ],
+    });
+
+    beforeEach(() => {
+      getPagedMock.mockReturnValue(
+        of(PagedDataOfPackageListItem.fromJS({ data: [plain.toJSON(), holdsRetired.toJSON()], total: 2 }))
+      );
+    });
+
+    it('is marked, and one without is not', () => {
+      getServicesMock.mockReturnValue(of({ data: [{ id: 'svc-r', name: 'Oven' }], total: 1 }));
+
+      facade.loadPackages();
+
+      expect(getServicesMock).toHaveBeenCalledWith(undefined, false, undefined, 0, 1000);
+      expect(facade.includesRetiredService(facade.packages()[0])).toBe(false);
+      expect(facade.includesRetiredService(facade.packages()[1])).toBe(true);
+    });
+
+    it('is known before the page renders, and read once across reloads', () => {
+      facade.loadPackages();
+      facade.loadPackages();
+
+      expect(getServicesMock).toHaveBeenCalledTimes(1);
+      expect(getPagedMock).toHaveBeenCalledTimes(2);
+      expect(getServicesMock.mock.invocationCallOrder[0]).toBeLessThan(getPagedMock.mock.invocationCallOrder[0]);
+    });
+
+    it('is not marked when the retired services cannot be read, and the list still loads', () => {
+      getServicesMock.mockReturnValue(throwError(() => new Error('offline')));
+
+      facade.loadPackages();
+
+      expect(facade.packages().length).toBe(2);
+      expect(facade.includesRetiredService(facade.packages()[1])).toBe(false);
     });
   });
 });

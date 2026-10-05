@@ -73,6 +73,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import cz.cleansia.core.ui.components.MascotEmptyState
 import cz.cleansia.core.ui.components.SudsRefreshIndicator
 import cz.cleansia.core.ui.theme.Spacing
+import cz.cleansia.core.ui.theme.primaryText
 import cz.cleansia.partner.R
 import cz.cleansia.partner.api.model.OrderListItem
 import cz.cleansia.partner.api.model.OrderStatus
@@ -472,13 +473,13 @@ private fun SortDropdown(
             Text(
                 text = stringResource(currentSort.labelRes),
                 style = MaterialTheme.typography.labelLarge,
-                color = MaterialTheme.colorScheme.primary,
+                color = primaryText(),
                 fontWeight = FontWeight.SemiBold,
             )
             Icon(
                 imageVector = Icons.Outlined.ArrowDropDown,
                 contentDescription = null,
-                tint = MaterialTheme.colorScheme.primary,
+                tint = primaryText(),
                 modifier = Modifier.size(20.dp),
             )
         }

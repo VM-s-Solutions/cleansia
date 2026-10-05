@@ -71,6 +71,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil3.compose.AsyncImage
 import coil3.request.ImageRequest
 import coil3.size.Size
+import cz.cleansia.core.ui.theme.primaryText
 import cz.cleansia.customer.R
 import cz.cleansia.customer.core.disputes.DisputeDetailsDto
 import cz.cleansia.customer.core.disputes.DisputeEvidenceDto
@@ -85,7 +86,6 @@ import cz.cleansia.core.ui.components.CleansiaPrimaryButton
 import cz.cleansia.core.snackbar.SnackbarController
 import cz.cleansia.core.ui.theme.Poppins
 import kotlinx.coroutines.launch
-import cz.cleansia.customer.ui.theme.primaryText
 
 /**
  * Dispute detail — header, original description, message thread, inline evidence, reply bar.

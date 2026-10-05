@@ -91,10 +91,10 @@ struct PendingOffersCardContent: View {
                     ReservedForYouRow(respondByUtc: soonestRespondBy, now: now)
                     Text(L10n.Offers.cardCta)
                         .font(CleansiaTypography.labelLarge)
-                        .foregroundColor(CleansiaColors.primary)
+                        .foregroundColor(CleansiaColors.primaryText)
                     Image(systemName: "arrow.right")
                         .font(.system(size: 13))
-                        .foregroundColor(CleansiaColors.primary)
+                        .foregroundColor(CleansiaColors.primaryText)
                 }
             }
             .padding(Spacing.m)

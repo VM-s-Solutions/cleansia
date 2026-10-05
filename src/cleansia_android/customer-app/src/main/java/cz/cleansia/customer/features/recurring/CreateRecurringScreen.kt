@@ -38,6 +38,7 @@ import androidx.compose.material.icons.outlined.CreditCard
 import androidx.compose.material.icons.outlined.Payments
 import androidx.compose.material.icons.outlined.Remove
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.DatePicker
 import androidx.compose.material3.DatePickerDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -47,7 +48,6 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.rememberDatePickerState
 import androidx.compose.runtime.Composable
@@ -67,6 +67,8 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import cz.cleansia.core.ui.components.CleansiaTextButton
+import cz.cleansia.core.ui.theme.primaryText
 import cz.cleansia.customer.ui.components.adjustableStepper
 import cz.cleansia.customer.ui.components.rememberStepperTick
 import cz.cleansia.customer.R
@@ -105,7 +107,6 @@ import java.time.format.DateTimeFormatter
 import java.time.format.FormatStyle
 import java.time.format.TextStyle
 import java.util.Locale
-import cz.cleansia.customer.ui.theme.primaryText
 
 /**
  * Multi-step create-recurring wizard, mirroring the booking sheet's step indicator and transitions.
@@ -460,6 +461,7 @@ private fun WizardBottomBar(
                 onClick = onSaveWithoutPreferredCleaner,
                 enabled = !submitting,
                 modifier = Modifier.fillMaxWidth(),
+                colors = ButtonDefaults.outlinedButtonColors(contentColor = primaryText()),
             ) {
                 Text(text = stringResource(R.string.preferred_cleaner_schedule_save_without))
             }
@@ -474,6 +476,7 @@ private fun WizardBottomBar(
                     onClick = onPrevious,
                     enabled = !submitting,
                     modifier = Modifier.weight(1f).defaultMinSize(minHeight = 54.dp),
+                    colors = ButtonDefaults.outlinedButtonColors(contentColor = primaryText()),
                 ) {
                     Text(
                         text = stringResource(R.string.recurring_create_back),
@@ -1027,7 +1030,7 @@ private fun SavedAddressPicker(
             Icon(
                 Icons.Outlined.Add,
                 contentDescription = null,
-                tint = MaterialTheme.colorScheme.primary,
+                tint = primaryText(),
                 modifier = Modifier.size(18.dp),
             )
             Spacer(Modifier.width(8.dp))
@@ -1404,7 +1407,7 @@ private fun StartsOnPicker(isoValue: String, latestDate: LocalDate?, onChange: (
         DatePickerDialog(
             onDismissRequest = { dialogOpen = false },
             confirmButton = {
-                TextButton(onClick = {
+                CleansiaTextButton(onClick = {
                     val ms = pickerState.selectedDateMillis
                     if (ms != null) {
                         val utcDate = Instant.fromEpochMilliseconds(ms).toLocalDateTime(TimeZone.UTC).date
@@ -1414,7 +1417,7 @@ private fun StartsOnPicker(isoValue: String, latestDate: LocalDate?, onChange: (
                 }) { Text(stringResource(R.string.common_ok)) }
             },
             dismissButton = {
-                TextButton(onClick = { dialogOpen = false }) {
+                CleansiaTextButton(onClick = { dialogOpen = false }) {
                     Text(stringResource(R.string.common_back))
                 }
             },

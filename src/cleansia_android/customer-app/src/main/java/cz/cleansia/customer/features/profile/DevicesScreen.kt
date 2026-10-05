@@ -54,12 +54,13 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import cz.cleansia.core.ui.components.CleansiaPrimaryButton
+import cz.cleansia.core.ui.components.CleansiaTextButton
 import cz.cleansia.core.ui.theme.Poppins
+import cz.cleansia.core.ui.theme.primaryTextOnContainer
 import cz.cleansia.customer.R
 import cz.cleansia.customer.core.devices.UserDeviceDto
 import cz.cleansia.customer.ui.state.ActionState
 import cz.cleansia.customer.ui.theme.CleansiaTheme
-import cz.cleansia.customer.ui.theme.primaryText
 import java.time.LocalDate
 import java.time.ZoneId
 import java.time.ZonedDateTime
@@ -130,7 +131,7 @@ fun DevicesScreen(
                 }
             },
             dismissButton = {
-                TextButton(onClick = { deviceToRevoke = null }) { Text(stringResource(R.string.common_cancel)) }
+                CleansiaTextButton(onClick = { deviceToRevoke = null }) { Text(stringResource(R.string.common_cancel)) }
             },
         )
     }
@@ -297,7 +298,7 @@ private fun CurrentDeviceChip() {
         Text(
             text = stringResource(R.string.devices_this_device),
             style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.SemiBold),
-            color = primaryText(),
+            color = MaterialTheme.colorScheme.primaryTextOnContainer,
         )
     }
 }

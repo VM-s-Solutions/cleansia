@@ -377,7 +377,8 @@ because order lines snapshot it, so deactivating is how an extra is retired once
 it. A deactivated service or package leaves every customer catalogue, and a quote, a booking, a new
 schedule or a schedule edit that adds it anyway is refused; a deactivated service stays inside the
 packages that include it, and books with them, until the package is edited, and cannot be put into a
-package ([A deactivated service or package](/product/business-rules#deactivated-catalogue)). A currency is
+package: the package form marks it *(Inactive)* and offers it disabled, and the list of packages marks
+a package that includes one ([A deactivated service or package](/product/business-rules#deactivated-catalogue)). A currency is
 switched on deliberately — a new one starts inactive — and the platform default cannot be switched
 off. The currency form also authors the no-show apology credit paid in that
 currency and the referral credit each side of a referral receives in it; the country form carries the two-letter code the market chip prints and, under "Market",

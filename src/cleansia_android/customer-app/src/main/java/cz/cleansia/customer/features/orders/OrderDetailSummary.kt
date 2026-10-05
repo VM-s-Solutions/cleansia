@@ -20,11 +20,11 @@ import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
 import cz.cleansia.core.format.formatOrderDateRange
 import cz.cleansia.core.format.formatOrderPrice
+import cz.cleansia.core.ui.theme.primaryText
 import cz.cleansia.customer.BuildConfig
 import cz.cleansia.customer.R
 import cz.cleansia.customer.core.booking.DirtinessLevel
 import cz.cleansia.customer.core.orders.OrderDetailDto
-import cz.cleansia.customer.ui.theme.primaryText
 
 /**
  * What the customer is charged and how. The per-source discount amounts are on

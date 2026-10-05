@@ -8,19 +8,14 @@ import XCTest
 /// arithmetic to the two heroes that render it is `AvatarDiscBindingTests` below — without it these
 /// constants would only model a surface, never observe one.
 final class FixedWhiteContrastTests: XCTestCase {
-    func testInkClearsTheLargeTextFloorAgainstTheFixedWhiteSurface() {
-        let ratio = contrastRatio(CleansiaColors.onFixedWhiteHex, CleansiaColors.fixedWhiteHex)
-        XCTAssertGreaterThanOrEqual(ratio, largeTextFloor)
-        XCTAssertEqual(ratio, 4.095, accuracy: 0.001)
-    }
-
-    /// The customer app's initials ink (finding 2026-10-05): the 18pt semibold initials are not large text
-    /// in WCAG's terms, so they take the 4.5:1 floor, which the light-mode brand blue misses.
+    /// The initials ink in both apps (finding 2026-10-05, owner decision 2026-10-05 for the partner app): the
+    /// 18pt semibold initials are not large text in WCAG's terms, so they take the 4.5:1 floor, which the
+    /// light-mode brand blue misses.
     func testTheTextInkClearsTheBodyTextFloorAgainstTheFixedWhiteSurface() {
         let ratio = contrastRatio(CleansiaColors.primaryTextOnFixedWhiteHex, CleansiaColors.fixedWhiteHex)
         XCTAssertGreaterThanOrEqual(ratio, 4.5)
         XCTAssertEqual(ratio, 5.93, accuracy: 0.01)
-        XCTAssertLessThan(contrastRatio(CleansiaColors.onFixedWhiteHex, CleansiaColors.fixedWhiteHex), 4.5)
+        XCTAssertEqual(contrastRatio(lightPrimary, CleansiaColors.fixedWhiteHex), 4.095, accuracy: 0.001)
     }
 
     func testTheAdaptivePrimaryWouldMissTheFloorOnThatSurface() {
@@ -63,28 +58,24 @@ final class AvatarDiscBindingTests: XCTestCase {
     ]
 
     private static let discInks: [String: UInt32] = [
-        "CleansiaColors.onFixedWhite": CleansiaColors.onFixedWhiteHex
+        "CleansiaColors.primaryTextOnFixedWhite": CleansiaColors.primaryTextOnFixedWhiteHex
     ]
 
-    /// The initials take the caller's `initialsInk`; the default, which the partner app draws, is the pair
-    /// measured here. The customer app's ink is pinned at its two call sites (`ProfileAvatarBindingTests`)
-    /// and measured in `FixedWhiteContrastTests`.
+    /// Both apps draw the initials in the one ink the disc names; no caller can pass another.
     func testTheHeroDiscPairsAMeasuredInkWithAMeasuredFill() throws {
         for hero in Self.heroes {
             let block = try discBlock(of: hero)
             let fills = arguments(of: ".fill(", in: block)
             let inks = arguments(of: ".foregroundColor(", in: block)
             XCTAssertEqual(fills.count, 1, "\(hero): expected exactly one disc fill, found \(fills)")
-            XCTAssertEqual(inks, ["initialsInk"], "\(hero): the initials no longer take the caller's ink")
-            let source = try String(contentsOf: iosRoot().appendingPathComponent(hero), encoding: .utf8)
-            let defaults = Self.discInks.keys.filter { source.contains("initialsInk: Color = \($0),") }
+            XCTAssertEqual(inks.count, 1, "\(hero): expected exactly one initials ink, found \(inks)")
 
             let fill = try XCTUnwrap(fills.first.flatMap { Self.discFills[$0] }, unmeasured(hero, fills))
-            let ink = try XCTUnwrap(defaults.first.flatMap { Self.discInks[$0] }, unmeasured(hero, defaults))
+            let ink = try XCTUnwrap(inks.first.flatMap { Self.discInks[$0] }, unmeasured(hero, inks))
 
             let ratio = contrastRatio(ink, fill)
-            XCTAssertGreaterThanOrEqual(ratio, largeTextFloor, "\(hero): initials measure \(ratio):1 on the disc")
-            XCTAssertEqual(ratio, 4.095, accuracy: 0.001, hero)
+            XCTAssertGreaterThanOrEqual(ratio, 4.5, "\(hero): initials measure \(ratio):1 on the disc")
+            XCTAssertEqual(ratio, 5.93, accuracy: 0.01, hero)
         }
     }
 
@@ -192,8 +183,11 @@ final class AvatarDiscBindingTests: XCTestCase {
     }
 }
 
-/// WCAG 2.x 1.4.3 floor for large text — the headline-small initials qualify.
+/// WCAG 2.x 1.4.3 floor for large text.
 private let largeTextFloor = 3.0
+
+/// sky600 — the light-mode brand blue the initials were drawn in before.
+private let lightPrimary: UInt32 = 0x0284C7
 
 /// sky400 — what the theme-adaptive `CleansiaColors.primary` resolves to in dark mode.
 private let adaptivePrimaryDark: UInt32 = 0x38BDF8

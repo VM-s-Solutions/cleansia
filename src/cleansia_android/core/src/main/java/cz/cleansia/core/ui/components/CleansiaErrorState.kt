@@ -22,6 +22,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import cz.cleansia.core.ui.theme.Poppins
+import cz.cleansia.core.ui.theme.primaryText
 
 /**
  * Full-screen load-failure surface: offline glyph, title, explanation, an
@@ -94,7 +95,7 @@ fun CleansiaErrorState(
         Text(
             text = backLabel,
             style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.SemiBold),
-            color = MaterialTheme.colorScheme.primary,
+            color = primaryText(),
             modifier = Modifier
                 .clip(RoundedCornerShape(999.dp))
                 .clickable(onClick = onBack)

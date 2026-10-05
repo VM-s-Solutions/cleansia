@@ -297,7 +297,7 @@ export class CreateRecurringWizardComponent implements OnInit {
   }
 
   selectAddress(id: string): void {
-    this.facade.updateFormData({ savedAddressId: id });
+    this.facade.pickAddress(id);
   }
 
   selectPayment(type: PaymentType): void {

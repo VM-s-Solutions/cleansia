@@ -234,7 +234,7 @@ struct ConfirmStep: View {
 /// the account already consented: an information line with the terms behind it, never a tick.
 private struct ContractNotice: View {
     var body: some View {
-        Text(ConsentMarkdown.styled(L10n.Booking.contractNotice, linkColor: CleansiaColors.primaryText))
+        Text(ConsentMarkdown.styled(L10n.Booking.contractNotice))
             .font(CleansiaTypography.bodyMedium)
             .foregroundColor(CleansiaColors.onSurfaceVariant)
             .tint(CleansiaColors.primaryText)

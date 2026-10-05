@@ -245,6 +245,8 @@ public struct CleansiaDangerButton: View {
     }
 }
 
+/// A text link. Its label takes the text ink, not the primary: sky-600 reads 4.10:1 on white, under the
+/// 4.5:1 floor for text (owner decision 2026-10-05); dark mode is unchanged.
 public struct CleansiaTextLink: View {
     private let text: String
     private let action: () -> Void
@@ -258,7 +260,7 @@ public struct CleansiaTextLink: View {
         Button(action: action) {
             Text(text)
                 .font(CleansiaTypography.labelLarge)
-                .foregroundColor(CleansiaColors.primary)
+                .foregroundColor(CleansiaColors.primaryText)
                 .lineLimit(1)
                 .padding(Spacing.xxs)
         }

@@ -75,6 +75,10 @@ struct RegistrationLockView: View {
                 .background(CleansiaColors.background.ignoresSafeArea())
                 .navigationDestination(for: ProfileRoute.self, destination: sectionDestination)
         }
+        // The shell's text ink. This stack is mounted beside the shell, not inside it, so without its own tint
+        // the sections it pushes drew their back buttons in iOS's own blue (4.0:1 on white), where the same
+        // sections reached from Profile draw sky-700.
+        .tint(CleansiaColors.primaryText)
         .task {
             // Prime the chain completion snapshot so the "Step X of 4" header
             // + per-section dots are accurate the moment the first onboarding
@@ -395,7 +399,7 @@ private struct StepRow: View {
                     if isRejected {
                         Text(L10n.RegistrationLock.actionContactSupport)
                             .font(CleansiaTypography.labelMedium)
-                            .foregroundColor(CleansiaColors.primary)
+                            .foregroundColor(CleansiaColors.primaryText)
                             .padding(.top, Spacing.xs)
                     }
                 }

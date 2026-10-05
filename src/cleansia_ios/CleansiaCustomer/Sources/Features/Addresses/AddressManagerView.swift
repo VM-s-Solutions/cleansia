@@ -193,10 +193,9 @@ private struct AddressListPane: View {
                 Image(systemName: "plus")
                 Text(L10n.AddressManager.add)
                     .font(CleansiaTypography.bodyLarge)
-                    .foregroundColor(CleansiaColors.primaryText)
                 Spacer()
             }
-            .foregroundColor(CleansiaColors.primary)
+            .foregroundColor(CleansiaColors.primaryText)
             .padding(Spacing.m)
             .overlay(
                 RoundedRectangle(cornerRadius: CornerRadius.medium)
@@ -272,7 +271,7 @@ private struct SavedAddressRow: View {
                     if address.isDefault {
                         Text(L10n.AddressManager.defaultBadge)
                             .font(CleansiaTypography.labelSmall)
-                            .foregroundColor(CleansiaColors.primaryText)
+                            .foregroundColor(CleansiaColors.primaryTextOnContainer)
                             .padding(.horizontal, Spacing.xs)
                             .padding(.vertical, 2)
                             .background(

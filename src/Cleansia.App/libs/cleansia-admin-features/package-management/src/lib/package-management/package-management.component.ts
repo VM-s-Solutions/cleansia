@@ -4,6 +4,8 @@ import {
   computed,
   inject,
   OnInit,
+  TemplateRef,
+  viewChild,
 } from '@angular/core';
 import { ReactiveFormsModule } from '@angular/forms';
 import { PermissionService, Policy } from '@cleansia/services';
@@ -51,6 +53,8 @@ export class PackageManagementComponent implements OnInit {
   private readonly translate = inject(TranslateService);
   private readonly permissions = inject(PermissionService);
 
+  private readonly nameTemplate = viewChild<TemplateRef<PackageListItem>>('nameTemplate');
+
   protected readonly table = computed(() => {
     this.facade.lang();
     return getPackageTableDefinition(
@@ -63,7 +67,8 @@ export class PackageManagementComponent implements OnInit {
       },
       this.translate,
       this.permissions,
-      (value) => this.facade.formatCurrency(value)
+      (value) => this.facade.formatCurrency(value),
+      this.nameTemplate()
     );
   });
 

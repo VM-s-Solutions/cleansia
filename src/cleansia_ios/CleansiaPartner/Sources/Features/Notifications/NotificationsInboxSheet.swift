@@ -36,7 +36,7 @@ struct NotificationsInboxSheet: View {
             .toolbar {
                 ToolbarItem(placement: .confirmationAction) {
                     Button(L10n.NotificationsInbox.close) { dismiss() }
-                        .tint(CleansiaColors.primary)
+                        .tint(CleansiaColors.primaryText)
                 }
             }
         }

@@ -162,11 +162,11 @@ private struct DropdownSheet: View {
                         Text(option.label)
                             .font(CleansiaTypography.bodyLarge)
                             .fontWeight(option.id == selectedId ? .semibold : .regular)
-                            .foregroundColor(option.id == selectedId ? CleansiaColors.primary : CleansiaColors
+                            .foregroundColor(option.id == selectedId ? CleansiaColors.primaryText : CleansiaColors
                                 .onSurface)
                         Spacer()
                         if option.id == selectedId {
-                            Image(systemName: "checkmark").foregroundColor(CleansiaColors.primary)
+                            Image(systemName: "checkmark").foregroundColor(CleansiaColors.primaryText)
                         }
                     }
                 }

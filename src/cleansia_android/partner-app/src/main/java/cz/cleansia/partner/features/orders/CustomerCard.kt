@@ -37,6 +37,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import cz.cleansia.core.ui.theme.primaryText
 import cz.cleansia.partner.R
 
 /**
@@ -189,13 +190,13 @@ private fun ActionChip(
                 imageVector = icon,
                 contentDescription = null,
                 modifier = Modifier.size(16.dp),
-                tint = MaterialTheme.colorScheme.primary,
+                tint = primaryText(),
             )
             Spacer(Modifier.width(6.dp))
             Text(
                 text = label,
                 style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.SemiBold),
-                color = MaterialTheme.colorScheme.primary,
+                color = primaryText(),
                 // The pill is exactly 40.dp tall and clipped to a 20.dp radius, so a second line does
                 // not make it taller — it gets cut, with the rounded corners slicing both line ends.
                 // uk "Подзвонити" is 81dp against a ~64dp budget and is one word, so it has no break

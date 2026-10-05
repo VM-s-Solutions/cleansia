@@ -363,6 +363,14 @@ cleansia-button {
   }
 }
 
+// A text or outlined button's label is the text ink, Sky700 (the preset). Under the pointer and
+// pressed it goes a step darker, Sky800, as a link does; PrimeNG has no hover ink for these two, so
+// the hovered button carries its own. Light only: after dark the preset's light blue stays.
+:root:not(.dark-mode) .p-button:is(.p-button-text, .p-button-outlined):not(:disabled):is(:hover, :active) {
+  --p-button-text-primary-color: var(--p-primary-800);
+  --p-button-outlined-primary-color: var(--p-primary-800);
+}
+
 // A button rendered as an anchor inherits the app's link underline, which made
 // every linked call to action read as body copy with a rule under it. The
 // element is a button; it should not be underlined in any of its renderings.

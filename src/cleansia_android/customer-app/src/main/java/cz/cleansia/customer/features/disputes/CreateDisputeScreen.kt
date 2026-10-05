@@ -66,10 +66,10 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import cz.cleansia.core.ui.theme.primaryText
 import cz.cleansia.customer.R
 import cz.cleansia.customer.core.disputes.DisputeSettlement
 import cz.cleansia.customer.ui.state.ActionState
-import cz.cleansia.customer.ui.theme.primaryText
 
 /**
  * CreateDisputeScreen — "Report an issue" full-screen form. Reached from two

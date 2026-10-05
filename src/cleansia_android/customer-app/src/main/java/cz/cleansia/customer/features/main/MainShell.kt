@@ -68,7 +68,7 @@ import cz.cleansia.customer.features.profile.ProfileTab
 import cz.cleansia.customer.features.profile.ProfileViewModel
 import cz.cleansia.customer.features.rewards.RewardsTab
 import cz.cleansia.customer.ui.theme.CleansiaTheme
-import cz.cleansia.customer.ui.theme.primaryText
+import cz.cleansia.core.ui.theme.primaryText
 
 enum class MainTab { Home, Orders, Rewards, Profile }
 
@@ -507,7 +507,9 @@ private fun NavSlot(
     modifier: Modifier = Modifier,
 ) {
     val isSelected = tab == currentSelected
-    val color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
+    // The selected tab's icon and label are one control, so one ink: the text blue. The pill under them
+    // is a fill and keeps the primary.
+    val color = if (isSelected) MaterialTheme.colorScheme.primaryText else MaterialTheme.colorScheme.onSurfaceVariant
     // Animate dot width on selection — 0 when unselected, 20dp pill when selected
     val dotWidth by animateDpAsState(
         targetValue = if (isSelected) 20.dp else 0.dp,
@@ -528,7 +530,7 @@ private fun NavSlot(
         Text(
             stringResource(labelRes),
             style = MaterialTheme.typography.labelSmall.copy(fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Normal),
-            color = if (isSelected) primaryText() else color,
+            color = color,
             maxLines = 1,
             overflow = TextOverflow.Ellipsis,
             textAlign = TextAlign.Center,

@@ -75,6 +75,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import cz.cleansia.core.format.formatOrderPrice
 import cz.cleansia.core.ui.theme.Spacing
+import cz.cleansia.core.ui.theme.primaryText
 import cz.cleansia.customer.R
 import cz.cleansia.customer.core.booking.PropertySize
 import cz.cleansia.customer.core.catalog.CategoryDto
@@ -86,7 +87,6 @@ import cz.cleansia.customer.ui.theme.selectionTint
 import cz.cleansia.customer.ui.theme.Sky600
 import cz.cleansia.customer.ui.theme.Sky700
 import cz.cleansia.customer.ui.theme.isDark
-import cz.cleansia.customer.ui.theme.primaryText
 
 // Local palette for backend-driven categories. Keyed by slug so backend can add
 // new categories without code changes; unknown slugs fall back to DefaultPalette.

@@ -11,6 +11,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.viewinterop.AndroidView
+import cz.cleansia.core.ui.theme.primaryText
 
 /**
  * Renders a server-rendered HTML fragment (a legal text) in-app, in the current theme's ink.
@@ -27,7 +28,8 @@ fun HtmlContentView(
 ) {
     val ink = MaterialTheme.colorScheme.onSurface
     val accent = MaterialTheme.colorScheme.primary
-    val document = remember(html, ink, accent) { HtmlDocument.wrap(html, ink, accent) }
+    val link = primaryText()
+    val document = remember(html, ink, accent, link) { HtmlDocument.wrap(html, ink, accent, link) }
 
     AndroidView(
         modifier = modifier,
@@ -50,7 +52,8 @@ fun HtmlContentView(
 
 internal object HtmlDocument {
 
-    fun wrap(fragment: String, ink: Color, accent: Color): String = """
+    /** [accent] draws the quote rule; [link] is the text blue a link reads in. */
+    fun wrap(fragment: String, ink: Color, accent: Color, link: Color): String = """
         <!doctype html>
         <html><head><meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -60,7 +63,7 @@ internal object HtmlDocument {
           h1, h2, h3 { font-size: 16px; font-weight: 600; margin: 20px 0 6px; }
           p, li { margin: 0 0 10px; }
           blockquote { margin: 0 0 12px; padding: 8px 12px; border-left: 3px solid ${accent.cssHex()}; opacity: 0.85; }
-          a { color: ${accent.cssHex()}; }
+          a { color: ${link.cssHex()}; }
         </style></head>
         <body>$fragment</body></html>
     """.trimIndent()

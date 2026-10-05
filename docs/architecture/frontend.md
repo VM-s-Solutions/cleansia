@@ -270,10 +270,27 @@ each of these drew until 2026-10-05:
 | The initials on Profile | `.customer-profile__user-avatar` |
 | A cleaner's initials on an order | `.order-detail__cleaner-avatar` |
 | The signed-in initials in the top bar, and in the drawer | `.customer-navbar__avatar` |
+| The initials in the account menu | `.customer-navbar__user-avatar` |
+| The *Your plan* flag on the Plus page | `.cl-mbr__option-flag` |
+
+The last two joined the slab later on 2026-10-05 (finding 2026-10-05). They were white on the accent,
+sky-600 in light mode (4.10:1) and sky-400 after dark (2.14:1); the account menu's initials sat on a
+sky-600 → sky-500 gradient, down to 2.77:1 at its light end, with a dark-mode gradient of its own. Both
+now read 5.93:1 and 10.37:1, and the account menu's disc is the top bar's.
 
 `customer-heading-slab.spec.ts`, in the assets project beside the stylesheets, reads every customer
 page stylesheet and the customer navbar's, finds each rule that paints its background with
 `--cl-heading` and sets an ink, and fails unless that ink is `--cl-surface`.
+
+**Hovering never repaints a picked chip's border** (since 2026-10-05). A chip's `:hover` rule, two
+classes, outranked its `--on` rule, one, so hovering the picked dispute reason, Rewards filter or Orders
+filter swapped its sky-700 border (sky-300 after dark) for the pale hover tint, `#e0f2fe`, and the
+picked pill lost its edge under the pointer. Each of the three hover rules now skips the picked chip
+(`&:hover:not(.cl-dsp__reason--on)`, and the same for `.cl-rwd__chip` and `.customer-orders__chip`), as
+the schedule form's picks already did ([the services step](/customer-app/ordering-flow#step-0-services-packages));
+an unpicked chip still takes the tint. The same spec compiles the customer stylesheet, finds every
+picked chip painted with the slab, and fails on a hover rule of its base that changes the border
+without skipping it.
 
 ### Blue text on the customer site takes `--cl-accent-text` {#accent-text}
 
@@ -299,12 +316,65 @@ stylesheet in Chromium, light / dark:
 
 The rules that used `--cl-accent` (sky-400 after dark, 8.07:1) now read sky-300 there, a lighter blue
 that both pass. Left in the primary on purpose: the inverse and Plus call-to-action buttons
-(`.cl-btn--inverse`, `.cl-plus__cta`), every icon, and the schedule form's add-address row on hover,
-whose resting ink is already sky-700, so the same token would leave no hover cue. PrimeNG's text
-buttons and links take the shared preset's sky-600, and that preset is shared with the partner and
-admin sites, so they are not part of this. `customer-accent-text.spec.ts`, in the assets project,
-compiles the customer stylesheet and requires `var(--cl-accent-text)` on each site above, and the token
-in both themes.
+(`.cl-btn--inverse`, `.cl-plus__cta`) and every icon. The schedule form's add-address row rests in
+sky-700 and goes a step darker under the pointer, to sky-800, since 2026-10-05; until then it went to
+the lighter sky-600 (4.10:1), and after dark it still goes from sky-300 to the accent, sky-400.
+PrimeNG's text buttons and links come from the preset the partner and admin sites share, and take
+sky-700 there since 2026-10-05 ([below](#link-ink)). `customer-accent-text.spec.ts`, in the assets
+project, compiles the customer stylesheet and requires `var(--cl-accent-text)` on each site above, and
+the token in both themes.
+
+### Links and text buttons take sky-700 on all three sites {#link-ink}
+
+Since 2026-10-05 (owner decision: *"go to the darker, but so that it still feels natural"*) a text link,
+and the label of a text, outlined or link button, is sky-700 `#0369a1` in light mode on the customer,
+partner and admin sites, and goes a step darker, sky-800 `#075985`, under the pointer and while
+pressed. Until then the shared PrimeNG preset left those three buttons on the light theme's primary,
+sky-500 `#0ea5e9`, 2.77:1 on white, and the shared and partner link styles drew sky-600 (4.10:1) or
+sky-500. Filled buttons, fills, borders and standalone icons keep the brand blue, and an icon inside a
+button takes the button's ink, so no control shows two blues. The apps follow the same rule
+([Blue text is sky-700](/mobile-app/patterns#brand-text-ink)).
+
+- **The preset** (`libs/shared/assets/src/lib/cleansia-preset.ts`), read by all three apps: in the
+  light scheme the text and outlined primary buttons' colour is `{primary.700}`, and the link button's
+  is `{primary.700}` with `{primary.800}` on hover and press. The dark theme is untouched, so the
+  customer site keeps its light blue there. PrimeNG has no hover ink for a text or an outlined button,
+  so `cleansia-button.component.scss` sets `--p-button-text-primary-color` and
+  `--p-button-outlined-primary-color` to `--p-primary-800` on a hovered or pressed one, in light mode
+  only.
+- **The shared and partner link styles**: the sign-in card's links (the partner and admin sign-in),
+  the partner register and forgot-password links, the partner detail breadcrumb, the partner profile's
+  consent link, the cookie notice's link (with its own sky-300 after dark, where sky-600 read 3.59:1),
+  the help card's *show help*, a filter chip's remove ×, which now takes the chip's own sky-700, and a
+  sortable table header with its arrow on hover. The partner registration lock's raised *Contact
+  support* button gets a white face: the text ink reads 4.44:1 on the rejected row's pink and 5.93:1 on
+  white.
+- **The customer site's** links already took sky-700 ([above](#accent-text)); only its add-address
+  row's hover moved.
+
+Measured in Chromium on the running dev servers, at rest / under the pointer: a PrimeNG text, outlined
+or link button's label and icon 2.77 / 2.60 → 5.93 / 7.09:1 (a link under the pointer 7.56:1); the
+registration lock's *Contact support* 2.08 / 2.60 → 5.93 / 7.09:1; the sign-in card's, register and
+forgot-password links 4.10 / 4.10 → 5.93 / 7.56:1; the breadcrumb 4.10 / 5.93 → 5.93 / 7.56:1; the
+profile's consent link 2.60 / 5.57 → 5.57 / 7.09:1; the cookie notice's link 4.10 / 5.93 → 5.93 /
+7.56:1 in light mode and 3.59 / 2.47 → 8.81 / 11.06:1 in dark; *show help* 3.70 / 4.90 → 5.37 /
+6.25:1; a filter chip's × 3.84 → 5.57:1; the add-address row under the pointer 4.10 → 7.56:1.
+`cleansia-preset.spec.ts` pins the three inks and that the filled button and the dark theme are
+Aura's, and `text-ink.spec.ts` compiles the partner and customer stylesheets and pins every rule above.
+
+### A paused schedule's card steps back without fading its text {#paused-card}
+
+On *Recurring cleanings*, a paused schedule's card (`.cl-rec__card--paused`) keeps the card's ground
+and every ink, and steps back with a dashed edge (`--cl-field-border`) and no shadow, beside the
+*Paused* pill it already shows (since 2026-10-05, finding 2026-10-05). Until then it set
+`opacity: 0.72`, which faded the text together with the ground: in light mode the title, the price and
+*Edit* read 3.41:1, the pill 3.53:1, the line about a retired service and the price's label 2.83:1, and
+in dark mode those last two 4.15:1. Measured from the compiled customer stylesheet in Chromium, light
+/ dark, they now read 5.93 / 10.37:1 (title, price, *Edit*), 6.37 / 6.37:1 (the pill), 10.35 / 11.64:1
+(a fact) and 4.76 / 6.74:1 (the retired-service line and the price's label); an active card is
+unchanged. The apps never faded a paused card: they mark it with a badge, and its lowest text reads 4.84:1
+on Android and iOS, the badge in dark mode. The schedules list's spec reads the card's rule and requires the dashed edge, no shadow and no
+opacity on a paused card.
 
 ## i18n
 

@@ -74,6 +74,7 @@ import cz.cleansia.core.ui.components.SnapSheet
 import cz.cleansia.core.ui.components.SnapSheetState
 import cz.cleansia.core.ui.components.rememberSnapSheetState
 import cz.cleansia.core.ui.theme.Spacing
+import cz.cleansia.core.ui.theme.primaryText
 import cz.cleansia.customer.R
 import cz.cleansia.customer.core.market.MarketState
 import cz.cleansia.customer.core.orders.OrderCurrencyDetailDto
@@ -882,9 +883,10 @@ private fun ActionsFooter(
                         .fillMaxWidth()
                         .height(48.dp),
                     shape = CircleShape,
+                    // The border keeps the primary; the label and its icon take the text blue.
                     border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary),
                     colors = ButtonDefaults.outlinedButtonColors(
-                        contentColor = MaterialTheme.colorScheme.primary,
+                        contentColor = primaryText(),
                     ),
                 ) {
                     Icon(

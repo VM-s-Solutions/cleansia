@@ -353,12 +353,14 @@ $nav-band: 96px;
     border-bottom: 1px solid var(--surface-border, #e2e8f0);
   }
 
+  // The top bar's disc: white on the Sky600→Sky500 gradient read 4.1 at one end and 2.8 at the
+  // other (2.1 after dark, at Sky400). The slab's ink is the card ground, which flips with it.
   &__user-avatar {
     width: 36px;
     height: 36px;
     border-radius: 50%;
-    background: linear-gradient(135deg, #0284c7, #0ea5e9);
-    color: #fff;
+    background: var(--cl-heading, #0369a1);
+    color: var(--cl-surface, #fff);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -600,10 +602,6 @@ body:has(.customer-navbar) .cleansia-dev-banner.cleansia-dev-banner.cleansia-dev
         border-color: #38bdf8;
         color: #38bdf8;
       }
-    }
-
-    &__user-avatar {
-      background: linear-gradient(135deg, #0284c7, #38bdf8);
     }
 
     &__user-role {

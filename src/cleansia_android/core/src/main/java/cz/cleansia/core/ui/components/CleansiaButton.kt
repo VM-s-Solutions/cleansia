@@ -2,6 +2,7 @@ package cz.cleansia.core.ui.components
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -23,6 +24,7 @@ import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import cz.cleansia.core.ui.theme.primaryText
 
 enum class CleansiaButtonSize(
     val minHeight: androidx.compose.ui.unit.Dp,
@@ -160,7 +162,10 @@ fun CleansiaDestructiveButton(
     }
 }
 
-/** Outlined button — used for "Continue with Google", secondary CTAs. */
+/**
+ * Outlined button — used for "Continue with Google", secondary CTAs. The label and its leading icon share
+ * one ink, onSurface, as on iOS; Material's default would draw the icon in the primary beside a dark label.
+ */
 @Composable
 fun CleansiaOutlinedButton(
     text: String,
@@ -178,6 +183,7 @@ fun CleansiaOutlinedButton(
         enabled = enabled,
         shape = CircleShape,
         border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
+        colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.onSurface),
         contentPadding = PaddingValues(horizontal = size.horizontalPadding, vertical = 12.dp),
     ) {
         if (leadingIcon != null) {
@@ -195,7 +201,31 @@ fun CleansiaOutlinedButton(
 }
 
 /**
- * Inline link — primary-colored text, no chrome.
+ * Material's TextButton with its label — and any icon beside it — in the text blue, [primaryText],
+ * rather than Material's default, the primary: sky-600 is 4.10:1 on white, and a dialog's surface or a
+ * card's tint is lower still. The one text button both apps draw; a caller that needs another ink (a
+ * destructive red) uses Material's TextButton with its own `colors`. The ripple follows the label.
+ */
+@Composable
+fun CleansiaTextButton(
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    enabled: Boolean = true,
+    contentPadding: PaddingValues = ButtonDefaults.TextButtonContentPadding,
+    content: @Composable RowScope.() -> Unit,
+) {
+    TextButton(
+        onClick = onClick,
+        modifier = modifier,
+        enabled = enabled,
+        colors = ButtonDefaults.textButtonColors(contentColor = primaryText()),
+        contentPadding = contentPadding,
+        content = content,
+    )
+}
+
+/**
+ * Inline link — text-blue label, no chrome.
  *
  * Single-line and ellipsized like the other three variants. Most callers give a button the full width
  * so it never mattered, but a label in a `weight(1f)` slot wraps mid-word instead of truncating — cs
@@ -208,7 +238,7 @@ fun CleansiaTextLink(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    TextButton(
+    CleansiaTextButton(
         onClick = onClick,
         modifier = modifier,
         contentPadding = PaddingValues(horizontal = 4.dp, vertical = 4.dp),
@@ -216,7 +246,6 @@ fun CleansiaTextLink(
         Text(
             text = text,
             style = MaterialTheme.typography.labelLarge,
-            color = MaterialTheme.colorScheme.primary,
             maxLines = 1,
             overflow = TextOverflow.Ellipsis,
         )

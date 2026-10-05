@@ -361,7 +361,8 @@ struct OrderDetailFooterStyle {
     let icon: String
     let tint: Color
 
-    static let makeRecurring = Self(icon: "calendar", tint: CleansiaColors.primary)
+    /// The label and its icon take the text ink; the outline keeps the primary (`borderColor` at the call site).
+    static let makeRecurring = Self(icon: "calendar", tint: CleansiaColors.primaryText)
     static let cancel = Self(icon: "xmark.circle", tint: CleansiaColors.error)
     static let cleanerDidNotArrive = Self(icon: "person.fill.questionmark", tint: CleansiaColors.error)
     static let reportIssue = Self(icon: "exclamationmark.triangle", tint: CleansiaColors.error)
@@ -398,6 +399,7 @@ private struct OrderDetailActionsFooter: View {
                     L10n.OrderDetail.actionMakeRecurring,
                     leadingIcon: OrderDetailFooterStyle.makeRecurring.icon,
                     contentColor: OrderDetailFooterStyle.makeRecurring.tint,
+                    borderColor: CleansiaColors.primary,
                     action: onMakeRecurring
                 )
             }

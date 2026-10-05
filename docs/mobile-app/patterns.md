@@ -195,20 +195,19 @@ top, the block that bleeds above it and the fade's colour (below) all take it, a
 blue that Home and the package cards use is unchanged. Dark mode keeps the brand blue on both
 platforms, white on sky-800 at 7.6:1.
 
-- **iOS** (`ProfileTab.heroTop`) does it from iOS 17. Before iOS 17 the system draws the clock black in
-  light mode whatever is under it, which reads 5.1:1 on sky-600 and would fall to 3.5:1 on sky-700,
-  so there the hero keeps the brand blue: the same gate as the Plus offer's fade (below). From the
-  colour values, white reads 5.93:1 on the hero's top at rest, and at least 4.86:1 scrolled, where the
-  90 % fade lies over the hero, the white avatar or the white stats card. `ContentSafeAreaBindingTests`
-  pins both, black on the brand blue before iOS 17, the gate and the wiring. While the hero's own
-  bottom passes up through the fade, the fade steps over the blues the clock cannot be read on
-  (since 2026-10-05, [below](#status-bar-fade)). One dip is left, and it is the system's: at 130–150pt
-  of scroll, with the hero still under the whole fade, the system sometimes draws the clock black on
-  the 90 % sky-700 fade, when the avatar or the white stats card is under or just below it, and black
-  reads 4.0–4.3:1 there from the colour values (5.45 and 4.92:1 in the screenshots). The app sets no
-  status-bar style, so the choice is the system's. A status-bar style set from Profile, or a fade
-  darker than the hero's top, would change it, and either departs from the colour actually behind the
-  status bar, so it is left for the owner (reported 2026-10-05).
+- **iOS** (`ProfileTab.heroTop`) does it on every version, because Profile asks for the white clock
+  while its hero is behind it (`StatusBarStyleBridge`, since 2026-10-05, [below](#status-bar-fade)).
+  Until then it did it from iOS 17 only: before iOS 17 the system draws the clock black in light mode
+  whatever is under it, 5.1:1 on sky-600 and 3.5:1 on sky-700, so there the hero kept the brand blue.
+  From the colour values, white reads 5.93:1 on the hero's top at rest, and at least 4.86:1 scrolled
+  while the 90 % fade lies over the hero, the white avatar or the white stats card. While the hero's
+  own bottom passes up through the fade, the fade steps over the blues the clock cannot be read on
+  ([below](#status-bar-fade)). The dip the system chose is gone: until 2026-10-05, at 130–150pt of
+  scroll, with the hero still under the whole fade, it sometimes drew the clock black on the 90 %
+  sky-700 fade when the avatar or the white stats card was under or just below it, 4.0–4.3:1 from the
+  colour values (5.45 and 4.92:1 in the screenshots), and the owner ruled that the clock is forced
+  white while the hero is behind it (2026-10-05). `ContentSafeAreaBindingTests` pins the light hero's
+  top with no version check, and the wiring.
 - **Android** (`profileHeroColors`, `ProfileTab.kt`) needs no gate, because it sets the icons itself
   (below). Measured on the emulator, the clock reads 5.40:1 at rest, where the theme's dark icons read
   3.26:1 before, and 4.87–5.69:1 scrolled with the hero under the status bar; dark mode reads
@@ -312,14 +311,11 @@ first point of scroll.
   with `statusBarFadeHero()`: the Plus offer passes `MembershipPalette.sky950`, the top of its navy
   hero, and Profile passes its hero's top, `ProfileTab.heroTop` ([above](#full-bleed-hero)). Profile
   takes its hero's colour for the same reason as Plus: the page colour over its blue hero was a pale
-  band, on which the clock measured 1.7:1 in light mode. **Before iOS 17 the Plus offer passes the
-  page colour in light mode**
-  (`fadeHeroTint`, since 2026-10-04). The app sets no status-bar style, and before iOS 17 the system
-  draws the clock, signal and battery in the colour scheme's colour whatever is under them, black in
-  light mode, which read 1.7:1 on the 90 % navy in the iOS 16.4 simulator and reads 17:1 on the page
-  colour. From iOS 17 the system takes their colour from the content and draws them white on the navy
-  (12:1), and in dark mode they are white on every version, so there the fade stays navy. The gate
-  sits at the call site, and the fade itself has no version check. The fade wears the hero's colour
+  band, on which the clock measured 1.7:1 in light mode. Both pass their hero's colour on every iOS
+  version, because the screen asks for the white clock while the hero is behind it (below). From
+  2026-10-04 until that change the Plus offer passed the page colour before iOS 17 in light mode
+  (`fadeHeroTint`, gone): the system then drew the clock, signal and battery black whatever was under
+  them, which read 1.7:1 on the 90 % navy in the iOS 16.4 simulator. The fade wears the hero's colour
   while the hero reaches below the fade, and cross-fades in proportion into the page colour as the
   hero's bottom passes up through it, from the fade's end to the top of the screen
   (`StatusBarFade.heroShare`), stepping once over the shades the clock cannot be read on (below). The
@@ -336,18 +332,40 @@ first point of scroll.
   it, and it kept the clock white over a dark hero's cross-fade until the fade was nearly as light as
   0.5 luminance. In proportion all the way, the cross-fade from a dark hero into the light page took
   the clock to 2.21:1 on Profile and 2.22:1 on the Plus offer (screenshots, at 190pt and 365pt of
-  scroll; finding 2026-10-05). The share now keeps its proportion outside those shades and jumps across
+  scroll; finding 2026-10-05). The share keeps its proportion outside those shades and jumps across
   them at their middle: from the darkest share on which the white clock still reads 4.5:1, the fade at
   90 % over white content (`whiteClockLimit`), to the lightest on which the fade over the hero itself
   is light enough, luminance 0.6, that the system draws the clock black at 13:1 or more
   (`blackClockFloor`). Profile's sky-700 over the page steps between shares 0.956 and 0.210, the Plus
-  offer's navy between 0.689 and 0.130. A dark page (dark mode), and a hero too light for the white
-  clock (Profile's brand blue before iOS 17, where the clock is black), have no such shades and keep
-  the plain proportion. Measured again in light mode on the iPhone 17 (iOS 26.3), every 5–10pt:
-  Profile's clock reads 3.60:1 at worst in the screenshots (4.5:1 from the colour values), then black
-  at 16:1; the Plus offer's 3.53:1 at worst (4.5:1), then 17:1. Dark mode is unchanged, 4.63:1 or more
-  on Profile in the screenshots. The one dip left on Profile is the system's choice of a black clock
-  before the hero leaves the fade ([above](#full-bleed-hero)).
+  offer's navy between 0.689 and 0.130. A dark page (dark mode), or a hero too light for the white
+  clock, has no such shades and keeps the plain proportion. Measured again in light mode on the
+  iPhone 17 (iOS 26.3), every 5–10pt: Profile's clock reads 3.60:1 at worst in the screenshots (4.5:1
+  from the colour values), then black at 16:1; the Plus offer's 3.53:1 at worst (4.5:1), then 17:1.
+  Dark mode is unchanged, 4.63:1 or more on Profile in the screenshots.
+- **The clock is asked for white while the hero is behind it** (owner decision 2026-10-05). Until then
+  the app set no status-bar style, so the clock, signal and battery were the system's: before iOS 17
+  black in light mode whatever was under them, and from iOS 17 taken from the content, which at
+  130–150pt of Profile drew them black on the 90 % sky-700 fade, about 4.1:1
+  ([above](#full-bleed-hero)). `StatusBarStyleBridge` (`StatusBarFadeScrollView.swift`) is a
+  `UIViewControllerRepresentable` whose controller answers `preferredStatusBarStyle`: the SwiftUI
+  hosting controllers hand `childForStatusBarStyle` down to it, logged and measured on iOS 16.4, 18.6
+  and 26.3. `.toolbarColorScheme(.dark, for: .navigationBar)` was tried first, and does nothing while
+  the navigation bar is hidden, as it is on these screens. On a screen with a hero the band mounts the
+  bridge and asks for `.lightContent` while `StatusBarFade.asksForWhiteClock` holds, that is while the
+  fade at the drawn share reads 4.5:1 for the white clock over white content, and for the system's
+  default once the page colour has taken over, where the step above has made the fade light enough
+  for the black clock. Dark mode asks for white throughout. The Plus offer's states with no plan to
+  price (loading, an error, none in the market), whose navy hero does not scroll, ask for white
+  throughout. Home has no hero and no bridge, so its clock stays the system's. Measured every 5–10pt
+  across Profile (0–300pt) and the Plus offer (0–520pt), light and dark, on the iPhone 17 (iOS 26.3),
+  iPhone 16 (18.6) and iPhone 14 Pro (16.4) simulators. From the colour values, white on the hero at
+  rest reads 5.93:1 on Profile and 13.88:1 on the Plus offer, white at worst 4.50:1 at the share where
+  the fade steps across, and black 13.0:1 or more after it; in dark mode white throughout, at least
+  5.97:1 on Profile and 10.31:1 on the Plus offer. In the screenshots, which run lighter
+  ([above](#full-bleed-hero)): white 3.60:1 at worst on Profile and 3.48:1 on the Plus offer (16.4),
+  black 16.25:1 or more, and 4.58:1 or more in dark mode. On iOS 16.4 the Plus hero at rest went from a
+  black clock at 1.74:1 to white at 12.07:1, and its reduced hero from black to white at 13.28:1. On no
+  runtime is the clock black on a hero-coloured fade.
 - **What pins it.** `ContentSafeAreaBindingTests` pins the end within 2pt of each measured island,
   notch and status bar, the ten notch phones above among them, the mask at each measured clock's
   baseline (0.85 or more, 0.5 or more under a notch), the 5pt ease, the full-strength
@@ -355,11 +373,15 @@ first point of scroll.
   no step is larger than one point's share), the step over the illegible shades (for Profile and the Plus offer, every share from
   1 to 0 reads 4.5:1 for the white clock or is light enough for the black one, with one jump and never
   back; shares outside the shades and the cases with none are left alone, and the band draws the
-  stepped share), the reporting band, both hero screens' wiring, the Plus offer's iOS 16 gate, and
-  that the fade has no material, no per-version branch and no system edge. Checked on the iOS 26.3,
-  18.6 and 16.4 simulators, light and dark: Plus with its hero under the status bar and with content
-  scrolled past it, Profile's hero, and Home with a card under the clock; the end line also on the
-  iPhone 16e and the iPhone SE.
+  stepped share), the reporting band, both hero screens' wiring, the clock each drawn share asks for
+  (when white is asked it reads 4.5:1 or more over white content, otherwise the fade is light enough
+  for black; dark mode always asks for white; a light hero is left to the system), the bridge's
+  controller answering `.lightContent` or `.default`, the band handing the bridge the share it paints,
+  the reduced Plus hero mounting it, Profile's light hero top with no version check and the Plus offer
+  with no `fadeHeroTint`, and that the fade has no material, no per-version branch and no system edge.
+  Checked on the iOS 26.3, 18.6 and 16.4 simulators, light and dark: Plus with its hero under the
+  status bar and with content scrolled past it, Profile's hero, and Home with a card under the clock;
+  the end line also on the iPhone 16e and the iPhone SE.
 - **Why not iOS 26's own soft edge.** From the first to the second remark of 2026-10-03, iOS 26 drew
   the system's soft scroll edge, the one a navigation bar draws: a `safeAreaBar` stand-in 24pt tall
   with a near-clear fill, then `scrollEdgeEffectStyle(.soft, for: .top)`, because the system draws its
@@ -425,8 +447,8 @@ first point of scroll.
     them and hands them back to the theme's on pause or dispose, because Profile leaves composition
     only once Plus has entered. `CleansiaTheme` sets the bars in a `DisposableEffect(darkTheme)`, not a
     `SideEffect`: side effects run after every other effect in a frame, so it undid the screen's
-    setting. Android sets the icons itself, so it needs no iOS 16 exception: the Plus fade is navy in
-    light mode on every version.
+    setting. Android sets the icons itself, as iOS asks for them since 2026-10-05, so on both the Plus
+    fade is navy in light mode on every version.
   - **Home pads inside the scroll.** Home moved its status-bar padding inside the scroll, so the
     address bar starts below the status bar at rest and then scrolls under the fade. That leaves
     Home's `PullToRefreshBox` filling the whole screen, so its indicator pads `WindowInsets.statusBars`
@@ -615,14 +637,14 @@ draws the same sky-700.
 
 The brand primary in light mode, sky-600 `#0284C7`, reads 4.10:1 on white and 3.91:1 on the page, and
 less on the tints blue labels sit on, under the 4.5:1 that text needs (finding 2026-10-05). Since
-2026-10-05 the customer apps, like the customer web, draw blue **text** in an ink of its own, and keep
-the primary for fills, borders, icons and buttons:
+2026-10-05 both apps, like the websites, draw blue **text** in an ink of its own, links and text
+buttons included, and keep the primary for fills, borders, standalone icons and filled buttons:
 
 | Client | Text ink | Light mode | Dark mode |
 |---|---|---|---|
 | iOS | `CleansiaColors.primaryText` (Core) | sky-700 `#0369A1`, 5.93:1 on white | sky-400, the primary, unchanged |
-| Android | `primaryText()` (customer `ui/theme/BrandGradients.kt`) | sky-700 `#0369A1` | the theme's primary, sky-400, unchanged |
-| Web | `--cl-accent-text` | sky-700 | sky-300 → [Blue text on the customer site](/architecture/frontend#accent-text) |
+| Android | `ColorScheme.primaryText`, or `primaryText()` for the theme in force (`:core`, `cz.cleansia.core.ui.theme`, `BrandColors.kt`) | sky-700 `#0369A1` | the theme's primary, sky-400, unchanged |
+| Web | `--cl-accent-text` on the customer site; the shared PrimeNG preset's text, outlined and link buttons on all three sites | sky-700; a link or a text button goes to sky-800 under the pointer | sky-300 on the customer site → [Blue text on the customer site](/architecture/frontend#accent-text), [links and text buttons](/architecture/frontend#link-ink) |
 
 The two texts the finding named moved on both apps: the package details sheet's price, 4.10 to 5.93:1,
 and the schedule form's default-address badge, 3.88 to 5.62:1 on iOS (on 40 % sky-100) and 3.38 to
@@ -636,34 +658,124 @@ before and after (iOS `81ef1bafb` and `89b5361f9`, Android `302a0fa6a`). The dis
 Android, the *Current* tier pill draw their 14 % wash from the ink, so the wash is now sky-700 at
 14 %, a shade darker.
 
-**What keeps the primary**, and where it is text still reads 4.10:1 in light mode:
+**Links and text buttons take it too, in both apps** (owner decision 2026-10-05: *"go to the darker,
+but so that it still feels natural"*). After the sweep above the shared Core and `:core` components,
+every text button and the whole partner app still drew the primary. Since then, in the customer and
+the partner app alike:
 
-- **Both apps**: fills, borders, icons, progress tints and the wordmark.
-- **iOS**: the shared button components (`CleansiaTextLink`, `CleansiaOutlinedButton`,
-  `CleansiaPrimaryButton`), the schedule cards' *Edit*, *Pause* and *Resume*, and the tab bar, whose
-  native `TabView` tints a tab's icon and label together. The shared Core components the partner app
-  draws too are left as they were: the selected chip and dropdown option, the reveal panel, the section
-  header's action, the consent text's links (the booking's contract notice among them), the Live
-  Activity card and the Profile avatar's initials (`onFixedWhite`).
-- **Android**: the labels inside Material `TextButton` and `OutlinedButton` (the schedule card's
-  *Change the schedule*, *Get Cleansia Plus*, dialog buttons, *Edit review*), and the shared `:core`
-  widgets the partner app draws too: the consent checkbox's links, the selected chip and dropdown row,
-  the section header, the error state's retry, `CleansiaButton`'s text variant and HTML content links.
+- **The shared components**: a text link (`CleansiaTextLink`), a picked chip's label (its 12 % wash and
+  border keep the primary), a dropdown's picked row and its check, the section header's badge, the
+  consent text's links (the booking's contract notice among them) and an HTML legal text's links
+  (iOS `HtmlDocument.linkLightHex`; the quote rule keeps the primary). On iOS also the reveal panel's
+  *Show* and *Hide* with its chevron and lock, and the Live Activity's clock, countdown and step labels,
+  whose wordmark, bar and dots keep the primary; on Android also the error state's back link.
+- **Text and outlined buttons.** Android's text button is `:core`'s `CleansiaTextButton`, Material's
+  `TextButton` with its content in the text ink. The 54 that drew Material's default ink (dialog
+  actions, card actions, inline *Edit*s) use it, and `CleansiaTextLink` is built on it; a destructive
+  one keeps Material's `TextButton` in its own red. iOS's shell tint is the text ink, so the back
+  buttons and the toolbars' text buttons take it, and so do the schedule card's *Edit*, *Pause* and
+  *Resume*. An outlined button's label is `onSurface` by default on both platforms, and since this
+  change so is the leading icon of Android's `CleansiaOutlinedButton`, as on iOS. An outlined button
+  with a blue label, *Make this recurring* among them, draws its label and icon in the text ink inside
+  a primary outline.
+- **The selected tab**, its icon and label in one ink, in both apps on both platforms. The pill under an
+  Android tab is a fill and keeps the primary.
+- **The partner app's links**, each with its icon: the earnings card's *View details*, *View period
+  pay*, *Add photo* and the add-photo tile, the order's call and navigate chips, *Copy instruction*,
+  the location prompt's action, the job-radius card's buttons, the available-jobs sort menu, the
+  language chooser and its picked row, the pending offers card's call to action and the rejected
+  registration step's *Contact support*.
+- **The avatar's initials** on iOS are sky-700 on the white disc in both apps
+  (`CleansiaColors.primaryTextOnFixedWhite`, 5.93:1 in both modes); `onFixedWhite`, the sky-600 the
+  partner app still drew, is gone. Android's customer avatar already drew sky-700. Android's partner
+  avatar is a different design, initials in the primary on a 40 % container disc, and is unchanged.
 
-So the apps differ in three places: Android draws the selected tab's label, the Profile avatar's
-initials (sky-700 on the circle that is white in both themes) and the booking's contract-notice link
-in the text ink, where iOS keeps the primary.
+**One ink per control.** An icon inside a link or a button takes its label's ink, so no control shows
+two blues. **What keeps the primary**: filled buttons (a white label on sky-600), fills and washes,
+borders and outlines, toggles, sliders and progress bars, standalone icons, the consent checkbox's
+tick box and the wordmark. Dark mode is unchanged on both platforms, the text ink there being the
+primary. On iOS a circular spinner with no tint of its own follows the shell's tint, so it is sky-700
+in light mode now, and so are the accents of iOS 16–18's compact date picker. Blue text in the partner
+app that is neither a link nor a button, section labels, pay amounts and the selected segment among
+them, still draws the primary (reported 2026-10-05).
+
+Measured in light mode, before and after, from the token values: on white (cards, sheets, the
+dropdown, the avatar disc, a legal page) 4.10 to 5.93:1, on the page 3.91 to 5.67:1, on a picked
+chip's 12 % wash 3.52 to 5.10:1, on the contact chips' 10 % wash 3.61 to 5.23:1, on the add-photo
+tile's 8 % 3.70 to 5.37:1, on Material's dialog surface 3.34 to 4.84:1, on iOS 26's tab bar 3.58 to
+5.19:1 and on iOS 16–18's 3.89 to 5.64:1. Read off iOS 26.3 screenshots, which run lighter (below): a
+text link 3.18 to 4.43:1, a picked chip 2.83 to 3.94:1 and the selected tab 3.21 to 4.51:1. Measured
+on the Android emulator: a dialog's text button 3.34 to 4.84:1, a picked chip on the page 3.37 to
+4.89:1, the call chip 3.45 to 5.00:1 and the selected tab's icon 4.10 to 5.93:1. Each app's commit
+lists every site (iOS `688cf6160`, Android `48f0749c8`).
 
 - **iOS**: `BrandTextInkTests` checks the token at 4.5:1 or more on every ground those texts sit on,
   pins the texts whose colour comes from a helper, and scans the customer sources so that no `Text`
-  is drawn in the primary. Checked on the iPhone 17 Pro (iOS 26.3) simulator, whose screenshots run
-  lighter than the colours (sky-600 is captured as `#0097D2`, sky-700 as `#007DB1`): the price read
-  3.30 to 4.60:1 there, the badge 3.17 to 4.41:1.
-- **Android**: `PrimaryTextContrastTest` pins sky-700 at 4.5:1 or more on every light ground those
-  texts sit on and the token's two values, and reads the customer sources so that no `Text` takes the
-  bare primary or sky-600 again; 39 did before. Measured on the emulator: the package sheet's price
-  4.10 to 5.93:1, the schedule form's *DEFAULT* badge 3.37 to 4.89:1, the *MOST POPULAR* badge 3.51 to
-  5.08:1 and *Add new address* 3.91 to 5.67:1.
+  is drawn in the primary. `ComponentTextInkTests` (Core) finds no shared `Text` drawn in the primary
+  but the wordmark's fallback, and pins the icons beside a text-ink label and the chrome that keeps
+  the primary; the partner app's `TextInkTests` pins its sites. Checked on the iPhone 17 Pro (iOS 26.3)
+  simulator, whose screenshots run lighter than the colours (sky-600 is captured as `#0097D2`, sky-700
+  as `#007DB1`): the price read 3.30 to 4.60:1 there, the badge 3.17 to 4.41:1.
+- **Android**: `PrimaryTextTest` (`:core`) pins the token's two values and 4.5:1 on every ground a link
+  or a label sits on, the legal text's link and quote colours, and reads all three modules' sources:
+  no `TextButton` on Material's default ink, no outlined button whose label or icon rides it, no
+  button content and no `:core` text in the bare primary, both selected tabs in one ink, and the
+  partner links with their icons. `PrimaryTextContrastTest` (customer) pins sky-700 at 4.5:1 or more
+  on every light ground the customer's texts sit on, reads the customer sources so that no `Text`
+  takes the bare primary or sky-600 again (39 did before), and no longer exempts labels inside
+  buttons. Measured on the emulator: the package sheet's price 4.10 to 5.93:1, the schedule form's
+  *DEFAULT* badge 3.37 to 4.89:1, the *MOST POPULAR* badge 3.51 to 5.08:1 and *Add new address* 3.91
+  to 5.67:1.
+
+**Blue text on the light-blue container has an ink of its own in dark mode** (finding 2026-10-05).
+`primaryContainer` is sky-100 in light mode and sky-700 in dark, and the text ink on it reads 5.17:1 in
+light mode but 2.77:1 in dark, sky-400 on sky-700. Text drawn straight on that container takes
+`CleansiaColors.primaryTextOnContainer` (iOS Core) or `ColorScheme.primaryTextOnContainer` (Android
+`:core`): sky-700 in light mode, as the text ink, and sky-100 `#E0F2FE` in dark, 5.17:1 on sky-700. It
+takes:
+
+- in both apps, *This device* on the devices list, and the shared section header's badge, which has no
+  caller today;
+- in the customer app, the initial of an order's cleaner, and on iOS the default-address badge in the
+  address manager and in the booking's saved-address chooser;
+- in the partner app on iOS, the *Pending* invoice badge.
+
+The customer's read 2.77 to 5.17:1 in dark mode and are unchanged in light. The partner's drew the
+primary, 3.57:1 in light mode and 2.77:1 in dark, and read 5.17:1 in both. Left as they are, because
+they already clear 4.5:1: Android's default-address badges, which sit on a 12 % primary wash and not on
+the container (5.43:1 in dark), the fills washed from the container at 35–60 % (4.89–6.03:1), the
+schedule form's badge on iOS's 40 % container (4.89:1), and the web's badges (5.17:1 or more in both
+themes, [Blue text on the customer site](/architecture/frontend#accent-text)). Icons on the container,
+which need 3:1, are not part of this, and in dark mode the primary's glyphs on its discs read 2.77:1
+(reported 2026-10-05). iOS's `ComponentTextInkTests` checks the token at 4.5:1 or more on the container
+in both modes, and `BrandTextInkTests` and the partner's `TextInkTests` pin the sites; Android's
+`PrimaryTextTest` pins the token's two values and reads all three modules, so that no `Text` drawn
+straight on a `primaryContainer` fill takes the text ink or the primary (iOS `235136257`, Android
+`59c1d05f9`).
+
+**A dispute's status pill reads 4.5:1 for every status, in both modes** (finding 2026-10-05). The pill
+writes its label in the status's ink on a 14 % wash of that ink over the card, on the list row and the
+detail header alike. *Pending* took the rating star's amber-500, 1.93:1 on its own wash in light mode;
+*Resolved*, green-700 in both modes, read 4.15:1 in light and 2.57:1 in dark; *Closed* read 2.66:1 in
+dark on Android and 4.47:1 on iOS; a status the app does not know, about 1.2:1. Both apps now pick a
+light and a dark ink per status, the same pairs (iOS `DisputeStatusPresentation`, Android
+`disputeStatusInk` in `DisputeFormatters.kt`), and the wash still comes from the ink:
+
+| Status | Light mode | Dark mode |
+|---|---|---|
+| *Pending* | amber-800 `#92400E`, 5.70:1 | amber-500, as before, 5.33:1 |
+| *Under review*, *Waiting for response* | the text ink, as before, 4.83:1 | the text ink, 5.21:1 |
+| *Resolved* | green-800 `#166534`, 5.75:1 | green-400 `#4ADE80`, 6.19:1 |
+| *Closed*, and a status the app does not know | slate-600 `#475569`, 6.13:1 | slate-300 `#CBD5E1`, 6.94:1 |
+| *Escalated* | the error colour, as before, 5.09:1 | 5.79:1 |
+
+Read off the iOS 26.3 screenshots, *Pending* went from 1.76 to 4.60:1 in light mode and *Resolved*
+from 2.51 to 5.04:1 in dark; measured on the Android emulator, *Pending* went from 1.93 to 5.69:1 and
+*Closed* in dark from 2.67 to 6.92:1. iOS's `DisputesListCardTests` and Android's
+`DisputeStatusInkTest` check every status, an unknown one and none at 4.5:1 or more on their wash over
+the card in both modes (iOS `96a1ea10e`, Android `a6b1b9942`). The web's pills already read 4.5:1 or
+more: the customer's 4.79:1 or more in both themes, the admin's shared status badge 4.51:1 at its
+lowest, the warning tone.
 
 ## Every map is quiet, with one Cleansia pin {#maps}
 

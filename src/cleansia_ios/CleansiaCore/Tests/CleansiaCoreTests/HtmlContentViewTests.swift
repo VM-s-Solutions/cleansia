@@ -20,6 +20,19 @@ final class HtmlContentViewTests: XCTestCase {
         XCTAssertTrue(document.contains(HtmlDocument.accentDarkHex))
     }
 
+    /// A link is text, so in light mode it takes the text ink (sky-700, 5.93:1 on white), not the primary
+    /// (sky-600, 4.10:1), which keeps the quote rule; dark mode draws both in sky-400 (owner decision
+    /// 2026-10-05).
+    func testALinkTakesTheTextInkAndTheQuoteRuleThePrimary() {
+        let document = HtmlDocument.wrap("<p>x</p>")
+
+        XCTAssertEqual(HtmlDocument.linkLightHex, "#0369A1")
+        XCTAssertTrue(document.contains("a { color: \(HtmlDocument.linkLightHex); }"))
+        XCTAssertTrue(document.contains("border-left: 3px solid \(HtmlDocument.accentLightHex);"))
+        XCTAssertTrue(document.contains("a { color: \(HtmlDocument.accentDarkHex); }"))
+        XCTAssertFalse(document.contains("a { color: \(HtmlDocument.accentLightHex); }"))
+    }
+
     func testTheWrapperAddsNoScript() {
         XCTAssertFalse(HtmlDocument.wrap("<p>x</p>").lowercased().contains("<script"))
     }

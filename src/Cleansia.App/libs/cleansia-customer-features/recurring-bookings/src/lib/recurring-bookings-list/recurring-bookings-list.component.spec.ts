@@ -257,3 +257,20 @@ describe('RecurringBookingsListComponent — the Plus badge on the paywall', () 
     expect(badge).toContain('color: var(--cl-surface);');
   });
 });
+
+// jsdom loads no stylesheet, so this reads the card's rule (an input of this test target). An opacity
+// on the paused card faded every line of it, the text with its ground: 2.8–3.5:1 in light mode.
+describe('RecurringBookingsListComponent — a paused schedule', () => {
+  it('marks the card with its edge, not by fading it', () => {
+    const scss = readFileSync(
+      join(__dirname, '../../../../../shared/assets/src/styles/pages/cleansia-customer/_recurring-bookings.scss'),
+      'utf8',
+    );
+    const card = scss.match(/^\.cl-rec__card \{[\s\S]*?^\}/m)?.[0] ?? '';
+    const paused = card.match(/&--paused \{([^}]*)\}/)?.[1] ?? '';
+
+    expect(paused).toContain('border: 1px dashed var(--cl-field-border);');
+    expect(paused).toContain('box-shadow: none;');
+    expect(paused).not.toMatch(/opacity/);
+  });
+});

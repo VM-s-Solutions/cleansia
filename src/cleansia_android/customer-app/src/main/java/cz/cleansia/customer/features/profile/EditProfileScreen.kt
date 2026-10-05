@@ -43,7 +43,6 @@ import androidx.compose.material3.LocalTextStyle
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.rememberDatePickerState
@@ -67,12 +66,13 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import cz.cleansia.core.ui.components.CleansiaTextButton
+import cz.cleansia.core.ui.theme.primaryText
 import cz.cleansia.customer.R
 import cz.cleansia.customer.core.user.CurrentUser
 import cz.cleansia.core.ui.components.CleansiaPrimaryButton
 import cz.cleansia.customer.ui.theme.CleansiaTheme
 import cz.cleansia.core.ui.theme.Poppins
-import cz.cleansia.customer.ui.theme.primaryText
 
 /**
  * Wolt/Bolt-style edit profile:
@@ -343,7 +343,7 @@ private fun AvatarPreview(
             title = { Text(stringResource(R.string.profile_avatar_picker_unavailable_title)) },
             text = { Text(stringResource(R.string.profile_avatar_picker_unavailable_message)) },
             confirmButton = {
-                TextButton(onClick = { pickerUnavailable = false }) { Text(stringResource(R.string.common_ok)) }
+                CleansiaTextButton(onClick = { pickerUnavailable = false }) { Text(stringResource(R.string.common_ok)) }
             },
         )
     }
@@ -509,7 +509,7 @@ private fun DateField(
         DatePickerDialog(
             onDismissRequest = { showPicker = false },
             confirmButton = {
-                TextButton(onClick = {
+                CleansiaTextButton(onClick = {
                     datePickerState.selectedDateMillis?.let { millis ->
                         onValueChange(formatDateDMY(millis))
                     }
@@ -517,7 +517,7 @@ private fun DateField(
                 }) { Text(stringResource(R.string.common_save)) }
             },
             dismissButton = {
-                TextButton(onClick = { showPicker = false }) {
+                CleansiaTextButton(onClick = { showPicker = false }) {
                     Text(stringResource(R.string.common_cancel))
                 }
             },

@@ -75,7 +75,7 @@ struct ProfileAvatarField: View {
                 disc
                 Text(L10n.Profile.photoAdd)
                     .font(CleansiaTypography.labelLarge)
-                    .foregroundColor(CleansiaColors.primary)
+                    .foregroundColor(CleansiaColors.primaryText)
                 Spacer(minLength: 0)
             }
             .padding(Spacing.m)

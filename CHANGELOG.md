@@ -183,10 +183,10 @@ need backfilling.
   points with no visible edge. On iOS that line is the bottom of the Dynamic Island or the notch, or
   of the status bar on a phone with a Home button, the same on every iOS version; on Android it is the
   bottom of the camera cut-out (on Android 9 to 11, of the rectangle the phone reports around it), or
-  of the status bar on a phone without one or on Android 8. On Android the clock and
-  icons turn white over the Plus and Profile headers while the header is under them. On iOS 16 in
-  light mode, where the clock is always black, the Plus offer's fade is the page colour instead. With
-  Reduce Transparency on, the iOS fade is fully opaque. Until 2026-10-05 the iOS fade reached past the
+  of the status bar on a phone without one or on Android 8. The clock and icons turn white over the
+  Plus and Profile headers while the header is under them, on Android and, since 2026-10-05, on iOS,
+  where iOS 16 in light mode used to draw the clock black and so the Plus offer's fade was the page
+  colour there. With Reduce Transparency on, the iOS fade is fully opaque. Until 2026-10-05 the iOS fade reached past the
   island, to about 21 points below it on an iPhone 17 Pro, and Android covered the status bar and a
   strip below it with a solid band of the page colour, which read as a white band over the Plus and
   Profile headers. Until 2026-10-04 iOS drew a light blur under a see-through veil of the page
@@ -1076,12 +1076,15 @@ need backfilling.
   clock, signal and battery were faint on the light blue top of Profile's header (white on iOS, dark
   grey on Android), below the contrast small text needs. Profile's header now starts a shade darker
   blue, at rest and under the fade as the page scrolls, and on Android the clock turns white over it.
-  The blue everywhere else in the apps is unchanged, and so is dark mode. On iOS 16 the clock is black
-  in light mode, and it reads on the old blue, so there the header keeps it. While the header of
+  The blue everywhere else in the apps is unchanged, and so is dark mode. While the header of
   Profile or of the Plus offer scrolls out from under the clock, the colour behind the clock no longer
   passes through the in-between blues it could not be read on: it moves past them in one step, and the
-  clock turns from white to dark at that moment. (Finding 2026-10-04; the header scrolling away,
-  finding 2026-10-05.)
+  clock turns from white to dark at that moment. On iOS the clock is now kept white while either
+  header is behind it, on every version. Until 2026-10-05 the system chose: it sometimes drew the clock
+  black over Profile's darker blue as the page scrolled, and on iOS 16 in light mode it was black
+  whatever was under it, faint on the Plus offer's navy header, so there Profile's header kept the old
+  blue; it now starts on the darker blue on iOS 16 too. (Finding 2026-10-04; the header scrolling
+  away, finding 2026-10-05; the clock kept white, owner decision 2026-10-05.)
 
 - **Customer web — what you pick, and your initials, read in dark mode.** In dark mode a picked
   service or package on the schedule form showed its name in white on light blue, hard to read, with a
@@ -1089,10 +1092,13 @@ need backfilling.
   that price was faint too. The picked how-often, day, rooms and bathrooms choices, and the Plus badge
   shown to a customer without Plus on the schedules page, were white on light blue in dark mode as
   well, and so were the picked reason on a dispute, the picked theme on Profile, the picked filter on
-  Rewards and on Orders, and the initials on Profile, on an order's cleaner and in the top bar. All of
-  them are now dark on the light blue in dark mode and white on the dark blue in light mode. Hovering
-  over a picked service or package no longer turns its border pale. (Finding 2026-10-04; the choices
-  and the badge, review 2026-10-05; the other pages, finding 2026-10-05.)
+  Rewards and on Orders, and the initials on Profile, on an order's cleaner, in the top bar and in the
+  account menu, and the *Your plan* flag on the Plus page; those last two were faint in light mode
+  too. All of them are now dark on the light blue in dark mode and white on the dark blue in light
+  mode. Hovering
+  over a picked service or package, a picked reason on a dispute or a picked filter on Rewards or
+  Orders no longer turns its border pale. (Finding 2026-10-04; the choices and the badge, review
+  2026-10-05; the other pages, finding 2026-10-05.)
 
 - **Customer Android and iOS — a service's price and description are easier to read.** In booking's
   list of services, the blue *from* price was faint in light mode, most of all on a row your package
@@ -1101,13 +1107,40 @@ need backfilling.
   on Android in the schedule form's services as well. The brand blue of the rows' fills, borders and
   ticks is unchanged, and the web already read clearly. (Finding 2026-10-04.)
 
-- **Customer web, Android and iOS — blue text is easier to read.** Prices, totals, links and small
-  labels in the brand blue were faint in light mode, under the contrast small text needs: among them
-  the price in a package's details, the badge on the schedule form, the package and *from* prices on
-  the website, and on the apps the totals, *See all*, *Retry*, the referral code and the badges. Blue
-  text is now a deeper blue in light mode on every client, and on the website a lighter blue in dark
-  mode too. The brand blue of buttons, fills, borders and icons is unchanged, and on the apps some
-  shared buttons and controls keep it. (Finding 2026-10-05.)
+- **Customer and cleaner, web, Android and iOS — blue text, links and text buttons are easier to
+  read.** Prices, totals, links and small labels in the brand blue were faint in light mode, under the
+  contrast small text needs: among them the price in a package's details, the badge on the schedule
+  form, the package and *from* prices on the website, and on the apps the totals, *See all*, *Retry*,
+  the referral code and the badges. Blue text is now a deeper blue in light mode on every client, and
+  on the website a lighter blue in dark mode too. Links and text buttons followed, each control in one
+  blue: on every screen of both apps, the cleaner's included, a link, the label of a text or outlined
+  button and the icon beside it, a picked chip, a dropdown's picked row, the selected tab and the
+  links in consent and legal texts; on the customer, cleaner and admin websites a link, the cookie
+  notice's among them, and the label of a text, outlined or link button and the icon beside it, a
+  shade darker again under the pointer. On the cleaner and admin websites those buttons were a
+  lighter blue still, the cleaner's *Contact support* on a rejected registration among them. Filled
+  buttons, fills, borders and icons that stand alone keep the brand blue, and dark mode is unchanged,
+  except the cookie notice's link on the customer website, which now reads clearly there too.
+  (Finding 2026-10-05; links and text buttons, owner decision 2026-10-05.)
+
+- **Customer and cleaner, Android and iOS — blue text on a light-blue badge reads in dark mode.** In
+  dark mode *This device* on the list of your devices and the initial of an order's cleaner, and on
+  iOS the *Default* badge on a saved address, were light blue on a darker blue, 2.8:1. They are now a
+  very pale blue there, 5.2:1. In the cleaner apps *This device*, and on iOS the *Pending* badge on an
+  invoice, were faint in light mode too, 3.6:1, and now read 5.2:1 in both modes. Light mode is
+  otherwise unchanged, and the website already read clearly. (Finding 2026-10-05.)
+
+- **Customer Android and iOS — a dispute's status is easy to read.** The *Pending* label on a
+  dispute was amber on a pale amber wash, 1.9:1 in light mode, under the contrast small text needs;
+  *Resolved* was faint in dark mode, 2.6:1, and so was *Closed* on Android, 2.7:1. Every status now
+  reads 4.5:1 or more in both modes, in a deeper amber, green or grey in light mode and a lighter green
+  or grey in dark. The website already read clearly. (Finding 2026-10-05.)
+
+- **Customer web — a paused schedule's card reads as clearly as an active one.** On *Recurring
+  cleanings* a paused schedule's card faded everything on it, its title, price, *Edit* and the line
+  about a service no longer offered among them, to 2.8–3.5:1 in light mode. It now keeps its text at
+  full strength and steps back with a dashed edge and no shadow, beside its *Paused* label. The apps
+  never faded it. (Finding 2026-10-05.)
 
 - **Customer — a service or package that is no longer offered can no longer be booked.** A service or
   package the company had taken off its list was hidden everywhere, but an out-of-date app, or *Order
@@ -1118,24 +1151,33 @@ need backfilling.
   before the service was taken off keeps it, and its visits are confirmed and paid as before; nothing
   shows an error for it. Its card on the list of schedules now says *Includes a service no longer
   offered — edit to update*, on the website, Android and iOS alike, and on the website that card
-  shows no price. Opening it to edit removes the service, now on Android as on iOS and the website,
+  shows no price. On the apps a card that offers no *Edit*, because the customer's Plus has lapsed
+  (on Android also while its benefits are paused), says only *Includes a service no longer offered*. Opening it to edit removes the service, now on Android as on iOS and the website,
   and says *Some of this schedule's choices are no longer offered and were removed*. It used to say
   they were not offered at this address, though nobody had changed the address, and on the website the
-  service was usually not removed at all. A service that is part of a package is still done with the
+  service was usually not removed at all. When you do move the schedule to an address in another
+  country, what that country does not offer is removed with *Some of your selection is not offered
+  at this address*, now on the website too when you move it before the schedule's own list has
+  loaded, where it said *no longer offered* until 2026-10-05. A service that is part of a package is still done with the
   package. **API consumer:** `QuoteOrder`, `QuotePlusSavings`,
   `CreateOrder` and `CreateRecurringBooking` refuse a deactivated id, and `UpdateRecurringBooking` a
   deactivated or unknown id the edit adds to the stored schedule, with `order.selected_services.invalid`
   / `order.selected_package.invalid`; an id the schedule already holds passes. (Finding 2026-10-04;
   the schedule's card and edit, review 2026-10-05; the card's line, the edit's notice and the edit's
-  check, owner ruling 2026-10-05.)
+  check, owner ruling 2026-10-05; the card without *Edit*, owner decision 2026-10-05.)
 
 - **Admin — a package can no longer take in a service that is no longer offered.** A service taken
   off the list could still be put into a new package, or added to one, and every booking of that
   package then included it. Creating a package with such a service, or adding one to a package, is now
   refused with *Service not found*. A service a package already includes stays in it when you edit the
-  package, as before. The package form still lists every service, those taken off the list among
-  them, so the refusal comes when you save. **API consumer:** `CreatePackage` refuses a deactivated
-  service, and `UpdatePackage` one the edit adds, with `service.not_found`. (Finding 2026-10-05.)
+  package, as before. The package form now marks a service taken off the list *(Inactive)*, in the
+  list of services and among the chosen ones, and does not let you pick it, with a note under the
+  list saying why; one the package already includes stays, marked, and can be removed and put back.
+  The list of packages marks a package that includes one *Includes an inactive service*. Until then
+  the form listed every service unmarked, and the refusal came only when you saved. **API
+  consumer:** `CreatePackage` refuses a deactivated service, and `UpdatePackage` one the edit adds,
+  with `service.not_found`; the admin list of packages now fills each package's `includedServices`,
+  which it always returned empty. (Finding 2026-10-05; the marks, owner decision 2026-10-05.)
 
 - **Customer web — deleting your account is confirmed on a red button.** The question before your
   account is deleted offered the same blue confirm button as any harmless question. It now shows the

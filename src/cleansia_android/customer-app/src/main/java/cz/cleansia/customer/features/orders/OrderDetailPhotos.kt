@@ -30,9 +30,9 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
+import cz.cleansia.core.ui.theme.primaryText
 import cz.cleansia.customer.R
 import cz.cleansia.customer.core.orders.OrderPhotosResponse
-import cz.cleansia.customer.ui.theme.primaryText
 
 /* ── Photos (Wave 2 Phase 5) ── */
 
@@ -74,7 +74,7 @@ internal fun PhotosSection(
                 Icon(
                     Icons.AutoMirrored.Outlined.ArrowForward,
                     contentDescription = null,
-                    tint = MaterialTheme.colorScheme.primary,
+                    tint = primaryText(),
                     modifier = Modifier.size(16.dp),
                 )
             }

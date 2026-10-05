@@ -58,7 +58,7 @@ final class ContentSafeAreaBindingTests: XCTestCase {
     /// the hero's top colour and mark the hero; Home's top is the page, so its fade is the page colour.
     func testTheHeroScreensFadeInTheirHerosColour() throws {
         let plus = try compactSource("CleansiaCustomer/Sources/Features/Membership/SubscribePlusScreen.swift")
-        XCTAssertTrue(plus.contains("StatusBarFadeScrollView(heroTint:fadeHeroTint){"))
+        XCTAssertTrue(plus.contains("StatusBarFadeScrollView(heroTint:MembershipPalette.sky950){"))
         XCTAssertTrue(plus.contains("onBack:onBack).statusBarFadeHero()"), "the Plus hero is not marked")
         let profile = try compactSource("CleansiaCustomer/Sources/Features/Profile/ProfileTab.swift")
         XCTAssertTrue(profile.contains("StatusBarFadeScrollView(heroTint:Self.heroTop(colorScheme)){"))
@@ -72,28 +72,30 @@ final class ContentSafeAreaBindingTests: XCTestCase {
         )
     }
 
-    /// The app sets no status-bar style, so before iOS 17 the system draws the clock black in light mode
-    /// whatever is under it, and black on the 90 % navy band measured 1.7:1 on iOS 16.4. The Plus fade
-    /// wears the navy only where the glyphs read on it — from iOS 17, where they follow the content, and
-    /// in dark mode, where they are white — and the page colour on iOS 16 in light mode.
-    func testThePlusFadeWearsTheNavyOnlyWhereTheClockReadsOnIt() throws {
+    /// The Plus fade wears the navy on every version and in both schemes: the screen asks for the white
+    /// clock while the fade is dark enough for it, so iOS 16's black light-mode clock (1.7:1 on the 90 %
+    /// navy band) no longer sits on it, and the page-colour exception it needed is gone (owner decision
+    /// 2026-10-05).
+    func testThePlusFadeWearsTheNavyOnEveryVersion() throws {
         let plus = try compactSource("CleansiaCustomer/Sources/Features/Membership/SubscribePlusScreen.swift")
-        XCTAssertTrue(plus.contains("@Environment(\\.colorScheme)privatevarcolorScheme"))
+        XCTAssertFalse(plus.contains("fadeHeroTint"))
+        XCTAssertFalse(plus.contains("#available(iOS17"))
+        // With no plan to price, the navy hero does not scroll and is always under the status bar.
         XCTAssertTrue(plus.contains(
-            "privatevarfadeHeroTint:Color{if#available(iOS17,*){returnMembershipPalette.sky950}"
-                + "returncolorScheme==.dark?MembershipPalette.sky950:CleansiaColors.background}"
-        ), "the Plus fade wears the navy under iOS 16's black light-mode clock")
+            ".background(MembershipPalette.heroGradient.ignoresSafeArea(.container,edges:.top))"
+                + ".background(StatusBarStyleBridge(lightContent:true))"
+        ), "the reduced offer leaves iOS 16's black light-mode clock on the navy")
     }
 
     /// The status bar sits on Profile's hero at rest and on the fade in the hero's top colour once scrolled,
-    /// so the clock must read on that colour (finding 2026-10-04: white on the brand blue's sky-600, 4.1:1).
-    /// From iOS 17 the clock is white over the hero in both schemes; before it, black in light mode, which
-    /// keeps the brand blue (a darker top would drop it to 3.5:1). The shared brand blue is not changed.
+    /// where the screen asks for the white clock, so it must read on that colour (finding 2026-10-04: white
+    /// on the brand blue's sky-600, 4.1:1): sky-700 in light mode on every version, the brand blue's sky-800
+    /// in dark. The shared brand blue is not changed.
     func testTheClockReadsOnProfilesHeroAtLeastAt4_5() throws {
         let white = SIMD3<Double>(1, 1, 1)
         for style in [UIUserInterfaceStyle.light, .dark] {
             let top = rgb(ProfileTab.heroTop(style == .dark ? .dark : .light), style)
-            XCTAssertGreaterThanOrEqual(contrast(white, top), 4.5, "\(style) at rest (iOS 17+ in light)")
+            XCTAssertGreaterThanOrEqual(contrast(white, top), 4.5, "\(style) at rest")
             // Scrolled, the fade wears the top colour at 90 % over whatever passes under it — at worst the
             // white avatar or stats card.
             let fade = top * StatusBarFade.opacity + white * (1 - StatusBarFade.opacity)
@@ -101,12 +103,68 @@ final class ContentSafeAreaBindingTests: XCTestCase {
         }
         let brandTop = try XCTUnwrap(BrandGradient.blue.stops.first)
         XCTAssertEqual(brandTop.light, 0x0284C7, "the shared brand blue changed")
-        XCTAssertGreaterThanOrEqual(contrast(SIMD3<Double>(0, 0, 0), hex(brandTop.light)), 4.5, "light, iOS 16")
-        XCTAssertGreaterThanOrEqual(contrast(white, hex(brandTop.dark)), 4.5, "dark, iOS 16")
+        let lightTop = rgb(ProfileTab.heroTop(.light), .light), sky700 = hex(0x0369A1)
+        for channel in 0 ..< 3 {
+            XCTAssertEqual(lightTop[channel], sky700[channel], accuracy: 0.002, "the light hero's top is not sky-700")
+        }
         let profile = try compactSource("CleansiaCustomer/Sources/Features/Profile/ProfileTab.swift")
-        XCTAssertTrue(profile.contains(
-            "if#available(iOS17,*),scheme==.light{returnheroTopLight}returnBrandGradient.blue.colors[0]"
-        ), "before iOS 17 the black light-mode clock would sit on the darker top")
+        XCTAssertFalse(profile.contains("#available(iOS17"), "the hero's top differs by version again")
+    }
+
+    /// While the fade wears a dark hero's colour the screen asks for the white clock; once the page colour has
+    /// taken over it leaves the choice to the system, which draws it black on the light page and white on the
+    /// dark one (owner decision 2026-10-05: from iOS 17 the system drew it black on Profile's 90 % sky-700 at
+    /// 4.1:1 when white content was under it). On every share the clock it gets reads 4.5:1 or more: white
+    /// over white content when asked for, or a fade over the hero light enough for black.
+    func testTheWhiteClockIsAskedForWhileTheFadeIsDarkEnoughForIt() {
+        let white = SIMD3<Double>(1, 1, 1)
+        for (name, tint) in [("Profile", ProfileTab.heroTop(.light)), ("Plus", MembershipPalette.sky950)] {
+            let hero = StatusBarFade.rgb(tint, .light)
+            let page = StatusBarFade.rgb(CleansiaColors.background, .light)
+            XCTAssertTrue(StatusBarFade.asksForWhiteClock(share: 1, hero: hero, page: page), "\(name) at rest")
+            XCTAssertFalse(StatusBarFade.asksForWhiteClock(share: 0, hero: hero, page: page), "\(name) scrolled past")
+            for step in 0 ... 1000 {
+                let share = StatusBarFade.legibleShare(Double(step) / 1000, hero: hero, page: page)
+                if StatusBarFade.asksForWhiteClock(share: share, hero: hero, page: page) {
+                    let fade = StatusBarFade.fade(share, hero: hero, page: page, over: white)
+                    XCTAssertGreaterThanOrEqual(contrast(white, fade), 4.5, "\(name) at \(share)")
+                } else {
+                    let overHero = StatusBarFade.fade(share, hero: hero, page: page, over: hero)
+                    XCTAssertGreaterThanOrEqual(
+                        StatusBarFade.luminance(overHero), StatusBarFade.blackClockFloor, "\(name) at \(share)"
+                    )
+                }
+            }
+        }
+        for tint in [ProfileTab.heroTop(.dark), MembershipPalette.sky950] {
+            let hero = StatusBarFade.rgb(tint, .dark)
+            let page = StatusBarFade.rgb(CleansiaColors.background, .dark)
+            for step in 0 ... 100 {
+                XCTAssertTrue(StatusBarFade.asksForWhiteClock(share: Double(step) / 100, hero: hero, page: page))
+            }
+        }
+        // A hero too light for the white clock is left to the system.
+        let brandBlue = StatusBarFade.rgb(BrandGradient.blue.colors[0], .light)
+        let page = StatusBarFade.rgb(CleansiaColors.background, .light)
+        XCTAssertFalse(StatusBarFade.asksForWhiteClock(share: 1, hero: brandBlue, page: page))
+    }
+
+    /// The bridge asks UIKit for the white clock when told to and for the system's choice otherwise, and the
+    /// fade hands it the same drawn share it paints.
+    @MainActor
+    func testTheBridgeAsksForTheStyleTheFadeComputes() throws {
+        let controller = StatusBarStyleBridge.Controller()
+        XCTAssertEqual(controller.preferredStatusBarStyle, .default)
+        controller.lightContent = true
+        XCTAssertEqual(controller.preferredStatusBarStyle, .lightContent)
+        controller.lightContent = false
+        XCTAssertEqual(controller.preferredStatusBarStyle, .default)
+
+        let fade = try compactSource("CleansiaCustomer/Sources/Components/StatusBarFadeScrollView.swift")
+        XCTAssertTrue(fade.contains(
+            "StatusBarStyleBridge(lightContent:StatusBarFade.asksForWhiteClock(share:share,hero:hero,page:page))"
+        ))
+        XCTAssertTrue(fade.contains("heroTint.opacity(share)"))
     }
 
     /// The hero's colour covers the fade while the hero reaches below it and gives way to the page
@@ -170,7 +228,7 @@ final class ContentSafeAreaBindingTests: XCTestCase {
     }
 
     /// No band to step over: a dark page (dark mode), where the clock is white on every shade, and a hero
-    /// too light for the white clock (the brand blue Profile keeps before iOS 17, where the clock is black).
+    /// too light for the white clock (the brand blue), where it is the system's black.
     func testTheShareKeepsItsProportionWhereNoShadeIsIllegible() {
         let cases: [(name: String, scheme: ColorScheme)] = [("Profile", .dark), ("Plus", .dark), ("brand blue", .light)]
         let tints = [ProfileTab.heroTop(.dark), MembershipPalette.sky950, BrandGradient.blue.colors[0]]
@@ -325,10 +383,11 @@ final class ContentSafeAreaBindingTests: XCTestCase {
         ))
         XCTAssertTrue(fade.contains(".frame(height:height).offset(y:-top)"), "the fade is not as tall as its rule")
         XCTAssertTrue(fade.contains(
-            "CleansiaColors.backgroundifletheroTint{heroTint.opacity(StatusBarFade.legibleShare("
-                + "StatusBarFade.heroShare(heroBottom:heroBottom,safeTop:top,height:height),"
-                + "hero:StatusBarFade.rgb(heroTint,colorScheme),"
-                + "page:StatusBarFade.rgb(CleansiaColors.background,colorScheme)))}"
+            "letpage=StatusBarFade.rgb(CleansiaColors.background,colorScheme)"
+                + "lethero=heroTint.map{StatusBarFade.rgb($0,colorScheme)}"
+                + "letshare=hero.map{StatusBarFade.legibleShare("
+                + "StatusBarFade.heroShare(heroBottom:heroBottom,safeTop:top,height:height),hero:$0,page:page)}??0"
+                + "ZStack{CleansiaColors.backgroundifletheroTint{heroTint.opacity(share)}}"
         ))
         XCTAssertTrue(fade.contains(".allowsHitTesting(false).accessibilityHidden(true)"))
     }

@@ -572,14 +572,20 @@
   color: var(--cl-heading);
   cursor: pointer;
 
+  // A step darker under the pointer, as a text link goes: Sky800, where the accent was Sky600 and
+  // lighter than the rest ink (4.1). After dark the rest is Sky300 and the step the accent, Sky400.
   &:hover {
-    color: var(--cl-accent);
+    color: $primary-darker;
   }
 
   &:focus-visible {
     outline: 2px solid var(--cl-accent);
     outline-offset: 3px;
   }
+}
+
+:root.dark-mode .cl-rec__add-address:hover {
+  color: var(--cl-accent);
 }
 
 .cl-rec__new-address {

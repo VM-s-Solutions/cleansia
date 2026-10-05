@@ -45,4 +45,19 @@ export const CleansiaPreset = definePreset(Aura, {
       },
     },
   },
+  components: {
+    button: {
+      colorScheme: {
+        // A text, outlined or link button is blue TEXT on a light ground, so it takes the text ink,
+        // Sky700 (5.9 on white), not the light theme's primary, Sky500 (2.8). Under the pointer it
+        // goes a step darker, Sky800: the link's own token here, the other two in
+        // cleansia-button.component.scss. Filled buttons keep the primary; dark keeps its light blue.
+        light: {
+          text: { primary: { color: '{primary.700}' } },
+          outlined: { primary: { color: '{primary.700}' } },
+          link: { color: '{primary.700}', hoverColor: '{primary.800}', activeColor: '{primary.800}' },
+        },
+      },
+    },
+  },
 });

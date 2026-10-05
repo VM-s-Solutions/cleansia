@@ -7,10 +7,11 @@
   min-height: auto;
 
   a {
-    color: var(--cleansia-primary);
+    color: var(--cleansia-primary-700);
     transition: var(--default-transition);
 
     &:hover {
+      color: var(--cleansia-primary-800);
       font-weight: 500;
     }
   }

@@ -198,6 +198,12 @@
   // Lines up with the details above it: the rejection reason, then what to do about it.
   &__category-action {
     padding: 0.5rem 0 0 1.5rem;
+
+    // The raised button gets a face of its own: the text ink reads 4.4 on the rejected row's pink
+    // and 5.9 on white.
+    .p-button {
+      background: var(--cleansia-white);
+    }
   }
 
   &__actions {

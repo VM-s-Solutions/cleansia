@@ -89,6 +89,35 @@ public class AresBusinessRegistryTests
         Assert.Equal(BusinessRegistryRecord.Unavailable, record);
     }
 
+    /// <summary>
+    /// An unavailable register refuses approval and an approved cleaner's changed IČO, so every failure that
+    /// reaches the registry, its retries already spent, is an Error: the level at which a log becomes a Sentry
+    /// event. A Warning is a breadcrumb, and an outage would refuse those writes with nobody told.
+    /// </summary>
+    [Theory]
+    [InlineData("503")]
+    [InlineData("500")]
+    [InlineData("429")]
+    [InlineData("403")]
+    [InlineData("400")]
+    [InlineData("timeout")]
+    [InlineData("connection refused")]
+    public async Task A_Register_That_Does_Not_Answer_Is_Logged_As_An_Error(string failure)
+    {
+        var handler = failure switch
+        {
+            "timeout" => Throwing(new TaskCanceledException("timed out")),
+            "connection refused" => Throwing(new HttpRequestException("connection refused")),
+            _ => Replying((HttpStatusCode)int.Parse(failure), "{}"),
+        };
+        var logger = new LevelRecordingLogger();
+
+        var record = await Registry(handler, logger: logger).LookupAsync("CZE", Ico, CancellationToken.None);
+
+        Assert.Equal(BusinessRegistryRecord.Unavailable, record);
+        Assert.Equal((LogLevel.Error, AresBusinessRegistry.UnavailableEvent.Id), Assert.Single(logger.Entries));
+    }
+
     [Fact]
     public async Task A_Reply_That_Is_Not_Json_Is_Unavailable()
     {
@@ -275,8 +304,9 @@ public class AresBusinessRegistryTests
         return services.BuildServiceProvider();
     }
 
-    private static AresBusinessRegistry Registry(StubHandler handler, AresConfig? config = null)
-        => new(new StubHttpClientFactory(handler), config ?? Config(), NullLogger<AresBusinessRegistry>.Instance);
+    private static AresBusinessRegistry Registry(
+        StubHandler handler, AresConfig? config = null, ILogger<AresBusinessRegistry>? logger = null)
+        => new(new StubHttpClientFactory(handler), config ?? Config(), logger ?? NullLogger<AresBusinessRegistry>.Instance);
 
     private static AresConfig Config(params (string Key, string Value)[] settings)
         => new(new ConfigurationBuilder()
@@ -302,6 +332,19 @@ public class AresBusinessRegistryTests
     private sealed class StubHttpClientFactory(HttpMessageHandler handler) : IHttpClientFactory
     {
         public HttpClient CreateClient(string name) => new(handler, disposeHandler: false);
+    }
+
+    private sealed class LevelRecordingLogger : ILogger<AresBusinessRegistry>
+    {
+        public List<(LogLevel Level, int EventId)> Entries { get; } = [];
+
+        public IDisposable? BeginScope<TState>(TState state) where TState : notnull => null;
+
+        public bool IsEnabled(LogLevel logLevel) => true;
+
+        public void Log<TState>(
+            LogLevel logLevel, EventId eventId, TState state, Exception? exception, Func<TState, Exception?, string> formatter)
+            => Entries.Add((logLevel, eventId.Id));
     }
 
     private sealed class CapturingLoggerProvider : ILoggerProvider

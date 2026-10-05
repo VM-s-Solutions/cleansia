@@ -221,6 +221,27 @@ final class TextInkTests: XCTestCase {
         XCTAssertLessThan(contrast(star, star * 0.12 + card * 0.88), 2, "the warning star reads on its wash after all")
     }
 
+    /// A document's status word is drawn in its tint on the card, and every status reads 4.5:1 or more there in
+    /// both modes (finding 2026-10-05: "Pending" in the warning star read 2.15:1 on white, "Approved" in
+    /// `successText` 2.92:1 on the dark card).
+    func testEveryDocumentStatusReadsOnTheCardInBothModes() {
+        let statuses: [DocumentStatus?] = DocumentStatus.allCases + [nil]
+        for style in [UIUserInterfaceStyle.light, .dark] {
+            for status in statuses {
+                XCTAssertGreaterThanOrEqual(
+                    contrast(rgb(DocumentPresentation.statusTint(status), style), rgb(CleansiaColors.surface, style)),
+                    4.5,
+                    "\(String(describing: status)), style \(style.rawValue)"
+                )
+            }
+        }
+        XCTAssertLessThan(
+            contrast(rgb(CleansiaColors.successText, .dark), rgb(CleansiaColors.surface, .dark)),
+            3,
+            "successText reads on the dark card after all"
+        )
+    }
+
     private var featureSources: URL {
         URL(fileURLWithPath: #filePath)
             .deletingLastPathComponent()

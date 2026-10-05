@@ -61,13 +61,13 @@ enum DocumentPresentation {
         }
     }
 
-    /// Matches `OrderStatusPill.tint` rather than Android's `StatusBadge`:
-    /// `CleansiaColors` has no `tertiary`, and warningStar/successText/error is
-    /// already the partner app's pending/good/bad triad.
+    /// The partner app's pending/good/bad triad rather than Android's `StatusBadge`: `CleansiaColors` has no
+    /// `tertiary`. Drawn as text on the card, so each takes the ink that reads 4.5:1 or more there in both
+    /// modes: the warning star read 2.15:1 on white and `successText` 2.92:1 on the dark card.
     static func statusTint(_ status: DocumentStatus?) -> Color {
         switch status {
-        case ._1: CleansiaColors.warningStar
-        case ._2: CleansiaColors.successText
+        case ._1: CleansiaColors.pendingInk
+        case ._2: CleansiaColors.successInk
         case ._3: CleansiaColors.error
         case .none: CleansiaColors.onSurfaceVariant
         }

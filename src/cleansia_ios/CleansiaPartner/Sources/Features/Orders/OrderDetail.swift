@@ -153,6 +153,7 @@ struct OrderDetailPayment: Equatable {
     let tierDiscount: Double?
     let membershipDiscount: Double?
     let promoDiscount: Double?
+    let creditApplied: Double?
     let typeCode: Int?
     let statusCode: Int?
 
@@ -167,6 +168,10 @@ struct OrderDetailPayment: Equatable {
 
     var isSettled: Bool {
         statusCode == PaymentStatusCode.paid.rawValue
+    }
+
+    var isPending: Bool {
+        statusCode == PaymentStatusCode.pending.rawValue
     }
 }
 
@@ -248,6 +253,13 @@ extension OrderDetail {
         guard let total = payment.total, total > 0 else { return nil }
         return OrdersFormat.money(total, symbol: currencySymbol)
     }
+
+    /// What the report makes the customer owe: the price less any credit applied. A missing figure names no
+    /// amount rather than a guessed one.
+    var cashNotPaidOwedLabel: String? {
+        guard let total = payment.total, let credit = payment.creditApplied, total - credit > 0 else { return nil }
+        return OrdersFormat.money(total - credit, symbol: currencySymbol)
+    }
 }
 
 extension OrderDetail {
@@ -304,6 +316,7 @@ extension OrderDetail {
             tierDiscount: item.tierDiscountAmount,
             membershipDiscount: item.membershipDiscountAmount,
             promoDiscount: item.promoDiscountAmount,
+            creditApplied: item.creditAppliedAmount,
             typeCode: item.paymentType?.value,
             statusCode: item.paymentStatus?.value
         )

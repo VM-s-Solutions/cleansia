@@ -14,6 +14,9 @@ struct StickyActionFooter: View {
     /// Raised instead of confirming inline: the screen root (`OrderDetailContent`) owns the cash-collected
     /// confirmation, a native `.alert`, so the footer only asks for it.
     var onCashConfirmRequested: () -> Void = {}
+    /// Shown under the cash collection only; its confirmation is the screen root's too.
+    var offersCashNotPaid = false
+    var onCashNotPaidRequested: () -> Void = {}
     /// The reservation held for this cleaner on this order. Present only where a hold exists, which is
     /// why the screen degrades to an ordinary job in the short-lead band the push also reaches.
     var preferredOffer: PendingOfferItem?
@@ -66,14 +69,24 @@ struct StickyActionFooter: View {
                 )
             }
         case .collectCash:
-            // The only irreversible money action in the app: the server rejects a
-            // second call and there is no un-collect endpoint, so it asks first.
+            // The two irreversible money answers in the app: the server rejects a second
+            // call and neither can be taken back from here, so each asks first.
             footer {
-                CleansiaPrimaryButton(
-                    L10n.Orders.markCashCollected,
-                    loading: isBusy(.markCashCollected),
-                    action: onCashConfirmRequested
-                )
+                VStack(spacing: Spacing.xs) {
+                    CleansiaPrimaryButton(
+                        L10n.Orders.markCashCollected,
+                        loading: isBusy(.markCashCollected),
+                        enabled: inFlightAction == nil,
+                        action: onCashConfirmRequested
+                    )
+                    if offersCashNotPaid {
+                        CashNotPaidLink(
+                            isReporting: isBusy(.reportCashNotPaid),
+                            enabled: inFlightAction == nil,
+                            onTap: onCashNotPaidRequested
+                        )
+                    }
+                }
             }
         case .complete:
             footer {
@@ -98,6 +111,23 @@ struct StickyActionFooter: View {
         .padding(Spacing.m)
         .frame(maxWidth: .infinity)
         .background(CleansiaColors.surface)
+    }
+}
+
+private struct CashNotPaidLink: View {
+    let isReporting: Bool
+    let enabled: Bool
+    let onTap: () -> Void
+
+    var body: some View {
+        if isReporting {
+            ProgressView()
+                .progressViewStyle(.circular)
+                .padding(Spacing.xxs)
+        } else {
+            CleansiaTextLink(L10n.Orders.cashNotPaidAction, action: onTap)
+                .disabled(!enabled)
+        }
     }
 }
 

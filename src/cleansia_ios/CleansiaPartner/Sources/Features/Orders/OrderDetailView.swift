@@ -110,6 +110,7 @@ struct OrderDetailView: View {
             OrderDetailContent(
                 order: order,
                 primaryAction: vm.primaryAction,
+                offersCashNotPaid: vm.offersCashNotPaid,
                 inFlightAction: vm.inFlightAction,
                 preferredOffer: vm.preferredOffer,
                 refusal: vm.refusal,
@@ -119,6 +120,7 @@ struct OrderDetailView: View {
                 onDeclineOffer: { Task { await vm.declinePreferredOffer() } },
                 onDismissRefusal: vm.dismissActionError,
                 onReportLockout: { note in Task { await vm.reportLockout(note) } },
+                onReportCashNotPaid: { Task { await vm.reportCashNotPaid() } },
                 checklistVM: checklistVM,
                 notesVM: notesVM,
                 photosVM: photosVM

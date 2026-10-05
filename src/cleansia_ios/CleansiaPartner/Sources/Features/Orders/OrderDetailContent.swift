@@ -6,6 +6,7 @@ struct OrderDetailContent: View {
     @Environment(\.locale) private var locale
     let order: OrderDetail
     var primaryAction: OrderPrimaryAction = .none
+    var offersCashNotPaid = false
     var inFlightAction: OrderAction?
     var preferredOffer: PendingOfferItem?
     var refusal: OfferRefusal?
@@ -15,6 +16,7 @@ struct OrderDetailContent: View {
     var onDeclineOffer: () -> Void = {}
     var onDismissRefusal: () -> Void = {}
     var onReportLockout: (String) -> Void = { _ in }
+    var onReportCashNotPaid: () -> Void = {}
     @ObservedObject var checklistVM: CleaningChecklistViewModel
     @ObservedObject var notesVM: OrderNotesViewModel
     @ObservedObject var photosVM: OrderPhotosViewModel
@@ -33,6 +35,7 @@ struct OrderDetailContent: View {
     }
 
     @State private var confirmingCash = false
+    @State private var confirmingCashNotPaid = false
     @State private var decliningOffer = false
 
     private var cashConfirmMessage: String {
@@ -40,6 +43,13 @@ struct OrderDetailContent: View {
             return L10n.Orders.markCashCollectedConfirmMessageNoAmount
         }
         return L10n.Orders.markCashCollectedConfirmMessage(cashAmount)
+    }
+
+    private var cashNotPaidConfirmMessage: String {
+        guard let owed = order.cashNotPaidOwedLabel else {
+            return L10n.Orders.cashNotPaidConfirmMessageNoAmount
+        }
+        return L10n.Orders.cashNotPaidConfirmMessage(owed)
     }
 
     var body: some View {
@@ -51,6 +61,12 @@ struct OrderDetailContent: View {
                 Button(L10n.cancel, role: .cancel) {}
             } message: {
                 Text(cashConfirmMessage)
+            }
+            .alert(L10n.Orders.cashNotPaidConfirmTitle, isPresented: $confirmingCashNotPaid) {
+                Button(L10n.Orders.cashNotPaidConfirmAction, role: .destructive, action: onReportCashNotPaid)
+                Button(L10n.cancel, role: .cancel) {}
+            } message: {
+                Text(cashNotPaidConfirmMessage)
             }
             .offerDeclineAlert(
                 decliningOffer ? preferredOffer : nil,
@@ -127,6 +143,8 @@ struct OrderDetailContent: View {
                 inFlightAction: inFlightAction,
                 onConfirm: onConfirm,
                 onCashConfirmRequested: { confirmingCash = true },
+                offersCashNotPaid: offersCashNotPaid,
+                onCashNotPaidRequested: { confirmingCashNotPaid = true },
                 preferredOffer: preferredOffer,
                 onDeclineOffer: { decliningOffer = true }
             )
@@ -314,6 +332,7 @@ private struct OrderMetadataRow: View {
                 tierDiscount: 200,
                 membershipDiscount: nil,
                 promoDiscount: nil,
+                creditApplied: nil,
                 typeCode: PaymentTypeCode.card.rawValue,
                 statusCode: PaymentStatusCode.paid.rawValue
             ),

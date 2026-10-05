@@ -11496,6 +11496,216 @@
         }
       }
     },
+    "order_cash_not_paid_action": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zákazník nezaplatil"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Customer did not pay"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Клиент не заплатил"
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zákazník nezaplatil"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Клієнт не заплатив"
+          }
+        }
+      }
+    },
+    "order_cash_not_paid_confirm_action": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ano, nahlásit"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Yes, report it"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Да, сообщить"
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Áno, nahlásiť"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Так, повідомити"
+          }
+        }
+      }
+    },
+    "order_cash_not_paid_confirm_message": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Použijte jen tehdy, když zákazník nezaplatil nic. Pokud zaplatil jen část, dejte místo toho vědět společnosti. Úklid se dokončí a dostanete za něj zaplaceno. Zákazník bude dlužit %1$@, dozví se to a dokud nezaplatí, nemůže si nic dalšího objednat. Tuto akci nelze vzít zpět."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Use this only if the customer paid nothing. If they paid part of it, tell the company instead. The job is completed and you are paid for it. The customer will owe %1$@, is told so and cannot book again until they pay. This cannot be undone."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Используйте это, только если клиент ничего не заплатил. Если он заплатил только часть, вместо этого сообщите компании. Уборка будет завершена, и вам за неё заплатят. Клиент будет должен %1$@, получит об этом уведомление и не сможет ничего заказать, пока не заплатит. Это действие нельзя отменить."
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Použite to len vtedy, keď zákazník nezaplatil nič. Ak zaplatil len časť, dajte namiesto toho vedieť spoločnosti. Upratovanie sa dokončí a dostanete zaň zaplatené. Zákazník bude dlžiť %1$@, dozvie sa to a kým nezaplatí, nemôže si nič ďalšie objednať. Túto akciu nemožno vrátiť späť."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Використовуйте це, лише якщо клієнт нічого не заплатив. Якщо він заплатив лише частину, натомість повідомте компанію. Прибирання буде завершено, і вам за нього заплатять. Клієнт буде винен %1$@, отримає про це повідомлення і не зможе нічого замовити, доки не заплатить. Цю дію не можна скасувати."
+          }
+        }
+      }
+    },
+    "order_cash_not_paid_confirm_message_no_amount": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Použijte jen tehdy, když zákazník nezaplatil nic. Pokud zaplatil jen část, dejte místo toho vědět společnosti. Úklid se dokončí a dostanete za něj zaplaceno. Zákazník bude dlužit cenu úklidu, dozví se to a dokud nezaplatí, nemůže si nic dalšího objednat. Tuto akci nelze vzít zpět."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Use this only if the customer paid nothing. If they paid part of it, tell the company instead. The job is completed and you are paid for it. The customer will owe the price of the cleaning, is told so and cannot book again until they pay. This cannot be undone."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Используйте это, только если клиент ничего не заплатил. Если он заплатил только часть, вместо этого сообщите компании. Уборка будет завершена, и вам за неё заплатят. Клиент будет должен стоимость уборки, получит об этом уведомление и не сможет ничего заказать, пока не заплатит. Это действие нельзя отменить."
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Použite to len vtedy, keď zákazník nezaplatil nič. Ak zaplatil len časť, dajte namiesto toho vedieť spoločnosti. Upratovanie sa dokončí a dostanete zaň zaplatené. Zákazník bude dlžiť cenu upratovania, dozvie sa to a kým nezaplatí, nemôže si nič ďalšie objednať. Túto akciu nemožno vrátiť späť."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Використовуйте це, лише якщо клієнт нічого не заплатив. Якщо він заплатив лише частину, натомість повідомте компанію. Прибирання буде завершено, і вам за нього заплатять. Клієнт буде винен вартість прибирання, отримає про це повідомлення і не зможе нічого замовити, доки не заплатить. Цю дію не можна скасувати."
+          }
+        }
+      }
+    },
+    "order_cash_not_paid_confirm_title": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zákazník nezaplatil?"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Customer did not pay?"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Клиент не заплатил?"
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zákazník nezaplatil?"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Клієнт не заплатив?"
+          }
+        }
+      }
+    },
+    "order_cash_not_paid_reported_toast": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nahlášeno. Úklid je dokončen a zákazník byl informován."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Reported. The job is completed and the customer has been told."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Сообщение отправлено. Уборка завершена, клиент уведомлён."
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nahlásené. Upratovanie je dokončené a zákazník bol informovaný."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Повідомлено. Прибирання завершено, клієнта поінформовано."
+          }
+        }
+      }
+    },
     "order_customer_details_closed_completed": {
       "extractionState": "manual",
       "localizations": {
@@ -18597,6 +18807,76 @@
           "stringUnit": {
             "state": "translated",
             "value": "Замовлення скасовано"
+          }
+        }
+      }
+    },
+    "push.order.cash_not_paid.title": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Platba v hotovosti nebyla přijata"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cash payment not received"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Оплата наличными не получена"
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Platba v hotovosti nebola prijatá"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Оплату готівкою не отримано"
+          }
+        }
+      }
+    },
+    "push.order.cash_not_paid.body": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Objednávka #%1$@ je dokončena, ale uklízeč neobdržel platbu v hotovosti. Dlužíte %2$@; uhradíte ji v profilu v sekci Platby. Do té doby nemůžete vytvořit novou objednávku."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Booking #%1$@ is completed, but the cleaner did not receive the cash payment. You owe %2$@; pay it under Payments in your profile. Until then you can't make a new booking."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Заказ #%1$@ выполнен, но уборщик не получил оплату наличными. Вы должны %2$@; оплатить можно в профиле в разделе Платежи. До этого новый заказ оформить нельзя."
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Objednávka #%1$@ je dokončená, ale upratovač nedostal platbu v hotovosti. Dlhujete %2$@; uhradíte ju v profile v sekcii Platby. Dovtedy nemôžete vytvoriť novú objednávku."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Замовлення #%1$@ виконано, але прибиральник не отримав оплату готівкою. Ви винні %2$@; сплатити можна в профілі в розділі Платежі. Доти нове замовлення оформити не можна."
           }
         }
       }

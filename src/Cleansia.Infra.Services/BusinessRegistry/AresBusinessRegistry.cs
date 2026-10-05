@@ -73,7 +73,11 @@ public sealed class AresBusinessRegistry(
                                    && ex is HttpRequestException or OperationCanceledException
                                        or ExecutionRejectedException or JsonException or NotSupportedException)
         {
-            return Unavailable(IntegrationFailureClassifier.FromException(ex), ex);
+            return Unavailable(
+                ex is JsonException or NotSupportedException
+                    ? IntegrationFailureClass.Permanent
+                    : IntegrationFailureClassifier.FromException(ex),
+                ex);
         }
     }
 

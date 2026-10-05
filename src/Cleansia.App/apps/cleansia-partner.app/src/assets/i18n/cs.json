@@ -1108,7 +1108,7 @@
       "consent_not_found": "Toto nastavení souhlasu jsme nenašli",
       "consent_already_granted": "Tento souhlas jste už udělili",
       "deletion_already_pending": "Žádost o smazání účtu již probíhá.",
-      "deletion_blocked_by_order": "Váš účet nelze smazat, dokud máte aktívní objednávky.",
+      "deletion_blocked_by_order": "Váš účet nelze smazat, dokud máte aktivní objednávky.",
       "deletion_blocked_by_invoice": "Váš účet nelze smazat, dokud jsou nevyřízené faktury.",
       "deletion_blocked_by_assigned_order": "Váš účet nelze smazat, dokud jste přiřazeni k zakázce.",
       "deletion_blocked_by_unsettled_pay": "Váš účet nelze smazat, dokud vám dlužíme odměnu. Nejprve to vyřešte s kanceláří.",

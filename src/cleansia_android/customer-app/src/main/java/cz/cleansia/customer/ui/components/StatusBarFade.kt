@@ -152,7 +152,8 @@ internal fun cutoutExtentFor(
 /**
  * How much of the fade wears the hero's colour, from the hero's bottom edge measured from the top of
  * the screen: all of it while the hero still reaches the fade's bottom ([height]), none once it has
- * passed above the screen's top, and in proportion between, so the page colour takes over with no jump.
+ * passed above the screen's top, and in proportion between. This is the raw share; the drawn one steps
+ * over the shades the status-bar icons cannot be read on ([statusBarFadeLegibleShare]).
  */
 internal fun statusBarFadeHeroShare(heroBottom: Int, height: Int): Float =
     (heroBottom.toFloat() / height.coerceAtLeast(1)).coerceIn(0f, 1f)

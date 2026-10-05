@@ -205,8 +205,8 @@ enum StatusBarFade {
     }
 
     /// How much of the fade wears the hero's colour: all of it while the hero still reaches below the
-    /// fade, none once its bottom has passed above the screen's top, and in between in proportion — the
-    /// page colour takes over as the hero scrolls out from behind the fade, with no jump. The hero's bottom
+    /// fade, none once its bottom has passed above the screen's top, and in between in proportion. This is
+    /// the raw share; `legibleShare` steps the drawn one over the shades the clock cannot be read on. The hero's bottom
     /// is in the scroll view's space, whose origin is the safe area's top, so the fade spans `-safeTop` to
     /// `height - safeTop` there.
     static func heroShare(heroBottom: CGFloat, safeTop: CGFloat, height: CGFloat) -> Double {

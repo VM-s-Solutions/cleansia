@@ -2172,14 +2172,17 @@ schedules list says why:
   market does not list. That market is the country of the schedule's saved address, or the platform
   default for an address with none, and its overviews list only active entries priced in its
   currency, which is what the quote asks of a selection. Each list reads those overviews itself,
-  quietly, once for each market its schedules are priced in, on every visit (and on Android on every
-  pull to refresh). It reads them straight from the API, so the catalogue that Home, the booking and
-  the form share is left alone. A schedule is judged only once its own market has been read: before
-  that read succeeds, or while the list does not know the schedule's saved address, its card says
-  nothing rather than guess. On the apps a customer whose Plus has lapsed or whose benefits are
-  paused has no *Edit* on the card, and the web's edit route sends them to the Plus page
-  (`customerMembershipGuard`), so for them the line's *edit to update* is a step they can take only
-  once Plus is back.
+  quietly, once for each market its schedules are priced in, on every visit (and on Android and iOS
+  on every pull to refresh). It reads them straight from the API, so the catalogue that Home, the
+  booking and the form share is left alone. A schedule is judged only once its own market has been
+  read: before that read succeeds, or while the list does not know the schedule's saved address, its
+  card says nothing rather than guess. On Android a customer whose Plus has lapsed or whose benefits
+  are paused, and on iOS one whose Plus has lapsed, has no *Edit* on the card, and the web's edit
+  route sends either to the Plus page (`customerMembershipGuard`, which lets only an active
+  membership through), so for them the line's *edit to update* is a step they can take only once
+  Plus is back. iOS still shows *Edit* to a member whose benefits are paused (past due or paused):
+  its gate reads only `hasMembership`, which the server answers `true` for a live enrolment, so the
+  form opens and the server refuses the save (`recurring_booking.membership_required`).
 - **Its card on the web has no price.** The web's schedules list, *Recurring cleanings*, quotes each
   card for its price per clean (`quoteTemplate`); a card whose quote is refused leaves the price out,
   with no message of its own, the line above being the explanation. Those quotes go through the

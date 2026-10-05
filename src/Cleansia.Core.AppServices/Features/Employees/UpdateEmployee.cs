@@ -16,6 +16,7 @@ using Cleansia.Core.Domain.Users;
 using Cleansia.Infra.Common.Validations;
 using Cleansia.Infra.Services.BusinessRegistry;
 using FluentValidation;
+using FluentValidation.Results;
 
 namespace Cleansia.Core.AppServices.Features.Employees;
 
@@ -113,8 +114,7 @@ public class UpdateEmployee
                     return result.IsValid;
                 })
                 .WithMessage(BusinessErrorMessage.RegistrationNumberInvalidFormat)
-                .MustAsync(KnownToTheBusinessRegisterAsync)
-                .WithMessage(BusinessErrorMessage.RegistrationNumberNotRegistered);
+                .CustomAsync(RefuseWhatTheRegisterRefusesAsync);
 
             RuleFor(c => c.EmergencyName)
                 .ValidateEmergencyName()
@@ -168,18 +168,31 @@ public class UpdateEmployee
         }
 
         // The address country is the one this save writes.
-        private async Task<bool> KnownToTheBusinessRegisterAsync(
-            Command command, string registrationNumber, CancellationToken cancellationToken)
+        private async Task RefuseWhatTheRegisterRefusesAsync(
+            string registrationNumber, ValidationContext<Command> context, CancellationToken cancellationToken)
         {
             var employee = await _employeeRepository.GetByUserEmailAsync(
                 _userSessionProvider.GetUserEmail() ?? string.Empty, cancellationToken);
+            if (employee is null)
+            {
+                return;
+            }
 
-            return employee is null || CleanerBusinessRegister.AcceptsOnSave(await CleanerBusinessRegister.LookupAsync(
+            var record = await CleanerBusinessRegister.LookupAsync(
                 _countryRepository,
                 _businessRegistry,
-                CleanerBusinessRegister.RegisterCountryId(employee, command.CountryId),
+                CleanerBusinessRegister.RegisterCountryId(employee, context.InstanceToValidate.CountryId),
                 registrationNumber,
-                cancellationToken));
+                cancellationToken);
+
+            var refusal = CleanerBusinessRegister.Refusal(
+                record,
+                approvalGrade: employee.ContractStatus == ContractStatus.Approved
+                    && CleanerBusinessRegister.Changes(employee, registrationNumber));
+            if (refusal is not null)
+            {
+                context.AddFailure(new ValidationFailure(nameof(Command.RegistrationNumber), refusal));
+            }
         }
     }
 

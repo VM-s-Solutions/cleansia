@@ -125,11 +125,13 @@
   border: 1px solid var(--cl-border);
   box-shadow: 0 2px 10px rgba(12, 74, 110, 0.06);
 
-  // A paused schedule is still a schedule: it dims, it does not grey out, and
-  // it keeps every figure legible — the customer paused it on purpose and will
-  // come back to it.
+  // A paused schedule is still a schedule: it steps back, it does not grey out,
+  // and it keeps every figure legible — the customer paused it on purpose and
+  // will come back to it. A dashed edge and no lift, beside its Paused pill; not
+  // an opacity, which faded every line of the card to 2.8–3.5:1.
   &--paused {
-    opacity: 0.72;
+    border: 1px dashed var(--cl-field-border);
+    box-shadow: none;
   }
 }
 

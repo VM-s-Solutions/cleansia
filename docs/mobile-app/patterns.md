@@ -786,13 +786,37 @@ primary, 3.57:1 in light mode and 2.77:1 in dark, and read 5.17:1 in both. Left 
 they already clear 4.5:1: Android's default-address badges, which sit on a 12 % primary wash and not on
 the container (5.43:1 in dark), the fills washed from the container at 35–60 % (4.89–6.03:1), the
 schedule form's badge on iOS's 40 % container (4.89:1), and the web's badges (5.17:1 or more in both
-themes, [Blue text on the customer site](/architecture/frontend#accent-text)). Icons on the container,
-which need 3:1, are not part of this, and in dark mode the primary's glyphs on its discs read 2.77:1
-(reported 2026-10-05). iOS's `ComponentTextInkTests` checks the token at 4.5:1 or more on the container
-in both modes, and `BrandTextInkTests` and the partner's `TextInkTests` pin the sites; Android's
-`PrimaryTextTest` pins the token's two values and reads all three modules, so that no `Text` drawn
-straight on a `primaryContainer` fill takes the text ink or the primary (iOS `235136257`, Android
-`59c1d05f9`).
+themes, [Blue text on the customer site](/architecture/frontend#accent-text)). Icons on the container
+are not part of this; they have a token of their own (below). iOS's `ComponentTextInkTests` checks the
+token at 4.5:1 or more on the container in both modes, and `BrandTextInkTests` and the partner's
+`TextInkTests` pin the sites; Android's `PrimaryTextTest` pins the token's two values and reads all
+three modules, so that no `Text` drawn straight on a `primaryContainer` fill takes the text ink or the
+primary (iOS `235136257`, Android `59c1d05f9`).
+
+**An icon on the light-blue container reads 3:1 or more in dark mode too** (finding 2026-10-05). An
+icon needs 3:1, and the primary's glyph on a `primaryContainer` disc read 3.57:1 in light mode (sky-600
+on sky-100) but 2.77:1 in dark (sky-400 on sky-700). An icon drawn on a full container disc or card
+now takes `CleansiaColors.primaryIconOnContainer` (iOS Core) or `ColorScheme.primaryIconOnContainer`
+(Android `:core`, `BrandColors.kt`), the icon twin of the text token above: the primary in light mode,
+so light mode is unchanged, and sky-100 `#E0F2FE` (`onPrimaryContainer`) in dark, 5.17:1 on sky-700. It
+takes:
+
+- in the customer app, on both platforms: Home's recent booking, *Order again* and popular package
+  cards, the leading icon on Payments, the platform icon on the devices list and the call button on an
+  order; on Android also the option discs of Market, Language and Appearance and the Notifications
+  rows; on iOS also Edit Profile's booking hint and the pin on a saved address's row, in the address
+  manager and the booking's address chooser (Android draws those rows on a 60 % container, which
+  already reads 4.07:1 or more);
+- in the partner app, on both platforms: the icon halo on earnings, invoices, an invoice and period
+  pay, the dashboard's weekly earnings disc and the platform icon on the devices list; on Android also
+  the registration lock's hero and step halos, which iOS draws on the page.
+
+A wash of the container at 30–60 % already reads 4.07:1 or more in dark mode and keeps the primary.
+iOS's `ComponentTextInkTests` measures the token at 3:1 or more on the container in both modes, 5.17:1
+in dark, and the bare primary under 3:1 there, and `BrandTextInkTests` and the partner's
+`TextInkTests` pin each site; Android's `PrimaryTextTest` measures the token in both schemes and reads
+all three modules, so that no `Icon` drawn on a `primaryContainer` fill takes the primary or the text
+ink (iOS `55c63e444`, Android `425dda614`).
 
 **A dispute's status pill reads 4.5:1 for every status, in both modes** (finding 2026-10-05). The pill
 writes its label in the status's ink on a 14 % wash of that ink over the card, on the list row and the

@@ -433,7 +433,9 @@ duplicate a `:core` component.
 > in light mode, the primary in dark. An icon inside the same link or button takes the same ink, so no
 > control shows two blues. Text drawn straight on `primaryContainer` takes **`primaryTextOnContainer`**
 > instead (both platforms): the same sky-700 in light mode, sky-100 in dark, where the text ink reads
-> 2.77:1 on the sky-700 container. Fills, washes, borders, toggles, progress tints, standalone icons and filled
+> 2.77:1 on the sky-700 container. An **icon** on a full `primaryContainer` disc or card takes
+> **`primaryIconOnContainer`** (both platforms, since 2026-10-05): the primary in light mode, sky-100
+> in dark, where the primary's glyph read 2.77:1, under the 3:1 a graphic needs. Fills, washes, borders, toggles, progress tints, standalone icons and filled
 > buttons keep `primary`. Source scans fail on a new blue `Text` or button label in the primary:
 > `BrandTextInkTests` (iOS customer), `ComponentTextInkTests` (iOS Core), `TextInkTests` (iOS partner),
 > `PrimaryTextTest` (Android `:core`, all three modules; its partner guard finds the primary under

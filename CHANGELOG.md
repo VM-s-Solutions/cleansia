@@ -1080,6 +1080,13 @@ need backfilling.
 
 ### Fixed
 
+- **Customer and cleaner, Android and iOS — icons on a light-blue circle stand out in dark mode.** In
+  dark mode the blue icons inside the light-blue circles and cards, on Home, Payments, the list of
+  your devices, an order's call button, the cleaner's earnings and invoices and, on Android, the
+  Language, Market, Appearance and Notifications settings and the cleaner's registration steps, were
+  light blue on a darker blue, 2.8:1. They are now a very pale blue there, 5.2:1. Light mode is
+  unchanged. (Finding 2026-10-05.)
+
 - **Customer and cleaner, Android and iOS — an order's and an invoice's status reads clearly.** On
   Android the status on a customer's order was faint: *New* and *In progress* read 1.9:1 in light
   mode, *Confirmed* 3.4:1, and *Completed* and *Cancelled* about 2.6:1 in dark mode. Every status now

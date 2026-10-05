@@ -1935,24 +1935,23 @@ comments expected the booking to fail loudly. What it deliberately leaves alone:
 - **The admin package editors** (`CreatePackage`, `UpdatePackage`) still accept a deactivated service
   into a package; they ask only that it exists.
 
-**A schedule still booking a deactivated entry shows the customer no error** (since 2026-10-05). The
-quote refuses its selection, so every client that quotes it fails quietly:
+**A schedule still booking a deactivated entry shows the customer no error.** The quote refuses its
+selection, so every client that quotes it fails quietly:
 
 - **Its card on the web has no price.** The web's schedules list, *Recurring cleanings*, quotes each
   card for its price per clean (`quoteTemplate`); a card whose quote is refused leaves the price out,
-  with no message. Those quotes go through the toast-suppressing client (`errorToastSuppressingHttpClient`).
-  Until 2026-10-05 they went through the shared error interceptor, so once the check above was in,
-  every visit to the list showed *One of the selected services is no longer available.* Android's and
-  iOS's schedule lists show no price on any card and quote nothing, and no client has a schedule
-  screen besides the edit form.
+  with no message. Those quotes go through the toast-suppressing client (`errorToastSuppressingHttpClient`),
+  since the shared error interceptor would otherwise toast the refusal (*One of the selected services
+  is no longer available.*) on every visit to the list. Android's and iOS's schedule lists show no
+  price on any card and quote nothing, and no client has a schedule screen besides the edit form.
 - **Editing it removes the entry, with a notice.** The web (`keepSelected`), Android and iOS trim an
   edited schedule's selection to its market's catalogue as the form loads, and tell the customer that
   part of the selection is not offered at this address and was removed, so saving the edit takes the
   entry off the schedule. A quote sent before the trim fails as quietly as the card's: the web form
   shows no price, and every form leaves the cash choice undecided rather than refused. Android trims
-  since 2026-10-05, when the template is prefilled and again once the form's first catalogue lands;
-  without the trim its crew quote was refused every time, and a cash schedule could not be saved
-  (*We couldn't confirm whether this schedule can be paid in cash*).
+  when the template is prefilled and again once the form's first catalogue lands, because an untrimmed
+  selection's crew quote is refused and a cash save would be held back (*We couldn't confirm whether
+  this schedule can be paid in cash*).
 - **Its occurrences are confirmed and paid as any other**, from the stored price (above).
 
 `CatalogActiveVisibilityTests` pins the active check on the repository, a schedule refused a

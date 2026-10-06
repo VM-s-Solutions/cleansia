@@ -57,7 +57,7 @@ class PrimaryTextContrastTest {
     fun `no customer-app text is coloured with the bare primary`() {
         val offenders = mutableListOf<String>()
         sourceRoot().walkTopDown().filter { it.isFile && it.extension == "kt" }.forEach { file ->
-            val rel = file.relativeTo(sourceRoot()).path
+            val rel = file.relativeTo(sourceRoot()).invariantSeparatorsPath
             if (rel in EXEMPT_FILES) return@forEach
             val text = file.readText()
             TEXT_CALL.findAll(text).forEach { call ->

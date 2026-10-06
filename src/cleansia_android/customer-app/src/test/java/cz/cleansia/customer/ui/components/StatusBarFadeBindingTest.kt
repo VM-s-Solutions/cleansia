@@ -175,6 +175,7 @@ class StatusBarFadeBindingTest {
     ).map { File(it, "src/main/java/cz/cleansia/customer/$path") }
         .firstOrNull { it.isFile }
         ?.readText()
+        ?.replace("\r\n", "\n")
         ?: error("$path not found from working dir ${File(".").absolutePath}")
 
     private companion object {

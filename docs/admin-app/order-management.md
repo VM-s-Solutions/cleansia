@@ -91,8 +91,10 @@ arrive — and the button is the answer. It cancels with the unfilled sweep's ow
 card refund, the customer's applied credit back, the apology credit, the reason *no cleaner was
 available*, and the push that says what happened to the money; it tells the assigned cleaners, ends the
 live activity, releases the express waiver, revokes the booking's loyalty points and closes an open
-*service not provided* dispute. The response says what moved: `refundedAmount`, `refundPending` (a card
-refund owed and not through — the hourly re-drive owns it) and `apologyCredit`; the toast states only
+*service not provided* dispute, unless that dispute's card refund is still pending (since 2026-10-06):
+resolving the dispute again is that refund's only retry, so it stays open. The response says what
+moved: `refundedAmount`, `refundPending` (a card refund owed and not through — the hourly re-drive owns
+it) and `apologyCredit`; the toast states only
 that this action made no card refund when none went through. It is refused before the start
 (`order.start_time_not_reached`), once a cleaner has started (`order.cleaner_already_started` — the
 cleaner did arrive; the report stays a dispute), and on a completed or cancelled order. One of two
@@ -151,8 +153,10 @@ before the two legs were recorded, shows neither. The dispute list's refund colu
 requested amount. A refused refund shows its error and leaves the dispute open:
 `refund.failed`, `refund.order_not_refundable` (a cash booking has no card charge) or
 `refund.nothing_refundable`. Resolving again re-drives the first attempt's refund, never a second one,
-and at the first attempt's amount even if the new resolution names another. A resolution with no
-amount moves no money. → [Cancellation, refund and dispute](/flows/cancellation-refund-dispute#dispute)
+and at the first attempt's amount even if the new resolution names another. While that refund is still
+pending the dispute cannot be closed: setting its status to *Closed* answers `dispute.refund_pending`
+(since 2026-10-06), so the retry stays possible. A resolution with no amount moves no money.
+→ [Cancellation, refund and dispute](/flows/cancellation-refund-dispute#dispute)
 
 A dispute that names no account shows the booking's own customer name and e-mail, read off the order.
 A bank chargeback reaches the console on every card booking, **guest** ones included, as an escalated

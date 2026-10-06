@@ -247,7 +247,10 @@ reports it from the order detail instead of completing the job, and the job comp
   again. A refusal is left to the translated interceptor notice and the order is read again;
   `contract.acceptance_required` opens the contract dialog in `accept` mode, as Start and Complete do.
 - **Android and iOS** carry the same action on the order detail, shown once the after photos are in, with
-  a system confirmation that names the amount the customer will owe (the price less any credit applied).
+  a system confirmation that names the amount the customer will owe (the price less any credit applied)
+  and says, in the web's words, that the customer is told, an administrator is alerted and only an
+  administrator can undo it (five locales on each platform, pinned by `CashNotPaidStringsTest` and
+  `OrderDetailCashNotPaidTests`).
   It is not offered on the Active-list swipe, where cash collection is not offered either.
 
 ### Elapsed Timer

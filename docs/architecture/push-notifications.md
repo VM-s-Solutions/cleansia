@@ -298,11 +298,12 @@ The in-app feed has **three** audiences, and the host controller sets which one 
 count or mark-read a row of their partner-app feed. The customer and partner keysets are lists that
 trail their clients' templates (a key belongs in a keyset only once the audience's clients render it,
 or the badge counts a row the app drops unrendered). **The admin keyset is the catalogue by
-construction** — `NotificationFeedEventKeys.Admin = AdminNotificationEventCatalog.All`, the sixteen
+construction** — `NotificationFeedEventKeys.Admin = AdminNotificationEventCatalog.All`, the seventeen
 `admin.*` keys ([ADR-0065](/decisions/adr-0065); the not-started alert, the two refund alerts and the
 lockout report joined on 2026-09-28, `admin.referral.held` — Support and above, args `[referralId]`,
-routed to *Referrals* in the console — on 2026-10-05, and `admin.order.cash_not_paid` — Support and
-above, args `[orderNumber, amount, orderId]`, opening the order in the console — on 2026-10-06) — because the console is built to render every key of its catalogue, and a spec walks the
+routed to *Referrals* in the console — on 2026-10-05, and on 2026-10-06 `admin.order.cash_not_paid` —
+Support and above, args `[orderNumber, amount, orderId]`, opening the order in the console — and
+`admin.payment.refund_without_cancel` — every role, the same args, opening the order) — because the console is built to render every key of its catalogue, and a spec walks the
 C# file so a key added on the server fails the admin build without its five-locale sentence and its
 entry in the console's mirror (`ADMIN_NOTIFICATION_EVENT_KEYS`).
 
@@ -363,15 +364,15 @@ the price owed formatted on the server with its currency's symbol. It is **not m
 | Client | Today |
 |---|---|
 | Android customer app | renders it on the order-updates channel with the order number and the amount; a tap opens **Payments**, not the order, because only Payments can pay a receivable on Android |
-| iOS customer app | both iOS bundles carry `push.order.cash_not_paid.title` / `.body` (`%1$@` the order number, `%2$@` the amount), and a tap opens Payments. The server has not put the key in `FcmMessageFactory.ApnsDisplayMap` yet, so the push arrives data-only and an iOS customer sees nothing on the lock screen |
+| iOS customer app | both iOS bundles carry `push.order.cash_not_paid.title` / `.body` (`%1$@` the order number, `%2$@` the amount), and the key is in `FcmMessageFactory.ApnsDisplayMap` with `[orderNumber, amount]` (since 2026-10-06, `45e872263`), so the lock screen shows the order number and the amount owed; a tap opens Payments |
 | The customer feed | not in `NotificationFeedEventKeys.Customer`, so no row is listed or counted |
 
-It shipped **client-first** ([ADR-0025](/decisions/adr-0025)): the server sends it data-only until the
-apps render it. The next step is the server's: add the key to the APNs display map with
-`[orderNumber, amount]` and to the pinned lists in `FcmMessageFactoryTests`, then to the customer feed
-keyset and `NotificationFeedEventKeysTests` once both apps list it in their own feed keysets. The
-catalogue's comment says `orderId` deep-links to the order *where it is paid*; both apps open Payments
-instead.
+It shipped **client-first** ([ADR-0025](/decisions/adr-0025)): the server sent it data-only until both
+iOS apps carried its loc-keys, then added it to the APNs display map with `[orderNumber, amount]` and to
+the pinned lists in `FcmMessageFactoryTests`. It is the fourth key `amount` rides, beside the three
+`order.no_cleaner_*` outcomes. The next step is the customer feed keyset and
+`NotificationFeedEventKeysTests`, once both apps list it in their own feed keysets. The catalogue's
+comment says `orderId` deep-links to the order *where it is paid*; both apps open Payments instead.
 
 ### Why the cleaner-assigned event is not the confirmed event {#assigned-vs-confirmed}
 

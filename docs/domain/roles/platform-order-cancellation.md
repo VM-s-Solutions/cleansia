@@ -21,8 +21,12 @@ the same key.
   `PlatformOrderCancellationResult(RefundAmount, Refund)`. `order.Cancel(now, cancelledBy, feeRate: 0,
   refundAmount, reason)`, where `refundAmount` is what this cancellation gives back
   (`RefundService.LeftToGiveBackAsync` on the key the refund reason derives, since 2026-10-06): the whole
-  price on an order nothing came back from, the rest of the sale on one already partly refunded. `Cancel`
-  records **0** instead on an order that took no payment (`Order.TookNoPayment`: `Pending` or `Failed`).
+  price on an order nothing came back from, the rest of the sale on one already partly refunded. When a
+  refund row already exists on that key — a guest's own cancel claimed it and never committed — the
+  figure is held to what that claim sends, its amount plus any credit leg already returned on the key,
+  because `RefundAsync` replays it at its own amount (since 2026-10-06: 750 of a 1 000 booking at the
+  25 % tier, not 1 000). `Cancel` records **0** instead on an order that took no payment
+  (`Order.TookNoPayment`: `Pending` or `Failed`).
   Then an `OrderStatusTrack` append;
   `ILiveActivityProducer` end-push unconditionally beside the append; then, for a card order that is
   `Paid` or, since 2026-10-06, `PartiallyRefunded`, with a refundable charge surface, `RefundAsync`,
@@ -46,7 +50,11 @@ the same key.
   `Failed(message)`; `RefundedAmount` is set only on `Issued`, to what the refund actually returned):
   `IRefundService.IssueRefundAsync(new RefundRequest(orderId, TotalPrice, refundReason, actorId))` and, on
   success, the customer's `OrderRefunded` notification keyed on the **refund** id, not the order (three
-  handlers raise that event; keying on the order minted duplicate outbox keys).
+  handlers raise that event; keying on the order minted duplicate outbox keys). On a failure that leaves
+  the row `Pending` (since 2026-10-06), `CreditUnwind.ReturnPendingRefundCreditLegAsync`
+  returns the slice's credit share at once on the refund's key, as `CustomerOrderCancellation` and
+  `CleanerNoShowCancellation` do, so the re-drive reads the slice back as card plus that leg, to the minor
+  unit, instead of in proportion from the card amount.
 - **`RefundService.BuildRefundKey`** — the key is derived from the reason: `CustomerCancellation →
   refund:{id}:cancel`, anything else → `refund:{id}:admin`. That is why the `refundReason` parameter
   exists: **the admin cancel keeps `CustomerCancellation` and its byte-identical key; the wind-down passes

@@ -146,7 +146,9 @@ sequenceDiagram
   apps show it once the after photos are in, as they do *Complete*; the web warns as *Complete* does when
   there is none. A confirmation states the consequence first: use it only when nothing was paid (a part
   payment is told to the company); the job completes and the cleaner is paid; the customer will owe the
-  price less any credit applied, is told so and cannot book until it is paid. After it the order is read
+  price less any credit applied, is told so and cannot book until it is paid; an administrator is
+  alerted, and only an administrator can undo it. All three clients say this in the same words; the
+  administrator undoes it by writing the debt off or by *Record cash received*. After it the order is read
   again and a notice confirms the report; the web's names the amount owed from the server's answer. Every
   refusal the endpoint can give has its sentence in five locales on all three; on the web a seat without
   its contract acceptance opens the contract.

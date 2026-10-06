@@ -65,7 +65,8 @@ sequenceDiagram
 | A saved card's capture reported twice (setup intent and setup-mode session) | The first lands the card; the second changes nothing. |
 | A receivable paid through its pay link | Paid under the receivable's company; the fee receipt is asked for; the order is untouched. |
 | A receivable paid twice — the pay link and a charge, or two links | The second payment is refunded in full; a redelivery replays the same refund. |
-| A written-off receivable paid anyway | It is paid — the money is the company's — and earns its fee receipt. |
+| A door price paid through its pay link after an administrator recorded it as paid in cash | Refunded in full on that PaymentIntent, as a second payment is; the receivable stays written off as *Paid in cash* and earns no fee receipt (since 2026-10-06). |
+| A receivable a Manager wrote off, paid anyway | It is paid — the money is the company's — and earns its fee receipt. |
 
 ## A saved card and a paid fee arrive by the same webhook {#saved-cards-and-receivables}
 
@@ -79,7 +80,7 @@ pass the same signature check and event-id stamp.
 | `checkout.session.completed` of a booking's payment-mode session, or `payment_intent.succeeded`, carrying `SavedCardId` | The card the customer ticked to keep lands the same way, read from the PaymentIntent and only when it succeeded with `setup_future_usage=off_session`. **Which event then settles the order depends on the channel.** An app's intent carries the `OrderId` as well, so its `payment_intent.succeeded` goes on to the order and settles it like any card payment. A web payment raises both events, and the PaymentIntent behind the web's Checkout Session carries `SavedCardId` but no `OrderId`: whichever event arrives first lands the card and the second finds it already captured, but only `checkout.session.completed` settles the web order — the intent's event lands the card and stops there. → [Business rules — saving a card while paying](/product/business-rules#save-card) |
 | `checkout.session.completed` of a receivable's pay link | The receivable is paid, under its own company. The session names the receivable (`ReceivableId`) and **never an `OrderId`**, so the order path cannot mistake the fee for the booking's sale; the order's payment status, charge surface and refunds are untouched. |
 | `payment_intent.succeeded` of an off-session charge | The same, for a charge on the saved card. |
-| A payment for a receivable already paid by another PaymentIntent | Refunded in full on that PaymentIntent under `refund:receivable:{id}:{paymentIntent}`, so a redelivery replays the same refund. |
+| A payment for a receivable already paid by another PaymentIntent, or for a door price whose order an administrator recorded as paid in cash (since 2026-10-06) | Refunded in full on that PaymentIntent under `refund:receivable:{id}:{paymentIntent}`, so a redelivery replays the same refund. |
 | `payment_intent.payment_failed` of an off-session charge — a decline, or the bank's `authentication_required` | A pay link is opened, recorded on the receivable and e-mailed to the customer (five locales). None for a receivable no longer open, and none while card payments are switched off. |
 
 **Only a ticked payment keeps a card.** With the box ticked, the booking's charge surface is opened on
@@ -146,6 +147,19 @@ keyed `receivable-checkout-{id}-after-{previous session}` — a key reused for a
 expired session. It returns to the order's page on the customer web, from `Stripe:SuccessUrlBase` —
 the customer app's origin on each of the three hosts that mint one: Customer, Customer Mobile, and
 Partner, which serves the webhook and so mints the failed-charge e-mail's link.
+
+**Recording the cash on a door default closes its pay link first** (since 2026-10-06). On an order the
+cleaner reported unpaid, *Record cash received* (`AdminRecordCashReceived`) expires the open Checkout
+Session of the `UnpaidCash` receivable at Stripe before it writes the debt off as *Paid in cash*, because
+a session stays payable for up to a day. It is refused with `order.payment_not_outstanding` when Stripe
+reports the link already paid — the customer paid online, and the webhook settles it — and with
+`order.payment_gateway_unavailable` when Stripe cannot be reached; nothing is recorded either way.
+Closing a link charges nothing, so it runs with `Stripe__Enabled` off too
+([Kill switches](/architecture/infrastructure#kill-switches)). A payment on the link that still arrives
+after the cash was recorded is refunded in full by the webhook, and the debt stays written off as paid
+in cash, with no fee receipt. A debt a Manager wrote off and the customer then pays is kept: it is paid
+and earns its fee receipt
+→ [Business rules — when the customer does not pay at the door](/product/business-rules#cash-not-paid).
 
 ## Amounts are never reconciled, and do not need to be
 

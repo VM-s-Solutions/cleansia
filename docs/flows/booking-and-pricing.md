@@ -159,7 +159,12 @@ cash only (`order.cash_unpaid_receivable`, retired) and left card open. The refu
   confirmed, and an unconfirmed visit is retracted an hour before its slot without a fee.
 - **A guest is not matched.** The web guest checkout is prepaid by card, and matching it by e-mail or
   phone would tell an anonymous caller which addresses owe money.
-- **The way out stays open.** Listing what is owed and opening its pay link are not bookings.
+- **The way out stays open.** Listing what is owed and opening its pay link are not bookings, and neither
+  are deleting a schedule or pausing it, which are not refused.
+- **A debt owed to a company frozen for archive does not count** (since 2026-10-06). Its books refuse both
+  the pay link's write and a write-off, so `OwesNothingAsync` and the customer's list of what is owed
+  leave out receivables of a company whose `ArchiveRequestedOn` is set, as the off-session charge sweep
+  already did; otherwise such a debt would refuse the customer for good.
 - **The clients turn the refusal into a way to pay.** The customer web keeps the chosen way to pay —
   card or cash — and returns to the payment step with the list of everything owed, *Pay now* and the
   parked draft; the schedule form and the order page's visit confirmation show the same list. Android and

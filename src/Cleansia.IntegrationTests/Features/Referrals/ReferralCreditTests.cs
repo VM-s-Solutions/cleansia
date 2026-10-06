@@ -9,6 +9,7 @@ using Cleansia.Core.Domain.Internationalization;
 using Cleansia.Core.Domain.Loyalty;
 using Cleansia.Core.Domain.Notifications;
 using Cleansia.Core.Domain.Orders;
+using Cleansia.Core.Domain.Payments;
 using Cleansia.Core.Domain.Repositories;
 using Cleansia.Core.Domain.Users;
 using Cleansia.Core.Queue.Abstractions;
@@ -40,6 +41,7 @@ public class ReferralCreditTests(PostgresContainerFixture fixture) : BaseIntegra
     private const string PlnId = "currency-pln-referral";
     private const string OrderId = "order-referral-first";
     private const string ReferrerOrderId = "order-referral-inviter";
+    private const string EarlierOrderId = "order-referral-earlier";
     private const string Reason = "referral ring";
     private static readonly DateTimeOffset FrozenOn = new(2026, 10, 1, 8, 0, 0, TimeSpan.Zero);
 
@@ -191,6 +193,7 @@ public class ReferralCreditTests(PostgresContainerFixture fixture) : BaseIntegra
         new ReferralCodeRepository(ctx),
         new ReferralRepository(ctx),
         new OrderRepository(ctx),
+        new ReceivableRepository(ctx),
         new CreditAccountRepository(ctx),
         Notifier(ctx),
         ctx,
@@ -327,6 +330,57 @@ public class ReferralCreditTests(PostgresContainerFixture fixture) : BaseIntegra
         Assert.Equal(EurId, referral.ReferredCreditCurrencyId);
         Assert.Equal(6m, referral.CreditAwardedToReferrer);
         Assert.Equal(6m, referral.CreditAwardedToReferred);
+    }
+
+    /// <summary>
+    /// The friend's earlier booking, with another company, was not paid to the cleaner at the door and the debt
+    /// has been paid since: it is not their first completion, so this one qualifies the referral. The same
+    /// earlier booking paid in the ordinary way is, and the referral keeps waiting.
+    /// </summary>
+    [Theory]
+    [InlineData(true, ReferralStatus.Qualified)]
+    [InlineData(false, ReferralStatus.Accepted)]
+    public async Task A_Booking_Not_Paid_At_The_Door_With_Another_Company_Is_Not_The_Friends_First_Completion(
+        bool notPaidAtTheDoor, ReferralStatus expected)
+    {
+        await ResetAsync();
+        var (referrerId, referredId, referralId) = await SeedAsync(orderCurrencyId: CzkId);
+        await using (var ctx = NewContext())
+        {
+            var earlier = NewOrder(
+                EarlierOrderId, referredId, TestTenants.Second, CzkId,
+                NewAddress("7 Door St", "11000", TestTenants.Second), "+420 000 000 000", completed: true);
+            ctx.Orders.Add(earlier);
+            if (notPaidAtTheDoor)
+            {
+                var debt = Receivable.ForUnpaidCash(earlier);
+                debt.TenantId = TestTenants.Second;
+                debt.MarkPaid(stripePaymentIntentId: null, DateTimeOffset.UtcNow);
+                ctx.Receivables.Add(debt);
+            }
+
+            await ctx.CommitAsync(CancellationToken.None);
+        }
+
+        await CompleteAsync(referredId);
+
+        var referral = await ReferralAsync(referralId);
+        Assert.Equal(expected, referral.Status);
+        Assert.Equal(notPaidAtTheDoor ? OrderId : null, referral.FirstQualifyingOrderId);
+        foreach (var userId in new[] { referrerId, referredId })
+        {
+            var accounts = await AccountsAsync(userId);
+            if (notPaidAtTheDoor)
+            {
+                var grant = Assert.Single(Assert.Single(accounts).Transactions);
+                Assert.Equal(150m, grant.Amount);
+                Assert.Equal(OrderId, grant.OrderId);
+            }
+            else
+            {
+                Assert.Empty(accounts);
+            }
+        }
     }
 
     /// <summary>

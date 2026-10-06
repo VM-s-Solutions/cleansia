@@ -29,6 +29,7 @@ public sealed class ReferralService(
     IReferralCodeRepository referralCodeRepository,
     IReferralRepository referralRepository,
     IOrderRepository orderRepository,
+    IReceivableRepository receivableRepository,
     ICreditAccountRepository creditAccountRepository,
     IAdminNotifier adminNotifier,
     IUnitOfWork unitOfWork,
@@ -221,9 +222,17 @@ public sealed class ReferralService(
             return;
         }
 
-        // The current completion may still be staged; only previously completed orders disqualify it.
+        // The current completion may still be staged; only previously completed orders disqualify it. A booking
+        // not paid at the door never counts, whatever became of its debt since.
+        var notPaidAtTheDoor = receivableRepository.GetQueryableIgnoringTenant()
+            .Where(r => r.UserId == userId && r.Kind == ReceivableKind.UnpaidCash)
+            .Select(r => r.OrderId);
         var hasEarlierCompletion = await orderRepository.GetQueryableForOwner(userId)
-            .AnyAsync(o => o.Id != orderId && o.OrderStatusHistory.Any(h => h.Status == OrderStatus.Completed), cancellationToken);
+            .AnyAsync(
+                o => o.Id != orderId
+                    && o.OrderStatusHistory.Any(h => h.Status == OrderStatus.Completed)
+                    && !notPaidAtTheDoor.Contains(o.Id),
+                cancellationToken);
 
         if (hasEarlierCompletion)
         {

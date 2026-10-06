@@ -5,6 +5,7 @@ using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Internationalization;
 using Cleansia.Core.Domain.Loyalty;
 using Cleansia.Core.Domain.Orders;
+using Cleansia.Core.Domain.Payments;
 using Cleansia.Core.Domain.Repositories;
 using Cleansia.Core.Domain.SeedWork;
 using Cleansia.TestUtilities.MockDataFactories.Orders;
@@ -30,13 +31,17 @@ public class ReferralServiceCreditGrantTests
 
     private readonly Mock<IReferralRepository> _referrals = new();
     private readonly Mock<IOrderRepository> _orders = new();
+    private readonly Mock<IReceivableRepository> _receivables = new();
     private readonly Mock<ICreditAccountRepository> _credit = new();
     private readonly Dictionary<string, CreditAccount> _accounts = new();
     private readonly List<string> _ensured = [];
     private readonly HashSet<string> _erased = [];
+    private readonly List<Order> _friendsEarlierOrders = [];
+    private readonly List<Receivable> _debts = [];
 
     public ReferralServiceCreditGrantTests()
     {
+        _receivables.Setup(r => r.GetQueryableIgnoringTenant()).Returns(() => _debts.AsQueryable().BuildMock());
         _credit
             .Setup(c => c.EnsureForUserAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync((string userId, string currencyId, CancellationToken _) =>
@@ -62,6 +67,7 @@ public class ReferralServiceCreditGrantTests
         Mock.Of<IReferralCodeRepository>(),
         _referrals.Object,
         _orders.Object,
+        _receivables.Object,
         _credit.Object,
         Mock.Of<IAdminNotifier>(),
         Mock.Of<IUnitOfWork>(),
@@ -83,7 +89,7 @@ public class ReferralServiceCreditGrantTests
         _orders.Setup(o => o.GetByIdForOwnerAsync(OrderId, referredId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(order);
         _orders.Setup(o => o.GetQueryableForOwner(referredId))
-            .Returns(new[] { order }.AsQueryable().BuildMock());
+            .Returns(() => _friendsEarlierOrders.Append(order).AsQueryable().BuildMock());
 
         var booked = referrerOrders.Select(o =>
         {
@@ -102,6 +108,31 @@ public class ReferralServiceCreditGrantTests
 
     private CreditTransaction SingleGrant(string userId, string currencyId) =>
         Assert.Single(_accounts[$"{userId}:{currencyId}"].Transactions);
+
+    private Order FriendCompletedEarlier(string orderId, Currency currency)
+    {
+        var earlier = OrderMockFactory.Generate(
+            new OrderMockFactory.OrderPartial { Id = orderId, UserId = "referred", CurrentStatus = OrderStatus.Completed },
+            currency: currency);
+        _friendsEarlierOrders.Add(earlier);
+        return earlier;
+    }
+
+    private void NotPaidAtTheDoor(Order order, ReceivableStatus status)
+    {
+        var debt = Receivable.ForUnpaidCash(order);
+        switch (status)
+        {
+            case ReceivableStatus.Paid:
+                debt.MarkPaid(stripePaymentIntentId: null, DateTimeOffset.UtcNow);
+                break;
+            case ReceivableStatus.WrittenOff:
+                debt.WriteOff("admin", "reported in error", DateTimeOffset.UtcNow);
+                break;
+        }
+
+        _debts.Add(debt);
+    }
 
     [Fact]
     public async Task Both_Sides_Receive_The_Orders_Referral_Credit_When_Both_Book_In_Its_Currency()
@@ -254,6 +285,54 @@ public class ReferralServiceCreditGrantTests
         Assert.Null(referral.CreditAwardedToReferrer);
         Assert.Equal(6m, referral.CreditAwardedToReferred);
         Assert.Equal(ReferralStatus.Qualified, referral.Status);
+    }
+
+    /// <summary>
+    /// The friend's earlier booking was not paid to the cleaner at the door. Whether that debt is still open, has
+    /// been paid since or was written off, the booking is never their first completion, so this later one
+    /// qualifies the referral and pays both sides against it.
+    /// </summary>
+    [Theory]
+    [InlineData(ReceivableStatus.Open)]
+    [InlineData(ReceivableStatus.Paid)]
+    [InlineData(ReceivableStatus.WrittenOff)]
+    public async Task A_Booking_Not_Paid_At_The_Door_Is_Not_The_Friends_First_Completion(ReceivableStatus debtStatus)
+    {
+        var czk = NewCurrency(CzkId, "CZK", 150m);
+        var referral = Arrange("referrer", "referred", czk);
+        NotPaidAtTheDoor(FriendCompletedEarlier("order-unpaid-at-door", czk), debtStatus);
+
+        await Service().ProcessOrderCompletedAsync(OrderId, "referred", CancellationToken.None);
+
+        Assert.Equal(ReferralStatus.Qualified, referral.Status);
+        Assert.Equal(OrderId, referral.FirstQualifyingOrderId);
+        Assert.Equal(OrderId, SingleGrant("referrer", CzkId).OrderId);
+        Assert.Equal(150m, SingleGrant("referrer", CzkId).Amount);
+        Assert.Equal(150m, SingleGrant("referred", CzkId).Amount);
+    }
+
+    /// <summary>
+    /// An earlier booking that was paid is a completion before this one, whether or not another booking went
+    /// unpaid at the door: the referral keeps waiting and nobody is paid.
+    /// </summary>
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task An_Earlier_Paid_Completion_Leaves_The_Referral_Waiting(bool anotherNotPaidAtTheDoor)
+    {
+        var czk = NewCurrency(CzkId, "CZK", 150m);
+        var referral = Arrange("referrer", "referred", czk);
+        FriendCompletedEarlier("order-paid-earlier", czk);
+        if (anotherNotPaidAtTheDoor)
+        {
+            NotPaidAtTheDoor(FriendCompletedEarlier("order-unpaid-at-door", czk), ReceivableStatus.Paid);
+        }
+
+        await Service().ProcessOrderCompletedAsync(OrderId, "referred", CancellationToken.None);
+
+        Assert.Equal(ReferralStatus.Accepted, referral.Status);
+        Assert.Null(referral.FirstQualifyingOrderId);
+        Assert.Empty(_ensured);
     }
 
     [Fact]

@@ -61,6 +61,7 @@ public class AdminCancelOrderAsNoShowTests
     private AdminCancelOrderAsNoShow.Handler Handler() => new(
         _orders.Object,
         _disputes.Object,
+        _refundRows.Object,
         _session.Object,
         new CleanerNoShowCancellation(
             _credit.Object,
@@ -195,6 +196,30 @@ public class AdminCancelOrderAsNoShowTests
         await ConfirmAsync();
 
         Assert.Equal(DisputeStatus.Closed, dispute.Status);
+    }
+
+    /// <summary>
+    /// The customer's dispute was resolved with a card refund Stripe refused, so that refund waits on the
+    /// dispute's own key. Resolving the dispute again is the only retry of it, so the no-show leaves the
+    /// dispute open instead of closing it.
+    /// </summary>
+    [Fact]
+    public async Task A_Service_Not_Provided_Dispute_Whose_Refund_Is_Still_Pending_Stays_Open()
+    {
+        ArrangeOrder();
+        var dispute = new Dispute(OrderId, CustomerId, DisputeReason.ServiceNotProvided, "Nobody came to clean.", CustomerId)
+        {
+            Id = "dispute-no-show-1",
+        };
+        _disputes.Setup(d => d.GetOpenDisputeForOrderAsync(OrderId, It.IsAny<CancellationToken>())).ReturnsAsync(dispute);
+        var disputeKey = $"refund:{OrderId}:dispute:{dispute.Id}";
+        _refundRows.Setup(r => r.GetByRefundKeyAsync(disputeKey, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(Refund.Create(
+                OrderId, disputeKey, 1000m, "CZK", RefundReason.DisputeResolution, RefundSource.AppRefund, disputeId: dispute.Id));
+
+        await ConfirmAsync();
+
+        Assert.Equal(DisputeStatus.Pending, dispute.Status);
     }
 
     [Fact]

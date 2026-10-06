@@ -3275,6 +3275,7 @@
       "action_failed": "Akci se sporem se nepodařilo dokončit. Zkuste to prosím znovu.",
       "already_exists": "Spor pro tuto objednávku již existuje",
       "already_resolved": "Tento spor již byl vyřešen a nelze jej změnit.",
+      "refund_pending": "Vrácení peněz na kartu u tohoto sporu ještě neprošlo, takže spor nelze uzavřít. Zkontrolujte vrácení ve Stripe a pak spor znovu vyřešte, tím se vrácení zopakuje.",
       "invalid_refund_amount": "Neplatná částka vrácení peněz",
       "invalid_status_transition": "Tato změna stavu není pro aktuální stav sporu povolena.",
       "max_length_exceeded": "Překročena maximální délka",

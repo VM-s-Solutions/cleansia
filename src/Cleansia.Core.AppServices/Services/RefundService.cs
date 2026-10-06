@@ -2,6 +2,7 @@ using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.AppServices.Services.Interfaces;
 using Cleansia.Core.Clients.Abstractions.Stripe;
 using Cleansia.Core.Domain.Credit;
+using Cleansia.Core.Domain.Disputes;
 using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Orders;
 using Cleansia.Core.Domain.Payments;
@@ -377,6 +378,18 @@ public sealed class RefundService(
         IRefundRepository refundRepository, string orderId, string? exceptRefundKey, CancellationToken cancellationToken) =>
         await refundRepository.GetSucceededRefundTotalForOrderAsync(orderId, cancellationToken)
         + await refundRepository.GetPendingRefundTotalForOrderAsync(orderId, exceptRefundKey, cancellationToken);
+
+    /// <summary>
+    /// The dispute's card refund was asked for and Stripe has not confirmed it. Resolving the dispute again is
+    /// the only retry of that refund, so a dispute is not closed while this holds.
+    /// </summary>
+    public static async Task<bool> HasPendingDisputeRefundAsync(
+        IRefundRepository refundRepository, Dispute dispute, CancellationToken cancellationToken) =>
+        await refundRepository.GetByRefundKeyAsync(
+                BuildRefundKey(new RefundRequest(
+                    dispute.OrderId, 0m, RefundReason.DisputeResolution, string.Empty, DisputeId: dispute.Id)),
+                cancellationToken)
+            is { Status: RefundStatus.Pending };
 
     /// <summary>
     /// What the sale has not given back on any key but <paramref name="exceptRefundKey"/>: the price, less

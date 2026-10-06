@@ -601,6 +601,9 @@ const ADMIN_SURFACE_ERROR_KEYS: readonly string[] = [
   'dispute.max_length_exceeded',
   'dispute.not_found',
   'dispute.not_owned_by_user',
+  // UpdateDisputeStatus: a dispute whose card refund is still pending is not closed, since resolving it
+  // again is the only retry of that refund.
+  'dispute.refund_pending',
   'order.already_cancelled',
   'order.already_completed',
   'order.employee_already_assigned',

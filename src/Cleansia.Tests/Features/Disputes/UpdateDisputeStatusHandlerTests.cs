@@ -2,6 +2,7 @@ using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.AppServices.Features.Disputes;
 using Cleansia.Core.Domain.Disputes;
 using Cleansia.Core.Domain.Enums;
+using Cleansia.Core.Domain.Payments;
 using Cleansia.Core.Domain.Repositories;
 using Moq;
 
@@ -19,6 +20,7 @@ public class UpdateDisputeStatusHandlerTests
     private const string ActorId = "admin-9";
 
     private readonly Mock<IDisputeRepository> _disputeRepository = new();
+    private readonly Mock<IRefundRepository> _refundRepository = new();
     private readonly Mock<IUserSessionProvider> _session = new();
 
     public UpdateDisputeStatusHandlerTests()
@@ -27,7 +29,7 @@ public class UpdateDisputeStatusHandlerTests
     }
 
     private UpdateDisputeStatus.Handler CreateHandler() =>
-        new(_disputeRepository.Object, _session.Object);
+        new(_disputeRepository.Object, _refundRepository.Object, _session.Object);
 
     private Dispute ArrangeDispute(DisputeStatus status)
     {
@@ -110,6 +112,34 @@ public class UpdateDisputeStatusHandlerTests
         Assert.Null(dispute.ResolvedBy);
         Assert.Null(dispute.ResolvedOn);
         Assert.Null(dispute.ResolutionNotes);
+    }
+
+    /// <summary>
+    /// The dispute was resolved with a card refund Stripe refused, so the refund waits on the dispute's own
+    /// key and resolving the dispute again is the only retry of it. Closing it is refused; any other move is
+    /// not.
+    /// </summary>
+    [Theory]
+    [InlineData(DisputeStatus.Closed, false)]
+    [InlineData(DisputeStatus.Escalated, true)]
+    public async Task A_dispute_whose_refund_is_still_pending_cannot_be_closed(DisputeStatus to, bool moves)
+    {
+        var dispute = ArrangeDispute(DisputeStatus.UnderReview);
+        const string disputeKey = $"refund:order-1:dispute:{DisputeId}";
+        _refundRepository
+            .Setup(r => r.GetByRefundKeyAsync(disputeKey, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(Refund.Create(
+                "order-1", disputeKey, 400m, "CZK", RefundReason.DisputeResolution, RefundSource.AppRefund, disputeId: DisputeId));
+
+        var result = await CreateHandler().Handle(
+            new UpdateDisputeStatus.Command(DisputeId, to), CancellationToken.None);
+
+        Assert.Equal(moves, result.IsSuccess);
+        Assert.Equal(moves ? to : DisputeStatus.UnderReview, dispute.Status);
+        if (!moves)
+        {
+            Assert.Equal(BusinessErrorMessage.DisputeRefundPending, result.Error!.Message);
+        }
     }
 
     [Fact]

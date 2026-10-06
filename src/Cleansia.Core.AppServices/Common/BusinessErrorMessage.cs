@@ -510,6 +510,11 @@ public static class BusinessErrorMessage
     public const string InvalidDisputeStatusTransition = "dispute.invalid_status_transition";
     public const string DisputeAlreadyResolved = "dispute.already_resolved";
     /// <summary>
+    /// The dispute's card refund is still pending, and resolving the dispute again is the only retry of it:
+    /// it cannot be closed until that refund has gone through.
+    /// </summary>
+    public const string DisputeRefundPending = "dispute.refund_pending";
+    /// <summary>
     /// A charge to a cleaner found at fault that their pay on the order cannot take: none recorded,
     /// already on an invoice, already charged for a dispute, or smaller than the charge.
     /// </summary>

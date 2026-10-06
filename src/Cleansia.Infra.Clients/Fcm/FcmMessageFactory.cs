@@ -30,7 +30,8 @@ public static class FcmMessageFactory
     /// disk — and keep arg names inside the closed {orderNumber, count, amount} lock-screen allowlist
     /// (D3, widened by one slot on owner ruling 2026-09-13: <c>amount</c> is a
     /// server-formatted money figure with its own currency's symbol, "250 Kč", carried only by the three
-    /// <c>order.no_cleaner_*</c> outcomes): internal ids and raw enum values must never render.
+    /// <c>order.no_cleaner_*</c> outcomes and <c>order.cash_not_paid</c>): internal ids and raw enum values
+    /// must never render.
     /// </summary>
     public static IReadOnlyDictionary<string, IReadOnlyList<string>> ApnsDisplayMap { get; } =
         new Dictionary<string, IReadOnlyList<string>>
@@ -48,6 +49,7 @@ public static class FcmMessageFactory
             [NotificationEventCatalog.OrderNoCleanerRefunded] = OrderNumberAndAmountArgs,
             [NotificationEventCatalog.OrderNoCleanerRefundPending] = OrderNumberAndAmountArgs,
             [NotificationEventCatalog.OrderNoCleanerNothingCharged] = OrderNumberAndAmountArgs,
+            [NotificationEventCatalog.OrderCashNotPaid] = OrderNumberAndAmountArgs,
             [NotificationEventCatalog.RecurringScheduled] = OrderNumberArg,
             [NotificationEventCatalog.RecurringPaused] = NoArgs,
             [NotificationEventCatalog.NewJobsAvailable] = CountArg,

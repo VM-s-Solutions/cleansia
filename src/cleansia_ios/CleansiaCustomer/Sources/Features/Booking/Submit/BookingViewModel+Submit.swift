@@ -54,9 +54,7 @@ extension BookingViewModel {
         // every one of them already ships translated in five locales.
         let createResult = await orderCreateClient.create(command)
         guard case let .success(order) = createResult else {
-            if createResult.apiErrorOrNil?.refusesForUnpaidAmount == true { return .owesMoney }
-            takeCashAwayIfServerRefused(createResult.apiErrorOrNil)
-            return .failed(createResult.apiErrorOrNil)
+            return outcomeOfRefusedCreate(createResult.apiErrorOrNil)
         }
 
         if paymentMethod == .card, isCardPaymentAvailable {
@@ -69,6 +67,14 @@ extension BookingViewModel {
         // The card path resets in the view when PaymentSheet resolves to success.
         reset()
         return .success(orderId: order.id, confirmationCode: order.confirmationCode)
+    }
+
+    /// A refused create: an amount the customer owes is its own outcome (the pay-what-you-owe path); anything else
+    /// takes cash away if the server refused it, and fails with the server's error.
+    private func outcomeOfRefusedCreate(_ error: ApiError?) -> BookingSubmitOutcome {
+        if error?.refusesForUnpaidAmount == true { return .owesMoney }
+        takeCashAwayIfServerRefused(error)
+        return .failed(error)
     }
 
     /// What stops a booking before anything is sent: no session, or a time that no longer holds — a Confirm

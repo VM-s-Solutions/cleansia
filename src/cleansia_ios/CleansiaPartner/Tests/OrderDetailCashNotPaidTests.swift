@@ -52,15 +52,47 @@ final class OrderDetailCashNotPaidTests: XCTestCase {
     }
 
     func testOfferedOnlyWhereTheCashIsCollected() async {
-        let cases: [(item: OrderItem, offered: Bool, why: String)] = [
-            (cashJob(), true, "my cash job, in progress, after photo taken, payment pending"),
-            (cashJob(paymentType: 2), false, "a card job"),
-            (cashJob(paymentStatus: 2), false, "the cash is already collected"),
-            (cashJob(paymentStatus: 4), false, "a refunded payment has nothing outstanding"),
-            (cashJob(status: 3), false, "not started yet"),
-            (cashJob(status: 5), false, "already completed"),
-            (cashJob(isMine: false), false, "someone else's job"),
-            (cashJob(hasAfterPhotos: false), false, "no after photo yet, which the server requires")
+        let cases: [OfferCase] = [
+            OfferCase(
+                item: cashJob(),
+                offered: true,
+                why: "my cash job, in progress, after photo taken, payment pending"
+            ),
+            OfferCase(
+                item: cashJob(paymentType: 2),
+                offered: false,
+                why: "a card job"
+            ),
+            OfferCase(
+                item: cashJob(paymentStatus: 2),
+                offered: false,
+                why: "the cash is already collected"
+            ),
+            OfferCase(
+                item: cashJob(paymentStatus: 4),
+                offered: false,
+                why: "a refunded payment has nothing outstanding"
+            ),
+            OfferCase(
+                item: cashJob(status: 3),
+                offered: false,
+                why: "not started yet"
+            ),
+            OfferCase(
+                item: cashJob(status: 5),
+                offered: false,
+                why: "already completed"
+            ),
+            OfferCase(
+                item: cashJob(isMine: false),
+                offered: false,
+                why: "someone else's job"
+            ),
+            OfferCase(
+                item: cashJob(hasAfterPhotos: false),
+                offered: false,
+                why: "no after photo yet, which the server requires"
+            )
         ]
         for testCase in cases {
             let vm = await loaded(testCase.item)
@@ -99,12 +131,32 @@ final class OrderDetailCashNotPaidTests: XCTestCase {
     /// cash is recorded as received), so "cannot be undone" overstates it. The phrases are partner web's own, so all
     /// three partner clients state the same consequences. Read through the BUILT bundle, in every shipped language.
     func testTheConfirmSaysAnAdministratorIsAlertedAndOnlyAnAdministratorCanUndoIt() throws {
-        let cases: [(language: String, promised: [String], retired: String)] = [
-            ("en", ["an administrator is alerted", "Only an administrator can undo this."], "cannot be undone"),
-            ("cs", ["administrátor dostane upozornění", "Vrátit to může jen administrátor."], "nelze vzít zpět"),
-            ("sk", ["administrátor dostane upozornenie", "Vrátiť to môže len administrátor."], "nemožno vrátiť späť"),
-            ("uk", ["адміністратор отримає сповіщення", "Скасувати це може лише адміністратор."], "не можна скасувати"),
-            ("ru", ["администратор получит уведомление", "Отменить это может только администратор."], "нельзя отменить")
+        let cases: [ConfirmCase] = [
+            ConfirmCase(
+                language: "en",
+                promised: ["an administrator is alerted", "Only an administrator can undo this."],
+                retired: "cannot be undone"
+            ),
+            ConfirmCase(
+                language: "cs",
+                promised: ["administrátor dostane upozornění", "Vrátit to může jen administrátor."],
+                retired: "nelze vzít zpět"
+            ),
+            ConfirmCase(
+                language: "sk",
+                promised: ["administrátor dostane upozornenie", "Vrátiť to môže len administrátor."],
+                retired: "nemožno vrátiť späť"
+            ),
+            ConfirmCase(
+                language: "uk",
+                promised: ["адміністратор отримає сповіщення", "Скасувати це може лише адміністратор."],
+                retired: "не можна скасувати"
+            ),
+            ConfirmCase(
+                language: "ru",
+                promised: ["администратор получит уведомление", "Отменить это может только администратор."],
+                retired: "нельзя отменить"
+            )
         ]
         let restore = L10n.bundle
         defer { L10n.bundle = restore }
@@ -204,4 +256,18 @@ final class OrderDetailCashNotPaidTests: XCTestCase {
         let resolved = try XCTUnwrap(path, "no \(tag).lproj in the built bundle")
         return try XCTUnwrap(Bundle(path: resolved), "\(tag).lproj at \(resolved) is not a bundle")
     }
+}
+
+/// One row of the offer table: the job, whether the action is offered, and why.
+private struct OfferCase {
+    let item: OrderItem
+    let offered: Bool
+    let why: String
+}
+
+/// One language of the confirm copy: the phrases it must say and the one it must not.
+private struct ConfirmCase {
+    let language: String
+    let promised: [String]
+    let retired: String
 }

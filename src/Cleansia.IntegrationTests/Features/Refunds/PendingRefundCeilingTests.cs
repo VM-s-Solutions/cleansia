@@ -176,7 +176,7 @@ public class PendingRefundCeilingTests(PostgresContainerFixture fixture) : BaseI
         return await NewRefundService(ctx).IssueRefundAsync(request, CancellationToken.None);
     }
 
-    private async Task<BusinessResult> SettleInCreditAsync(string disputeId, decimal amount)
+    private async Task<BusinessResult> ResolveDisputeAsync(string disputeId, decimal amount)
     {
         await using var ctx = NewContext();
         var handler = new ResolveDispute.Handler(
@@ -375,8 +375,8 @@ public class PendingRefundCeilingTests(PostgresContainerFixture fixture) : BaseI
         StripePays(timesOutOn: partialKey);
 
         await Assert.ThrowsAsync<HttpRequestException>(() => RefundAsync(Partial(600m)));
-        var refused = await SettleInCreditAsync(disputeId, 1000m);
-        var settled = await SettleInCreditAsync(disputeId, 400m);
+        var refused = await ResolveDisputeAsync(disputeId, 1000m);
+        var settled = await ResolveDisputeAsync(disputeId, 400m);
         var retried = await RefundAsync(Partial(600m));
 
         Assert.Equal(BusinessErrorMessage.InvalidRefundAmount, refused.Error?.Message);
@@ -455,8 +455,8 @@ public class PendingRefundCeilingTests(PostgresContainerFixture fixture) : BaseI
         StripePays(timesOutOn: partialKey);
 
         await Assert.ThrowsAsync<HttpRequestException>(() => RefundAsync(Partial(800m)));
-        var refused = await SettleInCreditAsync(disputeId, 1400.01m);
-        var settled = await SettleInCreditAsync(disputeId, 1400m);
+        var refused = await ResolveDisputeAsync(disputeId, 1400.01m);
+        var settled = await ResolveDisputeAsync(disputeId, 1400m);
         var retried = await RefundAsync(Partial(800m));
 
         Assert.Equal(BusinessErrorMessage.InvalidRefundAmount, refused.Error?.Message);
@@ -468,6 +468,42 @@ public class PendingRefundCeilingTests(PostgresContainerFixture fixture) : BaseI
         Assert.Equal(0m, given.CreditReturned);
         Assert.Equal(1400m, given.SettledInCredit);
         Assert.Equal(2000m, given.Total);
+    }
+
+    /// <summary>
+    /// 1000 by card. The dispute's card refund of 1000 was claimed, Stripe's answer was lost, and Stripe has since
+    /// failed that refund. Resolving the dispute again sends nothing and closes the refund for good, even though
+    /// the resolve itself fails and is not committed. The dispute stays open: the customer is still owed the 1000.
+    /// </summary>
+    [Fact]
+    public async Task A_Dispute_Whose_Pending_Card_Refund_Stripe_Failed_Stays_Open_And_The_Refund_Is_Closed()
+    {
+        await ResetAsync();
+        var (_, disputeId) = await SeedAsync(total: 1000m, creditApplied: 0m);
+        var disputeKey = RefundService.BuildRefundKey(
+            new RefundRequest(OrderId, 0m, RefundReason.DisputeResolution, string.Empty, DisputeId: disputeId));
+        await using (var ctx = NewContext())
+        {
+            ctx.Refunds.Add(Refund.Create(
+                OrderId, disputeKey, 1000m, "CZK", RefundReason.DisputeResolution, RefundSource.AppRefund,
+                disputeId: disputeId));
+            await ctx.CommitAsync(CancellationToken.None);
+        }
+
+        StripePays();
+        _stripe.Setup(s => s.FindRefundAsync(It.IsAny<string?>(), PaymentIntentId, disputeKey, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new StripeRefundSnapshot("re_failed", 1000m, Failed: true));
+
+        var resolved = await ResolveDisputeAsync(disputeId, 1000m);
+
+        Assert.Equal(BusinessErrorMessage.RefundFailed, resolved.Error?.Message);
+        Assert.Empty(_stripeCalls);
+        await using var read = NewContext();
+        var refund = await read.Refunds.IgnoreQueryFilters().AsNoTracking().SingleAsync(r => r.RefundKey == disputeKey);
+        Assert.Equal(RefundStatus.Failed, refund.Status);
+        var dispute = await read.Disputes.IgnoreQueryFilters().AsNoTracking().SingleAsync(d => d.Id == disputeId);
+        Assert.Equal(DisputeStatus.Pending, dispute.Status);
+        Assert.Null(dispute.RefundAmount);
     }
 
     private sealed class FixedTenantProvider(string? tenantId) : ITenantProvider

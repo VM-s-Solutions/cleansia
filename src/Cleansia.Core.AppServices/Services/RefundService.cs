@@ -322,7 +322,10 @@ public sealed class RefundService(
 
             if (made is { Failed: true })
             {
+                // Committed here, as the claim is: a caller that fails on refund.failed rolls back, and a row left
+                // pending would keep counting in every ceiling money Stripe never paid.
                 refund.MarkFailed();
+                await refundRepository.CommitAsync(cancellationToken);
                 logger.LogError(
                     "Stripe failed refund {StripeRefundId} it made for order {OrderId} on refund {RefundId}; the refund is closed and nothing is sent again.",
                     made.Id, order.Id, refund.Id);

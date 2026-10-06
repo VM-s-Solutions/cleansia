@@ -1793,7 +1793,10 @@ public class RefundServiceTests
         Assert.Equal(PaymentStatus.Paid, order.PaymentStatus);
     }
 
-    /// <summary>Stripe already has a refund on the key and failed or canceled it: the row is closed, nothing is sent.</summary>
+    /// <summary>
+    /// Stripe already has a refund on the key and failed or canceled it: the row is closed, nothing is sent. The
+    /// close is committed by the seam, because a caller that fails on refund.failed rolls its unit of work back.
+    /// </summary>
     [Theory]
     [InlineData(RetryPath.Redrive)]
     [InlineData(RetryPath.ReusedRow)]
@@ -1803,12 +1806,18 @@ public class RefundServiceTests
         ArrangeOrder(order);
         ArrangeConsumed(0m);
         var refund = ArrangeRetriedRefund(order, 1000m, new StripeRefundSnapshot("re_failed", 1000m, Failed: true));
+        var committed = new List<RefundStatus>();
+        _refundRepository
+            .Setup(r => r.CommitAsync(It.IsAny<CancellationToken>()))
+            .Callback(() => committed.Add(refund.Status))
+            .Returns(Task.CompletedTask);
 
         var result = await RetryAsync(path, refund, 1000m);
 
         Assert.Equal(BusinessErrorMessage.RefundFailed, result.Error?.Message);
         Assert.Equal(0, _stripe.RefundCallCount);
         Assert.Equal(RefundStatus.Failed, refund.Status);
+        Assert.Equal([RefundStatus.Failed], committed);
         Assert.Equal(PaymentStatus.Paid, order.PaymentStatus);
     }
 

@@ -11572,31 +11572,31 @@
         "cs": {
           "stringUnit": {
             "state": "translated",
-            "value": "Použijte jen tehdy, když zákazník nezaplatil nic. Pokud zaplatil jen část, dejte místo toho vědět společnosti. Úklid se dokončí a dostanete za něj zaplaceno. Zákazník bude dlužit %1$@, dozví se to a dokud nezaplatí, nemůže si nic dalšího objednat. Tuto akci nelze vzít zpět."
+            "value": "Použijte jen tehdy, když zákazník nezaplatil nic. Pokud zaplatil jen část, dejte místo toho vědět společnosti. Úklid se dokončí a dostanete za něj zaplaceno. Zákazník bude dlužit %1$@, dozví se to a dokud nezaplatí, nemůže si nic dalšího objednat; administrátor dostane upozornění. Vrátit to může jen administrátor."
           }
         },
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Use this only if the customer paid nothing. If they paid part of it, tell the company instead. The job is completed and you are paid for it. The customer will owe %1$@, is told so and cannot book again until they pay. This cannot be undone."
+            "value": "Use this only if the customer paid nothing. If they paid part of it, tell the company instead. The job is completed and you are paid for it. The customer will owe %1$@, is told so and cannot book again until they pay, and an administrator is alerted. Only an administrator can undo this."
           }
         },
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Используйте это, только если клиент ничего не заплатил. Если он заплатил только часть, вместо этого сообщите компании. Уборка будет завершена, и вам за неё заплатят. Клиент будет должен %1$@, получит об этом уведомление и не сможет ничего заказать, пока не заплатит. Это действие нельзя отменить."
+            "value": "Используйте это, только если клиент ничего не заплатил. Если он заплатил только часть, вместо этого сообщите компании. Уборка будет завершена, и вам за неё заплатят. Клиент будет должен %1$@, получит об этом уведомление и не сможет ничего заказать, пока не заплатит; администратор получит уведомление. Отменить это может только администратор."
           }
         },
         "sk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Použite to len vtedy, keď zákazník nezaplatil nič. Ak zaplatil len časť, dajte namiesto toho vedieť spoločnosti. Upratovanie sa dokončí a dostanete zaň zaplatené. Zákazník bude dlžiť %1$@, dozvie sa to a kým nezaplatí, nemôže si nič ďalšie objednať. Túto akciu nemožno vrátiť späť."
+            "value": "Použite to len vtedy, keď zákazník nezaplatil nič. Ak zaplatil len časť, dajte namiesto toho vedieť spoločnosti. Upratovanie sa dokončí a dostanete zaň zaplatené. Zákazník bude dlžiť %1$@, dozvie sa to a kým nezaplatí, nemôže si nič ďalšie objednať; administrátor dostane upozornenie. Vrátiť to môže len administrátor."
           }
         },
         "uk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Використовуйте це, лише якщо клієнт нічого не заплатив. Якщо він заплатив лише частину, натомість повідомте компанію. Прибирання буде завершено, і вам за нього заплатять. Клієнт буде винен %1$@, отримає про це повідомлення і не зможе нічого замовити, доки не заплатить. Цю дію не можна скасувати."
+            "value": "Використовуйте це, лише якщо клієнт нічого не заплатив. Якщо він заплатив лише частину, натомість повідомте компанію. Прибирання буде завершено, і вам за нього заплатять. Клієнт буде винен %1$@, отримає про це повідомлення і не зможе нічого замовити, доки не заплатить; адміністратор отримає сповіщення. Скасувати це може лише адміністратор."
           }
         }
       }
@@ -11607,31 +11607,31 @@
         "cs": {
           "stringUnit": {
             "state": "translated",
-            "value": "Použijte jen tehdy, když zákazník nezaplatil nic. Pokud zaplatil jen část, dejte místo toho vědět společnosti. Úklid se dokončí a dostanete za něj zaplaceno. Zákazník bude dlužit cenu úklidu, dozví se to a dokud nezaplatí, nemůže si nic dalšího objednat. Tuto akci nelze vzít zpět."
+            "value": "Použijte jen tehdy, když zákazník nezaplatil nic. Pokud zaplatil jen část, dejte místo toho vědět společnosti. Úklid se dokončí a dostanete za něj zaplaceno. Zákazník bude dlužit cenu úklidu, dozví se to a dokud nezaplatí, nemůže si nic dalšího objednat; administrátor dostane upozornění. Vrátit to může jen administrátor."
           }
         },
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Use this only if the customer paid nothing. If they paid part of it, tell the company instead. The job is completed and you are paid for it. The customer will owe the price of the cleaning, is told so and cannot book again until they pay. This cannot be undone."
+            "value": "Use this only if the customer paid nothing. If they paid part of it, tell the company instead. The job is completed and you are paid for it. The customer will owe the price of the cleaning, is told so and cannot book again until they pay, and an administrator is alerted. Only an administrator can undo this."
           }
         },
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Используйте это, только если клиент ничего не заплатил. Если он заплатил только часть, вместо этого сообщите компании. Уборка будет завершена, и вам за неё заплатят. Клиент будет должен стоимость уборки, получит об этом уведомление и не сможет ничего заказать, пока не заплатит. Это действие нельзя отменить."
+            "value": "Используйте это, только если клиент ничего не заплатил. Если он заплатил только часть, вместо этого сообщите компании. Уборка будет завершена, и вам за неё заплатят. Клиент будет должен стоимость уборки, получит об этом уведомление и не сможет ничего заказать, пока не заплатит; администратор получит уведомление. Отменить это может только администратор."
           }
         },
         "sk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Použite to len vtedy, keď zákazník nezaplatil nič. Ak zaplatil len časť, dajte namiesto toho vedieť spoločnosti. Upratovanie sa dokončí a dostanete zaň zaplatené. Zákazník bude dlžiť cenu upratovania, dozvie sa to a kým nezaplatí, nemôže si nič ďalšie objednať. Túto akciu nemožno vrátiť späť."
+            "value": "Použite to len vtedy, keď zákazník nezaplatil nič. Ak zaplatil len časť, dajte namiesto toho vedieť spoločnosti. Upratovanie sa dokončí a dostanete zaň zaplatené. Zákazník bude dlžiť cenu upratovania, dozvie sa to a kým nezaplatí, nemôže si nič ďalšie objednať; administrátor dostane upozornenie. Vrátiť to môže len administrátor."
           }
         },
         "uk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Використовуйте це, лише якщо клієнт нічого не заплатив. Якщо він заплатив лише частину, натомість повідомте компанію. Прибирання буде завершено, і вам за нього заплатять. Клієнт буде винен вартість прибирання, отримає про це повідомлення і не зможе нічого замовити, доки не заплатить. Цю дію не можна скасувати."
+            "value": "Використовуйте це, лише якщо клієнт нічого не заплатив. Якщо він заплатив лише частину, натомість повідомте компанію. Прибирання буде завершено, і вам за нього заплатять. Клієнт буде винен вартість прибирання, отримає про це повідомлення і не зможе нічого замовити, доки не заплатить; адміністратор отримає сповіщення. Скасувати це може лише адміністратор."
           }
         }
       }

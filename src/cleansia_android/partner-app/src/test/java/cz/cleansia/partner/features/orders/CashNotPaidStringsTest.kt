@@ -2,6 +2,7 @@ package cz.cleansia.partner.features.orders
 
 import java.io.File
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
@@ -50,6 +51,40 @@ class CashNotPaidStringsTest {
             keys.forEach { key ->
                 val expected = if (key == "order_cash_not_paid_confirm_message") listOf("%1\$s") else emptyList()
                 assertEquals("$locale/$key format slots", expected, formatSlots(valueOf(xml, key)!!))
+            }
+        }
+    }
+
+    /**
+     * The report alerts an administrator, and an administrator can reverse it (a manager writes the debt off, or
+     * the cash is recorded as received), so "cannot be undone" overstates it. The phrases are partner web's own
+     * (`orders.cash_not_paid.confirm_message`), so all three partner clients state the same consequences.
+     */
+    @Test
+    fun `both confirm messages say an administrator is alerted and only an administrator can undo it`() {
+        val promised = mapOf(
+            "values" to listOf("an administrator is alerted", "Only an administrator can undo this."),
+            "values-cs" to listOf("administrátor dostane upozornění", "Vrátit to může jen administrátor."),
+            "values-sk" to listOf("administrátor dostane upozornenie", "Vrátiť to môže len administrátor."),
+            "values-uk" to listOf("адміністратор отримає сповіщення", "Скасувати це може лише адміністратор."),
+            "values-ru" to listOf("администратор получит уведомление", "Отменить это может только администратор."),
+        )
+        val retired = mapOf(
+            "values" to "cannot be undone",
+            "values-cs" to "nelze vzít zpět",
+            "values-sk" to "nemožno vrátiť späť",
+            "values-uk" to "не можна скасувати",
+            "values-ru" to "нельзя отменить",
+        )
+        val messages = listOf("order_cash_not_paid_confirm_message", "order_cash_not_paid_confirm_message_no_amount")
+        locales.forEach { locale ->
+            val xml = stringsXml(locale)
+            messages.forEach { key ->
+                val value = valueOf(xml, key)!!
+                promised.getValue(locale).forEach { phrase ->
+                    assertTrue("$locale/$key does not say \"$phrase\": $value", value.contains(phrase))
+                }
+                assertFalse("$locale/$key still says it cannot be undone: $value", value.contains(retired.getValue(locale)))
             }
         }
     }

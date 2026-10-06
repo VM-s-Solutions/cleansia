@@ -95,6 +95,35 @@ final class OrderDetailCashNotPaidTests: XCTestCase {
         XCTAssertNil(try OrderDetail(noPrice).cashNotPaidOwedLabel)
     }
 
+    /// The report alerts an administrator, and an administrator can reverse it (a manager writes the debt off, or the
+    /// cash is recorded as received), so "cannot be undone" overstates it. The phrases are partner web's own, so all
+    /// three partner clients state the same consequences. Read through the BUILT bundle, in every shipped language.
+    func testTheConfirmSaysAnAdministratorIsAlertedAndOnlyAnAdministratorCanUndoIt() throws {
+        let cases: [(language: String, promised: [String], retired: String)] = [
+            ("en", ["an administrator is alerted", "Only an administrator can undo this."], "cannot be undone"),
+            ("cs", ["administrátor dostane upozornění", "Vrátit to může jen administrátor."], "nelze vzít zpět"),
+            ("sk", ["administrátor dostane upozornenie", "Vrátiť to môže len administrátor."], "nemožno vrátiť späť"),
+            ("uk", ["адміністратор отримає сповіщення", "Скасувати це може лише адміністратор."], "не можна скасувати"),
+            ("ru", ["администратор получит уведомление", "Отменить это может только администратор."], "нельзя отменить")
+        ]
+        let restore = L10n.bundle
+        defer { L10n.bundle = restore }
+        for testCase in cases {
+            L10n.bundle = try localeBundle(testCase.language)
+            let messages = [
+                L10n.Orders.cashNotPaidConfirmMessage("900"),
+                L10n.Orders.cashNotPaidConfirmMessageNoAmount
+            ]
+            for message in messages {
+                let language = testCase.language
+                for phrase in testCase.promised {
+                    XCTAssertTrue(message.contains(phrase), "\(language) omits \"\(phrase)\": \(message)")
+                }
+                XCTAssertFalse(message.contains(testCase.retired), "\(language) says it is final: \(message)")
+            }
+        }
+    }
+
     func testTheReportSendsOnlyTheOrderIdConfirmsAndRefetches() async {
         let vm = await loaded(cashJob())
         let fetchesBefore = client.getByIdCallCount
@@ -167,5 +196,12 @@ final class OrderDetailCashNotPaidTests: XCTestCase {
 
         client.resumeCommand()
         await collecting.value
+    }
+
+    private func localeBundle(_ tag: String) throws -> Bundle {
+        let hosts = [Bundle.main, Bundle(for: Self.self)]
+        let path = hosts.lazy.compactMap { $0.path(forResource: tag, ofType: "lproj") }.first
+        let resolved = try XCTUnwrap(path, "no \(tag).lproj in the built bundle")
+        return try XCTUnwrap(Bundle(path: resolved), "\(tag).lproj at \(resolved) is not a bundle")
     }
 }

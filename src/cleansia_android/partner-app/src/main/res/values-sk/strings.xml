@@ -920,8 +920,8 @@
     <string name="partner_order_mark_cash_collected_confirm_action">Áno, hotovosť prijatá</string>
     <string name="order_cash_not_paid_action">Zákazník nezaplatil</string>
     <string name="order_cash_not_paid_confirm_title">Zákazník nezaplatil?</string>
-    <string name="order_cash_not_paid_confirm_message">Použite to len vtedy, keď zákazník nezaplatil nič. Ak zaplatil len časť, dajte namiesto toho vedieť spoločnosti. Upratovanie sa dokončí a dostanete zaň zaplatené. Zákazník bude dlžiť %1$s, dozvie sa to a kým nezaplatí, nemôže si nič ďalšie objednať. Túto akciu nemožno vrátiť späť.</string>
-    <string name="order_cash_not_paid_confirm_message_no_amount">Použite to len vtedy, keď zákazník nezaplatil nič. Ak zaplatil len časť, dajte namiesto toho vedieť spoločnosti. Upratovanie sa dokončí a dostanete zaň zaplatené. Zákazník bude dlžiť cenu upratovania, dozvie sa to a kým nezaplatí, nemôže si nič ďalšie objednať. Túto akciu nemožno vrátiť späť.</string>
+    <string name="order_cash_not_paid_confirm_message">Použite to len vtedy, keď zákazník nezaplatil nič. Ak zaplatil len časť, dajte namiesto toho vedieť spoločnosti. Upratovanie sa dokončí a dostanete zaň zaplatené. Zákazník bude dlžiť %1$s, dozvie sa to a kým nezaplatí, nemôže si nič ďalšie objednať; administrátor dostane upozornenie. Vrátiť to môže len administrátor.</string>
+    <string name="order_cash_not_paid_confirm_message_no_amount">Použite to len vtedy, keď zákazník nezaplatil nič. Ak zaplatil len časť, dajte namiesto toho vedieť spoločnosti. Upratovanie sa dokončí a dostanete zaň zaplatené. Zákazník bude dlžiť cenu upratovania, dozvie sa to a kým nezaplatí, nemôže si nič ďalšie objednať; administrátor dostane upozornenie. Vrátiť to môže len administrátor.</string>
     <string name="order_cash_not_paid_confirm_action">Áno, nahlásiť</string>
     <string name="order_cash_not_paid_reported_toast">Nahlásené. Upratovanie je dokončené a zákazník bol informovaný.</string>
 

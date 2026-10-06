@@ -358,7 +358,9 @@ side received 150 tier points.
    have accepted no code before (`CreateOrder`). The `Referral` row starts `Accepted`, stamped with
    the time.
 3. **Qualified, or held.** When that customer's first order completes (`CompleteOrder` →
-   `ReferralService.ProcessOrderCompletedAsync`) within 90 days of the acceptance, both sides'
+   `ReferralService.ProcessOrderCompletedAsync`), leaving aside one reported unpaid at the door (any
+   `UnpaidCash` receivable on it, whatever its status, since 2026-10-06), within 90 days of the
+   acceptance, both sides'
    currencies are resolved and, when at least one carries a referral figure, the two accounts are
    compared first; when neither does, nothing is compared and the referral qualifies with nothing paid.
    When they share a home, a phone number or an e-mail inbox, the referral is **held**:
@@ -372,8 +374,10 @@ side received 150 tier points.
    up. A side whose currency has no figure, or 0, is paid nothing, the other side is paid, and the
    referral still qualifies.
 4. **Not qualified.** Past the 90 days the referral is `Expired` and pays nothing; the daily
-   `ExpireStaleReferrals` sweeps the ones no order reached, never a held one. An order that is not the
-   customer's first completed one leaves the referral `Accepted` until it expires.
+   `ExpireStaleReferrals` sweeps the ones no order reached, never a held one. An order completed after
+   another completed one that was not reported unpaid at the door leaves the referral `Accepted` until it
+   expires. The booking reported unpaid never qualifies the referral itself, then or once its debt is
+   paid.
 5. **Interventions.** An administrator can force-qualify an `Accepted` referral, or reverse a
    `Qualified` one, taking back only what each side's balance still holds in its own currency. A held
    referral is **released** by the force-qualify, which pays the friend in the held order's currency,

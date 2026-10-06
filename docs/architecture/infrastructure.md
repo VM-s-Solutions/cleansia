@@ -466,6 +466,15 @@ can be repeated ([above](#sendgrid)). APNs and the fiscal client are not reachab
 today (the fiscal client is registered only when `Fiscal:CzechEet2:Enabled`, false everywhere), and they
 get the same one line rather than a written exception.
 
+**When Mapbox's pipeline gives up, the call degrades** (since 2026-10-06). Polly rejects a call it will
+not finish — its timeout today, a circuit breaker or rate limiter if one is ever added — with an
+`ExecutionRejectedException`, which all three Mapbox calls now catch like any other Mapbox failure:
+address search answers no suggestions, so the customer enters the address by hand; geocoding saves the
+address without coordinates; the static map answers no image. Each still records the integration-failure
+metric, as `Transient`, and logs its degrade warning. Until then the rejection escaped as a server error
+— on address search, and through geocoding on `CreateOrder` (web and mobile), `UpdateEmployee`,
+`AdminUpdateEmployee` and `UpdateAddressInfo`.
+
 The host default stays for any factory client that brings no handler of its own — none of ours, but a
 library's, such as the OTLP exporter's when an endpoint is set. `HostHttpClientPipelineTests` composes
 the real host collection and checks every named client for exactly one pipeline and its own retry budget,

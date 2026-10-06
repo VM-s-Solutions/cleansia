@@ -28,9 +28,10 @@ beside them — so that the archive validator and the page refuse and explain fr
   later made `Paid`), `ReceiptsAwaitingFiscalRegistration`
   (`FiscalNextRetryAt != null`), `OpenPayPeriods`, `UnpaidInvoices` (an invoice neither `Paid` nor
   `Cancelled` in a `Closed` period), `UninvoicedPayRows` (`EmployeeInvoiceId == null` in a `Closed`
-  period), `OpenDisputes` (Pending, UnderReview, WaitingForResponse, Escalated), and
+  period), `OpenDisputes` (Pending, UnderReview, WaitingForResponse, Escalated),
   `LatestCardPaidCleaningDateTime` (the latest `CleaningDateTime` among card orders whose money moved —
-  Paid, PartiallyRefunded, Refunded; null when the company never took a card).
+  Paid, PartiallyRefunded, Refunded; null when the company never took a card), and, since 2026-10-06,
+  `OpenReceivables` (`Receivables.Status == Open`, every kind — the company's own customers' debts).
 - **`WindDownCutoff.Utc(date, timeZoneId)`** — midnight of the date in the market's zone, UTC when the
   zone is null or unknown; the one function the reader counts by and the sweep cancels by, so the page's
   count and the sweep's selection agree.
@@ -41,7 +42,8 @@ beside them — so that the archive validator and the page refuse and explain fr
 - **`ArchiveCompany.Validator`** — reads the facts once and refuses on the first non-zero in the order of
   the ADR-0064 D3 table (`company.has_open_orders` … `company.has_open_disputes`,
   `company.within_chargeback_horizon`).
-- **`GetCompanyLifecycle`** — maps every fact onto `CompanyLifecycleDto` with the horizon date resolved;
+- **`GetCompanyLifecycle`** — maps every fact but `OpenReceivables`, which only the archive validator
+  reads, onto `CompanyLifecycleDto` with the horizon date resolved;
   the admin page turns each count into a row that links to the list that settles it (orders, pay periods,
   invoices, disputes) and the horizon row into *archive admissible from ‹date›*.
 
@@ -70,6 +72,10 @@ beside them — so that the archive validator and the page refuse and explain fr
    `CompanyWindDownService`; neither carries its own zone math.
 4. **The validator's order is the table's order**, and each refusal fires on one seeded fact
    (`ArchiveCompanyTests`).
+5. **`OpenReceivables` is read after `OpenOrders`** (since 2026-10-06). Every receivable opens in the
+   same commit that takes its order out of the open set — a fee cancellation, a confirmed lockout, a door
+   report or an administrator's override — so a commit landing between the two reads is seen by one of
+   them and cannot let the archive through.
 5. **`lifecycle.chargeback_horizon_days` is in `TenantSettingCatalog.All`** with (180, 0, 730) and renders
    on the Company settings page in five locales (the catalogue spec).
 

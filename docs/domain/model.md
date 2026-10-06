@@ -230,7 +230,7 @@ case-insensitive), `Symbol`, `Name`, `IsDefault` (a filtered unique index holds 
 currency earns one point; required before the market can be switched on), `NoShowCredit` (the
 apology credit paid on an order in this currency when its slot arrives with no cleaner; null = none —
 not an activation gate) and `ReferralCredit` (the credit a side of a referral receives when it books in
-this currency — the friend's first completed order, the referrer's latest order; null or 0 = none for
+this currency — the friend's order that qualifies the referral, the referrer's latest order; null or 0 = none for
 that side — not an activation gate either).
 → [Platform expandability](/architecture/platform-expandability#market-switch)
 

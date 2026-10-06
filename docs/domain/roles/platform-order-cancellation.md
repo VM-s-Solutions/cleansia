@@ -69,8 +69,10 @@ the same key.
 - **`CompanyWindDownService`** — `CancelAsync(order, WindDownRequestedBy, CancelledBy.System,
   OrderCancellationReasons.CompanyWindDown, RefundReason.ServiceNotRendered)` per open order, committed
   per order; and `RefundAsync(order, WindDownRequestedBy, ServiceNotRendered)` alone for every earlier
-  run's cancelled, card-paid, still-`Paid` order — the key resolves to the `Pending` row, the live
-  refundable ceiling re-clamps it, Stripe replays once.
+  run's cancelled, card-paid order still `Paid` or, since 2026-10-06, `PartiallyRefunded`, skipping one
+  whose own `refund:{id}:admin` row already `Succeeded` — the key resolves to the `Pending` row, whose
+  retry first records the refund Stripe made on that key and sends on it only when Stripe has none
+  (since 2026-10-06).
 
 ## Does NOT know
 

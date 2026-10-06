@@ -24,6 +24,13 @@
 > `CLAUDE.md` §"NSwag Client Generation" + §"Manual Steps (owner does these)", ADR-0019 (the **iOS**
 > generated client, a different pipeline governed separately).
 
+> **Correction — 2026-10-05.** Where these notes say `offerability-parity.yml` *gates* a check, cite its
+> lines, or count it with `nx-project-registration.yml` as the shape standardized twice: neither workflow
+> is in the repository, and no commit in its history has ever contained either (`git log --all`,
+> 2026-10-05). `check-available-status-parity.mjs` runs on demand only. The shape itself exists in
+> `ios-symbols-ci.yml` and `booking-policy-parity.yml`, and `agents/process/enforcement.md` keeps the
+> list of what gates a pull request. The notes below are left as written.
+
 ## Scope
 
 The **web** generated clients only — the three NSwag-generated TypeScript clients under

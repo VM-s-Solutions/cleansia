@@ -68,7 +68,7 @@
     color: #1f2937;
 
     &--positive {
-      color: #10b981;
+      color: var(--cleansia-success-800);
     }
 
     &--negative {

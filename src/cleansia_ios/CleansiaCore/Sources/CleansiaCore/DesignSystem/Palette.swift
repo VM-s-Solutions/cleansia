@@ -32,6 +32,9 @@ enum Palette {
     static let errorBg = Color(hex: 0xFEE2E2)
     static let errorText = Color(hex: 0xB91C1C)
     static let warningStar = Color(hex: 0xF59E0B)
+    static let amber800 = Color(hex: 0x92400E)
+    static let green400 = Color(hex: 0x4ADE80)
+    static let green800 = Color(hex: 0x166534)
     static let darkError = Color(hex: 0xFCA5A5)
     /// The Android dark schemes never override the error-container slots, so
     /// they render the Material3 BASELINE errorContainer/onErrorContainer

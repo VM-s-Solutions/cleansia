@@ -66,6 +66,7 @@ import cz.cleansia.partner.api.model.DocumentStatus
 import cz.cleansia.partner.api.model.DocumentType
 import cz.cleansia.partner.api.model.GetMyDocumentsMyDocumentDto
 import cz.cleansia.partner.api.model.MyDocumentRequirementDto
+import cz.cleansia.partner.ui.theme.pendingInk
 
 /**
  * My-documents screen — what the cleaner's country asks for, what they have uploaded, and the two
@@ -524,7 +525,7 @@ private fun DocumentRow(
 @Composable
 private fun StatusBadge(status: DocumentStatus?) {
     val (label, color) = when (status) {
-        DocumentStatus._1 -> stringResource(R.string.document_status_pending) to MaterialTheme.colorScheme.tertiary
+        DocumentStatus._1 -> stringResource(R.string.document_status_pending) to MaterialTheme.colorScheme.pendingInk
         DocumentStatus._2 -> stringResource(R.string.document_status_approved) to primaryText()
         DocumentStatus._3 -> stringResource(R.string.document_status_rejected) to MaterialTheme.colorScheme.error
         null -> "—" to MaterialTheme.colorScheme.onSurfaceVariant

@@ -261,7 +261,7 @@ coordinating multi-agent or multi-step work, start with **`agents/WAY-OF-WORKING
   ios, qa, reviewer, security, optimizer, docs). Invoke via the `Agent` tool with `subagent_type` set
   to the charter's `name`.
 - **`agents/process/*.md`** — ticket lifecycle, quality gates, communication protocol, routing.
-- **`agents/tools/check-*.mjs`** — 17 repo checkers, eight with their own self-test. Seven CI
+- **`agents/tools/check-*.mjs`** — 18 repo checkers, nine with their own self-test. Seven CI
   workflows gate a PR: Backend, Frontend, Android, iOS, Docs, iOS symbols and booking-policy parity.
   The last two are dependency-free Node gates with their own repo-root workflows, because the drift
   they catch spans trees that no single existing job can see: `nx affected` selects nothing for a

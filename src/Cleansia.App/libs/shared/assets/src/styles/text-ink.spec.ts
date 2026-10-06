@@ -1,27 +1,28 @@
+import { readFileSync, readdirSync } from 'fs';
 import { join } from 'path';
 import { compile } from 'sass';
+
+const compiled = (entry: string): string =>
+  compile(join(__dirname, entry), {
+    quietDeps: true,
+    loadPaths: [join(__dirname, '../../../../../node_modules')],
+  }).css;
+const partner = compiled('cleansia-partner.scss');
+const customer = compiled('cleansia-customer.scss');
+const admin = compiled('cleansia-admin.scss');
+
+/** The colour every rule for exactly this selector declares. */
+const inks = (css: string, selector: string): string[] => {
+  const escaped = selector.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const rules = css.matchAll(new RegExp(`(?:^[ \\t]*|,\\s*)${escaped}\\s*(?:,[^{]*)?\\{([^}]*)\\}`, 'gm'));
+  return Array.from(rules, ([, body]) => body.match(/(?:^|;)\s*color:\s*([^;]+)/)?.[1].trim() ?? '')
+    .filter(Boolean);
+};
 
 // A text link or a text button is blue TEXT on a light ground, so it takes the text ink, Sky700
 // (5.9 on white), never the brand Sky600 (4.1) or Sky500 (2.8); under the pointer it goes a step
 // darker, Sky800 (7.6). Fills, borders and standalone icons keep the brand blue.
 describe('the shared and partner stylesheets — text links and text buttons', () => {
-  const compiled = (entry: string): string =>
-    compile(join(__dirname, entry), {
-      quietDeps: true,
-      loadPaths: [join(__dirname, '../../../../../node_modules')],
-    }).css;
-  const partner = compiled('cleansia-partner.scss');
-  const customer = compiled('cleansia-customer.scss');
-  const admin = compiled('cleansia-admin.scss');
-
-  /** The colour every rule for exactly this selector declares. */
-  const inks = (css: string, selector: string): string[] => {
-    const escaped = selector.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-    const rules = css.matchAll(new RegExp(`(?:^[ \\t]*|,\\s*)${escaped}\\s*(?:,[^{]*)?\\{([^}]*)\\}`, 'gm'));
-    return Array.from(rules, ([, body]) => body.match(/(?:^|;)\s*color:\s*([^;]+)/)?.[1].trim() ?? '')
-      .filter(Boolean);
-  };
-
   it.each([
     ['the sign-in card links (partner and admin)', '.cleansia-login a'],
     ['the partner register page links', '.cleansia-register a'],
@@ -53,6 +54,27 @@ describe('the shared and partner stylesheets — text links and text buttons', (
     expect(inks(customer, ':root.dark-mode .cleansia-code-input-dialog__status--neutral')).toEqual([
       '#7dd3fc',
     ]);
+  });
+
+  // The applied and invalid lines sat on green-600 and red-600: 2.9 and 4.1 on their tints, 3.8 and
+  // 2.9 after dark. Green-700 is 4.4 on its tint, so the applied line takes green-800.
+  it("inks the code dialog's applied and invalid lines to read on their tints, after dark too", () => {
+    expect(inks(customer, '.cleansia-code-input-dialog__status--success')).toEqual([
+      'var(--cleansia-success-800)',
+    ]);
+    expect(inks(customer, '.cleansia-code-input-dialog__status--error')).toEqual(['var(--cleansia-error-700)']);
+    expect(inks(customer, ':root.dark-mode .cleansia-code-input-dialog__status--success')).toEqual(['#86efac']);
+    expect(inks(customer, ':root.dark-mode .cleansia-code-input-dialog__status--error')).toEqual(['#fca5a5']);
+  });
+
+  // The partner dashboard's green figures were emerald-500 #10b981: 2.1 on the order summary's blue
+  // wash, 2.4 on the earnings summary. Green-700 is 4.1 on the wash; green-800 reads 5.8.
+  it.each([
+    ['a success label (the completion rate, a positive growth)', '.cleansia-label--success'],
+    ["the order chart's success value", '.summary-item__value--success'],
+    ["the earnings chart's positive value", '.summary-item__value--positive'],
+  ])('inks %s with green-800', (_, selector) => {
+    expect(inks(partner, selector)).toEqual(['var(--cleansia-success-800)']);
   });
 
   it("inks the admin price form's optional badge with Sky700", () => {
@@ -97,8 +119,9 @@ describe('the shared and partner stylesheets — text links and text buttons', (
   });
 
   // The notice's OK is a filled button: white on the brand blue, Sky600 at its lightest (it started
-  // at Sky500, 2.77), a step darker under the pointer. Light theme; after dark it keeps its own.
-  it("paints the cookie notice's OK button from Sky600, a step darker under the pointer", () => {
+  // at Sky500, 2.77), a step darker under the pointer. After dark it was white on Sky400, 2.14; it
+  // keeps the white label a step deeper, Sky700 at its lightest (5.9).
+  it("paints the cookie notice's OK button from Sky600, Sky700 after dark, a step darker under the pointer", () => {
     const background = (css: string, selector: string): string[] => {
       const escaped = selector.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
       return Array.from(
@@ -114,10 +137,106 @@ describe('the shared and partner stylesheets — text links and text buttons', (
         'linear-gradient(135deg, var(--cleansia-primary-700) 0%, var(--cleansia-primary-800) 100%)',
       ]);
     }
+    expect(background(customer, ':root.dark-mode .cleansia-cookie-consent__btn--accept')).toEqual([
+      'linear-gradient(135deg, var(--cleansia-primary-700) 0%, var(--cleansia-primary-800) 100%)',
+    ]);
+    expect(background(customer, ':root.dark-mode .cleansia-cookie-consent__btn--accept:hover')).toEqual([
+      'linear-gradient(135deg, var(--cleansia-primary-800) 0%, var(--cleansia-primary-900) 100%)',
+    ]);
   });
 
   it('keeps the cookie notice link a light blue after dark', () => {
     expect(inks(customer, ':root.dark-mode .cleansia-cookie-consent__link')).toEqual(['#7dd3fc']);
     expect(inks(customer, ':root.dark-mode .cleansia-cookie-consent__link:hover')).toEqual(['#bae6fd']);
+  });
+});
+
+// A standalone icon needs 3:1 on its ground. These sat on Sky400 (2.0 to 2.1) and Sky500 (2.4 to
+// 2.6) over white cards and pale blue tints; they take the brand blue, Sky600 (3.5 at the lowest).
+describe('the partner and admin stylesheets — standalone icons', () => {
+  it.each([
+    ['the help card dismiss X', '.cleansia-help-card__dismiss'],
+    ['the help card step arrow', '.cleansia-help-card__step-arrow i'],
+    ['the info dialog icon', '.cleansia-dialog__icon--info i'],
+    ["the order activity's note icon", '.cleansia-order-details__activity-icon--note'],
+    ['an empty section icon', '.empty-state i'],
+    ['the document dropzone icon', '.doc-upload__dropzone-icon'],
+    ['the invoice banner meta icons', '.invoice-detail-banner__meta-item i'],
+    ['the order header meta icons', '.cleansia-order-details__status-banner .order-header-meta__item i'],
+  ])('paints %s with Sky600', (_, selector) => {
+    expect(inks(partner, selector)).toEqual(['var(--cleansia-primary-600)']);
+  });
+
+  it('paints the not-found icon with Sky600', () => {
+    expect(inks(partner, '.not-found-state__icon i')).toEqual(['var(--cleansia-primary-600, #0284c7)']);
+  });
+
+  it("paints the admin pay-config banner's info icon with Sky600", () => {
+    expect(inks(admin, '.cleansia-pay-config-management__info-banner i')).toEqual(['var(--cleansia-primary-600)']);
+  });
+});
+
+// PrimeNG 20 names its primary --p-primary-color. --primary-color is declared nowhere, so a border or
+// an icon reading it fell back to Tailwind's #3b82f6, or lost its colour to its parent's. Borders and
+// icons take the PrimeNG primary (Sky600; Sky400 after dark); blue text takes the text ink, Sky700.
+describe('the shared styles — the primary they read exists', () => {
+  const sources = (dir: string): string[] =>
+    readdirSync(dir, { withFileTypes: true }).flatMap((entry) => {
+      const path = join(dir, entry.name);
+      if (entry.isDirectory()) return sources(path);
+      return /\.(scss|ts)$/.test(entry.name) && !entry.name.endsWith('.spec.ts') ? [path] : [];
+    });
+
+  it('reads --primary-color nowhere', () => {
+    const readers = sources(join(__dirname, '../../..')).filter((path) =>
+      /var\(--primary-color\b/.test(readFileSync(path, 'utf8')),
+    );
+
+    expect(readers).toEqual([]);
+  });
+
+  it.each([
+    ['under the pointer', ':hover:not(.disabled)'],
+    ['focused', ':focus:not(.disabled)'],
+    ['with a file dragged over it', '.drag-over'],
+  ])("edges the file drop area with the PrimeNG primary %s", (_, state) => {
+    const escaped = `.cleansia-file-component .file-upload-area${state}`.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    expect(customer).toMatch(new RegExp(`\\n${escaped} \\{\\s*border-color: var\\(--p-primary-color\\);`));
+  });
+
+  it("rings the focused file drop area with the brand blue", () => {
+    expect(customer).toMatch(
+      /\.file-upload-area:focus:not\(\.disabled\) \{[^}]*box-shadow: 0 0 0 2px rgba\(var\(--cleansia-primary-rgb\), 0\.2\)/,
+    );
+  });
+
+  it.each([
+    ['a picked file', '.cleansia-file-component .selected-files .files-list .file-item .file-info .file-icon'],
+    ['an address suggestion', '.cleansia-address-autocomplete__suggestion i'],
+  ])("paints %s's icon with the PrimeNG primary", (_, selector) => {
+    expect(inks(customer, selector)).toEqual(['var(--p-primary-color)']);
+  });
+
+  it.each([
+    ["the order photos' counts", '.order-photos__count-value'],
+    ["the order photos' upload progress", '.order-photos__upload-progress'],
+    ['the actual time beside the estimate', '.time-comparison-item--actual .time-comparison-item__value'],
+  ])('inks %s with Sky700', (_, selector) => {
+    expect(inks(partner, selector)).toEqual(['var(--cleansia-primary-700)']);
+  });
+
+  it('edges and rings the code boxes with the brand blue, not Tailwind blue', () => {
+    const source = readFileSync(
+      join(__dirname, '../../../components/src/lib/cleansia-code-input/cleansia-code-input.component.ts'),
+      'utf8',
+    );
+
+    expect(source.match(/border-color: var\(--p-primary-color\);/g)).toHaveLength(2);
+    expect(source).toContain('box-shadow: 0 0 0 2px rgba(var(--cleansia-primary-rgb), 0.15);');
+    expect(source).not.toMatch(/#3b82f6|59, 130, 246/);
+  });
+
+  it('carries no rule for the order chart revenue no template draws', () => {
+    expect(partner).not.toContain('.service-item__revenue');
   });
 });

@@ -118,6 +118,14 @@ extension L10n {
             localized("recurring_lapsed_notice_body")
         }
 
+        static var pausedNoticeTitle: String {
+            localized("recurring_paused_notice_title")
+        }
+
+        static var pausedNoticeBody: String {
+            localized("recurring_paused_notice_body")
+        }
+
         static var createTitleBlank: String {
             localized("recurring_create_title_blank")
         }

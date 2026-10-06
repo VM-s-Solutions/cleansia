@@ -279,7 +279,10 @@ Text drawn from the primary takes the text ink, `{primary.700}` (sky-700), in th
 
 The cookie notice's *OK* is a filled button on all three sites, with a gradient of its own in
 `cleansia-cookie-consent.component.scss`: sky-600 → sky-700, and sky-700 → sky-800 under the pointer,
-where it ran sky-500 → sky-600. Its dark-mode gradient is unchanged.
+where it ran sky-500 → sky-600. After dark, on the customer site, its white label sat on sky-400 →
+sky-500, 2.14:1 at the light end and 2.77:1 at the other, 2.77 / 4.10:1 under the pointer; since a
+later finding the same day the dark gradient is one step deeper than the light one, sky-700 → sky-800,
+and sky-800 → sky-900 under the pointer, 5.93 / 7.56:1 at rest and 7.56 / 9.46:1 under the pointer.
 
 Measured in Chromium on the running dev servers, at rest / under the pointer: the partner *Login* and
 the admin *Create* 2.77 / 4.10 → 4.10 / 5.93:1; the cookie notice's *OK*, at the light end of its
@@ -289,6 +292,19 @@ customer *Log In* reads 4.10 / 5.93:1 before and after. `cleansia-preset.spec.ts
 primary and its two darker steps, the label and tab inks, the untouched dark theme and tab underline,
 and computes every light blue text ink in the preset at 4.5:1 or better on white from the preset's
 own ramp; `text-ink.spec.ts` pins the cookie notice's gradients in the partner and customer bundles.
+
+**`--primary-color` is not a token.** PrimeNG 20 names its primary `--p-primary-color`, and nothing
+declares `--primary-color`, so until 2026-10-05 (finding 2026-10-05) eleven shared declarations that
+read it each lost their colour, measured in Chromium on the running apps. The code boxes' focused and
+filled borders and an address suggestion's icon fell back to Tailwind's `#3b82f6`. The file drop
+area's border under the pointer, focused and with a file dragged over it, and a picked file's icon,
+went to the text colour, black or white after dark, which also cancelled the customer site's own
+accent border under the pointer, and its focus ring, read from `--primary-color-alpha-20`, dropped to
+none. The partner order photos' count and upload line took their parent's black. Borders and icons
+now read `--p-primary-color`, sky-600 (4.10:1 on white) and sky-400 after dark on the customer site
+(6.83–8.07:1); the focus rings are `rgba(var(--cleansia-primary-rgb), …)`; and the blue text takes the
+text ink, `--cleansia-primary-700`, 5.93:1. `text-ink.spec.ts` pins each site and fails on a read of
+`--primary-color` anywhere under `libs/shared`.
 
 ### A blue slab on the customer site takes the card's ground as its ink {#heading-slab-ink}
 
@@ -396,8 +412,9 @@ button takes the button's ink, so no control shows two blues. The apps follow th
   [the partner app's other blue text](/mobile-app/patterns#brand-text-ink)): 4.10 → 5.93:1, beside a
   name already on sky-700. A sweep of the compiled partner bundle found no other blue text under
   4.5:1 but icons and two shared labels, the code dialog's *checking* line and the price form's
-  *Optional* badge (next). `.service-item__revenue`, which the finding named, styles nothing: the
-  dashboard's top-services revenue is a `<cleansia-label color="primary">`, slate on white.
+  *Optional* badge (next). `.service-item__revenue`, which the finding named, styled nothing: the
+  dashboard's top-services revenue is a `<cleansia-label color="primary">`, slate on white. The rule
+  was deleted later on 2026-10-05.
 - **Two shared labels** (finding 2026-10-05). The code dialog's neutral status, *Checking the code…*
   under the customer sign-up's referral code (`.cleansia-code-input-dialog__status--neutral` in
   `cleansia-dialog.component.scss`), was sky-600 on a light-blue tint in both themes; it takes
@@ -406,8 +423,21 @@ button takes the button's ink, so no control shows two blues. The apps follow th
   (`.currency-price-block__badge--optional` in `_form-page.scss`), was sky-500 text on white and takes
   the text ink, 2.77 → 5.93:1; its see-through ground and outline still keep it quieter than the
   *Required* badge (5.17:1). `text-ink.spec.ts` compiles the customer and admin bundles and pins both,
-  light and dark. The same dialog's success and error lines read under 4.5:1 too, and are not part of
-  this (reported 2026-10-05).
+  light and dark. The same dialog's *applied* and *invalid* lines, green-600 and red-600 on a 12 % and
+  a 10 % wash of themselves, read under 4.5:1 too, and since a later finding the same day take
+  green-800 (`--cleansia-success-800`; green-700, the apps' success text, reads 4.39:1 on the wash) and
+  red-700 (`--cleansia-error-700`) in light mode, and green-300 and red-300 after dark: 2.88 → 6.24:1
+  and 4.14 → 5.54:1 in light mode, 3.80 → 8.91:1 and 2.89 → 7.36:1 in dark. The washes are unchanged,
+  and the icons share their line's ink.
+- **Standalone icons on the partner and admin sites** (finding 2026-10-05). Nine drawn icons were in
+  the lighter sky-500 or sky-400, 2.01–2.60:1, under the 3:1 an icon needs: the help card's dismiss ×
+  and step arrow, an order activity's note icon, the admin pay settings banner's icon, the
+  empty-section and not-found icons, the document drop zone's icon, and the invoice banner's and an
+  order header's meta icons. They take the brand blue, sky-600 (`--cleansia-primary-600`),
+  3.49–4.10:1, the lowest being the dismiss × on its header tint, which still goes to sky-700 under the
+  pointer. The dialog's `--info` icon modifier took the same sky-600, although no template has drawn
+  it since the customer site's card-capture dialogs went with the cash path's card (2026-10-04).
+  `text-ink.spec.ts` pins each.
 
 Measured in Chromium on the running dev servers, at rest / under the pointer: a PrimeNG text, outlined
 or link button's label and icon 2.77 / 2.60 → 5.93 / 7.09:1 (a link under the pointer 7.56:1); the

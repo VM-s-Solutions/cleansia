@@ -557,13 +557,16 @@ need backfilling.
 
 ### Changed
 
-- **Customer iOS — a schedule offers no *Edit* while your Plus benefits are paused.** When a Plus
-  renewal payment fails, your benefits are paused until it goes through or you cancel, and a schedule
-  cannot be changed meanwhile. The iOS app still offered *Edit* on each schedule, and *Change the
-  schedule* on one that can no longer be paid in cash, and saving the change was then refused. It now
-  hides them, as Android does, and a schedule that includes a service no longer offered says so
-  without *edit to update*. You can still pause, resume and delete a schedule. (Owner decision
-  2026-10-05.)
+- **Customer iOS — while your Plus benefits are paused, your schedules say so and offer nothing that
+  would be refused.** When a Plus renewal payment fails, your benefits are paused until it goes
+  through or you cancel, and no schedule can be set up or changed meanwhile. The iOS app still offered
+  *Edit* on each schedule, *Change the schedule* on one that can no longer be paid in cash, and the
+  button to set up a new schedule, both below your schedules and on the empty screen, and each was
+  then refused. It now hides them all, as Android does, and a schedule that includes a service no
+  longer offered says so without *edit to update*. In their place your schedules screen says
+  *Recurring paused — Plus payment failed*, and that your schedules book no new cleanings until a
+  retried payment goes through, in Android's words. You can still pause, resume and delete a
+  schedule. (Owner decisions 2026-10-05.)
 
 - **Customer, cleaner and admin, in Slovak — a package is a *balík*.** The apps called a package
   *balíček* in Slovak: on Home, in the booking and its *In your package* questions, on an order, in a
@@ -1079,6 +1082,38 @@ need backfilling.
   generic English sentence that is honest about being generic, until counsel supplies each one.
 
 ### Fixed
+
+- **Cleaner Android, iOS and website — the last faint statuses, labels and icons read clearly.** On
+  an order, the payment's *Pending* and *Paid* were faint on their own pale band, as low as 2.0:1,
+  and on Android so were *Failed* and *Disputed* in dark mode; they now read 5.3:1 or more in both
+  modes, in a deeper amber, green or red in light mode and a lighter one in dark, the same on both
+  platforms. A document's *Pending*, and on iOS its *Approved*, read 6.8:1 or more: on iOS they were
+  2.2:1, and 2.9:1 in dark mode, and on Android *Pending* was a purple that matched nothing else in
+  the app. That purple is gone from the Android app: the registration screen's *awaiting review* row
+  is grey, the note that a city is outside the area served is amber, and so are the contract and
+  legal notices, as on iOS. On iOS the label of the slider you swipe to take a job, act on one or
+  accept its contract is the deeper blue, 5.1:1 where it was 3.5:1. In dark mode the label on a
+  filled blue button, and on Android the swipe slider's, is a darker navy, 6.5:1 where it was 4.4:1.
+  On the website the dashboard's green figures, the completion rate and earnings growth, read 5.8:1
+  or more where they were about 2:1; eight icons that stand alone, on an empty section, a help card, an
+  order and an invoice among them, are the brand blue, 3.5:1 or more where they were 2.0–2.6:1; and
+  an order's photo count and upload progress, the boxes you type the e-mail code into and an address
+  suggestion's pin are blue again, where they had lost their colour or fallen back to another blue.
+  (Findings 2026-10-05.)
+
+- **Customer Android, iOS and website — the last faint labels read clearly.** In dark mode the label
+  on a filled blue button in the apps, and on iOS the slider you swipe to book, is a darker navy, 6.5:1
+  where it was 4.4:1; light mode is unchanged. On the website, the line under a referral code you
+  enter at sign-up, saying it was applied or is not valid, read 2.9–4.1:1 and now reads 5.5:1 or more
+  in both themes. After dark the cookie notice's *OK* was white on a light blue, 2.1:1, and is now on
+  a deeper blue, 5.9:1; the light theme is unchanged. The boxes you type an e-mail code into, an
+  address suggestion's pin and the edge of the area you drop a dispute's files on are the brand blue
+  again, where they had fallen back to another blue or lost their colour. (Findings 2026-10-05.)
+
+- **Admin website — icons that stand alone are the brand blue.** Icons on their own, the information
+  icon on the pay settings banner and the icon on an empty section among them, were a light blue,
+  2.0–2.6:1, under the contrast an icon needs. They are now the brand blue, 3.5:1 or more. (Finding
+  2026-10-05.)
 
 - **Customer and admin websites — two more blue labels read clearly.** While the website checks the
   referral code you type at sign-up, *Checking the code…* was a light blue on a light-blue band, 3.7:1,

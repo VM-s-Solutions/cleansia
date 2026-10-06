@@ -6,7 +6,9 @@ public enum CleansiaColors {
     /// so text takes sky-700 in light mode (5.93:1); dark mode keeps the primary's sky-400. Fills, borders,
     /// icons and buttons keep `primary`.
     public static let primaryText = Color.dynamic(light: Palette.sky700, dark: Palette.sky400)
-    public static let onPrimary = Color.dynamic(light: .white, dark: Palette.sky900)
+    /// Dark mode takes sky-950, 6.48:1 on the dark primary's sky-400, where sky-900 read 4.42:1 — every filled
+    /// button's label. Light mode keeps white on the brand blue.
+    public static let onPrimary = Color.dynamic(light: .white, dark: Palette.sky950)
     public static let primaryContainer = Color.dynamic(light: Palette.sky100, dark: Palette.sky700)
     /// The brand blue for TEXT on `primaryContainer` — a badge, a chip, an initial on its disc: sky-700 in
     /// light mode, as `primaryText` (5.17:1 on sky-100), and sky-100 in dark mode, where the container is
@@ -74,6 +76,14 @@ public enum CleansiaColors {
     public static let successText = Palette.successText
     public static let successBg = Palette.successBg
     public static let warningStar = Palette.warningStar
+
+    /// A status word drawn in its own amber or green — on the surface, or as a pill's label on a 12 % wash of
+    /// itself — reads 4.5:1 or more in both modes: amber-800 and green-800 in light mode, the warning star's
+    /// amber-500 and green-400 in dark. `warningStar` read 2.15:1 on white (1.96:1 on its wash) and
+    /// `successText`'s green-700 2.92:1 on the dark surface (2.64:1 on its wash). The customer apps' dispute
+    /// pills and Android's partner `pendingInk` take the same pairs.
+    public static let pendingInk = Color.dynamic(light: Palette.amber800, dark: Palette.warningStar)
+    public static let successInk = Color.dynamic(light: Palette.green800, dark: Palette.green400)
 
     // Fixed brand ramp for the splash gradient (sky-600 → sky-400), matching
     // Android's SplashScreen which does not vary with the color scheme.

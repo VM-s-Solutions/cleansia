@@ -72,6 +72,42 @@ final class ComponentTextInkTests: XCTestCase {
         XCTAssertLessThan(contrast(rgb(0x0284C7), wash), 4.5, "the primary is not a text colour on the wash")
     }
 
+    /// The subtle slide-to-confirm (the partner's order actions, the orders list's take, the work contract) writes
+    /// its label on a 12 % primary wash over the card: it takes the text ink, 5.10:1 in light mode where the
+    /// primary read 3.52:1 (finding 2026-10-05), and 5.43:1 in dark. The track and the thumb keep the primary.
+    func testTheSubtleSlideToConfirmLabelReadsOnItsWash() throws {
+        let slide = try compactSource("Components/SlideToConfirm.swift")
+        XCTAssertTrue(slide.contains("privatevarlabelColor:Color{switchstyle{case.subtle:CleansiaColors.primaryText"))
+        XCTAssertTrue(slide
+            .contains("privatevartrackColor:Color{switchstyle{case.subtle:CleansiaColors.primary.opacity(0.12)"))
+        XCTAssertTrue(slide.contains(
+            "privatevarthumbColor:Color{switchstyle{case.subtle:CleansiaColors.primarycase.prominent:"
+        ))
+        for style in [UIUserInterfaceStyle.light, .dark] {
+            let wash = resolved(CleansiaColors.primary, style) * 0.12 + resolved(CleansiaColors.surface, style) * 0.88
+            XCTAssertGreaterThanOrEqual(contrast(resolved(CleansiaColors.primaryText, style), wash), 4.5)
+        }
+        XCTAssertLessThan(
+            contrast(rgb(0x0284C7), mix(0x0284C7, 0.12, over: 0xFFFFFF)),
+            4.5,
+            "the primary reads after all"
+        )
+    }
+
+    /// A filled button's label reads 4.5:1 on its dark-mode fill (finding 2026-10-05): sky-900 on the dark
+    /// primary's sky-400 read 4.42:1, so dark mode takes sky-950 (6.48:1). Light mode is unchanged, white.
+    func testTheFilledButtonsLabelReadsOnItsDarkFill() throws {
+        XCTAssertEqual(
+            contrast(resolved(CleansiaColors.onPrimary, .dark), resolved(CleansiaColors.primary, .dark)),
+            6.48,
+            accuracy: 0.01
+        )
+        XCTAssertLessThan(contrast(rgb(0x0C4A6E), rgb(0x38BDF8)), 4.5, "sky-900 reads on sky-400 after all")
+        XCTAssertEqual(contrast(resolved(CleansiaColors.onPrimary, .light), rgb(0xFFFFFF)), 1, accuracy: 0.001)
+        let button = try compactSource("Components/CleansiaButton.swift")
+        XCTAssertTrue(button.contains(".foregroundColor(CleansiaColors.onPrimary).background(CleansiaColors.primary"))
+    }
+
     /// Blue text on the primary container reads 4.5:1 in both modes (finding 2026-10-05): in dark mode the
     /// container is sky-700, where the text ink's sky-400 read 2.77:1, so badge text takes
     /// `primaryTextOnContainer` (sky-100 in dark, the text ink's sky-700 in light). The section header's badge

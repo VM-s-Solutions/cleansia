@@ -50,7 +50,9 @@ the same key.
   `Failed(message)`; `RefundedAmount` is set only on `Issued`, to what the refund actually returned):
   `IRefundService.IssueRefundAsync(new RefundRequest(orderId, TotalPrice, refundReason, actorId))` and, on
   success, the customer's `OrderRefunded` notification keyed on the **refund** id, not the order (three
-  handlers raise that event; keying on the order minted duplicate outbox keys). On a failure that leaves
+  handlers raise that event; keying on the order minted duplicate outbox keys). A Stripe transport fault
+  (`RefundService.IsStripeTransportFailure`) is caught and reported as `Failed(refund.failed)`, since the
+  refund's claim already committed the cancellation. On a failure that leaves
   the row `Pending` (since 2026-10-06), `CreditUnwind.ReturnPendingRefundCreditLegAsync`
   returns the slice's credit share at once on the refund's key, as `CustomerOrderCancellation` and
   `CleanerNoShowCancellation` do, so the re-drive reads the slice back as card plus that leg, to the minor

@@ -23,7 +23,8 @@ non-refunded fee only on pure goodwill — `RefundReason.AdminDiscretion`).
 - **The refundable ceiling** — the seam clamps `Amount` to `amountCharged − Σ(succeeded refunds)`
   (ADR-0006 D2) — since 2026-10-06 `− Σ(pending refunds on any other key)` too, because a pending row may
   be one Stripe already paid (`RefundService.CardRefundedOrOwedAsync`); only the row being retried is left
-  out, and it keeps its amount — and since 2026-10-05 first holds the requested slice of the sale to what
+  out, and it keeps its amount; a pending row's retry counts on the card only the pending refunds claimed
+  before it (`IRefundRepository.GetPendingRefundTotalClaimedBeforeAsync`) — and since 2026-10-05 first holds the requested slice of the sale to what
   the order has left once a complaint settled in credit is counted: the card leg is `min(card ceiling, card
   share of min(requested, TotalPrice − card refunded or pending − credit returned − settled in credit))`,
   where *credit returned* leaves out a credit leg already returned on the refund's own key, which counts as

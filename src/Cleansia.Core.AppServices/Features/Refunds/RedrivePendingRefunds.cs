@@ -18,7 +18,8 @@ namespace Cleansia.Core.AppServices.Features.Refunds;
 /// Every hour, re-drive the card refunds of cancelled orders that Stripe refused or could not be reached
 /// for, each on the key it was created with, and tell the company's administrators about any refund still
 /// owed and not through a day after it was asked for, saying whether this job retries it or they must
-/// (owner ruling 2026-09-28). A refund with nothing left to give back is closed instead.
+/// (owner ruling 2026-09-28). A refund with nothing left to give back is closed instead. A refund Stripe
+/// made on the key and then failed is closed too, and raised for a retry at once, however young.
 /// → /flows/cancellation-refund-dispute#refund
 /// </summary>
 public class RedrivePendingRefunds
@@ -82,6 +83,7 @@ public class RedrivePendingRefunds
                     r.Order!.UserId,
                     r.Order.DisplayOrderNumber,
                     OrderStatus = r.Order.CurrentStatus,
+                    CardCharged = r.Order.TotalPrice - r.Order.CreditAppliedAmount,
                 })
                 .ToListAsync(cancellationToken);
 
@@ -118,6 +120,7 @@ public class RedrivePendingRefunds
                     try
                     {
                         BusinessResult<RefundResult>? result = null;
+                        var closed = false;
                         if (redrive)
                         {
                             try
@@ -131,10 +134,34 @@ public class RedrivePendingRefunds
                                     row.Id, row.OrderId);
                             }
                         }
+                        else if (row.CardCharged - await refundRepository.GetSucceededRefundTotalForOrderAsync(
+                                     row.OrderId, cancellationToken) <= 0m)
+                        {
+                            // Stripe never refunds more than the charge, so once the refunds it confirmed took all
+                            // of it this row cannot have been paid. The total is read before the row so a row
+                            // settled in between is seen settled and left alone.
+                            var refund = await refundRepository.GetByIdAsync(row.Id, cancellationToken);
+                            if (refund is { Status: RefundStatus.Pending })
+                            {
+                                refund.MarkFailed();
+                                logger.LogInformation(
+                                    "Refund {RefundId} of order {OrderId} closed: refunds Stripe confirmed took the whole card charge",
+                                    row.Id, row.OrderId);
+                            }
 
-                        var nothingOwed = result?.Error?.Message
-                            is BusinessErrorMessage.RefundNothingRefundable
-                            or BusinessErrorMessage.RefundOrderNotRefundable;
+                            closed = true;
+                        }
+
+                        var nothingOwed = closed
+                            || result?.Error?.Message
+                                is BusinessErrorMessage.RefundNothingRefundable
+                                or BusinessErrorMessage.RefundOrderNotRefundable;
+
+                        // Stripe failed it: the refund seam closed it and raised it for a retry in a commit of its own.
+                        var raisedBySeam = result is { IsSuccess: false }
+                            && result.Error?.Message == BusinessErrorMessage.RefundFailed
+                            && (await refundRepository.GetByIdAsync(row.Id, cancellationToken))?.Status
+                                == RefundStatus.Failed;
 
                         if (result is { IsSuccess: true })
                         {
@@ -156,7 +183,8 @@ public class RedrivePendingRefunds
                                     cancellationToken);
                             }
                         }
-                        else if (!nothingOwed && row.CreatedOn <= alertBefore && !string.IsNullOrEmpty(row.TenantId)
+                        else if (!nothingOwed && !raisedBySeam && row.CreatedOn <= alertBefore
+                            && !string.IsNullOrEmpty(row.TenantId)
                             && !await userNotificationRepository.AnyForEventAsync(
                                 row.TenantId, alertKey, "orderId", row.OrderId, cancellationToken))
                         {

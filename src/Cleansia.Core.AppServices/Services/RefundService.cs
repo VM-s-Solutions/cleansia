@@ -4,6 +4,7 @@ using Cleansia.Core.Clients.Abstractions.Stripe;
 using Cleansia.Core.Domain.Credit;
 using Cleansia.Core.Domain.Disputes;
 using Cleansia.Core.Domain.Enums;
+using Cleansia.Core.Domain.Notifications;
 using Cleansia.Core.Domain.Orders;
 using Cleansia.Core.Domain.Payments;
 using Cleansia.Core.Domain.Repositories;
@@ -20,6 +21,8 @@ public sealed class RefundService(
     IOrderRepository orderRepository,
     ICreditAccountRepository creditAccountRepository,
     IStripeClientFactory stripeClientFactory,
+    IAdminNotifier adminNotifier,
+    IUserNotificationRepository userNotificationRepository,
     ILogger<RefundService> logger) : IRefundService
 {
     public async Task<BusinessResult<RefundResult>> IssueRefundAsync(
@@ -36,9 +39,10 @@ public sealed class RefundService(
 
         // Resolve-to-existing ONLY for a terminally-Succeeded refund. A Pending/Failed row from a prior
         // attempt whose Stripe call never confirmed must NOT short-circuit as success — it has to be
-        // re-driven through Stripe (the deterministic refundKey is Stripe's idempotency key, so a replay
-        // issues the refund exactly once). Returning a Pending row as success is the phantom-refund bug:
-        // the money never moved but the caller would notify the customer it did.
+        // retried: the retry first records the refund Stripe lists under the key and sends on the same key only
+        // when Stripe has none, because Stripe's own idempotency replay lasts only about a day. Returning a
+        // Pending row as success is the phantom-refund bug: the money never moved but the caller would notify
+        // the customer it did.
         var existing = await refundRepository.GetByRefundKeyAsync(refundKey, cancellationToken);
         if (existing is { Status: RefundStatus.Succeeded })
         {
@@ -82,6 +86,7 @@ public sealed class RefundService(
         var refundable = CardRefundCeiling(order, consumed);
         Refund refund;
         var creditShare = split.Credit;
+        var retry = existing is not null;
         if (existing is not null)
         {
             // A prior Pending/Failed attempt exists — reuse its row (do NOT insert a second) and re-drive
@@ -161,12 +166,13 @@ public sealed class RefundService(
                     return await ResolveToExistingAsync(winner, cancellationToken);
                 }
 
-                // The winner is Pending/Failed — re-drive its Stripe call (same key → Stripe replays once).
+                // The winner is Pending/Failed: retry it, recording the refund Stripe made on its key if there is one.
                 refund = winner;
+                retry = true;
             }
         }
 
-        return await SettleAsync(order, refund, creditShare, request.ActorId, cancellationToken);
+        return await SettleAsync(order, refund, creditShare, request.ActorId, retry, cancellationToken);
     }
 
     public async Task<BusinessResult<RefundResult>> RedriveAsync(
@@ -242,7 +248,7 @@ public sealed class RefundService(
             creditShare = CreditBesideCard(held, refund.Amount, creditShare, creditOnThisKey);
         }
 
-        return await SettleAsync(order, refund, creditShare, actorId, cancellationToken);
+        return await SettleAsync(order, refund, creditShare, actorId, retry: true, cancellationToken);
     }
 
     /// <summary>
@@ -250,9 +256,9 @@ public sealed class RefundService(
     /// confirmed, and the pending refunds it must count. A pending refund counts only those claimed before it.
     /// One claimed later either counted its card as owed or, claimed at the same moment, did not see it, and
     /// counting that one here too would leave the two waiting on each other for good. So the older is retried
-    /// on its own key: Stripe replays it if it paid it, pays it if it paid neither, and refuses it if it paid
-    /// the younger, whose retry still counts the older. A closed refund was counted by no later claim, so it
-    /// counts every pending one.
+    /// on its own key: its retry records it if Stripe lists it under its key, Stripe pays it if it paid neither,
+    /// and refuses it if it paid the younger, whose retry still counts the older. A closed refund was counted
+    /// by no later claim, so it counts every pending one.
     ///
     /// <para>The card ceiling only. The slice held to what the sale has left still counts every pending refund:
     /// a pending refund's credit leg waits for its card, and a claim made after it was sized on what was left
@@ -304,20 +310,43 @@ public sealed class RefundService(
         || (ex is OperationCanceledException && !cancellationToken.IsCancellationRequested);
 
     private async Task<BusinessResult<RefundResult>> SettleAsync(
-        Order order, Refund refund, decimal creditShare, string actorId, CancellationToken cancellationToken)
+        Order order, Refund refund, decimal creditShare, string actorId, bool retry, CancellationToken cancellationToken)
     {
         var refundKey = refund.RefundKey;
         var stripe = stripeClientFactory.CreateClient();
+        StripeRefundSnapshot? made = null;
         try
         {
+            // Stripe forgets an idempotency key after about a day and would then pay this key as a new refund.
+            if (retry)
+            {
+                made = await stripe.FindRefundAsync(
+                    order.StripeSessionId, order.StripePaymentIntentId, refundKey, cancellationToken);
+            }
+
+            if (made is { Failed: true })
+            {
+                // Committed here with the administrators' alert, as the claim is: a caller that fails on refund.failed
+                // rolls back, a row left pending would keep counting in every ceiling money Stripe never paid, and
+                // once closed no job selects it again, so the alert is the only thing that gets the money paid.
+                refund.MarkFailed();
+                await RaiseForRetryAsync(order, refund, cancellationToken);
+                await refundRepository.CommitAsync(cancellationToken);
+                logger.LogError(
+                    "Stripe failed refund {StripeRefundId} it made for order {OrderId} on refund {RefundId}; the refund is closed and nothing is sent again.",
+                    made.Id, order.Id, refund.Id);
+                return BusinessResult.Failure<RefundResult>(new Error(
+                    nameof(refund.Amount), BusinessErrorMessage.RefundFailed));
+            }
+
             // Route by charge surface: a web order carries a Checkout Session; a mobile (PaymentSheet)
             // order carries only a PaymentIntent (T-0347 suppresses its Session). Prefer the Session when
             // present so the established web refund path is byte-unchanged.
-            if (!string.IsNullOrEmpty(order.StripeSessionId))
+            if (made is null && !string.IsNullOrEmpty(order.StripeSessionId))
             {
                 await stripe.RefundCheckoutSessionAsync(order.StripeSessionId, refund.Amount, refundKey, cancellationToken);
             }
-            else
+            else if (made is null)
             {
                 await stripe.RefundPaymentIntentAsync(order.StripePaymentIntentId!, refund.Amount, refundKey, cancellationToken);
             }
@@ -326,8 +355,8 @@ public sealed class RefundService(
         {
             // Confirm-then-record (ADR-0006): the Refund row stays Pending and PaymentStatus is left
             // un-flipped, so a failed Stripe call never produces a phantom Refunded — and the caller gets a
-            // Failure, never a false "refund initiated". A later retry re-enters here on the same key and
-            // re-drives Stripe (idempotent), so the refund is eventually issued exactly once.
+            // Failure, never a false "refund initiated". A later retry re-enters here on the same key, records
+            // the refund Stripe made on it if there is one and sends it only if not, so it is issued exactly once.
             logger.LogError(ex,
                 "Stripe refund failed for order {OrderId} on key {RefundKey}; refund left pending for retry.",
                 order.Id, refundKey);
@@ -337,7 +366,7 @@ public sealed class RefundService(
 
         var succeededConsumed = await refundRepository.GetSucceededRefundTotalForOrderAsync(
             order.Id, cancellationToken);
-        refund.MarkSucceeded(stripeRefundId: null, confirmedOnUtc: DateTimeOffset.UtcNow);
+        refund.MarkSucceeded(stripeRefundId: made?.Id, confirmedOnUtc: DateTimeOffset.UtcNow, amount: made?.Amount);
 
         // The credit leg is independently idempotent; an erased account receives only its card refund.
         await ReturnCreditShareAsync(order, creditShare, refundKey, actorId, cancellationToken);
@@ -362,6 +391,29 @@ public sealed class RefundService(
             Status: RefundStatus.Succeeded,
             ResolvedToExisting: false,
             CreditReturned: await creditAccountRepository.GetReturnedForRefundAsync(refundKey, cancellationToken)));
+    }
+
+    private async Task RaiseForRetryAsync(Order order, Refund refund, CancellationToken cancellationToken)
+    {
+        if (refund.TenantId is not { Length: > 0 } tenantId
+            || await userNotificationRepository.AnyForEventAsync(
+                tenantId, AdminNotificationEventCatalog.RefundNeedsRetry, "orderId", order.Id, cancellationToken))
+        {
+            return;
+        }
+
+        await adminNotifier.NotifyAsync(
+            new AdminEvent(
+                AdminNotificationEventCatalog.RefundNeedsRetry,
+                tenantId,
+                Subject: refund.Id,
+                Args: new Dictionary<string, string>
+                {
+                    ["orderNumber"] = order.DisplayOrderNumber,
+                    ["amount"] = MoneyText.Format(refund.Amount, refund.Currency),
+                    ["orderId"] = order.Id,
+                }),
+            cancellationToken);
     }
 
     private async Task<BusinessResult<RefundResult>> ResolveToExistingAsync(Refund existing, CancellationToken cancellationToken) =>

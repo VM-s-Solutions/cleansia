@@ -47,7 +47,8 @@ public sealed class PlatformCancellationCreditReturnTests
     {
         var factory = new Mock<IStripeClientFactory>();
         factory.Setup(f => f.CreateClient()).Returns(_stripe.Object);
-        return new RefundService(_refunds.Object, _orders.Object, _credit.Object, factory.Object, NullLogger<RefundService>.Instance);
+        return new RefundService(_refunds.Object, _orders.Object, _credit.Object, factory.Object, Mock.Of<IAdminNotifier>(),
+            Mock.Of<IUserNotificationRepository>(), NullLogger<RefundService>.Instance);
     }
 
     private PlatformOrderCancellation Cancellation() =>
@@ -295,8 +296,8 @@ public sealed class PlatformCancellationCreditReturnTests
     /// <summary>
     /// A guest cancelled 47 hours ahead at a 25% fee: 750 of the 1000 was claimed on the cancellation's key,
     /// and the cancel itself never committed. The administrator cancels the booking, which replays that claim
-    /// on the same key for the 750 Stripe may already have paid, so the cancellation records 750, not the
-    /// whole price.
+    /// on the same key for the 750 Stripe may already have paid, asking Stripe first for a refund made on the
+    /// key, so the cancellation records 750, not the whole price.
     /// </summary>
     [Fact]
     public async Task A_Cancellation_Whose_Refund_Was_Already_Claimed_Records_What_That_Claim_Gives_Back()
@@ -307,6 +308,7 @@ public sealed class PlatformCancellationCreditReturnTests
 
         var result = await CancelAsync(order);
 
+        _stripe.Verify(s => s.FindRefundAsync(It.IsAny<string?>(), PaymentIntentId, RefundKey, It.IsAny<CancellationToken>()), Times.Once);
         VerifyCard(750m);
         Assert.Equal(750m, result.Refund.RefundedAmount);
         Assert.Equal(750m, result.RefundAmount);

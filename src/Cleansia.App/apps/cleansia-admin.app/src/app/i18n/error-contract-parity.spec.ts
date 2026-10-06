@@ -499,6 +499,7 @@ const ADMIN_SURFACE_ERROR_KEYS: readonly string[] = [
   'company.wind_down_not_requested',
   'company.has_open_orders',
   'company.has_orders_awaiting_pay',
+  'company.has_open_receivables',
   'company.has_orders_awaiting_receipt',
   'company.has_receipts_awaiting_fiscal_registration',
   'company.has_pending_refunds',

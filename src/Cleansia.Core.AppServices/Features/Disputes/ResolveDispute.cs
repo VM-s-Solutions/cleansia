@@ -176,8 +176,10 @@ public class ResolveDispute
                 {
                     refundResult = refund.Value!;
                 }
-                // A pending card refund the seam closed as one Stripe cannot have paid leaves nothing owed on it.
-                else if (!refundPending
+                // A pending card refund the seam closed as one Stripe cannot have paid leaves nothing owed on it. One
+                // closed because Stripe failed it is still owed, so the dispute stays open.
+                else if (refund.Error?.Message != BusinessErrorMessage.RefundNothingRefundable
+                    || !refundPending
                     || await RefundService.HasPendingDisputeRefundAsync(refundRepository, dispute, cancellationToken))
                 {
                     return BusinessResult.Failure(refund.Error!);

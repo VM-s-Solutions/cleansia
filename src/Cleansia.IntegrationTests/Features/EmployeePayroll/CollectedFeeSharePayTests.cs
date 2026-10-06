@@ -1,6 +1,9 @@
 using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.AppServices.Features.EmployeePayroll;
 using Cleansia.Core.AppServices.Features.Orders;
+using Cleansia.Core.AppServices.Services;
+using Cleansia.Core.AppServices.Services.Interfaces;
+using Cleansia.Core.Domain.Credit;
 using Cleansia.Core.Domain.EmployeePayroll;
 using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Internationalization;
@@ -125,6 +128,43 @@ public class CollectedFeeSharePayTests(PostgresContainerFixture fixture) : BaseI
                     .SingleAsync(p => p.OrderId == _orderId);
                 Assert.Equal(150m, pay.TotalPay);
                 Assert.Contains("Collected fee: 300.00", pay.PayBreakdown);
+            });
+    }
+
+    [Fact]
+    public async Task A_Fee_Cancellation_Whose_Own_Card_Refund_Is_Pending_With_Its_Credit_Leg_Returned_Pays_Half_Of_The_Fee_Kept()
+    {
+        await TestMethod(
+            arrange: async ctx =>
+            {
+                var order = SeedCancelledOrder(ctx, PaymentType.Card, PaymentStatus.Paid, totalPrice: 1000m, seats: 1);
+                order.ApplyCredit(300m, order.UserId!);
+                order.Cancel(DateTime.UtcNow, CancelledBy.Customer, feeRate: 0.25m, refundAmount: 750m, reason: null);
+
+                var ownKey = RefundService.BuildRefundKey(
+                    new RefundRequest(_orderId, 0m, RefundReason.CustomerCancellation, string.Empty));
+                ctx.Refunds.Add(Refund.Create(_orderId, ownKey, 525m, "CZK",
+                    RefundReason.CustomerCancellation, RefundSource.AppRefund));
+                var credit = CreditAccount.Create(order.UserId!, CurrencyId, order.UserId!);
+                credit.Issue(225m, CreditTransactionReason.OrderPaymentReturned, CreditUnwind.KeyPrefix + ownKey,
+                    order.UserId!, orderId: _orderId);
+                ctx.CreditAccounts.Add(credit);
+                await ctx.CommitAsync(CancellationToken.None);
+            },
+            act: provider => provider.GetRequiredService<IMediator>()
+                .Send(new CalculateOrderPay.Command(_orderId, _firstSeatEmployeeId)),
+            assert: async (CleansiaDbContext context, BusinessResult<CalculateOrderPay.Response> result) =>
+            {
+                Assert.True(result.IsSuccess, result.Error?.Message);
+
+                // Its own pending 525 and the 225 already returned are the 750 refund, counted once; counting the
+                // pending card again with its credit leg would leave 1000 − 225 − 525 − 225 = 25 kept.
+                var pay = await context.Set<OrderEmployeePay>()
+                    .IgnoreQueryFilters()
+                    .SingleAsync(p => p.OrderId == _orderId);
+                Assert.Equal(PayLineType.CancellationFeeShare, pay.LineType);
+                Assert.Equal(125m, pay.TotalPay);
+                Assert.Contains("Collected fee: 250.00", pay.PayBreakdown);
             });
     }
 

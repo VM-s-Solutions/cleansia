@@ -15,6 +15,7 @@ public sealed record CompanySettlementFacts(
     int CreditBalances,
     int PendingRefunds,
     int OrdersAwaitingPay,
+    int OpenReceivables,
     int OrdersAwaitingReceipt,
     int ReceiptsAwaitingFiscalRegistration,
     int OpenPayPeriods,

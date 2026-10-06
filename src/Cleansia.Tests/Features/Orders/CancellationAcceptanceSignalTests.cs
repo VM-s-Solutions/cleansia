@@ -171,7 +171,9 @@ public class CancellationAcceptanceSignalTests
             _session.Object,
             Mock.Of<IAuditContext>(),
             _liveActivityProducer.Object,
-            _pending.Object);
+            _pending.Object,
+            Mock.Of<IReceivableRepository>(),
+            Mock.Of<INotificationProducer>());
 
     /// <summary>
     /// A brand-new unpaid order booked <paramref name="bookedMinutesAgo"/> ago whose cleaning starts

@@ -62,13 +62,15 @@ never naming another company.
   **(1) notices** — every `IsActive && IsEmailConfirmed && not anonymised` customer and every such cleaner
   with `ContractStatus == Approved`, keyset-paged, one `SendEmailMessage` each straight onto `send-email`
   through `IQueueClient`, `Code = WindDownRequestedOn`, a `CampaignProgress` cursor per page;
-  **(2) orders** — `New`/`Confirmed`/`OnTheWay` (never `InProgress`), `Paid || Cash`, on or after
+  **(2) orders** — `New`/`Confirmed`/`OnTheWay` (never `InProgress`), `Paid || PartiallyRefunded || Cash`
+  (`PartiallyRefunded` since 2026-10-06), on or after
   midnight of the date in the address's market zone (`WindDownCutoff.Utc`) — every open order once the
   company is deactivated — status re-read untracked before each cancel, then
   `IPlatformOrderCancellation.CancelAsync(order, WindDownRequestedBy, System, "order.cancelled.company_wind_down",
   ServiceNotRendered)` and a commit per order; then the **re-drive** of every earlier run's cancelled,
-  card-paid, still-`Paid` order through the refund leg alone (the key `refund:{id}:admin` resolves to the
-  `Pending` row; Stripe replays once) → [Platform order cancellation](./platform-order-cancellation);
+  card-paid order still `Paid` or `PartiallyRefunded` through the refund leg alone, skipping one whose own
+  `refund:{id}:admin` row already `Succeeded` (the key resolves to the `Pending` row, whose retry records
+  the refund Stripe made on it or sends it once) → [Platform order cancellation](./platform-order-cancellation);
   **(3) templates** paused; **(4) every Active Plus** cancel-at-period-end, any currency;
   **(5) credit** — only when deactivated — every positive balance discharged through
   `TryDebitAsync(…, Expired, "wind-down-credit:{account}:{run}", note: "company wind-down")`;

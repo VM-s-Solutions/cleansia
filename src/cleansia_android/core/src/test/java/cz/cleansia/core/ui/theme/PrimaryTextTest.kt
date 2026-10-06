@@ -263,7 +263,7 @@ class PrimaryTextTest {
         listOf("core", "customer-app", "partner-app").flatMap { module ->
             val root = File(androidRoot, "$module/src/main/java")
             root.walkTopDown().filter { it.isFile && it.extension == "kt" }
-                .map { SourceFile(module, it.relativeTo(root).path, it.readText()) }
+                .map { SourceFile(module, it.relativeTo(root).invariantSeparatorsPath, it.readText().replace("\r\n", "\n")) }
                 .toList()
         }
     }

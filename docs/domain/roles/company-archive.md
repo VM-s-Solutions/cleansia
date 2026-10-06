@@ -23,7 +23,8 @@ at the one seam every write crosses**, letting through only the person's rows an
 - **`ArchiveCompany.Command()`** → `company.archive`. The validator reads
   [`ICompanySettlementReader`](./company-settlement-reader) and refuses in order: `tenant.not_found`,
   `company.not_deactivated`, `company.wind_down_not_requested`, `company.has_open_orders`,
-  `company.has_orders_awaiting_pay`, `company.has_orders_awaiting_receipt`,
+  `company.has_orders_awaiting_pay`, `company.has_open_receivables` (since 2026-10-06),
+  `company.has_orders_awaiting_receipt`,
   `company.has_receipts_awaiting_fiscal_registration`, `company.has_pending_refunds`,
   `company.has_active_memberships`, `company.has_credit_balances`, `company.has_open_pay_period`,
   `company.has_unpaid_invoices`, `company.has_uninvoiced_pay`, `company.has_open_disputes`,

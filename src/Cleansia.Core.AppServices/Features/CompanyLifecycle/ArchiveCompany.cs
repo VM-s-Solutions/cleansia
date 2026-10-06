@@ -52,6 +52,8 @@ public class ArchiveCompany
                 .WithMessage(BusinessErrorMessage.CompanyHasOpenOrders)
                 .MustAsync(async (_, ct) => (await FactsAsync(ct)).OrdersAwaitingPay == 0)
                 .WithMessage(BusinessErrorMessage.CompanyHasOrdersAwaitingPay)
+                .MustAsync(async (_, ct) => (await FactsAsync(ct)).OpenReceivables == 0)
+                .WithMessage(BusinessErrorMessage.CompanyHasOpenReceivables)
                 .MustAsync(async (_, ct) => (await FactsAsync(ct)).OrdersAwaitingReceipt == 0)
                 .WithMessage(BusinessErrorMessage.CompanyHasOrdersAwaitingReceipt)
                 .MustAsync(async (_, ct) => (await FactsAsync(ct)).ReceiptsAwaitingFiscalRegistration == 0)

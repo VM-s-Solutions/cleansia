@@ -28,7 +28,7 @@ public sealed class ArchiveCompanyTests
 
     private static readonly CompanySettlementFacts Settled = new(
         OpenOrders: 0, OpenOrdersOnOrAfterWindDownFrom: 0, ActiveTemplates: 0, ActiveMemberships: 0,
-        CreditBalances: 0, PendingRefunds: 0, OrdersAwaitingPay: 0, OrdersAwaitingReceipt: 0,
+        CreditBalances: 0, PendingRefunds: 0, OrdersAwaitingPay: 0, OpenReceivables: 0, OrdersAwaitingReceipt: 0,
         ReceiptsAwaitingFiscalRegistration: 0, OpenPayPeriods: 0, UnpaidInvoices: 0, UninvoicedPayRows: 0,
         OpenDisputes: 0, CleanersHoldingCash: 0, LatestCardPaidCleaningDateTime: null);
 
@@ -107,6 +107,7 @@ public sealed class ArchiveCompanyTests
     {
         { Settled with { OpenOrders = 1 }, BusinessErrorMessage.CompanyHasOpenOrders },
         { Settled with { OrdersAwaitingPay = 1 }, BusinessErrorMessage.CompanyHasOrdersAwaitingPay },
+        { Settled with { OpenReceivables = 1 }, BusinessErrorMessage.CompanyHasOpenReceivables },
         { Settled with { OrdersAwaitingReceipt = 1 }, BusinessErrorMessage.CompanyHasOrdersAwaitingReceipt },
         { Settled with { ReceiptsAwaitingFiscalRegistration = 1 }, BusinessErrorMessage.CompanyHasReceiptsAwaitingFiscalRegistration },
         { Settled with { PendingRefunds = 1 }, BusinessErrorMessage.CompanyHasPendingRefunds },
@@ -137,6 +138,15 @@ public sealed class ArchiveCompanyTests
         Facts(Settled with { OpenDisputes = 3, CreditBalances = 2, OrdersAwaitingPay = 1 });
 
         Assert.Equal(BusinessErrorMessage.CompanyHasOrdersAwaitingPay, await RefusalAsync());
+    }
+
+    [Fact]
+    public async Task An_Open_Door_Debt_Refuses_As_An_Open_Receivable_Before_The_Receipt_It_Also_Holds_Back()
+    {
+        SettledCompany();
+        Facts(Settled with { OpenReceivables = 1, OrdersAwaitingReceipt = 1 });
+
+        Assert.Equal(BusinessErrorMessage.CompanyHasOpenReceivables, await RefusalAsync());
     }
 
     [Fact]

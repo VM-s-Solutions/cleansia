@@ -4,10 +4,13 @@ using Cleansia.Core.AppServices.Features.Orders;
 using Cleansia.Core.AppServices.Services.Interfaces;
 using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Internationalization;
+using Cleansia.Core.Domain.Notifications;
 using Cleansia.Core.Domain.Orders;
+using Cleansia.Core.Domain.Payments;
 using Cleansia.Core.Domain.Repositories;
 using Cleansia.Core.Domain.Users;
 using Cleansia.Core.Queue.Abstractions;
+using Cleansia.Core.Queue.Abstractions.Messages;
 using MockQueryable;
 using Moq;
 
@@ -31,6 +34,8 @@ public class AdminOverrideOrderStatusHandlerTests
     private const string OrderId = "order-admin-override-1";
     private const string AdminUserId = "admin-user";
     private const string CleanerId = "emp-override-1";
+    private const string CustomerId = "owner-user";
+    private const string TenantId = "cleansia-cz";
 
     private readonly Mock<IOrderRepository> _orderRepository = new();
     private readonly Mock<IUserSessionProvider> _session = new();
@@ -43,13 +48,23 @@ public class AdminOverrideOrderStatusHandlerTests
     private readonly AuditContext _auditContext = new();
     private readonly Mock<ILiveActivityProducer> _liveActivityProducer = new();
     private readonly Mock<IPendingDispatch> _pending = new();
+    private readonly Mock<IReceivableRepository> _receivables = new();
+    private readonly Mock<INotificationProducer> _notifications = new();
 
     private AdminOverrideOrderStatus.Handler CreateHandler() =>
-        new(_orderRepository.Object, _session.Object, _auditContext, _liveActivityProducer.Object, _pending.Object);
+        new(_orderRepository.Object, _session.Object, _auditContext, _liveActivityProducer.Object, _pending.Object,
+            _receivables.Object, _notifications.Object);
 
     private Order ArrangeOrder(params OrderStatus[] history) => ArrangeOrder(crew: 0, history);
 
-    private Order ArrangeOrder(int crew, params OrderStatus[] history)
+    private Order ArrangeOrder(int crew, params OrderStatus[] history) =>
+        ArrangeOrder(crew, PaymentType.Card, PaymentStatus.Paid, CustomerId, history);
+
+    private Order ArrangeUnpaidCashOrder(int crew, params OrderStatus[] history) =>
+        ArrangeOrder(crew, PaymentType.Cash, PaymentStatus.Pending, CustomerId, history);
+
+    private Order ArrangeOrder(
+        int crew, PaymentType paymentType, PaymentStatus paymentStatus, string? userId, params OrderStatus[] history)
     {
         var currency = Currency.Create("CZK", "Kč", "Czech Koruna");
         var order = Order.Create(
@@ -60,13 +75,14 @@ public class AdminOverrideOrderStatusHandlerTests
             rooms: 2,
             bathrooms: 1,
             cleaningDateTime: DateTime.UtcNow.AddDays(5),
-            paymentType: PaymentType.Card,
+            paymentType: paymentType,
             totalPrice: 1000m,
             currencyId: currency.Id,
-            paymentStatus: PaymentStatus.Paid,
-            userId: "owner-user",
+            paymentStatus: paymentStatus,
+            userId: userId,
             cancellationTerms: BookingPolicy.CancellationTermsAtBooking);
         order.Id = OrderId;
+        order.TenantId = TenantId;
         order.SetCurrency(currency);
         order.SetMaxEmployees(2);
         foreach (var status in history)
@@ -349,6 +365,106 @@ public class AdminOverrideOrderStatusHandlerTests
         Assert.True(result.IsSuccess, result.Error?.Message);
         _pending.Verify(p => p.Enqueue(
             QueueNames.GenerateReceipt, It.IsAny<It.IsAnyType>(), MessageKeys.Receipt(OrderId)), Times.Exactly(receipts));
+    }
+
+    /// <summary>
+    /// Owner ruling 2026-10-06: an administrator who completes a signed-in customer's cash order in progress
+    /// whose cash was never recorded asserts what the cleaner's door report asserts. The price less the credit
+    /// applied is owed, the crew is paid the job, and the customer is told by push and e-mail. No receipt is
+    /// issued, because no money arrived.
+    /// </summary>
+    [Fact]
+    public async Task Completing_An_Unpaid_Cash_Order_In_Progress_Opens_The_Debt_Pays_The_Crew_And_Tells_The_Customer()
+    {
+        var order = ArrangeUnpaidCashOrder(crew: 1, OrderStatus.New, OrderStatus.Confirmed, OrderStatus.InProgress);
+        order.ApplyCredit(200m, CustomerId);
+        Receivable? opened = null;
+        _receivables.Setup(r => r.Add(It.IsAny<Receivable>())).Callback<Receivable>(r => opened = r);
+
+        var result = await CreateHandler().Handle(
+            new AdminOverrideOrderStatus.Command(OrderId, OrderStatus.Completed), CancellationToken.None);
+
+        Assert.True(result.IsSuccess, result.Error?.Message);
+        Assert.Equal((OrderStatus.Completed, PaymentStatus.Pending), (order.CurrentStatus, order.PaymentStatus));
+        _receivables.Verify(r => r.Add(It.IsAny<Receivable>()), Times.Once);
+        Assert.Equal(
+            (ReceivableKind.UnpaidCash, ReceivableStatus.Open, 800m, OrderId, CustomerId),
+            (opened!.Kind, opened.Status, opened.Amount, opened.OrderId, opened.UserId));
+        _pending.Verify(p => p.Enqueue(
+            QueueNames.CalculateOrderPay,
+            It.Is<QueueEnvelope<CalculateOrderPayMessage>>(e => e.TenantId == TenantId && e.Payload.EmployeeId == $"{CleanerId}-0"),
+            MessageKeys.Pay(OrderId, $"{CleanerId}-0")), Times.Once);
+        _notifications.Verify(n => n.NotifyAsync(
+            CustomerId,
+            NotificationEventCatalog.OrderCashNotPaid,
+            It.Is<Dictionary<string, string>>(a => a["orderId"] == OrderId && a["amount"] == MoneyText.Format(800m, order.Currency!)),
+            TenantId,
+            opened.Id,
+            It.IsAny<CancellationToken>()), Times.Once);
+        _pending.Verify(p => p.Enqueue(
+            QueueNames.SendEmail,
+            It.Is<QueueEnvelope<SendOrderCashNotPaidEmailMessage>>(e => e.Payload.ReceivableId == opened.Id),
+            MessageKeys.OrderCashNotPaidEmail(opened.Id)), Times.Once);
+        _pending.Verify(p => p.Enqueue(QueueNames.GenerateReceipt, It.IsAny<It.IsAnyType>(), It.IsAny<string>()), Times.Never);
+    }
+
+    public static TheoryData<string> CompletionsThatOpenNoDebt => new()
+    {
+        "card order",
+        "cash already collected",
+        "legacy guest cash order",
+        "from New with no crew",
+        "from New with a crew",
+        "from Confirmed",
+        "from OnTheWay",
+        "target short of Completed",
+    };
+
+    /// <summary>
+    /// The debt is the price of a cleaning done and not paid for, so only an order in progress opens it. From
+    /// an earlier status the customer may well have paid the cleaner who never pressed Start: the administrator
+    /// records the cash on the completed order, or cancels it instead.
+    /// </summary>
+    [Theory]
+    [MemberData(nameof(CompletionsThatOpenNoDebt))]
+    public async Task Only_An_Unpaid_Signed_In_Cash_Order_Completed_From_In_Progress_Opens_A_Debt(string situation)
+    {
+        var target = OrderStatus.Completed;
+        switch (situation)
+        {
+            case "card order":
+                ArrangeOrder(crew: 1, PaymentType.Card, PaymentStatus.Pending, CustomerId,
+                    OrderStatus.New, OrderStatus.Confirmed, OrderStatus.InProgress);
+                break;
+            case "cash already collected":
+                ArrangeUnpaidCashOrder(crew: 1, OrderStatus.New, OrderStatus.Confirmed, OrderStatus.InProgress)
+                    .MarkCashCollected($"{CleanerId}-0");
+                break;
+            case "legacy guest cash order":
+                ArrangeOrder(crew: 1, PaymentType.Cash, PaymentStatus.Pending, userId: null,
+                    OrderStatus.New, OrderStatus.Confirmed, OrderStatus.InProgress);
+                break;
+            case "from New with no crew": ArrangeUnpaidCashOrder(crew: 0, OrderStatus.New); break;
+            case "from New with a crew": ArrangeUnpaidCashOrder(crew: 1, OrderStatus.New); break;
+            case "from Confirmed": ArrangeUnpaidCashOrder(crew: 1, OrderStatus.New, OrderStatus.Confirmed); break;
+            case "from OnTheWay":
+                ArrangeUnpaidCashOrder(crew: 1, OrderStatus.New, OrderStatus.Confirmed, OrderStatus.OnTheWay);
+                break;
+            case "target short of Completed":
+                ArrangeUnpaidCashOrder(crew: 1, OrderStatus.New, OrderStatus.Confirmed, OrderStatus.OnTheWay);
+                target = OrderStatus.InProgress;
+                break;
+            default: throw new ArgumentOutOfRangeException(nameof(situation), situation, null);
+        }
+
+        var result = await CreateHandler().Handle(
+            new AdminOverrideOrderStatus.Command(OrderId, target, "The cleaner's phone broke on site."), CancellationToken.None);
+
+        Assert.True(result.IsSuccess, result.Error?.Message);
+        _receivables.Verify(r => r.Add(It.IsAny<Receivable>()), Times.Never);
+        _notifications.VerifyNoOtherCalls();
+        _pending.Verify(p => p.Enqueue(QueueNames.CalculateOrderPay, It.IsAny<It.IsAnyType>(), It.IsAny<string>()), Times.Never);
+        _pending.Verify(p => p.Enqueue(QueueNames.SendEmail, It.IsAny<It.IsAnyType>(), It.IsAny<string>()), Times.Never);
     }
 
     // Owner ruling 2026-09-28: completing an order that has no after photo is the photo rule's one exception, and it

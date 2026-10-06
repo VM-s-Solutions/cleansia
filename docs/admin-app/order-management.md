@@ -235,8 +235,11 @@ Admins can initiate refunds for orders with card payments:
 
 ::: warning
 A refund Stripe refuses or does not answer stays pending; the administrators are told after 24 hours
-(`admin.payment.refund_needs_retry`) and retry it from the same action. Cash payment refunds must be
-handled outside the system.
+(`admin.payment.refund_needs_retry`) and retry it from the same action. A retry that finds Stripe failed
+the refund made on its key closes it, sends nothing, and tells them at once (since 2026-10-06); retrying
+that same action fails the same way, so the money goes back only by a refund on another key: the full
+refund, or a partial refund of another selection of lines. Cash payment refunds must be handled outside
+the system.
 → [Business rules — a pending card refund counts as given back](/product/business-rules#after-the-start)
 :::
 
@@ -314,6 +317,19 @@ pipeline (pay, fiscal — that is `CompleteOrder`'s), but the revenue report rea
 override that completes the order has to date it or the order is revenue of no month; the first stamp
 wins. A sale already settled in cash with no receipt gets its receipt here, because a cash receipt is
 issued at completion; uncollected cash gets none until *Record cash received*.
+
+**Completing an unpaid cash order in progress opens the door debt** (owner ruling 2026-10-06). When the
+order was `InProgress` at the override, is a signed-in customer's cash order and its payment is still
+`Pending`, the override does what the cleaner's *Customer did not pay* report does: it opens the
+`UnpaidCash` receivable for the price less any credit applied, asks the crew's pay, and sends the
+customer the `order.cash_not_paid` push and e-mail. It raises no administrators' alert (the
+`order.status.override` audit row is the record), issues no receipt and grants no points or referral.
+From `New`, `Confirmed` or `OnTheWay` it opens no debt and asks no pay, because the customer may have
+paid a cleaner who never pressed Start: record the cash or cancel the order instead. A legacy guest cash
+order opens none. The override dialog's confirmation says that completing a cash order in progress whose
+cash was not recorded makes the customer owe its price; it shows that sentence for every target status.
+A wrong debt is written off on Orders → Receivables, or closed by *Record cash received*
+→ [Business rules — when the customer does not pay at the door](/product/business-rules#cash-not-paid).
 
 **Completing without an *after* photo needs a reason** (owner ruling 2026-09-28). It is the only way to
 close an order stuck in progress, so it stays — but `Completed` on an order with no *after* photo is

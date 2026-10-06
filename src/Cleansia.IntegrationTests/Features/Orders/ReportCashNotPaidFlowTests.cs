@@ -247,6 +247,58 @@ public class ReportCashNotPaidFlowTests(PostgresContainerFixture fixture) : Base
             transactional: false);
     }
 
+    /// <summary>
+    /// Owner ruling 2026-10-06: an administrator who completes the unpaid cash order in progress, because its
+    /// cleaner cannot report, opens the same debt under the order's company. The customer is refused a booking
+    /// elsewhere, the cleaner's pay is asked for, no points or referral come of it, and recording the cash
+    /// later closes the debt as paid in cash.
+    /// </summary>
+    [Fact]
+    public async Task An_Administrators_Completion_Of_The_Unpaid_Cash_Order_In_Progress_Opens_The_Same_Debt()
+    {
+        await TestMethod(
+            setup: Setup,
+            arrange: context => SeedAsync(context, orderCompany: TestTenants.Second),
+            act: async provider =>
+            {
+                var completion = await SendAs(provider, Admin(), TestTenants.Second,
+                    new AdminOverrideOrderStatus.Command(OrderId, OrderStatus.Completed));
+                var booking = await SendAs(provider, Customer(), TestTenants.Default, CardBookingIn(OtherMarket));
+                var debtId = await DebtIdAsync(provider);
+                var cash = await SendAs(provider, Admin(), TestTenants.Second,
+                    new AdminRecordCashReceived.Command(OrderId, CleanerEmployeeId, DateTime.UtcNow.AddMinutes(-10), Price));
+                return (completion, booking, debtId, cash);
+            },
+            assert: async (CleansiaDbContext context,
+                (BusinessResult<AdminOverrideOrderStatus.Response> Completion, BusinessResult<CreateOrder.Response> Booking,
+                    string DebtId, BusinessResult<AdminRecordCashReceived.Response> Cash) outcome) =>
+            {
+                Assert.True(outcome.Completion.IsSuccess, outcome.Completion.Error?.Message);
+                Assert.True(outcome.Booking.IsFailure);
+                var refusal = Assert.Single(Assert.IsAssignableFrom<IValidationResult>(outcome.Booking).Errors);
+                Assert.Equal(BusinessErrorMessage.OrderUnpaidReceivable, refusal.Message);
+                Assert.True(outcome.Cash.IsSuccess, outcome.Cash.Error?.Message);
+
+                var debt = await context.Receivables.IgnoreQueryFilters().SingleAsync(r => r.OrderId == OrderId);
+                Assert.Equal(
+                    (outcome.DebtId, ReceivableKind.UnpaidCash, Price, CustomerUserId, TestTenants.Second),
+                    (debt.Id, debt.Kind, debt.Amount, debt.UserId, debt.TenantId));
+                Assert.Equal(
+                    (ReceivableStatus.WrittenOff, AdminRecordCashReceived.PaidInCashNote, AdminUserId),
+                    (debt.Status, debt.WriteOffNote, debt.WrittenOffByUserId));
+
+                var outbox = await context.OutboxMessages.IgnoreQueryFilters().ToListAsync();
+                Assert.Single(outbox, m => m.QueueName == QueueNames.CalculateOrderPay
+                    && m.MessageKey == MessageKeys.Pay(OrderId, CleanerEmployeeId) && m.TenantId == TestTenants.Second);
+                Assert.Single(outbox, m => m.QueueName == QueueNames.SendEmail
+                    && m.MessageKey == MessageKeys.OrderCashNotPaidEmail(debt.Id));
+
+                Assert.Empty(await context.LoyaltyTransactions.IgnoreQueryFilters().ToListAsync());
+                Assert.Equal(ReferralStatus.Accepted, (await context.Referrals.IgnoreQueryFilters().SingleAsync()).Status);
+            },
+            transactional: false);
+    }
+
     private static async Task<string> DebtIdAsync(IServiceProvider provider)
     {
         using var scope = provider.GetRequiredService<IServiceScopeFactory>().CreateScope();

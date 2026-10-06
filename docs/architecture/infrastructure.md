@@ -264,7 +264,7 @@ deployed database while reporting success (T-0685).
 |---|---|---|
 | `DataRetention__Enabled` | All fourteen weekly GDPR retention tasks (Sun 03:00), including order photos, all three audit tables, contract-acceptance metadata and dead guest access tokens — **and** the daily failed-erasure retry (05:00) | Everything else |
 | `PayPeriodClosing__Enabled` | The nightly pay-period job (02:00) — closing expired periods, opening the next, **and generating + emailing an invoice per employee** | `EnsureOpenPeriodAsync`, called inline by pay calculation, so pay-calc never fails with `NoActivePeriod` |
-| `Stripe__Enabled` | **All seven card-charge surfaces** — web checkout, resume checkout, mobile PaymentSheet, recurring-occurrence confirm, membership subscribe, membership checkout, membership plan swap | **Cash orders** — which only a signed-in customer's one-cleaner booking may use ([the cash rule](/product/business-rules#cash)), so with card off a guest or a larger booking has no way to pay — and everything that returns or releases money: refunds, cash-collection intent cancellation, closing a door debt's pay link when an administrator records the cash (since 2026-10-06), membership cancellation, and GDPR erasure of the Stripe customer |
+| `Stripe__Enabled` | **All seven card-charge surfaces** — web checkout, resume checkout, mobile PaymentSheet, recurring-occurrence confirm, membership subscribe, membership checkout, membership plan swap | **Cash orders** — which only a signed-in customer's one-cleaner booking may use ([the cash rule](/product/business-rules#cash)), so with card off a guest or a larger booking has no way to pay — and everything that returns or releases money: refunds, cash-collection intent cancellation, closing a door debt's pay link when an administrator records the cash (since 2026-10-06), closing a receivable's pay link when a Manager or above writes the debt off (since 2026-10-06), membership cancellation, and GDPR erasure of the Stripe customer |
 
 ::: danger Set these as app settings, never in `Cleansia.Functions/appsettings.json`
 The Functions worker composes configuration in the **opposite order** to the five API hosts:
@@ -465,6 +465,15 @@ POST and every retry of it replays that key, so no retry can move money twice. S
 can be repeated ([above](#sendgrid)). APNs and the fiscal client are not reachable from the API hosts
 today (the fiscal client is registered only when `Fiscal:CzechEet2:Enabled`, false everywhere), and they
 get the same one line rather than a written exception.
+
+**When Mapbox's pipeline gives up, the call degrades** (since 2026-10-06). Polly rejects a call it will
+not finish — its timeout today, a circuit breaker or rate limiter if one is ever added — with an
+`ExecutionRejectedException`, which all three Mapbox calls now catch like any other Mapbox failure:
+address search answers no suggestions, so the customer enters the address by hand; geocoding saves the
+address without coordinates; the static map answers no image. Each still records the integration-failure
+metric, as `Transient`, and logs its degrade warning. Until then the rejection escaped as a server error
+— on address search, and through geocoding on `CreateOrder` (web and mobile), `UpdateEmployee`,
+`AdminUpdateEmployee` and `UpdateAddressInfo`.
 
 The host default stays for any factory client that brings no handler of its own — none of ours, but a
 library's, such as the OTLP exporter's when an endpoint is set. `HostHttpClientPipelineTests` composes

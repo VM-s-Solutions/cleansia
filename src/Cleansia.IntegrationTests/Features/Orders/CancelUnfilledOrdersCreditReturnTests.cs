@@ -152,6 +152,8 @@ public class CancelUnfilledOrdersCreditReturnTests(PostgresContainerFixture fixt
             new OrderRepository(ctx),
             new CreditAccountRepository(ctx),
             factory.Object,
+            Mock.Of<IAdminNotifier>(),
+            new UserNotificationRepository(ctx),
             NullLogger<RefundService>.Instance);
     }
 

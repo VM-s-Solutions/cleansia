@@ -75,6 +75,10 @@ public sealed class CompanySettlementReader(CleansiaDbContext context, ITenantPr
         var latestCardPaidCleaning = await context.Orders
             .Where(o => o.PaymentType == PaymentType.Card && CardMoneyMoved.Contains(o.PaymentStatus))
             .MaxAsync(o => (DateTime?)o.CleaningDateTime, cancellationToken);
+        // Read after the open orders: a receivable is opened in the same commit that takes its order out of
+        // the open set, so a commit landing between the two reads is seen by one of them.
+        var openReceivables = await context.Receivables
+            .CountAsync(r => r.Status == ReceivableStatus.Open, cancellationToken);
 
         return new CompanySettlementFacts(
             OpenOrders: openOrders,
@@ -84,6 +88,7 @@ public sealed class CompanySettlementReader(CleansiaDbContext context, ITenantPr
             CreditBalances: creditBalances,
             PendingRefunds: pendingRefunds,
             OrdersAwaitingPay: ordersAwaitingPay,
+            OpenReceivables: openReceivables,
             OrdersAwaitingReceipt: ordersAwaitingReceipt,
             ReceiptsAwaitingFiscalRegistration: receiptsAwaitingFiscalRegistration,
             OpenPayPeriods: openPayPeriods,

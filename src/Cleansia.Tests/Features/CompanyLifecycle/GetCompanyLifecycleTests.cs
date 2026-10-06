@@ -30,7 +30,7 @@ public sealed class GetCompanyLifecycleTests
 
     private static readonly CompanySettlementFacts Facts = new(
         OpenOrders: 1, OpenOrdersOnOrAfterWindDownFrom: 2, ActiveTemplates: 3, ActiveMemberships: 4,
-        CreditBalances: 5, PendingRefunds: 6, OrdersAwaitingPay: 7, OrdersAwaitingReceipt: 8,
+        CreditBalances: 5, PendingRefunds: 6, OrdersAwaitingPay: 7, OpenReceivables: 0, OrdersAwaitingReceipt: 8,
         ReceiptsAwaitingFiscalRegistration: 9, OpenPayPeriods: 10, UnpaidInvoices: 11, UninvoicedPayRows: 12,
         OpenDisputes: 13, CleanersHoldingCash: 14, LatestCardPaidCleaningDateTime: LatestClean);
 

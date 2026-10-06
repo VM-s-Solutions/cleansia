@@ -4,10 +4,12 @@ using Cleansia.Core.AppServices.Services;
 using Cleansia.Core.AppServices.Services.Interfaces;
 using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Internationalization;
+using Cleansia.Core.Domain.Notifications;
 using Cleansia.Core.Domain.Orders;
 using Cleansia.Core.Domain.Payments;
 using Cleansia.Core.Domain.Repositories;
 using Cleansia.Core.Clients.Abstractions.Stripe;
+using Cleansia.Infra.Common.Validations;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
@@ -33,11 +35,23 @@ public class RefundServiceTests
     private const string ActorId = "admin-1";
     private const string StripeSessionId = "cs_test_123";
     private const string StripePaymentIntentId = "pi_test_456";
+    private const string TenantId = "tenant-refunds";
 
     private readonly Mock<IRefundRepository> _refundRepository = new();
     private readonly Mock<IOrderRepository> _orderRepository = new();
     private readonly Mock<ICreditAccountRepository> _creditAccountRepository = new();
     private readonly RecordingStripeClient _stripe = new();
+    private readonly Mock<IAdminNotifier> _adminNotifier = new();
+    private readonly Mock<IUserNotificationRepository> _userNotifications = new();
+    private readonly List<AdminEvent> _raised = [];
+
+    public RefundServiceTests()
+    {
+        _adminNotifier
+            .Setup(n => n.NotifyAsync(It.IsAny<AdminEvent>(), It.IsAny<CancellationToken>()))
+            .Callback<AdminEvent, CancellationToken>((e, _) => _raised.Add(e))
+            .Returns(Task.CompletedTask);
+    }
 
     private RefundService CreateService() =>
         new(
@@ -45,6 +59,8 @@ public class RefundServiceTests
             _orderRepository.Object,
             _creditAccountRepository.Object,
             new StubStripeClientFactory(_stripe),
+            _adminNotifier.Object,
+            _userNotifications.Object,
             NullLogger<RefundService>.Instance);
 
     private static Order CreateCardPaidOrder(decimal totalPrice)
@@ -1670,6 +1686,231 @@ public class RefundServiceTests
         Assert.Equal(0, _stripe.RefundCallCount);
     }
 
+    public enum RetryPath { Redrive, ReusedRow, RaceWinner }
+
+    private const string AdminKey = $"refund:{OrderId}:admin";
+
+    private Refund ArrangeRetriedRefund(Order order, decimal amount, StripeRefundSnapshot? listed)
+    {
+        var refund = ArrangePendingRefund(order, amount, AdminKey);
+        refund.TenantId = TenantId;
+        refund.Created("system", DateTimeOffset.UtcNow.AddHours(-25));
+        _stripe.Listed = listed;
+        return refund;
+    }
+
+    private Task<BusinessResult<RefundResult>> RetryAsync(RetryPath path, Refund pending, decimal requested)
+    {
+        var request = new RefundRequest(OrderId, requested, pending.Reason, ActorId);
+        switch (path)
+        {
+            case RetryPath.Redrive:
+                return CreateService().RedriveAsync(pending.Id, "system", CancellationToken.None);
+            case RetryPath.ReusedRow:
+                _refundRepository
+                    .Setup(r => r.GetByRefundKeyAsync(pending.RefundKey, It.IsAny<CancellationToken>()))
+                    .ReturnsAsync(pending);
+                return CreateService().IssueRefundAsync(request, CancellationToken.None);
+            default:
+                var reads = 0;
+                _refundRepository
+                    .Setup(r => r.GetByRefundKeyAsync(pending.RefundKey, It.IsAny<CancellationToken>()))
+                    .ReturnsAsync(() => reads++ == 0 ? null : pending);
+                _refundRepository
+                    .SetupSequence(r => r.CommitAsync(It.IsAny<CancellationToken>()))
+                    .ThrowsAsync(new DbUpdateException(
+                        "duplicate key value violates unique constraint", new FakePostgresUniqueViolationException()))
+                    .Returns(Task.CompletedTask);
+                return CreateService().IssueRefundAsync(request, CancellationToken.None);
+        }
+    }
+
+    /// <summary>
+    /// Stripe forgets an idempotency key after about a day and would then pay the same key as a new refund.
+    /// Every retry of a stored key, by the hourly job, by reusing the row or by the claim that lost the race to
+    /// it, first asks Stripe for the refund made on the key, and records it instead of sending a second.
+    /// </summary>
+    [Theory]
+    [InlineData(RetryPath.Redrive)]
+    [InlineData(RetryPath.ReusedRow)]
+    [InlineData(RetryPath.RaceWinner)]
+    public async Task A_Retry_Records_The_Refund_Stripe_Already_Made_On_Its_Key_And_Sends_Nothing(RetryPath path)
+    {
+        var order = CreateCardPaidOrder(2000m);
+        order.ApplyCredit(500m, "user-1");
+        ArrangeOrder(order);
+        ArrangeConsumed(0m);
+        var refund = ArrangeRetriedRefund(order, 1500m, new StripeRefundSnapshot("re_1", 1500m, Failed: false));
+
+        var result = await RetryAsync(path, refund, 2000m);
+
+        Assert.True(result.IsSuccess, result.Error?.Message);
+        Assert.Equal(0, _stripe.RefundCallCount);
+        Assert.Equal((StripeSessionId, (string?)null, AdminKey), Assert.Single(_stripe.Lookups));
+        Assert.Equal(RefundStatus.Succeeded, refund.Status);
+        Assert.Equal("re_1", refund.StripeRefundId);
+        Assert.Equal(1500m, refund.Amount);
+        Assert.Equal(PaymentStatus.Refunded, order.PaymentStatus);
+        _creditAccountRepository.Verify(r => r.TryReturnAsync("user-1", order.CurrencyId, 500m,
+            $"credit-return:{AdminKey}", It.IsAny<string>(), It.IsAny<CancellationToken>(), OrderId, null), Times.Once);
+    }
+
+    /// <summary>
+    /// Stripe paid 1000 on the key and the answer was lost; the row was clamped to 700 since. The row records
+    /// the 1000 Stripe paid, so no later retry looks for 300 of room Stripe would refuse.
+    /// </summary>
+    [Fact]
+    public async Task A_Retry_Records_What_Stripe_Paid_When_The_Row_Was_Clamped_Since()
+    {
+        var order = CreateCardPaidOrder(1000m);
+        ArrangeOrder(order);
+        ArrangeConsumed(0m);
+        var refund = ArrangeRetriedRefund(order, 700m, new StripeRefundSnapshot("re_1", 1000m, Failed: false));
+
+        var result = await CreateService().RedriveAsync(refund.Id, "system", CancellationToken.None);
+
+        Assert.True(result.IsSuccess, result.Error?.Message);
+        Assert.Equal(0, _stripe.RefundCallCount);
+        Assert.Equal(1000m, refund.Amount);
+        Assert.Equal(1000m, result.Value!.Amount);
+        Assert.Equal(PaymentStatus.Refunded, order.PaymentStatus);
+    }
+
+    [Fact]
+    public async Task A_Retry_Whose_Lookup_Cannot_Reach_Stripe_Sends_Nothing()
+    {
+        var order = CreateCardPaidOrder(1000m);
+        ArrangeOrder(order);
+        ArrangeConsumed(0m);
+        var refund = ArrangeRetriedRefund(order, 1000m, listed: null);
+        _stripe.LookupFailure = new HttpRequestException("connection reset");
+
+        await Assert.ThrowsAsync<HttpRequestException>(
+            () => CreateService().RedriveAsync(refund.Id, "system", CancellationToken.None));
+
+        Assert.Equal(0, _stripe.RefundCallCount);
+        Assert.Equal(RefundStatus.Pending, refund.Status);
+    }
+
+    [Fact]
+    public async Task A_Retry_Whose_Lookup_Stripe_Refuses_Stays_Pending()
+    {
+        var order = CreateCardPaidOrder(1000m);
+        ArrangeOrder(order);
+        ArrangeConsumed(0m);
+        var refund = ArrangeRetriedRefund(order, 1000m, listed: null);
+        _stripe.LookupFailure = new StripeException("rate limited");
+
+        var result = await CreateService().RedriveAsync(refund.Id, "system", CancellationToken.None);
+
+        Assert.Equal(BusinessErrorMessage.RefundFailed, result.Error?.Message);
+        Assert.Equal(0, _stripe.RefundCallCount);
+        Assert.Equal(RefundStatus.Pending, refund.Status);
+        Assert.Equal(PaymentStatus.Paid, order.PaymentStatus);
+    }
+
+    /// <summary>
+    /// Stripe already has a refund on the key and failed or canceled it: the row is closed, nothing is sent, and
+    /// the administrators are asked to retry it. The seam commits the close and the alert together: a caller that
+    /// fails on refund.failed rolls its unit of work back, and the hourly job never selects a closed row again.
+    /// </summary>
+    [Theory]
+    [InlineData(RetryPath.Redrive)]
+    [InlineData(RetryPath.ReusedRow)]
+    public async Task A_Retry_Stripe_Reports_Failed_Is_Closed_And_Raised_For_A_Retry_In_One_Commit(RetryPath path)
+    {
+        var order = CreateCardPaidOrder(1000m);
+        ArrangeOrder(order);
+        ArrangeConsumed(0m);
+        var refund = ArrangeRetriedRefund(order, 1000m, new StripeRefundSnapshot("re_failed", 1000m, Failed: true));
+        var committed = new List<(RefundStatus Status, int Alerts)>();
+        _refundRepository
+            .Setup(r => r.CommitAsync(It.IsAny<CancellationToken>()))
+            .Callback(() => committed.Add((refund.Status, _raised.Count)))
+            .Returns(Task.CompletedTask);
+
+        var result = await RetryAsync(path, refund, 1000m);
+
+        Assert.Equal(BusinessErrorMessage.RefundFailed, result.Error?.Message);
+        Assert.Equal(0, _stripe.RefundCallCount);
+        Assert.Equal(RefundStatus.Failed, refund.Status);
+        Assert.Equal([(RefundStatus.Failed, 1)], committed);
+        Assert.Equal(PaymentStatus.Paid, order.PaymentStatus);
+        var alert = Assert.Single(_raised);
+        Assert.Equal(AdminNotificationEventCatalog.RefundNeedsRetry, alert.Key);
+        Assert.Equal(TenantId, alert.TenantId);
+        Assert.Equal(refund.Id, alert.Subject);
+        Assert.Equal(OrderId, alert.Args["orderId"]);
+        Assert.Equal(order.DisplayOrderNumber, alert.Args["orderNumber"]);
+        Assert.Equal("1000 CZK", alert.Args["amount"]);
+    }
+
+    /// <summary>
+    /// The administrators were already asked to retry a refund on this order: the close is still committed, and
+    /// they are not asked a second time.
+    /// </summary>
+    [Fact]
+    public async Task A_Refund_Stripe_Failed_On_An_Order_Already_Raised_Is_Closed_Without_A_Second_Alert()
+    {
+        var order = CreateCardPaidOrder(1000m);
+        ArrangeOrder(order);
+        ArrangeConsumed(0m);
+        var refund = ArrangeRetriedRefund(order, 1000m, new StripeRefundSnapshot("re_failed", 1000m, Failed: true));
+        _userNotifications
+            .Setup(r => r.AnyForEventAsync(
+                TenantId, AdminNotificationEventCatalog.RefundNeedsRetry, "orderId", OrderId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(true);
+
+        var result = await CreateService().RedriveAsync(refund.Id, "system", CancellationToken.None);
+
+        Assert.Equal(BusinessErrorMessage.RefundFailed, result.Error?.Message);
+        Assert.Equal(RefundStatus.Failed, refund.Status);
+        Assert.Empty(_raised);
+        _refundRepository.Verify(r => r.CommitAsync(It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    [Theory]
+    [InlineData(RetryPath.Redrive)]
+    [InlineData(RetryPath.ReusedRow)]
+    [InlineData(RetryPath.RaceWinner)]
+    public async Task A_Retry_Stripe_Has_No_Refund_For_Is_Sent_On_The_Same_Key(RetryPath path)
+    {
+        var order = CreateCardPaidOrder(1000m);
+        ArrangeOrder(order);
+        ArrangeConsumed(0m);
+        var refund = ArrangeRetriedRefund(order, 1000m, listed: null);
+
+        var result = await RetryAsync(path, refund, 1000m);
+
+        Assert.True(result.IsSuccess, result.Error?.Message);
+        Assert.Single(_stripe.Lookups);
+        Assert.Equal(1, _stripe.RefundCallCount);
+        Assert.Equal(AdminKey, _stripe.LastIdempotencyKey);
+        Assert.Equal(1000m, _stripe.LastAmount);
+        Assert.Equal(RefundStatus.Succeeded, refund.Status);
+        Assert.Null(refund.StripeRefundId);
+    }
+
+    [Fact]
+    public async Task A_First_Attempt_Asks_Stripe_Nothing_First()
+    {
+        var order = CreateCardPaidOrder(1000m);
+        ArrangeOrder(order);
+        ArrangeNoExistingRefund();
+        ArrangeConsumed(0m);
+        CaptureAddedRefund(out var added);
+        _stripe.Listed = new StripeRefundSnapshot("re_other", 1000m, Failed: false);
+
+        var result = await CreateService().IssueRefundAsync(
+            new RefundRequest(OrderId, 1000m, RefundReason.AdminDiscretion, ActorId, RefundRequestId: "full"),
+            CancellationToken.None);
+
+        Assert.True(result.IsSuccess, result.Error?.Message);
+        Assert.Empty(_stripe.Lookups);
+        Assert.Equal(1, _stripe.RefundCallCount);
+        Assert.Equal(RefundStatus.Succeeded, Assert.Single(added).Status);
+    }
+
     private sealed class RecordingStripeClient : IStripeClient
     {
         private readonly List<string> _refundKeys = [];
@@ -1685,6 +1926,16 @@ public class RefundServiceTests
         public bool RetryFirstAttemptTransientlyInternally { get; set; }
         public bool ThrowOnRefund { get; set; }
         public bool AllRefundKeysIdentical => _refundKeys.Distinct().Count() <= 1;
+        public StripeRefundSnapshot? Listed { get; set; }
+        public Exception? LookupFailure { get; set; }
+        public List<(string? SessionId, string? PaymentIntentId, string RefundKey)> Lookups { get; } = [];
+
+        public Task<StripeRefundSnapshot?> FindRefundAsync(
+            string? stripeSessionId, string? stripePaymentIntentId, string refundKey, CancellationToken cancellationToken)
+        {
+            Lookups.Add((stripeSessionId, stripePaymentIntentId, refundKey));
+            return LookupFailure is null ? Task.FromResult(Listed) : Task.FromException<StripeRefundSnapshot?>(LookupFailure);
+        }
 
         public void Reset()
         {

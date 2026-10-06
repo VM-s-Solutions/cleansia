@@ -662,7 +662,7 @@
         },
         "override_status": {
           "action": "Přepsat stav",
-          "confirm": "Ručně nastavit stav objednávky. Povoleny jsou pouze platné přechody.",
+          "confirm": "Ručně nastavit stav objednávky. Povoleny jsou pouze platné přechody. Dokončením probíhající objednávky placené v hotovosti, u které nebyla zaznamenána přijatá hotovost, bude zákazník dlužit její cenu.",
           "target": "Nový stav",
           "reason": "Důvod",
           "reason_hint": "Uloží se do auditního záznamu. Povinný pro dokončení objednávky bez fotografie po úklidu.",
@@ -2905,7 +2905,7 @@
             },
             "refund_needs_retry": {
               "title": "Vrácení peněz je potřeba zopakovat",
-              "body": "Vrácení {{amount}} u objednávky {{orderNumber}} už den neprošlo a automaticky se neopakuje. Zkontrolujte ho ve Stripe a pak ho zopakujte z reklamace nebo z objednávky."
+              "body": "Vrácení {{amount}} u objednávky {{orderNumber}} neprošlo a automaticky se neopakuje. Zopakujte ho jednou z reklamace nebo z objednávky: systém ho ověří ve Stripe, a pokud ho Stripe provedl, zapíše ho, a pokud skončilo chybou, uzavře ho. Vrácení, které ve Stripe skončilo chybou, už znovu odeslat nelze: pak vraťte peníze jinak — plným vrácením, pokud chybou neskončilo právě ono, částečným vrácením jiných položek nebo kreditem."
             },
             "refund_without_cancel": {
               "title": "Vrácení peněz bylo vyžádáno pro zrušení, které neproběhlo",
@@ -3231,6 +3231,7 @@
       "wind_down_not_requested": "Archivace čeká, až budou lidé informováni: nejprve nastavte datum ukončení činnosti.",
       "has_open_orders": "Společnost má stále otevřené objednávky; archivace čeká, dokud nebude každá dokončena nebo zrušena.",
       "has_orders_awaiting_pay": "Dokončená objednávka stále čeká na výpočet odměny; archivace na něj čeká.",
+      "has_open_receivables": "Zákazník stále dluží společnosti otevřenou pohledávku; nejprve musí být zaplacena nebo odepsána.",
       "has_orders_awaiting_receipt": "Zaplacená nebo hotovostní objednávka stále čeká na účtenku; archivace na ni čeká.",
       "has_receipts_awaiting_fiscal_registration": "Účtenka stále čeká na fiskální registraci; archivace na ni čeká.",
       "has_pending_refunds": "Vrácení platby stále čeká na vyřízení; archivace čeká, dokud nebude vypořádáno.",

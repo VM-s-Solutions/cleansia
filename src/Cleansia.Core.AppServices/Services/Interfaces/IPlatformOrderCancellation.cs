@@ -22,7 +22,7 @@ public interface IPlatformOrderCancellation
 
     /// <summary>
     /// The refund leg alone, for a cancelled card order whose refund Stripe refused: the same key
-    /// resolves to the pending row and Stripe replays once.
+    /// resolves to the pending row, whose retry records the refund Stripe made on it or sends it once.
     /// </summary>
     Task<PlatformRefundOutcome> RefundAsync(
         Order order,

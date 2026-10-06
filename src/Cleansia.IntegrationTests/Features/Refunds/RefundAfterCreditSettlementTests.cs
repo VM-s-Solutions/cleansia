@@ -1,3 +1,4 @@
+using Cleansia.Core.AppServices.Auditing;
 using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.AppServices.Features.Orders;
 using Cleansia.Core.AppServices.Services;
@@ -37,6 +38,8 @@ public class RefundAfterCreditSettlementTests(PostgresContainerFixture fixture) 
     private const string OrderId = "order-settled-refund";
     private const string PaymentIntentId = "pi_settled_refund";
     private const string FullKey = $"refund:{OrderId}:admin:full";
+    private const string PartialKey = $"refund:{OrderId}:admin:partial";
+    private const string CancelKey = $"refund:{OrderId}:cancel";
 
     private readonly Mock<IStripeClient> _stripe = new();
 
@@ -67,9 +70,12 @@ public class RefundAfterCreditSettlementTests(PostgresContainerFixture fixture) 
 
     /// <summary>
     /// A paid card order, with <paramref name="creditApplied"/> spent on it at checkout under its payment
-    /// key, and an earlier complaint on it settled in <paramref name="settledInCredit"/> of credit.
+    /// key, and an earlier complaint on it settled in <paramref name="settledInCredit"/> of credit. With
+    /// <paramref name="cleanerOnTheJob"/> it was booked two days ago, starts in 12 hours and a cleaner took it,
+    /// so a customer cancellation now is charged the partial fee.
     /// </summary>
-    private async Task<string> SeedAsync(decimal total, decimal creditApplied, decimal settledInCredit)
+    private async Task<string> SeedAsync(
+        decimal total, decimal creditApplied, decimal settledInCredit, bool cleanerOnTheJob = false)
     {
         string userId;
         await using (var ctx = NewContext())
@@ -97,9 +103,12 @@ public class RefundAfterCreditSettlementTests(PostgresContainerFixture fixture) 
                 account!.Issue(creditApplied, CreditTransactionReason.Goodwill, "seed-grant", "seed", note: "n");
             }
 
-            account!.Issue(
-                settledInCredit, CreditTransactionReason.DisputeSettlement, "dispute-settlement:dispute-earlier", "admin",
-                orderId: OrderId, disputeId: "dispute-earlier");
+            if (settledInCredit > 0m)
+            {
+                account!.Issue(
+                    settledInCredit, CreditTransactionReason.DisputeSettlement, "dispute-settlement:dispute-earlier",
+                    "admin", orderId: OrderId, disputeId: "dispute-earlier");
+            }
 
             var order = Order.Create(
                 customerName: "Settled Refund",
@@ -108,7 +117,7 @@ public class RefundAfterCreditSettlementTests(PostgresContainerFixture fixture) 
                 customerAddress: Address.Create("123 Main St", "Prague", "11000", CountryId),
                 rooms: 1,
                 bathrooms: 1,
-                cleaningDateTime: DateTime.UtcNow.AddDays(-1),
+                cleaningDateTime: cleanerOnTheJob ? DateTime.UtcNow.AddHours(12) : DateTime.UtcNow.AddDays(-1),
                 paymentType: PaymentType.Card,
                 totalPrice: total,
                 currencyId: CzkId,
@@ -119,6 +128,16 @@ public class RefundAfterCreditSettlementTests(PostgresContainerFixture fixture) 
             order.ApplyCredit(creditApplied, userId);
             order.AssignStripePaymentIntentId(PaymentIntentId);
             order.AddOrderStatus(OrderStatusTrack.Create(OrderStatus.New, order));
+            if (cleanerOnTheJob)
+            {
+                order.Created("seed", DateTimeOffset.UtcNow.AddDays(-2));
+                var cleaner = User.CreateWithPassword(
+                    "settled-refund-cleaner@cleansia.test", "Seed-Password-123", "Clean", "Er", UserProfile.Employee);
+                var employee = Employee.CreateWithUser(cleaner);
+                ctx.Employees.Add(employee);
+                order.AddAssignedEmployee(OrderEmployee.Create(order, employee));
+            }
+
             ctx.Orders.Add(order);
             await ctx.CommitAsync(CancellationToken.None);
 
@@ -144,6 +163,8 @@ public class RefundAfterCreditSettlementTests(PostgresContainerFixture fixture) 
             new OrderRepository(ctx),
             new CreditAccountRepository(ctx),
             factory.Object,
+            Mock.Of<IAdminNotifier>(),
+            new UserNotificationRepository(ctx),
             NullLogger<RefundService>.Instance);
         return await service.IssueRefundAsync(
             new RefundRequest(OrderId, amount, RefundReason.AdminDiscretion, "admin", RefundRequestId: refundRequestId),
@@ -161,12 +182,52 @@ public class RefundAfterCreditSettlementTests(PostgresContainerFixture fixture) 
                 new OrderRepository(ctx),
                 new CreditAccountRepository(ctx),
                 factory.Object,
+                Mock.Of<IAdminNotifier>(),
+                new UserNotificationRepository(ctx),
                 NullLogger<RefundService>.Instance),
             new RefundRepository(ctx),
             Mock.Of<INotificationProducer>(),
             new GuestOrderAccessTokenIssuer(new GuestOrderAccessTokenRepository(ctx)),
             Mock.Of<IPendingDispatch>(),
             NullLogger<CleanerNoShowCancellation>.Instance);
+    }
+
+    private async Task<CancelOrder.Response> CancelAsync(string userId)
+    {
+        await using var ctx = NewContext();
+        var factory = new Mock<IStripeClientFactory>();
+        factory.Setup(f => f.CreateClient()).Returns(_stripe.Object);
+        var cancellation = new CustomerOrderCancellation(
+            new FixedTenantProvider(TestTenants.Default),
+            new RefundService(
+                new RefundRepository(ctx),
+                new OrderRepository(ctx),
+                new CreditAccountRepository(ctx),
+                factory.Object,
+                Mock.Of<IAdminNotifier>(),
+                new UserNotificationRepository(ctx),
+                NullLogger<RefundService>.Instance),
+            new RefundRepository(ctx),
+            new ReceivableRepository(ctx),
+            new CreditAccountRepository(ctx),
+            Mock.Of<ILoyaltyService>(),
+            new CancellationPolicyResolver(new UserMembershipRepository(ctx), new OrderRepository(ctx)),
+            Mock.Of<INotificationProducer>(),
+            Mock.Of<ILiveActivityProducer>(),
+            Mock.Of<IExpressWaiverConsumer>(),
+            Mock.Of<IPendingDispatch>(),
+            new AuditContext(),
+            TimeProvider.System,
+            NullLogger<CustomerOrderCancellation>.Instance);
+        var order = await ctx.Orders
+            .Include(o => o.OrderStatusHistory)
+            .Include(o => o.AssignedEmployees)
+            .Include(o => o.Currency)
+            .SingleAsync(o => o.Id == OrderId);
+
+        var result = await cancellation.ExecuteAsync(order, reason: null, userId, CancellationToken.None);
+        await ctx.CommitAsync(CancellationToken.None);
+        return result.Response;
     }
 
     private sealed record GivenBack(
@@ -344,6 +405,76 @@ public class RefundAfterCreditSettlementTests(PostgresContainerFixture fixture) 
         Assert.Equal(1200m, given.Card);
         Assert.Equal(400m, given.CreditReturned);
         Assert.Equal(2000m, given.Total);
+        Assert.Equal(given.LedgerSum, given.Balance);
+    }
+
+    /// <summary>
+    /// 1000 paid 300 in credit and 700 by card; an admin refunded 400 of it, 280 to the card and 120 to the
+    /// balance. Cancelled 12 hours before the start with a cleaner on the job, at a 25 % fee of 250, the
+    /// customer gets the 600 still held less the fee, in the mix they paid: 245 card and 105 credit. 525 of the
+    /// card and 225 of the credit are back, 75 % of each.
+    /// </summary>
+    [Fact]
+    public async Task A_Fee_Cancellation_Of_A_Partly_Refunded_Card_And_Credit_Order_Returns_What_Is_Held_Less_The_Fee_In_Proportion()
+    {
+        await ResetAsync();
+        var userId = await SeedAsync(total: 1000m, creditApplied: 300m, settledInCredit: 0m, cleanerOnTheJob: true);
+
+        var partial = await RefundAsync(400m, "partial");
+        var cancelled = await CancelAsync(userId);
+
+        Assert.True(partial.IsSuccess, partial.Error?.Message);
+        Assert.Equal(280m, partial.Value!.Amount);
+        Assert.Equal(BookingPolicy.PartialCancellationFeeRate, cancelled.FeeRate);
+        Assert.Equal(350m, cancelled.RefundAmount);
+        Assert.True(cancelled.RefundInitiated);
+        Assert.Equal(245m, cancelled.ActualRefundAmount);
+        _stripe.Verify(s => s.RefundPaymentIntentAsync(
+            PaymentIntentId, 245m, CancelKey, It.IsAny<CancellationToken>()), Times.Once);
+        var given = await ReadAsync(userId);
+        Assert.Equal(525m, given.Card);
+        Assert.Equal(225m, given.CreditReturned);
+        Assert.Equal(given.LedgerSum, given.Balance);
+        Assert.Equal(PaymentStatus.PartiallyRefunded, given.PaymentStatus);
+        await using var ctx = NewContext();
+        Assert.Equal(105m, await new CreditAccountRepository(ctx).GetReturnedForRefundAsync(CancelKey, CancellationToken.None));
+        var order = await ctx.Orders.IgnoreQueryFilters().AsNoTracking().SingleAsync(o => o.Id == OrderId);
+        Assert.Equal(350m, order.CancellationRefundAmount);
+    }
+
+    /// <summary>
+    /// The same order, but Stripe never answered the admin's 400 refund: 280 of card is pending and its 120
+    /// credit leg waits for it. The fee cancellation counts both as given back and returns 1000 − 400 − 250 =
+    /// 350, 245 card and 105 credit. When the partial's retry goes through, 525 card and 225 credit are back and
+    /// the 250 fee is kept.
+    /// </summary>
+    [Fact]
+    public async Task A_Fee_Cancellation_Beside_A_Pending_Refund_Keeps_The_Fee_Once_That_Refund_Goes_Through()
+    {
+        await ResetAsync();
+        var userId = await SeedAsync(total: 1000m, creditApplied: 300m, settledInCredit: 0m, cleanerOnTheJob: true);
+        var partialCalls = 0;
+        _stripe.Setup(s => s.RefundPaymentIntentAsync(
+                PaymentIntentId, It.IsAny<decimal>(), PartialKey, It.IsAny<CancellationToken>()))
+            .Returns(() => ++partialCalls == 1
+                ? Task.FromException(new HttpRequestException("timed out"))
+                : Task.CompletedTask);
+
+        await Assert.ThrowsAsync<HttpRequestException>(() => RefundAsync(400m, "partial"));
+        var cancelled = await CancelAsync(userId);
+        var retried = await RefundAsync(400m, "partial");
+
+        Assert.Equal(350m, cancelled.RefundAmount);
+        Assert.Equal(245m, cancelled.ActualRefundAmount);
+        Assert.True(retried.IsSuccess, retried.Error?.Message);
+        Assert.Equal(280m, retried.Value!.Amount);
+        _stripe.Verify(s => s.RefundPaymentIntentAsync(
+            PaymentIntentId, 280m, PartialKey, It.IsAny<CancellationToken>()), Times.Exactly(2));
+        _stripe.Verify(s => s.RefundPaymentIntentAsync(
+            PaymentIntentId, 245m, CancelKey, It.IsAny<CancellationToken>()), Times.Once);
+        var given = await ReadAsync(userId);
+        Assert.Equal(525m, given.Card);
+        Assert.Equal(225m, given.CreditReturned);
         Assert.Equal(given.LedgerSum, given.Balance);
     }
 

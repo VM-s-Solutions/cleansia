@@ -141,6 +141,8 @@ public class DisputeRefundPendingAtNoShowTests(PostgresContainerFixture fixture)
             new OrderRepository(ctx),
             new CreditAccountRepository(ctx),
             factory.Object,
+            Mock.Of<IAdminNotifier>(),
+            new UserNotificationRepository(ctx),
             NullLogger<RefundService>.Instance);
     }
 

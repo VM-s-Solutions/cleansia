@@ -267,8 +267,9 @@ public static class NotificationEventCatalog
     public const string OrderNoCleanerNothingCharged = "order.no_cleaner_nothing_charged";
 
     /// <summary>
-    /// Customer-targeted: the cleaner reported that the cash for a finished cleaning was not paid, so the
-    /// price is now owed and no new booking is taken until it is paid (owner ruling 2026-10-06). Args:
+    /// Customer-targeted: the cleaner reported that the cash for a finished cleaning was not paid, or an
+    /// administrator completed the order in progress through the status override, so the price is now owed
+    /// and no new booking is taken until it is paid (owner ruling 2026-10-06). Args:
     /// <c>orderNumber</c> (loc) + <c>amount</c> (loc, the price owed with its currency's symbol) +
     /// <c>orderId</c> (deep link to the order, where it is paid). Non-mutable (GetCategoryFor returns null):
     /// a debt that blocks every booking is not a notice the customer may silence. In the APNs display map;

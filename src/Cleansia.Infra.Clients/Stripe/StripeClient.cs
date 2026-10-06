@@ -226,9 +226,10 @@ public class StripeClient : IStripeClient
             PaymentIntent = session.PaymentIntentId,
             Amount = ToMinorUnits(amount),
             Reason = global::Stripe.RefundReasons.RequestedByCustomer,
+            Metadata = new Dictionary<string, string> { { RefundKeyMetadataKey, idempotencyKey } },
         };
-        // The caller's deterministic refund key is the idempotency key (ADR-0006 D3): a retry of the
-        // same logical refund replays Stripe's original refund instead of issuing a second one.
+        // The caller's deterministic refund key is the idempotency key (ADR-0006 D3), so Stripe replays its
+        // original refund to a retry for about a day; the RefundKey metadata is what a later retry finds it by.
         var requestOptions = new RequestOptions { IdempotencyKey = idempotencyKey };
         await ClassifyAsync(
             nameof(RefundCheckoutSessionAsync),
@@ -244,14 +245,61 @@ public class StripeClient : IStripeClient
             PaymentIntent = paymentIntentId,
             Amount = ToMinorUnits(amount),
             Reason = global::Stripe.RefundReasons.RequestedByCustomer,
+            Metadata = new Dictionary<string, string> { { RefundKeyMetadataKey, idempotencyKey } },
         };
-        // The caller's deterministic refund key is the idempotency key (ADR-0006 D3): a retry of the
-        // same logical refund replays Stripe's original refund instead of issuing a second one.
+        // The caller's deterministic refund key is the idempotency key (ADR-0006 D3), so Stripe replays its
+        // original refund to a retry for about a day; the RefundKey metadata is what a later retry finds it by.
         var requestOptions = new RequestOptions { IdempotencyKey = idempotencyKey };
         await ClassifyAsync(
             nameof(RefundPaymentIntentAsync),
             () => refundService.CreateAsync(refundOptions, requestOptions, cancellationToken));
     }
+
+    public async Task<StripeRefundSnapshot?> FindRefundAsync(
+        string? stripeSessionId,
+        string? stripePaymentIntentId,
+        string refundKey,
+        CancellationToken cancellationToken)
+    {
+        var intentId = stripePaymentIntentId;
+        if (!string.IsNullOrEmpty(stripeSessionId))
+        {
+            var sessionService = new SessionService(stripe);
+            var session = await ClassifyAsync(
+                nameof(FindRefundAsync),
+                () => sessionService.GetAsync(stripeSessionId, cancellationToken: cancellationToken));
+            intentId = session.PaymentIntentId;
+        }
+
+        if (string.IsNullOrEmpty(intentId))
+        {
+            return null;
+        }
+
+        var refundService = new global::Stripe.RefundService(stripe);
+        var ours = await ClassifyAsync(nameof(FindRefundAsync), async () =>
+        {
+            var found = new List<global::Stripe.Refund>();
+            await foreach (var refund in refundService.ListAutoPagingAsync(
+                               new global::Stripe.RefundListOptions { PaymentIntent = intentId, Limit = 100 },
+                               cancellationToken: cancellationToken))
+            {
+                if (refund.Metadata?.GetValueOrDefault(RefundKeyMetadataKey) == refundKey)
+                {
+                    found.Add(refund);
+                }
+            }
+
+            return found;
+        });
+
+        var made = ours.FirstOrDefault(r => !IsFailedRefund(r.Status)) ?? ours.FirstOrDefault();
+        return made is null
+            ? null
+            : new StripeRefundSnapshot(made.Id, made.Amount / 100m, IsFailedRefund(made.Status));
+    }
+
+    private static bool IsFailedRefund(string status) => status is "failed" or "canceled";
 
     public async Task<string> CreateCustomerAsync(
         string userId,
@@ -853,6 +901,8 @@ public class StripeClient : IStripeClient
     private const string ReplacedIntentCancellationReason = "duplicate";
 
     private const string ReceivableMetadataKey = "ReceivableId";
+
+    private const string RefundKeyMetadataKey = "RefundKey";
 
     /// <summary>
     /// Where Stripe sends the browser back to after a membership checkout.

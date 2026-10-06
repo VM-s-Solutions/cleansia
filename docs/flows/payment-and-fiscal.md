@@ -66,7 +66,7 @@ sequenceDiagram
 | A receivable paid through its pay link | Paid under the receivable's company; the fee receipt is asked for; the order is untouched. |
 | A receivable paid twice — the pay link and a charge, or two links | The second payment is refunded in full; a redelivery replays the same refund. |
 | A door price paid through its pay link after an administrator recorded it as paid in cash | Refunded in full on that PaymentIntent, as a second payment is; the receivable stays written off as *Paid in cash* and earns no fee receipt (since 2026-10-06). |
-| A receivable a Manager wrote off, paid anyway | It is paid — the money is the company's — and earns its fee receipt. |
+| A receivable a Manager wrote off, paid anyway | It is paid — the money is the company's — and earns its fee receipt. Since 2026-10-06 the write-off closes the pay link first, so only a payment racing it can land this way. |
 
 ## A saved card and a paid fee arrive by the same webhook {#saved-cards-and-receivables}
 
@@ -160,6 +160,17 @@ after the cash was recorded is refunded in full by the webhook, and the debt sta
 in cash, with no fee receipt. A debt a Manager wrote off and the customer then pays is kept: it is paid
 and earns its fee receipt
 → [Business rules — when the customer does not pay at the door](/product/business-rules#cash-not-paid).
+
+**A Manager's write-off closes the pay link first too** (owner ruling 2026-10-06). `WriteOffReceivable`
+expires the receivable's open Checkout Session at Stripe before it writes the debt off, the same call
+*Record cash received* makes, for every kind of receivable. It is refused with `receivable.not_open` when
+Stripe reports the link already paid — its payment is still to land — and with
+`order.payment_gateway_unavailable` when Stripe cannot be reached; nothing is written off either way. A
+receivable with no pay link is written off without a call. A payment can still land on a written-off
+debt only through a link opened between the write-off's read and its commit, and it is kept. Both
+closes ask Stripe for the session first, so a session Stripe no longer knows refuses them, and the
+customer's *Pay now*, on every attempt; that receivable stays open until a data fix clears its
+`PayLinkSessionId` ([Business rules — what a customer owes](/product/business-rules#receivables)).
 
 ## Amounts are never reconciled, and do not need to be
 

@@ -41,6 +41,7 @@ public class GuestOrderCancellationTests(PostgresContainerFixture fixture) : Bas
     private const string CleanerId = "guest-cancel-cleaner";
     private const string CurrencyId = "guest-cancel-eur";
     private const string CountryId = "guest-cancel-sk";
+    private const string AdminId = "guest-cancel-admin";
 
     private string _guestToken = null!;
 
@@ -99,6 +100,13 @@ public class GuestOrderCancellationTests(PostgresContainerFixture fixture) : Bas
             }
             inner.Add(entry);
         }
+    }
+
+    private sealed class ManualClock(DateTimeOffset now) : TimeProvider
+    {
+        public override DateTimeOffset GetUtcNow() => now;
+
+        public void Set(DateTimeOffset at) => now = at;
     }
 
     private async Task Seed(CleansiaDbContext db, bool paid = true, bool accepted = false,
@@ -500,6 +508,134 @@ public class GuestOrderCancellationTests(PostgresContainerFixture fixture) : Bas
             Assert.Single(await db.OutboxMessages.IgnoreQueryFilters().Where(x => x.QueueName == QueueNames.SendEmail).ToListAsync());
             Assert.Single(await db.Refunds.IgnoreQueryFilters().ToListAsync());
             run.Stripe.Verify(x => x.RefundPaymentIntentAsync("pi_guest", 1000m, It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Once);
+        }, transactional: false);
+    }
+
+    [Theory]
+    [InlineData(false, false)]
+    [InlineData(true, false)]
+    [InlineData(false, true)]
+    public async Task Guest_retry_records_the_amount_its_original_claim_sends(bool stripeUnreachable, bool cleanerDropped)
+    {
+        var run = new Run { FailFinalCommit = !stripeUnreachable };
+        var clock = new ManualClock(DateTimeOffset.UtcNow.AddHours(-9));
+        await TestMethod<bool>(setup: (IServiceCollection services) =>
+        {
+            run.Setup(services);
+            services.Replace(ServiceDescriptor.Singleton<TimeProvider>(clock));
+            return Task.CompletedTask;
+        }, arrange: (CleansiaDbContext db) => Seed(db, accepted: true), act: async (IServiceProvider provider) =>
+        {
+            var command = GuestCommand();
+            if (stripeUnreachable) run.DuringStripe = () => throw new HttpRequestException("connection reset");
+            using (var attempt = provider.CreateScope())
+            {
+                var mediator = attempt.ServiceProvider.GetRequiredService<IMediator>();
+                if (stripeUnreachable) await Assert.ThrowsAsync<HttpRequestException>(() => mediator.Send(command));
+                else await Assert.ThrowsAsync<DbUpdateException>(() => mediator.Send(command));
+            }
+            run.DuringStripe = null;
+            if (cleanerDropped)
+            {
+                using var drop = provider.CreateScope();
+                drop.ServiceProvider.GetRequiredService<ITenantProvider>().SetTenantOverride(TestTenants.Second);
+                var db = drop.ServiceProvider.GetRequiredService<CleansiaDbContext>();
+                var order = await db.Orders.Include(o => o.AssignedEmployees).SingleAsync(o => o.Id == OrderId);
+                order.UnassignEmployee(order.AssignedEmployees.Single().EmployeeId);
+                await db.CommitAsync(CancellationToken.None);
+            }
+            clock.Set(DateTimeOffset.UtcNow);
+            using (var retry = provider.CreateScope())
+            {
+                var result = await retry.ServiceProvider.GetRequiredService<IMediator>().Send(command);
+                Assert.True(result.IsSuccess, result.Error?.Message);
+                Assert.Equal(cleanerDropped ? 0m : 0.5m, result.Value.FeeRate);
+                Assert.Equal(750m, result.Value.RefundAmount);
+                Assert.Equal(750m, result.Value.ActualRefundAmount);
+            }
+            return true;
+        }, assert: async (CleansiaDbContext db, bool _) =>
+        {
+            var order = await db.Orders.IgnoreQueryFilters().SingleAsync();
+            Assert.Equal(OrderStatus.Cancelled, order.CurrentStatus);
+            Assert.Equal(750m, order.CancellationRefundAmount);
+            var refund = Assert.Single(await db.Refunds.IgnoreQueryFilters().ToListAsync());
+            Assert.Equal(RefundStatus.Succeeded, refund.Status);
+            Assert.Equal(750m, refund.Amount);
+            run.Stripe.Verify(x => x.RefundPaymentIntentAsync("pi_guest", 750m, refund.RefundKey, It.IsAny<CancellationToken>()),
+                Times.Exactly(stripeUnreachable ? 2 : 1));
+            run.Stripe.Verify(x => x.RefundPaymentIntentAsync(It.IsAny<string>(), It.IsNotIn(750m), It.IsAny<string>(), It.IsAny<CancellationToken>()),
+                Times.Never);
+        }, transactional: false);
+    }
+
+    /// <summary>
+    /// A guest's cancel claimed its 1 000 refund and Stripe's answer was lost; Stripe then failed that refund. The
+    /// guest's own retry, or an administrator's cancellation replaying the claim, records the 1 000 the customer is
+    /// owed and closes the refund, and the administrators are asked to retry it in the commit that closes it:
+    /// nothing else ever would, because the hourly job selects only pending refunds.
+    /// </summary>
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task A_replayed_guest_claim_Stripe_failed_is_recorded_closed_and_raised_for_a_retry(bool administratorCancels)
+    {
+        var run = new Run();
+        await TestMethod<bool>(setup: run.Setup, arrange: async (CleansiaDbContext db) =>
+        {
+            await Seed(db);
+            var admin = User.CreateWithPassword($"{AdminId}@example.test", "Password123!", "Ad", "Min",
+                UserProfile.Administrator, adminRole: AdminRole.Administrator);
+            admin.Id = AdminId;
+            admin.TenantId = TestTenants.Second;
+            admin.ConfirmEmail();
+            db.Users.Add(admin);
+            await db.CommitAsync(CancellationToken.None);
+        }, act: async (IServiceProvider provider) =>
+        {
+            var command = GuestCommand();
+            run.DuringStripe = () => throw new HttpRequestException("timed out");
+            using (var attempt = provider.CreateScope())
+                await Assert.ThrowsAsync<HttpRequestException>(() => attempt.ServiceProvider.GetRequiredService<IMediator>().Send(command));
+            run.DuringStripe = null;
+            run.Stripe.Setup(x => x.FindRefundAsync(It.IsAny<string?>(), "pi_guest", It.IsAny<string>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new StripeRefundSnapshot("re_failed", 1000m, Failed: true));
+
+            using var retry = provider.CreateScope();
+            if (administratorCancels)
+            {
+                retry.ServiceProvider.GetRequiredService<ITenantProvider>().SetTenantOverride(TestTenants.Second);
+                var handler = ActivatorUtilities.CreateInstance<AdminCancelOrder.Handler>(
+                    retry.ServiceProvider, new TestUserSessionProvider(AdminId, $"{AdminId}@example.test"));
+                var result = await handler.Handle(new AdminCancelOrder.Command(OrderId, null), CancellationToken.None);
+                Assert.True(result.IsSuccess, result.Error?.Message);
+                Assert.False(result.Value.RefundInitiated);
+                Assert.Equal(1000m, result.Value.RefundAmount);
+                await retry.ServiceProvider.GetRequiredService<CleansiaDbContext>().CommitAsync(CancellationToken.None);
+            }
+            else
+            {
+                var result = await retry.ServiceProvider.GetRequiredService<IMediator>().Send(command);
+                Assert.True(result.IsSuccess, result.Error?.Message);
+                Assert.False(result.Value.RefundInitiated);
+                Assert.Equal(1000m, result.Value.RefundAmount);
+            }
+
+            return true;
+        }, assert: async (CleansiaDbContext db, bool _) =>
+        {
+            var order = await db.Orders.IgnoreQueryFilters().SingleAsync();
+            Assert.Equal(OrderStatus.Cancelled, order.CurrentStatus);
+            Assert.Equal(1000m, order.CancellationRefundAmount);
+            Assert.Equal(PaymentStatus.Paid, order.PaymentStatus);
+            Assert.Equal(RefundStatus.Failed, (await db.Refunds.IgnoreQueryFilters().SingleAsync()).Status);
+            var alert = Assert.Single(await db.Set<UserNotification>().IgnoreQueryFilters()
+                .Where(n => n.EventKey == AdminNotificationEventCatalog.RefundNeedsRetry).ToListAsync());
+            Assert.Equal(AdminId, alert.UserId);
+            Assert.Equal(TestTenants.Second, alert.TenantId);
+            Assert.Contains(OrderId, alert.ArgsJson);
+            run.Stripe.Verify(x => x.RefundPaymentIntentAsync("pi_guest", It.IsAny<decimal>(), It.IsAny<string>(), It.IsAny<CancellationToken>()),
+                Times.Once);
         }, transactional: false);
     }
 

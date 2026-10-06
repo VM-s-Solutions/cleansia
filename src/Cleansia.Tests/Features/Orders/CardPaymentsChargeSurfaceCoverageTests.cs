@@ -47,6 +47,9 @@ public class CardPaymentsChargeSurfaceCoverageTests
         ("Features/Orders/AdminRecordCashReceived.cs",
             "CLOSES the pay link of a door price the customer paid in cash after all, so it cannot be paid "
             + "twice. Closing a payable link, never opening one; cash is recorded with the switch off too."),
+        ("Features/Receivables/WriteOffReceivable.cs",
+            "CLOSES the pay link of a debt the company writes off, so it cannot be paid afterwards. Closing "
+            + "a payable link, never opening one; a write-off must work with the switch off too."),
         ("Features/Memberships/CancelMembershipSubscription.cs",
             "Cancellation. A customer must always be able to stop being billed."),
         ("Services/CompanyWindDownService.cs",

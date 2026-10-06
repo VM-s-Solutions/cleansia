@@ -151,33 +151,7 @@ public class ReportCashNotPaid
             order.AddOrderStatus(completed);
             await liveActivityProducer.NotifyOrderTransitionAsync(order, LiveActivityEventKeys.End, completed, cancellationToken);
 
-            var receivable = Receivable.ForUnpaidCash(order);
-            receivableRepository.Add(receivable);
-
-            CalculateOrderPay.EnqueueForCrew(order, pending);
-
-            var amount = MoneyText.Format(receivable.Amount, order.Currency!);
-            await notificationProducer.NotifyAsync(
-                order.UserId!,
-                NotificationEventCatalog.OrderCashNotPaid,
-                new Dictionary<string, string>
-                {
-                    ["orderId"] = order.Id,
-                    ["orderNumber"] = order.DisplayOrderNumber,
-                    ["amount"] = amount,
-                },
-                order.TenantId,
-                receivable.Id,
-                cancellationToken);
-
-            var emailKey = MessageKeys.OrderCashNotPaidEmail(receivable.Id);
-            pending.Enqueue(
-                QueueNames.SendEmail,
-                new QueueEnvelope<SendOrderCashNotPaidEmailMessage>(
-                    emailKey,
-                    order.TenantId,
-                    new SendOrderCashNotPaidEmailMessage(receivable.Id, EmailLocale.Resolve(order.LanguageCode), order.TenantId)),
-                emailKey);
+            var receivable = await OpenDoorDebtAsync(order, receivableRepository, pending, notificationProducer, cancellationToken);
 
             await adminNotifier.NotifyAsync(
                 new AdminEvent(
@@ -187,12 +161,50 @@ public class ReportCashNotPaid
                     Args: new Dictionary<string, string>
                     {
                         ["orderNumber"] = order.DisplayOrderNumber,
-                        ["amount"] = amount,
+                        ["amount"] = MoneyText.Format(receivable.Amount, order.Currency!),
                         ["orderId"] = order.Id,
                     }),
                 cancellationToken);
 
             return BusinessResult.Success(new Response(order.Id, OrderStatus.Completed, receivable.Amount));
         }
+    }
+
+    /// <summary>The order's Currency must be loaded: the customer's notice states the amount owed.</summary>
+    internal static async Task<Receivable> OpenDoorDebtAsync(
+        Order order,
+        IReceivableRepository receivableRepository,
+        IPendingDispatch pending,
+        INotificationProducer notificationProducer,
+        CancellationToken cancellationToken)
+    {
+        var receivable = Receivable.ForUnpaidCash(order);
+        receivableRepository.Add(receivable);
+
+        CalculateOrderPay.EnqueueForCrew(order, pending);
+
+        await notificationProducer.NotifyAsync(
+            order.UserId!,
+            NotificationEventCatalog.OrderCashNotPaid,
+            new Dictionary<string, string>
+            {
+                ["orderId"] = order.Id,
+                ["orderNumber"] = order.DisplayOrderNumber,
+                ["amount"] = MoneyText.Format(receivable.Amount, order.Currency!),
+            },
+            order.TenantId,
+            receivable.Id,
+            cancellationToken);
+
+        var emailKey = MessageKeys.OrderCashNotPaidEmail(receivable.Id);
+        pending.Enqueue(
+            QueueNames.SendEmail,
+            new QueueEnvelope<SendOrderCashNotPaidEmailMessage>(
+                emailKey,
+                order.TenantId,
+                new SendOrderCashNotPaidEmailMessage(receivable.Id, EmailLocale.Resolve(order.LanguageCode), order.TenantId)),
+            emailKey);
+
+        return receivable;
     }
 }

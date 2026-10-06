@@ -105,7 +105,13 @@ failing e-mail can never fail the command, and nothing the notifier reads depend
   cancellation's own refund on an order that was never cancelled — a guest's claim whose cancel failed,
   never re-driven — and `refund_needs_retry` for any other; args `orderNumber`, `amount`, `orderId`;
   subject the refund id, guarded by `AnyForEventAsync` on `orderId`, inside the per-company loop and its
-  per-row commit)
+  per-row commit; nothing for a row it closes because the refunds Stripe confirmed took the whole card
+  charge, nor for one the refund seam closed and raised itself) · `RefundService`
+  (`admin.payment.refund_needs_retry` at once, since 2026-10-06, when a retry finds Stripe failed or
+  canceled the refund made on its key — from the hourly re-drive, a cancellation replaying a guest's claim,
+  the guest's own retry, a full or partial refund or a dispute resolved again; args `orderNumber`,
+  `amount`, `orderId`; subject the refund id, guarded by `AnyForEventAsync` on `orderId`, saved in the
+  seam's own commit with the row's close, so it stands when the caller rolls back)
   · `RetryFailedUserDeletions` (subject `{requestId}:{day}`, in a fresh scope with the override set and its own
   commit — the failing walk's scope is discarded by design) · `WindDownCompany` (only when a date is set;
   subject `{tenantId}:{requestInstant}`) · `CompanyWindDownService` (only when `cancelled + refunded +

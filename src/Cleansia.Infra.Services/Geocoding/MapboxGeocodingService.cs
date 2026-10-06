@@ -5,6 +5,7 @@ using System.Web;
 using Cleansia.Core.Clients.Abstractions;
 using Cleansia.Infra.Common.Configuration.Interfaces;
 using Microsoft.Extensions.Logging;
+using Polly;
 
 namespace Cleansia.Infra.Services.Geocoding;
 
@@ -98,7 +99,8 @@ public class MapboxGeocodingService : IGeocodingService
             // Mapbox v6 returns [longitude, latitude].
             return new GeoCoordinates(coordinates[1], coordinates[0]);
         }
-        catch (Exception ex) when (ex is HttpRequestException or TaskCanceledException or JsonException or InvalidOperationException)
+        catch (Exception ex) when (ex is HttpRequestException or TaskCanceledException or JsonException or InvalidOperationException
+            or ExecutionRejectedException)
         {
             return Degrade(IntegrationFailureClassifier.FromException(ex), city, zipCode, ex);
         }
@@ -201,7 +203,8 @@ public class MapboxGeocodingService : IGeocodingService
 
             return results;
         }
-        catch (Exception ex) when (ex is HttpRequestException or TaskCanceledException or JsonException or InvalidOperationException)
+        catch (Exception ex) when (ex is HttpRequestException or TaskCanceledException or JsonException or InvalidOperationException
+            or ExecutionRejectedException)
         {
             return DegradeSearch(IntegrationFailureClassifier.FromException(ex), ex);
         }
@@ -247,7 +250,8 @@ public class MapboxGeocodingService : IGeocodingService
             var contentType = response.Content.Headers.ContentType?.MediaType ?? "image/png";
             return new GeoStaticMap(bytes, contentType);
         }
-        catch (Exception ex) when (ex is HttpRequestException or TaskCanceledException or InvalidOperationException)
+        catch (Exception ex) when (ex is HttpRequestException or TaskCanceledException or InvalidOperationException
+            or ExecutionRejectedException)
         {
             IntegrationFailureMetrics.Record(HttpClientName, IntegrationFailureClassifier.FromException(ex));
             _logger.LogWarning(TransientDegradeEvent, ex,

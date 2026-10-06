@@ -662,7 +662,7 @@
         },
         "override_status": {
           "action": "Override status",
-          "confirm": "Manually set the order status. Only valid transitions are allowed.",
+          "confirm": "Manually set the order status. Only valid transitions are allowed. Completing a cash order in progress whose cash was not recorded makes the customer owe its price.",
           "target": "New status",
           "reason": "Reason",
           "reason_hint": "Kept in the audit log. Required to complete an order that has no after photo.",
@@ -2905,7 +2905,7 @@
             },
             "refund_needs_retry": {
               "title": "A refund needs a retry",
-              "body": "The refund of {{amount}} on order {{orderNumber}} has not gone through for a day, and it is not retried automatically. Check it in Stripe, then retry it from the dispute or the order."
+              "body": "The refund of {{amount}} on order {{orderNumber}} has not gone through, and it is not retried automatically. Retry it once from the dispute or the order: that checks it with Stripe, records it if Stripe made it and closes it if Stripe failed it. A refund Stripe failed cannot be sent again: then refund the money another way — the full refund if it was not the one that failed, a partial refund of other lines, or credit."
             },
             "refund_without_cancel": {
               "title": "A refund was asked for a cancellation that did not go through",
@@ -3231,6 +3231,7 @@
       "wind_down_not_requested": "The archive waits for the people to have been told: set a wind-down date first.",
       "has_open_orders": "The company still has open orders; the archive waits until every one is completed or cancelled.",
       "has_orders_awaiting_pay": "A completed order still awaits its pay calculation; the archive waits for it.",
+      "has_open_receivables": "A customer still owes the company an open receivable; it must be paid or written off first.",
       "has_orders_awaiting_receipt": "A paid or cash order still awaits its receipt; the archive waits for it.",
       "has_receipts_awaiting_fiscal_registration": "A receipt still awaits fiscal registration; the archive waits for it.",
       "has_pending_refunds": "A refund is still pending; the archive waits until it has settled.",

@@ -7,13 +7,16 @@ using Cleansia.Core.Clients.Abstractions.Stripe;
 using Cleansia.Core.Domain.Credit;
 using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Internationalization;
+using Cleansia.Core.Domain.Notifications;
 using Cleansia.Core.Domain.Orders;
 using Cleansia.Core.Domain.Repositories;
+using Cleansia.Core.Domain.SeedWork;
 using Cleansia.Core.Domain.Users;
 using Cleansia.Infra.Database;
 using Cleansia.Infra.Database.Repositories;
 using Cleansia.TestUtilities;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Storage;
 using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
 using Npgsql;
@@ -40,6 +43,7 @@ public class MemberCancellationRefundRedriveTests(PostgresContainerFixture fixtu
     private const decimal Total = 2000m;
     private const decimal Credit = 500m;
     private const decimal CardShare = 1500m;
+    private const string AdminId = "admin-member-redrive";
 
     private readonly Mock<IStripeClient> _stripe = new();
 
@@ -135,7 +139,7 @@ public class MemberCancellationRefundRedriveTests(PostgresContainerFixture fixtu
         return userId;
     }
 
-    private RefundService NewRefundService(CleansiaDbContext ctx)
+    private RefundService NewRefundService(CleansiaDbContext ctx, IAdminNotifier? adminNotifier = null)
     {
         var factory = new Mock<IStripeClientFactory>();
         factory.Setup(f => f.CreateClient()).Returns(_stripe.Object);
@@ -144,8 +148,14 @@ public class MemberCancellationRefundRedriveTests(PostgresContainerFixture fixtu
             new OrderRepository(ctx),
             new CreditAccountRepository(ctx),
             factory.Object,
+            adminNotifier ?? Mock.Of<IAdminNotifier>(),
+            new UserNotificationRepository(ctx),
             NullLogger<RefundService>.Instance);
     }
+
+    private static AdminNotifier NewAdminNotifier(CleansiaDbContext ctx) =>
+        new(new UserRepository(ctx), new UserNotificationRepository(ctx), new AppConfigurationProvider(ctx),
+            new OutboxPendingDispatch(ctx), NullLogger<AdminNotifier>.Instance);
 
     private NotificationProducer NewProducer(CleansiaDbContext ctx) =>
         new(new UserNotificationRepository(ctx), new OutboxPendingDispatch(ctx), new UserRepository(ctx),
@@ -180,23 +190,25 @@ public class MemberCancellationRefundRedriveTests(PostgresContainerFixture fixtu
         return result.Response;
     }
 
-    private async Task<RedrivePendingRefunds.Response> RedriveAsync()
+    private async Task<RedrivePendingRefunds.Response> RedriveAsync(
+        int hoursOld = 2, Func<CleansiaDbContext, IAdminNotifier>? adminNotifier = null, bool jobCommitFails = false)
     {
         await using (var ctx = NewContext())
         {
             await ctx.Database.ExecuteSqlRawAsync(
-                "UPDATE \"Refunds\" SET \"CreatedOn\" = NOW() - INTERVAL '2 hours'");
+                "UPDATE \"Refunds\" SET \"CreatedOn\" = NOW() - {0} * INTERVAL '1 hour'", hoursOld);
         }
 
         await using var watchdogContext = NewContext();
+        var admins = adminNotifier?.Invoke(watchdogContext) ?? Mock.Of<IAdminNotifier>();
         var watchdog = new RedrivePendingRefunds.Handler(
             new RefundRepository(watchdogContext),
-            NewRefundService(watchdogContext),
+            NewRefundService(watchdogContext, admins),
             NewProducer(watchdogContext),
-            Mock.Of<IAdminNotifier>(),
+            admins,
             new UserNotificationRepository(watchdogContext),
             new FixedTenantProvider(TestTenants.Default),
-            watchdogContext,
+            jobCommitFails ? new CommitFailingUnitOfWork(watchdogContext) : watchdogContext,
             NullLogger<RedrivePendingRefunds.Handler>.Instance);
         var result = await watchdog.Handle(new RedrivePendingRefunds.Command(), CancellationToken.None);
         Assert.True(result.IsSuccess, result.Error?.Message);
@@ -311,6 +323,114 @@ public class MemberCancellationRefundRedriveTests(PostgresContainerFixture fixtu
         }
     }
 
+    private async Task<string> CancelWhileStripeTimesOutAsync()
+    {
+        await ResetAsync();
+        var userId = await SeedAsync();
+        _stripe.Setup(s => s.RefundPaymentIntentAsync(
+                PaymentIntentId, It.IsAny<decimal>(), RefundKey, It.IsAny<CancellationToken>()))
+            .ThrowsAsync(new HttpRequestException("timed out"));
+        Assert.True((await CancelAsync(userId)).RefundPending);
+        return userId;
+    }
+
+    private void StripeLists(bool failed) =>
+        _stripe.Setup(s => s.FindRefundAsync(
+                It.IsAny<string?>(), PaymentIntentId, RefundKey, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new StripeRefundSnapshot("re_1", CardShare, failed));
+
+    /// <summary>
+    /// Stripe took the card refund but its answer never came back, and a day later Stripe has forgotten the key.
+    /// The re-drive finds the refund Stripe lists under the key and records it, so the card is never paid twice.
+    /// </summary>
+    [Fact]
+    public async Task A_Redrive_Records_The_Refund_Stripe_Lists_Under_Its_Key_And_Sends_Nothing()
+    {
+        var userId = await CancelWhileStripeTimesOutAsync();
+        StripeLists(failed: false);
+
+        var redrive = await RedriveAsync(hoursOld: 25);
+
+        Assert.Equal(1, redrive.Redriven);
+        _stripe.Verify(s => s.RefundPaymentIntentAsync(
+            It.IsAny<string>(), It.IsAny<decimal>(), It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Once);
+        await using var ctx = NewContext();
+        var refund = await ctx.Refunds.IgnoreQueryFilters().AsNoTracking().SingleAsync();
+        Assert.Equal(RefundStatus.Succeeded, refund.Status);
+        Assert.Equal("re_1", refund.StripeRefundId);
+        Assert.Equal(CardShare, refund.Amount);
+        var order = await ctx.Orders.IgnoreQueryFilters().AsNoTracking().SingleAsync(o => o.Id == OrderId);
+        Assert.Equal(PaymentStatus.Refunded, order.PaymentStatus);
+        var account = await ctx.CreditAccounts.IgnoreQueryFilters().AsNoTracking()
+            .Include(a => a.Transactions)
+            .SingleAsync(a => a.UserId == userId && a.CurrencyId == CzkId);
+        Assert.Single(account.Transactions, t => t.Reason == CreditTransactionReason.OrderPaymentReturned);
+    }
+
+    /// <summary>
+    /// Stripe made the card refund and then failed it. The re-drive sends nothing, closes the row, and the
+    /// administrators are asked to retry it at once, though the row is two hours old.
+    /// </summary>
+    [Fact]
+    public async Task A_Redrive_That_Finds_Stripe_Failed_The_Refund_Closes_It_And_Raises_It_At_Once()
+    {
+        await CancelWhileStripeTimesOutAsync();
+        StripeLists(failed: true);
+        var admins = new Mock<IAdminNotifier>();
+
+        var redrive = await RedriveAsync(hoursOld: 2, _ => admins.Object);
+
+        Assert.Equal(0, redrive.Redriven);
+        _stripe.Verify(s => s.RefundPaymentIntentAsync(
+            It.IsAny<string>(), It.IsAny<decimal>(), It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Once);
+        await using var ctx = NewContext();
+        var refund = await ctx.Refunds.IgnoreQueryFilters().AsNoTracking().SingleAsync();
+        Assert.Equal(RefundStatus.Failed, refund.Status);
+        admins.Verify(n => n.NotifyAsync(
+            It.Is<AdminEvent>(e => e.Key == AdminNotificationEventCatalog.RefundNeedsRetry && e.Subject == refund.Id),
+            It.IsAny<CancellationToken>()), Times.Once);
+        admins.VerifyNoOtherCalls();
+    }
+
+    /// <summary>
+    /// The same failed refund, and the job's own commit for the row then fails. The refund seam saved the close and
+    /// the administrators' alert in one commit, so neither is lost, though the job never selects a closed row again.
+    /// </summary>
+    [Fact]
+    public async Task The_Close_Of_A_Refund_Stripe_Failed_And_Its_Alert_Survive_A_Failing_Job_Commit()
+    {
+        await CancelWhileStripeTimesOutAsync();
+        await SeedAdministratorAsync();
+        StripeLists(failed: true);
+
+        await RedriveAsync(hoursOld: 2, NewAdminNotifier, jobCommitFails: true);
+
+        await using var ctx = NewContext();
+        var refund = await ctx.Refunds.IgnoreQueryFilters().AsNoTracking().SingleAsync();
+        Assert.Equal(RefundStatus.Failed, refund.Status);
+        var alert = await ctx.Set<UserNotification>().IgnoreQueryFilters().AsNoTracking()
+            .SingleAsync(n => n.EventKey == AdminNotificationEventCatalog.RefundNeedsRetry);
+        Assert.Equal(AdminId, alert.UserId);
+        Assert.Equal(TestTenants.Default, alert.TenantId);
+        Assert.Contains(OrderId, alert.ArgsJson);
+        Assert.Single(await ctx.OutboxMessages.IgnoreQueryFilters().AsNoTracking()
+            .Where(m => m.QueueName == QueueNames.SendEmail && m.Body.Contains(AdminNotificationEventCatalog.RefundNeedsRetry))
+            .ToListAsync());
+    }
+
+    private async Task SeedAdministratorAsync()
+    {
+        await using var ctx = NewContext();
+        var admin = User.CreateWithPassword(
+            $"{AdminId}@cleansia.test", "Seed-Password-123", "Ad", "Min", UserProfile.Administrator,
+            adminRole: AdminRole.Administrator);
+        admin.Id = AdminId;
+        admin.TenantId = TestTenants.Default;
+        admin.ConfirmEmail();
+        ctx.Users.Add(admin);
+        await ctx.CommitAsync(CancellationToken.None);
+    }
+
     private async Task PartlyRefundAsync(decimal amount)
     {
         await using var ctx = NewContext();
@@ -386,6 +506,21 @@ public class MemberCancellationRefundRedriveTests(PostgresContainerFixture fixtu
         Assert.Equal(credit, returnedOnTheCancellation);
         Assert.Equal(1000m, cardRefunded + creditReturned + settledInCredit);
         Assert.Equal(account.Balance, account.Transactions.Sum(t => t.Amount));
+    }
+
+    private sealed class CommitFailingUnitOfWork(CleansiaDbContext context) : IUnitOfWork
+    {
+        public void Rollback() => context.Rollback();
+
+        public Task CommitAsync(CancellationToken cancellationToken = default) =>
+            Task.FromException(new DbUpdateException("connection reset"));
+
+        public Task<IDbContextTransaction> BeginTransactionAsync(CancellationToken cancellationToken) =>
+            context.BeginTransactionAsync(cancellationToken);
+
+        public void Dispose()
+        {
+        }
     }
 
     private sealed class FixedTenantProvider(string? tenantId) : ITenantProvider

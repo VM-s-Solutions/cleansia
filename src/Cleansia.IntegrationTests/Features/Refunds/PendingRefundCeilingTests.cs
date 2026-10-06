@@ -2,6 +2,7 @@ using Cleansia.Core.AppServices.Auditing;
 using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.AppServices.Features.Disputes;
 using Cleansia.Core.AppServices.Features.Orders;
+using Cleansia.Core.AppServices.Features.Refunds;
 using Cleansia.Core.AppServices.Services;
 using Cleansia.Core.AppServices.Services.Interfaces;
 using Cleansia.Core.Clients.Abstractions.Stripe;
@@ -9,6 +10,7 @@ using Cleansia.Core.Domain.Credit;
 using Cleansia.Core.Domain.Disputes;
 using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Internationalization;
+using Cleansia.Core.Domain.Notifications;
 using Cleansia.Core.Domain.Orders;
 using Cleansia.Core.Domain.Payments;
 using Cleansia.Core.Domain.Repositories;
@@ -40,6 +42,7 @@ public class PendingRefundCeilingTests(PostgresContainerFixture fixture) : BaseI
     private const string OrderId = "order-pending-ceiling";
     private const string PaymentIntentId = "pi_pending_ceiling";
     private const string CancelKey = $"refund:{OrderId}:cancel";
+    private const string AdminId = "admin-pending-ceiling";
 
     private readonly Mock<IStripeClient> _stripe = new();
     private readonly List<(decimal Amount, string Key)> _stripeCalls = [];
@@ -163,6 +166,9 @@ public class PendingRefundCeilingTests(PostgresContainerFixture fixture) : BaseI
             new OrderRepository(ctx),
             new CreditAccountRepository(ctx),
             factory.Object,
+            new AdminNotifier(new UserRepository(ctx), new UserNotificationRepository(ctx), new AppConfigurationProvider(ctx),
+                new OutboxPendingDispatch(ctx), NullLogger<AdminNotifier>.Instance),
+            new UserNotificationRepository(ctx),
             NullLogger<RefundService>.Instance);
     }
 
@@ -175,7 +181,7 @@ public class PendingRefundCeilingTests(PostgresContainerFixture fixture) : BaseI
         return await NewRefundService(ctx).IssueRefundAsync(request, CancellationToken.None);
     }
 
-    private async Task<BusinessResult> SettleInCreditAsync(string disputeId, decimal amount)
+    private async Task<BusinessResult> ResolveDisputeAsync(string disputeId, decimal amount)
     {
         await using var ctx = NewContext();
         var handler = new ResolveDispute.Handler(
@@ -296,6 +302,8 @@ public class PendingRefundCeilingTests(PostgresContainerFixture fixture) : BaseI
     /// 1000 by card. A member's cancellation and, a moment later, an administrator's full refund were claimed at
     /// once, and Stripe paid neither. The re-drive of the older one is not held back by the younger, which
     /// counted it: Stripe pays the 1000 on the cancellation's key, and the full refund's retry sends nothing.
+    /// A day on, the hourly job closes the full refund, which Stripe cannot have paid, instead of asking the
+    /// administrators to retry it.
     /// </summary>
     [Fact]
     public async Task Of_Two_Refunds_Claimed_At_Once_And_Paid_By_Neither_The_Older_Ones_Redrive_Pays_It()
@@ -303,7 +311,7 @@ public class PendingRefundCeilingTests(PostgresContainerFixture fixture) : BaseI
         await ResetAsync();
         await SeedAsync(total: 1000m, creditApplied: 0m, status: OrderStatus.Cancelled);
         var full = new RefundRequest(OrderId, 1000m, RefundReason.AdminDiscretion, "admin-pending-ceiling", RefundRequestId: "full");
-        var claimedOn = DateTimeOffset.UtcNow.AddHours(-2);
+        var claimedOn = DateTimeOffset.UtcNow.AddHours(-25);
         string cancelId;
         await using (var ctx = NewContext())
         {
@@ -325,13 +333,36 @@ public class PendingRefundCeilingTests(PostgresContainerFixture fixture) : BaseI
         }
 
         var retried = await RefundAsync(full);
+        var admins = new Mock<IAdminNotifier>();
+        await using (var ctx = NewContext())
+        {
+            var job = new RedrivePendingRefunds.Handler(
+                new RefundRepository(ctx),
+                NewRefundService(ctx),
+                Mock.Of<INotificationProducer>(),
+                admins.Object,
+                new UserNotificationRepository(ctx),
+                new FixedTenantProvider(TestTenants.Default),
+                ctx,
+                NullLogger<RedrivePendingRefunds.Handler>.Instance);
+            var swept = await job.Handle(new RedrivePendingRefunds.Command(), CancellationToken.None);
+            Assert.True(swept.IsSuccess, swept.Error?.Message);
+            Assert.Equal(1, swept.Value!.Considered);
+        }
 
         Assert.True(redriven.IsSuccess, redriven.Error?.Message);
         Assert.Equal([(1000m, CancelKey)], _stripeCalls);
         Assert.Equal(BusinessErrorMessage.RefundNothingRefundable, retried.Error?.Message);
+        admins.VerifyNoOtherCalls();
         var given = await ReadAsync();
         Assert.Equal(1000m, given.Card);
         Assert.Equal(PaymentStatus.Refunded, given.PaymentStatus);
+        await using (var ctx = NewContext())
+        {
+            var fullRow = await ctx.Refunds.IgnoreQueryFilters().AsNoTracking()
+                .SingleAsync(r => r.RefundKey == RefundService.BuildRefundKey(full));
+            Assert.Equal(RefundStatus.Failed, fullRow.Status);
+        }
     }
 
     /// <summary>
@@ -349,8 +380,8 @@ public class PendingRefundCeilingTests(PostgresContainerFixture fixture) : BaseI
         StripePays(timesOutOn: partialKey);
 
         await Assert.ThrowsAsync<HttpRequestException>(() => RefundAsync(Partial(600m)));
-        var refused = await SettleInCreditAsync(disputeId, 1000m);
-        var settled = await SettleInCreditAsync(disputeId, 400m);
+        var refused = await ResolveDisputeAsync(disputeId, 1000m);
+        var settled = await ResolveDisputeAsync(disputeId, 400m);
         var retried = await RefundAsync(Partial(600m));
 
         Assert.Equal(BusinessErrorMessage.InvalidRefundAmount, refused.Error?.Message);
@@ -429,8 +460,8 @@ public class PendingRefundCeilingTests(PostgresContainerFixture fixture) : BaseI
         StripePays(timesOutOn: partialKey);
 
         await Assert.ThrowsAsync<HttpRequestException>(() => RefundAsync(Partial(800m)));
-        var refused = await SettleInCreditAsync(disputeId, 1400.01m);
-        var settled = await SettleInCreditAsync(disputeId, 1400m);
+        var refused = await ResolveDisputeAsync(disputeId, 1400.01m);
+        var settled = await ResolveDisputeAsync(disputeId, 1400m);
         var retried = await RefundAsync(Partial(800m));
 
         Assert.Equal(BusinessErrorMessage.InvalidRefundAmount, refused.Error?.Message);
@@ -442,6 +473,59 @@ public class PendingRefundCeilingTests(PostgresContainerFixture fixture) : BaseI
         Assert.Equal(0m, given.CreditReturned);
         Assert.Equal(1400m, given.SettledInCredit);
         Assert.Equal(2000m, given.Total);
+    }
+
+    /// <summary>
+    /// 1000 by card. The dispute's card refund of 1000 was claimed, Stripe's answer was lost, and Stripe has since
+    /// failed that refund. Resolving the dispute again sends nothing and closes the refund for good, even though
+    /// the resolve itself fails and is not committed, and in the same commit the administrators are asked to retry
+    /// it. The dispute stays open: the customer is still owed the 1000.
+    /// </summary>
+    [Fact]
+    public async Task A_Dispute_Whose_Pending_Card_Refund_Stripe_Failed_Stays_Open_And_The_Refund_Is_Closed()
+    {
+        await ResetAsync();
+        var (_, disputeId) = await SeedAsync(total: 1000m, creditApplied: 0m);
+        await using (var ctx = NewContext())
+        {
+            var admin = User.CreateWithPassword(
+                $"{AdminId}@cleansia.test", "Seed-Password-123", "Ad", "Min", UserProfile.Administrator,
+                adminRole: AdminRole.Administrator);
+            admin.Id = AdminId;
+            admin.TenantId = TestTenants.Default;
+            admin.ConfirmEmail();
+            ctx.Users.Add(admin);
+            await ctx.CommitAsync(CancellationToken.None);
+        }
+
+        var disputeKey = RefundService.BuildRefundKey(
+            new RefundRequest(OrderId, 0m, RefundReason.DisputeResolution, string.Empty, DisputeId: disputeId));
+        await using (var ctx = NewContext())
+        {
+            ctx.Refunds.Add(Refund.Create(
+                OrderId, disputeKey, 1000m, "CZK", RefundReason.DisputeResolution, RefundSource.AppRefund,
+                disputeId: disputeId));
+            await ctx.CommitAsync(CancellationToken.None);
+        }
+
+        StripePays();
+        _stripe.Setup(s => s.FindRefundAsync(It.IsAny<string?>(), PaymentIntentId, disputeKey, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new StripeRefundSnapshot("re_failed", 1000m, Failed: true));
+
+        var resolved = await ResolveDisputeAsync(disputeId, 1000m);
+
+        Assert.Equal(BusinessErrorMessage.RefundFailed, resolved.Error?.Message);
+        Assert.Empty(_stripeCalls);
+        await using var read = NewContext();
+        var refund = await read.Refunds.IgnoreQueryFilters().AsNoTracking().SingleAsync(r => r.RefundKey == disputeKey);
+        Assert.Equal(RefundStatus.Failed, refund.Status);
+        var dispute = await read.Disputes.IgnoreQueryFilters().AsNoTracking().SingleAsync(d => d.Id == disputeId);
+        Assert.Equal(DisputeStatus.Pending, dispute.Status);
+        Assert.Null(dispute.RefundAmount);
+        var alert = await read.Set<UserNotification>().IgnoreQueryFilters().AsNoTracking()
+            .SingleAsync(n => n.EventKey == AdminNotificationEventCatalog.RefundNeedsRetry);
+        Assert.Equal(AdminId, alert.UserId);
+        Assert.Contains(OrderId, alert.ArgsJson);
     }
 
     private sealed class FixedTenantProvider(string? tenantId) : ITenantProvider

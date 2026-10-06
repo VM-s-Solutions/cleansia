@@ -156,6 +156,8 @@ public class RefundCreditLegOnFrozenBooksTests(PostgresContainerFixture fixture)
                     new OrderRepository(ctx),
                     new CreditAccountRepository(ctx),
                     factory.Object,
+                    Mock.Of<IAdminNotifier>(),
+                    new UserNotificationRepository(ctx),
                     NullLogger<RefundService>.Instance),
                 new RefundRepository(ctx),
                 new CreditAccountRepository(ctx),
@@ -208,6 +210,8 @@ public class RefundCreditLegOnFrozenBooksTests(PostgresContainerFixture fixture)
                     new OrderRepository(ctx),
                     new CreditAccountRepository(ctx),
                     factory.Object,
+                    Mock.Of<IAdminNotifier>(),
+                    new UserNotificationRepository(ctx),
                     NullLogger<RefundService>.Instance)
                 .IssueRefundAsync(
                     new RefundRequest(OrderId, 2000m, RefundReason.AdminDiscretion, "admin-frozen-refund", RefundRequestId: "full"),
@@ -226,6 +230,8 @@ public class RefundCreditLegOnFrozenBooksTests(PostgresContainerFixture fixture)
             await new PlatformOrderCancellation(
                     new RefundService(
                         refunds, new OrderRepository(ctx), new CreditAccountRepository(ctx), factory.Object,
+                        Mock.Of<IAdminNotifier>(),
+                        new UserNotificationRepository(ctx),
                         NullLogger<RefundService>.Instance),
                     refunds,
                     new CreditAccountRepository(ctx),

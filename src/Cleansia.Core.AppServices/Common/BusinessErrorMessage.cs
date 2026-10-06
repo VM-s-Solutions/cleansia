@@ -630,6 +630,8 @@ public static class BusinessErrorMessage
     public const string CompanyWindDownNotRequested = "company.wind_down_not_requested";
     public const string CompanyHasOpenOrders = "company.has_open_orders";
     public const string CompanyHasOrdersAwaitingPay = "company.has_orders_awaiting_pay";
+    /// <summary>A customer still owes the company money; the freeze would take the debt out of the booking ban and the charge sweep.</summary>
+    public const string CompanyHasOpenReceivables = "company.has_open_receivables";
     public const string CompanyHasOrdersAwaitingReceipt = "company.has_orders_awaiting_receipt";
     public const string CompanyHasReceiptsAwaitingFiscalRegistration = "company.has_receipts_awaiting_fiscal_registration";
     public const string CompanyHasPendingRefunds = "company.has_pending_refunds";

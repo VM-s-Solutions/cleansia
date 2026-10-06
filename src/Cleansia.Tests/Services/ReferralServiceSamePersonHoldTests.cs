@@ -109,6 +109,7 @@ public class ReferralServiceSamePersonHoldTests
         Mock.Of<IReferralCodeRepository>(),
         _referrals.Object,
         _orders.Object,
+        Mock.Of<IReceivableRepository>(),
         _credit.Object,
         _adminNotifier.Object,
         Mock.Of<IUnitOfWork>(),

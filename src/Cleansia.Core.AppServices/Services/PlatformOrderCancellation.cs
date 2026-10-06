@@ -29,14 +29,22 @@ public sealed class PlatformOrderCancellation(
         CancellationToken cancellationToken)
     {
         // A platform cancellation is not a customer-fault cancellation — no cancellation fee, full refund:
-        // everything the sale has not already given back.
+        // everything the sale has not already given back. A refund already claimed on this key, by a guest's
+        // own cancel that never committed, is replayed at its own amount on that key, so that is recorded.
         var refundKey = RefundService.BuildRefundKey(new RefundRequest(order.Id, order.TotalPrice, refundReason, actorId));
+        var refundAmount = await RefundService.LeftToGiveBackAsync(
+            refundRepository, creditAccountRepository, order, refundKey, cancellationToken);
+        if (await refundRepository.GetByRefundKeyAsync(refundKey, cancellationToken) is { } claimed)
+        {
+            refundAmount = Math.Min(refundAmount,
+                claimed.Amount + await creditAccountRepository.GetReturnedForRefundAsync(refundKey, cancellationToken));
+        }
+
         order.Cancel(
             cancelledAtUtc: DateTime.UtcNow,
             cancelledBy: cancelledBy,
             feeRate: 0m,
-            refundAmount: await RefundService.LeftToGiveBackAsync(
-                refundRepository, creditAccountRepository, order, refundKey, cancellationToken),
+            refundAmount: refundAmount,
             reason: reason);
         var transition = OrderStatusTrack.Create(OrderStatus.Cancelled, order);
         order.AddOrderStatus(transition);
@@ -93,12 +101,21 @@ public sealed class PlatformOrderCancellation(
         // The refund key is derived from the reason and is one-per-order per purpose, so a retried
         // cancel — or a customer cancel of the same order — collapses onto the single refund and never
         // double-refunds (ADR-0006 D3).
-        var refund = await refundService.IssueRefundAsync(
-            new RefundRequest(order.Id, order.TotalPrice, refundReason, actorId),
-            cancellationToken);
+        var request = new RefundRequest(order.Id, order.TotalPrice, refundReason, actorId);
+        var refund = await refundService.IssueRefundAsync(request, cancellationToken);
 
         if (refund.IsFailure)
         {
+            // The card leg is left to the re-drive, which asks Stripe again for the amount it may already have
+            // paid on this key. Its credit leg comes back now on the same key, so the re-drive reads the slice
+            // back exactly instead of in proportion from the card amount, which can come out a minor unit short.
+            if (await refundRepository.GetByRefundKeyAsync(RefundService.BuildRefundKey(request), cancellationToken)
+                is { Status: RefundStatus.Pending })
+            {
+                await creditAccountRepository.ReturnPendingRefundCreditLegAsync(
+                    refundRepository, order, request, cancellationToken);
+            }
+
             return PlatformRefundOutcome.Failed(refund.Error?.Message);
         }
 

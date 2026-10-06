@@ -37,9 +37,6 @@ public sealed class RefundMoneyConservationTests
 {
     private const int Orders = 500;
 
-    // A re-drive reads its row's slice of the sale back from the card amount, which can lose one haléř.
-    private const decimal ReadBackRounding = 0.01m;
-
     [Fact]
     public async Task No_Order_Gives_Back_More_Than_Was_Paid_And_An_Order_Ended_While_Paid_Gives_Back_All_Of_It()
     {
@@ -55,7 +52,7 @@ public sealed class RefundMoneyConservationTests
             {
                 over.Add(world.Describe());
             }
-            else if (world.MustGiveBackAll && world.Paid - world.Received > ReadBackRounding)
+            else if (world.MustGiveBackAll && world.Received < world.Paid)
             {
                 under.Add(world.Describe());
             }

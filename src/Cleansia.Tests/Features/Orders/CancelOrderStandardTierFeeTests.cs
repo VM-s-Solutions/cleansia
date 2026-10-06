@@ -1,8 +1,11 @@
 using Cleansia.Core.AppServices.Auditing;
 using Cleansia.Core.AppServices.Common;
+using Cleansia.Core.AppServices.Features.EmployeePayroll;
 using Cleansia.Core.AppServices.Features.Orders;
 using Cleansia.Core.AppServices.Services;
 using Cleansia.Core.AppServices.Services.Interfaces;
+using Cleansia.Core.Domain.Configuration;
+using Cleansia.Core.Domain.EmployeePayroll;
 using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Internationalization;
 using Cleansia.Core.Domain.Memberships;
@@ -42,6 +45,7 @@ public class CancelOrderStandardTierFeeTests
     private readonly Mock<IOrderRepository> _orderRepository = new();
     private readonly Mock<IUserSessionProvider> _session = new();
     private readonly Mock<IRefundService> _refundService = new();
+    private readonly Mock<IRefundRepository> _refundRepository = new();
     private readonly Mock<ICreditAccountRepository> _creditAccountRepository = new();
     private readonly Mock<ILoyaltyService> _loyaltyService = new();
     private readonly Mock<IUserMembershipRepository> _membershipRepository = new();
@@ -71,7 +75,7 @@ public class CancelOrderStandardTierFeeTests
             new CustomerOrderCancellation(
                 Mock.Of<ITenantProvider>(),
                 _refundService.Object,
-                Mock.Of<IRefundRepository>(),
+                _refundRepository.Object,
                 Mock.Of<IReceivableRepository>(),
                 _creditAccountRepository.Object,
                 _loyaltyService.Object,
@@ -84,7 +88,7 @@ public class CancelOrderStandardTierFeeTests
                 TimeProvider.System,
                 NullLogger<CustomerOrderCancellation>.Instance));
 
-    private Order ArrangeAcceptedCardPaidOrder(DateTime cleaningUtc, decimal totalPrice)
+    private Order ArrangeAcceptedCardPaidOrder(DateTime cleaningUtc, decimal totalPrice, decimal creditApplied = 0m)
     {
         var currency = Currency.Create("CZK", "Kč", "Czech Koruna");
         var order = Order.Create(
@@ -105,6 +109,11 @@ public class CancelOrderStandardTierFeeTests
         // Created well before the oops window so the short-circuit cannot mask the tier.
         order.Created("tester", DateTime.UtcNow.AddDays(-2));
         order.SetCurrency(currency);
+        if (creditApplied > 0m)
+        {
+            order.ApplyCredit(creditApplied, UserId);
+        }
+
         order.AssignStripeSessionId("cs_test_std");
 
         var stamp = DateTimeOffset.UtcNow.AddDays(-2);
@@ -125,7 +134,63 @@ public class CancelOrderStandardTierFeeTests
         _orderRepository
             .Setup(r => r.GetQueryable())
             .Returns(new[] { order }.AsQueryable().BuildMock());
+        _orderRepository
+            .Setup(r => r.GetAll())
+            .Returns(new[] { order }.AsQueryable().BuildMock());
         return order;
+    }
+
+    private void AlreadyGivenBack(decimal cardSucceeded = 0m, decimal cardPending = 0m, decimal creditReturned = 0m)
+    {
+        _refundRepository
+            .Setup(r => r.GetSucceededRefundTotalForOrderAsync(OrderId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(cardSucceeded);
+        _refundRepository
+            .Setup(r => r.GetPendingRefundTotalForOrderAsync(OrderId, It.IsAny<string?>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(cardPending);
+        _creditAccountRepository
+            .Setup(r => r.GetReturnedTotalForOrderAsync(OrderId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(creditReturned);
+    }
+
+    private List<RefundRequest> CaptureIssuedRefunds()
+    {
+        var issued = new List<RefundRequest>();
+        _refundService
+            .Setup(s => s.IssueRefundAsync(It.IsAny<RefundRequest>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((RefundRequest req, CancellationToken _) =>
+            {
+                issued.Add(req);
+                return BusinessResult.Success(new RefundResult(
+                    "refund-1", $"refund:{req.OrderId}:cancel", req.Amount, RefundStatus.Succeeded, false));
+            });
+        return issued;
+    }
+
+    private async Task<OrderEmployeePay> CrewPayAsync(Order order)
+    {
+        var payPeriods = new Mock<IPayPeriodRepository>();
+        payPeriods
+            .Setup(r => r.GetActivePeriodAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync(PayPeriod.CreateBiWeekly(DateOnly.FromDateTime(DateTime.UtcNow.Date.AddDays(-3))));
+        var written = new List<OrderEmployeePay>();
+        var pays = new Mock<IOrderEmployeePayRepository>();
+        pays.Setup(r => r.Add(It.IsAny<OrderEmployeePay>())).Callback<OrderEmployeePay>(written.Add);
+        var handler = new CalculateOrderPay.Handler(
+            _orderRepository.Object,
+            payPeriods.Object,
+            Mock.Of<IEmployeePayConfigRepository>(),
+            pays.Object,
+            Mock.Of<IReceivableRepository>(),
+            _refundRepository.Object,
+            _creditAccountRepository.Object,
+            Mock.Of<IAppConfigurationProvider>());
+
+        var employeeId = order.AssignedEmployees.Single().EmployeeId;
+        var result = await handler.Handle(new CalculateOrderPay.Command(OrderId, employeeId), CancellationToken.None);
+
+        Assert.True(result.IsSuccess, result.Error?.Message);
+        return Assert.Single(written);
     }
 
     [Fact]
@@ -159,23 +224,105 @@ public class CancelOrderStandardTierFeeTests
     }
 
     /// <summary>
-    /// Pinned until the owner rules on how a fee applies to a price already partly refunded: a fee-bearing
-    /// cancellation of a partly refunded card order still makes no card refund, and its recorded refund
-    /// stays the assessor's share of the price.
+    /// 1000 by card, 400 of it already refunded. The fee is a share of the price, so the cancellation returns
+    /// the 600 still held less the fee: 350 at 25 %, 100 at 50 % (owner ruling 2026-10-06).
     /// </summary>
-    [Fact]
-    public async Task A_Fee_Bearing_Cancellation_Of_A_Partly_Refunded_Card_Order_Still_Makes_No_Card_Refund()
+    [Theory]
+    [InlineData(12, 350)]
+    [InlineData(1, 100)]
+    public async Task A_Fee_Cancellation_Of_A_Partly_Refunded_Card_Order_Returns_What_Is_Held_Less_The_Fee(
+        int hoursBeforeStart, int expected)
     {
-        var order = ArrangeAcceptedCardPaidOrder(DateTime.UtcNow.AddHours(1), totalPrice: 1000m);
+        var order = ArrangeAcceptedCardPaidOrder(DateTime.UtcNow.AddHours(hoursBeforeStart), totalPrice: 1000m);
         order.UpdatePaymentStatus(PaymentStatus.PartiallyRefunded);
+        AlreadyGivenBack(cardSucceeded: 400m);
+        var issued = CaptureIssuedRefunds();
 
         var result = await CreateHandler().Handle(new CancelOrder.Command(OrderId, null), CancellationToken.None);
 
-        Assert.True(result.IsSuccess);
-        Assert.Equal(BookingPolicy.LastMinuteCancellationFeeRate, result.Value!.FeeRate);
+        Assert.True(result.IsSuccess, result.Error?.Message);
+        Assert.True(result.Value!.RefundInitiated);
+        Assert.Equal(expected, result.Value.RefundAmount);
+        Assert.Equal(expected, order.CancellationRefundAmount);
+        Assert.Equal(expected, Assert.Single(issued).Amount);
+    }
+
+    /// <summary>
+    /// What already came back reaches the price less the 250 fee, so nothing more is returned: neither the
+    /// card nor the 60 of credit still out on the card-and-credit order.
+    /// </summary>
+    [Theory]
+    [InlineData(800, 0, 0)]
+    [InlineData(750, 0, 0)]
+    [InlineData(560, 300, 240)]
+    public async Task A_Fee_Cancellation_Of_An_Order_Already_Refunded_Past_The_Price_Less_The_Fee_Returns_Nothing(
+        int cardRefunded, int creditApplied, int creditReturned)
+    {
+        var order = ArrangeAcceptedCardPaidOrder(DateTime.UtcNow.AddHours(12), totalPrice: 1000m, creditApplied);
+        order.UpdatePaymentStatus(PaymentStatus.PartiallyRefunded);
+        AlreadyGivenBack(cardSucceeded: cardRefunded, creditReturned: creditReturned);
+
+        var result = await CreateHandler().Handle(new CancelOrder.Command(OrderId, null), CancellationToken.None);
+
+        Assert.True(result.IsSuccess, result.Error?.Message);
+        Assert.Equal(BookingPolicy.PartialCancellationFeeRate, result.Value!.FeeRate);
+        Assert.Equal(0m, result.Value.RefundAmount);
         Assert.False(result.Value.RefundInitiated);
-        Assert.Equal(500m, order.CancellationRefundAmount);
+        Assert.False(result.Value.RefundPending);
+        Assert.Null(result.Value.ActualRefundAmount);
+        Assert.Equal(0m, order.CancellationRefundAmount);
         _refundService.Verify(s => s.IssueRefundAsync(It.IsAny<RefundRequest>(), It.IsAny<CancellationToken>()), Times.Never);
+        _creditAccountRepository.Verify(r => r.TryReturnAsync(
+            It.IsAny<string>(), It.IsAny<string>(), It.IsAny<decimal>(), It.IsAny<string>(), It.IsAny<string>(),
+            It.IsAny<CancellationToken>(), It.IsAny<string?>(), It.IsAny<string?>()), Times.Never);
+    }
+
+    /// <summary>
+    /// An earlier refund is still pending on a Paid order: 280 of card, and on the card-and-credit order its
+    /// 120 credit leg, which waits for that card. Both count as given back, so 1000 − 400 − 250 = 350 is
+    /// returned and the customer has 750 once the pending refund goes through.
+    /// </summary>
+    [Theory]
+    [InlineData(300, 280)]
+    [InlineData(0, 400)]
+    public async Task A_Fee_Cancellation_Beside_A_Pending_Refund_Counts_Its_Card_And_Its_Credit_Leg(
+        int creditApplied, int pendingCard)
+    {
+        var order = ArrangeAcceptedCardPaidOrder(DateTime.UtcNow.AddHours(12), totalPrice: 1000m, creditApplied);
+        AlreadyGivenBack(cardPending: pendingCard);
+        var issued = CaptureIssuedRefunds();
+
+        var result = await CreateHandler().Handle(new CancelOrder.Command(OrderId, null), CancellationToken.None);
+
+        Assert.True(result.IsSuccess, result.Error?.Message);
+        Assert.Equal(350m, result.Value!.RefundAmount);
+        Assert.Equal(350m, order.CancellationRefundAmount);
+        Assert.Equal(350m, Assert.Single(issued).Amount);
+    }
+
+    /// <summary>
+    /// The 350 of a cancellation that left 400 already refunded is still pending at Stripe, so the company
+    /// holds 600 for now; the crew is paid on the 250 fee it keeps, not on the 600.
+    /// </summary>
+    [Fact]
+    public async Task A_Fee_Cancellation_Whose_Own_Refund_Is_Pending_Pays_The_Crew_On_The_Fee_Kept()
+    {
+        var order = ArrangeAcceptedCardPaidOrder(DateTime.UtcNow.AddHours(12), totalPrice: 1000m);
+        order.UpdatePaymentStatus(PaymentStatus.PartiallyRefunded);
+        AlreadyGivenBack(cardSucceeded: 400m);
+        _refundService
+            .Setup(s => s.IssueRefundAsync(It.IsAny<RefundRequest>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(BusinessResult.Failure<RefundResult>(
+                new Error(nameof(RefundRequest.Amount), BusinessErrorMessage.RefundFailed)));
+
+        var result = await CreateHandler().Handle(new CancelOrder.Command(OrderId, null), CancellationToken.None);
+        var pay = await CrewPayAsync(order);
+
+        Assert.True(result.IsSuccess, result.Error?.Message);
+        Assert.True(result.Value!.RefundPending);
+        Assert.Equal(350m, order.CancellationRefundAmount);
+        Assert.Equal(PayLineType.CancellationFeeShare, pay.LineType);
+        Assert.Equal(125m, pay.TotalPay);
     }
 
     [Fact]

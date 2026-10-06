@@ -60,14 +60,16 @@ public class CalculateOrderPay
 
         if (!order.TookNoPayment)
         {
-            // Never more than the company still holds. An order refunded before it was cancelled is no
-            // longer Paid, so the cancellation refunds nothing and the price less the recorded
-            // refund would count money already given back. A cancellation refund still waiting for its
-            // re-drive is not among the succeeded refunds yet, so the first term keeps the fee to its size.
+            // Never more than the fee, nor than the company still holds. The recorded refund nets what came back
+            // before the cancellation, so the price less it is the fee plus those earlier refunds; and a
+            // cancellation refund still waiting for its re-drive is not among the succeeded refunds yet.
             var stillHeld = order.TotalPrice
                 - await refundRepository.GetSucceededRefundTotalForOrderAsync(order.Id, cancellationToken)
                 - await creditAccountRepository.GetReturnedTotalForOrderAsync(order.Id, cancellationToken);
-            return Math.Max(0m, Math.Min(order.TotalPrice - (order.CancellationRefundAmount ?? 0m), stillHeld));
+            var fee = order.TotalPrice - CancellationAssessor.RefundAmountFor(order.TotalPrice, order.CancellationFeeRate.Value);
+            return Math.Max(0m, Math.Min(
+                Math.Min(order.TotalPrice - (order.CancellationRefundAmount ?? 0m), fee),
+                stillHeld));
         }
 
         return await receivableRepository

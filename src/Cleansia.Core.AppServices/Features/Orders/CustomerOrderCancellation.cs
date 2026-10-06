@@ -52,11 +52,32 @@ public sealed class CustomerOrderCancellation(
         var refundInitiated = false;
         var refundPending = false;
         decimal? successfulRefundAmount = null;
-        var request = new RefundRequest(order.Id, assessment.RefundAmount, RefundReason.CustomerCancellation, actorId);
-        var cancellationRefund = assessment.FeeRate == 0m && !order.TookNoPayment
-            ? await RefundService.LeftToGiveBackAsync(
-                refundRepository, creditAccountRepository, order, RefundService.BuildRefundKey(request), cancellationToken)
-            : assessment.RefundAmount;
+        var refundKey = RefundService.BuildRefundKey(
+            new RefundRequest(order.Id, 0m, RefundReason.CustomerCancellation, actorId));
+        var cancellationRefund = assessment.RefundAmount;
+        if (!order.TookNoPayment)
+        {
+            // The fee is a share of the price, so what comes back is what the sale still holds less the fee
+            // (owner ruling 2026-10-06). A pending refund's credit leg waits for its card and is not returned
+            // yet, so it is counted here at the proportion the seam reads such a leg back with.
+            var left = await RefundService.LeftToGiveBackAsync(
+                refundRepository, creditAccountRepository, order, refundKey, cancellationToken);
+            var cardCharged = RefundService.CardChargedAmount(order);
+            var pendingCredit = assessment.FeeRate > 0m && cardCharged > 0m
+                ? Math.Round(
+                    await refundRepository.GetPendingRefundTotalForOrderAsync(order.Id, refundKey, cancellationToken)
+                    * order.CreditAppliedAmount / cardCharged,
+                    2,
+                    MidpointRounding.AwayFromZero)
+                : 0m;
+            cancellationRefund = Math.Max(0m, left - pendingCredit - assessment.FeeAmount);
+        }
+
+        var request = new RefundRequest(
+            order.Id,
+            assessment.FeeRate == 0m ? assessment.RefundAmount : cancellationRefund,
+            RefundReason.CustomerCancellation,
+            actorId);
 
         // The refund seam commits its claim and confirmed amount. A guest cancellation stays retryable
         // until its status, audit and email intent can commit together after those independent flushes.
@@ -81,7 +102,8 @@ public sealed class CustomerOrderCancellation(
             await RefundAsync(recoverGuestAttempt: false);
         }
 
-        if (paymentStatusAtCancel != PaymentStatus.Paid && !refundInitiated && !refundPending)
+        if (paymentStatusAtCancel != PaymentStatus.Paid && !refundInitiated && !refundPending
+            && (order.TookNoPayment || assessment.FeeRate == 0m))
         {
             await creditAccountRepository.ReturnUnpaidOrderCreditAsync(
                 order,
@@ -129,14 +151,13 @@ public sealed class CustomerOrderCancellation(
         async Task RefundAsync(bool recoverGuestAttempt)
         {
             var existing = recoverGuestAttempt
-                ? await refundRepository.GetByRefundKeyAsync(RefundService.BuildRefundKey(request), cancellationToken)
+                ? await refundRepository.GetByRefundKeyAsync(refundKey, cancellationToken)
                 : null;
-            // A free cancellation of a partly refunded order gives back the rest; the seam holds the price
-            // asked for to what the sale has left, on each tender.
+            // A free cancellation of a partly refunded order asks for the price; the seam holds it to what the
+            // sale has left, on each tender.
             if (existing is null && !(order.PaymentType == PaymentType.Card
-                && (order.PaymentStatus == PaymentStatus.Paid
-                    || (order.PaymentStatus == PaymentStatus.PartiallyRefunded && assessment.FeeRate == 0m))
-                && assessment.RefundAmount > 0m && order.HasRefundableChargeSurface))
+                && (order.PaymentStatus is PaymentStatus.Paid or PaymentStatus.PartiallyRefunded)
+                && request.Amount > 0m && order.HasRefundableChargeSurface))
             {
                 return;
             }

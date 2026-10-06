@@ -68,7 +68,7 @@ A cancellation fee on a cash booking (section 13), the price of a cash booking w
 
 If you do not pay the cleaner the price of a cash booking after the cleaning, the cleaner records this in the app, the booking is completed and its price becomes an amount you owe; we let you know when this happens. Such a booking earns no loyalty points (section 11) and no referral credit (section 9), even once the amount has been paid.
 
-While you owe an amount to any operating company, you cannot make a new booking, by cash or by card, until the amount is paid through its pay link or the company writes it off. Nor can you confirm a visit of a recurring schedule, and the schedule creates no new visits meanwhile. Bookings you have already made are kept.
+While you owe an amount to any operating company, you cannot make a new booking, by cash or by card, until the amount is paid through its pay link or the company writes it off. Nor can you confirm a visit of a recurring schedule, and the schedule creates no new visits meanwhile. Likewise, you cannot create a recurring schedule or change one you already have. Bookings you have already made are kept.
 
 ## 9. Credit
 

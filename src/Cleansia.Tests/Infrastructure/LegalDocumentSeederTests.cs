@@ -596,8 +596,8 @@ public sealed class LegalDocumentSeederTests : IDisposable
     /// ones, not defaults. Section 8: a cash price the customer did not pay the cleaner completes the booking and
     /// becomes an amount owed, which earns no loyalty points or referral credit; and while any amount is owed to any
     /// operating company, no new booking is made, by cash or by card, no recurring visit is confirmed or created,
-    /// and bookings already made are kept. Each row is a phrase the section must state in that language; none of
-    /// them is in the 2026-10-06 terms.
+    /// no recurring schedule is created or changed (Create/UpdateRecurringBooking), and bookings already made are
+    /// kept. Each row is a phrase the section must state in that language; none of them is in the 2026-10-06 terms.
     /// </summary>
     [Theory]
     [InlineData("en", 7, "no more than two cash bookings that you have not yet paid, counting the one you are making")]
@@ -635,6 +635,11 @@ public sealed class LegalDocumentSeederTests : IDisposable
     [InlineData("sk", 8, "Nemôžete ani potvrdiť návštevu opakovaného upratovania a nové návštevy sa medzitým nevytvárajú.")]
     [InlineData("uk", 8, "Ви також не можете підтвердити візит регулярного прибирання, а нові візити тим часом не створюються.")]
     [InlineData("ru", 8, "Вы также не можете подтвердить визит регулярной уборки, а новые визиты тем временем не создаются.")]
+    [InlineData("en", 8, "Likewise, you cannot create a recurring schedule or change one you already have.")]
+    [InlineData("cs", 8, "Stejně tak nemůžete nastavit nový opakovaný úklid ani změnit ten, který již máte.")]
+    [InlineData("sk", 8, "Rovnako nemôžete nastaviť nové opakované upratovanie ani zmeniť to, ktoré už máte.")]
+    [InlineData("uk", 8, "Так само ви не можете ні налаштувати нове регулярне прибирання, ні змінити вже наявне.")]
+    [InlineData("ru", 8, "Точно так же вы не можете ни настроить новую регулярную уборку, ни изменить уже существующую.")]
     [InlineData("en", 8, "Bookings you have already made are kept.")]
     [InlineData("cs", 8, "Objednávky, které jste již vytvořili, zůstávají zachovány.")]
     [InlineData("sk", 8, "Objednávky, ktoré ste už vytvorili, zostávajú zachované.")]

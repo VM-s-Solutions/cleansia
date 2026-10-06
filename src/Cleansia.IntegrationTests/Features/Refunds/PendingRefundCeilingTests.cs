@@ -2,6 +2,7 @@ using Cleansia.Core.AppServices.Auditing;
 using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.AppServices.Features.Disputes;
 using Cleansia.Core.AppServices.Features.Orders;
+using Cleansia.Core.AppServices.Features.Refunds;
 using Cleansia.Core.AppServices.Services;
 using Cleansia.Core.AppServices.Services.Interfaces;
 using Cleansia.Core.Clients.Abstractions.Stripe;
@@ -296,6 +297,8 @@ public class PendingRefundCeilingTests(PostgresContainerFixture fixture) : BaseI
     /// 1000 by card. A member's cancellation and, a moment later, an administrator's full refund were claimed at
     /// once, and Stripe paid neither. The re-drive of the older one is not held back by the younger, which
     /// counted it: Stripe pays the 1000 on the cancellation's key, and the full refund's retry sends nothing.
+    /// A day on, the hourly job closes the full refund, which Stripe cannot have paid, instead of asking the
+    /// administrators to retry it.
     /// </summary>
     [Fact]
     public async Task Of_Two_Refunds_Claimed_At_Once_And_Paid_By_Neither_The_Older_Ones_Redrive_Pays_It()
@@ -303,7 +306,7 @@ public class PendingRefundCeilingTests(PostgresContainerFixture fixture) : BaseI
         await ResetAsync();
         await SeedAsync(total: 1000m, creditApplied: 0m, status: OrderStatus.Cancelled);
         var full = new RefundRequest(OrderId, 1000m, RefundReason.AdminDiscretion, "admin-pending-ceiling", RefundRequestId: "full");
-        var claimedOn = DateTimeOffset.UtcNow.AddHours(-2);
+        var claimedOn = DateTimeOffset.UtcNow.AddHours(-25);
         string cancelId;
         await using (var ctx = NewContext())
         {
@@ -325,13 +328,36 @@ public class PendingRefundCeilingTests(PostgresContainerFixture fixture) : BaseI
         }
 
         var retried = await RefundAsync(full);
+        var admins = new Mock<IAdminNotifier>();
+        await using (var ctx = NewContext())
+        {
+            var job = new RedrivePendingRefunds.Handler(
+                new RefundRepository(ctx),
+                NewRefundService(ctx),
+                Mock.Of<INotificationProducer>(),
+                admins.Object,
+                new UserNotificationRepository(ctx),
+                new FixedTenantProvider(TestTenants.Default),
+                ctx,
+                NullLogger<RedrivePendingRefunds.Handler>.Instance);
+            var swept = await job.Handle(new RedrivePendingRefunds.Command(), CancellationToken.None);
+            Assert.True(swept.IsSuccess, swept.Error?.Message);
+            Assert.Equal(1, swept.Value!.Considered);
+        }
 
         Assert.True(redriven.IsSuccess, redriven.Error?.Message);
         Assert.Equal([(1000m, CancelKey)], _stripeCalls);
         Assert.Equal(BusinessErrorMessage.RefundNothingRefundable, retried.Error?.Message);
+        admins.VerifyNoOtherCalls();
         var given = await ReadAsync();
         Assert.Equal(1000m, given.Card);
         Assert.Equal(PaymentStatus.Refunded, given.PaymentStatus);
+        await using (var ctx = NewContext())
+        {
+            var fullRow = await ctx.Refunds.IgnoreQueryFilters().AsNoTracking()
+                .SingleAsync(r => r.RefundKey == RefundService.BuildRefundKey(full));
+            Assert.Equal(RefundStatus.Failed, fullRow.Status);
+        }
     }
 
     /// <summary>

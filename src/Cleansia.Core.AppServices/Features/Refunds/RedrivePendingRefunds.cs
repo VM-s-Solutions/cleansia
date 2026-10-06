@@ -83,6 +83,7 @@ public class RedrivePendingRefunds
                     r.Order!.UserId,
                     r.Order.DisplayOrderNumber,
                     OrderStatus = r.Order.CurrentStatus,
+                    CardCharged = r.Order.TotalPrice - r.Order.CreditAppliedAmount,
                 })
                 .ToListAsync(cancellationToken);
 
@@ -119,6 +120,7 @@ public class RedrivePendingRefunds
                     try
                     {
                         BusinessResult<RefundResult>? result = null;
+                        var closed = false;
                         if (redrive)
                         {
                             try
@@ -132,10 +134,28 @@ public class RedrivePendingRefunds
                                     row.Id, row.OrderId);
                             }
                         }
+                        else if (row.CardCharged - await refundRepository.GetSucceededRefundTotalForOrderAsync(
+                                     row.OrderId, cancellationToken) <= 0m)
+                        {
+                            // Stripe never refunds more than the charge, so once the refunds it confirmed took all
+                            // of it this row cannot have been paid. The total is read before the row so a row
+                            // settled in between is seen settled and left alone.
+                            var refund = await refundRepository.GetByIdAsync(row.Id, cancellationToken);
+                            if (refund is { Status: RefundStatus.Pending })
+                            {
+                                refund.MarkFailed();
+                                logger.LogInformation(
+                                    "Refund {RefundId} of order {OrderId} closed: refunds Stripe confirmed took the whole card charge",
+                                    row.Id, row.OrderId);
+                            }
 
-                        var nothingOwed = result?.Error?.Message
-                            is BusinessErrorMessage.RefundNothingRefundable
-                            or BusinessErrorMessage.RefundOrderNotRefundable;
+                            closed = true;
+                        }
+
+                        var nothingOwed = closed
+                            || result?.Error?.Message
+                                is BusinessErrorMessage.RefundNothingRefundable
+                                or BusinessErrorMessage.RefundOrderNotRefundable;
 
                         var failedAtStripe = result is { IsSuccess: false }
                             && result.Error?.Message == BusinessErrorMessage.RefundFailed

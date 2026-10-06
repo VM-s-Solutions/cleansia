@@ -61,7 +61,8 @@ public class RedrivePendingRefundsTests
         string? userId = UserId,
         bool orderCancelled = true,
         RefundReason reason = RefundReason.CustomerCancellation,
-        string? refundKey = null)
+        string? refundKey = null,
+        decimal creditApplied = 0m)
     {
         var order = Order.Create(
             customerName: "Refund",
@@ -78,6 +79,7 @@ public class RedrivePendingRefundsTests
             userId: userId,
             cancellationTerms: BookingPolicy.CancellationTermsAtBooking);
         order.Id = orderId;
+        order.ApplyCredit(creditApplied, "test");
         order.AddOrderStatus(OrderStatusTrack.Create(OrderStatus.Confirmed, order));
         if (orderCancelled)
         {
@@ -85,7 +87,7 @@ public class RedrivePendingRefundsTests
         }
 
         var refund = Refund.Create(
-            orderId, refundKey ?? $"refund:{orderId}:cancel", 1000m, "CZK", reason, source);
+            orderId, refundKey ?? $"refund:{orderId}:cancel", 1000m - creditApplied, "CZK", reason, source);
         refund.TenantId = TenantId;
         refund.Created("test", DateTimeOffset.UtcNow - age);
         if (status == RefundStatus.Succeeded)
@@ -340,6 +342,60 @@ public class RedrivePendingRefundsTests
         Assert.Equal(AdminNotificationEventCatalog.RefundNeedsRetry, alert.Key);
         Assert.Equal("order-1", alert.Args["orderId"]);
         Assert.Equal("1000 CZK", alert.Args["amount"]);
+    }
+
+    private Refund PendingFullRefund(decimal creditApplied = 0m)
+    {
+        var refund = PendingRefund(
+            "order-1", TimeSpan.FromHours(25), reason: RefundReason.AdminDiscretion,
+            refundKey: "refund:order-1:admin:full", creditApplied: creditApplied);
+        Arrange(refund);
+        _refunds.Setup(r => r.GetByIdAsync(refund.Id, It.IsAny<CancellationToken>())).ReturnsAsync(refund);
+        return refund;
+    }
+
+    private void StripeConfirmed(decimal total) =>
+        _refunds.Setup(r => r.GetSucceededRefundTotalForOrderAsync("order-1", It.IsAny<CancellationToken>()))
+            .ReturnsAsync(total);
+
+    /// <summary>
+    /// A member's cancellation and an administrator's full refund were claimed at the same moment, and Stripe
+    /// paid the cancellation. Stripe never refunds more than the charge, so once the refunds it confirmed took
+    /// the whole card the full refund cannot have been paid: the job closes it, and nobody is asked to retry it.
+    /// </summary>
+    [Theory]
+    [InlineData(0, 1000)]
+    [InlineData(300, 700)]
+    public async Task Another_Actions_Refund_Is_Closed_Once_Confirmed_Refunds_Took_The_Whole_Card(
+        int creditApplied, int confirmed)
+    {
+        var refund = PendingFullRefund(creditApplied);
+        StripeConfirmed(confirmed);
+
+        var result = await RunAsync();
+
+        Assert.Equal(RefundStatus.Failed, refund.Status);
+        Assert.Equal(0, result.Value!.Alerted);
+        Assert.Empty(_raised);
+        _refundService.Verify(s => s.RedriveAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Never);
+        _uow.Verify(u => u.CommitAsync(It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    /// <summary>
+    /// Money is still on the card, so Stripe may yet owe the administrator's refund in part: it stays pending,
+    /// and theirs to retry.
+    /// </summary>
+    [Fact]
+    public async Task Another_Actions_Refund_Is_Still_Raised_While_Money_Is_Left_On_The_Card()
+    {
+        var refund = PendingFullRefund();
+        StripeConfirmed(750m);
+
+        var result = await RunAsync();
+
+        Assert.Equal(RefundStatus.Pending, refund.Status);
+        Assert.Equal(1, result.Value!.Alerted);
+        Assert.Equal(AdminNotificationEventCatalog.RefundNeedsRetry, Assert.Single(_raised).Key);
     }
 
     /// <summary>

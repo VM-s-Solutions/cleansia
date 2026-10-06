@@ -24,6 +24,7 @@ export const ADMIN_NOTIFICATION_EVENT_KEYS = [
   'admin.payment.failed',
   'admin.payment.refund_stuck',
   'admin.payment.refund_needs_retry',
+  'admin.payment.refund_without_cancel',
   'admin.erasure.failed',
   'admin.company.wind_down_requested',
   'admin.company.wind_down_run',

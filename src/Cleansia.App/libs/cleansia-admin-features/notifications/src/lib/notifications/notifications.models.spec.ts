@@ -30,7 +30,7 @@ function dto(overrides: Partial<UserNotificationDto> = {}): UserNotificationDto 
 }
 
 describe('the admin event catalogue mirror', () => {
-  it('pins the sixteen keys the backend catalogue declares, in its order', () => {
+  it('pins the seventeen keys the backend catalogue declares, in its order', () => {
     expect(ADMIN_NOTIFICATION_EVENT_KEYS).toEqual([
       'admin.order.new',
       'admin.order.crew_lost',
@@ -43,6 +43,7 @@ describe('the admin event catalogue mirror', () => {
       'admin.payment.failed',
       'admin.payment.refund_stuck',
       'admin.payment.refund_needs_retry',
+      'admin.payment.refund_without_cancel',
       'admin.erasure.failed',
       'admin.company.wind_down_requested',
       'admin.company.wind_down_run',
@@ -73,6 +74,7 @@ describe('the admin event catalogue mirror', () => {
       NotificationFamily.Dispute,
       NotificationFamily.Dispute,
       NotificationFamily.Dispute,
+      NotificationFamily.Payment,
       NotificationFamily.Payment,
       NotificationFamily.Payment,
       NotificationFamily.Payment,
@@ -166,6 +168,7 @@ describe('getNotificationRoute', () => {
     'admin.payment.failed',
     'admin.payment.refund_stuck',
     'admin.payment.refund_needs_retry',
+    'admin.payment.refund_without_cancel',
   ])('%s opens the order', (key) => {
     expect(getNotificationRoute(key, { orderId: 'o-1', disputeId: 'd-1' })).toEqual(['order-management', 'o-1']);
   });

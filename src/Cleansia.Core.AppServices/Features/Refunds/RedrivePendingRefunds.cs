@@ -101,16 +101,17 @@ public class RedrivePendingRefunds
                     // cancel committed before the money was asked for, and nothing follows the money. A
                     // guest's refund is claimed BEFORE the cancel and outlives a cancel that failed: re-driving
                     // it would refund a clean that still happens, yet a timeout may come after Stripe paid it,
-                    // and every later refund on the order counts it as owed. A dispute's, an admin's or a
-                    // partial refund carries a distinguishing key segment and belongs to the action that asked
-                    // for it, whose retry runs its own follow-up. For all of these the administrators are told
-                    // to check it in Stripe and retry it there.
+                    // and every later refund on the order counts it as owed. Only cancelling the booking retries
+                    // it, so the administrators are told to do that if it is still open, or to reconcile the claim
+                    // in Stripe if it went ahead. A dispute's, an admin's or a partial refund carries a
+                    // distinguishing key segment and belongs to the action that asked for it, whose retry runs its
+                    // own follow-up; the administrators are told to check it in Stripe and retry it there.
                     var cancellationsOwnKey = row.RefundKey == RefundService.BuildRefundKey(
                         new RefundRequest(row.OrderId, row.Amount, row.Reason, SystemActor));
                     var redrive = cancellationsOwnKey && row.OrderStatus == OrderStatus.Cancelled;
 
-                    var alertKey = redrive
-                        ? AdminNotificationEventCatalog.RefundStuck
+                    var alertKey = redrive ? AdminNotificationEventCatalog.RefundStuck
+                        : cancellationsOwnKey ? AdminNotificationEventCatalog.RefundWithoutCancel
                         : AdminNotificationEventCatalog.RefundNeedsRetry;
                     var wentThrough = false;
                     var raised = false;

@@ -2906,6 +2906,10 @@
             "refund_needs_retry": {
               "title": "A refund needs a retry",
               "body": "The refund of {{amount}} on order {{orderNumber}} has not gone through for a day, and it is not retried automatically. Check it in Stripe, then retry it from the dispute or the order."
+            },
+            "refund_without_cancel": {
+              "title": "A refund was asked for a cancellation that did not go through",
+              "body": "The refund of {{amount}} on order {{orderNumber}} was asked of Stripe for a cancellation that did not go through, and it is not retried automatically. If the booking is still open, cancel the order; if the clean went ahead, do not issue a refund on it: reconcile this claim in Stripe first."
             }
           },
           "erasure": {

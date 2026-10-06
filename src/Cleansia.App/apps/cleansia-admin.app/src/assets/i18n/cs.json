@@ -2906,6 +2906,10 @@
             "refund_needs_retry": {
               "title": "Vrácení peněz je potřeba zopakovat",
               "body": "Vrácení {{amount}} u objednávky {{orderNumber}} už den neprošlo a automaticky se neopakuje. Zkontrolujte ho ve Stripe a pak ho zopakujte z reklamace nebo z objednávky."
+            },
+            "refund_without_cancel": {
+              "title": "Vrácení peněz bylo vyžádáno pro zrušení, které neproběhlo",
+              "body": "Vrácení {{amount}} u objednávky {{orderNumber}} bylo ve Stripe vyžádáno pro zrušení, které neproběhlo, a automaticky se neopakuje. Pokud je rezervace stále otevřená, zrušte objednávku; pokud úklid proběhl, nevracejte u ní platbu: nejdřív toto vrácení dořešte ve Stripe."
             }
           },
           "erasure": {

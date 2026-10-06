@@ -269,8 +269,8 @@ public class RedrivePendingRefundsTests
     /// A guest's refund is claimed before the cancel. When Stripe cannot be reached the request fails and
     /// the booking stays live, so re-driving that claim would refund a clean that still happens. But a
     /// timeout can come after Stripe took the refund, and every later refund on the order counts the claim
-    /// as money already on its way back, so a day later the administrators are asked to check it in Stripe
-    /// and retry it themselves.
+    /// as money already on its way back, so a day later the administrators are told, on an event of its own:
+    /// neither the dispute nor the order's Full refund retries this claim.
     /// </summary>
     [Fact]
     public async Task A_Refund_Whose_Cancel_Never_Committed_Is_Raised_For_A_Retry_But_Never_Redriven()
@@ -283,8 +283,9 @@ public class RedrivePendingRefundsTests
         Assert.Equal(1, result.Value.Alerted);
         _refundService.Verify(s => s.RedriveAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Never);
         var alert = Assert.Single(_raised);
-        Assert.Equal(AdminNotificationEventCatalog.RefundNeedsRetry, alert.Key);
+        Assert.Equal(AdminNotificationEventCatalog.RefundWithoutCancel, alert.Key);
         Assert.Equal("order-1", alert.Args["orderId"]);
+        Assert.Equal("1000 CZK", alert.Args["amount"]);
     }
 
     [Fact]
@@ -304,7 +305,7 @@ public class RedrivePendingRefundsTests
     {
         Arrange(PendingRefund("order-1", TimeSpan.FromHours(30), userId: null, orderCancelled: false));
         _userNotifications
-            .Setup(r => r.AnyForEventAsync(TenantId, AdminNotificationEventCatalog.RefundNeedsRetry, "orderId", "order-1",
+            .Setup(r => r.AnyForEventAsync(TenantId, AdminNotificationEventCatalog.RefundWithoutCancel, "orderId", "order-1",
                 It.IsAny<CancellationToken>()))
             .ReturnsAsync(true);
 

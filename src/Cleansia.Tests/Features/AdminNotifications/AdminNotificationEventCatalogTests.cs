@@ -87,6 +87,7 @@ public sealed class AdminNotificationEventCatalogTests
     [InlineData(AdminNotificationEventCatalog.PaymentFailed, PhysicalPolicy.SupportOrAbove)]
     [InlineData(AdminNotificationEventCatalog.RefundStuck, PhysicalPolicy.AdminOnly)]
     [InlineData(AdminNotificationEventCatalog.RefundNeedsRetry, PhysicalPolicy.AdminOnly)]
+    [InlineData(AdminNotificationEventCatalog.RefundWithoutCancel, PhysicalPolicy.AdminOnly)]
     [InlineData(AdminNotificationEventCatalog.ErasureFailed, PhysicalPolicy.ManagerOrAbove)]
     [InlineData(AdminNotificationEventCatalog.CompanyWindDownRequested, PhysicalPolicy.AdministratorOnly)]
     [InlineData(AdminNotificationEventCatalog.CompanyWindDownRun, PhysicalPolicy.AdministratorOnly)]

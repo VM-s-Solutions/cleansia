@@ -151,6 +151,7 @@ public sealed class AdminNotificationEmailRenderingTests
     [Theory]
     [InlineData(AdminNotificationEventCatalog.RefundStuck, "It is retried every hour", "retry it from")]
     [InlineData(AdminNotificationEventCatalog.RefundNeedsRetry, "retry it from the dispute or the order", "retried every hour")]
+    [InlineData(AdminNotificationEventCatalog.RefundWithoutCancel, "do not issue a refund on the order", "retry it from")]
     public async Task Each_Stuck_Refund_Email_Says_Who_Retries_It(string eventKey, string says, string doesNotSay)
     {
         var (service, capture) = BuildService([]);

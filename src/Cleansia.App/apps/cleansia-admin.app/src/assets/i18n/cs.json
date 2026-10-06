@@ -3231,6 +3231,7 @@
       "wind_down_not_requested": "Archivace čeká, až budou lidé informováni: nejprve nastavte datum ukončení činnosti.",
       "has_open_orders": "Společnost má stále otevřené objednávky; archivace čeká, dokud nebude každá dokončena nebo zrušena.",
       "has_orders_awaiting_pay": "Dokončená objednávka stále čeká na výpočet odměny; archivace na něj čeká.",
+      "has_open_receivables": "Zákazník stále dluží společnosti otevřenou pohledávku; nejprve musí být zaplacena nebo odepsána.",
       "has_orders_awaiting_receipt": "Zaplacená nebo hotovostní objednávka stále čeká na účtenku; archivace na ni čeká.",
       "has_receipts_awaiting_fiscal_registration": "Účtenka stále čeká na fiskální registraci; archivace na ni čeká.",
       "has_pending_refunds": "Vrácení platby stále čeká na vyřízení; archivace čeká, dokud nebude vypořádáno.",

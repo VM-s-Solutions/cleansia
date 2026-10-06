@@ -3231,6 +3231,7 @@
       "wind_down_not_requested": "The archive waits for the people to have been told: set a wind-down date first.",
       "has_open_orders": "The company still has open orders; the archive waits until every one is completed or cancelled.",
       "has_orders_awaiting_pay": "A completed order still awaits its pay calculation; the archive waits for it.",
+      "has_open_receivables": "A customer still owes the company an open receivable; it must be paid or written off first.",
       "has_orders_awaiting_receipt": "A paid or cash order still awaits its receipt; the archive waits for it.",
       "has_receipts_awaiting_fiscal_registration": "A receipt still awaits fiscal registration; the archive waits for it.",
       "has_pending_refunds": "A refund is still pending; the archive waits until it has settled.",

@@ -308,7 +308,7 @@ public sealed class CompanySettlementReaderTests(PostgresContainerFixture fixtur
         var facts = await ReaderFor("cleansia-nobody", ctx).ReadAsync(CancellationToken.None);
 
         Assert.Equal(
-            new CompanySettlementFacts(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, null),
+            new CompanySettlementFacts(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, null),
             facts);
     }
 
@@ -340,7 +340,7 @@ public sealed class CompanySettlementReaderTests(PostgresContainerFixture fixtur
         var facts = await ReaderFor(DoorCompany, ctx).ReadAsync(CancellationToken.None);
 
         Assert.Equal(
-            new CompanySettlementFacts(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, null),
+            new CompanySettlementFacts(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, null),
             facts);
     }
 
@@ -363,6 +363,43 @@ public sealed class CompanySettlementReaderTests(PostgresContainerFixture fixtur
         var facts = await ReaderFor(DoorCompany, ctx).ReadAsync(CancellationToken.None);
 
         Assert.Equal(2, facts.OrdersAwaitingReceipt);
+        Assert.Equal(1, facts.OpenReceivables);
+    }
+
+    /// <summary>
+    /// Owner ruling 2026-10-06: a fee owed on a cancelled cash booking holds no order open and no receipt
+    /// back, yet the freeze would take it out of the booking ban, so the open receivable is a fact of its own.
+    /// </summary>
+    [Fact]
+    public async Task An_Open_Fee_On_A_Cancelled_Booking_Is_An_Open_Receivable_Of_Its_Own_Company_Only()
+    {
+        await SeedDoorCompanyAsync(ctx =>
+        {
+            ctx.Receivables.Add(Receivable.ForCashCancellationFee(CancelledCash(ctx, "fee-open"), 50m));
+            ctx.Receivables.Add(Receivable.ForLockout(CancelledCash(ctx, "lockout-open"), 100m));
+            var paid = Receivable.ForCashCancellationFee(CancelledCash(ctx, "fee-paid"), 50m);
+            paid.MarkPaid("pi_fee_paid", DateTimeOffset.UtcNow);
+            var writtenOff = Receivable.ForLockout(CancelledCash(ctx, "lockout-written-off"), 100m);
+            writtenOff.WriteOff("manager-door", "Goodwill", DateTimeOffset.UtcNow);
+            ctx.Receivables.AddRange(paid, writtenOff);
+        });
+        await using var ctx = NewContext();
+
+        var facts = await ReaderFor(DoorCompany, ctx).ReadAsync(CancellationToken.None);
+        var otherCompany = await ReaderFor(TestTenants.Second, ctx).ReadAsync(CancellationToken.None);
+
+        Assert.Equal(2, facts.OpenReceivables);
+        Assert.Equal(0, facts.OpenOrders);
+        Assert.Equal(0, facts.OrdersAwaitingReceipt);
+        Assert.Equal(0, otherCompany.OpenReceivables);
+    }
+
+    private static Order CancelledCash(CleansiaDbContext ctx, string orderId)
+    {
+        var order = NewOrder(orderId, new DateTime(2026, 9, 14, 9, 0, 0, DateTimeKind.Utc), PaymentType.Cash, PaymentStatus.Pending);
+        order.AddOrderStatus(Track(OrderStatus.Cancelled, order, DateTimeOffset.UtcNow));
+        ctx.Orders.Add(order);
+        return order;
     }
 
     private const string DoorCompany = "cleansia-door-settle";

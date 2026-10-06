@@ -1290,6 +1290,74 @@ public class RefundServiceTests
     }
 
     /// <summary>
+    /// The hourly re-drive's own ceiling counts another key's pending refund as it does for a new refund: a
+    /// partial of 600 is still pending, so a free cancellation's 1000 claimed beside it is sent the 400 the
+    /// charge has left, not the 1000 real Stripe would refuse every hour.
+    /// </summary>
+    [Fact]
+    public async Task Redrive_Counts_Another_Keys_Pending_Refund_In_Its_Ceiling()
+    {
+        var order = CreateCardPaidOrder(1000m);
+        ArrangeOrder(order);
+        ArrangeConsumed(0m);
+        var cancelKey = $"refund:{OrderId}:cancel";
+        ArrangePendingElsewhere(cancelKey, 600m);
+        var refund = ArrangePendingRefund(order, 1000m, cancelKey);
+
+        var result = await CreateService().RedriveAsync(refund.Id, "system", CancellationToken.None);
+
+        Assert.True(result.IsSuccess, result.Error?.Message);
+        Assert.Equal(400m, _stripe.LastAmount);
+        Assert.Equal(cancelKey, _stripe.LastIdempotencyKey);
+        Assert.Equal(400m, refund.Amount);
+    }
+
+    /// <summary>
+    /// A cancellation and an administrator's full refund were claimed at the same moment, each against the
+    /// whole 1000. Stripe paid the cancellation's and lost the answer, and refused the administrator's. Only the
+    /// other pending refund leaves this one nothing, and that refund may be the one Stripe never paid, so this
+    /// one is not closed: it stays pending, Stripe is not asked, and the administrators hear of it after a day.
+    /// </summary>
+    [Fact]
+    public async Task Redrive_Held_Back_Only_By_Another_Pending_Refund_Stays_Pending()
+    {
+        var order = CreateCardPaidOrder(1000m);
+        ArrangeOrder(order);
+        ArrangeConsumed(0m);
+        var cancelKey = $"refund:{OrderId}:cancel";
+        ArrangePendingElsewhere(cancelKey, 1000m);
+        var refund = ArrangePendingRefund(order, 1000m, cancelKey);
+
+        var result = await CreateService().RedriveAsync(refund.Id, "system", CancellationToken.None);
+
+        Assert.Equal(BusinessErrorMessage.RefundFailed, result.Error!.Message);
+        Assert.Equal(RefundStatus.Pending, refund.Status);
+        Assert.Equal(0, _stripe.RefundCallCount);
+    }
+
+    /// <summary>
+    /// The same race on a sale with a complaint settled in 300 of credit: the other pending refund of 700 leaves
+    /// the sale nothing, while the refunds Stripe confirmed leave it 700. The row stays pending.
+    /// </summary>
+    [Fact]
+    public async Task Redrive_Whose_Held_Slice_Only_Another_Pending_Refund_Took_Stays_Pending()
+    {
+        var order = CreateCardPaidOrder(1000m);
+        ArrangeOrder(order);
+        ArrangeConsumed(0m);
+        ArrangeSettledInCredit(300m);
+        var cancelKey = $"refund:{OrderId}:cancel";
+        ArrangePendingElsewhere(cancelKey, 700m);
+        var refund = ArrangePendingRefund(order, 700m, cancelKey);
+
+        var result = await CreateService().RedriveAsync(refund.Id, "system", CancellationToken.None);
+
+        Assert.Equal(BusinessErrorMessage.RefundFailed, result.Error!.Message);
+        Assert.Equal(RefundStatus.Pending, refund.Status);
+        Assert.Equal(0, _stripe.RefundCallCount);
+    }
+
+    /// <summary>
     /// A 2000 sale, 500 in credit and 1500 by card. An admin's partial refund of 800 froze 600 on the card;
     /// Stripe paid it but the answer never came back, so its 200 credit share was never returned. A complaint
     /// was then settled in the 1400 the sale had left. The retry sends Stripe the same 600 on the same key,

@@ -20,7 +20,8 @@ public interface IRefundService
     /// Re-drive a refund Stripe refused or could not be reached for, on the idempotency key it was
     /// created with, so a refund Stripe did take is never taken twice. Clamped to the live ceiling, as a
     /// retried <see cref="IssueRefundAsync"/> is; a refund with nothing left to give back is closed as
-    /// <see cref="RefundStatus.Failed"/> for the caller to commit.
+    /// <see cref="RefundStatus.Failed"/> for the caller to commit, unless only other refunds still pending
+    /// left it nothing, in which case it stays pending and fails as <c>refund.failed</c>.
     /// </summary>
     Task<BusinessResult<RefundResult>> RedriveAsync(string refundId, string actorId, CancellationToken cancellationToken);
 }

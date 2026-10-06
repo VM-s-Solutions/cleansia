@@ -191,9 +191,8 @@ public sealed class RefundService(
         var refundable = CardRefundCeiling(order, consumed);
         if (refundable <= 0m)
         {
-            refund.MarkFailed();
-            return BusinessResult.Failure<RefundResult>(new Error(
-                nameof(refund.Amount), BusinessErrorMessage.RefundNothingRefundable));
+            var confirmed = await refundRepository.GetSucceededRefundTotalForOrderAsync(order.Id, cancellationToken);
+            return NothingLeftToRedrive(refund, heldOnlyByPendingRefunds: CardRefundCeiling(order, confirmed) > 0m);
         }
 
         refund.ClampAmountTo(refundable);
@@ -223,9 +222,9 @@ public sealed class RefundService(
             var card = held - creditOnThisKey;
             if (card <= 0m)
             {
-                refund.MarkFailed();
-                return BusinessResult.Failure<RefundResult>(new Error(
-                    nameof(refund.Amount), BusinessErrorMessage.RefundNothingRefundable));
+                var confirmed = await refundRepository.GetSucceededRefundTotalForOrderAsync(order.Id, cancellationToken);
+                return NothingLeftToRedrive(refund, heldOnlyByPendingRefunds:
+                    HeldToWhatIsLeft(order, slice, confirmed, creditAlreadyReturned, settledInCredit) - creditOnThisKey > 0m);
             }
 
             refund.ClampAmountTo(card);
@@ -233,6 +232,28 @@ public sealed class RefundService(
         }
 
         return await SettleAsync(order, refund, creditShare, actorId, cancellationToken);
+    }
+
+    /// <summary>
+    /// A re-drive the order has nothing left for. Closed when the refunds Stripe confirmed used up what is
+    /// left, so the hourly job stops selecting it. Left pending when only other refunds still pending did:
+    /// two refunds claimed at once each count the other, Stripe may have paid this one and refused that one,
+    /// and closing this one would leave the money it paid unrecorded with nobody told.
+    /// </summary>
+    private BusinessResult<RefundResult> NothingLeftToRedrive(Refund refund, bool heldOnlyByPendingRefunds)
+    {
+        if (heldOnlyByPendingRefunds)
+        {
+            logger.LogWarning(
+                "Refund {RefundId} of order {OrderId} is held back only by other refunds still pending; it stays pending.",
+                refund.Id, refund.OrderId);
+            return BusinessResult.Failure<RefundResult>(new Error(
+                nameof(refund.Amount), BusinessErrorMessage.RefundFailed));
+        }
+
+        refund.MarkFailed();
+        return BusinessResult.Failure<RefundResult>(new Error(
+            nameof(refund.Amount), BusinessErrorMessage.RefundNothingRefundable));
     }
 
     /// <summary>

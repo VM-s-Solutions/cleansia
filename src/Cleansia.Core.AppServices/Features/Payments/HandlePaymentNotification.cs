@@ -584,9 +584,10 @@ public class HandlePaymentNotification
         /// The receivable is paid, and its fee receipt and, on a late-cancellation fee, the crew's share of it
         /// are asked for. A lockout's crew pay was asked for at the confirmation under the same outbox key, so
         /// asking again here would fail this commit on the key's unique index. A second payment of one already
-        /// paid is money taken twice for one debt, and it is refunded in full, keyed on its own PaymentIntent
-        /// so a redelivery replays the same refund. The refund is made here, so an unreachable Stripe throws,
-        /// the processed-event stamp rolls back and Stripe redelivers.
+        /// paid, or of a door price an administrator recorded as paid in cash, is money taken twice for one
+        /// debt, and it is refunded in full, keyed on its own PaymentIntent so a redelivery replays the same
+        /// refund. The refund is made here, so an unreachable Stripe throws, the processed-event stamp rolls
+        /// back and Stripe redelivers.
         /// </summary>
         private async Task<BusinessResult> SettleReceivable(
             string receivableId, string? paymentIntentId, string language, CancellationToken cancellationToken)
@@ -603,7 +604,8 @@ public class HandlePaymentNotification
                 tenantProvider.SetTenantOverride(receivable.TenantId);
             }
 
-            if (receivable.IsPaid)
+            var doorPricePaidInCash = receivable.Kind == ReceivableKind.UnpaidCash && receivable.Order!.SettledInCash;
+            if (receivable.IsPaid || doorPricePaidInCash)
             {
                 if (!string.IsNullOrEmpty(paymentIntentId) && receivable.StripePaymentIntentId != paymentIntentId)
                 {
@@ -613,8 +615,8 @@ public class HandlePaymentNotification
                         $"refund:receivable:{receivable.Id}:{paymentIntentId}",
                         cancellationToken);
                     logger.LogWarning(
-                        "Receivable {ReceivableId} paid by {PaymentIntentId} was paid again by {SecondPaymentIntentId}; the second payment was refunded in full",
-                        receivable.Id, receivable.StripePaymentIntentId, paymentIntentId);
+                        "Receivable {ReceivableId} settled by {SettledBy} was paid again by {SecondPaymentIntentId}; the second payment was refunded in full",
+                        receivable.Id, receivable.StripePaymentIntentId ?? "cash", paymentIntentId);
                 }
 
                 return BusinessResult.Success();

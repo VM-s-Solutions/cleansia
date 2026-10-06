@@ -1,5 +1,6 @@
 using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.AppServices.Features.Orders;
+using Cleansia.Core.Clients.Abstractions.Stripe;
 using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Internationalization;
 using Cleansia.Core.Domain.Orders;
@@ -7,8 +8,10 @@ using Cleansia.Core.Domain.Payments;
 using Cleansia.Core.Domain.Repositories;
 using Cleansia.Core.Domain.Users;
 using Cleansia.Core.Queue.Abstractions;
+using Microsoft.Extensions.Logging.Abstractions;
 using MockQueryable;
 using Moq;
+using StripeException = Stripe.StripeException;
 
 namespace Cleansia.Tests.Features.Orders;
 
@@ -29,9 +32,17 @@ public class AdminRecordCashReceivedTests
     private readonly Mock<ICashLedgerRepository> _cashLedger = new();
     private readonly Mock<IReceivableRepository> _receivables = new();
     private readonly Mock<IUserSessionProvider> _session = new();
+    private readonly Mock<IStripeClient> _stripe = new();
 
     private AdminRecordCashReceived.Handler Handler() => new(
-        _orderRepository.Object, _cashLedger.Object, _receivables.Object, _session.Object, new StubTimeProvider(Now), _pending.Object);
+        _orderRepository.Object,
+        _cashLedger.Object,
+        _receivables.Object,
+        _stripe.Object,
+        _session.Object,
+        new StubTimeProvider(Now),
+        _pending.Object,
+        NullLogger<AdminRecordCashReceived.Handler>.Instance);
 
     private AdminRecordCashReceived.Validator Validator()
     {
@@ -231,6 +242,63 @@ public class AdminRecordCashReceivedTests
             (debt.Status, debt.WrittenOffByUserId, debt.WriteOffNote, debt.WrittenOffOn));
         _pending.Verify(p => p.Enqueue(
             QueueNames.GenerateReceipt, It.IsAny<It.IsAnyType>(), MessageKeys.Receipt(OrderId)), Times.Once);
+        _stripe.VerifyNoOtherCalls();
+    }
+
+    /// <summary>
+    /// Stripe keeps the debt's pay link payable for a day. It is closed before the debt is, or the customer
+    /// who handed over the cash could still pay the same price by card.
+    /// </summary>
+    [Fact]
+    public async Task Recording_The_Cash_Closes_The_Debts_Pay_Link_Before_The_Debt()
+    {
+        var order = ArrangeOrder(history: [OrderStatus.New, OrderStatus.Confirmed, OrderStatus.InProgress, OrderStatus.Completed]);
+        var debt = OweTheDoorPrice(order);
+        debt.RecordPayLink("cs_door");
+        _session.Setup(s => s.GetUserId()).Returns("admin-door");
+        _stripe.Setup(s => s.ExpireReceivableCheckoutSessionAsync("cs_door", It.IsAny<CancellationToken>())).ReturnsAsync(true);
+
+        var result = await Handler().Handle(Command(), CancellationToken.None);
+
+        Assert.True(result.IsSuccess, result.Error?.Message);
+        Assert.Equal((ReceivableStatus.WrittenOff, PaymentStatus.Paid), (debt.Status, order.PaymentStatus));
+        _stripe.Verify(s => s.ExpireReceivableCheckoutSessionAsync("cs_door", It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    /// <summary>Stripe answers that the pay link was paid: the price is settled online, and cash on top would be twice.</summary>
+    [Fact]
+    public async Task Cash_Is_Refused_When_The_Customer_Has_Just_Paid_Through_The_Pay_Link()
+    {
+        var order = ArrangeOrder(history: [OrderStatus.New, OrderStatus.Confirmed, OrderStatus.InProgress, OrderStatus.Completed]);
+        var debt = OweTheDoorPrice(order);
+        debt.RecordPayLink("cs_door_paid");
+        _stripe.Setup(s => s.ExpireReceivableCheckoutSessionAsync("cs_door_paid", It.IsAny<CancellationToken>())).ReturnsAsync(false);
+
+        var result = await Handler().Handle(Command(), CancellationToken.None);
+
+        Assert.True(result.IsFailure);
+        Assert.Equal(BusinessErrorMessage.OrderPaymentNotOutstanding, result.Error!.Message);
+        Assert.Equal((ReceivableStatus.Open, PaymentStatus.Pending), (debt.Status, order.PaymentStatus));
+        _cashLedger.Verify(r => r.Add(It.IsAny<CashLedgerEntry>()), Times.Never);
+        _pending.VerifyNoOtherCalls();
+    }
+
+    [Fact]
+    public async Task An_Unreachable_Stripe_Refuses_The_Record_And_Leaves_The_Debt_Open()
+    {
+        var order = ArrangeOrder(history: [OrderStatus.New, OrderStatus.Confirmed, OrderStatus.InProgress, OrderStatus.Completed]);
+        var debt = OweTheDoorPrice(order);
+        debt.RecordPayLink("cs_door_unreachable");
+        _stripe
+            .Setup(s => s.ExpireReceivableCheckoutSessionAsync("cs_door_unreachable", It.IsAny<CancellationToken>()))
+            .ThrowsAsync(new StripeException("Stripe is unavailable"));
+
+        var result = await Handler().Handle(Command(), CancellationToken.None);
+
+        Assert.True(result.IsFailure);
+        Assert.Equal(BusinessErrorMessage.PaymentGatewayUnavailable, result.Error!.Message);
+        Assert.Equal((ReceivableStatus.Open, PaymentStatus.Pending), (debt.Status, order.PaymentStatus));
+        _pending.VerifyNoOtherCalls();
     }
 
     /// <summary>A debt already settled through its pay link is money the customer paid once; cash on top would be twice.</summary>

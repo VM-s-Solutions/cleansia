@@ -630,6 +630,8 @@ const ADMIN_SURFACE_ERROR_KEYS: readonly string[] = [
   'order.cash_already_collected',
   'order.cash_not_allowed_on_card_order',
   'order.payment_not_outstanding',
+  // Stripe could not close the pay link of the price the customer owes, so the cash is not recorded.
+  'order.payment_gateway_unavailable',
   'order.cash_amount_invalid',
   'order.cash_received_at_in_future',
   'order.cash_received_at_before_clean',

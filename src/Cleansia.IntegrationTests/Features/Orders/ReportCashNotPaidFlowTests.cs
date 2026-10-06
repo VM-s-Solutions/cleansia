@@ -4,6 +4,7 @@ using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.AppServices.Features.Addresses.DTOs;
 using Cleansia.Core.AppServices.Features.EmployeePayroll;
 using Cleansia.Core.AppServices.Features.Orders;
+using Cleansia.Core.AppServices.Features.Payments;
 using Cleansia.Core.AppServices.Features.Receivables;
 using Cleansia.Core.AppServices.Services.Interfaces;
 using Cleansia.Core.Clients.Abstractions.Stripe;
@@ -23,6 +24,7 @@ using Cleansia.Core.Queue.Abstractions;
 using Cleansia.Infra.Common.Configuration.Interfaces;
 using Cleansia.Infra.Common.Validations;
 using Cleansia.Infra.Database;
+using Cleansia.IntegrationTests.Features.Payments.Webhooks;
 using Cleansia.TestUtilities;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
@@ -39,8 +41,9 @@ namespace Cleansia.IntegrationTests.Features.Orders;
 /// booking reports that the customer did not pay at the door. The job completes, the price becomes a debt
 /// under the order's company, and the customer is refused a new booking in any company's market until it is
 /// settled. The cleaner is paid the job's full reward; the booking earns no loyalty points and qualifies no
-/// referral. The customer can ask for the pay link, and when they pay the cleaner after all an administrator
-/// records the cash, which closes the debt in the same commit.
+/// referral, not even once the debt is paid through its pay link. The customer can ask for the pay link, and
+/// when they pay the cleaner after all an administrator records the cash, which closes the link and the debt
+/// in the same commit; a link paid after that is refunded.
 /// </summary>
 [Collection("PostgresCollection")]
 public class ReportCashNotPaidFlowTests(PostgresContainerFixture fixture) : BaseIntegrationTest(fixture)
@@ -60,7 +63,8 @@ public class ReportCashNotPaidFlowTests(PostgresContainerFixture fixture) : Base
     private const decimal Price = 1500m;
 
     private TestUserSessionProvider _session = new(new TestClaimsPrincipalUser());
-    private string _tenant = TestTenants.Default;
+    private string? _tenant = TestTenants.Default;
+    private readonly Mock<IStripeClient> _stripe = new();
 
     [Fact]
     public async Task The_Report_Completes_The_Job_Opens_The_Debt_Under_The_Orders_Company_And_Refuses_The_Customer_Elsewhere()
@@ -149,6 +153,7 @@ public class ReportCashNotPaidFlowTests(PostgresContainerFixture fixture) : Base
                 Assert.Equal(
                     (ReceivableStatus.WrittenOff, AdminRecordCashReceived.PaidInCashNote, AdminUserId, "cs_door"),
                     (debt.Status, debt.WriteOffNote, debt.WrittenOffByUserId, debt.PayLinkSessionId));
+                _stripe.Verify(s => s.ExpireReceivableCheckoutSessionAsync("cs_door", It.IsAny<CancellationToken>()), Times.Once);
 
                 var order = await context.Orders.IgnoreQueryFilters().SingleAsync(o => o.Id == OrderId);
                 Assert.Equal((PaymentStatus.Paid, (string?)CleanerEmployeeId, (decimal?)Price),
@@ -161,27 +166,137 @@ public class ReportCashNotPaidFlowTests(PostgresContainerFixture fixture) : Base
             transactional: false);
     }
 
+    /// <summary>
+    /// Terms 2026-10-07 §8: the defaulted booking earns no points or referral credit even once the amount has
+    /// been paid, and the pay link is where it is paid.
+    /// </summary>
+    [Fact]
+    public async Task A_Debt_Paid_Through_Its_Pay_Link_Earns_No_Points_And_Qualifies_No_Referral()
+    {
+        await TestMethod(
+            setup: Setup,
+            arrange: context => SeedAsync(context, orderCompany: TestTenants.Default),
+            act: async provider =>
+            {
+                var report = await SendAs(provider, Cleaner(), TestTenants.Default, new ReportCashNotPaid.Command(OrderId));
+                var debtId = await DebtIdAsync(provider);
+                var payLink = await SendAs(provider, Customer(), TestTenants.Default, new CreateReceivablePayLink.Command(debtId));
+                var paid = await PayLinkCompletedAsync(provider, "evt_door_pay_link", debtId, "pi_door_pay_link");
+                return (report, payLink, paid);
+            },
+            assert: async (CleansiaDbContext context,
+                (BusinessResult<ReportCashNotPaid.Response> Report, BusinessResult<CreateReceivablePayLink.Response> PayLink,
+                    BusinessResult Paid) outcome) =>
+            {
+                Assert.True(outcome.Report.IsSuccess, outcome.Report.Error?.Message);
+                Assert.True(outcome.PayLink.IsSuccess, outcome.PayLink.Error?.Message);
+                Assert.True(outcome.Paid.IsSuccess, outcome.Paid.Error?.Message);
+
+                var debt = await context.Receivables.IgnoreQueryFilters().SingleAsync(r => r.OrderId == OrderId);
+                Assert.Equal((ReceivableStatus.Paid, "pi_door_pay_link"), (debt.Status, debt.StripePaymentIntentId));
+                Assert.Single(await context.OutboxMessages.IgnoreQueryFilters()
+                    .Where(m => m.QueueName == QueueNames.GenerateReceipt && m.MessageKey == MessageKeys.FeeReceipt(debt.Id)).ToListAsync());
+
+                Assert.Empty(await context.LoyaltyTransactions.IgnoreQueryFilters().ToListAsync());
+                var referral = await context.Referrals.IgnoreQueryFilters().SingleAsync();
+                Assert.Equal(ReferralStatus.Accepted, referral.Status);
+            },
+            transactional: false);
+    }
+
+    /// <summary>
+    /// The pay link the customer opened before handing over the cash is paid after the administrator recorded
+    /// it: the card payment is the price a second time, so it is refunded in full, the debt stays closed as
+    /// paid in cash and it earns no fee receipt.
+    /// </summary>
+    [Fact]
+    public async Task A_Pay_Link_Paid_After_The_Cash_Was_Recorded_Is_Refunded_And_The_Debt_Stays_Closed()
+    {
+        var debtId = "";
+        await TestMethod(
+            setup: Setup,
+            arrange: context => SeedAsync(context, orderCompany: TestTenants.Default),
+            act: async provider =>
+            {
+                var report = await SendAs(provider, Cleaner(), TestTenants.Default, new ReportCashNotPaid.Command(OrderId));
+                debtId = await DebtIdAsync(provider);
+                var payLink = await SendAs(provider, Customer(), TestTenants.Default, new CreateReceivablePayLink.Command(debtId));
+                var cash = await SendAs(provider, Admin(), TestTenants.Default,
+                    new AdminRecordCashReceived.Command(OrderId, CleanerEmployeeId, DateTime.UtcNow.AddMinutes(-10), Price));
+                var late = await PayLinkCompletedAsync(provider, "evt_door_pay_link_late", debtId, "pi_door_late");
+                return (report, payLink, cash, late);
+            },
+            assert: async (CleansiaDbContext context,
+                (BusinessResult<ReportCashNotPaid.Response> Report, BusinessResult<CreateReceivablePayLink.Response> PayLink,
+                    BusinessResult<AdminRecordCashReceived.Response> Cash, BusinessResult Late) outcome) =>
+            {
+                Assert.True(outcome.Report.IsSuccess, outcome.Report.Error?.Message);
+                Assert.True(outcome.PayLink.IsSuccess, outcome.PayLink.Error?.Message);
+                Assert.True(outcome.Cash.IsSuccess, outcome.Cash.Error?.Message);
+                Assert.True(outcome.Late.IsSuccess, outcome.Late.Error?.Message);
+
+                _stripe.Verify(s => s.RefundPaymentIntentAsync(
+                    "pi_door_late", Price, $"refund:receivable:{debtId}:pi_door_late", It.IsAny<CancellationToken>()), Times.Once);
+                var debt = await context.Receivables.IgnoreQueryFilters().SingleAsync(r => r.Id == debtId);
+                Assert.Equal(
+                    (ReceivableStatus.WrittenOff, AdminRecordCashReceived.PaidInCashNote, (string?)null),
+                    (debt.Status, debt.WriteOffNote, debt.StripePaymentIntentId));
+                Assert.Empty(await context.OutboxMessages.IgnoreQueryFilters()
+                    .Where(m => m.QueueName == QueueNames.GenerateReceipt && m.MessageKey == MessageKeys.FeeReceipt(debtId)).ToListAsync());
+            },
+            transactional: false);
+    }
+
+    private static async Task<string> DebtIdAsync(IServiceProvider provider)
+    {
+        using var scope = provider.GetRequiredService<IServiceScopeFactory>().CreateScope();
+        return (await scope.ServiceProvider.GetRequiredService<CleansiaDbContext>().Receivables
+            .IgnoreQueryFilters().SingleAsync(r => r.OrderId == OrderId)).Id;
+    }
+
+    /// <summary>Stripe's checkout.session.completed for the pay link, delivered as the webhook is: anonymous and with no company.</summary>
+    private async Task<BusinessResult> PayLinkCompletedAsync(
+        IServiceProvider provider, string eventId, string receivableId, string paymentIntentId)
+    {
+        _session = new TestUserSessionProvider(new TestClaimsPrincipalUser());
+        _tenant = null;
+        var body = StripeWebhookTestPayloads.ReceivablePayLinkCompletedBody(eventId, receivableId, paymentIntentId);
+        using var scope = provider.GetRequiredService<IServiceScopeFactory>().CreateScope();
+        return await scope.ServiceProvider.GetRequiredService<IMediator>().Send(new HandlePaymentNotification.Command(
+            body, StripeWebhookTestPayloads.Sign(body, StripeWebhookTestPayloads.ConfiguredWebhookSecret)));
+    }
+
     private Task Setup(IServiceCollection services)
     {
         services.Replace(ServiceDescriptor.Scoped<IUserSessionProvider>(_ => _session));
         services.Replace(ServiceDescriptor.Scoped<ITenantProvider>(sp =>
         {
             var tenantProvider = new TenantProvider(sp.GetRequiredService<Microsoft.AspNetCore.Http.IHttpContextAccessor>());
-            tenantProvider.SetTenantOverride(_tenant);
+            if (_tenant is not null)
+            {
+                tenantProvider.SetTenantOverride(_tenant);
+            }
+
             return tenantProvider;
         }));
         services.Replace(ServiceDescriptor.Singleton<IOrderChannelProvider>(_ => new OrderChannelProvider(OrderChannel.Mobile)));
         services.Replace(ServiceDescriptor.Scoped<IAddressGeocoder, NoopAddressGeocoder>());
         services.Replace(ServiceDescriptor.Scoped<IEmailService>(_ => Mock.Of<IEmailService>()));
 
-        var stripe = new Mock<IStripeClient>();
-        stripe
+        _stripe
             .Setup(s => s.CreateReceivableCheckoutSessionAsync(
                 It.IsAny<string>(), It.IsAny<string?>(), OrderId, It.IsAny<string>(), Price, "CZK", It.IsAny<CancellationToken>()))
             .ReturnsAsync(new CheckoutSessionResult("cs_door", "https://checkout.stripe.test/cs_door"));
-        services.Replace(ServiceDescriptor.Transient<IStripeClient>(_ => stripe.Object));
+        _stripe
+            .Setup(s => s.ExpireReceivableCheckoutSessionAsync("cs_door", It.IsAny<CancellationToken>()))
+            .ReturnsAsync(true);
+        services.Replace(ServiceDescriptor.Transient<IStripeClient>(_ => _stripe.Object));
+        var stripeFactory = new Mock<IStripeClientFactory>();
+        stripeFactory.Setup(f => f.CreateClient()).Returns(_stripe.Object);
+        services.Replace(ServiceDescriptor.Singleton(stripeFactory.Object));
         var stripeConfig = new Mock<IStripeConfig>();
         stripeConfig.SetupGet(c => c.Enabled).Returns(true);
+        stripeConfig.SetupGet(c => c.WebhookSecret).Returns(StripeWebhookTestPayloads.ConfiguredWebhookSecret);
         services.Replace(ServiceDescriptor.Singleton(stripeConfig.Object));
         return Task.CompletedTask;
     }

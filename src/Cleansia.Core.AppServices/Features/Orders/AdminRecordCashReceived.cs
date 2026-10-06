@@ -1,6 +1,7 @@
 using Cleansia.Core.AppServices.Abstractions;
 using Cleansia.Core.AppServices.Auditing;
 using Cleansia.Core.AppServices.Common;
+using Cleansia.Core.Clients.Abstractions.Stripe;
 using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Orders;
 using Cleansia.Core.Domain.Payments;
@@ -10,6 +11,8 @@ using Cleansia.Core.Queue.Abstractions.Messages;
 using Cleansia.Infra.Common.Validations;
 using FluentValidation;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
+using StripeException = Stripe.StripeException;
 
 namespace Cleansia.Core.AppServices.Features.Orders;
 
@@ -19,8 +22,9 @@ namespace Cleansia.Core.AppServices.Features.Orders;
 /// as the cleaner's own <see cref="MarkCashCollected"/> would have paid it, so the cleaner can complete
 /// it; on an order an administrator already completed, the cash receipt is issued here, because that is
 /// the moment both of its dates exist. On an order the cleaner reported unpaid (owner ruling 2026-10-06) it
-/// closes the price owed in the same commit, written off as paid in cash, and it is refused once that price
-/// was paid online, so the customer never pays twice. → /flows/payment-and-fiscal
+/// closes the price owed in the same commit, written off as paid in cash, after closing the debt's pay link at
+/// Stripe, and it is refused once that price was paid online, so the customer never pays twice.
+/// → /flows/payment-and-fiscal
 /// </summary>
 [AuditAction("order.cash.record", ResourceType = "Order")]
 public class AdminRecordCashReceived
@@ -123,9 +127,11 @@ public class AdminRecordCashReceived
         IOrderRepository orderRepository,
         ICashLedgerRepository cashLedgerRepository,
         IReceivableRepository receivableRepository,
+        IStripeClient stripeClient,
         IUserSessionProvider userSessionProvider,
         TimeProvider timeProvider,
-        IPendingDispatch pending)
+        IPendingDispatch pending,
+        ILogger<Handler> logger)
         : ICommandHandler<Command, Response>
     {
         public async Task<BusinessResult<Response>> Handle(Command command, CancellationToken cancellationToken)
@@ -143,9 +149,33 @@ public class AdminRecordCashReceived
                     nameof(command.OrderId), BusinessErrorMessage.OrderNotFound));
             }
 
+            var debt = await receivableRepository.GetUnpaidCashForOrderAsync(order.Id, cancellationToken);
+            if (debt is { IsOpen: true, PayLinkSessionId: { } payLink })
+            {
+                bool closed;
+                try
+                {
+                    closed = await stripeClient.ExpireReceivableCheckoutSessionAsync(payLink, cancellationToken);
+                }
+                catch (StripeException ex)
+                {
+                    logger.LogWarning(ex,
+                        "Pay link {SessionId} of receivable {ReceivableId} could not be closed; the cash is not recorded",
+                        payLink, debt.Id);
+                    return BusinessResult.Failure<Response>(new Error(
+                        nameof(command.OrderId), BusinessErrorMessage.PaymentGatewayUnavailable));
+                }
+
+                if (!closed)
+                {
+                    return BusinessResult.Failure<Response>(new Error(
+                        nameof(command.OrderId), BusinessErrorMessage.OrderPaymentNotOutstanding));
+                }
+            }
+
             order.MarkCashCollected(command.EmployeeId, command.ReceivedAt.ToUniversalTime(), command.Amount);
             cashLedgerRepository.Add(CashLedgerEntry.ForCollection(order));
-            if (await receivableRepository.GetUnpaidCashForOrderAsync(order.Id, cancellationToken) is { IsOpen: true } debt)
+            if (debt is { IsOpen: true })
             {
                 debt.WriteOff(userSessionProvider.GetUserId()!, PaidInCashNote, timeProvider.GetUtcNow());
             }

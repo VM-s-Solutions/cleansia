@@ -325,6 +325,35 @@ public class CancelOrderStandardTierFeeTests
         Assert.Equal(125m, pay.TotalPay);
     }
 
+    /// <summary>
+    /// A refund still pending on another key counts as given back, card and credit leg, so the cancellation returns
+    /// nothing and the company keeps only what that refund leaves once it goes through; the crew is paid half of
+    /// that. 1000 by card with 800 pending, at 25 %, keeps 200, not the 250 fee. 700 by card and 300 in credit,
+    /// 280 + 120 refunded and 140 pending with its 60 credit leg waiting, at 50 %, keeps 400, not the 500 fee.
+    /// </summary>
+    [Theory]
+    [InlineData(12, 0, 0, 0, 800, 100)]
+    [InlineData(1, 300, 280, 120, 140, 200)]
+    public async Task A_Fee_Cancellation_Beside_A_Pending_Refund_Pays_The_Crew_Only_On_What_The_Company_Keeps(
+        int hoursBeforeStart, int creditApplied, int cardSucceeded, int creditReturned, int cardPending, int seatPay)
+    {
+        var order = ArrangeAcceptedCardPaidOrder(DateTime.UtcNow.AddHours(hoursBeforeStart), totalPrice: 1000m, creditApplied);
+        if (cardSucceeded > 0)
+        {
+            order.UpdatePaymentStatus(PaymentStatus.PartiallyRefunded);
+        }
+
+        AlreadyGivenBack(cardSucceeded: cardSucceeded, cardPending: cardPending, creditReturned: creditReturned);
+
+        var result = await CreateHandler().Handle(new CancelOrder.Command(OrderId, null), CancellationToken.None);
+        var pay = await CrewPayAsync(order);
+
+        Assert.True(result.IsSuccess, result.Error?.Message);
+        Assert.Equal(0m, order.CancellationRefundAmount);
+        Assert.Equal(PayLineType.CancellationFeeShare, pay.LineType);
+        Assert.Equal(seatPay, pay.TotalPay);
+    }
+
     [Fact]
     public async Task Refund_RoundsToTwoDecimals_AwayFromZero_AtTheTruncationBoundary()
     {

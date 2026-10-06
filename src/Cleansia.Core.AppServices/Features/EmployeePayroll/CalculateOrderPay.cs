@@ -2,6 +2,8 @@ using Cleansia.Core.AppServices.Abstractions;
 using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.AppServices.Features.Orders;
 using Cleansia.Core.AppServices.Features.TenantSettings;
+using Cleansia.Core.AppServices.Services;
+using Cleansia.Core.AppServices.Services.Interfaces;
 using Cleansia.Core.Domain.Configuration;
 using Cleansia.Core.Domain.EmployeePayroll;
 using Cleansia.Core.Domain.Enums;
@@ -62,10 +64,21 @@ public class CalculateOrderPay
         {
             // Never more than the fee, nor than the company still holds. The recorded refund nets what came back
             // before the cancellation, so the price less it is the fee plus those earlier refunds; and a
-            // cancellation refund still waiting for its re-drive is not among the succeeded refunds yet.
+            // cancellation refund still waiting for its re-drive is not among the succeeded refunds yet. Another
+            // refund still pending counts as given back, its credit leg too, as it does in the cancellation's refund.
+            var cancellationKey = RefundService.BuildRefundKey(
+                new RefundRequest(order.Id, 0m, RefundReason.CustomerCancellation, string.Empty));
+            var pendingCard = await refundRepository.GetPendingRefundTotalForOrderAsync(
+                order.Id, cancellationKey, cancellationToken);
+            var cardCharged = RefundService.CardChargedAmount(order);
+            var pendingCredit = cardCharged > 0m
+                ? Math.Round(pendingCard * order.CreditAppliedAmount / cardCharged, 2, MidpointRounding.AwayFromZero)
+                : 0m;
             var stillHeld = order.TotalPrice
                 - await refundRepository.GetSucceededRefundTotalForOrderAsync(order.Id, cancellationToken)
-                - await creditAccountRepository.GetReturnedTotalForOrderAsync(order.Id, cancellationToken);
+                - await creditAccountRepository.GetReturnedTotalForOrderAsync(order.Id, cancellationToken)
+                - pendingCard
+                - pendingCredit;
             var fee = order.TotalPrice - CancellationAssessor.RefundAmountFor(order.TotalPrice, order.CancellationFeeRate.Value);
             return Math.Max(0m, Math.Min(
                 Math.Min(order.TotalPrice - (order.CancellationRefundAmount ?? 0m), fee),

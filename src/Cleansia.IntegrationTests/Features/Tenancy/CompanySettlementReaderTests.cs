@@ -312,6 +312,94 @@ public sealed class CompanySettlementReaderTests(PostgresContainerFixture fixtur
             facts);
     }
 
+    /// <summary>
+    /// Owner ruling 2026-10-06: an order the cleaner reported unpaid at the door completes with its price
+    /// owed and no sale receipt. Once that debt is paid online or written off, nothing more is owed on it,
+    /// and no writer could ever issue it a sale receipt, so it must not hold the company's archive back.
+    /// </summary>
+    [Theory]
+    [InlineData(ReceivableStatus.Paid)]
+    [InlineData(ReceivableStatus.WrittenOff)]
+    public async Task A_Door_Default_Whose_Debt_Was_Paid_Or_Written_Off_Owes_No_Receipt_And_Leaves_The_Company_Archivable(
+        ReceivableStatus settled)
+    {
+        await SeedDoorCompanyAsync(ctx =>
+        {
+            var (_, debt) = DoorDefault(ctx, "door-settled");
+            if (settled == ReceivableStatus.Paid)
+            {
+                debt.MarkPaid("pi_door_settled", DateTimeOffset.UtcNow);
+            }
+            else
+            {
+                debt.WriteOff("manager-door", "Wrong report", DateTimeOffset.UtcNow);
+            }
+        });
+        await using var ctx = NewContext();
+
+        var facts = await ReaderFor(DoorCompany, ctx).ReadAsync(CancellationToken.None);
+
+        Assert.Equal(
+            new CompanySettlementFacts(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, null),
+            facts);
+    }
+
+    /// <summary>
+    /// The price still owed may yet be paid to the cleaner, and cash an administrator recorded is a sale
+    /// the company owes a receipt for until it is issued.
+    /// </summary>
+    [Fact]
+    public async Task A_Door_Default_Still_Owed_Or_Recorded_As_Paid_In_Cash_Is_Awaiting_Its_Receipt()
+    {
+        await SeedDoorCompanyAsync(ctx =>
+        {
+            DoorDefault(ctx, "door-owed");
+            var (recorded, debt) = DoorDefault(ctx, "door-cash-recorded");
+            recorded.MarkCashCollected("emp-door", DateTime.UtcNow.AddHours(-1), 100m);
+            debt.WriteOff("admin-door", AdminRecordCashReceived.PaidInCashNote, DateTimeOffset.UtcNow);
+        });
+        await using var ctx = NewContext();
+
+        var facts = await ReaderFor(DoorCompany, ctx).ReadAsync(CancellationToken.None);
+
+        Assert.Equal(2, facts.OrdersAwaitingReceipt);
+    }
+
+    private const string DoorCompany = "cleansia-door-settle";
+
+    private async Task SeedDoorCompanyAsync(Action<CleansiaDbContext> seedBooks)
+    {
+        _tenantProvider.ClearTenantOverride();
+        await using (var registry = NewContext())
+        {
+            registry.Tenants.Add(Tenant.Create(DoorCompany, "Cleansia Door s.r.o."));
+            await registry.CommitAsync(CancellationToken.None);
+        }
+
+        _tenantProvider.SetTenantOverride(DoorCompany);
+        await using (var books = NewContext())
+        {
+            seedBooks(books);
+            await books.CommitAsync(CancellationToken.None);
+        }
+
+        _tenantProvider.ClearTenantOverride();
+    }
+
+    /// <summary>What a door report leaves once the crew's pay is calculated: the cash order completed unpaid, and the price owed.</summary>
+    private static (Order Order, Receivable Debt) DoorDefault(CleansiaDbContext ctx, string orderId)
+    {
+        var order = NewOrder(orderId, new DateTime(2026, 9, 12, 9, 0, 0, DateTimeKind.Utc), PaymentType.Cash, PaymentStatus.Pending);
+        order.AddOrderStatus(Track(OrderStatus.InProgress, order, DateTimeOffset.UtcNow.AddMinutes(-5)));
+        order.AddOrderStatus(Track(OrderStatus.Completed, order, DateTimeOffset.UtcNow));
+        order.MarkEmployeePayCalculated();
+        ctx.Orders.Add(order);
+
+        var debt = Receivable.ForUnpaidCash(order);
+        ctx.Receivables.Add(debt);
+        return (order, debt);
+    }
+
     private sealed class MutableTenantProvider : ITenantProvider
     {
         private string? _tenantId;

@@ -19,13 +19,21 @@ sequenceDiagram
   API->>O: InProgress
   O-->>N: push (+ Live Activity on iOS)
   C->>API: photos, notes
-  opt cash taken at the door
+  alt cash taken at the door
     C->>API: cash collected
     API->>O: Paid, amount due stamped (no receipt yet)
+    C->>API: complete
+    API->>O: Completed
+    O-->>N: push (+ receipt — for cash, the first one)
+  else the customer paid nothing
+    C->>API: customer did not pay
+    API->>O: Completed, payment still Pending, price owed
+    O-->>N: push + e-mail: the amount owed, pay it on the order page
+  else card
+    C->>API: complete
+    API->>O: Completed
+    O-->>N: push (+ receipt)
   end
-  C->>API: complete
-  API->>O: Completed
-  O-->>N: push (+ receipt — for cash, the first one)
 ```
 
 ## Only the assigned cleaner may move the job
@@ -85,6 +93,68 @@ order, under that company's override and commit. It never cancels or refunds: a 
 proof of absence, so an administrator confirms the no-show.
 → [Business rules — when the cleaner no-shows](/product/business-rules#when-the-cleaner-cancels-or-no-shows)
 
+## When the customer does not pay at the door {#cash-not-paid}
+
+**Owner ruling 2026-10-06.** A cash job could only be completed after the cash was recorded, so when the
+customer paid nothing the job stayed in progress, the cleaner was paid nothing, and nothing the platform
+could claim was owed. Now the cleaner reports it.
+
+```mermaid
+sequenceDiagram
+  autonumber
+  participant C as Cleaner (partner app)
+  participant API as Partner API
+  participant N as Customer
+  participant A as Administrators
+
+  C->>API: ReportCashNotPaid(order) — cash, in progress, payment Pending, after photo taken
+  API->>API: Completed (payment stays Pending), live activity ends
+  API->>API: UnpaidCash receivable = TotalPrice − credit applied
+  API->>API: the crew's pay asked for — the full reward
+  API-->>N: order.cash_not_paid push + e-mail (pay it on the order page)
+  API-->>A: admin.order.cash_not_paid (feed + e-mail)
+  Note over API: no receipt, no loyalty points, no referral, no cash-ledger entry
+  N->>API: every new booking refused order.unpaid_receivable — until paid or written off
+```
+
+- **The command** is `ReportCashNotPaid` (`POST api/Order/ReportCashNotPaid`, on the Partner and Partner
+  Mobile hosts only; `Policy.CanCompleteOrder`, the `auth` rate limit). Its one validator chain runs the
+  completion's gates first — the caller on the crew (`order.not_found` otherwise), approved, a complete
+  profile, the contract for work for the seat (`contract.acceptance_required`) — then the order: in
+  progress (`order.not_in_progress`), cash (`order.cash_not_allowed_on_card_order`), not paid
+  (`order.cash_already_collected`), payment `Pending` on a signed-in customer's booking
+  (`order.payment_not_outstanding`, which also answers a legacy guest cash order), and an *after* photo
+  (`order.after_photos.required`). It answers the order id, the new status and the amount owed.
+- **One commit.** The order completes, timed from its start as `CompleteOrder` times one, with the payment
+  still `Pending`. An `UnpaidCash` receivable opens for `TotalPrice − CreditAppliedAmount`, stamped with
+  the order's company. Every seat's pay is asked for as a completion asks for it, so the crew gets the
+  full reward. The customer push `order.cash_not_paid` (order number and amount; not mutable), the
+  customer e-mail (`email:order-cash-not-paid:{receivableId}`, five locales, its button opening the
+  order's page) and the administrators' `admin.order.cash_not_paid` (Support and above, order number and
+  amount) ride the same commit. Nothing that needs money runs: no receipt, no loyalty grant, no referral
+  qualification, no cash-ledger entry.
+- **The customer** is refused every new booking, cash or card, in any company, until the debt is paid
+  through its pay link or written off → [Booking and pricing — a customer who owes books nothing](/flows/booking-and-pricing#owes-nothing).
+  Paid online, it earns a fee receipt labelled *Unpaid cash payment* and asks for no crew pay.
+- **The administrator** corrects a wrong report by writing the debt off (Manager and above). When the
+  customer pays the cleaner later, *Record cash received* (`AdminRecordCashReceived`) marks the order
+  `Paid`, issues the sale receipt because the order is complete, and writes the open debt off as *Paid in
+  cash* in the same commit; it is refused with `order.payment_not_outstanding` once the customer paid the
+  debt online.
+- **The partner web, Android and iOS** offer *Customer did not pay* beside *Mark cash collected*, on the
+  order detail only, to a cleaner on the crew of a cash job in progress whose payment is pending. The
+  apps show it once the after photos are in, as they do *Complete*; the web warns as *Complete* does when
+  there is none. A confirmation states the consequence first: use it only when nothing was paid (a part
+  payment is told to the company); the job completes and the cleaner is paid; the customer will owe the
+  price less any credit applied, is told so and cannot book until it is paid; an administrator is
+  alerted, and only an administrator can undo it. All three clients say this in the same words; the
+  administrator undoes it by writing the debt off or by *Record cash received*. After it the order is read
+  again and a notice confirms the report; the web's names the amount owed from the server's answer. Every
+  refusal the endpoint can give has its sentence in five locales on all three; on the web a seat without
+  its contract acceptance opens the contract.
+→ [Business rules — when the customer does not pay at the door](/product/business-rules#cash-not-paid),
+[Partner order management](/partner-app/order-management#customer-did-not-pay)
+
 ## Photos have windows, and a finished job keeps them {#photo-windows}
 
 **Owner rulings 2026-09-28.** The server decides when a job photo may be taken and removed
@@ -135,6 +205,9 @@ token that reaches only their mailbox.
 | A card order an administrator refunded, partly or fully, before the job ended | The cleaner completes it (since 2026-10-04): `CompleteOrder` passes a card payment that is `Paid`, `PartiallyRefunded` or `Refunded` and still refuses `Pending` and `Failed` with `order.payment_not_confirmed`. Completion asks for the crew's pay and takes the points share of what was returned. Until then the crew was refused and only an administrator's status override closed the order, with no pay asked for and no points. → [Business rules — money constants](/product/business-rules#money-constants) |
 | Cleaner records the cash (`MarkCashCollected`) | Only while `InProgress`, and only by an approved cleaner on the crew. The order becomes `Paid` and the server stamps the amount due (`CashCollectedAmount` = total − applied credit). No receipt yet: the cash receipt is issued at completion. → [What the receipt says](/flows/payment-and-fiscal#what-the-receipt-says) |
 | The cleaner could not record the cash | An administrator records it — which assigned cleaner, when, how much (`AdminRecordCashReceived`); on an order already completed the receipt is issued then. → [Business rules — cash handover](/product/business-rules#cash-handover) |
+| The customer paid nothing at the door | The cleaner reports it (`ReportCashNotPaid`): the order completes with the payment pending, the price less credit becomes an `UnpaidCash` receivable, the crew is paid in full, the customer and the administrators are told, and the customer books nothing until it is paid or written off. → [above](#cash-not-paid) |
+| The customer paid part of the price | Not covered by the report: the cleaner tells the company, and an administrator records what was received. |
+| The customer pays the cleaner after a non-payment report | An administrator records the cash; the open debt is written off as *Paid in cash* in the same commit, and the sale receipt is issued. Refused once the debt was paid online. |
 | A photo outside its window, or deleted after the job | Refused — `order.photo.window_closed`, `order.photo.locked`. |
 | Admin-placed cleaner taps Start or Complete before accepting the contract | Refused with `contract.acceptance_required`; the app opens the contract, they accept, and the act goes through. A second crew member who neither starts nor completes is never prompted — the stated residual. |
 | Photos requested by a non-assignee | Refused by the strict access gate. Browsing detail is redacted; **photographs of a customer's home are not browsable at all**. |

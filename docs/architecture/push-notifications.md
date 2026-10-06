@@ -298,10 +298,12 @@ The in-app feed has **three** audiences, and the host controller sets which one 
 count or mark-read a row of their partner-app feed. The customer and partner keysets are lists that
 trail their clients' templates (a key belongs in a keyset only once the audience's clients render it,
 or the badge counts a row the app drops unrendered). **The admin keyset is the catalogue by
-construction** — `NotificationFeedEventKeys.Admin = AdminNotificationEventCatalog.All`, the fifteen
+construction** — `NotificationFeedEventKeys.Admin = AdminNotificationEventCatalog.All`, the seventeen
 `admin.*` keys ([ADR-0065](/decisions/adr-0065); the not-started alert, the two refund alerts and the
-lockout report joined on 2026-09-28, and `admin.referral.held` — Support and above, args `[referralId]`,
-routed to *Referrals* in the console — on 2026-10-05) — because the console is built to render every key of its catalogue, and a spec walks the
+lockout report joined on 2026-09-28, `admin.referral.held` — Support and above, args `[referralId]`,
+routed to *Referrals* in the console — on 2026-10-05, and on 2026-10-06 `admin.order.cash_not_paid` —
+Support and above, args `[orderNumber, amount, orderId]`, opening the order in the console — and
+`admin.payment.refund_without_cancel` — every role, the same args, opening the order) — because the console is built to render every key of its catalogue, and a spec walks the
 C# file so a key added on the server fails the admin build without its five-locale sentence and its
 entry in the console's mirror (`ADMIN_NOTIFICATION_EVENT_KEYS`).
 
@@ -350,6 +352,27 @@ only the cancellation e-mail). All four sit in the
 credit; `orderId` is the deep link only), render on Android and iOS and land in the customer feed. A refund
 re-driven later sends `order.refunded`, keyed on the refund.
 → [Business rules — when the cleaner no-shows](/product/business-rules#when-the-cleaner-cancels-or-no-shows)
+
+### The door non-payment push names what is owed {#cash-not-paid}
+
+When the cleaner reports that the customer did not pay the cash at the door (owner ruling 2026-10-06),
+`ReportCashNotPaid` sends the customer `order.cash_not_paid` with `orderId`, `orderNumber` and `amount`,
+the price owed formatted on the server with its currency's symbol. It is **not mutable**
+(`GetCategoryFor` returns null, [below](#mutability)), and an e-mail goes with it
+([Business rules — when the customer does not pay at the door](/product/business-rules#cash-not-paid)).
+
+| Client | Today |
+|---|---|
+| Android customer app | renders it on the order-updates channel with the order number and the amount; a tap opens **Payments**, not the order, because only Payments can pay a receivable on Android |
+| iOS customer app | both iOS bundles carry `push.order.cash_not_paid.title` / `.body` (`%1$@` the order number, `%2$@` the amount), and the key is in `FcmMessageFactory.ApnsDisplayMap` with `[orderNumber, amount]` (since 2026-10-06, `45e872263`), so the lock screen shows the order number and the amount owed; a tap opens Payments |
+| The customer feed | not in `NotificationFeedEventKeys.Customer`, so no row is listed or counted |
+
+It shipped **client-first** ([ADR-0025](/decisions/adr-0025)): the server sent it data-only until both
+iOS apps carried its loc-keys, then added it to the APNs display map with `[orderNumber, amount]` and to
+the pinned lists in `FcmMessageFactoryTests`. It is the fourth key `amount` rides, beside the three
+`order.no_cleaner_*` outcomes. The next step is the customer feed keyset and
+`NotificationFeedEventKeysTests`, once both apps list it in their own feed keysets. The catalogue's
+comment says `orderId` deep-links to the order *where it is paid*; both apps open Payments instead.
 
 ### Why the cleaner-assigned event is not the confirmed event {#assigned-vs-confirmed}
 
@@ -453,8 +476,9 @@ The `admin.*` keys also map to null, but they never push; they are the
 Ten keys are deliberately **non-mutable** for a **cleaner**. Six are about a job they have accepted
 or been given; the other four are about the cleaner themselves: a paid invoice, a weekly cap, and the
 registration decision either way. That is the line: a customer may silence almost anything, because the consequence
-of a missed message is theirs. A cleaner not turning up is somebody else's morning. The one customer
-exception is `membership.payment_failed` (owner ruling 2026-09-28).
+of a missed message is theirs. A cleaner not turning up is somebody else's morning. The customer
+exceptions are `membership.payment_failed` (owner ruling 2026-09-28) and `order.cash_not_paid` (owner
+ruling 2026-10-06).
 
 | Who | Event | Key | Why it cannot be silenced |
 |---|---|---|---|
@@ -469,6 +493,7 @@ exception is `membership.payment_failed` (owner ruling 2026-09-28).
 | Cleaner | Your registration was approved | `employee.registration_approved` | The one answer a cleaner on the registration lock is waiting for; a mute would leave them on a stale *under review* screen ([why it is a push](#registration-decided)) |
 | Cleaner | Your registration was rejected | `employee.registration_rejected` | As for the approval |
 | Customer | A Plus renewal payment failed | `membership.payment_failed` | A card Stripe keeps retrying while the benefits are paused is not a notice the member may switch off |
+| Customer | The cleaner reports the cash was not paid at the door | `order.cash_not_paid` | A debt that refuses every new booking is not a notice the customer may switch off; it is also how they learn of a report they may dispute ([above](#cash-not-paid)) |
 
 The three reminders are non-mutable **on the owner's ruling** (2026-09-15, Q-PUSH-01 — the evening
 digest included; it was the one the ADR had escalated), on the same reasoning as the first two rows and

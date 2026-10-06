@@ -37,6 +37,7 @@ public class FcmMessageFactoryTests
         { "order.new_available", new Dictionary<string, string> { ["count"] = "3" }, ["3"] },
         { "order.assignment_cancelled", new Dictionary<string, string> { ["orderId"] = "ord-1", ["orderNumber"] = "A-2201" }, ["A-2201"] },
         { "order.no_cleaner_refunded", new Dictionary<string, string> { ["orderId"] = "ord-1", ["orderNumber"] = "A-1042", ["amount"] = "250 Kč" }, ["A-1042", "250 Kč"] },
+        { "order.cash_not_paid", new Dictionary<string, string> { ["orderId"] = "ord-1", ["orderNumber"] = "A-1042", ["amount"] = "1 500 Kč" }, ["A-1042", "1 500 Kč"] },
         { "payroll.invoice_paid", new Dictionary<string, string> { ["invoiceId"] = "inv-1" }, [] },
         { "dispute.reply", new Dictionary<string, string> { ["orderId"] = "ord-1", ["disputeId"] = "dsp-1" }, [] },
         { "loyalty.tier_upgrade", new Dictionary<string, string> { ["tier"] = "SilverMopper" }, [] },
@@ -74,6 +75,7 @@ public class FcmMessageFactoryTests
         { "order.new_available", new Dictionary<string, string> { ["count"] = "3" } },
         { "order.assignment_cancelled", new Dictionary<string, string> { ["orderId"] = "ord-1", ["orderNumber"] = "A-2201" } },
         { "order.no_cleaner_refunded", new Dictionary<string, string> { ["orderId"] = "ord-1", ["orderNumber"] = "A-1042", ["amount"] = "250 Kč" } },
+        { "order.cash_not_paid", new Dictionary<string, string> { ["orderId"] = "ord-1", ["orderNumber"] = "A-1042", ["amount"] = "1 500 Kč" } },
         { "payroll.invoice_paid", new Dictionary<string, string> { ["invoiceId"] = "inv-1" } },
         { "dispute.reply", new Dictionary<string, string> { ["orderId"] = "ord-1", ["disputeId"] = "dsp-1" } },
         { "loyalty.tier_upgrade", new Dictionary<string, string> { ["tier"] = "SilverMopper" } },
@@ -329,8 +331,8 @@ public class FcmMessageFactoryTests
     }
 
     // ── TC-PUSH-APNS-5 — S6 tripwire: lock-screen args stay inside the closed allowlist ──────
-    // {orderNumber, count} plus `amount` since owner ruling 2026-09-13: a server-
-    // formatted money figure with its currency's symbol, carried only by the order.no_cleaner_* outcomes.
+    // {orderNumber, count} plus `amount` since owner ruling 2026-09-13: a server-formatted money figure
+    // with its currency's symbol, carried only by the order.no_cleaner_* outcomes and order.cash_not_paid.
 
     [Fact]
     public void Display_Map_Arg_Names_Stay_Within_The_OrderNumber_Count_Amount_Allowlist()
@@ -346,7 +348,7 @@ public class FcmMessageFactoryTests
     }
 
     [Fact]
-    public void Only_The_No_Cleaner_Outcomes_Carry_The_Amount_Slot_And_It_Follows_The_Order_Number()
+    public void Only_The_No_Cleaner_Outcomes_And_The_Door_Default_Carry_The_Amount_Slot_And_It_Follows_The_Order_Number()
     {
         var carriers = FcmMessageFactory.ApnsDisplayMap
             .Where(entry => entry.Value.Contains("amount"))
@@ -355,7 +357,7 @@ public class FcmMessageFactoryTests
             .ToList();
 
         Assert.Equal(
-            ["order.no_cleaner_nothing_charged", "order.no_cleaner_refund_pending", "order.no_cleaner_refunded"],
+            ["order.cash_not_paid", "order.no_cleaner_nothing_charged", "order.no_cleaner_refund_pending", "order.no_cleaner_refunded"],
             carriers);
         Assert.All(carriers, key => Assert.Equal(["orderNumber", "amount"], FcmMessageFactory.ApnsDisplayMap[key]));
     }
@@ -381,6 +383,7 @@ public class FcmMessageFactoryTests
             "order.assignment_cancelled",
             "order.assignment_revoked",
             "order.cancelled",
+            "order.cash_not_paid",
             "order.cleaner_assigned",
             "order.completed",
             "order.in_progress",

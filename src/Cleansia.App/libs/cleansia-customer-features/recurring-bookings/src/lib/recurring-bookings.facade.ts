@@ -79,9 +79,11 @@ const ONE_DAY_MS = 24 * 60 * 60 * 1000;
 /** Cash refusals the customer answers on this form by paying by card. */
 const CASH_REFUSALS: readonly string[] = [
   'order.cash_not_available',
-  'order.cash_unpaid_receivable',
   'order.cash_open_bookings_limit_reached',
 ];
+
+/** How the server refuses a schedule of either tender while the customer owes an amount. */
+const UNPAID_RECEIVABLE = 'order.unpaid_receivable';
 
 function priceOf(quoted: QuoteOrderResponse): QuotedPrice {
   return {
@@ -166,6 +168,8 @@ export class RecurringBookingsFacade extends UnsubscribeControlDirective {
    * are not paid in). The preference is kept until the customer chooses to save without it.
    */
   readonly preferredCleanerRefused = signal(false);
+  /** The server refused the last save because the customer owes an amount from an earlier booking. */
+  readonly owesUnpaidAmount = signal(false);
   /** The server refuses a start on or after the schedule's end date, which this form cannot edit. */
   readonly latestStartsOn = computed(() => {
     const endsOn = this.formData().endsOn;
@@ -929,6 +933,7 @@ export class RecurringBookingsFacade extends UnsubscribeControlDirective {
     this.formCrew.set(null);
     this.cashCleared.set(false);
     this.preferredCleanerRefused.set(false);
+    this.owesUnpaidAmount.set(false);
     this.submitAttempted.set(false);
     this.loadedSelectionUnjudged.set(false);
     this.formData.set({ ...RECURRING_WIZARD_INITIAL_DATA });
@@ -1029,6 +1034,7 @@ export class RecurringBookingsFacade extends UnsubscribeControlDirective {
       : (d.preferredEmployeeId ?? undefined);
 
     this.preferredCleanerRefused.set(false);
+    this.owesUnpaidAmount.set(false);
     this.submitting.set(true);
     try {
       if (paymentType === PaymentType.Cash && !(await this.cashConfirmedForForm())) return false;
@@ -1064,6 +1070,10 @@ export class RecurringBookingsFacade extends UnsubscribeControlDirective {
     } catch (error: unknown) {
       // The interceptor has already said why; a generic toast would replace that sentence.
       const code = extractApiErrorCode(error);
+      if (code === UNPAID_RECEIVABLE) {
+        this.owesUnpaidAmount.set(true);
+        return false;
+      }
       if (code && CASH_REFUSALS.includes(code)) {
         this.dropCash(false);
         return false;

@@ -24,7 +24,8 @@ namespace Cleansia.Tests.Features.Payments;
 /// What a customer owes on an order is settled through the webhook (owner ruling 2026-09-28, decision 18):
 /// a paid pay link or a successful off-session charge marks the receivable paid under its own company and
 /// asks for its fee receipt, and never touches the order's sale; a paid lockout asks for no crew pay, which
-/// its confirmation already asked for; a second payment of a receivable already paid is refunded in full; a
+/// its confirmation already asked for; a second payment of a receivable already paid, or of a door price
+/// recorded as paid in cash, is refunded in full; a
 /// declined off-session charge, or one the bank wants authenticated, e-mails the customer a pay link for the
 /// amount and records it; a receivable no longer open is left alone.
 /// </summary>
@@ -168,6 +169,79 @@ public class ReceivableWebhookTests
             It.IsAny<string>()), Times.Never);
     }
 
+    /// <summary>
+    /// The cleaner was paid when they reported that the customer did not pay at the door, under the same
+    /// outbox key a second request would collide on.
+    /// </summary>
+    [Fact]
+    public async Task A_Paid_Unpaid_Cash_Receivable_Asks_For_Its_Fee_Receipt_And_No_Crew_Pay()
+    {
+        var order = _receivable.Order!;
+        order.TenantId = TenantId;
+        order.AddAssignedEmployee(OrderEmployee.Create(
+            order, ValidatorTestHelpers.BuildEmployee("emp-door", ContractStatus.Approved)));
+        var unpaidCash = Receivable.ForUnpaidCash(order);
+        unpaidCash.TenantId = TenantId;
+        typeof(Receivable).GetProperty(nameof(Receivable.Order))!.SetValue(unpaidCash, order);
+        _receivables
+            .Setup(r => r.GetByIdIgnoringTenantAsync(unpaidCash.Id, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(unpaidCash);
+
+        var result = await DeliverAsync(PayLinkCompleted("evt_link_door", unpaidCash.Id, "pi_door"));
+
+        Assert.True(result.IsSuccess);
+        Assert.True(unpaidCash.IsPaid);
+        Assert.Equal(PaymentStatus.Pending, order.PaymentStatus);
+        _pending.Verify(p => p.Enqueue(
+            QueueNames.GenerateReceipt,
+            It.Is<QueueEnvelope<GenerateReceiptMessage>>(e => e.Payload.ReceivableId == unpaidCash.Id),
+            MessageKeys.FeeReceipt(unpaidCash.Id)), Times.Once);
+        _pending.Verify(p => p.Enqueue(
+            QueueNames.CalculateOrderPay,
+            It.IsAny<QueueEnvelope<CalculateOrderPayMessage>>(),
+            It.IsAny<string>()), Times.Never);
+    }
+
+    /// <summary>
+    /// An administrator recorded the door price as paid in cash after all, which closed its debt. A pay link
+    /// paid after that is the same price a second time, so it is refunded in full and the debt stays closed.
+    /// </summary>
+    [Fact]
+    public async Task A_Pay_Link_Payment_Of_A_Door_Price_Recorded_As_Paid_In_Cash_Is_Refunded_In_Full()
+    {
+        var order = _receivable.Order!;
+        order.MarkCashCollected("emp-door", DateTime.UtcNow.AddHours(-1), 1500m);
+        var unpaidCash = UnpaidCashOn(order);
+        unpaidCash.WriteOff("admin-door", AdminRecordCashReceived.PaidInCashNote, DateTimeOffset.UtcNow);
+
+        var result = await DeliverAsync(PayLinkCompleted("evt_link_after_cash", unpaidCash.Id, "pi_after_cash"));
+
+        Assert.True(result.IsSuccess);
+        _stripe.Verify(c => c.RefundPaymentIntentAsync(
+            "pi_after_cash", 1500m, $"refund:receivable:{unpaidCash.Id}:pi_after_cash", It.IsAny<CancellationToken>()), Times.Once);
+        _stripe.VerifyNoOtherCalls();
+        Assert.Equal((ReceivableStatus.WrittenOff, (string?)null), (unpaidCash.Status, unpaidCash.StripePaymentIntentId));
+        _pending.VerifyNoOtherCalls();
+    }
+
+    /// <summary>A door price a manager wrote off and the customer then paid anyway is paid: the money is the company's.</summary>
+    [Fact]
+    public async Task A_Door_Price_A_Manager_Wrote_Off_And_The_Customer_Paid_Anyway_Is_Paid()
+    {
+        var unpaidCash = UnpaidCashOn(_receivable.Order!);
+        unpaidCash.WriteOff("manager-door", "Wrong report", DateTimeOffset.UtcNow);
+
+        var result = await DeliverAsync(PayLinkCompleted("evt_link_after_write_off", unpaidCash.Id, "pi_after_write_off"));
+
+        Assert.True(result.IsSuccess);
+        Assert.Equal((ReceivableStatus.Paid, "pi_after_write_off"), (unpaidCash.Status, unpaidCash.StripePaymentIntentId));
+        _stripe.VerifyNoOtherCalls();
+        _pending.Verify(p => p.Enqueue(
+            QueueNames.GenerateReceipt,
+            It.IsAny<QueueEnvelope<GenerateReceiptMessage>>(),
+            MessageKeys.FeeReceipt(unpaidCash.Id)), Times.Once);
+    }
+
     [Fact]
     public async Task A_Successful_Off_Session_Charge_Settles_Its_Receivable_And_Leaves_The_Orders_Sale_Alone()
     {
@@ -263,6 +337,17 @@ public class ReceivableWebhookTests
         Assert.True(_receivable.IsOpen);
         _stripe.VerifyNoOtherCalls();
         _pending.VerifyNoOtherCalls();
+    }
+
+    private Receivable UnpaidCashOn(Order order)
+    {
+        var unpaidCash = Receivable.ForUnpaidCash(order);
+        unpaidCash.TenantId = TenantId;
+        typeof(Receivable).GetProperty(nameof(Receivable.Order))!.SetValue(unpaidCash, order);
+        _receivables
+            .Setup(r => r.GetByIdIgnoringTenantAsync(unpaidCash.Id, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(unpaidCash);
+        return unpaidCash;
     }
 
     private static string PayLinkCompleted(string eventId, string receivableId, string paymentIntentId) =>

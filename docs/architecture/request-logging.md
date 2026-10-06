@@ -50,3 +50,43 @@ Not the list. A guard test walks **every wire DTO on all five hosts** and redden
 member is neither matched by the regex, nor on a suppressed route, nor excepted in writing.
 
 It reads the regex itself, so the two cannot drift.
+
+## The query string keeps its names and loses every value {#query-string}
+
+The request line — `[{RequestId}] {Method} {Path}{QueryString} | User | IP | Body`, at Information — used
+to mask only a query value whose name contained *email*. Everything else went out raw. That included the
+guest access token on `GET api/Order/Lookup?token=`, the address a customer types into
+`api/AddressSearch/search?q=`, the home coordinates on the static map the booking wizard draws
+(`api/AddressSearch/map?lat=&lng=`), and an administrator's search for a name, e-mail or phone in the
+paged lists. `IsSensitivePath` suppresses only the body, never the line. On DEV the
+`Cleansia` category logs at Information, so the line reached Application Insights and rode Sentry
+events as a breadcrumb; on production `Cleansia=Warning` hid it, one setting away from live.
+
+**Since 2026-10-06 every value is masked and every name kept**, on all five hosts:
+`QueryParamValueRegex` (`([?&][^=&]*=)[^&]*`) in each `RequestLoggingMiddleware` rewrites the line to
+`GET /api/AddressSearch/map?lat=***REDACTED***&lng=***REDACTED***`. That matches the OpenTelemetry server
+span, which redacts `url.query` values by default. The five copies stay separate on purpose, and the
+request-logging harness runs every assertion against all five, so they cannot drift. Filter and paging
+values are gone from DEV logs with the rest; the names say what was asked. A query segment with no `=`
+(`?<value>`) still prints as written, because the mask starts after `=`; no first-party client sends
+that shape.
+
+**Sentry keeps no query string and only four request headers.** Sentry.AspNetCore copies the raw query
+string and every inbound header but the cookie onto each event and transaction, and `SendDefaultPii =
+false` covers neither. The headers include the client IP (`X-Forwarded-For`), the CSRF token, the device
+id and, behind the App Service front end, headers that carry the original URL. `WithoutRequestDetail` in
+`ConfigureSentry` (`ServiceDefaults/Extensions.cs`), hooked into both `SetBeforeSend` and
+`SetBeforeSendTransaction`, clears the query string and drops every header but `User-Agent`,
+`Content-Type`, `Accept` and `Accept-Language`. It is an allowlist because the platform, not the repo,
+decides which proxy headers arrive; a header someone later needs for triage is added on purpose. The
+route, the path, the request id and the stack trace stay. The Functions worker shares `ConfigureSentry`
+and has no request, so it changes nothing there.
+
+**The other inbound sinks were already closed.** ASP.NET Core's own *Request starting* line, which prints
+the query, is in the `Microsoft.AspNetCore` category, which every host's `appsettings*.json` pins at
+Warning and no deployment overrides. The OpenTelemetry span redacts query values unless an environment
+variable says otherwise, and nothing sets it. HTTP logging and Serilog are not used.
+
+The request line still prints the client IP at Information on every host. The S6 list does not name it,
+and whether it stays is an open question for the owner.
+→ [Security rules — S6](/architecture/security-rules#inbound-query)

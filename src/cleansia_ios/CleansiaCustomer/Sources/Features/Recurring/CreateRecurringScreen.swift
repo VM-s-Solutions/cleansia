@@ -5,6 +5,7 @@ struct CreateRecurringScreen: View {
     @StateObject private var vm: CreateRecurringViewModel
     @State private var showAddressManager = false
     let onCreated: () -> Void
+    let onOpenPayments: () -> Void
 
     private let savedAddressRepository: SavedAddressRepository
     private let geocoding: GeocodingService
@@ -21,7 +22,8 @@ struct CreateRecurringScreen: View {
         mapProvider: MapProvider,
         serviceArea: ServiceAreaProvider? = nil,
         snackbar: SnackbarController,
-        onCreated: @escaping () -> Void
+        onCreated: @escaping () -> Void,
+        onOpenPayments: @escaping () -> Void = {}
     ) {
         _vm = StateObject(wrappedValue: CreateRecurringViewModel(
             sourceOrderId: sourceOrderId,
@@ -41,6 +43,7 @@ struct CreateRecurringScreen: View {
         self.serviceArea = serviceArea
         self.snackbar = snackbar
         self.onCreated = onCreated
+        self.onOpenPayments = onOpenPayments
     }
 
     private var title: String {
@@ -155,6 +158,10 @@ struct CreateRecurringScreen: View {
             isPresented: $showAddressManager,
             onDismiss: { Task { await vm.reloadAddresses() } },
             content: { addressManager }
+        )
+        .unpaidReceivableAlert(
+            isPresented: Binding(get: { vm.owesMoney }, set: { if !$0 { vm.dismissOwesMoney() } }),
+            onPay: onOpenPayments
         )
     }
 

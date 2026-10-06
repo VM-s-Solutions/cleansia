@@ -470,7 +470,11 @@
 
     <!-- ================= RIGHT ================= -->
     <div class="order-detail__col">
+      @if (confirmRefusedForDebt()) {
+      <cleansia-customer-amount-due />
+      } @else {
       <cleansia-customer-amount-due [orderId]="order()!.id ?? null" />
+      }
 
       <!-- What it cost, line by line. -->
       <section class="order-detail__card">
@@ -606,6 +610,12 @@
         <p class="order-detail__policy" role="status">
           <i class="pi pi-mobile"></i>
           {{ 'pages.order_detail.recurring_confirm.begun_in_app' | translate }}
+        </p>
+        }
+        @if (confirmRefusedForDebt()) {
+        <p class="order-detail__policy" role="status" data-spec-recurring-owed>
+          <i class="pi pi-exclamation-circle"></i>
+          {{ 'pages.order_detail.recurring_confirm.owed' | translate }}
         </p>
         }
 

@@ -703,7 +703,7 @@
         },
         "record_cash": {
           "action": "Zaznamenať prijatú hotovosť",
-          "context": "Použite, keď upratovač prevzal hotovosť, ale nemohol ju zaznamenať vo svojej aplikácii. Objednávka sa tým stane zaplatenou, takže ju upratovač môže dokončiť; ak už je dokončená, účtenka sa vystaví hneď.",
+          "context": "Použite, keď upratovač prevzal hotovosť, ale nemohol ju zaznamenať vo svojej aplikácii. Objednávka sa tým stane zaplatenou, takže ju upratovač môže dokončiť; ak už je dokončená, účtenka sa vystaví hneď. Ak upratovač nahlásil, že zákazník nezaplatil, týmto sa zároveň uzavrie suma, ktorú zákazník dlhuje; keď ju zákazník zaplatil online, hotovosť zaznamenať nemožno.",
           "no_cleaner": "Na tejto zakázke nikto nie je. Najprv na ňu priraďte upratovača, ktorý hotovosť prevzal.",
           "cleaner": "Upratovač, ktorý hotovosť prevzal",
           "received_at": "Prijaté",
@@ -2874,6 +2874,10 @@
             "lockout_reported": {
               "title": "Upratovač sa nemôže dostať dnu",
               "body": "Upratovač pri objednávke {{orderNumber}}, objednanej na {{cleaningDateTime}}, hlási, že sa nemôže dostať dnu. Skontrolujte fotografiu vchodu a jeho pokusy o volanie; ak ho zákazník nepustil dnu, zrušte ju ako nesprístupnenie zákazníkom."
+            },
+            "cash_not_paid": {
+              "title": "Zákazník nezaplatil v hotovosti",
+              "body": "Upratovač pri objednávke {{orderNumber}} hlási, že mu zákazník nezaplatil {{amount}} v hotovosti. Objednávka je dokončená a upratovač dostane odmenu; zákazník teraz dlhuje {{amount}} a kým nezaplatí, nemôže objednávať. Ak hlásenie nie je pravdivé, manažér dlh odpíše; ak zákazník upratovačovi zaplatí dodatočne, zaznamenajte pri objednávke prijatú hotovosť."
             }
           },
           "dispute": {
@@ -2902,6 +2906,10 @@
             "refund_needs_retry": {
               "title": "Vrátenie peňazí treba zopakovať",
               "body": "Vrátenie {{amount}} pri objednávke {{orderNumber}} už deň neprešlo a automaticky sa neopakuje. Skontrolujte ho v Stripe a potom ho zopakujte z reklamácie alebo z objednávky."
+            },
+            "refund_without_cancel": {
+              "title": "Vrátenie peňazí bolo vyžiadané pre zrušenie, ktoré neprebehlo",
+              "body": "Vrátenie {{amount}} pri objednávke {{orderNumber}} bolo v Stripe vyžiadané pre zrušenie, ktoré neprebehlo, a automaticky sa neopakuje. Ak je rezervácia stále otvorená, zrušte objednávku; ak upratovanie prebehlo, nevracajte pri nej platbu: najprv toto vrátenie doriešte v Stripe."
             }
           },
           "erasure": {
@@ -3271,6 +3279,7 @@
       "action_failed": "Akciu s reklamáciou sa nepodarilo dokončiť. Skúste to znova.",
       "already_exists": "Reklamácia pre túto objednávku už existuje",
       "already_resolved": "Táto reklamácia už bola vyriešená a nedá sa zmeniť.",
+      "refund_pending": "Vrátenie peňazí na kartu pri tejto reklamácii ešte neprešlo, takže reklamáciu nemožno uzavrieť ani vyriešiť bez neho. Skontrolujte vrátenie v Stripe a potom reklamáciu znova vyriešte so sumou na vrátenie, tým sa vrátenie zopakuje.",
       "invalid_refund_amount": "Neplatná suma vrátenia",
       "invalid_status_transition": "Táto zmena stavu nie je pre aktuálny stav reklamácie povolená.",
       "max_length_exceeded": "Bola prekročená maximálna dĺžka",

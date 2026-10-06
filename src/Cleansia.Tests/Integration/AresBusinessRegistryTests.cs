@@ -267,6 +267,33 @@ public class AresBusinessRegistryTests
     }
 
     /// <summary>
+    /// A register that answers 200 with a body nobody can read is not retried, and the refusal is not a
+    /// blip: the registry's own line is the one Error, so it reaches Sentry as its own event.
+    /// </summary>
+    [Theory]
+    [InlineData("application/json")]
+    [InlineData("text/html")]
+    public async Task Under_The_Host_Defaults_An_Unreadable_Reply_Is_One_Error_And_It_Is_The_Registrys(string mediaType)
+    {
+        var logs = new CapturingLoggerProvider();
+        var handler = new StubHandler(() => new HttpResponseMessage(HttpStatusCode.OK)
+        {
+            Content = new StringContent("<html>maintenance</html>", Encoding.UTF8, mediaType),
+        });
+        await using var provider = HostComposition(handler, logs);
+        await using var scope = provider.CreateAsyncScope();
+
+        var record = await scope.ServiceProvider.GetRequiredService<IBusinessRegistry>()
+            .LookupAsync("CZE", Ico, CancellationToken.None);
+
+        Assert.Equal(BusinessRegistryRecord.Unavailable, record);
+        Assert.Single(handler.Urls);
+        var error = Assert.Single(logs.Entries, e => e.Level >= LogLevel.Error);
+        Assert.Equal(AresBusinessRegistry.UnavailableEvent.Id, error.EventId);
+        Assert.NotEqual("Polly", error.Category);
+    }
+
+    /// <summary>
     /// The HTTP client's request logging writes the URL at Information, and an ARES URL ends in the cleaner's
     /// IČO. The registry's own refusal is still logged, so the capture is known to be listening.
     /// </summary>

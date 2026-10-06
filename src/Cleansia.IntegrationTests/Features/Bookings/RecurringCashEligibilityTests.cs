@@ -12,6 +12,7 @@ using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Internationalization;
 using Cleansia.Core.Domain.Memberships;
 using Cleansia.Core.Domain.Orders;
+using Cleansia.Core.Domain.Payments;
 using Cleansia.Core.Domain.Repositories;
 using Cleansia.Core.Domain.Services;
 using Cleansia.Core.Domain.Users;
@@ -219,6 +220,60 @@ public class RecurringCashEligibilityTests(PostgresContainerFixture fixture) : B
                 Assert.Equal(PaymentStatus.Pending, later.PaymentStatus);
             },
             transactional: false);
+    }
+
+    /// <summary>
+    /// Owner ruling 2026-10-06: an owner who owes any company creates no visit from any schedule, so is
+    /// never asked to confirm one; the schedules are kept and the next sweep after the write-off resumes them.
+    /// </summary>
+    [Fact]
+    public async Task The_Sweep_Creates_No_Visit_For_An_Owner_Owing_Another_Company_And_Resumes_Once_It_Is_Written_Off()
+    {
+        await TestMethod(
+            setup: CustomerSession,
+            arrange: async context =>
+            {
+                await SeedAsync()(context);
+                await SeedOpenReceivableAsync(context, TestTenants.Second);
+            },
+            act: async provider =>
+            {
+                var mediator = provider.GetRequiredService<IMediator>();
+                var owing = await mediator.Send(new MaterializeRecurringBookings.Command());
+
+                var context = provider.GetRequiredService<CleansiaDbContext>();
+                var receivable = await context.Receivables.IgnoreQueryFilters().SingleAsync(r => r.UserId == CustomerUserId);
+                receivable.WriteOff("admin-rcash", "Goodwill", DateTimeOffset.UtcNow);
+                await context.CommitAsync(CancellationToken.None);
+
+                var settled = await mediator.Send(new MaterializeRecurringBookings.Command());
+                return (owing, settled);
+            },
+            assert: async (context, outcome) =>
+            {
+                var (owing, settled) = outcome;
+                Assert.Equal(0, owing.Value.TemplatesFailed);
+                Assert.Equal(0, owing.Value.OrdersCreated);
+
+                Assert.Equal(0, settled.Value.TemplatesFailed);
+                Assert.Equal(1, settled.Value.OrdersCreated);
+                Assert.Single(await OccurrencesOf(context, EligibleTemplateId));
+            },
+            transactional: false);
+    }
+
+    private static async Task SeedOpenReceivableAsync(CleansiaDbContext context, string tenantId)
+    {
+        var cancelled = Order.Create(
+            "Recurring Customer", CustomerEmail, "+420777444555",
+            Address.Create("Opakovana 3", "Praha", "11000", Czechia),
+            rooms: 2, bathrooms: 1, DateTime.UtcNow.Date.AddDays(-2).AddHours(9), PaymentType.Cash, 900m, Czk,
+            PaymentStatus.Pending, userId: CustomerUserId, cancellationTerms: BookingPolicy.CancellationTermsAtBooking);
+        cancelled.AddOrderStatus(OrderStatusTrack.Create(OrderStatus.Cancelled, cancelled));
+        context.Orders.Add(cancelled);
+        context.Receivables.Add(Receivable.ForCashCancellationFee(cancelled, 225m));
+        StampUnstampedAdded(context, tenantId);
+        await context.CommitAsync(CancellationToken.None);
     }
 
     private static async Task<List<Order>> OccurrencesOf(CleansiaDbContext context, string templateId) =>

@@ -4240,66 +4240,66 @@
         "cs": {
           "stringUnit": {
             "state": "translated",
-            "value": "Už máte nejvyšší povolený počet nezaplacených objednávek v hotovosti. Zvolte kartu, nebo hotovost znovu, až bude některá z nich zaplacena."
+            "value": "Už máte nejvyšší povolený počet nadcházejících objednávek v hotovosti. Hotovost se platí až po úklidu, takže se každá počítá, dokud není uklizeno a zaplaceno. Tuto objednávku zaplaťte kartou, nebo hotovost zvolte znovu, až bude některá z nich zaplacena."
           }
         },
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "You already have as many unpaid cash bookings as allowed. Choose card, or pay in cash again once one of them is paid."
+            "value": "You already have as many upcoming cash bookings as allowed. Cash is paid after the cleaning, so each one counts until it has been cleaned and paid. Pay this booking by card, or choose cash again once one of them has been paid."
           }
         },
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "У вас уже максимально допустимое количество неоплаченных заказов наличными. Выберите карту или снова наличные, когда один из них будет оплачен."
+            "value": "У вас уже максимально допустимое количество предстоящих заказов с оплатой наличными. Наличными платят после уборки, поэтому каждый из них учитывается, пока уборка не выполнена и не оплачена. Оплатите этот заказ картой или снова выберите наличные, когда один из них будет оплачен."
           }
         },
         "sk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Už máte najvyšší povolený počet nezaplatených objednávok v hotovosti. Zvoľte kartu alebo hotovosť znova, keď bude niektorá z nich zaplatená."
+            "value": "Už máte najvyšší povolený počet nadchádzajúcich objednávok v hotovosti. Hotovosť sa platí až po upratovaní, takže sa každá počíta, kým nie je upratané a zaplatené. Túto objednávku zaplaťte kartou alebo hotovosť zvoľte znova, keď bude niektorá z nich zaplatená."
           }
         },
         "uk": {
           "stringUnit": {
             "state": "translated",
-            "value": "У вас уже максимально дозволена кількість неоплачених замовлень готівкою. Оберіть картку або знову готівку, коли одне з них буде оплачено."
+            "value": "У вас уже максимально дозволена кількість майбутніх замовлень з оплатою готівкою. Готівкою платять після прибирання, тож кожне з них враховується, доки прибирання не виконано й не оплачено. Оплатіть це замовлення карткою або знову оберіть готівку, коли одне з них буде оплачено."
           }
         }
       }
     },
-    "error.order.cash_unpaid_receivable": {
+    "error.order.unpaid_receivable": {
       "extractionState": "manual",
       "localizations": {
         "cs": {
           "stringUnit": {
             "state": "translated",
-            "value": "Máte u nás nezaplacenou částku, například storno poplatek. Zatím zaplaťte kartou; v hotovosti budete moci platit znovu, až ji uhradíte v profilu v sekci Platby."
+            "value": "Máte u nás nezaplacenou částku, například nezaplacený úklid nebo storno poplatek. Dokud ji neuhradíte, nemůžete vytvořit novou objednávku; objednávky, které už máte, zůstávají. Uhradíte ji v profilu v sekci Platby."
           }
         },
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "You have an unpaid amount with us, such as a cancellation fee. Pay by card for now; cash is available again once you settle it under Payments in your profile."
+            "value": "You have an unpaid amount with us, such as a cleaning you did not pay for or a cancellation fee. You can't make a new booking until it is paid; bookings you already have are kept. Pay it under Payments in your profile."
           }
         },
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "У вас есть неоплаченная сумма, например плата за отмену. Пока оплатите картой; наличными можно будет платить снова, когда вы погасите её в профиле в разделе Платежи."
+            "value": "У вас есть неоплаченная сумма, например неоплаченная уборка или плата за отмену. Пока она не оплачена, новый заказ оформить нельзя; заказы, которые у вас уже есть, сохраняются. Оплатить её можно в профиле в разделе Платежи."
           }
         },
         "sk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Máte u nás nezaplatenú sumu, napríklad stornovací poplatok. Zatiaľ zaplaťte kartou; v hotovosti budete môcť platiť znova, keď ju uhradíte v profile v sekcii Platby."
+            "value": "Máte u nás nezaplatenú sumu, napríklad nezaplatené upratovanie alebo stornovací poplatok. Kým ju neuhradíte, nemôžete vytvoriť novú objednávku; objednávky, ktoré už máte, zostávajú. Uhradíte ju v profile v sekcii Platby."
           }
         },
         "uk": {
           "stringUnit": {
             "state": "translated",
-            "value": "У вас є неоплачена сума, наприклад плата за скасування. Поки що оплатіть карткою; готівкою можна буде платити знову, коли ви сплатите її в профілі в розділі Платежі."
+            "value": "У вас є неоплачена сума, наприклад неоплачене прибирання або плата за скасування. Доки її не сплачено, нове замовлення оформити не можна; замовлення, які у вас уже є, зберігаються. Сплатити її можна в профілі в розділі Платежі."
           }
         }
       }

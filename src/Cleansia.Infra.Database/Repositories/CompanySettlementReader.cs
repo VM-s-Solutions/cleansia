@@ -40,9 +40,14 @@ public sealed class CompanySettlementReader(CleansiaDbContext context, ITenantPr
             .CountAsync(r => r.Status == RefundStatus.Pending, cancellationToken);
         var ordersAwaitingPay = await context.Orders
             .CountAsync(o => o.CurrentStatus == OrderStatus.Completed && !o.EmployeePayCalculated, cancellationToken);
+        // A door price paid online or written off closed the order's money without a sale, so no sale
+        // receipt is ever owed on it; cash recorded later makes it Paid and owed one again.
+        var settledDoorDebts = context.Receivables
+            .Where(r => r.Kind == ReceivableKind.UnpaidCash && r.Status != ReceivableStatus.Open);
         var ordersAwaitingReceipt = await context.Orders
             .CountAsync(
-                o => (o.PaymentType == PaymentType.Cash || o.PaymentStatus == PaymentStatus.Paid)
+                o => (o.PaymentStatus == PaymentStatus.Paid
+                        || (o.PaymentType == PaymentType.Cash && !settledDoorDebts.Any(r => r.OrderId == o.Id)))
                     && o.CurrentStatus != OrderStatus.Cancelled
                     && !receipts.Any(r => r.OrderId == o.Id && r.ReceivableId == null),
                 cancellationToken);

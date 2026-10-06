@@ -35,6 +35,14 @@ struct ProblemDetails: Decodable {
     var firstErrorKey: String? {
         errors?.values.flatMap { $0 }.first { !$0.isEmpty }
     }
+
+    /// The server groups failures by their error code and joins the keys of rules sharing one with "; ", as it
+    /// does for every whole-command rule.
+    var allErrorKeys: [String] {
+        (errors?.values.flatMap { $0 } ?? [])
+            .flatMap { $0.components(separatedBy: "; ") }
+            .filter { !$0.isEmpty }
+    }
 }
 
 /// The backend emits `errors` values as single strings (business errors) or

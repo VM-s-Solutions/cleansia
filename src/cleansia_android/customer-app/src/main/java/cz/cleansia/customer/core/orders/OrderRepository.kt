@@ -19,6 +19,7 @@ import javax.inject.Singleton
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import okhttp3.ResponseBody.Companion.toResponseBody
 
 /**
  * Cache + orchestrator for the user's orders, with additive pagination. `@Singleton`, so it lives for the
@@ -264,10 +265,15 @@ class OrderRepository @Inject constructor(
         // the surfacing ViewModel shows the identical string. The 401 object
         // would drop that message, so it folds into the message-carrying
         // [ApiError.Unknown] alongside the generic fallback.
-        val message = ApiErrorParser.parseToUserMessage(appContext, errorBody, httpCode)
+        val raw = runCatching { errorBody?.string() }.getOrNull()
+        val message = ApiErrorParser.parseToUserMessage(appContext, raw?.toResponseBody(), httpCode)
         val error = when (httpCode) {
             404 -> ApiError.NotFound(message)
-            400 -> ApiError.BadRequest(message)
+            400 -> ApiError.BadRequest(
+                message,
+                validationErrors = ApiErrorParser.errorsByField(raw),
+                errorKey = ApiErrorParser.firstErrorKey(raw),
+            )
             in 500..599 -> ApiError.Server(statusCode = httpCode, message = message)
             else -> ApiError.Unknown(message)
         }

@@ -1,10 +1,12 @@
 using Cleansia.Core.AppServices.Auditing;
 using Cleansia.Core.AppServices.Common;
+using Cleansia.Core.AppServices.Features.Disputes;
 using Cleansia.Core.AppServices.Features.Orders;
 using Cleansia.Core.AppServices.Services;
 using Cleansia.Core.AppServices.Services.Interfaces;
 using Cleansia.Core.Clients.Abstractions.Stripe;
 using Cleansia.Core.Domain.Credit;
+using Cleansia.Core.Domain.Disputes;
 using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Internationalization;
 using Cleansia.Core.Domain.Orders;
@@ -21,20 +23,19 @@ namespace Cleansia.Tests.Features.Refunds;
 
 /// <summary>
 /// Random card-and-credit orders taken through partial refunds, card disputes and complaints settled in
-/// credit, then ended by a member's cancellation, an admin's full refund, a no-show or a platform
-/// cancellation while Stripe pays, is unreachable or refuses, and finally re-driven hourly. The real refund
-/// seam and cancellations run over an in-memory ledger in which Stripe keeps what it was first asked on a
-/// key and refuses that key with another amount. What came back, the card refunds Stripe made plus the
-/// credit returned plus the settlements, never passes the price, and an order still paid in full when it
-/// ends gets back the price to the haléř. Once the re-drives have run, every refund Stripe made is on record:
+/// credit by the real dispute resolution, then ended by a member's cancellation, an admin's full refund, a
+/// no-show or a platform cancellation, while Stripe pays, is unreachable, refuses, or pays and never answers,
+/// and a refund Stripe paid may lose its record at any step. Every refund still pending is then retried. The
+/// real refund seam and cancellations run over an in-memory ledger in which Stripe keeps what it was first
+/// asked on a key and refuses that key with another amount, and has no cap of its own, so the platform's
+/// ceilings are what is proven. What came back, the card refunds Stripe made plus the credit returned plus
+/// the settlements, never passes the price, and an order that ends still paid, in full or in part, gets back
+/// the price to the haléř. Once the retries have run, every refund Stripe made is on record:
 /// a retry that asks another amount on a key Stripe already paid is refused there every time.
 /// </summary>
 public sealed class RefundMoneyConservationTests
 {
     private const int Orders = 500;
-
-    // A re-drive reads its row's slice of the sale back from the card amount, which can lose one haléř.
-    private const decimal ReadBackRounding = 0.01m;
 
     [Fact]
     public async Task No_Order_Gives_Back_More_Than_Was_Paid_And_An_Order_Ended_While_Paid_Gives_Back_All_Of_It()
@@ -51,7 +52,7 @@ public sealed class RefundMoneyConservationTests
             {
                 over.Add(world.Describe());
             }
-            else if (world.MustGiveBackAll && world.Paid - world.Received > ReadBackRounding)
+            else if (world.MustGiveBackAll && world.Received < world.Paid)
             {
                 under.Add(world.Describe());
             }
@@ -80,6 +81,7 @@ public sealed class RefundMoneyConservationTests
         public string? DisputeId { get; init; }
         public decimal Amount { get; set; }
         public RefundStatus Status { get; set; }
+        public required DateTimeOffset ClaimedOn { get; init; }
     }
 
     private sealed class World
@@ -175,49 +177,40 @@ public sealed class RefundMoneyConservationTests
         public async Task RunAsync()
         {
             var ending = (Ending)_random.Next(4);
-            var answer = ending == Ending.PlatformCancellation
-                ? (_random.Next(2) == 0 ? StripeAnswer.Pays : StripeAnswer.Refuses)
-                : RandomAnswer(mayTakeTheMoney: true);
+            var answer = RandomAnswer();
             var loseTheRecord = ending == Ending.AdminFullRefund && answer == StripeAnswer.Pays && _random.Next(2) == 0;
 
-            // A refund Stripe paid without it being recorded is counted by no other refund's ceiling until its
-            // own retry records it, so here it is only ever the last money in flight on the order.
-            var earlierAnswers = answer == StripeAnswer.PaysThenTimesOut || loseTheRecord
-                ? () => StripeAnswer.Pays
-                : (Func<StripeAnswer>)(() => RandomAnswer(mayTakeTheMoney: false));
             for (var n = _random.Next(4); n > 0; n--)
             {
                 switch (_random.Next(3))
                 {
                     case 0:
-                        Settle();
+                        await SettleAsync();
                         break;
                     case 1:
-                        await RefundAsync(
+                        await EarlierRefundAsync(
                             new RefundRequest(Order.Id, Whole(1, Paid), RefundReason.AdminDiscretion, "admin",
-                                RefundRequestId: $"partial-{++_actions}"),
-                            earlierAnswers());
+                                RefundRequestId: $"partial-{++_actions}"));
                         break;
                     default:
-                        await RefundAsync(
+                        await EarlierRefundAsync(
                             new RefundRequest(Order.Id, Whole(1, Paid), RefundReason.DisputeResolution, "admin",
-                                DisputeId: $"dispute-{++_actions}"),
-                            earlierAnswers());
+                                DisputeId: $"dispute-{++_actions}"));
                         break;
                 }
             }
 
-            MustGiveBackAll = Order.PaymentStatus == PaymentStatus.Paid;
-            _steps.Add($"{ending} with Stripe {answer}{(MustGiveBackAll ? " while paid" : "")}");
+            MustGiveBackAll = Order.PaymentStatus is PaymentStatus.Paid or PaymentStatus.PartiallyRefunded;
+            _steps.Add($"{ending} with Stripe {answer}{(MustGiveBackAll ? $" while {Order.PaymentStatus}" : "")}");
             await EndAsync(ending, answer, loseTheRecord);
 
             if (answer is StripeAnswer.Unreachable or StripeAnswer.Refuses && _random.Next(3) == 0)
             {
-                Settle();
+                await SettleAsync();
             }
 
             // The hourly re-drive finishes a cancellation's own refund; any other is retried by the action that
-            // asked for it.
+            // asked for it, as the administrators are asked to.
             for (var round = 0; round < 3; round++)
             {
                 foreach (var row in _rows.Where(r => r.Status == RefundStatus.Pending).ToList())
@@ -262,13 +255,12 @@ public sealed class RefundMoneyConservationTests
                 case Ending.AdminFullRefund:
                 {
                     var full = new RefundRequest(Order.Id, Paid, RefundReason.AdminDiscretion, "admin", RefundRequestId: "full");
-                    _loseNextSucceededRecord = loseTheRecord;
                     if (loseTheRecord)
                     {
                         _steps.Add("record lost");
                     }
 
-                    await RefundAsync(full, answer);
+                    await RefundAsync(full, answer, loseTheRecord);
                     if (_random.Next(2) == 0)
                     {
                         await RefundAsync(full, StripeAnswer.Pays);
@@ -300,7 +292,7 @@ public sealed class RefundMoneyConservationTests
                             Mock.Of<INotificationProducer>(), Mock.Of<ILiveActivityProducer>(),
                             Mock.Of<IExpressWaiverConsumer>(),
                             new GuestOrderAccessTokenIssuer(Mock.Of<IGuestOrderAccessTokenRepository>()),
-                            Mock.Of<IPendingDispatch>())
+                            Mock.Of<IPendingDispatch>(), NullLogger<PlatformOrderCancellation>.Instance)
                         .CancelAsync(Order, "admin", CancelledBy.Admin, null, RefundReason.CustomerCancellation,
                             CancellationToken.None);
                     await uow.CommitAsync();
@@ -309,9 +301,22 @@ public sealed class RefundMoneyConservationTests
             }
         }
 
-        private async Task RefundAsync(RefundRequest request, StripeAnswer answer)
+        private async Task EarlierRefundAsync(RefundRequest request)
+        {
+            var answer = RandomAnswer();
+            var loseTheRecord = answer == StripeAnswer.Pays && _random.Next(4) == 0;
+            if (loseTheRecord)
+            {
+                _steps.Add("record lost");
+            }
+
+            await RefundAsync(request, answer, loseTheRecord);
+        }
+
+        private async Task RefundAsync(RefundRequest request, StripeAnswer answer, bool loseTheRecord = false)
         {
             _nextAnswer = answer;
+            _loseNextSucceededRecord = loseTheRecord;
             _asked[RefundService.BuildRefundKey(request)] = request;
             var uow = new UnitOfWork(this);
             try
@@ -329,22 +334,56 @@ public sealed class RefundMoneyConservationTests
             {
                 _steps.Add($"refund {request.Amount} on {RefundService.BuildRefundKey(request)} with Stripe {answer} -> {ex.GetType().Name}");
             }
+            finally
+            {
+                _loseNextSucceededRecord = false;
+            }
         }
 
-        private void Settle()
+        /// <summary>
+        /// A complaint whose customer chose credit, resolved by the production handler. The administrator asks
+        /// for an amount up to what the recorded refunds alone leave, which counts no refund still pending;
+        /// the handler decides whether the order has that much left to give back.
+        /// </summary>
+        private async Task SettleAsync()
         {
-            var outstanding = Paid
+            var recordedOutstanding = Paid
                 - _rows.Where(r => r.Status == RefundStatus.Succeeded).Sum(r => r.Amount)
                 - Sum(CreditTransactionReason.OrderPaymentReturned)
                 - Sum(CreditTransactionReason.DisputeSettlement);
-            if (outstanding < 1m)
+            if (recordedOutstanding < 1m)
             {
                 return;
             }
 
-            var amount = Whole(1, outstanding);
-            _credit.Add(($"dispute-settlement:dispute-{++_actions}", CreditTransactionReason.DisputeSettlement, amount));
-            _steps.Add($"settled {amount} in credit");
+            var amount = Whole(1, recordedOutstanding);
+            var dispute = new Dispute(
+                Order.Id, UserId, DisputeReason.QualityIssue, "Not cleaned.", UserId, DisputeSettlementPreference.Credit)
+            {
+                Id = $"dispute-{++_actions}",
+            };
+            typeof(Dispute).GetProperty(nameof(Dispute.Order))!.SetValue(dispute, Order);
+            var disputes = new Mock<IDisputeRepository>();
+            disputes.Setup(d => d.GetForUpdateAsync(dispute.Id, It.IsAny<CancellationToken>())).ReturnsAsync(dispute);
+            var account = CreditAccount.Create(UserId, Order.CurrencyId, "system");
+            _creditRepository
+                .Setup(c => c.EnsureForUserAsync(UserId, Order.CurrencyId, It.IsAny<CancellationToken>()))
+                .ReturnsAsync(account);
+            var uow = new UnitOfWork(this);
+
+            var result = await new ResolveDispute.Handler(
+                    disputes.Object, Mock.Of<IUserSessionProvider>(s => s.GetUserId() == "admin"),
+                    Mock.Of<IRefundService>(), uow.Refunds.Object, _creditRepository.Object,
+                    Mock.Of<IOrderEmployeePayRepository>(), Mock.Of<ILoyaltyService>(), Mock.Of<INotificationProducer>(),
+                    new AuditContext())
+                .Handle(new ResolveDispute.Command(dispute.Id, amount, "Settled in credit."), CancellationToken.None);
+
+            foreach (var granted in account.Transactions.Where(t => t.Reason == CreditTransactionReason.DisputeSettlement))
+            {
+                _credit.Add((granted.IdempotencyKey, CreditTransactionReason.DisputeSettlement, granted.Amount));
+            }
+
+            _steps.Add(result.IsSuccess ? $"settled {amount} in credit" : $"settling {amount} in credit refused");
         }
 
         private Task Stripe(decimal amount, string key)
@@ -373,7 +412,7 @@ public sealed class RefundMoneyConservationTests
             }
         }
 
-        private StripeAnswer RandomAnswer(bool mayTakeTheMoney) => _random.Next(mayTakeTheMoney ? 10 : 8) switch
+        private StripeAnswer RandomAnswer() => _random.Next(10) switch
         {
             < 6 => StripeAnswer.Pays,
             6 => StripeAnswer.Unreachable,
@@ -408,6 +447,15 @@ public sealed class RefundMoneyConservationTests
                         _tracked.GetValueOrDefault(id) ?? Track(_world._rows.SingleOrDefault(r => r.Id == id)));
                 Refunds.Setup(r => r.GetSucceededRefundTotalForOrderAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
                     .ReturnsAsync(() => _world._rows.Where(r => r.Status == RefundStatus.Succeeded).Sum(r => r.Amount));
+                Refunds.Setup(r => r.GetPendingRefundTotalForOrderAsync(
+                        It.IsAny<string>(), It.IsAny<string?>(), It.IsAny<CancellationToken>()))
+                    .ReturnsAsync((string _, string? exceptRefundKey, CancellationToken _) => _world._rows
+                        .Where(r => r.Status == RefundStatus.Pending && r.Key != exceptRefundKey)
+                        .Sum(r => r.Amount));
+                Refunds.Setup(r => r.GetPendingRefundTotalClaimedBeforeAsync(It.IsAny<Refund>(), It.IsAny<CancellationToken>()))
+                    .ReturnsAsync((Refund refund, CancellationToken _) => _world._rows
+                        .Where(r => r.Status == RefundStatus.Pending && r.ClaimedOn < refund.CreatedOn)
+                        .Sum(r => r.Amount));
                 Refunds.Setup(r => r.Add(It.IsAny<Refund>())).Callback<Refund>(_added.Add);
                 Refunds.Setup(r => r.Rollback()).Callback(_added.Clear);
                 Refunds.Setup(r => r.CommitAsync(It.IsAny<CancellationToken>())).Returns(CommitAsync);
@@ -437,6 +485,8 @@ public sealed class RefundMoneyConservationTests
 
                 foreach (var refund in _added)
                 {
+                    var claimedOn = DateTimeOffset.UnixEpoch.AddSeconds(_world._rows.Count + 1);
+                    refund.Created("system", claimedOn);
                     _world._rows.Add(new RefundRow
                     {
                         Id = refund.Id,
@@ -445,6 +495,7 @@ public sealed class RefundMoneyConservationTests
                         DisputeId = refund.DisputeId,
                         Amount = refund.Amount,
                         Status = refund.Status,
+                        ClaimedOn = claimedOn,
                     });
                     _tracked[refund.Id] = refund;
                 }
@@ -470,6 +521,7 @@ public sealed class RefundMoneyConservationTests
                 var refund = Refund.Create(
                     _world.Order.Id, row.Key, row.Amount, "CZK", row.Reason, RefundSource.AppRefund, disputeId: row.DisputeId);
                 refund.Id = row.Id;
+                refund.Created("system", row.ClaimedOn);
                 if (row.Status == RefundStatus.Succeeded)
                 {
                     refund.MarkSucceeded(stripeRefundId: null, confirmedOnUtc: DateTimeOffset.UtcNow);

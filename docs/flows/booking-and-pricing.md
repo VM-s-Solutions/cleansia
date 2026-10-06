@@ -131,13 +131,48 @@ the choice (the web wizard returns to the payment step); Android shows the refus
 for the customer to change. → [Business rules — paying in cash](/product/business-rules#cash)
 
 **Beyond the crew, the customer's standing decides, and no card is asked for.** A signed-in customer
-with an open receivable is refused `order.cash_unpaid_receivable`, and one holding two open unpaid cash
-bookings `order.cash_open_bookings_limit_reached`; `CreateRecurringBooking`, `UpdateRecurringBooking`
-and `ConfirmRecurringOrder` ask the same. Since 2026-10-04 (owner ruling) a cash booking needs no saved
+holding two cash bookings not yet paid — in practice their upcoming cash bookings — is refused
+`order.cash_open_bookings_limit_reached`; `CreateRecurringBooking`, `UpdateRecurringBooking` and
+`ConfirmRecurringOrder` ask the same. The cap of two is kept (owner ruling 2026-10-06), and it counts
+bookings in flight, not non-payments. Since 2026-10-04 (owner ruling) a cash booking needs no saved
 card and no card is charged: `order.cash_requires_saved_card` is gone, and so is every client's card
 step on the cash path — the web wizard's and schedule form's card capture, Android's guarantee tick
 and setup sheet, and iOS's capture before booking. A cash slide or submit books at once.
 → [Business rules — cash needs no card](/product/business-rules#card-guarantee)
+
+## A customer who owes an amount books nothing {#owes-nothing}
+
+**Owner ruling 2026-10-06.** A signed-in customer with an open receivable in any company — a late
+cancellation fee on a cash booking, a lockout, or a cash price not paid at the door — makes no new
+booking, cash or card, until it is paid through its pay link or written off. Until then the rule refused
+cash only (`order.cash_unpaid_receivable`, retired) and left card open. The refusal is
+`order.unpaid_receivable`, from one read (`CustomerCashStanding.OwesNothingAsync`) at every way in:
+
+| Way in | Where the rule sits |
+|---|---|
+| `CreateOrder`, web and mobile, cash and card | the first rule of the whole-booking chain, before the currency and price rules, so a refused booking has reserved no express waiver, debited no credit, accepted no promo or referral and opened no Stripe session. It is a whole-command rule, not a `paymentType` one |
+| `CreateRecurringBooking`, `UpdateRecurringBooking` | a whole-command rule, any tender |
+| `ConfirmRecurringOrder`, both tenders | in the handler, on `orderId`, after the lead-time check and before the cash rules — so before the terms consent is recorded and before Stripe is asked |
+| The recurring sweep | creates no visit for an owner who owes; it logs the skip and keeps the schedule, and resumes once the debt is gone |
+
+- **Bookings already made are kept.** A visit created before the debt can be cancelled but not
+  confirmed, and an unconfirmed visit is retracted an hour before its slot without a fee.
+- **A guest is not matched.** The web guest checkout is prepaid by card, and matching it by e-mail or
+  phone would tell an anonymous caller which addresses owe money.
+- **The way out stays open.** Listing what is owed and opening its pay link are not bookings, and neither
+  are deleting a schedule or pausing it, which are not refused.
+- **A debt owed to a company frozen for archive does not count** (since 2026-10-06). Its books refuse both
+  the pay link's write and a write-off, so `OwesNothingAsync` and the customer's list of what is owed
+  leave out receivables of a company whose `ArchiveRequestedOn` is set, as the off-session charge sweep
+  already did; otherwise such a debt would refuse the customer for good.
+- **The clients turn the refusal into a way to pay.** The customer web keeps the chosen way to pay —
+  card or cash — and returns to the payment step with the list of everything owed, *Pay now* and the
+  parked draft; the schedule form and the order page's visit confirmation show the same list. Android and
+  iOS open a dialog with *Pay now* from the booking sheet, the schedule form (create and edit) and the
+  visit confirmation, which goes to Profile → Payments. Each finds the key among every key the refusal
+  carries, because whole-booking rules share one wire code and can arrive `; `-joined.
+
+→ [Business rules — what a customer owes](/product/business-rules#receivables)
 
 ## The booking leaves a row, and so does a refused one
 
@@ -347,6 +382,8 @@ time and the express window still apply to the exact selected instant, including
 | A deactivated service or package selected by id, from an out-of-date app or an *Order again* sent before the catalogue loaded | Refused on the quote, the Plus preview, the booking, a new schedule and a schedule edit that adds it, `order.selected_services.invalid` / `order.selected_package.invalid`, since 2026-10-05. A schedule created before the deactivation keeps booking it, and an edit keeps it, and its occurrences are confirmed and paid from their stored price; its card on the web, Android and iOS says it *includes a service no longer offered*, the web card shows no price, and editing it removes the entry with a notice that it is no longer offered. A deactivated service inside a package books with the package → [A deactivated service or package](/product/business-rules#deactivated-catalogue). |
 | Guest, no account | Allowed **on the web**, by card. The order is keyed on the email address, and the customer later finds it via order lookup. The audit row has no user; an admin reaches it from the order's history. The customer mobile host's create route requires a session, so an anonymous call there is `401` and creates nothing → [CreateOrder](/api/orders#createorder). |
 | Cash from a guest, or on a booking that needs two cleaners or more | Refused, `order.cash_not_available`, before anything is reserved, debited or dispatched. 120 booked minutes is one cleaner; 121 is two. |
+| A signed-in customer who owes any company an amount books, cash or card | Refused, `order.unpaid_receivable`, before anything is reserved, debited or dispatched; the web returns to the payment step with what is owed and *Pay now*, the apps open a dialog to Payments. |
+| A guest books with the e-mail of a customer who owes | Accepted: a guest is not matched to an account. |
 | An unknown language code on the booking | Refused (`CreateOrder.Validator` carries the `LanguageValidator`, the `Register` idiom) — the audit row records `language`, and an unrecognised code is not evidence of anything. No shipped client sends one outside the five seeded codes. |
 | A recurring occurrence confirmed | One `customer.order.recurring.confirm` row: the order, the template, the price and currency, the dirtiness level, the payment type, the cleaning time and lead time, and — since 2026-10-03 — the terms tick and the terms and privacy versions it was confirmed under. A confirm refused for the terms writes the failure row with `consent.terms_not_accepted`, as a booking does. A schedule created, edited, paused/resumed or deleted writes a `customer.recurring.*` row with the schedule facts — its level among them — before and after. |
 
@@ -375,7 +412,9 @@ the money:
 A card occurrence begun on the other channel is refused (`InvalidOrderStatusTransition`), so no order
 ever has two capturable payment surfaces; a card occurrence can be confirmed again until its payment
 settles, and a Checkout Session that expires leaves it confirmable. The confirm refuses a cancelled
-occurrence, a paid one, and one closer than 2 h (`order.cleaning_date.below_lead_time`). The
+occurrence, a paid one, one closer than 2 h (`order.cleaning_date.below_lead_time`) and, since
+2026-10-06, any occurrence of a customer who owes an amount (`order.unpaid_receivable`, before the terms
+consent is recorded and before Stripe is asked → [above](#owes-nothing)). The
 stale-occurrence sweep and the confirm reminders select only occurrences still awaiting the customer
 (`Order.AwaitsCustomerConfirmation`: open, `Pending`, and for cash not yet confirmed); the order detail
 carries it as `needsConfirmation`, and every client offers the confirm on it. Until the web confirm
@@ -420,7 +459,13 @@ customer is asked to accept the version in force at the confirm.
   occurrence, including a retry after a failed payment, pays as before. The apps confirm first and
   then take the sheet's intent. The web confirm opens its own Checkout Session, and
   `ResumeOrderCheckout` already refused every occurrence.
-- **An occurrence nobody confirms** is still retracted an hour before its slot, with no fee.
+- **An occurrence nobody confirms** is still retracted an hour before its slot, with no fee — including
+  one its owner could not confirm because they owed an amount.
+
+**A schedule whose owner owes creates no visits** (owner ruling 2026-10-06). The materialiser asks the
+same debt read before it resolves the address; a template whose owner owes is skipped with a log line,
+stays active and keeps its marker, and books again once the debt is paid or written off
+([above](#owes-nothing)).
 
 **A schedule's weekday and time are the market's wall-clock time** (since 2026-09-28; they used to be
 read as UTC, so a Prague 10:00 schedule ran at 11:00 in winter and 12:00 in summer). The materialiser

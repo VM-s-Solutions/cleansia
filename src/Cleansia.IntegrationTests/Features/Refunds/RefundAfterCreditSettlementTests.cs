@@ -10,6 +10,7 @@ using Cleansia.Core.Domain.Orders;
 using Cleansia.Core.Domain.Payments;
 using Cleansia.Core.Domain.Repositories;
 using Cleansia.Core.Domain.Users;
+using Cleansia.Core.Queue.Abstractions;
 using Cleansia.Infra.Common.Validations;
 using Cleansia.Infra.Database;
 using Cleansia.Infra.Database.Repositories;
@@ -149,6 +150,25 @@ public class RefundAfterCreditSettlementTests(PostgresContainerFixture fixture) 
             CancellationToken.None);
     }
 
+    private CleanerNoShowCancellation NoShowCancellation(CleansiaDbContext ctx)
+    {
+        var factory = new Mock<IStripeClientFactory>();
+        factory.Setup(f => f.CreateClient()).Returns(_stripe.Object);
+        return new CleanerNoShowCancellation(
+            new CreditAccountRepository(ctx),
+            new RefundService(
+                new RefundRepository(ctx),
+                new OrderRepository(ctx),
+                new CreditAccountRepository(ctx),
+                factory.Object,
+                NullLogger<RefundService>.Instance),
+            new RefundRepository(ctx),
+            Mock.Of<INotificationProducer>(),
+            new GuestOrderAccessTokenIssuer(new GuestOrderAccessTokenRepository(ctx)),
+            Mock.Of<IPendingDispatch>(),
+            NullLogger<CleanerNoShowCancellation>.Instance);
+    }
+
     private sealed record GivenBack(
         decimal Card, decimal CreditReturned, decimal SettledInCredit, decimal Balance, decimal LedgerSum, PaymentStatus PaymentStatus)
     {
@@ -198,7 +218,34 @@ public class RefundAfterCreditSettlementTests(PostgresContainerFixture fixture) 
         Assert.Equal(1000m, given.Total);
         Assert.Equal(300m, given.SettledInCredit);
         Assert.Equal(0m, given.CreditReturned);
-        Assert.Equal(PaymentStatus.PartiallyRefunded, given.PaymentStatus);
+        Assert.Equal(PaymentStatus.Refunded, given.PaymentStatus);
+    }
+
+    /// <summary>
+    /// Nobody came to a 1000 booking whose earlier complaint was settled in 300 of credit. The no-show refunds
+    /// the 700 the sale has left, and the order reads Refunded: the whole price is back.
+    /// </summary>
+    [Fact]
+    public async Task A_No_Show_After_A_Complaint_Settled_In_Credit_Gives_Back_The_Rest_And_Reads_Refunded()
+    {
+        await ResetAsync();
+        var userId = await SeedAsync(total: 1000m, creditApplied: 0m, settledInCredit: 300m);
+
+        await using (var ctx = NewContext())
+        {
+            var order = await new OrderRepository(ctx).GetByIdAsync(OrderId, CancellationToken.None);
+            var outcome = await NoShowCancellation(ctx).ExecuteAsync(
+                order!, CancelledBy.Admin, "admin", DateTime.UtcNow, CancellationToken.None);
+            await ctx.CommitAsync(CancellationToken.None);
+            Assert.Equal(700m, outcome.RefundedAmount);
+        }
+
+        _stripe.Verify(s => s.RefundPaymentIntentAsync(
+            PaymentIntentId, 700m, $"refund:{OrderId}:admin", It.IsAny<CancellationToken>()), Times.Once);
+        var given = await ReadAsync(userId);
+        Assert.Equal(700m, given.Card);
+        Assert.Equal(1000m, given.Total);
+        Assert.Equal(PaymentStatus.Refunded, given.PaymentStatus);
     }
 
     /// <summary>
@@ -225,6 +272,7 @@ public class RefundAfterCreditSettlementTests(PostgresContainerFixture fixture) 
         Assert.Equal(2000m, given.Total);
         Assert.Equal(800m, given.Balance);
         Assert.Equal(given.LedgerSum, given.Balance);
+        Assert.Equal(PaymentStatus.Refunded, given.PaymentStatus);
     }
 
     /// <summary>
@@ -238,6 +286,7 @@ public class RefundAfterCreditSettlementTests(PostgresContainerFixture fixture) 
         var userId = await SeedAsync(total: 2000m, creditApplied: 500m, settledInCredit: 400m);
 
         var partial = await RefundAsync(600m, "partial-1");
+        var afterPartial = (await ReadAsync(userId)).PaymentStatus;
         var full = await RefundAsync(2000m, "full");
         var third = await RefundAsync(100m, "partial-2");
 
@@ -257,6 +306,8 @@ public class RefundAfterCreditSettlementTests(PostgresContainerFixture fixture) 
         Assert.Equal(400m, given.CreditReturned);
         Assert.Equal(2000m, given.Total);
         Assert.Equal(given.LedgerSum, given.Balance);
+        Assert.Equal(PaymentStatus.PartiallyRefunded, afterPartial);
+        Assert.Equal(PaymentStatus.Refunded, given.PaymentStatus);
     }
 
     /// <summary>

@@ -948,6 +948,64 @@ class CreateRecurringViewModelTest {
         assertEquals(ActionState.Idle, vm.submitState.value)
     }
 
+    /** The debt refusal can share its code with another whole-schedule refusal, so it is looked for among every key. */
+    private val owesMoney = ApiResult.Error(
+        ApiError.BadRequest(
+            message = "You have an unpaid amount with us.",
+            validationErrors = mapOf(
+                "PaymentType" to listOf("order.cash_open_bookings_limit_reached"),
+                "AsyncPredicateValidator" to listOf("order.unpaid_receivable"),
+            ),
+            errorKey = "order.cash_open_bookings_limit_reached",
+        ),
+    )
+
+    @Test
+    fun `a new schedule refused for an unpaid amount offers the way to pay it instead of a snackbar`() = runTest {
+        coEvery { recurringRepo.create(any()) } returns owesMoney
+        val vm = viewModel()
+        advanceUntilIdle()
+        fillValidForm(vm)
+
+        vm.submit()
+        advanceUntilIdle()
+
+        assertEquals(true, vm.owesMoney.value)
+        assertEquals(ActionState.Idle, vm.submitState.value)
+        verify(exactly = 0) { snackbar.showError(any<ApiError>()) }
+    }
+
+    @Test
+    fun `an edit refused for an unpaid amount offers the way to pay it, and a dismissal closes it`() = runTest {
+        editing(editableTemplate)
+        coEvery { recurringRepo.update(any()) } returns owesMoney
+        val vm = viewModel(templateId = "tpl-1")
+        advanceUntilIdle()
+
+        vm.submit()
+        advanceUntilIdle()
+        assertEquals(true, vm.owesMoney.value)
+
+        vm.dismissOwesMoney()
+        assertEquals(false, vm.owesMoney.value)
+    }
+
+    @Test
+    fun `any other refusal still snackbars and asks for no payment`() = runTest {
+        coEvery { recurringRepo.create(any()) } returns ApiResult.Error(
+            ApiError.BadRequest(message = "Too many", errorKey = "order.cash_open_bookings_limit_reached"),
+        )
+        val vm = viewModel()
+        advanceUntilIdle()
+        fillValidForm(vm)
+
+        vm.submit()
+        advanceUntilIdle()
+
+        assertEquals(false, vm.owesMoney.value)
+        verify(exactly = 1) { snackbar.showError(any<ApiError>()) }
+    }
+
     @Test
     fun `an edit sends the favourite cleaner the customer changed to, and none once cleared`() = runTest {
         editing(editableTemplate.copy(preferredEmployeeId = "emp-7"))

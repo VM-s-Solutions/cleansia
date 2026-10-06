@@ -122,6 +122,12 @@ final class NotificationFeedTemplatesTests: XCTestCase {
         }
     }
 
+    /// The server holds the key out of its customer keyset until both apps render it, so a push of it bumps no
+    /// badge for a row the feed would not return (Android's `CustomerFeedEventKeys` holds it out too).
+    func testAnUnpaidDoorPaymentStaysOutOfTheFeedKeysetUntilTheServerListsIt() {
+        XCTAssertFalse(CustomerFeedEventKeys.contains("order.cash_not_paid"))
+    }
+
     func testFailedPlusRenewalRowRendersItsArglessCopyAndSurvivesTheCustomerFeedFilter() throws {
         let rendered = try XCTUnwrap(NotificationFeedTemplates.render(
             eventKey: "membership.payment_failed",

@@ -51,8 +51,11 @@ public static class FiscalServiceCollectionExtensions
             return;
         }
 
+#pragma warning disable EXTEXP0001 // RemoveAllResilienceHandlers is the one way to take the host's default off one client.
         services.AddHttpClient<CzechEet2FiscalService>()
+            .RemoveAllResilienceHandlers()
             .AddStandardResilienceHandler();
+#pragma warning restore EXTEXP0001
         services.AddScoped<IFiscalService, CzechEet2FiscalService>();
     }
 }

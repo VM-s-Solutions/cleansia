@@ -703,7 +703,7 @@
         },
         "record_cash": {
           "action": "Zaznamenat přijatou hotovost",
-          "context": "Použijte, když uklízeč převzal hotovost, ale nemohl ji zaznamenat ve své aplikaci. Objednávka se tím stane zaplacenou, takže ji uklízeč může dokončit; pokud už je dokončená, účtenka se vystaví hned.",
+          "context": "Použijte, když uklízeč převzal hotovost, ale nemohl ji zaznamenat ve své aplikaci. Objednávka se tím stane zaplacenou, takže ji uklízeč může dokončit; pokud už je dokončená, účtenka se vystaví hned. Pokud uklízeč nahlásil, že zákazník nezaplatil, tímto se zároveň uzavře částka, kterou zákazník dluží; jakmile ji zákazník zaplatil online, zaznamenat hotovost nelze.",
           "no_cleaner": "Na této zakázce nikdo není. Nejprve na ni přiřaďte uklízeče, který hotovost převzal.",
           "cleaner": "Uklízeč, který hotovost převzal",
           "received_at": "Přijato",
@@ -2874,6 +2874,10 @@
             "lockout_reported": {
               "title": "Uklízeč se nemůže dostat dovnitř",
               "body": "Uklízeč u objednávky {{orderNumber}}, objednané na {{cleaningDateTime}}, hlásí, že se nemůže dostat dovnitř. Zkontrolujte fotografii vchodu a jeho pokusy o volání; pokud ho zákazník nepustil dovnitř, zrušte ji jako nezpřístupnění zákazníkem."
+            },
+            "cash_not_paid": {
+              "title": "Zákazník nezaplatil v hotovosti",
+              "body": "Uklízeč u objednávky {{orderNumber}} hlásí, že mu zákazník nezaplatil {{amount}} v hotovosti. Objednávka je dokončená a uklízeč dostane odměnu; zákazník nyní dluží {{amount}} a dokud nezaplatí, nemůže objednávat. Pokud hlášení není pravdivé, manažer dluh odepíše; pokud zákazník uklízeči zaplatí dodatečně, zaznamenejte u objednávky přijatou hotovost."
             }
           },
           "dispute": {
@@ -2902,6 +2906,10 @@
             "refund_needs_retry": {
               "title": "Vrácení peněz je potřeba zopakovat",
               "body": "Vrácení {{amount}} u objednávky {{orderNumber}} už den neprošlo a automaticky se neopakuje. Zkontrolujte ho ve Stripe a pak ho zopakujte z reklamace nebo z objednávky."
+            },
+            "refund_without_cancel": {
+              "title": "Vrácení peněz bylo vyžádáno pro zrušení, které neproběhlo",
+              "body": "Vrácení {{amount}} u objednávky {{orderNumber}} bylo ve Stripe vyžádáno pro zrušení, které neproběhlo, a automaticky se neopakuje. Pokud je rezervace stále otevřená, zrušte objednávku; pokud úklid proběhl, nevracejte u ní platbu: nejdřív toto vrácení dořešte ve Stripe."
             }
           },
           "erasure": {
@@ -3271,6 +3279,7 @@
       "action_failed": "Akci se sporem se nepodařilo dokončit. Zkuste to prosím znovu.",
       "already_exists": "Spor pro tuto objednávku již existuje",
       "already_resolved": "Tento spor již byl vyřešen a nelze jej změnit.",
+      "refund_pending": "Vrácení peněz na kartu u tohoto sporu ještě neprošlo, takže spor nelze uzavřít ani vyřešit bez něj. Zkontrolujte vrácení ve Stripe a pak spor znovu vyřešte s částkou k vrácení, tím se vrácení zopakuje.",
       "invalid_refund_amount": "Neplatná částka vrácení peněz",
       "invalid_status_transition": "Tato změna stavu není pro aktuální stav sporu povolena.",
       "max_length_exceeded": "Překročena maximální délka",

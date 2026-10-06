@@ -38,6 +38,7 @@ public sealed class LegalDocumentSeederTests : IDisposable
         (LegalDocumentType.TermsOfService, new DateOnly(2026, 10, 3)),
         (LegalDocumentType.TermsOfService, new DateOnly(2026, 10, 5)),
         (LegalDocumentType.TermsOfService, new DateOnly(2026, 10, 6)),
+        (LegalDocumentType.TermsOfService, new DateOnly(2026, 10, 7)),
         (LegalDocumentType.PrivacyPolicy, new DateOnly(2026, 9, 14)),
         (LegalDocumentType.PrivacyPolicy, new DateOnly(2026, 9, 29)),
         (LegalDocumentType.PrivacyPolicy, new DateOnly(2026, 10, 3)),
@@ -528,13 +529,6 @@ public sealed class LegalDocumentSeederTests : IDisposable
     /// row quotes a phrase the section must now state in that language, and fails against the replaced wording.
     /// </summary>
     [Theory]
-    // A cash booking is refused once the customer holds MaxOpenUnpaidCashBookings open and unpaid
-    // (CustomerCashStanding): the two include the new one, and every language says so.
-    [InlineData(LegalDocumentType.TermsOfService, "en", 7, "no more than two unpaid cash bookings at a time, counting this one")]
-    [InlineData(LegalDocumentType.TermsOfService, "cs", 7, "včetně této objednávky")]
-    [InlineData(LegalDocumentType.TermsOfService, "sk", 7, "vrátane tejto objednávky")]
-    [InlineData(LegalDocumentType.TermsOfService, "uk", 7, "не більше двох неоплачених готівкових замовлень одночасно, включно з цим")]
-    [InlineData(LegalDocumentType.TermsOfService, "ru", 7, "не более двух неоплаченных заказов с оплатой наличными одновременно, включая этот")]
     // A code is accepted at registration (Register) or later on a booking (OrderLateReferralAcceptor) ...
     [InlineData(LegalDocumentType.TermsOfService, "en", 9, "or later on a booking")]
     [InlineData(LegalDocumentType.TermsOfService, "cs", 9, "nebo později u objednávky")]
@@ -593,6 +587,97 @@ public sealed class LegalDocumentSeederTests : IDisposable
         LegalDocumentType type, string language, int section, string phrase)
     {
         Assert.DoesNotContain(phrase, SectionOf(type, language, section));
+    }
+
+    /// <summary>
+    /// Owner rulings 2026-10-06, in force from the 2026-10-07 terms. Section 7: a cash booking is refused once the
+    /// customer holds <see cref="BookingPolicy.MaxOpenUnpaidCashBookings"/> cash bookings booked and not yet paid
+    /// (CustomerCashStanding), the new one included — and as cash is paid after the cleaning, those are the upcoming
+    /// ones, not defaults. Section 8: a cash price the customer did not pay the cleaner completes the booking and
+    /// becomes an amount owed, which earns no loyalty points or referral credit; and while any amount is owed to any
+    /// operating company, no new booking is made, by cash or by card, no recurring visit is confirmed or created,
+    /// no recurring schedule is created or changed (Create/UpdateRecurringBooking), one already set up can still be
+    /// paused, resumed or cancelled (SetRecurringBookingActive, DeleteRecurringBooking, which ask nothing about
+    /// money), and bookings already made are kept. Each row is a phrase the section must state in that language;
+    /// none of them is in the 2026-10-06 terms.
+    /// </summary>
+    [Theory]
+    [InlineData("en", 7, "no more than two cash bookings that you have not yet paid, counting the one you are making")]
+    [InlineData("cs", 7, "Hotovostních objednávek, které jste dosud nezaplatili, můžete mít současně nejvýše dvě, a to včetně té, kterou právě vytváříte")]
+    [InlineData("sk", 7, "Hotovostných objednávok, ktoré ste ešte nezaplatili, môžete mať súčasne najviac dve, a to vrátane tej, ktorú práve vytvárate")]
+    [InlineData("uk", 7, "не більше двох готівкових замовлень, які ви ще не оплатили, включно з тим, яке ви зараз оформлюєте")]
+    [InlineData("ru", 7, "не более двух заказов с оплатой наличными, которые вы ещё не оплатили, включая тот, который вы сейчас оформляете")]
+    [InlineData("en", 7, "in practice these are your upcoming cash bookings")]
+    [InlineData("cs", 7, "jde v praxi o vaše nadcházející hotovostní objednávky")]
+    [InlineData("sk", 7, "ide v praxi o vaše nadchádzajúce hotovostné objednávky")]
+    [InlineData("uk", 7, "на практиці це ваші майбутні готівкові замовлення")]
+    [InlineData("ru", 7, "на практике это ваши предстоящие заказы с оплатой наличными")]
+    [InlineData("en", 8, "the price of a cash booking you did not pay the cleaner after the cleaning are amounts you owe the company")]
+    [InlineData("cs", 8, "cena hotovostní objednávky, kterou jste uklízeči po úklidu nezaplatili, jsou částky, které dlužíte společnosti")]
+    [InlineData("sk", 8, "cena hotovostnej objednávky, ktorú ste upratovačovi po upratovaní nezaplatili, sú sumy, ktoré dlhujete spoločnosti")]
+    [InlineData("uk", 8, "ціна готівкового замовлення, яку ви не сплатили прибиральнику після прибирання, є вашою заборгованістю перед компанією")]
+    [InlineData("ru", 8, "цена заказа с оплатой наличными, которую вы не заплатили уборщику после уборки, являются вашей задолженностью перед компанией")]
+    [InlineData("en", 8, "the booking is completed and its price becomes an amount you owe")]
+    [InlineData("cs", 8, "objednávka se dokončí a její cena se stane částkou, kterou dlužíte")]
+    [InlineData("sk", 8, "objednávka sa dokončí a jej cena sa stane sumou, ktorú dlhujete")]
+    [InlineData("uk", 8, "замовлення завершується, а його ціна стає вашою заборгованістю")]
+    [InlineData("ru", 8, "заказ завершается, а его цена становится вашей задолженностью")]
+    [InlineData("en", 8, "earns no loyalty points (section 11) and no referral credit (section 9), even once the amount has been paid")]
+    [InlineData("cs", 8, "nepřináší věrnostní body (článek 11) ani kredit za doporučení (článek 9), a to ani poté, co dlužnou částku zaplatíte")]
+    [InlineData("sk", 8, "neprináša vernostné body (článok 11) ani kredit za odporúčanie (článok 9), a to ani potom, ako dlžnú sumu zaplatíte")]
+    [InlineData("uk", 8, "не приносить ні бонусних балів (розділ 11), ні реферального кредиту (розділ 9), навіть після сплати заборгованості")]
+    [InlineData("ru", 8, "не приносит ни бонусных баллов (раздел 11), ни реферального кредита (раздел 9), даже после оплаты задолженности")]
+    [InlineData("en", 8, "While you owe an amount to any operating company, you cannot make a new booking, by cash or by card, until the amount is paid through its pay link or the company writes it off.")]
+    [InlineData("cs", 8, "Dlužíte-li kterékoli provozní společnosti nějakou částku, nemůžete vytvořit žádnou novou objednávku, ať s platbou v hotovosti, nebo kartou, dokud tuto částku nezaplatíte přes její platební odkaz nebo dokud ji společnost neodepíše.")]
+    [InlineData("sk", 8, "Ak dlhujete ktorejkoľvek prevádzkovej spoločnosti nejakú sumu, nemôžete vytvoriť žiadnu novú objednávku, či už s platbou v hotovosti, alebo kartou, kým túto sumu nezaplatíte cez jej platobný odkaz alebo kým ju spoločnosť neodpíše.")]
+    [InlineData("uk", 8, "Якщо у вас є заборгованість перед будь-якою операційною компанією, ви не можете оформити жодного нового замовлення — ні з оплатою готівкою, ні з оплатою карткою, — доки цю заборгованість не буде сплачено через її платіжне посилання або компанія її не спише.")]
+    [InlineData("ru", 8, "Если у вас есть задолженность перед какой-либо операционной компанией, вы не можете оформить ни одного нового заказа — ни с оплатой наличными, ни с оплатой картой, — пока эта задолженность не будет оплачена по её платёжной ссылке или компания её не спишет.")]
+    [InlineData("en", 8, "Nor can you confirm a visit of a recurring schedule, and the schedule creates no new visits meanwhile.")]
+    [InlineData("cs", 8, "Nemůžete ani potvrdit návštěvu opakovaného úklidu a nové návštěvy se mezitím nevytvářejí.")]
+    [InlineData("sk", 8, "Nemôžete ani potvrdiť návštevu opakovaného upratovania a nové návštevy sa medzitým nevytvárajú.")]
+    [InlineData("uk", 8, "Ви також не можете підтвердити візит регулярного прибирання, а нові візити тим часом не створюються.")]
+    [InlineData("ru", 8, "Вы также не можете подтвердить визит регулярной уборки, а новые визиты тем временем не создаются.")]
+    [InlineData("en", 8, "Likewise, you cannot create a recurring schedule or change one you already have.")]
+    [InlineData("cs", 8, "Stejně tak nemůžete nastavit nový opakovaný úklid ani změnit ten, který již máte.")]
+    [InlineData("sk", 8, "Rovnako nemôžete nastaviť nové opakované upratovanie ani zmeniť to, ktoré už máte.")]
+    [InlineData("uk", 8, "Так само ви не можете ні налаштувати нове регулярне прибирання, ні змінити вже наявне.")]
+    [InlineData("ru", 8, "Точно так же вы не можете ни настроить новую регулярную уборку, ни изменить уже существующую.")]
+    [InlineData("en", 8, "You can, however, still pause, resume or cancel a recurring schedule you already have.")]
+    [InlineData("cs", 8, "Opakovaný úklid, který již máte, však můžete i nadále pozastavit, obnovit nebo zrušit.")]
+    [InlineData("sk", 8, "Opakované upratovanie, ktoré už máte, však môžete aj naďalej pozastaviť, obnoviť alebo zrušiť.")]
+    [InlineData("uk", 8, "Водночас вже наявне регулярне прибирання ви й надалі можете призупинити, відновити або скасувати.")]
+    [InlineData("ru", 8, "При этом уже существующую регулярную уборку вы по-прежнему можете приостановить, возобновить или отменить.")]
+    [InlineData("en", 8, "Bookings you have already made are kept.")]
+    [InlineData("cs", 8, "Objednávky, které jste již vytvořili, zůstávají zachovány.")]
+    [InlineData("sk", 8, "Objednávky, ktoré ste už vytvorili, zostávajú zachované.")]
+    [InlineData("uk", 8, "Замовлення, які ви вже оформили, зберігаються.")]
+    [InlineData("ru", 8, "Заказы, которые вы уже оформили, сохраняются.")]
+    public void The_Newest_Terms_Count_Upcoming_Cash_Bookings_And_Refuse_Every_Booking_While_An_Amount_Is_Owed(
+        string language, int section, string phrase)
+    {
+        Assert.Contains(phrase, SectionOf(LegalDocumentType.TermsOfService, language, section));
+    }
+
+    /// <summary>
+    /// The 2026-10-06 terms called the cash limit "unpaid cash bookings", which read as a tolerance of two
+    /// non-payments rather than a cap on bookings not yet paid at the door; and they kept card booking open while
+    /// an amount was owed, which the owner reversed on 2026-10-06 once no card is charged for a debt. Neither may
+    /// come back.
+    /// </summary>
+    [Theory]
+    [InlineData("en", 7, "unpaid cash bookings")]
+    [InlineData("cs", 7, "nezaplacené hotovostní objednávky")]
+    [InlineData("sk", 7, "nezaplatené hotovostné objednávky")]
+    [InlineData("uk", 7, "неоплачених готівкових замовлень")]
+    [InlineData("ru", 7, "неоплаченных заказов с оплатой наличными")]
+    [InlineData("en", 8, "you can still book and pay by card")]
+    [InlineData("cs", 8, "kartou objednávat a platit můžete dál")]
+    [InlineData("sk", 8, "kartou objednávať a platiť môžete ďalej")]
+    [InlineData("uk", 8, "замовляти й платити карткою можна й далі")]
+    [InlineData("ru", 8, "заказывать и платить картой можно и дальше")]
+    public void The_Newest_Terms_Carry_None_Of_The_Cash_Only_Debt_Wording(string language, int section, string phrase)
+    {
+        Assert.DoesNotContain(phrase, SectionOf(LegalDocumentType.TermsOfService, language, section));
     }
 
     /// <summary>

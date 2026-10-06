@@ -143,8 +143,9 @@ well, because it would reveal whether the customer has Plus.
 applied. The refund amount it records is what goes back — so on an order whose payment is still
 `Pending` or `Failed` (a cash booking not yet collected, a card never charged) it is **0**, whoever
 cancelled it. The fee on such an order is owed, not taken. **On a cash booking a signed-in customer
-cancels late, the fee becomes a receivable** — money the customer owes the company, which refuses them
-cash until it is paid or written off (owner ruling 2026-09-28 → [What a customer owes](#receivables)).
+cancels late, the fee becomes a receivable** — money the customer owes the company (owner ruling
+2026-09-28), which since 2026-10-06 refuses them every new booking, cash or card, until it is paid or
+written off → [What a customer owes](#receivables).
 Only a customer's own cancellation and a confirmed [lockout](#lockout) carry a fee at all; on an unpaid
 card order nothing collects it. The admin order detail shows both: *Cancellation fee* (the rate) and
 *Fee still owed* — the whole fee on an order that took no payment, zero where the card charge covered
@@ -153,6 +154,21 @@ receivable, so it keeps showing the fee after the receivable is paid or written 
 page says which. The cancellation previews (signed-in and guest) and the cancel's own response report
 the same **0** refund on an order that took no payment, and the customer web, Android and iOS cancel sheets
 print no refund line on a cash or unpaid booking.
+
+**A fee-free cancellation of a card order already partly refunded records what it gives back** (since
+2026-10-06): the rest of the sale, not the full price again. That covers the customer's free
+cancellation, an administrator's cancellation and a no-show ([below](#when-the-cleaner-cancels-or-no-shows)),
+and it is the figure the cancel's response and the administrator's cancel report. A cancellation that
+charges a fee records the assessor's figure, as before. The cancellation previews still quote the
+assessor's full figure on such an order; the confirmation shows what actually went back.
+
+**An administrator's cancellation that replays a refund already claimed records what that claim sends**
+(since 2026-10-06). A guest's cancel claims its refund on the cancellation's key before the cancel
+commits, and the administrator's cancellation derives the same key, so it replays that claim at the
+claim's own amount, the one Stripe may already have paid. A guest who cancelled at the 25 % tier claimed
+750 of a 1 000 booking, and the cancel never committed. The administrator's cancellation sends Stripe the
+750 on the same key and records 750 as `Order.CancellationRefundAmount` and as `AdminCancelOrder`'s
+`RefundAmount`. Until then it recorded 1 000, with no fee, although 750 went back.
 
 Since 2026-09-28 the rule has **no cash exception**: a confirmed recurring cash occurrence stays
 `Pending` until the cleaner records the cash ([Paying in cash](#cash)), so it took no payment in the
@@ -182,6 +198,72 @@ settled in credit, cancelled free while Stripe is down, gets 560 to the card, pe
 at once; the re-drive then asks Stripe for the same 560 on the same key, and with the settlement the
 customer has 1 000 back. The re-drive counts the 240 as part of its own slice, not as credit returned
 elsewhere ([A justified complaint is settled to the card](#dispute-settlement)).
+
+**A pending card refund counts as given back** (since 2026-10-06). A refund row left `Pending` may be one
+Stripe paid before its answer was lost, so every other refund, every complaint settled in credit and every
+credit return on the order counts it as money already gone back. Only the row being retried is left out
+of its own count, and its card ceiling also leaves out the refunds claimed after it (below).
+Until then only refunds Stripe had confirmed were counted. So a 1 000 card order with a
+600 partial refund that Stripe paid and the platform never recorded could still take a 1 000 settlement in
+credit, and the customer held 1 600. Now 400 is the most such a settlement can give.
+
+- **A retried refund keeps its card amount.** Every other refund counted the row as owed, so what the sale
+  has left still holds it, and the retry sends Stripe the amount it sent before, on the same key. Stripe
+  replays a refund it already made only for the same amount. A complaint settled in credit since the
+  first attempt comes off the row's credit leg, never its card.
+- **The order-ended-unpaid credit return ignores a pending card refund on an order that never took
+  payment** (`Order.TookNoPayment`). A card that was never charged had no refund paid, whatever row is left
+  pending against it.
+- **A guest's refund claim on a booking that was never cancelled is raised, never re-driven.** A guest's
+  cancel claims its refund before the cancel commits. When the cancel then fails on a Stripe transport
+  fault, the booking stays live with a `Pending` row on the cancellation's key that every later refund
+  counts. After 24 hours the hourly job raises `admin.payment.refund_without_cancel` once per order and
+  does not retry the row ([Administrators are told](#admin-notifications)). The notice says what to do,
+  after a check in Stripe:
+  - **If the booking is still open**, the administrator cancels the order from the console. That replays
+    the claim on the same key and records it ([above](#cancellation)).
+  - **If the clean went ahead**, no refund is issued on the order until the claim is reconciled in Stripe.
+    No console action retries the row, and a *Full refund* would send the rest of the sale on a key of its
+    own, so the customer would get money back for a clean that happened.
+
+  Until then the job skipped the row and told nobody.
+- **The re-drive closes a refund only when refunds Stripe confirmed have used up what is left** (since
+  2026-10-06). It then marks the row `Failed` (`refund.nothing_refundable`), and the hourly job stops
+  selecting it. When only refunds still pending have used it up, the row stays `Pending`: Stripe may have
+  paid this one and refused one of those, so closing this one could leave money Stripe paid unrecorded.
+  The row is retried every hour and raised as `admin.payment.refund_stuck` after 24 hours, like any refund
+  the re-drive keeps trying.
+- **A retry closes a refund Stripe cannot have paid** (since 2026-10-06). Stripe never refunds more than a
+  charge, so once the refunds it confirmed on the order have given back the whole card charge
+  (`TotalPrice − CreditAppliedAmount`), a row still `Pending` was never paid. A retry of that row by the
+  action that asked for it marks it `Failed` (`refund.nothing_refundable`), asks Stripe nothing, and the
+  row is closed when that action commits: resolving the dispute again does
+  ([below](#dispute-settlement)), and so does a cancellation. Only the confirmed refunds count. When
+  refunds still pending use up the rest, the row stays `Pending`, as it does for the re-drive. An
+  administrator's own refund does not close its row: a partial refund answers `refund.nothing_refundable`
+  and commits nothing, and a full refund is refused with `refund.order_not_refundable` once the order
+  reads `Refunded`. Such a row stays `Pending` and is raised after 24 hours, an open finding. Until then
+  every retry left the row pending.
+- **A retried refund leaves room on the card only for the pending refunds claimed before it** (since
+  2026-10-06). A refund claimed after it counted it as owed. Two refunds claimed at the same moment did not
+  see each other, and until then each retry counted the other: when Stripe refused both, neither was asked
+  again, and no console action could pay the customer. Now the older one is retried on its own key, by the
+  hourly re-drive or by the action that asked for it. Stripe replays it if it paid it, pays it if it paid
+  neither, and refuses it if it paid the younger one, whose retry still counts the older. A member's
+  cancellation and an administrator's full refund of a 1 000 order, claimed at once and both refused: the
+  older is paid the 1 000 on its key, and the younger then finds nothing left. When Stripe paid the younger
+  one and the charge has too little left for the older, both stay `Pending` and are raised after 24 hours
+  for a check in Stripe. The slice held to what the sale has left still counts every pending refund: a pending
+  refund's credit leg waits for its card, and a refund claimed after it was sized without that leg, so
+  leaving it out would return that credit twice. On an order with a complaint settled in credit, the held
+  slice can therefore still leave two refunds claimed at once waiting on each other; that is an open
+  finding.
+- **What this costs.** A `Pending` row that Stripe refused, and never paid, also holds back later refunds
+  until it is retried. A free cancellation of a 1 000 order with a refused 300 partial pending gives back
+  700 now, and the 300 when an administrator retries the partial. The 24-hour alert comes well inside the
+  three days the terms give a card refund. An administrator closes a row as *not paid* only by resolving a
+  dispute again once the refunds Stripe confirmed took the whole card charge (above). Every other row
+  waits for a reconciliation with Stripe.
 
 ### A guest cancels under the same policy
 
@@ -284,10 +366,12 @@ and gets the refund only.
   whole card refund, the customer's applied credit back, the apology credit, the reason
   `order.cancelled.no_cleaner_available` (which the customer's apps render) and the outcome push. It
   also ends the live activity, releases the express waiver, tells the assigned cleaners, revokes the
-  booking's loyalty points and **closes an open *service not provided* dispute** on the order. It
-  refuses before the start, on a job in progress (`order.cleaner_already_started` — a cleaner who
-  tapped Start after the report did arrive, and the report stands as a dispute), and on a completed or
-  cancelled one.
+  booking's loyalty points and **closes an open *service not provided* dispute** on the order, unless
+  that dispute's own card refund is still pending (since 2026-10-06): resolving the dispute again is that
+  refund's only retry, so the dispute stays open ([A dispute whose card refund is pending stays
+  open](#dispute-settlement)). It refuses before the start, on a job in progress
+  (`order.cleaner_already_started` — a cleaner who tapped Start after the report did arrive, and the
+  report stands as a dispute), and on a completed or cancelled one.
 - **One of two cleaners missing stays a dispute** the administrator settles at their discretion;
   crews are rare and never pay cash.
 
@@ -305,11 +389,12 @@ customer's inbox. A guest gets no push; the cancellation e-mail tells them what 
 > and the push is the plain cancellation. The home page states the figure from the market, never from
 > the translation; see [Money constants](#money-constants).
 >
-> **Credit the customer spent on the booking comes back exactly once.** A paid card order's full refund
-> returns it on the refund's own credit leg — at once, when Stripe refused the card refund or could not
-> be reached and the card waits for the re-drive (below); the cancellation returns it itself only when no
-> card refund was claimed — a cash or unpaid order, or one with nothing left to refund to the card — and
-> only what is still outstanding (applied minus already returned). A later refund of the same order nets
+> **Credit the customer spent on the booking comes back exactly once.** A paid card order's full refund,
+> and since 2026-10-06 a partly refunded one's refund of the rest, returns it on the refund's own credit
+> leg — at once, when Stripe refused the card refund or could not be reached and the card waits for the
+> re-drive (below), and then the cancellation returns no second credit. The cancellation returns it itself
+> only when no card refund was claimed — a cash or unpaid order, or one with nothing left to refund to the
+> card — and only what is still outstanding (applied minus already returned). A later refund of the same order nets
 > off credit already returned. The sweep commits **per order**, so an apology balance can never be written back
 > over a later order's credit return. Until 2026-09-27 the sweep returned credit after a successful
 > refund as well, crediting a card customer twice.
@@ -320,13 +405,28 @@ customer's inbox. A guest gets no push; the cancellation e-mail tells them what 
 >
 > - **An order that took no payment** (`Order.TookNoPayment`): the credit is all that was paid, so a
 >   settlement comes off it in full. 500 applied with 400 settled returns 100.
-> - **An order that took a card payment** — one already partly refunded, then cancelled by the
->   customer, an administrator, a company wind-down or a no-show: the whole price was paid, so the credit is held to
->   what the sale has left after the card refunds, the credit already returned and the settlements, never
->   more than the credit still outstanding. A 1 000 order paid with 300 credit, refunded 400 (280 to the
->   card, 120 in credit) and then 200 settled in credit, gets 180 back; with 600 settled, nothing. Taking
->   the whole settlement off the credit here would keep credit the customer is owed: the same order would
->   get nothing back with 200 settled.
+> - **An order that took a card payment** and has no card refund of its own here — one already partly
+>   refunded that the customer cancels with a fee, one refunded in full before it was cancelled, a no-show
+>   whose refund found nothing left, or one with no charge surface: the whole price was paid, so the credit
+>   is held to what the sale has left after the card refunds (confirmed or pending), the credit already
+>   returned and the settlements, never more than the credit still outstanding. A 1 000 order paid with 300
+>   credit, refunded 400 (280 to the card, 120 in credit), then 200 settled in credit and cancelled with a
+>   fee, gets 180 back; with 600 settled, nothing. Taking the whole settlement off the credit here would
+>   keep credit the customer is owed: the same order would get nothing back with 200 settled.
+>
+> **A fee-free cancellation of a partly refunded card order refunds the rest of the sale** (since
+> 2026-10-06) — the customer's free cancellation, an administrator's cancellation, and an administrator's
+> no-show confirmation. It goes through the refund seam on both tenders, in proportion, held to what the
+> sale has left. The company wind-down, its retry pass and the unfilled sweep still select only `Paid`
+> card orders, so they never reach a partly refunded booking; that is an open finding. The order
+> above cancelled free gets 280 to the card and 120 in credit, so with the 400 refunded and the 200 settled
+> the customer has 1 000 back; until then it got the 180 in credit and the card kept 280. The card refund
+> used to be asked only of a `Paid` order, against the terms in force: §13 returns the rest on both
+> tenders in the proportion paid, and §14 refunds a no-show in full. The cancellation records the 400 as
+> its refund. **A fee-bearing
+> cancellation of a partly refunded card order is unchanged**: no card refund, and the remaining credit
+> held as above. It waits on an owner ruling, because the fee can be read as a share of the price as
+> booked or of the price that is left.
 >
 > **A no-show whose card refund Stripe did not complete returns the credit on the refund's own key**
 > (since 2026-10-05), as a member's cancellation does ([A card refund that does not go through is owed,
@@ -458,6 +558,18 @@ fee; a cash booking is simply cancelled. No fee is ever charged on a platform ca
 the platform's cancellation but the customer's, written by an administrator's confirmation and exposed
 like a platform reason, never as the administrator's words → [the lockout](#lockout).
 
+**When Stripe refuses a platform cancellation's card refund, or cannot be reached for it, the credit comes
+back at once** (since 2026-10-06), on the refund's own key, as a customer's cancellation and a no-show
+already did ([A card refund that does not go through is owed, not lost](#after-the-start)). That covers an
+administrator's cancellation and the wind-down, and the wind-down's retry pass. The card refund waits
+`Pending` for the re-drive, which reads the slice back as the card amount plus that leg, so the customer
+gets back exactly what the sale has left, to the minor unit, even on an order already partly refunded
+whose earlier refunds rounded. Until then the credit waited for the re-drive too, which worked it out in
+proportion from the card amount. A timeout or a dropped connection on the way to Stripe also escaped after
+the cancellation had committed: the administrator's cancel answered with an error for an order it had
+cancelled, and the wind-down's run stopped there. Now the cancel succeeds and reports the refund as not
+gone through.
+
 **A guest is told by e-mail.** A platform cancellation of a guest booking — by an administrator, the
 wind-down, or either sweep — e-mails the booking's address in its language, with the reason (from the
 key, never an administrator's own words) and a money line that claims only what happened: the amount a
@@ -509,8 +621,11 @@ web offers the money back rather than a card refund.
   and an account, it is credit in the order's currency (`CreditTransactionReason.DisputeSettlement`,
   keyed `dispute-settlement:{disputeId}`, linked to the order and the dispute), recorded as the
   dispute's `CreditReturnedAmount`. A credit settlement must be whole cents and no more than what the
-  order has not already given back — card refunds, credit returned, earlier complaints settled in
-  credit — else `dispute.invalid_refund_amount`. **Any later refund or credit return on the same order
+  order has not already given back — card refunds, confirmed or still pending, credit returned, earlier
+  complaints settled in credit — else `dispute.invalid_refund_amount`. A pending card refund counts
+  since 2026-10-06 ([A pending card refund counts as given back](#after-the-start)): on a 1 000 card
+  order with 600 refunded and still pending, 400 can be settled in credit, not 1 000.
+  **Any later refund or credit return on the same order
   is held to what is left the same way** (since 2026-10-05): an administrator's full or partial refund,
   a cancellation's, a dispute's card settlement and a credit return alone. The held part is still split
   between card and credit in the proportion the price was paid, and a refund with nothing left is
@@ -531,7 +646,27 @@ web offers the money back rather than a card refund.
   moved since, the retry sends Stripe the amount it sent before, on the same key. Until then the retry
   counted its own leg twice and lowered the card share: a 2 000 order paid with 500 credit and 400
   settled in credit, refunded in full, retried 1 100 to the card where it had asked 1 200, which Stripe
-  refuses on that key when it already paid.
+  refuses on that key when it already paid. **Since 2026-10-06 a retried refund keeps its card amount**
+  whenever what the sale has left allows it, which it does, because every other refund and settlement
+  counted the pending row as owed. A complaint settled in credit since the first attempt is taken from the
+  row's credit leg, never its card: on a 2 000 order paid with 500 credit whose full refund was left
+  pending at 1 500 to the card with its credit leg not yet back, at most 500 can then be settled in
+  credit. After a 400 settlement the retry sends Stripe 1 500 again and returns a 100 credit leg, so with
+  the settlement the customer has 2 000 back. Until then the retry cut the card to 1 200, which Stripe
+  refuses on a key it already paid.
+- **An order whose whole price came back reads `Refunded`** (since 2026-10-06). The refund seam is the
+  one writer of `Refunded` and `PartiallyRefunded`, and it writes `Refunded` when either holds: the card
+  has given back everything it took (`TotalPrice − CreditAppliedAmount`), or the card refunds, the credit
+  returned and the complaints settled in credit together reach `TotalPrice`. Otherwise it writes
+  `PartiallyRefunded`. The first arm keeps a customer whose credit leg was skipped (an erased account,
+  frozen books) at `Refunded`. The second is the one a settlement in credit needs, because the hold stops
+  the card short of its charge: a no-show on a 1 000 card order after a 300 settlement in credit refunds
+  700 to the card, and until then the order read `PartiallyRefunded` although all 1 000 had come back.
+  `AdminRefundOrder` and `IssuePartialRefund` report the status the seam stored instead of working it out
+  again. A settlement in credit writes no status itself, so one that completes an order already
+  `PartiallyRefunded` leaves it `PartiallyRefunded` (an open finding). These orders move from the
+  *partly refunded* bucket to *refunded* in the revenue report's table by status; net revenue does not
+  change.
 - **An administrator cannot settle with credit any other way.** *Issue credit* refuses the reason
   *Dispute settlement* (`credit.dispute_settlement_not_issuable`), and the admin dialog no longer offers
   it.
@@ -541,6 +676,32 @@ web offers the money back rather than a card refund.
   ([the no-show](#when-the-cleaner-cancels-or-no-shows)) — and does not settle the complaint with an
   amount first: a settlement in credit is subtracted from what the confirmation can still refund, while
   the terms in force promise the card back in full.
+- **A dispute whose card refund is pending stays open** (since 2026-10-06). When Stripe refuses or does
+  not answer a dispute's card refund, the row waits `Pending` on the dispute's own key,
+  `refund:{orderId}:dispute:{disputeId}`, and resolving the dispute again is the only thing that retries
+  it: the hourly re-drive never takes a dispute's refund. So the dispute is not closed while that row is
+  pending. A no-show confirmation leaves such a *service not provided* dispute open, and closing it by
+  hand (`UpdateDisputeStatus` to *Closed*), or resolving it with no refund amount or zero, is refused with
+  `dispute.refund_pending`, whose message asks for a refund amount. Resolving it with an amount retries the
+  card refund even when the customer chose credit: the first resolve already settled on the card, and
+  credit beside a card refund Stripe may have paid would pay twice. The no-show counts the
+  pending row as given back and refunds what is left; resolving the dispute again then sends Stripe the
+  first attempt's amount on the dispute's key. On a 1 000 card order whose 400 dispute refund Stripe
+  refused, the no-show refunds 600, the second resolve sends 400, and the customer has 1 000 back. With
+  the whole 1 000 pending on the dispute, the no-show refunds nothing to the card and the second resolve
+  sends the 1 000. A closed dispute cannot be resolved again (`dispute.already_resolved`), and a full or
+  partial refund from the order counts the pending row too, so closing it would leave a customer owed the
+  whole price for a no-show with none of it back and no way to send it.
+- **A dispute whose pending card refund Stripe cannot have paid is resolved with nothing sent** (since
+  2026-10-06). When refunds Stripe confirmed on other keys have given back the whole card charge, the
+  dispute's pending row was never paid. Resolving the dispute again with an amount closes that row as
+  `Failed` and resolves the dispute. It records the amount asked and no card or credit leg, and the
+  customer is told of no refund. Until then the resolve answered `refund.nothing_refundable` and left the
+  row pending, so the dispute could be neither resolved nor closed although the customer had the whole
+  price back. A no-show and a complaint's 1 000 refund, both on a 1 000 card order, were claimed at the
+  same moment and refused. The no-show confirmation pays the 1 000 on the older key, its own. Resolving
+  the complaint then closes its row, sends nothing, and ends the dispute. When other refunds still pending
+  are what use up the card, the row stays pending and the dispute stays open.
 
 ### A cleaner is charged for a complaint only when found at fault {#dispute-cleaner-charge}
 
@@ -877,9 +1038,10 @@ order, the quote and the cash rule below all call it: 120 booked minutes is one 
 AllowsCash = signedIn && RequiredEmployees == 1        # BookingPolicy.AllowsCash
 ```
 
-Beyond that rule, the customer's own standing decides (owner rulings 2026-09-28): no debt and at most
-two open unpaid cash bookings. **No saved card is asked for, and no card is charged** (owner ruling
-2026-10-04) → [Cash needs no card](#card-guarantee).
+Beyond that rule, the customer's own standing decides: at most two cash bookings not yet paid, the one
+being made included (owner ruling 2026-09-28). A customer who owes any amount makes no booking at all,
+cash or card (owner ruling 2026-10-06 → [What a customer owes](#receivables)). **No saved card is asked
+for, and no card is charged** (owner ruling 2026-10-04) → [Cash needs no card](#card-guarantee).
 
 - **The crew is the server's, from the duration.** `RequiredEmployees` is computed from the selected
   services and packages, the home's size and the [dirtiness level](#dirtiness) exactly as the order will
@@ -947,25 +1109,118 @@ cleaner has the money:
   only occurrences still awaiting that confirmation (`Order.AwaitsCustomerConfirmation`).
 → [What the receipt says](/flows/payment-and-fiscal#what-the-receipt-says)
 
+### When the customer does not pay at the door {#cash-not-paid}
+
+**Owner ruling 2026-10-06.** Until then a cleaner whose customer paid nothing could not finish the job:
+completion needs the cash recorded, so the job stayed in progress, the cleaner was paid nothing, and the
+customer owed nothing the platform could claim.
+
+1. **The cleaner reports it.** *Customer did not pay* sits beside *Mark cash collected* on the job sheet
+   of the partner web, Android and iOS (`POST api/Order/ReportCashNotPaid`, Partner and Partner Mobile
+   hosts only). It is refused, in this order:
+
+   | Refusal | Key |
+   |---|---|
+   | The caller is not on the crew (so a cleaner off the job learns nothing about it) | `order.not_found` |
+   | The caller is not approved, or their profile is incomplete | `employee.not_approved`, `employee.profile_incomplete` |
+   | The seat has no accepted contract for work | `contract.acceptance_required` |
+   | The order is not in progress | `order.not_in_progress` |
+   | The order is a card order | `order.cash_not_allowed_on_card_order` |
+   | The cash was already recorded | `order.cash_already_collected` |
+   | The payment is not `Pending` (refunded or disputed), or the booking is a legacy guest cash order | `order.payment_not_outstanding` |
+   | No *after* photo | `order.after_photos.required` |
+
+   The clients offer the action only on a cash job in progress whose payment is pending, to a cleaner on
+   the crew. It sits behind a confirmation that says to use it only when the customer paid nothing. The
+   confirmation also says that the job completes and the cleaner is paid, that the customer will owe
+   the price less any credit applied, is told so and cannot book until it is paid, that an administrator
+   is alerted, and that only an administrator can undo it (step 4: a write-off, or the cash recorded as
+   received). The partner web, Android and iOS say this in the same words. A short payment is not covered:
+   the cleaner tells the company, as the framework agreement asks (§8), and an administrator records what
+   was received.
+2. **One commit does the rest.**
+   - The job is **completed**, timed from the start like any completion, and the live activity ends. The
+     payment stays `Pending`.
+   - An **`UnpaidCash` receivable** opens for `TotalPrice − CreditAppliedAmount`, which is what *Mark cash
+     collected* would have stamped. It is stamped with the order's company.
+   - The crew is **paid the full reward** of a completed job, asked for as a completion asks for it
+     (framework agreement §9).
+   - **No receipt** is issued, because no money arrived. **No loyalty points** are granted and **no
+     referral** qualifies, then or once the debt is paid. Nothing enters the cash ledger.
+   - The customer gets the push `order.cash_not_paid`, with the order number and the amount owed; it
+     cannot be muted ([Push notifications](/architecture/push-notifications#mutability)). They also get an
+     e-mail in the booking's language: the cleaning is done, the cash was not received, this amount is
+     owed, pay it on the order's page. The pay link is opened there on demand, so the report calls no
+     Stripe.
+   - The company's administrators are told: `admin.order.cash_not_paid`, Support and above, with the
+     order number and the amount ([Administrators are told](#admin-notifications)).
+3. **The customer can make no booking until it is paid or written off** → [What a customer owes](#receivables).
+   Paid through the pay link, the debt earns a fee receipt labelled *Unpaid cash payment* and asks for no
+   crew pay, because the crew was paid at the report.
+4. **Correcting it.** A report that was wrong is written off by a Manager on the Receivables page. When
+   the customer pays the cleaner after all, an administrator records the cash (*Record cash received*,
+   [above](#cash-handover)). The order becomes `Paid`, the sale receipt is issued because the order is
+   complete, and the open debt is written off with the note *Paid in cash* in the same commit. Once the
+   customer has paid the debt online, recording the cash is refused (`order.payment_not_outstanding`), so
+   nobody pays twice. **Recording the cash first closes the debt's open pay link** (since 2026-10-06): a
+   Stripe Checkout Session stays payable for up to a day, so the handler expires it at Stripe before it
+   writes the debt off. It is refused with `order.payment_not_outstanding` when Stripe reports the link
+   already paid, and with `order.payment_gateway_unavailable` when Stripe cannot be reached; nothing is
+   recorded either way. A pay-link payment that still arrives after the cash was recorded is refunded in
+   full, and the debt stays written off as paid in cash and earns no fee receipt.
+
+The customer terms carry it from their `2026-10-07` version (§8, [The legal texts](#legal-texts)): the
+price of a cash booking not paid to the cleaner after the cleaning is an amount owed, the customer is told
+when it is recorded, and such a booking earns no loyalty points or referral credit even once paid.
+
+**Known gaps, reported and not built.**
+
+- A Manager's write-off does not expire a pay link the customer already opened, so a customer who pays it
+  afterwards pays a debt that was written off, and the payment is kept. *Record cash received* closes the
+  link first (above).
+- The revenue report reads only `Completed` and `Paid` orders, so a price paid later through the pay link
+  never shows as revenue. Lockouts have the same gap.
+- An administrator's override to `Completed` still closes an uncollected cash order with no debt and no
+  crew pay.
+- There is no administrator *did not pay* action; an administrator asks the cleaner to report it.
+- A referral qualifies on the friend's **first** completed booking, and a booking reported unpaid is a
+  completed booking. So it also keeps any later, paid booking from qualifying the referral. Whether that
+  later booking should qualify is an owner question.
+- A cleaner can keep the cash and report non-payment. The customer is told at once, the administrators are
+  alerted, and a write-off reverses the debt.
+
 ### Cash needs no card {#card-guarantee}
 
-**Owner rulings 2026-09-28 (decisions 18 (a) and 24), and 2026-10-04.** A signed-in customer books cash
-only while they meet two more conditions, asked in this order after the one-cleaner rule
-(`CustomerCashStanding`):
+**Owner rulings 2026-09-28 (decision 24), 2026-10-04 and 2026-10-06.** After the one-cleaner rule, a
+signed-in customer books cash only while they hold fewer than **2** cash bookings not yet paid
+(`BookingPolicy.MaxOpenUnpaidCashBookings`, in `CustomerCashStanding`); else
+`order.cash_open_bookings_limit_reached`. **The cap of 2 is kept** (owner ruling 2026-10-06).
 
-| # | The customer must | Else |
-|---|---|---|
-| 1 | owe no operating company an open receivable → [What a customer owes](#receivables) | `order.cash_unpaid_receivable` |
-| 2 | hold fewer than **2** open unpaid cash bookings (`BookingPolicy.MaxOpenUnpaidCashBookings`) | `order.cash_open_bookings_limit_reached` |
+Until 2026-10-06 an open receivable was the first of two cash conditions (`order.cash_unpaid_receivable`,
+decision 18 (a)), and card bookings stayed open. Owing is no longer a cash condition: it refuses every new
+booking, cash or card, with `order.unpaid_receivable`, and it is asked before anything else
+([What a customer owes](#receivables)).
 
-- **Where it is asked.** `CreateOrder`, `CreateRecurringBooking` and `UpdateRecurringBooking` in their
-  validators — on `CreateOrder` inside the price chain, after `order.cash_not_available` and before the
-  promo rules, so a refused booking has moved nothing — and `ConfirmRecurringOrder` in its handler,
-  after the crew rule. Card bookings need none of it, and a guest was already refused cash.
-- **Open unpaid** is cash, payment `Pending`, neither cancelled nor completed; a recurring occurrence
-  counts from the customer's confirmation, and the one being confirmed does not count. The debt and the
-  limit are both counted **across every operating company**. There is **no amount ceiling** (decision
-  24): the one-cleaner rule already bounds the price.
+- **Where the cap is asked.** `CreateOrder`, `CreateRecurringBooking` and `UpdateRecurringBooking` in
+  their validators — on `CreateOrder` inside the price chain, after `order.cash_not_available` and before
+  the promo rules, so a refused booking has moved nothing — and `ConfirmRecurringOrder` in its handler,
+  after the debt rule and the crew rule. Card bookings are not counted, and a guest was already refused
+  cash.
+- **What the cap counts: bookings in flight, not defaults.** A cash booking *not yet paid* is cash,
+  payment `Pending`, neither cancelled nor completed. Cash is paid at the door after the cleaning, so in
+  practice these are the customer's upcoming cash bookings, plus any in progress; a recurring occurrence
+  counts from the customer's confirmation, and the one being confirmed does not count. It limits how many
+  cash jobs one customer has open at once. It is not a tolerance for two non-payments: a door
+  non-payment completes the booking, which leaves the count, and makes the price an amount owed, which
+  refuses every booking ([above](#cash-not-paid)). The count is taken **across every operating company**.
+  There is **no amount ceiling** (decision 24): the one-cleaner rule already bounds the price. The
+  customer terms say so from their `2026-10-07` version (§7): at most two cash bookings not yet paid,
+  counting the one being made, which in practice are the upcoming ones.
+- **What the customer reads.** The refusal on the customer web, Android and iOS, in five languages, says
+  the customer already has as many cash bookings not yet paid as allowed — in practice their upcoming cash
+  bookings — and to pay this one by card or wait until one is paid. It names no number:
+  `check-booking-policy-parity.mjs` does not pin `MaxOpenUnpaidCashBookings`, and a written *two* would be
+  an unguarded copy of it in fifteen strings.
 
 **No saved card is asked for, and no card is charged** (owner ruling 2026-10-04). Until then a third
 condition asked for a usable card saved in the booking's currency (`order.cash_requires_saved_card`).
@@ -980,10 +1235,9 @@ from every client's translations and parity lists. So is every client's capture 
   chosen, opens a setup sheet or waits for a saved card to land.
 - **iOS** no longer reads the saved cards before it books, shows the guarantee box or captures a card.
 
-A cash slide now books at once. The two refusals that remain behave as before; on the web, a debt
-refusal lists what is owed with *Pay now*. What a cash booking leaves owing is a receivable, paid through
-its pay link or written off ([What a customer owes](#receivables)). The off-session charge that could
-have taken it from a saved card stays switched off.
+A cash slide now books at once. What a cash booking leaves owing is a receivable, paid through its pay
+link or written off ([What a customer owes](#receivables)). The off-session charge that could have taken
+it from a saved card stays switched off.
 
 **Saved cards stay** (owner ruling 2026-10-04). A signed-in customer still keeps a card by ticking *Save
 this card for my next bookings* on a card payment ([below](#save-card)), lists it and can remove it
@@ -1086,13 +1340,55 @@ keeps it, pseudonymous.
 |---|---|---|
 | Cash cancellation fee | a signed-in customer cancels a cash booking that took no payment, late enough to owe a fee → [Cancellation](#cancellation) | the assessed fee |
 | Lockout | an administrator confirms a lockout on a signed-in customer's cash booking that took no payment → [the lockout](#lockout) | the whole price |
-| Unpaid cash, top-up | declared for decision 17; **nothing opens either yet** — the top-up waits for the on-site top-up (decision 36) | — |
+| Unpaid cash | the assigned cleaner reports that a signed-in customer did not pay the cash at the door (`ReportCashNotPaid`, since 2026-10-06) → [When the customer does not pay at the door](#cash-not-paid) | the price less any credit applied |
+| Top-up | declared for decision 17; **nothing opens it yet** — it waits for the on-site top-up (decision 36) | — |
 
 A free cancellation, a card booking and a guest open none: a card booking keeps its fee out of the
 refund, and a guest always prepays.
 
-**While one is open, the customer books no cash** — with any company; card bookings stay open, since
-they are prepaid (decision 18 (a)) → [Cash needs no card](#card-guarantee).
+**While one is open, the customer makes no new booking, cash or card, in any company** (owner ruling
+2026-10-06). It lasts until the amount is paid through its pay link or written off. Until then the rule
+refused cash only and left card bookings open, because an off-session charge on the saved card was meant
+to collect the debt (decision 18 (a)). That charge was switched off for good on 2026-10-04, so a debtor
+who moved to card was never chased beyond the pay link. One read, `CustomerCashStanding.OwesNothingAsync`,
+asks the account's open receivables across every company, and every way into a booking asks it:
+
+| Where | What happens |
+|---|---|
+| `CreateOrder`, web and mobile, cash and card | refused `order.unpaid_receivable`, as the **first** rule of the validator's whole-booking chain, before the currency and price rules. A refused booking has reserved no express waiver, debited no credit, accepted no promo or referral and opened no Stripe session |
+| `CreateRecurringBooking`, `UpdateRecurringBooking`, any tender | refused `order.unpaid_receivable`, a whole-command rule: a customer who owes can neither create a recurring schedule nor change one. Deleting a schedule and pausing or resuming it (`DeleteRecurringBooking`, `SetRecurringBookingActive`) are not refused |
+| `ConfirmRecurringOrder`, both tenders | refused `order.unpaid_receivable` on `orderId`, after the lead-time check and before the cash rules, so before the terms consent is recorded and before Stripe is asked |
+| The recurring sweep | creates no visit for an owner who owes, logs it and keeps the schedule and its marker; it resumes once the debt is paid or written off. A visit created before the debt cannot be confirmed, and an unconfirmed visit is retracted an hour before its slot with no fee, as any other |
+
+- **Bookings already made are kept**, as on 2026-09-24 nothing already booked was converted. An upcoming
+  cash booking is still cleaned and paid at the door.
+- **A guest is not matched.** A guest books on the web by card, prepaid, and is not looked up by e-mail
+  or phone: refusing an anonymous checkout for a debt would tell anyone which addresses owe money.
+- **The pay link and the list of what is owed are not bookings** and stay open, so the customer can
+  always pay their way out. Cleansia Plus is not a booking either.
+- **Every client turns the refusal into a way to pay.** The customer web keeps the chosen way to pay and
+  returns to the payment step, which lists what is owed with *Pay now* and parks the booking for when the
+  customer comes back; the schedule form and the order page's visit confirmation show the same list
+  ([The booking wizard](/customer-app/ordering-flow#step-4-payment-method)). The schedule form is not
+  saved when the customer leaves it to pay, and its copy promises nothing about keeping it. Android and
+  iOS open a dialog with
+  *Pay now* from the booking sheet, the schedule form (create and edit) and the visit confirmation, which
+  goes to Profile → Payments. Any other refusal still shows as before. The clients find the key among
+  every key the refusal carries, because whole-booking rules share one wire code and can arrive
+  `; `-joined ([Mobile patterns — the error model](/mobile-app/patterns#error-model)).
+- **The terms say so** from their `2026-10-07` version (§8): while anything is owed to any operating
+  company, no new booking is made by cash or card, no recurring visit is confirmed or created, and no
+  recurring schedule is created or changed, until it is paid through its pay link or written off; a
+  schedule the customer already has can still be paused, resumed or cancelled, and bookings already made
+  are kept ([The legal texts](#legal-texts)).
+- **A wrong debt now costs more.** A false door report or a mistaken fee blocks every booking until a
+  Manager writes it off, which is why the door report tells the customer and the administrators at once.
+- **A debt owed to a company frozen for archive does not count** (since 2026-10-06). Once a company's
+  `ArchiveRequestedOn` is set, its books refuse both the pay link's write and a write-off, so its open
+  receivable could never be closed. It no longer refuses the customer any booking, and the customer's
+  list of what is owed (`GetMine`) no longer shows it, as the off-session charge sweep already left it
+  out. Until then it refused the customer for good, because nothing could close it
+  ([A company's lifecycle](#company-lifecycle)).
 
 **How it is paid.**
 
@@ -1102,8 +1398,11 @@ they are prepaid (decision 18 (a)) → [Cash needs no card](#card-guarantee).
   recorded on the receivable (`PayLinkSessionId`) and handed back while Stripe still has it open; a
   closed one is replaced by a new session keyed on the old. Only an open receivable gets one
   (`receivable.not_open`); another customer's is `receivable.not_found`. The customer web shows the
-  amount due on the order's page and, when cash is refused for a debt, on the payment step; Android and
-  iOS under Profile → Payments.
+  amount due on the order's page — all of it, not this order's only — and, when a booking is refused for
+  a debt, on the payment step and the schedule form; Android and iOS under Profile → Payments. The
+  amount-due introduction on every client says that until it is paid no new booking is taken, by card
+  or cash, and that bookings already made are kept; until 2026-10-06 it said card bookings were
+  unaffected.
 - **By an off-session charge on the saved card — built, and switched off for good.**
   `ChargeOpenReceivables` (Functions, every 15 minutes) charges each open receivable **once** to the
   customer's usable card in its currency, with the customer absent, company by company, the attempt
@@ -1122,7 +1421,9 @@ they are prepaid (decision 18 (a)) → [Cash needs no card](#card-guarantee).
   written off meanwhile.
 - **Paid once.** Stripe's webhook settles a receivable under its own company, without touching the
   order's payment status, charge surface or refunds; a second payment of one already paid is refunded
-  in full. A receivable written off and then paid anyway is paid — the money is the company's.
+  in full, and so, since 2026-10-06, is a payment of a door price whose order an administrator recorded
+  as paid in cash ([Correcting it](#cash-not-paid)). A receivable a Manager wrote off and the customer
+  then paid anyway is paid — the money is the company's.
   → [Payment and fiscal](/flows/payment-and-fiscal#saved-cards-and-receivables)
 - **Its payment earns a fee receipt** of its own, next to the order's sale receipt
   → [Payment and fiscal](/flows/payment-and-fiscal#fee-receipt); and a paid cancellation fee pays the
@@ -1132,14 +1433,16 @@ they are prepaid (decision 18 (a)) → [Cash needs no card](#card-guarantee).
   pay (since 2026-10-04). It used to ask for the crew's pay again under the key the confirmation had
   used, which the outbox holds for at least 14 days, so the webhook's commit failed on that key's
   unique index on every Stripe retry: the payment was never recorded and the customer stayed blocked
-  from cash.
+  from cash. A paid unpaid-cash receivable asks for no pay either: the crew was paid at the door report.
 
 **Administrators** list the company's receivables — Orders → Receivables, filtered by status, kind,
 customer or order (`GET api/AdminReceivable/get-paged`, any administrator) — and write an open one off
 with a required note of at most 500 characters (`POST api/AdminReceivable/write-off`, Manager and
 above, audited as the sensitive `receivable.write_off`). A receivable that is not open is
-`receivable.not_open`, and another company's `receivable.not_found`. A write-off lifts the cash
-refusal.
+`receivable.not_open`, and another company's `receivable.not_found`. A write-off lifts the booking
+ban once nothing else is open. An unpaid-cash receivable is also closed by an administrator's *Record
+cash received* on its order, written off with the note *Paid in cash*
+([When the customer does not pay at the door](#cash-not-paid)).
 → [ADR-0070](/decisions/adr-0070)
 
 ## Preferred cleaner
@@ -1164,7 +1467,7 @@ one of them is our own draft until the lawyer delivers** ([below](#legal-drafts)
 
 | Text | Audience | In force | Who is bound, and how |
 |---|---|---|---|
-| Terms of service | customer | `2026-10-06` | the customer's contract with the operating company of the market the home is in, concluded at booking — a card booking once its payment completes. Accepted by the tick at registration and at booking, and again before the next booking when a newer version applies ([What is recorded about a customer](#customer-record)); shown at `/terms` |
+| Terms of service | customer | `2026-10-07` (`2026-10-06` until that day) | the customer's contract with the operating company of the market the home is in, concluded at booking — a card booking once its payment completes. Accepted by the tick at registration and at booking, and again before the next booking when a newer version applies ([What is recorded about a customer](#customer-record)); shown at `/terms` |
 | Privacy policy | customer | `2026-10-06` | the operating company is the controller; accepted with the terms, and again before the next booking when a newer version applies; shown at `/privacy` |
 | Complaints procedure | customer | `2026-09-29` | read, never accepted; shown at `/complaints` on the customer web and linked from its footer |
 | Framework cooperation agreement, self-billing agreement | employee | `2026-10-05` | the cleaner's agreements with the operating company of the market they work in, each accepted in the partner apps → [A cleaner's own documents](#cleaner-documents) |
@@ -1172,7 +1475,7 @@ one of them is our own draft until the lawyer delivers** ([below](#legal-drafts)
 | Contract for work | employee | `2026-10-05` | one per seat of a job, between the operating company and the cleaner, stamped on the order at booking and accepted at the take → [The contract for work](#work-contract) |
 
 Earlier versions stay in the database as the texts earlier customers and orders were bound by: the
-terms `2026-09-14`, `2026-09-27`, `2026-09-29`, `2026-09-30`, `2026-10-03` and `2026-10-05`, the
+terms `2026-09-14`, `2026-09-27`, `2026-09-29`, `2026-09-30`, `2026-10-03`, `2026-10-05` and `2026-10-06`, the
 privacy policy `2026-09-14`, `2026-09-29` and `2026-10-03`, the framework and self-billing agreements `2026-09-29`, and the contract
 for work `2026-09-29` and `2026-09-20`, the latter naming the customer and the cleaner as its
 parties. The terms `2026-09-30` differ from `2026-09-29` only where Plus is concerned: they offer the
@@ -1263,6 +1566,32 @@ points in them are put to the lawyer: the per-side currency sentence; the hold p
 undue delay* is an operational promise that a fixed period such as 14 days could replace; the comparison
 paragraph and its legitimate-interest basis; and whether, once a second operating company exists, one
 company's referral check may read another company's customer data.
+
+**The `2026-10-07` terms of service carry the owner's rulings of 2026-10-06** on cash and amounts owed.
+They copy `2026-10-06` and differ only in §7 and §8, in all five languages (`d2fbe8363`):
+
+- **§7** counts the cash cap as bookings, not defaults: at most two cash bookings not yet paid at a time,
+  counting the one being made, which in practice are the upcoming ones, because cash is paid after the
+  cleaning. A cash booking, like any other, cannot be made while an amount is owed (§8)
+  ([Cash needs no card](#card-guarantee)). The `2026-10-06` wording, *no more than two unpaid cash
+  bookings at a time*, read to the owner and the lawyer as a tolerance for two non-payments.
+- **§8** adds the price of a cash booking not paid to the cleaner after the cleaning to the amounts owed.
+  The cleaner records it, the booking is completed, the customer is told, and the booking earns no
+  loyalty points (§11) or referral credit (§9) even once paid
+  ([When the customer does not pay at the door](#cash-not-paid)). Where `2026-10-06` said *you cannot book
+  cash; you can still book and pay by card*, it now says that while anything is owed to any operating
+  company no new booking is made, by cash or by card, no recurring visit is confirmed and the schedule
+  creates none, and no recurring schedule is created or changed (`3274dec39`, which states what
+  `CreateRecurringBooking` and `UpdateRecurringBooking` already refused), until the amount is paid through
+  its pay link or written off. A schedule the customer already has can still be paused, resumed or
+  cancelled, which `SetRecurringBookingActive` and `DeleteRecurringBooking` never refuse for a debt.
+  Bookings already made are kept, and no card is ever charged ([What a customer owes](#receivables)).
+
+It takes effect on 2026-10-07, so every signed-in customer accepts it before their next booking from that
+day. The privacy policy is unchanged at `2026-10-06`. **This branch's code must not reach production
+before 2026-10-07**: the booking ban and the door report act on rules only the `2026-10-07` terms state,
+and the `2026-10-06` terms promise that card bookings stay open. Like every text here it is our draft
+([below](#legal-drafts)), with five more draft banners for the lawyer to clear before launch.
 
 ### The seller is named from the company record {#company-identity}
 
@@ -1594,11 +1923,13 @@ register of economic subjects. Before the ruling, only its format (`^\d{8}$` for
   has not ended (no `datumZaniku`), and a trade licence is in force (`stavZdrojeRzp` is `AKTIVNI`).
   **No name is matched.** The client is a named HTTP client with a budget of its own: 12 s in all, at
   most three attempts of 4 s. An error, a timeout, a rate limit or a reply it cannot read is
-  *unavailable*. **Since 2026-10-04 nothing wraps that budget and nothing logs the request.** Every host
-  gives each HTTP client the standard resilience handler, and until then it wrapped the lookup's own, so
-  a register that kept failing was asked twelve times in up to 30 s while a save or an approval waited.
-  The client's request logging wrote the URL, which ends in the IČO, at Information. The client now
-  drops both.
+  *unavailable*. **Since 2026-10-04 nothing wraps that budget and nothing logs the request.** The five
+  API hosts' service defaults give every factory client the standard resilience handler as its outermost
+  layer, and until then it wrapped the lookup's own, so a register that kept failing was asked twelve
+  times in up to 30 s while a save or an approval waited. The client's request logging wrote the URL,
+  which ends in the IČO, at Information. The client now drops both. Since 2026-10-06 every other
+  outbound client does the same, so each runs its own pipeline as its only one in every host
+  ([Infrastructure — one resilience pipeline per client](/architecture/infrastructure#outbound-resilience)).
 - **The cleaner's own save checks that the number exists.** `UpdateEmployee` (the partner web
   profile) and `UpdateIdentificationInfo` (the apps' identification section) refuse, after the format
   check, a number the register does not hold, with `validation.registration_number.not_registered`.
@@ -1638,9 +1969,35 @@ register of economic subjects. Before the ruling, only its format (`^\d{8}$` for
   Sentry turns an `Error` into an event, so an operator learns that approvals and approved cleaners' IČO
   changes are being refused. The registry's own line for such a failure is a `Warning`, so it adds no
   second event; a refusal (`401`, `403`), or any other `4xx` the retry does not repeat, is an `Error` of
-  its own. A reply that arrives but is not JSON is not retried and is a `Warning`, so it reaches Sentry
-  only as a breadcrumb
+  its own. **A reply that arrives but cannot be read is a permanent failure** (since 2026-10-06): a
+  `200` whose body is not JSON, or whose content type is not one the client reads, is not retried, because the retry
+  repeats only HTTP failures, and the registry logs it once at `Error`, so it reaches Sentry as an event
+  of its own. Its integration-failure metric tag is `Permanent`. Until then it was classed `Transient` and
+  logged at `Warning`, so a maintenance page served as a `200` refused every approval with nothing in
+  Sentry but a breadcrumb
   → [An outbound URL is personal data too](/architecture/security-rules#outbound-urls).
+- **A save and an approval that race are refused at commit** (since 2026-10-06). An approval checks the
+  number it loaded, and the register can take seconds to answer; a `Pending` cleaner's save checks only
+  that the number exists. Either write could commit second against a row that no longer holds what it
+  was judged on, leaving an approved cleaner on a number nobody checked at approval grade.
+  `Employees.RegistrationNumber` and `Employees.ContractStatus` are now concurrency tokens, the
+  `Orders.CurrentStatus` idiom: every update of a cleaner's row also requires the number and the status it
+  loaded. A save that changes the number while an approval waits makes the approval fail and roll back
+  whole, so nothing is approved, and the administrator's retry checks the new number at approval grade.
+  An approval that lands while a `Pending` save waits makes the save fail, and the cleaner's retry, now
+  approved, is held to approval grade. The loser gets a server error, recorded in Sentry, and no business
+  key; a second approval racing the first fails the same way. Any other write to a cleaner's row that
+  loaded it before such a change fails once and is retried by its own path. The two digest sweeps lose
+  more than that one cleaner's write, and the next tick catches up:
+  - **The day-ahead job digest** commits a company's cleaners together, outside each cleaner's own error
+    handling, so one conflict ends that run. That company's digests and every company after it in the
+    run are skipped until the next tick.
+  - **The new-jobs digest** commits one cleaner at a time, but the failed write stays in the sweep's unit
+    of work and rides every later commit. So every cleaner after the conflict in that sweep fails too.
+
+  No watermark moves on a failed commit, so the next tick sends what was skipped and nothing is sent
+  twice. This is accepted, not built around (CLAUDE.md §4): the window is one read-to-write round trip on
+  a change to a cleaner's IČO or contract status, which is rare, and the cost is one skipped tick.
 - **A switch for development.** `Ares:Enabled` is on unless a host says otherwise, so a deployment that
   forgets the section still checks. The Development settings of the Partner, Partner Mobile and Admin
   hosts switch it off, as do the integration-test and host-test settings, so local runs and CI never
@@ -1707,11 +2064,13 @@ up is somebody else's morning. → [Push notifications](/architecture/push-notif
 
 ## Administrators are told {#admin-notifications}
 
-**Fifteen things the platform can prove happened reach the company's administrators through an in-app
+**Seventeen things the platform can prove happened reach the company's administrators through an in-app
 feed and an e-mail, both** (owner ruling 2026-09-19, [ADR-0065](/decisions/adr-0065): *"both in-app and
 email"*; the not-started alert, the two refund alerts and the lockout report were added by the rulings
-of 2026-09-28, the held referral by the ruling of 2026-10-05). Until then nothing told an administrator anything: a failed erasure was an Error log line, a
-chargeback was a dispute row nobody opened, an order that lost its crew was re-advertised to cleaners
+of 2026-09-28, the held referral by the ruling of 2026-10-05, the door non-payment by the ruling of
+2026-10-06, and the same day a guest's refund claimed for a cancellation that never went through got an
+alert of its own). Until then nothing told an administrator anything: a failed erasure was an Error log
+line, a chargeback was a dispute row nobody opened, an order that lost its crew was re-advertised to cleaners
 only. One writer, `IAdminNotifier`, turns an event into one feed row per administrator of the **named**
 company and one e-mail per recipient address, inside the same unit of work as the event — so the rows
 exist iff the event committed, and a failing e-mail can never fail the command, because the command
@@ -1724,12 +2083,14 @@ an administrator may also hold cannot render these keys.
 | `admin.order.crew_lost` | a drop or an admin rejection leaves nobody on the order, at any status → [above](#crew-lost) | order number, the cause, the status at the loss, the slot |
 | `admin.order.cleaner_not_started` | a job with a cleaner on it is still not started 30 minutes after its start, or the customer reports that the cleaner did not arrive — **once per order**, whichever comes first → [the no-show](#when-the-cleaner-cancels-or-no-shows) | order number, the slot |
 | `admin.order.lockout_reported` | the assigned cleaner reports that they cannot get in, 15 minutes or more past the start, with an entrance photo; nothing moves until an administrator confirms it → [the lockout](#lockout) | order number, the slot |
+| `admin.order.cash_not_paid` | the assigned cleaner reports that the customer did not pay the cash at the door; the order is already completed, the price owed and the customer barred from booking. The console's row opens the order; a wrong report is written off, a late payment to the cleaner is recorded as cash received → [When the customer does not pay at the door](#cash-not-paid) | order number, the amount owed |
 | `admin.dispute.filed` | a customer files a dispute | order number, the reason (an enum), the dispute |
 | `admin.dispute.chargeback` | the bank reverses a charge — the dispute named is the customer's open one when there is one, else the chargeback's own | order number, the reversed amount, the dispute |
 | `admin.dispute.chargeback_unmatched` | the bank reverses a charge that **no order carries**, so no dispute can be written. The Stripe account is shared by every operating company, so **every company** is told, each on its own row. The e-mail and the console's feed row carry the figures | the reversed amount with its currency, the Stripe dispute id to answer it by in the Stripe dashboard |
 | `admin.payment.failed` | a card payment is declined — **once per order**, the first decline only (default O-6): Stripe fires per attempt and the platform resolves the state itself, by a retry or the stale sweep's cancel | order number |
 | `admin.payment.refund_stuck` | a cancelled order's card refund is still not through **24 h** after it was asked for, although the hourly re-drive keeps trying — once per order | order number, the amount |
-| `admin.payment.refund_needs_retry` | any other refund — a dispute's, an administrator's, a partial one — still `Pending` after 24 h; the re-drive does not touch it, so the administrator retries it from the action that asked for it — once per order | order number, the amount |
+| `admin.payment.refund_needs_retry` | any other refund — a dispute's, an administrator's, a partial one — still `Pending` after 24 h; the re-drive does not touch it, so the administrator checks it in Stripe and retries it from the action that asked for it — once per order | order number, the amount |
+| `admin.payment.refund_without_cancel` | a refund a guest claimed on the cancellation's key, for a cancel that never committed, is still `Pending` after 24 h on an order that is not cancelled (since 2026-10-06). The re-drive does not touch it. The notice says to check it in Stripe, then to cancel the order if the booking is still open, which finishes the refund, and if the clean went ahead to issue no refund on the order until the claim is reconciled in Stripe — once per order → [A pending card refund counts as given back](#after-the-start) | order number, the amount |
 | `admin.erasure.failed` | the daily retry of a failed account erasure fails again — **once per request per day**, and a request that fails again tomorrow is meant to be heard again | the request, the day |
 | `admin.company.wind_down_requested` | an administrator sets the company's last day of service (a re-run announces nothing) | the date |
 | `admin.company.wind_down_run` | a wind-down run **that did something** — cancelled, refunded, failed a refund or closed a period; a run that moved nothing is not news | the four counts |
@@ -1741,8 +2102,8 @@ role is in the event's audience** — read by the company **argument**, never by
 be ambient at a webhook or a job — gets their own feed row with their own read state, so the first
 administrator who glances at the bell does not silence it for everyone. The audience is one of the
 administrator sets ([ADR-0066](/decisions/adr-0066) D8): the order, dispute and payment events, a
-lost crew, a cleaner not started, a lockout report and a held referral reach **Support and above**; a failed erasure retry reaches **Manager and above**; the three
-company milestones reach **Administrators only**; a **chargeback and a stuck refund reach every role**, a
+lost crew, a cleaner not started, a lockout report, a door non-payment and a held referral reach **Support and above**; a failed erasure retry reaches **Manager and above**; the three
+company milestones reach **Administrators only**; a **chargeback and the three refund alerts reach every role**, a
 chargeback matched to an order or not — Support answers the customer or the bank, the Accountant
 reconciles the money. The e-mail fan-out below is over the same
 narrowed set. A company with no eligible administrator in the audience is a logged warning, not an error.
@@ -2986,6 +3347,14 @@ range 0–730, set on Company settings): a cardholder can dispute a charge for m
 sealed books would have nowhere to land. The page shows every count, with a link to the list that
 settles it, and the date the archive becomes admissible.
 
+**A door price paid online or written off owes no sale receipt** (since 2026-10-06). An order the
+cleaner reported unpaid ([When the customer does not pay at the door](#cash-not-paid)) completes with its
+price owed and no sale receipt. While that `UnpaidCash` debt is open the order still counts as awaiting a
+receipt, and so it does once cash recorded later makes it `Paid`, until the receipt is issued. Once the
+debt is paid through its pay link or written off, the order's money closed without a sale and it no
+longer counts; counting it would refuse the archive with `…has_orders_awaiting_receipt` for good, since
+no action could issue that receipt.
+
 What the archive does, at the click: **the books freeze** — from that commit on, every write to the
 company's books is refused (`tenant.archived`, HTTP 409): a late review, a receipt edit, a goodwill credit,
 a pay calculation arriving late, a Stripe event for a frozen company's order — the last two are recorded
@@ -3233,7 +3602,11 @@ the same facts must get the same answer from every administrator:
   matches.
 - **Reject** when both accounts book the same flat as their own home — one household is one customer;
   when the e-mail inbox matches; or when the qualifying booking has been refunded in full (`Refunded`),
-  as §9 of the terms allows. A partly refunded one (`PartiallyRefunded`) is not a ground on its own: §9
+  as §9 of the terms allows. Since 2026-10-06 that includes a booking whose price came back partly as a
+  complaint settled in credit: it reads `Refunded` once the card refunds, the credit returned and the
+  settlement reach the price ([dispute settlement](#dispute-settlement)), and §17 settles a justified
+  complaint by refunding the part not done, to the card or in credit as the customer chose. A partly
+  refunded one (`PartiallyRefunded`) is not a ground on its own: §9
   lets the company take the referral credit back when the booking that earned it *is refunded*, and
   treats a booking of which only part of the price is refunded apart.
 

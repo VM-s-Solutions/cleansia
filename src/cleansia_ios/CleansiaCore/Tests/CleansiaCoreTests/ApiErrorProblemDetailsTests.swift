@@ -33,6 +33,27 @@ final class ApiErrorProblemDetailsTests: XCTestCase {
         XCTAssertEqual(error.code, "auth.account_locked")
     }
 
+    /// Whole-command refusals keep one wire code and arrive "; "-joined under it, so every key is kept apart and a
+    /// screen can find the one it acts on wherever it sits.
+    func testEveryKeyIsKeptAndJoinedKeysAreSplit() {
+        let json = #"{"errors":{"PaymentType":"order.cash_open_bookings_limit_reached","#
+            + #""AsyncPredicateValidator":"country.not_serviced; order.unpaid_receivable"}}"#
+
+        let error = ApiError.fromProblemDetails(httpStatus: 400, body: Data(json.utf8))
+
+        XCTAssertEqual(
+            Set(error.keys),
+            ["order.cash_open_bookings_limit_reached", "country.not_serviced", "order.unpaid_receivable"]
+        )
+        XCTAssertTrue(error.carries("order.unpaid_receivable"))
+        XCTAssertFalse(error.carries("order.cash_not_available"))
+    }
+
+    func testTheCodeAloneIsCarried() {
+        XCTAssertTrue(ApiError(code: "order.unpaid_receivable").carries("order.unpaid_receivable"))
+        XCTAssertFalse(ApiError(httpStatus: 500).carries("order.unpaid_receivable"))
+    }
+
     func testTitleBacksUpAMissingDetail() {
         let body = Data(#"{"type":"gdpr.deletion_already_pending","title":"Bad Request"}"#.utf8)
 

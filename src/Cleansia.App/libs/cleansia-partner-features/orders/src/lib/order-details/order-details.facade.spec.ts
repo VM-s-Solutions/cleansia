@@ -10,11 +10,13 @@ import {
   PartnerClient,
   PaymentStatus,
   PaymentType,
+  ReportCashNotPaidCommand,
+  ReportCashNotPaidResponse,
   ReportOrderIssueCommand,
   StartOrderCommand,
 } from '@cleansia/partner-services';
 import * as OrderActions from '@cleansia/partner-stores';
-import { SnackbarService } from '@cleansia/services';
+import { DialogService as ConfirmDialogService, SnackbarService } from '@cleansia/services';
 import { TranslateService } from '@ngx-translate/core';
 import { Actions } from '@ngrx/effects';
 import { Action, Store } from '@ngrx/store';
@@ -70,6 +72,7 @@ function buildOrder(overrides: OrderOverrides = {}): OrderItem {
 describe('OrderDetailsFacade', () => {
   let orderClient: {
     markCashCollected: jest.Mock;
+    reportCashNotPaid: jest.Mock;
     takeOrder: jest.Mock;
     startOrder: jest.Mock;
     reportIssue: jest.Mock;
@@ -83,6 +86,7 @@ describe('OrderDetailsFacade', () => {
     showApiError: jest.Mock;
   };
   let dialogService: { open: jest.Mock };
+  let confirmDialog: { confirmTranslated: jest.Mock };
   let dispatch: jest.Mock;
   let actions$: Subject<Action>;
 
@@ -95,6 +99,7 @@ describe('OrderDetailsFacade', () => {
         { provide: PartnerClient, useValue: { orderClient, employeeClient } },
         { provide: SnackbarService, useValue: snackbar },
         { provide: DialogService, useValue: dialogService },
+        { provide: ConfirmDialogService, useValue: confirmDialog },
         { provide: TranslateService, useValue: { instant: (k: string) => k, currentLang: 'cs' } },
         { provide: Store, useValue: { dispatch } },
         { provide: Actions, useValue: actions$ },
@@ -108,6 +113,7 @@ describe('OrderDetailsFacade', () => {
     TestBed.resetTestingModule();
     orderClient = {
       markCashCollected: jest.fn(),
+      reportCashNotPaid: jest.fn(),
       takeOrder: jest.fn(),
       startOrder: jest.fn(),
       reportIssue: jest.fn(),
@@ -121,6 +127,7 @@ describe('OrderDetailsFacade', () => {
       showApiError: jest.fn(),
     };
     dialogService = { open: jest.fn() };
+    confirmDialog = { confirmTranslated: jest.fn().mockReturnValue(of(false)) };
     dispatch = jest.fn();
     actions$ = new Subject<Action>();
   });
@@ -612,6 +619,121 @@ describe('OrderDetailsFacade', () => {
       expect(dialogService.open).not.toHaveBeenCalled();
       expect(snackbar.showErrorTranslated).toHaveBeenCalledWith(
         'global.messages.orders.invalid_request'
+      );
+    });
+  });
+
+  describe('reporting that the customer did not pay', () => {
+    const reported = () =>
+      of(
+        ReportCashNotPaidResponse.fromJS({
+          orderId: ORDER_ID,
+          newStatus: OrderStatus.Completed,
+          amountOwed: 1250,
+        })
+      );
+
+    const onTheJob = (overrides: OrderOverrides = {}): OrderDetailsFacade => {
+      const facade = createFacade();
+      facade.orderDetails.set(buildOrder(overrides));
+      facade.currentEmployeeId.set(EMPLOYEE_ID);
+      return facade;
+    };
+
+    it('asks first, as a consequential act, and reports nothing when the cleaner backs out', () => {
+      const facade = onTheJob();
+
+      facade.openReportCashNotPaidDialog();
+
+      expect(confirmDialog.confirmTranslated).toHaveBeenCalledWith(
+        'pages.order_details.cash_not_paid.confirm_message',
+        'pages.order_details.cash_not_paid.confirm_title',
+        undefined,
+        expect.objectContaining({
+          danger: true,
+          acceptLabelKey: 'pages.order_details.cash_not_paid.confirm_action',
+        })
+      );
+      expect(orderClient.reportCashNotPaid).not.toHaveBeenCalled();
+    });
+
+    it('reports the order once confirmed, says what the customer owes in the server figure, and re-reads the job', () => {
+      const facade = onTheJob();
+      confirmDialog.confirmTranslated.mockReturnValue(of(true));
+      orderClient.reportCashNotPaid.mockReturnValue(reported());
+
+      facade.openReportCashNotPaidDialog();
+
+      const command: ReportCashNotPaidCommand = orderClient.reportCashNotPaid.mock.calls[0][0];
+      expect(command).toBeInstanceOf(ReportCashNotPaidCommand);
+      expect(command.toJSON()).toEqual({ orderId: ORDER_ID });
+      expect(snackbar.showSuccessTranslated).toHaveBeenCalledWith(
+        'global.messages.orders.cash_not_paid_reported',
+        { amount: '1 250,00 Kč' }
+      );
+      expect(orderClient.getById).toHaveBeenCalledWith(ORDER_ID);
+      expect(facade.loading()).toBe(false);
+    });
+
+    it('re-reads the job after a refusal, leaving the translated toast to the interceptor', () => {
+      const facade = onTheJob();
+      confirmDialog.confirmTranslated.mockReturnValue(of(true));
+      orderClient.reportCashNotPaid.mockReturnValue(
+        throwError(() => refusal('order.cash_already_collected'))
+      );
+
+      facade.openReportCashNotPaidDialog();
+
+      expect(orderClient.getById).toHaveBeenCalledWith(ORDER_ID);
+      expect(snackbar.showSuccessTranslated).not.toHaveBeenCalled();
+      expect(snackbar.showErrorTranslated).not.toHaveBeenCalled();
+      expect(snackbar.showApiError).not.toHaveBeenCalled();
+      expect(facade.loading()).toBe(false);
+    });
+
+    it('opens the contract dialog when the seat still owes its acceptance', () => {
+      const facade = onTheJob();
+      confirmDialog.confirmTranslated.mockReturnValue(of(true));
+      dialogService.open.mockReturnValue({ onClose: EMPTY });
+      orderClient.reportCashNotPaid.mockReturnValue(
+        throwError(() => refusal('contract.acceptance_required'))
+      );
+
+      facade.openReportCashNotPaidDialog();
+
+      expect(workContractDialogData()).toEqual({
+        mode: WorkContractDialogMode.Accept,
+        orderId: ORDER_ID,
+      });
+    });
+
+    it('keeps the job sheet when the call never reached the server', () => {
+      const facade = onTheJob();
+      confirmDialog.confirmTranslated.mockReturnValue(of(true));
+      orderClient.reportCashNotPaid.mockReturnValue(
+        throwError(() => new HttpErrorResponse({ status: 0, statusText: 'Unknown Error' }))
+      );
+
+      facade.openReportCashNotPaidDialog();
+
+      expect(orderClient.getById).not.toHaveBeenCalled();
+      expect(facade.orderDetails()).not.toBeNull();
+      expect(facade.loading()).toBe(false);
+    });
+
+    it.each([
+      { paymentTypeValue: PaymentType.Card },
+      { paymentStatusValue: PaymentStatus.Paid },
+      { orderStatusValue: OrderStatus.Confirmed },
+      { assignedEmployeeId: 'someone-else' },
+    ])('does not ask on a job the action is not offered on, %o', (overrides) => {
+      const facade = onTheJob(overrides);
+
+      facade.openReportCashNotPaidDialog();
+
+      expect(confirmDialog.confirmTranslated).not.toHaveBeenCalled();
+      expect(snackbar.showErrorTranslated).toHaveBeenCalledWith(
+        'pages.order_details.cash_not_paid.gating_error'
       );
     });
   });

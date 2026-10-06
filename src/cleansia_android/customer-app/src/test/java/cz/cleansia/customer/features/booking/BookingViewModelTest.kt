@@ -2350,17 +2350,54 @@ class BookingViewModelTest {
         coVerify(exactly = 1) { bookingApi.create(any()) }
     }
 
-    /** Debt and the open-bookings limit still refuse cash; the refusal is shown as it reads. */
+    /** The open-bookings limit still refuses cash; the refusal is shown as it reads. */
     @Test
-    fun submit_cashRefusedForDebtOrTheOpenBookingsLimit_showsTheRefusal() = runTest {
+    fun submit_cashRefusedForTheOpenBookingsLimit_showsTheRefusal() = runTest {
         val vm = cashReady()
+        val key = "order.cash_open_bookings_limit_reached"
+        coEvery { bookingApi.create(any()) } coAnswers { createRefusedWith(key) }
 
-        listOf("order.cash_unpaid_receivable", "order.cash_open_bookings_limit_reached").forEach { key ->
-            coEvery { bookingApi.create(any()) } coAnswers { createRefusedWith(key) }
+        assertEquals(BookingSubmitOutcome.Failed, vm.submit())
+        verify(exactly = 1) { snackbar.showError(key) }
+    }
 
-            assertEquals(BookingSubmitOutcome.Failed, vm.submit())
-            verify(exactly = 1) { snackbar.showError(key) }
+    private fun createRefusedWithErrors(errors: String): Response<CreateOrderResponse> = Response.error(
+        400,
+        """{"status":400,"errors":$errors}""".toResponseBody("application/problem+json".toMediaType()),
+    )
+
+    /** An unpaid amount refuses every booking, cash or card: the sheet offers the way to pay it, not a snackbar. */
+    @Test
+    fun submit_refusedForAnUnpaidAmount_asksToPayWhateverTheTender() = runTest {
+        val unpaid = """{"AsyncPredicateValidator":"order.unpaid_receivable"}"""
+
+        val cash = cashReady()
+        coEvery { bookingApi.create(any()) } coAnswers { createRefusedWithErrors(unpaid) }
+        assertEquals(BookingSubmitOutcome.OwesMoney, cash.submit())
+
+        val card = cardReady()
+        coEvery { bookingApi.create(any()) } coAnswers { createRefusedWithErrors(unpaid) }
+        assertEquals(BookingSubmitOutcome.OwesMoney, card.submit())
+
+        verify(exactly = 0) { snackbar.showError(any<String>()) }
+        coVerify(exactly = 0) { paymentRepository.createPaymentIntent(any(), any()) }
+    }
+
+    /**
+     * Whole-booking refusals share one code on the wire and arrive joined, and a payment refusal can come
+     * first; the debt is what the customer has to act on, so it is found wherever it sits.
+     */
+    @Test
+    fun submit_refusedForAnUnpaidAmountAmongOtherRefusals_stillAsksToPay() = runTest {
+        val vm = cashReady()
+        coEvery { bookingApi.create(any()) } coAnswers {
+            createRefusedWithErrors(
+                """{"PaymentType":"order.cash_open_bookings_limit_reached","AsyncPredicateValidator":"country.not_serviced; order.unpaid_receivable"}""",
+            )
         }
+
+        assertEquals(BookingSubmitOutcome.OwesMoney, vm.submit())
+        verify(exactly = 0) { snackbar.showError(any<String>()) }
     }
 
     // ── saving the card a booking is paid with — offered to a signed-in card payment, off until ticked ──

@@ -1222,6 +1222,42 @@ describe('OrderWizardFacade', () => {
       });
     });
 
+    describe('a booking refused while the customer owes an amount', () => {
+      const owing = () => throwError(() => ({ errors: { '': 'order.unpaid_receivable' } }));
+
+      it.each([PaymentType.Card, PaymentType.Cash])(
+        'lists what is owed on the payment step and keeps payment type %s',
+        async (paymentType) => {
+          facade.updateFormData({ paymentType });
+          paymentClient.createOrder.mockReturnValue(owing());
+          orderClient.createOrder.mockReturnValue(owing());
+
+          expect(facade.owesUnpaidAmount()).toBe(false);
+          await facade.submitOrder();
+
+          expect(facade.owesUnpaidAmount()).toBe(true);
+          expect(facade.formData().paymentType).toBe(paymentType);
+          expect(facade.cashClearedNotice()).toBe(false);
+          expect(facade.activeStep()).toBe(4);
+          expect(snackbar.showError).not.toHaveBeenCalled();
+          expect(facade.submitting()).toBe(false);
+        },
+      );
+
+      it.each(['order.cash_open_bookings_limit_reached', 'order.cash_not_available'])(
+        'lists nothing owed when %s refuses cash',
+        async (code) => {
+          facade.updateFormData({ paymentType: PaymentType.Cash });
+          orderClient.createOrder.mockReturnValue(throwError(() => ({ errors: { PaymentType: code } })));
+
+          await facade.submitOrder();
+
+          expect(facade.owesUnpaidAmount()).toBe(false);
+          expect(facade.formData().paymentType).toBeNull();
+        },
+      );
+    });
+
     it('routes through the payment client on a card order with a stripe redirect', async () => {
       facade.updateFormData({ paymentType: PaymentType.Card });
       paymentClient.createOrder.mockReturnValue(
@@ -1770,38 +1806,20 @@ describe('OrderWizardFacade', () => {
       expect(facade.activeStep()).toBe(4);
     });
 
-    it.each(['order.cash_unpaid_receivable', 'order.cash_open_bookings_limit_reached'])(
-      'is taken off the order when the server refuses it with %s, leaving the interceptor toast alone',
-      async (code) => {
-        signedIn.set(true);
-        completeOrder();
-        await quoted();
-        facade.selectPaymentType(PaymentType.Cash);
-        orderClient.createOrder.mockReturnValue(throwError(() => ({ errors: { PaymentType: code } })));
-
-        await facade.submitOrder();
-
-        expect(snackbar.showError).not.toHaveBeenCalled();
-        expect(facade.formData().paymentType).toBeNull();
-        expect(facade.activeStep()).toBe(4);
-      },
-    );
-
-    it.each([
-      ['order.cash_unpaid_receivable', true],
-      ['order.cash_open_bookings_limit_reached', false],
-      ['order.cash_not_available', false],
-    ])('lists what is owed on the payment step only when %s refuses cash for an unpaid amount', async (code, owed) => {
+    it('is taken off the order when the server refuses it with the open-bookings limit, leaving the interceptor toast alone', async () => {
       signedIn.set(true);
       completeOrder();
       await quoted();
       facade.selectPaymentType(PaymentType.Cash);
-      orderClient.createOrder.mockReturnValue(throwError(() => ({ errors: { PaymentType: code } })));
+      orderClient.createOrder.mockReturnValue(
+        throwError(() => ({ errors: { PaymentType: 'order.cash_open_bookings_limit_reached' } })),
+      );
 
-      expect(facade.cashOwed()).toBe(false);
       await facade.submitOrder();
 
-      expect(facade.cashOwed()).toBe(owed);
+      expect(snackbar.showError).not.toHaveBeenCalled();
+      expect(facade.formData().paymentType).toBeNull();
+      expect(facade.activeStep()).toBe(4);
     });
   });
 

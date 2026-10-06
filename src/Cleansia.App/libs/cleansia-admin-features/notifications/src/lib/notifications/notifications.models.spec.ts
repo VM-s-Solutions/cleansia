@@ -30,18 +30,20 @@ function dto(overrides: Partial<UserNotificationDto> = {}): UserNotificationDto 
 }
 
 describe('the admin event catalogue mirror', () => {
-  it('pins the fifteen keys the backend catalogue declares, in its order', () => {
+  it('pins the seventeen keys the backend catalogue declares, in its order', () => {
     expect(ADMIN_NOTIFICATION_EVENT_KEYS).toEqual([
       'admin.order.new',
       'admin.order.crew_lost',
       'admin.order.cleaner_not_started',
       'admin.order.lockout_reported',
+      'admin.order.cash_not_paid',
       'admin.dispute.filed',
       'admin.dispute.chargeback',
       'admin.dispute.chargeback_unmatched',
       'admin.payment.failed',
       'admin.payment.refund_stuck',
       'admin.payment.refund_needs_retry',
+      'admin.payment.refund_without_cancel',
       'admin.erasure.failed',
       'admin.company.wind_down_requested',
       'admin.company.wind_down_run',
@@ -68,9 +70,11 @@ describe('the admin event catalogue mirror', () => {
       NotificationFamily.Order,
       NotificationFamily.Order,
       NotificationFamily.Order,
+      NotificationFamily.Order,
       NotificationFamily.Dispute,
       NotificationFamily.Dispute,
       NotificationFamily.Dispute,
+      NotificationFamily.Payment,
       NotificationFamily.Payment,
       NotificationFamily.Payment,
       NotificationFamily.Payment,
@@ -160,9 +164,11 @@ describe('getNotificationRoute', () => {
     'admin.order.crew_lost',
     'admin.order.cleaner_not_started',
     'admin.order.lockout_reported',
+    'admin.order.cash_not_paid',
     'admin.payment.failed',
     'admin.payment.refund_stuck',
     'admin.payment.refund_needs_retry',
+    'admin.payment.refund_without_cancel',
   ])('%s opens the order', (key) => {
     expect(getNotificationRoute(key, { orderId: 'o-1', disputeId: 'd-1' })).toEqual(['order-management', 'o-1']);
   });

@@ -226,6 +226,33 @@ like the server and the detail page, which sends an empty string. It passes no v
 *On time* row is gone (2026-09-28), and the hint under the notes says only that they help improve the
 estimates. Nothing in pay reads the minutes; the dashboard's time and productivity analytics do.
 
+### Customer did not pay {#customer-did-not-pay}
+
+**Owner ruling 2026-10-06.** When the customer of a cash job pays nothing at the door, the cleaner
+reports it from the order detail instead of completing the job, and the job completes through the report
+→ [Business rules — when the customer does not pay at the door](/product/business-rules#cash-not-paid).
+
+- **Where it shows.** Beside *Mark cash collected*, only on a cash order in progress whose payment is
+  still pending, to a cleaner on its crew (`canReportCashNotPaid` in `order-details.helpers.ts`, which
+  mirrors the server's order gates; the contract for work is the server's to check). With no after photo
+  the page warns as *Complete* does and sends nothing.
+- **What it asks.** `OrderDetailsFacade.openReportCashNotPaidDialog()` opens the shared confirmation,
+  marked dangerous: report this only if the customer paid nothing; the order is completed and its price
+  becomes an amount the customer owes; the customer is told at once and cannot book again until it is
+  paid; an administrator is alerted; the cleaner receives the reward as usual; only an administrator can
+  undo it (`pages.order_details.cash_not_paid.*`, five locales).
+- **What it sends.** `ReportCashNotPaidCommand { orderId }` through the regenerated
+  `orderClient.reportCashNotPaid`. On success a notice says the order is completed and the customer owes
+  the amount the server answered (`global.messages.orders.cash_not_paid_reported`), and the order is read
+  again. A refusal is left to the translated interceptor notice and the order is read again;
+  `contract.acceptance_required` opens the contract dialog in `accept` mode, as Start and Complete do.
+- **Android and iOS** carry the same action on the order detail, shown once the after photos are in, with
+  a system confirmation that names the amount the customer will owe (the price less any credit applied)
+  and says, in the web's words, that the customer is told, an administrator is alerted and only an
+  administrator can undo it (five locales on each platform, pinned by `CashNotPaidStringsTest` and
+  `OrderDetailCashNotPaidTests`).
+  It is not offered on the Active-list swipe, where cash collection is not offered either.
+
 ### Elapsed Timer
 
 While an order is `InProgress`, an elapsed timer is displayed on the order detail page showing how long the cleaning has been running. The timer updates in real time based on the `InProgress` status timestamp.

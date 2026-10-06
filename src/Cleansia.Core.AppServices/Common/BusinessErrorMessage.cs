@@ -117,10 +117,13 @@ public static class BusinessErrorMessage
     public const string OrderCashNotCollected = "order.cash_not_collected";
     /// <summary>Cash is only for a signed-in customer whose booking needs one cleaner; anything else pays by card.</summary>
     public const string OrderCashNotAvailable = "order.cash_not_available";
-    /// <summary>The customer already holds the most open unpaid cash bookings allowed; the next one pays by card.</summary>
+    /// <summary>
+    /// The customer already holds the most cash bookings not yet paid at the door, their upcoming ones; the next
+    /// one pays by card. It counts bookings in flight, not defaults.
+    /// </summary>
     public const string OrderCashOpenBookingsLimitReached = "order.cash_open_bookings_limit_reached";
-    /// <summary>The customer owes the company an open receivable (an unpaid fee or unpaid cash); cash waits until it is settled, card stays open.</summary>
-    public const string OrderCashUnpaidReceivable = "order.cash_unpaid_receivable";
+    /// <summary>The customer owes any operating company an open receivable; no new booking, cash or card, until it is paid or written off.</summary>
+    public const string OrderUnpaidReceivable = "order.unpaid_receivable";
     public const string OrderPaymentNotConfirmed = "order.payment_not_confirmed";
     // Reconciliation outcomes when the cleaner tries to take cash for an order booked on a card: the
     // handler asks Stripe what really happened before any second tender is recorded.
@@ -506,6 +509,11 @@ public static class BusinessErrorMessage
     public const string DisputeNotOwnedByUser = "dispute.not_owned_by_user";
     public const string InvalidDisputeStatusTransition = "dispute.invalid_status_transition";
     public const string DisputeAlreadyResolved = "dispute.already_resolved";
+    /// <summary>
+    /// The dispute's card refund is still pending, and resolving the dispute again is the only retry of it:
+    /// it cannot be closed until that refund has gone through.
+    /// </summary>
+    public const string DisputeRefundPending = "dispute.refund_pending";
     /// <summary>
     /// A charge to a cleaner found at fault that their pay on the order cannot take: none recorded,
     /// already on an invoice, already charged for a dispute, or smaller than the charge.

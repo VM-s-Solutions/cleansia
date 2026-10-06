@@ -15,16 +15,17 @@ byte-stable data-only payload + `AndroidConfig` for Android, plus an APNs-scoped
 - `FcmPushDispatcher` — its only caller; hands the factory's `MulticastMessage` to
   `FirebaseMessaging.SendEachForMulticastAsync` and owns everything after the wire (init, failure
   classification, dead-token prune signaling).
-- The **APNs display map** it owns internally: the 32 displayable event keys (ADR-0025 D2 — union
+- The **APNs display map** it owns internally: the 33 displayable event keys (ADR-0025 D2 — union
   of what the two Android apps render *from fixed client-side templates*; `promo.new_sitewide`
   excluded **by nature**: it is a literal-text event with no fixed template anywhere — panel
   finding CH-1) → derived loc-keys (`push.<event_key>.title|body`) + ordered arg names.
 - The **loc-args allowlist** it enforces: `{orderNumber, count, amount}` only (ADR-0025 D3, widened by
-  one slot in Amendment A2 on owner ruling 2026-09-13; pinned by TC-PUSH-APNS-5). `amount` rides the
-  **three no-show outcome keys only** — `order.no_cleaner_refunded`, `order.no_cleaner_refund_pending`
-  and `order.no_cleaner_nothing_charged`, each `["orderNumber", "amount"]` — and is a server-formatted
-  money figure with its own currency's symbol (`MoneyText.Format`: "250 Kč"), never a name, an id or
-  free text.
+  one slot in Amendment A2 on owner ruling 2026-09-13; pinned by TC-PUSH-APNS-5). `amount` rides
+  **four keys only** — the three no-show outcomes `order.no_cleaner_refunded`,
+  `order.no_cleaner_refund_pending` and `order.no_cleaner_nothing_charged`, and since 2026-10-06 the door
+  non-payment `order.cash_not_paid`, each `["orderNumber", "amount"]` — and is a server-formatted money
+  figure with its own currency's symbol (`MoneyText.Format`: "250 Kč"), never a name, an id or free
+  text.
 
 ## Does NOT know
 - **Which platform a token belongs to** — `ApnsConfig` is attached platform-blind; FCM routes it.
@@ -49,6 +50,12 @@ byte-stable data-only payload + `AndroidConfig` for Android, plus an APNs-scoped
 - A new event key may enter the display map **only after** its loc-keys ship in BOTH iOS apps'
   main-bundle `Localizable.xcstrings` (client-first rule, ADR-0025 D2) — otherwise version-skew
   renders a raw key on the lock screen.
+- **`order.cash_not_paid` went in on 2026-10-06** (`45e872263`, owner ruling 2026-10-06, the door
+  non-payment), after both iOS bundles carried `push.order.cash_not_paid.title|body` (`d3aa991bc`,
+  `223db7c6a`), so the rule above was met first. Its entry is `["orderNumber", "amount"]`, the fourth key
+  `amount` rides — the price owed, formatted by `MoneyText.Format` like the no-show credit — and it is in
+  the pinned lists in `FcmMessageFactoryTests`. It is still out of the customer feed keyset
+  → [Push notifications — the door non-payment push](/architecture/push-notifications#cash-not-paid).
 - **Day-one catalog gate (ADR-0025 D5, CH-2):** the map must not go live before the first public
   release of both iOS apps carrying the full 23-event catalog — both AppDelegates already register
   FCM tokens, so a catalog-less build + live map = raw `push.*` keys on lock screens.

@@ -11,6 +11,7 @@ enum OrderAction: Equatable {
     case notifyOnTheWay
     case start
     case markCashCollected
+    case reportCashNotPaid
     case complete
     case declineOffer
     case reportLockout
@@ -21,7 +22,8 @@ enum OrderAction: Equatable {
         switch self {
         case .take: .confirm
         case .declineOffer: .release
-        case .acceptContract, .notifyOnTheWay, .start, .markCashCollected, .complete, .reportLockout: nil
+        case .acceptContract, .notifyOnTheWay, .start, .markCashCollected, .reportCashNotPaid, .complete,
+             .reportLockout: nil
         }
     }
 
@@ -32,6 +34,7 @@ enum OrderAction: Equatable {
         case .notifyOnTheWay: .notifyOnTheWay
         case .start: .startOrder
         case .markCashCollected: .markCashCollected
+        case .reportCashNotPaid: .completeOrder
         case .complete: .completeOrder
         case .declineOffer: .declinePreferredOffer
         case .reportLockout: .reportLockout
@@ -46,6 +49,7 @@ enum OrderAction: Equatable {
         case .notifyOnTheWay: L10n.Orders.customerNotifiedOnTheWay
         case .start: L10n.Orders.orderStartedToast
         case .markCashCollected: L10n.Orders.cashCollectedToast
+        case .reportCashNotPaid: L10n.Orders.cashNotPaidReportedToast
         case .complete: L10n.Orders.orderCompletedToast
         case .declineOffer: L10n.Offers.declinedToast
         case .reportLockout: L10n.Orders.lockoutReportedToast
@@ -129,6 +133,12 @@ final class OrderDetailViewModel: ViewModel {
             isCashPayment: order.payment.isCash,
             isPaymentSettled: order.payment.isSettled
         )
+    }
+
+    /// Beside the cash collection, and only while the payment is still pending: a refunded or disputed payment
+    /// is not a debt to report.
+    var offersCashNotPaid: Bool {
+        primaryAction == .collectCash && state.loadedValue?.payment.isPending == true
     }
 
     func load() async {
@@ -235,6 +245,10 @@ final class OrderDetailViewModel: ViewModel {
 
     func markCashCollected() async {
         await run(.markCashCollected) { await self.client.markCashCollected(orderId: self.orderId) }
+    }
+
+    func reportCashNotPaid() async {
+        await run(.reportCashNotPaid) { await self.client.reportCashNotPaid(orderId: self.orderId) }
     }
 
     func complete() async {

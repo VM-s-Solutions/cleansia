@@ -34,6 +34,12 @@ final class CustomerPushTapRoutingTests: XCTestCase {
         XCTAssertEqual(plan.routes, [.rewardsActivity])
     }
 
+    func testPaymentsDestinationOpensPaymentsOverTheProfileTab() {
+        let plan = CustomerPushTapRouting.plan(for: .payments)
+        XCTAssertEqual(plan.tab, .profile)
+        XCTAssertEqual(plan.routes, [.payments], "back from Payments must land on the profile, where its row is")
+    }
+
     func testPlansForDifferentOrdersDiffer() {
         XCTAssertNotEqual(
             CustomerPushTapRouting.plan(for: .order(orderId: "a")),
@@ -72,6 +78,19 @@ final class CustomerShellPushApplyTests: XCTestCase {
         model.applyPushTap(CustomerPushTapRouting.plan(for: .dispute(disputeId: "d-2")))
 
         try assertPath(model.path, equals: [ShellRoute.disputes, ShellRoute.disputeDetail("d-2")])
+    }
+
+    /// A booking refused for an amount owed leads to Payments, over the profile where its row is.
+    func testOpenPaymentsLeavesWhateverWasOpenForPayments() throws {
+        let model = CustomerShellModel()
+        model.isBookingPresented = true
+        model.path.append(ShellRoute.createRecurring(orderId: nil))
+
+        model.openPayments()
+
+        XCTAssertFalse(model.isBookingPresented)
+        XCTAssertEqual(model.selection, .profile)
+        try assertPath(model.path, equals: [ShellRoute.payments])
     }
 
     func testConsumeReturnsThePendingDestinationOnceThenClearsIt() {

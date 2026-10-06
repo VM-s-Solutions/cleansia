@@ -173,6 +173,31 @@ class BackendKeyStringsTest {
         assertTrue("these refusals render raw: $raw", raw.isEmpty())
     }
 
+    /** Every refusal `ReportCashNotPaid` can answer the cleaner who reports a customer who did not pay. */
+    @Test
+    fun `every refusal of a non-payment report resolves to a sentence in all five locales`() {
+        val keys = listOf(
+            "common.required",
+            "order.not_found",
+            "employee.not_approved",
+            "employee.profile_incomplete",
+            "contract.acceptance_required",
+            "order.not_in_progress",
+            "order.cash_not_allowed_on_card_order",
+            "order.cash_already_collected",
+            "order.payment_not_outstanding",
+            "order.after_photos.required",
+        )
+        val raw = locales.flatMap { locale ->
+            val declared = declared(locale)
+            keys
+                .map { it to it.replace('.', '_').replace('-', '_').lowercase() }
+                .filterNot { (_, name) -> "error_$name" in declared || "error_key_$name" in declared }
+                .map { (key, name) -> "$locale/error_$name ($key)" }
+        }
+        assertTrue("these refusals render raw: $raw", raw.isEmpty())
+    }
+
     /**
      * `UpdateIdentificationInfo` and `UpdateEmployee` refuse an IČO the country's business register (ARES)
      * does not hold, and an approved cleaner's changed IČO gets approval's full register check.

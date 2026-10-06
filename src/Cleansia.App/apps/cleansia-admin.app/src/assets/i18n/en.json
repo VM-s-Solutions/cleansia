@@ -703,7 +703,7 @@
         },
         "record_cash": {
           "action": "Record cash received",
-          "context": "Use this when the cleaner took the cash but could not record it in their app. The order becomes paid, so the cleaner can complete it; if it is already completed, its receipt is issued now.",
+          "context": "Use this when the cleaner took the cash but could not record it in their app. The order becomes paid, so the cleaner can complete it; if it is already completed, its receipt is issued now. If the cleaner reported that the customer did not pay, this also closes the amount the customer owes; it is refused once the customer has paid that amount online.",
           "no_cleaner": "Nobody is on this job. Put the cleaner who took the cash on it first.",
           "cleaner": "Cleaner who took the cash",
           "received_at": "Received at",
@@ -2874,6 +2874,10 @@
             "lockout_reported": {
               "title": "The cleaner cannot get in",
               "body": "The cleaner on order {{orderNumber}}, booked for {{cleaningDateTime}}, reports that they cannot get in. Check the entrance photo and the calls they made; if the customer did not let them in, cancel it as a customer lockout."
+            },
+            "cash_not_paid": {
+              "title": "The customer did not pay cash",
+              "body": "The cleaner on order {{orderNumber}} reports that the customer did not pay {{amount}} in cash. The order is completed and the cleaner is paid; the customer now owes {{amount}} and cannot book until it is paid. If the report is wrong, a manager writes the debt off; if the customer pays the cleaner later, record the cash received on the order."
             }
           },
           "dispute": {
@@ -2902,6 +2906,10 @@
             "refund_needs_retry": {
               "title": "A refund needs a retry",
               "body": "The refund of {{amount}} on order {{orderNumber}} has not gone through for a day, and it is not retried automatically. Check it in Stripe, then retry it from the dispute or the order."
+            },
+            "refund_without_cancel": {
+              "title": "A refund was asked for a cancellation that did not go through",
+              "body": "The refund of {{amount}} on order {{orderNumber}} was asked of Stripe for a cancellation that did not go through, and it is not retried automatically. If the booking is still open, cancel the order; if the clean went ahead, do not issue a refund on it: reconcile this claim in Stripe first."
             }
           },
           "erasure": {
@@ -3271,6 +3279,7 @@
       "action_failed": "The dispute action could not be completed. Please try again.",
       "already_exists": "Dispute already exists for this order",
       "already_resolved": "This dispute has already been resolved and cannot be changed.",
+      "refund_pending": "This dispute's card refund has not gone through yet, so the dispute cannot be closed or resolved without it. Check the refund in Stripe, then resolve the dispute again with a refund amount to retry it.",
       "invalid_refund_amount": "Invalid refund amount",
       "invalid_status_transition": "This status change is not allowed for the current dispute state.",
       "max_length_exceeded": "Maximum length exceeded",

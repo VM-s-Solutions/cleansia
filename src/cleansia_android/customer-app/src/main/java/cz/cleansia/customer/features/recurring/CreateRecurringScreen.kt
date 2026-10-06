@@ -82,6 +82,7 @@ import cz.cleansia.customer.features.addresses.AddressManagerSheet
 import cz.cleansia.customer.features.booking.DayPartTimePicker
 import cz.cleansia.customer.features.booking.DirtinessLevelPicker
 import cz.cleansia.customer.features.booking.DoubleBookingDialog
+import cz.cleansia.customer.features.payments.UnpaidReceivableDialog
 import cz.cleansia.customer.features.booking.InPackageMarker
 import cz.cleansia.customer.features.booking.inPackageRowBorder
 import cz.cleansia.customer.features.booking.inPackageRowFill
@@ -117,6 +118,7 @@ import java.util.Locale
 fun CreateRecurringScreen(
     onBack: () -> Unit,
     onCreated: () -> Unit,
+    onOpenPayments: () -> Unit = {},
     viewModel: CreateRecurringViewModel = hiltViewModel(),
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
@@ -133,6 +135,7 @@ fun CreateRecurringScreen(
     val preferredCleanerRefused by viewModel.preferredCleanerRefused.collectAsStateWithLifecycle()
     val termsAsked by viewModel.termsAsked.collectAsStateWithLifecycle()
     val doubleBooking by viewModel.doubleBooking.collectAsStateWithLifecycle()
+    val owesMoney by viewModel.owesMoney.collectAsStateWithLifecycle()
     val submitting = submitState is ActionState.Submitting
     val isEditing = viewModel.isEditing
 
@@ -259,6 +262,16 @@ fun CreateRecurringScreen(
             pick = pick,
             onConfirm = viewModel::confirmDoubleBooking,
             onDismiss = viewModel::dismissDoubleBooking,
+        )
+    }
+
+    if (owesMoney) {
+        UnpaidReceivableDialog(
+            onPay = {
+                viewModel.dismissOwesMoney()
+                onOpenPayments()
+            },
+            onDismiss = viewModel::dismissOwesMoney,
         )
     }
 }

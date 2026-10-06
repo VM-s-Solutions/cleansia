@@ -562,15 +562,51 @@ public sealed partial class EmailService : IEmailService
 
     // In-code copy only: the status e-mail's translation rows are that e-mail's, and a Subject entered for
     // it would retitle this one.
-    public async Task<string> SendReceivablePayLinkEmailAsync(
+    public Task<string> SendReceivablePayLinkEmailAsync(
         string email,
         Order order,
         Receivable receivable,
         string payUrl,
         string languageCode = Constants.Language.English,
+        CancellationToken ct = default) =>
+        SendReceivableEmailAsync(
+            email, order, receivable, payUrl, CopyFor(PayLinkDefaults, languageCode), languageCode,
+            $"Receivable pay link for receivable {receivable.Id}", ct);
+
+    // The pay-link e-mail's labels under its own subject and message; the button opens the order's page, where
+    // the customer asks for the pay link.
+    public Task<string> SendOrderCashNotPaidEmailAsync(
+        string email,
+        Order order,
+        Receivable receivable,
+        string languageCode = Constants.Language.English,
         CancellationToken ct = default)
     {
-        var copy = PayLinkDefaults.GetValueOrDefault(languageCode) ?? PayLinkDefaults[Constants.Language.English];
+        var copy = new Dictionary<string, string>(CopyFor(PayLinkDefaults, languageCode), StringComparer.Ordinal);
+        foreach (var (key, value) in CopyFor(CashNotPaidDefaults, languageCode))
+        {
+            copy[key] = value;
+        }
+
+        return SendReceivableEmailAsync(
+            email, order, receivable, BuildOrderStatusLink(order, email, guestAccessToken: null), copy, languageCode,
+            $"Cash not paid for receivable {receivable.Id}", ct);
+    }
+
+    private static IReadOnlyDictionary<string, string> CopyFor(
+        IReadOnlyDictionary<string, Dictionary<string, string>> defaults, string languageCode) =>
+        defaults.GetValueOrDefault(languageCode) ?? defaults[Constants.Language.English];
+
+    private async Task<string> SendReceivableEmailAsync(
+        string email,
+        Order order,
+        Receivable receivable,
+        string link,
+        IReadOnlyDictionary<string, string> copy,
+        string languageCode,
+        string description,
+        CancellationToken ct)
+    {
         var culture = CultureFor(languageCode);
         var subject = string.Format(culture, copy["Subject"], order.DisplayOrderNumber);
         var cleaningTime = TimeZoneInfo.ConvertTimeFromUtc(
@@ -590,7 +626,7 @@ public sealed partial class EmailService : IEmailService
         values["CleaningDate"] = cleaningTime.ToString("g", culture);
         values["Address"] = order.CustomerAddress is { } address ? $"{address.Street}, {address.City}" : string.Empty;
         values["Total"] = Money(receivable.Amount, order.Currency?.Symbol ?? string.Empty, languageCode);
-        values["OrderStatusLink"] = payUrl;
+        values["OrderStatusLink"] = link;
         values["SupportEmail"] = SupportAddress;
         values["FooterText"] = await FooterTextAsync(languageCode, order.CustomerAddress?.CountryId, ct);
 
@@ -598,7 +634,7 @@ public sealed partial class EmailService : IEmailService
             email,
             templateRenderer.Render(TemplateFileFor(EmailType.OrderStatusUpdate), values),
             subject,
-            $"Receivable pay link for receivable {receivable.Id}",
+            description,
             ct);
     }
 
@@ -609,7 +645,7 @@ public sealed partial class EmailService : IEmailService
             ["en"] = new()
             {
                 ["Subject"] = "Payment due for order {0}",
-                ["StatusMessage"] = "We could not charge the amount below to your saved card. Please pay it with the button below; the link is valid for 24 hours. Until it is paid, cash bookings are not available, and you can still book and pay by card.",
+                ["StatusMessage"] = "We could not charge the amount below to your saved card. Please pay it with the button below; the link is valid for 24 hours. Until it is paid, you cannot make a new booking.",
                 ["StatusSectionLabel"] = "Amount due for",
                 ["OrderNumberLabel"] = "Order #",
                 ["CleaningDateLabel"] = "Cleaning date",
@@ -624,7 +660,7 @@ public sealed partial class EmailService : IEmailService
             ["cs"] = new()
             {
                 ["Subject"] = "Platba k rezervaci {0}",
-                ["StatusMessage"] = "Níže uvedenou částku se nám nepodařilo strhnout z vaší uložené karty. Zaplaťte ji prosím tlačítkem níže; odkaz platí 24 hodin. Dokud nebude zaplacena, nelze objednávat s platbou v hotovosti, kartou můžete objednávat dál.",
+                ["StatusMessage"] = "Níže uvedenou částku se nám nepodařilo strhnout z vaší uložené karty. Zaplaťte ji prosím tlačítkem níže; odkaz platí 24 hodin. Dokud nebude zaplacena, nelze vytvořit novou objednávku.",
                 ["StatusSectionLabel"] = "Dlužná částka za",
                 ["OrderNumberLabel"] = "Rezervace č.",
                 ["CleaningDateLabel"] = "Datum úklidu",
@@ -639,7 +675,7 @@ public sealed partial class EmailService : IEmailService
             ["sk"] = new()
             {
                 ["Subject"] = "Platba k rezervácii {0}",
-                ["StatusMessage"] = "Uvedenú sumu sa nám nepodarilo stiahnuť z vašej uloženej karty. Zaplaťte ju, prosím, tlačidlom nižšie; odkaz platí 24 hodín. Kým nebude zaplatená, nie je možné objednávať s platbou v hotovosti, kartou môžete objednávať naďalej.",
+                ["StatusMessage"] = "Uvedenú sumu sa nám nepodarilo stiahnuť z vašej uloženej karty. Zaplaťte ju, prosím, tlačidlom nižšie; odkaz platí 24 hodín. Kým nebude zaplatená, nie je možné vytvoriť novú objednávku.",
                 ["StatusSectionLabel"] = "Dlžná suma za",
                 ["OrderNumberLabel"] = "Rezervácia č.",
                 ["CleaningDateLabel"] = "Dátum upratovania",
@@ -654,7 +690,7 @@ public sealed partial class EmailService : IEmailService
             ["uk"] = new()
             {
                 ["Subject"] = "Оплата за бронювання {0}",
-                ["StatusMessage"] = "Нам не вдалося списати зазначену суму з вашої збереженої картки. Будь ласка, сплатіть її за допомогою кнопки нижче; посилання дійсне 24 години. Доки суму не сплачено, бронювання з оплатою готівкою недоступні, бронювати з оплатою карткою можна й далі.",
+                ["StatusMessage"] = "Нам не вдалося списати зазначену суму з вашої збереженої картки. Будь ласка, сплатіть її за допомогою кнопки нижче; посилання дійсне 24 години. Доки суму не сплачено, нові бронювання недоступні.",
                 ["StatusSectionLabel"] = "Сума до сплати за",
                 ["OrderNumberLabel"] = "Бронювання №",
                 ["CleaningDateLabel"] = "Дата прибирання",
@@ -669,7 +705,7 @@ public sealed partial class EmailService : IEmailService
             ["ru"] = new()
             {
                 ["Subject"] = "Оплата по бронированию {0}",
-                ["StatusMessage"] = "Нам не удалось списать указанную сумму с вашей сохранённой карты. Пожалуйста, оплатите её с помощью кнопки ниже; ссылка действительна 24 часа. Пока сумма не оплачена, бронирования с оплатой наличными недоступны, бронировать с оплатой картой можно и дальше.",
+                ["StatusMessage"] = "Нам не удалось списать указанную сумму с вашей сохранённой карты. Пожалуйста, оплатите её с помощью кнопки ниже; ссылка действительна 24 часа. Пока сумма не оплачена, новые бронирования недоступны.",
                 ["StatusSectionLabel"] = "Сумма к оплате за",
                 ["OrderNumberLabel"] = "Бронирование №",
                 ["CleaningDateLabel"] = "Дата уборки",
@@ -680,6 +716,40 @@ public sealed partial class EmailService : IEmailService
                 ["SupportText"] = "Нужна помощь? Напишите нам:",
                 ["Closing"] = "С уважением",
                 ["TeamName"] = "Команда Cleansia",
+            },
+        };
+
+    /// <summary>
+    /// The cash-not-paid e-mail's subject and message per locale, over the pay-link e-mail's labels;
+    /// <c>{0}</c> in the subject is the order number.
+    /// </summary>
+    private static readonly IReadOnlyDictionary<string, Dictionary<string, string>> CashNotPaidDefaults =
+        new Dictionary<string, Dictionary<string, string>>(StringComparer.OrdinalIgnoreCase)
+        {
+            ["en"] = new()
+            {
+                ["Subject"] = "Cash payment not received for order {0}",
+                ["StatusMessage"] = "Your cleaning is done, but the cleaner did not receive the cash payment for it, so the amount below is now owed. Please pay it on the order's page with the button below. Until it is paid, you cannot make a new booking. If you did pay the cleaner, please contact us.",
+            },
+            ["cs"] = new()
+            {
+                ["Subject"] = "Platba v hotovosti za rezervaci {0} nebyla přijata",
+                ["StatusMessage"] = "Úklid je hotový, ale uklízeč za něj nedostal platbu v hotovosti, takže nám níže uvedenou částku nyní dlužíte. Zaplaťte ji prosím na stránce rezervace tlačítkem níže. Dokud nebude zaplacena, nelze vytvořit novou objednávku. Pokud jste uklízeči zaplatili, kontaktujte nás prosím.",
+            },
+            ["sk"] = new()
+            {
+                ["Subject"] = "Platba v hotovosti za rezerváciu {0} nebola prijatá",
+                ["StatusMessage"] = "Upratovanie je hotové, ale upratovač zaň nedostal platbu v hotovosti, takže nám uvedenú sumu teraz dlhujete. Zaplaťte ju, prosím, na stránke rezervácie tlačidlom nižšie. Kým nebude zaplatená, nie je možné vytvoriť novú objednávku. Ak ste upratovačovi zaplatili, kontaktujte nás, prosím.",
+            },
+            ["uk"] = new()
+            {
+                ["Subject"] = "Оплату готівкою за бронювання {0} не отримано",
+                ["StatusMessage"] = "Прибирання завершено, але прибиральник не отримав за нього оплату готівкою, тож зазначену суму ви тепер винні. Будь ласка, сплатіть її на сторінці бронювання за допомогою кнопки нижче. Доки суму не сплачено, нові бронювання недоступні. Якщо ви заплатили прибиральнику, будь ласка, зв’яжіться з нами.",
+            },
+            ["ru"] = new()
+            {
+                ["Subject"] = "Оплата наличными за бронирование {0} не получена",
+                ["StatusMessage"] = "Уборка завершена, но уборщик не получил за неё оплату наличными, поэтому указанную сумму вы теперь должны. Пожалуйста, оплатите её на странице бронирования с помощью кнопки ниже. Пока сумма не оплачена, новые бронирования недоступны. Если вы заплатили уборщику, пожалуйста, свяжитесь с нами.",
             },
         };
 

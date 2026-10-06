@@ -85,6 +85,7 @@ import cz.cleansia.customer.core.orders.ReceiptOpenResult
 import cz.cleansia.customer.core.orders.openReceiptPdf
 import cz.cleansia.customer.core.payments.toConfiguration
 import cz.cleansia.customer.core.user.CodeDto
+import cz.cleansia.customer.features.payments.UnpaidReceivableDialog
 import cz.cleansia.customer.features.recurring.RecurringAuthoringGate
 import cz.cleansia.customer.ui.components.CardSavingConsent
 import cz.cleansia.customer.ui.state.ActionState
@@ -122,6 +123,7 @@ fun OrderDetailScreen(
     onMakeRecurring: (orderId: String) -> Unit = {},
     @Suppress("UNUSED_PARAMETER") onDownloadReceipt: () -> Unit = {},
     onViewPhotos: () -> Unit = {},
+    onOpenPayments: () -> Unit = {},
     /**
      * Raise the review sheet as soon as the order resolves — the completion prompt's landing.
      *
@@ -150,6 +152,7 @@ fun OrderDetailScreen(
     val termsAsked by viewModel.termsAsked.collectAsStateWithLifecycle()
     val termsAccepted by viewModel.termsAccepted.collectAsStateWithLifecycle()
     val canConfirmRecurring by viewModel.canConfirmRecurring.collectAsStateWithLifecycle()
+    val owesMoney by viewModel.owesMoney.collectAsStateWithLifecycle()
 
     val cancelling = cancelState is ActionState.Submitting
     val cancelError = (cancelState as? ActionState.Error)?.message
@@ -340,6 +343,16 @@ fun OrderDetailScreen(
             onConfirm = { reason -> viewModel.cancel(reason) },
             onReasonChanged = viewModel::dismissCancelError,
             tookNoCardPayment = tookNoCardPayment,
+        )
+    }
+
+    if (owesMoney) {
+        UnpaidReceivableDialog(
+            onPay = {
+                viewModel.dismissOwesMoney()
+                onOpenPayments()
+            },
+            onDismiss = viewModel::dismissOwesMoney,
         )
     }
 

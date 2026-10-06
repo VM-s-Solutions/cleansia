@@ -264,7 +264,7 @@ deployed database while reporting success (T-0685).
 |---|---|---|
 | `DataRetention__Enabled` | All fourteen weekly GDPR retention tasks (Sun 03:00), including order photos, all three audit tables, contract-acceptance metadata and dead guest access tokens — **and** the daily failed-erasure retry (05:00) | Everything else |
 | `PayPeriodClosing__Enabled` | The nightly pay-period job (02:00) — closing expired periods, opening the next, **and generating + emailing an invoice per employee** | `EnsureOpenPeriodAsync`, called inline by pay calculation, so pay-calc never fails with `NoActivePeriod` |
-| `Stripe__Enabled` | **All seven card-charge surfaces** — web checkout, resume checkout, mobile PaymentSheet, recurring-occurrence confirm, membership subscribe, membership checkout, membership plan swap | **Cash orders** — which only a signed-in customer's one-cleaner booking may use ([the cash rule](/product/business-rules#cash)), so with card off a guest or a larger booking has no way to pay — and everything that returns or releases money: refunds, cash-collection intent cancellation, membership cancellation, and GDPR erasure of the Stripe customer |
+| `Stripe__Enabled` | **All seven card-charge surfaces** — web checkout, resume checkout, mobile PaymentSheet, recurring-occurrence confirm, membership subscribe, membership checkout, membership plan swap | **Cash orders** — which only a signed-in customer's one-cleaner booking may use ([the cash rule](/product/business-rules#cash)), so with card off a guest or a larger booking has no way to pay — and everything that returns or releases money: refunds, cash-collection intent cancellation, closing a door debt's pay link when an administrator records the cash (since 2026-10-06), membership cancellation, and GDPR erasure of the Stripe customer |
 
 ::: danger Set these as app settings, never in `Cleansia.Functions/appsettings.json`
 The Functions worker composes configuration in the **opposite order** to the five API hosts:
@@ -424,11 +424,52 @@ private async Task<string> SendRenderedAsync(
   the contact ([Environment configuration — SendGrid](/deployment/environment-config#sendgrid)).
 - **Reply-To** is `support@cleansia.cz` on every e-mail, the same constant the support line prints, so
   pressing Reply writes to support ([Decision 54](/product/business-rules#company-identity)).
-- **The transport** is the named `SendGrid` `HttpClient` from `IHttpClientFactory`, pooled and behind
-  the standard resilience handler. A response that is still a failure after its retries is classified,
-  counted in `IntegrationFailureMetrics` and thrown as `EmailDeliveryException`.
+- **The transport** is the named `SendGrid` `HttpClient` from `IHttpClientFactory`, pooled, with the
+  standard resilience handler as its only pipeline ([below](#outbound-resilience)). It retries a `5xx`,
+  `408` or `429` and a timed-out attempt. `POST /v3/mail/send` carries no idempotency key, so a send
+  SendGrid accepted whose `202` is lost to a timeout or a dropped connection is sent again: one e-mail
+  can arrive twice. That is kept on purpose — the inline senders swallow a failed send at Warning, so
+  without the retry a short outage would lose the mail — and recorded against ADR-0005 D1.2, which says
+  a keyless call is not auto-retried ([ADR-0005](/decisions/adr-0005#amended-2026-10-06)). A response
+  that is still a failure after its retries is classified, counted in `IntegrationFailureMetrics` and
+  thrown as `EmailDeliveryException`.
 - **A PDF** rides along when the caller has one: the receipt, the booking confirmation, the cleaner's
   payout invoice at period close, the contract for work.
+
+### One resilience pipeline per client {#outbound-resilience}
+
+**Every outbound client runs its own resilience pipeline, and only that one, in every host** (since
+2026-10-06). The five API hosts call `AddServiceDefaults`, whose `ConfigureHttpClientDefaults` gives
+every factory client the standard resilience handler, and the framework puts that default **outside**
+the client's own handler. So Stripe, SendGrid, APNs, Mapbox and the fiscal client each ran their own
+pipeline inside a second one. A provider answering `429` with `Retry-After: 0` was sent **16** requests
+per call where one pipeline sends **4**, a fast `503` surfaced at the outer 30 s instead of about 14 s,
+and each layer had its own circuit breaker and logged its spent retry at Error, so one failure was
+several Sentry events. The Functions worker never calls `AddServiceDefaults`, so its clients always had
+one pipeline.
+
+Each registration now calls `RemoveAllResilienceHandlers()` before adding its own, as ARES has done
+since 2026-10-04. The method is experimental (`EXTEXP0001`), so the suppression is scoped to each
+registration and a package bump that changes it breaks the build.
+
+| Client | Its one pipeline |
+|---|---|
+| Stripe, SendGrid, APNs, fiscal | the standard handler: 30 s in all, 3 retries with exponential back-off and jitter honouring `Retry-After`, a circuit breaker, 10 s per attempt |
+| Mapbox (`mapbox-geocode`) | 30 s in all, as its first strategy — removing the outer handler would have removed its only bound on the whole call, an honoured `Retry-After` included — then 3 retries honouring `Retry-After`, then 5 s per attempt |
+| ARES | 12 s in all, 3 attempts of 4 s ([The business register](/product/business-rules#business-register)) |
+
+In the API hosts a `429` storm now costs 4 sends per call, 3 for ARES. A provider that recovers between
+about 14 s and 30 s now fails a call the stacked pipelines might have rescued. Every Stripe call that
+moves money carries a deterministic idempotency key, and the SDK attaches one generated key to a keyless
+POST and every retry of it replays that key, so no retry can move money twice. SendGrid's keyless send
+can be repeated ([above](#sendgrid)). APNs and the fiscal client are not reachable from the API hosts
+today (the fiscal client is registered only when `Fiscal:CzechEet2:Enabled`, false everywhere), and they
+get the same one line rather than a written exception.
+
+The host default stays for any factory client that brings no handler of its own — none of ours, but a
+library's, such as the OTLP exporter's when an endpoint is set. `HostHttpClientPipelineTests` composes
+the real host collection and checks every named client for exactly one pipeline and its own retry budget,
+so a new client that forgets the line fails CI.
 
 ## Deploying onto the shared plan {#deploys}
 
@@ -743,7 +784,8 @@ private static bool ConfigureSentry(SentryOptions options, string? dsn)
     options.AttachStacktrace = true;
     options.AutoSessionTracking = true;
     options.TracesSampleRate = 0.2;
-    options.SetBeforeSend((evt, _) => evt.Exception is OperationCanceledException ? null : evt);
+    options.SetBeforeSend((evt, _) => evt.Exception is OperationCanceledException ? null : WithoutRequestDetail(evt));
+    options.SetBeforeSendTransaction((transaction, _) => WithoutRequestDetail(transaction));
     return true;
 }
 ```
@@ -752,7 +794,11 @@ The empty-DSN branch is deliberate, not a bug — it is what keeps a host with n
 boot. `TracesSampleRate` and `SendDefaultPii` are fixed in code, not read from configuration. Sentry's
 HTTP handler is off (since 2026-10-05): it recorded every outbound URL — an IČO, a typed address, a push
 token — as a breadcrumb, and the OpenTelemetry span already traces the call with its path redacted
-→ [An outbound URL is personal data too](/architecture/security-rules#outbound-urls).
+→ [An outbound URL is personal data too](/architecture/security-rules#outbound-urls). Every event and
+transaction loses its request's query string and every header but `User-Agent`, `Content-Type`, `Accept`
+and `Accept-Language` (`WithoutRequestDetail`, since 2026-10-06): Sentry.AspNetCore copies both onto the
+scope, and `SendDefaultPii` covers neither
+→ [Request logging — the query string](/architecture/request-logging#query-string).
 
 Every committed `appsettings*.json` sets `"Dsn": ""`. In Azure the value arrives from Key Vault as the
 `Sentry__Dsn` app setting on the five APIs and the Functions app, populated by CI from the `SENTRY_DSN`

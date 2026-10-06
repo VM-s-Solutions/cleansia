@@ -21,8 +21,11 @@ beside them — so that the archive validator and the page refuse and explain fr
   address outside the company's markets; zero when no date is set), `ActiveTemplates`,
   `ActiveMemberships` (`Status == Active`, cancellation requested or not), `CreditBalances` (accounts with
   `Balance > 0`), `PendingRefunds` (`Refunds.Status == Pending`, any purpose), `OrdersAwaitingPay`
-  (`Completed && !EmployeePayCalculated`), `OrdersAwaitingReceipt` (cash or paid, **not cancelled**, and
-  no receipt row — the reconciliation sweep's own predicate), `ReceiptsAwaitingFiscalRegistration`
+  (`Completed && !EmployeePayCalculated`), `OrdersAwaitingReceipt` (paid, or cash with no settled door
+  debt, **not cancelled**, and no sale receipt row — the reconciliation sweep's own predicate; since
+  2026-10-06 a cash order whose `UnpaidCash` receivable is `Paid` or `WrittenOff` is not counted, because
+  its money closed without a sale, while one whose debt is open still is, and so is one cash recorded
+  later made `Paid`), `ReceiptsAwaitingFiscalRegistration`
   (`FiscalNextRetryAt != null`), `OpenPayPeriods`, `UnpaidInvoices` (an invoice neither `Paid` nor
   `Cancelled` in a `Closed` period), `UninvoicedPayRows` (`EmployeeInvoiceId == null` in a `Closed`
   period), `OpenDisputes` (Pending, UnderReview, WaitingForResponse, Escalated), and
@@ -59,7 +62,10 @@ beside them — so that the archive validator and the page refuse and explain fr
    counted).
 2. **A cancelled order owes no receipt** — `OrdersAwaitingReceipt` and `FiscalReconciliationService` share
    the exclusion; a company whose last orders were cancelled by the wind-down is not held un-archivable by
-   receipts it will never issue.
+   receipts it will never issue. **Nor does a door price paid online or written off** (since 2026-10-06):
+   an order the cleaner reported unpaid completes with no sale receipt, and once its `UnpaidCash` debt is
+   settled no action could issue one, so counting it would refuse the archive for good
+   (`CompanySettlementReaderTests` on Postgres pins the open, paid, written-off and cash-recorded cases).
 3. **The per-market cut-off is computed once, in `WindDownCutoff`**, by the reader and by
    `CompanyWindDownService`; neither carries its own zone math.
 4. **The validator's order is the table's order**, and each refusal fires on one seeded fact

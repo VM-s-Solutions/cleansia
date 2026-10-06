@@ -36,6 +36,7 @@ import cz.cleansia.customer.features.booking.doubleBookingOfPackage
 import cz.cleansia.customer.features.booking.doubleBookingOfService
 import cz.cleansia.customer.features.booking.FIRST_WINDOW_HOUR
 import cz.cleansia.customer.features.booking.LAST_WINDOW_HOUR
+import cz.cleansia.customer.features.payments.UnpaidReceivable
 import cz.cleansia.customer.ui.state.ActionState
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
@@ -162,6 +163,13 @@ class CreateRecurringViewModel @Inject constructor(
      */
     private val _preferredCleanerRefused = MutableStateFlow(false)
     val preferredCleanerRefused: StateFlow<Boolean> = _preferredCleanerRefused.asStateFlow()
+
+    private val _owesMoney = MutableStateFlow(false)
+    val owesMoney: StateFlow<Boolean> = _owesMoney.asStateFlow()
+
+    fun dismissOwesMoney() {
+        _owesMoney.value = false
+    }
 
     /** The crew the server last quoted, with the selection it was quoted for. */
     private val quotedCrew = MutableStateFlow<QuotedCrew?>(null)
@@ -413,6 +421,11 @@ class CreateRecurringViewModel @Inject constructor(
                 }
                 is ApiResult.Error -> {
                     val error = result.error
+                    if (UnpaidReceivable.refuses(error)) {
+                        _owesMoney.value = true
+                        _submitState.value = ActionState.Idle
+                        return@launch
+                    }
                     if ((error as? ApiError.BadRequest)?.errorKey == PREFERRED_CLEANER_NOT_ELIGIBLE) {
                         _preferredCleanerRefused.value = true
                         _submitState.value =

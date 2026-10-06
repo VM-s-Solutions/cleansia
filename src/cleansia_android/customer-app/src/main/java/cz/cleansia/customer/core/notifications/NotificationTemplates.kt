@@ -84,6 +84,11 @@ object NotificationTemplates {
             R.string.notification_order_no_cleaner_nothing_charged_body,
             NotificationCategoryDto.OrderCancelled,
         )
+        "order.cash_not_paid" -> Template(
+            R.string.notification_order_cash_not_paid_title,
+            R.string.notification_order_cash_not_paid_body,
+            NotificationCategoryDto.OrderUpdates,
+        )
         "dispute.reply" -> Template(
             R.string.notification_dispute_reply_title,
             R.string.notification_dispute_reply_body,
@@ -153,11 +158,12 @@ object NotificationTemplates {
                 val orderNumber = args["orderNumber"].orEmpty()
                 context.getString(bodyRes, orderNumber)
             }
-            // The credit figure arrives already formatted by the server in the credit's own
-            // currency ("250 Kč", "10 €"); the device only places it.
+            // The figure arrives already formatted by the server in its own currency ("250 Kč",
+            // "10 €"); the device only places it.
             "order.no_cleaner_refunded",
             "order.no_cleaner_refund_pending",
-            "order.no_cleaner_nothing_charged" -> {
+            "order.no_cleaner_nothing_charged",
+            "order.cash_not_paid" -> {
                 val orderNumber = args["orderNumber"].orEmpty()
                 val amount = args["amount"].orEmpty()
                 context.getString(bodyRes, orderNumber, amount)

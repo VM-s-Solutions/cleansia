@@ -4,6 +4,8 @@ import cz.cleansia.core.auth.SessionScopedCache
 import cz.cleansia.partner.api.client.OrderApi
 import cz.cleansia.partner.api.model.OrderItem
 import cz.cleansia.partner.api.model.PagedDataOfOrderListItem
+import cz.cleansia.partner.api.model.ReportCashNotPaidCommand
+import cz.cleansia.partner.api.model.ReportCashNotPaidResponse
 import cz.cleansia.partner.api.model.ReportOrderLockoutCommand
 import cz.cleansia.partner.api.model.ReportOrderLockoutResponse
 import cz.cleansia.core.network.ApiResult
@@ -85,5 +87,20 @@ class OrdersRepositoryTest {
 
         assertTrue("the report must succeed; got $result", result is ApiResult.Success)
         assertTrue("the reported order must be refetched, not served warm", repo.isOrderStale("order-1"))
+    }
+
+    @Test
+    fun reportCashNotPaid_postsTheOrderAndExpiresTheOrder() = runTest {
+        coEvery { orderApi.orderGetById("order-1") } returns Response.success(mockk<OrderItem>(relaxed = true))
+        coEvery {
+            orderApi.orderReportCashNotPaid(ReportCashNotPaidCommand(orderId = "order-1"))
+        } returns Response.success(ReportCashNotPaidResponse(orderId = "order-1", amountOwed = 1200.0))
+        val repo = newRepo()
+        repo.getById("order-1")
+
+        val result = repo.reportCashNotPaid("order-1")
+
+        assertTrue("the report must succeed; got $result", result is ApiResult.Success)
+        assertTrue("the completed order must be refetched, not served warm", repo.isOrderStale("order-1"))
     }
 }

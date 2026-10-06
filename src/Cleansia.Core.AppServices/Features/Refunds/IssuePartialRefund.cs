@@ -7,7 +7,6 @@ using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Orders;
 using Cleansia.Core.Domain.Packages;
 using Cleansia.Core.Domain.Repositories;
-using Cleansia.Core.AppServices.Services;
 using Cleansia.Infra.Common.Validations;
 using System.Security.Cryptography;
 using System.Text;
@@ -171,10 +170,8 @@ public class IssuePartialRefund
 
             var consumedAfter = await refundRepository.GetSucceededRefundTotalForOrderAsync(
                 order.Id, cancellationToken);
-            // Against what the CARD was charged, not the sale — see AdminRefundOrder for why.
-            var paymentStatus = consumedAfter >= RefundService.CardChargedAmount(order)
-                ? PaymentStatus.Refunded
-                : PaymentStatus.PartiallyRefunded;
+            // What the refund seam stored on this tracked order, never a second derivation of it.
+            var paymentStatus = order.PaymentStatus;
 
             auditContext.RecordChange(
                 "Order",
@@ -312,8 +309,8 @@ public class IssuePartialRefund
         // is (ServiceId, PackageId?) and has no way to name an extra, so adding one would change the
         // wire contract and the admin picker — and it would buy nothing today, because a FULL refund
         // does not come through here. AdminRefundOrder takes a plain amount, and the terminal
-        // PaymentStatus is computed from GetSucceededRefundTotalForOrderAsync, which is cumulative
-        // across every refund path. So "refund everything" still works and still lands on Refunded.
+        // PaymentStatus is written by the refund seam from everything the order has given back on every
+        // refund path. So "refund everything" still works and still lands on Refunded.
         //
         // Weights only, like the service lines above — but read from the ORDER'S OWN ROWS, not the live
         // catalogue. This used to query Extras by slug at refund time, which meant an admin price edit

@@ -26,6 +26,8 @@ final class OrderDetailViewModel: ViewModel {
     @Published private(set) var reviewState: ActionState = .idle
     @Published private(set) var receiptState: ActionState = .idle
     @Published private(set) var confirmRecurringState: ActionState = .idle
+    /// The confirmation was refused because the customer owes a company money; the screen offers Payments.
+    @Published private(set) var owesMoney = false
     @Published private(set) var saveCard = false
     /// Nil until the account's consents are read for a visit awaiting confirmation; a failed read is `false`.
     @Published private(set) var alreadyConsented: Bool?
@@ -447,6 +449,9 @@ final class OrderDetailViewModel: ViewModel {
                 _ = await repository.refresh()
                 await fetch(initial: false)
             }
+        case let .failure(error) where error.refusesForUnpaidAmount:
+            owesMoney = true
+            confirmRecurringState = .idle
         case let .failure(error):
             snackbar.showApiError(error)
             if error.code == Self.termsNotAcceptedCode {
@@ -456,6 +461,10 @@ final class OrderDetailViewModel: ViewModel {
             }
             confirmRecurringState = .idle
         }
+    }
+
+    func dismissOwesMoney() {
+        owesMoney = false
     }
 
     /// ConfirmRecurringOrder takes no saveCard and its intent keeps nothing. CreatePaymentIntent hands that

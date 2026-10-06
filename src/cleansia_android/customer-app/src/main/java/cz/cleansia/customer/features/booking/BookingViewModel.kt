@@ -5,6 +5,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import cz.cleansia.customer.R
 import cz.cleansia.customer.core.auth.ApiErrorParser
+import cz.cleansia.customer.features.payments.UnpaidReceivable
 import cz.cleansia.core.auth.TokenStore
 import cz.cleansia.customer.core.booking.BookingApi
 import cz.cleansia.customer.core.booking.CashEligibility
@@ -55,6 +56,7 @@ import kotlinx.datetime.Clock
 import kotlinx.datetime.Instant
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
+import okhttp3.ResponseBody.Companion.toResponseBody
 
 /**
  * Outcome of a submit attempt. The sheet maps these to snackbar + navigation.
@@ -81,6 +83,8 @@ sealed interface BookingSubmitOutcome {
     data object Failed : BookingSubmitOutcome
     /** User profile is missing a required field; UI should deep-link to Edit Profile. */
     data object ProfileIncomplete : BookingSubmitOutcome
+    /** The customer owes an amount, so no booking is taken; the UI offers the way to pay it. */
+    data object OwesMoney : BookingSubmitOutcome
 }
 
 /**
@@ -769,7 +773,11 @@ class BookingViewModel @Inject constructor(
                 return BookingSubmitOutcome.Failed
             }
             if (!createResp.isSuccessful) {
-                snackbar.showError(ApiErrorParser.parseToUserMessage(appContext, createResp.errorBody(), createResp.code()))
+                val raw = runCatching { createResp.errorBody()?.string() }.getOrNull()
+                if (UnpaidReceivable.refuses(ApiErrorParser.errorsByField(raw)?.values?.flatten().orEmpty())) {
+                    return BookingSubmitOutcome.OwesMoney
+                }
+                snackbar.showError(ApiErrorParser.parseToUserMessage(appContext, raw?.toResponseBody(), createResp.code()))
                 return BookingSubmitOutcome.Failed
             }
             val body = createResp.body() ?: run {

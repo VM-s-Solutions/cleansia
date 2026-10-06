@@ -601,6 +601,9 @@ const ADMIN_SURFACE_ERROR_KEYS: readonly string[] = [
   'dispute.max_length_exceeded',
   'dispute.not_found',
   'dispute.not_owned_by_user',
+  // UpdateDisputeStatus: a dispute whose card refund is still pending is not closed, since resolving it
+  // again is the only retry of that refund.
+  'dispute.refund_pending',
   'order.already_cancelled',
   'order.already_completed',
   'order.employee_already_assigned',
@@ -630,6 +633,8 @@ const ADMIN_SURFACE_ERROR_KEYS: readonly string[] = [
   'order.cash_already_collected',
   'order.cash_not_allowed_on_card_order',
   'order.payment_not_outstanding',
+  // Stripe could not close the pay link of the price the customer owes, so the cash is not recorded.
+  'order.payment_gateway_unavailable',
   'order.cash_amount_invalid',
   'order.cash_received_at_in_future',
   'order.cash_received_at_before_clean',

@@ -1032,7 +1032,7 @@
       "cash_needs_card": "Počet upratovačov potrebných pre túto objednávku: {{count}}. V hotovosti sa dá platiť len za objednávky, ktoré zvládne jeden upratovač, túto preto zaplatíte kartou.",
       "cash_pending": "Či môžete platiť v hotovosti, potvrdíme, keď bude známa cena.",
       "cash_cleared": "Platba v hotovosti už pre túto objednávku nie je možná, preto nie je vybraný žiadny spôsob platby. Zvoľte, ako chcete platiť.",
-      "cash_owed": "Platba v hotovosti nie je možná, kým nie je uhradená suma z predchádzajúcej rezervácie. Zaplaťte ju nižšie a táto rezervácia na vás počká, keď sa k objednávke vrátite — alebo túto rezerváciu zaplaťte hneď kartou.",
+      "unpaid_owed": "Dlhujete sumu z predchádzajúcej rezervácie, preto túto rezerváciu zatiaľ nemožno vytvoriť, kartou ani v hotovosti. Zaplaťte ju nižšie a táto rezervácia na vás počká, keď sa vrátite.",
       "cash_sign_in": "Prihlásiť sa",
       "plus_perk_grace": "60 minút po každej objednávke na bezplatné zrušenie namiesto 15 minút",
       "dirtiness": {
@@ -1241,12 +1241,13 @@
         "note_card": "Toto upratovanie je súčasťou vašej opakovanej rezervácie. Potvrďte ho a zaplaťte bezpečne kartou. Ak ho včas nepotvrdíte, bude zadarmo zrušené.",
         "note_cash": "Toto upratovanie je súčasťou vašej opakovanej rezervácie. Potvrďte ho a upratovačovi zaplaťte v hotovosti v deň upratovania. Ak ho včas nepotvrdíte, bude zadarmo zrušené.",
         "success": "Rezervácia potvrdená",
-        "begun_in_app": "Platbu za toto upratovanie ste začali v mobilnej aplikácii. Dokončite ju prosím tam."
+        "begun_in_app": "Platbu za toto upratovanie ste začali v mobilnej aplikácii. Dokončite ju prosím tam.",
+        "owed": "Toto upratovanie bude možné potvrdiť, keď uhradíte dlžnú sumu. Zaplatiť ju môžete v časti Dlžná suma na tejto stránke."
       }
     },
     "amount_due": {
       "title": "Dlžná suma",
-      "intro": "Kým nebude uhradená, nie je možné objednávať s platbou v hotovosti. Rezervácií platených kartou sa to netýka.",
+      "intro": "Kým nebude uhradená, nie je možné vytvoriť novú rezerváciu ani potvrdiť opakované upratovanie, kartou ani v hotovosti. Rezervácie, ktoré už máte, zostávajú.",
       "after_payment": "Práve ste zaplatili? Môže chvíľu trvať, kým odtiaľto zmizne.",
       "pay": "Zaplatiť",
       "load_error": "Nepodarilo sa overiť, či nám niečo dlhujete.",
@@ -1995,8 +1996,8 @@
       },
       "payment_gateway_unavailable": "Platby sú dočasne nedostupné. Skúste to prosím o chvíľu.",
       "cash_not_available": "Platba v hotovosti je možná len po prihlásení a pri objednávke, ktorú zvládne jeden upratovač.",
-      "cash_open_bookings_limit_reached": "Už máte najvyšší povolený počet nezaplatených objednávok v hotovosti. Zvoľte kartu alebo hotovosť znova, keď bude niektorá z nich zaplatená.",
-      "cash_unpaid_receivable": "Máte u nás nezaplatenú sumu, napríklad stornovací poplatok. Zatiaľ zaplaťte kartou; v hotovosti budete môcť platiť znova, keď bude uhradená.",
+      "cash_open_bookings_limit_reached": "Už máte najvyšší povolený počet rezervácií v hotovosti, ktoré ešte nie sú zaplatené — v praxi vaše nadchádzajúce rezervácie v hotovosti. Túto zaplaťte kartou, alebo si v hotovosti objednajte znova, keď bude niektorá z nich zaplatená.",
+      "unpaid_receivable": "Dlhujete nám sumu z predchádzajúcej rezervácie, napríklad stornovací poplatok alebo nezaplatené upratovanie. Kým nebude uhradená, nemôžete vytvoriť ani potvrdiť rezerváciu, kartou ani v hotovosti.",
       "country_operator_mismatch": "Túto adresu obsluhuje iná spoločnosť Cleansia, preto ju tu nie je možné objednať.",
       "payment": {
         "already_paid": "Táto objednávka už bola zaplatená."
@@ -2297,6 +2298,7 @@
     "cash_pending": "Či sa dá tento rozvrh platiť v hotovosti, potvrdíme, keď bude známa cena.",
     "cash_cleared": "Platba v hotovosti už pre tento rozvrh nie je možná, preto nie je vybraný žiadny spôsob platby. Zvoľte, ako chcete platiť.",
     "cash_unchecked": "Nepodarilo sa overiť, či sa dá tento rozvrh platiť v hotovosti. Uložte ho o chvíľu znova alebo zvoľte kartu.",
+    "owed": "Dlhujete sumu z predchádzajúcej rezervácie, preto opakovanú rezerváciu nemožno uložiť, kým nebude uhradená, kartou ani v hotovosti. Zaplatiť ju môžete nižšie.",
     "payment_placeholder": "Zvoľte spôsob platby",
     "error_payment": "Zvoľte, ako sa bude rozvrh platiť.",
     "terms_label": "Súhlas s podmienkami",

@@ -108,6 +108,25 @@ object ApiErrorParser {
         return problem?.errors?.values?.firstNotNullOfOrNull { firstErrorValue(it) }
     }
 
+    /**
+     * Every key the body carries, by the code the server filed it under, for a caller that looks for one
+     * refusal among several. Rules that share a code arrive joined with "; ", one key per failed rule.
+     */
+    fun errorsByField(raw: String?): Map<String, List<String>>? {
+        if (raw.isNullOrBlank()) return null
+        val errors = runCatching { json.decodeFromString<ProblemDetailsBody>(raw) }.getOrNull()?.errors ?: return null
+        return errors
+            .mapValues { (_, element) -> errorValues(element).flatMap { it.split("; ") }.filter { it.isNotBlank() } }
+            .filterValues { it.isNotEmpty() }
+            .takeIf { it.isNotEmpty() }
+    }
+
+    private fun errorValues(element: JsonElement): List<String> = when (element) {
+        is JsonPrimitive -> listOfNotNull(element.contentOrNull)
+        is JsonArray -> element.mapNotNull { (it as? JsonPrimitive)?.contentOrNull }
+        else -> emptyList()
+    }
+
     private fun firstErrorValue(element: JsonElement): String? = when (element) {
         is JsonPrimitive -> element.contentOrNull
         is JsonArray -> element.firstOrNull()?.let { (it as? JsonPrimitive)?.contentOrNull }

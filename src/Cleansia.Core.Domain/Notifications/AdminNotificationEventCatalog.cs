@@ -12,12 +12,14 @@ public static class AdminNotificationEventCatalog
     public const string OrderCrewLost = "admin.order.crew_lost";
     public const string OrderCleanerNotStarted = "admin.order.cleaner_not_started";
     public const string OrderLockoutReported = "admin.order.lockout_reported";
+    public const string OrderCashNotPaid = "admin.order.cash_not_paid";
     public const string DisputeFiled = "admin.dispute.filed";
     public const string DisputeChargeback = "admin.dispute.chargeback";
     public const string DisputeChargebackUnmatched = "admin.dispute.chargeback_unmatched";
     public const string PaymentFailed = "admin.payment.failed";
     public const string RefundStuck = "admin.payment.refund_stuck";
     public const string RefundNeedsRetry = "admin.payment.refund_needs_retry";
+    public const string RefundWithoutCancel = "admin.payment.refund_without_cancel";
     public const string ErasureFailed = "admin.erasure.failed";
     public const string CompanyWindDownRequested = "admin.company.wind_down_requested";
     public const string CompanyWindDownRun = "admin.company.wind_down_run";
@@ -30,12 +32,14 @@ public static class AdminNotificationEventCatalog
         OrderCrewLost,
         OrderCleanerNotStarted,
         OrderLockoutReported,
+        OrderCashNotPaid,
         DisputeFiled,
         DisputeChargeback,
         DisputeChargebackUnmatched,
         PaymentFailed,
         RefundStuck,
         RefundNeedsRetry,
+        RefundWithoutCancel,
         ErasureFailed,
         CompanyWindDownRequested,
         CompanyWindDownRun,

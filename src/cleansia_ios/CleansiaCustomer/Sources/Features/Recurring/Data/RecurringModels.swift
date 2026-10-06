@@ -120,6 +120,27 @@ struct UpdateRecurringInput: Equatable {
     let preferredEmployeeId: String?
 }
 
+extension UpdateRecurringInput {
+    init(_ input: CreateRecurringInput, templateId: String, endsOn: Date?, preferredEmployeeId: String?) {
+        self.init(
+            templateId: templateId,
+            frequency: input.frequency,
+            dayOfWeek: input.dayOfWeek,
+            timeOfDay: input.timeOfDay,
+            rooms: input.rooms,
+            bathrooms: input.bathrooms,
+            dirtiness: input.dirtiness,
+            savedAddressId: input.savedAddressId,
+            selectedServiceIds: input.selectedServiceIds,
+            selectedPackageIds: input.selectedPackageIds,
+            paymentType: input.paymentType,
+            startsOn: input.startsOn,
+            endsOn: endsOn,
+            preferredEmployeeId: preferredEmployeeId
+        )
+    }
+}
+
 struct RecurringSavedAddress: Equatable, Identifiable {
     let id: String
     let label: String?

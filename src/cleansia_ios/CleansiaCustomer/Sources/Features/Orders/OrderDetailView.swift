@@ -19,6 +19,7 @@ struct OrderDetailView: View {
     private let onReportCleanerNoShow: (String) -> Void
     private let onRebook: (String) -> Void
     private let onMakeRecurring: (String) -> Void
+    private let onOpenPayments: () -> Void
     private let openReviewOnLoad: Bool
     private let onReviewPromptConsumed: () -> Void
     @State private var reviewAutoOpened = false
@@ -39,7 +40,8 @@ struct OrderDetailView: View {
         onReportCleanerNoShow: @escaping (String) -> Void,
         onRebook: @escaping (String) -> Void,
         onCreditMoved: @escaping () -> Void,
-        onMakeRecurring: @escaping (String) -> Void
+        onMakeRecurring: @escaping (String) -> Void,
+        onOpenPayments: @escaping () -> Void = {}
     ) {
         _vm = StateObject(
             wrappedValue: OrderDetailViewModel(
@@ -62,6 +64,7 @@ struct OrderDetailView: View {
         self.onReportCleanerNoShow = onReportCleanerNoShow
         self.onRebook = onRebook
         self.onMakeRecurring = onMakeRecurring
+        self.onOpenPayments = onOpenPayments
         self.openReviewOnLoad = openReviewOnLoad
         self.onReviewPromptConsumed = onReviewPromptConsumed
     }
@@ -100,6 +103,10 @@ struct OrderDetailView: View {
             .sheet(item: $receiptURL) { receipt in
                 receiptPreview(receipt.url)
             }
+            .unpaidReceivableAlert(
+                isPresented: Binding(get: { vm.owesMoney }, set: { if !$0 { vm.dismissOwesMoney() } }),
+                onPay: onOpenPayments
+            )
     }
 
     /// The wire's `id` is optional, so fall back to the id this screen was routed

@@ -6,9 +6,10 @@ namespace Cleansia.Tests.Features.Orders;
 /// The revenue report reads <c>Order.CompletedAt</c>, and <c>Order.AddOrderStatus</c> persists
 /// <c>CurrentStatus = Completed</c> with <c>CompletedAt = null</c> without complaint. An order in that
 /// state is revenue of no month, and the only symptom is money missing from a report — which is how the
-/// administrator's override shipped. Two writers date the completion today: <c>CompleteOrder</c> through
-/// <c>Order.CompleteOrder</c>, the override through <c>Order.MarkCompletedAt</c>. This scan makes a third
-/// that forgets go red at the seam where it is written, in a message that names the file.
+/// administrator's override shipped. Three writers date the completion today: <c>CompleteOrder</c> and the
+/// cleaner's report that the cash was not paid through <c>Order.CompleteOrder</c>, the override through
+/// <c>Order.MarkCompletedAt</c>. This scan makes another that forgets go red at the seam where it is written,
+/// in a message that names the file.
 ///
 /// <para>A writer is a completion writer when the status it appends is not a literal other than
 /// <c>Completed</c> and is not the order's own <c>CurrentStatus</c> — the same-value row that
@@ -34,6 +35,7 @@ public sealed class CompletedTrackWritersDateTheCompletionTests
     [
         "Cleansia.Core.AppServices/Features/Orders/AdminOverrideOrderStatus.cs",
         "Cleansia.Core.AppServices/Features/Orders/CompleteOrder.cs",
+        "Cleansia.Core.AppServices/Features/Orders/ReportCashNotPaid.cs",
     ];
 
     [Fact]

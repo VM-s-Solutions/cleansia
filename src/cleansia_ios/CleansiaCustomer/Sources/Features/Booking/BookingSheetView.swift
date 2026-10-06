@@ -6,6 +6,7 @@ struct BookingSheetView: View {
     @Environment(\.snackbarController) private var snackbar
     @State private var success: BookingSuccess?
     @State private var slideResetCount = 0
+    @State private var owesMoney = false
     let geocoding: GeocodingService
     let mapProvider: MapProvider
     let serviceArea: ServiceAreaProvider?
@@ -15,6 +16,7 @@ struct BookingSheetView: View {
     let onDismiss: () -> Void
     let onViewOrder: (String) -> Void
     let onCompleteProfile: () -> Void
+    let onOpenPayments: () -> Void
 
     private static let footerSnackbarInset: CGFloat = 88
 
@@ -28,7 +30,8 @@ struct BookingSheetView: View {
         warmOrders: @escaping @Sendable () async -> Void = {},
         onDismiss: @escaping () -> Void,
         onViewOrder: @escaping (String) -> Void = { _ in },
-        onCompleteProfile: @escaping () -> Void = {}
+        onCompleteProfile: @escaping () -> Void = {},
+        onOpenPayments: @escaping () -> Void = {}
     ) {
         self.vm = vm
         self.geocoding = geocoding
@@ -40,6 +43,7 @@ struct BookingSheetView: View {
         self.onDismiss = onDismiss
         self.onViewOrder = onViewOrder
         self.onCompleteProfile = onCompleteProfile
+        self.onOpenPayments = onOpenPayments
     }
 
     var body: some View {
@@ -96,6 +100,7 @@ struct BookingSheetView: View {
             }
         }
         .snackbarHost(snackbar, bottomInset: Self.footerSnackbarInset)
+        .unpaidReceivableAlert(isPresented: $owesMoney, onPay: onOpenPayments)
         .presentationDetents([.large])
         .presentationDragIndicator(.visible)
         // Swiping down closes the sheet on any step: the draft is the session's view model, so the Book
@@ -119,6 +124,9 @@ struct BookingSheetView: View {
             onCompleteProfile()
         case .paymentMethodCleared:
             slideResetCount += 1
+        case .owesMoney:
+            slideResetCount += 1
+            owesMoney = true
         case .timeNoLongerHolds:
             slideResetCount += 1
             snackbar.showInfo(L10n.Booking.draftTimeChanged)

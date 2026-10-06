@@ -9,6 +9,8 @@ enum CustomerNotificationDestination: Equatable {
     /// asked and hid the one they had.
     case membershipManagement
     case rewardsActivity
+    /// Where an amount owed is paid; the order page has nothing to pay it with.
+    case payments
 }
 
 enum CustomerNotificationDeepLink {
@@ -56,6 +58,8 @@ enum CustomerNotificationDeepLink {
             return .membershipManagement
         case "loyalty.tier_upgrade":
             return .rewardsActivity
+        case "order.cash_not_paid":
+            return .payments
         default:
             return nil
         }

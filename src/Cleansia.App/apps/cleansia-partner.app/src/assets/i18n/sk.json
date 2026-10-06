@@ -448,6 +448,13 @@
       "mark_cash_collected_confirm_warning": "Týmto bude objednávka označená ako zaplatená. Túto akciu nemožno vrátiť späť.",
       "mark_cash_collected_confirm_action": "Áno, hotovosť prijatá",
       "mark_cash_collected_gating_error": "Hotovosť možno prijať len pri prebiehajúcej a zatiaľ nezaplatenej objednávke",
+      "cash_not_paid": {
+        "action": "Zákazník nezaplatil",
+        "confirm_title": "Zákazník nezaplatil?",
+        "confirm_message": "Nahláste to len vtedy, keď vám zákazník za upratovanie nezaplatil nič. Objednávka sa dokončí a jej cena sa stane sumou, ktorú zákazník dlhuje spoločnosti. Zákazník sa to hneď dozvie a kým ju nezaplatí, nemôže si nič ďalšie objednať; administrátor dostane upozornenie. Odmenu za objednávku dostanete ako zvyčajne. Vrátiť to môže len administrátor.",
+        "confirm_action": "Áno, zákazník nezaplatil",
+        "gating_error": "Nahlásiť to možno len pri prebiehajúcej objednávke platenej v hotovosti, ktorá ešte nie je zaplatená"
+      },
       "complete_missing_after_photos": "Objednávku nemožno dokončiť bez fotografií po upratovaní",
       "work_contract": {
         "accepted_line": "Zmluvu o dielo ste prijali {{date}}, verzia {{version}}",
@@ -715,6 +722,7 @@
         "invalid_request": "Neplatná požiadavka. Chýbajú požadované informácie.",
         "order_started": "Objednávka bola úspešne začatá.",
         "cash_collected": "Hotovosť bola prijatá. Objednávka je označená ako zaplatená.",
+        "cash_not_paid_reported": "Nahlásené. Objednávka je dokončená a zákazník dlhuje {{amount}}.",
         "failed_to_start": "Nepodarilo sa začať objednávku. Skúste to prosím znova.",
         "print_failed": "Nepodarilo sa vytlačiť objednávku. Skúste to prosím znova.",
         "receipt_not_available": "Potvrdenie nie je k dispozícii pre túto objednávku.",

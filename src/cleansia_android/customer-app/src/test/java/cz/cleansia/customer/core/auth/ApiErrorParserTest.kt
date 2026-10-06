@@ -202,4 +202,26 @@ class ApiErrorParserTest {
 
         assertEquals("error_user_not_existing_email", capturedName.captured)
     }
+
+    /** The server joins the keys of rules that share an error code with "; ", one key per failed rule. */
+    @Test
+    fun errorsByField_splitsKeysJoinedUnderOneCode() {
+        val raw = """{"errors":{"PaymentType":"order.cash_not_available","AsyncPredicateValidator":"country.not_serviced; order.unpaid_receivable","Id":["The Id field is required."]}}"""
+
+        assertEquals(
+            mapOf(
+                "PaymentType" to listOf("order.cash_not_available"),
+                "AsyncPredicateValidator" to listOf("country.not_serviced", "order.unpaid_receivable"),
+                "Id" to listOf("The Id field is required."),
+            ),
+            ApiErrorParser.errorsByField(raw),
+        )
+    }
+
+    @Test
+    fun errorsByField_givenNoErrors_isNull() {
+        assertEquals(null, ApiErrorParser.errorsByField(null))
+        assertEquals(null, ApiErrorParser.errorsByField("not json"))
+        assertEquals(null, ApiErrorParser.errorsByField("""{"title":"Bad Request"}"""))
+    }
 }

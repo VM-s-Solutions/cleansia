@@ -168,8 +168,9 @@
       }
 
       <!-- Action buttons row: Report Issue / Add Note available across active statuses, Mark Cash Collected
-           only while InProgress, awaiting payment and not refused by anything the job sheet shows, Complete only in InProgress with after-photos. -->
-      @if (canAddNoteOrIssue() || canMarkCashCollected() || canCompleteOrder()) {
+           only while InProgress, awaiting payment and not refused by anything the job sheet shows, Customer Did Not Pay only on a cash order
+           InProgress and awaiting payment, Complete only in InProgress with after-photos. -->
+      @if (canAddNoteOrIssue() || canMarkCashCollected() || canReportCashNotPaid() || canCompleteOrder()) {
       <div class="cleansia-order-details__actions-row">
         @if (canMarkCashCollected()) {
         <cleansia-button
@@ -178,6 +179,16 @@
           [outlined]="true"
           [severity]="'success'"
           (onClick)="openMarkCashCollected()"
+          [loading]="loading()"
+        />
+        }
+        @if (canReportCashNotPaid()) {
+        <cleansia-button
+          [label]="'pages.order_details.cash_not_paid.action' | translate"
+          [icon]="'pi pi-ban'"
+          [outlined]="true"
+          [severity]="'danger'"
+          (onClick)="openReportCashNotPaid()"
           [loading]="loading()"
         />
         }

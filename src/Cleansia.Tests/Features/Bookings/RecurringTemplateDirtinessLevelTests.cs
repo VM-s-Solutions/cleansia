@@ -174,6 +174,7 @@ public class RecurringTemplateDirtinessLevelTests
                 pricing.Object,
                 factory.Object,
                 memberships.Object,
+                Mock.Of<IReceivableRepository>(),
                 OrderMarketDoubles.OperatedBy("cleansia-cz"),
                 Mock.Of<ITenantProvider>(),
                 Mock.Of<IUnitOfWork>(),

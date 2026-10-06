@@ -160,6 +160,38 @@ public sealed class ReturnUnpaidOrderCreditTests
     }
 
     /// <summary>
+    /// A card the order never charged cannot have had a refund paid, so a card refund left pending on it, one
+    /// Stripe refused because there was no payment to refund, does not eat the credit applied: all 300 of it
+    /// comes back.
+    /// </summary>
+    [Fact]
+    public async Task ReturnUnpaidOrderCredit_OrderThatTookNoPayment_IgnoresAPendingCardRefund()
+    {
+        var order = NewOrder(PaymentType.Card, PaymentStatus.Pending, totalPrice: 1000m, creditApplied: 300m);
+        Arrange(returned: 0m, settled: 0m);
+
+        await _credit.Object.ReturnUnpaidOrderCreditAsync(order, cardRefunded: 280m, "system", CancellationToken.None);
+
+        _credit.Verify(c => c.TryReturnAsync(
+            UserId, "czk", 300m, $"credit-return:order-ended-unpaid:{OrderId}", "system",
+            It.IsAny<CancellationToken>(), OrderId, It.IsAny<string?>()), Times.Once);
+    }
+
+    /// <summary>The same 280 on an order that did take its card payment counts, and 720 still covers the 300.</summary>
+    [Fact]
+    public async Task ReturnUnpaidOrderCredit_PaidCardOrder_CountsACardRefundAgainstTheSale()
+    {
+        var order = NewOrder(PaymentType.Card, PaymentStatus.Paid, totalPrice: 1000m, creditApplied: 300m);
+        Arrange(returned: 0m, settled: 0m);
+
+        await _credit.Object.ReturnUnpaidOrderCreditAsync(order, cardRefunded: 280m, "system", CancellationToken.None);
+
+        _credit.Verify(c => c.TryReturnAsync(
+            UserId, "czk", 300m, $"credit-return:order-ended-unpaid:{OrderId}", "system",
+            It.IsAny<CancellationToken>(), OrderId, It.IsAny<string?>()), Times.Once);
+    }
+
+    /// <summary>
     /// The customer's credit account sits on the books of a company frozen for archive. The return is raw SQL,
     /// which the frozen-books commit guard cannot see, so it is not written: that company's credit is written
     /// off when it closes.

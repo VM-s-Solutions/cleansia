@@ -1164,8 +1164,8 @@
     <string name="error_order_recurring_already_confirmed">Toto upratovanie už máte potvrdené. Upratovačovi zaplatíte v hotovosti v deň upratovania.</string>
     <string name="error_order_creation_failed">Nie je možné vytvoriť rezerváciu. Skúste to znova.</string>
     <string name="error_order_cash_not_available">Platba v hotovosti je možná len po prihlásení a pri objednávke, ktorú zvládne jeden upratovač.</string>
-    <string name="error_order_cash_open_bookings_limit_reached">Už máte najvyšší povolený počet nezaplatených objednávok v hotovosti. Zvoľte kartu alebo hotovosť znova, keď bude niektorá z nich zaplatená.</string>
-    <string name="error_order_cash_unpaid_receivable">Máte u nás nezaplatenú sumu, napríklad stornovací poplatok. Zatiaľ zaplaťte kartou; v hotovosti budete môcť platiť znova, keď ju uhradíte v profile v sekcii Platby.</string>
+    <string name="error_order_cash_open_bookings_limit_reached">Už máte najvyšší povolený počet nadchádzajúcich objednávok v hotovosti. Hotovosť sa platí až po upratovaní, takže sa každá počíta, kým nie je upratané a zaplatené. Túto objednávku zaplaťte kartou alebo hotovosť zvoľte znova, keď bude niektorá z nich zaplatená.</string>
+    <string name="error_order_unpaid_receivable">Máte u nás nezaplatenú sumu, napríklad nezaplatené upratovanie alebo stornovací poplatok. Kým ju neuhradíte, nemôžete vytvoriť novú objednávku; objednávky, ktoré už máte, zostávajú. Uhradíte ju v profile v sekcii Platby.</string>
     <string name="error_saved_card_consent_not_accepted">Pred uložením karty prosím zaškrtnite súhlas s jej uložením.</string>
     <string name="error_saved_card_not_found">Túto uloženú kartu sme nenašli.</string>
     <string name="error_receivable_not_found">Túto dlžnú sumu sme nenašli.</string>
@@ -1350,6 +1350,8 @@
     <string name="notification_order_no_cleaner_refund_pending_body">Na objednávku #%1$s nemohol prísť žiadny upratovač, preto sme ju zrušili. Vrátenie peňazí je na ceste a pridali sme vám kredit %2$s na ďalšie upratovanie. Ospravedlňujeme sa.</string>
     <string name="notification_order_no_cleaner_nothing_charged_title">Žiadny upratovač nebol k dispozícii</string>
     <string name="notification_order_no_cleaner_nothing_charged_body">Na objednávku #%1$s nemohol prísť žiadny upratovač, preto sme ju zrušili. Nič sme vám neúčtovali a pridali sme vám kredit %2$s na ďalšie upratovanie. Ospravedlňujeme sa.</string>
+    <string name="notification_order_cash_not_paid_title">Platba v hotovosti nebola prijatá</string>
+    <string name="notification_order_cash_not_paid_body">Objednávka #%1$s je dokončená, ale upratovač nedostal platbu v hotovosti. Dlhujete %2$s; uhradíte ju v profile v sekcii Platby. Dovtedy nemôžete vytvoriť novú objednávku.</string>
     <string name="notification_dispute_reply_title">Podpora odpovedala</string>
     <string name="notification_dispute_reply_body">Máte novú správu k vašej reklamácii. Ťuknutím si ju prečítate.</string>
     <string name="notification_recurring_scheduled_title">Potvrďte zajtrajšie upratovanie</string>
@@ -1374,9 +1376,11 @@
     <string name="profile_row_payments">Platby</string>
     <string name="payments_title">Platby</string>
     <string name="payments_due_title">Na úhradu</string>
-    <string name="payments_due_intro">Uhraďte dlžnú sumu a budete môcť znova platiť v hotovosti. Objednávok platených kartou sa to netýka.</string>
+    <string name="payments_due_intro">Uhraďte dlžnú sumu a budete môcť znova objednávať. Kým nie je uhradená, nemožno vytvoriť žiadnu novú objednávku, v hotovosti ani kartou; objednávky, ktoré už máte, zostávajú.</string>
     <string name="payments_due_order">Objednávka %1$s</string>
     <string name="payments_pay_action">Zaplatiť</string>
+    <string name="unpaid_receivable_title">Máte sumu na úhradu</string>
+    <string name="unpaid_receivable_pay">Zaplatiť teraz</string>
     <string name="receivable_kind_cancellation_fee">Stornovací poplatok</string>
     <string name="receivable_kind_lockout">Poplatok za neumožnenie vstupu</string>
     <string name="receivable_kind_unpaid_cash">Nezaplatená hotovosť</string>

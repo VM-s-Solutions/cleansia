@@ -44,6 +44,9 @@ public class CardPaymentsChargeSurfaceCoverageTests
         ("Features/Orders/MarkCashCollected.cs",
             "Reads a payment snapshot and CANCELS an uncaptured intent. Releasing an authorisation, "
             + "never creating one."),
+        ("Features/Orders/AdminRecordCashReceived.cs",
+            "CLOSES the pay link of a door price the customer paid in cash after all, so it cannot be paid "
+            + "twice. Closing a payable link, never opening one; cash is recorded with the switch off too."),
         ("Features/Memberships/CancelMembershipSubscription.cs",
             "Cancellation. A customer must always be able to stop being billed."),
         ("Services/CompanyWindDownService.cs",

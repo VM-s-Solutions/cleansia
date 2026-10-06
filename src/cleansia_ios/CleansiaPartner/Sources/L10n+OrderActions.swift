@@ -39,6 +39,30 @@ extension L10n.Orders {
         L10n.localized("partner_order_mark_cash_collected_confirm_action")
     }
 
+    static var cashNotPaidAction: String {
+        L10n.localized("order_cash_not_paid_action")
+    }
+
+    static var cashNotPaidConfirmTitle: String {
+        L10n.localized("order_cash_not_paid_confirm_title")
+    }
+
+    static func cashNotPaidConfirmMessage(_ amount: String) -> String {
+        L10n.format("order_cash_not_paid_confirm_message", amount)
+    }
+
+    static var cashNotPaidConfirmMessageNoAmount: String {
+        L10n.localized("order_cash_not_paid_confirm_message_no_amount")
+    }
+
+    static var cashNotPaidConfirmAction: String {
+        L10n.localized("order_cash_not_paid_confirm_action")
+    }
+
+    static var cashNotPaidReportedToast: String {
+        L10n.localized("order_cash_not_paid_reported_toast")
+    }
+
     static var slideToComplete: String {
         L10n.localized("slide_to_complete")
     }

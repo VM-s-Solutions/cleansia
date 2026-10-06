@@ -234,7 +234,8 @@ public class RefundCreditLegOnFrozenBooksTests(PostgresContainerFixture fixture)
                     Mock.Of<ILiveActivityProducer>(),
                     Mock.Of<IExpressWaiverConsumer>(),
                     new GuestOrderAccessTokenIssuer(new GuestOrderAccessTokenRepository(ctx)),
-                    Mock.Of<IPendingDispatch>())
+                    Mock.Of<IPendingDispatch>(),
+                    NullLogger<PlatformOrderCancellation>.Instance)
                 .CancelAsync(order, "admin-frozen-refund", CancelledBy.Admin, null, RefundReason.CustomerCancellation,
                     CancellationToken.None);
             await ctx.CommitAsync(CancellationToken.None);

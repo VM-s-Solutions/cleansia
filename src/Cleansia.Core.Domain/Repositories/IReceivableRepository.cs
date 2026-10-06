@@ -4,11 +4,20 @@ namespace Cleansia.Core.Domain.Repositories;
 
 public interface IReceivableRepository : IRepository<Receivable, string>
 {
-    /// <summary>Whether the customer owes an open receivable to any operating company.</summary>
+    /// <summary>
+    /// Whether the customer owes an open receivable to any operating company but a frozen one, whose books
+    /// refuse both its payment and its write-off.
+    /// </summary>
     Task<bool> HasOpenForUserAsync(string userId, CancellationToken cancellationToken);
 
-    /// <summary>What the customer owes any operating company and has not settled, with its order and currency, oldest first.</summary>
+    /// <summary>
+    /// What the customer owes any operating company but a frozen one and has not settled, with its order and
+    /// currency, oldest first.
+    /// </summary>
     Task<IReadOnlyList<Receivable>> GetOpenForUserAsync(string userId, CancellationToken cancellationToken);
+
+    /// <summary>The price of the order the customer did not pay the cleaner at the door, in any status, or null.</summary>
+    Task<Receivable?> GetUnpaidCashForOrderAsync(string orderId, CancellationToken cancellationToken);
 
     /// <summary>
     /// A receivable of any company with its order, the order's crew and its currency: the Stripe webhook and

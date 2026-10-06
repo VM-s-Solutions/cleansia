@@ -18,8 +18,8 @@ namespace Cleansia.IntegrationTests.Features.Receipts;
 /// More than one receipt per order, on real Postgres: an order holds its sale receipt and a fee receipt
 /// for a receivable paid on it, and reads the sale receipt as its own; one receivable earns one fee receipt;
 /// and a registered fee receipt does not stand in for the sale receipt the reconciliation sweep is owed.
-/// The receivable reads the sweep and the customer use cross companies, and the sweep's leaves out a frozen
-/// company, whose books would refuse the charge attempt's write.
+/// The receivable reads the sweep and the customer use cross companies, and both leave out a frozen
+/// company, whose books would refuse the charge attempt's, the payment's and the write-off's write.
 /// </summary>
 [Collection("PostgresCollection")]
 public class FeeReceiptPersistenceTests(PostgresContainerFixture fixture) : BaseIntegrationTest(fixture)
@@ -175,6 +175,43 @@ public class FeeReceiptPersistenceTests(PostgresContainerFixture fixture) : Base
             assert: (CleansiaDbContext _, HashSet<string> batch) =>
             {
                 Assert.Equal(new HashSet<string> { _receivableId }, batch);
+                return Task.CompletedTask;
+            });
+    }
+
+    /// <summary>
+    /// A frozen company's books refuse the pay link's write and a write-off alike, so a debt owed to it can
+    /// never be closed; counted, it would refuse the customer every booking in every company for good.
+    /// </summary>
+    [Fact]
+    public async Task A_Frozen_Companys_Receivables_Neither_Refuse_The_Customer_A_Booking_Nor_Ask_Them_To_Pay()
+    {
+        await TestMethod(
+            arrange: async ctx =>
+            {
+                var (order, _) = Seed(ctx);
+                var owedToFrozen = Receivable.ForCashCancellationFee(order, 300m);
+                owedToFrozen.TenantId = TestTenants.Second;
+                ctx.Receivables.Add(owedToFrozen);
+                await ctx.CommitAsync(CancellationToken.None);
+
+                var company = await ctx.Tenants.SingleAsync(t => t.Id == TestTenants.Second);
+                company.RequestWindDown(DateOnly.FromDateTime(DateTime.UtcNow), "admin-frozen", DateTimeOffset.UtcNow.AddDays(-2));
+                company.Deactivate("admin-frozen", DateTimeOffset.UtcNow.AddDays(-1));
+                company.RequestArchive("admin-frozen", DateTimeOffset.UtcNow);
+                await ctx.CommitAsync(CancellationToken.None);
+            },
+            act: async provider =>
+            {
+                var repository = provider.GetRequiredService<IReceivableRepository>();
+                var owes = await repository.HasOpenForUserAsync(_customerId, CancellationToken.None);
+                var mine = await repository.GetOpenForUserAsync(_customerId, CancellationToken.None);
+                return (Owes: owes, Mine: mine.Select(r => r.Id).ToList());
+            },
+            assert: (CleansiaDbContext _, (bool Owes, List<string> Mine) r) =>
+            {
+                Assert.False(r.Owes);
+                Assert.Empty(r.Mine);
                 return Task.CompletedTask;
             });
     }

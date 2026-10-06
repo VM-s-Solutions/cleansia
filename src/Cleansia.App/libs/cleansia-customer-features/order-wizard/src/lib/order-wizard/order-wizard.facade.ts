@@ -57,7 +57,7 @@ import { OrderSavedAddressFacade } from './order-saved-address.facade';
 import { OrderServiceAreaFacade } from './order-service-area.facade';
 import {
   CASH_REFUSALS,
-  CASH_UNPAID_RECEIVABLE,
+  UNPAID_RECEIVABLE,
   ORDER_WIZARD_INITIAL_DATA,
   OrderWizardFormData,
   OUTSIDE_BOOKING_WINDOW,
@@ -264,8 +264,8 @@ export class OrderWizardFacade extends UnsubscribeControlDirective {
   readonly cashCleared = signal(false);
   /** Said only while cash is still not available; a booking that allows it again needs no warning. */
   readonly cashClearedNotice = computed(() => this.cashCleared() && !this.cashSelectable());
-  /** The server refused cash because an amount from an earlier booking is unpaid. */
-  readonly cashOwed = signal(false);
+  /** The server refused the booking because an amount from an earlier booking is unpaid. */
+  readonly owesUnpaidAmount = signal(false);
   // Credit: the balance, the slice this booking takes, and what the card is left to pay.
   // Owner ruling 2026-09-05 — applied automatically, and never the whole booking.
   readonly creditBalance = this.pricing.creditBalance;
@@ -1195,8 +1195,9 @@ export class OrderWizardFacade extends UnsubscribeControlDirective {
    * price. The interceptor has already toasted which promo rule refused it, and a second, generic
    * toast would replace that sentence — so this one only takes the code off the order, which is
    * what lets the customer submit again. Refused cash is handled the same way: taken off, and the
-   * customer sent back to choose how to pay, where cash refused for an unpaid amount lists what is
-   * owed; a start outside the booking window sends them back to the time.
+   * customer sent back to choose how to pay. A booking refused for an unpaid amount keeps its way to
+   * pay and sends the customer back to the payment step, which lists what is owed; a start outside
+   * the booking window sends them back to the time.
    */
   private onCreateRefused(error: unknown): void {
     const code = extractApiErrorCode(error);
@@ -1204,8 +1205,12 @@ export class OrderWizardFacade extends UnsubscribeControlDirective {
       this.promo.clearPromoCode();
       return;
     }
+    if (code === UNPAID_RECEIVABLE) {
+      this.owesUnpaidAmount.set(true);
+      this.goToPaymentStep();
+      return;
+    }
     if (code && CASH_REFUSALS.includes(code)) {
-      if (code === CASH_UNPAID_RECEIVABLE) this.cashOwed.set(true);
       this.dropCash(false);
       this.goToPaymentStep();
       return;

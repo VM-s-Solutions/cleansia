@@ -126,7 +126,11 @@ class RecurringBookingRepository @Inject constructor(
         val message = ApiErrorParser.parseToUserMessage(appContext, raw?.toResponseBody(), httpCode)
         val error = when (httpCode) {
             404 -> ApiError.NotFound(message)
-            400 -> ApiError.BadRequest(message, errorKey = ApiErrorParser.firstErrorKey(raw))
+            400 -> ApiError.BadRequest(
+                message,
+                validationErrors = ApiErrorParser.errorsByField(raw),
+                errorKey = ApiErrorParser.firstErrorKey(raw),
+            )
             in 500..599 -> ApiError.Server(statusCode = httpCode, message = message)
             else -> ApiError.Unknown(message)
         }

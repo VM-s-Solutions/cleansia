@@ -31,6 +31,9 @@ const REASSIGN_REFUSAL = 'api.order.reassign.employee_not_approved';
 /** A confirmed lockout pays each seat its full reward for the job, collected fee or not. */
 const LOCKOUT_CONFIRM = 'pages.order_management.ops.lockout.confirm';
 
+/** Recording the cash on an order the cleaner reported unpaid also closes what the customer owes. */
+const RECORD_CASH_CONTEXT = 'pages.order_management.ops.record_cash.context';
+
 const COPY: Record<
   Locale,
   {
@@ -41,6 +44,7 @@ const COPY: Record<
     inactive: RegExp;
     fullReward: RegExp;
     feeShare: RegExp;
+    closesDebt: RegExp;
   }
 > = {
   en: {
@@ -51,6 +55,7 @@ const COPY: Record<
     inactive: /no longer active/i,
     fullReward: /full reward for the job/i,
     feeShare: /share of the fee|once it is collected/i,
+    closesDebt: /closes the amount the customer owes/i,
   },
   cs: {
     completed: /dokončen/i,
@@ -60,6 +65,7 @@ const COPY: Record<
     inactive: /není aktivní/i,
     fullReward: /plnou odměnu za zakázku/i,
     feeShare: /podíl z poplatku|bude vybrán/i,
+    closesDebt: /uzavře částka, kterou zákazník dluží/i,
   },
   sk: {
     completed: /dokončen/i,
@@ -69,6 +75,7 @@ const COPY: Record<
     inactive: /nie je aktívny/i,
     fullReward: /plnú odmenu za zákazku/i,
     feeShare: /podiel z poplatku|bude vybraný/i,
+    closesDebt: /uzavrie suma, ktorú zákazník dlhuje/i,
   },
   uk: {
     completed: /виконан|завершен/i,
@@ -78,6 +85,7 @@ const COPY: Record<
     inactive: /не активний/i,
     fullReward: /повну винагороду за замовлення/i,
     feeShare: /частку комісії|буде стягнуто/i,
+    closesDebt: /закриває суму, яку клієнт винен/i,
   },
   ru: {
     completed: /выполнен|завершени/i,
@@ -87,6 +95,7 @@ const COPY: Record<
     inactive: /не активен/i,
     fullReward: /полное вознаграждение за заказ/i,
     feeShare: /долю комиссии|будет взыскана/i,
+    closesDebt: /закрывает сумму, которую клиент должен/i,
   },
 };
 
@@ -133,5 +142,9 @@ describe('the admin order copy says what the platform does', () => {
 
     expect(value).toMatch(COPY[locale].fullReward);
     expect(value).not.toMatch(COPY[locale].feeShare);
+  });
+
+  it.each(LOCALES)('says recording cash closes what a customer reported unpaid owes, in %s', (locale) => {
+    expect(resolveKey(readLocale(locale), RECORD_CASH_CONTEXT)).toMatch(COPY[locale].closesDebt);
   });
 });

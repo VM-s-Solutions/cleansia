@@ -343,6 +343,68 @@ class OrderDetailViewModelTest {
     }
 
     @Test
+    fun `a non-payment report completes the job, confirms it and refetches the order`() = runTest {
+        every { ordersRepository.isOrderStale(orderId) } returns true
+        coEvery { ordersRepository.getById(orderId) } returns ApiResult.Success(order)
+        coEvery { ordersRepository.reportCashNotPaid(orderId) } returns ApiResult.Success(Unit)
+
+        val vm = viewModel()
+        advanceUntilIdle()
+
+        vm.reportCashNotPaid()
+        advanceUntilIdle()
+
+        io.mockk.coVerify(exactly = 1) { ordersRepository.reportCashNotPaid(orderId) }
+        io.mockk.coVerify(exactly = 0) { ordersRepository.markCashCollected(any()) }
+        verify { snackbar.showSuccessKey(R.string.order_cash_not_paid_reported_toast) }
+        io.mockk.coVerify(exactly = 2) { ordersRepository.getById(orderId) }
+        assertEquals(ActionState.Idle, vm.actionState.value)
+        assertNull(vm.inFlightAction.value)
+    }
+
+    @Test
+    fun `a refused non-payment report snackbars the reason and confirms nothing`() = runTest {
+        every { ordersRepository.isOrderStale(orderId) } returns true
+        coEvery { ordersRepository.getById(orderId) } returns ApiResult.Success(order)
+        coEvery { ordersRepository.reportCashNotPaid(orderId) } returns
+            ApiResult.Error(refusal("order.after_photos.required"))
+
+        val vm = viewModel()
+        advanceUntilIdle()
+
+        vm.reportCashNotPaid()
+        advanceUntilIdle()
+
+        verify { snackbar.showError("translated error") }
+        verify(exactly = 0) { snackbar.showSuccessKey(R.string.order_cash_not_paid_reported_toast) }
+        assertTrue(vm.actionState.value is ActionState.Error)
+        assertNull(vm.inFlightAction.value)
+    }
+
+    @Test
+    fun `a non-payment report runs as its own action so only its control spins`() = runTest {
+        every { ordersRepository.isOrderStale(orderId) } returns true
+        coEvery { ordersRepository.getById(orderId) } returns ApiResult.Success(order)
+        val gate = kotlinx.coroutines.CompletableDeferred<ApiResult<Unit>>()
+        coEvery { ordersRepository.reportCashNotPaid(orderId) } coAnswers { gate.await() }
+
+        val vm = viewModel()
+        advanceUntilIdle()
+
+        vm.reportCashNotPaid()
+        advanceUntilIdle()
+        assertEquals(OrderAction.ReportCashNotPaid, vm.inFlightAction.value)
+
+        vm.markCashCollected()
+        advanceUntilIdle()
+        io.mockk.coVerify(exactly = 0) { ordersRepository.markCashCollected(any()) }
+
+        gate.complete(ApiResult.Success(Unit))
+        advanceUntilIdle()
+        assertNull(vm.inFlightAction.value)
+    }
+
+    @Test
     fun `a lockout report sends the trimmed note, confirms it and refetches the order`() = runTest {
         every { ordersRepository.isOrderStale(orderId) } returns true
         coEvery { ordersRepository.getById(orderId) } returns ApiResult.Success(order)

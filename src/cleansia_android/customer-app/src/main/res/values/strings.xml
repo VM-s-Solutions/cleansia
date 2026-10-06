@@ -1178,8 +1178,8 @@
     <string name="error_order_recurring_already_confirmed">You\'ve already confirmed this cleaning. Pay the cleaner in cash on the day.</string>
     <string name="error_order_creation_failed">Couldn\'t create booking. Please try again.</string>
     <string name="error_order_cash_not_available">Cash is only available when you\'re signed in and the booking needs a single cleaner.</string>
-    <string name="error_order_cash_open_bookings_limit_reached">You already have as many unpaid cash bookings as allowed. Choose card, or pay in cash again once one of them is paid.</string>
-    <string name="error_order_cash_unpaid_receivable">You have an unpaid amount with us, such as a cancellation fee. Pay by card for now; cash is available again once you settle it under Payments in your profile.</string>
+    <string name="error_order_cash_open_bookings_limit_reached">You already have as many upcoming cash bookings as allowed. Cash is paid after the cleaning, so each one counts until it has been cleaned and paid. Pay this booking by card, or choose cash again once one of them has been paid.</string>
+    <string name="error_order_unpaid_receivable">You have an unpaid amount with us, such as a cleaning you did not pay for or a cancellation fee. You can\'t make a new booking until it is paid; bookings you already have are kept. Pay it under Payments in your profile.</string>
     <string name="error_saved_card_consent_not_accepted">Please tick the box agreeing to save your card before saving it.</string>
     <string name="error_saved_card_not_found">We couldn\'t find that saved card.</string>
     <string name="error_receivable_not_found">We couldn\'t find that amount due.</string>
@@ -1372,6 +1372,8 @@
     <string name="notification_order_no_cleaner_refund_pending_body">No cleaner could make it to booking #%1$s, so we have cancelled it. Your refund is on its way, and we have added %2$s credit towards your next clean. Sorry.</string>
     <string name="notification_order_no_cleaner_nothing_charged_title">No cleaner was available</string>
     <string name="notification_order_no_cleaner_nothing_charged_body">No cleaner could make it to booking #%1$s, so we have cancelled it. You have not been charged, and we have added %2$s credit towards your next clean. Sorry.</string>
+    <string name="notification_order_cash_not_paid_title">Cash payment not received</string>
+    <string name="notification_order_cash_not_paid_body">Booking #%1$s is completed, but the cleaner did not receive the cash payment. You owe %2$s; pay it under Payments in your profile. Until then you can\'t make a new booking.</string>
     <string name="notification_dispute_reply_title">Support replied</string>
     <string name="notification_dispute_reply_body">You have a new message about your dispute. Tap to read.</string>
     <string name="notification_recurring_scheduled_title">Confirm tomorrow\'s cleaning</string>
@@ -1396,9 +1398,11 @@
     <string name="profile_row_payments">Payments</string>
     <string name="payments_title">Payments</string>
     <string name="payments_due_title">Amounts due</string>
-    <string name="payments_due_intro">Pay what you owe to book in cash again. Card bookings are not affected.</string>
+    <string name="payments_due_intro">Pay what you owe to book again. Until it is paid, no new booking can be made, by cash or by card; bookings you already have are kept.</string>
     <string name="payments_due_order">Order %1$s</string>
     <string name="payments_pay_action">Pay</string>
+    <string name="unpaid_receivable_title">You have an amount to pay</string>
+    <string name="unpaid_receivable_pay">Pay now</string>
     <string name="receivable_kind_cancellation_fee">Cancellation fee</string>
     <string name="receivable_kind_lockout">Lockout fee</string>
     <string name="receivable_kind_unpaid_cash">Unpaid cash</string>

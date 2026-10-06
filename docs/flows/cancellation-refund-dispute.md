@@ -67,7 +67,9 @@ each **naming the credit with its currency** as an `amount` formatted on the ser
 currency row ("250 Kč", "10 €": the number with no trailing zeros, a space, the symbol, the code when
 there is none; owner ruling 2026-09-13). A currency with no figure pays no credit and sends the plain
 cancellation push. The administrator's confirmation also closes an open *service not provided*
-dispute on the order. → [Business rules — when the cleaner no-shows](/product/business-rules#when-the-cleaner-cancels-or-no-shows),
+dispute on the order, unless that dispute's own card refund is still pending (since 2026-10-06): then the
+dispute stays open, because resolving it again is that refund's only retry ([Dispute](#dispute)).
+→ [Business rules — when the cleaner no-shows](/product/business-rules#when-the-cleaner-cancels-or-no-shows),
 [Money constants](/product/business-rules#money-constants)
 
 **Money never taken is never refunded.** `Order.Cancel` records the fee rate on every cancellation,
@@ -75,8 +77,9 @@ but on an order that took no payment (`Order.TookNoPayment`: payment `Pending` o
 booking not yet collected, a card never charged) it records a refund of **0**, for every writer: the
 customer, an administrator or the company wind-down, and the unfilled sweep. The fee on such an order is
 owed, not taken. **A signed-in customer's late cancellation of a cash booking opens a receivable for it**
-(`Receivable.ForCashCancellationFee`, owner ruling 2026-09-28): while it is open the customer books no
-more cash, and it is paid through the customer's pay link or written off by an administrator
+(`Receivable.ForCashCancellationFee`, owner ruling 2026-09-28): while it is open the customer makes no
+new booking, cash or card (since 2026-10-06), and it is paid through the customer's pay link or written
+off by an administrator
 → [Business rules — what a customer owes](/product/business-rules#receivables). A free cancellation, a
 card booking and a guest open none. The admin order detail shows the rate and *Fee still owed*
 (`CancellationAssessor.FeeOwed` — all of the fee on an unpaid order, zero where a card charge covered
@@ -163,12 +166,17 @@ never adds up to more than its `TotalPrice`:
 settled  = complaints on the order settled in credit
 own leg  = credit already returned on this refund's own key
 returned = credit returned on the order − own leg
+card out = card refunds confirmed, plus those still pending on any other key
+ceiling  = card charged − card out
 slice    = requested                                          when settled = 0
-         = min(requested, TotalPrice − card refunded
+         = min(requested, TotalPrice − card out
                           − returned − settled)               otherwise
 credit   = min(credit share of slice, credit applied − returned)
-card     = min(card ceiling, slice − credit)                  refuse if the slice is ≤ 0
+card     = min(ceiling, slice − credit)                       refuse if the slice is ≤ 0
          when own leg > 0: card = min(that, slice − own leg), and no credit leg is paid
+retry    = the row keeps its amount, held to min(ceiling, slice − own leg), where its card out
+           counts only the pending refunds claimed before it;
+           credit = min(credit share of slice, slice − card), none when own leg > 0
 ```
 
 The slice is split between the card and the credit in the proportion the price was paid, so a held
@@ -176,7 +184,7 @@ refund keeps the proportion the terms promise. A 2 000 order paid with 500 credi
 settled in credit, is refunded 1 200 to the card and 400 to the balance — with the settlement, 2 000 in
 all. **The hold applies wherever money leaves** (since 2026-10-05): `RefundService`, the one seam
 every card refund passes, for an administrator's full or partial refund, a cancellation and a dispute's card settlement; and
-the credit-only returns. A member's cancellation or a no-show that cannot reach Stripe returns at once the
+the credit-only returns. A member's cancellation, a no-show or a platform cancellation that cannot reach Stripe returns at once the
 credit share of the same held slice its pending card row was sized from. An order that ends with no card refund of
 its own gets its credit back under `order-ended-unpaid:{orderId}`, counting a settlement by what the
 order took: in full off the credit when it took no payment, and otherwise holding the credit to what the
@@ -184,6 +192,34 @@ sale has left after card refunds, credit returned and settlements
 → [Business rules — the credit return](/product/business-rules#when-the-cleaner-cancels-or-no-shows).
 Until then only a dispute's card settlement was held, and a full refund after a complaint settled in
 credit paid the settled part out again. An order with no settlement is refunded exactly as before.
+
+**A pending card refund counts as given back** (since 2026-10-06). A `Pending` row may be one Stripe
+paid before its answer was lost, so *card out* above counts it, and so does every complaint settled in
+credit (`ResolveDispute`, through `RefundService.LeftToGiveBackAsync`) and every credit return
+(`CreditUnwind`). Only the row being retried is left out of its own count
+(`RefundService.CardRefundedOrOwedAsync`, over `IRefundRepository.GetPendingRefundTotalForOrderAsync`).
+Until then only confirmed rows were counted: a 1 000 card order whose 600 partial refund Stripe paid but
+the platform never recorded could still settle 1 000 in credit, and the customer held 1 600. Now the
+settlement is held to 400, and the partial's retry replays 600 on its key: 1 000 in all. A retry keeps its
+card amount, so Stripe sees the same amount on the same key; a settlement made since comes off its credit
+leg. The order-ended-unpaid credit return ignores the card term on an order that never took payment,
+where no pending row can have been paid. The cost: a row Stripe refused and never paid also holds back
+later refunds until it is retried, and a retry closes it as *not paid* only once the refunds Stripe
+confirmed have left nothing for it (below). The payment status, the
+loyalty clawback, payroll's collected fee and the revenue report still read confirmed refunds only.
+→ [Business rules — a pending card refund counts as given back](/product/business-rules#after-the-start)
+
+**A fee-free cancellation of a partly refunded card order refunds the rest** (since 2026-10-06). The
+customer's free cancellation, an administrator's cancellation and an administrator's no-show
+confirmation used to ask for a card refund only on a `Paid` order, so a `PartiallyRefunded` one got only
+its credit back and the card kept the rest. They now ask the seam for the price, and the seam holds it to
+what the sale has left on each tender. 1 000 paid with 300 credit, refunded 400 (280 card, 120 credit),
+then 200 settled in credit, gets 280 to the card and 120 in credit, so the customer has 1 000 back. The
+cancellation records what it gave back, 400, as its refund amount; a refund left pending returns its
+credit leg on its own key and no second credit after it. A cancellation that charges a fee is unchanged
+while the owner rules on how the fee reads on a reduced price, and the wind-down and the unfilled sweep
+still select only `Paid` card orders.
+→ [Business rules — the credit return](/product/business-rules#when-the-cleaner-cancels-or-no-shows)
 
 **A refund's own credit leg is part of its slice** (since 2026-10-05). A refund whose credit leg already
 came back on its key — a member's cancellation or a no-show while Stripe was down, or an administrator's refund whose
@@ -195,13 +231,38 @@ amount on a key Stripe already paid is refused. Until then the retry counted its
 refund of 2 000 paid with 500 credit and 400 settled retried 1 100 to the card where it had asked 1 200.
 
 **The Stripe call happens before the status flips.** A failed call therefore leaves no phantom
-`Refunded` — the order keeps its real state and the caller gets a failure. The status becomes
-`Refunded` or `PartiallyRefunded` depending on whether the total is now covered.
+`Refunded` — the order keeps its real state and the caller gets a failure. The seam then writes
+`Refunded` when either holds — the card has given back everything it took, or the card refunds, the
+credit returned and the complaints settled in credit reach `TotalPrice` — and `PartiallyRefunded`
+otherwise (`RefundService.IsFullyRefunded`, since 2026-10-06). The second arm is the one a settlement in
+credit needs: the hold stops the card short of its charge, so a no-show refunding 700 to the card after a
+300 settlement used to leave a 1 000 order `PartiallyRefunded`. `AdminRefundOrder` and
+`IssuePartialRefund` report the status the seam stored. A settlement in credit writes no status of its
+own. → [Business rules — dispute settlement](/product/business-rules#dispute-settlement)
 
-Re-driving an existing refund row clamps it to what remains rather than issuing a second one. A re-drive
-on an order with no settlement keeps its exact amount, so Stripe sees the same parameters on the same
-key; one held below its row's amount is clamped, or marked `Failed` with `refund.nothing_refundable`
-when nothing is left for the card.
+Re-driving an existing refund row reuses it rather than issuing a second one, and keeps its card amount
+(since 2026-10-06): every other refund and settlement counted the row as owed, so what the sale has left
+still holds it, and Stripe sees the same amount on the same key. Only a row sized before pending refunds
+were counted can still be clamped. The re-drive marks a row `Failed` with `refund.nothing_refundable`
+only when refunds Stripe confirmed have left nothing for it. When only refunds still pending have used
+it up, the row stays `Pending` and the re-drive fails with `refund.failed`: Stripe may
+have paid this one, so closing it could leave money Stripe paid unrecorded. The hourly job keeps trying it
+and raises it after 24 hours. **A retry by the action that asked for it closes a row Stripe cannot have
+paid** (since 2026-10-06): Stripe never refunds more than a charge, so once the refunds it confirmed have
+given back the whole card charge (`TotalPrice − CreditAppliedAmount`), the seam marks a still-`Pending`
+row `Failed`, asks Stripe nothing, answers `refund.nothing_refundable`, and the row is closed when that
+action commits — resolving a dispute again ([Dispute](#dispute)) or a cancellation. An administrator's own
+refund does not close its row: a partial refund answers `refund.nothing_refundable` and commits nothing,
+and a full refund is refused `refund.order_not_refundable` once the order reads `Refunded`. Such a row
+stays `Pending` and is raised after 24 hours, an open finding. A retry of a pending row, by the re-drive or by the action that asked for it,
+leaves room on the card only for the pending refunds claimed before it (since 2026-10-06): one claimed
+after it counted it as owed. So of two refunds claimed at the same moment, each blind to the other, the
+older is retried on its own key, and Stripe replays it, pays it, or refuses it when it paid the younger,
+whose retry still counts the older. Until then each counted the other, and when Stripe refused both,
+neither was ever asked again. The slice held to what the sale has left still counts every pending refund,
+because a pending refund's credit leg waits for its card; with a complaint settled in credit on the order,
+two such refunds can still wait on each other, an open finding
+([Business rules](/product/business-rules#after-the-start)).
 
 **An administrator's card refund needs no second step** (checked 2026-10-04). `AdminRefundOrder`,
 `IssuePartialRefund` and `ResolveDispute` with a card settlement all go through
@@ -209,7 +270,7 @@ when nothing is left for the card.
 marks the refund done, so the money leaves when the administrator confirms the amount. A dispute settled
 in credit is on the customer's balance at once. The one manual case is a refund Stripe refuses or does
 not answer: it stays `Pending`, the hourly re-drive below does not take it, and the administrators are
-told after 24 hours to retry it from the action that asked for it.
+told after 24 hours to check it in Stripe and retry it from the action that asked for it.
 
 **A cash order has no card to refund.** `AdminRefundOrder` refuses it (`refund.order_not_refundable`),
 and `IssuePartialRefund` reaches the refund service, which refuses it the same way because there is no
@@ -239,6 +300,13 @@ it. Now:
   asked 1 300 on a key Stripe may already have paid 1 350, which Stripe refuses every time. With no refund
   claimed — nothing left for the card, or no charge surface — the credit still comes back under the
   order's key.
+- **A platform cancellation survives Stripe the same way** (since 2026-10-06). When Stripe refuses the
+  card refund of an administrator's cancellation or the wind-down's, or cannot be reached for it,
+  `PlatformOrderCancellation` returns the credit share at once on the refund's own key, so the re-drive
+  reads the slice back as the card amount plus that leg, to the minor unit, and the cancellation reports
+  the refund as not gone through. Until then the credit waited for the re-drive, which worked it out in
+  proportion from the card amount, and a timeout or dropped connection escaped after the cancellation had
+  committed, failing the administrator's cancel and stopping the wind-down's run.
 - **The hourly re-drive** (`RedrivePendingRefunds`, on the existing hourly tick of
   `AutoCancelStaleRecurringOrders`, so no new timer) takes every `Pending` app refund older than 30
   minutes, per company, and re-drives a **cancelled order's own** refund through
@@ -246,12 +314,21 @@ it. Now:
   The row keeps only the card leg, so the slice it refunds is read back: its card amount plus a credit leg
   already returned on its key, which is not returned again, or, with none on the key, through the
   proportion the split applied, with the credit leg paid on the same key. On success the customer gets
-  `order.refunded`. A refund with nothing left to return is closed; a transport fault on one row is
-  caught and the next run tries again.
+  `order.refunded`. A refund left nothing to return by refunds Stripe confirmed is closed; one held back
+  only by refunds still pending stays `Pending` (above). A transport fault on one row is
+  caught and the next run tries again. A guest's cancellation refund claimed before a cancel that then
+  failed is never re-driven: its order was never cancelled, so re-driving it could refund a clean that
+  still happens.
 - **After 24 hours the administrators are told**, once per order: `admin.payment.refund_stuck` for a
-  cancelled order's refund the re-drive keeps trying, `admin.payment.refund_needs_retry` for any other —
-  a dispute's, an administrator's or a partial refund, which carries its own key segment, belongs to the
-  action that asked for it and is retried there.
+  cancelled order's refund the re-drive keeps trying, `admin.payment.refund_needs_retry` for a dispute's,
+  an administrator's or a partial refund, which carries its own key segment, belongs to the action that
+  asked for it and is retried there. Since 2026-10-06 a guest's cancellation refund left pending on an
+  order that was never cancelled raises `admin.payment.refund_without_cancel`: every later refund on the
+  order counts it, so silence would hold money back with nobody told why. Its notice says to check it in
+  Stripe, then, if the booking is still open, to cancel the order, which replays the claim on the same key
+  and records what it sends; and if the clean went ahead, to issue no refund on the order until the claim
+  is reconciled in Stripe, because no console action retries the row and a *Full refund* would send the
+  rest of the sale on a key of its own.
   → [Business rules — administrators are told](/product/business-rules#admin-notifications)
 
 **Partial line refunds load every component of the split.** `IssuePartialRefund` uses the order's
@@ -346,8 +423,10 @@ opens the right file. Both ride the outbox, so a Stripe redelivery that never re
 dispute form asks it — a refund to the card, the default, or credit — and `CreateDispute` stores it as
 `Dispute.SettlementPreference`; the administrator sees it and decides only the amount. With *credit* and
 an account, `ResolveDispute` issues the amount as credit in the order's currency
-(`dispute-settlement:{disputeId}`), bounded by what the order has not already given back, records it as
-`CreditReturnedAmount`, and moves nothing on the card; *Issue credit* can no longer settle a dispute
+(`dispute-settlement:{disputeId}`), bounded by what the order has not already given back — a pending
+card refund counted as given back — records it as
+`CreditReturnedAmount`, and moves nothing on the card, unless the dispute's own card refund is still
+pending, which the amount then retries ([below](#dispute)); *Issue credit* can no longer settle a dispute
 (`credit.dispute_settlement_not_issuable`). The rest of this section is the card settlement.
 → [Business rules — dispute settlement](/product/business-rules#dispute-settlement)
 
@@ -371,14 +450,34 @@ recorded, shows neither. The audit row's before and after carry all three. `Disp
 the two new figures on every host that serves it — admin, customer web and customer mobile — and only
 the admin console shows them. When the seam refuses — `refund.failed` from
 Stripe, `refund.order_not_refundable` on an order with no card charge, `refund.nothing_refundable` once
-the ceiling is spent — the resolver gets that error and the dispute stays open. The refund key carries
-the dispute's id and no amount, so a retry re-drives the **first attempt's** refund row, clamped to
-what remains, whatever amount the retry names. The money moves once: the dispute records the retry's
+the ceiling is spent — the resolver gets that error and the dispute stays open, save for the one case
+below where the seam closed the dispute's own pending row. The refund key carries
+the dispute's id and no amount, so a retry re-drives the **first attempt's** refund row, at that
+attempt's card amount, whatever amount the retry names. The money moves once: the dispute records the retry's
 amount as requested, and that one refund's card and credit legs as what moved. A resolution with no
-amount, or zero, moves nothing and simply resolves. A terminal dispute is never resolved twice
-(`dispute.already_resolved`). After an earlier complaint on the order was settled in credit, the card
+amount, or zero, moves nothing and simply resolves, unless the dispute's card refund is still pending: then
+it is refused with `dispute.refund_pending` (since 2026-10-06), and a resolution with an amount retries that
+card refund even when the customer chose credit. A terminal dispute is never resolved twice
+(`dispute.already_resolved`). **So a dispute whose card refund is still pending is not closed** (since
+2026-10-06): resolving it again is the only retry of that row, on `refund:{orderId}:dispute:{disputeId}`,
+and the hourly re-drive never takes it. A no-show confirmation leaves such a dispute open, and
+`UpdateDisputeStatus` refuses to close it with `dispute.refund_pending`. The no-show counts the pending row
+as given back and refunds what is left, and the second resolve sends the first attempt's amount: a 1 000
+card order whose 400 dispute refund Stripe refused gets 600 from the no-show and 400 from the second
+resolve, 1 000 in all. After an earlier complaint on the order was settled in credit, the card
 settlement is held to what the order still has left, by the seam, like every other refund
 ([Refund](#refund)).
+
+**A dispute whose pending card refund Stripe cannot have paid is resolved with nothing sent** (since
+2026-10-06). Once refunds Stripe confirmed on other keys have given back the whole card charge, the seam
+closes the dispute's pending row as `Failed` without asking Stripe ([Refund](#refund)), and
+`ResolveDispute` resolves the dispute anyway: it records the amount asked as `RefundAmount`, no card or
+credit leg, and tells the customer of no refund. A no-show and a complaint's 1 000 refund on a 1 000 card
+order, claimed at the same moment and both refused: the no-show pays the 1 000 on its own, older key, and
+resolving the complaint again closes its row and ends the dispute. Until then that resolve answered
+`refund.nothing_refundable` for good, and the dispute could be neither resolved nor closed. When refunds
+still pending are what use up the card, the row stays pending and the dispute open.
+→ [Business rules — dispute settlement](/product/business-rules#dispute-settlement)
 
 **A settlement takes back its share of the order's points** (owner ruling 2026-10-03). As its last
 write, `ResolveDispute` hands the refund clawback what the settlement actually gave back:
@@ -397,7 +496,7 @@ any money moves when the pay row is missing, invoiced, already charged or smalle
 **"The cleaner did not arrive" is a dispute that also raises the no-show alert.** A signed-in customer's
 *service not provided* dispute on a staffed job nobody has started, filed after the start, raises
 `admin.order.cleaner_not_started` for the company (once per order, shared with the reminder sweep's
-alert); an administrator's no-show confirmation closes it.
+alert); an administrator's no-show confirmation closes it, unless its card refund is still pending.
 
 **Filing one is recorded against the order, then the dispute.** `CreateDispute` is marked
 `customer.dispute.create` with `Order` as its resource, so a filing that is refused — against a clean
@@ -431,7 +530,10 @@ dispute or the order shows the three interleaved, newest first.
 | Cancel after the booked start, cleaner assigned, job not started | Refused, `order.start_passed_cannot_cancel`; the customer reports that the cleaner did not arrive, and an administrator confirms the no-show. |
 | Stripe unreachable during a signed-in customer's cancel | The order is cancelled, the refund stays `Pending` for the hourly re-drive, the credit share of the same held slice returns now, and the response says `refundPending`. |
 | Stripe unreachable during a no-show confirmation or the unfilled sweep | The order is cancelled, the refund stays `Pending`, and the credit share of the same held slice returns now on the refund's key; the re-drive asks Stripe for the same card amount on that key, and the total is never more than the price. |
-| A refund still `Pending` after 24 h | The administrators are told once — `admin.payment.refund_stuck` or `admin.payment.refund_needs_retry`. |
+| A refund still `Pending` after 24 h | The administrators are told once — `admin.payment.refund_stuck`, `admin.payment.refund_needs_retry` or `admin.payment.refund_without_cancel`. |
+| A re-drive whose ceiling only pending refunds have used up | The row stays `Pending` and the re-drive answers `refund.failed`; it is retried hourly and raised as `refund_stuck` after 24 h, and closed `Failed` only once refunds Stripe confirmed have used it up. |
+| Two refunds claimed at the same moment, both refused by Stripe | The older one's retry does not count the younger, which counted it: Stripe is asked on the older key and pays it, and the younger then finds nothing left. If Stripe had paid the younger and the charge has too little left, both stay `Pending` and are raised after 24 h. |
+| Stripe refuses or cannot be reached for an administrator's or the wind-down's cancellation refund | The order is cancelled, the refund stays `Pending`, and the credit share returns now on the refund's key; the re-drive sends the card amount on that key, and the total is exactly what the sale had left. |
 | Cancel by someone who does not own the order | Refused — the handler checks `order.UserId`. The probe is recorded: a failure row on the caller with `order.not_found` and the probed order as its resource. |
 | Dispute resolved outside the guard | Cannot happen from application code; the checker fails the build. |
 | Dispute resolved with a refund Stripe refuses | The resolver gets `refund.failed`; the dispute stays open with no `RefundAmount`, and the customer is not told of a refund. Resolving again re-drives the same refund row at the first attempt's amount, even when the retry names another; the dispute then records the retry's amount as requested and that refund's legs as what moved. |
@@ -440,7 +542,18 @@ dispute or the order shows the three interleaved, newest first.
 | Chargeback on a web card booking, guest or account | Found by the intent `checkout.session.completed` stored, or through its Checkout Session when the order predates that; the dispute is written and the administrators are told. |
 | Chargeback that matches no order | No dispute is written; the webhook answers `200` and the administrators of every company are told (`admin.dispute.chargeback_unmatched`). |
 | Express waiver used, then the order cancelled | The consumed benefit slot is forfeited or released by rule, not silently kept. |
-| A signed-in customer cancels a cash booking late | No refund (nothing was taken); a cash-cancellation-fee receivable for the fee; no more cash bookings until it is paid through the pay link or written off. |
+| A signed-in customer cancels a cash booking late | No refund (nothing was taken); a cash-cancellation-fee receivable for the fee; no new booking, cash or card, until it is paid through the pay link or written off. |
+| A card refund left `Pending` that Stripe may have paid | Counted as given back by every other refund, settlement in credit and credit return on the order; its retry sends Stripe the same amount on the same key. |
+| A settlement in credit while a card refund is pending | Held to what the sale has left after it: 1 000 with 600 pending settles at most 400. |
+| A guest's cancel fails after its refund was claimed, and the booking goes ahead | The row is never re-driven; after 24 h the administrators get `admin.payment.refund_without_cancel`: check it in Stripe, and issue no refund on the order until the claim is reconciled there. |
+| A guest's cancel fails after its refund was claimed, and an administrator then cancels the booking | The administrator's cancellation replays the claim on the same key at the claim's amount and records that amount: 750 of a 1 000 booking cancelled at the 25 % tier, not 1 000. |
+| A no-show confirmed while the complaint's card refund is pending | The no-show refunds what is left and the dispute stays open; resolving it again sends the pending amount on the dispute's key. |
+| A dispute closed by hand while its card refund is pending | Refused, `dispute.refund_pending`. |
+| A dispute resolved with no refund amount while its card refund is pending | Refused, `dispute.refund_pending`; resolving with an amount retries the card refund on the dispute's key, even for a customer who chose credit. |
+| A dispute resolved again after refunds Stripe confirmed gave back the whole card charge while its card refund was pending | The pending row is closed `Failed` as not paid and nothing is sent; the dispute resolves with the amount asked recorded, no card or credit leg, and no refund notice. |
+| A partly refunded card order cancelled free, by an administrator, or as a no-show | The rest of the sale goes back on both tenders, in proportion; the cancellation records what it gave back. |
+| A partly refunded card order cancelled with a fee | No card refund; the remaining credit comes back, held to what the sale has left (pending an owner ruling). |
+| Card refunds, credit returned and a settlement in credit reach the price | The order reads `Refunded`. |
 | A card order is cancelled late and its fee kept | The crew's pay is asked for at the cancel: each seat's share of half the fee still held. |
 | The cleaner reports a lockout before start + 15 | `order.lockout.too_early`; the partner apps open the report at that moment. |
 | A lockout confirmed on a paid card order | Payment and applied credit kept, no refund; each seat is paid its full reward. |

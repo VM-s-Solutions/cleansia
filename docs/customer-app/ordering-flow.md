@@ -293,11 +293,18 @@ when the server refuses cash, because the server no longer asks for a saved card
 the parked booking and the return through the profile are gone.
 → [Cash needs no card](/product/business-rules#card-guarantee)
 
-**When the server refuses cash at submit.** Cash refused because the customer still owes an amount
-from an earlier booking (`order.cash_unpaid_receivable`) is taken away as above, and the step shows
-the amount owed with a way to pay it (`cleansia-customer-amount-due`); leaving to pay parks the
-booking, which is waiting on the next visit → [What a customer owes](/product/business-rules#receivables).
-Cash refused for want of a saved card opens the card capture instead.
+**When the server refuses the booking for an amount owed** (since 2026-10-06). A customer who owes any
+company an amount is refused every booking, card or cash, with `order.unpaid_receivable`, which replaced
+the cash-only `order.cash_unpaid_receivable`. The wizard **keeps the chosen way to pay** and returns to
+the payment step, which says the booking cannot be made yet, by card or in cash
+(`pages.order.unpaid_owed`), and lists everything owed with *Pay now* (`cleansia-customer-amount-due`);
+leaving to pay parks the booking, which is waiting on the next visit
+→ [What a customer owes](/product/business-rules#receivables). The wizard reads the key whatever field
+it arrives under. Cash is taken away only for `order.cash_not_available` and
+`order.cash_open_bookings_limit_reached`; the latter's copy says the customer already has as many cash
+bookings not yet paid as allowed — in practice their upcoming ones — and names no number. The schedule
+form and the order page's visit confirmation show the same list of what is owed when they are refused;
+the schedule form is not saved when the customer leaves it to pay.
 
 **A promo code** is for a signed-in customer: a guest is told that codes are tied to an account and
 that the booking does not need one. *Apply* asks the server once, never per keystroke. A valid code

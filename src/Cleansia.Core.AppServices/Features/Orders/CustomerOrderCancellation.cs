@@ -52,6 +52,12 @@ public sealed class CustomerOrderCancellation(
         var refundInitiated = false;
         var refundPending = false;
         decimal? successfulRefundAmount = null;
+        var request = new RefundRequest(order.Id, assessment.RefundAmount, RefundReason.CustomerCancellation, actorId);
+        var cancellationRefund = assessment.FeeRate == 0m && !order.TookNoPayment
+            ? await RefundService.LeftToGiveBackAsync(
+                refundRepository, creditAccountRepository, order, RefundService.BuildRefundKey(request), cancellationToken)
+            : assessment.RefundAmount;
+
         // The refund seam commits its claim and confirmed amount. A guest cancellation stays retryable
         // until its status, audit and email intent can commit together after those independent flushes.
         if (guest)
@@ -59,7 +65,7 @@ public sealed class CustomerOrderCancellation(
             await RefundAsync(recoverGuestAttempt: true);
         }
 
-        order.Cancel(now, CancelledBy.Customer, assessment.FeeRate, assessment.RefundAmount, reason);
+        order.Cancel(now, CancelledBy.Customer, assessment.FeeRate, cancellationRefund, reason);
         var transition = OrderStatusTrack.Create(OrderStatus.Cancelled, order);
         order.AddOrderStatus(transition);
         await liveActivityProducer.NotifyOrderTransitionAsync(
@@ -75,11 +81,11 @@ public sealed class CustomerOrderCancellation(
             await RefundAsync(recoverGuestAttempt: false);
         }
 
-        if (paymentStatusAtCancel != PaymentStatus.Paid && !refundInitiated)
+        if (paymentStatusAtCancel != PaymentStatus.Paid && !refundInitiated && !refundPending)
         {
             await creditAccountRepository.ReturnUnpaidOrderCreditAsync(
                 order,
-                await refundRepository.GetSucceededRefundTotalForOrderAsync(order.Id, cancellationToken),
+                await RefundService.CardRefundedOrOwedAsync(refundRepository, order.Id, null, cancellationToken),
                 actorId,
                 cancellationToken);
         }
@@ -122,13 +128,14 @@ public sealed class CustomerOrderCancellation(
 
         async Task RefundAsync(bool recoverGuestAttempt)
         {
-            var request = new RefundRequest(order.Id, assessment.RefundAmount,
-                RefundReason.CustomerCancellation, actorId);
             var existing = recoverGuestAttempt
                 ? await refundRepository.GetByRefundKeyAsync(RefundService.BuildRefundKey(request), cancellationToken)
                 : null;
+            // A free cancellation of a partly refunded order gives back the rest; the seam holds the price
+            // asked for to what the sale has left, on each tender.
             if (existing is null && !(order.PaymentType == PaymentType.Card
-                && order.PaymentStatus == PaymentStatus.Paid
+                && (order.PaymentStatus == PaymentStatus.Paid
+                    || (order.PaymentStatus == PaymentStatus.PartiallyRefunded && assessment.FeeRate == 0m))
                 && assessment.RefundAmount > 0m && order.HasRefundableChargeSurface))
             {
                 return;

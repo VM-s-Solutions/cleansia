@@ -16,6 +16,7 @@ import { of, Subject } from 'rxjs';
 import { OrderPreferredOfferComponent } from './components/order-preferred-offer.component';
 import { OrderDetailComponent } from './order-detail.component';
 import { OrderMarketFacade } from '../order-market.facade';
+import { OrderDetailFacade } from './order-detail.facade';
 import { OrderPreferredOfferFacade } from './order-preferred-offer.facade';
 
 const ORDER_ID = 'ord-1';
@@ -134,5 +135,19 @@ describe('OrderDetailComponent — an amount due on the order', () => {
     await setup([receivable('rcv-2', 'ord-2', 2, 1200)]);
 
     expect(card()).toBeNull();
+  });
+
+  it('offers to pay everything owed, and says why, once a confirmation was refused for it', async () => {
+    await setup([receivable('rcv-1', ORDER_ID, 1, 450), receivable('rcv-2', 'ord-2', 2, 1200)]);
+
+    fixture.debugElement.injector.get(OrderDetailFacade).confirmRefusedForDebt.set(true);
+    fixture.detectChanges();
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    expect(rows().map((row) => row[1])).toEqual(['Order CL-1001', 'Order CL-2002']);
+    expect(
+      (fixture.nativeElement as HTMLElement).querySelector('[data-spec-recurring-owed]'),
+    ).not.toBeNull();
   });
 });

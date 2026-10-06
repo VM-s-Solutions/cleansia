@@ -87,6 +87,7 @@ fun MainShell(
     onProfileRow: (key: String) -> Unit = {},
     onBookingComplete: (confirmationCode: String, orderId: String) -> Unit = { _, _ -> },
     onNavigateToEditProfile: () -> Unit = {},
+    onOpenPayments: () -> Unit = {},
     onNavigateToOnboarding: () -> Unit = {},
     onOpenRewardsActivity: () -> Unit = {},
     /** Tap on the Home upsell carousel's Plus card. Routes to Subscribe Plus. */
@@ -423,6 +424,7 @@ fun MainShell(
                 reopenBookingAfterProfile = true
                 onNavigateToEditProfile()
             },
+            onNavigateToPayments = onOpenPayments,
         )
 
         // Address manager, same bottom-sheet behavior as the booking sheet.

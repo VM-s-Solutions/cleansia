@@ -1,6 +1,7 @@
 using Cleansia.Core.AppServices.Abstractions;
 using Cleansia.Core.AppServices.Auditing;
 using Cleansia.Core.AppServices.Common;
+using Cleansia.Core.AppServices.Services;
 using Cleansia.Core.AppServices.Services.Interfaces;
 using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Orders;
@@ -15,8 +16,8 @@ namespace Cleansia.Core.AppServices.Features.Orders;
 /// <summary>
 /// An administrator confirms that the cleaner did not arrive (owner ruling 2026-09-28): the order is
 /// cancelled with the no-show sweep's own remedy — no fee, the whole refund, the apology credit and the
-/// no-cleaner message — and a linked "service not provided" dispute is closed. A crew with one of two
-/// cleaners missing stays a dispute for the administrator's judgement.
+/// no-cleaner message — and a linked "service not provided" dispute is closed, unless its own card refund is
+/// still pending. A crew with one of two cleaners missing stays a dispute for the administrator's judgement.
 /// → /product/business-rules#when-the-cleaner-cancels-or-no-shows
 /// </summary>
 [AuditAction("order.cancel.no_show", ResourceType = "Order")]
@@ -49,6 +50,7 @@ public class AdminCancelOrderAsNoShow
     public class Handler(
         IOrderRepository orderRepository,
         IDisputeRepository disputeRepository,
+        IRefundRepository refundRepository,
         IUserSessionProvider userSessionProvider,
         CleanerNoShowCancellation noShowCancellation,
         INotificationProducer notificationProducer,
@@ -94,7 +96,8 @@ public class AdminCancelOrderAsNoShow
             await loyaltyService.RevokeForCancelledOrderAsync(order.Id, cancellationToken);
 
             var dispute = await disputeRepository.GetOpenDisputeForOrderAsync(order.Id, cancellationToken);
-            if (dispute is { Reason: DisputeReason.ServiceNotProvided })
+            if (dispute is { Reason: DisputeReason.ServiceNotProvided }
+                && !await RefundService.HasPendingDisputeRefundAsync(refundRepository, dispute, cancellationToken))
             {
                 dispute.UpdateStatus(DisputeStatus.Closed, adminId);
             }

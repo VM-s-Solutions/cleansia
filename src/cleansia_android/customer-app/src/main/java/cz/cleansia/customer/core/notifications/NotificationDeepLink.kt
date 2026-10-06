@@ -79,6 +79,8 @@ object NotificationDeepLink {
         "membership.cancellation_effective",
         "membership.payment_failed" -> Routes.Home(tab = MainTab.Profile.name)
         "loyalty.tier_upgrade" -> Routes.RewardsActivity
+        // The debt is paid on Payments, which the order detail has no way to do.
+        "order.cash_not_paid" -> Routes.Payments
         // promo.new_sitewide intentionally lands on Home — there's no
         // single screen that's right for "see the new offer".
         else -> null

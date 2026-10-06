@@ -11,12 +11,26 @@ public interface IRefundRepository : IRepository<Refund, string>
     Task<Refund?> GetByRefundKeyAsync(string refundKey, CancellationToken cancellationToken);
 
     /// <summary>
-    /// Sum of an order's succeeded refund amounts — the consumed half of the refundable ceiling
-    /// <c>refundable(order) = amountCharged − Σ(succeeded refunds)</c> (ADR-0006 D2). Reads only
-    /// <see cref="Cleansia.Core.Domain.Enums.RefundStatus.Succeeded"/> rows so a pending/failed
-    /// attempt never shrinks the ceiling.
+    /// Sum of an order's succeeded refund amounts: the card money confirmed back, which decides the
+    /// payment status, the loyalty clawback and payroll's collected fee. A ceiling on what may still go
+    /// back adds <see cref="GetPendingRefundTotalForOrderAsync"/>, because a pending row may be one
+    /// Stripe already paid.
     /// </summary>
     Task<decimal> GetSucceededRefundTotalForOrderAsync(string orderId, CancellationToken cancellationToken);
+
+    /// <summary>
+    /// Sum of an order's pending refund amounts, leaving out the row keyed <paramref name="exceptRefundKey"/>:
+    /// the refund being re-driven is not owed on top of itself.
+    /// </summary>
+    Task<decimal> GetPendingRefundTotalForOrderAsync(
+        string orderId, string? exceptRefundKey, CancellationToken cancellationToken);
+
+    /// <summary>
+    /// Sum of the pending refund amounts on <paramref name="refund"/>'s order that were claimed before it,
+    /// leaving the refund itself out. A retry of a pending refund leaves room on the card for these only: one
+    /// claimed after it counted it as owed or, claimed at the same moment, waits for it.
+    /// </summary>
+    Task<decimal> GetPendingRefundTotalClaimedBeforeAsync(Refund refund, CancellationToken cancellationToken);
 
     /// <summary>
     /// The batch form of <see cref="GetSucceededRefundTotalForOrderAsync"/>: Σ succeeded refund amounts

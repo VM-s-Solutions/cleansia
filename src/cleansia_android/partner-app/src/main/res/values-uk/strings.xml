@@ -923,6 +923,12 @@
     <string name="partner_order_mark_cash_collected_confirm_message">Підтвердьте, що ви отримали від клієнта %1$s готівкою. Цю дію не можна скасувати.</string>
     <string name="partner_order_mark_cash_collected_confirm_message_no_amount">Підтвердьте, що ви отримали від клієнта оплату готівкою. Цю дію не можна скасувати.</string>
     <string name="partner_order_mark_cash_collected_confirm_action">Так, готівку отримано</string>
+    <string name="order_cash_not_paid_action">Клієнт не заплатив</string>
+    <string name="order_cash_not_paid_confirm_title">Клієнт не заплатив?</string>
+    <string name="order_cash_not_paid_confirm_message">Використовуйте це, лише якщо клієнт нічого не заплатив. Якщо він заплатив лише частину, натомість повідомте компанію. Прибирання буде завершено, і вам за нього заплатять. Клієнт буде винен %1$s, отримає про це повідомлення і не зможе нічого замовити, доки не заплатить; адміністратор отримає сповіщення. Скасувати це може лише адміністратор.</string>
+    <string name="order_cash_not_paid_confirm_message_no_amount">Використовуйте це, лише якщо клієнт нічого не заплатив. Якщо він заплатив лише частину, натомість повідомте компанію. Прибирання буде завершено, і вам за нього заплатять. Клієнт буде винен вартість прибирання, отримає про це повідомлення і не зможе нічого замовити, доки не заплатить; адміністратор отримає сповіщення. Скасувати це може лише адміністратор.</string>
+    <string name="order_cash_not_paid_confirm_action">Так, повідомити</string>
+    <string name="order_cash_not_paid_reported_toast">Повідомлено. Прибирання завершено, клієнта поінформовано.</string>
 
     <!-- Backend error-key translations -->
     <string name="error_key_order_after_photos_required">Перед завершенням замовлення зробіть принаймні одне фото \"після\".</string>

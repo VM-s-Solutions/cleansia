@@ -47,6 +47,12 @@ public interface IEmailService
     Task<string> SendReceivablePayLinkEmailAsync(string email, Order order, Receivable receivable, string payUrl, string languageCode = Constants.Language.English, CancellationToken ct = default);
 
     /// <summary>
+    /// Tells a customer that the cleaner did not receive the cash for a finished cleaning: the price is owed,
+    /// it is paid on the order's page, and no new booking is taken until then.
+    /// </summary>
+    Task<string> SendOrderCashNotPaidEmailAsync(string email, Order order, Receivable receivable, string languageCode = Constants.Language.English, CancellationToken ct = default);
+
+    /// <summary>
     /// Asks a cleaner to hand over the company's cash they have held since a pay-period close could not set it
     /// off against their pay (owner ruling 2026-09-28, decision 23): the amount and the close it dates from.
     /// </summary>

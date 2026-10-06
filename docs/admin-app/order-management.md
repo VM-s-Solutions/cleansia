@@ -88,11 +88,14 @@ When the assigned cleaner did not come, **Cancel as a no-show** confirms it (own
 question reaches the console as `admin.order.cleaner_not_started` — raised by the reminder sweep 30
 minutes after the start of a job nobody started, or by the customer's report that the cleaner did not
 arrive — and the button is the answer. It cancels with the unfilled sweep's own remedy: no fee, the whole
-card refund, the customer's applied credit back, the apology credit, the reason *no cleaner was
+card refund (since 2026-10-06, on an order already partly refunded or with a card refund still pending,
+the rest of the sale on both tenders), the customer's applied credit back, the apology credit, the reason *no cleaner was
 available*, and the push that says what happened to the money; it tells the assigned cleaners, ends the
 live activity, releases the express waiver, revokes the booking's loyalty points and closes an open
-*service not provided* dispute. The response says what moved: `refundedAmount`, `refundPending` (a card
-refund owed and not through — the hourly re-drive owns it) and `apologyCredit`; the toast states only
+*service not provided* dispute, unless that dispute's card refund is still pending (since 2026-10-06):
+resolving the dispute again is that refund's only retry, so it stays open. The response says what
+moved: `refundedAmount`, `refundPending` (a card refund owed and not through — the hourly re-drive owns
+it) and `apologyCredit`; the toast states only
 that this action made no card refund when none went through. It is refused before the start
 (`order.start_time_not_reached`), once a cleaner has started (`order.cleaner_already_started` — the
 cleaner did arrive; the report stays a dispute), and on a completed or cancelled order. One of two
@@ -110,6 +113,14 @@ Only on a cash order in progress or completed whose money is still owed. The ord
 exactly as the cleaner's own record would make it, so the cleaner can complete it; on an order already
 completed the cash receipt is issued at once.
 → [Business rules — cash handover](/product/business-rules#cash-handover)
+
+**On an order the cleaner reported unpaid it also closes the customer's debt** (since 2026-10-06). It
+first expires the debt's open pay link at Stripe, then writes the debt off with the note *Paid in cash* in
+the same commit, which lifts the booking ban once nothing else is owed. It is refused with
+`order.payment_not_outstanding` once the customer paid the debt online or Stripe reports the link already
+paid, and with `order.payment_gateway_unavailable` when Stripe cannot be reached; nothing is recorded
+either way. A pay-link payment that still arrives afterwards is refunded in full.
+→ [Business rules — when the customer does not pay at the door](/product/business-rules#cash-not-paid)
 
 ## Dispute Resolution
 
@@ -130,8 +141,9 @@ Disputes are linked to specific orders and contain a description of the issue. T
 **The customer chose how a justified complaint is settled** (owner ruling 2026-09-28): the dispute
 detail shows *Card refund* — the default — or *Credit*, and the resolve dialog shows the choice. The
 administrator decides the amount only. With *Credit* the amount is issued as credit in the order's
-currency and recorded as **Returned as credit**, bounded by what the order has not already given back
-(`dispute.invalid_refund_amount`); nothing moves on the card. *Issue credit* no longer offers a
+currency and recorded as **Returned as credit**, bounded by what the order has not already given back,
+a card refund still pending counted as given back (`dispute.invalid_refund_amount`); nothing moves on
+the card, unless the dispute's own card refund is still pending, which the amount then retries (below). *Issue credit* no longer offers a
 *Dispute settlement* reason, and the server refuses it (`credit.dispute_settlement_not_issuable`).
 
 **Charging the cleaner is a finding of fault, not a side effect.** The resolve dialog can charge a named
@@ -151,8 +163,15 @@ before the two legs were recorded, shows neither. The dispute list's refund colu
 requested amount. A refused refund shows its error and leaves the dispute open:
 `refund.failed`, `refund.order_not_refundable` (a cash booking has no card charge) or
 `refund.nothing_refundable`. Resolving again re-drives the first attempt's refund, never a second one,
-and at the first attempt's amount even if the new resolution names another. A resolution with no
-amount moves no money. → [Cancellation, refund and dispute](/flows/cancellation-refund-dispute#dispute)
+and at the first attempt's amount even if the new resolution names another. While that refund is still
+pending the dispute cannot be closed (since 2026-10-06), so the retry stays possible: setting its status
+to *Closed*, or resolving it with no amount, answers `dispute.refund_pending`, whose message asks for a
+refund amount, and a no-show confirmation leaves it open. Resolving it with an amount retries the card
+refund even when the customer chose credit. Once refunds Stripe confirmed on the order have given back
+the whole card charge, resolving again closes the pending refund as not paid and resolves the dispute
+with nothing sent: **Refund requested** shows the amount named, neither leg is shown, and the customer is
+told of no refund. With no card refund pending, a resolution with no amount moves no money.
+→ [Cancellation, refund and dispute](/flows/cancellation-refund-dispute#dispute)
 
 A dispute that names no account shows the booking's own customer name and e-mail, read off the order.
 A bank chargeback reaches the console on every card booking, **guest** ones included, as an escalated
@@ -207,11 +226,18 @@ Admins can initiate refunds for orders with card payments:
 1. Navigate to the order detail page
 2. Verify the payment status is `Paid`
 3. Initiate refund (full or partial)
-4. The refund is processed through the payment provider
-5. Payment status is updated to `Refunded`
+4. The refund is processed through the payment provider, in the same command, held to what the order
+   has not already given back — a card refund still pending counts as given back; with nothing left it
+   is refused `refund.nothing_refundable`
+5. Payment status is updated to `Refunded` once the card has given back all it took or the whole price
+   has come back (card refunds, credit returned and complaints settled in credit together), and to
+   `PartiallyRefunded` otherwise
 
 ::: warning
-Refunds for Stripe payments are processed asynchronously. The payment status may not update immediately. Cash payment refunds must be handled outside the system.
+A refund Stripe refuses or does not answer stays pending; the administrators are told after 24 hours
+(`admin.payment.refund_needs_retry`) and retry it from the same action. Cash payment refunds must be
+handled outside the system.
+→ [Business rules — a pending card refund counts as given back](/product/business-rules#after-the-start)
 :::
 
 ## Photo Management

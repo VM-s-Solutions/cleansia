@@ -124,10 +124,11 @@ public class AdminRefundOrderHandlerTests
         return order;
     }
 
-    private void ArrangeSeamSuccess(decimal amount, bool resolvedToExisting = false)
+    private void ArrangeSeamSuccess(decimal amount, bool resolvedToExisting = false, Action? settles = null)
     {
         _refundService
             .Setup(s => s.IssueRefundAsync(It.IsAny<RefundRequest>(), It.IsAny<CancellationToken>()))
+            .Callback(() => settles?.Invoke())
             .ReturnsAsync((RefundRequest req, CancellationToken _) =>
                 BusinessResult.Success(new RefundResult(
                     RefundId: "refund-1",
@@ -148,7 +149,7 @@ public class AdminRefundOrderHandlerTests
     public async Task Admin_RefundOnly_Confirmed_Paid_Leaves_Status_Confirmed_PaymentStatus_Refunded()
     {
         var order = ArrangeOrder(OrderStatus.Confirmed);
-        ArrangeSeamSuccess(amount: 1000m);
+        ArrangeSeamSuccess(amount: 1000m, settles: () => order.UpdatePaymentStatus(PaymentStatus.Refunded));
         ArrangeConsumedTotal(1000m);
 
         var result = await CreateHandler().Handle(
@@ -164,8 +165,8 @@ public class AdminRefundOrderHandlerTests
     [Fact]
     public async Task Admin_RefundOnly_PartialConsumed_Returns_PartiallyRefunded()
     {
-        ArrangeOrder(OrderStatus.Confirmed);
-        ArrangeSeamSuccess(amount: 400m);
+        var order = ArrangeOrder(OrderStatus.Confirmed);
+        ArrangeSeamSuccess(amount: 400m, settles: () => order.UpdatePaymentStatus(PaymentStatus.PartiallyRefunded));
         ArrangeConsumedTotal(400m);
 
         var result = await CreateHandler().Handle(
@@ -173,6 +174,27 @@ public class AdminRefundOrderHandlerTests
 
         Assert.True(result.IsSuccess);
         Assert.Equal(PaymentStatus.PartiallyRefunded, result.Value!.PaymentStatus);
+    }
+
+    /// <summary>
+    /// A complaint was settled in 300 of credit, so the full refund sent the card 700 and the seam stored the
+    /// order as Refunded: the sale has nothing left to give back. The admin is told what was stored, and so is
+    /// the audit row.
+    /// </summary>
+    [Fact]
+    public async Task Admin_FullRefund_After_A_Settlement_Reports_The_Status_The_Seam_Stored()
+    {
+        var order = ArrangeOrder(OrderStatus.Completed);
+        ArrangeSeamSuccess(amount: 700m, settles: () => order.UpdatePaymentStatus(PaymentStatus.Refunded));
+        ArrangeConsumedTotal(700m);
+
+        var result = await CreateHandler().Handle(
+            new AdminRefundOrder.Command(OrderId), CancellationToken.None);
+
+        Assert.True(result.IsSuccess, result.Error?.Message);
+        Assert.Equal(PaymentStatus.Refunded, result.Value!.PaymentStatus);
+        Assert.Equal(order.PaymentStatus, result.Value.PaymentStatus);
+        Assert.Contains("\"paymentStatus\":\"refunded\"", _auditContext.DrainSnapshot()!.AfterJson, StringComparison.Ordinal);
     }
 
     [Fact]
@@ -256,8 +278,8 @@ public class AdminRefundOrderHandlerTests
     [Fact]
     public async Task Admin_RefundOnly_MobilePaymentIntentOrder_PassesRefundableGate_GoesThroughSeam()
     {
-        ArrangeMobileOrder(OrderStatus.Confirmed);
-        ArrangeSeamSuccess(amount: 1000m);
+        var order = ArrangeMobileOrder(OrderStatus.Confirmed);
+        ArrangeSeamSuccess(amount: 1000m, settles: () => order.UpdatePaymentStatus(PaymentStatus.Refunded));
         ArrangeConsumedTotal(1000m);
 
         var result = await CreateHandler().Handle(

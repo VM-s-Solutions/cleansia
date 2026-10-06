@@ -3674,6 +3674,11 @@ export interface IOrderClient {
      */
     markCashCollected(body?: MarkCashCollectedCommand | undefined): Observable<MarkCashCollectedResponse>;
     /**
+     * @param body (optional) 
+     * @return OK
+     */
+    reportCashNotPaid(body?: ReportCashNotPaidCommand | undefined): Observable<ReportCashNotPaidResponse>;
+    /**
      * @param orderId (optional) 
      * @return OK
      */
@@ -4387,6 +4392,83 @@ export class OrderClient implements IOrderClient {
             let result200: any = null;
             let resultData200 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
             result200 = MarkCashCollectedResponse.fromJS(resultData200);
+            return ObservableOf(result200);
+            }));
+        } else if (status === 400) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result400: any = null;
+            let resultData400 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result400 = ProblemDetails.fromJS(resultData400);
+            return throwException("Bad Request", status, ResponseText, Headers, result400);
+            }));
+        } else if (status === 401) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result401: any = null;
+            let resultData401 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result401 = ProblemDetails.fromJS(resultData401);
+            return throwException("Unauthorized", status, ResponseText, Headers, result401);
+            }));
+        } else if (status === 403) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result403: any = null;
+            let resultData403 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result403 = ProblemDetails.fromJS(resultData403);
+            return throwException("Forbidden", status, ResponseText, Headers, result403);
+            }));
+        } else if (status !== 200 && status !== 204) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            return throwException("An unexpected server error occurred.", status, ResponseText, Headers);
+            }));
+        }
+        return ObservableOf(null as any);
+    }
+
+    /**
+     * @param body (optional) 
+     * @return OK
+     */
+    reportCashNotPaid(body?: ReportCashNotPaidCommand | undefined): Observable<ReportCashNotPaidResponse> {
+        let url = this.baseUrl + "/api/Order/ReportCashNotPaid";
+        url = url.replace(/[?&]$/, "");
+
+        const content = JSON.stringify(body);
+
+        let options : any = {
+            body: content,
+            observe: "response",
+            responseType: "blob",
+            headers: new HttpHeaders({
+                "Content-Type": "application/json",
+                "Accept": "application/json"
+            })
+        };
+
+        return this.http.request("post", url, options).pipe(ObservableMergeMap((response : any) => {
+            return this.processReportCashNotPaid(response);
+        })).pipe(ObservableCatch((response: any) => {
+            if (response instanceof HttpResponseBase) {
+                try {
+                    return this.processReportCashNotPaid(response as any);
+                } catch (e) {
+                    return ObservableThrow(e) as any as Observable<ReportCashNotPaidResponse>;
+                }
+            } else
+                return ObservableThrow(response) as any as Observable<ReportCashNotPaidResponse>;
+        }));
+    }
+
+    protected processReportCashNotPaid(response: HttpResponseBase): Observable<ReportCashNotPaidResponse> {
+        const status = response.status;
+        const responseBlob =
+            response instanceof HttpResponse ? response.body :
+            (response as any).error instanceof Blob ? (response as any).error : undefined;
+
+        let Headers: any = {}; if (response.headers) { for (let key of response.headers.keys()) { Headers[key] = response.headers.get(key); }}
+        if (status === 200) {
+            return blobToText(responseBlob).pipe(ObservableMergeMap((ResponseText: string) => {
+            let result200: any = null;
+            let resultData200 = ResponseText === "" ? null : JSON.parse(ResponseText, this.jsonParseReviver);
+            result200 = ReportCashNotPaidResponse.fromJS(resultData200);
             return ObservableOf(result200);
             }));
         } else if (status === 400) {
@@ -13338,6 +13420,86 @@ export class ReplaceMyDocumentResponse implements IReplaceMyDocumentResponse {
 export interface IReplaceMyDocumentResponse {
     documentId: string | undefined;
     version: number;
+}
+
+export class ReportCashNotPaidCommand implements IReportCashNotPaidCommand {
+    orderId!: string | undefined;
+
+    constructor(data?: IReportCashNotPaidCommand) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (this as any)[property] = (data as any)[property];
+            }
+        }
+    }
+
+    init(Data?: any) {
+        if (Data) {
+            this.orderId = Data["orderId"];
+        }
+    }
+
+    static fromJS(data: any): ReportCashNotPaidCommand {
+        data = typeof data === 'object' ? data : {};
+        let result = new ReportCashNotPaidCommand();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["orderId"] = this.orderId;
+        return data;
+    }
+}
+
+export interface IReportCashNotPaidCommand {
+    orderId: string | undefined;
+}
+
+export class ReportCashNotPaidResponse implements IReportCashNotPaidResponse {
+    orderId!: string | undefined;
+    newStatus!: OrderStatus;
+    amountOwed!: number;
+
+    constructor(data?: IReportCashNotPaidResponse) {
+        if (data) {
+            for (var property in data) {
+                if (data.hasOwnProperty(property))
+                    (this as any)[property] = (data as any)[property];
+            }
+        }
+    }
+
+    init(Data?: any) {
+        if (Data) {
+            this.orderId = Data["orderId"];
+            this.newStatus = Data["newStatus"];
+            this.amountOwed = Data["amountOwed"];
+        }
+    }
+
+    static fromJS(data: any): ReportCashNotPaidResponse {
+        data = typeof data === 'object' ? data : {};
+        let result = new ReportCashNotPaidResponse();
+        result.init(data);
+        return result;
+    }
+
+    toJSON(data?: any) {
+        data = typeof data === 'object' ? data : {};
+        data["orderId"] = this.orderId;
+        data["newStatus"] = this.newStatus;
+        data["amountOwed"] = this.amountOwed;
+        return data;
+    }
+}
+
+export interface IReportCashNotPaidResponse {
+    orderId: string | undefined;
+    newStatus: OrderStatus;
+    amountOwed: number;
 }
 
 export class ReportOrderIssueCommand implements IReportOrderIssueCommand {

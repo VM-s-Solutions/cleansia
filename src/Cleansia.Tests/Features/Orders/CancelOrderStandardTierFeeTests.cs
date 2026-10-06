@@ -158,6 +158,26 @@ public class CancelOrderStandardTierFeeTests
         Assert.Equal(500m, order.CancellationRefundAmount);
     }
 
+    /// <summary>
+    /// Pinned until the owner rules on how a fee applies to a price already partly refunded: a fee-bearing
+    /// cancellation of a partly refunded card order still makes no card refund, and its recorded refund
+    /// stays the assessor's share of the price.
+    /// </summary>
+    [Fact]
+    public async Task A_Fee_Bearing_Cancellation_Of_A_Partly_Refunded_Card_Order_Still_Makes_No_Card_Refund()
+    {
+        var order = ArrangeAcceptedCardPaidOrder(DateTime.UtcNow.AddHours(1), totalPrice: 1000m);
+        order.UpdatePaymentStatus(PaymentStatus.PartiallyRefunded);
+
+        var result = await CreateHandler().Handle(new CancelOrder.Command(OrderId, null), CancellationToken.None);
+
+        Assert.True(result.IsSuccess);
+        Assert.Equal(BookingPolicy.LastMinuteCancellationFeeRate, result.Value!.FeeRate);
+        Assert.False(result.Value.RefundInitiated);
+        Assert.Equal(500m, order.CancellationRefundAmount);
+        _refundService.Verify(s => s.IssueRefundAsync(It.IsAny<RefundRequest>(), It.IsAny<CancellationToken>()), Times.Never);
+    }
+
     [Fact]
     public async Task Refund_RoundsToTwoDecimals_AwayFromZero_AtTheTruncationBoundary()
     {

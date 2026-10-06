@@ -9,6 +9,7 @@ using Cleansia.Core.Domain.Users;
 using Cleansia.Core.Queue.Abstractions;
 using Cleansia.Core.Queue.Abstractions.Messages;
 using Cleansia.Infra.Common.Validations;
+using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
 
 namespace Cleansia.Tests.Features.Orders;
@@ -115,7 +116,8 @@ public sealed class PlatformCancellationGuestEmailTests
             Mock.Of<ILiveActivityProducer>(),
             Mock.Of<IExpressWaiverConsumer>(),
             new GuestOrderAccessTokenIssuer(_guestTokens.Object),
-            new RecordingDispatch(_enqueued));
+            new RecordingDispatch(_enqueued),
+            NullLogger<PlatformOrderCancellation>.Instance);
 
     private static Order CardOrder(string? userId)
     {

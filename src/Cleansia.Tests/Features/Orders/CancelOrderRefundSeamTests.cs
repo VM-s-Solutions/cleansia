@@ -283,12 +283,38 @@ public class CancelOrderRefundSeamTests
     }
 
     /// <summary>
-    /// A partly refunded order, 560 by card and 240 in credit of 800, with a complaint settled in 150 of credit,
-    /// takes no card refund on cancelling. Of the 1000 sale 50 is left, so 50 of the 60 credit still out comes
-    /// back, not all 60.
+    /// An admin already refunded 300 of the 1000 card order. A free cancellation asks the seam for the whole
+    /// price, which sends the card the 700 not yet back, and reports that 700 as what this cancellation gives
+    /// back, not the 1000 price.
     /// </summary>
     [Fact]
-    public async Task A_Partly_Refunded_Order_Gets_Back_No_More_Credit_Than_The_Sale_Has_Left_After_Its_Card_Refunds()
+    public async Task A_Free_Cancel_Of_A_Partly_Refunded_Card_Order_Refunds_The_Rest_Of_The_Card()
+    {
+        var order = ArrangeCardPaidPendingOrder();
+        order.UpdatePaymentStatus(PaymentStatus.PartiallyRefunded);
+        _refundRepository
+            .Setup(r => r.GetSucceededRefundTotalForOrderAsync(OrderId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(300m);
+        ArrangeSeamSuccess(confirmedAmount: 700m);
+
+        var result = await CreateHandler().Handle(new CancelOrder.Command(OrderId, null), CancellationToken.None);
+
+        Assert.True(result.IsSuccess);
+        VerifyTheSeamWasAskedForThePrice();
+        VerifyNoOrderEndedUnpaidReturn();
+        Assert.True(result.Value!.RefundInitiated);
+        Assert.Equal(700m, result.Value.RefundAmount);
+        Assert.Equal(700m, result.Value.ActualRefundAmount);
+        Assert.Equal(700m, order.CancellationRefundAmount);
+    }
+
+    /// <summary>
+    /// A partly refunded order, 560 by card and 240 in credit of 800, with a complaint settled in 150 of credit.
+    /// The seam is asked for the price and holds it to the 50 the sale has left, on both tenders; nothing comes
+    /// back a second way, and the 50 is what the cancellation reports.
+    /// </summary>
+    [Fact]
+    public async Task A_Partly_Refunded_Order_Asks_The_Seam_For_The_Price_And_Reports_What_The_Sale_Had_Left()
     {
         var order = ArrangeCardPaidPendingOrder();
         order.ApplyCredit(300m, UserId);
@@ -302,14 +328,45 @@ public class CancelOrderRefundSeamTests
         _creditAccountRepository
             .Setup(c => c.GetDisputeSettledTotalForOrderAsync(OrderId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(150m);
+        ArrangeSeamSuccess(confirmedAmount: 35m);
 
         var result = await CreateHandler().Handle(new CancelOrder.Command(OrderId, null), CancellationToken.None);
 
         Assert.True(result.IsSuccess);
-        _refundService.Verify(s => s.IssueRefundAsync(It.IsAny<RefundRequest>(), It.IsAny<CancellationToken>()), Times.Never);
-        _creditAccountRepository.Verify(c => c.TryReturnAsync(
-            UserId, order.CurrencyId, 50m, $"credit-return:order-ended-unpaid:{OrderId}", UserId,
-            It.IsAny<CancellationToken>(), OrderId, It.IsAny<string?>()), Times.Once);
+        VerifyTheSeamWasAskedForThePrice();
+        VerifyNoOrderEndedUnpaidReturn();
+        Assert.Equal(50m, result.Value!.RefundAmount);
+        Assert.Equal(35m, result.Value.ActualRefundAmount);
+    }
+
+    /// <summary>
+    /// The same kind of partly refunded order, 280 by card and 120 in credit already back, cancelled while
+    /// Stripe is down. The credit share of the rest comes back once, now, on the cancellation refund's own key,
+    /// so the re-drive reads it as part of its slice; it does not come back a second time as the credit of an
+    /// order that ended unrefunded.
+    /// </summary>
+    [Fact]
+    public async Task A_Partly_Refunded_Order_Cancelled_While_Stripe_Is_Down_Returns_Its_Credit_Share_Once()
+    {
+        var order = ArrangeCardPaidPendingOrder();
+        order.ApplyCredit(300m, UserId);
+        order.UpdatePaymentStatus(PaymentStatus.PartiallyRefunded);
+        _refundRepository
+            .Setup(r => r.GetSucceededRefundTotalForOrderAsync(OrderId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(280m);
+        _creditAccountRepository
+            .Setup(c => c.GetReturnedTotalForOrderAsync(OrderId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(120m);
+        _refundService
+            .Setup(s => s.IssueRefundAsync(It.IsAny<RefundRequest>(), It.IsAny<CancellationToken>()))
+            .ThrowsAsync(new HttpRequestException("connection reset"));
+
+        var result = await CreateHandler().Handle(new CancelOrder.Command(OrderId, null), CancellationToken.None);
+
+        Assert.True(result.IsSuccess);
+        Assert.True(result.Value!.RefundPending);
+        VerifyCreditShareReturnedOnTheRefundKey(order, 180m);
+        VerifyNoOrderEndedUnpaidReturn();
     }
 
     /// <summary>
@@ -368,6 +425,19 @@ public class CancelOrderRefundSeamTests
             It.IsAny<CancellationToken>(),
             OrderId,
             It.IsAny<string?>()), Times.Once);
+
+    private void VerifyTheSeamWasAskedForThePrice() =>
+        _refundService.Verify(s => s.IssueRefundAsync(
+            It.Is<RefundRequest>(r => r.Amount == 1000m
+                && r.Reason == RefundReason.CustomerCancellation
+                && r.DisputeId == null
+                && r.RefundRequestId == null),
+            It.IsAny<CancellationToken>()), Times.Once);
+
+    private void VerifyNoOrderEndedUnpaidReturn() =>
+        _creditAccountRepository.Verify(c => c.TryReturnAsync(
+            It.IsAny<string>(), It.IsAny<string>(), It.IsAny<decimal>(), $"credit-return:order-ended-unpaid:{OrderId}",
+            It.IsAny<string>(), It.IsAny<CancellationToken>(), It.IsAny<string?>(), It.IsAny<string?>()), Times.Never);
 
     private void VerifyNoRefundNotice() =>
         _producer.Verify(p => p.NotifyAsync(

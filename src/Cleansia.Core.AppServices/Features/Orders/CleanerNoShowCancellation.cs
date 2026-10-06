@@ -37,18 +37,21 @@ public sealed class CleanerNoShowCancellation(
     public async Task<Outcome> ExecuteAsync(
         Order order, CancelledBy cancelledBy, string actorId, DateTime nowUtc, CancellationToken cancellationToken)
     {
+        var refund = NoShowRefund(order, actorId);
+        var refundKey = RefundService.BuildRefundKey(refund);
         order.Cancel(
             nowUtc,
             cancelledBy,
             feeRate: 0m,
-            refundAmount: order.TotalPrice,
+            refundAmount: await RefundService.LeftToGiveBackAsync(
+                refundRepository, creditAccountRepository, order, refundKey, cancellationToken),
             reason: OrderCancellationReasons.NoCleanerAvailable);
         var transition = OrderStatusTrack.Create(OrderStatus.Cancelled, order);
         order.AddOrderStatus(transition);
 
         var tookNoPayment = order.TookNoPayment;
         var refundOwed = order.PaymentType == PaymentType.Card
-            && order.PaymentStatus == PaymentStatus.Paid
+            && order.PaymentStatus is PaymentStatus.Paid or PaymentStatus.PartiallyRefunded
             && order.TotalPrice > 0m;
         decimal? refundedAmount = null;
         if (refundOwed && order.HasRefundableChargeSurface)
@@ -58,13 +61,14 @@ public sealed class CleanerNoShowCancellation(
 
         // A refund of the whole sale returns the applied credit on its own leg. One left to the re-drive
         // returns that leg now, on its own key, so the re-drive asks Stripe for the card amount Stripe may
-        // already have paid on that key; with no refund claimed the credit comes back here, now.
+        // already have paid on that key; with no refund claimed the credit comes back here, now. A refund
+        // the seam found nothing left for claims no row, and nothing is pending.
+        var refundPending = false;
         if (refundedAmount is null)
         {
-            var refund = NoShowRefund(order, actorId);
-            var pending = await refundRepository.GetByRefundKeyAsync(
-                RefundService.BuildRefundKey(refund), cancellationToken);
-            if (pending is { Status: RefundStatus.Pending })
+            var pending = await refundRepository.GetByRefundKeyAsync(refundKey, cancellationToken);
+            refundPending = pending is { Status: RefundStatus.Pending };
+            if (refundPending)
             {
                 await creditAccountRepository.ReturnPendingRefundCreditLegAsync(
                     refundRepository, order, refund, cancellationToken);
@@ -73,14 +77,13 @@ public sealed class CleanerNoShowCancellation(
             {
                 await creditAccountRepository.ReturnUnpaidOrderCreditAsync(
                     order,
-                    await refundRepository.GetSucceededRefundTotalForOrderAsync(order.Id, cancellationToken),
+                    await RefundService.CardRefundedOrOwedAsync(refundRepository, order.Id, null, cancellationToken),
                     actorId,
                     cancellationToken);
             }
         }
 
         var apology = await TryIssueApologyCreditAsync(order, actorId, cancellationToken);
-        var refundPending = refundOwed && refundedAmount is null;
         await NotifyCustomerAsync(order, refundedAmount, tookNoPayment, refundPending, apology, cancellationToken);
 
         await GuestCancellationEmail.EnqueueAsync(order, EmailLocale.Resolve(order.LanguageCode),

@@ -6247,6 +6247,7 @@ namespace Cleansia.Infra.Database.Migrations
                         .HasDefaultValue(0);
 
                     b.Property<int>("ContractStatus")
+                        .IsConcurrencyToken()
                         .HasColumnType("integer");
 
                     b.Property<string>("CreatedBy")
@@ -6310,6 +6311,7 @@ namespace Cleansia.Infra.Database.Migrations
                         .HasColumnType("character varying(50)");
 
                     b.Property<string>("RegistrationNumber")
+                        .IsConcurrencyToken()
                         .HasMaxLength(50)
                         .HasColumnType("character varying(50)");
 

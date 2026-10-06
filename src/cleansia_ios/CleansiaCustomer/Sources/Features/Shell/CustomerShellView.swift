@@ -104,7 +104,8 @@ struct CustomerShellView: View {
                 onCompleteProfile: {
                     model.isBookingPresented = false
                     model.openEditProfile(showBookingHint: true)
-                }
+                },
+                onOpenPayments: { model.openPayments() }
             )
             .zoomDestination(id: Self.bookZoomID, in: bookingFromFab ? fabZoom : nil)
         })
@@ -510,7 +511,8 @@ extension CustomerShellView {
                     ShellRoute.recurringList,
                     ShellRoute.createRecurring(orderId: orderId)
                 ])
-            }
+            },
+            onOpenPayments: { model.openPayments() }
         )
     }
 
@@ -565,7 +567,8 @@ extension CustomerShellView {
             mapProvider: container.mapProvider,
             serviceArea: container.serviceArea,
             snackbar: snackbar,
-            onCreated: { model.pop() }
+            onCreated: { model.pop() },
+            onOpenPayments: { model.openPayments() }
         )
     }
 
@@ -583,7 +586,8 @@ extension CustomerShellView {
                 mapProvider: container.mapProvider,
                 serviceArea: container.serviceArea,
                 snackbar: snackbar,
-                onCreated: { model.pop() }
+                onCreated: { model.pop() },
+                onOpenPayments: { model.openPayments() }
             )
         } else {
             recurringList

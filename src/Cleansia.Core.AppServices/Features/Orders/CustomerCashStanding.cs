@@ -6,15 +6,15 @@ using Cleansia.Core.Domain.Repositories;
 namespace Cleansia.Core.AppServices.Features.Orders;
 
 /// <summary>
-/// What a signed-in customer must hold to book cash, beyond the one-cleaner rule of
-/// <see cref="BookingPolicy.AllowsCash"/> (owner ruling 2026-09-28): no open receivable, and room under
-/// <see cref="BookingPolicy.MaxOpenUnpaidCashBookings"/>. No saved card is asked for (owner ruling
-/// 2026-10-04). Asked by the one-off booking, both recurring schedule writes and the confirmation of a
-/// recurring cash occurrence, in that order.
+/// A signed-in customer's standing to book. Owing any receivable refuses every new booking, cash or card,
+/// and stops their schedules from creating visits (owner ruling 2026-10-06). A cash booking also needs
+/// room under <see cref="BookingPolicy.MaxOpenUnpaidCashBookings"/> (owner ruling 2026-09-28), beside the
+/// one-cleaner rule of <see cref="BookingPolicy.AllowsCash"/>. No saved card is asked for (owner ruling
+/// 2026-10-04).
 /// </summary>
 internal static class CustomerCashStanding
 {
-    /// <summary>Owed to any operating company, like the open-bookings limit.</summary>
+    /// <summary>Owed to any operating company but a frozen one, which can no longer be paid.</summary>
     public static async Task<bool> OwesNothingAsync(
         IReceivableRepository receivableRepository, string userId, CancellationToken cancellationToken)
         => !await receivableRepository.HasOpenForUserAsync(userId, cancellationToken);

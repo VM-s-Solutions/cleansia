@@ -155,8 +155,28 @@ public static class Extensions
         // Drop cancellation noise — RequestLoggingMiddleware re-throws OperationCanceledException for a
         // client disconnect, and worker shutdown cancels every in-flight invocation; without this filter
         // Sentry captures every navigation-cancelled request and every deploy.
-        options.SetBeforeSend((evt, _) => evt.Exception is OperationCanceledException ? null : evt);
+        options.SetBeforeSend((evt, _) => evt.Exception is OperationCanceledException ? null : WithoutRequestDetail(evt));
+        options.SetBeforeSendTransaction((transaction, _) => WithoutRequestDetail(transaction));
         return true;
+    }
+
+    private static readonly string[] SentryRequestHeaderAllowlist = ["User-Agent", "Content-Type", "Accept", "Accept-Language"];
+
+    // Sentry.AspNetCore copies the raw query string and every inbound header but the cookie onto the scope, and
+    // SendDefaultPii does not cover them: a guest token, a typed address, the client IP and the original URL the
+    // front end forwards. An allowlist, because which proxy headers arrive is the platform's choice, not ours.
+    private static T WithoutRequestDetail<T>(T item) where T : IEventLike
+    {
+        item.Request.QueryString = null;
+        foreach (var header in item.Request.Headers.Keys.ToList())
+        {
+            if (!SentryRequestHeaderAllowlist.Contains(header, StringComparer.OrdinalIgnoreCase))
+            {
+                item.Request.Headers.Remove(header);
+            }
+        }
+
+        return item;
     }
 
     public static IHostApplicationBuilder ConfigureOpenTelemetry(this IHostApplicationBuilder builder)

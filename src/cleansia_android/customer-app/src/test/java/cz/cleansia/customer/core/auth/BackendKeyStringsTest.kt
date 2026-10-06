@@ -168,7 +168,7 @@ class BackendKeyStringsTest {
         "order.recurring_already_confirmed",
         "order.cleaning_date.below_lead_time",
         "order.cash_not_available",
-        "order.cash_unpaid_receivable",
+        "order.unpaid_receivable",
         "order.cash_open_bookings_limit_reached",
         "order.payment_gateway_unavailable",
         "order.invalid_status_transition",
@@ -177,11 +177,11 @@ class BackendKeyStringsTest {
     )
 
     /**
-     * Beyond the one-cleaner rule, cash needs no open receivable and room under the open unpaid cash
-     * bookings. Refused on `CreateOrder`, both recurring writes and `ConfirmRecurringOrder`.
+     * An open receivable refuses every booking, cash or card; cash also needs room under the upcoming
+     * cash bookings not yet paid. Refused on `CreateOrder`, both recurring writes and `ConfirmRecurringOrder`.
      */
     private val cashStandingKeys = listOf(
-        "order.cash_unpaid_receivable",
+        "order.unpaid_receivable",
         "order.cash_open_bookings_limit_reached",
     )
 
@@ -307,6 +307,13 @@ class BackendKeyStringsTest {
     @Test
     fun `every cash-standing refusal a booking or schedule can answer resolves to a sentence in all five locales`() {
         assertAllResolve(cashStandingKeys)
+    }
+
+    /** The server answers an open receivable with `order.unpaid_receivable` alone since the ban covers card too. */
+    @Test
+    fun `the retired cash-only debt refusal is gone from every locale`() {
+        val left = locales.filter { resourceName("order.cash_unpaid_receivable") in declared(it) }
+        assertTrue("error_order_cash_unpaid_receivable is still declared in $left", left.isEmpty())
     }
 
     @Test

@@ -522,6 +522,7 @@ public class IssuePartialRefundHandlerTests
         var order = CreateOrder(1000m, appliedVatRate: null, completed: true, services: [a, b]);
         ArrangeOrder(order);
         ArrangeConsumed(500m);
+        _refundService.Settles = () => order.UpdatePaymentStatus(PaymentStatus.PartiallyRefunded);
 
         var result = await CreateHandler().Handle(
             new IssuePartialRefund.Command(
@@ -545,6 +546,7 @@ public class IssuePartialRefundHandlerTests
         var order = CreateOrder(1000m, appliedVatRate: null, completed: true, services: [a, b]);
         ArrangeOrder(order);
         ArrangeConsumed(1000m);
+        _refundService.Settles = () => order.UpdatePaymentStatus(PaymentStatus.Refunded);
 
         var result = await CreateHandler().Handle(
             new IssuePartialRefund.Command(
@@ -559,6 +561,37 @@ public class IssuePartialRefundHandlerTests
 
         Assert.True(result.IsSuccess);
         Assert.Equal(PaymentStatus.Refunded, result.Value!.PaymentStatus);
+    }
+
+    /// <summary>
+    /// A complaint was settled in 300 of credit, so refunding every line sent the card 700 and the seam stored
+    /// the order as Refunded. The admin is told what was stored, and so is the audit row.
+    /// </summary>
+    [Fact]
+    public async Task AfterASettlementInCredit_ReportsTheStatusTheSeamStored()
+    {
+        var a = Svc("svc-a", 500m);
+        var b = Svc("svc-b", 500m);
+        var order = CreateOrder(1000m, appliedVatRate: null, completed: true, services: [a, b]);
+        ArrangeOrder(order);
+        ArrangeConsumed(700m);
+        _refundService.Settles = () => order.UpdatePaymentStatus(PaymentStatus.Refunded);
+
+        var result = await CreateHandler().Handle(
+            new IssuePartialRefund.Command(
+                OrderId,
+                [
+                    new IssuePartialRefund.RefundLineSelection("svc-a", null),
+                    new IssuePartialRefund.RefundLineSelection("svc-b", null),
+                ],
+                RefundReason.ServiceNotRendered,
+                OverrideReason: null),
+            CancellationToken.None);
+
+        Assert.True(result.IsSuccess, result.Error?.Message);
+        Assert.Equal(PaymentStatus.Refunded, result.Value!.PaymentStatus);
+        Assert.Equal(order.PaymentStatus, result.Value.PaymentStatus);
+        Assert.Contains("\"paymentStatus\":\"refunded\"", _auditContext.DrainSnapshot()!.AfterJson, StringComparison.Ordinal);
     }
 
     // TC-REFUND-VAT — apportioned VAT is reported, and the loyalty clawback is handed the gross returned:
@@ -718,6 +751,9 @@ public class IssuePartialRefundHandlerTests
         /// <summary>The part of each request the order's credit settled, returned to the balance.</summary>
         public decimal CreditShare { get; set; }
 
+        /// <summary>What the seam writes to the order when it settles a refund.</summary>
+        public Action? Settles { get; set; }
+
         public void Reset()
         {
             CallCount = 0;
@@ -729,6 +765,7 @@ public class IssuePartialRefundHandlerTests
         {
             CallCount++;
             LastRequest = request;
+            Settles?.Invoke();
             return Task.FromResult(BusinessResult.Success(new RefundResult(
                 RefundId: "refund-1",
                 // The REAL builder, not a restatement of it. This fake used to hardcode

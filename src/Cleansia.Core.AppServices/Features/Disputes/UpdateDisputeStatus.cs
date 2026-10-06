@@ -1,6 +1,7 @@
 using Cleansia.Core.AppServices.Abstractions;
 using Cleansia.Core.AppServices.Auditing;
 using Cleansia.Core.AppServices.Common;
+using Cleansia.Core.AppServices.Services;
 using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Repositories;
 using Cleansia.Infra.Common.Validations;
@@ -34,6 +35,7 @@ public class UpdateDisputeStatus
 
     public class Handler(
         IDisputeRepository disputeRepository,
+        IRefundRepository refundRepository,
         IUserSessionProvider userSessionProvider) : ICommandHandler<Command, Response>
     {
         public async Task<BusinessResult<Response>> Handle(Command request, CancellationToken cancellationToken)
@@ -43,6 +45,12 @@ public class UpdateDisputeStatus
             if (dispute == null)
             {
                 return BusinessResult.Failure<Response>(new Error(nameof(request.DisputeId), BusinessErrorMessage.DisputeNotFound));
+            }
+
+            if (request.NewStatus == DisputeStatus.Closed
+                && await RefundService.HasPendingDisputeRefundAsync(refundRepository, dispute, cancellationToken))
+            {
+                return BusinessResult.Failure<Response>(new Error(nameof(request.NewStatus), BusinessErrorMessage.DisputeRefundPending));
             }
 
             var actorId = userSessionProvider.GetUserId() ?? string.Empty;

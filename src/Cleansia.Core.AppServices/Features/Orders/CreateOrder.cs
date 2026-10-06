@@ -272,13 +272,15 @@ public class CreateOrder
             // calculator produced, so it only has an answer once the price the customer consented to
             // has been confirmed.
             //
-            // The two currency rules are FIRST, and in THIS chain rather than their own RuleFor: the
-            // class-level cascade is Continue, so a separate rule would not stop the two price rules
+            // The two currency rules lead the price rules, and in THIS chain rather than their own RuleFor:
+            // the class-level cascade is Continue, so a separate rule would not stop the two price rules
             // below from running the calculator with the bad currency -- and the calculator throws on a
             // currency it cannot price in, which would turn a 400 into a 500. WithErrorCode keys the
             // failure to the field; the chain's other failures keep the root name.
             RuleFor(x => x)
                 .Cascade(CascadeMode.Stop)
+                .MustAsync(CustomerOwesNothingAsync)
+                .WithMessage(BusinessErrorMessage.OrderUnpaidReceivable)
                 .MustAsync(CurrencyMatchesAddressCountryAsync)
                 .WithMessage(BusinessErrorMessage.InvalidCurrency)
                 .WithErrorCode(nameof(Command.CurrencyId))
@@ -298,9 +300,6 @@ public class CreateOrder
                 .WithMessage(BusinessErrorMessage.TotalPriceNotMatch)
                 .Must(CashIsAvailable)
                 .WithMessage(BusinessErrorMessage.OrderCashNotAvailable)
-                .WithErrorCode(nameof(Command.PaymentType))
-                .MustAsync(CashOwesNothingAsync)
-                .WithMessage(BusinessErrorMessage.OrderCashUnpaidReceivable)
                 .WithErrorCode(nameof(Command.PaymentType))
                 .MustAsync(CashLeavesRoomForAnotherOpenBookingAsync)
                 .WithMessage(BusinessErrorMessage.OrderCashOpenBookingsLimitReached)
@@ -699,12 +698,16 @@ public class CreateOrder
                    signedIn: !IsGuest(),
                    OrderDuration.RequiredEmployees(CachedPricing(context).EstimatedDurationMinutes));
 
-        /// <summary>Past <see cref="CashIsAvailable"/> only a signed-in customer's cash booking remains.</summary>
-        private async Task<bool> CashOwesNothingAsync(Command command, CancellationToken cancellationToken)
-            => command.PaymentType != PaymentType.Cash
+        /// <summary>
+        /// A guest is not matched to an account by e-mail: a guest prepays by card, and refusing would tell an
+        /// anonymous caller which addresses owe money.
+        /// </summary>
+        private async Task<bool> CustomerOwesNothingAsync(Command command, CancellationToken cancellationToken)
+            => IsGuest()
                || await CustomerCashStanding.OwesNothingAsync(
                    _receivableRepository, _userSessionProvider.GetUserId()!, cancellationToken);
 
+        /// <summary>Past <see cref="CashIsAvailable"/> only a signed-in customer's cash booking remains.</summary>
         private async Task<bool> CashLeavesRoomForAnotherOpenBookingAsync(
             Command command, CancellationToken cancellationToken)
             => command.PaymentType != PaymentType.Cash

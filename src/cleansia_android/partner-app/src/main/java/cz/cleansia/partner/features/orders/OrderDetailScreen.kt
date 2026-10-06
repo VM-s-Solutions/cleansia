@@ -142,6 +142,7 @@ fun OrderDetailScreen(
             // input pipeline. iOS hosts it at its ZStack root for the same
             // reason (OrderDetailContent.swift).
             var confirmingCash by remember { mutableStateOf(false) }
+            var confirmingCashNotPaid by remember { mutableStateOf(false) }
             var decliningOffer by remember { mutableStateOf(false) }
 
             Box(modifier = Modifier.fillMaxSize()) {
@@ -162,6 +163,7 @@ fun OrderDetailScreen(
                     // slide gesture and the order flips to Completed.
                     onCompleteClick = { viewModel.complete(null, null) },
                     onCashConfirmRequested = { confirmingCash = true },
+                    onCashNotPaidRequested = { confirmingCashNotPaid = true },
                     onDeclineOffer = { decliningOffer = true },
                     // onContentMutated routes through the staleness-gated
                     // refresh path, so photo upload / note add re-fetches
@@ -247,6 +249,37 @@ fun OrderDetailScreen(
                         },
                     )
                 }
+
+                if (confirmingCashNotPaid) {
+                    AlertDialog(
+                        onDismissRequest = { confirmingCashNotPaid = false },
+                        title = { Text(stringResource(R.string.order_cash_not_paid_confirm_title)) },
+                        text = {
+                            Text(
+                                cashDueLabel(
+                                    s.order.cashNotPaidOwed(),
+                                    s.order.currency?.code ?: s.order.currency?.symbol,
+                                )?.let {
+                                    stringResource(R.string.order_cash_not_paid_confirm_message, it)
+                                } ?: stringResource(R.string.order_cash_not_paid_confirm_message_no_amount),
+                            )
+                        },
+                        confirmButton = {
+                            TextButton(
+                                onClick = {
+                                    confirmingCashNotPaid = false
+                                    viewModel.reportCashNotPaid()
+                                },
+                                colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error),
+                            ) { Text(stringResource(R.string.order_cash_not_paid_confirm_action)) }
+                        },
+                        dismissButton = {
+                            CleansiaTextButton(onClick = { confirmingCashNotPaid = false }) {
+                                Text(stringResource(R.string.cancel))
+                            }
+                        },
+                    )
+                }
             }
         }
         // Retry is wired to `refresh()`, NOT to `onResume()`/
@@ -308,6 +341,7 @@ private fun OrderDetailBottomSheetLayout(
     onNotifyOnTheWay: () -> Unit,
     onCompleteClick: () -> Unit,
     onCashConfirmRequested: () -> Unit,
+    onCashNotPaidRequested: () -> Unit,
     onDeclineOffer: () -> Unit,
     onPhotosChanged: () -> Unit,
     onReportLockout: (String) -> Unit,
@@ -375,6 +409,7 @@ private fun OrderDetailBottomSheetLayout(
                     onNotifyOnTheWay = onNotifyOnTheWay,
                     onCompleteClick = onCompleteClick,
                     onCashConfirmRequested = onCashConfirmRequested,
+                    onCashNotPaidRequested = onCashNotPaidRequested,
                     onDeclineOffer = onDeclineOffer,
                     onPhotosChanged = onPhotosChanged,
                     onReportLockout = onReportLockout,
@@ -593,6 +628,7 @@ private fun OrderDetailSheetContent(
     onNotifyOnTheWay: () -> Unit,
     onCompleteClick: () -> Unit,
     onCashConfirmRequested: () -> Unit,
+    onCashNotPaidRequested: () -> Unit,
     onDeclineOffer: () -> Unit,
     onPhotosChanged: () -> Unit,
     onReportLockout: (String) -> Unit,
@@ -782,12 +818,14 @@ private fun OrderDetailSheetContent(
             inFlight = inFlight,
             canComplete = order.hasAfterPhotos == true,
             needsCashCollection = order.needsCashCollection(),
+            canReportCashNotPaid = order.cashNotPaidReportable(),
             preferredOffer = preferredOffer,
             onTake = onTake,
             onStart = onStart,
             onNotifyOnTheWay = onNotifyOnTheWay,
             onCompleteClick = onCompleteClick,
             onCashConfirmRequested = onCashConfirmRequested,
+            onCashNotPaidRequested = onCashNotPaidRequested,
             onDeclineOffer = onDeclineOffer,
         )
     }
@@ -800,12 +838,14 @@ private fun StickyActionFooter(
     inFlight: OrderAction?,
     canComplete: Boolean,
     needsCashCollection: Boolean,
+    canReportCashNotPaid: Boolean,
     preferredOffer: PendingOffer?,
     onTake: () -> Unit,
     onStart: () -> Unit,
     onNotifyOnTheWay: () -> Unit,
     onCompleteClick: () -> Unit,
     onCashConfirmRequested: () -> Unit,
+    onCashNotPaidRequested: () -> Unit,
     onDeclineOffer: () -> Unit,
 ) {
     // Completed / Cancelled / null — no action available. Don't even
@@ -851,8 +891,10 @@ private fun StickyActionFooter(
                 onNotifyOnTheWay = onNotifyOnTheWay,
                 onCompleteClick = onCompleteClick,
                 onCashConfirmRequested = onCashConfirmRequested,
+                onCashNotPaidRequested = onCashNotPaidRequested,
                 canComplete = canComplete,
                 needsCashCollection = needsCashCollection,
+                canReportCashNotPaid = canReportCashNotPaid,
                 isPreferredOffer = preferredOffer != null,
             )
             if (preferredOffer != null && !isMine) {
@@ -889,3 +931,20 @@ internal fun cashDueLabel(
  */
 internal fun OrderItem.needsCashCollection(): Boolean =
     paymentType?.value == PaymentType._1.value && paymentStatus?.value != PaymentStatus._2.value
+
+/**
+ * Mirrors `ReportCashNotPaid`: the cleaner on a cash job in progress whose payment is still pending may
+ * report that the customer paid nothing. A refunded or disputed payment is not a debt to report.
+ */
+internal fun OrderItem.cashNotPaidReportable(): Boolean =
+    isAssignedToCurrentUser == true &&
+        orderStatus.toOrderStatus() == OrderStatus._4 &&
+        paymentType?.value == PaymentType._1.value &&
+        paymentStatus?.value == PaymentStatus._1.value
+
+/** What the report makes the customer owe: the price less any credit applied, or null when either is missing. */
+internal fun OrderItem.cashNotPaidOwed(): Double? {
+    val price = totalPrice ?: return null
+    val credit = creditAppliedAmount ?: return null
+    return price - credit
+}

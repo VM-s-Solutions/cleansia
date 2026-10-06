@@ -351,6 +351,7 @@ fun CleansiaNavHost(
                 onNavigateToEditProfile = {
                     navController.navigate(Routes.EditProfile)
                 },
+                onOpenPayments = { navController.navigate(Routes.Payments) },
                 onNavigateToOnboarding = {
                     navController.navigate(Routes.ProfileOnboarding)
                 },
@@ -624,6 +625,7 @@ fun CleansiaNavHost(
         ) {
             cz.cleansia.customer.features.recurring.CreateRecurringScreen(
                 onBack = { navController.popBackStack() },
+                onOpenPayments = { navController.navigate(Routes.Payments) },
                 onCreated = {
                     // ALWAYS land on the recurring list after submit — Path B
                     // (entry from order detail / home carousel / post-Plus
@@ -673,6 +675,7 @@ fun CleansiaNavHost(
                 },
                 onDownloadReceipt = { /* Phase 4 handles this internally via the VM */ },
                 onViewPhotos = { navController.navigate(Routes.OrderPhotos(args.orderId)) },
+                onOpenPayments = { navController.navigate(Routes.Payments) },
                 openReviewOnLoad = args.openReview,
             )
         }

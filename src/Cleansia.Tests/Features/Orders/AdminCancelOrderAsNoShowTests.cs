@@ -61,6 +61,7 @@ public class AdminCancelOrderAsNoShowTests
     private AdminCancelOrderAsNoShow.Handler Handler() => new(
         _orders.Object,
         _disputes.Object,
+        _refundRows.Object,
         _session.Object,
         new CleanerNoShowCancellation(
             _credit.Object,
@@ -197,6 +198,30 @@ public class AdminCancelOrderAsNoShowTests
         Assert.Equal(DisputeStatus.Closed, dispute.Status);
     }
 
+    /// <summary>
+    /// The customer's dispute was resolved with a card refund Stripe refused, so that refund waits on the
+    /// dispute's own key. Resolving the dispute again is the only retry of it, so the no-show leaves the
+    /// dispute open instead of closing it.
+    /// </summary>
+    [Fact]
+    public async Task A_Service_Not_Provided_Dispute_Whose_Refund_Is_Still_Pending_Stays_Open()
+    {
+        ArrangeOrder();
+        var dispute = new Dispute(OrderId, CustomerId, DisputeReason.ServiceNotProvided, "Nobody came to clean.", CustomerId)
+        {
+            Id = "dispute-no-show-1",
+        };
+        _disputes.Setup(d => d.GetOpenDisputeForOrderAsync(OrderId, It.IsAny<CancellationToken>())).ReturnsAsync(dispute);
+        var disputeKey = $"refund:{OrderId}:dispute:{dispute.Id}";
+        _refundRows.Setup(r => r.GetByRefundKeyAsync(disputeKey, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(Refund.Create(
+                OrderId, disputeKey, 1000m, "CZK", RefundReason.DisputeResolution, RefundSource.AppRefund, disputeId: dispute.Id));
+
+        await ConfirmAsync();
+
+        Assert.Equal(DisputeStatus.Pending, dispute.Status);
+    }
+
     [Fact]
     public async Task A_Dispute_About_Something_Else_Is_Left_For_The_Administrator()
     {
@@ -254,6 +279,9 @@ public class AdminCancelOrderAsNoShowTests
         _refunds.Setup(r => r.IssueRefundAsync(It.IsAny<RefundRequest>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(BusinessResult.Failure<RefundResult>(
                 new Error(nameof(RefundRequest.Amount), BusinessErrorMessage.RefundFailed)));
+        _refundRows.Setup(r => r.GetByRefundKeyAsync($"refund:{OrderId}:admin", It.IsAny<CancellationToken>()))
+            .ReturnsAsync(Refund.Create(
+                OrderId, $"refund:{OrderId}:admin", 1000m, "CZK", RefundReason.ServiceNotRendered, RefundSource.AppRefund));
 
         var result = await ConfirmAsync();
 
@@ -314,10 +342,12 @@ public class AdminCancelOrderAsNoShowTests
 
     /// <summary>
     /// The order was partly refunded, 560 by card and 240 in credit of 800, and a complaint was settled in 150
-    /// of credit. Of the 1000 sale 50 is left, so 50 of the 60 credit still out comes back, not all 60.
+    /// of credit. The terms promise a no-show the whole card refund, so the seam is asked for the price and
+    /// holds it to the 50 the sale has left, on both tenders; nothing comes back a second way, and the
+    /// cancellation records the 50 it gives back.
     /// </summary>
     [Fact]
-    public async Task A_Partly_Refunded_Order_Gets_Back_No_More_Credit_Than_The_Sale_Has_Left_After_Its_Card_Refunds()
+    public async Task A_Partly_Refunded_Order_Is_Refunded_The_Rest_Of_The_Sale_Through_The_Seam()
     {
         var order = ArrangeOrder(paymentStatus: PaymentStatus.PartiallyRefunded);
         order.ApplyCredit(300m, CustomerId);
@@ -327,11 +357,75 @@ public class AdminCancelOrderAsNoShowTests
             .ReturnsAsync(240m);
         _credit.Setup(c => c.GetDisputeSettledTotalForOrderAsync(OrderId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(150m);
+        _refunds.Setup(r => r.IssueRefundAsync(It.IsAny<RefundRequest>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(BusinessResult.Success(
+                new RefundResult("refund-1", $"refund:{OrderId}:admin", 35m, RefundStatus.Succeeded, false, CreditReturned: 15m)));
+
+        var result = await ConfirmAsync();
+
+        Assert.True(result.IsSuccess, result.Error?.Message);
+        _refunds.Verify(r => r.IssueRefundAsync(
+            It.Is<RefundRequest>(q => q.Amount == 1000m && q.Reason == RefundReason.ServiceNotRendered),
+            It.IsAny<CancellationToken>()), Times.Once);
+        _credit.Verify(c => c.TryReturnAsync(
+            It.IsAny<string>(), It.IsAny<string>(), It.IsAny<decimal>(), $"credit-return:order-ended-unpaid:{OrderId}",
+            It.IsAny<string>(), It.IsAny<CancellationToken>(), It.IsAny<string?>(), It.IsAny<string?>()), Times.Never);
+        Assert.Equal(35m, result.Value!.RefundedAmount);
+        Assert.Equal(50m, order.CancellationRefundAmount);
+    }
+
+    /// <summary>
+    /// 1000 paid 700 by card and 300 in credit, with 100 settled in credit and an admin's refund of the card's
+    /// 700 still pending, which Stripe may already have paid. The no-show's own refund finds nothing left on
+    /// the card, and the credit that comes back is held to the 200 the sale has left, not all 300.
+    /// </summary>
+    [Fact]
+    public async Task A_Card_Refund_Still_Pending_Holds_Back_The_Credit_Returned_When_The_Order_Ends()
+    {
+        var order = ArrangeOrder();
+        order.ApplyCredit(300m, CustomerId);
+        _refunds.Setup(r => r.IssueRefundAsync(It.IsAny<RefundRequest>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(BusinessResult.Failure<RefundResult>(
+                new Error(nameof(RefundRequest.Amount), BusinessErrorMessage.RefundNothingRefundable)));
+        _refundRows.Setup(r => r.GetPendingRefundTotalForOrderAsync(OrderId, null, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(700m);
+        _credit.Setup(c => c.GetDisputeSettledTotalForOrderAsync(OrderId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(100m);
 
         await ConfirmAsync();
 
         _credit.Verify(c => c.TryReturnAsync(
-            CustomerId, CzkId, 50m, $"credit-return:order-ended-unpaid:{OrderId}", AdminId,
+            CustomerId, CzkId, 200m, $"credit-return:order-ended-unpaid:{OrderId}", AdminId,
             It.IsAny<CancellationToken>(), OrderId, It.IsAny<string?>()), Times.Once);
+    }
+
+    /// <summary>
+    /// What the sale had left was already given back, here by a complaint settled in credit, so the seam finds
+    /// nothing to refund and claims no row. Nothing is waiting on Stripe, and the customer is not told that a
+    /// refund is on its way.
+    /// </summary>
+    [Theory]
+    [InlineData(PaymentStatus.Paid, 0, 1000)]
+    [InlineData(PaymentStatus.PartiallyRefunded, 600, 400)]
+    public async Task A_Remainder_Already_Covered_Is_Not_Announced_As_A_Pending_Refund(
+        PaymentStatus paymentStatus, int cardRefunded, int settledInCredit)
+    {
+        ArrangeOrder(paymentStatus: paymentStatus);
+        _refundRows.Setup(r => r.GetSucceededRefundTotalForOrderAsync(OrderId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync((decimal)cardRefunded);
+        _credit.Setup(c => c.GetDisputeSettledTotalForOrderAsync(OrderId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync((decimal)settledInCredit);
+        _refunds.Setup(r => r.IssueRefundAsync(It.IsAny<RefundRequest>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(BusinessResult.Failure<RefundResult>(
+                new Error(nameof(RefundRequest.Amount), BusinessErrorMessage.RefundNothingRefundable)));
+
+        var result = await ConfirmAsync();
+
+        Assert.True(result.IsSuccess, result.Error?.Message);
+        Assert.False(result.Value!.RefundPending);
+        _notifications.Verify(n => n.NotifyAsync(
+            CustomerId, NotificationEventCatalog.OrderNoCleanerRefundPending,
+            It.IsAny<Dictionary<string, string>>(), It.IsAny<string?>(), It.IsAny<string?>(),
+            It.IsAny<CancellationToken>()), Times.Never);
     }
 }

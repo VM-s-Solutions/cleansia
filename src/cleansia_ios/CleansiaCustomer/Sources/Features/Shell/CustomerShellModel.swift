@@ -84,6 +84,11 @@ final class CustomerShellModel: ViewModel {
         path = NavigationPath(plan.routes)
     }
 
+    /// Where an amount owed is paid; a booking refused for one leads here.
+    func openPayments() {
+        applyPushTap(CustomerPushTapRouting.plan(for: .payments))
+    }
+
     func pop() {
         if !path.isEmpty { path.removeLast() }
     }

@@ -516,10 +516,11 @@ const CUSTOMER_SURFACE_ERROR_KEYS: readonly string[] = [
   // Cash only for a signed-in customer whose booking needs one cleaner (owner ruling 2026-09-24):
   // CreateOrder, CreateRecurringBooking, UpdateRecurringBooking and ConfirmRecurringOrder.
   'order.cash_not_available',
-  // At most two open unpaid cash bookings (owner ruling 2026-09-28): the same four commands.
+  // At most two cash bookings not yet paid (owner ruling 2026-09-28): the same four commands.
   'order.cash_open_bookings_limit_reached',
-  // No open receivable owed to any company (owner ruling 2026-09-28): the same four commands.
-  'order.cash_unpaid_receivable',
+  // No booking of any tender while a receivable is open with any company (owner ruling 2026-10-06):
+  // the same four commands.
+  'order.unpaid_receivable',
   'currency.invalid',
   // The ambient tenant (the claim, or the market's operator for a guest) must be the operator of the
   // address country; a booking in another operating company's country is refused (ADR-0061 D6).

@@ -435,23 +435,20 @@ public class RedrivePendingRefundsTests
 
     /// <summary>
     /// Stripe made the refund on the key and then failed it, so the re-drive closed the row and nothing retries
-    /// it. The administrators are told at once, however young the row, and asked to retry it.
+    /// it. The refund seam asked the administrators to retry it in the commit that closed it, so the job raises
+    /// nothing of its own, not even a day on.
     /// </summary>
     [Fact]
-    public async Task A_Refund_Stripe_Failed_Is_Raised_For_A_Retry_At_Once()
+    public async Task A_Refund_Stripe_Failed_Is_Left_To_The_Alert_The_Refund_Seam_Raised()
     {
-        var refund = PendingRefund("order-1", TimeSpan.FromHours(2));
+        var refund = PendingRefund("order-1", TimeSpan.FromHours(25));
         Arrange(refund);
         RedriveRefused(refund, closesTheRow: true);
 
         var result = await RunAsync();
 
-        Assert.Equal(1, result.Value!.Alerted);
-        var alert = Assert.Single(_raised);
-        Assert.Equal(AdminNotificationEventCatalog.RefundNeedsRetry, alert.Key);
-        Assert.Equal(refund.Id, alert.Subject);
-        Assert.Equal("order-1", alert.Args["orderId"]);
-        Assert.Equal("1000 CZK", alert.Args["amount"]);
+        Assert.Equal(0, result.Value!.Alerted);
+        Assert.Empty(_raised);
     }
 
     [Fact]

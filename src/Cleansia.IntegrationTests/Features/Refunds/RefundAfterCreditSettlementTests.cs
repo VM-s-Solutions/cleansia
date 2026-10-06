@@ -163,6 +163,8 @@ public class RefundAfterCreditSettlementTests(PostgresContainerFixture fixture) 
             new OrderRepository(ctx),
             new CreditAccountRepository(ctx),
             factory.Object,
+            Mock.Of<IAdminNotifier>(),
+            new UserNotificationRepository(ctx),
             NullLogger<RefundService>.Instance);
         return await service.IssueRefundAsync(
             new RefundRequest(OrderId, amount, RefundReason.AdminDiscretion, "admin", RefundRequestId: refundRequestId),
@@ -180,6 +182,8 @@ public class RefundAfterCreditSettlementTests(PostgresContainerFixture fixture) 
                 new OrderRepository(ctx),
                 new CreditAccountRepository(ctx),
                 factory.Object,
+                Mock.Of<IAdminNotifier>(),
+                new UserNotificationRepository(ctx),
                 NullLogger<RefundService>.Instance),
             new RefundRepository(ctx),
             Mock.Of<INotificationProducer>(),
@@ -200,6 +204,8 @@ public class RefundAfterCreditSettlementTests(PostgresContainerFixture fixture) 
                 new OrderRepository(ctx),
                 new CreditAccountRepository(ctx),
                 factory.Object,
+                Mock.Of<IAdminNotifier>(),
+                new UserNotificationRepository(ctx),
                 NullLogger<RefundService>.Instance),
             new RefundRepository(ctx),
             new ReceivableRepository(ctx),

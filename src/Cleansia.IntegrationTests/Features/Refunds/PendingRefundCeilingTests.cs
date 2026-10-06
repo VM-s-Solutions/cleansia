@@ -10,6 +10,7 @@ using Cleansia.Core.Domain.Credit;
 using Cleansia.Core.Domain.Disputes;
 using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Internationalization;
+using Cleansia.Core.Domain.Notifications;
 using Cleansia.Core.Domain.Orders;
 using Cleansia.Core.Domain.Payments;
 using Cleansia.Core.Domain.Repositories;
@@ -41,6 +42,7 @@ public class PendingRefundCeilingTests(PostgresContainerFixture fixture) : BaseI
     private const string OrderId = "order-pending-ceiling";
     private const string PaymentIntentId = "pi_pending_ceiling";
     private const string CancelKey = $"refund:{OrderId}:cancel";
+    private const string AdminId = "admin-pending-ceiling";
 
     private readonly Mock<IStripeClient> _stripe = new();
     private readonly List<(decimal Amount, string Key)> _stripeCalls = [];
@@ -164,6 +166,9 @@ public class PendingRefundCeilingTests(PostgresContainerFixture fixture) : BaseI
             new OrderRepository(ctx),
             new CreditAccountRepository(ctx),
             factory.Object,
+            new AdminNotifier(new UserRepository(ctx), new UserNotificationRepository(ctx), new AppConfigurationProvider(ctx),
+                new OutboxPendingDispatch(ctx), NullLogger<AdminNotifier>.Instance),
+            new UserNotificationRepository(ctx),
             NullLogger<RefundService>.Instance);
     }
 
@@ -473,13 +478,26 @@ public class PendingRefundCeilingTests(PostgresContainerFixture fixture) : BaseI
     /// <summary>
     /// 1000 by card. The dispute's card refund of 1000 was claimed, Stripe's answer was lost, and Stripe has since
     /// failed that refund. Resolving the dispute again sends nothing and closes the refund for good, even though
-    /// the resolve itself fails and is not committed. The dispute stays open: the customer is still owed the 1000.
+    /// the resolve itself fails and is not committed, and in the same commit the administrators are asked to retry
+    /// it. The dispute stays open: the customer is still owed the 1000.
     /// </summary>
     [Fact]
     public async Task A_Dispute_Whose_Pending_Card_Refund_Stripe_Failed_Stays_Open_And_The_Refund_Is_Closed()
     {
         await ResetAsync();
         var (_, disputeId) = await SeedAsync(total: 1000m, creditApplied: 0m);
+        await using (var ctx = NewContext())
+        {
+            var admin = User.CreateWithPassword(
+                $"{AdminId}@cleansia.test", "Seed-Password-123", "Ad", "Min", UserProfile.Administrator,
+                adminRole: AdminRole.Administrator);
+            admin.Id = AdminId;
+            admin.TenantId = TestTenants.Default;
+            admin.ConfirmEmail();
+            ctx.Users.Add(admin);
+            await ctx.CommitAsync(CancellationToken.None);
+        }
+
         var disputeKey = RefundService.BuildRefundKey(
             new RefundRequest(OrderId, 0m, RefundReason.DisputeResolution, string.Empty, DisputeId: disputeId));
         await using (var ctx = NewContext())
@@ -504,6 +522,10 @@ public class PendingRefundCeilingTests(PostgresContainerFixture fixture) : BaseI
         var dispute = await read.Disputes.IgnoreQueryFilters().AsNoTracking().SingleAsync(d => d.Id == disputeId);
         Assert.Equal(DisputeStatus.Pending, dispute.Status);
         Assert.Null(dispute.RefundAmount);
+        var alert = await read.Set<UserNotification>().IgnoreQueryFilters().AsNoTracking()
+            .SingleAsync(n => n.EventKey == AdminNotificationEventCatalog.RefundNeedsRetry);
+        Assert.Equal(AdminId, alert.UserId);
+        Assert.Contains(OrderId, alert.ArgsJson);
     }
 
     private sealed class FixedTenantProvider(string? tenantId) : ITenantProvider

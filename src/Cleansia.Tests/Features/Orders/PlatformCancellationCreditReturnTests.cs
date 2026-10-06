@@ -47,7 +47,8 @@ public sealed class PlatformCancellationCreditReturnTests
     {
         var factory = new Mock<IStripeClientFactory>();
         factory.Setup(f => f.CreateClient()).Returns(_stripe.Object);
-        return new RefundService(_refunds.Object, _orders.Object, _credit.Object, factory.Object, NullLogger<RefundService>.Instance);
+        return new RefundService(_refunds.Object, _orders.Object, _credit.Object, factory.Object, Mock.Of<IAdminNotifier>(),
+            Mock.Of<IUserNotificationRepository>(), NullLogger<RefundService>.Instance);
     }
 
     private PlatformOrderCancellation Cancellation() =>

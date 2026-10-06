@@ -4,6 +4,7 @@ using Cleansia.Core.Clients.Abstractions.Stripe;
 using Cleansia.Core.Domain.Credit;
 using Cleansia.Core.Domain.Disputes;
 using Cleansia.Core.Domain.Enums;
+using Cleansia.Core.Domain.Notifications;
 using Cleansia.Core.Domain.Orders;
 using Cleansia.Core.Domain.Payments;
 using Cleansia.Core.Domain.Repositories;
@@ -20,6 +21,8 @@ public sealed class RefundService(
     IOrderRepository orderRepository,
     ICreditAccountRepository creditAccountRepository,
     IStripeClientFactory stripeClientFactory,
+    IAdminNotifier adminNotifier,
+    IUserNotificationRepository userNotificationRepository,
     ILogger<RefundService> logger) : IRefundService
 {
     public async Task<BusinessResult<RefundResult>> IssueRefundAsync(
@@ -322,9 +325,11 @@ public sealed class RefundService(
 
             if (made is { Failed: true })
             {
-                // Committed here, as the claim is: a caller that fails on refund.failed rolls back, and a row left
-                // pending would keep counting in every ceiling money Stripe never paid.
+                // Committed here with the administrators' alert, as the claim is: a caller that fails on refund.failed
+                // rolls back, a row left pending would keep counting in every ceiling money Stripe never paid, and
+                // once closed no job selects it again, so the alert is the only thing that gets the money paid.
                 refund.MarkFailed();
+                await RaiseForRetryAsync(order, refund, cancellationToken);
                 await refundRepository.CommitAsync(cancellationToken);
                 logger.LogError(
                     "Stripe failed refund {StripeRefundId} it made for order {OrderId} on refund {RefundId}; the refund is closed and nothing is sent again.",
@@ -385,6 +390,29 @@ public sealed class RefundService(
             Status: RefundStatus.Succeeded,
             ResolvedToExisting: false,
             CreditReturned: await creditAccountRepository.GetReturnedForRefundAsync(refundKey, cancellationToken)));
+    }
+
+    private async Task RaiseForRetryAsync(Order order, Refund refund, CancellationToken cancellationToken)
+    {
+        if (refund.TenantId is not { Length: > 0 } tenantId
+            || await userNotificationRepository.AnyForEventAsync(
+                tenantId, AdminNotificationEventCatalog.RefundNeedsRetry, "orderId", order.Id, cancellationToken))
+        {
+            return;
+        }
+
+        await adminNotifier.NotifyAsync(
+            new AdminEvent(
+                AdminNotificationEventCatalog.RefundNeedsRetry,
+                tenantId,
+                Subject: refund.Id,
+                Args: new Dictionary<string, string>
+                {
+                    ["orderNumber"] = order.DisplayOrderNumber,
+                    ["amount"] = MoneyText.Format(refund.Amount, refund.Currency),
+                    ["orderId"] = order.Id,
+                }),
+            cancellationToken);
     }
 
     private async Task<BusinessResult<RefundResult>> ResolveToExistingAsync(Refund existing, CancellationToken cancellationToken) =>

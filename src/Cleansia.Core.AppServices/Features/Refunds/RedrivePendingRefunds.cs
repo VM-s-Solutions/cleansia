@@ -157,11 +157,11 @@ public class RedrivePendingRefunds
                                 is BusinessErrorMessage.RefundNothingRefundable
                                 or BusinessErrorMessage.RefundOrderNotRefundable;
 
-                        var failedAtStripe = result is { IsSuccess: false }
+                        // Stripe failed it: the refund seam closed it and raised it for a retry in a commit of its own.
+                        var raisedBySeam = result is { IsSuccess: false }
                             && result.Error?.Message == BusinessErrorMessage.RefundFailed
                             && (await refundRepository.GetByIdAsync(row.Id, cancellationToken))?.Status
                                 == RefundStatus.Failed;
-                        var raisedAs = failedAtStripe ? AdminNotificationEventCatalog.RefundNeedsRetry : alertKey;
 
                         if (result is { IsSuccess: true })
                         {
@@ -183,14 +183,14 @@ public class RedrivePendingRefunds
                                     cancellationToken);
                             }
                         }
-                        else if (!nothingOwed && (row.CreatedOn <= alertBefore || failedAtStripe)
+                        else if (!nothingOwed && !raisedBySeam && row.CreatedOn <= alertBefore
                             && !string.IsNullOrEmpty(row.TenantId)
                             && !await userNotificationRepository.AnyForEventAsync(
-                                row.TenantId, raisedAs, "orderId", row.OrderId, cancellationToken))
+                                row.TenantId, alertKey, "orderId", row.OrderId, cancellationToken))
                         {
                             await adminNotifier.NotifyAsync(
                                 new AdminEvent(
-                                    raisedAs,
+                                    alertKey,
                                     row.TenantId,
                                     Subject: row.Id,
                                     Args: new Dictionary<string, string>

@@ -530,7 +530,8 @@ public sealed class RefundMoneyConservationTests
                 return new RefundService(
                     Refunds.Object, Mock.Of<IOrderRepository>(o => o.GetByIdAsync(_world.Order.Id, It.IsAny<CancellationToken>())
                         == Task.FromResult<Order?>(_world.Order)),
-                    _world._creditRepository.Object, factory.Object, NullLogger<RefundService>.Instance);
+                    _world._creditRepository.Object, factory.Object, Mock.Of<IAdminNotifier>(),
+                    Mock.Of<IUserNotificationRepository>(), NullLogger<RefundService>.Instance);
             }
 
             public Task CommitAsync()

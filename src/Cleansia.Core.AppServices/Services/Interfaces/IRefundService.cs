@@ -14,6 +14,10 @@ namespace Cleansia.Core.AppServices.Services.Interfaces;
 /// </summary>
 public interface IRefundService
 {
+    /// <summary>
+    /// A retry of a pending refund that the refunds Stripe confirmed have left nothing on the card for is closed
+    /// as <see cref="RefundStatus.Failed"/> for the caller to commit, and fails as <c>refund.nothing_refundable</c>.
+    /// </summary>
     Task<BusinessResult<RefundResult>> IssueRefundAsync(RefundRequest request, CancellationToken cancellationToken);
 
     /// <summary>

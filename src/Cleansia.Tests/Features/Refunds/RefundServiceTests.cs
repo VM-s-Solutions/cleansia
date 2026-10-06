@@ -1617,6 +1617,59 @@ public class RefundServiceTests
         Assert.Equal(0, _stripe.RefundCallCount);
     }
 
+    /// <summary>
+    /// A member's cancellation and, a moment later, an administrator's full refund were claimed at once, and
+    /// Stripe then paid the cancellation the whole card charge. Stripe never refunds more than a charge, so it
+    /// cannot have paid the full refund: its retry closes the row as not paid, for the caller to commit, and asks
+    /// Stripe nothing. With credit applied, the card charge is the price less the credit.
+    /// </summary>
+    [Theory]
+    [InlineData(0)]
+    [InlineData(300)]
+    public async Task A_Retried_Pending_Refund_Is_Closed_When_Confirmed_Refunds_Took_The_Whole_Card_Charge(int creditApplied)
+    {
+        var order = CreateCardPaidOrder(1000m);
+        order.ApplyCredit(creditApplied, "user-1");
+        ArrangeOrder(order);
+        var card = 1000m - creditApplied;
+        var cancel = Claim(MemberCancel, DateTimeOffset.UtcNow.AddHours(-2), card)
+            .MarkSucceeded(stripeRefundId: null, confirmedOnUtc: DateTimeOffset.UtcNow);
+        var full = Claim(FullRefund, DateTimeOffset.UtcNow.AddHours(-2).AddMilliseconds(5), card);
+        ArrangeRefundTable(cancel, full);
+
+        var retried = await CreateService().IssueRefundAsync(FullRefund, CancellationToken.None);
+
+        Assert.Equal(BusinessErrorMessage.RefundNothingRefundable, retried.Error?.Message);
+        Assert.Equal(RefundStatus.Failed, full.Status);
+        Assert.Equal(0, _stripe.RefundCallCount);
+        _refundRepository.Verify(r => r.CommitAsync(It.IsAny<CancellationToken>()), Times.Never);
+    }
+
+    /// <summary>
+    /// A partial refund of 600 that Stripe confirmed, and a cancellation's 400 claimed before the full refund and
+    /// still pending, leave the full refund nothing. The confirmed refund alone leaves 400 on the card, which
+    /// Stripe may have paid on either pending key, so the full refund's row stays pending.
+    /// </summary>
+    [Fact]
+    public async Task A_Retried_Pending_Refund_Held_Back_Partly_By_An_Older_Pending_Refund_Stays_Pending()
+    {
+        var order = CreateCardPaidOrder(1000m);
+        ArrangeOrder(order);
+        var partial = Claim(
+                new RefundRequest(OrderId, 600m, RefundReason.AdminDiscretion, ActorId, RefundRequestId: "partial-1"),
+                DateTimeOffset.UtcNow.AddHours(-3))
+            .MarkSucceeded(stripeRefundId: null, confirmedOnUtc: DateTimeOffset.UtcNow);
+        var cancel = Claim(MemberCancel, DateTimeOffset.UtcNow.AddHours(-2), card: 400m);
+        var full = Claim(FullRefund, DateTimeOffset.UtcNow.AddHours(-1), card: 400m);
+        ArrangeRefundTable(partial, cancel, full);
+
+        var retried = await CreateService().IssueRefundAsync(FullRefund, CancellationToken.None);
+
+        Assert.Equal(BusinessErrorMessage.RefundNothingRefundable, retried.Error?.Message);
+        Assert.Equal(RefundStatus.Pending, full.Status);
+        Assert.Equal(0, _stripe.RefundCallCount);
+    }
+
     private sealed class RecordingStripeClient : IStripeClient
     {
         private readonly List<string> _refundKeys = [];

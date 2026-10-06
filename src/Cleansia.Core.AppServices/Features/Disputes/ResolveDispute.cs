@@ -172,12 +172,16 @@ public class ResolveDispute
                         DisputeId: dispute.Id),
                     cancellationToken);
 
-                if (refund.IsFailure)
+                if (refund.IsSuccess)
+                {
+                    refundResult = refund.Value!;
+                }
+                // A pending card refund the seam closed as one Stripe cannot have paid leaves nothing owed on it.
+                else if (!refundPending
+                    || await RefundService.HasPendingDisputeRefundAsync(refundRepository, dispute, cancellationToken))
                 {
                     return BusinessResult.Failure(refund.Error!);
                 }
-
-                refundResult = refund.Value!;
             }
 
             dispute.Resolve(

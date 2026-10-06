@@ -5,10 +5,12 @@ using Cleansia.Core.AppServices.Features.Orders;
 using Cleansia.Core.AppServices.Services;
 using Cleansia.Core.AppServices.Services.Interfaces;
 using Cleansia.Core.Clients.Abstractions.Stripe;
+using Cleansia.Core.Domain.Credit;
 using Cleansia.Core.Domain.Disputes;
 using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Internationalization;
 using Cleansia.Core.Domain.Orders;
+using Cleansia.Core.Domain.Payments;
 using Cleansia.Core.Domain.Repositories;
 using Cleansia.Core.Domain.Users;
 using Cleansia.Core.Queue.Abstractions;
@@ -261,6 +263,64 @@ public class DisputeRefundPendingAtNoShowTests(PostgresContainerFixture fixture)
         Assert.Equal(1000m, refundedByCard);
         Assert.Equal(PaymentStatus.Refunded, order.PaymentStatus);
         Assert.Equal(OrderStatus.Cancelled, order.CurrentStatus);
+    }
+
+    /// <summary>
+    /// The no-show's refund and the complaint's card refund of the whole 1000 were claimed at the same moment and
+    /// both refused. Confirming the no-show pays the 1000 on the older key, its own, and leaves the complaint open
+    /// with its row pending, so it cannot be closed by hand. Stripe never refunds more than a charge, so it cannot
+    /// have paid the complaint's refund: resolving the complaint again closes that row as not paid and resolves it
+    /// with nothing sent. The customer has the 1000 back, once.
+    /// </summary>
+    [Fact]
+    public async Task A_Dispute_Refund_Confirmed_Refunds_Left_No_Card_For_Is_Closed_And_The_Dispute_Resolved()
+    {
+        await ResetAsync();
+        var disputeId = await SeedAsync();
+        var disputeKey = $"refund:{OrderId}:dispute:{disputeId}";
+        var claimedOn = DateTimeOffset.UtcNow.AddHours(-2);
+        await using (var ctx = NewContext())
+        {
+            var noShow = Refund.Create(OrderId, NoShowKey, 1000m, "CZK", RefundReason.ServiceNotRendered, RefundSource.AppRefund);
+            noShow.Created(AdminId, claimedOn);
+            var complaint = Refund.Create(OrderId, disputeKey, 1000m, "CZK", RefundReason.DisputeResolution,
+                RefundSource.AppRefund, disputeId: disputeId);
+            complaint.Created(AdminId, claimedOn.AddMilliseconds(3));
+            ctx.Refunds.AddRange(noShow, complaint);
+            await ctx.CommitAsync(CancellationToken.None);
+        }
+
+        _stripe.Setup(s => s.RefundPaymentIntentAsync(
+                PaymentIntentId, It.IsAny<decimal>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .Callback<string, decimal, string, CancellationToken>((_, amount, key, _) => _stripeCalls.Add((amount, key)))
+            .Returns(Task.CompletedTask);
+
+        var noShowConfirmed = await ConfirmNoShowAsync();
+        var closing = await CloseAsync(disputeId);
+        var resolved = await ResolveAsync(disputeId, 1000m);
+
+        Assert.True(noShowConfirmed.IsSuccess, noShowConfirmed.Error?.Message);
+        Assert.Equal(1000m, noShowConfirmed.Value!.RefundedAmount);
+        Assert.Equal(BusinessErrorMessage.DisputeRefundPending, closing.Error?.Message);
+        Assert.True(resolved.IsSuccess, resolved.Error?.Message);
+        Assert.Equal(DisputeStatus.Resolved, await DisputeStatusAsync(disputeId));
+        Assert.Equal([(1000m, NoShowKey)], _stripeCalls);
+
+        await using var read = NewContext();
+        var complaintRow = await read.Refunds.IgnoreQueryFilters().AsNoTracking().SingleAsync(r => r.RefundKey == disputeKey);
+        Assert.Equal(RefundStatus.Failed, complaintRow.Status);
+        var refundedByCard = await read.Refunds.IgnoreQueryFilters().AsNoTracking()
+            .Where(r => r.OrderId == OrderId && r.Status == RefundStatus.Succeeded)
+            .SumAsync(r => r.Amount);
+        var givenBackInCredit = await read.CreditTransactions.IgnoreQueryFilters().AsNoTracking()
+            .Where(t => t.OrderId == OrderId
+                && (t.Reason == CreditTransactionReason.OrderPaymentReturned
+                    || t.Reason == CreditTransactionReason.DisputeSettlement))
+            .SumAsync(t => t.Amount);
+        Assert.Equal(1000m, refundedByCard);
+        Assert.Equal(1000m, refundedByCard + givenBackInCredit);
+        var order = await read.Orders.IgnoreQueryFilters().AsNoTracking().SingleAsync(o => o.Id == OrderId);
+        Assert.Equal(PaymentStatus.Refunded, order.PaymentStatus);
     }
 
     private sealed class FixedTenantProvider(string? tenantId) : ITenantProvider

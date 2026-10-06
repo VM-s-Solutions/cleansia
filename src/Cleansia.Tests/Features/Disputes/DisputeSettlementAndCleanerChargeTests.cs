@@ -326,6 +326,56 @@ public sealed class DisputeSettlementAndCleanerChargeTests
         Assert.Equal(DisputeStatus.Resolved, dispute.Status);
     }
 
+    /// <summary>
+    /// The dispute's 1000 card refund is pending, and refunds Stripe confirmed on other keys already took the
+    /// whole card charge, so the seam closes the row as one Stripe cannot have paid. Nothing is owed on it: the
+    /// dispute resolves with no money moved, no notice of a refund and no points taken.
+    /// </summary>
+    [Fact]
+    public async Task A_Dispute_Whose_Pending_Card_Refund_The_Seam_Closed_As_Not_Paid_Is_Resolved_With_Nothing_Moved()
+    {
+        var dispute = ArrangeDispute(DisputeSettlementPreference.CardRefund);
+        var pending = ArrangePendingDisputeRefund(1000m);
+        _refunds
+            .Setup(s => s.IssueRefundAsync(It.IsAny<RefundRequest>(), It.IsAny<CancellationToken>()))
+            .Callback(() => pending.MarkFailed())
+            .ReturnsAsync(BusinessResult.Failure<RefundResult>(
+                new Error(nameof(RefundRequest.Amount), BusinessErrorMessage.RefundNothingRefundable)));
+
+        var result = await Handler().Handle(
+            new ResolveDispute.Command(DisputeId, 1000m, "already refunded"), CancellationToken.None);
+
+        Assert.True(result.IsSuccess, result.Error?.Message);
+        Assert.Equal(DisputeStatus.Resolved, dispute.Status);
+        Assert.Null(dispute.CardRefundedAmount);
+        Assert.Null(dispute.CreditReturnedAmount);
+        AssertNoCreditGranted();
+        _loyalty.VerifyNoOtherCalls();
+    }
+
+    /// <summary>
+    /// The seam finds nothing left for the dispute's pending card refund only because another refund still
+    /// pending holds the card, which Stripe may have paid on either key, so it leaves the row pending and the
+    /// dispute stays open.
+    /// </summary>
+    [Fact]
+    public async Task A_Dispute_Whose_Pending_Card_Refund_The_Seam_Left_Pending_Stays_Open()
+    {
+        var dispute = ArrangeDispute(DisputeSettlementPreference.CardRefund);
+        ArrangePendingDisputeRefund(1000m);
+        _refunds
+            .Setup(s => s.IssueRefundAsync(It.IsAny<RefundRequest>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(BusinessResult.Failure<RefundResult>(
+                new Error(nameof(RefundRequest.Amount), BusinessErrorMessage.RefundNothingRefundable)));
+
+        var result = await Handler().Handle(
+            new ResolveDispute.Command(DisputeId, 1000m, "already refunded"), CancellationToken.None);
+
+        Assert.Equal(BusinessErrorMessage.RefundNothingRefundable, result.Error?.Message);
+        Assert.Equal(DisputeStatus.Pending, dispute.Status);
+        _loyalty.VerifyNoOtherCalls();
+    }
+
     [Fact]
     public async Task A_Refund_Alone_Never_Touches_The_Cleaners_Pay()
     {
@@ -430,12 +480,16 @@ public sealed class DisputeSettlementAndCleanerChargeTests
             .Setup(r => r.GetDisputeSettledTotalForOrderAsync(OrderId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(amount);
 
-    private void ArrangePendingDisputeRefund(decimal amount) =>
+    private Refund ArrangePendingDisputeRefund(decimal amount)
+    {
+        var refund = Refund.Create(
+            OrderId, $"refund:{OrderId}:dispute:{DisputeId}", amount, "CZK", RefundReason.DisputeResolution,
+            RefundSource.AppRefund, disputeId: DisputeId);
         _refundRows
             .Setup(r => r.GetByRefundKeyAsync($"refund:{OrderId}:dispute:{DisputeId}", It.IsAny<CancellationToken>()))
-            .ReturnsAsync(Refund.Create(
-                OrderId, $"refund:{OrderId}:dispute:{DisputeId}", amount, "CZK", RefundReason.DisputeResolution,
-                RefundSource.AppRefund, disputeId: DisputeId));
+            .ReturnsAsync(refund);
+        return refund;
+    }
 
     private void AssertNoCreditGranted() =>
         _creditAccounts.Verify(

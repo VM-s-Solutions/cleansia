@@ -97,6 +97,15 @@ public sealed class RefundService(
 
             if (refundable <= 0m)
             {
+                // Stripe never refunds more than the charge, so once the refunds it confirmed took all of it this
+                // row cannot have been paid. Only then is it closed: other pending rows may hold money Stripe paid.
+                if (existing.Status == RefundStatus.Pending
+                    && CardRefundCeiling(order, await refundRepository.GetSucceededRefundTotalForOrderAsync(
+                        order.Id, cancellationToken)) <= 0m)
+                {
+                    existing.MarkFailed();
+                }
+
                 return BusinessResult.Failure<RefundResult>(new Error(
                     nameof(request.Amount), BusinessErrorMessage.RefundNothingRefundable));
             }

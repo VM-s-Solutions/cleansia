@@ -11,6 +11,7 @@ using Cleansia.Core.Queue.Abstractions;
 using Cleansia.Infra.Common.Validations;
 using Cleansia.Tests.Common;
 using Cleansia.Tests.Infrastructure;
+using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
 
 namespace Cleansia.Tests.Services;
@@ -47,7 +48,8 @@ public class PlatformOrderCancellationTests
             _liveActivityProducer.Object,
             _expressWaiverConsumer.Object,
             TestGuestOrderAccessTokenIssuer.WithNoLiveTokens(),
-            Mock.Of<IPendingDispatch>());
+            Mock.Of<IPendingDispatch>(),
+            NullLogger<PlatformOrderCancellation>.Instance);
 
     private static Order ArrangeOrder(
         OrderStatus latestStatus,
@@ -227,6 +229,49 @@ public class PlatformOrderCancellationTests
         _producer.Verify(p => p.NotifyAsync(
             It.IsAny<string>(), NotificationEventCatalog.OrderRefunded, It.IsAny<Dictionary<string, string>>(),
             It.IsAny<string?>(), It.IsAny<string?>(), It.IsAny<CancellationToken>()), Times.Never);
+    }
+
+    /// <summary>
+    /// The refund's claim commits the cancellation before Stripe is called, so a timeout or a dropped
+    /// connection there cannot fail the action that cancelled: the order stays cancelled and the refund is
+    /// reported as not gone through, left pending for the re-drive.
+    /// </summary>
+    [Theory]
+    [MemberData(nameof(StripeTransportFaults))]
+    public async Task A_Stripe_That_Cannot_Be_Reached_Leaves_The_Order_Cancelled_And_Reports_The_Refund_Failed(Exception fault)
+    {
+        var order = ArrangeOrder(OrderStatus.Confirmed);
+        _refundService
+            .Setup(s => s.IssueRefundAsync(It.IsAny<RefundRequest>(), It.IsAny<CancellationToken>()))
+            .ThrowsAsync(fault);
+
+        var result = await CreateService().CancelAsync(
+            order, ActorId, CancelledBy.Admin, null, RefundReason.CustomerCancellation, CancellationToken.None);
+
+        Assert.Equal(OrderStatus.Cancelled, order.CurrentStatus);
+        Assert.True(result.Refund.Attempted);
+        Assert.False(result.Refund.Initiated);
+        Assert.Equal(BusinessErrorMessage.RefundFailed, result.Refund.FailureMessage);
+        _producer.Verify(p => p.NotifyAsync(
+            It.IsAny<string>(), NotificationEventCatalog.OrderRefunded, It.IsAny<Dictionary<string, string>>(),
+            It.IsAny<string?>(), It.IsAny<string?>(), It.IsAny<CancellationToken>()), Times.Never);
+    }
+
+    public static TheoryData<Exception> StripeTransportFaults() =>
+        [new HttpRequestException("timed out"), new TimeoutException(), new TaskCanceledException()];
+
+    [Fact]
+    public async Task A_Cancellation_The_Caller_Asked_For_Is_Not_Taken_For_A_Stripe_Fault()
+    {
+        var order = ArrangeOrder(OrderStatus.Confirmed);
+        using var aborted = new CancellationTokenSource();
+        await aborted.CancelAsync();
+        _refundService
+            .Setup(s => s.IssueRefundAsync(It.IsAny<RefundRequest>(), It.IsAny<CancellationToken>()))
+            .ThrowsAsync(new OperationCanceledException(aborted.Token));
+
+        await Assert.ThrowsAsync<OperationCanceledException>(() => CreateService().CancelAsync(
+            order, ActorId, CancelledBy.Admin, null, RefundReason.CustomerCancellation, aborted.Token));
     }
 
     [Fact]

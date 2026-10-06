@@ -60,7 +60,8 @@ public sealed class PlatformCancellationCreditReturnTests
             Mock.Of<ILiveActivityProducer>(),
             Mock.Of<IExpressWaiverConsumer>(),
             new GuestOrderAccessTokenIssuer(_guestTokens.Object),
-            Mock.Of<IPendingDispatch>());
+            Mock.Of<IPendingDispatch>(),
+            NullLogger<PlatformOrderCancellation>.Instance);
 
     private Order PartlyRefundedOrder(
         decimal cardRefunded,
@@ -250,6 +251,37 @@ public sealed class PlatformCancellationCreditReturnTests
         var claimed = Assert.Single(rows);
         var redriven = await RefundService().RedriveAsync(claimed.Id, "system", CancellationToken.None);
 
+        Assert.False(result.Refund.Initiated);
+        Assert.True(redriven.IsSuccess, redriven.Error?.Message);
+        _stripe.Verify(s => s.RefundPaymentIntentAsync(
+            PaymentIntentId, 436.36m, RefundKey, It.IsAny<CancellationToken>()), Times.Exactly(2));
+        var returned = Assert.Single(credit);
+        Assert.Equal(($"credit-return:{RefundKey}", 363.64m, "admin-1"), returned);
+        Assert.Equal(800m, claimed.Amount + returned.Amount);
+        Assert.Equal(PaymentStatus.Refunded, order.PaymentStatus);
+    }
+
+    /// <summary>
+    /// The same order when Stripe cannot be reached: the first call times out after the claim committed the
+    /// cancellation. The credit share comes back at the cancellation on the refund's key, as for a refusal, so
+    /// the re-drive sends the card its 436.36 and the customer has 800 to the haléř, not 799.99.
+    /// </summary>
+    [Fact]
+    public async Task A_Refund_Stripe_Cannot_Be_Reached_For_Returns_Its_Credit_Share_Now_And_The_Redrive_Gives_Back_Exactly_The_Rest()
+    {
+        var order = PartlyRefundedOrder(
+            cardRefunded: 163.64m, creditReturned: 136.36m, settledInCredit: 0m, total: 1100m, creditApplied: 500m);
+        var (rows, credit) = ArrangeLedger(cardRefundedBefore: 163.64m, creditReturnedBefore: 136.36m);
+        _stripe.SetupSequence(s => s.RefundPaymentIntentAsync(
+                PaymentIntentId, It.IsAny<decimal>(), RefundKey, It.IsAny<CancellationToken>()))
+            .ThrowsAsync(new HttpRequestException("timed out"))
+            .Returns(Task.CompletedTask);
+
+        var result = await CancelAsync(order);
+        var claimed = Assert.Single(rows);
+        var redriven = await RefundService().RedriveAsync(claimed.Id, "system", CancellationToken.None);
+
+        Assert.True(result.Refund.Attempted);
         Assert.False(result.Refund.Initiated);
         Assert.True(redriven.IsSuccess, redriven.Error?.Message);
         _stripe.Verify(s => s.RefundPaymentIntentAsync(

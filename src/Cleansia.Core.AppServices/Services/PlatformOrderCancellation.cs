@@ -6,6 +6,8 @@ using Cleansia.Core.Domain.Notifications;
 using Cleansia.Core.Domain.Orders;
 using Cleansia.Core.Domain.Repositories;
 using Cleansia.Core.Queue.Abstractions;
+using Cleansia.Infra.Common.Validations;
+using Microsoft.Extensions.Logging;
 
 namespace Cleansia.Core.AppServices.Services;
 
@@ -18,7 +20,8 @@ public sealed class PlatformOrderCancellation(
     ILiveActivityProducer liveActivityProducer,
     IExpressWaiverConsumer expressWaiverConsumer,
     GuestOrderAccessTokenIssuer accessTokenIssuer,
-    IPendingDispatch pending) : IPlatformOrderCancellation
+    IPendingDispatch pending,
+    ILogger<PlatformOrderCancellation> logger) : IPlatformOrderCancellation
 {
     public async Task<PlatformOrderCancellationResult> CancelAsync(
         Order order,
@@ -102,9 +105,22 @@ public sealed class PlatformOrderCancellation(
         // cancel — or a customer cancel of the same order — collapses onto the single refund and never
         // double-refunds (ADR-0006 D3).
         var request = new RefundRequest(order.Id, order.TotalPrice, refundReason, actorId);
-        var refund = await refundService.IssueRefundAsync(request, cancellationToken);
+        BusinessResult<RefundResult>? refund;
+        try
+        {
+            refund = await refundService.IssueRefundAsync(request, cancellationToken);
+        }
+        // The refund's claim committed the cancellation before Stripe was called, so the action that cancelled
+        // must not fail with it; the refund is left pending for the re-drive.
+        catch (Exception ex) when (RefundService.IsStripeTransportFailure(ex, cancellationToken))
+        {
+            logger.LogError(ex,
+                "Could not reach Stripe to refund cancelled order {OrderId}; the refund is left pending",
+                order.Id);
+            refund = null;
+        }
 
-        if (refund.IsFailure)
+        if (refund is not { IsSuccess: true })
         {
             // The card leg is left to the re-drive, which asks Stripe again for the amount it may already have
             // paid on this key. Its credit leg comes back now on the same key, so the re-drive reads the slice
@@ -116,7 +132,7 @@ public sealed class PlatformOrderCancellation(
                     refundRepository, order, request, cancellationToken);
             }
 
-            return PlatformRefundOutcome.Failed(refund.Error?.Message);
+            return PlatformRefundOutcome.Failed(refund?.Error?.Message ?? BusinessErrorMessage.RefundFailed);
         }
 
         if (!string.IsNullOrEmpty(order.UserId))

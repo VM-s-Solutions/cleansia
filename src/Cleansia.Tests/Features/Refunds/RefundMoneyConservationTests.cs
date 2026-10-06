@@ -176,9 +176,7 @@ public sealed class RefundMoneyConservationTests
         public async Task RunAsync()
         {
             var ending = (Ending)_random.Next(4);
-            var answer = ending == Ending.PlatformCancellation
-                ? (_random.Next(2) == 0 ? StripeAnswer.Pays : StripeAnswer.Refuses)
-                : RandomAnswer();
+            var answer = RandomAnswer();
             var loseTheRecord = ending == Ending.AdminFullRefund && answer == StripeAnswer.Pays && _random.Next(2) == 0;
 
             for (var n = _random.Next(4); n > 0; n--)
@@ -293,7 +291,7 @@ public sealed class RefundMoneyConservationTests
                             Mock.Of<INotificationProducer>(), Mock.Of<ILiveActivityProducer>(),
                             Mock.Of<IExpressWaiverConsumer>(),
                             new GuestOrderAccessTokenIssuer(Mock.Of<IGuestOrderAccessTokenRepository>()),
-                            Mock.Of<IPendingDispatch>())
+                            Mock.Of<IPendingDispatch>(), NullLogger<PlatformOrderCancellation>.Instance)
                         .CancelAsync(Order, "admin", CancelledBy.Admin, null, RefundReason.CustomerCancellation,
                             CancellationToken.None);
                     await uow.CommitAsync();

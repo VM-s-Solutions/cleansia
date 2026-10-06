@@ -233,6 +233,17 @@ credit, and the customer held 1 600. Now 400 is the most such a settlement can g
   paid this one and refused one of those, so closing this one could leave money Stripe paid unrecorded.
   The row is retried every hour and raised as `admin.payment.refund_stuck` after 24 hours, like any refund
   the re-drive keeps trying.
+- **A retry closes a refund Stripe cannot have paid** (since 2026-10-06). Stripe never refunds more than a
+  charge, so once the refunds it confirmed on the order have given back the whole card charge
+  (`TotalPrice − CreditAppliedAmount`), a row still `Pending` was never paid. A retry of that row by the
+  action that asked for it marks it `Failed` (`refund.nothing_refundable`), asks Stripe nothing, and the
+  row is closed when that action commits: resolving the dispute again does
+  ([below](#dispute-settlement)), and so does a cancellation. Only the confirmed refunds count. When
+  refunds still pending use up the rest, the row stays `Pending`, as it does for the re-drive. An
+  administrator's own refund does not close its row: a partial refund answers `refund.nothing_refundable`
+  and commits nothing, and a full refund is refused with `refund.order_not_refundable` once the order
+  reads `Refunded`. Such a row stays `Pending` and is raised after 24 hours, an open finding. Until then
+  every retry left the row pending.
 - **A retried refund leaves room on the card only for the pending refunds claimed before it** (since
   2026-10-06). A refund claimed after it counted it as owed. Two refunds claimed at the same moment did not
   see each other, and until then each retry counted the other: when Stripe refused both, neither was asked
@@ -250,8 +261,9 @@ credit, and the customer held 1 600. Now 400 is the most such a settlement can g
 - **What this costs.** A `Pending` row that Stripe refused, and never paid, also holds back later refunds
   until it is retried. A free cancellation of a 1 000 order with a refused 300 partial pending gives back
   700 now, and the 300 when an administrator retries the partial. The 24-hour alert comes well inside the
-  three days the terms give a card refund. No administrator action closes a row as *not paid*; that waits
-  for a reconciliation with Stripe.
+  three days the terms give a card refund. An administrator closes a row as *not paid* only by resolving a
+  dispute again once the refunds Stripe confirmed took the whole card charge (above). Every other row
+  waits for a reconciliation with Stripe.
 
 ### A guest cancels under the same policy
 
@@ -680,6 +692,16 @@ web offers the money back rather than a card refund.
   sends the 1 000. A closed dispute cannot be resolved again (`dispute.already_resolved`), and a full or
   partial refund from the order counts the pending row too, so closing it would leave a customer owed the
   whole price for a no-show with none of it back and no way to send it.
+- **A dispute whose pending card refund Stripe cannot have paid is resolved with nothing sent** (since
+  2026-10-06). When refunds Stripe confirmed on other keys have given back the whole card charge, the
+  dispute's pending row was never paid. Resolving the dispute again with an amount closes that row as
+  `Failed` and resolves the dispute. It records the amount asked and no card or credit leg, and the
+  customer is told of no refund. Until then the resolve answered `refund.nothing_refundable` and left the
+  row pending, so the dispute could be neither resolved nor closed although the customer had the whole
+  price back. A no-show and a complaint's 1 000 refund, both on a 1 000 card order, were claimed at the
+  same moment and refused. The no-show confirmation pays the 1 000 on the older key, its own. Resolving
+  the complaint then closes its row, sends nothing, and ends the dispute. When other refunds still pending
+  are what use up the card, the row stays pending and the dispute stays open.
 
 ### A cleaner is charged for a complaint only when found at fault {#dispute-cleaner-charge}
 

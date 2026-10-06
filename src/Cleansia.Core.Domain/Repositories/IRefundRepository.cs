@@ -26,6 +26,13 @@ public interface IRefundRepository : IRepository<Refund, string>
         string orderId, string? exceptRefundKey, CancellationToken cancellationToken);
 
     /// <summary>
+    /// Sum of the pending refund amounts on <paramref name="refund"/>'s order that were claimed before it,
+    /// leaving the refund itself out. A retry of a pending refund leaves room on the card for these only: one
+    /// claimed after it counted it as owed or, claimed at the same moment, waits for it.
+    /// </summary>
+    Task<decimal> GetPendingRefundTotalClaimedBeforeAsync(Refund refund, CancellationToken cancellationToken);
+
+    /// <summary>
     /// The batch form of <see cref="GetSucceededRefundTotalForOrderAsync"/>: Σ succeeded refund amounts
     /// per order, any date, keyed by order id; an order with none is absent. The card leg only — the
     /// credit share of a refund is a <c>CreditTransaction</c>, read by

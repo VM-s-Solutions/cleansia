@@ -254,6 +254,87 @@ public class PendingRefundCeilingTests(PostgresContainerFixture fixture) : BaseI
     }
 
     /// <summary>
+    /// A retry's card ceiling counts the pending refunds claimed before it on its order: not itself, even when
+    /// the instance in hand carries its creation time to a finer tick than Postgres stored, not a later claim,
+    /// and not one that went through or was closed.
+    /// </summary>
+    [Fact]
+    public async Task The_Pending_Total_Claimed_Before_A_Refund_Counts_Only_Older_Pending_Rows()
+    {
+        await ResetAsync();
+        await SeedAsync(total: 1000m, creditApplied: 0m);
+        var claimedOn = new DateTimeOffset(2026, 10, 6, 12, 0, 0, TimeSpan.Zero);
+        Refund Row(string purpose, decimal amount, TimeSpan after)
+        {
+            var refund = Refund.Create(OrderId, $"refund:{OrderId}:admin:{purpose}", amount, "CZK",
+                RefundReason.AdminDiscretion, RefundSource.AppRefund);
+            refund.Created("seed", claimedOn + after);
+            return refund;
+        }
+
+        await using var ctx = NewContext();
+        var self = Row("self", 300m, TimeSpan.FromTicks(7));
+        ctx.Refunds.AddRange(
+            Row("older-a", 100m, TimeSpan.FromSeconds(-2)),
+            Row("older-b", 200m, TimeSpan.FromSeconds(-1)),
+            Row("older-paid", 400m, TimeSpan.FromSeconds(-3)).MarkSucceeded(stripeRefundId: null, confirmedOnUtc: claimedOn),
+            Row("older-closed", 50m, TimeSpan.FromSeconds(-4)).MarkFailed(),
+            self,
+            Row("younger", 500m, TimeSpan.FromSeconds(1)));
+        await ctx.CommitAsync(CancellationToken.None);
+
+        var refunds = new RefundRepository(ctx);
+        Assert.Equal(300m, await refunds.GetPendingRefundTotalClaimedBeforeAsync(self, CancellationToken.None));
+        var younger = await refunds.GetByRefundKeyAsync($"refund:{OrderId}:admin:younger", CancellationToken.None);
+        Assert.Equal(600m, await refunds.GetPendingRefundTotalClaimedBeforeAsync(younger!, CancellationToken.None));
+
+        await using var other = NewContext(TestTenants.Second);
+        Assert.Equal(0m, await new RefundRepository(other).GetPendingRefundTotalClaimedBeforeAsync(younger!, CancellationToken.None));
+    }
+
+    /// <summary>
+    /// 1000 by card. A member's cancellation and, a moment later, an administrator's full refund were claimed at
+    /// once, and Stripe paid neither. The re-drive of the older one is not held back by the younger, which
+    /// counted it: Stripe pays the 1000 on the cancellation's key, and the full refund's retry sends nothing.
+    /// </summary>
+    [Fact]
+    public async Task Of_Two_Refunds_Claimed_At_Once_And_Paid_By_Neither_The_Older_Ones_Redrive_Pays_It()
+    {
+        await ResetAsync();
+        await SeedAsync(total: 1000m, creditApplied: 0m, status: OrderStatus.Cancelled);
+        var full = new RefundRequest(OrderId, 1000m, RefundReason.AdminDiscretion, "admin-pending-ceiling", RefundRequestId: "full");
+        var claimedOn = DateTimeOffset.UtcNow.AddHours(-2);
+        string cancelId;
+        await using (var ctx = NewContext())
+        {
+            var cancel = Refund.Create(OrderId, CancelKey, 1000m, "CZK", RefundReason.CustomerCancellation, RefundSource.AppRefund);
+            cancel.Created("member", claimedOn);
+            var admin = Refund.Create(OrderId, RefundService.BuildRefundKey(full), 1000m, "CZK", RefundReason.AdminDiscretion,
+                RefundSource.AppRefund);
+            admin.Created("admin", claimedOn.AddMilliseconds(3));
+            ctx.Refunds.AddRange(cancel, admin);
+            await ctx.CommitAsync(CancellationToken.None);
+            cancelId = cancel.Id;
+        }
+
+        StripePays();
+        BusinessResult<RefundResult> redriven;
+        await using (var ctx = NewContext())
+        {
+            redriven = await NewRefundService(ctx).RedriveAsync(cancelId, "system", CancellationToken.None);
+        }
+
+        var retried = await RefundAsync(full);
+
+        Assert.True(redriven.IsSuccess, redriven.Error?.Message);
+        Assert.Equal([(1000m, CancelKey)], _stripeCalls);
+        Assert.Equal(BusinessErrorMessage.RefundNothingRefundable, retried.Error?.Message);
+        var given = await ReadAsync();
+        Assert.Equal(1000m, given.Card);
+        Assert.Equal(PaymentStatus.Refunded, given.PaymentStatus);
+    }
+
+    /// <summary>
     /// 1000 by card. An admin's partial refund of 600 is paid by Stripe, whose answer never comes back, so the
     /// row stays pending and the order still reads paid. The customer chose credit for a complaint: 1000 is
     /// refused, the 400 not already on its way back is settled, and the partial's retry is answered by Stripe

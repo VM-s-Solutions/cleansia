@@ -76,7 +76,9 @@ public sealed class RefundService(
             split = (Math.Min(split.Card, held - creditOnThisKey), 0m);
         }
 
-        var consumed = await CardRefundedOrOwedAsync(refundRepository, order.Id, refundKey, cancellationToken);
+        var consumed = existing is null
+            ? await CardRefundedOrOwedAsync(refundRepository, order.Id, refundKey, cancellationToken)
+            : await CardRefundedOrOwedBeforeRetryAsync(existing, cancellationToken);
         var refundable = CardRefundCeiling(order, consumed);
         Refund refund;
         var creditShare = split.Credit;
@@ -187,7 +189,7 @@ public sealed class RefundService(
                 nameof(refund.OrderId), BusinessErrorMessage.RefundOrderNotRefundable));
         }
 
-        var consumed = await CardRefundedOrOwedAsync(refundRepository, order.Id, refund.RefundKey, cancellationToken);
+        var consumed = await CardRefundedOrOwedBeforeRetryAsync(refund, cancellationToken);
         var refundable = CardRefundCeiling(order, consumed);
         if (refundable <= 0m)
         {
@@ -235,10 +237,29 @@ public sealed class RefundService(
     }
 
     /// <summary>
+    /// The card money a retry of <paramref name="refund"/> leaves room for on the charge: refunds Stripe
+    /// confirmed, and the pending refunds it must count. A pending refund counts only those claimed before it.
+    /// One claimed later either counted its card as owed or, claimed at the same moment, did not see it, and
+    /// counting that one here too would leave the two waiting on each other for good. So the older is retried
+    /// on its own key: Stripe replays it if it paid it, pays it if it paid neither, and refuses it if it paid
+    /// the younger, whose retry still counts the older. A closed refund was counted by no later claim, so it
+    /// counts every pending one.
+    ///
+    /// <para>The card ceiling only. The slice held to what the sale has left still counts every pending refund:
+    /// a pending refund's credit leg waits for its card, and a claim made after it was sized on what was left
+    /// without that leg, so leaving the younger out there returns that credit twice.</para>
+    /// </summary>
+    private async Task<decimal> CardRefundedOrOwedBeforeRetryAsync(Refund refund, CancellationToken cancellationToken) =>
+        refund.Status == RefundStatus.Pending
+            ? await refundRepository.GetSucceededRefundTotalForOrderAsync(refund.OrderId, cancellationToken)
+              + await refundRepository.GetPendingRefundTotalClaimedBeforeAsync(refund, cancellationToken)
+            : await CardRefundedOrOwedAsync(refundRepository, refund.OrderId, refund.RefundKey, cancellationToken);
+
+    /// <summary>
     /// A re-drive the order has nothing left for. Closed when the refunds Stripe confirmed used up what is
-    /// left, so the hourly job stops selecting it. Left pending when only other refunds still pending did:
-    /// two refunds claimed at once each count the other, Stripe may have paid this one and refused that one,
-    /// and closing this one would leave the money it paid unrecorded with nobody told.
+    /// left, so the hourly job stops selecting it. Left pending when only refunds still pending did: Stripe may
+    /// have paid this one and refused one of those, and closing this one would leave the money it paid
+    /// unrecorded with nobody told.
     /// </summary>
     private BusinessResult<RefundResult> NothingLeftToRedrive(Refund refund, bool heldOnlyByPendingRefunds)
     {

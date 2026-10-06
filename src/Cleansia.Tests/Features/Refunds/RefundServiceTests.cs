@@ -1289,10 +1289,15 @@ public class RefundServiceTests
         Assert.Equal(700m, Assert.Single(added).Amount);
     }
 
+    private void ArrangePendingClaimedBefore(Refund refund, decimal pending) =>
+        _refundRepository
+            .Setup(r => r.GetPendingRefundTotalClaimedBeforeAsync(refund, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(pending);
+
     /// <summary>
-    /// The hourly re-drive's own ceiling counts another key's pending refund as it does for a new refund: a
-    /// partial of 600 is still pending, so a free cancellation's 1000 claimed beside it is sent the 400 the
-    /// charge has left, not the 1000 real Stripe would refuse every hour.
+    /// The hourly re-drive's own ceiling counts another key's pending refund claimed before it: a partial of
+    /// 600 is still pending, so a free cancellation's 1000 claimed beside it is sent the 400 the charge has
+    /// left, not the 1000 real Stripe would refuse every hour.
     /// </summary>
     [Fact]
     public async Task Redrive_Counts_Another_Keys_Pending_Refund_In_Its_Ceiling()
@@ -1301,8 +1306,8 @@ public class RefundServiceTests
         ArrangeOrder(order);
         ArrangeConsumed(0m);
         var cancelKey = $"refund:{OrderId}:cancel";
-        ArrangePendingElsewhere(cancelKey, 600m);
         var refund = ArrangePendingRefund(order, 1000m, cancelKey);
+        ArrangePendingClaimedBefore(refund, 600m);
 
         var result = await CreateService().RedriveAsync(refund.Id, "system", CancellationToken.None);
 
@@ -1313,9 +1318,9 @@ public class RefundServiceTests
     }
 
     /// <summary>
-    /// A cancellation and an administrator's full refund were claimed at the same moment, each against the
+    /// An administrator's full refund and, a moment later, a cancellation were claimed at once, each against the
     /// whole 1000. Stripe paid the cancellation's and lost the answer, and refused the administrator's. Only the
-    /// other pending refund leaves this one nothing, and that refund may be the one Stripe never paid, so this
+    /// older pending refund leaves this one nothing, and that refund may be the one Stripe never paid, so this
     /// one is not closed: it stays pending, Stripe is not asked, and the administrators hear of it after a day.
     /// </summary>
     [Fact]
@@ -1325,8 +1330,8 @@ public class RefundServiceTests
         ArrangeOrder(order);
         ArrangeConsumed(0m);
         var cancelKey = $"refund:{OrderId}:cancel";
-        ArrangePendingElsewhere(cancelKey, 1000m);
         var refund = ArrangePendingRefund(order, 1000m, cancelKey);
+        ArrangePendingClaimedBefore(refund, 1000m);
 
         var result = await CreateService().RedriveAsync(refund.Id, "system", CancellationToken.None);
 
@@ -1336,7 +1341,7 @@ public class RefundServiceTests
     }
 
     /// <summary>
-    /// The same race on a sale with a complaint settled in 300 of credit: the other pending refund of 700 leaves
+    /// The same race on a sale with a complaint settled in 300 of credit: the older pending refund of 700 leaves
     /// the sale nothing, while the refunds Stripe confirmed leave it 700. The row stays pending.
     /// </summary>
     [Fact]
@@ -1347,8 +1352,9 @@ public class RefundServiceTests
         ArrangeConsumed(0m);
         ArrangeSettledInCredit(300m);
         var cancelKey = $"refund:{OrderId}:cancel";
-        ArrangePendingElsewhere(cancelKey, 700m);
         var refund = ArrangePendingRefund(order, 700m, cancelKey);
+        ArrangePendingElsewhere(cancelKey, 700m);
+        ArrangePendingClaimedBefore(refund, 700m);
 
         var result = await CreateService().RedriveAsync(refund.Id, "system", CancellationToken.None);
 
@@ -1396,7 +1402,8 @@ public class RefundServiceTests
 
     /// <summary>
     /// The row being retried is not owed on top of itself: a 1000 sale with its own 600 pending and 400
-    /// settled in credit still has the 600 left for it.
+    /// settled in credit still has the 600 left for it. The held slice leaves out its own key, and the card
+    /// ceiling counts only the pending refunds claimed before it, which leave the row itself out.
     /// </summary>
     [Theory]
     [InlineData(true)]
@@ -1417,6 +1424,7 @@ public class RefundServiceTests
             .Setup(r => r.GetPendingRefundTotalForOrderAsync(OrderId, It.IsAny<string?>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(600m);
         ArrangePendingElsewhere(refundKey, 0m);
+        ArrangePendingClaimedBefore(pending, 0m);
 
         var result = viaRedrive
             ? await CreateService().RedriveAsync(pending.Id, "system", CancellationToken.None)
@@ -1424,10 +1432,189 @@ public class RefundServiceTests
 
         Assert.True(result.IsSuccess, result.Error?.Message);
         Assert.Equal(600m, _stripe.LastAmount);
+        _refundRepository.Verify(r => r.GetPendingRefundTotalClaimedBeforeAsync(
+            pending, It.IsAny<CancellationToken>()), Times.Once);
         _refundRepository.Verify(r => r.GetPendingRefundTotalForOrderAsync(
             OrderId, refundKey, It.IsAny<CancellationToken>()), Times.AtLeastOnce);
         _refundRepository.Verify(r => r.GetPendingRefundTotalForOrderAsync(
             OrderId, It.Is<string?>(k => k != refundKey), It.IsAny<CancellationToken>()), Times.Never);
+    }
+
+    /// <summary>
+    /// Refund rows kept in a list, so each retry reads the others' states as the table would; a row claimed
+    /// earlier carries an earlier creation time.
+    /// </summary>
+    private void ArrangeRefundTable(params Refund[] rows)
+    {
+        _refundRepository
+            .Setup(r => r.GetByIdAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((string id, CancellationToken _) => rows.SingleOrDefault(r => r.Id == id));
+        _refundRepository
+            .Setup(r => r.GetByRefundKeyAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((string key, CancellationToken _) => rows.SingleOrDefault(r => r.RefundKey == key));
+        _refundRepository
+            .Setup(r => r.GetSucceededRefundTotalForOrderAsync(OrderId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(() => rows.Where(r => r.Status == RefundStatus.Succeeded).Sum(r => r.Amount));
+        _refundRepository
+            .Setup(r => r.GetPendingRefundTotalForOrderAsync(OrderId, It.IsAny<string?>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((string _, string? exceptRefundKey, CancellationToken _) => rows
+                .Where(r => r.Status == RefundStatus.Pending && r.RefundKey != exceptRefundKey)
+                .Sum(r => r.Amount));
+        _refundRepository
+            .Setup(r => r.GetPendingRefundTotalClaimedBeforeAsync(It.IsAny<Refund>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((Refund refund, CancellationToken _) => rows
+                .Where(r => r.Status == RefundStatus.Pending && r.CreatedOn < refund.CreatedOn)
+                .Sum(r => r.Amount));
+        _refundRepository.Setup(r => r.CommitAsync(It.IsAny<CancellationToken>())).Returns(Task.CompletedTask);
+    }
+
+    private static Refund Claim(RefundRequest request, DateTimeOffset claimedOn, decimal? card = null)
+    {
+        var refund = Refund.Create(
+            OrderId, RefundService.BuildRefundKey(request), card ?? request.Amount, "CZK", request.Reason, RefundSource.AppRefund);
+        refund.Created("system", claimedOn);
+        return refund;
+    }
+
+    private static readonly RefundRequest MemberCancel = new(OrderId, 1000m, RefundReason.CustomerCancellation, "user-1");
+
+    private static readonly RefundRequest FullRefund =
+        new(OrderId, 1000m, RefundReason.AdminDiscretion, ActorId, RefundRequestId: "full");
+
+    /// <summary>
+    /// A member's cancellation and, a moment later, an administrator's full refund of the 1000 order were
+    /// claimed at once, each reading the other as absent, and Stripe paid neither. The younger claim counted the
+    /// older, so the older one's re-drive does not count the younger: Stripe is asked on the cancellation's key
+    /// and pays the 1000. The administrator's retry of the full refund then finds nothing left and sends nothing.
+    /// </summary>
+    [Fact]
+    public async Task Two_Claims_At_Once_Stripe_Paid_Neither_Of_The_Re_Drive_Pays_The_Older_One()
+    {
+        var order = CreateCardPaidOrder(1000m);
+        ArrangeOrder(order);
+        var cancel = Claim(MemberCancel, DateTimeOffset.UtcNow.AddHours(-2));
+        var full = Claim(FullRefund, DateTimeOffset.UtcNow.AddHours(-2).AddMilliseconds(5));
+        ArrangeRefundTable(cancel, full);
+
+        var redriven = await CreateService().RedriveAsync(cancel.Id, "system", CancellationToken.None);
+        var retried = await CreateService().IssueRefundAsync(FullRefund, CancellationToken.None);
+
+        Assert.True(redriven.IsSuccess, redriven.Error?.Message);
+        Assert.Equal(1, _stripe.RefundCallCount);
+        Assert.Equal(cancel.RefundKey, _stripe.LastIdempotencyKey);
+        Assert.Equal(1000m, _stripe.LastAmount);
+        Assert.Equal(RefundStatus.Succeeded, cancel.Status);
+        Assert.Equal(BusinessErrorMessage.RefundNothingRefundable, retried.Error?.Message);
+        Assert.Equal(PaymentStatus.Refunded, order.PaymentStatus);
+    }
+
+    /// <summary>
+    /// The same race the other way round: the administrator's full refund was claimed first. The hourly re-drive
+    /// of the cancellation is held back by it and asks Stripe nothing, and the administrator's retry is not held
+    /// back by the younger cancellation: Stripe pays the 1000 on the full refund's key, and the next re-drive
+    /// closes the cancellation's row, which Stripe never paid.
+    /// </summary>
+    [Fact]
+    public async Task Two_Claims_At_Once_Stripe_Paid_Neither_Of_The_Retry_Of_The_Older_One_Pays_It()
+    {
+        var order = CreateCardPaidOrder(1000m);
+        ArrangeOrder(order);
+        var full = Claim(FullRefund, DateTimeOffset.UtcNow.AddHours(-2));
+        var cancel = Claim(MemberCancel, DateTimeOffset.UtcNow.AddHours(-2).AddMilliseconds(5));
+        ArrangeRefundTable(full, cancel);
+
+        var heldBack = await CreateService().RedriveAsync(cancel.Id, "system", CancellationToken.None);
+        var retried = await CreateService().IssueRefundAsync(FullRefund, CancellationToken.None);
+        var closed = await CreateService().RedriveAsync(cancel.Id, "system", CancellationToken.None);
+
+        Assert.Equal(BusinessErrorMessage.RefundFailed, heldBack.Error?.Message);
+        Assert.True(retried.IsSuccess, retried.Error?.Message);
+        Assert.Equal(1, _stripe.RefundCallCount);
+        Assert.Equal(full.RefundKey, _stripe.LastIdempotencyKey);
+        Assert.Equal(1000m, _stripe.LastAmount);
+        Assert.Equal(RefundStatus.Succeeded, full.Status);
+        Assert.Equal(BusinessErrorMessage.RefundNothingRefundable, closed.Error?.Message);
+        Assert.Equal(RefundStatus.Failed, cancel.Status);
+        Assert.Equal(PaymentStatus.Refunded, order.PaymentStatus);
+    }
+
+    /// <summary>
+    /// The race's other outcome: Stripe paid the younger claim and lost the answer, so the charge has nothing
+    /// left and Stripe refuses the older one. The older one's re-drive asks Stripe on its own key and is refused,
+    /// and the younger one, still counting the older, is not retried. Neither is closed, so the refund Stripe
+    /// made is never recorded as not paid; both stay pending for the administrators to reconcile.
+    /// </summary>
+    [Fact]
+    public async Task Two_Claims_At_Once_Stripe_Paid_The_Younger_Of_Neither_Is_Closed()
+    {
+        var order = CreateCardPaidOrder(1000m);
+        ArrangeOrder(order);
+        var cancel = Claim(MemberCancel, DateTimeOffset.UtcNow.AddHours(-2));
+        var full = Claim(FullRefund, DateTimeOffset.UtcNow.AddHours(-2).AddMilliseconds(5));
+        ArrangeRefundTable(cancel, full);
+        _stripe.ThrowOnRefund = true;
+
+        var older = await CreateService().RedriveAsync(cancel.Id, "system", CancellationToken.None);
+        var askedForTheOlder = _stripe.SessionRefundCallCount;
+        var younger = await CreateService().RedriveAsync(full.Id, "system", CancellationToken.None);
+
+        Assert.Equal(BusinessErrorMessage.RefundFailed, older.Error?.Message);
+        Assert.Equal(1, askedForTheOlder);
+        Assert.Equal(BusinessErrorMessage.RefundFailed, younger.Error?.Message);
+        Assert.Equal(1, _stripe.SessionRefundCallCount);
+        Assert.Equal(RefundStatus.Pending, cancel.Status);
+        Assert.Equal(RefundStatus.Pending, full.Status);
+        Assert.Equal(PaymentStatus.Paid, order.PaymentStatus);
+    }
+
+    /// <summary>
+    /// 1000, 500 of it in credit. A dispute's 600 froze 300 on the card and its 300 credit leg waits for the card.
+    /// 300 was then settled in credit, and a platform cancellation sized on the 400 left froze 200 on the card
+    /// and returned its 200 credit leg at once. The dispute's retry sends Stripe its 300 and returns no credit:
+    /// its slice is still held by the younger pending refund, because that refund was sized without the
+    /// dispute's credit leg, and 300 + 200 + 200 + 300 is the price.
+    /// </summary>
+    [Fact]
+    public async Task A_Retried_Refunds_Credit_Leg_Is_Still_Held_By_A_Younger_Pending_Refund()
+    {
+        var order = CreateCardPaidOrder(1000m);
+        order.ApplyCredit(500m, "user-1");
+        ArrangeOrder(order);
+        ArrangeSettledInCredit(300m);
+        var disputeRefund = new RefundRequest(OrderId, 600m, RefundReason.DisputeResolution, ActorId, DisputeId: "dispute-1");
+        var dispute = Claim(disputeRefund, DateTimeOffset.UtcNow.AddHours(-2), card: 300m);
+        var cancel = Claim(MemberCancel, DateTimeOffset.UtcNow.AddHours(-1), card: 200m);
+        ArrangeRefundTable(dispute, cancel);
+        ArrangeCreditReturned(forOrder: 200m, dispute.RefundKey, onRefundKey: 0m);
+
+        var retried = await CreateService().IssueRefundAsync(disputeRefund, CancellationToken.None);
+
+        Assert.True(retried.IsSuccess, retried.Error?.Message);
+        Assert.Equal(300m, _stripe.LastAmount);
+        Assert.Equal(dispute.RefundKey, _stripe.LastIdempotencyKey);
+        _creditAccountRepository.Verify(r => r.TryReturnAsync(
+            It.IsAny<string>(), It.IsAny<string>(), It.IsAny<decimal>(), It.IsAny<string>(), It.IsAny<string>(),
+            It.IsAny<CancellationToken>(), It.IsAny<string?>(), It.IsAny<string?>()), Times.Never);
+    }
+
+    /// <summary>
+    /// A row the re-drive closed was counted by no claim after it, so its retry still counts every pending
+    /// refund: the full refund closed before the cancellation's 1000 was claimed finds nothing left.
+    /// </summary>
+    [Fact]
+    public async Task A_Closed_Refunds_Retry_Counts_Every_Pending_Refund_However_Young()
+    {
+        var order = CreateCardPaidOrder(1000m);
+        ArrangeOrder(order);
+        var full = Claim(FullRefund, DateTimeOffset.UtcNow.AddHours(-2));
+        full.MarkFailed();
+        var cancel = Claim(MemberCancel, DateTimeOffset.UtcNow.AddHours(-1));
+        ArrangeRefundTable(full, cancel);
+
+        var retried = await CreateService().IssueRefundAsync(FullRefund, CancellationToken.None);
+
+        Assert.Equal(BusinessErrorMessage.RefundNothingRefundable, retried.Error?.Message);
+        Assert.Equal(0, _stripe.RefundCallCount);
     }
 
     private sealed class RecordingStripeClient : IStripeClient

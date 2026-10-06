@@ -81,6 +81,7 @@ public sealed class RefundMoneyConservationTests
         public string? DisputeId { get; init; }
         public decimal Amount { get; set; }
         public RefundStatus Status { get; set; }
+        public required DateTimeOffset ClaimedOn { get; init; }
     }
 
     private sealed class World
@@ -451,6 +452,10 @@ public sealed class RefundMoneyConservationTests
                     .ReturnsAsync((string _, string? exceptRefundKey, CancellationToken _) => _world._rows
                         .Where(r => r.Status == RefundStatus.Pending && r.Key != exceptRefundKey)
                         .Sum(r => r.Amount));
+                Refunds.Setup(r => r.GetPendingRefundTotalClaimedBeforeAsync(It.IsAny<Refund>(), It.IsAny<CancellationToken>()))
+                    .ReturnsAsync((Refund refund, CancellationToken _) => _world._rows
+                        .Where(r => r.Status == RefundStatus.Pending && r.ClaimedOn < refund.CreatedOn)
+                        .Sum(r => r.Amount));
                 Refunds.Setup(r => r.Add(It.IsAny<Refund>())).Callback<Refund>(_added.Add);
                 Refunds.Setup(r => r.Rollback()).Callback(_added.Clear);
                 Refunds.Setup(r => r.CommitAsync(It.IsAny<CancellationToken>())).Returns(CommitAsync);
@@ -480,6 +485,8 @@ public sealed class RefundMoneyConservationTests
 
                 foreach (var refund in _added)
                 {
+                    var claimedOn = DateTimeOffset.UnixEpoch.AddSeconds(_world._rows.Count + 1);
+                    refund.Created("system", claimedOn);
                     _world._rows.Add(new RefundRow
                     {
                         Id = refund.Id,
@@ -488,6 +495,7 @@ public sealed class RefundMoneyConservationTests
                         DisputeId = refund.DisputeId,
                         Amount = refund.Amount,
                         Status = refund.Status,
+                        ClaimedOn = claimedOn,
                     });
                     _tracked[refund.Id] = refund;
                 }
@@ -513,6 +521,7 @@ public sealed class RefundMoneyConservationTests
                 var refund = Refund.Create(
                     _world.Order.Id, row.Key, row.Amount, "CZK", row.Reason, RefundSource.AppRefund, disputeId: row.DisputeId);
                 refund.Id = row.Id;
+                refund.Created("system", row.ClaimedOn);
                 if (row.Status == RefundStatus.Succeeded)
                 {
                     refund.MarkSucceeded(stripeRefundId: null, confirmedOnUtc: DateTimeOffset.UtcNow);

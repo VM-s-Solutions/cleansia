@@ -150,9 +150,9 @@ public sealed class AdminNotificationEmailRenderingTests
     /// </summary>
     [Theory]
     [InlineData(AdminNotificationEventCatalog.RefundStuck, "It is retried every hour", "retry it from")]
-    [InlineData(AdminNotificationEventCatalog.RefundNeedsRetry, "If Stripe failed it, that refund cannot be sent again: refund the money another way", "refund it again")]
-    [InlineData(AdminNotificationEventCatalog.RefundNeedsRetry, "the full refund if it was not the one that failed, a partial refund of other lines, or credit", "for a day")]
-    [InlineData(AdminNotificationEventCatalog.RefundNeedsRetry, "a refund still pending can be retried from the dispute or the order", "retried every hour")]
+    [InlineData(AdminNotificationEventCatalog.RefundNeedsRetry, "Retry it once from the dispute or the order", "refund it again")]
+    [InlineData(AdminNotificationEventCatalog.RefundNeedsRetry, "records it if Stripe made it and closes it if Stripe failed it", "for a day")]
+    [InlineData(AdminNotificationEventCatalog.RefundNeedsRetry, "A refund Stripe failed cannot be sent again: then refund the money another way — the full refund if it was not the one that failed, a partial refund of other lines, or credit", "retried every hour")]
     [InlineData(AdminNotificationEventCatalog.RefundWithoutCancel, "do not issue a refund on the order", "retry it from")]
     public async Task Each_Stuck_Refund_Email_Says_Who_Retries_It(string eventKey, string says, string doesNotSay)
     {

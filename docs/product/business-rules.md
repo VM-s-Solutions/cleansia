@@ -1334,8 +1334,9 @@ asks the account's open receivables across every company, and every way into a b
   `; `-joined ([Mobile patterns — the error model](/mobile-app/patterns#error-model)).
 - **The terms say so** from their `2026-10-07` version (§8): while anything is owed to any operating
   company, no new booking is made by cash or card, no recurring visit is confirmed or created, and no
-  recurring schedule is created or changed, until it is paid through its pay link or written off;
-  bookings already made are kept ([The legal texts](#legal-texts)).
+  recurring schedule is created or changed, until it is paid through its pay link or written off; a
+  schedule the customer already has can still be paused, resumed or cancelled, and bookings already made
+  are kept ([The legal texts](#legal-texts)).
 - **A wrong debt now costs more.** A false door report or a mistaken fee blocks every booking until a
   Manager writes it off, which is why the door report tells the customer and the administrators at once.
 - **A debt owed to a company frozen for archive does not count** (since 2026-10-06). Once a company's
@@ -1538,8 +1539,9 @@ They copy `2026-10-06` and differ only in §7 and §8, in all five languages (`d
   company no new booking is made, by cash or by card, no recurring visit is confirmed and the schedule
   creates none, and no recurring schedule is created or changed (`3274dec39`, which states what
   `CreateRecurringBooking` and `UpdateRecurringBooking` already refused), until the amount is paid through
-  its pay link or written off; bookings already made are kept, and no card is ever charged
-  ([What a customer owes](#receivables)).
+  its pay link or written off. A schedule the customer already has can still be paused, resumed or
+  cancelled, which `SetRecurringBookingActive` and `DeleteRecurringBooking` never refuse for a debt.
+  Bookings already made are kept, and no card is ever charged ([What a customer owes](#receivables)).
 
 It takes effect on 2026-10-07, so every signed-in customer accepts it before their next booking from that
 day. The privacy policy is unchanged at `2026-10-06`. **This branch's code must not reach production

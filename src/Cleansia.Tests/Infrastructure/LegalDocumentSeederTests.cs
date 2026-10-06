@@ -596,8 +596,10 @@ public sealed class LegalDocumentSeederTests : IDisposable
     /// ones, not defaults. Section 8: a cash price the customer did not pay the cleaner completes the booking and
     /// becomes an amount owed, which earns no loyalty points or referral credit; and while any amount is owed to any
     /// operating company, no new booking is made, by cash or by card, no recurring visit is confirmed or created,
-    /// no recurring schedule is created or changed (Create/UpdateRecurringBooking), and bookings already made are
-    /// kept. Each row is a phrase the section must state in that language; none of them is in the 2026-10-06 terms.
+    /// no recurring schedule is created or changed (Create/UpdateRecurringBooking), one already set up can still be
+    /// paused, resumed or cancelled (SetRecurringBookingActive, DeleteRecurringBooking, which ask nothing about
+    /// money), and bookings already made are kept. Each row is a phrase the section must state in that language;
+    /// none of them is in the 2026-10-06 terms.
     /// </summary>
     [Theory]
     [InlineData("en", 7, "no more than two cash bookings that you have not yet paid, counting the one you are making")]
@@ -640,6 +642,11 @@ public sealed class LegalDocumentSeederTests : IDisposable
     [InlineData("sk", 8, "Rovnako nemôžete nastaviť nové opakované upratovanie ani zmeniť to, ktoré už máte.")]
     [InlineData("uk", 8, "Так само ви не можете ні налаштувати нове регулярне прибирання, ні змінити вже наявне.")]
     [InlineData("ru", 8, "Точно так же вы не можете ни настроить новую регулярную уборку, ни изменить уже существующую.")]
+    [InlineData("en", 8, "You can, however, still pause, resume or cancel a recurring schedule you already have.")]
+    [InlineData("cs", 8, "Opakovaný úklid, který již máte, však můžete i nadále pozastavit, obnovit nebo zrušit.")]
+    [InlineData("sk", 8, "Opakované upratovanie, ktoré už máte, však môžete aj naďalej pozastaviť, obnoviť alebo zrušiť.")]
+    [InlineData("uk", 8, "Водночас вже наявне регулярне прибирання ви й надалі можете призупинити, відновити або скасувати.")]
+    [InlineData("ru", 8, "При этом уже существующую регулярную уборку вы по-прежнему можете приостановить, возобновить или отменить.")]
     [InlineData("en", 8, "Bookings you have already made are kept.")]
     [InlineData("cs", 8, "Objednávky, které jste již vytvořili, zůstávají zachovány.")]
     [InlineData("sk", 8, "Objednávky, ktoré ste už vytvorili, zostávajú zachované.")]

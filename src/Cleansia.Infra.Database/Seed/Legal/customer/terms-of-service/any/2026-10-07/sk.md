@@ -68,7 +68,7 @@ Stornovací poplatok pri hotovostnej objednávke (článok 13), cena hotovostnej
 
 Ak upratovačovi po upratovaní cenu hotovostnej objednávky nezaplatíte, upratovač to zaznamená v aplikácii, objednávka sa dokončí a jej cena sa stane sumou, ktorú dlhujete; o tom vás budeme informovať. Taká objednávka neprináša vernostné body (článok 11) ani kredit za odporúčanie (článok 9), a to ani potom, ako dlžnú sumu zaplatíte.
 
-Ak dlhujete ktorejkoľvek prevádzkovej spoločnosti nejakú sumu, nemôžete vytvoriť žiadnu novú objednávku, či už s platbou v hotovosti, alebo kartou, kým túto sumu nezaplatíte cez jej platobný odkaz alebo kým ju spoločnosť neodpíše. Nemôžete ani potvrdiť návštevu opakovaného upratovania a nové návštevy sa medzitým nevytvárajú. Rovnako nemôžete nastaviť nové opakované upratovanie ani zmeniť to, ktoré už máte. Objednávky, ktoré ste už vytvorili, zostávajú zachované.
+Ak dlhujete ktorejkoľvek prevádzkovej spoločnosti nejakú sumu, nemôžete vytvoriť žiadnu novú objednávku, či už s platbou v hotovosti, alebo kartou, kým túto sumu nezaplatíte cez jej platobný odkaz alebo kým ju spoločnosť neodpíše. Nemôžete ani potvrdiť návštevu opakovaného upratovania a nové návštevy sa medzitým nevytvárajú. Rovnako nemôžete nastaviť nové opakované upratovanie ani zmeniť to, ktoré už máte. Opakované upratovanie, ktoré už máte, však môžete aj naďalej pozastaviť, obnoviť alebo zrušiť. Objednávky, ktoré ste už vytvorili, zostávajú zachované.
 
 ## 9. Kredit
 

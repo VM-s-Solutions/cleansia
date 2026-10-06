@@ -68,7 +68,7 @@ Storno poplatek u hotovostní objednávky (článek 13), cena hotovostní objedn
 
 Pokud uklízeči po úklidu cenu hotovostní objednávky nezaplatíte, uklízeč to zaznamená v aplikaci, objednávka se dokončí a její cena se stane částkou, kterou dlužíte; o tom vás budeme informovat. Taková objednávka nepřináší věrnostní body (článek 11) ani kredit za doporučení (článek 9), a to ani poté, co dlužnou částku zaplatíte.
 
-Dlužíte-li kterékoli provozní společnosti nějakou částku, nemůžete vytvořit žádnou novou objednávku, ať s platbou v hotovosti, nebo kartou, dokud tuto částku nezaplatíte přes její platební odkaz nebo dokud ji společnost neodepíše. Nemůžete ani potvrdit návštěvu opakovaného úklidu a nové návštěvy se mezitím nevytvářejí. Stejně tak nemůžete nastavit nový opakovaný úklid ani změnit ten, který již máte. Objednávky, které jste již vytvořili, zůstávají zachovány.
+Dlužíte-li kterékoli provozní společnosti nějakou částku, nemůžete vytvořit žádnou novou objednávku, ať s platbou v hotovosti, nebo kartou, dokud tuto částku nezaplatíte přes její platební odkaz nebo dokud ji společnost neodepíše. Nemůžete ani potvrdit návštěvu opakovaného úklidu a nové návštěvy se mezitím nevytvářejí. Stejně tak nemůžete nastavit nový opakovaný úklid ani změnit ten, který již máte. Opakovaný úklid, který již máte, však můžete i nadále pozastavit, obnovit nebo zrušit. Objednávky, které jste již vytvořili, zůstávají zachovány.
 
 ## 9. Kredit
 

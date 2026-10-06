@@ -29,6 +29,7 @@ public sealed class CompanyWindDownService(
     IOrderRepository orderRepository,
     ICountryConfigurationRepository countryConfigurationRepository,
     IPlatformOrderCancellation platformOrderCancellation,
+    IRefundRepository refundRepository,
     IRecurringBookingTemplateRepository recurringBookingTemplateRepository,
     IUserMembershipRepository userMembershipRepository,
     IStripeClient stripeClient,
@@ -255,7 +256,9 @@ public sealed class CompanyWindDownService(
         var candidates = await orderRepository.GetQueryable()
             .AsNoTracking()
             .Where(o => CancellableStatuses.Contains(o.CurrentStatus)
-                && (o.PaymentStatus == PaymentStatus.Paid || o.PaymentType == PaymentType.Cash))
+                && (o.PaymentStatus == PaymentStatus.Paid
+                    || o.PaymentStatus == PaymentStatus.PartiallyRefunded
+                    || o.PaymentType == PaymentType.Cash))
             .OrderBy(o => o.CleaningDateTime)
             .Select(o => new OrderCandidate(
                 o.Id,
@@ -343,7 +346,7 @@ public sealed class CompanyWindDownService(
                 && o.CancelledBy == CancelledBy.System
                 && o.CancellationReason == OrderCancellationReasons.CompanyWindDown
                 && o.PaymentType == PaymentType.Card
-                && o.PaymentStatus == PaymentStatus.Paid)
+                && (o.PaymentStatus == PaymentStatus.Paid || o.PaymentStatus == PaymentStatus.PartiallyRefunded))
             .OrderBy(o => o.CleaningDateTime)
             .Select(o => o.Id)
             .ToListAsync(cancellationToken);
@@ -356,6 +359,15 @@ public sealed class CompanyWindDownService(
                 .Include(o => o.Currency)
                 .FirstOrDefaultAsync(o => o.Id == orderId, cancellationToken);
             if (order is null)
+            {
+                continue;
+            }
+
+            // Unlike Paid, PartiallyRefunded does not prove this refund is still owed: another refund still
+            // pending keeps the order there after this one went through, and replaying it repeats its push.
+            var ownRefundKey = RefundService.BuildRefundKey(new RefundRequest(
+                order.Id, order.TotalPrice, RefundReason.ServiceNotRendered, tenant.WindDownRequestedBy!));
+            if (await refundRepository.GetByRefundKeyAsync(ownRefundKey, cancellationToken) is { Status: RefundStatus.Succeeded })
             {
                 continue;
             }

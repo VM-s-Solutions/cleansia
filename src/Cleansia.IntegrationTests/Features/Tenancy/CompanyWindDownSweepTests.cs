@@ -14,6 +14,7 @@ using Cleansia.Core.Domain.Internationalization;
 using Cleansia.Core.Domain.Memberships;
 using Cleansia.Core.Domain.Notifications;
 using Cleansia.Core.Domain.Orders;
+using Cleansia.Core.Domain.Outbox;
 using Cleansia.Core.Domain.Payments;
 using Cleansia.Core.Domain.Tenancy;
 using Cleansia.Core.Domain.Users;
@@ -310,6 +311,177 @@ public sealed class CompanyWindDownSweepTests(PostgresContainerFixture fixture) 
                 Assert.Single(await ctx.OutboxMessages.IgnoreQueryFilters()
                     .Where(m => m.QueueName == QueueNames.NotificationsDispatch && m.Body.Contains(NotificationEventCatalog.OrderRefunded))
                     .ToListAsync());
+            },
+            transactional: false);
+    }
+
+    /// <summary>
+    /// 1 000 sale, 300 of it in credit; an earlier refund of 400 gave back 280 to the card and 120 in
+    /// credit. The wind-down gives back the other 600: 420 to the card (all the card has left) and 180 in
+    /// credit (all the credit has left).
+    /// </summary>
+    [Fact]
+    public async Task A_partly_refunded_card_booking_after_the_date_is_cancelled_and_given_back_the_rest_on_card_and_credit()
+    {
+        const string OrderId = "b-partly-refunded";
+        await TestMethod(
+            setup: SetupAsync,
+            arrange: async ctx =>
+            {
+                var seeded = await SeedTwoCompaniesAsync(ctx, deactivateB: false, includeOpenOrdersAfterDate: false);
+                ctx.Orders.Add(CardOrderAfterTheDate(OrderId, seeded.ConfirmedCustomerId, creditApplied: 300m));
+                StampUnstampedAdded(ctx, B);
+                await ctx.CommitAsync(CancellationToken.None);
+            },
+            act: async provider =>
+            {
+                var earlier = await IssueEarlierRefundAsync(provider, OrderId, 400m);
+                var beforeRun = await ReadPaymentStatusAsync(provider, OrderId);
+                var run = await RunSweepAsync(provider, B);
+                return (Earlier: earlier, BeforeRun: beforeRun, Run: run);
+            },
+            assert: async (ctx, act) =>
+            {
+                Assert.True(act.Earlier);
+                Assert.Equal(PaymentStatus.PartiallyRefunded, act.BeforeRun);
+
+                Assert.Equal(1, act.Run.OrdersCancelled);
+                Assert.Equal(1, act.Run.Refunded);
+                Assert.Equal(0, act.Run.RefundFailures);
+                Assert.Equal(
+                    [($"refund:{OrderId}:admin:earlier", 280m), (WindDownRefundKey(OrderId), 420m)],
+                    _stripe.RefundAttempts);
+
+                var order = await ctx.Orders.IgnoreQueryFilters().SingleAsync(o => o.Id == OrderId);
+                Assert.Equal(OrderStatus.Cancelled, order.CurrentStatus);
+                Assert.Equal(OrderCancellationReasons.CompanyWindDown, order.CancellationReason);
+                Assert.Equal(600m, order.CancellationRefundAmount);
+                Assert.Equal(PaymentStatus.Refunded, order.PaymentStatus);
+
+                var refund = await ctx.Refunds.IgnoreQueryFilters().SingleAsync(r => r.RefundKey == WindDownRefundKey(OrderId));
+                Assert.Equal(RefundStatus.Succeeded, refund.Status);
+                Assert.Equal(420m, refund.Amount);
+                var returned = await ctx.CreditTransactions.IgnoreQueryFilters()
+                    .Where(t => t.OrderId == OrderId)
+                    .ToDictionaryAsync(t => t.IdempotencyKey, t => t.Amount);
+                Assert.Equal(120m, returned[$"{CreditUnwind.KeyPrefix}refund:{OrderId}:admin:earlier"]);
+                Assert.Equal(180m, returned[CreditUnwind.KeyPrefix + WindDownRefundKey(OrderId)]);
+
+                Assert.Single(await RefundPushesAsync(ctx, OrderId));
+            },
+            transactional: false);
+    }
+
+    /// <summary>
+    /// The booking above with Stripe refusing the first run: the card leg stays pending at 420 while its
+    /// 180 of credit comes back at once, and the next run asks Stripe for the same 420 on the same key.
+    /// </summary>
+    [Fact]
+    public async Task A_partly_refunded_booking_whose_refund_Stripe_refuses_is_re_driven_by_the_next_run_for_the_same_amount_on_the_same_key()
+    {
+        const string OrderId = "b-partly-refused";
+        await TestMethod(
+            setup: SetupAsync,
+            arrange: async ctx =>
+            {
+                var seeded = await SeedTwoCompaniesAsync(ctx, deactivateB: false, includeOpenOrdersAfterDate: false);
+                ctx.Orders.Add(CardOrderAfterTheDate(OrderId, seeded.ConfirmedCustomerId, creditApplied: 300m));
+                StampUnstampedAdded(ctx, B);
+                await ctx.CommitAsync(CancellationToken.None);
+            },
+            act: async provider =>
+            {
+                var earlier = await IssueEarlierRefundAsync(provider, OrderId, 400m);
+
+                _stripe.RefuseRefunds = true;
+                var first = await RunSweepAsync(provider, B);
+                var afterFirst = await ReadRefundAsync(provider, OrderId);
+
+                _stripe.RefuseRefunds = false;
+                var second = await RunSweepAsync(provider, B);
+                var third = await RunSweepAsync(provider, B);
+                return (Earlier: earlier, First: first, AfterFirst: afterFirst, Second: second, Third: third);
+            },
+            assert: async (ctx, runs) =>
+            {
+                Assert.True(runs.Earlier);
+
+                Assert.Equal(1, runs.First.OrdersCancelled);
+                Assert.Equal(0, runs.First.Refunded);
+                Assert.Equal(1, runs.First.RefundFailures);
+                Assert.Equal(RefundStatus.Pending, runs.AfterFirst.Status);
+                Assert.Equal(420m, runs.AfterFirst.Amount);
+                Assert.Equal(180m, runs.AfterFirst.CreditReturned);
+                Assert.Equal(PaymentStatus.PartiallyRefunded, runs.AfterFirst.PaymentStatus);
+                Assert.Equal(OrderStatus.Cancelled, runs.AfterFirst.OrderStatus);
+
+                Assert.Equal(1, runs.Second.RefundsRedriven);
+                Assert.Equal(0, runs.Second.RefundFailures);
+                Assert.Equal(0, runs.Third.RefundsRedriven);
+                Assert.Equal(0, runs.Third.RefundFailures);
+                Assert.Equal(
+                    [($"refund:{OrderId}:admin:earlier", 280m), (WindDownRefundKey(OrderId), 420m), (WindDownRefundKey(OrderId), 420m)],
+                    _stripe.RefundAttempts);
+
+                var settled = await ctx.Refunds.IgnoreQueryFilters().SingleAsync(r => r.RefundKey == WindDownRefundKey(OrderId));
+                Assert.Equal(RefundStatus.Succeeded, settled.Status);
+                Assert.Equal(420m, settled.Amount);
+                Assert.Equal(180m, await ctx.CreditTransactions.IgnoreQueryFilters()
+                    .Where(t => t.IdempotencyKey == CreditUnwind.KeyPrefix + WindDownRefundKey(OrderId))
+                    .SumAsync(t => t.Amount));
+                var order = await ctx.Orders.IgnoreQueryFilters().SingleAsync(o => o.Id == OrderId);
+                Assert.Equal(PaymentStatus.Refunded, order.PaymentStatus);
+                Assert.Single(await RefundPushesAsync(ctx, OrderId));
+            },
+            transactional: false);
+    }
+
+    /// <summary>
+    /// A 1 000 card booking with an administrator's 300 refund still pending: the wind-down refunds the
+    /// other 700 and the order stays partly refunded. The next run must leave the wind-down's own refund
+    /// alone: it went through, and announcing it again would repeat its push on the outbox's unique index.
+    /// </summary>
+    [Fact]
+    public async Task A_wind_down_refund_that_went_through_is_not_re_driven_while_another_refund_keeps_the_order_partly_refunded()
+    {
+        const string OrderId = "b-other-pending";
+        await TestMethod(
+            setup: SetupAsync,
+            arrange: async ctx =>
+            {
+                var seeded = await SeedTwoCompaniesAsync(ctx, deactivateB: false, includeOpenOrdersAfterDate: false);
+                ctx.Orders.Add(CardOrderAfterTheDate(OrderId, seeded.ConfirmedCustomerId, creditApplied: 0m));
+                StampUnstampedAdded(ctx, B);
+                await ctx.CommitAsync(CancellationToken.None);
+            },
+            act: async provider =>
+            {
+                _stripe.RefuseRefunds = true;
+                var earlier = await IssueEarlierRefundAsync(provider, OrderId, 300m);
+                _stripe.RefuseRefunds = false;
+
+                var first = await RunSweepAsync(provider, B);
+                var afterFirst = await ReadRefundAsync(provider, OrderId);
+                var second = await RunSweepAsync(provider, B);
+                return (Earlier: earlier, First: first, AfterFirst: afterFirst, Second: second);
+            },
+            assert: async (ctx, runs) =>
+            {
+                Assert.False(runs.Earlier);
+
+                Assert.Equal(1, runs.First.OrdersCancelled);
+                Assert.Equal(1, runs.First.Refunded);
+                Assert.Equal(RefundStatus.Succeeded, runs.AfterFirst.Status);
+                Assert.Equal(700m, runs.AfterFirst.Amount);
+                Assert.Equal(PaymentStatus.PartiallyRefunded, runs.AfterFirst.PaymentStatus);
+
+                Assert.True(runs.Second.Ran);
+                Assert.Equal(0, runs.Second.RefundsRedriven);
+                Assert.Equal(0, runs.Second.RefundFailures);
+                Assert.Equal(
+                    [($"refund:{OrderId}:admin:earlier", 300m), (WindDownRefundKey(OrderId), 700m)],
+                    _stripe.RefundAttempts);
+                Assert.Single(await RefundPushesAsync(ctx, OrderId));
             },
             transactional: false);
     }
@@ -671,7 +843,7 @@ public sealed class CompanyWindDownSweepTests(PostgresContainerFixture fixture) 
 
     private static Order NewOrder(
         string id, string countryId, string currencyId, string userId, DateTime cleaningAt,
-        PaymentType paymentType, PaymentStatus paymentStatus, string tenantId)
+        PaymentType paymentType, PaymentStatus paymentStatus, string tenantId, decimal totalPrice = 100m)
     {
         var address = Address.Create("Hlavna 1", "Bratislava", "81101", countryId);
         address.TenantId = tenantId;
@@ -684,7 +856,7 @@ public sealed class CompanyWindDownSweepTests(PostgresContainerFixture fixture) 
             bathrooms: 1,
             cleaningDateTime: cleaningAt,
             paymentType: paymentType,
-            totalPrice: 100m,
+            totalPrice: totalPrice,
             currencyId: currencyId,
             paymentStatus: paymentStatus,
             userId: userId,
@@ -725,16 +897,59 @@ public sealed class CompanyWindDownSweepTests(PostgresContainerFixture fixture) 
         return await ctx.Tenants.AsNoTracking().Where(t => t.Id == B).Select(t => t.WindDownLastRunOn).SingleAsync();
     }
 
-    private sealed record RefundSnapshot(RefundStatus Status, PaymentStatus PaymentStatus, OrderStatus OrderStatus);
+    private sealed record RefundSnapshot(
+        RefundStatus Status, decimal Amount, decimal CreditReturned, PaymentStatus PaymentStatus, OrderStatus OrderStatus);
 
+    /// <summary>The wind-down's own refund of the order, on its own key, and the order beside it.</summary>
     private static async Task<RefundSnapshot> ReadRefundAsync(IServiceProvider provider, string orderId)
     {
         using var scope = provider.GetRequiredService<IServiceScopeFactory>().CreateScope();
         var ctx = scope.ServiceProvider.GetRequiredService<CleansiaDbContext>();
-        var refund = await ctx.Refunds.IgnoreQueryFilters().SingleAsync(r => r.OrderId == orderId);
+        var key = WindDownRefundKey(orderId);
+        var refund = await ctx.Refunds.IgnoreQueryFilters().SingleAsync(r => r.RefundKey == key);
+        var creditReturned = await ctx.CreditTransactions.IgnoreQueryFilters()
+            .Where(t => t.IdempotencyKey == CreditUnwind.KeyPrefix + key)
+            .SumAsync(t => t.Amount);
         var order = await ctx.Orders.IgnoreQueryFilters().SingleAsync(o => o.Id == orderId);
-        return new RefundSnapshot(refund.Status, order.PaymentStatus, order.CurrentStatus);
+        return new RefundSnapshot(refund.Status, refund.Amount, creditReturned, order.PaymentStatus, order.CurrentStatus);
     }
+
+    private static string WindDownRefundKey(string orderId) => $"refund:{orderId}:admin";
+
+    private static async Task<PaymentStatus> ReadPaymentStatusAsync(IServiceProvider provider, string orderId)
+    {
+        using var scope = provider.GetRequiredService<IServiceScopeFactory>().CreateScope();
+        var ctx = scope.ServiceProvider.GetRequiredService<CleansiaDbContext>();
+        return await ctx.Orders.IgnoreQueryFilters().Where(o => o.Id == orderId).Select(o => o.PaymentStatus).SingleAsync();
+    }
+
+    /// <summary>A 1 000 EUR card booking after the date, confirmed, part of it settled with credit.</summary>
+    private static Order CardOrderAfterTheDate(string id, string customerId, decimal creditApplied)
+    {
+        var order = NewOrder(id, SvkId, EurId, customerId, AfterCutoff, PaymentType.Card, PaymentStatus.Paid, B, totalPrice: 1000m);
+        order.AssignStripeSessionId($"cs_{id}");
+        order.ApplyCredit(creditApplied, "seed");
+        order.AddOrderStatus(OrderStatusTrack.Create(OrderStatus.Confirmed, order));
+        return order;
+    }
+
+    /// <summary>An administrator's earlier partial refund of the booking, through the real refund seam.</summary>
+    private static async Task<bool> IssueEarlierRefundAsync(IServiceProvider provider, string orderId, decimal amount)
+    {
+        using var scope = provider.GetRequiredService<IServiceScopeFactory>().CreateScope();
+        scope.ServiceProvider.GetRequiredService<Core.Domain.Repositories.ITenantProvider>().SetTenantOverride(B);
+        var result = await scope.ServiceProvider.GetRequiredService<IRefundService>().IssueRefundAsync(
+            new RefundRequest(orderId, amount, RefundReason.AdminDiscretion, AdminBId, RefundRequestId: "earlier"),
+            CancellationToken.None);
+        return result.IsSuccess;
+    }
+
+    private static Task<List<OutboxMessage>> RefundPushesAsync(CleansiaDbContext ctx, string orderId) =>
+        ctx.OutboxMessages.IgnoreQueryFilters()
+            .Where(m => m.QueueName == QueueNames.NotificationsDispatch
+                && m.Body.Contains(NotificationEventCatalog.OrderRefunded)
+                && m.Body.Contains(orderId))
+            .ToListAsync();
 
     private static IPdfService StubPdfService()
     {
@@ -810,6 +1025,7 @@ public sealed class CompanyWindDownSweepTests(PostgresContainerFixture fixture) 
         private readonly List<string> _refundKeys = [];
 
         public int RefundCalls { get; private set; }
+        public List<(string Key, decimal Amount)> RefundAttempts { get; } = [];
         public string? LastRefundKey { get; private set; }
         public bool RefuseRefunds { get; set; }
         public List<string> CancelledSubscriptions { get; } = [];
@@ -817,14 +1033,15 @@ public sealed class CompanyWindDownSweepTests(PostgresContainerFixture fixture) 
         public bool AllRefundKeysIdentical => _refundKeys.Distinct().Count() <= 1;
 
         public Task RefundCheckoutSessionAsync(string stripeSessionId, decimal amount, string idempotencyKey, CancellationToken cancellationToken)
-            => RecordRefund(idempotencyKey);
+            => RecordRefund(idempotencyKey, amount);
 
         public Task RefundPaymentIntentAsync(string paymentIntentId, decimal amount, string idempotencyKey, CancellationToken cancellationToken)
-            => RecordRefund(idempotencyKey);
+            => RecordRefund(idempotencyKey, amount);
 
-        private Task RecordRefund(string idempotencyKey)
+        private Task RecordRefund(string idempotencyKey, decimal amount)
         {
             RefundCalls++;
+            RefundAttempts.Add((idempotencyKey, amount));
             if (RefuseRefunds)
             {
                 throw new StripeException("simulated Stripe refund refusal");

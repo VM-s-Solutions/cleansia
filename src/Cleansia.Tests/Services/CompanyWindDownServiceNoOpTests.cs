@@ -39,6 +39,7 @@ public sealed class CompanyWindDownServiceNoOpTests
         _orders.Object,
         Mock.Of<ICountryConfigurationRepository>(),
         Mock.Of<IPlatformOrderCancellation>(),
+        Mock.Of<IRefundRepository>(),
         Mock.Of<IRecurringBookingTemplateRepository>(),
         Mock.Of<IUserMembershipRepository>(),
         Mock.Of<IStripeClient>(),

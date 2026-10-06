@@ -2905,7 +2905,7 @@
             },
             "refund_needs_retry": {
               "title": "Vrátenie peňazí treba zopakovať",
-              "body": "Vrátenie {{amount}} pri objednávke {{orderNumber}} už deň neprešlo a automaticky sa neopakuje. Skontrolujte ho v Stripe a potom ho zopakujte z reklamácie alebo z objednávky."
+              "body": "Vrátenie {{amount}} pri objednávke {{orderNumber}} neprešlo a automaticky sa neopakuje. Skontrolujte ho v Stripe. Ak v Stripe skončilo chybou, vráťte peniaze znova z objednávky, v plnej výške alebo čiastočne, alebo ich vyrovnajte kreditom; vrátenie, ktoré ešte čaká, možno zopakovať z reklamácie alebo z objednávky."
             },
             "refund_without_cancel": {
               "title": "Vrátenie peňazí bolo vyžiadané pre zrušenie, ktoré neprebehlo",

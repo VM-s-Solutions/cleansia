@@ -82,6 +82,7 @@ public sealed class RefundService(
         var refundable = CardRefundCeiling(order, consumed);
         Refund refund;
         var creditShare = split.Credit;
+        var retry = existing is not null;
         if (existing is not null)
         {
             // A prior Pending/Failed attempt exists — reuse its row (do NOT insert a second) and re-drive
@@ -163,10 +164,11 @@ public sealed class RefundService(
 
                 // The winner is Pending/Failed — re-drive its Stripe call (same key → Stripe replays once).
                 refund = winner;
+                retry = true;
             }
         }
 
-        return await SettleAsync(order, refund, creditShare, request.ActorId, cancellationToken);
+        return await SettleAsync(order, refund, creditShare, request.ActorId, retry, cancellationToken);
     }
 
     public async Task<BusinessResult<RefundResult>> RedriveAsync(
@@ -242,7 +244,7 @@ public sealed class RefundService(
             creditShare = CreditBesideCard(held, refund.Amount, creditShare, creditOnThisKey);
         }
 
-        return await SettleAsync(order, refund, creditShare, actorId, cancellationToken);
+        return await SettleAsync(order, refund, creditShare, actorId, retry: true, cancellationToken);
     }
 
     /// <summary>
@@ -304,20 +306,38 @@ public sealed class RefundService(
         || (ex is OperationCanceledException && !cancellationToken.IsCancellationRequested);
 
     private async Task<BusinessResult<RefundResult>> SettleAsync(
-        Order order, Refund refund, decimal creditShare, string actorId, CancellationToken cancellationToken)
+        Order order, Refund refund, decimal creditShare, string actorId, bool retry, CancellationToken cancellationToken)
     {
         var refundKey = refund.RefundKey;
         var stripe = stripeClientFactory.CreateClient();
+        StripeRefundSnapshot? made = null;
         try
         {
+            // Stripe forgets an idempotency key after about a day and would then pay this key as a new refund.
+            if (retry)
+            {
+                made = await stripe.FindRefundAsync(
+                    order.StripeSessionId, order.StripePaymentIntentId, refundKey, cancellationToken);
+            }
+
+            if (made is { Failed: true })
+            {
+                refund.MarkFailed();
+                logger.LogError(
+                    "Stripe failed refund {StripeRefundId} it made for order {OrderId} on refund {RefundId}; the refund is closed and nothing is sent again.",
+                    made.Id, order.Id, refund.Id);
+                return BusinessResult.Failure<RefundResult>(new Error(
+                    nameof(refund.Amount), BusinessErrorMessage.RefundFailed));
+            }
+
             // Route by charge surface: a web order carries a Checkout Session; a mobile (PaymentSheet)
             // order carries only a PaymentIntent (T-0347 suppresses its Session). Prefer the Session when
             // present so the established web refund path is byte-unchanged.
-            if (!string.IsNullOrEmpty(order.StripeSessionId))
+            if (made is null && !string.IsNullOrEmpty(order.StripeSessionId))
             {
                 await stripe.RefundCheckoutSessionAsync(order.StripeSessionId, refund.Amount, refundKey, cancellationToken);
             }
-            else
+            else if (made is null)
             {
                 await stripe.RefundPaymentIntentAsync(order.StripePaymentIntentId!, refund.Amount, refundKey, cancellationToken);
             }
@@ -326,8 +346,8 @@ public sealed class RefundService(
         {
             // Confirm-then-record (ADR-0006): the Refund row stays Pending and PaymentStatus is left
             // un-flipped, so a failed Stripe call never produces a phantom Refunded — and the caller gets a
-            // Failure, never a false "refund initiated". A later retry re-enters here on the same key and
-            // re-drives Stripe (idempotent), so the refund is eventually issued exactly once.
+            // Failure, never a false "refund initiated". A later retry re-enters here on the same key, records
+            // the refund Stripe made on it if there is one and sends it only if not, so it is issued exactly once.
             logger.LogError(ex,
                 "Stripe refund failed for order {OrderId} on key {RefundKey}; refund left pending for retry.",
                 order.Id, refundKey);
@@ -337,7 +357,7 @@ public sealed class RefundService(
 
         var succeededConsumed = await refundRepository.GetSucceededRefundTotalForOrderAsync(
             order.Id, cancellationToken);
-        refund.MarkSucceeded(stripeRefundId: null, confirmedOnUtc: DateTimeOffset.UtcNow);
+        refund.MarkSucceeded(stripeRefundId: made?.Id, confirmedOnUtc: DateTimeOffset.UtcNow, amount: made?.Amount);
 
         // The credit leg is independently idempotent; an erased account receives only its card refund.
         await ReturnCreditShareAsync(order, creditShare, refundKey, actorId, cancellationToken);

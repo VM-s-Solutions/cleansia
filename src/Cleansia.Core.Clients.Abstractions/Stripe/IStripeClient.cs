@@ -76,6 +76,19 @@ public interface IStripeClient
         string paymentIntentId, decimal amount, string idempotencyKey, CancellationToken cancellationToken);
 
     /// <summary>
+    /// The refund Stripe made on <paramref name="refundKey"/>, found among the refunds of the order's
+    /// PaymentIntent by the <c>RefundKey</c> metadata both refund calls above tag it with; null when Stripe
+    /// has none. A live refund is preferred over a failed or canceled one under the same key. Read-only.
+    /// <para><b>An unreachable Stripe THROWS and is never reported as "no refund"</b>, so a retry that must
+    /// not pay twice sends nothing. → /flows/cancellation-refund-dispute#refund</para>
+    /// </summary>
+    Task<StripeRefundSnapshot?> FindRefundAsync(
+        string? stripeSessionId,
+        string? stripePaymentIntentId,
+        string refundKey,
+        CancellationToken cancellationToken);
+
+    /// <summary>
     /// Create a new Stripe Customer record for a user who's making their first
     /// card payment. Caller is responsible for persisting the returned id on the
     /// User entity and reusing it on subsequent calls — this method does NOT
@@ -352,6 +365,12 @@ public enum StripePaymentState
 /// surface; null when there is nothing cancellable (no intent, or it is already canceled/settled).
 /// </summary>
 public record StripePaymentSnapshot(StripePaymentState State, string? OutstandingPaymentIntentId);
+
+/// <summary>
+/// Result of <see cref="IStripeClient.FindRefundAsync"/>: the refund Stripe made, the amount it pays, and
+/// whether Stripe failed or canceled it.
+/// </summary>
+public record StripeRefundSnapshot(string Id, decimal Amount, bool Failed);
 
 /// <summary>
 /// Result of <see cref="IStripeClient.CreateSetupIntentAsync"/>. The

@@ -18,7 +18,8 @@ namespace Cleansia.Core.AppServices.Features.Refunds;
 /// Every hour, re-drive the card refunds of cancelled orders that Stripe refused or could not be reached
 /// for, each on the key it was created with, and tell the company's administrators about any refund still
 /// owed and not through a day after it was asked for, saying whether this job retries it or they must
-/// (owner ruling 2026-09-28). A refund with nothing left to give back is closed instead.
+/// (owner ruling 2026-09-28). A refund with nothing left to give back is closed instead. A refund Stripe
+/// made on the key and then failed is closed too, and raised for a retry at once, however young.
 /// → /flows/cancellation-refund-dispute#refund
 /// </summary>
 public class RedrivePendingRefunds
@@ -136,6 +137,12 @@ public class RedrivePendingRefunds
                             is BusinessErrorMessage.RefundNothingRefundable
                             or BusinessErrorMessage.RefundOrderNotRefundable;
 
+                        var failedAtStripe = result is { IsSuccess: false }
+                            && result.Error?.Message == BusinessErrorMessage.RefundFailed
+                            && (await refundRepository.GetByIdAsync(row.Id, cancellationToken))?.Status
+                                == RefundStatus.Failed;
+                        var raisedAs = failedAtStripe ? AdminNotificationEventCatalog.RefundNeedsRetry : alertKey;
+
                         if (result is { IsSuccess: true })
                         {
                             wentThrough = true;
@@ -156,13 +163,14 @@ public class RedrivePendingRefunds
                                     cancellationToken);
                             }
                         }
-                        else if (!nothingOwed && row.CreatedOn <= alertBefore && !string.IsNullOrEmpty(row.TenantId)
+                        else if (!nothingOwed && (row.CreatedOn <= alertBefore || failedAtStripe)
+                            && !string.IsNullOrEmpty(row.TenantId)
                             && !await userNotificationRepository.AnyForEventAsync(
-                                row.TenantId, alertKey, "orderId", row.OrderId, cancellationToken))
+                                row.TenantId, raisedAs, "orderId", row.OrderId, cancellationToken))
                         {
                             await adminNotifier.NotifyAsync(
                                 new AdminEvent(
-                                    alertKey,
+                                    raisedAs,
                                     row.TenantId,
                                     Subject: row.Id,
                                     Args: new Dictionary<string, string>

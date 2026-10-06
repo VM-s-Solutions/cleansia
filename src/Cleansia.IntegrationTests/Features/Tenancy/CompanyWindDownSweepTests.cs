@@ -853,6 +853,7 @@ public sealed class CompanyWindDownSweepTests(PostgresContainerFixture fixture) 
         public Task<PaymentIntentResult> CreatePaymentIntentAsync(decimal amount, string currency, string stripeCustomerId, string orderId, string displayOrderNumber, string? savedCardId, string? currentPaymentIntentId, CancellationToken cancellationToken) => throw new NotSupportedException();
         public Task CancelPaymentIntentAsync(string paymentIntentId, CancellationToken cancellationToken) => throw new NotSupportedException();
         public Task CancelReplacedPaymentIntentAsync(string paymentIntentId, CancellationToken cancellationToken) => throw new NotSupportedException();
+        public Task<StripeRefundSnapshot?> FindRefundAsync(string? stripeSessionId, string? stripePaymentIntentId, string refundKey, CancellationToken cancellationToken) => Task.FromResult<StripeRefundSnapshot?>(null);
         public Task<StripePaymentSnapshot> GetPaymentSnapshotAsync(string? stripeSessionId, string? stripePaymentIntentId, CancellationToken cancellationToken) => throw new NotSupportedException();
         public Task<string?> FindCheckoutSessionOrderIdAsync(string paymentIntentId, CancellationToken cancellationToken) => throw new NotSupportedException();
         public Task<string> CreateEphemeralKeyAsync(string stripeCustomerId, CancellationToken cancellationToken) => throw new NotSupportedException();

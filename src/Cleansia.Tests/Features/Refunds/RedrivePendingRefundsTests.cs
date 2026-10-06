@@ -362,6 +362,55 @@ public class RedrivePendingRefundsTests
         Assert.Empty(_raised);
     }
 
+    private void RedriveRefused(Refund refund, bool closesTheRow)
+    {
+        _refunds.Setup(r => r.GetByIdAsync(refund.Id, It.IsAny<CancellationToken>())).ReturnsAsync(refund);
+        _refundService.Setup(s => s.RedriveAsync(refund.Id, "system", It.IsAny<CancellationToken>()))
+            .Callback(() =>
+            {
+                if (closesTheRow)
+                {
+                    refund.MarkFailed();
+                }
+            })
+            .ReturnsAsync(BusinessResult.Failure<RefundResult>(
+                new Error(nameof(Refund.Amount), BusinessErrorMessage.RefundFailed)));
+    }
+
+    /// <summary>
+    /// Stripe made the refund on the key and then failed it, so the re-drive closed the row and nothing retries
+    /// it. The administrators are told at once, however young the row, and asked to retry it.
+    /// </summary>
+    [Fact]
+    public async Task A_Refund_Stripe_Failed_Is_Raised_For_A_Retry_At_Once()
+    {
+        var refund = PendingRefund("order-1", TimeSpan.FromHours(2));
+        Arrange(refund);
+        RedriveRefused(refund, closesTheRow: true);
+
+        var result = await RunAsync();
+
+        Assert.Equal(1, result.Value!.Alerted);
+        var alert = Assert.Single(_raised);
+        Assert.Equal(AdminNotificationEventCatalog.RefundNeedsRetry, alert.Key);
+        Assert.Equal(refund.Id, alert.Subject);
+        Assert.Equal("order-1", alert.Args["orderId"]);
+        Assert.Equal("1000 CZK", alert.Args["amount"]);
+    }
+
+    [Fact]
+    public async Task A_Refused_Refund_Still_Pending_Inside_The_Day_Raises_Nothing()
+    {
+        var refund = PendingRefund("order-1", TimeSpan.FromHours(2));
+        Arrange(refund);
+        RedriveRefused(refund, closesTheRow: false);
+
+        var result = await RunAsync();
+
+        Assert.Equal(0, result.Value!.Alerted);
+        Assert.Empty(_raised);
+    }
+
     /// <summary>Settled by somebody else since this run read it: they have already told the customer.</summary>
     [Fact]
     public async Task A_Refund_Settled_Meanwhile_Is_Not_Announced_Again()

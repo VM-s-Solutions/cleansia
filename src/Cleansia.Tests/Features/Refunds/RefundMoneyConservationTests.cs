@@ -25,13 +25,14 @@ namespace Cleansia.Tests.Features.Refunds;
 /// Random card-and-credit orders taken through partial refunds, card disputes and complaints settled in
 /// credit by the real dispute resolution, then ended by a member's cancellation, an admin's full refund, a
 /// no-show or a platform cancellation, while Stripe pays, is unreachable, refuses, or pays and never answers,
-/// and a refund Stripe paid may lose its record at any step. Every refund still pending is then retried. The
-/// real refund seam and cancellations run over an in-memory ledger in which Stripe keeps what it was first
-/// asked on a key and refuses that key with another amount, and has no cap of its own, so the platform's
-/// ceilings are what is proven. What came back, the card refunds Stripe made plus the credit returned plus
-/// the settlements, never passes the price, and an order that ends still paid, in full or in part, gets back
-/// the price to the haléř. Once the retries have run, every refund Stripe made is on record:
-/// a retry that asks another amount on a key Stripe already paid is refused there every time.
+/// and a refund Stripe paid may lose its record at any step. A day may then pass, after which Stripe has
+/// forgotten every idempotency key but still lists the refunds it made, and every refund still pending is
+/// retried. The real refund seam and cancellations run over an in-memory ledger in which Stripe keeps what it
+/// was first asked on a key and refuses that key with another amount while it remembers it, and has no cap of
+/// its own, so the platform's ceilings are what is proven. What came back, the card refunds Stripe made plus
+/// the credit returned plus the settlements, never passes the price, and an order that ends still paid, in
+/// full or in part, gets back the price to the haléř. No key is ever paid twice, and once the retries have run,
+/// every refund Stripe made is on record.
 /// </summary>
 public sealed class RefundMoneyConservationTests
 {
@@ -44,6 +45,7 @@ public sealed class RefundMoneyConservationTests
         var over = new List<string>();
         var under = new List<string>();
         var unrecorded = new List<string>();
+        var paidTwice = new List<string>();
         for (var i = 0; i < Orders; i++)
         {
             var world = new World(random, $"order-{i}");
@@ -61,12 +63,19 @@ public sealed class RefundMoneyConservationTests
             {
                 unrecorded.Add(world.Describe());
             }
+
+            if (world.PaidAKeyTwice)
+            {
+                paidTwice.Add(world.Describe());
+            }
         }
 
         Assert.True(over.Count == 0, $"{over.Count} orders gave back more than was paid:\n{string.Join('\n', over.Take(10))}");
         Assert.True(under.Count == 0, $"{under.Count} orders gave back less than was paid:\n{string.Join('\n', under.Take(10))}");
         Assert.True(unrecorded.Count == 0,
             $"{unrecorded.Count} orders left a refund Stripe made unrecorded:\n{string.Join('\n', unrecorded.Take(10))}");
+        Assert.True(paidTwice.Count == 0,
+            $"{paidTwice.Count} orders had Stripe pay one key twice:\n{string.Join('\n', paidTwice.Take(10))}");
     }
 
     private enum StripeAnswer { Pays, Unreachable, Refuses, PaysThenTimesOut }
@@ -91,7 +100,8 @@ public sealed class RefundMoneyConservationTests
         private readonly Random _random;
         private readonly List<RefundRow> _rows = [];
         private readonly List<(string Key, CreditTransactionReason Reason, decimal Amount)> _credit = [];
-        private readonly Dictionary<string, decimal> _stripeRefunded = [];
+        private readonly List<(string Id, string Key, decimal Amount)> _stripeRefunds = [];
+        private readonly Dictionary<string, decimal> _stripeKeys = [];
         private readonly Dictionary<string, RefundRequest> _asked = [];
         private readonly List<string> _steps = [];
         private readonly Mock<IStripeClient> _stripe = new();
@@ -132,6 +142,9 @@ public sealed class RefundMoneyConservationTests
             _stripe.Setup(s => s.RefundPaymentIntentAsync(
                     It.IsAny<string>(), It.IsAny<decimal>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
                 .Returns((string _, decimal amount, string key, CancellationToken _) => Stripe(amount, key));
+            _stripe.Setup(s => s.FindRefundAsync(
+                    It.IsAny<string?>(), It.IsAny<string?>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
+                .Returns((string? _, string? _, string key, CancellationToken _) => FindAsync(key));
             _creditRepository
                 .Setup(c => c.TryReturnAsync(UserId, It.IsAny<string>(), It.IsAny<decimal>(), It.IsAny<string>(),
                     It.IsAny<string>(), It.IsAny<CancellationToken>(), Order.Id, It.IsAny<string?>()))
@@ -162,14 +175,16 @@ public sealed class RefundMoneyConservationTests
 
         public decimal Paid => Order.TotalPrice;
 
-        public decimal Received => _stripeRefunded.Values.Sum()
+        public decimal Received => _stripeRefunds.Sum(r => r.Amount)
             + Sum(CreditTransactionReason.OrderPaymentReturned)
             + Sum(CreditTransactionReason.DisputeSettlement);
 
         public bool MustGiveBackAll { get; private set; }
 
         public bool LeftAStripeRefundUnrecorded =>
-            _rows.Any(r => r.Status != RefundStatus.Succeeded && _stripeRefunded.ContainsKey(r.Key));
+            _rows.Any(r => r.Status != RefundStatus.Succeeded && _stripeRefunds.Any(s => s.Key == r.Key));
+
+        public bool PaidAKeyTwice => _stripeRefunds.GroupBy(r => r.Key).Any(g => g.Count() > 1);
 
         public string Describe() =>
             $"paid {Paid} received {Received}: {string.Join("; ", _steps)}";
@@ -209,6 +224,12 @@ public sealed class RefundMoneyConservationTests
                 await SettleAsync();
             }
 
+            if (_random.Next(3) == 0)
+            {
+                _stripeKeys.Clear();
+                _steps.Add("a day passes");
+            }
+
             // The hourly re-drive finishes a cancellation's own refund; any other is retried by the action that
             // asked for it, as the administrators are asked to.
             for (var round = 0; round < 3; round++)
@@ -222,9 +243,16 @@ public sealed class RefundMoneyConservationTests
                     }
 
                     var uow = new UnitOfWork(this);
-                    var result = await uow.RefundService().RedriveAsync(row.Id, "system", CancellationToken.None);
-                    await uow.CommitAsync();
-                    _steps.Add($"redrive {row.Key} -> {(result.IsSuccess ? result.Value!.Amount.ToString() : result.Error!.Message)}");
+                    try
+                    {
+                        var result = await uow.RefundService().RedriveAsync(row.Id, "system", CancellationToken.None);
+                        await uow.CommitAsync();
+                        _steps.Add($"redrive {row.Key} -> {(result.IsSuccess ? result.Value!.Amount.ToString() : result.Error!.Message)}");
+                    }
+                    catch (HttpRequestException ex)
+                    {
+                        _steps.Add($"redrive {row.Key} -> {ex.GetType().Name}");
+                    }
                 }
             }
         }
@@ -390,7 +418,7 @@ public sealed class RefundMoneyConservationTests
         {
             var answer = _nextAnswer;
             _nextAnswer = StripeAnswer.Pays;
-            if (_stripeRefunded.TryGetValue(key, out var took))
+            if (_stripeKeys.TryGetValue(key, out var took))
             {
                 return took == amount
                     ? Task.CompletedTask
@@ -404,12 +432,44 @@ public sealed class RefundMoneyConservationTests
                 case StripeAnswer.Refuses:
                     return Task.FromException(new StripeException("card network unavailable"));
                 case StripeAnswer.PaysThenTimesOut:
-                    _stripeRefunded[key] = amount;
+                    Pay(amount, key);
                     return Task.FromException(new HttpRequestException("timed out"));
                 default:
-                    _stripeRefunded[key] = amount;
+                    Pay(amount, key);
                     return Task.CompletedTask;
             }
+        }
+
+        private void Pay(decimal amount, string key)
+        {
+            _stripeKeys[key] = amount;
+            _stripeRefunds.Add(($"re_{_stripeRefunds.Count + 1}", key, amount));
+        }
+
+        /// <summary>
+        /// The lookup is the first call of the retry it serves: Stripe unreachable or refusing answers it, and a
+        /// refund it finds ends the retry, so only a lookup that finds nothing leaves the answer to the refund.
+        /// </summary>
+        private Task<StripeRefundSnapshot?> FindAsync(string key)
+        {
+            switch (_nextAnswer)
+            {
+                case StripeAnswer.Unreachable:
+                    _nextAnswer = StripeAnswer.Pays;
+                    return Task.FromException<StripeRefundSnapshot?>(new HttpRequestException("connection reset"));
+                case StripeAnswer.Refuses:
+                    _nextAnswer = StripeAnswer.Pays;
+                    return Task.FromException<StripeRefundSnapshot?>(new StripeException("card network unavailable"));
+            }
+
+            var made = _stripeRefunds.FirstOrDefault(r => r.Key == key);
+            if (made.Id is null)
+            {
+                return Task.FromResult<StripeRefundSnapshot?>(null);
+            }
+
+            _nextAnswer = StripeAnswer.Pays;
+            return Task.FromResult<StripeRefundSnapshot?>(new StripeRefundSnapshot(made.Id, made.Amount, Failed: false));
         }
 
         private StripeAnswer RandomAnswer() => _random.Next(10) switch

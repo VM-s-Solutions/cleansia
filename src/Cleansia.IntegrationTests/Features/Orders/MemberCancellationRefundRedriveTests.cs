@@ -7,6 +7,7 @@ using Cleansia.Core.Clients.Abstractions.Stripe;
 using Cleansia.Core.Domain.Credit;
 using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Internationalization;
+using Cleansia.Core.Domain.Notifications;
 using Cleansia.Core.Domain.Orders;
 using Cleansia.Core.Domain.Repositories;
 using Cleansia.Core.Domain.Users;
@@ -180,12 +181,12 @@ public class MemberCancellationRefundRedriveTests(PostgresContainerFixture fixtu
         return result.Response;
     }
 
-    private async Task<RedrivePendingRefunds.Response> RedriveAsync()
+    private async Task<RedrivePendingRefunds.Response> RedriveAsync(int hoursOld = 2, IAdminNotifier? adminNotifier = null)
     {
         await using (var ctx = NewContext())
         {
             await ctx.Database.ExecuteSqlRawAsync(
-                "UPDATE \"Refunds\" SET \"CreatedOn\" = NOW() - INTERVAL '2 hours'");
+                "UPDATE \"Refunds\" SET \"CreatedOn\" = NOW() - {0} * INTERVAL '1 hour'", hoursOld);
         }
 
         await using var watchdogContext = NewContext();
@@ -193,7 +194,7 @@ public class MemberCancellationRefundRedriveTests(PostgresContainerFixture fixtu
             new RefundRepository(watchdogContext),
             NewRefundService(watchdogContext),
             NewProducer(watchdogContext),
-            Mock.Of<IAdminNotifier>(),
+            adminNotifier ?? Mock.Of<IAdminNotifier>(),
             new UserNotificationRepository(watchdogContext),
             new FixedTenantProvider(TestTenants.Default),
             watchdogContext,
@@ -309,6 +310,76 @@ public class MemberCancellationRefundRedriveTests(PostgresContainerFixture fixtu
             Assert.Equal(1000m, refund.Amount + creditReturned + settled);
             Assert.Equal(account.Balance, account.Transactions.Sum(t => t.Amount));
         }
+    }
+
+    private async Task<string> CancelWhileStripeTimesOutAsync()
+    {
+        await ResetAsync();
+        var userId = await SeedAsync();
+        _stripe.Setup(s => s.RefundPaymentIntentAsync(
+                PaymentIntentId, It.IsAny<decimal>(), RefundKey, It.IsAny<CancellationToken>()))
+            .ThrowsAsync(new HttpRequestException("timed out"));
+        Assert.True((await CancelAsync(userId)).RefundPending);
+        return userId;
+    }
+
+    private void StripeLists(bool failed) =>
+        _stripe.Setup(s => s.FindRefundAsync(
+                It.IsAny<string?>(), PaymentIntentId, RefundKey, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new StripeRefundSnapshot("re_1", CardShare, failed));
+
+    /// <summary>
+    /// Stripe took the card refund but its answer never came back, and a day later Stripe has forgotten the key.
+    /// The re-drive finds the refund Stripe lists under the key and records it, so the card is never paid twice.
+    /// </summary>
+    [Fact]
+    public async Task A_Redrive_Records_The_Refund_Stripe_Lists_Under_Its_Key_And_Sends_Nothing()
+    {
+        var userId = await CancelWhileStripeTimesOutAsync();
+        StripeLists(failed: false);
+
+        var redrive = await RedriveAsync(hoursOld: 25);
+
+        Assert.Equal(1, redrive.Redriven);
+        _stripe.Verify(s => s.RefundPaymentIntentAsync(
+            It.IsAny<string>(), It.IsAny<decimal>(), It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Once);
+        await using var ctx = NewContext();
+        var refund = await ctx.Refunds.IgnoreQueryFilters().AsNoTracking().SingleAsync();
+        Assert.Equal(RefundStatus.Succeeded, refund.Status);
+        Assert.Equal("re_1", refund.StripeRefundId);
+        Assert.Equal(CardShare, refund.Amount);
+        var order = await ctx.Orders.IgnoreQueryFilters().AsNoTracking().SingleAsync(o => o.Id == OrderId);
+        Assert.Equal(PaymentStatus.Refunded, order.PaymentStatus);
+        var account = await ctx.CreditAccounts.IgnoreQueryFilters().AsNoTracking()
+            .Include(a => a.Transactions)
+            .SingleAsync(a => a.UserId == userId && a.CurrencyId == CzkId);
+        Assert.Single(account.Transactions, t => t.Reason == CreditTransactionReason.OrderPaymentReturned);
+    }
+
+    /// <summary>
+    /// Stripe made the card refund and then failed it. The re-drive sends nothing, closes the row, and the
+    /// administrators are asked to retry it at once, though the row is two hours old.
+    /// </summary>
+    [Fact]
+    public async Task A_Redrive_That_Finds_Stripe_Failed_The_Refund_Closes_It_And_Raises_It_At_Once()
+    {
+        await CancelWhileStripeTimesOutAsync();
+        StripeLists(failed: true);
+        var admins = new Mock<IAdminNotifier>();
+
+        var redrive = await RedriveAsync(hoursOld: 2, admins.Object);
+
+        Assert.Equal(0, redrive.Redriven);
+        Assert.Equal(1, redrive.Alerted);
+        _stripe.Verify(s => s.RefundPaymentIntentAsync(
+            It.IsAny<string>(), It.IsAny<decimal>(), It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Once);
+        await using var ctx = NewContext();
+        var refund = await ctx.Refunds.IgnoreQueryFilters().AsNoTracking().SingleAsync();
+        Assert.Equal(RefundStatus.Failed, refund.Status);
+        admins.Verify(n => n.NotifyAsync(
+            It.Is<AdminEvent>(e => e.Key == AdminNotificationEventCatalog.RefundNeedsRetry && e.Subject == refund.Id),
+            It.IsAny<CancellationToken>()), Times.Once);
+        admins.VerifyNoOtherCalls();
     }
 
     private async Task PartlyRefundAsync(decimal amount)

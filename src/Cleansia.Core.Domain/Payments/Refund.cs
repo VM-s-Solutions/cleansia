@@ -92,13 +92,19 @@ public class Refund : TenantAuditable
     /// <summary>
     /// Stamp the refund as confirmed by Stripe (confirm-then-record, ADR-0006 D7). Called only after
     /// the Stripe refund call returns, so a recorded <see cref="RefundStatus.Succeeded"/> row always
-    /// means money actually moved.
+    /// means money actually moved. <paramref name="amount"/> is what Stripe says it paid when a retry
+    /// finds the refund there, which may be more than a row clamped since.
     /// </summary>
-    public Refund MarkSucceeded(string? stripeRefundId, DateTimeOffset confirmedOnUtc)
+    public Refund MarkSucceeded(string? stripeRefundId, DateTimeOffset confirmedOnUtc, decimal? amount = null)
     {
         StripeRefundId = stripeRefundId;
         Status = RefundStatus.Succeeded;
         ConfirmedOn = confirmedOnUtc;
+        if (amount is { } paid)
+        {
+            Amount = Math.Round(paid, 2, MidpointRounding.AwayFromZero);
+        }
+
         return this;
     }
 

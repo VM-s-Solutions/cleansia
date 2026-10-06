@@ -91,9 +91,10 @@ public class Refund : TenantAuditable
 
     /// <summary>
     /// Stamp the refund as confirmed by Stripe (confirm-then-record, ADR-0006 D7). Called only after
-    /// the Stripe refund call returns, so a recorded <see cref="RefundStatus.Succeeded"/> row always
-    /// means money actually moved. <paramref name="amount"/> is what Stripe says it paid when a retry
-    /// finds the refund there, which may be more than a row clamped since.
+    /// the Stripe refund call returns, or when a retry finds the refund Stripe made on its key, so a
+    /// recorded <see cref="RefundStatus.Succeeded"/> row always means money actually moved.
+    /// <paramref name="amount"/> is what Stripe says it paid when a retry finds the refund there, which
+    /// may be more than a row clamped since.
     /// </summary>
     public Refund MarkSucceeded(string? stripeRefundId, DateTimeOffset confirmedOnUtc, decimal? amount = null)
     {
@@ -110,7 +111,9 @@ public class Refund : TenantAuditable
 
     /// <summary>
     /// Close a refund there is nothing left to give back for, so the hourly re-drive stops selecting it.
-    /// The action that asked for it can still retry; a retry re-checks the ceiling first.
+    /// The action that asked for it can still retry; a retry re-checks the ceiling first. It also closes a
+    /// refund Stripe failed or canceled on its key: that money is still owed, and every retry on the same
+    /// key closes it again, so it can only go back on another key.
     /// </summary>
     public Refund MarkFailed()
     {

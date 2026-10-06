@@ -179,7 +179,7 @@ public class AdminOverrideOrderStatus
 
                 // The debt is the price of a cleaning done and not paid for (terms §8), so only an order in
                 // progress opens it; from an earlier status the customer may have paid a cleaner who never
-                // pressed Start. → /product/business-rules#card-guarantee
+                // pressed Start. → /product/business-rules#cash-not-paid
                 if (currentStatus == OrderStatus.InProgress
                     && order is { PaymentType: PaymentType.Cash, PaymentStatus: PaymentStatus.Pending, UserId: not null })
                 {

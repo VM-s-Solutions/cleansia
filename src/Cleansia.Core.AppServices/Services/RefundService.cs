@@ -39,9 +39,10 @@ public sealed class RefundService(
 
         // Resolve-to-existing ONLY for a terminally-Succeeded refund. A Pending/Failed row from a prior
         // attempt whose Stripe call never confirmed must NOT short-circuit as success — it has to be
-        // re-driven through Stripe (the deterministic refundKey is Stripe's idempotency key, so a replay
-        // issues the refund exactly once). Returning a Pending row as success is the phantom-refund bug:
-        // the money never moved but the caller would notify the customer it did.
+        // retried: the retry first records the refund Stripe lists under the key and sends on the same key only
+        // when Stripe has none, because Stripe's own idempotency replay lasts only about a day. Returning a
+        // Pending row as success is the phantom-refund bug: the money never moved but the caller would notify
+        // the customer it did.
         var existing = await refundRepository.GetByRefundKeyAsync(refundKey, cancellationToken);
         if (existing is { Status: RefundStatus.Succeeded })
         {
@@ -165,7 +166,7 @@ public sealed class RefundService(
                     return await ResolveToExistingAsync(winner, cancellationToken);
                 }
 
-                // The winner is Pending/Failed — re-drive its Stripe call (same key → Stripe replays once).
+                // The winner is Pending/Failed: retry it, recording the refund Stripe made on its key if there is one.
                 refund = winner;
                 retry = true;
             }
@@ -255,9 +256,9 @@ public sealed class RefundService(
     /// confirmed, and the pending refunds it must count. A pending refund counts only those claimed before it.
     /// One claimed later either counted its card as owed or, claimed at the same moment, did not see it, and
     /// counting that one here too would leave the two waiting on each other for good. So the older is retried
-    /// on its own key: Stripe replays it if it paid it, pays it if it paid neither, and refuses it if it paid
-    /// the younger, whose retry still counts the older. A closed refund was counted by no later claim, so it
-    /// counts every pending one.
+    /// on its own key: its retry records it if Stripe lists it under its key, Stripe pays it if it paid neither,
+    /// and refuses it if it paid the younger, whose retry still counts the older. A closed refund was counted
+    /// by no later claim, so it counts every pending one.
     ///
     /// <para>The card ceiling only. The slice held to what the sale has left still counts every pending refund:
     /// a pending refund's credit leg waits for its card, and a claim made after it was sized on what was left

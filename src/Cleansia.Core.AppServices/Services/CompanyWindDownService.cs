@@ -333,9 +333,9 @@ public sealed class CompanyWindDownService(
 
     /// <summary>
     /// A card order an earlier run cancelled whose money has not come back yet: the refund key resolves
-    /// to the pending row and Stripe replays once. An order cancelled by this very run is left to the
-    /// next one — a refusal seconds old is not answered by asking again seconds later. Empty on a
-    /// company whose refunds all succeeded.
+    /// to the pending row, whose retry records the refund Stripe made on it or sends it once. An order
+    /// cancelled by this very run is left to the next one — a refusal seconds old is not answered by
+    /// asking again seconds later. Empty on a company whose refunds all succeeded.
     /// </summary>
     private async Task<(int Redriven, int Failures)> RedriveRefundsAsync(
         Tenant tenant, IReadOnlySet<string> cancelledThisRun, CancellationToken cancellationToken)

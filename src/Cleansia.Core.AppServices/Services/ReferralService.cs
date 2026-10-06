@@ -20,10 +20,10 @@ namespace Cleansia.Core.AppServices.Services;
 
 /// <summary>
 /// Coordinates referral-code generation + acceptance, and the credit grants
-/// when an invitee completes their first order — or the hold for review when
-/// the two accounts look like one person. Mirrors the
-/// <see cref="LoyaltyService"/> shape: handlers call into this, the service
-/// keeps the business rules.
+/// when an invitee completes their first order not reported unpaid at the
+/// door — or the hold for review when the two accounts look like one person.
+/// Mirrors the <see cref="LoyaltyService"/> shape: handlers call into this, the
+/// service keeps the business rules.
 /// </summary>
 public sealed class ReferralService(
     IReferralCodeRepository referralCodeRepository,

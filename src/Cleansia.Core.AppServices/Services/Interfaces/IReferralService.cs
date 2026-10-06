@@ -62,10 +62,12 @@ public interface IReferralService
     /// <summary>
     /// Called from <c>CompleteOrder.Handler</c>. If the user has a pending
     /// (Accepted, not held) referral and this is their first completed order within
-    /// the qualifying window, either holds it for an administrator — when the two
-    /// accounts share an address, a phone or an inbox — or credits each side the
-    /// <c>ReferralCredit</c> of the currency it books in and flips the referral to
-    /// Qualified. Idempotent — safe to call twice for the same orderId.
+    /// the qualifying window, leaving aside any reported unpaid at the door (an
+    /// UnpaidCash receivable, whatever its status), either holds it for an
+    /// administrator — when the two accounts share an address, a phone or an
+    /// inbox — or credits each side the <c>ReferralCredit</c> of the currency it
+    /// books in and flips the referral to Qualified. Idempotent — safe to call
+    /// twice for the same orderId.
     /// </summary>
     Task ProcessOrderCompletedAsync(string orderId, string? userId, CancellationToken cancellationToken);
 

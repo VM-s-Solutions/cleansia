@@ -228,8 +228,8 @@ public class StripeClient : IStripeClient
             Reason = global::Stripe.RefundReasons.RequestedByCustomer,
             Metadata = new Dictionary<string, string> { { RefundKeyMetadataKey, idempotencyKey } },
         };
-        // The caller's deterministic refund key is the idempotency key (ADR-0006 D3): a retry of the
-        // same logical refund replays Stripe's original refund instead of issuing a second one.
+        // The caller's deterministic refund key is the idempotency key (ADR-0006 D3), so Stripe replays its
+        // original refund to a retry for about a day; the RefundKey metadata is what a later retry finds it by.
         var requestOptions = new RequestOptions { IdempotencyKey = idempotencyKey };
         await ClassifyAsync(
             nameof(RefundCheckoutSessionAsync),
@@ -247,8 +247,8 @@ public class StripeClient : IStripeClient
             Reason = global::Stripe.RefundReasons.RequestedByCustomer,
             Metadata = new Dictionary<string, string> { { RefundKeyMetadataKey, idempotencyKey } },
         };
-        // The caller's deterministic refund key is the idempotency key (ADR-0006 D3): a retry of the
-        // same logical refund replays Stripe's original refund instead of issuing a second one.
+        // The caller's deterministic refund key is the idempotency key (ADR-0006 D3), so Stripe replays its
+        // original refund to a retry for about a day; the RefundKey metadata is what a later retry finds it by.
         var requestOptions = new RequestOptions { IdempotencyKey = idempotencyKey };
         await ClassifyAsync(
             nameof(RefundPaymentIntentAsync),

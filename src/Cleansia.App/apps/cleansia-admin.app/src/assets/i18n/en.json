@@ -3279,7 +3279,7 @@
       "action_failed": "The dispute action could not be completed. Please try again.",
       "already_exists": "Dispute already exists for this order",
       "already_resolved": "This dispute has already been resolved and cannot be changed.",
-      "refund_pending": "This dispute's card refund has not gone through yet, so it cannot be closed. Check the refund in Stripe, then resolve the dispute again to retry it.",
+      "refund_pending": "This dispute's card refund has not gone through yet, so the dispute cannot be closed or resolved without it. Check the refund in Stripe, then resolve the dispute again with a refund amount to retry it.",
       "invalid_refund_amount": "Invalid refund amount",
       "invalid_status_transition": "This status change is not allowed for the current dispute state.",
       "max_length_exceeded": "Maximum length exceeded",

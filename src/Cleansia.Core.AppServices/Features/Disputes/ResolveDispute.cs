@@ -121,6 +121,14 @@ public class ResolveDispute
                 return BusinessResult.Failure(new Error(nameof(request.DisputeId), BusinessErrorMessage.DisputeAlreadyResolved));
             }
 
+            // Resolving again is the only retry of a card refund Stripe has not confirmed, so while one is pending
+            // the dispute ends only through it: a resolve that moves no card money would leave it pending for good.
+            var refundPending = await RefundService.HasPendingDisputeRefundAsync(refundRepository, dispute, cancellationToken);
+            if (refundPending && request.RefundAmount is not > 0m)
+            {
+                return BusinessResult.Failure(new Error(nameof(request.RefundAmount), BusinessErrorMessage.DisputeRefundPending));
+            }
+
             var actorId = userSessionProvider.GetUserId() ?? string.Empty;
 
             var charge = request.ChargeToCleaner;
@@ -140,6 +148,7 @@ public class ResolveDispute
             RefundResult? refundResult = null;
             decimal? creditSettled = null;
             if (request.RefundAmount is > 0m
+                && !refundPending
                 && dispute.SettlementPreference == DisputeSettlementPreference.Credit
                 && !string.IsNullOrEmpty(dispute.UserId))
             {

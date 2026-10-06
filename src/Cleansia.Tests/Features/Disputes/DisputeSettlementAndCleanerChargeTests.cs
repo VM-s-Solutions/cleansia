@@ -9,6 +9,7 @@ using Cleansia.Core.Domain.Disputes;
 using Cleansia.Core.Domain.EmployeePayroll;
 using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Orders;
+using Cleansia.Core.Domain.Payments;
 using Cleansia.Core.Domain.Repositories;
 using Cleansia.Infra.Common.Validations;
 using Moq;
@@ -281,6 +282,50 @@ public sealed class DisputeSettlementAndCleanerChargeTests
         Assert.Equal(DisputeStatus.Resolved, dispute.Status);
     }
 
+    /// <summary>
+    /// Stripe refused this dispute's card refund of 1000, so the row waits pending on the dispute's key and
+    /// resolving again is its only retry. A resolve that moves no card money would end the dispute with the
+    /// customer owed the 1000 and nothing left to send it, so it is refused and the dispute stays open.
+    /// </summary>
+    [Theory]
+    [InlineData(null)]
+    [InlineData(0d)]
+    public async Task A_Dispute_Whose_Card_Refund_Is_Pending_Is_Not_Resolved_Without_A_Refund(double? refundAmount)
+    {
+        var dispute = ArrangeDispute(DisputeSettlementPreference.CardRefund);
+        ArrangePendingDisputeRefund(1000m);
+
+        var result = await Handler().Handle(
+            new ResolveDispute.Command(DisputeId, (decimal?)refundAmount, "no refund"), CancellationToken.None);
+
+        Assert.Equal(BusinessErrorMessage.DisputeRefundPending, result.Error?.Message);
+        Assert.Equal(DisputeStatus.Pending, dispute.Status);
+        _refunds.VerifyNoOtherCalls();
+        AssertNoCreditGranted();
+    }
+
+    /// <summary>
+    /// The customer chose credit, but the first resolve went to the card, which Stripe refused. The settlement's
+    /// tender was decided then: resolving again retries the pending card refund on the dispute's key instead of
+    /// granting credit beside a card refund Stripe may already have paid.
+    /// </summary>
+    [Fact]
+    public async Task A_Dispute_Whose_Card_Refund_Is_Pending_Retries_The_Card_Even_When_The_Customer_Chose_Credit()
+    {
+        var dispute = ArrangeDispute(DisputeSettlementPreference.Credit);
+        ArrangeCreditAccount();
+        ArrangePendingDisputeRefund(300m);
+
+        var result = await Handler().Handle(new ResolveDispute.Command(DisputeId, 300m, "justified"), CancellationToken.None);
+
+        Assert.True(result.IsSuccess, result.Error?.Message);
+        _refunds.Verify(s => s.IssueRefundAsync(
+            It.Is<RefundRequest>(r => r.DisputeId == DisputeId), It.IsAny<CancellationToken>()), Times.Once);
+        AssertNoCreditGranted();
+        Assert.Equal(300m, dispute.CardRefundedAmount);
+        Assert.Equal(DisputeStatus.Resolved, dispute.Status);
+    }
+
     [Fact]
     public async Task A_Refund_Alone_Never_Touches_The_Cleaners_Pay()
     {
@@ -384,6 +429,13 @@ public sealed class DisputeSettlementAndCleanerChargeTests
         _creditAccounts
             .Setup(r => r.GetDisputeSettledTotalForOrderAsync(OrderId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(amount);
+
+    private void ArrangePendingDisputeRefund(decimal amount) =>
+        _refundRows
+            .Setup(r => r.GetByRefundKeyAsync($"refund:{OrderId}:dispute:{DisputeId}", It.IsAny<CancellationToken>()))
+            .ReturnsAsync(Refund.Create(
+                OrderId, $"refund:{OrderId}:dispute:{DisputeId}", amount, "CZK", RefundReason.DisputeResolution,
+                RefundSource.AppRefund, disputeId: DisputeId));
 
     private void AssertNoCreditGranted() =>
         _creditAccounts.Verify(

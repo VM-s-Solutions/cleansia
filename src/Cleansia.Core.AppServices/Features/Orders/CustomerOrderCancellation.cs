@@ -71,6 +71,14 @@ public sealed class CustomerOrderCancellation(
                     MidpointRounding.AwayFromZero)
                 : 0m;
             cancellationRefund = Math.Max(0m, left - pendingCredit - assessment.FeeAmount);
+
+            // A guest's own cancel that never committed left its claim on this key, and a retry re-sends that
+            // claim at its own amount, so that is what is recorded, as the platform replay does.
+            if (await refundRepository.GetByRefundKeyAsync(refundKey, cancellationToken) is { } claimed)
+            {
+                cancellationRefund = Math.Min(left,
+                    claimed.Amount + await creditAccountRepository.GetReturnedForRefundAsync(refundKey, cancellationToken));
+            }
         }
 
         var request = new RefundRequest(

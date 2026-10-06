@@ -14,7 +14,7 @@ namespace Cleansia.Core.AppServices.Features.Orders;
 /// </summary>
 internal static class CustomerCashStanding
 {
-    /// <summary>Owed to any operating company, like the open-bookings limit.</summary>
+    /// <summary>Owed to any operating company but a frozen one, which can no longer be paid.</summary>
     public static async Task<bool> OwesNothingAsync(
         IReceivableRepository receivableRepository, string userId, CancellationToken cancellationToken)
         => !await receivableRepository.HasOpenForUserAsync(userId, cancellationToken);

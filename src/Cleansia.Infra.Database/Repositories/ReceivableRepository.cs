@@ -10,20 +10,24 @@ public class ReceivableRepository(CleansiaDbContext context)
 {
     public Task<bool> HasOpenForUserAsync(string userId, CancellationToken cancellationToken)
     {
-        return GetQueryableIgnoringTenant()
-            .AnyAsync(r => r.UserId == userId && r.Status == ReceivableStatus.Open, cancellationToken);
+        return OpenForUserIgnoringTenant(userId).AnyAsync(cancellationToken);
     }
 
     public async Task<IReadOnlyList<Receivable>> GetOpenForUserAsync(string userId, CancellationToken cancellationToken)
     {
-        return await GetQueryableIgnoringTenant()
+        return await OpenForUserIgnoringTenant(userId)
             .Include(r => r.Order)
             .Include(r => r.Currency)
-            .Where(r => r.UserId == userId && r.Status == ReceivableStatus.Open)
             .OrderBy(r => r.CreatedOn)
             .AsNoTracking()
             .ToListAsync(cancellationToken);
     }
+
+    // A frozen company's books refuse the payment's write and the write-off's alike, so its debt can never be closed.
+    private IQueryable<Receivable> OpenForUserIgnoringTenant(string userId) =>
+        GetQueryableIgnoringTenant()
+            .Where(r => r.UserId == userId && r.Status == ReceivableStatus.Open)
+            .Where(r => Context.Tenants.Any(t => t.Id == r.TenantId && t.ArchiveRequestedOn == null));
 
     public Task<Receivable?> GetUnpaidCashForOrderAsync(string orderId, CancellationToken cancellationToken)
     {

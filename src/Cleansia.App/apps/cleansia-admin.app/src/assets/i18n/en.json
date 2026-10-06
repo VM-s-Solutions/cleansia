@@ -662,7 +662,7 @@
         },
         "override_status": {
           "action": "Override status",
-          "confirm": "Manually set the order status. Only valid transitions are allowed.",
+          "confirm": "Manually set the order status. Only valid transitions are allowed. Completing a cash order in progress whose cash was not recorded makes the customer owe its price.",
           "target": "New status",
           "reason": "Reason",
           "reason_hint": "Kept in the audit log. Required to complete an order that has no after photo.",

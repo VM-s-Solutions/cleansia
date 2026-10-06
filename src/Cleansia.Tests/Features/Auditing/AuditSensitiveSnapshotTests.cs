@@ -74,7 +74,7 @@ public sealed class AuditSensitiveSnapshotTests
 
         var handler = new AdminOverrideOrderStatus.Handler(
             orderRepository.Object, AdminSession(), auditContext, new Mock<ILiveActivityProducer>().Object,
-            Mock.Of<IPendingDispatch>());
+            Mock.Of<IPendingDispatch>(), Mock.Of<IReceivableRepository>(), Mock.Of<INotificationProducer>());
         var result = await handler.Handle(
             new AdminOverrideOrderStatus.Command("order-ovr", OrderStatus.OnTheWay), CancellationToken.None);
 

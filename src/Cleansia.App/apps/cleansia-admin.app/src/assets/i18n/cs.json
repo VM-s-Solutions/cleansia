@@ -662,7 +662,7 @@
         },
         "override_status": {
           "action": "Přepsat stav",
-          "confirm": "Ručně nastavit stav objednávky. Povoleny jsou pouze platné přechody.",
+          "confirm": "Ručně nastavit stav objednávky. Povoleny jsou pouze platné přechody. Dokončením probíhající objednávky placené v hotovosti, u které nebyla zaznamenána přijatá hotovost, bude zákazník dlužit její cenu.",
           "target": "Nový stav",
           "reason": "Důvod",
           "reason_hint": "Uloží se do auditního záznamu. Povinný pro dokončení objednávky bez fotografie po úklidu.",

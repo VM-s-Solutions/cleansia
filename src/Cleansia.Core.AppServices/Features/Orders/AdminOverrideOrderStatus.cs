@@ -64,7 +64,9 @@ public class AdminOverrideOrderStatus
         IUserSessionProvider userSessionProvider,
         IAuditContext auditContext,
         ILiveActivityProducer liveActivityProducer,
-        IPendingDispatch pending
+        IPendingDispatch pending,
+        IReceivableRepository receivableRepository,
+        INotificationProducer notificationProducer
     ) : ICommandHandler<Command, Response>
     {
         // The RANK array — not the set of legal targets. It must stay total over every status a row
@@ -91,6 +93,7 @@ public class AdminOverrideOrderStatus
                 .Include(o => o.OrderStatusHistory)
                 .Include(o => o.AssignedEmployees)
                 .Include(o => o.Receipts)
+                .Include(o => o.Currency)
                 .AsSplitQuery()
                 .FirstOrDefaultAsync(o => o.Id == command.OrderId, cancellationToken);
 
@@ -172,6 +175,16 @@ public class AdminOverrideOrderStatus
                             order.TenantId,
                             new GenerateReceiptMessage(order.Id, Constants.Language.English)),
                         MessageKeys.Receipt(order.Id));
+                }
+
+                // The debt is the price of a cleaning done and not paid for (terms §8), so only an order in
+                // progress opens it; from an earlier status the customer may have paid a cleaner who never
+                // pressed Start. → /product/business-rules#card-guarantee
+                if (currentStatus == OrderStatus.InProgress
+                    && order is { PaymentType: PaymentType.Cash, PaymentStatus: PaymentStatus.Pending, UserId: not null })
+                {
+                    await ReportCashNotPaid.OpenDoorDebtAsync(
+                        order, receivableRepository, pending, notificationProducer, cancellationToken);
                 }
             }
 

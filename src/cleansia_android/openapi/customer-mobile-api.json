@@ -1559,7 +1559,7 @@
             "name": "Offset",
             "in": "query",
             "schema": {
-              "maximum": 500,
+              "maximum": 2147383647,
               "minimum": 0,
               "type": "integer",
               "format": "int32"
@@ -3100,7 +3100,7 @@
             "name": "Offset",
             "in": "query",
             "schema": {
-              "maximum": 500,
+              "maximum": 2147383647,
               "minimum": 0,
               "type": "integer",
               "format": "int32"
@@ -4284,7 +4284,7 @@
             "name": "Offset",
             "in": "query",
             "schema": {
-              "maximum": 500,
+              "maximum": 2147383647,
               "minimum": 0,
               "type": "integer",
               "format": "int32"
@@ -4552,7 +4552,7 @@
             "name": "Offset",
             "in": "query",
             "schema": {
-              "maximum": 500,
+              "maximum": 2147383647,
               "minimum": 0,
               "type": "integer",
               "format": "int32"

@@ -343,6 +343,14 @@ flags a `@Singleton` with a `StateFlow`/`DataStore` cache field that isn't a mem
 A full static "is this per-user" check is infeasible for the line-based checker (Kotlin/Swift type-graph
 resolution) — see `enforcement.md`.
 
+iOS checklist persistence and the customer Live Activity coordinator are registry members. The
+coordinator invalidates its session generation before any suspension, cancels its observer tasks,
+and captures tracked plus actual OS activities for immediate termination. Every resumed adoption or
+observer continuation checks that generation; an old callback must not remove a new activity's map
+entry. The registry's coordinator is first so terminal auth cannot leave this work active while
+other caches clear. Actual cleanup tests exercise these holders and lifecycle paths; they do not
+constitute the full roster-equality guard described above.
+
 The 401-refresh path classifies failure via the sealed `cz.cleansia.core.auth.RefreshResult`
 (the cross-platform rule — iOS `SessionRefresher` mirrors it): **terminal** (sign out) = the stored
 refresh token is locally dead **before any call** (expired by its stored expiry, or empty — iOS

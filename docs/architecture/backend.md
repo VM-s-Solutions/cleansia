@@ -272,6 +272,25 @@ public class OrdersController : CleansiaApiController
 }
 ```
 
+## Order-list paging
+
+Order lists without a supplied sort order by `CreatedOn` descending, then `Id` descending, before
+`Skip` and `Take`. A supplied sort keeps its direction and receives an `Id` descending tie-breaker
+unless it already orders by `Id`. Administrative and partner financial sorts retain their existing
+currency-leading ordering when the requested sort includes total price and no currency filter is
+supplied.
+
+The shared offset accepts `0` through `int.MaxValue - 100000` (2,147,383,647), so advertised pages
+beyond offset 500 are reachable and existing integer end-offset/page-number calculations cannot
+overflow. The shared limit remains 1–100000; individual endpoints may enforce a narrower contract.
+Paged Admin/Partner order projections first select the ordered IDs for the admitted page, then
+load those IDs with the same tenant and visibility filters and restore their selected ordinal.
+This avoids repeating the full ordered selector in each split collection query. Rows that become
+ineligible between the two reads stay hidden; the count is still a separate read.
+
+The action timeline retains an offset ceiling of 500 and a limit ceiling of 100 because it merges
+three bounded source windows in memory rather than paging one database query.
+
 ## Authentication and Authorization
 
 ### JWT Configuration

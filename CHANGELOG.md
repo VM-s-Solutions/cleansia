@@ -1083,6 +1083,15 @@ need backfilling.
 
 ### Fixed
 
+- The customer website receives its market, prices and catalogue during server rendering and keeps
+  them through hydration, so the initial page no longer loses that data during loading. (T-0803)
+- Order lists can reach advertised pages beyond offset 500 and keep a consistent newest-first order
+  when no sort is selected. Selected sorts retain their direction when rows have equal values.
+  (T-0803)
+- On iOS, partner checklist ticks clear when a session ends. Customer Live Activities also end on
+  logout, expired authentication or successful account deletion. Pending or failed deletion keeps
+  the session's state. (T-0803)
+
 - **Cleaner Android, iOS and website — the last faint statuses, labels and icons read clearly.** On
   an order, the payment's *Pending* and *Paid* were faint on their own pale band, as low as 2.0:1,
   and on Android so were *Failed* and *Disputed* in dark mode; they now read 5.3:1 or more in both

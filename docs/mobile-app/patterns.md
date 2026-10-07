@@ -11,6 +11,13 @@ leak: **the next account inherits the previous one's data unless the cache is ex
 Every such cache is wired into the sign-out, forced-401 and account-delete paths. A new one that is not
 in that set is a defect, and it is the kind nobody notices until two people use one phone.
 
+On iOS, the partner checklist store joins the registry and clears only `order_checklist.` keys;
+device preferences survive. The customer Live Activity coordinator is the first registry member. It
+marks its session inactive and cancels observers before awaiting immediate ActivityKit termination,
+including activities restored by the system and absent from its in-memory map. Delayed work from an
+old session cannot repopulate the current session's maps, and a teardown sweeps only the activities
+captured before it suspends. Pending or failed account deletion preserves the session and its state.
+
 ## The error model {#error-model}
 
 Operations return a success or an error carrying the parsed message; the consuming ViewModel raises the

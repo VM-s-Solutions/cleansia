@@ -2,7 +2,7 @@
 
 Exact argument arrays, working directories and results recorded for the Wave A report. This includes failed and guarded setup attempts. Credentials and environment-file contents remain private; their paths are recorded. Local fixture SQL and synthetic authentication are the only database effects. No DEV or PRO command was executed.
 
-Ledger snapshot: 2026-10-07T23:42:00.792032+00:00; 535 completed records; SHA256 `abaaa6e5419cc50444d2235d386a5fd7e0c4e6ba6e5da85cdc2d0da8ca26928a`. Subsequent PR/CI operations are recorded separately until this snapshot is refreshed.
+Ledger snapshot: 2026-10-07T23:46:44.875404+00:00; 567 completed records; SHA256 `b48c40e25b45f605fbb7224f27dc32b030962f2803ea714c09561e208646a4d1`. Subsequent PR/CI operations are recorded separately until this snapshot is refreshed.
 
 ## 1. branch-wave-a
 
@@ -5136,6 +5136,262 @@ UTC `2026-10-07T23:41:11.482363+00:00`; exit `0`; elapsed `0.033s`; cwd `/Users/
 
 ```json
 ["git", "commit", "--file", "/Users/michael/.codex/scratchpads/cleansia-wave-a-2026-10-07/raw/commit-customer-cleanup.txt"]
+```
+
+## 536. root-final-command-appendix-snapshot
+
+UTC `2026-10-07T23:42:00.771887+00:00`; exit `0`; elapsed `0.202s`; cwd `/Users/michael/.codex/worktrees/wave-a-correctness/cleansia`.
+
+```json
+["python3", "/Users/michael/.codex/scratchpads/cleansia-wave-a-2026-10-07/tools/write-wave-command-appendix.py"]
+```
+
+## 537. root-prepublication-backlog
+
+UTC `2026-10-07T23:42:01.043085+00:00`; exit `0`; elapsed `0.064s`; cwd `/Users/michael/.codex/worktrees/wave-a-correctness/cleansia`.
+
+```json
+["/Users/michael/.codex/scratchpads/cleansia-audit-2026-10-07/tools/web-tooling/node_modules/node/bin/node", "agents/tools/check-backlog-consistency.mjs"]
+```
+
+## 538. root-prepublication-docs-refs
+
+UTC `2026-10-07T23:42:01.043040+00:00`; exit `0`; elapsed `0.752s`; cwd `/Users/michael/.codex/worktrees/wave-a-correctness/cleansia`.
+
+```json
+["/Users/michael/.codex/scratchpads/cleansia-audit-2026-10-07/tools/web-tooling/node_modules/node/bin/node", "agents/tools/check-docs-refs.mjs"]
+```
+
+## 539. root-stage-wave-record
+
+UTC `2026-10-07T23:42:27.199651+00:00`; exit `0`; elapsed `0.040s`; cwd `/Users/michael/.codex/worktrees/wave-a-correctness/cleansia`.
+
+```json
+["git", "add", "--", "CHANGELOG.md", "agents/backlog/INDEX.md", "agents/knowledge/patterns-frontend.md", "agents/knowledge/patterns-mobile.md", "docs/architecture/backend.md", "docs/architecture/frontend.md", "docs/mobile-app/patterns.md", "agents/AUDIT-2026-10-07.md", "agents/WAVE-A-2026-10-07.md", "agents/WAVE-A-COMMANDS-2026-10-07.md", "agents/backlog/tickets/T-0803-wave-a-correctness.md"]
+```
+
+## 540. root-commit-wave-record
+
+UTC `2026-10-07T23:42:27.397730+00:00`; exit `0`; elapsed `0.039s`; cwd `/Users/michael/.codex/worktrees/wave-a-correctness/cleansia`.
+
+```json
+["git", "commit", "--file", "/Users/michael/.codex/scratchpads/cleansia-wave-a-2026-10-07/raw/commit-wave-record.txt"]
+```
+
+## 541. root-wave-a-create-draft-pr-existing-credential
+
+UTC `2026-10-07T23:42:47.304754+00:00`; exit `0`; elapsed `0.024s`; cwd `/Users/michael/.codex/worktrees/wave-a-correctness/cleansia`.
+
+```json
+["git", "-C", "/Users/michael/.codex/worktrees/wave-a-correctness/cleansia", "credential", "fill"]
+```
+
+## 542. root-wave-a-push
+
+UTC `2026-10-07T23:42:45.977338+00:00`; exit `0`; elapsed `2.593s`; cwd `/Users/michael/.codex/worktrees/wave-a-correctness/cleansia`.
+
+```json
+["git", "push", "--set-upstream", "origin", "fix/wave-a-correctness"]
+```
+
+## 543. root-wave-a-create-draft-pr
+
+UTC `2026-10-07T23:42:47.355789+00:00`; exit `0`; elapsed `3.454s`; cwd `/Users/michael/.codex/worktrees/wave-a-correctness/cleansia`.
+
+```json
+["gh", "pr", "create", "--draft", "--base", "master", "--head", "fix/wave-a-correctness", "--title", "fix: restore SSR data, deep order paging and iOS session cleanup (Wave A)", "--body-file", "/Users/michael/.codex/scratchpads/cleansia-wave-a-2026-10-07/raw/wave-a-pr-body.md"]
+```
+
+## 544. root-wave-a-ci-initial-existing-credential
+
+UTC `2026-10-07T23:43:00.727290+00:00`; exit `0`; elapsed `0.027s`; cwd `/Users/michael/.codex/worktrees/wave-a-correctness/cleansia`.
+
+```json
+["git", "-C", "/Users/michael/.codex/worktrees/wave-a-correctness/cleansia", "credential", "fill"]
+```
+
+## 545. root-wave-a-ci-initial
+
+UTC `2026-10-07T23:43:00.779390+00:00`; exit `0`; elapsed `1.127s`; cwd `/Users/michael/.codex/worktrees/wave-a-correctness/cleansia`.
+
+```json
+["gh", "pr", "view", "fix/wave-a-correctness", "--json", "number,url,isDraft,headRefOid,baseRefName,statusCheckRollup,mergeStateStatus"]
+```
+
+## 546. mobile-ci-android-poll-01-existing-credential
+
+UTC `2026-10-07T23:43:42.950043+00:00`; exit `0`; elapsed `0.024s`; cwd `/Users/michael/.codex/worktrees/wave-a-correctness/cleansia`.
+
+```json
+["git", "-C", "/Users/michael/.codex/worktrees/wave-a-correctness/cleansia", "credential", "fill"]
+```
+
+## 547. mobile-ci-ios-poll-01-existing-credential
+
+UTC `2026-10-07T23:43:42.950043+00:00`; exit `0`; elapsed `0.030s`; cwd `/Users/michael/.codex/worktrees/wave-a-correctness/cleansia`.
+
+```json
+["git", "-C", "/Users/michael/.codex/worktrees/wave-a-correctness/cleansia", "credential", "fill"]
+```
+
+## 548. mobile-ci-ios-poll-01
+
+UTC `2026-10-07T23:43:43.005422+00:00`; exit `0`; elapsed `0.982s`; cwd `/Users/michael/.codex/worktrees/wave-a-correctness/cleansia`.
+
+```json
+["gh", "run", "view", "37703809284", "--repo", "VM-s-Solutions/cleansia", "--json", "databaseId,displayTitle,headSha,status,conclusion,createdAt,updatedAt,startedAt,url,jobs"]
+```
+
+## 549. mobile-ci-android-poll-01
+
+UTC `2026-10-07T23:43:42.999161+00:00`; exit `0`; elapsed `1.028s`; cwd `/Users/michael/.codex/worktrees/wave-a-correctness/cleansia`.
+
+```json
+["gh", "run", "view", "37703809265", "--repo", "VM-s-Solutions/cleansia", "--json", "databaseId,displayTitle,headSha,status,conclusion,createdAt,updatedAt,startedAt,url,jobs"]
+```
+
+## 550. web-ci-37703809356-poll01-existing-credential
+
+UTC `2026-10-07T23:43:46.101778+00:00`; exit `0`; elapsed `0.024s`; cwd `/Users/michael/.codex/worktrees/wave-a-correctness/cleansia`.
+
+```json
+["git", "-C", "/Users/michael/.codex/worktrees/wave-a-correctness/cleansia", "credential", "fill"]
+```
+
+## 551. web-ci-37703809356-poll01
+
+UTC `2026-10-07T23:43:46.151867+00:00`; exit `0`; elapsed `0.949s`; cwd `/Users/michael/.codex/worktrees/wave-a-correctness/cleansia`.
+
+```json
+["gh", "run", "view", "37703809356", "--repo", "VM-s-Solutions/cleansia", "--json", "status,conclusion,jobs,headSha,url,startedAt,updatedAt,workflowName"]
+```
+
+## 552. root-wave-a-backend-ci-progress-1-existing-credential
+
+UTC `2026-10-07T23:44:01.389277+00:00`; exit `0`; elapsed `0.031s`; cwd `/Users/michael/.codex/worktrees/wave-a-correctness/cleansia`.
+
+```json
+["git", "-C", "/Users/michael/.codex/worktrees/wave-a-correctness/cleansia", "credential", "fill"]
+```
+
+## 553. root-wave-a-docs-ci-progress-1-existing-credential
+
+UTC `2026-10-07T23:44:01.389886+00:00`; exit `0`; elapsed `0.041s`; cwd `/Users/michael/.codex/worktrees/wave-a-correctness/cleansia`.
+
+```json
+["git", "-C", "/Users/michael/.codex/worktrees/wave-a-correctness/cleansia", "credential", "fill"]
+```
+
+## 554. root-wave-a-backend-ci-progress-1
+
+UTC `2026-10-07T23:44:01.453698+00:00`; exit `0`; elapsed `1.026s`; cwd `/Users/michael/.codex/worktrees/wave-a-correctness/cleansia`.
+
+```json
+["gh", "run", "view", "37703809233", "--json", "conclusion,status,jobs,createdAt,updatedAt,url"]
+```
+
+## 555. root-wave-a-docs-ci-progress-1
+
+UTC `2026-10-07T23:44:01.463150+00:00`; exit `0`; elapsed `1.017s`; cwd `/Users/michael/.codex/worktrees/wave-a-correctness/cleansia`.
+
+```json
+["gh", "run", "view", "37703809333", "--json", "conclusion,status,jobs,createdAt,updatedAt,url"]
+```
+
+## 556. root-wave-a-ci-progress-2-existing-credential
+
+UTC `2026-10-07T23:44:33.234353+00:00`; exit `0`; elapsed `0.024s`; cwd `/Users/michael/.codex/worktrees/wave-a-correctness/cleansia`.
+
+```json
+["git", "-C", "/Users/michael/.codex/worktrees/wave-a-correctness/cleansia", "credential", "fill"]
+```
+
+## 557. root-wave-a-ci-progress-2
+
+UTC `2026-10-07T23:44:33.285306+00:00`; exit `0`; elapsed `0.975s`; cwd `/Users/michael/.codex/worktrees/wave-a-correctness/cleansia`.
+
+```json
+["gh", "pr", "view", "fix/wave-a-correctness", "--json", "headRefOid,statusCheckRollup,isDraft,mergeStateStatus"]
+```
+
+## 558. root-wave-a-secret-scan-failure-existing-credential
+
+UTC `2026-10-07T23:45:01.881673+00:00`; exit `0`; elapsed `0.023s`; cwd `/Users/michael/.codex/worktrees/wave-a-correctness/cleansia`.
+
+```json
+["git", "-C", "/Users/michael/.codex/worktrees/wave-a-correctness/cleansia", "credential", "fill"]
+```
+
+## 559. root-wave-a-secret-scan-failure
+
+UTC `2026-10-07T23:45:01.930026+00:00`; exit `0`; elapsed `1.968s`; cwd `/Users/michael/.codex/worktrees/wave-a-correctness/cleansia`.
+
+```json
+["gh", "run", "view", "37703809292", "--log-failed"]
+```
+
+## 560. mobile-ci-ios-poll-02-existing-credential
+
+UTC `2026-10-07T23:45:07.787332+00:00`; exit `0`; elapsed `0.024s`; cwd `/Users/michael/.codex/worktrees/wave-a-correctness/cleansia`.
+
+```json
+["git", "-C", "/Users/michael/.codex/worktrees/wave-a-correctness/cleansia", "credential", "fill"]
+```
+
+## 561. mobile-ci-android-poll-02-existing-credential
+
+UTC `2026-10-07T23:45:07.787330+00:00`; exit `0`; elapsed `0.030s`; cwd `/Users/michael/.codex/worktrees/wave-a-correctness/cleansia`.
+
+```json
+["git", "-C", "/Users/michael/.codex/worktrees/wave-a-correctness/cleansia", "credential", "fill"]
+```
+
+## 562. mobile-ci-ios-poll-02
+
+UTC `2026-10-07T23:45:07.836728+00:00`; exit `0`; elapsed `0.981s`; cwd `/Users/michael/.codex/worktrees/wave-a-correctness/cleansia`.
+
+```json
+["gh", "run", "view", "37703809284", "--repo", "VM-s-Solutions/cleansia", "--json", "databaseId,headSha,status,conclusion,startedAt,updatedAt,url,jobs"]
+```
+
+## 563. mobile-ci-android-poll-02
+
+UTC `2026-10-07T23:45:07.842346+00:00`; exit `0`; elapsed `1.111s`; cwd `/Users/michael/.codex/worktrees/wave-a-correctness/cleansia`.
+
+```json
+["gh", "run", "view", "37703809265", "--repo", "VM-s-Solutions/cleansia", "--json", "databaseId,headSha,status,conclusion,startedAt,updatedAt,url,jobs"]
+```
+
+## 564. web-ci-37703809356-poll02-existing-credential
+
+UTC `2026-10-07T23:45:20.296235+00:00`; exit `0`; elapsed `0.025s`; cwd `/Users/michael/.codex/worktrees/wave-a-correctness/cleansia`.
+
+```json
+["git", "-C", "/Users/michael/.codex/worktrees/wave-a-correctness/cleansia", "credential", "fill"]
+```
+
+## 565. web-ci-37703809356-poll02
+
+UTC `2026-10-07T23:45:20.347532+00:00`; exit `0`; elapsed `1.077s`; cwd `/Users/michael/.codex/worktrees/wave-a-correctness/cleansia`.
+
+```json
+["gh", "run", "view", "37703809356", "--repo", "VM-s-Solutions/cleansia", "--json", "status,conclusion,jobs,headSha,url,startedAt,updatedAt,workflowName"]
+```
+
+## 566. web-ci-37703809356-poll03-existing-credential
+
+UTC `2026-10-07T23:46:38.074037+00:00`; exit `0`; elapsed `0.029s`; cwd `/Users/michael/.codex/worktrees/wave-a-correctness/cleansia`.
+
+```json
+["git", "-C", "/Users/michael/.codex/worktrees/wave-a-correctness/cleansia", "credential", "fill"]
+```
+
+## 567. web-ci-37703809356-poll03
+
+UTC `2026-10-07T23:46:38.128840+00:00`; exit `0`; elapsed `0.926s`; cwd `/Users/michael/.codex/worktrees/wave-a-correctness/cleansia`.
+
+```json
+["gh", "run", "view", "37703809356", "--repo", "VM-s-Solutions/cleansia", "--json", "status,conclusion,jobs,headSha,url,startedAt,updatedAt,workflowName"]
 ```
 
 ## Local API host child processes

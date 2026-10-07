@@ -42,3 +42,6 @@ d7ade53b879fceb291a3b8ecc476eec9cabcc183:src/Cleansia.Web/appsettings.Production
 db4d95834c67483c7cb33c16f887d753e50cfd96:deploy/bicep/weu.dev.bicepparam:generic-api-key:79
 db4d95834c67483c7cb33c16f887d753e50cfd96:deploy/bicep/weu.dev.bicepparam:generic-api-key:81
 f0e39d7e594611bac9359cb92c24bc7abaded992:deploy/bicep/main.bicep:generic-api-key:468
+
+# Not a credential: the owned simulator UUID in the retained audit's simctl keychain reset command.
+32984a69240f2b0941a202b2071bae7eb6219626:agents/AUDIT-2026-10-07.md:generic-api-key:4893

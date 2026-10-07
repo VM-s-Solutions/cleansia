@@ -67,7 +67,7 @@ export class AddressSearchClient implements IAddressSearchClient {
 
         let options : any = {
             observe: "response",
-            responseType: "blob",
+            responseType: "text",
             headers: new HttpHeaders({
                 "Accept": "application/json"
             })
@@ -91,7 +91,7 @@ export class AddressSearchClient implements IAddressSearchClient {
         const status = response.status;
         const responseBlob =
             response instanceof HttpResponse ? response.body :
-            (response as any).error instanceof Blob ? (response as any).error : undefined;
+            (response as any).error instanceof Blob || typeof (response as any).error === "string" ? (response as any).error : undefined;
 
         let Headers: any = {}; if (response.headers) { for (let key of response.headers.keys()) { Headers[key] = response.headers.get(key); }}
         if (status === 200) {
@@ -159,7 +159,7 @@ export class AddressSearchClient implements IAddressSearchClient {
         const status = response.status;
         const responseBlob =
             response instanceof HttpResponse ? response.body :
-            (response as any).error instanceof Blob ? (response as any).error : undefined;
+            (response as any).error instanceof Blob || typeof (response as any).error === "string" ? (response as any).error : undefined;
 
         let Headers: any = {}; if (response.headers) { for (let key of response.headers.keys()) { Headers[key] = response.headers.get(key); }}
         if (status === 200 || status === 206) {
@@ -258,7 +258,7 @@ export class AuthClient implements IAuthClient {
         let options : any = {
             body: content,
             observe: "response",
-            responseType: "blob",
+            responseType: "text",
             headers: new HttpHeaders({
                 "Content-Type": "application/json",
             })
@@ -282,7 +282,7 @@ export class AuthClient implements IAuthClient {
         const status = response.status;
         const responseBlob =
             response instanceof HttpResponse ? response.body :
-            (response as any).error instanceof Blob ? (response as any).error : undefined;
+            (response as any).error instanceof Blob || typeof (response as any).error === "string" ? (response as any).error : undefined;
 
         let Headers: any = {}; if (response.headers) { for (let key of response.headers.keys()) { Headers[key] = response.headers.get(key); }}
         if (status === 200) {
@@ -324,7 +324,7 @@ export class AuthClient implements IAuthClient {
         let options : any = {
             body: content,
             observe: "response",
-            responseType: "blob",
+            responseType: "text",
             headers: new HttpHeaders({
                 "Content-Type": "application/json",
                 "Accept": "application/json"
@@ -349,7 +349,7 @@ export class AuthClient implements IAuthClient {
         const status = response.status;
         const responseBlob =
             response instanceof HttpResponse ? response.body :
-            (response as any).error instanceof Blob ? (response as any).error : undefined;
+            (response as any).error instanceof Blob || typeof (response as any).error === "string" ? (response as any).error : undefined;
 
         let Headers: any = {}; if (response.headers) { for (let key of response.headers.keys()) { Headers[key] = response.headers.get(key); }}
         if (status === 200) {
@@ -394,7 +394,7 @@ export class AuthClient implements IAuthClient {
         let options : any = {
             body: content,
             observe: "response",
-            responseType: "blob",
+            responseType: "text",
             headers: new HttpHeaders({
                 "Content-Type": "application/json",
                 "Accept": "application/json"
@@ -419,7 +419,7 @@ export class AuthClient implements IAuthClient {
         const status = response.status;
         const responseBlob =
             response instanceof HttpResponse ? response.body :
-            (response as any).error instanceof Blob ? (response as any).error : undefined;
+            (response as any).error instanceof Blob || typeof (response as any).error === "string" ? (response as any).error : undefined;
 
         let Headers: any = {}; if (response.headers) { for (let key of response.headers.keys()) { Headers[key] = response.headers.get(key); }}
         if (status === 200) {
@@ -464,7 +464,7 @@ export class AuthClient implements IAuthClient {
         let options : any = {
             body: content,
             observe: "response",
-            responseType: "blob",
+            responseType: "text",
             headers: new HttpHeaders({
                 "Content-Type": "application/json",
                 "Accept": "application/json"
@@ -489,7 +489,7 @@ export class AuthClient implements IAuthClient {
         const status = response.status;
         const responseBlob =
             response instanceof HttpResponse ? response.body :
-            (response as any).error instanceof Blob ? (response as any).error : undefined;
+            (response as any).error instanceof Blob || typeof (response as any).error === "string" ? (response as any).error : undefined;
 
         let Headers: any = {}; if (response.headers) { for (let key of response.headers.keys()) { Headers[key] = response.headers.get(key); }}
         if (status === 200) {
@@ -534,7 +534,7 @@ export class AuthClient implements IAuthClient {
         let options : any = {
             body: content,
             observe: "response",
-            responseType: "blob",
+            responseType: "text",
             headers: new HttpHeaders({
                 "Content-Type": "application/json",
                 "Accept": "application/json"
@@ -559,7 +559,7 @@ export class AuthClient implements IAuthClient {
         const status = response.status;
         const responseBlob =
             response instanceof HttpResponse ? response.body :
-            (response as any).error instanceof Blob ? (response as any).error : undefined;
+            (response as any).error instanceof Blob || typeof (response as any).error === "string" ? (response as any).error : undefined;
 
         let Headers: any = {}; if (response.headers) { for (let key of response.headers.keys()) { Headers[key] = response.headers.get(key); }}
         if (status === 200) {
@@ -597,7 +597,7 @@ export class AuthClient implements IAuthClient {
         let options : any = {
             body: content,
             observe: "response",
-            responseType: "blob",
+            responseType: "text",
             headers: new HttpHeaders({
                 "Content-Type": "application/json",
             })
@@ -621,7 +621,7 @@ export class AuthClient implements IAuthClient {
         const status = response.status;
         const responseBlob =
             response instanceof HttpResponse ? response.body :
-            (response as any).error instanceof Blob ? (response as any).error : undefined;
+            (response as any).error instanceof Blob || typeof (response as any).error === "string" ? (response as any).error : undefined;
 
         let Headers: any = {}; if (response.headers) { for (let key of response.headers.keys()) { Headers[key] = response.headers.get(key); }}
         if (status === 200) {
@@ -656,7 +656,7 @@ export class AuthClient implements IAuthClient {
         let options : any = {
             body: content,
             observe: "response",
-            responseType: "blob",
+            responseType: "text",
             headers: new HttpHeaders({
                 "Content-Type": "application/json",
                 "Accept": "application/json"
@@ -681,7 +681,7 @@ export class AuthClient implements IAuthClient {
         const status = response.status;
         const responseBlob =
             response instanceof HttpResponse ? response.body :
-            (response as any).error instanceof Blob ? (response as any).error : undefined;
+            (response as any).error instanceof Blob || typeof (response as any).error === "string" ? (response as any).error : undefined;
 
         let Headers: any = {}; if (response.headers) { for (let key of response.headers.keys()) { Headers[key] = response.headers.get(key); }}
         if (status === 200) {
@@ -726,7 +726,7 @@ export class AuthClient implements IAuthClient {
         let options : any = {
             body: content,
             observe: "response",
-            responseType: "blob",
+            responseType: "text",
             headers: new HttpHeaders({
                 "Content-Type": "application/json",
             })
@@ -750,7 +750,7 @@ export class AuthClient implements IAuthClient {
         const status = response.status;
         const responseBlob =
             response instanceof HttpResponse ? response.body :
-            (response as any).error instanceof Blob ? (response as any).error : undefined;
+            (response as any).error instanceof Blob || typeof (response as any).error === "string" ? (response as any).error : undefined;
 
         let Headers: any = {}; if (response.headers) { for (let key of response.headers.keys()) { Headers[key] = response.headers.get(key); }}
         if (status === 200) {
@@ -812,7 +812,7 @@ export class CountryClient implements ICountryClient {
 
         let options : any = {
             observe: "response",
-            responseType: "blob",
+            responseType: "text",
             headers: new HttpHeaders({
                 "Accept": "application/json"
             })
@@ -836,7 +836,7 @@ export class CountryClient implements ICountryClient {
         const status = response.status;
         const responseBlob =
             response instanceof HttpResponse ? response.body :
-            (response as any).error instanceof Blob ? (response as any).error : undefined;
+            (response as any).error instanceof Blob || typeof (response as any).error === "string" ? (response as any).error : undefined;
 
         let Headers: any = {}; if (response.headers) { for (let key of response.headers.keys()) { Headers[key] = response.headers.get(key); }}
         if (status === 200) {
@@ -877,7 +877,7 @@ export class CountryClient implements ICountryClient {
 
         let options : any = {
             observe: "response",
-            responseType: "blob",
+            responseType: "text",
             headers: new HttpHeaders({
                 "Accept": "application/json"
             })
@@ -901,7 +901,7 @@ export class CountryClient implements ICountryClient {
         const status = response.status;
         const responseBlob =
             response instanceof HttpResponse ? response.body :
-            (response as any).error instanceof Blob ? (response as any).error : undefined;
+            (response as any).error instanceof Blob || typeof (response as any).error === "string" ? (response as any).error : undefined;
 
         let Headers: any = {}; if (response.headers) { for (let key of response.headers.keys()) { Headers[key] = response.headers.get(key); }}
         if (status === 200) {
@@ -952,7 +952,7 @@ export class CountryClient implements ICountryClient {
 
         let options : any = {
             observe: "response",
-            responseType: "blob",
+            responseType: "text",
             headers: new HttpHeaders({
                 "Accept": "application/json"
             })
@@ -976,7 +976,7 @@ export class CountryClient implements ICountryClient {
         const status = response.status;
         const responseBlob =
             response instanceof HttpResponse ? response.body :
-            (response as any).error instanceof Blob ? (response as any).error : undefined;
+            (response as any).error instanceof Blob || typeof (response as any).error === "string" ? (response as any).error : undefined;
 
         let Headers: any = {}; if (response.headers) { for (let key of response.headers.keys()) { Headers[key] = response.headers.get(key); }}
         if (status === 200) {
@@ -1038,7 +1038,7 @@ export class CreditClient implements ICreditClient {
 
         let options : any = {
             observe: "response",
-            responseType: "blob",
+            responseType: "text",
             headers: new HttpHeaders({
                 "Accept": "application/json"
             })
@@ -1062,7 +1062,7 @@ export class CreditClient implements ICreditClient {
         const status = response.status;
         const responseBlob =
             response instanceof HttpResponse ? response.body :
-            (response as any).error instanceof Blob ? (response as any).error : undefined;
+            (response as any).error instanceof Blob || typeof (response as any).error === "string" ? (response as any).error : undefined;
 
         let Headers: any = {}; if (response.headers) { for (let key of response.headers.keys()) { Headers[key] = response.headers.get(key); }}
         if (status === 200) {
@@ -1131,7 +1131,7 @@ export class CurrencyClient implements ICurrencyClient {
 
         let options : any = {
             observe: "response",
-            responseType: "blob",
+            responseType: "text",
             headers: new HttpHeaders({
                 "Accept": "application/json"
             })
@@ -1155,7 +1155,7 @@ export class CurrencyClient implements ICurrencyClient {
         const status = response.status;
         const responseBlob =
             response instanceof HttpResponse ? response.body :
-            (response as any).error instanceof Blob ? (response as any).error : undefined;
+            (response as any).error instanceof Blob || typeof (response as any).error === "string" ? (response as any).error : undefined;
 
         let Headers: any = {}; if (response.headers) { for (let key of response.headers.keys()) { Headers[key] = response.headers.get(key); }}
         if (status === 200) {
@@ -1232,7 +1232,7 @@ export class DeviceClient implements IDeviceClient {
         let options : any = {
             body: content,
             observe: "response",
-            responseType: "blob",
+            responseType: "text",
             headers: new HttpHeaders({
                 "Content-Type": "application/json",
                 "Accept": "application/json"
@@ -1257,7 +1257,7 @@ export class DeviceClient implements IDeviceClient {
         const status = response.status;
         const responseBlob =
             response instanceof HttpResponse ? response.body :
-            (response as any).error instanceof Blob ? (response as any).error : undefined;
+            (response as any).error instanceof Blob || typeof (response as any).error === "string" ? (response as any).error : undefined;
 
         let Headers: any = {}; if (response.headers) { for (let key of response.headers.keys()) { Headers[key] = response.headers.get(key); }}
         if (status === 200) {
@@ -1303,7 +1303,7 @@ export class DeviceClient implements IDeviceClient {
 
         let options : any = {
             observe: "response",
-            responseType: "blob",
+            responseType: "text",
             headers: new HttpHeaders({
                 "Accept": "application/json"
             })
@@ -1327,7 +1327,7 @@ export class DeviceClient implements IDeviceClient {
         const status = response.status;
         const responseBlob =
             response instanceof HttpResponse ? response.body :
-            (response as any).error instanceof Blob ? (response as any).error : undefined;
+            (response as any).error instanceof Blob || typeof (response as any).error === "string" ? (response as any).error : undefined;
 
         let Headers: any = {}; if (response.headers) { for (let key of response.headers.keys()) { Headers[key] = response.headers.get(key); }}
         if (status === 200) {
@@ -1373,7 +1373,7 @@ export class DeviceClient implements IDeviceClient {
 
         let options : any = {
             observe: "response",
-            responseType: "blob",
+            responseType: "text",
             headers: new HttpHeaders({
                 "Accept": "application/json"
             })
@@ -1397,7 +1397,7 @@ export class DeviceClient implements IDeviceClient {
         const status = response.status;
         const responseBlob =
             response instanceof HttpResponse ? response.body :
-            (response as any).error instanceof Blob ? (response as any).error : undefined;
+            (response as any).error instanceof Blob || typeof (response as any).error === "string" ? (response as any).error : undefined;
 
         let Headers: any = {}; if (response.headers) { for (let key of response.headers.keys()) { Headers[key] = response.headers.get(key); }}
         if (status === 200) {
@@ -1467,7 +1467,7 @@ export class ApiClient implements IApiClient {
 
         let options : any = {
             observe: "response",
-            responseType: "blob",
+            responseType: "text",
             headers: new HttpHeaders({
                 "Accept": "application/json"
             })
@@ -1491,7 +1491,7 @@ export class ApiClient implements IApiClient {
         const status = response.status;
         const responseBlob =
             response instanceof HttpResponse ? response.body :
-            (response as any).error instanceof Blob ? (response as any).error : undefined;
+            (response as any).error instanceof Blob || typeof (response as any).error === "string" ? (response as any).error : undefined;
 
         let Headers: any = {}; if (response.headers) { for (let key of response.headers.keys()) { Headers[key] = response.headers.get(key); }}
         if (status === 200) {
@@ -1537,7 +1537,7 @@ export class ApiClient implements IApiClient {
 
         let options : any = {
             observe: "response",
-            responseType: "blob",
+            responseType: "text",
             headers: new HttpHeaders({
                 "Accept": "application/json"
             })
@@ -1561,7 +1561,7 @@ export class ApiClient implements IApiClient {
         const status = response.status;
         const responseBlob =
             response instanceof HttpResponse ? response.body :
-            (response as any).error instanceof Blob ? (response as any).error : undefined;
+            (response as any).error instanceof Blob || typeof (response as any).error === "string" ? (response as any).error : undefined;
 
         let Headers: any = {}; if (response.headers) { for (let key of response.headers.keys()) { Headers[key] = response.headers.get(key); }}
         if (status === 200) {
@@ -1655,7 +1655,7 @@ export class DisputeClient implements IDisputeClient {
         let options : any = {
             body: content,
             observe: "response",
-            responseType: "blob",
+            responseType: "text",
             headers: new HttpHeaders({
                 "Content-Type": "application/json",
                 "Accept": "application/json"
@@ -1680,7 +1680,7 @@ export class DisputeClient implements IDisputeClient {
         const status = response.status;
         const responseBlob =
             response instanceof HttpResponse ? response.body :
-            (response as any).error instanceof Blob ? (response as any).error : undefined;
+            (response as any).error instanceof Blob || typeof (response as any).error === "string" ? (response as any).error : undefined;
 
         let Headers: any = {}; if (response.headers) { for (let key of response.headers.keys()) { Headers[key] = response.headers.get(key); }}
         if (status === 200) {
@@ -1731,7 +1731,7 @@ export class DisputeClient implements IDisputeClient {
 
         let options : any = {
             observe: "response",
-            responseType: "blob",
+            responseType: "text",
             headers: new HttpHeaders({
                 "Accept": "application/json"
             })
@@ -1755,7 +1755,7 @@ export class DisputeClient implements IDisputeClient {
         const status = response.status;
         const responseBlob =
             response instanceof HttpResponse ? response.body :
-            (response as any).error instanceof Blob ? (response as any).error : undefined;
+            (response as any).error instanceof Blob || typeof (response as any).error === "string" ? (response as any).error : undefined;
 
         let Headers: any = {}; if (response.headers) { for (let key of response.headers.keys()) { Headers[key] = response.headers.get(key); }}
         if (status === 200) {
@@ -1883,7 +1883,7 @@ export class DisputeClient implements IDisputeClient {
 
         let options : any = {
             observe: "response",
-            responseType: "blob",
+            responseType: "text",
             headers: new HttpHeaders({
                 "Accept": "application/json"
             })
@@ -1907,7 +1907,7 @@ export class DisputeClient implements IDisputeClient {
         const status = response.status;
         const responseBlob =
             response instanceof HttpResponse ? response.body :
-            (response as any).error instanceof Blob ? (response as any).error : undefined;
+            (response as any).error instanceof Blob || typeof (response as any).error === "string" ? (response as any).error : undefined;
 
         let Headers: any = {}; if (response.headers) { for (let key of response.headers.keys()) { Headers[key] = response.headers.get(key); }}
         if (status === 200) {
@@ -1959,7 +1959,7 @@ export class DisputeClient implements IDisputeClient {
         let options : any = {
             body: content,
             observe: "response",
-            responseType: "blob",
+            responseType: "text",
             headers: new HttpHeaders({
                 "Content-Type": "application/json",
             })
@@ -1983,7 +1983,7 @@ export class DisputeClient implements IDisputeClient {
         const status = response.status;
         const responseBlob =
             response instanceof HttpResponse ? response.body :
-            (response as any).error instanceof Blob ? (response as any).error : undefined;
+            (response as any).error instanceof Blob || typeof (response as any).error === "string" ? (response as any).error : undefined;
 
         let Headers: any = {}; if (response.headers) { for (let key of response.headers.keys()) { Headers[key] = response.headers.get(key); }}
         if (status === 200) {
@@ -2041,7 +2041,7 @@ export class DisputeClient implements IDisputeClient {
         let options : any = {
             body: content,
             observe: "response",
-            responseType: "blob",
+            responseType: "text",
             headers: new HttpHeaders({
                 "Accept": "application/json"
             })
@@ -2065,7 +2065,7 @@ export class DisputeClient implements IDisputeClient {
         const status = response.status;
         const responseBlob =
             response instanceof HttpResponse ? response.body :
-            (response as any).error instanceof Blob ? (response as any).error : undefined;
+            (response as any).error instanceof Blob || typeof (response as any).error === "string" ? (response as any).error : undefined;
 
         let Headers: any = {}; if (response.headers) { for (let key of response.headers.keys()) { Headers[key] = response.headers.get(key); }}
         if (status === 200) {
@@ -2140,7 +2140,7 @@ export class ExtraClient implements IExtraClient {
 
         let options : any = {
             observe: "response",
-            responseType: "blob",
+            responseType: "text",
             headers: new HttpHeaders({
                 "Accept": "application/json"
             })
@@ -2164,7 +2164,7 @@ export class ExtraClient implements IExtraClient {
         const status = response.status;
         const responseBlob =
             response instanceof HttpResponse ? response.body :
-            (response as any).error instanceof Blob ? (response as any).error : undefined;
+            (response as any).error instanceof Blob || typeof (response as any).error === "string" ? (response as any).error : undefined;
 
         let Headers: any = {}; if (response.headers) { for (let key of response.headers.keys()) { Headers[key] = response.headers.get(key); }}
         if (status === 200) {
@@ -2239,7 +2239,7 @@ export class GdprClient implements IGdprClient {
 
         let options : any = {
             observe: "response",
-            responseType: "blob",
+            responseType: "text",
             headers: new HttpHeaders({
                 "Accept": "application/json"
             })
@@ -2263,7 +2263,7 @@ export class GdprClient implements IGdprClient {
         const status = response.status;
         const responseBlob =
             response instanceof HttpResponse ? response.body :
-            (response as any).error instanceof Blob ? (response as any).error : undefined;
+            (response as any).error instanceof Blob || typeof (response as any).error === "string" ? (response as any).error : undefined;
 
         let Headers: any = {}; if (response.headers) { for (let key of response.headers.keys()) { Headers[key] = response.headers.get(key); }}
         if (status === 200) {
@@ -2290,7 +2290,7 @@ export class GdprClient implements IGdprClient {
 
         let options : any = {
             observe: "response",
-            responseType: "blob",
+            responseType: "text",
             headers: new HttpHeaders({
             })
         };
@@ -2313,7 +2313,7 @@ export class GdprClient implements IGdprClient {
         const status = response.status;
         const responseBlob =
             response instanceof HttpResponse ? response.body :
-            (response as any).error instanceof Blob ? (response as any).error : undefined;
+            (response as any).error instanceof Blob || typeof (response as any).error === "string" ? (response as any).error : undefined;
 
         let Headers: any = {}; if (response.headers) { for (let key of response.headers.keys()) { Headers[key] = response.headers.get(key); }}
         if (status === 200) {
@@ -2337,7 +2337,7 @@ export class GdprClient implements IGdprClient {
 
         let options : any = {
             observe: "response",
-            responseType: "blob",
+            responseType: "text",
             headers: new HttpHeaders({
                 "Accept": "application/json"
             })
@@ -2361,7 +2361,7 @@ export class GdprClient implements IGdprClient {
         const status = response.status;
         const responseBlob =
             response instanceof HttpResponse ? response.body :
-            (response as any).error instanceof Blob ? (response as any).error : undefined;
+            (response as any).error instanceof Blob || typeof (response as any).error === "string" ? (response as any).error : undefined;
 
         let Headers: any = {}; if (response.headers) { for (let key of response.headers.keys()) { Headers[key] = response.headers.get(key); }}
         if (status === 200) {
@@ -2399,7 +2399,7 @@ export class GdprClient implements IGdprClient {
         let options : any = {
             body: content,
             observe: "response",
-            responseType: "blob",
+            responseType: "text",
             headers: new HttpHeaders({
                 "Content-Type": "application/json",
             })
@@ -2423,7 +2423,7 @@ export class GdprClient implements IGdprClient {
         const status = response.status;
         const responseBlob =
             response instanceof HttpResponse ? response.body :
-            (response as any).error instanceof Blob ? (response as any).error : undefined;
+            (response as any).error instanceof Blob || typeof (response as any).error === "string" ? (response as any).error : undefined;
 
         let Headers: any = {}; if (response.headers) { for (let key of response.headers.keys()) { Headers[key] = response.headers.get(key); }}
         if (status === 200) {
@@ -2473,7 +2473,7 @@ export class ConsentsClient implements IConsentsClient {
         let options : any = {
             body: content,
             observe: "response",
-            responseType: "blob",
+            responseType: "text",
             headers: new HttpHeaders({
                 "Content-Type": "application/json",
             })
@@ -2497,7 +2497,7 @@ export class ConsentsClient implements IConsentsClient {
         const status = response.status;
         const responseBlob =
             response instanceof HttpResponse ? response.body :
-            (response as any).error instanceof Blob ? (response as any).error : undefined;
+            (response as any).error instanceof Blob || typeof (response as any).error === "string" ? (response as any).error : undefined;
 
         let Headers: any = {}; if (response.headers) { for (let key of response.headers.keys()) { Headers[key] = response.headers.get(key); }}
         if (status === 200) {
@@ -2542,7 +2542,7 @@ export class LanguageClient implements ILanguageClient {
 
         let options : any = {
             observe: "response",
-            responseType: "blob",
+            responseType: "text",
             headers: new HttpHeaders({
                 "Accept": "application/json"
             })
@@ -2566,7 +2566,7 @@ export class LanguageClient implements ILanguageClient {
         const status = response.status;
         const responseBlob =
             response instanceof HttpResponse ? response.body :
-            (response as any).error instanceof Blob ? (response as any).error : undefined;
+            (response as any).error instanceof Blob || typeof (response as any).error === "string" ? (response as any).error : undefined;
 
         let Headers: any = {}; if (response.headers) { for (let key of response.headers.keys()) { Headers[key] = response.headers.get(key); }}
         if (status === 200) {
@@ -2646,7 +2646,7 @@ export class LegalClient implements ILegalClient {
 
         let options : any = {
             observe: "response",
-            responseType: "blob",
+            responseType: "text",
             headers: new HttpHeaders({
                 "Accept": "application/json"
             })
@@ -2670,7 +2670,7 @@ export class LegalClient implements ILegalClient {
         const status = response.status;
         const responseBlob =
             response instanceof HttpResponse ? response.body :
-            (response as any).error instanceof Blob ? (response as any).error : undefined;
+            (response as any).error instanceof Blob || typeof (response as any).error === "string" ? (response as any).error : undefined;
 
         let Headers: any = {}; if (response.headers) { for (let key of response.headers.keys()) { Headers[key] = response.headers.get(key); }}
         if (status === 200) {
@@ -2735,7 +2735,7 @@ export class LoyaltyClient implements ILoyaltyClient {
 
         let options : any = {
             observe: "response",
-            responseType: "blob",
+            responseType: "text",
             headers: new HttpHeaders({
                 "Accept": "application/json"
             })
@@ -2759,7 +2759,7 @@ export class LoyaltyClient implements ILoyaltyClient {
         const status = response.status;
         const responseBlob =
             response instanceof HttpResponse ? response.body :
-            (response as any).error instanceof Blob ? (response as any).error : undefined;
+            (response as any).error instanceof Blob || typeof (response as any).error === "string" ? (response as any).error : undefined;
 
         let Headers: any = {}; if (response.headers) { for (let key of response.headers.keys()) { Headers[key] = response.headers.get(key); }}
         if (status === 200) {
@@ -2817,7 +2817,7 @@ export class LoyaltyClient implements ILoyaltyClient {
 
         let options : any = {
             observe: "response",
-            responseType: "blob",
+            responseType: "text",
             headers: new HttpHeaders({
                 "Accept": "application/json"
             })
@@ -2841,7 +2841,7 @@ export class LoyaltyClient implements ILoyaltyClient {
         const status = response.status;
         const responseBlob =
             response instanceof HttpResponse ? response.body :
-            (response as any).error instanceof Blob ? (response as any).error : undefined;
+            (response as any).error instanceof Blob || typeof (response as any).error === "string" ? (response as any).error : undefined;
 
         let Headers: any = {}; if (response.headers) { for (let key of response.headers.keys()) { Headers[key] = response.headers.get(key); }}
         if (status === 200) {
@@ -2889,7 +2889,7 @@ export class LoyaltyClient implements ILoyaltyClient {
 
         let options : any = {
             observe: "response",
-            responseType: "blob",
+            responseType: "text",
             headers: new HttpHeaders({
                 "Accept": "application/json"
             })
@@ -2913,7 +2913,7 @@ export class LoyaltyClient implements ILoyaltyClient {
         const status = response.status;
         const responseBlob =
             response instanceof HttpResponse ? response.body :
-            (response as any).error instanceof Blob ? (response as any).error : undefined;
+            (response as any).error instanceof Blob || typeof (response as any).error === "string" ? (response as any).error : undefined;
 
         let Headers: any = {}; if (response.headers) { for (let key of response.headers.keys()) { Headers[key] = response.headers.get(key); }}
         if (status === 200) {
@@ -2982,7 +2982,7 @@ export class MarketClient implements IMarketClient {
 
         let options : any = {
             observe: "response",
-            responseType: "blob",
+            responseType: "text",
             headers: new HttpHeaders({
                 "Accept": "application/json"
             })
@@ -3006,7 +3006,7 @@ export class MarketClient implements IMarketClient {
         const status = response.status;
         const responseBlob =
             response instanceof HttpResponse ? response.body :
-            (response as any).error instanceof Blob ? (response as any).error : undefined;
+            (response as any).error instanceof Blob || typeof (response as any).error === "string" ? (response as any).error : undefined;
 
         let Headers: any = {}; if (response.headers) { for (let key of response.headers.keys()) { Headers[key] = response.headers.get(key); }}
         if (status === 200) {
@@ -3096,7 +3096,7 @@ export class MembershipClient implements IMembershipClient {
         let options : any = {
             body: content,
             observe: "response",
-            responseType: "blob",
+            responseType: "text",
             headers: new HttpHeaders({
                 "Content-Type": "application/json",
                 "Accept": "application/json"
@@ -3121,7 +3121,7 @@ export class MembershipClient implements IMembershipClient {
         const status = response.status;
         const responseBlob =
             response instanceof HttpResponse ? response.body :
-            (response as any).error instanceof Blob ? (response as any).error : undefined;
+            (response as any).error instanceof Blob || typeof (response as any).error === "string" ? (response as any).error : undefined;
 
         let Headers: any = {}; if (response.headers) { for (let key of response.headers.keys()) { Headers[key] = response.headers.get(key); }}
         if (status === 200) {
@@ -3155,7 +3155,7 @@ export class MembershipClient implements IMembershipClient {
 
         let options : any = {
             observe: "response",
-            responseType: "blob",
+            responseType: "text",
             headers: new HttpHeaders({
                 "Accept": "application/json"
             })
@@ -3179,7 +3179,7 @@ export class MembershipClient implements IMembershipClient {
         const status = response.status;
         const responseBlob =
             response instanceof HttpResponse ? response.body :
-            (response as any).error instanceof Blob ? (response as any).error : undefined;
+            (response as any).error instanceof Blob || typeof (response as any).error === "string" ? (response as any).error : undefined;
 
         let Headers: any = {}; if (response.headers) { for (let key of response.headers.keys()) { Headers[key] = response.headers.get(key); }}
         if (status === 200) {
@@ -3213,7 +3213,7 @@ export class MembershipClient implements IMembershipClient {
 
         let options : any = {
             observe: "response",
-            responseType: "blob",
+            responseType: "text",
             headers: new HttpHeaders({
                 "Accept": "application/json"
             })
@@ -3237,7 +3237,7 @@ export class MembershipClient implements IMembershipClient {
         const status = response.status;
         const responseBlob =
             response instanceof HttpResponse ? response.body :
-            (response as any).error instanceof Blob ? (response as any).error : undefined;
+            (response as any).error instanceof Blob || typeof (response as any).error === "string" ? (response as any).error : undefined;
 
         let Headers: any = {}; if (response.headers) { for (let key of response.headers.keys()) { Headers[key] = response.headers.get(key); }}
         if (status === 200) {
@@ -3268,7 +3268,7 @@ export class MembershipClient implements IMembershipClient {
         let options : any = {
             body: content,
             observe: "response",
-            responseType: "blob",
+            responseType: "text",
             headers: new HttpHeaders({
                 "Content-Type": "application/json",
                 "Accept": "application/json"
@@ -3293,7 +3293,7 @@ export class MembershipClient implements IMembershipClient {
         const status = response.status;
         const responseBlob =
             response instanceof HttpResponse ? response.body :
-            (response as any).error instanceof Blob ? (response as any).error : undefined;
+            (response as any).error instanceof Blob || typeof (response as any).error === "string" ? (response as any).error : undefined;
 
         let Headers: any = {}; if (response.headers) { for (let key of response.headers.keys()) { Headers[key] = response.headers.get(key); }}
         if (status === 200) {
@@ -3332,7 +3332,7 @@ export class MembershipClient implements IMembershipClient {
 
         let options : any = {
             observe: "response",
-            responseType: "blob",
+            responseType: "text",
             headers: new HttpHeaders({
                 "Accept": "application/json"
             })
@@ -3356,7 +3356,7 @@ export class MembershipClient implements IMembershipClient {
         const status = response.status;
         const responseBlob =
             response instanceof HttpResponse ? response.body :
-            (response as any).error instanceof Blob ? (response as any).error : undefined;
+            (response as any).error instanceof Blob || typeof (response as any).error === "string" ? (response as any).error : undefined;
 
         let Headers: any = {}; if (response.headers) { for (let key of response.headers.keys()) { Headers[key] = response.headers.get(key); }}
         if (status === 200) {
@@ -3394,7 +3394,7 @@ export class MembershipClient implements IMembershipClient {
         let options : any = {
             body: content,
             observe: "response",
-            responseType: "blob",
+            responseType: "text",
             headers: new HttpHeaders({
                 "Content-Type": "application/json",
                 "Accept": "application/json"
@@ -3419,7 +3419,7 @@ export class MembershipClient implements IMembershipClient {
         const status = response.status;
         const responseBlob =
             response instanceof HttpResponse ? response.body :
-            (response as any).error instanceof Blob ? (response as any).error : undefined;
+            (response as any).error instanceof Blob || typeof (response as any).error === "string" ? (response as any).error : undefined;
 
         let Headers: any = {}; if (response.headers) { for (let key of response.headers.keys()) { Headers[key] = response.headers.get(key); }}
         if (status === 200) {
@@ -3479,7 +3479,7 @@ export class NotificationPreferencesClient implements INotificationPreferencesCl
 
         let options : any = {
             observe: "response",
-            responseType: "blob",
+            responseType: "text",
             headers: new HttpHeaders({
                 "Accept": "application/json"
             })
@@ -3503,7 +3503,7 @@ export class NotificationPreferencesClient implements INotificationPreferencesCl
         const status = response.status;
         const responseBlob =
             response instanceof HttpResponse ? response.body :
-            (response as any).error instanceof Blob ? (response as any).error : undefined;
+            (response as any).error instanceof Blob || typeof (response as any).error === "string" ? (response as any).error : undefined;
 
         let Headers: any = {}; if (response.headers) { for (let key of response.headers.keys()) { Headers[key] = response.headers.get(key); }}
         if (status === 200) {
@@ -3541,7 +3541,7 @@ export class NotificationPreferencesClient implements INotificationPreferencesCl
         let options : any = {
             body: content,
             observe: "response",
-            responseType: "blob",
+            responseType: "text",
             headers: new HttpHeaders({
                 "Content-Type": "application/json",
                 "Accept": "application/json"
@@ -3566,7 +3566,7 @@ export class NotificationPreferencesClient implements INotificationPreferencesCl
         const status = response.status;
         const responseBlob =
             response instanceof HttpResponse ? response.body :
-            (response as any).error instanceof Blob ? (response as any).error : undefined;
+            (response as any).error instanceof Blob || typeof (response as any).error === "string" ? (response as any).error : undefined;
 
         let Headers: any = {}; if (response.headers) { for (let key of response.headers.keys()) { Headers[key] = response.headers.get(key); }}
         if (status === 200) {
@@ -3786,7 +3786,7 @@ export class OrderClient implements IOrderClient {
         let options : any = {
             body: content,
             observe: "response",
-            responseType: "blob",
+            responseType: "text",
             headers: new HttpHeaders({
                 "Content-Type": "application/json",
                 "Accept": "application/json"
@@ -3811,7 +3811,7 @@ export class OrderClient implements IOrderClient {
         const status = response.status;
         const responseBlob =
             response instanceof HttpResponse ? response.body :
-            (response as any).error instanceof Blob ? (response as any).error : undefined;
+            (response as any).error instanceof Blob || typeof (response as any).error === "string" ? (response as any).error : undefined;
 
         let Headers: any = {}; if (response.headers) { for (let key of response.headers.keys()) { Headers[key] = response.headers.get(key); }}
         if (status === 200) {
@@ -3849,7 +3849,7 @@ export class OrderClient implements IOrderClient {
         let options : any = {
             body: content,
             observe: "response",
-            responseType: "blob",
+            responseType: "text",
             headers: new HttpHeaders({
                 "Content-Type": "application/json",
                 "Accept": "application/json"
@@ -3874,7 +3874,7 @@ export class OrderClient implements IOrderClient {
         const status = response.status;
         const responseBlob =
             response instanceof HttpResponse ? response.body :
-            (response as any).error instanceof Blob ? (response as any).error : undefined;
+            (response as any).error instanceof Blob || typeof (response as any).error === "string" ? (response as any).error : undefined;
 
         let Headers: any = {}; if (response.headers) { for (let key of response.headers.keys()) { Headers[key] = response.headers.get(key); }}
         if (status === 200) {
@@ -3912,7 +3912,7 @@ export class OrderClient implements IOrderClient {
         let options : any = {
             body: content,
             observe: "response",
-            responseType: "blob",
+            responseType: "text",
             headers: new HttpHeaders({
                 "Content-Type": "application/json",
                 "Accept": "application/json"
@@ -3937,7 +3937,7 @@ export class OrderClient implements IOrderClient {
         const status = response.status;
         const responseBlob =
             response instanceof HttpResponse ? response.body :
-            (response as any).error instanceof Blob ? (response as any).error : undefined;
+            (response as any).error instanceof Blob || typeof (response as any).error === "string" ? (response as any).error : undefined;
 
         let Headers: any = {}; if (response.headers) { for (let key of response.headers.keys()) { Headers[key] = response.headers.get(key); }}
         if (status === 200) {
@@ -3975,7 +3975,7 @@ export class OrderClient implements IOrderClient {
         let options : any = {
             body: content,
             observe: "response",
-            responseType: "blob",
+            responseType: "text",
             headers: new HttpHeaders({
                 "Content-Type": "application/json",
                 "Accept": "application/json"
@@ -4000,7 +4000,7 @@ export class OrderClient implements IOrderClient {
         const status = response.status;
         const responseBlob =
             response instanceof HttpResponse ? response.body :
-            (response as any).error instanceof Blob ? (response as any).error : undefined;
+            (response as any).error instanceof Blob || typeof (response as any).error === "string" ? (response as any).error : undefined;
 
         let Headers: any = {}; if (response.headers) { for (let key of response.headers.keys()) { Headers[key] = response.headers.get(key); }}
         if (status === 200) {
@@ -4039,7 +4039,7 @@ export class OrderClient implements IOrderClient {
 
         let options : any = {
             observe: "response",
-            responseType: "blob",
+            responseType: "text",
             headers: new HttpHeaders({
                 "Accept": "application/json"
             })
@@ -4063,7 +4063,7 @@ export class OrderClient implements IOrderClient {
         const status = response.status;
         const responseBlob =
             response instanceof HttpResponse ? response.body :
-            (response as any).error instanceof Blob ? (response as any).error : undefined;
+            (response as any).error instanceof Blob || typeof (response as any).error === "string" ? (response as any).error : undefined;
 
         let Headers: any = {}; if (response.headers) { for (let key of response.headers.keys()) { Headers[key] = response.headers.get(key); }}
         if (status === 200) {
@@ -4101,7 +4101,7 @@ export class OrderClient implements IOrderClient {
         let options : any = {
             body: content,
             observe: "response",
-            responseType: "blob",
+            responseType: "text",
             headers: new HttpHeaders({
                 "Content-Type": "application/json",
                 "Accept": "application/json"
@@ -4126,7 +4126,7 @@ export class OrderClient implements IOrderClient {
         const status = response.status;
         const responseBlob =
             response instanceof HttpResponse ? response.body :
-            (response as any).error instanceof Blob ? (response as any).error : undefined;
+            (response as any).error instanceof Blob || typeof (response as any).error === "string" ? (response as any).error : undefined;
 
         let Headers: any = {}; if (response.headers) { for (let key of response.headers.keys()) { Headers[key] = response.headers.get(key); }}
         if (status === 200) {
@@ -4157,7 +4157,7 @@ export class OrderClient implements IOrderClient {
         let options : any = {
             body: content,
             observe: "response",
-            responseType: "blob",
+            responseType: "text",
             headers: new HttpHeaders({
                 "Content-Type": "application/json",
                 "Accept": "application/json"
@@ -4182,7 +4182,7 @@ export class OrderClient implements IOrderClient {
         const status = response.status;
         const responseBlob =
             response instanceof HttpResponse ? response.body :
-            (response as any).error instanceof Blob ? (response as any).error : undefined;
+            (response as any).error instanceof Blob || typeof (response as any).error === "string" ? (response as any).error : undefined;
 
         let Headers: any = {}; if (response.headers) { for (let key of response.headers.keys()) { Headers[key] = response.headers.get(key); }}
         if (status === 200) {
@@ -4220,7 +4220,7 @@ export class OrderClient implements IOrderClient {
         let options : any = {
             body: content,
             observe: "response",
-            responseType: "blob",
+            responseType: "text",
             headers: new HttpHeaders({
                 "Content-Type": "application/json",
                 "Accept": "application/json"
@@ -4245,7 +4245,7 @@ export class OrderClient implements IOrderClient {
         const status = response.status;
         const responseBlob =
             response instanceof HttpResponse ? response.body :
-            (response as any).error instanceof Blob ? (response as any).error : undefined;
+            (response as any).error instanceof Blob || typeof (response as any).error === "string" ? (response as any).error : undefined;
 
         let Headers: any = {}; if (response.headers) { for (let key of response.headers.keys()) { Headers[key] = response.headers.get(key); }}
         if (status === 200) {
@@ -4283,7 +4283,7 @@ export class OrderClient implements IOrderClient {
         let options : any = {
             body: content,
             observe: "response",
-            responseType: "blob",
+            responseType: "text",
             headers: new HttpHeaders({
                 "Content-Type": "application/json",
                 "Accept": "application/json"
@@ -4308,7 +4308,7 @@ export class OrderClient implements IOrderClient {
         const status = response.status;
         const responseBlob =
             response instanceof HttpResponse ? response.body :
-            (response as any).error instanceof Blob ? (response as any).error : undefined;
+            (response as any).error instanceof Blob || typeof (response as any).error === "string" ? (response as any).error : undefined;
 
         let Headers: any = {}; if (response.headers) { for (let key of response.headers.keys()) { Headers[key] = response.headers.get(key); }}
         if (status === 200) {
@@ -4346,7 +4346,7 @@ export class OrderClient implements IOrderClient {
         let options : any = {
             body: content,
             observe: "response",
-            responseType: "blob",
+            responseType: "text",
             headers: new HttpHeaders({
                 "Content-Type": "application/json",
                 "Accept": "application/json"
@@ -4371,7 +4371,7 @@ export class OrderClient implements IOrderClient {
         const status = response.status;
         const responseBlob =
             response instanceof HttpResponse ? response.body :
-            (response as any).error instanceof Blob ? (response as any).error : undefined;
+            (response as any).error instanceof Blob || typeof (response as any).error === "string" ? (response as any).error : undefined;
 
         let Headers: any = {}; if (response.headers) { for (let key of response.headers.keys()) { Headers[key] = response.headers.get(key); }}
         if (status === 200) {
@@ -4527,7 +4527,7 @@ export class OrderClient implements IOrderClient {
 
         let options : any = {
             observe: "response",
-            responseType: "blob",
+            responseType: "text",
             headers: new HttpHeaders({
                 "Accept": "application/json"
             })
@@ -4551,7 +4551,7 @@ export class OrderClient implements IOrderClient {
         const status = response.status;
         const responseBlob =
             response instanceof HttpResponse ? response.body :
-            (response as any).error instanceof Blob ? (response as any).error : undefined;
+            (response as any).error instanceof Blob || typeof (response as any).error === "string" ? (response as any).error : undefined;
 
         let Headers: any = {}; if (response.headers) { for (let key of response.headers.keys()) { Headers[key] = response.headers.get(key); }}
         if (status === 200) {
@@ -4714,7 +4714,7 @@ export class OrderClient implements IOrderClient {
 
         let options : any = {
             observe: "response",
-            responseType: "blob",
+            responseType: "text",
             headers: new HttpHeaders({
                 "Accept": "application/json"
             })
@@ -4738,7 +4738,7 @@ export class OrderClient implements IOrderClient {
         const status = response.status;
         const responseBlob =
             response instanceof HttpResponse ? response.body :
-            (response as any).error instanceof Blob ? (response as any).error : undefined;
+            (response as any).error instanceof Blob || typeof (response as any).error === "string" ? (response as any).error : undefined;
 
         let Headers: any = {}; if (response.headers) { for (let key of response.headers.keys()) { Headers[key] = response.headers.get(key); }}
         if (status === 200) {
@@ -4791,7 +4791,7 @@ export class OrderClient implements IOrderClient {
 
         let options : any = {
             observe: "response",
-            responseType: "blob",
+            responseType: "text",
             headers: new HttpHeaders({
                 "Accept": "application/json"
             })
@@ -4815,7 +4815,7 @@ export class OrderClient implements IOrderClient {
         const status = response.status;
         const responseBlob =
             response instanceof HttpResponse ? response.body :
-            (response as any).error instanceof Blob ? (response as any).error : undefined;
+            (response as any).error instanceof Blob || typeof (response as any).error === "string" ? (response as any).error : undefined;
 
         let Headers: any = {}; if (response.headers) { for (let key of response.headers.keys()) { Headers[key] = response.headers.get(key); }}
         if (status === 200) {
@@ -4892,7 +4892,7 @@ export class OrderClient implements IOrderClient {
         const status = response.status;
         const responseBlob =
             response instanceof HttpResponse ? response.body :
-            (response as any).error instanceof Blob ? (response as any).error : undefined;
+            (response as any).error instanceof Blob || typeof (response as any).error === "string" ? (response as any).error : undefined;
 
         let Headers: any = {}; if (response.headers) { for (let key of response.headers.keys()) { Headers[key] = response.headers.get(key); }}
         if (status === 200 || status === 206) {
@@ -4949,7 +4949,7 @@ export class OrderClient implements IOrderClient {
 
         let options : any = {
             observe: "response",
-            responseType: "blob",
+            responseType: "text",
             headers: new HttpHeaders({
                 "Accept": "application/json"
             })
@@ -4973,7 +4973,7 @@ export class OrderClient implements IOrderClient {
         const status = response.status;
         const responseBlob =
             response instanceof HttpResponse ? response.body :
-            (response as any).error instanceof Blob ? (response as any).error : undefined;
+            (response as any).error instanceof Blob || typeof (response as any).error === "string" ? (response as any).error : undefined;
 
         let Headers: any = {}; if (response.headers) { for (let key of response.headers.keys()) { Headers[key] = response.headers.get(key); }}
         if (status === 200) {
@@ -5025,7 +5025,7 @@ export class OrderClient implements IOrderClient {
         let options : any = {
             body: content,
             observe: "response",
-            responseType: "blob",
+            responseType: "text",
             headers: new HttpHeaders({
                 "Content-Type": "application/json",
                 "Accept": "application/json"
@@ -5050,7 +5050,7 @@ export class OrderClient implements IOrderClient {
         const status = response.status;
         const responseBlob =
             response instanceof HttpResponse ? response.body :
-            (response as any).error instanceof Blob ? (response as any).error : undefined;
+            (response as any).error instanceof Blob || typeof (response as any).error === "string" ? (response as any).error : undefined;
 
         let Headers: any = {}; if (response.headers) { for (let key of response.headers.keys()) { Headers[key] = response.headers.get(key); }}
         if (status === 200) {
@@ -5102,7 +5102,7 @@ export class OrderClient implements IOrderClient {
         let options : any = {
             body: content,
             observe: "response",
-            responseType: "blob",
+            responseType: "text",
             headers: new HttpHeaders({
                 "Content-Type": "application/json",
                 "Accept": "application/json"
@@ -5127,7 +5127,7 @@ export class OrderClient implements IOrderClient {
         const status = response.status;
         const responseBlob =
             response instanceof HttpResponse ? response.body :
-            (response as any).error instanceof Blob ? (response as any).error : undefined;
+            (response as any).error instanceof Blob || typeof (response as any).error === "string" ? (response as any).error : undefined;
 
         let Headers: any = {}; if (response.headers) { for (let key of response.headers.keys()) { Headers[key] = response.headers.get(key); }}
         if (status === 200) {
@@ -5180,7 +5180,7 @@ export class OrderClient implements IOrderClient {
 
         let options : any = {
             observe: "response",
-            responseType: "blob",
+            responseType: "text",
             headers: new HttpHeaders({
                 "Accept": "application/json"
             })
@@ -5204,7 +5204,7 @@ export class OrderClient implements IOrderClient {
         const status = response.status;
         const responseBlob =
             response instanceof HttpResponse ? response.body :
-            (response as any).error instanceof Blob ? (response as any).error : undefined;
+            (response as any).error instanceof Blob || typeof (response as any).error === "string" ? (response as any).error : undefined;
 
         let Headers: any = {}; if (response.headers) { for (let key of response.headers.keys()) { Headers[key] = response.headers.get(key); }}
         if (status === 200) {
@@ -5256,7 +5256,7 @@ export class OrderClient implements IOrderClient {
         let options : any = {
             body: content,
             observe: "response",
-            responseType: "blob",
+            responseType: "text",
             headers: new HttpHeaders({
                 "Content-Type": "application/json",
                 "Accept": "application/json"
@@ -5281,7 +5281,7 @@ export class OrderClient implements IOrderClient {
         const status = response.status;
         const responseBlob =
             response instanceof HttpResponse ? response.body :
-            (response as any).error instanceof Blob ? (response as any).error : undefined;
+            (response as any).error instanceof Blob || typeof (response as any).error === "string" ? (response as any).error : undefined;
 
         let Headers: any = {}; if (response.headers) { for (let key of response.headers.keys()) { Headers[key] = response.headers.get(key); }}
         if (status === 200) {
@@ -5359,7 +5359,7 @@ export class OrderClient implements IOrderClient {
 
         let options : any = {
             observe: "response",
-            responseType: "blob",
+            responseType: "text",
             headers: new HttpHeaders({
                 "Accept": "application/json"
             })
@@ -5383,7 +5383,7 @@ export class OrderClient implements IOrderClient {
         const status = response.status;
         const responseBlob =
             response instanceof HttpResponse ? response.body :
-            (response as any).error instanceof Blob ? (response as any).error : undefined;
+            (response as any).error instanceof Blob || typeof (response as any).error === "string" ? (response as any).error : undefined;
 
         let Headers: any = {}; if (response.headers) { for (let key of response.headers.keys()) { Headers[key] = response.headers.get(key); }}
         if (status === 200) {
@@ -5435,7 +5435,7 @@ export class OrderClient implements IOrderClient {
         let options : any = {
             body: content,
             observe: "response",
-            responseType: "blob",
+            responseType: "text",
             headers: new HttpHeaders({
                 "Content-Type": "application/json",
                 "Accept": "application/json"
@@ -5460,7 +5460,7 @@ export class OrderClient implements IOrderClient {
         const status = response.status;
         const responseBlob =
             response instanceof HttpResponse ? response.body :
-            (response as any).error instanceof Blob ? (response as any).error : undefined;
+            (response as any).error instanceof Blob || typeof (response as any).error === "string" ? (response as any).error : undefined;
 
         let Headers: any = {}; if (response.headers) { for (let key of response.headers.keys()) { Headers[key] = response.headers.get(key); }}
         if (status === 200) {
@@ -5518,7 +5518,7 @@ export class OrderClient implements IOrderClient {
 
         let options : any = {
             observe: "response",
-            responseType: "blob",
+            responseType: "text",
             headers: new HttpHeaders({
                 "Accept": "application/json"
             })
@@ -5542,7 +5542,7 @@ export class OrderClient implements IOrderClient {
         const status = response.status;
         const responseBlob =
             response instanceof HttpResponse ? response.body :
-            (response as any).error instanceof Blob ? (response as any).error : undefined;
+            (response as any).error instanceof Blob || typeof (response as any).error === "string" ? (response as any).error : undefined;
 
         let Headers: any = {}; if (response.headers) { for (let key of response.headers.keys()) { Headers[key] = response.headers.get(key); }}
         if (status === 200) {
@@ -5617,7 +5617,7 @@ export class PackageClient implements IPackageClient {
 
         let options : any = {
             observe: "response",
-            responseType: "blob",
+            responseType: "text",
             headers: new HttpHeaders({
                 "Accept": "application/json"
             })
@@ -5641,7 +5641,7 @@ export class PackageClient implements IPackageClient {
         const status = response.status;
         const responseBlob =
             response instanceof HttpResponse ? response.body :
-            (response as any).error instanceof Blob ? (response as any).error : undefined;
+            (response as any).error instanceof Blob || typeof (response as any).error === "string" ? (response as any).error : undefined;
 
         let Headers: any = {}; if (response.headers) { for (let key of response.headers.keys()) { Headers[key] = response.headers.get(key); }}
         if (status === 200) {
@@ -5722,7 +5722,7 @@ export class PaymentClient implements IPaymentClient {
         let options : any = {
             body: content,
             observe: "response",
-            responseType: "blob",
+            responseType: "text",
             headers: new HttpHeaders({
                 "Content-Type": "application/json",
                 "Accept": "application/json"
@@ -5747,7 +5747,7 @@ export class PaymentClient implements IPaymentClient {
         const status = response.status;
         const responseBlob =
             response instanceof HttpResponse ? response.body :
-            (response as any).error instanceof Blob ? (response as any).error : undefined;
+            (response as any).error instanceof Blob || typeof (response as any).error === "string" ? (response as any).error : undefined;
 
         let Headers: any = {}; if (response.headers) { for (let key of response.headers.keys()) { Headers[key] = response.headers.get(key); }}
         if (status === 200) {
@@ -5785,7 +5785,7 @@ export class PaymentClient implements IPaymentClient {
         let options : any = {
             body: content,
             observe: "response",
-            responseType: "blob",
+            responseType: "text",
             headers: new HttpHeaders({
                 "Content-Type": "application/json",
                 "Accept": "application/json"
@@ -5810,7 +5810,7 @@ export class PaymentClient implements IPaymentClient {
         const status = response.status;
         const responseBlob =
             response instanceof HttpResponse ? response.body :
-            (response as any).error instanceof Blob ? (response as any).error : undefined;
+            (response as any).error instanceof Blob || typeof (response as any).error === "string" ? (response as any).error : undefined;
 
         let Headers: any = {}; if (response.headers) { for (let key of response.headers.keys()) { Headers[key] = response.headers.get(key); }}
         if (status === 200) {
@@ -5855,7 +5855,7 @@ export class PaymentClient implements IPaymentClient {
         let options : any = {
             body: content,
             observe: "response",
-            responseType: "blob",
+            responseType: "text",
             headers: new HttpHeaders({
                 "Content-Type": "application/json",
                 "Accept": "application/json"
@@ -5880,7 +5880,7 @@ export class PaymentClient implements IPaymentClient {
         const status = response.status;
         const responseBlob =
             response instanceof HttpResponse ? response.body :
-            (response as any).error instanceof Blob ? (response as any).error : undefined;
+            (response as any).error instanceof Blob || typeof (response as any).error === "string" ? (response as any).error : undefined;
 
         let Headers: any = {}; if (response.headers) { for (let key of response.headers.keys()) { Headers[key] = response.headers.get(key); }}
         if (status === 200) {
@@ -5921,7 +5921,7 @@ export class PaymentClient implements IPaymentClient {
 
         let options : any = {
             observe: "response",
-            responseType: "blob",
+            responseType: "text",
             headers: new HttpHeaders({
             })
         };
@@ -5944,7 +5944,7 @@ export class PaymentClient implements IPaymentClient {
         const status = response.status;
         const responseBlob =
             response instanceof HttpResponse ? response.body :
-            (response as any).error instanceof Blob ? (response as any).error : undefined;
+            (response as any).error instanceof Blob || typeof (response as any).error === "string" ? (response as any).error : undefined;
 
         let Headers: any = {}; if (response.headers) { for (let key of response.headers.keys()) { Headers[key] = response.headers.get(key); }}
         if (status === 200) {
@@ -6006,7 +6006,7 @@ export class PromoCodeClient implements IPromoCodeClient {
         let options : any = {
             body: content,
             observe: "response",
-            responseType: "blob",
+            responseType: "text",
             headers: new HttpHeaders({
                 "Content-Type": "application/json",
                 "Accept": "application/json"
@@ -6031,7 +6031,7 @@ export class PromoCodeClient implements IPromoCodeClient {
         const status = response.status;
         const responseBlob =
             response instanceof HttpResponse ? response.body :
-            (response as any).error instanceof Blob ? (response as any).error : undefined;
+            (response as any).error instanceof Blob || typeof (response as any).error === "string" ? (response as any).error : undefined;
 
         let Headers: any = {}; if (response.headers) { for (let key of response.headers.keys()) { Headers[key] = response.headers.get(key); }}
         if (status === 200) {
@@ -6083,7 +6083,7 @@ export class PromoCodeClient implements IPromoCodeClient {
         let options : any = {
             body: content,
             observe: "response",
-            responseType: "blob",
+            responseType: "text",
             headers: new HttpHeaders({
                 "Content-Type": "application/json",
                 "Accept": "application/json"
@@ -6108,7 +6108,7 @@ export class PromoCodeClient implements IPromoCodeClient {
         const status = response.status;
         const responseBlob =
             response instanceof HttpResponse ? response.body :
-            (response as any).error instanceof Blob ? (response as any).error : undefined;
+            (response as any).error instanceof Blob || typeof (response as any).error === "string" ? (response as any).error : undefined;
 
         let Headers: any = {}; if (response.headers) { for (let key of response.headers.keys()) { Headers[key] = response.headers.get(key); }}
         if (status === 200) {
@@ -6167,7 +6167,7 @@ export class ReceivableClient implements IReceivableClient {
 
         let options : any = {
             observe: "response",
-            responseType: "blob",
+            responseType: "text",
             headers: new HttpHeaders({
                 "Accept": "application/json"
             })
@@ -6191,7 +6191,7 @@ export class ReceivableClient implements IReceivableClient {
         const status = response.status;
         const responseBlob =
             response instanceof HttpResponse ? response.body :
-            (response as any).error instanceof Blob ? (response as any).error : undefined;
+            (response as any).error instanceof Blob || typeof (response as any).error === "string" ? (response as any).error : undefined;
 
         let Headers: any = {}; if (response.headers) { for (let key of response.headers.keys()) { Headers[key] = response.headers.get(key); }}
         if (status === 200) {
@@ -6228,7 +6228,7 @@ export class ReceivableClient implements IReceivableClient {
 
         let options : any = {
             observe: "response",
-            responseType: "blob",
+            responseType: "text",
             headers: new HttpHeaders({
                 "Accept": "application/json"
             })
@@ -6252,7 +6252,7 @@ export class ReceivableClient implements IReceivableClient {
         const status = response.status;
         const responseBlob =
             response instanceof HttpResponse ? response.body :
-            (response as any).error instanceof Blob ? (response as any).error : undefined;
+            (response as any).error instanceof Blob || typeof (response as any).error === "string" ? (response as any).error : undefined;
 
         let Headers: any = {}; if (response.headers) { for (let key of response.headers.keys()) { Headers[key] = response.headers.get(key); }}
         if (status === 200) {
@@ -6327,7 +6327,7 @@ export class RecurringBookingClient implements IRecurringBookingClient {
 
         let options : any = {
             observe: "response",
-            responseType: "blob",
+            responseType: "text",
             headers: new HttpHeaders({
                 "Accept": "application/json"
             })
@@ -6351,7 +6351,7 @@ export class RecurringBookingClient implements IRecurringBookingClient {
         const status = response.status;
         const responseBlob =
             response instanceof HttpResponse ? response.body :
-            (response as any).error instanceof Blob ? (response as any).error : undefined;
+            (response as any).error instanceof Blob || typeof (response as any).error === "string" ? (response as any).error : undefined;
 
         let Headers: any = {}; if (response.headers) { for (let key of response.headers.keys()) { Headers[key] = response.headers.get(key); }}
         if (status === 200) {
@@ -6389,7 +6389,7 @@ export class RecurringBookingClient implements IRecurringBookingClient {
         let options : any = {
             body: content,
             observe: "response",
-            responseType: "blob",
+            responseType: "text",
             headers: new HttpHeaders({
                 "Content-Type": "application/json",
                 "Accept": "application/json"
@@ -6414,7 +6414,7 @@ export class RecurringBookingClient implements IRecurringBookingClient {
         const status = response.status;
         const responseBlob =
             response instanceof HttpResponse ? response.body :
-            (response as any).error instanceof Blob ? (response as any).error : undefined;
+            (response as any).error instanceof Blob || typeof (response as any).error === "string" ? (response as any).error : undefined;
 
         let Headers: any = {}; if (response.headers) { for (let key of response.headers.keys()) { Headers[key] = response.headers.get(key); }}
         if (status === 200) {
@@ -6452,7 +6452,7 @@ export class RecurringBookingClient implements IRecurringBookingClient {
         let options : any = {
             body: content,
             observe: "response",
-            responseType: "blob",
+            responseType: "text",
             headers: new HttpHeaders({
                 "Content-Type": "application/json",
                 "Accept": "application/json"
@@ -6477,7 +6477,7 @@ export class RecurringBookingClient implements IRecurringBookingClient {
         const status = response.status;
         const responseBlob =
             response instanceof HttpResponse ? response.body :
-            (response as any).error instanceof Blob ? (response as any).error : undefined;
+            (response as any).error instanceof Blob || typeof (response as any).error === "string" ? (response as any).error : undefined;
 
         let Headers: any = {}; if (response.headers) { for (let key of response.headers.keys()) { Headers[key] = response.headers.get(key); }}
         if (status === 200) {
@@ -6515,7 +6515,7 @@ export class RecurringBookingClient implements IRecurringBookingClient {
         let options : any = {
             body: content,
             observe: "response",
-            responseType: "blob",
+            responseType: "text",
             headers: new HttpHeaders({
                 "Content-Type": "application/json",
             })
@@ -6539,7 +6539,7 @@ export class RecurringBookingClient implements IRecurringBookingClient {
         const status = response.status;
         const responseBlob =
             response instanceof HttpResponse ? response.body :
-            (response as any).error instanceof Blob ? (response as any).error : undefined;
+            (response as any).error instanceof Blob || typeof (response as any).error === "string" ? (response as any).error : undefined;
 
         let Headers: any = {}; if (response.headers) { for (let key of response.headers.keys()) { Headers[key] = response.headers.get(key); }}
         if (status === 200) {
@@ -6574,7 +6574,7 @@ export class RecurringBookingClient implements IRecurringBookingClient {
         let options : any = {
             body: content,
             observe: "response",
-            responseType: "blob",
+            responseType: "text",
             headers: new HttpHeaders({
                 "Content-Type": "application/json",
             })
@@ -6598,7 +6598,7 @@ export class RecurringBookingClient implements IRecurringBookingClient {
         const status = response.status;
         const responseBlob =
             response instanceof HttpResponse ? response.body :
-            (response as any).error instanceof Blob ? (response as any).error : undefined;
+            (response as any).error instanceof Blob || typeof (response as any).error === "string" ? (response as any).error : undefined;
 
         let Headers: any = {}; if (response.headers) { for (let key of response.headers.keys()) { Headers[key] = response.headers.get(key); }}
         if (status === 200) {
@@ -6661,7 +6661,7 @@ export class ReferralClient implements IReferralClient {
 
         let options : any = {
             observe: "response",
-            responseType: "blob",
+            responseType: "text",
             headers: new HttpHeaders({
                 "Accept": "application/json"
             })
@@ -6685,7 +6685,7 @@ export class ReferralClient implements IReferralClient {
         const status = response.status;
         const responseBlob =
             response instanceof HttpResponse ? response.body :
-            (response as any).error instanceof Blob ? (response as any).error : undefined;
+            (response as any).error instanceof Blob || typeof (response as any).error === "string" ? (response as any).error : undefined;
 
         let Headers: any = {}; if (response.headers) { for (let key of response.headers.keys()) { Headers[key] = response.headers.get(key); }}
         if (status === 200) {
@@ -6743,7 +6743,7 @@ export class ReferralClient implements IReferralClient {
 
         let options : any = {
             observe: "response",
-            responseType: "blob",
+            responseType: "text",
             headers: new HttpHeaders({
                 "Accept": "application/json"
             })
@@ -6767,7 +6767,7 @@ export class ReferralClient implements IReferralClient {
         const status = response.status;
         const responseBlob =
             response instanceof HttpResponse ? response.body :
-            (response as any).error instanceof Blob ? (response as any).error : undefined;
+            (response as any).error instanceof Blob || typeof (response as any).error === "string" ? (response as any).error : undefined;
 
         let Headers: any = {}; if (response.headers) { for (let key of response.headers.keys()) { Headers[key] = response.headers.get(key); }}
         if (status === 200) {
@@ -6819,7 +6819,7 @@ export class ReferralClient implements IReferralClient {
         let options : any = {
             body: content,
             observe: "response",
-            responseType: "blob",
+            responseType: "text",
             headers: new HttpHeaders({
                 "Content-Type": "application/json",
                 "Accept": "application/json"
@@ -6844,7 +6844,7 @@ export class ReferralClient implements IReferralClient {
         const status = response.status;
         const responseBlob =
             response instanceof HttpResponse ? response.body :
-            (response as any).error instanceof Blob ? (response as any).error : undefined;
+            (response as any).error instanceof Blob || typeof (response as any).error === "string" ? (response as any).error : undefined;
 
         let Headers: any = {}; if (response.headers) { for (let key of response.headers.keys()) { Headers[key] = response.headers.get(key); }}
         if (status === 200) {
@@ -6918,7 +6918,7 @@ export class SavedAddressClient implements ISavedAddressClient {
 
         let options : any = {
             observe: "response",
-            responseType: "blob",
+            responseType: "text",
             headers: new HttpHeaders({
                 "Accept": "application/json"
             })
@@ -6942,7 +6942,7 @@ export class SavedAddressClient implements ISavedAddressClient {
         const status = response.status;
         const responseBlob =
             response instanceof HttpResponse ? response.body :
-            (response as any).error instanceof Blob ? (response as any).error : undefined;
+            (response as any).error instanceof Blob || typeof (response as any).error === "string" ? (response as any).error : undefined;
 
         let Headers: any = {}; if (response.headers) { for (let key of response.headers.keys()) { Headers[key] = response.headers.get(key); }}
         if (status === 200) {
@@ -6987,7 +6987,7 @@ export class SavedAddressClient implements ISavedAddressClient {
         let options : any = {
             body: content,
             observe: "response",
-            responseType: "blob",
+            responseType: "text",
             headers: new HttpHeaders({
                 "Content-Type": "application/json",
                 "Accept": "application/json"
@@ -7012,7 +7012,7 @@ export class SavedAddressClient implements ISavedAddressClient {
         const status = response.status;
         const responseBlob =
             response instanceof HttpResponse ? response.body :
-            (response as any).error instanceof Blob ? (response as any).error : undefined;
+            (response as any).error instanceof Blob || typeof (response as any).error === "string" ? (response as any).error : undefined;
 
         let Headers: any = {}; if (response.headers) { for (let key of response.headers.keys()) { Headers[key] = response.headers.get(key); }}
         if (status === 200) {
@@ -7057,7 +7057,7 @@ export class SavedAddressClient implements ISavedAddressClient {
         let options : any = {
             body: content,
             observe: "response",
-            responseType: "blob",
+            responseType: "text",
             headers: new HttpHeaders({
                 "Content-Type": "application/json",
             })
@@ -7081,7 +7081,7 @@ export class SavedAddressClient implements ISavedAddressClient {
         const status = response.status;
         const responseBlob =
             response instanceof HttpResponse ? response.body :
-            (response as any).error instanceof Blob ? (response as any).error : undefined;
+            (response as any).error instanceof Blob || typeof (response as any).error === "string" ? (response as any).error : undefined;
 
         let Headers: any = {}; if (response.headers) { for (let key of response.headers.keys()) { Headers[key] = response.headers.get(key); }}
         if (status === 200) {
@@ -7123,7 +7123,7 @@ export class SavedAddressClient implements ISavedAddressClient {
         let options : any = {
             body: content,
             observe: "response",
-            responseType: "blob",
+            responseType: "text",
             headers: new HttpHeaders({
                 "Content-Type": "application/json",
                 "Accept": "application/json"
@@ -7148,7 +7148,7 @@ export class SavedAddressClient implements ISavedAddressClient {
         const status = response.status;
         const responseBlob =
             response instanceof HttpResponse ? response.body :
-            (response as any).error instanceof Blob ? (response as any).error : undefined;
+            (response as any).error instanceof Blob || typeof (response as any).error === "string" ? (response as any).error : undefined;
 
         let Headers: any = {}; if (response.headers) { for (let key of response.headers.keys()) { Headers[key] = response.headers.get(key); }}
         if (status === 200) {
@@ -7192,7 +7192,7 @@ export class SavedAddressClient implements ISavedAddressClient {
 
         let options : any = {
             observe: "response",
-            responseType: "blob",
+            responseType: "text",
             headers: new HttpHeaders({
                 "Accept": "application/json"
             })
@@ -7216,7 +7216,7 @@ export class SavedAddressClient implements ISavedAddressClient {
         const status = response.status;
         const responseBlob =
             response instanceof HttpResponse ? response.body :
-            (response as any).error instanceof Blob ? (response as any).error : undefined;
+            (response as any).error instanceof Blob || typeof (response as any).error === "string" ? (response as any).error : undefined;
 
         let Headers: any = {}; if (response.headers) { for (let key of response.headers.keys()) { Headers[key] = response.headers.get(key); }}
         if (status === 200) {
@@ -7291,7 +7291,7 @@ export class SavedCardClient implements ISavedCardClient {
         let options : any = {
             body: content,
             observe: "response",
-            responseType: "blob",
+            responseType: "text",
             headers: new HttpHeaders({
                 "Content-Type": "application/json",
                 "Accept": "application/json"
@@ -7316,7 +7316,7 @@ export class SavedCardClient implements ISavedCardClient {
         const status = response.status;
         const responseBlob =
             response instanceof HttpResponse ? response.body :
-            (response as any).error instanceof Blob ? (response as any).error : undefined;
+            (response as any).error instanceof Blob || typeof (response as any).error === "string" ? (response as any).error : undefined;
 
         let Headers: any = {}; if (response.headers) { for (let key of response.headers.keys()) { Headers[key] = response.headers.get(key); }}
         if (status === 200) {
@@ -7350,7 +7350,7 @@ export class SavedCardClient implements ISavedCardClient {
 
         let options : any = {
             observe: "response",
-            responseType: "blob",
+            responseType: "text",
             headers: new HttpHeaders({
                 "Accept": "application/json"
             })
@@ -7374,7 +7374,7 @@ export class SavedCardClient implements ISavedCardClient {
         const status = response.status;
         const responseBlob =
             response instanceof HttpResponse ? response.body :
-            (response as any).error instanceof Blob ? (response as any).error : undefined;
+            (response as any).error instanceof Blob || typeof (response as any).error === "string" ? (response as any).error : undefined;
 
         let Headers: any = {}; if (response.headers) { for (let key of response.headers.keys()) { Headers[key] = response.headers.get(key); }}
         if (status === 200) {
@@ -7411,7 +7411,7 @@ export class SavedCardClient implements ISavedCardClient {
 
         let options : any = {
             observe: "response",
-            responseType: "blob",
+            responseType: "text",
             headers: new HttpHeaders({
                 "Accept": "application/json"
             })
@@ -7435,7 +7435,7 @@ export class SavedCardClient implements ISavedCardClient {
         const status = response.status;
         const responseBlob =
             response instanceof HttpResponse ? response.body :
-            (response as any).error instanceof Blob ? (response as any).error : undefined;
+            (response as any).error instanceof Blob || typeof (response as any).error === "string" ? (response as any).error : undefined;
 
         let Headers: any = {}; if (response.headers) { for (let key of response.headers.keys()) { Headers[key] = response.headers.get(key); }}
         if (status === 200) {
@@ -7496,7 +7496,7 @@ export class ServiceClient implements IServiceClient {
 
         let options : any = {
             observe: "response",
-            responseType: "blob",
+            responseType: "text",
             headers: new HttpHeaders({
                 "Accept": "application/json"
             })
@@ -7520,7 +7520,7 @@ export class ServiceClient implements IServiceClient {
         const status = response.status;
         const responseBlob =
             response instanceof HttpResponse ? response.body :
-            (response as any).error instanceof Blob ? (response as any).error : undefined;
+            (response as any).error instanceof Blob || typeof (response as any).error === "string" ? (response as any).error : undefined;
 
         let Headers: any = {}; if (response.headers) { for (let key of response.headers.keys()) { Headers[key] = response.headers.get(key); }}
         if (status === 200) {
@@ -7608,7 +7608,7 @@ export class UserClient implements IUserClient {
 
         let options : any = {
             observe: "response",
-            responseType: "blob",
+            responseType: "text",
             headers: new HttpHeaders({
                 "Accept": "application/json"
             })
@@ -7632,7 +7632,7 @@ export class UserClient implements IUserClient {
         const status = response.status;
         const responseBlob =
             response instanceof HttpResponse ? response.body :
-            (response as any).error instanceof Blob ? (response as any).error : undefined;
+            (response as any).error instanceof Blob || typeof (response as any).error === "string" ? (response as any).error : undefined;
 
         let Headers: any = {}; if (response.headers) { for (let key of response.headers.keys()) { Headers[key] = response.headers.get(key); }}
         if (status === 200) {
@@ -7670,7 +7670,7 @@ export class UserClient implements IUserClient {
         let options : any = {
             body: content,
             observe: "response",
-            responseType: "blob",
+            responseType: "text",
             headers: new HttpHeaders({
                 "Content-Type": "application/json",
                 "Accept": "application/json"
@@ -7695,7 +7695,7 @@ export class UserClient implements IUserClient {
         const status = response.status;
         const responseBlob =
             response instanceof HttpResponse ? response.body :
-            (response as any).error instanceof Blob ? (response as any).error : undefined;
+            (response as any).error instanceof Blob || typeof (response as any).error === "string" ? (response as any).error : undefined;
 
         let Headers: any = {}; if (response.headers) { for (let key of response.headers.keys()) { Headers[key] = response.headers.get(key); }}
         if (status === 200) {
@@ -7733,7 +7733,7 @@ export class UserClient implements IUserClient {
         let options : any = {
             body: content,
             observe: "response",
-            responseType: "blob",
+            responseType: "text",
             headers: new HttpHeaders({
                 "Content-Type": "application/json",
                 "Accept": "application/json"
@@ -7758,7 +7758,7 @@ export class UserClient implements IUserClient {
         const status = response.status;
         const responseBlob =
             response instanceof HttpResponse ? response.body :
-            (response as any).error instanceof Blob ? (response as any).error : undefined;
+            (response as any).error instanceof Blob || typeof (response as any).error === "string" ? (response as any).error : undefined;
 
         let Headers: any = {}; if (response.headers) { for (let key of response.headers.keys()) { Headers[key] = response.headers.get(key); }}
         if (status === 200) {
@@ -7796,7 +7796,7 @@ export class UserClient implements IUserClient {
         let options : any = {
             body: content,
             observe: "response",
-            responseType: "blob",
+            responseType: "text",
             headers: new HttpHeaders({
                 "Content-Type": "application/json",
             })
@@ -7820,7 +7820,7 @@ export class UserClient implements IUserClient {
         const status = response.status;
         const responseBlob =
             response instanceof HttpResponse ? response.body :
-            (response as any).error instanceof Blob ? (response as any).error : undefined;
+            (response as any).error instanceof Blob || typeof (response as any).error === "string" ? (response as any).error : undefined;
 
         let Headers: any = {}; if (response.headers) { for (let key of response.headers.keys()) { Headers[key] = response.headers.get(key); }}
         if (status === 200) {
@@ -7855,7 +7855,7 @@ export class UserClient implements IUserClient {
         let options : any = {
             body: content,
             observe: "response",
-            responseType: "blob",
+            responseType: "text",
             headers: new HttpHeaders({
                 "Content-Type": "application/json",
                 "Accept": "application/json"
@@ -7880,7 +7880,7 @@ export class UserClient implements IUserClient {
         const status = response.status;
         const responseBlob =
             response instanceof HttpResponse ? response.body :
-            (response as any).error instanceof Blob ? (response as any).error : undefined;
+            (response as any).error instanceof Blob || typeof (response as any).error === "string" ? (response as any).error : undefined;
 
         let Headers: any = {}; if (response.headers) { for (let key of response.headers.keys()) { Headers[key] = response.headers.get(key); }}
         if (status === 200) {
@@ -18392,18 +18392,18 @@ function throwException(message: string, status: number, response: string, heade
         return ObservableThrow(new ApiException(message, status, response, headers, null));
 }
 
-function blobToText(blob: any): Observable<string> {
-    return new Observable<string>((observer: any) => {
-        if (!blob) {
-            observer.next("");
-            observer.complete();
-        } else {
-            let reader = new FileReader();
-            reader.onload = event => {
-                observer.next((event.target as any).result);
+function blobToText(blob: Blob | string | null | undefined): Observable<string> {
+    if (typeof blob === "string")
+        return ObservableOf(blob);
+    if (!blob)
+        return ObservableOf("");
+    return new Observable<string>(observer => {
+        blob.text().then(
+            text => {
+                observer.next(text);
                 observer.complete();
-            };
-            reader.readAsText(blob);
-        }
+            },
+            error => observer.error(error)
+        );
     });
 }

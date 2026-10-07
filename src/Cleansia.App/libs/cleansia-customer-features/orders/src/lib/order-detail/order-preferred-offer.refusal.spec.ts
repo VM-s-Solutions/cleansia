@@ -28,7 +28,7 @@ const GENERIC_FALLBACK_KEY = 'api.common.error_occurred';
 const bundleFor = (locale: string): Record<string, unknown> =>
   JSON.parse(readFileSync(join(I18N_DIR, `${locale}.json`), 'utf8'));
 
-/** The blob read resolves on the FileReader's load event, which is a macrotask behind the flush. */
+/** Let the facade's asynchronous error handling settle after the text response is flushed. */
 const flushAsyncErrorHandling = async (): Promise<void> => {
   for (let tick = 0; tick < 5; tick++) {
     await new Promise((resolve) => setTimeout(resolve, 0));
@@ -110,10 +110,10 @@ describe('preferred-cleaner re-choose refusal', () => {
       facade.select('emp-9');
       facade.submit();
 
-      httpMock.expectOne('/api/Order/ChoosePreferredCleaner').flush(
-        new Blob([JSON.stringify({ errors: { EmployeeId: ERROR_CODE } })], {
-          type: 'application/json',
-        }),
+      const request = httpMock.expectOne('/api/Order/ChoosePreferredCleaner');
+      expect(request.request.responseType).toBe('text');
+      request.flush(
+        JSON.stringify({ errors: { EmployeeId: ERROR_CODE } }),
         { status: 400, statusText: 'Bad Request' }
       );
       await flushAsyncErrorHandling();

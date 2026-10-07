@@ -11,6 +11,7 @@
       "className": "{controller}Client",
       "typeScriptVersion": 5.5,
       "template": "Angular",
+      "templateDirectory": "tools/nswag/customer",
       "promiseType": "Promise",
       "httpClass": "HttpClient",
       "useSingletonProvider": true,

@@ -2105,7 +2105,7 @@ describe('RecurringBookingsFacade — a quote the server refuses', () => {
   let httpMock: HttpTestingController;
   let showError: jest.Mock;
 
-  /** The blob read resolves on the FileReader's load event, which is a macrotask behind the flush. */
+  /** Let the facade's asynchronous error handling settle after the text response is flushed. */
   const flushAsyncErrorHandling = async (): Promise<void> => {
     for (let tick = 0; tick < 5; tick++) {
       await new Promise((resolve) => setTimeout(resolve, 0));
@@ -2113,12 +2113,12 @@ describe('RecurringBookingsFacade — a quote the server refuses', () => {
   };
 
   const refuse = async (pending: Promise<void>, field: string, code: string): Promise<void> => {
-    httpMock
-      .expectOne((request) => request.url.endsWith('/api/Order/Quote'))
-      .flush(new Blob([JSON.stringify({ errors: { [field]: code } })], { type: 'application/json' }), {
-        status: 400,
-        statusText: 'Bad Request',
-      });
+    const request = httpMock.expectOne((request) => request.url.endsWith('/api/Order/Quote'));
+    expect(request.request.responseType).toBe('text');
+    request.flush(JSON.stringify({ errors: { [field]: code } }), {
+      status: 400,
+      statusText: 'Bad Request',
+    });
     await pending;
     await flushAsyncErrorHandling();
   };

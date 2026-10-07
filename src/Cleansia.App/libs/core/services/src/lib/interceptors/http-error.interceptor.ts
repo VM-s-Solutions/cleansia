@@ -53,8 +53,16 @@ export const HttpErrorInterceptorFn: HttpInterceptorFn = (req, next) => {
                 snackbarService.showError(translate.instant(GENERIC_ERROR_KEY));
               });
           } else {
-            const errorKey = error.error?.errors
-              ? getObjectValues(error.error.errors)[0]
+            let errorBody = error.error;
+            if (typeof errorBody === 'string') {
+              try {
+                errorBody = JSON.parse(errorBody);
+              } catch {
+                errorBody = null;
+              }
+            }
+            const errorKey = errorBody?.errors
+              ? getObjectValues(errorBody.errors)[0]
               : 'common.error_occurred';
             if (!isAbsentResourceRead(req.method, req.url, errorKey)) {
               snackbarService.showError(resolveApiError(translate, errorKey));

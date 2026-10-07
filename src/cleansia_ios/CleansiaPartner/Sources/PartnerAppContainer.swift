@@ -134,6 +134,7 @@ final class PartnerAppContainer: AppContainer {
         }
         sessionScopedCaches.register(ordersStaleness)
         sessionScopedCaches.register(invoicesStaleness)
+        sessionScopedCaches.register(cleaningChecklistStore)
         sessionScopedCaches.register(pendingOffers)
         sessionScopedCaches.register(notificationBadge)
         sessionScopedCaches.register(pushTokenRegistrar)

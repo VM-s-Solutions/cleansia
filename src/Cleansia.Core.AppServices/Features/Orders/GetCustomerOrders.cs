@@ -55,7 +55,7 @@ public class GetCustomerOrders
             // Server-side projection onto exactly the columns the list DTO reads — the previous
             // full-graph Include set paid ~8 split queries per page for mostly unread columns.
             var rows = await orderRepository
-                .GetPagedSortForOwner<OrderSort>(userId, request.Offset, request.Limit, filter, request.Sort.MapToDomain())
+                .GetPagedSortForOwner<OrderSort>(userId, request.Offset, request.Limit, filter, request.Sort.MapToDomain().ForOrderPage())
                 .SelectOrderListRows()
                 .AsSplitQuery()
                 .ToListAsync(cancellationToken);

@@ -1,4 +1,5 @@
 ﻿using Cleansia.Core.AppServices.Shared.DTOs.Sorting;
+using Cleansia.Core.Domain.Orders;
 using DB = Cleansia.Core.Domain.Sorting;
 
 namespace Cleansia.Core.AppServices.Mappers;
@@ -8,6 +9,35 @@ public static class SortMapper
     public static IEnumerable<DB.Common.SortDefinition> MapToDomain(this IEnumerable<SortDefinition>? sortDefinitions)
     {
         return sortDefinitions is null ? [] : sortDefinitions.Select(x => x.MapToDomain());
+    }
+
+    public static IEnumerable<DB.Common.SortDefinition> ForOrderPage(this IEnumerable<DB.Common.SortDefinition> sort)
+    {
+        // Repository sorting lowercases fields with current culture; normalize the Id key first.
+        var idField = nameof(Order.Id).ToLowerInvariant();
+        var definitions = sort.Select(definition =>
+            string.Equals(definition.Field, idField, StringComparison.OrdinalIgnoreCase)
+                ? new DB.Common.SortDefinition { Field = idField, Direction = definition.Direction }
+                : definition).ToList();
+        if (definitions.Count == 0)
+        {
+            definitions.Add(new DB.Common.SortDefinition
+            {
+                Field = nameof(Order.CreatedOn),
+                Direction = DB.Common.SortDirection.Descending
+            });
+        }
+
+        if (!definitions.Any(s => string.Equals(s.Field, idField, StringComparison.OrdinalIgnoreCase)))
+        {
+            definitions.Add(new DB.Common.SortDefinition
+            {
+                Field = idField,
+                Direction = DB.Common.SortDirection.Descending
+            });
+        }
+
+        return definitions;
     }
 
     /// <summary>

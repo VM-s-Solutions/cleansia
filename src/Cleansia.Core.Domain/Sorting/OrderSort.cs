@@ -11,6 +11,10 @@ public class OrderSort(string propertyName, bool isAscending)
 
     protected override Expression<Func<Order, object>> GetSortingExpression(string propertyName)
     {
+        if (string.Equals(PropertyName, nameof(Order.Id), StringComparison.OrdinalIgnoreCase))
+        {
+            return x => x.Id;
+        }
         if (string.Equals(propertyName, nameof(Order.DisplayOrderNumber), StringComparison.CurrentCultureIgnoreCase))
         {
             return x => x.DisplayOrderNumber;

@@ -1,6 +1,8 @@
 import {
   HttpClient,
   HttpContext,
+  HttpErrorResponse,
+  HttpRequest,
   provideHttpClient,
   withInterceptors,
 } from '@angular/common/http';
@@ -10,6 +12,7 @@ import {
 } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
 import { TranslateService } from '@ngx-translate/core';
+import { throwError } from 'rxjs';
 
 import { SnackbarService } from '../services';
 import { SUPPRESS_ERROR_TOAST } from './error-toast-suppression';
@@ -139,12 +142,71 @@ describe('HttpErrorInterceptorFn (EP-1/AC4 error-key resolution + fallback)', ()
     expect(showError).not.toHaveBeenCalled();
   });
 
-  /**
-   * The branch production actually takes: the generated clients read errors with
-   * `responseType: 'blob'`, so a real refusal never reaches the object branch above. jsdom ships no
-   * `Blob.prototype.text`, so without the shared `jest.polyfills.ts` every case here resolves through
-   * the interceptor's `.catch` and reports the generic fallback — green for the wrong reason.
-   */
+  describe('a refusal that arrives as text', () => {
+    it('resolves a JSON error code to the same translation', () => {
+      const { http, httpMock } = setup();
+      http.get(URL, { responseType: 'text' }).subscribe({ error: () => undefined });
+      httpMock.expectOne(URL).flush(
+        JSON.stringify({ errors: { order: 'order.cancellation_window_closed' } }),
+        { status: 400, statusText: 'Bad Request' }
+      );
+
+      expect(showError).toHaveBeenCalledWith(
+        KNOWN_TRANSLATIONS['api.order.cancellation_window_closed']
+      );
+    });
+
+    it.each(['<html>gateway refused</html>', 'null', '42', '"failure"', '{}',
+      '{"errors":{"failure":"unknown.error"}}'])('falls back for %s', (body) => {
+      const { http, httpMock } = setup();
+      http.get(URL, { responseType: 'text' }).subscribe({ error: () => undefined });
+      httpMock.expectOne(URL).flush(body, { status: 400, statusText: 'Bad Request' });
+      expect(showError).toHaveBeenCalledWith(FALLBACK_MESSAGE);
+    });
+
+    it('keeps an absent optional read silent', () => {
+      const { http, httpMock } = setup();
+      const url = '/api/Employee/GetMyPayoutDetails';
+      http.get(url, { responseType: 'text' }).subscribe({ error: () => undefined });
+      httpMock.expectOne(url).flush(
+        JSON.stringify({ errors: { payout: 'payout.not_found' } }),
+        { status: 400, statusText: 'Bad Request' }
+      );
+      expect(showError).not.toHaveBeenCalled();
+    });
+
+    it('still reports an absent resource when the call is a mutation', () => {
+      const { http, httpMock } = setup();
+      const url = '/api/Employee/GetMyPayoutDetails';
+      http.post(url, {}, { responseType: 'text' }).subscribe({ error: () => undefined });
+      httpMock.expectOne(url).flush(
+        JSON.stringify({ errors: { payout: 'payout.not_found' } }),
+        { status: 400, statusText: 'Bad Request' }
+      );
+      expect(showError).toHaveBeenCalledWith(FALLBACK_MESSAGE);
+    });
+
+    it('honours no-toast context and rethrows the same HTTP error', () => {
+      setup();
+      const body = JSON.stringify({ errors: { order: 'order.cancellation_window_closed' } });
+      const original = new HttpErrorResponse({ error: body, status: 400, url: URL });
+      const request = new HttpRequest('GET', URL, {
+        responseType: 'text',
+        context: new HttpContext().set(SUPPRESS_ERROR_TOAST, true),
+      });
+      let caught: unknown;
+      TestBed.runInInjectionContext(() =>
+        HttpErrorInterceptorFn(request, () => throwError(() => original))
+          .subscribe({ error: (error) => (caught = error) })
+      );
+
+      expect(caught).toBe(original);
+      expect(original.error).toBe(body);
+      expect(showError).not.toHaveBeenCalled();
+    });
+  });
+
+  /** Partner/admin clients and customer file endpoints retain Blob transport. */
   describe('a refusal that arrives as a Blob', () => {
     it('resolves the error key to its api.* translation', async () => {
       const { http, httpMock } = setup();

@@ -112,6 +112,12 @@ The generated clients are injected via Angular DI with a base URL token:
 { provide: CUSTOMER_API_BASE_URL, useValue: environment.apiBaseUrl }
 ```
 
+The customer configuration uses the NSwag templates in `tools/nswag/customer`. JSON operations
+request text and decode it into the generated DTOs; text survives Angular's JSON transfer-state
+serialization. The map image and receipt download remain Blob responses. Body extraction accepts
+text or a native Blob, using `Blob.text()` so the same generated client runs in the browser and Node.
+Regenerate through `generate-customer-client`; do not edit the generated transport by hand.
+
 ## Build Scripts
 
 ```bash
@@ -205,6 +211,10 @@ made with a session: an **anonymous own-API GET** (the market directory, the cat
 plans, the property sizes, the serviced countries) is fetched once on the server and reused on
 bootstrap; a **session-bearing GET** carries the cookie, is never transferred and is re-fetched by the
 browser. → [Customer app overview — SSR](/customer-app/overview#ssr)
+
+The transferred customer JSON response body is text, and the client parses it after retrieval from
+the cache. Transferring a Blob would serialize its body as an empty object. The transport does not
+change the credential rules or cache inclusion policy above.
 
 The partner and admin apps are client-side only (no SSR).
 

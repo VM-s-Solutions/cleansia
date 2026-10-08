@@ -3,6 +3,7 @@ using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.AppServices.Features.Auditing;
 using Cleansia.Core.AppServices.Features.Auditing.DTOs;
 using Cleansia.Core.AppServices.Shared.DTOs.Enums;
+using Cleansia.Core.AppServices.Shared.DTOs.RequestModels;
 using Cleansia.Core.AppServices.Shared.DTOs.ResponseModels;
 using Cleansia.Core.Domain.Auditing;
 using Cleansia.Core.Domain.Disputes;
@@ -101,6 +102,27 @@ public class GetActionTimelineTests
             .ValidateAsync(new GetActionTimeline.Request { UserId = UserId, Limit = GetActionTimeline.MaxLimit });
 
         Assert.True(result.IsValid);
+    }
+
+    [Theory]
+    [InlineData(500, true)]
+    [InlineData(501, false)]
+    [InlineData(DataRangeRequest.MaximumOffset, false)]
+    public async Task The_Merged_Timeline_Preserves_Its_Previous_Bounded_Fetch_Window(int offset, bool expectedValid)
+    {
+        var result = await new GetActionTimeline.Validator(VisibleUsers())
+            .ValidateAsync(new GetActionTimeline.Request
+            {
+                UserId = UserId,
+                Offset = offset,
+                Limit = GetActionTimeline.MaxLimit
+            });
+
+        Assert.Equal(expectedValid, result.IsValid);
+        if (!expectedValid)
+        {
+            Assert.Contains(result.Errors, error => error.PropertyName == nameof(DataRangeRequest.Offset));
+        }
     }
 
     [Fact]

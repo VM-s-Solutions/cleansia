@@ -1,4 +1,5 @@
 #nullable enable
+using System.ComponentModel.DataAnnotations;
 using Cleansia.Core.AppServices.Features.Orders.DTOs;
 using Cleansia.Core.AppServices.Features.Orders.Filters;
 using Cleansia.Core.AppServices.Mappers;
@@ -16,6 +17,14 @@ public class GetCustomerOrders
 {
     public class Request : DataRangeRequest, IRequest<PagedData<OrderListItem>>
     {
+        [Range(1, 100)]
+        [Display(Order = int.MaxValue)]
+        public override int Limit
+        {
+            get => base.Limit;
+            init => base.Limit = value;
+        }
+
         public OrderFilter? Filter { get; init; }
     }
 
@@ -55,7 +64,7 @@ public class GetCustomerOrders
             // Server-side projection onto exactly the columns the list DTO reads — the previous
             // full-graph Include set paid ~8 split queries per page for mostly unread columns.
             var rows = await orderRepository
-                .GetPagedSortForOwner<OrderSort>(userId, request.Offset, request.Limit, filter, request.Sort.MapToDomain())
+                .GetPagedSortForOwner<OrderSort>(userId, request.Offset, request.Limit, filter, request.Sort.MapToDomain().ForOrderPage())
                 .SelectOrderListRows()
                 .AsSplitQuery()
                 .ToListAsync(cancellationToken);

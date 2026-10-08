@@ -26,6 +26,8 @@ namespace Cleansia.Core.AppServices.Features.Auditing;
 public class GetActionTimeline
 {
     public const int MaxLimit = 100;
+    // Three source lists fetch Offset + Limit before merging; preserve their previous bounded window.
+    public const int MaxOffset = 500;
 
     /// <summary>
     /// The admin and employee arms match the user through the ids of what they own; the set is capped
@@ -56,6 +58,8 @@ public class GetActionTimeline
             RuleFor(x => x.Limit)
                 .LessThanOrEqualTo(MaxLimit)
                 .WithMessage(BusinessErrorMessage.PageSizeExceeded);
+            RuleFor(x => x.Offset)
+                .LessThanOrEqualTo(MaxOffset);
         }
 
         private static bool KeyedByExactlyOneOfUserOrResource(Request request)

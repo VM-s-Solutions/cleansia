@@ -137,6 +137,10 @@ public sealed class GetPagedOrdersFrozenSeatPayTests
                 It.IsAny<Expression<Func<Order, bool>>>(),
                 It.IsAny<IEnumerable<SortDefinition>>()))
             .Returns(new[] { order }.AsQueryable().BuildMock());
+        _orderRepository
+            .Setup(r => r.GetFiltered(It.IsAny<Expression<Func<Order, bool>>>()))
+            .Returns((Expression<Func<Order, bool>> filter) =>
+                new[] { order }.AsQueryable().Where(filter).BuildMock());
         _payConfigRepository
             .Setup(r => r.GetServiceConfigsForOrderAsync(It.IsAny<IEnumerable<string>>(), caller, It.IsAny<IReadOnlyCollection<string>>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync([EmployeePayConfig.CreateForService(service.Id, 700m, CurrencyId)]);

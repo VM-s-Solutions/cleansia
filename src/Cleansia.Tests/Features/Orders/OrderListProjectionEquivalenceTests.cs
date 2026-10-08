@@ -1,16 +1,24 @@
 using Cleansia.TestUtilities.MockDataFactories.Orders;
+using System.Globalization;
+using System.Linq.Expressions;
 using System.Reflection;
+using System.Security.Claims;
 using System.Text.Json;
+using Cleansia.Core.AppServices.Authentication;
 using Cleansia.Core.AppServices.Features.Orders;
 using Cleansia.Core.AppServices.Features.Orders.DTOs;
+using Cleansia.Core.AppServices.Features.Orders.Filters;
 using Cleansia.Core.AppServices.Mappers;
+using Cleansia.Core.AppServices.Services.Interfaces;
 using Cleansia.Core.AppServices.Shared.DTOs.ResponseModels;
 using Cleansia.Core.Domain.Enums;
+using Cleansia.Core.Domain.Configuration;
 using Cleansia.Core.Domain.Internationalization;
 using Cleansia.Core.Domain.Orders;
 using Cleansia.Core.Domain.Packages;
 using Cleansia.Core.Domain.Repositories;
 using Cleansia.Core.Domain.Services;
+using Cleansia.Core.Domain.Sorting.Common;
 using Cleansia.Core.Domain.Users;
 using Cleansia.Infra.Database;
 using Cleansia.Infra.Database.Repositories;
@@ -18,6 +26,11 @@ using Cleansia.TestUtilities;
 using MediatR;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Diagnostics;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging.Abstractions;
+using Moq;
+using RequestSort = Cleansia.Core.AppServices.Shared.DTOs.Sorting.SortDefinition;
 
 namespace Cleansia.Tests.Features.Orders;
 
@@ -49,11 +62,19 @@ public sealed class OrderListProjectionEquivalenceTests : IAsyncLifetime, IDispo
 
     public void Dispose() => _connection.Dispose();
 
-    private CleansiaDbContext NewContext() =>
-        new(
-            new DbContextOptionsBuilder<CleansiaDbContext>().UseSqlite(_connection).Options,
+    private CleansiaDbContext NewContext(Action<string>? log = null)
+    {
+        var options = new DbContextOptionsBuilder<CleansiaDbContext>().UseSqlite(_connection);
+        if (log is not null)
+        {
+            options.LogTo(log, [RelationalEventId.CommandExecuted]);
+        }
+
+        return new(
+            options.Options,
             new TestUserSessionProvider("system", "system@cleansia.test"),
             new FixedTenantProvider(TestTenants.Default));
+    }
 
     public async Task InitializeAsync()
     {
@@ -194,6 +215,241 @@ public sealed class OrderListProjectionEquivalenceTests : IAsyncLifetime, IDispo
             var expected = expectedById[dto.Id];
             Assert.Equal(JsonSerializer.Serialize(expected), JsonSerializer.Serialize(dto));
         }
+    }
+
+    [Theory]
+    [InlineData(false, false)]
+    [InlineData(false, true)]
+    [InlineData(true, false)]
+    [InlineData(true, true)]
+    public async Task Order_Pages_Default_To_Newest_Then_Unique_Id_Before_Paging(bool admin, bool emptySort)
+    {
+        await StampPagingFixture();
+
+        var first = await ReadOrderPage(admin, offset: 0, sort: emptySort ? [] : null);
+        var second = await ReadOrderPage(admin, offset: 2, sort: emptySort ? [] : null);
+
+        Assert.Equal(new[] { "proj-legacy-null", "proj-full" }, first.Data.Select(row => row.Id));
+        Assert.Equal(new[] { "proj-cancelled", "proj-bare" }, second.Data.Select(row => row.Id));
+        Assert.Equal(4, first.Total);
+        Assert.Equal(2, second.PageNumber);
+        Assert.Empty(first.Data.Select(row => row.Id).Intersect(second.Data.Select(row => row.Id)));
+    }
+
+    [Fact]
+    public async Task Split_Order_List_Projection_Selects_The_Ordered_Page_Only_Once()
+    {
+        await StampPagingFixture();
+        var commands = new List<string>();
+
+        var page = await ReadOrderPage(true, 0, null, log: commands.Add);
+
+        Assert.Equal(new[] { "proj-legacy-null", "proj-full" }, page.Data.Select(row => row.Id));
+        Assert.Equal(4, page.Total);
+        Assert.Contains(commands, sql => sql.Contains("COUNT(*)", StringComparison.OrdinalIgnoreCase));
+        Assert.Contains(commands, sql => sql.Contains("\"OrderServices\"", StringComparison.Ordinal));
+        Assert.Contains(commands, sql => sql.Contains("\"OrderEmployees\"", StringComparison.Ordinal));
+        var globalPageSelectors = commands.Where(sql =>
+            sql.Contains("FROM \"Orders\"", StringComparison.Ordinal)
+            && sql.Contains("LIMIT", StringComparison.Ordinal)
+            && sql.Contains("ORDER BY", StringComparison.Ordinal)).ToList();
+        Assert.Single(globalPageSelectors);
+    }
+
+    [Theory]
+    [InlineData(4)]
+    [InlineData(79980)]
+    public async Task Empty_Order_Page_Keeps_The_Count_Without_Loading_Split_Collections(int offset)
+    {
+        await StampPagingFixture();
+        var commands = new List<string>();
+
+        var page = await ReadOrderPage(true, offset, null, log: commands.Add);
+
+        Assert.Empty(page.Data);
+        Assert.Equal(4, page.Total);
+        Assert.Equal(offset / 2 + 1, page.PageNumber);
+        Assert.Equal(2, commands.Count(sql => sql.Contains("SELECT", StringComparison.Ordinal)));
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task Order_Projection_Revalidates_Filter_And_Tenant_After_Selecting_Page_Ids(bool moveTenant)
+    {
+        await StampPagingFixture();
+        Mock<OrderRepository>? repository = null;
+        var filter = new OrderFilter(
+            Id: null, IsActive: true, CustomerName: null, CustomerEmail: null, CustomerPhone: null,
+            DisplayOrderNumber: null, EmployeeId: null, CleaningDateFrom: null, CleaningDateTo: null,
+            PaymentStatuses: null, PaymentTypes: null, MinTotalPrice: null, MaxTotalPrice: null,
+            OrderStatuses: null, HasAvailableSpots: null, IsUnassigned: null, ExcludeEmployeeId: null);
+
+        var page = await ReadOrderPage(true, 0, null, repositoryFactory: context =>
+        {
+            repository = new Mock<OrderRepository>(context) { CallBase = true };
+            repository.Setup(r => r.GetFiltered(It.IsAny<Expression<Func<Order, bool>>>()))
+                .Callback(() =>
+                {
+                    if (moveTenant)
+                    {
+                        context.Database.ExecuteSqlRaw(
+                            "UPDATE \"Orders\" SET \"TenantId\" = {0} WHERE \"Id\" = {1}",
+                            "other-tenant", "proj-full");
+                    }
+                    else
+                    {
+                        context.Database.ExecuteSqlRaw(
+                            "UPDATE \"Orders\" SET \"IsActive\" = 0 WHERE \"Id\" = {0}", "proj-full");
+                    }
+                }).CallBase();
+            return repository.Object;
+        }, filter: filter);
+
+        Assert.Equal(new[] { "proj-legacy-null" }, page.Data.Select(row => row.Id));
+        Assert.Equal(4, page.Total);
+        repository!.Verify(r => r.GetFiltered(It.IsAny<Expression<Func<Order, bool>>>()), Times.Once);
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task Supplied_Nonunique_Sort_Keeps_Its_Direction_And_Gains_An_Id_Tie_Breaker(bool admin)
+    {
+        await StampPagingFixture();
+
+        var first = await ReadOrderPage(admin, 0, [new RequestSort("createdOn", SortDirection.Ascending)]);
+        var second = await ReadOrderPage(admin, 2, [new RequestSort("createdOn", SortDirection.Ascending)]);
+
+        Assert.Equal(new[] { "proj-cancelled", "proj-bare" }, first.Data.Select(row => row.Id));
+        Assert.Equal(new[] { "proj-legacy-null", "proj-full" }, second.Data.Select(row => row.Id));
+    }
+
+    [Theory]
+    [InlineData(false, SortDirection.Ascending)]
+    [InlineData(false, SortDirection.Descending)]
+    [InlineData(true, SortDirection.Ascending)]
+    [InlineData(true, SortDirection.Descending)]
+    public async Task An_Explicit_Id_Sort_Retains_Its_Requested_Direction(bool admin, SortDirection direction)
+    {
+        await AssertExplicitIdPaging(admin, direction, "id");
+    }
+
+    [Theory]
+    [InlineData(false, "id", SortDirection.Ascending)]
+    [InlineData(false, "id", SortDirection.Descending)]
+    [InlineData(false, "Id", SortDirection.Ascending)]
+    [InlineData(false, "Id", SortDirection.Descending)]
+    [InlineData(false, "ID", SortDirection.Ascending)]
+    [InlineData(false, "ID", SortDirection.Descending)]
+    [InlineData(true, "id", SortDirection.Ascending)]
+    [InlineData(true, "id", SortDirection.Descending)]
+    [InlineData(true, "Id", SortDirection.Ascending)]
+    [InlineData(true, "Id", SortDirection.Descending)]
+    [InlineData(true, "ID", SortDirection.Ascending)]
+    [InlineData(true, "ID", SortDirection.Descending)]
+    public async Task Explicit_Id_Casing_Does_Not_Change_Order_Paging_In_Turkish_Culture(
+        bool admin, string field, SortDirection direction)
+    {
+        var previousCulture = CultureInfo.CurrentCulture;
+        try
+        {
+            CultureInfo.CurrentCulture = CultureInfo.GetCultureInfo("tr-TR");
+            await AssertExplicitIdPaging(admin, direction, field);
+        }
+        finally
+        {
+            CultureInfo.CurrentCulture = previousCulture;
+        }
+    }
+
+    [Theory]
+    [InlineData(false, false)]
+    [InlineData(false, true)]
+    [InlineData(true, false)]
+    [InlineData(true, true)]
+    public async Task Default_And_Supplied_Order_Pages_Keep_Unique_Ties_In_Turkish_Culture(
+        bool admin, bool suppliedSort)
+    {
+        var previousCulture = CultureInfo.CurrentCulture;
+        try
+        {
+            CultureInfo.CurrentCulture = CultureInfo.GetCultureInfo("tr-TR");
+            await StampPagingFixture();
+            RequestSort[]? sort = suppliedSort ? [new RequestSort("createdOn", SortDirection.Ascending)] : null;
+            var first = await ReadOrderPage(admin, 0, sort);
+            var second = await ReadOrderPage(admin, 2, sort);
+
+            var expected = suppliedSort
+                ? new[] { "proj-cancelled", "proj-bare", "proj-legacy-null", "proj-full" }
+                : new[] { "proj-legacy-null", "proj-full", "proj-cancelled", "proj-bare" };
+            Assert.Equal(expected.Take(2), first.Data.Select(row => row.Id));
+            Assert.Equal(expected.Skip(2), second.Data.Select(row => row.Id));
+            Assert.Empty(first.Data.Select(row => row.Id).Intersect(second.Data.Select(row => row.Id)));
+            Assert.Equal(4, first.Total);
+        }
+        finally
+        {
+            CultureInfo.CurrentCulture = previousCulture;
+        }
+    }
+
+    private async Task AssertExplicitIdPaging(bool admin, SortDirection direction, string field)
+    {
+        await StampPagingFixture(reverseTimestampGroups: true);
+
+        var first = await ReadOrderPage(admin, 0, [new RequestSort(field, direction)]);
+        var second = await ReadOrderPage(admin, 2, [new RequestSort(field, direction)]);
+
+        var expected = new[] { "proj-bare", "proj-cancelled", "proj-full", "proj-legacy-null" };
+        if (direction == SortDirection.Descending)
+        {
+            Array.Reverse(expected);
+        }
+        Assert.Equal(expected.Take(2), first.Data.Select(row => row.Id));
+        Assert.Equal(expected.Skip(2), second.Data.Select(row => row.Id));
+    }
+
+    private async Task StampPagingFixture(bool reverseTimestampGroups = false)
+    {
+        await using var ctx = NewContext();
+        var orders = await ctx.Set<Order>().Include(order => order.CustomerAddress).ToListAsync();
+        var older = new DateTimeOffset(2026, 1, 1, 0, 0, 0, TimeSpan.Zero);
+        foreach (var order in orders)
+        {
+            var isNewer = order.Id is "proj-full" or "proj-legacy-null";
+            order.Created("system", isNewer != reverseTimestampGroups ? older.AddDays(1) : older);
+            // Keep this paging test on a synchronous read path without starting geocoding tasks.
+            var address = order.CustomerAddress!;
+            address.Update(address.Street, address.City, address.ZipCode, address.CountryId,
+                latitude: 50.05, longitude: 14.41);
+        }
+        await ctx.CommitAsync(CancellationToken.None);
+    }
+
+    private async Task<PagedData<OrderListItem>> ReadOrderPage(
+        bool admin, int offset, RequestSort[]? sort, Action<string>? log = null,
+        Func<CleansiaDbContext, IOrderRepository>? repositoryFactory = null, OrderFilter? filter = null)
+    {
+        await using var ctx = NewContext(log);
+        if (!admin)
+        {
+            var handlerType = typeof(GetCustomerOrders).GetNestedType("Handler", BindingFlags.NonPublic)!;
+            var handler = (IRequestHandler<GetCustomerOrders.Request, PagedData<OrderListItem>>)Activator.CreateInstance(
+                handlerType, new OrderRepository(ctx),
+                new TestUserSessionProvider(CustomerUserId, "customer-proj@cleansia.test"))!;
+            return await handler.Handle(new GetCustomerOrders.Request { Offset = offset, Limit = 2, Sort = sort }, CancellationToken.None);
+        }
+
+        var adminHandlerType = typeof(GetPagedOrders).GetNestedType("Handler", BindingFlags.NonPublic)!;
+        var adminHandler = (IRequestHandler<GetPagedOrders.Request, PagedData<OrderListItem>>)Activator.CreateInstance(
+            adminHandlerType, repositoryFactory?.Invoke(ctx) ?? new OrderRepository(ctx), Mock.Of<IOrderAccessService>(),
+            new TestUserSessionProvider("admin", "admin@cleansia.test", [new Claim(ClaimTypes.Role, UserProfile.Administrator.ToString())]),
+            Mock.Of<IEmployeePayConfigRepository>(), Mock.Of<IOrderEmployeePayRepository>(),
+            Mock.Of<ICurrencyResolutionService>(), Mock.Of<IServiceScopeFactory>(),
+            Mock.Of<IAppConfigurationProvider>(),
+            Activator.CreateInstance(typeof(NullLogger<>).MakeGenericType(adminHandlerType)))!;
+        return await adminHandler.Handle(new GetPagedOrders.Request { Offset = offset, Limit = 2, Sort = sort, Filter = filter }, CancellationToken.None);
     }
 
     /// <summary>

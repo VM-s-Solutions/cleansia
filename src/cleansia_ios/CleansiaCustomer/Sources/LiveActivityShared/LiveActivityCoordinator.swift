@@ -22,7 +22,7 @@ import Foundation
 /// tracks in-app.
 @available(iOS 16.2, *)
 @MainActor
-final class LiveActivityCoordinator {
+final class LiveActivityCoordinator: SessionScopedCache {
     static let shared = LiveActivityCoordinator(registrar: NoopLiveActivityRegistering())
 
     private var registrar: LiveActivityRegistering
@@ -33,6 +33,9 @@ final class LiveActivityCoordinator {
     private var pushToStartObserver: Task<Void, Never>?
     private var activityObserver: Task<Void, Never>?
     private var adoptedActivityIds: Set<String> = []
+    private var adoptionTasks: [String: Task<Void, Never>] = [:]
+    private var sessionActive = false
+    private var sessionGeneration: UInt64 = 0
 
     init(registrar: LiveActivityRegistering) {
         self.registrar = registrar
@@ -43,6 +46,61 @@ final class LiveActivityCoordinator {
     func install(registrar: LiveActivityRegistering, orderResolver: LiveActivityOrderResolving? = nil) {
         self.registrar = registrar
         if let orderResolver { self.orderResolver = orderResolver }
+    }
+
+    func setSessionActive(_ active: Bool) {
+        if active {
+            sessionActive = true
+            beginActivityAdoption()
+            beginPushToStartRegistration()
+        } else {
+            let activities = invalidateSession()
+            guard !activities.isEmpty else { return }
+            Task {
+                for activity in activities {
+                    await activity.end(nil, dismissalPolicy: .immediate)
+                }
+            }
+        }
+    }
+
+    func clear() async {
+        let activities = invalidateSession()
+        for activity in activities {
+            await activity.end(nil, dismissalPolicy: .immediate)
+        }
+    }
+
+    private func invalidateSession() -> [Activity<CleanOrderAttributes>] {
+        sessionActive = false
+        sessionGeneration &+= 1
+        var ids = Set<String>()
+        // Capture before suspending: a reentrant sign-in may start new cards during the old sweep.
+        let activities = (Array(started.values) + Activity<CleanOrderAttributes>.activities)
+            .filter { ids.insert($0.id).inserted }
+        activityObserver?.cancel()
+        activityObserver = nil
+        pushToStartObserver?.cancel()
+        pushToStartObserver = nil
+        for task in tokenObservers.values {
+            task.cancel()
+        }
+        for task in stateObservers.values {
+            task.cancel()
+        }
+        for task in adoptionTasks.values {
+            task.cancel()
+        }
+        tokenObservers.removeAll()
+        stateObservers.removeAll()
+        adoptionTasks.removeAll()
+        started.removeAll()
+        adoptedActivityIds.removeAll()
+        return activities
+    }
+
+    private func ownsSession(_ generation: UInt64) -> Bool {
+        sessionActive && sessionGeneration == generation && !Task.isCancelled
     }
 
     /// Adopt every Live Activity for this app that THIS session did not start — the ones the SERVER started
@@ -59,7 +117,8 @@ final class LiveActivityCoordinator {
     /// launches the app in the BACKGROUND with no scene connected, so a scene-scoped task never runs — the
     /// one launch that most needs this lane is the one that would skip it.
     func beginActivityAdoption() {
-        guard activityObserver == nil else { return }
+        guard sessionActive, activityObserver == nil else { return }
+        let generation = sessionGeneration
 
         // Already-running activities first: `activityUpdates` reports activities as they START, so a card
         // the server started while this process was dead is not in the stream — only in `activities`.
@@ -69,14 +128,17 @@ final class LiveActivityCoordinator {
 
         activityObserver = Task { [weak self] in
             for await activity in Activity<CleanOrderAttributes>.activityUpdates {
-                self?.adopt(activity)
+                guard let self, ownsSession(generation) else { return }
+                adopt(activity)
             }
         }
     }
 
     /// Track a foreign activity and wire its token + lifecycle. Idempotent per activity id.
     private func adopt(_ activity: Activity<CleanOrderAttributes>) {
-        guard !adoptedActivityIds.contains(activity.id) else { return }
+        guard sessionActive, !adoptedActivityIds.contains(activity.id),
+              activity.activityState == .active || activity.activityState == .stale else { return }
+        let generation = sessionGeneration
         let orderNumber = activity.attributes.orderNumber
         // An activity this session started is already tracked by order id, with its token observed.
         guard !started.values.contains(where: { $0.id == activity.id }) else {
@@ -86,12 +148,20 @@ final class LiveActivityCoordinator {
         guard !orderNumber.isEmpty else { return }
 
         adoptedActivityIds.insert(activity.id)
-        Task { [weak self] in
-            guard let self else { return }
-            guard let orderId = await resolveOrderId(orderNumber: orderNumber) else {
+        adoptionTasks[activity.id] = Task { [weak self] in
+            guard let self, ownsSession(generation) else { return }
+            guard let orderId = await resolveOrderId(orderNumber: orderNumber, generation: generation) else {
                 // Could not map the number to an id (no session, or the network never came up in the
                 // background-launch window). Un-mark it so a later launch — or the next activityUpdates
                 // emission — can try again instead of the card being orphaned for its whole lifetime.
+                guard ownsSession(generation) else { return }
+                adoptedActivityIds.remove(activity.id)
+                adoptionTasks.removeValue(forKey: activity.id)
+                return
+            }
+            guard ownsSession(generation) else { return }
+            adoptionTasks.removeValue(forKey: activity.id)
+            guard activity.activityState == .active || activity.activityState == .stale else {
                 adoptedActivityIds.remove(activity.id)
                 return
             }
@@ -107,14 +177,21 @@ final class LiveActivityCoordinator {
 
     /// Bounded retry around the resolve: a background launch races the network coming up, and giving up on
     /// the first failure would leave the card unpushable for its entire life.
-    private func resolveOrderId(orderNumber: String) async -> String? {
+    private func resolveOrderId(orderNumber: String, generation: UInt64) async -> String? {
         guard let orderResolver else { return nil }
         for attempt in 0 ..< 3 {
-            if let orderId = await orderResolver.orderId(forOrderNumber: orderNumber) {
+            guard ownsSession(generation) else { return nil }
+            let orderId = await orderResolver.orderId(forOrderNumber: orderNumber)
+            guard ownsSession(generation) else { return nil }
+            if let orderId {
                 return orderId
             }
             if attempt < 2 {
-                try? await Task.sleep(nanoseconds: UInt64(2 << attempt) * 1_000_000_000)
+                do {
+                    try await Task.sleep(nanoseconds: UInt64(2 << attempt) * 1_000_000_000)
+                } catch {
+                    return nil
+                }
             }
         }
 
@@ -126,10 +203,13 @@ final class LiveActivityCoordinator {
     /// exists (the unmet half of T-0427's deregistration AC).
     private func observeState(of activity: Activity<CleanOrderAttributes>, orderId: String) {
         stateObservers[orderId]?.cancel()
+        let generation = sessionGeneration
         stateObservers[orderId] = Task { [weak self, registrar] in
             for await state in activity.activityStateUpdates where state == .dismissed || state == .ended {
+                guard let self, ownsSession(generation), started[orderId]?.id == activity.id else { return }
                 await registrar.deregister(orderId: orderId)
-                self?.forgetAdopted(orderId: orderId, activityId: activity.id)
+                guard ownsSession(generation) else { return }
+                forgetAdopted(orderId: orderId, activityId: activity.id)
 
                 return
             }
@@ -137,6 +217,7 @@ final class LiveActivityCoordinator {
     }
 
     private func forgetAdopted(orderId: String, activityId: String) {
+        guard started[orderId]?.id == activityId else { return }
         tokenObservers.removeValue(forKey: orderId)?.cancel()
         stateObservers.removeValue(forKey: orderId)?.cancel()
         started.removeValue(forKey: orderId)
@@ -154,7 +235,8 @@ final class LiveActivityCoordinator {
     /// order's CURRENT status, so opening an already-in-progress order renders "Cleaning in progress"
     /// rather than a stale "On the way".
     func start(orderId: String, orderNumber: String, status: String, window: EtaWindow) {
-        guard isEnabled, existingActivity(orderId: orderId, orderNumber: orderNumber) == nil else { return }
+        guard sessionActive, isEnabled,
+              existingActivity(orderId: orderId, orderNumber: orderNumber) == nil else { return }
 
         let attributes = CleanOrderAttributes(orderNumber: orderNumber)
         let initialState = contentState(status: status, orderNumber: orderNumber, window: window)
@@ -181,9 +263,11 @@ final class LiveActivityCoordinator {
     /// also drives a system-restored / server-started activity. This is the on-device path that keeps the
     /// Live Activity in sync while the app is active, independent of the (regen-gated) backend push channel.
     func update(orderId: String, orderNumber: String, status: String, window: EtaWindow) {
-        guard let activity = existingActivity(orderId: orderId, orderNumber: orderNumber) else { return }
+        guard sessionActive, let activity = existingActivity(orderId: orderId, orderNumber: orderNumber) else { return }
+        let generation = sessionGeneration
         let state = contentState(status: status, orderNumber: orderNumber, window: window)
-        Task {
+        Task { [weak self] in
+            guard let self, ownsSession(generation) else { return }
             await activity.update(ActivityContent(state: state, staleDate: staleDate(for: window)))
         }
     }
@@ -195,19 +279,23 @@ final class LiveActivityCoordinator {
     /// state, whose stale date is by then already in the past — the system draws its placeholder over that
     /// instead of the widget's terminal presentation.
     func end(orderId: String, orderNumber: String, status: LiveActivityTerminalStatus) {
+        guard sessionActive else { return }
+        let generation = sessionGeneration
         tokenObservers.removeValue(forKey: orderId)?.cancel()
         stateObservers.removeValue(forKey: orderId)?.cancel()
         let live = existingActivity(orderId: orderId, orderNumber: orderNumber)
         if let live { adoptedActivityIds.remove(live.id) }
         started.removeValue(forKey: orderId)
         let dismissal = LiveActivityPolicy.dismissal(for: status, now: Date())
-        Task { [registrar] in
+        Task { [weak self, registrar] in
+            guard let self, ownsSession(generation) else { return }
             if let live {
                 await live.end(
                     terminalActivityContent(from: live.content.state, status: status),
                     dismissalPolicy: dismissal.uiPolicy
                 )
             }
+            guard ownsSession(generation) else { return }
             await registrar.deregister(orderId: orderId)
         }
     }
@@ -215,9 +303,11 @@ final class LiveActivityCoordinator {
     /// Register the app's push-to-start token so the SERVER can start activities without the app running
     /// (iOS 17.2+). No-op on earlier OSes — activities there start only from the foreground via `start`.
     func beginPushToStartRegistration() {
-        guard #available(iOS 17.2, *), pushToStartObserver == nil else { return }
-        pushToStartObserver = Task { [registrar] in
+        guard #available(iOS 17.2, *), sessionActive, pushToStartObserver == nil else { return }
+        let generation = sessionGeneration
+        pushToStartObserver = Task { [weak self, registrar] in
             for await tokenData in Activity<CleanOrderAttributes>.pushToStartTokenUpdates {
+                guard let self, ownsSession(generation) else { return }
                 await registrar.registerPushToStart(token: hexString(tokenData))
             }
         }
@@ -255,8 +345,10 @@ final class LiveActivityCoordinator {
 
     private func observePushToken(of activity: Activity<CleanOrderAttributes>, orderId: String, orderNumber: String) {
         tokenObservers[orderId]?.cancel()
-        tokenObservers[orderId] = Task { [registrar] in
+        let generation = sessionGeneration
+        tokenObservers[orderId] = Task { [weak self, registrar] in
             for await tokenData in activity.pushTokenUpdates {
+                guard let self, ownsSession(generation), started[orderId]?.id == activity.id else { return }
                 await registrar.register(orderId: orderId, orderNumber: orderNumber, token: hexString(tokenData))
             }
         }

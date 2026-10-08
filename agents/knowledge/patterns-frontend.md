@@ -474,10 +474,12 @@ and no currency word after the placeholder slot is stripped, five locales × thr
 
 ### Error-contract → i18n: the one canonical path is the interceptor `api.*` namespace
 
-> **A spec asserting a translated refusal needs `Blob.prototype.text`, or it proves nothing — and the
-> workspace now supplies it, so write no `beforeAll` of your own.** The generated clients read errors
-> with `responseType: 'blob'`, so a real refusal arrives as a Blob and `parseBlobToJson` is what turns it
-> into a key. **jsdom 20 ships no `Blob.prototype.text`**, so unpolyfilled that rejects and the
+> **A spec asserting a translated refusal through the Blob path needs `Blob.prototype.text`, or it
+> proves nothing — and the workspace now supplies it, so write no `beforeAll` of your own.** Partner
+> and admin generated clients, and the customer's binary operations, use `responseType: 'blob'`, so
+> their refusals arrive as a Blob and `parseBlobToJson` turns them into a key. Customer JSON operations
+> use text for SSR transfer; the interceptor parses that string into the same error model.
+> **jsdom 20 ships no `Blob.prototype.text`**, so unpolyfilled that rejects and the
 > interceptor takes its `.catch` — every locale silently renders `api.common.error_occurred`. A locale
 > assertion written that way passes on the *fallback* rather than on the message, and passes just as well
 > when the key is wrong, missing, or renamed.
@@ -493,10 +495,12 @@ and no currency word after the placeholder slot is stripped, five locales × thr
 > `libs/shared/models/project.json` does; find the rest with
 > `grep -l '"inputs"' libs/*/*/project.json`.
 >
-> Measured, not argued: unloading the shared polyfill turns the customer preferred-offer spec's **five
-> locale cases** and the partner radius spec's **five** red, plus the interceptor's own blob-branch
-> cases. Making `parseBlobToJson` stop resolving the key reddens the blob-branch cases alone. The
-> non-blob branch — the one production does not take — is still covered beside them.
+> Before the customer JSON transport switched to text, unloading the shared polyfill turned its
+> preferred-offer spec's **five locale cases** and the partner radius spec's **five** red, plus the
+> interceptor's own blob-branch cases. The customer locale cases now exercise text responses and
+> do not depend on this polyfill. Partner radius and interceptor Blob cases retain that dependency.
+> Making `parseBlobToJson` stop resolving the key reddens the blob-branch cases alone. The text and
+> object branches are covered beside them.
 >
 > **Enforced by:** the *"a refusal that arrives as a Blob"* cases in
 > `libs/core/services/src/lib/interceptors/http-error.interceptor.spec.ts`, which exercise the branch

@@ -1,10 +1,11 @@
+import CleansiaCore
 import Foundation
 
 /// Local-only persistence for the cleaner's checklist ticks, keyed by orderId.
 /// PURELY LOCAL — there is no backend checklist API; the ticks are the cleaner's
 /// own working memory and survive process death. Mechanism divergence from
 /// Android (DataStore → UserDefaults); behavior identical.
-protocol CleaningChecklistStore: AnyObject {
+protocol CleaningChecklistStore: SessionScopedCache {
     func checkedIds(orderId: String) -> Set<String>
     func setChecked(orderId: String, itemId: String, checked: Bool)
 }
@@ -30,6 +31,13 @@ final class UserDefaultsCleaningChecklistStore: CleaningChecklistStore {
             ids.remove(itemId)
         }
         defaults.set(Array(ids), forKey: key(orderId))
+    }
+
+    @MainActor
+    func clear() async {
+        for key in defaults.dictionaryRepresentation().keys where key.hasPrefix(keyPrefix) {
+            defaults.removeObject(forKey: key)
+        }
     }
 
     private func key(_ orderId: String) -> String {

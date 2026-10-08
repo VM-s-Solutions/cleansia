@@ -1,4 +1,5 @@
 #nullable enable
+using System.ComponentModel.DataAnnotations;
 using System.Security.Claims;
 using Cleansia.Core.AppServices.Authentication;
 using Cleansia.Core.AppServices.Features.Orders.DTOs;
@@ -28,6 +29,14 @@ public class GetPagedOrders
 {
     public class Request : DataRangeRequest, IRequest<PagedData<OrderListItem>>
     {
+        [Range(1, 100)]
+        [Display(Order = int.MaxValue)]
+        public override int Limit
+        {
+            get => base.Limit;
+            init => base.Limit = value;
+        }
+
         public OrderFilter? Filter { get; init; }
     }
 
@@ -108,19 +117,32 @@ public class GetPagedOrders
                 hideCashFromEmployeeId: cashJobsHidden ? callerEmployeeId : null);
 
             var filter = specification.SatisfiedBy();
-            var sort = request.Sort.MapToDomain()
+            var sort = request.Sort.MapToDomain().ForOrderPage()
                 .WithinCurrencyWhenSortedBy(nameof(Order.TotalPrice), request.Filter?.CurrencyId);
 
             var totalItems = await orderRepository.GetCountAsync(filter, cancellationToken);
-            // Server-side projection onto exactly the columns the list DTO reads (plus the
-            // sidecar fields this handler needs: assignee ids, address id) —
-            // the previous full-graph Include set paid ~7 split queries per page for mostly
-            // unread columns.
-            var orders = await orderRepository
+            // Select the ordered IDs once, so each split collection query does not repeat
+            // the full board selector. Reapply visibility when loading those IDs: a row
+            // that became ineligible between reads must stay hidden.
+            var pageIds = await orderRepository
                 .GetPagedSort<OrderSort>(request.Offset, request.Limit, filter, sort)
-                .SelectOrderListRows()
-                .AsSplitQuery()
+                .Select(o => o.Id)
                 .ToListAsync(cancellationToken);
+            var orders = new List<OrderListRow>();
+            if (pageIds.Count > 0)
+            {
+                orders = await orderRepository
+                    .GetFiltered(filter)
+                    .Where(o => pageIds.Contains(o.Id))
+                    .SelectOrderListRows()
+                    .AsSplitQuery()
+                    .ToListAsync(cancellationToken);
+
+                // EF orders split rows for collection grouping; restore the selected page order.
+                var pageOrder = pageIds.Select((id, index) => (id, index))
+                    .ToDictionary(entry => entry.id, entry => entry.index);
+                orders.Sort((left, right) => pageOrder[left.Id].CompareTo(pageOrder[right.Id]));
+            }
 
             // Pay-config lookups for the caller — only when we have an
             // employee id. For admins the per-row pay is not meaningful so we

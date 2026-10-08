@@ -181,6 +181,9 @@ final class CustomerAppContainer: AppContainer {
     /// Every per-user cache joins the session-wipe set here, in one place, so a logout empties all of
     /// them (S11); the market directory and the device settings are deliberately not on this list.
     private func registerSessionScopedCaches(in registry: SessionScopedCacheRegistry) {
+        if #available(iOS 16.2, *) {
+            registry.register(LiveActivityCoordinator.shared)
+        }
         registry.register(orderRepository)
         registry.register(loyaltyRepository)
         registry.register(referralRepository)
@@ -195,12 +198,11 @@ final class CustomerAppContainer: AppContainer {
     }
 
     func startPush() {
-        hasSessionSubject.send(hasValidSession)
+        updatePushSession(hasSession: hasValidSession)
         pushSessionObserver.attach(
             hasSession: hasSessionSubject.eraseToAnyPublisher(),
             apnsToken: pushRegistrar.apnsToken
         )
-        if hasValidSession { beginLiveActivityPushToStart() }
         // Alert-display permission only — APNs registration itself happens in
         // the app delegate's didFinishLaunching (deferring it there gets
         // silently dropped by iOS).
@@ -209,7 +211,9 @@ final class CustomerAppContainer: AppContainer {
 
     func updatePushSession(hasSession: Bool) {
         hasSessionSubject.send(hasSession)
-        if hasSession { beginLiveActivityPushToStart() }
+        if #available(iOS 16.2, *) {
+            LiveActivityCoordinator.shared.setSessionActive(hasSession)
+        }
     }
 
     /// Rides the same session signal the device registration does, for the same reason: it is derived
@@ -217,13 +221,6 @@ final class CustomerAppContainer: AppContainer {
     /// path can forget to call it. Nothing here belongs to a screen — the task is the container's.
     func startLanguageReconcile() {
         languageReconciler.attach(hasSession: hasSessionSubject.eraseToAnyPublisher())
-    }
-
-    /// Register the push-to-start token once a session is ready so the backend can start Live Activities
-    /// on iOS 17.2+ (ADR-0029). Idempotent — the coordinator guards its single observer.
-    private func beginLiveActivityPushToStart() {
-        guard #available(iOS 16.2, *) else { return }
-        LiveActivityCoordinator.shared.beginPushToStartRegistration()
     }
 
     func installGeneratedClientAuth() {
@@ -251,10 +248,7 @@ final class CustomerAppContainer: AppContainer {
             // Adopt server-started / system-restored cards from LAUNCH — deliberately here and not in the
             // scene's `.task`, because a push-to-start launches the app in the BACKGROUND with no scene
             // connected, so a scene-scoped task never runs on the one launch that needs this most.
-            LiveActivityCoordinator.shared.beginActivityAdoption()
-            // Same reasoning for the push-to-start token: `startPush()` runs from the scene `.task`, so a
-            // background launch never re-registers. Idempotent — the coordinator guards its one observer.
-            if hasValidSession { LiveActivityCoordinator.shared.beginPushToStartRegistration() }
+            LiveActivityCoordinator.shared.setSessionActive(hasValidSession)
         }
     }
 }

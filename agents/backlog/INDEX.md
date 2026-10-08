@@ -316,6 +316,7 @@
 | T-0800 | Remove the six guest routes (`Lookup` POST and GET, `LookupBatch`, `GuestCancellationPreview`, `CancelGuest`, `ReportGuestNoShow`) from the customer **mobile** host and re-dump the mobile spec, once no supported app build calls them | S | `todo` | — | filed 2026-10-02 from owner decision D1 (2026-10-01): both customer apps lost their guest surface in C1 (`c45fb87c8`, `a021c7a34`), and the host keeps the routes only for builds installed before it. **Starts on the owner's word** that no supported build calls them. Web host unchanged. |
 | T-0801 | The partner registration lock shows Documents as needing action when an admin rejects a required document — Android and iOS, client-only, from `GetMyDocumentRequirements` | M | `todo` | — | filed 2026-10-02 from the P2 variant the owner deferred (D13, 2026-10-01, *"not now"*): the row reads `AreDocumentsUploaded` (any active document), so a rejected required document still shows *Documents: Done* and *Awaiting review*. The endpoint and both apps' client call already exist (documents screen); the lock does not read them. Partner web and the nothing-uploaded case are named in the ticket, not decided. |
 | T-0802 | The next Slovak customer terms version calls a package *balík* (*balíky*, *balíkov*), not *balíček* — only in a version made for a real change of terms | S | `todo` | — | filed 2026-10-04 from owner decision 3 of wave T (*"write the recommended"*): the Slovak terms in force (`Seed/Legal/customer/terms-of-service/any/2026-10-03/sk.md` lines 27, 35, 43) still say *balíčky* / *balíčkov* after the R-2 ruling moved every client to *balík*. A text in force is never edited, and a version made for this word alone would bring the booking tick back for every customer, so it waits for the next real terms version. |
+| T-0803 | Restore SSR data, compatible paging and iOS session cleanup (approved Wave A) | L | `in_progress` | pm | — |
 
 > **T-0785–T-0799 filed 2026-09-20** — the UI-polish and dead-code batch, on the owner's ruling of
 > that day (*"I want to polish alignments in admin app a bit on all of the overview/detail pages.
@@ -360,4 +361,4 @@
 > reported not absorbed. Owed: the DEV drop at the next DEV deploy (MS-2 / A1, `20260920204705`);
 > the merge order is #255 then #260. Open rows: none.
 
-*Next id: **T-0803**.*
+*Next id: **T-0804**.*

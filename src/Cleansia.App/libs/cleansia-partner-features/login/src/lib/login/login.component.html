@@ -2,7 +2,22 @@
   <cleansia-language-switcher />
   <div class="cleansia-login">
     <div class="cleansia-login__mascot">
-      <img src="assets/images/mascot/mascot-waving.png" alt="Cleansia mascot" />
+      <picture>
+        <source
+          type="image/webp"
+          srcset="
+            assets/images/mascot/mascot-waving-130.webp 1x,
+            assets/images/mascot/mascot-waving-260.webp 2x,
+            assets/images/mascot/mascot-waving-390.webp 3x
+          "
+        />
+        <img
+          src="assets/images/mascot/mascot-waving.png"
+          width="130"
+          height="130"
+          alt="Cleansia mascot"
+        />
+      </picture>
     </div>
     <form class="cleansia-login__login-card" [formGroup]="facade.formGroup">
       <div class="cleansia-login__brand-name-container">

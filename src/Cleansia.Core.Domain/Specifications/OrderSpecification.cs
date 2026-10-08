@@ -180,10 +180,13 @@ public class OrderSpecification : BaseSpecification<string?>, ISpecification<Ord
             // client status lists are a display refinement on top of this, never the boundary.
             Specification<Order> assignedToCaller = new DirectSpecification<Order>(x =>
                 x.AssignedEmployees.Any(ae => ae.EmployeeId == RestrictToEmployeeId));
-            Specification<Order> openAndOfferable =
-                new DirectSpecification<Order>(
+            Specification<Order> openAndOfferable = new DirectSpecification<Order>(OrderAvailability.IsOfferableSql);
+            if (HasAvailableSpots != true)
+            {
+                openAndOfferable = new DirectSpecification<Order>(
                     x => x.AssignedEmployees.Count(ae => ae.CoverRequestedAt == null) < x.MaxEmployees)
-                & new DirectSpecification<Order>(OrderAvailability.IsOfferableSql);
+                    & openAndOfferable;
+            }
 
             specification &= assignedToCaller | openAndOfferable;
         }

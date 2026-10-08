@@ -2,7 +2,7 @@
 
 Exact argument arrays, working directories and results recorded for the Wave A report. This includes failed and guarded setup attempts. Credentials and environment-file contents remain private; their paths are recorded. Local fixture SQL and synthetic authentication are the only database effects. No DEV or PRO command was executed.
 
-Ledger snapshot: 2026-10-07T23:46:44.875404+00:00; 567 completed records; SHA256 `b48c40e25b45f605fbb7224f27dc32b030962f2803ea714c09561e208646a4d1`. Subsequent PR/CI operations are recorded separately until this snapshot is refreshed.
+Ledger snapshot: 2026-10-08T07:40:03.385036+00:00; 815 completed records; SHA256 `d3a42f51e05f5ad09a1ab9be2f5b71e60930bd104fa6ff5b1697e36ad56c38fe`. Subsequent PR/CI operations are recorded separately until this snapshot is refreshed.
 
 ## 1. branch-wave-a
 
@@ -5394,6 +5394,2044 @@ UTC `2026-10-07T23:46:38.128840+00:00`; exit `0`; elapsed `0.926s`; cwd `/Users/
 ["gh", "run", "view", "37703809356", "--repo", "VM-s-Solutions/cleansia", "--json", "status,conclusion,jobs,headSha,url,startedAt,updatedAt,workflowName"]
 ```
 
+## 568. root-command-appendix-ci-correction-snapshot
+
+UTC `2026-10-07T23:46:44.855205+00:00`; exit `0`; elapsed `0.097s`; cwd `/Users/michael/.codex/worktrees/wave-a-correctness/cleansia`.
+
+```json
+["python3", "/Users/michael/.codex/scratchpads/cleansia-wave-a-2026-10-07/tools/write-wave-command-appendix.py"]
+```
+
+## 569. root-stage-audit-simulator-false-positive
+
+UTC `2026-10-07T23:46:45.014807+00:00`; exit `0`; elapsed `0.019s`; cwd `/Users/michael/.codex/worktrees/wave-a-correctness/cleansia`.
+
+```json
+["git", "add", "--", ".gitleaksignore", "agents/WAVE-A-2026-10-07.md", "agents/WAVE-A-COMMANDS-2026-10-07.md"]
+```
+
+## 570. root-commit-audit-simulator-false-positive
+
+UTC `2026-10-07T23:46:45.184919+00:00`; exit `0`; elapsed `0.030s`; cwd `/Users/michael/.codex/worktrees/wave-a-correctness/cleansia`.
+
+```json
+["git", "commit", "--file", "/Users/michael/.codex/scratchpads/cleansia-wave-a-2026-10-07/raw/commit-audit-simulator-false-positive.txt"]
+```
+
+## 571. mobile-ci-ios-poll-03-existing-credential
+
+UTC `2026-10-07T23:46:54.671619+00:00`; exit `0`; elapsed `0.024s`; cwd `/Users/michael/.codex/worktrees/wave-a-correctness/cleansia`.
+
+```json
+["git", "-C", "/Users/michael/.codex/worktrees/wave-a-correctness/cleansia", "credential", "fill"]
+```
+
+## 572. mobile-ci-ios-poll-03
+
+UTC `2026-10-07T23:46:54.719986+00:00`; exit `0`; elapsed `0.972s`; cwd `/Users/michael/.codex/worktrees/wave-a-correctness/cleansia`.
+
+```json
+["gh", "run", "view", "37703809284", "--repo", "VM-s-Solutions/cleansia", "--json", "databaseId,headSha,status,conclusion,startedAt,updatedAt,url,jobs"]
+```
+
+## 573. root-ci-correction-docs-refs
+
+UTC `2026-10-07T23:47:02.274066+00:00`; exit `0`; elapsed `0.269s`; cwd `/Users/michael/.codex/worktrees/wave-a-correctness/cleansia`.
+
+```json
+["/Users/michael/.codex/scratchpads/cleansia-audit-2026-10-07/tools/web-tooling/node_modules/node/bin/node", "agents/tools/check-docs-refs.mjs"]
+```
+
+## 574. root-wave-a-ci-correction-push
+
+UTC `2026-10-07T23:47:01.107086+00:00`; exit `0`; elapsed `1.478s`; cwd `/Users/michael/.codex/worktrees/wave-a-correctness/cleansia`.
+
+```json
+["git", "push", "origin", "fix/wave-a-correctness"]
+```
+
+## 575. web-ci-f9bf956-new-head-runs01-existing-credential
+
+UTC `2026-10-07T23:47:56.950710+00:00`; exit `0`; elapsed `0.028s`; cwd `/Users/michael/.codex/worktrees/wave-a-correctness/cleansia`.
+
+```json
+["git", "-C", "/Users/michael/.codex/worktrees/wave-a-correctness/cleansia", "credential", "fill"]
+```
+
+## 576. web-ci-f9bf956-new-head-runs01
+
+UTC `2026-10-07T23:47:57.005462+00:00`; exit `0`; elapsed `0.764s`; cwd `/Users/michael/.codex/worktrees/wave-a-correctness/cleansia`.
+
+```json
+["gh", "run", "list", "--repo", "VM-s-Solutions/cleansia", "--workflow", "frontend-ci.yml", "--commit", "f9bf956524e1f2282229a558b47ca427fa850aa1", "--limit", "5", "--json", "databaseId,status,conclusion,headSha,url,createdAt,updatedAt,workflowName"]
+```
+
+## 577. root-wave-a-ci-final-head-watch-existing-credential
+
+UTC `2026-10-07T23:48:01.465209+00:00`; exit `0`; elapsed `0.027s`; cwd `/Users/michael/.codex/worktrees/wave-a-correctness/cleansia`.
+
+```json
+["git", "-C", "/Users/michael/.codex/worktrees/wave-a-correctness/cleansia", "credential", "fill"]
+```
+
+## 578. root-wave-a-ci-final-head-snapshot-existing-credential
+
+UTC `2026-10-07T23:48:02.631426+00:00`; exit `0`; elapsed `0.027s`; cwd `/Users/michael/.codex/worktrees/wave-a-correctness/cleansia`.
+
+```json
+["git", "-C", "/Users/michael/.codex/worktrees/wave-a-correctness/cleansia", "credential", "fill"]
+```
+
+## 579. root-wave-a-ci-final-head-snapshot
+
+UTC `2026-10-07T23:48:02.683232+00:00`; exit `0`; elapsed `0.901s`; cwd `/Users/michael/.codex/worktrees/wave-a-correctness/cleansia`.
+
+```json
+["gh", "pr", "view", "fix/wave-a-correctness", "--json", "headRefOid,statusCheckRollup,isDraft,mergeStateStatus"]
+```
+
+## 580. mobile-ci-ios-newhead-discovery-01-existing-credential
+
+UTC `2026-10-07T23:48:35.948280+00:00`; exit `0`; elapsed `0.024s`; cwd `/Users/michael/.codex/worktrees/wave-a-correctness/cleansia`.
+
+```json
+["git", "-C", "/Users/michael/.codex/worktrees/wave-a-correctness/cleansia", "credential", "fill"]
+```
+
+## 581. mobile-ci-android-newhead-discovery-01-existing-credential
+
+UTC `2026-10-07T23:48:35.948273+00:00`; exit `0`; elapsed `0.030s`; cwd `/Users/michael/.codex/worktrees/wave-a-correctness/cleansia`.
+
+```json
+["git", "-C", "/Users/michael/.codex/worktrees/wave-a-correctness/cleansia", "credential", "fill"]
+```
+
+## 582. mobile-ci-ios-newhead-discovery-01
+
+UTC `2026-10-07T23:48:35.998228+00:00`; exit `0`; elapsed `0.765s`; cwd `/Users/michael/.codex/worktrees/wave-a-correctness/cleansia`.
+
+```json
+["gh", "run", "list", "--repo", "VM-s-Solutions/cleansia", "--commit", "f9bf956524e1f2282229a558b47ca427fa850aa1", "--workflow", "ios-ci.yml", "--limit", "3", "--json", "databaseId,headSha,status,conclusion,createdAt,updatedAt,startedAt,url"]
+```
+
+## 583. mobile-ci-android-newhead-discovery-01
+
+UTC `2026-10-07T23:48:36.004402+00:00`; exit `0`; elapsed `0.759s`; cwd `/Users/michael/.codex/worktrees/wave-a-correctness/cleansia`.
+
+```json
+["gh", "run", "list", "--repo", "VM-s-Solutions/cleansia", "--commit", "f9bf956524e1f2282229a558b47ca427fa850aa1", "--workflow", "android-ci.yml", "--limit", "3", "--json", "databaseId,headSha,status,conclusion,createdAt,updatedAt,startedAt,url"]
+```
+
+## 584. web-ci-37704204320-poll01-existing-credential
+
+UTC `2026-10-07T23:49:12.603503+00:00`; exit `0`; elapsed `0.031s`; cwd `/Users/michael/.codex/worktrees/wave-a-correctness/cleansia`.
+
+```json
+["git", "-C", "/Users/michael/.codex/worktrees/wave-a-correctness/cleansia", "credential", "fill"]
+```
+
+## 585. web-ci-37704204320-poll01
+
+UTC `2026-10-07T23:49:12.661302+00:00`; exit `0`; elapsed `0.918s`; cwd `/Users/michael/.codex/worktrees/wave-a-correctness/cleansia`.
+
+```json
+["gh", "run", "view", "37704204320", "--repo", "VM-s-Solutions/cleansia", "--json", "status,conclusion,jobs,headSha,url,startedAt,updatedAt,workflowName"]
+```
+
+## 586. root-wave-a-final-backend-progress-1-existing-credential
+
+UTC `2026-10-07T23:49:59.508820+00:00`; exit `0`; elapsed `0.024s`; cwd `/Users/michael/.codex/worktrees/wave-a-correctness/cleansia`.
+
+```json
+["git", "-C", "/Users/michael/.codex/worktrees/wave-a-correctness/cleansia", "credential", "fill"]
+```
+
+## 587. mobile-ci-ios-newhead-poll-01-existing-credential
+
+UTC `2026-10-07T23:49:59.600285+00:00`; exit `0`; elapsed `0.025s`; cwd `/Users/michael/.codex/worktrees/wave-a-correctness/cleansia`.
+
+```json
+["git", "-C", "/Users/michael/.codex/worktrees/wave-a-correctness/cleansia", "credential", "fill"]
+```
+
+## 588. mobile-ci-android-newhead-poll-01-existing-credential
+
+UTC `2026-10-07T23:49:59.600346+00:00`; exit `0`; elapsed `0.031s`; cwd `/Users/michael/.codex/worktrees/wave-a-correctness/cleansia`.
+
+```json
+["git", "-C", "/Users/michael/.codex/worktrees/wave-a-correctness/cleansia", "credential", "fill"]
+```
+
+## 589. root-wave-a-final-backend-progress-1
+
+UTC `2026-10-07T23:49:59.560776+00:00`; exit `0`; elapsed `0.937s`; cwd `/Users/michael/.codex/worktrees/wave-a-correctness/cleansia`.
+
+```json
+["gh", "run", "view", "37704204302", "--json", "headSha,status,conclusion,jobs,createdAt,url"]
+```
+
+## 590. mobile-ci-ios-newhead-poll-01
+
+UTC `2026-10-07T23:49:59.654753+00:00`; exit `0`; elapsed `0.857s`; cwd `/Users/michael/.codex/worktrees/wave-a-correctness/cleansia`.
+
+```json
+["gh", "run", "view", "37704204359", "--repo", "VM-s-Solutions/cleansia", "--json", "databaseId,headSha,status,conclusion,startedAt,updatedAt,url,jobs"]
+```
+
+## 591. mobile-ci-android-newhead-poll-01
+
+UTC `2026-10-07T23:49:59.659941+00:00`; exit `0`; elapsed `0.923s`; cwd `/Users/michael/.codex/worktrees/wave-a-correctness/cleansia`.
+
+```json
+["gh", "run", "view", "37704204297", "--repo", "VM-s-Solutions/cleansia", "--json", "databaseId,headSha,status,conclusion,startedAt,updatedAt,url,jobs"]
+```
+
+## 592. mobile-ci-ios-superseded-queue-diagnostic-01-existing-credential
+
+UTC `2026-10-07T23:50:19.976348+00:00`; exit `0`; elapsed `0.023s`; cwd `/Users/michael/.codex/worktrees/wave-a-correctness/cleansia`.
+
+```json
+["git", "-C", "/Users/michael/.codex/worktrees/wave-a-correctness/cleansia", "credential", "fill"]
+```
+
+## 593. mobile-ci-ios-superseded-queue-diagnostic-01
+
+UTC `2026-10-07T23:50:20.023757+00:00`; exit `0`; elapsed `1.106s`; cwd `/Users/michael/.codex/worktrees/wave-a-correctness/cleansia`.
+
+```json
+["gh", "run", "view", "37703809284", "--repo", "VM-s-Solutions/cleansia", "--json", "databaseId,headSha,status,conclusion,startedAt,updatedAt,url,jobs"]
+```
+
+## 594. web-ci-37704204320-poll02-existing-credential
+
+UTC `2026-10-07T23:50:27.375359+00:00`; exit `0`; elapsed `0.028s`; cwd `/Users/michael/.codex/worktrees/wave-a-correctness/cleansia`.
+
+```json
+["git", "-C", "/Users/michael/.codex/worktrees/wave-a-correctness/cleansia", "credential", "fill"]
+```
+
+## 595. web-ci-37704204320-poll02
+
+UTC `2026-10-07T23:50:27.429641+00:00`; exit `0`; elapsed `0.928s`; cwd `/Users/michael/.codex/worktrees/wave-a-correctness/cleansia`.
+
+```json
+["gh", "run", "view", "37704204320", "--repo", "VM-s-Solutions/cleansia", "--json", "status,conclusion,jobs,headSha,url,startedAt,updatedAt,workflowName"]
+```
+
+## 596. mobile-ci-ios-newhead-poll-02-existing-credential
+
+UTC `2026-10-07T23:51:57.918760+00:00`; exit `0`; elapsed `0.022s`; cwd `/Users/michael/.codex/worktrees/wave-a-correctness/cleansia`.
+
+```json
+["git", "-C", "/Users/michael/.codex/worktrees/wave-a-correctness/cleansia", "credential", "fill"]
+```
+
+## 597. mobile-ci-ios-newhead-poll-02
+
+UTC `2026-10-07T23:51:57.965943+00:00`; exit `0`; elapsed `1.012s`; cwd `/Users/michael/.codex/worktrees/wave-a-correctness/cleansia`.
+
+```json
+["gh", "run", "view", "37704204359", "--repo", "VM-s-Solutions/cleansia", "--json", "databaseId,headSha,status,conclusion,startedAt,updatedAt,url,jobs"]
+```
+
+## 598. web-ci-37703809356-superseded-final-existing-credential
+
+UTC `2026-10-07T23:52:00.625769+00:00`; exit `0`; elapsed `0.029s`; cwd `/Users/michael/.codex/worktrees/wave-a-correctness/cleansia`.
+
+```json
+["git", "-C", "/Users/michael/.codex/worktrees/wave-a-correctness/cleansia", "credential", "fill"]
+```
+
+## 599. web-ci-37704204320-poll03-existing-credential
+
+UTC `2026-10-07T23:52:00.625769+00:00`; exit `0`; elapsed `0.038s`; cwd `/Users/michael/.codex/worktrees/wave-a-correctness/cleansia`.
+
+```json
+["git", "-C", "/Users/michael/.codex/worktrees/wave-a-correctness/cleansia", "credential", "fill"]
+```
+
+## 600. web-ci-37704204320-poll03
+
+UTC `2026-10-07T23:52:00.690292+00:00`; exit `0`; elapsed `1.038s`; cwd `/Users/michael/.codex/worktrees/wave-a-correctness/cleansia`.
+
+```json
+["gh", "run", "view", "37704204320", "--repo", "VM-s-Solutions/cleansia", "--json", "status,conclusion,jobs,headSha,url,startedAt,updatedAt,workflowName"]
+```
+
+## 601. web-ci-37703809356-superseded-final
+
+UTC `2026-10-07T23:52:00.681663+00:00`; exit `0`; elapsed `1.091s`; cwd `/Users/michael/.codex/worktrees/wave-a-correctness/cleansia`.
+
+```json
+["gh", "run", "view", "37703809356", "--repo", "VM-s-Solutions/cleansia", "--json", "status,conclusion,jobs,headSha,url,startedAt,updatedAt,workflowName"]
+```
+
+## 602. web-ci-37704204320-poll04-existing-credential
+
+UTC `2026-10-07T23:53:22.636770+00:00`; exit `0`; elapsed `0.024s`; cwd `/Users/michael/.codex/worktrees/wave-a-correctness/cleansia`.
+
+```json
+["git", "-C", "/Users/michael/.codex/worktrees/wave-a-correctness/cleansia", "credential", "fill"]
+```
+
+## 603. web-ci-37704204320-poll04
+
+UTC `2026-10-07T23:53:22.686926+00:00`; exit `0`; elapsed `1.064s`; cwd `/Users/michael/.codex/worktrees/wave-a-correctness/cleansia`.
+
+```json
+["gh", "run", "view", "37704204320", "--repo", "VM-s-Solutions/cleansia", "--json", "status,conclusion,jobs,headSha,url,startedAt,updatedAt,workflowName"]
+```
+
+## 604. mobile-ci-ios-newhead-poll-03-existing-credential
+
+UTC `2026-10-07T23:53:29.637445+00:00`; exit `0`; elapsed `0.028s`; cwd `/Users/michael/.codex/worktrees/wave-a-correctness/cleansia`.
+
+```json
+["git", "-C", "/Users/michael/.codex/worktrees/wave-a-correctness/cleansia", "credential", "fill"]
+```
+
+## 605. mobile-ci-ios-newhead-poll-03
+
+UTC `2026-10-07T23:53:29.690491+00:00`; exit `0`; elapsed `1.057s`; cwd `/Users/michael/.codex/worktrees/wave-a-correctness/cleansia`.
+
+```json
+["gh", "run", "view", "37704204359", "--repo", "VM-s-Solutions/cleansia", "--json", "databaseId,headSha,status,conclusion,startedAt,updatedAt,url,jobs"]
+```
+
+## 606. root-wave-a-final-backend-progress-2-existing-credential
+
+UTC `2026-10-07T23:53:50.383317+00:00`; exit `0`; elapsed `0.024s`; cwd `/Users/michael/.codex/worktrees/wave-a-correctness/cleansia`.
+
+```json
+["git", "-C", "/Users/michael/.codex/worktrees/wave-a-correctness/cleansia", "credential", "fill"]
+```
+
+## 607. root-wave-a-final-backend-progress-2
+
+UTC `2026-10-07T23:53:50.432402+00:00`; exit `0`; elapsed `0.994s`; cwd `/Users/michael/.codex/worktrees/wave-a-correctness/cleansia`.
+
+```json
+["gh", "run", "view", "37704204302", "--json", "headSha,status,conclusion,jobs,createdAt,url"]
+```
+
+## 608. web-ci-37704204320-poll05-existing-credential
+
+UTC `2026-10-07T23:54:42.060509+00:00`; exit `0`; elapsed `0.025s`; cwd `/Users/michael/.codex/worktrees/wave-a-correctness/cleansia`.
+
+```json
+["git", "-C", "/Users/michael/.codex/worktrees/wave-a-correctness/cleansia", "credential", "fill"]
+```
+
+## 609. web-ci-37704204320-poll05
+
+UTC `2026-10-07T23:54:42.112047+00:00`; exit `0`; elapsed `1.183s`; cwd `/Users/michael/.codex/worktrees/wave-a-correctness/cleansia`.
+
+```json
+["gh", "run", "view", "37704204320", "--repo", "VM-s-Solutions/cleansia", "--json", "status,conclusion,jobs,headSha,url,startedAt,updatedAt,workflowName"]
+```
+
+## 610. mobile-ci-ios-newhead-poll-04-existing-credential
+
+UTC `2026-10-07T23:54:50.127943+00:00`; exit `0`; elapsed `0.028s`; cwd `/Users/michael/.codex/worktrees/wave-a-correctness/cleansia`.
+
+```json
+["git", "-C", "/Users/michael/.codex/worktrees/wave-a-correctness/cleansia", "credential", "fill"]
+```
+
+## 611. mobile-ci-ios-newhead-poll-04
+
+UTC `2026-10-07T23:54:50.180513+00:00`; exit `0`; elapsed `0.912s`; cwd `/Users/michael/.codex/worktrees/wave-a-correctness/cleansia`.
+
+```json
+["gh", "run", "view", "37704204359", "--repo", "VM-s-Solutions/cleansia", "--json", "databaseId,headSha,status,conclusion,startedAt,updatedAt,url,jobs"]
+```
+
+## 612. web-ci-37704204320-poll06-existing-credential
+
+UTC `2026-10-07T23:55:55.756802+00:00`; exit `0`; elapsed `0.028s`; cwd `/Users/michael/.codex/worktrees/wave-a-correctness/cleansia`.
+
+```json
+["git", "-C", "/Users/michael/.codex/worktrees/wave-a-correctness/cleansia", "credential", "fill"]
+```
+
+## 613. web-ci-37704204320-poll06
+
+UTC `2026-10-07T23:55:55.811220+00:00`; exit `0`; elapsed `1.086s`; cwd `/Users/michael/.codex/worktrees/wave-a-correctness/cleansia`.
+
+```json
+["gh", "run", "view", "37704204320", "--repo", "VM-s-Solutions/cleansia", "--json", "status,conclusion,jobs,headSha,url,startedAt,updatedAt,workflowName"]
+```
+
+## 614. mobile-ci-ios-newhead-poll-05-existing-credential
+
+UTC `2026-10-07T23:56:12.028584+00:00`; exit `0`; elapsed `0.024s`; cwd `/Users/michael/.codex/worktrees/wave-a-correctness/cleansia`.
+
+```json
+["git", "-C", "/Users/michael/.codex/worktrees/wave-a-correctness/cleansia", "credential", "fill"]
+```
+
+## 615. mobile-ci-ios-newhead-poll-05
+
+UTC `2026-10-07T23:56:12.076791+00:00`; exit `0`; elapsed `0.918s`; cwd `/Users/michael/.codex/worktrees/wave-a-correctness/cleansia`.
+
+```json
+["gh", "run", "view", "37704204359", "--repo", "VM-s-Solutions/cleansia", "--json", "databaseId,headSha,status,conclusion,startedAt,updatedAt,url,jobs"]
+```
+
+## 616. web-ci-37704204320-poll07-existing-credential
+
+UTC `2026-10-07T23:57:11.890937+00:00`; exit `0`; elapsed `0.023s`; cwd `/Users/michael/.codex/worktrees/wave-a-correctness/cleansia`.
+
+```json
+["git", "-C", "/Users/michael/.codex/worktrees/wave-a-correctness/cleansia", "credential", "fill"]
+```
+
+## 617. web-ci-37704204320-poll07
+
+UTC `2026-10-07T23:57:11.939590+00:00`; exit `0`; elapsed `1.123s`; cwd `/Users/michael/.codex/worktrees/wave-a-correctness/cleansia`.
+
+```json
+["gh", "run", "view", "37704204320", "--repo", "VM-s-Solutions/cleansia", "--json", "status,conclusion,jobs,headSha,url,startedAt,updatedAt,workflowName"]
+```
+
+## 618. mobile-ci-ios-newhead-poll-06-existing-credential
+
+UTC `2026-10-07T23:57:31.742993+00:00`; exit `0`; elapsed `0.027s`; cwd `/Users/michael/.codex/worktrees/wave-a-correctness/cleansia`.
+
+```json
+["git", "-C", "/Users/michael/.codex/worktrees/wave-a-correctness/cleansia", "credential", "fill"]
+```
+
+## 619. mobile-ci-ios-newhead-poll-06
+
+UTC `2026-10-07T23:57:31.794886+00:00`; exit `0`; elapsed `0.965s`; cwd `/Users/michael/.codex/worktrees/wave-a-correctness/cleansia`.
+
+```json
+["gh", "run", "view", "37704204359", "--repo", "VM-s-Solutions/cleansia", "--json", "databaseId,headSha,status,conclusion,startedAt,updatedAt,url,jobs"]
+```
+
+## 620. root-wave-a-final-backend-progress-3-existing-credential
+
+UTC `2026-10-07T23:58:01.759754+00:00`; exit `0`; elapsed `0.026s`; cwd `/Users/michael/.codex/worktrees/wave-a-correctness/cleansia`.
+
+```json
+["git", "-C", "/Users/michael/.codex/worktrees/wave-a-correctness/cleansia", "credential", "fill"]
+```
+
+## 621. root-wave-a-final-backend-progress-3
+
+UTC `2026-10-07T23:58:01.810755+00:00`; exit `0`; elapsed `0.973s`; cwd `/Users/michael/.codex/worktrees/wave-a-correctness/cleansia`.
+
+```json
+["gh", "run", "view", "37704204302", "--json", "headSha,status,conclusion,jobs,createdAt,url"]
+```
+
+## 622. web-ci-37704204320-poll08-existing-credential
+
+UTC `2026-10-07T23:58:26.407762+00:00`; exit `0`; elapsed `0.030s`; cwd `/Users/michael/.codex/worktrees/wave-a-correctness/cleansia`.
+
+```json
+["git", "-C", "/Users/michael/.codex/worktrees/wave-a-correctness/cleansia", "credential", "fill"]
+```
+
+## 623. web-ci-37704204320-poll08
+
+UTC `2026-10-07T23:58:26.464660+00:00`; exit `0`; elapsed `0.950s`; cwd `/Users/michael/.codex/worktrees/wave-a-correctness/cleansia`.
+
+```json
+["gh", "run", "view", "37704204320", "--repo", "VM-s-Solutions/cleansia", "--json", "status,conclusion,jobs,headSha,url,startedAt,updatedAt,workflowName"]
+```
+
+## 624. mobile-ci-ios-newhead-poll-07-existing-credential
+
+UTC `2026-10-07T23:59:10.474520+00:00`; exit `0`; elapsed `0.023s`; cwd `/Users/michael/.codex/worktrees/wave-a-correctness/cleansia`.
+
+```json
+["git", "-C", "/Users/michael/.codex/worktrees/wave-a-correctness/cleansia", "credential", "fill"]
+```
+
+## 625. mobile-ci-ios-newhead-poll-07
+
+UTC `2026-10-07T23:59:10.522564+00:00`; exit `0`; elapsed `1.037s`; cwd `/Users/michael/.codex/worktrees/wave-a-correctness/cleansia`.
+
+```json
+["gh", "run", "view", "37704204359", "--repo", "VM-s-Solutions/cleansia", "--json", "databaseId,headSha,status,conclusion,startedAt,updatedAt,url,jobs"]
+```
+
+## 626. web-ci-37704204320-poll09-existing-credential
+
+UTC `2026-10-07T23:59:48.230797+00:00`; exit `0`; elapsed `0.025s`; cwd `/Users/michael/.codex/worktrees/wave-a-correctness/cleansia`.
+
+```json
+["git", "-C", "/Users/michael/.codex/worktrees/wave-a-correctness/cleansia", "credential", "fill"]
+```
+
+## 627. web-ci-37704204320-poll09
+
+UTC `2026-10-07T23:59:48.281597+00:00`; exit `0`; elapsed `1.114s`; cwd `/Users/michael/.codex/worktrees/wave-a-correctness/cleansia`.
+
+```json
+["gh", "run", "view", "37704204320", "--repo", "VM-s-Solutions/cleansia", "--json", "status,conclusion,jobs,headSha,url,startedAt,updatedAt,workflowName"]
+```
+
+## 628. root-wave-a-final-backend-progress-4-existing-credential
+
+UTC `2026-10-08T00:00:36.183010+00:00`; exit `0`; elapsed `0.023s`; cwd `/Users/michael/.codex/worktrees/wave-a-correctness/cleansia`.
+
+```json
+["git", "-C", "/Users/michael/.codex/worktrees/wave-a-correctness/cleansia", "credential", "fill"]
+```
+
+## 629. mobile-ci-ios-newhead-poll-08-existing-credential
+
+UTC `2026-10-08T00:00:36.729011+00:00`; exit `0`; elapsed `0.026s`; cwd `/Users/michael/.codex/worktrees/wave-a-correctness/cleansia`.
+
+```json
+["git", "-C", "/Users/michael/.codex/worktrees/wave-a-correctness/cleansia", "credential", "fill"]
+```
+
+## 630. root-wave-a-final-backend-progress-4
+
+UTC `2026-10-08T00:00:36.230305+00:00`; exit `0`; elapsed `0.951s`; cwd `/Users/michael/.codex/worktrees/wave-a-correctness/cleansia`.
+
+```json
+["gh", "run", "view", "37704204302", "--json", "headSha,status,conclusion,jobs,createdAt,url"]
+```
+
+## 631. mobile-ci-ios-newhead-poll-08
+
+UTC `2026-10-08T00:00:36.780245+00:00`; exit `0`; elapsed `0.946s`; cwd `/Users/michael/.codex/worktrees/wave-a-correctness/cleansia`.
+
+```json
+["gh", "run", "view", "37704204359", "--repo", "VM-s-Solutions/cleansia", "--json", "databaseId,headSha,status,conclusion,startedAt,updatedAt,url,jobs"]
+```
+
+## 632. web-ci-37704204320-poll10-existing-credential
+
+UTC `2026-10-08T00:01:05.395935+00:00`; exit `0`; elapsed `0.028s`; cwd `/Users/michael/.codex/worktrees/wave-a-correctness/cleansia`.
+
+```json
+["git", "-C", "/Users/michael/.codex/worktrees/wave-a-correctness/cleansia", "credential", "fill"]
+```
+
+## 633. web-ci-37704204320-poll10
+
+UTC `2026-10-08T00:01:05.449636+00:00`; exit `0`; elapsed `0.996s`; cwd `/Users/michael/.codex/worktrees/wave-a-correctness/cleansia`.
+
+```json
+["gh", "run", "view", "37704204320", "--repo", "VM-s-Solutions/cleansia", "--json", "status,conclusion,jobs,headSha,url,startedAt,updatedAt,workflowName"]
+```
+
+## 634. mobile-ci-ios-newhead-poll-09-existing-credential
+
+UTC `2026-10-08T00:02:05.322802+00:00`; exit `0`; elapsed `0.026s`; cwd `/Users/michael/.codex/worktrees/wave-a-correctness/cleansia`.
+
+```json
+["git", "-C", "/Users/michael/.codex/worktrees/wave-a-correctness/cleansia", "credential", "fill"]
+```
+
+## 635. mobile-ci-ios-newhead-poll-09
+
+UTC `2026-10-08T00:02:05.374386+00:00`; exit `0`; elapsed `1.079s`; cwd `/Users/michael/.codex/worktrees/wave-a-correctness/cleansia`.
+
+```json
+["gh", "run", "view", "37704204359", "--repo", "VM-s-Solutions/cleansia", "--json", "databaseId,headSha,status,conclusion,startedAt,updatedAt,url,jobs"]
+```
+
+## 636. web-ci-37704204320-poll11-existing-credential
+
+UTC `2026-10-08T00:02:18.705927+00:00`; exit `0`; elapsed `0.028s`; cwd `/Users/michael/.codex/worktrees/wave-a-correctness/cleansia`.
+
+```json
+["git", "-C", "/Users/michael/.codex/worktrees/wave-a-correctness/cleansia", "credential", "fill"]
+```
+
+## 637. web-ci-37704204320-poll11
+
+UTC `2026-10-08T00:02:18.760400+00:00`; exit `0`; elapsed `1.078s`; cwd `/Users/michael/.codex/worktrees/wave-a-correctness/cleansia`.
+
+```json
+["gh", "run", "view", "37704204320", "--repo", "VM-s-Solutions/cleansia", "--json", "status,conclusion,jobs,headSha,url,startedAt,updatedAt,workflowName"]
+```
+
+## 638. mobile-ci-ios-newhead-poll-10-existing-credential
+
+UTC `2026-10-08T00:03:24.809539+00:00`; exit `0`; elapsed `0.027s`; cwd `/Users/michael/.codex/worktrees/wave-a-correctness/cleansia`.
+
+```json
+["git", "-C", "/Users/michael/.codex/worktrees/wave-a-correctness/cleansia", "credential", "fill"]
+```
+
+## 639. mobile-ci-ios-newhead-poll-10
+
+UTC `2026-10-08T00:03:24.861736+00:00`; exit `0`; elapsed `1.157s`; cwd `/Users/michael/.codex/worktrees/wave-a-correctness/cleansia`.
+
+```json
+["gh", "run", "view", "37704204359", "--repo", "VM-s-Solutions/cleansia", "--json", "databaseId,headSha,status,conclusion,startedAt,updatedAt,url,jobs"]
+```
+
+## 640. web-ci-37704204320-poll12-existing-credential
+
+UTC `2026-10-08T00:03:38.416429+00:00`; exit `0`; elapsed `0.024s`; cwd `/Users/michael/.codex/worktrees/wave-a-correctness/cleansia`.
+
+```json
+["git", "-C", "/Users/michael/.codex/worktrees/wave-a-correctness/cleansia", "credential", "fill"]
+```
+
+## 641. web-ci-37704204320-poll12
+
+UTC `2026-10-08T00:03:38.466313+00:00`; exit `0`; elapsed `0.970s`; cwd `/Users/michael/.codex/worktrees/wave-a-correctness/cleansia`.
+
+```json
+["gh", "run", "view", "37704204320", "--repo", "VM-s-Solutions/cleansia", "--json", "status,conclusion,jobs,headSha,url,startedAt,updatedAt,workflowName"]
+```
+
+## 642. root-wave-a-final-backend-progress-5-existing-credential
+
+UTC `2026-10-08T00:04:19.146753+00:00`; exit `0`; elapsed `0.023s`; cwd `/Users/michael/.codex/worktrees/wave-a-correctness/cleansia`.
+
+```json
+["git", "-C", "/Users/michael/.codex/worktrees/wave-a-correctness/cleansia", "credential", "fill"]
+```
+
+## 643. root-wave-a-final-backend-progress-5
+
+UTC `2026-10-08T00:04:19.194850+00:00`; exit `0`; elapsed `0.910s`; cwd `/Users/michael/.codex/worktrees/wave-a-correctness/cleansia`.
+
+```json
+["gh", "run", "view", "37704204302", "--json", "headSha,status,conclusion,jobs,createdAt,url"]
+```
+
+## 644. mobile-ci-ios-newhead-poll-11-existing-credential
+
+UTC `2026-10-08T00:04:47.520790+00:00`; exit `0`; elapsed `0.027s`; cwd `/Users/michael/.codex/worktrees/wave-a-correctness/cleansia`.
+
+```json
+["git", "-C", "/Users/michael/.codex/worktrees/wave-a-correctness/cleansia", "credential", "fill"]
+```
+
+## 645. mobile-ci-ios-newhead-poll-11
+
+UTC `2026-10-08T00:04:47.572331+00:00`; exit `0`; elapsed `1.209s`; cwd `/Users/michael/.codex/worktrees/wave-a-correctness/cleansia`.
+
+```json
+["gh", "run", "view", "37704204359", "--repo", "VM-s-Solutions/cleansia", "--json", "databaseId,headSha,status,conclusion,startedAt,updatedAt,url,jobs"]
+```
+
+## 646. web-ci-37704204320-poll13-existing-credential
+
+UTC `2026-10-08T00:04:58.358544+00:00`; exit `0`; elapsed `0.024s`; cwd `/Users/michael/.codex/worktrees/wave-a-correctness/cleansia`.
+
+```json
+["git", "-C", "/Users/michael/.codex/worktrees/wave-a-correctness/cleansia", "credential", "fill"]
+```
+
+## 647. web-ci-37704204320-poll13
+
+UTC `2026-10-08T00:04:58.408910+00:00`; exit `0`; elapsed `1.241s`; cwd `/Users/michael/.codex/worktrees/wave-a-correctness/cleansia`.
+
+```json
+["gh", "run", "view", "37704204320", "--repo", "VM-s-Solutions/cleansia", "--json", "status,conclusion,jobs,headSha,url,startedAt,updatedAt,workflowName"]
+```
+
+## 648. web-ci-37704204320-poll14-existing-credential
+
+UTC `2026-10-08T00:06:15.365126+00:00`; exit `0`; elapsed `0.024s`; cwd `/Users/michael/.codex/worktrees/wave-a-correctness/cleansia`.
+
+```json
+["git", "-C", "/Users/michael/.codex/worktrees/wave-a-correctness/cleansia", "credential", "fill"]
+```
+
+## 649. web-ci-37704204320-poll14
+
+UTC `2026-10-08T00:06:15.414886+00:00`; exit `0`; elapsed `1.080s`; cwd `/Users/michael/.codex/worktrees/wave-a-correctness/cleansia`.
+
+```json
+["gh", "run", "view", "37704204320", "--repo", "VM-s-Solutions/cleansia", "--json", "status,conclusion,jobs,headSha,url,startedAt,updatedAt,workflowName"]
+```
+
+## 650. mobile-ci-ios-newhead-poll-12-existing-credential
+
+UTC `2026-10-08T00:06:21.246601+00:00`; exit `0`; elapsed `0.024s`; cwd `/Users/michael/.codex/worktrees/wave-a-correctness/cleansia`.
+
+```json
+["git", "-C", "/Users/michael/.codex/worktrees/wave-a-correctness/cleansia", "credential", "fill"]
+```
+
+## 651. mobile-ci-ios-newhead-poll-12
+
+UTC `2026-10-08T00:06:21.294542+00:00`; exit `0`; elapsed `1.058s`; cwd `/Users/michael/.codex/worktrees/wave-a-correctness/cleansia`.
+
+```json
+["gh", "run", "view", "37704204359", "--repo", "VM-s-Solutions/cleansia", "--json", "databaseId,headSha,status,conclusion,startedAt,updatedAt,url,jobs"]
+```
+
+## 652. web-ci-37704204320-poll15-existing-credential
+
+UTC `2026-10-08T00:07:35.928609+00:00`; exit `0`; elapsed `0.024s`; cwd `/Users/michael/.codex/worktrees/wave-a-correctness/cleansia`.
+
+```json
+["git", "-C", "/Users/michael/.codex/worktrees/wave-a-correctness/cleansia", "credential", "fill"]
+```
+
+## 653. web-ci-37704204320-poll15
+
+UTC `2026-10-08T00:07:35.978546+00:00`; exit `0`; elapsed `1.030s`; cwd `/Users/michael/.codex/worktrees/wave-a-correctness/cleansia`.
+
+```json
+["gh", "run", "view", "37704204320", "--repo", "VM-s-Solutions/cleansia", "--json", "status,conclusion,jobs,headSha,url,startedAt,updatedAt,workflowName"]
+```
+
+## 654. root-wave-a-final-backend-progress-6-existing-credential
+
+UTC `2026-10-08T00:07:48.029011+00:00`; exit `0`; elapsed `0.027s`; cwd `/Users/michael/.codex/worktrees/wave-a-correctness/cleansia`.
+
+```json
+["git", "-C", "/Users/michael/.codex/worktrees/wave-a-correctness/cleansia", "credential", "fill"]
+```
+
+## 655. root-wave-a-final-backend-progress-6
+
+UTC `2026-10-08T00:07:48.080695+00:00`; exit `0`; elapsed `0.912s`; cwd `/Users/michael/.codex/worktrees/wave-a-correctness/cleansia`.
+
+```json
+["gh", "run", "view", "37704204302", "--json", "headSha,status,conclusion,jobs,createdAt,url"]
+```
+
+## 656. mobile-ci-ios-newhead-poll-13-existing-credential
+
+UTC `2026-10-08T00:07:51.249400+00:00`; exit `0`; elapsed `0.023s`; cwd `/Users/michael/.codex/worktrees/wave-a-correctness/cleansia`.
+
+```json
+["git", "-C", "/Users/michael/.codex/worktrees/wave-a-correctness/cleansia", "credential", "fill"]
+```
+
+## 657. mobile-ci-ios-newhead-poll-13
+
+UTC `2026-10-08T00:07:51.296383+00:00`; exit `0`; elapsed `1.070s`; cwd `/Users/michael/.codex/worktrees/wave-a-correctness/cleansia`.
+
+```json
+["gh", "run", "view", "37704204359", "--repo", "VM-s-Solutions/cleansia", "--json", "databaseId,headSha,status,conclusion,startedAt,updatedAt,url,jobs"]
+```
+
+## 658. root-wave-a-ci-closure-master-fetch
+
+UTC `2026-10-08T00:08:17.456218+00:00`; exit `0`; elapsed `0.502s`; cwd `/Users/michael/.codex/worktrees/wave-a-correctness/cleansia`.
+
+```json
+["git", "fetch", "origin", "master"]
+```
+
+## 659. root-wave-a-ci-closure-master-merge
+
+UTC `2026-10-08T00:08:18.085614+00:00`; exit `0`; elapsed `0.013s`; cwd `/Users/michael/.codex/worktrees/wave-a-correctness/cleansia`.
+
+```json
+["git", "merge", "--no-edit", "origin/master"]
+```
+
+## 660. web-ci-37704204320-poll16-existing-credential
+
+UTC `2026-10-08T00:08:58.023235+00:00`; exit `0`; elapsed `0.025s`; cwd `/Users/michael/.codex/worktrees/wave-a-correctness/cleansia`.
+
+```json
+["git", "-C", "/Users/michael/.codex/worktrees/wave-a-correctness/cleansia", "credential", "fill"]
+```
+
+## 661. web-ci-37704204320-poll16
+
+UTC `2026-10-08T00:08:58.073881+00:00`; exit `0`; elapsed `1.101s`; cwd `/Users/michael/.codex/worktrees/wave-a-correctness/cleansia`.
+
+```json
+["gh", "run", "view", "37704204320", "--repo", "VM-s-Solutions/cleansia", "--json", "status,conclusion,jobs,headSha,url,startedAt,updatedAt,workflowName"]
+```
+
+## 662. mobile-ci-ios-newhead-poll-14-existing-credential
+
+UTC `2026-10-08T00:09:20.183617+00:00`; exit `0`; elapsed `0.023s`; cwd `/Users/michael/.codex/worktrees/wave-a-correctness/cleansia`.
+
+```json
+["git", "-C", "/Users/michael/.codex/worktrees/wave-a-correctness/cleansia", "credential", "fill"]
+```
+
+## 663. mobile-ci-ios-newhead-poll-14
+
+UTC `2026-10-08T00:09:20.231641+00:00`; exit `0`; elapsed `1.047s`; cwd `/Users/michael/.codex/worktrees/wave-a-correctness/cleansia`.
+
+```json
+["gh", "run", "view", "37704204359", "--repo", "VM-s-Solutions/cleansia", "--json", "databaseId,headSha,status,conclusion,startedAt,updatedAt,url,jobs"]
+```
+
+## 664. web-ci-current-head-final-receipt
+
+UTC `2026-10-08T00:09:58.527421+00:00`; exit `0`; elapsed `0.025s`; cwd `/Users/michael/.codex/scratchpads/cleansia-wave-a-2026-10-07`.
+
+```json
+["python3", "/Users/michael/.codex/scratchpads/cleansia-wave-a-2026-10-07/tools/web_ci_receipt.py"]
+```
+
+## 665. mobile-ci-ios-newhead-poll-15-existing-credential
+
+UTC `2026-10-08T00:11:08.325965+00:00`; exit `0`; elapsed `0.023s`; cwd `/Users/michael/.codex/worktrees/wave-a-correctness/cleansia`.
+
+```json
+["git", "-C", "/Users/michael/.codex/worktrees/wave-a-correctness/cleansia", "credential", "fill"]
+```
+
+## 666. mobile-ci-ios-newhead-poll-15
+
+UTC `2026-10-08T00:11:08.373750+00:00`; exit `0`; elapsed `1.302s`; cwd `/Users/michael/.codex/worktrees/wave-a-correctness/cleansia`.
+
+```json
+["gh", "run", "view", "37704204359", "--repo", "VM-s-Solutions/cleansia", "--json", "databaseId,headSha,status,conclusion,startedAt,updatedAt,url,jobs"]
+```
+
+## 667. mobile-ci-ios-newhead-poll-16-existing-credential
+
+UTC `2026-10-08T00:12:47.730540+00:00`; exit `0`; elapsed `0.027s`; cwd `/Users/michael/.codex/worktrees/wave-a-correctness/cleansia`.
+
+```json
+["git", "-C", "/Users/michael/.codex/worktrees/wave-a-correctness/cleansia", "credential", "fill"]
+```
+
+## 668. mobile-ci-ios-newhead-poll-16
+
+UTC `2026-10-08T00:12:47.781955+00:00`; exit `0`; elapsed `0.942s`; cwd `/Users/michael/.codex/worktrees/wave-a-correctness/cleansia`.
+
+```json
+["gh", "run", "view", "37704204359", "--repo", "VM-s-Solutions/cleansia", "--json", "databaseId,headSha,status,conclusion,startedAt,updatedAt,url,jobs"]
+```
+
+## 669. mobile-ci-ios-newhead-poll-17-existing-credential
+
+UTC `2026-10-08T00:13:58.412735+00:00`; exit `0`; elapsed `0.027s`; cwd `/Users/michael/.codex/worktrees/wave-a-correctness/cleansia`.
+
+```json
+["git", "-C", "/Users/michael/.codex/worktrees/wave-a-correctness/cleansia", "credential", "fill"]
+```
+
+## 670. mobile-ci-ios-newhead-poll-17
+
+UTC `2026-10-08T00:13:58.464102+00:00`; exit `0`; elapsed `1.195s`; cwd `/Users/michael/.codex/worktrees/wave-a-correctness/cleansia`.
+
+```json
+["gh", "run", "view", "37704204359", "--repo", "VM-s-Solutions/cleansia", "--json", "databaseId,headSha,status,conclusion,startedAt,updatedAt,url,jobs"]
+```
+
+## 671. mobile-ci-ios-newhead-poll-18-existing-credential
+
+UTC `2026-10-08T00:15:09.720379+00:00`; exit `0`; elapsed `0.023s`; cwd `/Users/michael/.codex/worktrees/wave-a-correctness/cleansia`.
+
+```json
+["git", "-C", "/Users/michael/.codex/worktrees/wave-a-correctness/cleansia", "credential", "fill"]
+```
+
+## 672. mobile-ci-ios-newhead-poll-18
+
+UTC `2026-10-08T00:15:09.767710+00:00`; exit `0`; elapsed `1.183s`; cwd `/Users/michael/.codex/worktrees/wave-a-correctness/cleansia`.
+
+```json
+["gh", "run", "view", "37704204359", "--repo", "VM-s-Solutions/cleansia", "--json", "databaseId,headSha,status,conclusion,startedAt,updatedAt,url,jobs"]
+```
+
+## 673. mobile-ci-ios-newhead-poll-19-existing-credential
+
+UTC `2026-10-08T00:16:40.414346+00:00`; exit `0`; elapsed `0.027s`; cwd `/Users/michael/.codex/worktrees/wave-a-correctness/cleansia`.
+
+```json
+["git", "-C", "/Users/michael/.codex/worktrees/wave-a-correctness/cleansia", "credential", "fill"]
+```
+
+## 674. mobile-ci-ios-newhead-poll-19
+
+UTC `2026-10-08T00:16:40.465876+00:00`; exit `0`; elapsed `1.191s`; cwd `/Users/michael/.codex/worktrees/wave-a-correctness/cleansia`.
+
+```json
+["gh", "run", "view", "37704204359", "--repo", "VM-s-Solutions/cleansia", "--json", "databaseId,headSha,status,conclusion,startedAt,updatedAt,url,jobs"]
+```
+
+## 675. mobile-ci-ios-newhead-poll-20-existing-credential
+
+UTC `2026-10-08T00:18:06.248496+00:00`; exit `0`; elapsed `0.027s`; cwd `/Users/michael/.codex/worktrees/wave-a-correctness/cleansia`.
+
+```json
+["git", "-C", "/Users/michael/.codex/worktrees/wave-a-correctness/cleansia", "credential", "fill"]
+```
+
+## 676. mobile-ci-ios-newhead-poll-20
+
+UTC `2026-10-08T00:18:06.300280+00:00`; exit `0`; elapsed `1.066s`; cwd `/Users/michael/.codex/worktrees/wave-a-correctness/cleansia`.
+
+```json
+["gh", "run", "view", "37704204359", "--repo", "VM-s-Solutions/cleansia", "--json", "databaseId,headSha,status,conclusion,startedAt,updatedAt,url,jobs"]
+```
+
+## 677. root-wave-a-ci-final-head-watch
+
+UTC `2026-10-07T23:48:01.516790+00:00`; exit `0`; elapsed `1818.457s`; cwd `/Users/michael/.codex/worktrees/wave-a-correctness/cleansia`.
+
+```json
+["gh", "pr", "checks", "fix/wave-a-correctness", "--watch", "--interval", "60", "--fail-fast"]
+```
+
+## 678. root-wave-a-final-ci-proof-existing-credential
+
+UTC `2026-10-08T00:19:02.736129+00:00`; exit `0`; elapsed `0.026s`; cwd `/Users/michael/.codex/worktrees/wave-a-correctness/cleansia`.
+
+```json
+["git", "-C", "/Users/michael/.codex/worktrees/wave-a-correctness/cleansia", "credential", "fill"]
+```
+
+## 679. root-wave-a-final-ci-proof
+
+UTC `2026-10-08T00:19:02.787744+00:00`; exit `0`; elapsed `0.697s`; cwd `/Users/michael/.codex/worktrees/wave-a-correctness/cleansia`.
+
+```json
+["gh", "pr", "view", "fix/wave-a-correctness", "--json", "headRefOid,statusCheckRollup,isDraft,baseRefName,url,number,mergeStateStatus"]
+```
+
+## 680. root-wave-a-final-run-proof-37704204297-existing-credential
+
+UTC `2026-10-08T00:19:03.546984+00:00`; exit `0`; elapsed `0.024s`; cwd `/Users/michael/.codex/worktrees/wave-a-correctness/cleansia`.
+
+```json
+["git", "-C", "/Users/michael/.codex/worktrees/wave-a-correctness/cleansia", "credential", "fill"]
+```
+
+## 681. root-wave-a-final-run-proof-37704204297
+
+UTC `2026-10-08T00:19:03.596851+00:00`; exit `0`; elapsed `0.935s`; cwd `/Users/michael/.codex/worktrees/wave-a-correctness/cleansia`.
+
+```json
+["gh", "run", "view", "37704204297", "--json", "headSha,status,conclusion,jobs,createdAt,updatedAt,url,workflowName"]
+```
+
+## 682. root-wave-a-final-run-proof-37704204302-existing-credential
+
+UTC `2026-10-08T00:19:04.597581+00:00`; exit `0`; elapsed `0.027s`; cwd `/Users/michael/.codex/worktrees/wave-a-correctness/cleansia`.
+
+```json
+["git", "-C", "/Users/michael/.codex/worktrees/wave-a-correctness/cleansia", "credential", "fill"]
+```
+
+## 683. root-wave-a-final-run-proof-37704204302
+
+UTC `2026-10-08T00:19:04.649982+00:00`; exit `0`; elapsed `0.986s`; cwd `/Users/michael/.codex/worktrees/wave-a-correctness/cleansia`.
+
+```json
+["gh", "run", "view", "37704204302", "--json", "headSha,status,conclusion,jobs,createdAt,updatedAt,url,workflowName"]
+```
+
+## 684. root-wave-a-final-run-proof-37704204320-existing-credential
+
+UTC `2026-10-08T00:19:05.699668+00:00`; exit `0`; elapsed `0.028s`; cwd `/Users/michael/.codex/worktrees/wave-a-correctness/cleansia`.
+
+```json
+["git", "-C", "/Users/michael/.codex/worktrees/wave-a-correctness/cleansia", "credential", "fill"]
+```
+
+## 685. root-wave-a-final-run-proof-37704204320
+
+UTC `2026-10-08T00:19:05.754363+00:00`; exit `0`; elapsed `0.941s`; cwd `/Users/michael/.codex/worktrees/wave-a-correctness/cleansia`.
+
+```json
+["gh", "run", "view", "37704204320", "--json", "headSha,status,conclusion,jobs,createdAt,updatedAt,url,workflowName"]
+```
+
+## 686. root-wave-a-final-run-proof-37704204359-existing-credential
+
+UTC `2026-10-08T00:19:06.762003+00:00`; exit `0`; elapsed `0.024s`; cwd `/Users/michael/.codex/worktrees/wave-a-correctness/cleansia`.
+
+```json
+["git", "-C", "/Users/michael/.codex/worktrees/wave-a-correctness/cleansia", "credential", "fill"]
+```
+
+## 687. root-wave-a-final-run-proof-37704204359
+
+UTC `2026-10-08T00:19:06.812931+00:00`; exit `0`; elapsed `0.943s`; cwd `/Users/michael/.codex/worktrees/wave-a-correctness/cleansia`.
+
+```json
+["gh", "run", "view", "37704204359", "--json", "headSha,status,conclusion,jobs,createdAt,updatedAt,url,workflowName"]
+```
+
+## 688. root-wave-a-final-run-proof-37704204361-existing-credential
+
+UTC `2026-10-08T00:19:07.820733+00:00`; exit `0`; elapsed `0.024s`; cwd `/Users/michael/.codex/worktrees/wave-a-correctness/cleansia`.
+
+```json
+["git", "-C", "/Users/michael/.codex/worktrees/wave-a-correctness/cleansia", "credential", "fill"]
+```
+
+## 689. root-wave-a-final-run-proof-37704204361
+
+UTC `2026-10-08T00:19:07.870472+00:00`; exit `0`; elapsed `1.012s`; cwd `/Users/michael/.codex/worktrees/wave-a-correctness/cleansia`.
+
+```json
+["gh", "run", "view", "37704204361", "--json", "headSha,status,conclusion,jobs,createdAt,updatedAt,url,workflowName"]
+```
+
+## 690. root-wave-a-final-run-proof-37704204386-existing-credential
+
+UTC `2026-10-08T00:19:08.946897+00:00`; exit `0`; elapsed `0.028s`; cwd `/Users/michael/.codex/worktrees/wave-a-correctness/cleansia`.
+
+```json
+["git", "-C", "/Users/michael/.codex/worktrees/wave-a-correctness/cleansia", "credential", "fill"]
+```
+
+## 691. root-wave-a-final-run-proof-37704204386
+
+UTC `2026-10-08T00:19:09.001524+00:00`; exit `0`; elapsed `0.940s`; cwd `/Users/michael/.codex/worktrees/wave-a-correctness/cleansia`.
+
+```json
+["gh", "run", "view", "37704204386", "--json", "headSha,status,conclusion,jobs,createdAt,updatedAt,url,workflowName"]
+```
+
+## 692. root-wave-a-final-run-proof-37704204471-existing-credential
+
+UTC `2026-10-08T00:19:10.007054+00:00`; exit `0`; elapsed `0.029s`; cwd `/Users/michael/.codex/worktrees/wave-a-correctness/cleansia`.
+
+```json
+["git", "-C", "/Users/michael/.codex/worktrees/wave-a-correctness/cleansia", "credential", "fill"]
+```
+
+## 693. root-wave-a-final-run-proof-37704204471
+
+UTC `2026-10-08T00:19:10.063072+00:00`; exit `0`; elapsed `1.100s`; cwd `/Users/michael/.codex/worktrees/wave-a-correctness/cleansia`.
+
+```json
+["gh", "run", "view", "37704204471", "--json", "headSha,status,conclusion,jobs,createdAt,updatedAt,url,workflowName"]
+```
+
+## 694. root-wave-a-publish-final-ci-body-existing-credential
+
+UTC `2026-10-08T00:19:51.136571+00:00`; exit `0`; elapsed `0.028s`; cwd `/Users/michael/.codex/worktrees/wave-a-correctness/cleansia`.
+
+```json
+["git", "-C", "/Users/michael/.codex/worktrees/wave-a-correctness/cleansia", "credential", "fill"]
+```
+
+## 695. root-wave-a-publish-final-ci-body
+
+UTC `2026-10-08T00:19:51.191569+00:00`; exit `1`; elapsed `0.363s`; cwd `/Users/michael/.codex/worktrees/wave-a-correctness/cleansia`.
+
+```json
+["gh", "pr", "edit", "311", "--body-file", "/Users/michael/.codex/scratchpads/cleansia-wave-a-2026-10-07/raw/wave-a-pr-body.md"]
+```
+
+## 696. root-wave-a-publish-final-ci-rest-existing-credential
+
+UTC `2026-10-08T00:20:40.020588+00:00`; exit `0`; elapsed `0.024s`; cwd `/Users/michael/.codex/worktrees/wave-a-correctness/cleansia`.
+
+```json
+["git", "-C", "/Users/michael/.codex/worktrees/wave-a-correctness/cleansia", "credential", "fill"]
+```
+
+## 697. root-wave-a-publish-final-ci-rest
+
+UTC `2026-10-08T00:20:40.069641+00:00`; exit `0`; elapsed `1.307s`; cwd `/Users/michael/.codex/worktrees/wave-a-correctness/cleansia`.
+
+```json
+["gh", "api", "--method", "PATCH", "repos/VM-s-Solutions/cleansia/pulls/311", "--input", "/Users/michael/.codex/scratchpads/cleansia-wave-a-2026-10-07/raw/wave-a-pr-rest-update.json", "--jq", "{number,url:.html_url,draft,head:.head.sha}"]
+```
+
+## 698. root-wave-a-final-body-verification-existing-credential
+
+UTC `2026-10-08T00:24:06.650576+00:00`; exit `0`; elapsed `0.028s`; cwd `/Users/michael/.codex/worktrees/wave-a-correctness/cleansia`.
+
+```json
+["git", "-C", "/Users/michael/.codex/worktrees/wave-a-correctness/cleansia", "credential", "fill"]
+```
+
+## 699. root-wave-a-final-body-verification
+
+UTC `2026-10-08T00:24:06.705939+00:00`; exit `0`; elapsed `0.908s`; cwd `/Users/michael/.codex/worktrees/wave-a-correctness/cleansia`.
+
+```json
+["gh", "api", "repos/VM-s-Solutions/cleansia/pulls/311", "--jq", "{number,draft,head:.head.sha,body}"]
+```
+
+## 700. root-cap-fetch-master
+
+UTC `2026-10-08T06:58:10.546733+00:00`; exit `0`; elapsed `0.509s`; cwd `/Users/michael/.codex/worktrees/wave-a-correctness/cleansia`.
+
+```json
+["git", "fetch", "origin", "master"]
+```
+
+## 701. root-cap-merge-master
+
+UTC `2026-10-08T06:58:53.221669+00:00`; exit `0`; elapsed `0.037s`; cwd `/Users/michael/.codex/worktrees/wave-a-correctness/cleansia`.
+
+```json
+["git", "merge", "--no-edit", "origin/master"]
+```
+
+## 702. web-cap-dependencies-install
+
+UTC `2026-10-08T06:58:32.686427+00:00`; exit `0`; elapsed `46.785s`; cwd `/Users/michael/.codex/scratchpads/cleansia-wave-a-2026-10-07/source/src/Cleansia.App`.
+
+```json
+["env", "PATH=/Users/michael/.codex/scratchpads/cleansia-audit-2026-10-07/tools/web-tooling/node_modules/node/bin:/opt/homebrew/bin:/usr/bin:/bin", "NX_DAEMON=false", "NX_NO_CLOUD=true", "npm", "ci"]
+```
+
+## 703. cap-owned-postgres-start
+
+UTC `2026-10-08T06:59:31.420653+00:00`; exit `0`; elapsed `1.165s`; cwd `/Users/michael/.codex/scratchpads/cleansia-wave-a-2026-10-07`.
+
+```json
+["docker", "--context", "desktop-linux", "start", "cleansia-audit-pg-20261007"]
+```
+
+## 704. root-cap-start-owned-db-guarded
+
+UTC `2026-10-08T06:59:31.300785+00:00`; exit `0`; elapsed `1.300s`; cwd `/Users/michael/.codex/scratchpads/cleansia-wave-a-2026-10-07`.
+
+```json
+["python3", "/Users/michael/.codex/scratchpads/cleansia-wave-a-2026-10-07/tools/start-owned-postgres-cap.py"]
+```
+
+## 705. postgres-local-drop-for-restore
+
+UTC `2026-10-08T07:00:37.951021+00:00`; exit `0`; elapsed `0.086s`; cwd `None`.
+
+```json
+["docker", "--context", "desktop-linux", "exec", "cleansia-audit-pg-20261007", "dropdb", "-U", "cleansia_audit", "--force", "--if-exists", "CleansiaAudit"]
+```
+
+## 706. postgres-local-create-for-restore
+
+UTC `2026-10-08T07:00:38.036785+00:00`; exit `0`; elapsed `0.121s`; cwd `None`.
+
+```json
+["docker", "--context", "desktop-linux", "exec", "cleansia-audit-pg-20261007", "createdb", "-U", "cleansia_audit", "CleansiaAudit"]
+```
+
+## 707. cap-before-fixture-restore
+
+UTC `2026-10-08T07:00:38.158355+00:00`; exit `0`; elapsed `9.135s`; cwd `None`.
+
+```json
+["docker", "--context", "desktop-linux", "exec", "-i", "cleansia-audit-pg-20261007", "pg_restore", "-U", "cleansia_audit", "--dbname", "CleansiaAudit", "--exit-on-error"]
+```
+
+stdin_file: `"/Users/michael/.codex/scratchpads/cleansia-wave-a-2026-10-07/private/primary-post-request.dump"`
+
+## 708. root-cap-before-fixture-restore-controller
+
+UTC `2026-10-08T07:00:37.854014+00:00`; exit `0`; elapsed `9.456s`; cwd `/Users/michael/.codex/scratchpads/cleansia-wave-a-2026-10-07`.
+
+```json
+["python3", "/Users/michael/.codex/scratchpads/cleansia-wave-a-2026-10-07/tools/local-db.py", "restore", "--file", "/Users/michael/.codex/scratchpads/cleansia-wave-a-2026-10-07/private/primary-post-request.dump", "--label", "cap-before-fixture-restore"]
+```
+
+## 709. cap-red-source-clone
+
+UTC `2026-10-08T07:01:13.809249+00:00`; exit `0`; elapsed `1.233s`; cwd `/Users/michael/.codex/scratchpads/cleansia-wave-a-2026-10-07`.
+
+```json
+["python3", "/Users/michael/.codex/scratchpads/cleansia-wave-a-2026-10-07/tools/prepare-order-cap-testcopy.py"]
+```
+
+## 710. cap-red-focused-tests
+
+UTC `2026-10-08T07:01:35.789887+00:00`; exit `1`; elapsed `5.048s`; cwd `/Users/michael/.codex/scratchpads/cleansia-wave-a-2026-10-07/cap-focused-source/src`.
+
+```json
+["dotnet", "test", "Cleansia.Tests/Cleansia.Tests.csproj", "--no-restore", "--configuration", "Release", "--filter", "FullyQualifiedName~OrderListPagingContractTests", "--logger", "trx", "--results-directory", "/Users/michael/.codex/scratchpads/cleansia-wave-a-2026-10-07/raw/backend/cap-red-tests", "--verbosity", "minimal"]
+```
+
+## 711. cap-before-fixture-qualification
+
+UTC `2026-10-08T07:01:44.226822+00:00`; exit `0`; elapsed `0.089s`; cwd `None`.
+
+```json
+["docker", "--context", "desktop-linux", "exec", "-i", "cleansia-audit-pg-20261007", "psql", "-X", "-U", "cleansia_audit", "-d", "CleansiaAudit", "-v", "ON_ERROR_STOP=1", "-v", "audit_local_fixture=1"]
+```
+
+stdin_file: `"/Users/michael/.codex/scratchpads/cleansia-wave-a-2026-10-07/tools/order-fixture-qualification.sql"`
+
+## 712. root-cap-before-fixture-qualification
+
+UTC `2026-10-08T07:01:44.130036+00:00`; exit `0`; elapsed `0.191s`; cwd `/Users/michael/.codex/scratchpads/cleansia-wave-a-2026-10-07`.
+
+```json
+["python3", "/Users/michael/.codex/scratchpads/cleansia-wave-a-2026-10-07/tools/local-db.py", "sql", "--file", "/Users/michael/.codex/scratchpads/cleansia-wave-a-2026-10-07/tools/order-fixture-qualification.sql", "--label", "cap-before-fixture-qualification"]
+```
+
+## 713. root-cap-before-hosts-start
+
+UTC `2026-10-08T07:01:44.386204+00:00`; exit `0`; elapsed `2.526s`; cwd `/Users/michael/.codex/scratchpads/cleansia-wave-a-2026-10-07`.
+
+```json
+["python3", "/Users/michael/.codex/scratchpads/cleansia-wave-a-2026-10-07/tools/backend-hosts-final.py", "start", "--hosting-timing", "--local-baseline", "--log-prefix", "cap-before"]
+```
+
+## 714. cap-red-email-build-context
+
+UTC `2026-10-08T07:02:28.211147+00:00`; exit `0`; elapsed `0.004s`; cwd `/Users/michael/.codex/scratchpads/cleansia-wave-a-2026-10-07`.
+
+```json
+["cp", "-cR", "/Users/michael/.codex/scratchpads/cleansia-wave-a-2026-10-07/source/email-templates", "/Users/michael/.codex/scratchpads/cleansia-wave-a-2026-10-07/cap-focused-source/email-templates"]
+```
+
+## 715. root-cap-before-bootstrap
+
+UTC `2026-10-08T07:02:25.350502+00:00`; exit `0`; elapsed `8.663s`; cwd `/Users/michael/.codex/scratchpads/cleansia-wave-a-2026-10-07`.
+
+```json
+["python3", "/Users/michael/.codex/scratchpads/cleansia-wave-a-2026-10-07/tools/backend-requests.py", "bootstrap", "--label", "cap-before"]
+```
+
+## 716. cap-red-focused-tests-qualified
+
+UTC `2026-10-08T07:02:28.336359+00:00`; exit `1`; elapsed `21.600s`; cwd `/Users/michael/.codex/scratchpads/cleansia-wave-a-2026-10-07/cap-focused-source/src`.
+
+```json
+["dotnet", "test", "Cleansia.Tests/Cleansia.Tests.csproj", "--no-restore", "--configuration", "Release", "--filter", "FullyQualifiedName~OrderListPagingContractTests", "--logger", "trx", "--results-directory", "/Users/michael/.codex/scratchpads/cleansia-wave-a-2026-10-07/raw/backend/cap-red-tests-qualified", "--verbosity", "minimal"]
+```
+
+## 717. web-cap-source-preparation-receipt
+
+UTC `2026-10-08T07:03:45.232187+00:00`; exit `0`; elapsed `0.034s`; cwd `/Users/michael/.codex/scratchpads/cleansia-wave-a-2026-10-07`.
+
+```json
+["python3", "/Users/michael/.codex/scratchpads/cleansia-wave-a-2026-10-07/tools/wave_cap_web_preparation.py"]
+```
+
+## 718. root-cap-before-contract-cohort
+
+UTC `2026-10-08T07:03:55.171460+00:00`; exit `0`; elapsed `51.738s`; cwd `/Users/michael/.codex/scratchpads/cleansia-wave-a-2026-10-07`.
+
+```json
+["python3", "/Users/michael/.codex/scratchpads/cleansia-wave-a-2026-10-07/tools/cap-contract-cohort.py", "before"]
+```
+
+## 719. cap-green-focused-mirror
+
+UTC `2026-10-08T07:05:36.664433+00:00`; exit `0`; elapsed `0.025s`; cwd `/Users/michael/.codex/scratchpads/cleansia-wave-a-2026-10-07`.
+
+```json
+["python3", "/Users/michael/.codex/scratchpads/cleansia-wave-a-2026-10-07/tools/mirror-order-cap-focus.py"]
+```
+
+## 720. root-cap-before-hosts-stop
+
+UTC `2026-10-08T07:05:47.738043+00:00`; exit `0`; elapsed `0.200s`; cwd `/Users/michael/.codex/scratchpads/cleansia-wave-a-2026-10-07`.
+
+```json
+["python3", "/Users/michael/.codex/scratchpads/cleansia-wave-a-2026-10-07/tools/backend-hosts-final.py", "stop", "--log-prefix", "cap-before"]
+```
+
+## 721. root-cap-preserve-api-partner
+
+UTC `2026-10-08T07:05:48.180882+00:00`; exit `0`; elapsed `0.047s`; cwd `/Users/michael/.codex/scratchpads/cleansia-wave-a-2026-10-07`.
+
+```json
+["/bin/cp", "-cR", "/Users/michael/.codex/scratchpads/cleansia-wave-a-2026-10-07/source/src/Cleansia.Web.Partner/bin/Release/net10.0", "/Users/michael/.codex/scratchpads/cleansia-wave-a-2026-10-07/artifacts/cap-before-api-products/Partner"]
+```
+
+## 722. root-cap-preserve-api-admin
+
+UTC `2026-10-08T07:05:48.312798+00:00`; exit `0`; elapsed `0.058s`; cwd `/Users/michael/.codex/scratchpads/cleansia-wave-a-2026-10-07`.
+
+```json
+["/bin/cp", "-cR", "/Users/michael/.codex/scratchpads/cleansia-wave-a-2026-10-07/source/src/Cleansia.Web.Admin/bin/Release/net10.0", "/Users/michael/.codex/scratchpads/cleansia-wave-a-2026-10-07/artifacts/cap-before-api-products/Admin"]
+```
+
+## 723. root-cap-preserve-api-mobile-partner
+
+UTC `2026-10-08T07:05:48.452507+00:00`; exit `0`; elapsed `0.043s`; cwd `/Users/michael/.codex/scratchpads/cleansia-wave-a-2026-10-07`.
+
+```json
+["/bin/cp", "-cR", "/Users/michael/.codex/scratchpads/cleansia-wave-a-2026-10-07/source/src/Cleansia.Web.Mobile.Partner/bin/Release/net10.0", "/Users/michael/.codex/scratchpads/cleansia-wave-a-2026-10-07/artifacts/cap-before-api-products/Mobile.Partner"]
+```
+
+## 724. root-cap-preserve-api-customer
+
+UTC `2026-10-08T07:05:48.556180+00:00`; exit `0`; elapsed `0.041s`; cwd `/Users/michael/.codex/scratchpads/cleansia-wave-a-2026-10-07`.
+
+```json
+["/bin/cp", "-cR", "/Users/michael/.codex/scratchpads/cleansia-wave-a-2026-10-07/source/src/Cleansia.Web.Customer/bin/Release/net10.0", "/Users/michael/.codex/scratchpads/cleansia-wave-a-2026-10-07/artifacts/cap-before-api-products/Customer"]
+```
+
+## 725. root-cap-preserve-api-mobile-customer
+
+UTC `2026-10-08T07:05:48.655144+00:00`; exit `0`; elapsed `0.045s`; cwd `/Users/michael/.codex/scratchpads/cleansia-wave-a-2026-10-07`.
+
+```json
+["/bin/cp", "-cR", "/Users/michael/.codex/scratchpads/cleansia-wave-a-2026-10-07/source/src/Cleansia.Web.Mobile.Customer/bin/Release/net10.0", "/Users/michael/.codex/scratchpads/cleansia-wave-a-2026-10-07/artifacts/cap-before-api-products/Mobile.Customer"]
+```
+
+## 726. cap-green-focused-tests
+
+UTC `2026-10-08T07:05:36.752518+00:00`; exit `0`; elapsed `29.114s`; cwd `/Users/michael/.codex/scratchpads/cleansia-wave-a-2026-10-07/cap-focused-source/src`.
+
+```json
+["dotnet", "test", "Cleansia.Tests/Cleansia.Tests.csproj", "-c", "Release", "--no-restore", "--filter", "FullyQualifiedName~Cleansia.Tests.Features.Auditing.GetActionTimelineTests|FullyQualifiedName~OrderListPagingContractTests|FullyQualifiedName~OrderListProjectionEquivalenceTests|FullyQualifiedName~GetPagedOrdersFrozenSeatPayTests|FullyQualifiedName~EveryValidatorIsReachedByThePipelineTests", "--logger", "trx;LogFileName=cap-green-focused-tests.trx", "--results-directory", "/Users/michael/.codex/scratchpads/cleansia-wave-a-2026-10-07/raw/backend/cap-green-tests", "--verbosity", "minimal"]
+```
+
+## 727. root-cap-release-build
+
+UTC `2026-10-08T07:06:07.578221+00:00`; exit `0`; elapsed `24.359s`; cwd `/Users/michael/.codex/scratchpads/cleansia-wave-a-2026-10-07/source/src`.
+
+```json
+["/opt/homebrew/bin/dotnet", "build", "Cleansia.Api.sln", "-c", "Release", "--no-restore"]
+```
+
+## 728. web-cap-source-preparation-nine-aliases
+
+UTC `2026-10-08T07:06:38.674990+00:00`; exit `0`; elapsed `0.040s`; cwd `/Users/michael/.codex/scratchpads/cleansia-wave-a-2026-10-07`.
+
+```json
+["python3", "/Users/michael/.codex/scratchpads/cleansia-wave-a-2026-10-07/tools/wave_cap_web_preparation.py"]
+```
+
+## 729. root-cap-generation-hosts-start
+
+UTC `2026-10-08T07:07:10.595166+00:00`; exit `0`; elapsed `2.838s`; cwd `/Users/michael/.codex/scratchpads/cleansia-wave-a-2026-10-07`.
+
+```json
+["python3", "/Users/michael/.codex/scratchpads/cleansia-wave-a-2026-10-07/tools/generation-cap-after-hosts.py", "start", "--local-baseline"]
+```
+
+## 730. root-cap-actual-swagger-capture
+
+UTC `2026-10-08T07:07:35.525878+00:00`; exit `0`; elapsed `0.958s`; cwd `/Users/michael/.codex/scratchpads/cleansia-wave-a-2026-10-07`.
+
+```json
+["python3", "/Users/michael/.codex/scratchpads/cleansia-wave-a-2026-10-07/tools/capture-cap-swagger.py", "after"]
+```
+
+## 731. root-cap-generation-hosts-stop
+
+UTC `2026-10-08T07:07:56.314228+00:00`; exit `0`; elapsed `0.059s`; cwd `/Users/michael/.codex/scratchpads/cleansia-wave-a-2026-10-07`.
+
+```json
+["python3", "/Users/michael/.codex/scratchpads/cleansia-wave-a-2026-10-07/tools/generation-cap-after-hosts.py", "stop"]
+```
+
+## 732. postgres-local-drop-for-restore
+
+UTC `2026-10-08T07:07:56.559901+00:00`; exit `0`; elapsed `0.109s`; cwd `None`.
+
+```json
+["docker", "--context", "desktop-linux", "exec", "cleansia-audit-pg-20261007", "dropdb", "-U", "cleansia_audit", "--force", "--if-exists", "CleansiaAudit"]
+```
+
+## 733. postgres-local-create-for-restore
+
+UTC `2026-10-08T07:07:56.669385+00:00`; exit `0`; elapsed `0.063s`; cwd `None`.
+
+```json
+["docker", "--context", "desktop-linux", "exec", "cleansia-audit-pg-20261007", "createdb", "-U", "cleansia_audit", "CleansiaAudit"]
+```
+
+## 734. cap-after-fixture-restore
+
+UTC `2026-10-08T07:07:56.732863+00:00`; exit `0`; elapsed `14.271s`; cwd `None`.
+
+```json
+["docker", "--context", "desktop-linux", "exec", "-i", "cleansia-audit-pg-20261007", "pg_restore", "-U", "cleansia_audit", "--dbname", "CleansiaAudit", "--exit-on-error"]
+```
+
+stdin_file: `"/Users/michael/.codex/scratchpads/cleansia-wave-a-2026-10-07/private/primary-post-request.dump"`
+
+## 735. root-cap-after-fixture-restore-controller
+
+UTC `2026-10-08T07:07:56.460733+00:00`; exit `0`; elapsed `14.557s`; cwd `/Users/michael/.codex/scratchpads/cleansia-wave-a-2026-10-07`.
+
+```json
+["python3", "/Users/michael/.codex/scratchpads/cleansia-wave-a-2026-10-07/tools/local-db.py", "restore", "--file", "/Users/michael/.codex/scratchpads/cleansia-wave-a-2026-10-07/private/primary-post-request.dump", "--label", "cap-after-fixture-restore"]
+```
+
+## 736. cap-after-fixture-qualification
+
+UTC `2026-10-08T07:08:54.310058+00:00`; exit `0`; elapsed `0.114s`; cwd `None`.
+
+```json
+["docker", "--context", "desktop-linux", "exec", "-i", "cleansia-audit-pg-20261007", "psql", "-X", "-U", "cleansia_audit", "-d", "CleansiaAudit", "-v", "ON_ERROR_STOP=1", "-v", "audit_local_fixture=1"]
+```
+
+stdin_file: `"/Users/michael/.codex/scratchpads/cleansia-wave-a-2026-10-07/tools/order-fixture-qualification.sql"`
+
+## 737. root-cap-after-fixture-qualification
+
+UTC `2026-10-08T07:08:54.263171+00:00`; exit `0`; elapsed `0.165s`; cwd `/Users/michael/.codex/scratchpads/cleansia-wave-a-2026-10-07`.
+
+```json
+["python3", "/Users/michael/.codex/scratchpads/cleansia-wave-a-2026-10-07/tools/local-db.py", "sql", "--file", "/Users/michael/.codex/scratchpads/cleansia-wave-a-2026-10-07/tools/order-fixture-qualification.sql", "--label", "cap-after-fixture-qualification"]
+```
+
+## 738. web-cap-actual-nine-schema-diff
+
+UTC `2026-10-08T07:08:54.978180+00:00`; exit `1`; elapsed `0.060s`; cwd `/Users/michael/.codex/scratchpads/cleansia-wave-a-2026-10-07`.
+
+```json
+["python3", "/Users/michael/.codex/scratchpads/cleansia-wave-a-2026-10-07/tools/wave_cap_schema_diff.py", "--before", "partner=/Users/michael/.codex/scratchpads/cleansia-wave-a-2026-10-07/raw/backend/swagger-after/partner.json", "--before", "admin=/Users/michael/.codex/scratchpads/cleansia-wave-a-2026-10-07/raw/backend/swagger-after/admin.json", "--before", "customer=/Users/michael/.codex/scratchpads/cleansia-wave-a-2026-10-07/raw/backend/swagger-after/customer.json", "--before", "partner-mobile=/Users/michael/.codex/scratchpads/cleansia-wave-a-2026-10-07/raw/backend/swagger-after/partner-mobile.json", "--before", "customer-mobile=/Users/michael/.codex/scratchpads/cleansia-wave-a-2026-10-07/raw/backend/swagger-after/customer-mobile.json", "--after", "partner=/Users/michael/.codex/scratchpads/cleansia-wave-a-2026-10-07/raw/backend/swagger-cap-after/partner.json", "--after", "admin=/Users/michael/.codex/scratchpads/cleansia-wave-a-2026-10-07/raw/backend/swagger-cap-after/admin.json", "--after", "customer=/Users/michael/.codex/scratchpads/cleansia-wave-a-2026-10-07/raw/backend/swagger-cap-after/customer.json", "--after", "partner-mobile=/Users/michael/.codex/scratchpads/cleansia-wave-a-2026-10-07/raw/backend/swagger-cap-after/partner-mobile.json", "--after", "customer-mobile=/Users/michael/.codex/scratchpads/cleansia-wave-a-2026-10-07/raw/backend/swagger-cap-after/customer-mobile.json", "--out", "/Users/michael/.codex/scratchpads/cleansia-wave-a-2026-10-07/raw/web/cap-generation/schema-diff.json"]
+```
+
+## 739. root-cap-after-hosts-start
+
+UTC `2026-10-08T07:08:54.489683+00:00`; exit `0`; elapsed `2.155s`; cwd `/Users/michael/.codex/scratchpads/cleansia-wave-a-2026-10-07`.
+
+```json
+["python3", "/Users/michael/.codex/scratchpads/cleansia-wave-a-2026-10-07/tools/backend-hosts-final.py", "start", "--hosting-timing", "--local-baseline", "--log-prefix", "cap-after"]
+```
+
+## 740. mobile-cap100-baseline
+
+UTC `2026-10-08T07:09:23.492746+00:00`; exit `0`; elapsed `0.327s`; cwd `/Users/michael/.codex/scratchpads/cleansia-wave-a-2026-10-07`.
+
+```json
+["python3", "/Users/michael/.codex/scratchpads/cleansia-wave-a-2026-10-07/tools/mobile-cap100-identity.py", "baseline"]
+```
+
+## 741. mobile-cap100-schema-check
+
+UTC `2026-10-08T07:09:31.389983+00:00`; exit `1`; elapsed `0.041s`; cwd `/Users/michael/.codex/scratchpads/cleansia-wave-a-2026-10-07`.
+
+```json
+["python3", "/Users/michael/.codex/scratchpads/cleansia-wave-a-2026-10-07/tools/mobile-cap100-identity.py", "schema-check", "--actual-dir", "/Users/michael/.codex/scratchpads/cleansia-wave-a-2026-10-07/raw/backend/swagger-cap-after"]
+```
+
+## 742. root-cap-after-bootstrap
+
+UTC `2026-10-08T07:10:06.338056+00:00`; exit `0`; elapsed `7.844s`; cwd `/Users/michael/.codex/scratchpads/cleansia-wave-a-2026-10-07`.
+
+```json
+["python3", "/Users/michael/.codex/scratchpads/cleansia-wave-a-2026-10-07/tools/backend-requests.py", "bootstrap", "--label", "cap-after"]
+```
+
+## 743. mobile-cap100-schema-check-normalized
+
+UTC `2026-10-08T07:11:07.628884+00:00`; exit `0`; elapsed `0.079s`; cwd `/Users/michael/.codex/scratchpads/cleansia-wave-a-2026-10-07`.
+
+```json
+["python3", "/Users/michael/.codex/scratchpads/cleansia-wave-a-2026-10-07/tools/mobile-cap100-identity.py", "schema-check", "--actual-dir", "/Users/michael/.codex/scratchpads/cleansia-wave-a-2026-10-07/raw/backend/swagger-cap-after"]
+```
+
+## 744. mobile-cap100-partner-refresh-guard
+
+UTC `2026-10-08T07:11:18.562946+00:00`; exit `1`; elapsed `0.048s`; cwd `/Users/michael/.codex/worktrees/wave-a-correctness/cleansia/src/cleansia_ios`.
+
+```json
+["bash", "scripts/refresh-mobile-spec.sh", "partner", "file:///Users/michael/.codex/scratchpads/cleansia-wave-a-2026-10-07/raw/backend/swagger-cap-after/partner-mobile.json"]
+```
+
+## 745. mobile-cap100-partner-refresh-approved-shrink
+
+UTC `2026-10-08T07:11:33.492929+00:00`; exit `0`; elapsed `0.043s`; cwd `/Users/michael/.codex/worktrees/wave-a-correctness/cleansia/src/cleansia_ios`.
+
+```json
+["bash", "scripts/refresh-mobile-spec.sh", "--allow-shrink", "partner", "file:///Users/michael/.codex/scratchpads/cleansia-wave-a-2026-10-07/raw/backend/swagger-cap-after/partner-mobile.json"]
+```
+
+## 746. mobile-cap100-customer-refresh-guard
+
+UTC `2026-10-08T07:11:33.598461+00:00`; exit `1`; elapsed `0.037s`; cwd `/Users/michael/.codex/worktrees/wave-a-correctness/cleansia/src/cleansia_ios`.
+
+```json
+["bash", "scripts/refresh-mobile-spec.sh", "customer", "file:///Users/michael/.codex/scratchpads/cleansia-wave-a-2026-10-07/raw/backend/swagger-cap-after/customer-mobile.json"]
+```
+
+## 747. web-cap-schema-unexpected-order-receipt
+
+UTC `2026-10-08T07:11:39.413141+00:00`; exit `1`; elapsed `0.066s`; cwd `/Users/michael/.codex/scratchpads/cleansia-wave-a-2026-10-07`.
+
+```json
+["python3", "/Users/michael/.codex/scratchpads/cleansia-wave-a-2026-10-07/tools/wave_cap_schema_diff.py", "--before", "partner=/Users/michael/.codex/scratchpads/cleansia-wave-a-2026-10-07/raw/backend/swagger-after/partner.json", "--before", "admin=/Users/michael/.codex/scratchpads/cleansia-wave-a-2026-10-07/raw/backend/swagger-after/admin.json", "--before", "customer=/Users/michael/.codex/scratchpads/cleansia-wave-a-2026-10-07/raw/backend/swagger-after/customer.json", "--before", "partner-mobile=/Users/michael/.codex/scratchpads/cleansia-wave-a-2026-10-07/raw/backend/swagger-after/partner-mobile.json", "--before", "customer-mobile=/Users/michael/.codex/scratchpads/cleansia-wave-a-2026-10-07/raw/backend/swagger-after/customer-mobile.json", "--after", "partner=/Users/michael/.codex/scratchpads/cleansia-wave-a-2026-10-07/raw/backend/swagger-cap-after/partner.json", "--after", "admin=/Users/michael/.codex/scratchpads/cleansia-wave-a-2026-10-07/raw/backend/swagger-cap-after/admin.json", "--after", "customer=/Users/michael/.codex/scratchpads/cleansia-wave-a-2026-10-07/raw/backend/swagger-cap-after/customer.json", "--after", "partner-mobile=/Users/michael/.codex/scratchpads/cleansia-wave-a-2026-10-07/raw/backend/swagger-cap-after/partner-mobile.json", "--after", "customer-mobile=/Users/michael/.codex/scratchpads/cleansia-wave-a-2026-10-07/raw/backend/swagger-cap-after/customer-mobile.json", "--out", "/Users/michael/.codex/scratchpads/cleansia-wave-a-2026-10-07/raw/web/cap-generation/schema-diff-rejected-v1.json"]
+```
+
+## 748. mobile-cap100-customer-refresh-approved-shrink
+
+UTC `2026-10-08T07:11:58.213881+00:00`; exit `0`; elapsed `0.045s`; cwd `/Users/michael/.codex/worktrees/wave-a-correctness/cleansia/src/cleansia_ios`.
+
+```json
+["bash", "scripts/refresh-mobile-spec.sh", "--allow-shrink", "customer", "file:///Users/michael/.codex/scratchpads/cleansia-wave-a-2026-10-07/raw/backend/swagger-cap-after/customer-mobile.json"]
+```
+
+## 749. mobile-cap100-swift-generation
+
+UTC `2026-10-08T07:11:58.321400+00:00`; exit `0`; elapsed `5.061s`; cwd `/Users/michael/.codex/worktrees/wave-a-correctness/cleansia/src/cleansia_ios`.
+
+```json
+["python3", "/Users/michael/.codex/scratchpads/cleansia-wave-a-2026-10-07/tools/mobile_guarded_exec.py", "--start-free-gib", "12", "--reserve-gib", "8", "--deadline-s", "1800", "--terminate-grace-s", "10", "--", "bash", "scripts/generate-api-clients.sh"]
+```
+
+Recorded child arguments:
+
+```json
+["bash", "scripts/generate-api-clients.sh"]
+```
+
+## 750. mobile-cap100-swift-identity
+
+UTC `2026-10-08T07:12:11.187044+00:00`; exit `1`; elapsed `0.111s`; cwd `/Users/michael/.codex/scratchpads/cleansia-wave-a-2026-10-07`.
+
+```json
+["python3", "/Users/michael/.codex/scratchpads/cleansia-wave-a-2026-10-07/tools/mobile-cap100-identity.py", "swift-close"]
+```
+
+## 751. root-cap-after-v1-hosts-stop
+
+UTC `2026-10-08T07:12:17.358179+00:00`; exit `0`; elapsed `0.074s`; cwd `/Users/michael/.codex/scratchpads/cleansia-wave-a-2026-10-07`.
+
+```json
+["python3", "/Users/michael/.codex/scratchpads/cleansia-wave-a-2026-10-07/tools/backend-hosts-final.py", "stop", "--log-prefix", "cap-after"]
+```
+
+## 752. root-cap-final-release-build
+
+UTC `2026-10-08T07:13:20.682401+00:00`; exit `0`; elapsed `22.580s`; cwd `/Users/michael/.codex/scratchpads/cleansia-wave-a-2026-10-07/source/src`.
+
+```json
+["/opt/homebrew/bin/dotnet", "build", "Cleansia.Api.sln", "-c", "Release", "--no-restore"]
+```
+
+## 753. mobile-cap100-v1-diagnostic-preservation
+
+UTC `2026-10-08T07:13:46.518457+00:00`; exit `0`; elapsed `0.041s`; cwd `/Users/michael/.codex/scratchpads/cleansia-wave-a-2026-10-07`.
+
+```json
+["python3", "-c", "import pathlib,json,hashlib,shutil; w=pathlib.Path(\"/Users/michael/.codex/scratchpads/cleansia-wave-a-2026-10-07\"); wt=pathlib.Path(\"/Users/michael/.codex/worktrees/wave-a-correctness/cleansia\"); out=w/\"raw/mobile/cap100-generation/v1-diagnostic\"; assert not out.exists(); out.mkdir(); schema=json.loads((out.parent/\"actual-schema-check.json\").read_text()); identity=json.loads((out.parent/\"swift-identity.json\").read_text()); files={}; sha=lambda p:hashlib.sha256(p.read_bytes()).hexdigest();\nfor row in schema[\"rows\"]:\n src=pathlib.Path(row[\"actualPath\"]); assert sha(src)==row[\"actualSha256\"]; dest=out/(row[\"role\"]+\"-mobile.json\"); shutil.copy2(src,dest); files[str(dest.relative_to(out))]=sha(dest)\nfor row in identity[\"rows\"]:\n for rel in row[\"differingFiles\"]:\n  src=wt/(\"src/cleansia_ios/Cleansia\"+row[\"role\"].title()+\"Api\")/rel; assert sha(src)==row[\"currentGeneratedHashes\"][rel]; dest=out/row[\"role\"]/rel; dest.parent.mkdir(parents=True,exist_ok=True); shutil.copy2(src,dest); files[str(dest.relative_to(out))]=sha(dest)\n(out/\"preservation.json\").write_text(json.dumps({\"status\":\"excluded-v1-query-parameter-order-diagnostic\",\"files\":files,\"maintainedCallerOrRuntimeBuildChange\":False},indent=2)+\"\\n\"); print(json.dumps({\"diagnosticFiles\":len(files),\"receipt\":str(out/\"preservation.json\")}))"]
+```
+
+## 754. root-cap-final-generation-hosts-start
+
+UTC `2026-10-08T07:14:19.854996+00:00`; exit `0`; elapsed `2.827s`; cwd `/Users/michael/.codex/scratchpads/cleansia-wave-a-2026-10-07`.
+
+```json
+["python3", "/Users/michael/.codex/scratchpads/cleansia-wave-a-2026-10-07/tools/generation-cap-final-hosts.py", "start", "--local-baseline"]
+```
+
+## 755. root-cap-final-actual-swagger-capture
+
+UTC `2026-10-08T07:14:29.790349+00:00`; exit `0`; elapsed `0.898s`; cwd `/Users/michael/.codex/scratchpads/cleansia-wave-a-2026-10-07`.
+
+```json
+["python3", "/Users/michael/.codex/scratchpads/cleansia-wave-a-2026-10-07/tools/capture-cap-final-swagger.py", "after"]
+```
+
+## 756. root-cap-final-generation-hosts-stop
+
+UTC `2026-10-08T07:14:59.550713+00:00`; exit `0`; elapsed `0.068s`; cwd `/Users/michael/.codex/scratchpads/cleansia-wave-a-2026-10-07`.
+
+```json
+["python3", "/Users/michael/.codex/scratchpads/cleansia-wave-a-2026-10-07/tools/generation-cap-final-hosts.py", "stop"]
+```
+
+## 757. mobile-cap100-v2-schema-exact-raw-check
+
+UTC `2026-10-08T07:15:52.704941+00:00`; exit `0`; elapsed `0.068s`; cwd `/Users/michael/.codex/scratchpads/cleansia-wave-a-2026-10-07`.
+
+```json
+["python3", "/Users/michael/.codex/scratchpads/cleansia-wave-a-2026-10-07/tools/mobile-cap100-identity.py", "schema-check", "--receipt-prefix", "v2-", "--require-raw-parameter-order", "--actual-dir", "/Users/michael/.codex/scratchpads/cleansia-wave-a-2026-10-07/raw/backend/swagger-cap-final"]
+```
+
+## 758. root-cap-final-after-hosts-start
+
+UTC `2026-10-08T07:15:57.344656+00:00`; exit `0`; elapsed `2.424s`; cwd `/Users/michael/.codex/scratchpads/cleansia-wave-a-2026-10-07`.
+
+```json
+["python3", "/Users/michael/.codex/scratchpads/cleansia-wave-a-2026-10-07/tools/backend-hosts-final.py", "start", "--hosting-timing", "--local-baseline", "--log-prefix", "cap-final-after"]
+```
+
+## 759. mobile-cap100-v2-partner-refresh
+
+UTC `2026-10-08T07:16:09.241656+00:00`; exit `0`; elapsed `0.054s`; cwd `/Users/michael/.codex/worktrees/wave-a-correctness/cleansia/src/cleansia_ios`.
+
+```json
+["bash", "scripts/refresh-mobile-spec.sh", "partner", "file:///Users/michael/.codex/scratchpads/cleansia-wave-a-2026-10-07/raw/backend/swagger-cap-final/partner-mobile.json"]
+```
+
+## 760. mobile-cap100-v2-customer-refresh
+
+UTC `2026-10-08T07:16:09.360664+00:00`; exit `0`; elapsed `0.039s`; cwd `/Users/michael/.codex/worktrees/wave-a-correctness/cleansia/src/cleansia_ios`.
+
+```json
+["bash", "scripts/refresh-mobile-spec.sh", "customer", "file:///Users/michael/.codex/scratchpads/cleansia-wave-a-2026-10-07/raw/backend/swagger-cap-final/customer-mobile.json"]
+```
+
+## 761. mobile-cap100-v2-swift-generation
+
+UTC `2026-10-08T07:16:09.464504+00:00`; exit `0`; elapsed `5.057s`; cwd `/Users/michael/.codex/worktrees/wave-a-correctness/cleansia/src/cleansia_ios`.
+
+```json
+["python3", "/Users/michael/.codex/scratchpads/cleansia-wave-a-2026-10-07/tools/mobile_guarded_exec.py", "--start-free-gib", "12", "--reserve-gib", "8", "--deadline-s", "1800", "--terminate-grace-s", "10", "--", "bash", "scripts/generate-api-clients.sh"]
+```
+
+Recorded child arguments:
+
+```json
+["bash", "scripts/generate-api-clients.sh"]
+```
+
+## 762. mobile-cap100-v2-swift-identity
+
+UTC `2026-10-08T07:16:14.587095+00:00`; exit `0`; elapsed `0.110s`; cwd `/Users/michael/.codex/scratchpads/cleansia-wave-a-2026-10-07`.
+
+```json
+["python3", "/Users/michael/.codex/scratchpads/cleansia-wave-a-2026-10-07/tools/mobile-cap100-identity.py", "swift-close", "--receipt-prefix", "v2-"]
+```
+
+## 763. mobile-cap100-v2-kotlin-partner
+
+UTC `2026-10-08T07:16:26.142099+00:00`; exit `0`; elapsed `10.068s`; cwd `/Users/michael/.codex/scratchpads/cleansia-wave-a-2026-10-07/source/src/cleansia_android`.
+
+```json
+["/opt/homebrew/opt/python@3.14/bin/python3.14", "/Users/michael/.codex/scratchpads/cleansia-wave-a-2026-10-07/tools/mobile_guarded_exec.py", "--start-free-gib", "12", "--reserve-gib", "8", "--deadline-s", "1800", "--terminate-grace-s", "10", "--", "/usr/bin/env", "-i", "HOME=/Users/michael", "PATH=/opt/homebrew/opt/openjdk@21/libexec/openjdk.jdk/Contents/Home/bin:/opt/homebrew/bin:/usr/bin:/bin:/usr/sbin:/sbin", "JAVA_HOME=/opt/homebrew/opt/openjdk@21/libexec/openjdk.jdk/Contents/Home", "ANDROID_HOME=/Users/michael/Library/Android/sdk", "ANDROID_SDK_ROOT=/Users/michael/Library/Android/sdk", "GRADLE_USER_HOME=/Users/michael/.gradle", "LANG=en_US.UTF-8", "TZ=UTC", "TMPDIR=/var/folders/lq/qzy68trd179d65ypm808hy6m0000gn/T/", "./gradlew", ":partner-app:openApiGenerate", "--rerun", "-I", "/Users/michael/.codex/scratchpads/cleansia-wave-a-2026-10-07/tools/mobile-cap100-kotlin-generation.init.gradle", "--offline", "--max-workers=2", "--no-daemon", "--no-configuration-cache", "--no-build-cache", "--console=plain", "-Dorg.gradle.jvmargs=-Xmx2g", "-PMAPBOX_ACCESS_TOKEN=", "-PMAPBOX_DOWNLOADS_TOKEN=", "-PSENTRY_DSN=", "-PSTRIPE_PUBLISHABLE_KEY=", "-PGOOGLE_WEB_CLIENT_ID=", "-PAPI_BASE_URL=http://10.0.2.2:16002/"]
+```
+
+Recorded child arguments:
+
+```json
+["/usr/bin/env", "-i", "HOME=/Users/michael", "PATH=/opt/homebrew/opt/openjdk@21/libexec/openjdk.jdk/Contents/Home/bin:/opt/homebrew/bin:/usr/bin:/bin:/usr/sbin:/sbin", "JAVA_HOME=/opt/homebrew/opt/openjdk@21/libexec/openjdk.jdk/Contents/Home", "ANDROID_HOME=/Users/michael/Library/Android/sdk", "ANDROID_SDK_ROOT=/Users/michael/Library/Android/sdk", "GRADLE_USER_HOME=/Users/michael/.gradle", "LANG=en_US.UTF-8", "TZ=UTC", "TMPDIR=/var/folders/lq/qzy68trd179d65ypm808hy6m0000gn/T/", "./gradlew", ":partner-app:openApiGenerate", "--rerun", "-I", "/Users/michael/.codex/scratchpads/cleansia-wave-a-2026-10-07/tools/mobile-cap100-kotlin-generation.init.gradle", "--offline", "--max-workers=2", "--no-daemon", "--no-configuration-cache", "--no-build-cache", "--console=plain", "-Dorg.gradle.jvmargs=-Xmx2g", "-PMAPBOX_ACCESS_TOKEN=", "-PMAPBOX_DOWNLOADS_TOKEN=", "-PSENTRY_DSN=", "-PSTRIPE_PUBLISHABLE_KEY=", "-PGOOGLE_WEB_CLIENT_ID=", "-PAPI_BASE_URL=http://10.0.2.2:16002/"]
+```
+
+## 764. mobile-cap100-v2-kotlin-customer
+
+UTC `2026-10-08T07:16:36.267099+00:00`; exit `0`; elapsed `10.069s`; cwd `/Users/michael/.codex/scratchpads/cleansia-wave-a-2026-10-07/source/src/cleansia_android`.
+
+```json
+["/opt/homebrew/opt/python@3.14/bin/python3.14", "/Users/michael/.codex/scratchpads/cleansia-wave-a-2026-10-07/tools/mobile_guarded_exec.py", "--start-free-gib", "12", "--reserve-gib", "8", "--deadline-s", "1800", "--terminate-grace-s", "10", "--", "/usr/bin/env", "-i", "HOME=/Users/michael", "PATH=/opt/homebrew/opt/openjdk@21/libexec/openjdk.jdk/Contents/Home/bin:/opt/homebrew/bin:/usr/bin:/bin:/usr/sbin:/sbin", "JAVA_HOME=/opt/homebrew/opt/openjdk@21/libexec/openjdk.jdk/Contents/Home", "ANDROID_HOME=/Users/michael/Library/Android/sdk", "ANDROID_SDK_ROOT=/Users/michael/Library/Android/sdk", "GRADLE_USER_HOME=/Users/michael/.gradle", "LANG=en_US.UTF-8", "TZ=UTC", "TMPDIR=/var/folders/lq/qzy68trd179d65ypm808hy6m0000gn/T/", "./gradlew", ":customer-app:openApiGenerate", "--rerun", "-I", "/Users/michael/.codex/scratchpads/cleansia-wave-a-2026-10-07/tools/mobile-cap100-kotlin-generation.init.gradle", "--offline", "--max-workers=2", "--no-daemon", "--no-configuration-cache", "--no-build-cache", "--console=plain", "-Dorg.gradle.jvmargs=-Xmx2g", "-PMAPBOX_ACCESS_TOKEN=", "-PMAPBOX_DOWNLOADS_TOKEN=", "-PSENTRY_DSN=", "-PSTRIPE_PUBLISHABLE_KEY=", "-PGOOGLE_WEB_CLIENT_ID=", "-PAPI_BASE_URL=http://10.0.2.2:16004/"]
+```
+
+Recorded child arguments:
+
+```json
+["/usr/bin/env", "-i", "HOME=/Users/michael", "PATH=/opt/homebrew/opt/openjdk@21/libexec/openjdk.jdk/Contents/Home/bin:/opt/homebrew/bin:/usr/bin:/bin:/usr/sbin:/sbin", "JAVA_HOME=/opt/homebrew/opt/openjdk@21/libexec/openjdk.jdk/Contents/Home", "ANDROID_HOME=/Users/michael/Library/Android/sdk", "ANDROID_SDK_ROOT=/Users/michael/Library/Android/sdk", "GRADLE_USER_HOME=/Users/michael/.gradle", "LANG=en_US.UTF-8", "TZ=UTC", "TMPDIR=/var/folders/lq/qzy68trd179d65ypm808hy6m0000gn/T/", "./gradlew", ":customer-app:openApiGenerate", "--rerun", "-I", "/Users/michael/.codex/scratchpads/cleansia-wave-a-2026-10-07/tools/mobile-cap100-kotlin-generation.init.gradle", "--offline", "--max-workers=2", "--no-daemon", "--no-configuration-cache", "--no-build-cache", "--console=plain", "-Dorg.gradle.jvmargs=-Xmx2g", "-PMAPBOX_ACCESS_TOKEN=", "-PMAPBOX_DOWNLOADS_TOKEN=", "-PSENTRY_DSN=", "-PSTRIPE_PUBLISHABLE_KEY=", "-PGOOGLE_WEB_CLIENT_ID=", "-PAPI_BASE_URL=http://10.0.2.2:16004/"]
+```
+
+## 765. mobile-cap100-v2-kotlin-controller
+
+UTC `2026-10-08T07:16:25.857705+00:00`; exit `0`; elapsed `20.498s`; cwd `/Users/michael/.codex/scratchpads/cleansia-wave-a-2026-10-07`.
+
+```json
+["python3", "/Users/michael/.codex/scratchpads/cleansia-wave-a-2026-10-07/tools/mobile-cap100-kotlin-generation.py"]
+```
+
+## 766. web-cap-final-v2-schema-diff
+
+UTC `2026-10-08T07:16:55.990146+00:00`; exit `0`; elapsed `0.065s`; cwd `/Users/michael/.codex/scratchpads/cleansia-wave-a-2026-10-07`.
+
+```json
+["python3", "tools/wave_cap_schema_diff.py", "--before", "partner=/Users/michael/.codex/scratchpads/cleansia-wave-a-2026-10-07/raw/backend/swagger-after/partner.json", "--before", "admin=/Users/michael/.codex/scratchpads/cleansia-wave-a-2026-10-07/raw/backend/swagger-after/admin.json", "--before", "partner-mobile=/Users/michael/.codex/scratchpads/cleansia-wave-a-2026-10-07/raw/backend/swagger-after/partner-mobile.json", "--before", "customer=/Users/michael/.codex/scratchpads/cleansia-wave-a-2026-10-07/raw/backend/swagger-after/customer.json", "--before", "customer-mobile=/Users/michael/.codex/scratchpads/cleansia-wave-a-2026-10-07/raw/backend/swagger-after/customer-mobile.json", "--after", "partner=/Users/michael/.codex/scratchpads/cleansia-wave-a-2026-10-07/raw/backend/swagger-cap-final/partner.json", "--after", "admin=/Users/michael/.codex/scratchpads/cleansia-wave-a-2026-10-07/raw/backend/swagger-cap-final/admin.json", "--after", "partner-mobile=/Users/michael/.codex/scratchpads/cleansia-wave-a-2026-10-07/raw/backend/swagger-cap-final/partner-mobile.json", "--after", "customer=/Users/michael/.codex/scratchpads/cleansia-wave-a-2026-10-07/raw/backend/swagger-cap-final/customer.json", "--after", "customer-mobile=/Users/michael/.codex/scratchpads/cleansia-wave-a-2026-10-07/raw/backend/swagger-cap-final/customer-mobile.json", "--out", "/Users/michael/.codex/scratchpads/cleansia-wave-a-2026-10-07/raw/web/cap-generation/schema-diff.json"]
+```
+
+## 767. web-cap-final-supported-overlay
+
+UTC `2026-10-08T07:17:05.912717+00:00`; exit `0`; elapsed `0.047s`; cwd `/Users/michael/.codex/scratchpads/cleansia-wave-a-2026-10-07`.
+
+```json
+["python3", "tools/wave_cap_web_overlay.py", "--schema-diff", "/Users/michael/.codex/scratchpads/cleansia-wave-a-2026-10-07/raw/web/cap-generation/schema-diff.json"]
+```
+
+## 768. web-cap-final-supported-three-client-generation
+
+UTC `2026-10-08T07:17:13.185021+00:00`; exit `0`; elapsed `13.756s`; cwd `/Users/michael/.codex/scratchpads/cleansia-wave-a-2026-10-07/source/src/Cleansia.App`.
+
+```json
+["env", "PATH=/Users/michael/.codex/scratchpads/cleansia-audit-2026-10-07/tools/web-tooling/node_modules/node/bin:/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin", "NX_DAEMON=false", "NX_NO_CLOUD=true", "NPM_CONFIG_OFFLINE=true", "npm", "run", "generate-clients"]
+```
+
+## 769. mobile-cap100-v2-kotlin-identity
+
+UTC `2026-10-08T07:17:46.970748+00:00`; exit `0`; elapsed `0.154s`; cwd `/Users/michael/.codex/scratchpads/cleansia-wave-a-2026-10-07`.
+
+```json
+["python3", "/Users/michael/.codex/scratchpads/cleansia-wave-a-2026-10-07/tools/mobile-cap100-identity.py", "kotlin-close", "--receipt-prefix", "v2-", "--kotlin-output-root", "/Users/michael/.codex/scratchpads/cleansia-wave-a-2026-10-07/raw/mobile/cap100-generation/fresh-v2-kotlin"]
+```
+
+## 770. web-cap-final-generated-identity
+
+UTC `2026-10-08T07:17:51.834425+00:00`; exit `0`; elapsed `0.365s`; cwd `/Users/michael/.codex/scratchpads/cleansia-wave-a-2026-10-07`.
+
+```json
+["python3", "tools/wave_cap_web_verify.py"]
+```
+
+## 771. root-cap-final-before-reset-hosts-stop
+
+UTC `2026-10-08T07:18:25.099283+00:00`; exit `0`; elapsed `0.082s`; cwd `/Users/michael/.codex/scratchpads/cleansia-wave-a-2026-10-07`.
+
+```json
+["python3", "/Users/michael/.codex/scratchpads/cleansia-wave-a-2026-10-07/tools/backend-hosts-final.py", "stop", "--log-prefix", "cap-final-after"]
+```
+
+## 772. postgres-local-drop-for-restore
+
+UTC `2026-10-08T07:18:25.340130+00:00`; exit `0`; elapsed `0.106s`; cwd `None`.
+
+```json
+["docker", "--context", "desktop-linux", "exec", "cleansia-audit-pg-20261007", "dropdb", "-U", "cleansia_audit", "--force", "--if-exists", "CleansiaAudit"]
+```
+
+## 773. postgres-local-create-for-restore
+
+UTC `2026-10-08T07:18:25.446001+00:00`; exit `0`; elapsed `0.062s`; cwd `None`.
+
+```json
+["docker", "--context", "desktop-linux", "exec", "cleansia-audit-pg-20261007", "createdb", "-U", "cleansia_audit", "CleansiaAudit"]
+```
+
+## 774. cap-final-fixture-restore
+
+UTC `2026-10-08T07:18:25.507817+00:00`; exit `0`; elapsed `14.230s`; cwd `None`.
+
+```json
+["docker", "--context", "desktop-linux", "exec", "-i", "cleansia-audit-pg-20261007", "pg_restore", "-U", "cleansia_audit", "--dbname", "CleansiaAudit", "--exit-on-error"]
+```
+
+stdin_file: `"/Users/michael/.codex/scratchpads/cleansia-wave-a-2026-10-07/private/primary-post-request.dump"`
+
+## 775. root-cap-final-fixture-restore-controller
+
+UTC `2026-10-08T07:18:25.246594+00:00`; exit `0`; elapsed `14.505s`; cwd `/Users/michael/.codex/scratchpads/cleansia-wave-a-2026-10-07`.
+
+```json
+["python3", "/Users/michael/.codex/scratchpads/cleansia-wave-a-2026-10-07/tools/local-db.py", "restore", "--file", "/Users/michael/.codex/scratchpads/cleansia-wave-a-2026-10-07/private/primary-post-request.dump", "--label", "cap-final-fixture-restore"]
+```
+
+## 776. cap-final-fixture-qualification
+
+UTC `2026-10-08T07:19:10.210497+00:00`; exit `0`; elapsed `0.114s`; cwd `None`.
+
+```json
+["docker", "--context", "desktop-linux", "exec", "-i", "cleansia-audit-pg-20261007", "psql", "-X", "-U", "cleansia_audit", "-d", "CleansiaAudit", "-v", "ON_ERROR_STOP=1", "-v", "audit_local_fixture=1"]
+```
+
+stdin_file: `"/Users/michael/.codex/scratchpads/cleansia-wave-a-2026-10-07/tools/order-fixture-qualification.sql"`
+
+## 777. root-cap-final-fixture-qualification
+
+UTC `2026-10-08T07:19:10.162413+00:00`; exit `0`; elapsed `0.167s`; cwd `/Users/michael/.codex/scratchpads/cleansia-wave-a-2026-10-07`.
+
+```json
+["python3", "/Users/michael/.codex/scratchpads/cleansia-wave-a-2026-10-07/tools/local-db.py", "sql", "--file", "/Users/michael/.codex/scratchpads/cleansia-wave-a-2026-10-07/tools/order-fixture-qualification.sql", "--label", "cap-final-fixture-qualification"]
+```
+
+## 778. root-cap-final-measured-hosts-start
+
+UTC `2026-10-08T07:19:10.395756+00:00`; exit `0`; elapsed `2.214s`; cwd `/Users/michael/.codex/scratchpads/cleansia-wave-a-2026-10-07`.
+
+```json
+["python3", "/Users/michael/.codex/scratchpads/cleansia-wave-a-2026-10-07/tools/backend-hosts-final.py", "start", "--hosting-timing", "--local-baseline", "--log-prefix", "cap-final-measured"]
+```
+
+## 779. mobile-cap100-final-closure
+
+UTC `2026-10-08T07:19:26.137817+00:00`; exit `0`; elapsed `0.128s`; cwd `/Users/michael/.codex/scratchpads/cleansia-wave-a-2026-10-07`.
+
+```json
+["python3", "/Users/michael/.codex/scratchpads/cleansia-wave-a-2026-10-07/tools/mobile-cap100-close.py"]
+```
+
+## 780. root-cap-final-measured-bootstrap
+
+UTC `2026-10-08T07:19:28.952317+00:00`; exit `0`; elapsed `7.841s`; cwd `/Users/michael/.codex/scratchpads/cleansia-wave-a-2026-10-07`.
+
+```json
+["python3", "/Users/michael/.codex/scratchpads/cleansia-wave-a-2026-10-07/tools/backend-requests.py", "bootstrap", "--label", "cap-final-measured"]
+```
+
+## 781. web-cap-independent-source-trx-review
+
+UTC `2026-10-08T07:20:42.163603+00:00`; exit `0`; elapsed `0.147s`; cwd `/Users/michael/.codex/scratchpads/cleansia-wave-a-2026-10-07`.
+
+```json
+["python3", "tools/review_order_cap_web.py"]
+```
+
+## 782. root-cap-final-after-contract-cohort
+
+UTC `2026-10-08T07:20:15.942444+00:00`; exit `0`; elapsed `34.271s`; cwd `/Users/michael/.codex/scratchpads/cleansia-wave-a-2026-10-07`.
+
+```json
+["python3", "/Users/michael/.codex/scratchpads/cleansia-wave-a-2026-10-07/tools/cap-contract-cohort.py", "after"]
+```
+
+## 783. web-cap-http-sql-source-method-review
+
+UTC `2026-10-08T07:22:07.531574+00:00`; exit `0`; elapsed `0.020s`; cwd `/Users/michael/.codex/scratchpads/cleansia-wave-a-2026-10-07`.
+
+```json
+["python3", "tools/review_cap_verifier_web.py"]
+```
+
+## 784. root-cap-final-measured-hosts-stop
+
+UTC `2026-10-08T07:22:13.722423+00:00`; exit `0`; elapsed `0.067s`; cwd `/Users/michael/.codex/scratchpads/cleansia-wave-a-2026-10-07`.
+
+```json
+["python3", "/Users/michael/.codex/scratchpads/cleansia-wave-a-2026-10-07/tools/backend-hosts-final.py", "stop", "--log-prefix", "cap-final-measured"]
+```
+
+## 785. root-cap-final-trace-hosts-start
+
+UTC `2026-10-08T07:22:13.881851+00:00`; exit `0`; elapsed `2.219s`; cwd `/Users/michael/.codex/scratchpads/cleansia-wave-a-2026-10-07`.
+
+```json
+["python3", "/Users/michael/.codex/scratchpads/cleansia-wave-a-2026-10-07/tools/backend-hosts-final.py", "start", "--trace", "--local-baseline", "--log-prefix", "cap-after-trace"]
+```
+
+## 786. root-cap-final-sql-contract-cohort
+
+UTC `2026-10-08T07:23:32.230570+00:00`; exit `0`; elapsed `31.921s`; cwd `/Users/michael/.codex/scratchpads/cleansia-wave-a-2026-10-07`.
+
+```json
+["python3", "/Users/michael/.codex/scratchpads/cleansia-wave-a-2026-10-07/tools/cap-contract-cohort.py", "after-trace"]
+```
+
+## 787. root-cap-final-trace-hosts-stop
+
+UTC `2026-10-08T07:25:34.286970+00:00`; exit `0`; elapsed `0.068s`; cwd `/Users/michael/.codex/scratchpads/cleansia-wave-a-2026-10-07`.
+
+```json
+["python3", "/Users/michael/.codex/scratchpads/cleansia-wave-a-2026-10-07/tools/backend-hosts-final.py", "stop", "--log-prefix", "cap-after-trace"]
+```
+
+## 788. cap-http-sql-independent-verification
+
+UTC `2026-10-08T07:26:01.562117+00:00`; exit `0`; elapsed `0.076s`; cwd `/Users/michael/.codex/scratchpads/cleansia-wave-a-2026-10-07`.
+
+```json
+["python3", "/Users/michael/.codex/scratchpads/cleansia-wave-a-2026-10-07/tools/verify-cap-http-sql.py"]
+```
+
+## 789. backend-tests-cap-final-unit-run-01
+
+UTC `2026-10-08T07:25:34.483382+00:00`; exit `0`; elapsed `57.613s`; cwd `/Users/michael/.codex/scratchpads/cleansia-wave-a-2026-10-07/source/src`.
+
+```json
+["dotnet", "test", "Cleansia.Tests/Cleansia.Tests.csproj", "-c", "Release", "--no-build", "--no-restore", "--logger", "trx;LogFileName=unit-01.trx", "--results-directory", "/Users/michael/.codex/scratchpads/cleansia-wave-a-2026-10-07/raw/backend/tests-cap-final/unit/run-01", "--", "xUnit.parallelizeTestCollections=false"]
+```
+
+environment: `{"LANG": "en_US.UTF-8", "LC_ALL": "en_US.UTF-8", "docker": "existing Docker Desktop socket; disposable Testcontainers DBs", "ambient_app_configuration": "not inherited"}`
+
+timed_out: `false`
+
+timeout_seconds: `1800`
+
+## 790. root-cap-check-available-status-parity
+
+UTC `2026-10-08T07:26:47.097067+00:00`; exit `0`; elapsed `0.113s`; cwd `/Users/michael/.codex/worktrees/wave-a-correctness/cleansia`.
+
+```json
+["env", "PATH=/Users/michael/.codex/scratchpads/cleansia-audit-2026-10-07/tools/web-tooling/node_modules/node/bin:/Users/michael/.local/bin:/opt/homebrew/bin:/opt/homebrew/sbin:/usr/local/bin:/System/Cryptexes/App/usr/bin:/usr/bin:/bin:/usr/sbin:/sbin:/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/local/bin:/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/bin:/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/appleinternal/bin:/Library/Apple/usr/bin:/opt/homebrew/bin:/Applications/ChatGPT.app/Contents/Resources/codex-cli/codex-path:/Users/michael/.codex/tmp/arg0/codex-arg0NTs1Pn:/Users/michael/.local/bin:/opt/homebrew/sbin:/Users/michael/.docker/bin:/Applications/ChatGPT.app/Contents/Resources:/Applications/ChatGPT.app/Contents/Resources/codex-cli/CodexCLI.app/Contents/MacOS:/Users/michael/.docker/bin", "/Users/michael/.codex/scratchpads/cleansia-audit-2026-10-07/tools/web-tooling/node_modules/node/bin/node", "/Users/michael/.codex/worktrees/wave-a-correctness/cleansia/agents/tools/check-available-status-parity.mjs"]
+```
+
+## 791. root-cap-check-backlog-consistency
+
+UTC `2026-10-08T07:26:47.245910+00:00`; exit `0`; elapsed `0.050s`; cwd `/Users/michael/.codex/worktrees/wave-a-correctness/cleansia`.
+
+```json
+["env", "PATH=/Users/michael/.codex/scratchpads/cleansia-audit-2026-10-07/tools/web-tooling/node_modules/node/bin:/Users/michael/.local/bin:/opt/homebrew/bin:/opt/homebrew/sbin:/usr/local/bin:/System/Cryptexes/App/usr/bin:/usr/bin:/bin:/usr/sbin:/sbin:/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/local/bin:/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/bin:/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/appleinternal/bin:/Library/Apple/usr/bin:/opt/homebrew/bin:/Applications/ChatGPT.app/Contents/Resources/codex-cli/codex-path:/Users/michael/.codex/tmp/arg0/codex-arg0NTs1Pn:/Users/michael/.local/bin:/opt/homebrew/sbin:/Users/michael/.docker/bin:/Applications/ChatGPT.app/Contents/Resources:/Applications/ChatGPT.app/Contents/Resources/codex-cli/CodexCLI.app/Contents/MacOS:/Users/michael/.docker/bin", "/Users/michael/.codex/scratchpads/cleansia-audit-2026-10-07/tools/web-tooling/node_modules/node/bin/node", "/Users/michael/.codex/worktrees/wave-a-correctness/cleansia/agents/tools/check-backlog-consistency.mjs"]
+```
+
+## 792. root-cap-check-booking-policy-parity
+
+UTC `2026-10-08T07:26:47.332172+00:00`; exit `0`; elapsed `0.142s`; cwd `/Users/michael/.codex/worktrees/wave-a-correctness/cleansia`.
+
+```json
+["env", "PATH=/Users/michael/.codex/scratchpads/cleansia-audit-2026-10-07/tools/web-tooling/node_modules/node/bin:/Users/michael/.local/bin:/opt/homebrew/bin:/opt/homebrew/sbin:/usr/local/bin:/System/Cryptexes/App/usr/bin:/usr/bin:/bin:/usr/sbin:/sbin:/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/local/bin:/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/bin:/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/appleinternal/bin:/Library/Apple/usr/bin:/opt/homebrew/bin:/Applications/ChatGPT.app/Contents/Resources/codex-cli/codex-path:/Users/michael/.codex/tmp/arg0/codex-arg0NTs1Pn:/Users/michael/.local/bin:/opt/homebrew/sbin:/Users/michael/.docker/bin:/Applications/ChatGPT.app/Contents/Resources:/Applications/ChatGPT.app/Contents/Resources/codex-cli/CodexCLI.app/Contents/MacOS:/Users/michael/.docker/bin", "/Users/michael/.codex/scratchpads/cleansia-audit-2026-10-07/tools/web-tooling/node_modules/node/bin/node", "/Users/michael/.codex/worktrees/wave-a-correctness/cleansia/agents/tools/check-booking-policy-parity.mjs"]
+```
+
+## 793. root-cap-check-catalog-claims
+
+UTC `2026-10-08T07:26:47.508440+00:00`; exit `0`; elapsed `0.335s`; cwd `/Users/michael/.codex/worktrees/wave-a-correctness/cleansia`.
+
+```json
+["env", "PATH=/Users/michael/.codex/scratchpads/cleansia-audit-2026-10-07/tools/web-tooling/node_modules/node/bin:/Users/michael/.local/bin:/opt/homebrew/bin:/opt/homebrew/sbin:/usr/local/bin:/System/Cryptexes/App/usr/bin:/usr/bin:/bin:/usr/sbin:/sbin:/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/local/bin:/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/bin:/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/appleinternal/bin:/Library/Apple/usr/bin:/opt/homebrew/bin:/Applications/ChatGPT.app/Contents/Resources/codex-cli/codex-path:/Users/michael/.codex/tmp/arg0/codex-arg0NTs1Pn:/Users/michael/.local/bin:/opt/homebrew/sbin:/Users/michael/.docker/bin:/Applications/ChatGPT.app/Contents/Resources:/Applications/ChatGPT.app/Contents/Resources/codex-cli/CodexCLI.app/Contents/MacOS:/Users/michael/.docker/bin", "/Users/michael/.codex/scratchpads/cleansia-audit-2026-10-07/tools/web-tooling/node_modules/node/bin/node", "/Users/michael/.codex/worktrees/wave-a-correctness/cleansia/agents/tools/check-catalog-claims.mjs"]
+```
+
+## 794. root-cap-check-consistency
+
+UTC `2026-10-08T07:26:47.878290+00:00`; exit `0`; elapsed `0.480s`; cwd `/Users/michael/.codex/worktrees/wave-a-correctness/cleansia`.
+
+```json
+["env", "PATH=/Users/michael/.codex/scratchpads/cleansia-audit-2026-10-07/tools/web-tooling/node_modules/node/bin:/Users/michael/.local/bin:/opt/homebrew/bin:/opt/homebrew/sbin:/usr/local/bin:/System/Cryptexes/App/usr/bin:/usr/bin:/bin:/usr/sbin:/sbin:/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/local/bin:/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/bin:/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/appleinternal/bin:/Library/Apple/usr/bin:/opt/homebrew/bin:/Applications/ChatGPT.app/Contents/Resources/codex-cli/codex-path:/Users/michael/.codex/tmp/arg0/codex-arg0NTs1Pn:/Users/michael/.local/bin:/opt/homebrew/sbin:/Users/michael/.docker/bin:/Applications/ChatGPT.app/Contents/Resources:/Applications/ChatGPT.app/Contents/Resources/codex-cli/CodexCLI.app/Contents/MacOS:/Users/michael/.docker/bin", "/Users/michael/.codex/scratchpads/cleansia-audit-2026-10-07/tools/web-tooling/node_modules/node/bin/node", "/Users/michael/.codex/worktrees/wave-a-correctness/cleansia/agents/tools/check-consistency.mjs"]
+```
+
+## 795. root-cap-check-docs-refs
+
+UTC `2026-10-08T07:26:48.394900+00:00`; exit `0`; elapsed `0.596s`; cwd `/Users/michael/.codex/worktrees/wave-a-correctness/cleansia`.
+
+```json
+["env", "PATH=/Users/michael/.codex/scratchpads/cleansia-audit-2026-10-07/tools/web-tooling/node_modules/node/bin:/Users/michael/.local/bin:/opt/homebrew/bin:/opt/homebrew/sbin:/usr/local/bin:/System/Cryptexes/App/usr/bin:/usr/bin:/bin:/usr/sbin:/sbin:/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/local/bin:/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/bin:/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/appleinternal/bin:/Library/Apple/usr/bin:/opt/homebrew/bin:/Applications/ChatGPT.app/Contents/Resources/codex-cli/codex-path:/Users/michael/.codex/tmp/arg0/codex-arg0NTs1Pn:/Users/michael/.local/bin:/opt/homebrew/sbin:/Users/michael/.docker/bin:/Applications/ChatGPT.app/Contents/Resources:/Applications/ChatGPT.app/Contents/Resources/codex-cli/CodexCLI.app/Contents/MacOS:/Users/michael/.docker/bin", "/Users/michael/.codex/scratchpads/cleansia-audit-2026-10-07/tools/web-tooling/node_modules/node/bin/node", "/Users/michael/.codex/worktrees/wave-a-correctness/cleansia/agents/tools/check-docs-refs.mjs"]
+```
+
+## 796. root-cap-check-ios-symbols
+
+UTC `2026-10-08T07:26:49.026515+00:00`; exit `0`; elapsed `0.917s`; cwd `/Users/michael/.codex/worktrees/wave-a-correctness/cleansia`.
+
+```json
+["env", "PATH=/Users/michael/.codex/scratchpads/cleansia-audit-2026-10-07/tools/web-tooling/node_modules/node/bin:/Users/michael/.local/bin:/opt/homebrew/bin:/opt/homebrew/sbin:/usr/local/bin:/System/Cryptexes/App/usr/bin:/usr/bin:/bin:/usr/sbin:/sbin:/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/local/bin:/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/bin:/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/appleinternal/bin:/Library/Apple/usr/bin:/opt/homebrew/bin:/Applications/ChatGPT.app/Contents/Resources/codex-cli/codex-path:/Users/michael/.codex/tmp/arg0/codex-arg0NTs1Pn:/Users/michael/.local/bin:/opt/homebrew/sbin:/Users/michael/.docker/bin:/Applications/ChatGPT.app/Contents/Resources:/Applications/ChatGPT.app/Contents/Resources/codex-cli/CodexCLI.app/Contents/MacOS:/Users/michael/.docker/bin", "/Users/michael/.codex/scratchpads/cleansia-audit-2026-10-07/tools/web-tooling/node_modules/node/bin/node", "/Users/michael/.codex/worktrees/wave-a-correctness/cleansia/agents/tools/check-ios-symbols.mjs"]
+```
+
+## 797. root-cap-check-legal-drafts
+
+UTC `2026-10-08T07:26:49.978859+00:00`; exit `1`; elapsed `0.032s`; cwd `/Users/michael/.codex/worktrees/wave-a-correctness/cleansia`.
+
+```json
+["env", "PATH=/Users/michael/.codex/scratchpads/cleansia-audit-2026-10-07/tools/web-tooling/node_modules/node/bin:/Users/michael/.local/bin:/opt/homebrew/bin:/opt/homebrew/sbin:/usr/local/bin:/System/Cryptexes/App/usr/bin:/usr/bin:/bin:/usr/sbin:/sbin:/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/local/bin:/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/bin:/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/appleinternal/bin:/Library/Apple/usr/bin:/opt/homebrew/bin:/Applications/ChatGPT.app/Contents/Resources/codex-cli/codex-path:/Users/michael/.codex/tmp/arg0/codex-arg0NTs1Pn:/Users/michael/.local/bin:/opt/homebrew/sbin:/Users/michael/.docker/bin:/Applications/ChatGPT.app/Contents/Resources:/Applications/ChatGPT.app/Contents/Resources/codex-cli/CodexCLI.app/Contents/MacOS:/Users/michael/.docker/bin", "/Users/michael/.codex/scratchpads/cleansia-audit-2026-10-07/tools/web-tooling/node_modules/node/bin/node", "/Users/michael/.codex/worktrees/wave-a-correctness/cleansia/agents/tools/check-legal-drafts.mjs"]
+```
+
+## 798. root-cap-check-module-boundaries
+
+UTC `2026-10-08T07:26:50.045202+00:00`; exit `1`; elapsed `2.029s`; cwd `/Users/michael/.codex/worktrees/wave-a-correctness/cleansia`.
+
+```json
+["env", "PATH=/Users/michael/.codex/scratchpads/cleansia-audit-2026-10-07/tools/web-tooling/node_modules/node/bin:/Users/michael/.local/bin:/opt/homebrew/bin:/opt/homebrew/sbin:/usr/local/bin:/System/Cryptexes/App/usr/bin:/usr/bin:/bin:/usr/sbin:/sbin:/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/local/bin:/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/bin:/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/appleinternal/bin:/Library/Apple/usr/bin:/opt/homebrew/bin:/Applications/ChatGPT.app/Contents/Resources/codex-cli/codex-path:/Users/michael/.codex/tmp/arg0/codex-arg0NTs1Pn:/Users/michael/.local/bin:/opt/homebrew/sbin:/Users/michael/.docker/bin:/Applications/ChatGPT.app/Contents/Resources:/Applications/ChatGPT.app/Contents/Resources/codex-cli/CodexCLI.app/Contents/MacOS:/Users/michael/.docker/bin", "/Users/michael/.codex/scratchpads/cleansia-audit-2026-10-07/tools/web-tooling/node_modules/node/bin/node", "/Users/michael/.codex/worktrees/wave-a-correctness/cleansia/agents/tools/check-module-boundaries.mjs"]
+```
+
+## 799. root-cap-check-nx-project-registration
+
+UTC `2026-10-08T07:26:52.108275+00:00`; exit `0`; elapsed `0.081s`; cwd `/Users/michael/.codex/worktrees/wave-a-correctness/cleansia`.
+
+```json
+["env", "PATH=/Users/michael/.codex/scratchpads/cleansia-audit-2026-10-07/tools/web-tooling/node_modules/node/bin:/Users/michael/.local/bin:/opt/homebrew/bin:/opt/homebrew/sbin:/usr/local/bin:/System/Cryptexes/App/usr/bin:/usr/bin:/bin:/usr/sbin:/sbin:/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/local/bin:/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/bin:/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/appleinternal/bin:/Library/Apple/usr/bin:/opt/homebrew/bin:/Applications/ChatGPT.app/Contents/Resources/codex-cli/codex-path:/Users/michael/.codex/tmp/arg0/codex-arg0NTs1Pn:/Users/michael/.local/bin:/opt/homebrew/sbin:/Users/michael/.docker/bin:/Applications/ChatGPT.app/Contents/Resources:/Applications/ChatGPT.app/Contents/Resources/codex-cli/CodexCLI.app/Contents/MacOS:/Users/michael/.docker/bin", "/Users/michael/.codex/scratchpads/cleansia-audit-2026-10-07/tools/web-tooling/node_modules/node/bin/node", "/Users/michael/.codex/worktrees/wave-a-correctness/cleansia/agents/tools/check-nx-project-registration.mjs"]
+```
+
+## 800. root-cap-final-static-checkers
+
+UTC `2026-10-08T07:26:47.048645+00:00`; exit `1`; elapsed `5.149s`; cwd `/Users/michael/.codex/worktrees/wave-a-correctness/cleansia`.
+
+```json
+["python3", "/Users/michael/.codex/scratchpads/cleansia-wave-a-2026-10-07/tools/cap-repo-static-checkers.py"]
+```
+
+## 801. root-cap-final-graphify-refresh
+
+UTC `2026-10-08T07:26:05.911371+00:00`; exit `0`; elapsed `173.729s`; cwd `/Users/michael/.codex/worktrees/wave-a-correctness/cleansia`.
+
+```json
+["/Users/michael/Library/Application Support/pipx/venvs/graphifyy/bin/python", "-c", "from graphify.watch import _rebuild_code; from pathlib import Path; assert _rebuild_code(Path(\".\"))"]
+```
+
+## 802. root-cap-module-dependency-link
+
+UTC `2026-10-08T07:31:38.978980+00:00`; exit `0`; elapsed `0.006s`; cwd `/Users/michael/.codex/worktrees/wave-a-correctness/cleansia`.
+
+```json
+["ln", "-s", "/Users/michael/.codex/scratchpads/cleansia-wave-a-2026-10-07/source/src/Cleansia.App/node_modules", "/Users/michael/.codex/worktrees/wave-a-correctness/cleansia/src/Cleansia.App/node_modules"]
+```
+
+## 803. root-cap-legal-baseline-today
+
+UTC `2026-10-08T07:31:40.232973+00:00`; exit `1`; elapsed `0.042s`; cwd `/Users/michael/.codex/worktrees/wave-a-correctness/cleansia`.
+
+```json
+["/Users/michael/.codex/scratchpads/cleansia-audit-2026-10-07/tools/web-tooling/node_modules/node/bin/node", "agents/tools/check-legal-drafts.mjs", "--root=/Users/michael/.codex/scratchpads/cleansia-audit-2026-10-07/source", "--today=2026-10-08"]
+```
+
+## 804. root-cap-module-boundaries-qualified
+
+UTC `2026-10-08T07:31:39.077674+00:00`; exit `0`; elapsed `8.399s`; cwd `/Users/michael/.codex/worktrees/wave-a-correctness/cleansia`.
+
+```json
+["env", "PATH=/Users/michael/.codex/scratchpads/cleansia-audit-2026-10-07/tools/web-tooling/node_modules/node/bin:/opt/homebrew/bin:/usr/bin:/bin:/usr/sbin:/sbin", "NX_DAEMON=false", "NX_NO_CLOUD=true", "/Users/michael/.codex/scratchpads/cleansia-audit-2026-10-07/tools/web-tooling/node_modules/node/bin/node", "agents/tools/check-module-boundaries.mjs"]
+```
+
+## 805. backend-tests-cap-final-integration-run-01
+
+UTC `2026-10-08T07:26:32.183374+00:00`; exit `0`; elapsed `323.326s`; cwd `/Users/michael/.codex/scratchpads/cleansia-wave-a-2026-10-07/source/src`.
+
+```json
+["dotnet", "test", "Cleansia.IntegrationTests/Cleansia.IntegrationTests.csproj", "-c", "Release", "--no-build", "--no-restore", "--logger", "trx;LogFileName=integration-01.trx", "--results-directory", "/Users/michael/.codex/scratchpads/cleansia-wave-a-2026-10-07/raw/backend/tests-cap-final/integration/run-01", "--", "xUnit.parallelizeTestCollections=false"]
+```
+
+environment: `{"LANG": "en_US.UTF-8", "LC_ALL": "en_US.UTF-8", "docker": "existing Docker Desktop socket; disposable Testcontainers DBs", "ambient_app_configuration": "not inherited"}`
+
+timed_out: `false`
+
+timeout_seconds: `1800`
+
+## 806. root-cap-final-docs-build
+
+UTC `2026-10-08T07:33:09.519868+00:00`; exit `0`; elapsed `13.846s`; cwd `/Users/michael/.codex/worktrees/wave-a-correctness/cleansia/docs`.
+
+```json
+["/Users/michael/.codex/scratchpads/cleansia-audit-2026-10-07/tools/web-tooling/node_modules/node/bin/node", "node_modules/vitepress/bin/vitepress.js", "build"]
+```
+
+## 807. root-cap-before-publication-fetch
+
+UTC `2026-10-08T07:34:29.242126+00:00`; exit `0`; elapsed `0.486s`; cwd `/Users/michael/.codex/worktrees/wave-a-correctness/cleansia`.
+
+```json
+["git", "fetch", "origin", "master"]
+```
+
+## 808. backend-tests-cap-final-host-run-01
+
+UTC `2026-10-08T07:31:55.601696+00:00`; exit `0`; elapsed `172.360s`; cwd `/Users/michael/.codex/scratchpads/cleansia-wave-a-2026-10-07/source/src`.
+
+```json
+["dotnet", "test", "Cleansia.HostTests/Cleansia.HostTests.csproj", "-c", "Release", "--no-build", "--no-restore", "--logger", "trx;LogFileName=host-01.trx", "--results-directory", "/Users/michael/.codex/scratchpads/cleansia-wave-a-2026-10-07/raw/backend/tests-cap-final/host/run-01", "--", "xUnit.parallelizeTestCollections=false"]
+```
+
+environment: `{"LANG": "en_US.UTF-8", "LC_ALL": "en_US.UTF-8", "docker": "existing Docker Desktop socket; disposable Testcontainers DBs", "ambient_app_configuration": "not inherited"}`
+
+timed_out: `false`
+
+timeout_seconds: `1800`
+
+## 809. root-cap-final-full-backend-suites
+
+UTC `2026-10-08T07:25:34.441092+00:00`; exit `0`; elapsed `553.542s`; cwd `/Users/michael/.codex/scratchpads/cleansia-wave-a-2026-10-07`.
+
+```json
+["python3", "/Users/michael/.codex/scratchpads/cleansia-wave-a-2026-10-07/tools/backend-test-loops-cap.py", "--runs", "1"]
+```
+
+## 810. root-cap-before-publication-merge
+
+UTC `2026-10-08T07:35:49.338211+00:00`; exit `0`; elapsed `0.015s`; cwd `/Users/michael/.codex/worktrees/wave-a-correctness/cleansia`.
+
+```json
+["git", "merge", "--no-edit", "origin/master"]
+```
+
+## 811. root-cap-final-owned-postgres-guard
+
+UTC `2026-10-08T07:38:33.699878+00:00`; exit `0`; elapsed `0.068s`; cwd `/Users/michael/.codex/worktrees/wave-a-correctness/cleansia`.
+
+```json
+["docker", "--context", "desktop-linux", "inspect", "--format", "{{json .Config.Labels}}\n{{json .Mounts}}\n{{json .HostConfig.PortBindings}}\n{{.State.Running}}", "cleansia-audit-pg-20261007"]
+```
+
+## 812. root-cap-final-owned-postgres-stop
+
+UTC `2026-10-08T07:38:33.797957+00:00`; exit `0`; elapsed `0.169s`; cwd `/Users/michael/.codex/worktrees/wave-a-correctness/cleansia`.
+
+```json
+["docker", "--context", "desktop-linux", "stop", "--time", "20", "cleansia-audit-pg-20261007"]
+```
+
+## 813. root-cap-final-owned-postgres-stopped-proof
+
+UTC `2026-10-08T07:38:34.005498+00:00`; exit `0`; elapsed `0.014s`; cwd `/Users/michael/.codex/worktrees/wave-a-correctness/cleansia`.
+
+```json
+["docker", "--context", "desktop-linux", "inspect", "--format", "{{.State.Running}}", "cleansia-audit-pg-20261007"]
+```
+
+## 814. root-cap-final-runtime-resource-closure
+
+UTC `2026-10-08T07:38:33.643887+00:00`; exit `0`; elapsed `0.392s`; cwd `/Users/michael/.codex/worktrees/wave-a-correctness/cleansia`.
+
+```json
+["python3", "/Users/michael/.codex/scratchpads/cleansia-wave-a-2026-10-07/tools/cap-final-resource-closure.py"]
+```
+
+## 815. root-cap-remove-owned-dependency-link
+
+UTC `2026-10-08T07:40:03.256900+00:00`; exit `0`; elapsed `0.018s`; cwd `/Users/michael/.codex/worktrees/wave-a-correctness/cleansia`.
+
+```json
+["python3", "-c", "from pathlib import Path; p=Path(\"src/Cleansia.App/node_modules\"); assert p.is_symlink() and str(p.resolve())==\"/Users/michael/.codex/scratchpads/cleansia-wave-a-2026-10-07/source/src/Cleansia.App/node_modules\"; p.unlink()"]
+```
+
 ## Local API host child processes
 
 These process argument arrays are recorded separately by the guarded host controllers. Environment key names are recorded in scratch; signing material and connection-string values remain private. Stops signal only the recorded, ownership-checked processes.
@@ -5725,3 +7763,283 @@ UTC `2026-10-07T23:31:39.843195+00:00`; `stop`; `partner-mobile`; recorded PID `
 UTC `2026-10-07T23:31:39.845235+00:00`; `stop`; `customer`; recorded PID `91083`.
 
 UTC `2026-10-07T23:31:39.847554+00:00`; `stop`; `customer-mobile`; recorded PID `91084`.
+
+UTC `2026-10-08T07:01:44.475473+00:00`; `partner`; cwd `/Users/michael/.codex/scratchpads/cleansia-wave-a-2026-10-07/private/backend-content/partner`; URL `http://127.0.0.1:15000`.
+
+```json
+["/opt/homebrew/bin/dotnet", "/Users/michael/.codex/scratchpads/cleansia-wave-a-2026-10-07/source/src/Cleansia.Web.Partner/bin/Release/net10.0/Cleansia.Web.Partner.dll", "--contentRoot", "/Users/michael/.codex/scratchpads/cleansia-wave-a-2026-10-07/private/backend-content/partner", "--urls", "http://127.0.0.1:15000"]
+```
+
+UTC `2026-10-08T07:01:44.476924+00:00`; `admin`; cwd `/Users/michael/.codex/scratchpads/cleansia-wave-a-2026-10-07/private/backend-content/admin`; URL `http://127.0.0.1:15001`.
+
+```json
+["/opt/homebrew/bin/dotnet", "/Users/michael/.codex/scratchpads/cleansia-wave-a-2026-10-07/source/src/Cleansia.Web.Admin/bin/Release/net10.0/Cleansia.Web.Admin.dll", "--contentRoot", "/Users/michael/.codex/scratchpads/cleansia-wave-a-2026-10-07/private/backend-content/admin", "--urls", "http://127.0.0.1:15001"]
+```
+
+UTC `2026-10-08T07:01:44.478275+00:00`; `partner-mobile`; cwd `/Users/michael/.codex/scratchpads/cleansia-wave-a-2026-10-07/private/backend-content/partner-mobile`; URL `http://127.0.0.1:15002`.
+
+```json
+["/opt/homebrew/bin/dotnet", "/Users/michael/.codex/scratchpads/cleansia-wave-a-2026-10-07/source/src/Cleansia.Web.Mobile.Partner/bin/Release/net10.0/Cleansia.Web.Mobile.Partner.dll", "--contentRoot", "/Users/michael/.codex/scratchpads/cleansia-wave-a-2026-10-07/private/backend-content/partner-mobile", "--urls", "http://127.0.0.1:15002"]
+```
+
+UTC `2026-10-08T07:01:44.479603+00:00`; `customer`; cwd `/Users/michael/.codex/scratchpads/cleansia-wave-a-2026-10-07/private/backend-content/customer`; URL `http://127.0.0.1:15003`.
+
+```json
+["/opt/homebrew/bin/dotnet", "/Users/michael/.codex/scratchpads/cleansia-wave-a-2026-10-07/source/src/Cleansia.Web.Customer/bin/Release/net10.0/Cleansia.Web.Customer.dll", "--contentRoot", "/Users/michael/.codex/scratchpads/cleansia-wave-a-2026-10-07/private/backend-content/customer", "--urls", "http://127.0.0.1:15003"]
+```
+
+UTC `2026-10-08T07:01:44.481307+00:00`; `customer-mobile`; cwd `/Users/michael/.codex/scratchpads/cleansia-wave-a-2026-10-07/private/backend-content/customer-mobile`; URL `http://127.0.0.1:15004`.
+
+```json
+["/opt/homebrew/bin/dotnet", "/Users/michael/.codex/scratchpads/cleansia-wave-a-2026-10-07/source/src/Cleansia.Web.Mobile.Customer/bin/Release/net10.0/Cleansia.Web.Mobile.Customer.dll", "--contentRoot", "/Users/michael/.codex/scratchpads/cleansia-wave-a-2026-10-07/private/backend-content/customer-mobile", "--urls", "http://127.0.0.1:15004"]
+```
+
+UTC `2026-10-08T07:05:47.878959+00:00`; `stop`; `partner`; recorded PID `4148`.
+
+UTC `2026-10-08T07:05:47.882343+00:00`; `stop`; `admin`; recorded PID `4149`.
+
+UTC `2026-10-08T07:05:47.887381+00:00`; `stop`; `partner-mobile`; recorded PID `4150`.
+
+UTC `2026-10-08T07:05:47.896075+00:00`; `stop`; `customer`; recorded PID `4151`.
+
+UTC `2026-10-08T07:05:47.904933+00:00`; `stop`; `customer-mobile`; recorded PID `4152`.
+
+UTC `2026-10-08T07:07:10.650660+00:00`; `partner`; cwd `/Users/michael/.codex/scratchpads/cleansia-wave-a-2026-10-07/private/backend-content/partner`; URL `http://127.0.0.1:15020`.
+
+```json
+["/opt/homebrew/bin/dotnet", "/Users/michael/.codex/scratchpads/cleansia-wave-a-2026-10-07/source/src/Cleansia.Web.Partner/bin/Release/net10.0/Cleansia.Web.Partner.dll", "--contentRoot", "/Users/michael/.codex/scratchpads/cleansia-wave-a-2026-10-07/private/backend-content/partner", "--urls", "http://127.0.0.1:15020"]
+```
+
+UTC `2026-10-08T07:07:10.652096+00:00`; `admin`; cwd `/Users/michael/.codex/scratchpads/cleansia-wave-a-2026-10-07/private/backend-content/admin`; URL `http://127.0.0.1:15021`.
+
+```json
+["/opt/homebrew/bin/dotnet", "/Users/michael/.codex/scratchpads/cleansia-wave-a-2026-10-07/source/src/Cleansia.Web.Admin/bin/Release/net10.0/Cleansia.Web.Admin.dll", "--contentRoot", "/Users/michael/.codex/scratchpads/cleansia-wave-a-2026-10-07/private/backend-content/admin", "--urls", "http://127.0.0.1:15021"]
+```
+
+UTC `2026-10-08T07:07:10.653111+00:00`; `partner-mobile`; cwd `/Users/michael/.codex/scratchpads/cleansia-wave-a-2026-10-07/private/backend-content/partner-mobile`; URL `http://127.0.0.1:15022`.
+
+```json
+["/opt/homebrew/bin/dotnet", "/Users/michael/.codex/scratchpads/cleansia-wave-a-2026-10-07/source/src/Cleansia.Web.Mobile.Partner/bin/Release/net10.0/Cleansia.Web.Mobile.Partner.dll", "--contentRoot", "/Users/michael/.codex/scratchpads/cleansia-wave-a-2026-10-07/private/backend-content/partner-mobile", "--urls", "http://127.0.0.1:15022"]
+```
+
+UTC `2026-10-08T07:07:10.654378+00:00`; `customer`; cwd `/Users/michael/.codex/scratchpads/cleansia-wave-a-2026-10-07/private/backend-content/customer`; URL `http://127.0.0.1:15023`.
+
+```json
+["/opt/homebrew/bin/dotnet", "/Users/michael/.codex/scratchpads/cleansia-wave-a-2026-10-07/source/src/Cleansia.Web.Customer/bin/Release/net10.0/Cleansia.Web.Customer.dll", "--contentRoot", "/Users/michael/.codex/scratchpads/cleansia-wave-a-2026-10-07/private/backend-content/customer", "--urls", "http://127.0.0.1:15023"]
+```
+
+UTC `2026-10-08T07:07:10.655625+00:00`; `customer-mobile`; cwd `/Users/michael/.codex/scratchpads/cleansia-wave-a-2026-10-07/private/backend-content/customer-mobile`; URL `http://127.0.0.1:15024`.
+
+```json
+["/opt/homebrew/bin/dotnet", "/Users/michael/.codex/scratchpads/cleansia-wave-a-2026-10-07/source/src/Cleansia.Web.Mobile.Customer/bin/Release/net10.0/Cleansia.Web.Mobile.Customer.dll", "--contentRoot", "/Users/michael/.codex/scratchpads/cleansia-wave-a-2026-10-07/private/backend-content/customer-mobile", "--urls", "http://127.0.0.1:15024"]
+```
+
+UTC `2026-10-08T07:07:56.356380+00:00`; `stop`; `partner`; recorded PID `4809`.
+
+UTC `2026-10-08T07:07:56.358495+00:00`; `stop`; `admin`; recorded PID `4810`.
+
+UTC `2026-10-08T07:07:56.360342+00:00`; `stop`; `partner-mobile`; recorded PID `4811`.
+
+UTC `2026-10-08T07:07:56.362811+00:00`; `stop`; `customer`; recorded PID `4812`.
+
+UTC `2026-10-08T07:07:56.365193+00:00`; `stop`; `customer-mobile`; recorded PID `4813`.
+
+UTC `2026-10-08T07:08:54.532739+00:00`; `partner`; cwd `/Users/michael/.codex/scratchpads/cleansia-wave-a-2026-10-07/private/backend-content/partner`; URL `http://127.0.0.1:15000`.
+
+```json
+["/opt/homebrew/bin/dotnet", "/Users/michael/.codex/scratchpads/cleansia-wave-a-2026-10-07/source/src/Cleansia.Web.Partner/bin/Release/net10.0/Cleansia.Web.Partner.dll", "--contentRoot", "/Users/michael/.codex/scratchpads/cleansia-wave-a-2026-10-07/private/backend-content/partner", "--urls", "http://127.0.0.1:15000"]
+```
+
+UTC `2026-10-08T07:08:54.533786+00:00`; `admin`; cwd `/Users/michael/.codex/scratchpads/cleansia-wave-a-2026-10-07/private/backend-content/admin`; URL `http://127.0.0.1:15001`.
+
+```json
+["/opt/homebrew/bin/dotnet", "/Users/michael/.codex/scratchpads/cleansia-wave-a-2026-10-07/source/src/Cleansia.Web.Admin/bin/Release/net10.0/Cleansia.Web.Admin.dll", "--contentRoot", "/Users/michael/.codex/scratchpads/cleansia-wave-a-2026-10-07/private/backend-content/admin", "--urls", "http://127.0.0.1:15001"]
+```
+
+UTC `2026-10-08T07:08:54.534929+00:00`; `partner-mobile`; cwd `/Users/michael/.codex/scratchpads/cleansia-wave-a-2026-10-07/private/backend-content/partner-mobile`; URL `http://127.0.0.1:15002`.
+
+```json
+["/opt/homebrew/bin/dotnet", "/Users/michael/.codex/scratchpads/cleansia-wave-a-2026-10-07/source/src/Cleansia.Web.Mobile.Partner/bin/Release/net10.0/Cleansia.Web.Mobile.Partner.dll", "--contentRoot", "/Users/michael/.codex/scratchpads/cleansia-wave-a-2026-10-07/private/backend-content/partner-mobile", "--urls", "http://127.0.0.1:15002"]
+```
+
+UTC `2026-10-08T07:08:54.536143+00:00`; `customer`; cwd `/Users/michael/.codex/scratchpads/cleansia-wave-a-2026-10-07/private/backend-content/customer`; URL `http://127.0.0.1:15003`.
+
+```json
+["/opt/homebrew/bin/dotnet", "/Users/michael/.codex/scratchpads/cleansia-wave-a-2026-10-07/source/src/Cleansia.Web.Customer/bin/Release/net10.0/Cleansia.Web.Customer.dll", "--contentRoot", "/Users/michael/.codex/scratchpads/cleansia-wave-a-2026-10-07/private/backend-content/customer", "--urls", "http://127.0.0.1:15003"]
+```
+
+UTC `2026-10-08T07:08:54.537336+00:00`; `customer-mobile`; cwd `/Users/michael/.codex/scratchpads/cleansia-wave-a-2026-10-07/private/backend-content/customer-mobile`; URL `http://127.0.0.1:15004`.
+
+```json
+["/opt/homebrew/bin/dotnet", "/Users/michael/.codex/scratchpads/cleansia-wave-a-2026-10-07/source/src/Cleansia.Web.Mobile.Customer/bin/Release/net10.0/Cleansia.Web.Mobile.Customer.dll", "--contentRoot", "/Users/michael/.codex/scratchpads/cleansia-wave-a-2026-10-07/private/backend-content/customer-mobile", "--urls", "http://127.0.0.1:15004"]
+```
+
+UTC `2026-10-08T07:12:17.410515+00:00`; `stop`; `partner`; recorded PID `5119`.
+
+UTC `2026-10-08T07:12:17.412895+00:00`; `stop`; `admin`; recorded PID `5120`.
+
+UTC `2026-10-08T07:12:17.414685+00:00`; `stop`; `partner-mobile`; recorded PID `5121`.
+
+UTC `2026-10-08T07:12:17.417438+00:00`; `stop`; `customer`; recorded PID `5122`.
+
+UTC `2026-10-08T07:12:17.421007+00:00`; `stop`; `customer-mobile`; recorded PID `5123`.
+
+UTC `2026-10-08T07:14:19.910641+00:00`; `partner`; cwd `/Users/michael/.codex/scratchpads/cleansia-wave-a-2026-10-07/private/backend-content/partner`; URL `http://127.0.0.1:15020`.
+
+```json
+["/opt/homebrew/bin/dotnet", "/Users/michael/.codex/scratchpads/cleansia-wave-a-2026-10-07/source/src/Cleansia.Web.Partner/bin/Release/net10.0/Cleansia.Web.Partner.dll", "--contentRoot", "/Users/michael/.codex/scratchpads/cleansia-wave-a-2026-10-07/private/backend-content/partner", "--urls", "http://127.0.0.1:15020"]
+```
+
+UTC `2026-10-08T07:14:19.912377+00:00`; `admin`; cwd `/Users/michael/.codex/scratchpads/cleansia-wave-a-2026-10-07/private/backend-content/admin`; URL `http://127.0.0.1:15021`.
+
+```json
+["/opt/homebrew/bin/dotnet", "/Users/michael/.codex/scratchpads/cleansia-wave-a-2026-10-07/source/src/Cleansia.Web.Admin/bin/Release/net10.0/Cleansia.Web.Admin.dll", "--contentRoot", "/Users/michael/.codex/scratchpads/cleansia-wave-a-2026-10-07/private/backend-content/admin", "--urls", "http://127.0.0.1:15021"]
+```
+
+UTC `2026-10-08T07:14:19.913640+00:00`; `partner-mobile`; cwd `/Users/michael/.codex/scratchpads/cleansia-wave-a-2026-10-07/private/backend-content/partner-mobile`; URL `http://127.0.0.1:15022`.
+
+```json
+["/opt/homebrew/bin/dotnet", "/Users/michael/.codex/scratchpads/cleansia-wave-a-2026-10-07/source/src/Cleansia.Web.Mobile.Partner/bin/Release/net10.0/Cleansia.Web.Mobile.Partner.dll", "--contentRoot", "/Users/michael/.codex/scratchpads/cleansia-wave-a-2026-10-07/private/backend-content/partner-mobile", "--urls", "http://127.0.0.1:15022"]
+```
+
+UTC `2026-10-08T07:14:19.915541+00:00`; `customer`; cwd `/Users/michael/.codex/scratchpads/cleansia-wave-a-2026-10-07/private/backend-content/customer`; URL `http://127.0.0.1:15023`.
+
+```json
+["/opt/homebrew/bin/dotnet", "/Users/michael/.codex/scratchpads/cleansia-wave-a-2026-10-07/source/src/Cleansia.Web.Customer/bin/Release/net10.0/Cleansia.Web.Customer.dll", "--contentRoot", "/Users/michael/.codex/scratchpads/cleansia-wave-a-2026-10-07/private/backend-content/customer", "--urls", "http://127.0.0.1:15023"]
+```
+
+UTC `2026-10-08T07:14:19.917142+00:00`; `customer-mobile`; cwd `/Users/michael/.codex/scratchpads/cleansia-wave-a-2026-10-07/private/backend-content/customer-mobile`; URL `http://127.0.0.1:15024`.
+
+```json
+["/opt/homebrew/bin/dotnet", "/Users/michael/.codex/scratchpads/cleansia-wave-a-2026-10-07/source/src/Cleansia.Web.Mobile.Customer/bin/Release/net10.0/Cleansia.Web.Mobile.Customer.dll", "--contentRoot", "/Users/michael/.codex/scratchpads/cleansia-wave-a-2026-10-07/private/backend-content/customer-mobile", "--urls", "http://127.0.0.1:15024"]
+```
+
+UTC `2026-10-08T07:14:59.596476+00:00`; `stop`; `partner`; recorded PID `5782`.
+
+UTC `2026-10-08T07:14:59.598916+00:00`; `stop`; `admin`; recorded PID `5783`.
+
+UTC `2026-10-08T07:14:59.601167+00:00`; `stop`; `partner-mobile`; recorded PID `5784`.
+
+UTC `2026-10-08T07:14:59.603992+00:00`; `stop`; `customer`; recorded PID `5785`.
+
+UTC `2026-10-08T07:14:59.606822+00:00`; `stop`; `customer-mobile`; recorded PID `5786`.
+
+UTC `2026-10-08T07:15:57.389666+00:00`; `partner`; cwd `/Users/michael/.codex/scratchpads/cleansia-wave-a-2026-10-07/private/backend-content/partner`; URL `http://127.0.0.1:15000`.
+
+```json
+["/opt/homebrew/bin/dotnet", "/Users/michael/.codex/scratchpads/cleansia-wave-a-2026-10-07/source/src/Cleansia.Web.Partner/bin/Release/net10.0/Cleansia.Web.Partner.dll", "--contentRoot", "/Users/michael/.codex/scratchpads/cleansia-wave-a-2026-10-07/private/backend-content/partner", "--urls", "http://127.0.0.1:15000"]
+```
+
+UTC `2026-10-08T07:15:57.391485+00:00`; `admin`; cwd `/Users/michael/.codex/scratchpads/cleansia-wave-a-2026-10-07/private/backend-content/admin`; URL `http://127.0.0.1:15001`.
+
+```json
+["/opt/homebrew/bin/dotnet", "/Users/michael/.codex/scratchpads/cleansia-wave-a-2026-10-07/source/src/Cleansia.Web.Admin/bin/Release/net10.0/Cleansia.Web.Admin.dll", "--contentRoot", "/Users/michael/.codex/scratchpads/cleansia-wave-a-2026-10-07/private/backend-content/admin", "--urls", "http://127.0.0.1:15001"]
+```
+
+UTC `2026-10-08T07:15:57.392754+00:00`; `partner-mobile`; cwd `/Users/michael/.codex/scratchpads/cleansia-wave-a-2026-10-07/private/backend-content/partner-mobile`; URL `http://127.0.0.1:15002`.
+
+```json
+["/opt/homebrew/bin/dotnet", "/Users/michael/.codex/scratchpads/cleansia-wave-a-2026-10-07/source/src/Cleansia.Web.Mobile.Partner/bin/Release/net10.0/Cleansia.Web.Mobile.Partner.dll", "--contentRoot", "/Users/michael/.codex/scratchpads/cleansia-wave-a-2026-10-07/private/backend-content/partner-mobile", "--urls", "http://127.0.0.1:15002"]
+```
+
+UTC `2026-10-08T07:15:57.394582+00:00`; `customer`; cwd `/Users/michael/.codex/scratchpads/cleansia-wave-a-2026-10-07/private/backend-content/customer`; URL `http://127.0.0.1:15003`.
+
+```json
+["/opt/homebrew/bin/dotnet", "/Users/michael/.codex/scratchpads/cleansia-wave-a-2026-10-07/source/src/Cleansia.Web.Customer/bin/Release/net10.0/Cleansia.Web.Customer.dll", "--contentRoot", "/Users/michael/.codex/scratchpads/cleansia-wave-a-2026-10-07/private/backend-content/customer", "--urls", "http://127.0.0.1:15003"]
+```
+
+UTC `2026-10-08T07:15:57.395730+00:00`; `customer-mobile`; cwd `/Users/michael/.codex/scratchpads/cleansia-wave-a-2026-10-07/private/backend-content/customer-mobile`; URL `http://127.0.0.1:15004`.
+
+```json
+["/opt/homebrew/bin/dotnet", "/Users/michael/.codex/scratchpads/cleansia-wave-a-2026-10-07/source/src/Cleansia.Web.Mobile.Customer/bin/Release/net10.0/Cleansia.Web.Mobile.Customer.dll", "--contentRoot", "/Users/michael/.codex/scratchpads/cleansia-wave-a-2026-10-07/private/backend-content/customer-mobile", "--urls", "http://127.0.0.1:15004"]
+```
+
+UTC `2026-10-08T07:18:25.153223+00:00`; `stop`; `partner`; recorded PID `5938`.
+
+UTC `2026-10-08T07:18:25.155773+00:00`; `stop`; `admin`; recorded PID `5939`.
+
+UTC `2026-10-08T07:18:25.158175+00:00`; `stop`; `partner-mobile`; recorded PID `5940`.
+
+UTC `2026-10-08T07:18:25.160463+00:00`; `stop`; `customer`; recorded PID `5941`.
+
+UTC `2026-10-08T07:18:25.163059+00:00`; `stop`; `customer-mobile`; recorded PID `5942`.
+
+UTC `2026-10-08T07:19:10.437263+00:00`; `partner`; cwd `/Users/michael/.codex/scratchpads/cleansia-wave-a-2026-10-07/private/backend-content/partner`; URL `http://127.0.0.1:15000`.
+
+```json
+["/opt/homebrew/bin/dotnet", "/Users/michael/.codex/scratchpads/cleansia-wave-a-2026-10-07/source/src/Cleansia.Web.Partner/bin/Release/net10.0/Cleansia.Web.Partner.dll", "--contentRoot", "/Users/michael/.codex/scratchpads/cleansia-wave-a-2026-10-07/private/backend-content/partner", "--urls", "http://127.0.0.1:15000"]
+```
+
+UTC `2026-10-08T07:19:10.438596+00:00`; `admin`; cwd `/Users/michael/.codex/scratchpads/cleansia-wave-a-2026-10-07/private/backend-content/admin`; URL `http://127.0.0.1:15001`.
+
+```json
+["/opt/homebrew/bin/dotnet", "/Users/michael/.codex/scratchpads/cleansia-wave-a-2026-10-07/source/src/Cleansia.Web.Admin/bin/Release/net10.0/Cleansia.Web.Admin.dll", "--contentRoot", "/Users/michael/.codex/scratchpads/cleansia-wave-a-2026-10-07/private/backend-content/admin", "--urls", "http://127.0.0.1:15001"]
+```
+
+UTC `2026-10-08T07:19:10.439733+00:00`; `partner-mobile`; cwd `/Users/michael/.codex/scratchpads/cleansia-wave-a-2026-10-07/private/backend-content/partner-mobile`; URL `http://127.0.0.1:15002`.
+
+```json
+["/opt/homebrew/bin/dotnet", "/Users/michael/.codex/scratchpads/cleansia-wave-a-2026-10-07/source/src/Cleansia.Web.Mobile.Partner/bin/Release/net10.0/Cleansia.Web.Mobile.Partner.dll", "--contentRoot", "/Users/michael/.codex/scratchpads/cleansia-wave-a-2026-10-07/private/backend-content/partner-mobile", "--urls", "http://127.0.0.1:15002"]
+```
+
+UTC `2026-10-08T07:19:10.441005+00:00`; `customer`; cwd `/Users/michael/.codex/scratchpads/cleansia-wave-a-2026-10-07/private/backend-content/customer`; URL `http://127.0.0.1:15003`.
+
+```json
+["/opt/homebrew/bin/dotnet", "/Users/michael/.codex/scratchpads/cleansia-wave-a-2026-10-07/source/src/Cleansia.Web.Customer/bin/Release/net10.0/Cleansia.Web.Customer.dll", "--contentRoot", "/Users/michael/.codex/scratchpads/cleansia-wave-a-2026-10-07/private/backend-content/customer", "--urls", "http://127.0.0.1:15003"]
+```
+
+UTC `2026-10-08T07:19:10.442195+00:00`; `customer-mobile`; cwd `/Users/michael/.codex/scratchpads/cleansia-wave-a-2026-10-07/private/backend-content/customer-mobile`; URL `http://127.0.0.1:15004`.
+
+```json
+["/opt/homebrew/bin/dotnet", "/Users/michael/.codex/scratchpads/cleansia-wave-a-2026-10-07/source/src/Cleansia.Web.Mobile.Customer/bin/Release/net10.0/Cleansia.Web.Mobile.Customer.dll", "--contentRoot", "/Users/michael/.codex/scratchpads/cleansia-wave-a-2026-10-07/private/backend-content/customer-mobile", "--urls", "http://127.0.0.1:15004"]
+```
+
+UTC `2026-10-08T07:22:13.770012+00:00`; `stop`; `partner`; recorded PID `6831`.
+
+UTC `2026-10-08T07:22:13.772368+00:00`; `stop`; `admin`; recorded PID `6832`.
+
+UTC `2026-10-08T07:22:13.774518+00:00`; `stop`; `partner-mobile`; recorded PID `6833`.
+
+UTC `2026-10-08T07:22:13.776996+00:00`; `stop`; `customer`; recorded PID `6834`.
+
+UTC `2026-10-08T07:22:13.779453+00:00`; `stop`; `customer-mobile`; recorded PID `6835`.
+
+UTC `2026-10-08T07:22:13.922254+00:00`; `partner`; cwd `/Users/michael/.codex/scratchpads/cleansia-wave-a-2026-10-07/private/backend-content/partner`; URL `http://127.0.0.1:15000`.
+
+```json
+["/opt/homebrew/bin/dotnet", "/Users/michael/.codex/scratchpads/cleansia-wave-a-2026-10-07/source/src/Cleansia.Web.Partner/bin/Release/net10.0/Cleansia.Web.Partner.dll", "--contentRoot", "/Users/michael/.codex/scratchpads/cleansia-wave-a-2026-10-07/private/backend-content/partner", "--urls", "http://127.0.0.1:15000"]
+```
+
+UTC `2026-10-08T07:22:13.923312+00:00`; `admin`; cwd `/Users/michael/.codex/scratchpads/cleansia-wave-a-2026-10-07/private/backend-content/admin`; URL `http://127.0.0.1:15001`.
+
+```json
+["/opt/homebrew/bin/dotnet", "/Users/michael/.codex/scratchpads/cleansia-wave-a-2026-10-07/source/src/Cleansia.Web.Admin/bin/Release/net10.0/Cleansia.Web.Admin.dll", "--contentRoot", "/Users/michael/.codex/scratchpads/cleansia-wave-a-2026-10-07/private/backend-content/admin", "--urls", "http://127.0.0.1:15001"]
+```
+
+UTC `2026-10-08T07:22:13.925047+00:00`; `partner-mobile`; cwd `/Users/michael/.codex/scratchpads/cleansia-wave-a-2026-10-07/private/backend-content/partner-mobile`; URL `http://127.0.0.1:15002`.
+
+```json
+["/opt/homebrew/bin/dotnet", "/Users/michael/.codex/scratchpads/cleansia-wave-a-2026-10-07/source/src/Cleansia.Web.Mobile.Partner/bin/Release/net10.0/Cleansia.Web.Mobile.Partner.dll", "--contentRoot", "/Users/michael/.codex/scratchpads/cleansia-wave-a-2026-10-07/private/backend-content/partner-mobile", "--urls", "http://127.0.0.1:15002"]
+```
+
+UTC `2026-10-08T07:22:13.926213+00:00`; `customer`; cwd `/Users/michael/.codex/scratchpads/cleansia-wave-a-2026-10-07/private/backend-content/customer`; URL `http://127.0.0.1:15003`.
+
+```json
+["/opt/homebrew/bin/dotnet", "/Users/michael/.codex/scratchpads/cleansia-wave-a-2026-10-07/source/src/Cleansia.Web.Customer/bin/Release/net10.0/Cleansia.Web.Customer.dll", "--contentRoot", "/Users/michael/.codex/scratchpads/cleansia-wave-a-2026-10-07/private/backend-content/customer", "--urls", "http://127.0.0.1:15003"]
+```
+
+UTC `2026-10-08T07:22:13.927524+00:00`; `customer-mobile`; cwd `/Users/michael/.codex/scratchpads/cleansia-wave-a-2026-10-07/private/backend-content/customer-mobile`; URL `http://127.0.0.1:15004`.
+
+```json
+["/opt/homebrew/bin/dotnet", "/Users/michael/.codex/scratchpads/cleansia-wave-a-2026-10-07/source/src/Cleansia.Web.Mobile.Customer/bin/Release/net10.0/Cleansia.Web.Mobile.Customer.dll", "--contentRoot", "/Users/michael/.codex/scratchpads/cleansia-wave-a-2026-10-07/private/backend-content/customer-mobile", "--urls", "http://127.0.0.1:15004"]
+```
+
+UTC `2026-10-08T07:25:34.336534+00:00`; `stop`; `partner`; recorded PID `7174`.
+
+UTC `2026-10-08T07:25:34.338950+00:00`; `stop`; `admin`; recorded PID `7175`.
+
+UTC `2026-10-08T07:25:34.341256+00:00`; `stop`; `partner-mobile`; recorded PID `7176`.
+
+UTC `2026-10-08T07:25:34.343456+00:00`; `stop`; `customer`; recorded PID `7177`.
+
+UTC `2026-10-08T07:25:34.345858+00:00`; `stop`; `customer-mobile`; recorded PID `7178`.

@@ -4,7 +4,7 @@ title: Restore SSR data, compatible paging and iOS session cleanup
 size: L
 owner: pm
 created: 2026-10-07
-updated: 2026-10-07
+updated: 2026-10-08
 depends_on: []
 blocks: []
 stories: []
@@ -33,7 +33,7 @@ teardown leaves persisted partner checklist ticks and customer Live Activities o
   Node and through JSON TransferState; typed DTOs, errors and anonymous cache exclusions remain intact.
 - [x] **AC2 / B002** — Existing advertised order pages beyond offset 500 can be reached with correct
   rows and counters. Supported navigation and API validation agree, including validation boundaries.
-- [ ] **AC3 / B003** — Interactive order-list requests have the recommended 100-row ceiling after a documented
+- [x] **AC3 / B003** — Interactive order-list requests have the recommended 100-row ceiling after a documented
   consumer inventory. Existing web/native consumers are aligned; shared noninteractive/full-list
   consumers retain their intended completeness. Any unresolved deployed-client incompatibility is
   presented to Mike before a nonadditive restriction is applied.
@@ -47,7 +47,7 @@ teardown leaves persisted partner checklist ticks and customer Live Activities o
   clears account-specific Live Activity state and ends actual ActivityKit activities, including
   restored activities absent from the in-memory registry. Successful deletion and terminal auth
   use the same teardown; failed deletion preserves the session.
-- [ ] **AC7** — Each cause has a named regression assertion demonstrated red before its fix and
+- [x] **AC7** — Each cause has a named regression assertion demonstrated red before its fix and
   green afterward. Current paired before/after measurements use the audit method and equivalent
   fixtures/profile with at least five observations; raw evidence and exact command ledger stay in
   the scratchpad. Correctness gains are distinguished from unmeasured speed gains.
@@ -84,6 +84,12 @@ Original audit evidence: `/Users/michael/.codex/scratchpads/cleansia-audit-2026-
   Qualified red/green cases and complete web/primary native suites are retained. Customer web
   paired comparisons complete; native after comparisons are running on the same owned guest and
   unchanged before API fixture. No order-limit restriction applied while coordination is pending.
+- 2026-10-08 — Mike explicitly approved the recommended 100-row ceiling for all paged order
+  endpoints, including both mobile APIs, after the concrete TestFlight compatibility question.
+  The shared non-order 100000 limit and unrelated catalogue 1000 callers remain intact. The change
+  continues on the same Wave A branch and draft PR #311, within the original 4–7 day estimate.
+  The pre-cap commit passed all eight applicable CI jobs; cap regression, generated contract
+  refresh and final-head verification are in progress. Deployment and merging remain separate.
 
 ## Review
 
@@ -93,6 +99,10 @@ with S1–S12 boundaries qualified. Backend author execution is not independent 
 root complete backend verification, paired API comparisons, graph refresh and corrected Admin/API/SQL
 row evidence pass. The separate AFTER SQL-count pass and independent combined evidence review
 also pass: 55 matched reads, 440 successful EF commands versus 430 before, with one additional
-scalar page-ID read on each Admin/board request. The coordinated limit decision and PR/CI gates
-remain pending. The correct default board sorting raises server
+scalar page-ID read on each Admin/board request. The coordinated limit was approved and implemented on 2026-10-08. Full final local verification passes; fresh final-head CI is still pending. The correct default board sorting raises server
 median from 287.0 to 614.0 ms (p95 304.9 to 630.5 ms); this measured cost is retained for review.
+
+- Final cap local verification: 8443 unit, 845 integration and 434 host tests pass; 105/105 final
+  HTTP boundaries pass and all 90 SQL traces match Hosting logs. Three web SDKs, 453 Swift and
+  429 Kotlin generated files retain exact pre-cap hashes. Final-head CI remains the publication
+  gate; the pre-cap commit passed all eight applicable jobs.

@@ -47,6 +47,60 @@ public sealed class OrderListPagingContractTests
         Assert.True(IsValid(new GetPagedServices.Request { Limit = 1000 }));
     }
 
+    [Theory]
+    [InlineData(false, 1, true)]
+    [InlineData(false, 100, true)]
+    [InlineData(false, 101, false)]
+    [InlineData(false, 100000, false)]
+    [InlineData(false, 0, false)]
+    [InlineData(false, -1, false)]
+    [InlineData(true, 1, true)]
+    [InlineData(true, 100, true)]
+    [InlineData(true, 101, false)]
+    [InlineData(true, 100000, false)]
+    [InlineData(true, 0, false)]
+    [InlineData(true, -1, false)]
+    public void Every_Order_Page_Admits_At_Most_One_Hundred_Rows(
+        bool customer, int limit, bool expectedValid)
+    {
+        DataRangeRequest request = customer
+            ? new GetCustomerOrders.Request { Offset = 79980, Limit = limit }
+            : new GetPagedOrders.Request { Offset = 79980, Limit = limit };
+        var errors = new List<ValidationResult>();
+
+        var valid = Validator.TryValidateObject(
+            request, new ValidationContext(request), errors, validateAllProperties: true);
+
+        Assert.Equal(expectedValid, valid);
+        Assert.Equal(limit, request.Limit);
+        if (!expectedValid)
+        {
+            var error = Assert.Single(errors);
+            Assert.Contains(nameof(DataRangeRequest.Limit), error.MemberNames);
+        }
+    }
+
+    [Fact]
+    public void Order_Page_Limits_Preserve_The_Default_And_Shared_Mapper_Value()
+    {
+        Assert.Equal(50, new GetPagedOrders.Request().Limit);
+        Assert.Equal(50, new GetCustomerOrders.Request().Limit);
+
+        foreach (var request in new DataRangeRequest[]
+                 {
+                     new GetPagedOrders.Request { Offset = 79980, Limit = 100 },
+                     new GetCustomerOrders.Request { Offset = 79980, Limit = 100 }
+                 })
+        {
+            var page = Array.Empty<string>().MapToDto(80000, request);
+
+            Assert.Equal(100, request.Limit);
+            Assert.Equal(100, page.PageSize);
+            Assert.Equal(800, page.PageNumber);
+            Assert.Equal(80000, page.Total);
+        }
+    }
+
     private static bool IsValid(DataRangeRequest request) =>
         Validator.TryValidateObject(request, new ValidationContext(request), [], validateAllProperties: true);
 }

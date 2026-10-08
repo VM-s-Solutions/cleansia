@@ -1,4 +1,5 @@
 #nullable enable
+using System.ComponentModel.DataAnnotations;
 using System.Security.Claims;
 using Cleansia.Core.AppServices.Authentication;
 using Cleansia.Core.AppServices.Features.Orders.DTOs;
@@ -28,6 +29,14 @@ public class GetPagedOrders
 {
     public class Request : DataRangeRequest, IRequest<PagedData<OrderListItem>>
     {
+        [Range(1, 100)]
+        [Display(Order = int.MaxValue)]
+        public override int Limit
+        {
+            get => base.Limit;
+            init => base.Limit = value;
+        }
+
         public OrderFilter? Filter { get; init; }
     }
 

@@ -1083,6 +1083,10 @@ need backfilling.
 
 ### Fixed
 
+- Paged order APIs now accept at most 100 rows per request across web and mobile. Larger requests
+  return HTTP 400, while catalogue lookups retain their existing limits. This restriction was
+  coordinated with Mike on 2026-10-08.
+
 - The customer website receives its market, prices and catalogue during server rendering and keeps
   them through hydration, so the initial page no longer loses that data during loading. (T-0803)
 - Order lists can reach advertised pages beyond offset 500 and keep a consistent newest-first order

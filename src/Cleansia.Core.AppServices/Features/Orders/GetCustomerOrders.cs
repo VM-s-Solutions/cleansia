@@ -1,4 +1,5 @@
 #nullable enable
+using System.ComponentModel.DataAnnotations;
 using Cleansia.Core.AppServices.Features.Orders.DTOs;
 using Cleansia.Core.AppServices.Features.Orders.Filters;
 using Cleansia.Core.AppServices.Mappers;
@@ -16,6 +17,14 @@ public class GetCustomerOrders
 {
     public class Request : DataRangeRequest, IRequest<PagedData<OrderListItem>>
     {
+        [Range(1, 100)]
+        [Display(Order = int.MaxValue)]
+        public override int Limit
+        {
+            get => base.Limit;
+            init => base.Limit = value;
+        }
+
         public OrderFilter? Filter { get; init; }
     }
 

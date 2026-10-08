@@ -4294,7 +4294,7 @@
             "name": "Limit",
             "in": "query",
             "schema": {
-              "maximum": 100000,
+              "maximum": 100,
               "minimum": 1,
               "type": "integer",
               "format": "int32"
@@ -4562,7 +4562,7 @@
             "name": "Limit",
             "in": "query",
             "schema": {
-              "maximum": 100000,
+              "maximum": 100,
               "minimum": 1,
               "type": "integer",
               "format": "int32"

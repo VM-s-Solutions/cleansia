@@ -16,5 +16,5 @@ public class DataRangeRequest
     public int Offset { get; init; } = 0;
 
     [Range(1, MaximumLimit)]
-    public int Limit { get; init; } = 50;
+    public virtual int Limit { get; init; } = 50;
 }

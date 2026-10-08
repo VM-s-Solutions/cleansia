@@ -282,7 +282,13 @@ supplied.
 
 The shared offset accepts `0` through `int.MaxValue - 100000` (2,147,383,647), so advertised pages
 beyond offset 500 are reachable and existing integer end-offset/page-number calculations cannot
-overflow. The shared limit remains 1–100000; individual endpoints may enforce a narrower contract.
+overflow. Paged order endpoints across Admin, Partner, Customer and both mobile APIs accept limits
+from 1 through 100, with a default of 50. A larger limit returns HTTP 400 instead of silently
+truncating the page. This includes both customer order-list aliases and the partner upcoming-order
+aliases. Their existing API model validation enforces the narrower request metadata before the
+handler runs. Mike approved this restriction on 2026-10-08, including the mobile endpoints; installed
+TestFlight build 13 requests were not independently observable. Deployment remains a separate step.
+The shared non-order limit remains 1–100000, so existing 1000-row catalogue lookups remain admitted.
 Paged Admin/Partner order projections first select the ordered IDs for the admitted page, then
 load those IDs with the same tenant and visibility filters and restore their selected ordinal.
 This avoids repeating the full ordered selector in each split collection query. Rows that become

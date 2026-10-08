@@ -1,7 +1,7 @@
 import { inject } from '@angular/core';
 import { Route } from '@angular/router';
-import { notificationsRoutes } from '@cleansia/admin-features/notifications';
 import { adminGuard, guestGuard, permissionGuard } from '@cleansia/admin-services';
+import { notificationsRoutes } from '@cleansia/admin-features/notifications/routes';
 import { CleansiaNotFoundComponent } from '@cleansia/components';
 import { CleansiaAdminRoute, CommonRoute, PermissionService, Policy } from '@cleansia/services';
 import { ADMIN_MENU_ITEMS, resolveLandingRoute } from './admin-menu';

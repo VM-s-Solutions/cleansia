@@ -51,7 +51,7 @@ teardown leaves persisted partner checklist ticks and customer Live Activities o
   green afterward. Current paired before/after measurements use the audit method and equivalent
   fixtures/profile with at least five observations; raw evidence and exact command ledger stay in
   the scratchpad. Correctness gains are distinguished from unmeasured speed gains.
-- [ ] **AC8** — Applicable backend, web, Android and iOS verification, repo checkers and docs build complete;
+- [x] **AC8** — Applicable backend, web, Android and iOS verification, repo checkers and docs build complete;
   an independent review covers the changed behavior and S1–S12. Latest master is merged before final
   verification. The PR carries measurement results and green CI; merging waits for Mike's approval.
 
@@ -106,3 +106,10 @@ median from 287.0 to 614.0 ms (p95 304.9 to 630.5 ms); this measured cost is ret
   HTTP boundaries pass and all 90 SQL traces match Hosting logs. Three web SDKs, 453 Swift and
   429 Kotlin generated files retain exact pre-cap hashes. Final-head CI remains the publication
   gate; the pre-cap commit passed all eight applicable jobs.
+
+
+## Merge closure — 2026-10-08
+
+Mike explicitly approved merging PR [#311](https://github.com/VM-s-Solutions/cleansia/pull/311), including the disclosed board latency cost and CI budget misses. It merged at 13:27:42 UTC as `6fa0492badf9ab5c9f30fee3beb680f7fcc1f265`. Its tree is identical to verified cap head `9028d9827625de30d9aa37a9187072028a2a5eea`; all implementation cause commits are preserved. All eight PR jobs across seven workflows succeeded, with independent review and exact job-ID/URL reconciliation. Local full backend verification passed 8443 unit, 845 integration and 434 host tests. The CI integration step succeeded; its returned log has no count summary, so the local count remains separate evidence. The final PR body supplements the earlier CI-pending publication snapshot above. Board p95 remains 630.50 ms and Backend/Frontend/iOS workflow walls remain 20.95/24.60/23.98 minutes. No deployment, DEV reset, PRO/provider or TestFlight operation followed the merge.
+
+Canonical status is recorded only in INDEX.md. This closure bookkeeping is carried into the next approved wave branch, preserving the single implementation PR for Wave A.

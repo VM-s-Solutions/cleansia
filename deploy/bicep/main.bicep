@@ -590,10 +590,10 @@ var apiBaseSettings = union({
   // Host.CreateDefaultBuilder layers environment variables AFTER the JSON files and App Service surfaces
   // every app setting as one, so this wins without a code change or a new appsettings file.
   //
-  // SCOPED TO THE `Cleansia` CATEGORY ON PURPOSE, never Default. Lowering Default would also admit
-  // RequestLoggingMiddleware's request/response body slices and the caller PII they can carry —
-  // /architecture/request-logging documents that as load-bearing in both directions. Prod stays at
-  // Warning regardless.
+  // The Cleansia prefix includes Cleansia.Web.* RequestLoggingMiddleware categories, so DEV's
+  // Information level admits their redacted request/response slices as well as sweep summaries.
+  // PRO's Warning level suppresses successful Information events and retains Warning/Error.
+  // Redaction remains required at both thresholds. → /architecture/request-logging
   Logging__LogLevel__Cleansia: env == 'prod' ? 'Warning' : 'Information'
   // The ARES business-register check (/product/business-rules#business-register) defaults on, and the
   // Development settings that switch it off never load here, because every deployed host runs as

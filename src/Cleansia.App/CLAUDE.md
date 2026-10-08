@@ -1,6 +1,6 @@
 # Cleansia Frontend — Claude Code Guide
 
-This is the Angular 19 / Nx monorepo for the 3 web apps (customer SSR, partner SPA, admin SPA).
+This is the Angular 20.3 / Nx 23.1 monorepo for the 3 web apps (customer SSR, partner SPA, admin SPA).
 
 **The canonical project guide is the root [`../../CLAUDE.md`](../../CLAUDE.md)** — read it for the
 full architecture, conventions, the agent operating system, and the i18n/client-generation rules.

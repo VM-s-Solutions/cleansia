@@ -513,9 +513,11 @@ app-level `TenantId` filter (see [`patterns-backend.md`](./patterns-backend.md))
 there are none left". Do not write `manual_step:` on a ticket, and never hold work waiting for the
 owner to run something.
 
-- **EF Core migrations** — regenerate `Initial` (`CLAUDE.md` → "Database migrations"), **drop the DEV
-  database** yourself, and verify with the integration suite: it builds a real Postgres from the
+- **EF Core migrations** — regenerate `Initial` (`CLAUDE.md` → "Database migrations"), prepare the
+  corresponding DEV reset, and verify with the integration suite: it builds a real Postgres from the
   migration and is the only thing that proves the model and the schema agree.
+  DEV is shared with testers: execute its reset, deployment or load test only after explicit owner
+  approval, then report the command. Code-change approval does not also approve these DEV actions.
 - **NSwag client regeneration** — run `npm run generate-*-client` whenever a backend DTO or endpoint
   changes, before the frontend/mobile work that needs it, and commit the regenerated client with the
   change. Never hand-edit a generated file; regenerate it.

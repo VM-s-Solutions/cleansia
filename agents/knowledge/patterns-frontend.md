@@ -773,7 +773,8 @@ constant makes it an inheritance nobody notices.
 
 - Extend `UnsubscribeControlDirective`; state in `signal()`; `takeUntil(this.destroyed$)` on every stream.
 - Call the generated client wrapper (`adminClient.adminXClient.method()`); never hand-roll HTTP, never
-  edit generated files. If a backend DTO changes → ticket carries `manual_step: nswag-regen`; **wait**.
+  edit generated files. If a backend DTO changes, run the matching NSwag script before dependent
+  frontend work and commit the regenerated client with the DTO; record the commands per `CLAUDE.md`.
 - Use `cleansia-*` components + `cleansia-table` + `getXxxTableDefinition()`. No raw HTML form controls.
 - Gate UI with `*cleansiaPermission="Policy.CanXxx"`. Toasts via `SnackbarService`. For data-driven
   menus where a structural directive can't attach (the app-shell sidebar), set
@@ -956,10 +957,11 @@ hand-written, so a `Filter$` widening would be 100 % false positives there.
 **Removal is the same rule, mirrored.** When the backend *drops* a field, a literal stops compiling
 against the still-stale client (`TS2345`, "property X is missing") — construct-then-assign simply
 omits it and compiles against both the current and the post-regen client. This is what lets a
-contract-narrowing fix land in one change instead of being blocked on the owner's regen.
+contract-narrowing fix and the regenerated client land in one change.
 
-When a ticket carries `manual_step: nswag-regen`, sweep the call sites into this form **before** the
-owner regenerates; that work needs no regenerated client and unblocks the regen.
+When a ticket needs client regeneration, sweep the call sites into this form **before** running the
+matching NSwag script; that preparation needs no regenerated client. Generation is agent-run work,
+recorded in the report, rather than an owner-only step.
 
 **Deleting the assignment is only half a field removal — follow the value to its form control.** The
 compiler names the read (`employee.iban`) and the write (`command.iban = …`) and nothing else, so a

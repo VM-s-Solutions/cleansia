@@ -1,15 +1,15 @@
 # Frontend Architecture
 
-The Cleansia frontend is an **Nx monorepo** containing three Angular 19 applications and a set of shared libraries. All apps share a common design system, API client layer, and state management infrastructure.
+The Cleansia frontend is an **Nx monorepo** containing three Angular 20.3 applications and a set of shared libraries. All apps share a common design system, API client layer, and state management infrastructure. The package manifest and lockfile in `src/Cleansia.App/` are the version source of truth.
 
 ## Tech Stack
 
 | Technology | Version | Purpose |
 |---|---|---|
-| Angular | 19.2 | Core framework |
-| Nx | 21.2 | Monorepo tooling, build orchestration |
-| NgRx | 19.2 | State management (Store + Effects) |
-| PrimeNG | 19.1 | UI component library |
+| Angular | 20.3 | Core framework |
+| Nx | 23.1 | Monorepo tooling, build orchestration |
+| NgRx | 20.1 | State management (Store + Effects) |
+| PrimeNG | 20.4 | UI component library |
 | PrimeFlex | 4.0 | Utility CSS framework |
 | Chart.js / ng2-charts | 4.5 / 8.0 | Dashboard charts and analytics |
 | ngx-translate | 16.0 | i18n (cs, en, sk, uk, ru) |

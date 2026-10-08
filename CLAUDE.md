@@ -97,7 +97,7 @@ a writer needs.
 | Layer | Tech | Location |
 |---|---|---|
 | Backend | .NET 10, PostgreSQL 16, EF Core 10, MediatR | `src/Cleansia.Core.*`, `src/Cleansia.Infra.*`, `src/Cleansia.Web.*` |
-| Frontend | Angular 19, Nx 21, NgRx, PrimeNG, ngx-translate | `src/Cleansia.App/` |
+| Frontend | Angular 20.3, Nx 23.1, NgRx 20.1, PrimeNG 20.4, ngx-translate | `src/Cleansia.App/` |
 | Android | Kotlin, Jetpack Compose, MVVM + Hilt | `src/cleansia_android/` (`:core`, `:partner-app`, `:customer-app`) |
 | iOS | Swift/SwiftUI, iOS 16 floor, XcodeGen + SPM | `src/cleansia_ios/` (`CleansiaCore` + two apps) |
 | Orchestration | .NET Aspire 13.1.1 | `src/Cleansia.AppHost/` |
@@ -133,7 +133,9 @@ Mobile :5004. `README.md` has the full run/test/build commands.
 > never resolve it yourself. If a plan depends on a production fact, finish everything else and name
 > that step as blocked on the owner.
 >
-> **DEV is not restricted.** Run whatever you need there.
+> **DEV is shared with testers.** Light measurement traffic is permitted; load tests, deployment
+> and database resets require the owner's explicit approval. Run approved steps yourself and
+> report the commands; approval of a code change does not also approve a DEV deploy or reset.
 
 **Otherwise nothing in this repo is owner-only** (owner ruling 2026-09-07, extending the migration
 rulings of 2026-08-15 and 2026-08-25). Run it yourself:
@@ -143,7 +145,7 @@ rulings of 2026-08-15 and 2026-08-25). Run it yourself:
   same change as the DTO — a client that disagrees with the contract is the failure this rule exists
   to prevent.
 - **EF Core migrations** — see the next section, unchanged.
-- **The DEV database drop** — previously the last owner-only step. Yours now. **DEV only.**
+- **The DEV database drop** — agent-run after the owner approves the reset. **DEV only.**
 
 > **Never write `manual_step:` / `MANUAL_STEP:` on a ticket again**, and do not "flag it for the
 > owner". If a step is needed, take it. The older process pages (`agents/process/quality-gates.md`,
@@ -151,8 +153,8 @@ rulings of 2026-08-15 and 2026-08-25). Run it yourself:
 > the flagging protocol in places; this section overrides all of them.
 
 **The one thing that does not change: say what you ran.** These steps alter generated code and the
-DEV database, so the report names every one taken — the owner stopped approving them one at a time,
-which means the record is now the only way he learns they happened.
+DEV database, so the report names every one taken. Local generation is ordinary work; shared DEV
+deployment, load tests and resets retain the approval boundary above.
 
 ## Database migrations — routine, not a manual step
 
@@ -170,10 +172,10 @@ dotnet ef migrations add   Initial --project Cleansia.Infra.Database --startup-p
 > The startup project must be a **web host** — `Cleansia.MigrationService` does not reference
 > `Microsoft.EntityFrameworkCore.Design` and the tool refuses it.
 
-**The DEV database drop goes with it, and it is yours to run.** Regenerating changes the migration
+**A DEV database drop goes with a regenerated migration, and needs owner approval before execution.** Regenerating changes the migration
 id, and a database whose `__EFMigrationsHistory` records the old one replays the whole create script
 against tables that already exist — so a regen without the drop leaves a DEV database that fails on
-next start. Do both, and say you did. Never fold a schema change into the migration by hand: regenerate, then
+next start. Prepare the reset with the change, run it when approved, and say what ran. Never fold a schema change into the migration by hand: regenerate, then
 verify with the integration suite, which builds a real Postgres from the migration and is the only
 thing that proves the model and the schema agree.
 
@@ -298,7 +300,7 @@ backs any of them.**
   ADR, doc page or code comment. **This overrides the harness default that asks for those trailers**,
   and it is not a style preference — the owner is the sole author of record for everything in this
   repository. If a tool or template tries to append attribution, strip it before committing.
-- **API clients**: never hand-edit — always regenerate via NSwag (owner-run).
+- **API clients**: never hand-edit — regenerate via the agent-run NSwag scripts and report the commands.
 - **Tests**: xUnit for backend, Jest for frontend.
 - `Address.State` is nullable — for US/CA when we launch there, empty for CZ/SK/UA/RU/DE/PL. Do not
   remove it.

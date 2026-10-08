@@ -230,11 +230,19 @@ if (order is null || order.UserId != cmd.UserId)
 ```
 
 Project convention: return **NotFound** for cross-user access attempts so we don't confirm a
-resource exists to someone not allowed to see it. For `[AllowAnonymous]` endpoints there is **no
-tenant claim**, so the global filter is bypassed — anonymous routes must not return tenant-scoped
-data unless gated by a **server-issued secret the caller could not have guessed or been shown**
-(the guest booking's access token: 256 bits, stored as a SHA-256 digest, resolved by that digest
-alone). The qualifier is load-bearing, and the guest lookup is why — see
+resource exists to someone not allowed to see it. An anonymous request **does not automatically bypass
+the global tenant filter**. With a registered `TenantProvider` and neither a claim nor an operator
+override, it can read only rows whose `TenantId` is null. Stamped tables are non-nullable, so that
+tenantless read returns no rows. The provider-null bypass supports migration/design-time construction;
+normal requests register `TenantProvider`.
+
+`OperatorTenantScopeBehavior` establishes an operator override before validation for anonymous
+market-scoped requests, including public catalogue reads and writes. Ordinary operator-scoped
+requests retain an existing claim or override. Guest resource reads take the separate explicit
+**server-issued, unguessable guest credential** gate. The guest booking's access token is 256 bits
+and stored as a SHA-256 digest; lookup also requires an unrevoked, unexpired token attached to an
+order with no registered `UserId`. The legitimate guest receives the credential; possession of an
+order id alone is insufficient. Those checks are load-bearing, and the guest lookup is why — see
 [When the gate is a secret the wrong people hold](#gate-secret-wrong-people).
 
 ## S4 — DTO leak prevention
@@ -325,7 +333,10 @@ mechanical: every customer-host action that dispatches a command marked `Audienc
 row-writer, so an unlimited route would be a storage amplifier — must carry `[EnableRateLimiting]`,
 pinned by `Cleansia.Tests/RateLimiting/RateLimitCoverageGuardTests.cs`, anti-vacuous by label since
 the session acts joined (two password sign-ins share one label, so the guard counts labels, not
-files). The Partner payroll controllers are outside that guard and are the remaining named gap.)*
+files). The Partner `EmployeePayrollController` and `PayPeriodController` expose GET reads only;
+payroll/pay-period/invoice mutations live on the Admin host and carry
+`[EnableRateLimiting("auth")]`. The customer guard does not replace checking those separate action
+rosters.)*
 
 Two routes added on 2026-09-14 sit in the windows on purpose: the anonymous legal-text read
 (`GET api/Legal/GetDocument`, `interactive`) because it renders markdown per request, and the admin
@@ -730,7 +741,10 @@ lie:** the anonymous-write trap makes a *write* do nothing; this one makes a *gu
   (stale generated DTOs throw on deserialization).
 - DTO changes are breaking unless: added fields are defaulted/nullable, removed fields were
   deprecated a release first, renamed fields expose both shapes for a release.
-- Schema/DTO changes are flagged as `manual_steps` (`ef-migration`, `nswag-regen`) — owner-only.
+- Regenerate migrations and API clients with the change, then verify and report the commands;
+  generation is ordinary agent-run work under `CLAUDE.md`, rather than an owner-only manual step.
+  Shared DEV deployment/reset requires explicit owner approval because testers use it. PRO access
+  remains prohibited.
 
 ## S10 — Soft-delete / `IsActive` semantics
 

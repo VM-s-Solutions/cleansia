@@ -20,7 +20,6 @@ import {
   PLATFORM_ID,
   provideZoneChangeDetection,
 } from '@angular/core';
-import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { provideAnimationsAsync } from '@angular/platform-browser/animations/async';
 import { provideRouter, Router, withInMemoryScrolling } from '@angular/router';
 import { CleansiaPreset } from '@cleansia/assets';
@@ -107,7 +106,6 @@ export const appConfig: ApplicationConfig = {
       },
     },
     importProvidersFrom(
-      BrowserAnimationsModule,
       StoreModule.forRoot(partnerReducers, {
         runtimeChecks: {
           strictStateImmutability: true,

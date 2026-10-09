@@ -10,7 +10,7 @@ import Foundation
 @MainActor
 public final class Staleness {
     private let window: TimeInterval
-    private let now: () -> Date
+    private let now: @MainActor @Sendable () -> Date
     private var mark: Date?
 
     /// `nonisolated` so it can be a default argument. Repositories declare
@@ -19,7 +19,7 @@ public final class Staleness {
     /// at every call site rather than at the declaration, which is why it is easy to miss.
     /// Safe because the initializer only assigns stored properties; every subsequent access
     /// is still `MainActor`-isolated.
-    public nonisolated init(window: TimeInterval = 30, now: @escaping () -> Date = Date.init) {
+    public nonisolated init(window: TimeInterval = 30, now: @escaping @MainActor @Sendable () -> Date = { Date() }) {
         self.window = window
         self.now = now
     }

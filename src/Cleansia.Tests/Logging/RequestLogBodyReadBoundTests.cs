@@ -1,5 +1,6 @@
 using System.Text;
 using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.Logging;
 
 namespace Cleansia.Tests.Logging;
 
@@ -39,6 +40,130 @@ public class RequestLogBodyReadBoundTests
     private const long ReadSlackBytes = 4 * 1024;
 
     public static TheoryData<Type> HostMiddlewareTypes() => RequestLoggingHarness.HostMiddlewareTypes();
+
+    public static TheoryData<Type, LogLevel> HostDisabledInformationLevels()
+    {
+        var data = new TheoryData<Type, LogLevel>();
+        foreach (var host in RequestLoggingHarness.AllHostMiddleware)
+        foreach (var level in new[] { LogLevel.Warning, LogLevel.None })
+            data.Add(host, level);
+        return data;
+    }
+
+    public static TheoryData<Type, LogLevel, int> HostStatusLoggerLevels()
+    {
+        var data = new TheoryData<Type, LogLevel, int>();
+        foreach (var host in RequestLoggingHarness.AllHostMiddleware)
+        foreach (var level in new[] { LogLevel.Information, LogLevel.Warning, LogLevel.Error, LogLevel.None })
+        foreach (var status in new[] { 200, 400, 500 })
+            data.Add(host, level, status);
+        return data;
+    }
+
+    [Theory]
+    [MemberData(nameof(HostDisabledInformationLevels))]
+    public async Task DisabledInformation_StillBoundsAndRewindsTheRequestWithoutLogCalls(Type middlewareType, LogLevel level)
+    {
+        var scanLimit = RequestLoggingHarness.LimitOf(middlewareType, "RedactionScanLimit");
+        var json = AsciiBodyOfChars(OversizeBodyChars);
+        var body = new CountingRequestBodyStream(Encoding.UTF8.GetBytes(json));
+        long pulledWhileLogging = -1;
+        string? received = null;
+        byte[]? forwarded = null;
+        var attempts = new List<LogLevel>();
+
+        var logged = await RequestLoggingHarness.RunAsync(
+            middlewareType, "/api/Order/Create", responseJson: "{}", method: HttpMethods.Post,
+            requestBody: body, minimumLogLevel: level,
+            onNextInvoked: () => pulledWhileLogging = body.BytesRead,
+            downstream: async context =>
+            {
+                using var reader = new StreamReader(context.Request.Body, Encoding.UTF8, leaveOpen: true);
+                received = await reader.ReadToEndAsync();
+                await context.Response.Body.WriteAsync(Encoding.UTF8.GetBytes("{}"));
+            },
+            onCompleted: context => forwarded = ((MemoryStream)context.Response.Body).ToArray(),
+            onLogAttempt: attempts.Add);
+
+        Assert.InRange(pulledWhileLogging, 1, scanLimit + ReadSlackBytes);
+        Assert.Equal(json, received);
+        Assert.Equal(Encoding.UTF8.GetBytes("{}"), forwarded);
+        Assert.Empty(logged);
+        // Original code calls disabled request/response logs after doing their formatting work.
+        // This observer is independent of whether the capturing logger stores disabled messages.
+        Assert.Empty(attempts);
+    }
+
+    [Theory]
+    [MemberData(nameof(HostStatusLoggerLevels))]
+    public async Task StatusSpecificLogging_PreservesForwardedBytesAndOnlyCallsEnabledLevels(
+        Type middlewareType, LogLevel minimumLevel, int status)
+    {
+        const string json = """{"apiKey":"sk_live_never_log_me","city":"Brno"}""";
+        var attempts = new List<LogLevel>();
+        byte[]? forwarded = null;
+        var actualStatus = 0;
+        var logged = await RequestLoggingHarness.RunAsync(
+            middlewareType, "/api/Order/Create", responseJson: json,
+            minimumLogLevel: minimumLevel, responseStatusCode: status,
+            onCompleted: context =>
+            {
+                forwarded = ((MemoryStream)context.Response.Body).ToArray();
+                actualStatus = context.Response.StatusCode;
+            },
+            onLogAttempt: attempts.Add);
+
+        var responseLevel = status >= 500 ? LogLevel.Error : status >= 400 ? LogLevel.Warning : LogLevel.Information;
+        var expected = new List<LogLevel>();
+        if (minimumLevel <= LogLevel.Information) expected.Add(LogLevel.Information);
+        if (minimumLevel <= responseLevel) expected.Add(responseLevel);
+        Assert.Equal(expected, attempts);
+        Assert.Equal(expected.Count, logged.Count);
+        Assert.Equal(status, actualStatus);
+        Assert.Equal(Encoding.UTF8.GetBytes(json), forwarded);
+        Assert.All(logged, message => Assert.DoesNotContain("sk_live_never_log_me", message));
+        if (minimumLevel <= responseLevel)
+            Assert.Contains(logged, message => message.Contains("Response: " + status)
+                && message.Contains("***REDACTED***") && message.Contains("Brno"));
+    }
+
+    [Theory]
+    [MemberData(nameof(HostMiddlewareTypes))]
+    public async Task CredentialCrossingTheReadChunk_IsRedactedAsOneBodyBeforeTruncation(Type middlewareType)
+    {
+        var json = "{\"apiKey\":\"" + Secret + new string('x', 4096) + "\",\"city\":\"Brno\"}";
+        const string expected = """{"apiKey":"***REDACTED***","city":"Brno"}""";
+        var logged = await RequestLoggingHarness.RunAsync(
+            middlewareType, "/api/Order/Create", responseJson: json, requestJson: json, method: HttpMethods.Post);
+        Assert.All(logged, message => Assert.DoesNotContain(Secret, message));
+        Assert.EndsWith(expected, RequestLine(logged), StringComparison.Ordinal);
+        Assert.EndsWith(expected, ResponseLine(logged), StringComparison.Ordinal);
+    }
+
+    [Theory]
+    [MemberData(nameof(HostMiddlewareTypes))]
+    public async Task ResponseAtTheScanLimit_IsRedactedAndOneCharacterOverIsSuppressed(Type middlewareType)
+    {
+        var scanLimit = RequestLoggingHarness.LimitOf(middlewareType, "RedactionScanLimit");
+        var at = await RequestLoggingHarness.RunAsync(middlewareType, "/api/Order/Create", AsciiBodyOfChars(scanLimit));
+        var over = await RequestLoggingHarness.RunAsync(middlewareType, "/api/Order/Create", AsciiBodyOfChars(scanLimit + 1));
+        Assert.Contains(Redacted, ResponseLine(at));
+        Assert.DoesNotContain(SizeSuppressed, ResponseLine(at));
+        Assert.DoesNotContain(Secret, ResponseLine(at));
+        Assert.Contains(SizeSuppressed, ResponseLine(over));
+        Assert.DoesNotContain(Secret, ResponseLine(over));
+    }
+
+    [Theory]
+    [MemberData(nameof(HostMiddlewareTypes))]
+    public async Task MultiByteResponse_OverTheCharCap_IsStillSuppressed(Type middlewareType)
+    {
+        var scanLimit = RequestLoggingHarness.LimitOf(middlewareType, "RedactionScanLimit");
+        var logged = await RequestLoggingHarness.RunAsync(
+            middlewareType, "/api/Order/Create", MultiByteBodyOfChars(scanLimit + 1000));
+        Assert.Contains(SizeSuppressed, ResponseLine(logged));
+        Assert.DoesNotContain(Marker, ResponseLine(logged));
+    }
 
     [Theory]
     [MemberData(nameof(HostMiddlewareTypes))]
@@ -161,6 +286,9 @@ public class RequestLogBodyReadBoundTests
     /// <summary>The request line is the only one carrying <c>IP:</c>; the response line carries <c>Response:</c>.</summary>
     private static string RequestLine(List<string> logged) =>
         Assert.Single(logged, message => message.Contains(" | IP: ", StringComparison.Ordinal));
+
+    private static string ResponseLine(List<string> logged) =>
+        Assert.Single(logged, message => message.Contains(" | Response: ", StringComparison.Ordinal));
 
     /// <summary>
     /// Exactly <paramref name="chars"/> single-byte characters, with the secret FIRST so a scan that ran

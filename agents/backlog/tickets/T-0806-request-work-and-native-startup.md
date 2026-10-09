@@ -223,3 +223,24 @@ claimed by this source-only ticket preparation.
 ## Review
 
 Implementation, measurements, independent review and actual delivery evidence pending.
+
+### B001 actual focused implementation and comparison, 2026-10-09
+
+All five logging copies and existing tests/architecture documentation are implemented.
+Tests-first RED: 55 failed and 271 passed; GREEN: 326 passed with no failures or skips.
+Real Kestrel body-limit/exception preservation controls pass 56/56 before and after.
+Five runs of 100 scored iterations match all 360 groups, with identical scratch
+Program/project bytes and checked forwarded lengths. Warning empty-GET with a
+1 KiB response allocates 277066.08 → 6473.68 B/request; sample p50 is
+.0061 → .0006 ms and p90 .022 → .0007 ms. Information with a 1 MiB response
+regresses in Partner p90 (.1296 → .1592 ms) and separate CPU
+(9.914 → 10.252 ms/100 requests); full response buffering remains.
+No HTTP or production gain is inferred. A separate stock pool diagnostic observes
+requested/actual capacity 4096, the same array re-rented fully zero; it does not
+instrument the production pool.
+
+Full methods, raw pins and commands are in agents/WAVE-C-2026-10-09.md.
+C/raw/backend/logging-comparison-b001-001.json (SHA256
+0db2163039583c65a8f4c5fbbd4032dd412451595b8dc3870c7d09643b445ca1)
+retains complete results and TRX lineage. Independent artifact review passes with
+mixed Information results explicitly retained. Combined gates and delivery remain pending.

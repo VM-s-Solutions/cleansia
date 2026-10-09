@@ -1,6 +1,7 @@
 using System.Net;
 using System.Text;
 using Cleansia.HostTests.Infrastructure;
+using Microsoft.Extensions.Logging;
 
 namespace Cleansia.HostTests.Tests;
 
@@ -66,6 +67,46 @@ public sealed class RequestBodyLimitStatusTests(HostTestPostgresFixture db) : IA
         var response = await host.CreateClient().PostAsync(Route, JsonOf(limit + (64 * 1024)));
 
         Assert.Equal(HttpStatusCode.RequestEntityTooLarge, response.StatusCode);
+    }
+
+    [Theory]
+    [InlineData(LogLevel.Warning)]
+    [InlineData(LogLevel.None)]
+    public async Task DisabledInformation_PreservesTheRealAnonymous413And401(LogLevel level)
+    {
+        await using var host = await KestrelPartnerHost.StartAsync(db.ConnectionString, BodyLimitBytes, level);
+        using var client = host.CreateClient();
+        var over = await client.PostAsync(Route, JsonOf(BodyLimitBytes * 4));
+        var under = await client.PostAsync(Route, JsonOf(512));
+        Assert.Equal(HttpStatusCode.RequestEntityTooLarge, over.StatusCode);
+        Assert.Equal(string.Empty, await over.Content.ReadAsStringAsync());
+        Assert.Equal(HttpStatusCode.Unauthorized, under.StatusCode);
+    }
+
+    [Theory]
+    [InlineData(LogLevel.Warning)]
+    [InlineData(LogLevel.None)]
+    public async Task DisabledInformation_Preserves413WhenContentLengthExceedsALimitAboveTheReaderBound(LogLevel level)
+    {
+        const long limit = 192 * 1024;
+        await using var host = await KestrelPartnerHost.StartAsync(db.ConnectionString, limit, level);
+        using var client = host.CreateClient();
+        var response = await client.PostAsync(Route, JsonOf(limit + (64 * 1024)));
+        Assert.Equal(HttpStatusCode.RequestEntityTooLarge, response.StatusCode);
+    }
+
+    [Theory]
+    [InlineData(LogLevel.Warning)]
+    [InlineData(LogLevel.None)]
+    public async Task DisabledInformation_Preserves413ForChunkedInputCrossingTheLimitWithinTheReadBound(LogLevel level)
+    {
+        await using var host = await KestrelPartnerHost.StartAsync(db.ConnectionString, BodyLimitBytes, level);
+        using var client = host.CreateClient();
+        using var request = new HttpRequestMessage(HttpMethod.Post, Route) { Content = JsonOf(BodyLimitBytes * 4) };
+        request.Headers.TransferEncodingChunked = true;
+        var response = await client.SendAsync(request);
+        Assert.Equal(HttpStatusCode.RequestEntityTooLarge, response.StatusCode);
+        Assert.Equal(string.Empty, await response.Content.ReadAsStringAsync());
     }
 
     private static StringContent JsonOf(long sizeBytes)

@@ -1,3 +1,4 @@
+using System.Buffers;
 using System.Diagnostics;
 using System.Security.Claims;
 using System.Text;
@@ -15,6 +16,7 @@ public partial class RequestLoggingMiddleware(RequestDelegate next, ILogger<Requ
     // Redacting scans the WHOLE body (see SafeBody), so it must be bounded: without a cap an
     // authenticated caller can spend seconds of request-thread CPU per call on a multi-MB upload.
     private const int RedactionScanLimit = 64 * 1024;
+    private const int ReadChunkChars = 4 * 1024;
 
     private readonly RequestDelegate _next = next;
     private readonly ILogger<RequestLoggingMiddleware> _logger = logger;
@@ -48,6 +50,7 @@ public partial class RequestLoggingMiddleware(RequestDelegate next, ILogger<Requ
 
             stopwatch.Stop();
             await LogResponseAsync(context, requestId, stopwatch.ElapsedMilliseconds);
+            responseBody.Position = 0;
             await responseBody.CopyToAsync(originalBodyStream);
         }
         catch (OperationCanceledException) when (context.RequestAborted.IsCancellationRequested)
@@ -77,6 +80,13 @@ public partial class RequestLoggingMiddleware(RequestDelegate next, ILogger<Requ
     private async Task LogRequestAsync(HttpContext context, string requestId)
     {
         var request = context.Request;
+        if (!_logger.IsEnabled(LogLevel.Information))
+        {
+            // Keep the same pre-auth read: Kestrel's body-limit refusal must not depend on logging.
+            await ReadRequestBodyAsync(request, capture: false);
+            return;
+        }
+
         var userId = context.User?.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "Anonymous";
 
         var rawBody = await ReadRequestBodyAsync(request);
@@ -97,14 +107,15 @@ public partial class RequestLoggingMiddleware(RequestDelegate next, ILogger<Requ
     private async Task LogResponseAsync(HttpContext context, string requestId, long durationMs)
     {
         var response = context.Response;
+        var logLevel = response.StatusCode >= 500 ? LogLevel.Error :
+                      response.StatusCode >= 400 ? LogLevel.Warning :
+                      LogLevel.Information;
+        if (!_logger.IsEnabled(logLevel)) return;
+
         var userId = context.User?.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "Anonymous";
 
         var rawBody = await ReadResponseBodyAsync(response);
         var safeBody = SafeBody(context.Request.Path, rawBody, ResponseBodyLimit);
-
-        var logLevel = response.StatusCode >= 500 ? LogLevel.Error :
-                      response.StatusCode >= 400 ? LogLevel.Warning :
-                      LogLevel.Information;
 
         _logger.Log(
             logLevel,
@@ -133,7 +144,7 @@ public partial class RequestLoggingMiddleware(RequestDelegate next, ILogger<Requ
         );
     }
 
-    private static async Task<string> ReadRequestBodyAsync(HttpRequest request)
+    private static async Task<string> ReadRequestBodyAsync(HttpRequest request, bool capture = true)
     {
         if (!request.Body.CanSeek)
         {
@@ -145,7 +156,7 @@ public partial class RequestLoggingMiddleware(RequestDelegate next, ILogger<Requ
         request.Body.Position = 0;
 
         using var reader = new StreamReader(request.Body, Encoding.UTF8, leaveOpen: true);
-        var body = await ReadBoundedAsync(reader);
+        var body = await ReadBoundedAsync(reader, capture);
 
         request.Body.Position = 0;
 
@@ -170,19 +181,29 @@ public partial class RequestLoggingMiddleware(RequestDelegate next, ILogger<Requ
     /// puts a multi-byte body under the cap and logs what must be suppressed.
     /// → /architecture/request-logging#scan-limit
     /// </summary>
-    private static async Task<string> ReadBoundedAsync(StreamReader reader)
+    private static async Task<string> ReadBoundedAsync(StreamReader reader, bool capture = true)
     {
-        var buffer = new char[RedactionScanLimit + 1];
-        var total = 0;
-
-        while (total < buffer.Length)
+        var buffer = ArrayPool<char>.Shared.Rent(ReadChunkChars);
+        try
         {
-            var read = await reader.ReadAsync(buffer.AsMemory(total));
-            if (read == 0) break;
-            total += read;
-        }
+            StringBuilder? body = capture ? new StringBuilder() : null;
+            var total = 0;
 
-        return new string(buffer, 0, total);
+            while (total < RedactionScanLimit + 1)
+            {
+                var count = Math.Min(ReadChunkChars, RedactionScanLimit + 1 - total);
+                var read = await reader.ReadAsync(buffer.AsMemory(0, count));
+                if (read == 0) break;
+                total += read;
+                body?.Append(buffer, 0, read);
+            }
+
+            return body?.ToString() ?? string.Empty;
+        }
+        finally
+        {
+            ArrayPool<char>.Shared.Return(buffer, clearArray: true);
+        }
     }
 
     /// <summary>

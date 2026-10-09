@@ -2456,3 +2456,25 @@ are preserved here as well. Values are kept outside the repository.
 | `board-after-plans-01-plan-partner-board-null-full-projection-r3` | `private/board-after-plans-01-select-plans/board-after-plans-01-plan-partner-board-null-full-projection-r3.sql` | `4794ce6d534544ea08cd2e640b7fcfdf1cece5c924dbff86e609c727c5281a70` |
 | `board-after-plans-01-plan-partner-board-null-full-projection-r4` | `private/board-after-plans-01-select-plans/board-after-plans-01-plan-partner-board-null-full-projection-r4.sql` | `4794ce6d534544ea08cd2e640b7fcfdf1cece5c924dbff86e609c727c5281a70` |
 | `board-after-plans-01-plan-partner-board-null-full-projection-r5` | `private/board-after-plans-01-select-plans/board-after-plans-01-plan-partner-board-null-full-projection-r5.sql` | `4794ce6d534544ea08cd2e640b7fcfdf1cece5c924dbff86e609c727c5281a70` |
+
+## Merge closure — 2026-10-08
+
+After Mike's explicit “Merge it”, PR[#312](https://github.com/VM-s-Solutions/cleansia/pull/312)
+merged at17:38:37UTC as `ed1e1b8fe8c6963758063def22dbc424446d0b9d`.
+The merge tree exactly equals verified head `3bb9d611902e2b84929b007911be692927b1f12d`,
+with both cause and evidence commits preserved. Fresh master stayed6fa0492 before
+merge; all six exact-head jobs across five applicable workflows passed and were
+independently reconciled. Full local backend verification is9748 passes.
+
+Final workflow walls (created through last actual job completion): Backend21:09,
+Frontend3:36, Android1:26, Docs0:56, Secret0:19. Backend misses15minutes by6:09;
+the other four meet budget. Existing iOS/iOS Symbols/Booking-policy path filters
+exclude this change and are not described as passes. These are current-head
+observations, not a delivery-performance before/after claim.
+
+The PR body supplements this report's earlier CI-pending publication snapshot.
+FinalCI proof SHA256 `69159ddb582f87240ccdf98bf36bf48ed0aacf34a8f52cdb784f64dbd9cc43c6`
+and independent CI receipt SHA256 `a5861133e4e0e9d4b1ad1a02f59135132be4d3e2d543c26f71d3aa9ea18196dc`
+remain in the scratchpad. Merge commands continue in the exact live ledger.
+No deployment or broader optimisation was performed. Local closure bookkeeping
+is retained for the next approved branch/PR; the historical audit is untouched.

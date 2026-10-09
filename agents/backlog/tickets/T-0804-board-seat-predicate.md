@@ -50,7 +50,7 @@ other filters and capture current before/after evidence.
   runs of 100 samples with excluded warmup. Exact-query cohorts, retained bodies,
   unique same-host trace joins and bounded read-only plans support median/p95 results.
   Any remaining budget miss is reported without expanding scope.
-- [ ] **AC5** — Applicable full backend verification, existing repo checkers and docs
+- [x] **AC5** — Applicable full backend verification, existing repo checkers and docs
   build pass. Latest master is merged before final verification. Independent source,
   security and evidence review passes, and existing applicable PR CI is green. Mike
   approves the concrete PR before merging.
@@ -122,3 +122,21 @@ The 9748 full backend tests, nine checkers, eight checker self-test files and
 docs build pass. Full source/build lineage and independent evidence review are
 retained. Current-head CI and Mike's concrete merge approval remain the AC5
 gates. False/null p95 remains near one second and is outside this focused scope.
+
+## Merge closure — 2026-10-08
+
+Mike explicitly approved merging the verified PR with “Merge it”. PR
+[#312](https://github.com/VM-s-Solutions/cleansia/pull/312) merged at17:38:37UTC
+as `ed1e1b8fe8c6963758063def22dbc424446d0b9d`. Its tree equals verified head
+`3bb9d611902e2b84929b007911be692927b1f12d`; normal merge preserves both commits,
+including production cause `79309d206dbfe6ee1ced7bbb32765e8b3c060305`.
+Fresh pre-merge master/head/check reconciliation confirms unchanged base6fa0492
+and all six applicable jobs successful. Independent CI and merge-gate reviews
+pass. The original report's CI/approval-pending language is a publication snapshot;
+this closure and the updated PR body record the completed gates.
+
+True-board p95 remains140.797ms, with9748 local passes and identical paired bodies.
+False/null reads near one second and backend CI21:09 (15-minute budget miss) are
+disclosed; no scope expansion or deployment follows approval. Canonical status
+is only in INDEX.md. This local post-merge bookkeeping is retained for the next
+approved branch/PR rather than reopening the implementation wave.

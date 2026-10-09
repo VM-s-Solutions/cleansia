@@ -319,6 +319,7 @@
 | T-0803 | Restore SSR data, compatible paging and iOS session cleanup (approved Wave A) | L | `done` | — | [#311](https://github.com/VM-s-Solutions/cleansia/pull/311), merged 2026-10-08 (`6fa0492`); all eight PR checks pass, coordinated cap 100 implemented; measured board p95 305→630 ms retained |
 | T-0804 | Remove the redundant board seat count (approved B010 scope) | M | `done` | — | [#312](https://github.com/VM-s-Solutions/cleansia/pull/312), merged 2026-10-08 (`ed1e1b8`); p95 637.37→140.80 ms (-77.9%),9748 local tests and six exact-head CI jobs pass |
 | T-0805 | Reduce initial web bytes and repeated validation reads, repair Swift warnings and align operating docs (approved Wave B) | L | `done` | T-0803 | [#313](https://github.com/VM-s-Solutions/cleansia/pull/313), merged 2026-10-09 (`18a2e5ac`); corrected-head seven workflows/eight jobs/36 critical steps succeed; hosted iOS 3,545 passes/zero failures/one skip; workflow timing overruns and all historical failures/limits retained in Wave B closure |
+| T-0806 | Reduce request logging work, negotiate HTTP JSON compression and overlap native reads (approved Wave C) | L | `in_progress` | T-0805 | off merged B313 (`18a2e5ac`); four causes, fresh baseline/RED/evidence pending; preserve all-level body-limit read and response rewind; direct HTTP compression only, every XFP-marked request declined, unmarked terminator residual; bounded country/session plan flights; D after actual C merge |
 
 > **T-0785–T-0799 filed 2026-09-20** — the UI-polish and dead-code batch, on the owner's ruling of
 > that day (*"I want to polish alignments in admin app a bit on all of the overview/detail pages.
@@ -363,4 +364,4 @@
 > reported not absorbed. Owed: the DEV drop at the next DEV deploy (MS-2 / A1, `20260920204705`);
 > the merge order is #255 then #260. Open rows: none.
 
-*Next id: **T-0806**.*
+*Next id: **T-0807**.*

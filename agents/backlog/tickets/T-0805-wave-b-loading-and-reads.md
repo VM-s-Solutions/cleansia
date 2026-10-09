@@ -243,3 +243,92 @@ All six native parent commands use cwd `/Users/michael/.codex/scratchpads/cleans
 Web source acceptance is attributed to root/mobile/backend, rather than its author. The web author independently reviewed backend/native/docs. Existing tenant/auth/private guards and route permissions remain source-qualified; no blanket runtime-security certificate is asserted. Gate8.5 closes this no-UI/push/navigation isolation scope through 19 actual covered tests at 16.4. Auxiliary ordinary-launch screenshots remain modal-obstructed; Customer makes one owned-loopback read receiving 503 without a real backend/database. The conditional AX skip and warning debt remain.
 
 Report/ticket publication checks and exact-head CI remain pending at this cutoff. Mike has already authorized merging B after those checks pass, then C/D separately.
+
+
+### 2026-10-09 quote-readiness correction
+
+The first B head `6607aba7…` failed the original booking promo currency assertion. The only additional maintained source is the existing test helper, final SHA `47eafa5a…`: subscribe before update/debounce, wait for the exact quoted state within two seconds, retain cancellation and original currency/business assertions. Production booking/quote/promo/currency behavior is unchanged. Intermediate file-length lint failure remains; final SwiftFormat and strict SwiftLint passed without a waiver.
+
+| Root-owned completed evidence | Actual result and qualification |
+| --- | --- |
+| Matched BEFORE20 | Every suite 1,721 passes / zero failures / one existing AX skip; full failed suites 0/20, quote failed suites 0/20, five callers 100 passes. |
+| Matched AFTER20 | 34,419 passes / one unrelated profile failure / 20 AX skips across 20 suites; full failed suites 1/20, quote failed suites 0/20, five callers 100 passes. Observation 16 and failed controllers remain; no local failure-rate gain is established. |
+| Fresh root functional group | Core 763 + Partner 1,061 + separate Customer02 1,721 = 3,545 passes / zero failures / one existing AX skip. Customer02 is outside the rate cohort. Independent native review `92f64309…`; rate review `e8e89504…`. |
+| Actual compiler/runtime | Xcode 26.3 (17C529), observed simulator iOS 26.3.1 (23D8133), current fixture04. Observed fresh BFTC build errors zero, warnings 14 / 8 / 24; these are not a matched fresh BEFORE warning-count comparison. Original source04 targeted 3-cause / 14-line → zero warning proof remains separate. |
+| Currency mutation and fresh restoration | Original assertion line 220 RED: 0 passes / 1 failure / 0 skips, Xcode 65, no readiness failure. Exact Codes source restored; fresh restored BFTC/inspection and named GREEN: 1 / 0 / 0. Independent actual review `1518618e…`. Actual restored parent cwd differs from the frozen plan; V2 reconciliation preserves that difference. |
+| Scoped evidence preservation | Verified lossless original/retired BEFORE Products archives keep six original modules and 12 historical Customer files in place; all 24 proof hashes match. Only BEFORE01 result bundle archived; plans 02–10 unused. Retired cache discard preserves all 36 finite hashes. No allocated-space or speed claim; native 12/8 guards unchanged. |
+| Fresh repository checks | Nine existing checkers and eight self-tests pass; self-tests 8 / 0 / 0. Receipt `c92a4dbc…`, root wrapper 0 / 15.768486 s. Existing catalog/consistency advisories remain; unchanged docs retain prior build, not a newly repeated build. |
+| Floor, final lifecycle and command tail | COMPLETED: floor31 passes / zero failures / zero skips on actual16.4; eight owned lifecycle stages exit zero and exact two directories absent (producer observation); tail04:47:35.822623 UTC captures375 parent rows /409 announcements, separately qualified. Peers `05929b92…` / `07fbf5d7…`; tail `86bdf5c0…`. |
+| Corrected head / exact 38 paths / fresh CI | PENDING delivery. Actual current 38-path roster retained; new-head seven workflows/eight jobs/36 critical steps must pass independently. Existing successes do not cover the future head. |
+
+The unchanged historical backend/web/repository/docs proof and actual own commands remain in the existing Review/report prefix. This correction adds the following actual root parent invocations; nested Xcode/guard/inspection commands belong in the final append-only command tail, with observed metadata only. These literal arrays are execution records, not planned or inferred commands.
+
+<details><summary>Actual root parent commands for fresh native and mutation/restoration</summary>
+
+`root-b-ci-quote-after-cleansiacore-build-01`: cwd `/Users/michael/.codex/scratchpads/cleansia-wave-b-2026-10-08`, UTC `2026-10-09T02:24:03.782613+00:00`, exit 0, wrapper 28.048570 s.
+
+```json
+["python3", "-E", "/Users/michael/.codex/scratchpads/cleansia-wave-b-2026-10-08/tools/ios_b_ci_quote_after_tests.py", "build", "--scheme", "CleansiaCore", "--owner-receipt", "/Users/michael/.codex/scratchpads/cleansia-wave-b-2026-10-08/raw/ios/uniqueowned-ci-quote-latest-simulator-01.json", "--attempt", "01"]
+```
+
+`root-b-ci-quote-after-cleansiacore-full-01`: cwd `/Users/michael/.codex/scratchpads/cleansia-wave-b-2026-10-08`, UTC `2026-10-09T02:24:44.448347+00:00`, exit 0, wrapper 16.512464 s.
+
+```json
+["python3", "-E", "/Users/michael/.codex/scratchpads/cleansia-wave-b-2026-10-08/tools/ios_b_ci_quote_after_tests.py", "test", "--scheme", "CleansiaCore", "--owner-receipt", "/Users/michael/.codex/scratchpads/cleansia-wave-b-2026-10-08/raw/ios/uniqueowned-ci-quote-latest-simulator-01.json", "--attempt", "01", "--build-attempt", "01", "--new-product-inspection-attempt", "11"]
+```
+
+`root-b-ci-quote-after-cleansiapartner-build-01`: cwd `/Users/michael/.codex/scratchpads/cleansia-wave-b-2026-10-08`, UTC `2026-10-09T02:25:07.839355+00:00`, exit 0, wrapper 67.483121 s.
+
+```json
+["python3", "-E", "/Users/michael/.codex/scratchpads/cleansia-wave-b-2026-10-08/tools/ios_b_ci_quote_after_tests.py", "build", "--scheme", "CleansiaPartner", "--owner-receipt", "/Users/michael/.codex/scratchpads/cleansia-wave-b-2026-10-08/raw/ios/uniqueowned-ci-quote-latest-simulator-01.json", "--attempt", "01"]
+```
+
+`root-b-ci-quote-after-cleansiapartner-full-01`: cwd `/Users/michael/.codex/scratchpads/cleansia-wave-b-2026-10-08`, UTC `2026-10-09T02:26:40.261253+00:00`, exit 0, wrapper 17.627266 s.
+
+```json
+["python3", "-E", "/Users/michael/.codex/scratchpads/cleansia-wave-b-2026-10-08/tools/ios_b_ci_quote_after_tests.py", "test", "--scheme", "CleansiaPartner", "--owner-receipt", "/Users/michael/.codex/scratchpads/cleansia-wave-b-2026-10-08/raw/ios/uniqueowned-ci-quote-latest-simulator-01.json", "--attempt", "01", "--build-attempt", "01", "--new-product-inspection-attempt", "11"]
+```
+
+`root-b-ci-quote-after-cleansiacustomer-build-01`: cwd `/Users/michael/.codex/scratchpads/cleansia-wave-b-2026-10-08`, UTC `2026-10-09T02:27:06.449841+00:00`, exit 0, wrapper 98.391839 s.
+
+```json
+["python3", "-E", "/Users/michael/.codex/scratchpads/cleansia-wave-b-2026-10-08/tools/ios_b_ci_quote_after_tests.py", "build", "--scheme", "CleansiaCustomer", "--owner-receipt", "/Users/michael/.codex/scratchpads/cleansia-wave-b-2026-10-08/raw/ios/uniqueowned-ci-quote-latest-simulator-01.json", "--attempt", "01"]
+```
+
+`root-b-ci-quote-after-customer-final-full-02`: cwd `/Users/michael/.codex/scratchpads/cleansia-wave-b-2026-10-08`, UTC `2026-10-09T02:51:36.642696+00:00`, exit 0, wrapper 29.231058 s.
+
+```json
+["python3", "-E", "/Users/michael/.codex/scratchpads/cleansia-wave-b-2026-10-08/tools/ios_b_ci_quote_after_tests.py", "test", "--scheme", "CleansiaCustomer", "--owner-receipt", "/Users/michael/.codex/scratchpads/cleansia-wave-b-2026-10-08/raw/ios/uniqueowned-ci-quote-latest-simulator-01.json", "--attempt", "02", "--build-attempt", "01", "--new-product-inspection-attempt", "11"]
+```
+
+`root-b-ci-quote-mutant-customer-named-01`: cwd `/Users/michael/.codex/scratchpads/cleansia-wave-b-2026-10-08`, UTC `2026-10-09T03:33:05.085924+00:00`, exit 0, wrapper 34.042001 s.
+
+```json
+["python3", "-E", "/Users/michael/.codex/scratchpads/cleansia-wave-b-2026-10-08/tools/ios_b_ci_quote_after_tests.py", "test", "--scheme", "CleansiaCustomer", "--owner-receipt", "/Users/michael/.codex/scratchpads/cleansia-wave-b-2026-10-08/raw/ios/uniqueowned-ci-quote-latest-simulator-01.json", "--attempt", "01", "--arm", "mutant", "--selection", "named", "--new-product-inspection-attempt", "11"]
+```
+
+`root-b-ci-quote-restored-customer-named-01`: cwd `/Users/michael/.codex/scratchpads/cleansia-wave-b-2026-10-08/source/src/cleansia_ios`, UTC `2026-10-09T04:04:05.932625+00:00`, exit 0, wrapper 18.468671 s.
+
+```json
+["python3", "-E", "/Users/michael/.codex/scratchpads/cleansia-wave-b-2026-10-08/tools/ios_b_ci_quote_after_tests.py", "test", "--scheme", "CleansiaCustomer", "--owner-receipt", "/Users/michael/.codex/scratchpads/cleansia-wave-b-2026-10-08/raw/ios/uniqueowned-ci-quote-latest-simulator-01.json", "--attempt", "01", "--arm", "restored", "--selection", "named", "--new-product-inspection-attempt", "11"]
+```
+
+</details>
+
+Actual direct root repository parent argv: `python3 -E /Users/michael/.codex/scratchpads/cleansia-wave-b-2026-10-08/tools/verify-repo.py --id ci-quote-final-001 --skip-docs` (cwd `/Users/michael/.codex/worktrees/wave-a-correctness/cleansia`); exact absolute argv/UTC/log hashes are retained by `root-b-repo-ci-quote-final-001` and the final command tail. No native wrapper/guard change is implied by these pure source checks.
+
+All original failures, raw summaries/logs and source preimages remain. The current 38-path delivery roster includes historical Board merge-closure records; it is not a claim that all 38 files are new implementation changes. Mike authorized merge when B's actual local/review/exact-head CI gates close, then C/D sequentially; that authorization remains present. C/D implementation remains held; this correction records actual local closure while future exact-head CI remains pending.
+
+Actual root floor parent argv (cwd `/Users/michael/.codex/scratchpads/cleansia-wave-b-2026-10-08`, UTC `2026-10-09T04:45:19.792576+00:00`, exit0, wrapper 18.600373s):
+
+```json
+["python3", "-E", "/Users/michael/.codex/scratchpads/cleansia-wave-b-2026-10-08/tools/ios_b_ci_quote_after_tests.py", "test", "--scheme", "CleansiaCustomer", "--owner-receipt", "/Users/michael/.codex/scratchpads/cleansia-wave-b-2026-10-08/raw/ios/uniqueowned-ci-quote-floor-simulator-01.json", "--attempt", "01", "--build-attempt", "01", "--selection", "class", "--runtime", "floor", "--new-product-inspection-attempt", "11"]
+```
+
+Actual root repository parent argv (cwd `/Users/michael/.codex/worktrees/wave-a-correctness/cleansia`, UTC `2026-10-09T04:38:46.148216+00:00`, exit0, wrapper 15.768486s):
+
+```json
+["python3", "-E", "/Users/michael/.codex/scratchpads/cleansia-wave-b-2026-10-08/tools/verify-repo.py", "--id", "ci-quote-final-001", "--skip-docs"]
+```
+
+All nine new native diagnostic/full parent arrays and the direct repository command are actual recorded invocations; exact nested Xcode/guard/guest operations and observed metadata remain in the full report tail. Producer announcements do not establish child execution. The current graph peer binds 12 finite sources and 169 saved structural nodes (`cc724c2f…`). Completed mutant cache discard retains all 36 finite hashes (`e6ce8ed2…`); restored cache untouched. Future publication checks/CI/merge have a later actual delivery cutoff.

@@ -209,8 +209,7 @@ final class BookingCodesViewModelTests: XCTestCase {
         )
     }
 
-    /// The preview must ask the question the create asks: a code bound to one currency is refused on
-    /// an order in another, so the promo is validated in the quote's currency, never the default.
+    /// Promo validation uses the quote's currency, matching order creation.
     func testThePromoIsValidatedInTheQuotesCurrency() async {
         let promo = FakePromoCodeClient()
         let quoted = BookingQuote(totalPrice: 2400, currencyId: "cur-eur", currencyCode: "EUR")
@@ -378,7 +377,6 @@ final class BookingCodesViewModelTests: XCTestCase {
         )
     }
 
-    /// A view model whose debounced quote has already landed, so `validatePromoCode` sees it.
     private func quotedVM(_ quoted: BookingQuote, promo: FakePromoCodeClient) async -> BookingViewModel {
         let scheduler = TestScheduler.dispatch
         let vm = BookingViewModel(
@@ -390,14 +388,16 @@ final class BookingCodesViewModelTests: XCTestCase {
             countryResolver: FakeCountryResolver(),
             scheduler: scheduler.eraseToAnyScheduler()
         )
+        let quoteLanded = expectation(description: "The expected quote has landed")
+        let observation = vm.$quoteState.first { $0 == .quoted(quoted) }.sink { _ in quoteLanded.fulfill() }
+        defer { observation.cancel() }
         vm.update { var s = $0
             s.selectedServiceIds = ["s-1"]
             return s
         }
         scheduler.advance(by: .milliseconds(400))
-        for _ in 0 ..< 5 {
-            await Task.yield()
-        }
+        await fulfillment(of: [quoteLanded], timeout: 2)
+        XCTAssertEqual(vm.quoteState, .quoted(quoted))
         return vm
     }
 

@@ -752,16 +752,18 @@ and it is the opposite of the Functions posture for a reason:
   including exceptions. Blowing the cap on routine telemetry therefore blinds the signal this whole
   section exists for.
 
-Two known noise sources were left alone rather than fixed here, both measured:
+The earlier readiness-probe measurements need the current health-path distinction:
 
-- **Health probes dominate DEV request volume.** App Service polls `/health` on six sites, and
-  `/health` runs the readiness checks — a Postgres query *and* an Azure Blob `ExistsAsync`
-  (`ReadinessHealthChecks.cs`) — so each probe emits a request span *and* an HttpClient dependency span.
-- **Filtering them at the instrumentation is the wrong tool.** Measured directly: an
-  `AspNetCoreTraceInstrumentationOptions.Filter` that drops `/health` removes the server span but the
-  HttpClient dependency span underneath it is still exported, now parented to a span that was never
-  sent. That trades one noisy record for one orphaned record. The correct fix is a sampler (or not
-  making a storage round trip on every probe) and belongs to a cost ticket, not this one.
+- **The authored API platform probe is `/alive`, not `/health`.** It runs the checks tagged
+  `live` and does not query Postgres or blob storage. The customer SSR uses its dependency-free
+  `/health`; Functions uses `/api/health` with its bounded database/queue checks. API `/health`
+  remains readiness for deploy warm-up and monitoring, and can still produce dependency spans when
+  invoked. These source settings do not establish the current deployed request volume.
+- **Filtering readiness spans at the instrumentation leaves dependency spans behind.** In the earlier
+  diagnostic, an `AspNetCoreTraceInstrumentationOptions.Filter` that dropped `/health` removed the
+  server span but the HttpClient dependency span underneath was still exported, parented to a span that was never
+  sent. Any further sampling or readiness-check cost change belongs to a separately scoped cost
+  ticket; this historical diagnostic does not measure the current liveness probes.
 
 ### Sentry
 

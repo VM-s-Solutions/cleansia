@@ -29,8 +29,8 @@ jobs:
   build:
     runs-on: ubuntu-latest
 
-    # A ceiling, not a budget: this job runs in single-digit minutes, so 60 only ever
-    # catches a hang. Without it a wedged run bills to GitHub's 6-hour default.
+    # A hang ceiling, not the performance budget. Wall time depends on the selected tests
+    # and cache state; compare dated workflow measurements rather than assuming a fixed duration.
     timeout-minutes: 60
 
     steps:

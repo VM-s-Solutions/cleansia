@@ -14,7 +14,7 @@ final class SplashViewModel: ViewModel {
     /// The cold-start reveal. Named rather than inlined because two call sites now choose
     /// between it and nothing, and a duration that only exists as a literal in a default
     /// argument cannot be referred to by the one that opts out.
-    static let brandHold: () async -> Void = {
+    nonisolated static func brandHold() async {
         try? await Task.sleep(nanoseconds: 1_800_000_000)
     }
 

@@ -12,7 +12,7 @@ import {
 } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { RouterModule } from '@angular/router';
-import { AdminNotificationsLauncherComponent } from '@cleansia/admin-features/notifications';
+import { AdminNotificationsLauncherComponent } from '@cleansia/admin-features/notifications/launcher';
 import { AdminAuthService, AdminNotificationBadgeService } from '@cleansia/admin-services';
 import { loadAdminCodes } from '@cleansia/admin-stores';
 import {

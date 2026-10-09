@@ -213,15 +213,16 @@ The startup project must be a **web host**. `Cleansia.MigrationService` does not
 Regenerating changes the migration id, so **DEV needs its database dropped** before the next deploy —
 otherwise `MigrateAsync()` replays the create script against tables that already exist. Verify a
 regeneration with the integration suite: it builds a real Postgres from the migration and is the only
-thing that proves the model and the schema agree.
+thing that proves the model and the schema agree. DEV is shared with testers: obtain explicit owner
+approval before its reset or deployment, then run the approved step and report the command.
 
 **NSwag client regeneration is ordinary work** (owner ruling 2026-09-07): regenerate before the frontend
 work that depends on it and commit the client with the DTO — never flag it. Migrations likewise — see `CLAUDE.md`.
 
 ## Regenerating the API clients
 
-A backend contract change needs **both** halves, and they are separate tools. Neither is hard to run;
-the reason they get flagged rather than run is the policy above, not the difficulty.
+A backend contract change needs **both** halves, and they are separate tools. Run the required
+generation before dependent client work, commit it with the contract change, and report the commands.
 
 On a Mac the hosts need a container engine (Colima), the client formatters need GNU sed
 (`brew install gnu-sed`), and macOS's AirPlay Receiver also listens on :5000 — see

@@ -20,7 +20,6 @@ import {
   PLATFORM_ID,
   provideZoneChangeDetection,
 } from '@angular/core';
-import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { provideAnimationsAsync } from '@angular/platform-browser/animations/async';
 import { provideRouter, Router, withInMemoryScrolling } from '@angular/router';
 import { ADMINAPIBASEURL } from '@cleansia/admin-services';
@@ -88,7 +87,6 @@ export const appConfig: ApplicationConfig = {
     { provide: ADMINAPIBASEURL, useValue: environment.apiBaseUrl },
     { provide: AUTH_COOKIE_KEYS, useValue: ADMIN_AUTH_COOKIE_KEYS },
     importProvidersFrom(
-      BrowserAnimationsModule,
       StoreModule.forRoot(adminReducers, {
         runtimeChecks: {
           strictStateImmutability: true,

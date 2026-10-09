@@ -10,8 +10,11 @@ struct OrderEvent: Equatable {
 /// and refetches. Customer push registration is NOT built in this slice (that
 /// was partner T-0311) — the 5-minute poller + refresh-on-appear cover refresh
 /// until customer push lands, so nothing emits here yet.
-final class OrderEventBus: Sendable {
+@MainActor
+final class OrderEventBus {
     private let subject = PassthroughSubject<OrderEvent, Never>()
+
+    nonisolated init() {}
 
     var events: AnyPublisher<OrderEvent, Never> {
         subject.eraseToAnyPublisher()

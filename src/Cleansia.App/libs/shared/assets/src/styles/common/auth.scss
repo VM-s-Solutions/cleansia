@@ -54,6 +54,10 @@
     margin-bottom: -1.7rem;
     z-index: 1;
 
+    picture {
+      display: flex;
+    }
+
     img {
       max-width: 130px;
       height: auto;

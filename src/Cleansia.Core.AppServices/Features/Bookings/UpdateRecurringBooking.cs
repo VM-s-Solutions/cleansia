@@ -37,6 +37,7 @@ public class UpdateRecurringBooking
 
     public class Validator : AbstractValidator<Command>
     {
+        private const string OwnedTemplateKey = nameof(UpdateRecurringBooking) + ".OwnedTemplate";
         private readonly IRecurringBookingTemplateRepository _templateRepository;
         private readonly IUserMembershipRepository _userMembershipRepository;
         private readonly IUserSessionProvider _userSessionProvider;
@@ -79,7 +80,7 @@ public class UpdateRecurringBooking
                 .Cascade(CascadeMode.Stop)
                 .NotEmpty()
                 .WithMessage(BusinessErrorMessage.Required)
-                .MustAsync(async (id, ct) => await _templateRepository.GetByIdForOwnerAsync(id, _userSessionProvider.GetUserId() ?? string.Empty, ct) is not null)
+                .MustAsync(async (_, id, context, ct) => await LoadOwnedTemplateAsync(id, context, ct) is not null)
                 .WithMessage(BusinessErrorMessage.RecurringTemplateNotFound)
                 .MustAsync(BeOwnedByCallerAsync)
                 .WithMessage(BusinessErrorMessage.RecurringTemplateNotOwnedByUser)
@@ -152,13 +153,13 @@ public class UpdateRecurringBooking
             // Only the ids the edit ADDS must be active, with CreateRecurringBooking's codes; one the stored
             // template already holds passes even if retired since. → /product/business-rules#deactivated-catalogue
             RuleFor(x => x.SelectedServiceIds)
-                .MustAsync((command, ids, ct) => AddsOnlyActiveAsync(
-                    command.TemplateId, ids, t => t.SelectedServiceIds, _serviceRepository.ExistActiveWithIdsAsync, ct))
+                .MustAsync((command, ids, context, ct) => AddsOnlyActiveAsync(
+                    command.TemplateId, ids, t => t.SelectedServiceIds, _serviceRepository.ExistActiveWithIdsAsync, context, ct))
                 .WithMessage(BusinessErrorMessage.InvalidSelectedServices);
 
             RuleFor(x => x.SelectedPackageIds)
-                .MustAsync((command, ids, ct) => AddsOnlyActiveAsync(
-                    command.TemplateId, ids, t => t.SelectedPackageIds, _packageRepository.ExistActiveWithIdsAsync, ct))
+                .MustAsync((command, ids, context, ct) => AddsOnlyActiveAsync(
+                    command.TemplateId, ids, t => t.SelectedPackageIds, _packageRepository.ExistActiveWithIdsAsync, context, ct))
                 .WithMessage(BusinessErrorMessage.InvalidSelectedPackage);
 
             RuleFor(x => x.StartsOn)
@@ -214,12 +215,29 @@ public class UpdateRecurringBooking
             IReadOnlyList<string> ids,
             Func<RecurringBookingTemplate, IReadOnlyCollection<string>> held,
             Func<IEnumerable<string>, CancellationToken, Task<bool>> existActiveWithIdsAsync,
+            ValidationContext<Command> context,
             CancellationToken cancellationToken)
         {
-            var template = await _templateRepository.GetByIdForOwnerAsync(
-                templateId, _userSessionProvider.GetUserId() ?? string.Empty, cancellationToken);
+            var template = await LoadOwnedTemplateAsync(templateId, context, cancellationToken);
             var added = template is null ? ids : ids.Except(held(template)).ToList();
             return await existActiveWithIdsAsync(added, cancellationToken);
+        }
+
+        private async Task<RecurringBookingTemplate?> LoadOwnedTemplateAsync(
+            string id, ValidationContext<Command> context, CancellationToken cancellationToken)
+        {
+            var userId = _userSessionProvider.GetUserId() ?? string.Empty;
+            if (context.RootContextData.TryGetValue(OwnedTemplateKey, out var stored)
+                && stored is ValueTuple<string, string, RecurringBookingTemplate?> cached
+                && cached.Item1 == userId && cached.Item2 == id)
+            {
+                return cached.Item3;
+            }
+
+            var template = await _templateRepository.GetByIdForOwnerAsync(id, userId, cancellationToken);
+            // Cache null too, for this validation only; the handler still reads its current tracked row.
+            context.RootContextData[OwnedTemplateKey] = (userId, id, template);
+            return template;
         }
 
         private async Task<bool> CashIsAvailableForSelectionAsync(
@@ -248,11 +266,12 @@ public class UpdateRecurringBooking
                     _orderRepository, userId, cancellationToken);
         }
 
-        private async Task<bool> BeOwnedByCallerAsync(string id, CancellationToken cancellationToken)
+        private async Task<bool> BeOwnedByCallerAsync(
+            Command _, string id, ValidationContext<Command> context, CancellationToken cancellationToken)
         {
             var userId = _userSessionProvider.GetUserId();
             if (string.IsNullOrEmpty(userId)) return false;
-            var template = await _templateRepository.GetByIdForOwnerAsync(id, userId, cancellationToken);
+            var template = await LoadOwnedTemplateAsync(id, context, cancellationToken);
             return template != null && template.UserId == userId;
         }
 

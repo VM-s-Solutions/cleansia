@@ -135,6 +135,12 @@
       "@cleansia/admin-features/notifications": [
         "libs/cleansia-admin-features/notifications/src/index.ts"
       ],
+      "@cleansia/admin-features/notifications/routes": [
+        "libs/cleansia-admin-features/notifications/src/lib/lib.routes.ts"
+      ],
+      "@cleansia/admin-features/notifications/launcher": [
+        "libs/cleansia-admin-features/notifications/src/lib/notifications-launcher/notifications-launcher.component.ts"
+      ],
       "@cleansia/admin-features/data-protection": [
         "libs/cleansia-admin-features/data-protection/src/index.ts"
       ],

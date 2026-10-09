@@ -88,19 +88,19 @@ Here's what happens — every step is a file you can open:
 2. For T-0101, behavior is slightly fuzzy → **Analyst** writes `US-admin-0007` with exact AC. The
    pay-override layering touches a seam → **Architect** confirms/writes an ADR so it composes over
    per-service config without recomputing history.
-3. **DB Master** designs the schema delta for the override (flags `manual_step: ef-migration` — you
-   run it). **Backend Dev** writes the command/query/validator/handler + DTO (flags
-   `manual_step: nswag-regen` — you regenerate the client). A **Reviewer** instance reviews each in
-   parallel.
-4. Once the contract is locked and you've regenerated the client, **Frontend Dev** builds the admin
+3. **DB Master** designs the schema delta for the override and regenerates the migration.
+   **Backend Dev** writes the command/query/validator/handler + DTO and regenerates the clients.
+   These are agent-run steps, recorded in the report; a shared DEV reset or deploy waits for your
+   explicit approval. A **Reviewer** instance reviews each in parallel.
+4. Once the contract is locked and the client is regenerated, **Frontend Dev** builds the admin
    tab + 5-locale i18n, with a Reviewer alongside.
 5. T-0102 is `security_touching` → **Security Reviewer** walks S1–S3 across `CancelOrder`, names the
    exact hole if any ("partner X can cancel customer Y's order — no ownership check at line N"),
    Backend Dev fixes it, Security re-verifies.
 6. **QA** writes and runs the test plans (including the cross-user cancel attempt → must be rejected).
-7. **PM** confirms every gate is green, marks the tickets `done`, updates the sprint status, and —
-   because there were manual steps — has already flagged them to you. Nothing is committed/pushed
-   unless you ask.
+7. **PM** confirms every gate is green, records the commands and evidence, and updates the backlog.
+   Committing/pushing follows the scope you authorised; merging and a shared DEV reset or deploy
+   remain separate decisions when your request requires approval.
 
 You watched none of the mechanics. You read `backlog/status/sprint-N.md` when you want the summary,
 and `backlog/questions/open.md` if the team needed a decision from you.
@@ -115,9 +115,10 @@ genuinely can't be derived from the code, the docs, or a sensible default — by
 checkpoint; non-blocking ones proceed on a documented default. When you answer, the decision is
 locked into an ADR/story/charter so it's never asked again.
 
-You're also the only one who runs the two **owner-only** steps (per your `CLAUDE.md`): **EF
-migrations** and **NSwag client regeneration**. The agents detect when these are needed, describe the
-exact delta, flag them on the ticket, and hold dependent work until you confirm.
+**EF migration generation and NSwag client regeneration are ordinary agent-run work**, per
+`CLAUDE.md`. They ship with the change and their commands appear in the report. DEV is shared with
+testers: load tests, resets and deployments require your explicit approval before execution. PRO
+access remains prohibited.
 
 ---
 

@@ -5,6 +5,8 @@ using Microsoft.AspNetCore.Hosting.Server.Features;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
 
 namespace Cleansia.HostTests.Infrastructure;
 
@@ -29,9 +31,16 @@ public sealed class KestrelPartnerHost : IAsyncDisposable
 
     private KestrelPartnerHost(IHost host) => _host = host;
 
-    public static async Task<KestrelPartnerHost> StartAsync(string connectionString, long maxRequestBodySizeBytes)
+    public static async Task<KestrelPartnerHost> StartAsync(string connectionString, long maxRequestBodySizeBytes, LogLevel? requestLoggingMinimumLevel = null)
     {
         var builder = Cleansia.Web.Partner.Program.CreateHostBuilder([]);
+
+        if (requestLoggingMinimumLevel is not null)
+        {
+            builder.ConfigureLogging(logging => logging.AddFilter(
+                typeof(Cleansia.Web.Partner.Middleware.RequestLoggingMiddleware).FullName,
+                requestLoggingMinimumLevel.Value));
+        }
 
         builder.ConfigureWebHost(web =>
         {
@@ -45,6 +54,11 @@ public sealed class KestrelPartnerHost : IAsyncDisposable
                     ["ConnectionStrings:ConnectionString"] = connectionString,
                 });
             });
+            if (requestLoggingMinimumLevel == LogLevel.None)
+            {
+                web.ConfigureServices(services => services.AddSingleton<ILogger<Cleansia.Web.Partner.Middleware.RequestLoggingMiddleware>>(
+                    NullLogger<Cleansia.Web.Partner.Middleware.RequestLoggingMiddleware>.Instance));
+            }
             web.ConfigureKestrel(options => options.Limits.MaxRequestBodySize = maxRequestBodySizeBytes);
             web.UseUrls("http://127.0.0.1:0");
         });

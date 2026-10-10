@@ -27,6 +27,10 @@ final class MembershipRepository: SessionScopedCache {
     private var plansCountryId: String?
     private var plansRequested = false
     private var marketReload: Task<Void, Never>?
+    private var plansFlight: Task<ApiResult<[MembershipPlan]>, Never>?
+    private var plansFlightCountryId: String?
+    private var plansFlightToken: UUID?
+    private var plansGeneration = 0
     private var cancellables = Set<AnyCancellable>()
 
     init(
@@ -58,24 +62,59 @@ final class MembershipRepository: SessionScopedCache {
 
     /// A failed read keeps the plans already on screen; only a first read that fails is an error state.
     @discardableResult
-    func refreshPlans() async -> ApiResult<[MembershipPlan]> {
-        plansRequested = true
-        if plans.isEmpty {
-            plansState = .loading
-        }
-        let countryId = marketCountryId
-        let result = await client.getPlans(countryId: countryId)
-        switch result {
-        case let .success(plans):
-            self.plans = plans
-            plansState = .loaded(plans)
-            plansCountryId = countryId
-        case let .failure(error):
-            if plans.isEmpty {
-                plansState = .error(error)
-            }
+    func refreshPlans(force: Bool = false) async -> ApiResult<[MembershipPlan]> {
+        guard !Task.isCancelled else { return .failure(ApiError(code: ApiError.cancelledCode)) }
+        let flight = startPlansFlight(force: force)
+        let generation = plansGeneration
+        let result = await flight.value
+        guard !Task.isCancelled, generation == plansGeneration else {
+            return .failure(ApiError(code: ApiError.cancelledCode))
         }
         return result
+    }
+
+    private func startPlansFlight(force: Bool) -> Task<ApiResult<[MembershipPlan]>, Never> {
+        if force {
+            plansGeneration += 1
+            let previous = plansFlight
+            plansFlight = nil
+            plansFlightToken = nil
+            previous?.cancel()
+        }
+        let countryId = marketCountryId
+        if let plansFlight, plansFlightCountryId == countryId { return plansFlight }
+        plansRequested = true
+        let generation = plansGeneration
+        let token = UUID()
+        let client = client
+        let flight = Task<ApiResult<[MembershipPlan]>, Never> { [weak self] in
+            let result = await client.getPlans(countryId: countryId)
+            guard let self else { return .failure(ApiError(code: ApiError.cancelledCode)) }
+            defer {
+                if plansFlightToken == token {
+                    plansFlight = nil
+                    plansFlightToken = nil
+                    plansFlightCountryId = nil
+                }
+            }
+            guard !Task.isCancelled, generation == plansGeneration,
+                  plansFlightToken == token, marketCountryId == countryId
+            else { return .failure(ApiError(code: ApiError.cancelledCode)) }
+            switch result {
+            case let .success(plans):
+                self.plans = plans
+                plansState = .loaded(plans)
+                plansCountryId = countryId
+            case let .failure(error):
+                if plans.isEmpty { plansState = .error(error) }
+            }
+            return result
+        }
+        plansFlight = flight
+        plansFlightCountryId = countryId
+        plansFlightToken = token
+        if plans.isEmpty { plansState = .loading }
+        return flight
     }
 
     func subscribePhase1(planCode: String, idempotencyToken: String) async -> ApiResult<SubscriptionSetup> {
@@ -97,12 +136,21 @@ final class MembershipRepository: SessionScopedCache {
     }
 
     private func followMarket(_ countryId: String?) {
+        if marketCountryId != countryId {
+            plansGeneration += 1
+            let previous = plansFlight
+            plansFlight = nil
+            plansFlightToken = nil
+            plansFlightCountryId = nil
+            previous?.cancel()
+        }
         marketCountryId = countryId
         marketReload?.cancel()
+        marketReload = nil
         guard plansRequested, plansCountryId != countryId else { return }
         marketReload = Task { [weak self] in
-            guard let self, !Task.isCancelled else { return }
-            await refreshPlans()
+            guard !Task.isCancelled, let flight = self?.startPlansFlight(force: false) else { return }
+            _ = await flight.value
         }
     }
 
@@ -115,6 +163,15 @@ final class MembershipRepository: SessionScopedCache {
     }
 
     func clear() async {
+        plansGeneration += 1
+        let previousReload = marketReload
+        let previousFlight = plansFlight
+        marketReload = nil
+        plansFlight = nil
+        plansFlightToken = nil
+        plansFlightCountryId = nil
+        previousReload?.cancel()
+        previousFlight?.cancel()
         current = nil
         plans = []
         plansState = .loading

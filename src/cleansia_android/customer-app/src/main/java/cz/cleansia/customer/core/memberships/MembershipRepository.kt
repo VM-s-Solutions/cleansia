@@ -12,11 +12,20 @@ import cz.cleansia.core.network.wireResult
 import dagger.hilt.android.qualifiers.ApplicationContext
 import javax.inject.Inject
 import javax.inject.Singleton
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.CoroutineStart
+import kotlinx.coroutines.Deferred
+import kotlinx.coroutines.NonCancellable
+import kotlinx.coroutines.async
+import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.currentCoroutineContext
+import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
+import kotlinx.coroutines.withContext
 
 /**
  * Wraps [MembershipApi] with a small in-memory cache of the user's current
@@ -117,16 +126,97 @@ class MembershipRepository @Inject constructor(
      * (the `CatalogRepository` idiom). An empty answer is cached like any other — it is the server
      * saying Plus is not on sale there. [forceRefresh] busts the cache (e.g. an admin-side change).
      */
-    suspend fun getPlans(countryId: String?, forceRefresh: Boolean = false): ApiResult<List<MembershipPlanDto>> {
-        val cached = _plans.value
-        if (!forceRefresh && cached != null && plansCountryId == countryId) return ApiResult.Success(cached)
-        return call("getPlans") { api.getPlans(countryId) }.onSuccess {
-            _plans.value = it
-            plansCountryId = countryId
+    suspend fun getPlans(countryId: String?, forceRefresh: Boolean = false): ApiResult<List<MembershipPlanDto>> = coroutineScope {
+        var obsoleteFlight: Deferred<ApiResult<List<MembershipPlanDto>>>? = null
+        val generation = plansLock.withLock {
+            currentCoroutineContext().ensureActive()
+            if (plansRequestCountryId != countryId) {
+                plansGeneration++
+                plansRequestCountryId = countryId
+                obsoleteFlight = plansFlight
+                plansFlight = null
+            }
+            plansGeneration
         }
+        obsoleteFlight?.cancel()
+        var replaceFlight = forceRefresh
+        var minimumFreshSerial = Long.MAX_VALUE
+        while (true) {
+            obsoleteFlight = null
+            val flight = plansLock.withLock {
+                currentCoroutineContext().ensureActive()
+                if (generation != plansGeneration) throw CancellationException("Plan request superseded")
+                val cached = _plans.value
+                val freshEnough = !forceRefresh || (
+                    !replaceFlight && plansFlight == null && plansPublishedSerial >= minimumFreshSerial
+                )
+                if (freshEnough && cached != null && plansCountryId == countryId) {
+                    return@coroutineScope ApiResult.Success(cached)
+                }
+                if (replaceFlight) {
+                    obsoleteFlight = plansFlight
+                    plansFlight = null
+                    replaceFlight = false
+                }
+                plansFlight?.takeUnless { it.isCancelled } ?: run {
+                    val serial = ++plansFlightSerial
+                    if (forceRefresh && minimumFreshSerial == Long.MAX_VALUE) minimumFreshSerial = serial
+                    lateinit var ownedFlight: Deferred<ApiResult<List<MembershipPlanDto>>>
+                    ownedFlight = async(start = CoroutineStart.LAZY) {
+                        try {
+                            val result = call("getPlans") { api.getPlans(countryId) }
+                            currentCoroutineContext().ensureActive()
+                            plansLock.withLock {
+                                currentCoroutineContext().ensureActive()
+                                if (generation == plansGeneration && plansFlight === ownedFlight) {
+                                    result.onSuccess {
+                                        _plans.value = it
+                                        plansCountryId = countryId
+                                        plansPublishedSerial = serial
+                                    }
+                                }
+                            }
+                            result
+                        } finally {
+                            withContext(NonCancellable) {
+                                plansLock.withLock {
+                                    if (plansFlight === ownedFlight) plansFlight = null
+                                }
+                            }
+                        }
+                    }
+                    plansFlight = ownedFlight
+                    ownedFlight
+                }
+            }
+            obsoleteFlight?.cancel()
+            flight.start()
+            try {
+                val result = flight.await()
+                plansLock.withLock {
+                    currentCoroutineContext().ensureActive()
+                    if (generation != plansGeneration) throw CancellationException("Plan request superseded")
+                }
+                return@coroutineScope result
+            } catch (cancelled: CancellationException) {
+                currentCoroutineContext().ensureActive()
+                plansLock.withLock {
+                    if (generation != plansGeneration) throw cancelled
+                    if (plansFlight === flight) plansFlight = null
+                }
+            }
+        }
+        @Suppress("UNREACHABLE_CODE")
+        error("Plan flight loop returned unexpectedly")
     }
+    private val plansLock = Mutex()
     private val _plans = MutableStateFlow<List<MembershipPlanDto>?>(null)
     private var plansCountryId: String? = null
+    private var plansRequestCountryId: String? = null
+    private var plansGeneration = 0L
+    private var plansFlightSerial = 0L
+    private var plansPublishedSerial = 0L
+    private var plansFlight: Deferred<ApiResult<List<MembershipPlanDto>>>? = null
 
     /**
      * Swap to a different plan. Returns the swap response on success and
@@ -143,10 +233,19 @@ class MembershipRepository @Inject constructor(
 
     /** Clear cache on sign-out so a re-login starts fresh. */
     override suspend fun clear() {
-        _current.value = null
-        _plans.value = null
-        plansCountryId = null
-        staleness.reset()
+        val obsoleteFlight = plansLock.withLock {
+            plansGeneration++
+            val previous = plansFlight
+            plansFlight = null
+            plansRequestCountryId = null
+            _current.value = null
+            _plans.value = null
+            plansCountryId = null
+            plansPublishedSerial = 0L
+            staleness.reset()
+            previous
+        }
+        obsoleteFlight?.cancel()
     }
 
     private suspend inline fun <T> call(

@@ -10,12 +10,21 @@ import io.mockk.coVerify
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.CoroutineStart
+import kotlinx.coroutines.NonCancellable
+import kotlinx.coroutines.async
+import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.test.runTest
+import kotlinx.coroutines.withContext
+import kotlinx.coroutines.withTimeout
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.ResponseBody.Companion.toResponseBody
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
+import org.junit.Assert.fail
 import org.junit.Before
 import org.junit.Test
 import retrofit2.Response
@@ -348,6 +357,467 @@ class MembershipRepositoryTest {
         assertTrue("expected Error but got: $result", result is ApiResult.Error)
         assertTrue((result as ApiResult.Error).error is ApiError.Server)
         verify(exactly = 0) { snackbar.showError(any<String>()) }
+    }
+
+    @Test
+    fun getPlans_concurrentSameMarketSharesOneSuccess() = runTest {
+        val entered = CompletableDeferred<Unit>()
+        val release = CompletableDeferred<Unit>()
+        val completed = CompletableDeferred<Unit>()
+        var calls = 0
+        val plans = listOf(plan("shared"))
+        coEvery { api.getPlans("cze-id") } coAnswers {
+            calls++
+            entered.complete(Unit)
+            try {
+                release.await()
+                Response.success(plans)
+            } finally {
+                completed.complete(Unit)
+            }
+        }
+        val repo = newRepo()
+        val first = async(start = CoroutineStart.UNDISPATCHED) { repo.getPlans("cze-id") }
+        val second = async(start = CoroutineStart.UNDISPATCHED) { repo.getPlans("cze-id") }
+        try {
+            withTimeout(5_000) { entered.await() }
+            assertEquals(1, calls)
+            release.complete(Unit)
+            assertEquals(ApiResult.Success(plans), first.await())
+            assertEquals(ApiResult.Success(plans), second.await())
+            withTimeout(5_000) { completed.await() }
+            assertEquals(ApiResult.Success(plans), repo.getPlans("cze-id"))
+            assertEquals(1, calls)
+        } finally {
+            release.complete(Unit)
+            first.cancelAndJoin()
+            second.cancelAndJoin()
+        }
+    }
+
+    @Test
+    fun getPlans_concurrentNilMarketSharesFailureThenRetriesFresh() = runTest {
+        val entered = CompletableDeferred<Unit>()
+        val release = CompletableDeferred<Unit>()
+        val completed = CompletableDeferred<Unit>()
+        var calls = 0
+        val plans = listOf(plan("retry"))
+        coEvery { api.getPlans(null) } coAnswers {
+            calls++
+            if (calls == 1) {
+                entered.complete(Unit)
+                try {
+                    release.await()
+                    Response.error(500, errorBody())
+                } finally {
+                    completed.complete(Unit)
+                }
+            } else {
+                Response.success(plans)
+            }
+        }
+        val repo = newRepo()
+        val first = async(start = CoroutineStart.UNDISPATCHED) { repo.getPlans(null) }
+        val second = async(start = CoroutineStart.UNDISPATCHED) { repo.getPlans(null) }
+        try {
+            withTimeout(5_000) { entered.await() }
+            assertEquals(1, calls)
+            release.complete(Unit)
+            val error = first.await()
+            assertTrue(error is ApiResult.Error)
+            assertTrue((error as ApiResult.Error).error is ApiError.Server)
+            assertEquals(error, second.await())
+            withTimeout(5_000) { completed.await() }
+            assertEquals(ApiResult.Success(plans), repo.getPlans(null))
+            assertEquals(2, calls)
+        } finally {
+            release.complete(Unit)
+            first.cancelAndJoin()
+            second.cancelAndJoin()
+        }
+    }
+
+    @Test
+    fun getPlans_cancellingWaiterLeavesOwnerAndSuccessIntact() = runTest {
+        val entered = CompletableDeferred<Unit>()
+        val release = CompletableDeferred<Unit>()
+        val completed = CompletableDeferred<Unit>()
+        var calls = 0
+        val plans = listOf(plan("owner"))
+        coEvery { api.getPlans("cze-id") } coAnswers {
+            calls++
+            entered.complete(Unit)
+            try {
+                release.await()
+                Response.success(plans)
+            } finally {
+                completed.complete(Unit)
+            }
+        }
+        val repo = newRepo()
+        val owner = async(start = CoroutineStart.UNDISPATCHED) { repo.getPlans("cze-id") }
+        val waiter = async(start = CoroutineStart.UNDISPATCHED) { repo.getPlans("cze-id") }
+        try {
+            withTimeout(5_000) { entered.await() }
+            assertEquals(1, calls)
+            waiter.cancelAndJoin()
+            assertTrue(waiter.isCancelled)
+            assertFalse(owner.isCancelled)
+            assertFalse(completed.isCompleted)
+            release.complete(Unit)
+            assertEquals(ApiResult.Success(plans), owner.await())
+            withTimeout(5_000) { completed.await() }
+            assertEquals(ApiResult.Success(plans), repo.getPlans("cze-id"))
+            assertEquals(1, calls)
+        } finally {
+            release.complete(Unit)
+            owner.cancelAndJoin()
+            waiter.cancelAndJoin()
+        }
+    }
+
+    @Test
+    fun getPlans_cancellingOwnerLetsActiveWaiterElectFreshChild() = runTest {
+        val firstEntered = CompletableDeferred<Unit>()
+        val firstRelease = CompletableDeferred<Unit>()
+        val firstCompleted = CompletableDeferred<Unit>()
+        val replacementEntered = CompletableDeferred<Unit>()
+        val replacementRelease = CompletableDeferred<Unit>()
+        val replacementCompleted = CompletableDeferred<Unit>()
+        var calls = 0
+        val plans = listOf(plan("replacement"))
+        coEvery { api.getPlans("cze-id") } coAnswers {
+            calls++
+            if (calls == 1) {
+                firstEntered.complete(Unit)
+                try {
+                    firstRelease.await()
+                    Response.success(listOf(plan("cancelled")))
+                } finally {
+                    firstCompleted.complete(Unit)
+                }
+            } else {
+                replacementEntered.complete(Unit)
+                try {
+                    replacementRelease.await()
+                    Response.success(plans)
+                } finally {
+                    replacementCompleted.complete(Unit)
+                }
+            }
+        }
+        val repo = newRepo()
+        val owner = async(start = CoroutineStart.UNDISPATCHED) { repo.getPlans("cze-id") }
+        val waiter = async(start = CoroutineStart.UNDISPATCHED) { repo.getPlans("cze-id") }
+        try {
+            withTimeout(5_000) { firstEntered.await() }
+            assertEquals(1, calls)
+            owner.cancelAndJoin()
+            withTimeout(5_000) { firstCompleted.await(); replacementEntered.await() }
+            assertTrue(owner.isCancelled)
+            assertFalse(waiter.isCancelled)
+            assertEquals(2, calls)
+            replacementRelease.complete(Unit)
+            assertEquals(ApiResult.Success(plans), waiter.await())
+            withTimeout(5_000) { replacementCompleted.await() }
+            assertEquals(ApiResult.Success(plans), repo.getPlans("cze-id"))
+            assertEquals(2, calls)
+        } finally {
+            firstRelease.complete(Unit)
+            replacementRelease.complete(Unit)
+            owner.cancelAndJoin()
+            waiter.cancelAndJoin()
+        }
+    }
+
+    @Test
+    fun getPlans_forceStartsFreshDuringOrdinaryFlightAndLateOwnerCannotReplaceIt() = runTest {
+        val oldEntered = CompletableDeferred<Unit>()
+        val oldRelease = CompletableDeferred<Unit>()
+        val oldCompleted = CompletableDeferred<Unit>()
+        val forcedEntered = CompletableDeferred<Unit>()
+        val forcedRelease = CompletableDeferred<Unit>()
+        var calls = 0
+        val fresh = listOf(plan("fresh"))
+        coEvery { api.getPlans("cze-id") } coAnswers {
+            calls++
+            if (calls == 1) {
+                oldEntered.complete(Unit)
+                try {
+                    withContext(NonCancellable) { oldRelease.await() }
+                    Response.success(listOf(plan("obsolete")))
+                } finally {
+                    oldCompleted.complete(Unit)
+                }
+            } else {
+                forcedEntered.complete(Unit)
+                forcedRelease.await()
+                Response.success(fresh)
+            }
+        }
+        val repo = newRepo()
+        val ordinary = async(start = CoroutineStart.UNDISPATCHED) { repo.getPlans("cze-id") }
+        try {
+            withTimeout(5_000) { oldEntered.await() }
+            val forced = async(start = CoroutineStart.UNDISPATCHED) { repo.getPlans("cze-id", forceRefresh = true) }
+            try {
+                withTimeout(5_000) { forcedEntered.await() }
+                assertEquals(2, calls)
+                forcedRelease.complete(Unit)
+                assertEquals(ApiResult.Success(fresh), forced.await())
+                oldRelease.complete(Unit)
+                withTimeout(5_000) { oldCompleted.await() }
+                assertEquals(ApiResult.Success(fresh), ordinary.await())
+                assertEquals(ApiResult.Success(fresh), repo.getPlans("cze-id"))
+                assertEquals(2, calls)
+            } finally {
+                oldRelease.complete(Unit)
+                forcedRelease.complete(Unit)
+                forced.cancelAndJoin()
+            }
+        } finally {
+            oldRelease.complete(Unit)
+            forcedRelease.complete(Unit)
+            ordinary.cancelAndJoin()
+        }
+    }
+
+    @Test
+    fun getPlans_laterForceReplacesHeldForceWithoutAReplacementLoop() = runTest {
+        val oldEntered = CompletableDeferred<Unit>()
+        val oldRelease = CompletableDeferred<Unit>()
+        val newEntered = CompletableDeferred<Unit>()
+        val newRelease = CompletableDeferred<Unit>()
+        var calls = 0
+        val fresh = listOf(plan("new-force"))
+        coEvery { api.getPlans("cze-id") } coAnswers {
+            calls++
+            if (calls == 1) {
+                oldEntered.complete(Unit)
+                withContext(NonCancellable) { oldRelease.await() }
+                Response.success(listOf(plan("old-force")))
+            } else {
+                newEntered.complete(Unit)
+                newRelease.await()
+                Response.success(fresh)
+            }
+        }
+        val repo = newRepo()
+        val first = async(start = CoroutineStart.UNDISPATCHED) { repo.getPlans("cze-id", forceRefresh = true) }
+        try {
+            withTimeout(5_000) { oldEntered.await() }
+            val second = async(start = CoroutineStart.UNDISPATCHED) { repo.getPlans("cze-id", forceRefresh = true) }
+            try {
+                withTimeout(5_000) { newEntered.await() }
+                assertEquals(2, calls)
+                newRelease.complete(Unit)
+                assertEquals(ApiResult.Success(fresh), second.await())
+                oldRelease.complete(Unit)
+                assertEquals(ApiResult.Success(fresh), first.await())
+                assertEquals(2, calls)
+                assertEquals(ApiResult.Success(fresh), repo.getPlans("cze-id", forceRefresh = true))
+                assertEquals(3, calls)
+            } finally {
+                oldRelease.complete(Unit)
+                newRelease.complete(Unit)
+                second.cancelAndJoin()
+            }
+        } finally {
+            oldRelease.complete(Unit)
+            newRelease.complete(Unit)
+            first.cancelAndJoin()
+        }
+    }
+
+    @Test
+    fun getPlans_cancelledNewerForceCannotSatisfyOlderFreshRequestWithWarmCache() = runTest {
+        val oldEntered = CompletableDeferred<Unit>()
+        val oldRelease = CompletableDeferred<Unit>()
+        val oldCompleted = CompletableDeferred<Unit>()
+        val newerEntered = CompletableDeferred<Unit>()
+        val newerRelease = CompletableDeferred<Unit>()
+        val newerCompleted = CompletableDeferred<Unit>()
+        val freshEntered = CompletableDeferred<Unit>()
+        val freshRelease = CompletableDeferred<Unit>()
+        val freshCompleted = CompletableDeferred<Unit>()
+        var calls = 0
+        val good = listOf(plan("warm-good"))
+        val fresh = listOf(plan("fresh-after-cancel"))
+        coEvery { api.getPlans("cze-id") } coAnswers {
+            when (++calls) {
+                1 -> Response.success(good)
+                2 -> {
+                    oldEntered.complete(Unit)
+                    try {
+                        withContext(NonCancellable) { oldRelease.await() }
+                        Response.success(listOf(plan("superseded-force")))
+                    } finally {
+                        oldCompleted.complete(Unit)
+                    }
+                }
+                3 -> {
+                    newerEntered.complete(Unit)
+                    try {
+                        newerRelease.await()
+                        Response.success(listOf(plan("cancelled-newer-force")))
+                    } finally {
+                        newerCompleted.complete(Unit)
+                    }
+                }
+                else -> {
+                    freshEntered.complete(Unit)
+                    try {
+                        freshRelease.await()
+                        Response.success(fresh)
+                    } finally {
+                        freshCompleted.complete(Unit)
+                    }
+                }
+            }
+        }
+        val repo = newRepo()
+        assertEquals(ApiResult.Success(good), repo.getPlans("cze-id"))
+        val old = async(start = CoroutineStart.UNDISPATCHED) { repo.getPlans("cze-id", forceRefresh = true) }
+        try {
+            withTimeout(5_000) { oldEntered.await() }
+            val newer = async(start = CoroutineStart.UNDISPATCHED) { repo.getPlans("cze-id", forceRefresh = true) }
+            try {
+                withTimeout(5_000) { newerEntered.await() }
+                newer.cancelAndJoin()
+                withTimeout(5_000) { newerCompleted.await() }
+                assertTrue(newer.isCancelled)
+                oldRelease.complete(Unit)
+                withTimeout(5_000) { oldCompleted.await(); freshEntered.await() }
+                assertEquals(4, calls)
+                freshRelease.complete(Unit)
+                assertEquals(ApiResult.Success(fresh), old.await())
+                withTimeout(5_000) { freshCompleted.await() }
+                assertEquals(ApiResult.Success(fresh), repo.getPlans("cze-id"))
+                assertEquals(4, calls)
+            } finally {
+                oldRelease.complete(Unit)
+                newerRelease.complete(Unit)
+                freshRelease.complete(Unit)
+                newer.cancelAndJoin()
+            }
+        } finally {
+            oldRelease.complete(Unit)
+            newerRelease.complete(Unit)
+            freshRelease.complete(Unit)
+            old.cancelAndJoin()
+        }
+    }
+
+    @Test
+    fun getPlans_marketChangeCancelsOldWaitersWithoutReelectingOldCountry() = runTest {
+        val oldEntered = CompletableDeferred<Unit>()
+        val oldRelease = CompletableDeferred<Unit>()
+        val newEntered = CompletableDeferred<Unit>()
+        val newRelease = CompletableDeferred<Unit>()
+        var oldCalls = 0
+        var newCalls = 0
+        val fresh = listOf(plan("svk"))
+        coEvery { api.getPlans("cze-id") } coAnswers {
+            oldCalls++
+            oldEntered.complete(Unit)
+            withContext(NonCancellable) { oldRelease.await() }
+            Response.success(listOf(plan("cze")))
+        }
+        coEvery { api.getPlans("svk-id") } coAnswers {
+            newCalls++
+            newEntered.complete(Unit)
+            newRelease.await()
+            Response.success(fresh)
+        }
+        val repo = newRepo()
+        val owner = async(start = CoroutineStart.UNDISPATCHED) { repo.getPlans("cze-id") }
+        val waiter = async(start = CoroutineStart.UNDISPATCHED) { repo.getPlans("cze-id") }
+        try {
+            withTimeout(5_000) { oldEntered.await() }
+            assertEquals(1, oldCalls)
+            val replacement = async(start = CoroutineStart.UNDISPATCHED) { repo.getPlans("svk-id") }
+            try {
+                withTimeout(5_000) { newEntered.await() }
+                newRelease.complete(Unit)
+                assertEquals(ApiResult.Success(fresh), replacement.await())
+                oldRelease.complete(Unit)
+                try { owner.await(); fail("Old owner must stay in its superseded market") } catch (_: CancellationException) { }
+                try { waiter.await(); fail("Old waiter must not re-elect a country request") } catch (_: CancellationException) { }
+                assertEquals(ApiResult.Success(fresh), repo.getPlans("svk-id"))
+                assertEquals(1, oldCalls)
+                assertEquals(1, newCalls)
+            } finally {
+                oldRelease.complete(Unit)
+                newRelease.complete(Unit)
+                replacement.cancelAndJoin()
+            }
+        } finally {
+            oldRelease.complete(Unit)
+            newRelease.complete(Unit)
+            owner.cancelAndJoin()
+            waiter.cancelAndJoin()
+        }
+    }
+
+    @Test
+    fun getPlans_clearRejectsLateNilMarketFlightAndNewSessionReadsFresh() = runTest {
+        val oldEntered = CompletableDeferred<Unit>()
+        val oldRelease = CompletableDeferred<Unit>()
+        val newEntered = CompletableDeferred<Unit>()
+        val newRelease = CompletableDeferred<Unit>()
+        var calls = 0
+        val fresh = listOf(plan("new-session"))
+        coEvery { api.getPlans(null) } coAnswers {
+            calls++
+            if (calls == 1) {
+                oldEntered.complete(Unit)
+                withContext(NonCancellable) { oldRelease.await() }
+                Response.success(listOf(plan("old-session")))
+            } else {
+                newEntered.complete(Unit)
+                newRelease.await()
+                Response.success(fresh)
+            }
+        }
+        val repo = newRepo()
+        val old = async(start = CoroutineStart.UNDISPATCHED) { repo.getPlans(null) }
+        try {
+            withTimeout(5_000) { oldEntered.await() }
+            repo.clear()
+            val new = async(start = CoroutineStart.UNDISPATCHED) { repo.getPlans(null) }
+            try {
+                withTimeout(5_000) { newEntered.await() }
+                newRelease.complete(Unit)
+                assertEquals(ApiResult.Success(fresh), new.await())
+                oldRelease.complete(Unit)
+                try { old.await(); fail("Cleared session must not return its old plans") } catch (_: CancellationException) { }
+                assertEquals(ApiResult.Success(fresh), repo.getPlans(null))
+                assertEquals(2, calls)
+            } finally {
+                newRelease.complete(Unit)
+                new.cancelAndJoin()
+            }
+        } finally {
+            oldRelease.complete(Unit)
+            newRelease.complete(Unit)
+            old.cancelAndJoin()
+        }
+    }
+
+    @Test
+    fun getPlans_forcedFailureRetainsSettledGoodCacheAndSequentialForcesStayFresh() = runTest {
+        var calls = 0
+        val good = listOf(plan("good"))
+        coEvery { api.getPlans("cze-id") } coAnswers {
+            calls++
+            if (calls == 1) Response.success(good) else Response.error(500, errorBody())
+        }
+        val repo = newRepo()
+        assertEquals(ApiResult.Success(good), repo.getPlans("cze-id"))
+        assertTrue(repo.getPlans("cze-id", forceRefresh = true) is ApiResult.Error)
+        assertEquals(ApiResult.Success(good), repo.getPlans("cze-id"))
+        assertTrue(repo.getPlans("cze-id", forceRefresh = true) is ApiResult.Error)
+        assertEquals(3, calls)
     }
 
     // ── staleness watermark ──

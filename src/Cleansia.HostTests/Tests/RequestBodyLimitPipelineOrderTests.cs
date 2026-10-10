@@ -42,6 +42,88 @@ public sealed class RequestBodyLimitPipelineOrderTests
         Assert.Equal(HttpStatusCode.InternalServerError, await StatusForOversizeBody(readBeforeHandler: false));
     }
 
+    public static TheoryData<Type, LogLevel> HostMiddlewareLoggerLevels()
+    {
+        var data = new TheoryData<Type, LogLevel>();
+        var hosts = new[]
+        {
+            typeof(Cleansia.Web.Customer.Middleware.RequestLoggingMiddleware),
+            typeof(Cleansia.Web.Mobile.Customer.Middleware.RequestLoggingMiddleware),
+            typeof(Cleansia.Web.Partner.Middleware.RequestLoggingMiddleware),
+            typeof(Cleansia.Web.Admin.Middleware.RequestLoggingMiddleware),
+            typeof(Cleansia.Web.Mobile.Partner.Middleware.RequestLoggingMiddleware),
+        };
+        foreach (var host in hosts)
+        foreach (var level in new[] { LogLevel.Information, LogLevel.Warning, LogLevel.None })
+            data.Add(host, level);
+        return data;
+    }
+
+    [Theory]
+    [MemberData(nameof(HostMiddlewareLoggerLevels))]
+    public async Task CapturedResponses_AreForwardedWithExactBytesAndHeadersAtEveryLoggerLevel(Type middlewareType, LogLevel level)
+    {
+        const string body = """{"message":"complete-response"}""";
+        var response = await ResponseThroughLogging(middlewareType, level, body, throwBeforeWrite: false, throwAfterWrite: false);
+        Assert.Equal(HttpStatusCode.OK, response.Status);
+        Assert.Equal(Encoding.UTF8.GetBytes(body), response.Body);
+        Assert.True(response.HasControlHeader);
+    }
+
+    [Theory]
+    [MemberData(nameof(HostMiddlewareLoggerLevels))]
+    public async Task ThrownBeforeWrite_RetainsTheRealExceptionHandlerResponse(Type middlewareType, LogLevel level)
+    {
+        var response = await ResponseThroughLogging(middlewareType, level, "unused", throwBeforeWrite: true, throwAfterWrite: false);
+        Assert.Equal(HttpStatusCode.InternalServerError, response.Status);
+        Assert.Equal(Encoding.UTF8.GetBytes("An unexpected error occurred."), response.Body);
+        Assert.False(response.HasControlHeader);
+    }
+
+    [Theory]
+    [MemberData(nameof(HostMiddlewareLoggerLevels))]
+    public async Task PartialWriteThenThrow_RetainsTheRealExceptionHandlerResponse(Type middlewareType, LogLevel level)
+    {
+        var response = await ResponseThroughLogging(middlewareType, level, "partial-must-not-escape", throwBeforeWrite: false, throwAfterWrite: true);
+        Assert.Equal(HttpStatusCode.InternalServerError, response.Status);
+        Assert.Equal(Encoding.UTF8.GetBytes("An unexpected error occurred."), response.Body);
+        Assert.False(response.HasControlHeader);
+    }
+
+    private static async Task<(HttpStatusCode Status, byte[] Body, bool HasControlHeader)> ResponseThroughLogging(
+        Type middlewareType, LogLevel level, string body, bool throwBeforeWrite, bool throwAfterWrite)
+    {
+        var builder = WebApplication.CreateBuilder();
+        builder.Logging.ClearProviders();
+        builder.Logging.AddConsole();
+        builder.Logging.SetMinimumLevel(level);
+        builder.Logging.AddFilter(middlewareType.FullName, level);
+        builder.WebHost.UseUrls("http://127.0.0.1:0");
+        var app = builder.Build();
+        app.UseMiddleware(middlewareType);
+        UseExceptionHandler(app);
+        app.Run(async context =>
+        {
+            context.Response.ContentType = "application/json";
+            context.Response.Headers["X-Body-Control"] = "retained";
+            if (throwBeforeWrite) throw new InvalidOperationException("before write");
+            await context.Response.Body.WriteAsync(Encoding.UTF8.GetBytes(body));
+            if (throwAfterWrite) throw new InvalidOperationException("after partial write");
+        });
+        await app.StartAsync();
+        try
+        {
+            using var client = new HttpClient { BaseAddress = new Uri(BoundAddress(app)) };
+            using var response = await client.GetAsync("/api/Order/Create");
+            return (response.StatusCode, await response.Content.ReadAsByteArrayAsync(), response.Headers.Contains("X-Body-Control"));
+        }
+        finally
+        {
+            await app.StopAsync();
+            await app.DisposeAsync();
+        }
+    }
+
     private static async Task<HttpStatusCode> StatusForOversizeBody(bool readBeforeHandler)
     {
         var builder = WebApplication.CreateBuilder();

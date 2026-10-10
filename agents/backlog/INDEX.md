@@ -318,7 +318,8 @@
 | T-0802 | The next Slovak customer terms version calls a package *balík* (*balíky*, *balíkov*), not *balíček* — only in a version made for a real change of terms | S | `todo` | — | filed 2026-10-04 from owner decision 3 of wave T (*"write the recommended"*): the Slovak terms in force (`Seed/Legal/customer/terms-of-service/any/2026-10-03/sk.md` lines 27, 35, 43) still say *balíčky* / *balíčkov* after the R-2 ruling moved every client to *balík*. A text in force is never edited, and a version made for this word alone would bring the booking tick back for every customer, so it waits for the next real terms version. |
 | T-0803 | Restore SSR data, compatible paging and iOS session cleanup (approved Wave A) | L | `done` | — | [#311](https://github.com/VM-s-Solutions/cleansia/pull/311), merged 2026-10-08 (`6fa0492`); all eight PR checks pass, coordinated cap 100 implemented; measured board p95 305→630 ms retained |
 | T-0804 | Remove the redundant board seat count (approved B010 scope) | M | `done` | — | [#312](https://github.com/VM-s-Solutions/cleansia/pull/312), merged 2026-10-08 (`ed1e1b8`); p95 637.37→140.80 ms (-77.9%),9748 local tests and six exact-head CI jobs pass |
-| T-0805 | Reduce initial web bytes and repeated validation reads, repair Swift warnings and align operating docs (approved Wave B) | L | `in_review` | T-0803 | seven causes implemented; measured reductions and first-use tradeoffs recorded; root clean native 3,545 passes/one existing skip, 19 floor passes and completed backend/web/repo/docs reviews; final record checks/PR/exact-head CI pending at publication; merge preauthorized after green, then C and D separately |
+| T-0805 | Reduce initial web bytes and repeated validation reads, repair Swift warnings and align operating docs (approved Wave B) | L | `done` | T-0803 | [#313](https://github.com/VM-s-Solutions/cleansia/pull/313), merged 2026-10-09 (`18a2e5ac`); corrected-head seven workflows/eight jobs/36 critical steps succeed; hosted iOS 3,545 passes/zero failures/one skip; workflow timing overruns and all historical failures/limits retained in Wave B closure |
+| T-0806 | Reduce request logging work, evaluate HTTP JSON compression and overlap native reads (approved Wave C) | L | `in_progress` | T-0805 | B001 and both native causes implemented; paired evidence closed with counterresults; B009 measured and deferred under AC4; final local gates (backend 9,894, Android 2,760, iOS 3,556 + 1 skip, floor 61/61) and six render checks recorded, AC8 closed; exact-head CI and normal merge pending; D after actual C merge |
 
 > **T-0785–T-0799 filed 2026-09-20** — the UI-polish and dead-code batch, on the owner's ruling of
 > that day (*"I want to polish alignments in admin app a bit on all of the overview/detail pages.
@@ -363,4 +364,4 @@
 > reported not absorbed. Owed: the DEV drop at the next DEV deploy (MS-2 / A1, `20260920204705`);
 > the merge order is #255 then #260. Open rows: none.
 
-*Next id: **T-0806**.*
+*Next id: **T-0807**.*

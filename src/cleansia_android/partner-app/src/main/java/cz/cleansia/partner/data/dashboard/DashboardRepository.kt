@@ -15,12 +15,18 @@ import cz.cleansia.core.network.ApiResult
 import cz.cleansia.core.network.safeApiCall
 import cz.cleansia.core.network.mapWire
 import cz.cleansia.core.network.required
+import kotlinx.coroutines.NonCancellable
+import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.currentCoroutineContext
+import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
+import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.Json
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -142,6 +148,8 @@ class DashboardRepositoryImpl @Inject constructor(
     // cold start). Whoever holds the lock loads; the others then see the
     // fresh cache via the staleness check and bail.
     private val refreshLock = Mutex()
+    private val snapshotLock = Mutex()
+    private var sessionGeneration = 0L
 
     // Per-cache freshness watermark — replaces the old manual nanoTime
     // tracking. Background paths (init / ON_RESUME) consult
@@ -153,42 +161,73 @@ class DashboardRepositoryImpl @Inject constructor(
     private val staleness = Staleness()
 
     override suspend fun refresh(employeeId: String?, force: Boolean): ApiError? {
+        val generation = snapshotLock.withLock { sessionGeneration }
         refreshLock.withLock {
-            val fresh = _snapshot.value.loaded && !staleness.isStale(STALE_WINDOW_MS)
-            if (fresh && !force) return null
-
-            _snapshot.update { it.copy(refreshing = true) }
-            var firstError: ApiError? = null
-
-            when (val statsResult = getStats(employeeId)) {
-                is ApiResult.Success -> _snapshot.update { it.copy(stats = statsResult.data) }
-                is ApiResult.Error -> firstError = statsResult.error
-            }
-
-            if (!employeeId.isNullOrBlank()) {
-                when (val upcoming = getUpcomingOrders(employeeId, 10)) {
-                    is ApiResult.Success -> _snapshot.update { it.copy(upcoming = upcoming.data) }
-                    is ApiResult.Error -> { /* non-critical — keep dashboard usable */ }
+            val shouldRefresh = snapshotLock.withLock {
+                currentCoroutineContext().ensureActive()
+                val fresh = _snapshot.value.loaded && !staleness.isStale(STALE_WINDOW_MS)
+                if (generation != sessionGeneration || (fresh && !force)) {
+                    false
+                } else {
+                    _snapshot.update { it.copy(refreshing = true) }
+                    true
                 }
-            } else {
-                _snapshot.update { it.copy(upcoming = emptyList()) }
             }
+            if (!shouldRefresh) return null
+            var firstError: ApiError? = null
+            try {
+                val statsResult = getStats(employeeId)
+                if (statsResult is ApiResult.Error) firstError = statsResult.error
+                if (!updateSnapshot(generation) {
+                    if (statsResult is ApiResult.Success) it.copy(stats = statsResult.data) else it
+                }) return null
 
-            when (val preview = getAvailableJobsPreview(5)) {
-                is ApiResult.Success -> _snapshot.update { it.copy(availableJobsPreview = preview.data) }
-                is ApiResult.Error -> { /* non-critical */ }
+                coroutineScope {
+                    launch {
+                        if (!employeeId.isNullOrBlank()) {
+                            when (val upcoming = getUpcomingOrders(employeeId, 10)) {
+                                is ApiResult.Success -> updateSnapshot(generation) { it.copy(upcoming = upcoming.data) }
+                                is ApiResult.Error -> Unit
+                            }
+                        } else {
+                            updateSnapshot(generation) { it.copy(upcoming = emptyList()) }
+                        }
+                    }
+                    launch {
+                        when (val preview = getAvailableJobsPreview(5)) {
+                            is ApiResult.Success -> updateSnapshot(generation) { it.copy(availableJobsPreview = preview.data) }
+                            is ApiResult.Error -> Unit
+                        }
+                    }
+                }
+                return snapshotLock.withLock {
+                    currentCoroutineContext().ensureActive()
+                    if (generation == sessionGeneration) {
+                        staleness.markFresh()
+                        _snapshot.update { it.copy(loaded = true, refreshing = false) }
+                        firstError
+                    } else {
+                        null
+                    }
+                }
+            } finally {
+                withContext(NonCancellable) {
+                    snapshotLock.withLock {
+                        if (generation == sessionGeneration) _snapshot.update { it.copy(refreshing = false) }
+                    }
+                }
             }
-
-            // Mark fresh even when non-critical sub-calls fail — stats is
-            // the load-bearing call, and the snapshot already preserves
-            // last-known-good values for the optional sections. If even
-            // stats failed, firstError surfaces and the caller can react,
-            // but we still stamp so we don't hammer the network on every
-            // resume; the next user pull will force-bypass anyway.
-            staleness.markFresh()
-            _snapshot.update { it.copy(loaded = true, refreshing = false) }
-            return firstError
         }
+    }
+
+    private suspend fun updateSnapshot(
+        generation: Long,
+        update: (DashboardSnapshot) -> DashboardSnapshot,
+    ): Boolean = snapshotLock.withLock {
+        currentCoroutineContext().ensureActive()
+        if (generation != sessionGeneration) return@withLock false
+        _snapshot.update(update)
+        true
     }
 
     override fun invalidate() {
@@ -196,8 +235,11 @@ class DashboardRepositoryImpl @Inject constructor(
     }
 
     override suspend fun clear() {
-        _snapshot.value = DashboardSnapshot()
-        staleness.reset()
+        snapshotLock.withLock {
+            sessionGeneration++
+            _snapshot.value = DashboardSnapshot()
+            staleness.reset()
+        }
     }
 
     override suspend fun getStats(employeeId: String?): ApiResult<DashboardStats> =

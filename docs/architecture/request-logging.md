@@ -1,6 +1,6 @@
 # Request logging and PII redaction
 
-Every host logs request bodies. Doing that safely is four decisions, each of which was a defect first.
+Each host has request and response body logging. Doing that safely is four decisions, each of which was a defect first.
 
 ## The scan is bounded, and bounded in characters {#scan-limit}
 
@@ -13,6 +13,27 @@ body, with nothing upstream able to throttle it.
 The bound is in **characters, not bytes**, because the verdict downstream is `string.Length`. One
 character past the cap decides it exactly as the whole body would, so no log line changes. A byte bound
 would put a multi-byte body under the cap and log what must be suppressed.
+
+## Enabled logging and body storage {#enabled-work}
+
+For paths subject to logging, the request read remains before exception handling, authentication and
+rate limiting at **every logger level**. It reads the same maximum 65,537 UTF-16 code units and rewinds the request for downstream
+consumers. Disabling Information skips body-text capture, user/query formatting and redaction; it does
+not skip that bounded read or turn body-limit checks into a logging-level decision. Unknown-length
+input is still read only to the same character bound, not to the end.
+
+Response logging chooses Information below 400, Warning for 400–499 and Error for 500 or above before
+reading the body. Disabled levels skip that read and formatting. The full response `MemoryStream`
+capture remains, and its position resets to zero immediately before copying to the original stream,
+independently of logging. Exception-handler ordering and cancellation/error levels remain unchanged.
+
+Readers rent a 4,096-character `ArrayPool<char>` chunk, limit each read by the remaining character
+bound, and append only returned characters when capture is enabled. The rented array is returned with
+`clearArray: true` in `finally`; its actual capacity may exceed the requested chunk size. Captured text
+is assembled before the existing whole-body redaction and truncation. Pool retention, clearing and
+builder copies have costs; this does not establish a latency or CPU gain. Builder/result strings keep
+ordinary managed lifetimes, and whole-response retained memory remains unbounded by the logging scan
+limit.
 
 ## Redact before truncating {#redact-before-truncate}
 

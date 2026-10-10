@@ -59,7 +59,7 @@ outside the tree at `/Users/michael/.codex/scratchpads/cleansia-wave-b-2026-10-0
   observations where measured in the audit. Scratch helpers, builds, raw data and exact
   command records remain outside the maintained tree. Gains and unchanged values are
   reported separately; no latency gain is inferred from byte/read reductions alone.
-- [ ] **AC9** — Relevant full backend/web/iOS verification, repo checkers, docs build,
+- [x] **AC9** — Relevant full backend/web/iOS verification, repo checkers, docs build,
   graph refresh and independent source/security/measurement review pass. Latest master
   is merged before final verification; exact-head CI is green. The PR gives before/after
   results. Mike explicitly authorized merge after all applicable local/review and
@@ -332,3 +332,31 @@ Actual root repository parent argv (cwd `/Users/michael/.codex/worktrees/wave-a-
 ```
 
 All nine new native diagnostic/full parent arrays and the direct repository command are actual recorded invocations; exact nested Xcode/guard/guest operations and observed metadata remain in the full report tail. Producer announcements do not establish child execution. The current graph peer binds 12 finite sources and 169 saved structural nodes (`cc724c2f…`). Completed mutant cache discard retains all 36 finite hashes (`e6ce8ed2…`); restored cache untouched. Future publication checks/CI/merge have a later actual delivery cutoff.
+
+
+### 2026-10-09 final CI and actual merge closure
+
+**AC9 is complete.** Earlier pending statements above describe their original
+publication cutoffs and remain unchanged. Corrected head `8e161c96087e3b2a949a6cf5500606b402d58f5f`
+at base `ed1e1b8fe8c6963758063def22dbc424446d0b9d` passed all seven observed workflows,
+eight jobs and 36 critical named steps. Hosted iOS selected Xcode 26.6 (17F113)
+and recorded 3,545 passes, zero failures and one skip; hosted OS/runtime remain
+unestablished. Frontend/Backend/iOS workflow walls exceeded the 15-minute target
+at 1,420/1,218/1,167 s while succeeding. Shared strict `build` policy and optional
+skipped uploads remain qualified; all prior failures and local limits are retained.
+
+[PR #313](https://github.com/VM-s-Solutions/cleansia/pull/313) actually merged
+2026-10-09 08:08:21 UTC by normal SHA-guarded REST merge as
+`18a2e5ac8e118be1c527443dc8f6cc48ee30ce6c`, with parents the base and corrected head.
+Merge tree `464b77865ce115255d1dac467a10afa5decafdc8` equals the verified head tree;
+the postmerge recorded worktree was clean and fresh master bound to that merge.
+The [Wave B report](../../WAVE-B-2026-10-08.md#2026-10-09-final-hosted-ci-and-actual-merge-closure)
+records exact CI, independent review, actual publication/merge receipt pins and
+one verbatim delivery annex through ledger entry 1,155. Exporter completion
+(B row 1,156) and C scratch bootstrap (B row 1,157) remain in B's ledger; later
+C-owned actions use C's ledger. The actual C cross-ledger reference
+`raw/b-c-cross-ledger-transition-001.json`, SHA-256
+`ae0ed0aef4a69c7e79fcc7a00f40fb2225d3c9679ed4e90564078d0baf9101e1`, links those completed
+B rows and C entry rows without repeating execution or extending the B annex cutoff.
+These three B closure records are carried on the next approved C branch; they do not
+change the merged B head. INDEX.md is the sole status record.

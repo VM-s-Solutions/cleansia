@@ -71,21 +71,32 @@ internal static class RequestLoggingHarness
         string? authenticatedUserId = null,
         Stream? requestBody = null,
         Action? onNextInvoked = null,
-        string? queryString = null)
+        string? queryString = null,
+        LogLevel minimumLogLevel = LogLevel.Trace,
+        int responseStatusCode = StatusCodes.Status200OK,
+        RequestDelegate? downstream = null,
+        Action<HttpContext>? onCompleted = null,
+        Action<LogLevel>? onLogAttempt = null)
     {
         if (requestBody is not null && requestJson is not null)
         {
             throw new ArgumentException("Pass either requestJson or requestBody, not both.", nameof(requestBody));
         }
 
-        var factory = new CapturingLoggerFactory();
+        var factory = new CapturingLoggerFactory(minimumLogLevel, onLogAttempt);
         var loggerType = typeof(Logger<>).MakeGenericType(middlewareType);
         var logger = Activator.CreateInstance(loggerType, factory)!;
 
         RequestDelegate next = async ctx =>
         {
             onNextInvoked?.Invoke();
-            ctx.Response.StatusCode = StatusCodes.Status200OK;
+            if (downstream is not null)
+            {
+                await downstream(ctx);
+                return;
+            }
+
+            ctx.Response.StatusCode = responseStatusCode;
             ctx.Response.ContentType = "application/json";
             await ctx.Response.Body.WriteAsync(Encoding.UTF8.GetBytes(responseJson));
         };
@@ -115,26 +126,30 @@ internal static class RequestLoggingHarness
         var invoke = middlewareType.GetMethod("InvokeAsync", BindingFlags.Public | BindingFlags.Instance)!;
         await (Task)invoke.Invoke(middleware, [context])!;
 
+        onCompleted?.Invoke(context);
         return factory.Messages;
     }
 
-    private sealed class CapturingLoggerFactory : ILoggerFactory
+    private sealed class CapturingLoggerFactory(LogLevel minimumLogLevel, Action<LogLevel>? onLogAttempt) : ILoggerFactory
     {
         public List<string> Messages { get; } = [];
 
-        public ILogger CreateLogger(string categoryName) => new CapturingLogger(Messages);
+        public ILogger CreateLogger(string categoryName) => new CapturingLogger(Messages, minimumLogLevel, onLogAttempt);
         public void AddProvider(ILoggerProvider provider) { }
         public void Dispose() { }
 
-        private sealed class CapturingLogger(List<string> messages) : ILogger
+        private sealed class CapturingLogger(List<string> messages, LogLevel minimumLogLevel, Action<LogLevel>? onLogAttempt) : ILogger
         {
             public IDisposable BeginScope<TState>(TState state) where TState : notnull => NullScope.Instance;
-            public bool IsEnabled(LogLevel logLevel) => true;
+            public bool IsEnabled(LogLevel logLevel) => minimumLogLevel != LogLevel.None && logLevel >= minimumLogLevel;
 
             public void Log<TState>(
                 LogLevel logLevel, EventId eventId, TState state, Exception? exception,
-                Func<TState, Exception?, string> formatter) =>
-                messages.Add(formatter(state, exception));
+                Func<TState, Exception?, string> formatter)
+            {
+                onLogAttempt?.Invoke(logLevel);
+                if (IsEnabled(logLevel)) messages.Add(formatter(state, exception));
+            }
         }
 
         private sealed class NullScope : IDisposable

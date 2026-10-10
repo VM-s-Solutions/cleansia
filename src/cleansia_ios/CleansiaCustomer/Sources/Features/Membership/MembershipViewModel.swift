@@ -68,7 +68,7 @@ final class MembershipViewModel: ViewModel {
     }
 
     func reloadPlans() async {
-        await repository.refreshPlans()
+        await repository.refreshPlans(force: true)
     }
 
     /// The annual switch is offered only when the plan's price can be stated in the subscription's

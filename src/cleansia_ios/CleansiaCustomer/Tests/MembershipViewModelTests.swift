@@ -553,4 +553,37 @@ extension MembershipViewModelTests {
         XCTAssertFalse(rendered.contains("ek_1"))
         XCTAssertFalse(rendered.contains("cus_1"))
     }
+
+    func testConcurrentNilCountryPlansShareOneReadAndOnePublication() async {
+        let entered = expectation(description: "plans API entered")
+        let secondEntered = expectation(description: "second caller entered")
+        let completed = expectation(description: "plans API completed")
+        let client = FakeMembershipManagementClient()
+        client.holdPlans = true
+        client.plansStarted = { call, _ in if call == 1 { entered.fulfill() } }
+        client.plansCompleted = { call in if call == 1 { completed.fulfill() } }
+        let repository = MembershipRepository(client: client)
+        var publications = 0
+        let observation = repository.$plans.dropFirst().sink { _ in publications += 1 }
+        let first = Task { await repository.refreshPlans() }
+        await fulfillment(of: [entered], timeout: 2)
+        let second = Task {
+            secondEntered.fulfill()
+            return await repository.refreshPlans()
+        }
+        await fulfillment(of: [secondEntered], timeout: 2)
+        XCTAssertEqual(client.plansCallCount, 1)
+        client.releasePlans(call: 1, result: .success(MembershipFixtures.plans))
+        client.releaseAllPlans()
+        let firstResult = await first.value
+        let secondResult = await second.value
+        await fulfillment(of: [completed], timeout: 2)
+        XCTAssertEqual(try? firstResult.get(), MembershipFixtures.plans)
+        XCTAssertEqual(try? secondResult.get(), MembershipFixtures.plans)
+        XCTAssertEqual(client.plansCountryIds, [nil])
+        XCTAssertEqual(publications, 1)
+        observation.cancel()
+        first.cancel()
+        second.cancel()
+    }
 }

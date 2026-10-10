@@ -246,14 +246,15 @@ the fade below.
 
 ## Content fades under the status bar {#status-bar-fade}
 
-Home, Profile and the Plus offer draw to the top edge with no navigation bar, so once their content
-scrolls up it passes under the clock and the camera cut-out. On those three screens, once the content
-has left its top, it fades out under the status bar. On iOS the fade is one solid colour, the colour
+Home, Profile and the Plus offer in the customer app, and the partner dashboard, draw to the top edge
+with no navigation bar, so once their content scrolls up it passes under the clock and the camera
+cut-out. On those four screens, once the content has left its top, it fades out under the status
+bar. On iOS the fade is one solid colour, the colour
 actually behind the status bar, held at 90 % over the clock, signal and battery and eased to clear in
 its last 5pt. It ends at the bottom line of the status bar's content: the Dynamic Island's or the
 notch's bottom edge, or the bottom of a home-button phone's 20pt status bar, with nothing below it,
-the same on every iOS version. On Home that colour is the page colour; on Profile and the Plus offer
-it is the hero's own colour while the hero is under the status bar, and the page colour once it has
+the same on every iOS version. On Home and the partner dashboard that colour is the page colour; on
+Profile and the Plus offer it is the hero's own colour while the hero is under the status bar, and the page colour once it has
 scrolled past. Android draws the same rule (since 2026-10-05), ending at the bottom of the camera
 hole, the line its clock is centred on (below). Until then it drew an opaque band of the page
 colour over the status bar and 24dp below it, a white band over the Plus and Profile heroes; the
@@ -272,7 +273,10 @@ heroes (above) paint the strip themselves. A pull-to-refresh never raises it eit
 only: it takes no touches and is hidden from VoiceOver and TalkBack. Both platforms show it from the
 first point of scroll.
 
-- **iOS** wraps the scroll view in `StatusBarFadeScrollView` (customer `Components/`). A
+- **iOS** wraps the scroll view in `StatusBarFadeScrollView` (CleansiaCore `Components/`, public there
+  since 2026-10-11, when the partner dashboard became its second app, as `CenteredAuthScroll` is;
+  `StatusBarStyleBridge` and `statusBarFadeHero()` are public with it, `StatusBarFade` stays
+  internal). A
   `GeometryReader` behind the content reads the content's top in a named coordinate space, and state
   is written only when it crosses the threshold, not on every scrolled frame. A `PreferenceKey` reader
   does not work here, because the scroll view does not pass its content's preference changes to an
@@ -412,10 +416,14 @@ first point of scroll.
   checks `UIScrollView.setContentOffset` did not update SwiftUI geometry; in the 2026-10-04 checks an
   animated `setContentOffset` did drive both the threshold and the hero cross-fade, on iOS 26.3, 18.6
   and 16.4.
-- **Android** applies `Modifier.statusBarFade(scrollState, heroTint, heroHeight)` (customer
-  `ui/components/StatusBarFade.kt`) directly before `verticalScroll(scrollState)`, so it draws over
-  the viewport and not over the scrolled content. It is visible while `scrollState.value > 0`. Since
-  2026-10-05 it draws the iOS rule:
+- **Android** applies `Modifier.statusBarFade(scrollState, heroTint, heroHeight)` (`:core`
+  `ui/components/StatusBarFade.kt`, shared by both apps since 2026-10-11) directly before
+  `verticalScroll(scrollState)`, so it draws over the viewport and not over the scrolled content. It
+  is visible while `scrollState.value > 0`. The partner dashboard scrolls a `LazyColumn` and has no
+  hero, so it chains the overload `Modifier.statusBarFade(listState)` on the list itself: the page
+  colour, shown once the list has left its top (`statusBarFadeScrolled`). Like Home, the dashboard
+  pads the status bar inside the scroll (its greeting row) and rests its refresh indicator below the
+  status bar. Since 2026-10-05 it draws the iOS rule:
   - **One solid colour, the one behind the status bar.** Home passes no tint, and its fade is the
     page background. The Plus offer passes `Sky950`, its hero's top, and Profile its hero's top
     colour (`profileHeroColors`, [above](#full-bleed-hero)), each with the hero's height as measured
@@ -467,7 +475,10 @@ first point of scroll.
     only once Plus has entered. `CleansiaTheme` sets the bars in a `DisposableEffect(darkTheme)`, not a
     `SideEffect`: side effects run after every other effect in a frame, so it undid the screen's
     setting. Android sets the icons itself, as iOS asks for them since 2026-10-05, so on both the Plus
-    fade is navy in light mode on every version.
+    fade is navy in light mode on every version. Handing them back, `StatusBarIcons` reads the theme
+    from the active colour scheme (a `surface` luminance under 0.5 is dark, the `:core` idiom),
+    because `:core` cannot read the customer app's theme setting; `CleansiaTheme` is built from that
+    setting, so the two agree. The partner dashboard passes no hero, so it never sets the icons.
   - **Home pads inside the scroll.** Home moved its status-bar padding inside the scroll, so the
     address bar starts below the status bar at rest and then scrolls under the fade. That leaves
     Home's `PullToRefreshBox` filling the whole screen, so its indicator pads `WindowInsets.statusBars`
@@ -476,13 +487,15 @@ first point of scroll.
     went from 1.35:1 to 14.2:1 at rest, where white icons replace the theme's dark ones, and reads
     14.1–14.2:1 scrolled, where it read 5.7:1 on the old white band. Plus in dark mode reads
     14.1–14.8:1, and Home 5.7:1 in light mode and 17.9:1 in dark as before, with the fade ending 30px
-    higher. `StatusBarFadeTest` pins the hold, the ease and its 5dp, the single colour, the end line
-    and the cutout rule (one test per API branch: the path from 31, the rectangles' span on 28–30,
-    neither below 28), the cross-fade, the step (the shades exist for a dark hero over the light
-    page and not over a dark one; at every share from 0 to 1 the clock reads 4.5:1 in the icons it is
-    given, for Profile and Plus in both themes; one jump, never back) and the icon rule;
-    `StatusBarFadeBindingTest` pins each screen's wiring, that the fade is coloured with the stepped
-    share, Home's padding and refresh indicator, and both heroes' tint and height.
+    higher. `StatusBarFadeTest` (`:core`) pins the hold, the ease and its 5dp, the single colour, the
+    end line and the cutout rule (one test per API branch: the path from 31, the rectangles' span on
+    28–30, neither below 28), the cross-fade, the step (the shades exist for a dark hero over the
+    light page and not over a dark one; at every share from 0 to 1 the clock reads 4.5:1 in the icons
+    it is given, for Profile and Plus in both themes; one jump, never back), the icon rule, and that a
+    lazy list shows the fade only once it has left its top; `StatusBarFadeBindingTest` (customer) pins
+    each customer screen's wiring, that the fade is coloured with the stepped share, Home's padding
+    and refresh indicator, and both heroes' tint and height; the partner `DashboardScreenTest` pins
+    the dashboard's `statusBarFade(listState)`.
 
 ## A booking swiped away keeps its draft {#booking-draft}
 
@@ -758,8 +771,8 @@ borders, standalone icons and filled buttons keep the primary:
 - **Card eyebrows and section labels**: the dashboard's *This week* and the hero row's label;
   earnings' current period, pay period and cash held; the invoices summary and each card's total; the
   invoice's hero, breakdown, period, references and notes; period pay's hero, breakdown and jobs, and
-  each job's fee caption. On Android also the dashboard's next-job and available-work labels and the
-  greeting's line for today.
+  each job's fee caption; the greeting's line for today (on iOS since 2026-10-11). On Android also the
+  dashboard's next-job and available-work labels.
 - **Pay amounts**: the orders list's available, active and history rows and its summary figures, the
   pending offer's total, the work contract's reward, and the payment card's discounts and total. On
   iOS also the compact order row and the order detail's pay.
@@ -1171,6 +1184,14 @@ What changed on iOS:
   schedule stepper already had 48dp buttons. Both are one TalkBack node, named and valued as on iOS and
   adjusted like a slider with a swipe up or down (`adjustableStepper()` in the customer app's
   `StepperAccessibility.kt`).
+- **Text links have 44pt targets.** Since 2026-10-11 `CleansiaTextLink` frames its label at least
+  44 by 44pt and takes the tap across that whole frame, as Material's `TextButton` gives every Android
+  link a 48dp target; a call site cannot grow a plain button's target from outside, so the component
+  carries it. Where a link swaps to a spinner while it works (the order footer's *Customer did not
+  pay*), the spinner keeps the 44pt height, so the footer does not drop under the cleaner's thumb.
+  The Plus offer's back arrow is a 44pt target that VoiceOver reads as *Back*, as TalkBack reads
+  Android's. It still sits in the hero and scrolls away with it on both platforms, by design; below
+  the hero the way back is the edge swipe on iOS and system back on Android.
 - **On iOS 26 the booking sheet grows out of the Book button.** Opened from the Book FAB, the booking
   sheet zooms out of the button and shrinks back into it when it closes. Every other way into booking
   (Home's book buttons, the carousel slides, *Order again*) slides the sheet up as before. The FAB looks

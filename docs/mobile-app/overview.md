@@ -152,7 +152,7 @@ fall back to an empty string so an unconfigured clone still builds:
 | `MAPBOX_ACCESS_TOKEN` | both | maps fail to load at runtime with a clear error |
 | `API_BASE_URL` | both | per-build-type default above |
 | `SENTRY_DSN` | customer | Sentry stays dormant (no-op init) |
-| `STRIPE_PUBLISHABLE_KEY` | customer | PaymentSheet fails at runtime with a clear error |
+| `STRIPE_PUBLISHABLE_KEY` | customer | the Plus purchase bar is hidden, as on iOS; a card booking still reaches PaymentSheet, which fails at runtime with a clear error |
 | `GOOGLE_WEB_CLIENT_ID` | customer | the Google sign-in button fails with a clear message |
 
 `google-services.json` is gitignored per app. If it is missing, the build copies the committed
@@ -194,6 +194,18 @@ uses, and says the distance is calculated only on the device, in all five `InfoP
 **`:customer-app`** — `INTERNET`, `POST_NOTIFICATIONS`, `ACCESS_FINE_LOCATION`,
 `ACCESS_COARSE_LOCATION`. It does not declare `ACCESS_NETWORK_STATE` or `CAMERA`, and it still
 declares precise location.
+
+**Notification permission is asked at launch, on purpose.** On Android 13 and later both apps request
+`POST_NOTIFICATIONS` from `MainActivity.onCreate` on every cold start until it is granted, signed in
+or not; dismissing the dialog is not an answer, and two refusals end it. Both iOS apps ask once at
+launch, from `startPush()`, with no explainer screen, at parity with Android. The customer Home slide
+*Stay in the loop* is the in-app way to ask again ([Features](/product/features#customer)); the
+partner app has none, and it ignores the answer. Asking only once the user is signed in is an option
+recorded for the owner, not built (2026-10-10); it would have to ask at sign-in rather than on the
+main screens, because a cleaner held on the registration lock learns of an approval by push. For
+launch timing, grant the permission first (`adb shell pm grant <package>
+android.permission.POST_NOTIFICATIONS`) or read logcat's `Displayed …/MainActivity` line: otherwise
+`am start -W` reports `GrantPermissionsActivity`, whose time is not the app's first frame.
 
 **Neither app declares a storage permission, and neither needs one.** Every gallery picker in
 both apps goes through the system picker — `PickVisualMedia()` on partner (job photos, avatar),

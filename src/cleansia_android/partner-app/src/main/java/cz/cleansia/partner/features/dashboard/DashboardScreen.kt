@@ -1,5 +1,7 @@
 package cz.cleansia.partner.features.dashboard
 
+import android.content.Intent
+import android.net.Uri
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -22,6 +24,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -60,6 +63,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -69,6 +73,7 @@ import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import cz.cleansia.core.money.CurrencySymbols
+import cz.cleansia.core.ui.components.statusBarFade
 import cz.cleansia.core.ui.theme.Spacing
 import cz.cleansia.core.ui.theme.primaryIconOnContainer
 import cz.cleansia.core.ui.theme.primaryText
@@ -120,6 +125,7 @@ fun DashboardScreen(
     val firstName by viewModel.firstName.collectAsStateWithLifecycle()
     val unreadNotifications by viewModel.unreadNotifications.collectAsStateWithLifecycle()
     val statusBarTop = WindowInsets.statusBars.asPaddingValues().calculateTopPadding()
+    val context = LocalContext.current
 
     // Hoisted so the list can skip the ITEM, not just its contents — see the note at the call sites.
     val pendingOffersViewModel: PendingOffersCardViewModel = hiltViewModel()
@@ -156,6 +162,7 @@ fun DashboardScreen(
     val isInitialLoading = uiState is DashboardUiState.Loading
 
     val pullState = rememberPullToRefreshState()
+    val listState = rememberLazyListState()
     PullToRefreshBox(
         // Bind ONLY to user-initiated pulls. Background refreshes
         // (init / ON_RESUME / post-mutation) must render silently — the
@@ -185,9 +192,11 @@ fun DashboardScreen(
         },
     ) {
     LazyColumn(
+        state = listState,
         modifier = Modifier
             .fillMaxSize()
-            .background(MaterialTheme.colorScheme.background),
+            .background(MaterialTheme.colorScheme.background)
+            .statusBarFade(listState),
         contentPadding = PaddingValues(bottom = MainBottomNavInset),
         verticalArrangement = Arrangement.spacedBy(Spacing.M),
     ) {
@@ -269,7 +278,11 @@ fun DashboardScreen(
                     onProfile = onOpenProfile,
                     onPayHistory = onOpenEarnings,
                     onDocuments = onOpenDocuments,
-                    onHelp = { /* Phase 9: help screen */ },
+                    onHelp = {
+                        runCatching {
+                            context.startActivity(Intent(Intent.ACTION_SENDTO, Uri.parse("mailto:support@cleansia.cz")))
+                        }
+                    },
                 )
             }
         }
@@ -403,7 +416,7 @@ private fun TodayHeroCard(
 private fun NextJobHero(order: OrderListItem, onClick: () -> Unit) {
     val status = order.orderStatus.toOrderStatus()
     val (label, _) = nextJobLabelAndCta(status)
-    val whenText = remember(order.cleaningDateTime) { nextJobWhenLine(order.cleaningDateTime) }
+    val whenText = nextJobWhenLine(order.cleaningDateTime)
     val whereText = remember(order.customerName, order.customerAddress) {
         nextJobWhereLine(order.customerName, order.customerAddress)
     }
@@ -473,6 +486,7 @@ private fun NextJobHero(order: OrderListItem, onClick: () -> Unit) {
  * 14:00"), absolute date+time otherwise. Drops the redundant year for
  * any time inside this calendar year.
  */
+@Composable
 private fun nextJobWhenLine(iso: String?): String {
     if (iso.isNullOrBlank()) return "—"
     val instant = runCatching { Instant.parse(iso) }.getOrNull() ?: return iso
@@ -485,15 +499,15 @@ private fun nextJobWhenLine(iso: String?): String {
         val totalMinutes = duration.toMinutes()
         val hours = duration.toHours()
         when {
-            totalMinutes < 60 -> return String.format(Locale.getDefault(), "In %d min", totalMinutes)
+            totalMinutes < 60 -> return stringResource(R.string.urgency_in_minutes, totalMinutes)
             hours < 24 -> {
                 val today = LocalDate.now(zone)
-                if (local.toLocalDate() == today) return "Today $time"
-                return String.format(Locale.getDefault(), "In %dh %02dm", hours, totalMinutes % 60)
+                if (local.toLocalDate() == today) return "${stringResource(R.string.day_today)} $time"
+                return stringResource(R.string.urgency_in_hours_minutes, hours, totalMinutes % 60)
             }
         }
         val days = duration.toDays()
-        if (days == 1L) return "Tomorrow $time"
+        if (days == 1L) return "${stringResource(R.string.day_tomorrow)} $time"
     }
     val sameYear = local.year == LocalDate.now(zone).year
     val datePattern = if (sameYear) "EEE d MMM" else "d MMM yyyy"
@@ -849,7 +863,7 @@ private fun WeeklyEarningsHero(stats: DashboardStats?, onClick: () -> Unit) {
  * supplied ISO code (e.g. "CZK") and falls back to device locale
  * only when the server hasn't told us the user's currency.
  */
-private fun formatMoneyWithSymbol(amount: Double?, symbol: String, fallback: String): String {
+internal fun formatMoneyWithSymbol(amount: Double?, symbol: String, fallback: String): String {
     if (amount == null || amount <= 0.0) return fallback
     val rounded = String.format(Locale.getDefault(), "%,.0f", amount).replace(',', ' ')
     return if (symbol.isBlank()) rounded else "$rounded $symbol"
@@ -864,7 +878,7 @@ private fun formatMoneyWithSymbol(amount: Double?, symbol: String, fallback: Str
  * server sends per order. A currency's symbol belongs to the currency, not to who is looking at it.
  * → [CurrencySymbols]
  */
-private fun resolveCurrencySymbol(serverCode: String?): String {
+internal fun resolveCurrencySymbol(serverCode: String?): String {
     val code = serverCode?.takeIf { it.isNotBlank() }
     if (code != null) return CurrencySymbols.forCode(code)
 
@@ -878,6 +892,7 @@ private fun resolveCurrencySymbol(serverCode: String?): String {
 
 @Composable
 private fun PayPeriodCard(stats: DashboardStats, onClick: () -> Unit) {
+    val currencySymbol = remember(stats.currencyCode) { resolveCurrencySymbol(stats.currencyCode) }
     val start = parseUtcDate(stats.currentPayPeriodStart) ?: return
     val end = parseUtcDate(stats.currentPayPeriodEnd) ?: return
     val today = LocalDate.now()
@@ -918,7 +933,7 @@ private fun PayPeriodCard(stats: DashboardStats, onClick: () -> Unit) {
             }
             Spacer(Modifier.height(Spacing.XS))
             Text(
-                text = formatMoney(stats.currentPeriodEarnings),
+                text = formatMoneyWithSymbol(stats.currentPeriodEarnings, currencySymbol, fallback = "—"),
                 style = MaterialTheme.typography.headlineMedium.copy(fontWeight = FontWeight.Bold),
                 color = MaterialTheme.colorScheme.onSurface,
             )
@@ -949,6 +964,7 @@ private fun PayPeriodCard(stats: DashboardStats, onClick: () -> Unit) {
 
 @Composable
 private fun LastMonthCard(stats: DashboardStats?) {
+    val currencySymbol = remember(stats?.currencyCode) { resolveCurrencySymbol(stats?.currencyCode) }
     Surface(
         modifier = Modifier
             .fillMaxWidth()
@@ -984,7 +1000,7 @@ private fun LastMonthCard(stats: DashboardStats?) {
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 MetricColumn(
-                    value = formatMoney(stats?.lastMonthEarnings),
+                    value = formatMoneyWithSymbol(stats?.lastMonthEarnings, currencySymbol, fallback = "—"),
                     label = stringResource(R.string.dash_last_month_earnings),
                 )
                 MetricColumn(
@@ -1231,11 +1247,6 @@ private fun greeting(firstName: String?): String {
         hour < 18 -> stringResource(R.string.good_afternoon)
         else -> stringResource(R.string.good_evening)
     }
-}
-
-private fun formatMoney(amount: Double?): String {
-    if (amount == null || amount == 0.0) return "—"
-    return String.format(Locale.getDefault(), "%.0f", amount)
 }
 
 private fun formatDateTime(iso: String): String = runCatching {

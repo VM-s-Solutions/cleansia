@@ -2,7 +2,6 @@ package cz.cleansia.customer.features.profile
 
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.luminance
-import cz.cleansia.customer.ui.components.statusBarIconsLight
 import cz.cleansia.customer.ui.theme.Sky400
 import cz.cleansia.customer.ui.theme.Sky600
 import cz.cleansia.customer.ui.theme.Sky700
@@ -29,7 +28,8 @@ class ProfileHeroClockTest {
 
     /**
      * The clock's lowest pixel is about 15 % of the way down the hero on the Pixel 8 emulator (81 of about 500 px);
-     * 20 % leaves room for a taller status bar over a shorter hero.
+     * 20 % leaves room for a taller status bar over a shorter hero. That the icons turn white over these tops
+     * (sky-700, sky-800) is the shared fade's rule, pinned in :core's StatusBarFadeTest.
      */
     @Test
     fun `the white clock and icons read at 4_5 to 1 over the hero's top in both themes`() {
@@ -37,7 +37,6 @@ class ProfileHeroClockTest {
             val (top, bottom) = profileHeroColors(dark, brand)
             val atClock = mix(top, bottom, 0.2f)
             val theme = if (dark) "dark" else "light"
-            assertTrue("$theme: the icons are not light over the hero", statusBarIconsLight(top))
             assertTrue("$theme: white on the hero's top is ${contrast(Color.White, top)}:1", contrast(Color.White, top) >= 4.5)
             assertTrue("$theme: white at the clock is ${contrast(Color.White, atClock)}:1", contrast(Color.White, atClock) >= 4.5)
         }

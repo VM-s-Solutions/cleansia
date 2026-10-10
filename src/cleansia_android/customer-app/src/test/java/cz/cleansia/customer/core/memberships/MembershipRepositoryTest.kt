@@ -10,12 +10,14 @@ import io.mockk.coVerify
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify
-import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.async
 import kotlinx.coroutines.cancelAndJoin
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeout
@@ -24,7 +26,6 @@ import okhttp3.ResponseBody.Companion.toResponseBody
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
-import org.junit.Assert.fail
 import org.junit.Before
 import org.junit.Test
 import retrofit2.Response
@@ -709,7 +710,7 @@ class MembershipRepositoryTest {
     }
 
     @Test
-    fun getPlans_marketChangeCancelsOldWaitersWithoutReelectingOldCountry() = runTest {
+    fun getPlans_marketChangeAnswersOldWaitersSupersededWithoutReelectingOldCountry() = runTest {
         val oldEntered = CompletableDeferred<Unit>()
         val oldRelease = CompletableDeferred<Unit>()
         val newEntered = CompletableDeferred<Unit>()
@@ -741,8 +742,18 @@ class MembershipRepositoryTest {
                 newRelease.complete(Unit)
                 assertEquals(ApiResult.Success(fresh), replacement.await())
                 oldRelease.complete(Unit)
-                try { owner.await(); fail("Old owner must stay in its superseded market") } catch (_: CancellationException) { }
-                try { waiter.await(); fail("Old waiter must not re-elect a country request") } catch (_: CancellationException) { }
+                val ownerAnswer = owner.await()
+                assertTrue(
+                    "Old owner must stay in its superseded market, answered silently: $ownerAnswer",
+                    ownerAnswer is ApiResult.Error && ownerAnswer.error is ApiError.Network,
+                )
+                assertFalse(owner.isCancelled)
+                val waiterAnswer = waiter.await()
+                assertTrue(
+                    "Old waiter must not re-elect a country request, answered silently: $waiterAnswer",
+                    waiterAnswer is ApiResult.Error && waiterAnswer.error is ApiError.Network,
+                )
+                assertFalse(waiter.isCancelled)
                 assertEquals(ApiResult.Success(fresh), repo.getPlans("svk-id"))
                 assertEquals(1, oldCalls)
                 assertEquals(1, newCalls)
@@ -790,7 +801,12 @@ class MembershipRepositoryTest {
                 newRelease.complete(Unit)
                 assertEquals(ApiResult.Success(fresh), new.await())
                 oldRelease.complete(Unit)
-                try { old.await(); fail("Cleared session must not return its old plans") } catch (_: CancellationException) { }
+                val oldAnswer = old.await()
+                assertTrue(
+                    "Cleared session must not return its old plans, answered silently: $oldAnswer",
+                    oldAnswer is ApiResult.Error && oldAnswer.error is ApiError.Network,
+                )
+                assertFalse(old.isCancelled)
                 assertEquals(ApiResult.Success(fresh), repo.getPlans(null))
                 assertEquals(2, calls)
             } finally {
@@ -801,6 +817,46 @@ class MembershipRepositoryTest {
             oldRelease.complete(Unit)
             newRelease.complete(Unit)
             old.cancelAndJoin()
+        }
+    }
+
+    /**
+     * A superseded caller is still active: only its market moved. Answering it with a thrown
+     * CancellationException would end a plain `collect` that called it, so it is answered silently.
+     */
+    @Test
+    fun getPlans_supersededCallerKeepsAPlainCollectFollowing() = runTest {
+        val czeEntered = CompletableDeferred<Unit>()
+        val czeRelease = CompletableDeferred<Unit>()
+        val fresh = listOf(plan("svk"))
+        coEvery { api.getPlans("cze-id") } coAnswers {
+            czeEntered.complete(Unit)
+            withContext(NonCancellable) { czeRelease.await() }
+            Response.success(listOf(plan("cze")))
+        }
+        coEvery { api.getPlans("svk-id") } returns Response.success(fresh)
+        val repo = newRepo()
+        val market = MutableStateFlow<String?>("cze-id")
+        val answers = mutableListOf<ApiResult<List<MembershipPlanDto>>>()
+        val follower = launch(start = CoroutineStart.UNDISPATCHED) {
+            market.collect { answers += repo.getPlans(it) }
+        }
+        try {
+            withTimeout(5_000) { czeEntered.await() }
+            assertEquals(ApiResult.Success(fresh), repo.getPlans("svk-id"))
+            czeRelease.complete(Unit)
+            market.value = "svk-id"
+            advanceUntilIdle()
+            assertTrue("a plain collect must outlive its superseded read", follower.isActive)
+            val superseded = answers.first()
+            assertTrue(
+                "expected the silent superseded answer but got: $superseded",
+                superseded is ApiResult.Error && superseded.error is ApiError.Network,
+            )
+            assertEquals(ApiResult.Success(fresh), answers.last())
+        } finally {
+            czeRelease.complete(Unit)
+            follower.cancelAndJoin()
         }
     }
 
@@ -853,5 +909,106 @@ class MembershipRepositoryTest {
         repo.clear()
 
         assertTrue("sign-out must not leave the next session reading this one as fresh", repo.staleness.isStale())
+    }
+
+    /** S11: a lookup still in flight at sign-out must not write the previous user's membership back. */
+    @Test
+    fun refresh_heldAcrossClearPublishesNothingAndStaysStale() = runTest {
+        val entered = CompletableDeferred<Unit>()
+        val release = CompletableDeferred<Unit>()
+        coEvery { api.getMine() } coAnswers {
+            entered.complete(Unit)
+            release.await()
+            Response.success(membership())
+        }
+        val repo = newRepo()
+        val old = async(start = CoroutineStart.UNDISPATCHED) { repo.refresh() }
+        try {
+            withTimeout(5_000) { entered.await() }
+            repo.clear()
+            release.complete(Unit)
+            val result = old.await()
+            assertTrue(
+                "expected the silent superseded answer but got: $result",
+                result is ApiResult.Error && result.error is ApiError.Network,
+            )
+            assertFalse(old.isCancelled)
+            assertEquals(null, repo.current.value)
+            assertTrue("the cleared session's read must not stamp the watermark", repo.staleness.isStale())
+            assertFalse(repo.loading.value)
+        } finally {
+            release.complete(Unit)
+            old.cancelAndJoin()
+        }
+    }
+
+    /**
+     * A refresh queued before sign-out belongs to the old session and never reaches the API; one made
+     * after it reads and publishes the new session's membership.
+     */
+    @Test
+    fun refresh_queuedBehindAClearedOneReadsTheNewSession() = runTest {
+        val entered = CompletableDeferred<Unit>()
+        val release = CompletableDeferred<Unit>()
+        var calls = 0
+        val newSession = membership(hasMembership = false)
+        coEvery { api.getMine() } coAnswers {
+            calls++
+            if (calls == 1) {
+                entered.complete(Unit)
+                release.await()
+                Response.success(membership())
+            } else {
+                Response.success(newSession)
+            }
+        }
+        val repo = newRepo()
+        val old = async(start = CoroutineStart.UNDISPATCHED) { repo.refresh() }
+        val queuedBeforeClear = async(start = CoroutineStart.UNDISPATCHED) { repo.refresh() }
+        try {
+            withTimeout(5_000) { entered.await() }
+            repo.clear()
+            val new = async(start = CoroutineStart.UNDISPATCHED) { repo.refresh() }
+            release.complete(Unit)
+            assertEquals(ApiResult.Success(newSession), new.await())
+            val stale = queuedBeforeClear.await()
+            assertTrue(
+                "a refresh queued before sign-out must be answered silently: $stale",
+                stale is ApiResult.Error && stale.error is ApiError.Network,
+            )
+            assertEquals(newSession, repo.current.value)
+            assertFalse(repo.staleness.isStale())
+            assertEquals("only the held read and the new session's read reach the API", 2, calls)
+        } finally {
+            release.complete(Unit)
+            old.cancelAndJoin()
+            queuedBeforeClear.cancelAndJoin()
+        }
+    }
+
+    /** A market change moves the plans' generation only; it never discards a membership refresh. */
+    @Test
+    fun refresh_survivesAMarketChangeWhileInFlight() = runTest {
+        val entered = CompletableDeferred<Unit>()
+        val release = CompletableDeferred<Unit>()
+        coEvery { api.getMine() } coAnswers {
+            entered.complete(Unit)
+            release.await()
+            Response.success(membership())
+        }
+        coEvery { api.getPlans("svk-id") } returns Response.success(listOf(plan("svk")))
+        val repo = newRepo()
+        val refresh = async(start = CoroutineStart.UNDISPATCHED) { repo.refresh() }
+        try {
+            withTimeout(5_000) { entered.await() }
+            assertEquals(ApiResult.Success(listOf(plan("svk"))), repo.getPlans("svk-id"))
+            release.complete(Unit)
+            assertEquals(ApiResult.Success(membership()), refresh.await())
+            assertEquals(membership(), repo.current.value)
+            assertFalse(repo.staleness.isStale())
+        } finally {
+            release.complete(Unit)
+            refresh.cancelAndJoin()
+        }
     }
 }

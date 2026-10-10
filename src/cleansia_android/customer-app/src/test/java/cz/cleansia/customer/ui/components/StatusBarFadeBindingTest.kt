@@ -88,7 +88,7 @@ class StatusBarFadeBindingTest {
     /** W-F4: the device's own API level picks the reader, and API 28-30 read the cutout's bounding rectangles. */
     @Test
     fun `the cutout is read for the API level the device runs`() {
-        val reader = code(FADE).substringAfter("private fun cutoutExtent(", "").substringBefore("\n}\n", "")
+        val reader = fadeCode().substringAfter("private fun cutoutExtent(", "").substringBefore("\n}\n", "")
         assertTrue("cutoutExtent must pass sdk = Build.VERSION.SDK_INT", reader.contains("sdk = Build.VERSION.SDK_INT"))
         assertTrue("cutoutExtent must read the cutout path", reader.contains("displayCutout?.cutoutPath"))
         assertTrue("cutoutExtent must read the bounding rectangles", reader.contains("displayCutout?.boundingRects"))
@@ -125,7 +125,7 @@ class StatusBarFadeBindingTest {
      */
     @Test
     fun `the icons are held while the screen shows and handed back when it pauses or leaves`() {
-        val icons = code(FADE).substringAfter("fun StatusBarIcons(", "")
+        val icons = fadeCode().substringAfter("fun StatusBarIcons(", "")
         assertTrue(
             "StatusBarIcons' set() must write isAppearanceLightStatusBars = !light",
             Regex("""fun set\(\) \{[^}]*isAppearanceLightStatusBars = !light\b""").containsMatchIn(icons),
@@ -163,16 +163,24 @@ class StatusBarFadeBindingTest {
 
     /** statusBarFade's own body, up to where it draws: the effects it runs and the height it draws to. */
     private fun fadeBody(): String =
-        code(FADE).substringAfter("fun Modifier.statusBarFade(", "").substringBefore("drawWithContent", "")
+        fadeCode().substringAfter("fun Modifier.statusBarFade(", "").substringBefore("drawWithContent", "")
 
     /** [source] without its comments, so prose that names a call is never read as the call. */
-    private fun code(path: String): String = source(path).replace(Regex("""/\*[\s\S]*?\*/|//[^\n]*"""), "")
+    private fun code(path: String): String = source(path).replace(COMMENTS, "")
 
-    private fun source(path: String): String = sequenceOf(
-        File("."),
-        File("customer-app"),
-        File("src/cleansia_android/customer-app"),
-    ).map { File(it, "src/main/java/cz/cleansia/customer/$path") }
+    /** The fade lives in :core, which the partner dashboard applies too. */
+    private fun fadeCode(): String = read(
+        sequenceOf(File("../core"), File("core"), File("src/cleansia_android/core")),
+        "src/main/java/cz/cleansia/core/$FADE",
+    ).replace(COMMENTS, "")
+
+    private fun source(path: String): String = read(
+        sequenceOf(File("."), File("customer-app"), File("src/cleansia_android/customer-app")),
+        "src/main/java/cz/cleansia/customer/$path",
+    )
+
+    private fun read(roots: Sequence<File>, path: String): String = roots
+        .map { File(it, path) }
         .firstOrNull { it.isFile }
         ?.readText()
         ?.replace("\r\n", "\n")
@@ -180,6 +188,7 @@ class StatusBarFadeBindingTest {
 
     private companion object {
         const val FADE = "ui/components/StatusBarFade.kt"
+        val COMMENTS = Regex("""/\*[\s\S]*?\*/|//[^\n]*""")
 
         val SCREENS = listOf(
             "features/home/HomeTab.kt",

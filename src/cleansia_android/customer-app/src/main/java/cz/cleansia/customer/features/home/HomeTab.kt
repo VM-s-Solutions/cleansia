@@ -132,7 +132,7 @@ import cz.cleansia.customer.ui.theme.CleansiaTheme
 import cz.cleansia.customer.ui.theme.SuccessText
 import cz.cleansia.customer.ui.theme.WarningStar
 import cz.cleansia.customer.features.main.MainShellBottomClearance
-import cz.cleansia.customer.ui.components.statusBarFade
+import cz.cleansia.core.ui.components.statusBarFade
 import kotlin.math.roundToInt
 import kotlinx.coroutines.launch
 

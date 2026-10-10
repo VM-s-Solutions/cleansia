@@ -1,14 +1,9 @@
-package cz.cleansia.customer.ui.components
+package cz.cleansia.core.ui.components
 
+import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.compositeOver
 import androidx.compose.ui.unit.dp
-import cz.cleansia.customer.ui.theme.Sky600
-import cz.cleansia.customer.ui.theme.Sky700
-import cz.cleansia.customer.ui.theme.Sky800
-import cz.cleansia.customer.ui.theme.Sky950
-import cz.cleansia.customer.ui.theme.Slate50
-import cz.cleansia.customer.ui.theme.Slate900
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertEquals
@@ -150,6 +145,7 @@ class StatusBarFadeTest {
     fun `the icons are light on the dark heroes and the dark page, dark on the light page`() {
         assertTrue(statusBarIconsLight(Sky950))
         assertTrue(statusBarIconsLight(Sky700))
+        assertTrue(statusBarIconsLight(Sky800))
         // The 60 % black icons read 3.2:1 on sky-600, white 4.1:1.
         assertTrue(statusBarIconsLight(Sky600))
         assertTrue(statusBarIconsLight(Slate900))
@@ -217,8 +213,24 @@ class StatusBarFadeTest {
         assertEquals(1, shares.zipWithNext().count { (a, b) -> a > illegible.endInclusive && b < illegible.start })
     }
 
+    @Test
+    fun `a lazy list shows the fade once it has left its top`() {
+        assertFalse(statusBarFadeScrolled(LazyListState()))
+        assertTrue(statusBarFadeScrolled(LazyListState(firstVisibleItemIndex = 0, firstVisibleItemScrollOffset = 1)))
+        assertTrue(statusBarFadeScrolled(LazyListState(firstVisibleItemIndex = 1, firstVisibleItemScrollOffset = 0)))
+        assertTrue(statusBarFadeScrolled(LazyListState(firstVisibleItemIndex = 3, firstVisibleItemScrollOffset = 40)))
+    }
+
     private companion object {
         /** An sRGB colour keeps its alpha in eight bits: 0.9 is stored as 230 / 255. */
         const val ALPHA_STEP = 1f / 255
+
+        /** The customer palette the fade is drawn in: the pages, Profile's and the Plus offer's heroes. */
+        val Sky600 = Color(0xFF0284C7)
+        val Sky700 = Color(0xFF0369A1)
+        val Sky800 = Color(0xFF075985)
+        val Sky950 = Color(0xFF082F49)
+        val Slate50 = Color(0xFFF8FAFC)
+        val Slate900 = Color(0xFF0F172A)
     }
 }

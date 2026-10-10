@@ -1,4 +1,4 @@
-package cz.cleansia.customer.ui.components
+package cz.cleansia.core.ui.components
 
 import android.annotation.SuppressLint
 import android.app.Activity
@@ -8,6 +8,7 @@ import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.ScrollState
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.statusBars
+import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
@@ -22,13 +23,13 @@ import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.compositeOver
+import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.unit.dp
 import androidx.core.view.WindowCompat
 import androidx.lifecycle.compose.LifecycleResumeEffect
-import cz.cleansia.customer.ui.theme.isDark
 import kotlin.math.ceil
 import kotlin.math.roundToInt
 
@@ -85,14 +86,38 @@ fun Modifier.statusBarFade(
 
     drawWithContent {
         drawContent()
-        if (alpha > 0f && height > 0) {
-            val bottom = height.toFloat()
-            drawRect(
-                brush = Brush.verticalGradient(*statusBarFadeStops(bottom, ease, behind.value), endY = bottom),
-                size = Size(size.width, bottom),
-                alpha = alpha,
-            )
-        }
+        drawStatusBarFade(alpha, height, ease, behind.value)
+    }
+}
+
+/**
+ * The same fade over a lazy list with no hero, such as the partner dashboard: the page colour, shown once
+ * the list has left its top. Chain it on the list itself, so it draws over the viewport.
+ */
+fun Modifier.statusBarFade(listState: LazyListState): Modifier = composed {
+    val scrolled by remember(listState) { derivedStateOf { statusBarFadeScrolled(listState) } }
+    val alpha by animateFloatAsState(if (scrolled) 1f else 0f, label = "statusBarFade")
+    val height = statusBarFadeHeight(WindowInsets.statusBars.getTop(LocalDensity.current), cutoutExtent())
+    val ease = with(LocalDensity.current) { FadeEase.toPx() }
+    val page = MaterialTheme.colorScheme.background
+    drawWithContent {
+        drawContent()
+        drawStatusBarFade(alpha, height, ease, page)
+    }
+}
+
+/** Whether [listState] has left its top: past its first item, or scrolled into it. */
+internal fun statusBarFadeScrolled(listState: LazyListState): Boolean =
+    listState.firstVisibleItemIndex > 0 || listState.firstVisibleItemScrollOffset > 0
+
+private fun DrawScope.drawStatusBarFade(alpha: Float, height: Int, ease: Float, color: Color) {
+    if (alpha > 0f && height > 0) {
+        val bottom = height.toFloat()
+        drawRect(
+            brush = Brush.verticalGradient(*statusBarFadeStops(bottom, ease, color), endY = bottom),
+            size = Size(size.width, bottom),
+            alpha = alpha,
+        )
     }
 }
 
@@ -239,7 +264,7 @@ internal fun statusBarIconsLight(color: Color): Boolean = color.luminance() < 0.
 private fun StatusBarIcons(light: Boolean) {
     val view = LocalView.current
     val window = (view.context as? Activity)?.window ?: return
-    val themeDark = isDark()
+    val themeDark = MaterialTheme.colorScheme.surface.luminance() < 0.5f
     val owner = remember { Any() }
     fun set() {
         WindowCompat.getInsetsController(window, view).isAppearanceLightStatusBars = !light

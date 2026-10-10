@@ -99,6 +99,43 @@ class MembershipCurrencyBindingTest {
         )
     }
 
+    /**
+     * As on iOS, a build without a Stripe key offers no purchase it cannot complete: the bar is the only
+     * caller of `startSubscribe`, so hiding it also keeps the server from creating a SetupIntent for a
+     * sheet that cannot open. Without the bar, the scroll content pads the navigation bar itself.
+     */
+    @Test
+    fun `the purchase bar mounts only when card payment is configured`() {
+        val subscribe = source(File(membershipDir, "SubscribePlusScreen.kt")).replace(Regex("\\s+"), " ")
+        assertTrue(
+            "the screen must read card availability from the key that initialises Stripe",
+            subscribe.contains("val canSubscribe = BuildConfig.STRIPE_PUBLISHABLE_KEY.isNotBlank()"),
+        )
+        val gate = subscribe.indexOf("if (canSubscribe) { StickyCtaBar(")
+        assertTrue("the purchase bar must mount only inside if (canSubscribe)", gate >= 0)
+        val starts = Regex("""viewModel\.startSubscribe\(""").findAll(subscribe).map { it.range.first }.toList()
+        assertEquals("startSubscribe must have exactly one caller, the gated bar", 1, starts.size)
+        assertTrue("startSubscribe must be reachable only through the gated bar", starts.single() > gate)
+        assertTrue(
+            "without the bar the last perk must still clear the navigation bar",
+            subscribe.contains("if (!canSubscribe) Spacer(Modifier.navigationBarsPadding())"),
+        )
+    }
+
+    /** TalkBack names the hero's back arrow, in the offer and in the not-on-sale state alike. */
+    @Test
+    fun `the hero's back arrow is announced as back`() {
+        val subscribe = source(File(membershipDir, "SubscribePlusScreen.kt")).replace(Regex("\\s+"), " ")
+        val descriptions = Regex("""Icons\.AutoMirrored\.Outlined\.ArrowBack, contentDescription = (.+?), tint""")
+            .findAll(subscribe)
+            .map { it.groupValues[1] }
+            .toList()
+        assertEquals("expected the offer's and the not-on-sale state's back arrows", 2, descriptions.size)
+        descriptions.forEach { description ->
+            assertEquals("stringResource(R.string.common_back)", description)
+        }
+    }
+
     /** The trial line takes a formatted amount; it used to hard-code "0 Kč" in five locales. */
     @Test
     fun `the trial price string takes a formatted amount in every locale`() {

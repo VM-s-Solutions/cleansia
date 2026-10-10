@@ -89,7 +89,7 @@ class DashboardRepositoryTest {
     }
 
     @Test
-    fun refresh_publishesStatsThenPreviewWhileUpcomingIsHeld() = runTest {
+    fun refresh_startsAllThreeReadsAndShowsStatsWhileOptionalReadsAreHeld() = runTest {
         val statsEntered = CompletableDeferred<Unit>()
         val statsRelease = CompletableDeferred<Unit>()
         val upcomingEntered = CompletableDeferred<Unit>()
@@ -129,11 +129,11 @@ class DashboardRepositoryTest {
         val repo = newRepo()
         val refresh = async { repo.refresh("emp-1", force = false) }
         try {
-            awaitRealCompletion { statsEntered.await() }
-            assertFalse(upcomingEntered.isCompleted)
-            assertFalse(previewEntered.isCompleted)
+            awaitRealCompletion { statsEntered.await(); upcomingEntered.await(); previewEntered.await() }
+            assertNull(repo.snapshot.value.stats)
+            assertTrue(repo.snapshot.value.refreshing)
             statsRelease.complete(Unit)
-            awaitRealCompletion { upcomingEntered.await(); previewEntered.await() }
+            awaitRealCompletion { repo.snapshot.first { it.stats != null } }
             assertEquals(dashboardStats(), repo.snapshot.value.stats)
             assertTrue(repo.snapshot.value.refreshing)
             assertFalse(repo.snapshot.value.loaded)
@@ -210,6 +210,77 @@ class DashboardRepositoryTest {
             previewRelease.complete(Unit)
             refresh.cancelAndJoin()
         }
+    }
+
+    @Test
+    fun refresh_optionalReadsPublishWhileStatsIsHeldAndFinalFlagsWaitForStats() = runTest {
+        val statsEntered = CompletableDeferred<Unit>()
+        val statsRelease = CompletableDeferred<Unit>()
+        val upcoming = listOf(OrderListItem(id = "upcoming-1"))
+        coEvery { dashboardApi.dashboardGetStats("emp-1") } coAnswers {
+            statsEntered.complete(Unit)
+            statsRelease.await()
+            Response.success(dashboardStatsDto())
+        }
+        coEvery {
+            dashboardApi.dashboardGetUpcomingOrders(
+                filterEmployeeId = "emp-1", filterIsActive = true, sort = any(), offset = 0, limit = 10,
+            )
+        } returns Response.success(PagedDataOfOrderListItem(data = upcoming))
+        coEvery { dashboardApi.dashboardGetAvailableJobsPreview(5) } returns Response.success(availableJobsPreviewResponse())
+        val repo = newRepo()
+        val refresh = async { repo.refresh("emp-1", force = false) }
+        try {
+            awaitRealCompletion {
+                statsEntered.await()
+                repo.snapshot.first { it.upcoming == upcoming && it.availableJobsPreview != null }
+            }
+            assertNull(repo.snapshot.value.stats)
+            assertFalse(repo.snapshot.value.loaded)
+            assertTrue(repo.snapshot.value.refreshing)
+            assertFalse(refresh.isCompleted)
+            statsRelease.complete(Unit)
+            assertNull(refresh.await())
+            assertEquals(dashboardStats(), repo.snapshot.value.stats)
+            assertEquals(upcoming, repo.snapshot.value.upcoming)
+            assertEquals(availableJobsPreviewResponse().toDomain(), repo.snapshot.value.availableJobsPreview)
+            assertTrue(repo.snapshot.value.loaded)
+            assertFalse(repo.snapshot.value.refreshing)
+        } finally {
+            statsRelease.complete(Unit)
+            refresh.cancelAndJoin()
+        }
+    }
+
+    /** Stats is the critical read: its failure is what refresh returns, and it costs the optional reads nothing. */
+    @Test
+    fun refresh_statsFailurePublishesOptionalReadsAndKeepsThePreviousStats() = runTest {
+        val upcoming = listOf(OrderListItem(id = "upcoming-1"))
+        coEvery { dashboardApi.dashboardGetStats("emp-1") } returns Response.success(dashboardStatsDto())
+        coEvery {
+            dashboardApi.dashboardGetUpcomingOrders(
+                filterEmployeeId = "emp-1", filterIsActive = true, sort = any(), offset = 0, limit = 10,
+            )
+        } returns Response.success(PagedDataOfOrderListItem(data = emptyList()))
+        coEvery { dashboardApi.dashboardGetAvailableJobsPreview(5) } throws java.io.IOException("first preview")
+        val repo = newRepo()
+        assertNull(repo.refresh("emp-1", force = false))
+        assertEquals(dashboardStats(), repo.snapshot.value.stats)
+        assertNull(repo.snapshot.value.availableJobsPreview)
+
+        coEvery { dashboardApi.dashboardGetStats("emp-1") } throws java.io.IOException("critical stats")
+        coEvery {
+            dashboardApi.dashboardGetUpcomingOrders(
+                filterEmployeeId = "emp-1", filterIsActive = true, sort = any(), offset = 0, limit = 10,
+            )
+        } returns Response.success(PagedDataOfOrderListItem(data = upcoming))
+        coEvery { dashboardApi.dashboardGetAvailableJobsPreview(5) } returns Response.success(availableJobsPreviewResponse())
+        assertTrue(repo.refresh("emp-1", force = true) is cz.cleansia.core.network.ApiError.Network)
+        assertEquals(dashboardStats(), repo.snapshot.value.stats)
+        assertEquals(upcoming, repo.snapshot.value.upcoming)
+        assertEquals(availableJobsPreviewResponse().toDomain(), repo.snapshot.value.availableJobsPreview)
+        assertTrue(repo.snapshot.value.loaded)
+        assertFalse(repo.snapshot.value.refreshing)
     }
 
     @Test
@@ -303,7 +374,11 @@ class DashboardRepositoryTest {
         val repo = newRepo()
         val refresh = async { repo.refresh("emp-1", force = true) }
         try {
-            awaitRealCompletion { upcomingEntered.await(); previewEntered.await() }
+            awaitRealCompletion {
+                upcomingEntered.await()
+                previewEntered.await()
+                repo.snapshot.first { it.stats != null }
+            }
             refresh.cancelAndJoin()
             awaitRealCompletion { upcomingCompleted.await(); previewCompleted.await() }
             assertTrue(refresh.isCancelled)
@@ -338,32 +413,54 @@ class DashboardRepositoryTest {
                 Response.success(dashboardStatsDto())
             }
         }
-        coEvery { dashboardApi.dashboardGetAvailableJobsPreview(5) } returns Response.success(availableJobsPreviewResponse())
+        val previewEntered = CompletableDeferred<Unit>()
+        val previewRelease = CompletableDeferred<Unit>()
+        val previewCompleted = CompletableDeferred<Unit>()
+        val previewCalls = AtomicInteger()
+        coEvery { dashboardApi.dashboardGetAvailableJobsPreview(5) } coAnswers {
+            if (previewCalls.incrementAndGet() == 1) {
+                previewEntered.complete(Unit)
+                try {
+                    withContext(NonCancellable) { previewRelease.await() }
+                    Response.success(availableJobsPreviewResponse())
+                } finally {
+                    previewCompleted.complete(Unit)
+                }
+            } else {
+                Response.success(availableJobsPreviewResponse())
+            }
+        }
         val repo = newRepo()
         val old = async { repo.refresh(null, force = true) }
         try {
-            awaitRealCompletion { oldEntered.await() }
+            awaitRealCompletion { oldEntered.await(); previewEntered.await() }
             val queued = async(start = CoroutineStart.UNDISPATCHED) { repo.refresh(null, force = true) }
             try {
                 repo.clear()
                 assertEquals(DashboardSnapshot(), repo.snapshot.value)
                 oldRelease.complete(Unit)
+                previewRelease.complete(Unit)
                 assertNull(old.await())
                 assertNull(queued.await())
-                awaitRealCompletion { oldCompleted.await() }
+                awaitRealCompletion { oldCompleted.await(); previewCompleted.await() }
                 assertEquals(DashboardSnapshot(), repo.snapshot.value)
                 assertEquals(1, statsCalls.get())
+                assertEquals(1, previewCalls.get())
                 assertNull(repo.refresh(null, force = false))
                 assertEquals(dashboardStats(), repo.snapshot.value.stats)
+                assertEquals(availableJobsPreviewResponse().toDomain(), repo.snapshot.value.availableJobsPreview)
                 assertTrue(repo.snapshot.value.loaded)
                 assertFalse(repo.snapshot.value.refreshing)
                 assertEquals(2, statsCalls.get())
+                assertEquals(2, previewCalls.get())
             } finally {
                 oldRelease.complete(Unit)
+                previewRelease.complete(Unit)
                 queued.cancelAndJoin()
             }
         } finally {
             oldRelease.complete(Unit)
+            previewRelease.complete(Unit)
             old.cancelAndJoin()
         }
     }

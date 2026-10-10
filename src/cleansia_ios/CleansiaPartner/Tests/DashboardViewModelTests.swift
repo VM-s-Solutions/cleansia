@@ -319,7 +319,10 @@ extension DashboardViewModelTests {
         let observation = vm.$state.dropFirst().sink { state in
             if case .loaded = state { loadedPublications += 1 }
         }
-        let load = Task { await vm.load(); finished = true }
+        let load = Task {
+            await vm.load()
+            finished = true
+        }
         await fulfillment(of: [employeeEntered, previewEntered], timeout: 2)
         XCTAssertTrue(client.statsEmployeeIds.isEmpty)
         XCTAssertTrue(vm.state.isLoading)

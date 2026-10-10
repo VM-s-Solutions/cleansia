@@ -86,7 +86,7 @@ final class MembershipRepository: SessionScopedCache {
         plansRequested = true
         let generation = plansGeneration
         let token = UUID()
-        let client = self.client
+        let client = client
         let flight = Task<ApiResult<[MembershipPlan]>, Never> { [weak self] in
             let result = await client.getPlans(countryId: countryId)
             guard let self else { return .failure(ApiError(code: ApiError.cancelledCode)) }

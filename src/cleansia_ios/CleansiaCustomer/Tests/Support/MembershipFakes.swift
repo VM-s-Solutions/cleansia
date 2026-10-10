@@ -7,6 +7,9 @@ import XCTest
 final class FakeMembershipManagementClient: MembershipManagementClient, @unchecked Sendable {
     var mineResults: [ApiResult<MyMembership>] = [.success(MembershipFixtures.inactive)]
     private(set) var mineCallCount = 0
+    var holdMine = false
+    var mineStarted: ((Int) -> Void)?
+    private var heldMine: [Int: CheckedContinuation<ApiResult<MyMembership>, Never>] = [:]
 
     var plansResult: ApiResult<[MembershipPlan]> = .success(MembershipFixtures.plans)
     private(set) var plansCallCount = 0
@@ -27,11 +30,25 @@ final class FakeMembershipManagementClient: MembershipManagementClient, @uncheck
     var swapResult: ApiResult<Void> = .success(())
     private(set) var swapCodes: [String] = []
 
+    @MainActor
     func getMine() async -> ApiResult<MyMembership> {
-        defer { mineCallCount += 1 }
         let index = min(mineCallCount, mineResults.count - 1)
-        guard index >= 0 else { return .failure(ApiError(httpStatus: 500)) }
-        return mineResults[index]
+        mineCallCount += 1
+        let call = mineCallCount
+        guard holdMine else {
+            mineStarted?(call)
+            guard index >= 0 else { return .failure(ApiError(httpStatus: 500)) }
+            return mineResults[index]
+        }
+        return await withCheckedContinuation { continuation in
+            heldMine[call] = continuation
+            mineStarted?(call)
+        }
+    }
+
+    @MainActor
+    func releaseMine(call: Int, result: ApiResult<MyMembership>) {
+        heldMine.removeValue(forKey: call)?.resume(returning: result)
     }
 
     @MainActor
@@ -370,6 +387,139 @@ extension MembershipViewModelTests {
         XCTAssertEqual(client.plansCallCount, 2)
         old.cancel()
         new.cancel()
+    }
+
+    /// Returning to a market whose plans had loaded empty, after a flight for another market was cancelled on
+    /// the way, left the plans `.loading`: the market had not changed from the last success, so nothing re-read
+    /// them and nothing restored the state the cancelled flight had replaced.
+    func testReturningToAnEmptyMarketAfterACancelledFlightSettlesThePlans() async {
+        let slovakEntered = expectation(description: "SK plans entered")
+        let czechAgainEntered = expectation(description: "CZ plans re-read")
+        let settled = expectation(description: "CZ plans settled empty")
+        let client = FakeMembershipManagementClient()
+        client.plansResult = .success([])
+        let market = await MarketFixtures.resolved()
+        let repository = MembershipRepository(client: client, market: market.statePublisher)
+        _ = await repository.refreshPlans()
+        XCTAssertEqual(repository.plansState.loadedValue, [])
+        client.holdPlans = true
+        client.plansStarted = { call, country in
+            if call == 2, country == "svk" { slovakEntered.fulfill() }
+            if call == 3, country == "cze" { czechAgainEntered.fulfill() }
+        }
+        market.select(isoCode: "SVK")
+        await fulfillment(of: [slovakEntered], timeout: 2)
+        XCTAssertTrue(repository.plansState.isLoading)
+        let observation = repository.$plansState.dropFirst().sink { state in
+            if state.loadedValue == [] { settled.fulfill() }
+        }
+        market.select(isoCode: "CZE")
+        await fulfillment(of: [czechAgainEntered], timeout: 2)
+        client.releasePlans(call: 3, result: .success([]))
+        await fulfillment(of: [settled], timeout: 2)
+        client.releasePlans(call: 2, result: .success(MembershipFixtures.plansInEur))
+        client.releaseAllPlans()
+        XCTAssertEqual(repository.plansState.loadedValue, [])
+        XCTAssertEqual(repository.plans, [])
+        XCTAssertEqual(client.plansCountryIds, ["cze", "svk", "cze"])
+        observation.cancel()
+        await repository.clear()
+    }
+
+    /// A membership read still in flight at sign-out answered into the next session: it put the previous
+    /// user's membership back after `clear()` and marked it fresh (S11).
+    func testRefreshHeldAcrossClearCannotRestoreThePreviousUsersMembership() async {
+        let entered = expectation(description: "membership read entered")
+        let client = FakeMembershipManagementClient()
+        client.holdMine = true
+        client.mineStarted = { _ in entered.fulfill() }
+        let repository = MembershipRepository(client: client)
+        let refresh = Task { await repository.refresh() }
+        await fulfillment(of: [entered], timeout: 2)
+        await repository.clear()
+        client.releaseMine(call: 1, result: .success(MembershipFixtures.active))
+        let result = await refresh.value
+
+        XCTAssertEqual(result, .failure(ApiError(code: ApiError.cancelledCode)))
+        XCTAssertNil(repository.current)
+        XCTAssertTrue(repository.staleness.isStale)
+        XCTAssertFalse(repository.loading)
+    }
+
+    /// The previous session's read left `loading` set across `clear()`, so the next user's own refresh
+    /// returned without reading and the staleness gate then held its readers off.
+    func testANewSessionRefreshIsNotSwallowedByAnOldInFlightOne() async {
+        let oldEntered = expectation(description: "old session read entered")
+        let newEntered = expectation(description: "new session read entered")
+        let client = FakeMembershipManagementClient()
+        client.holdMine = true
+        client.mineStarted = { call in
+            if call == 1 { oldEntered.fulfill() } else { newEntered.fulfill() }
+        }
+        let repository = MembershipRepository(client: client)
+        let old = Task { await repository.refresh() }
+        await fulfillment(of: [oldEntered], timeout: 2)
+        await repository.clear()
+        let new = Task { await repository.refresh() }
+        await fulfillment(of: [newEntered], timeout: 2)
+        client.releaseMine(call: 2, result: .success(MembershipFixtures.inactive))
+        let newResult = await new.value
+        client.releaseMine(call: 1, result: .success(MembershipFixtures.active))
+        _ = await old.value
+
+        XCTAssertEqual(newResult, .success(MembershipFixtures.inactive))
+        XCTAssertEqual(repository.current, MembershipFixtures.inactive)
+        XCTAssertFalse(repository.staleness.isStale)
+        XCTAssertFalse(repository.loading)
+        XCTAssertEqual(client.mineCallCount, 2)
+    }
+
+    /// The previous session's read answering first must not end the new session's `loading`: a refresh made
+    /// meanwhile would read a second time inside the same session.
+    func testAnOldSessionReadAnsweringFirstLeavesTheNewSessionsReadLoading() async {
+        let oldEntered = expectation(description: "old session read entered")
+        let newEntered = expectation(description: "new session read entered")
+        let client = FakeMembershipManagementClient()
+        client.holdMine = true
+        client.mineStarted = { call in
+            if call == 1 { oldEntered.fulfill() } else if call == 2 { newEntered.fulfill() }
+        }
+        let repository = MembershipRepository(client: client)
+        let old = Task { await repository.refresh() }
+        await fulfillment(of: [oldEntered], timeout: 2)
+        await repository.clear()
+        let new = Task { await repository.refresh() }
+        await fulfillment(of: [newEntered], timeout: 2)
+        client.releaseMine(call: 1, result: .success(MembershipFixtures.active))
+        _ = await old.value
+
+        XCTAssertTrue(repository.loading)
+        client.holdMine = false
+        _ = await repository.refresh()
+        XCTAssertEqual(client.mineCallCount, 2)
+
+        client.releaseMine(call: 2, result: .success(MembershipFixtures.inactive))
+        _ = await new.value
+        XCTAssertFalse(repository.loading)
+        XCTAssertEqual(repository.current, MembershipFixtures.inactive)
+    }
+
+    /// The session's counter is its own: a forced plans reload moves the plans' counter, and a membership read
+    /// in flight across it still answers.
+    func testAForcedPlansReloadDoesNotDiscardAMembershipRefresh() async {
+        let entered = expectation(description: "membership read entered")
+        let client = FakeMembershipManagementClient()
+        client.holdMine = true
+        client.mineStarted = { _ in entered.fulfill() }
+        let repository = MembershipRepository(client: client)
+        let refresh = Task { await repository.refresh() }
+        await fulfillment(of: [entered], timeout: 2)
+        _ = await repository.refreshPlans(force: true)
+        client.releaseMine(call: 1, result: .success(MembershipFixtures.active))
+        let result = await refresh.value
+
+        XCTAssertEqual(result, .success(MembershipFixtures.active))
+        XCTAssertEqual(repository.current, MembershipFixtures.active)
     }
 
     func testSequentialPlanReadsStayFreshIncludingEmptySuccess() async {

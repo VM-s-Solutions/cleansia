@@ -42,14 +42,16 @@ final class DashboardViewModel: ViewModel {
         let employee = try? await client.getCurrentEmployee().get()
         guard !Task.isCancelled, generation == fetchGeneration else { return }
         let capturedEmployeeId = employee?.id
+        async let upcoming = upcomingOrders(for: capturedEmployeeId)
         let nextState: UiState<DashboardData>
 
         switch await client.getStats(employeeId: capturedEmployeeId) {
         case let .success(stats):
             let preview = try? await previewResult.get()
-            nextState = .loaded(DashboardData.from(
+            nextState = await .loaded(DashboardData.from(
                 stats: stats,
                 preview: preview,
+                upcoming: upcoming,
                 firstName: employee?.firstName
             ))
         case let .failure(error):
@@ -60,6 +62,11 @@ final class DashboardViewModel: ViewModel {
         employeeId = capturedEmployeeId
         state = nextState
         resolveJobRadiusPrompt(radiusKm: employee?.jobRadiusKm, employeeRead: employee != nil)
+    }
+
+    private func upcomingOrders(for employeeId: String?) async -> [OrderListItem] {
+        guard let employeeId, !employeeId.isBlank else { return [] }
+        return await (try? client.getUpcomingOrders(employeeId: employeeId, limit: Self.upcomingLimit).get()) ?? []
     }
 
     /// Both answers are answers, so either one spends the ask. A cleaner who taps through to the
@@ -87,4 +94,5 @@ final class DashboardViewModel: ViewModel {
     }
 
     private static let previewLimit = 5
+    private static let upcomingLimit = 10
 }

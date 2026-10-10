@@ -36,4 +36,23 @@ final class PartnerShellSelectionTests: XCTestCase {
             XCTAssertFalse(tab.label.isEmpty)
         }
     }
+
+    /// The dashboard's Help shortcut did nothing on either platform. It writes to the one support address, as
+    /// the registration lock's contact link does.
+    func testTheHelpShortcutWritesToSupport() throws {
+        let shell = try String(
+            contentsOf: URL(fileURLWithPath: #filePath)
+                .deletingLastPathComponent()
+                .deletingLastPathComponent()
+                .appendingPathComponent("Sources/Features/Shell/PartnerShellView.swift"),
+            encoding: .utf8
+        )
+        .components(separatedBy: .whitespacesAndNewlines)
+        .joined()
+
+        XCTAssertFalse(shell.contains("onOpenHelp:{}"), "the Help shortcut is a dead tile again")
+        XCTAssertTrue(shell.contains(
+            "mail.scheme=\"mailto\"mail.path=CleansiaWeb.contactEmailifleturl=mail.url{openURL(url)}"
+        ))
+    }
 }

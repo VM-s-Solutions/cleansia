@@ -33,6 +33,13 @@ final class ContentSafeAreaBindingTests: XCTestCase {
         ))
     }
 
+    /// The dashboard hides its navigation bar, so its cards scrolled under the clock and the Dynamic Island with
+    /// nothing behind them. It scrolls through the shared fade, as the customer Home does.
+    func testTheDashboardFadesItsContentUnderTheStatusBar() throws {
+        let dashboard = try read("CleansiaPartner/Sources/Features/Dashboard/DashboardView.swift")
+        XCTAssertTrue(dashboard.contains("StatusBarFadeScrollView{"))
+    }
+
     private func read(_ path: String) throws -> String {
         let root = URL(fileURLWithPath: #filePath)
             .deletingLastPathComponent()

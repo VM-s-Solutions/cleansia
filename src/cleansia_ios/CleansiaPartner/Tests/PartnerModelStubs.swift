@@ -131,3 +131,22 @@ extension InvoiceDetail {
         )
     }
 }
+
+extension OrderListItem {
+    /// A row of the dashboard's upcoming read, carrying only what the hero and the today line read.
+    static func upcoming(
+        id: String,
+        status: Int,
+        startsAt: Date?,
+        customerName: String? = nil,
+        address: String? = nil
+    ) -> OrderListItem {
+        OrderListItem(
+            id: id,
+            customerName: customerName,
+            customerAddress: address,
+            cleaningDateTime: startsAt,
+            orderStatus: Code(value: status)
+        )
+    }
+}

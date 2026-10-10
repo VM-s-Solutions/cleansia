@@ -44,29 +44,6 @@ final class PendingOffersCardViewModel: ViewModel {
     }
 }
 
-struct PendingOffersCard: View {
-    @StateObject private var vm: PendingOffersCardViewModel
-    private let onOpenOffers: () -> Void
-
-    init(store: PendingOffersStore, onOpenOffers: @escaping () -> Void) {
-        _vm = StateObject(wrappedValue: PendingOffersCardViewModel(store: store))
-        self.onOpenOffers = onOpenOffers
-    }
-
-    var body: some View {
-        Group {
-            if case let .visible(count, soonestRespondBy) = vm.state {
-                PendingOffersCardContent(
-                    count: count,
-                    soonestRespondBy: soonestRespondBy,
-                    onOpenOffers: onOpenOffers
-                )
-            }
-        }
-        .task { await vm.load() }
-    }
-}
-
 struct PendingOffersCardContent: View {
     let count: Int
     let soonestRespondBy: Date?

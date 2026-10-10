@@ -94,6 +94,26 @@ final class ProfileEditChipTests: XCTestCase {
         }
     }
 
+    /// Android's row puts 14dp between the avatar and the name column and 12dp between the column and the chip
+    /// (`ProfileTab.kt`). A `Spacer` between the column and the chip took the stack's 14pt spacing on each side,
+    /// a 40pt gap that truncated the name and the e-mail where Android fits them whole.
+    func testTheHeroRowKeepsAndroidsGapsAroundTheNameColumn() throws {
+        let profile = try compactSource("CleansiaCustomer/Sources/Features/Profile/ProfileTab.swift")
+        let start = try XCTUnwrap(profile.range(of: "privatestructHeroGradient:View{"))
+        let end = try XCTUnwrap(profile.range(of: "privateletheroBleed", range: start.upperBound ..< profile.endIndex))
+        let hero = profile[start.upperBound ..< end.lowerBound]
+
+        XCTAssertTrue(hero.contains("HStack(alignment:.top,spacing:0){ProfileAvatar("))
+        XCTAssertTrue(hero.contains(
+            "TierBadge(tier:tier).padding(.top,Spacing.xxs)}.frame(maxWidth:.infinity,alignment:.leading)"
+                + ".padding(.leading,14).padding(.trailing,Spacing.s)"
+        ))
+        XCTAssertFalse(
+            hero.contains("Spacer("),
+            "a spacer between the column and the chip takes the stack's spacing twice"
+        )
+    }
+
     // MARK: - Rendering
 
     /// Narrow enough that the longest label cannot fit, derived from the label itself so no width here
@@ -138,6 +158,16 @@ final class ProfileEditChipTests: XCTestCase {
             found += view.subviews.flatMap { labels(under: $0, seen: &seen) }
         }
         return found
+    }
+
+    private func compactSource(_ path: String) throws -> String {
+        let root = URL(fileURLWithPath: #filePath)
+            .deletingLastPathComponent()
+            .deletingLastPathComponent()
+            .deletingLastPathComponent()
+        return try String(contentsOf: root.appendingPathComponent(path), encoding: .utf8)
+            .components(separatedBy: .whitespacesAndNewlines)
+            .joined()
     }
 
     // MARK: - Bundles

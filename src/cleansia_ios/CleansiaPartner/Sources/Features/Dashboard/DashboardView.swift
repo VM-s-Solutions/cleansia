@@ -1,8 +1,10 @@
 import CleansiaCore
+import CleansiaPartnerApi
 import SwiftUI
 
 struct DashboardView: View {
     @StateObject private var vm: DashboardViewModel
+    @StateObject private var pendingOffersVM: PendingOffersCardViewModel
     @ObservedObject private var notificationBadge: NotificationBadgeModel
     @Environment(\.scenePhase) private var scenePhase
     @State private var showNotifications = false
@@ -10,9 +12,9 @@ struct DashboardView: View {
     private let notificationFeedClient: NotificationFeedClient
     private let profileClient: PartnerProfileClient
     private let snackbar: SnackbarController
-    private let pendingOffers: PendingOffersStore
     let onOpenEarnings: () -> Void
     let onOpenOrders: () -> Void
+    let onOpenOrder: (String) -> Void
     let onOpenPendingOffers: () -> Void
     let onNotificationDestination: (PartnerNotificationDestination) -> Void
     let onOpenProfile: () -> Void
@@ -29,6 +31,7 @@ struct DashboardView: View {
         pendingOffers: PendingOffersStore,
         onOpenEarnings: @escaping () -> Void = {},
         onOpenOrders: @escaping () -> Void = {},
+        onOpenOrder: @escaping (String) -> Void = { _ in },
         onOpenPendingOffers: @escaping () -> Void = {},
         onNotificationDestination: @escaping (PartnerNotificationDestination) -> Void = { _ in },
         onOpenProfile: @escaping () -> Void = {},
@@ -36,13 +39,14 @@ struct DashboardView: View {
         onOpenHelp: @escaping () -> Void = {}
     ) {
         _vm = StateObject(wrappedValue: DashboardViewModel(client: client, settings: settings))
+        _pendingOffersVM = StateObject(wrappedValue: PendingOffersCardViewModel(store: pendingOffers))
         self.notificationBadge = notificationBadge
         self.notificationFeedClient = notificationFeedClient
         self.profileClient = profileClient
         self.snackbar = snackbar
-        self.pendingOffers = pendingOffers
         self.onOpenEarnings = onOpenEarnings
         self.onOpenOrders = onOpenOrders
+        self.onOpenOrder = onOpenOrder
         self.onOpenPendingOffers = onOpenPendingOffers
         self.onNotificationDestination = onNotificationDestination
         self.onOpenProfile = onOpenProfile
@@ -73,6 +77,7 @@ struct DashboardView: View {
                 .snackbarHost(snackbar, bottomInset: Spacing.m)
             }
             .task { await vm.load() }
+            .task { await pendingOffersVM.load() }
             .task { await notificationBadge.refresh() }
             .onChange(of: scenePhase) { phase in
                 if phase == .active {
@@ -94,10 +99,11 @@ struct DashboardView: View {
                 data: data,
                 unreadCount: notificationBadge.unreadCount,
                 showsJobRadiusPrompt: vm.showsJobRadiusPrompt,
-                pendingOffers: pendingOffers,
+                pendingOffers: pendingOffersVM.state,
                 onOpenPendingOffers: onOpenPendingOffers,
                 onOpenEarnings: onOpenEarnings,
                 onOpenOrders: onOpenOrders,
+                onOpenOrder: onOpenOrder,
                 onNotificationTap: { showNotifications = true },
                 onChooseJobRadius: {
                     vm.answerJobRadiusPrompt()
@@ -139,10 +145,11 @@ struct DashboardContent: View {
     let data: DashboardData
     let unreadCount: Int
     let showsJobRadiusPrompt: Bool
-    let pendingOffers: PendingOffersStore?
+    let pendingOffers: PendingOffersCardUiState
     let onOpenPendingOffers: () -> Void
     let onOpenEarnings: () -> Void
     let onOpenOrders: () -> Void
+    let onOpenOrder: (String) -> Void
     let onNotificationTap: () -> Void
     let onChooseJobRadius: () -> Void
     let onKeepEveryJob: () -> Void
@@ -154,10 +161,11 @@ struct DashboardContent: View {
         data: DashboardData,
         unreadCount: Int = 0,
         showsJobRadiusPrompt: Bool = false,
-        pendingOffers: PendingOffersStore? = nil,
+        pendingOffers: PendingOffersCardUiState = .hidden,
         onOpenPendingOffers: @escaping () -> Void = {},
         onOpenEarnings: @escaping () -> Void,
         onOpenOrders: @escaping () -> Void,
+        onOpenOrder: @escaping (String) -> Void = { _ in },
         onNotificationTap: @escaping () -> Void = {},
         onChooseJobRadius: @escaping () -> Void = {},
         onKeepEveryJob: @escaping () -> Void = {},
@@ -172,6 +180,7 @@ struct DashboardContent: View {
         self.onOpenPendingOffers = onOpenPendingOffers
         self.onOpenEarnings = onOpenEarnings
         self.onOpenOrders = onOpenOrders
+        self.onOpenOrder = onOpenOrder
         self.onNotificationTap = onNotificationTap
         self.onChooseJobRadius = onChooseJobRadius
         self.onKeepEveryJob = onKeepEveryJob
@@ -181,16 +190,21 @@ struct DashboardContent: View {
     }
 
     var body: some View {
-        ScrollView {
+        StatusBarFadeScrollView {
             VStack(spacing: Spacing.m) {
                 GreetingBar(
                     firstName: data.firstName,
+                    todaysJobsCount: data.todaysJobsCount,
                     locale: locale,
                     unreadCount: unreadCount,
                     onNotificationTap: onNotificationTap
                 )
-                if let pendingOffers {
-                    PendingOffersCard(store: pendingOffers, onOpenOffers: onOpenPendingOffers)
+                if case let .visible(count, soonestRespondBy) = pendingOffers {
+                    PendingOffersCardContent(
+                        count: count,
+                        soonestRespondBy: soonestRespondBy,
+                        onOpenOffers: onOpenPendingOffers
+                    )
                 }
                 if showsJobRadiusPrompt {
                     JobRadiusPromptCard(
@@ -198,7 +212,13 @@ struct DashboardContent: View {
                         onKeepEveryJob: onKeepEveryJob
                     )
                 }
-                HeroCard(hero: data.hero, currencyCode: data.currencyCode, onOpenOrders: onOpenOrders)
+                HeroCard(
+                    hero: data.hero,
+                    currencyCode: data.currencyCode,
+                    locale: locale,
+                    onOpenOrders: onOpenOrders,
+                    onOpenOrder: onOpenOrder
+                )
                 WeeklyEarningsCard(data: data, onClick: onOpenEarnings)
                 if let period = data.payPeriod {
                     PayPeriodCard(
@@ -223,6 +243,7 @@ struct DashboardContent: View {
 
 private struct GreetingBar: View {
     let firstName: String?
+    let todaysJobsCount: Int
     let locale: Locale
     let unreadCount: Int
     let onNotificationTap: () -> Void
@@ -237,9 +258,14 @@ private struct GreetingBar: View {
                 Text(DashboardGreeting.text(firstName: firstName))
                     .font(CleansiaTypography.titleLarge)
                     .foregroundColor(CleansiaColors.onBackground)
-                Text(DashboardGreeting.dateLine(locale: locale))
-                    .font(CleansiaTypography.bodyMedium)
-                    .foregroundColor(CleansiaColors.onSurfaceVariant)
+                (
+                    Text(verbatim: "\(DashboardGreeting.dateLine(locale: locale)) · ")
+                        .foregroundColor(CleansiaColors.onSurfaceVariant)
+                        + Text(DashboardGreeting.todayLine(jobsToday: todaysJobsCount))
+                        .fontWeight(.semibold)
+                        .foregroundColor(CleansiaColors.primaryText)
+                )
+                .font(CleansiaTypography.bodyMedium)
             }
             Spacer()
             NotificationBell(unreadCount: unreadCount, onTap: onNotificationTap)
@@ -292,17 +318,20 @@ private struct NotificationBell: View {
 private struct HeroCard: View {
     let hero: DashboardHero
     let currencyCode: String?
+    let locale: Locale
     let onOpenOrders: () -> Void
+    let onOpenOrder: (String) -> Void
 
     var body: some View {
         switch hero {
-        case let .nextJob(title, subtitle):
+        case let .nextJob(orderId, status, startsAt, whereLine):
             HeroRowCard(
-                label: nil,
-                title: title,
-                subtitle: subtitle,
+                label: DashboardFormat.nextJobLabel(status),
+                title: DashboardFormat.nextJobWhen(startsAt, locale: locale),
+                subtitle: whereLine,
+                subtitleLineLimit: 2,
                 mascot: .cleaning,
-                onClick: onOpenOrders
+                onClick: { if let orderId { onOpenOrder(orderId) } }
             )
         case let .availableWork(jobCount, potentialEarnings):
             HeroRowCard(
@@ -317,7 +346,7 @@ private struct HeroCard: View {
         case .empty:
             Button(action: onOpenOrders) {
                 HStack(spacing: Spacing.m) {
-                    Mascot.leaning.image
+                    Mascot.resting.image
                         .resizable()
                         .scaledToFit()
                         .frame(width: 64, height: 64)
@@ -346,6 +375,7 @@ private struct HeroRowCard: View {
     let label: String?
     let title: String
     let subtitle: String?
+    var subtitleLineLimit = 1
     let mascot: Mascot
     let onClick: () -> Void
 
@@ -370,7 +400,7 @@ private struct HeroRowCard: View {
                         Text(subtitle)
                             .font(CleansiaTypography.bodyMedium)
                             .foregroundColor(CleansiaColors.onSurfaceVariant)
-                            .lineLimit(1)
+                            .lineLimit(subtitleLineLimit)
                     }
                 }
                 Spacer()
@@ -394,7 +424,12 @@ private struct HeroRowCard: View {
                 DashboardContent(data: sample(hero: .empty), onOpenEarnings: {}, onOpenOrders: {})
                     .previewDisplayName("Loaded · empty hero")
                 DashboardContent(
-                    data: sample(hero: .nextJob(title: "Today 14:00", subtitle: "Jana · Praha 5")),
+                    data: sample(hero: .nextJob(
+                        orderId: "order-1",
+                        status: ._2,
+                        startsAt: Date(timeIntervalSinceNow: 2 * 3600),
+                        whereLine: "Jana · Praha 5"
+                    )),
                     onOpenEarnings: {},
                     onOpenOrders: {}
                 )
@@ -446,6 +481,7 @@ private struct HeroRowCard: View {
                 thisMonthCompletedOrders: 26,
                 averageRating: 4.8,
                 ratingCount: 31,
+                todaysJobsCount: 1,
                 hero: hero
             )
         }

@@ -124,6 +124,7 @@ private struct CashNotPaidLink: View {
             ProgressView()
                 .progressViewStyle(.circular)
                 .padding(Spacing.xxs)
+                .frame(minHeight: 44)
         } else {
             CleansiaTextLink(L10n.Orders.cashNotPaidAction, action: onTap)
                 .disabled(!enabled)

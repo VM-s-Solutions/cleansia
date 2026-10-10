@@ -1,5 +1,6 @@
 import CleansiaCore
 import CleansiaPartnerApi
+import SwiftUI
 import XCTest
 @testable import CleansiaPartner
 
@@ -248,6 +249,24 @@ final class OrderDetailCashNotPaidTests: XCTestCase {
 
         client.resumeCommand()
         await collecting.value
+    }
+
+    /// The link is a full touch target, so the spinner that replaces it while the report is sent takes its
+    /// height: the footer does not drop under the cleaner's thumb as the link swaps out.
+    func testTheFooterKeepsItsHeightWhileTheReportIsSent() {
+        func footerHeight(reporting: Bool) -> CGFloat {
+            let footer = StickyActionFooter(
+                action: .collectCash,
+                inFlightAction: reporting ? .reportCashNotPaid : nil,
+                onConfirm: { _ in },
+                offersCashNotPaid: true
+            )
+            return UIHostingController(rootView: footer)
+                .sizeThatFits(in: CGSize(width: 390, height: CGFloat.greatestFiniteMagnitude))
+                .height
+        }
+
+        XCTAssertEqual(footerHeight(reporting: true), footerHeight(reporting: false), accuracy: 0.5)
     }
 
     private func localeBundle(_ tag: String) throws -> Bundle {

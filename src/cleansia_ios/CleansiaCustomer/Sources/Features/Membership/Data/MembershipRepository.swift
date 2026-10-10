@@ -31,6 +31,7 @@ final class MembershipRepository: SessionScopedCache {
     private var plansFlightCountryId: String?
     private var plansFlightToken: UUID?
     private var plansGeneration = 0
+    private var sessionGeneration = 0
     private var cancellables = Set<AnyCancellable>()
 
     init(
@@ -50,9 +51,11 @@ final class MembershipRepository: SessionScopedCache {
     @discardableResult
     func refresh() async -> ApiResult<MyMembership> {
         if loading { return current.map { .success($0) } ?? .failure(ApiError(code: "membership.loading")) }
+        let generation = sessionGeneration
         loading = true
-        defer { loading = false }
+        defer { if generation == sessionGeneration { loading = false } }
         let result = await client.getMine()
+        guard generation == sessionGeneration else { return .failure(ApiError(code: ApiError.cancelledCode)) }
         if case let .success(membership) = result {
             current = membership
             staleness.markFresh()
@@ -147,7 +150,7 @@ final class MembershipRepository: SessionScopedCache {
         marketCountryId = countryId
         marketReload?.cancel()
         marketReload = nil
-        guard plansRequested, plansCountryId != countryId else { return }
+        guard plansRequested, plansCountryId != countryId || plansState.isLoading else { return }
         marketReload = Task { [weak self] in
             guard !Task.isCancelled, let flight = self?.startPlansFlight(force: false) else { return }
             _ = await flight.value
@@ -164,6 +167,8 @@ final class MembershipRepository: SessionScopedCache {
 
     func clear() async {
         plansGeneration += 1
+        sessionGeneration += 1
+        loading = false
         let previousReload = marketReload
         let previousFlight = plansFlight
         marketReload = nil

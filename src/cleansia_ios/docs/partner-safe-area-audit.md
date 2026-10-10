@@ -21,6 +21,17 @@ status bar. The hero now bleeds its background 600pt above its own frame — a b
 first stop above the unchanged gradient — the customer Profile hero's form (customer audit, 2026-10-01).
 Content still stays in the safe viewport. Checked on the iPhone 17 (iOS 26.3) simulator.
 
+### 2026-10-11 — the dashboard's content fades under the status bar
+
+This audit recorded the dashboard as safe with only its background expanding. The verdict rested on the
+safe viewport keeping content out of the status bar, which the customer audit withdrew on 2026-10-01: the
+dashboard tab hides its navigation bar, so its scroll view carried scrolled cards under the clock and the
+Dynamic Island with nothing behind them. The dashboard now scrolls through `StatusBarFadeScrollView`, in
+the customer Home's form: the page colour, no hero tint. The fade moved into CleansiaCore for this second
+caller and is otherwise unchanged. `ContentSafeAreaBindingTests` guards the binding. Not yet checked on a
+simulator or device: the fade should sit behind the clock once the cards scroll, and be absent at rest and
+during a pull-to-refresh.
+
 No guessed status-bar height or hardcoded sheet anchor is used. The map backdrop remains full bleed.
 `ViewThatFits` is available on iOS 16 and selects a child by the proposed space; see [Apple's documentation](https://developer.apple.com/documentation/swiftui/viewthatfits).
 
@@ -45,7 +56,7 @@ below the top safe boundary and that the approximate legend appears only when it
 
 Partner:
 - Root/splash/auth/onboarding: PartnerRootView, SplashGateView incl unreachable/skeleton, OnboardingView incl language/Skip header, LoginView, RegisterView, ForgotPasswordView, ConfirmEmailView safe. RegistrationLockView owns its safe NavigationStack and routes to the same section forms.
-- Dashboard: DashboardView/content/skeleton/error, greeting/notification bell, pending-offer shortcuts, notification sheet and job-radius modal safe. Only background expands.
+- Dashboard: DashboardView/content/skeleton/error, greeting/notification bell, pending-offer shortcuts, notification sheet and job-radius modal safe. Only background expands; scrolled content fades under the status bar (2026-10-11, above).
 - Jobs: OrdersRootView/OrdersListView with available/active/history panes, PendingOffersView and decline/refusal overlays safe. OrderDetailView normal content safe, with the shared ornament and approximate legend repaired above. Checklist, scope, customer/payment, timer, notes/issues, photos and action footer inherit the safe sheet content. TextEntrySheet safe NavigationStack/form. Camera/library sheet uses UIKit-owned controls.
 - Earnings: EarningsView, PeriodPayView, InvoicesListView, InvoiceDetailView and their loading/error/empty/content branches safe. Invoice PDF uses UIKit QuickLook.
 - Profile: ProfileHubContent is repaired above. PersonalSectionView, AddressSectionView, EmergencySectionView, IdentificationSectionView, BankSectionView, DocumentsSectionView, JobRadiusSectionView use SectionScaffold safe ScrollViews or safe custom content. AddressPickerView extends only the map sibling, keeping top search/back controls in a safe VStack. LanguagePickerView, ThemePickerView, DevicesView, DeleteAccountView safe. ProfileAvatarField camera/library modal is UIKit-owned.
@@ -85,7 +96,7 @@ Shared containers: SnapSheet geometry/content are safe with the ornament now cli
 | CleansiaPartner/Sources/Features/Orders/OrdersListView.swift | OrdersRootView, OrdersListView, OrdersErrorView | Background/media/UIKit-only escape; controls inherit safe host |
 | CleansiaPartner/Sources/Features/Orders/OrderTimerCard.swift | OrderTimerCard | Inherits safe host; no direct top-content escape |
 | CleansiaPartner/Sources/Features/Orders/PendingOfferComponents.swift | ReservedForYouRow, OfferRefusalDialog, OfferDeclineDialog | Inherits safe host; no direct top-content escape |
-| CleansiaPartner/Sources/Features/Orders/PendingOffersCard.swift | PendingOffersCard, PendingOffersCardContent | Inherits safe host; no direct top-content escape |
+| CleansiaPartner/Sources/Features/Orders/PendingOffersCard.swift | PendingOffersCardContent | Inherits safe host; no direct top-content escape |
 | CleansiaPartner/Sources/Features/Orders/PendingOffersView.swift | PendingOffersView, PendingOffersContent, OffersErrorView, PendingOfferCard | Background/media/UIKit-only escape; controls inherit safe host |
 | CleansiaPartner/Sources/Features/Orders/PhotosSection.swift | PhotosSection, PhotoRailsContent, PhotoRail, AddPhotoTile, PhotoTile | Background/media/UIKit-only escape; controls inherit safe host |
 | CleansiaPartner/Sources/Features/Orders/StatusTimelineView.swift | StatusTimelineView, TimelineRow | Inherits safe host; no direct top-content escape |

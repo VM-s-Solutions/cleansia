@@ -212,7 +212,10 @@ private struct HeroTopRow: View {
                     Image(systemName: "arrow.left")
                         .font(.system(size: 18, weight: .semibold))
                         .foregroundColor(.white)
+                        .frame(width: 44, height: 44)
+                        .contentShape(Rectangle())
                 }
+                .accessibilityLabel(L10n.Membership.back)
                 Spacer()
             }
             HStack(spacing: Spacing.xs) {
@@ -307,7 +310,6 @@ private struct HeroBlock: View {
                     : L10n.Membership.heroThenPrice(regularPrice))
                     .font(CleansiaTypography.bodyMedium)
                     .foregroundColor(.white.opacity(0.7))
-                    .strikethrough()
             }
             .frame(maxWidth: .infinity)
         } else {

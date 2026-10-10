@@ -1,3 +1,4 @@
+import CleansiaCore
 import CleansiaPartnerApi
 import Foundation
 
@@ -17,6 +18,7 @@ struct DashboardData: Equatable {
     let averageRating: Double?
     let ratingCount: Int
 
+    let todaysJobsCount: Int
     let hero: DashboardHero
 
     struct PayPeriod: Equatable {
@@ -41,7 +43,9 @@ struct DashboardData: Equatable {
     static func from(
         stats: DashboardStats,
         preview: AvailableJobsPreview?,
-        firstName: String?
+        upcoming: [OrderListItem],
+        firstName: String?,
+        now: Date = Date()
     ) -> DashboardData {
         let payPeriod: PayPeriod? = {
             guard let start = stats.currentPayPeriodStart, let end = stats.currentPayPeriodEnd else { return nil }
@@ -65,8 +69,33 @@ struct DashboardData: Equatable {
             thisMonthCompletedOrders: stats.thisMonthCompletedOrders,
             averageRating: stats.averageRating,
             ratingCount: stats.ratingCount,
-            hero: hero(from: preview)
+            todaysJobsCount: todaysJobsCount(in: upcoming, now: now),
+            hero: nextJob(in: upcoming) ?? hero(from: preview)
         )
+    }
+
+    private static func todaysJobsCount(in upcoming: [OrderListItem], now: Date) -> Int {
+        upcoming.filter { $0.cleaningDateTime.map { Calendar.current.isDate($0, inSameDayAs: now) } ?? false }.count
+    }
+
+    /// Android's `pickNextJob`, which also orders an undated job first.
+    private static func nextJob(in upcoming: [OrderListItem]) -> DashboardHero? {
+        let active: Set<OrderStatus> = [._2, ._3, ._4]
+        let soonest = upcoming
+            .filter { $0.status.map(active.contains) ?? false }
+            .min { ($0.cleaningDateTime ?? .distantPast) < ($1.cleaningDateTime ?? .distantPast) }
+        guard let soonest, let status = soonest.status else { return nil }
+        return .nextJob(
+            orderId: soonest.id,
+            status: status,
+            startsAt: soonest.cleaningDateTime,
+            whereLine: whereLine(name: soonest.customerName, address: soonest.customerAddress)
+        )
+    }
+
+    private static func whereLine(name: String?, address: String?) -> String? {
+        let parts = [name, address].compactMap { $0 }.filter { !$0.isBlank }
+        return parts.isEmpty ? nil : parts.joined(separator: " · ")
     }
 
     /// A preview the caller never got is no jobs to show, not zero jobs available — the hero is
@@ -81,7 +110,7 @@ struct DashboardData: Equatable {
 }
 
 enum DashboardHero: Equatable {
-    case nextJob(title: String, subtitle: String?)
+    case nextJob(orderId: String?, status: OrderStatus, startsAt: Date?, whereLine: String?)
     case availableWork(jobCount: Int, potentialEarnings: Double)
     case empty
 }

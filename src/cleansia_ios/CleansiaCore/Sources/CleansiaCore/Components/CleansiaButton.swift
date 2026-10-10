@@ -263,6 +263,8 @@ public struct CleansiaTextLink: View {
                 .foregroundColor(CleansiaColors.primaryText)
                 .lineLimit(1)
                 .padding(Spacing.xxs)
+                .frame(minWidth: 44, minHeight: 44)
+                .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
     }

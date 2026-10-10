@@ -145,7 +145,7 @@ Shared containers: SnapSheet geometry/content are safe with the ornament now cli
 | File | View declarations | Source classification |
 |---|---|---|
 | CleansiaCustomer/Sources/Components/BusyMascotOverlay.swift | BusyMascotOverlay | Background/media/UIKit-only escape; controls inherit safe host |
-| CleansiaCustomer/Sources/Components/StatusBarFadeScrollView.swift | StatusBarFadeScrollView | Decorative band drawn above the safe viewport; content inherits safe host |
+| CleansiaCore/Sources/CleansiaCore/Components/StatusBarFadeScrollView.swift (in CleansiaCore since 2026-10-11, shared with the partner dashboard) | StatusBarFadeScrollView | Decorative band drawn above the safe viewport; content inherits safe host |
 | CleansiaCustomer/Sources/CustomerRootView.swift | CustomerRootView | Background/media/UIKit-only escape; controls inherit safe host |
 | CleansiaCustomer/Sources/Features/Addresses/AddressManagerView.swift | AddressManagerView, AddressManagerHeader, AddressListPane, RenameAlertButtons, SavedAddressRow, AddressReviewPane | Background/media/UIKit-only escape; controls inherit safe host |
 | CleansiaCustomer/Sources/Features/Auth/EmailVerifyView.swift | EmailVerifyView, EmailVerifyContent | Background/media/UIKit-only escape; controls inherit safe host |

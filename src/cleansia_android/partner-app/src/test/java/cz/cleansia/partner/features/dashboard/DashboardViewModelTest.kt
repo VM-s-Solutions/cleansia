@@ -24,6 +24,7 @@ import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runTest
+import kotlinx.coroutines.withTimeout
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Before
@@ -153,5 +154,45 @@ class DashboardViewModelTest {
         advanceUntilIdle()
 
         verify { snackbar.showError("translated error") }
+    }
+
+    @Test
+    fun `stats project Loaded while repository is still waiting for optional reads`() = runTest {
+        val entered = CompletableDeferred<Unit>()
+        val release = CompletableDeferred<Unit>()
+        val completed = CompletableDeferred<Unit>()
+        coEvery { dashboardRepository.refresh("emp-1", false) } coAnswers {
+            entered.complete(Unit)
+            try {
+                release.await()
+                null
+            } finally {
+                completed.complete(Unit)
+            }
+        }
+        val vm = viewModel()
+        try {
+            vm.uiState.test {
+                awaitItem()
+                advanceUntilIdle()
+                withTimeout(5_000) { entered.await() }
+                snapshotFlow.value = DashboardSnapshot(stats = stats, refreshing = true, loaded = false)
+                advanceUntilIdle()
+                val progressive = expectMostRecentItem()
+                assertTrue(progressive is DashboardUiState.Loaded)
+                assertEquals(stats, (progressive as DashboardUiState.Loaded).stats)
+                assertTrue(progressive.upcoming.isEmpty())
+                assertEquals(null, progressive.availableJobsPreview)
+                assertEquals(false, progressive.isUserRefreshing)
+                assertEquals(false, completed.isCompleted)
+                release.complete(Unit)
+                advanceUntilIdle()
+                withTimeout(5_000) { completed.await() }
+                cancelAndIgnoreRemainingEvents()
+            }
+        } finally {
+            release.complete(Unit)
+            advanceUntilIdle()
+        }
     }
 }

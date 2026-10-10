@@ -10,6 +10,7 @@ final class DashboardViewModel: ViewModel {
     private let client: PartnerDashboardClient
     private let settings: AppSettingsStore
     private var employeeId: String?
+    private var fetchGeneration = 0
 
     init(client: PartnerDashboardClient, settings: AppSettingsStore) {
         self.client = client
@@ -17,6 +18,7 @@ final class DashboardViewModel: ViewModel {
     }
 
     func load() async {
+        guard !Task.isCancelled else { return }
         state = .loading
         await fetch()
     }
@@ -33,21 +35,30 @@ final class DashboardViewModel: ViewModel {
     }
 
     private func fetch() async {
+        guard !Task.isCancelled else { return }
+        fetchGeneration += 1
+        let generation = fetchGeneration
+        async let previewResult = client.getAvailableJobsPreview(limit: Self.previewLimit)
         let employee = try? await client.getCurrentEmployee().get()
-        employeeId = employee?.id
+        guard !Task.isCancelled, generation == fetchGeneration else { return }
+        let capturedEmployeeId = employee?.id
+        let nextState: UiState<DashboardData>
 
-        switch await client.getStats(employeeId: employeeId) {
+        switch await client.getStats(employeeId: capturedEmployeeId) {
         case let .success(stats):
-            let preview = try? await client.getAvailableJobsPreview(limit: Self.previewLimit).get()
-            state = .loaded(DashboardData.from(
+            let preview = try? await previewResult.get()
+            nextState = .loaded(DashboardData.from(
                 stats: stats,
                 preview: preview,
                 firstName: employee?.firstName
             ))
         case let .failure(error):
-            state = .error(error)
+            nextState = .error(error)
         }
 
+        guard !Task.isCancelled, generation == fetchGeneration else { return }
+        employeeId = capturedEmployeeId
+        state = nextState
         resolveJobRadiusPrompt(radiusKm: employee?.jobRadiusKm, employeeRead: employee != nil)
     }
 

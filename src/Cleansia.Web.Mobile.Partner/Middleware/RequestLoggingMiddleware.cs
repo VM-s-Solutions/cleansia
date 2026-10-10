@@ -89,7 +89,7 @@ public partial class RequestLoggingMiddleware(RequestDelegate next, ILogger<Requ
 
         var userId = context.User?.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "Anonymous";
 
-        var rawBody = await ReadRequestBodyAsync(request);
+        var rawBody = await ReadRequestBodyAsync(request, capture: !IsSensitivePath(request.Path));
         var safeBody = SafeBody(request.Path, rawBody, RequestBodyLimit);
 
         _logger.LogInformation(
@@ -114,7 +114,7 @@ public partial class RequestLoggingMiddleware(RequestDelegate next, ILogger<Requ
 
         var userId = context.User?.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "Anonymous";
 
-        var rawBody = await ReadResponseBodyAsync(response);
+        var rawBody = IsSensitivePath(context.Request.Path) ? string.Empty : await ReadResponseBodyAsync(response);
         var safeBody = SafeBody(context.Request.Path, rawBody, ResponseBodyLimit);
 
         _logger.Log(
@@ -144,7 +144,7 @@ public partial class RequestLoggingMiddleware(RequestDelegate next, ILogger<Requ
         );
     }
 
-    private static async Task<string> ReadRequestBodyAsync(HttpRequest request, bool capture = true)
+    private static async Task<string?> ReadRequestBodyAsync(HttpRequest request, bool capture = true)
     {
         if (!request.Body.CanSeek)
         {
@@ -163,7 +163,7 @@ public partial class RequestLoggingMiddleware(RequestDelegate next, ILogger<Requ
         return body;
     }
 
-    private static async Task<string> ReadResponseBodyAsync(HttpResponse response)
+    private static async Task<string?> ReadResponseBodyAsync(HttpResponse response)
     {
         response.Body.Seek(0, SeekOrigin.Begin);
 
@@ -181,7 +181,7 @@ public partial class RequestLoggingMiddleware(RequestDelegate next, ILogger<Requ
     /// puts a multi-byte body under the cap and logs what must be suppressed.
     /// → /architecture/request-logging#scan-limit
     /// </summary>
-    private static async Task<string> ReadBoundedAsync(StreamReader reader, bool capture = true)
+    private static async Task<string?> ReadBoundedAsync(StreamReader reader, bool capture = true)
     {
         var buffer = ArrayPool<char>.Shared.Rent(ReadChunkChars);
         try
@@ -198,7 +198,7 @@ public partial class RequestLoggingMiddleware(RequestDelegate next, ILogger<Requ
                 body?.Append(buffer, 0, read);
             }
 
-            return body?.ToString() ?? string.Empty;
+            return total > RedactionScanLimit ? null : body?.ToString() ?? string.Empty;
         }
         finally
         {
@@ -211,14 +211,14 @@ public partial class RequestLoggingMiddleware(RequestDelegate next, ILogger<Requ
     /// leaves the raw prefix of any secret whose closing quote falls past the cut. Anything past the scan
     /// limit is suppressed outright. → /architecture/request-logging#redact-before-truncate
     /// </summary>
-    private static string SafeBody(PathString path, string rawBody, int logLimit)
+    private static string SafeBody(PathString path, string? rawBody, int logLimit)
     {
         if (IsSensitivePath(path))
         {
             return "[suppressed: sensitive endpoint]";
         }
 
-        if (rawBody.Length > RedactionScanLimit)
+        if (rawBody is null)
         {
             return "[suppressed: body too large to redact]";
         }

@@ -28,7 +28,9 @@ public class RequestLogBodyReadBoundTests
     private const string Secret = "sk_live_this_must_never_reach_a_log";
     private const string Marker = "leak-marker-must-not-reach-a-log";
     private const string SizeSuppressed = "[suppressed: body too large to redact]";
+    private const string SensitiveSuppressed = "[suppressed: sensitive endpoint]";
     private const string Redacted = "***REDACTED***";
+    private const string ObservedResponseJson = """{"city":"Brno"}""";
 
     // ~30x the bound below, so a read that is bounded but wrongly (a whole extra buffer, a doubled cap)
     // still passes and only an unbounded one fails.
@@ -57,6 +59,17 @@ public class RequestLogBodyReadBoundTests
         foreach (var level in new[] { LogLevel.Information, LogLevel.Warning, LogLevel.Error, LogLevel.None })
         foreach (var status in new[] { 200, 400, 500 })
             data.Add(host, level, status);
+        return data;
+    }
+
+    public static TheoryData<Type, LogLevel, int> HostEnabledResponseLevels()
+    {
+        var data = new TheoryData<Type, LogLevel, int>();
+        foreach (var host in RequestLoggingHarness.AllHostMiddleware)
+        {
+            data.Add(host, LogLevel.Information, StatusCodes.Status200OK);
+            data.Add(host, LogLevel.Warning, StatusCodes.Status400BadRequest);
+        }
         return data;
     }
 
@@ -276,6 +289,85 @@ public class RequestLogBodyReadBoundTests
             $"POST /api/Order/Create | User: Anonymous | IP: Unknown | Body: {expected}",
             RequestLine(logged),
             StringComparison.Ordinal);
+    }
+
+    [Theory]
+    [MemberData(nameof(HostEnabledResponseLevels))]
+    public async Task SensitivePathResponse_IsForwardedWithoutBeingReadForTheLog(
+        Type middlewareType, LogLevel minimumLevel, int status)
+    {
+        var (logged, bytesRead, forwarded) = await RunObservingTheResponseRead(
+            middlewareType, "/api/Order/GetPhotos", minimumLevel, status);
+
+        Assert.Equal(0, bytesRead);
+        Assert.Equal(Encoding.UTF8.GetBytes(ObservedResponseJson), forwarded);
+        Assert.Contains(SensitiveSuppressed, ResponseLine(logged));
+    }
+
+    [Theory]
+    [MemberData(nameof(HostEnabledResponseLevels))]
+    public async Task OrdinaryPathResponse_IsReadForTheLog(Type middlewareType, LogLevel minimumLevel, int status)
+    {
+        var (logged, bytesRead, forwarded) = await RunObservingTheResponseRead(
+            middlewareType, "/api/Order/Create", minimumLevel, status);
+
+        Assert.Equal(Encoding.UTF8.GetByteCount(ObservedResponseJson), bytesRead);
+        Assert.Equal(Encoding.UTF8.GetBytes(ObservedResponseJson), forwarded);
+        Assert.EndsWith(ObservedResponseJson, ResponseLine(logged), StringComparison.Ordinal);
+    }
+
+    [Theory]
+    [MemberData(nameof(HostMiddlewareTypes))]
+    public async Task SensitivePathRequest_StillPullsTheBoundedReadWhenInformationIsEnabled(Type middlewareType)
+    {
+        var scanLimit = RequestLoggingHarness.LimitOf(middlewareType, "RedactionScanLimit");
+        var json = AsciiBodyOfChars(OversizeBodyChars);
+        var body = new CountingRequestBodyStream(Encoding.UTF8.GetBytes(json));
+        long pulledWhileLogging = -1;
+        string? received = null;
+
+        var logged = await RequestLoggingHarness.RunAsync(
+            middlewareType, "/api/Order/SavePhotos", responseJson: "{}", method: HttpMethods.Post,
+            requestBody: body, minimumLogLevel: LogLevel.Information,
+            onNextInvoked: () => pulledWhileLogging = body.BytesRead,
+            downstream: async context =>
+            {
+                using var reader = new StreamReader(context.Request.Body, Encoding.UTF8, leaveOpen: true);
+                received = await reader.ReadToEndAsync();
+                await context.Response.Body.WriteAsync(Encoding.UTF8.GetBytes("{}"));
+            });
+
+        Assert.InRange(pulledWhileLogging, 1, scanLimit + ReadSlackBytes);
+        Assert.Equal(json, received);
+        Assert.EndsWith(
+            $"POST /api/Order/SavePhotos | User: Anonymous | IP: Unknown | Body: {SensitiveSuppressed}",
+            RequestLine(logged),
+            StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    /// The downstream writes into the middleware's capture stream, which is what gets forwarded, and then
+    /// swaps <c>Response.Body</c> for a counting stream holding the same bytes. The response log reads
+    /// <c>Response.Body</c>, so the counter says whether the log read the response at all.
+    /// </summary>
+    private static async Task<(List<string> Logged, long BytesRead, byte[]? Forwarded)> RunObservingTheResponseRead(
+        Type middlewareType, string path, LogLevel minimumLevel, int status)
+    {
+        var bytes = Encoding.UTF8.GetBytes(ObservedResponseJson);
+        var observed = new CountingRequestBodyStream(bytes);
+        byte[]? forwarded = null;
+
+        var logged = await RequestLoggingHarness.RunAsync(
+            middlewareType, path, responseJson: ObservedResponseJson, minimumLogLevel: minimumLevel,
+            downstream: async context =>
+            {
+                context.Response.StatusCode = status;
+                await context.Response.Body.WriteAsync(bytes);
+                context.Response.Body = observed;
+            },
+            onCompleted: context => forwarded = ((MemoryStream)context.Response.Body).ToArray());
+
+        return (logged, observed.BytesRead, forwarded);
     }
 
     private static Task<List<string>> RunPost(Type middlewareType, string json) =>

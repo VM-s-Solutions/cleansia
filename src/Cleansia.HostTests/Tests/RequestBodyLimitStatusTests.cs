@@ -70,9 +70,10 @@ public sealed class RequestBodyLimitStatusTests(HostTestPostgresFixture db) : IA
     }
 
     [Theory]
+    [InlineData(LogLevel.Information)]
     [InlineData(LogLevel.Warning)]
     [InlineData(LogLevel.None)]
-    public async Task DisabledInformation_PreservesTheRealAnonymous413And401(LogLevel level)
+    public async Task PreservesTheRealAnonymous413And401(LogLevel level)
     {
         await using var host = await KestrelPartnerHost.StartAsync(db.ConnectionString, BodyLimitBytes, level);
         using var client = host.CreateClient();
@@ -84,9 +85,10 @@ public sealed class RequestBodyLimitStatusTests(HostTestPostgresFixture db) : IA
     }
 
     [Theory]
+    [InlineData(LogLevel.Information)]
     [InlineData(LogLevel.Warning)]
     [InlineData(LogLevel.None)]
-    public async Task DisabledInformation_Preserves413WhenContentLengthExceedsALimitAboveTheReaderBound(LogLevel level)
+    public async Task Preserves413WhenContentLengthExceedsALimitAboveTheReaderBound(LogLevel level)
     {
         const long limit = 192 * 1024;
         await using var host = await KestrelPartnerHost.StartAsync(db.ConnectionString, limit, level);
@@ -96,9 +98,10 @@ public sealed class RequestBodyLimitStatusTests(HostTestPostgresFixture db) : IA
     }
 
     [Theory]
+    [InlineData(LogLevel.Information)]
     [InlineData(LogLevel.Warning)]
     [InlineData(LogLevel.None)]
-    public async Task DisabledInformation_Preserves413ForChunkedInputCrossingTheLimitWithinTheReadBound(LogLevel level)
+    public async Task Preserves413ForChunkedInputCrossingTheLimitWithinTheReadBound(LogLevel level)
     {
         await using var host = await KestrelPartnerHost.StartAsync(db.ConnectionString, BodyLimitBytes, level);
         using var client = host.CreateClient();

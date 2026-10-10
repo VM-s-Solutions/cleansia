@@ -153,7 +153,7 @@ holder is implicitly added.
   distinct. Keep valid no-effect startup cohorts; if the changed path is not reached,
   add separately named n=5 production VM/repository controlled-flight diagnostics
   without calling them actual startup/HTTP/physical-device gains.
-- [ ] **AC8 / full verification:** meaningful RED→GREEN and independent source/security/
+- [x] **AC8 / full verification:** meaningful RED→GREEN and independent source/security/
   optimizer/artifact review pass. The coordinating reviewer executes fresh combined
   backend build/unit/integration/host suites and clean latest native full schemes;
   actual Android core/partner/customer tests execute with fresh task/XML proof and
@@ -219,10 +219,22 @@ claimed by this source-only ticket preparation.
   source/products, safety inspections, RED and comparable BEFORE closure remain
   prerequisites to maintained fixes. Final B closure records and the C ticket/INDEX
   entry are separate documentation changes.
+- 2026-10-10 — Final local gates recorded at `43c2168`:
+  - Backend 9,894 passed.
+  - Android 2,760 passed.
+  - iOS 3,556 passed plus one conditional VoiceOver skip; touched iOS 16.4 classes 61/61.
+  - Lints, generic Debug builds, repository checkers, VitePress and graph all pass.
+
+  The six render checks were captured on owned guests through the existing reviewed
+  lifecycle, with Mike-approved AXe for iOS input; everything started was stopped.
+  Independent render and code-diff lens reviews pass with qualifications, and AC8 is
+  closed. Exact-head CI and the normal merge (AC9) are pending; this record implies
+  neither.
 
 ## Review
 
-Implementation, measurements, independent review and actual delivery evidence pending.
+Implementation, measurements, final local gates and independent reviews are recorded
+below. Exact-head hosted CI and the normal merge (AC9) remain pending.
 
 ### B001 actual focused implementation and comparison, 2026-10-09
 
@@ -250,3 +262,37 @@ mixed Information results explicitly retained. Combined gates and delivery remai
 Dashboard and plan-flight cause commits retain the independently reviewed candidate bytes. The closed native comparison contains 160 observations per arm: 80 signed-in and 80 separately declared signed-out, 320 total. Selected tagged requests fall 561→544; Customer cold signed-in GetPlans falls 2→1 in each observation on both platforms. Independent closure preserves mixed timing/RSS/PSS results and the proxy/permission-activity limits. Android full suites passed 2760/2760. Fresh combined backend/iOS, render/repo/docs/graph and current-head CI/delivery remain pending.
 
 B009 was evaluated with actual focused RED and corrected GREEN36, then physically measured in 280 groups per arm. Useful HTTP-message reductions coexist with materially higher Brotli catalogue median latency and tiny-message growth. Under AC4 it is explicitly deferred: production/test candidate bytes were restored to retained HEAD, while all source/measurement/test evidence remains preserved. AC3 records evaluated-candidate safety evidence, not delivered compression; measured authenticated controls cover profile, orders, quote and GDPR consent only, with customer-audience board/payout/audit route gaps explicit. No deployed HTTPS, forwarded-terminator, production-transfer or broad security claim is made. See the Wave C report and raw/backend/b009-deferral-001/decision.json. AC8 and AC9 stay open until actual final gates and normal merge.
+
+### Final local verification and six render checks, 2026-10-10
+
+**AC8 is complete.** The earlier "pending" sentences describe their original cutoffs and remain unchanged. These results are at head `43c2168788aed51c1ffbff0323f4d079635c1a71`; the recorded pre-PR fetch found `origin/master` still at `18a2e5ac`, an ancestor (0 behind, 7 ahead, clean).
+
+| Gate | Result |
+|---|---|
+| Backend fresh Release build | **9,894 passed** (unit 8,564, integration 845, host 485), 0 skipped |
+| Android unfiltered suites | **2,760 passed**; unchanged Android inputs, so not rerun |
+| iOS lints | SwiftFormat 0/946 after the formatting-only `43c2168`; SwiftLint strict 0 violations in 945 files |
+| iOS 18.6 full schemes | **3,557 discovered, 3,556 passed**, one existing conditional VoiceOver skip, 0 failed |
+| Generic Debug device builds | Pass for both apps |
+| iOS 16.4 touched floor | **61/61** (17 + 44). The Partner wrapper's unsupported `.xctestrun` expectation (exit 1 after its tests passed) is preserved; a separate signed inspection and postguard passed |
+| Repository and docs | Nine repository checkers, eight self-test files and VitePress build pass |
+| Graph | Refresh and current-source coverage 002 pass |
+| Android bridge | Current tracked inputs equal the inspected APK inputs |
+
+Each gate has an accepted independent review.
+
+**The six required render checks were captured on owned guests (iOS 18.6, Android API 35)** through the existing reviewed backend, observer and emulator lifecycle, with ordinary navigation only:
+- **Pass:** both Partner Dashboards, the Android Customer Profile and the Android Customer Plus.
+- **Pass with a header-truncation observation:** iOS Customer Profile.
+- **Pass for loaded nonempty plans:** iOS Customer Plus. Its purchase bar is not shown because the provider-safe product has no Stripe key.
+
+The read-only eight-agent adversarial review confirms all six with qualifications. Its 15 wording corrections are in the receipt corrigendum. Everything started for the run was stopped, the iOS input tool AXe 1.8.0 was installed with Mike's approval, and the observations outside scope are listed in the report, not fixed.
+
+The project's security, optimizer and reviewer lenses reviewed the `src/` diff read-only and found no blocker:
+- **Security:** pass, no findings.
+- **Optimizer:** pass with one low note (the measured Information-path string build) and one info note (Android stats-first round trip).
+- **Correctness:** pass, with two info-level latent contracts.
+
+Review: `raw/reviews/c-diff-lens-review-independent-001.json`.
+
+The report's [final verification section](../../WAVE-C-2026-10-09.md#final-verification-and-six-render-checks-2026-10-10) holds the exact receipts, failed attempts, side effects and closure. **AC9** (exact-head hosted CI and the normal SHA-guarded merge) stays open until those happen. Wave D starts only after the actual C merge.

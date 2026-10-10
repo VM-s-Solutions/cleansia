@@ -5,6 +5,7 @@ import cz.cleansia.partner.api.client.DashboardApi
 import cz.cleansia.partner.api.model.AvailableJobPreviewDto
 import cz.cleansia.partner.api.model.AvailableJobsPreviewResponse
 import cz.cleansia.partner.api.model.DashboardStatsDto
+import java.util.concurrent.CopyOnWriteArrayList
 import kotlinx.coroutines.test.runTest
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.descriptors.SerialDescriptor
@@ -132,19 +133,17 @@ class DashboardWireTest {
 
     @Test
     fun theRequestsKeepTheQueryNamesTheServerBinds() = runTest {
-        val paths = mutableListOf<String>()
+        val paths = CopyOnWriteArrayList<String>()
         serving(onRequest = { paths += it.path.orEmpty() }) {
             it.getStats(EMPLOYEE_ID)
             it.refresh(employeeId = null, force = true)
         }
 
+        assertEquals("/api/Dashboard/GetStats?EmployeeId=$EMPLOYEE_ID", paths.first())
+        // A refresh starts stats and the preview together, so their arrival order is not fixed.
         assertEquals(
-            listOf(
-                "/api/Dashboard/GetStats?EmployeeId=$EMPLOYEE_ID",
-                "/api/Dashboard/GetStats",
-                "/api/Dashboard/GetAvailableJobsPreview?Limit=5",
-            ),
-            paths,
+            listOf("/api/Dashboard/GetAvailableJobsPreview?Limit=5", "/api/Dashboard/GetStats"),
+            paths.drop(1).sorted(),
         )
     }
 

@@ -1,10 +1,10 @@
 ---
 id: T-0806
-title: Reduce request logging work, negotiate HTTP JSON compression and overlap native reads
+title: Reduce request logging work, evaluate HTTP JSON compression and overlap native reads
 size: L
 owner: pm
 created: 2026-10-09
-updated: 2026-10-09
+updated: 2026-10-10
 depends_on: [T-0805]
 blocks: []
 stories: []
@@ -82,7 +82,7 @@ holder is implicitly added.
 
 ## Acceptance criteria
 
-- [ ] **AC1 / B001 behavior:** meaningful RED/GREEN exposes and removes disabled
+- [x] **AC1 / B001 behavior:** meaningful RED/GREEN exposes and removes disabled
   capture/formatting work while preserving the same bounded request read at all
   logger levels; zero request-body reads is not an acceptance requirement. The real
   pre-authentication Kestrel 413 behavior and downstream complete-request semantics
@@ -93,14 +93,14 @@ holder is implicitly added.
   disabled-response controls prove capture Position=0 before final copy independently
   of whether response logging read anything. Status, body and headers remain
   equivalent; pool clearing/return is reviewed. No new type or weakened bound.
-- [ ] **AC2 / B001 evidence:** fresh merged-B and AFTER products use the same five-host
+- [x] **AC2 / B001 evidence:** fresh merged-B and AFTER products use the same five-host
   GET/POST, empty/1 KiB/64 KiB/oversize-body and logger-level profiles: authored PRO
   Warning, Information enabled and NullLogger. Record five observations per profile,
   the fixed 100 iterations and ten excluded warmups, exact bytes, allocations and
   elapsed median/p90. Observe actual pooled capacity/cleared length and enabled-body
   tradeoffs. CPU claims use separate TotalProcessorTime deltas; Stopwatch, allocation
   reductions or NullLogger-only results do not establish HTTP latency/production gain.
-- [ ] **AC3 / B009 safety:** actual public customer web/mobile Service/Package/Extra
+- [x] **AC3 / B009 safety:** actual public customer web/mobile Service/Package/Extra
   GetOverview direct-HTTP gzip/br negotiation is RED before and GREEN after, with
   decompressed byte/DTO equality and unchanged tenant/market/currency/pay rules.
   Every X-Forwarded-Proto-marked request declines compression, including http, https,
@@ -112,22 +112,22 @@ holder is implicitly added.
   Unmarked terminator traffic remains outside the demonstrated boundary; do not claim
   blanket forwarded-TLS protection, HTTP private-header/Set-Cookie exclusions or a
   stock minimum-size threshold.
-- [ ] **AC4 / B009 evidence:** paired n=5 direct-HTTP path/host/encoding observations
+- [x] **AC4 / B009 evidence:** paired n=5 direct-HTTP path/host/encoding observations
   retain actual raw wire bytes, uncompressed hashes and latency; qualified warm serial
   CPU batches
-  use TotalProcessorTime and retain RSS. Tiny JSON/empty arrays may grow and CPU may
+  use recorded process ps-time deltas with resolution/noise qualifications and retain RSS snapshots. Tiny JSON/empty arrays may grow and CPU may
   regress; report them. With materially worse cost or no useful HTTP benefit, retain
   the measurements and explicitly defer B009 rather than force a gain. Local TLS uses
   a pinned scratch certificate without installing a trust root. No deployed HTTPS/CDN
   or production transfer claim is made.
-- [ ] **AC5 / dashboards:** explicit start/release/completion barriers in existing Swift
+- [x] **AC5 / dashboards:** explicit start/release/completion barriers in existing Swift
   and Android suites prove preview starts while iOS employee is held, stats uses its
   actual captured employee ID, and the final load still waits for required legs.
   Android stats stays visible while optional work is blocked; preview completes while
   upcoming is held; both completion orders retain both fields. Optional errors retain
   last good data, critical errors and null-ID/force/freshness behavior remain. Cancelled,
   cleared or superseded work cannot overwrite current snapshot, prompt or final flags.
-- [ ] **AC6 / plans:** held concurrent same-country success and failure produce one API
+- [x] **AC6 / plans:** held concurrent same-country success and failure produce one API
   call and equal current-waiter outcomes, followed by fresh retry after failure. Cover
   nil country, empty success, later failure retaining good plans, force during flight,
   reversed market completion, clear/new session and mutation-follow-up refresh. iOS
@@ -140,7 +140,7 @@ holder is implicitly added.
   controls cancellation-safe cleanup; no network await under the short flight/cache
   mutex and no app-global coroutine scope or error cache. These are acceptance
   requirements and source recommendations, not already-closed runtime evidence.
-- [ ] **AC7 / native measurements:** preserve exactly 80 signed-in observations per arm
+- [x] **AC7 / native measurements:** preserve exactly 80 signed-in observations per arm
   (four apps × ten process-cold + ten warm-resume), 160 paired observations total, on
   the same owned representative iOS18.6 and Android API35 guests. Extra iOS cold
   warmup is explicitly excluded; signed-out controls have a separately declared equal
@@ -244,3 +244,9 @@ C/raw/backend/logging-comparison-b001-001.json (SHA256
 0db2163039583c65a8f4c5fbbd4032dd412451595b8dc3870c7d09643b445ca1)
 retains complete results and TRX lineage. Independent artifact review passes with
 mixed Information results explicitly retained. Combined gates and delivery remain pending.
+
+### Native closed evidence and B009 decision, 2026-10-10
+
+Dashboard and plan-flight cause commits retain the independently reviewed candidate bytes. The closed native comparison contains 160 observations per arm: 80 signed-in and 80 separately declared signed-out, 320 total. Selected tagged requests fall 561→544; Customer cold signed-in GetPlans falls 2→1 in each observation on both platforms. Independent closure preserves mixed timing/RSS/PSS results and the proxy/permission-activity limits. Android full suites passed 2760/2760. Fresh combined backend/iOS, render/repo/docs/graph and current-head CI/delivery remain pending.
+
+B009 was evaluated with actual focused RED and corrected GREEN36, then physically measured in 280 groups per arm. Useful HTTP-message reductions coexist with materially higher Brotli catalogue median latency and tiny-message growth. Under AC4 it is explicitly deferred: production/test candidate bytes were restored to retained HEAD, while all source/measurement/test evidence remains preserved. AC3 records evaluated-candidate safety evidence, not delivered compression; measured authenticated controls cover profile, orders, quote and GDPR consent only, with customer-audience board/payout/audit route gaps explicit. No deployed HTTPS, forwarded-terminator, production-transfer or broad security claim is made. See the Wave C report and raw/backend/b009-deferral-001/decision.json. AC8 and AC9 stay open until actual final gates and normal merge.

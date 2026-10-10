@@ -550,3 +550,43 @@ The namespace is pinned by `apps/<app>/src/app/i18n/error-contract-parity.spec.t
 nx test <project-name>       # Unit tests
 nx e2e <project-name>-e2e   # E2E tests
 ```
+
+## Native mobile request ownership
+
+### Partner dashboard
+
+On iOS, `DashboardViewModel` starts the available-jobs preview alongside the employee
+read. Stats still waits for the captured employee ID. The view model assembles one
+terminal state, then checks cancellation and the fetch generation before publishing
+the state, employee identity and radius-prompt ownership together. A user refresh
+keeps the visible dashboard until that result arrives. Stats failure still becomes
+an error; preview failure still permits the loaded dashboard with an empty hero.
+
+On Android, `DashboardRepositoryImpl` retains its serialized refresh and freshness
+check. It publishes stats first, then runs upcoming orders and the available-jobs
+preview together in the refresh's `coroutineScope`. Each successful optional read
+updates its own snapshot field; an optional failure retains the last good field.
+The final loaded/freshness flags wait for both legs. Snapshot updates check active
+cancellation and the captured session generation under the snapshot lock; `clear`
+advances that generation so old work cannot repopulate a cleared session.
+
+### Customer membership plans
+
+The customer membership repositories share one active plan read for the chosen
+country, including a nil country. Current waiters share ordinary success or failure.
+A failure is not stored as a successful result: an uncached failed read can retry,
+while previously loaded good plans remain available. Country changes and session
+clear invalidate the captured generation. Flight identity also guards publication
+and cleanup so late work cannot overwrite or remove its replacement.
+
+| Plan-read behavior | iOS | Android |
+|---|---|---|
+| Ordinary completed success | Published plans remain visible; the next sequential read fetches again. Only active requests are shared. | Success is cached for the same country, including an empty list, until country change, clear or explicit force. |
+| Explicit retry/force | `MembershipViewModel.reloadPlans` calls `refreshPlans(force: true)`, replacing the active task. | `getPlans(forceRefresh = true)` starts a fresh flight and does not satisfy that request from an older cached result. A failed force keeps the previous good cache. |
+| Cancelled waiter | The repository owns the shared `Task`; cancelling one waiter does not cancel publication for surviving waiters. The cancelled caller receives a cancellation result. | A follower's cancellation leaves the owning `Deferred` intact. Cancelling the first caller cancels its structured child; still-active same-generation waiters can elect a fresh child. |
+| Late completion after replacement/reset | Cancellation, country, generation and flight-token checks protect publication; cleanup removes only the matching task. | Active/generation and `Deferred` identity checks protect publication; cleanup removes only the matching flight. Old-country/session waiters cannot re-elect stale work. |
+
+The existing dashboard and membership tests use held request/completion barriers to
+cover overlap, both optional completion orders, shared failures, force replacement,
+cancelled waiters and reset. These ownership rules retain the existing API payloads,
+market pricing and screen error/refresh behavior.

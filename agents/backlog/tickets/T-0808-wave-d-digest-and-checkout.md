@@ -71,7 +71,7 @@ A read-only ground truth checked both findings against the tree before any code.
 - [x] **AC3** — Fresh n=5 before/after measurement on the restored synthetic fixture, interleaved, with a fresh restore and seed before every run. SQL count, elapsed time, allocation and exact outcome counts are reported as median and nearest-rank p90.
 - [x] **AC4** — The Release backend build and the unit, integration and host suites pass on the final head; the repository checkers and the docs build pass.
 - [x] **AC5** — Independent correctness, security, optimizer and architect reviews pass.
-- [ ] **AC6** — Exact-head CI passes on every applicable workflow, and a normal SHA-guarded merge follows.
+- [x] **AC6** — Exact-head CI passes on every applicable workflow, and a normal SHA-guarded merge follows.
 
 ## Out of scope — reported, not fixed
 
@@ -107,6 +107,7 @@ A read-only ground truth checked both findings against the tree before any code.
   - the server-derived-id clause on `NotifyEachAsync`.
 
   Then the before/after job measurement ran.
+- 2026-10-11 — PR #320: exact-head CI green, merged as `620f3c7`.
 
 ## Review
 
@@ -129,3 +130,10 @@ Evidence lives off-tree under `/Users/michael/.codex/scratchpads/cleansia-wave-d
   - Docs build: passes.
   - The graph is refreshed.
 - **AC5.** Correctness, security (S1/S8/S11), optimizer and architect reviews all approve with notes; none blocks. The optimizer ran `EXPLAIN (ANALYZE, BUFFERS)` of the batch statement on a wide band of the audit copy and found no plan risk. It also confirmed the predicted counts (74 and 13) before the measurement ran.
+- **AC6.** On exact head `2dedce4`, every triggered workflow passed:
+  - Android, Backend and Frontend `build`;
+  - Frontend e2e-smoke;
+  - Docs;
+  - Secret scan.
+
+  Hosted Backend CI totals were unit 8,639, integration 848 and host 488, all passed, matching the local run. iOS CI, iOS Symbols and booking-policy parity did not trigger: their path filters match nothing in this diff. The SHA-guarded merge was `620f3c7` on 2026-10-11 at 01:05:14 UTC. Its parents are `64dfed7` and `2dedce4`, and its tree equals the head tree. No deploy ran. Evidence: `raw/ci/t0808-ci-merge-closure-001.json`.

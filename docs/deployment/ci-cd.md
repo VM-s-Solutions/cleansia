@@ -178,7 +178,9 @@ steps:
   - Cache ~/.nuget/packages   # keyed on Directory.Packages.props + all csprojs
   - dotnet restore Cleansia.Api.sln
   - dotnet build Cleansia.Api.sln --configuration Release --no-restore
-  # Three suites, single-threaded, fast-first:
+  # Three suites, single-threaded, fast-first, each run as
+  #   dotnet test <project> --configuration Release --no-build --verbosity normal
+  #     -- xUnit.parallelizeTestCollections=false
   - dotnet test Cleansia.Tests/Cleansia.Tests.csproj                        # unit
   - dotnet test Cleansia.IntegrationTests/Cleansia.IntegrationTests.csproj  # Testcontainers Postgres
   - dotnet test Cleansia.HostTests/Cleansia.HostTests.csproj                # authz/isolation

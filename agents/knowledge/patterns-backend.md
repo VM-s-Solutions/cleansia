@@ -1411,11 +1411,34 @@ already exists is the wrong tool, and calling it in a loop is the defect, not th
   GetBusyEmployeeIdsInWindowAsync(ids, startUtc, endUtc, ct)` — **return the positive subset (the
   "busy" ones), not the free ones**, so "absent from the result" is the fail-**open** default and an
   empty/failed answer degrades to today's behaviour rather than to a lie.
-- **Reduce the singular method to a wrapper over the set method.** Two predicates answering one
-  question in one repository is the defect class, not a shape to leave behind — and the wrapper means
-  every later fix (a range bound, a tenancy variant) lands on the **write gate** for free. The existing
-  status-matrix test on the singular method is the pin that proves the predicate did not change meaning
-  while it moved.
+- **Share the predicate, not the terminal call** (ADR-0039 D3.2 as amended). Two predicates answering
+  one question in one repository is the defect class, not a shape to leave behind — so the filter is
+  ONE method that returns a queryable and terminates nothing (`LiveCommitmentsInWindow`), the caller's
+  world is the queryable passed in (scoped or tenant-ignoring), and each shape ends it its own way: the
+  write gate keeps `.AnyAsync`'s early exit, the set method fans out with `.SelectMany`. That filter is
+  the "same call" the read-path/write-path bullet below asks for. Do **not** make the singular method a
+  wrapper over the set method; that costs the write gate a materialized set and a hash aggregate to
+  answer a bool. Every later fix to the filter (a range bound, a status term) still lands on every
+  query shape at once; a time term also lives in the in-memory twin below, which only its agreement
+  test holds to the filter. The existing status-matrix test on the singular method
+  (`HasOverlappingOrderStatusTests`) is the pin that proves the predicate did not change meaning while
+  it moved. **Enforced by:** `quality-gates.md` **Gate 4 (Architecture)** — `T3-HUMAN`. *(Not
+  mechanizable: which method is the singular form of a set question is a reading of meaning, not of
+  text; the status-matrix and agreement tests fail when the shapes disagree, not when one wraps the
+  other.)*
+- **The reverse shape — ONE entity, MANY windows — is one read, a pure Domain twin and an agreement
+  test.** Read the entity's live commitments once over `[min(start) − floor, max(end))`, with the status
+  set kept in SQL; judge each window in memory with a pure Domain function that carries the same time
+  terms and applies each window's own floor (`Order.OccupiesWindow`); and pin that twin to the SQL with
+  an agreement test on real PostgreSQL (`LiveCommitmentWindowsAgreementTests`), since nothing else stops
+  the two drifting. Shipped for the new-jobs digest as `GetOverlappedCandidateIdsIgnoringTenantAsync`.
+  The price: every window is judged against one statement's snapshot rather than one READ COMMITTED
+  probe each, which an advisory read can pay and a write gate cannot.
+  **Enforced by:** `LiveCommitmentWindowsAgreementTests`, for the shipped instance — `T1-CI`; that a
+  new instance of the shape brings its own agreement test, `quality-gates.md` **Gate 4 (Architecture)**
+  — `T3-HUMAN`. *(Not mechanizable: whether an in-memory function restates a SQL filter's time terms is
+  a reading of meaning — the two are different text in different assemblies, and a new twin need not
+  call `Order.OccupiesWindow`. Baseline is zero: the shipped instance carries its test.)*
 - **The read path and the write path must be the SAME CALL, not "the same rule".** If a picker can say
   *available* and the command can then say *busy* for a reason of its own, the feature has already
   failed and no shared documentation prevents it.

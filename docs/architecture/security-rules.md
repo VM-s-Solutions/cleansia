@@ -110,8 +110,8 @@ the last Administrator"* is a predicate over *other* rows, and a conditional `UP
 is not atomic against a second one on a different row — under READ COMMITTED each statement's snapshot
 sees the other row still active, both land, and the company has no Administrator (write skew, not a lost
 update — S7a's `ExecuteUpdateAsync` shape does not cover it). `UserRepository.DemoteAdministratorIfAnotherRemainsAsync`
-and `DeactivateAdministratorIfAnotherRemainsAsync` (`UserRepository.cs:171-218`) therefore each open a
-transaction, take `SELECT pg_advisory_xact_lock(hashtext(tenantId))` (`:220-227`; Postgres only — the SQLite
+and `DeactivateAdministratorIfAnotherRemainsAsync` (`UserRepository.cs:157-204`) therefore each open a
+transaction, take `SELECT pg_advisory_xact_lock(hashtext(tenantId))` (`:206-213`; Postgres only — the SQLite
 unit-test provider serialises on one connection), then run the conditional `UPDATE`; `0 rows` is the business
 error (`admin_user.cannot_demote_last_administrator` / `admin_user.cannot_deactivate_last_admin`), and the
 race test on Testcontainers proves exactly one of two concurrent demotions succeeds on every run. The

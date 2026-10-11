@@ -33,12 +33,17 @@ mounts. Testcontainers is pointed at it by two variables in the shell that runs 
 export DOCKER_HOST="unix://$HOME/.colima/default/docker.sock"
 export TESTCONTAINERS_DOCKER_SOCKET_OVERRIDE=/var/run/docker.sock
 cd src
-dotnet test Cleansia.IntegrationTests/Cleansia.IntegrationTests.csproj -c Release
-dotnet test Cleansia.HostTests/Cleansia.HostTests.csproj -c Release
+dotnet build Cleansia.Api.sln --configuration Release
+dotnet test Cleansia.IntegrationTests/Cleansia.IntegrationTests.csproj \
+  --configuration Release --no-build -- xUnit.parallelizeTestCollections=false
+dotnet test Cleansia.HostTests/Cleansia.HostTests.csproj \
+  --configuration Release --no-build -- xUnit.parallelizeTestCollections=false
 ```
 
 The first is the socket on the Mac. The second is the socket's path *inside* the VM, which
-Testcontainers mounts into its clean-up container; the Mac's path does not exist in there.
+Testcontainers mounts into its clean-up container; the Mac's path does not exist in there. The test
+commands are CI's (`backend-ci.yml`) less its `--verbosity normal`: one Release build, then each suite
+with its test collections run one at a time.
 
 `Cleansia.HostTests` boots several hundred hosts, and each one watches its appsettings files. On macOS a
 watcher is an FSEvents stream, and after a few hundred the system refuses new ones; a refused watcher

@@ -290,6 +290,9 @@ fourth predicate, and the digest runs exactly that: `GetOverlappedCandidateIdsIg
 reads the cleaner's live commitments once through the unchanged `LiveCommitmentsInWindow`, then
 `Order.OccupiesWindow` judges each candidate against **its own** inclusive floor.
 `LiveCommitmentWindowsAgreementTests` pins its answer to the single-window form's on real PostgreSQL.
+Its one accepted limit: a cleaner's candidates are judged against one statement's snapshot, not one
+READ COMMITTED probe each, which holds because the digest only advises and `TakeOrder`'s write gate
+still decides at take time.
 **Only the recurring materializer's loop is left** (one resolver busy read per occurrence) —
 pre-existing, on a timer, and still the digest redesign's (Consumers, below), as are the redesign's two
 other items: grouping the board by `WorkCountryId` and batching the preferences read. The single-window

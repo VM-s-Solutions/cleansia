@@ -700,20 +700,27 @@ No `ASPNETCORE_ENVIRONMENT` is set on any host in `deploy/`, so every deployed h
 
 That is load-bearing in both directions. **Warning and above ships** — which includes every
 `LogError`, and the framework's own `ExceptionHandlerMiddleware` record of an unhandled exception. And
-**Information does not** — which is why `RequestLoggingMiddleware`'s request/response body slices, and
-the caller PII they can carry, do not leave the process at all. Lowering `Default` to `Information` on
-a deployed host would send both the volume and that PII to App Insights.
+**Information does not**, so the framework's Information chatter stays in the process; lowering
+`Default` to `Information` on a deployed host would send that volume to App Insights. Our own
+`Cleansia` categories, the request logging among them, are set on their own, below.
 
-**Since 2026-08-22 there is one exception, and only on non-prod.** `main.bicep:533` sets
+**Since 2026-08-22 there is one exception, and only on non-prod.** `main.bicep` sets
 `Logging__LogLevel__Cleansia` to `Information` when `env != 'prod'` (prod stays `Warning`). App Service
 surfaces every app setting as an environment variable and `Host.CreateDefaultBuilder` layers those
 **after** the JSON files, so it wins without a code change.
 
 It is scoped to the **`Cleansia` category, never `Default`** — that is the whole point. Our own
 `LogInformation` calls ("this sweep considered 40 assignments and sent 3") now reach App Insights on
-DEV, while `Default` stays at `Warning` so `RequestLoggingMiddleware` and the framework's Information
-chatter still do not. Before this, a DEV timer that ran and did nothing was indistinguishable from one
-that never ran at all — which is exactly the bug that took a day to find.
+DEV, while `Default` stays at `Warning` so the framework's Information chatter still does not. Before
+this, a DEV timer that ran and did nothing was indistinguishable from one that never ran at all — which
+is exactly the bug that took a day to find.
+
+**The `Cleansia` prefix takes in the request logging too.** Each of the five hosts'
+`RequestLoggingMiddleware` logs under `Cleansia.Web.<Host>.Middleware`, so DEV ships their redacted
+request and response lines at Information. On prod, `Warning` keeps the request lines and the lines for
+responses under 400 in the process, while a 4xx or 5xx response's line ships at Warning or Error with
+its redacted body slice. Redaction is required at both thresholds →
+[Request logging and PII redaction](/architecture/request-logging).
 :::
 
 `deploy/bicep/modules/appService.bicep` still configures no `Microsoft.Insights/diagnosticSettings` for
@@ -832,11 +839,14 @@ things stay true while it is on:
 1. Know the blast radius. `TracesSampleRate = 0.2` also sends 20% of *transactions*, not just errors,
    and `AutoSessionTracking = true` sends a session per request-ish unit — those, not the errors, are
    what consume a free tier.
-2. `SendDefaultPii = false` is already set and must stay. Together with the deployed `Warning` log
-   level (which keeps the `RequestLoggingMiddleware` Information records — and the caller email, name,
-   phone and birth date they can contain — out of the breadcrumb trail entirely) that is what keeps a
-   third-party error tracker from becoming a PII export. **Lowering the deployed log level and enabling
-   Sentry are individually fine and jointly not**; sprint 14's T-0457 is the ticket that owns that PII.
+2. `SendDefaultPii = false` is already set and must stay. On production, together with the `Cleansia`
+   category's `Warning` level (which keeps the `RequestLoggingMiddleware` Information records — and the
+   caller email, name, phone and birth date they can contain — out of the breadcrumb trail entirely)
+   that is what keeps a third-party error tracker from becoming a PII export. **On production, lowering
+   that level and enabling Sentry are individually fine and jointly not**; sprint 14's T-0457 is the
+   ticket that owns that PII. DEV runs `Cleansia` at Information, so there those records do ride Sentry
+   events as breadcrumbs, and their protection is the middleware's redaction and its sensitive-path
+   suppression → [Request logging and PII redaction](/architecture/request-logging).
 
 Two smaller things are worth fixing when someone next touches this. One is live now that the DSN is
 set: `appsettings.Production.json` hardcodes `Sentry:Environment = "production"` on every API host and

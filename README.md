@@ -163,10 +163,19 @@ pull**. See `src/cleansia_ios/README.md`.
 
 ```bash
 cd src
-dotnet test Cleansia.Tests/Cleansia.Tests.csproj                        # unit, fast
-dotnet test Cleansia.IntegrationTests/Cleansia.IntegrationTests.csproj  # real Postgres, Testcontainers
-dotnet test Cleansia.HostTests/Cleansia.HostTests.csproj                # authz and isolation
+dotnet build Cleansia.Api.sln --configuration Release
+dotnet test Cleansia.Tests/Cleansia.Tests.csproj \
+  --configuration Release --no-build -- xUnit.parallelizeTestCollections=false
+dotnet test Cleansia.IntegrationTests/Cleansia.IntegrationTests.csproj \
+  --configuration Release --no-build -- xUnit.parallelizeTestCollections=false
+dotnet test Cleansia.HostTests/Cleansia.HostTests.csproj \
+  --configuration Release --no-build -- xUnit.parallelizeTestCollections=false
 ```
+
+The unit suite is the fast one; the integration suite runs on a real Postgres through
+Testcontainers, and the host tests cover authz and isolation. These are CI's test commands
+(`backend-ci.yml`) less its `--verbosity normal`: one Release build, then each suite with
+`--no-build` and its test collections run one at a time.
 
 ```bash
 cd src/Cleansia.App

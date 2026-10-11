@@ -49,6 +49,15 @@ Docs CI, Secret scan and Frontend e2e-smoke run on every PR but are **not** requ
 2. Then C + D, a tightening at zero runtime cost.
 3. E only if B shows a red `build` can be masked, or if path-filtered gates must become required.
 
+**Local evidence for the CI-side options (T-0809, 2026-10-11).** Measured on an M4, 10 cores, Node 22.23.3, all 74 test projects, n=3:
+
+| Configuration | Empty Jest cache | Warm Jest cache |
+|---|---:|---:|
+| default workers (CI today) | 829 s | 242 s |
+| `--maxWorkers=1` | 304 s | 96 s |
+
+Under default workers the worker-exit warning appears only cold. Hosted runners have 4 vCPUs, so the size of the gain will differ there; a hosted A/B (n ≥ 5) on a PR that affects all projects should come before either change.
+
 Two related CI decisions from T-0809 and T-0812 belong in the same packet:
 - the Nx/Jest cache and parallelism in Frontend CI, and the iOS SPM cache and parallel schemes;
 - whether to pin `ubuntu-24.04` before GitHub's Ubuntu 26 migration (from 2026-10-19), or to validate 26 first.

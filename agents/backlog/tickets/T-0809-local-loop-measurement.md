@@ -51,10 +51,23 @@ The ground truth confirmed the cost centres but found **no local measurement of 
 
 ## Acceptance criteria
 
-- [ ] **AC1** — A dated cost table per measured loop. It splits download, restore, compile, test and cache replay, and gives median / min / max and test-count identity, with the environment, max RSS and every command ledgered.
-- [ ] **AC2** — Either a list of local wins that clear the bar, landed as docs only (0 Nx projects affected), or an explicit "none cleared the bar".
-- [ ] **AC3** — CI-side options are recorded on T-0813 with the local evidence.
+- [x] **AC1** — A dated cost table per measured loop. It splits download, restore, compile, test and cache replay, and gives median / min / max and test-count identity, with the environment, max RSS and every command ledgered.
+- [x] **AC2** — Either a list of local wins that clear the bar, landed as docs only (0 Nx projects affected), or an explicit "none cleared the bar".
+- [x] **AC3** — CI-side options are recorded on T-0813 with the local evidence.
 
 ## Review
 
-Pending the measurement.
+The tables, method and limits are in `agents/WAVE-E-2026-10-11.md`. Receipt: `raw/wave-e-measurement-receipt-001.json` (`412eb962…`) in the off-tree Wave E folder. Every counted run has exact totals: 74 Jest projects / 5,038 tests, or 8,639 .NET unit tests.
+
+- **AC1.** The dated cost tables cover:
+  - web: download (`npm ci` 48.7 s cold, 10.0 s warm); tests (829 s cold, 242 s warm, at default workers); replay (0.6 s); lint; builds;
+  - backend: restore (151 s cold, 1.2 s warm); compile (12.7 s full, 4.3 s no-op); unit tests (62 s CI form, 66 s README form).
+- **AC2.** One local win clears the bar: `--maxWorkers=1` under Nx's default three tasks.
+  - It brings cold runs from 829 to 304 s and warm runs from 242 to 96 s.
+  - The ranges do not overlap, the counts are identical, and Jest's worker-exit warning disappears.
+  - It lands as docs only, in the README test commands, with 0 Nx projects affected. Nothing else cleared the bar.
+- **AC3.** The CI-side options, with these numbers, are on T-0813:
+  - persisting the Jest transform cache;
+  - bounding workers in CI.
+
+  Both need a hosted A/B and the owner's call.

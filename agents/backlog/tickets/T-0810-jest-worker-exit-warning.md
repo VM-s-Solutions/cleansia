@@ -37,9 +37,12 @@ The 2026-10-07 audit (C-03) saw Jest print "A worker process has failed to exit 
 
 ## Acceptance criteria
 
-- [ ] **AC1** — The flag lands. Locally, a run with it shows every project's Jest summary.
-- [ ] **AC2** — The diagnosis and the open hypothesis are recorded here. The next PR that touches `src/Cleansia.App` will show whether hosted CI still prints the warning.
+- [x] **AC1** — The flag lands. Locally, a run with it shows every project's Jest summary.
+- [x] **AC2** — The diagnosis and the open hypothesis are recorded here. The next PR that touches `src/Cleansia.App` will show whether hosted CI still prints the warning.
 
 ## Review
 
-Pending.
+- **AC1.** The flag is on Frontend CI's unit-test step. Hosted CI on PR #321 ran `nx affected -t test … --ci --output-style=static`; no project was affected, so no tasks ran. Every T-0809 measurement log shows each project's Jest summary under the same flag.
+- **AC2, new evidence from T-0809.** The warning reproduces locally only in the three cold runs at default workers: 7, 4 and 7 times, at load 35–47 on 10 cores. It never appears in the twelve warm runs or in any of the six runs with bounded workers (`--maxWorkers=1` or `3`), even cold. That supports the slow-exit-under-oversubscription hypothesis; no handle leak was found.
+
+  Bounding CI's workers would make the warning moot, but that is a CI decision: T-0813, with T-0809's numbers.

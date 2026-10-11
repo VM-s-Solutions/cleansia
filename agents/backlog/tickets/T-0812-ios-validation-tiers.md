@@ -44,5 +44,11 @@ No workflow edit: no runner, image or Xcode pin, no 16.4 CI destination, no Node
 
 ## Acceptance criteria
 
-- [ ] **AC1** — Both pages carry the characterization, with dates and run ids, and claim nothing about simulator behaviour from Ubuntu checks.
-- [ ] **AC2** — The docs build and the repository checkers pass.
+- [x] **AC1** — Both pages carry the characterization, with dates and run ids, and claim nothing about simulator behaviour from Ubuntu checks.
+- [x] **AC2** — The docs build and the repository checkers pass.
+
+## Review
+
+- **AC1.** The tier table is at `docs/mobile-app/overview.md#ios-validation-tiers`, and the runner facts at `docs/deployment/ci-cd.md#runners`. Both cite the 2026-10-11 run ids and images. Neither claims simulator behaviour from an Ubuntu check.
+- **AC2.** All eleven repository checkers pass, the docs build passes, and the first head's Docs CI is green.
+

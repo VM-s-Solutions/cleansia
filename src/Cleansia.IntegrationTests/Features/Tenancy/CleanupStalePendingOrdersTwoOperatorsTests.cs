@@ -129,7 +129,8 @@ public sealed class CleanupStalePendingOrdersTwoOperatorsTests(PostgresContainer
         _tenantProvider.ClearTenantOverride();
     }
 
-    private async Task SeedStaleOrderAsync(string key, string userId, string tenantId, decimal creditApplied = 0m)
+    private async Task SeedStaleOrderAsync(
+        string key, string userId, string tenantId, decimal creditApplied = 0m, int hoursOld = 2)
     {
         var order = Order.Create(
             customerName: "Stale Customer",
@@ -151,7 +152,7 @@ public sealed class CleanupStalePendingOrdersTwoOperatorsTests(PostgresContainer
         {
             order.ApplyCredit(creditApplied, "seed");
         }
-        order.Created("seed", DateTimeOffset.UtcNow.AddHours(-2));
+        order.Created("seed", DateTimeOffset.UtcNow.AddHours(-hoursOld));
 
         _tenantProvider.SetTenantOverride(tenantId);
         await using var ctx = NewContext();
@@ -160,7 +161,11 @@ public sealed class CleanupStalePendingOrdersTwoOperatorsTests(PostgresContainer
         _tenantProvider.ClearTenantOverride();
     }
 
-    private async Task<CleanupStalePendingOrders.Response> RunSweepAsync(params IInterceptor[] interceptors)
+    private Task<CleanupStalePendingOrders.Response> RunSweepAsync(params IInterceptor[] interceptors) =>
+        RunSweepAsync(new CleanupStalePendingOrders.Command(), interceptors);
+
+    private async Task<CleanupStalePendingOrders.Response> RunSweepAsync(
+        CleanupStalePendingOrders.Command command, params IInterceptor[] interceptors)
     {
         _tenantProvider.ClearTenantOverride();
         await using var ctx = NewContext(interceptors);
@@ -174,7 +179,7 @@ public sealed class CleanupStalePendingOrdersTwoOperatorsTests(PostgresContainer
             ctx,
             NullLogger<CleanupStalePendingOrders.Handler>.Instance);
 
-        var result = await handler.Handle(new CleanupStalePendingOrders.Command(), CancellationToken.None);
+        var result = await handler.Handle(command, CancellationToken.None);
 
         Assert.True(result.IsSuccess);
         return result.Value!;
@@ -343,6 +348,94 @@ public sealed class CleanupStalePendingOrdersTwoOperatorsTests(PostgresContainer
             await verify.Set<UserNotification>().IgnoreQueryFilters().OrderBy(n => n.UserId).Select(n => n.UserId).ToListAsync());
         Assert.Equal(3, await verify.OutboxMessages.IgnoreQueryFilters()
             .CountAsync(m => m.QueueName == QueueNames.NotificationsDispatch));
+    }
+
+    /// <summary>
+    /// A run takes the oldest checkouts across every company, at most its batch, and still commits once
+    /// per company it took from; the next run takes the rest. The youngest is seeded first and the ages
+    /// run against id order, so neither the order rows were written in nor id order can stand in for age.
+    /// </summary>
+    [Fact]
+    public async Task A_Run_Takes_The_Oldest_Batch_Across_Companies_And_Commits_Each_Company_Once()
+    {
+        await SeedAccountAsync("user-cz", TestTenants.Default);
+        await SeedAccountAsync("user-sk", TestTenants.Second);
+        await SeedStaleOrderAsync("cz-2", "user-cz", TestTenants.Default, hoursOld: 2);
+        await SeedStaleOrderAsync("cz-1", "user-cz", TestTenants.Default, hoursOld: 5);
+        await SeedStaleOrderAsync("sk-2", "user-sk", TestTenants.Second, hoursOld: 3);
+        await SeedStaleOrderAsync("sk-1", "user-sk", TestTenants.Second, hoursOld: 4);
+        var batchOfThree = new CleanupStalePendingOrders.Command(BatchSize: 3);
+        var firstRunSaves = new NonEmptySaveCounter();
+
+        var first = await RunSweepAsync(batchOfThree, firstRunSaves);
+
+        Assert.Equal(3, first.CancelledCount);
+        Assert.Equal(2, firstRunSaves.Count);
+        await using (var afterFirst = NewContext())
+        {
+            Assert.Equal(
+                new[]
+                {
+                    new { OrderId = "ord-cz-1", TenantId = (string?)TestTenants.Default },
+                    new { OrderId = "ord-sk-1", TenantId = (string?)TestTenants.Second },
+                    new { OrderId = "ord-sk-2", TenantId = (string?)TestTenants.Second },
+                },
+                await afterFirst.Set<OrderStatusTrack>().IgnoreQueryFilters()
+                    .Where(t => t.Status == OrderStatus.Cancelled)
+                    .OrderBy(t => t.OrderId)
+                    .Select(t => new { t.OrderId, t.TenantId })
+                    .ToListAsync());
+            Assert.Equal(
+                new[]
+                {
+                    new { MessageKey = MessageKeys.Push("user-cz", NotificationEventCatalog.OrderCancelled, "ord-cz-1"), TenantId = (string?)TestTenants.Default },
+                    new { MessageKey = MessageKeys.Push("user-sk", NotificationEventCatalog.OrderCancelled, "ord-sk-1"), TenantId = (string?)TestTenants.Second },
+                    new { MessageKey = MessageKeys.Push("user-sk", NotificationEventCatalog.OrderCancelled, "ord-sk-2"), TenantId = (string?)TestTenants.Second },
+                }.OrderBy(push => push.MessageKey, StringComparer.Ordinal),
+                (await afterFirst.OutboxMessages.IgnoreQueryFilters()
+                    .Where(m => m.QueueName == QueueNames.NotificationsDispatch)
+                    .Select(m => new { m.MessageKey, m.TenantId })
+                    .ToListAsync())
+                .OrderBy(push => push.MessageKey, StringComparer.Ordinal));
+            Assert.Equal(
+                new[]
+                {
+                    new { UserId = "user-cz", TenantId = (string?)TestTenants.Default },
+                    new { UserId = "user-sk", TenantId = (string?)TestTenants.Second },
+                    new { UserId = "user-sk", TenantId = (string?)TestTenants.Second },
+                },
+                await afterFirst.Set<UserNotification>().IgnoreQueryFilters()
+                    .OrderBy(n => n.UserId)
+                    .Select(n => new { n.UserId, n.TenantId })
+                    .ToListAsync());
+            Assert.Equal(PaymentStatus.Pending, (await afterFirst.Orders.IgnoreQueryFilters()
+                .SingleAsync(o => o.Id == "ord-cz-2")).PaymentStatus);
+        }
+
+        var secondRunSaves = new NonEmptySaveCounter();
+        var second = await RunSweepAsync(batchOfThree, secondRunSaves);
+
+        Assert.Equal(1, second.CancelledCount);
+        Assert.Equal(1, secondRunSaves.Count);
+        await using var verify = NewContext();
+        Assert.Equal(TestTenants.Default, (await verify.Set<OrderStatusTrack>().IgnoreQueryFilters()
+            .SingleAsync(t => t.OrderId == "ord-cz-2" && t.Status == OrderStatus.Cancelled)).TenantId);
+    }
+
+    private sealed class NonEmptySaveCounter : SaveChangesInterceptor
+    {
+        public int Count { get; private set; }
+
+        public override ValueTask<int> SavedChangesAsync(
+            SaveChangesCompletedEventData eventData, int result, CancellationToken cancellationToken = default)
+        {
+            if (result > 0)
+            {
+                Count++;
+            }
+
+            return ValueTask.FromResult(result);
+        }
     }
 
     private sealed class UsersReadCounter : DbCommandInterceptor

@@ -33,13 +33,19 @@ namespace Cleansia.Core.AppServices.Features.Orders;
 /// </summary>
 public class CleanupStalePendingOrders
 {
-    public record Command(int OlderThanHours = 1) : ICommand<Response>;
+    /// <param name="BatchSize">
+    /// How many checkouts one run may cancel, oldest first. A larger backlog spreads over the following
+    /// runs with no cursor to carry, because a cancelled order has left the query.
+    /// → /flows/cross-cutting#tenancy
+    /// </param>
+    public record Command(int OlderThanHours = 1, int BatchSize = 500) : ICommand<Response>;
 
     public class Validator : AbstractValidator<Command>
     {
         public Validator()
         {
             RuleFor(x => x.OlderThanHours).InclusiveBetween(1, 168);
+            RuleFor(x => x.BatchSize).InclusiveBetween(1, 5000);
         }
     }
 
@@ -86,6 +92,9 @@ public class CleanupStalePendingOrders
                     && o.CurrentStatus != OrderStatus.Cancelled
                     && o.CreatedOn < cutoff)
                 .Include(o => o.OrderStatusHistory)
+                .OrderBy(o => o.CreatedOn)
+                .ThenBy(o => o.Id)
+                .Take(command.BatchSize)
                 .ToListAsync(cancellationToken);
 
             int cancelledCount = 0;

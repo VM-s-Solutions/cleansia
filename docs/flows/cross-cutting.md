@@ -71,8 +71,11 @@ flowchart LR
 Every filtered read inside the loop is that company's, every setting read is that company's, and a
 company with no override rows is simply a company on the defaults — so a one-year audit window set on
 company B deletes B's two-year-old rows and leaves A's alone. `DataRetentionBackgroundService` is the
-reference; `CleanupStalePendingOrders` is the reference for the row-driven shape above. Which one a
-new job takes is decided by its input: rows, or companies.
+reference; `CleanupStalePendingOrders` is the reference for the row-driven shape above, and for bounding
+it: a run takes the oldest 500 stale checkouts and a larger backlog spreads over the following runs, one
+every 15 minutes, with no cursor to carry because a cancelled order has left the query, as
+`ExpireStaleCredit` and `NotifyLapsedPreferredOffers` bound theirs. Which one a new job takes is decided
+by its input: rows, or companies.
 
 **The third shape: a consumer whose unit of work is one company an admin named.** The company
 wind-down sweep and the archive build ([ADR-0064](/decisions/adr-0064)) are neither row-driven nor

@@ -56,6 +56,30 @@ failing, it does not make the secret safe.
 | `deploy-pro` | Manual (`workflow_dispatch`) | Deploy everything to PRO |
 | `execute-sql` | Manual | Run ad-hoc SQL scripts. On PRO it refuses a development fixture by resolved path (`insert_seed_data.sql`, anything under `seed/` or outside `sql-scripts/`), and every DEV-only script by file name, from one list in its step *Refuse DEV-only scripts against production*: `insert_local_dev_admin.sql`, `fix-company-contact-placeholders.sql`, `fix-plus-trial-14-days.sql` and `fix-deactivate-local-dev-admin.sql`. A relative path cannot walk around a name, each refusal says where production does the same thing instead, and a new DEV-only script is one more row of the list (one list since 2026-10-04; the last two were not refused before). The three fixes correct what a DEV database got from a development fixture, which production is never built from. DEV runs all of them, `insert_local_dev_admin.sql` included (owner ruling 2026-09-30, until an app registration gates the DEV apps). It opens no network window, so it cannot reach the production database once that is private ([below](#production-window)) |
 
+## Runners and images {#runners}
+
+Every job runs on `ubuntu-latest`, except `ios-ci.yml`, which runs on `macos-latest`. No workflow pins
+an image, and none uses a self-hosted or larger runner. A new workflow either joins one of these two
+labels or says why not.
+
+- **Which image a label resolved to** is printed only in the job log's *Runner Image* group (`Image:`
+  and `Version:`). The repository keeps logs for one day, so read it within 24 hours. The jobs API
+  returns only the requested label.
+- **iOS CI picks its tools at run time.** The newest installed Xcode (`ls -d /Applications/Xcode*.app |
+  sort -V | tail -1`), and the first available iPhone simulator.
+- **Observed on 2026-10-11**, in runs 38098170687 and 38098170722 at `64dfed7`:
+  - `ubuntu-latest` resolved to ubuntu-24.04, version 20261004.327.1;
+  - `macos-latest` resolved to macos-26-arm64, version 20260907.0351.1, with Xcode 26.6 (17F113) and an iPhone 17 Pro simulator.
+
+  A maintainer's Mac ran Xcode 26.3 that day. The pinned SwiftFormat, SwiftLint, xcodegen and
+  openapi-generator versions match CI.
+- **Ubuntu 26.** Every Ubuntu job carries GitHub's annotation *"The ubuntu-latest label will migrate to
+  Ubuntu 26 beginning October 19, 2026"* ([actions/runner-images#14748](https://github.com/actions/runner-images/issues/14748)).
+  The annotation gives no end date. Nothing is pinned to 24.04. Pinning, or validating 26 first, is a
+  CI decision for the owner, not a default.
+- **Required checks.** `master` requires one status context, `build`, which the Backend, Frontend, Android and iOS
+  workflows all emit. → [What validates iOS, and where](/mobile-app/overview#ios-validation-tiers)
+
 ## Branch Strategy
 
 ```

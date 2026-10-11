@@ -71,3 +71,5 @@ The tables, method and limits are in `agents/WAVE-E-2026-10-11.md`. Receipt: `ra
   - bounding workers in CI.
 
   Both need a hosted A/B and the owner's call.
+
+- 2026-10-11 — Shipped in PR #321. Exact-head CI on `ee60678` passed every triggered workflow: Android and Frontend `build`, Frontend e2e-smoke, Docs and Secret scan. Merged normally with the SHA guard as `c39928c`. No deploy ran. Evidence: `raw/ci/wave-e-ci-merge-closure-001.json` in the off-tree Wave E folder.

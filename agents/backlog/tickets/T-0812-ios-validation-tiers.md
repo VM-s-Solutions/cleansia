@@ -52,3 +52,4 @@ No workflow edit: no runner, image or Xcode pin, no 16.4 CI destination, no Node
 - **AC1.** The tier table is at `docs/mobile-app/overview.md#ios-validation-tiers`, and the runner facts at `docs/deployment/ci-cd.md#runners`. Both cite the 2026-10-11 run ids and images. Neither claims simulator behaviour from an Ubuntu check.
 - **AC2.** All eleven repository checkers pass, the docs build passes, and the first head's Docs CI is green.
 
+- 2026-10-11 — Shipped in PR #321. Exact-head CI on `ee60678` passed every triggered workflow: Android and Frontend `build`, Frontend e2e-smoke, Docs and Secret scan. Merged normally with the SHA guard as `c39928c`. No deploy ran. Evidence: `raw/ci/wave-e-ci-merge-closure-001.json` in the off-tree Wave E folder.

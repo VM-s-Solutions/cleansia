@@ -90,9 +90,11 @@ jobs:
         working-directory: ./src/Cleansia.App
 
       # Jest unit tests — the suites (facades, components, parity guards, a11y) that
-      # CI was not running before. Affected-only keeps it quick.
+      # CI was not running before. Affected-only keeps it quick. --output-style=static keeps
+      # every passing suite's output in the log; Nx 23.2 shows only failures by default, which
+      # hid the per-suite counts and Jest's worker-exit warnings.
       - name: Unit tests (affected)
-        run: npx nx affected -t test --base="$NX_BASE" --head=HEAD --parallel=3 --ci
+        run: npx nx affected -t test --base="$NX_BASE" --head=HEAD --parallel=3 --ci --output-style=static
         working-directory: ./src/Cleansia.App
 
       # Production builds of all 3 apps stay an explicit gate (they catch generated-client

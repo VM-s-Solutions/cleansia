@@ -30,9 +30,11 @@
       "cache": true,
       "inputs": [
         "default",
-        "{workspaceRoot}/.eslintrc.json",
-        "{workspaceRoot}/.eslintignore",
-        "{workspaceRoot}/eslint.config.mjs"
+        "^default",
+        "{workspaceRoot}/eslint.config.mjs",
+        "{workspaceRoot}/eslint.base.config.mjs",
+        "{workspaceRoot}/eslint.module-boundaries.config.mjs",
+        "{workspaceRoot}/eslint.generated-dto.config.mjs"
       ]
     },
     "@nx/jest:jest": {

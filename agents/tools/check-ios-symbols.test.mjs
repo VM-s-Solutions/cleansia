@@ -11,7 +11,7 @@
  *
  *   1. THE GATE CAN STILL FAIL. Stub the tool's body to `process.exit(0)` and 32 of the 62 scenarios
  *      go red. That is the whole point of running this first in CI: the gate is the only iOS signal
- *      on a Windows machine, and a defanged gate reads exactly like a clean tree.
+ *      without Xcode, and a defanged gate reads exactly like a clean tree.
  *   2. IT CATCHES #215. Three scenarios replay the real defect — a case added to `ProfileRoute`, the
  *      arm that classified one taken away, and the same added case in a file that ALSO binds `route`
  *      somewhere unrelated — against a switch that lives in a file neither change touches. The third

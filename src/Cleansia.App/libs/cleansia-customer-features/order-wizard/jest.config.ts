@@ -2,7 +2,7 @@ export default {
   displayName: 'cleansia-customer-order-wizard',
   preset: '../../../jest.preset.js',
   setupFilesAfterEnv: ['<rootDir>/src/test-setup.ts'],
-  coverageDirectory: '../../../../coverage/libs/cleansia-customer-features/order-wizard',
+  coverageDirectory: '../../../coverage/libs/cleansia-customer-features/order-wizard',
   transform: {
     '^.+\\.(ts|mjs|js|html)$': [
       'jest-preset-angular',

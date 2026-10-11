@@ -42,10 +42,10 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Set up JDK
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@v5
         with:
           distribution: temurin
           java-version: '21'
@@ -69,9 +69,7 @@ jobs:
           yes | "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --licenses >/dev/null 2>&1 || true
 
       - name: Gradle cache
-        uses: gradle/actions/setup-gradle@v4
-        with:
-          build-root-directory: ./src/cleansia_android
+        uses: gradle/actions/setup-gradle@v5
 
       # Defensive: gradlew is committed with the executable bit (100755), but a
       # Windows-side checkout can drop it — keep CI self-healing on Linux runners.
@@ -89,7 +87,7 @@ jobs:
 
       - name: Upload test reports on failure
         if: failure()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: android-test-reports
           path: ./src/cleansia_android/**/build/reports/tests/

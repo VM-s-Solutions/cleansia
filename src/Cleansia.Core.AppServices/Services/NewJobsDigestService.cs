@@ -37,7 +37,7 @@ namespace Cleansia.Core.AppServices.Services;
 ///     is a lie.
 ///   - The order is FRESH to this cleaner (see below)
 ///   - The cleaner has no overlapping live-commitment order at the order's
-///     cleaning time (see <see cref="IOrderRepository.HasOverlappingOrderIgnoringTenantAsync"/>)
+///     cleaning time (see <see cref="IOrderRepository.GetOverlappedCandidateIdsIgnoringTenantAsync"/>)
 ///
 /// Freshness is THREE disjunctive sources, upper-bounded at the sweep's own start instant, because
 /// <see cref="Domain.Users.Employee.LastNewJobsDigestAt"/> is ONE per-cleaner scalar while two of the
@@ -169,14 +169,11 @@ public class NewJobsDigestService(
                     continue;
                 }
 
-                // Not-busy filter: drop orders that overlap one of the cleaner's existing
-                // live-commitment orders. Per-order check — the one predicate every surface asks; a
-                // dropped order is not lost, it comes back through the released-window source above.
-                var takeable = 0;
+                // Exact great-circle test over the box's superset. Only the survivors reach the
+                // commitment read, so a cleaner with nothing near costs no read at all.
+                var nearby = new List<(string Id, DateTime CleaningDateTime, int EstimatedTimeMinutes)>(newOrders.Count);
                 foreach (var o in newOrders)
                 {
-                    // Exact great-circle test over the box's superset, and it runs BEFORE the overlap
-                    // check because that one is a database round trip per candidate.
                     if (radiusApplies && !JobProximity.IsWithinRadius(
                         cleaner.HomeLatitude!.Value, cleaner.HomeLongitude!.Value,
                         o.Latitude, o.Longitude, cleaner.JobRadiusKm!.Value))
@@ -185,13 +182,16 @@ public class NewJobsDigestService(
                         continue;
                     }
 
-                    var overlaps = await orderRepository.HasOverlappingOrderIgnoringTenantAsync(
-                        cleaner.EmployeeId,
-                        o.CleaningDateTime,
-                        o.EstimatedTime,
-                        cancellationToken);
-                    if (!overlaps) takeable++;
+                    nearby.Add((o.Id, o.CleaningDateTime, o.EstimatedTime));
                 }
+
+                // Not-busy filter: drop orders that overlap one of the cleaner's existing
+                // live-commitment orders, answered for every survivor by one read of the cleaner's
+                // commitments over the window filter every surface asks. A dropped order is not lost, it
+                // comes back through the released-window source above.
+                var overlapped = await orderRepository.GetOverlappedCandidateIdsIgnoringTenantAsync(
+                    cleaner.EmployeeId, nearby, cancellationToken);
+                var takeable = nearby.Count(c => !overlapped.Contains(c.Id));
 
                 if (takeable == 0)
                 {
@@ -259,7 +259,7 @@ public class NewJobsDigestService(
     ///
     /// <para>The second disjunct is deliberately an OVER-approximation: it re-offers everything in the
     /// merged window a release freed, not just what that release was blocking. Widening freshness can
-    /// only cost a redundant candidate — <see cref="IOrderRepository.HasOverlappingOrderIgnoringTenantAsync"/>
+    /// only cost a redundant candidate — <see cref="IOrderRepository.GetOverlappedCandidateIdsIgnoringTenantAsync"/>
     /// still decides takeability — whereas narrowing it loses the job permanently, which is the defect
     /// this exists to close.</para>
     ///

@@ -78,7 +78,7 @@ open  ⟺  PreferredHoldUntilUtc == null          // never held
   `HasOverlappingOrderAsync` in a loop **on a request path**, and **never** pick tenancy for the
   caller — the scoped variant is correct on every request path (including the materializer, which sets
   a per-template `SetTenantOverride`); only `NewJobsDigestService` wants an ignoring variant, and it
-  already has the **boolean** one it needs.
+  has its own one-employee, many-windows read, `GetOverlappedCandidateIdsIgnoringTenantAsync`.
 
   > ⚠️ **[ADR-0039 · panel] Three corrections to the drafted shape. The tree moved mid-panel.**
   > 1. **The tenancy fix and the scan floor are SHIPPED.** `OrderRepository.cs:272-307` is already one
@@ -195,9 +195,10 @@ open  ⟺  PreferredHoldUntilUtc == null          // never held
     membership / lead-time gates (it pays a range scan for every non-member). `CleanerBusyAtCleaningTime`
     ⇒ **`NotifyPreferred == false`** — placing it beside `ShortLeadTime` (notify, no hold) is a finding:
     *short lead means we cannot hold; busy means they cannot take.*
-    **[ADR-0039 · panel]** The **digest's** nested loop (`NewJobsDigestService.cs:86` × `:135` → `:137`)
-    is **expected and is not a finding** — it is one-employee-many-windows, which the set method does
-    not address, and it belongs to the filed digest redesign.
+    **[ADR-0039 · panel]** The **digest** is one-employee-many-windows, which the set method does not
+    address. It reads each cleaner's commitments once (`GetOverlappedCandidateIdsIgnoringTenantAsync`,
+    ADR-0039 D3.3's second shape) and judges every candidate in memory — one read per cleaner, never one
+    per candidate.
 14. **[ADR-0039 · panel — CORRECTED] The scan floor is `windowStart − Order.MaxOrderSpanHours` (168 h,
     `Cleansia.Core.Domain`)** — *not* `BookingPolicy.MaxOrderSpanHours` (24 h), which does not compile
     from `Infra.Database` and was refuted by seed data. Absent ⇒ the query is the old unbounded lifetime

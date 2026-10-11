@@ -163,6 +163,56 @@ public sealed class HasOverlappingOrderTenancyAndScanFloorTests : IDisposable
         Assert.False(await ProbeScopedAsync(callerTenantId: TestTenants.Default));
     }
 
+    // ── The digest's batch form: the same tenancy and the same floor, per candidate. ──
+
+    /// <summary>
+    /// A commitment stamped with a company still clashes when the digest asks from a context that carries
+    /// no claim, or another company's.
+    /// </summary>
+    [Theory]
+    [InlineData(null)]
+    [InlineData(OtherTenantId)]
+    public async Task A_Tenanted_Overlap_Is_Detected_By_The_Batch_Form_From_Any_Context(string? callerTenantId)
+    {
+        await SeedAssignedOrderInSlotAsync("ovl-batch-tenant", SeedTenantId);
+
+        Assert.Equal(["probe"], await ProbeBatchAsync(callerTenantId, ("probe", ProbeStart, 60)));
+    }
+
+    [Fact]
+    public async Task An_Order_Starting_Exactly_On_A_Candidates_Floor_Still_Clashes_In_The_Batch_Form()
+    {
+        await SeedAssignedOrderInSlotAsync(
+            "ovl-batch-floor-edge",
+            tenantId: TestTenants.Default,
+            cleaningDateTime: ProbeStart.AddHours(-Order.MaxOrderSpanHours),
+            estimatedMinutes: (Order.MaxOrderSpanHours * 60) + 30);
+
+        Assert.Equal(["probe"], await ProbeBatchAsync(TestTenants.Default, ("probe", ProbeStart, 60)));
+    }
+
+    /// <summary>
+    /// The batch reads from the EARLIEST candidate's floor, so it fetches a row the later candidate's own
+    /// floor excludes. That row may block the earlier candidate and not the later one, which is the answer
+    /// each gets from the single-window query.
+    /// </summary>
+    [Fact]
+    public async Task A_Row_Fetched_For_An_Earlier_Candidate_Does_Not_Block_A_Later_One_Beyond_Its_Floor()
+    {
+        var later = ProbeStart.AddHours(100);
+        await SeedAssignedOrderInSlotAsync(
+            "ovl-batch-floor-beyond",
+            tenantId: TestTenants.Default,
+            cleaningDateTime: later.AddHours(-Order.MaxOrderSpanHours).AddMinutes(-1),
+            estimatedMinutes: 200 * 60);
+
+        var clashing = await ProbeBatchAsync(TestTenants.Default, ("earlier", ProbeStart, 60), ("later", later, 60));
+
+        Assert.Equal(["earlier"], clashing);
+        Assert.True(await ProbeIgnoringTenantAsync(TestTenants.Default, ProbeStart, 60));
+        Assert.False(await ProbeIgnoringTenantAsync(TestTenants.Default, later, 60));
+    }
+
     private CleansiaDbContext NewContext(string? tenantId) =>
         new(
             new DbContextOptionsBuilder<CleansiaDbContext>().UseSqlite(_connection).Options,
@@ -208,12 +258,25 @@ public sealed class HasOverlappingOrderTenancyAndScanFloorTests : IDisposable
             CleanerId, SlotStart.AddMinutes(30), 60, CancellationToken.None);
     }
 
-    /// <summary>The same probe through the sweep's tenant-IGNORING sibling.</summary>
-    private async Task<bool> ProbeIgnoringTenantAsync(string? callerTenantId)
+    /// <summary>The same probe through the tenant-IGNORING sibling.</summary>
+    private Task<bool> ProbeIgnoringTenantAsync(string? callerTenantId) =>
+        ProbeIgnoringTenantAsync(callerTenantId, SlotStart.AddMinutes(30), 60);
+
+    private async Task<bool> ProbeIgnoringTenantAsync(string? callerTenantId, DateTime start, int minutes)
     {
         await using var ctx = NewContext(callerTenantId);
         return await new OrderRepository(ctx).HasOverlappingOrderIgnoringTenantAsync(
-            CleanerId, SlotStart.AddMinutes(30), 60, CancellationToken.None);
+            CleanerId, start, minutes, CancellationToken.None);
+    }
+
+    /// <summary>The digest's question: which of these windows does CleanerId already have a commitment in.</summary>
+    private async Task<IReadOnlySet<string>> ProbeBatchAsync(
+        string? callerTenantId,
+        params (string Id, DateTime CleaningDateTime, int EstimatedTimeMinutes)[] candidates)
+    {
+        await using var ctx = NewContext(callerTenantId);
+        return await new OrderRepository(ctx).GetOverlappedCandidateIdsIgnoringTenantAsync(
+            CleanerId, candidates, CancellationToken.None);
     }
 
     private static Order NewOrder(string orderId, DateTime cleaningDateTime, int estimatedMinutes)

@@ -10,6 +10,7 @@ using Cleansia.Infra.Database.Repositories;
 using Cleansia.TestUtilities;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
 
@@ -47,6 +48,13 @@ public sealed class NewJobsDigestRadiusTests : IDisposable
     private const double DresdenLon = 13.7373;
     private const double OstravaLat = 49.8209;
     private const double OstravaLon = 18.2625;
+
+    // Synthetic points between a radius's box and its circle: 12.0 km from home, inside the 10 km box;
+    // 61.8 km from home, inside the 50 km box.
+    private const double Corner10Lat = 50.15;
+    private const double Corner10Lon = 14.56;
+    private const double Corner50Lat = 50.47;
+    private const double Corner50Lon = 15.05;
 
     private static readonly DateTime Slot = DateTime.UtcNow.AddDays(4);
 
@@ -195,6 +203,45 @@ public sealed class NewJobsDigestRadiusTests : IDisposable
         Assert.Equal("1", Assert.Single(await RunSweepAsync())["count"]);
     }
 
+    /// <summary>
+    /// Only jobs inside the circle reach the commitment read, and the read is per cleaner. The cleaner with
+    /// no radius and the 50 km one each cost one read naming their own survivors; the 10 km cleaner's only
+    /// candidate passes the box and fails the circle, so they cost no read, get no push and keep no
+    /// watermark.
+    /// </summary>
+    [Fact]
+    public async Task Only_Jobs_Inside_The_Circle_Reach_The_Commitment_Read_At_Most_Once_Per_Cleaner()
+    {
+        AssertInsideTheBoxButOutsideTheCircle(Corner10Lat, Corner10Lon, radiusKm: 10);
+        AssertInsideTheBoxButOutsideTheCircle(Corner50Lat, Corner50Lon, radiusKm: 50);
+
+        await SeedCleanersAsync(
+            [
+                new CleanerFixture("emp-radius-anywhere", "user-radius-anywhere", RadiusKm: null),
+                new CleanerFixture("emp-radius-50", "user-radius-50", RadiusKm: 50),
+                new CleanerFixture("emp-radius-10", "user-radius-10", RadiusKm: 10),
+            ],
+            new JobFixture("order-kladno", CountryId, KladnoLat, KladnoLon),
+            new JobFixture("order-corner-10", CountryId, Corner10Lat, Corner10Lon),
+            new JobFixture("order-corner-50", CountryId, Corner50Lat, Corner50Lon));
+
+        var sweep = await RunCountedSweepAsync();
+
+        Assert.Equal("3", sweep.CountsByUser["user-radius-anywhere"]);
+        Assert.Equal("2", sweep.CountsByUser["user-radius-50"]);
+        Assert.False(sweep.CountsByUser.ContainsKey("user-radius-10"));
+        Assert.Null(await ReadWatermarkAsync("emp-radius-10"));
+
+        Assert.Equal(0, sweep.SingleWindowProbes);
+        Assert.Equal(2, sweep.Reads.Count);
+        Assert.Equal(
+            new[] { "order-corner-10", "order-corner-50", "order-kladno" },
+            Assert.Single(sweep.Reads, r => r.EmployeeId == "emp-radius-anywhere").CandidateIds.Order());
+        Assert.Equal(
+            new[] { "order-corner-10", "order-kladno" },
+            Assert.Single(sweep.Reads, r => r.EmployeeId == "emp-radius-50").CandidateIds.Order());
+    }
+
     private async Task<IReadOnlyList<Dictionary<string, string>>> RunSweepAsync()
     {
         await using var ctx = NewContext();
@@ -222,14 +269,125 @@ public sealed class NewJobsDigestRadiusTests : IDisposable
         return pushes;
     }
 
-    private async Task<DateTimeOffset?> ReadWatermarkAsync()
+    /// <summary>The premise of a corner point: the SQL box keeps it and the exact test drops it.</summary>
+    private static void AssertInsideTheBoxButOutsideTheCircle(double latitude, double longitude, int radiusKm)
+    {
+        var box = JobProximity.BoundingBox(PragueLat, PragueLon, radiusKm);
+        Assert.InRange(latitude, box.MinLatitude, box.MaxLatitude);
+        Assert.InRange(longitude, box.MinLongitude, box.MaxLongitude);
+        Assert.False(JobProximity.IsWithinRadius(PragueLat, PragueLon, latitude, longitude, radiusKm));
+    }
+
+    /// <summary>
+    /// The sweep with the commitment read counted per cleaner. A lookup with no candidates issues no query
+    /// (pinned in <c>HasOverlappingOrderStatusTests</c>), so only the others count as reads; and because
+    /// the sweep swallows a cleaner's failure, any swallowed failure fails the test instead of reading as
+    /// "nothing to send".
+    /// </summary>
+    private async Task<CountedSweep> RunCountedSweepAsync()
+    {
+        await using var ctx = NewContext();
+
+        var counts = new Dictionary<string, string>();
+        var producer = new Mock<INotificationProducer>();
+        producer
+            .Setup(p => p.NotifyAsync(
+                It.IsAny<string>(), It.IsAny<string>(), It.IsAny<Dictionary<string, string>>(),
+                It.IsAny<string?>(), It.IsAny<string?>(), It.IsAny<CancellationToken>()))
+            .Callback<string, string, Dictionary<string, string>, string?, string?, CancellationToken>(
+                (userId, _, args, _, _, _) => counts.Add(userId, args["count"]))
+            .Returns(Task.CompletedTask);
+
+        // Strict, so a member nobody set up throws instead of answering null. The single-window probe is
+        // still forwarded and counted, so probing per candidate shows up as a count, not as a failure.
+        var singleWindowProbes = 0;
+        var lookups = new List<(string EmployeeId, IReadOnlyList<string> CandidateIds)>();
+        var realOrderRepository = new OrderRepository(ctx);
+        var orderRepository = new Mock<IOrderRepository>(MockBehavior.Strict);
+        orderRepository
+            .Setup(r => r.GetQueryableIgnoringTenant())
+            .Returns(() => realOrderRepository.GetQueryableIgnoringTenant());
+        orderRepository
+            .Setup(r => r.HasOverlappingOrderIgnoringTenantAsync(
+                It.IsAny<string>(), It.IsAny<DateTime>(), It.IsAny<int>(), It.IsAny<CancellationToken>()))
+            .Returns<string, DateTime, int, CancellationToken>((employeeId, start, minutes, ct) =>
+            {
+                singleWindowProbes++;
+                return realOrderRepository.HasOverlappingOrderIgnoringTenantAsync(employeeId, start, minutes, ct);
+            });
+        orderRepository
+            .Setup(r => r.GetOverlappedCandidateIdsIgnoringTenantAsync(
+                It.IsAny<string>(),
+                It.IsAny<IReadOnlyCollection<(string Id, DateTime CleaningDateTime, int EstimatedTimeMinutes)>>(),
+                It.IsAny<CancellationToken>()))
+            .Returns<string, IReadOnlyCollection<(string Id, DateTime CleaningDateTime, int EstimatedTimeMinutes)>, CancellationToken>(
+                (employeeId, candidates, ct) =>
+                {
+                    lookups.Add((employeeId, [.. candidates.Select(c => c.Id)]));
+                    return realOrderRepository.GetOverlappedCandidateIdsIgnoringTenantAsync(employeeId, candidates, ct);
+                });
+
+        var swallowed = new List<Exception>();
+        var digest = new NewJobsDigestService(
+            new EmployeeRepository(ctx),
+            orderRepository.Object,
+            new UserNotificationPreferencesRepository(ctx),
+            producer.Object,
+            ctx,
+            new FailureCapturingLogger(swallowed));
+
+        await digest.SendDigestsAsync(CancellationToken.None);
+
+        Assert.True(swallowed.Count == 0, $"the sweep swallowed: {string.Join(" | ", swallowed)}");
+        return new CountedSweep(counts, singleWindowProbes, [.. lookups.Where(l => l.CandidateIds.Count > 0)]);
+    }
+
+    private async Task<DateTimeOffset?> ReadWatermarkAsync(string employeeId = EmployeeId)
     {
         await using var ctx = NewContext();
         var employee = await ctx.Set<Employee>()
             .IgnoreQueryFilters()
             .AsNoTracking()
-            .FirstAsync(e => e.Id == EmployeeId);
+            .FirstAsync(e => e.Id == employeeId);
         return employee.LastNewJobsDigestAt;
+    }
+
+    /// <summary>Several cleaners, all living in Prague and approved for the same country, so they share one board.</summary>
+    private async Task SeedCleanersAsync(IReadOnlyList<CleanerFixture> cleaners, params JobFixture[] jobs)
+    {
+        await using (var schema = NewContext())
+        {
+            await schema.Database.EnsureCreatedAsync();
+        }
+
+        await using var seed = NewContext();
+
+        foreach (var fixture in cleaners)
+        {
+            var user = User.CreateWithPassword(
+                $"{fixture.EmployeeId}@cleansia.test", "Test-password-1!", "Rada", "Radius", UserProfile.Employee);
+            user.Id = fixture.UserId;
+            user.Created("system", DateTimeOffset.UtcNow.AddDays(-10));
+
+            var cleaner = Employee.CreateWithUser(user);
+            cleaner.Id = fixture.EmployeeId;
+            cleaner.Created("system", DateTimeOffset.UtcNow.AddDays(-10));
+            cleaner.Approve(approvedByUserId: "admin-digest-radius");
+            cleaner.AssignWorkCountry(CountryId);
+            cleaner.SetJobRadius(fixture.RadiusKm);
+            cleaner.UpdateAddress(Address.Create(
+                "Home St 1", "Praha", "11000", CountryId, null, PragueLat, PragueLon));
+            seed.Add(cleaner);
+        }
+
+        var slot = 0;
+        foreach (var job in jobs)
+        {
+            seed.Add(NewOfferableOrder(job, Slot.AddHours(slot * 8)));
+            slot++;
+        }
+
+        await seed.CommitAsync(CancellationToken.None);
     }
 
     private async Task SeedAsync(
@@ -318,6 +476,26 @@ public sealed class NewJobsDigestRadiusTests : IDisposable
 
     private sealed record JobFixture(
         string OrderId, string CountryId, double? Latitude, double? Longitude);
+
+    private sealed record CleanerFixture(string EmployeeId, string UserId, int? RadiusKm);
+
+    private sealed record CountedSweep(
+        IReadOnlyDictionary<string, string> CountsByUser,
+        int SingleWindowProbes,
+        IReadOnlyList<(string EmployeeId, IReadOnlyList<string> CandidateIds)> Reads);
+
+    private sealed class FailureCapturingLogger(List<Exception> swallowed) : ILogger<NewJobsDigestService>
+    {
+        public IDisposable? BeginScope<TState>(TState state) where TState : notnull => null;
+        public bool IsEnabled(LogLevel logLevel) => true;
+        public void Log<TState>(LogLevel logLevel, EventId eventId, TState state, Exception? exception, Func<TState, Exception?, string> formatter)
+        {
+            if (exception is not null)
+            {
+                swallowed.Add(exception);
+            }
+        }
+    }
 
     private sealed class DefaultTenantProvider : ITenantProvider
     {

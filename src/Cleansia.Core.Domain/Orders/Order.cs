@@ -151,6 +151,20 @@ public class Order : TenantAuditable
     /// </summary>
     public const int MaxOrderSpanHours = 168;
 
+    /// <summary>
+    /// Whether an order starting at <paramref name="startUtc"/> and lasting
+    /// <paramref name="estimatedTimeMinutes"/> occupies <c>[windowStartUtc, windowEndUtc)</c> as the overlap
+    /// scan sees it: the in-memory form of <c>OrderRepository.LiveCommitmentsInWindow</c>'s three time
+    /// terms, its inclusive <see cref="MaxOrderSpanHours"/> floor included, so a row longer than the floor
+    /// that starts before it occupies nothing here either. The status half stays in SQL. The two forms are
+    /// pinned together on PostgreSQL by <c>LiveCommitmentWindowsAgreementTests</c>.
+    /// </summary>
+    public static bool OccupiesWindow(
+        DateTime startUtc, int estimatedTimeMinutes, DateTime windowStartUtc, DateTime windowEndUtc)
+        => startUtc >= windowStartUtc.AddHours(-MaxOrderSpanHours)
+        && startUtc < windowEndUtc
+        && startUtc.AddMinutes(estimatedTimeMinutes) > windowStartUtc;
+
     public int AvailableSpots => MaxEmployees - _assignedEmployees.Count;
     public bool HasAvailableSpots => AvailableSpots > 0;
 

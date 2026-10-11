@@ -432,6 +432,37 @@ public class OrderRepository(CleansiaDbContext context) : BaseRepository<Order>(
         return busy.ToHashSet(StringComparer.Ordinal);
     }
 
+    public async Task<IReadOnlySet<string>> GetOverlappedCandidateIdsIgnoringTenantAsync(
+        string employeeId,
+        IReadOnlyCollection<(string Id, DateTime CleaningDateTime, int EstimatedTimeMinutes)> candidates,
+        CancellationToken cancellationToken)
+    {
+        if (candidates.Count == 0)
+        {
+            return new HashSet<string>(StringComparer.Ordinal);
+        }
+
+        var windowStartUtc = candidates.Min(c => c.CleaningDateTime);
+        var windowEndUtc = candidates.Max(c => c.CleaningDateTime.AddMinutes(c.EstimatedTimeMinutes));
+
+        var commitments = await LiveCommitmentsInWindow(GetQueryableIgnoringTenant(), windowStartUtc, windowEndUtc)
+            .Where(o => o.AssignedEmployees.Any(e => e.EmployeeId == employeeId))
+            .Select(o => new { o.CleaningDateTime, o.EstimatedTime })
+            .ToListAsync(cancellationToken);
+
+        // Each candidate against its OWN floor, not the batch's: a row longer than MaxOrderSpanHours that
+        // is fetched only because an earlier candidate lowered the floor must not block a later candidate
+        // the single-window query would never show it to.
+        return candidates
+            .Where(c => commitments.Any(x => Order.OccupiesWindow(
+                x.CleaningDateTime,
+                x.EstimatedTime,
+                c.CleaningDateTime,
+                c.CleaningDateTime.AddMinutes(c.EstimatedTimeMinutes))))
+            .Select(c => c.Id)
+            .ToHashSet(StringComparer.Ordinal);
+    }
+
     public async Task<IReadOnlyList<Order>> GetLiveReservationsForBeneficiaryInWindowAsync(
         string employeeId,
         DateTime windowStartUtc,
@@ -448,7 +479,9 @@ public class OrderRepository(CleansiaDbContext context) : BaseRepository<Order>(
     /// The ONE definition of "occupied in this window" — the scan floor, the interval overlap and the
     /// live-commitment status set. Returns a queryable and terminates nothing, so the boolean form keeps
     /// its early exit and the set form gets its fan-out over the same predicate. Two overlap predicates
-    /// in one repository is the defect class this shape exists to prevent.
+    /// in one repository is the defect class this shape exists to prevent. The three time terms have one
+    /// in-memory twin, <see cref="Order.OccupiesWindow"/>, for the one-employee batch: change them together,
+    /// and <c>LiveCommitmentWindowsAgreementTests</c> fails when they differ.
     /// </summary>
     private static IQueryable<Order> LiveCommitmentsInWindow(
         IQueryable<Order> orders, DateTime windowStartUtc, DateTime windowEndUtc)

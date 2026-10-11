@@ -371,7 +371,31 @@ public class PayCalculatorExtensionsTests
 
         Assert.Equal((decimal)dirtinessPay, seat.dirtinessPay);
         Assert.Equal((decimal)totalPay, seat.totalPay);
-        Assert.Contains($"Dirtiness: {(decimal)dirtinessPay:F2}", seat.breakdown);
+        Assert.Contains($"Dirtiness: {((decimal)dirtinessPay).ToString("F2", CultureInfo.InvariantCulture)}", seat.breakdown);
+    }
+
+    /// <summary>
+    /// The breakdown is the pay row's note for the books, copied verbatim into the company archive, so it reads
+    /// the same whatever the culture of the machine that computed the pay.
+    /// </summary>
+    [Theory]
+    [InlineData("en-US")]
+    [InlineData("cs-CZ")]
+    public void CalculateSeatPay_Writes_Its_Breakdown_With_A_Point_Whatever_The_Hosts_Culture(string hostCulture)
+    {
+        var host = CultureInfo.CurrentCulture;
+        CultureInfo.CurrentCulture = CultureInfo.GetCultureInfo(hostCulture);
+        try
+        {
+            var seat = new[] { Config(basePay: 500m, extraPerRoom: 50m) }.CalculateSeatPay(
+                rooms: 3, bathrooms: 0, bookedExtrasPay: 0m, Rate(DirtinessLevel.Heavy), seats: 1, firstSeat: true);
+
+            Assert.Equal("Base: 500.00, Extras: 100.00, Dirtiness: 180.00", seat.breakdown);
+        }
+        finally
+        {
+            CultureInfo.CurrentCulture = host;
+        }
     }
 
     [Fact]

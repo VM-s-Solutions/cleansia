@@ -324,9 +324,26 @@
 | T-0808 | Wave D — one commitment read per cleaner in the new-jobs digest, one recipient read per company in the stale-checkout sweep (audit B005/B006) | M | `done` | T-0807 | [#320](https://github.com/VM-s-Solutions/cleansia/pull/320), merged 2026-10-11 (`620f3c7`); exact-head five workflows/six jobs succeed; measured n=5: digest SQL 724→74, cleanup 1,010→13, identical outcomes; cause 2 (bounded pages) not built, options for Mike; review-found items listed on the ticket |
 | T-0809 | Wave E C01–C02 — measure the local build/test loop, then adopt only local wins that clear the bar | M | `done` | T-0808 | [#321](https://github.com/VM-s-Solutions/cleansia/pull/321), merged 2026-10-11 (`c39928c`); measured n=3 (web + backend); tests 829 s cold / 242 s warm at default workers, 304 s / 96 s with `--maxWorkers=1` → README recommendation; CI side on T-0813 |
 | T-0810 | Wave E C03 — Jest's worker-exit warning: diagnose without hiding it, and make CI show test output again | S | `done` | T-0808 | [#321](https://github.com/VM-s-Solutions/cleansia/pull/321), merged 2026-10-11 (`c39928c`); no handle leak; warning appears only cold under oversubscription (7/4/7), never with bounded workers; CI test output restored |
-| T-0811 | Wave E C04 — Nx 24 readiness: replace the deprecated Jest and ESLint executors through the supported generators | M | `todo` | T-0808 | inventory recorded (74 jest / 73 eslint targets); generator output not drop-in (4 corrections); nothing forces it before Nx 24 |
+| T-0811 | Wave E C04 — Nx 24 readiness: replace the deprecated Jest and ESLint executors through the supported generators | M | `todo` | T-0808 | inventory recorded (74 jest / 73 eslint targets); generator output not drop-in (4 corrections); nothing forces it before Nx 24; scheduled after Wave F (Mike, 2026-10-11) |
 | T-0812 | Wave E C05 — write down what validates iOS where, and what CI cannot see | S | `done` | T-0808 | [#321](https://github.com/VM-s-Solutions/cleansia/pull/321), merged 2026-10-11 (`c39928c`); docs-only tiers + runner/image facts |
-| T-0813 | Wave E C06 — required-check policy and CI runtime: a decision for the owner | S | `blocked` | T-0808 | blocked on Mike: options A–H recorded with gate semantics and runtime; nothing changed |
+| T-0813 | Wave E C06 — required-check policy and CI runtime: a decision for the owner | S | `in_progress` | T-0808 | Mike ruled A+B on 2026-10-11: document what `build` enforces now; B (passive observation of a failed-then-green head) stays open until a qualifying head appears; runtime packet (caches, workers, Ubuntu pin) unchanged |
+| T-0814 | Bound each stale-checkout sweep to its oldest 500 checkouts | S | `todo` | T-0808 | filed 2026-10-11 from the post-Wave E ground truth |
+| T-0815 | Delete the orphaned tenant-ignoring overlap read and re-point S8 | S | `todo` | T-0808 | filed 2026-10-11 from the post-Wave E ground truth |
+| T-0816 | Write the pay breakdown text the same way on every machine | XS | `todo` | T-0807 | filed 2026-10-11 from the post-Wave E ground truth |
+| T-0817 | Make backend tenancy comments, contracts and test guards say what the code does | S | `todo` | T-0808 | filed 2026-10-11 from the post-Wave E ground truth |
+| T-0818 | Correct the docs that drifted from the code: backend pages, request logging, local test commands, owner rulings | XS | `todo` | T-0808 | filed 2026-10-11 from the post-Wave E ground truth |
+| T-0819 | Find out why the dashboard's upcoming-orders read is ten times slower, and fix it if the query is at fault | S | `todo` | T-0807 | filed 2026-10-11 from the post-Wave E ground truth |
+| T-0820 | Bring the workflows and web tooling up to date without changing a gate | S | `todo` | T-0812 | filed 2026-10-11 from the post-Wave E ground truth |
+| T-0821 | Never offer card payment in a build with no Stripe key, on either app | S | `todo` | T-0807 | filed 2026-10-11 from the post-Wave E ground truth |
+| T-0822 | Stop a signed-out session's late reads reaching the next account (S11) | M | `todo` | T-0807 | filed 2026-10-11 from the post-Wave E ground truth |
+| T-0823 | Partner dashboard: right day words, honest today line, no reload on every tab return | S | `todo` | T-0807 | filed 2026-10-11 from the post-Wave E ground truth |
+| T-0824 | Show 'Kč' on every partner money screen, as the dashboard does | XS | `todo` | T-0807 | filed 2026-10-11 from the post-Wave E ground truth |
+| T-0825 | When no mail app answers, Help copies the support address and says so | S | `todo` | T-0807 | filed 2026-10-11 from the post-Wave E ground truth |
+| T-0826 | Fade content under the status bar on the partner Profile hub too | XS | `todo` | T-0807 | filed 2026-10-11 from the post-Wave E ground truth |
+| T-0827 | Report the selected Orders segment, hide mascot art, and grow small targets | XS | `todo` | T-0807 | filed 2026-10-11 from the post-Wave E ground truth |
+| T-0828 | Make iOS's discount-perk copy match Android's | XS | `todo` | T-0807 | filed 2026-10-11 from the post-Wave E ground truth |
+| T-0829 | Make the iOS 16.4 colour tests pass and tidy two Android test nits | S | `todo` | T-0807 | filed 2026-10-11 from the post-Wave E ground truth |
+| T-0830 | Wave F W01: put the evidence and a measured, costed decision in front of Mike | S | `todo` | T-0812 | filed 2026-10-11 from the post-Wave E ground truth |
 
 > **T-0785–T-0799 filed 2026-09-20** — the UI-polish and dead-code batch, on the owner's ruling of
 > that day (*"I want to polish alignments in admin app a bit on all of the overview/detail pages.
@@ -371,4 +388,4 @@
 > reported not absorbed. Owed: the DEV drop at the next DEV deploy (MS-2 / A1, `20260920204705`);
 > the merge order is #255 then #260. Open rows: none.
 
-*Next id: **T-0814**.*
+*Next id: **T-0831**.*

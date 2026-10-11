@@ -107,12 +107,22 @@ failing, it does not make the secret safe.
 
 | Workflow | Trigger | Purpose |
 |----------|---------|---------|
-| `backend-ci` | PR to any branch | Build + test .NET solution |
+| `backend-ci` | PR to any branch that touches `src/**` outside the web, Android and iOS trees, `sql-scripts/**` or the workflow | Build + test .NET solution |
 | `frontend-ci` | PR to any branch | Build Angular apps |
+| `android-ci` | PR to any branch | Compile and unit-test `:core`, `:partner-app` and `:customer-app` |
+| `ios-ci` | PR to any branch that touches `src/cleansia_ios/**`, `src/cleansia_android/openapi/**` or the workflow | SwiftFormat, SwiftLint, then build and test the three schemes |
+| `docs-ci` | PR to any branch | Docs pointers and written claims resolve; the docs site builds |
+| `ios-symbols-ci` | PR to any branch that touches `src/cleansia_ios/**`, the checker, its self-test or the workflow | `check-ios-symbols.mjs` on Linux |
+| `booking-policy-parity` | PR to any branch that touches a file the checker reads, the checker, its self-test or the workflow | `check-booking-policy-parity.mjs` |
 | `secret-scan` | PR to any branch, push to `master` | gitleaks — no new secret in the history |
 | `deploy-dev` | **Manual (`workflow_dispatch`)** | Deploy everything to DEV |
 | `deploy-pro` | Manual (`workflow_dispatch`) | Deploy everything to PRO |
+| `deploy-azure` | Called by `deploy-dev` and `deploy-pro` (`workflow_call`) | The shared build, provision, migrate and deploy pipeline |
+| `deploy-docs` | Manual (`workflow_dispatch`) | Build the docs site and deploy it to DEV's Static Web App |
 | `execute-sql` | Manual | Run ad-hoc SQL scripts. On PRO it refuses a development fixture by resolved path (`insert_seed_data.sql`, anything under `seed/` or outside `sql-scripts/`), and every DEV-only script by file name, from one list in its step *Refuse DEV-only scripts against production*: `insert_local_dev_admin.sql`, `fix-company-contact-placeholders.sql`, `fix-plus-trial-14-days.sql` and `fix-deactivate-local-dev-admin.sql`. A relative path cannot walk around a name, each refusal says where production does the same thing instead, and a new DEV-only script is one more row of the list (one list since 2026-10-04; the last two were not refused before). The three fixes correct what a DEV database got from a development fixture, which production is never built from. DEV runs all of them, `insert_local_dev_admin.sql` included (owner ruling 2026-09-30, until an app registration gates the DEV apps). It opens no network window, so it cannot reach the production database once that is private ([below](#production-window)) |
+
+As of 2026-10-11, every file in `.github/workflows/` has a row. The workflows that check a pull
+request also run on pushes to `master`, path-scoped except for the secret scan.
 
 ## Runners and images {#runners}
 
@@ -129,8 +139,10 @@ labels or says why not.
   - `ubuntu-latest` resolved to ubuntu-24.04, version 20261004.327.1;
   - `macos-latest` resolved to macos-26-arm64, version 20260907.0351.1, with Xcode 26.6 (17F113) and an iPhone 17 Pro simulator.
 
-  A maintainer's Mac ran Xcode 26.3 that day. The pinned SwiftFormat, SwiftLint, xcodegen and
-  openapi-generator versions match CI.
+  A maintainer's Mac ran Xcode 26.3 that day, with the same SwiftFormat, SwiftLint, xcodegen,
+  xcbeautify and openapi-generator versions as CI. Only SwiftFormat, SwiftLint and openapi-generator
+  are pinned: CI installs xcodegen and xcbeautify from Homebrew, unpinned, so their versions follow
+  Homebrew's.
 - **Ubuntu 26.** Every Ubuntu job carries GitHub's annotation *"The ubuntu-latest label will migrate to
   Ubuntu 26 beginning October 19, 2026"* ([actions/runner-images#14748](https://github.com/actions/runner-images/issues/14748)).
   The annotation gives no end date. Nothing is pinned to 24.04. Pinning, or validating 26 first, is a
@@ -181,8 +193,9 @@ structurally cannot — for example the SQL-vs-C# equivalence pins on `OrderAvai
 
 ## Deploy to DEV (`deploy-dev.yml`)
 
-Triggered on every push to `master`. It is a thin caller — the pipeline itself lives in the reusable
-`deploy-azure.yml`, which `deploy-pro.yml` also calls. Nine deployable components.
+Run by hand (`workflow_dispatch`); a push to `master` deploys nothing. It is a thin caller — the
+pipeline itself lives in the reusable `deploy-azure.yml`, which `deploy-pro.yml` also calls. Nine
+deployable components.
 
 ### Pipeline Stages
 
@@ -342,7 +355,7 @@ Same pipeline as DEV with these differences:
 | Trigger | Manual (`workflow_dispatch`) | Manual (`workflow_dispatch`) |
 | Approval | None | **Required reviewers on the `prod-weu` Environment** |
 | Default mode | `deploy` or `what-if`, chosen at dispatch | `what-if` — the no-thought path is the non-mutating preview |
-| Concurrency | Cancel in-progress | Never cancel |
+| Concurrency | Never cancel: a second dispatch waits for the running one | Never cancel |
 | Environment | (default) | `prod-weu` (GitHub Environment) |
 | Angular config | `staging` | `production` |
 | Resource group | `rg-cleansia-dev` | `rg-cleansia-pro` |

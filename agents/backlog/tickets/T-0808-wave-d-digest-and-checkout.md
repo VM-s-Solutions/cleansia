@@ -69,7 +69,7 @@ A read-only ground truth checked both findings against the tree before any code.
   - shorter and longer candidates;
   - a malformed long row that lowers the batch floor without blocking a later candidate.
 - [x] **AC3** — Fresh n=5 before/after measurement on the restored synthetic fixture, interleaved, with a fresh restore and seed before every run. SQL count, elapsed time, allocation and exact outcome counts are reported as median and nearest-rank p90.
-- [ ] **AC4** — The Release backend build and the unit, integration and host suites pass on the final head; the repository checkers and the docs build pass.
+- [x] **AC4** — The Release backend build and the unit, integration and host suites pass on the final head; the repository checkers and the docs build pass.
 - [x] **AC5** — Independent correctness, security, optimizer and architect reviews pass.
 - [ ] **AC6** — Exact-head CI passes on every applicable workflow, and a normal SHA-guarded merge follows.
 
@@ -120,4 +120,12 @@ Evidence lives off-tree under `/Users/michael/.codex/scratchpads/cleansia-wave-d
   - Cleanup: SQL 1,010 → 13; elapsed median 2,010 → 1,307 ms (p90 2,140 → 1,315); allocation 224.3 → 209.3 MB.
   - Outcomes are identical within and across cohorts, with 0 provider attempts.
   - Limits are listed in the report: local loopback, not idle; no peak-memory reading on macOS; empty batch reads on this fixture; the zero-credit sweep only.
+- **AC4.** On the final code (`026bf52`, fast-forwarded onto `64dfed7`):
+  - Release build: 0 errors.
+  - Unit: 8,639/8,639.
+  - Integration: 848/848 under `en_US.UTF-8`, as CI runs it; the machine culture fails the three known `CollectedFeeSharePayTests` only.
+  - Host: 488/488.
+  - Repository checkers: 11/11. `check-module-boundaries` ran in the worktree that has web `node_modules`, at `05ac271`, with 0 drift.
+  - Docs build: passes.
+  - The graph is refreshed.
 - **AC5.** Correctness, security (S1/S8/S11), optimizer and architect reviews all approve with notes; none blocks. The optimizer ran `EXPLAIN (ANALYZE, BUFFERS)` of the batch statement on a wide band of the audit copy and found no plan risk. It also confirmed the predicted counts (74 and 13) before the measurement ran.

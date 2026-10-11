@@ -181,8 +181,11 @@ an empty Jest cache, and 96 s instead of 242 s with a warm one, and Jest's *"wor
 gracefully"* warning went away. CI still runs the default; whether it should change is an owner
 decision (T-0813).
 
-Integration and host tests need Docker running. Six CI workflows gate a PR: Backend, Frontend,
-Android, iOS, iOS Symbols and Docs.
+Integration and host tests need Docker running. The only required status check on `master` is
+`build`, emitted by the Backend, Frontend, Android and iOS workflows; Backend and iOS run only when
+their paths change. Docs and Secret scan run on every pull request, and iOS Symbols and
+booking-policy parity when their paths change, but the ruleset does not require them
+([what a PR needs to merge](docs/deployment/ci-cd.md#required-checks)).
 
 Two of those suites are easy to forget locally and are derived from the backend rather than from what
 you edited, so a backend change can redden them: **`Cleansia.HostTests`** (authz and tenant isolation)

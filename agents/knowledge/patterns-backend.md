@@ -593,11 +593,14 @@ member, **`NotifyEachAsync(notifications, ct)`**, makes ONE read of every distin
 persisted company, then records each item exactly as `NotifyAsync` would, in input order. It takes
 **no tenant parameter** — the recipient's persisted company decides — and every `UserId` in it must be
 one the server read, **never one a client supplied**: whoever it names receives the push and the feed
-row. ⚠️ **The subject guard does not see it:** `PushSubjectNamesTheEventTests` recognises only a subject
-passed positionally to `NotifyAsync(`, so a subject inside a `NotifyEachAsync` item is not checked. Its
-one production caller, `CleanupStalePendingOrders`, is already on that guard's
-`DeliberatelyKeyedOnTheParent` allowlist; a second caller must either join the allowlist with the
-argument the list demands, or teach the guard the list shape first.
+row. ⚠️ **The subject guard cannot read it:** `PushSubjectNamesTheEventTests` recognises only a subject
+passed positionally to `NotifyAsync(`, so a subject inside a `NotifyEachAsync` item is not checked.
+Instead the guard fails any file in `Cleansia.Core.AppServices` whose text calls `.NotifyEachAsync(`
+without being on its `DeliberatelyKeyedOnTheParent` allowlist. `CleanupStalePendingOrders` is listed and
+is the fact's anchor: the fact fails when it stops detecting that caller, so a detection gone blind
+fails instead of passing on no callers. A new caller joins the list with the argument the list demands,
+or teaches the guard the list shape first. **Enforced by:**
+`PushSubjectNamesTheEventTests.Every_NotifyEachAsync_Caller_Is_On_The_Allowlist` — `T1-CI`.
 **Constructing `new SendPushNotificationMessage(...)` anywhere else is a violation**, mechanically
 pinned by `SendPushNotificationSeamTripwireTests` (allowed sites: the seam, the sitewide-promo
 fan-out, the record's own file). Rules the seam encodes: category mutes gate the PUSH (checked by

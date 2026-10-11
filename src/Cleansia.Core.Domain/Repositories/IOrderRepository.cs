@@ -163,9 +163,14 @@ public interface IOrderRepository : IRepository<Order, string>
     /// window. Not the same rule — the same method: if the picker could say available and the resolver
     /// then say busy for a reason of its own, the feature has already failed.</para>
     ///
-    /// <para>TENANT-SCOPED, deliberately, and there is no ignoring sibling: every caller is a request
-    /// path with a claim (the recurring materializer runs under its own per-template tenant override).
-    /// A background sweep asking about ONE cleaner over many windows has
+    /// <para>TENANT-IGNORING, deliberately: a commitment can be booked under a company other than the
+    /// caller's. A customer may book across markets, and a booking carries the operator of its address's
+    /// market, so a read scoped to the customer's claim would call a cleaner free who is booked there.
+    /// Because it reads every company's rows, every id in <paramref name="employeeIds"/> must be
+    /// server-derived: the caller's own completed orders (the picker) or a preferred cleaner the booking
+    /// validator has already proven served this customer (the resolver). An id a client supplied
+    /// unchecked would make this a schedule oracle over every company's cleaners. A background sweep
+    /// asking about ONE cleaner over many windows has
     /// <see cref="GetOverlappedCandidateIdsIgnoringTenantAsync"/>.</para>
     /// </summary>
     Task<IReadOnlySet<string>> GetBusyEmployeeIdsInWindowAsync(

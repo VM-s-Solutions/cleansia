@@ -68,9 +68,10 @@ public class CleanupStalePendingOrders
         {
             var cutoff = DateTimeOffset.UtcNow.AddHours(-command.OlderThanHours);
 
-            // System job — no JWT context. Use IgnoreQueryFilters to see rows
-            // across all tenants, then group + set override per tenant so
-            // child writes (OrderStatusTrack, the feed row) inherit the right TenantId.
+            // System job — no JWT context. Read across all tenants, then group and set the override per
+            // tenant: it is what stamps the OrderStatusTrack each group adds. It does not decide the
+            // notices. The customer's feed row and push carry the customer's own account company and the
+            // guest e-mail the order's, each passed explicitly. → /flows/cross-cutting#tenancy
             //
             // RecurringTemplateId == null is load-bearing. A recurring occurrence is materialized up
             // to 7 days before its slot and stays Pending until the customer confirms it via
@@ -148,9 +149,9 @@ public class CleanupStalePendingOrders
                         reason: OrderCancellationReasons.PaymentNotCompleted);
 
                     // Nothing was captured, but credit may have been SPENT - CreateOrder debits it
-                    // before the customer ever reaches Stripe. Inside the loop, so the ledger row is
-                    // stamped by the commit below with THIS group's tenant. Deferring it would stamp
-                    // every group with whichever tenant was processed last.
+                    // before the customer ever reaches Stripe. The return commits on its own, onto the
+                    // customer's credit account, whose company comes from the account and not from the
+                    // override; its key stops a rerun returning it twice. → /flows/cross-cutting#tenancy
                     await creditAccountRepository.ReturnUnpaidOrderCreditAsync(
                         order, cardRefunded: 0m, SystemActor, cancellationToken);
 

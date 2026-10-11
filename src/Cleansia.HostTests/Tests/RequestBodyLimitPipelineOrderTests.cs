@@ -30,6 +30,9 @@ public sealed class RequestBodyLimitPipelineOrderTests
 {
     private const long BodyLimitBytes = 4 * 1024;
 
+    // Every request-logging copy skips the root, so the oversize body goes to a route they all read.
+    private const string OversizeRoute = "/api/Order/SavePhotos";
+
     [Fact]
     public async Task Read_upstream_of_the_exception_handler_answers_413()
     {
@@ -40,6 +43,20 @@ public sealed class RequestBodyLimitPipelineOrderTests
     public async Task Read_downstream_of_the_exception_handler_answers_500()
     {
         Assert.Equal(HttpStatusCode.InternalServerError, await StatusForOversizeBody(readBeforeHandler: false));
+    }
+
+    /// <summary>
+    /// The facts above use a stand-in reader. Here each host's real copy is the reader, at every logger
+    /// level, so a copy that swallowed Kestrel's <c>BadHttpRequestException</c> would answer something
+    /// other than 413 and turn its own rows red.
+    /// </summary>
+    [Theory]
+    [MemberData(nameof(HostMiddlewareLoggerLevels))]
+    public async Task EveryHostCopy_ReadUpstreamOfTheExceptionHandler_Answers413AtEveryLoggerLevel(Type middlewareType, LogLevel level)
+    {
+        Assert.Equal(
+            HttpStatusCode.RequestEntityTooLarge,
+            await StatusForOversizeBody(readBeforeHandler: true, middlewareType, level));
     }
 
     public static TheoryData<Type, LogLevel> HostMiddlewareLoggerLevels()
@@ -124,24 +141,44 @@ public sealed class RequestBodyLimitPipelineOrderTests
         }
     }
 
-    private static async Task<HttpStatusCode> StatusForOversizeBody(bool readBeforeHandler)
+    private static async Task<HttpStatusCode> StatusForOversizeBody(
+        bool readBeforeHandler, Type? middlewareType = null, LogLevel level = LogLevel.None)
     {
         var builder = WebApplication.CreateBuilder();
         builder.Logging.ClearProviders();
+        if (middlewareType is not null)
+        {
+            builder.Logging.AddConsole();
+            builder.Logging.SetMinimumLevel(level);
+            builder.Logging.AddFilter(middlewareType.FullName, level);
+        }
+
         builder.WebHost.UseUrls("http://127.0.0.1:0");
         builder.WebHost.ConfigureKestrel(options => options.Limits.MaxRequestBodySize = BodyLimitBytes);
 
         var app = builder.Build();
 
+        void UseReader()
+        {
+            if (middlewareType is null)
+            {
+                app.Use(ReadWholeBody);
+            }
+            else
+            {
+                app.UseMiddleware(middlewareType);
+            }
+        }
+
         if (readBeforeHandler)
         {
-            app.Use(ReadWholeBody);
+            UseReader();
             UseExceptionHandler(app);
         }
         else
         {
             UseExceptionHandler(app);
-            app.Use(ReadWholeBody);
+            UseReader();
         }
 
         app.Run(context => context.Response.WriteAsync("reached the endpoint"));
@@ -153,7 +190,7 @@ public sealed class RequestBodyLimitPipelineOrderTests
             using var client = new HttpClient { BaseAddress = new Uri(BoundAddress(app)) };
             var payload = new StringContent(new string('x', (int)BodyLimitBytes * 4), Encoding.UTF8, "application/json");
 
-            return (await client.PostAsync("/", payload)).StatusCode;
+            return (await client.PostAsync(OversizeRoute, payload)).StatusCode;
         }
         finally
         {

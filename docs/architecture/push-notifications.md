@@ -202,8 +202,9 @@ stamped row carries a non-null `TenantId`, so the filter's `(currentTenantId == 
 null)` branch matches nothing here: a consumer that forgets its override reads an **empty** set — a
 user with no device, an order with no rows — and a producer that writes under no tenant fails `23502`.
 Set the override from the envelope's tenant before the first tenanted read; the envelope carries it
-because the producer passed `tenantProvider.GetCurrentTenantId()` (or the row's own tenant) when it
-enqueued. → [Cross-cutting concerns — tenancy](/flows/cross-cutting#tenancy)
+because the producer set it when it enqueued: for a customer or partner push, the recipient's persisted
+account company (`NotificationProducer`), whatever the ambient tenant; for the other envelopes, the
+ambient tenant or the row's own. → [Cross-cutting concerns — tenancy](/flows/cross-cutting#tenancy)
 
 ## 5. Emulator setup
 

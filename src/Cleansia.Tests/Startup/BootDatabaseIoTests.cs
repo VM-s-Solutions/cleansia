@@ -109,8 +109,10 @@ public class BootDatabaseIoTests
     /// (a refused port, a listener that closed) would satisfy the upper bound while proving nothing, so it
     /// reddens here instead of passing quietly.</para>
     ///
-    /// <para>The unprobed composition is measured first and subtracted, so what is asserted is the probe's
-    /// own wait rather than the cost of building the graph — and it warms the JIT for the measured leg.</para>
+    /// <para>The lower bound is asserted on the probed composition alone: the probe's join can only add
+    /// time, so a cold first leg cannot pull it under the ceiling. The upper bound subtracts the unprobed
+    /// composition, measured first, so what it bounds is the probe's own wait rather than the cost of
+    /// building the graph — and that first leg also warms the JIT for the measured one.</para>
     /// </summary>
     [Fact]
     public void TheEagerTypeCatalogProbeStopsAtItsOwnCeilingNotTheConnectionStrings()
@@ -125,9 +127,9 @@ public class BootDatabaseIoTests
             "The stalling loopback listener never accepted a connection, so nothing here measured a stalled " +
             "connect and both bounds below would be met vacuously.");
 
-        Assert.True(probeWait >= DbContextBindingExtensions.EagerTypeCatalogProbeTimeout - CeilingTolerance,
-            $"The probe gave up after {probeWait.TotalSeconds:0.00}s against a peer that accepts and never " +
-            $"answers, well short of its own {DbContextBindingExtensions.EagerTypeCatalogProbeTimeout.TotalSeconds:0}s " +
+        Assert.True(withProbe >= DbContextBindingExtensions.EagerTypeCatalogProbeTimeout - CeilingTolerance,
+            $"The probed composition took {withProbe.TotalSeconds:0.00}s against a peer that accepts and never " +
+            $"answers, well short of the probe's own {DbContextBindingExtensions.EagerTypeCatalogProbeTimeout.TotalSeconds:0}s " +
             "ceiling. Either the fixture stopped stalling or the probe stopped waiting for the catalog at all.");
 
         Assert.True(probeWait < StalledConnectTimeout / 2,

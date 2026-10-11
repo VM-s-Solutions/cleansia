@@ -266,15 +266,21 @@ LiveCommitmentsInWindow(IQueryable<Order>, startUtc, endUtc)   ← ONE definitio
    ├─ .Any()        one employee, tenant-scoped     → TakeOrder            ✅ shipped
    ├─ .Select()     one employee, M windows         → NewJobsDigestService ✅ shipped (ADR-0039 D3.3)
    │                tenant-ignoring; ONE read, then each window judged in memory by Order.OccupiesWindow
-   └─ .SelectMany() N employees, tenant-scoped      → picker + resolver    ⬅ the only piece left to build
+   └─ .SelectMany() N employees, tenant-ignoring    → picker + resolver    ✅ shipped
 ```
 
 **No `IgnoringTenant` sibling of the set method will be built** — it would have zero callers on the day
 it shipped (the digest asks about one employee over many windows and has its own read for that, below),
 and a tenant-escaping read one IntelliSense entry from a customer-facing handler is a cost with no
 buyer. **Two pin classes** hold the predicate through the extraction: `HasOverlappingOrderStatusTests`
-(11 status cases) and `HasOverlappingOrderTenancyAndScanFloorTests` (5 tenancy + 3 floor cases,
-including the accepted blind spot written down as a passing `Assert.False`).
+(11 status cases) and `HasOverlappingOrderTenancyAndScanFloorTests` (4 tenancy + 3 floor cases,
+including the accepted blind spot written down as a passing `Assert.False`). *(Departure from ADR-0039
+D3.2, recorded here rather than in the ADR: the set method itself has read tenant-ignoring since
+7751c5fa9 (2026-09-16), because a commitment can be booked under a company other than the caller's — a
+customer may book across markets, and a booking carries the operator of its address's market. Every id
+it is given is server-derived — the caller's own completed orders or a preference the booking validator
+has proven. Pinned by
+`GetBusyEmployeeIdsInWindowTests.A_Proven_Cleaner_Is_Busy_Across_Operators_And_Unrelated_Cleaners_Stay_Excluded`.)*
 
 **A second fan-out shape exists, and for the digest it has shipped.** The digest and the recurring
 materializer are **one employee, many windows** — the set method does nothing for either. ADR-0039 D3.3

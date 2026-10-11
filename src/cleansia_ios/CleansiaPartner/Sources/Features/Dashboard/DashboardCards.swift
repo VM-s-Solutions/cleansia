@@ -88,7 +88,7 @@ struct PayPeriodCard: View {
                         .font(CleansiaTypography.labelSmall)
                         .foregroundColor(CleansiaColors.onSurfaceVariant)
                 }
-                Text(DashboardFormat.plainMoney(period.earnings))
+                Text(DashboardFormat.money(period.earnings, currencyCode: currencyCode))
                     .cleansiaFont(CleansiaTypography.headlineMedium)
                     .foregroundColor(CleansiaColors.onSurface)
                     .contentTransition(.numericText())
@@ -125,7 +125,7 @@ struct LastMonthCard: View {
             }
             HStack {
                 MetricColumn(
-                    value: DashboardFormat.plainMoney(data.lastMonthEarnings),
+                    value: DashboardFormat.money(data.lastMonthEarnings, currencyCode: data.currencyCode),
                     label: L10n.Dashboard.lastMonthEarnings
                 )
                 Spacer()

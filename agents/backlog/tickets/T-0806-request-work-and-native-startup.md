@@ -165,7 +165,7 @@ holder is implicitly added.
   commands, if required by the build, are recorded and resulting identity verified.
   Author-only or historical PASS does not close these gates. Keep conditional skips,
   existing diagnostics and failed attempts visible.
-- [ ] **AC9 / delivery:** fresh master is incorporated before final verification;
+- [x] **AC9 / delivery:** fresh master is incorporated before final verification;
   actual current-head CI is green, the PR reports results and limits, exact commands
   have observed metadata, and normal SHA-guarded C merge is recorded separately.
   Start Wave D implementation only after actual C merge. No future check/merge is
@@ -230,6 +230,9 @@ claimed by this source-only ticket preparation.
   Independent render and code-diff lens reviews pass with qualifications, and AC8 is
   closed. Exact-head CI and the normal merge (AC9) are pending; this record implies
   neither.
+- 2026-10-10 20:39 UTC — PR #318 passed exact-head CI (seven workflows, eight jobs)
+  and was normally merged, SHA-guarded, as `5f94129`. AC9 is closed and T-0806 is done.
+  Wave D may now start as a separate wave.
 
 ## Review
 
@@ -296,3 +299,18 @@ The project's security, optimizer and reviewer lenses reviewed the `src/` diff r
 Review: `raw/reviews/c-diff-lens-review-independent-001.json`.
 
 The report's [final verification section](../../WAVE-C-2026-10-09.md#final-verification-and-six-render-checks-2026-10-10) holds the exact receipts, failed attempts, side effects and closure. **AC9** (exact-head hosted CI and the normal SHA-guarded merge) stays open until those happen. Wave D starts only after the actual C merge.
+
+### Hosted CI and actual merge closure, 2026-10-10
+
+**AC9 is complete.** Earlier pending statements describe their original cutoffs and remain unchanged.
+
+Exact PR head `b4dbe8f057c2e4d9875bbee1030084bf8bc2c884`, at base `18a2e5ac8e118be1c527443dc8f6cc48ee30ce6c`, passed all seven `pull_request` workflows and eight jobs: Backend, Frontend build and e2e-smoke, Android, iOS, iOS Symbols, Docs and Secret scan.
+- **Hosted iOS (Xcode 26.6):** Core 763, Partner 1,065, Customer 1,729 with one skip, zero failures.
+- **Backend:** 9,894 passes.
+- **Frontend:** affected lint and unit tests selected no projects, because nothing on the web side changed.
+- **Policy:** the ruleset requires only the strict shared `build` context.
+- **Timing and optional steps:** iOS CI ran 1,525 s, over the 15-minute target, while succeeding; the optional Android upload step was skipped.
+
+[PR #318](https://github.com/VM-s-Solutions/cleansia/pull/318) merged on 2026-10-10 at 20:39:41 UTC, by normal REST merge guarded on the head SHA, as `5f94129f6a9b204982292cdf927514f14c9d0b5b`. Its parents are the base and the head, and its tree equals the head tree. No deploy workflow ran.
+
+The report's [closure section](../../WAVE-C-2026-10-09.md#hosted-ci-and-actual-merge-closure-2026-10-10) records the receipts. These closure records travel on a separate branch after the merge. INDEX.md is the sole status record.

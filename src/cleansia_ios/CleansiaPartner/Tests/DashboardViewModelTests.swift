@@ -12,23 +12,30 @@ final class DashboardViewModelTests: XCTestCase {
         var previewResult: ApiResult<AvailableJobsPreview> = .success(
             AvailableJobsPreview(totalAvailableCount: 0, totalPotentialEarnings: 0)
         )
+        var upcomingResult: ApiResult<[OrderListItem]> = .success([])
         private(set) var statsEmployeeId: String??
         private(set) var previewLimit: Int?
+        private(set) var upcomingLimit: Int?
         private(set) var statsEmployeeIds: [String?] = []
+        private(set) var upcomingEmployeeIds: [String] = []
         private var employeeCalls = 0
         private var previewCalls = 0
         var holdEmployee = false
         var holdStats = false
         var holdPreview = false
+        var holdUpcoming = false
         var employeeStarted: ((Int) -> Void)?
         var statsStarted: ((Int) -> Void)?
         var previewStarted: ((Int) -> Void)?
+        var upcomingStarted: ((Int) -> Void)?
         var employeeCompleted: ((Int) -> Void)?
         var statsCompleted: ((Int) -> Void)?
         var previewCompleted: ((Int) -> Void)?
+        var upcomingCompleted: ((Int) -> Void)?
         private var heldEmployee: [Int: CheckedContinuation<ApiResult<EmployeeItem>, Never>] = [:]
         private var heldStats: [Int: CheckedContinuation<ApiResult<DashboardStats>, Never>] = [:]
         private var heldPreview: [Int: CheckedContinuation<ApiResult<AvailableJobsPreview>, Never>] = [:]
+        private var heldUpcoming: [Int: CheckedContinuation<ApiResult<[OrderListItem]>, Never>] = [:]
 
         func getStats(employeeId: String?) async -> ApiResult<DashboardStats> {
             statsEmployeeId = .some(employeeId)
@@ -43,6 +50,21 @@ final class DashboardViewModelTests: XCTestCase {
             }
             statsStarted?(call)
             return statsResult
+        }
+
+        func getUpcomingOrders(employeeId: String, limit: Int) async -> ApiResult<[OrderListItem]> {
+            upcomingEmployeeIds.append(employeeId)
+            upcomingLimit = limit
+            let call = upcomingEmployeeIds.count
+            defer { upcomingCompleted?(call) }
+            if holdUpcoming {
+                return await withCheckedContinuation { continuation in
+                    heldUpcoming[call] = continuation
+                    upcomingStarted?(call)
+                }
+            }
+            upcomingStarted?(call)
+            return upcomingResult
         }
 
         func getAvailableJobsPreview(limit: Int) async -> ApiResult<AvailableJobsPreview> {
@@ -86,19 +108,27 @@ final class DashboardViewModelTests: XCTestCase {
             heldPreview.removeValue(forKey: call)?.resume(returning: result)
         }
 
+        func releaseUpcoming(call: Int, result: ApiResult<[OrderListItem]>) {
+            heldUpcoming.removeValue(forKey: call)?.resume(returning: result)
+        }
+
         func releaseAll() {
             holdEmployee = false
             holdStats = false
             holdPreview = false
+            holdUpcoming = false
             let employee = heldEmployee.values
             let stats = heldStats.values
             let preview = heldPreview.values
+            let upcoming = heldUpcoming.values
             heldEmployee = [:]
             heldStats = [:]
             heldPreview = [:]
+            heldUpcoming = [:]
             employee.forEach { $0.resume(returning: employeeResult) }
             stats.forEach { $0.resume(returning: statsResult) }
             preview.forEach { $0.resume(returning: previewResult) }
+            upcoming.forEach { $0.resume(returning: upcomingResult) }
         }
     }
 
@@ -282,6 +312,62 @@ final class DashboardViewModelTests: XCTestCase {
         XCTAssertTrue(recovered.showsJobRadiusPrompt)
     }
 
+    func testUpcomingIsReadForTheCapturedEmployeeWithLimitTen() async {
+        client.employeeResult = .success(EmployeeItem(id: "emp-1"))
+
+        let vm = makeViewModel()
+        await vm.load()
+
+        XCTAssertEqual(client.upcomingEmployeeIds, ["emp-1"])
+        XCTAssertEqual(client.upcomingLimit, 10)
+    }
+
+    func testTheCleanersActiveJobIsTheHeroOverAvailableWork() async {
+        let startsAt = Date(timeIntervalSinceNow: 3600)
+        client.employeeResult = .success(EmployeeItem(id: "emp-1"))
+        client.previewResult = .success(AvailableJobsPreview(totalAvailableCount: 2, totalPotentialEarnings: 650))
+        client.upcomingResult = .success([
+            .upcoming(id: "order-7", status: 3, startsAt: startsAt, customerName: "Jana", address: "Praha 5")
+        ])
+
+        let vm = makeViewModel()
+        await vm.load()
+
+        XCTAssertEqual(
+            vm.state.loadedValue?.hero,
+            .nextJob(orderId: "order-7", status: ._3, startsAt: startsAt, whereLine: "Jana · Praha 5")
+        )
+    }
+
+    /// Android skips the read without an id; a failed or blank employee read leaves the fetch none to pass.
+    func testWithNoEmployeeIdUpcomingIsNotReadAndTheBoardIsTheHero() async {
+        client.previewResult = .success(AvailableJobsPreview(totalAvailableCount: 2, totalPotentialEarnings: 650))
+        for employee: ApiResult<EmployeeItem> in [
+            .failure(ApiError(httpStatus: 500)),
+            .success(EmployeeItem(id: " "))
+        ] {
+            client.employeeResult = employee
+            let vm = makeViewModel()
+            await vm.load()
+
+            XCTAssertEqual(vm.state.loadedValue?.hero, .availableWork(jobCount: 2, potentialEarnings: 650))
+        }
+        XCTAssertTrue(client.upcomingEmployeeIds.isEmpty)
+    }
+
+    func testAFailedUpcomingReadStillLoadsWithTheBoardAsTheHero() async {
+        client.employeeResult = .success(EmployeeItem(id: "emp-1"))
+        client.previewResult = .success(AvailableJobsPreview(totalAvailableCount: 2, totalPotentialEarnings: 650))
+        client.upcomingResult = .failure(ApiError(httpStatus: 500))
+
+        let vm = makeViewModel()
+        await vm.load()
+
+        XCTAssertEqual(client.upcomingEmployeeIds, ["emp-1"])
+        XCTAssertEqual(vm.state.loadedValue?.hero, .availableWork(jobCount: 2, potentialEarnings: 650))
+        XCTAssertEqual(vm.state.loadedValue?.todaysJobsCount, 0)
+    }
+
     func testPreviewFailureStillLoadsWithEmptyHero() async {
         client.statsResult = .success(.stub(weekEarnings: 100))
         client.previewResult = .failure(ApiError(httpStatus: 500))
@@ -412,6 +498,7 @@ extension DashboardViewModelTests {
         XCTAssertEqual(vm.state.loadedValue?.weekEarnings, 111)
         XCTAssertFalse(vm.showsJobRadiusPrompt)
         XCTAssertEqual(client.statsEmployeeIds, ["prime"])
+        XCTAssertEqual(client.upcomingEmployeeIds, ["prime"], "the cancelled refresh read upcoming orders")
         XCTAssertFalse(settings.hasAnsweredPrompt(JobRadiusPrompt.settingsKey, userId: "cancelled"))
     }
 
@@ -447,5 +534,61 @@ extension DashboardViewModelTests {
         vm.answerJobRadiusPrompt()
         XCTAssertTrue(settings.hasAnsweredPrompt(JobRadiusPrompt.settingsKey, userId: "visible"))
         XCTAssertFalse(settings.hasAnsweredPrompt(JobRadiusPrompt.settingsKey, userId: "replacement"))
+    }
+
+    /// The slowest read decides when the dashboard appears, so the hero never swaps under the cleaner.
+    func testTheDashboardIsPublishedOnceUpcomingHasArrived() async {
+        let upcomingEntered = expectation(description: "upcoming entered")
+        let othersCompleted = expectation(description: "employee, stats and preview completed")
+        othersCompleted.expectedFulfillmentCount = 3
+        client.employeeResult = .success(EmployeeItem(id: "emp-1"))
+        client.holdUpcoming = true
+        client.upcomingStarted = { _ in upcomingEntered.fulfill() }
+        client.employeeCompleted = { _ in othersCompleted.fulfill() }
+        client.statsCompleted = { _ in othersCompleted.fulfill() }
+        client.previewCompleted = { _ in othersCompleted.fulfill() }
+        let vm = makeViewModel()
+        var loadedPublications = 0
+        let observation = vm.$state.dropFirst().sink { state in
+            if case .loaded = state { loadedPublications += 1 }
+        }
+        let load = Task { await vm.load() }
+        await fulfillment(of: [upcomingEntered, othersCompleted], timeout: 2)
+        XCTAssertTrue(vm.state.isLoading)
+        XCTAssertEqual(loadedPublications, 0)
+        let startsAt = Date(timeIntervalSinceNow: 7200)
+        client.releaseUpcoming(call: 1, result: .success([.upcoming(id: "order-1", status: 2, startsAt: startsAt)]))
+        client.releaseAll()
+        await load.value
+        XCTAssertEqual(loadedPublications, 1)
+        XCTAssertEqual(
+            vm.state.loadedValue?.hero,
+            .nextJob(orderId: "order-1", status: ._2, startsAt: startsAt, whereLine: nil)
+        )
+        observation.cancel()
+    }
+
+    func testASupersededFetchsUpcomingOrdersNeverReachTheDashboard() async {
+        let oldEntered = expectation(description: "old upcoming entered")
+        let newEntered = expectation(description: "new upcoming entered")
+        client.employeeResult = .success(EmployeeItem(id: "emp-1"))
+        client.holdUpcoming = true
+        client.upcomingStarted = { call in
+            if call == 1 { oldEntered.fulfill() } else { newEntered.fulfill() }
+        }
+        let vm = makeViewModel()
+        let old = Task { await vm.load() }
+        await fulfillment(of: [oldEntered], timeout: 2)
+        let new = Task { await vm.userRefresh() }
+        await fulfillment(of: [newEntered], timeout: 2)
+        client.releaseUpcoming(call: 2, result: .success([]))
+        await new.value
+        XCTAssertEqual(vm.state.loadedValue?.hero, .empty)
+        let stale = OrderListItem.upcoming(id: "stale", status: 4, startsAt: Date(timeIntervalSinceNow: 600))
+        client.releaseUpcoming(call: 1, result: .success([stale]))
+        client.releaseAll()
+        await old.value
+        XCTAssertEqual(vm.state.loadedValue?.hero, .empty)
+        XCTAssertEqual(client.upcomingEmployeeIds, ["emp-1", "emp-1"])
     }
 }

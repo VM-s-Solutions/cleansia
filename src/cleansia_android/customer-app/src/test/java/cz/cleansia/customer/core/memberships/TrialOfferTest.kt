@@ -96,6 +96,10 @@ class TrialOfferTest {
             "disclosure = buildDisclosure(selectedPlan, trialDays)",
             "if (plan == null || trialDays <= 0) return stringResource(R.string.membership_disclosure)",
         ).forEach { binding -> assertTrue("SubscribePlusScreen lost `$binding`", subscribe.contains(binding)) }
+        assertTrue(
+            "the post-trial price is the one that will be charged, so it must not be struck through",
+            !subscribe.contains("TextDecoration.LineThrough"),
+        )
     }
 
     @Test

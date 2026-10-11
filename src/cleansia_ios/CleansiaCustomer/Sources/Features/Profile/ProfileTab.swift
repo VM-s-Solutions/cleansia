@@ -358,7 +358,7 @@ private struct HeroGradient: View {
     let onAvatarLoadSuccess: () -> Void
 
     var body: some View {
-        HStack(alignment: .top, spacing: 14) {
+        HStack(alignment: .top, spacing: 0) {
             ProfileAvatar(
                 display: AvatarDisplay.resolve(photo: user?.profilePhoto, edit: .unchanged),
                 initials: user?.initials ?? "",
@@ -380,7 +380,9 @@ private struct HeroGradient: View {
                 TierBadge(tier: tier)
                     .padding(.top, Spacing.xxs)
             }
-            Spacer(minLength: Spacing.s)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(.leading, 14)
+            .padding(.trailing, Spacing.s)
             // Center the chip vertically within the (taller) header while the avatar and
             // name/email/badge stay top-anchored — the fill-height frame expands the chip to the
             // row height and centers its content.

@@ -174,15 +174,8 @@ class DashboardRepositoryImpl @Inject constructor(
                 }
             }
             if (!shouldRefresh) return null
-            var firstError: ApiError? = null
             try {
-                val statsResult = getStats(employeeId)
-                if (statsResult is ApiResult.Error) firstError = statsResult.error
-                if (!updateSnapshot(generation) {
-                    if (statsResult is ApiResult.Success) it.copy(stats = statsResult.data) else it
-                }) return null
-
-                coroutineScope {
+                val firstError = coroutineScope {
                     launch {
                         if (!employeeId.isNullOrBlank()) {
                             when (val upcoming = getUpcomingOrders(employeeId, 10)) {
@@ -199,6 +192,11 @@ class DashboardRepositoryImpl @Inject constructor(
                             is ApiResult.Error -> Unit
                         }
                     }
+                    val statsResult = getStats(employeeId)
+                    updateSnapshot(generation) {
+                        if (statsResult is ApiResult.Success) it.copy(stats = statsResult.data) else it
+                    }
+                    (statsResult as? ApiResult.Error)?.error
                 }
                 return snapshotLock.withLock {
                     currentCoroutineContext().ensureActive()

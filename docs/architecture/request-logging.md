@@ -10,7 +10,7 @@ It runs **before authentication and before the rate limiter**. Reading to the en
 anonymous request of Kestrel's maximum size a ~121 MB allocation that was then discarded: 423× the
 body, with nothing upstream able to throttle it.
 
-The bound is in **characters, not bytes**, because the verdict downstream is `string.Length`. One
+The bound is in **characters, not bytes**, because the verdict counts the characters read. One
 character past the cap decides it exactly as the whole body would, so no log line changes. A byte bound
 would put a multi-byte body under the cap and log what must be suppressed.
 
@@ -20,20 +20,26 @@ For paths subject to logging, the request read remains before exception handling
 rate limiting at **every logger level**. It reads the same maximum 65,537 UTF-16 code units and rewinds the request for downstream
 consumers. Disabling Information skips body-text capture, user/query formatting and redaction; it does
 not skip that bounded read or turn body-limit checks into a logging-level decision. Unknown-length
-input is still read only to the same character bound, not to the end.
+input is still read only to the same character bound, not to the end. On a sensitive path the read
+still runs with Information enabled, bounded and before authentication, but with capture off: its line
+can only say `[suppressed: sensitive endpoint]`, so no body text is built for it.
 
 Response logging chooses Information below 400, Warning for 400–499 and Error for 500 or above before
-reading the body. Disabled levels skip that read and formatting. The full response `MemoryStream`
+reading the body. Disabled levels skip that read and formatting. A sensitive path skips the read at
+every level; its line still says `[suppressed: sensitive endpoint]`. The full response `MemoryStream`
 capture remains, and its position resets to zero immediately before copying to the original stream,
 independently of logging. Exception-handler ordering and cancellation/error levels remain unchanged.
 
 Readers rent a 4,096-character `ArrayPool<char>` chunk, limit each read by the remaining character
 bound, and append only returned characters when capture is enabled. The rented array is returned with
 `clearArray: true` in `finally`; its actual capacity may exceed the requested chunk size. Captured text
-is assembled before the existing whole-body redaction and truncation. Pool retention, clearing and
-builder copies have costs; this does not establish a latency or CPU gain. Builder/result strings keep
-ordinary managed lifetimes, and whole-response retained memory remains unbounded by the logging scan
-limit.
+is assembled before the existing whole-body redaction and truncation. A body that reaches
+`RedactionScanLimit + 1` characters is never built into a string: the reader returns `null` instead of
+the text, and the line says `[suppressed: body too large to redact]`. Its characters up to that bound
+are still decoded and appended, because the last one is what decides the verdict. Pool retention,
+clearing and builder copies have costs; this does not establish a latency or CPU gain. Builder/result
+strings keep ordinary managed lifetimes, and whole-response retained memory remains unbounded by the
+logging scan limit.
 
 ## Redact before truncating {#redact-before-truncate}
 

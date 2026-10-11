@@ -66,6 +66,26 @@ class BottomNavLabelTruncationTest {
         }
     }
 
+    /**
+     * A custom tab row declares its selection itself, as Material's NavigationBar does: TalkBack reports
+     * the selected flag only for `Role.Tab`, and `clickable` gives a slot an action but no state.
+     */
+    @Test
+    fun `each slot reports itself as a tab and whether it is the selected one`() {
+        val slot = navSlotBody()
+        val at = slot.indexOf(".selectable(")
+        assertTrue("the slot must declare itself with Modifier.selectable(...)", at >= 0)
+        val selectable = parenBlock(slot, at + ".selectable".length)
+        listOf("selected = isSelected", "indication = null", "role = Role.Tab").forEach { argument ->
+            assertTrue("the slot's selectable(...) must pass `$argument`", selectable.contains(argument))
+        }
+        assertTrue("the slot must not fall back to clickable, which carries no selection", !slot.contains(".clickable("))
+        assertTrue(
+            "the bar's row must group its tabs with selectableGroup()",
+            braceBlock(source, "fun FloatingIslandBottomBar(").contains(".selectableGroup()"),
+        )
+    }
+
     private val source: String = sequenceOf(
         File("."),
         File("partner-app"),

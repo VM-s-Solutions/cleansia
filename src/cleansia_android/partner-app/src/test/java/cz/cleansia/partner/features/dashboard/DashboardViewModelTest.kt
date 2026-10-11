@@ -9,6 +9,8 @@ import cz.cleansia.core.network.ApiError
 import cz.cleansia.core.network.ApiResult
 import cz.cleansia.partner.core.network.ApiErrorTranslator
 import cz.cleansia.partner.core.notifications.NotificationFeedRepository
+import cz.cleansia.partner.api.model.OrderListItem
+import cz.cleansia.partner.data.dashboard.AvailableJobsPreview
 import cz.cleansia.partner.data.dashboard.DashboardRepository
 import cz.cleansia.partner.data.dashboard.DashboardSnapshot
 import cz.cleansia.partner.data.dashboard.dashboardStats
@@ -101,6 +103,29 @@ class DashboardViewModelTest {
             val loaded = awaitItem()
             assertTrue(loaded is DashboardUiState.Loaded)
             assertEquals(stats, (loaded as DashboardUiState.Loaded).stats)
+
+            cancelAndIgnoreRemainingEvents()
+        }
+    }
+
+    /** The optional reads can now land before stats; a first load must not flash an empty dashboard. */
+    @Test
+    fun `optional reads arriving before stats keep the first load on Loading`() = runTest {
+        val vm = viewModel()
+        vm.uiState.test {
+            awaitItem()
+
+            snapshotFlow.value = DashboardSnapshot(
+                upcoming = listOf(OrderListItem(id = "upcoming-1")),
+                availableJobsPreview = AvailableJobsPreview(
+                    jobs = emptyList(),
+                    totalPotentialEarnings = 0.0,
+                    totalAvailableCount = 3,
+                ),
+                refreshing = true,
+            )
+            advanceUntilIdle()
+            assertTrue(expectMostRecentItem() is DashboardUiState.Loading)
 
             cancelAndIgnoreRemainingEvents()
         }

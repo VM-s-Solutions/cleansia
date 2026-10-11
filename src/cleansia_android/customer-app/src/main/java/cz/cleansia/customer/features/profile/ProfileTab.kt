@@ -87,7 +87,7 @@ import cz.cleansia.customer.ui.theme.isDark
 import kotlinx.datetime.toJavaLocalDateTime
 import kotlinx.datetime.toLocalDateTime
 import cz.cleansia.customer.features.main.MainShellBottomClearance
-import cz.cleansia.customer.ui.components.statusBarFade
+import cz.cleansia.core.ui.components.statusBarFade
 
 private data class ProfileRow(
     val key: String,

@@ -242,6 +242,10 @@ final class MembershipCopyTests: XCTestCase {
             subscribe.range(of: "trialPeriodDays"),
             "the subscribe screen reads the plan's trial days past the eligibility check"
         )
+        XCTAssertNil(
+            subscribe.range(of: ".strikethrough()"),
+            "the price charged once the trial ends is struck through as if it would not be"
+        )
     }
 
     private func localeBundle(_ tag: String) throws -> Bundle {

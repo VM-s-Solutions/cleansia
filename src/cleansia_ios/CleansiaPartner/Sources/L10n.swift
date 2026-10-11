@@ -103,6 +103,26 @@ enum L10n {
             format("dash_state_many_today", count)
         }
 
+        static var nextJob: String {
+            localized("dash_next_job")
+        }
+
+        static var onTheWay: String {
+            localized("dash_on_the_way")
+        }
+
+        static var inProgress: String {
+            localized("dash_in_progress")
+        }
+
+        static func urgencyInMinutes(_ minutes: Int) -> String {
+            format("urgency_in_minutes", minutes)
+        }
+
+        static func urgencyInHoursMinutes(_ hours: Int, _ minutes: Int) -> String {
+            format("urgency_in_hours_minutes", hours, minutes)
+        }
+
         static var earningsWeek: String {
             localized("dash_earnings_week")
         }

@@ -1,10 +1,10 @@
-import CleansiaCore
 import SwiftUI
 import UIKit
 
 /// A vertical scroll view whose content fades out under the status bar once it scrolls — for the
-/// screens that hide the navigation bar (Home, Profile, the Plus offer). Shown only once the content
-/// has scrolled, so the full-bleed heroes stay untouched at rest and a pull-to-refresh never raises it.
+/// screens that hide the navigation bar (Home, Profile, the Plus offer, the partner dashboard). Shown
+/// only once the content has scrolled, so the full-bleed heroes stay untouched at rest and a
+/// pull-to-refresh never raises it.
 ///
 /// The fade is one solid colour, the colour actually behind the status bar: the page colour, or — on a
 /// screen with a hero at its top (`heroTint`, the hero marked `statusBarFadeHero()`) — the hero's top
@@ -24,7 +24,7 @@ import UIKit
 /// app cannot set.
 ///
 /// → /mobile-app/patterns#status-bar-fade
-struct StatusBarFadeScrollView<Content: View>: View {
+public struct StatusBarFadeScrollView<Content: View>: View {
     private let heroTint: Color?
     private let content: Content
     @State private var isScrolled = false
@@ -32,12 +32,12 @@ struct StatusBarFadeScrollView<Content: View>: View {
     /// status bar redraws the fade alone, never the content.
     @State private var heroBottom = StatusBarFade.heroBottomRange.upperBound
 
-    init(heroTint: Color? = nil, @ViewBuilder content: () -> Content) {
+    public init(heroTint: Color? = nil, @ViewBuilder content: () -> Content) {
         self.heroTint = heroTint
         self.content = content()
     }
 
-    var body: some View {
+    public var body: some View {
         ZStack(alignment: .top) {
             scroll
             StatusBarFadeBand(heroTint: heroTint, heroBottom: $heroBottom)
@@ -122,41 +122,45 @@ private struct StatusBarFadeBand: View {
 /// iOS 16.4, 18.6 and 26.3. `.toolbarColorScheme` reaches no further than a visible navigation bar, and
 /// these screens hide theirs. White while `lightContent`; otherwise the system's own choice. The Plus offer's
 /// states with no plan to price, whose navy hero does not scroll, ask for white throughout.
-struct StatusBarStyleBridge: UIViewControllerRepresentable {
+public struct StatusBarStyleBridge: UIViewControllerRepresentable {
     let lightContent: Bool
 
-    func makeUIViewController(context _: Context) -> Controller {
+    public init(lightContent: Bool) {
+        self.lightContent = lightContent
+    }
+
+    public func makeUIViewController(context _: Context) -> Controller {
         Controller()
     }
 
-    func updateUIViewController(_ controller: Controller, context _: Context) {
+    public func updateUIViewController(_ controller: Controller, context _: Context) {
         controller.lightContent = lightContent
     }
 
-    final class Controller: UIViewController {
+    public final class Controller: UIViewController {
         var lightContent = false {
             didSet {
                 if lightContent != oldValue { setNeedsStatusBarAppearanceUpdate() }
             }
         }
 
-        override var preferredStatusBarStyle: UIStatusBarStyle {
+        override public var preferredStatusBarStyle: UIStatusBarStyle {
             lightContent ? .lightContent : .default
         }
 
-        override func loadView() {
+        override public func loadView() {
             view = UIView()
             view.isUserInteractionEnabled = false
         }
 
-        override func didMove(toParent parent: UIViewController?) {
+        override public func didMove(toParent parent: UIViewController?) {
             super.didMove(toParent: parent)
             setNeedsStatusBarAppearanceUpdate()
         }
     }
 }
 
-extension View {
+public extension View {
     /// Marks the hero whose colour the enclosing `StatusBarFadeScrollView` wears (its `heroTint`) while
     /// the hero is under the status bar.
     func statusBarFadeHero() -> some View {

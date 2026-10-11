@@ -60,21 +60,36 @@ class MembershipRepository @Inject constructor(
      */
     val staleness = Staleness()
 
-    suspend fun refresh(): ApiResult<GetMyMembershipResponse> = wireResult { mutex.withLock {
-        _loading.value = true
-        try {
-            val response = networkCall(TAG) { api.getMine() } ?: return@withLock networkError()
-            if (!response.isSuccessful) {
-                return@withLock httpError(response.errorBody(), response.code())
+    /**
+     * A read that began before [clear] belongs to the session that ended: it publishes nothing and is
+     * answered with the silent [ApiError.Network], so the previous user's membership never comes back.
+     */
+    suspend fun refresh(): ApiResult<GetMyMembershipResponse> = wireResult {
+        val generation = plansLock.withLock { sessionGeneration }
+        mutex.withLock {
+            if (plansLock.withLock { generation != sessionGeneration }) return@withLock networkError()
+            _loading.value = true
+            try {
+                val response = networkCall(TAG) { api.getMine() } ?: return@withLock networkError()
+                if (!response.isSuccessful) {
+                    return@withLock httpError(response.errorBody(), response.code())
+                }
+                val body = response.body() ?: return@withLock httpError(null, response.code())
+                val published = plansLock.withLock {
+                    currentCoroutineContext().ensureActive()
+                    val sameSession = generation == sessionGeneration
+                    if (sameSession) {
+                        _current.value = body
+                        staleness.markFresh()
+                    }
+                    sameSession
+                }
+                return@withLock if (published) ApiResult.Success(body) else networkError()
+            } finally {
+                _loading.value = false
             }
-            val body = response.body() ?: return@withLock httpError(null, response.code())
-            _current.value = body
-            staleness.markFresh()
-            return@withLock ApiResult.Success(body)
-        } finally {
-            _loading.value = false
         }
-    } }
+    }
 
     /** [countryId] is the chosen market's — the subscription is created in its currency (ADR-0059 D2). */
     suspend fun subscribePhase1(planCode: String, countryId: String?): ApiResult<CreateMembershipSubscriptionResponse> =
@@ -125,6 +140,8 @@ class MembershipRepository @Inject constructor(
      * the market's currency, so a list answered for another `countryId` is re-read rather than served
      * (the `CatalogRepository` idiom). An empty answer is cached like any other — it is the server
      * saying Plus is not on sale there. [forceRefresh] busts the cache (e.g. an admin-side change).
+     * A caller superseded by a market change or a sign-out is answered with the silent
+     * [ApiError.Network], never another market's or session's plans.
      */
     suspend fun getPlans(countryId: String?, forceRefresh: Boolean = false): ApiResult<List<MembershipPlanDto>> = coroutineScope {
         var obsoleteFlight: Deferred<ApiResult<List<MembershipPlanDto>>>? = null
@@ -145,7 +162,7 @@ class MembershipRepository @Inject constructor(
             obsoleteFlight = null
             val flight = plansLock.withLock {
                 currentCoroutineContext().ensureActive()
-                if (generation != plansGeneration) throw CancellationException("Plan request superseded")
+                if (generation != plansGeneration) return@coroutineScope networkError()
                 val cached = _plans.value
                 val freshEnough = !forceRefresh || (
                     !replaceFlight && plansFlight == null && plansPublishedSerial >= minimumFreshSerial
@@ -195,13 +212,13 @@ class MembershipRepository @Inject constructor(
                 val result = flight.await()
                 plansLock.withLock {
                     currentCoroutineContext().ensureActive()
-                    if (generation != plansGeneration) throw CancellationException("Plan request superseded")
+                    if (generation != plansGeneration) return@coroutineScope networkError()
                 }
                 return@coroutineScope result
-            } catch (cancelled: CancellationException) {
+            } catch (_: CancellationException) {
                 currentCoroutineContext().ensureActive()
                 plansLock.withLock {
-                    if (generation != plansGeneration) throw cancelled
+                    if (generation != plansGeneration) return@coroutineScope networkError()
                     if (plansFlight === flight) plansFlight = null
                 }
             }
@@ -218,6 +235,10 @@ class MembershipRepository @Inject constructor(
     private var plansPublishedSerial = 0L
     private var plansFlight: Deferred<ApiResult<List<MembershipPlanDto>>>? = null
 
+    // Moved only by clear(): plansGeneration also moves on a market change, which must not drop a
+    // membership read.
+    private var sessionGeneration = 0L
+
     /**
      * Swap to a different plan. Returns the swap response on success and
      * refreshes the active membership cache so the management UI shows the
@@ -231,9 +252,14 @@ class MembershipRepository @Inject constructor(
         return result
     }
 
-    /** Clear cache on sign-out so a re-login starts fresh. */
+    /**
+     * Clear cache on sign-out so a re-login starts fresh. Never takes [mutex]: the authenticator runs
+     * this on OkHttp's thread while a refresh may hold it across the very request being authenticated.
+     * For the same reason no `plansLock` section may wait on a request.
+     */
     override suspend fun clear() {
         val obsoleteFlight = plansLock.withLock {
+            sessionGeneration++
             plansGeneration++
             val previous = plansFlight
             plansFlight = null

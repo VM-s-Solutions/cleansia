@@ -1,6 +1,6 @@
-import CleansiaCore
 import SwiftUI
 import XCTest
+@testable import CleansiaCore
 @testable import CleansiaCustomer
 
 final class ContentSafeAreaBindingTests: XCTestCase {
@@ -70,6 +70,18 @@ final class ContentSafeAreaBindingTests: XCTestCase {
             try compactSource("CleansiaCustomer/Sources/Features/Home/HomeTab.swift")
                 .contains("StatusBarFadeScrollView{")
         )
+    }
+
+    /// The offer has no navigation bar, so its back arrow scrolls away with the hero, as Android's does, and the
+    /// edge swipe is the way back below it. While it shows it is a full touch target VoiceOver names, where it
+    /// was a 22 by 17pt glyph read as "Left".
+    func testThePlusOffersBackArrowIsANamedFullTouchTarget() throws {
+        let plus = try compactSource("CleansiaCustomer/Sources/Features/Membership/SubscribePlusScreen.swift")
+        XCTAssertTrue(plus.contains(
+            "Button(action:onBack){Image(systemName:\"arrow.left\").font(.system(size:18,weight:.semibold))"
+                + ".foregroundColor(.white).frame(width:44,height:44).contentShape(Rectangle())}"
+                + ".accessibilityLabel(L10n.Membership.back)"
+        ))
     }
 
     /// The Plus fade wears the navy on every version and in both schemes: the screen asks for the white
@@ -160,7 +172,7 @@ final class ContentSafeAreaBindingTests: XCTestCase {
         controller.lightContent = false
         XCTAssertEqual(controller.preferredStatusBarStyle, .default)
 
-        let fade = try compactSource("CleansiaCustomer/Sources/Components/StatusBarFadeScrollView.swift")
+        let fade = try compactSource("CleansiaCore/Sources/CleansiaCore/Components/StatusBarFadeScrollView.swift")
         XCTAssertTrue(fade.contains(
             "StatusBarStyleBridge(lightContent:StatusBarFade.asksForWhiteClock(share:share,hero:hero,page:page))"
         ))
@@ -371,7 +383,7 @@ final class ContentSafeAreaBindingTests: XCTestCase {
     /// One fade on every version (iOS 26's system edge reaches far below the status bar), one solid
     /// colour with no material under it (the blur read as a different colour), Reduce Transparency read.
     func testTheFadeIsTheSameOnEveryVersionAndOneSolidColour() throws {
-        let fade = try compactSource("CleansiaCustomer/Sources/Components/StatusBarFadeScrollView.swift")
+        let fade = try compactSource("CleansiaCore/Sources/CleansiaCore/Components/StatusBarFadeScrollView.swift")
         XCTAssertFalse(fade.contains("#available"), "the fade differs by version")
         XCTAssertFalse(fade.contains("scrollEdgeEffect"), "the system edge is back")
         XCTAssertFalse(fade.contains("Material"), "a material is back under the colour")

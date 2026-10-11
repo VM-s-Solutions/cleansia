@@ -67,4 +67,26 @@ final class PendingOffersCardViewModelTests: XCTestCase {
         XCTAssertEqual(client.pendingOffersCallCount, 1)
         XCTAssertEqual(vm.state, .visible(count: 1, soonestRespondBy: PendingOfferItem.sample(id: "a").respondByUtc))
     }
+
+    /// The card's load hung off a group that is empty while the card is hidden, which is how it starts, so it
+    /// never ran from the dashboard and the card showed only once another screen had filled the store. The
+    /// dashboard holds the card's view model and loads it from its own body, as Android's screen hoists it.
+    func testTheDashboardLoadsTheCardFromItsOwnBody() throws {
+        let dashboard = try compactSource("Dashboard/DashboardView.swift")
+        XCTAssertTrue(dashboard.contains(".task{awaitvm.load()}.task{awaitpendingOffersVM.load()}"))
+        XCTAssertTrue(dashboard.contains(
+            "ifcaselet.visible(count,soonestRespondBy)=pendingOffers{PendingOffersCardContent("
+        ))
+        XCTAssertFalse(try compactSource("Orders/PendingOffersCard.swift").contains("structPendingOffersCard:View"))
+    }
+
+    private func compactSource(_ path: String) throws -> String {
+        let features = URL(fileURLWithPath: #filePath)
+            .deletingLastPathComponent()
+            .deletingLastPathComponent()
+            .appendingPathComponent("Sources/Features")
+        return try String(contentsOf: features.appendingPathComponent(path), encoding: .utf8)
+            .components(separatedBy: .whitespacesAndNewlines)
+            .joined()
+    }
 }

@@ -319,7 +319,8 @@
 | T-0803 | Restore SSR data, compatible paging and iOS session cleanup (approved Wave A) | L | `done` | — | [#311](https://github.com/VM-s-Solutions/cleansia/pull/311), merged 2026-10-08 (`6fa0492`); all eight PR checks pass, coordinated cap 100 implemented; measured board p95 305→630 ms retained |
 | T-0804 | Remove the redundant board seat count (approved B010 scope) | M | `done` | — | [#312](https://github.com/VM-s-Solutions/cleansia/pull/312), merged 2026-10-08 (`ed1e1b8`); p95 637.37→140.80 ms (-77.9%),9748 local tests and six exact-head CI jobs pass |
 | T-0805 | Reduce initial web bytes and repeated validation reads, repair Swift warnings and align operating docs (approved Wave B) | L | `done` | T-0803 | [#313](https://github.com/VM-s-Solutions/cleansia/pull/313), merged 2026-10-09 (`18a2e5ac`); corrected-head seven workflows/eight jobs/36 critical steps succeed; hosted iOS 3,545 passes/zero failures/one skip; workflow timing overruns and all historical failures/limits retained in Wave B closure |
-| T-0806 | Reduce request logging work, evaluate HTTP JSON compression and overlap native reads (approved Wave C) | L | `in_progress` | T-0805 | B001 and both native causes implemented; paired evidence closed with counterresults; B009 measured and deferred under AC4; final local gates (backend 9,894, Android 2,760, iOS 3,556 + 1 skip, floor 61/61) and six render checks recorded, AC8 closed; exact-head CI and normal merge pending; D after actual C merge |
+| T-0806 | Reduce request logging work, evaluate HTTP JSON compression and overlap native reads (approved Wave C) | L | `done` | T-0805 | [#318](https://github.com/VM-s-Solutions/cleansia/pull/318), merged 2026-10-10 (`5f94129`); exact-head seven workflows/eight jobs succeed; hosted iOS 3,556 passes/one skip, backend 9,894; six render checks recorded; B009 deferred; mixed timings and iOS CI over 15 min retained |
+| T-0807 | Fix the reported Wave C findings and the open Dependabot alerts (explicit owner instruction 2026-10-10) | L | `in_progress` | T-0806 | fixes committed per platform (`aae6fca`, `196448e`, `c456fc1`, `279007b`) with Dependabot (`545ae30`); AC1/2/4/5 evidenced; render checks and exact-head CI pending; F10/F11 kept as documented designs with their options recorded for Mike |
 
 > **T-0785–T-0799 filed 2026-09-20** — the UI-polish and dead-code batch, on the owner's ruling of
 > that day (*"I want to polish alignments in admin app a bit on all of the overview/detail pages.
@@ -364,4 +365,4 @@
 > reported not absorbed. Owed: the DEV drop at the next DEV deploy (MS-2 / A1, `20260920204705`);
 > the merge order is #255 then #260. Open rows: none.
 
-*Next id: **T-0807**.*
+*Next id: **T-0808**.*

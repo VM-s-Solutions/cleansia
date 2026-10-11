@@ -18,6 +18,14 @@ enum DashboardGreeting {
         }
     }
 
+    static func todayLine(jobsToday count: Int) -> String {
+        switch count {
+        case 0: L10n.Dashboard.stateFreeToday
+        case 1: L10n.Dashboard.stateOneToday
+        default: L10n.Dashboard.stateManyToday(count)
+        }
+    }
+
     static func dateLine(now: Date = Date(), locale: Locale = .current) -> String {
         let formatter = DateFormatter()
         formatter.locale = locale

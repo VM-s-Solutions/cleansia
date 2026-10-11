@@ -22,6 +22,7 @@ struct PartnerShellView: View {
     @StateObject private var model = ShellModel()
     @ObservedObject private var preferences: PreferencesModel
     @EnvironmentObject private var pushNavigation: PushNavigationModel
+    @Environment(\.openURL) private var openURL
     @State private var deepLinkOrderRoute: OrderRoute?
     @State private var deepLinkInvoiceId: String?
     @State private var dashboardPath: [DashboardRoute] = []
@@ -75,6 +76,7 @@ struct PartnerShellView: View {
                 pendingOffers: container.pendingOffers,
                 onOpenEarnings: { model.selectEarnings() },
                 onOpenOrders: { model.selectOrders() },
+                onOpenOrder: { dashboardPath.append(.orderDetail(orderId: $0)) },
                 onOpenPendingOffers: { dashboardPath.append(.pendingOffers) },
                 // Feed-row taps land exactly where a push tap does — the same
                 // resolver, the same routing plan (FD-AC9).
@@ -85,9 +87,7 @@ struct PartnerShellView: View {
                 // owner asked for parity with Android's row; it is a real shortcut, just a shallower
                 // one until documents get their own route.
                 onOpenDocuments: { model.selectProfile() },
-                // Android's Help tile is a stub too (`onHelp = { /* Phase 9 */ }`). Parity includes
-                // the gap; a tile that silently does nothing is at least the same nothing.
-                onOpenHelp: {}
+                onOpenHelp: openSupportMail
             )
             .toolbar(.hidden, for: .navigationBar)
             .navigationDestination(for: DashboardRoute.self) { route in
@@ -120,6 +120,13 @@ struct PartnerShellView: View {
                 }
             }
         }
+    }
+
+    private func openSupportMail() {
+        var mail = URLComponents()
+        mail.scheme = "mailto"
+        mail.path = CleansiaWeb.contactEmail
+        if let url = mail.url { openURL(url) }
     }
 
     /// iOS 26: the bar shrinks to its selected tab while a tab root scrolls down and comes back on the

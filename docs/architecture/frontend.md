@@ -556,19 +556,28 @@ nx e2e <project-name>-e2e   # E2E tests
 ### Partner dashboard
 
 On iOS, `DashboardViewModel` starts the available-jobs preview alongside the employee
-read. Stats still waits for the captured employee ID. The view model assembles one
-terminal state, then checks cancellation and the fetch generation before publishing
-the state, employee identity and radius-prompt ownership together. A user refresh
-keeps the visible dashboard until that result arrives. Stats failure still becomes
-an error; preview failure still permits the loaded dashboard with an empty hero.
+read. Stats still waits for the captured employee ID. Once the employee read has
+answered, the upcoming-orders read starts beside stats: that employee's active orders,
+soonest first, ten rows, the query Android sends; without an employee ID it is not
+sent. The view model assembles one terminal state once stats, the preview and upcoming
+orders have all answered, then checks cancellation and the fetch generation before
+publishing the state, employee identity and radius-prompt ownership together. The hero
+therefore never swaps after the first paint; in exchange the spinner waits for the
+slowest of the three reads. A user refresh keeps the visible dashboard until that
+result arrives. Stats failure still becomes an error. A preview or upcoming failure
+still permits the loaded dashboard: its hero falls back from the next job to the
+available work and then to the empty hero, and its today line reads as free.
 
 On Android, `DashboardRepositoryImpl` retains its serialized refresh and freshness
-check. It publishes stats first, then runs upcoming orders and the available-jobs
-preview together in the refresh's `coroutineScope`. Each successful optional read
-updates its own snapshot field; an optional failure retains the last good field.
-The final loaded/freshness flags wait for both legs. Snapshot updates check active
-cancellation and the captured session generation under the snapshot lock; `clear`
-advances that generation so old work cannot repopulate a cleared session.
+check. Stats, upcoming orders and the available-jobs preview run together in the
+refresh's `coroutineScope`, and each publishes its own snapshot field when it arrives;
+an optional failure retains the last good field. Stats remains the critical read: its
+failure is the error the refresh returns, and on a first load the view model keeps the
+spinner until stats lands even when the optional reads arrive first. The final
+loaded/freshness flags wait for all three. Snapshot updates check active cancellation
+and the captured session generation under the snapshot lock; `clear` advances that
+generation so old work cannot repopulate a cleared session, and reads already in flight
+finish unused.
 
 ### Customer membership plans
 
@@ -579,12 +588,26 @@ while previously loaded good plans remain available. Country changes and session
 clear invalidate the captured generation. Flight identity also guards publication
 and cleanup so late work cannot overwrite or remove its replacement.
 
+The current-membership read (`getMine`) carries its own session generation on both
+platforms, advanced only by sign-out (`clear`). It is not the plans' generation, which
+also moves on a market change and a forced plans reload; neither of those discards it.
+A read still in flight at sign-out publishes nothing and leaves freshness stale. iOS
+answers its caller with the cancellation result, and `clear` also ends that read's
+`loading`, so the next session's own refresh is not swallowed by it. Android answers
+with the silent `ApiError.Network`, and a refresh queued before sign-out never reaches
+the API. `clear` never takes Android's refresh lock, because the authenticator calls it
+while a refresh may hold that lock across the request being authenticated.
+
 | Plan-read behavior | iOS | Android |
 |---|---|---|
 | Ordinary completed success | Published plans remain visible; the next sequential read fetches again. Only active requests are shared. | Success is cached for the same country, including an empty list, until country change, clear or explicit force. |
 | Explicit retry/force | `MembershipViewModel.reloadPlans` calls `refreshPlans(force: true)`, replacing the active task. | `getPlans(forceRefresh = true)` starts a fresh flight and does not satisfy that request from an older cached result. A failed force keeps the previous good cache. |
 | Cancelled waiter | The repository owns the shared `Task`; cancelling one waiter does not cancel publication for surviving waiters. The cancelled caller receives a cancellation result. | A follower's cancellation leaves the owning `Deferred` intact. Cancelling the first caller cancels its structured child; still-active same-generation waiters can elect a fresh child. |
-| Late completion after replacement/reset | Cancellation, country, generation and flight-token checks protect publication; cleanup removes only the matching task. | Active/generation and `Deferred` identity checks protect publication; cleanup removes only the matching flight. Old-country/session waiters cannot re-elect stale work. |
+| Late completion after replacement/reset | Cancellation, country, generation and flight-token checks protect publication; cleanup removes only the matching task. | Active/generation and `Deferred` identity checks protect publication; cleanup removes only the matching flight. Old-country/session waiters cannot re-elect stale work: they are answered with the silent `ApiError.Network`, never a thrown `CancellationException` (which would end a plain `collect`), while a caller's own cancellation still throws. |
+
+When the market changes back to the one whose plans last loaded, iOS re-reads the
+plans if they still show `.loading`, a state only a flight cancelled on the way can
+leave; Android answers that return from its cache.
 
 The existing dashboard and membership tests use held request/completion barriers to
 cover overlap, both optional completion orders, shared failures, force replacement,

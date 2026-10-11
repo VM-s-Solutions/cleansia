@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBars
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBars
@@ -55,7 +56,6 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.dp
@@ -76,7 +76,7 @@ import cz.cleansia.customer.ui.theme.Sky400
 import cz.cleansia.customer.ui.theme.Sky950
 import cz.cleansia.customer.ui.theme.Slate900
 import kotlinx.coroutines.launch
-import cz.cleansia.customer.ui.components.statusBarFade
+import cz.cleansia.core.ui.components.statusBarFade
 
 /**
  * Cleansia Plus subscribe page. Dark hero with the trial anchor, plan toggle inside the hero so the
@@ -97,6 +97,7 @@ fun SubscribePlusScreen(
     val plansLoaded by viewModel.plansLoaded.collectAsStateWithLifecycle()
     val market by viewModel.market.collectAsStateWithLifecycle()
     val notOnSaleInMarket = plansLoaded && plans.isEmpty()
+    val canSubscribe = BuildConfig.STRIPE_PUBLISHABLE_KEY.isNotBlank()
 
     var selectedPlanCode by remember(plans) {
         mutableStateOf(plans.firstOrNull { it.billingInterval == 1 }?.code ?: plans.firstOrNull()?.code.orEmpty())
@@ -240,64 +241,68 @@ fun SubscribePlusScreen(
             }
 
             Spacer(Modifier.height(24.dp))
+            if (!canSubscribe) Spacer(Modifier.navigationBarsPadding())
         }
 
         // Sticky CTA bar — sits above the navigation bar, on a contrasting
         // surface so the button is always visible regardless of scroll position.
-        StickyCtaBar(
-            modifier = Modifier
-                .align(Alignment.BottomCenter)
-                .onSizeChanged { ctaBarHeight = with(density) { it.height.toDp() } },
-            ctaLabel = if (trialDays > 0) {
-                stringResource(R.string.membership_cta_start_trial)
-            } else {
-                stringResource(R.string.membership_cta_subscribe)
-            },
-            disclosure = buildDisclosure(selectedPlan, trialDays),
-            enabled = !submitting && selectedPlanCode.isNotBlank(),
-            onClick = {
-                if (selectedPlanCode.isBlank()) return@StickyCtaBar
-                scope.launch {
-                    val outcome = viewModel.startSubscribe(selectedPlanCode)
-                    when (outcome) {
-                        is SubscribeOutcome.NeedsPaymentMethod -> {
-                            paymentSheet.presentWithSetupIntent(
-                                setupIntentClientSecret = outcome.setupIntentClientSecret,
-                                configuration = PaymentSheet.Configuration(
-                                    merchantDisplayName = "Cleansia",
-                                    customer = PaymentSheet.CustomerConfiguration(
-                                        id = outcome.customerId,
-                                        ephemeralKeySecret = outcome.ephemeralKey,
+        // Without a Stripe key the sheet cannot open, so there is nothing to buy (as on iOS).
+        if (canSubscribe) {
+            StickyCtaBar(
+                modifier = Modifier
+                    .align(Alignment.BottomCenter)
+                    .onSizeChanged { ctaBarHeight = with(density) { it.height.toDp() } },
+                ctaLabel = if (trialDays > 0) {
+                    stringResource(R.string.membership_cta_start_trial)
+                } else {
+                    stringResource(R.string.membership_cta_subscribe)
+                },
+                disclosure = buildDisclosure(selectedPlan, trialDays),
+                enabled = !submitting && selectedPlanCode.isNotBlank(),
+                onClick = {
+                    if (selectedPlanCode.isBlank()) return@StickyCtaBar
+                    scope.launch {
+                        val outcome = viewModel.startSubscribe(selectedPlanCode)
+                        when (outcome) {
+                            is SubscribeOutcome.NeedsPaymentMethod -> {
+                                paymentSheet.presentWithSetupIntent(
+                                    setupIntentClientSecret = outcome.setupIntentClientSecret,
+                                    configuration = PaymentSheet.Configuration(
+                                        merchantDisplayName = "Cleansia",
+                                        customer = PaymentSheet.CustomerConfiguration(
+                                            id = outcome.customerId,
+                                            ephemeralKeySecret = outcome.ephemeralKey,
+                                        ),
+                                        googlePay = PaymentSheet.GooglePayConfiguration(
+                                            // Follows the Stripe key, not the build type. See
+                                            // build.gradle.kts where GOOGLE_PAY_PRODUCTION is derived.
+                                            environment = if (BuildConfig.GOOGLE_PAY_PRODUCTION) {
+                                                PaymentSheet.GooglePayConfiguration.Environment.Production
+                                            } else {
+                                                PaymentSheet.GooglePayConfiguration.Environment.Test
+                                            },
+                                            // The MERCHANT's country (Stripe's meaning of this field): Cleansia
+                                            // s.r.o. is Czech whichever market the customer shops in.
+                                            countryCode = "CZ",
+                                            // A SetupIntent carries no currency, so this is what the Google Pay
+                                            // sheet shows and what gates it: the currency the plan is sold in.
+                                            currencyCode = selectedPlan?.currencyCode,
+                                        ),
+                                        allowsDelayedPaymentMethods = false,
                                     ),
-                                    googlePay = PaymentSheet.GooglePayConfiguration(
-                                        // Follows the Stripe key, not the build type. See
-                                        // build.gradle.kts where GOOGLE_PAY_PRODUCTION is derived.
-                                        environment = if (BuildConfig.GOOGLE_PAY_PRODUCTION) {
-                                            PaymentSheet.GooglePayConfiguration.Environment.Production
-                                        } else {
-                                            PaymentSheet.GooglePayConfiguration.Environment.Test
-                                        },
-                                        // The MERCHANT's country (Stripe's meaning of this field): Cleansia
-                                        // s.r.o. is Czech whichever market the customer shops in.
-                                        countryCode = "CZ",
-                                        // A SetupIntent carries no currency, so this is what the Google Pay
-                                        // sheet shows and what gates it: the currency the plan is sold in.
-                                        currencyCode = selectedPlan?.currencyCode,
-                                    ),
-                                    allowsDelayedPaymentMethods = false,
-                                ),
-                            )
+                                )
+                            }
+                            SubscribeOutcome.AlreadyActive -> {
+                                viewModel.onAlreadyActive()
+                                onBack()
+                            }
+                            SubscribeOutcome.Failed -> Unit
+                            is SubscribeOutcome.Subscribed -> Unit
                         }
-                        SubscribeOutcome.AlreadyActive -> {
-                            viewModel.onAlreadyActive()
-                            onBack()
-                        }
-                        SubscribeOutcome.Failed -> Unit
-                        is SubscribeOutcome.Subscribed -> Unit
                     }
-                }
-            },
-        )
+                },
+            )
+        }
 
         // Wave 4 — busy overlay over the whole screen during Stripe confirm +
         // backend subscription activation. Swallows touches so the user can't
@@ -311,9 +316,8 @@ fun SubscribePlusScreen(
 
 /**
  * Dark gradient hero with back arrow, brand splash, big trial-first price,
- * and the monthly/annual plan toggle. The trial price is the visual anchor —
- * the struck-through regular price under it is doing comparison work, not the
- * other way around.
+ * and the monthly/annual plan toggle. The trial price is the visual anchor;
+ * the post-trial price sits under it, smaller and muted.
  */
 @Composable
 private fun HeroBlock(
@@ -358,7 +362,7 @@ private fun HeroBlock(
             ) {
                 Icon(
                     Icons.AutoMirrored.Outlined.ArrowBack,
-                    contentDescription = null,
+                    contentDescription = stringResource(R.string.common_back),
                     tint = Color.White,
                 )
             }
@@ -379,11 +383,6 @@ private fun HeroBlock(
 
             Spacer(Modifier.height(16.dp))
 
-            // The price block — trial price huge, struck-through regular price
-            // small below. Order is intentional: free anchor first, comparison
-            // second. If there's no trial, the regular per-month price IS the
-            // anchor and the struck line goes away.
-            //
             // Sizes intentionally smaller than headline-display defaults so the
             // trial line ("0 / first 14 days", with its currency) stays on a single line on narrow
             // phones (~360dp). 36sp is the upper bound that still fits.
@@ -415,7 +414,6 @@ private fun HeroBlock(
                     ),
                     style = MaterialTheme.typography.bodyMedium,
                     color = Color.White.copy(alpha = 0.7f),
-                    textDecoration = TextDecoration.LineThrough,
                     textAlign = TextAlign.Center,
                     modifier = Modifier.fillMaxWidth(),
                 )
@@ -760,7 +758,11 @@ private fun NotAvailableInMarket(onBack: () -> Unit) {
         ) {
             Column(modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 16.dp)) {
                 IconButton(onClick = onBack, modifier = Modifier.size(40.dp)) {
-                    Icon(Icons.AutoMirrored.Outlined.ArrowBack, contentDescription = null, tint = Color.White)
+                    Icon(
+                        Icons.AutoMirrored.Outlined.ArrowBack,
+                        contentDescription = stringResource(R.string.common_back),
+                        tint = Color.White,
+                    )
                 }
                 Spacer(Modifier.height(8.dp))
                 BrandSplash()

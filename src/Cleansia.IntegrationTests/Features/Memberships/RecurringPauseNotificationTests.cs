@@ -79,6 +79,10 @@ public class RecurringPauseNotificationTests(PostgresContainerFixture fixture) :
             }
             if (run.AfterStage is not null) await run.AfterStage();
         }
+
+        public Task NotifyEachAsync(
+            IReadOnlyCollection<(string UserId, string EventKey, Dictionary<string, string> Args, string? Subject)> notifications,
+            CancellationToken cancellationToken) => inner.NotifyEachAsync(notifications, cancellationToken);
     }
 
     private static async Task Seed(CleansiaDbContext db, bool muted = false, bool secondAccountTemplate = false,

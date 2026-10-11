@@ -1,3 +1,4 @@
+using System.Data.Common;
 using Cleansia.Core.AppServices.Features.Orders;
 using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Orders;
@@ -8,6 +9,7 @@ using Cleansia.Infra.Database.Repositories;
 using Cleansia.TestUtilities;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Diagnostics;
 
 namespace Cleansia.Tests.Features.Orders;
 
@@ -128,6 +130,60 @@ public sealed class HasOverlappingOrderStatusTests : IDisposable
         Assert.False(await ProbeSlotAsync());
     }
 
+    // ── The digest's batch form gives the same answers. ──
+
+    [Theory]
+    [InlineData(OrderStatus.New, true)]
+    [InlineData(OrderStatus.Pending, true)]
+    [InlineData(OrderStatus.Confirmed, true)]
+    [InlineData(OrderStatus.OnTheWay, true)]
+    [InlineData(OrderStatus.InProgress, true)]
+    [InlineData(OrderStatus.Completed, false)]
+    [InlineData(OrderStatus.Cancelled, false)]
+    public async Task The_Batch_Form_Gives_Every_Status_The_Single_Window_Answer(OrderStatus status, bool clashes)
+    {
+        await SeedAssignedOrderInSlotAsync(
+            "ovl-batch-status", status == OrderStatus.New ? [OrderStatus.New] : [OrderStatus.New, status]);
+
+        var fromBatch = await ProbeBatchAsync(("probe", SlotStart.AddMinutes(30), 60));
+
+        await using var ctx = NewContext();
+        var fromSingle = await new OrderRepository(ctx).HasOverlappingOrderIgnoringTenantAsync(
+            CleanerId, SlotStart.AddMinutes(30), 60, CancellationToken.None);
+
+        Assert.Equal(clashes, fromSingle);
+        Assert.Equal(fromSingle, fromBatch.Contains("probe"));
+    }
+
+    [Fact]
+    public async Task The_Batch_Form_Never_Reports_Another_Cleaners_Order()
+    {
+        await SeedAssignedOrderInSlotAsync(
+            "ovl-batch-other-cleaner",
+            [OrderStatus.New, OrderStatus.Confirmed],
+            assignedTo: "emp-someone-else");
+
+        Assert.Empty(await ProbeBatchAsync(("probe", SlotStart.AddMinutes(30), 60)));
+    }
+
+    [Fact]
+    public async Task The_Batch_Form_Answers_An_Empty_Candidate_List_Without_A_Query()
+    {
+        await SeedAssignedOrderInSlotAsync("ovl-batch-empty", [OrderStatus.New, OrderStatus.Confirmed]);
+
+        var counter = new CommandCounter();
+        await using var ctx = new CleansiaDbContext(
+            new DbContextOptionsBuilder<CleansiaDbContext>().UseSqlite(_connection).AddInterceptors(counter).Options,
+            new TestUserSessionProvider("system", "system@cleansia.test"),
+            new FixedTenantProvider(TestTenants.Default));
+
+        var clashing = await new OrderRepository(ctx).GetOverlappedCandidateIdsIgnoringTenantAsync(
+            CleanerId, [], CancellationToken.None);
+
+        Assert.Empty(clashing);
+        Assert.Equal(0, counter.Count);
+    }
+
     private CleansiaDbContext NewContext() =>
         new(
             new DbContextOptionsBuilder<CleansiaDbContext>().UseSqlite(_connection).Options,
@@ -170,6 +226,14 @@ public sealed class HasOverlappingOrderStatusTests : IDisposable
         await using var ctx = NewContext();
         return await new OrderRepository(ctx).HasOverlappingOrderAsync(
             CleanerId, SlotStart.AddMinutes(30), 60, CancellationToken.None);
+    }
+
+    private async Task<IReadOnlySet<string>> ProbeBatchAsync(
+        params (string Id, DateTime CleaningDateTime, int EstimatedTimeMinutes)[] candidates)
+    {
+        await using var ctx = NewContext();
+        return await new OrderRepository(ctx).GetOverlappedCandidateIdsIgnoringTenantAsync(
+            CleanerId, candidates, CancellationToken.None);
     }
 
     private static Order NewOrder(string orderId, DateTime cleaningDateTime, int estimatedMinutes)
@@ -219,6 +283,34 @@ public sealed class HasOverlappingOrderStatusTests : IDisposable
         {
             AppendTrack(order, status, stamp);
             stamp = stamp.AddMinutes(20);
+        }
+    }
+
+    private sealed class CommandCounter : DbCommandInterceptor
+    {
+        public int Count { get; private set; }
+
+        public override InterceptionResult<DbDataReader> ReaderExecuting(
+            DbCommand command, CommandEventData eventData, InterceptionResult<DbDataReader> result)
+        {
+            Count++;
+            return result;
+        }
+
+        public override ValueTask<InterceptionResult<DbDataReader>> ReaderExecutingAsync(
+            DbCommand command, CommandEventData eventData, InterceptionResult<DbDataReader> result,
+            CancellationToken cancellationToken = default)
+        {
+            Count++;
+            return ValueTask.FromResult(result);
+        }
+
+        public override ValueTask<InterceptionResult<object>> ScalarExecutingAsync(
+            DbCommand command, CommandEventData eventData, InterceptionResult<object> result,
+            CancellationToken cancellationToken = default)
+        {
+            Count++;
+            return ValueTask.FromResult(result);
         }
     }
 

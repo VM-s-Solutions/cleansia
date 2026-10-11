@@ -109,10 +109,10 @@ public interface IOrderRepository : IRepository<Order, string>
     Task<OrderStatus?> GetCurrentStatusAsync(string orderId, CancellationToken cancellationToken);
 
     /// <summary>
-    /// Same predicate as <see cref="HasOverlappingOrderAsync"/> with the tenant filter bypassed. For
-    /// background sweeps that run with no tenant context and already select tenant-ignoring — today the
-    /// new-jobs digest's not-busy filter, which would otherwise advertise clashing jobs to every
-    /// tenanted cleaner.
+    /// Same predicate as <see cref="HasOverlappingOrderAsync"/> with the tenant filter bypassed, for a
+    /// background sweep that runs with no tenant context and asks about ONE window. Nothing in production
+    /// calls it today: the new-jobs digest asks about all of a cleaner's candidates at once through
+    /// <see cref="GetOverlappedCandidateIdsIgnoringTenantAsync"/>.
     /// </summary>
     Task<bool> HasOverlappingOrderIgnoringTenantAsync(string employeeId, DateTime cleaningDateTime, int estimatedTimeMinutes, CancellationToken ct);
 
@@ -172,13 +172,33 @@ public interface IOrderRepository : IRepository<Order, string>
     ///
     /// <para>TENANT-SCOPED, deliberately, and there is no ignoring sibling: every caller is a request
     /// path with a claim (the recurring materializer runs under its own per-template tenant override).
-    /// A background sweep asking about ONE cleaner already has
-    /// <see cref="HasOverlappingOrderIgnoringTenantAsync"/>.</para>
+    /// A background sweep asking about ONE cleaner over many windows has
+    /// <see cref="GetOverlappedCandidateIdsIgnoringTenantAsync"/>.</para>
     /// </summary>
     Task<IReadOnlySet<string>> GetBusyEmployeeIdsInWindowAsync(
         IReadOnlyCollection<string> employeeIds,
         DateTime windowStartUtc,
         DateTime windowEndUtc,
+        CancellationToken cancellationToken);
+
+    /// <summary>
+    /// ADR-0039 D3.3 — which of <paramref name="candidates"/> clash with a live-commitment assignment
+    /// <paramref name="employeeId"/> already holds, each over its own
+    /// <c>[CleaningDateTime, +EstimatedTimeMinutes)</c>: the one-employee, many-windows shape of the window
+    /// filter <see cref="HasOverlappingOrderAsync"/> and <see cref="GetBusyEmployeeIdsInWindowAsync"/>
+    /// share. Returns the CLASHING ids, so absence is the fail-OPEN default.
+    ///
+    /// <para>ONE read however many candidates: the employee's live commitments over
+    /// <c>[min(start) − Order.MaxOrderSpanHours, max(end))</c>, the status set kept in SQL. Each candidate is
+    /// then judged in memory by <see cref="Order.OccupiesWindow"/> against its own floor, so it gets the
+    /// answer the single-window query gives on the same rows. An empty list reads nothing.</para>
+    ///
+    /// <para>TENANT-IGNORING: the caller is the new-jobs digest, a timer with no claim, and a commitment
+    /// booked through any company occupies the same cleaner.</para>
+    /// </summary>
+    Task<IReadOnlySet<string>> GetOverlappedCandidateIdsIgnoringTenantAsync(
+        string employeeId,
+        IReadOnlyCollection<(string Id, DateTime CleaningDateTime, int EstimatedTimeMinutes)> candidates,
         CancellationToken cancellationToken);
 
     /// <summary>

@@ -1,3 +1,4 @@
+using System.Data.Common;
 using System.Text.Json;
 using Cleansia.Core.AppServices.Features.Bookings;
 using Cleansia.Core.AppServices.Features.Orders;
@@ -14,6 +15,7 @@ using Cleansia.Infra.Database.Repositories;
 using Cleansia.TestUtilities;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Diagnostics;
 using Microsoft.Extensions.Logging.Abstractions;
 
 namespace Cleansia.Tests.Features.Orders;
@@ -47,9 +49,9 @@ public sealed class CleanupStalePendingOrdersSweepTests : IDisposable
 
     public void Dispose() => _connection.Dispose();
 
-    private CleansiaDbContext NewContext() =>
+    private CleansiaDbContext NewContext(params IInterceptor[] interceptors) =>
         new(
-            new DbContextOptionsBuilder<CleansiaDbContext>().UseSqlite(_connection).Options,
+            new DbContextOptionsBuilder<CleansiaDbContext>().UseSqlite(_connection).AddInterceptors(interceptors).Options,
             new TestUserSessionProvider("system", "system@cleansia.test"),
             _tenantProvider);
 
@@ -125,9 +127,19 @@ public sealed class CleanupStalePendingOrdersSweepTests : IDisposable
         await ctx.CommitAsync(CancellationToken.None);
     }
 
-    private async Task<CleanupStalePendingOrders.Response> RunSweepAsync()
+    private async Task SeedAccountAsync(string userId, string tenantId)
     {
         await using var ctx = NewContext();
+        var user = User.CreateWithPassword($"{userId}@test.local", "Password123!", "Test", "Customer");
+        user.Id = userId;
+        user.TenantId = tenantId;
+        ctx.Users.Add(user);
+        await ctx.CommitAsync(CancellationToken.None);
+    }
+
+    private async Task<CleanupStalePendingOrders.Response> RunSweepAsync(params IInterceptor[] interceptors)
+    {
+        await using var ctx = NewContext(interceptors);
         var handler = new CleanupStalePendingOrders.Handler(
             new OrderRepository(ctx),
             new CreditAccountRepository(ctx),
@@ -425,6 +437,112 @@ public sealed class CleanupStalePendingOrdersSweepTests : IDisposable
     }
 
     /// <summary>
+    /// A customer's account can belong to another operating company than the order's. The cancellation
+    /// is the operator's; the notice is the account's, whatever company the order names.
+    /// </summary>
+    [Fact]
+    public async Task A_Customer_Whose_Account_Is_In_Another_Company_Is_Told_Under_That_Company()
+    {
+        const string orderId = "01HZX9N6M7Q8R9S0T1V2W3Y420";
+        await EnsureSchemaAsync();
+        await SeedAccountAsync("user-20", "tenant-b");
+        var checkout = AbandonedOneOffCardCheckout(orderId, "user-20");
+        checkout.TenantId = "tenant-a";
+        await SeedAsync(checkout);
+
+        await RunSweepAsync();
+
+        await using var ctx = NewContext();
+        var cancelled = await ctx.Set<OrderStatusTrack>().IgnoreQueryFilters()
+            .SingleAsync(t => t.OrderId == orderId && t.Status == OrderStatus.Cancelled);
+        Assert.Equal("tenant-a", cancelled.TenantId);
+        Assert.Equal("tenant-b", Assert.Single(await ReadFeedAsync()).TenantId);
+        var push = Assert.Single(await ctx.OutboxMessages.IgnoreQueryFilters()
+            .Where(m => m.QueueName == QueueNames.NotificationsDispatch).ToListAsync());
+        Assert.Equal(MessageKeys.Push("user-20", NotificationEventCatalog.OrderCancelled, orderId), push.MessageKey);
+        Assert.Equal("tenant-b", push.TenantId);
+    }
+
+    /// <summary>
+    /// An order can name a customer whose account no longer exists. It is cancelled all the same and
+    /// nobody is told: the order's company is never taken for the missing account's.
+    /// </summary>
+    [Fact]
+    public async Task A_Customer_Without_A_Persisted_Account_Is_Cancelled_But_Not_Notified()
+    {
+        const string orderId = "01HZX9N6M7Q8R9S0T1V2W3Y421";
+        await EnsureSchemaAsync();
+        await using (var seed = NewContext())
+        {
+            seed.Orders.Add(AbandonedOneOffCardCheckout(orderId, "user-without-account"));
+            await seed.CommitAsync(CancellationToken.None);
+        }
+
+        var response = await RunSweepAsync();
+
+        Assert.Equal(1, response.CancelledCount);
+        Assert.Equal(OrderStatus.Cancelled, (await ReadOrderAsync(orderId)).CurrentStatus);
+        Assert.Empty(await ReadFeedAsync());
+        await using var ctx = NewContext();
+        Assert.Empty(await ctx.OutboxMessages.IgnoreQueryFilters().ToListAsync());
+    }
+
+    [Fact]
+    public async Task Two_Stale_Checkouts_Of_One_Customer_Each_Get_Their_Own_Notice()
+    {
+        const string first = "01HZX9N6M7Q8R9S0T1V2W3Y422";
+        const string second = "01HZX9N6M7Q8R9S0T1V2W3Y423";
+        await EnsureSchemaAsync();
+        await SeedAsync(
+            AbandonedOneOffCardCheckout(first, "user-22"),
+            AbandonedOneOffCardCheckout(second, "user-22"));
+
+        var response = await RunSweepAsync();
+
+        Assert.Equal(2, response.CancelledCount);
+        Assert.Equal(
+            new[] { first, second },
+            (await ReadFeedAsync())
+                .Select(row => JsonSerializer.Deserialize<Dictionary<string, string>>(row.ArgsJson)!["orderId"])
+                .Order());
+        Assert.Equal(
+            new[]
+            {
+                MessageKeys.Push("user-22", NotificationEventCatalog.OrderCancelled, first),
+                MessageKeys.Push("user-22", NotificationEventCatalog.OrderCancelled, second),
+            },
+            (await ReadOutboxKeysAsync()).Order());
+    }
+
+    /// <summary>
+    /// The notices of one company's checkouts ask for their recipients' companies in a single read,
+    /// however many orders the company has and however often one customer appears among them.
+    /// </summary>
+    [Fact]
+    public async Task Recipient_Companies_Are_Read_Once_Per_Company_Not_Once_Per_Order()
+    {
+        await EnsureSchemaAsync();
+        var orders = new[]
+        {
+            AbandonedOneOffCardCheckout("01HZX9N6M7Q8R9S0T1V2W3Y424", "user-24"),
+            AbandonedOneOffCardCheckout("01HZX9N6M7Q8R9S0T1V2W3Y425", "user-25"),
+            AbandonedOneOffCardCheckout("01HZX9N6M7Q8R9S0T1V2W3Y426", "user-24"),
+            AbandonedOneOffCardCheckout("01HZX9N6M7Q8R9S0T1V2W3Y427", "user-27"),
+            AbandonedOneOffCardCheckout("01HZX9N6M7Q8R9S0T1V2W3Y428", "user-28"),
+        };
+        orders[3].TenantId = "tenant-a";
+        orders[4].TenantId = "tenant-a";
+        await SeedAsync(orders);
+        var usersReads = new UsersReadCounter();
+
+        var response = await RunSweepAsync(usersReads);
+
+        Assert.Equal(5, response.CancelledCount);
+        Assert.Equal(5, (await ReadFeedAsync()).Count);
+        Assert.Equal(2, usersReads.Count);
+    }
+
+    /// <summary>
     /// Owner ruling 2026-09-28: a cash occurrence the customer confirmed stays Pending until the cleaner
     /// records the cash, and from then on it is the cleaner's job — retracting it an hour before the slot
     /// would cancel a booking the customer confirmed. An unconfirmed one is still retracted, and so is a
@@ -476,6 +594,23 @@ public sealed class CleanupStalePendingOrdersSweepTests : IDisposable
 
         Assert.Null((await ReadOrderAsync("01HZX9N6M7Q8R9S0T1V2W3Y416")).RecurringReminderSentAt);
         Assert.NotNull((await ReadOrderAsync("01HZX9N6M7Q8R9S0T1V2W3Y417")).RecurringReminderSentAt);
+    }
+
+    private sealed class UsersReadCounter : DbCommandInterceptor
+    {
+        public int Count { get; private set; }
+
+        public override ValueTask<InterceptionResult<DbDataReader>> ReaderExecutingAsync(
+            DbCommand command, CommandEventData eventData, InterceptionResult<DbDataReader> result,
+            CancellationToken cancellationToken = default)
+        {
+            if (command.CommandText.Contains("FROM \"Users\"", StringComparison.Ordinal))
+            {
+                Count++;
+            }
+
+            return ValueTask.FromResult(result);
+        }
     }
 
     private sealed class FixedTenantProvider(string? tenantId) : ITenantProvider

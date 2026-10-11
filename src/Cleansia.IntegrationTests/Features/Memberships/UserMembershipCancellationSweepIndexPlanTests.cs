@@ -360,6 +360,10 @@ public sealed class UserMembershipCancellationSweepIndexPlanTests(
             public Task NotifyAsync(
                 string userId, string eventKey, Dictionary<string, string> args, string? tenantId,
                 string? subject, CancellationToken cancellationToken) => Task.CompletedTask;
+
+            public Task NotifyEachAsync(
+                IReadOnlyCollection<(string UserId, string EventKey, Dictionary<string, string> Args, string? Subject)> notifications,
+                CancellationToken cancellationToken) => Task.CompletedTask;
         }
 
         private sealed class DefaultTenantProvider : ITenantProvider

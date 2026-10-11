@@ -53,7 +53,7 @@ Evidence, the ground truth and the decisions live off-tree under `/Users/michael
 
 - [x] **AC1** — Each finding above lands as decided, with a test that fails before and passes after, or with the stated documentation for F11. The F10 behaviour is kept and documented.
 - [x] **AC2** — The Dependabot alerts are resolved in the lockfiles. A clean CI-parity install validates locally: Node 22, npm 10, `npm ci`, unit tests for every project, lint, the three production builds, the three e2e smokes, and the docs build.
-- [ ] **AC3** — Before/after simulator and emulator captures, through ordinary navigation, show the visible fixes: Profile hero, Plus hero and bar, Partner hero, money, status bar, text links. Accessibility dumps show the semantics fixes.
+- [x] **AC3** — Before/after simulator and emulator captures, through ordinary navigation, show the visible fixes: Profile hero, Plus hero and bar, Partner hero, money, status bar, text links. Accessibility dumps show the semantics fixes.
 - [x] **AC4** — Full affected gates pass:
   - backend Release build plus unit and host suites;
   - Android core/partner/customer unit suites;
@@ -61,7 +61,7 @@ Evidence, the ground truth and the decisions live off-tree under `/Users/michael
   - touched-class iOS 16.4 floor tests;
   - repository checkers and the docs build.
 - [x] **AC5** — Independent review per platform, plus a security review of the security-touching items (F2, F12, F13a), passes.
-- [ ] **AC6** — Exact-head CI passes on every applicable workflow, and a normal SHA-guarded merge follows.
+- [x] **AC6** — Exact-head CI passes on every applicable workflow, and a normal SHA-guarded merge follows.
 
 ## Out of scope
 
@@ -113,6 +113,10 @@ Evidence, the ground truth and the decisions live off-tree under `/Users/michael
   - one KDoc sentence on Android's `plansLock` rule.
 
   Items the reviews found outside the decisions are listed under *Out of scope*.
+- 2026-10-11 — PR #319.
+  - **First head, `96919e3`.** It failed only Android CI. `DashboardWireTest` still asserted the sequential stats-then-preview request order that F13b deliberately made concurrent; the hosted runner received the preview first.
+  - **Fix, `e494ba4`.** The test now compares the refresh's two requests as a set, in a thread-safe list. Locally it passed 5/5 reruns, and partner ran 815 tests with 0 failures.
+  - **Merge.** Exact-head CI passed on all workflows. Merged normally with the SHA guard as `64dfed7`.
 
 ## Review
 
@@ -132,4 +136,27 @@ Evidence lives off-tree in `/Users/michael/.codex/scratchpads/cleansia-wave-c-20
   - **iOS.** CleansiaCore 765, Partner 1,091 and Customer 1,735 passed, with 1 skip that predates this change (VoiceOver needs the accessibility server). SwiftFormat 0.60.1 and SwiftLint 0.65.0 report 0 violations.
   - **iOS 16.4 floor.** The touched classes pass, except the existing floor debt that is byte-identical on `545ae30`. After the new pin, MembershipViewModelTests passed 49 of 49.
   - **Repository checkers.** All eleven pass, and the docs build passes.
+- **AC3.** Wave C's six captures of master are the "before". The "after" captures were taken at `279007b` on the same owned simulator and emulator, with products built from a fresh export under Wave C's safe profile, using ordinary navigation only. Receipt: `/Users/michael/.codex/scratchpads/cleansia-t0807-2026-10-11/raw/render/receipt.json` (`35189d7c…`); everything started was stopped, with proofs.
+  - **PASS:**
+    - F1: name and e-mail untruncated; 14pt after the avatar.
+    - F2: no bar or disclosure on a keyless build; the last perk clears the navigation bar by 63px.
+    - F4: `3 609 Kč` and `6 870 Kč` on both platforms, plus `2 034 Kč` on iOS.
+    - F5: no strike-through.
+    - F6: the strip under the status bar is page-coloured once scrolled. Dark text pixels went from 11.8 % to 0 % on Android and from 4.8 % to 0 % on iOS.
+    - F8: the active slot is `selected="true"`, the rest `false`.
+    - F9: the links went from 19.3 to 44pt.
+    - F10: iOS *Back* at 44×44; Android content-desc *Back*.
+  - **F3 passes for the iOS Next-job hero and today line.** Two things were not observed:
+    - The localized when-line ("In 35m") needs a job within a day; the fixture's is a month out, and tests pin it.
+    - The hero tap was not exercised.
+  - **Visible side effect, as the iOS review predicted:** the 44pt back button moves the Plus hero down about 27pt.
+  - **Accessibility note:** Android's Plus back control now dumps as a clickable view over a named icon. That is the same `IconButton { Icon(contentDescription = …) }` pattern the apps' other back buttons use.
 - **AC5.** Each platform had a reviewer and a security reviewer. All six returned approve-with-notes, none blocking. The security reviews covered F2, F12 and F13a.
+- **AC6.** On exact head `e494ba4` every job passed:
+  - Android, Backend, Frontend and iOS `build`;
+  - Frontend e2e-smoke;
+  - Docs;
+  - Secret scan;
+  - iOS Symbols.
+
+  The first head's Android failure and its fix are in the work record. The SHA-guarded merge was `64dfed7` on 2026-10-11 at 00:21:49 UTC. Its parents are `5f94129` and `e494ba4`, and its tree equals the head tree. No deploy ran. Evidence: `t0807-001/t0807-ci-merge-closure-001.json`.

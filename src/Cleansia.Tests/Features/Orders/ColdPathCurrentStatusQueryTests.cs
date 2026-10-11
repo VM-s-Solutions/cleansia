@@ -216,9 +216,11 @@ public sealed class ColdPathCurrentStatusQueryTests : IDisposable
             .Setup(r => r.GetQueryableIgnoringTenant())
             .Returns(() => realOrderRepository.GetQueryableIgnoringTenant());
         orderRepository
-            .Setup(r => r.HasOverlappingOrderIgnoringTenantAsync(
-                It.IsAny<string>(), It.IsAny<DateTime>(), It.IsAny<int>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(false);
+            .Setup(r => r.GetOverlappedCandidateIdsIgnoringTenantAsync(
+                It.IsAny<string>(),
+                It.IsAny<IReadOnlyCollection<(string Id, DateTime CleaningDateTime, int EstimatedTimeMinutes)>>(),
+                It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new HashSet<string>());
 
         var producer = new Mock<INotificationProducer>();
         (string UserId, Dictionary<string, string> Args)? notified = null;

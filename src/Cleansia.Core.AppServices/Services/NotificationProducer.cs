@@ -25,6 +25,30 @@ public class NotificationProducer(
     {
         // Notification ownership follows the recipient, while the business action keeps its operator.
         var recipientTenantId = await userRepository.GetNotificationRecipientTenantAsync(userId, cancellationToken);
+        await RecordAsync(userId, eventKey, args, recipientTenantId, subject, cancellationToken);
+    }
+
+    public async Task NotifyEachAsync(
+        IReadOnlyCollection<(string UserId, string EventKey, Dictionary<string, string> Args, string? Subject)> notifications,
+        CancellationToken cancellationToken)
+    {
+        var recipientTenantIds = await userRepository.GetNotificationRecipientTenantsAsync(
+            notifications.Select(notification => notification.UserId).Distinct(StringComparer.Ordinal).ToList(),
+            cancellationToken);
+        foreach (var (userId, eventKey, args, subject) in notifications)
+        {
+            await RecordAsync(userId, eventKey, args, recipientTenantIds.GetValueOrDefault(userId), subject, cancellationToken);
+        }
+    }
+
+    private async Task RecordAsync(
+        string userId,
+        string eventKey,
+        Dictionary<string, string> args,
+        string? recipientTenantId,
+        string? subject,
+        CancellationToken cancellationToken)
+    {
         if (string.IsNullOrEmpty(recipientTenantId))
         {
             logger.LogWarning("Notification {EventKey} skipped: recipient {UserId} has no persisted account company", eventKey, userId);

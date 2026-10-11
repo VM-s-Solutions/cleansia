@@ -100,6 +100,23 @@ public class CleanupStalePendingOrders
                     tenantProvider.SetTenantOverride(tenantGroup.Key);
                 }
 
+                // Before the loop, not inside it: each credit return below commits on its own, so a failing
+                // read of the recipients must happen before any credit moves, or the group would roll back
+                // with its credit already handed back.
+                await notificationProducer.NotifyEachAsync(
+                    [
+                        .. tenantGroup
+                            .Where(order => order.PaymentStatus == PaymentStatus.Pending && !string.IsNullOrEmpty(order.UserId))
+                            .Select(order => (order.UserId!, NotificationEventCatalog.OrderCancelled,
+                                new Dictionary<string, string>
+                                {
+                                    ["orderId"] = order.Id,
+                                    ["orderNumber"] = order.DisplayOrderNumber,
+                                },
+                                order.Id))
+                    ],
+                    cancellationToken);
+
                 foreach (var order in tenantGroup)
                 {
                     if (order.PaymentStatus != PaymentStatus.Pending)
@@ -127,21 +144,6 @@ public class CleanupStalePendingOrders
                     // every group with whichever tenant was processed last.
                     await creditAccountRepository.ReturnUnpaidOrderCreditAsync(
                         order, cardRefunded: 0m, SystemActor, cancellationToken);
-
-                    if (!string.IsNullOrEmpty(order.UserId))
-                    {
-                        await notificationProducer.NotifyAsync(
-                            order.UserId,
-                            NotificationEventCatalog.OrderCancelled,
-                            new Dictionary<string, string>
-                            {
-                                ["orderId"] = order.Id,
-                                ["orderNumber"] = order.DisplayOrderNumber,
-                            },
-                            order.TenantId,
-                            order.Id,
-                            cancellationToken);
-                    }
 
                     await GuestCancellationEmail.EnqueueAsync(order, EmailLocale.Resolve(order.LanguageCode),
                         successfulRefundAmount: null, guestAccessTokenIssuer, pending, cancellationToken);

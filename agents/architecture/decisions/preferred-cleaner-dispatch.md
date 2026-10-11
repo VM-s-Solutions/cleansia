@@ -261,23 +261,32 @@ a boolean. The shipped code shares the **predicate**, not the terminal operation
 ```
 LiveCommitmentsInWindow(IQueryable<Order>, startUtc, endUtc)   ← ONE definition (floor + interval + status)
    ├─ .Any()        one employee, tenant-scoped     → TakeOrder            ✅ shipped
-   ├─ .Any()        one employee, ignoring          → NewJobsDigestService ✅ shipped
+   ├─ .Any()        one employee, ignoring          → no production caller ⚠️ keep or delete: owner, pending
+   ├─ .Select()     one employee, M windows         → NewJobsDigestService ✅ shipped (ADR-0039 D3.3)
+   │                tenant-ignoring; ONE read, then each window judged in memory by Order.OccupiesWindow
    └─ .SelectMany() N employees, tenant-scoped      → picker + resolver    ⬅ the only piece left to build
 ```
 
 **No `IgnoringTenant` sibling of the set method will be built** — it would have zero callers on the day
-it shipped (the digest is boolean-shaped and already has one), and a tenant-escaping read one
-IntelliSense entry from a customer-facing handler is a cost with no buyer. **Two pin classes** hold the
-predicate through the extraction: `HasOverlappingOrderStatusTests` (11 status cases) and
-`HasOverlappingOrderTenancyAndScanFloorTests` (5 tenancy + 3 floor cases, including the accepted blind
-spot written down as a passing `Assert.False`).
+it shipped (the digest asks about one employee over many windows and has its own read for that, below),
+and a tenant-escaping read one IntelliSense entry from a customer-facing handler is a cost with no
+buyer. **Two pin classes** hold the predicate through the extraction: `HasOverlappingOrderStatusTests`
+(11 status cases) and `HasOverlappingOrderTenancyAndScanFloorTests` (5 tenancy + 3 floor cases,
+including the accepted blind spot written down as a passing `Assert.False`).
 
-**A second fan-out shape exists and is deliberately NOT built here.** The digest and the recurring
-materializer are **one employee, many windows** — the set method does nothing for either, and both
-loops survive. That is pre-existing, on timers, and belongs to the filed digest redesign; ADR-0039 D3.3
-specifies its shape (one query per cleaner over `[min(starts) − floor, max(ends))`, intersected in
-memory against a **pure interval function in Domain**, status staying in SQL) so the redesign cannot
-invent a fourth predicate.
+**A second fan-out shape exists, and for the digest it has shipped.** The digest and the recurring
+materializer are **one employee, many windows** — the set method does nothing for either. ADR-0039 D3.3
+specified the shape (one query per cleaner over `[min(starts) − floor, max(ends))`, intersected in
+memory against a **pure interval function in Domain**, status staying in SQL) so nothing could invent a
+fourth predicate, and the digest runs exactly that: `GetOverlappedCandidateIdsIgnoringTenantAsync`
+reads the cleaner's live commitments once through the unchanged `LiveCommitmentsInWindow`, then
+`Order.OccupiesWindow` judges each candidate against **its own** inclusive floor.
+`LiveCommitmentWindowsAgreementTests` pins its answer to the single-window form's on real PostgreSQL.
+**Only the recurring materializer's loop is left** (one resolver busy read per occurrence) —
+pre-existing, on a timer, and still the digest redesign's (Consumers, below), as are the redesign's two
+other items: grouping the board by `WorkCountryId` and batching the preferences read. The single-window
+ignoring wrapper, `HasOverlappingOrderIgnoringTenantAsync`, now has **no production caller** — only
+tests, the agreement pin's single-window oracle among them; keep or delete is an owner decision, pending.
 
 > ⚠️ **The composition trap with ADR-0037, because it fails OPEN.** Offerability is
 > `STATUS(o) ∧ NotRetractable(o)`. **Do not add `NotRetractable` to the occupancy predicate.** It is an
@@ -703,8 +712,9 @@ cleaner's score"* myth lives in **three** files (`Order.cs:217-224`, `PreferredC
 - **The constants are uncalibrated**, and **`const` means a release** — not the free knob the draft
   claimed. Honest cost: one backend release, **no** client change. Measurement ticket is a precondition.
 - **No `EXPLAIN`, no row counts.** The emitted SQL is known (a `ToQueryString()` harness); plan choice is
-  reasoning. The sweep's per-cleaner loop (C queries + Σ N_c queries per run, 48×/day) is priced by
-  reasoning only — redesign **filed, not preconditioned**.
+  reasoning. The sweep's per-cleaner loop was C queries + Σ N_c queries per run, 48×/day, priced by
+  reasoning only; T-0808 (Wave D) shipped the redesign, one commitment read per cleaner with candidates,
+  and measured it on the audit fixture.
 - **Surface 2/6 use `{Pending, Confirmed}` while the digest uses `{New, Pending, Confirmed}`** under a
   comment claiming they mirror. Whether the board *should* show `New` is a product question — filed.
 - **Admin visibility of a live hold** — not decided. (And no index exists to serve it: D5.5 rules out the
@@ -737,11 +747,16 @@ cleaner's score"* myth lives in **three** files (`Order.cs:217-224`, `PreferredC
   a different shape for a fact that never changes with the slot. ⚠️ **The `IsActive` half is no longer
   "filed, not fixed": it is a PRECONDITION of the flag** (D12.3), because after the flag ships the
   absence of a mark is an affirmative claim.
-- **The digest's nested N+1 survives** (`NewJobsDigestService.cs:86` × `:135` → `:137`) — every
-  approved/active cleaner platform-wide × their unpaged candidate orders, one round trip each. The set
-  method does nothing for it: that loop is **one employee, many windows** and the set method is **many
-  employees, one window**. Pre-existing, on a timer, owned by the filed digest redesign — whose shape
-  ADR-0039 D3.3 now specifies so it cannot invent a fourth overlap predicate.
+- ✅ ~~**The digest's nested N+1 survives**~~ **Closed: one commitment read per cleaner, not one per
+  candidate.** ADR-0039 D3.3's shape shipped as specified:
+  `GetOverlappedCandidateIdsIgnoringTenantAsync` (`NewJobsDigestService.cs:192-193`) on the unchanged
+  `LiveCommitmentsInWindow`, each candidate judged in memory by `Order.OccupiesWindow`, pinned by
+  `LiveCommitmentWindowsAgreementTests`. **Still open, on the digest redesign row:** the board query
+  runs per cleaner, not per `WorkCountryId` (`NewJobsDigestService.cs:123-132`), and the preferences
+  read is one round trip per cleaner (`:206-208`). The one-employee, many-windows loop left is the
+  recurring materializer's (`MaterializeRecurringBookingTemplate.cs:303` → `:335`, one resolver busy
+  read per occurrence). And `HasOverlappingOrderIgnoringTenantAsync` has **no production caller** now:
+  keep or delete is an **owner decision, pending**.
 - **Two catalog rules the panel found missing** (filed, not written here): (1) **S5 does not cover
   read oracles** — it is scoped to *"auth + side-effecting endpoints"*, which is exactly why an
   unthrottled per-subject read shipped; the rule wanted is *a read whose answer is per-subject and whose
@@ -762,7 +777,7 @@ cleaner's score"* myth lives in **three** files (`Order.cs:217-224`, `PreferredC
 | ***precondition of T-0515 starting*** | the measurement ticket (time-to-first-assignment by lead bucket; approved+active cleaners per `WorkCountryId`; share of orders never claimed) |
 | *new, PM to file* | recurring carry-through (D8) — ⚠️ second `ef-migration`, ⚠️ `nswag-regen` |
 | *new, PM to file* | the digest's overlap-filter variant of the watermark defect (pre-existing, same root cause) |
-| *new, PM to file* | the digest sweep redesign (group by `WorkCountryId`; hoist the overlap loop; batch the preferences read) |
+| *new, PM to file* | the digest sweep redesign (group by `WorkCountryId`; batch the preferences read). ~~Hoist the overlap loop~~ — **shipped** as ADR-0039 D3.3's shape (§"Is this cleaner free at this hour?"); the one-employee, many-windows loop still open is the recurring materializer's |
 | *new, PM to file* | the web wizard has no preferred-cleaner picker at all — **and it inherits ADR-0039's copy + tri-state constraints when it is built** |
 | *new, PM to file* | should the available-orders board include `New` orders? — **answered by ADR-0037 D1** (`New` **+ Cash** yes, `New` + Card no) |
 | ~~**ADR-0039 (A0)**~~ | ✅ **DONE — shipped before the panel ruled.** `HasOverlappingOrderIgnoringTenantAsync` + the digest switch + non-null-`TenantId` pins. **Do not file.** |

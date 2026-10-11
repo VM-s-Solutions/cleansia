@@ -17,6 +17,21 @@ public class UserRepository(CleansiaDbContext context)
             .Select(u => u.TenantId).FirstOrDefaultAsync(cancellationToken);
     }
 
+    public async Task<IReadOnlyDictionary<string, string>> GetNotificationRecipientTenantsAsync(
+        IReadOnlyCollection<string> userIds, CancellationToken cancellationToken)
+    {
+        if (userIds.Count == 0)
+        {
+            return new Dictionary<string, string>(StringComparer.Ordinal);
+        }
+
+        var recipients = await GetDbSet().IgnoreQueryFilters()
+            .Where(u => userIds.Contains(u.Id) && u.TenantId != null)
+            .Select(u => new { u.Id, u.TenantId })
+            .ToListAsync(cancellationToken);
+        return recipients.ToDictionary(u => u.Id, u => u.TenantId!, StringComparer.Ordinal);
+    }
+
     public async Task<IReadOnlyList<AdministratorRecipient>> GetActiveAdministratorsAsync(string tenantId, CancellationToken cancellationToken)
     {
         return await GetDbSet()

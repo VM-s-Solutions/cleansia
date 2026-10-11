@@ -1,3 +1,4 @@
+using System.Data.Common;
 using System.Text.Json;
 using Cleansia.Core.AppServices.Services;
 using Cleansia.Core.Domain.Internationalization;
@@ -9,6 +10,8 @@ using Cleansia.Infra.Database.Repositories;
 using Cleansia.TestUtilities;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Diagnostics;
+using Microsoft.Extensions.Logging;
 
 namespace Cleansia.Tests.Features.Notifications;
 
@@ -25,6 +28,9 @@ public sealed class NotificationProducerFeedRowTests : IDisposable
 {
     private const string UserId = "user-feed-1";
     private const string TenantId = "tenant-1";
+    private const string SecondUserId = "user-feed-2";
+    private const string SecondTenantId = "tenant-2";
+    private const string CompanylessUserId = "user-feed-3";
 
     private readonly SqliteConnection _connection;
 
@@ -42,9 +48,9 @@ public sealed class NotificationProducerFeedRowTests : IDisposable
 
     public void Dispose() => _connection.Dispose();
 
-    private CleansiaDbContext NewContext() =>
+    private CleansiaDbContext NewContext(params IInterceptor[] interceptors) =>
         new(
-            new DbContextOptionsBuilder<CleansiaDbContext>().UseSqlite(_connection).Options,
+            new DbContextOptionsBuilder<CleansiaDbContext>().UseSqlite(_connection).AddInterceptors(interceptors).Options,
             new TestUserSessionProvider("system", "system@cleansia.test"),
             new FixedTenantProvider(TestTenants.Default));
 
@@ -59,8 +65,18 @@ public sealed class NotificationProducerFeedRowTests : IDisposable
         await ctx.CommitAsync(CancellationToken.None);
     }
 
-    private static NotificationProducer NewProducer(CleansiaDbContext ctx) =>
-        new(new UserNotificationRepository(ctx), new OutboxPendingDispatch(ctx), new UserRepository(ctx), Microsoft.Extensions.Logging.Abstractions.NullLogger<NotificationProducer>.Instance);
+    private async Task SeedUserAsync(string userId, string tenantId)
+    {
+        await using var ctx = NewContext();
+        var user = Cleansia.Core.Domain.Users.User.CreateWithPassword($"{userId}@test.local", "Password123!", "Feed", "Recipient");
+        user.Id = userId;
+        user.TenantId = tenantId;
+        ctx.Users.Add(user);
+        await ctx.CommitAsync(CancellationToken.None);
+    }
+
+    private static NotificationProducer NewProducer(CleansiaDbContext ctx, ILogger<NotificationProducer>? logger = null) =>
+        new(new UserNotificationRepository(ctx), new OutboxPendingDispatch(ctx), new UserRepository(ctx), logger ?? Microsoft.Extensions.Logging.Abstractions.NullLogger<NotificationProducer>.Instance);
 
     private static Dictionary<string, string> OrderArgs(string orderId) => new()
     {
@@ -260,6 +276,132 @@ public sealed class NotificationProducerFeedRowTests : IDisposable
 
         Assert.Empty(await ReadRowsAsync());
         Assert.Single(await ReadOutboxAsync());
+    }
+
+    /// <summary>
+    /// A sweep tells many customers at once. The batch reads every recipient's company in one go, then
+    /// records each notice exactly as its own <c>NotifyAsync</c> would: under the account's company,
+    /// with the same feed rows, the same push keys and bodies collapsed the same way, and the same
+    /// warning for a recipient with no account or no company.
+    /// </summary>
+    [Fact]
+    public async Task A_Batch_Records_Exactly_What_Single_Calls_Would_After_One_Recipient_Read()
+    {
+        await EnsureSchemaAsync();
+        await SeedUserAsync(SecondUserId, SecondTenantId);
+        await SeedUserAsync(CompanylessUserId, TenantId);
+        await using (var ctx = NewContext())
+        {
+            await ctx.Database.ExecuteSqlAsync($"UPDATE \"Users\" SET \"TenantId\" = '' WHERE \"Id\" = {CompanylessUserId}");
+        }
+
+        (string UserId, string EventKey, Dictionary<string, string> Args, string? Subject)[] notices =
+        [
+            (UserId, NotificationEventCatalog.OrderCancelled, OrderArgs("order-1"), "order-1"),
+            (SecondUserId, NotificationEventCatalog.OrderCancelled, OrderArgs("order-2"), "order-2"),
+            (UserId, NotificationEventCatalog.OrderCompleted, OrderArgs("order-3"), "order-3"),
+            (UserId, NotificationEventCatalog.OrderCancelled, OrderArgs("order-1"), "order-1"),
+            ("missing-user", NotificationEventCatalog.OrderCancelled, OrderArgs("order-4"), "order-4"),
+            (CompanylessUserId, NotificationEventCatalog.OrderCancelled, OrderArgs("order-5"), "order-5"),
+        ];
+
+        var singleLog = new List<(LogLevel Level, string Message)>();
+        var singleReads = new UsersReadCounter();
+        await using (var ctx = NewContext(singleReads))
+        {
+            var producer = NewProducer(ctx, new CapturingLogger<NotificationProducer>(singleLog));
+            foreach (var (userId, eventKey, args, subject) in notices)
+            {
+                await producer.NotifyAsync(userId, eventKey, args, TenantId, subject, CancellationToken.None);
+            }
+
+            await ctx.CommitAsync(CancellationToken.None);
+        }
+
+        var singleFeed = await ReadFeedShapeAsync();
+        var singlePushes = await ReadPushShapeAsync();
+        await using (var ctx = NewContext())
+        {
+            await ctx.Set<UserNotification>().IgnoreQueryFilters().ExecuteDeleteAsync();
+            await ctx.Set<Cleansia.Core.Domain.Outbox.OutboxMessage>().IgnoreQueryFilters().ExecuteDeleteAsync();
+        }
+
+        var batchLog = new List<(LogLevel Level, string Message)>();
+        var batchReads = new UsersReadCounter();
+        await using (var ctx = NewContext(batchReads))
+        {
+            await NewProducer(ctx, new CapturingLogger<NotificationProducer>(batchLog))
+                .NotifyEachAsync(notices, CancellationToken.None);
+            await ctx.CommitAsync(CancellationToken.None);
+        }
+
+        Assert.Equal(6, singleReads.Count);
+        Assert.Equal(1, batchReads.Count);
+        Assert.Equal(singleFeed, await ReadFeedShapeAsync());
+        Assert.Equal(singlePushes, await ReadPushShapeAsync());
+        Assert.Equal(singleLog, batchLog);
+
+        Assert.Equal(
+            new[] { TenantId, TenantId, TenantId, SecondTenantId },
+            singleFeed.Select(row => row.TenantId));
+        Assert.Equal(3, singlePushes.Count);
+        Assert.Equal(2, singleLog.Count(entry => entry.Level == LogLevel.Warning));
+    }
+
+    [Fact]
+    public async Task An_Empty_Batch_Reads_No_Recipient_And_Records_Nothing()
+    {
+        await EnsureSchemaAsync();
+        var reads = new UsersReadCounter();
+
+        await using (var ctx = NewContext(reads))
+        {
+            await NewProducer(ctx).NotifyEachAsync([], CancellationToken.None);
+            await ctx.CommitAsync(CancellationToken.None);
+        }
+
+        Assert.Equal(0, reads.Count);
+        Assert.Empty(await ReadRowsAsync());
+        Assert.Empty(await ReadOutboxAsync());
+    }
+
+    private async Task<List<(string UserId, string EventKey, string ArgsJson, string? TenantId)>> ReadFeedShapeAsync() =>
+        (await ReadRowsAsync())
+            .Select(row => (row.UserId, row.EventKey, row.ArgsJson, row.TenantId))
+            .OrderBy(row => row.UserId, StringComparer.Ordinal)
+            .ThenBy(row => row.EventKey, StringComparer.Ordinal)
+            .ThenBy(row => row.ArgsJson, StringComparer.Ordinal)
+            .ToList();
+
+    private async Task<List<(string QueueName, string MessageKey, string? TenantId, string Body)>> ReadPushShapeAsync() =>
+        (await ReadOutboxAsync())
+            .Select(row => (row.QueueName, row.MessageKey, row.TenantId, row.Body))
+            .OrderBy(row => row.MessageKey, StringComparer.Ordinal)
+            .ToList();
+
+    private sealed class UsersReadCounter : DbCommandInterceptor
+    {
+        public int Count { get; private set; }
+
+        public override ValueTask<InterceptionResult<DbDataReader>> ReaderExecutingAsync(
+            DbCommand command, CommandEventData eventData, InterceptionResult<DbDataReader> result,
+            CancellationToken cancellationToken = default)
+        {
+            if (command.CommandText.Contains("FROM \"Users\"", StringComparison.Ordinal))
+            {
+                Count++;
+            }
+
+            return ValueTask.FromResult(result);
+        }
+    }
+
+    private sealed class CapturingLogger<T>(List<(LogLevel Level, string Message)> entries) : ILogger<T>
+    {
+        public IDisposable? BeginScope<TState>(TState state) where TState : notnull => null;
+        public bool IsEnabled(LogLevel logLevel) => true;
+        public void Log<TState>(LogLevel logLevel, EventId eventId, TState state, Exception? exception, Func<TState, Exception?, string> formatter)
+            => entries.Add((logLevel, formatter(state, exception)));
     }
 
     private sealed class FixedTenantProvider(string? tenantId) : ITenantProvider

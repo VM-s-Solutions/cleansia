@@ -56,6 +56,8 @@ public class UserRepositoryTokenLookupTenantTests
                 "GetByIdIgnoringTenantAsync",
                 // An order's operator can differ from its recipient's account; delivery resolves only that account's company.
                 "GetNotificationRecipientTenantAsync",
+                // The same resolution for a batch of notices: one read for every recipient a sweep tells at once.
+                "GetNotificationRecipientTenantsAsync",
                 // An admin event names its company as an argument (the order's, the webhook's) while the
                 // caller's override may name another; the read pins TenantId to that argument.
                 "GetActiveAdministratorsAsync",
@@ -100,6 +102,16 @@ public class UserRepositoryTokenLookupTenantTests
         Assert.Matches(@"\.Where\(u\s*=>\s*u\.Id\s*==\s*userId\)", body);
         Assert.Matches(@"\.Select\(u\s*=>\s*u\.TenantId\)", body);
         Assert.Contains(".FirstOrDefaultAsync(cancellationToken)", body);
+        Assert.DoesNotContain(".Include(", body);
+        Assert.Single(Regex.Matches(body, IgnoreCall));
+    }
+
+    [Fact]
+    public void Notification_Recipients_Bypass_Is_Pinned_To_The_Named_Users_And_Projects_Only_Id_And_Company()
+    {
+        var body = ExtractMethodBody(ReadRepositorySource(), "GetNotificationRecipientTenantsAsync");
+        Assert.Matches(@"\.Where\(u\s*=>\s*userIds\.Contains\(u\.Id\)", body);
+        Assert.Matches(@"\.Select\(u\s*=>\s*new\s*\{\s*u\.Id\s*,\s*u\.TenantId\s*\}\)", body);
         Assert.DoesNotContain(".Include(", body);
         Assert.Single(Regex.Matches(body, IgnoreCall));
     }

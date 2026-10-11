@@ -584,11 +584,20 @@ A refund is the one side effect with both money and fiscal consequences, so it h
 ## User notifications — ONE seam, never a hand-rolled push (T-0393 FD-AC12)
 
 Every user-facing notification (push + in-app feed row) is produced through
-**`INotificationProducer.NotifyAsync(userId, eventKey, args, tenantId, subject, ct)`**
-(`Core.AppServices/Services/NotificationProducer.cs`). One call records BOTH halves into the
-caller's scoped unit of work — the `UserNotification` feed row (for feed-scoped events, per the
+**`INotificationProducer.NotifyAsync(userId, eventKey, args, tenantId, subject, ct)`**, or its batch
+member below (`Core.AppServices/Services/NotificationProducer.cs`). One call records BOTH halves into
+the caller's scoped unit of work — the `UserNotification` feed row (for feed-scoped events, per the
 `NotificationFeedEventKeys` audience keysets beside `NotificationEventCatalog`) and the outbox push
-row — so both commit atomically with the domain change and neither exists on rollback.
+row — so both commit atomically with the domain change and neither exists on rollback. The batch
+member, **`NotifyEachAsync(notifications, ct)`**, makes ONE read of every distinct recipient's
+persisted company, then records each item exactly as `NotifyAsync` would, in input order. It takes
+**no tenant parameter** — the recipient's persisted company decides — and every `UserId` in it must be
+one the server read, **never one a client supplied**: whoever it names receives the push and the feed
+row. ⚠️ **The subject guard does not see it:** `PushSubjectNamesTheEventTests` recognises only a subject
+passed positionally to `NotifyAsync(`, so a subject inside a `NotifyEachAsync` item is not checked. Its
+one production caller, `CleanupStalePendingOrders`, is already on that guard's
+`DeliberatelyKeyedOnTheParent` allowlist; a second caller must either join the allowlist with the
+argument the list demands, or teach the guard the list shape first.
 **Constructing `new SendPushNotificationMessage(...)` anywhere else is a violation**, mechanically
 pinned by `SendPushNotificationSeamTripwireTests` (allowed sites: the seam, the sitewide-promo
 fan-out, the record's own file). Rules the seam encodes: category mutes gate the PUSH (checked by

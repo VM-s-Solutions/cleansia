@@ -26,4 +26,14 @@ public interface INotificationProducer
         string? tenantId,
         string? subject,
         CancellationToken cancellationToken);
+
+    /// <summary>
+    /// Records each notification exactly as <see cref="NotifyAsync"/> would, in order, after one read of
+    /// all the recipients' persisted companies. It takes no tenant at all: only the account decides.
+    /// Every <c>UserId</c> must be one the server read itself, never one a client supplied: whoever it
+    /// names receives the push and the feed row.
+    /// </summary>
+    Task NotifyEachAsync(
+        IReadOnlyCollection<(string UserId, string EventKey, Dictionary<string, string> Args, string? Subject)> notifications,
+        CancellationToken cancellationToken);
 }

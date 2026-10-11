@@ -77,6 +77,13 @@ public interface IUserRepository : IRepository<User, string>
     Task<string?> GetNotificationRecipientTenantAsync(string userId, CancellationToken cancellationToken);
 
     /// <summary>
+    /// <see cref="GetNotificationRecipientTenantAsync"/> for many server-derived user ids in one read. A
+    /// user with no row, or with no company, has no entry.
+    /// </summary>
+    Task<IReadOnlyDictionary<string, string>> GetNotificationRecipientTenantsAsync(
+        IReadOnlyCollection<string> userIds, CancellationToken cancellationToken);
+
+    /// <summary>
     /// The administrators of <paramref name="tenantId"/> an admin event may be delivered to: active,
     /// e-mail confirmed and not anonymised, with their role for the notifier to match against the
     /// event's audience. Reads by the company ARGUMENT, never the ambient tenant — the event's company

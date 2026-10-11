@@ -321,7 +321,12 @@
 | T-0805 | Reduce initial web bytes and repeated validation reads, repair Swift warnings and align operating docs (approved Wave B) | L | `done` | T-0803 | [#313](https://github.com/VM-s-Solutions/cleansia/pull/313), merged 2026-10-09 (`18a2e5ac`); corrected-head seven workflows/eight jobs/36 critical steps succeed; hosted iOS 3,545 passes/zero failures/one skip; workflow timing overruns and all historical failures/limits retained in Wave B closure |
 | T-0806 | Reduce request logging work, evaluate HTTP JSON compression and overlap native reads (approved Wave C) | L | `done` | T-0805 | [#318](https://github.com/VM-s-Solutions/cleansia/pull/318), merged 2026-10-10 (`5f94129`); exact-head seven workflows/eight jobs succeed; hosted iOS 3,556 passes/one skip, backend 9,894; six render checks recorded; B009 deferred; mixed timings and iOS CI over 15 min retained |
 | T-0807 | Fix the reported Wave C findings and the open Dependabot alerts (explicit owner instruction 2026-10-10) | L | `done` | T-0806 | [#319](https://github.com/VM-s-Solutions/cleansia/pull/319), merged 2026-10-11 (`64dfed7`); exact-head seven workflows/eight jobs succeed (first head failed one order-bound Android wire test, fixed); F1–F13 and Dependabot shipped, renders recorded; F10/F11 kept as documented designs with options for Mike; review-found items listed on the ticket |
-| T-0808 | Wave D — one commitment read per cleaner in the new-jobs digest, one recipient read per company in the stale-checkout sweep (audit B005/B006) | M | `in_progress` | T-0807 | B005 `7bfe872`, B006 cause 1 `026bf52`; measured n=5: digest SQL 724→74, cleanup 1,010→13, identical outcomes; cause 2 (bounded pages) not built, options for Mike; exact-head CI pending |
+| T-0808 | Wave D — one commitment read per cleaner in the new-jobs digest, one recipient read per company in the stale-checkout sweep (audit B005/B006) | M | `done` | T-0807 | [#320](https://github.com/VM-s-Solutions/cleansia/pull/320), merged 2026-10-11 (`620f3c7`); exact-head five workflows/six jobs succeed; measured n=5: digest SQL 724→74, cleanup 1,010→13, identical outcomes; cause 2 (bounded pages) not built, options for Mike; review-found items listed on the ticket |
+| T-0809 | Wave E C01–C02 — measure the local build/test loop, then adopt only local wins that clear the bar | M | `in_progress` | T-0808 | measured n=3 (web + backend); tests 829 s cold / 242 s warm at default workers, 304 s / 96 s with `--maxWorkers=1` → README recommendation; CI side on T-0813; PR #321 merge pending |
+| T-0810 | Wave E C03 — Jest's worker-exit warning: diagnose without hiding it, and make CI show test output again | S | `in_progress` | T-0808 | no handle leak; warning appears only cold under oversubscription (7/4/7), never with bounded workers; CI test output restored; PR #321 merge pending |
+| T-0811 | Wave E C04 — Nx 24 readiness: replace the deprecated Jest and ESLint executors through the supported generators | M | `todo` | T-0808 | inventory recorded (74 jest / 73 eslint targets); generator output not drop-in (4 corrections); nothing forces it before Nx 24 |
+| T-0812 | Wave E C05 — write down what validates iOS where, and what CI cannot see | S | `in_progress` | T-0808 | docs-only tiers + runner/image facts written; PR #321 merge pending |
+| T-0813 | Wave E C06 — required-check policy and CI runtime: a decision for the owner | S | `blocked` | T-0808 | blocked on Mike: options A–H recorded with gate semantics and runtime; nothing changed |
 
 > **T-0785–T-0799 filed 2026-09-20** — the UI-polish and dead-code batch, on the owner's ruling of
 > that day (*"I want to polish alignments in admin app a bit on all of the overview/detail pages.
@@ -366,4 +371,4 @@
 > reported not absorbed. Owed: the DEV drop at the next DEV deploy (MS-2 / A1, `20260920204705`);
 > the merge order is #255 then #260. Open rows: none.
 
-*Next id: **T-0809**.*
+*Next id: **T-0814**.*

@@ -664,6 +664,28 @@ looks the same as a passing one at a glance. iOS is path-scoped because macOS ru
 higher rate — but a change to the shared mobile OpenAPI specs (which live in the Android tree)
 re-triggers it, since those specs feed the iOS codegen too.
 
+### What validates iOS, and where {#ios-validation-tiers}
+
+Only `ios-ci.yml` compiles Swift. Every other check that reads the iOS tree runs on Ubuntu and
+reads it as text, or reads its string catalogs from a JVM or .NET test. None of them compiles Swift,
+and none says anything about how the app behaves in a simulator. This was characterized on
+2026-10-11.
+
+| Where | Check | What it decides | What it cannot decide |
+|---|---|---|---|
+| Ubuntu | `ios-symbols-ci.yml` | default-less switches over locally declared enums stay exhaustive; `L10n` members, non-interpolated catalog keys and design-system members exist | types, protocol conformance, availability, `ViewBuilder`, `#if`, the generated API packages, interpolated keys, anything at runtime |
+| Ubuntu | `booking-policy-parity.yml` | the iOS cancellation copy, both string catalogs and the property sizes quote `BookingPolicy.cs` | whether a screen shows them |
+| Ubuntu | `docs-ci.yml` | Swift `→ /path#anchor` pointers and Swift, xcstrings and pbxproj citations resolve | — |
+| Ubuntu | `secret-scan.yml` | no new secret in the history, the iOS tree included | — |
+| Ubuntu | `android-ci.yml` (`MarketCopyStringsTest`) | reads the iOS customer catalog's market copy against Android's | — |
+| Ubuntu | `backend-ci.yml` (`ApnsDisplayMapIosCatalogSyncTests`, `MobileSpecEnumGuardTests`) | both iOS app catalogs carry every push event's loc-keys; the shared mobile specs' enums agree | it does not run on a diff limited to the mobile trees, which `backend-ci.yml` excludes |
+| macOS hosted | `ios-ci.yml` | the pinned SwiftFormat and SwiftLint gates, then a Debug simulator build and the XCTest suites of CleansiaCore, CleansiaPartner and CleansiaCustomer, on one newest-runtime iPhone simulator | the iOS 16 floor; UI and navigation (the only test targets are unit tests); the VoiceOver tree (that test skips); the card path (no `Local.xcconfig`); Release builds, signing, archive and TestFlight; physical devices; the Notification Service Extension banner |
+| a local Mac only | — | the iOS 16.4 floor smoke the quality gates require of every iOS ticket; simulator UI walks; the VoiceOver test with the accessibility server on; `check-available-status-parity.mjs`; the fastlane archive and TestFlight lanes | the exact 16.0 floor, which no check verifies |
+
+So a green `ios-ci.yml` run means the code compiles and its unit tests pass on the newest runtime.
+Floor, UI, accessibility and device behaviour are proved only by the local evidence recorded on each
+ticket. → [Runners and images](/deployment/ci-cd#runners)
+
 ## Where to go next
 
 - [Features](/mobile-app/features) — how a feature is laid out on each platform, and which code is

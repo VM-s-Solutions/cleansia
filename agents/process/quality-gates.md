@@ -297,6 +297,7 @@ Mechanics and scope:
   gate — until then the floor smoke is **local evidence recorded on the ticket**.
 - Real-device CI is out of scope (macOS runners can't attach physical devices) — the leg is
   simulator-based; owner device passes remain ad-hoc acceptance, not a substitute for this gate.
+- Which iOS checks run where, and what each one cannot see → `/mobile-app/overview#ios-validation-tiers`.
 
 ---
 

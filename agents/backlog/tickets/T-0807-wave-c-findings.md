@@ -160,3 +160,5 @@ Evidence lives off-tree in `/Users/michael/.codex/scratchpads/cleansia-wave-c-20
   - iOS Symbols.
 
   The first head's Android failure and its fix are in the work record. The SHA-guarded merge was `64dfed7` on 2026-10-11 at 00:21:49 UTC. Its parents are `5f94129` and `e494ba4`, and its tree equals the head tree. No deploy ran. Evidence: `t0807-001/t0807-ci-merge-closure-001.json`.
+- **AC2, after the merge.** GitHub's Dependabot API reports all 16 alerts fixed on 2026-10-11 (13 in `src/Cleansia.App/package-lock.json`, 3 in `docs/package-lock.json`), with 0 open on master.
+

@@ -170,8 +170,16 @@ dotnet test Cleansia.HostTests/Cleansia.HostTests.csproj                # authz 
 
 ```bash
 cd src/Cleansia.App
-npx nx run-many -t test                # Jest, all three web apps and their libraries
+npx nx run-many -t test                  # Jest, all three web apps and their libraries
+npx nx run-many -t test --maxWorkers=1   # the same, faster on a laptop
 ```
+
+Nx runs three projects at once, and each project's Jest otherwise starts a worker per CPU core
+minus one, which oversubscribes a laptop. `--maxWorkers=1` runs each project's Jest in one process.
+On an M4 MacBook Air (2026-10-11, all 74 projects, 5,038 tests) it took 304 s instead of 829 s with
+an empty Jest cache, and 96 s instead of 242 s with a warm one, and Jest's *"worker failed to exit
+gracefully"* warning went away. CI still runs the default; whether it should change is an owner
+decision (T-0813).
 
 Integration and host tests need Docker running. Six CI workflows gate a PR: Backend, Frontend,
 Android, iOS, iOS Symbols and Docs.

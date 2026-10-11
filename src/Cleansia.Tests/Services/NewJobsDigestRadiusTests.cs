@@ -308,12 +308,12 @@ public sealed class NewJobsDigestRadiusTests : IDisposable
             .Setup(r => r.GetQueryableIgnoringTenant())
             .Returns(() => realOrderRepository.GetQueryableIgnoringTenant());
         orderRepository
-            .Setup(r => r.HasOverlappingOrderIgnoringTenantAsync(
+            .Setup(r => r.HasOverlappingOrderAsync(
                 It.IsAny<string>(), It.IsAny<DateTime>(), It.IsAny<int>(), It.IsAny<CancellationToken>()))
             .Returns<string, DateTime, int, CancellationToken>((employeeId, start, minutes, ct) =>
             {
                 singleWindowProbes++;
-                return realOrderRepository.HasOverlappingOrderIgnoringTenantAsync(employeeId, start, minutes, ct);
+                return realOrderRepository.HasOverlappingOrderAsync(employeeId, start, minutes, ct);
             });
         orderRepository
             .Setup(r => r.GetOverlappedCandidateIdsIgnoringTenantAsync(

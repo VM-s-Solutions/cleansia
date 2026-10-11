@@ -717,11 +717,15 @@ tenancy — name the two variants and let the call site say which world it is in
 `OrderRepository.HasOverlappingOrderAsync` used a single `GetDbSet()` body while
 `NewJobsDigestService.cs:137` called it from inside a `GetQueryableIgnoringTenant()` sweep — so under
 a tenant **every cleaner reported as free and the digest would advertise double-booked jobs** — while
-the *same* method is `TakeOrder`'s write gate, where the scoped read is correct. It is now one private
-predicate parameterised by the queryable, with two public wrappers
-(`HasOverlappingOrderAsync` / `HasOverlappingOrderIgnoringTenantAsync`), so the call site names its
-world. Pinned by `HasOverlappingOrderTenancyAndScanFloorTests`, whose tenanted case fails if the
-ignoring wrapper is reverted to `GetDbSet()`.
+the *same* method is `TakeOrder`'s write gate, where the scoped read is correct. It is now one predicate
+parameterised by the queryable (`LiveCommitmentsInWindow`), and each world calls a method that names it:
+the request paths (`TakeOrder`, `AdminReassignOrder`) the scoped `HasOverlappingOrderAsync`, the digest
+the tenant-ignoring batch `GetOverlappedCandidateIdsIgnoringTenantAsync`. *(The single-window ignoring
+wrapper, `HasOverlappingOrderIgnoringTenantAsync`, lost its last caller to the batch and was deleted on
+owner ruling, 2026-10-11.)* Pinned by `HasOverlappingOrderTenancyAndScanFloorTests`, whose batch cases
+fail if the batch is reverted to `GetDbSet()`, and whose
+`The_Scoped_Variant_Reports_Free_For_A_Tenanted_Order_When_The_Caller_Has_No_Claim` records the lie the
+scoped gate tells a caller with no claim.
 
 > **Do not leave a security law asserting a live hole that has been closed.** A reader who checks the
 > citation and finds it fixed learns to distrust the rest of the catalog, which is the same defect

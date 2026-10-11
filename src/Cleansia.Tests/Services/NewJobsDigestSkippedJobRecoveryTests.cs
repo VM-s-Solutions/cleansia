@@ -352,14 +352,14 @@ public sealed class NewJobsDigestSkippedJobRecoveryTests : IDisposable
             .Setup(r => r.GetQueryableIgnoringTenant())
             .Returns(() => realOrderRepository.GetQueryableIgnoringTenant());
         orderRepository
-            .Setup(r => r.HasOverlappingOrderIgnoringTenantAsync(
+            .Setup(r => r.HasOverlappingOrderAsync(
                 It.IsAny<string>(), It.IsAny<DateTime>(), It.IsAny<int>(), It.IsAny<CancellationToken>()))
             .Returns<string, DateTime, int, CancellationToken>((employeeId, start, minutes, ct) =>
             {
                 singleWindowProbes++;
                 return employeeId == failCommitmentReadFor
                     ? Task.FromException<bool>(new InvalidOperationException("commitment read failed"))
-                    : realOrderRepository.HasOverlappingOrderIgnoringTenantAsync(employeeId, start, minutes, ct);
+                    : realOrderRepository.HasOverlappingOrderAsync(employeeId, start, minutes, ct);
             });
 
         var commitmentLookups = new List<(string EmployeeId, IReadOnlyList<string> CandidateIds)>();

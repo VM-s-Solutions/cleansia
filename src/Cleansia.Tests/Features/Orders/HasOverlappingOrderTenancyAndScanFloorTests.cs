@@ -66,14 +66,6 @@ public sealed class HasOverlappingOrderTenancyAndScanFloorTests : IDisposable
     // ── Tenancy: one question, two worlds. ──
 
     [Fact]
-    public async Task Tenanted_Overlap_Is_Detected_By_The_Sweeps_Ignoring_Variant()
-    {
-        await SeedAssignedOrderInSlotAsync("ovl-tenant-sweep", SeedTenantId);
-
-        Assert.True(await ProbeIgnoringTenantAsync(callerTenantId: null));
-    }
-
-    [Fact]
     public async Task Tenanted_Overlap_Is_Detected_By_The_Write_Gate_Under_The_Same_Tenant()
     {
         await SeedAssignedOrderInSlotAsync("ovl-tenant-gate", SeedTenantId);
@@ -90,9 +82,10 @@ public sealed class HasOverlappingOrderTenancyAndScanFloorTests : IDisposable
     }
 
     /// <summary>
-    /// The reason the sibling has to exist, pinned rather than described: the scoped variant is correct
-    /// for a request path and silently answers "free" for a tenanted cleaner when the caller carries no
-    /// claim. A background sweep that calls it gets a safe-sounding lie.
+    /// The reason the sweep needs a tenant-ignoring form (now the batch,
+    /// <c>GetOverlappedCandidateIdsIgnoringTenantAsync</c>), pinned rather than described: the scoped
+    /// variant is correct for a request path and silently answers "free" for a tenanted cleaner when the
+    /// caller carries no claim. A background sweep that calls it gets a safe-sounding lie.
     /// </summary>
     [Fact]
     public async Task The_Scoped_Variant_Reports_Free_For_A_Tenanted_Order_When_The_Caller_Has_No_Claim()
@@ -108,7 +101,7 @@ public sealed class HasOverlappingOrderTenancyAndScanFloorTests : IDisposable
         await SeedAssignedOrderInSlotAsync("ovl-tenant-own", tenantId: TestTenants.Default);
 
         Assert.True(await ProbeScopedAsync(callerTenantId: TestTenants.Default));
-        Assert.True(await ProbeIgnoringTenantAsync(callerTenantId: null));
+        Assert.Equal(["probe"], await ProbeBatchAsync(callerTenantId: null, ("probe", ProbeStart, 60)));
     }
 
     // ── The scan floor: it may cost a wider scan, it may not lose an overlap. ──
@@ -209,8 +202,8 @@ public sealed class HasOverlappingOrderTenancyAndScanFloorTests : IDisposable
         var clashing = await ProbeBatchAsync(TestTenants.Default, ("earlier", ProbeStart, 60), ("later", later, 60));
 
         Assert.Equal(["earlier"], clashing);
-        Assert.True(await ProbeIgnoringTenantAsync(TestTenants.Default, ProbeStart, 60));
-        Assert.False(await ProbeIgnoringTenantAsync(TestTenants.Default, later, 60));
+        Assert.True(await ProbeScopedAsync(TestTenants.Default, ProbeStart, 60));
+        Assert.False(await ProbeScopedAsync(TestTenants.Default, later, 60));
     }
 
     private CleansiaDbContext NewContext(string? tenantId) =>
@@ -251,21 +244,13 @@ public sealed class HasOverlappingOrderTenancyAndScanFloorTests : IDisposable
     }
 
     /// <summary>Probe 10:30–11:30 inside the 10:00 slot, as CleanerId, through the tenant-SCOPED gate.</summary>
-    private async Task<bool> ProbeScopedAsync(string? callerTenantId)
+    private Task<bool> ProbeScopedAsync(string? callerTenantId) =>
+        ProbeScopedAsync(callerTenantId, ProbeStart, 60);
+
+    private async Task<bool> ProbeScopedAsync(string? callerTenantId, DateTime start, int minutes)
     {
         await using var ctx = NewContext(callerTenantId);
         return await new OrderRepository(ctx).HasOverlappingOrderAsync(
-            CleanerId, SlotStart.AddMinutes(30), 60, CancellationToken.None);
-    }
-
-    /// <summary>The same probe through the tenant-IGNORING sibling.</summary>
-    private Task<bool> ProbeIgnoringTenantAsync(string? callerTenantId) =>
-        ProbeIgnoringTenantAsync(callerTenantId, SlotStart.AddMinutes(30), 60);
-
-    private async Task<bool> ProbeIgnoringTenantAsync(string? callerTenantId, DateTime start, int minutes)
-    {
-        await using var ctx = NewContext(callerTenantId);
-        return await new OrderRepository(ctx).HasOverlappingOrderIgnoringTenantAsync(
             CleanerId, start, minutes, CancellationToken.None);
     }
 

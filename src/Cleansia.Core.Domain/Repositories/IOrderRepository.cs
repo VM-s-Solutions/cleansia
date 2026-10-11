@@ -95,10 +95,11 @@ public interface IOrderRepository : IRepository<Order, string>
     /// time-conflict write gate.
     ///
     /// <para>TENANT-SCOPED, deliberately: a request path carries a <c>tenant_id</c> claim and the
-    /// cleaner is in the caller's tenant. A caller with NO claim (timer, Function, webhook) must use
-    /// <see cref="HasOverlappingOrderIgnoringTenantAsync"/> — under a tenant the global filter resolves
-    /// <c>TenantId == null</c> against non-null rows, so this method finds nothing and reports the
-    /// cleaner FREE, which is a guard saying yes.</para>
+    /// cleaner is in the caller's tenant. A caller with NO claim (timer, Function, webhook) must not use
+    /// it — under a tenant the global filter resolves <c>TenantId == null</c> against non-null rows, so
+    /// this method finds nothing and reports the cleaner FREE, which is a guard saying yes. The
+    /// tenant-ignoring form is <see cref="GetOverlappedCandidateIdsIgnoringTenantAsync"/>; one window is a
+    /// one-candidate list.</para>
     ///
     /// <para>The scan is floored at <c>cleaningDateTime - Order.MaxOrderSpanHours</c>; see that
     /// constant for what the floor assumes.</para>
@@ -107,14 +108,6 @@ public interface IOrderRepository : IRepository<Order, string>
 
     /// <summary>The order's current status through the tenant filter; null when there is no such order.</summary>
     Task<OrderStatus?> GetCurrentStatusAsync(string orderId, CancellationToken cancellationToken);
-
-    /// <summary>
-    /// Same predicate as <see cref="HasOverlappingOrderAsync"/> with the tenant filter bypassed, for a
-    /// background sweep that runs with no tenant context and asks about ONE window. Nothing in production
-    /// calls it today: the new-jobs digest asks about all of a cleaner's candidates at once through
-    /// <see cref="GetOverlappedCandidateIdsIgnoringTenantAsync"/>.
-    /// </summary>
-    Task<bool> HasOverlappingOrderIgnoringTenantAsync(string employeeId, DateTime cleaningDateTime, int estimatedTimeMinutes, CancellationToken ct);
 
     /// <summary>
     /// The cleaners who are, RIGHT NOW, physically on a job — <c>OnTheWay</c> or <c>InProgress</c> on

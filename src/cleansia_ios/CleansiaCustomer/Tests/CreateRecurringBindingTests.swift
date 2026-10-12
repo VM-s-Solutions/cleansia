@@ -130,6 +130,17 @@ final class CreateRecurringBindingTests: XCTestCase {
         )
     }
 
+    /// Android shows one note or the other (`CreateRecurringScreen.kt`): the cash-cleared note wins, and otherwise a
+    /// form with no way to pay says so.
+    func testTheFormSaysAWayToPayIsMissingUnlessItJustSaidCashWasCleared() throws {
+        let source = try read(Self.screen).components(separatedBy: .whitespacesAndNewlines).joined()
+        let cleared = "ifcashCleared,cash!=.available{"
+            + "PaymentNote(systemImage:\"exclamationmark.circle\",text:L10n.Recurring.cashCleared,warns:true)}"
+        let missing = "elseifselected==nil{"
+            + "PaymentNote(systemImage:\"exclamationmark.circle\",text:L10n.Recurring.createPaymentMissing,warns:true)}"
+        XCTAssertTrue(source.contains(cleared + missing), "a form with no way to pay does not say so, or says it twice")
+    }
+
     func testTheScreenSpellsNoLabelItself() throws {
         let source = try read(Self.screen)
         for hardcoded in ["Rooms", "Bathrooms", "Add new"] {

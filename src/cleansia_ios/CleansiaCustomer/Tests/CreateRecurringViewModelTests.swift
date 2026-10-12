@@ -304,13 +304,14 @@ final class CreateRecurringViewModelTests: XCTestCase {
         XCTAssertTrue(vm.formState.selectedServiceIds.contains("s-1"))
     }
 
-    /// A build with no Stripe key hides the card, so a new schedule starts on cash and no card the customer
-    /// cannot see is ever taken: not from a tap, and not from the card order the form was prefilled from.
-    func testABuildWithNoStripeKeyStartsANewScheduleOnCash() {
+    /// A build with no Stripe key hides the card, so a new schedule starts with no way to pay, as a booking does,
+    /// and no card the customer cannot see is ever taken: not from a tap, and not from the card order the form was
+    /// prefilled from.
+    func testABuildWithNoStripeKeyStartsANewScheduleWithNoWayToPay() {
         let (vm, _) = makeVM(cardPaymentAvailable: false)
 
         XCTAssertFalse(vm.isCardPaymentAvailable)
-        XCTAssertEqual(vm.formState.paymentType, RecurringPaymentType.cash)
+        XCTAssertNil(vm.formState.paymentType)
         XCTAssertEqual(makeVM().0.formState.paymentType, RecurringPaymentType.card, "a keyed build changed")
     }
 
@@ -319,7 +320,7 @@ final class CreateRecurringViewModelTests: XCTestCase {
 
         vm.setPaymentType(RecurringPaymentType.card)
 
-        XCTAssertEqual(vm.formState.paymentType, RecurringPaymentType.cash)
+        XCTAssertNil(vm.formState.paymentType)
     }
 
     func testABuildWithNoStripeKeyDoesNotCarryACardOrdersPaymentIntoTheSchedule() async {
@@ -335,7 +336,7 @@ final class CreateRecurringViewModelTests: XCTestCase {
         await vm.load()
 
         XCTAssertTrue(vm.formState.selectedServiceIds.contains("s-1"), "the prefill did not run")
-        XCTAssertEqual(vm.formState.paymentType, RecurringPaymentType.cash)
+        XCTAssertNil(vm.formState.paymentType)
     }
 
     /// The default address decides the market the repeated order is priced in: a Slovak address reads

@@ -163,7 +163,7 @@ struct OrderDetailView: View {
 
     @ViewBuilder
     private func footer(_ order: CustomerOrderDetail) -> some View {
-        if order.needsConfirmation {
+        if order.needsConfirmation, vm.offersRecurringConfirm {
             ConfirmRecurringFooter(
                 submitting: vm.confirmRecurringState.isSubmitting,
                 label: OrderRecurringConfirm.ctaLabel(order),

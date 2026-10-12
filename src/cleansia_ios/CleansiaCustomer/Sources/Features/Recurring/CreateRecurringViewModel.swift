@@ -13,7 +13,7 @@ struct CreateRecurringFormState: Equatable {
     var savedAddressId = ""
     var selectedServiceIds: Set<String> = []
     var selectedPackageIds: Set<String> = []
-    /// Nil once a cash choice was taken away and the customer has not chosen again.
+    /// Nil until the customer picks: a build with no Stripe key holds no card, and a cash choice taken away is cleared.
     var paymentType: Int? = RecurringPaymentType.card
     var startsOn: Date?
     var preferredEmployeeId: String?
@@ -184,9 +184,8 @@ final class CreateRecurringViewModel: ViewModel {
         if let editing {
             formState = CreateRecurringFormState(editing)
             termsAsked = false
-        } else if !isCardPaymentAvailable {
-            formState.paymentType = RecurringPaymentType.cash
         }
+        formState.paymentType = formState.paymentType.flatMap { offersPayment($0) ? $0 : nil }
         startMarketWatcher()
         startQuoteWatcher()
     }
@@ -446,7 +445,7 @@ final class CreateRecurringViewModel: ViewModel {
         formState.paymentType = type
     }
 
-    /// A build with no Stripe key hides the card, so a card is never taken in it, from a tap or a prefill.
+    /// A build with no Stripe key hides the card, so no default, tap, prefill or edit ever holds one.
     private func offersPayment(_ type: Int) -> Bool {
         type != RecurringPaymentType.card || isCardPaymentAvailable
     }

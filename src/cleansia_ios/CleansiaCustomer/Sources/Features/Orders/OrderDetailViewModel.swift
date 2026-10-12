@@ -406,6 +406,10 @@ final class OrderDetailViewModel: ViewModel {
         !isCardPaymentAvailable && state.loadedValue?.paymentType?.value == 2
     }
 
+    var offersRecurringConfirm: Bool {
+        !isCardOccurrenceWithoutStripe
+    }
+
     func setSaveCard(_ save: Bool) {
         saveCard = save
     }

@@ -175,7 +175,7 @@ final class OrderDetailFooterActionsTests: XCTestCase {
     func testTheConfirmFooterKeysOnTheServersVerdict() throws {
         let source = try readSource("CleansiaCustomer/Sources/Features/Orders/OrderDetailView.swift")
 
-        XCTAssertTrue(source.contains("if order.needsConfirmation {"), "the confirm footer ignores the verdict")
+        XCTAssertTrue(source.contains("if order.needsConfirmation,"), "the confirm footer ignores the verdict")
         XCTAssertNil(
             source.range(of: "paymentStatus?.value == 1"),
             "the confirm footer infers the verdict from the payment status again"

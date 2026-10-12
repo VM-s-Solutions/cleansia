@@ -212,6 +212,52 @@ extension CreateRecurringViewModelTests {
         XCTAssertEqual(client.updateInputs.first?.bathrooms, 1)
     }
 
+    // MARK: - An edit in a build with no Stripe key
+
+    /// The card row is hidden there, so keeping card would save a card schedule the customer never saw chosen.
+    /// The form opens with no way to pay, says so, and stays closed until the customer picks one.
+    func testAKeylessEditOfACardScheduleOpensWithNoWayToPay() async {
+        let template = RecurringFixtures.template(paymentType: RecurringPaymentType.card)
+        let (vm, client) = makeVM(editing: template, cardPaymentAvailable: false)
+        await vm.load()
+
+        XCTAssertNil(vm.formState.paymentType)
+        XCTAssertFalse(vm.cashCleared, "the form says cash was taken away instead of asking for a way to pay")
+        XCTAssertFalse(vm.isValid)
+        let saved = await vm.submit()
+        XCTAssertFalse(saved)
+        XCTAssertEqual(client.updateInputs.count, 0)
+    }
+
+    func testAKeylessEditOfACashScheduleKeepsCash() async {
+        let template = RecurringFixtures.template(paymentType: RecurringPaymentType.cash)
+        let (vm, _) = makeVM(editing: template, cardPaymentAvailable: false)
+        await vm.load()
+
+        XCTAssertEqual(vm.formState.paymentType, RecurringPaymentType.cash)
+        XCTAssertTrue(vm.isValid)
+    }
+
+    func testAnEditOfACardScheduleKeepsCardInABuildWithAKey() async {
+        let (vm, _) = makeVM(editing: RecurringFixtures.template(paymentType: RecurringPaymentType.card))
+        await vm.load()
+
+        XCTAssertEqual(vm.formState.paymentType, RecurringPaymentType.card)
+        XCTAssertTrue(vm.isValid)
+    }
+
+    func testTheMissingWayToPayIsSaidInEveryLocale() throws {
+        let restore = L10n.bundle
+        defer { L10n.bundle = restore }
+
+        for language in ["en", "cs", "sk", "uk", "ru"] {
+            L10n.bundle = try localeBundle(language)
+            let note = L10n.Recurring.createPaymentMissing
+            XCTAssertNotEqual(note, "recurring_create_payment_missing", "unlocalized in \(language)")
+            XCTAssertFalse(note.isBlank, "empty in \(language)")
+        }
+    }
+
     // MARK: - What an edit does and does not touch
 
     func testTheAppliesNoticeIsShownOnlyWhenEditing() {

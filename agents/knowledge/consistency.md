@@ -1015,3 +1015,57 @@ and the sharpest false sentence is on a `Confirmed`, fully-staffed booking. The 
 status — which is also why `AssignedEmployees.Count > 0` is the wrong term: with
 `RequiredEmployees = ceil(EstimatedTime / 120)` (`Order.cs:697-707`) a booking over two hours has a
 second seat, and the sentence is still true while it is free.
+
+## A loop that continues past a failed commit in a shared scope — the deviating form (2026-10-12)
+
+> **Enforced by:** for the two dispatchers that give each item a scope, `RecurringSweepPerTemplateIsolationTests`
+> and `RecurringAutoCancelPerOrderIsolationTests` — **`T1-CI`**, closed roster; for every other job,
+> `runtime-readiness.md` checklist item 8 — **`T3-HUMAN`**. Rule and rejected alternatives:
+> `patterns-backend.md` §*"One scope per job item, and per command on a shared timer"*; decision: **ADR-0072**,
+> which is `accepted` (`docs/decisions/adr-0072.md:9`).
+> **Retires when:** every job in the roster below gives its items a scope of its own — the canonicalization
+> ticket ADR-0072 asks for, `SendRecurringOrderReminders` first. Until then this entry is how a reader tells a
+> listed deviation from a new one.
+>
+> **This entry exists because the rule puts code that exists today in violation** (ADR-0033 routing test 1), so
+> the shipped deviations are recorded here and their conversion is ticketed rather than assumed. **The baseline
+> is non-zero and read from the tree, not counted.**
+
+**The deviating form (normative — it decides the next case):** *a system job whose `catch` lets its loop go on
+to the next item in the same DI scope, where the `try` covers a commit, or covers staging that a later commit in
+that scope will save — with or without `Rollback()` in the catch.* A catch over a read, an e-mail or a queue send
+that leaves nothing staged is not this form.
+
+**The search behind the roster:** `catch (Exception` and `Rollback()` under `src/Cleansia.Core.AppServices`, each
+hit read in its loop on 2026-10-12. The roster is descriptive; if a job matches the form and is missing here,
+the roster is stale.
+
+**Roster — a commit inside the try, or `Rollback()` and continue:**
+
+| Job | Where |
+|---|---|
+| `RedrivePendingRefunds` | `RedrivePendingRefunds.cs:120-218`; it moves money |
+| `FiscalRetryService` | `FiscalRetryService.cs:40-112` |
+| `PayPeriodBackgroundService` | `PayPeriodBackgroundService.cs:255-279`, a cleaner's invoices, committing at `:455-476` |
+| `SendRecurringOrderReminders` | `SendRecurringOrderReminders.cs:62-92` |
+| `SendMembershipLifecycleNotifications` | `SendMembershipLifecycleNotifications.cs:67-89` and `:105-127` |
+| `NewJobsDigestService` | `NewJobsDigestService.cs:110-244`, committing at `:376` |
+| `DataRetentionBackgroundService` | `DataRetentionBackgroundService.cs:93-105`, around each retention task |
+
+**Roster — a catch over staging only, then one commit for the group** (milder: the failed item's staged rows
+still ride the group's commit):
+
+| Job | Where |
+|---|---|
+| `SendPreCleaningReminders` | `SendPreCleaningReminders.cs:87-112` |
+| `NotifyLapsedPreferredOffers` | `NotifyLapsedPreferredOffers.cs:88-102` |
+| `SendCleanerJobReminders` | `SendCleanerJobReminders.cs:175-201` |
+| `SendTomorrowJobDigest` | `SendTomorrowJobDigest.cs:138-153` |
+| `PayPeriodBackgroundService` | `PayPeriodBackgroundService.cs:156-172`, closing each period |
+
+**Not deviations, and this is a ruling rather than an omission:** `CleanupStalePendingOrders` commits once per
+company with no catch at that commit, so a refused company ends the run and the next run takes it again; its one
+commit per company is pinned by `CleanupStalePendingOrdersTwoOperatorsTests`. `MaterializeRecurringBookings`,
+`AutoCancelStaleRecurringOrders` and `RetryFailedUserDeletions` give each item a scope, and the two timers that
+carry several commands give each command one (ADR-0072 D1). `DataRetentionBackgroundService` stays the reference
+for the per-company tenancy shape; only its catch around each task is listed above.

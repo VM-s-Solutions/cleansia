@@ -74,5 +74,7 @@ down.** Each external dependency has a defined failure behavior:
 5. Idempotent (S7) so retries/webhook re-deliveries are safe.
 6. There's a visible dead-end for failures (a human can see what's stuck).
 7. Health check covers any new critical dependency.
-8. A unit that holds several customers' credit locks until its commit takes them in ordinal user-id order
-   (ADR-0073 D2; `patterns-backend.md` §"Customer credit locks").
+8. In a system job, each item and each command fails alone, in its own scope, and no loop continues past a
+   failed commit in a shared scope (ADR-0072; `patterns-backend.md` §"One scope per job item"). A unit that
+   holds several customers' credit locks until its commit takes them in ordinal user-id order (ADR-0073 D2;
+   `patterns-backend.md` §"Customer credit locks").

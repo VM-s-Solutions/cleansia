@@ -44,6 +44,16 @@ flowchart LR
 > therefore stamps every group with whichever tenant happened to be processed last. Committing inside
 > the loop is what makes the override mean anything.
 
+**When each row must fail alone, it gets a scope of its own.** A job whose rows must not hold one another
+back — one customer's broken template, one occurrence whose notice fails — reads only the ids, then sends each
+one as a command of its own in a DI scope of its own ([ADR-0072](/decisions/adr-0072)). The command reads its
+row again past the filter, sets the override from that row, and the pipeline commits it inside its scope; a row
+that fails takes everything it staged away with its scope, and the next run tries it again.
+`MaterializeRecurringBookings` and `AutoCancelStaleRecurringOrders` are the references. What no loop does is
+catch a failed commit and carry on in the same scope: the failed row's changes would ride the next row's commit.
+A job takes this variant when one bad row must not cost the others their run; a job that commits a whole
+company at once, as `CleanupStalePendingOrders` does, keeps the plain shape, with no catch at its commit.
+
 **The second shape: the sweeps that read per company.** Some jobs have no row to derive the tenant
 from, because their input is the list of companies and their settings — the fourteen retention tasks,
 with thirteen company settings (`TenantConfiguration`, set on the admin's *Company settings* page;
@@ -72,7 +82,9 @@ flowchart LR
 Every filtered read inside the loop is that company's, every setting read is that company's, and a
 company with no override rows is simply a company on the defaults — so a one-year audit window set on
 company B deletes B's two-year-old rows and leaves A's alone. `DataRetentionBackgroundService` is the
-reference; `CleanupStalePendingOrders` is the reference for the row-driven shape above, and for bounding
+reference for this tenancy shape — though not for its catch around each task, which carries on in one shared
+scope and is listed as a deviation to convert ([ADR-0072](/decisions/adr-0072)).
+`CleanupStalePendingOrders` is the reference for the row-driven shape above, and for bounding
 it: a run takes the oldest 500 stale checkouts and a larger backlog spreads over the following runs, one
 every 15 minutes, with no cursor to carry because a cancelled order has left the query, as
 `ExpireStaleCredit` and `NotifyLapsedPreferredOffers` bound theirs. Which one a new job takes is decided

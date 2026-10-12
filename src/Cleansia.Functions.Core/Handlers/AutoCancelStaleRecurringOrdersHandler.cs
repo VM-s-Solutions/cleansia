@@ -15,8 +15,8 @@ namespace Cleansia.Functions.Core.Handlers;
 ///
 /// Hourly cadence keeps the gap between "should have confirmed" and "slot
 /// freed for someone else" short enough that it doesn't affect cleaner
-/// scheduling expectations. Idempotent: a cancelled order's PaymentStatus
-/// stops matching the sweep's filter, so re-running mid-hour is a no-op.
+/// scheduling expectations. Idempotent: a cancelled occurrence leaves the
+/// sweep's selection by its status, so re-running mid-hour is a no-op.
 ///
 /// <para>The same tick re-drives pending card refunds (<c>RedrivePendingRefunds</c>). Each command is
 /// sent from a DI scope of its own, which is what keeps one from hiding the other: a command that throws
@@ -37,9 +37,10 @@ public class AutoCancelStaleRecurringOrdersHandler(
             if (result.IsSuccess && result.Value != null)
             {
                 logger.LogInformation(
-                    "AutoCancelStaleRecurringOrders completed; cancelled {Cancelled} of {Considered}",
+                    "AutoCancelStaleRecurringOrders completed; cancelled {Cancelled} of {Considered}, {Failed} failed",
                     result.Value.Cancelled,
-                    result.Value.Considered);
+                    result.Value.Considered,
+                    result.Value.Failed);
             }
             else
             {

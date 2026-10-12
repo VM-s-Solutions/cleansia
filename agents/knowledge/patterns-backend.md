@@ -1122,6 +1122,45 @@ for the Cleanup group — `T1-CI`; for the next unit that holds several customer
 when it takes the next one depends on where its commits fall, across services, not on text. Apart from the
 named `CompleteOrder` exception the baseline is zero.)*
 
+## One scope per job item, and per command on a shared timer (ADR-0072)
+
+> **LAW.** ADR-0072 `accepted` 2026-10-12. Living doc: `agents/architecture/decisions/system-jobs.md`.
+
+**A job whose items must fail independently gives each item its own DI scope.** The dispatcher reads ids only,
+then for each: `cancellationToken.ThrowIfCancellationRequested()`, `await using var scope =
+serviceScopeFactory.CreateAsyncScope()`, and `Send` of the item's command — a nested record named `Command`, so
+the pipeline commits it inside that scope. An `OperationCanceledException` while cancelled is rethrown; any other
+exception, and any failure result, is logged at **Error** and counted in the response. The item's handler reads
+its row again past the tenant filter, checks again that it still qualifies, sets the tenant override from the
+row, and **neither commits nor catches**. References: `MaterializeRecurringBookings` →
+`MaterializeRecurringBookingTemplate`, `AutoCancelStaleRecurringOrders` → `AutoCancelRecurringOccurrence`,
+`RetryFailedUserDeletions`.
+
+**A loop never continues past a failed commit, or past staging that a later commit in the same scope will save —
+with or without `Rollback()`.** A failed `CommitAsync` leaves every tracked entry as it was, so the failed item's
+changes ride the next item's commit or the pipeline's; `Rollback()` turns an `Added` row into an `Unchanged`
+phantom and leaves the outbox keys it staged behind; and since ADR-0073 a refused commit has rolled back the
+credit its order returned, so its leftovers commit without it. A row-driven job that commits once per company,
+like `CleanupStalePendingOrders`, has no catch at that commit: a refused company ends the run, and the next run
+takes it again.
+
+**A timer that carries several commands sends each from its own scope, then rethrows.** Each command goes
+through a mediator taken from `scopeFactory.CreateAsyncScope()`. An `OperationCanceledException` while the host
+is stopping is rethrown at once; any other exception is logged at Warning, naming the command, and the next
+command runs; after the last, one failure is rethrown as itself and several as an `AggregateException`, so the
+invocation still fails. A failure result is logged at Error and never thrown.
+
+**Enforced by:**
+- the item rule: `RecurringSweepPerTemplateIsolationTests` and `RecurringAutoCancelPerOrderIsolationTests`, for
+  the two dispatchers — `T1-CI` (closed roster: those two); for every other job, `runtime-readiness.md` checklist
+  item 8 — `T3-HUMAN`. *(Not mechanizable: a regex finds a `catch` in a loop, but cannot tell a catch over a
+  commit, or over staging a later commit saves, from a catch over a read or a send. The baseline is not zero:
+  the shipped deviations are listed in `consistency.md` §"A loop that continues past a failed commit in a
+  shared scope".)*
+- the timer rule: `TimerCommandIsolationTests` — the two handlers' behaviour, and a source guard that fails any
+  handler under `src/Cleansia.Functions.Core/Handlers` with two or more `Send(` calls and no
+  `CreateAsyncScope` — `T1-CI`.
+
 ## Fail-soft is admissible only over an operation that normally SUCCEEDS (ADR-0038 §D8)
 
 > **LAW.** ADR-0038 `accepted` 2026-08-03.

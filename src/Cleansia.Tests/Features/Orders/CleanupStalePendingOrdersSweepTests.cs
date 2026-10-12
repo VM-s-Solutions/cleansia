@@ -13,6 +13,7 @@ using Cleansia.Core.Queue.Abstractions.Messages;
 using Cleansia.Infra.Database;
 using Cleansia.Infra.Database.Repositories;
 using Cleansia.TestUtilities;
+using Cleansia.Tests.Features.Bookings;
 using FluentValidation.TestHelper;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
@@ -161,19 +162,7 @@ public sealed class CleanupStalePendingOrdersSweepTests : IDisposable
         return (result.Value!, ctx.ChangeTracker.Entries<Order>().Count());
     }
 
-    private async Task RunRecurringSweepAsync()
-    {
-        await using var ctx = NewContext();
-        var handler = new AutoCancelStaleRecurringOrders.Handler(
-            new OrderRepository(ctx),
-            new CreditAccountRepository(ctx),
-            new NotificationProducer(new UserNotificationRepository(ctx), new OutboxPendingDispatch(ctx), new UserRepository(ctx), Microsoft.Extensions.Logging.Abstractions.NullLogger<NotificationProducer>.Instance),
-            _tenantProvider,
-            ctx,
-            NullLogger<AutoCancelStaleRecurringOrders.Handler>.Instance);
-
-        await handler.Handle(new AutoCancelStaleRecurringOrders.Command(), CancellationToken.None);
-    }
+    private Task RunRecurringSweepAsync() => RecurringAutoCancelSweep.RunAsync(_connection);
 
     private async Task<Order> ReadOrderAsync(string orderId)
     {

@@ -1,15 +1,11 @@
 using Cleansia.Core.AppServices.Abstractions;
-using Cleansia.Core.AppServices.Mappers;
-using Cleansia.Core.AppServices.Services.Interfaces;
 using Cleansia.Core.Domain.Enums;
-using Cleansia.Core.Domain.Notifications;
-using Cleansia.Core.Domain.Orders;
 using Cleansia.Core.Domain.Repositories;
-using Cleansia.Core.Domain.SeedWork;
-using Cleansia.Core.AppServices.Services;
 using Cleansia.Infra.Common.Validations;
 using FluentValidation;
+using MediatR;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using BusinessResult = Cleansia.Infra.Common.Validations.BusinessResult;
 
@@ -26,10 +22,16 @@ namespace Cleansia.Core.AppServices.Features.Bookings;
 /// this is the safety net that frees the cleaner's slot when the customer
 /// either ignored the reminder or never opened it. Cancellation here is fee-
 /// free (no payment was ever taken) — we just transition state + notify.
+///
+/// <para><b>A dispatcher, not a worker.</b> It selects the occurrence ids and sends one
+/// <see cref="AutoCancelRecurringOccurrence"/> per id, each in its OWN DI scope — its own DbContext, change
+/// tracker, tenant provider and pending-dispatch buffer — so an occurrence that fails takes its changes away
+/// with its scope, holds back none of the others, and is retried on the next run. → /decisions/adr-0072</para>
 /// </summary>
 public class AutoCancelStaleRecurringOrders
 {
     public const int DefaultMissedConfirmGraceHours = 1;
+    public const int MaxMissedConfirmGraceHours = 24;
 
     /// <param name="MissedConfirmGraceHours">
     /// Hours before <c>CleaningDateTime</c> after which an unconfirmed
@@ -43,119 +45,87 @@ public class AutoCancelStaleRecurringOrders
     {
         public Validator()
         {
-            RuleFor(x => x.MissedConfirmGraceHours).InclusiveBetween(0, 24);
+            RuleFor(x => x.MissedConfirmGraceHours).InclusiveBetween(0, MaxMissedConfirmGraceHours);
         }
     }
 
-    public record Response(int Cancelled, int Considered);
-
-    /// <summary>No JWT on a sweep. Matches ExpireStaleReferrals and LoyaltyService.</summary>
-    private const string SystemActor = "system";
+    /// <summary>
+    /// <paramref name="Considered"/> counts the occurrences still awaiting confirmation at the cutoff;
+    /// <paramref name="Failed"/> counts the ones whose unit threw or returned a failure. Each failed one stays
+    /// as it was and is retried on the next run, so a non-zero count every hour is the alerting signal for an
+    /// occurrence that is permanently stuck.
+    /// </summary>
+    public record Response(int Cancelled, int Considered, int Failed = 0);
 
     public class Handler(
         IOrderRepository orderRepository,
-        ICreditAccountRepository creditAccountRepository,
-        INotificationProducer notificationProducer,
-        ITenantProvider tenantProvider,
-        IUnitOfWork unitOfWork,
+        IServiceScopeFactory serviceScopeFactory,
         ILogger<Handler> logger) : ICommandHandler<Command, Response>
     {
         public async Task<BusinessResult<Response>> Handle(Command command, CancellationToken cancellationToken)
         {
-            var nowUtc = DateTime.UtcNow;
-            var cutoff = nowUtc.AddHours(command.MissedConfirmGraceHours);
+            var cutoff = DateTime.UtcNow.AddHours(command.MissedConfirmGraceHours);
 
-            // Cross-tenant query — sweep runs system-level. Each cancellation's push and feed row carry the
-            // customer's own account company, which the producer reads itself; the order's TenantId passed
-            // to it below is a hint it ignores. → /flows/cross-cutting#tenancy
-            //
-            // Unconfirmed is Order.AwaitsCustomerConfirmation in SQL: a confirmed cash occurrence stays
-            // Pending until the cleaner records the cash, and is the cleaner's job, not this sweep's.
-            var stale = await orderRepository.GetQueryableIgnoringTenant()
-                .Include(o => o.OrderStatusHistory)
+            // Ids only, across every company: each unit loads its occurrence in its own scope and stamps it with the
+            // order's own company. The terms are Order.AwaitsCustomerConfirmation's in SQL: a confirmed cash
+            // occurrence stays Pending until the cleaner records the cash, and is the cleaner's job, not this
+            // sweep's; an occurrence cancelled before it was paid stays Pending too, and is done.
+            var orderIds = await orderRepository.GetQueryableIgnoringTenant()
                 .Where(o => o.RecurringTemplateId != null
+                    && o.CurrentStatus != OrderStatus.Cancelled
+                    && o.CurrentStatus != OrderStatus.Completed
                     && o.PaymentStatus == PaymentStatus.Pending
                     && (o.PaymentType != PaymentType.Cash || o.CustomerConfirmedAt == null)
                     && o.CleaningDateTime <= cutoff
                     && o.UserId != null)
+                .OrderBy(o => o.CleaningDateTime)
+                .ThenBy(o => o.Id)
+                .Select(o => o.Id)
                 .ToListAsync(cancellationToken);
 
             var cancelled = 0;
-            // Grouped by tenant because the OrderStatusTrack row added below is stamped from the
-            // AMBIENT tenant at commit time (CleansiaDbContext.SaveChangesAsync). This sweep carries no
-            // JWT, so without the override every cancellation row would fail its NOT NULL tenant
-            // whatever tenant the order belongs to. CleanupStalePendingOrders — named in its own header
-            // as the exact complement of this sweep — is the reference shape.
-            foreach (var tenantGroup in stale.GroupBy(o => o.TenantId ?? string.Empty))
+            var failed = 0;
+
+            foreach (var orderId in orderIds)
             {
-                // Reset before each iteration so the previous group's override never outlives its
-                // group: what the next commit stamps is decided here, not by whatever ran last.
-                tenantProvider.ClearTenantOverride();
-                if (!string.IsNullOrEmpty(tenantGroup.Key))
+                cancellationToken.ThrowIfCancellationRequested();
+
+                try
                 {
-                    tenantProvider.SetTenantOverride(tenantGroup.Key);
+                    await using var scope = serviceScopeFactory.CreateAsyncScope();
+                    var result = await scope.ServiceProvider.GetRequiredService<IMediator>().Send(
+                        new AutoCancelRecurringOccurrence.Command(orderId, cutoff), cancellationToken);
+
+                    if (result.IsSuccess && result.Value != null)
+                    {
+                        cancelled += result.Value.Cancelled ? 1 : 0;
+                    }
+                    else
+                    {
+                        failed++;
+                        logger.LogError(
+                            "Recurring occurrence {OrderId} failed to auto-cancel: {Error}. It stays as it was and "
+                            + "the next run retries it",
+                            orderId,
+                            result.Error?.Message ?? "unknown");
+                    }
                 }
-
-                foreach (var order in tenantGroup)
+                catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
                 {
-                    // Filter out orders already terminated (Cancelled or post-Confirmed)
-                    // — the SQL filter on PaymentStatus catches most but the in-memory
-                    // status check is cheap insurance against race conditions where a
-                    // status flipped between query and processing.
-                    var currentStatus = order.GetCurrentOrderStatus();
-                    if (currentStatus is OrderStatus.Cancelled or OrderStatus.Completed)
-                    {
-                        continue;
-                    }
-
-                    try
-                    {
-                        order.AddOrderStatus(OrderStatusTrack.Create(OrderStatus.Cancelled, order));
-
-                        // An unconfirmed occurrence was never charged, but if credit was applied
-                        // when it was materialized it has to come back. The return joins this order's
-                        // commit, onto the customer's credit account, whose company comes from the
-                        // account and not from the override. → /flows/cross-cutting#tenancy
-                        await creditAccountRepository.ReturnUnpaidOrderCreditAsync(
-                            order, cardRefunded: 0m, SystemActor, cancellationToken);
-
-                        // Fee-free by this sweep's own rule, and now it says so on the order.
-                        order.Cancel(
-                            DateTime.UtcNow,
-                            CancelledBy.System,
-                            feeRate: 0m,
-                            refundAmount: 0m,
-                            reason: OrderCancellationReasons.RecurringNotConfirmed);
-
-                        await notificationProducer.NotifyAsync(
-                            order.UserId!,
-                            NotificationEventCatalog.OrderCancelled,
-                            new Dictionary<string, string>
-                            {
-                                ["orderId"] = order.Id,
-                                ["orderNumber"] = order.DisplayOrderNumber,
-                            },
-                            order.TenantId,
-                            order.Id,
-                            cancellationToken);
-
-                        // The cancellation and its outbox row commit together so the row is durable iff
-                        // this order's state changed; the drainer puts it on the wire after the commit.
-                        // Per-order rather than per-group on purpose: the catch below keeps one bad order
-                        // from stopping the sweep, which a group-wide commit would forfeit.
-                        await unitOfWork.CommitAsync(cancellationToken);
-                        cancelled++;
-                    }
-                    catch (Exception ex)
-                    {
-                        logger.LogWarning(ex,
-                            "Failed to auto-cancel stale recurring order {OrderId}",
-                            order.Id);
-                    }
+                    throw;
+                }
+                catch (Exception ex)
+                {
+                    failed++;
+                    logger.LogError(
+                        ex,
+                        "Recurring occurrence {OrderId} threw while auto-cancelling. Its scope is discarded with "
+                        + "every change it staged, and the next run retries it",
+                        orderId);
                 }
             }
 
-            return BusinessResult.Success(new Response(cancelled, stale.Count));
+            return BusinessResult.Success(new Response(cancelled, orderIds.Count, failed));
         }
     }
 }

@@ -35,7 +35,7 @@ Seven callers, none with code of its own for this:
 | Caller | Commit that ends the order |
 |---|---|
 | `CleanupStalePendingOrders` | one per company's group, inside the loop |
-| `AutoCancelStaleRecurringOrders` | one per occurrence, inside the loop |
+| `AutoCancelRecurringOccurrence` (one per occurrence, sent by `AutoCancelStaleRecurringOrders`) | the pipeline's, inside the occurrence's own scope (ADR-0072 D2) |
 | `CustomerOrderCancellation` (through `CancelOrder`) | the pipeline's |
 | `PlatformOrderCancellation` (an administrator's cancel, the company wind-down) | the pipeline's, or the wind-down's per order |
 | `CleanerNoShowCancellation` (the unfilled sweep, an administrator's no-show) | the sweep's per order, or the pipeline's |
@@ -52,7 +52,8 @@ credit, the loyalty lock in `CompleteOrder`, the `EnsureForUserAsync` callers an
 
 **What it forbids.** A loop that catches a refused commit and continues in the same scope now loses credit:
 the failed order's staged changes ride the next commit, without the return the refused commit rolled back.
-`CleanupStalePendingOrders` has no catch at its commit and says why.
+`CleanupStalePendingOrders` has no catch at its commit and says why, and the recurring auto-cancel gives each
+occurrence a scope of its own ([`system-jobs.md`](./system-jobs.md), ADR-0072).
 
 ## Several customers' locks in one unit (ADR-0073 D2)
 
@@ -74,8 +75,6 @@ A unit that holds several customers' credit locks until one commit takes them in
   the sweep retries next tick and the cleaner retries the completion.
 - **A future caller that ends an order and gives the credit back another way loses the atomicity.** The guard
   is `CreditUnwind`'s rule that every order end returns credit through it.
-- **`AutoCancelStaleRecurringOrders` still catches around each occurrence's commit in one shared scope**, the
-  shape the join makes lossy. ADR-0072 gives each occurrence its own scope.
 
 ## Tests that pin it
 
@@ -85,3 +84,5 @@ A unit that holds several customers' credit locks until one commit takes them in
   company commit rolls its credit back and the rerun returns it once; the locks are taken in ordinal order.
 - `src/Cleansia.IntegrationTests/Features/Orders/PlatformCancellationCreditReturnAtomicityTests.cs` — a
   refused administrator cancel returns nothing, and its retry returns the credit once.
+- `src/Cleansia.IntegrationTests/Features/Bookings/RecurringAutoCancelCreditAtomicityTests.cs` — a refused
+  auto-cancel of an occurrence returns no credit, and the next run cancels it and returns the credit once.

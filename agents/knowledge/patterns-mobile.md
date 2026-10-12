@@ -427,10 +427,33 @@ duplicate a `:core` component.
 > 2026-10-05 (`onFixedWhite`, the sky-600 at 4.10:1 the partner app still drew, is gone), derived from
 > the internal `fixedWhiteHex`/`primaryTextOnFixedWhiteHex` so `FixedWhiteContrastTests` can pin the
 > **ratio** from the hexes
-> (a `Color` → `UIColor` roundtrip is trait-dependent on the iOS-16 floor — the `BrandGradientTests`
-> rule). The generalizable law: **an adaptive foreground over a hardcoded background is a contrast
-> defect until someone measures it** — the same shape as the `onError`-on-`error` collapse above, and
-> neither is visible in the theme the author develops in.
+> (a `Color` → `UIColor` roundtrip keeps only a dynamic colour's light value on the iOS-16 floor — the
+> `BrandGradientTests` rule). The generalizable law: **an adaptive foreground over a hardcoded
+> background is a contrast defect until someone measures it** — the same shape as the
+> `onError`-on-`error` collapse above, and neither is visible in the theme the author develops in.
+
+> **Reading what a dynamic colour draws in dark mode: `StatusBarFade.rgb`, never `UIColor(Color)`
+> (T-0829).** On the iOS 16 floor `UIColor(Color)` keeps only a dynamic colour's light value, whatever it
+> is then resolved with — `resolvedColor(with:)`, `performAsCurrent` and dark appearance alike; from iOS
+> 17 it keeps both (`StatusBarFadeScrollView.swift:316-318`). A colour built from hexes is still tested on
+> its hexes (above, and the `CleansiaMapMarker` row of the parity table). Where a test needs what a
+> dynamic colour **draws in dark mode** — a luminance, a contrast ratio, an ink assertion — it reads
+> `StatusBarFade.rgb(_:_:)` (`StatusBarFadeScrollView.swift:319-342`, a `@MainActor` one-point
+> `ImageRenderer` read in the requested scheme). `StatusBarFade` is `internal` to `CleansiaCore`
+> (`StatusBarFadeScrollView.swift:201`), so an app's tests reach it through
+> `@testable import CleansiaCore`, as `ContentSafeAreaBindingTests` does. In production only the fade
+> reads through it: its cache keeps eight reads per scheme and empties when full
+> (`StatusBarFadeScrollView.swift:339`), so a second production reader gives the read its own Core home
+> and cache instead of sharing the fade's. A light read through `UIColor(Color)` is still correct; a dark
+> read through it does not fail on the floor — it checks the light value twice — and CI's newest runtime
+> cannot see the difference. What UIKit draws from a `UIColor(Color)` it is handed is a different
+> question, and this rule does not answer it. **Enforced by:** SwiftLint custom rule
+> `dynamic_colour_dark_read` (`src/cleansia_ios/.swiftlint.yml`; `swiftlint lint --strict`,
+> `ios-ci.yml`) — `T1-CI`, over one form: `UIColor(<colour>).resolvedColor(with: …)` with anything but a
+> literal `UITraitCollection(userInterfaceStyle: .light)`, across line breaks. A colour argument with
+> nested parentheses, a `UIColor` stored before it is resolved, and a dark read that never calls
+> `resolvedColor(with:)` (`performAsCurrent`, `UITraitCollection.current`) pass it —
+> `(guidance — no gate)`.
 
 > **Blue TEXT takes the text ink, never the primary (finding 2026-10-05; links and text buttons, and
 > the partner app's informational text, owner decisions 2026-10-05):** the light primary, sky-600,

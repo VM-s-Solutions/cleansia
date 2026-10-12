@@ -126,9 +126,9 @@ request also run on pushes to `master`, path-scoped except for the secret scan.
 
 ## Runners and images {#runners}
 
-Every job runs on `ubuntu-latest`, except `ios-ci.yml`, which runs on `macos-latest`. No workflow pins
-an image, and none uses a self-hosted or larger runner. A new workflow either joins one of these two
-labels or says why not.
+Every Ubuntu job runs on `ubuntu-24.04`, and `ios-ci.yml` runs on `macos-latest`. The Ubuntu jobs pin
+their Ubuntu release and the macOS job does not pin its macOS one; none uses a self-hosted or larger
+runner. A new workflow either joins one of these two labels or says why not.
 
 - **Which image a label resolved to** is printed only in the job log's *Runner Image* group (`Image:`
   and `Version:`). The repository keeps logs for one day, so read it within 24 hours. The jobs API
@@ -143,10 +143,12 @@ labels or says why not.
   xcbeautify and openapi-generator versions as CI. Only SwiftFormat, SwiftLint and openapi-generator
   are pinned: CI installs xcodegen and xcbeautify from Homebrew, unpinned, so their versions follow
   Homebrew's.
-- **Ubuntu 26.** Every Ubuntu job carries GitHub's annotation *"The ubuntu-latest label will migrate to
-  Ubuntu 26 beginning October 19, 2026"* ([actions/runner-images#14748](https://github.com/actions/runner-images/issues/14748)).
-  The annotation gives no end date. Nothing is pinned to 24.04. Pinning, or validating 26 first, is a
-  CI decision for the owner, not a default.
+- **Ubuntu 26.** GitHub moves the `ubuntu-latest` label to Ubuntu 26.04 in a rollout that begins
+  2026-10-19 and completes by 2026-11-19 ([actions/runner-images#14748](https://github.com/actions/runner-images/issues/14748)).
+  Every Ubuntu job names `ubuntu-24.04` instead (owner ruling 2026-10-12), the image it already ran on,
+  so the rollout changes nothing here. Moving to 26.04 is a deliberate change of the label: that image
+  brings Docker 29 under backend-ci's Testcontainers, a PostgreSQL 18 client for the migrate job's
+  `psql`, Android command-line tools 20 and jq 1.8.
 - **Required checks** are not a runner setting: [what a pull request needs to merge](#required-checks).
   → [What validates iOS, and where](/mobile-app/overview#ios-validation-tiers)
 
@@ -314,13 +316,16 @@ az webapp config set --startup-file "node server/server.mjs"
 Partner and Admin apps deploy to Azure Static Web Apps:
 
 ```yaml
-- uses: Azure/static-web-apps-deploy@v1
+- uses: Azure/static-web-apps-deploy@1a947af9992250f3bc2e68ad0754c0b0c11566c9 # v1
   with:
     azure_static_web_apps_api_token: ${{ secrets.TOKEN }}
     action: upload
     app_location: ./partner-app
     skip_app_build: true
 ```
+
+The action's repository has a tag and a branch that are both called `v1`. `@v1` ran the tag, so the pin
+is the tag's commit, not the branch head, whose action declares a different set of inputs.
 
 ### Warming is one job, after every deploy {#warm-dev-sites}
 
@@ -447,14 +452,18 @@ Every later administrator is created in the console →
 
 ## Authentication
 
-All workflows use Azure federated identity (OIDC):
+Every job that signs in to Azure uses federated identity (OIDC), so no Azure credential is stored.
+Each workflow's token is read-only (`contents: read`) at the top level, and `id-token: write` is
+granted per job: to the jobs that sign in, and to the `deploy` job of `deploy-dev.yml` and
+`deploy-pro.yml`, whose grant caps what any job in `deploy-azure.yml` may request. A job that signs in
+and checks out the repository declares:
 
 ```yaml
 permissions:
   id-token: write
   contents: read
 
-- uses: azure/login@v2
+- uses: azure/login@a641126d1b8aa4d1fa005f4f92df94a3a4c4c906 # v3.1.0
   with:
     client-id: ${{ secrets.AZURE_CLIENT_ID }}
     tenant-id: ${{ secrets.AZURE_TENANT_ID }}

@@ -15,7 +15,7 @@ Cleansia is a multi-tenant cleaning services platform deployed on Azure. The sys
 ┌────────▼────────┐  ┌────────▼────────┐  ┌────────▼────────┐  ┌─────────────────┐  ┌─────────────────┐
 │ Customer SSR    │  │ Partner SPA     │  │ Admin SPA       │  │ Customer app    │  │ Partner app     │
 │ App Service     │  │ Static Web App  │  │ Static Web App  │  │ Android + iOS   │  │ Android + iOS   │
-│ (Node.js 20)    │  │ (Angular 19)    │  │ (Angular 19)    │  │                 │  │                 │
+│ (Node.js 22)    │  │ (Angular 19)    │  │ (Angular 19)    │  │                 │  │                 │
 └────────┬────────┘  └────────┬────────┘  └────────┬────────┘  └────────┬────────┘  └────────┬────────┘
          │                    │                    │                    │                    │
 ┌────────▼────────┐  ┌────────▼────────┐  ┌────────▼────────┐  ┌────────▼────────┐  ┌────────▼────────┐

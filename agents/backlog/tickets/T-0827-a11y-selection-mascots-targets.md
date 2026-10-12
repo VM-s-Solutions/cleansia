@@ -49,6 +49,7 @@ Accessibility findings [AND-06, IOS-04, IOS-17], per the read-only post-Wave E g
     - Android: the Orders dump shows exactly one of the three segments `selected="true"`, and the selection moves to Active when Active is tapped.
     - iOS: customer Home's *See all* and *Manage* and the Profile *Edit* chip are at least 44 pt tall, and no mascot element carries an asset-name label.
   - The `selectableGroup` semantics themselves cannot be expressed in uiautomator's dump format. The dump is consistent with one group: the three segments are the only children of one parent.
+- 2026-10-12 — Shipped in [#323](https://github.com/VM-s-Solutions/cleansia/pull/323). Exact-head CI on `cf63083` passed all 9 check runs with no re-run: Backend, Frontend and e2e-smoke, Android, iOS, Docs, iOS Symbols, booking-policy parity and Secret scan. Merged normally with the SHA guard as `de4e6cb`. No deploy ran. Evidence: `raw/ci/p2-pr323-ci-merge-closure-001.json` (sha256 `504b3841…`) in the off-tree Wave F folder.
 
 ## Review
 

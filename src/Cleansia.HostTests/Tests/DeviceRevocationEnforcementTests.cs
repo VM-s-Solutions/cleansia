@@ -215,9 +215,10 @@ public sealed class DeviceRevocationEnforcementTests(HostTestPostgresFixture db)
     }
 
     // A shared handset whose sign-out never reached the server: the next account registering the same
-    // device id and push token ends the previous account's sessions on it, as that account's logout would have.
+    // device id and push token retires the previous account's device row, so an access token that account
+    // was issued before is refused. Its refresh token is not revoked, so this ends no session.
     [Fact]
-    public async Task Next_account_registering_the_same_handset_ends_the_previous_accounts_session_on_it()
+    public async Task Next_account_registering_the_same_handset_refuses_the_previous_accounts_earlier_access_token()
     {
         await SeedEmployeeAsync("shared-handset-previous@hosttests.local");
         await SeedEmployeeAsync("shared-handset-next@hosttests.local");

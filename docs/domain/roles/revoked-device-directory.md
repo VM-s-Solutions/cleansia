@@ -38,7 +38,8 @@ registered by `AddDeviceRevocationEnforcement()` in `Cleansia.Config` — **mobi
 ## Does NOT know
 - **HTTP, JWTs, or claims** — the JwtBearer helper parses the token and hands it plain values.
 - **Why a device was deactivated** (revoke, logout, or another account registering the same app
-  install's push token — all mean "sessions before T are dead").
+  install's push token — to the directory all three mean "tokens issued before T are refused"; the third
+  revokes no refresh token, so it ends no session).
 - **A device row's current `IsActive`** (A1, deliberate) — reactivation is invisible to the
   directory; if a scenario ever wants the entry removed on re-registration, the answer is the
   `iat` guard, not a predicate change.

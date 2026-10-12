@@ -32,8 +32,8 @@ raises no snackbar. Two caches drop only their own write: `RemoteImageCache` sti
 loaded across `clear()` to the view that asked for it, without keeping it, and `PushTokenRegistrar`
 does not record a registration that answers after `clear()`, so the next account's registration of
 the same device token is not skipped as already done. On both platforms that registration is what
-retires the previous account's device row on the server, so the previous account's pushes stop
-reaching the phone even when its sign-out never got there. → [Auth edge cases](/flows/auth-and-identity#edge-cases)
+retires the previous account's device row on the server, so the previous account's notification pushes
+stop reaching the phone even when its sign-out never got there. → [Auth edge cases](/flows/auth-and-identity#edge-cases)
 
 ## The error model {#error-model}
 

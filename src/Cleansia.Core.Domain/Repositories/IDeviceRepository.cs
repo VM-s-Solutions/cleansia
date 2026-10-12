@@ -40,8 +40,10 @@ public interface IDeviceRepository : IRepository<Device, string>
     /// <summary>
     /// Every other user's active row holding this device id and this push token: an account the
     /// caller's own app install still routes pushes to. Reads every company's rows, because that account
-    /// may belong to another one; the pin is the device id plus the push token the caller's install
-    /// presented, and an empty token matches nothing. → /flows/auth-and-identity#edge-cases
+    /// may belong to another one; an empty token matches nothing. The pin is a caller obligation: the
+    /// device id and the push token are the ones the caller's own install presented, and the server cannot
+    /// verify the token was issued to that install — so the rows found are only ever deactivated, never
+    /// returned or shown. → /architecture/security-rules#s8-tenant-isolation-correctness
     /// </summary>
     Task<IReadOnlyList<Device>> GetOtherUsersActiveByDeviceAndTokenIgnoringTenantAsync(
         string exceptUserId, string deviceId, string deviceToken, CancellationToken cancellationToken);

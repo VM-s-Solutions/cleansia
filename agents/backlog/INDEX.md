@@ -334,16 +334,22 @@
 | T-0818 | Correct the docs that drifted from the code: backend pages, request logging, local test commands, owner rulings | XS | `todo` | T-0808 | filed 2026-10-11 from the post-Wave E ground truth |
 | T-0819 | Find out why the dashboard's upcoming-orders read is ten times slower, and fix it if the query is at fault | S | `todo` | T-0807 | filed 2026-10-11 from the post-Wave E ground truth |
 | T-0820 | Bring the workflows and web tooling up to date without changing a gate | S | `todo` | T-0812 | filed 2026-10-11 from the post-Wave E ground truth |
-| T-0821 | Never offer card payment in a build with no Stripe key, on either app | S | `todo` | T-0807 | filed 2026-10-11 from the post-Wave E ground truth |
-| T-0822 | Stop a signed-out session's late reads reaching the next account (S11) | M | `todo` | T-0807 | filed 2026-10-11 from the post-Wave E ground truth |
-| T-0823 | Partner dashboard: right day words, honest today line, no reload on every tab return | S | `todo` | T-0807 | filed 2026-10-11 from the post-Wave E ground truth |
-| T-0824 | Show 'Kč' on every partner money screen, as the dashboard does | XS | `todo` | T-0807 | filed 2026-10-11 from the post-Wave E ground truth |
-| T-0825 | When no mail app answers, Help copies the support address and says so | S | `todo` | T-0807 | filed 2026-10-11 from the post-Wave E ground truth |
-| T-0826 | Fade content under the status bar on the partner Profile hub too | XS | `todo` | T-0807 | filed 2026-10-11 from the post-Wave E ground truth |
-| T-0827 | Report the selected Orders segment, hide mascot art, and grow small targets | XS | `todo` | T-0807 | filed 2026-10-11 from the post-Wave E ground truth |
-| T-0828 | Make iOS's discount-perk copy match Android's | XS | `todo` | T-0807 | filed 2026-10-11 from the post-Wave E ground truth |
-| T-0829 | Make the iOS 16.4 colour tests pass and tidy two Android test nits | S | `todo` | T-0807 | filed 2026-10-11 from the post-Wave E ground truth |
+| T-0821 | Never offer card payment in a build with no Stripe key, on either app | S | `in_progress` | T-0807 | Booking, a new schedule and the confirm are gated on both apps; release refuses a blank or non-pk key. AC1 narrowed, remaining paths are T-0835. Native PR merge pending |
+| T-0822 | Stop a signed-out session's late reads reaching the next account (S11) | M | `in_progress` | T-0807 | Sign-in wipes on both apps; every iOS cross-await cache carries a session generation. S11 passes. Native PR merge pending |
+| T-0823 | Partner dashboard: right day words, honest today line, no reload on every tab return | S | `in_progress` | T-0807 | Done on both apps, with the features section. Live render (AC3) pending. Native PR merge pending |
+| T-0824 | Show 'Kč' on every partner money screen, as the dashboard does | XS | `in_progress` | T-0807 | Kč on every money screen; no guessed symbol for a null code; DTO comment (IOS-13) lands here. Native PR merge pending |
+| T-0825 | When no mail app answers, Help copies the support address and says so | S | `in_progress` | T-0807 | Both partner apps copy and say so; five locales. Runtime check on a no-mail device pending. Native PR merge pending |
+| T-0826 | Fade content under the status bar on the partner Profile hub too | XS | `in_progress` | T-0807 | Both apps fade the hub. Live render on both apps (AC2) pending. Native PR merge pending |
+| T-0827 | Report the selected Orders segment, hide mascot art, and grow small targets | XS | `in_progress` | T-0807 | Done; iOS mascot verified unlabelled by AXe. Android selected-state dump (AC2) pending. Native PR merge pending |
+| T-0828 | Make iOS's discount-perk copy match Android's | XS | `in_progress` | T-0807 | Title carries the percentage in five locales. Native PR merge pending |
+| T-0829 | Make the iOS 16.4 colour tests pass and tidy two Android test nits | S | `in_progress` | T-0807 | StatusBarFade.rgb reads colours as drawn; the 16.4 floor suites are fully green; source pin added. Native PR merge pending |
 | T-0830 | Wave F W01: put the evidence and a measured, costed decision in front of Mike | S | `todo` | T-0812 | filed 2026-10-11 from the post-Wave E ground truth |
+| T-0831 | Ask for the cleaner's upcoming jobs from the start of today | XS | `in_progress` | T-0823 | From-date on both apps, pinned under UTC+14; premise corrected (the sort never binds, T-0832). AC3 render pending. Native PR merge pending |
+| T-0832 | Make the native apps' sort reach the server | M | `todo` | — | filed 2026-10-12 from the native PR's correctness re-review: Android sends `toString`, iOS base64 JSON, both bind to an empty list; six call sites; awaits Mike |
+| T-0833 | Rename GetBusyEmployeeIdsInWindowAsync so its name says it reads every company (S8) | XS | `todo` | T-0815 | filed 2026-10-12 from the P1 security review; latent, not exploitable today; awaits Mike |
+| T-0834 | Stop a shared phone's previous account receiving pushes when its sign-out never reached the server | S | `todo` | T-0822 | filed 2026-10-12 from the native PR's security re-review; server-side, pre-existing; awaits Mike |
+| T-0835 | Close the keyless card paths T-0821 left: Android recurring prefill and edit, iOS Payments > Add card | S | `todo` | T-0821 | filed 2026-10-12 from T-0821's re-reviews; debug builds only, no money moves; awaits Mike |
+| T-0836 | Don't count a job cancelled today on the partner dashboard's today line | XS | `todo` | T-0831 | filed 2026-10-12 from the native PR's correctness re-review; product call for Mike |
 
 > **T-0785–T-0799 filed 2026-09-20** — the UI-polish and dead-code batch, on the owner's ruling of
 > that day (*"I want to polish alignments in admin app a bit on all of the overview/detail pages.
@@ -388,4 +394,4 @@
 > reported not absorbed. Owed: the DEV drop at the next DEV deploy (MS-2 / A1, `20260920204705`);
 > the merge order is #255 then #260. Open rows: none.
 
-*Next id: **T-0831**.*
+*Next id: **T-0837**.*

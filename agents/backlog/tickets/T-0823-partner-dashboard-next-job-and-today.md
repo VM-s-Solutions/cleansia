@@ -62,6 +62,7 @@ Edge cases F3 ported between the apps, and the iOS reload [AND-10, AND-11, AND-1
     - On iOS, a tab return after more than 60 s refreshed the dashboard in place.
   - The apps were warm-started, not cold-started: Prepare had already launched them for its signed-in check.
 - 2026-10-12 — The new repository test `refresh_firstLoadWhoseUpcomingReadFailsLeavesUpcomingUnknown` in `35905af` already carries T-0831's `filterCleaningDateFrom = any()` matcher, one of its 11. It matches the null that commit's request sends, and `0165b2f` carries the other 10.
+- 2026-10-12 — Shipped in [#323](https://github.com/VM-s-Solutions/cleansia/pull/323). Exact-head CI on `cf63083` passed all 9 check runs with no re-run: Backend, Frontend and e2e-smoke, Android, iOS, Docs, iOS Symbols, booking-policy parity and Secret scan. Merged normally with the SHA guard as `de4e6cb`. No deploy ran. Evidence: `raw/ci/p2-pr323-ci-merge-closure-001.json` (sha256 `504b3841…`) in the off-tree Wave F folder.
 
 ## Review
 

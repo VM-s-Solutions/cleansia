@@ -56,6 +56,7 @@ The endpoint already accepts `Filter.CleaningDateFrom` (`partner-mobile-api.json
   - Android sends `Filter.CleaningDateFrom=2026-10-11T22:00:00Z` and iOS sends `2026-10-11T22:00:00.000Z`: the same instant, local midnight in Prague expressed in UTC. On iOS the value was read from the host's request log; on Android, from the guest's own OkHttp log.
   - Caveat: on this fixture the five future orders are also the five most recently created. So the hero alone cannot tell the fix from no fix, and the from-date on the wire is the proof.
   - Android's log also shows `Sort=SortDefinition(field=cleaningDateTime, direction=0)` on the wire, which is T-0832 seen on a device.
+- 2026-10-12 — Shipped in [#323](https://github.com/VM-s-Solutions/cleansia/pull/323). Exact-head CI on `cf63083` passed all 9 check runs with no re-run: Backend, Frontend and e2e-smoke, Android, iOS, Docs, iOS Symbols, booking-policy parity and Secret scan. Merged normally with the SHA guard as `de4e6cb`. No deploy ran. Evidence: `raw/ci/p2-pr323-ci-merge-closure-001.json` (sha256 `504b3841…`) in the off-tree Wave F folder.
 
 ## Review
 

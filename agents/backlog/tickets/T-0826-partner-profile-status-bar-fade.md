@@ -51,6 +51,7 @@ F6 fixed the dashboard; the partner Profile hub has the same overlap [AND-21, AN
     - Android: after one swipe, a band in the page colour sits under the status bar.
     - iOS, light: the band is the hero's blue while the hero is under the bar, then the page colour. Dark: the far-scrolled band is the page colour, slate-900, under a white clock.
   - The light-mode clock question in the Review did not arise. Over the blue band the system drew a black clock, at 5.17:1 (5.13:1 over the hero at rest), never a white one. A white one would have read 4.06:1 (4.10:1 at rest).
+- 2026-10-12 — Shipped in [#323](https://github.com/VM-s-Solutions/cleansia/pull/323). Exact-head CI on `cf63083` passed all 9 check runs with no re-run: Backend, Frontend and e2e-smoke, Android, iOS, Docs, iOS Symbols, booking-policy parity and Secret scan. Merged normally with the SHA guard as `de4e6cb`. No deploy ran. Evidence: `raw/ci/p2-pr323-ci-merge-closure-001.json` (sha256 `504b3841…`) in the off-tree Wave F folder.
 
 ## Review
 

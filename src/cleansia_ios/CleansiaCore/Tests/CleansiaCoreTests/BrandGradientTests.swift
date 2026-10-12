@@ -40,6 +40,19 @@ final class BrandGradientTests: XCTestCase {
         }
     }
 
+    /// `StatusBarFade.rgb` keys its cache by `Color`, so a stop handed to the fade as a tint has to be the same
+    /// `Color` on every access: a dynamic one built afresh is a new key and costs the fade a render each time.
+    /// A gradient whose stops are equal in both schemes builds a static `Color(hex:)`, equal anyway.
+    func testEveryDynamicStopIsTheSameColorOnEveryAccess() {
+        let dynamic = BrandGradient.allCases.filter { $0.stops.contains { $0.light != $0.dark } }
+        XCTAssertFalse(dynamic.isEmpty)
+        for gradient in dynamic {
+            for index in gradient.stops.indices {
+                XCTAssertEqual(gradient.colors[index], gradient.colors[index], "\(gradient) stop \(index)")
+            }
+        }
+    }
+
     private func assertStops(
         _ gradient: BrandGradient,
         light: [UInt32],

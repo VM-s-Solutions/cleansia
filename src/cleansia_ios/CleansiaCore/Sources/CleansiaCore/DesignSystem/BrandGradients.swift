@@ -16,11 +16,14 @@ public enum BrandGradient: CaseIterable {
     case emerald
 
     /// The light/dark hex stops are the single source of truth — `colors` is
-    /// derived from them. They are also the unit-testable surface: a SwiftUI
-    /// `Color` → `UIColor` roundtrip FLATTENS dynamic providers on iOS 16
-    /// (dynamic preservation arrived in iOS 17), so tests must assert these
-    /// values, not an OS-dependent resolution. Values verbatim from
-    /// `BrandGradients.kt` + `Color.kt` (blue = Sky600/800 → Sky400/700).
+    /// derived from them, once per case, so every access hands out the same
+    /// `Color`s: they compare equal, and a stop is safe to use as a cache key
+    /// (`StatusBarFade.rgb` keys its reads by colour). The stops are also the
+    /// unit-testable surface: a SwiftUI `Color` → `UIColor` roundtrip FLATTENS
+    /// dynamic providers on iOS 16 (dynamic preservation arrived in iOS 17), so
+    /// tests must assert these values, not an OS-dependent resolution. Values
+    /// verbatim from `BrandGradients.kt` + `Color.kt` (blue = Sky600/800 →
+    /// Sky400/700).
     public var stops: [(light: UInt32, dark: UInt32)] {
         switch self {
         case .blue:
@@ -39,12 +42,19 @@ public enum BrandGradient: CaseIterable {
     }
 
     public var colors: [Color] {
-        stops.map { stop in
-            stop.light == stop.dark
-                ? Color(hex: stop.light)
-                : .dynamic(light: Color(hex: stop.light), dark: Color(hex: stop.dark))
-        }
+        Self.builtColors[self] ?? []
     }
+
+    private static let builtColors: [BrandGradient: [Color]] = Dictionary(
+        uniqueKeysWithValues: allCases.map { gradient in
+            let colors = gradient.stops.map { stop in
+                stop.light == stop.dark
+                    ? Color(hex: stop.light)
+                    : .dynamic(light: Color(hex: stop.light), dark: Color(hex: stop.dark))
+            }
+            return (gradient, colors)
+        }
+    )
 
     /// The `Brush.linearGradient(colors)` parity — Compose's default runs
     /// top-left → bottom-right.

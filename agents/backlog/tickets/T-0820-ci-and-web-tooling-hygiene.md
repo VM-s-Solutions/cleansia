@@ -38,9 +38,9 @@ CI and tooling findings that need no owner ruling, per the read-only post-Wave E
 
 ## Acceptance criteria (done looks like)
 
-- [ ] **AC1** — Every PR-checking workflow runs its actions on Node 24 majors with no deprecation or ignored-input warning, and stays green on the exact head.
+- [x] **AC1** — Every PR-checking workflow runs its actions on Node 24 majors with no deprecation or ignored-input warning, and stays green on the exact head.
 - [x] **AC2** — `npm ci`, every project's tests and lint, the three production builds and the e2e smokes pass locally on Node 22 / npm 10.
-- [ ] **AC3** — The worker-exit observation is recorded on T-0810.
+- [x] **AC3** — The worker-exit observation is recorded on T-0810.
 
 ## Work record
 
@@ -75,6 +75,7 @@ CI and tooling findings that need no owner ruling, per the read-only post-Wave E
     - the e2e smokes pass: 5, 1 and 1 tests;
     - the nine `agents/tools` self-tests pass.
 - 2026-10-12 — Committed as `e08e479`, with `graph.json` staged as a deletion. AC1 and AC3 wait for this PR's hosted CI.
+- 2026-10-12 — Shipped in [#322](https://github.com/VM-s-Solutions/cleansia/pull/322). Exact-head CI on `1136e16` passed all 9 check runs with no re-run: Backend, Frontend and e2e-smoke, Android, iOS, Docs, iOS Symbols, booking-policy parity and Secret scan. Merged normally with the SHA guard as `6840882`. No deploy ran. Evidence: `raw/ci/p1-pr322-ci-merge-closure-001.json` (sha256 `d31e29ba…`) in the off-tree Wave F folder.
 
 ## Review
 
@@ -87,3 +88,5 @@ CI and tooling findings that need no owner ruling, per the read-only post-Wave E
   - `enforcement.md:79` says the consistency checker runs on the Windows dev box.
   - The `@module-federation/enhanced` override names a package that is in neither lockfile.
   - Four workflow comments still claim single-digit minutes. This is unverified against hosted durations.
+- **AC1, on PR #322's exact head.** None of the 9 check runs carries an annotation reading "Node.js 20 is deprecated", "setup-java v4" or "Unexpected input". e2e-smoke's warning, "Retention days cannot be greater than the maximum allowed retention", predates this change: 2026-09-30 runs on the v4 actions show the same message.
+- **AC3.** Recorded on T-0810. The hosted Frontend job ran all 74 test projects and printed the worker-exit warning once.

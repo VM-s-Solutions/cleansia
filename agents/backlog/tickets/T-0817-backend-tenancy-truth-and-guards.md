@@ -73,6 +73,7 @@ Findings reported by the Wave D reviews, and still true on master, per the read-
 - 2026-10-12 — Committed as `3a71c0e`, which builds on its own.
   - **IOS-13 is not in it.** The `DashboardStatsDto` comment says a client with no code shows the bare number. That was false for Android until T-0824's AND-17, so the comment moved to the native PR to land with that fix.
   - The dispatch doc's paragraph also changes its tenancy pin count from 5 to 4, which follows T-0815's deletion.
+- 2026-10-12 — Shipped in [#322](https://github.com/VM-s-Solutions/cleansia/pull/322). Exact-head CI on `1136e16` passed all 9 check runs with no re-run: Backend, Frontend and e2e-smoke, Android, iOS, Docs, iOS Symbols, booking-policy parity and Secret scan. Merged normally with the SHA guard as `6840882`. No deploy ran. Evidence: `raw/ci/p1-pr322-ci-merge-closure-001.json` (sha256 `d31e29ba…`) in the off-tree Wave F folder.
 
 ## Review
 

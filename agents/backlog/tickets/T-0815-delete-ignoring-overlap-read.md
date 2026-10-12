@@ -56,6 +56,7 @@ Mike ruled "Delete" (Mike's rulings of 2026-10-11 (`/Users/michael/.codex/scratc
     - dropping `Confirmed` from the status set is RED on the re-pointed oracles.
   - Fix pass: the comment at `HasOverlappingOrderTenancyAndScanFloorTests.cs:85` names what remains, "the sweep needs a tenant-ignoring form (now the batch, …)".
 - 2026-10-12 — Committed as `5ce5048`, which builds on its own. The suites are on T-0814's line. The re-review's runs are the ones made on a tree byte-identical to this branch's head.
+- 2026-10-12 — Shipped in [#322](https://github.com/VM-s-Solutions/cleansia/pull/322). Exact-head CI on `1136e16` passed all 9 check runs with no re-run: Backend, Frontend and e2e-smoke, Android, iOS, Docs, iOS Symbols, booking-policy parity and Secret scan. Merged normally with the SHA guard as `6840882`. No deploy ran. Evidence: `raw/ci/p1-pr322-ci-merge-closure-001.json` (sha256 `d31e29ba…`) in the off-tree Wave F folder.
 
 ## Review
 

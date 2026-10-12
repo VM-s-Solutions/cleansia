@@ -75,6 +75,7 @@ B006's second cause, as decided by Mike ("Go with recommended", Mike's rulings o
   - Its integration and host runs came before its last edit, a doc comment in `HasOverlappingOrderTenancyAndScanFloorTests.cs`. Its unit run was repeated after that edit.
   - The re-review then ran all three suites (8,647, 850 and 503, all passing) on a mirror whose `src/` is byte-identical to this branch's head.
   - The records check ran them again on the committed T-0819 tree, the last .NET change on this branch: unit 8,647/8,647, integration 850/850 and host 503/503.
+- 2026-10-12 — Shipped in [#322](https://github.com/VM-s-Solutions/cleansia/pull/322). Exact-head CI on `1136e16` passed all 9 check runs with no re-run: Backend, Frontend and e2e-smoke, Android, iOS, Docs, iOS Symbols, booking-policy parity and Secret scan. Merged normally with the SHA guard as `6840882`. No deploy ran. Evidence: `raw/ci/p1-pr322-ci-merge-closure-001.json` (sha256 `d31e29ba…`) in the off-tree Wave F folder.
 
 ## Review
 

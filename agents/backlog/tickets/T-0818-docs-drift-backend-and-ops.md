@@ -59,6 +59,7 @@ Docs findings still true on master, per the read-only post-Wave E ground truth o
     - the docs lane's assertion script fails these claims on HEAD and passes them on the edited tree;
     - the docs build passes, and so do check-docs-refs, check-catalog-claims and check-consistency.
 - 2026-10-12 — Committed as `da2aa77`, with the `ci-cd.md` steps-block hunk. It builds on its own; its one code file, `NewJobsDigestService.cs`, changes comments only.
+- 2026-10-12 — Shipped in [#322](https://github.com/VM-s-Solutions/cleansia/pull/322). Exact-head CI on `1136e16` passed all 9 check runs with no re-run: Backend, Frontend and e2e-smoke, Android, iOS, Docs, iOS Symbols, booking-policy parity and Secret scan. Merged normally with the SHA guard as `6840882`. No deploy ran. Evidence: `raw/ci/p1-pr322-ci-merge-closure-001.json` (sha256 `d31e29ba…`) in the off-tree Wave F folder.
 
 ## Review
 

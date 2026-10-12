@@ -137,6 +137,7 @@ B is passive. Whichever lane watches a PR's CI samples a head only when its norm
   - The awk check the section quotes prints nothing on the tree. It flags each of `name:`, `strategy:`, `if:` and `uses:` when injected into a `build` job.
 - Guard duty: no mechanical guard ships (CLAUDE.md §4). The section carries its own two-part membership test, and its ruleset facts come from the D1 ground truth's GET-only reads.
 - B: no qualifying head observed yet. It stays passive. If none appears before Wave F closes, AC3 moves to its own ticket.
+- 2026-10-12 — A shipped in [#322](https://github.com/VM-s-Solutions/cleansia/pull/322). Exact-head CI on `1136e16` passed all 9 check runs with no re-run: Backend, Frontend and e2e-smoke, Android, iOS, Docs, iOS Symbols, booking-policy parity and Secret scan. Merged normally with the SHA guard as `6840882`. No deploy ran. Evidence: `raw/ci/p1-pr322-ci-merge-closure-001.json` (sha256 `d31e29ba…`) in the off-tree Wave F folder. B stays open: PR #322 was not a qualifying head, because no `build` failed on it.
 
 ## Review
 

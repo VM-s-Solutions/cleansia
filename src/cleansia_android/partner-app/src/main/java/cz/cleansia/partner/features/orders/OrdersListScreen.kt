@@ -29,6 +29,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.verticalScroll
@@ -63,6 +64,9 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.role
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -269,7 +273,7 @@ private fun SegmentedTabs(
         color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
     ) {
         Row(
-            modifier = Modifier.fillMaxSize().padding(4.dp),
+            modifier = Modifier.fillMaxSize().padding(4.dp).selectableGroup(),
             horizontalArrangement = Arrangement.spacedBy(4.dp),
         ) {
             OrdersTab.values().forEach { tab ->
@@ -298,8 +302,9 @@ private fun SegmentChip(
     modifier: Modifier = Modifier,
 ) {
     Surface(
+        selected = selected,
         onClick = onClick,
-        modifier = modifier.fillMaxSize(),
+        modifier = modifier.fillMaxSize().semantics { role = Role.Tab },
         shape = RoundedCornerShape(50),
         color = if (selected) MaterialTheme.colorScheme.surface else Color.Transparent,
         shadowElevation = if (selected) 2.dp else 0.dp,

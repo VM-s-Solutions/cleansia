@@ -216,6 +216,45 @@ as does Profile on Android for its *Credit* row, showing the cached figures mean
 2026-10-02; Rewards used to keep whatever it held until a pull). A re-read on entry shows no spinner:
 on Android the Rewards pull indicator follows the user's own pull only, as Home's does.
 
+## Partner dashboard
+
+Screens are not inventoried here, but the partner dashboard's rules span both apps and several files,
+so they are written down once (Android `features/dashboard/`, iOS `Features/Dashboard/`). It answers
+the four questions a cleaner has on opening the app: what is my state today, what is my next job, what
+am I earning, and when am I paid.
+
+- **The greeting** gives the date and the day's state: *You're free today*, *1 job today* or *N jobs
+  today*, counted from the cleaner's upcoming orders that start today. Those orders are read from the
+  start of the cleaner's local day, so a job earlier today still counts, even one already done. While
+  they are unknown, because they have not been read yet, their read failed or the session has no
+  employee ID to read them for, the state is left off and the date stands alone: an unread list is not
+  a free day.
+- **One hero, chosen in order:** the next job; otherwise, when any work is open, the available work
+  (how many jobs are open and up to what they would pay); otherwise the empty hero. The next job is the
+  soonest confirmed, on-the-way or in-progress order with a start time among the ten upcoming orders
+  read, so a job done earlier today is passed over, and an order with no start time is never the next
+  job.
+- **When the next job starts** reads *In 25m* under an hour; under a day, *Today 14:00* on today's
+  date and *In 5h 20m* past midnight; *Tomorrow 14:00* only on the next calendar day, so a job 47 hours
+  away, two midnights on, shows its date. Any other start, a past one included, such as a job in
+  progress, shows its date and time. Android writes *Wed 14 Oct · 14:00*, and outside the current year
+  *14 Oct 2027 · 14:00*, dropping the weekday; iOS takes the same fields through its localized date
+  template, as its other partner dates do.
+- **Money** on the dashboard is in whole units, grouped, with the symbol of the currency the server
+  names: *Kč* in every phone language, the same symbol Earnings, Invoices and Period pay print. A figure
+  the server names no currency for carries no symbol; neither app guesses one from the phone's locale
+  (Android `core/money/CurrencySymbols`, iOS `EarningsFormat.currencySymbol`). The web dashboard follows
+  the same no-guess rule → [Currency formatting](/partner-app/dashboard#currency-formatting).
+- **Shortcuts:** Profile, Pay history, Documents and Help. Help opens an e-mail to
+  `support@cleansia.cz`; on a phone with no mail app it copies the address and says so, as the
+  registration lock's support row and the customer app's Help do. An iPhone copies it too when Mail has
+  no account set up, because Mail still takes the link on its setup screen.
+- **A loaded dashboard is kept for 60 seconds:** coming back to the tab within that window repeats
+  none of the dashboard's own reads; after it the dashboard refreshes in place, behind what it shows,
+  and a pull always reads. Both apps still re-read the bell's unread count on every return, and iOS
+  reads the pending-offers card when its 30-second store is stale. How each platform issues and
+  publishes the reads is in [Native mobile request ownership](/architecture/frontend#partner-dashboard).
+
 ## Localization
 
 Both platforms ship English, Czech, Slovak, Ukrainian and Russian — the same fixed set as the web

@@ -106,7 +106,7 @@ class DashboardRepositoryTest {
         }
         coEvery {
             dashboardApi.dashboardGetUpcomingOrders(
-                filterEmployeeId = "emp-1", filterIsActive = true, sort = any(), offset = 0, limit = 10,
+                filterEmployeeId = "emp-1", filterIsActive = true, filterCleaningDateFrom = any(), sort = any(), offset = 0, limit = 10,
             )
         } coAnswers {
             upcomingEntered.complete(Unit)
@@ -143,7 +143,7 @@ class DashboardRepositoryTest {
                 repo.snapshot.first { it.availableJobsPreview != null }
             }
             assertEquals(availableJobsPreviewResponse().toDomain(), repo.snapshot.value.availableJobsPreview)
-            assertTrue(repo.snapshot.value.upcoming.isEmpty())
+            assertNull(repo.snapshot.value.upcoming)
             assertFalse(refresh.isCompleted)
             upcomingRelease.complete(Unit)
             assertNull(refresh.await())
@@ -172,7 +172,7 @@ class DashboardRepositoryTest {
         coEvery { dashboardApi.dashboardGetStats("emp-1") } returns Response.success(dashboardStatsDto())
         coEvery {
             dashboardApi.dashboardGetUpcomingOrders(
-                filterEmployeeId = "emp-1", filterIsActive = true, sort = any(), offset = 0, limit = 10,
+                filterEmployeeId = "emp-1", filterIsActive = true, filterCleaningDateFrom = any(), sort = any(), offset = 0, limit = 10,
             )
         } coAnswers {
             upcomingEntered.complete(Unit)
@@ -224,7 +224,7 @@ class DashboardRepositoryTest {
         }
         coEvery {
             dashboardApi.dashboardGetUpcomingOrders(
-                filterEmployeeId = "emp-1", filterIsActive = true, sort = any(), offset = 0, limit = 10,
+                filterEmployeeId = "emp-1", filterIsActive = true, filterCleaningDateFrom = any(), sort = any(), offset = 0, limit = 10,
             )
         } returns Response.success(PagedDataOfOrderListItem(data = upcoming))
         coEvery { dashboardApi.dashboardGetAvailableJobsPreview(5) } returns Response.success(availableJobsPreviewResponse())
@@ -259,7 +259,7 @@ class DashboardRepositoryTest {
         coEvery { dashboardApi.dashboardGetStats("emp-1") } returns Response.success(dashboardStatsDto())
         coEvery {
             dashboardApi.dashboardGetUpcomingOrders(
-                filterEmployeeId = "emp-1", filterIsActive = true, sort = any(), offset = 0, limit = 10,
+                filterEmployeeId = "emp-1", filterIsActive = true, filterCleaningDateFrom = any(), sort = any(), offset = 0, limit = 10,
             )
         } returns Response.success(PagedDataOfOrderListItem(data = emptyList()))
         coEvery { dashboardApi.dashboardGetAvailableJobsPreview(5) } throws java.io.IOException("first preview")
@@ -271,7 +271,7 @@ class DashboardRepositoryTest {
         coEvery { dashboardApi.dashboardGetStats("emp-1") } throws java.io.IOException("critical stats")
         coEvery {
             dashboardApi.dashboardGetUpcomingOrders(
-                filterEmployeeId = "emp-1", filterIsActive = true, sort = any(), offset = 0, limit = 10,
+                filterEmployeeId = "emp-1", filterIsActive = true, filterCleaningDateFrom = any(), sort = any(), offset = 0, limit = 10,
             )
         } returns Response.success(PagedDataOfOrderListItem(data = upcoming))
         coEvery { dashboardApi.dashboardGetAvailableJobsPreview(5) } returns Response.success(availableJobsPreviewResponse())
@@ -289,7 +289,7 @@ class DashboardRepositoryTest {
         coEvery { dashboardApi.dashboardGetStats("emp-1") } returns Response.success(dashboardStatsDto())
         coEvery {
             dashboardApi.dashboardGetUpcomingOrders(
-                filterEmployeeId = "emp-1", filterIsActive = true, sort = any(), offset = 0, limit = 10,
+                filterEmployeeId = "emp-1", filterIsActive = true, filterCleaningDateFrom = any(), sort = any(), offset = 0, limit = 10,
             )
         } returns Response.success(PagedDataOfOrderListItem(data = upcoming))
         coEvery { dashboardApi.dashboardGetAvailableJobsPreview(5) } returns Response.success(availableJobsPreviewResponse())
@@ -299,7 +299,7 @@ class DashboardRepositoryTest {
 
         coEvery {
             dashboardApi.dashboardGetUpcomingOrders(
-                filterEmployeeId = "emp-1", filterIsActive = true, sort = any(), offset = 0, limit = 10,
+                filterEmployeeId = "emp-1", filterIsActive = true, filterCleaningDateFrom = any(), sort = any(), offset = 0, limit = 10,
             )
         } throws java.io.IOException("optional upcoming")
         coEvery { dashboardApi.dashboardGetAvailableJobsPreview(5) } throws java.io.IOException("optional preview")
@@ -309,6 +309,25 @@ class DashboardRepositoryTest {
         coEvery { dashboardApi.dashboardGetStats("emp-1") } throws java.io.IOException("critical stats")
         assertTrue(repo.refresh("emp-1", force = true) is cz.cleansia.core.network.ApiError.Network)
         assertEquals(good, repo.snapshot.value)
+    }
+
+    /** An unread list is not an empty one: read as empty, the greeting says "You're free today". */
+    @Test
+    fun refresh_firstLoadWhoseUpcomingReadFailsLeavesUpcomingUnknown() = runTest {
+        coEvery { dashboardApi.dashboardGetStats("emp-1") } returns Response.success(dashboardStatsDto())
+        coEvery {
+            dashboardApi.dashboardGetUpcomingOrders(
+                filterEmployeeId = "emp-1", filterIsActive = true, filterCleaningDateFrom = any(), sort = any(), offset = 0, limit = 10,
+            )
+        } throws java.io.IOException("upcoming")
+        coEvery { dashboardApi.dashboardGetAvailableJobsPreview(5) } returns Response.success(availableJobsPreviewResponse())
+        val repo = newRepo()
+
+        assertNull(repo.refresh("emp-1", force = false))
+
+        assertTrue(repo.snapshot.value.loaded)
+        assertEquals(dashboardStats(), repo.snapshot.value.stats)
+        assertNull(repo.snapshot.value.upcoming)
     }
 
     @Test
@@ -321,7 +340,7 @@ class DashboardRepositoryTest {
         }
         coEvery {
             dashboardApi.dashboardGetUpcomingOrders(
-                filterEmployeeId = "emp-1", filterIsActive = true, sort = any(), offset = 0, limit = 10,
+                filterEmployeeId = "emp-1", filterIsActive = true, filterCleaningDateFrom = any(), sort = any(), offset = 0, limit = 10,
             )
         } returns Response.success(PagedDataOfOrderListItem(data = upcoming))
         coEvery { dashboardApi.dashboardGetAvailableJobsPreview(5) } returns Response.success(availableJobsPreviewResponse())
@@ -331,11 +350,11 @@ class DashboardRepositoryTest {
         assertEquals(1, statsCalls.get())
         assertEquals(upcoming, repo.snapshot.value.upcoming)
         assertNull(repo.refresh(null, force = true))
-        assertTrue(repo.snapshot.value.upcoming.isEmpty())
+        assertNull(repo.snapshot.value.upcoming)
         assertEquals(2, statsCalls.get())
         coVerify(exactly = 1) {
             dashboardApi.dashboardGetUpcomingOrders(
-                filterEmployeeId = "emp-1", filterIsActive = true, sort = any(), offset = 0, limit = 10,
+                filterEmployeeId = "emp-1", filterIsActive = true, filterCleaningDateFrom = any(), sort = any(), offset = 0, limit = 10,
             )
         }
     }
@@ -351,7 +370,7 @@ class DashboardRepositoryTest {
         coEvery { dashboardApi.dashboardGetStats("emp-1") } returns Response.success(dashboardStatsDto())
         coEvery {
             dashboardApi.dashboardGetUpcomingOrders(
-                filterEmployeeId = "emp-1", filterIsActive = true, sort = any(), offset = 0, limit = 10,
+                filterEmployeeId = "emp-1", filterIsActive = true, filterCleaningDateFrom = any(), sort = any(), offset = 0, limit = 10,
             )
         } coAnswers {
             upcomingEntered.complete(Unit)
@@ -385,7 +404,7 @@ class DashboardRepositoryTest {
             assertFalse(repo.snapshot.value.refreshing)
             assertFalse(repo.snapshot.value.loaded)
             assertEquals(dashboardStats(), repo.snapshot.value.stats)
-            assertTrue(repo.snapshot.value.upcoming.isEmpty())
+            assertNull(repo.snapshot.value.upcoming)
             assertNull(repo.snapshot.value.availableJobsPreview)
         } finally {
             upcomingRelease.complete(Unit)

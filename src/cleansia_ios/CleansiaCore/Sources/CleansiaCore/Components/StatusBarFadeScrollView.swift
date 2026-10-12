@@ -2,9 +2,9 @@ import SwiftUI
 import UIKit
 
 /// A vertical scroll view whose content fades out under the status bar once it scrolls — for the
-/// screens that hide the navigation bar (Home, Profile, the Plus offer, the partner dashboard). Shown
-/// only once the content has scrolled, so the full-bleed heroes stay untouched at rest and a
-/// pull-to-refresh never raises it.
+/// screens that hide the navigation bar (Home, Profile, the Plus offer, the partner dashboard and the
+/// partner Profile hub). Shown only once the content has scrolled, so the full-bleed heroes stay untouched
+/// at rest and a pull-to-refresh never raises it.
 ///
 /// The fade is one solid colour, the colour actually behind the status bar: the page colour, or — on a
 /// screen with a hero at its top (`heroTint`, the hero marked `statusBarFadeHero()`) — the hero's top
@@ -313,15 +313,35 @@ enum StatusBarFade {
         return 0.2126 * linear[0] + 0.7152 * linear[1] + 0.0722 * linear[2]
     }
 
+    /// The colour as it is drawn in `scheme`, read off a one-point render. Before iOS 17 `UIColor(Color)` keeps
+    /// only a dynamic colour's light value, whatever traits it is then resolved with. A render costs about a
+    /// millisecond and the fade reads the same two colours each time it redraws, so the reads are kept.
+    @MainActor
     static func rgb(_ color: Color, _ scheme: ColorScheme) -> RGB {
-        let traits = UITraitCollection(userInterfaceStyle: scheme == .dark ? .dark : .light)
-        var red: CGFloat = 0
-        var green: CGFloat = 0
-        var blue: CGFloat = 0
-        var alpha: CGFloat = 0
-        UIColor(color).resolvedColor(with: traits).getRed(&red, green: &green, blue: &blue, alpha: &alpha)
-        return RGB(Double(red), Double(green), Double(blue))
+        if let kept = reads[scheme]?[color] { return kept }
+        let renderer = ImageRenderer(content: color.frame(width: 1, height: 1).environment(\.colorScheme, scheme))
+        renderer.scale = 1
+        guard let image = renderer.cgImage,
+              let space = CGColorSpace(name: CGColorSpace.sRGB),
+              let context = CGContext(
+                  data: nil,
+                  width: 1,
+                  height: 1,
+                  bitsPerComponent: 8,
+                  bytesPerRow: 4,
+                  space: space,
+                  bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue
+              )
+        else { return .zero }
+        context.draw(image, in: CGRect(x: 0, y: 0, width: 1, height: 1))
+        guard let pixel = context.data?.assumingMemoryBound(to: UInt8.self) else { return .zero }
+        let read = RGB(Double(pixel[0]), Double(pixel[1]), Double(pixel[2])) / max(Double(pixel[3]), 1)
+        if reads[scheme, default: [:]].count >= 8 { reads[scheme] = [:] }
+        reads[scheme, default: [:]][color] = read
+        return read
     }
+
+    @MainActor private static var reads: [ColorScheme: [Color: RGB]] = [:]
 
     /// Where a luminance that falls as the hero's share rises reaches `target`, bracketed to a thousandth
     /// of a share: above it at `lower`, at or below it at `upper`.

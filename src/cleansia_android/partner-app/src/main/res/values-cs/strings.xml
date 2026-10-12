@@ -1049,6 +1049,7 @@
     <string name="registration_lock_sign_out_confirm_title">Odhlásit se?</string>
     <string name="registration_lock_sign_out_confirm_message">Váš postup je uložený. Pro dokončení registrace se budete muset znovu přihlásit.</string>
     <string name="registration_lock_support_subject">Cleansia partner — žádost zamítnuta</string>
+    <string name="help_email_unavailable">Nenašli jsme poštovní aplikaci, adresa je zkopírovaná.</string>
     <string name="registration_lock_category_profile">Profil</string>
     <string name="registration_lock_category_documents">Dokumenty</string>
     <string name="registration_lock_category_approval">Schválení</string>

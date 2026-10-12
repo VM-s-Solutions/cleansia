@@ -55,6 +55,7 @@ class RegistrationLockDecisionPushTest {
             errorTranslator = mockk(relaxed = true),
             appSettingsRepository = mockk(relaxed = true),
             languageSync = mockk(relaxed = true),
+            snackbar = mockk(relaxed = true),
         )
         advanceUntilIdle()
         vm.onResume()

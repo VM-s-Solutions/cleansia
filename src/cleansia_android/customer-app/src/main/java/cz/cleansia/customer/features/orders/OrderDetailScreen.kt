@@ -75,6 +75,7 @@ import cz.cleansia.core.ui.components.SnapSheetState
 import cz.cleansia.core.ui.components.rememberSnapSheetState
 import cz.cleansia.core.ui.theme.Spacing
 import cz.cleansia.core.ui.theme.primaryText
+import cz.cleansia.customer.BuildConfig
 import cz.cleansia.customer.R
 import cz.cleansia.customer.core.market.MarketState
 import cz.cleansia.customer.core.orders.OrderCurrencyDetailDto
@@ -577,7 +578,10 @@ private fun OrderDetailSheetContent(
     onSaveCardChange: (Boolean) -> Unit,
     onTermsAcceptedChange: (Boolean) -> Unit,
 ) {
-    val showConfirmRecurringCta = order.needsConfirmation
+    val payByCard = order.paymentType?.value == 2
+    val cardPaymentAvailable = BuildConfig.STRIPE_PUBLISHABLE_KEY.isNotBlank()
+    // Without a Stripe key a card occurrence is not offered: its confirm spends credit for a sheet that cannot open.
+    val showConfirmRecurringCta = order.needsConfirmation && (cardPaymentAvailable || !payByCard)
     val hasFooter = showCancel || showCleanerNoShow || showReportIssue || showRebook || showMakeRecurring
 
     // Gesture-priority guard, the same one the partner sheet carries: once the customer has scrolled
@@ -684,7 +688,7 @@ private fun OrderDetailSheetContent(
                     // arm takes no payment — the cleaner collects on the day. Branch on Card so
                     // anything unexpected falls to the label that is true of BOTH flavours rather
                     // than the one that over-promises.
-                    labelRes = if (order.paymentType?.value == 2) {
+                    labelRes = if (payByCard) {
                         R.string.recurring_confirm_cta
                     } else {
                         R.string.recurring_confirm_cta_cash

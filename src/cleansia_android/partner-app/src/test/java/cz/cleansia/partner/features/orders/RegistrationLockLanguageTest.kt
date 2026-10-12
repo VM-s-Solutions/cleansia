@@ -85,6 +85,7 @@ class RegistrationLockLanguageTest {
             errorTranslator = errorTranslator,
             appSettingsRepository = appSettingsRepository,
             languageSync = LiveLanguagePreferenceSync(tokenStore, userRepository, appSettingsRepository, syncScope()),
+            snackbar = mockk(relaxed = true),
         )
     }
 

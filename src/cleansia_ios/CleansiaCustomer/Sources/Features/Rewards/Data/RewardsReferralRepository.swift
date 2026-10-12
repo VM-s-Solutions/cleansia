@@ -15,6 +15,7 @@ final class RewardsReferralRepository: SessionScopedCache {
     @Published private(set) var loading = false
 
     private let client: RewardsReferralClient
+    private var sessionGeneration = 0
 
     init(client: RewardsReferralClient) {
         self.client = client
@@ -23,15 +24,20 @@ final class RewardsReferralRepository: SessionScopedCache {
     @discardableResult
     func refresh() async -> ApiResult<Void> {
         if loading { return .success(()) }
+        let generation = sessionGeneration
         loading = true
-        defer { loading = false }
-        switch await client.getMy() {
+        defer { if generation == sessionGeneration { loading = false } }
+        let accountResult = await client.getMy()
+        guard generation == sessionGeneration else { return .failure(ApiError(code: ApiError.cancelledCode)) }
+        switch accountResult {
         case let .success(account):
             self.account = account
         case let .failure(error):
             return .failure(error)
         }
-        if case let .success(page) = await client.getMyReferrals(offset: 0, limit: 20) {
+        let referralsResult = await client.getMyReferrals(offset: 0, limit: 20)
+        guard generation == sessionGeneration else { return .failure(ApiError(code: ApiError.cancelledCode)) }
+        if case let .success(page) = referralsResult {
             referrals = page.items
         }
         loaded = true
@@ -39,6 +45,8 @@ final class RewardsReferralRepository: SessionScopedCache {
     }
 
     func clear() async {
+        sessionGeneration += 1
+        loading = false
         account = nil
         referrals = []
         loaded = false

@@ -46,6 +46,19 @@ final class DashboardDataTests: XCTestCase {
         XCTAssertNil(whereLine(name: " ", address: nil))
     }
 
+    /// The server always dates an order, but the client's field is optional: an undated order never takes the
+    /// hero from a dated one, and never becomes the next job on its own.
+    func testAnUndatedActiveOrderIsNeverTheNextJob() {
+        let withDated = from(preview: Self.board, upcoming: [
+            .upcoming(id: "undated", status: 4, startsAt: nil),
+            .upcoming(id: "dated", status: 2, startsAt: hours(5))
+        ])
+        XCTAssertEqual(withDated.hero, .nextJob(orderId: "dated", status: ._2, startsAt: hours(5), whereLine: nil))
+
+        let alone = from(preview: Self.board, upcoming: [.upcoming(id: "undated", status: 2, startsAt: nil)])
+        XCTAssertEqual(alone.hero, .availableWork(jobCount: 3, potentialEarnings: 900))
+    }
+
     func testTodaysJobsCountCountsOnlyUpcomingDatedToday() {
         let data = from(preview: nil, upcoming: [
             .upcoming(id: "this-morning", status: 4, startsAt: hours(-2)),

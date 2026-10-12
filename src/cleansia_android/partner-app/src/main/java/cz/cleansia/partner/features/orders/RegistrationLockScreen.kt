@@ -72,6 +72,7 @@ import androidx.lifecycle.Lifecycle
 import cz.cleansia.core.settings.AppLocale
 import cz.cleansia.core.ui.components.CleansiaTextButton
 import cz.cleansia.core.ui.components.SudsRefreshIndicator
+import cz.cleansia.core.ui.openOrCopy
 import cz.cleansia.core.ui.theme.Spacing
 import cz.cleansia.core.ui.theme.primaryIconOnContainer
 import cz.cleansia.core.ui.theme.primaryText
@@ -79,6 +80,8 @@ import cz.cleansia.partner.LocalAppSettings
 import cz.cleansia.partner.R
 import cz.cleansia.partner.features.settings.LanguageChooser
 import cz.cleansia.partner.navigation.NavRoute
+
+private const val SUPPORT_EMAIL = "support@cleansia.cz"
 
 /**
  * App-wide gate for cleaners who have not finished onboarding or are not approved. One category row per
@@ -233,6 +236,7 @@ fun RegistrationLockScreen(
                     progress = progress,
                     steps = steps,
                     onFixStep = onFixStep,
+                    onSupportEmailUnavailable = viewModel::onSupportEmailUnavailable,
                 )
             }
 
@@ -347,6 +351,7 @@ private fun ProgressCard(
     progress: Float,
     steps: List<StepRow>,
     onFixStep: (NavRoute) -> Unit,
+    onSupportEmailUnavailable: () -> Unit,
 ) {
     // Flat card pattern (matches EarningsSummaryScreen): surface
     // background, 1dp outlineVariant border, 16dp corners, no shadow.
@@ -390,7 +395,7 @@ private fun ProgressCard(
         Spacer(Modifier.height(Spacing.M))
 
         steps.forEachIndexed { index, step ->
-            StepRowView(step = step, onFixStep = onFixStep)
+            StepRowView(step = step, onFixStep = onFixStep, onSupportEmailUnavailable = onSupportEmailUnavailable)
             if (index < steps.lastIndex) Spacer(Modifier.height(Spacing.S))
         }
     }
@@ -423,7 +428,7 @@ private fun IconHalo(icon: ImageVector) {
 }
 
 @Composable
-private fun StepRowView(step: StepRow, onFixStep: (NavRoute) -> Unit) {
+private fun StepRowView(step: StepRow, onFixStep: (NavRoute) -> Unit, onSupportEmailUnavailable: () -> Unit) {
     val (categoryIcon, categoryLabelRes, ctaLabelRes) = when (step.category) {
         StepCategory.Profile -> Triple(
             Icons.Outlined.Person,
@@ -468,13 +473,13 @@ private fun StepRowView(step: StepRow, onFixStep: (NavRoute) -> Unit) {
             } else {
                 // Approval rejected → open default mail app to support.
                 val intent = Intent(Intent.ACTION_SENDTO).apply {
-                    data = Uri.parse("mailto:support@cleansia.cz")
+                    data = Uri.parse("mailto:$SUPPORT_EMAIL")
                     putExtra(
                         Intent.EXTRA_SUBJECT,
                         context.getString(R.string.registration_lock_support_subject),
                     )
                 }
-                runCatching { context.startActivity(intent) }
+                if (!context.openOrCopy(intent, SUPPORT_EMAIL)) onSupportEmailUnavailable()
             }
         }
     }

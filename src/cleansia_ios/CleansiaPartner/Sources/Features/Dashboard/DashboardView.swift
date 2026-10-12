@@ -243,7 +243,7 @@ struct DashboardContent: View {
 
 private struct GreetingBar: View {
     let firstName: String?
-    let todaysJobsCount: Int
+    let todaysJobsCount: Int?
     let locale: Locale
     let unreadCount: Int
     let onNotificationTap: () -> Void
@@ -258,13 +258,18 @@ private struct GreetingBar: View {
                 Text(DashboardGreeting.text(firstName: firstName))
                     .font(CleansiaTypography.titleLarge)
                     .foregroundColor(CleansiaColors.onBackground)
-                (
-                    Text(verbatim: "\(DashboardGreeting.dateLine(locale: locale)) · ")
-                        .foregroundColor(CleansiaColors.onSurfaceVariant)
-                        + Text(DashboardGreeting.todayLine(jobsToday: todaysJobsCount))
-                        .fontWeight(.semibold)
-                        .foregroundColor(CleansiaColors.primaryText)
-                )
+                Group {
+                    if let todaysJobsCount {
+                        Text(verbatim: "\(DashboardGreeting.dateLine(locale: locale)) · ")
+                            .foregroundColor(CleansiaColors.onSurfaceVariant)
+                            + Text(DashboardGreeting.todayLine(jobsToday: todaysJobsCount))
+                            .fontWeight(.semibold)
+                            .foregroundColor(CleansiaColors.primaryText)
+                    } else {
+                        Text(verbatim: DashboardGreeting.dateLine(locale: locale))
+                            .foregroundColor(CleansiaColors.onSurfaceVariant)
+                    }
+                }
                 .font(CleansiaTypography.bodyMedium)
             }
             Spacer()

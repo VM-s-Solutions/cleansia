@@ -536,6 +536,7 @@ extension CustomerShellView {
     private var membershipSuccess: some View {
         MembershipSuccessScreen(
             showExpressPerk: membershipVM.expressWaiverAdvertised,
+            discountPercent: membershipVM.discountPerkPercent,
             copy: membershipVM.copy,
             onSetupRecurring: {
                 model.path = NavigationPath([

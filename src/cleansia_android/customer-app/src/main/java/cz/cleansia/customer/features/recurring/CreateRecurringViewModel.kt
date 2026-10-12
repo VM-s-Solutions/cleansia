@@ -27,6 +27,7 @@ import cz.cleansia.customer.core.market.countryId
 import cz.cleansia.customer.core.orders.OrderRepository
 import cz.cleansia.customer.core.recurring.CreateRecurringBookingRequest
 import cz.cleansia.customer.core.recurring.RecurrenceFrequency
+import cz.cleansia.customer.BuildConfig
 import cz.cleansia.customer.R
 import cz.cleansia.customer.core.recurring.RecurringBookingRepository
 import cz.cleansia.customer.core.recurring.UpdateRecurringBookingRequest
@@ -723,8 +724,11 @@ data class CreateRecurringFormState(
     val savedAddressId: String = "",
     val selectedServiceIds: Set<String> = emptySet(),
     val selectedPackageIds: Set<String> = emptySet(),
-    /** The backend's `PaymentType`; null once a cash choice was taken away and nothing was chosen since. */
-    val paymentType: Int? = CreateRecurringViewModel.PAYMENT_CARD,
+    /**
+     * The backend's `PaymentType`; null while nothing is chosen: after a cash choice is taken away, and at the
+     * start in a build with no Stripe key, which offers no card, as booking starts with no method.
+     */
+    val paymentType: Int? = if (BuildConfig.STRIPE_PUBLISHABLE_KEY.isNotBlank()) CreateRecurringViewModel.PAYMENT_CARD else null,
     /** ISO-8601 instant. Default empty — UI must set before submit. */
     val startsOnIso: String = "",
     /** ISO-8601 instant. No editor in the wizard; carried so an edit doesn't erase it. */

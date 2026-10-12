@@ -8,6 +8,7 @@ import app.cash.turbine.test
 import cz.cleansia.core.network.ApiError
 import cz.cleansia.core.network.ApiResult
 import cz.cleansia.core.snackbar.SnackbarController
+import cz.cleansia.customer.BuildConfig
 import cz.cleansia.customer.R
 import cz.cleansia.customer.core.booking.BookingApi
 import cz.cleansia.customer.core.booking.CashEligibility
@@ -294,6 +295,7 @@ class CreateRecurringViewModelTest {
         vm.setDirtinessLevel(DirtinessLevel.Normal)
         vm.setStartsOn("2026-07-01T00:00:00Z")
         vm.setEarlyPerformanceRequested(true)
+        vm.setPaymentType(CreateRecurringViewModel.PAYMENT_CARD)
     }
 
     private val plusRefusal = "Recurring cleanings are a Cleansia Plus benefit — subscribe to set one up."
@@ -1536,6 +1538,7 @@ class CreateRecurringViewModelTest {
         val vm = viewModel()
         advanceUntilIdle()
         vm.setEarlyPerformanceRequested(true)
+        vm.setPaymentType(CreateRecurringViewModel.PAYMENT_CARD)
         vm.nextStep()
         vm.nextStep()
         runCurrent()
@@ -1600,12 +1603,14 @@ class CreateRecurringViewModelTest {
         return vm
     }
 
+    /** A build without a Stripe key starts with no way to pay chosen, as booking does; CI builds without one. */
     @Test
-    fun `a new schedule is paid by card until the customer chooses otherwise`() = runTest {
+    fun `a new schedule starts on card only in a build that can take a card`() = runTest {
         val vm = viewModel()
         advanceUntilIdle()
 
-        assertEquals(CreateRecurringViewModel.PAYMENT_CARD, vm.state.value.paymentType)
+        val expected = if (BuildConfig.STRIPE_PUBLISHABLE_KEY.isNotBlank()) CreateRecurringViewModel.PAYMENT_CARD else null
+        assertEquals(expected, vm.state.value.paymentType)
     }
 
     @Test

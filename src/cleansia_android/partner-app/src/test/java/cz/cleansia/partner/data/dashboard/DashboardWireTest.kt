@@ -5,6 +5,9 @@ import cz.cleansia.partner.api.client.DashboardApi
 import cz.cleansia.partner.api.model.AvailableJobPreviewDto
 import cz.cleansia.partner.api.model.AvailableJobsPreviewResponse
 import cz.cleansia.partner.api.model.DashboardStatsDto
+import java.time.LocalDate
+import java.time.ZoneId
+import java.util.TimeZone
 import java.util.concurrent.CopyOnWriteArrayList
 import kotlinx.coroutines.test.runTest
 import kotlinx.serialization.ExperimentalSerializationApi
@@ -145,6 +148,30 @@ class DashboardWireTest {
             listOf("/api/Dashboard/GetAvailableJobsPreview?Limit=5", "/api/Dashboard/GetStats"),
             paths.drop(1).sorted(),
         )
+    }
+
+    /**
+     * The page starts at the cleaner's local midnight, sent in UTC: Kiritimati is UTC+14 all year, so its
+     * midnight is 10:00 UTC the day before.
+     */
+    @Test
+    fun theUpcomingRequestStartsAtTheCleanersLocalMidnightInUtc() = runTest {
+        val saved = TimeZone.getDefault()
+        TimeZone.setDefault(TimeZone.getTimeZone("Pacific/Kiritimati"))
+        try {
+            val zone = ZoneId.of("Pacific/Kiritimati")
+            val requests = CopyOnWriteArrayList<RecordedRequest>()
+            val before = LocalDate.now(zone)
+            serving(onRequest = { requests += it }) { it.refresh(employeeId = EMPLOYEE_ID, force = true) }
+            val after = LocalDate.now(zone)
+
+            val upcoming = requests.single { it.path.orEmpty().startsWith("/api/Dashboard/GetUpcomingOrders") }
+            val from = upcoming.requestUrl?.queryParameter("Filter.CleaningDateFrom")
+            val todaysMidnight = setOf(before, after).map { "${it.minusDays(1)}T10:00:00Z" }
+            assertTrue("expected today's local midnight in UTC, one of $todaysMidnight; got $from", from in todaysMidnight)
+        } finally {
+            TimeZone.setDefault(saved)
+        }
     }
 
     // --- rule 1: money is never coerced -----------------------------------------

@@ -4,6 +4,7 @@ import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.compositeOver
 import androidx.compose.ui.unit.dp
+import java.io.File
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertEquals
@@ -78,7 +79,7 @@ class StatusBarFadeTest {
         assertEquals(63, statusBarFadeHeight(statusBar = 63, cutout = 0f..90f))
     }
 
-    // W-F4: API 28-30 have no cutout path, so a phone there with a camera in its top edge fell back to the
+    // API 28-30 have no cutout path, so a phone there with a camera in its top edge fell back to the
     // status bar's inset, below the clock's line. Its bounding rectangles give the same line.
 
     @Test
@@ -153,7 +154,7 @@ class StatusBarFadeTest {
         assertFalse(statusBarIconsLight(Color.White))
     }
 
-    // W-F3: a dark hero cross-faded into a light page passed through shades neither icon colour reads
+    // A dark hero cross-faded into a light page passed through shades neither icon colour reads
     // 4.5:1 on; Profile's clock measured 3.1:1 over about 50 px of scroll on the Pixel 8 emulator.
 
     /** Profile's and Subscribe Plus's heroes over their pages, light and dark. */
@@ -220,6 +221,35 @@ class StatusBarFadeTest {
         assertTrue(statusBarFadeScrolled(LazyListState(firstVisibleItemIndex = 1, firstVisibleItemScrollOffset = 0)))
         assertTrue(statusBarFadeScrolled(LazyListState(firstVisibleItemIndex = 3, firstVisibleItemScrollOffset = 40)))
     }
+
+    /**
+     * The overload the partner dashboard and Profile hub chain on their lists: the fade in the page colour,
+     * shown once the list has left its top. Nothing else would notice a body that drew nothing.
+     */
+    @Test
+    fun `the lazy-list overload draws the page colour once the list has left its top`() {
+        val marker = "fun Modifier.statusBarFade(listState: LazyListState): Modifier = composed {"
+        val code = File(coreDir, "src/main/java/cz/cleansia/core/ui/components/StatusBarFade.kt").readText()
+            .replace("\r\n", "\n")
+            .replace(Regex("""/\*[\s\S]*?\*/|(?<![:"])//[^\n]*"""), "")
+        val start = code.indexOf(marker)
+        assertTrue("no `$marker` in StatusBarFade.kt", start >= 0)
+        val body = code.substring(start, code.indexOf("\n}\n", start))
+        assertTrue(
+            "the overload must show the fade once statusBarFadeScrolled(listState)",
+            body.contains("derivedStateOf { statusBarFadeScrolled(listState) }"),
+        )
+        assertTrue("the overload must fade in the page colour", body.contains("val page = MaterialTheme.colorScheme.background"))
+        assertTrue(
+            "the overload must draw the fade over its content",
+            Regex("""drawWithContent \{\s*drawContent\(\)\s*drawStatusBarFade\(alpha, height, ease, page\)\s*\}""")
+                .containsMatchIn(body),
+        )
+    }
+
+    private val coreDir: File = sequenceOf(File("."), File("core"), File("src/cleansia_android/core"))
+        .firstOrNull { File(it, "src/main/java/cz/cleansia/core/ui/components/StatusBarFade.kt").isFile }
+        ?: error("core not found from working dir ${File(".").absolutePath}")
 
     private companion object {
         /** An sRGB colour keeps its alpha in eight bits: 0.9 is stored as 230 / 255. */

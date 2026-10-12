@@ -10,6 +10,7 @@ import XCTest
 /// inside the same control takes its label's ink, so no control shows two blues; fills, borders, filled
 /// buttons and standalone icons keep the primary. These are the partner app's own text buttons; the shared
 /// ones (`CleansiaTextLink`, the chip, the dropdown, the reveal panel) are pinned in Core.
+@MainActor
 final class TextInkTests: XCTestCase {
     func testTheTabBarAndTheToolbarsTextButtonsTakeTheTextInk() throws {
         let shell = try compactSource("Shell/PartnerShellView.swift")
@@ -282,14 +283,34 @@ final class TextInkTests: XCTestCase {
         return found
     }
 
+    /// Resolves a colour as SwiftUI draws it in `style`. Before iOS 17 `UIColor(Color)` keeps only a dynamic colour's
+    /// light value whatever traits it is then resolved with, so a dark value read through it was the light one.
     private func rgb(_ color: Color, _ style: UIUserInterfaceStyle) -> SIMD3<Double> {
-        var red: CGFloat = 0
-        var green: CGFloat = 0
-        var blue: CGFloat = 0
-        var alpha: CGFloat = 0
-        UIColor(color).resolvedColor(with: UITraitCollection(userInterfaceStyle: style))
-            .getRed(&red, green: &green, blue: &blue, alpha: &alpha)
-        return SIMD3(Double(red), Double(green), Double(blue))
+        let renderer = ImageRenderer(
+            content: color.frame(width: 1, height: 1).environment(\.colorScheme, style == .dark ? .dark : .light)
+        )
+        renderer.scale = 1
+        guard let image = renderer.cgImage,
+              let space = CGColorSpace(name: CGColorSpace.sRGB),
+              let context = CGContext(
+                  data: nil,
+                  width: 1,
+                  height: 1,
+                  bitsPerComponent: 8,
+                  bytesPerRow: 4,
+                  space: space,
+                  bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue
+              )
+        else {
+            XCTFail("the colour could not be rendered")
+            return .zero
+        }
+        context.draw(image, in: CGRect(x: 0, y: 0, width: 1, height: 1))
+        guard let pixel = context.data?.assumingMemoryBound(to: UInt8.self) else {
+            XCTFail("the rendered colour could not be read")
+            return .zero
+        }
+        return SIMD3(Double(pixel[0]), Double(pixel[1]), Double(pixel[2])) / 255
     }
 
     private func contrast(_ first: SIMD3<Double>, _ second: SIMD3<Double>) -> Double {

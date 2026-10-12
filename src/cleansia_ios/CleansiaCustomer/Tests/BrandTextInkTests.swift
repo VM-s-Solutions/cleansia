@@ -1,6 +1,6 @@
-import CleansiaCore
 import SwiftUI
 import XCTest
+@testable import CleansiaCore
 @testable import CleansiaCustomer
 
 /// Brand-blue TEXT reads at 4.5:1 or more (finding 2026-10-05). The primary is sky-600 in light mode,
@@ -128,6 +128,7 @@ final class BrandTextInkTests: XCTestCase {
     /// Dark mode: on the primary container (sky-700 there) the text ink's sky-400 read 2.77:1, so the
     /// default-address badges, the "This device" chip and the cleaner's initial take the container's text ink,
     /// sky-100 in dark (5.17:1) and unchanged in light (finding 2026-10-05).
+    @MainActor
     func testTheBadgesOnThePrimaryContainerTakeItsTextInk() throws {
         let sites: [(path: String, snippet: String)] = [
             ("Addresses/AddressManagerView.swift", "Text(L10n.AddressManager.defaultBadge)"),
@@ -147,14 +148,8 @@ final class BrandTextInkTests: XCTestCase {
                 "\(site.path): \(modifiers)"
             )
         }
-        let dark = UITraitCollection(userInterfaceStyle: .dark)
         func darkRGB(_ color: Color) -> RGB {
-            var red: CGFloat = 0
-            var green: CGFloat = 0
-            var blue: CGFloat = 0
-            var alpha: CGFloat = 0
-            UIColor(color).resolvedColor(with: dark).getRed(&red, green: &green, blue: &blue, alpha: &alpha)
-            return RGB(Double(red), Double(green), Double(blue))
+            StatusBarFade.rgb(color, .dark)
         }
         let container = darkRGB(CleansiaColors.primaryContainer)
         XCTAssertGreaterThanOrEqual(contrast(darkRGB(CleansiaColors.primaryTextOnContainer), container), 4.5)

@@ -13,15 +13,24 @@ import org.junit.Test
  */
 class DashboardScreenTest {
 
+    /** With no mail app on the phone the tap did nothing; now it copies the address and says so, as the customer Help does. */
     @Test
-    fun `the Help shortcut opens an e-mail to support`() {
+    fun `the Help shortcut opens an e-mail to support, or copies the address and says so`() {
         val onHelp = block(code(), "onHelp = ", '{', '}')
         listOf(
-            "runCatching",
-            "context.startActivity(",
             "Intent.ACTION_SENDTO",
-            "Uri.parse(\"mailto:support@cleansia.cz\")",
+            "Uri.parse(\"mailto:\$SUPPORT_EMAIL\")",
         ).forEach { call -> assertTrue("the Help shortcut must use `$call`, got $onHelp", onHelp.contains(call)) }
+        assertTrue(
+            "a mail intent no app takes must copy the address and tell the cleaner, got $onHelp",
+            Regex("""if \(!context\.openOrCopy\(\w+, SUPPORT_EMAIL\)\) viewModel\.onHelpEmailUnavailable\(\)""")
+                .containsMatchIn(onHelp),
+        )
+        assertFalse("a refused intent must not be swallowed, got $onHelp", onHelp.contains("runCatching"))
+        assertTrue(
+            "the support address must be the one the customer app uses",
+            code().contains("private const val SUPPORT_EMAIL = \"support@cleansia.cz\""),
+        )
     }
 
     @Test
@@ -38,6 +47,34 @@ class DashboardScreenTest {
             .filter { Regex("""\b(?:In|Today|Tomorrow|min)\b""").containsMatchIn(it) }
             .toList()
         assertEquals("nextJobWhenLine still hard-codes English", emptyList<String>(), english)
+    }
+
+    @Test
+    fun `the when-line says tomorrow only for the next calendar day`() {
+        val whenLine = functionBody("private fun nextJobWhenLine(")
+        assertTrue(
+            "nextJobWhenLine must decide Tomorrow with startsTomorrow(instant, now, zone)",
+            whenLine.contains("startsTomorrow(instant, now, zone)"),
+        )
+        assertFalse("nextJobWhenLine must not count whole days for Tomorrow", whenLine.contains("toDays()"))
+    }
+
+    /** An unread or failed upcoming list is not a free day: the greeting then shows the date alone. */
+    @Test
+    fun `the greeting omits its today line while the day's jobs are unknown`() {
+        val screen = code()
+        assertTrue(
+            "the count must come from the nullable upcoming list",
+            screen.contains("todaysJobCount(upcoming, LocalDate.now(), ZoneId.systemDefault())"),
+        )
+        assertTrue("the greeting must take a nullable count", screen.contains("todaysJobsCount: Int?,"))
+        assertTrue("the greeting must be handed the count as it is", screen.contains("todaysJobsCount = todaysJobsCount,"))
+        val bar = functionBody("private fun CompactGreetingBar(")
+        assertTrue("the greeting lost its today line", bar.contains("todaysStateLine(todaysJobsCount)"))
+        assertTrue(
+            "the today line must render only inside if (todaysJobsCount != null)",
+            block(bar, "if (todaysJobsCount != null) {", '{', '}').contains("todaysStateLine(todaysJobsCount)"),
+        )
     }
 
     @Test
@@ -71,8 +108,24 @@ class DashboardScreenTest {
             for (tag in listOf("en-US", "uk-UA")) {
                 Locale.setDefault(Locale.forLanguageTag(tag))
                 val figure = formatMoneyWithSymbol(3609.0, resolveCurrencySymbol("CZK"), fallback = "—")
-                // uk groups digits with a no-break space, en with a comma the formatter turns into a space.
-                assertEquals(tag, "3 609 Kč", figure.replace('\u00A0', ' '))
+                // uk groups digits with a no-break space, narrow on some JDKs, and en with a comma the
+                // formatter turns into a space.
+                assertEquals(tag, "3 609 Kč", figure.replace('\u00A0', ' ').replace('\u202F', ' '))
+            }
+        } finally {
+            Locale.setDefault(original)
+        }
+    }
+
+    /** As on iOS and in the docs, a figure the server names no currency for carries no symbol, not the phone's. */
+    @Test
+    fun `a missing currency code shows no symbol on any phone`() {
+        val original = Locale.getDefault()
+        try {
+            for (tag in listOf("en-US", "uk-UA", "cs-CZ")) {
+                Locale.setDefault(Locale.forLanguageTag(tag))
+                assertEquals(tag, "", resolveCurrencySymbol(null))
+                assertEquals(tag, "", resolveCurrencySymbol(" "))
             }
         } finally {
             Locale.setDefault(original)

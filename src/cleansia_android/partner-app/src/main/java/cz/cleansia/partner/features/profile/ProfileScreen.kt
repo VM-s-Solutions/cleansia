@@ -22,6 +22,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -72,6 +73,7 @@ import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import cz.cleansia.core.ui.components.CleansiaTextButton
+import cz.cleansia.core.ui.components.statusBarFade
 import cz.cleansia.core.ui.theme.Spacing
 import cz.cleansia.core.ui.theme.primaryText
 import cz.cleansia.partner.R
@@ -145,6 +147,7 @@ fun ProfileScreen(
     val context = LocalContext.current
 
     val statusBarTop = WindowInsets.statusBars.asPaddingValues().calculateTopPadding()
+    val listState = rememberLazyListState()
 
     when (val s = uiState) {
         ProfileUiState.Loading -> {
@@ -160,9 +163,11 @@ fun ProfileScreen(
         is ProfileUiState.Loaded -> {
             val employee = s.employee
             LazyColumn(
+                state = listState,
                 modifier = Modifier
                     .fillMaxSize()
-                    .background(MaterialTheme.colorScheme.background),
+                    .background(MaterialTheme.colorScheme.background)
+                    .statusBarFade(listState),
                 contentPadding = PaddingValues(bottom = MainBottomNavInset),
                 verticalArrangement = Arrangement.spacedBy(Spacing.M),
             ) {

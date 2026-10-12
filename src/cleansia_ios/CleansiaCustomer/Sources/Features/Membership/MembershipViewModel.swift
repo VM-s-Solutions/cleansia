@@ -45,6 +45,11 @@ final class MembershipViewModel: ViewModel {
         expressWaiverStatus.isAdvertised
     }
 
+    /// The discount the welcome names in its perk's title; without one the row is left out, as on Android.
+    var discountPerkPercent: Int? {
+        current?.discountPercentage.map { Int($0) }.flatMap { $0 > 0 ? $0 : nil }
+    }
+
     var copy: MembershipCopy {
         MembershipCopy(current)
     }

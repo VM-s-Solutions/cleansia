@@ -51,6 +51,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import cz.cleansia.core.money.CurrencySymbols
 import cz.cleansia.core.ui.components.MascotEmptyState
 import cz.cleansia.core.ui.components.SudsRefreshIndicator
 import cz.cleansia.core.ui.theme.Spacing
@@ -62,7 +63,6 @@ import cz.cleansia.partner.features.main.MainBottomNavInset
 import java.time.LocalDate
 import java.time.ZonedDateTime
 import java.time.format.DateTimeFormatter
-import java.util.Currency
 import java.util.Locale
 
 /**
@@ -254,7 +254,7 @@ private fun SummaryCard(invoices: List<Invoice>) {
     val code = remember(invoices) {
         invoices.firstNotNullOfOrNull { it.currencyCode }
     }
-    val symbol = remember(code) { currencySymbol(code) }
+    val symbol = remember(code) { CurrencySymbols.forCode(code) }
 
     Row(
         modifier = Modifier
@@ -294,7 +294,7 @@ private fun SummaryCard(invoices: List<Invoice>) {
 
 @Composable
 private fun InvoiceCard(invoice: Invoice, onClick: () -> Unit) {
-    val symbol = remember(invoice.currencyCode) { currencySymbol(invoice.currencyCode) }
+    val symbol = remember(invoice.currencyCode) { CurrencySymbols.forCode(invoice.currencyCode) }
     val dateLine = remember(invoice.paidAt, invoice.generatedAt) {
         // Prefer paid-at (final state) so the user sees the date that
         // matters to them; fall back to generated-at for invoices still
@@ -468,13 +468,6 @@ private fun formatDate(iso: String?): String? {
         ?: runCatching { LocalDate.parse(iso) }.getOrNull()
         ?: return null
     return date.format(shortDateFormatter)
-}
-
-private fun currencySymbol(code: String?): String {
-    if (code.isNullOrBlank()) return ""
-    return runCatching { Currency.getInstance(code).getSymbol(Locale.getDefault()) }
-        .getOrNull()
-        ?: code
 }
 
 private fun formatMoney(amount: Double, symbol: String): String {

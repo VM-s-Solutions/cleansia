@@ -24,6 +24,7 @@ final class SavedAddressRepository: SessionScopedCache {
 
     private let client: SavedAddressClient
     private let defaults: UserDefaults
+    private var sessionGeneration = 0
     private static let selectedIdKey = "saved_address_selected_id"
 
     init(client: SavedAddressClient, defaults: UserDefaults = .standard) {
@@ -44,9 +45,12 @@ final class SavedAddressRepository: SessionScopedCache {
     @discardableResult
     func refresh() async -> ApiResult<Void> {
         if loading { return .success(()) }
+        let generation = sessionGeneration
         loading = true
-        defer { loading = false }
-        switch await client.getMine() {
+        defer { if generation == sessionGeneration { loading = false } }
+        let result = await client.getMine()
+        guard generation == sessionGeneration else { return .failure(ApiError(code: ApiError.cancelledCode)) }
+        switch result {
         case let .success(list):
             addresses = list
             loaded = true
@@ -101,7 +105,10 @@ final class SavedAddressRepository: SessionScopedCache {
     /// surfaces the error so the calling VM can snackbar it; the mutation itself
     /// already succeeded server-side.
     private func reload() async -> ApiResult<Void> {
-        switch await client.getMine() {
+        let generation = sessionGeneration
+        let result = await client.getMine()
+        guard generation == sessionGeneration else { return .failure(ApiError(code: ApiError.cancelledCode)) }
+        switch result {
         case let .success(list):
             addresses = list
             loaded = true
@@ -112,6 +119,8 @@ final class SavedAddressRepository: SessionScopedCache {
     }
 
     func clear() async {
+        sessionGeneration += 1
+        loading = false
         addresses = []
         loaded = false
         setSelected(nil)

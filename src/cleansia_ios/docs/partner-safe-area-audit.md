@@ -32,6 +32,15 @@ caller and is otherwise unchanged. `ContentSafeAreaBindingTests` guards the bind
 simulator or device: the fade should sit behind the clock once the cards scroll, and be absent at rest and
 during a pull-to-refresh.
 
+### 2026-10-11 — the Profile hub's content fades under the status bar too
+
+The hub hides its navigation bar at its root, as the dashboard does, so its rows scrolled under the clock
+and the Dynamic Island with nothing behind them once the hero had scrolled away. It now scrolls through
+`StatusBarFadeScrollView` in the customer Profile's form: the fade wears the hero's top colour, the brand
+blue's first stop, while the hero (marked `statusBarFadeHero()`) is under the status bar, and the page
+colour once it has scrolled past. The hero's own bleed is unchanged. `ContentSafeAreaBindingTests` guards
+the binding.
+
 No guessed status-bar height or hardcoded sheet anchor is used. The map backdrop remains full bleed.
 `ViewThatFits` is available on iOS 16 and selects a child by the proposed space; see [Apple's documentation](https://developer.apple.com/documentation/swiftui/viewthatfits).
 
@@ -59,7 +68,7 @@ Partner:
 - Dashboard: DashboardView/content/skeleton/error, greeting/notification bell, pending-offer shortcuts, notification sheet and job-radius modal safe. Only background expands; scrolled content fades under the status bar (2026-10-11, above).
 - Jobs: OrdersRootView/OrdersListView with available/active/history panes, PendingOffersView and decline/refusal overlays safe. OrderDetailView normal content safe, with the shared ornament and approximate legend repaired above. Checklist, scope, customer/payment, timer, notes/issues, photos and action footer inherit the safe sheet content. TextEntrySheet safe NavigationStack/form. Camera/library sheet uses UIKit-owned controls.
 - Earnings: EarningsView, PeriodPayView, InvoicesListView, InvoiceDetailView and their loading/error/empty/content branches safe. Invoice PDF uses UIKit QuickLook.
-- Profile: ProfileHubContent is repaired above. PersonalSectionView, AddressSectionView, EmergencySectionView, IdentificationSectionView, BankSectionView, DocumentsSectionView, JobRadiusSectionView use SectionScaffold safe ScrollViews or safe custom content. AddressPickerView extends only the map sibling, keeping top search/back controls in a safe VStack. LanguagePickerView, ThemePickerView, DevicesView, DeleteAccountView safe. ProfileAvatarField camera/library modal is UIKit-owned.
+- Profile: ProfileHubContent is repaired above; scrolled content fades under the status bar (2026-10-11, above). PersonalSectionView, AddressSectionView, EmergencySectionView, IdentificationSectionView, BankSectionView, DocumentsSectionView, JobRadiusSectionView use SectionScaffold safe ScrollViews or safe custom content. AddressPickerView extends only the map sibling, keeping top search/back controls in a safe VStack. LanguagePickerView, ThemePickerView, DevicesView, DeleteAccountView safe. ProfileAvatarField camera/library modal is UIKit-owned.
 
 Shared containers: SnapSheet geometry/content are safe with the ornament now clipped at the safe viewport; backdrop extension is intentional. Confirms are system `.alert` / `.confirmationDialog`, laid out by iOS. WordmarkSplashView ignores only its gradient. GlobalSnackbarHost is bottom-aligned; no top escape. CameraOrLibraryPicker returns UIImagePickerController and QuickLookPreview returns QLPreviewController with no overridden safeAreaInsets, edgesForExtendedLayout, or custom top controls; iOS owns the navigation/camera chrome. MapKitMapProvider is the intentional edge-to-edge media layer.
 

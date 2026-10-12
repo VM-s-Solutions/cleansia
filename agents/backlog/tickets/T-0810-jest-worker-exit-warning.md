@@ -48,3 +48,9 @@ The 2026-10-07 audit (C-03) saw Jest print "A worker process has failed to exit 
   Bounding CI's workers would make the warning moot, but that is a CI decision: T-0813, with T-0809's numbers.
 
 - 2026-10-11 — Shipped in PR #321. Exact-head CI on `ee60678` passed every triggered workflow: Android and Frontend `build`, Frontend e2e-smoke, Docs and Secret scan. Merged normally with the SHA guard as `c39928c`. No deploy ran. Evidence: `raw/ci/wave-e-ci-merge-closure-001.json` in the off-tree Wave E folder.
+- 2026-10-12 — **AC2, the hosted check (T-0820, WCD-28).**
+  - PR #322's exact-head Frontend CI (job `114700837478`, head `1136e16`) selected every project, because that PR's `nx.json` and lockfile changes affect all of them.
+  - 74 test tasks and 77 lint tasks ran under `--output-style=static`: 71 Jest summaries, 408 suites and 5,038 tests passed, and none failed.
+  - The log contains `failed to exit gracefully` once, in `cleansia-customer-orders` (18 suites, 331 tests).
+  - For comparison, locally on the same tree (Node 22.23.3, npm 10.9.9, `run-many -t test --all --parallel=3 --ci --maxWorkers=1`), all 74 projects passed with 0 occurrences.
+  - The hosted runner's default workers are where the warning still shows. That is consistent with the oversubscription hypothesis above; bounding the workers stays T-0813's decision.

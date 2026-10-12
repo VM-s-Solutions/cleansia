@@ -15,11 +15,7 @@ struct RecentBookingsSection: View {
             HStack {
                 HomeSectionTitle(text: L10n.Home.recentTitle)
                 Spacer()
-                Button(action: onSeeAll) {
-                    Text(L10n.Home.recentSeeAll)
-                        .font(CleansiaTypography.labelLarge)
-                        .foregroundColor(CleansiaColors.primaryText)
-                }
+                CleansiaTextLink(L10n.Home.recentSeeAll, action: onSeeAll)
             }
             VStack(spacing: Spacing.xs) {
                 ForEach(orders, id: \.id) { order in

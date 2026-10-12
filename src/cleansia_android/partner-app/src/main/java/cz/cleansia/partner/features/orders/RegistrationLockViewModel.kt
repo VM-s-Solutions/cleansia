@@ -2,6 +2,8 @@ package cz.cleansia.partner.features.orders
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import cz.cleansia.core.snackbar.SnackbarController
+import cz.cleansia.partner.R
 import cz.cleansia.partner.api.model.ContractStatus
 import cz.cleansia.partner.api.model.RegistrationCompletionStatus
 import cz.cleansia.partner.core.network.ApiErrorTranslator
@@ -128,6 +130,7 @@ class RegistrationLockViewModel @Inject constructor(
     private val errorTranslator: ApiErrorTranslator,
     private val appSettingsRepository: AppSettingsRepository,
     private val languageSync: LanguagePreferenceSync,
+    private val snackbar: SnackbarController,
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(RegistrationLockUiState())
@@ -270,6 +273,9 @@ class RegistrationLockViewModel @Inject constructor(
             onSignedOut()
         }
     }
+
+    /** No mail app took the support address, so the screen copied it; say so. */
+    fun onSupportEmailUnavailable() = snackbar.showInfoKey(R.string.help_email_unavailable)
 
     companion object {
         /**

@@ -40,6 +40,7 @@ final class CreateRecurringPreferredCleanerTests: XCTestCase {
             cleanersClient: cleaners,
             consentClient: FakeConsentStatusClient(granted: [.termsOfService, .privacyPolicy]),
             snackbar: SnackbarController(),
+            isCardPaymentAvailable: true,
             scheduler: TestScheduler.dispatch.eraseToAnyScheduler()
         )
     }

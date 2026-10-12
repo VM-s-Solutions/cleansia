@@ -9,17 +9,25 @@ final class DashboardViewModel: ViewModel {
 
     private let client: PartnerDashboardClient
     private let settings: AppSettingsStore
+    private let staleness: Staleness
     private var employeeId: String?
     private var fetchGeneration = 0
 
-    init(client: PartnerDashboardClient, settings: AppSettingsStore) {
+    init(client: PartnerDashboardClient, settings: AppSettingsStore, staleness: Staleness? = nil) {
         self.client = client
         self.settings = settings
+        self.staleness = staleness ?? Staleness(window: Self.freshnessWindow)
     }
 
+    /// A loaded dashboard is kept for a minute, as Android keeps it, so a return to the tab reads nothing; after
+    /// that the return refreshes it in place, behind no spinner.
     func load() async {
         guard !Task.isCancelled else { return }
-        state = .loading
+        if state.loadedValue != nil {
+            guard staleness.isStale else { return }
+        } else {
+            state = .loading
+        }
         await fetch()
     }
 
@@ -61,12 +69,13 @@ final class DashboardViewModel: ViewModel {
         guard !Task.isCancelled, generation == fetchGeneration else { return }
         employeeId = capturedEmployeeId
         state = nextState
+        if nextState.loadedValue != nil { staleness.markFresh() }
         resolveJobRadiusPrompt(radiusKm: employee?.jobRadiusKm, employeeRead: employee != nil)
     }
 
-    private func upcomingOrders(for employeeId: String?) async -> [OrderListItem] {
-        guard let employeeId, !employeeId.isBlank else { return [] }
-        return await (try? client.getUpcomingOrders(employeeId: employeeId, limit: Self.upcomingLimit).get()) ?? []
+    private func upcomingOrders(for employeeId: String?) async -> [OrderListItem]? {
+        guard let employeeId, !employeeId.isBlank else { return nil }
+        return try? await client.getUpcomingOrders(employeeId: employeeId, limit: Self.upcomingLimit).get()
     }
 
     /// Both answers are answers, so either one spends the ask. A cleaner who taps through to the
@@ -95,4 +104,5 @@ final class DashboardViewModel: ViewModel {
 
     private static let previewLimit = 5
     private static let upcomingLimit = 10
+    private static let freshnessWindow: TimeInterval = 60
 }

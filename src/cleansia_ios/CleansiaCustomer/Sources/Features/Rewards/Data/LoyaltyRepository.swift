@@ -23,6 +23,7 @@ final class LoyaltyRepository: ObservableObject, SessionScopedCache {
     let staleness: Staleness
 
     private let client: LoyaltyClient
+    private var sessionGeneration = 0
 
     init(client: LoyaltyClient, staleness: Staleness = Staleness()) {
         self.client = client
@@ -35,9 +36,12 @@ final class LoyaltyRepository: ObservableObject, SessionScopedCache {
     @discardableResult
     func refresh() async -> ApiResult<Void> {
         if loading { return .success(()) }
+        let generation = sessionGeneration
         loading = true
-        defer { loading = false }
-        switch await client.getMy() {
+        defer { if generation == sessionGeneration { loading = false } }
+        let accountResult = await client.getMy()
+        guard generation == sessionGeneration else { return .failure(ApiError(code: ApiError.cancelledCode)) }
+        switch accountResult {
         case let .success(account):
             self.account = account
         case let .failure(error):
@@ -45,10 +49,14 @@ final class LoyaltyRepository: ObservableObject, SessionScopedCache {
         }
         async let tiersRead = client.getTiers()
         async let creditRead = client.getCredit()
-        if case let .success(tiers) = await tiersRead {
+        let tiersResult = await tiersRead
+        guard generation == sessionGeneration else { return .failure(ApiError(code: ApiError.cancelledCode)) }
+        if case let .success(tiers) = tiersResult {
             self.tiers = tiers
         }
-        credit = try? await creditRead.get()
+        let creditResult = await creditRead
+        guard generation == sessionGeneration else { return .failure(ApiError(code: ApiError.cancelledCode)) }
+        credit = try? creditResult.get()
         loaded = true
         staleness.markFresh()
         return .success(())
@@ -59,6 +67,8 @@ final class LoyaltyRepository: ObservableObject, SessionScopedCache {
     }
 
     func clear() async {
+        sessionGeneration += 1
+        loading = false
         account = nil
         tiers = []
         credit = nil

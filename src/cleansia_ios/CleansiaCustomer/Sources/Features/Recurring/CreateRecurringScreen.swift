@@ -91,6 +91,7 @@ struct CreateRecurringScreen: View {
                     selected: vm.formState.paymentType,
                     cash: vm.cashEligibility,
                     cashCleared: vm.cashCleared,
+                    cardAvailable: vm.isCardPaymentAvailable,
                     onSelect: vm.setPaymentType
                 )
                 StartsSection(
@@ -212,24 +213,6 @@ private struct SectionLabel: View {
         Text(text)
             .font(CleansiaTypography.titleMedium)
             .foregroundColor(CleansiaColors.onBackground)
-    }
-}
-
-private struct AppliesNotice: View {
-    let text: String
-
-    var body: some View {
-        HStack(alignment: .top, spacing: Spacing.s) {
-            Image(systemName: "info.circle")
-                .foregroundColor(CleansiaColors.onSurfaceVariant)
-            Text(text)
-                .font(CleansiaTypography.bodyMedium)
-                .foregroundColor(CleansiaColors.onSurfaceVariant)
-                .fixedSize(horizontal: false, vertical: true)
-        }
-        .padding(Spacing.m)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .background(CleansiaColors.surfaceVariant, in: RoundedRectangle(cornerRadius: CornerRadius.medium))
     }
 }
 
@@ -492,6 +475,7 @@ private struct PaymentSection: View {
     let selected: Int?
     let cash: CashEligibility
     let cashCleared: Bool
+    let cardAvailable: Bool
     let onSelect: (Int) -> Void
 
     var body: some View {
@@ -502,8 +486,10 @@ private struct PaymentSection: View {
                 selected: selected == RecurringPaymentType.cash,
                 enabled: cash == .available
             ) { onSelect(RecurringPaymentType.cash) }
-            SelectableRow(text: L10n.Recurring.createPayCard, selected: selected == RecurringPaymentType.card) {
-                onSelect(RecurringPaymentType.card)
+            if cardAvailable {
+                SelectableRow(text: L10n.Recurring.createPayCard, selected: selected == RecurringPaymentType.card) {
+                    onSelect(RecurringPaymentType.card)
+                }
             }
             if cashCleared, cash != .available {
                 PaymentNote(systemImage: "exclamationmark.circle", text: L10n.Recurring.cashCleared, warns: true)

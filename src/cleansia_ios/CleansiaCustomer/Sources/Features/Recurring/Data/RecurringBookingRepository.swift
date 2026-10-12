@@ -13,6 +13,7 @@ final class RecurringBookingRepository: SessionScopedCache {
     @Published private(set) var loading = false
 
     private let client: RecurringBookingClient
+    private var sessionGeneration = 0
 
     init(client: RecurringBookingClient) {
         self.client = client
@@ -21,9 +22,11 @@ final class RecurringBookingRepository: SessionScopedCache {
     @discardableResult
     func refresh() async -> ApiResult<[RecurringTemplate]> {
         if loading { return .success(templates) }
+        let generation = sessionGeneration
         loading = true
-        defer { loading = false }
+        defer { if generation == sessionGeneration { loading = false } }
         let result = await client.getMine()
+        guard generation == sessionGeneration else { return .failure(ApiError(code: ApiError.cancelledCode)) }
         if case let .success(items) = result {
             templates = items
             loaded = true
@@ -66,13 +69,16 @@ final class RecurringBookingRepository: SessionScopedCache {
     }
 
     private func refreshForce() async {
-        if case let .success(items) = await client.getMine() {
-            templates = items
-            loaded = true
-        }
+        let generation = sessionGeneration
+        let result = await client.getMine()
+        guard generation == sessionGeneration, case let .success(items) = result else { return }
+        templates = items
+        loaded = true
     }
 
     func clear() async {
+        sessionGeneration += 1
+        loading = false
         templates = []
         loaded = false
     }

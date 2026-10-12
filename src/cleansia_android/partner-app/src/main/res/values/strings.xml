@@ -1033,6 +1033,7 @@
     <string name="registration_lock_sign_out_confirm_title">Sign out?</string>
     <string name="registration_lock_sign_out_confirm_message">Your progress is saved. You\'ll need to sign in again to finish setting up.</string>
     <string name="registration_lock_support_subject">Cleansia partner — application rejected</string>
+    <string name="help_email_unavailable">No mail app found, so the address was copied.</string>
     <string name="registration_lock_category_profile">Profile</string>
     <string name="registration_lock_category_documents">Documents</string>
     <string name="registration_lock_category_approval">Approval</string>

@@ -51,8 +51,6 @@ final class PartnerShellSelectionTests: XCTestCase {
         .joined()
 
         XCTAssertFalse(shell.contains("onOpenHelp:{}"), "the Help shortcut is a dead tile again")
-        XCTAssertTrue(shell.contains(
-            "mail.scheme=\"mailto\"mail.path=CleansiaWeb.contactEmailifleturl=mail.url{openURL(url)}"
-        ))
+        XCTAssertTrue(shell.contains("mail.scheme=\"mailto\"mail.path=CleansiaWeb.contactEmail"))
     }
 }

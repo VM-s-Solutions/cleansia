@@ -1,4 +1,5 @@
 import CleansiaCore
+import MessageUI
 import SwiftUI
 
 @MainActor
@@ -122,11 +123,22 @@ struct PartnerShellView: View {
         }
     }
 
+    /// Where no app takes the link the address is copied and the cleaner told, as the customer Help does; where
+    /// Mail has no account it is copied first, because Mail still takes the link, on its setup screen.
     private func openSupportMail() {
         var mail = URLComponents()
         mail.scheme = "mailto"
         mail.path = CleansiaWeb.contactEmail
-        if let url = mail.url { openURL(url) }
+        guard let url = mail.url else { return }
+        let copyFirst = !MFMailComposeViewController.canSendMail()
+        let copy = {
+            UIPasteboard.general.string = CleansiaWeb.contactEmail
+            container.snackbar.showInfo(L10n.Help.emailUnavailable)
+        }
+        if copyFirst { copy() }
+        openURL(url) { accepted in
+            if !accepted, !copyFirst { copy() }
+        }
     }
 
     /// iOS 26: the bar shrinks to its selected tab while a tab root scrolls down and comes back on the

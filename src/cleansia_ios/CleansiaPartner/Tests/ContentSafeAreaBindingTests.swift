@@ -4,7 +4,7 @@ import XCTest
 final class ContentSafeAreaBindingTests: XCTestCase {
     func testProfileScrollKeepsTheSafeViewport() throws {
         var content = try read("CleansiaPartner/Sources/Features/Profile/ProfileHubContent.swift")
-        XCTAssertTrue(content.contains("ScrollView{"), "No scrolling surface was inspected")
+        XCTAssertTrue(content.contains("ScrollView"), "No scrolling surface was inspected")
         content = content.replacingOccurrences(of: "CleansiaColors.background.ignoresSafeArea()", with: "")
         XCTAssertFalse(content.contains(".ignoresSafeArea("), "Profile rows can escape the safe viewport")
         XCTAssertFalse(content.contains("topInset"), "Manual content insets no longer match the safe viewport")
@@ -38,6 +38,17 @@ final class ContentSafeAreaBindingTests: XCTestCase {
     func testTheDashboardFadesItsContentUnderTheStatusBar() throws {
         let dashboard = try read("CleansiaPartner/Sources/Features/Dashboard/DashboardView.swift")
         XCTAssertTrue(dashboard.contains("StatusBarFadeScrollView{"))
+    }
+
+    /// The hub hides its navigation bar as the dashboard does, so its rows scrolled under the clock too. It
+    /// scrolls through the shared fade in its hero's top colour, as the customer Profile does.
+    func testTheProfileHubFadesItsContentUnderTheStatusBarInTheHerosColour() throws {
+        let content = try read("CleansiaPartner/Sources/Features/Profile/ProfileHubContent.swift")
+        XCTAssertTrue(content.contains("StatusBarFadeScrollView(heroTint:BrandGradient.blue.colors[0]){"))
+        XCTAssertTrue(
+            content.contains("onAvatarLoadSuccess:avatar.loadSucceeded).statusBarFadeHero()"),
+            "the fade cannot tell when the hero has scrolled past"
+        )
     }
 
     private func read(_ path: String) throws -> String {

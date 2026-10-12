@@ -118,6 +118,57 @@ extension OrderDetailViewModelTests {
         XCTAssertEqual(vm.confirmRecurringState, .idle)
     }
 
+    /// A build with no Stripe key cannot open the sheet, so a card occurrence is never confirmed from it: the
+    /// server would spend the occurrence's credit and mint an intent nobody can pay.
+    func testABuildWithNoStripeKeyNeverConfirmsACardOccurrence() async {
+        var creditReads = 0
+        let intent = FakePaymentIntentClient()
+        let client = FakeOrderClient()
+        client.detailResults = [.success(recurringOccurrence(paymentType: 2))]
+        client.confirmRecurringResult = .success(RecurringConfirmation(
+            clientSecret: "pi_confirm_secret",
+            stripeCustomerId: "cus_confirm",
+            ephemeralKey: "ek_confirm"
+        ))
+        let vm = makeVM(
+            client: client,
+            paymentIntent: intent,
+            consent: FakeConsentStatusClient(granted: [.termsOfService, .privacyPolicy]),
+            onCreditMoved: { creditReads += 1 },
+            cardPaymentAvailable: false
+        )
+        await vm.load()
+
+        let sheets = await sheetsOpened(by: vm)
+
+        XCTAssertFalse(vm.canConfirmRecurring, "the confirm is offered with no way to pay")
+        XCTAssertFalse(vm.offersCardSaving, "a card is offered for saving with no way to pay")
+        XCTAssertEqual(client.confirmRecurringCallCount, 0)
+        XCTAssertEqual(intent.callCount, 0)
+        XCTAssertTrue(sheets.isEmpty)
+        XCTAssertEqual(creditReads, 0)
+        XCTAssertEqual(vm.confirmRecurringState, .idle)
+    }
+
+    func testABuildWithNoStripeKeyStillConfirmsACashOccurrence() async {
+        let client = FakeOrderClient()
+        client.detailResults = [
+            .success(recurringOccurrence(paymentType: 1)),
+            .success(recurringOccurrence(paymentType: 1, needsConfirmation: false))
+        ]
+        let vm = makeVM(
+            client: client,
+            consent: FakeConsentStatusClient(granted: [.termsOfService, .privacyPolicy]),
+            cardPaymentAvailable: false
+        )
+        await vm.load()
+
+        XCTAssertTrue(vm.canConfirmRecurring)
+        await vm.confirmRecurring()
+
+        XCTAssertEqual(client.confirmRecurringCallCount, 1)
+    }
+
     func testTheSaveTickIsOfferedUntickedOnlyWhileACardOccurrenceAwaitsItsConfirmation() async {
         func loaded(_ order: CustomerOrderDetail) async -> OrderDetailViewModel {
             let client = FakeOrderClient()

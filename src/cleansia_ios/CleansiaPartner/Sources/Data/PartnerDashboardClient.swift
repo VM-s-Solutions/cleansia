@@ -16,11 +16,14 @@ struct LivePartnerDashboardClient: PartnerDashboardClient {
         }
     }
 
+    /// From the start of the cleaner's local day, so today's earlier jobs still count for the today line.
+    /// → /architecture/frontend#partner-dashboard
     func getUpcomingOrders(employeeId: String, limit: Int) async -> ApiResult<[OrderListItem]> {
         await apiResult(mapError: ApiError.fromGenerated) {
             try await PartnerDashboardAPI.dashboardGetUpcomingOrders(
                 filterIsActive: true,
                 filterEmployeeId: employeeId,
+                filterCleaningDateFrom: Calendar.current.startOfDay(for: Date()),
                 sort: [SortDefinition(field: "cleaningDateTime", direction: ._0)],
                 offset: 0,
                 limit: limit

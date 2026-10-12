@@ -1,3 +1,4 @@
+import CleansiaCore
 import XCTest
 @testable import CleansiaCustomer
 
@@ -39,8 +40,28 @@ final class MembershipPerksTests: XCTestCase {
         XCTAssertNil(noExpress.expressPerkPerMonth, "a quota the plan does not honour is not advertised")
     }
 
+    /// The welcome names the member's own discount in its perk's title, and leaves the row out without one.
+    @MainActor
+    func testTheWelcomesDiscountIsTheMembersOwn() async {
+        let client = FakeMembershipManagementClient()
+        client.mineResults = [.success(MembershipFixtures.active)]
+        let vm = MembershipViewModel(
+            repository: MembershipRepository(client: client),
+            snackbar: SnackbarController(),
+            isCardPaymentAvailable: true
+        )
+        XCTAssertNil(vm.discountPerkPercent)
+
+        await vm.refresh()
+
+        XCTAssertEqual(vm.discountPerkPercent, 5)
+        client.mineResults = [.success(MembershipFixtures.inactive)]
+        await vm.refresh()
+        XCTAssertNil(vm.discountPerkPercent)
+    }
+
     func testEveryDynamicPerkSentenceCarriesItsFigure() {
-        XCTAssertTrue(L10n.Membership.perkDiscountDesc(7).contains("7"))
+        XCTAssertTrue(L10n.Membership.perkDiscountTitle(7).contains("7"))
         XCTAssertTrue(L10n.Membership.perkCancellationDesc(6).contains("6"))
         XCTAssertTrue(L10n.Membership.perkExpressDesc(3).contains("3"))
     }

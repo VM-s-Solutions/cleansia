@@ -111,11 +111,7 @@ struct RecurringSchedulesSection: View {
             HStack {
                 HomeSectionTitle(text: L10n.Home.recurringSectionTitle)
                 Spacer()
-                Button(action: onManage) {
-                    Text(L10n.Home.recurringSectionManage)
-                        .font(CleansiaTypography.labelLarge)
-                        .foregroundColor(CleansiaColors.primaryText)
-                }
+                CleansiaTextLink(L10n.Home.recurringSectionManage, action: onManage)
             }
             VStack(spacing: Spacing.xs) {
                 ForEach(templates) { template in

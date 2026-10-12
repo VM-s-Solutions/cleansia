@@ -29,9 +29,11 @@ public record DashboardStatsDto(
 
     string? LatestInvoiceStatus,
 
-    // ISO code of the employee's preferred currency (e.g. "CZK", "EUR").
+    // ISO code of the currency the cleaner is paid in, from their work country (e.g. "CZK", "EUR").
     // Clients use this to format any of the money fields on this DTO —
     // device locale alone is wrong (a Czech cleaner on a US-locale
-    // emulator would otherwise see "$"). Null only when the employee
-    // has no preference set; clients fall back to device locale.
+    // emulator would otherwise see "$"). The server always sends one: the
+    // currency resolution throws rather than return none. Should a client
+    // still get none, it shows the bare number, never a guessed symbol.
+    // → /partner-app/dashboard#currency-formatting
     string? CurrencyCode);

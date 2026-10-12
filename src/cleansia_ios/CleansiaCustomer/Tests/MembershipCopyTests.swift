@@ -248,6 +248,47 @@ final class MembershipCopyTests: XCTestCase {
         )
     }
 
+    // MARK: - The discount perk
+
+    /// Android is the reference: the perk's title carries the percentage ("5% member discount") and its
+    /// description does not, so the success screen, which shows titles alone, names the discount just bought.
+    func testTheDiscountPerksTitleCarriesThePercentageAndItsDescriptionDoesNot() throws {
+        let catalog = try XCTUnwrap(
+            JSONSerialization.jsonObject(with: Data(read("CleansiaCustomer/Resources/Localizable.xcstrings").utf8))
+                as? [String: Any]
+        )
+        let strings = try XCTUnwrap(catalog["strings"] as? [String: Any])
+        for language in Self.languages {
+            let title = try catalogValue("membership_perk_discount_title", language, in: strings)
+            let desc = try catalogValue("membership_perk_discount_desc", language, in: strings)
+            XCTAssertTrue(title.contains("%1$d"), "\(language) title: \(title)")
+            XCTAssertFalse(desc.contains("%1$d"), "\(language) description: \(desc)")
+        }
+    }
+
+    func testBothPlusScreensNameTheDiscountInItsTitle() throws {
+        let subscribe = try read("CleansiaCustomer/Sources/Features/Membership/SubscribePlusScreen.swift")
+            .components(separatedBy: .whitespacesAndNewlines).joined()
+        XCTAssertTrue(subscribe.contains(
+            "title:L10n.Membership.perkDiscountTitle(percent),desc:L10n.Membership.perkDiscountDesc"
+        ))
+        let success = try read("CleansiaCustomer/Sources/Features/Membership/MembershipSuccessScreen.swift")
+            .components(separatedBy: .whitespacesAndNewlines).joined()
+        XCTAssertTrue(success.contains("PerkRow(text:L10n.Membership.perkDiscountTitle(discountPercent))"))
+        let shell = try read("CleansiaCustomer/Sources/Features/Shell/CustomerShellView.swift")
+        XCTAssertTrue(
+            shell.contains("discountPercent: membershipVM.discountPerkPercent"),
+            "the welcome is given no figure"
+        )
+    }
+
+    private func catalogValue(_ key: String, _ language: String, in strings: [String: Any]) throws -> String {
+        let entry = try XCTUnwrap(strings[key] as? [String: Any], "no \(key)")
+        let localizations = try XCTUnwrap(entry["localizations"] as? [String: Any])
+        let unit = (localizations[language] as? [String: Any])?["stringUnit"] as? [String: Any]
+        return try XCTUnwrap(unit?["value"] as? String, "\(key) has no \(language)")
+    }
+
     private func localeBundle(_ tag: String) throws -> Bundle {
         let hosts = [Bundle.main, Bundle(for: Self.self)]
         let path = hosts.lazy.compactMap { $0.path(forResource: tag, ofType: "lproj") }.first

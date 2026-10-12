@@ -126,8 +126,9 @@ Orders have a `PaymentStatus` enum tracked throughout their lifecycle, **indepen
 ::: warning An abandoned checkout is swept, not left forever
 The cancel page does not retry or void the order. The order stays at `OrderStatus.New` with
 `PaymentStatus.Pending` and is **not offerable to any cleaner**. `CleanupStalePendingOrders` — an
-Azure Function on a 15-minute timer — then cancels every non-recurring card order that has been
-`PaymentStatus.Pending` for more than an hour: it sets `PaymentStatus.Failed`, appends
+Azure Function on a 15-minute timer — then cancels, oldest first and at most 500 a run, every
+non-recurring card order that has been `PaymentStatus.Pending` for more than an hour (a larger backlog
+clears over the following runs): it sets `PaymentStatus.Failed`, appends
 `OrderStatus.Cancelled`, and notifies the customer. Stripe's own PaymentIntent expiry (~24 h) is much
 later, and the webhook for a subsequently-cancelled intent no-ops via the idempotency check.
 

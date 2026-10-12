@@ -66,7 +66,7 @@ open  ⟺  PreferredHoldUntilUtc == null          // never held
   `BookingPolicy.SpareSeatsPerOrder = 0` is now the **only** seat. `HoldDeclineReason
   .CleanerNotApproved` covers this case; the *check* is what must widen. **An AC on T-0515.**
 - `IUserNotificationPreferencesRepository` — whether `NotificationCategory.NewJobsAvailable` is muted
-  (default-allow when the row is absent, matching `NewJobsDigestService.cs:155-158`).
+  (default-allow when the row is absent, matching `NewJobsDigestService.cs:202-209`).
 - **Device reachability** — ≥1 `Device` with `NotificationsEnabled == true` (`Device.cs:14-20`). This is
   the second and third of the platform's **three** ways not to receive a push; checking only the
   category mute makes D4's own rule false (ADR-0036 CH-P4).
@@ -75,10 +75,14 @@ open  ⟺  PreferredHoldUntilUtc == null          // never held
 - **[ADR-0039] `IOrderRepository.GetBusyEmployeeIdsInWindowAsync(ids, startUtc, endUtc, ct)`** — the
   slot-conflict answer. **The picker (`GetMyServingCleaners`) calls the same method with the same
   window**; if the two ever diverge the feature has already failed. **Never** call
-  `HasOverlappingOrderAsync` in a loop **on a request path**, and **never** pick tenancy for the
-  caller — the scoped variant is correct on every request path (including the materializer, which sets
-  a per-template `SetTenantOverride`); only `NewJobsDigestService` wants an ignoring variant, and it
-  has its own one-employee, many-windows read, `GetOverlappedCandidateIdsIgnoringTenantAsync`.
+  `HasOverlappingOrderAsync` in a loop **on a request path**. The busy read is **tenant-ignoring on
+  purpose**: a commitment can be booked under a company other than the caller's — a customer may book
+  across markets, and a booking carries the operator of its address's market — so a read scoped to the
+  caller's claim would call a cleaner free who is booked there. That makes it a question about every company's calendar,
+  so **every id it is given must be server-derived** — the caller's own completed orders (the picker)
+  or a preference the booking validator has already proven (this resolver), never one a client
+  supplied unchecked. `NewJobsDigestService` asks the one-employee, many-windows question through its
+  own read, `GetOverlappedCandidateIdsIgnoringTenantAsync`.
 
   > ⚠️ **[ADR-0039 · panel] Three corrections to the drafted shape. The tree moved mid-panel.**
   > 1. **The tenancy fix and the scan floor are SHIPPED.** `OrderRepository.cs:272-307` is already one
@@ -154,7 +158,9 @@ open  ⟺  PreferredHoldUntilUtc == null          // never held
   granted (§Copy constraint 8). Wording belongs to T-0491.
 - **The country's time zone.** Everything here is UTC instant arithmetic; no local calendar is involved.
   (Contrast `ExpressWaiverResolver`, which needs `CountryConfiguration.TimeZoneId`.)
-- **Which tenant.** The global query filter scopes its reads.
+- **Which tenant.** The global query filter scopes its reads, except the busy read, which is
+  tenant-ignoring on purpose (see Collaborators) and is safe only because the preferred cleaner's id
+  was validated before it reaches this role.
 - **`OrderAccessService` does not know the hold rule** — it *asks* `OrderVisibility`. If a future
   scenario forces it to reason about deadlines itself, the collaborator is missing.
 
@@ -187,8 +193,8 @@ open  ⟺  PreferredHoldUntilUtc == null          // never held
    `NoAvailableSpots`. No new partner-facing error key mentioning a hold, a reservation or a preference.
 10. **`PreferredEmployeeId` reaches no partner-facing DTO.**
 11. **The digest's freshness clause is a bounded disjunction** — no `CASE`, no `GREATEST`, no scalar
-    `(SELECT max(...))`, a mandatory `<= sweepStartedAt` upper bound, and `sweepStartedAt` (never
-    `UtcNow`) as `nowUtc`.
+    `(SELECT max(...))`, a mandatory `<= sweepStartedAt` upper bound on the hold-expiry term (the status
+    term has none), and `sweepStartedAt` (never `UtcNow`) as `nowUtc`.
 12. **No index on `PreferredHoldUntilUtc`, and a partial index on it is a hard reject** (ADR-0036 D5.5).
 13. **[ADR-0039] The busy check runs LAST and costs one set-based query.** A `HasOverlappingOrder*`
     call inside a loop **on a request path** is a hard reject; so is a busy check placed *before* the

@@ -1,3 +1,4 @@
+using System.Globalization;
 using Cleansia.Core.AppServices.Abstractions;
 using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.AppServices.Features.Orders;
@@ -272,7 +273,8 @@ public class CalculateOrderPay
                     currencyId: order.CurrencyId,
                     lineType: PayLineType.CancellationFeeShare,
                     share: share,
-                    payBreakdown: $"Collected fee: {collectedFee:F2}, Share: {share:F2}");
+                    payBreakdown: $"Collected fee: {collectedFee.ToString("F2", CultureInfo.InvariantCulture)}, "
+                        + $"Share: {share.ToString("F2", CultureInfo.InvariantCulture)}");
 
                 orderEmployeePayRepository.Add(feeShare);
 

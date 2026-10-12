@@ -21,6 +21,7 @@ reads automatically. A row gets its tenant at commit time from whatever is ambie
 | The two company-lifecycle consumers (`company-wind-down`, `company-archive`) | the **envelope's** tenant — the company the admin's act named, set as the override before the first read, so every filtered read inside is that company's and every commit stamps it ([ADR-0064](/decisions/adr-0064) D2/D3; the third job shape, below) |
 | A dead letter for a write a frozen company's books refused | the **frozen company's** tenant, set on a fresh scope by `ArchivedCompanyDeadLetter` — from the Stripe webhook filter, or from the `calculate-order-pay` / `generate-receipt` consumers — so the row is that company's to find |
 | An administrator notice (feed row + outbox e-mail) | the **event's** company, passed as an argument to `IAdminNotifier` — the site names it from the subject it already holds (the order's, the dispute's, the request's, the company's own) — and every read the notifier makes (the administrators, the mailbox setting) is by that argument through a tenant-ignoring query, never through the filter; the outbox row's tenant is read back from the envelope ([ADR-0065](/decisions/adr-0065) D2) |
+| A customer or partner notice (feed row + push outbox) | the **recipient's** persisted account company, read past the filter by `INotificationProducer` (`NotifyAsync` for one notice, `NotifyEachAsync` once for a batch) and written onto the feed row and the push envelope explicitly — never the ambient override and never the tenant hint a caller passes; a recipient with no persisted company gets no notice and one warning per notice. A guest's e-mail about an order carries the **order's** company on its envelope |
 
 **System jobs carry no JWT**, which makes them the interesting case. They read across tenants
 deliberately, and when they *write* they must group by tenant, set the override per group, and commit
@@ -71,8 +72,11 @@ flowchart LR
 Every filtered read inside the loop is that company's, every setting read is that company's, and a
 company with no override rows is simply a company on the defaults — so a one-year audit window set on
 company B deletes B's two-year-old rows and leaves A's alone. `DataRetentionBackgroundService` is the
-reference; `CleanupStalePendingOrders` is the reference for the row-driven shape above. Which one a
-new job takes is decided by its input: rows, or companies.
+reference; `CleanupStalePendingOrders` is the reference for the row-driven shape above, and for bounding
+it: a run takes the oldest 500 stale checkouts and a larger backlog spreads over the following runs, one
+every 15 minutes, with no cursor to carry because a cancelled order has left the query, as
+`ExpireStaleCredit` and `NotifyLapsedPreferredOffers` bound theirs. Which one a new job takes is decided
+by its input: rows, or companies.
 
 **The third shape: a consumer whose unit of work is one company an admin named.** The company
 wind-down sweep and the archive build ([ADR-0064](/decisions/adr-0064)) are neither row-driven nor

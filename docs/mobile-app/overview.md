@@ -200,9 +200,9 @@ declares precise location.
 or not; dismissing the dialog is not an answer, and two refusals end it. Both iOS apps ask once at
 launch, from `startPush()`, with no explainer screen, at parity with Android. The customer Home slide
 *Stay in the loop* is the in-app way to ask again ([Features](/product/features#customer)); the
-partner app has none, and it ignores the answer. Asking only once the user is signed in is an option
-recorded for the owner, not built (2026-10-10); it would have to ask at sign-in rather than on the
-main screens, because a cleaner held on the registration lock learns of an approval by push. For
+partner app has none, and it ignores the answer. The owner kept the ask at launch over asking once
+signed in (ruling 2026-10-11); any later move would have to ask at sign-in rather than on the main
+screens, because a cleaner held on the registration lock learns of an approval by push. For
 launch timing, grant the permission first (`adb shell pm grant <package>
 android.permission.POST_NOTIFICATIONS`) or read logcat's `Displayed …/MainActivity` line: otherwise
 `am start -W` reports `GrantPermissionsActivity`, whose time is not the app's first frame.

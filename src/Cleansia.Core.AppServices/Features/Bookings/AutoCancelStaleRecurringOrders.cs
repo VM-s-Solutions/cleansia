@@ -65,9 +65,9 @@ public class AutoCancelStaleRecurringOrders
             var nowUtc = DateTime.UtcNow;
             var cutoff = nowUtc.AddHours(command.MissedConfirmGraceHours);
 
-            // Cross-tenant query — sweep runs system-level. Each cancellation
-            // dispatches a push tagged with the order's TenantId so the
-            // dispatcher routes it correctly.
+            // Cross-tenant query — sweep runs system-level. Each cancellation's push and feed row carry the
+            // customer's own account company, which the producer reads itself; the order's TenantId passed
+            // to it below is a hint it ignores. → /flows/cross-cutting#tenancy
             //
             // Unconfirmed is Order.AwaitsCustomerConfirmation in SQL: a confirmed cash occurrence stays
             // Pending until the cleaner records the cash, and is the cleaner's job, not this sweep's.
@@ -113,8 +113,9 @@ public class AutoCancelStaleRecurringOrders
                         order.AddOrderStatus(OrderStatusTrack.Create(OrderStatus.Cancelled, order));
 
                         // An unconfirmed occurrence was never charged, but if credit was applied
-                        // when it was materialized it has to come back. Inside the loop for the same
-                        // tenant-stamping reason as the commit below.
+                        // when it was materialized it has to come back. The return commits on its own,
+                        // onto the customer's credit account, whose company comes from the account and
+                        // not from the override. → /flows/cross-cutting#tenancy
                         await creditAccountRepository.ReturnUnpaidOrderCreditAsync(
                             order, cardRefunded: 0m, SystemActor, cancellationToken);
 

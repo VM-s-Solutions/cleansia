@@ -32,7 +32,7 @@ decides:
 |---|---|---|
 | One-off, cash | **yes, from creation** | Nothing scheduled can retract it. The take *is* the confirmation, and the money changes hands at the door |
 | One-off, card, `Paid` | **yes** | The webhook's `Paid` write puts it on the board; the status stays `New` until a cleaner takes it |
-| One-off, card, `Pending` or `Failed` | no | The money has not landed. A `Pending` checkout is cancelled by `CleanupStalePendingOrders` once it is more than an hour old (the sweep runs every 15 minutes). `Failed` is only ever written together with a cancellation — by that sweep, or by the webhook when Stripe expires or cancels the payment |
+| One-off, card, `Pending` or `Failed` | no | The money has not landed. A `Pending` checkout is cancelled by `CleanupStalePendingOrders` once it is more than an hour old (the sweep runs every 15 minutes and takes at most the 500 oldest a run, so a larger backlog spreads over the following runs). `Failed` is only ever written together with a cancellation — by that sweep, or by the webhook when Stripe expires or cancels the payment |
 | Recurring occurrence, card, `Pending` | no | The payment has not landed, and `AutoCancelStaleRecurringOrders` withdraws an unpaid occurrence an hour before the slot. A cleaner should not be standing in a doorway when that happens |
 | Recurring occurrence, cash, not confirmed | no | The customer has not confirmed it, and the same sweep withdraws it |
 | Recurring occurrence, cash, confirmed | **yes** | The customer's confirm stamps `CustomerConfirmedAt` — its own marker, since 2026-09-28 — and the occurrence stays `Pending` until the cleaner records the cash, like any cash order. Until then the confirm wrote `Paid` before any money moved |

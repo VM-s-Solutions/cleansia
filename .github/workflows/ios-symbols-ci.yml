@@ -4,7 +4,8 @@ name: iOS Symbols CI
 #
 # ios-ci.yml does the real build: xcodegen, SwiftFormat, SwiftLint and a full xcodebuild build+test of
 # all three targets. It is thorough and it is the only thing that can say "this compiles" — and it
-# runs on macos-latest, which bills at 10x the Linux rate. That cost is why it is worth having a
+# runs on macos-latest, which bills at about 10x the Linux rate if the repo goes private (free
+# while it is public). That cost is why it is worth having a
 # second, cheap gate over the same tree: agents/tools/check-ios-symbols.mjs needs no Xcode, no
 # simulator, no network and no Swift toolchain, so it gates on ubuntu-latest in seconds and catches
 # the class of defect that reached the owner's Mac twice while Actions was billing-blocked — a case
@@ -17,7 +18,8 @@ name: iOS Symbols CI
 #       or its self-test — a gate that stops being verified is how check-consistency accumulated 20
 #       phantom violations;
 #     - add agents/tools/** to ios-ci.yml's paths, and every edit to a dependency-free Node file
-#       drags a full macOS build+test along with it, at 10x billing, for a change no Swift file saw.
+#       drags a full macOS build+test along with it (about 10x Linux billing if the repo goes
+#       private), for a change no Swift file saw.
 #   Split, each workflow gets exactly the trigger set its inputs justify, at the rate its runner
 #   costs. It also keeps the signal legible: a red check here says "symbols", not "iOS CI failed"
 #   about a workflow whose build steps never ran.
@@ -62,17 +64,17 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       # No `cache: npm` — the checker is dependency-free Node by the same rule as every other tool in
       # agents/tools, so there is no lock file to key a cache on and nothing to install.
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v5
         with:
-          node-version: 20
+          node-version: 22
 
       # FIRST, and blocking, exactly as docs-ci.yml runs check-docs-refs.test.mjs first. This gate is
-      # the ONLY iOS signal available on the Windows machine this app is developed on, so a defanged
+      # the only iOS signal available on a machine without Xcode, so a defanged
       # gate does not read as "broken" — it reads as "clean tree", which is the most expensive lie
       # this repository can tell itself. 28 of the 62 scenarios assert the tool EXITS 1; stub its body
       # to `process.exit(0)` and 32 of them go red here.

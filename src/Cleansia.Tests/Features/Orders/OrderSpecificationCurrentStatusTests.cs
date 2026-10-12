@@ -234,6 +234,28 @@ public sealed class OrderSpecificationCurrentStatusTests : IAsyncLifetime, IDisp
         Assert.Equal(expected ? 1 : 0, count);
     }
 
+    /// <summary>
+    /// The employee filter reaches SQL as an EXISTS that names the employee inside it. As
+    /// <c>@id IN (SELECT "EmployeeId" … WHERE "OrderId" = o."Id")</c> PostgreSQL cannot plan it as a
+    /// semi-join, and the partner dashboard's upcoming list ran that subquery once for every order of the
+    /// cleaner's company, twice per load.
+    /// </summary>
+    [Fact]
+    public async Task The_Employee_Filter_Is_An_Exists_On_That_Employee()
+    {
+        await SeedBoardRows();
+        var commands = new List<string>();
+        await using var ctx = NewContext(commands.Add);
+
+        var count = await new OrderRepository(ctx).GetCountAsync(
+            OrderSpecification.Create(employeeId: BoardCaller).SatisfiedBy(), CancellationToken.None);
+
+        Assert.True(count > 0);
+        var sql = Assert.Single(commands);
+        Assert.DoesNotMatch(new Regex("""IN \(\s*SELECT "o\d*"\."EmployeeId"\s"""), sql);
+        Assert.Matches(new Regex("""EXISTS \(\s*SELECT 1\s+FROM "OrderEmployees" AS "o\d*"\s+WHERE "o"\."Id" = "o\d*"\."OrderId" AND "o\d*"\."EmployeeId" = @"""), sql);
+    }
+
     private static OrderSpecification BoardSpecification(bool? hasAvailableSpots) => OrderSpecification.Create(
         customerName: "Board regression",
         hasAvailableSpots: hasAvailableSpots,

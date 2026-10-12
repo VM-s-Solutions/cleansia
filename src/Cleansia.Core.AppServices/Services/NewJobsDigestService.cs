@@ -39,14 +39,14 @@ namespace Cleansia.Core.AppServices.Services;
 ///   - The cleaner has no overlapping live-commitment order at the order's
 ///     cleaning time (see <see cref="IOrderRepository.GetOverlappedCandidateIdsIgnoringTenantAsync"/>)
 ///
-/// Freshness is THREE disjunctive sources, upper-bounded at the sweep's own start instant, because
-/// <see cref="Domain.Users.Employee.LastNewJobsDigestAt"/> is ONE per-cleaner scalar while two of the
-/// filters are per-cleaner and NON-monotone — an order can become takeable again long after its own
-/// status stopped changing. Drop the released-commitment source and every candidate dropped for a time
-/// conflict is burned; drop the expired-hold source and a held order leaves the notification channel
-/// permanently. This method IS the rate limit — the timer's cadence caps each cleaner to one digest per
-/// interval, so no dedup store is needed. Runs across all tenants and stamps each message with the
-/// recipient's TenantId. → /flows/offerability-and-take#new-jobs-digest
+/// Freshness is THREE disjunctive sources, two of them upper-bounded at the sweep's start (see
+/// ApplyFreshness), because <see cref="Domain.Users.Employee.LastNewJobsDigestAt"/> is ONE per-cleaner
+/// scalar while two of the filters are per-cleaner and NON-monotone — an order can become takeable again
+/// long after its own status stopped changing. Drop the released-commitment source and every candidate
+/// dropped for a time conflict is burned; drop the expired-hold source and a held order leaves the
+/// notification channel permanently. This method IS the rate limit — the timer's cadence caps each
+/// cleaner to one digest per interval, so no dedup store is needed. Runs across all tenants and stamps
+/// each message with the recipient's TenantId. → /flows/offerability-and-take#new-jobs-digest
 /// </summary>
 public class NewJobsDigestService(
     IEmployeeRepository employeeRepository,
@@ -266,6 +266,10 @@ public class NewJobsDigestService(
     /// <para>Freshness is `∃ track newer than the watermark`, never `latest track newer than the
     /// watermark`: the two are equivalent, and the existential form drops the correlated top-N subquery
     /// the sweep used to run per candidate row (ADR-0036 §D5.3).</para>
+    ///
+    /// <para>Only the hold-expiry window below and the released window, bounded where it is found, stop
+    /// at the sweep's start. The status disjunct has no upper bound, so a track written after the sweep
+    /// started but before this cleaner's board read counts in this digest and again in the next.</para>
     ///
     /// <para>The hold-expiry disjunct is a bounded WINDOW, `> watermark AND &lt;= sweepStart`, never a
     /// lower bound and never `max(track, hold) > watermark`. The upper bound is the correctness

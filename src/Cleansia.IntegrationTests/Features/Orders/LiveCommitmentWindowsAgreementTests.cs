@@ -15,7 +15,8 @@ namespace Cleansia.IntegrationTests.Features.Orders;
 /// PostgreSQL. The batch reads the cleaner's commitments once and judges each window in memory with
 /// <see cref="Order.OccupiesWindow"/>; the single-window form asks the database per window. They are two
 /// pieces of text for one rule, so this asks both about the same windows over the same rows and requires
-/// the same answer — and a literal one, so they cannot agree on a wrong verdict.
+/// the same answer — and a literal one, so they cannot agree on a wrong verdict. The single-window form is
+/// the tenant-scoped write gate, so it is asked under each company the rows carry.
 ///
 /// <para>Each case sits in its own block of days, far enough apart that only the rows of its block can
 /// touch it, while every live row of the probe cleaner is still fetched by the batch: a verdict leaking
@@ -49,13 +50,18 @@ public class LiveCommitmentWindowsAgreementTests(PostgresContainerFixture fixtur
                 var fromBatch = await repository.GetOverlappedCandidateIdsIgnoringTenantAsync(
                     ProbeCleaner, candidates, CancellationToken.None);
 
-                var fromSingle = new List<string>();
-                foreach (var (id, start, minutes) in candidates)
+                var tenants = provider.GetRequiredService<ITenantProvider>();
+                var fromSingle = new HashSet<string>(StringComparer.Ordinal);
+                foreach (var tenant in new[] { TestTenants.Default, TestTenants.Second })
                 {
-                    if (await repository.HasOverlappingOrderIgnoringTenantAsync(
-                            ProbeCleaner, start, minutes, CancellationToken.None))
+                    tenants.SetTenantOverride(tenant);
+                    foreach (var (id, start, minutes) in candidates)
                     {
-                        fromSingle.Add(id);
+                        if (await repository.HasOverlappingOrderAsync(
+                                ProbeCleaner, start, minutes, CancellationToken.None))
+                        {
+                            fromSingle.Add(id);
+                        }
                     }
                 }
 

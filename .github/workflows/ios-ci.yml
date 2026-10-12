@@ -1,7 +1,8 @@
 name: iOS CI
 
-# macOS runners bill at a higher rate than Linux, so only run this when the iOS
-# sources (or this workflow) actually change — backend/frontend PRs skip it.
+# macOS minutes bill at about 10x Linux if the repo goes private (free while it is public),
+# so only run this when the iOS sources (or this workflow) actually change — backend/frontend
+# PRs skip it.
 # Also runs on pushes to master: direct-to-master commits used to bypass this
 # gate entirely (pull_request-only), which let lint-red code land unnoticed.
 on:
@@ -28,9 +29,9 @@ on:
       - 'src/cleansia_android/openapi/**'
       - '.github/workflows/ios-ci.yml'
 
-# The other five CI workflows have carried this since they were written; this one did not,
-# and it is the expensive one. A macOS runner bills at 10x Linux, so every superseded push to
-# a PR branch was paying for a full 20-to-80-minute build of a SHA nobody would ever look at.
+# The other CI workflows carry this; this one did not, and it is the expensive one (about 10x
+# Linux billing if the repo goes private; free while public): every superseded push to a PR
+# branch ran a full 20-to-80-minute build of a SHA nobody would ever look at.
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
@@ -50,7 +51,7 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       # The runner's DEFAULT Xcode lags the newest SDK on the image, while local dev
       # builds against the newest installed Xcode. Any #available-gated API newer than

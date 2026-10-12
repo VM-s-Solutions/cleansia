@@ -147,12 +147,16 @@ A timer sweeps the open board and tells each cleaner about work that is **fresh 
 
 `Employee.LastNewJobsDigestAt` is a single per-cleaner scalar, but two of the filters are per-cleaner
 and **non-monotone** — an order can become takeable again long after its own status stopped changing.
-So freshness is a disjunction, upper-bounded at the sweep's own start instant:
+So freshness is a disjunction:
 
 1. the order's **status** moved into an offerable state after the watermark; or
 2. one of **this cleaner's commitments was released** after the watermark, and this order sits in the
    window that release freed; or
 3. a **preferred hold expired** after the watermark.
+
+Only the second and third are also bounded above, at the sweep's own start instant. The status source
+has no upper bound, so a status change written while a sweep is running can count in that digest and
+again in the next one.
 
 Each of the last two exists because of a specific failure:
 

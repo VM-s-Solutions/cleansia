@@ -557,6 +557,12 @@ need backfilling.
 
 ### Changed
 
+- **Operators — the abandoned-checkout sweep now cancels at most the 500 oldest a run.** A card
+  checkout still pending payment an hour after it was placed is cancelled as before, oldest first. A
+  larger backlog now spreads over the following 15-minute runs instead of being cancelled in one, so
+  during a backlog some abandoned checkouts are cancelled, and their spent credit returned, later than
+  an hour. Each run tracks half the rows it used to on a 1,000-checkout backlog.
+
 - **Customer iOS — while your Plus benefits are paused, your schedules say so and offer nothing that
   would be refused.** When a Plus renewal payment fails, your benefits are paused until it goes
   through or you cancel, and no schedule can be set up or changed meanwhile. The iOS app still offered

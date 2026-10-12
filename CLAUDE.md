@@ -81,9 +81,9 @@ a comment that only explains *why* belongs in `docs/` with a `→ /path#anchor` 
 | Order lifecycle — the two axes, and why `Pending` is dead | `/domain/order-lifecycle` |
 | Offerability, the preferred-cleaner hold, seat allocation | `/domain/offerability` |
 | Entities and their relationships | `/domain/model` |
-| Per-component contracts (34 of them) | `/domain/roles/` |
+| Per-component contracts | `/domain/roles/` |
 | The ten flows, end to end | `/flows/` |
-| Why a decision was made — 64 ADRs | `/decisions/` |
+| Why a decision was made — the ADRs | `/decisions/` |
 | Aspire, ports, the migrator, request logging | `/architecture/local-orchestration` |
 | The S1–S12 security laws | `/architecture/security-rules` |
 
@@ -263,8 +263,11 @@ coordinating multi-agent or multi-step work, start with **`agents/WAY-OF-WORKING
   ios, qa, reviewer, security, optimizer, docs). Invoke via the `Agent` tool with `subagent_type` set
   to the charter's `name`.
 - **`agents/process/*.md`** — ticket lifecycle, quality gates, communication protocol, routing.
-- **`agents/tools/check-*.mjs`** — 18 repo checkers, nine with their own self-test. Seven CI
-  workflows gate a PR: Backend, Frontend, Android, iOS, Docs, iOS symbols and booking-policy parity.
+- **`agents/tools/check-*.mjs`** — 18 repo checkers, nine with their own self-test. The only
+  required status check on `master` is `build`, emitted by the Backend, Frontend, Android and iOS
+  workflows; Backend and iOS run only when their paths change. Docs and Secret scan run on every
+  pull request, and iOS symbols and booking-policy parity when their paths change, but the ruleset
+  does not require them (→ `/deployment/ci-cd#required-checks`).
   The last two are dependency-free Node gates with their own repo-root workflows, because the drift
   they catch spans trees that no single existing job can see: `nx affected` selects nothing for a
   C#-only diff, `backend-ci` excludes the mobile trees, and Gradle and Xcode cannot read C#.

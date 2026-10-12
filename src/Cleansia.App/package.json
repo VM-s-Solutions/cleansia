@@ -65,9 +65,6 @@
     "brace-expansion@2": "^2.1.7",
     "@module-federation/enhanced": "^2.9.0",
     "chokidar": "^4.0.3",
-    "@verdaccio/config": {
-      "js-yaml": "^5.4.1"
-    },
     "nx": {
       "smol-toml": "^1.9.1",
       "brace-expansion": "^5.0.12",
@@ -81,9 +78,6 @@
     "handlebars": "^4.7.10",
     "js-yaml@3": {
       "argparse": "^2.0.1"
-    },
-    "verdaccio": {
-      "compression": "^1.8.2"
     }
   },
   "devDependencies": {
@@ -133,8 +127,7 @@
     "ts-node": "10.9.1",
     "tslib": "^2.3.0",
     "typescript": "~5.9.3",
-    "typescript-eslint": "^8.29.0",
-    "verdaccio": "^6.10.4"
+    "typescript-eslint": "^8.29.0"
   },
   "nx": {
     "includedScripts": []

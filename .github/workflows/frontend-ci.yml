@@ -36,12 +36,12 @@ jobs:
     steps:
       - name: Checkout code
         # Nx 'affected' needs the merge-base with the target branch, so fetch history.
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           fetch-depth: 0
 
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v5
         with:
           node-version: '22'
           cache: 'npm'
@@ -77,10 +77,11 @@ jobs:
       # pre-existing debt in several libs (module-boundary, a11y, unused-var), so making
       # it blocking today would red every PR on debt the change didn't introduce. It still
       # runs so regressions are visible in the PR. Flip to blocking once the baseline is
-      # clean (tracked as a follow-up lint-cleanup ticket).
+      # clean (tracked as a follow-up lint-cleanup ticket). --output-style=static keeps each
+      # passing lint task's warnings in the log, as on the unit-test step below.
       - name: Lint (affected, non-blocking)
         continue-on-error: true
-        run: npx nx affected -t lint --base="$NX_BASE" --head=HEAD --parallel=3
+        run: npx nx affected -t lint --base="$NX_BASE" --head=HEAD --parallel=3 --output-style=static
         working-directory: ./src/Cleansia.App
 
       # The regen-drift guard's own suite. It runs here so the guard cannot rot into
@@ -133,10 +134,10 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v5
         with:
           node-version: '22'
           cache: 'npm'
@@ -171,7 +172,7 @@ jobs:
 
       - name: Upload Playwright reports
         if: ${{ !cancelled() }}
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: playwright-report
           path: ./src/Cleansia.App/dist/.playwright/apps/*-e2e/playwright-report

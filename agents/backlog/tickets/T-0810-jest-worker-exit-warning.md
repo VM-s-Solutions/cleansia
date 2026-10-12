@@ -46,3 +46,5 @@ The 2026-10-07 audit (C-03) saw Jest print "A worker process has failed to exit 
 - **AC2, new evidence from T-0809.** The warning reproduces locally only in the three cold runs at default workers: 7, 4 and 7 times, at load 35–47 on 10 cores. It never appears in the twelve warm runs or in any of the six runs with bounded workers (`--maxWorkers=1` or `3`), even cold. That supports the slow-exit-under-oversubscription hypothesis; no handle leak was found.
 
   Bounding CI's workers would make the warning moot, but that is a CI decision: T-0813, with T-0809's numbers.
+
+- 2026-10-11 — Shipped in PR #321. Exact-head CI on `ee60678` passed every triggered workflow: Android and Frontend `build`, Frontend e2e-smoke, Docs and Secret scan. Merged normally with the SHA guard as `c39928c`. No deploy ran. Evidence: `raw/ci/wave-e-ci-merge-closure-001.json` in the off-tree Wave E folder.

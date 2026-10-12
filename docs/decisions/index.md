@@ -2,7 +2,7 @@
 
 Every architecture and business decision on record, with the argument that settled it.
 
-**70 records.** A decision keeps a stable id — `ADR-0037` — and roughly six hundred source
+**71 records.** A decision keeps a stable id — `ADR-0037` — and roughly six hundred source
 files cite ids in that form. The id is the reference, not the file name or the title, so a record can
 be retitled without breaking a single citation.
 
@@ -193,6 +193,7 @@ Neither replaces a record, so there is no arrow.
 | **[ADR-0068](./adr-0068)** | A contract for work per job: the text the order is booked under, the cleaner's acceptance of it, what both parties can see (owner ruling 2026-09-20; amends ADR-0063 D9 by one sentence; shipped as T-0777–T-0784; amended 2026-09-27: the company sells in its own name; amended 2026-09-29: the operating company and the cleaner are the parties, under our draft texts; amended 2026-10-03: the seat is paid the reward its contract states) | `accepted` |
 | **[ADR-0069](./adr-0069)** | The dirtiness level prices, times, crews and pays the job, and a job's pay is split across its seats (owner rulings 2026-09-28, meeting-plan decisions 28–40; changes a premise of ADR-0037 D9, whose no-spare-seat ruling stands) | `accepted` |
 | **[ADR-0070](./adr-0070)** | A saved card guarantees cash, and what a customer owes is a receivable — paid through a pay link, charged to the card only once the terms allow it; a lockout is the customer's cancellation at the whole price; the crew shares a fee once it is collected (owner rulings 2026-09-28, meeting-plan decisions 11–13, 16–18 and 24; amended 2026-10-01: a card may be saved while paying by card, and only a ticked one is kept; amended 2026-10-04: cash needs no card and none is charged, and a confirmed lockout pays each seat its reward; amended 2026-10-06: an amount owed refuses every booking, and a door non-payment is owed) | `accepted` |
+| **[ADR-0075](./adr-0075)** | The mobile contract states a query sort the way the server binds it (T-0832: the two mobile hosts describe `DataRangeRequest.Sort` as `Sort[0].Field` and `Sort[0].Direction`) | `accepted` |
 
 ⟲ = superseded in whole or in part by a later record.
 

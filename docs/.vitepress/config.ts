@@ -167,6 +167,7 @@ export default withMermaid(
               { text: "ADR-0068 — A contract for work per job: the text, the acceptance, the record", link: '/decisions/adr-0068' },
               { text: "ADR-0069 — The dirtiness level prices, times, crews and pays the job", link: '/decisions/adr-0069' },
               { text: "ADR-0070 — A saved card guarantees cash, and what a customer owes is a receivable", link: '/decisions/adr-0070' },
+              { text: "ADR-0075 — The mobile contract states a query sort the way the server binds it", link: '/decisions/adr-0075' },
             ],
           },
         ],

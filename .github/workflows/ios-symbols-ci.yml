@@ -7,7 +7,7 @@ name: iOS Symbols CI
 # runs on macos-latest, which bills at about 10x the Linux rate if the repo goes private (free
 # while it is public). That cost is why it is worth having a
 # second, cheap gate over the same tree: agents/tools/check-ios-symbols.mjs needs no Xcode, no
-# simulator, no network and no Swift toolchain, so it gates on ubuntu-latest in seconds and catches
+# simulator, no network and no Swift toolchain, so it gates on ubuntu-24.04 in seconds and catches
 # the class of defect that reached the owner's Mac twice while Actions was billing-blocked — a case
 # added to an enum that a default-less switch in an OLD, untouched file no longer covers (#214/#215).
 #
@@ -58,7 +58,7 @@ concurrency:
 
 jobs:
   symbols:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
 
     # A ceiling, not a budget: this job runs in single-digit minutes, so 60 only ever
     # catches a hang. Without it a wedged run bills to GitHub's 6-hour default.

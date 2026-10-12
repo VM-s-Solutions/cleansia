@@ -24,7 +24,7 @@ name: Booking policy parity
 # there is no per-job `paths`. Folding this into any one of the four would either under-trigger (it
 # would miss the other three trees) or drag that workflow's expensive runner along with every edit to
 # a dependency-free Node file. Split, this gate gets exactly the trigger set its inputs justify, on
-# ubuntu-latest, in seconds — and a red check here reads "booking policy", not "iOS CI failed".
+# ubuntu-24.04, in seconds — and a red check here reads "booking policy", not "iOS CI failed".
 #
 # Same trigger shape as the other tool workflows, and for the same reason: pushes to master are
 # included because a pull_request-only trigger means a direct-to-master commit is never checked.
@@ -86,7 +86,7 @@ concurrency:
 
 jobs:
   parity:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
 
     # A ceiling, not a budget: this job runs in seconds, so 15 only ever catches a hang. Without it a
     # wedged run bills to GitHub's 6-hour default.

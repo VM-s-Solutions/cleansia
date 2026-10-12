@@ -51,7 +51,7 @@ concurrency:
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
 
     # A hang ceiling, not a duration budget: wall time depends on the container-backed suites, so
     # compare dated workflow measurements rather than assuming one here. Without it a wedged run
@@ -95,7 +95,7 @@ jobs:
         working-directory: ./src
 
       # Integration + host tests spin a real Postgres via Testcontainers (Docker is
-      # available on ubuntu-latest). These are the suites that catch the multi-tenant /
+      # available on ubuntu-24.04). These are the suites that catch the multi-tenant /
       # FK / migration / webhook bugs that unit tests (SQLite/mocked) cannot. Run
       # single-threaded — the metrics MeterListener and the shared Postgres container
       # are sensitive to collection-parallel runs.

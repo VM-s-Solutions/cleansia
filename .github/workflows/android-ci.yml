@@ -33,7 +33,7 @@ concurrency:
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
 
     # A ceiling, not a budget: this job runs in single-digit minutes, so 60 only ever
     # catches a hang. Without it a wedged run bills to GitHub's 6-hour default.
@@ -54,7 +54,7 @@ jobs:
           java-version: '21'
 
       - name: Set up Android SDK
-        # The ubuntu-latest runner ships a full Android SDK at $ANDROID_HOME (compileSdk 35 +
+        # The ubuntu-24.04 runner ships a full Android SDK at $ANDROID_HOME (compileSdk 35 +
         # build-tools + platform-tools) with its licenses PRE-ACCEPTED, so Gradle resolves the SDK
         # from the environment with no committed local.properties sdk.dir.
         #

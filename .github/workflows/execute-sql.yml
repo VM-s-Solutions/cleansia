@@ -25,7 +25,7 @@ permissions:
 jobs:
   validate:
     name: Validate inputs
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - name: Check PRO confirmation
         if: inputs.environment == 'PRO' && inputs.confirm != 'execute'
@@ -108,7 +108,7 @@ jobs:
     name: Execute on DEV
     if: inputs.environment == 'DEV'
     needs: validate
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     permissions:
       id-token: write
       contents: read
@@ -173,7 +173,7 @@ jobs:
     name: Execute on PRO
     if: inputs.environment == 'PRO'
     needs: validate
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     permissions:
       id-token: write
       contents: read

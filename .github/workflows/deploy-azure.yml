@@ -83,7 +83,7 @@ jobs:
 
   build-dotnet:
     name: Build .NET APIs
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     permissions:
       contents: read
     steps:
@@ -203,7 +203,7 @@ jobs:
 
   build-angular:
     name: Build Angular Apps
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     permissions:
       contents: read
     env:
@@ -279,7 +279,7 @@ jobs:
   provision:
     name: Provision (Bicep)
     needs: [build-dotnet, build-angular]
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     permissions:
       id-token: write
       contents: read
@@ -711,7 +711,7 @@ jobs:
     # what-if is a preview only: no migrations, no deploys. Skipping this job propagates the skip to
     # every deploy job (they all `need` migrate-database).
     if: inputs.mode == 'deploy'
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     permissions:
       id-token: write
       contents: read
@@ -955,7 +955,7 @@ jobs:
   deploy-api:
     name: Deploy ${{ matrix.host }} API
     needs: [build-dotnet, provision, migrate-database]
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     permissions:
       id-token: write
       contents: read
@@ -1062,7 +1062,7 @@ jobs:
   build-and-deploy-functions:
     name: Deploy Functions
     needs: [build-dotnet, provision, migrate-database]
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     permissions:
       id-token: write
       contents: read
@@ -1113,7 +1113,7 @@ jobs:
   deploy-customer-ssr:
     name: Deploy Customer SSR
     needs: [build-angular, provision, migrate-database]
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     permissions:
       id-token: write
     strategy:
@@ -1205,7 +1205,7 @@ jobs:
     # SPAs don't need the DB, so they don't `need` migrate-database — guard them directly so a what-if
     # preview never deploys.
     if: inputs.mode == 'deploy'
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     permissions: {}
     strategy:
       matrix:
@@ -1231,7 +1231,7 @@ jobs:
     needs: [build-angular, provision]
     # See deploy-partner-spa: guarded directly because the SPAs don't depend on migrate-database.
     if: inputs.mode == 'deploy'
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     permissions: {}
     strategy:
       matrix:
@@ -1272,7 +1272,7 @@ jobs:
     name: Warm dev sites
     needs: [deploy-api, deploy-customer-ssr]
     if: inputs.mode == 'deploy' && inputs.env != 'prod'
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     permissions:
       contents: read
     strategy:
@@ -1327,7 +1327,7 @@ jobs:
     name: Close the deploy quiet window
     needs: [deploy-api, deploy-customer-ssr, build-and-deploy-functions, warm-dev-sites]
     if: always() && inputs.env != 'prod' && inputs.mode == 'deploy'
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     permissions:
       id-token: write
     strategy:

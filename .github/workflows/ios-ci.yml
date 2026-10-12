@@ -51,7 +51,7 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v5
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
 
       # The runner's DEFAULT Xcode lags the newest SDK on the image, while local dev
       # builds against the newest installed Xcode. Any #available-gated API newer than

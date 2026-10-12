@@ -26,17 +26,6 @@
       "dependsOn": ["^build"],
       "inputs": ["production", "^production"]
     },
-    "@nx/eslint:lint": {
-      "cache": true,
-      "inputs": [
-        "default",
-        "^default",
-        "{workspaceRoot}/eslint.config.mjs",
-        "{workspaceRoot}/eslint.base.config.mjs",
-        "{workspaceRoot}/eslint.module-boundaries.config.mjs",
-        "{workspaceRoot}/eslint.generated-dto.config.mjs"
-      ]
-    },
     "@nx/angular:ng-packagr-lite": {
       "cache": true,
       "dependsOn": ["^build"],

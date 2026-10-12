@@ -364,21 +364,40 @@ public sealed class RefundService(
                 nameof(refund.Amount), BusinessErrorMessage.RefundFailed));
         }
 
-        var succeededConsumed = await refundRepository.GetSucceededRefundTotalForOrderAsync(
-            order.Id, cancellationToken);
         refund.MarkSucceeded(stripeRefundId: made?.Id, confirmedOnUtc: DateTimeOffset.UtcNow, amount: made?.Amount);
 
-        // The credit leg is independently idempotent; an erased account receives only its card refund.
-        await ReturnCreditShareAsync(order, creditShare, refundKey, actorId, cancellationToken);
+        // A save refused only because another refund moved the order's payment status is not a lost decision: that
+        // status is derived from what the order has given back, so it is read and saved again rather than failing
+        // after Stripe has paid. Everything else the order's tokens refuse stays refused (→ ADR-0071 D2).
+        const int maxAttempts = 3;
+        for (var attempt = 1; ; attempt++)
+        {
+            var succeededConsumed = await refundRepository.GetSucceededRefundTotalForOrderAsync(
+                order.Id, cancellationToken);
 
-        order.UpdatePaymentStatus(IsFullyRefunded(
-                order,
-                succeededConsumed + refund.Amount,
-                await creditAccountRepository.GetReturnedTotalForOrderAsync(order.Id, cancellationToken),
-                await creditAccountRepository.GetDisputeSettledTotalForOrderAsync(order.Id, cancellationToken))
-            ? PaymentStatus.Refunded
-            : PaymentStatus.PartiallyRefunded);
-        await refundRepository.CommitAsync(cancellationToken);
+            // The credit leg is independently idempotent; an erased account receives only its card refund.
+            await ReturnCreditShareAsync(order, creditShare, refundKey, actorId, cancellationToken);
+
+            order.UpdatePaymentStatus(IsFullyRefunded(
+                    order,
+                    succeededConsumed + refund.Amount,
+                    await creditAccountRepository.GetReturnedTotalForOrderAsync(order.Id, cancellationToken),
+                    await creditAccountRepository.GetDisputeSettledTotalForOrderAsync(order.Id, cancellationToken))
+                ? PaymentStatus.Refunded
+                : PaymentStatus.PartiallyRefunded);
+            try
+            {
+                await refundRepository.CommitAsync(cancellationToken);
+                break;
+            }
+            catch (DbUpdateConcurrencyException conflict) when (attempt < maxAttempts)
+            {
+                if (!await RefreshIfOnlyItsPaymentStatusMovedAsync(conflict, order, cancellationToken))
+                {
+                    throw;
+                }
+            }
+        }
 
         logger.LogInformation(
             "Refund {RefundId} issued for order {OrderId}: {Amount} {Currency} ({Reason}).",
@@ -391,6 +410,36 @@ public sealed class RefundService(
             Status: RefundStatus.Succeeded,
             ResolvedToExisting: false,
             CreditReturned: await creditAccountRepository.GetReturnedForRefundAsync(refundKey, cancellationToken)));
+    }
+
+    /// <summary>
+    /// Reloads the order when the refused save names it alone, nothing but its derived payment status is staged
+    /// on it, and it is still on the fulfilment status it was read with. A reload discards what is staged, and a
+    /// cancel or a cleaner's start committed since is a decision the caller may still act on once the refund
+    /// returns: reloaded past it, the caller's next commit is compared against that decision instead of refused.
+    /// </summary>
+    private static async Task<bool> RefreshIfOnlyItsPaymentStatusMovedAsync(
+        DbUpdateConcurrencyException conflict, Order order, CancellationToken cancellationToken)
+    {
+        if (conflict.Entries is not [var entry]
+            || !ReferenceEquals(entry.Entity, order)
+            || entry.Properties.Any(p => p.IsModified
+                && p.Metadata.Name is not (nameof(Order.PaymentStatus) or nameof(Order.UpdatedOn) or nameof(Order.UpdatedBy))))
+        {
+            return false;
+        }
+
+        var committed = await entry.GetDatabaseValuesAsync(cancellationToken);
+        if (committed is null
+            || !Equals(committed[nameof(Order.CurrentStatus)], entry.OriginalValues[nameof(Order.CurrentStatus)]))
+        {
+            return false;
+        }
+
+        entry.OriginalValues.SetValues(committed);
+        entry.CurrentValues.SetValues(committed);
+        entry.State = EntityState.Unchanged;
+        return true;
     }
 
     private async Task RaiseForRetryAsync(Order order, Refund refund, CancellationToken cancellationToken)

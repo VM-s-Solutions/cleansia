@@ -22,6 +22,26 @@ subject of ADR-0071, which adds `PaymentStatus` as the second token; this sectio
 Nothing writes `Orders` outside the change tracker: no `ExecuteUpdate`/`ExecuteDelete` targets it, and the
 only raw SQL naming the table is a `SELECT … FOR UPDATE`.
 
+## A refund's settle reads again what it derives (ADR-0071 D2)
+
+`RefundService.SettleAsync` saves the order's payment status after Stripe has paid, computed from what the
+order has given back: card refunds confirmed, credit returned, complaints settled in credit. That status is
+derived, not decided, so a save refused only because another refund moved it is read and saved again, in at
+most three attempts. Failing there would leave a refund Stripe has paid pending, and a cancellation without the
+notices and e-mail it sends after its refund. The credit leg is re-run with it and moves once on its key. The
+settle reloads the order and tries again only when all three hold:
+
+- the refused save names this order alone;
+- nothing but `PaymentStatus`, `UpdatedOn` and `UpdatedBy` is staged on it. A reload discards what is staged,
+  such as a cancel replayed on a claim still pending on its key;
+- the order is still on the fulfilment status it was read with. A guest's cancel issues its refund before it
+  stages the cancel, so reloading past a cleaner's start committed meanwhile would let that cancel be compared
+  against the start instead of refused by it.
+
+Anything else is rethrown as before. Until `PaymentStatus` is a token (ADR-0071 D1), nothing refuses a save on
+the payment axis alone, so this path does not run yet: two refunds settling at once each still save a status
+counted without the other's refund.
+
 ## The credit an order gives back when it ends (ADR-0073 D1)
 
 `CreditUnwind.ReturnUnpaidOrderCreditAsync` returns, under `order-ended-unpaid:{orderId}`, the credit an
@@ -75,6 +95,10 @@ A unit that holds several customers' credit locks until one commit takes them in
   the sweep retries next tick and the cleaner retries the completion.
 - **A future caller that ends an order and gives the credit back another way loses the atomicity.** The guard
   is `CreditUnwind`'s rule that every order end returns credit through it.
+- **A settle refused on the fulfilment axis, or three times, still fails after Stripe has paid**, as before:
+  an administrator's refund whose order a cleaner took or started, or someone cancelled, during the Stripe
+  call. The refund stays pending for the hourly job, which re-drives a cancelled order's own refund and raises
+  any other to the company's administrators.
 
 ## Tests that pin it
 
@@ -86,3 +110,10 @@ A unit that holds several customers' credit locks until one commit takes them in
   refused administrator cancel returns nothing, and its retry returns the credit once.
 - `src/Cleansia.IntegrationTests/Features/Bookings/RecurringAutoCancelCreditAtomicityTests.cs` — a refused
   auto-cancel of an occurrence returns no credit, and the next run cancels it and returns the credit once.
+- `src/Cleansia.IntegrationTests/Features/Refunds/ConcurrentRefundSettleTests.cs` — with `PaymentStatus` as a
+  token in its own model: two refunds settling at once are both recorded and the order ends Refunded; a
+  cancellation whose refund settles beside another still notifies its crew, e-mails the guest and releases the
+  waiver; a settle carrying a cancel staged on the order is refused whole.
+- `src/Cleansia.IntegrationTests/Features/Orders/GuestOrderCancellationTests.cs`
+  (`Cleaner_start_during_refund_or_before_final_commit_cannot_be_overwritten`) — a guest's settle refused by a
+  cleaner's start stays refused, and the start stands.

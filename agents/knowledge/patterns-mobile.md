@@ -1898,6 +1898,18 @@ importer** (`StripePaymentController` stays the sole `import StripePaymentSheet`
 is the sole paid authority), fail-closed on an empty publishable key (`StripeConfig.isCardPaymentAvailable` → hide the
 CTA + the branch is unreachable), replay one idempotency token across a two-phase confirm.
 
+**A keyless build never holds card, and never offers what only card can finish (T-0835).** Wherever card would enter
+a form — a new schedule's default, a prefill from an order, an edit of a stored schedule — a build with no publishable
+key holds no method until the customer picks one, and says so (`recurring_create_payment_missing`, both apps). A
+card-only action — a recurring occurrence's confirm, Payments → Add card, the Plus subscribe — is hidden, never shown
+disabled; on iOS its view model also refuses the call, per the Stripe-seam rule above. **Enforced by:**
+`CreateRecurringCardPaymentBindingTest` and `CreateRecurringViewModelTest` (customer Android,
+`:customer-app:testDebugUnitTest`, android-ci) and `CreateRecurringViewModelTests`, `CreateRecurringBindingTests`,
+`PaymentsViewModelTests`, `OrderDetailViewModelTests` and `OrderDetailFooterStyleTests` (CleansiaCustomer, ios-ci) —
+`T1-CI`, closed roster: the recurring form (new, prefill, edit) on both apps and the two iOS actions T-0835 changed; a
+new form or card-only action is caught only if it brings its own pin, and on Android the view-model tests run only the
+keyless branch because CI builds keyless.
+
 **Debounced VM Combine pipelines — the scheduler seam (harvested T-0313):** when a VM debounces a `@Published` pipeline (the
 quoteWatcher 400ms), inject the scheduler as a Core **`AnyScheduler`/`AnySchedulerOf`** (`CleansiaCore/State`, a minimal
 Combine `Scheduler` type-eraser — no swift-clocks dep) defaulting to `.main`; behavioral tests pass a `TestScheduler` and

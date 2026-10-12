@@ -46,13 +46,15 @@ A read-only ground truth checked both findings against the tree before any code.
   - (b) detaching after each tenant commit;
   - (c) per-page commits.
 
+  Mike answered "Go with recommended" on 2026-10-11. No option had been marked as recommended. The decision ground truth reads the answer as (a), the only option that keeps one commit per company → T-0814.
+
   Still unbounded:
   - the change tracker across the whole run;
   - the O(N) candidate population;
   - `OutboxPendingDispatch._seen`.
 
   Credit return and cancellation are still not atomic: `TryReturnAsync` commits on its own.
-- **`HasOverlappingOrderIgnoringTenantAsync` stays, now with no production caller.** Deleting it means re-pointing the S8 worked example (`docs/architecture/security-rules.md`) and its tenancy pins. That is an owner decision; security asks that it be decided before go-live.
+- **`HasOverlappingOrderIgnoringTenantAsync` stays, now with no production caller.** Deleting it means re-pointing the S8 worked example (`docs/architecture/security-rules.md`) and its tenancy pins. That is an owner decision; security asks that it be decided before go-live. Mike chose deletion on 2026-10-11 → T-0815.
 - No schema, index, migration, DTO, NSwag or new framework. Not B009, not B010 (closure only), not Wave E/F.
 
 ## Acceptance criteria

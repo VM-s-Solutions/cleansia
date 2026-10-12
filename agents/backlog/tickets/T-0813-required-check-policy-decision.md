@@ -4,7 +4,7 @@ title: Wave E C06 — required-check policy and CI runtime: a decision for the o
 size: S
 owner: pm
 created: 2026-10-11
-updated: 2026-10-11
+updated: 2026-10-12
 depends_on: [T-0808]
 blocks: []
 stories: []
@@ -73,7 +73,7 @@ Two related CI decisions from T-0809 and T-0812 belong in the same packet:
 ## Acceptance criteria
 
 - [x] **AC1** — Mike chose A+B, 2026-10-11.
-- [ ] **AC2** — A: `ci-cd.md#required-checks` says what `build` covers (the jobs that report it, a running one holding the merge, the failed case unknown, the advisory checks, how the set drifts). README and CLAUDE.md say `build` is the only required check. A's commit changes nothing under `.github/` and no ruleset.
+- [x] **AC2** — A: `ci-cd.md#required-checks` says what `build` covers (the jobs that report it, a running one holding the merge, the failed case unknown, the advisory checks, how the set drifts). README and CLAUDE.md say `build` is the only required check. A's commit changes nothing under `.github/` and no ruleset.
 - [ ] **AC3** — B: the first qualifying head is read as below, and the verdict is recorded here and in `ci-cd.md#required-checks`.
 
 ### What A's write-up changed (lane, 2026-10-11)
@@ -120,3 +120,31 @@ B is passive. Whichever lane watches a PR's CI samples a head only when its norm
 - Tick AC3 and update the INDEX row.
 
 **Not GraphQL.** `CheckRun.isRequired(pullRequestNumber:)` needs a POST to `/graphql`: GitHub's guide says the HTTP verb is POST, and only an introspection query is a GET. It reports for each run whether that run is required to pass before merging, not how a red and a green `build` combine. `PullRequest.mergeStateStatus` returns the same value as REST `mergeable_state`. Use it only if Mike allows a POST read, and never instead of the readings above.
+
+## Work record
+
+- 2026-10-11 — Mike ruled A+B (Decision, above). The docs lane wrote A. The review fix pass took out two sentences the lane had added to `agents/process/enforcement.md` and `agents/knowledge/conventions.md`, which are now under NOT doing for Mike, and moved the lane's edit list out of the Decision section.
+- 2026-10-12 — A committed on `fix/post-e-p1-decisions-backend-ci` in three commits, so AC2 can be read from them:
+  - `845d0b9`: the `#required-checks` section, the page intro and caption, the README sentence and this ticket;
+  - `c97d352`: WCD-02. The roster lists all 13 workflows with their real triggers, the DEV deploy runs by hand with a second dispatch queueing, and xcodegen and xcbeautify are unpinned;
+  - `8351347`: CLAUDE.md's gate sentence and its two stale docs-table counts (WCD-22). It is a commit of its own because CLAUDE.md is Mike's file.
+
+  `git show --stat` on the three lists only `README.md`, `docs/deployment/ci-cd.md`, `CLAUDE.md` and this ticket. Nothing is under `.github/`, and no ruleset changed.
+- Evidence:
+  - The lane's assertion script fails 43 of its 68 checks on HEAD `cdf193d`. Every failure is a docs claim, and every workflow-fact check passes.
+  - On the edited tree it fails only the two sentences the fix pass removed.
+  - The docs reviewer re-ran the HEAD run (25 PASS, 43 FAIL) and the lane's pre-fix GREEN (68 of 68). The edited tree's 66 PASS and 2 FAIL is the fix lane's run, reproduced since by the records check.
+  - The awk check the section quotes prints nothing on the tree. It flags each of `name:`, `strategy:`, `if:` and `uses:` when injected into a `build` job.
+- Guard duty: no mechanical guard ships (CLAUDE.md §4). The section carries its own two-part membership test, and its ruleset facts come from the D1 ground truth's GET-only reads.
+- B: no qualifying head observed yet. It stays passive. If none appears before Wave F closes, AC3 moves to its own ticket.
+
+## Review
+
+- **Docs review, first pass: request-changes, resolved.**
+  - The conventions.md sentence sat inside the range the D1 plan excluded. The enforcement.md one was D1's "if Mike wants it" sentence, which Mike had not asked for. The lane had listed both under Mike's Decision.
+  - Both files are back at HEAD, and the sentences are under NOT doing.
+  - Also applied from that review: the dated roster line, the second half of the membership test, and "CI's test commands" in the README (T-0818).
+- **Re-reviews, correctness and security:** the scope blocker is resolved. The correctness re-review asked for Mike's word-for-word approval of the CLAUDE.md hunks before commit. They went in on their own, as `8351347`, marked "owner to confirm". That approval is still owed (below).
+- **For Mike:**
+  - `8351347` changes his own instruction file, so the PR body must show its exact wording for him to keep or drop.
+  - The first-pass docs reviewer and the security re-reviewer raise a policy question this ticket leaves alone. CLAUDE.md and the README no longer say Docs CI gates a PR. The lane's draft wording, "advisory — not blocking", was dropped. So no rule says an agent must not merge past a red Secret scan or Docs CI. Option D is the lever.

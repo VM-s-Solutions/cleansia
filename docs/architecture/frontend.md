@@ -544,8 +544,11 @@ The namespace is pinned by `apps/<app>/src/app/i18n/error-contract-parity.spec.t
 ## Testing
 
 - **Unit tests**: Jest with `jest-preset-angular`. `@nx/jest/plugin` infers each project's `test`
-  target from its `jest.config.ts`; a `project.json` only adds inputs to it, so a new library gets its
-  target from the config alone
+  target from its `jest.config.ts`; a `project.json` only adds inputs to it. A new library gets its
+  `test` and `lint` targets from its config files as long as its `project.json` names no executor
+  or command for them. A library made with `nx g @nx/angular:library` does: in Nx 23.2.1 that
+  generator still writes both targets with the deprecated `@nx/jest:jest` and `@nx/eslint:lint`
+  executors, which replace the inferred targets, so delete them
 - **Lint**: ESLint. `@nx/eslint/plugin` infers each project's `lint` target from the nearest
   `eslint.config.mjs`, the project's own or else the workspace root's
 - **E2E tests**: Playwright (configured via Nx plugin)

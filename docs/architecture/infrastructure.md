@@ -199,10 +199,10 @@ had never fired at all — see [the schedule tokens](#timer-schedules) below.
 | `NotifyLapsedPreferredOffers` | every 5 min | Closes a preferred-cleaner hold that expired and reopens the order |
 | `SendPreCleaningReminders` | `%Cron%` — every 5 min | Reminds a **customer** their cleaning is coming up |
 | `SendCleanerJobReminders` | `%Cron%` — every 5 min | Reminds a **cleaner** two hours out; nudges them close to the start if they have not set off; tells the company's administrators once when a staffed job is still not started 30 min after its start (`admin.order.cleaner_not_started`) |
-| `CleanupStalePendingOrders` | every 15 min | Releases orders stuck awaiting payment |
+| `CleanupStalePendingOrders` | every 15 min | Releases orders stuck awaiting payment; the same tick frees membership benefit reservations whose order never committed (`ReleaseOrphanedBenefitReservations`) and cancels and refunds orders that reached their slot with nobody assigned (`CancelUnfilledOrders`). Each of the three runs in its own scope, and one that throws never stops the others; the invocation still fails once the last has run |
 | `SendNewJobsDigest` | `%Cron%` — hourly | Tells cleaners how many new offerable jobs are near them |
 | `SendTomorrowJobDigest` | `%Cron%` — hourly | Tells each cleaner how many jobs they have tomorrow, at 18:00 **local** — hourly because a UTC cron cannot be timezone-aware |
-| `AutoCancelStaleRecurringOrders` | hourly | Cancels recurring instances the customer did not confirm in time; the same tick re-drives pending card refunds of cancelled orders (`RedrivePendingRefunds`) and alerts the administrators after 24 h |
+| `AutoCancelStaleRecurringOrders` | hourly | Cancels recurring instances the customer did not confirm in time; the same tick re-drives pending card refunds of cancelled orders (`RedrivePendingRefunds`) and alerts the administrators after 24 h. Each of the two runs in its own scope, and one that throws never stops the other; the invocation still fails once both have run |
 | `CloseExpiredPayPeriods` | daily 02:00 UTC | Marks pay periods past their end date as closed and opens the successor — no successor for a deactivated company |
 | `MaterializeRecurringBookings` | `%Cron%` — daily 02:00 UTC | Turns recurring bookings into real orders — none for a deactivated company's templates |
 | `SendRecurringOrderReminders` | `%Cron%` — daily 02:30 UTC | Warns a customer about an upcoming recurring instance |

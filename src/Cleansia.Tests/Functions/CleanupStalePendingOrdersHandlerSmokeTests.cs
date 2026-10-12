@@ -3,6 +3,7 @@ using Cleansia.Core.AppServices.Features.Orders;
 using Cleansia.Functions.Core.Handlers;
 using Cleansia.Infra.Common.Validations;
 using MediatR;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
 
@@ -12,9 +13,15 @@ public class CleanupStalePendingOrdersHandlerSmokeTests
 {
     private readonly Mock<IMediator> _mediator = new();
 
-    private CleanupStalePendingOrdersHandler CreateHandler() => new(
-        _mediator.Object,
-        NullLogger<CleanupStalePendingOrdersHandler>.Instance);
+    private CleanupStalePendingOrdersHandler CreateHandler()
+    {
+        var services = new ServiceCollection();
+        services.AddScoped(_ => _mediator.Object);
+        var provider = services.BuildServiceProvider();
+        return new CleanupStalePendingOrdersHandler(
+            provider.GetRequiredService<IServiceScopeFactory>(),
+            NullLogger<CleanupStalePendingOrdersHandler>.Instance);
+    }
 
     [Fact]
     public async Task HandleAsync_Is_Reachable_And_Drives_The_Sweep_Once()

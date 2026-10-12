@@ -30,7 +30,8 @@ final class HelpSupportContactTests: XCTestCase {
         XCTAssertTrue(help.contains("notice: L10n.Help.callUnavailable"))
     }
 
-    /// One address and one line on both apps: the ones Android's Help opens.
+    /// One address and one line on both apps: the ones Android's Help opens. Android holds the address once,
+    /// in its Core `CleansiaWeb.CONTACT_EMAIL`, as this app holds `CleansiaWeb.contactEmail`.
     func testBothAppsOpenTheSameAddressAndLine() throws {
         let android = try String(
             contentsOf: Self.sourceRoot().appendingPathComponent(
@@ -38,8 +39,16 @@ final class HelpSupportContactTests: XCTestCase {
             ),
             encoding: .utf8
         )
+        let androidWeb = try String(
+            contentsOf: Self.sourceRoot().appendingPathComponent(
+                "cleansia_android/core/src/main/java/cz/cleansia/core/config/CleansiaWeb.kt"
+            ),
+            encoding: .utf8
+        )
         XCTAssertEqual(CleansiaWeb.contactEmail, "support@cleansia.cz")
-        XCTAssertTrue(android.contains("private const val SUPPORT_EMAIL = \"\(CleansiaWeb.contactEmail)\""))
+        XCTAssertTrue(androidWeb.contains("const val DOMAIN = \"\(CleansiaWeb.domain)\""))
+        XCTAssertTrue(androidWeb.contains("const val CONTACT_EMAIL = \"support@$DOMAIN\""))
+        XCTAssertTrue(android.contains("Uri.parse(\"mailto:${CleansiaWeb.CONTACT_EMAIL}\")"))
         XCTAssertTrue(android.contains("private const val SUPPORT_PHONE = \"\(HelpSupportView.supportPhone)\""))
     }
 

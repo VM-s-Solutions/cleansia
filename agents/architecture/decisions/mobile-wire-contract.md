@@ -179,9 +179,11 @@ hand-trimmed: the next one would overwrite it. If the dump taken before a contra
 from the committed spec, that drift lands first, in its own commit, and drift that needs hand-written code
 is new scope (ADR-0075 D3).
 
-**Pinned by** `MobileSpecSortParameterTests` (`Cleansia.HostTests`, backend-ci): no query parameter in
-either mobile spec is a collection of objects, every query sort on either mobile host is stated as the
-two scalars, and the stated names order the partner order page.
+**Pinned by** `MobileSpecSortParameterTests` (`Cleansia.HostTests`, backend-ci), which reads each mobile
+host's live document (`ISwaggerProvider.GetSwagger("v1")`), not the committed JSON files: no query
+parameter in either host's document is a collection of objects, every query sort on either host is
+stated as the two scalars, and the stated names order the partner order page. The committed specs carry
+that shape only through the re-dump above.
 
 ## Open questions / future evolution
 

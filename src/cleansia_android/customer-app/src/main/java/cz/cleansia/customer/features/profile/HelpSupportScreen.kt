@@ -51,6 +51,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import cz.cleansia.core.config.CleansiaWeb
 import cz.cleansia.core.format.formatOrderPrice
 import cz.cleansia.core.ui.openOrCopy
 import cz.cleansia.customer.R
@@ -60,8 +61,7 @@ import cz.cleansia.core.ui.theme.Poppins
 
 private data class FaqItem(val qRes: Int, val answer: @Composable () -> String)
 
-/** The one support contact (owner ruling 2026-10-02) and the line the customer web footer prints. */
-private const val SUPPORT_EMAIL = "support@cleansia.cz"
+/** The line the customer web footer prints. */
 private const val SUPPORT_PHONE = "+420739788108"
 
 /** The insurance question is asked only when the market authored a ceiling to answer it with (ADR-0060 D2). */
@@ -92,8 +92,8 @@ fun HelpSupportScreen(
             if (!context.openOrCopy(dial, SUPPORT_PHONE)) viewModel.onCallUnavailable()
         },
         onEmail = {
-            val mail = Intent(Intent.ACTION_SENDTO, Uri.parse("mailto:$SUPPORT_EMAIL"))
-            if (!context.openOrCopy(mail, SUPPORT_EMAIL)) viewModel.onEmailUnavailable()
+            val mail = Intent(Intent.ACTION_SENDTO, Uri.parse("mailto:${CleansiaWeb.CONTACT_EMAIL}"))
+            if (!context.openOrCopy(mail, CleansiaWeb.CONTACT_EMAIL)) viewModel.onEmailUnavailable()
         },
     )
 }
@@ -138,7 +138,7 @@ private fun HelpSupportScreenContent(
                     ContactRow(
                         icon = Icons.Outlined.Email,
                         title = stringResource(R.string.help_email),
-                        subtitle = SUPPORT_EMAIL,
+                        subtitle = CleansiaWeb.CONTACT_EMAIL,
                         onClick = onEmail,
                     )
                     HorizontalDivider(

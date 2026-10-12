@@ -14,6 +14,9 @@ object CleansiaWeb {
 
     const val ORIGIN = "https://$DOMAIN"
 
+    /** The one support contact customers and cleaners are shown or linked to (owner ruling 2026-10-02). */
+    const val CONTACT_EMAIL = "support@$DOMAIN"
+
     /** Routed by the customer web app (`app.routes.ts`). */
     const val TERMS_URL = "$ORIGIN/terms"
 

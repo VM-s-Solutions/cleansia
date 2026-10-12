@@ -69,6 +69,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.Lifecycle
+import cz.cleansia.core.config.CleansiaWeb
 import cz.cleansia.core.settings.AppLocale
 import cz.cleansia.core.ui.components.CleansiaTextButton
 import cz.cleansia.core.ui.components.SudsRefreshIndicator
@@ -80,8 +81,6 @@ import cz.cleansia.partner.LocalAppSettings
 import cz.cleansia.partner.R
 import cz.cleansia.partner.features.settings.LanguageChooser
 import cz.cleansia.partner.navigation.NavRoute
-
-private const val SUPPORT_EMAIL = "support@cleansia.cz"
 
 /**
  * App-wide gate for cleaners who have not finished onboarding or are not approved. One category row per
@@ -473,13 +472,13 @@ private fun StepRowView(step: StepRow, onFixStep: (NavRoute) -> Unit, onSupportE
             } else {
                 // Approval rejected → open default mail app to support.
                 val intent = Intent(Intent.ACTION_SENDTO).apply {
-                    data = Uri.parse("mailto:$SUPPORT_EMAIL")
+                    data = Uri.parse("mailto:${CleansiaWeb.CONTACT_EMAIL}")
                     putExtra(
                         Intent.EXTRA_SUBJECT,
                         context.getString(R.string.registration_lock_support_subject),
                     )
                 }
-                if (!context.openOrCopy(intent, SUPPORT_EMAIL)) onSupportEmailUnavailable()
+                if (!context.openOrCopy(intent, CleansiaWeb.CONTACT_EMAIL)) onSupportEmailUnavailable()
             }
         }
     }

@@ -79,7 +79,7 @@ class StatusBarFadeTest {
         assertEquals(63, statusBarFadeHeight(statusBar = 63, cutout = 0f..90f))
     }
 
-    // W-F4: API 28-30 have no cutout path, so a phone there with a camera in its top edge fell back to the
+    // API 28-30 have no cutout path, so a phone there with a camera in its top edge fell back to the
     // status bar's inset, below the clock's line. Its bounding rectangles give the same line.
 
     @Test
@@ -154,7 +154,7 @@ class StatusBarFadeTest {
         assertFalse(statusBarIconsLight(Color.White))
     }
 
-    // W-F3: a dark hero cross-faded into a light page passed through shades neither icon colour reads
+    // A dark hero cross-faded into a light page passed through shades neither icon colour reads
     // 4.5:1 on; Profile's clock measured 3.1:1 over about 50 px of scroll on the Pixel 8 emulator.
 
     /** Profile's and Subscribe Plus's heroes over their pages, light and dark. */

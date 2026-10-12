@@ -3,6 +3,7 @@ import XCTest
 @testable import CleansiaCore
 @testable import CleansiaCustomer
 
+@MainActor
 final class ContentSafeAreaBindingTests: XCTestCase {
     func testProfileScrollKeepsTheSafeViewport() throws {
         try assertOnlyBackgroundsExtendUnderTheStatusBar(
@@ -254,6 +255,24 @@ final class ContentSafeAreaBindingTests: XCTestCase {
         }
     }
 
+    /// The fade computes its share and its clock from the colours as they are drawn. Before iOS 17 a dynamic
+    /// colour read through `UIColor(Color)` kept its light value in dark mode: sky-600 for the brand blue's
+    /// sky-800 and slate-50 for the page's slate-900.
+    func testTheFadeReadsEachColourAsItIsDrawnInDarkMode() {
+        let colors = [
+            ("Profile", ProfileTab.heroTop(.dark)),
+            ("Plus", MembershipPalette.sky950),
+            ("page", CleansiaColors.background)
+        ]
+        for (name, color) in colors {
+            let read = StatusBarFade.rgb(color, .dark)
+            let drawn = rgb(color, .dark)
+            for channel in 0 ..< 3 {
+                XCTAssertEqual(read[channel], drawn[channel], accuracy: 0.004, "\(name), channel \(channel)")
+            }
+        }
+    }
+
     /// The hero's reader reports only near the status bar, in whole points — enough for the tallest
     /// status bar and the fade — so scrolling elsewhere never redraws the fade.
     func testTheHeroIsReportedOnlyNearTheStatusBar() {
@@ -404,14 +423,34 @@ final class ContentSafeAreaBindingTests: XCTestCase {
         XCTAssertTrue(fade.contains(".allowsHitTesting(false).accessibilityHidden(true)"))
     }
 
+    /// Resolves a colour as SwiftUI draws it in `style`. Before iOS 17 `UIColor(Color)` keeps only a dynamic colour's
+    /// light value whatever traits it is then resolved with, so a dark value read through it was the light one.
     private func rgb(_ color: Color, _ style: UIUserInterfaceStyle) -> SIMD3<Double> {
-        let resolved = UIColor(color).resolvedColor(with: UITraitCollection(userInterfaceStyle: style))
-        var red: CGFloat = 0
-        var green: CGFloat = 0
-        var blue: CGFloat = 0
-        var alpha: CGFloat = 0
-        resolved.getRed(&red, green: &green, blue: &blue, alpha: &alpha)
-        return SIMD3(Double(red), Double(green), Double(blue))
+        let renderer = ImageRenderer(
+            content: color.frame(width: 1, height: 1).environment(\.colorScheme, style == .dark ? .dark : .light)
+        )
+        renderer.scale = 1
+        guard let image = renderer.cgImage,
+              let space = CGColorSpace(name: CGColorSpace.sRGB),
+              let context = CGContext(
+                  data: nil,
+                  width: 1,
+                  height: 1,
+                  bitsPerComponent: 8,
+                  bytesPerRow: 4,
+                  space: space,
+                  bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue
+              )
+        else {
+            XCTFail("the colour could not be rendered")
+            return .zero
+        }
+        context.draw(image, in: CGRect(x: 0, y: 0, width: 1, height: 1))
+        guard let pixel = context.data?.assumingMemoryBound(to: UInt8.self) else {
+            XCTFail("the rendered colour could not be read")
+            return .zero
+        }
+        return SIMD3(Double(pixel[0]), Double(pixel[1]), Double(pixel[2])) / 255
     }
 
     private func hex(_ value: UInt32) -> SIMD3<Double> {
@@ -453,11 +492,46 @@ final class ContentSafeAreaBindingTests: XCTestCase {
     }
 
     private func compactSource(_ path: String) throws -> String {
+        try source(path).components(separatedBy: .whitespacesAndNewlines).joined()
+    }
+}
+
+extension ContentSafeAreaBindingTests {
+    /// CI runs only the newest runtime, where `UIColor(Color)` keeps a dynamic colour's dark value too, so the
+    /// dark-mode read test above passes a read that goes back through it; this pin on the source does not.
+    func testTheFadeReadsNoColourThroughUIColor() throws {
+        let rgb = try compactBody(
+            of: "staticfuncrgb(",
+            in: "CleansiaCore/Sources/CleansiaCore/Components/StatusBarFadeScrollView.swift"
+        )
+        XCTAssertNil(
+            rgb.range(of: #"UIColor\((?![A-Za-z_]\w*:)"#, options: .regularExpression),
+            "StatusBarFade.rgb reads a Color through UIColor(_:), which keeps only its light value before iOS 17"
+        )
+    }
+
+    /// The braced body of the function whose compacted declaration starts with `declaration`, comments removed.
+    private func compactBody(of declaration: String, in path: String) throws -> String {
+        let code = try source(path)
+            .replacingOccurrences(of: #"//[^\n]*|/\*[\s\S]*?\*/"#, with: "", options: .regularExpression)
+            .components(separatedBy: .whitespacesAndNewlines).joined()
+        let start = try XCTUnwrap(code.range(of: declaration), "\(declaration) is not in \(path)")
+        let open = try XCTUnwrap(code[start.upperBound...].firstIndex(of: "{"), "\(declaration) has no body")
+        var depth = 0
+        for index in code[open...].indices {
+            if code[index] == "{" { depth += 1 }
+            if code[index] == "}" { depth -= 1 }
+            if depth == 0 { return String(code[open ... index]) }
+        }
+        XCTFail("\(declaration) never closes in \(path)")
+        return ""
+    }
+
+    private func source(_ path: String) throws -> String {
         let root = URL(fileURLWithPath: #filePath)
             .deletingLastPathComponent()
             .deletingLastPathComponent()
             .deletingLastPathComponent()
-        let source = try String(contentsOf: root.appendingPathComponent(path), encoding: .utf8)
-        return source.components(separatedBy: .whitespacesAndNewlines).joined()
+        return try String(contentsOf: root.appendingPathComponent(path), encoding: .utf8)
     }
 }

@@ -9,6 +9,7 @@ import XCTest
 /// either way). An icon inside the same control takes its label's ink, so no control shows two blues; fills,
 /// borders and standalone icons keep the primary. Read from source, the `AvatarDiscBindingTests` idiom: a
 /// rendered colour is not observable in a unit test, the token a view names is.
+@MainActor
 final class ComponentTextInkTests: XCTestCase {
     /// No Core `Text` names the primary as its own colour. The one exception is the Live Activity's
     /// wordmark fallback: it stands in for the logo, which keeps the brand blue.
@@ -236,13 +237,7 @@ final class ComponentTextInkTests: XCTestCase {
     }
 
     private func resolved(_ color: Color, _ style: UIUserInterfaceStyle) -> RGB {
-        let traits = UITraitCollection(userInterfaceStyle: style)
-        var red: CGFloat = 0
-        var green: CGFloat = 0
-        var blue: CGFloat = 0
-        var alpha: CGFloat = 0
-        UIColor(color).resolvedColor(with: traits).getRed(&red, green: &green, blue: &blue, alpha: &alpha)
-        return RGB(Double(red), Double(green), Double(blue))
+        StatusBarFade.rgb(color, style == .dark ? .dark : .light)
     }
 
     private func rgb(_ hex: UInt32) -> RGB {

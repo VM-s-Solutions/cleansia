@@ -1096,6 +1096,21 @@ need backfilling.
 
 ### Fixed
 
+- **Cleaner Android and iOS — the order lists, the dashboard and your invoices come in the order they
+  should.** The apps sent their sort in a form the server could not read, so the order lists and the
+  dashboard came back with the most recently booked job first whatever you chose, and your invoices
+  in no particular order. (T-0832)
+  - *Orders*: on *Available*, *Soonest first* and *Total price high → low* now order the whole list,
+    and *Earnings high → low* orders each page as it loads. *Active* lists your jobs soonest first,
+    and *Completed* the most recent first.
+  - *Dashboard*: it reads the ten soonest of your jobs from the start of today. It read the ten most
+    recently booked, so with more than ten coming up, your next job could be missing.
+  - *Invoices*: newest first.
+- **Cleaner Android and iOS — a job cancelled today no longer counts on the *N jobs today* line.**
+  A job cancelled today was still counted as one of today's jobs. A job you finished earlier today
+  still counts. (T-0836)
+- **Cleaner iOS — a reserved job's price on *Pending offers* shows the koruna as *Kč*.** It printed
+  *CZK*, where Android prints *Kč*. (T-0839)
 - **Cleaner Android and iOS — the dashboard shows today's and coming jobs, with the right day
   words.** The dashboard now asks for your jobs from the start of your day, so past jobs no longer
   crowd out the next one. A job you finished earlier today still counts on the *N jobs today* line.

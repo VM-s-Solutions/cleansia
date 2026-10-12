@@ -224,11 +224,11 @@ the four questions a cleaner has on opening the app: what is my state today, wha
 am I earning, and when am I paid.
 
 - **The greeting** gives the date and the day's state: *You're free today*, *1 job today* or *N jobs
-  today*, counted from the cleaner's upcoming orders that start today. Those orders are read from the
-  start of the cleaner's local day, so a job earlier today still counts, even one already done. While
-  they are unknown, because they have not been read yet, their read failed or the session has no
-  employee ID to read them for, the state is left off and the date stands alone: an unread list is not
-  a free day.
+  today*, counted from the cleaner's upcoming orders that start today, leaving out any that were
+  cancelled. Those orders are read from the start of the cleaner's local day, so a job earlier today
+  still counts, even one already done; a job cancelled today does not. While they are unknown, because
+  they have not been read yet, their read failed or the session has no employee ID to read them for,
+  the state is left off and the date stands alone: an unread list is not a free day.
 - **One hero, chosen in order:** the next job; otherwise, when any work is open, the available work
   (how many jobs are open and up to what they would pay); otherwise the empty hero. The next job is the
   soonest confirmed, on-the-way or in-progress order with a start time among the ten upcoming orders

@@ -372,8 +372,8 @@ public sealed class RefundService(
         const int maxAttempts = 3;
         for (var attempt = 1; ; attempt++)
         {
-            // A second settle of this key (a double-submitted refund, a re-drive) may have committed it already;
-            // it is left out of the total and counted once, as this refund's amount.
+            // A second settle of this key (a refund sent twice, a retry beside the hourly re-drive) may have committed
+            // it already; it is left out of the total and counted once, as this refund's amount.
             var succeededConsumed = await refundRepository.GetSucceededRefundTotalForOrderAsync(
                 order.Id, refundKey, cancellationToken);
 

@@ -713,6 +713,23 @@ conflict, no duplicate, nothing found. The sweep does not fail; it silently agre
 tenancy — name the two variants and let the call site say which world it is in**, per the shipped
 `EmployeeRepository.GetByIdAsync` / `GetByIdIgnoringTenantAsync` pair (`:44-57`).
 
+**When every caller needs every company's rows, there is one method, and its name still says so.** A
+method of this form whose callers all need every company's rows gets no scoped variant — it would have no
+correct caller, and ADR-0039 D3.2 builds no method with zero callers — and the one method carries
+`IgnoringTenant`, so each call site still says which world it reads. The reference is
+`IOrderRepository.GetBusyEmployeeIdsInWindowIgnoringTenantAsync`: a commitment booked under any operator
+occupies the same cleaner, so the preferred-cleaner picker and the hold resolver on request paths, and the
+payment webhook and the recurring materializer through the resolver, all need every company's calendar;
+every id it is given must be server-derived (`IOrderRepository.cs:166-174`). This reaches only this form's
+subject, a method reached from both a request path and a background job; a read that one world alone
+reaches is governed by the matrix above and its re-pin, not by its name. ✗ **Not yet named:**
+`IOrderRepository.IsFirstBookingAsync` reads every company by contract (`IOrderRepository.cs:10-18`,
+`OrderRepository.cs:20`) and is reached from request paths through `CancellationPolicyResolver.cs:43` and
+from a Function through `SendEmailHandler.cs:290` — T-0837. **Enforced by:** S8's closing test below
+(*for every repository method, list its callers*), walked in the security review of every
+`security_touching` ticket (`.claude/agents/security.md`, item 8) — `T3-HUMAN`. *(Not mechanizable:
+whether every caller needs every company's rows is a reading of meaning.)*
+
 **The worked example — now FIXED, and kept here as the reference pair rather than as an open hole.**
 `OrderRepository.HasOverlappingOrderAsync` used a single `GetDbSet()` body while
 `NewJobsDigestService.cs:137` called it from inside a `GetQueryableIgnoringTenant()` sweep — so under
@@ -732,9 +749,11 @@ scoped gate tells a caller with no claim.
 > class as a comment claiming two lists agree. Re-label to the shipped reference pair and name the pin.
 
 **Reviewer test:** for every repository method, list its callers and ask whether
-they all live in the same tenancy world. If not, one name is wrong. **The pinning test must seed a
-non-null `TenantId`** — same as the mirror case, for the same reason. **And note the direction of the
-lie:** the anonymous-write trap makes a *write* do nothing; this one makes a *guard* say yes.
+they all live in the same tenancy world. If not, one name is wrong — unless every caller needs every
+company's rows, and then there is one method and its name must carry `IgnoringTenant` (above). **The
+pinning test must seed a non-null `TenantId`** — same as the mirror case, for the same reason. **And
+note the direction of the lie:** the anonymous-write trap makes a *write* do nothing; this one makes a
+*guard* say yes.
 
 ## S9 — Migration & DTO-contract safety
 

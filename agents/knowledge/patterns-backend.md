@@ -1477,7 +1477,7 @@ When a rule must give one actor **temporary exclusive access** to a work item on
 > **LAW — ADR-0039 is `accepted`.** Its status line reads *"`accepted` — **2026-08-03, by the lead of
 > the defense panel**"* after two challenge lanes (disclosure `CH-D1…D9`, query-cost `CH-Q1…Q7`) and
 > eleven amendments
-> (`docs/decisions/adr-0039.md:3-9`).
+> (`docs/decisions/adr-0039.md:3-16`).
 > **Retires when:** that status line stops reading `accepted`.
 > *(This block said "PROPOSED — not yet law … `proposed` and unchallenged as of 2026-08-03" until
 > 2026-08-09 — the ADR was accepted the same day the banner was written, and a sibling card

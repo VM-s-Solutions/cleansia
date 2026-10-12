@@ -2,7 +2,7 @@
 
 Every architecture and business decision on record, with the argument that settled it.
 
-**73 records.** A decision keeps a stable id — `ADR-0037` — and roughly six hundred source
+**74 records.** A decision keeps a stable id — `ADR-0037` — and roughly six hundred source
 files cite ids in that form. The id is the reference, not the file name or the title, so a record can
 be retitled without breaking a single citation.
 
@@ -40,8 +40,9 @@ flowchart LR
   A0063[ADR-0063] --> A0062[ADR-0062]
   A0066[ADR-0066] --> A0001[ADR-0001]
   A0067[ADR-0067] --> A0057[ADR-0057]
+  A0074[ADR-0074] --> A0039[ADR-0039]
   classDef old fill:#e5e7eb,stroke:#6b7280,color:#374151
-  class A0001,A0002,A0006,A0010,A0013,A0017,A0024,A0026,A0036,A0037,A0045,A0046,A0050,A0057,A0062 old
+  class A0001,A0002,A0006,A0010,A0013,A0017,A0024,A0026,A0036,A0037,A0039,A0045,A0046,A0050,A0057,A0062 old
 ```
 
 Grey nodes are superseded in whole or in part. Not every later record replaces an earlier one:
@@ -134,6 +135,13 @@ shared scope are listed as deviations rather than reversed by it, so there is no
 ends unpaid now commits with the commit that ends the order, which brings that return in line with
 [ADR-0038](./adr-0038)'s rule for a self-committing write inside a handler, so there is no arrow.
 
+**[ADR-0074](./adr-0074)** (`accepted` 2026-10-12, T-0833) supersedes **two parts** of
+[ADR-0039](./adr-0039) — the arrow: D3.2's end-state tenancy of the set read that asks which cleaners are
+busy, which has read every company since 2026-09-16 and is now named
+`GetBusyEmployeeIdsInWindowIgnoringTenantAsync`, and step 2 of its compliance steps, which it restates.
+D3.2's rule against a method with zero callers and the rest of ADR-0039 stand, and ADR-0039 carries a dated
+pointer at its head.
+
 ## All records
 
 | | Decision | Status |
@@ -176,7 +184,7 @@ ends unpaid now commits with the commit that ends the order, which brings that r
 | **[ADR-0036](./adr-0036)** | Preferred cleaner first refusal hold ⟲ | `accepted` |
 | **[ADR-0037](./adr-0037)** | Order offerability is a payment qualified status… ⟲ | `accepted` |
 | **[ADR-0038](./adr-0038)** | Promo redemption reservation runs after the uow… | `accepted` |
-| **[ADR-0039](./adr-0039)** | Preferred cleaner slot availability is checked at… | `accepted` |
+| **[ADR-0039](./adr-0039)** | Preferred cleaner slot availability is checked at… ⟲ (D3.2's set-read tenancy and compliance step 2 superseded 2026-10-12 by ADR-0074) | `accepted` |
 | **[ADR-0040](./adr-0040)** | Order currentstatus is non nullable the pre… | `proposed` |
 | **[ADR-0041](./adr-0041)** | Self billing agreement is a versioned append only… | `accepted` |
 | **[ADR-0042](./adr-0042)** | Shared wire enums are generated from the nswag… | `proposed` |
@@ -211,6 +219,7 @@ ends unpaid now commits with the commit that ends the order, which brings that r
 | **[ADR-0071](./adr-0071)** | An order's two lifecycle axes, fulfilment and payment, are its concurrency tokens, so a write decided on a stale read of either is refused at commit; the payment status a refund's settle derives is read again on such a refusal (2026-10-12; changes a premise of ADR-0067 D8, whose conclusion stands) | `accepted` |
 | **[ADR-0072](./adr-0072)** | A system job gives each item, and each command on a shared timer, a DI scope of its own; no loop continues past a failed commit in a shared scope (2026-10-12) | `accepted` |
 | **[ADR-0073](./adr-0073)** | The credit an order gives back when it ends unpaid commits with the commit that ends the order, or not at all; a unit holding several customers' credit locks takes them in ordinal user-id order (2026-10-12) | `accepted` |
+| **[ADR-0074](./adr-0074)** | The read that asks which cleaners are busy in a window reads every company's orders, so it is one method, `GetBusyEmployeeIdsInWindowIgnoringTenantAsync`, with no scoped sibling; S8 says a method every caller needs across companies carries `IgnoringTenant` (2026-10-12, T-0833; supersedes ADR-0039 D3.2's set-read tenancy and its compliance step 2) | `accepted` |
 
 ⟲ = superseded in whole or in part by a later record.
 

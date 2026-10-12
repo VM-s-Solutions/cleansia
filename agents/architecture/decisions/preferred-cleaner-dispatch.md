@@ -279,7 +279,7 @@ D3.2, recorded here rather than in the ADR: the set method itself has read tenan
 7751c5fa9 (2026-09-16), because a commitment can be booked under a company other than the caller's — a
 customer may book across markets, and a booking carries the operator of its address's market. Every id
 it is given is server-derived — the caller's own completed orders or a preference the booking validator
-has proven. Pinned by
+has proven. Since T-0833 the name says so, and ADR-0074 records the departure; there is still one set method. Pinned by
 `GetBusyEmployeeIdsInWindowIgnoringTenantTests.A_Proven_Cleaner_Is_Busy_Across_Operators_And_Unrelated_Cleaners_Stay_Excluded`.)*
 
 **A second fan-out shape exists, and for the digest it has shipped.** The digest and the recurring

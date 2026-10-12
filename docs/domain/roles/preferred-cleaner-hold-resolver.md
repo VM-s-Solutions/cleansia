@@ -96,6 +96,10 @@ open  ⟺  PreferredHoldUntilUtc == null          // never held
   >    by shipped seed data (the catalog produces 58.25 h).
   > 3. **There is NO `GetBusyEmployeeIdsInWindowIgnoringTenantAsync`.** It would have zero callers on
   >    the day it shipped. Adding one without a caller in hand is a finding.
+  >
+  >    *(2026-10-12, T-0833: the one set method has read every company since 2026-09-16 and is now named
+  >    `GetBusyEmployeeIdsInWindowIgnoringTenantAsync` (ADR-0074); item 3 stands — there is one set method
+  >    and no scoped sibling.)*
 - **[ADR-0039 · panel] `BookingPolicy.MaxBookableOrderSpanHours` (24 h) — the ENFORCED span cap.**
   `Order.MaxOrderSpanHours` is a query safety margin that is only safe while nothing produces a longer
   order, and **nothing enforced that**: no cap on a service's estimate, on the item count, or on

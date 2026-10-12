@@ -170,6 +170,7 @@ export default withMermaid(
               { text: "ADR-0071 — The order's two lifecycle axes are its concurrency tokens", link: '/decisions/adr-0071' },
               { text: "ADR-0072 — One scope per job item and per timer command", link: '/decisions/adr-0072' },
               { text: "ADR-0073 — The order-ending credit return joins the commit that ends the order", link: '/decisions/adr-0073' },
+              { text: "ADR-0074 — The slot-busy set read reads every company, and its name says so", link: '/decisions/adr-0074' },
             ],
           },
         ],

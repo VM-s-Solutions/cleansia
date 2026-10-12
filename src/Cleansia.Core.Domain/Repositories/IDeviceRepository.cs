@@ -42,8 +42,9 @@ public interface IDeviceRepository : IRepository<Device, string>
     /// caller's own app install still routes pushes to. Reads every company's rows, because that account
     /// may belong to another one; an empty token matches nothing. The pin is a caller obligation: the
     /// device id and the push token are the ones the caller's own install presented, and the server cannot
-    /// verify the token was issued to that install — so the rows found are only ever deactivated, never
-    /// returned or shown. → /architecture/security-rules#s8-tenant-isolation-correctness
+    /// verify the token was issued to that install — so a row found only ever loses its routes to that
+    /// install (it is deactivated, and its account's Live Activity tokens for the install are deleted), and is
+    /// never returned or shown. → /architecture/security-rules#s8-tenant-isolation-correctness
     /// </summary>
     Task<IReadOnlyList<Device>> GetOtherUsersActiveByDeviceAndTokenIgnoringTenantAsync(
         string exceptUserId, string deviceId, string deviceToken, CancellationToken cancellationToken);

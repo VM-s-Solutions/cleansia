@@ -1,8 +1,10 @@
 using System.Text.Json;
 using Cleansia.Core.AppServices.Features.Devices;
+using Cleansia.Core.Clients.Abstractions.Apns;
 using Cleansia.Core.Clients.Abstractions.Fcm;
 using Cleansia.Core.Domain.Devices;
 using Cleansia.Core.Domain.Internationalization;
+using Cleansia.Core.Domain.LiveActivities;
 using Cleansia.Core.Domain.Notifications;
 using Cleansia.Core.Domain.Repositories;
 using Cleansia.Core.Domain.SeedWork;
@@ -24,8 +26,9 @@ namespace Cleansia.IntegrationTests.Features.Devices;
 /// <summary>
 /// A shared phone whose previous account's sign-out never reached the server. The next account's
 /// registration of the phone's device id and push token retires every other account's active row for
-/// that install, in either company, so a push to a previous account no longer reaches the phone; rows
-/// that route to another install are left alone.
+/// that install, in either company, and deletes that account's Live Activity tokens for it, so neither a
+/// notification nor a Live Activity push to a previous account reaches the phone any more; rows that route
+/// to another install are left alone.
 /// </summary>
 [Collection("PostgresCollection")]
 public class SharedHandsetDeviceRegistrationTests(PostgresContainerFixture fixture) : BaseIntegrationTest(fixture)
@@ -85,6 +88,65 @@ public class SharedHandsetDeviceRegistrationTests(PostgresContainerFixture fixtu
                 Assert.True(next.IsActive);
                 Assert.Equal(InstallToken, next.DeviceToken);
                 Assert.Equal(TestTenants.Default, next.TenantId);
+            },
+            transactional: false);
+    }
+
+    [Fact]
+    public async Task Registering_An_iPhone_Deletes_Each_Retired_Accounts_Live_Activity_Tokens_For_It_So_Their_Lock_Screen_Pushes_Stop_Reaching_It()
+    {
+        const string iPhone = "ios-keychain-id-shared-iphone";
+        const string iPhoneApnsToken = "apns-token-shared-iphone";
+        const string iPhonePushToStartToken = "apns-push-to-start-shared-iphone";
+        const string otherIPhone = "ios-keychain-id-other-iphone";
+        const string otherIPhonePushToStartToken = "apns-push-to-start-other-iphone";
+        (string Account, string Company)[] previousAccounts =
+        [
+            (PreviousAccountOtherCompany, TestTenants.Second),
+            (PreviousAccountSameCompany, TestTenants.Default),
+        ];
+        var harness = new Harness();
+        await TestMethod<IReadOnlyList<string>>(
+            setup: harness.Setup,
+            arrange: async context =>
+            {
+                SeedAccounts(context,
+                    (NextAccount, TestTenants.Default),
+                    (PreviousAccountOtherCompany, TestTenants.Second),
+                    (PreviousAccountSameCompany, TestTenants.Default));
+                foreach (var (account, company) in previousAccounts)
+                {
+                    AddDevice(context, account, company, iPhone, iPhoneApnsToken, "ios");
+                    AddActivityTokens(context, account, company, iPhone, iPhonePushToStartToken);
+                }
+
+                AddActivityTokens(context, PreviousAccountOtherCompany, TestTenants.Second, otherIPhone, otherIPhonePushToStartToken);
+                AddActivityTokens(context, NextAccount, TestTenants.Default, iPhone, iPhonePushToStartToken);
+                await context.CommitAsync(CancellationToken.None);
+            },
+            act: async provider =>
+            {
+                await harness.RegisterAsync(provider, NextAccount, TestTenants.Default, iPhone, iPhoneApnsToken, "ios");
+
+                foreach (var (account, company) in previousAccounts)
+                {
+                    await harness.SendLiveActivityAsync(provider, account, company, LiveActivityEventKeys.Start);
+                    await harness.SendLiveActivityAsync(provider, account, company, LiveActivityEventKeys.Update);
+                }
+
+                return harness.ActivityPushes.ToList();
+            },
+            assert: async (context, activityPushes) =>
+            {
+                Assert.Equal(
+                    new[] { otherIPhonePushToStartToken, UpdateTokenOf(PreviousAccountOtherCompany, otherIPhone) },
+                    activityPushes);
+
+                var rows = await context.LiveActivityTokens.IgnoreQueryFilters().ToListAsync();
+                Assert.DoesNotContain(rows, t => t.DeviceId == iPhone && t.UserId != NextAccount);
+                Assert.Equal(2, rows.Count(t =>
+                    t.UserId == PreviousAccountOtherCompany && t.DeviceId == otherIPhone && t.TenantId == TestTenants.Second));
+                Assert.Equal(2, rows.Count(t => t.UserId == NextAccount && t.DeviceId == iPhone));
             },
             transactional: false);
     }
@@ -164,7 +226,9 @@ public class SharedHandsetDeviceRegistrationTests(PostgresContainerFixture fixtu
             transactional: false);
     }
 
-    private static string OrderOf(string userId) => $"order-of-{userId}";
+    private static string OrderOf(string userId) => $"order-{userId}";
+
+    private static string UpdateTokenOf(string userId, string deviceId) => $"apns-update-{userId}-{deviceId}";
 
     private static void SeedAccounts(CleansiaDbContext context, params (string UserId, string TenantId)[] accounts)
     {
@@ -178,12 +242,22 @@ public class SharedHandsetDeviceRegistrationTests(PostgresContainerFixture fixtu
         }
     }
 
-    private static Device AddDevice(CleansiaDbContext context, string userId, string tenantId, string deviceId, string token)
+    private static Device AddDevice(
+        CleansiaDbContext context, string userId, string tenantId, string deviceId, string token, string platform = "android")
     {
-        var device = Device.Create(userId, "android", token, deviceId);
+        var device = Device.Create(userId, platform, token, deviceId);
         device.TenantId = tenantId;
         context.Devices.Add(device);
         return device;
+    }
+
+    // ActivityKit issues the push-to-start token per install, so every account signed in on one iPhone registers the same one.
+    private static void AddActivityTokens(
+        CleansiaDbContext context, string userId, string tenantId, string deviceId, string pushToStartToken)
+    {
+        context.LiveActivityTokens.Add(LiveActivityToken.Create(userId, deviceId, orderId: null, pushToStartToken, tenantId));
+        context.LiveActivityTokens.Add(
+            LiveActivityToken.Create(userId, deviceId, OrderOf(userId), UpdateTokenOf(userId, deviceId), tenantId));
     }
 
     private sealed class Harness
@@ -191,9 +265,12 @@ public class SharedHandsetDeviceRegistrationTests(PostgresContainerFixture fixtu
         private static readonly JsonSerializerOptions WireJson = new() { PropertyNamingPolicy = JsonNamingPolicy.CamelCase };
 
         private readonly Mock<IPushDispatcher> _dispatcher = new();
+        private readonly Mock<ILiveActivityPushClient> _activityPushClient = new();
         private IUserSessionProvider _session = new TestUserSessionProvider();
 
         public List<(string OrderId, string[] Tokens)> Sent { get; } = [];
+
+        public List<string> ActivityPushes { get; } = [];
 
         public Task Setup(IServiceCollection services)
         {
@@ -205,19 +282,43 @@ public class SharedHandsetDeviceRegistrationTests(PostgresContainerFixture fixtu
                     Sent.Add((data["orderId"], tokens.ToArray())))
                 .ReturnsAsync(new PushDispatchResult(1, 0, []));
             services.Replace(ServiceDescriptor.Singleton(_dispatcher.Object));
+            _activityPushClient
+                .Setup(c => c.SendAsync(It.IsAny<string>(), It.IsAny<LiveActivityPush>(), It.IsAny<CancellationToken>()))
+                .Callback((string token, LiveActivityPush _, CancellationToken _) => ActivityPushes.Add(token))
+                .ReturnsAsync(LiveActivityPushResult.Sent());
+            services.Replace(ServiceDescriptor.Singleton(_activityPushClient.Object));
             return Task.CompletedTask;
         }
 
-        public async Task RegisterAsync(IServiceProvider provider, string userId, string tenantId, string deviceId, string? token)
+        public async Task RegisterAsync(
+            IServiceProvider provider, string userId, string tenantId, string deviceId, string? token, string platform = "android")
         {
             _session = new TestUserSessionProvider(userId, $"{userId}@cleansia.test");
             await using var scope = provider.CreateAsyncScope();
             scope.ServiceProvider.GetRequiredService<ITenantProvider>().SetTenantOverride(tenantId);
 
             var result = await scope.ServiceProvider.GetRequiredService<IMediator>()
-                .Send(new RegisterDevice.Command(deviceId, token, "android"));
+                .Send(new RegisterDevice.Command(deviceId, token, platform));
 
             Assert.True(result.IsSuccess, result.Error?.Message);
+        }
+
+        public async Task SendLiveActivityAsync(IServiceProvider provider, string userId, string tenantId, string eventKey)
+        {
+            _session = new TestUserSessionProvider();
+            await using var scope = provider.CreateAsyncScope();
+
+            var orderId = OrderOf(userId);
+            var now = DateTimeOffset.UtcNow;
+            var message = new SendLiveActivityUpdateMessage(
+                userId, orderId, eventKey, "CL-1001", now, now.AddHours(2), now, tenantId);
+            var body = JsonSerializer.Serialize(
+                new QueueEnvelope<SendLiveActivityUpdateMessage>(MessageKeys.LiveActivity(orderId, eventKey, 1), tenantId, message),
+                WireJson);
+
+            var guard = new DbIdempotencyGuard(new ProcessedMessageRepository(scope.ServiceProvider.GetRequiredService<CleansiaDbContext>()));
+            await ActivatorUtilities.CreateInstance<SendLiveActivityUpdateHandler>(scope.ServiceProvider, guard)
+                .HandleAsync(body, CancellationToken.None);
         }
 
         public async Task PushAsync(IServiceProvider provider, string userId, string tenantId)

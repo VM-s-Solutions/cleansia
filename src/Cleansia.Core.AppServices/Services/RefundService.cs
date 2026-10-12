@@ -372,8 +372,10 @@ public sealed class RefundService(
         const int maxAttempts = 3;
         for (var attempt = 1; ; attempt++)
         {
+            // A second settle of this key (a double-submitted refund, a re-drive) may have committed it already;
+            // it is left out of the total and counted once, as this refund's amount.
             var succeededConsumed = await refundRepository.GetSucceededRefundTotalForOrderAsync(
-                order.Id, cancellationToken);
+                order.Id, refundKey, cancellationToken);
 
             // The credit leg is independently idempotent; an erased account receives only its card refund.
             await ReturnCreditShareAsync(order, creditShare, refundKey, actorId, cancellationToken);

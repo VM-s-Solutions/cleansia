@@ -507,6 +507,11 @@ public sealed class RefundMoneyConservationTests
                         _tracked.GetValueOrDefault(id) ?? Track(_world._rows.SingleOrDefault(r => r.Id == id)));
                 Refunds.Setup(r => r.GetSucceededRefundTotalForOrderAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
                     .ReturnsAsync(() => _world._rows.Where(r => r.Status == RefundStatus.Succeeded).Sum(r => r.Amount));
+                Refunds.Setup(r => r.GetSucceededRefundTotalForOrderAsync(
+                        It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
+                    .ReturnsAsync((string _, string exceptRefundKey, CancellationToken _) => _world._rows
+                        .Where(r => r.Status == RefundStatus.Succeeded && r.Key != exceptRefundKey)
+                        .Sum(r => r.Amount));
                 Refunds.Setup(r => r.GetPendingRefundTotalForOrderAsync(
                         It.IsAny<string>(), It.IsAny<string?>(), It.IsAny<CancellationToken>()))
                     .ReturnsAsync((string _, string? exceptRefundKey, CancellationToken _) => _world._rows

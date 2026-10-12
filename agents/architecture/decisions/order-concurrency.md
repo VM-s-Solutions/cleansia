@@ -60,6 +60,11 @@ settle reloads the order and tries again only when all three hold:
 Anything else is rethrown as before. Without the retry, the payment-axis token would refuse the later of two
 settles after Stripe had paid it; without the token, each saved a status counted without the other's refund.
 
+Each pass sums the confirmed card refunds **without this refund's own key** and adds the refund once. Two settles
+of one key — a partial refund or a dispute's resolution sent twice at once, a re-drive beside the request that
+claimed it — share one row, and the one that commits second would otherwise find that row already succeeded and
+count it twice: 600 back on a paid 1 000 ended `Refunded`, and a later cancellation then refunded none of the rest.
+
 ## The credit an order gives back when it ends (ADR-0073 D1)
 
 `CreditUnwind.ReturnUnpaidOrderCreditAsync` returns, under `order-ended-unpaid:{orderId}`, the credit an
@@ -136,9 +141,9 @@ A unit that holds several customers' credit locks until one commit takes them in
 - `src/Cleansia.IntegrationTests/Features/Bookings/RecurringAutoCancelCreditAtomicityTests.cs` — a refused
   auto-cancel of an occurrence returns no credit, and the next run cancels it and returns the credit once.
 - `src/Cleansia.IntegrationTests/Features/Refunds/ConcurrentRefundSettleTests.cs` — two refunds settling at once
-  are both recorded and the order ends Refunded; a cancellation whose refund settles beside another still notifies
-  its crew, e-mails the guest and releases the waiver; a settle carrying a cancel staged on the order is refused
-  whole.
+  are both recorded and the order ends Refunded; the same refund settled twice at once is counted once and the order
+  stays partly refunded; a cancellation whose refund settles beside another still notifies its crew, e-mails the
+  guest and releases the waiver; a settle carrying a cancel staged on the order is refused whole.
 - `src/Cleansia.Tests/Infrastructure/OrderConcurrencyTokenTests.cs` — the order's tokens are exactly the two axes;
   a cancel decided on an unpaid order whose payment landed meanwhile is refused (SQLite, two contexts); the source
   guard that keeps `Orders` written only through the change tracker.

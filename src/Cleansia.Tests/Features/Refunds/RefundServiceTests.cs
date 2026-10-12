@@ -1472,6 +1472,11 @@ public class RefundServiceTests
             .Setup(r => r.GetSucceededRefundTotalForOrderAsync(OrderId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(() => rows.Where(r => r.Status == RefundStatus.Succeeded).Sum(r => r.Amount));
         _refundRepository
+            .Setup(r => r.GetSucceededRefundTotalForOrderAsync(OrderId, It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((string _, string exceptRefundKey, CancellationToken _) => rows
+                .Where(r => r.Status == RefundStatus.Succeeded && r.RefundKey != exceptRefundKey)
+                .Sum(r => r.Amount));
+        _refundRepository
             .Setup(r => r.GetPendingRefundTotalForOrderAsync(OrderId, It.IsAny<string?>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync((string _, string? exceptRefundKey, CancellationToken _) => rows
                 .Where(r => r.Status == RefundStatus.Pending && r.RefundKey != exceptRefundKey)

@@ -29,6 +29,7 @@ namespace Cleansia.IntegrationTests.Features.Refunds;
 /// refused because the other moved that status, reads the refunds again and saves the status the two make
 /// together, instead of failing after Stripe has paid and leaving its refund pending, and with it everything a
 /// cancellation does after its refund. A settle that carries a decision of its own on the order stays refused.
+/// Two settles of one refund, the same request sent twice, share its row and count it once.
 ///
 /// <para>The refusal comes from <c>PaymentStatus</c> being the order's second concurrency token (ADR-0071 D1).
 /// Without that token neither settle is refused, and the later one saves a status counted without the other's
@@ -46,6 +47,7 @@ public class ConcurrentRefundSettleTests(PostgresContainerFixture fixture) : Bas
     private const string KeyA = $"refund:{OrderId}:admin:a";
     private const string KeyB = $"refund:{OrderId}:admin:b";
     private const string CancelKey = $"refund:{OrderId}:cancel";
+    private const string EarlierKey = $"refund:{OrderId}:admin:earlier";
 
     private readonly Mock<IStripeClient> _stripe = new();
     private readonly List<(decimal Amount, string Key)> _stripeRefunds = [];
@@ -159,6 +161,43 @@ public class ConcurrentRefundSettleTests(PostgresContainerFixture fixture) : Bas
         Assert.True(settled.IsSuccess, settled.Error?.Message);
     }
 
+    /// <summary>The administrator's refund "a" of 600 sent a second time, run to completion on a connection of its own.</summary>
+    private async Task SettleRefundAAgainAsync()
+    {
+        await using var ctx = NewContext();
+        var settled = await NewRefundService(ctx).IssueRefundAsync(AdminRefund(600m, "a"), CancellationToken.None);
+        Assert.True(settled.IsSuccess, settled.Error?.Message);
+    }
+
+    /// <summary>Runs another settle to completion once, while the first card refund is with Stripe.</summary>
+    private void RunOnceDuringTheStripeCall(Func<Task> settleAnother)
+    {
+        var ran = false;
+        _stripe.Setup(s => s.RefundPaymentIntentAsync(
+                PaymentIntentId, It.IsAny<decimal>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .Returns(async (string _, decimal amount, string key, CancellationToken _) =>
+            {
+                _stripeRefunds.Add((amount, key));
+                if (!ran)
+                {
+                    ran = true;
+                    await settleAnother();
+                }
+            });
+    }
+
+    /// <summary>A card refund of <paramref name="amount"/> Stripe confirmed earlier, which left the order partly refunded.</summary>
+    private async Task SeedEarlierRefundAsync(decimal amount)
+    {
+        await using var ctx = NewContext();
+        var earlier = Refund.Create(OrderId, EarlierKey, amount, "CZK", RefundReason.AdminDiscretion, RefundSource.AppRefund);
+        earlier.MarkSucceeded("re_earlier", DateTimeOffset.UtcNow.AddHours(-1));
+        ctx.Refunds.Add(earlier);
+        var order = await ctx.Orders.SingleAsync(o => o.Id == OrderId);
+        order.UpdatePaymentStatus(PaymentStatus.PartiallyRefunded);
+        await ctx.CommitAsync(CancellationToken.None);
+    }
+
     /// <summary>An administrator cancels the booking, loaded as the admin cancel loads it.</summary>
     private async Task<PlatformOrderCancellationResult> CancelAsync(CleansiaDbContext ctx)
     {
@@ -213,6 +252,54 @@ public class ConcurrentRefundSettleTests(PostgresContainerFixture fixture) : Bas
         Assert.Equal((RefundStatus.Succeeded, 600m), (refunds[KeyA].Status, refunds[KeyA].Amount));
         Assert.Equal((RefundStatus.Succeeded, 400m), (refunds[KeyB].Status, refunds[KeyB].Amount));
         Assert.Equal(new List<(decimal, string)> { (600m, KeyA), (400m, KeyB) }, _stripeRefunds);
+    }
+
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public async Task The_Same_Refund_Sent_Twice_And_Settled_At_Once_Is_Counted_Once(bool duringStripe)
+    {
+        await ResetAsync();
+        await SeedAsync();
+        if (duringStripe)
+        {
+            RunOnceDuringTheStripeCall(SettleRefundAAgainAsync);
+        }
+
+        BusinessResult<RefundResult> first;
+        await using (var ctx = duringStripe ? NewContext() : NewContext(new AtTheSettleSave(SettleRefundAAgainAsync)))
+        {
+            first = await NewRefundService(ctx).IssueRefundAsync(AdminRefund(600m, "a"), CancellationToken.None);
+        }
+
+        Assert.True(first.IsSuccess, first.Error?.Message);
+        var (order, refunds) = await ReadAsync();
+        Assert.Equal(PaymentStatus.PartiallyRefunded, order.PaymentStatus);
+        Assert.Equal(KeyA, Assert.Single(refunds).Key);
+        Assert.Equal((RefundStatus.Succeeded, 600m), (refunds[KeyA].Status, refunds[KeyA].Amount));
+        Assert.Equal(2, _stripeRefunds.Count);
+        Assert.All(_stripeRefunds, sent => Assert.Equal((600m, KeyA), sent));
+    }
+
+    [Fact]
+    public async Task The_Same_Refund_Sent_Twice_On_A_Partly_Refunded_Order_Leaves_It_Partly_Refunded()
+    {
+        await ResetAsync();
+        await SeedAsync();
+        await SeedEarlierRefundAsync(100m);
+        RunOnceDuringTheStripeCall(SettleRefundAAgainAsync);
+
+        BusinessResult<RefundResult> first;
+        await using (var ctx = NewContext())
+        {
+            first = await NewRefundService(ctx).IssueRefundAsync(AdminRefund(600m, "a"), CancellationToken.None);
+        }
+
+        Assert.True(first.IsSuccess, first.Error?.Message);
+        var (order, refunds) = await ReadAsync();
+        Assert.Equal(PaymentStatus.PartiallyRefunded, order.PaymentStatus);
+        Assert.Equal((RefundStatus.Succeeded, 600m), (refunds[KeyA].Status, refunds[KeyA].Amount));
+        Assert.Equal((RefundStatus.Succeeded, 100m), (refunds[EarlierKey].Status, refunds[EarlierKey].Amount));
     }
 
     [Fact]

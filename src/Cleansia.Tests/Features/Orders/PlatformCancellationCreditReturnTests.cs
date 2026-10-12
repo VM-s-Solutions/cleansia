@@ -128,6 +128,10 @@ public sealed class PlatformCancellationCreditReturnTests
             .ReturnsAsync((string id, CancellationToken _) => rows.SingleOrDefault(r => r.Id == id));
         _refunds.Setup(r => r.GetSucceededRefundTotalForOrderAsync(OrderId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(() => cardRefundedBefore + rows.Where(r => r.Status == RefundStatus.Succeeded).Sum(r => r.Amount));
+        _refunds.Setup(r => r.GetSucceededRefundTotalForOrderAsync(OrderId, It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((string _, string exceptRefundKey, CancellationToken _) => cardRefundedBefore + rows
+                .Where(r => r.Status == RefundStatus.Succeeded && r.RefundKey != exceptRefundKey)
+                .Sum(r => r.Amount));
         _refunds.Setup(r => r.GetPendingRefundTotalForOrderAsync(OrderId, It.IsAny<string?>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync((string _, string? exceptRefundKey, CancellationToken _) => rows
                 .Where(r => r.Status == RefundStatus.Pending && r.RefundKey != exceptRefundKey)

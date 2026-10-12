@@ -48,7 +48,8 @@ final class LivePartnerPayrollClient: PartnerPayrollClient {
         await apiResult(mapError: ApiError.fromGenerated) {
             let paged = try await PartnerEmployeePayrollAPI.employeePayrollGetPagedInvoices(
                 filterEmployeeId: employeeId,
-                sort: [SortDefinition(field: "createdOn", direction: ._1)],
+                sort0Field: "createdOn",
+                sort0Direction: ._1,
                 offset: 0,
                 limit: 50
             )

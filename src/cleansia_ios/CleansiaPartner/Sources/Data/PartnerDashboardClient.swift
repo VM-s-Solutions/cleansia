@@ -24,7 +24,8 @@ struct LivePartnerDashboardClient: PartnerDashboardClient {
                 filterIsActive: true,
                 filterEmployeeId: employeeId,
                 filterCleaningDateFrom: Calendar.current.startOfDay(for: Date()),
-                sort: [SortDefinition(field: "cleaningDateTime", direction: ._0)],
+                sort0Field: "cleaningDateTime",
+                sort0Direction: ._0,
                 offset: 0,
                 limit: limit
             ).data ?? []

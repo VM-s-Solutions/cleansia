@@ -9,13 +9,14 @@ import Foundation
 final class WireBodies: @unchecked Sendable {
     private let lock = NSLock()
     // swiftlint:disable:next large_tuple
-    private var recorded: [(path: String, method: String, body: Data?)] = []
+    private var recorded: [(path: String, method: String, query: [URLQueryItem], body: Data?)] = []
 
     func record(_ request: URLRequest) {
         lock.withLock {
             recorded.append((
                 path: request.url?.path ?? "",
                 method: request.httpMethod ?? "",
+                query: request.url.flatMap { URLComponents(url: $0, resolvingAgainstBaseURL: false)?.queryItems } ?? [],
                 body: Self.readBody(from: request)
             ))
         }
@@ -27,6 +28,10 @@ final class WireBodies: @unchecked Sendable {
 
     func method(ofPath path: String) -> String? {
         lock.withLock { recorded.last { $0.path == path }?.method }
+    }
+
+    func query(ofPath path: String) -> [URLQueryItem]? {
+        lock.withLock { recorded.last { $0.path == path }?.query }
     }
 
     func text(ofPath path: String) -> String? {

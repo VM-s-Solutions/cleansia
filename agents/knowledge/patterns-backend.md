@@ -593,11 +593,14 @@ member, **`NotifyEachAsync(notifications, ct)`**, makes ONE read of every distin
 persisted company, then records each item exactly as `NotifyAsync` would, in input order. It takes
 **no tenant parameter** — the recipient's persisted company decides — and every `UserId` in it must be
 one the server read, **never one a client supplied**: whoever it names receives the push and the feed
-row. ⚠️ **The subject guard does not see it:** `PushSubjectNamesTheEventTests` recognises only a subject
-passed positionally to `NotifyAsync(`, so a subject inside a `NotifyEachAsync` item is not checked. Its
-one production caller, `CleanupStalePendingOrders`, is already on that guard's
-`DeliberatelyKeyedOnTheParent` allowlist; a second caller must either join the allowlist with the
-argument the list demands, or teach the guard the list shape first.
+row. ⚠️ **The subject guard cannot read it:** `PushSubjectNamesTheEventTests` recognises only a subject
+passed positionally to `NotifyAsync(`, so a subject inside a `NotifyEachAsync` item is not checked.
+Instead the guard fails any file in `Cleansia.Core.AppServices` whose text calls `.NotifyEachAsync(`
+without being on its `DeliberatelyKeyedOnTheParent` allowlist. `CleanupStalePendingOrders` is listed and
+is the fact's anchor: the fact fails when it stops detecting that caller, so a detection gone blind
+fails instead of passing on no callers. A new caller joins the list with the argument the list demands,
+or teaches the guard the list shape first. **Enforced by:**
+`PushSubjectNamesTheEventTests.Every_NotifyEachAsync_Caller_Is_On_The_Allowlist` — `T1-CI`.
 **Constructing `new SendPushNotificationMessage(...)` anywhere else is a violation**, mechanically
 pinned by `SendPushNotificationSeamTripwireTests` (allowed sites: the seam, the sitewide-promo
 fan-out, the record's own file). Rules the seam encodes: category mutes gate the PUSH (checked by
@@ -1408,11 +1411,34 @@ already exists is the wrong tool, and calling it in a loop is the defect, not th
   GetBusyEmployeeIdsInWindowAsync(ids, startUtc, endUtc, ct)` — **return the positive subset (the
   "busy" ones), not the free ones**, so "absent from the result" is the fail-**open** default and an
   empty/failed answer degrades to today's behaviour rather than to a lie.
-- **Reduce the singular method to a wrapper over the set method.** Two predicates answering one
-  question in one repository is the defect class, not a shape to leave behind — and the wrapper means
-  every later fix (a range bound, a tenancy variant) lands on the **write gate** for free. The existing
-  status-matrix test on the singular method is the pin that proves the predicate did not change meaning
-  while it moved.
+- **Share the predicate, not the terminal call** (ADR-0039 D3.2 as amended). Two predicates answering
+  one question in one repository is the defect class, not a shape to leave behind — so the filter is
+  ONE method that returns a queryable and terminates nothing (`LiveCommitmentsInWindow`), the caller's
+  world is the queryable passed in (scoped or tenant-ignoring), and each shape ends it its own way: the
+  write gate keeps `.AnyAsync`'s early exit, the set method fans out with `.SelectMany`. That filter is
+  the "same call" the read-path/write-path bullet below asks for. Do **not** make the singular method a
+  wrapper over the set method; that costs the write gate a materialized set and a hash aggregate to
+  answer a bool. Every later fix to the filter (a range bound, a status term) still lands on every
+  query shape at once; a time term also lives in the in-memory twin below, which only its agreement
+  test holds to the filter. The existing status-matrix test on the singular method
+  (`HasOverlappingOrderStatusTests`) is the pin that proves the predicate did not change meaning while
+  it moved. **Enforced by:** `quality-gates.md` **Gate 4 (Architecture)** — `T3-HUMAN`. *(Not
+  mechanizable: which method is the singular form of a set question is a reading of meaning, not of
+  text; the status-matrix and agreement tests fail when the shapes disagree, not when one wraps the
+  other.)*
+- **The reverse shape — ONE entity, MANY windows — is one read, a pure Domain twin and an agreement
+  test.** Read the entity's live commitments once over `[min(start) − floor, max(end))`, with the status
+  set kept in SQL; judge each window in memory with a pure Domain function that carries the same time
+  terms and applies each window's own floor (`Order.OccupiesWindow`); and pin that twin to the SQL with
+  an agreement test on real PostgreSQL (`LiveCommitmentWindowsAgreementTests`), since nothing else stops
+  the two drifting. Shipped for the new-jobs digest as `GetOverlappedCandidateIdsIgnoringTenantAsync`.
+  The price: every window is judged against one statement's snapshot rather than one READ COMMITTED
+  probe each, which an advisory read can pay and a write gate cannot.
+  **Enforced by:** `LiveCommitmentWindowsAgreementTests`, for the shipped instance — `T1-CI`; that a
+  new instance of the shape brings its own agreement test, `quality-gates.md` **Gate 4 (Architecture)**
+  — `T3-HUMAN`. *(Not mechanizable: whether an in-memory function restates a SQL filter's time terms is
+  a reading of meaning — the two are different text in different assemblies, and a new twin need not
+  call `Order.OccupiesWindow`. Baseline is zero: the shipped instance carries its test.)*
 - **The read path and the write path must be the SAME CALL, not "the same rule".** If a picker can say
   *available* and the command can then say *busy* for a reason of its own, the feature has already
   failed and no shared documentation prevents it.

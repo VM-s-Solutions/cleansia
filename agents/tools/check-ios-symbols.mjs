@@ -2,7 +2,7 @@
 /**
  * check-ios-symbols — a compiler-free gate over the iOS tree, for machines with no Swift compiler.
  *
- * WHY IT EXISTS. Development happens on Windows. `.github/workflows/ios-ci.yml` does the real thing —
+ * WHY IT EXISTS. Not every dev machine has Xcode. `.github/workflows/ios-ci.yml` does the real thing —
  * xcodegen, SwiftFormat, SwiftLint, and a full xcodebuild build+test of all three targets on a macOS
  * runner — and it is the only thing that can say "this compiles". It is also the only thing that
  * cannot run when GitHub Actions is billing-blocked, which is what happened for seven merges. Two
@@ -1138,6 +1138,6 @@ if (problems.length === 0 && blind.length === 0) console.log("\nios-symbols: cle
 // A REACH failure exits 1 EVEN UNDER `--warn`, the shape check-catalog-claims settled on
 // (`agents/process/enforcement.md`): `--warn` downgrades findings ABOUT THE TREE, which is what a
 // rollout needs, but a run that did not read the tree has no findings to downgrade. Letting it exit 0
-// would let the only iOS signal on a Windows machine report clean while blind, which is the exact lie
+// would let the only iOS signal without Xcode report clean while blind, which is the exact lie
 // that let two broken builds through.
 process.exit(blind.length > 0 || (!warnOnly && problems.length > 0) ? 1 : 0);

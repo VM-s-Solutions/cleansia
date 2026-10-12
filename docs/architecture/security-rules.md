@@ -110,8 +110,8 @@ the last Administrator"* is a predicate over *other* rows, and a conditional `UP
 is not atomic against a second one on a different row — under READ COMMITTED each statement's snapshot
 sees the other row still active, both land, and the company has no Administrator (write skew, not a lost
 update — S7a's `ExecuteUpdateAsync` shape does not cover it). `UserRepository.DemoteAdministratorIfAnotherRemainsAsync`
-and `DeactivateAdministratorIfAnotherRemainsAsync` (`UserRepository.cs:171-218`) therefore each open a
-transaction, take `SELECT pg_advisory_xact_lock(hashtext(tenantId))` (`:220-227`; Postgres only — the SQLite
+and `DeactivateAdministratorIfAnotherRemainsAsync` (`UserRepository.cs:157-204`) therefore each open a
+transaction, take `SELECT pg_advisory_xact_lock(hashtext(tenantId))` (`:206-213`; Postgres only — the SQLite
 unit-test provider serialises on one connection), then run the conditional `UPDATE`; `0 rows` is the business
 error (`admin_user.cannot_demote_last_administrator` / `admin_user.cannot_deactivate_last_admin`), and the
 race test on Testcontainers proves exactly one of two concurrent demotions succeeds on every run. The
@@ -717,11 +717,15 @@ tenancy — name the two variants and let the call site say which world it is in
 `OrderRepository.HasOverlappingOrderAsync` used a single `GetDbSet()` body while
 `NewJobsDigestService.cs:137` called it from inside a `GetQueryableIgnoringTenant()` sweep — so under
 a tenant **every cleaner reported as free and the digest would advertise double-booked jobs** — while
-the *same* method is `TakeOrder`'s write gate, where the scoped read is correct. It is now one private
-predicate parameterised by the queryable, with two public wrappers
-(`HasOverlappingOrderAsync` / `HasOverlappingOrderIgnoringTenantAsync`), so the call site names its
-world. Pinned by `HasOverlappingOrderTenancyAndScanFloorTests`, whose tenanted case fails if the
-ignoring wrapper is reverted to `GetDbSet()`.
+the *same* method is `TakeOrder`'s write gate, where the scoped read is correct. It is now one predicate
+parameterised by the queryable (`LiveCommitmentsInWindow`), and each world calls a method that names it:
+the request paths (`TakeOrder`, `AdminReassignOrder`) the scoped `HasOverlappingOrderAsync`, the digest
+the tenant-ignoring batch `GetOverlappedCandidateIdsIgnoringTenantAsync`. *(The single-window ignoring
+wrapper, `HasOverlappingOrderIgnoringTenantAsync`, lost its last caller to the batch and was deleted on
+owner ruling, 2026-10-11.)* Pinned by `HasOverlappingOrderTenancyAndScanFloorTests`, whose batch cases
+fail if the batch is reverted to `GetDbSet()`, and whose
+`The_Scoped_Variant_Reports_Free_For_A_Tenanted_Order_When_The_Caller_Has_No_Claim` records the lie the
+scoped gate tells a caller with no claim.
 
 > **Do not leave a security law asserting a live hole that has been closed.** A reader who checks the
 > citation and finds it fixed learns to distrust the rest of the catalog, which is the same defect

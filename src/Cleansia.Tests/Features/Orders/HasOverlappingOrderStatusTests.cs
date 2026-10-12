@@ -15,7 +15,8 @@ namespace Cleansia.Tests.Features.Orders;
 
 /// <summary>
 /// <see cref="OrderRepository.HasOverlappingOrderAsync"/> backs the TakeOrder
-/// <c>order.time_conflict</c> rule and the new-jobs digest's not-busy filter. An assigned order
+/// <c>order.time_conflict</c> rule and the AdminReassignOrder <c>order.reassign.employee_busy</c> rule;
+/// the new-jobs digest asks the batch form, which must give every status the same answer. An assigned order
 /// occupies the cleaner's time only while it is a live commitment — terminal orders (Completed,
 /// Cancelled) free the slot. These tests run the real predicate against a
 /// <see cref="CleansiaDbContext"/> over SQLite with rows seeded through the
@@ -147,9 +148,7 @@ public sealed class HasOverlappingOrderStatusTests : IDisposable
 
         var fromBatch = await ProbeBatchAsync(("probe", SlotStart.AddMinutes(30), 60));
 
-        await using var ctx = NewContext();
-        var fromSingle = await new OrderRepository(ctx).HasOverlappingOrderIgnoringTenantAsync(
-            CleanerId, SlotStart.AddMinutes(30), 60, CancellationToken.None);
+        var fromSingle = await ProbeSlotAsync();
 
         Assert.Equal(clashes, fromSingle);
         Assert.Equal(fromSingle, fromBatch.Contains("probe"));

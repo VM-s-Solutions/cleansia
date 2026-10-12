@@ -163,10 +163,19 @@ pull**. See `src/cleansia_ios/README.md`.
 
 ```bash
 cd src
-dotnet test Cleansia.Tests/Cleansia.Tests.csproj                        # unit, fast
-dotnet test Cleansia.IntegrationTests/Cleansia.IntegrationTests.csproj  # real Postgres, Testcontainers
-dotnet test Cleansia.HostTests/Cleansia.HostTests.csproj                # authz and isolation
+dotnet build Cleansia.Api.sln --configuration Release
+dotnet test Cleansia.Tests/Cleansia.Tests.csproj \
+  --configuration Release --no-build -- xUnit.parallelizeTestCollections=false
+dotnet test Cleansia.IntegrationTests/Cleansia.IntegrationTests.csproj \
+  --configuration Release --no-build -- xUnit.parallelizeTestCollections=false
+dotnet test Cleansia.HostTests/Cleansia.HostTests.csproj \
+  --configuration Release --no-build -- xUnit.parallelizeTestCollections=false
 ```
+
+The unit suite is the fast one; the integration suite runs on a real Postgres through
+Testcontainers, and the host tests cover authz and isolation. These are CI's test commands
+(`backend-ci.yml`) less its `--verbosity normal`: one Release build, then each suite with
+`--no-build` and its test collections run one at a time.
 
 ```bash
 cd src/Cleansia.App
@@ -181,8 +190,11 @@ an empty Jest cache, and 96 s instead of 242 s with a warm one, and Jest's *"wor
 gracefully"* warning went away. CI still runs the default; whether it should change is an owner
 decision (T-0813).
 
-Integration and host tests need Docker running. Six CI workflows gate a PR: Backend, Frontend,
-Android, iOS, iOS Symbols and Docs.
+Integration and host tests need Docker running. The only required status check on `master` is
+`build`, emitted by the Backend, Frontend, Android and iOS workflows; Backend and iOS run only when
+their paths change. Docs and Secret scan run on every pull request, and iOS Symbols and
+booking-policy parity when their paths change, but the ruleset does not require them
+([what a PR needs to merge](docs/deployment/ci-cd.md#required-checks)).
 
 Two of those suites are easy to forget locally and are derived from the backend rather than from what
 you edited, so a backend change can redden them: **`Cleansia.HostTests`** (authz and tenant isolation)

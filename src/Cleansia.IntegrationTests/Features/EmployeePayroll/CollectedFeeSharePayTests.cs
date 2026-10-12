@@ -1,3 +1,4 @@
+using System.Globalization;
 using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.AppServices.Features.EmployeePayroll;
 using Cleansia.Core.AppServices.Features.Orders;
@@ -101,34 +102,49 @@ public class CollectedFeeSharePayTests(PostgresContainerFixture fixture) : BaseI
             });
     }
 
-    [Fact]
-    public async Task A_Late_Cancellation_After_A_Partial_Refund_Pays_Half_Of_What_The_Company_Still_Holds()
+    /// <summary>
+    /// Run under two host cultures: the breakdown is the books' note, copied verbatim into the company archive,
+    /// so a decimal comma would also collide with the comma between its figures.
+    /// </summary>
+    [Theory]
+    [InlineData("en-US")]
+    [InlineData("cs-CZ")]
+    public async Task A_Late_Cancellation_After_A_Partial_Refund_Pays_Half_Of_What_The_Company_Still_Holds(string hostCulture)
     {
-        await TestMethod(
-            arrange: async ctx =>
-            {
-                var order = SeedCancelledOrder(ctx, PaymentType.Card, PaymentStatus.Paid, totalPrice: 1000m, seats: 1);
-                var partial = Refund.Create(_orderId, "refund:partial", 700m, "CZK",
-                    RefundReason.AdminDiscretion, RefundSource.AppRefund);
-                partial.MarkSucceeded("re_partial", DateTimeOffset.UtcNow);
-                ctx.Refunds.Add(partial);
-                order.UpdatePaymentStatus(PaymentStatus.PartiallyRefunded);
+        var host = CultureInfo.CurrentCulture;
+        CultureInfo.CurrentCulture = CultureInfo.GetCultureInfo(hostCulture);
+        try
+        {
+            await TestMethod(
+                arrange: async ctx =>
+                {
+                    var order = SeedCancelledOrder(ctx, PaymentType.Card, PaymentStatus.Paid, totalPrice: 1000m, seats: 1);
+                    var partial = Refund.Create(_orderId, "refund:partial", 700m, "CZK",
+                        RefundReason.AdminDiscretion, RefundSource.AppRefund);
+                    partial.MarkSucceeded("re_partial", DateTimeOffset.UtcNow);
+                    ctx.Refunds.Add(partial);
+                    order.UpdatePaymentStatus(PaymentStatus.PartiallyRefunded);
 
-                order.Cancel(DateTime.UtcNow, CancelledBy.Customer, feeRate: 0.5m, refundAmount: 500m, reason: null);
-                await ctx.CommitAsync(CancellationToken.None);
-            },
-            act: provider => provider.GetRequiredService<IMediator>()
-                .Send(new CalculateOrderPay.Command(_orderId, _firstSeatEmployeeId)),
-            assert: async (CleansiaDbContext context, BusinessResult<CalculateOrderPay.Response> result) =>
-            {
-                Assert.True(result.IsSuccess, result.Error?.Message);
+                    order.Cancel(DateTime.UtcNow, CancelledBy.Customer, feeRate: 0.5m, refundAmount: 500m, reason: null);
+                    await ctx.CommitAsync(CancellationToken.None);
+                },
+                act: provider => provider.GetRequiredService<IMediator>()
+                    .Send(new CalculateOrderPay.Command(_orderId, _firstSeatEmployeeId)),
+                assert: async (CleansiaDbContext context, BusinessResult<CalculateOrderPay.Response> result) =>
+                {
+                    Assert.True(result.IsSuccess, result.Error?.Message);
 
-                var pay = await context.Set<OrderEmployeePay>()
-                    .IgnoreQueryFilters()
-                    .SingleAsync(p => p.OrderId == _orderId);
-                Assert.Equal(150m, pay.TotalPay);
-                Assert.Contains("Collected fee: 300.00", pay.PayBreakdown);
-            });
+                    var pay = await context.Set<OrderEmployeePay>()
+                        .IgnoreQueryFilters()
+                        .SingleAsync(p => p.OrderId == _orderId);
+                    Assert.Equal(150m, pay.TotalPay);
+                    Assert.Equal("Collected fee: 300.00, Share: 150.00", pay.PayBreakdown);
+                });
+        }
+        finally
+        {
+            CultureInfo.CurrentCulture = host;
+        }
     }
 
     [Fact]

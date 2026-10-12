@@ -95,10 +95,11 @@ public interface IOrderRepository : IRepository<Order, string>
     /// time-conflict write gate.
     ///
     /// <para>TENANT-SCOPED, deliberately: a request path carries a <c>tenant_id</c> claim and the
-    /// cleaner is in the caller's tenant. A caller with NO claim (timer, Function, webhook) must use
-    /// <see cref="HasOverlappingOrderIgnoringTenantAsync"/> — under a tenant the global filter resolves
-    /// <c>TenantId == null</c> against non-null rows, so this method finds nothing and reports the
-    /// cleaner FREE, which is a guard saying yes.</para>
+    /// cleaner is in the caller's tenant. A caller with NO claim (timer, Function, webhook) must not use
+    /// it — under a tenant the global filter resolves <c>TenantId == null</c> against non-null rows, so
+    /// this method finds nothing and reports the cleaner FREE, which is a guard saying yes. The
+    /// tenant-ignoring form is <see cref="GetOverlappedCandidateIdsIgnoringTenantAsync"/>; one window is a
+    /// one-candidate list.</para>
     ///
     /// <para>The scan is floored at <c>cleaningDateTime - Order.MaxOrderSpanHours</c>; see that
     /// constant for what the floor assumes.</para>
@@ -107,14 +108,6 @@ public interface IOrderRepository : IRepository<Order, string>
 
     /// <summary>The order's current status through the tenant filter; null when there is no such order.</summary>
     Task<OrderStatus?> GetCurrentStatusAsync(string orderId, CancellationToken cancellationToken);
-
-    /// <summary>
-    /// Same predicate as <see cref="HasOverlappingOrderAsync"/> with the tenant filter bypassed, for a
-    /// background sweep that runs with no tenant context and asks about ONE window. Nothing in production
-    /// calls it today: the new-jobs digest asks about all of a cleaner's candidates at once through
-    /// <see cref="GetOverlappedCandidateIdsIgnoringTenantAsync"/>.
-    /// </summary>
-    Task<bool> HasOverlappingOrderIgnoringTenantAsync(string employeeId, DateTime cleaningDateTime, int estimatedTimeMinutes, CancellationToken ct);
 
     /// <summary>
     /// The cleaners who are, RIGHT NOW, physically on a job — <c>OnTheWay</c> or <c>InProgress</c> on
@@ -170,9 +163,14 @@ public interface IOrderRepository : IRepository<Order, string>
     /// window. Not the same rule — the same method: if the picker could say available and the resolver
     /// then say busy for a reason of its own, the feature has already failed.</para>
     ///
-    /// <para>TENANT-SCOPED, deliberately, and there is no ignoring sibling: every caller is a request
-    /// path with a claim (the recurring materializer runs under its own per-template tenant override).
-    /// A background sweep asking about ONE cleaner over many windows has
+    /// <para>TENANT-IGNORING, deliberately: a commitment can be booked under a company other than the
+    /// caller's. A customer may book across markets, and a booking carries the operator of its address's
+    /// market, so a read scoped to the customer's claim would call a cleaner free who is booked there.
+    /// Because it reads every company's rows, every id in <paramref name="employeeIds"/> must be
+    /// server-derived: the caller's own completed orders (the picker) or a preferred cleaner the booking
+    /// validator has already proven served this customer (the resolver). An id a client supplied
+    /// unchecked would make this a schedule oracle over every company's cleaners. A background sweep
+    /// asking about ONE cleaner over many windows has
     /// <see cref="GetOverlappedCandidateIdsIgnoringTenantAsync"/>.</para>
     /// </summary>
     Task<IReadOnlySet<string>> GetBusyEmployeeIdsInWindowAsync(

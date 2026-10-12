@@ -1,3 +1,4 @@
+using System.Globalization;
 using Cleansia.Core.Domain.EmployeePayroll;
 using Cleansia.Core.Domain.Orders;
 
@@ -125,7 +126,9 @@ public static class PayCalculatorExtensions
 
         var totalPay = ApplyMinMaxClamp(basePay + extrasPay, minPay, maxPay) + dirtinessPay;
 
-        var breakdown = $"Base: {basePay:F2}, Extras: {extrasPay:F2}, Dirtiness: {dirtinessPay:F2}";
+        var breakdown = $"Base: {basePay.ToString("F2", CultureInfo.InvariantCulture)}, "
+            + $"Extras: {extrasPay.ToString("F2", CultureInfo.InvariantCulture)}, "
+            + $"Dirtiness: {dirtinessPay.ToString("F2", CultureInfo.InvariantCulture)}";
 
         return (basePay, extrasPay, dirtinessPay, totalPay, minPay, maxPay, breakdown);
     }

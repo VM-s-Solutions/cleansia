@@ -239,7 +239,10 @@ landed while the panel was sitting; kept here because the *shape* is the reusabl
    `HasOverlappingOrderIgnoringTenantAsync` (`OrderRepository.cs:272-276`)**, both delegating to one
    private predicate parameterised by the queryable. Pinned by
    `HasOverlappingOrderTenancyAndScanFloorTests` — **every tenancy case seeds a non-null `TenantId`**,
-   which is the only way these tests prove anything (`security-rules.md:236`).
+   which is the only way these tests prove anything (`security-rules.md:236`). *(2026-10-11, owner
+   ruling: the ignoring half is now the digest's batch, `GetOverlappedCandidateIdsIgnoringTenantAsync`.
+   The single-window ignoring wrapper lost its last caller to it and was deleted, and its tenancy pins
+   moved to the batch cases.)*
 2. ✅ **No lower bound on `CleaningDateTime`** — the only range term was an **upper** one, and
    `CleaningDateTime.AddMinutes(EstimatedTime)` is a per-row computation, not sargable, so each call
    scanned the cleaner's whole assignment history. **×20 per picker render.**
@@ -261,18 +264,23 @@ a boolean. The shipped code shares the **predicate**, not the terminal operation
 ```
 LiveCommitmentsInWindow(IQueryable<Order>, startUtc, endUtc)   ← ONE definition (floor + interval + status)
    ├─ .Any()        one employee, tenant-scoped     → TakeOrder            ✅ shipped
-   ├─ .Any()        one employee, ignoring          → no production caller ⚠️ keep or delete: owner, pending
    ├─ .Select()     one employee, M windows         → NewJobsDigestService ✅ shipped (ADR-0039 D3.3)
    │                tenant-ignoring; ONE read, then each window judged in memory by Order.OccupiesWindow
-   └─ .SelectMany() N employees, tenant-scoped      → picker + resolver    ⬅ the only piece left to build
+   └─ .SelectMany() N employees, tenant-ignoring    → picker + resolver    ✅ shipped
 ```
 
 **No `IgnoringTenant` sibling of the set method will be built** — it would have zero callers on the day
 it shipped (the digest asks about one employee over many windows and has its own read for that, below),
 and a tenant-escaping read one IntelliSense entry from a customer-facing handler is a cost with no
 buyer. **Two pin classes** hold the predicate through the extraction: `HasOverlappingOrderStatusTests`
-(11 status cases) and `HasOverlappingOrderTenancyAndScanFloorTests` (5 tenancy + 3 floor cases,
-including the accepted blind spot written down as a passing `Assert.False`).
+(11 status cases) and `HasOverlappingOrderTenancyAndScanFloorTests` (4 tenancy + 3 floor cases,
+including the accepted blind spot written down as a passing `Assert.False`). *(Departure from ADR-0039
+D3.2, recorded here rather than in the ADR: the set method itself has read tenant-ignoring since
+7751c5fa9 (2026-09-16), because a commitment can be booked under a company other than the caller's — a
+customer may book across markets, and a booking carries the operator of its address's market. Every id
+it is given is server-derived — the caller's own completed orders or a preference the booking validator
+has proven. Pinned by
+`GetBusyEmployeeIdsInWindowTests.A_Proven_Cleaner_Is_Busy_Across_Operators_And_Unrelated_Cleaners_Stay_Excluded`.)*
 
 **A second fan-out shape exists, and for the digest it has shipped.** The digest and the recurring
 materializer are **one employee, many windows** — the set method does nothing for either. ADR-0039 D3.3
@@ -282,11 +290,15 @@ fourth predicate, and the digest runs exactly that: `GetOverlappedCandidateIdsIg
 reads the cleaner's live commitments once through the unchanged `LiveCommitmentsInWindow`, then
 `Order.OccupiesWindow` judges each candidate against **its own** inclusive floor.
 `LiveCommitmentWindowsAgreementTests` pins its answer to the single-window form's on real PostgreSQL.
+Its one accepted limit: a cleaner's candidates are judged against one statement's snapshot, not one
+READ COMMITTED probe each, which holds because the digest only advises and `TakeOrder`'s write gate
+still decides at take time.
 **Only the recurring materializer's loop is left** (one resolver busy read per occurrence) —
 pre-existing, on a timer, and still the digest redesign's (Consumers, below), as are the redesign's two
 other items: grouping the board by `WorkCountryId` and batching the preferences read. The single-window
-ignoring wrapper, `HasOverlappingOrderIgnoringTenantAsync`, now has **no production caller** — only
-tests, the agreement pin's single-window oracle among them; keep or delete is an owner decision, pending.
+ignoring wrapper, `HasOverlappingOrderIgnoringTenantAsync`, lost its last production caller to the batch
+and was **deleted on owner ruling, 2026-10-11**; the agreement pin's single-window oracle is now the
+scoped gate, asked under each company the rows carry.
 
 > ⚠️ **The composition trap with ADR-0037, because it fails OPEN.** Offerability is
 > `STATUS(o) ∧ NotRetractable(o)`. **Do not add `NotRetractable` to the occupancy predicate.** It is an
@@ -755,8 +767,9 @@ cleaner's score"* myth lives in **three** files (`Order.cs:217-224`, `PreferredC
   runs per cleaner, not per `WorkCountryId` (`NewJobsDigestService.cs:123-132`), and the preferences
   read is one round trip per cleaner (`:206-208`). The one-employee, many-windows loop left is the
   recurring materializer's (`MaterializeRecurringBookingTemplate.cs:303` → `:335`, one resolver busy
-  read per occurrence). And `HasOverlappingOrderIgnoringTenantAsync` has **no production caller** now:
-  keep or delete is an **owner decision, pending**.
+  read per occurrence). And `HasOverlappingOrderIgnoringTenantAsync`, left with no production caller,
+  was **deleted on owner ruling, 2026-10-11**; the agreement pin asks the scoped gate under each company
+  instead.
 - **Two catalog rules the panel found missing** (filed, not written here): (1) **S5 does not cover
   read oracles** — it is scoped to *"auth + side-effecting endpoints"*, which is exactly why an
   unthrottled per-subject read shipped; the rule wanted is *a read whose answer is per-subject and whose

@@ -365,24 +365,15 @@ public class OrderRepository(CleansiaDbContext context) : BaseRepository<Order>(
     ];
 
     public Task<bool> HasOverlappingOrderAsync(string employeeId, DateTime cleaningDateTime, int estimatedTimeMinutes, CancellationToken ct)
-        => HasOverlappingOrderAsync(GetDbSet(), employeeId, cleaningDateTime, estimatedTimeMinutes, ct);
+        => LiveCommitmentsInWindow(GetDbSet(), cleaningDateTime, cleaningDateTime.AddMinutes(estimatedTimeMinutes))
+            .Where(o => o.AssignedEmployees.Any(e => e.EmployeeId == employeeId))
+            .AnyAsync(ct);
 
     public Task<OrderStatus?> GetCurrentStatusAsync(string orderId, CancellationToken cancellationToken)
         => GetDbSet()
             .Where(o => o.Id == orderId)
             .Select(o => (OrderStatus?)o.CurrentStatus)
             .FirstOrDefaultAsync(cancellationToken);
-
-    public Task<bool> HasOverlappingOrderIgnoringTenantAsync(string employeeId, DateTime cleaningDateTime, int estimatedTimeMinutes, CancellationToken ct)
-        => HasOverlappingOrderAsync(GetQueryableIgnoringTenant(), employeeId, cleaningDateTime, estimatedTimeMinutes, ct);
-
-    private static Task<bool> HasOverlappingOrderAsync(
-        IQueryable<Order> orders, string employeeId, DateTime cleaningDateTime, int estimatedTimeMinutes, CancellationToken ct)
-    {
-        return LiveCommitmentsInWindow(orders, cleaningDateTime, cleaningDateTime.AddMinutes(estimatedTimeMinutes))
-            .Where(o => o.AssignedEmployees.Any(e => e.EmployeeId == employeeId))
-            .AnyAsync(ct);
-    }
 
     public async Task<IReadOnlySet<string>> GetEmployeeIdsCurrentlyOnAJobAsync(
         IReadOnlyCollection<string> employeeIds,

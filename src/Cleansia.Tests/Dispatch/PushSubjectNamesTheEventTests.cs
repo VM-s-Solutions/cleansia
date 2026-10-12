@@ -1,6 +1,7 @@
 using System.Reflection;
 using System.Text.RegularExpressions;
 using Cleansia.Core.AppServices.Features.Orders;
+using Cleansia.Core.AppServices.Services.Interfaces;
 
 namespace Cleansia.Tests.Dispatch;
 
@@ -85,19 +86,51 @@ public class PushSubjectNamesTheEventTests
         "HandlePaymentNotification.cs",
     };
 
+    /// <summary>
+    /// A <c>NotifyEachAsync</c> subject sits inside a list of tuples, not directly before the
+    /// cancellation token, so <see cref="No_Push_Subject_Is_A_Bare_Parent_Identifier"/> cannot read it.
+    /// Its callers are therefore held to the allowlist instead: each must carry the argument the list
+    /// demands, or the guard must learn the list shape first.
+    /// </summary>
     [Fact]
-    public void No_Push_Subject_Is_A_Bare_Parent_Identifier()
+    public void Every_NotifyEachAsync_Caller_Is_On_The_Allowlist()
     {
-        var featureFiles = Directory
-            .EnumerateFiles(FeaturesDirectory(), "*.cs", SearchOption.AllDirectories)
+        var batchCall = $".{nameof(INotificationProducer.NotifyEachAsync)}(";
+        var callers = AppServicesFiles()
+            .Where(file => File.ReadAllText(file).Contains(batchCall, StringComparison.Ordinal))
+            .Select(Path.GetFileName)
             .ToList();
 
         Assert.True(
-            featureFiles.Count >= 100,
-            $"Expected the Features tree; found only {featureFiles.Count} files. The walk drifted.");
+            callers.Contains("CleanupStalePendingOrders.cs"),
+            $"The walk finds no {batchCall} call in CleanupStalePendingOrders.cs, the known caller, so this "
+                + "guard would pass on no callers at all. Either the call's text changed (a method group, a "
+                + "helper) and the detection must learn it, or the call moved and this anchor must move too.");
+
+        var unlisted = callers.Where(name => !DeliberatelyKeyedOnTheParent.Contains(name!)).ToList();
+
+        Assert.True(
+            unlisted.Count == 0,
+            "These files call NotifyEachAsync, whose subjects this guard cannot read. Add each to "
+                + "DeliberatelyKeyedOnTheParent with the argument for why its events cannot recur, or "
+                + "teach the guard the list shape first:"
+                + Environment.NewLine
+                + string.Join(Environment.NewLine, unlisted));
+    }
+
+    [Fact]
+    public void No_Push_Subject_Is_A_Bare_Parent_Identifier()
+    {
+        var sourceFiles = AppServicesFiles();
+
+        Assert.True(
+            sourceFiles.Count >= 100,
+            $"Expected the AppServices tree; found only {sourceFiles.Count} files. The walk drifted.");
+        Assert.Contains(sourceFiles, file => file.Contains(
+            $"{Path.DirectorySeparatorChar}Services{Path.DirectorySeparatorChar}", StringComparison.Ordinal));
 
         var offenders = new List<string>();
-        foreach (var file in featureFiles)
+        foreach (var file in sourceFiles)
         {
             if (DeliberatelyKeyedOnTheParent.Contains(Path.GetFileName(file)))
             {
@@ -156,7 +189,7 @@ public class PushSubjectNamesTheEventTests
         return false;
     }
 
-    private static string FeaturesDirectory()
+    private static List<string> AppServicesFiles()
     {
         var assembly = Path.GetDirectoryName(typeof(TakeOrder).Assembly.Location)!;
         var directory = new DirectoryInfo(assembly);
@@ -166,8 +199,12 @@ public class PushSubjectNamesTheEventTests
         }
 
         Assert.True(directory is not null, "Could not locate the solution directory.");
-        var features = Path.Combine(directory!.FullName, "Cleansia.Core.AppServices", "Features");
-        Assert.True(Directory.Exists(features), $"Features directory not found at {features}.");
-        return features;
+        var appServices = Path.Combine(directory!.FullName, "Cleansia.Core.AppServices");
+        Assert.True(Directory.Exists(appServices), $"AppServices directory not found at {appServices}.");
+        return Directory
+            .EnumerateFiles(appServices, "*.cs", SearchOption.AllDirectories)
+            .Where(file => !file.Contains($"{Path.DirectorySeparatorChar}obj{Path.DirectorySeparatorChar}", StringComparison.Ordinal)
+                && !file.Contains($"{Path.DirectorySeparatorChar}bin{Path.DirectorySeparatorChar}", StringComparison.Ordinal))
+            .ToList();
     }
 }

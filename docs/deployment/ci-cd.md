@@ -1,11 +1,12 @@
 # CI/CD Pipeline
 
-Cleansia uses GitHub Actions. **Eight workflows gate a pull request** — one per stack, the docs, two
-dependency-free Node gates whose drift spans trees no single stack job can see, and the secret scan —
-and five more deploy or run operational jobs.
+Cleansia uses GitHub Actions. **The workflows below check a pull request** — one per stack, the docs,
+the dependency-free Node checks whose drift spans trees no single stack job can see, and the secret
+scan — and the rest deploy or run operational jobs. **The only status required to merge is `build`**:
+[what it covers](#required-checks).
 
 ::: info Source Files
-**Gates on a PR**
+**Runs on a PR**
 
 | Workflow | Guards |
 |---|---|
@@ -23,6 +24,63 @@ and five more deploy or run operational jobs.
 - `deploy-dev.yml`, `deploy-pro.yml`, `deploy-azure.yml`, `deploy-docs.yml`
 - `execute-sql.yml` — the manual, environment-gated SQL runner
 :::
+
+## What a pull request needs to merge {#required-checks}
+
+`build` is the only status check required to merge into `master`, and this section says what it
+covers (owner ruling 2026-10-11, T-0813).
+
+The repository rulesets *master* and *Pull request rule* protect `master`, and there is no classic
+branch protection. They apply only to `master`, so a pull request into another branch (a stacked one)
+has no required check. Ruleset *master* requires every review thread to be resolved, no approval, and
+the status check **`build`**, strict: the branch must also be up to date with `master`. The check is
+pinned to no app, so a `build` from any source counts.
+
+**`build` is a job name, not a workflow.** Every check called `build` on the head must report, and
+these jobs report one:
+
+- **Frontend** (`frontend-ci.yml`) and **Android** (`android-ci.yml`), on every pull request;
+- **Backend** (`backend-ci.yml`), when the pull request touches `src/**` outside the web, Android and
+  iOS trees, `sql-scripts/**` or the workflow;
+- **iOS** (`ios-ci.yml`), when it touches `src/cleansia_ios/**`, `src/cleansia_android/openapi/**` or
+  the workflow.
+
+The list is every job keyed `build` with no `name:`, `strategy:`, `if:` or `uses:`, and its
+membership test has two halves. `grep -nE '^  build:$' .github/workflows/*.yml` lists the jobs keyed
+`build`, but a `build` job that gains a `name:`, `strategy:`, `if:` or `uses:` leaves the gate while
+the grep still lists it. This check prints nothing while none of the four jobs has one:
+
+```bash
+for f in android backend frontend ios; do awk '/^  build:$/{f=1;next} f&&/^    steps:/{exit} f&&/^    (name|strategy|if|uses):/{print FILENAME": "NR}' .github/workflows/$f-ci.yml; done
+```
+
+Frontend's lint step is `continue-on-error`, so lint never fails its `build`.
+
+- **A running `build` holds the merge.** Observed 2026-10-11 on PR #320: it stayed blocked while
+  Backend's `build` ran, with Android's and Frontend's already green, and was mergeable at the next
+  reading, 45 s after Backend finished.
+- **A failed `build` beside a green one has not been observed.** Whether a red `build` still blocks
+  when another `build` on the same head finishes green after it stays unknown until a pull request
+  reaches that state on its own (T-0813).
+
+**Advisory checks** show red on a pull request when they fail, and do not block the merge: Docs CI
+(*References and build*), Secret scan (*No new secret in the history*) and Frontend CI's *e2e-smoke*
+on every pull request; iOS Symbols CI (*Symbols resolve and switches stay exhaustive*) and Booking
+policy parity (*Every surface quotes the policy it actually enforces*) when their paths change.
+
+**The gate changes when a workflow does.** A required check is matched by its name alone, not by its
+workflow, matrix or event:
+
+- a `name:`, a matrix, or a move into a reusable workflow renames a job's check, and that workflow
+  leaves the gate without any error;
+- any other check called `build` on the head joins the gate, from any workflow or app;
+- renaming every `build` job leaves each pull request waiting for a check that never arrives, until
+  someone bypasses the rule;
+- a workflow that fails before its job starts reports no `build`, so the others can pass the gate
+  without it (inferred, not observed).
+
+Team *VM* can bypass both rulesets. That happened once in the month to 2026-10-11: PR #295 merged with
+no `build` reported.
 
 ## Secret scan (`secret-scan.yml`) {#secret-scan}
 
@@ -49,12 +107,22 @@ failing, it does not make the secret safe.
 
 | Workflow | Trigger | Purpose |
 |----------|---------|---------|
-| `backend-ci` | PR to any branch | Build + test .NET solution |
+| `backend-ci` | PR to any branch that touches `src/**` outside the web, Android and iOS trees, `sql-scripts/**` or the workflow | Build + test .NET solution |
 | `frontend-ci` | PR to any branch | Build Angular apps |
+| `android-ci` | PR to any branch | Compile and unit-test `:core`, `:partner-app` and `:customer-app` |
+| `ios-ci` | PR to any branch that touches `src/cleansia_ios/**`, `src/cleansia_android/openapi/**` or the workflow | SwiftFormat, SwiftLint, then build and test the three schemes |
+| `docs-ci` | PR to any branch | Docs pointers and written claims resolve; the docs site builds |
+| `ios-symbols-ci` | PR to any branch that touches `src/cleansia_ios/**`, the checker, its self-test or the workflow | `check-ios-symbols.mjs` on Linux |
+| `booking-policy-parity` | PR to any branch that touches a file the checker reads, the checker, its self-test or the workflow | `check-booking-policy-parity.mjs` |
 | `secret-scan` | PR to any branch, push to `master` | gitleaks — no new secret in the history |
 | `deploy-dev` | **Manual (`workflow_dispatch`)** | Deploy everything to DEV |
 | `deploy-pro` | Manual (`workflow_dispatch`) | Deploy everything to PRO |
+| `deploy-azure` | Called by `deploy-dev` and `deploy-pro` (`workflow_call`) | The shared build, provision, migrate and deploy pipeline |
+| `deploy-docs` | Manual (`workflow_dispatch`) | Build the docs site and deploy it to DEV's Static Web App |
 | `execute-sql` | Manual | Run ad-hoc SQL scripts. On PRO it refuses a development fixture by resolved path (`insert_seed_data.sql`, anything under `seed/` or outside `sql-scripts/`), and every DEV-only script by file name, from one list in its step *Refuse DEV-only scripts against production*: `insert_local_dev_admin.sql`, `fix-company-contact-placeholders.sql`, `fix-plus-trial-14-days.sql` and `fix-deactivate-local-dev-admin.sql`. A relative path cannot walk around a name, each refusal says where production does the same thing instead, and a new DEV-only script is one more row of the list (one list since 2026-10-04; the last two were not refused before). The three fixes correct what a DEV database got from a development fixture, which production is never built from. DEV runs all of them, `insert_local_dev_admin.sql` included (owner ruling 2026-09-30, until an app registration gates the DEV apps). It opens no network window, so it cannot reach the production database once that is private ([below](#production-window)) |
+
+As of 2026-10-11, every file in `.github/workflows/` has a row. The workflows that check a pull
+request also run on pushes to `master`, path-scoped except for the secret scan.
 
 ## Runners and images {#runners}
 
@@ -71,14 +139,16 @@ labels or says why not.
   - `ubuntu-latest` resolved to ubuntu-24.04, version 20261004.327.1;
   - `macos-latest` resolved to macos-26-arm64, version 20260907.0351.1, with Xcode 26.6 (17F113) and an iPhone 17 Pro simulator.
 
-  A maintainer's Mac ran Xcode 26.3 that day. The pinned SwiftFormat, SwiftLint, xcodegen and
-  openapi-generator versions match CI.
+  A maintainer's Mac ran Xcode 26.3 that day, with the same SwiftFormat, SwiftLint, xcodegen,
+  xcbeautify and openapi-generator versions as CI. Only SwiftFormat, SwiftLint and openapi-generator
+  are pinned: CI installs xcodegen and xcbeautify from Homebrew, unpinned, so their versions follow
+  Homebrew's.
 - **Ubuntu 26.** Every Ubuntu job carries GitHub's annotation *"The ubuntu-latest label will migrate to
   Ubuntu 26 beginning October 19, 2026"* ([actions/runner-images#14748](https://github.com/actions/runner-images/issues/14748)).
   The annotation gives no end date. Nothing is pinned to 24.04. Pinning, or validating 26 first, is a
   CI decision for the owner, not a default.
-- **Required checks.** `master` requires one status context, `build`, which the Backend, Frontend, Android and iOS
-  workflows all emit. → [What validates iOS, and where](/mobile-app/overview#ios-validation-tiers)
+- **Required checks** are not a runner setting: [what a pull request needs to merge](#required-checks).
+  → [What validates iOS, and where](/mobile-app/overview#ios-validation-tiers)
 
 ## Branch Strategy
 
@@ -98,7 +168,8 @@ feature/* ──PR──> master ──manual──> DEV
 
 ## Backend CI (`backend-ci.yml`)
 
-Runs on every pull request. Every step uses `working-directory: ./src` — the solution lives at
+Runs on a pull request that touches `src/**` outside the web, Android and iOS trees, `sql-scripts/**`
+or the workflow itself. Every step uses `working-directory: ./src` — the solution lives at
 `src/Cleansia.Api.sln`, not the repo root.
 
 ```yaml
@@ -107,7 +178,9 @@ steps:
   - Cache ~/.nuget/packages   # keyed on Directory.Packages.props + all csprojs
   - dotnet restore Cleansia.Api.sln
   - dotnet build Cleansia.Api.sln --configuration Release --no-restore
-  # Three suites, single-threaded, fast-first:
+  # Three suites, single-threaded, fast-first, each run as
+  #   dotnet test <project> --configuration Release --no-build --verbosity normal
+  #     -- xUnit.parallelizeTestCollections=false
   - dotnet test Cleansia.Tests/Cleansia.Tests.csproj                        # unit
   - dotnet test Cleansia.IntegrationTests/Cleansia.IntegrationTests.csproj  # Testcontainers Postgres
   - dotnet test Cleansia.HostTests/Cleansia.HostTests.csproj                # authz/isolation
@@ -122,8 +195,9 @@ structurally cannot — for example the SQL-vs-C# equivalence pins on `OrderAvai
 
 ## Deploy to DEV (`deploy-dev.yml`)
 
-Triggered on every push to `master`. It is a thin caller — the pipeline itself lives in the reusable
-`deploy-azure.yml`, which `deploy-pro.yml` also calls. Nine deployable components.
+Run by hand (`workflow_dispatch`); a push to `master` deploys nothing. It is a thin caller — the
+pipeline itself lives in the reusable `deploy-azure.yml`, which `deploy-pro.yml` also calls. Nine
+deployable components.
 
 ### Pipeline Stages
 
@@ -283,7 +357,7 @@ Same pipeline as DEV with these differences:
 | Trigger | Manual (`workflow_dispatch`) | Manual (`workflow_dispatch`) |
 | Approval | None | **Required reviewers on the `prod-weu` Environment** |
 | Default mode | `deploy` or `what-if`, chosen at dispatch | `what-if` — the no-thought path is the non-mutating preview |
-| Concurrency | Cancel in-progress | Never cancel |
+| Concurrency | Never cancel: a second dispatch waits for the running one | Never cancel |
 | Environment | (default) | `prod-weu` (GitHub Environment) |
 | Angular config | `staging` | `production` |
 | Resource group | `rg-cleansia-dev` | `rg-cleansia-pro` |

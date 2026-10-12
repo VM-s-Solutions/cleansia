@@ -1215,8 +1215,9 @@ What changed on iOS:
   carries it. Where a link swaps to a spinner while it works (the order footer's *Customer did not
   pay*), the spinner keeps the 44pt height, so the footer does not drop under the cleaner's thumb.
   The Plus offer's back arrow is a 44pt target that VoiceOver reads as *Back*, as TalkBack reads
-  Android's. It still sits in the hero and scrolls away with it on both platforms, by design; below
-  the hero the way back is the edge swipe on iOS and system back on Android.
+  Android's. It still sits in the hero and scrolls away with it on both platforms, by design: the
+  owner kept the bar-less hero over a pinned arrow (ruling 2026-10-11). Below the hero the way back is
+  the edge swipe on iOS and system back on Android.
 - **On iOS 26 the booking sheet grows out of the Book button.** Opened from the Book FAB, the booking
   sheet zooms out of the button and shrinks back into it when it closes. Every other way into booking
   (Home's book buttons, the carousel slides, *Order again*) slides the sheet up as before. The FAB looks

@@ -13,6 +13,7 @@ using Cleansia.Core.Queue.Abstractions.Messages;
 using Cleansia.Infra.Database;
 using Cleansia.Infra.Database.Repositories;
 using Cleansia.TestUtilities;
+using FluentValidation.TestHelper;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Diagnostics;
@@ -137,7 +138,11 @@ public sealed class CleanupStalePendingOrdersSweepTests : IDisposable
         await ctx.CommitAsync(CancellationToken.None);
     }
 
-    private async Task<CleanupStalePendingOrders.Response> RunSweepAsync(params IInterceptor[] interceptors)
+    private async Task<CleanupStalePendingOrders.Response> RunSweepAsync(params IInterceptor[] interceptors) =>
+        (await RunSweepAsync(new CleanupStalePendingOrders.Command(), interceptors)).Response;
+
+    private async Task<(CleanupStalePendingOrders.Response Response, int TrackedOrders)> RunSweepAsync(
+        CleanupStalePendingOrders.Command command, params IInterceptor[] interceptors)
     {
         await using var ctx = NewContext(interceptors);
         var handler = new CleanupStalePendingOrders.Handler(
@@ -150,10 +155,10 @@ public sealed class CleanupStalePendingOrdersSweepTests : IDisposable
             ctx,
             NullLogger<CleanupStalePendingOrders.Handler>.Instance);
 
-        var result = await handler.Handle(new CleanupStalePendingOrders.Command(), CancellationToken.None);
+        var result = await handler.Handle(command, CancellationToken.None);
 
         Assert.True(result.IsSuccess);
-        return result.Value!;
+        return (result.Value!, ctx.ChangeTracker.Entries<Order>().Count());
     }
 
     private async Task RunRecurringSweepAsync()
@@ -540,6 +545,90 @@ public sealed class CleanupStalePendingOrdersSweepTests : IDisposable
         Assert.Equal(5, response.CancelledCount);
         Assert.Equal(5, (await ReadFeedAsync()).Count);
         Assert.Equal(2, usersReads.Count);
+    }
+
+    /// <summary>
+    /// A run takes at most its batch: the oldest checkouts, and by id between two of the same instant.
+    /// What it leaves is still stale, so the next run takes it, and no order is cancelled or told twice.
+    /// Each checkout is seeded by its own commit, youngest first and the tied pair against id order, so
+    /// neither the order rows were written in nor an index scan can stand in for the ordering.
+    /// </summary>
+    [Fact]
+    public async Task A_Run_Takes_At_Most_Its_Batch_Oldest_First_And_The_Next_Run_Takes_The_Rest()
+    {
+        const string youngest = "01HZX9N6M7Q8R9S0T1V2W3Y438";
+        const string tiedEarlierId = "01HZX9N6M7Q8R9S0T1V2W3Y439";
+        const string tiedLaterId = "01HZX9N6M7Q8R9S0T1V2W3Y440";
+        const string oldest = "01HZX9N6M7Q8R9S0T1V2W3Y441";
+        await EnsureSchemaAsync();
+        var tiedOn = DateTimeOffset.UtcNow.AddHours(-3);
+        var tiedLater = AbandonedOneOffCardCheckout(tiedLaterId, "user-40");
+        tiedLater.Created("seed", tiedOn);
+        var tiedEarlier = AbandonedOneOffCardCheckout(tiedEarlierId, "user-39");
+        tiedEarlier.Created("seed", tiedOn);
+        await SeedAsync(AbandonedOneOffCardCheckout(youngest, "user-38"));
+        await SeedAsync(tiedLater);
+        await SeedAsync(tiedEarlier);
+        await SeedAsync(PendingOrder(oldest, "user-41", PaymentType.Card, recurringTemplateId: null,
+            createdAgo: TimeSpan.FromHours(4), cleaningIn: TimeSpan.FromDays(2)));
+        var batchOfTwo = new CleanupStalePendingOrders.Command(BatchSize: 2);
+
+        var first = await RunSweepAsync(batchOfTwo);
+
+        Assert.Equal(2, first.Response.CancelledCount);
+        Assert.Equal(2, first.TrackedOrders);
+        foreach (var taken in new[] { oldest, tiedEarlierId })
+        {
+            var order = await ReadOrderAsync(taken);
+            Assert.Equal(PaymentStatus.Failed, order.PaymentStatus);
+            Assert.Single(order.OrderStatusHistory, track => track.Status == OrderStatus.Cancelled);
+        }
+
+        foreach (var left in new[] { tiedLaterId, youngest })
+        {
+            var order = await ReadOrderAsync(left);
+            Assert.Equal(PaymentStatus.Pending, order.PaymentStatus);
+            Assert.Equal(OrderStatus.New, order.CurrentStatus);
+            Assert.DoesNotContain(order.OrderStatusHistory, track => track.Status == OrderStatus.Cancelled);
+        }
+
+        Assert.Equal(new[] { "user-39", "user-41" }, (await ReadFeedAsync()).Select(row => row.UserId).Order());
+        Assert.Equal(
+            new[]
+            {
+                MessageKeys.Push("user-39", NotificationEventCatalog.OrderCancelled, tiedEarlierId),
+                MessageKeys.Push("user-41", NotificationEventCatalog.OrderCancelled, oldest),
+            }.Order(),
+            (await ReadOutboxKeysAsync()).Order());
+
+        Assert.Equal(2, (await RunSweepAsync(batchOfTwo)).Response.CancelledCount);
+        Assert.Equal(0, (await RunSweepAsync(batchOfTwo)).Response.CancelledCount);
+
+        Assert.Equal(
+            new[] { "user-38", "user-39", "user-40", "user-41" },
+            (await ReadFeedAsync()).Select(row => row.UserId).Order());
+        Assert.Equal(
+            new[]
+            {
+                MessageKeys.Push("user-38", NotificationEventCatalog.OrderCancelled, youngest),
+                MessageKeys.Push("user-39", NotificationEventCatalog.OrderCancelled, tiedEarlierId),
+                MessageKeys.Push("user-40", NotificationEventCatalog.OrderCancelled, tiedLaterId),
+                MessageKeys.Push("user-41", NotificationEventCatalog.OrderCancelled, oldest),
+            }.Order(),
+            (await ReadOutboxKeysAsync()).Order());
+    }
+
+    [Theory]
+    [InlineData(0, false)]
+    [InlineData(1, true)]
+    [InlineData(5000, true)]
+    [InlineData(5001, false)]
+    public void A_Batch_Is_Between_One_And_Five_Thousand(int batchSize, bool valid)
+    {
+        var result = new CleanupStalePendingOrders.Validator()
+            .TestValidate(new CleanupStalePendingOrders.Command(BatchSize: batchSize));
+
+        Assert.Equal(valid, result.IsValid);
     }
 
     /// <summary>

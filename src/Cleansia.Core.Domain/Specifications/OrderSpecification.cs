@@ -100,7 +100,9 @@ public class OrderSpecification : BaseSpecification<string?>, ISpecification<Ord
 
         if (!string.IsNullOrEmpty(EmployeeId))
         {
-            specification &= new DirectSpecification<Order>(x => x.AssignedEmployees.Select(x => x.EmployeeId).Contains(EmployeeId));
+            // Any, not Select(EmployeeId).Contains: the latter becomes `@id IN (correlated subquery)`, which
+            // PostgreSQL runs once per order of the company instead of as a semi-join on the employee.
+            specification &= new DirectSpecification<Order>(x => x.AssignedEmployees.Any(ae => ae.EmployeeId == EmployeeId));
         }
 
         if (CleaningDateFrom.HasValue)

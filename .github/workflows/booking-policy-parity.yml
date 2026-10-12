@@ -92,14 +92,14 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       # No `cache: npm` — the checker is dependency-free Node by the same rule as every other tool in
       # agents/tools, so there is no lock file to key a cache on and nothing to install.
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v5
         with:
-          node-version: 20
+          node-version: 22
 
       # FIRST, and blocking, exactly as docs-ci.yml runs check-docs-refs.test.mjs first. A gate whose
       # own body has been broken reads exactly like a clean tree, and this is the only signal that

@@ -18,6 +18,8 @@ public interface INotificationProducer
     /// templates from (never PII); <paramref name="subject"/> is the push dedup key's subject
     /// segment (typically the order/dispute/membership id the event is about). Recipient ownership
     /// is resolved from the persisted user; the caller's tenant hint never selects the delivery company.
+    /// <paramref name="userId"/> must be one the server read itself, never one a client supplied:
+    /// whoever it names receives the push and the feed row.
     /// </summary>
     Task NotifyAsync(
         string userId,

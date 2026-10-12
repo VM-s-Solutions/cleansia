@@ -1160,10 +1160,14 @@ then for each: `cancellationToken.ThrowIfCancellationRequested()`, `await using 
 serviceScopeFactory.CreateAsyncScope()`, and `Send` of the item's command — a nested record named `Command`, so
 the pipeline commits it inside that scope. An `OperationCanceledException` while cancelled is rethrown; any other
 exception, and any failure result, is logged at **Error** and counted in the response. The item's handler reads
-its row again past the tenant filter, checks again that it still qualifies, sets the tenant override from the
-row, and **neither commits nor catches**. References: `MaterializeRecurringBookings` →
+its row again, checks again that it still qualifies, runs under that row's company, and **does not catch**:
+whatever fails leaves with its scope. References: `MaterializeRecurringBookings` →
 `MaterializeRecurringBookingTemplate`, `AutoCancelStaleRecurringOrders` → `AutoCancelRecurringOccurrence`,
-`RetryFailedUserDeletions`.
+`RetryFailedUserDeletions` → `AdminRetryUserDeletion`. The last two leave their commit to the pipeline inside the
+item's scope, as any handler does. **`MaterializeRecurringBookingTemplate` commits itself** — a pause notice, a
+marker alone, or its occurrences with their marker once it has switched the tenant override to the market's
+operator — because a new row is stamped from the tenant ambient at commit time; the comment at its last commit
+gives the reasons. It is a known exception to the handler rule, not a form to copy.
 
 **A loop never continues past a failed commit, or past staging that a later commit in the same scope will save —
 with or without `Rollback()`.** A failed `CommitAsync` leaves every tracked entry as it was, so the failed item's
@@ -1180,12 +1184,13 @@ command runs; after the last, one failure is rethrown as itself and several as a
 invocation still fails. A failure result is logged at Error and never thrown.
 
 **Enforced by:**
-- the item rule: `RecurringSweepPerTemplateIsolationTests` and `RecurringAutoCancelPerOrderIsolationTests`, for
-  the two dispatchers — `T1-CI` (closed roster: those two); for every other job, `runtime-readiness.md` checklist
-  item 8 — `T3-HUMAN`. *(Not mechanizable: a regex finds a `catch` in a loop, but cannot tell a catch over a
-  commit, or over staging a later commit saves, from a catch over a read or a send. The baseline is not zero:
-  the shipped deviations are listed in `consistency.md` §"A loop that continues past a failed commit in a
-  shared scope".)*
+- the item rule — one scope per item, so a failing item holds back no other: `RecurringSweepPerTemplateIsolationTests`
+  and `RecurringAutoCancelPerOrderIsolationTests` assert exactly that for the two dispatchers — `T1-CI` (closed
+  roster: those two); for every other job, `runtime-readiness.md` checklist item 8 — `T3-HUMAN`. *(Not
+  mechanizable: a regex finds a `catch` in a loop, but cannot tell a catch over a commit, or over staging a later
+  commit saves, from a catch over a read or a send. The baseline is not zero: the shipped deviations are listed in
+  `consistency.md` §"A loop that continues past a failed commit in a shared scope".)* Where an item's handler
+  commits is the handler rule's question, not this entry's; neither test checks it.
 - the timer rule: `TimerCommandIsolationTests` — the two handlers' behaviour, and a source guard that fails any
   handler under `src/Cleansia.Functions.Core/Handlers` with two or more `Send(` calls and no
   `CreateAsyncScope` — `T1-CI`.

@@ -19,7 +19,7 @@ A system job carries no JWT, so its input decides both its tenancy and its unit 
 | Shape | Input | Unit of work | Reference |
 |---|---|---|---|
 | Row-driven | rows read across every company | one commit per company's group, inside the loop | `CleanupStalePendingOrders` |
-| Row-driven, one scope per item | ids read across every company | one DI scope and one pipeline commit per item | `MaterializeRecurringBookings`, `AutoCancelStaleRecurringOrders`, `RetryFailedUserDeletions` |
+| Row-driven, one scope per item | ids read across every company | one DI scope per item, committed inside it (by the pipeline; the materializer commits itself) | `MaterializeRecurringBookings`, `AutoCancelStaleRecurringOrders`, `RetryFailedUserDeletions` |
 | Per company, from the registry | `ITenantRepository.GetAllIdsAsync()` | each sweep commits under the company's override | `DataRetentionBackgroundService` (its tenancy; its catch is a deviation, below) |
 | Per company, named by an administrator's act | the message envelope's company | every step commits on its own | `CompanyWindDownService`, `CompanyArchiveService` |
 
@@ -37,10 +37,12 @@ failed commit, or past staging that a later commit in the same scope will save, 
 The dispatcher reads ids only and, per id, checks for cancellation, opens `await using var scope =
 serviceScopeFactory.CreateAsyncScope()`, and sends the item's command. It rethrows an
 `OperationCanceledException` while cancelled; it logs any other exception, and any failure result, at Error and
-counts it in its response. The item's handler reads its row again past the tenant filter, checks again that it
-still qualifies, sets the tenant override from that row, and neither commits nor catches: the unit-of-work
-pipeline commits it inside its own scope, where the same tenant override and the same credit-lock transaction
-live.
+counts it in its response. The item's handler reads its row again, checks again that it still qualifies, runs
+under that row's company, and does not catch. `AutoCancelRecurringOccurrence` and `AdminRetryUserDeletion` leave
+the commit to the unit-of-work pipeline inside their own scope, where the same tenant override and the same
+credit-lock transaction live. `MaterializeRecurringBookingTemplate` commits itself, and switches the override to
+the market's operator before its last commit, because a new row is stamped from the tenant ambient at commit
+time; it is a known exception to the handler rule, not the shape to copy.
 
 Why a scope and not a catch:
 

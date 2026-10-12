@@ -47,8 +47,9 @@ flowchart LR
 **When each row must fail alone, it gets a scope of its own.** A job whose rows must not hold one another
 back — one customer's broken template, one occurrence whose notice fails — reads only the ids, then sends each
 one as a command of its own in a DI scope of its own ([ADR-0072](/decisions/adr-0072)). The command reads its
-row again past the filter, sets the override from that row, and the pipeline commits it inside its scope; a row
-that fails takes everything it staged away with its scope, and the next run tries it again.
+row again past the filter, sets the override from that row and commits inside its scope — the auto-cancel's
+through the pipeline, the materializer's in its own handler once it has switched the override to the market's
+operator; a row that fails takes everything it staged away with its scope, and the next run tries it again.
 `MaterializeRecurringBookings` and `AutoCancelStaleRecurringOrders` are the references. What no loop does is
 catch a failed commit and carry on in the same scope: the failed row's changes would ride the next row's commit.
 A job takes this variant when one bad row must not cost the others their run; a job that commits a whole

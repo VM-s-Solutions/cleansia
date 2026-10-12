@@ -12,7 +12,7 @@
  *   - The subject is *projects Nx does not know exist*. Asking Nx to enumerate them is circular, and
  *     a Jest spec cannot cover it: `frontend-ci.yml` runs `nx affected -t test`, and an unregistered
  *     lib belongs to NO project, so `affected` can never select it. Hosting the spec inside some
- *     other project does not help either — `nx.json` declares `@nx/jest:jest` inputs as
+ *     other project does not help either — a `test` target's inputs start from `default`, which is
  *     `{projectRoot}/**\/*` with an EMPTY `sharedGlobals`, so adding an unregistered directory
  *     anywhere else in the tree does not invalidate that project's cache and Nx replays a CACHED
  *     PASS over the hole.
@@ -44,7 +44,11 @@
  *     the right depth are one character apart and neither is visible in any build output.
  *   - NX-7, a jest config with no `test` target to select it (or a target whose `jestConfig` path does
  *     not resolve). `legal-pages` had a jest-shaped lib and no target, so `run-many -t test --all`
- *     simply did not list it — an absence no run can print.
+ *     simply did not list it — an absence no run can print. The target is normally not in
+ *     project.json at all: `@nx/jest/plugin` infers it from the jest config. So a target counts
+ *     when project.json declares one with an executor or command, or when a plugin registration in
+ *     nx.json covers the config. The guard reads that registration's include and exclude itself,
+ *     rather than asking Nx. A scoped `include` is how a lib added later silently gets no target.
  *   - NX-8, NEITHER (T-0463). NX-7 uses the jest config as its witness, so a project that has no jest
  *     config AND no `test` target is invisible to it — the guard was blind to exactly the state it
  *     was built for. All three `libs/data-access/*-stores` sat there: registered, tagged, aliased,
@@ -69,7 +73,7 @@
  *                                                                   #   (used by the self-test)
  */
 import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
-import { dirname, join, relative, resolve, sep } from "node:path";
+import { dirname, join, matchesGlob, relative, resolve, sep } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const args = process.argv.slice(2);
@@ -83,6 +87,8 @@ const WORKSPACE = join(REPO, "src/Cleansia.App");
 const LIBS = join(WORKSPACE, "libs");
 const APPS = join(WORKSPACE, "apps");
 const TSCONFIG = join(WORKSPACE, "tsconfig.base.json");
+const NX_JSON = join(WORKSPACE, "nx.json");
+const JEST_PLUGIN = "@nx/jest/plugin";
 
 /**
  * The DOT before `app` is load-bearing: `cleansia-partner-app` fails with "Cannot find project".
@@ -104,7 +110,8 @@ const SKIP_DIRS = new Set([
 
 const SOURCE_EXT = [".ts", ".tsx", ".html", ".scss", ".css"];
 
-const JEST_CONFIG_NAMES = ["jest.config.ts", "jest.config.js", "jest.config.mjs"];
+/** The configs `@nx/jest/plugin` infers a `test` target from: `**\/jest.config.{cjs,mjs,js,cts,mts,ts}`. */
+const JEST_CONFIG_NAMES = ["ts", "js", "mjs", "cts", "mts", "cjs"].map((x) => `jest.config.${x}`);
 
 const isTsconfigName = (name) => /^tsconfig(\..+)?\.json$/.test(name);
 
@@ -248,6 +255,52 @@ function tsconfigTargetExists(from, target) {
 
 const jestConfigOf = (dir) => JEST_CONFIG_NAMES.map((n) => join(dir, n)).find(existsSync);
 
+/**
+ * Nx's include/exclude semantics: an empty list is `emptyValue`, and a list holding a negation is
+ * applied in order, the last matching pattern deciding.
+ */
+function globMatcher(patterns, emptyValue) {
+    if (!Array.isArray(patterns) || patterns.length === 0) return () => emptyValue;
+    if (!patterns.some((p) => p.startsWith("!"))) {
+        return (file) => patterns.some((p) => matchesGlob(file, p));
+    }
+    return (file) =>
+        patterns.reduce((hit, p) => {
+            const negated = p.startsWith("!");
+            return matchesGlob(file, negated ? p.slice(1) : p) ? !negated : hit;
+        }, patterns[0].startsWith("!"));
+}
+
+/** One predicate per `@nx/jest/plugin` registration that infers a target named `test`. */
+function jestTestRegistrations(nxJson) {
+    return (Array.isArray(nxJson?.plugins) ? nxJson.plugins : [])
+        .map((p) => (typeof p === "string" ? { plugin: p } : p))
+        .filter((p) => p?.plugin === JEST_PLUGIN && (p.options?.targetName ?? "test") === "test")
+        .map((p) => {
+            const included = globMatcher(p.include, true);
+            const excluded = globMatcher(p.exclude, false);
+            return (file) => included(file) && !excluded(file);
+        });
+}
+
+/** Why `@nx/jest/plugin` infers no `test` target from this config, or null when it does. */
+function whyNotInferred(jestConfig, registrations) {
+    if (readFileSync(jestConfig, "utf8").includes("getJestProjectsAsync()")) {
+        return "the config calls getJestProjectsAsync(), and @nx/jest/plugin infers nothing from it";
+    }
+    if (registrations.length === 0) {
+        return "nx.json registers no `@nx/jest/plugin` that infers `test`";
+    }
+    if (!registrations.some((covers) => covers(relWs(jestConfig)))) {
+        return (
+            "the include/exclude of every `@nx/jest/plugin` registration in nx.json leaves the " +
+            "config out — a scoped `include` lists the projects it was written for, so a lib " +
+            "added later falls outside it"
+        );
+    }
+    return null;
+}
+
 /** Every file under `dir` matching `match`, skipping the same directories the project walk does. */
 function walkFiles(dir, match) {
     const out = [];
@@ -292,6 +345,7 @@ let aliases = 0;
 let tsconfigs = 0;
 let jestConfigs = 0;
 let testTargets = 0;
+let inferredTestTargets = 0;
 let libProjects = [];
 
 if (!isDir(WORKSPACE)) {
@@ -538,7 +592,18 @@ if (isDir(WORKSPACE)) {
         }
     }
 
-    // NX-7 — the jest config and the `test` target must both exist, and the target's paths resolve.
+    // The witness for inferred `test` targets: the configs `@nx/jest/plugin` is registered to read.
+    let registrations = [];
+    if (!existsSync(NX_JSON)) {
+        add(NX_JSON, "P0", "nx.json not found — the witness for inferred `test` targets is gone");
+    } else {
+        const { value, error } = readJson(NX_JSON);
+        if (error) add(NX_JSON, "P0", `nx.json does not parse as JSON — ${error}`);
+        else registrations = jestTestRegistrations(value);
+    }
+
+    // NX-7 — the jest config and the `test` target must both exist, and a declared target's paths
+    // resolve.
     const testable = [
         ...libProjects.filter((p) => p.registered).map((p) => p.dir),
         ...APP_ROSTER.map((a) => join(APPS, a)).filter((d) => existsSync(join(d, "project.json"))),
@@ -550,11 +615,19 @@ if (isDir(WORKSPACE)) {
         const jestConfig = jestConfigOf(dir);
         if (jestConfig) jestConfigs++;
         const target = value?.targets?.test;
-        if (target) testTargets++;
+        // A declared entry without an executor or command only adds to the inferred target (inputs,
+        // options); on its own it runs nothing.
+        const declaresRunner = Boolean(target?.executor || target?.command);
+        const notInferred =
+            jestConfig && !declaresRunner ? whyNotInferred(jestConfig, registrations) : null;
+        const inferred = Boolean(jestConfig && !declaresRunner && !notInferred);
+        const hasTarget = declaresRunner || inferred;
+        if (hasTarget) testTargets++;
+        if (inferred) inferredTestTargets++;
 
         // NX-8 — the state NX-7 cannot see, because NX-7's witness is the jest config. Source is the
         // only witness left when a project has neither half of the jest shape.
-        if (!target && !jestConfig && hasTypeScriptBeneath(dir)) {
+        if (!hasTarget && !jestConfig && hasTypeScriptBeneath(dir)) {
             add(
                 file,
                 "NX-8",
@@ -563,22 +636,26 @@ if (isDir(WORKSPACE)) {
                     "`run-many -t test --all` never lists it, so the project is absent from every " +
                     "test run with no output anywhere saying so. NX-7 cannot see this: its witness " +
                     "is the jest config, which is the half that is missing. Scaffold jest.config.ts " +
-                    "+ tsconfig.spec.json + src/test-setup.ts from a sibling and add the target — " +
-                    "and land a real spec in the same change, because a correct config with zero " +
-                    "specs prints 'No tests found, exiting with code 0' and reads as success.",
+                    "+ tsconfig.spec.json + src/test-setup.ts from a sibling, and @nx/jest/plugin " +
+                    "infers the target from the jest config. Land a real spec in the same change, " +
+                    "because a correct config with zero specs prints 'No tests found, exiting with " +
+                    "code 0' and reads as success.",
             );
         }
 
-        if (jestConfig && !target) {
+        if (jestConfig && !hasTarget) {
             add(
                 dir,
                 "NX-7",
-                `has ${relWs(jestConfig)} but its project.json declares NO \`test\` target — ` +
-                    "`nx run-many -t test` cannot select the project, so the whole suite is absent " +
-                    "from every run and nothing prints its absence",
+                `has ${relWs(jestConfig)} but no \`test\` target: ` +
+                    (target
+                        ? "its project.json `test` names no executor or command"
+                        : "its project.json declares none") +
+                    `, and ${notInferred} — \`nx run-many -t test\` cannot select the project, so ` +
+                    "the whole suite is absent from every run and nothing prints its absence",
             );
         }
-        if (target && !jestConfig && String(target.executor ?? "").includes("jest")) {
+        if (declaresRunner && !jestConfig && String(target.executor ?? "").includes("jest")) {
             add(
                 file,
                 "NX-7",
@@ -622,7 +699,8 @@ if (isDir(WORKSPACE)) {
 console.log(
     `nx-project-registration: read ${libRoots} lib root(s), ${registered} registered project(s), ` +
         `${aliases} alias(es) into libs/, ${APP_ROSTER.length} rostered app(s), ` +
-        `${tsconfigs} tsconfig(s), ${jestConfigs} jest config(s), ${testTargets} test target(s)`,
+        `${tsconfigs} tsconfig(s), ${jestConfigs} jest config(s), ${testTargets} test target(s) ` +
+        `(${inferredTestTargets} inferred by ${JEST_PLUGIN})`,
 );
 
 if (known.length) {

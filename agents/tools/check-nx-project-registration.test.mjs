@@ -27,9 +27,15 @@
  * The fixture's apps deliberately carry no source, so NX-8 does not fire on them by default; the
  * scenario that needs an app to fire writes a `.ts` into one.
  *
- * Stub the checker to exit 0 and 41 of the 46 scenarios go red. The 5 survivors are the must-NOT-fire
+ * The libs have the workspace's shape: no project.json declares a `test` target, an unscoped
+ * `@nx/jest/plugin` registration in nx.json infers one from each jest config, and one lib keeps an
+ * `inputs`-only residual. The scenarios about a declared executor target write one first.
+ *
+ * Stub the checker to exit 0 and 54 of the 59 scenarios go red. The 5 survivors are the must-NOT-fire
  * ones (a tag value the guard has no opinion on, a JSONC comment, a bare `extends` specifier, an
- * extensionless `extends`, a project with no TypeScript), which a no-op passes by construction.
+ * extensionless `extends`, a project with no TypeScript), which a no-op passes by construction. The
+ * must-NOT-fire scenarios about inferred targets also assert the count the guard read, so a no-op
+ * fails them.
  *
  *   node agents/tools/check-nx-project-registration.test.mjs
  */
@@ -73,30 +79,52 @@ const WS = "src/Cleansia.App";
 /** `libs/core/partner-services` sits three segments deep, so its base is three `../` up. */
 const toBase = (dir) => `${"../".repeat(dir.split("/").length)}tsconfig.base.json`;
 
+const JEST_PLUGIN = "@nx/jest/plugin";
+const jestPlugin = (extra = {}) => ({ plugin: JEST_PLUGIN, options: { targetName: "test" }, ...extra });
+
+/** The lib whose project.json keeps a test `inputs` residual, as the real ones with custom inputs do. */
+const RESIDUAL_LIB = "libs/shared/components";
+
+const writeNxJson = (root, plugins) =>
+    writeJson(root, `${WS}/nx.json`, {
+        plugins: [{ plugin: "@nx/eslint/plugin", options: { targetName: "lint" } }, ...plugins],
+    });
+
+/** A hand-declared executor target, which wins over anything the plugin would infer. */
+const declareExecutorTarget = (root, dir, options = {}) => {
+    const p = `${WS}/${dir}/project.json`;
+    const j = readJson(root, p);
+    j.targets.test = {
+        executor: "@nx/jest:jest",
+        options: {
+            jestConfig: `${dir}/jest.config.ts`,
+            tsConfig: `${dir}/tsconfig.spec.json`,
+            ...options,
+        },
+    };
+    writeJson(root, p, j);
+};
+
 function freshRoot() {
     const root = mkdtempSync(join(tmpdir(), "nx-project-registration-"));
     const paths = {};
     for (const [dir, name, alias, tags] of LIBS) {
         write(root, `${WS}/${dir}/src/index.ts`, `export * from './lib/${name}';\n`);
         write(root, `${WS}/${dir}/src/lib/${name}.ts`, `export const ${name.replace(/-/g, "_")} = 1;\n`);
+        const targets = { lint: { inputs: ["default", { externalDependencies: ["eslint"] }] } };
+        if (dir === RESIDUAL_LIB) {
+            targets.test = { inputs: ["default", "^production", "{workspaceRoot}/jest.preset.js"] };
+        }
         writeJson(root, `${WS}/${dir}/project.json`, {
             name,
             sourceRoot: `${dir}/src`,
             projectType: "library",
             tags,
-            targets: {
-                test: {
-                    executor: "@nx/jest:jest",
-                    options: {
-                        jestConfig: `${dir}/jest.config.ts`,
-                        tsConfig: `${dir}/tsconfig.spec.json`,
-                    },
-                },
-                lint: { executor: "@nx/eslint:lint" },
-            },
+            targets,
         });
         // The fixture carries the real shape — a solution tsconfig referencing a lib and a spec
-        // config, plus the jest config the test target names — so NX-6/NX-7 read a real corpus.
+        // config, plus the jest config the plugin infers the target from — so NX-6/NX-7 read a real
+        // corpus.
         writeJson(root, `${WS}/${dir}/tsconfig.json`, {
             extends: toBase(dir),
             files: [],
@@ -115,6 +143,7 @@ function freshRoot() {
         paths[alias] = [`${dir}/src/index.ts`];
     }
     writeJson(root, `${WS}/tsconfig.base.json`, { compilerOptions: { paths } });
+    writeNxJson(root, [jestPlugin()]);
 
     for (const app of APPS) {
         writeJson(root, `${WS}/apps/${app}/project.json`, {
@@ -188,7 +217,7 @@ scenario("an unmutated workspace is clean and states what it read", {
     // clean fixture must report ZERO known, not a quiet pass over something it tolerated.
     expectText: [
         "read 4 lib root(s), 4 registered project(s), 4 alias(es) into libs/, 3 rostered app(s), " +
-            "13 tsconfig(s), 4 jest config(s), 4 test target(s)",
+            "13 tsconfig(s), 4 jest config(s), 4 test target(s) (4 inferred by @nx/jest/plugin)",
         "0 violation(s), 0 known",
     ],
 });
@@ -305,6 +334,18 @@ scenario("AC3: compilerOptions.paths removed entirely -> RED", {
     mutate: (r) => writeJson(r, `${WS}/tsconfig.base.json`, { compilerOptions: {} }),
     expectExit: 1,
     expectText: ["P0", "compilerOptions.paths is absent"],
+});
+
+scenario("AC3: nx.json is gone -> RED (the witness for inferred test targets)", {
+    mutate: (r) => rm(r, `${WS}/nx.json`),
+    expectExit: 1,
+    expectText: ["P0", "nx.json not found"],
+});
+
+scenario("AC3: nx.json does not parse -> RED, never read as 'no plugins'", {
+    mutate: (r) => write(r, `${WS}/nx.json`, "{ not json"),
+    expectExit: 1,
+    expectText: ["P0", "nx.json does not parse as JSON"],
 });
 
 // ── the alias witness is INDEPENDENT of the barrel witness ──────────────────
@@ -449,41 +490,111 @@ scenario("NX-6: `extends` written without the .json extension still resolves", {
 // ── NX-7 — a suite no run can select (T-0546) ───────────────────────────────
 // `legal-pages` had a jest-shaped lib and no `test` target, so `run-many -t test --all` never listed
 // it. An absent project prints nothing at all — the one failure mode no log can show you.
-scenario("NX-7: a jest config with NO `test` target -> RED", {
-    mutate: (r) => {
-        const p = `${WS}/${BROKEN_LIB}/project.json`;
-        const j = readJson(r, p);
-        delete j.targets.test;
-        writeJson(r, p, j);
-    },
+scenario("NX-7: a jest config with NO declared target and NO @nx/jest/plugin -> RED", {
+    mutate: (r) => writeNxJson(r, []),
     expectExit: 1,
-    expectText: ["NX-7", BROKEN_LIB, "declares NO `test` target"],
+    expectText: ["NX-7", BROKEN_LIB, "no `test` target", "registers no `@nx/jest/plugin`"],
 });
 
-scenario("NX-7: a `test` target whose jestConfig option is not on disk -> RED", {
+// `nx g @nx/workspace:infer-targets` registers the plugin with one include glob per project it
+// converts. Every one of those projects keeps its target; a lib added afterwards gets none.
+scenario("NX-7: a scoped include that misses a lib added later -> RED, naming the lib", {
     mutate: (r) => {
-        const p = `${WS}/${BROKEN_LIB}/project.json`;
-        const j = readJson(r, p);
-        j.targets.test.options.jestConfig = `${BROKEN_LIB}/jest.config.js`;
-        writeJson(r, p, j);
+        const include = LIBS.map(([dir]) => `${dir}/**/*`).filter((g) => !g.startsWith(BROKEN_LIB));
+        writeNxJson(r, [jestPlugin({ include })]);
     },
+    expectExit: 1,
+    expectText: ["NX-7", BROKEN_LIB, "include/exclude", "1 violation(s)"],
+});
+
+scenario("NX-7: an exclude that matches a lib's jest config -> RED", {
+    mutate: (r) => writeNxJson(r, [jestPlugin({ exclude: [`${BROKEN_LIB}/**/*`] })]),
+    expectExit: 1,
+    expectText: ["NX-7", BROKEN_LIB, "include/exclude", "1 violation(s)"],
+});
+
+scenario("NX-7: a negated include pattern is applied in order, as Nx applies it", {
+    mutate: (r) => writeNxJson(r, [jestPlugin({ include: ["libs/**/*", `!${BROKEN_LIB}/**/*`] })]),
+    expectExit: 1,
+    expectText: ["NX-7", BROKEN_LIB, "1 violation(s)"],
+});
+
+scenario("NX-7: a registration that infers another target name gives no `test` target -> RED", {
+    mutate: (r) => writeNxJson(r, [jestPlugin({ options: { targetName: "jest-test" } })]),
+    expectExit: 1,
+    expectText: ["NX-7", BROKEN_LIB, "registers no `@nx/jest/plugin`"],
+});
+
+scenario("NX-7: a jest config that calls getJestProjectsAsync() infers nothing -> RED", {
+    mutate: (r) =>
+        write(
+            r,
+            `${WS}/${BROKEN_LIB}/jest.config.ts`,
+            "import { getJestProjectsAsync } from '@nx/jest';\n" +
+                "export default async () => ({ projects: await getJestProjectsAsync() });\n",
+        ),
+    expectExit: 1,
+    expectText: ["NX-7", BROKEN_LIB, "getJestProjectsAsync()", "1 violation(s)"],
+});
+
+scenario("NX-7: an `inputs`-only `test` entry with no plugin behind it runs nothing -> RED", {
+    mutate: (r) => writeNxJson(r, []),
+    expectExit: 1,
+    expectText: ["NX-7", RESIDUAL_LIB, "names no executor or command"],
+});
+
+scenario("NX-7: an include that covers every project leaves every target in place", {
+    mutate: (r) => writeNxJson(r, [jestPlugin({ include: ["apps/**/*", "libs/**/*"] })]),
+    expectExit: 0,
+    expectText: ["4 test target(s) (4 inferred by @nx/jest/plugin)"],
+    rejectText: ["NX-7"],
+});
+
+scenario("NX-7: the plugin registered as a bare string infers `test` too", {
+    mutate: (r) => writeNxJson(r, [JEST_PLUGIN]),
+    expectExit: 0,
+    expectText: ["4 test target(s) (4 inferred by @nx/jest/plugin)"],
+    rejectText: ["NX-7"],
+});
+
+scenario("NX-7: a jest.config.cts, as `nx g @nx/angular:library` writes it, is a jest config", {
+    mutate: (r) => {
+        const config = readFileSync(join(r, `${WS}/${BROKEN_LIB}/jest.config.ts`), "utf8");
+        rm(r, `${WS}/${BROKEN_LIB}/jest.config.ts`);
+        write(r, `${WS}/${BROKEN_LIB}/jest.config.cts`, config);
+    },
+    expectExit: 0,
+    expectText: ["4 jest config(s), 4 test target(s) (4 inferred by @nx/jest/plugin)"],
+    rejectText: ["NX-7", "NX-8"],
+});
+
+scenario("NX-7: declared executor targets need no plugin", {
+    mutate: (r) => {
+        writeNxJson(r, []);
+        for (const [dir] of LIBS) declareExecutorTarget(r, dir);
+    },
+    expectExit: 0,
+    expectText: ["4 test target(s) (0 inferred by @nx/jest/plugin)"],
+    rejectText: ["NX-7"],
+});
+
+scenario("NX-7: a declared `test` target whose jestConfig option is not on disk -> RED", {
+    mutate: (r) => declareExecutorTarget(r, BROKEN_LIB, { jestConfig: `${BROKEN_LIB}/jest.config.js` }),
     expectExit: 1,
     expectText: ["NX-7", "`jestConfig`", "is not on disk"],
 });
 
 scenario("NX-7: a project-relative jestConfig is caught — the option is workspace-relative", {
-    mutate: (r) => {
-        const p = `${WS}/${BROKEN_LIB}/project.json`;
-        const j = readJson(r, p);
-        j.targets.test.options.jestConfig = "jest.config.ts";
-        writeJson(r, p, j);
-    },
+    mutate: (r) => declareExecutorTarget(r, BROKEN_LIB, { jestConfig: "jest.config.ts" }),
     expectExit: 1,
     expectText: ["NX-7", "workspace-relative, not project-relative"],
 });
 
-scenario("NX-7: a jest `test` target with no jest config on disk -> RED", {
-    mutate: (r) => rm(r, `${WS}/${BROKEN_LIB}/jest.config.ts`),
+scenario("NX-7: a declared jest `test` target with no jest config on disk -> RED", {
+    mutate: (r) => {
+        declareExecutorTarget(r, BROKEN_LIB);
+        rm(r, `${WS}/${BROKEN_LIB}/jest.config.ts`);
+    },
     expectExit: 1,
     expectText: ["NX-7", "declares a jest `test` target but no"],
 });
@@ -499,27 +610,16 @@ scenario("NX-7: an UNREGISTERED lib's jest config is NX-1's business, not NX-7's
 // All three `libs/data-access/*-stores` had `lint` as their only target and no jest config at all.
 // They were registered, tagged and aliased, so NX-1..NX-5 passed them; NX-7 needs a jest config to
 // fire and there was none; and `run-many -t test --all` simply never listed them. Third instance of
-// the class this guard exists for, and the guard could not see it.
+// the class this guard exists for, and the guard could not see it. With the target inferred, losing
+// the jest config loses the target too.
 scenario("NX-8: a lib with NO test target and NO jest config -> RED", {
-    mutate: (r) => {
-        const p = `${WS}/${BROKEN_LIB}/project.json`;
-        const j = readJson(r, p);
-        delete j.targets.test;
-        writeJson(r, p, j);
-        rm(r, `${WS}/${BROKEN_LIB}/jest.config.ts`);
-    },
+    mutate: (r) => rm(r, `${WS}/${BROKEN_LIB}/jest.config.ts`),
     expectExit: 1,
     expectText: ["NX-8", BROKEN_LIB, "declares NO `test` target and has no jest config"],
 });
 
 scenario("NX-8: it is NX-8 alone, never doubled with NX-7 — the two states are disjoint", {
-    mutate: (r) => {
-        const p = `${WS}/${BROKEN_LIB}/project.json`;
-        const j = readJson(r, p);
-        delete j.targets.test;
-        writeJson(r, p, j);
-        rm(r, `${WS}/${BROKEN_LIB}/jest.config.ts`);
-    },
+    mutate: (r) => rm(r, `${WS}/${BROKEN_LIB}/jest.config.ts`),
     expectExit: 1,
     expectText: ["NX-8", "1 violation(s)"],
     // A finding renders as `<path>  <rule>  <message>`, so the two-space form is the finding itself.
@@ -529,16 +629,16 @@ scenario("NX-8: it is NX-8 alone, never doubled with NX-7 — the two states are
 
 scenario("NX-8: every untargeted lib is named, not just the first", {
     mutate: (r) => {
-        for (const dir of [BROKEN_LIB, "libs/shared/components"]) {
-            const p = `${WS}/${dir}/project.json`;
-            const j = readJson(r, p);
-            delete j.targets.test;
-            writeJson(r, p, j);
-            rm(r, `${WS}/${dir}/jest.config.ts`);
-        }
+        for (const dir of [BROKEN_LIB, RESIDUAL_LIB]) rm(r, `${WS}/${dir}/jest.config.ts`);
     },
     expectExit: 1,
-    expectText: [BROKEN_LIB, "libs/shared/components", "2 violation(s)"],
+    expectText: [BROKEN_LIB, RESIDUAL_LIB, "2 violation(s)"],
+});
+
+scenario("NX-8: an `inputs`-only `test` entry is not a target -> RED", {
+    mutate: (r) => rm(r, `${WS}/${RESIDUAL_LIB}/jest.config.ts`),
+    expectExit: 1,
+    expectText: ["NX-8", `${RESIDUAL_LIB}/project.json`, "1 violation(s)"],
 });
 
 scenario("NX-8: an APP with source and no test target is caught too, not just a lib", {
@@ -549,10 +649,6 @@ scenario("NX-8: an APP with source and no test target is caught too, not just a 
 
 scenario("NX-8: a project holding no TypeScript is not asked to run tests", {
     mutate: (r) => {
-        const p = `${WS}/${BROKEN_LIB}/project.json`;
-        const j = readJson(r, p);
-        delete j.targets.test;
-        writeJson(r, p, j);
         rm(r, `${WS}/${BROKEN_LIB}/jest.config.ts`);
         rm(r, `${WS}/${BROKEN_LIB}/src`);
         for (const name of ["tsconfig.json", "tsconfig.lib.json", "tsconfig.spec.json"]) {
@@ -570,14 +666,7 @@ scenario("NX-8: a project holding no TypeScript is not asked to run tests", {
 
 // ── the new corpora are anchored too: an empty SCAN is illegal ──────────────
 scenario("AC3: registered projects but ZERO test targets -> RED (the target probe went stale)", {
-    mutate: (r) => {
-        for (const [dir] of LIBS) {
-            const p = `${WS}/${dir}/project.json`;
-            const j = readJson(r, p);
-            delete j.targets.test;
-            writeJson(r, p, j);
-        }
-    },
+    mutate: (r) => writeNxJson(r, []),
     expectExit: 1,
     expectText: ["P0", "ZERO `test` targets", "HARD FAILURE, never a silent pass"],
 });

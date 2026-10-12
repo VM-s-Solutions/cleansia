@@ -18,7 +18,8 @@ struct DashboardData: Equatable {
     let averageRating: Double?
     let ratingCount: Int
 
-    let todaysJobsCount: Int
+    /// Nil while the cleaner's upcoming orders are unread, or their read failed: an unknown day, not a free one.
+    let todaysJobsCount: Int?
     let hero: DashboardHero
 
     struct PayPeriod: Equatable {
@@ -43,7 +44,7 @@ struct DashboardData: Equatable {
     static func from(
         stats: DashboardStats,
         preview: AvailableJobsPreview?,
-        upcoming: [OrderListItem],
+        upcoming: [OrderListItem]?,
         firstName: String?,
         now: Date = Date()
     ) -> DashboardData {
@@ -69,8 +70,8 @@ struct DashboardData: Equatable {
             thisMonthCompletedOrders: stats.thisMonthCompletedOrders,
             averageRating: stats.averageRating,
             ratingCount: stats.ratingCount,
-            todaysJobsCount: todaysJobsCount(in: upcoming, now: now),
-            hero: nextJob(in: upcoming) ?? hero(from: preview)
+            todaysJobsCount: upcoming.map { todaysJobsCount(in: $0, now: now) },
+            hero: upcoming.flatMap(nextJob(in:)) ?? hero(from: preview)
         )
     }
 
@@ -78,12 +79,12 @@ struct DashboardData: Equatable {
         upcoming.filter { $0.cleaningDateTime.map { Calendar.current.isDate($0, inSameDayAs: now) } ?? false }.count
     }
 
-    /// Android's `pickNextJob`, which also orders an undated job first.
+    /// Android's `pickNextJob`. An undated order is never the next job.
     private static func nextJob(in upcoming: [OrderListItem]) -> DashboardHero? {
         let active: Set<OrderStatus> = [._2, ._3, ._4]
         let soonest = upcoming
-            .filter { $0.status.map(active.contains) ?? false }
-            .min { ($0.cleaningDateTime ?? .distantPast) < ($1.cleaningDateTime ?? .distantPast) }
+            .filter { ($0.status.map(active.contains) ?? false) && $0.cleaningDateTime != nil }
+            .min { ($0.cleaningDateTime ?? .distantFuture) < ($1.cleaningDateTime ?? .distantFuture) }
         guard let soonest, let status = soonest.status else { return nil }
         return .nextJob(
             orderId: soonest.id,

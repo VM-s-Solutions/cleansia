@@ -107,6 +107,23 @@ final class DashboardFormatTests: XCTestCase {
         XCTAssertEqual(DashboardFormat.nextJobWhen(startsAt, now: now, locale: russian), "Завтра 14:00")
     }
 
+    /// 'Tomorrow' is the next calendar day, not the next 24 to 48 hours: on Monday evening a Wednesday-morning
+    /// job, 39 hours away, read "Tomorrow 09:00".
+    func testTwoCalendarDaysOutItNamesTheDayNotTomorrow() throws {
+        L10n.bundle = try localeBundle("en")
+        let when = DashboardFormat.nextJobWhen(at(day: 11, hour: 9), now: at(day: 9, hour: 18), locale: english)
+
+        XCTAssertFalse(when.hasPrefix("Tomorrow"), when)
+        XCTAssertTrue(when.hasSuffix(" · 09:00"), when)
+    }
+
+    func testLateTomorrowEveningIsStillTomorrow() throws {
+        L10n.bundle = try localeBundle("en")
+        let when = DashboardFormat.nextJobWhen(at(day: 10, hour: 23), now: at(day: 9, hour: 21), locale: english)
+
+        XCTAssertEqual(when, "Tomorrow 23:00")
+    }
+
     func testFurtherOutItNamesTheDayAndTheYearOnlyWhenItDiffers() throws {
         L10n.bundle = try localeBundle("en")
         let now = at(day: 9, hour: 10)
@@ -134,6 +151,18 @@ final class DashboardFormatTests: XCTestCase {
         XCTAssertEqual(DashboardGreeting.todayLine(jobsToday: 0), "You're free today")
         XCTAssertEqual(DashboardGreeting.todayLine(jobsToday: 1), "1 job today")
         XCTAssertEqual(DashboardGreeting.todayLine(jobsToday: 3), "3 jobs today")
+    }
+
+    /// An upcoming list never read, or whose read failed, is not a free day: the greeting shows the date alone.
+    func testTheGreetingDrawsTheTodayLineOnlyWhileTheDaysJobsAreKnown() throws {
+        let view = try compactSource("Dashboard/DashboardView.swift")
+
+        XCTAssertTrue(view.contains("lettodaysJobsCount:Int?"), "the greeting cannot tell an unread list")
+        XCTAssertTrue(
+            view.contains("iflettodaysJobsCount{")
+                && view.contains("Text(DashboardGreeting.todayLine(jobsToday:todaysJobsCount))"),
+            "the today line is drawn whether or not the day's jobs are known"
+        )
     }
 
     // MARK: - Helpers

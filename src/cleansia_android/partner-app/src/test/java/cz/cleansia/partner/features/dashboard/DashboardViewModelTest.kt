@@ -28,6 +28,7 @@ import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.withTimeout
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Rule
@@ -206,7 +207,7 @@ class DashboardViewModelTest {
                 val progressive = expectMostRecentItem()
                 assertTrue(progressive is DashboardUiState.Loaded)
                 assertEquals(stats, (progressive as DashboardUiState.Loaded).stats)
-                assertTrue(progressive.upcoming.isEmpty())
+                assertNull(progressive.upcoming)
                 assertEquals(null, progressive.availableJobsPreview)
                 assertEquals(false, progressive.isUserRefreshing)
                 assertEquals(false, completed.isCompleted)

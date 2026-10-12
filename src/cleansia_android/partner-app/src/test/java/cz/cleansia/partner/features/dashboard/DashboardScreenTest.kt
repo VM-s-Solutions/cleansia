@@ -41,6 +41,34 @@ class DashboardScreenTest {
     }
 
     @Test
+    fun `the when-line says tomorrow only for the next calendar day`() {
+        val whenLine = functionBody("private fun nextJobWhenLine(")
+        assertTrue(
+            "nextJobWhenLine must decide Tomorrow with startsTomorrow(instant, now, zone)",
+            whenLine.contains("startsTomorrow(instant, now, zone)"),
+        )
+        assertFalse("nextJobWhenLine must not count whole days for Tomorrow", whenLine.contains("toDays()"))
+    }
+
+    /** An unread or failed upcoming list is not a free day: the greeting then shows the date alone. */
+    @Test
+    fun `the greeting omits its today line while the day's jobs are unknown`() {
+        val screen = code()
+        assertTrue(
+            "the count must come from the nullable upcoming list",
+            screen.contains("todaysJobCount(upcoming, LocalDate.now(), ZoneId.systemDefault())"),
+        )
+        assertTrue("the greeting must take a nullable count", screen.contains("todaysJobsCount: Int?,"))
+        assertTrue("the greeting must be handed the count as it is", screen.contains("todaysJobsCount = todaysJobsCount,"))
+        val bar = functionBody("private fun CompactGreetingBar(")
+        assertTrue("the greeting lost its today line", bar.contains("todaysStateLine(todaysJobsCount)"))
+        assertTrue(
+            "the today line must render only inside if (todaysJobsCount != null)",
+            block(bar, "if (todaysJobsCount != null) {", '{', '}').contains("todaysStateLine(todaysJobsCount)"),
+        )
+    }
+
+    @Test
     fun `the pay-period and last-month figures carry the currency symbol`() {
         val payPeriod = functionBody("private fun PayPeriodCard(")
         assertTrue(

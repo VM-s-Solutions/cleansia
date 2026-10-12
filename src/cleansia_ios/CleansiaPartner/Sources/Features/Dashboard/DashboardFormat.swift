@@ -32,7 +32,8 @@ enum DashboardFormat {
         }
     }
 
-    /// Android's `nextJobWhenLine`, rule for rule.
+    /// Android's `nextJobWhenLine` rules; the day text follows the iOS localized-template convention rather
+    /// than Android's fixed "EEE d MMM" pattern.
     static func nextJobWhen(_ startsAt: Date?, now: Date = Date(), locale: Locale = .current) -> String {
         guard let startsAt else { return "—" }
         let calendar = Calendar.current
@@ -46,7 +47,10 @@ enum DashboardFormat {
                 if calendar.isDate(startsAt, inSameDayAs: now) { return "\(L10n.Orders.dayToday) \(time)" }
                 return L10n.Dashboard.urgencyInHoursMinutes(hours, minutes % 60)
             }
-            if hours / 24 == 1 { return "\(L10n.Orders.dayTomorrow) \(time)" }
+            let tomorrow = calendar.date(byAdding: .day, value: 1, to: now)
+            if let tomorrow, calendar.isDate(startsAt, inSameDayAs: tomorrow) {
+                return "\(L10n.Orders.dayTomorrow) \(time)"
+            }
         }
         let sameYear = calendar.component(.year, from: startsAt) == calendar.component(.year, from: now)
         let day = formatted(startsAt, template: sameYear ? "EEE d MMM" : "d MMM yyyy", locale: locale)

@@ -82,7 +82,11 @@ data class AvailableJobPreview(
  */
 data class DashboardSnapshot(
     val stats: DashboardStats? = null,
-    val upcoming: List<OrderListItem> = emptyList(),
+    /**
+     * Null until the upcoming read has answered, and when the session has no employee id to read it for:
+     * an unread list is not an empty one.
+     */
+    val upcoming: List<OrderListItem>? = null,
     val availableJobsPreview: AvailableJobsPreview? = null,
     /** True once at least one successful load has populated the cache. */
     val loaded: Boolean = false,
@@ -183,7 +187,7 @@ class DashboardRepositoryImpl @Inject constructor(
                                 is ApiResult.Error -> Unit
                             }
                         } else {
-                            updateSnapshot(generation) { it.copy(upcoming = emptyList()) }
+                            updateSnapshot(generation) { it.copy(upcoming = null) }
                         }
                     }
                     launch {

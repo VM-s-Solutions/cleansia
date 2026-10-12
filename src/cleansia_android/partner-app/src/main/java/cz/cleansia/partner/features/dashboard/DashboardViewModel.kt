@@ -28,7 +28,8 @@ import javax.inject.Inject
  *
  * [Loaded] carries a nullable stats so the cards render with their
  * own zero/placeholder fallbacks in the brief pre-load and error-cleared
- * moments, matching the cache projection. [isUserRefreshing] drives the
+ * moments, matching the cache projection, and a nullable upcoming list that
+ * stays null until it has been read. [isUserRefreshing] drives the
  * pull-to-refresh suds indicator; background refreshes (init / ON_RESUME /
  * post-mutation) never set it, so they render silently.
  */
@@ -39,7 +40,7 @@ sealed interface DashboardUiState {
 
     data class Loaded(
         val stats: DashboardStats?,
-        val upcoming: List<OrderListItem>,
+        val upcoming: List<OrderListItem>?,
         val availableJobsPreview: AvailableJobsPreview?,
         override val isUserRefreshing: Boolean,
     ) : DashboardUiState
@@ -95,7 +96,7 @@ class DashboardViewModel @Inject constructor(
             started = SharingStarted.WhileSubscribed(5_000),
             initialValue = DashboardUiState.Loaded(
                 stats = null,
-                upcoming = emptyList(),
+                upcoming = null,
                 availableJobsPreview = null,
                 isUserRefreshing = false,
             ),

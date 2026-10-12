@@ -21,13 +21,16 @@ on:
       - 'src/Cleansia.App/**'
       - '.github/workflows/frontend-ci.yml'
 
+permissions:
+  contents: read
+
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
 
     # A hang ceiling, not the performance budget. Wall time depends on the selected tests
     # and cache state; compare dated workflow measurements rather than assuming a fixed duration.
@@ -36,12 +39,12 @@ jobs:
     steps:
       - name: Checkout code
         # Nx 'affected' needs the merge-base with the target branch, so fetch history.
-        uses: actions/checkout@v5
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
         with:
           fetch-depth: 0
 
       - name: Setup Node.js
-        uses: actions/setup-node@v5
+        uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5.0.0
         with:
           node-version: '22'
           cache: 'npm'
@@ -126,7 +129,7 @@ jobs:
   # job concurrently — each step boots and tears down its own app server in turn.
   e2e-smoke:
     if: github.event_name == 'pull_request'
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
 
     # A ceiling, not a budget: this job runs in single-digit minutes, so 60 only ever
     # catches a hang. A wedged browser is the likeliest way that happens here.
@@ -134,10 +137,10 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v5
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
 
       - name: Setup Node.js
-        uses: actions/setup-node@v5
+        uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5.0.0
         with:
           node-version: '22'
           cache: 'npm'
@@ -172,7 +175,7 @@ jobs:
 
       - name: Upload Playwright reports
         if: ${{ !cancelled() }}
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
         with:
           name: playwright-report
           path: ./src/Cleansia.App/dist/.playwright/apps/*-e2e/playwright-report

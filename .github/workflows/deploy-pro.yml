@@ -34,7 +34,6 @@ on:
         default: false
 
 permissions:
-  id-token: write
   contents: read
 
 concurrency:
@@ -47,18 +46,18 @@ jobs:
   # force on its date with no deploy in between. Runs in both modes, before any provisioning.
   legal-texts:
     name: No legal text in force or upcoming is a draft
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     permissions:
       contents: read
     timeout-minutes: 10
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
 
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5.0.0
         with:
-          node-version: 20
+          node-version: 22
 
       - name: Self-test the legal draft gate
         run: node agents/tools/check-legal-drafts.test.mjs

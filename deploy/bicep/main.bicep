@@ -309,7 +309,7 @@ var apiHosts = [
 ]
 
 var apiLinuxFxVersion = 'DOTNETCORE|10.0'
-var ssrLinuxFxVersion = 'NODE|20-lts'
+var ssrLinuxFxVersion = 'NODE|22-lts'
 
 // Deploy-time site NAMES — the single source both the appService instantiations and the alerts
 // module consume. Alert scopes must be deploy-time strings (module outputs cannot be collected for

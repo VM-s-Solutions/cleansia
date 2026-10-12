@@ -485,15 +485,16 @@ and no currency word after the placeholder slot is stripped, five locales × thr
 > when the key is wrong, missing, or renamed.
 >
 > The polyfill is `src/Cleansia.App/jest.polyfills.ts`, loaded into **every** project by `setupFiles` in
-> the shared `jest.preset.js`, and declared as an input on the jest target — `nx.json` `targetDefaults`
-> → `@nx/jest:jest`. Both halves are load-bearing for the same reason the shared-client glob is further
-> down this page: undeclared, a warm-cache `nx test services` **replays green over a disabled polyfill**
-> — measured, then measured again as red once declared.
+> the shared `jest.preset.js`, and declared as an input on every `test` target — `@nx/jest/plugin`
+> infers `{workspaceRoot}/jest.polyfills.ts` from the preset's `setupFiles`. Both halves are
+> load-bearing for the same reason the shared-client glob is further down this page: undeclared, a
+> warm-cache `nx test services` **replays green over a disabled polyfill** — measured, then measured
+> again as red once declared.
 >
 > **Membership test for the declaration:** a `project.json` that gives its own `test` target an `inputs`
-> list *replaces* `targetDefaults` rather than extending it, so it must repeat the entry.
+> list *replaces* the inputs the plugin infers rather than extending them, so it must repeat the entry.
 > `libs/shared/models/project.json` does; find the rest with
-> `grep -l '"inputs"' libs/*/*/project.json`.
+> `grep -l '"test"' apps/*/project.json libs/*/*/project.json`.
 >
 > Before the customer JSON transport switched to text, unloading the shared polyfill turned its
 > preferred-offer spec's **five locale cases** and the partner radius spec's **five** red, plus the
@@ -1110,13 +1111,15 @@ a lib, add the spec that proves its target works in the same change — a correc
 specs is byte-for-byte as green as the broken one, and so is a correct target with no spec beside it.
 
 **Enforced by:** `agents/tools/check-nx-project-registration.mjs` rules **NX-6** (every `tsconfig*.json`
-resolves its `extends` and its `references`), **NX-7** (`jest.config.*` ⇔ a `test` target, and the
+resolves its `extends` and its `references`), **NX-7** (`jest.config.*` ⇔ a `test` target — one that
+`project.json` declares, or one `@nx/jest/plugin` infers because its `nx.json` registration covers the
+config, so an `include` that leaves a lib's config out leaves that lib with no target; a declared
 target's `jestConfig`/`tsConfig` options resolve — they are **workspace**-relative, not project-relative)
-and **NX-8** (a registered project holding TypeScript has a `test` target at all) — **T1-CI**, same
-repo-root workflow, same anti-vacuity anchor: zero tsconfigs read, zero jest configs, or zero `test`
-targets across a non-empty project set is a hard failure. None of the three has a recorded set; all
-three baselines are zero and each instance is a one-token fix. NX-8 and NX-7 are disjoint by
-construction, so a project is reported once, not twice.
+and **NX-8** (a registered project holding TypeScript has a `test` target at all) — **on demand only**,
+as above: no workflow runs the checker, so read the tier as `T2-ADVISORY`. Same anti-vacuity anchor:
+zero tsconfigs read, zero jest configs, or zero `test` targets across a non-empty project set is a hard
+failure. None of the three has a recorded set; all three baselines are zero and each instance is a
+one-token fix. NX-8 and NX-7 are disjoint by construction, so a project is reported once, not twice.
 
 **A dangling `tsconfig.base.json` alias is deleted, not repointed — decide per alias, by grep.** An
 alias with live importers and a typo'd path is a *repair*; an alias with **zero** importers whose lib
@@ -1158,9 +1161,9 @@ available one.
 
 **A file a spec only `readFileSync`s is a file Nx cannot see, and an unseen input makes a green run
 worthless.** Nx derives *both* "is this project affected" *and* the task's cache key from **declared**
-inputs: `nx.json` gives `@nx/jest` `["default", "^production", "{workspaceRoot}/jest.preset.js",
-"{workspaceRoot}/jest.polyfills.ts"]` — the fourth element is the **second** instance of this same
-defect, found and closed the same way (see the jsdom-blob entry below) —
+inputs: `@nx/jest/plugin` infers `["default", "^production", "{workspaceRoot}/jest.preset.js",
+"{workspaceRoot}/jest.polyfills.ts", …]` for a `test` target — the fourth element is the **second**
+instance of this same defect, found and closed the same way (see the jsdom-blob entry below) —
 `default` is `{projectRoot}/**/*`, `sharedGlobals` is **empty**, and `models` has no dependency edge to
 any `*-services` lib — nor may it have one. Undeclared, the three clients are inputs to nothing, which is
 two independent holes; the second one is the one nobody expects. Measured by renumbering `OnTheWay = 3`
@@ -1181,15 +1184,16 @@ lib arrives covered:
 ```jsonc
 "inputs": ["default", "^production", "{workspaceRoot}/jest.preset.js",
            "{workspaceRoot}/jest.polyfills.ts",
-           "{workspaceRoot}/libs/core/*-services/src/lib/client/*.ts"]
+           "{workspaceRoot}/libs/core/*-services/src/lib/client/*.ts",
+           { "externalDependencies": ["jest", "@nx/jest", "ts-jest", "jest-preset-angular"] }]
 ```
 
-⚠️ **A project-level `inputs` array REPLACES the `targetDefaults` one — it does not extend it.** So a
-workspace-wide input added to `nx.json` alone silently misses every project that declares its own list,
-and `models` is exactly such a project *because of the rule above*. That is why the polyfill entry
-appears twice in this section: adding it in one place and measuring the warm cache is how you discover
-the second place, and adding it in one place while measuring only `--skip-nx-cache` is how you ship a
-hole that reads as closed.
+⚠️ **A project-level `inputs` array REPLACES the one `@nx/jest/plugin` infers — it does not extend it.**
+So a workspace-wide input — the polyfill is one, inferred from the preset — silently misses every
+project that declares its own list, and `models` is exactly such a project *because of the rule above*.
+That is why the polyfill entry appears twice in this section: adding it in one place and measuring the
+warm cache is how you discover the second place, and adding it in one place while measuring only
+`--skip-nx-cache` is how you ship a hole that reads as closed.
 
 **An input is a hashing declaration, not a dependency — and that distinction is the only reason this is
 available here.** `nx graph` still reports `models → types` and nothing else. The alternative that looks
@@ -1220,8 +1224,8 @@ file was still a cache hit). Two shapes do work:
   The two test targets whose specs read that file list it: `cleansia.app`
   (`cancellation-grace-claim.spec.ts`, the three Oops-window minutes) and
   `cleansia-customer-recurring-bookings` (the create-recurring-wizard spec, `MaxRooms` and
-  `MaxBathrooms`). The app's target restates the jest defaults beside it, because a project-level
-  `inputs` array replaces the `targetDefaults` one (above). Proved in a scratch copy of the workspace:
+  `MaxBathrooms`). The app's target restates the inferred jest inputs beside it, because a
+  project-level `inputs` array replaces the inferred one (above). Proved in a scratch copy of the workspace:
   unchanged, 2/2 targets from cache; with `MaxRooms` 8 → 9 and `OopsWindowMinutesStandard` 15 → 30,
   0/2 from cache and both fail; restored, 2/2 from cache. A spec that reads another file above the
   workspace hashes it the same way, in a runtime input on its own target (below).
@@ -1241,8 +1245,8 @@ one `node -e` line that prints a SHA-256 over the paths it is given, relative to
 directory contributes every `.cs` file under it, in sorted order, with `bin/` and `obj/` skipped
 (`obj/` holds `AssemblyInfo.cs`, which carries the commit and changes on every build); a named file is
 hashed whatever its type; and a path that does not exist fails the hash loudly rather than hashing
-nothing. The three targets that had no inputs of their own restate the jest defaults beside it, because
-a project-level `inputs` array replaces the `targetDefaults` one (above).
+nothing. The three targets that had no inputs of their own restate the inferred jest inputs beside it,
+because a project-level `inputs` array replaces the inferred one (above).
 
 | Test target | Its runtime input hashes (under `src/`) | For the specs |
 |---|---|---|

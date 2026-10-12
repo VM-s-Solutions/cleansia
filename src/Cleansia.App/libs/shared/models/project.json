@@ -4,29 +4,37 @@
   "sourceRoot": "libs/shared/models/src",
   "prefix": "lib",
   "projectType": "library",
-  "tags": [
-    "scope:shared",
-    "type:util"
-  ],
+  "tags": ["scope:shared", "type:util"],
   "targets": {
     "test": {
-      "executor": "@nx/jest:jest",
       "inputs": [
         "default",
         "^production",
         "{workspaceRoot}/jest.preset.js",
         "{workspaceRoot}/jest.polyfills.ts",
-        "{workspaceRoot}/libs/core/*-services/src/lib/client/*.ts"
-      ],
-      "outputs": [
-        "{workspaceRoot}/coverage/{projectRoot}"
-      ],
-      "options": {
-        "jestConfig": "libs/shared/models/jest.config.ts"
-      }
+        "{workspaceRoot}/libs/core/*-services/src/lib/client/*.ts",
+        {
+          "externalDependencies": [
+            "jest",
+            "@nx/jest",
+            "ts-jest",
+            "jest-preset-angular"
+          ]
+        }
+      ]
     },
     "lint": {
-      "executor": "@nx/eslint:lint"
+      "inputs": [
+        "default",
+        "^default",
+        "{workspaceRoot}/eslint.config.mjs",
+        "{workspaceRoot}/eslint.base.config.mjs",
+        "{workspaceRoot}/eslint.module-boundaries.config.mjs",
+        "{workspaceRoot}/eslint.generated-dto.config.mjs",
+        {
+          "externalDependencies": ["eslint"]
+        }
+      ]
     }
   }
 }

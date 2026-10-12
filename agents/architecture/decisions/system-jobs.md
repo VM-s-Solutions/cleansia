@@ -74,17 +74,17 @@ fails any handler under `src/Cleansia.Functions.Core/Handlers` that gains a seco
 
 The jobs that still catch past a commit, or past staging, in a shared scope are listed in
 `agents/knowledge/consistency.md` §"A loop that continues past a failed commit in a shared scope", with the search
-that found them. The roster is descriptive; the rule decides the next case. Converting them is a canonicalization
-ticket for the owner to schedule. `SendRecurringOrderReminders` comes first: since ADR-0071 made the order's
-payment status a concurrency token, one payment landing during its run fails every later reminder of that run.
-`RedrivePendingRefunds` moves money.
+that found them. The roster is descriptive; the rule decides the next case. Converting them is T-0841, a
+canonicalization ticket for the owner to schedule. `SendRecurringOrderReminders` comes first: since ADR-0071 made
+the order's payment status a concurrency token, one payment landing during its run fails every later reminder of
+that run. `RedrivePendingRefunds` moves money.
 
 ## Residuals
 
 - **No attempt cap.** A poison occurrence, like a poison template, is retried and logged at Error on every run.
   The visible places are Sentry and the response's `Failed` count; a cap would need persisted state for a
   failure nobody has seen yet.
-- **The listed deviations stay live** until the canonicalization ticket is scheduled.
+- **The listed deviations stay live** until T-0841, the canonicalization ticket, is scheduled.
 - **A failure followed by the host stopping raises no Sentry event.** A command that throws keeps only its Warning
   line when a later command on the same tick meets the host stopping: the stop is rethrown at once, and the error
   middleware passes a cancellation on unlogged. The next tick runs the command again.

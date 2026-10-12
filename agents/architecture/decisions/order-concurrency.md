@@ -31,7 +31,7 @@ cancel left `Cancelled` and `Paid`, and either way the money was kept with nothi
 of overwriting: a request path returns one unmapped 500; `TakeOrder` answers `order.no_available_spots` when a take
 races a refund's settle; `MarkCashCollected`'s repair commit after Stripe has settled can return one 500; and
 `SendRecurringOrderReminders`, which commits per order inside a catch in one shared scope, fails every later
-reminder of a run during which a payment lands (the first item of ADR-0072's canonicalization ticket).
+reminder of a run during which a payment lands (the first item of ADR-0072's canonicalization ticket, T-0841).
 
 **Not `xmin`, and no lock.** A row version would also refuse writes to every unrelated column of the busiest row; a
 per-sweep `FOR UPDATE` would cover only the sweeps that adopt it and lock `Orders` before the customer's `Users` row.

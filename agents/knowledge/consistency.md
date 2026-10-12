@@ -1033,13 +1033,13 @@ second seat, and the sentence is still true while it is free.
 > `runtime-readiness.md` checklist item 8 — **`T3-HUMAN`**. Rule and rejected alternatives:
 > `patterns-backend.md` §*"One scope per job item, and per command on a shared timer"*; decision: **ADR-0072**,
 > which is `accepted` (`docs/decisions/adr-0072.md:9`).
-> **Retires when:** every job in the roster below gives its items a scope of its own — the canonicalization
-> ticket ADR-0072 asks for, `SendRecurringOrderReminders` first. Until then this entry is how a reader tells a
-> listed deviation from a new one.
+> **Retires when:** every job in the roster below gives its items a scope of its own — T-0841, the
+> canonicalization ticket ADR-0072 asks for, `SendRecurringOrderReminders` first. Until then this entry is how a
+> reader tells a listed deviation from a new one.
 >
 > **This entry exists because the rule puts code that exists today in violation** (ADR-0033 routing test 1), so
-> the shipped deviations are recorded here and their conversion is ticketed rather than assumed. **The baseline
-> is non-zero and read from the tree, not counted.**
+> the shipped deviations are recorded here and their conversion is ticketed as T-0841 rather than assumed. **The
+> baseline is non-zero and read from the tree, not counted.**
 
 **The deviating form (normative — it decides the next case):** *a system job whose `catch` lets its loop go on
 to the next item in the same DI scope, where the `try` covers a commit, or covers staging that a later commit in

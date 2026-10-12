@@ -21,8 +21,11 @@
  *   - `agents/tools/check-consistency.mjs` is the counter-example, not the model: it appears in ZERO
  *     workflow files (ADR-0038 CH-P6), so it can never go red.
  * Living outside the workspace removes the cache hazard by construction rather than by
- * configuration. It has its OWN repo-root workflow (`.github/workflows/nx-project-registration.yml`)
- * so it is never behind `nx affected` and never behind a `continue-on-error` step.
+ * configuration. It was given its OWN repo-root workflow so it would never be behind `nx affected`
+ * and never behind a `continue-on-error` step, but that workflow,
+ * `.github/workflows/nx-project-registration.yml`, was deleted on 2026-08-11 by owner instruction.
+ * No workflow runs it now: the guard and its self-test run on demand only, so its tier is
+ * `T2-ADVISORY`, as the registration entry in `agents/knowledge/patterns-frontend.md` says.
  *
  * ANTI-FALSE-GREEN (ADR-0032 D3). Every enumeration is anchored. If `libs/` is gone, if the walk
  * yields ZERO lib roots, if ZERO projects are registered, if `tsconfig.base.json` yields ZERO lib

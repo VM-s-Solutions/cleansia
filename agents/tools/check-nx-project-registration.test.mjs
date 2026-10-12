@@ -3,9 +3,12 @@
  * Self-test for the Nx project-registration guard (`check-nx-project-registration.mjs`).
  *
  * T-0537's AC1 states the acceptance test BEHAVIOURALLY: *"temporarily rename one project.json, show
- * the failure, restore"*. This file runs that test — and every other failure mode — on every CI run,
- * so the guard cannot decay into scaffolding the way `check-consistency.mjs` did. Stub the checker to
- * exit 0 and this file goes red.
+ * the failure, restore"*. This file runs that test — and every other failure mode — on demand only:
+ * `.github/workflows/nx-project-registration.yml` was deleted on 2026-08-11 by owner instruction and
+ * no workflow runs this file or the guard now, so the guard's tier is `T2-ADVISORY`, as the
+ * registration entry in `agents/knowledge/patterns-frontend.md` says. Only when someone runs it does
+ * it catch the guard decaying into scaffolding, the way `check-consistency.mjs` did. Stub the checker
+ * to exit 0 and this file goes red.
  *
  * It never touches the working tree. Each scenario builds a throwaway workspace with the same SHAPE
  * as the real one (libs with barrels + project.json, the app roster, a tsconfig alias map) and

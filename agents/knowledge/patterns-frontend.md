@@ -1115,11 +1115,11 @@ resolves its `extends` and its `references`), **NX-7** (`jest.config.*` ⇔ a `t
 `project.json` declares, or one `@nx/jest/plugin` infers because its `nx.json` registration covers the
 config, so an `include` that leaves a lib's config out leaves that lib with no target; a declared
 target's `jestConfig`/`tsConfig` options resolve — they are **workspace**-relative, not project-relative)
-and **NX-8** (a registered project holding TypeScript has a `test` target at all) — **T1-CI**, same
-repo-root workflow, same anti-vacuity anchor: zero tsconfigs read, zero jest configs, or zero `test`
-targets across a non-empty project set is a hard failure. None of the three has a recorded set; all
-three baselines are zero and each instance is a one-token fix. NX-8 and NX-7 are disjoint by
-construction, so a project is reported once, not twice.
+and **NX-8** (a registered project holding TypeScript has a `test` target at all) — **on demand only**,
+as above: no workflow runs the checker, so read the tier as `T2-ADVISORY`. Same anti-vacuity anchor:
+zero tsconfigs read, zero jest configs, or zero `test` targets across a non-empty project set is a hard
+failure. None of the three has a recorded set; all three baselines are zero and each instance is a
+one-token fix. NX-8 and NX-7 are disjoint by construction, so a project is reported once, not twice.
 
 **A dangling `tsconfig.base.json` alias is deleted, not repointed — decide per alias, by grep.** An
 alias with live importers and a typo'd path is a *repair*; an alias with **zero** importers whose lib

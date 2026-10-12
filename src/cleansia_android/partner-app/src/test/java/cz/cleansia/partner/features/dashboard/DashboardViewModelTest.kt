@@ -2,6 +2,7 @@ package cz.cleansia.partner.features.dashboard
 
 import app.cash.turbine.test
 import cz.cleansia.core.snackbar.SnackbarController
+import cz.cleansia.partner.R
 import cz.cleansia.partner.core.auth.EmployeeIdResolver
 import cz.cleansia.partner.core.auth.UserProfileData
 import cz.cleansia.partner.core.auth.UserProfileStore
@@ -169,6 +170,16 @@ class DashboardViewModelTest {
             inFlight.complete(Unit)
             cancelAndIgnoreRemainingEvents()
         }
+    }
+
+    /** The screen copied the support address because no mail app took it; the cleaner is told so. */
+    @Test
+    fun `a Help tap no mail app takes says the address was copied`() = runTest {
+        val vm = viewModel()
+
+        vm.onHelpEmailUnavailable()
+
+        verify(exactly = 1) { snackbar.showInfoKey(R.string.help_email_unavailable) }
     }
 
     @Test

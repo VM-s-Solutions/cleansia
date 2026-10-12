@@ -68,6 +68,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import cz.cleansia.core.money.CurrencySymbols
 import cz.cleansia.core.ui.components.statusBarFade
+import cz.cleansia.core.ui.openOrCopy
 import cz.cleansia.core.ui.theme.Spacing
 import cz.cleansia.core.ui.theme.primaryIconOnContainer
 import cz.cleansia.core.ui.theme.primaryText
@@ -91,6 +92,8 @@ import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import java.time.temporal.ChronoUnit
 import java.util.Locale
+
+private const val SUPPORT_EMAIL = "support@cleansia.cz"
 
 /**
  * Cleaner-first dashboard, composed top-to-bottom around the four questions a cleaner has on opening the
@@ -270,9 +273,8 @@ fun DashboardScreen(
                     onPayHistory = onOpenEarnings,
                     onDocuments = onOpenDocuments,
                     onHelp = {
-                        runCatching {
-                            context.startActivity(Intent(Intent.ACTION_SENDTO, Uri.parse("mailto:support@cleansia.cz")))
-                        }
+                        val mail = Intent(Intent.ACTION_SENDTO, Uri.parse("mailto:$SUPPORT_EMAIL"))
+                        if (!context.openOrCopy(mail, SUPPORT_EMAIL)) viewModel.onHelpEmailUnavailable()
                     },
                 )
             }

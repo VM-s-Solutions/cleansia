@@ -13,15 +13,24 @@ import org.junit.Test
  */
 class DashboardScreenTest {
 
+    /** With no mail app on the phone the tap did nothing; now it copies the address and says so, as the customer Help does. */
     @Test
-    fun `the Help shortcut opens an e-mail to support`() {
+    fun `the Help shortcut opens an e-mail to support, or copies the address and says so`() {
         val onHelp = block(code(), "onHelp = ", '{', '}')
         listOf(
-            "runCatching",
-            "context.startActivity(",
             "Intent.ACTION_SENDTO",
-            "Uri.parse(\"mailto:support@cleansia.cz\")",
+            "Uri.parse(\"mailto:\$SUPPORT_EMAIL\")",
         ).forEach { call -> assertTrue("the Help shortcut must use `$call`, got $onHelp", onHelp.contains(call)) }
+        assertTrue(
+            "a mail intent no app takes must copy the address and tell the cleaner, got $onHelp",
+            Regex("""if \(!context\.openOrCopy\(\w+, SUPPORT_EMAIL\)\) viewModel\.onHelpEmailUnavailable\(\)""")
+                .containsMatchIn(onHelp),
+        )
+        assertFalse("a refused intent must not be swallowed, got $onHelp", onHelp.contains("runCatching"))
+        assertTrue(
+            "the support address must be the one the customer app uses",
+            code().contains("private const val SUPPORT_EMAIL = \"support@cleansia.cz\""),
+        )
     }
 
     @Test

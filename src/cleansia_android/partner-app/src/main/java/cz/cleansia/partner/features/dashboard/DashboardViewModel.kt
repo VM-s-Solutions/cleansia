@@ -3,6 +3,7 @@ package cz.cleansia.partner.features.dashboard
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import cz.cleansia.core.snackbar.SnackbarController
+import cz.cleansia.partner.R
 import cz.cleansia.partner.api.model.OrderListItem
 import cz.cleansia.partner.core.auth.EmployeeIdResolver
 import cz.cleansia.partner.core.auth.UserProfileStore
@@ -110,6 +111,9 @@ class DashboardViewModel @Inject constructor(
 
     /** Pull-to-refresh — always hits the network, surfaces as isUserRefreshing. */
     fun refresh() = load(RefreshSource.USER_PULL)
+
+    /** No mail app took the support address, so the screen copied it; say so. */
+    fun onHelpEmailUnavailable() = snackbar.showInfoKey(R.string.help_email_unavailable)
 
     fun onResume() {
         load(RefreshSource.RESUME)

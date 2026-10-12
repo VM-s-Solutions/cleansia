@@ -24,4 +24,11 @@ extension L10n {
             localized("dash_qa_help")
         }
     }
+
+    /// The notice when the support address is copied instead of mailed; the customer app's key and wording.
+    enum Help {
+        static var emailUnavailable: String {
+            localized("help_email_unavailable")
+        }
+    }
 }

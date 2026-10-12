@@ -555,25 +555,47 @@ nx e2e <project-name>-e2e   # E2E tests
 
 ### Partner dashboard
 
+Both apps ask for the dashboard's upcoming orders with one query: the cleaner's orders
+from the start of their local day, today's local midnight sent in UTC as
+`Filter.CleaningDateFrom`, beside the employee ID and `Filter.IsActive`, ten rows.
+`IsActive` is the soft-delete flag, not a status. Both apps also send a cleaning-date
+sort, but in a form the server does not bind (Android writes the sort object's
+`toString`, iOS base64 JSON), so the page takes the server's own order, newest created
+first (`SortMapper.ForOrderPage`). The page is therefore the ten most recently created of
+the cleaner's orders from today on, and the hero's next job holds only while there are
+ten or fewer; until 2026-10-12, while neither app sent a date, past jobs could fill the
+page as well. No status is filtered: a job done earlier today still counts on the today
+line, and the hero takes only a confirmed, on-the-way or in-progress order
+→ [Partner dashboard](/mobile-app/features#partner-dashboard).
+
 On iOS, `DashboardViewModel` starts the available-jobs preview alongside the employee
 read. Stats still waits for the captured employee ID. Once the employee read has
-answered, the upcoming-orders read starts beside stats: that employee's active orders,
-soonest first, ten rows, the query Android sends; without an employee ID it is not
-sent. The view model assembles one terminal state once stats, the preview and upcoming
-orders have all answered, then checks cancellation and the fetch generation before
-publishing the state, employee identity and radius-prompt ownership together. The hero
-therefore never swaps after the first paint; in exchange the spinner waits for the
-slowest of the three reads. A user refresh keeps the visible dashboard until that
-result arrives. Stats failure still becomes an error. A preview or upcoming failure
-still permits the loaded dashboard: its hero falls back from the next job to the
-available work and then to the empty hero, and its today line reads as free.
+answered, the upcoming-orders read starts beside stats; without an employee ID it is
+not sent. The view model assembles one terminal state once stats, the preview and
+upcoming orders have all answered, then checks cancellation and the fetch generation
+before publishing the state, employee identity and radius-prompt ownership together.
+The hero therefore never swaps after the first paint; in exchange the spinner waits for
+the slowest of the three reads. A loaded dashboard is kept for 60 seconds, as Android
+keeps it: returning to the Dashboard tab within that window repeats none of the view
+model's reads (employee, stats, preview and upcoming orders), and after it the
+dashboard refreshes in place, behind no spinner. The view's own reads are not part of
+that: it re-reads the bell's unread count on every return, and the pending-offers card
+when its 30-second store is stale. A user refresh always reads, and keeps the visible
+dashboard until that result arrives. Stats failure still becomes an error. A preview
+or upcoming failure still permits the loaded dashboard: its hero falls back from the
+next job to the available work and then to the empty hero. While the upcoming orders
+are unread, because there is no employee ID, or their read failed, the greeting shows
+the date alone, never *You're free today*.
 
 On Android, `DashboardRepositoryImpl` retains its serialized refresh and freshness
 check. Stats, upcoming orders and the available-jobs preview run together in the
 refresh's `coroutineScope`, and each publishes its own snapshot field when it arrives;
-an optional failure retains the last good field. Stats remains the critical read: its
-failure is the error the refresh returns, and on a first load the view model keeps the
-spinner until stats lands even when the optional reads arrive first. The final
+an optional failure retains the last good field. Upcoming orders stay `null`, not
+empty, until a read of them has succeeded, and go back to `null` when the session has
+no employee ID to read them for, so the greeting leaves its today line off rather than
+reading as free. Stats remains the critical read: its failure is the error the refresh
+returns, and on a first load the view model keeps the spinner until stats lands even
+when the optional reads arrive first. The final
 loaded/freshness flags wait for all three. Snapshot updates check active cancellation
 and the captured session generation under the snapshot lock; `clear` advances that
 generation so old work cannot repopulate a cleared session, and reads already in flight

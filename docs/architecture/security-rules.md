@@ -828,6 +828,15 @@ app's pending offers and notification badge; and Core's `RemoteImageCache` and `
 but does not keep it; `PushTokenRegistrar` does not record a registration that answers after it. A new
 cache that reads across an `await` needs the same guard. → [Shared patterns](/mobile-app/patterns#session-wipe)
 
+**The server holds a per-user route the wipe cannot reach: the previous account's `Device` row.**
+A sign-out that never reached the server leaves it active, and every push to that account would keep
+going to the phone. So `RegisterDevice` deactivates every other account's active row holding the same
+device id **and** the same non-empty push token, in any company, the deactivation that account's
+sign-out would have made; the next account's registration on the phone is what ends the previous
+account's pushes there. The push token is the pin because it belongs to one app install: the partner
+and customer apps on one Android phone can share a device id, never a token.
+→ [Auth edge cases](/flows/auth-and-identity#edge-cases)
+
 **The allowlist (the only sanctioned exception).** A `@Singleton` that holds cached state but whose
 state is **device-level or public, not per-user**, is legitimately out of the set — but only if it is
 on the **named, reason-annotated allowlist** in [`consistency.md` §E9](https://github.com/VM-s-Solutions/cleansia/blob/master/agents/knowledge/consistency.md) /

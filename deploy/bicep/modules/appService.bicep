@@ -18,7 +18,7 @@ param location string
 @description('Resource id of the shared Linux App Service Plan.')
 param appServicePlanId string
 
-@description('Linux runtime stack for this host. APIs = DOTNETCORE|10.0; the customer SSR = NODE|20-lts.')
+@description('Linux runtime stack for this host. APIs = DOTNETCORE|10.0; the customer SSR = NODE|22-lts.')
 param linuxFxVersion string
 
 @description('Startup command (appCommandLine) for the site AND its staging slot. Empty (default) = none, the runtime default — the five .NET APIs. The customer SSR passes `node server/server.mjs`. Owned here rather than by a deploy step, because a config write restarts the site and the deploy restarts it again seconds later; appCommandLine travels with the slot on a swap.')

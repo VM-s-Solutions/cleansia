@@ -40,6 +40,9 @@ on:
       - 'sql-scripts/**'
       - '.github/workflows/backend-ci.yml'
 
+permissions:
+  contents: read
+
 # A newer push to the same ref supersedes the in-flight run — the container-backed
 # suites are the long pole, and stacked runs only burn runner minutes on stale SHAs.
 concurrency:
@@ -48,7 +51,7 @@ concurrency:
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
 
     # A hang ceiling, not a duration budget: wall time depends on the container-backed suites, so
     # compare dated workflow measurements rather than assuming one here. Without it a wedged run
@@ -57,17 +60,17 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v5
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
 
       - name: Set up .NET
-        uses: actions/setup-dotnet@v5
+        uses: actions/setup-dotnet@26b0ec14cb23fa6904739307f278c14f94c95bf1 # v5.4.0
         with:
           dotnet-version: 10.x
 
       # NuGet package cache — keyed on the central package versions file + csprojs, so a
       # dependency bump misses once and everything else restores from cache instead of nuget.org.
       - name: Cache NuGet packages
-        uses: actions/cache@v5
+        uses: actions/cache@caa296126883cff596d87d8935842f9db880ef25 # v5.1.0
         with:
           path: ~/.nuget/packages
           key: nuget-${{ runner.os }}-${{ hashFiles('src/Directory.Packages.props', 'src/**/*.csproj') }}
@@ -92,7 +95,7 @@ jobs:
         working-directory: ./src
 
       # Integration + host tests spin a real Postgres via Testcontainers (Docker is
-      # available on ubuntu-latest). These are the suites that catch the multi-tenant /
+      # available on ubuntu-24.04). These are the suites that catch the multi-tenant /
       # FK / migration / webhook bugs that unit tests (SQLite/mocked) cannot. Run
       # single-threaded — the metrics MeterListener and the shared Postgres container
       # are sensitive to collection-parallel runs.

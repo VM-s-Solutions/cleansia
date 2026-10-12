@@ -17,7 +17,7 @@ One subscription, one resource group `rg-cleansia-weu-dev`, containing:
 |---|---|---|---|
 | 1 | App Service Plan | `plan-cleansia-weu-dev` | B2 Linux |
 | 2 | API App Service ×5 | `api-cleansia-{partner,admin,customer,partner-mobile,customer-mobile}-weu-dev` | .NET 10 |
-| 3 | SSR App Service | `web-cleansia-customer-weu-dev` | Node 20 (Angular SSR) |
+| 3 | SSR App Service | `web-cleansia-customer-weu-dev` | Node 22 (Angular SSR) |
 | 4 | Static Web App ×2 | `swa-cleansia-{partner,admin}-weu-dev` | Free tier |
 | 5 | Function App | `func-cleansia-weu-dev` | container (ACR), dotnet-isolated |
 | 6 | Container Registry | `acrcleansiaweudev` | Basic, admin disabled (MI pull) |
@@ -135,8 +135,9 @@ and `QueueListenerInventoryTests` fails the build if the two drift again.
 
 ## 2. Azure OIDC federation (so CI logs in without a stored password)
 
-The workflows use `azure/login@v2` with federated credentials — no client secret is stored. Create an
-app registration (service principal) and federate it to this repo's environments.
+The workflows sign in with `azure/login` (v3.1.0, pinned to its commit) and federated credentials — no
+client secret is stored. Create an app registration (service principal) and federate it to this repo's
+environments.
 
 ```bash
 # 2.1 — Create the app registration + service principal

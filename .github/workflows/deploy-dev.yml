@@ -38,7 +38,6 @@ on:
         default: false
 
 permissions:
-  id-token: write
   contents: read
 
 concurrency:
@@ -51,7 +50,8 @@ jobs:
   # logic is identical for both triggers.
   resolve:
     name: Resolve mode
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
+    permissions: {}
     outputs:
       mode: ${{ steps.mode.outputs.mode }}
     steps:

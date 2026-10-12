@@ -35,7 +35,7 @@ Edge cases F3 ported between the apps, and the iOS reload [AND-10, AND-11, AND-1
 
 - [x] **AC1** — Pure-helper tests for the day rule, the undated sort and the unknown today line, RED then GREEN on both apps.
 - [x] **AC2** — A test that the iOS tab return within 60 s makes no read.
-- [ ] **AC3** — The full suites pass, and a render check of the dashboard.
+- [x] **AC3** — The full suites pass, and a render check of the dashboard.
 
 ## Work record
 
@@ -55,6 +55,12 @@ Edge cases F3 ported between the apps, and the iOS reload [AND-10, AND-11, AND-1
   - Moved for SwiftLint's `file_length`: the dashboard tests' barrier extension, with four test members widened to internal.
 - 2026-10-12 — Committed as `4a2e1d2`, which compiles on its own. Full suites on the final tree, from the review fix pass: Android core 294, partner 834 and customer 1679, all passing. iOS on 18.6 and on the 16.4 floor: Core 775/0, Partner 1109/0, and Customer 1770 with 1 skipped (the VoiceOver-only chip test) and 0 failures. After that run only two test files changed (T-0829's source pin, T-0831's time-zone pin), each run green at class level, plus comment-only edits. Every Android-touching commit compiles on its own.
   AC3's live render waits for the render pass.
+- 2026-10-12 — Render pass on the owned guests, by T-0807's procedure, of an export of `b2a4ca4`. The guests were the emulator CleansiaWaveC35 (API 35) and the simulator ED225002 (iOS 18.6), both against the local render fixture. The apps opened signed in from the sessions already on the guests, nothing was typed, and only ordinary taps and swipes were used. Everything started was stopped, with proofs. Receipt: `render-p2/raw/receipt.json` (sha256 `7ad79eac…`, kind `p2-native-render-receipt-002`) in the off-tree Wave F folder.
+  - **AC3, render: PASS on both apps.**
+    - Greeting: *Monday, 12 Oct · You're free today*. It shows the date and the today state, so the upcoming list was read.
+    - Hero: *Next job · Mon 9 Nov · 10:00 · Audit Synthetic · Synthetic job street 80095*. A job 28 days out takes the dated form, not *Tomorrow*.
+    - On iOS, a tab return after more than 60 s refreshed the dashboard in place.
+  - The apps were warm-started, not cold-started: Prepare had already launched them for its signed-in check.
 
 ## Review
 

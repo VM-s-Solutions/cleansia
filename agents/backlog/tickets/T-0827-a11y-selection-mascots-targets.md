@@ -30,7 +30,7 @@ Accessibility findings [AND-06, IOS-04, IOS-17], per the read-only post-Wave E g
 ## Acceptance criteria (done looks like)
 
 - [x] **AC1** — Source-binding tests RED then GREEN.
-- [ ] **AC2** — Accessibility dumps show the selected state, no asset-name labels and 44 pt frames.
+- [x] **AC2** — Accessibility dumps show the selected state, no asset-name labels and 44 pt frames.
 - [x] **AC3** — The full suites pass.
 
 ## Work record
@@ -44,6 +44,11 @@ Accessibility findings [AND-06, IOS-04, IOS-17], per the read-only post-Wave E g
   - iOS: AXe on the 16.4 onboarding shows the mascot with no label. In T-0807 it read `mascot_waving`.
 - 2026-10-12 — Committed as `d07fbcd`, which compiles on its own. Full suites on the final tree, from the review fix pass: Android core 294, partner 834 and customer 1679, all passing. iOS on 18.6 and on the 16.4 floor: Core 775/0, Partner 1109/0, and Customer 1770 with 1 skipped (the VoiceOver-only chip test) and 0 failures. After that run only two test files changed (T-0829's source pin, T-0831's time-zone pin), each run green at class level, plus comment-only edits. Every Android-touching commit compiles on its own.
   AC2's remaining dumps wait for the render pass: Android's selected tab, and the signed-in iOS 44 pt frames and mascots.
+- 2026-10-12 — Render pass on the owned guests, by T-0807's procedure, of an export of `b2a4ca4`. The guests were the emulator CleansiaWaveC35 (API 35) and the simulator ED225002 (iOS 18.6), both against the local render fixture. The apps opened signed in from the sessions already on the guests, nothing was typed, and only ordinary taps and swipes were used. Everything started was stopped, with proofs. Receipt: `render-p2/raw/receipt.json` (sha256 `7ad79eac…`, kind `p2-native-render-receipt-002`) in the off-tree Wave F folder.
+  - **AC2: PASS.**
+    - Android: the Orders dump shows exactly one `selected="true"` segment, and the selection moves when the other segment is tapped.
+    - iOS: customer Home's *See all* and *Manage* and the Profile *Edit* chip are at least 44 pt tall, and no mascot element carries an asset-name label.
+  - The `selectableGroup` semantics themselves cannot be expressed in uiautomator's dump format. The dump is consistent with one group: the three segments are the only children of one parent.
 
 ## Review
 

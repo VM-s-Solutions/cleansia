@@ -38,7 +38,7 @@ The endpoint already accepts `Filter.CleaningDateFrom` (`partner-mobile-api.json
 
 - [x] **AC1** — The request carries the from-date on both apps (tests RED then GREEN).
 - [x] **AC2** — The full suites pass.
-- [ ] **AC3** — On the render fixture, the dashboard shows the cleaner's real next job.
+- [x] **AC3** — On the render fixture, the dashboard shows the cleaner's real next job.
 
 ## Work record
 
@@ -51,6 +51,11 @@ The endpoint already accepts `Filter.CleaningDateFrom` (`partner-mobile-api.json
 - 2026-10-12 — Both tests now pin the zone to Pacific/Kiritimati (UTC+14), so a regression to UTC midnight cannot pass on a UTC runner. On iOS the control showed the old test passing against that regression under `TEST_RUNNER_TZ=UTC`; the pinned test fails, then passes when restored.
 - 2026-10-12 — The premise is corrected: the sort never binds (T-0832), so the page is the ten most recently created orders from today. The docs and comments now say so. Committed as `82d9982`, which compiles on its own. Full suites on the final tree, from the review fix pass: Android core 294, partner 834 and customer 1679, all passing. iOS on 18.6 and on the 16.4 floor: Core 775/0, Partner 1109/0, and Customer 1770 with 1 skipped (the VoiceOver-only chip test) and 0 failures. After that run only two test files changed (T-0829's source pin, T-0831's time-zone pin), each run green at class level, plus comment-only edits. Every Android-touching commit compiles on its own.
   AC3 waits for the render pass. On the render fixture, the cleaner's orders from today are fewer than ten, so the page holds them all.
+- 2026-10-12 — Render pass on the owned guests, by T-0807's procedure, of an export of `b2a4ca4`. The guests were the emulator CleansiaWaveC35 (API 35) and the simulator ED225002 (iOS 18.6), both against the local render fixture. The apps opened signed in from the sessions already on the guests, nothing was typed, and only ordinary taps and swipes were used. Everything started was stopped, with proofs. Receipt: `render-p2/raw/receipt.json` (sha256 `7ad79eac…`, kind `p2-native-render-receipt-002`) in the off-tree Wave F folder.
+  - **AC3: PASS.** One read-only query of the disposable fixture gives the cleaner's orders from local midnight on: five, all Confirmed, none today. The soonest is `…80095`, on Mon 9 Nov at 10:00 Prague time. Both apps' heroes show exactly that job.
+  - Both requests carry `Filter.CleaningDateFrom=2026-10-11T22:00:00Z`, which is local midnight in Prague, expressed in UTC. On iOS the value was read from the host's request log; on Android, from the guest's own OkHttp log.
+  - Caveat: on this fixture the five future orders are also the five most recently created. So the hero alone cannot tell the fix from no fix, and the from-date on the wire is the proof.
+  - Android's log also shows `Sort=SortDefinition(field=cleaningDateTime, direction=0)` on the wire, which is T-0832 seen on a device.
 
 ## Review
 

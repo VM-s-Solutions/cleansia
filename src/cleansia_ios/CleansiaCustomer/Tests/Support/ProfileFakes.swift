@@ -45,9 +45,27 @@ final class FakeUserProfileClient: UserProfileClient, @unchecked Sendable {
     private(set) var updateCallCount = 0
     private(set) var lastUpdate: ProfileUpdate?
 
+    var holdCurrentUser = false
+    var currentUserStarted: ((Int) -> Void)?
+    private var heldCurrentUser: [Int: CheckedContinuation<ApiResult<CurrentUserProfile>, Never>] = [:]
+
+    @MainActor
     func currentUser() async -> ApiResult<CurrentUserProfile> {
         currentUserCallCount += 1
-        return currentUserResult
+        let call = currentUserCallCount
+        guard holdCurrentUser else {
+            currentUserStarted?(call)
+            return currentUserResult
+        }
+        return await withCheckedContinuation { continuation in
+            heldCurrentUser[call] = continuation
+            currentUserStarted?(call)
+        }
+    }
+
+    @MainActor
+    func releaseCurrentUser(call: Int, result: ApiResult<CurrentUserProfile>) {
+        heldCurrentUser.removeValue(forKey: call)?.resume(returning: result)
     }
 
     func updateCurrentUser(_ update: ProfileUpdate) async -> ApiResult<Void> {

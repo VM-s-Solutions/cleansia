@@ -76,11 +76,52 @@
             }
         }
 
+        /// An image still downloading at sign-out is the previous user's: it must not land in the cache the
+        /// next user reads.
+        func testAnImageLoadedAcrossClearIsNotCached() async throws {
+            let entered = expectation(description: "image load entered")
+            let gate = HeldLoader(entered: entered)
+            let cache = RemoteImageCache(loader: gate.load)
+            let load = Task { try await cache.image(forKey: "blob-1", url: url("https://blob/one")) }
+            await fulfillment(of: [entered], timeout: 2)
+
+            await cache.clear()
+            gate.release(RecordingLoader.pixelJpeg())
+            _ = try await load.value
+
+            XCTAssertNil(cache.image(forKey: "blob-1"))
+        }
+
         private func url(_ value: String) -> URL {
             guard let url = URL(string: value) else {
                 preconditionFailure("test fixture is not a URL: \(value)")
             }
             return url
+        }
+    }
+
+    private final class HeldLoader: @unchecked Sendable {
+        private let lock = NSLock()
+        private let entered: XCTestExpectation
+        private var continuation: CheckedContinuation<Data, Never>?
+
+        init(entered: XCTestExpectation) {
+            self.entered = entered
+        }
+
+        func load(_: URL) async throws -> Data {
+            await withCheckedContinuation { continuation in
+                lock.withLock { self.continuation = continuation }
+                entered.fulfill()
+            }
+        }
+
+        func release(_ data: Data) {
+            let continuation = lock.withLock {
+                defer { self.continuation = nil }
+                return self.continuation
+            }
+            continuation?.resume(returning: data)
         }
     }
 

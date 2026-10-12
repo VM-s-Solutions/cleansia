@@ -8,8 +8,9 @@ and the code carries the warning plus a pointer.
 Repositories that cache per-user data live for the app process. On a shared handset that makes them a
 leak: **the next account inherits the previous one's data unless the cache is explicitly cleared.**
 
-Every such cache is wired into the sign-out, forced-401 and account-delete paths. A new one that is not
-in that set is a defect, and it is the kind nobody notices until two people use one phone.
+Every such cache is wired into the sign-out, forced-401 and account-delete paths, and into sign-in,
+which wipes the set again before it stores the new tokens. A new one that is not in that set is a
+defect, and it is the kind nobody notices until two people use one phone.
 
 On iOS, the partner checklist store joins the registry and clears only `order_checklist.` keys;
 device preferences survive. The customer Live Activity coordinator is the first registry member. It
@@ -17,6 +18,20 @@ marks its session inactive and cancels observers before awaiting immediate Activ
 including activities restored by the system and absent from its in-memory map. Delayed work from an
 old session cannot repopulate the current session's maps, and a teardown sweeps only the activities
 captured before it suspends. Pending or failed account deletion preserves the session and its state.
+
+The sign-in wipe is for whatever an interrupted sign-out, or a read that answered after it, left in a
+cache: it belongs to the previous account. On Android each app's `AuthRepository` wipes before it
+saves the tokens. On iOS Core's `AuthApiClient` does it on a login and a confirmed e-mail in both
+apps, on Google and Apple sign-in in the customer app, and on an unconfirmed login that is given a
+token; a login that stores no token wipes nothing. A read still in flight when the session ends must
+not answer into the next one either: every iOS cache that reads across an `await` captures a session
+generation before it, and writes, or marks itself fresh, only while the generation still matches.
+`clear()` advances the generation and resets the cache's loading latches, so the next account's first
+refresh is never swallowed by the old read. A dropped data read returns the cancelled error, which
+raises no snackbar. Two caches drop only their own write: `RemoteImageCache` still hands an image that
+loaded across `clear()` to the view that asked for it, without keeping it, and `PushTokenRegistrar`
+does not record a registration that answers after `clear()`, so the next account's registration of
+the same device token is not skipped as already done.
 
 ## The error model {#error-model}
 

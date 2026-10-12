@@ -131,6 +131,9 @@ class AuthRepositoryImpl @Inject constructor(
             )
         }
 
+        // A read still in flight at sign-out can refill a cache after its wipe, so a new session
+        // starts from empty caches, as in the customer app.
+        sessionScopedCaches.get().forEach { it.clear() }
         persistTokens(body)
         persistProfile(body, fallbackEmail = email)
 
@@ -191,6 +194,8 @@ class AuthRepositoryImpl @Inject constructor(
             return ApiResult.Success(LoginOutcome.UnverifiedEmail(email = body.email ?: email, hasToken = false))
         }
 
+        // Same wipe as login(), for the same reason.
+        sessionScopedCaches.get().forEach { it.clear() }
         persistTokens(body)
         persistProfile(body, fallbackEmail = email)
 

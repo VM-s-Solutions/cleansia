@@ -23,12 +23,30 @@ final class FakeSavedAddressClient: SavedAddressClient, @unchecked Sendable {
     private(set) var deleteCallCount = 0
     private(set) var lastDeleteId: String?
 
+    var holdMine = false
+    var mineStarted: ((Int) -> Void)?
+    private var heldMine: [Int: CheckedContinuation<ApiResult<[SavedAddress]>, Never>] = [:]
+
+    @MainActor
     func getMine() async -> ApiResult<[SavedAddress]> {
-        defer { getMineCallCount += 1 }
-        if let getMineError { return .failure(getMineError) }
         let index = min(getMineCallCount, pages.count - 1)
-        guard index >= 0 else { return .success([]) }
-        return .success(pages[index])
+        getMineCallCount += 1
+        let call = getMineCallCount
+        guard holdMine else {
+            mineStarted?(call)
+            if let getMineError { return .failure(getMineError) }
+            guard index >= 0 else { return .success([]) }
+            return .success(pages[index])
+        }
+        return await withCheckedContinuation { continuation in
+            heldMine[call] = continuation
+            mineStarted?(call)
+        }
+    }
+
+    @MainActor
+    func releaseMine(call: Int, result: ApiResult<[SavedAddress]>) {
+        heldMine.removeValue(forKey: call)?.resume(returning: result)
     }
 
     func add(_ draft: SavedAddressDraft) async -> ApiResult<SavedAddress> {

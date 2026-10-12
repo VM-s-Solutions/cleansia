@@ -12,10 +12,30 @@ final class FakeLoyaltyClient: LoyaltyClient, @unchecked Sendable {
     private(set) var accountCallCount = 0
     private(set) var tiersCallCount = 0
     private(set) var creditCallCount = 0
+    var holdAccount = false
+    var accountStarted: ((Int) -> Void)?
+    private var heldAccount: [Int: CheckedContinuation<ApiResult<LoyaltyAccount>, Never>] = [:]
+    var holdCredit = false
+    var creditStarted: ((Int) -> Void)?
+    private var heldCredit: [Int: CheckedContinuation<ApiResult<CustomerCredit>, Never>] = [:]
 
+    @MainActor
     func getMy() async -> ApiResult<LoyaltyAccount> {
         accountCallCount += 1
-        return accountResult
+        let call = accountCallCount
+        guard holdAccount else {
+            accountStarted?(call)
+            return accountResult
+        }
+        return await withCheckedContinuation { continuation in
+            heldAccount[call] = continuation
+            accountStarted?(call)
+        }
+    }
+
+    @MainActor
+    func releaseAccount(call: Int, result: ApiResult<LoyaltyAccount>) {
+        heldAccount.removeValue(forKey: call)?.resume(returning: result)
     }
 
     func getTiers() async -> ApiResult<[TierInfo]> {
@@ -23,9 +43,23 @@ final class FakeLoyaltyClient: LoyaltyClient, @unchecked Sendable {
         return tiersResult
     }
 
+    @MainActor
     func getCredit() async -> ApiResult<CustomerCredit> {
         creditCallCount += 1
-        return creditResult
+        let call = creditCallCount
+        guard holdCredit else {
+            creditStarted?(call)
+            return creditResult
+        }
+        return await withCheckedContinuation { continuation in
+            heldCredit[call] = continuation
+            creditStarted?(call)
+        }
+    }
+
+    @MainActor
+    func releaseCredit(call: Int, result: ApiResult<CustomerCredit>) {
+        heldCredit.removeValue(forKey: call)?.resume(returning: result)
     }
 
     func getActivity(offset: Int, limit: Int) async -> ApiResult<LoyaltyActivityPage> {
@@ -42,15 +76,49 @@ final class FakeRewardsReferralClient: RewardsReferralClient, @unchecked Sendabl
     var referralsResult: ApiResult<ReferralListPage> = .success(ReferralListPage(items: [], total: 0))
     private(set) var accountCallCount = 0
     private(set) var referralsCallCount = 0
+    var holdAccount = false
+    var accountStarted: ((Int) -> Void)?
+    private var heldAccount: [Int: CheckedContinuation<ApiResult<ReferralAccount>, Never>] = [:]
+    var holdReferrals = false
+    var referralsStarted: ((Int) -> Void)?
+    private var heldReferrals: [Int: CheckedContinuation<ApiResult<ReferralListPage>, Never>] = [:]
 
+    @MainActor
     func getMy() async -> ApiResult<ReferralAccount> {
         accountCallCount += 1
-        return accountResult
+        let call = accountCallCount
+        guard holdAccount else {
+            accountStarted?(call)
+            return accountResult
+        }
+        return await withCheckedContinuation { continuation in
+            heldAccount[call] = continuation
+            accountStarted?(call)
+        }
     }
 
+    @MainActor
+    func releaseAccount(call: Int, result: ApiResult<ReferralAccount>) {
+        heldAccount.removeValue(forKey: call)?.resume(returning: result)
+    }
+
+    @MainActor
     func getMyReferrals(offset _: Int, limit _: Int) async -> ApiResult<ReferralListPage> {
         referralsCallCount += 1
-        return referralsResult
+        let call = referralsCallCount
+        guard holdReferrals else {
+            referralsStarted?(call)
+            return referralsResult
+        }
+        return await withCheckedContinuation { continuation in
+            heldReferrals[call] = continuation
+            referralsStarted?(call)
+        }
+    }
+
+    @MainActor
+    func releaseReferrals(call: Int, result: ApiResult<ReferralListPage>) {
+        heldReferrals.removeValue(forKey: call)?.resume(returning: result)
     }
 }
 

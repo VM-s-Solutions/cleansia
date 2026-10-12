@@ -192,6 +192,9 @@ public final class AuthApiClient: AuthSpine, @unchecked Sendable {
         guard let token = dto.token, !token.isEmpty else {
             return .unverifiedEmail(email: fallbackEmail, hasToken: false)
         }
+        // Before the new tokens: what an interrupted sign-out or a late read left is the previous account's.
+        // → /mobile-app/patterns#session-wipe
+        await sessionScopedCaches.clearAll()
         persist(dto, fallbackRefreshLifetime: refreshLifetime)
         if dto.isEmailConfirmed != true {
             return .unverifiedEmail(email: fallbackEmail, hasToken: true)

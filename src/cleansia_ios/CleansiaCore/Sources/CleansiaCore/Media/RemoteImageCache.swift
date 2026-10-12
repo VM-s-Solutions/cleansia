@@ -22,6 +22,7 @@
 
         private let cache = NSCache<NSString, UIImage>()
         private let load: Loader
+        private var sessionGeneration = 0
 
         public init(countLimit: Int = 16, loader: Loader? = nil) {
             cache.countLimit = countLimit
@@ -35,13 +36,17 @@
         @discardableResult
         public func image(forKey key: String, url: URL) async throws -> UIImage {
             if let hit = image(forKey: key) { return hit }
+            let generation = sessionGeneration
             let data = try await load(url)
             guard let image = UIImage(data: data) else { throw RemoteImageError.undecodable }
-            cache.setObject(image, forKey: key as NSString)
+            if generation == sessionGeneration {
+                cache.setObject(image, forKey: key as NSString)
+            }
             return image
         }
 
         public func clear() async {
+            sessionGeneration += 1
             cache.removeAllObjects()
         }
 

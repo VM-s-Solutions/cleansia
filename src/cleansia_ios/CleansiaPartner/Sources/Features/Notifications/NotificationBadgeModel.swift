@@ -12,6 +12,7 @@ final class NotificationBadgeModel: ObservableObject, SessionScopedCache {
 
     private let client: NotificationFeedClient
     private var refreshing = false
+    private var sessionGeneration = 0
 
     init(client: NotificationFeedClient) {
         self.client = client
@@ -26,11 +27,12 @@ final class NotificationBadgeModel: ObservableObject, SessionScopedCache {
     /// signed-out or offline fetch must never snackbar or crash.
     func refresh() async {
         if refreshing { return }
+        let generation = sessionGeneration
         refreshing = true
-        defer { refreshing = false }
-        if case let .success(count) = await client.unreadCount() {
-            unreadCount = max(0, count)
-        }
+        defer { if generation == sessionGeneration { refreshing = false } }
+        let result = await client.unreadCount()
+        guard generation == sessionGeneration, case let .success(count) = result else { return }
+        unreadCount = max(0, count)
     }
 
     /// A push received while the app runs bumps the badge without a refetch —
@@ -45,6 +47,8 @@ final class NotificationBadgeModel: ObservableObject, SessionScopedCache {
     }
 
     func clear() async {
+        sessionGeneration += 1
+        refreshing = false
         unreadCount = 0
     }
 }

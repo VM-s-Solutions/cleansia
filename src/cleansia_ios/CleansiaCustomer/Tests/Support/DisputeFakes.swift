@@ -34,12 +34,30 @@ final class FakeDisputeClient: DisputeClient, @unchecked Sendable {
     var onCreate: (@MainActor () -> Void)?
     var onUpload: (@MainActor () -> Void)?
 
+    var holdPages = false
+    var pageStarted: ((Int) -> Void)?
+    private var heldPages: [Int: CheckedContinuation<ApiResult<DisputesPage>, Never>] = [:]
+
+    @MainActor
     func getPaged(offset: Int, limit: Int) async -> ApiResult<DisputesPage> {
         pageRequests.append((offset, limit))
-        if let pageError { return .failure(pageError) }
-        let index = min(pageRequests.count - 1, pages.count - 1)
-        guard index >= 0 else { return .success(DisputesPage(items: [], total: 0)) }
-        return .success(pages[index])
+        let call = pageRequests.count
+        guard holdPages else {
+            pageStarted?(call)
+            if let pageError { return .failure(pageError) }
+            let index = min(pageRequests.count - 1, pages.count - 1)
+            guard index >= 0 else { return .success(DisputesPage(items: [], total: 0)) }
+            return .success(pages[index])
+        }
+        return await withCheckedContinuation { continuation in
+            heldPages[call] = continuation
+            pageStarted?(call)
+        }
+    }
+
+    @MainActor
+    func releasePage(call: Int, result: ApiResult<DisputesPage>) {
+        heldPages.removeValue(forKey: call)?.resume(returning: result)
     }
 
     func getById(disputeId _: String) async -> ApiResult<DisputeDetail> {

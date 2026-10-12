@@ -786,12 +786,24 @@ Profile/OrderChecklist/NotificationPreferences).
 - **iOS** — conform to `SessionScopedCache` and `register(self)` with the injected
   `SessionScopedCacheRegistry` (held weakly); `clearAll()` iterates it.
 
-**Three wipe-triggers, one set — they must not drift.** The set is iterated on **all three**:
+**Four wipe-triggers, one set — they must not drift.** The set is iterated on **all four**:
 1. **Sign-out** (voluntary `logout()`),
 2. **Authenticator forced-401** (the refresh-terminal path — a revoked/reset session),
 3. **Account deletion** (customer `UserRepository.deleteAccount()` — which, being itself a member,
    injects `Provider<Set<@JvmSuppressWildcards SessionScopedCache>>` / iterates the registry to
-   break the self-referential Dagger cycle).
+   break the self-referential Dagger cycle),
+4. **Sign-in, before the new tokens are stored** (both Android apps' `AuthRepository`; both iOS apps
+   through Core's `AuthApiClient`), so whatever a sign-out that never completed, or a read that
+   answered after it, left in a cache is gone before the next account's first read.
+
+**On iOS a read that outlives `clear()` is dropped.** Every iOS cache that reads across an `await`
+captures a session generation before it and writes only while the generation still matches, and
+`clear()` advances it: the customer app's orders, loyalty, referrals, membership, recurring bookings,
+disputes, saved addresses, profile, notification badge and Live Activity coordinator; the partner
+app's pending offers and notification badge; and Core's `RemoteImageCache` and `PushTokenRegistrar`.
+`RemoteImageCache` still returns an image that loaded across `clear()` to the view that asked for it,
+but does not keep it; `PushTokenRegistrar` does not record a registration that answers after it. A new
+cache that reads across an `await` needs the same guard. → [Shared patterns](/mobile-app/patterns#session-wipe)
 
 **The allowlist (the only sanctioned exception).** A `@Singleton` that holds cached state but whose
 state is **device-level or public, not per-user**, is legitimately out of the set — but only if it is

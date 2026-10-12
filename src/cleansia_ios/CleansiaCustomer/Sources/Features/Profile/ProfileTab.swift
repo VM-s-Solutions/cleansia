@@ -452,6 +452,8 @@ struct EditProfileChip: View {
             .padding(.horizontal, 14)
             .padding(.vertical, Spacing.xs)
             .background(Color.white.opacity(0.22), in: Capsule())
+            .frame(minHeight: 44)
+            .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
     }

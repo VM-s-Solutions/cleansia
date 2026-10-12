@@ -26,7 +26,8 @@ public enum Mascot: String, CaseIterable {
     /// Vacuuming — the web's drawing, for the Home quick-size slide.
     case vacuuming = "mascot_vacuuming"
 
+    /// Decorative: VoiceOver would read the asset name ("mascot_waving"); Android hides every mascot too.
     public var image: Image {
-        Image(rawValue, bundle: MascotAssets.bundle)
+        Image(decorative: rawValue, bundle: MascotAssets.bundle)
     }
 }

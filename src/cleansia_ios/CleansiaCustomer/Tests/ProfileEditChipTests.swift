@@ -57,6 +57,12 @@ final class ProfileEditChipTests: XCTestCase {
         }
     }
 
+    /// The chip is the hero's one control and was 35pt tall. Its tap target takes the 44pt floor while the
+    /// capsule keeps its look.
+    func testTheChipIsAFullTouchTarget() {
+        XCTAssertGreaterThanOrEqual(chipSize(proposedWidth: .greatestFiniteMagnitude).height, 44)
+    }
+
     func testTheChipStaysOneLineWhenSqueezedBelowItsIdealWidth() throws {
         for tag in ["ru", "uk"] {
             L10n.bundle = try localeBundle(tag)

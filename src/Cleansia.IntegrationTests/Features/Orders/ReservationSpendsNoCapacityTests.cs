@@ -77,7 +77,7 @@ public class ReservationSpendsNoCapacityTests(PostgresContainerFixture fixture) 
 
                 var overlaps = await orders.HasOverlappingOrderAsync(
                     BeneficiaryId, ReservedSlot, 120, CancellationToken.None);
-                var busy = await orders.GetBusyEmployeeIdsInWindowAsync(
+                var busy = await orders.GetBusyEmployeeIdsInWindowIgnoringTenantAsync(
                     [BeneficiaryId], ReservedSlot, ReservedSlot.AddMinutes(120), CancellationToken.None);
 
                 return (Overlaps: overlaps, Busy: busy.Contains(BeneficiaryId));
@@ -116,7 +116,7 @@ public class ReservationSpendsNoCapacityTests(PostgresContainerFixture fixture) 
                     BeneficiaryId, CancellationToken.None);
                 var overlaps = await orders.HasOverlappingOrderAsync(
                     BeneficiaryId, ReservedSlot, 120, CancellationToken.None);
-                var busy = await orders.GetBusyEmployeeIdsInWindowAsync(
+                var busy = await orders.GetBusyEmployeeIdsInWindowIgnoringTenantAsync(
                     [BeneficiaryId], ReservedSlot, ReservedSlot.AddMinutes(120), CancellationToken.None);
 
                 return (WeeklyCount: weeklyCount, Overlaps: overlaps, Busy: busy.Contains(BeneficiaryId));

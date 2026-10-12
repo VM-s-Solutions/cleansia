@@ -222,7 +222,7 @@ fill window spent on an outcome with probability **zero**.
 | | Ruling |
 |---|---|
 | **Where it is asked** | at the picker (the customer's chosen slot) **and** in the hold resolver at creation |
-| **How** | **one set-based query** — `GetBusyEmployeeIdsInWindowAsync(ids, start, end)` — never `HasOverlappingOrderAsync` in a loop |
+| **How** | **one set-based query** — `GetBusyEmployeeIdsInWindowIgnoringTenantAsync(ids, start, end)` — never `HasOverlappingOrderAsync` in a loop |
 | **The agreement that matters** | picker and resolver call **the same method** with the same window. Not "the same rule" — the same call |
 | **When busy** | **no hold AND no targeted push.** ADR-0036 D5.1's own words: *"a hold for a cleaner `TakeOrder.cs:53` would reject is pure latency — and so is a push."* New `HoldDeclineReason.CleanerBusyAtCleaningTime = 9`, sitting with `CleanerNotApproved`, **not** with `ShortLeadTime` |
 | **The weekly cap** | **still not checked, and this is evidence not taste.** `GetEmployeeOrderCountThisWeekAsync:249-252` derives its window from `DateTime.UtcNow.Date` — at creation, for a booking 10 days out, it answers about a week that does not contain the booking |
@@ -280,7 +280,7 @@ D3.2, recorded here rather than in the ADR: the set method itself has read tenan
 customer may book across markets, and a booking carries the operator of its address's market. Every id
 it is given is server-derived — the caller's own completed orders or a preference the booking validator
 has proven. Pinned by
-`GetBusyEmployeeIdsInWindowTests.A_Proven_Cleaner_Is_Busy_Across_Operators_And_Unrelated_Cleaners_Stay_Excluded`.)*
+`GetBusyEmployeeIdsInWindowIgnoringTenantTests.A_Proven_Cleaner_Is_Busy_Across_Operators_And_Unrelated_Cleaners_Stay_Excluded`.)*
 
 **A second fan-out shape exists, and for the digest it has shipped.** The digest and the recurring
 materializer are **one employee, many windows** — the set method does nothing for either. ADR-0039 D3.3

@@ -1503,7 +1503,7 @@ free at this hour?"*, *"which of these are over their limit?"* — the singular 
 already exists is the wrong tool, and calling it in a loop is the defect, not the shortcut:
 
 - **The set-based method is the seam, and it takes the set.** `Task<IReadOnlySet<string>>
-  GetBusyEmployeeIdsInWindowAsync(ids, startUtc, endUtc, ct)` — **return the positive subset (the
+  GetBusyEmployeeIdsInWindowIgnoringTenantAsync(ids, startUtc, endUtc, ct)` — **return the positive subset (the
   "busy" ones), not the free ones**, so "absent from the result" is the fail-**open** default and an
   empty/failed answer degrades to today's behaviour rather than to a lie.
 - **Share the predicate, not the terminal call** (ADR-0039 D3.2 as amended). Two predicates answering

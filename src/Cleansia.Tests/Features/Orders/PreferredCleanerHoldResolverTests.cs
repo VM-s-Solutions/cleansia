@@ -50,7 +50,7 @@ public class PreferredCleanerHoldResolverTests
             .Setup(r => r.GetByUserIdAsync(CleanerUserId, It.IsAny<CancellationToken>()))
             .ReturnsAsync([NewDevice(notificationsEnabled: true)]);
         _orders
-            .Setup(r => r.GetBusyEmployeeIdsInWindowAsync(
+            .Setup(r => r.GetBusyEmployeeIdsInWindowIgnoringTenantAsync(
                 It.IsAny<IReadOnlyCollection<string>>(),
                 It.IsAny<DateTime>(),
                 It.IsAny<DateTime>(),
@@ -201,7 +201,7 @@ public class PreferredCleanerHoldResolverTests
         await ResolveAsync();
 
         _orders.Verify(
-            r => r.GetBusyEmployeeIdsInWindowAsync(
+            r => r.GetBusyEmployeeIdsInWindowIgnoringTenantAsync(
                 It.Is<IReadOnlyCollection<string>>(ids => ids.Count == 1 && ids.Contains(CleanerId)),
                 CleaningUtc,
                 CleaningUtc.AddMinutes(EstimatedMinutes),
@@ -223,7 +223,7 @@ public class PreferredCleanerHoldResolverTests
         await ResolveAsync();
 
         _orders.Verify(
-            r => r.GetBusyEmployeeIdsInWindowAsync(
+            r => r.GetBusyEmployeeIdsInWindowIgnoringTenantAsync(
                 It.IsAny<IReadOnlyCollection<string>>(),
                 It.IsAny<DateTime>(),
                 It.IsAny<DateTime>(),
@@ -257,7 +257,7 @@ public class PreferredCleanerHoldResolverTests
     public async Task An_Unanswerable_Busy_Check_Declines_Instead_Of_Throwing()
     {
         _orders
-            .Setup(r => r.GetBusyEmployeeIdsInWindowAsync(
+            .Setup(r => r.GetBusyEmployeeIdsInWindowIgnoringTenantAsync(
                 It.IsAny<IReadOnlyCollection<string>>(),
                 It.IsAny<DateTime>(),
                 It.IsAny<DateTime>(),
@@ -276,7 +276,7 @@ public class PreferredCleanerHoldResolverTests
 
     private void MarkCleanerBusy() =>
         _orders
-            .Setup(r => r.GetBusyEmployeeIdsInWindowAsync(
+            .Setup(r => r.GetBusyEmployeeIdsInWindowIgnoringTenantAsync(
                 It.IsAny<IReadOnlyCollection<string>>(),
                 It.IsAny<DateTime>(),
                 It.IsAny<DateTime>(),

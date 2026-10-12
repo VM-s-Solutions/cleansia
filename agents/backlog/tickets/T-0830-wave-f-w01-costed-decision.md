@@ -45,6 +45,8 @@ The roadmap's W01, endpoint-scoped client loading. The ground truth refutes the 
   - Writes outside scratch, disclosed:
     - two temp files, since deleted;
     - npm debug logs in `~/.npm/_logs`, from the first attempt's partner and admin `npm ci` and from admin's `npm ls`. Each run also pruned one older log there, and both installs read the shared `~/.npm/_cacache`.
+- 2026-10-12 — Shipped in [#324](https://github.com/VM-s-Solutions/cleansia/pull/324). Exact-head CI on `52d215b` passed all 5 check runs with no re-run: Frontend build and e2e-smoke, Android, Docs and Secret scan. Backend, iOS, iOS Symbols and booking-policy parity did not run, because their path filters select nothing in a backlog-only change. Merged normally with the SHA guard as `7fc7c39`. No deploy ran: deploy-dev, deploy-pro, deploy-docs and execute-sql have no run since the merge, and deploy-azure runs only through the first two. Evidence: `raw/ci/p3-pr324-ci-merge-closure-002.json` (sha256 `a1f52226…`) in the off-tree Wave F folder, which supersedes `-001`.
+  - The decision itself is Mike's: one letter, A to E (+F), under *Recommendation and the decision* below. T-0830 stays in progress until he gives it, and nothing in the tree changes for W01 before then.
 
 ### Why W01 as written moves about 0 B
 

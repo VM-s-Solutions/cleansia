@@ -25,7 +25,7 @@ name: Deploy to Azure (reusable)
 #   `secrets: inherit` the caller's GitHub Environment (dev-weu open, prod-weu reviewer-protected)
 #   supplies both the secret VALUES and the protection gate. Secrets are referenced by NAME only;
 #   no secret value is in this file (ADR-0015 D4).
-# - OIDC (azure/login@v2 + id-token: write) and the EF-migration bundle (committed migrations applied
+# - OIDC (azure/login + id-token: write) and the EF-migration bundle (committed migrations applied
 #   BEFORE any API deploy) are preserved (ADR-0015 D5).
 # - On B2 the app deploys fan out: every API/SSR/Functions deploy depends on [provision, migrate-database]
 #   only, not on each other. The ordering that matters (migrate-before-deploy) is held by the needs edge.
@@ -85,17 +85,17 @@ jobs:
       contents: read
     steps:
       - name: Checkout code
-        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
 
       - name: Set up .NET
-        uses: actions/setup-dotnet@67a3573c9a986a3f9c594539f4ab511d57bb3ce9 # v4.3.1
+        uses: actions/setup-dotnet@26b0ec14cb23fa6904739307f278c14f94c95bf1 # v5.4.0
         with:
           dotnet-version: 10.x
 
       # NuGet package cache — keyed on the central package versions file + csprojs, so a
       # dependency bump misses once and everything else restores from cache instead of nuget.org.
       - name: Cache NuGet packages
-        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
+        uses: actions/cache@caa296126883cff596d87d8935842f9db880ef25 # v5.1.0
         with:
           path: ~/.nuget/packages
           key: nuget-${{ runner.os }}-${{ hashFiles('src/Directory.Packages.props', 'src/**/*.csproj') }}
@@ -143,31 +143,31 @@ jobs:
         working-directory: ./src
 
       - name: Upload Partner API artifact
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
         with:
           name: partner-api
           path: ./src/publish/partner-api
 
       - name: Upload Admin API artifact
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
         with:
           name: admin-api
           path: ./src/publish/admin-api
 
       - name: Upload Customer API artifact
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
         with:
           name: customer-api
           path: ./src/publish/customer-api
 
       - name: Upload Partner-Mobile API artifact
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
         with:
           name: partner-mobile-api
           path: ./src/publish/partner-mobile-api
 
       - name: Upload Customer-Mobile API artifact
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
         with:
           name: customer-mobile-api
           path: ./src/publish/customer-mobile-api
@@ -193,7 +193,7 @@ jobs:
 
       - name: Upload EF bundle artifact
         if: inputs.mode == 'deploy'
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
         with:
           name: ef-bundle
           path: ./src/efbundle
@@ -209,10 +209,10 @@ jobs:
       NX_BUILD_CONFIGURATION: ${{ inputs.env == 'prod' && 'production' || 'staging' }}
     steps:
       - name: Checkout code
-        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
 
       - name: Setup Node.js
-        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5.0.0
         with:
           node-version: '22'
           cache: 'npm'
@@ -226,7 +226,7 @@ jobs:
       # output instead of recompiling all three bundles. Keyed to the SHA so every run saves a
       # fresh entry; restore-keys pulls the most recent prior run's cache.
       - name: Cache Nx computation cache
-        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
+        uses: actions/cache@caa296126883cff596d87d8935842f9db880ef25 # v5.1.0
         with:
           path: ./src/Cleansia.App/.nx/cache
           key: nx-${{ runner.os }}-${{ inputs.env }}-${{ github.sha }}
@@ -251,19 +251,19 @@ jobs:
             > ./src/Cleansia.App/dist/apps/cleansia.app/package.json
 
       - name: Upload Customer App artifact (SSR)
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
         with:
           name: customer-app
           path: ./src/Cleansia.App/dist/apps/cleansia.app
 
       - name: Upload Partner App artifact
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
         with:
           name: partner-app
           path: ./src/Cleansia.App/dist/apps/cleansia-partner.app/browser
 
       - name: Upload Admin App artifact
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
         with:
           name: admin-app
           path: ./src/Cleansia.App/dist/apps/cleansia-admin.app/browser
@@ -286,7 +286,7 @@ jobs:
     environment: ${{ inputs.githubEnvironment }}
     steps:
       - name: Checkout code
-        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
 
       # Read from the param file Bicep deploys, so the workflow and the infrastructure cannot disagree:
       # privateNetworkingEnabled = true (prod) closes the Key Vault to every network but its private
@@ -316,7 +316,7 @@ jobs:
           fi
 
       - name: Login to Azure
-        uses: azure/login@7184910d9eb2b1c5e48f7073824a90609bb9b6d6 # v2.3.1
+        uses: azure/login@a641126d1b8aa4d1fa005f4f92df94a3a4c4c906 # v3.1.0
         with:
           client-id: ${{ secrets.AZURE_CLIENT_ID }}
           tenant-id: ${{ secrets.AZURE_TENANT_ID }}
@@ -536,7 +536,7 @@ jobs:
       # secrets, and its single ARM call runs seconds after the first login.
       - name: Re-login to Azure (fresh OIDC token before Key Vault writes)
         if: inputs.mode == 'deploy'
-        uses: azure/login@7184910d9eb2b1c5e48f7073824a90609bb9b6d6 # v2.3.1
+        uses: azure/login@a641126d1b8aa4d1fa005f4f92df94a3a4c4c906 # v3.1.0
         with:
           client-id: ${{ secrets.AZURE_CLIENT_ID }}
           tenant-id: ${{ secrets.AZURE_TENANT_ID }}
@@ -718,13 +718,13 @@ jobs:
     environment: ${{ inputs.githubEnvironment }}
     steps:
       - name: Checkout code
-        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
 
       # The self-contained bundle was built in build-dotnet (a `needs` of this job) — download
       # it instead of re-restoring the whole solution here. The artifact transfer drops the
       # exec bit; the Apply step's chmod restores it.
       - name: Download EF bundle artifact
-        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+        uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7.0.0
         with:
           name: ef-bundle
           path: ./src
@@ -752,7 +752,7 @@ jobs:
           fi
 
       - name: Login to Azure
-        uses: azure/login@7184910d9eb2b1c5e48f7073824a90609bb9b6d6 # v2.3.1
+        uses: azure/login@a641126d1b8aa4d1fa005f4f92df94a3a4c4c906 # v3.1.0
         with:
           client-id: ${{ secrets.AZURE_CLIENT_ID }}
           tenant-id: ${{ secrets.AZURE_TENANT_ID }}
@@ -823,7 +823,7 @@ jobs:
       # the same AADSTS700024 the provision job re-logs in for.
       - name: Re-login to Azure (fresh OIDC token before the Key Vault read)
         if: env.PRIVATE_NETWORKING == 'true'
-        uses: azure/login@7184910d9eb2b1c5e48f7073824a90609bb9b6d6 # v2.3.1
+        uses: azure/login@a641126d1b8aa4d1fa005f4f92df94a3a4c4c906 # v3.1.0
         with:
           client-id: ${{ secrets.AZURE_CLIENT_ID }}
           tenant-id: ${{ secrets.AZURE_TENANT_ID }}
@@ -967,19 +967,19 @@ jobs:
       # DEV only, for the warm step at the end. First, so it never clears a downloaded artifact.
       - name: Checkout the warm script
         if: inputs.env != 'prod'
-        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
         with:
           sparse-checkout: .github/scripts
 
       - name: Login to Azure
-        uses: azure/login@7184910d9eb2b1c5e48f7073824a90609bb9b6d6 # v2.3.1
+        uses: azure/login@a641126d1b8aa4d1fa005f4f92df94a3a4c4c906 # v3.1.0
         with:
           client-id: ${{ secrets.AZURE_CLIENT_ID }}
           tenant-id: ${{ secrets.AZURE_TENANT_ID }}
           subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
 
       - name: Download artifact
-        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+        uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7.0.0
         with:
           name: ${{ matrix.host }}-api
           path: ./${{ matrix.host }}-api
@@ -1069,10 +1069,10 @@ jobs:
     environment: ${{ inputs.githubEnvironment }}
     steps:
       - name: Checkout code
-        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
 
       - name: Login to Azure
-        uses: azure/login@7184910d9eb2b1c5e48f7073824a90609bb9b6d6 # v2.3.1
+        uses: azure/login@a641126d1b8aa4d1fa005f4f92df94a3a4c4c906 # v3.1.0
         with:
           client-id: ${{ secrets.AZURE_CLIENT_ID }}
           tenant-id: ${{ secrets.AZURE_TENANT_ID }}
@@ -1120,14 +1120,14 @@ jobs:
     environment: ${{ inputs.githubEnvironment }}
     steps:
       - name: Login to Azure
-        uses: azure/login@7184910d9eb2b1c5e48f7073824a90609bb9b6d6 # v2.3.1
+        uses: azure/login@a641126d1b8aa4d1fa005f4f92df94a3a4c4c906 # v3.1.0
         with:
           client-id: ${{ secrets.AZURE_CLIENT_ID }}
           tenant-id: ${{ secrets.AZURE_TENANT_ID }}
           subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
 
       - name: Download artifact
-        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+        uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7.0.0
         with:
           name: customer-app
           path: ./customer-app
@@ -1212,7 +1212,7 @@ jobs:
     environment: ${{ inputs.githubEnvironment }}
     steps:
       - name: Download artifact
-        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+        uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7.0.0
         with:
           name: partner-app
           path: ./partner-app
@@ -1239,7 +1239,7 @@ jobs:
     environment: ${{ inputs.githubEnvironment }}
     steps:
       - name: Download artifact
-        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+        uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7.0.0
         with:
           name: admin-app
           path: ./admin-app
@@ -1281,7 +1281,7 @@ jobs:
     environment: ${{ inputs.githubEnvironment }}
     steps:
       - name: Checkout code
-        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
 
       # Sequential on purpose: each hostname gets the plan's attention for as long as it needs it.
       # Both public hostnames are exercised without the micro-cache and must carry Angular's SSR
@@ -1337,7 +1337,7 @@ jobs:
     environment: ${{ inputs.githubEnvironment }}
     steps:
       - name: Login to Azure
-        uses: azure/login@7184910d9eb2b1c5e48f7073824a90609bb9b6d6 # v2.3.1
+        uses: azure/login@a641126d1b8aa4d1fa005f4f92df94a3a4c4c906 # v3.1.0
         with:
           client-id: ${{ secrets.AZURE_CLIENT_ID }}
           tenant-id: ${{ secrets.AZURE_TENANT_ID }}

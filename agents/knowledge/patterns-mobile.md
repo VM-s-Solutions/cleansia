@@ -190,6 +190,13 @@ using `@AuthRetrofit` (main) vs `@NoAuthRetrofit` (refresh-only) qualifiers.
 > by deleting a mapper line: if nothing goes red, the test is one hop short. iOS mirrors this — its
 > generated models have the same all-optional shape.
 
+> **A paged call sends its sort through the generated `sort0Field` / `sort0Direction` (ADR-0075).** One
+> key per request; the orders page adds its tie-break on the server. **Enforced by:**
+> `MobileSpecSortParameterTests` (`Cleansia.HostTests`, backend-ci) keeping each mobile host's document
+> flat, so a re-dumped spec leaves a generated operation no other sort parameter — `T1-CI`. The wire
+> tests (`DashboardWireTest`, `InvoicesWireTest`, `OrdersWireTest`; `UpcomingOrdersWireTests`,
+> `OrderPageWireTests`, `InvoicesWireTests`) pin only the six existing call sites — a closed roster.
+
 > **And the RESPONSE side: a repository REFUSES a generated DTO, it never defaults one — and the
 > refusal names the field (ADR-0048).** Neither mobile spec declares a `required` array, so the
 > generator types every property optional-with-null **regardless of `nullable: false`**, and the

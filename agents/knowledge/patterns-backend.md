@@ -40,6 +40,12 @@ parallel ones.** Authoritative architecture prose:
 `Failure<T>(Error)`, `Create<T>(value?)`. **There is no `NotFound()`/`Forbidden()`/`ValidationFailure()`
 helper and no `ErrorType` enum** — construct failures as `BusinessResult.Failure<Response>(new Error(code, BusinessErrorMessage.X))`.
 
+**A sort on the mobile hosts is two scalar query parameters (ADR-0075).** The two mobile hosts register
+`IndexedSortOperationFilter`, which states `DataRangeRequest.Sort` as `Sort[0].Field` / `Sort[0].Direction`,
+the form the server binds; one key per request; the web hosts do not register it. Never add another
+collection of objects to a mobile query. **Enforced by:** `MobileSpecSortParameterTests`
+(`Cleansia.HostTests`, backend-ci) — `T1-CI`.
+
 ---
 
 ## The one-file feature — exact shape (a COMMAND, from `Features/Orders/CancelOrder.cs`)

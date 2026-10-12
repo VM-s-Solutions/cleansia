@@ -162,9 +162,12 @@ private struct PendingOfferCard: View {
                     }
                 }
                 Spacer()
-                Text(OrdersFormat.money(offer.totalPrice ?? 0, symbol: offer.currencyCode))
-                    .font(CleansiaTypography.titleLarge)
-                    .foregroundColor(CleansiaColors.primaryText)
+                Text(OrdersFormat.money(
+                    offer.totalPrice ?? 0,
+                    symbol: EarningsFormat.currencySymbol(offer.currencyCode)
+                ))
+                .font(CleansiaTypography.titleLarge)
+                .foregroundColor(CleansiaColors.primaryText)
             }
 
             // City and a truncated postcode — the pre-acceptance ceiling for every cleaner-facing

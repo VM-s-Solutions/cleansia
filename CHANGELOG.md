@@ -1730,14 +1730,15 @@ need backfilling.
 
 ### Security
 
-- **Customer and cleaner apps — on a shared phone, the previous account's notifications stop once
-  the next person's sign-in registers the phone for them, even if the previous sign-out never reached
-  us.** A sign-out made offline, or one the iPhone app gave up on after five seconds, left the previous
-  account's phone registration active, so its notifications — an order number, a count, an amount —
-  went on arriving on that phone for up to 90 days. The next account's registration for the same app on
-  that phone now retires it, in whichever company the previous account belongs to. Two things it does
-  not do: an iPhone on iOS 17.2 or later can still be sent a lock-screen card for the previous account's
-  order, and the previous account is not signed out anywhere. (T-0834)
+- **Customer and cleaner apps — on a shared phone, the previous account's notifications, and on a
+  customer's iPhone its lock-screen cards, stop once the next person's sign-in registers the phone for
+  them, even if the previous sign-out never reached us.** A sign-out made offline, or one the iPhone app
+  gave up on after five seconds, left the previous account's phone registration active, so its
+  notifications — an order number, a count, an amount — went on arriving on that phone for up to 90
+  days, and on the customer iPhone app a lock-screen card for its order could still be started or
+  updated there. The next account's registration for the same app on that phone now retires the previous
+  account's, lock-screen cards included, in whichever company the previous account belongs to. One thing
+  it does not do: the previous account is not signed out anywhere. (T-0834)
 
 - **Cleaner apps and customer iOS — on a phone two people share, signing in starts from a clean
   slate, as it already did in the customer Android app.** Signing in now clears what the app kept for

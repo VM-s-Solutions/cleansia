@@ -601,7 +601,7 @@ question first and the form second.
 
 |  | **Read under a tenant claim** | **Read with no claim (anonymous / job)** |
 |---|---|---|
-| **Written under a tenant claim** | **symmetric → FILTERED.** `src/Cleansia.Config/Filters/RequireCompleteProfileAttribute.cs:25`, `src/Cleansia.Core.AppServices/Authentication/OrderAccessService.cs:112`, the employee self-service `Update*` handlers, `src/Cleansia.Infra.Database/Repositories/LiveActivityTokenRepository.cs:10-45` | **ASYMMETRIC → bypass + re-pin.** `src/Cleansia.Infra.Database/Repositories/EmployeeRepository.cs:19-26` on the token-mint paths; `src/Cleansia.Infra.Database/Repositories/LiveActivityTokenRepository.cs:47-61`; `src/Cleansia.Infra.Database/Repositories/DeviceRepository.cs:46-57` and `src/Cleansia.Infra.Database/Repositories/DeviceRepository.cs:59-68`; and, read under **another** account's claim, `src/Cleansia.Infra.Database/Repositories/DeviceRepository.cs:64-77` (`GetOtherUsersActiveByDeviceAndTokenIgnoringTenantAsync`, deactivation only, pinned on the device id and the presented push token — below) |
+| **Written under a tenant claim** | **symmetric → FILTERED.** `src/Cleansia.Config/Filters/RequireCompleteProfileAttribute.cs:25`, `src/Cleansia.Core.AppServices/Authentication/OrderAccessService.cs:112`, the employee self-service `Update*` handlers, `src/Cleansia.Infra.Database/Repositories/LiveActivityTokenRepository.cs:10-45` | **ASYMMETRIC → bypass + re-pin.** `src/Cleansia.Infra.Database/Repositories/EmployeeRepository.cs:19-26` on the token-mint paths; `src/Cleansia.Infra.Database/Repositories/LiveActivityTokenRepository.cs:47-61`; `src/Cleansia.Infra.Database/Repositories/DeviceRepository.cs:46-57` and `src/Cleansia.Infra.Database/Repositories/DeviceRepository.cs:59-68`; and, read under **another** account's claim, `src/Cleansia.Infra.Database/Repositories/DeviceRepository.cs:64-77` (`GetOtherUsersActiveByDeviceAndTokenIgnoringTenantAsync`, deactivation only, pinned on the device id and the presented push token — below) and `GetByUserAndDeviceIgnoringTenantAsync` (`src/Cleansia.Infra.Database/Repositories/LiveActivityTokenRepository.cs:72-78`, deletion only, pinned on the user id and device id read out of a row the device read found — below) |
 | **Written with no claim (anonymous)** | **ASYMMETRIC → bypass + re-pin.** `src/Cleansia.Infra.Database/Repositories/RefreshTokenRepository.cs:10-23` and the revoke family at `src/Cleansia.Infra.Database/Repositories/RefreshTokenRepository.cs:120-150`; **the legacy confirm read** `UserRepository.GetByConfirmationCodeIgnoringTenantAsync` (written under the market's operator by `Register`, read anonymously from the link — pinned by the code hash); **the register / resend / admin-create pre-checks** (`GetByEmailIgnoringTenantAsync` / `ExistsWithEmailIgnoringTenantAsync` — pinned by the global `IX_Users_Email`, deliberately across the holding: one email is one identity); the **guest booking family** — `Order/Lookup`, `LookupBatch`, `GuestCancellationPreview`, `CancelGuest`, all four through the one seam `GuestOrderAccess` (`GetQueryableIgnoringTenant()` on the order *and* the token table, pinned by the SHA-256 digest of the presented token, plus `UserId == null`) | **symmetric → FILTERED.** Since ADR-0061 D3 every anonymous write runs under the market operator's override, so this cell holds the reads a request makes of rows *it* wrote in the same scope — the promo `GetByCodeAsync` pre-check under `RequestPromoCode`, `ValidateReferral`'s `(TenantId, Code)` read |
 
 **The newest row in the top-right cell — the contract-for-work acceptance (ADR-0068, 2026-09-20).**
@@ -644,17 +644,22 @@ than dressing it as an invariant.
 
 **One more pin, admitted on 2026-10-12 for a bypass that only withdraws (T-0834):** the device id **and** the
 non-empty push token the caller's own app install presents. `DeviceRepository.GetOtherUsersActiveByDeviceAndTokenIgnoringTenantAsync`
-reads every company's device rows that hold both and belong to another account, and the one thing done with
-them is deactivation (`RegisterDevice`): nothing read is returned, shown or granted. The token is issued per
+reads every company's device rows that hold both and belong to another account, and all that is done with
+them is withdrawal (`RegisterDevice`): each is deactivated, and its account's Live Activity tokens for the
+install are deleted; nothing read is returned, shown or granted. The token is issued per
 install by the push provider, which delivers to whoever holds the install, so it pins the install whose
 pushes the previous account would otherwise keep receiving. The conditions are part of the admission: the
 token is on no DTO and in no log above Debug; an empty token matches nothing; the caller's own rows are
 excluded by the id from its JWT. The device id alone is not a pin — Android's fallback id is the
 manufacturer and model, and the partner and customer apps signed with one key share one. Its contract
 (`IDeviceRepository`) states the caller obligation in so many words: *the server cannot verify the token was
-issued to the caller's install.*
-**Residual, accepted:** whoever learns another install's push token can silently stop that account's pushes
-there until its next sign-in or token rotation — a denial of service with no data exposure. An access token
+issued to the caller's install.* The Live Activity tokens are read by
+`LiveActivityTokenRepository.GetByUserAndDeviceIgnoringTenantAsync`, which reads every company's rows too and
+needs no further pin: its user id and device id are read out of a device row the first read found, *a row id
+read out of an already-pinned row*, and its contract (`ILiveActivityTokenRepository`) says so.
+**Residual, accepted:** whoever learns another install's push token can silently stop that account's
+notification and Live Activity pushes there until the app on that install registers them again (for
+notifications, its next sign-in or token rotation) — a denial of service with no data exposure. An access token
 that account was issued before is refused once, and the next refresh issues another, because the refresh
 path checks no device state (`src/Cleansia.Core.AppServices/Features/Auth/RefreshToken.cs:63-105`).
 
@@ -846,16 +851,16 @@ app's pending offers and notification badge; and Core's `RemoteImageCache` and `
 but does not keep it; `PushTokenRegistrar` does not record a registration that answers after it. A new
 cache that reads across an `await` needs the same guard. → [Shared patterns](/mobile-app/patterns#session-wipe)
 
-**The server holds a per-user route the wipe cannot reach: the previous account's `Device` row.**
-A sign-out that never reached the server leaves it active, and every push to that account would keep
-going to the phone. So `RegisterDevice` deactivates every other account's active row holding the same
-device id **and** the same non-empty push token, in any company; the next account's registration on the
-phone is what ends the previous account's notification pushes there. That is the device-row part of the
-sign-out that never arrived, **not the rest of it**: the previous account's Live Activity tokens for the
-install are not deleted, so on an iPhone on iOS 17.2 or later, with APNs configured, a push-to-start can
-still put that account's order on the lock screen; and its refresh token is not revoked. The push token is
-the pin because it belongs to one app install: the partner and customer apps on one Android phone can share
-a device id, never a token (S8 admits this pin for a deactivation only).
+**The server holds per-user routes the wipe cannot reach: the previous account's `Device` row and its
+Live Activity tokens.** A sign-out that never reached the server leaves both in place, and every push to
+that account would keep going to the phone. So `RegisterDevice` deactivates every other account's active
+row holding the same device id **and** the same non-empty push token, in any company, and deletes that
+account's Live Activity tokens for the install, push-to-start included; the next account's registration on
+the phone is what ends the previous account's notification and Live Activity pushes there. That is what the
+previous account's `Device/Unregister` would have done, **not the rest of its sign-out**: its refresh token
+is not revoked, so no session ends. The push token is the pin because it belongs to one app install: the
+partner and customer apps on one Android phone can share a device id, never a token (S8 admits this pin for
+a withdrawal only).
 → [Auth edge cases](/flows/auth-and-identity#edge-cases)
 
 **The allowlist (the only sanctioned exception).** A `@Singleton` that holds cached state but whose

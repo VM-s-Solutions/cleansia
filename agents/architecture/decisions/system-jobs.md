@@ -85,6 +85,9 @@ payment status a concurrency token, one payment landing during its run fails eve
   The visible places are Sentry and the response's `Failed` count; a cap would need persisted state for a
   failure nobody has seen yet.
 - **The listed deviations stay live** until the canonicalization ticket is scheduled.
+- **A failure followed by the host stopping raises no Sentry event.** A command that throws keeps only its Warning
+  line when a later command on the same tick meets the host stopping: the stop is rethrown at once, and the error
+  middleware passes a cancellation on unlogged. The next tick runs the command again.
 
 ## Tests that pin it
 

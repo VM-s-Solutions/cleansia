@@ -29,7 +29,8 @@ namespace Cleansia.Core.AppServices.Features.Orders;
 ///
 /// Credit a checkout spent comes back in the commit that cancels it. A company
 /// whose commit is refused keeps its orders and their credit as they were, and
-/// the next run takes them again.
+/// the next run takes them again. A payment that lands mid-group is refused at
+/// commit, and the paid order stays paid. → /decisions/adr-0071
 ///
 /// Recurring occurrences are deliberately out of scope — see the query below;
 /// <see cref="Cleansia.Core.AppServices.Features.Bookings.AutoCancelStaleRecurringOrders"/>
@@ -174,7 +175,8 @@ public class CleanupStalePendingOrders
                 //
                 // No catch: a refused group ends the run and its scope. Catching to continue would let
                 // this group's leftovers ride the next group's commit, without the credit the failed
-                // commit rolled back (→ ADR-0072 D2).
+                // commit rolled back.
+                // → /decisions/adr-0072#d2-a-job-whose-items-must-fail-independently-gives-each-item-its-own-scope
                 await unitOfWork.CommitAsync(cancellationToken);
             }
 

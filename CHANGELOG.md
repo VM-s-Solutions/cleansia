@@ -557,6 +557,14 @@ need backfilling.
 
 ### Changed
 
+- **Cleaner Android and iOS — the Profile screen fades its content under the status bar, as the
+  dashboard does.** When you scroll the Profile screen, its content now fades out under the clock and
+  the camera, where it used to run into them. On iOS the band wears the blue of the screen's header
+  while the header is under it. (T-0826)
+- **Customer iOS — the Plus discount perk names its percentage in its title, as on Android.** It
+  reads, for example, *10% member discount*, and the line under it no longer repeats the figure.
+  (T-0828)
+
 - **Customer iOS — while your Plus benefits are paused, your schedules say so and offer nothing that
   would be refused.** When a Plus renewal payment fails, your benefits are paused until it goes
   through or you cancel, and no schedule can be set up or changed meanwhile. The iOS app still offered
@@ -1082,6 +1090,36 @@ need backfilling.
   generic English sentence that is honest about being generic, until counsel supplies each one.
 
 ### Fixed
+
+- **Cleaner Android and iOS — the dashboard shows today's and coming jobs, with the right day
+  words.** The dashboard now asks for your jobs from the start of your day, so past jobs no longer
+  crowd out the next one. A job you finished earlier today still counts on the *N jobs today* line.
+  - *Tomorrow* now means the next calendar day, so a job two midnights away shows its date.
+  - While your jobs have not loaded yet, or could not load, the line shows only the date. It used to
+    say *You're free today*.
+  - A job with no start time is never shown as your next job.
+  - On iOS, coming back to the dashboard within a minute no longer reloads it.
+
+  (T-0823, T-0831)
+- **Cleaner Android and iOS — every money screen shows the koruna as *Kč*.** Earnings, invoices and
+  period pay now print *Kč* on English and Ukrainian phones too, as the dashboard already did. An
+  amount whose currency the server does not name shows no symbol, rather than one guessed from the
+  phone's language. (T-0824)
+- **Cleaner Android and iOS — Help works on a phone with no mail app.** On such a phone, tapping
+  Help on the dashboard, or the support row on the registration screen, used to do nothing. The app
+  now copies the support address and says so. An iPhone does the same when Mail has no account set
+  up. (T-0825)
+- **Accessibility.**
+  - Cleaner Android: TalkBack now announces which Orders tab is selected.
+  - iOS: VoiceOver no longer reads mascot pictures out by their file names.
+  - Customer iOS: the *See all*, *Manage* and *Edit* controls on Home and Profile are at least
+    44 points tall, so they are easier to hit.
+
+  (T-0827)
+- **iOS 16 in dark mode — the band behind the status bar takes the right colour.** On iOS 16, the
+  fade under the clock read its colours as if the phone were in light mode, so in dark mode its tint
+  stepped instead of blending, most visibly on the Plus offer. It now reads each colour as it is
+  drawn. (T-0829)
 
 - Paged order APIs now accept at most 100 rows per request across web and mobile. Larger requests
   return HTTP 400, while catalogue lookups retain their existing limits. This restriction was
@@ -1659,6 +1697,12 @@ need backfilling.
   offers a retry.
 
 ### Security
+
+- **Cleaner and customer apps — on a phone two people share, signing in starts from a clean
+  slate.** Signing in now clears what the app kept for the previous account before it stores the new
+  one. A list that was still loading when someone signed out, or that answered after they did, can no
+  longer show up for the next person. On iOS, every list that loads in the background also checks,
+  when its answer arrives, that it still belongs to the account signed in. (T-0822)
 
 - **E-mails show a name as it was typed, never as markup.** Every e-mail put names and other values
   into its page as they came. A name holding `<` or `&` broke the e-mail, and HTML typed into a name,

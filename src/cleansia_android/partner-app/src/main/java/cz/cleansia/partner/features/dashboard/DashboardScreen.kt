@@ -1133,9 +1133,13 @@ internal fun pickNextJob(upcoming: List<OrderListItem>): OrderListItem? {
 internal fun startsTomorrow(start: Instant, now: Instant, zone: ZoneId): Boolean =
     start.atZone(zone).toLocalDate() == now.atZone(zone).toLocalDate().plusDays(1)
 
-/** Null while [upcoming] is unknown, so an unread or failed list never reads as a free day. */
+/**
+ * Null while [upcoming] is unknown, so an unread or failed list never reads as a free day. A cancelled order
+ * still reaches the list, because cancelling leaves the cleaner assigned, and it is not a job.
+ */
 internal fun todaysJobCount(upcoming: List<OrderListItem>?, today: LocalDate, zone: ZoneId): Int? =
     upcoming?.count { item ->
+        if (item.orderStatus.toOrderStatus() == OrderStatus._6) return@count false
         val iso = item.cleaningDateTime ?: return@count false
         runCatching { Instant.parse(iso).atZone(zone).toLocalDate() }.getOrNull() == today
     }

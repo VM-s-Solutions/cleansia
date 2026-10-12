@@ -8,7 +8,6 @@ import cz.cleansia.partner.api.model.AvailableJobsPreviewResponse
 import cz.cleansia.partner.api.model.DashboardStatsDto
 import cz.cleansia.partner.api.model.EarningsAnalyticsDto
 import cz.cleansia.partner.api.model.OrderListItem
-import cz.cleansia.partner.api.model.SortDefinition
 import cz.cleansia.partner.api.model.SortDirection
 import cz.cleansia.core.network.ApiError
 import cz.cleansia.core.network.ApiResult
@@ -264,7 +263,8 @@ class DashboardRepositoryImpl @Inject constructor(
                 filterEmployeeId = employeeId,
                 filterIsActive = true,
                 filterCleaningDateFrom = startOfToday,
-                sort = listOf(SortDefinition(field = "cleaningDateTime", direction = SortDirection._0)),
+                sort0Field = "cleaningDateTime",
+                sort0Direction = SortDirection._0,
                 offset = 0,
                 limit = limit,
             )

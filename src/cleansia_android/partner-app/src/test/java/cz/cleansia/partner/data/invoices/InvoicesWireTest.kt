@@ -6,6 +6,7 @@ import cz.cleansia.partner.api.model.EmployeeInvoiceDetailDto
 import cz.cleansia.partner.api.model.EmployeeInvoiceDto
 import cz.cleansia.partner.api.model.EmployeeInvoiceStatus
 import cz.cleansia.partner.data.payroll.OrderPayLine
+import cz.cleansia.partner.testing.assertSortedBy
 import kotlinx.coroutines.test.runTest
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.descriptors.SerialDescriptor
@@ -144,6 +145,14 @@ class InvoicesWireTest {
         assertTrue("got $path", path!!.contains("Filter.EmployeeId=$EMPLOYEE_ID"))
         assertTrue("got $path", path!!.contains("Offset=0"))
         assertTrue("got $path", path!!.contains("Limit=50"))
+    }
+
+    @Test
+    fun theListRequestAsksForTheNewestInvoicesFirst() = runTest {
+        var sent: RecordedRequest? = null
+        fetchList(CAPTURED_PAGE) { sent = it }
+
+        assertSortedBy(sent!!, field = "createdOn", direction = 1)
     }
 
     @Test

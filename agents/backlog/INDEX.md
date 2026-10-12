@@ -364,6 +364,7 @@
 | T-0848 | Close the CI security findings SEC-CI-1 to SEC-CI-6 before production holds a secret — most of the work is in GitHub and Azure settings | M | `todo` | — | filed 2026-10-12 from the CI security review: two HIGH latent go-live blockers in Mike's GitHub and Azure settings, three workflow fixes and one more setting; awaits Mike |
 | T-0849 | CI follow-ups — move to Ubuntu 26.04 deliberately, let Dependabot update the action pins, settle static-web-apps-deploy's ref and stray input, pin dotnet-ef, delete the dead partner Dockerfile, and bring CLAUDE.md's Nx version current | S | `todo` | T-0838 | filed 2026-10-12 from the surprises in the CI ground truth; CLAUDE.md already says Angular 20.3, and only Nx 23.1 → 23.2 is stale; awaits Mike |
 | T-0850 | Stop a cleaner sorting the order board by customer e-mail or name, which tells them which open offer belongs to a customer they know | XS | `todo` | — | filed 2026-10-12 from the native PR's security review: low, pre-existing; the two fields are admin-only as filters and blanked on the board, but sortable by anyone; awaits Mike |
+| T-0851 | Stop a second settle of one refund key closing the refund Stripe paid as Failed when that refund took everything left on the card | S | `todo` | T-0844 | filed 2026-10-13 from the security re-review of T-0844's F1 fix: medium, pre-existing; the retry path's ceiling read still counts the key's own committed row, so a dispute's resolution, the hourly re-drive or the wind-down can close a paid refund as Failed; awaits Mike |
 
 > **T-0785–T-0799 filed 2026-09-20** — the UI-polish and dead-code batch, on the owner's ruling of
 > that day (*"I want to polish alignments in admin app a bit on all of the overview/detail pages.
@@ -408,4 +409,4 @@
 > reported not absorbed. Owed: the DEV drop at the next DEV deploy (MS-2 / A1, `20260920204705`);
 > the merge order is #255 then #260. Open rows: none.
 
-*Next id: **T-0851**.*
+*Next id: **T-0852**.*

@@ -33,12 +33,20 @@ final class EarningsFormatTests: XCTestCase {
     func testCurrencySymbolUsesLocaleDisplaySymbol() {
         XCTAssertEqual(EarningsFormat.currencySymbol("CZK", locale: Locale(identifier: "cs_CZ")), "Kč")
         XCTAssertEqual(EarningsFormat.currencySymbol("USD", locale: Locale(identifier: "en_US")), "$")
-        XCTAssertEqual(EarningsFormat.currencySymbol("CZK", locale: Locale(identifier: "en_US")), "CZK")
+    }
+
+    /// A currency's symbol belongs to the currency, not to the reader: English and Ukrainian know none for
+    /// the koruna and printed "CZK" on Earnings, Invoices and Period pay while the dashboard printed "Kč".
+    func testTheKorunaReadsKcInEveryPhoneLanguage() {
+        for identifier in ["en_US", "uk_UA", "en_US@rg=czzzzz", "cs_CZ"] {
+            let locale = Locale(identifier: identifier)
+            XCTAssertEqual(EarningsFormat.currencySymbol("CZK", locale: locale), "Kč", identifier)
+        }
     }
 
     func testCurrencySymbolHonorsCodeWhenLocaleIdentifierCarriesKeywords() {
         let locale = Locale(identifier: "en_US@rg=czzzzz")
-        XCTAssertEqual(EarningsFormat.currencySymbol("CZK", locale: locale), "CZK")
+        XCTAssertEqual(EarningsFormat.currencySymbol("CZK", locale: locale), "Kč")
         XCTAssertEqual(EarningsFormat.currencySymbol("EUR", locale: locale), "€")
     }
 

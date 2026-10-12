@@ -99,8 +99,24 @@ class DashboardScreenTest {
             for (tag in listOf("en-US", "uk-UA")) {
                 Locale.setDefault(Locale.forLanguageTag(tag))
                 val figure = formatMoneyWithSymbol(3609.0, resolveCurrencySymbol("CZK"), fallback = "—")
-                // uk groups digits with a no-break space, en with a comma the formatter turns into a space.
-                assertEquals(tag, "3 609 Kč", figure.replace('\u00A0', ' '))
+                // uk groups digits with a no-break space, narrow on some JDKs, and en with a comma the
+                // formatter turns into a space.
+                assertEquals(tag, "3 609 Kč", figure.replace('\u00A0', ' ').replace('\u202F', ' '))
+            }
+        } finally {
+            Locale.setDefault(original)
+        }
+    }
+
+    /** As on iOS and in the docs, a figure the server names no currency for carries no symbol, not the phone's. */
+    @Test
+    fun `a missing currency code shows no symbol on any phone`() {
+        val original = Locale.getDefault()
+        try {
+            for (tag in listOf("en-US", "uk-UA", "cs-CZ")) {
+                Locale.setDefault(Locale.forLanguageTag(tag))
+                assertEquals(tag, "", resolveCurrencySymbol(null))
+                assertEquals(tag, "", resolveCurrencySymbol(" "))
             }
         } finally {
             Locale.setDefault(original)

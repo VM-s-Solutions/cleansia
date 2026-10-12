@@ -803,10 +803,8 @@ private fun WeeklyEarningsHero(stats: DashboardStats?, onClick: () -> Unit) {
  * [fallback] when amount is null/zero so the hero can swap in a
  * "no jobs yet" message instead of rendering "0 Kč" or "—".
  *
- * [symbol] should be the user's preferred-currency symbol resolved
- * via [resolveCurrencySymbol] — that helper accepts the server-
- * supplied ISO code (e.g. "CZK") and falls back to device locale
- * only when the server hasn't told us the user's currency.
+ * [symbol] comes from [resolveCurrencySymbol]: the symbol of the
+ * currency the server names, blank when it names none.
  */
 internal fun formatMoneyWithSymbol(amount: Double?, symbol: String, fallback: String): String {
     if (amount == null || amount <= 0.0) return fallback
@@ -815,23 +813,10 @@ internal fun formatMoneyWithSymbol(amount: Double?, symbol: String, fallback: St
 }
 
 /**
- * Resolve a display symbol from the server-supplied ISO currency code.
- *
- * This used to call `Currency.getSymbol(Locale.getDefault())` directly, which returns the bare ISO
- * code whenever the DEVICE's locale has no symbol for that currency — so a Ukrainian handset rendered
- * "3 731 CZK" on this screen while the orders list beside it rendered "1 275 Kč" from the symbol the
- * server sends per order. A currency's symbol belongs to the currency, not to who is looking at it.
- * → [CurrencySymbols]
+ * The symbol of the currency the server names, whatever the phone's language, and none when it names
+ * no currency: a guessed one would be wrong as often as not. → [CurrencySymbols]
  */
-internal fun resolveCurrencySymbol(serverCode: String?): String {
-    val code = serverCode?.takeIf { it.isNotBlank() }
-    if (code != null) return CurrencySymbols.forCode(code)
-
-    // No code at all: the device's own currency is the only thing left to guess with.
-    return runCatching {
-        java.util.Currency.getInstance(Locale.getDefault()).symbol
-    }.getOrDefault("")
-}
+internal fun resolveCurrencySymbol(serverCode: String?): String = CurrencySymbols.forCode(serverCode)
 
 /* ─── 4. Pay period ─── */
 

@@ -47,6 +47,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import cz.cleansia.core.money.CurrencySymbols
 import cz.cleansia.core.ui.theme.Spacing
 import cz.cleansia.core.ui.theme.primaryIconOnContainer
 import cz.cleansia.core.ui.theme.primaryText
@@ -56,7 +57,6 @@ import cz.cleansia.partner.data.payroll.CashHeld
 import java.time.LocalDate
 import java.time.ZonedDateTime
 import java.time.format.DateTimeFormatter
-import java.util.Currency
 import java.util.Locale
 
 /**
@@ -144,7 +144,7 @@ fun EarningsSummaryScreen(
  */
 @Composable
 private fun HeadlineEarningsCard(stats: DashboardStats?) {
-    val symbol = remember(stats?.currencyCode) { currencySymbol(stats?.currencyCode) }
+    val symbol = remember(stats?.currencyCode) { CurrencySymbols.forCode(stats?.currencyCode) }
     val isEstimate = stats?.latestInvoiceStatus.isNullOrBlank()
 
     Row(
@@ -188,7 +188,7 @@ private fun HeadlineEarningsCard(stats: DashboardStats?) {
 /** Today / Week / Last-month numbers in a single card. */
 @Composable
 private fun BreakdownGrid(stats: DashboardStats?) {
-    val symbol = remember(stats?.currencyCode) { currencySymbol(stats?.currencyCode) }
+    val symbol = remember(stats?.currencyCode) { CurrencySymbols.forCode(stats?.currencyCode) }
     Column(
         modifier = Modifier
             .fillMaxWidth()
@@ -367,7 +367,7 @@ private fun CashHeldCard(cashHeld: List<CashHeld>) {
             }
         }
         cashHeld.forEach { held ->
-            val symbol = currencySymbol(held.currencyCode)
+            val symbol = CurrencySymbols.forCode(held.currencyCode)
             Spacer(Modifier.height(Spacing.M))
             Divider()
             Spacer(Modifier.height(Spacing.M))
@@ -477,18 +477,6 @@ private fun parseIsoDate(iso: String?): LocalDate? {
     return runCatching { ZonedDateTime.parse(iso).toLocalDate() }
         .getOrNull()
         ?: runCatching { LocalDate.parse(iso) }.getOrNull()
-}
-
-/**
- * Best-effort ISO → symbol lookup. Falls back to the ISO code itself
- * when JDK doesn't know it, which is acceptable on this screen — the
- * raw code ("USD") is still readable.
- */
-private fun currencySymbol(code: String?): String {
-    if (code.isNullOrBlank()) return ""
-    return runCatching { Currency.getInstance(code).getSymbol(Locale.getDefault()) }
-        .getOrNull()
-        ?: code
 }
 
 /** Cash is owed to the cent, so unlike the earnings figures it is not rounded to a whole unit. */

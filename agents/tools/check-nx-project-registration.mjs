@@ -665,9 +665,11 @@ if (isDir(WORKSPACE)) {
                 `declares a jest \`test\` target but no ${JEST_CONFIG_NAMES.join("/")} is on disk`,
             );
         }
+        // Only where a target runs. A project with none is NX-7's if it has a jest config and NX-8's
+        // if not, so NX-7 and NX-8 never both report it.
         for (const key of ["jestConfig", "tsConfig"]) {
             const option = target?.options?.[key];
-            if (typeof option === "string" && !existsSync(join(WORKSPACE, option))) {
+            if (hasTarget && typeof option === "string" && !existsSync(join(WORKSPACE, option))) {
                 add(
                     file,
                     "NX-7",

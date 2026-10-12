@@ -34,7 +34,7 @@
  * `@nx/jest/plugin` registration in nx.json infers one from each jest config, and one lib keeps an
  * `inputs`-only residual. The scenarios about a declared executor target write one first.
  *
- * Stub the checker to exit 0 and 54 of the 59 scenarios go red. The 5 survivors are the must-NOT-fire
+ * Stub the checker to exit 0 and 55 of the 60 scenarios go red. The 5 survivors are the must-NOT-fire
  * ones (a tag value the guard has no opinion on, a JSONC comment, a bare `extends` specifier, an
  * extensionless `extends`, a project with no TypeScript), which a no-op passes by construction. The
  * must-NOT-fire scenarios about inferred targets also assert the count the guard read, so a no-op
@@ -642,6 +642,19 @@ scenario("NX-8: an `inputs`-only `test` entry is not a target -> RED", {
     mutate: (r) => rm(r, `${WS}/${RESIDUAL_LIB}/jest.config.ts`),
     expectExit: 1,
     expectText: ["NX-8", `${RESIDUAL_LIB}/project.json`, "1 violation(s)"],
+});
+
+scenario("NX-8: a runnerless `test` entry with an option not on disk is still NX-8 alone", {
+    mutate: (r) => {
+        rm(r, `${WS}/${RESIDUAL_LIB}/jest.config.ts`);
+        const p = `${WS}/${RESIDUAL_LIB}/project.json`;
+        const j = readJson(r, p);
+        j.targets.test.options = { jestConfig: `${RESIDUAL_LIB}/jest.config.ts` };
+        writeJson(r, p, j);
+    },
+    expectExit: 1,
+    expectText: ["NX-8", `${RESIDUAL_LIB}/project.json`, "1 violation(s)"],
+    rejectText: ["  NX-7  "],
 });
 
 scenario("NX-8: an APP with source and no test target is caught too, not just a lib", {

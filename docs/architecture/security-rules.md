@@ -655,8 +655,16 @@ manufacturer and model, and the partner and customer apps signed with one key sh
 (`IDeviceRepository`) states the caller obligation in so many words: *the server cannot verify the token was
 issued to the caller's install.* The Live Activity tokens are read by
 `LiveActivityTokenRepository.GetByUserAndDeviceIgnoringTenantAsync`, which reads every company's rows too and
-needs no further pin: its user id and device id are read out of a device row the first read found, *a row id
-read out of an already-pinned row*, and its contract (`ILiveActivityTokenRepository`) says so.
+has no pin of its own: it inherits this admission and its conditions. Its user id and device id are only ever
+those of a row the device read returned in the same command — *a row id read out of an already-pinned row* — so
+it never reaches the caller's own rows, which that read excludes by the id from the JWT; and because that row
+was pinned by a caller obligation admitted for withdrawal only, the rows it finds are only ever deleted. A row
+the device read found is an already-pinned row for withdrawal and nothing else: a read keyed from it that
+returns, shows or grants anything is not admitted here. It is keyed on the device id, not the push token, so it
+deletes every Live Activity token that account holds under that device id — the set the account's own
+`Device/Unregister` deletes (`src/Cleansia.Core.AppServices/Features/Devices/UnregisterDevice.cs:46`); only the
+customer iOS app registers them, under a device id kept per app on one phone. Its contract
+(`ILiveActivityTokenRepository`) states the obligation.
 **Residual, accepted:** whoever learns another install's push token can silently stop that account's
 notification and Live Activity pushes there until the app on that install registers them again (for
 notifications, its next sign-in or token rotation) — a denial of service with no data exposure. An access token

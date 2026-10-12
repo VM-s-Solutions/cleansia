@@ -37,6 +37,7 @@ import cz.cleansia.customer.core.recurring.RecurringBookingRepository
 import cz.cleansia.customer.core.recurring.CreateRecurringBookingRequest
 import cz.cleansia.customer.core.recurring.RecurringBookingTemplateDto
 import cz.cleansia.customer.core.recurring.UpdateRecurringBookingRequest
+import cz.cleansia.customer.core.user.CodeDto
 import cz.cleansia.customer.features.booking.DoubleBooking
 import cz.cleansia.customer.features.booking.inPackageMarkerRes
 import cz.cleansia.customer.features.booking.selectedIncluding
@@ -349,6 +350,7 @@ class CreateRecurringViewModelTest {
         bathrooms: Int = 2,
         cleaningDateTime: String? = null,
         dirtinessLevel: DirtinessLevel = DirtinessLevel.Normal,
+        paymentType: CodeDto? = null,
     ) {
         coEvery { orderRepo.getById("ord-7") } returns ApiResult.Success(
             OrderDetailDto(
@@ -356,6 +358,7 @@ class CreateRecurringViewModelTest {
                 rooms = rooms,
                 bathrooms = bathrooms,
                 cleaningDateTime = cleaningDateTime,
+                paymentType = paymentType,
                 dirtinessLevel = dirtinessLevel,
                 totalPrice = 100.0,
                 originalSubtotal = 100.0,
@@ -463,7 +466,7 @@ class CreateRecurringViewModelTest {
         savedAddressId = "addr-9",
         selectedServiceIds = listOf("svc-7"),
         selectedPackageIds = listOf("pkg-3"),
-        paymentType = 2,
+        paymentType = CreateRecurringViewModel.PAYMENT_CASH,
         startsOn = "2026-09-15T00:00:00Z",
         dirtinessLevel = DirtinessLevel.Heavy,
     )
@@ -492,7 +495,7 @@ class CreateRecurringViewModelTest {
         assertEquals("addr-9", state.savedAddressId)
         assertEquals(setOf("svc-7"), state.selectedServiceIds)
         assertEquals(setOf("pkg-3"), state.selectedPackageIds)
-        assertEquals(2, state.paymentType)
+        assertEquals(CreateRecurringViewModel.PAYMENT_CASH, state.paymentType)
         assertEquals("2026-09-15T00:00:00Z", state.startsOnIso)
         assertEquals(DirtinessLevel.Heavy, state.dirtinessLevel)
         verify(exactly = 0) { snackbar.showInfo(any<String>()) }
@@ -1611,6 +1614,57 @@ class CreateRecurringViewModelTest {
 
         val expected = if (BuildConfig.STRIPE_PUBLISHABLE_KEY.isNotBlank()) CreateRecurringViewModel.PAYMENT_CARD else null
         assertEquals(expected, vm.state.value.paymentType)
+    }
+
+    @Test
+    fun `card is presentable only in a build that can take a card, and no other way to pay is touched`() {
+        val card = CreateRecurringViewModel.PAYMENT_CARD
+        val cash = CreateRecurringViewModel.PAYMENT_CASH
+
+        assertEquals(card, CreateRecurringViewModel.presentablePaymentType(card, cardAvailable = true))
+        assertNull(CreateRecurringViewModel.presentablePaymentType(card, cardAvailable = false))
+        assertEquals(cash, CreateRecurringViewModel.presentablePaymentType(cash, cardAvailable = true))
+        assertEquals(cash, CreateRecurringViewModel.presentablePaymentType(cash, cardAvailable = false))
+        assertNull(CreateRecurringViewModel.presentablePaymentType(null, cardAvailable = true))
+        assertNull(CreateRecurringViewModel.presentablePaymentType(null, cardAvailable = false))
+    }
+
+    @Test
+    fun `a schedule made from a card order holds card only in a build that can take a card`() = runTest {
+        sourceOrder(
+            services = listOf("svc-1"),
+            paymentType = CodeDto(type = "PaymentType", name = "Card", value = CreateRecurringViewModel.PAYMENT_CARD),
+        )
+
+        val vm = viewModel(orderId = "ord-7")
+        advanceUntilIdle()
+
+        val expected = if (BuildConfig.STRIPE_PUBLISHABLE_KEY.isNotBlank()) CreateRecurringViewModel.PAYMENT_CARD else null
+        assertEquals(expected, vm.state.value.paymentType)
+    }
+
+    /**
+     * Without a key the card row is hidden, so a kept card would be saved without the customer ever seeing it
+     * chosen: the edit opens with nothing chosen, the missing-payment note rather than the cash one, and Save closed.
+     */
+    @Test
+    fun `a card schedule is edited on card only in a build that can take a card`() = runTest {
+        val cardAvailable = BuildConfig.STRIPE_PUBLISHABLE_KEY.isNotBlank()
+        editing(editableTemplate.copy(paymentType = CreateRecurringViewModel.PAYMENT_CARD))
+        val vm = viewModel(templateId = "tpl-1")
+        advanceUntilIdle()
+        vm.nextStep()
+        vm.nextStep()
+        runCurrent()
+
+        assertEquals(if (cardAvailable) CreateRecurringViewModel.PAYMENT_CARD else null, vm.state.value.paymentType)
+        assertEquals(false, vm.cashClearedNotice.value)
+        assertEquals(cardAvailable, vm.canAdvance.value)
+
+        vm.setPaymentType(CreateRecurringViewModel.PAYMENT_CASH)
+        runCurrent()
+
+        assertEquals(true, vm.canAdvance.value)
     }
 
     @Test

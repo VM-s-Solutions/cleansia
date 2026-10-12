@@ -67,6 +67,9 @@ on:
         required: false
         default: false
 
+permissions:
+  contents: read
+
 env:
   # The least-privilege database login the hosts connect as on a stage whose param file sets
   # postgresAppLoginEnabled (deploy/AZURE-PROD-POSTURE.md §7). The provision job writes its connection
@@ -1113,7 +1116,6 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       id-token: write
-      contents: read
     strategy:
       matrix:
         region: ["${{ inputs.region }}"]
@@ -1204,8 +1206,7 @@ jobs:
     # preview never deploys.
     if: inputs.mode == 'deploy'
     runs-on: ubuntu-latest
-    permissions:
-      contents: read
+    permissions: {}
     strategy:
       matrix:
         region: ["${{ inputs.region }}"]
@@ -1231,8 +1232,7 @@ jobs:
     # See deploy-partner-spa: guarded directly because the SPAs don't depend on migrate-database.
     if: inputs.mode == 'deploy'
     runs-on: ubuntu-latest
-    permissions:
-      contents: read
+    permissions: {}
     strategy:
       matrix:
         region: ["${{ inputs.region }}"]
@@ -1330,7 +1330,6 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       id-token: write
-      contents: read
     strategy:
       matrix:
         region: ["${{ inputs.region }}"]

@@ -20,7 +20,6 @@ on:
         type: string
 
 permissions:
-  id-token: write
   contents: read
 
 jobs:
@@ -110,6 +109,9 @@ jobs:
     if: inputs.environment == 'DEV'
     needs: validate
     runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
     # Match deploy-dev.yml (environment: dev-weu) so OIDC federates with the
     # environment:dev-weu subject that holds the RBAC + the dev-scoped secrets
     # (AZURE_* + DB_CONNECTION_STRING_DEV). Without it the branch subject has no
@@ -172,6 +174,9 @@ jobs:
     if: inputs.environment == 'PRO'
     needs: validate
     runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
     environment: prod-weu
     steps:
       - name: Checkout code

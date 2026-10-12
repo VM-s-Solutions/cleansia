@@ -29,6 +29,9 @@ on:
       - 'src/cleansia_android/openapi/**'
       - '.github/workflows/ios-ci.yml'
 
+permissions:
+  contents: read
+
 # The other CI workflows carry this; this one did not, and it is the expensive one (about 10x
 # Linux billing if the repo goes private; free while public): every superseded push to a PR
 # branch ran a full 20-to-80-minute build of a SHA nobody would ever look at.

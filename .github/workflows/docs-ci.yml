@@ -35,6 +35,9 @@ on:
       - 'agents/**'
       - '.github/workflows/docs-ci.yml'
 
+permissions:
+  contents: read
+
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true

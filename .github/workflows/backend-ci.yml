@@ -40,6 +40,9 @@ on:
       - 'sql-scripts/**'
       - '.github/workflows/backend-ci.yml'
 
+permissions:
+  contents: read
+
 # A newer push to the same ref supersedes the in-flight run — the container-backed
 # suites are the long pole, and stacked runs only burn runner minutes on stale SHAs.
 concurrency:

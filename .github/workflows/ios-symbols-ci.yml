@@ -49,6 +49,9 @@ on:
       - 'agents/tools/check-ios-symbols.test.mjs'
       - '.github/workflows/ios-symbols-ci.yml'
 
+permissions:
+  contents: read
+
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true

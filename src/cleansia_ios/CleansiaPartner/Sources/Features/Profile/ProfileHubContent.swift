@@ -23,7 +23,7 @@ struct ProfileHubContent: View {
     var body: some View {
         ZStack {
             CleansiaColors.background.ignoresSafeArea()
-            ScrollView {
+            StatusBarFadeScrollView(heroTint: BrandGradient.blue.colors[0]) {
                 VStack(spacing: Spacing.l) {
                     ProfileHero(
                         employee: employee,
@@ -35,6 +35,7 @@ struct ProfileHubContent: View {
                         },
                         onAvatarLoadSuccess: avatar.loadSucceeded
                     )
+                    .statusBarFadeHero()
                     sectionGroup(title: L10n.Profile.groupAccount, rows: accountRows)
                     sectionGroup(title: L10n.Profile.groupWorkLegal, rows: workLegalRows)
                     sectionGroup(title: L10n.Profile.groupPreferences, rows: preferenceRows)

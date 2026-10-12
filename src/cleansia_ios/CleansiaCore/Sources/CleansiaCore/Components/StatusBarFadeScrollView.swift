@@ -2,9 +2,9 @@ import SwiftUI
 import UIKit
 
 /// A vertical scroll view whose content fades out under the status bar once it scrolls — for the
-/// screens that hide the navigation bar (Home, Profile, the Plus offer, the partner dashboard). Shown
-/// only once the content has scrolled, so the full-bleed heroes stay untouched at rest and a
-/// pull-to-refresh never raises it.
+/// screens that hide the navigation bar (Home, Profile, the Plus offer, the partner dashboard and the
+/// partner Profile hub). Shown only once the content has scrolled, so the full-bleed heroes stay untouched
+/// at rest and a pull-to-refresh never raises it.
 ///
 /// The fade is one solid colour, the colour actually behind the status bar: the page colour, or — on a
 /// screen with a hero at its top (`heroTint`, the hero marked `statusBarFadeHero()`) — the hero's top

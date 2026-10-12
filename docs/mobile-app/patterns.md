@@ -261,20 +261,24 @@ the fade below.
 
 ## Content fades under the status bar {#status-bar-fade}
 
-Home, Profile and the Plus offer in the customer app, and the partner dashboard, draw to the top edge
-with no navigation bar, so once their content scrolls up it passes under the clock and the camera
-cut-out. On those four screens, once the content has left its top, it fades out under the status
-bar. On iOS the fade is one solid colour, the colour
+Home, Profile and the Plus offer in the customer app, and the partner dashboard and Profile hub, draw
+to the top edge with no navigation bar, so once their content scrolls up it passes under the clock and
+the camera cut-out. On those five screens, once the content has left its top, it fades out under the
+status bar. On iOS the fade is one solid colour, the colour
 actually behind the status bar, held at 90 % over the clock, signal and battery and eased to clear in
 its last 5pt. It ends at the bottom line of the status bar's content: the Dynamic Island's or the
 notch's bottom edge, or the bottom of a home-button phone's 20pt status bar, with nothing below it,
 the same on every iOS version. On Home and the partner dashboard that colour is the page colour; on
-Profile and the Plus offer it is the hero's own colour while the hero is under the status bar, and the page colour once it has
-scrolled past. Android draws the same rule (since 2026-10-05), ending at the bottom of the camera
-hole, the line its clock is centred on (below). Until then it drew an opaque band of the page
-colour over the status bar and 24dp below it, a white band over the Plus and Profile heroes; the
-owner ruled that Android follows iOS, and that on both the fade ends at the clock and island line
-(2026-10-04). iOS changed four times (owner remarks). On 2026-10-03 a band of the page colour, like
+Profile, the partner Profile hub and the Plus offer it is the hero's own colour while the hero is
+under the status bar, and the page colour once it has scrolled past. Android draws the same rule
+(since 2026-10-05), ending at the bottom of the camera hole, the line its clock is centred on
+(below). On the partner Profile hub the two apps follow that rule with different heroes: the iOS
+hub's hero is the blue brand gradient, so its fade wears that blue while the hero is under the status
+bar and the page colour after, whereas the Android hub's hero has no colour of its own and sits on the
+page colour, so its fade is the page colour throughout. Until 2026-10-05 Android drew an opaque band
+of the page colour over the status bar and 24dp below it, a white band over the Plus and Profile
+heroes; the owner ruled that Android follows iOS, and that on both the fade ends at the clock and
+island line (2026-10-04). iOS changed four times (owner remarks). On 2026-10-03 a band of the page colour, like
 Android's then, read as a solid white strip, and the system soft edge and blur that replaced it were too
 tall, too sharp and too opaque. On 2026-10-04 the light blur under a 40 % wash of the page colour
 that followed read as a white band over the Plus offer's navy hero, and was so see-through that the
@@ -344,11 +348,12 @@ first point of scroll.
   (0.74 on the X and XS, unchanged). Between the island's or the notch's bottom and the safe area's
   top, a strip of about 11–14pt beside the housing, scrolled content shows unfaded; that is what the
   owner asked for.
-- **The colour behind the status bar.** Home passes nothing, and its fade is the page colour
-  (`CleansiaColors.background`). A screen with a hero at its top passes `heroTint` and marks the hero
-  with `statusBarFadeHero()`: the Plus offer passes `MembershipPalette.sky950`, the top of its navy
-  hero, and Profile passes its hero's top, `ProfileTab.heroTop` ([above](#full-bleed-hero)). Profile
-  takes its hero's colour for the same reason as Plus: the page colour over its blue hero was a pale
+- **The colour behind the status bar.** Home and the partner dashboard pass nothing, and their fade is
+  the page colour (`CleansiaColors.background`). A screen with a hero at its top passes `heroTint` and
+  marks the hero with `statusBarFadeHero()`: the Plus offer passes `MembershipPalette.sky950`, the top
+  of its navy hero, Profile passes its hero's top, `ProfileTab.heroTop` ([above](#full-bleed-hero)),
+  and the partner Profile hub the first stop of its blue brand gradient,
+  `BrandGradient.blue.colors[0]`. Profile takes its hero's colour for the same reason as Plus: the page colour over its blue hero was a pale
   band, on which the clock measured 1.7:1 in light mode. Both pass their hero's colour on every iOS
   version, because the screen asks for the white clock while the hero is behind it (below). From
   2026-10-04 until that change the Plus offer passed the page colour before iOS 17 in light mode
@@ -417,8 +422,9 @@ first point of scroll.
   controller answering `.lightContent` or `.default`, the band handing the bridge the share it paints,
   the reduced Plus hero mounting it, Profile's light hero top with no version check and the Plus offer
   with no `fadeHeroTint`, and that the fade has no material, no per-version branch and no system edge.
-  Checked on the iOS 26.3, 18.6 and 16.4 simulators, light and dark: Plus with its hero under the
-  status bar and with content scrolled past it, Profile's hero, and Home with a card under the clock;
+  The partner app's own `ContentSafeAreaBindingTests` pins the dashboard's wiring and the Profile
+  hub's, with its hero's colour and its marked hero. Checked on the iOS 26.3, 18.6 and 16.4
+  simulators, light and dark: Plus with its hero under the status bar and with content scrolled past it, Profile's hero, and Home with a card under the clock;
   the end line also on the iPhone 16e and the iPhone SE.
 - **Why not iOS 26's own soft edge.** From the first to the second remark of 2026-10-03, iOS 26 drew
   the system's soft scroll edge, the one a navigation bar draws: a `safeAreaBar` stand-in 24pt tall
@@ -434,11 +440,12 @@ first point of scroll.
 - **Android** applies `Modifier.statusBarFade(scrollState, heroTint, heroHeight)` (`:core`
   `ui/components/StatusBarFade.kt`, shared by both apps since 2026-10-11) directly before
   `verticalScroll(scrollState)`, so it draws over the viewport and not over the scrolled content. It
-  is visible while `scrollState.value > 0`. The partner dashboard scrolls a `LazyColumn` and has no
-  hero, so it chains the overload `Modifier.statusBarFade(listState)` on the list itself: the page
-  colour, shown once the list has left its top (`statusBarFadeScrolled`). Like Home, the dashboard
-  pads the status bar inside the scroll (its greeting row) and rests its refresh indicator below the
-  status bar. Since 2026-10-05 it draws the iOS rule:
+  is visible while `scrollState.value > 0`. The partner dashboard and Profile hub each scroll a
+  `LazyColumn` with no tinted hero (the hub's hero sits on the page colour, unlike the iOS hub's blue
+  one), so each chains the overload `Modifier.statusBarFade(listState)` on the list itself, which draws
+  the page colour once `statusBarFadeScrolled` says the list has left its top. Like Home, both pad the
+  status bar inside the scroll (the dashboard's greeting row, the hub's hero), and the dashboard rests
+  its refresh indicator below the status bar. Since 2026-10-05 the Android fade draws the iOS rule:
   - **One solid colour, the one behind the status bar.** Home passes no tint, and its fade is the
     page background. The Plus offer passes `Sky950`, its hero's top, and Profile its hero's top
     colour (`profileHeroColors`, [above](#full-bleed-hero)), each with the hero's height as measured
@@ -493,7 +500,8 @@ first point of scroll.
     fade is navy in light mode on every version. Handing them back, `StatusBarIcons` reads the theme
     from the active colour scheme (a `surface` luminance under 0.5 is dark, the `:core` idiom),
     because `:core` cannot read the customer app's theme setting; `CleansiaTheme` is built from that
-    setting, so the two agree. The partner dashboard passes no hero, so it never sets the icons.
+    setting, so the two agree. The partner dashboard and Profile hub pass no hero, so they never set
+    the icons.
   - **Home pads inside the scroll.** Home moved its status-bar padding inside the scroll, so the
     address bar starts below the status bar at rest and then scrolls under the fade. That leaves
     Home's `PullToRefreshBox` filling the whole screen, so its indicator pads `WindowInsets.statusBars`
@@ -506,11 +514,13 @@ first point of scroll.
     end line and the cutout rule (one test per API branch: the path from 31, the rectangles' span on
     28–30, neither below 28), the cross-fade, the step (the shades exist for a dark hero over the
     light page and not over a dark one; at every share from 0 to 1 the clock reads 4.5:1 in the icons
-    it is given, for Profile and Plus in both themes; one jump, never back), the icon rule, and that a
-    lazy list shows the fade only once it has left its top; `StatusBarFadeBindingTest` (customer) pins
-    each customer screen's wiring, that the fade is coloured with the stepped share, Home's padding
-    and refresh indicator, and both heroes' tint and height; the partner `DashboardScreenTest` pins
-    the dashboard's `statusBarFade(listState)`.
+    it is given, for Profile and Plus in both themes; one jump, never back), the icon rule, that a
+    lazy list shows the fade only once it has left its top, and that the lazy-list overload draws the
+    page colour over its content once `statusBarFadeScrolled` says so; `StatusBarFadeBindingTest`
+    (customer) pins each customer screen's wiring, that the fade is coloured with the stepped share,
+    Home's padding and refresh indicator, and both heroes' tint and height; the partner
+    `DashboardScreenTest` and `ProfileScreenTest` pin the dashboard's and the Profile hub's
+    `statusBarFade(listState)`.
 
 ## A booking swiped away keeps its draft {#booking-draft}
 

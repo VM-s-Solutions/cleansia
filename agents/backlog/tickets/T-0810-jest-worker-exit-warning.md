@@ -54,3 +54,7 @@ The 2026-10-07 audit (C-03) saw Jest print "A worker process has failed to exit 
   - The log contains `failed to exit gracefully` once, in `cleansia-customer-orders` (18 suites, 331 tests).
   - For comparison, locally on the same tree (Node 22.23.3, npm 10.9.9, `run-many -t test --all --parallel=3 --ci --maxWorkers=1`), all 74 projects passed with 0 occurrences.
   - The hosted runner's default workers are where the warning still shows. That is consistent with the oversubscription hypothesis above; bounding the workers stays T-0813's decision.
+- 2026-10-12 — **A second hosted observation (T-0811, [#325](https://github.com/VM-s-Solutions/cleansia/pull/325)).**
+  - Exact-head Frontend CI on `be776dc` (job `114802928983`) ran all 74 test projects after the switch to inferred `jest` targets: 408 suites and 5,038 tests passed.
+  - The log contains `failed to exit gracefully` 9 times, in nine projects: cleansia-customer-orders, cleansia-partner-invoices, cleansia-partner-orders, customer-stores, employee-management, invoice-management, membership-plan-management, order-management and pay-config-management. #322's run had 1.
+  - One run each. The production builds were also 30–40% slower on #325's runner, so the count is not attributed to the conversion. Bounding the workers stays T-0813's runtime packet.

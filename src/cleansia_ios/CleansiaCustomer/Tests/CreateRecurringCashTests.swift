@@ -28,6 +28,7 @@ final class CreateRecurringCashTests: XCTestCase {
             cleanersClient: FakeServingCleanersClient(),
             consentClient: FakeConsentStatusClient(granted: [.termsOfService, .privacyPolicy]),
             snackbar: snackbar ?? SnackbarController(),
+            isCardPaymentAvailable: true,
             quoteDebounce: .milliseconds(400),
             scheduler: scheduler.eraseToAnyScheduler()
         )

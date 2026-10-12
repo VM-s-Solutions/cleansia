@@ -71,6 +71,7 @@ import cz.cleansia.core.ui.components.CleansiaTextButton
 import cz.cleansia.core.ui.theme.primaryText
 import cz.cleansia.customer.ui.components.adjustableStepper
 import cz.cleansia.customer.ui.components.rememberStepperTick
+import cz.cleansia.customer.BuildConfig
 import cz.cleansia.customer.R
 import cz.cleansia.customer.core.booking.CashEligibility
 import cz.cleansia.customer.core.booking.PropertySize
@@ -1274,12 +1275,14 @@ private fun SelectionBadge(selected: Boolean) {
 }
 
 /**
- * Payment type — two side-by-side cards with icon + label. Replaces the
+ * Payment type — side-by-side cards with icon + label. Card shows only in a build with a Stripe key,
+ * as on iOS: without one, a card occurrence could never be confirmed. Replaces the
  * old FilterChip pair so the visual weight matches the service/package
  * cards on Step 2 and the affordance is more obviously tappable.
  */
 @Composable
 private fun PaymentTypePicker(selected: Int?, cashEnabled: Boolean, onSelect: (Int) -> Unit) {
+    val cardPaymentAvailable = BuildConfig.STRIPE_PUBLISHABLE_KEY.isNotBlank()
     Row(
         modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.spacedBy(12.dp),
@@ -1292,13 +1295,15 @@ private fun PaymentTypePicker(selected: Int?, cashEnabled: Boolean, onSelect: (I
             enabled = cashEnabled,
             onClick = { onSelect(CreateRecurringViewModel.PAYMENT_CASH) },
         )
-        PaymentCard(
-            modifier = Modifier.weight(1f),
-            icon = Icons.Outlined.CreditCard,
-            label = stringResource(R.string.recurring_create_pay_card),
-            selected = selected == CreateRecurringViewModel.PAYMENT_CARD,
-            onClick = { onSelect(CreateRecurringViewModel.PAYMENT_CARD) },
-        )
+        if (cardPaymentAvailable) {
+            PaymentCard(
+                modifier = Modifier.weight(1f),
+                icon = Icons.Outlined.CreditCard,
+                label = stringResource(R.string.recurring_create_pay_card),
+                selected = selected == CreateRecurringViewModel.PAYMENT_CARD,
+                onClick = { onSelect(CreateRecurringViewModel.PAYMENT_CARD) },
+            )
+        }
     }
 }
 

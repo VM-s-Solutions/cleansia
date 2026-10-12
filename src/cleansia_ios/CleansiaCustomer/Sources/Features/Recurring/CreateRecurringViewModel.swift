@@ -132,6 +132,7 @@ final class CreateRecurringViewModel: ViewModel {
 
     let sourceOrderId: String?
     let editing: RecurringTemplate?
+    let isCardPaymentAvailable: Bool
     let events = PassthroughSubject<CreateRecurringEvent, Never>()
     let consentClient: ConsentStatusClient
 
@@ -162,11 +163,13 @@ final class CreateRecurringViewModel: ViewModel {
         cleanersClient: ServingCleanersClient,
         consentClient: ConsentStatusClient,
         snackbar: SnackbarController,
+        isCardPaymentAvailable: Bool = StripeConfig.isCardPaymentAvailable,
         quoteDebounce: DispatchQueue.SchedulerTimeType.Stride = .milliseconds(400),
         scheduler: AnySchedulerOf<DispatchQueue> = .main
     ) {
         self.sourceOrderId = editing == nil && sourceOrderId?.isBlank == false ? sourceOrderId : nil
         self.editing = editing
+        self.isCardPaymentAvailable = isCardPaymentAvailable
         self.repository = repository
         self.catalogClient = catalogClient
         self.addressClient = addressClient
@@ -181,6 +184,8 @@ final class CreateRecurringViewModel: ViewModel {
         if let editing {
             formState = CreateRecurringFormState(editing)
             termsAsked = false
+        } else if !isCardPaymentAvailable {
+            formState.paymentType = RecurringPaymentType.cash
         }
         startMarketWatcher()
         startQuoteWatcher()
@@ -436,8 +441,14 @@ final class CreateRecurringViewModel: ViewModel {
 
     func setPaymentType(_ type: Int) {
         if type == RecurringPaymentType.cash, cashEligibility != .available { return }
+        guard offersPayment(type) else { return }
         cashCleared = false
         formState.paymentType = type
+    }
+
+    /// A build with no Stripe key hides the card, so a card is never taken in it, from a tap or a prefill.
+    private func offersPayment(_ type: Int) -> Bool {
+        type != RecurringPaymentType.card || isCardPaymentAvailable
     }
 
     /// Never replaced by card: the customer is told and chooses again.
@@ -574,7 +585,7 @@ final class CreateRecurringViewModel: ViewModel {
         state.bathrooms = min(max(0, order.bathrooms), PropertySize.maxBathrooms)
         state.selectedServiceIds = Set(order.services.compactMap(\.id))
         state.selectedPackageIds = Set(order.packages.compactMap(\.id))
-        if let paymentType = order.paymentType?.value {
+        if let paymentType = order.paymentType?.value, offersPayment(paymentType) {
             state.paymentType = paymentType
         }
         if let cleaningDate = order.cleaningDateTime {

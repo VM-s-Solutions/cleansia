@@ -111,15 +111,52 @@ class MembershipCurrencyBindingTest {
             "the screen must read card availability from the key that initialises Stripe",
             subscribe.contains("val canSubscribe = BuildConfig.STRIPE_PUBLISHABLE_KEY.isNotBlank()"),
         )
-        val gate = subscribe.indexOf("if (canSubscribe) { StickyCtaBar(")
-        assertTrue("the purchase bar must mount only inside if (canSubscribe)", gate >= 0)
-        val starts = Regex("""viewModel\.startSubscribe\(""").findAll(subscribe).map { it.range.first }.toList()
-        assertEquals("startSubscribe must have exactly one caller, the gated bar", 1, starts.size)
-        assertTrue("startSubscribe must be reachable only through the gated bar", starts.single() > gate)
+        assertTrue(
+            "the purchase bar must mount only inside if (canSubscribe)",
+            subscribe.contains("if (canSubscribe) { StickyCtaBar("),
+        )
+        val callers = customerMainSources().flatMap { file ->
+            START_SUBSCRIBE_CALL.findAll(code(file)).map { file.name to it.range.first }.toList()
+        }
+        assertEquals(
+            "startSubscribe must have exactly one caller in the app, the gated bar",
+            listOf("SubscribePlusScreen.kt"),
+            callers.map { it.first },
+        )
+        assertTrue(
+            "startSubscribe must be reachable only inside if (canSubscribe)",
+            callers.single().second in blockRange(code(File(membershipDir, "SubscribePlusScreen.kt")), "if (canSubscribe) {"),
+        )
         assertTrue(
             "without the bar the last perk must still clear the navigation bar",
             subscribe.contains("if (!canSubscribe) Spacer(Modifier.navigationBarsPadding())"),
         )
+    }
+
+    private fun customerMainSources(): List<File> {
+        val files = File(moduleDir, "src/main/java").walkTopDown().filter { it.isFile && it.extension == "kt" }.toList()
+        assertTrue("the walk must reach SubscribePlusScreen.kt", files.any { it.name == "SubscribePlusScreen.kt" })
+        assertTrue("the walk must reach MembershipViewModel.kt", files.any { it.name == "MembershipViewModel.kt" })
+        return files
+    }
+
+    /** The source without comments, so prose naming a call is never read as the call. */
+    private fun code(file: File): String =
+        file.readText().replace("\r\n", "\n").replace(COMMENTS, "")
+
+    /** From the unique [marker], which ends with the block's opening brace, to its matching closing brace. */
+    private fun blockRange(text: String, marker: String): IntRange {
+        val start = text.indexOf(marker)
+        assertTrue("no `$marker` in the source", start >= 0)
+        assertTrue("`$marker` must be unique for the gate to mean anything", start == text.lastIndexOf(marker))
+        var depth = 0
+        for (i in start + marker.length - 1 until text.length) {
+            when (text[i]) {
+                '{' -> depth++
+                '}' -> if (--depth == 0) return start..i
+            }
+        }
+        error("unbalanced braces after `$marker`")
     }
 
     /** TalkBack names the hero's back arrow, in the offer and in the not-on-sale state alike. */
@@ -160,5 +197,7 @@ class MembershipCurrencyBindingTest {
     private companion object {
         val KORUNA = Regex("""Kč|formatPriceCzk""")
         val CURRENCY_LITERAL = Regex("""CZK|Kč|EUR|€""")
+        val COMMENTS = Regex("""/\*[\s\S]*?\*/|(?<![:"])//[^\n]*""")
+        val START_SUBSCRIBE_CALL = Regex("""(?<!fun )\bstartSubscribe\(|::startSubscribe\b""")
     }
 }

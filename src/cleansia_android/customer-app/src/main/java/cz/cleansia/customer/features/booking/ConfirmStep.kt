@@ -61,6 +61,7 @@ import cz.cleansia.customer.core.booking.CashEligibility
 import cz.cleansia.customer.core.memberships.GetMyMembershipResponse
 import cz.cleansia.customer.core.memberships.benefitsPaused
 import cz.cleansia.customer.features.orders.roomsAndBathrooms
+import cz.cleansia.customer.BuildConfig
 import cz.cleansia.customer.R
 import cz.cleansia.core.format.formatOrderPrice
 import cz.cleansia.core.ui.components.CleansiaConsentCheckbox
@@ -111,6 +112,7 @@ fun ConfirmStep(
     val cashEligibility by bookingVm.cashEligibility.collectAsStateWithLifecycle()
     val cashClearedNotice by bookingVm.cashClearedNotice.collectAsStateWithLifecycle()
     val offersCardSaving by bookingVm.offersCardSaving.collectAsStateWithLifecycle()
+    val cardPaymentAvailable = BuildConfig.STRIPE_PUBLISHABLE_KEY.isNotBlank()
     // Every money row comes from the one resolver, so this card and the sticky bar below it cannot
     // disagree with each other or with the total the order is created with.
     val payByCard = state.paymentMethod == BookingViewModel.PAYMENT_CARD
@@ -415,21 +417,24 @@ fun ConfirmStep(
         SectionLabel(stringResource(R.string.booking_payment_method))
         Spacer(Modifier.height(10.dp))
 
-        PaymentOption(
-            icon = Icons.Outlined.CreditCard,
-            title = stringResource(R.string.booking_pay_card),
-            subtitle = stringResource(R.string.booking_pay_card_desc),
-            selected = state.paymentMethod == BookingViewModel.PAYMENT_CARD,
-            onClick = { bookingVm.selectPaymentMethod(BookingViewModel.PAYMENT_CARD) },
-        )
-        if (offersCardSaving) {
-            Spacer(Modifier.height(8.dp))
-            CardSavingConsent(
-                saved = state.saveCard,
-                onSavedChange = { onUpdate(state.copy(saveCard = it)) },
+        // Without a Stripe key the sheet cannot open, so there is no card to pay by (as on iOS).
+        if (cardPaymentAvailable) {
+            PaymentOption(
+                icon = Icons.Outlined.CreditCard,
+                title = stringResource(R.string.booking_pay_card),
+                subtitle = stringResource(R.string.booking_pay_card_desc),
+                selected = state.paymentMethod == BookingViewModel.PAYMENT_CARD,
+                onClick = { bookingVm.selectPaymentMethod(BookingViewModel.PAYMENT_CARD) },
             )
+            if (offersCardSaving) {
+                Spacer(Modifier.height(8.dp))
+                CardSavingConsent(
+                    saved = state.saveCard,
+                    onSavedChange = { onUpdate(state.copy(saveCard = it)) },
+                )
+            }
+            Spacer(Modifier.height(8.dp))
         }
-        Spacer(Modifier.height(8.dp))
         PaymentOption(
             icon = Icons.Outlined.Payments,
             title = stringResource(R.string.booking_pay_cash),

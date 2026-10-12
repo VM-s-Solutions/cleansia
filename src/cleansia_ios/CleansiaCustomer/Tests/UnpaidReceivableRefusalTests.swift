@@ -101,6 +101,7 @@ final class UnpaidReceivableRefusalTests: XCTestCase {
             cleanersClient: FakeServingCleanersClient(),
             consentClient: FakeConsentStatusClient(granted: [.termsOfService, .privacyPolicy]),
             snackbar: snackbar,
+            isCardPaymentAvailable: true,
             quoteDebounce: .milliseconds(400),
             scheduler: scheduler.eraseToAnyScheduler()
         )

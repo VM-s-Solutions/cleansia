@@ -15,7 +15,8 @@ final class CreateRecurringViewModelTests: XCTestCase {
         catalog: FakeCatalogClient = FakeCatalogClient(result: .success(CatalogFixtures.populated)),
         addressClient: FakeRecurringSavedAddressClient = FakeRecurringSavedAddressClient(),
         orderClient: FakeOrderClient = FakeOrderClient(),
-        snackbar: SnackbarController? = nil
+        snackbar: SnackbarController? = nil,
+        cardPaymentAvailable: Bool = true
     ) -> (CreateRecurringViewModel, FakeRecurringBookingClient) {
         let repo = RecurringBookingRepository(client: recurringClient)
         let vm = CreateRecurringViewModel(
@@ -29,6 +30,7 @@ final class CreateRecurringViewModelTests: XCTestCase {
             cleanersClient: FakeServingCleanersClient(),
             consentClient: FakeConsentStatusClient(granted: [.termsOfService, .privacyPolicy]),
             snackbar: snackbar ?? SnackbarController(),
+            isCardPaymentAvailable: cardPaymentAvailable,
             scheduler: TestScheduler.dispatch.eraseToAnyScheduler()
         )
         return (vm, recurringClient)
@@ -300,6 +302,40 @@ final class CreateRecurringViewModelTests: XCTestCase {
         XCTAssertEqual(vm.formState.bathrooms, 2)
         XCTAssertEqual(vm.formState.paymentType, 2)
         XCTAssertTrue(vm.formState.selectedServiceIds.contains("s-1"))
+    }
+
+    /// A build with no Stripe key hides the card, so a new schedule starts on cash and no card the customer
+    /// cannot see is ever taken: not from a tap, and not from the card order the form was prefilled from.
+    func testABuildWithNoStripeKeyStartsANewScheduleOnCash() {
+        let (vm, _) = makeVM(cardPaymentAvailable: false)
+
+        XCTAssertFalse(vm.isCardPaymentAvailable)
+        XCTAssertEqual(vm.formState.paymentType, RecurringPaymentType.cash)
+        XCTAssertEqual(makeVM().0.formState.paymentType, RecurringPaymentType.card, "a keyed build changed")
+    }
+
+    func testABuildWithNoStripeKeyRefusesACardChoice() {
+        let (vm, _) = makeVM(cardPaymentAvailable: false)
+
+        vm.setPaymentType(RecurringPaymentType.card)
+
+        XCTAssertEqual(vm.formState.paymentType, RecurringPaymentType.cash)
+    }
+
+    func testABuildWithNoStripeKeyDoesNotCarryACardOrdersPaymentIntoTheSchedule() async {
+        let orderClient = FakeOrderClient()
+        orderClient.detailResults = [.success(OrderFixtures.detail(
+            id: "ord-7",
+            statusCode: Code(type: "OrderStatus", name: nil, value: 5),
+            services: [OrderFixtures.service(id: "s-1")],
+            paymentType: Code(type: "PaymentType", name: nil, value: RecurringPaymentType.card)
+        ))]
+        let (vm, _) = makeVM(sourceOrderId: "ord-7", orderClient: orderClient, cardPaymentAvailable: false)
+
+        await vm.load()
+
+        XCTAssertTrue(vm.formState.selectedServiceIds.contains("s-1"), "the prefill did not run")
+        XCTAssertEqual(vm.formState.paymentType, RecurringPaymentType.cash)
     }
 
     /// The default address decides the market the repeated order is priced in: a Slovak address reads

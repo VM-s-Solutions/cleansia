@@ -49,6 +49,7 @@ final class OrderDetailViewModel: ViewModel {
     private let snackbar: SnackbarController
     private let eventBus: OrderEventBus
     private let paymentIntentClient: PaymentIntentClient
+    private let isCardPaymentAvailable: Bool
     private let consentClient: ConsentStatusClient
     private let liveActivity: OrderLiveActivitySyncing
     /// Re-reads the credit balance the Rewards and Profile screens show. Required, with no default: the
@@ -76,6 +77,7 @@ final class OrderDetailViewModel: ViewModel {
         snackbar: SnackbarController,
         eventBus: OrderEventBus,
         paymentIntentClient: PaymentIntentClient = LivePaymentIntentClient(),
+        isCardPaymentAvailable: Bool = StripeConfig.isCardPaymentAvailable,
         consentClient: ConsentStatusClient = LiveConsentStatusClient(),
         liveActivity: OrderLiveActivitySyncing = LiveActivityBridge(),
         onCreditMoved: @escaping () -> Void,
@@ -94,6 +96,7 @@ final class OrderDetailViewModel: ViewModel {
         self.snackbar = snackbar
         self.eventBus = eventBus
         self.paymentIntentClient = paymentIntentClient
+        self.isCardPaymentAvailable = isCardPaymentAvailable
         self.consentClient = consentClient
         self.liveActivity = liveActivity
         self.onCreditMoved = onCreditMoved
@@ -393,8 +396,14 @@ final class OrderDetailViewModel: ViewModel {
     /// The order is read through the customer's own session, so a card occurrence awaiting confirmation is a
     /// signed-in card payment.
     var offersCardSaving: Bool {
-        guard let order = state.loadedValue else { return false }
+        guard isCardPaymentAvailable, let order = state.loadedValue else { return false }
         return order.needsConfirmation && order.paymentType?.value == 2
+    }
+
+    /// A build with no Stripe key has no sheet to pay through, so a card occurrence is not confirmed from it: the
+    /// server would spend its credit and mint an intent nobody can pay.
+    private var isCardOccurrenceWithoutStripe: Bool {
+        !isCardPaymentAvailable && state.loadedValue?.paymentType?.value == 2
     }
 
     func setSaveCard(_ save: Bool) {
@@ -409,7 +418,7 @@ final class OrderDetailViewModel: ViewModel {
 
     /// Closed until the consents are read, so the box never flashes up over an account that already holds them.
     var canConfirmRecurring: Bool {
-        alreadyConsented == true || (asksForTerms && termsAccepted)
+        !isCardOccurrenceWithoutStripe && (alreadyConsented == true || (asksForTerms && termsAccepted))
     }
 
     func setTermsAccepted(_ accepted: Bool) {
@@ -432,7 +441,7 @@ final class OrderDetailViewModel: ViewModel {
     /// UX-only — the view calls `notifyRecurringPaymentResult` and we re-read the
     /// order; the webhook remains the sole paid authority.
     func confirmRecurring() async {
-        guard !orderId.isBlank, !confirmRecurringState.isSubmitting else { return }
+        guard !orderId.isBlank, !confirmRecurringState.isSubmitting, !isCardOccurrenceWithoutStripe else { return }
         confirmRecurringState = .submitting
         // Asserted only when the box was shown and ticked; an account that saw no box asserts nothing new.
         let terms: Bool? = asksForTerms && termsAccepted ? true : nil

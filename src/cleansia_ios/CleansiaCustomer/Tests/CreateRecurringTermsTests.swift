@@ -25,6 +25,7 @@ final class CreateRecurringTermsTests: XCTestCase {
             cleanersClient: FakeServingCleanersClient(),
             consentClient: consent,
             snackbar: SnackbarController(),
+            isCardPaymentAvailable: true,
             scheduler: TestScheduler.dispatch.eraseToAnyScheduler()
         )
     }

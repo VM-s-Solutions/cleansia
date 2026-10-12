@@ -152,7 +152,7 @@ fall back to an empty string so an unconfigured clone still builds:
 | `MAPBOX_ACCESS_TOKEN` | both | maps fail to load at runtime with a clear error |
 | `API_BASE_URL` | both | per-build-type default above |
 | `SENTRY_DSN` | customer | Sentry stays dormant (no-op init) |
-| `STRIPE_PUBLISHABLE_KEY` | customer | the Plus purchase bar is hidden, as on iOS; a card booking still reaches PaymentSheet, which fails at runtime with a clear error |
+| `STRIPE_PUBLISHABLE_KEY` | customer | no card payment is offered, as on iOS: booking and the recurring-schedule form offer cash only, a card occurrence of a recurring booking shows no confirm, and the Plus purchase bar is hidden. A release build refuses an empty key (below) |
 | `GOOGLE_WEB_CLIENT_ID` | customer | the Google sign-in button fails with a clear message |
 
 `google-services.json` is gitignored per app. If it is missing, the build copies the committed
@@ -163,6 +163,18 @@ config the release variant reads is real — `<app>/src/release/google-services.
 build reads ahead of `<app>/google-services.json`. The owner puts the production Firebase project's
 config for `cz.cleansia.partner` and `cz.cleansia.customer` there (gitignored); debug builds keep
 reading the module-root file.
+
+**A build with no `STRIPE_PUBLISHABLE_KEY` offers no card payment, and cash is not always
+possible.** Booking hides the card option and its saving consent, and the recurring-schedule form
+hides its card option. A card occurrence of a recurring booking shows no confirm, because confirming
+it would spend the customer's credit for a payment sheet that cannot open. A new schedule starts with
+no way to pay chosen, as a booking does; one made from a card order still copies card, and an edit
+keeps the schedule's way to pay, card included. Cash needs a signed-in customer and a booking one
+cleaner does alone, so a guest booking, or a booking or schedule that needs two cleaners, has no way
+to pay at all. **A release packaging task refuses an empty key**, which would ship the app with card
+payment hidden, and **every build, debug included, refuses a key that does not start with `pk_`**: a
+secret key must never be built into a client. Both checks run at configuration time in
+`customer-app/build.gradle.kts`; iOS's `check-local-config.sh` grades the same two cases (below).
 
 ### Permissions
 
@@ -537,11 +549,13 @@ builds:
 
 | Missing | Simulator / Debug | Device / Release |
 |---|---|---|
-| `STRIPE_PUBLISHABLE_KEY` | warning — card payment hidden, cash only (fail-closed) — and cash itself needs a signed-in customer and a one-cleaner booking | build **error** on Release |
+| `STRIPE_PUBLISHABLE_KEY` | warning — card payment hidden, cash only (fail-closed): booking and a new recurring schedule offer no card, and a new schedule starts on cash; a card occurrence's confirm is disabled and refused. Cash itself needs a signed-in customer and a one-cleaner booking. Payments → Add card is still offered (below) | build **error** on Release |
 | `DEVELOPMENT_TEAM` | no diagnostic (the simulator needs no signing) | build **error** |
 
-A secret key (`sk_…`) in the publishable slot is always a build error. The severity rules have their
-own test: `./scripts/tests/check-local-config.test.sh`.
+A key that does not start with `pk_`, a secret `sk_…` key above all, is always a build error. The
+severity rules have their own test: `./scripts/tests/check-local-config.test.sh`. In a keyless build an
+edit of a card schedule keeps card, as on Android, and **Payments → Add card is not yet gated on the
+key**: it is still offered, and asks the server to start a card capture that the build cannot complete.
 
 ### Building and testing
 

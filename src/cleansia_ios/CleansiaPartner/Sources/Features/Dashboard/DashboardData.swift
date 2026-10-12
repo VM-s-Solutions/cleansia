@@ -76,7 +76,10 @@ struct DashboardData: Equatable {
     }
 
     private static func todaysJobsCount(in upcoming: [OrderListItem], now: Date) -> Int {
-        upcoming.filter { $0.cleaningDateTime.map { Calendar.current.isDate($0, inSameDayAs: now) } ?? false }.count
+        upcoming.filter { order in
+            order.status != ._6
+                && (order.cleaningDateTime.map { Calendar.current.isDate($0, inSameDayAs: now) } ?? false)
+        }.count
     }
 
     /// Android's `pickNextJob`. An undated order is never the next job.

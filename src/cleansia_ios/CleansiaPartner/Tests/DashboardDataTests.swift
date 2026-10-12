@@ -4,7 +4,7 @@ import XCTest
 
 /// The hero answers "what is my next job" before "what work is there": Android's `pickNextJob` takes the
 /// soonest upcoming order the cleaner is on (Confirmed, On the way or In progress) over the board's preview,
-/// and the greeting counts the upcoming orders dated today (`filterTodaysJobs`).
+/// and the greeting counts the upcoming orders dated today that were not cancelled (`todaysJobCount`).
 final class DashboardDataTests: XCTestCase {
     private static let now = Calendar.current.date(from: DateComponents(year: 2026, month: 11, day: 9, hour: 10))
         ?? Date()
@@ -64,6 +64,7 @@ final class DashboardDataTests: XCTestCase {
             .upcoming(id: "this-morning", status: 4, startsAt: hours(-2)),
             .upcoming(id: "tonight", status: 2, startsAt: hours(9)),
             .upcoming(id: "unconfirmed-today", status: 0, startsAt: hours(4)),
+            .upcoming(id: "cancelled-today", status: 6, startsAt: hours(3)),
             .upcoming(id: "tomorrow", status: 2, startsAt: hours(24)),
             .upcoming(id: "yesterday", status: 4, startsAt: hours(-24)),
             .upcoming(id: "undated", status: 2, startsAt: nil)

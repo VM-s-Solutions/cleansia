@@ -6,16 +6,18 @@
   "projectType": "library",
   "tags": ["scope:admin", "type:feature"],
   "targets": {
-    "test": {
-      "executor": "@nx/jest:jest",
-      "outputs": ["{workspaceRoot}/coverage/{projectRoot}"],
-      "options": {
-        "jestConfig": "libs/cleansia-admin-features/country-management/jest.config.ts",
-        "tsConfig": "libs/cleansia-admin-features/country-management/tsconfig.spec.json"
-      }
-    },
     "lint": {
-      "executor": "@nx/eslint:lint"
+      "inputs": [
+        "default",
+        "^default",
+        "{workspaceRoot}/eslint.config.mjs",
+        "{workspaceRoot}/eslint.base.config.mjs",
+        "{workspaceRoot}/eslint.module-boundaries.config.mjs",
+        "{workspaceRoot}/eslint.generated-dto.config.mjs",
+        {
+          "externalDependencies": ["eslint"]
+        }
+      ]
     }
   }
 }

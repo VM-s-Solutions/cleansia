@@ -37,24 +37,6 @@
         "{workspaceRoot}/eslint.generated-dto.config.mjs"
       ]
     },
-    "@nx/jest:jest": {
-      "cache": true,
-      "inputs": [
-        "default",
-        "^production",
-        "{workspaceRoot}/jest.preset.js",
-        "{workspaceRoot}/jest.polyfills.ts"
-      ],
-      "options": {
-        "passWithNoTests": true
-      },
-      "configurations": {
-        "ci": {
-          "ci": true,
-          "codeCoverage": true
-        }
-      }
-    },
     "@nx/angular:ng-packagr-lite": {
       "cache": true,
       "dependsOn": ["^build"],
@@ -69,7 +51,23 @@
       "cache": true,
       "dependsOn": ["^build"],
       "inputs": ["production", "^production"]
-    }
+    },
+    "test": [
+      {
+        "filter": {
+          "plugin": "@nx/jest/plugin"
+        },
+        "configurations": {
+          "ci": {
+            "ci": true,
+            "coverage": true
+          }
+        },
+        "options": {
+          "passWithNoTests": true
+        }
+      }
+    ]
   },
   "plugins": [
     {
@@ -83,6 +81,88 @@
       "options": {
         "targetName": "lint"
       }
+    },
+    {
+      "plugin": "@nx/jest/plugin",
+      "options": {
+        "targetName": "test"
+      },
+      "include": [
+        "apps/cleansia-admin.app/**/*",
+        "apps/cleansia-partner.app/**/*",
+        "apps/cleansia.app/**/*",
+        "libs/cleansia-admin-features/admin-login/**/*",
+        "libs/cleansia-admin-features/admin-profile/**/*",
+        "libs/cleansia-admin-features/admin-user-management/**/*",
+        "libs/cleansia-admin-features/audit-log/**/*",
+        "libs/cleansia-admin-features/company-lifecycle/**/*",
+        "libs/cleansia-admin-features/company-management/**/*",
+        "libs/cleansia-admin-features/company-settings/**/*",
+        "libs/cleansia-admin-features/country-management/**/*",
+        "libs/cleansia-admin-features/currency-management/**/*",
+        "libs/cleansia-admin-features/data-protection/**/*",
+        "libs/cleansia-admin-features/disputes-management/**/*",
+        "libs/cleansia-admin-features/employee-document-config/**/*",
+        "libs/cleansia-admin-features/employee-management/**/*",
+        "libs/cleansia-admin-features/extra-management/**/*",
+        "libs/cleansia-admin-features/fiscal-failures/**/*",
+        "libs/cleansia-admin-features/invoice-management/**/*",
+        "libs/cleansia-admin-features/language-management/**/*",
+        "libs/cleansia-admin-features/legal-documents/**/*",
+        "libs/cleansia-admin-features/loyalty-promo-codes/**/*",
+        "libs/cleansia-admin-features/loyalty-referrals/**/*",
+        "libs/cleansia-admin-features/loyalty-tier-configs/**/*",
+        "libs/cleansia-admin-features/loyalty-user-detail/**/*",
+        "libs/cleansia-admin-features/marketing/**/*",
+        "libs/cleansia-admin-features/membership-plan-management/**/*",
+        "libs/cleansia-admin-features/notifications/**/*",
+        "libs/cleansia-admin-features/order-management/**/*",
+        "libs/cleansia-admin-features/package-management/**/*",
+        "libs/cleansia-admin-features/pay-config-management/**/*",
+        "libs/cleansia-admin-features/pay-periods/**/*",
+        "libs/cleansia-admin-features/reports/**/*",
+        "libs/cleansia-admin-features/service-management/**/*",
+        "libs/cleansia-admin-features/template-management/**/*",
+        "libs/cleansia-customer-features/checkout/**/*",
+        "libs/cleansia-customer-features/confirm-email/**/*",
+        "libs/cleansia-customer-features/disputes/**/*",
+        "libs/cleansia-customer-features/forgot-password/**/*",
+        "libs/cleansia-customer-features/gdpr/**/*",
+        "libs/cleansia-customer-features/home/**/*",
+        "libs/cleansia-customer-features/legal-pages/**/*",
+        "libs/cleansia-customer-features/login/**/*",
+        "libs/cleansia-customer-features/order-wizard/**/*",
+        "libs/cleansia-customer-features/orders/**/*",
+        "libs/cleansia-customer-features/plus/**/*",
+        "libs/cleansia-customer-features/profile/**/*",
+        "libs/cleansia-customer-features/recurring-bookings/**/*",
+        "libs/cleansia-customer-features/register/**/*",
+        "libs/cleansia-customer-features/rewards/**/*",
+        "libs/cleansia-customer-features/services-catalog/**/*",
+        "libs/cleansia-partner-features/confirm-email/**/*",
+        "libs/cleansia-partner-features/dashboard/**/*",
+        "libs/cleansia-partner-features/forgot-password/**/*",
+        "libs/cleansia-partner-features/gdpr/**/*",
+        "libs/cleansia-partner-features/invoices/**/*",
+        "libs/cleansia-partner-features/login/**/*",
+        "libs/cleansia-partner-features/orders/**/*",
+        "libs/cleansia-partner-features/profile/**/*",
+        "libs/cleansia-partner-features/register/**/*",
+        "libs/core/admin-services/**/*",
+        "libs/core/customer-services/**/*",
+        "libs/core/partner-services/**/*",
+        "libs/core/services/**/*",
+        "libs/data-access/admin-stores/**/*",
+        "libs/data-access/customer-stores/**/*",
+        "libs/data-access/partner-stores/**/*",
+        "libs/shared/assets/**/*",
+        "libs/shared/components/**/*",
+        "libs/shared/directives/**/*",
+        "libs/shared/models/**/*",
+        "libs/shared/pipes/**/*",
+        "libs/shared/types/**/*",
+        "libs/shared/utils/**/*"
+      ]
     }
   ],
   "generators": {

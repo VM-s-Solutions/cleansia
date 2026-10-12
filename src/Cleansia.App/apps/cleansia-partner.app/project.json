@@ -10,6 +10,7 @@
       "executor": "@angular-devkit/build-angular:application",
       "outputs": ["{options.outputPath}"],
       "dependsOn": [],
+      "defaultConfiguration": "production",
       "options": {
         "outputPath": "dist/apps/cleansia-partner.app",
         "index": "apps/cleansia-partner.app/src/index.html",
@@ -88,12 +89,12 @@
           "extractLicenses": false,
           "sourceMap": true
         }
-      },
-      "defaultConfiguration": "production"
+      }
     },
     "serve": {
       "continuous": true,
       "executor": "@angular-devkit/build-angular:dev-server",
+      "defaultConfiguration": "development",
       "options": {
         "port": 4200,
         "proxyConfig": "apps/cleansia-partner.app/proxy.conf.json"
@@ -109,8 +110,7 @@
           "buildTarget": "cleansia-partner.app:build:development",
           "proxyConfig": "apps/cleansia-partner.app/proxy.devremote.conf.json"
         }
-      },
-      "defaultConfiguration": "development"
+      }
     },
     "extract-i18n": {
       "executor": "@angular-devkit/build-angular:extract-i18n",
@@ -119,14 +119,19 @@
       }
     },
     "lint": {
-      "executor": "@nx/eslint:lint"
+      "inputs": [
+        "default",
+        "^default",
+        "{workspaceRoot}/eslint.config.mjs",
+        "{workspaceRoot}/eslint.base.config.mjs",
+        "{workspaceRoot}/eslint.module-boundaries.config.mjs",
+        "{workspaceRoot}/eslint.generated-dto.config.mjs",
+        {
+          "externalDependencies": ["eslint"]
+        }
+      ]
     },
     "test": {
-      "executor": "@nx/jest:jest",
-      "outputs": ["{workspaceRoot}/coverage/{projectRoot}"],
-      "options": {
-        "jestConfig": "apps/cleansia-partner.app/jest.config.ts"
-      },
       "inputs": [
         "default",
         "^production",
@@ -134,6 +139,14 @@
         "{workspaceRoot}/jest.polyfills.ts",
         {
           "runtime": "node -e \"const c=require('crypto'),f=require('fs'),p=require('path'),h=c.createHash('sha256');const w=x=>f.statSync(x).isDirectory()?f.readdirSync(x).sort().flatMap(e=>['bin','obj'].includes(e)?[]:w(p.join(x,e))):[x];for(const r of process.argv.slice(1))for(const x of w(r))if(x===r||x.endsWith('.cs'))h.update(x).update(f.readFileSync(x));process.stdout.write(h.digest('hex'))\" ../Cleansia.Core.AppServices ../Cleansia.Web.Partner/Controllers"
+        },
+        {
+          "externalDependencies": [
+            "jest",
+            "@nx/jest",
+            "ts-jest",
+            "jest-preset-angular"
+          ]
         }
       ]
     },

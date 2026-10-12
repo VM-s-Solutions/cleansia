@@ -13,7 +13,8 @@ struct CreateRecurringFormState: Equatable {
     var savedAddressId = ""
     var selectedServiceIds: Set<String> = []
     var selectedPackageIds: Set<String> = []
-    /// Nil until the customer picks: a build with no Stripe key holds no card, and a cash choice taken away is cleared.
+    /// Card by default. Nil while no way to pay is chosen: a build with no Stripe key holds no card, so a new,
+    /// prefilled or edited card schedule starts with none; and a cash choice taken away stays cleared until a pick.
     var paymentType: Int? = RecurringPaymentType.card
     var startsOn: Date?
     var preferredEmployeeId: String?

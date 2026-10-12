@@ -10,7 +10,8 @@ namespace Cleansia.Core.Domain.LiveActivities;
 /// install-lived, revocation-coupled <c>Device</c> aggregate is rejected on cardinality and lifecycle.
 ///
 /// Rows are hours-lived operational addressing data and are HARD-deleted (consumer terminal-send
-/// cleanup, APNs 410 prune, the 24h janitor, and the logout/revoke cascade) — deliberately NOT the
+/// cleanup, APNs 410 prune, the 24h janitor, the logout/revoke cascade, GDPR erasure, and the
+/// shared-phone retirement when another account registers the same install) — deliberately NOT the
 /// ADR-0007 soft-delete domain surface.
 /// </summary>
 public class LiveActivityToken : TenantAuditable

@@ -319,12 +319,14 @@ member yet also needs to iterate the whole set (e.g. customer `UserRepository.de
 everything) injects `Provider<Set<@JvmSuppressWildcards SessionScopedCache>>` and calls `.get()` — the
 same lazy cycle-breaker `AuthAuthenticator`/partner `AuthRepository` use; a direct `Set<…>` inject is a
 self-referential Dagger cycle. Never hand-maintain a partial clear-list — iterate the set so
-sign-out, forced-401, and account-deletion can't drift.
+sign-out, forced-401, account-deletion and sign-in (before the new tokens are stored) can't drift.
 
 **This is a security law, not a style rule — `security-rules.md` S11 (`consistency.md` E9 = the mechanism
-+ allowlist).** The wipe set is iterated on **all three** triggers — voluntary sign-out, the
-authenticator's forced-401 (revoked/reset session), and account-deletion — so membership is what stops
-the prior user's data reaching the next account on a shared device. **The ONE sanctioned way to leave a
++ allowlist).** The wipe set is iterated on **all four** triggers — voluntary sign-out, the
+authenticator's forced-401 (revoked/reset session), account-deletion, and sign-in before the new tokens
+are stored (partner `AuthRepository.kt:136`/`:198`, customer `AuthRepository.kt:222`, iOS Core
+`Auth.swift:197`) — so membership is what stops the prior user's data reaching the next account on a
+shared device. **The ONE sanctioned way to leave a
 per-user-looking `@Singleton` out is the named, reason-annotated allowlist in `consistency.md` E9**
 (device-level / public caches only): `CatalogRepository` (the *public* services/packages catalog —
 identical for every user, anonymous-fetchable), the `ServiceAreaDataSource`s (public serviced-cities),

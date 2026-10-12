@@ -269,10 +269,14 @@ Canonical shape (see `patterns-backend.md` for the full sample). **Every paged/l
   class (iOS) that holds **per-user state** (a cached `StateFlow`/`@Published`, a DataStore/`UserDefaults`
   row, a `Staleness` watermark, or a `Map` of these) **MUST** join the wipe set: Android — implement
   `SessionScopedCache` + `@Binds @IntoSet … : SessionScopedCache`; iOS — conform + `register(self)` with
-  the `SessionScopedCacheRegistry`. The set is iterated on **all three** wipe-triggers (sign-out,
-  authenticator forced-401, account-deletion) — never a hand-maintained partial clear-list (§`patterns-mobile.md`
-  "three non-obvious rules"). ✗ *Don't* leave a per-user holder out — it leaks the prior user's data to
-  the next account on a shared device.
+  the `SessionScopedCacheRegistry`. The set is iterated on **all four** wipe-triggers S11 names (sign-out,
+  authenticator forced-401, account-deletion, and sign-in before the new tokens are stored) — never a
+  hand-maintained partial clear-list (§`patterns-mobile.md` "three non-obvious rules"). **Enforced by:**
+  for the sign-in trigger only, `AuthRepositorySignInWipeTest` (partner Android,
+  `:partner-app:testDebugUnitTest`, android-ci) and `SignInWipeTests` (`CleansiaCoreTests`, `ios-ci.yml` →
+  "Build & test CleansiaCore") — `T1-CI`, closed roster: the customer Android sign-in wipe
+  (`customer-app/…/core/auth/AuthRepository.kt:217-222`) is outside it. ✗ *Don't* leave a per-user holder
+  out — it leaks the prior user's data to the next account on a shared device.
 
   **The allowlist (the ONE sanctioned exclusion — device-level / public caches).** A `@Singleton` that
   caches state whose value is **the same for every user** (public/anonymous-fetchable, or device-scoped)

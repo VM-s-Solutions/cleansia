@@ -200,7 +200,7 @@ Two shared mechanisms decide when a screen re-fetches and when it must forget ev
 | Mechanism | Android | iOS | Purpose |
 |---|---|---|---|
 | Freshness watermark | `core/freshness/Staleness` | `State/Staleness` | a repository stamps `markFresh()` after a successful fetch; a view model checks `isStale()` on screen entry and skips the round trip if the cache is warm. A user-initiated pull always bypasses it — the user's intent outranks the cache age. |
-| Session-scoped cache | `auth/SessionScopedCache` (a Hilt multibinding) | `SessionScopedCacheRegistry` | any repository holding per-user state joins the set and is wiped automatically on sign-out **and** on forced sign-out. There is no hand-maintained list to keep in sync, so the two clear-paths cannot drift. |
+| Session-scoped cache | `auth/SessionScopedCache` (a Hilt multibinding) | `SessionScopedCacheRegistry` | any repository holding per-user state joins the set and is wiped automatically on sign-out, on forced sign-out, on account deletion and at sign-in before the new tokens are stored. There is no hand-maintained list to keep in sync, so the four paths cannot drift. |
 
 A repository may hold both, and should reset its `Staleness` from its `clear()` so the watermark
 does not survive a session swap.

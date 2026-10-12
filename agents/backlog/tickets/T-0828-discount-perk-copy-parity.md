@@ -41,7 +41,7 @@ The same string keys say different things on the two apps; Android is the refere
   - The first version branched on the trial copy and tripped the existing guard against holding a perk back from a trialing member. It was reworked.
   - RED: the five-locale copy test, and both screens' title test.
   - GREEN: both. The customer suite passes, and so does `StringCatalogCompletenessTests`.
-- 2026-10-12 — Committed as `3b7ca50`. Full suites on the final tree, from the review fix pass: Android core 294, partner 834 and customer 1679, all passing. iOS on 18.6 and on the 16.4 floor: Core 775/0, Partner 1109/0, and Customer 1770 with 1 skipped (the VoiceOver-only chip test) and 0 failures. After that run only two test files changed (T-0829's source pin, T-0831's time-zone pin), each run green at class level, plus comment-only edits. Every Android-touching commit compiles on its own.
+- 2026-10-12 — Committed as `4bdc9cb`. Full suites on the final tree, from the review fix pass: Android core 294, partner 834 and customer 1679, all passing. iOS on 18.6 and on the 16.4 floor: Core 775/0, Partner 1109/0, and Customer 1770 with 1 skipped (the VoiceOver-only chip test) and 0 failures. After that run only two test files changed (T-0829's source pin, T-0831's time-zone pin), each run green at class level, plus comment-only edits. Every Android-touching commit compiles on its own.
 
 ## Review
 

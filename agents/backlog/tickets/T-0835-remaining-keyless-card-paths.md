@@ -1,6 +1,6 @@
 ---
 id: T-0835
-title: Close the keyless card paths T-0821 left: Android recurring prefill and edit, iOS Payments > Add card
+title: Close the keyless card paths T-0821 left: Android recurring prefill, recurring edit on both apps, iOS Payments > Add card
 size: S
 owner: pm
 created: 2026-10-12
@@ -15,9 +15,9 @@ security_touching: true
 
 ## Context
 
-Found on 2026-10-12. These paths were outside T-0821's Doing. No money can move:
+Found on 2026-10-11 (iOS Add card, by the first-pass iOS reviews) and 2026-10-12 (the prefill and edit paths, by the fix pass and the re-reviews). These paths were outside T-0821's Doing. No money can move:
 - The only off-session charge, `ChargeOpenReceivables`, sits behind `Payments:OffSessionChargesEnabled` (`ChargeOpenReceivables.cs:56`).
-- A keyless build hides the occurrence confirm.
+- A keyless build offers no working occurrence confirm: Android hides it, and iOS shows it disabled and refuses the call.
 - A release build refuses a blank key (`customer-app/build.gradle.kts:256-262`).
 
 So only debug builds are affected.
@@ -26,7 +26,7 @@ So only debug builds are affected.
 - `CreateRecurringViewModel.kt:674` (`prefillFromOrder`) copies `order.paymentType?.value`.
 - `:629` (edit) keeps `template.paymentType`.
 
-Both put card into a keyless form whose card option is hidden. The form stays valid, so Save creates or keeps a card schedule the customer never saw selected. iOS already refuses the prefilled card (`CreateRecurringViewModel.swift:450-452`, `:588`).
+Both put card into a keyless form whose card option is hidden. The form stays valid, so Save creates or keeps a card schedule the customer never saw selected. iOS already refuses the prefilled card (`CreateRecurringViewModel.swift:450-452`, `:588`), but its edit keeps card too: the keyless cash default applies only to a new schedule (`:184-189`).
 
 **iOS.** Payments > Add card is not gated on `StripeConfig.isCardPaymentAvailable`. `PaymentsViewModel.swift:119-136` starts a server SetupIntent and a pending saved card that a keyless build cannot present. Android has no Add-card caller.
 
@@ -39,7 +39,8 @@ Both put card into a keyless form whose card option is hidden. The form stays va
 
 ## Doing (proposed, for Mike)
 
-- Android: prefill and edit fall back to cash when no key is configured, as iOS does. A pin covers each.
+- Android: the prefill falls back to cash when no key is configured, as iOS's prefill does. A pin covers it.
+- Edit, on both apps: a keyless edit of a card schedule keeps card, with the card row hidden. Pick one behaviour for both apps, and pin it.
 - iOS: Add card is hidden without a key. A pin covers it.
 
 ## NOT doing

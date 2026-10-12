@@ -1106,10 +1106,10 @@ need backfilling.
   - On iOS, coming back to the dashboard within a minute no longer reloads it.
 
   (T-0823, T-0831)
-- **Cleaner Android and iOS — every money screen shows the koruna as *Kč*.** Earnings, invoices and
-  period pay now print *Kč* on English and Ukrainian phones too, as the dashboard already did. An
-  amount whose currency the server does not name shows no symbol, rather than one guessed from the
-  phone's language. (T-0824)
+- **Cleaner Android and iOS — earnings, invoices and period pay show the koruna as *Kč*.** They now
+  print *Kč* on English and Ukrainian phones too, as the dashboard already did. An amount whose
+  currency the server does not name shows no symbol, rather than the currency of the phone's region.
+  (T-0824)
 - **Cleaner Android and iOS — Help works on a phone with no mail app.** On such a phone, tapping
   Help on the dashboard, or the support row on the registration screen, used to do nothing. The app
   now copies the support address and says so. An iPhone does the same when Mail has no account set
@@ -1703,9 +1703,9 @@ need backfilling.
 
 ### Security
 
-- **Cleaner and customer apps — on a phone two people share, signing in starts from a clean
-  slate.** Signing in now clears what the app kept for the previous account before it stores the new
-  one. A list that was still loading when someone signed out, or that answered after they did, can no
+- **Cleaner apps and customer iOS — on a phone two people share, signing in starts from a clean
+  slate, as it already did in the customer Android app.** Signing in now clears what the app kept for
+  the previous account before it stores the new one. A list that was still loading when someone signed out, or that answered after they did, can no
   longer show up for the next person. On iOS, every list that loads in the background also checks,
   when its answer arrives, that it still belongs to the account signed in. (T-0822)
 

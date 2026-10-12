@@ -19,7 +19,7 @@ Found on 2026-10-12. Neither native app's sort parameter binds on the server, so
 - Android serialises the generated model through `toString`: `Sort=SortDefinition(field=cleaningDateTime, direction=0)`, captured from the generated Retrofit client.
 - iOS sends base64 JSON: `Sort=ewog…`.
 - `DataRangeRequest.Sort` (`DataRangeRequest.cs:13`) has no binder or type converter, and nothing in `src/` adds a value provider.
-- A throwaway ASP.NET Core 10 app with the same request shape bound both strings to an empty list, with ModelState valid. The web client's indexed form, `Sort[0].Field=…&Sort[0].Direction=0` (generated, `admin-client.ts:112`), bound one entry.
+- A throwaway ASP.NET Core 10 app with the same request shape bound both strings to an empty list, with ModelState valid. The web client's indexed form, `Sort[0].field=…&Sort[0].direction=0` (generated, `admin-client.ts:112`; the keys bind case-insensitively), bound one entry.
 - An empty sort falls back to each endpoint's default. For orders that is `SortMapper.ForOrderPage`: newest created first, then `Id`.
 
 Six native call sites send a sort:
@@ -28,7 +28,7 @@ Six native call sites send a sort:
 
 Effects:
 - The Orders list's sort choice does nothing on either app.
-- The dashboard's upcoming page is the ten most recently created orders from today, so the next job is wrong once a cleaner has more than ten (T-0831).
+- The dashboard's upcoming page is the ten most recently created orders from today. So once a cleaner has more than ten orders from today on, the next job can fall off the page (whenever ten newer-created ones exist), and the today line can undercount (T-0831).
 - The two created-descending calls get whatever their endpoint's default is, which this finding did not check.
 
 ## Doing (proposed, for Mike)

@@ -15,7 +15,7 @@ security_touching: true
 
 ## Context
 
-Found on 2026-10-11. `GetBusyEmployeeIdsInWindowAsync` reads `GetQueryableIgnoringTenant()` (`OrderRepository.cs:416`), but its name sounds scoped. Request paths call it: `GetMyServingCleaners.cs:158`, and `PreferredCleanerHoldResolver.cs:108` through `CreateOrder` and `ChoosePreferredCleaner`.
+Found on 2026-10-11. `GetBusyEmployeeIdsInWindowAsync` reads `GetQueryableIgnoringTenant()` (`OrderRepository.cs:416`), but its name sounds scoped. Request paths call it: `GetMyServingCleaners.cs:158`, and `PreferredCleanerHoldResolver.cs:108` through `CreateOrder`, `ChoosePreferredCleaner` and `ConfirmRecurringOrder`. So do the Stripe payment webhook (`HandlePaymentNotification.cs:426`, through `PreferredOfferNotifier`) and the recurring-materializer timer (`OrderFactory.cs:316`, through `MaterializeRecurringBookingTemplate`). That mix of request path and background job is exactly what S8's third form is about.
 
 It is not exploitable today:
 - Every caller's ids are server-derived, or proven by a validator.

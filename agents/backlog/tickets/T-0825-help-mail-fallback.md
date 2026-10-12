@@ -29,7 +29,7 @@ F7's Help shortcut (and the registration lock's support row) does nothing on a p
 
 ## Acceptance criteria (done looks like)
 
-- [x] **AC1** — Source-binding tests prove that each Help entry routes a refused intent or URL to the copy-and-say fallback, RED then GREEN. A device with no mail app is the runtime check. *(Amended 2026-10-12: the tests read the source, so they show the fallback is wired, not that it runs.)*
+- [x] **AC1** — Source-binding tests show each Help entry is wired to the copy-and-say fallback, RED then GREEN. On Android they pin the refused-intent branch, `if (!context.openOrCopy(…))`. On iOS they pin its parts (the `openURL` completion, the pasteboard write, the notice and the `canSendMail()` check), but not the `!accepted` condition. *(Amended 2026-10-12: the tests read the source, so they show the fallback is wired, not that it runs.)*
 - [x] **AC2** — Five locales are present (parity guards).
 - [x] **AC3** — The full suites pass.
 
@@ -47,11 +47,12 @@ F7's Help shortcut (and the registration lock's support row) does nothing on a p
     - The new key is in all five locales.
   - RED: the binding tests and the new-API tests failed (Android: compile-RED, then assertion-RED). The iOS binding tests failed on all four assertions.
   - GREEN: Android core `OpenOrCopyTest` 2/2, partner parity, dashboard and registration-lock suites, and customer `HelpSupportViewModelTest`. iOS partner suites, and `StringCatalogCompletenessTests`.
-- 2026-10-12 — Committed as `887d10a`, which compiles on its own. Full suites on the final tree, from the review fix pass: Android core 294, partner 834 and customer 1679, all passing. iOS on 18.6 and on the 16.4 floor: Core 775/0, Partner 1109/0, and Customer 1770 with 1 skipped (the VoiceOver-only chip test) and 0 failures. After that run only two test files changed (T-0829's source pin, T-0831's time-zone pin), each run green at class level, plus comment-only edits. Every Android-touching commit compiles on its own.
+- 2026-10-12 — Committed as `278582f`. Its Android half compiles on its own (main and unit-test sources, per commit); its iOS half was built only as part of the final tree. Full suites on the final tree, from the review fix pass: Android core 294, partner 834 and customer 1679, all passing. iOS on 18.6 and on the 16.4 floor: Core 775/0, Partner 1109/0, and Customer 1770 with 1 skipped (the VoiceOver-only chip test) and 0 failures. After that run only two test files changed (T-0829's source pin, T-0831's time-zone pin), each run green at class level, plus comment-only edits. Every Android-touching commit compiles on its own.
 
 ## Review
 
-- **Correctness:** approve, with AC1 amended. The tests read the source, so they show the fallback is wired, not that it runs. The runtime check is a device with no mail app. It joins the render pass if the pass can do it without a mail action, and otherwise stays QA.
+- **Correctness:** approve, with AC1 amended. The tests read the source, so they show the fallback is wired, not that it runs.
+- **Open, for QA:** the runtime check on a device with no mail app. The render pass excludes Help and mail actions, so it did not run it.
 - **Reported, not fixed:**
   - The support address is a private constant in three Android files. iOS keeps it once, in Core.
   - The two platforms' notice wording differs on purpose (`business-rules.md`).

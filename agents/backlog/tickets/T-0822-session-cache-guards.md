@@ -42,7 +42,7 @@ F12 guarded the membership read; the same shape remains elsewhere [IOS-01, IOS-0
 - 2026-10-11 — Filed from the post-Wave E ground truth and Mike's rulings.
 - 2026-10-11 — Implemented. iOS lane: IOS-01 to IOS-03. Android lane: AND-08 and AND-09. The review fix pass added `PushTokenRegistrar` and two held-read tests.
   - iOS:
-    - Core's `AuthApiClient.resolveEmailGate` awaits the session wipe before it stores tokens. It covers login, a confirmed e-mail, Google and Apple, in both apps.
+    - Core's `AuthApiClient.resolveEmailGate` awaits the session wipe before it stores tokens. It covers a login and a confirmed e-mail in both apps, Google and Apple sign-in in the customer app, and an unconfirmed login that is given a token.
     - Every cache that reads across an await captures a session generation, and publishes only while it still matches. `clear()` advances the generation and resets the latches. The guard sits inline in each cache, with no shared type.
     - The caches are `PendingOffersStore`, customer loyalty, referrals, orders, disputes, recurring, saved addresses, profile and badge, the partner badge, Core's `RemoteImageCache`, and `PushTokenRegistrar`.
   - Android: the partner app's `login()` and `confirmEmail()` wipe the session caches before persisting the tokens. The customer caches are unchanged (AND-08).
@@ -51,7 +51,7 @@ F12 guarded the membership read; the same shape remains elsewhere [IOS-01, IOS-0
     - `PushTokenRegistrarTests`: a late register rewrote the marker after `clear()`.
     - Android: 3 of 3 failed, including the previous cleaner's employee id reaching the new session.
   - GREEN: all of the above. On Android, the partner `data.auth` tests pass 29/29.
-- 2026-10-12 — Committed as `942c973`, which compiles on its own. Full suites on the final tree, from the review fix pass: Android core 294, partner 834 and customer 1679, all passing. iOS on 18.6 and on the 16.4 floor: Core 775/0, Partner 1109/0, and Customer 1770 with 1 skipped (the VoiceOver-only chip test) and 0 failures. After that run only two test files changed (T-0829's source pin, T-0831's time-zone pin), each run green at class level, plus comment-only edits. Every Android-touching commit compiles on its own.
+- 2026-10-12 — Committed as `ac5e774`. Its Android half compiles on its own (main and unit-test sources, per commit); its iOS half was built only as part of the final tree. Full suites on the final tree, from the review fix pass: Android core 294, partner 834 and customer 1679, all passing. iOS on 18.6 and on the 16.4 floor: Core 775/0, Partner 1109/0, and Customer 1770 with 1 skipped (the VoiceOver-only chip test) and 0 failures. After that run only two test files changed (T-0829's source pin, T-0831's time-zone pin), each run green at class level, plus comment-only edits. Every Android-touching commit compiles on its own.
 
 ## Review
 

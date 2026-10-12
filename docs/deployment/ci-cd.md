@@ -452,7 +452,7 @@ Every later administrator is created in the console →
 
 ## Authentication
 
-Every job that signs in to Azure uses federated identity (OIDC), so no Azure credential is stored.
+Every job that signs in to Azure uses federated identity (OIDC), so no Azure client secret is stored.
 Each workflow's token is read-only (`contents: read`) at the top level, and `id-token: write` is
 granted per job: to the jobs that sign in, and to the `deploy` job of `deploy-dev.yml` and
 `deploy-pro.yml`, whose grant caps what any job in `deploy-azure.yml` may request. A job that signs in

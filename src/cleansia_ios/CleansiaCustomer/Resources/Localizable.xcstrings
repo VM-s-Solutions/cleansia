@@ -18400,31 +18400,31 @@
         "cs": {
           "stringUnit": {
             "state": "translated",
-            "value": "Sleva %1$d %% z každého úklidu. V kombinaci s věrnostním programem je omezena na 12 %%."
+            "value": "Z každého úklidu. V kombinaci s věrnostním programem je omezena na 12%."
           }
         },
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "%1$d%% off every cleaning. Combined with your loyalty tier it is capped at 12%%."
+            "value": "Off every cleaning. Combined with your loyalty tier it is capped at 12%."
           }
         },
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Скидка %1$d%% на каждую уборку. В сочетании с уровнем лояльности ограничена 12%%."
+            "value": "На каждую уборку. В сочетании с уровнем лояльности ограничена 12%."
           }
         },
         "sk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Zľava %1$d %% z každého upratovania. V kombinácii s vernostným programom je obmedzená na 12 %%."
+            "value": "Z každého upratovania. V kombinácii s vernostným programom je obmedzená na 12%."
           }
         },
         "uk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Знижка %1$d%% на кожне прибирання. У поєднанні з рівнем лояльності обмежена 12%%."
+            "value": "На кожне прибирання. У поєднанні з рівнем лояльності обмежена 12%."
           }
         }
       }
@@ -18435,31 +18435,31 @@
         "cs": {
           "stringUnit": {
             "state": "translated",
-            "value": "Členská sleva"
+            "value": "%1$d%% členská sleva"
           }
         },
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Member discount"
+            "value": "%1$d%% member discount"
           }
         },
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Скидка для участников"
+            "value": "%1$d%% скидка для участников"
           }
         },
         "sk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Členská zľava"
+            "value": "%1$d%% členská zľava"
           }
         },
         "uk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Знижка для учасників"
+            "value": "%1$d%% знижка для учасників"
           }
         }
       }

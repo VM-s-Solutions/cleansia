@@ -42,6 +42,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import cz.cleansia.core.money.CurrencySymbols
 import cz.cleansia.core.ui.components.CleansiaPrimaryButton
 import cz.cleansia.core.ui.theme.Spacing
 import cz.cleansia.core.ui.theme.primaryIconOnContainer
@@ -54,7 +55,6 @@ import java.time.LocalDate
 import java.time.ZoneId
 import java.time.ZonedDateTime
 import java.time.format.DateTimeFormatter
-import java.util.Currency
 import java.util.Locale
 
 /**
@@ -127,7 +127,7 @@ fun PeriodPayScreenContent(
             }
             PeriodPayUiState.Error -> ErrorState(onRetry = onRetry)
             is PeriodPayUiState.Loaded -> {
-                val symbol = remember(currencyCode) { currencySymbol(currencyCode) }
+                val symbol = remember(currencyCode) { CurrencySymbols.forCode(currencyCode) }
                 Column(
                     modifier = Modifier
                         .fillMaxSize()
@@ -424,13 +424,6 @@ private fun formatDate(iso: String?): String? {
         ?: runCatching { LocalDate.parse(iso) }.getOrNull()
         ?: return null
     return date.format(shortDateFormatter)
-}
-
-private fun currencySymbol(code: String?): String {
-    if (code.isNullOrBlank()) return ""
-    return runCatching { Currency.getInstance(code).getSymbol(Locale.getDefault()) }
-        .getOrNull()
-        ?: code
 }
 
 private fun formatMoney(amount: Double, symbol: String): String {

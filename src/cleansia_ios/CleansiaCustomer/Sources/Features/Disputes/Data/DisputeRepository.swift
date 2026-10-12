@@ -19,6 +19,7 @@ final class DisputeRepository: SessionScopedCache {
 
     private let client: DisputeClient
     private let pageSize: Int
+    private var sessionGeneration = 0
 
     init(client: DisputeClient, pageSize: Int = 20) {
         self.client = client
@@ -32,9 +33,12 @@ final class DisputeRepository: SessionScopedCache {
     @discardableResult
     func refresh() async -> ApiResult<Void> {
         if loading { return .success(()) }
+        let generation = sessionGeneration
         loading = true
-        defer { loading = false }
-        switch await client.getPaged(offset: 0, limit: pageSize) {
+        defer { if generation == sessionGeneration { loading = false } }
+        let result = await client.getPaged(offset: 0, limit: pageSize)
+        guard generation == sessionGeneration else { return .failure(ApiError(code: ApiError.cancelledCode)) }
+        switch result {
         case let .success(page):
             disputes = page.items
             totalRecords = page.total
@@ -49,9 +53,12 @@ final class DisputeRepository: SessionScopedCache {
     func loadNextPage() async -> ApiResult<Void> {
         if loadingMore { return .success(()) }
         guard hasMore else { return .success(()) }
+        let generation = sessionGeneration
         loadingMore = true
-        defer { loadingMore = false }
-        switch await client.getPaged(offset: disputes.count, limit: pageSize) {
+        defer { if generation == sessionGeneration { loadingMore = false } }
+        let result = await client.getPaged(offset: disputes.count, limit: pageSize)
+        guard generation == sessionGeneration else { return .failure(ApiError(code: ApiError.cancelledCode)) }
+        switch result {
         case let .success(page):
             disputes += page.items
             totalRecords = page.total
@@ -90,6 +97,9 @@ final class DisputeRepository: SessionScopedCache {
     }
 
     func clear() async {
+        sessionGeneration += 1
+        loading = false
+        loadingMore = false
         disputes = []
         totalRecords = 0
         loaded = false

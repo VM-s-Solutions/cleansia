@@ -116,6 +116,20 @@ final class CreateRecurringBindingTests: XCTestCase {
         XCTAssertTrue(source.contains("toggleAccessibilityLabel: L10n.Auth.acceptTermsToggle"))
     }
 
+    /// The view model refusing a card proves nothing while the form still draws the row a keyless build
+    /// cannot pay through.
+    func testTheFormDrawsTheCardRowOnlyInABuildWithAStripeKey() throws {
+        let source = try read(Self.screen).components(separatedBy: .whitespacesAndNewlines).joined()
+        XCTAssertTrue(
+            source.contains("cardAvailable:vm.isCardPaymentAvailable,"),
+            "the form never asks whether the build can take a card"
+        )
+        XCTAssertTrue(
+            source.contains("ifcardAvailable{SelectableRow(text:L10n.Recurring.createPayCard,"),
+            "the card row is drawn in a build with no Stripe key"
+        )
+    }
+
     func testTheScreenSpellsNoLabelItself() throws {
         let source = try read(Self.screen)
         for hardcoded in ["Rooms", "Bathrooms", "Add new"] {

@@ -33,13 +33,10 @@ import androidx.compose.material.icons.automirrored.outlined.Article
 import androidx.compose.material.icons.automirrored.outlined.HelpOutline
 import androidx.compose.material.icons.automirrored.outlined.TrendingDown
 import androidx.compose.material.icons.automirrored.outlined.TrendingUp
-import androidx.compose.material.icons.outlined.AccessTime
 import androidx.compose.material.icons.outlined.Person
 import androidx.compose.material.icons.outlined.History
 import androidx.compose.material.icons.outlined.NotificationsNone
-import androidx.compose.material.icons.outlined.Place
 import androidx.compose.material.icons.outlined.Star
-import androidx.compose.material.icons.outlined.WorkOutline
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -60,8 +57,6 @@ import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Brush
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
@@ -69,11 +64,11 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import cz.cleansia.core.money.CurrencySymbols
 import cz.cleansia.core.ui.components.statusBarFade
+import cz.cleansia.core.ui.openOrCopy
 import cz.cleansia.core.ui.theme.Spacing
 import cz.cleansia.core.ui.theme.primaryIconOnContainer
 import cz.cleansia.core.ui.theme.primaryText
@@ -90,23 +85,22 @@ import cz.cleansia.partner.features.orders.PendingOffersCardViewModel
 import cz.cleansia.partner.features.profile.JobRadiusPromptCardContent
 import cz.cleansia.partner.features.profile.JobRadiusPromptUiState
 import cz.cleansia.partner.features.profile.JobRadiusPromptViewModel
-import cz.cleansia.partner.ui.theme.BrandGradients
-import cz.cleansia.partner.ui.theme.asList
 import java.time.Duration
 import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
-import java.time.format.FormatStyle
 import java.time.temporal.ChronoUnit
 import java.util.Locale
+
+private const val SUPPORT_EMAIL = "support@cleansia.cz"
 
 /**
  * Cleaner-first dashboard, composed top-to-bottom around the four questions a cleaner has on opening the
  * app: what is my state today, what is my next job, what am I earning, when am I paid.
  *
  * The hero adapts to state rather than stacking cards, so the answer is visible without scanning a grid.
- * -> /partner-app/dashboard
+ * → /mobile-app/features#partner-dashboard
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -149,11 +143,11 @@ fun DashboardScreen(
     }
 
     val loaded = uiState as? DashboardUiState.Loaded
-    val upcoming = loaded?.upcoming.orEmpty()
+    val upcoming = loaded?.upcoming
     val stats = loaded?.stats
     val availableJobsPreview = loaded?.availableJobsPreview
-    val nextJob = remember(upcoming) { pickNextJob(upcoming) }
-    val todaysJobs = remember(upcoming) { filterTodaysJobs(upcoming) }
+    val nextJob = remember(upcoming) { pickNextJob(upcoming.orEmpty()) }
+    val todaysJobsCount = remember(upcoming) { todaysJobCount(upcoming, LocalDate.now(), ZoneId.systemDefault()) }
 
     // Genuine first-ever paint — owns the screen with the centered
     // CircularProgressIndicator. After that first paint, the data renders
@@ -203,7 +197,7 @@ fun DashboardScreen(
         item {
             CompactGreetingBar(
                 firstName = firstName,
-                todaysJobsCount = todaysJobs.size,
+                todaysJobsCount = todaysJobsCount,
                 statusBarTop = statusBarTop,
                 unreadCount = unreadNotifications,
                 onNotificationClick = onOpenNotifications,
@@ -279,9 +273,8 @@ fun DashboardScreen(
                     onPayHistory = onOpenEarnings,
                     onDocuments = onOpenDocuments,
                     onHelp = {
-                        runCatching {
-                            context.startActivity(Intent(Intent.ACTION_SENDTO, Uri.parse("mailto:support@cleansia.cz")))
-                        }
+                        val mail = Intent(Intent.ACTION_SENDTO, Uri.parse("mailto:$SUPPORT_EMAIL"))
+                        if (!context.openOrCopy(mail, SUPPORT_EMAIL)) viewModel.onHelpEmailUnavailable()
                     },
                 )
             }
@@ -295,7 +288,7 @@ fun DashboardScreen(
 @Composable
 private fun CompactGreetingBar(
     firstName: String?,
-    todaysJobsCount: Int,
+    todaysJobsCount: Int?,
     statusBarTop: androidx.compose.ui.unit.Dp,
     unreadCount: Int,
     onNotificationClick: () -> Unit,
@@ -331,16 +324,18 @@ private fun CompactGreetingBar(
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
-                Text(
-                    text = " · ",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-                Text(
-                    text = todaysStateLine(todaysJobsCount),
-                    style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold),
-                    color = primaryText(),
-                )
+                if (todaysJobsCount != null) {
+                    Text(
+                        text = " · ",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                    Text(
+                        text = todaysStateLine(todaysJobsCount),
+                        style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold),
+                        color = primaryText(),
+                    )
+                }
             }
         }
         Box {
@@ -506,8 +501,7 @@ private fun nextJobWhenLine(iso: String?): String {
                 return stringResource(R.string.urgency_in_hours_minutes, hours, totalMinutes % 60)
             }
         }
-        val days = duration.toDays()
-        if (days == 1L) return "${stringResource(R.string.day_tomorrow)} $time"
+        if (startsTomorrow(instant, now, zone)) return "${stringResource(R.string.day_tomorrow)} $time"
     }
     val sameYear = local.year == LocalDate.now(zone).year
     val datePattern = if (sameYear) "EEE d MMM" else "d MMM yyyy"
@@ -533,7 +527,7 @@ private fun nextJobWhereLine(name: String?, address: String?): String? {
 
 /**
  * Available-work card. The mascot avatar in the leading slot is what gives this card personality the
- * earnings card below it does not have. -> /partner-app/dashboard
+ * earnings card below it does not have. → /mobile-app/features#partner-dashboard
  */
 @Composable
 private fun AvailableWorkHero(
@@ -668,53 +662,6 @@ private fun EmptyHero(onClick: () -> Unit) {
     }
 }
 
-@Composable
-private fun HeroRow(icon: ImageVector? = null, text: String) {
-    Row(
-        verticalAlignment = Alignment.CenterVertically,
-        modifier = Modifier.padding(top = 2.dp),
-    ) {
-        icon?.let {
-            Icon(
-                imageVector = it,
-                contentDescription = null,
-                modifier = Modifier.size(14.dp),
-                tint = Color.White.copy(alpha = 0.9f),
-            )
-            Spacer(Modifier.width(6.dp))
-        }
-        Text(
-            text = text,
-            style = MaterialTheme.typography.bodyMedium,
-            color = Color.White.copy(alpha = 0.95f),
-        )
-    }
-}
-
-@Composable
-private fun HeroPillCta(text: String) {
-    Row(
-        modifier = Modifier
-            .clip(CircleShape)
-            .background(Color.White.copy(alpha = 0.18f))
-            .padding(horizontal = Spacing.M, vertical = Spacing.XS),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        Text(
-            text = text,
-            style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.SemiBold),
-            color = Color.White,
-        )
-        Spacer(Modifier.width(6.dp))
-        Icon(
-            imageVector = Icons.AutoMirrored.Outlined.ArrowForward,
-            contentDescription = null,
-            modifier = Modifier.size(16.dp),
-            tint = Color.White,
-        )
-    }
-}
-
 /* ─── 3. Earnings split (Today / Week) ─── */
 
 @Composable
@@ -725,7 +672,7 @@ private fun EarningsSplitRow(stats: DashboardStats?, onClick: () -> Unit) {
 /**
  * Brand-blue earnings hero: the week so far as the primary number, today and the per-job average as
  * secondary rows. Replaces an older two-card split that read as flat siblings and showed bare numbers
- * without currency. -> /partner-app/dashboard
+ * without currency. → /mobile-app/features#partner-dashboard
  */
 @Composable
 private fun WeeklyEarningsHero(stats: DashboardStats?, onClick: () -> Unit) {
@@ -858,10 +805,8 @@ private fun WeeklyEarningsHero(stats: DashboardStats?, onClick: () -> Unit) {
  * [fallback] when amount is null/zero so the hero can swap in a
  * "no jobs yet" message instead of rendering "0 Kč" or "—".
  *
- * [symbol] should be the user's preferred-currency symbol resolved
- * via [resolveCurrencySymbol] — that helper accepts the server-
- * supplied ISO code (e.g. "CZK") and falls back to device locale
- * only when the server hasn't told us the user's currency.
+ * [symbol] comes from [resolveCurrencySymbol]: the symbol of the
+ * currency the server names, blank when it names none.
  */
 internal fun formatMoneyWithSymbol(amount: Double?, symbol: String, fallback: String): String {
     if (amount == null || amount <= 0.0) return fallback
@@ -870,23 +815,10 @@ internal fun formatMoneyWithSymbol(amount: Double?, symbol: String, fallback: St
 }
 
 /**
- * Resolve a display symbol from the server-supplied ISO currency code.
- *
- * This used to call `Currency.getSymbol(Locale.getDefault())` directly, which returns the bare ISO
- * code whenever the DEVICE's locale has no symbol for that currency — so a Ukrainian handset rendered
- * "3 731 CZK" on this screen while the orders list beside it rendered "1 275 Kč" from the symbol the
- * server sends per order. A currency's symbol belongs to the currency, not to who is looking at it.
- * → [CurrencySymbols]
+ * The symbol of the currency the server names, whatever the phone's language, and none when it names
+ * no currency: a guessed one would be wrong as often as not. → [CurrencySymbols]
  */
-internal fun resolveCurrencySymbol(serverCode: String?): String {
-    val code = serverCode?.takeIf { it.isNotBlank() }
-    if (code != null) return CurrencySymbols.forCode(code)
-
-    // No code at all: the device's own currency is the only thing left to guess with.
-    return runCatching {
-        java.util.Currency.getInstance(Locale.getDefault()).symbol
-    }.getOrDefault("")
-}
+internal fun resolveCurrencySymbol(serverCode: String?): String = CurrencySymbols.forCode(serverCode)
 
 /* ─── 4. Pay period ─── */
 
@@ -1190,23 +1122,23 @@ private fun QuickActionTile(
 
 /* ─── Pure derivations ─── */
 
-private fun pickNextJob(upcoming: List<OrderListItem>): OrderListItem? {
+internal fun pickNextJob(upcoming: List<OrderListItem>): OrderListItem? {
     val active = setOf(OrderStatus._2, OrderStatus._3, OrderStatus._4)
     return upcoming
-        .filter { it.orderStatus.toOrderStatus() in active }
-        .minByOrNull { it.cleaningDateTime ?: "" }
+        .filter { it.orderStatus.toOrderStatus() in active && !it.cleaningDateTime.isNullOrBlank() }
+        .minByOrNull { it.cleaningDateTime.orEmpty() }
 }
 
-private fun filterTodaysJobs(upcoming: List<OrderListItem>): List<OrderListItem> {
-    val today = LocalDate.now()
-    return upcoming.filter { item ->
-        val iso = item.cleaningDateTime ?: return@filter false
-        val local = runCatching {
-            Instant.parse(iso).atZone(ZoneId.systemDefault()).toLocalDate()
-        }.getOrNull()
-        local == today
+/** "Tomorrow" names the calendar day after [now]'s, not anything 24 to 48 hours away. */
+internal fun startsTomorrow(start: Instant, now: Instant, zone: ZoneId): Boolean =
+    start.atZone(zone).toLocalDate() == now.atZone(zone).toLocalDate().plusDays(1)
+
+/** Null while [upcoming] is unknown, so an unread or failed list never reads as a free day. */
+internal fun todaysJobCount(upcoming: List<OrderListItem>?, today: LocalDate, zone: ZoneId): Int? =
+    upcoming?.count { item ->
+        val iso = item.cleaningDateTime ?: return@count false
+        runCatching { Instant.parse(iso).atZone(zone).toLocalDate() }.getOrNull() == today
     }
-}
 
 private fun computeMonthDelta(thisMonth: Int, lastMonth: Int): Int? {
     if (lastMonth == 0) return if (thisMonth > 0) 100 else null
@@ -1218,21 +1150,6 @@ private fun nextJobLabelAndCta(status: OrderStatus?): Pair<String, String> = whe
     OrderStatus._4 -> stringResource(R.string.dash_in_progress) to stringResource(R.string.dash_continue)
     OrderStatus._3 -> stringResource(R.string.dash_on_the_way) to stringResource(R.string.dash_open)
     else -> stringResource(R.string.dash_next_job) to stringResource(R.string.dash_open)
-}
-
-private fun countdown(iso: String?): String {
-    if (iso.isNullOrBlank()) return "—"
-    val cleaning = runCatching { Instant.parse(iso) }.getOrNull() ?: return iso
-    val now = Instant.now()
-    val duration = Duration.between(now, cleaning)
-    if (duration.isNegative) return formatDateTime(iso)
-    val hours = duration.toHours()
-    val minutes = (duration.toMinutes() % 60)
-    return when {
-        hours >= 24 -> formatDateTime(iso)
-        hours >= 1 -> String.format(Locale.getDefault(), "In %dh %02dm", hours, minutes)
-        else -> String.format(Locale.getDefault(), "In %dm", duration.toMinutes())
-    }
 }
 
 @Composable
@@ -1248,15 +1165,6 @@ private fun greeting(firstName: String?): String {
         else -> stringResource(R.string.good_evening)
     }
 }
-
-private fun formatDateTime(iso: String): String = runCatching {
-    val instant = Instant.parse(iso)
-    val local = instant.atZone(ZoneId.systemDefault())
-    DateTimeFormatter
-        .ofLocalizedDateTime(FormatStyle.MEDIUM, FormatStyle.SHORT)
-        .withLocale(Locale.getDefault())
-        .format(local)
-}.getOrDefault(iso)
 
 private fun formatPayoutDate(iso: String): String = runCatching {
     val instant = Instant.parse(iso)

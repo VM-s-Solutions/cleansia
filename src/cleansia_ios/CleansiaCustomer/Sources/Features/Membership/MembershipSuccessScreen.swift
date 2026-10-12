@@ -5,6 +5,7 @@ struct MembershipSuccessScreen: View {
     /// The one perk on this list the plan may not carry, so it comes from the server rather than
     /// from the layout.
     let showExpressPerk: Bool
+    let discountPercent: Int?
     let copy: MembershipCopy
     let onSetupRecurring: () -> Void
     let onBackHome: () -> Void
@@ -35,7 +36,9 @@ struct MembershipSuccessScreen: View {
                     Text(L10n.Membership.successPerksHeader)
                         .font(CleansiaTypography.labelMedium)
                         .foregroundColor(CleansiaColors.onSurfaceVariant)
-                    PerkRow(text: L10n.Membership.perkDiscountTitle)
+                    if let discountPercent {
+                        PerkRow(text: L10n.Membership.perkDiscountTitle(discountPercent))
+                    }
                     PerkRow(text: L10n.Membership.perkCancellationTitle)
                     PerkRow(text: L10n.Membership.perkFavoriteCleanerTitle)
                     PerkRow(text: L10n.Membership.perkRecurringTitle)
@@ -83,6 +86,7 @@ private struct PerkRow: View {
         static var previews: some View {
             MembershipSuccessScreen(
                 showExpressPerk: true,
+                discountPercent: 5,
                 copy: MembershipCopy(nil),
                 onSetupRecurring: {},
                 onBackHome: {}

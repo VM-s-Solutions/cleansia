@@ -18,11 +18,29 @@ final class FakeRecurringBookingClient: RecurringBookingClient, @unchecked Senda
     var deleteResult: ApiResult<Void> = .success(())
     private(set) var deletedIds: [String] = []
 
+    var holdMine = false
+    var mineStarted: ((Int) -> Void)?
+    private var heldMine: [Int: CheckedContinuation<ApiResult<[RecurringTemplate]>, Never>] = [:]
+
+    @MainActor
     func getMine() async -> ApiResult<[RecurringTemplate]> {
-        defer { mineCallCount += 1 }
         let index = min(mineCallCount, mineResults.count - 1)
-        guard index >= 0 else { return .success([]) }
-        return mineResults[index]
+        mineCallCount += 1
+        let call = mineCallCount
+        guard holdMine else {
+            mineStarted?(call)
+            guard index >= 0 else { return .success([]) }
+            return mineResults[index]
+        }
+        return await withCheckedContinuation { continuation in
+            heldMine[call] = continuation
+            mineStarted?(call)
+        }
+    }
+
+    @MainActor
+    func releaseMine(call: Int, result: ApiResult<[RecurringTemplate]>) {
+        heldMine.removeValue(forKey: call)?.resume(returning: result)
     }
 
     func create(_ input: CreateRecurringInput) async -> ApiResult<RecurringTemplate> {

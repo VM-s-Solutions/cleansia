@@ -21,6 +21,7 @@ final class OrderRepository: SessionScopedCache {
 
     private let client: OrderClient
     private let pageSize: Int
+    private var sessionGeneration = 0
 
     init(client: OrderClient, pageSize: Int = 20, staleness: Staleness = Staleness()) {
         self.client = client
@@ -36,9 +37,12 @@ final class OrderRepository: SessionScopedCache {
     @discardableResult
     func refresh() async -> ApiResult<Void> {
         if loading { return .success(()) }
+        let generation = sessionGeneration
         loading = true
-        defer { loading = false }
-        switch await client.getMyOrders(offset: 0, limit: pageSize) {
+        defer { if generation == sessionGeneration { loading = false } }
+        let result = await client.getMyOrders(offset: 0, limit: pageSize)
+        guard generation == sessionGeneration else { return .failure(ApiError(code: ApiError.cancelledCode)) }
+        switch result {
         case let .success(page):
             orders = page.items
             totalRecords = page.total
@@ -56,9 +60,12 @@ final class OrderRepository: SessionScopedCache {
     func loadNextPage() async -> ApiResult<Void> {
         if loadingMore { return .success(()) }
         guard hasMore else { return .success(()) }
+        let generation = sessionGeneration
         loadingMore = true
-        defer { loadingMore = false }
-        switch await client.getMyOrders(offset: orders.count, limit: pageSize) {
+        defer { if generation == sessionGeneration { loadingMore = false } }
+        let result = await client.getMyOrders(offset: orders.count, limit: pageSize)
+        guard generation == sessionGeneration else { return .failure(ApiError(code: ApiError.cancelledCode)) }
+        switch result {
         case let .success(page):
             orders += page.items
             totalRecords = page.total
@@ -69,6 +76,9 @@ final class OrderRepository: SessionScopedCache {
     }
 
     func clear() async {
+        sessionGeneration += 1
+        loading = false
+        loadingMore = false
         orders = []
         totalRecords = 0
         loaded = false

@@ -37,12 +37,30 @@ final class FakeOrderClient: OrderClient, @unchecked Sendable {
     var cancellationQuoteResults: [ApiResult<CancellationQuote>] = []
     private(set) var cancellationQuoteCallCount = 0
 
+    var holdPages = false
+    var pageStarted: ((Int) -> Void)?
+    private var heldPages: [Int: CheckedContinuation<ApiResult<OrdersPage>, Never>] = [:]
+
+    @MainActor
     func getMyOrders(offset: Int, limit: Int) async -> ApiResult<OrdersPage> {
         pageRequests.append((offset, limit))
-        if let pageError { return .failure(pageError) }
-        let index = min(pageRequests.count - 1, pages.count - 1)
-        guard index >= 0 else { return .success(OrdersPage(items: [], total: 0)) }
-        return .success(pages[index])
+        let call = pageRequests.count
+        guard holdPages else {
+            pageStarted?(call)
+            if let pageError { return .failure(pageError) }
+            let index = min(pageRequests.count - 1, pages.count - 1)
+            guard index >= 0 else { return .success(OrdersPage(items: [], total: 0)) }
+            return .success(pages[index])
+        }
+        return await withCheckedContinuation { continuation in
+            heldPages[call] = continuation
+            pageStarted?(call)
+        }
+    }
+
+    @MainActor
+    func releasePage(call: Int, result: ApiResult<OrdersPage>) {
+        heldPages.removeValue(forKey: call)?.resume(returning: result)
     }
 
     func getById(orderId _: String) async -> ApiResult<CustomerOrderDetail> {

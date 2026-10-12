@@ -1033,6 +1033,7 @@
     <string name="registration_lock_sign_out_confirm_title">Вийти з облікового запису?</string>
     <string name="registration_lock_sign_out_confirm_message">Ваш прогрес збережено. Щоб завершити реєстрацію, потрібно буде увійти знову.</string>
     <string name="registration_lock_support_subject">Cleansia partner — заявку відхилено</string>
+    <string name="help_email_unavailable">Поштовий застосунок не знайдено, тож адресу скопійовано.</string>
     <string name="registration_lock_category_profile">Профіль</string>
     <string name="registration_lock_category_documents">Документи</string>
     <string name="registration_lock_category_approval">Схвалення</string>

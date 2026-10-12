@@ -105,4 +105,46 @@ final class PendingOffersStoreTests: XCTestCase {
         XCTAssertTrue(store.offers.isEmpty)
         XCTAssertTrue(store.isStale)
     }
+
+    /// A read still in flight at sign-out answered into the next session: it put the previous cleaner's
+    /// held offers back after `clear()` and marked them fresh, so the next cleaner's card skipped its own read.
+    func testARefreshHeldAcrossClearCannotRestoreThePreviousCleanersOffers() async {
+        let entered = expectation(description: "offers read entered")
+        client.holdPendingOffers = true
+        client.pendingOffersStarted = { _ in entered.fulfill() }
+        let store = makeStore()
+        let refresh = Task { await store.refresh() }
+        await fulfillment(of: [entered], timeout: 2)
+
+        await store.clear()
+        client.releasePendingOffers(call: 1, result: .success([.sample(id: "previous")]))
+        let result = await refresh.value
+
+        XCTAssertEqual(result.apiErrorOrNil?.code, ApiError.cancelledCode)
+        XCTAssertTrue(store.offers.isEmpty)
+        XCTAssertTrue(store.isStale)
+    }
+
+    func testTheNewSessionsRefreshKeepsItsRowsWhenTheOldReadAnswersLate() async {
+        let oldEntered = expectation(description: "old session read entered")
+        let newEntered = expectation(description: "new session read entered")
+        client.holdPendingOffers = true
+        client.pendingOffersStarted = { call in
+            if call == 1 { oldEntered.fulfill() } else { newEntered.fulfill() }
+        }
+        let store = makeStore()
+        let old = Task { await store.refresh() }
+        await fulfillment(of: [oldEntered], timeout: 2)
+        await store.clear()
+        let new = Task { await store.refresh() }
+        await fulfillment(of: [newEntered], timeout: 2)
+
+        client.releasePendingOffers(call: 2, result: .success([.sample(id: "mine")]))
+        _ = await new.value
+        client.releasePendingOffers(call: 1, result: .success([.sample(id: "previous")]))
+        _ = await old.value
+
+        XCTAssertEqual(store.offers.map(\.id), ["mine"])
+        XCTAssertFalse(store.isStale)
+    }
 }

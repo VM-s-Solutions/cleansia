@@ -33,6 +33,7 @@ public actor PushTokenRegistrar: SessionScopedCache {
     private let deviceIdProvider: DeviceIdProviding
     private let platform: String
     private let tokenStore: LastRegisteredTokenStore
+    private var sessionGeneration = 0
 
     public init(
         client: DeviceRegistrationClient,
@@ -48,6 +49,7 @@ public actor PushTokenRegistrar: SessionScopedCache {
 
     public func ensureRegistered(token: String) async {
         guard token != tokenStore.read() else { return }
+        let generation = sessionGeneration
         let result = await client.register(
             RegisterDeviceRequest(
                 deviceId: deviceIdProvider.deviceId,
@@ -57,7 +59,9 @@ public actor PushTokenRegistrar: SessionScopedCache {
         )
         switch result {
         case .success:
-            tokenStore.write(token)
+            if generation == sessionGeneration {
+                tokenStore.write(token)
+            }
         case let .failure(error):
             PushLog.log.error("device register FAILED: \(String(describing: error), privacy: .public)")
         }
@@ -69,6 +73,7 @@ public actor PushTokenRegistrar: SessionScopedCache {
     }
 
     public func clear() async {
+        sessionGeneration += 1
         tokenStore.clear()
     }
 }

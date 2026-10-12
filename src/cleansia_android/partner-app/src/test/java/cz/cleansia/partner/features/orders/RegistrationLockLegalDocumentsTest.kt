@@ -109,6 +109,7 @@ class RegistrationLockLegalDocumentsTest {
             errorTranslator = errors,
             appSettingsRepository = appSettings,
             languageSync = mockk(relaxed = true),
+            snackbar = mockk(relaxed = true),
         )
         advanceUntilIdle()
 

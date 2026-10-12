@@ -32,7 +32,7 @@ Mike: "You can run against CI, but I guess it has to be adaptable" (Mike's rulin
 
 - [x] **AC1** — `PayBreakdown` is identical under en-US and cs-CZ hosts; RED then GREEN.
 - [x] **AC2** — The full integration suite passes under this Mac's own culture.
-- [ ] **AC3** — CI stays green.
+- [x] **AC3** — CI stays green.
 
 ## Work record
 
@@ -51,6 +51,7 @@ Mike: "You can run against CI, but I guess it has to be adaptable" (Mike's rulin
     - the pay suites alone, with `LANG=de_DE.UTF-8`: unit 83/83, and the same integration suites 15/15;
     - the full integration suite, with no `LANG` or `LC_ALL` override: 850/850 (AC2).
 - 2026-10-12 — Committed as `d9a9fd8`, which builds on its own. AC3 waits for this PR's exact-head CI.
+- 2026-10-12 — Shipped in [#322](https://github.com/VM-s-Solutions/cleansia/pull/322). Exact-head CI on `1136e16` passed all 9 check runs with no re-run: Backend, Frontend and e2e-smoke, Android, iOS, Docs, iOS Symbols, booking-policy parity and Secret scan. Merged normally with the SHA guard as `6840882`. No deploy ran. Evidence: `raw/ci/p1-pr322-ci-merge-closure-001.json` (sha256 `d31e29ba…`) in the off-tree Wave F folder.
 
 ## Review
 

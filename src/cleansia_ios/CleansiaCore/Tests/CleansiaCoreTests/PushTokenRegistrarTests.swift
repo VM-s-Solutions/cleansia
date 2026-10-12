@@ -94,6 +94,28 @@ final class PushTokenRegistrarTests: XCTestCase {
         XCTAssertEqual(client.unregisterCallCount, 0)
         XCTAssertEqual(client.registerCallCount, 2)
     }
+
+    /// A registration still in flight when the session is wiped belongs to the previous account. Writing its
+    /// marker afterwards would make the next account's registration of the same token look already done.
+    func testARegistrationHeldAcrossClearLeavesNoMarkerSoTheNextAccountRegisters() async {
+        let entered = expectation(description: "register entered")
+        let client = FakeDeviceRegistrationClient()
+        client.holdRegister = true
+        client.registerStarted = { entered.fulfill() }
+        let (registrar, store) = makeRegistrar(client: client)
+        let previous = Task { await registrar.ensureRegistered(token: token) }
+        await fulfillment(of: [entered], timeout: 2)
+
+        await registrar.clear()
+        client.releaseRegister(.success(()))
+        await previous.value
+
+        XCTAssertNil(store.read())
+        client.holdRegister = false
+        await registrar.ensureRegistered(token: token)
+        XCTAssertEqual(client.registerCallCount, 2)
+        XCTAssertEqual(store.read(), token)
+    }
 }
 
 private final class StubDeviceIdProvider: DeviceIdProviding {
@@ -125,9 +147,12 @@ private final class FakeDeviceRegistrationClient: DeviceRegistrationClient, @unc
 
     var registerResult: ApiResult<Void> = .success(())
     var unregisterResult: ApiResult<Void> = .success(())
+    var holdRegister = false
+    var registerStarted: (() -> Void)?
 
     private(set) var registeredRequests: [RegisterDeviceRequest] = []
     private(set) var unregisteredDeviceIds: [String] = []
+    private var heldRegister: CheckedContinuation<ApiResult<Void>, Never>?
 
     var registerCallCount: Int {
         lock.withLock { registeredRequests.count }
@@ -139,7 +164,19 @@ private final class FakeDeviceRegistrationClient: DeviceRegistrationClient, @unc
 
     func register(_ request: RegisterDeviceRequest) async -> ApiResult<Void> {
         lock.withLock { registeredRequests.append(request) }
-        return registerResult
+        guard holdRegister else { return registerResult }
+        return await withCheckedContinuation { continuation in
+            lock.withLock { heldRegister = continuation }
+            registerStarted?()
+        }
+    }
+
+    func releaseRegister(_ result: ApiResult<Void>) {
+        let held = lock.withLock {
+            defer { heldRegister = nil }
+            return heldRegister
+        }
+        held?.resume(returning: result)
     }
 
     func unregister(deviceId: String) async -> ApiResult<Void> {

@@ -1,11 +1,12 @@
-import CleansiaCore
 import SwiftUI
 import XCTest
+@testable import CleansiaCore
 @testable import CleansiaCustomer
 
 /// A service a chosen package already books must read as covered at a glance (owner remark 2026-10-04:
 /// the grey caption under the name was almost invisible): the row wears a primary tint and a primary
 /// border, and the note is a badge whose text stays legible on it in both schemes.
+@MainActor
 final class InPackageMarkerLookTests: XCTestCase {
     private static let components = "CleansiaCustomer/Sources/Features/Booking/Steps/ServicesStepComponents.swift"
     private static let recurring = "CleansiaCustomer/Sources/Features/Recurring/CreateRecurringScreen.swift"
@@ -103,13 +104,7 @@ final class InPackageMarkerLookTests: XCTestCase {
     private typealias RGB = SIMD3<Double>
 
     private func rgb(_ color: Color, _ style: UIUserInterfaceStyle) -> RGB {
-        let resolved = UIColor(color).resolvedColor(with: UITraitCollection(userInterfaceStyle: style))
-        var red: CGFloat = 0
-        var green: CGFloat = 0
-        var blue: CGFloat = 0
-        var alpha: CGFloat = 0
-        resolved.getRed(&red, green: &green, blue: &blue, alpha: &alpha)
-        return RGB(Double(red), Double(green), Double(blue))
+        StatusBarFade.rgb(color, style == .dark ? .dark : .light)
     }
 
     private func over(_ top: RGB, _ alpha: Double, _ bottom: RGB) -> RGB {

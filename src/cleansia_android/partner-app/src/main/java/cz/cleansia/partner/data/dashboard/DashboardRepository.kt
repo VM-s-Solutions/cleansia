@@ -15,6 +15,8 @@ import cz.cleansia.core.network.ApiResult
 import cz.cleansia.core.network.safeApiCall
 import cz.cleansia.core.network.mapWire
 import cz.cleansia.core.network.required
+import java.time.LocalDate
+import java.time.ZoneId
 import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.currentCoroutineContext
@@ -82,7 +84,11 @@ data class AvailableJobPreview(
  */
 data class DashboardSnapshot(
     val stats: DashboardStats? = null,
-    val upcoming: List<OrderListItem> = emptyList(),
+    /**
+     * Null until the upcoming read has answered, and when the session has no employee id to read it for:
+     * an unread list is not an empty one.
+     */
+    val upcoming: List<OrderListItem>? = null,
     val availableJobsPreview: AvailableJobsPreview? = null,
     /** True once at least one successful load has populated the cache. */
     val loaded: Boolean = false,
@@ -183,7 +189,7 @@ class DashboardRepositoryImpl @Inject constructor(
                                 is ApiResult.Error -> Unit
                             }
                         } else {
-                            updateSnapshot(generation) { it.copy(upcoming = emptyList()) }
+                            updateSnapshot(generation) { it.copy(upcoming = null) }
                         }
                     }
                     launch {
@@ -243,19 +249,27 @@ class DashboardRepositoryImpl @Inject constructor(
     override suspend fun getStats(employeeId: String?): ApiResult<DashboardStats> =
         safeApiCall(json) { dashboardApi.dashboardGetStats(employeeId) }.mapWire { it.toDomain() }
 
+    /**
+     * From the start of the cleaner's local day, sent in UTC, so a job earlier today still counts on the
+     * today line. → /architecture/frontend#partner-dashboard
+     */
     private suspend fun getUpcomingOrders(
         employeeId: String,
         limit: Int,
-    ): ApiResult<List<OrderListItem>> =
-        safeApiCall(json) {
+    ): ApiResult<List<OrderListItem>> {
+        val zone = ZoneId.systemDefault()
+        val startOfToday = LocalDate.now(zone).atStartOfDay(zone).toInstant().toString()
+        return safeApiCall(json) {
             dashboardApi.dashboardGetUpcomingOrders(
                 filterEmployeeId = employeeId,
                 filterIsActive = true,
+                filterCleaningDateFrom = startOfToday,
                 sort = listOf(SortDefinition(field = "cleaningDateTime", direction = SortDirection._0)),
                 offset = 0,
                 limit = limit,
             )
         }.map { it.data.orEmpty() }
+    }
 
     private suspend fun getAvailableJobsPreview(limit: Int): ApiResult<AvailableJobsPreview> =
         safeApiCall(json) { dashboardApi.dashboardGetAvailableJobsPreview(limit) }

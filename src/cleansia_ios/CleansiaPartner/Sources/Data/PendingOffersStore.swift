@@ -13,6 +13,7 @@ final class PendingOffersStore: ObservableObject, SessionScopedCache {
     private let client: PartnerOrderClient
     private let ordersStaleness: OrdersStaleness
     private let staleness: Staleness
+    private var sessionGeneration = 0
 
     init(
         client: PartnerOrderClient,
@@ -29,7 +30,9 @@ final class PendingOffersStore: ObservableObject, SessionScopedCache {
     }
 
     func refresh() async -> ApiResult<[PendingOfferItem]> {
+        let generation = sessionGeneration
         let result = await client.myPendingOffers()
+        guard generation == sessionGeneration else { return .failure(ApiError(code: ApiError.cancelledCode)) }
         if case let .success(rows) = result {
             offers = rows
             staleness.markFresh()
@@ -54,6 +57,7 @@ final class PendingOffersStore: ObservableObject, SessionScopedCache {
     }
 
     func clear() async {
+        sessionGeneration += 1
         offers = []
         staleness.invalidate()
     }

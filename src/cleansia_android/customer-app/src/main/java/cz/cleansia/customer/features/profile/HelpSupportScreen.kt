@@ -1,9 +1,5 @@
 package cz.cleansia.customer.features.profile
 
-import android.content.ActivityNotFoundException
-import android.content.ClipData
-import android.content.ClipboardManager
-import android.content.Context
 import android.content.Intent
 import android.net.Uri
 import androidx.compose.foundation.background
@@ -56,6 +52,7 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import cz.cleansia.core.format.formatOrderPrice
+import cz.cleansia.core.ui.openOrCopy
 import cz.cleansia.customer.R
 import cz.cleansia.customer.core.market.InsuranceCoverage
 import cz.cleansia.customer.ui.theme.CleansiaTheme
@@ -99,16 +96,6 @@ fun HelpSupportScreen(
             if (!context.openOrCopy(mail, SUPPORT_EMAIL)) viewModel.onEmailUnavailable()
         },
     )
-}
-
-/** Starts [intent]; when no app on the device handles it, copies [value] instead and returns false. */
-private fun Context.openOrCopy(intent: Intent, value: String): Boolean = try {
-    startActivity(intent)
-    true
-} catch (_: ActivityNotFoundException) {
-    (getSystemService(Context.CLIPBOARD_SERVICE) as? ClipboardManager)
-        ?.setPrimaryClip(ClipData.newPlainText(value, value))
-    false
 }
 
 @OptIn(ExperimentalMaterial3Api::class)

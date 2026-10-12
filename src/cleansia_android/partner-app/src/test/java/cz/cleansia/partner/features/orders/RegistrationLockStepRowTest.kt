@@ -12,10 +12,12 @@ import org.junit.Test
  */
 class RegistrationLockStepRowTest {
 
-    private val row: String = sequenceOf(File("."), File("partner-app"), File("src/cleansia_android/partner-app"))
+    private val screen: String = sequenceOf(File("."), File("partner-app"), File("src/cleansia_android/partner-app"))
         .map { File(it, "src/main/java/cz/cleansia/partner/features/orders/RegistrationLockScreen.kt") }
         .first { it.isFile }
         .readText()
+
+    private val row: String = screen
         .substringAfter("private fun StepRowView(")
         .substringBefore("private fun SignOutLink(")
 
@@ -27,6 +29,25 @@ class RegistrationLockStepRowTest {
         assertTrue("the title left the header line", header.contains("stringResource(categoryLabelRes)"))
         assertTrue("the status icon left the header line", header.contains("imageVector = statusIcon"))
         assertTrue("the chevron left the header line", header.contains("KeyboardArrowRight"))
+    }
+
+    /** With no mail app the rejected-approval row did nothing; it now copies the address and says so, as Help does. */
+    @Test
+    fun `the support row copies the address and says so when no mail app takes it`() {
+        assertTrue(
+            "the row must route its mail intent through openOrCopy and tell the cleaner when it copied",
+            Regex("""if \(!context\.openOrCopy\(intent, SUPPORT_EMAIL\)\) onSupportEmailUnavailable\(\)""").containsMatchIn(row),
+        )
+        assertTrue("the row must mail the support address", row.contains("Uri.parse(\"mailto:\$SUPPORT_EMAIL\")"))
+        assertTrue("a refused intent must not be swallowed", !row.contains("runCatching"))
+        assertTrue(
+            "the screen must hand the rows the view model's notice",
+            screen.contains("onSupportEmailUnavailable = viewModel::onSupportEmailUnavailable"),
+        )
+        assertTrue(
+            "the support address must be the one the customer app uses",
+            screen.contains("private const val SUPPORT_EMAIL = \"support@cleansia.cz\""),
+        )
     }
 
     @Test

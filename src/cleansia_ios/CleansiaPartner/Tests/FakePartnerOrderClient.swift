@@ -59,6 +59,9 @@ final class FakePartnerOrderClient: PartnerOrderClient {
     var pendingOffersResult: ApiResult<[PendingOfferItem]> = .success([])
     var declineResult: ApiResult<Void> = .success(())
     private(set) var pendingOffersCallCount = 0
+    var holdPendingOffers = false
+    var pendingOffersStarted: ((Int) -> Void)?
+    private var heldPendingOffers: [Int: CheckedContinuation<ApiResult<[PendingOfferItem]>, Never>] = [:]
 
     /// The reservation writes, recorded separately from the lifecycle commands so a test can assert
     /// that a confirm went to `takeOrder` and nowhere near the decline endpoint.
@@ -142,7 +145,19 @@ final class FakePartnerOrderClient: PartnerOrderClient {
 
     func myPendingOffers() async -> ApiResult<[PendingOfferItem]> {
         pendingOffersCallCount += 1
-        return pendingOffersResult
+        let call = pendingOffersCallCount
+        guard holdPendingOffers else {
+            pendingOffersStarted?(call)
+            return pendingOffersResult
+        }
+        return await withCheckedContinuation { continuation in
+            heldPendingOffers[call] = continuation
+            pendingOffersStarted?(call)
+        }
+    }
+
+    func releasePendingOffers(call: Int, result: ApiResult<[PendingOfferItem]>) {
+        heldPendingOffers.removeValue(forKey: call)?.resume(returning: result)
     }
 
     /// Gated like the lifecycle commands, so a test can hold a release mid-flight and try a confirm

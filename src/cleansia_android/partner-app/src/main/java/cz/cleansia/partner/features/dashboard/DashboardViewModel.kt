@@ -3,6 +3,7 @@ package cz.cleansia.partner.features.dashboard
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import cz.cleansia.core.snackbar.SnackbarController
+import cz.cleansia.partner.R
 import cz.cleansia.partner.api.model.OrderListItem
 import cz.cleansia.partner.core.auth.EmployeeIdResolver
 import cz.cleansia.partner.core.auth.UserProfileStore
@@ -28,7 +29,8 @@ import javax.inject.Inject
  *
  * [Loaded] carries a nullable stats so the cards render with their
  * own zero/placeholder fallbacks in the brief pre-load and error-cleared
- * moments, matching the cache projection. [isUserRefreshing] drives the
+ * moments, matching the cache projection, and a nullable upcoming list that
+ * stays null until it has been read. [isUserRefreshing] drives the
  * pull-to-refresh suds indicator; background refreshes (init / ON_RESUME /
  * post-mutation) never set it, so they render silently.
  */
@@ -39,7 +41,7 @@ sealed interface DashboardUiState {
 
     data class Loaded(
         val stats: DashboardStats?,
-        val upcoming: List<OrderListItem>,
+        val upcoming: List<OrderListItem>?,
         val availableJobsPreview: AvailableJobsPreview?,
         override val isUserRefreshing: Boolean,
     ) : DashboardUiState
@@ -95,7 +97,7 @@ class DashboardViewModel @Inject constructor(
             started = SharingStarted.WhileSubscribed(5_000),
             initialValue = DashboardUiState.Loaded(
                 stats = null,
-                upcoming = emptyList(),
+                upcoming = null,
                 availableJobsPreview = null,
                 isUserRefreshing = false,
             ),
@@ -109,6 +111,9 @@ class DashboardViewModel @Inject constructor(
 
     /** Pull-to-refresh — always hits the network, surfaces as isUserRefreshing. */
     fun refresh() = load(RefreshSource.USER_PULL)
+
+    /** No mail app took the support address, so the screen copied it; say so. */
+    fun onHelpEmailUnavailable() = snackbar.showInfoKey(R.string.help_email_unavailable)
 
     fun onResume() {
         load(RefreshSource.RESUME)

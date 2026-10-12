@@ -42,6 +42,19 @@ if (!googleServicesFile.exists()) {
     }
 }
 
+// Stripe publishable key (pk_test_... in dev, pk_live_... in prod), from ~/.gradle/gradle.properties
+// (STRIPE_PUBLISHABLE_KEY) or CI env. Blank leaves the app without card payment; a release build refuses
+// a blank key (below), and no build accepts a key that is not publishable.
+val stripePublishableKey = providers.gradleProperty("STRIPE_PUBLISHABLE_KEY").orNull
+    ?: System.getenv("STRIPE_PUBLISHABLE_KEY")
+    ?: ""
+if (stripePublishableKey.isNotBlank() && !stripePublishableKey.startsWith("pk_")) {
+    throw GradleException(
+        "STRIPE_PUBLISHABLE_KEY must be a Stripe publishable key (pk_...). A secret key must never be " +
+            "built into a client app. Fix it in ~/.gradle/gradle.properties or the environment."
+    )
+}
+
 android {
     namespace = "cz.cleansia.customer"
     compileSdk = 35
@@ -76,13 +89,6 @@ android {
                     ?: ""
         buildConfigField("String", "SENTRY_DSN", "\"$sentryDsn\"")
 
-        // Stripe publishable key (pk_test_... in dev, pk_live_... in prod). Read
-        // from ~/.gradle/gradle.properties (STRIPE_PUBLISHABLE_KEY) or CI env.
-        // Empty fallback so unconfigured builds don't crash at startup —
-        // PaymentSheet will fail at runtime with a clear error if the key is missing.
-        val stripePublishableKey = providers.gradleProperty("STRIPE_PUBLISHABLE_KEY").orNull
-            ?: System.getenv("STRIPE_PUBLISHABLE_KEY")
-                    ?: ""
         buildConfigField("String", "STRIPE_PUBLISHABLE_KEY", "\"$stripePublishableKey\"")
 
         // Google Pay environment follows the STRIPE KEY, not the build type.
@@ -196,10 +202,10 @@ android {
     }
 }
 
-// Copy guards read every locale's strings.xml, the grace claims the backend's BookingPolicy.cs, and
-// the card-guarantee consent its version in SavedCard.cs, straight off disk. None of them changes a compiled class, so
-// undeclared, a copy-only edit or a changed policy figure leaves this task UP-TO-DATE or FROM-CACHE
-// with the old verdict.
+// Copy guards read every locale's strings.xml, the grace claims the backend's BookingPolicy.cs,
+// the card-guarantee consent its version in SavedCard.cs, and StripeKeyBuildGuardTest this build script,
+// straight off disk. None of them changes a compiled class, so undeclared, a copy-only edit or a changed
+// policy figure leaves this task UP-TO-DATE or FROM-CACHE with the old verdict.
 tasks.withType<Test>().configureEach {
     inputs.files(fileTree("src/main/res") { include("values*/strings.xml") })
         .withPropertyName("localeStrings")
@@ -212,9 +218,13 @@ tasks.withType<Test>().configureEach {
     inputs.file("$rootDir/../Cleansia.Core.Domain/Users/SavedCard.cs")
         .withPropertyName("savedCardConsentVersion")
         .withPathSensitivity(PathSensitivity.NONE)
+
+    inputs.file("build.gradle.kts")
+        .withPropertyName("buildScript")
+        .withPathSensitivity(PathSensitivity.NONE)
 }
 
-// ─── Release assertions: Firebase config, signing ───────────────────
+// ─── Release assertions: Stripe key, Firebase config, signing ───────
 // The `if (keystoreFile.exists())` guard above is what keeps debug builds and IDE sync working on
 // a machine with no keystore — but AGP then treats the empty signingConfig as "package it
 // unsigned" and emits the artifact with no error, so the first signal is Play rejecting the
@@ -242,6 +252,13 @@ run {
     val wantsRelease = gradle.startParameter.taskNames.any { name ->
         releaseTask.containsMatchIn(name) &&
             (!name.startsWith(":") || name.startsWith("${project.path}:"))
+    }
+    if (wantsRelease && stripePublishableKey.isBlank()) {
+        throw GradleException(
+            "STRIPE_PUBLISHABLE_KEY is not set, so this release build would hide card payment and offer " +
+                "cash only. Set it to the publishable key (pk_...) in ~/.gradle/gradle.properties or the " +
+                "environment."
+        )
     }
     // The fallback at the top of this file copies the placeholder in whenever the real config is
     // absent, so without this a release build ships with push dead and nothing says so. The

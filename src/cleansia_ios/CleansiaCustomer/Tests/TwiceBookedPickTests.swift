@@ -345,6 +345,7 @@ final class TwiceBookedPickTests: XCTestCase {
             cleanersClient: FakeServingCleanersClient(),
             consentClient: FakeConsentStatusClient(granted: [.termsOfService, .privacyPolicy]),
             snackbar: SnackbarController(),
+            isCardPaymentAvailable: true,
             scheduler: TestScheduler.dispatch.eraseToAnyScheduler()
         )
         await vm.load()

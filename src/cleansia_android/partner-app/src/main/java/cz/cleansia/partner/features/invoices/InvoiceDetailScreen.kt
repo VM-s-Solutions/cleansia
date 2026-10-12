@@ -55,6 +55,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import cz.cleansia.core.money.CurrencySymbols
 import cz.cleansia.core.ui.components.CleansiaPrimaryButton
 import cz.cleansia.core.ui.theme.Spacing
 import cz.cleansia.core.ui.theme.primaryIconOnContainer
@@ -64,7 +65,6 @@ import cz.cleansia.partner.data.invoices.InvoiceDetail
 import java.time.LocalDate
 import java.time.ZonedDateTime
 import java.time.format.DateTimeFormatter
-import java.util.Currency
 import java.util.Locale
 
 /**
@@ -193,7 +193,7 @@ fun InvoiceDetailScreen(
 
 @Composable
 private fun HeroCard(invoice: InvoiceDetail) {
-    val symbol = remember(invoice.currencyCode) { currencySymbol(invoice.currencyCode) }
+    val symbol = remember(invoice.currencyCode) { CurrencySymbols.forCode(invoice.currencyCode) }
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -236,7 +236,7 @@ private fun HeroCard(invoice: InvoiceDetail) {
 
 @Composable
 private fun BreakdownCard(invoice: InvoiceDetail) {
-    val symbol = remember(invoice.currencyCode) { currencySymbol(invoice.currencyCode) }
+    val symbol = remember(invoice.currencyCode) { CurrencySymbols.forCode(invoice.currencyCode) }
     Column(
         modifier = Modifier
             .fillMaxWidth()
@@ -620,13 +620,6 @@ private fun formatDate(iso: String?): String? {
         ?: runCatching { LocalDate.parse(iso) }.getOrNull()
         ?: return null
     return date.format(shortDateFormatter)
-}
-
-private fun currencySymbol(code: String?): String {
-    if (code.isNullOrBlank()) return ""
-    return runCatching { Currency.getInstance(code).getSymbol(Locale.getDefault()) }
-        .getOrNull()
-        ?: code
 }
 
 private fun formatMoney(amount: Double, symbol: String): String {

@@ -409,8 +409,8 @@ private struct PerksSection: View {
             if let percent = plan?.discountPerkPercent {
                 PerkTile(
                     icon: "tag",
-                    title: L10n.Membership.perkDiscountTitle,
-                    desc: L10n.Membership.perkDiscountDesc(percent)
+                    title: L10n.Membership.perkDiscountTitle(percent),
+                    desc: L10n.Membership.perkDiscountDesc
                 )
             }
             if let hours = plan?.cancellationPerkHours {

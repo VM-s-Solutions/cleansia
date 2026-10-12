@@ -82,12 +82,12 @@ extension L10n {
             format("membership_cta_disclosure_trial_year", price)
         }
 
-        static var perkDiscountTitle: String {
-            localized("membership_perk_discount_title")
+        static func perkDiscountTitle(_ percent: Int) -> String {
+            format("membership_perk_discount_title", percent)
         }
 
-        static func perkDiscountDesc(_ percent: Int) -> String {
-            format("membership_perk_discount_desc", percent)
+        static var perkDiscountDesc: String {
+            localized("membership_perk_discount_desc")
         }
 
         static var perkCancellationTitle: String {

@@ -2,6 +2,7 @@ package cz.cleansia.customer.features.orders
 
 import java.io.File
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -50,13 +51,36 @@ class OrderDetailRecurringGateTest {
      */
     @Test
     fun `the recurring confirm keys on the server's needsConfirmation, not the payment status`() {
-        assertEquals(
-            "val showConfirmRecurringCta = order.needsConfirmation",
-            Regex("""val showConfirmRecurringCta = .*""").find(screen)?.value,
+        val flag = Regex("""val showConfirmRecurringCta = .*""").find(screen)?.value.orEmpty()
+        assertTrue(
+            "the confirm must key on the server's needsConfirmation, got `$flag`",
+            flag.startsWith("val showConfirmRecurringCta = order.needsConfirmation"),
         )
+        assertFalse("the confirm must not key on the payment status, got `$flag`", flag.contains("paymentStatus"))
         assertTrue(
             "the derived flag no longer gates the confirm button",
             screen.contains("if (showConfirmRecurringCta) {"),
+        )
+    }
+
+    /**
+     * As on iOS, a build without a Stripe key does not offer a card occurrence's confirm: the server spends
+     * the customer's credit on it, and the screen then opens a PaymentSheet that cannot. A cash occurrence
+     * takes no card, so it still confirms.
+     */
+    @Test
+    fun `a card occurrence offers no confirm in a build without a Stripe key`() {
+        assertTrue(
+            "the screen must read card availability from the key that initialises Stripe",
+            screen.contains("val cardPaymentAvailable = BuildConfig.STRIPE_PUBLISHABLE_KEY.isNotBlank()"),
+        )
+        assertEquals(
+            "val payByCard = order.paymentType?.value == 2",
+            Regex("""val payByCard = .*""").find(screen)?.value,
+        )
+        assertEquals(
+            "val showConfirmRecurringCta = order.needsConfirmation && (cardPaymentAvailable || !payByCard)",
+            Regex("""val showConfirmRecurringCta = .*""").find(screen)?.value,
         )
     }
 

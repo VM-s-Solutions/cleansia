@@ -1,4 +1,5 @@
 import CleansiaCore
+import MessageUI
 import SwiftUI
 
 struct RegistrationLockView: View {
@@ -186,7 +187,16 @@ struct RegistrationLockView: View {
             mail.scheme = "mailto"
             mail.path = CleansiaWeb.contactEmail
             mail.queryItems = [URLQueryItem(name: "subject", value: L10n.RegistrationLock.supportSubject)]
-            if let url = mail.url { openURL(url) }
+            guard let url = mail.url else { return }
+            let copyFirst = !MFMailComposeViewController.canSendMail()
+            let copy = {
+                UIPasteboard.general.string = CleansiaWeb.contactEmail
+                snackbar.showInfo(L10n.Help.emailUnavailable)
+            }
+            if copyFirst { copy() }
+            openURL(url) { accepted in
+                if !accepted, !copyFirst { copy() }
+            }
         }
     }
 

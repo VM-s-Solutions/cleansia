@@ -73,9 +73,9 @@ fails any handler under `src/Cleansia.Functions.Core/Handlers` that gains a seco
 The jobs that still catch past a commit, or past staging, in a shared scope are listed in
 `agents/knowledge/consistency.md` §"A loop that continues past a failed commit in a shared scope", with the search
 that found them. The roster is descriptive; the rule decides the next case. Converting them is a canonicalization
-ticket for the owner to schedule. `SendRecurringOrderReminders` comes first: once ADR-0071 makes the order's
-payment status a concurrency token, one payment landing during its run will fail every later reminder of that
-run. `RedrivePendingRefunds` moves money.
+ticket for the owner to schedule. `SendRecurringOrderReminders` comes first: since ADR-0071 made the order's
+payment status a concurrency token, one payment landing during its run fails every later reminder of that run.
+`RedrivePendingRefunds` moves money.
 
 ## Residuals
 

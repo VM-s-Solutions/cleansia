@@ -1,3 +1,4 @@
+using System.Data.Common;
 using Cleansia.Core.AppServices.Behaviors;
 using Cleansia.Core.AppServices.Features.Bookings;
 using Cleansia.Core.AppServices.Features.Orders;
@@ -108,6 +109,43 @@ public sealed class RecurringAutoCancelCreditAtomicityTests(PostgresContainerFix
             .SingleAsync(a => a.UserId == UserId);
         Assert.Equal(Credit, account.Balance);
         Assert.Equal(account.Balance, account.Transactions.Sum(t => t.Amount));
+    }
+
+    /// <summary>
+    /// The customer's payment for the occurrence lands while its cancellation is being staged. The order's payment
+    /// status is a concurrency token, so the cancellation's commit is refused and rolls back with its credit return:
+    /// the occurrence stays paid and booked with its credit still spent, and the run counts it as failed. Without
+    /// the token the cancellation landed on the paid occurrence and handed its credit back.
+    /// </summary>
+    [Fact]
+    public async Task A_Payment_Landing_While_The_Occurrence_Is_Cancelled_Is_Kept_And_Nothing_Is_Cancelled()
+    {
+        var paidMeanwhile = new BeforeFirstOwnerLock(PayAsync);
+
+        var run = await RunSweepAsync(paidMeanwhile);
+
+        await using (var afterRace = NewContext())
+        {
+            var order = await afterRace.Orders.IgnoreQueryFilters()
+                .Include(o => o.OrderStatusHistory)
+                .SingleAsync(o => o.Id == OrderId);
+            Assert.Equal((PaymentStatus.Paid, OrderStatus.New), (order.PaymentStatus, order.CurrentStatus));
+            Assert.DoesNotContain(order.OrderStatusHistory, t => t.Status == OrderStatus.Cancelled);
+            Assert.False(await afterRace.CreditTransactions.IgnoreQueryFilters()
+                .AnyAsync(t => t.IdempotencyKey == ReturnKey));
+        }
+
+        Assert.True(paidMeanwhile.Ran);
+        Assert.Equal(new AutoCancelStaleRecurringOrders.Response(Cancelled: 0, Considered: 1, Failed: 1), run);
+    }
+
+    /// <summary>The webhook's write of the occurrence's card payment, committed on a connection of its own.</summary>
+    private async Task PayAsync()
+    {
+        await using var paying = NewContext();
+        var order = await paying.Orders.IgnoreQueryFilters().SingleAsync(o => o.Id == OrderId);
+        order.UpdatePaymentStatus(PaymentStatus.Paid);
+        await paying.CommitAsync(CancellationToken.None);
     }
 
     /// <summary>
@@ -255,6 +293,27 @@ public sealed class RecurringAutoCancelCreditAtomicityTests(PostgresContainerFix
             }
 
             return ValueTask.FromResult(result);
+        }
+    }
+
+    /// <summary>Commits another connection's write just before the first owner lock, the credit return's.</summary>
+    private sealed class BeforeFirstOwnerLock(Func<Task> write) : DbCommandInterceptor
+    {
+        public bool Ran { get; private set; }
+
+        public override async ValueTask<InterceptionResult<int>> NonQueryExecutingAsync(
+            DbCommand command, CommandEventData eventData, InterceptionResult<int> result,
+            CancellationToken cancellationToken = default)
+        {
+            if (!Ran
+                && command.CommandText.Contains("FROM \"Users\"", StringComparison.Ordinal)
+                && command.CommandText.Contains("FOR NO KEY UPDATE", StringComparison.Ordinal))
+            {
+                Ran = true;
+                await write();
+            }
+
+            return result;
         }
     }
 

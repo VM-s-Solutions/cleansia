@@ -2,7 +2,7 @@
 
 Every architecture and business decision on record, with the argument that settled it.
 
-**72 records.** A decision keeps a stable id — `ADR-0037` — and roughly six hundred source
+**73 records.** A decision keeps a stable id — `ADR-0037` — and roughly six hundred source
 files cite ids in that form. The id is the reference, not the file name or the title, so a record can
 be retitled without breaking a single citation.
 
@@ -119,6 +119,12 @@ reported by the cleaner (ADR-0070 — 18 (a) reversed to 18 (b), D8 lifted for u
 client runs one resilience pipeline, and SendGrid's keyless send stays retried against D1.2 (ADR-0005).
 Neither replaces a record, so there is no arrow.
 
+**[ADR-0071](./adr-0071)** (`accepted` 2026-10-12) supersedes nothing: an order's payment status is its second
+concurrency token beside its fulfilment status, so a cancel decided on an unpaid order is refused when the payment
+lands first, and the payment status a refund's settle derives is read again instead of failing. It changes the
+premise of [ADR-0067](./adr-0067) D8 (*`CurrentStatus` is the only concurrency token*) while D8's conclusion stands,
+and ADR-0067 is not edited, so there is no arrow.
+
 **[ADR-0072](./adr-0072)** (`accepted` 2026-10-12) supersedes nothing: a timer that carries several commands
 sends each from a scope of its own, and a job whose items must fail independently gives each item one. It
 extends the shape [ADR-0061](./adr-0061)'s jobs already follow, and the jobs that still catch past a commit in a
@@ -202,6 +208,7 @@ ends unpaid now commits with the commit that ends the order, which brings that r
 | **[ADR-0068](./adr-0068)** | A contract for work per job: the text the order is booked under, the cleaner's acceptance of it, what both parties can see (owner ruling 2026-09-20; amends ADR-0063 D9 by one sentence; shipped as T-0777–T-0784; amended 2026-09-27: the company sells in its own name; amended 2026-09-29: the operating company and the cleaner are the parties, under our draft texts; amended 2026-10-03: the seat is paid the reward its contract states) | `accepted` |
 | **[ADR-0069](./adr-0069)** | The dirtiness level prices, times, crews and pays the job, and a job's pay is split across its seats (owner rulings 2026-09-28, meeting-plan decisions 28–40; changes a premise of ADR-0037 D9, whose no-spare-seat ruling stands) | `accepted` |
 | **[ADR-0070](./adr-0070)** | A saved card guarantees cash, and what a customer owes is a receivable — paid through a pay link, charged to the card only once the terms allow it; a lockout is the customer's cancellation at the whole price; the crew shares a fee once it is collected (owner rulings 2026-09-28, meeting-plan decisions 11–13, 16–18 and 24; amended 2026-10-01: a card may be saved while paying by card, and only a ticked one is kept; amended 2026-10-04: cash needs no card and none is charged, and a confirmed lockout pays each seat its reward; amended 2026-10-06: an amount owed refuses every booking, and a door non-payment is owed) | `accepted` |
+| **[ADR-0071](./adr-0071)** | An order's two lifecycle axes, fulfilment and payment, are its concurrency tokens, so a write decided on a stale read of either is refused at commit; the payment status a refund's settle derives is read again on such a refusal (2026-10-12; changes a premise of ADR-0067 D8, whose conclusion stands) | `accepted` |
 | **[ADR-0072](./adr-0072)** | A system job gives each item, and each command on a shared timer, a DI scope of its own; no loop continues past a failed commit in a shared scope (2026-10-12) | `accepted` |
 | **[ADR-0073](./adr-0073)** | The credit an order gives back when it ends unpaid commits with the commit that ends the order, or not at all; a unit holding several customers' credit locks takes them in ordinal user-id order (2026-10-12) | `accepted` |
 

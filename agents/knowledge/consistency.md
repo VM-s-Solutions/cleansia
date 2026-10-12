@@ -660,6 +660,16 @@ where it is seen.
     too: a predicate that matches most of the table makes a seq scan the **correct** plan and the whole
     pin meaningless.
 
+- **An order's write concurrency is its two lifecycle axes, not a row version and not a lock (ADR-0071,
+  `accepted` 2026-10-12).** The precedent in this codebase for "two writers of one row must not lose an update" is
+  `xmin` (`RefreshToken`, `UserMembership`, `LoyaltyAccount`, `Referral`), and a sweep that must not race its rows
+  could take them `FOR UPDATE`. `Orders` takes neither. `CurrentStatus` and `PaymentStatus` are its concurrency
+  tokens, because the invariant at risk is a decision made on a stale read of either axis. A row version would also
+  refuse writes to every unrelated column of the busiest row, and `TakeOrder` turns any conflict into a refused seat.
+  A per-sweep lock covers only the sweeps that adopt it, leaves the request-path cancels racing, and locks `Orders`
+  before the customer's `Users` row, the reverse of every credit path. Rule and enforcer: `patterns-backend.md`
+  §"Order writes compare both lifecycle axes".
+
 These judgment calls are **Architect-owned**; changing one is an ADR, not an ad-hoc reversal.
 
 ## Interim implementations must name their end state (ADR-0038 §D4, amended AM-7)

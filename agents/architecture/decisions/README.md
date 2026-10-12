@@ -29,8 +29,9 @@ Expected early topics (from the audit's 5 pre-/Wave-1 ADRs): `authz`, `outbox`, 
 `integration`, plus `soft-delete`, `multi-tenancy`, `fiscal-modes`, `pay-calculation`.
 
 `order-concurrency.md` — what keeps one order and its customer's credit consistent when writers overlap: the
-order's concurrency token, the order-ending credit return joining the ending commit, and the order several
-customers' credit locks are taken in (ADR-0073).
+order's two concurrency tokens and the refund settle that reads again what it derives (ADR-0071), the
+order-ending credit return joining the ending commit, and the order several customers' credit locks are taken in
+(ADR-0073).
 
 `system-jobs.md` — the shapes a system job takes, the rule that each item and each command on a shared timer
 fails in a scope of its own, and the jobs that still catch past a commit in a shared scope (ADR-0072).

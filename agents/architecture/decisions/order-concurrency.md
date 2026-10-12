@@ -1,8 +1,9 @@
 # Order concurrency — what keeps one order and its customer's credit consistent when writers overlap
 
-> **Status of this page: THE CURRENT SHAPE — binding.** [ADR-0073](/decisions/adr-0073) is `accepted`
-> (2026-10-12) and shipped with this page. The ADR is the immutable record with the
-> `## Challenge` / `## Defense` / `## Verdict` trail; this page is the evolving companion.
+> **Status of this page: THE CURRENT SHAPE — binding.** [ADR-0071](/decisions/adr-0071) and
+> [ADR-0073](/decisions/adr-0073) are `accepted` (2026-10-12) and shipped with this page. The ADRs are the
+> immutable records with the `## Challenge` / `## Defense` / `## Verdict` trail; this page is the evolving
+> companion.
 >
 > Companion pages: [`outbox.md`](./outbox.md) (what a commit carries out of the process),
 > [`order-availability.md`](./order-availability.md) (which orders a cleaner may take).
@@ -10,17 +11,35 @@
 
 ---
 
-## The order row: one concurrency token today
+## The order row: one concurrency token per lifecycle axis (ADR-0071 D1)
 
-`Orders.CurrentStatus` is the only concurrency token on an order
-(`src/Cleansia.Infra.Database/EntityConfigurations/OrderEntityConfiguration.cs:252-254`). Every tracked
-UPDATE of an order compares it, so a writer that decided on a fulfilment status it read earlier is refused
-when another writer moved that status in between. `PaymentStatus` is indexed, not compared: a writer that
-decided on a payment status read earlier still overwrites one committed since. That second axis is the
-subject of ADR-0071, which adds `PaymentStatus` as the second token; this section is rewritten when it ships.
+An order moves on two axes, fulfilment (`CurrentStatus`) and payment (`PaymentStatus`), and both are its
+concurrency tokens (`src/Cleansia.Infra.Database/EntityConfigurations/OrderEntityConfiguration.cs:252-260`).
+Every tracked UPDATE of an order compares both, so a writer that decided on the order as it read it is refused
+when another writer moved either axis in between. Before the payment axis was a token, a cancel decided on an
+unpaid checkout overwrote a payment committed after its read: the sweep's commit wrote `Failed`, a customer's
+cancel left `Cancelled` and `Paid`, and either way the money was kept with nothing refunded or escalated.
 
-Nothing writes `Orders` outside the change tracker: no `ExecuteUpdate`/`ExecuteDelete` targets it, and the
-only raw SQL naming the table is a `SELECT … FOR UPDATE`.
+| A payment lands while… | What happens now |
+|---|---|
+| the stale-checkout sweep cancels the company's checkouts | the company's commit is refused and rolls back whole, credit return included; the order stays paid; the next run does not select it |
+| the recurring auto-cancel cancels the occurrence | the occurrence's unit is refused and counted as failed; it stays paid and is not selected again |
+| a customer or an administrator cancels | the cancel gets one error and its credit return rolls back; a retry reads the paid order |
+| a webhook commits after a cancel | the webhook is refused, Stripe retries, and the retry escalates the paid-after-cancel order (unchanged) |
+
+**What the tokens cost.** A writer whose read-to-commit window contains a write on either axis now fails instead
+of overwriting: a request path returns one unmapped 500; `TakeOrder` answers `order.no_available_spots` when a take
+races a refund's settle; `MarkCashCollected`'s repair commit after Stripe has settled can return one 500; and
+`SendRecurringOrderReminders`, which commits per order inside a catch in one shared scope, fails every later
+reminder of a run during which a payment lands (the first item of ADR-0072's canonicalization ticket).
+
+**Not `xmin`, and no lock.** A row version would also refuse writes to every unrelated column of the busiest row; a
+per-sweep `FOR UPDATE` would cover only the sweeps that adopt it and lock `Orders` before the customer's `Users` row.
+
+**`Orders` is written only through the change tracker**, which is what makes the tokens hold: no
+`ExecuteUpdate`/`ExecuteDelete` targets it, and the only raw SQL naming the table is a `SELECT … FOR UPDATE`
+(`EmployeeActionAuditRepository`). `OrderConcurrencyTokenTests` fails the build on a new one; the rule and the
+guard's scope are in `agents/knowledge/patterns-backend.md` §"Order writes compare both lifecycle axes".
 
 ## A refund's settle reads again what it derives (ADR-0071 D2)
 
@@ -38,9 +57,8 @@ settle reloads the order and tries again only when all three hold:
   stages the cancel, so reloading past a cleaner's start committed meanwhile would let that cancel be compared
   against the start instead of refused by it.
 
-Anything else is rethrown as before. Until `PaymentStatus` is a token (ADR-0071 D1), nothing refuses a save on
-the payment axis alone, so this path does not run yet: two refunds settling at once each still save a status
-counted without the other's refund.
+Anything else is rethrown as before. Without the retry, the payment-axis token would refuse the later of two
+settles after Stripe had paid it; without the token, each saved a status counted without the other's refund.
 
 ## The credit an order gives back when it ends (ADR-0073 D1)
 
@@ -89,6 +107,13 @@ A unit that holds several customers' credit locks until one commit takes them in
 
 ## Residuals
 
+- **`CustomerConfirmedAt` is not a token.** A confirm cannot meet the auto-cancel at the shipped settings: a
+  confirm is refused within two hours of the slot and the auto-cancel acts only within the last hour. It reopens
+  only if the grace is set to two hours or more (the validator allows up to 24).
+- **Every other column of an order stays last-writer-wins**: notes, reminder stamps, lapse stamps.
+- **The source guard misses** a bulk call on a query held in a variable from an earlier statement, and SQL assembled
+  at runtime; the S8 grep in `docs/architecture/security-rules.md` still finds them.
+
 - **`CompleteOrder` and a company's group can deadlock** when a referrer and the customer they referred both
   have abandoned checkouts with credit in the same group, the referrer sorts first, and the referred
   customer's first job completes in that second. Postgres aborts one side (40P01) and both roll back whole;
@@ -110,10 +135,17 @@ A unit that holds several customers' credit locks until one commit takes them in
   refused administrator cancel returns nothing, and its retry returns the credit once.
 - `src/Cleansia.IntegrationTests/Features/Bookings/RecurringAutoCancelCreditAtomicityTests.cs` — a refused
   auto-cancel of an occurrence returns no credit, and the next run cancels it and returns the credit once.
-- `src/Cleansia.IntegrationTests/Features/Refunds/ConcurrentRefundSettleTests.cs` — with `PaymentStatus` as a
-  token in its own model: two refunds settling at once are both recorded and the order ends Refunded; a
-  cancellation whose refund settles beside another still notifies its crew, e-mails the guest and releases the
-  waiver; a settle carrying a cancel staged on the order is refused whole.
+- `src/Cleansia.IntegrationTests/Features/Refunds/ConcurrentRefundSettleTests.cs` — two refunds settling at once
+  are both recorded and the order ends Refunded; a cancellation whose refund settles beside another still notifies
+  its crew, e-mails the guest and releases the waiver; a settle carrying a cancel staged on the order is refused
+  whole.
+- `src/Cleansia.Tests/Infrastructure/OrderConcurrencyTokenTests.cs` — the order's tokens are exactly the two axes;
+  a cancel decided on an unpaid order whose payment landed meanwhile is refused (SQLite, two contexts); the source
+  guard that keeps `Orders` written only through the change tracker.
+- On Postgres, a payment landing mid-cancel is kept and nothing is cancelled or credited:
+  `CleanupStalePendingOrdersTwoOperatorsTests.A_Payment_Landing_While_Its_Company_Is_Swept_Is_Kept_And_Nothing_Is_Cancelled`,
+  `RecurringAutoCancelCreditAtomicityTests.A_Payment_Landing_While_The_Occurrence_Is_Cancelled_Is_Kept_And_Nothing_Is_Cancelled`,
+  `src/Cleansia.IntegrationTests/Features/Orders/CustomerCancelRacingPaymentTests.cs`.
 - `src/Cleansia.IntegrationTests/Features/Orders/GuestOrderCancellationTests.cs`
   (`Cleaner_start_during_refund_or_before_final_commit_cannot_be_overwritten`) — a guest's settle refused by a
   cleaner's start stays refused, and the start stands.

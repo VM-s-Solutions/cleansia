@@ -161,7 +161,7 @@ The phase-5 loyalty perks arrive with the reseed that follows the drop (below) �
 Phase 6A (2026-09-23) regenerates `Initial` as **`20260923071814`**, removing the unread
 `CountryConfigurations.ReducedVatRate` column while retaining both live VAT rates.
 
-The 2026-09-27 meeting plan and the fixes after it regenerated it twenty times more, each one adding
+The 2026-09-27 meeting plan and the fixes after it regenerated it twenty-four times more, each one adding
 what is named against the id before it:
 
 - **`20260927231818`** (2026-09-28, `5d7d7b68a`, the chargeback and dispute-amount fixes):
@@ -223,13 +223,22 @@ what is named against the id before it:
   Designer and the snapshot gain the two `IsConcurrencyToken()` lines. Still **89** tables and **53** with
   the `Tenants` FK; `has-pending-model-changes` reports none, and the three backend suites ran green at it
   (8161 / 803 / 428).
+- **`20261012190449`** (2026-10-12, branch `fix/post-e-p5-backend-sweep-devices`, ADR-0071 — a payment that
+  lands while its order is being cancelled): `Orders.PaymentStatus` becomes the order's second concurrency token
+  beside `CurrentStatus`. No DDL: the body is byte-identical to `20261005201452` (sha256 `e4e3866c…f5cc` for both),
+  and the Designer and the snapshot each gain the one `IsConcurrencyToken()` line. Still **89** tables and **53**
+  with the `Tenants` FK. `has-pending-model-changes` reports none, and reported none before the regeneration too: a
+  token on an ordinary column is invisible to it, so the snapshot diff is the check for a change like this one. The
+  three backend suites ran green at it (8685 / 860 / 503).
 
-**The one owed drop belongs to `20261005201452`** (it renews the one owed for `20261005082345`), and
-the coordinator runs it right before the DEV deploy of `fix/findings-2026-10-06`: a DEV database whose
-`__EFMigrationsHistory` records any earlier id replays the whole create script against tables that
-already exist. The legal texts need no extra step — every host seeds them at start, and since
-`b34dff07` a fresh Development database is seeded once more in the boot that migrates it (the factory
-now refuses a booking with no contract text in force, so a first boot must not come up without one).
+**The one owed drop belongs to `20261012190449`** (it renews the one owed for `20261005201452`), and it
+runs right before the DEV deploy that first carries this id (`fix/post-e-p5-backend-sweep-devices`), once
+the owner has approved the reset — a DEV reset needs his explicit approval (`CLAUDE.md`), and approving the
+code does not approve it: a DEV database whose `__EFMigrationsHistory` records any earlier id replays the
+whole create script against tables that already exist. The legal texts need no extra step — every host seeds
+them at start, and since `b34dff07` a fresh Development database is seeded once more in the boot that
+migrates it (the factory now refuses a booking with no contract text in force, so a first boot must not come
+up without one).
 **Seven** document types are seeded now, in five languages each: for customers the terms of service, the
 privacy policy and the complaints procedure; for cleaners the contract for work, the framework
 cooperation agreement, the self-billing agreement and the data processing agreement. Every dated version

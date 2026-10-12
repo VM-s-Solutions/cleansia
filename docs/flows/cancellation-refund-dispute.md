@@ -615,5 +615,6 @@ dispute or the order shows the three interleaved, newest first.
 | A lockout confirmed on a signed-in customer's unpaid cash booking | Credit returned; a *Lockout* receivable for the whole price; each seat is paid its full reward at the confirmation, whether or not the receivable is ever paid. |
 | A lockout confirmed on an order already refunded | Each seat is still paid its full reward; no collected fee is read. |
 | Two partial refunds of one order settle at once | The second waits for the first's commit and takes only what the running total leaves. |
+| Two refunds of one order settle their payment status at once | The later one re-reads what the earlier one recorded and saves the status the two make together: 600 and 400 of a paid 1 000 leave it `Refunded`, and a cancellation whose refund settled second still sends its notices ([ADR-0071](/decisions/adr-0071) D2). |
 | A full refund run again with nothing left to do | `refund.nothing_refundable`; no money moves and no notice is queued. |
 | A card order refunded before the job ends | The cleaner completes it; completion asks for the crew's pay and takes the points share of what was returned. |

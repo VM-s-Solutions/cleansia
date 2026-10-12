@@ -368,7 +368,7 @@ public sealed class RefundService(
 
         // A save refused only because another refund moved the order's payment status is not a lost decision: that
         // status is derived from what the order has given back, so it is read and saved again rather than failing
-        // after Stripe has paid. Everything else the order's tokens refuse stays refused (→ ADR-0071 D2).
+        // after Stripe has paid. Everything else the order's tokens refuse stays refused. → /decisions/adr-0071
         const int maxAttempts = 3;
         for (var attempt = 1; ; attempt++)
         {

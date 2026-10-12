@@ -30,9 +30,9 @@ namespace Cleansia.IntegrationTests.Features.Refunds;
 /// together, instead of failing after Stripe has paid and leaving its refund pending, and with it everything a
 /// cancellation does after its refund. A settle that carries a decision of its own on the order stays refused.
 ///
-/// <para>Every context here has <c>PaymentStatus</c> as the order's second concurrency token, as ADR-0071 D1
-/// makes it. Without that token neither settle is refused, and the later one saves a status counted without
-/// the other's refund.</para>
+/// <para>The refusal comes from <c>PaymentStatus</c> being the order's second concurrency token (ADR-0071 D1).
+/// Without that token neither settle is refused, and the later one saves a status counted without the other's
+/// refund.</para>
 /// </summary>
 [Collection("PostgresCollection")]
 public class ConcurrentRefundSettleTests(PostgresContainerFixture fixture) : BaseIntegrationTest(fixture)
@@ -51,8 +51,8 @@ public class ConcurrentRefundSettleTests(PostgresContainerFixture fixture) : Bas
     private readonly List<(decimal Amount, string Key)> _stripeRefunds = [];
     private readonly Mock<IExpressWaiverConsumer> _waiver = new();
 
-    private CleansiaDbContext NewContext(params IInterceptor[] interceptors) => new PaymentAxisTokenContext(
-        new DbContextOptionsBuilder<PaymentAxisTokenContext>()
+    private CleansiaDbContext NewContext(params IInterceptor[] interceptors) => new(
+        new DbContextOptionsBuilder<CleansiaDbContext>()
             .UseNpgsql(Fixture.GetConnectionString())
             .AddInterceptors(interceptors)
             .Options,
@@ -286,20 +286,6 @@ public class ConcurrentRefundSettleTests(PostgresContainerFixture fixture) : Bas
             }
 
             return result;
-        }
-    }
-
-    /// <summary>The order model with <c>PaymentStatus</c> as its second concurrency token (ADR-0071 D1).</summary>
-    private sealed class PaymentAxisTokenContext(
-        DbContextOptions<PaymentAxisTokenContext> options,
-        IUserSessionProvider userSessionProvider,
-        ITenantProvider tenantProvider)
-        : CleansiaDbContext(options, userSessionProvider, tenantProvider)
-    {
-        protected override void OnModelCreating(ModelBuilder modelBuilder)
-        {
-            base.OnModelCreating(modelBuilder);
-            modelBuilder.Entity<Order>().Property(o => o.PaymentStatus).IsConcurrencyToken();
         }
     }
 

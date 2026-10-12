@@ -4339,6 +4339,7 @@ namespace Cleansia.Infra.Database.Migrations
                         .HasColumnType("text");
 
                     b.Property<int>("PaymentStatus")
+                        .IsConcurrencyToken()
                         .HasColumnType("integer");
 
                     b.Property<int>("PaymentType")

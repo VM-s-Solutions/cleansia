@@ -476,6 +476,35 @@ Any change to the list shape must keep `OrderListProjectionEquivalenceTests` (JS
 against the retained entity-mapper path) green — that test is the contract that the projection
 and the entity path emit identical DTO values.
 
+## Order writes compare both lifecycle axes, and `Orders` is written only through the change tracker (ADR-0071)
+
+> **LAW.** ADR-0071 `accepted` 2026-10-12. Living doc: `agents/architecture/decisions/order-concurrency.md`.
+
+An order moves on two axes, fulfilment (`CurrentStatus`) and payment (`PaymentStatus`), and both are EF
+concurrency tokens (`OrderEntityConfiguration`). Every tracked UPDATE of an order compares both, so a writer that
+decided on the order as it read it — a cancel, a sweep, a take, a cash collection — is refused with
+`DbUpdateConcurrencyException` when either axis has moved since, instead of overwriting it. A refusal is the token
+working: the unit fails, and a retry reads the new state. The one write that reads again instead is derived rather
+than decided — `RefundService.SettleAsync` reloads the order and saves its payment status again only when the
+refused save names the order alone, nothing but `PaymentStatus`, `UpdatedOn` and `UpdatedBy` is staged on it, and the
+order is still on the fulfilment status it read (ADR-0071 D2). Not `xmin`: a row version would also refuse writes to
+every unrelated column of the busiest row, and `TakeOrder` turns any conflict into `order.no_available_spots`.
+
+**The tokens hold only for writes the change tracker issues, so `Orders` is written only through it.** Load the order
+tracked and let the unit of work commit it. Never an `ExecuteUpdate`/`ExecuteDelete` from the orders set (`.Orders`,
+`Set<Order>()`, an order repository), and never a raw `UPDATE` or `DELETE` of `"Orders"`: either one writes the row
+without comparing a token, and commits outside the caller's unit of work.
+
+**Enforced by:** `src/Cleansia.Tests/Infrastructure/OrderConcurrencyTokenTests.cs` — the model check (the order's
+tokens are exactly the two axes) and the source guard `Orders_Are_Written_Only_Through_The_Change_Tracker` —
+**`T1-CI`**. *(The guard's scope: every `.cs` file of the production projects under `src/`, no test project and no
+`Migrations/`. It fails a raw `UPDATE`/`DELETE` of `Orders` anywhere but in a full-line comment, an
+`ExecuteUpdate`/`ExecuteDelete` chained in one statement from `.Orders`, `Set<Order>()` or an order repository, and
+any such call inside `OrderRepository.cs`. It does not see a bulk call on a query held in a variable from an earlier
+statement, or SQL assembled at runtime — the grep in `docs/architecture/security-rules.md` §S8 still finds those.
+Its anchors: `OrderRepository.cs` and `EmployeeActionAuditRepository.cs` are in the corpus, the latter's
+`SELECT … FROM "Orders" … FOR UPDATE` passes, known-bad samples are caught and known-good ones are not.)*
+
 ## A DISCLOSURE BLOCK is withheld by the server when its sentence stops being true (ADR-0049)
 
 > **Enforced by:** `src/Cleansia.Tests/Features/Orders/PreferredOfferDisclosureTests.cs` (backend CI,

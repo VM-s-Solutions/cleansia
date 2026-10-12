@@ -27,3 +27,7 @@ view) and `docs/architecture/*` (dev/published view).
 
 Expected early topics (from the audit's 5 pre-/Wave-1 ADRs): `authz`, `outbox`, `ratelimit`, `refund`,
 `integration`, plus `soft-delete`, `multi-tenancy`, `fiscal-modes`, `pay-calculation`.
+
+`order-concurrency.md` — what keeps one order and its customer's credit consistent when writers overlap: the
+order's concurrency token, the order-ending credit return joining the ending commit, and the order several
+customers' credit locks are taken in (ADR-0073).

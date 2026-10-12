@@ -446,7 +446,8 @@ customer's inbox. A guest gets no push; the cancellation e-mail tells them what 
 >
 > **A complaint settled in credit is counted, by what the order took** (since 2026-10-05). This credit
 > return, under the key `order-ended-unpaid:{orderId}` (`CreditUnwind.ReturnUnpaidOrderCreditAsync`),
-> serves every order that ends with no card refund of its own:
+> commits with the cancellation that ends the order, or not at all (since 2026-10-12,
+> [ADR-0073](/decisions/adr-0073)), and serves every order that ends with no card refund of its own:
 >
 > - **An order that took no payment** (`Order.TookNoPayment`): the credit is all that was paid, so a
 >   settlement comes off it in full. 500 applied with 400 settled returns 100.

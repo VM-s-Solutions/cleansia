@@ -1095,6 +1095,33 @@ false negative, not noise — the report stays clean and stops seeing anything. 
 amount instead of the id, never in addition to it** (an `AND id IS NOT NULL` re-introduces the
 blindness). So: *an order with a discount **amount** stamped and no matching ledger row.*
 
+## Customer credit locks: the order-ending return joins the ending commit, and several are taken in ordinal order (ADR-0073)
+
+> **LAW.** ADR-0073 `accepted` 2026-10-12. Living doc:
+> `agents/architecture/decisions/order-concurrency.md`.
+
+`CreditUnwind.ReturnUnpaidOrderCreditAsync` takes the customer's owner lock
+(`ICreditAccountRepository.LockForUserAsync`) before it reads or returns anything. The lock opens the unit of
+work's lock transaction when none is open, `TryReturnAsync` joins it, and the commit that ends the order
+commits the return or rolls it back with everything else — §"Post-persist" above, applied to the credit an
+order gives back. A caller therefore holds that customer's lock from the return until its commit, and needs
+no transaction of its own.
+
+**A unit that holds several customers' credit locks until one commit takes them in ordinal `UserId`
+order** — an `OrderBy(…UserId, StringComparer.Ordinal)` ahead of the loop that locks, as the referral grant
+(`ReferralService`), its reversal (`ReverseReferral`) and a company's group in `CleanupStalePendingOrders`
+do. Two units that hold the same customers then never each wait on a lock the other holds. A unit that can
+commit per customer does that instead and holds one lock at a time (`ExpireStaleCredit`).
+**Known exception, accepted:** `CompleteOrder` locks the completing customer (its loyalty grant) and then the
+referrer (the referral award), whatever their ordinal order — ADR-0073's named residual. A cycle with a
+company's group aborts one side with 40P01, and both roll back whole.
+
+**Enforced by:** `CleanupStalePendingOrdersTwoOperatorsTests.A_Company_Takes_Its_Customers_Credit_Locks_In_Ordinal_User_Order`,
+for the Cleanup group — `T1-CI`; for the next unit that holds several customers' locks,
+`runtime-readiness.md` checklist item 8 — `T3-HUMAN`. *(Not mechanizable: which locks a unit still holds
+when it takes the next one depends on where its commits fall, across services, not on text. Apart from the
+named `CompleteOrder` exception the baseline is zero.)*
+
 ## Fail-soft is admissible only over an operation that normally SUCCEEDS (ADR-0038 §D8)
 
 > **LAW.** ADR-0038 `accepted` 2026-08-03.

@@ -186,7 +186,8 @@ all. **The hold applies wherever money leaves** (since 2026-10-05): `RefundServi
 every card refund passes, for an administrator's full or partial refund, a cancellation and a dispute's card settlement; and
 the credit-only returns. A member's cancellation, a no-show or a platform cancellation that cannot reach Stripe returns at once the
 credit share of the same held slice its pending card row was sized from. An order that ends with no card refund of
-its own gets its credit back under `order-ended-unpaid:{orderId}`, counting a settlement by what the
+its own gets its credit back under `order-ended-unpaid:{orderId}`, in the commit that ends the order or
+not at all (since 2026-10-12, [ADR-0073](/decisions/adr-0073)), counting a settlement by what the
 order took: in full off the credit when it took no payment, and otherwise holding the credit to what the
 sale has left after card refunds, credit returned and settlements
 → [Business rules — the credit return](/product/business-rules#when-the-cleaner-cancels-or-no-shows).

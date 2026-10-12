@@ -36,7 +36,8 @@ the same key.
   since 2026-10-06; confirmed only since 2026-10-05): an order that took no payment gets its credit back
   less any complaint settled in credit, the card term ignored, and one already refunded in full, or with
   no charge surface, the credit the sale still owes after its card refunds, credit returned and
-  settlements
+  settlements. It takes the customer's owner lock first, so the return joins the caller's commit and rolls
+  back with it (since 2026-10-12, [ADR-0073](/decisions/adr-0073))
   → [Business rules — the credit return](/product/business-rules#when-the-cleaner-cancels-or-no-shows);
   `IExpressWaiverConsumer.ReleaseForOrderAsync` unconditionally;
   `OrderAssignmentCancellationNotifier` for every assigned cleaner;

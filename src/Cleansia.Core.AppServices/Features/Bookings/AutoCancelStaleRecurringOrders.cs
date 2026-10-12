@@ -113,9 +113,9 @@ public class AutoCancelStaleRecurringOrders
                         order.AddOrderStatus(OrderStatusTrack.Create(OrderStatus.Cancelled, order));
 
                         // An unconfirmed occurrence was never charged, but if credit was applied
-                        // when it was materialized it has to come back. The return commits on its own,
-                        // onto the customer's credit account, whose company comes from the account and
-                        // not from the override. → /flows/cross-cutting#tenancy
+                        // when it was materialized it has to come back. The return joins this order's
+                        // commit, onto the customer's credit account, whose company comes from the
+                        // account and not from the override. → /flows/cross-cutting#tenancy
                         await creditAccountRepository.ReturnUnpaidOrderCreditAsync(
                             order, cardRefunded: 0m, SystemActor, cancellationToken);
 

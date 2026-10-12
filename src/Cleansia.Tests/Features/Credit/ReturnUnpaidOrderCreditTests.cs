@@ -26,7 +26,8 @@ public sealed class ReturnUnpaidOrderCreditTests
         NewOrder(PaymentType.Cash, PaymentStatus.Pending, totalPrice: 2000m, creditApplied);
 
     private static Order NewOrder(
-        PaymentType paymentType, PaymentStatus paymentStatus, decimal totalPrice, decimal creditApplied)
+        PaymentType paymentType, PaymentStatus paymentStatus, decimal totalPrice, decimal creditApplied,
+        string? userId = UserId)
     {
         var order = Order.Create(
             customerName: "Credit Customer",
@@ -40,7 +41,7 @@ public sealed class ReturnUnpaidOrderCreditTests
             totalPrice: totalPrice,
             currencyId: "czk",
             paymentStatus: paymentStatus,
-            userId: UserId,
+            userId: userId,
             cancellationTerms: BookingPolicy.CancellationTermsAtBooking);
         order.Id = OrderId;
         order.ApplyCredit(creditApplied, UserId);
@@ -189,6 +190,61 @@ public sealed class ReturnUnpaidOrderCreditTests
         _credit.Verify(c => c.TryReturnAsync(
             UserId, "czk", 300m, $"credit-return:order-ended-unpaid:{OrderId}", "system",
             It.IsAny<CancellationToken>(), OrderId, It.IsAny<string?>()), Times.Once);
+    }
+
+    /// <summary>
+    /// The return rides the commit that ends the order. Taking the customer's owner lock first opens the unit
+    /// of work's lock transaction, which the return then joins, and what is still owed is read under that lock,
+    /// so a return committed meanwhile on another connection is counted.
+    /// </summary>
+    [Fact]
+    public async Task ReturnUnpaidOrderCredit_TakesTheOwnersLockBeforeItReadsOrReturns()
+    {
+        var credit = new Mock<ICreditAccountRepository>(MockBehavior.Strict);
+        var sequence = new MockSequence();
+        credit.InSequence(sequence).Setup(c => c.LockForUserAsync(UserId, It.IsAny<CancellationToken>()))
+            .Returns(Task.CompletedTask);
+        credit.InSequence(sequence).Setup(c => c.GetReturnedTotalForOrderAsync(OrderId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(0m);
+        credit.InSequence(sequence).Setup(c => c.GetDisputeSettledTotalForOrderAsync(OrderId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(0m);
+        credit.Setup(c => c.IsOnFrozenCompanyBooksAsync(UserId, "czk", It.IsAny<CancellationToken>()))
+            .ReturnsAsync(false);
+        credit.InSequence(sequence).Setup(c => c.TryReturnAsync(
+                UserId, "czk", 500m, $"credit-return:order-ended-unpaid:{OrderId}", "system",
+                It.IsAny<CancellationToken>(), OrderId, It.IsAny<string?>()))
+            .ReturnsAsync(true);
+
+        var moved = await credit.Object.ReturnUnpaidOrderCreditAsync(
+            OrderWithCredit(500m), cardRefunded: 0m, "system", CancellationToken.None);
+
+        Assert.True(moved);
+        credit.Verify(c => c.LockForUserAsync(UserId, It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    [Fact]
+    public async Task ReturnUnpaidOrderCredit_OnAnOrderWithNoCreditApplied_TakesNoLock()
+    {
+        var moved = await _credit.Object.ReturnUnpaidOrderCreditAsync(
+            OrderWithCredit(0m), cardRefunded: 0m, "system", CancellationToken.None);
+
+        Assert.False(moved);
+        _credit.Verify(c => c.LockForUserAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task ReturnUnpaidOrderCredit_OnAnOrderWithNoCustomerAccount_TakesNoLock()
+    {
+        var order = NewOrder(PaymentType.Card, PaymentStatus.Pending, totalPrice: 1000m, creditApplied: 300m, userId: null);
+        Arrange(returned: 0m, settled: 0m);
+
+        var moved = await _credit.Object.ReturnUnpaidOrderCreditAsync(order, cardRefunded: 0m, "system", CancellationToken.None);
+
+        Assert.False(moved);
+        _credit.Verify(c => c.LockForUserAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Never);
+        _credit.Verify(c => c.TryReturnAsync(
+            It.IsAny<string>(), It.IsAny<string>(), It.IsAny<decimal>(), It.IsAny<string>(), It.IsAny<string>(),
+            It.IsAny<CancellationToken>(), It.IsAny<string?>(), It.IsAny<string?>()), Times.Never);
     }
 
     /// <summary>

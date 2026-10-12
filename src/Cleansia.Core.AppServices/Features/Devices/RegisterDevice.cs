@@ -51,6 +51,16 @@ public static class RegisterDevice
             // canonical stored form (the dispatcher's IsNullOrEmpty filter treats it as absent).
             var deviceToken = string.IsNullOrWhiteSpace(request.DeviceToken) ? string.Empty : request.DeviceToken;
 
+            // A previous account whose sign-out never reached the server still routes its pushes to this
+            // install, in whichever company it belongs to; this registration retires its row.
+            // → /flows/auth-and-identity#edge-cases
+            var previousAccountRows = await deviceRepository.GetOtherUsersActiveByDeviceAndTokenIgnoringTenantAsync(
+                userId, request.DeviceId, deviceToken, cancellationToken);
+            foreach (var previousAccountRow in previousAccountRows)
+            {
+                deviceRepository.Deactivate(previousAccountRow);
+            }
+
             if (existingDevice is not null)
             {
                 existingDevice.MarkRegistered(deviceToken);

@@ -28,6 +28,10 @@ public class RegisterDeviceHandlerTests
     public RegisterDeviceHandlerTests()
     {
         _session.Setup(s => s.GetUserId()).Returns(CallerUserId);
+        _deviceRepository
+            .Setup(r => r.GetOtherUsersActiveByDeviceAndTokenIgnoringTenantAsync(
+                It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(Array.Empty<Device>());
     }
 
     private void ArrangeLookup(Device? device)
@@ -172,5 +176,47 @@ public class RegisterDeviceHandlerTests
         _deviceRepository.Verify(r => r.Add(It.IsAny<Device>()), Times.Once);
         Assert.NotNull(added);
         Assert.Equal(otherUser, added!.UserId);
+    }
+
+    [Fact]
+    public async Task Registering_Retires_Every_Other_Accounts_Active_Row_Holding_This_Handset_And_Token()
+    {
+        // A shared handset whose previous accounts' sign-outs never reached the server: their rows hold
+        // this install's device id and push token, so their pushes would keep reaching the caller.
+        var previousAccount = Device.Create("previous-user-1", "android", NewToken, DeviceId);
+        var earlierAccount = Device.Create("previous-user-2", "android", NewToken, DeviceId);
+        ArrangeLookup(null);
+        _deviceRepository
+            .Setup(r => r.GetOtherUsersActiveByDeviceAndTokenIgnoringTenantAsync(
+                CallerUserId, DeviceId, NewToken, It.IsAny<CancellationToken>()))
+            .ReturnsAsync([previousAccount, earlierAccount]);
+
+        var result = await InvokeHandler(DeviceId, NewToken, "android");
+
+        Assert.True(result.IsSuccess);
+        _deviceRepository.Verify(r => r.Deactivate(previousAccount), Times.Once);
+        _deviceRepository.Verify(r => r.Deactivate(earlierAccount), Times.Once);
+        _deviceRepository.Verify(r => r.Add(It.Is<Device>(d => d.UserId == CallerUserId)), Times.Once);
+    }
+
+    [Fact]
+    public async Task Re_Registering_Its_Own_Row_Retires_Only_Other_Accounts_Rows()
+    {
+        var own = Device.Create(CallerUserId, "android", OldToken, DeviceId);
+        var previousAccount = Device.Create("previous-user-1", "android", NewToken, DeviceId);
+        ArrangeLookup(own);
+        _deviceRepository
+            .Setup(r => r.GetOtherUsersActiveByDeviceAndTokenIgnoringTenantAsync(
+                CallerUserId, DeviceId, NewToken, It.IsAny<CancellationToken>()))
+            .ReturnsAsync([previousAccount]);
+
+        var result = await InvokeHandler(DeviceId, NewToken, "android");
+
+        Assert.True(result.IsSuccess);
+        Assert.Equal(own.Id, result.Value.DeviceId);
+        Assert.True(own.IsActive);
+        Assert.Equal(NewToken, own.DeviceToken);
+        _deviceRepository.Verify(r => r.Deactivate(previousAccount), Times.Once);
+        _deviceRepository.Verify(r => r.Deactivate(own), Times.Never);
     }
 }

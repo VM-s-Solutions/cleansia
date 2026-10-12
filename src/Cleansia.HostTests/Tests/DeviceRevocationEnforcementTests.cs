@@ -214,6 +214,25 @@ public sealed class DeviceRevocationEnforcementTests(HostTestPostgresFixture db)
         Assert.Equal(HttpStatusCode.OK, await CallAuthedAsync(freshToken));
     }
 
+    // A shared handset whose sign-out never reached the server: the next account registering the same
+    // device id and push token ends the previous account's sessions on it, as that account's logout would have.
+    [Fact]
+    public async Task Next_account_registering_the_same_handset_ends_the_previous_accounts_session_on_it()
+    {
+        await SeedEmployeeAsync("shared-handset-previous@hosttests.local");
+        await SeedEmployeeAsync("shared-handset-next@hosttests.local");
+
+        var (previousToken, _) = await LoginAsync("shared-handset-previous@hosttests.local", deviceId: "H");
+        await RegisterDeviceAsync(previousToken, "H");
+
+        var (nextToken, _) = await LoginAsync("shared-handset-next@hosttests.local", deviceId: "H");
+        await RegisterDeviceAsync(nextToken, "H");
+        await ForceDirectoryRefreshAsync();
+
+        Assert.Equal(HttpStatusCode.Unauthorized, await CallAuthedAsync(previousToken));
+        Assert.Equal(HttpStatusCode.OK, await CallAuthedAsync(nextToken));
+    }
+
     // AC2 chain — the revoked device's REFRESH is already dead (InvalidRefreshToken), so the client's
     // 401 -> refresh -> refresh-rejected path forces sign-out. This pins the refresh-dead leg.
     [Fact]

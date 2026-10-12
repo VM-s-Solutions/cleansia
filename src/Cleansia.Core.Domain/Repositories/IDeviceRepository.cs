@@ -36,6 +36,15 @@ public interface IDeviceRepository : IRepository<Device, string>
     /// active rows only. → /flows/gdpr-and-audit</para>
     /// </summary>
     Task RemoveForSubjectAsync(string userId, CancellationToken cancellationToken);
+
+    /// <summary>
+    /// Every other user's active row holding this device id and this push token: an account the
+    /// caller's own app install still routes pushes to. Reads every company's rows, because that account
+    /// may belong to another one; the pin is the device id plus the push token the caller's install
+    /// presented, and an empty token matches nothing. → /flows/auth-and-identity#edge-cases
+    /// </summary>
+    Task<IReadOnlyList<Device>> GetOtherUsersActiveByDeviceAndTokenIgnoringTenantAsync(
+        string exceptUserId, string deviceId, string deviceToken, CancellationToken cancellationToken);
 }
 
 /// <summary>Projection for the device-revocation poll (ADR-0026): the three fields the directory keys on.</summary>

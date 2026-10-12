@@ -140,6 +140,7 @@ public class RevokedDeviceDirectoryRefresherTests
         public Task<Device?> GetByIdAndUserAsync(string id, string userId, CancellationToken cancellationToken) => throw new NotSupportedException();
         public Task<IReadOnlyList<Device>> GetByUserIdAsync(string userId, CancellationToken cancellationToken) => throw new NotSupportedException();
         public Task RemoveForSubjectAsync(string userId, CancellationToken cancellationToken) => throw new NotSupportedException();
+        public Task<IReadOnlyList<Device>> GetOtherUsersActiveByDeviceAndTokenIgnoringTenantAsync(string exceptUserId, string deviceId, string deviceToken, CancellationToken cancellationToken) => throw new NotSupportedException();
         public Task<bool> ExistsAsync(string id, CancellationToken cancellationToken) => throw new NotSupportedException();
         public Task<bool> ExistWithIdsAsync(IEnumerable<string> ids, CancellationToken cancellationToken) => throw new NotSupportedException();
         public Task<bool> ExistActiveWithIdsAsync(IEnumerable<string> ids, CancellationToken cancellationToken) => throw new NotSupportedException();

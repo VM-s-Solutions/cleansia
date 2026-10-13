@@ -4,8 +4,8 @@ title: Give every system job that continues past a failed commit one scope per i
 size: L
 owner: pm
 created: 2026-10-12
-updated: 2026-10-12
-depends_on: [T-0844]
+updated: 2026-10-13
+depends_on: [T-0856, T-0857, T-0858, T-0859, T-0860, T-0861, T-0862, T-0863, T-0864, T-0865, T-0866, T-0867]
 blocks: []
 stories: []
 adrs: []
@@ -50,25 +50,26 @@ security_touching: true
 
 **If not built:** in each listed job, a failing item holds back every later item in the same run until the next run. For `RedrivePendingRefunds`, the next run is an hour later.
 
-## Doing (proposed, for Mike)
+## Doing — approved split, 2026-10-13
 
-- **One job per change.** Each job gets its own isolation RED: an item that throws leaves the others untouched, and a fault that repeats holds back nobody.
-- **The order:**
-  1. `SendRecurringOrderReminders`, with or after T-0840, which edits the same file;
-  2. `RedrivePendingRefunds`;
-  3. the rest of the first group;
-  4. the staging-only group.
-- **The shape, chosen per job.** Each job takes one of T-0844's two shapes:
-  - the dispatcher-and-unit shape of `MaterializeRecurringBookings` and `AutoCancelRecurringOccurrence`. Each item gets one DI scope. The unit re-reads and re-checks its row, takes its tenant from that row, and has no catch and no `CommitAsync`;
-  - no catch at all, where failing the tick is the right outcome.
+This is the aggregate evidence record for twelve children, not one L implementation job.
 
-  `DataRetentionBackgroundService` keeps its companies-in tenancy shape, which CLAUDE.md names as the reference.
-- **`CancelUnfilledOrders`.**
-  - Each order is re-read fresh before it is cancelled, in its own scope or with a reload.
-  - The comment at `:131-133` is rewritten to say what is true.
-  - A PostgreSQL RED with two connections: a take onto a crewless Confirmed order inside the sweep's window. Today the sweep cancels it.
-- **The deviating-forms entry** drops each job as it lands, and is deleted when the last one does.
-- **Split before it goes ready**, into one ticket per job or per group. As filed, it is L.
+- T-0856: recurring reminder item scopes; PR 2 with T-0840.
+- T-0857: refund re-drive item scopes; remaining-jobs PR after T-0851/M10.
+- T-0858: unfilled-order fresh re-read; after T-0854.
+- T-0859: membership notification fail-tick boundary.
+- T-0860: new-jobs digest cleaner scopes.
+- T-0861: fiscal retry receipt scopes.
+- T-0862: employee invoicing plus period-close staging.
+- T-0863: retention company/task scopes and child archive gate.
+- T-0864: pre-cleaning reminder fail-tick boundary.
+- T-0865: await lapsed-offer notice before stamp and fail unsafe staging.
+- T-0866: cleaner reminder fail-tick boundary.
+- T-0867: tomorrow digest fail-tick boundary.
+
+Each child owns its observable failure boundary and evidence. The remaining-jobs PR is explicitly allowed. Prefer no catch where the existing window supports retry; the four notification staging sites and payroll close get no new types. A scoped unit resolves all dependencies afresh, re-reads its row, and takes tenancy from that row. Retention opens its archive gate in each child. CancelUnfilledOrders re-reads status/crew immediately before cancellation and retains the final read-to-claim race residual. Product windows, attempt caps, stale-checkout company commits and refund rules remain unchanged. Do not claim a next-tick guarantee at a finite window edge. Fiscal e-mail reconciliation is separately reported, outside this scope.
+
+Remove only each verified job’s deviating-forms row; the final child reconciles the aggregate entry and ADR-0072’s temporary statements. Full combined suites and independent reviews are final-head obligations.
 
 ## NOT doing
 
@@ -78,9 +79,17 @@ security_touching: true
 
 ## Acceptance criteria (done looks like)
 
-- [ ] **AC1** — Each listed job runs each item in its own scope, or fails the tick. Each job's isolation test goes RED then GREEN.
-- [ ] **AC2** — `CancelUnfilledOrders` does not cancel an order whose seat was taken after its read. The PostgreSQL test goes RED then GREEN.
-- [ ] **AC3** — The deviating-forms entry is gone, and the full suites pass.
+- [ ] **AC1** — Each listed job’s child proves its chosen independent-scope or fail-tick boundary RED then GREEN. A fail-tick shape need not finish later unsaved items in that tick; its retry eligibility and finite-window limitations are recorded.
+- [ ] **AC2** — T-0858’s PostgreSQL two-connection test proves the final fresh read skips cancellation after a take committed before that read. The read-to-claim residual remains explicit; no serializability claim.
+- [ ] **AC3** — All twelve child results are linked, the verified deviations and temporary records match the final tree, and the full combined suites and reviews pass.
+
+## Owner decision — 2026-10-13
+
+Mike, answer 8: "Analyze and Fix those".
+
+Mike, default choice: "Go with defaults (recommended)".
+
+Authority: `/Users/michael/.codex/scratchpads/cleansia-wave-f-2026-10-11/next-wave/decisions-2026-10-13.md`. The approved split replaces the earlier aggregate proposal. T-0844’s foundations shipped in #327; its remaining AC2/final DEV evidence is not supplied by this filing. The corrected source reports are `p2/correctness-verifier-before.md` and `remaining-jobs/verifier-before.md` under `/Users/michael/.codex/scratchpads/cleansia-next-wave-2026-10-13/`. No acceptance result is claimed here.
 
 ## Work record
 

@@ -1,10 +1,10 @@
 ---
 id: T-0842
 title: Fail backend CI when the EF model has changes the Initial migration does not carry
-size: S
+size: XS
 owner: pm
 created: 2026-10-12
-updated: 2026-10-12
+updated: 2026-10-13
 depends_on: []
 blocks: []
 stories: []
@@ -29,16 +29,11 @@ Schema changes are folded into the one `Initial` migration by regenerating it (C
 
 **If not built:** a forgotten regeneration passes CI. It is found later, when a fresh database disagrees with the model; for a change with no DDL, it may never be found.
 
-## Doing (proposed, for Mike)
+## Doing — approved 2026-10-13
 
 1. **Check today's state first.** Run `dotnet ef migrations has-pending-model-changes` at HEAD to learn whether the model and the snapshot agree. If they do not, this change waits for a regeneration.
-2. **Then add the check, in one of two ways:**
-   - **A backend-ci step** after the build, run from `src/`:
-     - install `dotnet-ef` at the EF Core version, 10.0.3 (`src/Directory.Packages.props:13`);
-     - run `dotnet ef migrations has-pending-model-changes --project Cleansia.Infra.Database --startup-project Cleansia.Web.Partner`;
-     - keep one pinned version, or one tool manifest, shared with the deploy's install (T-0849).
-   - **Or stop ignoring the warning** in the two fixtures, so that the integration and host suites fail on a pending change by themselves. This needs no new step and no tool, provided the model is clean today.
-3. **Prove it, whichever way is chosen.** On a scratch commit that adds a column without regenerating, the check goes RED. After the regeneration it goes GREEN. Record whether a change that only adds a token is caught.
+2. **Stop suppressing the warning** in the two fixtures and two individual tests; remove the two stale fixture comments. No new tool, package, workflow step or snapshot test.
+3. **Prove the fixture boundary.** With an isolated scratch column addition without regenerating, the check goes RED. After restoring the isolated model state it goes GREEN; real model changes join the wave’s one Initial regeneration. Record whether a change that only adds a token is caught.
 4. **Keep the required check's name.** No `build` job gains `name:`, `strategy:`, `if:` or `uses:`.
 5. **Docs.** `docs/deployment/ci-cd.md` says what backend-ci now checks.
 
@@ -48,9 +43,21 @@ Schema changes are folded into the one `Initial` migration by regenerating it (C
 
 ## Acceptance criteria (done looks like)
 
-- [ ] **AC1** — A model change without a regenerated `Initial` fails backend CI's `build`. This is shown RED then GREEN on a scratch commit and recorded here.
+- [ ] **AC1** — A model change without a regenerated `Initial` fails backend CI's `build`. This is shown RED then GREEN with an isolated scratch mutation and recorded here.
 - [ ] **AC2** — Whether a change that only adds a token is caught is recorded here.
 - [ ] **AC3** — The required check keeps its name, and the full suites pass.
+
+## Owner decision — 2026-10-13
+
+Mike, answer 8: "Analyze and Fix those".
+
+Mike, default choice: "Go with defaults (recommended)".
+
+Authority: `/Users/michael/.codex/scratchpads/cleansia-wave-f-2026-10-11/next-wave/decisions-2026-10-13.md`.
+
+The chosen XS shape removes the four PendingModelChangesWarning suppressions and the two stale fixture comments. No CI tool step, package or snapshot-text test is added. Existing unsuppressed seed-migration coverage already catches relational drift; a token-only metadata change is not caught and causes no DDL difference. Measure the current model, prove a real DDL mutation refused by the fixtures, and restore the scratch bytes. The migrator does not check relational drift on a startup with no pending migration ID.
+
+Evidence root: `/Users/michael/.codex/scratchpads/cleansia-next-wave-2026-10-13/`. Source checks are pre-implementation findings; no test, implementation review, CI or deployment result is asserted by this approval record.
 
 ## Work record
 

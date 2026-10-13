@@ -1,7 +1,7 @@
 ---
 id: T-0837
 title: Name every company-wide read both worlds reach — rename IsFirstBookingAsync, sweep the remaining repositories, settle GetEmployeeIdsCurrentlyOnAJobAsync and the unfiled T-0606 (S8)
-size: S
+size: M
 owner: pm
 created: 2026-10-12
 updated: 2026-10-13
@@ -37,18 +37,14 @@ Lines are as of `1768d58`.
 
 **If not built:** the next caller of `IsFirstBookingAsync` cannot tell from its name that it reads every company. That is the autocomplete trap T-0815 deleted a method to close.
 
-## Doing (proposed, for Mike)
+## Doing — approved 2026-10-13
 
 1. **Rename `IsFirstBookingAsync` to `IsFirstBookingIgnoringTenantAsync`.**
    - Rename it in the interface, the implementation, the caller and the tests, and in the comments at `OrderEntityConfiguration.cs:297` and `BookingPolicy.cs:171`.
    - Remove S8's open-instance line.
-2. **Sweep the 36 files.** Look for a company-wide read that both worlds reach, under a name without `IgnoringTenant`. Rename each one found, or record why it is outside S8's subject. The list, with a verdict for each file, goes on this ticket.
-3. **`GetEmployeeIdsCurrentlyOnAJobAsync`:** rename it to say `IgnoringTenant`, or leave it, since S8 does not require the rename. Mike's call.
-4. **T-0606:** either
-   - file the repository-wide roster gate as a ticket and cite that ticket, or
-   - change `security-rules.md:681` to "(guidance — no gate)".
-
-   ADR-0051's two citations are dated history. At most, ADR-0051 gets a dated pointer at its head, in the shape of `adr-0057.md:17-21`.
+2. **Sweep the 34 real unswept direct-bypass files.** Look for a company-wide read that both worlds reach, under a name without `IgnoringTenant`. Rename each one found, or record why it is outside S8's subject. The list, with a verdict for each file, goes on this ticket.
+3. **Keep `GetEmployeeIdsCurrentlyOnAJobAsync` unchanged.** Its current caller is a background sweep only.
+4. **File and cite T-0868** for the deferred repository-wide roster gate. S8’s current guidance must not claim absent T-0606 exists. ADR-0051 gets only the specifically approved dated head pointer; its historical body/citations remain.
 
 ## NOT doing
 
@@ -61,6 +57,18 @@ Lines are as of `1768d58`.
 - [ ] **AC1** — `rg -n 'IsFirstBookingAsync' src` prints nothing, S8 has no open-instance line, and the full suites pass.
 - [ ] **AC2** — Each unswept repository file has a verdict recorded here.
 - [ ] **AC3** — No page cites T-0606 as a gate that exists.
+
+## Owner decision — 2026-10-13
+
+Mike, answer 8: "Analyze and Fix those".
+
+Mike, default choice: "Go with defaults (recommended)".
+
+Authority: `/Users/michael/.codex/scratchpads/cleansia-wave-f-2026-10-11/next-wave/decisions-2026-10-13.md`.
+
+The approved scope is M: rename both-world reads, trace private helpers and public wrappers across the 34 real unswept direct-bypass repository files, and record a per-file verdict. Preserve GetEmployeeIdsCurrentlyOnAJobAsync and ADR-0074’s protected names. T-0868 is the separate deferred roster-gate record; file/cite it without building it. The account is the order’s own, while booking phone and guest e-mail remain booker-supplied. Source report: p2/data-verifier-before.md under the wave evidence root.
+
+Evidence root: `/Users/michael/.codex/scratchpads/cleansia-next-wave-2026-10-13/`. Source checks are pre-implementation findings; no test, implementation review, CI or deployment result is asserted by this approval record.
 
 ## Work record
 

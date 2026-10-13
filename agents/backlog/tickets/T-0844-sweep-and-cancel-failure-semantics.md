@@ -137,6 +137,16 @@ The ruling also leaves these out:
 - [x] **AC5** — The three decision records, the two living records and the listed page edits ship with the code. consistency.md's deviating-forms entry names T-0841.
 - [x] **AC6** — The DEV reset runs on Mike's explicit approval and is recorded here. Otherwise it is recorded as owed, with the new migration id.
 
+## Owner decision — 2026-10-13
+
+Mike, answer 1: "You can reset db, but once we're done with everything and we can do a fresh deployment".
+
+Mike, answer 2: "Add those assertions, I think that more coverage won't be something extra".
+
+Mike, default choice: "Go with defaults (recommended)".
+
+Authority: `/Users/michael/.codex/scratchpads/cleansia-wave-f-2026-10-11/next-wave/decisions-2026-10-13.md`. AC2 receives the approved D/F notice/outbox/rerun assertions, F push-to-start positive control, and a real PostgreSQL administrator-cancel/payment race after credit staging. No broader A/E assertion sweep. Applicable token-removal mutations must fail; rerun assertions are pins, not a separate claimed RED. Doing 6 / AC6 remains the single final DEV reset and fresh deployment after all PRs merge green. M9, the normally absent design-time database case, is left outside this wave. T-0851 then M10 address the reported refund follow-ups; T-0857 follows after their merge. No new deployment or test result is claimed by this approval record.
+
 ## Work record
 
 - 2026-10-12 — Filed from the post-Wave E ground truth (BE-11 to BE-14) and the 2026-10-12 design ruling. Mike: "Go with recommended long-term fix", his answer to item 3 of the decisions put to him (off-tree, in the Wave F folder: `p5/phase0/owner-decisions-2026-10-12.md`). That item named fixes (a) and (b) without recommending either, so the design ruling that followed chose the fix.

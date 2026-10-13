@@ -4,7 +4,7 @@ title: Send the Started and Completed e-mails only once their commit lands, and 
 size: M
 owner: pm
 created: 2026-10-12
-updated: 2026-10-12
+updated: 2026-10-13
 depends_on: [T-0844]
 blocks: []
 stories: []
@@ -36,15 +36,11 @@ None of the three is on the self-committing roster (`consistency.md:459-501`, fa
 - when one of these commits is refused, the customer gets a duplicate e-mail, or one with a dead link. This is rare;
 - a later change could break one of the three self-commits without knowing it was deliberate.
 
-## Doing (proposed, for Mike)
+## Doing — approved 2026-10-13
 
-- **The e-mails ride the commit.**
-  - Both e-mails go out through the outbox, as the ruling recommends. The guest token, the order and the e-mail then commit together.
-  - A refused commit sends nothing, and a retry sends one.
-  - RED today: a commit is refused after the handler has already sent the e-mail (the e-mail fake was called). GREEN: nothing is sent until the commit lands, and a retry sends exactly one.
-- **The roster.** Each of the three returns gets one of these:
-  - a roster entry: why it must land on its own, and what it does not roll back;
-  - or, where its caller's commit is the right boundary, the joined form T-0844 uses.
+- **The e-mail intent rides the commit.** Start and Complete stage one durable outbox message per order/status with the order change. A refused commit stages no durable intent and sends no e-mail; a retry commits one intent.
+- The consumer takes tenant from the message, freshly checks the order/status, resolves language and a live guest token before sending, and makes duplicate delivery idempotent. The token is consumer-issued; it is not claimed to commit with the producer’s order change.
+- **The roster.** Add one TryReturnAsync entry listing all three existing independent return paths, their reasons and what survives a caller’s rollback. Keep their behavior and commit boundaries unchanged.
 
 ## NOT doing
 
@@ -53,8 +49,20 @@ None of the three is on the self-committing roster (`consistency.md:459-501`, fa
 ## Acceptance criteria (done looks like)
 
 - [ ] **AC1** — A refused Start or Complete commit sends no e-mail, and its retry sends exactly one. The test goes RED then GREEN.
-- [ ] **AC2** — Each of the three self-committing returns is either on the roster, with its reason, or joins its caller's commit.
+- [ ] **AC2** — One TryReturnAsync roster entry names all three existing independent return paths, why they commit alone, and what survives a caller rollback; their behavior is unchanged.
 - [ ] **AC3** — The full suites pass.
+
+## Owner decision — 2026-10-13
+
+Mike, answer 8: "Analyze and Fix those".
+
+Mike, default choice: "Go with defaults (recommended)".
+
+Authority: `/Users/michael/.codex/scratchpads/cleansia-wave-f-2026-10-11/next-wave/decisions-2026-10-13.md`.
+
+Started/Completed delivery moves to per-order/status durable outbox messages and a fresh consumer state guard. Refused commits must deliver nothing, duplicate delivery is idempotent, and a live guest link is issued by the consumer. Record all three independent TryReturnAsync credit-return paths accurately without changing their behavior. Functions must deploy with or before APIs; the approved final reset/fresh deployment avoids mixed-version messages.
+
+Evidence root: `/Users/michael/.codex/scratchpads/cleansia-next-wave-2026-10-13/`. Source checks are pre-implementation findings; no test, implementation review, CI or deployment result is asserted by this approval record.
 
 ## Work record
 

@@ -4,7 +4,7 @@ title: Give the invoices endpoint a default order and a tie-break, name the nati
 size: S
 owner: pm
 created: 2026-10-12
-updated: 2026-10-12
+updated: 2026-10-13
 depends_on: [T-0832]
 blocks: []
 stories: []
@@ -36,7 +36,7 @@ This comes from open questions 1 to 3 of the 2026-10-12 native design ruling's i
 
 **If not built:** a cleaner with more than 50 invoices may see an arbitrary page of them. Nothing else breaks.
 
-## Doing (proposed, for Mike)
+## Doing — approved 2026-10-13
 
 1. **A default order and a tie-break.** An empty invoice sort orders the newest generated first, and every invoice sort ends with `Id` as a tie-break, the same shape as the orders page. A paged read with no sort is stable across pages; the test is RED today.
 2. **The native sort field.** Both native call sites ask for `generatedAt` instead of `createdOn`, through the parameters T-0832 generates. T-0832's wire tests follow.
@@ -51,6 +51,18 @@ This comes from open questions 1 to 3 of the 2026-10-12 native design ruling's i
 - [ ] **AC1** — `GetPagedInvoices` with no sort returns the newest generated first, with a stable tie-break. The test goes RED then GREEN.
 - [ ] **AC2** — No native call site sorts invoices by `createdOn`.
 - [ ] **AC3** — Outside dated records, the decision records no longer call regeneration or the re-dump owner-only, and the full suites pass.
+
+## Owner decision — 2026-10-13
+
+Mike, answer 8: "Analyze and Fix those".
+
+Mike, default choice: "Go with defaults (recommended)".
+
+Authority: `/Users/michael/.codex/scratchpads/cleansia-wave-f-2026-10-11/next-wave/decisions-2026-10-13.md`.
+
+The default GeneratedAt descending order belongs before WithinCurrencyWhenSortedBy; the Id tie-break belongs after it, with an explicit Id resolver and local invariant normalization. No one-caller SortMapper helper. The approved regeneration wording includes the eleven outside lines (including .claude/commands/sync.md) and the current-facing generated-client passages at baseline lines 550 and 596–597; genuinely dated rounds remain history. The two native generatedAt literals land in PR 3; AC2 remains open until then.
+
+Evidence root: `/Users/michael/.codex/scratchpads/cleansia-next-wave-2026-10-13/`. Source checks are pre-implementation findings; no test, implementation review, CI or deployment result is asserted by this approval record.
 
 ## Work record
 

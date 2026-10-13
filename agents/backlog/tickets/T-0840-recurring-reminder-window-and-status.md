@@ -4,7 +4,7 @@ title: Remind every recurring occurrence, morning slots included, and never one 
 size: S
 owner: pm
 created: 2026-10-12
-updated: 2026-10-12
+updated: 2026-10-13
 depends_on: []
 blocks: []
 stories: []
@@ -27,13 +27,10 @@ The 2026-10-12 design ruling on BE-11 to BE-14 reported these as items 1 and 2. 
   - The query (`:51-59`) has no `CurrentStatus` term, unlike `Order.AwaitsCustomerConfirmation` (`Order.cs:569-573`). Its comment (`:49-50`) says it uses that term.
   - So an occurrence that was cancelled while still Pending, and not yet reminded, gets a push asking the customer to confirm it.
 
-## Doing (proposed, for Mike)
+## Doing — approved 2026-10-13
 
-- **Cover every slot**, in one of two ways:
-  - Run the sweep hourly with today's 6–26 h window. The sent-at stamp (`RecurringReminderSentAt`) already makes repeat runs fire once, and each reminder then arrives about 26 hours ahead. Sends spread across the day; today's daily run sends at 03:30–04:30 Czech time.
-  - Keep the daily run and widen the window to 6–30 h, so consecutive runs meet. A reminder then arrives 6 to 30 hours ahead.
-
-  The cadence and the notice are a product call.
+- **Cover every slot** with the hourly :30 cron (`0 30 * * * *`) and the 2–26-hour window. Established occurrences receive one notice about 25–26 hours ahead; the sent-at stamp prevents repeats.
+- A late-created valid occurrence whose confirmation cutoff is at or before the next strict :30 tick receives its one short-notice reminder staged with materialization, in the existing atomic commit. T-0856’s periodic unit skips the stamp. No change to the confirmation cutoff, auto-cancel grace or quiet hours.
 - **Add the status term** (not Cancelled, not Completed), so the query matches `AwaitsCustomerConfirmation`, as its comment says.
 - **Tests.**
   - RED then GREEN: over a simulated day of scheduled runs, a 06:00 UTC slot is reminded exactly once.
@@ -43,7 +40,7 @@ The 2026-10-12 design ruling on BE-11 to BE-14 reported these as items 1 and 2. 
 
 ## NOT doing
 
-- The sweep's shared-scope catch (`:62-92`), which is T-0841's first item. Both tickets edit this file, so one change takes both, or they land one after the other.
+- The item-scope isolation is tracked separately by T-0856, in this same PR; this ticket owns reminder timing and status.
 - No change to the auto-cancel's one-hour grace, or to the confirm cutoff.
 
 ## Acceptance criteria (done looks like)
@@ -51,6 +48,18 @@ The 2026-10-12 design ruling on BE-11 to BE-14 reported these as items 1 and 2. 
 - [ ] **AC1** — Every slot of a day gets exactly one reminder from the scheduled runs, including the 04:30–08:30 UTC gap. The test goes RED then GREEN.
 - [ ] **AC2** — A cancelled or completed occurrence gets no reminder. The test goes RED then GREEN.
 - [ ] **AC3** — The full suites pass, and the docs state the new timing.
+
+## Owner decision — 2026-10-13
+
+Mike, answer 8: "Analyze and Fix those".
+
+Mike, default choice: "Go with defaults (recommended)".
+
+Authority: `/Users/michael/.codex/scratchpads/cleansia-wave-f-2026-10-11/next-wave/decisions-2026-10-13.md`.
+
+Decision 5 sets the hourly :30 cron and 2–26-hour reminder window, with CurrentStatus excluding Cancelled/Completed. T-0856 owns item-scope isolation in this PR. The fresh source check also identifies a valid delayed materialization whose confirmation cutoff precedes the next :30 tick; its one short-notice reminder must be staged with materialization when that next tick is at or after the cutoff. The confirm cutoff, auto-cancel grace and quiet hours stay unchanged.
+
+Evidence root: `/Users/michael/.codex/scratchpads/cleansia-next-wave-2026-10-13/`. Source checks are pre-implementation findings; no test, implementation review, CI or deployment result is asserted by this approval record.
 
 ## Work record
 

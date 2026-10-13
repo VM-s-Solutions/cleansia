@@ -43,24 +43,34 @@ Found on 2026-10-13 by the security re-review of T-0844's F1 fix, its N1, rated 
 
 **If not built:** in a rare race, a refund Stripe paid is recorded as Failed. The money is right, but the books are not, and nobody is told.
 
-## Doing (proposed, for Mike)
+## Doing — approved 2026-10-13
 
-- In the retry path, treat this key's committed row as this refund. The review offers two ways:
-  - re-read its status untracked, and resolve to the existing refund when it is Succeeded; or
-  - leave the key out of the ceiling and closure reads, as F1's fix did for the status read.
-
-  The implementation chooses, and ADR-0071 records why.
-- The probe's two cases become the pins, RED first and then GREEN.
+- Re-read this key’s committed status untracked after the ceiling read and before every mutation of the stale tracked row. Resolve a Succeeded row to the existing refund. Exclude this key from the closure totals as well; these are complementary requirements.
+- Prove dispute, hourly re-drive and wind-down orderings, including wind-down’s tracked load, RED then GREEN; mutation pins remove the fresh read and key exclusion separately.
+- Then address M10: actual concurrent identical partial-refund handlers produce one provider refund and one successful audit, with the winner chosen atomically at persistence. Pin both Paid and already PartiallyRefunded orderings and refused-commit retry behavior. No Refund concurrency token.
+- The immediate Work record explains the mechanism; ADR-0071’s final amendment lands with PR 6’s authorized wording sweep.
 
 ## NOT doing
 
 - No change to the status read, which T-0844 fixed.
-- Two concurrent partial refunds that each write an audit row (the re-review's N3) stay as T-0844 reports them.
+- The earlier N3 deferral is superseded by the approved M10 follow-up in this PR; no other refund or audit redesign.
 
 ## Acceptance criteria (done looks like)
 
 - [ ] **AC1** — A second settle of one key that finds the key already Succeeded leaves it Succeeded, through a dispute's resolution, the hourly re-drive and the wind-down. The tests go RED, then GREEN.
 - [ ] **AC2** — Security review passes (S7), and the full suites pass.
+
+## Owner decision — 2026-10-13
+
+Mike, answer 8: "Analyze and Fix those".
+
+Mike, default choice: "Go with defaults (recommended)".
+
+Authority: `/Users/michael/.codex/scratchpads/cleansia-wave-f-2026-10-11/next-wave/decisions-2026-10-13.md`.
+
+Re-read this key’s committed Succeeded row untracked after the ceiling read and before every stale tracked mutation; closure totals exclude this key. The tests include wind-down’s tracked load. After this core fix, the explicitly approved M10 follow-up proves one provider refund and one successful audit for concurrent identical partial refunds at an atomic persistence boundary. No Refund concurrency token or row-repair work. ADR-0071’s final mechanism wording is sequenced with PR 6. T-0857 follows after this PR merges.
+
+Evidence root: `/Users/michael/.codex/scratchpads/cleansia-next-wave-2026-10-13/`. Source checks are pre-implementation findings; no test, implementation review, CI or deployment result is asserted by this approval record.
 
 ## Work record
 

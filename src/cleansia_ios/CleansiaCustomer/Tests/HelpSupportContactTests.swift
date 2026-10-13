@@ -31,7 +31,7 @@ final class HelpSupportContactTests: XCTestCase {
     }
 
     /// One address and one line on both apps: the ones Android's Help opens. Android holds the address once,
-    /// in its Core `CleansiaWeb.CONTACT_EMAIL`, as this app holds `CleansiaWeb.contactEmail`.
+    /// in its Core `CleansiaWeb.CONTACT_EMAIL`, as CleansiaCore holds `CleansiaWeb.contactEmail`.
     func testBothAppsOpenTheSameAddressAndLine() throws {
         let android = try String(
             contentsOf: Self.sourceRoot().appendingPathComponent(

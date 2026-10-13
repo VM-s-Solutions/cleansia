@@ -223,7 +223,7 @@ Canonical shape (see `patterns-backend.md` for the full sample). **Every paged/l
   **`@ApplicationContext Context`** (for `getString`). *(Judgment call on error localization: localize
   at the layer that surfaces the snackbar — repo for `T?`/`ApiResult` repos — and keep VM/​repo split
   consistent within an app.)*
-- **E4.** Repositories are **`@Singleton`**, implement **`SessionScopedCache`** (`clear()` on sign-out),
+- **E4.** Repositories are **`@Singleton`**, implement **`SessionScopedCache`** (`clear()` on every wipe trigger),
   cache via `StateFlow`, wrap calls in **`networkCall { }`**, and parse errors with
   **`ApiErrorParser.parseToUserMessage(...)`**.
 - **E5.** **Repository contract: return `ApiResult<T>`** (the sealed `Success`/`Error(ApiError)` type with

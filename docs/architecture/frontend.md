@@ -619,12 +619,14 @@ clear invalidate the captured generation. Flight identity also guards publicatio
 and cleanup so late work cannot overwrite or remove its replacement.
 
 The current-membership read (`getMine`) carries its own session generation on both
-platforms, advanced only by sign-out (`clear`). It is not the plans' generation, which
+platforms, advanced only by `clear`, which runs on every wipe trigger S11 names (sign-out,
+forced-401, account deletion on the customer apps, and sign-in before the new tokens are
+stored). It is not the plans' generation, which
 also moves on a market change and a forced plans reload; neither of those discards it.
-A read still in flight at sign-out publishes nothing and leaves freshness stale. iOS
+A read still in flight at the wipe publishes nothing and leaves freshness stale. iOS
 answers its caller with the cancellation result, and `clear` also ends that read's
 `loading`, so the next session's own refresh is not swallowed by it. Android answers
-with the silent `ApiError.Network`, and a refresh queued before sign-out never reaches
+with the silent `ApiError.Network`, and a refresh queued before the wipe never reaches
 the API. `clear` never takes Android's refresh lock, because the authenticator calls it
 while a refresh may hold that lock across the request being authenticated.
 

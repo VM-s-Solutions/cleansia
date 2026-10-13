@@ -139,7 +139,7 @@ fun OrderDetailScreen(onBack: () -> Unit = {}, viewModel: OrderDetailViewModel =
 
 Two layers: an **Api adapter** wrapping the generated Retrofit service and mapping wire→app DTOs
 (`raw.mapBody { it.toAppDto() }`), and a **`@Singleton` Repository** that caches via `StateFlow`,
-implements `SessionScopedCache` (`clear()` on sign-out), wraps calls in **`networkCall { }`**, parses
+implements `SessionScopedCache` (`clear()` on every wipe trigger), wraps calls in **`networkCall { }`**, parses
 HTTP errors via **`ApiErrorParser.parseToUserMessage(...)`** → **`snackbar.showError(...)`**, and
 returns **`T?` (null = failure, already snackbarred)**:
 
@@ -313,7 +313,7 @@ using `@AuthRetrofit` (main) vs `@NoAuthRetrofit` (refresh-only) qualifiers.
 
 **Joining the `SessionScopedCache` multibinding (three non-obvious rules).** ANY `@Singleton` holding
 per-user state — a cached `StateFlow`, a persistent DataStore, OR a bare freshness watermark — is a
-member and must `clear()` on sign-out; leaving one out leaks the prior user's data to the next account
+member and must `clear()` on every wipe trigger; leaving one out leaks the prior user's data to the next account
 on a shared device (a security defect). (1) A repo bound behind an **interface** needs a SECOND binding
 — `@Binds @IntoSet abstract fun bindXAsCache(impl: XImpl): SessionScopedCache` alongside the primary
 `@Binds …: XInterface` (the `@IntoSet` binds the impl, not the interface); a plain in-app repo just
@@ -985,7 +985,7 @@ and `…/Network`; the `:core` sub-packages map by name (`auth`→`Auth`, `netwo
 | `:core` module | the `CleansiaCore` Swift package (theme, components, auth/network, state) |
 | Hilt `NetworkModule`/`AuthModule` per app | a hand-rolled per-app `AppContainer` (initializer injection; no Hilt analogue) conforming to the `Core/DI` `AppContainer` protocol. `Core/DI`'s `@MainActor BaseAppContainer` is the lazy composition root: it `lazy`-builds ONE `AuthSpine` (the `AuthApiClient`, which is **both** the `AuthClient` and the `RefreshClient` — it owns the separate authed + no-auth sessions internally) and exposes the same instance as `authClient`/`refreshClient`; the `SessionManager` + `SessionRefresher` are wired off that one spine + the shared `TokenStore`/cache registry so there's a single token source. `PartnerAppContainer`/`CustomerAppContainer` live in the app targets, own a `BaseAppContainer`, and pass their app-specific `make…AuthSpine`/`makeApiClient` factories; the App owns one + reads its snackbar and observes `sessionManager` |
 | two OkHttp clients (`@NoAuthOkHttp` refresh vs `@AuthOkHttp`) | the `AuthApiClient` holds **two `URLSession`s** — an authed session + a separate no-auth `.ephemeral` session used for `/api/Auth/*` (login/refresh/forgot) so a 401-on-refresh can't loop; `AuthNetworkBoundary` in `Core/DI` is the generic lazy-seam variant kept for surfaces that need the boundary made explicit |
-| `Set<SessionScopedCache>` Hilt multibinding (`SessionScopedModule`) | a `SessionScopedCacheRegistry` in `Core/Auth` — repos `register` themselves (held weakly); both sign-out and the 401-refresh path call `clearAll()`, so the two clear-paths can't drift |
+| `Set<SessionScopedCache>` Hilt multibinding (`SessionScopedModule`) | a `SessionScopedCacheRegistry` in `Core/Auth` — the app containers `register` the caches they hold (held weakly); every wipe trigger S11 names calls `clearAll()` (sign-out, the 401-refresh path's forced sign-out, account deletion on the customer app, and sign-in before the new tokens are stored), so the clear-paths can't drift |
 | `AuthInterceptor` anon path-skip (one hardcoded list) | `HeaderAdapter` takes an injected `AnonymousAllowList` (`Core/Auth`) — **host-specific**: both lists carry the auth paths and `Market/GetOverview` (the register form's market directory); `.customer` adds the reads it makes before or regardless of a session (`customerPreSession`: `Service/Package/Extra/Currency GetOverview`, `Membership/GetPlans`, `Order/Quote`, `Referral/Validate`) and **no guest path** — the apps have no guest surface (owner ruling 2026-10-01), and `Order/CreateOrder` is `[Authorize]` on the mobile host, which has no `Payment/CreateOrder` (2026-09-28). Same case-insensitive path-contains match as Android; `Logout` is never anon. **`AnonymousAllowList` also carries a `dualUsePaths` set** (`isDualUse(path:)`) — `.customer` = `Order/Quote` only; `HeaderAdapter` attaches the Bearer when `isDualUse OR !isAnonymous`, so a dual-use path is Bearer-iff-token (signed-in carries it for tier/membership pricing; signed-out stays tokenless). The other anonymous paths stay tokenless even signed-in; `.partner` has none (T-0332). → `docs/mobile-app/api-integration.md#the-anonymous-allow-list` |
 | `AuthAuthenticator` `synchronized(this)` single-flight 401-refresh | `actor SessionRefresher` (`Core/Auth`): coalesces concurrent 401s into ONE network refresh (queued callers reuse the freshly-stored token), **replaces** the stored refresh token every refresh (theft-detection). Refresh failure is **classified, not nil-collapsed** (`RefreshCallResult`, the cross-platform contract): **terminal** = refresh-token expiry or an auth rejection (HTTP 401/403 or the parseable `auth.invalid_refresh_token`/`auth.refresh_token_reused` business key) → wipe `TokenStore` + `clearAll()` caches + emit `ForcedSignOut` via the `SessionManager`; **retryable** = transport/5xx/429/any unknown non-auth answer → `RefreshOutcome.unavailable`: tokens kept, the failing call surfaces its own error, the next trigger re-attempts (fail-open — the server still rejects a bad token next call). A refresh path that signs out on a transient failure is a defect |
 | `BuildConfig.API_BASE_URL` | per-app `AppConfig.apiBaseURL` reading the `API_BASE_URL` Info.plist key (set from the build setting; each app points at its own `…-mobile-…` host) |
@@ -999,7 +999,7 @@ and `…/Network`; the `:core` sub-packages map by name (`auth`→`Auth`, `netwo
 | `ActionState` (Idle/Submitting/Error) | an `enum ActionState` mirror |
 | `SharedFlow(replay=0)` effects | a `PassthroughSubject` / async stream |
 | `@Composable Screen` + `…Content` | a `View` + stateless preview subview |
-| `@Singleton Repository : SessionScopedCache` | an injected actor/class with a `clear()` on sign-out |
+| `@Singleton Repository : SessionScopedCache` | an injected actor/class with a `clear()` on every wipe trigger |
 | `networkCall { }` + `ApiErrorParser` | an equivalent throwing wrapper + error→message parser |
 | `SnackbarController` | `@MainActor ObservableObject` in `Core/Snackbar` with `@Published current: SnackbarMessage?` |
 | `GlobalSnackbarHost` composable at the nav root | a `.snackbarHost(controller)` root `ViewModifier` (bottom overlay), one per app |
@@ -1677,7 +1677,8 @@ the T-0336 spike is superseded.)
   **persists on success only**.
   **`unregisterDevice()` is invoked from `AuthApiClient.logout()` BEFORE the `TokenStore` wipe** (best-effort — the
   `Device/Unregister` DELETE needs the Bearer; the `AuthRepository.kt:210-225` ordering) and the local `clear()` is the
-  **`SessionScopedCache`** run by the registry on **both** sign-out paths (user logout + forced-401). **The
+  **`SessionScopedCache`** run by the registry on **every** wipe trigger S11 names (sign-out, forced-401, account
+  deletion on the customer apps, and sign-in before the new tokens are stored). **The
   unregister-ordering GATE is SECURITY's (Gate-SEC) — this rule fixes the seam + the invocation HOME, not the mandate.**
 - **Scope/permission (c):** **minimal** `willPresent` (foreground banner) + `didReceive` (tap → existing order route via a
   **`PartnerNotificationDeepLink`** port) only. **NO Info.plist purpose string** — APNs needs only the **`aps-environment`

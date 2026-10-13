@@ -278,8 +278,9 @@ cite each other in their doc comments and are tested on both platforms.
 ### Forced sign-out fans out automatically
 
 A teardown clears **every** session-scoped cache without a hand-maintained list: Android iterates a
-`Set<SessionScopedCache>` Hilt multibinding, iOS a `SessionScopedCacheRegistry`. Both the normal
-logout path and the forced-sign-out path iterate the same set, so they cannot drift. Any repository
+`Set<SessionScopedCache>` Hilt multibinding, iOS a `SessionScopedCacheRegistry`. Every wipe trigger
+S11 names (sign-out, forced-401, account deletion on the customer apps, and sign-in before the new
+tokens are stored) iterates the same set, so they cannot drift. Any repository
 holding per-user state joins the set and is wiped for free.
 
 ## Result and error envelope

@@ -446,7 +446,8 @@ customer's inbox. A guest gets no push; the cancellation e-mail tells them what 
 >
 > **A complaint settled in credit is counted, by what the order took** (since 2026-10-05). This credit
 > return, under the key `order-ended-unpaid:{orderId}` (`CreditUnwind.ReturnUnpaidOrderCreditAsync`),
-> serves every order that ends with no card refund of its own:
+> commits with the cancellation that ends the order, or not at all (since 2026-10-12,
+> [ADR-0073](/decisions/adr-0073)), and serves every order that ends with no card refund of its own:
 >
 > - **An order that took no payment** (`Order.TookNoPayment`): the credit is all that was paid, so a
 >   settlement comes off it in full. 500 applied with 400 settled returns 100.
@@ -591,15 +592,17 @@ a new confirmation, and the e-mail is true when it is sent. No "your cleaner lef
 another" message exists.
 
 **A drop is checked against the order's status at commit** (since 2026-10-05). The drop touches the
-order row, so the commit compares the order's `CurrentStatus` token, and a drop racing a status change —
+order row, so the commit compares the order's two tokens, `CurrentStatus` and `PaymentStatus` (the second
+since 2026-10-12, [ADR-0071](/decisions/adr-0071)), and a drop racing a status change —
 an administrator confirming the customer's lockout in the same instant — is refused and rolls back whole:
 the seat stays on the crew and keeps the [lockout reward](#lockout-pay), so a confirmed lockout pays
 exactly the seats on the crew when it committed. The cleaner who loses gets an unmapped error once, and a
 retry reads the cancelled order and is refused `order.not_confirmed`.
 
 **No invariant is claimed.** Two releases racing on one order — two same-window drops on a two-seat
-job, a drop racing a rejection — can still leave `Confirmed` with nobody on it, because `CurrentStatus`
-is the only concurrency token and neither commit changes it. Every sweep therefore keeps reading the
+job, a drop racing a rejection — can still leave `Confirmed` with nobody on it, because the order's two
+tokens are `CurrentStatus` and `PaymentStatus` and neither release commit changes either. Every sweep
+therefore keeps reading the
 crew: `CancelUnfilledOrders` still selects `{New, Confirmed}` with no assignee, the reminders still
 require one, the validators still authorise the caller by their assignment. The status is a summary;
 the crew is the fact. Legacy DEV rows holding `Confirmed` with no crew are harmless for the same

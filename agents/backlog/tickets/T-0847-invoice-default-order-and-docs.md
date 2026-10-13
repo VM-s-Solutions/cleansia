@@ -15,7 +15,7 @@ security_touching: false
 
 ## Context
 
-This comes from open questions 1 to 3 of the 2026-10-12 native design ruling's item on T-0832, and from surprise 2 of the native ground truth. Both are off-tree, in the Wave F folder: `/Users/michael/.codex/scratchpads/cleansia-wave-f-2026-10-11/p5/phase0/`, files `architect_native-lead.json` and `gt_native.json`. Lines are as of `76e1638a3`.
+This comes from open questions 1 to 3 of the 2026-10-12 native design ruling's item on T-0832, and from surprise 2 of the native ground truth. Both are off-tree, in the Wave F folder: `/Users/michael/.codex/scratchpads/cleansia-wave-f-2026-10-11/p5/phase0/`, files `architect_native-lead.json` and `gt_native.json`. Lines are as of `207d2f319`.
 
 - **The invoices query has no order at all.**
   - With an empty sort, `GetPagedInvoices.cs:58-63` reaches `BaseRepository.cs:88-96`. That code loops over zero sort definitions, so the query has no `ORDER BY`.
@@ -29,7 +29,7 @@ This comes from open questions 1 to 3 of the 2026-10-12 native design ruling's i
   - The order comes out the same, but the name says otherwise.
 - **Two decision records still call regeneration owner-only.**
   - Client regeneration and the mobile re-dump are ordinary work (CLAUDE.md, owner ruling 2026-09-07).
-  - `agents/architecture/decisions/generated-client-contract.md:95-96`, `:128-130` and `:557` still call them owner-only. The ruling cited these as `:38-39`, `:71-73` and `:500`; the W01 note added in `76e1638a3` moved them.
+  - `agents/architecture/decisions/generated-client-contract.md:95-96`, `:128-130` and `:557` still call them owner-only. The ruling cited these as `:38-39`, `:71-73` and `:500`; the W01 note added in `207d2f319` moved them.
   - `agents/architecture/decisions/ios-app-architecture.md:928` says the same.
   - The first page has five more mentions, in its round records (`:318`, `:445`, `:492`, `:550`, `:597`).
   - T-0832 corrects the same claim in `mobile-wire-contract.md` and `docs/mobile-app/api-integration.md`.

@@ -50,7 +50,7 @@ Nx 24 removes the `@nx/jest:jest` and `@nx/eslint:lint` executors, and Nx 23.2.1
 - [x] **AC2** — The graph diff shows only the expected deltas.
 - [x] **AC3** — The test and lint result sets are equal.
 - [x] **AC4** — The guard and its self-test are green.
-- [ ] **AC5** — Exact-head Frontend CI is green.
+- [x] **AC5** — Exact-head Frontend CI is green.
 
 ## Work record
 
@@ -99,6 +99,10 @@ Nx 24 removes the `@nx/jest:jest` and `@nx/eslint:lint` executors, and Nx 23.2.1
     - both Docs self-tests, check-docs-refs and check-catalog-claims pass.
 
     The fix pass's evidence is in `FIXPASS-MANIFEST.sha256` (`070ace7b…`, 40 files).
+- 2026-10-12 — Shipped in [#325](https://github.com/VM-s-Solutions/cleansia/pull/325). Mike: "You can merge" (2026-10-12), which settles the schedule question in the Review below. Exact-head CI on `be776dc` passed all 5 check runs with no re-run: Frontend build and e2e-smoke, Android, Docs and Secret scan. Backend, iOS, iOS Symbols and booking-policy parity did not run, because their path filters match none of the changed files. Merged normally with the SHA guard as `6952149`. No deploy ran: deploy-dev, deploy-pro, deploy-docs and execute-sql have no run since the merge. Evidence: `raw/ci/p4-pr325-ci-merge-closure-001.json` (sha256 `3fe9783f…`) and `raw/ci/p4-pr325-ci-001.json` (`4b858697…`) in the off-tree Wave F folder.
+  - **AC5.** The hosted Frontend job ran lint on 77 projects and test on 74. Its 71 Jest summaries add up to 408 suites and 5,038 tests passed, with none failed, and the log names neither deprecated executor.
+  - The hosted test step printed Jest's worker-exit warning 9 times, in nine projects, against once on #322's full run, and took 1,296 s against 954 s. That is one run each, and the three production builds, which this change does not touch, were also 30–40% slower on this runner. So neither difference is attributed to the conversion. T-0810 records it.
+  - The first review's git-archive copies under `p4-nx.noindex/review/` lost their `node_modules` on 2026-10-12 to free disk; its outputs in `review/out/` are kept.
 
 ## Review
 

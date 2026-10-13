@@ -6,6 +6,7 @@ using Cleansia.Core.AppServices.Features.Referrals;
 using Cleansia.Functions.Core.Handlers;
 using Cleansia.Infra.Common.Validations;
 using MediatR;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
 using Cleansia.Core.AppServices.Features.Refunds;
@@ -26,6 +27,13 @@ public class TimerSweepFailureBranchTests
     private static BusinessResult<T> Fail<T>() =>
         BusinessResult.Failure<T>(new Error("sweep", BusinessErrorMessage.Required));
 
+    private IServiceScopeFactory ScopesServingTheMediator()
+    {
+        var services = new ServiceCollection();
+        services.AddScoped(_ => _mediator.Object);
+        return services.BuildServiceProvider().GetRequiredService<IServiceScopeFactory>();
+    }
+
     [Fact]
     public async Task AutoCancelStaleRecurringOrders_Failure_Result_Does_Not_Throw()
     {
@@ -38,7 +46,7 @@ public class TimerSweepFailureBranchTests
             .ReturnsAsync(Fail<RedrivePendingRefunds.Response>());
 
         var handler = new AutoCancelStaleRecurringOrdersHandler(
-            _mediator.Object, NullLogger<AutoCancelStaleRecurringOrdersHandler>.Instance);
+            ScopesServingTheMediator(), NullLogger<AutoCancelStaleRecurringOrdersHandler>.Instance);
 
         var ex = await Record.ExceptionAsync(() => handler.HandleAsync(CancellationToken.None));
 
@@ -69,11 +77,20 @@ public class TimerSweepFailureBranchTests
             .ReturnsAsync(Fail<CancelUnfilledOrders.Response>());
 
         var handler = new CleanupStalePendingOrdersHandler(
-            _mediator.Object, NullLogger<CleanupStalePendingOrdersHandler>.Instance);
+            ScopesServingTheMediator(), NullLogger<CleanupStalePendingOrdersHandler>.Instance);
 
         var ex = await Record.ExceptionAsync(() => handler.HandleAsync(CancellationToken.None));
 
         Assert.Null(ex);
+        _mediator.Verify(
+            m => m.Send(It.IsAny<CleanupStalePendingOrders.Command>(), It.IsAny<CancellationToken>()),
+            Times.Once);
+        _mediator.Verify(
+            m => m.Send(It.IsAny<ReleaseOrphanedBenefitReservations.Command>(), It.IsAny<CancellationToken>()),
+            Times.Once);
+        _mediator.Verify(
+            m => m.Send(It.IsAny<CancelUnfilledOrders.Command>(), It.IsAny<CancellationToken>()),
+            Times.Once);
     }
 
     [Fact]

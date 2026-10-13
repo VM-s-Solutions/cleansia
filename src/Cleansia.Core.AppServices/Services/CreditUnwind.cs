@@ -124,6 +124,11 @@ public static class CreditUnwind
     ///
     /// <para>Keyed on the order id alone. An order can only end once, so a re-run of a sweep, a
     /// re-delivered webhook and a double-cancel all collapse onto the one ledger row.</para>
+    ///
+    /// <para><b>With the commit that ends the order, or not at all.</b> The customer's owner lock comes first:
+    /// it opens the unit of work's lock transaction when none is open, the return joins it, and the commit that
+    /// ends the order commits both or rolls both back. What is still owed is read under that lock, so a return
+    /// another unit committed meanwhile is counted. → /decisions/adr-0073</para>
     /// </summary>
     public static async Task<bool> ReturnUnpaidOrderCreditAsync(
         this ICreditAccountRepository creditAccountRepository,
@@ -132,10 +137,12 @@ public static class CreditUnwind
         string actorId,
         CancellationToken cancellationToken)
     {
-        if (order.CreditAppliedAmount <= 0m)
+        if (order.CreditAppliedAmount <= 0m || string.IsNullOrEmpty(order.UserId))
         {
             return false;
         }
+
+        await creditAccountRepository.LockForUserAsync(order.UserId, cancellationToken);
 
         var alreadyReturned = await creditAccountRepository.GetReturnedTotalForOrderAsync(order.Id, cancellationToken);
         var settledInCredit = await creditAccountRepository.GetDisputeSettledTotalForOrderAsync(order.Id, cancellationToken);

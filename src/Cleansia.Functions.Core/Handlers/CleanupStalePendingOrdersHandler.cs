@@ -1,6 +1,8 @@
+using System.Runtime.ExceptionServices;
 using Cleansia.Core.AppServices.Features.Memberships;
 using Cleansia.Core.AppServices.Features.Orders;
 using MediatR;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 
 namespace Cleansia.Functions.Core.Handlers;
@@ -17,66 +19,112 @@ namespace Cleansia.Functions.Core.Handlers;
 /// DI registration, a cron token in two settings files, a bicep entry and two test rows — and the
 /// eight tokenised timers silently never fired in Azure for months, which is the argument against
 /// adding a ninth for work an existing tick can carry.</para>
+///
+/// <para>What makes that true is the DI scope each command is sent from: one that throws takes its
+/// change tracker and tenant override away with its scope, is logged at Warning, and fails the
+/// invocation only after the last command has run.</para>
 /// </summary>
 public class CleanupStalePendingOrdersHandler(
-    IMediator mediator,
+    IServiceScopeFactory scopeFactory,
     ILogger<CleanupStalePendingOrdersHandler> logger)
 {
     public async Task HandleAsync(CancellationToken ct)
     {
         logger.LogInformation("CleanupStalePendingOrders timer triggered at {Time}", DateTime.UtcNow);
-        var result = await mediator.Send(new CleanupStalePendingOrders.Command(OlderThanHours: 1), ct);
-        if (result.IsSuccess && result.Value != null)
+        var thrown = new List<Exception>();
+
+        await RunInOwnScopeAsync(nameof(CleanupStalePendingOrders), thrown, async mediator =>
         {
-            logger.LogInformation(
-                "CleanupStalePendingOrders completed; cancelled {Count} orders",
-                result.Value.CancelledCount);
-        }
-        else
-        {
-            logger.LogError(
-                "CleanupStalePendingOrders failed: {Error}",
-                result.Error?.Message ?? "unknown");
-        }
+            var result = await mediator.Send(new CleanupStalePendingOrders.Command(OlderThanHours: 1), ct);
+            if (result.IsSuccess && result.Value != null)
+            {
+                logger.LogInformation(
+                    "CleanupStalePendingOrders completed; cancelled {Count} orders",
+                    result.Value.CancelledCount);
+            }
+            else
+            {
+                logger.LogError(
+                    "CleanupStalePendingOrders failed: {Error}",
+                    result.Error?.Message ?? "unknown");
+            }
+        }, ct);
 
         // ADR-0035 AM-7 — a SECOND command on this existing schedule, not a second schedule. Membership
         // benefit orphans live in MembershipBenefitUsages and are invisible to the sweep above, which
         // reads Orders; an orphan is precisely a reservation whose order never committed. Sent
         // separately so a failure in one sweep does not suppress the other.
-        var orphans = await mediator.Send(
-            new ReleaseOrphanedBenefitReservations.Command(OlderThanHours: 1), ct);
-        if (orphans.IsSuccess && orphans.Value != null)
+        await RunInOwnScopeAsync(nameof(ReleaseOrphanedBenefitReservations), thrown, async mediator =>
         {
-            logger.LogInformation(
-                "ReleaseOrphanedBenefitReservations completed; released {Count} reservations",
-                orphans.Value.ReleasedCount);
-        }
-        else
-        {
-            logger.LogError(
-                "ReleaseOrphanedBenefitReservations failed: {Error}",
-                orphans.Error?.Message ?? "unknown");
-        }
+            var orphans = await mediator.Send(
+                new ReleaseOrphanedBenefitReservations.Command(OlderThanHours: 1), ct);
+            if (orphans.IsSuccess && orphans.Value != null)
+            {
+                logger.LogInformation(
+                    "ReleaseOrphanedBenefitReservations completed; released {Count} reservations",
+                    orphans.Value.ReleasedCount);
+            }
+            else
+            {
+                logger.LogError(
+                    "ReleaseOrphanedBenefitReservations failed: {Error}",
+                    orphans.Error?.Message ?? "unknown");
+            }
+        }, ct);
 
         // A THIRD command on the same schedule, and the only one of the three that moves money.
         // Orders that reached their cleaning time with nobody assigned: nothing in the platform saw
         // these before, because every sweep that could have requires an assignment. Fifteen minutes
         // plus the command's own 30-minute grace means a customer hears within about three quarters of
         // an hour of the slot they were waiting through.
-        var unfilled = await mediator.Send(new CancelUnfilledOrders.Command(), ct);
-        if (unfilled.IsSuccess && unfilled.Value != null)
+        await RunInOwnScopeAsync(nameof(CancelUnfilledOrders), thrown, async mediator =>
         {
-            logger.LogInformation(
-                "CancelUnfilledOrders completed; cancelled {Cancelled}, refunded {Refunded}, credited {Credited}",
-                unfilled.Value.CancelledCount,
-                unfilled.Value.RefundedCount,
-                unfilled.Value.CreditedCount);
+            var unfilled = await mediator.Send(new CancelUnfilledOrders.Command(), ct);
+            if (unfilled.IsSuccess && unfilled.Value != null)
+            {
+                logger.LogInformation(
+                    "CancelUnfilledOrders completed; cancelled {Cancelled}, refunded {Refunded}, credited {Credited}",
+                    unfilled.Value.CancelledCount,
+                    unfilled.Value.RefundedCount,
+                    unfilled.Value.CreditedCount);
+            }
+            else
+            {
+                logger.LogError(
+                    "CancelUnfilledOrders failed: {Error}",
+                    unfilled.Error?.Message ?? "unknown");
+            }
+        }, ct);
+
+        if (thrown.Count == 1)
+        {
+            ExceptionDispatchInfo.Capture(thrown[0]).Throw();
         }
-        else
+
+        if (thrown.Count > 1)
         {
-            logger.LogError(
-                "CancelUnfilledOrders failed: {Error}",
-                unfilled.Error?.Message ?? "unknown");
+            throw new AggregateException(thrown);
+        }
+    }
+
+    private async Task RunInOwnScopeAsync(
+        string command, List<Exception> thrown, Func<IMediator, Task> send, CancellationToken ct)
+    {
+        try
+        {
+            await using var scope = scopeFactory.CreateAsyncScope();
+            await send(scope.ServiceProvider.GetRequiredService<IMediator>());
+        }
+        catch (OperationCanceledException) when (ct.IsCancellationRequested)
+        {
+            throw;
+        }
+        catch (Exception ex)
+        {
+            logger.LogWarning(ex,
+                "{Command} threw; the other commands on this tick still run, and the invocation fails after the last",
+                command);
+            thrown.Add(ex);
         }
     }
 }

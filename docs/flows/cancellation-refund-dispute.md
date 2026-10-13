@@ -186,7 +186,8 @@ all. **The hold applies wherever money leaves** (since 2026-10-05): `RefundServi
 every card refund passes, for an administrator's full or partial refund, a cancellation and a dispute's card settlement; and
 the credit-only returns. A member's cancellation, a no-show or a platform cancellation that cannot reach Stripe returns at once the
 credit share of the same held slice its pending card row was sized from. An order that ends with no card refund of
-its own gets its credit back under `order-ended-unpaid:{orderId}`, counting a settlement by what the
+its own gets its credit back under `order-ended-unpaid:{orderId}`, in the commit that ends the order or
+not at all (since 2026-10-12, [ADR-0073](/decisions/adr-0073)), counting a settlement by what the
 order took: in full off the credit when it took no payment, and otherwise holding the credit to what the
 sale has left after card refunds, credit returned and settlements
 → [Business rules — the credit return](/product/business-rules#when-the-cleaner-cancels-or-no-shows).
@@ -614,5 +615,7 @@ dispute or the order shows the three interleaved, newest first.
 | A lockout confirmed on a signed-in customer's unpaid cash booking | Credit returned; a *Lockout* receivable for the whole price; each seat is paid its full reward at the confirmation, whether or not the receivable is ever paid. |
 | A lockout confirmed on an order already refunded | Each seat is still paid its full reward; no collected fee is read. |
 | Two partial refunds of one order settle at once | The second waits for the first's commit and takes only what the running total leaves. |
+| Two refunds of one order settle their payment status at once | The later one re-reads what the earlier one recorded and saves the status the two make together: 600 and 400 of a paid 1 000 leave it `Refunded`, and a cancellation whose refund settled second still sends its notices ([ADR-0071](/decisions/adr-0071) D2). |
+| The same refund settled twice at once (a refund or a dispute's resolution sent twice, or the wind-down's re-drive beside the hourly one or beside another delivery of its own message) | Stripe pays it once on its key, and the status counts it once: a partial refund of 600 sent twice on a paid 1 000 leaves the order partly refunded, so a later cancellation still refunds the other 400. A wound-down order ends `Refunded`, unless another of its refunds is still pending; a settle that loaded the row before the other's commit and reads the totals after it can still mark the paid refund `Failed` (T-0851). |
 | A full refund run again with nothing left to do | `refund.nothing_refundable`; no money moves and no notice is queued. |
 | A card order refunded before the job ends | The cleaner completes it; completion asks for the crew's pay and takes the points share of what was returned. |

@@ -557,6 +557,13 @@ need backfilling.
 
 ### Changed
 
+- **Operator — before the next DEV deploy, drop the DEV database, once the owner has approved the
+  reset.** The `Initial` migration was regenerated as `20261012190449`: no table, column or index
+  changed — an order's payment status became its second concurrency token, which lives in the model
+  only — but the id did, so a DEV database that recorded an earlier id would replay the whole create
+  script against tables that exist. One drop, owed once, at deploy time; it replaces the one owed for
+  `20261005201452`. (ADR-0071)
+
 - **Cleaner Android and iOS — the Profile screen fades its content under the status bar, as the
   dashboard does.** When you scroll the Profile screen, its content now fades out under the clock and
   the camera, where it used to run into them. On iOS the band wears the blue of the screen's header
@@ -1095,6 +1102,26 @@ need backfilling.
   generic English sentence that is honest about being generic, until counsel supplies each one.
 
 ### Fixed
+
+- **Customer — a card payment that lands while an unpaid booking is being cancelled keeps the
+  booking.** If the payment arrived at the same moment as the cancellation of a booking still waiting
+  for it — the clean-up of an abandoned checkout, the auto-cancel of a recurring visit nobody
+  confirmed, or a cancel by you or by the company — the booking could end cancelled with the money
+  kept and nothing refunded. Now whichever comes second is refused. A payment that lands first keeps
+  the booking, and a cancel sent at that moment answers with an error once and then finds it paid; a
+  payment that lands after the cancel is flagged for an administrator to refund, as before. Credit you
+  spent on a booking comes back only together with the cancellation that ends it. (ADR-0071, ADR-0073)
+- **Admin — refunds of one order that settle at the same moment are counted right.** Two refunds
+  settling together, 600 and 400 of a paid 1 000, could leave the order *Partially refunded* although
+  everything had gone back; it now ends *Refunded*. The same refund sent twice at once — a partial
+  refund or a dispute resolution submitted twice — is paid once and now counted once: it could mark
+  600 of 1 000 *Refunded*, after which no cancellation refunded the other 400. (ADR-0071)
+- **Operators — one failing item or command no longer holds back the rest of a sweep.** The hourly
+  auto-cancel of unconfirmed recurring visits takes each visit on its own: one that fails stays as it
+  was, is retried the next hour and is counted as failed in the run's log line, while the others are
+  cancelled. On the two shared timers — the 15-minute abandoned-checkout clean-up with the unfilled-order
+  cancellation, and the hourly auto-cancel with the refund re-drive — a command that throws no longer
+  stops the ones after it, and the run still reports the failure. (ADR-0072)
 
 - **Cleaner Android and iOS — the dashboard shows today's and coming jobs, with the right day
   words.** The dashboard now asks for your jobs from the start of your day, so past jobs no longer
@@ -1702,6 +1729,16 @@ need backfilling.
   offers a retry.
 
 ### Security
+
+- **Customer and cleaner apps — on a shared phone, the previous account's notifications, and on a
+  customer's iPhone its lock-screen cards, stop once the next person's sign-in registers the phone for
+  them, even if the previous sign-out never reached us.** A sign-out made offline, or one the iPhone app
+  gave up on after five seconds, left the previous account's phone registration active, so its
+  notifications — an order number, a count, an amount — went on arriving on that phone for up to 90
+  days, and on the customer iPhone app a lock-screen card for its order could still be started or
+  updated there. The next account's registration for the same app on that phone now retires the previous
+  account's, lock-screen cards included, in whichever company the previous account belongs to. One thing
+  it does not do: the previous account is not signed out anywhere. (T-0834)
 
 - **Cleaner apps and customer iOS — on a phone two people share, signing in starts from a clean
   slate, as it already did in the customer Android app.** Signing in now clears what the app kept for

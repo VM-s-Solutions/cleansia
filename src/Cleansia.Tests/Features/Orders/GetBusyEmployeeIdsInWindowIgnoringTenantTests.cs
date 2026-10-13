@@ -21,7 +21,7 @@ namespace Cleansia.Tests.Features.Orders;
 /// the day they stop agreeing is the day the extraction was undone — and the picker and the take gate
 /// would be answering the same question differently.</para>
 /// </summary>
-public sealed class GetBusyEmployeeIdsInWindowTests : IDisposable
+public sealed class GetBusyEmployeeIdsInWindowIgnoringTenantTests : IDisposable
 {
     private const string BusyCleaner = "emp-busy";
     private const string FreeCleaner = "emp-free";
@@ -35,7 +35,7 @@ public sealed class GetBusyEmployeeIdsInWindowTests : IDisposable
 
     private readonly SqliteConnection _connection;
 
-    public GetBusyEmployeeIdsInWindowTests()
+    public GetBusyEmployeeIdsInWindowIgnoringTenantTests()
     {
         _connection = new SqliteConnection("DataSource=:memory:");
         _connection.Open();
@@ -154,7 +154,7 @@ public sealed class GetBusyEmployeeIdsInWindowTests : IDisposable
     private async Task<IReadOnlySet<string>> ProbeAsync(string[] candidates, string? callerTenantId = TestTenants.Default)
     {
         await using var ctx = NewContext(callerTenantId);
-        return await new OrderRepository(ctx).GetBusyEmployeeIdsInWindowAsync(
+        return await new OrderRepository(ctx).GetBusyEmployeeIdsInWindowIgnoringTenantAsync(
             candidates, ProbeStart, ProbeStart.AddMinutes(ProbeMinutes), CancellationToken.None);
     }
 

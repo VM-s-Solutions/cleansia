@@ -1,6 +1,7 @@
 using System.Reflection;
 using Cleansia.Core.AppServices.Features.Devices;
 using Cleansia.Core.Domain.Devices;
+using Cleansia.Core.Domain.LiveActivities;
 using Cleansia.Core.Domain.Repositories;
 using Cleansia.Infra.Common.Validations;
 using Moq;
@@ -23,11 +24,20 @@ public class RegisterDeviceHandlerTests
     private const string NewToken = "token-new";
 
     private readonly Mock<IDeviceRepository> _deviceRepository = new();
+    private readonly Mock<ILiveActivityTokenRepository> _liveActivityTokenRepository = new();
     private readonly Mock<IUserSessionProvider> _session = new();
 
     public RegisterDeviceHandlerTests()
     {
         _session.Setup(s => s.GetUserId()).Returns(CallerUserId);
+        _deviceRepository
+            .Setup(r => r.GetOtherUsersActiveByDeviceAndTokenIgnoringTenantAsync(
+                It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(Array.Empty<Device>());
+        _liveActivityTokenRepository
+            .Setup(r => r.GetByUserAndDeviceIgnoringTenantAsync(
+                It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(Array.Empty<LiveActivityToken>());
     }
 
     private void ArrangeLookup(Device? device)
@@ -41,7 +51,14 @@ public class RegisterDeviceHandlerTests
     {
         var handlerType = typeof(RegisterDevice).GetNestedType("Handler", BindingFlags.NonPublic | BindingFlags.Public);
         Assert.NotNull(handlerType);
-        var handler = Activator.CreateInstance(handlerType!, _deviceRepository.Object, _session.Object)!;
+        var dependencies = new Dictionary<Type, object>
+        {
+            [typeof(IDeviceRepository)] = _deviceRepository.Object,
+            [typeof(ILiveActivityTokenRepository)] = _liveActivityTokenRepository.Object,
+            [typeof(IUserSessionProvider)] = _session.Object,
+        };
+        var args = handlerType!.GetConstructors().Single().GetParameters().Select(p => dependencies[p.ParameterType]).ToArray();
+        var handler = Activator.CreateInstance(handlerType!, args)!;
         var handleMethod = handlerType!.GetMethod("Handle");
         Assert.NotNull(handleMethod);
         var task = (Task<BusinessResult<RegisterDevice.Response>>)handleMethod!.Invoke(
@@ -172,5 +189,97 @@ public class RegisterDeviceHandlerTests
         _deviceRepository.Verify(r => r.Add(It.IsAny<Device>()), Times.Once);
         Assert.NotNull(added);
         Assert.Equal(otherUser, added!.UserId);
+    }
+
+    [Fact]
+    public async Task Registering_Retires_Every_Other_Accounts_Active_Row_Holding_This_Handset_And_Token()
+    {
+        // A shared handset whose previous accounts' sign-outs never reached the server: their rows hold
+        // this install's device id and push token, so their pushes would keep reaching the caller.
+        var previousAccount = Device.Create("previous-user-1", "android", NewToken, DeviceId);
+        var earlierAccount = Device.Create("previous-user-2", "android", NewToken, DeviceId);
+        ArrangeLookup(null);
+        _deviceRepository
+            .Setup(r => r.GetOtherUsersActiveByDeviceAndTokenIgnoringTenantAsync(
+                CallerUserId, DeviceId, NewToken, It.IsAny<CancellationToken>()))
+            .ReturnsAsync([previousAccount, earlierAccount]);
+
+        var result = await InvokeHandler(DeviceId, NewToken, "android");
+
+        Assert.True(result.IsSuccess);
+        _deviceRepository.Verify(r => r.Deactivate(previousAccount), Times.Once);
+        _deviceRepository.Verify(r => r.Deactivate(earlierAccount), Times.Once);
+        _deviceRepository.Verify(r => r.Add(It.Is<Device>(d => d.UserId == CallerUserId)), Times.Once);
+    }
+
+    [Fact]
+    public async Task Re_Registering_Its_Own_Row_Retires_Only_Other_Accounts_Rows()
+    {
+        var own = Device.Create(CallerUserId, "android", OldToken, DeviceId);
+        var previousAccount = Device.Create("previous-user-1", "android", NewToken, DeviceId);
+        ArrangeLookup(own);
+        _deviceRepository
+            .Setup(r => r.GetOtherUsersActiveByDeviceAndTokenIgnoringTenantAsync(
+                CallerUserId, DeviceId, NewToken, It.IsAny<CancellationToken>()))
+            .ReturnsAsync([previousAccount]);
+
+        var result = await InvokeHandler(DeviceId, NewToken, "android");
+
+        Assert.True(result.IsSuccess);
+        Assert.Equal(own.Id, result.Value.DeviceId);
+        Assert.True(own.IsActive);
+        Assert.Equal(NewToken, own.DeviceToken);
+        _deviceRepository.Verify(r => r.Deactivate(previousAccount), Times.Once);
+        _deviceRepository.Verify(r => r.Deactivate(own), Times.Never);
+    }
+
+    [Fact]
+    public async Task Registering_Deletes_Each_Retired_Accounts_Live_Activity_Tokens_For_This_Install()
+    {
+        var previousAccount = Device.Create("previous-user-1", "ios", NewToken, DeviceId);
+        var earlierAccount = Device.Create("previous-user-2", "ios", NewToken, DeviceId);
+        IReadOnlyList<LiveActivityToken> previousAccountTokens =
+        [
+            LiveActivityToken.Create("previous-user-1", DeviceId, orderId: null, "push-to-start", tenantId: null),
+            LiveActivityToken.Create("previous-user-1", DeviceId, "order-1", "update-order-1", tenantId: null),
+        ];
+        IReadOnlyList<LiveActivityToken> earlierAccountTokens =
+        [
+            LiveActivityToken.Create("previous-user-2", DeviceId, orderId: null, "push-to-start", tenantId: null),
+        ];
+        ArrangeLookup(null);
+        _deviceRepository
+            .Setup(r => r.GetOtherUsersActiveByDeviceAndTokenIgnoringTenantAsync(
+                CallerUserId, DeviceId, NewToken, It.IsAny<CancellationToken>()))
+            .ReturnsAsync([previousAccount, earlierAccount]);
+        _liveActivityTokenRepository
+            .Setup(r => r.GetByUserAndDeviceIgnoringTenantAsync("previous-user-1", DeviceId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(previousAccountTokens);
+        _liveActivityTokenRepository
+            .Setup(r => r.GetByUserAndDeviceIgnoringTenantAsync("previous-user-2", DeviceId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(earlierAccountTokens);
+
+        var result = await InvokeHandler(DeviceId, NewToken, "ios");
+
+        Assert.True(result.IsSuccess);
+        _liveActivityTokenRepository.Verify(r => r.RemoveRange(previousAccountTokens), Times.Once);
+        _liveActivityTokenRepository.Verify(r => r.RemoveRange(earlierAccountTokens), Times.Once);
+        _liveActivityTokenRepository.Verify(
+            r => r.GetByUserAndDeviceIgnoringTenantAsync(CallerUserId, It.IsAny<string>(), It.IsAny<CancellationToken>()),
+            Times.Never);
+    }
+
+    [Fact]
+    public async Task A_Registration_That_Retires_No_Row_Reads_And_Deletes_No_Live_Activity_Token()
+    {
+        ArrangeLookup(null);
+
+        var result = await InvokeHandler(DeviceId, NewToken, "ios");
+
+        Assert.True(result.IsSuccess);
+        _liveActivityTokenRepository.Verify(
+            r => r.GetByUserAndDeviceIgnoringTenantAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()),
+            Times.Never);
+        _liveActivityTokenRepository.Verify(r => r.RemoveRange(It.IsAny<IEnumerable<LiveActivityToken>>()), Times.Never);
     }
 }

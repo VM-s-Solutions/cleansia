@@ -601,7 +601,7 @@ question first and the form second.
 
 |  | **Read under a tenant claim** | **Read with no claim (anonymous / job)** |
 |---|---|---|
-| **Written under a tenant claim** | **symmetric → FILTERED.** `src/Cleansia.Config/Filters/RequireCompleteProfileAttribute.cs:25`, `src/Cleansia.Core.AppServices/Authentication/OrderAccessService.cs:112`, the employee self-service `Update*` handlers, `src/Cleansia.Infra.Database/Repositories/LiveActivityTokenRepository.cs:10-45` | **ASYMMETRIC → bypass + re-pin.** `src/Cleansia.Infra.Database/Repositories/EmployeeRepository.cs:19-26` on the token-mint paths; `src/Cleansia.Infra.Database/Repositories/LiveActivityTokenRepository.cs:47-61`; `src/Cleansia.Infra.Database/Repositories/DeviceRepository.cs:46-57` and `src/Cleansia.Infra.Database/Repositories/DeviceRepository.cs:59-68` |
+| **Written under a tenant claim** | **symmetric → FILTERED.** `src/Cleansia.Config/Filters/RequireCompleteProfileAttribute.cs:25`, `src/Cleansia.Core.AppServices/Authentication/OrderAccessService.cs:112`, the employee self-service `Update*` handlers, `src/Cleansia.Infra.Database/Repositories/LiveActivityTokenRepository.cs:10-45` | **ASYMMETRIC → bypass + re-pin.** `src/Cleansia.Infra.Database/Repositories/EmployeeRepository.cs:19-26` on the token-mint paths; `src/Cleansia.Infra.Database/Repositories/LiveActivityTokenRepository.cs:47-61`; `src/Cleansia.Infra.Database/Repositories/DeviceRepository.cs:46-57` and `src/Cleansia.Infra.Database/Repositories/DeviceRepository.cs:59-68`; and, read under **another** account's claim, `src/Cleansia.Infra.Database/Repositories/DeviceRepository.cs:64-77` (`GetOtherUsersActiveByDeviceAndTokenIgnoringTenantAsync`, deactivation only, pinned on the device id and the presented push token — below) and `GetByUserAndDeviceIgnoringTenantAsync` (`src/Cleansia.Infra.Database/Repositories/LiveActivityTokenRepository.cs:72-78`, deletion only, pinned on the user id and device id read out of a row the device read found — below) |
 | **Written with no claim (anonymous)** | **ASYMMETRIC → bypass + re-pin.** `src/Cleansia.Infra.Database/Repositories/RefreshTokenRepository.cs:10-23` and the revoke family at `src/Cleansia.Infra.Database/Repositories/RefreshTokenRepository.cs:120-150`; **the legacy confirm read** `UserRepository.GetByConfirmationCodeIgnoringTenantAsync` (written under the market's operator by `Register`, read anonymously from the link — pinned by the code hash); **the register / resend / admin-create pre-checks** (`GetByEmailIgnoringTenantAsync` / `ExistsWithEmailIgnoringTenantAsync` — pinned by the global `IX_Users_Email`, deliberately across the holding: one email is one identity); the **guest booking family** — `Order/Lookup`, `LookupBatch`, `GuestCancellationPreview`, `CancelGuest`, all four through the one seam `GuestOrderAccess` (`GetQueryableIgnoringTenant()` on the order *and* the token table, pinned by the SHA-256 digest of the presented token, plus `UserId == null`) | **symmetric → FILTERED.** Since ADR-0061 D3 every anonymous write runs under the market operator's override, so this cell holds the reads a request makes of rows *it* wrote in the same scope — the promo `GetByCodeAsync` pre-check under `RequestPromoCode`, `ValidateReferral`'s `(TenantId, Code)` read |
 
 **The newest row in the top-right cell — the contract-for-work acceptance (ADR-0068, 2026-09-20).**
@@ -641,6 +641,35 @@ that used to forbid it here described `(TenantId, Email)` under a dormant `Tenan
 exists). Where the true pin is a **caller obligation** the method cannot verify
 (`GetActiveByUserIdAsync`'s "the `UserId` comes from the caller's own JWT"), say so in those words rather
 than dressing it as an invariant.
+
+**One more pin, admitted on 2026-10-12 for a bypass that only withdraws (T-0834):** the device id **and** the
+non-empty push token the caller's own app install presents. `DeviceRepository.GetOtherUsersActiveByDeviceAndTokenIgnoringTenantAsync`
+reads every company's device rows that hold both and belong to another account, and all that is done with
+them is withdrawal (`RegisterDevice`): each is deactivated, and its account's Live Activity tokens for the
+install are deleted; nothing read is returned, shown or granted. The token is issued per
+install by the push provider, which delivers to whoever holds the install, so it pins the install whose
+pushes the previous account would otherwise keep receiving. The conditions are part of the admission: the
+token is on no DTO and in no log above Debug; an empty token matches nothing; the caller's own rows are
+excluded by the id from its JWT. The device id alone is not a pin — Android's fallback id is the
+manufacturer and model, and the partner and customer apps signed with one key share one. Its contract
+(`IDeviceRepository`) states the caller obligation: the device id and the push token are the ones the caller's
+own install presented, which the server cannot verify. The Live Activity tokens are read by
+`LiveActivityTokenRepository.GetByUserAndDeviceIgnoringTenantAsync`, which reads every company's rows too and
+has no pin of its own: it inherits this admission and its conditions. Its user id and device id are only ever
+those of a row the device read returned in the same command — *a row id read out of an already-pinned row* — so
+it never reaches the caller's own rows, which that read excludes by the id from the JWT; and because that row
+was pinned by a caller obligation admitted for withdrawal only, the rows it finds are only ever deleted. A row
+the device read found is an already-pinned row for withdrawal and nothing else: a read keyed from it that
+returns, shows or grants anything is not admitted here. It is keyed on the device id, not the push token, so it
+deletes every Live Activity token that account holds under that device id — the set the account's own
+`Device/Unregister` deletes (`src/Cleansia.Core.AppServices/Features/Devices/UnregisterDevice.cs:46`); only the
+customer iOS app registers them, under a device id kept per app on one phone. Its contract
+(`ILiveActivityTokenRepository`) states the obligation.
+**Residual, accepted:** whoever learns another install's push token can silently stop that account's
+notification and Live Activity pushes there until the app on that install registers them again (for
+notifications, its next sign-in or token rotation) — a denial of service with no data exposure. An access token
+that account was issued before is refused once, and the next refresh issues another, because the refresh
+path checks no device state (`src/Cleansia.Core.AppServices/Features/Auth/RefreshToken.cs:63-105`).
 
 **Enforced by:** `src/Cleansia.Tests/Features/Auth/UserRepositoryTokenLookupTenantTests.cs` (bypass
 sites confined to an enumerated roster; the confirm family and the register pre-checks pinned on the
@@ -713,6 +742,25 @@ conflict, no duplicate, nothing found. The sweep does not fail; it silently agre
 tenancy — name the two variants and let the call site say which world it is in**, per the shipped
 `EmployeeRepository.GetByIdAsync` / `GetByIdIgnoringTenantAsync` pair (`:44-57`).
 
+**When every caller needs every company's rows, there is one method, and its name still says so.** A
+method of this form whose callers all need every company's rows gets no scoped variant — it would have no
+correct caller, and ADR-0039 D3.2 builds no method with zero callers — and the one method carries
+`IgnoringTenant`, so each call site still says which world it reads. The name does not pay the bypass's
+price: **the method still states its re-pin in its contract, as a named caller obligation, and every caller
+meets it.** The reference is
+`IOrderRepository.GetBusyEmployeeIdsInWindowIgnoringTenantAsync`: a commitment booked under any operator
+occupies the same cleaner, so the preferred-cleaner picker and the hold resolver on request paths, and the
+payment webhook and the recurring materializer through the resolver, all need every company's calendar;
+its re-pin is that every id it is given is server-derived (`IOrderRepository.cs:166-174`). This reaches only this form's
+subject, a method reached from both a request path and a background job; a read that one world alone
+reaches is governed by the matrix above and its re-pin, not by its name. ✗ **Not yet named:**
+`IOrderRepository.IsFirstBookingAsync` reads every company by contract (`IOrderRepository.cs:10-18`,
+`OrderRepository.cs:20`) and is reached from request paths through `CancellationPolicyResolver.cs:43` and
+from a Function through `SendEmailHandler.cs:290` — T-0837. **Enforced by:** S8's closing test below
+(*for every repository method, list its callers*), walked in the security review of every
+`security_touching` ticket (`.claude/agents/security.md`, item 8) — `T3-HUMAN`. *(Not mechanizable:
+whether every caller needs every company's rows is a reading of meaning.)*
+
 **The worked example — now FIXED, and kept here as the reference pair rather than as an open hole.**
 `OrderRepository.HasOverlappingOrderAsync` used a single `GetDbSet()` body while
 `NewJobsDigestService.cs:137` called it from inside a `GetQueryableIgnoringTenant()` sweep — so under
@@ -732,9 +780,11 @@ scoped gate tells a caller with no claim.
 > class as a comment claiming two lists agree. Re-label to the shipped reference pair and name the pin.
 
 **Reviewer test:** for every repository method, list its callers and ask whether
-they all live in the same tenancy world. If not, one name is wrong. **The pinning test must seed a
-non-null `TenantId`** — same as the mirror case, for the same reason. **And note the direction of the
-lie:** the anonymous-write trap makes a *write* do nothing; this one makes a *guard* say yes.
+they all live in the same tenancy world. If not, one name is wrong — unless every caller needs every
+company's rows, and then there is one method and its name must carry `IgnoringTenant` (above). **The
+pinning test must seed a non-null `TenantId`** — same as the mirror case, for the same reason. **And
+note the direction of the lie:** the anonymous-write trap makes a *write* do nothing; this one makes a
+*guard* say yes.
 
 ## S9 — Migration & DTO-contract safety
 
@@ -808,6 +858,18 @@ app's pending offers and notification badge; and Core's `RemoteImageCache` and `
 `RemoteImageCache` still returns an image that loaded across `clear()` to the view that asked for it,
 but does not keep it; `PushTokenRegistrar` does not record a registration that answers after it. A new
 cache that reads across an `await` needs the same guard. → [Shared patterns](/mobile-app/patterns#session-wipe)
+
+**The server holds per-user routes the wipe cannot reach: the previous account's `Device` row and its
+Live Activity tokens.** A sign-out that never reached the server leaves both in place, and every push to
+that account would keep going to the phone. So `RegisterDevice` deactivates every other account's active
+row holding the same device id **and** the same non-empty push token, in any company, and deletes that
+account's Live Activity tokens for the install, push-to-start included; the next account's registration on
+the phone is what ends the previous account's notification and Live Activity pushes there. That is what the
+previous account's `Device/Unregister` would have done, **not the rest of its sign-out**: its refresh token
+is not revoked, so no session ends. The push token is the pin because it belongs to one app install: the
+partner and customer apps on one Android phone can share a device id, never a token (S8 admits this pin for
+a withdrawal only).
+→ [Auth edge cases](/flows/auth-and-identity#edge-cases)
 
 **The allowlist (the only sanctioned exception).** A `@Singleton` that holds cached state but whose
 state is **device-level or public, not per-user**, is legitimately out of the set — but only if it is

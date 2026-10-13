@@ -253,6 +253,12 @@ public class OrderEntityConfiguration : TenantAuditableEntityConfiguration<Order
             .IsRequired()
             .IsConcurrencyToken();
 
+        // The order's two lifecycle axes, fulfilment (CurrentStatus) and payment (PaymentStatus), are both tokens: a
+        // writer that decided on the order as it read it is refused at commit when either axis has moved since, rather
+        // than overwriting it. Not xmin, which would also refuse writes to every unrelated column. → /decisions/adr-0071
+        builder.Property(o => o.PaymentStatus)
+            .IsConcurrencyToken();
+
         // (CurrentStatus, CleaningDateTime): the leftmost prefix serves the status-set predicates
         // migrated off the per-row latest-history subquery (partner available/active dashboard
         // counts, admin/partner status filters), and the second column serves the spec's most common

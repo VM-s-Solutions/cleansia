@@ -15,7 +15,7 @@ security_touching: true
 
 ## Context
 
-The 2026-10-12 design ruling on BE-11 to BE-14 reported these as items 6 and 7. Item 7 came from that ruling's security review. Both are off-tree, in the Wave F folder: `/Users/michael/.codex/scratchpads/cleansia-wave-f-2026-10-11/p5/phase0/`, files `architect_be-lead.json` and `security_be.json`. Lines are as of `76e1638a3`.
+The 2026-10-12 design ruling on BE-11 to BE-14 reported these as items 6 and 7. Item 7 came from that ruling's security review. Both are off-tree, in the Wave F folder: `/Users/michael/.codex/scratchpads/cleansia-wave-f-2026-10-11/p5/phase0/`, files `architect_be-lead.json` and `security_be.json`. Lines are as of `207d2f319`.
 
 **The status e-mails go out before the commit.**
 - `StartOrder.cs:200-202` and `CompleteOrder.cs:302-304` send the status e-mail through SendGrid, synchronously, inside the handler (`EmailService.cs:1222`). The unit-of-work pipeline commits only after the handler returns.

@@ -16,7 +16,7 @@ security_touching: true
 ## Context
 
 T-0820's review reported three things for Mike: the mutable action tags, the missing `permissions:` blocks and the deploy workflows' Node 20.
-- The CI ground truth of 2026-10-12 confirmed each one against `b405e9cc5` and resolved every ref.
+- The CI ground truth of 2026-10-12 confirmed each one against `db2272a5d` and resolved every ref.
   - The ground truth itself is off-tree, in the Wave F folder: `/Users/michael/.codex/scratchpads/cleansia-wave-f-2026-10-11/p5/phase0/gt_ci.json`.
   - The inventory is `/Users/michael/.codex/scratchpads/cleansia-wave-f-2026-10-11/p5/ci-inventory.json`.
   - Tag lists, `action.yml` at each SHA and the release notes are under `p5/ci-inventory/`.
@@ -27,7 +27,7 @@ T-0820's review reported three things for Mike: the mutable action tags, the mis
 - **"Fix it"** for `ubuntu-latest` moving to Ubuntu 26. This also answers the pin question in T-0813's runtime packet.
 - gradle/actions stays on v5.
 
-At `76e1638a3`:
+At `207d2f319`:
 - **No action is pinned.**
   - All 67 action `uses:` lines across the 13 workflows are on mutable tags, for example `android-ci.yml:45` `actions/checkout@v5`.
   - The two local reusable calls (`deploy-dev.yml:69`, `deploy-pro.yml:72`) are `./` paths.
@@ -122,7 +122,7 @@ At `76e1638a3`:
 - [x] **AC1** — Every external `uses:` is a 40-character SHA with its version comment, matching the table. `grep -nE 'uses: [^.].*@v[0-9]' .github/workflows/*.yml` prints nothing.
 - [x] **AC2** — Every workflow declares top-level permissions, and the job blocks are as listed. The names of the required `build` checks are unchanged.
 - [x] **AC3** — No `node-version: 20`, `NODE|20-lts` or `ubuntu-latest` remains under `.github/workflows/` or `deploy/bicep/`. The listed docs and comments say what the files do.
-- [ ] **AC4** — The PR workflows pass on the exact head, with no "Node.js 20" annotation and no new warning.
+- [x] **AC4** — The PR workflows pass on the exact head, with no "Node.js 20" annotation and no new warning.
 - [ ] **AC5** — Validation is done or recorded:
   - deploy-pro has had its static review, and its two scripts pass on Node 22;
   - execute-sql's DEV job passes the read-only health check;
@@ -164,6 +164,17 @@ At `76e1638a3`:
   - deploy-pro's changes, deploy-azure's production-only steps and execute-sql's execute-pro job run on none of these before production. They have the static review only.
 
   No DEV deploy has run since 2026-09-30, so the first one also carries the ten deploy-pipeline commits made since then.
+- 2026-10-13 — Shipped in [#326](https://github.com/VM-s-Solutions/cleansia/pull/326).
+  - Exact-head CI on `3a0582b` passed all 9 check runs with no re-run: Backend, Frontend and e2e-smoke, Android, iOS, Docs, iOS Symbols, booking-policy parity and Secret scan.
+  - Every job ran this PR's own definitions: pinned actions, least-privilege permissions and `ubuntu-24.04`.
+  - Merged normally with the SHA guard as `52f1049`. No deploy ran: deploy-dev, deploy-pro, deploy-docs and execute-sql have no run since the merge.
+  - Evidence: `raw/ci/p7-pr326-ci-merge-closure-001.json` (sha256 `abec0bec…`) in the off-tree Wave F folder.
+  - **AC4.**
+    - No annotation names Node.js 20.
+    - The `ubuntu-latest` migration notice is gone from every Ubuntu job; #323's run carried it.
+    - No Ubuntu job gained an annotation.
+    - The iOS job shows GitHub's macOS capacity notice and a different capped sample of the same compiler warnings. Both runs used Xcode 26.6 (17F113), and both logs carry the `nonisolated(unsafe)` warning 12 times.
+  - T-0838 stays in progress for AC5: the execute-sql DEV check, a DEV deploy and a deploy-docs dispatch.
 
 ## Review
 

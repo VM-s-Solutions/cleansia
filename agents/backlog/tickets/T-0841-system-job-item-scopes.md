@@ -25,7 +25,7 @@ security_touching: true
 - T-0844 fixes the recurring auto-cancel and lists the remaining cases in a deviating-forms entry in `consistency.md`. This ticket retires that entry.
 - The 2026-10-12 design ruling on BE-11 to BE-14 reported these as items 3 and 4, and recommended filing this ticket. The ruling is off-tree, in the Wave F folder: `/Users/michael/.codex/scratchpads/cleansia-wave-f-2026-10-11/p5/phase0/architect_be-lead.json`.
 
-**The deviations** were read from the tree by the ruling, with a search for `catch (Exception` and `Rollback()` under `src/Cleansia.Core.AppServices`. Lines are as of `76e1638a3`.
+**The deviations** were read from the tree by the ruling, with a search for `catch (Exception` and `Rollback()` under `src/Cleansia.Core.AppServices`. Lines are as of `207d2f319`.
 - **A commit inside the try, or `Rollback()` and continue:**
   - `SendRecurringOrderReminders.cs:62-92`;
   - `RedrivePendingRefunds.cs:120-218`, with the catch at `:208-218`. This job moves money;

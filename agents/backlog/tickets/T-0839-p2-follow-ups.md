@@ -16,7 +16,7 @@ security_touching: false
 ## Context
 
 The native PR (#323) left six items open, and each is named in a P2 ticket's record. **Mike: "Finish the tasks from P2" (2026-10-12).**
-- Each item was ground-truthed at `b405e9cc5`. The ground truth is off-tree, in the Wave F folder: `/Users/michael/.codex/scratchpads/cleansia-wave-f-2026-10-11/p5/phase0/gt_native.json`. Its scratch outputs are under `/Users/michael/.codex/scratchpads/cleansia-wave-f-2026-10-11/p5/groundtruth/`.
+- Each item was ground-truthed at `db2272a5d`. The ground truth is off-tree, in the Wave F folder: `/Users/michael/.codex/scratchpads/cleansia-wave-f-2026-10-11/p5/phase0/gt_native.json`. Its scratch outputs are under `/Users/michael/.codex/scratchpads/cleansia-wave-f-2026-10-11/p5/groundtruth/`.
 - The catalog wording comes from the native design ruling of 2026-10-12, items 5 and 7. That ruling is in the same folder, `architect_native-lead.json`.
 
 1. **iOS Pending offers prints "CZK"** (from T-0824's review).

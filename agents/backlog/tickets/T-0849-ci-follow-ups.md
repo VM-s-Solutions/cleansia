@@ -15,7 +15,7 @@ security_touching: true
 
 ## Context
 
-These are surprises in the CI ground truth of 2026-10-12 that no ruling covered. The ground truth is off-tree, in the Wave F folder: `/Users/michael/.codex/scratchpads/cleansia-wave-f-2026-10-11/p5/phase0/gt_ci.json`. Its inventory is `/Users/michael/.codex/scratchpads/cleansia-wave-f-2026-10-11/p5/ci-inventory.json`. Lines are as of `76e1638a3`.
+These are surprises in the CI ground truth of 2026-10-12 that no ruling covered. The ground truth is off-tree, in the Wave F folder: `/Users/michael/.codex/scratchpads/cleansia-wave-f-2026-10-11/p5/phase0/gt_ci.json`. Its inventory is `/Users/michael/.codex/scratchpads/cleansia-wave-f-2026-10-11/p5/ci-inventory.json`. Lines are as of `207d2f319`.
 
 1. **Ubuntu 26.04.** T-0838 pins `ubuntu-24.04` ahead of the 2026-10-19 migration. Moving later is a choice to make with evidence. These image differences touch our jobs:
    - Docker goes from 28.0.4 to 29.4.2. That affects Testcontainers.PostgreSql 4.10.0 (`src/Directory.Packages.props:122`);
@@ -36,7 +36,7 @@ These are surprises in the CI ground truth of 2026-10-12 that no ruling covered.
    - No workflow, Bicep file or script references this Dockerfile. Only Visual Studio's hooks do: `<DockerDefaultTargetOS>` (`Cleansia.Web.Partner.csproj:8`) and the "Docker" launch profile (`Properties/launchSettings.json:12-13`).
 6. **CLAUDE.md's quick reference is mostly current already.**
    - The ground truth quoted "Angular 19, Nx 21", but that line is not in the tree.
-   - `CLAUDE.md:100` has said "Angular 20.3, Nx 23.1, NgRx 20.1, PrimeNG 20.4" since `00583a452` (2026-10-09), at `b405e9cc5` and on `origin/master`. The old line survives only in a local checkout that is behind `master`.
+   - `CLAUDE.md:100` has said "Angular 20.3, Nx 23.1, NgRx 20.1, PrimeNG 20.4" since `00583a452` (2026-10-09), at `db2272a5d` and on `origin/master`. The old line survives only in a local checkout that is behind `master`.
    - The one drift left: Nx is 23.2.1 (`src/Cleansia.App/package.json:92`, `:122`).
 
 ## Doing (proposed, for Mike)

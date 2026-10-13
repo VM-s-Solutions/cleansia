@@ -27,6 +27,11 @@ namespace Cleansia.Core.AppServices.Features.Orders;
 /// eventually-canceled PaymentIntent will then no-op via the existing
 /// idempotency check.
 ///
+/// Credit a checkout spent comes back in the commit that cancels it. A company
+/// whose commit is refused keeps its orders and their credit as they were, and
+/// the next run takes them again. A payment that lands mid-group gets this
+/// company's commit refused, and the paid order stays paid. → /decisions/adr-0071
+///
 /// Recurring occurrences are deliberately out of scope — see the query below;
 /// <see cref="Cleansia.Core.AppServices.Features.Bookings.AutoCancelStaleRecurringOrders"/>
 /// owns their retraction.
@@ -110,9 +115,7 @@ public class CleanupStalePendingOrders
                     tenantProvider.SetTenantOverride(tenantGroup.Key);
                 }
 
-                // Before the loop, not inside it: each credit return below commits on its own, so a failing
-                // read of the recipients must happen before any credit moves, or the group would roll back
-                // with its credit already handed back.
+                // Before the loop, so one read of the recipients' companies serves the whole company.
                 await notificationProducer.NotifyEachAsync(
                     [
                         .. tenantGroup
@@ -127,7 +130,11 @@ public class CleanupStalePendingOrders
                     ],
                     cancellationToken);
 
-                foreach (var order in tenantGroup)
+                // Each credit return holds its customer's lock until the commit below, so the locks are taken
+                // in one fixed order, ordinal user id, as the referral grant takes them. → /decisions/adr-0073
+                foreach (var order in tenantGroup
+                             .OrderBy(o => o.UserId, StringComparer.Ordinal)
+                             .ThenBy(o => o.Id, StringComparer.Ordinal))
                 {
                     if (order.PaymentStatus != PaymentStatus.Pending)
                     {
@@ -149,9 +156,9 @@ public class CleanupStalePendingOrders
                         reason: OrderCancellationReasons.PaymentNotCompleted);
 
                     // Nothing was captured, but credit may have been SPENT - CreateOrder debits it
-                    // before the customer ever reaches Stripe. The return commits on its own, onto the
-                    // customer's credit account, whose company comes from the account and not from the
-                    // override; its key stops a rerun returning it twice. → /flows/cross-cutting#tenancy
+                    // before the customer ever reaches Stripe. The return joins this company's commit,
+                    // onto the customer's credit account, whose company comes from the account and not
+                    // from the override; its key stops a rerun returning it twice. → /flows/cross-cutting#tenancy
                     await creditAccountRepository.ReturnUnpaidOrderCreditAsync(
                         order, cardRefunded: 0m, SystemActor, cancellationToken);
 
@@ -163,7 +170,13 @@ public class CleanupStalePendingOrders
 
                 // The commit is what makes the override above mean anything: rows added by this group
                 // are stamped from the ambient tenant AT COMMIT TIME, so deferring to the pipeline's
-                // single commit would stamp every group with whichever tenant was processed last.
+                // single commit would stamp every group with whichever tenant was processed last. It
+                // commits the group's credit returns too, or rolls them back with the group.
+                //
+                // No catch: a refused group ends the run and its scope. Catching to continue would let
+                // this group's leftovers ride the next group's commit, without the credit the failed
+                // commit rolled back.
+                // → /decisions/adr-0072#d2-a-job-whose-items-must-fail-independently-gives-each-item-its-own-scope
                 await unitOfWork.CommitAsync(cancellationToken);
             }
 

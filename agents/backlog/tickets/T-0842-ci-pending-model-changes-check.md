@@ -17,7 +17,7 @@ security_touching: false
 
 The 2026-10-12 design ruling on BE-11 to BE-14 reported this as item 5. The ruling is off-tree, in the Wave F folder: `/Users/michael/.codex/scratchpads/cleansia-wave-f-2026-10-11/p5/phase0/architect_be-lead.json`.
 
-Schema changes are folded into the one `Initial` migration by regenerating it (CLAUDE.md, *Database migrations*). Nothing in CI notices a model change that lands without that regeneration. Lines are as of `76e1638a3`.
+Schema changes are folded into the one `Initial` migration by regenerating it (CLAUDE.md, *Database migrations*). Nothing in CI notices a model change that lands without that regeneration. Lines are as of `207d2f319`.
 
 - **The tests ignore pending model changes.**
   - Both test fixtures ignore `PendingModelChangesWarning` (`BaseIntegrationTest.cs:89`, `HostTestPostgresFixture.cs:88`), and so do two tests (`AppLoginGrantScriptTests.cs:130`, `DevelopmentFirstBootLegalSeedTests.cs:65`).

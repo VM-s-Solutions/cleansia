@@ -60,7 +60,7 @@ public class PushSubjectNamesTheEventTests
         "StartOrder.cs",
         "NotifyOnTheWay.cs",
         "ConfirmRecurringOrder.cs",
-        "AutoCancelStaleRecurringOrders.cs",
+        "AutoCancelRecurringOccurrence.cs",
         "CleanupStalePendingOrders.cs",
         // Same claim, and it is load-bearing here: the cancel is ALSO the unfilled sweep's only repeat
         // suppressor, and the administrator's no-show confirmation refuses a cancelled order. Cancelled

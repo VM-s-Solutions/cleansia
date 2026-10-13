@@ -60,7 +60,7 @@ public sealed class ServingCleanersSlotAnswerTests : IDisposable
         ArrangeActiveMembership();
 
         _orderRepository
-            .Setup(r => r.GetBusyEmployeeIdsInWindowAsync(
+            .Setup(r => r.GetBusyEmployeeIdsInWindowIgnoringTenantAsync(
                 It.IsAny<IReadOnlyCollection<string>>(),
                 It.IsAny<DateTime>(),
                 It.IsAny<DateTime>(),
@@ -207,7 +207,7 @@ public sealed class ServingCleanersSlotAnswerTests : IDisposable
     {
         await SeedAsync();
         _orderRepository
-            .Setup(r => r.GetBusyEmployeeIdsInWindowAsync(
+            .Setup(r => r.GetBusyEmployeeIdsInWindowIgnoringTenantAsync(
                 It.IsAny<IReadOnlyCollection<string>>(),
                 It.IsAny<DateTime>(),
                 It.IsAny<DateTime>(),

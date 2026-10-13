@@ -68,4 +68,12 @@ public class LiveActivityTokenRepository(CleansiaDbContext context)
             .Where(t => t.OrderId != null && t.LastUpdatedAt < cutoff)
             .ToListAsync(cancellationToken);
     }
+
+    public async Task<IReadOnlyList<LiveActivityToken>> GetByUserAndDeviceIgnoringTenantAsync(
+        string userId, string deviceId, CancellationToken cancellationToken)
+    {
+        return await GetQueryableIgnoringTenant()
+            .Where(t => t.UserId == userId && t.DeviceId == deviceId)
+            .ToListAsync(cancellationToken);
+    }
 }

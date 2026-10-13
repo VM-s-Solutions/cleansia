@@ -1103,6 +1103,10 @@ need backfilling.
 
 ### Fixed
 
+- **Customer and cleaner — a failed membership-notice tick saves no partial notice batch.**
+  A fresh tick can retry while the membership remains in its existing renewal or cancellation
+  window. (T-0859)
+
 - **Customer — a signed-in booking uses your account e-mail.** The web form shows that address
   read-only, and the server keeps it even if a request supplies another address. Guest contact
   details and booking names and phone numbers retain their existing rules. (T-0853)

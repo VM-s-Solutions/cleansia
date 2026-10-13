@@ -55,6 +55,12 @@ catch a failed commit and carry on in the same scope: the failed row's changes w
 A job takes this variant when one bad row must not cost the others their run; a job that commits a whole
 company at once, as `CleanupStalePendingOrders` does, keeps the plain shape, with no catch at its commit.
 
+**A staging-only batch can fail as a batch.** Membership lifecycle notices use the command pipeline's
+whole-tick commit: a renewal or cancellation staging failure escapes, so none of that tick's unsaved
+stamps, feed rows or push envelopes lands.
+Fresh retries require the original eligibility window to remain open. Repeated poison or
+a failure near its lower edge can still cost a notice; these changes widen no window or attempt cap.
+
 **The second shape: the sweeps that read per company.** Some jobs have no row to derive the tenant
 from, because their input is the list of companies and their settings — the fourteen retention tasks,
 with thirteen company settings (`TenantConfiguration`, set on the admin's *Company settings* page;

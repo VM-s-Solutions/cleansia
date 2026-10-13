@@ -1074,7 +1074,6 @@ the roster is stale.
 | `RedrivePendingRefunds` | `RedrivePendingRefunds.cs:120-218`; it moves money |
 | `FiscalRetryService` | `FiscalRetryService.cs:40-112` |
 | `PayPeriodBackgroundService` | `PayPeriodBackgroundService.cs:255-279`, a cleaner's invoices, committing at `:455-476` |
-| `SendMembershipLifecycleNotifications` | `SendMembershipLifecycleNotifications.cs:67-89` and `:105-127` |
 | `NewJobsDigestService` | `NewJobsDigestService.cs:110-244`, committing at `:376` |
 | `DataRetentionBackgroundService` | `DataRetentionBackgroundService.cs:93-105`, around each retention task |
 

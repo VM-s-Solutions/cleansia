@@ -1,15 +1,12 @@
 using Cleansia.Core.AppServices.Abstractions;
-using Cleansia.Core.AppServices.Common;
-using Cleansia.Core.AppServices.Services;
-using Cleansia.Core.AppServices.Services.Interfaces;
 using Cleansia.Core.Domain.Enums;
-using Cleansia.Core.Domain.Notifications;
 using Cleansia.Core.Domain.Repositories;
-using Cleansia.Core.Domain.SeedWork;
 using Cleansia.Infra.Common.Validations;
 using FluentValidation;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
+using MediatR;
+using Microsoft.Extensions.DependencyInjection;
 using BusinessResult = Cleansia.Infra.Common.Validations.BusinessResult;
 
 namespace Cleansia.Core.AppServices.Features.Refunds;
@@ -31,7 +28,7 @@ public class RedrivePendingRefunds
     /// <param name="AlertAfterHours">How long a refund may stay pending before the administrators are told.</param>
     public record Command(int MinimumAgeMinutes = 30, int AlertAfterHours = 24) : ICommand<Response>;
 
-    public record Response(int Considered, int Redriven, int Alerted);
+    public record Response(int Considered, int Redriven, int Alerted, int Failed = 0);
 
     public class Validator : AbstractValidator<Command>
     {
@@ -42,17 +39,9 @@ public class RedrivePendingRefunds
         }
     }
 
-    /// <summary>No JWT on a sweep. Matches CancelUnfilledOrders and CleanupStalePendingOrders.</summary>
-    private const string SystemActor = "system";
-
     public class Handler(
         IRefundRepository refundRepository,
-        IRefundService refundService,
-        INotificationProducer notificationProducer,
-        IAdminNotifier adminNotifier,
-        IUserNotificationRepository userNotificationRepository,
-        ITenantProvider tenantProvider,
-        IUnitOfWork unitOfWork,
+        IServiceScopeFactory serviceScopeFactory,
         ILogger<Handler> logger) : ICommandHandler<Command, Response>
     {
         public async Task<BusinessResult<Response>> Handle(Command command, CancellationToken cancellationToken)
@@ -60,176 +49,50 @@ public class RedrivePendingRefunds
             var now = DateTimeOffset.UtcNow;
             var youngest = now.AddMinutes(-command.MinimumAgeMinutes);
             var alertBefore = now.AddHours(-command.AlertAfterHours);
-
-            // System job, no JWT: read across tenants, then set the override per company and commit
-            // inside the loop, so every row is stamped with its own company. A chargeback row is the
-            // bank's money movement, never ours to re-drive.
-            var pending = await refundRepository.GetQueryableIgnoringTenant()
+            var ids = await refundRepository.GetQueryableIgnoringTenant()
                 .AsNoTracking()
-                .Where(r => r.Status == RefundStatus.Pending
-                    && r.Source == RefundSource.AppRefund
-                    && r.CreatedOn <= youngest)
-                .OrderBy(r => r.CreatedOn)
-                .Select(r => new
-                {
-                    r.Id,
-                    r.OrderId,
-                    r.TenantId,
-                    r.CreatedOn,
-                    r.Amount,
-                    r.Currency,
-                    r.RefundKey,
-                    r.Reason,
-                    r.Order!.UserId,
-                    r.Order.DisplayOrderNumber,
-                    OrderStatus = r.Order.CurrentStatus,
-                    CardCharged = r.Order.TotalPrice - r.Order.CreditAppliedAmount,
-                })
+                .Where(r => r.Status == RefundStatus.Pending && r.Source == RefundSource.AppRefund && r.CreatedOn <= youngest)
+                .OrderBy(r => r.CreatedOn).ThenBy(r => r.Id)
+                .Select(r => r.Id)
                 .ToListAsync(cancellationToken);
-
             var redriven = 0;
             var alerted = 0;
-            foreach (var tenantGroup in pending.GroupBy(r => r.TenantId ?? string.Empty))
+            var failed = 0;
+            foreach (var id in ids)
             {
-                tenantProvider.ClearTenantOverride();
-                if (!string.IsNullOrEmpty(tenantGroup.Key))
+                cancellationToken.ThrowIfCancellationRequested();
+                try
                 {
-                    tenantProvider.SetTenantOverride(tenantGroup.Key);
+                    BusinessResult<RedrivePendingRefund.Response> result;
+                    await using (var scope = serviceScopeFactory.CreateAsyncScope())
+                        result = await scope.ServiceProvider.GetRequiredService<IMediator>().Send(
+                            new RedrivePendingRefund.Command(id, youngest, alertBefore), cancellationToken);
+                    if (result.IsSuccess && result.Value is { } value)
+                    {
+                        redriven += value.Redriven ? 1 : 0;
+                        alerted += value.Alerted ? 1 : 0;
+                    }
+                    else
+                    {
+                        failed++;
+                        logger.LogError("Refund {RefundId} failed to re-drive: {Error}; the next run tries again",
+                            id, result.Error?.Message ?? "unknown");
+                    }
                 }
-
-                foreach (var row in tenantGroup)
+                catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
                 {
-                    // Only a cancellation's own refund, on the order it cancelled, is finished here: its
-                    // cancel committed before the money was asked for, and nothing follows the money. A
-                    // guest's refund is claimed BEFORE the cancel and outlives a cancel that failed: re-driving
-                    // it would refund a clean that still happens, yet a timeout may come after Stripe paid it,
-                    // and every later refund on the order counts it as owed. Only cancelling the booking retries
-                    // it, so the administrators are told to do that if it is still open, or to reconcile the claim
-                    // in Stripe if it went ahead. A dispute's, an admin's or a partial refund carries a
-                    // distinguishing key segment and belongs to the action that asked for it, whose retry runs its
-                    // own follow-up; the administrators are told to check it in Stripe and retry it there.
-                    var cancellationsOwnKey = row.RefundKey == RefundService.BuildRefundKey(
-                        new RefundRequest(row.OrderId, row.Amount, row.Reason, SystemActor));
-                    var redrive = cancellationsOwnKey && row.OrderStatus == OrderStatus.Cancelled;
-
-                    var alertKey = redrive ? AdminNotificationEventCatalog.RefundStuck
-                        : cancellationsOwnKey ? AdminNotificationEventCatalog.RefundWithoutCancel
-                        : AdminNotificationEventCatalog.RefundNeedsRetry;
-                    var wentThrough = false;
-                    var raised = false;
-                    try
-                    {
-                        BusinessResult<RefundResult>? result = null;
-                        var closed = false;
-                        if (redrive)
-                        {
-                            try
-                            {
-                                result = await refundService.RedriveAsync(row.Id, SystemActor, cancellationToken);
-                            }
-                            catch (Exception ex) when (RefundService.IsStripeTransportFailure(ex, cancellationToken))
-                            {
-                                logger.LogWarning(ex,
-                                    "Could not reach Stripe to re-drive refund {RefundId} of order {OrderId}",
-                                    row.Id, row.OrderId);
-                            }
-                        }
-                        else if (row.CardCharged - await refundRepository.GetSucceededRefundTotalForOrderAsync(
-                                     row.OrderId, cancellationToken) <= 0m)
-                        {
-                            // Stripe never refunds more than the charge, so once the refunds it confirmed took all
-                            // of it this row cannot have been paid. The total is read before the row so a row
-                            // settled in between is seen settled and left alone.
-                            var refund = await refundRepository.GetByIdAsync(row.Id, cancellationToken);
-                            if (refund is { Status: RefundStatus.Pending })
-                            {
-                                refund.MarkFailed();
-                                logger.LogInformation(
-                                    "Refund {RefundId} of order {OrderId} closed: refunds Stripe confirmed took the whole card charge",
-                                    row.Id, row.OrderId);
-                            }
-
-                            closed = true;
-                        }
-
-                        var nothingOwed = closed
-                            || result?.Error?.Message
-                                is BusinessErrorMessage.RefundNothingRefundable
-                                or BusinessErrorMessage.RefundOrderNotRefundable;
-
-                        // Stripe failed it: the refund seam closed it and raised it for a retry in a commit of its own.
-                        var raisedBySeam = result is { IsSuccess: false }
-                            && result.Error?.Message == BusinessErrorMessage.RefundFailed
-                            && (await refundRepository.GetByIdAsync(row.Id, cancellationToken))?.Status
-                                == RefundStatus.Failed;
-
-                        if (result is { IsSuccess: true })
-                        {
-                            wentThrough = true;
-                            // Resolved to a row somebody else settled in the meantime; they told the customer.
-                            if (!result.Value!.ResolvedToExisting && !string.IsNullOrEmpty(row.UserId))
-                            {
-                                await notificationProducer.NotifyAsync(
-                                    row.UserId,
-                                    NotificationEventCatalog.OrderRefunded,
-                                    new Dictionary<string, string>
-                                    {
-                                        ["orderId"] = row.OrderId,
-                                        ["orderNumber"] = row.DisplayOrderNumber,
-                                    },
-                                    row.TenantId,
-                                    // The refund, not the order: an order can see more than one refund.
-                                    row.Id,
-                                    cancellationToken);
-                            }
-                        }
-                        else if (!nothingOwed && !raisedBySeam && row.CreatedOn <= alertBefore
-                            && !string.IsNullOrEmpty(row.TenantId)
-                            && !await userNotificationRepository.AnyForEventIgnoringTenantAsync(
-                                row.TenantId, alertKey, "orderId", row.OrderId, cancellationToken))
-                        {
-                            await adminNotifier.NotifyAsync(
-                                new AdminEvent(
-                                    alertKey,
-                                    row.TenantId,
-                                    Subject: row.Id,
-                                    Args: new Dictionary<string, string>
-                                    {
-                                        ["orderNumber"] = row.DisplayOrderNumber,
-                                        ["amount"] = MoneyText.Format(row.Amount, row.Currency),
-                                        ["orderId"] = row.OrderId,
-                                    }),
-                                cancellationToken);
-                            raised = true;
-                        }
-
-                        await unitOfWork.CommitAsync(cancellationToken);
-                    }
-                    catch (Exception ex) when (!cancellationToken.IsCancellationRequested)
-                    {
-                        // One row that cannot be settled or recorded must not starve every row behind it,
-                        // run after run, since the oldest row is always first. Its unsaved changes go so
-                        // they cannot ride the next row's commit; the next run tries it again.
-                        unitOfWork.Rollback();
-                        logger.LogError(ex,
-                            "Could not re-drive refund {RefundId} of order {OrderId}; the next run tries again",
-                            row.Id, row.OrderId);
-                        continue;
-                    }
-
-                    redriven += wentThrough ? 1 : 0;
-                    alerted += raised ? 1 : 0;
+                    throw;
+                }
+                catch (Exception ex)
+                {
+                    failed++;
+                    logger.LogError(ex, "Could not re-drive refund {RefundId}; its scope is discarded and the next run tries again", id);
                 }
             }
-
-            if (pending.Count > 0)
-            {
-                logger.LogInformation(
-                    "RedrivePendingRefunds considered {Considered} pending refunds: {Redriven} re-driven, {Alerted} raised to administrators",
-                    pending.Count, redriven, alerted);
-            }
-
-            return BusinessResult.Success(new Response(pending.Count, redriven, alerted));
+            if (ids.Count > 0)
+                logger.LogInformation("RedrivePendingRefunds considered {Considered} pending refunds: {Redriven} re-driven, {Alerted} raised to administrators, {Failed} failed",
+                    ids.Count, redriven, alerted, failed);
+            return BusinessResult.Success(new Response(ids.Count, redriven, alerted, failed));
         }
     }
 }

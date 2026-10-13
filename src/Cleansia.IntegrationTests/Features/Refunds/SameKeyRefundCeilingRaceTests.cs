@@ -1,3 +1,7 @@
+using Microsoft.Extensions.DependencyInjection;
+using MediatR;
+using Cleansia.Core.Domain.SeedWork;
+using Cleansia.Core.AppServices.Behaviors;
 using System.Data.Common;
 using Cleansia.Core.AppServices.Auditing;
 using Cleansia.Core.AppServices.Features.Orders;
@@ -219,20 +223,7 @@ public class SameKeyRefundCeilingRaceTests(PostgresContainerFixture fixture) : B
         var tenants = new FixedTenantProvider(TestTenants.Default);
         var interceptor = new AtFirstRefundSum(FirstSettleCompletes(
             new RefundRequest(OrderId, 1000m, RefundReason.ServiceNotRendered, AdminId)));
-        BusinessResult<RedrivePendingRefunds.Response> result;
-        await using (var ctx = NewContext(tenants, interceptor))
-        {
-            var handler = new RedrivePendingRefunds.Handler(
-                new RefundRepository(ctx),
-                NewRefundService(ctx),
-                Mock.Of<INotificationProducer>(),
-                Mock.Of<IAdminNotifier>(),
-                new UserNotificationRepository(ctx),
-                tenants,
-                ctx,
-                NullLogger<RedrivePendingRefunds.Handler>.Instance);
-            result = await handler.Handle(new RedrivePendingRefunds.Command(), CancellationToken.None);
-        }
+        var result = await RunRedriveSweepAsync(interceptor);
 
         Assert.True(interceptor.Ran);
         Assert.Equal(1, result.Value!.Redriven);
@@ -354,4 +345,37 @@ public class SameKeyRefundCeilingRaceTests(PostgresContainerFixture fixture) : B
         public void SetTenantOverride(string tenantId) => _tenantId = tenantId;
         public void ClearTenantOverride() => _tenantId = null;
     }
+    private async Task<BusinessResult<RedrivePendingRefunds.Response>> RunRedriveSweepAsync(params IInterceptor[] interceptors)
+    {
+        var services = new ServiceCollection();
+        services.AddLogging();
+        services.AddMediatR(c => c.RegisterServicesFromAssemblyContaining<RedrivePendingRefunds>());
+        services.AddTransient(typeof(IPipelineBehavior<,>), typeof(UnitOfWorkPipelineBehavior<,>));
+        services.AddScoped<ITenantProvider>(_ => new FixedTenantProvider(TestTenants.Default));
+        services.AddScoped(sp => NewContext(sp.GetRequiredService<ITenantProvider>(), interceptors));
+        services.AddScoped<IUnitOfWork>(sp => sp.GetRequiredService<CleansiaDbContext>());
+        services.AddScoped<IRefundRepository, RefundRepository>();
+        services.AddScoped<IUserNotificationRepository, UserNotificationRepository>();
+        services.AddScoped<IAdminNotifier>(sp =>
+        {
+            var ctx = sp.GetRequiredService<CleansiaDbContext>();
+            return Mock.Of<IAdminNotifier>();
+        });
+        services.AddScoped<IRefundService>(sp =>
+        {
+            var ctx = sp.GetRequiredService<CleansiaDbContext>();
+            return NewRefundService(ctx);
+        });
+        services.AddScoped<INotificationProducer>(sp =>
+        {
+            var ctx = sp.GetRequiredService<CleansiaDbContext>();
+            return new NotificationProducer(new UserNotificationRepository(ctx), new OutboxPendingDispatch(ctx),
+                new UserRepository(ctx), NullLogger<NotificationProducer>.Instance);
+        });
+        await using var provider = services.BuildServiceProvider();
+        await using var scope = provider.CreateAsyncScope();
+        return await ActivatorUtilities.CreateInstance<RedrivePendingRefunds.Handler>(scope.ServiceProvider)
+            .Handle(new RedrivePendingRefunds.Command(), CancellationToken.None);
+    }
+
 }

@@ -1071,7 +1071,6 @@ the roster is stale.
 
 | Job | Where |
 |---|---|
-| `RedrivePendingRefunds` | `RedrivePendingRefunds.cs:120-218`; it moves money |
 | `FiscalRetryService` | `FiscalRetryService.cs:40-112` |
 | `PayPeriodBackgroundService` | `PayPeriodBackgroundService.cs:255-279`, a cleaner's invoices, committing at `:455-476` |
 | `NewJobsDigestService` | `NewJobsDigestService.cs:110-244`, committing at `:376` |

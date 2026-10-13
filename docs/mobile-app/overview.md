@@ -167,11 +167,13 @@ reading the module-root file.
 **A build with no `STRIPE_PUBLISHABLE_KEY` offers no card payment, and cash is not always
 possible.** Booking hides the card option and its saving consent, and the recurring-schedule form
 hides its card option. A card occurrence of a recurring booking shows no confirm, because confirming
-it would spend the customer's credit for a payment sheet that cannot open. A new schedule starts with
-no way to pay chosen, as a booking does; one made from a card order still copies card, and an edit
-keeps the schedule's way to pay, card included. Cash needs a signed-in customer and a booking one
-cleaner does alone, so a guest booking, or a booking or schedule that needs two cleaners, has no way
-to pay at all. **A release packaging task refuses an empty key**, which would ship the app with card
+it would spend the customer's credit for a payment sheet that cannot open. A new schedule, one made
+from a card order and an edit of a card schedule all start with no way to pay chosen, as a booking
+does, and say so; an edit of a cash schedule keeps cash. Cash needs a signed-in customer and a booking
+one cleaner does alone, so a guest booking, or a booking or schedule that needs two cleaners, has no
+way to pay at all. On both apps, the notes that refuse cash to a booking or schedule needing two
+cleaners still end with *paid by card*: they state the production rule, and no customer can reach a
+keyless build. **A release packaging task refuses an empty key**, which would ship the app with card
 payment hidden, and **every build, debug included, refuses a key that does not start with `pk_`**: a
 secret key must never be built into a client. Both checks run at configuration time in
 `customer-app/build.gradle.kts`; iOS's `check-local-config.sh` grades the same two cases (below).
@@ -549,13 +551,11 @@ builds:
 
 | Missing | Simulator / Debug | Device / Release |
 |---|---|---|
-| `STRIPE_PUBLISHABLE_KEY` | warning — card payment hidden, cash only (fail-closed): booking and a new recurring schedule offer no card, and a new schedule starts on cash; a card occurrence's confirm is disabled and refused. Cash itself needs a signed-in customer and a one-cleaner booking. Payments → Add card is still offered (below) | build **error** on Release |
+| `STRIPE_PUBLISHABLE_KEY` | warning — card payment hidden, cash only (fail-closed): booking and the recurring-schedule form offer no card; a new schedule, one made from a card order and an edit of a card schedule start with no way to pay chosen, and say so; a card occurrence shows no confirm and refuses it; Payments → Add card is hidden and refused. Cash itself needs a signed-in customer and a one-cleaner booking. | build **error** on Release |
 | `DEVELOPMENT_TEAM` | no diagnostic (the simulator needs no signing) | build **error** |
 
 A key that does not start with `pk_`, a secret `sk_…` key above all, is always a build error. The
-severity rules have their own test: `./scripts/tests/check-local-config.test.sh`. In a keyless build an
-edit of a card schedule keeps card, as on Android, and **Payments → Add card is not yet gated on the
-key**: it is still offered, and asks the server to start a card capture that the build cannot complete.
+severity rules have their own test: `./scripts/tests/check-local-config.test.sh`.
 
 ### Building and testing
 

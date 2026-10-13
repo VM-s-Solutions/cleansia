@@ -5,6 +5,7 @@ import cz.cleansia.partner.api.client.DashboardApi
 import cz.cleansia.partner.api.model.AvailableJobPreviewDto
 import cz.cleansia.partner.api.model.AvailableJobsPreviewResponse
 import cz.cleansia.partner.api.model.DashboardStatsDto
+import cz.cleansia.partner.testing.assertSortedBy
 import java.time.LocalDate
 import java.time.ZoneId
 import java.util.TimeZone
@@ -172,6 +173,15 @@ class DashboardWireTest {
         } finally {
             TimeZone.setDefault(saved)
         }
+    }
+
+    @Test
+    fun theUpcomingRequestAsksForTheSoonestJobsFirst() = runTest {
+        val requests = CopyOnWriteArrayList<RecordedRequest>()
+        serving(onRequest = { requests += it }) { it.refresh(employeeId = EMPLOYEE_ID, force = true) }
+
+        val upcoming = requests.single { it.path.orEmpty().startsWith("/api/Dashboard/GetUpcomingOrders") }
+        assertSortedBy(upcoming, field = "cleaningDateTime", direction = 0)
     }
 
     // --- rule 1: money is never coerced -----------------------------------------

@@ -1,11 +1,12 @@
-import CleansiaCore
 import SwiftUI
 import XCTest
+@testable import CleansiaCore
 @testable import CleansiaCustomer
 
 /// The dispute card carries its status in the pill only; the left accent strip is gone by owner
 /// ruling. A SwiftUI body has no unit harness, so the card is pinned as source text scoped to its
 /// one struct.
+@MainActor
 final class DisputesListCardTests: XCTestCase {
     private func disputeRowCard() throws -> String {
         let root = URL(fileURLWithPath: #filePath)
@@ -78,14 +79,14 @@ final class DisputesListCardTests: XCTestCase {
         XCTAssertEqual(DisputeStatusPresentation.color(nil), DisputeStatusPresentation.neutralInk)
     }
 
+    /// The dark half above checks dark mode only if the read sees it: before iOS 17 `UIColor(Color)` keeps a dynamic
+    /// colour's light value alone, and the dark check then repeats the light one.
+    func testTheReadSeesTheDarkSurface() {
+        XCTAssertNotEqual(rgb(CleansiaColors.surface, .dark), rgb(CleansiaColors.surface, .light))
+    }
+
     private func rgb(_ color: Color, _ style: UIUserInterfaceStyle) -> SIMD3<Double> {
-        var red: CGFloat = 0
-        var green: CGFloat = 0
-        var blue: CGFloat = 0
-        var alpha: CGFloat = 0
-        UIColor(color).resolvedColor(with: UITraitCollection(userInterfaceStyle: style))
-            .getRed(&red, green: &green, blue: &blue, alpha: &alpha)
-        return SIMD3(Double(red), Double(green), Double(blue))
+        StatusBarFade.rgb(color, style == .dark ? .dark : .light)
     }
 
     private func contrast(_ first: SIMD3<Double>, _ second: SIMD3<Double>) -> Double {

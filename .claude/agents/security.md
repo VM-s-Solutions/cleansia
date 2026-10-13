@@ -49,7 +49,8 @@ section (and raise a ticket per serious finding):
    client in the diff, not just the model change that prompted them.
 10. **S10** `IsActive` soft-delete filter applied where deactivated rows must be hidden.
 11. **S11** (mobile) every new per-user `@Singleton`/injected cache is in the `SessionScopedCache`
-    wipe set or on the §E9 allowlist — all three wipe triggers, one set.
+    wipe set or on the §E9 allowlist — all four wipe triggers (sign-out, forced-401, account deletion,
+    sign-in before the new tokens are stored), one set.
 12. **S12** an upload route is on the intake roster and its row answers who fetches / what it is
     served as / what is scrubbed; the scrub takes **bytes**, never a content type; a `scrub: none`
     row names its reason; no decoder is reachable from a request path.

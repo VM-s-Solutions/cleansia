@@ -29,6 +29,7 @@ final class PaymentsViewModel: ViewModel {
     private let snackbar: SnackbarController
     private let countryId: String?
     private let currencyCode: String?
+    private let isCardPaymentAvailable: Bool
     private let pauseBetweenCardReads: () async -> Void
     private var capturingCardId: String?
 
@@ -41,6 +42,7 @@ final class PaymentsViewModel: ViewModel {
         snackbar: SnackbarController,
         countryId: String? = nil,
         currencyCode: String? = nil,
+        isCardPaymentAvailable: Bool = StripeConfig.isCardPaymentAvailable,
         pauseBetweenCardReads: @escaping () async -> Void = { _ = try? await Task.sleep(nanoseconds: 1_500_000_000) }
     ) {
         self.savedCardClient = savedCardClient
@@ -48,13 +50,14 @@ final class PaymentsViewModel: ViewModel {
         self.snackbar = snackbar
         self.countryId = countryId
         self.currencyCode = currencyCode
+        self.isCardPaymentAvailable = isCardPaymentAvailable
         self.pauseBetweenCardReads = pauseBetweenCardReads
     }
 
-    /// Offered while the customer holds no usable card in the market's currency. With no market known,
-    /// any usable card counts.
+    /// Offered while the customer holds no usable card in the market's currency, in a build that can save one.
+    /// With no market known, any usable card counts.
     var offersCardCapture: Bool {
-        guard case let .loaded(snapshot) = state else { return false }
+        guard isCardPaymentAvailable, case let .loaded(snapshot) = state else { return false }
         guard let currencyCode else { return !snapshot.cards.contains { $0.isUsable(on: Date()) } }
         return SavedCard.usable(in: snapshot.cards, currencyCode: currencyCode) == nil
     }
@@ -117,7 +120,7 @@ final class PaymentsViewModel: ViewModel {
     }
 
     func addCard() async {
-        guard cardConsentAccepted, !addCardState.isSubmitting else { return }
+        guard isCardPaymentAvailable, cardConsentAccepted, !addCardState.isSubmitting else { return }
         addCardState = .submitting
         switch await savedCardClient.startCapture(consentAccepted: cardConsentAccepted, countryId: countryId) {
         case let .success(setup):

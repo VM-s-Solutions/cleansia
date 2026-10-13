@@ -493,6 +493,12 @@ private struct PaymentSection: View {
             }
             if cashCleared, cash != .available {
                 PaymentNote(systemImage: "exclamationmark.circle", text: L10n.Recurring.cashCleared, warns: true)
+            } else if selected == nil {
+                PaymentNote(
+                    systemImage: "exclamationmark.circle",
+                    text: L10n.Recurring.createPaymentMissing,
+                    warns: true
+                )
             }
             if let reason = L10n.Recurring.cashReason(cash) {
                 PaymentNote(systemImage: "info.circle", text: reason)

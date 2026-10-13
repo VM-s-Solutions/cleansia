@@ -190,6 +190,10 @@ extension L10n {
             localized("recurring_create_pay_card")
         }
 
+        static var createPaymentMissing: String {
+            localized("recurring_create_payment_missing")
+        }
+
         static var cashCleared: String {
             localized("recurring_cash_cleared")
         }

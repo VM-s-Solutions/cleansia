@@ -6,7 +6,6 @@ import cz.cleansia.partner.api.client.EmployeePayrollApi
 import cz.cleansia.partner.api.model.EmployeeInvoiceDetailDto
 import cz.cleansia.partner.api.model.EmployeeInvoiceDto
 import cz.cleansia.partner.api.model.EmployeeInvoiceStatus
-import cz.cleansia.partner.api.model.SortDefinition
 import cz.cleansia.partner.api.model.SortDirection
 import cz.cleansia.core.network.ApiResult
 import cz.cleansia.core.network.safeApiCall
@@ -122,7 +121,8 @@ class InvoicesRepositoryImpl @Inject constructor(
         safeApiCall(json) {
             payrollApi.employeePayrollGetPagedInvoices(
                 filterEmployeeId = employeeId,
-                sort = listOf(SortDefinition(field = "createdOn", direction = SortDirection._1)),
+                sort0Field = "createdOn",
+                sort0Direction = SortDirection._1,
                 offset = 0,
                 limit = 50,
             )

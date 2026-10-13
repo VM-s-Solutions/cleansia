@@ -50,6 +50,29 @@ class CreateRecurringCardPaymentBindingTest {
         )
     }
 
+    /** A card copied from a stored schedule or a past order is the same card the hidden option would have selected. */
+    @Test
+    fun `a way to pay copied from a schedule or an order holds card only when card payment is configured`() {
+        val viewModel = code(createRecurringViewModel)
+        val copies = COPIED_PAYMENT_TYPE.findAll(viewModel).toList()
+        assertEquals(
+            "the form copies a way to pay from the stored schedule and from the past order",
+            listOf("order.paymentType", "template.paymentType"),
+            copies.map { it.value }.sorted(),
+        )
+        val gated = GATED_COPY.findAll(viewModel).map { it.range }.toList()
+        copies.forEach { copy ->
+            assertTrue(
+                "`${copy.value}` must reach the form through presentablePaymentType(…, cardAvailable)",
+                gated.any { copy.range.first in it },
+            )
+        }
+        assertTrue(
+            "the view model must read card availability from the key that initialises Stripe",
+            viewModel.contains("private val cardAvailable = BuildConfig.STRIPE_PUBLISHABLE_KEY.isNotBlank()"),
+        )
+    }
+
     private val mainDir: File = sequenceOf(
         File("."),
         File("customer-app"),
@@ -97,6 +120,10 @@ class CreateRecurringCardPaymentBindingTest {
         val CARD_DEFAULT = Regex(
             """val paymentType: Int\? =\s*if \(BuildConfig\.STRIPE_PUBLISHABLE_KEY\.isNotBlank\(\)\)\s*""" +
                 """(?:CreateRecurringViewModel\.)?PAYMENT_CARD\s+else\s+null\b""",
+        )
+        val COPIED_PAYMENT_TYPE = Regex("""\b(?:template|order)\.paymentType\b""")
+        val GATED_COPY = Regex(
+            """presentablePaymentType\(\s*(?:template|order)\.paymentType(?:\?\.value)?\s*,\s*cardAvailable\s*\)""",
         )
     }
 }

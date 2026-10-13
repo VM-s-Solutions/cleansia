@@ -19,18 +19,14 @@ class DashboardScreenTest {
         val onHelp = block(code(), "onHelp = ", '{', '}')
         listOf(
             "Intent.ACTION_SENDTO",
-            "Uri.parse(\"mailto:\$SUPPORT_EMAIL\")",
+            "Uri.parse(\"mailto:\${CleansiaWeb.CONTACT_EMAIL}\")",
         ).forEach { call -> assertTrue("the Help shortcut must use `$call`, got $onHelp", onHelp.contains(call)) }
         assertTrue(
             "a mail intent no app takes must copy the address and tell the cleaner, got $onHelp",
-            Regex("""if \(!context\.openOrCopy\(\w+, SUPPORT_EMAIL\)\) viewModel\.onHelpEmailUnavailable\(\)""")
+            Regex("""if \(!context\.openOrCopy\(\w+, CleansiaWeb\.CONTACT_EMAIL\)\) viewModel\.onHelpEmailUnavailable\(\)""")
                 .containsMatchIn(onHelp),
         )
         assertFalse("a refused intent must not be swallowed, got $onHelp", onHelp.contains("runCatching"))
-        assertTrue(
-            "the support address must be the one the customer app uses",
-            code().contains("private const val SUPPORT_EMAIL = \"support@cleansia.cz\""),
-        )
     }
 
     @Test

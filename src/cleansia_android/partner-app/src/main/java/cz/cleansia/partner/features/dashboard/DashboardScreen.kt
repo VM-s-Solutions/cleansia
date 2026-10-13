@@ -66,6 +66,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import cz.cleansia.core.config.CleansiaWeb
 import cz.cleansia.core.money.CurrencySymbols
 import cz.cleansia.core.ui.components.statusBarFade
 import cz.cleansia.core.ui.openOrCopy
@@ -92,8 +93,6 @@ import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import java.time.temporal.ChronoUnit
 import java.util.Locale
-
-private const val SUPPORT_EMAIL = "support@cleansia.cz"
 
 /**
  * Cleaner-first dashboard, composed top-to-bottom around the four questions a cleaner has on opening the
@@ -273,8 +272,8 @@ fun DashboardScreen(
                     onPayHistory = onOpenEarnings,
                     onDocuments = onOpenDocuments,
                     onHelp = {
-                        val mail = Intent(Intent.ACTION_SENDTO, Uri.parse("mailto:$SUPPORT_EMAIL"))
-                        if (!context.openOrCopy(mail, SUPPORT_EMAIL)) viewModel.onHelpEmailUnavailable()
+                        val mail = Intent(Intent.ACTION_SENDTO, Uri.parse("mailto:${CleansiaWeb.CONTACT_EMAIL}"))
+                        if (!context.openOrCopy(mail, CleansiaWeb.CONTACT_EMAIL)) viewModel.onHelpEmailUnavailable()
                     },
                 )
             }
@@ -1133,9 +1132,13 @@ internal fun pickNextJob(upcoming: List<OrderListItem>): OrderListItem? {
 internal fun startsTomorrow(start: Instant, now: Instant, zone: ZoneId): Boolean =
     start.atZone(zone).toLocalDate() == now.atZone(zone).toLocalDate().plusDays(1)
 
-/** Null while [upcoming] is unknown, so an unread or failed list never reads as a free day. */
+/**
+ * Null while [upcoming] is unknown, so an unread or failed list never reads as a free day. A cancelled order
+ * still reaches the list, because cancelling leaves the cleaner assigned, and it is not a job.
+ */
 internal fun todaysJobCount(upcoming: List<OrderListItem>?, today: LocalDate, zone: ZoneId): Int? =
     upcoming?.count { item ->
+        if (item.orderStatus.toOrderStatus() == OrderStatus._6) return@count false
         val iso = item.cleaningDateTime ?: return@count false
         runCatching { Instant.parse(iso).atZone(zone).toLocalDate() }.getOrNull() == today
     }

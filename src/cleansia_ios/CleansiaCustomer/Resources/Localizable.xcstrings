@@ -34773,6 +34773,41 @@
         }
       }
     },
+    "recurring_create_payment_missing": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zvolte, jak se bude rozvrh platit."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Choose how the schedule is paid."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Выберите, как будет оплачиваться расписание."
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zvoľte, ako sa bude rozvrh platiť."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Оберіть, як оплачуватиметься розклад."
+          }
+        }
+      }
+    },
     "recurring_create_rooms_label": {
       "extractionState": "stale",
       "localizations": {

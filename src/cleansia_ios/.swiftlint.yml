@@ -61,6 +61,16 @@ custom_rules:
       - string
     severity: error
 
+  dynamic_colour_dark_read:
+    name: "A dynamic colour's dark value is read through StatusBarFade.rgb"
+    message: "Read what a dynamic colour draws in dark mode with StatusBarFade.rgb(_:_:) (@testable import CleansiaCore). On the iOS 16 floor UIColor(Color) keeps only a dynamic colour's light value, so a dark read through it checks the light value again and passes."
+    regex: 'UIColor\([^()]*\)\s*\.resolvedColor\(\s*with:(?!\s*UITraitCollection\(userInterfaceStyle:\s*\.light\b)'
+    excluded_match_kinds:
+      - comment
+      - doccomment
+      - string
+    severity: error
+
 force_unwrapping:
   severity: error
 force_cast:

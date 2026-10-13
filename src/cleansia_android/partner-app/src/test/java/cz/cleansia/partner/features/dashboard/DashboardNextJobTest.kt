@@ -63,4 +63,17 @@ class DashboardNextJobTest {
         )
         assertEquals(1, todaysJobCount(upcoming, monday, prague))
     }
+
+    /** Cancelling leaves the cleaner assigned, so a cancelled order still reaches the upcoming list. */
+    @Test
+    fun `a job cancelled today is left off the today count, one done or not yet confirmed is not`() {
+        val monday = LocalDate.of(2026, 10, 12)
+        val upcoming = listOf(
+            order("confirmed", status = 2, startsAt = "2026-10-12T08:00:00Z"),
+            order("done", status = 5, startsAt = "2026-10-12T06:00:00Z"),
+            order("unconfirmed", status = 0, startsAt = "2026-10-12T10:00:00Z"),
+            order("cancelled", status = 6, startsAt = "2026-10-12T12:00:00Z"),
+        )
+        assertEquals(3, todaysJobCount(upcoming, monday, prague))
+    }
 }

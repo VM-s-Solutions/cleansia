@@ -104,13 +104,16 @@ class MarketCopyStringsTest {
 
     /**
      * Owner ruling 2026-10-02: support@cleansia.cz is the one support contact a customer is shown. The
-     * e-mail row prints the address it opens, as iOS's prints `CleansiaWeb.contactEmail`; no locale
-     * carries a copy of it that could drift.
+     * e-mail row prints the address it opens, `CleansiaWeb.CONTACT_EMAIL`, as iOS's prints
+     * `CleansiaWeb.contactEmail`; no locale carries a copy of it that could drift.
      */
     @Test
     fun `the help screen names the one support address in every locale`() {
         val help = source("features/profile/HelpSupportScreen.kt")
-        assertTrue("the e-mail row no longer prints the address it opens", help.contains("subtitle = SUPPORT_EMAIL,"))
+        assertTrue(
+            "the e-mail row no longer prints the address it opens",
+            help.contains("subtitle = CleansiaWeb.CONTACT_EMAIL,"),
+        )
         locales.forEach { locale ->
             assertEquals("$locale/help_email_desc outlived the address constant", null, valueOf(stringsXml(locale), "help_email_desc"))
         }
@@ -124,9 +127,8 @@ class MarketCopyStringsTest {
     @Test
     fun `the help rows open the support address and line, and the dead chat row is gone`() {
         val help = source("features/profile/HelpSupportScreen.kt")
-        assertTrue(help.contains("private const val SUPPORT_EMAIL = \"support@cleansia.cz\""))
         assertTrue(help.contains("private const val SUPPORT_PHONE = \"+420739788108\""))
-        assertTrue(help.contains("Intent(Intent.ACTION_SENDTO, Uri.parse(\"mailto:${'$'}SUPPORT_EMAIL\"))"))
+        assertTrue(help.contains("Intent(Intent.ACTION_SENDTO, Uri.parse(\"mailto:${'$'}{CleansiaWeb.CONTACT_EMAIL}\"))"))
         assertTrue(help.contains("Intent(Intent.ACTION_DIAL, Uri.parse(\"tel:${'$'}SUPPORT_PHONE\"))"))
         assertTrue(help.contains("viewModel.onEmailUnavailable()"))
         assertTrue(help.contains("viewModel.onCallUnavailable()"))

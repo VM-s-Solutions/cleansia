@@ -39,4 +39,18 @@ final class UpcomingOrdersWireTests: XCTestCase {
         XCTAssertTrue(day == before || day == after, "\(from) is not the start of the local day")
         XCTAssertTrue(query.contains(URLQueryItem(name: "Filter.EmployeeId", value: "emp-1")), "\(query)")
     }
+
+    /// The server binds a sort only as `Sort[0].Field` and `Sort[0].Direction`; any other form is dropped and
+    /// the page comes back newest-created first. → /decisions/adr-0075
+    func testTheUpcomingPageAsksForTheSoonestCleaningFirst() async throws {
+        let bodies = WireBodies()
+        GeneratedWireSpine.install(recording: bodies) { _ in (200, Data(#"{"data":[],"total":0}"#.utf8)) }
+
+        _ = try await LivePartnerDashboardClient().getUpcomingOrders(employeeId: "emp-1", limit: 10).get()
+
+        let query = try XCTUnwrap(bodies.query(ofPath: "/api/Dashboard/GetUpcomingOrders"), "no upcoming request")
+        XCTAssertTrue(query.contains(URLQueryItem(name: "Sort[0].Field", value: "cleaningDateTime")), "\(query)")
+        XCTAssertTrue(query.contains(URLQueryItem(name: "Sort[0].Direction", value: "0")), "\(query)")
+        XCTAssertFalse(query.contains { $0.name == "Sort" }, "a sort the server does not bind: \(query)")
+    }
 }

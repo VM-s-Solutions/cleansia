@@ -19,7 +19,6 @@ import cz.cleansia.partner.api.model.ReportOrderIssueCommand
 import cz.cleansia.partner.api.model.ReportOrderLockoutCommand
 import cz.cleansia.partner.api.model.SaveOrderPhotosCommand
 import cz.cleansia.partner.api.model.SaveOrderPhotosPhotoToSave
-import cz.cleansia.partner.api.model.SortDefinition
 import cz.cleansia.partner.api.model.SortDirection
 import cz.cleansia.partner.api.model.StartOrderCommand
 import cz.cleansia.partner.api.model.TakeOrderCommand
@@ -297,10 +296,8 @@ class OrdersRepositoryImpl @Inject constructor(
             filterEmployeeId = employeeId,
             filterCleaningDateFrom = cleaningDateFrom,
             filterCleaningDateTo = cleaningDateTo,
-            sort = listOf(SortDefinition(
-                field = sortField,
-                direction = if (sortAscending) SortDirection._0 else SortDirection._1,
-            )),
+            sort0Field = sortField,
+            sort0Direction = if (sortAscending) SortDirection._0 else SortDirection._1,
             offset = offset,
             limit = limit,
         )

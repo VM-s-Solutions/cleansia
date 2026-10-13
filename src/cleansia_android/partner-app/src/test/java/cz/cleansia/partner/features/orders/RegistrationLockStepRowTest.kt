@@ -36,17 +36,17 @@ class RegistrationLockStepRowTest {
     fun `the support row copies the address and says so when no mail app takes it`() {
         assertTrue(
             "the row must route its mail intent through openOrCopy and tell the cleaner when it copied",
-            Regex("""if \(!context\.openOrCopy\(intent, SUPPORT_EMAIL\)\) onSupportEmailUnavailable\(\)""").containsMatchIn(row),
+            Regex("""if \(!context\.openOrCopy\(intent, CleansiaWeb\.CONTACT_EMAIL\)\) onSupportEmailUnavailable\(\)""")
+                .containsMatchIn(row),
         )
-        assertTrue("the row must mail the support address", row.contains("Uri.parse(\"mailto:\$SUPPORT_EMAIL\")"))
+        assertTrue(
+            "the row must mail the support address",
+            row.contains("Uri.parse(\"mailto:\${CleansiaWeb.CONTACT_EMAIL}\")"),
+        )
         assertTrue("a refused intent must not be swallowed", !row.contains("runCatching"))
         assertTrue(
             "the screen must hand the rows the view model's notice",
             screen.contains("onSupportEmailUnavailable = viewModel::onSupportEmailUnavailable"),
-        )
-        assertTrue(
-            "the support address must be the one the customer app uses",
-            screen.contains("private const val SUPPORT_EMAIL = \"support@cleansia.cz\""),
         )
     }
 

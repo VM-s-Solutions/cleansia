@@ -2,7 +2,7 @@
 
 Every architecture and business decision on record, with the argument that settled it.
 
-**74 records.** A decision keeps a stable id — `ADR-0037` — and roughly six hundred source
+**75 records.** A decision keeps a stable id — `ADR-0037` — and roughly six hundred source
 files cite ids in that form. The id is the reference, not the file name or the title, so a record can
 be retitled without breaking a single citation.
 
@@ -221,6 +221,7 @@ pointer at its head.
 | **[ADR-0072](./adr-0072)** | A system job gives each item, and each command on a shared timer, a DI scope of its own; no loop continues past a failed commit in a shared scope (2026-10-12) | `accepted` |
 | **[ADR-0073](./adr-0073)** | The credit an order gives back when it ends unpaid commits with the commit that ends the order, or not at all; a unit holding several customers' credit locks takes them in ordinal user-id order (2026-10-12) | `accepted` |
 | **[ADR-0074](./adr-0074)** | The read that asks which cleaners are busy in a window reads every company's orders, so it is one method, `GetBusyEmployeeIdsInWindowIgnoringTenantAsync`, with no scoped sibling; S8 says a method every caller needs across companies carries `IgnoringTenant` (2026-10-12, T-0833; supersedes every passage of ADR-0039 on the set read's tenancy) | `accepted` |
+| **[ADR-0075](./adr-0075)** | The mobile contract states a query sort the way the server binds it (T-0832: the two mobile hosts describe `DataRangeRequest.Sort` as `Sort[0].Field` and `Sort[0].Direction`) | `accepted` |
 
 ⟲ = superseded in whole or in part by a later record.
 

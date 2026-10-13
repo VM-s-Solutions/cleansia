@@ -106,7 +106,7 @@ class DashboardRepositoryTest {
         }
         coEvery {
             dashboardApi.dashboardGetUpcomingOrders(
-                filterEmployeeId = "emp-1", filterIsActive = true, filterCleaningDateFrom = any(), sort = any(), offset = 0, limit = 10,
+                filterEmployeeId = "emp-1", filterIsActive = true, filterCleaningDateFrom = any(), sort0Field = any(), sort0Direction = any(), offset = 0, limit = 10,
             )
         } coAnswers {
             upcomingEntered.complete(Unit)
@@ -172,7 +172,7 @@ class DashboardRepositoryTest {
         coEvery { dashboardApi.dashboardGetStats("emp-1") } returns Response.success(dashboardStatsDto())
         coEvery {
             dashboardApi.dashboardGetUpcomingOrders(
-                filterEmployeeId = "emp-1", filterIsActive = true, filterCleaningDateFrom = any(), sort = any(), offset = 0, limit = 10,
+                filterEmployeeId = "emp-1", filterIsActive = true, filterCleaningDateFrom = any(), sort0Field = any(), sort0Direction = any(), offset = 0, limit = 10,
             )
         } coAnswers {
             upcomingEntered.complete(Unit)
@@ -224,7 +224,7 @@ class DashboardRepositoryTest {
         }
         coEvery {
             dashboardApi.dashboardGetUpcomingOrders(
-                filterEmployeeId = "emp-1", filterIsActive = true, filterCleaningDateFrom = any(), sort = any(), offset = 0, limit = 10,
+                filterEmployeeId = "emp-1", filterIsActive = true, filterCleaningDateFrom = any(), sort0Field = any(), sort0Direction = any(), offset = 0, limit = 10,
             )
         } returns Response.success(PagedDataOfOrderListItem(data = upcoming))
         coEvery { dashboardApi.dashboardGetAvailableJobsPreview(5) } returns Response.success(availableJobsPreviewResponse())
@@ -259,7 +259,7 @@ class DashboardRepositoryTest {
         coEvery { dashboardApi.dashboardGetStats("emp-1") } returns Response.success(dashboardStatsDto())
         coEvery {
             dashboardApi.dashboardGetUpcomingOrders(
-                filterEmployeeId = "emp-1", filterIsActive = true, filterCleaningDateFrom = any(), sort = any(), offset = 0, limit = 10,
+                filterEmployeeId = "emp-1", filterIsActive = true, filterCleaningDateFrom = any(), sort0Field = any(), sort0Direction = any(), offset = 0, limit = 10,
             )
         } returns Response.success(PagedDataOfOrderListItem(data = emptyList()))
         coEvery { dashboardApi.dashboardGetAvailableJobsPreview(5) } throws java.io.IOException("first preview")
@@ -271,7 +271,7 @@ class DashboardRepositoryTest {
         coEvery { dashboardApi.dashboardGetStats("emp-1") } throws java.io.IOException("critical stats")
         coEvery {
             dashboardApi.dashboardGetUpcomingOrders(
-                filterEmployeeId = "emp-1", filterIsActive = true, filterCleaningDateFrom = any(), sort = any(), offset = 0, limit = 10,
+                filterEmployeeId = "emp-1", filterIsActive = true, filterCleaningDateFrom = any(), sort0Field = any(), sort0Direction = any(), offset = 0, limit = 10,
             )
         } returns Response.success(PagedDataOfOrderListItem(data = upcoming))
         coEvery { dashboardApi.dashboardGetAvailableJobsPreview(5) } returns Response.success(availableJobsPreviewResponse())
@@ -289,7 +289,7 @@ class DashboardRepositoryTest {
         coEvery { dashboardApi.dashboardGetStats("emp-1") } returns Response.success(dashboardStatsDto())
         coEvery {
             dashboardApi.dashboardGetUpcomingOrders(
-                filterEmployeeId = "emp-1", filterIsActive = true, filterCleaningDateFrom = any(), sort = any(), offset = 0, limit = 10,
+                filterEmployeeId = "emp-1", filterIsActive = true, filterCleaningDateFrom = any(), sort0Field = any(), sort0Direction = any(), offset = 0, limit = 10,
             )
         } returns Response.success(PagedDataOfOrderListItem(data = upcoming))
         coEvery { dashboardApi.dashboardGetAvailableJobsPreview(5) } returns Response.success(availableJobsPreviewResponse())
@@ -299,7 +299,7 @@ class DashboardRepositoryTest {
 
         coEvery {
             dashboardApi.dashboardGetUpcomingOrders(
-                filterEmployeeId = "emp-1", filterIsActive = true, filterCleaningDateFrom = any(), sort = any(), offset = 0, limit = 10,
+                filterEmployeeId = "emp-1", filterIsActive = true, filterCleaningDateFrom = any(), sort0Field = any(), sort0Direction = any(), offset = 0, limit = 10,
             )
         } throws java.io.IOException("optional upcoming")
         coEvery { dashboardApi.dashboardGetAvailableJobsPreview(5) } throws java.io.IOException("optional preview")
@@ -317,7 +317,7 @@ class DashboardRepositoryTest {
         coEvery { dashboardApi.dashboardGetStats("emp-1") } returns Response.success(dashboardStatsDto())
         coEvery {
             dashboardApi.dashboardGetUpcomingOrders(
-                filterEmployeeId = "emp-1", filterIsActive = true, filterCleaningDateFrom = any(), sort = any(), offset = 0, limit = 10,
+                filterEmployeeId = "emp-1", filterIsActive = true, filterCleaningDateFrom = any(), sort0Field = any(), sort0Direction = any(), offset = 0, limit = 10,
             )
         } throws java.io.IOException("upcoming")
         coEvery { dashboardApi.dashboardGetAvailableJobsPreview(5) } returns Response.success(availableJobsPreviewResponse())
@@ -340,7 +340,7 @@ class DashboardRepositoryTest {
         }
         coEvery {
             dashboardApi.dashboardGetUpcomingOrders(
-                filterEmployeeId = "emp-1", filterIsActive = true, filterCleaningDateFrom = any(), sort = any(), offset = 0, limit = 10,
+                filterEmployeeId = "emp-1", filterIsActive = true, filterCleaningDateFrom = any(), sort0Field = any(), sort0Direction = any(), offset = 0, limit = 10,
             )
         } returns Response.success(PagedDataOfOrderListItem(data = upcoming))
         coEvery { dashboardApi.dashboardGetAvailableJobsPreview(5) } returns Response.success(availableJobsPreviewResponse())
@@ -354,7 +354,7 @@ class DashboardRepositoryTest {
         assertEquals(2, statsCalls.get())
         coVerify(exactly = 1) {
             dashboardApi.dashboardGetUpcomingOrders(
-                filterEmployeeId = "emp-1", filterIsActive = true, filterCleaningDateFrom = any(), sort = any(), offset = 0, limit = 10,
+                filterEmployeeId = "emp-1", filterIsActive = true, filterCleaningDateFrom = any(), sort0Field = any(), sort0Direction = any(), offset = 0, limit = 10,
             )
         }
     }
@@ -370,7 +370,7 @@ class DashboardRepositoryTest {
         coEvery { dashboardApi.dashboardGetStats("emp-1") } returns Response.success(dashboardStatsDto())
         coEvery {
             dashboardApi.dashboardGetUpcomingOrders(
-                filterEmployeeId = "emp-1", filterIsActive = true, filterCleaningDateFrom = any(), sort = any(), offset = 0, limit = 10,
+                filterEmployeeId = "emp-1", filterIsActive = true, filterCleaningDateFrom = any(), sort0Field = any(), sort0Direction = any(), offset = 0, limit = 10,
             )
         } coAnswers {
             upcomingEntered.complete(Unit)

@@ -80,6 +80,10 @@ It is still the IntelliSense trap that T-0815 deleted a method to close. S8's th
   - Full suites on `10d6d82` (the evidence's `138ccc015`), in CI's order: unit 8689/8689, integration 867/867, host 504/504 (`p5/be-followups/suites-progress.txt`, `unit.log`, `integration.log`, `host.log`). After that run, `1768d58` changes two docs pages and one code comment, and `1b4ecb7` changes seven docs pages and three code comments; the master merge `6363aee` changes no `src`. No full suite ran after `10d6d82`.
   - Not run: no migration and no NSwag regeneration, because no schema, DTO or endpoint changed. Nothing ran against DEV or PRO.
   - Not yet: the P5 pull request's exact-head CI and its merge.
+- 2026-10-13 — Shipped in [#327](https://github.com/VM-s-Solutions/cleansia/pull/327).
+  - Exact-head CI on `b47e6ce` passed all 6 check runs with no re-run: Backend, Frontend build and e2e-smoke, Android, Docs and Secret scan. iOS, iOS Symbols and booking-policy parity did not run, because their path filters match none of the changed files.
+  - Merged normally with the SHA guard as `2a8bd7f`. No deploy ran: deploy-dev, deploy-pro, deploy-docs and execute-sql have no run since the merge.
+  - Evidence: `raw/ci/p5-pr327-ci-merge-closure-001.json` (sha256 `8885990d…`) in the off-tree Wave F folder.
 
 ## Review
 
@@ -100,7 +104,7 @@ It is still the IntelliSense trap that T-0815 deleted a method to close. S8's th
   - S8's new paragraph is a law. The design ruling ratified it, at `T3-HUMAN` on S8's closing caller test (its challenge 2b).
 - **Gate 7:** no CHANGELOG entry. The change is a rename with no behaviour change, a refactor, which CHANGELOG.md's "What does NOT get an entry" excludes (`agents/process/quality-gates.md:184-187`).
 - **Reported, not fixed:**
-  - ADR-0039's dated head pointer (`docs/decisions/adr-0039.md:9-14`) still names only D3.2's end state and step 2, while ADR-0074 now supersedes five passages. A reader is not misled on substance: the pointer says the set read covers every company and links to ADR-0074. A dated record-only closure would be allowed (`agents/knowledge/consistency.md:758-762`), but ADR-0039 was left unedited.
+  - ADR-0039's dated head pointer (`docs/decisions/adr-0039.md:9-14`) still names only D3.2's end state and step 2, while ADR-0074 now supersedes five passages. A reader is not misled on substance: the pointer says the set read covers every company and links to ADR-0074. A dated record-only closure would be allowed (`agents/knowledge/consistency.md:762-766`; `:758-762` at `2a8bd7f`), but ADR-0039 was left unedited.
   - ADR-0039 still uses the old name at `:297`, `:479`, `:508`, `:1044` and `:1271`. Those passages are about the name, not the tenancy, and stay as dated records.
   - ADR-0074 keeps the deliberation wording "Provenance, checked by the lead" (`docs/decisions/adr-0074.md:226`) and "the lead read every passage" (`:239`). Whether the rule against role names in the docs covers that convention is Mike's call; T-0844 records the same question for ADR-0071.
   - Already filed, so not repeated here: T-0837, which covers `IsFirstBookingAsync`'s name, the unswept repository files, `GetEmployeeIdsCurrentlyOnAJobAsync` and the unfiled T-0606.

@@ -134,7 +134,7 @@ The ruling also leaves these out:
 - [x] **AC3** — The regenerated `Initial` has a byte-identical migration body, and one more `IsConcurrencyToken` line in each of the Designer and the snapshot. It has no pending model changes. MS-2 and `database.md` name the new id.
 - [x] **AC4** — The unit, integration and host suites pass in full at every step.
   - At step 4 they ran on the build before its last two edits, a comment pointer in `RefundService.cs` and a living-doc wording change. After those, the solution rebuilt with 0 errors and 42 refund and cancellation tests passed.
-- [ ] **AC5** — The three decision records, the two living records and the listed page edits ship with the code. consistency.md's deviating-forms entry names T-0841.
+- [x] **AC5** — The three decision records, the two living records and the listed page edits ship with the code. consistency.md's deviating-forms entry names T-0841.
 - [x] **AC6** — The DEV reset runs on Mike's explicit approval and is recorded here. Otherwise it is recorded as owed, with the new migration id.
 
 ## Work record
@@ -196,7 +196,7 @@ The ruling also leaves these out:
     - host 504/504 on the `5995501` build (`host.txt`).
   - Checks: check-docs-refs, 382 references with 0 unresolved; check-catalog-claims, C1 0 · C2 0 · C3 0 with 157 advisories; the docs site builds with no dead links. check-consistency over the changed directories reports three B10 hits in unchanged test files, the same three as at `6952149`.
 - 2026-10-13 — Follow-ups. (`442fb78` was committed late on 2026-10-12.)
-  - `442fb78` — every page that pointed at the canonicalization ticket now names it, T-0841: `consistency.md:1036-1042`, ADR-0072, `system-jobs.md`, ADR-0071 and `order-concurrency.md:34`. The deviating-forms entry's "ticketed rather than assumed" is now true.
+  - `442fb78` — every page that pointed at the canonicalization ticket now names it, T-0841: `consistency.md:1040-1046` (`:1036-1042` at `2a8bd7f`), ADR-0072, `system-jobs.md`, ADR-0071 and `order-concurrency.md:34`. The deviating-forms entry's "ticketed rather than assumed" is now true.
   - `49ebf55` — ADR-0071 records the ratification of D2's third condition; the commit's ADR-0074 half is T-0833's. It cites the guard (`RefundService.cs:423-445`) and the condition (`:434-439`), and says why a reload is refused past a fulfilment move. It adds that a token added to Orders later must join the guard's comparison, plus a fifth verification item naming the guard's two tests and the Verdict.
   - `1768d58` — of its three corrections, this ticket's is ADR-0071's residual. It now says a cancellation's own refund is re-driven hourly only once its cancellation committed. One whose cancellation did not commit, the case the third condition refuses, raises `RefundWithoutCancel`; any other refund raises `RefundNeedsRetry` (`RedrivePendingRefunds.cs:111-117`). `1768d58` wrote ADR-0071's citation as `:110-116`, one line early, where it had been right; `1b4ecb7` restores it.
   - Full suites on `10d6d82` (the evidence's `138ccc015`), in CI's order (restore, Release build, then each suite single-threaded): unit 8689/8689, integration 867/867, host 504/504. Checks: check-docs-refs 383 references, 0 unresolved; check-catalog-claims C1 0 · C2 0 · C3 0 with 158 advisories; the VitePress build completes (`p5/be-followups/`).
@@ -207,6 +207,12 @@ The ruling also leaves these out:
   - Checks at the head, whose docs and code are `1b4ecb7`'s: check-docs-refs, 383 references with 0 unresolved; check-catalog-claims, C1 0 · C2 0 · C3 0 with 158 advisories; the docs site builds (`p5/be-final/vitepress-build.log`, which records the commit it ran on).
   - No full suite ran after `1768d58`; the security re-review's targeted runs (Review) ran on its `src`. No commit since changes `src` beyond code comments: this branch's commits change docs, records and comments, and the master merge `6363aee` brings T-0838's workflow and Bicep changes.
   - Not yet: the P5 pull request's exact-head CI and its merge. AC5 waits for the merge: every record and page edit it names is on the branch, in the commits above.
+- 2026-10-13 — Shipped in [#327](https://github.com/VM-s-Solutions/cleansia/pull/327).
+  - Exact-head CI on `b47e6ce` passed all 6 check runs with no re-run: Backend, Frontend build and e2e-smoke, Android, Docs and Secret scan. iOS, iOS Symbols and booking-policy parity did not run, because their path filters match none of the changed files.
+  - Merged normally with the SHA guard as `2a8bd7f`. No deploy ran: deploy-dev, deploy-pro, deploy-docs and execute-sql have no run since the merge.
+  - Evidence: `raw/ci/p5-pr327-ci-merge-closure-001.json` (sha256 `8885990d…`) in the off-tree Wave F folder.
+  - **AC5.** The three decision records, the two living records and the page edits shipped with the code. consistency.md's deviating-forms entry names T-0841 (`consistency.md:1040` and `:1045`; `:1036` and `:1041` at `2a8bd7f`).
+  - T-0844 stays in progress for AC2, which waits for Mike: add the assertions it names, or read it as met. The DEV drop for `20261012190449_Initial` is still owed and waits for his explicit approval.
 
 ## Review
 
@@ -277,7 +283,7 @@ The ruling also leaves these out:
     - `agents/architecture/decisions/outbox.md:85` maps `AutoCancelStaleRecurringOrders:87`.
     - `docs/decisions/adr-0073.md:112-113` says the auto-cancel keeps its catch until ADR-0072, which this branch then ships.
   - When the same partial refund is sent twice at once (the re-review's N3), both `IssuePartialRefund` calls return success with `ResolvedToExisting` false (`RefundService.cs:413`). So the admin audit log records two refunds for one Stripe refund (`IssuePartialRefund.cs:176-183`). The loyalty revoke is keyed by the refund key. This was already so on master.
-  - Merge order: this branch's decisions index says "74 records" (`docs/decisions/index.md:5`) and the P6 branch's says 71. Whichever merges second sets the count to 75 and merges the sidebar entries in `docs/.vitepress/config.ts`.
+  - Merge order: done in `753b98b`, which keeps both sides, sets the index to 75 records and lists ADR-0071 to ADR-0075 in the sidebar on the P6 branch.
   - ADR-0071 keeps the deliberation wording "the panel did not rule" (`docs/decisions/adr-0071.md:234`) and "by the implementation and by its review" (`:269-270`). Whether the rule against role names in the docs covers that convention is Mike's call.
   - A lone `OperationCanceledException` that the host did not ask for, such as a call's timeout inside a timer command, fails the invocation with the command's Warning as its only line: `FunctionInvocationErrorMiddleware` passes every cancellation on unlogged (`FunctionInvocationErrorMiddleware.cs:26-29`). Before step 1 it left no line at all. ADR-0072 D1 now says so.
   - Already filed, so not repeated here:

@@ -48,7 +48,8 @@ class OrdersRepositoryTest {
                 filterEmployeeId = any(),
                 filterCleaningDateFrom = any(),
                 filterCleaningDateTo = any(),
-                sort = any(),
+                sort0Field = any(),
+                sort0Direction = any(),
                 offset = any(),
                 limit = any(),
             )

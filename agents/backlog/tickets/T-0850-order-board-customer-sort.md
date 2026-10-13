@@ -4,7 +4,7 @@ title: Stop a cleaner sorting the order board by customer e-mail or name, which 
 size: XS
 owner: pm
 created: 2026-10-12
-updated: 2026-10-12
+updated: 2026-10-13
 depends_on: []
 blocks: []
 stories: []
@@ -47,6 +47,10 @@ Found on 2026-10-12 by the security review of the native follow-ups (T-0832, T-0
 ## Work record
 
 - 2026-10-12 — Filed from the native PR's security review. Reported, not absorbed (CLAUDE.md §2): Mike decides whether it becomes work.
+- 2026-10-13 — The security review of the native branch's later commits found this wider than filed (`p5/impl2/security_native_followups.md`, its F1, off-tree in the Wave F folder), and proposes Medium in place of Low:
+  - A cleaner needs no past customer: a signed-in booking stamps whatever contact e-mail and name the request sends (`CreateOrder.cs:1111-1112`), so a cleaner can book one cash visit under a guessed e-mail and use it as the reference order.
+  - `GET /api/Dashboard/GetUpcomingOrders` on both partner hosts reaches the same handler, and every sort entry is applied, not only the first (`BaseRepository.cs:88-94`). So the fix belongs in `GetPagedOrders` (`:120-121`), dropping both fields from every entry.
+  - A question for Mike (S1): should a signed-in booking be able to name a contact e-mail other than the account's? The order's status e-mails go to it (`TakeOrder.cs:484-485`).
 
 ## Review
 

@@ -99,6 +99,8 @@ class CreateRecurringViewModel @Inject constructor(
 
     val isEditing: Boolean = editingTemplateId != null
 
+    private val cardAvailable = BuildConfig.STRIPE_PUBLISHABLE_KEY.isNotBlank()
+
     /**
      * A new schedule is a new booking, so it asks for the booking's terms tick on the same rule: shown
      * until both consents on record cover the versions in force, and on a failed read. An edit asks
@@ -594,6 +596,10 @@ class CreateRecurringViewModel @Inject constructor(
         const val PAYMENT_CASH = 1
         const val PAYMENT_CARD = 2
 
+        /** A build without a Stripe key hides the card option, so a card copied into the form would be saved unseen. */
+        internal fun presentablePaymentType(type: Int?, cardAvailable: Boolean): Int? =
+            if (type == PAYMENT_CARD && !cardAvailable) null else type
+
         private const val QUOTE_DEBOUNCE_MS = 400L
 
         private const val PREFERRED_CLEANER_NOT_ELIGIBLE = "order.preferred_employee.not_eligible"
@@ -626,7 +632,7 @@ class CreateRecurringViewModel @Inject constructor(
                 savedAddressId = template.savedAddressId,
                 selectedServiceIds = template.selectedServiceIds.toSet(),
                 selectedPackageIds = template.selectedPackageIds.toSet(),
-                paymentType = template.paymentType,
+                paymentType = presentablePaymentType(template.paymentType, cardAvailable),
                 startsOnIso = template.startsOn,
                 endsOnIso = template.endsOn,
                 preferredEmployeeId = template.preferredEmployeeId,
@@ -671,7 +677,7 @@ class CreateRecurringViewModel @Inject constructor(
                     bathrooms = order.bathrooms.coerceIn(0, PropertySize.MAX_BATHROOMS),
                     selectedServiceIds = order.selectedServices?.mapNotNull { it.id }?.toSet().orEmpty(),
                     selectedPackageIds = order.selectedPackages?.mapNotNull { it.id }?.toSet().orEmpty(),
-                    paymentType = order.paymentType?.value ?: current.paymentType,
+                    paymentType = presentablePaymentType(order.paymentType?.value, cardAvailable) ?: current.paymentType,
                     timeOfDay = timeOfDay ?: current.timeOfDay,
                     dayOfWeek = dayOfWeek ?: current.dayOfWeek,
                 )
@@ -725,8 +731,9 @@ data class CreateRecurringFormState(
     val selectedServiceIds: Set<String> = emptySet(),
     val selectedPackageIds: Set<String> = emptySet(),
     /**
-     * The backend's `PaymentType`; null while nothing is chosen: after a cash choice is taken away, and at the
-     * start in a build with no Stripe key, which offers no card, as booking starts with no method.
+     * The backend's `PaymentType`; null while nothing is chosen: after a cash choice is taken away, and in a build
+     * with no Stripe key, which offers no card, at the start and wherever card would be copied in, as booking
+     * starts with no method.
      */
     val paymentType: Int? = if (BuildConfig.STRIPE_PUBLISHABLE_KEY.isNotBlank()) CreateRecurringViewModel.PAYMENT_CARD else null,
     /** ISO-8601 instant. Default empty — UI must set before submit. */

@@ -1090,13 +1090,18 @@
             }
           },
           {
-            "name": "Sort",
+            "name": "Sort[0].Field",
             "in": "query",
             "schema": {
-              "type": "array",
-              "items": {
-                "$ref": "#/components/schemas/SortDefinition"
-              }
+              "type": "string",
+              "nullable": true
+            }
+          },
+          {
+            "name": "Sort[0].Direction",
+            "in": "query",
+            "schema": {
+              "$ref": "#/components/schemas/SortDirection"
             }
           },
           {
@@ -3430,13 +3435,18 @@
             }
           },
           {
-            "name": "Sort",
+            "name": "Sort[0].Field",
             "in": "query",
             "schema": {
-              "type": "array",
-              "items": {
-                "$ref": "#/components/schemas/SortDefinition"
-              }
+              "type": "string",
+              "nullable": true
+            }
+          },
+          {
+            "name": "Sort[0].Direction",
+            "in": "query",
+            "schema": {
+              "$ref": "#/components/schemas/SortDirection"
             }
           },
           {
@@ -4216,13 +4226,18 @@
             }
           },
           {
-            "name": "Sort",
+            "name": "Sort[0].Field",
             "in": "query",
             "schema": {
-              "type": "array",
-              "items": {
-                "$ref": "#/components/schemas/SortDefinition"
-              }
+              "type": "string",
+              "nullable": true
+            }
+          },
+          {
+            "name": "Sort[0].Direction",
+            "in": "query",
+            "schema": {
+              "$ref": "#/components/schemas/SortDirection"
             }
           },
           {
@@ -4652,13 +4667,18 @@
             }
           },
           {
-            "name": "Sort",
+            "name": "Sort[0].Field",
             "in": "query",
             "schema": {
-              "type": "array",
-              "items": {
-                "$ref": "#/components/schemas/SortDefinition"
-              }
+              "type": "string",
+              "nullable": true
+            }
+          },
+          {
+            "name": "Sort[0].Direction",
+            "in": "query",
+            "schema": {
+              "$ref": "#/components/schemas/SortDirection"
             }
           },
           {

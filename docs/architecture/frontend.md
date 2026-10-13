@@ -566,14 +566,15 @@ Both apps ask for the dashboard's upcoming orders with one query: the cleaner's 
 from the start of their local day, today's local midnight sent in UTC as
 `Filter.CleaningDateFrom`, beside the employee ID and `Filter.IsActive`, ten rows.
 `IsActive` is the soft-delete flag, not a status. Both apps also send a cleaning-date
-sort, but in a form the server does not bind (Android writes the sort object's
-`toString`, iOS base64 JSON), so the page takes the server's own order, newest created
-first (`SortMapper.ForOrderPage`). The page is therefore the ten most recently created of
-the cleaner's orders from today on, and the hero's next job holds only while there are
-ten or fewer; until 2026-10-12, while neither app sent a date, past jobs could fill the
-page as well. No status is filtered: a job done earlier today still counts on the today
-line, and the hero takes only a confirmed, on-the-way or in-progress order
-→ [Partner dashboard](/mobile-app/features#partner-dashboard).
+sort, ascending, as `Sort[0].Field` and `Sort[0].Direction`, the form the server binds
+([ADR-0075](/decisions/adr-0075)), so the page is the ten soonest of the cleaner's
+orders from the start of today. Until 2026-10-12 the sort went out in a form the server
+does not bind (Android wrote the sort object's `toString`, iOS base64 JSON), so the page
+took the server's own order, newest created first (`SortMapper.ForOrderPage`), and
+before both apps sent the date, past jobs could fill it as well. The request filters no
+status. On the page, the today line counts every order dated today except a cancelled
+one, so a job done earlier today still counts, and the hero takes only a confirmed,
+on-the-way or in-progress order → [Partner dashboard](/mobile-app/features#partner-dashboard).
 
 On iOS, `DashboardViewModel` starts the available-jobs preview alongside the employee
 read. Stats still waits for the captured employee ID. Once the employee read has
@@ -618,12 +619,14 @@ clear invalidate the captured generation. Flight identity also guards publicatio
 and cleanup so late work cannot overwrite or remove its replacement.
 
 The current-membership read (`getMine`) carries its own session generation on both
-platforms, advanced only by sign-out (`clear`). It is not the plans' generation, which
+platforms, advanced only by `clear`, which runs on every wipe trigger S11 names (sign-out,
+forced-401, account deletion on the customer apps, and sign-in before the new tokens are
+stored). It is not the plans' generation, which
 also moves on a market change and a forced plans reload; neither of those discards it.
-A read still in flight at sign-out publishes nothing and leaves freshness stale. iOS
+A read still in flight at the wipe publishes nothing and leaves freshness stale. iOS
 answers its caller with the cancellation result, and `clear` also ends that read's
 `loading`, so the next session's own refresh is not swallowed by it. Android answers
-with the silent `ApiError.Network`, and a refresh queued before sign-out never reaches
+with the silent `ApiError.Network`, and a refresh queued before the wipe never reaches
 the API. `clear` never takes Android's refresh lock, because the authenticator calls it
 while a refresh may hold that lock across the request being authenticated.
 

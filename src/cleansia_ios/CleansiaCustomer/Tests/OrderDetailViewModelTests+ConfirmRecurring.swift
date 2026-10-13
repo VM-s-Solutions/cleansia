@@ -150,6 +150,26 @@ extension OrderDetailViewModelTests {
         XCTAssertEqual(vm.confirmRecurringState, .idle)
     }
 
+    /// A confirm that can only be refused is not drawn: a keyless build keeps the occurrence's other actions instead,
+    /// as Android does, rather than showing a button nothing can finish.
+    func testTheConfirmIsOfferedUnlessTheBuildCannotPayTheOccurrence() async {
+        func offered(paymentType: Int, keyed: Bool) async -> Bool {
+            let client = FakeOrderClient()
+            client.detailResults = [.success(recurringOccurrence(paymentType: paymentType))]
+            let vm = makeVM(client: client, cardPaymentAvailable: keyed)
+            await vm.load()
+            return vm.offersRecurringConfirm
+        }
+
+        let keylessCard = await offered(paymentType: 2, keyed: false)
+        let keylessCash = await offered(paymentType: 1, keyed: false)
+        let keyedCard = await offered(paymentType: 2, keyed: true)
+
+        XCTAssertFalse(keylessCard, "a card occurrence's confirm is drawn in a build that cannot pay it")
+        XCTAssertTrue(keylessCash)
+        XCTAssertTrue(keyedCard)
+    }
+
     func testABuildWithNoStripeKeyStillConfirmsACashOccurrence() async {
         let client = FakeOrderClient()
         client.detailResults = [

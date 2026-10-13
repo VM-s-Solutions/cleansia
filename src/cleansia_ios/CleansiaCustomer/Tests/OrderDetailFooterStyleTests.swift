@@ -38,6 +38,21 @@ final class OrderDetailFooterStyleTests: XCTestCase {
         ))
     }
 
+    /// A card occurrence's confirm can only be refused in a build with no Stripe key, so the footer falls through to
+    /// the order's other actions there, as Android's does, instead of drawing the confirm disabled.
+    func testTheConfirmFooterIsDrawnOnlyWhereTheConfirmCanFinish() throws {
+        let root = URL(fileURLWithPath: #filePath).deletingLastPathComponent().deletingLastPathComponent()
+        let source = try String(
+            contentsOf: root.appendingPathComponent("Sources/Features/Orders/OrderDetailView.swift"),
+            encoding: .utf8
+        ).components(separatedBy: .whitespacesAndNewlines).joined()
+
+        XCTAssertTrue(
+            source.contains("iforder.needsConfirmation,vm.offersRecurringConfirm{ConfirmRecurringFooter("),
+            "the confirm footer is drawn for an occurrence the build cannot pay"
+        )
+    }
+
     /// Cancel and Report issue now share one tint, and Confirmed is the single
     /// status that renders both — so on that footer the glyphs are the entire
     /// non-textual differentiator between abandoning a booking and complaining

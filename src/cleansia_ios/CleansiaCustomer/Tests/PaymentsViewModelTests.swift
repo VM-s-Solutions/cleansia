@@ -21,6 +21,7 @@ final class PaymentsViewModelTests: XCTestCase {
     private func makeVM(
         countryId: String? = nil,
         currencyCode: String? = nil,
+        cardPaymentAvailable: Bool = true,
         pauses: @escaping () -> Void = {}
     ) -> PaymentsViewModel {
         PaymentsViewModel(
@@ -29,6 +30,7 @@ final class PaymentsViewModelTests: XCTestCase {
             snackbar: snackbar,
             countryId: countryId,
             currencyCode: currencyCode,
+            isCardPaymentAvailable: cardPaymentAvailable,
             pauseBetweenCardReads: pauses
         )
     }
@@ -138,6 +140,24 @@ final class PaymentsViewModelTests: XCTestCase {
         let noMarket = makeVM()
         await noMarket.load()
         XCTAssertFalse(noMarket.offersCardCapture, "with no market known any usable card counts")
+    }
+
+    /// A build with no Stripe key has no sheet to save a card through, so it offers no capture and starts none: the
+    /// server would mint a SetupIntent and a pending card that nothing in the build can finish.
+    func testABuildWithNoStripeKeyOffersNoCardAndStartsNoCapture() async {
+        cards.reads = [.success([])]
+        let vm = makeVM(countryId: "country-cz", currencyCode: "CZK", cardPaymentAvailable: false)
+        await vm.load()
+        var sheets: [PaymentSheetPresentation] = []
+        vm.cardSetups.sink { sheets.append($0) }.store(in: &cancellables)
+
+        XCTAssertFalse(vm.offersCardCapture, "a card is offered with no way to save it")
+        vm.setCardConsentAccepted(true)
+        await vm.addCard()
+
+        XCTAssertEqual(cards.captureConsents, [], "a card capture started with no way to finish it")
+        XCTAssertEqual(sheets, [])
+        XCTAssertEqual(vm.addCardState, .idle)
     }
 
     func testSavingACardStartsTheCaptureOnlyWithTheConsentTicked() async {

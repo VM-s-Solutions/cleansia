@@ -7,6 +7,7 @@ using Cleansia.Config;
 using Cleansia.Config.Services;
 using Cleansia.Config.Services.DeviceRevocation;
 using Cleansia.Config.Services.UserRevocation;
+using Cleansia.Config.Swagger;
 using Cleansia.Infra.Database;
 using Cleansia.Web.Mobile.Partner.Middlewares;
 using Cleansia.Web.Mobile.Partner.SwaggerSchemaFilters;
@@ -83,6 +84,7 @@ public static class ServiceExtensions
             c.CustomSchemaIds(type => GetSchemaId(type));
             c.SchemaFilter<EnumSchemaFilter>();
             c.SchemaFilter<CreateOrderNullableCustomerAddressFilter>();
+            c.OperationFilter<IndexedSortOperationFilter>();
             // OperationId becomes the generated client method name. The
             // default `ActionDescriptor.DisplayName` is the fully-qualified
             // controller path which produces awful Kotlin method names like

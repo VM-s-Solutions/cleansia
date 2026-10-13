@@ -736,7 +736,7 @@ stats source). **Tests:** TC-IOS-EARNINGS-NAV, TC-IOS-PDF-GATE, TC-IOS-EARNINGS-
 ### Partner APNs push registration — the `PushRegistrar` Core seam, the `@UIApplicationDelegateAdaptor` hook, the session-driven `PushSessionObserver`, the logout-ordered unregister (sprint-12 §7.13 / T-0311)
 
 The partner **APNs push registration** surface — register → an APNs token → the **same `/api/Device/*` contract** the
-Android `:core` push uses (`Platform="ios"`, the one `X-Device-Id`) + register-on-login / clear-on-logout, plus a minimal
+Android `:core` push uses (`Platform="ios"`, the one `X-Device-Id`) + register-on-login / clear on every wipe trigger, plus a minimal
 foreground-banner/tap — surfaced by the T-0311 Understand pass on `phase/ios-phase5` (depends_on T-0302/0303/0310/0331). The
 generated `PartnerDeviceAPI` (`deviceRegister(RegisterDeviceCommand{deviceId,deviceToken,platform})`/`deviceUnregister(deviceId)`)
 rides the **ADR-0019** spine — T-0311 writes no auth code. **Three rulings, all APPLYING accepted ADRs/records — no new ADR**
@@ -769,8 +769,9 @@ DeviceRegistrationClient,PushTokenDataStore}.kt` + `partner-app/.../data/auth/Au
   the persisted last-registered token (`UserDefaults`, not Keychain — the `PushTokenDataStore` parity; not a secret) and
   persists on success only. **`unregisterDevice()` is invoked from `AuthApiClient.logout()` BEFORE the `TokenStore` wipe**
   (best-effort; the `Device/Unregister` DELETE needs the Bearer — the `AuthRepository.kt:210-225` ordering); the local
-  `clear()` is the **`SessionScopedCache`** the registrar's store implements, run by the registry on **both** the user-logout
-  and the forced-401 sign-out paths (the `PushTokenRepository.kt:44,65-67` local-only `clear()` parity). **SECURITY rules the
+  `clear()` is the **`SessionScopedCache`** the registrar implements, run by the registry on **every** wipe trigger
+  S11 names (sign-out, forced-401, account deletion on the customer apps, and sign-in before the new tokens are
+  stored; the `PushTokenRepository.kt:44,65-67` local-only `clear()` parity). **SECURITY rules the
   ordering GATE in parallel; this record only fixes that the invocation home is `logout()` (before the wipe) + the
   `SessionScopedCache` (local).** Rejected: the `afterLogin` + logout-call event hooks (the deleted Android brittleness;
   thickens the App; forks two clear-paths).

@@ -104,17 +104,14 @@ final class LivePartnerOrderClient: PartnerOrderClient {
 
     func getPaged(_ query: OrderPageQuery) async -> ApiResult<[OrderListItem]> {
         await apiResult(mapError: ApiError.fromGenerated) {
-            let sort = [SortDefinition(
-                field: query.sortField,
-                direction: query.sortAscending ? ._0 : ._1
-            )]
             let paged = try await PartnerOrderAPI.orderGetPaged(
                 filterEmployeeId: query.employeeId,
                 filterCleaningDateFrom: query.cleaningDateFrom,
                 filterCleaningDateTo: query.cleaningDateTo,
                 filterOrderStatuses: query.statuses,
                 filterIsUnassigned: query.isUnassigned,
-                sort: sort,
+                sort0Field: query.sortField,
+                sort0Direction: query.sortAscending ? ._0 : ._1,
                 offset: query.offset,
                 limit: query.limit
             )

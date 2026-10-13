@@ -297,10 +297,9 @@ public sealed class CleanupStalePendingOrdersTwoOperatorsTests(PostgresContainer
     }
 
     /// <summary>
-    /// A credit return commits on its own, before the company's commit. So a company's notices are
-    /// staged before any of its orders hands credit back: when the read of their recipients fails, the
-    /// company's orders stay Pending with their credit still spent, the companies already done stay
-    /// committed, and the next tick cancels the rest and returns the credit once.
+    /// The read of a company's recipients fails before that company commits. A credit return commits only
+    /// with its company, so the company's orders stay Pending with their credit still spent, the companies
+    /// already done stay committed, and the next tick cancels the rest and returns the credit once.
     /// </summary>
     [Fact]
     public async Task A_Failed_Recipient_Read_Comes_Before_Its_Company_Returns_Any_Credit()
@@ -348,6 +347,120 @@ public sealed class CleanupStalePendingOrdersTwoOperatorsTests(PostgresContainer
             await verify.Set<UserNotification>().IgnoreQueryFilters().OrderBy(n => n.UserId).Select(n => n.UserId).ToListAsync());
         Assert.Equal(3, await verify.OutboxMessages.IgnoreQueryFilters()
             .CountAsync(m => m.QueueName == QueueNames.NotificationsDispatch));
+    }
+
+    /// <summary>
+    /// The company's commit is refused after its order handed its credit back. The return rode that commit and
+    /// rolls back with it: the order is still Pending with its credit still spent, and the next tick cancels it
+    /// and returns the credit once.
+    /// </summary>
+    [Fact]
+    public async Task A_Refused_Company_Commit_Rolls_Back_The_Credit_Its_Orders_Returned()
+    {
+        const string creditReturnKey = "credit-return:order-ended-unpaid:ord-c-1";
+        await SeedAccountAsync("user-credit", TestTenants.Default);
+        await SeedStaleOrderAsync("c-1", "user-credit", TestTenants.Default, creditApplied: 300m);
+
+        await Assert.ThrowsAsync<InvalidOperationException>(() => RunSweepAsync(new RefuseFirstSave()));
+
+        await using (var afterFailure = NewContext())
+        {
+            var order = await afterFailure.Orders.IgnoreQueryFilters()
+                .Include(o => o.OrderStatusHistory)
+                .SingleAsync(o => o.Id == "ord-c-1");
+            Assert.Equal(PaymentStatus.Pending, order.PaymentStatus);
+            Assert.DoesNotContain(order.OrderStatusHistory, t => t.Status == OrderStatus.Cancelled);
+            Assert.False(await afterFailure.CreditTransactions.IgnoreQueryFilters()
+                .AnyAsync(t => t.IdempotencyKey == creditReturnKey));
+            Assert.False(await afterFailure.CreditAccounts.IgnoreQueryFilters().AnyAsync(a => a.UserId == "user-credit"));
+        }
+
+        var rerun = await RunSweepAsync();
+
+        Assert.Equal(1, rerun.CancelledCount);
+        await using var verify = NewContext();
+        Assert.Equal(300m, Assert.Single(await verify.CreditTransactions.IgnoreQueryFilters()
+            .Where(t => t.IdempotencyKey == creditReturnKey).ToListAsync()).Amount);
+        var account = await verify.CreditAccounts.IgnoreQueryFilters().Include(a => a.Transactions)
+            .SingleAsync(a => a.UserId == "user-credit");
+        Assert.Equal(300m, account.Balance);
+        Assert.Equal(account.Balance, account.Transactions.Sum(t => t.Amount));
+    }
+
+    /// <summary>
+    /// The customer pays while the sweep is cancelling the checkout it read as unpaid. The order's payment status is
+    /// a concurrency token, so the company's commit is refused and rolls back whole: the order stays paid and
+    /// booked, with no cancellation, no notice and no credit handed back, and the next run leaves it alone. Without
+    /// the token the sweep's commit overwrote the payment, and the order ended Failed and cancelled with the money
+    /// kept and its credit returned.
+    /// </summary>
+    [Fact]
+    public async Task A_Payment_Landing_While_Its_Company_Is_Swept_Is_Kept_And_Nothing_Is_Cancelled()
+    {
+        const string creditReturnKey = "credit-return:order-ended-unpaid:ord-paid-1";
+        await SeedAccountAsync("user-paying", TestTenants.Default);
+        await SeedStaleOrderAsync("paid-1", "user-paying", TestTenants.Default, creditApplied: 300m);
+        var paidMeanwhile = new AtTheFirstUsersRead(() => PayAsync("ord-paid-1"));
+
+        var refused = await Record.ExceptionAsync(() => RunSweepAsync(paidMeanwhile));
+
+        await using (var afterRace = NewContext())
+        {
+            var order = await afterRace.Orders.IgnoreQueryFilters()
+                .Include(o => o.OrderStatusHistory)
+                .SingleAsync(o => o.Id == "ord-paid-1");
+            Assert.Equal((PaymentStatus.Paid, OrderStatus.New), (order.PaymentStatus, order.CurrentStatus));
+            Assert.DoesNotContain(order.OrderStatusHistory, t => t.Status == OrderStatus.Cancelled);
+            Assert.Empty(await afterRace.Set<UserNotification>().IgnoreQueryFilters().ToListAsync());
+            Assert.Empty(await afterRace.OutboxMessages.IgnoreQueryFilters().ToListAsync());
+            Assert.False(await afterRace.CreditTransactions.IgnoreQueryFilters()
+                .AnyAsync(t => t.IdempotencyKey == creditReturnKey));
+        }
+
+        Assert.True(paidMeanwhile.Ran);
+        Assert.IsType<DbUpdateConcurrencyException>(refused);
+        Assert.Equal(0, (await RunSweepAsync()).CancelledCount);
+    }
+
+    /// <summary>The webhook's write of a card payment, committed on a connection of its own.</summary>
+    private async Task PayAsync(string orderId)
+    {
+        await using var paying = NewContext();
+        var order = await paying.Orders.IgnoreQueryFilters().SingleAsync(o => o.Id == orderId);
+        order.UpdatePaymentStatus(PaymentStatus.Paid);
+        await paying.CommitAsync(CancellationToken.None);
+    }
+
+    /// <summary>
+    /// A company's orders hold their customers' credit locks until its one commit, so they take them in one
+    /// fixed order, ordinal user id, the order the referral grant and its reversal use, whatever the age or id of
+    /// each order. The older order here belongs to the greater user and has the smaller id, so neither the age
+    /// order nor the id order can stand in for it.
+    /// </summary>
+    [Fact]
+    public async Task A_Company_Takes_Its_Customers_Credit_Locks_In_Ordinal_User_Order()
+    {
+        await SeedAccountAsync("user-lock-b", TestTenants.Default);
+        await SeedAccountAsync("user-lock-a", TestTenants.Default);
+        await SeedStaleOrderAsync("lock-1", "user-lock-b", TestTenants.Default, creditApplied: 300m, hoursOld: 5);
+        await SeedStaleOrderAsync("lock-2", "user-lock-a", TestTenants.Default, creditApplied: 200m, hoursOld: 2);
+        var ownerLocks = new OwnerLockRecorder();
+
+        var result = await RunSweepAsync(ownerLocks);
+
+        Assert.Equal(2, result.CancelledCount);
+        Assert.Equal(new[] { "user-lock-a", "user-lock-b" }, ownerLocks.UserIds.Distinct());
+        await using var verify = NewContext();
+        Assert.Equal(
+            new[]
+            {
+                new { OrderId = (string?)"ord-lock-1", Amount = 300m },
+                new { OrderId = (string?)"ord-lock-2", Amount = 200m },
+            },
+            await verify.CreditTransactions.IgnoreQueryFilters()
+                .OrderBy(t => t.OrderId)
+                .Select(t => new { t.OrderId, t.Amount })
+                .ToListAsync());
     }
 
     /// <summary>
@@ -432,6 +545,62 @@ public sealed class CleanupStalePendingOrdersTwoOperatorsTests(PostgresContainer
             if (result > 0)
             {
                 Count++;
+            }
+
+            return ValueTask.FromResult(result);
+        }
+    }
+
+    /// <summary>Refuses the first save, as a conflict or a dropped connection at the company's commit would.</summary>
+    private sealed class RefuseFirstSave : SaveChangesInterceptor
+    {
+        private bool _refused;
+
+        public override ValueTask<InterceptionResult<int>> SavingChangesAsync(
+            DbContextEventData eventData, InterceptionResult<int> result, CancellationToken cancellationToken = default)
+        {
+            if (!_refused)
+            {
+                _refused = true;
+                throw new InvalidOperationException("The company's commit was refused.");
+            }
+
+            return ValueTask.FromResult(result);
+        }
+    }
+
+    /// <summary>Commits another connection's write just before the first read of Users, the company's recipients.</summary>
+    private sealed class AtTheFirstUsersRead(Func<Task> write) : DbCommandInterceptor
+    {
+        public bool Ran { get; private set; }
+
+        public override async ValueTask<InterceptionResult<DbDataReader>> ReaderExecutingAsync(
+            DbCommand command, CommandEventData eventData, InterceptionResult<DbDataReader> result,
+            CancellationToken cancellationToken = default)
+        {
+            if (!Ran && command.CommandText.Contains("FROM \"Users\"", StringComparison.Ordinal))
+            {
+                Ran = true;
+                await write();
+            }
+
+            return result;
+        }
+    }
+
+    /// <summary>Records whose Users row each owner lock names, in the order the locks are asked for.</summary>
+    private sealed class OwnerLockRecorder : DbCommandInterceptor
+    {
+        public List<string> UserIds { get; } = [];
+
+        public override ValueTask<InterceptionResult<int>> NonQueryExecutingAsync(
+            DbCommand command, CommandEventData eventData, InterceptionResult<int> result,
+            CancellationToken cancellationToken = default)
+        {
+            if (command.CommandText.Contains("FROM \"Users\"", StringComparison.Ordinal)
+                && command.CommandText.Contains("FOR NO KEY UPDATE", StringComparison.Ordinal))
+            {
+                UserIds.Add((string)command.Parameters[0].Value!);
             }
 
             return ValueTask.FromResult(result);

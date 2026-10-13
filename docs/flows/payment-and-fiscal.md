@@ -50,7 +50,7 @@ sequenceDiagram
 | Case | What happens |
 |---|---|
 | The same event delivered twice | Second insert violates the unique index; no second effect. |
-| Two redeliveries in parallel | One wins the insert, the other gets `23505` and acks. |
+| Two redeliveries in parallel | One wins the insert, the other gets `23505` or a concurrency conflict and acks. |
 | Order already `Paid` or `Refunded` | Short-circuit — but only *after* the cash check. |
 | Event for an order that no longer exists | Logged and ignored. |
 | Payment fails | Status is left alone so the client can retry. The company's administrators are told of the **first** decline on an order and not of every fumbled card entry: the site reads the feed before raising `admin.payment.failed`, and a decline that lands after the money did, or after the order was cancelled, is news about nothing. |
@@ -59,6 +59,7 @@ sequenceDiagram
 | Chargeback that matches no order | Nothing is recorded, and the webhook acknowledges so Stripe does not retry. The administrators of **every** company are told (`admin.dispute.chargeback_unmatched`, the amount and the Stripe dispute id), because the Stripe account is shared. Only `charge.dispute.created` alerts; an update or close for an unknown dispute is logged and ignored. → [Cancellation, refund and dispute](/flows/cancellation-refund-dispute#dispute) |
 | Card order paid | `admin.order.new` to the company's administrators — the order became offerable on this write, never at creation; a redelivery never reaches the site. |
 | Card payment settles after the order was cancelled | The order is **not** marked `Paid`: the customer paid for a clean that will not happen, so the webhook escalates a dispute for a refund (the customer's open one, or a new one), as it does for a card payment that lands on an order already settled in cash. |
+| A payment lands while the order is being cancelled | Whichever commits second is refused: the order's payment status is a concurrency token beside its fulfilment status ([ADR-0071](/decisions/adr-0071)). A sweep's cancel rolls back whole, its credit return included, and the order stays paid and booked. A refused webhook is retried by Stripe and, when the cancel committed first, escalates as in the row above. A customer's or an administrator's cancel gets one error, and a retry reads the paid order. |
 | Checkout expired or payment cancelled (`checkout.session.expired`, `payment_intent.canceled`) | An order not yet cancelled is cancelled through `Order.Cancel` — by the system, `order.cancelled.payment_not_completed`, no fee, no refund — and a guest is e-mailed, with the old links revoked and a fresh one minted. |
 | A recurring occurrence's Checkout Session expires | Nothing is cancelled: the session is released and the occurrence stays confirmable until the stale-occurrence sweep's cut-off. |
 | A PaymentSheet intent replaced by a newer one (`payment_intent.canceled` with Stripe's reason `duplicate`) | Nothing is cancelled: `CreatePaymentIntent` cancels the order's old intent that way only when it hands the customer a new one to pay. Any other cancelled intent cancels the order as above. |

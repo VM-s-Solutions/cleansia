@@ -397,7 +397,7 @@ public class OrderRepository(CleansiaDbContext context) : BaseRepository<Order>(
         return onAJob.ToHashSet(StringComparer.Ordinal);
     }
 
-    public async Task<IReadOnlySet<string>> GetBusyEmployeeIdsInWindowAsync(
+    public async Task<IReadOnlySet<string>> GetBusyEmployeeIdsInWindowIgnoringTenantAsync(
         IReadOnlyCollection<string> employeeIds,
         DateTime windowStartUtc,
         DateTime windowEndUtc,

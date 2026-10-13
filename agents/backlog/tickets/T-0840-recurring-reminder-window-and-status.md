@@ -15,7 +15,7 @@ security_touching: false
 
 ## Context
 
-The 2026-10-12 design ruling on BE-11 to BE-14 reported these as items 1 and 2. The ruling is off-tree, in the Wave F folder: `/Users/michael/.codex/scratchpads/cleansia-wave-f-2026-10-11/p5/phase0/architect_be-lead.json`. Both items were found by reading the code, not by running it, and the lines below were re-read at `76e1638a3`. **Of that ruling's reported items, this one has the most effect: it can cost customers their recurring bookings.**
+The 2026-10-12 design ruling on BE-11 to BE-14 reported these as items 1 and 2. The ruling is off-tree, in the Wave F folder: `/Users/michael/.codex/scratchpads/cleansia-wave-f-2026-10-11/p5/phase0/architect_be-lead.json`. Both items were found by reading the code, not by running it, and the lines below were re-read at `207d2f319`. **Of that ruling's reported items, this one has the most effect: it can cost customers their recurring bookings.**
 
 - **A morning gap.**
   - `SendRecurringOrderReminders` runs once a day, at 02:30 UTC (`deploy/bicep/main.bicep:531`; `src/Cleansia.Functions/appsettings.json:3`, `0 30 2 * * *`).

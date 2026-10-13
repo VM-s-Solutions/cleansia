@@ -22,6 +22,18 @@ public interface ILiveActivityTokenRepository : IRepository<LiveActivityToken, s
     Task<IReadOnlyList<LiveActivityToken>> GetByUserAndDeviceAsync(string userId, string deviceId, CancellationToken cancellationToken);
 
     /// <summary>
+    /// Every row this user holds for this device id, push-to-start included: the Live Activity routes of an
+    /// account whose device row on the caller's own install is being retired. Reads every company's rows,
+    /// because that account may belong to another one. The pin is a caller obligation: the user id and the
+    /// device id are read out of an already-pinned row, a device row
+    /// <see cref="IDeviceRepository.GetOtherUsersActiveByDeviceAndTokenIgnoringTenantAsync"/> found, and the
+    /// rows found are only ever deleted, never returned or shown.
+    /// → /architecture/security-rules#s8-tenant-isolation-correctness
+    /// </summary>
+    Task<IReadOnlyList<LiveActivityToken>> GetByUserAndDeviceIgnoringTenantAsync(
+        string userId, string deviceId, CancellationToken cancellationToken);
+
+    /// <summary>
     /// The per-order UPDATE/END tokens (<c>OrderId == orderId</c>) — the dispatch target for
     /// <c>update</c>/<c>end</c> events, and the rows deleted after a successful terminal send.
     /// </summary>

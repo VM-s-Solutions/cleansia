@@ -31,6 +31,63 @@
 > `ios-symbols-ci.yml` and `booking-policy-parity.yml`, and `agents/process/enforcement.md` keeps the
 > list of what gates a pull request. The notes below are left as written.
 
+> **W01 closed as refuted — 2026-10-12, Mike's letter A.** W01 — the 2026-10-07 audit's structural
+> client-DI item, which the Wave F roadmap calls *endpoint-scoped client loading* — proposed injecting
+> per-endpoint clients at their consumers and moving feature effects behind their routes, so that each
+> app's generated client would leave its initial bundle. It is closed with no change, on Mike's letter
+> **A** of 2026-10-12 (*close W01, no change*). That letter answers the measured, costed decision in
+> T-0830 (`agents/backlog/tickets/T-0830-wave-f-w01-costed-decision.md`), which shipped as a
+> backlog-only change in #324 (merged as `7fc7c39`).
+>
+> **Refuted, not deferred.** Two build facts keep each client whole and in the initial bundle, and W01
+> changes neither:
+>
+> - **esbuild places code per file.** None of customer's 608, partner's 769 or admin's 810 inputs is
+>   split across chunks. Each client is one file, and eager code imports from it (the base-URL token,
+>   the auth DTOs, the aggregate client), so the whole file is initial however its endpoints are
+>   injected. In the shipping build that is 253,990 B for customer, 225,457 B for partner and
+>   540,549 B for admin (esbuild `bytesInOutput`).
+> - **Unreferenced injectables are kept.** With `isolatedModules: true` and no source maps,
+>   `@angular/build` skips the pass that wraps `static ɵprov`/`ɵfac`, so esbuild keeps every
+>   `@Injectable` class in a reachable file, referenced or not.
+>
+> W01 itself was not built as its own arm. The refutation rests on three things:
+>
+> - the controls: customer's `DeviceClient` is constructed nowhere and still ships; partner's
+>   `GdprClient` is used only on a lazy route and is still initial; admin's 12 per-endpoint clients
+>   are initial;
+> - the ground truth's esbuild probes;
+> - the split builds, where bytes moved only once both the file layout and the imports changed.
+>
+> An independent re-derivation of every byte figure from the build outputs refuted none
+> (T-0830 §*Review*).
+>
+> **What would move bytes was measured and not taken:**
+>
+> - Splitting each client per declaration buys 1,362–8,755 B of initial gzip-9 (0.33–2.06 %). It
+>   costs 3–5 engineer-days per app plus a permanent splitter step in the ADR-0031 regeneration
+>   chain, and it grows total JS in every app.
+> - `isolatedModules: false` moves mostly shared-barrel exports, not the client: −15,784 B of
+>   initial gzip-9 on partner, +283 B on customer.
+>
+> **This closure changes nothing else on this page.** Each client stays one generated file, the
+> `generate-*-client` chain and the invariants below are untouched, and the catalog's import rule
+> (`patterns-frontend.md:24-25`) does not narrow.
+>
+> **Open, and not part of this closure:**
+>
+> - the shared-barrel leak behind the partner figure (the unchosen **+F**);
+> - admin's initial bundle sitting 192.94 kB over its 2 MB warning budget, which no measured option
+>   cleared.
+>
+> **Reopen only on new evidence, and re-measure first.** That evidence would be one of:
+>
+> - an adopted initial-JS target that an app fails;
+> - a browser measurement that attributes first-load cost to a generated client;
+> - a toolchain change that splits one file across chunks or drops unreferenced injectables.
+>
+> Receipts: T-0830 §*Receipts (AC1)*.
+
 ## Scope
 
 The **web** generated clients only — the three NSwag-generated TypeScript clients under

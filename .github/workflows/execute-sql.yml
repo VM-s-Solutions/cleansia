@@ -20,13 +20,12 @@ on:
         type: string
 
 permissions:
-  id-token: write
   contents: read
 
 jobs:
   validate:
     name: Validate inputs
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - name: Check PRO confirmation
         if: inputs.environment == 'PRO' && inputs.confirm != 'execute'
@@ -35,7 +34,7 @@ jobs:
           exit 1
 
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
 
       # insert_seed_data.sql is a DEVELOPMENT FIXTURE, not an operational script. It creates the
       # catalogue a fresh dev database needs; running it against production would collide with real
@@ -109,7 +108,10 @@ jobs:
     name: Execute on DEV
     if: inputs.environment == 'DEV'
     needs: validate
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
+    permissions:
+      id-token: write
+      contents: read
     # Match deploy-dev.yml (environment: dev-weu) so OIDC federates with the
     # environment:dev-weu subject that holds the RBAC + the dev-scoped secrets
     # (AZURE_* + DB_CONNECTION_STRING_DEV). Without it the branch subject has no
@@ -117,10 +119,10 @@ jobs:
     environment: dev-weu
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
 
       - name: Login to Azure
-        uses: azure/login@v2
+        uses: azure/login@a641126d1b8aa4d1fa005f4f92df94a3a4c4c906 # v3.1.0
         with:
           client-id: ${{ secrets.AZURE_CLIENT_ID }}
           tenant-id: ${{ secrets.AZURE_TENANT_ID }}
@@ -171,14 +173,17 @@ jobs:
     name: Execute on PRO
     if: inputs.environment == 'PRO'
     needs: validate
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
+    permissions:
+      id-token: write
+      contents: read
     environment: prod-weu
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
 
       - name: Login to Azure
-        uses: azure/login@v2
+        uses: azure/login@a641126d1b8aa4d1fa005f4f92df94a3a4c4c906 # v3.1.0
         with:
           client-id: ${{ secrets.AZURE_CLIENT_ID }}
           tenant-id: ${{ secrets.AZURE_TENANT_ID }}

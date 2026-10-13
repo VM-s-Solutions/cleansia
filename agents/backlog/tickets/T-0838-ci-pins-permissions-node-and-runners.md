@@ -16,7 +16,7 @@ security_touching: true
 ## Context
 
 T-0820's review reported three things for Mike: the mutable action tags, the missing `permissions:` blocks and the deploy workflows' Node 20.
-- The CI ground truth of 2026-10-12 confirmed each one against `b405e9cc5` and resolved every ref.
+- The CI ground truth of 2026-10-12 confirmed each one against `db2272a5d` and resolved every ref.
   - The ground truth itself is off-tree, in the Wave F folder: `/Users/michael/.codex/scratchpads/cleansia-wave-f-2026-10-11/p5/phase0/gt_ci.json`.
   - The inventory is `/Users/michael/.codex/scratchpads/cleansia-wave-f-2026-10-11/p5/ci-inventory.json`.
   - Tag lists, `action.yml` at each SHA and the release notes are under `p5/ci-inventory/`.
@@ -27,7 +27,7 @@ T-0820's review reported three things for Mike: the mutable action tags, the mis
 - **"Fix it"** for `ubuntu-latest` moving to Ubuntu 26. This also answers the pin question in T-0813's runtime packet.
 - gradle/actions stays on v5.
 
-At `76e1638a3`:
+At `207d2f319`:
 - **No action is pinned.**
   - All 67 action `uses:` lines across the 13 workflows are on mutable tags, for example `android-ci.yml:45` `actions/checkout@v5`.
   - The two local reusable calls (`deploy-dev.yml:69`, `deploy-pro.yml:72`) are `./` paths.
@@ -38,7 +38,7 @@ At `76e1638a3`:
   - `secret-scan.yml:19-20` already declares `contents: read`.
 - **The deploy workflows run Node 20 action majors:**
   - checkout@v4 (12 uses), setup-node@v4 (3), setup-dotnet@v4, cache@v4 (2), upload-artifact@v4 (9), download-artifact@v4 (5) and azure/login@v2 (10);
-  - Node 20 left the hosted runners on 2026-09-23, so these actions already run forced onto Node 24, with a warning (DEV run 36763660261).
+  - Since 2026-06-16 the runners have run these node20 actions on Node 24 with a warning (DEV run 36763660261, and a deploy-docs job on 2026-08-25). Node 20 left the hosted runners on 2026-09-23, so nothing can opt back out.
 - **Two Node 20 pins:** `deploy-pro.yml:61` and `deploy-docs.yml:18`. Node 20 reached end of life on 2026-04-30. Every other workflow pins 22.
 - **The customer SSR runs on `NODE|20-lts`** (`deploy/bicep/main.bicep:312` → `modules/appService.bicep:80`, `:117`), but it is built on Node 22 (`deploy-azure.yml:217`).
 - **25 jobs run on `ubuntu-latest`.** That label moves to Ubuntu 26.04 between 2026-10-19 and 2026-11-19 (actions/runner-images#14748), and the issue's stated mitigation is the `ubuntu-24.04` label.
@@ -64,7 +64,7 @@ At `76e1638a3`:
 
 2. **Move the deploy workflows onto Node 24 majors:**
    - checkout, setup-node, setup-dotnet and cache go from v4 to v5;
-   - upload-artifact goes from v4 to v6, and download-artifact from v4 to v7. They move together in `deploy-azure.yml`, because v5 and v6 of each still declare node20;
+   - upload-artifact goes from v4 to v6 (its v5 still declares node20), and download-artifact from v4 to v7 (its v5 and v6 still declare node20). The pair moves together in `deploy-azure.yml`;
    - azure/login goes from v2 to v3.
 
    The ground truth checked each major's breaking changes against the inputs we pass, and none applies. webapps-deploy v3.0.8 already runs Node 24. static-web-apps-deploy is a Docker action, so it is only pinned.
@@ -119,10 +119,10 @@ At `76e1638a3`:
 
 ## Acceptance criteria (done looks like)
 
-- [ ] **AC1** — Every external `uses:` is a 40-character SHA with its version comment, matching the table. `grep -nE 'uses: [^.].*@v[0-9]' .github/workflows/*.yml` prints nothing.
-- [ ] **AC2** — Every workflow declares top-level permissions, and the job blocks are as listed. The names of the required `build` checks are unchanged.
-- [ ] **AC3** — No `node-version: 20`, `NODE|20-lts` or `ubuntu-latest` remains under `.github/workflows/` or `deploy/bicep/`. The listed docs and comments say what the files do.
-- [ ] **AC4** — The PR workflows pass on the exact head, with no "Node.js 20" annotation and no new warning.
+- [x] **AC1** — Every external `uses:` is a 40-character SHA with its version comment, matching the table. `grep -nE 'uses: [^.].*@v[0-9]' .github/workflows/*.yml` prints nothing.
+- [x] **AC2** — Every workflow declares top-level permissions, and the job blocks are as listed. The names of the required `build` checks are unchanged.
+- [x] **AC3** — No `node-version: 20`, `NODE|20-lts` or `ubuntu-latest` remains under `.github/workflows/` or `deploy/bicep/`. The listed docs and comments say what the files do.
+- [x] **AC4** — The PR workflows pass on the exact head, with no "Node.js 20" annotation and no new warning.
 - [ ] **AC5** — Validation is done or recorded:
   - deploy-pro has had its static review, and its two scripts pass on Node 22;
   - execute-sql's DEV job passes the read-only health check;
@@ -131,7 +131,67 @@ At `76e1638a3`:
 ## Work record
 
 - 2026-10-12 — Filed from the CI ground truth and the CI security review of 2026-10-12. Mike: "Fix" and "Fix it" (2026-10-12); gradle/actions stays on v5.
+- 2026-10-12 — Implemented on `fix/post-e-p7-ci-hardening`, one commit per item, except that item 7's comments rode with items 2 and 6:
+  - `d006726` (item 1) pins every remote action;
+  - `a8d6fd4` (item 2) moves the deploy workflows to the Node 24 majors;
+  - `f79cfa2` (item 3) sets Node 22;
+  - `c90e7c4` (item 5) applies least privilege;
+  - `fce8eef` (item 4) runs the SSR on `NODE|22-lts`;
+  - `1efe682` (item 6) pins every Ubuntu job to `ubuntu-24.04`;
+  - `bb4b8c7` (item 7) updates the docs. The five `ubuntu-latest` comments went in with `1efe682`, and deploy-azure.yml's header comment with `a8d6fd4`;
+  - after review, `9b7c6ab` drops deploy-docs' `repo_token`, and `bf383ed` corrects one docs sentence.
+  - **Static validation; no workflow was dispatched and nothing was deployed.** A validator script in scratch (`p5/p7-ci-hardening/scripts/` and `p5/p7-ci-fixpass/` in the off-tree Wave F folder) passes 4,646 checks at the head, with 0 failures:
+    - all 13 workflows parse;
+    - the 67 remote `uses:` lines carry 11 distinct SHAs, each the peeled commit of the tag in its comment, from a fresh `git ls-remote` on 2026-10-12;
+    - no input a step passes was removed or renamed across any major bump (each `action.yml` compared at both commits);
+    - every job with steps holds `id-token: write` only if it runs azure/login, and `contents: read` only if it checks out. The two calls into deploy-azure, deploy-dev's and deploy-pro's `deploy`, hold both, as the ceiling for its jobs;
+    - no `node-version: 20`, `NODE|20-lts` or `ubuntu-latest` remains (25 jobs on `ubuntu-24.04`, one on `macos-latest`), and the four `build` jobs are unchanged.
+  - `bicep build deploy/bicep/main.bicep` and `build-params` for both stages exit 0. The ARM output differs only in the SSR runtime, the module description and the template hashes.
+  - deploy-pro had a static review. On Node 22, `check-legal-drafts.test.mjs` passes 19/19, and the gate itself exits 1 by design, because all 35 seeded texts are drafts.
+  - At the head, check-docs-refs finds 0 unresolved, and check-catalog-claims and booking-policy parity are OK. The docs build passed at `bb4b8c7`, and was not rerun after `bf383ed`'s one-word change; Docs CI on the PR head builds it.
+  - azure/login is pinned to v3.1.0, the newest v3 and what `@v3` resolves to today, not the literal first Node 24 release, v3.0.0.
+  - Before push, five commit messages were corrected by plumbing, with every tree unchanged:
+    - `d006726`: the inputs in static-web-apps' warning, and why its comment is `# v1`;
+    - `a8d6fd4`: where the Node 20 warning was observed;
+    - `c90e7c4`: when the default token applies, which jobs the old grants reached, which step needs a token scope, which token a same-run artifact download uses, and its closing sentence;
+    - `9b7c6ab`: that it ends only the explicit hand-off of the token, what the static-web-apps container is still given (the workspace's read-only token), and what the permissions commit said about `repo_token`;
+    - the filing commit: which branches carry it, and where S8 cites T-0837.
+- **Owed:**
+  - **The execute-sql DEV health check.** It is read-only and not a deployment. This program did not run it, because it ran nothing against DEV.
+  - **Waiting for Mike's explicit approval, because each is a deployment:**
+    - a full DEV deploy, the only run that exercises deploy-dev's and deploy-azure's changes and the SSR's `NODE|22-lts`;
+    - a deploy-docs dispatch, the only run of deploy-docs' changes.
+  - deploy-pro's changes, deploy-azure's production-only steps and execute-sql's execute-pro job run on none of these before production. They have the static review only.
+
+  No DEV deploy has run since 2026-09-30, so the first one also carries the ten deploy-pipeline commits made since then.
+- 2026-10-13 — Shipped in [#326](https://github.com/VM-s-Solutions/cleansia/pull/326).
+  - Exact-head CI on `3a0582b` passed all 9 check runs with no re-run: Backend, Frontend and e2e-smoke, Android, iOS, Docs, iOS Symbols, booking-policy parity and Secret scan.
+  - Every job ran this PR's own definitions: pinned actions, least-privilege permissions and `ubuntu-24.04`.
+  - Merged normally with the SHA guard as `52f1049`. No deploy ran: deploy-dev, deploy-pro, deploy-docs and execute-sql have no run since the merge.
+  - Evidence: `raw/ci/p7-pr326-ci-merge-closure-001.json` (sha256 `abec0bec…`) in the off-tree Wave F folder.
+  - **AC4.**
+    - No annotation names Node.js 20.
+    - The `ubuntu-latest` migration notice is gone from every Ubuntu job; #323's run carried it.
+    - No Ubuntu job gained an annotation.
+    - The iOS job shows GitHub's macOS capacity notice and a different capped sample of the same compiler warnings. Both runs used Xcode 26.6 (17F113), and both logs carry the `nonisolated(unsafe)` warning 12 times.
+  - T-0838 stays in progress for AC5: the execute-sql DEV check, a DEV deploy and a deploy-docs dispatch.
 
 ## Review
 
-Pending.
+- **Correctness: changes requested, then fixed.**
+  - B1: deploy-docs still passed `repo_token`. `9b7c6ab` drops it.
+  - B2: `ci-cd.md` said no Azure credential is stored. `bf383ed` says no Azure client secret.
+  - The message corrections above.
+  - Everything else passed on the reviewer's own runs, including 67 of 67 pins re-resolved.
+- **Security: pass**, on `bb4b8c7`'s tree, before the two review fixes; it had itself recommended one of them, dropping `repo_token`. Every pin is a commit on an upstream tag. No permission is broader than master or the plan. No secret is newly exposed, and no trigger changed.
+- **Reported, not fixed:**
+  - Nothing in CI guards the pins, the permissions or the runner label. T-0849 carries Dependabot only.
+  - The living docs' workflow line citations were already off at base, and this branch shifts them by three lines (for example `security-rules.md:408` and `:650`, which cite `backend-ci.yml:69-71` and `:69-74`, the NuGet cache step at base).
+  - Pre-existing docs drift:
+    - `deploy/AZURE-DEV-RUNBOOK.md:7` names the agents as authors, against CLAUDE.md;
+    - `ci-cd.md` still describes the B1 plan tier and sequential deploys;
+    - its Required Secrets table names the static-web-apps tokens with a stage suffix that `deploy-azure.yml` does not read;
+    - `azure-setup.md` says B1, and `overview.md` says Angular 19.
+  - execute-sql's two azure/login steps sign in to Azure, but no later step calls `az`. Deleting them is listed under NOT doing for Mike.
+  - deploy-docs still hands the run's token, now read-only, to checkout and setup-node through their defaults. Checkout leaves it in the workspace's `.git/config`, which the static-web-apps container mounts. `persist-credentials: false` is under NOT doing for Mike.
+  - SEC-CI-1 to SEC-CI-5, and SEC-CI-6's repository default-token setting, are T-0848. This branch's permission blocks close SEC-CI-6's workflow half.

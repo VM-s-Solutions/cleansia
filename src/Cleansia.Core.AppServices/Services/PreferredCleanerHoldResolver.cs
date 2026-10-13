@@ -105,7 +105,7 @@ public sealed class PreferredCleanerHoldResolver(
     {
         try
         {
-            var busy = await orderRepository.GetBusyEmployeeIdsInWindowAsync(
+            var busy = await orderRepository.GetBusyEmployeeIdsInWindowIgnoringTenantAsync(
                 [preferredEmployeeId],
                 cleaningUtc,
                 cleaningUtc.AddMinutes(estimatedMinutes),

@@ -72,7 +72,7 @@ open  ⟺  PreferredHoldUntilUtc == null          // never held
   category mute makes D4's own rule false (ADR-0036 CH-P4).
 - `BookingPolicy.ComputePreferredHold(cleaningUtc, nowUtc)` — the pure window function. Floor is
   `2 * StandardLeadTimeHours`; fraction `0.10`; ceiling `12 h`.
-- **[ADR-0039] `IOrderRepository.GetBusyEmployeeIdsInWindowAsync(ids, startUtc, endUtc, ct)`** — the
+- **[ADR-0039] `IOrderRepository.GetBusyEmployeeIdsInWindowIgnoringTenantAsync(ids, startUtc, endUtc, ct)`** — the
   slot-conflict answer. **The picker (`GetMyServingCleaners`) calls the same method with the same
   window**; if the two ever diverge the feature has already failed. **Never** call
   `HasOverlappingOrderAsync` in a loop **on a request path**. The busy read is **tenant-ignoring on
@@ -96,6 +96,10 @@ open  ⟺  PreferredHoldUntilUtc == null          // never held
   >    by shipped seed data (the catalog produces 58.25 h).
   > 3. **There is NO `GetBusyEmployeeIdsInWindowIgnoringTenantAsync`.** It would have zero callers on
   >    the day it shipped. Adding one without a caller in hand is a finding.
+  >
+  >    *(2026-10-12, T-0833: the one set method has read every company since 2026-09-16 and is now named
+  >    `GetBusyEmployeeIdsInWindowIgnoringTenantAsync` (ADR-0074); item 3 stands — there is one set method
+  >    and no scoped sibling.)*
 - **[ADR-0039 · panel] `BookingPolicy.MaxBookableOrderSpanHours` (24 h) — the ENFORCED span cap.**
   `Order.MaxOrderSpanHours` is a query safety margin that is only safe while nothing produces a longer
   order, and **nothing enforced that**: no cap on a service's estimate, on the item count, or on
@@ -142,7 +146,7 @@ open  ⟺  PreferredHoldUntilUtc == null          // never held
   behind, which makes consulting it here even less defensible than it already was.
 - **[ADR-0039] ~~The TIME CONFLICT~~ — this is now KNOWN, and knowing it is the point.** The resolver
   **does** consult the cleaner's slot conflict at the booking's own date and time, via
-  `IOrderRepository.GetBusyEmployeeIdsInWindowAsync` — **the same call the picker makes, with the same
+  `IOrderRepository.GetBusyEmployeeIdsInWindowIgnoringTenantAsync` — **the same call the picker makes, with the same
   window.** Busy ⇒ `HoldDeclineReason.CleanerBusyAtCleaningTime` ⇒ **no hold AND no push** (D5.1's own
   rule: *"a hold for a cleaner `TakeOrder.cs:53` would reject is pure latency — and so is a push"*).
   What the resolver still does **not** know: whether the cleaner will *become* busy after creation.

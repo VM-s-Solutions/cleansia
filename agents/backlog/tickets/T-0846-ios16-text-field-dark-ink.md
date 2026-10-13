@@ -15,7 +15,7 @@ security_touching: false
 
 ## Context
 
-This comes from open question 2 of the catalog item in the 2026-10-12 native design ruling. The ruling is off-tree, in the Wave F folder: `/Users/michael/.codex/scratchpads/cleansia-wave-f-2026-10-11/p5/phase0/architect_native-lead.json`. **This is unverified: a render check decides.** Lines are as of `76e1638a3`.
+This comes from open question 2 of the catalog item in the 2026-10-12 native design ruling. The ruling is off-tree, in the Wave F folder: `/Users/michael/.codex/scratchpads/cleansia-wave-f-2026-10-11/p5/phase0/architect_native-lead.json`. **This is unverified: a render check decides.** Lines are as of `207d2f319`.
 
 - **The cause, from T-0829.** On the iOS 16 floor, `UIColor(Color)` keeps only a dynamic colour's light value. That holds under `resolvedColor(with:)`, under `performAsCurrent` and in dark appearance alike. From iOS 17 on, it keeps both values.
 - **Where it may bite.**

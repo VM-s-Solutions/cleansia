@@ -51,9 +51,11 @@ NotRetractable(o) ⟺ o.PaymentStatus == Paid
 | `IsOfferable(OrderStatus?, PaymentType, PaymentStatus, string? recurringTemplateId, DateTime? customerConfirmedAt)` | in-memory form, for the `TakeOrder` write gate. **Five scalars, all columns on `Order`** — no navigation properties, no I/O, no collaborator. `IsOfferable(Order)` is the overload for callers that hold the entity; the take's probe projects the five columns. |
 
 **`NotRetractable` is the union of the negations of the two sweeps that actually run**, read off their
-own `WHERE` clauses — `CleanupStalePendingOrders` (**no `OrderStatus` term**) and
-`AutoCancelStaleRecurringOrders` (a `PaymentType` term only for the cash confirmation: cash is
-retractable while `CustomerConfirmedAt` is null). If a third scheduled retractor
+own `WHERE` clauses — `CleanupStalePendingOrders` and `AutoCancelStaleRecurringOrders` (a `PaymentType`
+term only for the cash confirmation: cash is retractable while `CustomerConfirmedAt` is null). Both also
+carry a terminal-status term — not `Cancelled` (`CleanupStalePendingOrders.cs:97`), and not `Cancelled` or
+`Completed` (`AutoCancelStaleRecurringOrders.cs:75-76`) — which the status conjunct above already
+excludes, so `NotRetractable` does not change for it. If a third scheduled retractor
 is ever added, **this term is where it must be reflected** — a sweep whose predicate is not negated
 here silently re-creates the defect the panel caught.
 

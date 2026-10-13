@@ -489,15 +489,14 @@ is ordinary work for whoever changes the model, paired with the DEV database dro
 integration suite — owner rulings 2026-08-15, 2026-08-25 and 2026-09-07; nothing here is a manual
 step any more.
 
-Today that file is **`20260920204705_Initial`**, regenerated on 2026-09-20 to drop what nothing read:
-the employee availability schedule (`Employees.Availability`), `Employees.PreferredCurrencyCode`, the
-`Carts` / `CartServiceItems` / `CartPackageItems` trio and `EmailTranslations` — **84 tables**, 48 of
-them stamped with a `Tenants` foreign key (`TenantId` NOT NULL on 46; `OutboxMessages` and
-`DeadLetters` nullable). It replaced `20260919231739` (the contract for work,
-[ADR-0068](/decisions/adr-0068), 88 tables) and `20260919142517` (the administrator roles,
-2026-09-19); the chain of regenerations before that — the per-currency schema of
-2026-09-12, the customer audit and legal documents, the tenant FK, the company lifecycle, the status
-concurrency token, the recurring pause state — is kept in `agents/cleanup/MANUAL_STEPS.md` MS-2.
+Today that file is **`20261012190449_Initial`**, regenerated on 2026-10-12 when `Orders.PaymentStatus`
+became the order's second concurrency token beside `CurrentStatus` ([ADR-0071](/decisions/adr-0071)). That
+is model metadata with no DDL: the migration body is byte-identical to the `20261005201452` it replaced, and
+only the Designer and the snapshot changed. **89 tables**, 53 of them stamped with a `Tenants` foreign key
+(`TenantId` NOT NULL on 51; `OutboxMessages` and `DeadLetters` nullable). The chain of regenerations before
+it — the per-currency schema of 2026-09-12, the customer audit and legal documents, the tenant FK, the
+company lifecycle, the status concurrency token, the recurring pause state, the contract for work, the
+receivables and the settlement snapshots — is kept in `agents/cleanup/MANUAL_STEPS.md` MS-2.
 Regenerating changes the migration id, so a DEV database whose `__EFMigrationsHistory` records an
 older id replays the whole create script against tables that already exist — drop it before the
 first start against the new file (MS-2 names the id the owed drop belongs to).

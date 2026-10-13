@@ -61,6 +61,21 @@ public class DeviceRepository(CleansiaDbContext context, IUserSessionProvider us
         GetDbSet().RemoveRange(rows);
     }
 
+    public async Task<IReadOnlyList<Device>> GetOtherUsersActiveByDeviceAndTokenIgnoringTenantAsync(
+        string exceptUserId, string deviceId, string deviceToken, CancellationToken cancellationToken)
+    {
+        // An empty token pins nothing: the device id alone can be Android's fallback, which every handset of
+        // one model shares, and a token-less row routes no push to take over.
+        if (string.IsNullOrWhiteSpace(deviceToken))
+        {
+            return [];
+        }
+
+        return await GetQueryableIgnoringTenant()
+            .Where(d => d.DeviceId == deviceId && d.DeviceToken == deviceToken && d.UserId != exceptUserId && d.IsActive)
+            .ToListAsync(cancellationToken);
+    }
+
     public override void Deactivate(Device entity)
     {
         var actorId = userSessionProvider?.GetUserId();

@@ -482,6 +482,35 @@ Any change to the list shape must keep `OrderListProjectionEquivalenceTests` (JS
 against the retained entity-mapper path) green — that test is the contract that the projection
 and the entity path emit identical DTO values.
 
+## Order writes compare both lifecycle axes, and `Orders` is written only through the change tracker (ADR-0071)
+
+> **LAW.** ADR-0071 `accepted` 2026-10-12. Living doc: `agents/architecture/decisions/order-concurrency.md`.
+
+An order moves on two axes, fulfilment (`CurrentStatus`) and payment (`PaymentStatus`), and both are EF
+concurrency tokens (`OrderEntityConfiguration`). Every tracked UPDATE of an order compares both, so a writer that
+decided on the order as it read it — a cancel, a sweep, a take, a cash collection — is refused with
+`DbUpdateConcurrencyException` when either axis has moved since, instead of overwriting it. A refusal is the token
+working: the unit fails, and a retry reads the new state. The one write that reads again instead is derived rather
+than decided — `RefundService.SettleAsync` reloads the order and saves its payment status again only when the
+refused save names the order alone, nothing but `PaymentStatus`, `UpdatedOn` and `UpdatedBy` is staged on it, and the
+order is still on the fulfilment status it read (ADR-0071 D2). Not `xmin`: a row version would also refuse writes to
+every unrelated column of the busiest row, and `TakeOrder` turns any conflict into `order.no_available_spots`.
+
+**The tokens hold only for writes the change tracker issues, so `Orders` is written only through it.** Load the order
+tracked and let the unit of work commit it. Never an `ExecuteUpdate`/`ExecuteDelete` from the orders set (`.Orders`,
+`Set<Order>()`, an order repository), and never a raw `UPDATE` or `DELETE` of `"Orders"`: either one writes the row
+without comparing a token, and commits outside the caller's unit of work.
+
+**Enforced by:** `src/Cleansia.Tests/Infrastructure/OrderConcurrencyTokenTests.cs` — the model check (the order's
+tokens are exactly the two axes) and the source guard `Orders_Are_Written_Only_Through_The_Change_Tracker` —
+**`T1-CI`**. *(The guard's scope: every `.cs` file of the production projects under `src/`, no test project and no
+`Migrations/`. It fails a raw `UPDATE`/`DELETE` of `Orders` anywhere but in a full-line comment, an
+`ExecuteUpdate`/`ExecuteDelete` chained in one statement from `.Orders`, `Set<Order>()` or an order repository, and
+any such call inside `OrderRepository.cs`. It does not see a bulk call on a query held in a variable from an earlier
+statement, or SQL assembled at runtime — the grep in `docs/architecture/security-rules.md` §S8 still finds those.
+Its anchors: `OrderRepository.cs` and `EmployeeActionAuditRepository.cs` are in the corpus, the latter's
+`SELECT … FROM "Orders" … FOR UPDATE` passes, known-bad samples are caught and known-good ones are not.)*
+
 ## A DISCLOSURE BLOCK is withheld by the server when its sentence stops being true (ADR-0049)
 
 > **Enforced by:** `src/Cleansia.Tests/Features/Orders/PreferredOfferDisclosureTests.cs` (backend CI,
@@ -1101,6 +1130,77 @@ false negative, not noise — the report stays clean and stops seeing anything. 
 amount instead of the id, never in addition to it** (an `AND id IS NOT NULL` re-introduces the
 blindness). So: *an order with a discount **amount** stamped and no matching ledger row.*
 
+## Customer credit locks: the order-ending return joins the ending commit, and several are taken in ordinal order (ADR-0073)
+
+> **LAW.** ADR-0073 `accepted` 2026-10-12. Living doc:
+> `agents/architecture/decisions/order-concurrency.md`.
+
+`CreditUnwind.ReturnUnpaidOrderCreditAsync` takes the customer's owner lock
+(`ICreditAccountRepository.LockForUserAsync`) before it reads or returns anything. The lock opens the unit of
+work's lock transaction when none is open, `TryReturnAsync` joins it, and the commit that ends the order
+commits the return or rolls it back with everything else — §"Post-persist" above, applied to the credit an
+order gives back. A caller therefore holds that customer's lock from the return until its commit, and needs
+no transaction of its own.
+
+**A unit that holds several customers' credit locks until one commit takes them in ordinal `UserId`
+order** — an `OrderBy(…UserId, StringComparer.Ordinal)` ahead of the loop that locks, as the referral grant
+(`ReferralService`), its reversal (`ReverseReferral`) and a company's group in `CleanupStalePendingOrders`
+do. Two units that hold the same customers then never each wait on a lock the other holds. A unit that can
+commit per customer does that instead and holds one lock at a time (`ExpireStaleCredit`).
+**Known exception, accepted:** `CompleteOrder` locks the completing customer (its loyalty grant) and then the
+referrer (the referral award), whatever their ordinal order — ADR-0073's named residual. A cycle with a
+company's group aborts one side with 40P01, and both roll back whole.
+
+**Enforced by:** `CleanupStalePendingOrdersTwoOperatorsTests.A_Company_Takes_Its_Customers_Credit_Locks_In_Ordinal_User_Order`,
+for the Cleanup group — `T1-CI`; for the next unit that holds several customers' locks,
+`runtime-readiness.md` checklist item 8 — `T3-HUMAN`. *(Not mechanizable: which locks a unit still holds
+when it takes the next one depends on where its commits fall, across services, not on text. Apart from the
+named `CompleteOrder` exception the baseline is zero.)*
+
+## One scope per job item, and per command on a shared timer (ADR-0072)
+
+> **LAW.** ADR-0072 `accepted` 2026-10-12. Living doc: `agents/architecture/decisions/system-jobs.md`.
+
+**A job whose items must fail independently gives each item its own DI scope.** The dispatcher reads ids only,
+then for each: `cancellationToken.ThrowIfCancellationRequested()`, `await using var scope =
+serviceScopeFactory.CreateAsyncScope()`, and `Send` of the item's command — a nested record named `Command`, so
+the pipeline commits it inside that scope. An `OperationCanceledException` while cancelled is rethrown; any other
+exception, and any failure result, is logged at **Error** and counted in the response. The item's handler reads
+its row again, checks again that it still qualifies, runs under that row's company, and **does not catch**:
+whatever fails leaves with its scope. References: `MaterializeRecurringBookings` →
+`MaterializeRecurringBookingTemplate`, `AutoCancelStaleRecurringOrders` → `AutoCancelRecurringOccurrence`,
+`RetryFailedUserDeletions` → `AdminRetryUserDeletion`. The last two leave their commit to the pipeline inside the
+item's scope, as any handler does. **`MaterializeRecurringBookingTemplate` commits itself** — a pause notice, a
+marker alone, or its occurrences with their marker once it has switched the tenant override to the market's
+operator — because a new row is stamped from the tenant ambient at commit time; the comment at its last commit
+gives the reasons. It is a known exception to the handler rule, not a form to copy.
+
+**A loop never continues past a failed commit, or past staging that a later commit in the same scope will save —
+with or without `Rollback()`.** A failed `CommitAsync` leaves every tracked entry as it was, so the failed item's
+changes ride the next item's commit or the pipeline's; `Rollback()` turns an `Added` row into an `Unchanged`
+phantom and leaves the outbox keys it staged behind; and since ADR-0073 a refused commit has rolled back the
+credit its order returned, so its leftovers commit without it. A row-driven job that commits once per company,
+like `CleanupStalePendingOrders`, has no catch at that commit: a refused company ends the run, and the next run
+takes it again.
+
+**A timer that carries several commands sends each from its own scope, then rethrows.** Each command goes
+through a mediator taken from `scopeFactory.CreateAsyncScope()`. An `OperationCanceledException` while the host
+is stopping is rethrown at once; any other exception is logged at Warning, naming the command, and the next
+command runs; after the last, one failure is rethrown as itself and several as an `AggregateException`, so the
+invocation still fails. A failure result is logged at Error and never thrown.
+
+**Enforced by:**
+- the item rule — one scope per item, so a failing item holds back no other: `RecurringSweepPerTemplateIsolationTests`
+  and `RecurringAutoCancelPerOrderIsolationTests` assert exactly that for the two dispatchers — `T1-CI` (closed
+  roster: those two); for every other job, `runtime-readiness.md` checklist item 8 — `T3-HUMAN`. *(Not
+  mechanizable: a regex finds a `catch` in a loop, but cannot tell a catch over a commit, or over staging a later
+  commit saves, from a catch over a read or a send. The baseline is not zero: the shipped deviations are listed in
+  `consistency.md` §"A loop that continues past a failed commit in a shared scope".)* Where an item's handler
+  commits is the handler rule's question, not this entry's; neither test checks it.
+- the timer rule: `TimerCommandIsolationTests` — the two handlers' behaviour, and a source guard that fails any
+  handler under `src/Cleansia.Functions.Core/Handlers` with two or more `Send(` calls and no
+  `CreateAsyncScope` — `T1-CI`.
+
 ## Fail-soft is admissible only over an operation that normally SUCCEEDS (ADR-0038 §D8)
 
 > **LAW.** ADR-0038 `accepted` 2026-08-03.
@@ -1388,7 +1488,7 @@ When a rule must give one actor **temporary exclusive access** to a work item on
 > **LAW — ADR-0039 is `accepted`.** Its status line reads *"`accepted` — **2026-08-03, by the lead of
 > the defense panel**"* after two challenge lanes (disclosure `CH-D1…D9`, query-cost `CH-Q1…Q7`) and
 > eleven amendments
-> (`docs/decisions/adr-0039.md:3-9`).
+> (`docs/decisions/adr-0039.md:3-16`).
 > **Retires when:** that status line stops reading `accepted`.
 > *(This block said "PROPOSED — not yet law … `proposed` and unchallenged as of 2026-08-03" until
 > 2026-08-09 — the ADR was accepted the same day the banner was written, and a sibling card
@@ -1414,7 +1514,7 @@ free at this hour?"*, *"which of these are over their limit?"* — the singular 
 already exists is the wrong tool, and calling it in a loop is the defect, not the shortcut:
 
 - **The set-based method is the seam, and it takes the set.** `Task<IReadOnlySet<string>>
-  GetBusyEmployeeIdsInWindowAsync(ids, startUtc, endUtc, ct)` — **return the positive subset (the
+  GetBusyEmployeeIdsInWindowIgnoringTenantAsync(ids, startUtc, endUtc, ct)` — **return the positive subset (the
   "busy" ones), not the free ones**, so "absent from the result" is the fail-**open** default and an
   empty/failed answer degrades to today's behaviour rather than to a lie.
 - **Share the predicate, not the terminal call** (ADR-0039 D3.2 as amended). Two predicates answering

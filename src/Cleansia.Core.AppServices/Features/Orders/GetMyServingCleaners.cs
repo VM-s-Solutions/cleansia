@@ -155,7 +155,7 @@ public class GetMyServingCleaners
                     return null;
                 }
 
-                return await orderRepository.GetBusyEmployeeIdsInWindowAsync(
+                return await orderRepository.GetBusyEmployeeIdsInWindowIgnoringTenantAsync(
                     employeeIds, cleaningUtc, cleaningUtc.AddMinutes(estimatedMinutes), cancellationToken);
             }
             catch (DbException ex)

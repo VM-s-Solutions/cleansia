@@ -77,11 +77,13 @@ more. Two producers stopped writing it:
 > **replaces** — remove then add, never a release. An order past `Confirmed` is never walked back: a
 > drop at `OnTheWay` or `InProgress` leaves the status where it is (a cleaner may be in the home) and
 > the company's administrators are told instead. A drop is checked against the order's status at
-> commit (since 2026-10-05: it touches the order row, so the `CurrentStatus` token is compared), so a
+> commit (since 2026-10-05: it touches the order row, so the order's tokens are compared — `CurrentStatus`,
+> and since 2026-10-12 `PaymentStatus`, [ADR-0071](/decisions/adr-0071)), so a
 > drop racing a status change — a lockout confirmed in the same instant — is refused and the seat keeps
 > the lockout reward. Two releases racing on one order can still leave
-> `Confirmed` with nobody on it — `CurrentStatus` is the only concurrency token and neither commit
-> changes it — which is why every sweep, reminder and validator keeps reading `AssignedEmployees`:
+> `Confirmed` with nobody on it — the order's two tokens are `CurrentStatus` and `PaymentStatus`, and
+> neither release commit changes either — which is why every sweep, reminder and validator keeps
+> reading `AssignedEmployees`:
 > **the crew is the fact, the status its summary.** `CancellationAssessor` does exactly that, and did
 > so even before the split. → [Business rules — when the last cleaner leaves](/product/business-rules#crew-lost)
 

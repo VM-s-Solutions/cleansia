@@ -19,6 +19,14 @@ public interface IRefundRepository : IRepository<Refund, string>
     Task<decimal> GetSucceededRefundTotalForOrderAsync(string orderId, CancellationToken cancellationToken);
 
     /// <summary>
+    /// Sum of an order's succeeded refund amounts, leaving out the row keyed <paramref name="exceptRefundKey"/>:
+    /// the refund being settled is added by its settle, and a settle of the same key that committed first has
+    /// already recorded it as succeeded.
+    /// </summary>
+    Task<decimal> GetSucceededRefundTotalForOrderAsync(
+        string orderId, string exceptRefundKey, CancellationToken cancellationToken);
+
+    /// <summary>
     /// Sum of an order's pending refund amounts, leaving out the row keyed <paramref name="exceptRefundKey"/>:
     /// the refund being re-driven is not owed on top of itself.
     /// </summary>
@@ -33,7 +41,7 @@ public interface IRefundRepository : IRepository<Refund, string>
     Task<decimal> GetPendingRefundTotalClaimedBeforeAsync(Refund refund, CancellationToken cancellationToken);
 
     /// <summary>
-    /// The batch form of <see cref="GetSucceededRefundTotalForOrderAsync"/>: Σ succeeded refund amounts
+    /// The batch form of <see cref="GetSucceededRefundTotalForOrderAsync(string, CancellationToken)"/>: Σ succeeded refund amounts
     /// per order, any date, keyed by order id; an order with none is absent. The card leg only — the
     /// credit share of a refund is a <c>CreditTransaction</c>, read by
     /// <c>ICreditAccountRepository.GetReturnedTotalsByOrderAsync</c>.

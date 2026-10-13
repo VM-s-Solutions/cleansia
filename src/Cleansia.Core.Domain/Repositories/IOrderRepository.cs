@@ -113,7 +113,7 @@ public interface IOrderRepository : IRepository<Order, string>
     /// The cleaners who are, RIGHT NOW, physically on a job — <c>OnTheWay</c> or <c>InProgress</c> on
     /// some assignment, with no time window at all.
     ///
-    /// <para><b>Deliberately not <see cref="GetBusyEmployeeIdsInWindowAsync"/>.</b> That set is the
+    /// <para><b>Deliberately not <see cref="GetBusyEmployeeIdsInWindowIgnoringTenantAsync"/>.</b> That set is the
     /// overlap question and includes <c>Confirmed</c>, so it answers "does this cleaner hold a
     /// commitment here" — which is true of every cleaner the not-started nudge is about, and using it
     /// would suppress the nudge for everyone. This answers the different question the nudge actually
@@ -173,7 +173,7 @@ public interface IOrderRepository : IRepository<Order, string>
     /// asking about ONE cleaner over many windows has
     /// <see cref="GetOverlappedCandidateIdsIgnoringTenantAsync"/>.</para>
     /// </summary>
-    Task<IReadOnlySet<string>> GetBusyEmployeeIdsInWindowAsync(
+    Task<IReadOnlySet<string>> GetBusyEmployeeIdsInWindowIgnoringTenantAsync(
         IReadOnlyCollection<string> employeeIds,
         DateTime windowStartUtc,
         DateTime windowEndUtc,
@@ -183,7 +183,7 @@ public interface IOrderRepository : IRepository<Order, string>
     /// ADR-0039 D3.3 — which of <paramref name="candidates"/> clash with a live-commitment assignment
     /// <paramref name="employeeId"/> already holds, each over its own
     /// <c>[CleaningDateTime, +EstimatedTimeMinutes)</c>: the one-employee, many-windows shape of the window
-    /// filter <see cref="HasOverlappingOrderAsync"/> and <see cref="GetBusyEmployeeIdsInWindowAsync"/>
+    /// filter <see cref="HasOverlappingOrderAsync"/> and <see cref="GetBusyEmployeeIdsInWindowIgnoringTenantAsync"/>
     /// share. Returns the CLASHING ids, so absence is the fail-OPEN default.
     ///
     /// <para>ONE read however many candidates: the employee's live commitments over
@@ -207,7 +207,7 @@ public interface IOrderRepository : IRepository<Order, string>
     /// customer who was told someone was considering their booking.
     ///
     /// <para>A fourth TERMINAL SHAPE over the one window filter <see cref="HasOverlappingOrderAsync"/>
-    /// and <see cref="GetBusyEmployeeIdsInWindowAsync"/> share — never a second overlap predicate,
+    /// and <see cref="GetBusyEmployeeIdsInWindowIgnoringTenantAsync"/> share — never a second overlap predicate,
     /// which ADR-0039 D3.2 rejects outright. It differs from its siblings in the other half only: they
     /// select on the ASSIGNMENT, this one on the RESERVATION.</para>
     ///

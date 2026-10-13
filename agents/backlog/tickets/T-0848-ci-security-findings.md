@@ -19,7 +19,7 @@ These findings come from the CI security review of 2026-10-12. The review is off
 
 The review passed forks, `pull_request_target` and token use. Its two HIGH findings sit outside the YAML.
 
-Production does not exist yet, so all six findings are latent. SEC-CI-1 and SEC-CI-2 must be closed before production holds a secret or a resource. Workflow lines are as of `76e1638a3`.
+Production does not exist yet, so all six findings are latent. SEC-CI-1 and SEC-CI-2 must be closed before production holds a secret or a resource. Workflow lines are as of `207d2f319`.
 
 | Finding | Severity | Who acts |
 |---|---|---|

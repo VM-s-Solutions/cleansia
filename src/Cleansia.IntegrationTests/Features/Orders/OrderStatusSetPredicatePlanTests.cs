@@ -35,7 +35,7 @@ public sealed class OrderStatusSetPredicatePlanTests(OrderStatusSetPredicatePlan
 
     private const string SpecCompletedDashboard = "OrderSpecification → CreateCompletedOrdersSpec";
     private const string RepoOverlapWriteGate = "LiveCommitmentsInWindow → HasOverlappingOrderAsync";
-    private const string RepoBusySetBoardFloor = "LiveCommitmentsInWindow → GetBusyEmployeeIdsInWindowAsync";
+    private const string RepoBusySetBoardFloor = "LiveCommitmentsInWindow → GetBusyEmployeeIdsInWindowIgnoringTenantAsync";
 
     private static readonly string[] PinnedQueries =
         [SpecCompletedDashboard, RepoOverlapWriteGate, RepoBusySetBoardFloor];
@@ -269,7 +269,7 @@ public sealed class OrderStatusSetPredicatePlanTests(OrderStatusSetPredicatePlan
                     ProbeEmployeeId, WindowStart, 120, CancellationToken.None));
 
             await CaptureAsync(RepoBusySetBoardFloor, async ctx =>
-                BusyEmployeeIds = await new OrderRepository(ctx).GetBusyEmployeeIdsInWindowAsync(
+                BusyEmployeeIds = await new OrderRepository(ctx).GetBusyEmployeeIdsInWindowIgnoringTenantAsync(
                     [ProbeEmployeeId, "emp-plan-other"], WindowStart, WindowStart.AddHours(2),
                     CancellationToken.None));
         }

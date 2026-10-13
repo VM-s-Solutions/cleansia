@@ -1,4 +1,3 @@
-using Cleansia.Core.AppServices.Features.Bookings;
 using Cleansia.Core.AppServices.Features.Orders;
 using Cleansia.Core.AppServices.Services;
 using Cleansia.Core.Domain.Enums;
@@ -13,6 +12,7 @@ using Cleansia.Infra.Common.Configuration.Interfaces;
 using Cleansia.Infra.Database;
 using Cleansia.Infra.Database.Repositories;
 using Cleansia.TestUtilities;
+using Cleansia.Tests.Features.Bookings;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging.Abstractions;
@@ -98,19 +98,7 @@ public sealed class BucketBPerIterationOutboxTests : IDisposable
         await ctx.CommitAsync(CancellationToken.None);
     }
 
-    private async Task RunSweepAsync()
-    {
-        await using var ctx = NewContext();
-        var handler = new AutoCancelStaleRecurringOrders.Handler(
-            new OrderRepository(ctx),
-            new CreditAccountRepository(ctx),
-            new NotificationProducer(new UserNotificationRepository(ctx), new OutboxPendingDispatch(ctx), new UserRepository(ctx), Microsoft.Extensions.Logging.Abstractions.NullLogger<NotificationProducer>.Instance),
-            new FixedTenantProvider(TestTenants.Default),
-            ctx,
-            NullLogger<AutoCancelStaleRecurringOrders.Handler>.Instance);
-
-        await handler.Handle(new AutoCancelStaleRecurringOrders.Command(), CancellationToken.None);
-    }
+    private Task RunSweepAsync() => RecurringAutoCancelSweep.RunAsync(_connection);
 
     private OutboxDrainerService NewDrainer(CleansiaDbContext ctx)
     {

@@ -194,7 +194,7 @@ public sealed class NewJobsDigestPreferredHoldTests : IDisposable
             new NotificationProducer(new UserNotificationRepository(ctx), new OutboxPendingDispatch(ctx), new UserRepository(ctx), Microsoft.Extensions.Logging.Abstractions.NullLogger<NotificationProducer>.Instance),
             tenantProvider,
             ctx,
-            NullLogger<NotifyLapsedPreferredOffers.Handler>.Instance);
+            NullLogger<NotifyLapsedPreferredOffers.Handler>.Instance, TimeProvider.System);
 
         var result = await handler.Handle(new NotifyLapsedPreferredOffers.Command(), CancellationToken.None);
 

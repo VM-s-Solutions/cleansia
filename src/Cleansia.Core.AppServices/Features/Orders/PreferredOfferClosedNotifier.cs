@@ -17,20 +17,19 @@ namespace Cleansia.Core.AppServices.Features.Orders;
 /// </summary>
 public static class PreferredOfferClosedNotifier
 {
-    public static Task NotifyPreferredOfferClosedAsync(
+    public static async Task NotifyPreferredOfferClosedAsync(
         Order order,
         INotificationProducer notificationProducer,
         DateTime nowUtc,
         CancellationToken cancellationToken)
     {
-        order.MarkPreferredOfferLapseNotified(nowUtc);
-
         if (string.IsNullOrEmpty(order.UserId))
         {
-            return Task.CompletedTask;
+            order.MarkPreferredOfferLapseNotified(nowUtc);
+            return;
         }
 
-        return notificationProducer.NotifyAsync(
+        await notificationProducer.NotifyAsync(
             order.UserId,
             NotificationEventCatalog.PreferredOfferClosed,
             new Dictionary<string, string>
@@ -49,5 +48,7 @@ public static class PreferredOfferClosedNotifier
             // is told once per reservation that it ended.
             $"{order.Id}:{order.PreferredOfferRound}",
             cancellationToken);
+
+        order.MarkPreferredOfferLapseNotified(nowUtc);
     }
 }

@@ -1118,6 +1118,9 @@ need backfilling.
   A change committed before that check prevents its cancellation. A concurrent change after the
   check can still race the cancellation claim. (T-0858)
 
+- **Customer — a preferred-offer notice is staged before its lapse stamp.** A failed account-notice
+  read leaves no stamp hiding the notice from a fresh eligible retry. (T-0865)
+
 - **Customer — a signed-in booking uses your account e-mail.** The web form shows that address
   read-only, and the server keeps it even if a request supplies another address. Guest contact
   details and booking names and phone numbers retain their existing rules. (T-0853)

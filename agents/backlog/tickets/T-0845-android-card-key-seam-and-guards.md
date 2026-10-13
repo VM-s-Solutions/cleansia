@@ -17,7 +17,7 @@ security_touching: true
 
 This comes from the 2026-10-12 native design ruling: open questions 1 and 2 of its item on T-0835, and open question 1 of its catalog item. The ruling is off-tree, in the Wave F folder: `/Users/michael/.codex/scratchpads/cleansia-wave-f-2026-10-11/p5/phase0/architect_native-lead.json`.
 
-Keyless builds are debug-only: a release build refuses a blank key (`customer-app/build.gradle.kts:252-262`). Lines are as of `76e1638a3`.
+Keyless builds are debug-only: a release build refuses a blank key (`customer-app/build.gradle.kts:252-262`). Lines are as of `207d2f319`.
 
 - **The key is read inline in six places, with no seam.**
   - `BuildConfig.STRIPE_PUBLISHABLE_KEY` is read at `CleansiaApp.kt:58`, `ConfirmStep.kt:115`, `OrderDetailScreen.kt:582`, `SubscribePlusScreen.kt:100`, `CreateRecurringViewModel.kt:731` and `CreateRecurringScreen.kt:1285`.

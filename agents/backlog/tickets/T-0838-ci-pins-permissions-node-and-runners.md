@@ -16,7 +16,7 @@ security_touching: true
 ## Context
 
 T-0820's review reported three things for Mike: the mutable action tags, the missing `permissions:` blocks and the deploy workflows' Node 20.
-- The CI ground truth of 2026-10-12 confirmed each one against `b405e9cc5` and resolved every ref.
+- The CI ground truth of 2026-10-12 confirmed each one against `db2272a5d` and resolved every ref.
   - The ground truth itself is off-tree, in the Wave F folder: `/Users/michael/.codex/scratchpads/cleansia-wave-f-2026-10-11/p5/phase0/gt_ci.json`.
   - The inventory is `/Users/michael/.codex/scratchpads/cleansia-wave-f-2026-10-11/p5/ci-inventory.json`.
   - Tag lists, `action.yml` at each SHA and the release notes are under `p5/ci-inventory/`.
@@ -27,7 +27,7 @@ T-0820's review reported three things for Mike: the mutable action tags, the mis
 - **"Fix it"** for `ubuntu-latest` moving to Ubuntu 26. This also answers the pin question in T-0813's runtime packet.
 - gradle/actions stays on v5.
 
-At `76e1638a3`:
+At `207d2f319`:
 - **No action is pinned.**
   - All 67 action `uses:` lines across the 13 workflows are on mutable tags, for example `android-ci.yml:45` `actions/checkout@v5`.
   - The two local reusable calls (`deploy-dev.yml:69`, `deploy-pro.yml:72`) are `./` paths.

@@ -652,8 +652,8 @@ pushes the previous account would otherwise keep receiving. The conditions are p
 token is on no DTO and in no log above Debug; an empty token matches nothing; the caller's own rows are
 excluded by the id from its JWT. The device id alone is not a pin — Android's fallback id is the
 manufacturer and model, and the partner and customer apps signed with one key share one. Its contract
-(`IDeviceRepository`) states the caller obligation in so many words: *the server cannot verify the token was
-issued to the caller's install.* The Live Activity tokens are read by
+(`IDeviceRepository`) states the caller obligation: the device id and the push token are the ones the caller's
+own install presented, which the server cannot verify. The Live Activity tokens are read by
 `LiveActivityTokenRepository.GetByUserAndDeviceIgnoringTenantAsync`, which reads every company's rows too and
 has no pin of its own: it inherits this admission and its conditions. Its user id and device id are only ever
 those of a row the device read returned in the same command — *a row id read out of an already-pinned row* — so

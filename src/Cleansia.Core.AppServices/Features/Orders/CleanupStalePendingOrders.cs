@@ -29,8 +29,8 @@ namespace Cleansia.Core.AppServices.Features.Orders;
 ///
 /// Credit a checkout spent comes back in the commit that cancels it. A company
 /// whose commit is refused keeps its orders and their credit as they were, and
-/// the next run takes them again. A payment that lands mid-group is refused at
-/// commit, and the paid order stays paid. → /decisions/adr-0071
+/// the next run takes them again. A payment that lands mid-group gets this
+/// company's commit refused, and the paid order stays paid. → /decisions/adr-0071
 ///
 /// Recurring occurrences are deliberately out of scope — see the query below;
 /// <see cref="Cleansia.Core.AppServices.Features.Bookings.AutoCancelStaleRecurringOrders"/>

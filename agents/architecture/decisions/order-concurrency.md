@@ -61,10 +61,12 @@ Anything else is rethrown as before. Without the retry, the payment-axis token w
 settles after Stripe had paid it; without the token, each saved a status counted without the other's refund.
 
 Each pass sums the confirmed card refunds **without this refund's own key** and adds the refund once. Two settles
-of one key — a partial refund or a dispute's resolution sent twice at once, an administrator's retry of a pending
-refund beside the hourly re-drive — share one row, and the one that commits second would otherwise find that row
-already succeeded and count it twice: 600 back on a paid 1 000 ended `Refunded`, and a later cancellation then
-refunded none of the rest.
+of one key share one row: an administrator's partial or full refund, a dispute's resolution or a guest's own
+cancellation, sent twice at once; or the company wind-down's re-drive of a wound-down order's refund beside the hourly re-drive, or beside
+another delivery of its own message. The one that commits second would
+otherwise find that row already succeeded and count it twice: 600 back on a paid 1 000 ended `Refunded`, and a
+later cancellation then refunded none of the rest. The retry path's ceiling and closure reads still count it
+twice (T-0851).
 
 ## The credit an order gives back when it ends (ADR-0073 D1)
 

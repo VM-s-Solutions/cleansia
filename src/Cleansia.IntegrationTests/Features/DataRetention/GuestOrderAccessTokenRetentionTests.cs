@@ -34,7 +34,8 @@ public class GuestOrderAccessTokenRetentionTests(PostgresContainerFixture fixtur
         await TestMethod(
             setup: services =>
             {
-                services.AddScoped<IDataRetentionBackgroundService, DataRetentionBackgroundService>();
+                services.AddScoped<DataRetentionBackgroundService>();
+                services.AddScoped<IDataRetentionBackgroundService>(sp => sp.GetRequiredService<DataRetentionBackgroundService>());
                 services.Replace(ServiceDescriptor.Singleton(_ => new Mock<IBlobContainerClientFactory>().Object));
                 return Task.CompletedTask;
             },

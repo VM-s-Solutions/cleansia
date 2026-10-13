@@ -1,3 +1,4 @@
+using Cleansia.Core.Domain.Tenancy;
 using Cleansia.Core.AppServices.Features.DataRetention;
 using Cleansia.Core.Blobs.Abstractions;
 using Cleansia.Core.Domain.Auditing;
@@ -210,11 +211,11 @@ public sealed class CustomerActionAuditRetentionTests : IDisposable
             .AddInMemoryCollection(values.Select(v => new KeyValuePair<string, string?>(v.Key, v.Value)))
             .Build();
 
-    private CleansiaDbContext NewContext(ITenantProvider? tenantProvider = null) =>
+    private CleansiaDbContext NewContext(ITenantProvider? tenantProvider = null, IArchiveWriteGate? gate = null) =>
         new(
             new DbContextOptionsBuilder<CleansiaDbContext>().UseSqlite(_connection).Options,
             new TestUserSessionProvider("system", "system@cleansia.test"),
-            tenantProvider ?? new FixedTenantProvider(TestTenants.Default));
+            tenantProvider ?? new FixedTenantProvider(TestTenants.Default), gate);
 
     private async Task EnsureSchemaAsync()
     {
@@ -235,9 +236,10 @@ public sealed class CustomerActionAuditRetentionTests : IDisposable
     /// </summary>
     private async Task RunSweepAsync(IConfiguration configuration)
     {
-        var tenantProvider = new FixedTenantProvider(null);
-        await using var ctx = NewContext(tenantProvider);
-        await NewSweep(ctx, tenantProvider, configuration).RunAllRetentionTasksAsync(CancellationToken.None);
+        await using var services = DataRetentionTestServices.Create(NewContext,
+            new DataRetentionConfig(configuration), _blobClientFactory.Object, _ => _configProvider.Object);
+        await using var scope = services.CreateAsyncScope();
+        await scope.ServiceProvider.GetRequiredService<IDataRetentionBackgroundService>().RunAllRetentionTasksAsync(CancellationToken.None);
     }
 
     private static CustomerActionAudit Row(DateTimeOffset occurredOn, string? userId, string resourceId)
@@ -251,35 +253,6 @@ public sealed class CustomerActionAuditRetentionTests : IDisposable
         return row;
     }
 
-    private DataRetentionBackgroundService NewSweep(CleansiaDbContext ctx, ITenantProvider tenantProvider, IConfiguration configuration)
-    {
-        var session = new TestUserSessionProvider("system", "system@cleansia.test");
-        return new DataRetentionBackgroundService(
-            new UserRepository(ctx),
-            new DeviceRepository(ctx, session),
-            new GdprRequestRepository(ctx),
-            new OrderRepository(ctx),
-            new UserConsentRepository(ctx),
-            new EmployeeDocumentRepository(ctx),
-            new UserNotificationRepository(ctx),
-            new CustomerActionAuditRepository(ctx),
-            new DisputeRepository(ctx),
-            new WorkContractAcceptanceRepository(ctx),
-            new CleanerLegalDocumentAcceptanceRepository(ctx),
-            new AddressRepository(ctx),
-            new OrderPhotoRepository(ctx),
-            new OrderReceiptRepository(ctx),
-            new AdminActionAuditRepository(ctx),
-            new EmployeeActionAuditRepository(ctx, Mock.Of<IServiceScopeFactory>()),
-            new GuestOrderAccessTokenRepository(ctx),
-            new TenantRepository(ctx),
-            tenantProvider,
-            _configProvider.Object,
-            new DataRetentionConfig(configuration),
-            _blobClientFactory.Object,
-            new ArchiveWriteGate(),
-            NullLogger<DataRetentionBackgroundService>.Instance);
-    }
 
     private async Task<List<CustomerActionAudit>> ReadRowsAsync()
     {

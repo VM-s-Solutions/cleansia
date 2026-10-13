@@ -1042,40 +1042,38 @@ status — which is also why `AssignedEmployees.Count > 0` is the wrong term: wi
 `RequiredEmployees = ceil(EstimatedTime / 120)` (`Order.cs:697-707`) a booking over two hours has a
 second seat, and the sentence is still true while it is free.
 
-## A loop that continues past a failed commit in a shared scope — the deviating form (2026-10-12)
+## A continuing job discards the failed item's scope
 
-> **Enforced by:** for the three named dispatchers that give each item a scope, `RecurringSweepPerTemplateIsolationTests`
-> and `RecurringAutoCancelPerOrderIsolationTests`, plus `RecurringReminderIsolationTests` (payment race on PostgreSQL)
-> — **`T1-CI`**, closed roster; for every other job,
-> `runtime-readiness.md` checklist item 8 — **`T3-HUMAN`**. Rule and rejected alternatives:
-> `patterns-backend.md` §*"One scope per job item, and per command on a shared timer"*; decision: **ADR-0072**,
-> which is `accepted` (`docs/decisions/adr-0072.md:9`).
-> **Retires when:** every job in the roster below gives its items a scope of its own — T-0841, the
-> canonicalization ticket ADR-0072 asks for, `SendRecurringOrderReminders` first. Until then this entry is how a
-> reader tells a listed deviation from a new one.
->
-> **This entry exists because the rule puts code that exists today in violation** (ADR-0033 routing test 1), so
-> the shipped deviations are recorded here and their conversion is ticketed as T-0841 rather than assumed. **The
-> baseline is non-zero and read from the tree, not counted.**
+**The rule:** a system job must not catch a failed commit, or failed staging that a later commit will
+save, and continue to another item in the same dependency scope, with or without `Rollback()`.
+A catch over a read, email or queue send that leaves nothing staged is outside this form.
+→ ADR-0072 D2; `patterns-backend.md` §*"One scope per job item, and per command on a shared timer"*.
 
-**The deviating form (normative — it decides the next case):** *a system job whose `catch` lets its loop go on
-to the next item in the same DI scope, where the `try` covers a commit, or covers staging that a later commit in
-that scope will save — with or without `Rollback()` in the catch.* A catch over a read, an e-mail or a queue send
-that leaves nothing staged is not this form.
+**Enforced by:** the named job fixtures below — **`T1-CI`**, a closed roster; for other jobs,
+`runtime-readiness.md` checklist item 8 — **`T3-HUMAN`**. This is not a repository-wide static detector.
 
-**The search behind the roster:** `catch (Exception` and `Rollback()` under `src/Cleansia.Core.AppServices`, each
-hit read in its loop on 2026-10-12. The roster is descriptive; if a job matches the form and is missing here,
-the roster is stale.
+The temporary non-zero deviation rosters from 2026-10-12 were converted through T-0841's twelve
+children. The current forms are:
 
-**Roster — a commit inside the try, or `Rollback()` and continue:**
+- Recurring materialization, auto-cancel and reminder commands, and pending-refund redrive dispatch
+  IDs into fresh command scopes. Their pins are `RecurringSweepPerTemplateIsolationTests`,
+  `RecurringAutoCancelPerOrderIsolationTests`, `RecurringReminderIsolationTests` and
+  `RedrivePendingRefundIsolationTests`.
+- The existing digest, fiscal and payroll services resolve fresh item dependencies. Their pins are
+  `NewJobsDigestPerCleanerIsolationPostgresTests`, `FiscalRetryScopeIsolationTests` and
+  `PayPeriodEmployeeIsolationPostgresTests`. Fiscal service commits remain fiscal state, email claim
+  before send, then provider metadata; payroll employee commits do not save the parent's staged close.
+- Retention resolves a fresh existing service for each company/task, setting its child tenant before
+  dependency construction and opening its child-local legal gate in the DataRetention source file.
+  `DataRetentionTaskScopePostgresTests` and `LegalObligationGateCallSiteTests` pin this shape.
+- Membership lifecycle staging failures escape the whole command invocation; pre-cleaning, lapsed
+  preferred offers, cleaner reminders and tomorrow digests escape before the current company commit.
+  Their pins are `MembershipNotificationAtomicityTests`, `PreCleaningReminderAtomicityTests`,
+  `LapsedPreferredOfferAtomicityTests`, `CleanerReminderAtomicityTests` and
+  `TomorrowDigestAtomicityTests`. Earlier company commits remain durable; retry still requires the
+  original window to remain open.
 
-| Job | Where |
-|---|---|
-| `DataRetentionBackgroundService` | `DataRetentionBackgroundService.cs:93-105`, around each retention task |
-
-**Not deviations, and this is a ruling rather than an omission:** `CleanupStalePendingOrders` commits once per
-company with no catch at that commit, so a refused company ends the run and the next run takes it again; its one
-commit per company is pinned by `CleanupStalePendingOrdersTwoOperatorsTests`. `MaterializeRecurringBookings`,
-`AutoCancelStaleRecurringOrders` and `RetryFailedUserDeletions` give each item a scope, and the two timers that
-carry several commands give each command one (ADR-0072 D1). `DataRetentionBackgroundService` stays the reference
-for the per-company tenancy shape; only its catch around each task is listed above.
+`CleanupStalePendingOrders` keeps one no-catch commit per company, pinned by
+`CleanupStalePendingOrdersTwoOperatorsTests`; `RetryFailedUserDeletions` keeps fresh request scopes.
+Company wind-down keeps its existing no-catch per-order commits. No attempt cap or wider retry window
+is implied by scope ownership.

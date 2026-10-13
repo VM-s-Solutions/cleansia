@@ -65,7 +65,8 @@ public sealed class ArchivedCompanyWriteGuardTests(PostgresContainerFixture fixt
 
     private Task SetupAsync(IServiceCollection services)
     {
-        services.AddScoped<IDataRetentionBackgroundService, DataRetentionBackgroundService>();
+        services.AddScoped<DataRetentionBackgroundService>();
+        services.AddScoped<IDataRetentionBackgroundService>(sp => sp.GetRequiredService<DataRetentionBackgroundService>());
         services.Replace(ServiceDescriptor.Singleton(_ => new Mock<IBlobContainerClientFactory>().Object));
         services.Replace(ServiceDescriptor.Singleton(_ => Mock.Of<IStripeClient>()));
         return Task.CompletedTask;

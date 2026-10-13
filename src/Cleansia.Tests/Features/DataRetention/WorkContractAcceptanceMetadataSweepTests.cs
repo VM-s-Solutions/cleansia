@@ -1,3 +1,4 @@
+using Cleansia.Core.Domain.Tenancy;
 using Cleansia.Core.AppServices.Features.DataRetention;
 using Cleansia.Core.Blobs.Abstractions;
 using Cleansia.Core.Domain.Configuration;
@@ -33,7 +34,6 @@ public sealed class WorkContractAcceptanceMetadataSweepTests : IDisposable
     private const string Facts = "{\"orderNumber\":\"ORD-1\"}";
 
     private readonly SqliteConnection _connection;
-    private readonly Mock<IAppConfigurationProvider> _configProvider = new();
     private readonly Mock<IBlobContainerClientFactory> _blobClientFactory = new();
 
     public WorkContractAcceptanceMetadataSweepTests()
@@ -45,9 +45,6 @@ public sealed class WorkContractAcceptanceMetadataSweepTests : IDisposable
         pragma.CommandText = "PRAGMA foreign_keys = OFF;";
         pragma.ExecuteNonQuery();
 
-        _configProvider
-            .Setup(c => c.GetTenantSettingAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync((string?)null);
     }
 
     public void Dispose() => _connection.Dispose();
@@ -103,12 +100,14 @@ public sealed class WorkContractAcceptanceMetadataSweepTests : IDisposable
             Row("acc-sk", twoYearsAgo, TestTenants.Second),
             Row("acc-sk-young", DateTimeOffset.UtcNow.AddMonths(-6), TestTenants.Second));
 
-        var tenantProvider = new FixedTenantProvider(null);
-        _configProvider
-            .Setup(c => c.GetTenantSettingAsync(RetentionDefaults.WorkContractMetadataRetentionYearsKey, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(() => tenantProvider.GetCurrentTenantId() == TestTenants.Second ? "1" : null);
-
-        await RunSweepAsync(EmptyConfiguration(), tenantProvider);
+        await using (var settings = NewContext())
+        {
+            var window = TenantConfiguration.Create(RetentionDefaults.WorkContractMetadataRetentionYearsKey, "1");
+            window.TenantId = TestTenants.Second;
+            settings.TenantConfigurations.Add(window);
+            await settings.CommitAsync(CancellationToken.None);
+        }
+        await RunSweepAsync(EmptyConfiguration());
 
         var rows = await ReadAllAsync();
         Assert.Equal(3, rows.Count);
@@ -169,11 +168,11 @@ public sealed class WorkContractAcceptanceMetadataSweepTests : IDisposable
             .AddInMemoryCollection(values.Select(v => new KeyValuePair<string, string?>(v.Key, v.Value)))
             .Build();
 
-    private CleansiaDbContext NewContext(ITenantProvider? tenantProvider = null) =>
+    private CleansiaDbContext NewContext(ITenantProvider? tenantProvider = null, IArchiveWriteGate? gate = null) =>
         new(
             new DbContextOptionsBuilder<CleansiaDbContext>().UseSqlite(_connection).Options,
             new TestUserSessionProvider("system", "system@cleansia.test"),
-            tenantProvider ?? new FixedTenantProvider(TestTenants.Default));
+            tenantProvider ?? new FixedTenantProvider(TestTenants.Default), gate);
 
     private async Task EnsureSchemaAsync()
     {
@@ -188,42 +187,14 @@ public sealed class WorkContractAcceptanceMetadataSweepTests : IDisposable
         await seed.CommitAsync(CancellationToken.None);
     }
 
-    private async Task RunSweepAsync(IConfiguration configuration, FixedTenantProvider? tenantProvider = null)
+    private async Task RunSweepAsync(IConfiguration configuration)
     {
-        tenantProvider ??= new FixedTenantProvider(null);
-        await using var ctx = NewContext(tenantProvider);
-        await NewSweep(ctx, tenantProvider, configuration).RunAllRetentionTasksAsync(CancellationToken.None);
+        await using var services = DataRetentionTestServices.Create(NewContext,
+            new DataRetentionConfig(configuration), _blobClientFactory.Object);
+        await using var scope = services.CreateAsyncScope();
+        await scope.ServiceProvider.GetRequiredService<IDataRetentionBackgroundService>().RunAllRetentionTasksAsync(CancellationToken.None);
     }
 
-    private DataRetentionBackgroundService NewSweep(CleansiaDbContext ctx, ITenantProvider tenantProvider, IConfiguration configuration)
-    {
-        var session = new TestUserSessionProvider("system", "system@cleansia.test");
-        return new DataRetentionBackgroundService(
-            new UserRepository(ctx),
-            new DeviceRepository(ctx, session),
-            new GdprRequestRepository(ctx),
-            new OrderRepository(ctx),
-            new UserConsentRepository(ctx),
-            new EmployeeDocumentRepository(ctx),
-            new UserNotificationRepository(ctx),
-            new CustomerActionAuditRepository(ctx),
-            new DisputeRepository(ctx),
-            new WorkContractAcceptanceRepository(ctx),
-            new CleanerLegalDocumentAcceptanceRepository(ctx),
-            new AddressRepository(ctx),
-            new OrderPhotoRepository(ctx),
-            new OrderReceiptRepository(ctx),
-            new AdminActionAuditRepository(ctx),
-            new EmployeeActionAuditRepository(ctx, Mock.Of<IServiceScopeFactory>()),
-            new GuestOrderAccessTokenRepository(ctx),
-            new TenantRepository(ctx),
-            tenantProvider,
-            _configProvider.Object,
-            new DataRetentionConfig(configuration),
-            _blobClientFactory.Object,
-            new ArchiveWriteGate(),
-            NullLogger<DataRetentionBackgroundService>.Instance);
-    }
 
     private async Task<List<WorkContractAcceptance>> ReadAllAsync()
     {

@@ -1103,6 +1103,10 @@ need backfilling.
 
 ### Fixed
 
+- **Operator — a refused retention task does not hold back later tasks or companies.**
+  Each task uses its own company settings and legal-obligation scope, including a frozen company;
+  stopping the host stops before the next task or storage effect. (T-0863)
+
 - **Customer and cleaner — a failed membership-notice tick saves no partial notice batch.**
   A fresh tick can retry while the membership remains in its existing renewal or cancellation
   window. (T-0859)

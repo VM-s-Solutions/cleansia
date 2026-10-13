@@ -79,8 +79,8 @@ Remove only each verified job’s deviating-forms row; the final child reconcile
 
 ## Acceptance criteria (done looks like)
 
-- [ ] **AC1** — Each listed job’s child proves its chosen independent-scope or fail-tick boundary RED then GREEN. A fail-tick shape need not finish later unsaved items in that tick; its retry eligibility and finite-window limitations are recorded.
-- [ ] **AC2** — T-0858’s PostgreSQL two-connection test proves the final fresh read skips cancellation after a take committed before that read. The read-to-claim residual remains explicit; no serializability claim.
+- [x] **AC1** — Each listed job’s child proves its chosen independent-scope or fail-tick boundary RED then GREEN. A fail-tick shape need not finish later unsaved items in that tick; its retry eligibility and finite-window limitations are recorded.
+- [x] **AC2** — T-0858’s PostgreSQL two-connection test proves the final fresh read skips cancellation after a take committed before that read. The read-to-claim residual remains explicit; no serializability claim.
 - [ ] **AC3** — All twelve child results are linked, the verified deviations and temporary records match the final tree, and the full combined suites and reviews pass.
 
 ## Owner decision — 2026-10-13
@@ -97,6 +97,30 @@ Authority: `/Users/michael/.codex/scratchpads/cleansia-wave-f-2026-10-11/next-wa
 
 - 2026-10-13 — First child T-0856 is implemented locally with T-0840: ordered reminder IDs, a new scope/command for each unit, fresh tenant/status/window/stamp/account reread, failed count and host-cancellation propagation. Actual isolation/poison-repeat and timing RED→GREEN evidence is in that child's Work record. The remaining eleven children are still future work in the explicitly permitted following PR; RedrivePendingRefunds remains after T-0851. This parent is a cross-reference/aggregate closure record, not an L implementation job. No remaining-job acceptance criterion or final catalog retirement is claimed here.
 
+- 2026-10-13 — All eleven remaining source children now have frozen implementation receipts; T-0857's extra direct dispatch/disposal proof now passes locally and is in fresh review. Scoped staging and money implementation/security verdicts approve only their exact input groups. Digest/payroll/retention implementation review approved the frozen 44-file set (own183unit/80PostgreSQL and five private no-op failures followed by rebuilt green); their separate security verification is underway; final combined gates, record refutation, CI and merge remain pending. This parent has no source implementation and does not add these overlapping focused runs into a distinct-test total. T-0863 is the planned last source child: its exact row and exhausted temporary catalog roster are retired in the proposed source change, with current flow wording and a dated ADR-0072 mechanism note; the later attribution sweep remains in the prose phase.
+
+| Child | Current implementation evidence (separate from publication) |
+|---|---|
+| [T-0856](./T-0856-recurring-reminder-item-scopes.md) | #330 merged; exact-head CI9/9 |
+| [T-0857](./T-0857-refund-redrive-item-scopes.md) | 43 PostgreSQL/119 unit; new direct identity/disposal proof 2/2, fresh review pending |
+| [T-0858](./T-0858-unfilled-order-fresh-reread.md) | 34 PostgreSQL/63 unit; real mediator take race |
+| [T-0859](./T-0859-membership-notification-failure-boundary.md) | 15 PostgreSQL/36 unit; scoped review/security approved |
+| [T-0860](./T-0860-new-jobs-digest-item-scopes.md) | 7 PostgreSQL/56 unit; repeated leading refusal and B watermark |
+| [T-0861](./T-0861-fiscal-retry-receipt-scopes.md) | 23 PostgreSQL/74 wider unit; scoped review/security approved |
+| [T-0862](./T-0862-pay-period-failure-boundaries.md) | 33 PostgreSQL/95 unit; five genuine persisted failures |
+| [T-0863](./T-0863-retention-company-task-scopes.md) | 40 PostgreSQL/36 unit; three genuine persisted/effect failures |
+| [T-0864](./T-0864-pre-cleaning-reminder-fail-tick.md) | 7 PostgreSQL/54 unit; scoped review/security approved |
+| [T-0865](./T-0865-lapsed-preferred-offer-notice-before-stamp.md) | 6 PostgreSQL/31 unit; scoped review/security approved |
+| [T-0866](./T-0866-cleaner-job-reminder-fail-tick.md) | 11 PostgreSQL/40 unit; scoped review/security approved |
+| [T-0867](./T-0867-tomorrow-job-digest-fail-tick.md) | 10 PostgreSQL/52 unit; scoped review/security approved |
+
+- 2026-10-13 — #330's master push CI subsequently passed **7/7 executed checks** on first attempts; the configured push-only e2e job was skipped, with annotations and the explicit no-log reason retained. Receipt `/Users/michael/.codex/scratchpads/cleansia-next-wave-2026-10-13/p2/master-ci-evidence-receipt.json` SHA256 `eff33741f95fdabafa2f84fdfbc69a2f7a424b57b13c7c632b8576ea2bd95186` binds the saved polling and evidence summary. This supplements the earlier bounded closure's pending-at-capture statement; it adds no deploy/reset.
+- 2026-10-13 — All three scoped implementation groups and their applicable separate security passes now approve the frozen changes. The updated T-0857 fixture has its additional fresh implementation approval and direct security execution. These approvals cover their exact group inputs and the one-file override, not the final cumulative 77-path/full-suite tree. Per-job independently buildable trees, final combined suites, record/head checks, CI and merge remain pending. The authoritative INDEX notes now distinguish completed scoped approvals from these remaining gates.
+
+- 2026-10-13 — Independent final source verification passed all eleven cumulative source prefixes: each separately forced Release Rebuild of Tests and IntegrationTests exited 0 from a clean complete source archive. The final frozen **77-source-path** composition, manifest SHA256 `b230b7b00b7d22d424b865fdc1f9e5505894cf3f124beedf99a1efa3ccba7876`, then passed the unfiltered full CI-order backend suites: **8,731 unit → 975 PostgreSQL integration → 509 host**, zero failed/skipped. All 69 added integration cases and the six final composed PreferredHold cases ran. These are executed results for the final frozen composition; each partial commit has its separate source-prefix build proof. The raw broader consistency scan exited 1 on six inherited byte-identical B10 reflection fixtures, with no new violation. Actual Rebuild argv does not contain an explicit UseSharedCompilation=false option. Source/DLL/TRX identities, source-exact output cleanup and the eleven prefix rows are in `/Users/michael/.codex/scratchpads/cleansia-next-wave-2026-10-13/remaining-jobs/verifier/final-source-verification.md` and `verifier/prospective-build-results.json`.
+
+Full frontend validation passed **5,041 cases / 408 suites / 71 tested projects plus three empty projects**, all three builds and **5 customer + 1 partner + 1 administrator** browser smokes. The first full-unit attempt exited 1 when Nx could not write its terminal cache because the disk was full; retained attempt 001 is an environment failure. Fresh full retry 002 passed uncached with task-owned cache/workspace-data. Android then passed forced compile followed by all **2,818 cases / 304 XML suites**, zero failures/errors/skips; all 875 tracked Android inputs remain unchanged. Aggregated commands, exits, log hashes and the environmental recovery are in `/Users/michael/.codex/scratchpads/cleansia-next-wave-2026-10-13/remaining-jobs/local/full-local-gates-before-commit-001.json`; Android's independently measured source/class/XML identities are in `android/gate-summary.json`. No DTO, endpoint, model or generated client changed in this phase, so no regeneration was needed. Actual per-head docs, final affected lint/history secret checks, record closure, exact-head CI and merge remain pending.
+
 ## Review
 
 Pending.
@@ -105,3 +129,5 @@ Pending.
 - 2026-10-13 — Final committed-head local checks on5490b331 passed: uncached lint64 projects, docs references/catalog/VitePress and secret-history2446 commits/no leaks (`p2/local/committed-head-gates.json` under the wave root). Earlier filing-head lint/check attempts are nonproof for this source head. The implementation/full-suite/command-only and residual limits above remain; no real-mail/device/DEV proof is added by hosted CI. This closure is prepared as the first commit of the fresh remaining-jobs branch, directly after the merged P2 base.
 
 - 2026-10-13 — T-0856 is merged. The other eleven child changes are now the remaining-jobs branch scope; this parent remains in progress.
+
+Full local source gates PASS for the final frozen composition and all eleven independently buildable prefixes, as recorded above. Final record/head checks, CI and merge remain pending.

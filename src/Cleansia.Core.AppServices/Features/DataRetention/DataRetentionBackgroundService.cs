@@ -9,6 +9,7 @@ using Cleansia.Core.Domain.Tenancy;
 using Cleansia.Infra.Common.Configuration.Interfaces;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace Cleansia.Core.AppServices.Features.DataRetention;
 
@@ -36,7 +37,8 @@ public class DataRetentionBackgroundService(
     IDataRetentionConfig retentionConfig,
     IBlobContainerClientFactory blobClientFactory,
     IArchiveWriteGate archiveWriteGate,
-    ILogger<DataRetentionBackgroundService> logger)
+    ILogger<DataRetentionBackgroundService> logger,
+    IServiceScopeFactory scopeFactory)
     : IDataRetentionBackgroundService
 {
     public async Task RunAllRetentionTasksAsync(CancellationToken cancellationToken = default)
@@ -59,49 +61,63 @@ public class DataRetentionBackgroundService(
         // without the override a filtered read returns nothing at all.
         var tenantIds = await tenantRepository.GetAllIdsAsync(cancellationToken);
 
-        // A company's GDPR obligations do not end with its trading: the windows keep blanking a
-        // frozen company's books, which the archived-company write guard would otherwise refuse.
-        using var legalObligation = archiveWriteGate.OpenForLegalObligation("data retention");
-
         foreach (var tenantId in tenantIds)
         {
-            tenantProvider.ClearTenantOverride();
-            tenantProvider.SetTenantOverride(tenantId);
-
-            await RunSafeAsync("ExpiredUserCodes", tenantId, CleanExpiredUserCodesAsync, cancellationToken);
-            await RunSafeAsync("StaleDevices", tenantId, CleanStaleDevicesAsync, cancellationToken);
-            await RunSafeAsync("OldGdprRequests", tenantId, CleanOldGdprRequestsAsync, cancellationToken);
-            await RunSafeAsync("OrderCustomerPii", tenantId, CleanOrderCustomerPiiAsync, cancellationToken);
-            await RunSafeAsync("WithdrawnConsents", tenantId, CleanWithdrawnConsentsAsync, cancellationToken);
-            await RunSafeAsync("SupersededDocuments", tenantId, CleanSupersededDocumentsAsync, cancellationToken);
-            await RunSafeAsync("UserNotifications", tenantId, CleanUserNotificationsAsync, cancellationToken);
-            await RunSafeAsync("CustomerActionAudits", tenantId, CleanCustomerActionAuditsAsync, cancellationToken);
-            await RunSafeAsync("DisputeText", tenantId, CleanExpiredDisputeTextAsync, cancellationToken);
-            await RunSafeAsync("WorkContractAcceptanceMetadata", tenantId, CleanWorkContractAcceptanceMetadataAsync, cancellationToken);
-            await RunSafeAsync("OrderPhotos", tenantId, CleanOrderPhotosAsync, cancellationToken);
-            await RunSafeAsync("ReceiptBlobs", tenantId, CleanReceiptBlobsAsync, cancellationToken);
-            await RunSafeAsync("AdminActionAudits", tenantId, CleanAdminActionAuditsAsync, cancellationToken);
-            await RunSafeAsync("EmployeeActionAudits", tenantId, CleanEmployeeActionAuditsAsync, cancellationToken);
-            await RunSafeAsync("GuestOrderAccessTokens", tenantId, CleanDeadGuestOrderAccessTokensAsync, cancellationToken);
+            await RunSafeAsync("ExpiredUserCodes", tenantId, (child, ct) => child.CleanExpiredUserCodesAsync(ct), cancellationToken);
+            await RunSafeAsync("StaleDevices", tenantId, (child, ct) => child.CleanStaleDevicesAsync(ct), cancellationToken);
+            await RunSafeAsync("OldGdprRequests", tenantId, (child, ct) => child.CleanOldGdprRequestsAsync(ct), cancellationToken);
+            await RunSafeAsync("OrderCustomerPii", tenantId, (child, ct) => child.CleanOrderCustomerPiiAsync(ct), cancellationToken);
+            await RunSafeAsync("WithdrawnConsents", tenantId, (child, ct) => child.CleanWithdrawnConsentsAsync(ct), cancellationToken);
+            await RunSafeAsync("SupersededDocuments", tenantId, (child, ct) => child.CleanSupersededDocumentsAsync(ct), cancellationToken);
+            await RunSafeAsync("UserNotifications", tenantId, (child, ct) => child.CleanUserNotificationsAsync(ct), cancellationToken);
+            await RunSafeAsync("CustomerActionAudits", tenantId, (child, ct) => child.CleanCustomerActionAuditsAsync(ct), cancellationToken);
+            await RunSafeAsync("DisputeText", tenantId, (child, ct) => child.CleanExpiredDisputeTextAsync(ct), cancellationToken);
+            await RunSafeAsync("WorkContractAcceptanceMetadata", tenantId, (child, ct) => child.CleanWorkContractAcceptanceMetadataAsync(ct), cancellationToken);
+            await RunSafeAsync("OrderPhotos", tenantId, (child, ct) => child.CleanOrderPhotosAsync(ct), cancellationToken);
+            await RunSafeAsync("ReceiptBlobs", tenantId, (child, ct) => child.CleanReceiptBlobsAsync(ct), cancellationToken);
+            await RunSafeAsync("AdminActionAudits", tenantId, (child, ct) => child.CleanAdminActionAuditsAsync(ct), cancellationToken);
+            await RunSafeAsync("EmployeeActionAudits", tenantId, (child, ct) => child.CleanEmployeeActionAuditsAsync(ct), cancellationToken);
+            await RunSafeAsync("GuestOrderAccessTokens", tenantId, (child, ct) => child.CleanDeadGuestOrderAccessTokensAsync(ct), cancellationToken);
         }
-
-        tenantProvider.ClearTenantOverride();
 
         logger.LogInformation("Data retention job completed for {TenantCount} operating companies", tenantIds.Count);
     }
 
-    private async Task RunSafeAsync(string taskName, string tenantId, Func<CancellationToken, Task> task, CancellationToken ct)
+    private async Task RunSafeAsync(string taskName, string tenantId,
+        Func<DataRetentionBackgroundService, CancellationToken, Task> task, CancellationToken ct)
     {
+        ct.ThrowIfCancellationRequested();
         try
         {
             logger.LogInformation("Starting retention task: {Task} for {TenantId}", taskName, tenantId);
-            await task(ct);
+            await using (var scope = scopeFactory.CreateAsyncScope())
+            {
+                // Adopt the company before constructing any filtered repository or settings provider.
+                scope.ServiceProvider.GetRequiredService<ITenantProvider>().SetTenantOverride(tenantId);
+                var child = scope.ServiceProvider.GetRequiredService<DataRetentionBackgroundService>();
+                await child.RunTaskAsync(task, ct);
+            }
             logger.LogInformation("Completed retention task: {Task} for {TenantId}", taskName, tenantId);
+        }
+        catch (OperationCanceledException) when (ct.IsCancellationRequested)
+        {
+            throw;
         }
         catch (Exception ex)
         {
+            ct.ThrowIfCancellationRequested();
             logger.LogError(ex, "Retention task '{Task}' failed for {TenantId}", taskName, tenantId);
         }
+    }
+
+    private async Task RunTaskAsync(Func<DataRetentionBackgroundService, CancellationToken, Task> task, CancellationToken ct)
+    {
+        // GDPR obligations continue after trading ends. Only this task's own context may pass the
+        // frozen-company guard; the opening ends before its dependency scope is discarded.
+        using var legalObligation = archiveWriteGate.OpenForLegalObligation("data retention");
+        ct.ThrowIfCancellationRequested();
+        await task(this, ct);
+        ct.ThrowIfCancellationRequested();
     }
 
     private async Task CleanExpiredUserCodesAsync(CancellationToken ct)
@@ -284,9 +300,14 @@ public class DataRetentionBackgroundService(
 
             foreach (var doc in batch)
             {
+                ct.ThrowIfCancellationRequested();
                 try
                 {
                     await blobClient.DeleteAsync(doc.FilePath, ct);
+                }
+                catch (OperationCanceledException) when (ct.IsCancellationRequested)
+                {
+                    throw;
                 }
                 catch (Exception ex)
                 {
@@ -440,9 +461,14 @@ public class DataRetentionBackgroundService(
 
             foreach (var photo in batch)
             {
+                ct.ThrowIfCancellationRequested();
                 try
                 {
                     await blobClient.DeleteAsync(OrderPhotoBlobName.FromUrl(photo.BlobUrl), ct);
+                }
+                catch (OperationCanceledException) when (ct.IsCancellationRequested)
+                {
+                    throw;
                 }
                 catch (Exception ex)
                 {
@@ -486,9 +512,14 @@ public class DataRetentionBackgroundService(
 
             foreach (var receipt in batch)
             {
+                ct.ThrowIfCancellationRequested();
                 try
                 {
                     await blobClient.DeleteAsync(receipt.BlobName, ct);
+                }
+                catch (OperationCanceledException) when (ct.IsCancellationRequested)
+                {
+                    throw;
                 }
                 catch (Exception ex)
                 {

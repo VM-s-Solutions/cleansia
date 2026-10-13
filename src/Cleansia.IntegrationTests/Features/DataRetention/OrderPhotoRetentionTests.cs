@@ -59,7 +59,8 @@ public class OrderPhotoRetentionTests(PostgresContainerFixture fixture) : BaseIn
                 var factory = new Mock<IBlobContainerClientFactory>();
                 factory.Setup(f => f.GetBlobContainerClient(Constants.BlobContainers.OrderPhotos)).Returns(blobClient.Object);
                 services.Replace(ServiceDescriptor.Singleton(_ => factory.Object));
-                services.AddScoped<IDataRetentionBackgroundService, DataRetentionBackgroundService>();
+                services.AddScoped<DataRetentionBackgroundService>();
+                services.AddScoped<IDataRetentionBackgroundService>(sp => sp.GetRequiredService<DataRetentionBackgroundService>());
                 return Task.CompletedTask;
             },
             arrange: async context =>
@@ -259,7 +260,8 @@ public class OrderPhotoRetentionTests(PostgresContainerFixture fixture) : BaseIn
         var factory = new Mock<IBlobContainerClientFactory>();
         factory.Setup(f => f.GetBlobContainerClient(Constants.BlobContainers.OrderPhotos)).Returns(blobClient.Object);
         services.Replace(ServiceDescriptor.Singleton(_ => factory.Object));
-        services.AddScoped<IDataRetentionBackgroundService, DataRetentionBackgroundService>();
+        services.AddScoped<DataRetentionBackgroundService>();
+        services.AddScoped<IDataRetentionBackgroundService>(sp => sp.GetRequiredService<DataRetentionBackgroundService>());
         return Task.CompletedTask;
     }
 

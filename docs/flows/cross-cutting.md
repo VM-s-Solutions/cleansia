@@ -65,8 +65,8 @@ the stamp. Fresh retries require the original eligibility window to remain open.
 a failure near its lower edge can still cost a notice; these changes widen no window or attempt cap.
 
 **The second shape: the sweeps that read per company.** Some jobs have no row to derive the tenant
-from, because their input is the list of companies and their settings — the fourteen retention tasks,
-with thirteen company settings (`TenantConfiguration`, set on the admin's *Company settings* page;
+from, because their input is the list of companies and their settings — the fifteen retention tasks,
+with fourteen company settings (`TenantConfiguration`, set on the admin's *Company settings* page;
 → [Business rules — retention](/product/business-rules#customer-record)).
 `WorkContractAcceptanceMetadata` blanks the IP address, device label and device id
 on the company's contract-for-work acceptances older than `retention.work_contract_metadata.years`
@@ -78,22 +78,25 @@ reads each token's own expiry and revocation. They loop the **registry** instead
 
 ```mermaid
 flowchart LR
-  A["ITenantRepository.GetAllIdsAsync — every company, deactivated included"] --> B[Clear override]
-  B --> C[Set override for this company]
-  C --> D["Read the company's own settings (TenantSettingCatalog — default when no row)"]
-  D --> E[Run each sweep through the filter]
-  E --> F[Commit — INSIDE each sweep]
-  F -->|next company| B
+  A["ITenantRepository.GetAllIdsAsync — every company, deactivated included"] --> B[Fresh scope for this company and task]
+  B --> C[Set child tenant before resolving dependencies]
+  C --> D[Open child legal gate and read company settings]
+  D --> E[Run task through the filter and its existing commits]
+  E --> F[Close gate and dispose child scope]
+  F -->|next task or company| B
 
   classDef key fill:#dbeafe,stroke:#1d4ed8,color:#1e3a8a
-  class D,F key
+  class C,D,F key
 ```
 
 Every filtered read inside the loop is that company's, every setting read is that company's, and a
 company with no override rows is simply a company on the defaults — so a one-year audit window set on
 company B deletes B's two-year-old rows and leaves A's alone. `DataRetentionBackgroundService` is the
-reference for this tenancy shape — though not for its catch around each task, which carries on in one shared
-scope and is listed as a deviation to convert ([ADR-0072](/decisions/adr-0072)).
+reference for this company-driven shape. Each task owns its context, settings provider and legal gate;
+a non-cancellation failure is logged only after its scope is discarded, then later tasks and companies
+continue. Active host cancellation stops before another task or storage effect. A permanently refused
+row remains delayed, and a blob removed before refused metadata remains an unmarked retry candidate
+([ADR-0072](/decisions/adr-0072)).
 `CleanupStalePendingOrders` is the reference for the row-driven shape above, and for bounding
 it: a run takes the oldest 500 stale checkouts and a larger backlog spreads over the following runs, one
 every 15 minutes, with no cursor to carry because a cancelled order has left the query, as

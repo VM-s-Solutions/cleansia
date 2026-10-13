@@ -1,3 +1,4 @@
+using Cleansia.Core.Domain.Tenancy;
 using Cleansia.Core.AppServices.Features.DataRetention;
 using Cleansia.Core.Blobs.Abstractions;
 using Cleansia.Core.Domain.Documents;
@@ -97,47 +98,22 @@ public sealed class SupersededDocumentSweepTests : IDisposable
 
     private async Task RunSweepAsync(IBlobContainerClient documentBlobs, CancellationToken cancellationToken)
     {
-        var tenantProvider = new FixedTenantProvider(null);
-        await using var ctx = NewContext(tenantProvider);
-        var session = new TestUserSessionProvider("system", "system@cleansia.test");
         var blobs = new Mock<IBlobContainerClientFactory>();
         blobs.Setup(f => f.GetBlobContainerClient(It.IsAny<string>())).Returns(Mock.Of<IBlobContainerClient>());
         blobs.Setup(f => f.GetBlobContainerClient(AppConstants.BlobContainers.EmployeeDocuments)).Returns(documentBlobs);
 
-        var sweep = new DataRetentionBackgroundService(
-            new UserRepository(ctx),
-            new DeviceRepository(ctx, session),
-            new GdprRequestRepository(ctx),
-            new OrderRepository(ctx),
-            new UserConsentRepository(ctx),
-            new EmployeeDocumentRepository(ctx),
-            new UserNotificationRepository(ctx),
-            new CustomerActionAuditRepository(ctx),
-            new DisputeRepository(ctx),
-            new WorkContractAcceptanceRepository(ctx),
-            new CleanerLegalDocumentAcceptanceRepository(ctx),
-            new AddressRepository(ctx),
-            new OrderPhotoRepository(ctx),
-            new OrderReceiptRepository(ctx),
-            new AdminActionAuditRepository(ctx),
-            new EmployeeActionAuditRepository(ctx, Mock.Of<IServiceScopeFactory>()),
-            new GuestOrderAccessTokenRepository(ctx),
-            new TenantRepository(ctx),
-            tenantProvider,
-            new AppConfigurationProvider(ctx),
-            new DataRetentionConfig(new ConfigurationBuilder().Build()),
-            blobs.Object,
-            new ArchiveWriteGate(),
-            new CapturingLogger(_log));
-
-        await sweep.RunAllRetentionTasksAsync(cancellationToken);
+        await using var services = DataRetentionTestServices.Create(NewContext,
+            new DataRetentionConfig(new ConfigurationBuilder().Build()), blobs.Object,
+            logger: new CapturingLogger(_log));
+        await using var scope = services.CreateAsyncScope();
+        await scope.ServiceProvider.GetRequiredService<IDataRetentionBackgroundService>().RunAllRetentionTasksAsync(cancellationToken);
     }
 
-    private CleansiaDbContext NewContext(ITenantProvider? tenantProvider = null) =>
+    private CleansiaDbContext NewContext(ITenantProvider? tenantProvider = null, IArchiveWriteGate? gate = null) =>
         new(
             new DbContextOptionsBuilder<CleansiaDbContext>().UseSqlite(_connection).Options,
             new TestUserSessionProvider("system", "system@cleansia.test"),
-            tenantProvider ?? new FixedTenantProvider(TestTenants.Default));
+            tenantProvider ?? new FixedTenantProvider(TestTenants.Default), gate);
 
     private sealed class FixedTenantProvider(string? tenantId) : ITenantProvider
     {

@@ -1114,6 +1114,10 @@ need backfilling.
   The failed batch saves no partial reminder stamps; previously completed companies remain saved.
   (T-0864)
 
+- **Customer — the no-show sweep re-checks whether a cleaner has taken or started the job.**
+  A change committed before that check prevents its cancellation. A concurrent change after the
+  check can still race the cancellation claim. (T-0858)
+
 - **Customer — a signed-in booking uses your account e-mail.** The web form shows that address
   read-only, and the server keeps it even if a request supplies another address. Guest contact
   details and booking names and phone numbers retain their existing rules. (T-0853)

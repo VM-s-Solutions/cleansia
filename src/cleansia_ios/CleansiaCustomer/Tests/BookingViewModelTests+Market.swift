@@ -19,7 +19,9 @@ extension BookingViewModelTests {
             return s
         }
         scheduler.advance(by: .milliseconds(400))
-        await drainQuote()
+        await drainQuote {
+            !vm.isQuoting && vm.lastQuoteRequest == vm.state.quoteRequest(marketCountryId: vm.catalogCountryId)
+        }
         XCTAssertNil(quote.requests.last?.countryId)
 
         vm.update { var s = $0
@@ -27,7 +29,9 @@ extension BookingViewModelTests {
             return s
         }
         scheduler.advance(by: .milliseconds(400))
-        await drainQuote()
+        await drainQuote {
+            !vm.isQuoting && vm.lastQuoteRequest == vm.state.quoteRequest(marketCountryId: vm.catalogCountryId)
+        }
 
         XCTAssertEqual(quote.callCount, 2)
         XCTAssertEqual(quote.requests.last?.countryId, "svk")
@@ -44,7 +48,9 @@ extension BookingViewModelTests {
             s.countryId = "svk"
             return s
         }
-        await drainQuote()
+        await drainQuote {
+            catalog.requestedCountryIds == [nil, "svk"] && vm.catalogState.loadedValue == CatalogFixtures.slovak
+        }
 
         XCTAssertEqual(catalog.requestedCountryIds, [nil, "svk"])
         XCTAssertEqual(vm.catalogState.loadedValue?.currencyCode, "EUR")
@@ -70,7 +76,9 @@ extension BookingViewModelTests {
             s.countryId = "svk"
             return s
         }
-        await drainQuote()
+        await drainQuote {
+            events == [.selectionPrunedForMarket]
+        }
 
         XCTAssertEqual(vm.state.selectedServiceIds, ["s-1"])
         XCTAssertEqual(vm.state.selectedPackageIds, [])
@@ -93,7 +101,9 @@ extension BookingViewModelTests {
             s.countryId = "svk"
             return s
         }
-        await drainQuote()
+        await drainQuote {
+            vm.catalogState.loadedValue == CatalogFixtures.slovak
+        }
 
         XCTAssertEqual(vm.state.selectedServiceIds, ["s-1"])
         XCTAssertEqual(events, [])
@@ -114,7 +124,9 @@ extension BookingViewModelTests {
             s.countryId = "svk"
             return s
         }
-        await drainQuote()
+        await drainQuote {
+            catalog.requestedCountryIds == [nil, "svk"]
+        }
 
         XCTAssertEqual(vm.catalogState.loadedValue, CatalogFixtures.populated)
         XCTAssertEqual(vm.state.selectedServiceIds, ["s-2"])
@@ -136,7 +148,9 @@ extension BookingViewModelTests {
             countryIsoCode: "sk",
             formatted: "Hlavná 1, Bratislava"
         ))
-        await drainQuote()
+        await drainQuote {
+            vm.state.countryId == "svk"
+        }
 
         XCTAssertEqual(country.requestedIsoCodes, ["sk"])
         XCTAssertEqual(vm.state.countryId, "svk")

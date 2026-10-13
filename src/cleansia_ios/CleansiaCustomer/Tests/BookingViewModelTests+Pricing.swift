@@ -59,7 +59,9 @@ extension BookingViewModelTests {
             return s
         }
         scheduler.advance(by: .milliseconds(400))
-        await drainQuote()
+        await drainQuote {
+            !vm.isQuoting && vm.lastQuoteRequest == vm.state.quoteRequest(marketCountryId: vm.catalogCountryId)
+        }
 
         XCTAssertEqual(quote.callCount, 1)
         XCTAssertEqual(quote.requests.last?.rooms, 3)
@@ -75,7 +77,9 @@ extension BookingViewModelTests {
             return s
         }
         scheduler.advance(by: .milliseconds(400))
-        await drainQuote()
+        await drainQuote {
+            !vm.isQuoting && vm.lastQuoteRequest == vm.state.quoteRequest(marketCountryId: vm.catalogCountryId)
+        }
         XCTAssertEqual(quote.callCount, 1)
 
         vm.update { var s = $0
@@ -83,7 +87,9 @@ extension BookingViewModelTests {
             return s
         }
         scheduler.advance(by: .milliseconds(400))
-        await drainQuote()
+        await drainQuote {
+            !vm.isQuoting && vm.lastQuoteRequest == vm.state.quoteRequest(marketCountryId: vm.catalogCountryId)
+        }
 
         XCTAssertEqual(quote.callCount, 1)
     }
@@ -98,7 +104,9 @@ extension BookingViewModelTests {
             return s
         }
         scheduler.advance(by: .milliseconds(400))
-        await drainQuote()
+        await drainQuote {
+            !vm.isQuoting && vm.lastQuoteRequest == vm.state.quoteRequest(marketCountryId: vm.catalogCountryId)
+        }
         XCTAssertEqual(vm.quoteState.quote?.totalPrice, 900)
 
         quote.result = .failure(ApiError(code: "x"))
@@ -107,7 +115,9 @@ extension BookingViewModelTests {
             return s
         }
         scheduler.advance(by: .milliseconds(400))
-        await drainQuote()
+        await drainQuote {
+            !vm.isQuoting && quote.requests.last?.rooms == 2
+        }
 
         XCTAssertEqual(vm.quoteState.quote?.totalPrice, 900)
     }
@@ -127,7 +137,9 @@ extension BookingViewModelTests {
             return s
         }
         scheduler.advance(by: .milliseconds(400))
-        await drainQuote()
+        await drainQuote {
+            !vm.isQuoting && vm.lastQuoteRequest == vm.state.quoteRequest(marketCountryId: vm.catalogCountryId)
+        }
         XCTAssertEqual(vm.quoteState.quote?.totalPrice, 1200)
 
         quote.result = .success(BookingQuote(totalPrice: 1500, currencyCode: "CZK"))
@@ -141,7 +153,9 @@ extension BookingViewModelTests {
         XCTAssertEqual(vm.quoteState.quote?.totalPrice, 1200)
         XCTAssertEqual(vm.quoteState.quote?.currencyCode, "CZK")
 
-        await drainQuote()
+        await drainQuote {
+            !vm.isQuoting && vm.lastQuoteRequest == vm.state.quoteRequest(marketCountryId: vm.catalogCountryId)
+        }
         XCTAssertEqual(vm.quoteState.quote?.totalPrice, 1500)
     }
 
@@ -197,7 +211,9 @@ extension BookingViewModelTests {
             return s
         }
         scheduler.advance(by: .milliseconds(400))
-        await drainQuote()
+        await drainQuote {
+            !vm.isQuoting && vm.lastQuoteRequest == vm.state.quoteRequest(marketCountryId: vm.catalogCountryId)
+        }
         XCTAssertNotNil(vm.quoteState.quote)
 
         vm.update { var s = $0
@@ -224,7 +240,9 @@ extension BookingViewModelTests {
         scheduler.advance(by: .milliseconds(400))
         XCTAssertTrue(vm.isQuoting)
 
-        await drainQuote()
+        await drainQuote {
+            !vm.isQuoting && vm.lastQuoteRequest == vm.state.quoteRequest(marketCountryId: vm.catalogCountryId)
+        }
         XCTAssertFalse(vm.isQuoting)
     }
 
@@ -328,7 +346,9 @@ extension BookingViewModelTests {
             return s
         }
         scheduler.advance(by: .milliseconds(400))
-        await drainQuote()
+        await drainQuote {
+            !vm.isQuoting && vm.lastQuoteRequest == vm.state.quoteRequest(marketCountryId: vm.catalogCountryId)
+        }
 
         XCTAssertEqual(vm.effectiveDiscount, 150, accuracy: 0.0001)
     }

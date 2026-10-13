@@ -123,6 +123,10 @@ Effects:
     - The host log holds 14 `GetPaged` requests in all and no bare `Sort=`, the observer's count. The observer logs paths only, so the query strings come from the fixed host's log.
     - Not observable on either device: the total-price order itself, because a card shows no total price.
 - 2026-10-13 — Not yet: the P6 pull request's exact-head CI and its merge.
+- 2026-10-13 — Shipped in [#328](https://github.com/VM-s-Solutions/cleansia/pull/328).
+  - Exact-head CI on `fc24e7e` passed all 9 check runs, iOS CI after one re-run. Its first attempt failed one customer test this branch did not touch, `BookingViewModelTests.testSelectionsTheMarketDoesNotOfferArePrunedWithANotice`, which waited for an asynchronous catalogue reload with five `Task.yield()` calls (`BookingViewModelTests.swift:448-452` at `fc24e7e`); the re-run passed. Backend, Frontend build and e2e-smoke, Android, iOS Symbols, Docs, booking-policy parity and Secret scan passed on their first attempt.
+  - Merged normally with the SHA guard as `737bdb4`. No deploy ran: deploy-dev, deploy-pro, deploy-docs and execute-sql have no run since the merge.
+  - Evidence: `raw/ci/p6-pr328-ci-merge-closure-001.json` (sha256 `5557de97…`) in the off-tree Wave F folder.
 
 ## Review
 

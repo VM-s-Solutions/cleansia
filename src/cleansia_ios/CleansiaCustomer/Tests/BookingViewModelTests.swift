@@ -46,7 +46,9 @@ final class BookingViewModelTests: XCTestCase {
 
         catalog.result = .success(CatalogFixtures.slovak)
         market.select(isoCode: "SVK")
-        await drainQuote()
+        await drainQuote {
+            catalog.requestedCountryIds == ["cze", "svk"] && vm.catalogState.loadedValue == CatalogFixtures.slovak
+        }
 
         XCTAssertEqual(catalog.requestedCountryIds, ["cze", "svk"])
         XCTAssertEqual(vm.displayCurrencyCode, "EUR")
@@ -65,13 +67,17 @@ final class BookingViewModelTests: XCTestCase {
             s.countryId = "cze"
             return s
         }
-        await drainQuote()
+        await drainQuote {
+            catalog.requestedCountryIds == ["svk", "cze"]
+        }
         XCTAssertEqual(catalog.requestedCountryIds, ["svk", "cze"])
         XCTAssertEqual(vm.catalogCountryId, "cze")
 
         market.select(isoCode: "CZE")
         market.select(isoCode: "SVK")
-        await drainQuote()
+        await drainQuote {
+            catalog.requestedCountryIds == ["svk", "cze"]
+        }
 
         XCTAssertEqual(catalog.requestedCountryIds, ["svk", "cze"], "the booking's address decides, not the chip")
     }
@@ -87,7 +93,9 @@ final class BookingViewModelTests: XCTestCase {
             return s
         }
         scheduler.advance(by: .milliseconds(400))
-        await drainQuote()
+        await drainQuote {
+            !vm.isQuoting && vm.lastQuoteRequest == vm.state.quoteRequest(marketCountryId: vm.catalogCountryId)
+        }
         XCTAssertEqual(quote.requests.last?.countryId, "svk")
 
         vm.update { var s = $0
@@ -95,7 +103,9 @@ final class BookingViewModelTests: XCTestCase {
             return s
         }
         scheduler.advance(by: .milliseconds(400))
-        await drainQuote()
+        await drainQuote {
+            !vm.isQuoting && vm.lastQuoteRequest == vm.state.quoteRequest(marketCountryId: vm.catalogCountryId)
+        }
         XCTAssertEqual(quote.requests.last?.countryId, "cze")
     }
 
@@ -111,7 +121,9 @@ final class BookingViewModelTests: XCTestCase {
             return s
         }
         scheduler.advance(by: .milliseconds(400))
-        await drainQuote()
+        await drainQuote {
+            !vm.isQuoting && vm.lastQuoteRequest == vm.state.quoteRequest(marketCountryId: vm.catalogCountryId)
+        }
 
         XCTAssertEqual(catalog.requestedCountryIds, [nil])
         XCTAssertEqual(quote.requests.last?.countryId, nil)
@@ -373,7 +385,9 @@ final class BookingViewModelTests: XCTestCase {
             return s
         }
         scheduler.advance(by: .milliseconds(400))
-        await drainQuote()
+        await drainQuote {
+            !vm.isQuoting && vm.lastQuoteRequest == vm.state.quoteRequest(marketCountryId: vm.catalogCountryId)
+        }
 
         XCTAssertEqual(vm.quoteState.quote?.currencyCode, "EUR")
         XCTAssertEqual(vm.displayCurrencyCode, "EUR")
@@ -396,7 +410,9 @@ final class BookingViewModelTests: XCTestCase {
             return s
         }
         scheduler.advance(by: .milliseconds(400))
-        await drainQuote()
+        await drainQuote {
+            !vm.isQuoting && vm.lastQuoteRequest == vm.state.quoteRequest(marketCountryId: vm.catalogCountryId)
+        }
         XCTAssertEqual(vm.unmetTierDiscountFloor, 1000)
 
         quote.result = .success(BookingQuote(
@@ -410,7 +426,9 @@ final class BookingViewModelTests: XCTestCase {
             return s
         }
         scheduler.advance(by: .milliseconds(400))
-        await drainQuote()
+        await drainQuote {
+            !vm.isQuoting && vm.lastQuoteRequest == vm.state.quoteRequest(marketCountryId: vm.catalogCountryId)
+        }
         XCTAssertNil(vm.unmetTierDiscountFloor)
 
         quote.result = .success(BookingQuote(totalPrice: 800, currencyCode: "EUR", tierDiscountMinOrderAmount: nil))
@@ -419,7 +437,9 @@ final class BookingViewModelTests: XCTestCase {
             return s
         }
         scheduler.advance(by: .milliseconds(400))
-        await drainQuote()
+        await drainQuote {
+            !vm.isQuoting && vm.lastQuoteRequest == vm.state.quoteRequest(marketCountryId: vm.catalogCountryId)
+        }
         XCTAssertNil(vm.unmetTierDiscountFloor)
     }
 
@@ -445,9 +465,18 @@ final class BookingViewModelTests: XCTestCase {
         XCTAssertEqual(vm.state.bathrooms, 2)
     }
 
-    func drainQuote() async {
-        for _ in 0 ..< 5 {
-            await Task.yield()
+    func drainQuote(
+        file: StaticString = #filePath,
+        line: UInt = #line,
+        until condition: () -> Bool
+    ) async {
+        let clock = ContinuousClock()
+        let deadline = clock.now.advanced(by: .seconds(2))
+        while !condition() {
+            guard clock.now < deadline else {
+                return XCTFail("Booking operation did not complete within two seconds", file: file, line: line)
+            }
+            try? await Task.sleep(for: .milliseconds(1))
         }
     }
 }

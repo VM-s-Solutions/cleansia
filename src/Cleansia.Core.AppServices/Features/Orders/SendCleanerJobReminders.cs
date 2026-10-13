@@ -81,11 +81,12 @@ public class SendCleanerJobReminders
         IUserNotificationRepository userNotificationRepository,
         ITenantProvider tenantProvider,
         IUnitOfWork unitOfWork,
-        ILogger<Handler> logger) : ICommandHandler<Command, Response>
+        ILogger<Handler> logger,
+        TimeProvider timeProvider) : ICommandHandler<Command, Response>
     {
         public async Task<BusinessResult<Response>> Handle(Command command, CancellationToken cancellationToken)
         {
-            var now = DateTime.UtcNow;
+            var now = timeProvider.GetUtcNow().UtcDateTime;
 
             // TWO ranges OR-ed, each pruned by ITS OWN stamp. ADR-0054 required change 6.
             //
@@ -172,32 +173,23 @@ public class SendCleanerJobReminders
                             continue;
                         }
 
-                        try
+                        if (soonDue && assignment.ReminderSoonSentAt == null)
                         {
-                            if (soonDue && assignment.ReminderSoonSentAt == null)
-                            {
-                                await NotifyAsync(
-                                    userId, NotificationEventCatalog.ReminderSoon, order, assignment,
-                                    cancellationToken);
-                                assignment.MarkReminderSoonSent(now);
-                                soonSent++;
-                            }
-                            else if (nudgeDue
-                                && assignment.ReminderNotStartedSentAt == null
-                                && !alreadyOnAJob.Contains(assignment.EmployeeId))
-                            {
-                                await NotifyAsync(
-                                    userId, NotificationEventCatalog.ReminderNotStarted, order, assignment,
-                                    cancellationToken);
-                                assignment.MarkReminderNotStartedSent(now);
-                                nudgesSent++;
-                            }
+                            await NotifyAsync(
+                                userId, NotificationEventCatalog.ReminderSoon, order, assignment,
+                                cancellationToken);
+                            assignment.MarkReminderSoonSent(now);
+                            soonSent++;
                         }
-                        catch (Exception ex)
+                        else if (nudgeDue
+                            && assignment.ReminderNotStartedSentAt == null
+                            && !alreadyOnAJob.Contains(assignment.EmployeeId))
                         {
-                            logger.LogWarning(ex,
-                                "Failed to enqueue a job reminder for order {OrderId} employee {EmployeeId}",
-                                order.Id, assignment.EmployeeId);
+                            await NotifyAsync(
+                                userId, NotificationEventCatalog.ReminderNotStarted, order, assignment,
+                                cancellationToken);
+                            assignment.MarkReminderNotStartedSent(now);
+                            nudgesSent++;
                         }
                     }
                 }

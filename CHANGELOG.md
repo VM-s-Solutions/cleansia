@@ -1121,6 +1121,10 @@ need backfilling.
 - **Customer — a preferred-offer notice is staged before its lapse stamp.** A failed account-notice
   read leaves no stamp hiding the notice from a fresh eligible retry. (T-0865)
 
+- **Cleaner — a failed soon/start-reminder batch saves no partial current-company stamps.**
+  A fresh tick can retry inside its existing window; an earlier company's completed batch remains.
+  (T-0866)
+
 - **Customer — a signed-in booking uses your account e-mail.** The web form shows that address
   read-only, and the server keeps it even if a request supplies another address. Guest contact
   details and booking names and phone numbers retain their existing rules. (T-0853)

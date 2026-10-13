@@ -4,7 +4,7 @@ title: When no mail app answers, Help copies the support address and says so
 size: S
 owner: pm
 created: 2026-10-11
-updated: 2026-10-12
+updated: 2026-10-13
 depends_on: [T-0807]
 blocks: []
 stories: []
@@ -49,6 +49,7 @@ F7's Help shortcut (and the registration lock's support row) does nothing on a p
   - GREEN: Android core `OpenOrCopyTest` 2/2, partner parity, dashboard and registration-lock suites, and customer `HelpSupportViewModelTest`. iOS partner suites, and `StringCatalogCompletenessTests`.
 - 2026-10-12 — Committed as `278582f`. Its Android half compiles on its own (main and unit-test sources, per commit); its iOS half was built only as part of the final tree. Full suites on the final tree, from the review fix pass: Android core 294, partner 834 and customer 1679, all passing. iOS on 18.6 and on the 16.4 floor: Core 775/0, Partner 1109/0, and Customer 1770 with 1 skipped (the VoiceOver-only chip test) and 0 failures. After that run only two test files changed (T-0829's source pin, T-0831's time-zone pin), each run green at class level, plus comment-only edits. Every Android-touching commit compiles on its own.
 - 2026-10-12 — Shipped in [#323](https://github.com/VM-s-Solutions/cleansia/pull/323). Exact-head CI on `cf63083` passed all 9 check runs with no re-run: Backend, Frontend and e2e-smoke, Android, iOS, Docs, iOS Symbols, booking-policy parity and Secret scan. Merged normally with the SHA guard as `de4e6cb`. No deploy ran. Evidence: `raw/ci/p2-pr323-ci-merge-closure-001.json` (sha256 `504b3841…`) in the off-tree Wave F folder.
+- 2026-10-13 — The no-mail check, run in T-0839's device pass (`render-p6/raw/receipt-003.json`, off-tree in the Wave F folder). iOS: PASS for Help. With no Mail app on the simulator, one Help tap copied `support@cleansia.cz`, the "Address copied" notice showed, and no composer opened. The registration lock's support row was not reached on either app. Android: NOT OBSERVED; Help was found but not tapped, because Gmail is the owned emulator's only `mailto` handler and disabling it waits for Mike's word or an image with no mail handler (T-0839 AC5).
 
 ## Review
 

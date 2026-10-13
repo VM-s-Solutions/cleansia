@@ -23,7 +23,8 @@ public static class FunctionsProcessingRegistration
     {
         services.AddScoped<IPayPeriodBackgroundService, PayPeriodBackgroundService>();
         services.AddScoped<IPeriodReminderBackgroundService, PeriodReminderBackgroundService>();
-        services.AddScoped<INewJobsDigestService, NewJobsDigestService>();
+        services.AddScoped<NewJobsDigestService>();
+        services.AddScoped<INewJobsDigestService>(provider => provider.GetRequiredService<NewJobsDigestService>());
         services.AddScoped<IDataRetentionBackgroundService, DataRetentionBackgroundService>();
         services.AddScoped<IRefreshTokenCleanupService, RefreshTokenCleanupService>();
         // ADR-0064 D2 — the company wind-down sweep, consumed here only.

@@ -13,8 +13,10 @@ using Cleansia.Core.Queue.Abstractions.Messages;
 using Cleansia.Infra.Database;
 using Cleansia.Infra.Database.Repositories;
 using Cleansia.TestUtilities;
+using Cleansia.Tests.Services;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
 
@@ -232,13 +234,13 @@ public sealed class ColdPathCurrentStatusQueryTests : IDisposable
                 (userId, _, args, _, _, _) => notified = (userId, args))
             .Returns(Task.CompletedTask);
 
-        var digest = new NewJobsDigestService(
-            new EmployeeRepository(ctx),
-            orderRepository.Object,
-            new UserNotificationPreferencesRepository(ctx),
+        await using var provider = NewJobsDigestTestServices.Create(
+            NewContext,
             producer.Object,
-            Mock.Of<IUnitOfWork>(),
-            NullLogger<NewJobsDigestService>.Instance);
+            _ => orderRepository.Object,
+            unitOfWork: Mock.Of<IUnitOfWork>());
+        await using var scope = provider.CreateAsyncScope();
+        var digest = scope.ServiceProvider.GetRequiredService<INewJobsDigestService>();
 
         await digest.SendDigestsAsync(CancellationToken.None);
 

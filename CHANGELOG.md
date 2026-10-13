@@ -1107,6 +1107,9 @@ need backfilling.
   A fresh tick can retry while the membership remains in its existing renewal or cancellation
   window. (T-0859)
 
+- **Cleaner — a failed new-jobs digest for one cleaner does not hold back the next cleaner.**
+  Each cleaner's notice and watermark save together; an expired job is still excluded. (T-0860)
+
 - **Customer — a signed-in booking uses your account e-mail.** The web form shows that address
   read-only, and the server keeps it even if a request supplies another address. Guest contact
   details and booking names and phone numbers retain their existing rules. (T-0853)

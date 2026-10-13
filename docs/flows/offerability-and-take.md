@@ -143,6 +143,12 @@ order just taken is excluded, so it earns the assignment notice and never also a
 
 A timer sweeps the open board and tells each cleaner about work that is **fresh to them personally**.
 
+The dispatcher selects cleaner IDs and captures one sweep instant. Each cleaner's existing service
+resolves in a fresh scope, re-reads the employee, adopts the employee's operator and commits that
+cleaner's watermark, feed row and push envelope together. A refused cleaner's scope is discarded
+before the next cleaner runs, so one refusal does not consume another cleaner's near-start opportunity.
+A retry still needs an eligible job; this does not extend its slot or notification window.
+
 ### Freshness is three sources, not one
 
 `Employee.LastNewJobsDigestAt` is a single per-cleaner scalar, but two of the filters are per-cleaner

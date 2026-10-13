@@ -8,6 +8,7 @@ using Cleansia.Core.Domain.Repositories;
 using Cleansia.Core.Domain.SeedWork;
 using Cleansia.Core.Domain.Users;
 using Cleansia.Infra.Database;
+using Cleansia.Functions.Core;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging.Abstractions;
@@ -97,25 +98,7 @@ public class NewJobsDigestRadiusPostgresTests(PostgresContainerFixture fixture) 
             expectedCount: "1",
             new Job("order-pg-ostrava", CountryId, OstravaLat, OstravaLon));
 
-    private Task RunAsync(int? radiusKm, string? expectedCount, params Job[] jobs) =>
-        TestMethod<IReadOnlyList<Dictionary<string, string>>>(
-            arrange: context => SeedAsync(context, radiusKm, jobs),
-            act: SweepAsync,
-            assert: (CleansiaDbContext _, IReadOnlyList<Dictionary<string, string>> pushes) =>
-            {
-                if (expectedCount is null)
-                {
-                    Assert.Empty(pushes);
-                }
-                else
-                {
-                    Assert.Equal(expectedCount, Assert.Single(pushes)["count"]);
-                }
-
-                return Task.CompletedTask;
-            });
-
-    private static async Task<IReadOnlyList<Dictionary<string, string>>> SweepAsync(IServiceProvider provider)
+    private Task RunAsync(int? radiusKm, string? expectedCount, params Job[] jobs)
     {
         var pushes = new List<Dictionary<string, string>>();
         var producer = new Mock<INotificationProducer>();
@@ -126,18 +109,25 @@ public class NewJobsDigestRadiusPostgresTests(PostgresContainerFixture fixture) 
             .Callback<string, string, Dictionary<string, string>, string?, string?, CancellationToken>(
                 (_, _, args, _, _, _) => pushes.Add(args))
             .Returns(Task.CompletedTask);
-
-        var digest = new NewJobsDigestService(
-            provider.GetRequiredService<IEmployeeRepository>(),
-            provider.GetRequiredService<IOrderRepository>(),
-            provider.GetRequiredService<IUserNotificationPreferencesRepository>(),
-            producer.Object,
-            provider.GetRequiredService<IUnitOfWork>(),
-            NullLogger<NewJobsDigestService>.Instance);
-
-        await digest.SendDigestsAsync(CancellationToken.None);
-
-        return pushes;
+        return TestMethod<IReadOnlyList<Dictionary<string, string>>>(
+            setup: services =>
+            {
+                services.AddFunctionsProcessing();
+                services.AddSingleton(producer.Object);
+                return Task.CompletedTask;
+            },
+            arrange: context => SeedAsync(context, radiusKm, jobs),
+            act: async provider =>
+            {
+                await provider.GetRequiredService<INewJobsDigestService>().SendDigestsAsync();
+                return pushes;
+            },
+            assert: (_, actual) =>
+            {
+                if (expectedCount is null) Assert.Empty(actual);
+                else Assert.Equal(expectedCount, Assert.Single(actual)["count"]);
+                return Task.CompletedTask;
+            }, transactional: false);
     }
 
     private static async Task SeedAsync(CleansiaDbContext context, int? radiusKm, Job[] jobs)

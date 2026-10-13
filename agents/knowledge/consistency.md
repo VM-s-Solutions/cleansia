@@ -1073,7 +1073,6 @@ the roster is stale.
 |---|---|
 | `FiscalRetryService` | `FiscalRetryService.cs:40-112` |
 | `PayPeriodBackgroundService` | `PayPeriodBackgroundService.cs:255-279`, a cleaner's invoices, committing at `:455-476` |
-| `NewJobsDigestService` | `NewJobsDigestService.cs:110-244`, committing at `:376` |
 | `DataRetentionBackgroundService` | `DataRetentionBackgroundService.cs:93-105`, around each retention task |
 
 **Roster — a catch over staging only, then one commit for the group** (milder: the failed item's staged rows

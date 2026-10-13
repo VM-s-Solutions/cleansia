@@ -10,6 +10,7 @@ using Cleansia.Infra.Database.Repositories;
 using Cleansia.TestUtilities;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
 
@@ -215,13 +216,9 @@ public sealed class NewJobsDigestPreferredHoldTests : IDisposable
                 (_, _, args, _, _, _) => pushes.Add(args))
             .Returns(Task.CompletedTask);
 
-        var digest = new NewJobsDigestService(
-            new EmployeeRepository(ctx),
-            new OrderRepository(ctx),
-            new UserNotificationPreferencesRepository(ctx),
-            producer.Object,
-            ctx,
-            NullLogger<NewJobsDigestService>.Instance);
+        await using var provider = NewJobsDigestTestServices.Create(() => NewContext(tenantId: TestTenants.Default), producer.Object, logger: NullLogger<NewJobsDigestService>.Instance);
+        await using var scope = provider.CreateAsyncScope();
+        var digest = scope.ServiceProvider.GetRequiredService<INewJobsDigestService>();
 
         await digest.SendDigestsAsync(CancellationToken.None);
 

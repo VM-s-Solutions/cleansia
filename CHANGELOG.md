@@ -1110,6 +1110,10 @@ need backfilling.
 - **Cleaner — a failed new-jobs digest for one cleaner does not hold back the next cleaner.**
   Each cleaner's notice and watermark save together; an expired job is still excluded. (T-0860)
 
+- **Customer — pre-cleaning reminders retry a failed company batch while it is still eligible.**
+  The failed batch saves no partial reminder stamps; previously completed companies remain saved.
+  (T-0864)
+
 - **Customer — a signed-in booking uses your account e-mail.** The web form shows that address
   read-only, and the server keeps it even if a request supplies another address. Guest contact
   details and booking names and phone numbers retain their existing rules. (T-0853)

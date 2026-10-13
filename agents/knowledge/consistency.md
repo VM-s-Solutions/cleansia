@@ -1080,7 +1080,6 @@ still ride the group's commit):
 
 | Job | Where |
 |---|---|
-| `SendPreCleaningReminders` | `SendPreCleaningReminders.cs:87-112` |
 | `NotifyLapsedPreferredOffers` | `NotifyLapsedPreferredOffers.cs:88-102` |
 | `SendCleanerJobReminders` | `SendCleanerJobReminders.cs:175-201` |
 | `SendTomorrowJobDigest` | `SendTomorrowJobDigest.cs:138-153` |

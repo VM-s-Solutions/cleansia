@@ -23,7 +23,8 @@ public class PayPeriodRolloverTests(PostgresContainerFixture fixture) : BaseInte
     private static Task RegisterBatch(IServiceCollection services)
     {
         // The batch is registered by the Functions host, not by AddCoreBindings.
-        services.AddScoped<IPayPeriodBackgroundService, PayPeriodBackgroundService>();
+        services.AddScoped<PayPeriodBackgroundService>();
+        services.AddScoped<IPayPeriodBackgroundService>(sp => sp.GetRequiredService<PayPeriodBackgroundService>());
         services.Replace(ServiceDescriptor.Singleton<IEmailService>(new Mock<IEmailService>().Object));
         return Task.CompletedTask;
     }

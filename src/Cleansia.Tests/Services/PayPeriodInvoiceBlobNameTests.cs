@@ -165,7 +165,9 @@ public class PayPeriodInvoiceBlobNameTests
 
     // ── arrangement ──────────────────────────────────────────────────
 
-    private Task Run() => new PayPeriodBackgroundService(
+    private Task Run() => CreateService().CloseExpiredPeriodsAndOpenNewAsync(CancellationToken.None);
+
+    private PayPeriodBackgroundService CreateService() => new(
         _payPeriodRepository.Object,
         _employeeRepository.Object,
         _emailService.Object,
@@ -184,8 +186,8 @@ public class PayPeriodInvoiceBlobNameTests
         _tenantProvider.Object,
         _payoutReferenceAllocator.Object,
         new Mock<ITenantRepository>().Object,
-        new Mock<ICashLedgerRepository>().Object)
-        .CloseExpiredPeriodsAndOpenNewAsync(CancellationToken.None);
+        new Mock<ICashLedgerRepository>().Object,
+        PayPeriodTestServices.ScopeFactory(CreateService));
 
     private static PayPeriod ExpiredPeriod(string id, string tenantId)
     {

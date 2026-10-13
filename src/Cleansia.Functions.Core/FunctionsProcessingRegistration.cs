@@ -21,7 +21,8 @@ public static class FunctionsProcessingRegistration
 {
     public static IServiceCollection AddFunctionsProcessing(this IServiceCollection services)
     {
-        services.AddScoped<IPayPeriodBackgroundService, PayPeriodBackgroundService>();
+        services.AddScoped<PayPeriodBackgroundService>();
+        services.AddScoped<IPayPeriodBackgroundService>(provider => provider.GetRequiredService<PayPeriodBackgroundService>());
         services.AddScoped<IPeriodReminderBackgroundService, PeriodReminderBackgroundService>();
         services.AddScoped<NewJobsDigestService>();
         services.AddScoped<INewJobsDigestService>(provider => provider.GetRequiredService<NewJobsDigestService>());

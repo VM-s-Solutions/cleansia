@@ -161,6 +161,14 @@ invoice is still due 14 days after issue, and the cash remittance request and th
 keep their own clocks. A period an administrator creates or edits by hand is held to 14 days too.
 → [Business rules — pay periods are 14 days](/product/business-rules#pay-periods)
 
+Each employee's invoice work uses fresh dependencies under the period's operator, receiving only its
+ID, dates, close instant and display label. Invoice, reference, cash-setoff and document commits do not
+save the parent's staged close: another connection still sees Open until the post-email company commit.
+A failed employee scope is disposed before a plain-email fallback starts in a clean scope. A failed
+successor/read step instead ends the tick before that company commit. Earlier invoice records can
+already be durable, and a crash before the period close can repeat email on a fresh tick. These writes
+record what is due; they do not transfer a payout.
+
 ## Approval is the last point the platform can refuse {#approval-is-the-last-refusal}
 
 An invoice is generated `Pending`, approved by an admin, and marked paid once the transfer has been

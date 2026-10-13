@@ -1071,15 +1071,7 @@ the roster is stale.
 
 | Job | Where |
 |---|---|
-| `PayPeriodBackgroundService` | `PayPeriodBackgroundService.cs:255-279`, a cleaner's invoices, committing at `:455-476` |
 | `DataRetentionBackgroundService` | `DataRetentionBackgroundService.cs:93-105`, around each retention task |
-
-**Roster — a catch over staging only, then one commit for the group** (milder: the failed item's staged rows
-still ride the group's commit):
-
-| Job | Where |
-|---|---|
-| `PayPeriodBackgroundService` | `PayPeriodBackgroundService.cs:156-172`, closing each period |
 
 **Not deviations, and this is a ruling rather than an omission:** `CleanupStalePendingOrders` commits once per
 company with no catch at that commit, so a refused company ends the run and the next run takes it again; its one

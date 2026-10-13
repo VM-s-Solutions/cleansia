@@ -73,7 +73,8 @@ public class PayoutReferenceProductionCensusTests(PostgresContainerFixture fixtu
             setup: services =>
             {
                 // The batch is registered by the Functions host, not by AddCoreBindings.
-                services.AddScoped<IPayPeriodBackgroundService, PayPeriodBackgroundService>();
+                services.AddScoped<PayPeriodBackgroundService>();
+        services.AddScoped<IPayPeriodBackgroundService>(sp => sp.GetRequiredService<PayPeriodBackgroundService>());
                 services.Replace(ServiceDescriptor.Scoped<IEmailService>(_ => new SilentEmailService()));
                 return Task.CompletedTask;
             },
@@ -114,7 +115,8 @@ public class PayoutReferenceProductionCensusTests(PostgresContainerFixture fixtu
         await TestMethod(
             setup: services =>
             {
-                services.AddScoped<IPayPeriodBackgroundService, PayPeriodBackgroundService>();
+                services.AddScoped<PayPeriodBackgroundService>();
+        services.AddScoped<IPayPeriodBackgroundService>(sp => sp.GetRequiredService<PayPeriodBackgroundService>());
                 services.Replace(ServiceDescriptor.Scoped<IEmailService>(_ => new SilentEmailService()));
                 return Task.CompletedTask;
             },

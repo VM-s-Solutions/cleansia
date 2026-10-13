@@ -1128,6 +1128,10 @@ need backfilling.
 - **Cleaner — a failed tomorrow-digest batch saves no partial current-company stamps.**
   A fresh tick can retry within the existing three-hour catch-up window. (T-0867)
 
+- **Cleaner and administrator — one refused employee invoice no longer blocks the next employee's
+  invoice work.** The period stays durably Open until its post-email close; earlier invoice records
+  can remain saved, and a crash before close can still repeat email. (T-0862)
+
 - **Customer — a signed-in booking uses your account e-mail.** The web form shows that address
   read-only, and the server keeps it even if a request supplies another address. Guest contact
   details and booking names and phone numbers retain their existing rules. (T-0853)

@@ -72,7 +72,8 @@ public class PayPeriodBackgroundServiceInvoiceMathTests
         _tenantProvider.Object,
         _payoutReferenceAllocator.Object,
         new Mock<ITenantRepository>().Object,
-        new Mock<ICashLedgerRepository>().Object);
+        new Mock<ICashLedgerRepository>().Object,
+        PayPeriodTestServices.ScopeFactory(CreateService));
 
     private void ArrangePeriodCloseWithPays(params OrderEmployeePay[] pays)
     {

@@ -267,6 +267,13 @@ used: **one order, one language.** A booking language with no e-mail copy falls 
 the confirmation does. A customer who changes the app's language after booking keeps getting that
 order's e-mails in the language it was booked in.
 
+Started and Completed e-mails are durable intents in the order's own commit. A refused commit sends
+nothing. The `send-email` consumer checks the committed current status and sends to the booking's
+`CustomerEmail`; for a guest it commits a fresh independent access token before sending the link.
+Delivery uses the existing send-then-record guard: sequential redelivery sends once, while a crash
+between the external send and its delivery record can still duplicate an e-mail. Deploy the Functions
+consumer with or before API versions that publish the `order-status` discriminator.
+
 ## Responsive quote previews
 
 The home calculator requests its quote immediately. Booking groups rapid selection changes into a
@@ -396,8 +403,13 @@ and kept as authored; `CreateRecurringBooking` and `UpdateRecurringBooking` refu
 (`order.cleaning_date.outside_booking_window`) and a `StartsOn` more than 60 days ahead. A materialised
 occurrence stays unconfirmed until the customer confirms it, so *"pending for over an hour"* is its
 **normal** state, not an abandoned checkout — which is why the stale-checkout sweep explicitly excludes
-rows with a `RecurringTemplateId`. A separate sweep retracts unconfirmed occurrences an hour before the
-slot.
+rows with a `RecurringTemplateId`. The confirmation reminder runs hourly at :30 UTC over the next
+2–26 hours, once per occurrence. Established occurrences are normally reminded 25–26 hours ahead;
+new short-notice occurrences get the same reminder before their two-hour confirmation cutoff. If the next
+strict :30 tick reaches or passes that cutoff, materialization stages the reminder and its sent stamp in
+its existing occurrence transaction. Cancelled and completed occurrences are excluded. Each periodic
+reminder uses its own scope, so a refused reminder leaves no staged rows in another occurrence's commit.
+A separate sweep retracts unconfirmed occurrences an hour before the slot.
 
 **Confirming an occurrence** (`ConfirmRecurringOrder`, owner ruling 2026-09-28) stamps
 `Order.CustomerConfirmedAt` for both tenders — the first stamp wins — and the card path then asks for

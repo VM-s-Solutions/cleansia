@@ -22,7 +22,7 @@ public class EmployeeDocumentRepository(CleansiaDbContext context) : BaseReposit
             .ToListAsync(cancellationToken);
     }
 
-    public async Task RemoveForEmployeeAsync(string employeeId, CancellationToken cancellationToken)
+    public async Task RemoveForEmployeeIgnoringTenantAsync(string employeeId, CancellationToken cancellationToken)
     {
         // No IsActive conjunct: a superseded version's row carries the same file name and reviewer notes as
         // the live one, and the erasure has already deleted every version's blob.

@@ -485,14 +485,16 @@ dotnet ef migrations add <MigrationName> \
 The committed history is a single `Initial` migration. While the platform is pre-production, schema
 changes are folded back into it rather than stacked on top, so the shipped set stays one file.
 Regenerating it (`dotnet ef migrations remove --force` then `add Initial`, startup project a web host)
-is ordinary work for whoever changes the model, paired with the DEV database drop and proven by the
-integration suite — owner rulings 2026-08-15, 2026-08-25 and 2026-09-07; nothing here is a manual
-step any more.
+is ordinary work for whoever changes the model, proven by the integration suite — owner rulings
+2026-08-15, 2026-08-25 and 2026-09-07. The shared DEV reset still requires explicit approval. Mike's
+2026-10-13 approval schedules this wave's one reset with its final fresh deployment, after every PR
+has merged green; it does not run during branch work.
 
-Today that file is **`20261012190449_Initial`**, regenerated on 2026-10-12 when `Orders.PaymentStatus`
-became the order's second concurrency token beside `CurrentStatus` ([ADR-0071](/decisions/adr-0071)). That
-is model metadata with no DDL: the migration body is byte-identical to the `20261005201452` it replaced, and
-only the Designer and the snapshot changed. **89 tables**, 53 of them stamped with a `Tenants` foreign key
+Today that file is **`20261013160545_Initial`**, regenerated on 2026-10-13 for the nonunique
+`Devices(DeviceId, DeviceToken)` index used by the shared-install withdrawal read. That index is the
+only DDL change from `20261012190449`; the preceding regeneration added `Orders.PaymentStatus`
+as the second order concurrency token beside `CurrentStatus` ([ADR-0071](/decisions/adr-0071)).
+**89 tables**, 53 of them stamped with a `Tenants` foreign key
 (`TenantId` NOT NULL on 51; `OutboxMessages` and `DeadLetters` nullable). The chain of regenerations before
 it — the per-currency schema of 2026-09-12, the customer audit and legal documents, the tenant FK, the
 company lifecycle, the status concurrency token, the recurring pause state, the contract for work, the

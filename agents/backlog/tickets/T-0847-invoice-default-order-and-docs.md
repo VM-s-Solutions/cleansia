@@ -48,9 +48,9 @@ This comes from open questions 1 to 3 of the 2026-10-12 native design ruling's i
 
 ## Acceptance criteria (done looks like)
 
-- [ ] **AC1** — `GetPagedInvoices` with no sort returns the newest generated first, with a stable tie-break. The test goes RED then GREEN.
+- [x] **AC1** — `GetPagedInvoices` with no sort returns the newest generated first, with a stable tie-break. The test goes RED then GREEN.
 - [ ] **AC2** — No native call site sorts invoices by `createdOn`.
-- [ ] **AC3** — Outside dated records, the decision records no longer call regeneration or the re-dump owner-only, and the full suites pass.
+- [x] **AC3** — Outside dated records, the decision records no longer call regeneration or the re-dump owner-only, and the full suites pass.
 
 ## Owner decision — 2026-10-13
 
@@ -68,6 +68,12 @@ Evidence root: `/Users/michael/.codex/scratchpads/cleansia-next-wave-2026-10-13/
 
 - 2026-10-12 — Filed from the native design ruling's open questions on T-0832. Reported, not absorbed (CLAUDE.md §2): Mike decides whether it becomes work.
 
+- 2026-10-13 — Backend half implemented inside GetPagedInvoices: materialize the supplied sort; locally normalize explicit Id invariantly, default to GeneratedAt descending only when empty before WithinCurrencyWhenSortedBy, and append Id descending afterward unless already explicit. EmployeeInvoiceSort resolves Id ordinal-ignore-case. Currency remains first for unfiltered amount sorting. No SortMapper helper or web sort change.
+- 2026-10-13 — PostgreSQL valid RED18 executed:11 new invoice assertions failed,7 existing/seed controls passed; fresh Release rebuild GREEN27/27 (14 invoice,4 seed,8 AppLogin,1 development-first-boot), zero skipped (`p2/data/t0847-valid-red-and-t0842-clean-model.json`, `t0847-green-and-t0842-fixtures.json`, associated TRXs/fingerprints). Seed order d,a,c,b differs from desired timestamp/id order. Tests cover null/empty default, explicit generatedAt directions with paging/ties, Turkish id/Id/ID and equal amounts within currency. The earlier missing-FK fixture/build/disk failures are retained as nonproof, not behavioral RED.
+- 2026-10-13 — Approved eleven outside regeneration passages and linked current guidance now say ordinary work, run and reported: sync command, backend/mobile catalogs, mobile overview, ticket template, iOS handover/openapi README/generator, generated-client-contract and iOS architecture. Genuinely dated rounds remain historical. Shell syntax/diff checks pass; sorting changes require no DTO/spec/client regeneration. The iOS helper was executed only to reproduce the local CI workspace from committed specs; its outputs are ignored. Full backend8722→906→509 all pass. Two native generatedAt literals and AC2 remain PR3 work; this ticket remains in progress until that evidence/closure.
+
+- 2026-10-13 — Combined-source local release gates completed before publication: rebuilt Release unit8722→integration906→host509, zero skipped; uncached web5041 tests/408 suites across71 tested projects (three empty projects), all three production builds and seven Playwright smokes (5/1/1); Android three Debug compilations then core296→partner839→customer1683 JVM tests, every task forced to execute, zero skipped; iOS18.6 Core776→partner1113→customer1779 passed, with one existing VoiceOver case skipped. Docs refs/catalog/VitePress, iOS symbols/booking-policy parity and their self-tests pass. Exact commands, counters and receipt/TRX/summary hashes are in `p2/local/full-gates-before-commit.json` and `p2/verifier/android-gates-final.json` under the wave root. Android ordinary ignored OpenAPI generation and ignored iOS workspace client generation from committed specs ran for local CI; no tracked contract dump/NSwag change was required. These are command-only proofs, not real mail, native behavior/device or deployment checks. First unit source-guard failure was corrected with four actual token-bearing invocations and passed the full rerun; first partner iOS ENOSPC attempt is nonproof. The initial affected lint selected no targets on filing-only HEAD and is not source proof; actual affected lint and the three Docs checks will run at the committed source head before push. Hosted exact-head CI/guarded merge and final DEV remain due.
+
 ## Review
 
-Pending.
+2026-10-13 — Backend/docs implementation verdict **approve-with-notes**. Command-only provider checks pass; final combined gates/hosted CI remain due, and AC2 belongs to PR3. Evidence: `p2/reviewer-round1.md`, `p2/verifier-round1.md` under the wave root.

@@ -75,7 +75,8 @@ public class PushSubjectNamesTheEventTests
         // Swept reminders, each suppressed by its own stamp on the row it reminds about, so the sweep
         // cannot re-send for the same order however many times it ticks.
         "SendPreCleaningReminders.cs",
-        "SendRecurringOrderReminders.cs",
+        "SendRecurringOrderReminder.cs",
+        "MaterializeRecurringBookingTemplate.cs",
 
         // The RECIPIENT discriminates: this loops the crew and sends one per cleaner, so two rows mean
         // two user segments rather than one repeated key — and an order is cancelled once regardless.

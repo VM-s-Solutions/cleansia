@@ -51,7 +51,7 @@ public class GetMyLegalDocuments
                 ? await countryConfigurationRepository.GetDefaultMarketAsync(cancellationToken)
                 : await countryConfigurationRepository.GetByCountryIdAsync(countryId, cancellationToken);
             var company = market?.OperatorTenantId is { } operatorTenantId
-                ? await companyInfoRepository.GetActiveForOperatorAsync(operatorTenantId, market.CountryId, cancellationToken)
+                ? await companyInfoRepository.GetActiveForOperatorIgnoringTenantAsync(operatorTenantId, market.CountryId, cancellationToken)
                 : null;
             var placeholders = LegalMarkdownRenderer.MarketPlaceholders(market, company);
 

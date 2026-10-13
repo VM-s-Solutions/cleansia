@@ -43,7 +43,7 @@ public sealed class OrderDetailFreeCancellationHoursTests
     public async Task An_Entitled_Plus_Member_Reads_The_Orders_Plus_Window()
     {
         _memberships
-            .Setup(r => r.GetEntitledForUserNoTrackingAsync(UserId, It.IsAny<CancellationToken>()))
+            .Setup(r => r.GetEntitledForUserNoTrackingIgnoringTenantAsync(UserId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(UserMembership.Create(
                 userId: UserId,
                 membershipPlanId: "plan-plus",

@@ -23,17 +23,17 @@ public class UserMembershipRepository(CleansiaDbContext context)
         return LifecycleForUserQuery(userId).AsNoTracking().FirstOrDefaultAsync(cancellationToken);
     }
 
-    public Task<UserMembership?> GetEntitledForUserAsync(string userId, CancellationToken cancellationToken)
+    public Task<UserMembership?> GetEntitledForUserIgnoringTenantAsync(string userId, CancellationToken cancellationToken)
     {
-        return EntitledForUserQuery(userId).FirstOrDefaultAsync(cancellationToken);
+        return EntitledForUserIgnoringTenantQuery(userId).FirstOrDefaultAsync(cancellationToken);
     }
 
-    public Task<UserMembership?> GetEntitledForUserNoTrackingAsync(string userId, CancellationToken cancellationToken)
+    public Task<UserMembership?> GetEntitledForUserNoTrackingIgnoringTenantAsync(string userId, CancellationToken cancellationToken)
     {
-        return EntitledForUserQuery(userId).AsNoTracking().FirstOrDefaultAsync(cancellationToken);
+        return EntitledForUserIgnoringTenantQuery(userId).AsNoTracking().FirstOrDefaultAsync(cancellationToken);
     }
 
-    private IQueryable<UserMembership> EntitledForUserQuery(string userId)
+    private IQueryable<UserMembership> EntitledForUserIgnoringTenantQuery(string userId)
     {
         return LifecycleForUserQuery(userId)
             // Benefits follow the account even while an authorized order is operated elsewhere.
@@ -75,7 +75,7 @@ public class UserMembershipRepository(CleansiaDbContext context)
             .AnyAsync(m => m.MembershipPlanId == membershipPlanId, cancellationToken);
     }
 
-    public Task<UserMembership?> GetByStripeSubscriptionIdAsync(string stripeSubscriptionId, CancellationToken cancellationToken)
+    public Task<UserMembership?> GetByStripeSubscriptionIdIgnoringTenantAsync(string stripeSubscriptionId, CancellationToken cancellationToken)
     {
         // Cross-tenant by design: webhook lookup. Caller (HandleSubscriptionEvent)
         // sets ITenantProvider.SetTenantOverride(membership.TenantId) before any

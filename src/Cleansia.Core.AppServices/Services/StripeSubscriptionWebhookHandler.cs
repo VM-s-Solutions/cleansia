@@ -39,7 +39,7 @@ public class StripeSubscriptionWebhookHandler(
         }
 
         var membership = await userMembershipRepository
-            .GetByStripeSubscriptionIdAsync(subscriptionId, cancellationToken);
+            .GetByStripeSubscriptionIdIgnoringTenantAsync(subscriptionId, cancellationToken);
 
         if (membership != null && !string.IsNullOrEmpty(membership.TenantId))
         {

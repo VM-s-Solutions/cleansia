@@ -17,5 +17,5 @@ public interface IEmployeeDocumentRepository : IRepository<EmployeeDocument, str
     /// superseded-document purge takes only rows already deactivated (<c>!IsActive &amp;&amp; DeactivatedOn
     /// &lt; cutoff</c>), and an erasure deactivates the employee, never their documents.</para>
     /// </summary>
-    Task RemoveForEmployeeAsync(string employeeId, CancellationToken cancellationToken);
+    Task RemoveForEmployeeIgnoringTenantAsync(string employeeId, CancellationToken cancellationToken);
 }

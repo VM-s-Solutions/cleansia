@@ -193,7 +193,7 @@ public sealed class CompanyArchiveService(
         // collapse — so the feed is read before the call: a row naming the day means the company was
         // already told.
         var archivedOn = builtOn.UtcDateTime.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
-        if (!await userNotificationRepository.AnyForEventAsync(
+        if (!await userNotificationRepository.AnyForEventIgnoringTenantAsync(
                 tenant.Id, AdminNotificationEventCatalog.CompanyArchived, "archivedOn", archivedOn, cancellationToken))
         {
             await adminNotifier.NotifyAsync(

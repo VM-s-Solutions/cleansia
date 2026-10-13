@@ -1,5 +1,6 @@
 using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Orders;
+using Cleansia.TestUtilities.MockDataFactories.Orders;
 
 namespace Cleansia.Tests.Features.Orders;
 
@@ -74,7 +75,33 @@ public class OrderAvailabilityTests
     {
         DateTime? customerConfirmedAt = customerConfirmed ? DateTime.UtcNow : null;
         Assert.Equal(expected, OrderAvailability.IsOfferable(
-            status, paymentType, paymentStatus, recurringTemplateId, customerConfirmedAt));
+            status, paymentType, paymentStatus, recurringTemplateId, customerConfirmedAt, NowUtc.AddMinutes(10), 60, NowUtc));
+    }
+
+    private static readonly DateTime NowUtc = new(2026, 10, 13, 12, 0, 0, DateTimeKind.Utc);
+
+    [Theory]
+    [InlineData(OrderStatus.New, PaymentType.Cash, PaymentStatus.Pending, 10, 60, true)]
+    [InlineData(OrderStatus.New, PaymentType.Cash, PaymentStatus.Pending, -10, 60, true)]
+    [InlineData(OrderStatus.OnTheWay, PaymentType.Card, PaymentStatus.Paid, -130, 180, true)]
+    [InlineData(OrderStatus.InProgress, PaymentType.Card, PaymentStatus.Paid, -130, 240, true)]
+    [InlineData(OrderStatus.New, PaymentType.Cash, PaymentStatus.Pending, -60, 60, false)]
+    [InlineData(OrderStatus.OnTheWay, PaymentType.Card, PaymentStatus.Paid, -180, 180, false)]
+    [InlineData(OrderStatus.InProgress, PaymentType.Card, PaymentStatus.Paid, -241, 240, false)]
+    [InlineData(OrderStatus.InProgress, PaymentType.Card, PaymentStatus.Pending, -130, 180, false)]
+    public void Offerability_Ends_At_The_Raw_Booked_Slot_End(
+        OrderStatus status, PaymentType type, PaymentStatus payment, int startOffsetMinutes, int duration, bool expected)
+    {
+        var order = OrderMockFactory.Generate(new OrderMockFactory.OrderPartial
+        {
+            CleaningDateTime = NowUtc.AddMinutes(startOffsetMinutes),
+            PaymentType = type,
+            PaymentStatus = payment,
+        });
+        order.UpdateEstimatedTime(duration);
+        order.AddOrderStatus(OrderStatusTrack.Create(status, order));
+
+        Assert.Equal(expected, OrderAvailability.IsOfferable(order, NowUtc));
     }
 
     [Fact]
@@ -91,8 +118,8 @@ public class OrderAvailabilityTests
         {
             var everOfferable = Enum.GetValues<PaymentType>()
                 .SelectMany(_ => Enum.GetValues<PaymentStatus>(), (type, paymentStatus) => (type, paymentStatus))
-                .Any(pair => OrderAvailability.IsOfferable(status, pair.type, pair.paymentStatus, null, null)
-                    || OrderAvailability.IsOfferable(status, pair.type, pair.paymentStatus, RecurringTemplateId, DateTime.UtcNow));
+                .Any(pair => OrderAvailability.IsOfferable(status, pair.type, pair.paymentStatus, null, null, NowUtc.AddMinutes(10), 60, NowUtc)
+                    || OrderAvailability.IsOfferable(status, pair.type, pair.paymentStatus, RecurringTemplateId, NowUtc, NowUtc.AddMinutes(10), 60, NowUtc));
 
             Assert.Equal(OrderAvailability.OfferableStatuses.Contains(status), everOfferable);
         }
@@ -130,11 +157,11 @@ public class OrderAvailabilityTests
 
             Assert.Equal(
                 offerableAtNew[paymentType],
-                OrderAvailability.IsOfferable(OrderStatus.New, paymentType, PaymentStatus.Pending, null, null));
+                OrderAvailability.IsOfferable(OrderStatus.New, paymentType, PaymentStatus.Pending, null, null, NowUtc.AddMinutes(10), 60, NowUtc));
 
             Assert.Equal(
                 retractionFreeWhenUnpaidAndOneOff[paymentType],
-                OrderAvailability.IsOfferable(OrderStatus.Confirmed, paymentType, PaymentStatus.Pending, null, null));
+                OrderAvailability.IsOfferable(OrderStatus.Confirmed, paymentType, PaymentStatus.Pending, null, null, NowUtc.AddMinutes(10), 60, NowUtc));
         }
     }
 }

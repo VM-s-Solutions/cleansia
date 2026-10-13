@@ -123,7 +123,7 @@ public class MaterializeRecurringBookingTemplate
             // Entitlement and the durable lapse notice belong to the account. Existing occurrences
             // and the authored schedule remain intact while the membership is unpaid.
             var entitled = await userMembershipRepository
-                .GetEntitledForUserNoTrackingAsync(template.UserId, cancellationToken);
+                .GetEntitledForUserNoTrackingIgnoringTenantAsync(template.UserId, cancellationToken);
 
             if (entitled == null)
             {
@@ -341,6 +341,16 @@ public class MaterializeRecurringBookingTemplate
                         template.EarlyPerformanceConsentClient!,
                         template.EarlyPerformanceConsentIpAddress,
                         template.EarlyPerformanceConsentDeviceLabel);
+                }
+
+                var nextReminderTick = now.Date.AddHours(now.Hour).AddMinutes(30);
+                if (nextReminderTick <= now) nextReminderTick = nextReminderTick.AddHours(1);
+                if (nextReminderTick >= occurrence.AddHours(-BookingPolicy.ExpressLeadTimeHours))
+                {
+                    await notificationProducer.NotifyAsync(order.UserId!, NotificationEventCatalog.RecurringScheduled,
+                        new Dictionary<string, string> { ["orderId"] = order.Id, ["orderNumber"] = order.DisplayOrderNumber },
+                        order.TenantId, order.Id, cancellationToken);
+                    order.MarkRecurringReminderSent(now);
                 }
 
                 ordersCreated++;

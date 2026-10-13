@@ -49,7 +49,7 @@ public class UpdateRecurringBookingMembershipGuardTests
             .Setup(r => r.GetByIdForOwnerAsync(TemplateId, It.IsAny<string>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(ArrangeTemplate(UserId));
         _membershipRepository
-            .Setup(r => r.GetEntitledForUserNoTrackingAsync(UserId, It.IsAny<CancellationToken>()))
+            .Setup(r => r.GetEntitledForUserNoTrackingIgnoringTenantAsync(UserId, It.IsAny<CancellationToken>()))
             .ReturnsAsync((UserMembership?)null);
     }
 
@@ -108,7 +108,7 @@ public class UpdateRecurringBookingMembershipGuardTests
         await CreateValidator().ValidateAsync(ValidCommand());
 
         _membershipRepository.Verify(
-            r => r.GetEntitledForUserNoTrackingAsync(UserId, It.IsAny<CancellationToken>()), Times.Once);
+            r => r.GetEntitledForUserNoTrackingIgnoringTenantAsync(UserId, It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Fact]
@@ -133,7 +133,7 @@ public class UpdateRecurringBookingMembershipGuardTests
         _templateRepository.Verify(
             r => r.GetByIdForOwnerAsync("missing", UserId, It.IsAny<CancellationToken>()), Times.Once);
         _membershipRepository.Verify(
-            r => r.GetEntitledForUserNoTrackingAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Never);
+            r => r.GetEntitledForUserNoTrackingIgnoringTenantAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 
     [Fact]
@@ -149,7 +149,7 @@ public class UpdateRecurringBookingMembershipGuardTests
         _templateRepository.Verify(
             r => r.GetByIdForOwnerAsync(TemplateId, UserId, It.IsAny<CancellationToken>()), Times.Once);
         _membershipRepository.Verify(
-            r => r.GetEntitledForUserNoTrackingAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Never);
+            r => r.GetEntitledForUserNoTrackingIgnoringTenantAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 
     [Fact]
@@ -281,7 +281,7 @@ public class UpdateRecurringBookingMembershipGuardTests
             currentPeriodStart: DateTime.UtcNow.AddDays(-1),
             currentPeriodEnd: DateTime.UtcNow.AddMonths(1));
         _membershipRepository
-            .Setup(r => r.GetEntitledForUserNoTrackingAsync(ownerUserId, It.IsAny<CancellationToken>()))
+            .Setup(r => r.GetEntitledForUserNoTrackingIgnoringTenantAsync(ownerUserId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(membership);
     }
 

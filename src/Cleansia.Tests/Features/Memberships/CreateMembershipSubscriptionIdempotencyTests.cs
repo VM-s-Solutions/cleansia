@@ -255,7 +255,7 @@ public class CreateMembershipSubscriptionIdempotencyTests
     // surfaced as a raw 500 at the pipeline's UnitOfWorkPipelineBehavior.CommitAsync. This test models exactly
     // that path — re-check NULL + the in-handler flush (CommitAsync) raising the 23505 DbUpdateException — and
     // asserts the handler CLOSES the window: it catches the unique-violation, resolves the winner via
-    // GetByStripeSubscriptionIdAsync, and returns a deterministic MembershipAlreadyActive instead of throwing.
+    // GetByStripeSubscriptionIdIgnoringTenantAsync, and returns a deterministic MembershipAlreadyActive instead of throwing.
     [Fact]
     public async Task SameToken_Loser_PreWinnerCommit_UniqueViolationOnFlush_ResolvesToMembershipAlreadyActive()
     {
@@ -287,7 +287,7 @@ public class CreateMembershipSubscriptionIdempotencyTests
             currentPeriodStart: DateTime.UtcNow,
             currentPeriodEnd: DateTime.UtcNow.AddMonths(1));
         _membershipRepository
-            .SetupSequence(r => r.GetByStripeSubscriptionIdAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .SetupSequence(r => r.GetByStripeSubscriptionIdIgnoringTenantAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync((UserMembership?)null)
             .ReturnsAsync(winnerRow);
 
@@ -301,7 +301,7 @@ public class CreateMembershipSubscriptionIdempotencyTests
         // the window was closed at the write boundary, not merely re-checked away.
         Assert.Single(added);
         _membershipRepository.Verify(
-            r => r.GetByStripeSubscriptionIdAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Exactly(2));
+            r => r.GetByStripeSubscriptionIdIgnoringTenantAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Exactly(2));
     }
 
     // ── null/empty token (web / not-yet-updated caller): deterministic fallback key, still collapses ──

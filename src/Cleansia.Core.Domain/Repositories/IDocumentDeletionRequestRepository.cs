@@ -18,5 +18,5 @@ public interface IDocumentDeletionRequestRepository
     /// subject wrote. It must also run BEFORE the documents are removed — the FK is
     /// <c>Restrict</c>, so a surviving request would make the erasure throw rather than skip.</para>
     /// </summary>
-    Task RemoveForEmployeeAsync(string employeeId, CancellationToken cancellationToken);
+    Task RemoveForEmployeeIgnoringTenantAsync(string employeeId, CancellationToken cancellationToken);
 }

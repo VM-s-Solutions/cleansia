@@ -43,7 +43,7 @@ public class QuoteOrderMembershipDiscountIsCurrencyFreeTests
             .GetSetMethod(nonPublic: true)!
             .Invoke(membership, [plan]);
         _membershipRepository
-            .Setup(r => r.GetEntitledForUserAsync(UserId, It.IsAny<CancellationToken>()))
+            .Setup(r => r.GetEntitledForUserIgnoringTenantAsync(UserId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(membership);
 
         _pricingCalculator

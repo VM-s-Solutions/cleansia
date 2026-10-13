@@ -13,7 +13,7 @@ public interface IAddressRepository : IRepository<Address, string>
     /// do not count when the caller removes their references in the same commit. Read past the tenant
     /// filter, because a deduped row is shared whichever company is asking.
     /// </summary>
-    Task<IReadOnlySet<string>> GetReferencedElsewhereAsync(
+    Task<IReadOnlySet<string>> GetReferencedElsewhereIgnoringTenantAsync(
         IReadOnlyCollection<string> addressIds,
         IReadOnlyCollection<string> exceptOrderIds,
         IReadOnlyCollection<string> exceptSavedAddressIds,

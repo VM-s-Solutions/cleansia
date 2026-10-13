@@ -100,7 +100,7 @@ public class CancelUnfilledOrdersCreditReturnTests(PostgresContainerFixture fixt
 
         await using (var ctx = NewContext())
         {
-            var account = await new CreditAccountRepository(ctx).EnsureForUserAsync(userId, CzkId, CancellationToken.None);
+            var account = await new CreditAccountRepository(ctx).EnsureForUserIgnoringTenantAsync(userId, CzkId, CancellationToken.None);
             account!.Issue(Credit, CreditTransactionReason.Goodwill, "seed-grant", "seed", note: "n");
             if (settledInCredit > 0m)
             {
@@ -392,7 +392,7 @@ public class CancelUnfilledOrdersCreditReturnTests(PostgresContainerFixture fixt
         var userId = await SeedAsync();
         await using (var ctx = NewContext())
         {
-            var account = await new CreditAccountRepository(ctx).EnsureForUserAsync(userId, CzkId, CancellationToken.None);
+            var account = await new CreditAccountRepository(ctx).EnsureForUserIgnoringTenantAsync(userId, CzkId, CancellationToken.None);
             account!.Issue(2 * Credit, CreditTransactionReason.Goodwill, "seed-grant-more", "seed", note: "n");
             foreach (var orderId in new[] { "order-unfilled-credit-b", "order-unfilled-credit-c" })
             {

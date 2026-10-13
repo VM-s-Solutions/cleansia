@@ -403,7 +403,7 @@ public sealed class MaterializeRecurringBookingsTenantStampingTests : IDisposabl
     {
         var memberships = new Mock<IUserMembershipRepository>();
         memberships
-            .Setup(r => r.GetEntitledForUserNoTrackingAsync(
+            .Setup(r => r.GetEntitledForUserNoTrackingIgnoringTenantAsync(
                 It.IsAny<string>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync((string userId, CancellationToken _) =>
                 UserMembershipMockFactory.Paid(userId));

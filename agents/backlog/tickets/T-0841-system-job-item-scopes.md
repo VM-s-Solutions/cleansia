@@ -95,6 +95,8 @@ Authority: `/Users/michael/.codex/scratchpads/cleansia-wave-f-2026-10-11/next-wa
 
 - 2026-10-12 — Filed from the BE-11 to BE-14 design ruling's reported items 3 and 4, and its recommendation under BE-13. Reported, not absorbed (CLAUDE.md §2): Mike decides whether it becomes work, and when.
 
+- 2026-10-13 — First child T-0856 is implemented locally with T-0840: ordered reminder IDs, a new scope/command for each unit, fresh tenant/status/window/stamp/account reread, failed count and host-cancellation propagation. Actual isolation/poison-repeat and timing RED→GREEN evidence is in that child's Work record. The remaining eleven children are still future work in the explicitly permitted following PR; RedrivePendingRefunds remains after T-0851. This parent is a cross-reference/aggregate closure record, not an L implementation job. No remaining-job acceptance criterion or final catalog retirement is claimed here.
+
 ## Review
 
 Pending.

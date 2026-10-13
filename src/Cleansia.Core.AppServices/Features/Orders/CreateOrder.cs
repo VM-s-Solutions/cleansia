@@ -359,7 +359,7 @@ public class CreateOrder
         /// <summary>
         /// The favourite-cleaner perk is Plus-only (owner ruling 2026-08-07, <c>Q-PLUS-03</c>;
         /// ADR-0039 D12.1 already gates the picker's availability flag on this same answer). The predicate
-        /// is <c>UserMembershipRepository.EntitledForUserQuery</c> — the ONE ENTITLEMENT predicate, shared
+        /// is <c>UserMembershipRepository.EntitledForUserIgnoringTenantQuery</c> — the ONE ENTITLEMENT predicate, shared
         /// by all six Plus benefits — so <c>PastDue</c>, <c>Paused</c>, <c>Cancelled</c> and an elapsed
         /// period are all refused, and a member inside the free trial is allowed like a paying one (owner
         /// ruling 2026-09-30).
@@ -372,7 +372,7 @@ public class CreateOrder
 
             return !string.IsNullOrEmpty(userId)
                 && await _userMembershipRepository
-                    .GetEntitledForUserNoTrackingAsync(userId, cancellationToken) is not null;
+                    .GetEntitledForUserNoTrackingIgnoringTenantAsync(userId, cancellationToken) is not null;
         }
 
         private async Task<bool> IsBookableStartAsync(
@@ -1109,7 +1109,7 @@ public class CreateOrder
             var order = await orderFactory.CreateAsync(new CreateOrderInput(
                 UserId: userId,
                 CustomerName: command.CustomerName,
-                CustomerEmail: command.CustomerEmail,
+                CustomerEmail: string.IsNullOrEmpty(userId) ? command.CustomerEmail : userSessionProvider.GetUserEmail()!,
                 CustomerPhone: command.CustomerPhone,
                 Address: address,
                 Rooms: command.Rooms,
@@ -1179,7 +1179,7 @@ public class CreateOrder
             if (dispatch.Failure is { } dispatchFailure)
             {
                 // Stripe is unreachable and this order will not exist - the pipeline commits nothing on
-                // a failure. Put the credit back before returning: TryReturnAsync is its own statement
+                // a failure. Put the credit back before returning: TryReturnIgnoringTenantAsync is its own statement
                 // precisely so it survives a request that is about to roll back, and it is keyed on the
                 // order id so a retry cannot double-return.
                 await creditAccountRepository.ReturnCreditAsync(

@@ -296,7 +296,7 @@ public class UpdateRecurringBooking
             var userId = _userSessionProvider.GetUserId();
             if (string.IsNullOrEmpty(userId)) return false;
             return await _userMembershipRepository
-                .GetEntitledForUserNoTrackingAsync(userId, cancellationToken) is not null;
+                .GetEntitledForUserNoTrackingIgnoringTenantAsync(userId, cancellationToken) is not null;
         }
     }
 

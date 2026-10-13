@@ -31,8 +31,8 @@ express surcharge on this booking, and how many waivers are left in this period?
 
 ## Collaborators
 
-- `IUserMembershipRepository.GetEntitledForUserNoTrackingAsync` — the **one** entitlement predicate,
-  shared with every other benefit (`UserMembershipRepository.EntitledForUserQuery:39-46`, which narrows
+- `IUserMembershipRepository.GetEntitledForUserNoTrackingIgnoringTenantAsync` — the **one** entitlement predicate,
+  shared with every other benefit (`UserMembershipRepository.EntitledForUserIgnoringTenantQuery:39-46`, which narrows
   the live-enrolment `UserMembershipRepository.ActiveForUserQuery:48-60`). It creates no second
   predicate. **`PastDue` and `Paused` are excluded by it** — settled by owner ruling 2026-08-03
   (ADR-0035 AM-17). A **trialing** enrolment is **included**: it is `Active`, and the predicate asks

@@ -275,12 +275,12 @@ public class ResolveDispute
                 return BusinessResult.Failure<bool>(new Error(nameof(request.RefundAmount), BusinessErrorMessage.InvalidRefundAmount));
             }
 
-            if (await creditAccountRepository.IsOnFrozenCompanyBooksAsync(dispute.UserId!, order.CurrencyId, cancellationToken))
+            if (await creditAccountRepository.IsOnFrozenCompanyBooksIgnoringTenantAsync(dispute.UserId!, order.CurrencyId, cancellationToken))
             {
                 return BusinessResult.Success(false);
             }
 
-            var account = await creditAccountRepository.EnsureForUserAsync(dispute.UserId!, order.CurrencyId, cancellationToken);
+            var account = await creditAccountRepository.EnsureForUserIgnoringTenantAsync(dispute.UserId!, order.CurrencyId, cancellationToken);
             if (account is null)
             {
                 return BusinessResult.Success(false);

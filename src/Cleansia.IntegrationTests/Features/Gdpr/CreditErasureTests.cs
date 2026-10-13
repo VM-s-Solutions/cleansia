@@ -264,9 +264,9 @@ public class CreditErasureTests(PostgresContainerFixture fixture) : BaseIntegrat
             act: async provider =>
             {
                 var repository = provider.GetRequiredService<ICreditAccountRepository>();
-                Assert.True(await repository.TryReturnAsync(SubjectId, CzkId, 25m, ReturnKey, AdminId, CancellationToken.None));
-                Assert.False(await repository.TryReturnAsync(SubjectId, CzkId, 25m, ReturnKey, AdminId, CancellationToken.None));
-                var grantAccount = await repository.EnsureForUserAsync(SubjectId, UnheldCurrencyId, CancellationToken.None);
+                Assert.True(await repository.TryReturnIgnoringTenantAsync(SubjectId, CzkId, 25m, ReturnKey, AdminId, CancellationToken.None));
+                Assert.False(await repository.TryReturnIgnoringTenantAsync(SubjectId, CzkId, 25m, ReturnKey, AdminId, CancellationToken.None));
+                var grantAccount = await repository.EnsureForUserIgnoringTenantAsync(SubjectId, UnheldCurrencyId, CancellationToken.None);
                 Assert.NotNull(grantAccount);
                 grantAccount.Issue(7m, CreditTransactionReason.Goodwill, "inactive-grant", AdminId);
                 await provider.GetRequiredService<CleansiaDbContext>().CommitAsync(CancellationToken.None);
@@ -300,7 +300,7 @@ public class CreditErasureTests(PostgresContainerFixture fixture) : BaseIntegrat
 
                 var barrier = new OwnerLockAttempt();
                 await using var returning = NewContext(barrier);
-                var returnTask = new CreditAccountRepository(returning).TryReturnAsync(
+                var returnTask = new CreditAccountRepository(returning).TryReturnIgnoringTenantAsync(
                     SubjectId, currencyId, 25m, ReturnKey, AdminId, CancellationToken.None);
                 await barrier.Attempted.Task.WaitAsync(Timeout);
                 Assert.False(returnTask.IsCompleted);
@@ -309,7 +309,7 @@ public class CreditErasureTests(PostgresContainerFixture fixture) : BaseIntegrat
 
                 await using var grantScope = provider.CreateAsyncScope();
                 Assert.Null(await grantScope.ServiceProvider.GetRequiredService<ICreditAccountRepository>()
-                    .EnsureForUserAsync(SubjectId, currencyId, CancellationToken.None));
+                    .EnsureForUserIgnoringTenantAsync(SubjectId, currencyId, CancellationToken.None));
                 await grantScope.ServiceProvider.GetRequiredService<CleansiaDbContext>().CommitAsync(CancellationToken.None);
                 return true;
             },
@@ -338,7 +338,7 @@ public class CreditErasureTests(PostgresContainerFixture fixture) : BaseIntegrat
             {
                 await using var returning = NewContext();
                 await using var transaction = await returning.Database.BeginTransactionAsync();
-                Assert.True(await new CreditAccountRepository(returning).TryReturnAsync(
+                Assert.True(await new CreditAccountRepository(returning).TryReturnIgnoringTenantAsync(
                     SubjectId, currencyId, 25m, ReturnKey, AdminId, CancellationToken.None));
 
                 var erasureTask = Erase(provider);
@@ -373,7 +373,7 @@ public class CreditErasureTests(PostgresContainerFixture fixture) : BaseIntegrat
 
                 await using var granting = NewContext();
                 await granting.Database.OpenConnectionAsync();
-                var grantTask = new CreditAccountRepository(granting).EnsureForUserAsync(
+                var grantTask = new CreditAccountRepository(granting).EnsureForUserIgnoringTenantAsync(
                     SubjectId, currencyId, CancellationToken.None);
                 await WaitUntilBlocked(BackendPid(granting), grantTask);
                 Assert.False(grantTask.IsCompleted, "the grant must wait for the erasure's owner lock");
@@ -401,7 +401,7 @@ public class CreditErasureTests(PostgresContainerFixture fixture) : BaseIntegrat
             act: async provider =>
             {
                 await using var granting = NewContext();
-                var account = await new CreditAccountRepository(granting).EnsureForUserAsync(
+                var account = await new CreditAccountRepository(granting).EnsureForUserIgnoringTenantAsync(
                     SubjectId, currencyId, CancellationToken.None);
                 Assert.NotNull(account);
                 account.Issue(25m, CreditTransactionReason.Goodwill, GrantKey, AdminId);

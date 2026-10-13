@@ -12,7 +12,6 @@ stories: []              # US-<persona>-NNNN ids this satisfies
 adrs: []                 # ADR numbers in force
 layers: []               # any of: analyst, architect, db, backend, frontend, android, ios, docs
 security_touching: false # true → Security gate mandatory
-manual_steps: []         # owner-only: ef-migration, nswag-regen, db-seed, xcode-project, docs-build
 sprint: N
 ---
 

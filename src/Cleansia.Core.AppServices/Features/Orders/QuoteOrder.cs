@@ -457,7 +457,7 @@ public class QuoteOrder
                 tierMinOrderAmount = tierResult.MinimumOrderAmount;
 
                 var activeMembership = await userMembershipRepository
-                    .GetEntitledForUserAsync(userId, cancellationToken);
+                    .GetEntitledForUserIgnoringTenantAsync(userId, cancellationToken);
                 if (activeMembership != null)
                 {
                     membershipDiscount = rawSubtotal

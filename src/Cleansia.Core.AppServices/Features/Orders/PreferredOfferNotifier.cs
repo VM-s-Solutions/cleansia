@@ -23,9 +23,10 @@ public static class PreferredOfferNotifier
         Order order,
         PreferredCleanerRecipient? recipient,
         INotificationProducer notificationProducer,
+        DateTime nowUtc,
         CancellationToken cancellationToken)
     {
-        if (recipient is null || !IsOfferable(order))
+        if (recipient is null || !OrderAvailability.IsOfferable(order, nowUtc))
         {
             return Task.CompletedTask;
         }
@@ -64,7 +65,7 @@ public static class PreferredOfferNotifier
         DateTime nowUtc,
         CancellationToken cancellationToken)
     {
-        if (string.IsNullOrEmpty(order.PreferredEmployeeId) || !IsOfferable(order))
+        if (string.IsNullOrEmpty(order.PreferredEmployeeId) || !OrderAvailability.IsOfferable(order, nowUtc))
         {
             return;
         }
@@ -78,8 +79,7 @@ public static class PreferredOfferNotifier
             nowUtc,
             cancellationToken);
 
-        await NotifyIfOfferableAsync(order, resolved.Recipient, notificationProducer, cancellationToken);
+        await NotifyIfOfferableAsync(order, resolved.Recipient, notificationProducer, nowUtc, cancellationToken);
     }
 
-    private static bool IsOfferable(Order order) => OrderAvailability.IsOfferable(order);
 }

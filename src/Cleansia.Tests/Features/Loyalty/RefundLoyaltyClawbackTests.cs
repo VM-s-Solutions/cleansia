@@ -90,7 +90,7 @@ public class RefundLoyaltyClawbackTests
             .Setup(r => r.GetByUserIdIgnoringTenantAsync(UserId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(account);
         _transactionRepository
-            .Setup(r => r.GetLatestForOrderSourceAsync(OrderId, LoyaltyEarnSource.OrderCompleted, It.IsAny<CancellationToken>()))
+            .Setup(r => r.GetLatestForOrderSourceIgnoringTenantAsync(OrderId, LoyaltyEarnSource.OrderCompleted, It.IsAny<CancellationToken>()))
             .ReturnsAsync(earnRow);
         return account;
     }
@@ -257,7 +257,7 @@ public class RefundLoyaltyClawbackTests
     {
         ArrangeOrder(UserId);
         _transactionRepository
-            .Setup(r => r.GetLatestForOrderSourceAsync(OrderId, LoyaltyEarnSource.OrderCompleted, It.IsAny<CancellationToken>()))
+            .Setup(r => r.GetLatestForOrderSourceIgnoringTenantAsync(OrderId, LoyaltyEarnSource.OrderCompleted, It.IsAny<CancellationToken>()))
             .ReturnsAsync((LoyaltyTransaction?)null);
         ArrangeNoExistingKey();
 
@@ -479,7 +479,7 @@ public class RefundLoyaltyClawbackTests
     {
         ArrangeOrder(UserId, totalPrice: 1000m);
         _transactionRepository
-            .Setup(r => r.GetLatestForOrderSourceAsync(OrderId, LoyaltyEarnSource.OrderCompleted, It.IsAny<CancellationToken>()))
+            .Setup(r => r.GetLatestForOrderSourceIgnoringTenantAsync(OrderId, LoyaltyEarnSource.OrderCompleted, It.IsAny<CancellationToken>()))
             .ReturnsAsync((LoyaltyTransaction?)null);
         ArrangeNoExistingKey();
 

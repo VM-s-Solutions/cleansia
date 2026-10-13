@@ -17,7 +17,7 @@
 # detection can't be expressed in the generated surface). See README + ADR-0013.
 #
 # Generated output is NOT committed (see .gitignore). Never hand-edit it — change
-# the spec (owner regen) or this script and regenerate.
+# the spec or this script and regenerate.
 #
 # Usage:
 #   ./scripts/generate-api-clients.sh            # both apps
@@ -73,7 +73,7 @@ for app in "${apps[@]}"; do
   if [[ ! -f "$spec" ]]; then
     echo "error: spec not found: ${spec}" >&2
     echo "       Run ./scripts/refresh-mobile-spec.sh ${app} against the running mobile API first," >&2
-    echo "       or wait for the owner mobile-spec-regen (manual_step: mobile-spec-regen)." >&2
+    echo "       or re-dump the shared mobile specs from the local mobile API hosts, then regenerate." >&2
     exit 1
   fi
 

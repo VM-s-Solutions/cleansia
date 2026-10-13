@@ -83,6 +83,11 @@ public sealed class RefundService(
         var consumed = existing is null
             ? await CardRefundedOrOwedAsync(refundRepository, order.Id, refundKey, cancellationToken)
             : await CardRefundedOrOwedBeforeRetryAsync(existing, cancellationToken);
+        if (existing is not null && await refundRepository.GetSucceededByRefundKeyNoTrackingAsync(
+                refundKey, cancellationToken) is { } settled)
+        {
+            return await ResolveToExistingAsync(settled, cancellationToken);
+        }
         var refundable = CardRefundCeiling(order, consumed);
         Refund refund;
         var creditShare = split.Credit;
@@ -106,7 +111,7 @@ public sealed class RefundService(
                 // row cannot have been paid. Only then is it closed: other pending rows may hold money Stripe paid.
                 if (existing.Status == RefundStatus.Pending
                     && CardRefundCeiling(order, await refundRepository.GetSucceededRefundTotalForOrderAsync(
-                        order.Id, cancellationToken)) <= 0m)
+                        order.Id, refundKey, cancellationToken)) <= 0m)
                 {
                     existing.MarkFailed();
                 }
@@ -205,10 +210,15 @@ public sealed class RefundService(
         }
 
         var consumed = await CardRefundedOrOwedBeforeRetryAsync(refund, cancellationToken);
+        if (await refundRepository.GetSucceededByRefundKeyNoTrackingAsync(
+                refund.RefundKey, cancellationToken) is { } settled)
+        {
+            return await ResolveToExistingAsync(settled, cancellationToken);
+        }
         var refundable = CardRefundCeiling(order, consumed);
         if (refundable <= 0m)
         {
-            var confirmed = await refundRepository.GetSucceededRefundTotalForOrderAsync(order.Id, cancellationToken);
+            var confirmed = await refundRepository.GetSucceededRefundTotalForOrderAsync(order.Id, refund.RefundKey, cancellationToken);
             return NothingLeftToRedrive(refund, heldOnlyByPendingRefunds: CardRefundCeiling(order, confirmed) > 0m);
         }
 
@@ -239,7 +249,7 @@ public sealed class RefundService(
             var card = held - creditOnThisKey;
             if (card <= 0m)
             {
-                var confirmed = await refundRepository.GetSucceededRefundTotalForOrderAsync(order.Id, cancellationToken);
+                var confirmed = await refundRepository.GetSucceededRefundTotalForOrderAsync(order.Id, refund.RefundKey, cancellationToken);
                 return NothingLeftToRedrive(refund, heldOnlyByPendingRefunds:
                     HeldToWhatIsLeft(order, slice, confirmed, creditAlreadyReturned, settledInCredit) - creditOnThisKey > 0m);
             }
@@ -447,7 +457,7 @@ public sealed class RefundService(
     private async Task RaiseForRetryAsync(Order order, Refund refund, CancellationToken cancellationToken)
     {
         if (refund.TenantId is not { Length: > 0 } tenantId
-            || await userNotificationRepository.AnyForEventAsync(
+            || await userNotificationRepository.AnyForEventIgnoringTenantAsync(
                 tenantId, AdminNotificationEventCatalog.RefundNeedsRetry, "orderId", order.Id, cancellationToken))
         {
             return;

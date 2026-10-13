@@ -99,7 +99,7 @@ public sealed class PastDueMembershipTests
     {
         var membership = ArrangeLive("active");
         _memberships
-            .Setup(r => r.GetByStripeSubscriptionIdAsync(SubscriptionId, It.IsAny<CancellationToken>()))
+            .Setup(r => r.GetByStripeSubscriptionIdIgnoringTenantAsync(SubscriptionId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(membership);
 
         await WebhookHandler().HandleAsync(PaymentFailedEvent("evt_failed_1"), CancellationToken.None);
@@ -125,7 +125,7 @@ public sealed class PastDueMembershipTests
         var membership = ArrangeLive("past_due");
         await CancelHandler().Handle(new CancelMembershipSubscription.Command(), CancellationToken.None);
         _memberships
-            .Setup(r => r.GetByStripeSubscriptionIdAsync(SubscriptionId, It.IsAny<CancellationToken>()))
+            .Setup(r => r.GetByStripeSubscriptionIdIgnoringTenantAsync(SubscriptionId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(membership);
 
         await WebhookHandler().HandleAsync(PaymentFailedEvent("evt_failed_late"), CancellationToken.None);
@@ -139,7 +139,7 @@ public sealed class PastDueMembershipTests
     {
         var membership = ArrangeLive("active");
         _memberships
-            .Setup(r => r.GetByStripeSubscriptionIdAsync(SubscriptionId, It.IsAny<CancellationToken>()))
+            .Setup(r => r.GetByStripeSubscriptionIdIgnoringTenantAsync(SubscriptionId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(membership);
 
         await WebhookHandler().HandleAsync(new Event

@@ -294,7 +294,7 @@ public class OrderEntityConfiguration : TenantAuditableEntityConfiguration<Order
         // CustomerPhone.
         builder.HasIndex(o => o.CustomerPhone);
 
-        // The first-booking test (IsFirstBookingAsync) looks an earlier order up by e-mail.
+        // The first-booking test (IsFirstBookingIgnoringTenantAsync) looks an earlier order up by e-mail.
         builder.HasIndex(o => o.CustomerEmail);
 
         // Stamped by the 24h-ahead reminder sweep. Indexed alongside

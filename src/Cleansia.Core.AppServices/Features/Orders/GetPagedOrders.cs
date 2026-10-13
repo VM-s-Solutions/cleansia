@@ -54,6 +54,7 @@ public class GetPagedOrders
     {
         public async Task<PagedData<OrderListItem>> Handle(Request request, CancellationToken cancellationToken)
         {
+            var nowUtc = DateTime.UtcNow;
             var role = userSessionProvider.GetTypedUserClaim(ClaimTypes.Role)?.Value;
             var isAdmin = role == UserProfile.Administrator.ToString();
 
@@ -75,9 +76,10 @@ public class GetPagedOrders
             }
 
             DateTime? cleaningDateFrom = request.Filter?.CleaningDateFrom;
-            if (request.Filter?.HasAvailableSpots == true && cleaningDateFrom is null)
+            if (request.Filter?.HasAvailableSpots == true && cleaningDateFrom is null
+                && (isAdmin || !string.IsNullOrEmpty(request.Filter?.EmployeeId)))
             {
-                cleaningDateFrom = DateTime.UtcNow.AddHours(-BookingPolicy.BoardBacklogHours);
+                cleaningDateFrom = nowUtc.AddHours(-BookingPolicy.BoardBacklogHours);
             }
 
             // A non-admin cannot filter by a FOREIGN employee. When the client
@@ -111,13 +113,20 @@ public class GetPagedOrders
                 userId: isAdmin ? request.Filter?.UserId : null,
                 restrictToEmployeeId: isAdmin ? null : callerEmployeeId,
                 notHeldFromEmployeeId: isAdmin ? null : callerEmployeeId,
-                nowUtc: isAdmin ? null : DateTime.UtcNow,
+                nowUtc: isAdmin ? null : nowUtc,
                 cleanerCurrencyId: callerCurrencyId,
                 currencyId: request.Filter?.CurrencyId,
                 hideCashFromEmployeeId: cashJobsHidden ? callerEmployeeId : null);
 
             var filter = specification.SatisfiedBy();
-            var sort = request.Sort.MapToDomain().ForOrderPage()
+            var requestedSort = request.Sort.MapToDomain();
+            if (!isAdmin && employeeIdFilter is null)
+            {
+                requestedSort = requestedSort.Where(definition =>
+                    !string.Equals(definition.Field?.ToLower(), nameof(Order.CustomerName), StringComparison.CurrentCultureIgnoreCase)
+                    && !string.Equals(definition.Field?.ToLower(), nameof(Order.CustomerEmail), StringComparison.CurrentCultureIgnoreCase));
+            }
+            var sort = requestedSort.ForOrderPage()
                 .WithinCurrencyWhenSortedBy(nameof(Order.TotalPrice), request.Filter?.CurrencyId);
 
             var totalItems = await orderRepository.GetCountAsync(filter, cancellationToken);
@@ -223,7 +232,7 @@ public class GetPagedOrders
                     && order.AssignedEmployees.Any(ae => ae.EmployeeId == callerEmployeeId);
                 if (isAssigned)
                 {
-                    items.Add(Order.CustomerDetailsOpenToCrew(order.OrderStatus, order.CompletedAt, DateTime.UtcNow)
+                    items.Add(Order.CustomerDetailsOpenToCrew(order.OrderStatus, order.CompletedAt, nowUtc)
                         ? dto
                         : dto.RedactForBrowsingCleaner());
                     continue;

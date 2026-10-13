@@ -12,7 +12,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace Cleansia.Infra.Database.Migrations
 {
     [DbContext(typeof(CleansiaDbContext))]
-    [Migration("20261012190449_Initial")]
+    [Migration("20261013160545_Initial")]
     partial class Initial
     {
         /// <inheritdoc />
@@ -1165,6 +1165,8 @@ namespace Cleansia.Infra.Database.Migrations
                     b.HasIndex("TenantId");
 
                     b.HasIndex("UserId");
+
+                    b.HasIndex("DeviceId", "DeviceToken");
 
                     b.HasIndex("IsActive", "LastActiveAt");
 

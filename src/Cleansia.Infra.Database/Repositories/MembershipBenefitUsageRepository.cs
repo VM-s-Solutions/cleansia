@@ -136,7 +136,7 @@ public class MembershipBenefitUsageRepository(
                 cancellationToken);
     }
 
-    public Task<MembershipBenefitUsage?> GetLiveByOrderIdAsync(
+    public Task<MembershipBenefitUsage?> GetLiveByOrderIdIgnoringTenantAsync(
         string orderId,
         MembershipBenefitKind benefitKind,
         CancellationToken cancellationToken)

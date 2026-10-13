@@ -72,7 +72,7 @@ public sealed class ExpressWaiverConsumer(
 
     public async Task<bool> ReleaseForOrderAsync(string orderId, CancellationToken cancellationToken)
     {
-        var usage = await benefitUsageRepository.GetLiveByOrderIdAsync(
+        var usage = await benefitUsageRepository.GetLiveByOrderIdIgnoringTenantAsync(
             orderId, MembershipBenefitKind.ExpressUpgrade, cancellationToken);
         if (usage == null)
         {
@@ -93,7 +93,7 @@ public sealed class ExpressWaiverConsumer(
             return false;
         }
 
-        var usage = await benefitUsageRepository.GetLiveByOrderIdAsync(
+        var usage = await benefitUsageRepository.GetLiveByOrderIdIgnoringTenantAsync(
             orderId, MembershipBenefitKind.ExpressUpgrade, cancellationToken);
         return usage != null;
     }

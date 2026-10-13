@@ -14,6 +14,7 @@ using Cleansia.Core.Domain.Orders;
 using Cleansia.Core.Domain.Repositories;
 using Cleansia.Core.Domain.Users;
 using Cleansia.Infra.Database;
+using Cleansia.Infra.Common.Validations;
 using Cleansia.TestUtilities;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
@@ -44,17 +45,12 @@ public class OrderOfferabilityAgreementTests(PostgresContainerFixture fixture) :
     private const string EmployeeId = "employee-offer-1";
     private const string UserId = "user-offer-1";
     private const string EmployeeEmail = "cleaner-offer@cleansia.test";
+    private static readonly DateTime NowUtc = DateTime.UtcNow;
     private const string RecurringTemplateId = "tpl-offer-weekly";
 
     /// <summary>
-    /// The six rows ADR-0037 D1 rules on, the two Fact-3 rows the old status-blind seat arithmetic
-    /// let through, and the four started-but-not-over rows the 2026-09-06 widening turns on. Every one
-    /// of them has a FREE SEAT and no assignee, so the seat term admits them all and the verdict is
-    /// decided purely by the rule under test.
-    ///
-    /// <para>The four new rows matter more than they look: this suite would have stayed GREEN without
-    /// them, because none of its original eight is <c>OnTheWay</c> or <c>InProgress</c> — a silent
-    /// pass over exactly the change being made, which is the failure this file exists to prevent.</para>
+    /// Status/payment cases have an unassigned free seat. Temporal cases include a late fill,
+    /// two long started jobs with another cleaner and a free seat, and exact/after-end refusals.
     /// </summary>
     private static readonly OfferabilityCase[] Cases =
     [
@@ -76,6 +72,12 @@ public class OrderOfferabilityAgreementTests(PostgresContainerFixture fixture) :
         // is still unpaid, and only cash — a card occurrence is confirmed by its payment.
         new("order-new-cash-recur-conf", OrderStatus.New, PaymentType.Cash, PaymentStatus.Pending, RecurringTemplateId, true, CustomerConfirmed: true),
         new("order-new-card-recur-conf", OrderStatus.New, PaymentType.Card, PaymentStatus.Pending, RecurringTemplateId, false, CustomerConfirmed: true),
+        new("order-late-fill", OrderStatus.New, PaymentType.Cash, PaymentStatus.Pending, null, true, StartOffsetMinutes: -10, DurationMinutes: 60),
+        new("order-started-180", OrderStatus.OnTheWay, PaymentType.Card, PaymentStatus.Paid, null, true, StartOffsetMinutes: -130, DurationMinutes: 180, AssignedOtherCleaner: true),
+        new("order-started-240", OrderStatus.InProgress, PaymentType.Card, PaymentStatus.Paid, null, true, StartOffsetMinutes: -130, DurationMinutes: 240, AssignedOtherCleaner: true),
+        new("order-slot-end", OrderStatus.New, PaymentType.Cash, PaymentStatus.Pending, null, false, StartOffsetMinutes: -60, DurationMinutes: 60),
+        new("order-started-end", OrderStatus.InProgress, PaymentType.Card, PaymentStatus.Paid, null, false, StartOffsetMinutes: -240, DurationMinutes: 240),
+        new("order-after-end", OrderStatus.OnTheWay, PaymentType.Card, PaymentStatus.Paid, null, false, StartOffsetMinutes: -181, DurationMinutes: 180),
     ];
 
     [Fact]
@@ -143,6 +145,111 @@ public class OrderOfferabilityAgreementTests(PostgresContainerFixture fixture) :
             });
     }
 
+    [Fact]
+    public async Task Slot_End_Agrees_On_Current_And_Seat_Boards_Browse_Contract_Preview_And_Dashboard()
+    {
+        await TestMethod(
+            setup: ReplaceWithEmployeeSession,
+            arrange: SeedTheOfferabilityMatrix,
+            act: async provider =>
+            {
+                var mediator = provider.GetRequiredService<IMediator>();
+                var board = await mediator.Send(AvailableRequest());
+                var native = await mediator.Send(new GetPagedOrders.Request
+                {
+                    Filter = EmptyFilter() with { IsUnassigned = true, OrderStatuses = OrderAvailability.OfferableStatuses.ToArray() },
+                    Limit = 50,
+                });
+                var preview = await mediator.Send(new GetAvailableJobsPreview.Query(50));
+                Assert.True(preview.IsSuccess, preview.Error?.Message);
+                var repository = provider.GetRequiredService<IOrderRepository>();
+                var access = provider.GetRequiredService<IOrderAccessService>();
+                var currency = provider.GetRequiredService<ICurrencyResolutionService>();
+                var counted = await repository.GetQueryable()
+                    .Where(DashboardSpecifications.CreateAvailableOrdersSpec(EmployeeId, CurrencyId, DateTime.UtcNow).SatisfiedBy())
+                    .Select(o => o.Id).ToListAsync();
+                var contractValidator = new GetWorkContractPreview.Validator(repository, access, currency);
+                var browse = new Dictionary<string, bool>();
+                var contract = new Dictionary<string, bool>();
+                foreach (var scenario in Cases.Where(c => c.StartOffsetMinutes.HasValue))
+                {
+                    var order = await repository.GetQueryable().SingleAsync(o => o.Id == scenario.OrderId);
+                    browse[order.Id] = await access.CanBrowseOrderAsync(order, CancellationToken.None);
+                    var validation = await contractValidator.ValidateAsync(new GetWorkContractPreview.Query(order.Id));
+                    contract[order.Id] = validation.IsValid;
+                    if (!scenario.Offerable)
+                    {
+                        var detail = await mediator.Send(new GetOrderDetails.Query(order.Id));
+                        Assert.True(detail.IsFailure);
+                        Assert.Equal(BusinessErrorMessage.OrderNotFound, detail.Error?.Message);
+                        var take = await mediator.Send(new TakeOrder.Command(order.Id, TestLegalDocuments.WorkContractTextEnId));
+                        Assert.True(take.IsFailure);
+                        Assert.Equal(BusinessErrorMessage.OrderNotTakeable, Assert.Single(Assert.IsAssignableFrom<IValidationResult>(take).Errors).Message);
+                        Assert.Empty(order.AssignedEmployees);
+                    }
+                }
+                return new SlotSurfaceVerdicts(board.Data!.Select(o => o.Id).ToHashSet(), native.Data!.Select(o => o.Id).ToHashSet(),
+                    counted.ToHashSet(), preview.Value.Jobs.Select(o => o.Id).ToHashSet(), browse, contract);
+            },
+            assert: (CleansiaDbContext _, SlotSurfaceVerdicts verdicts) =>
+            {
+                foreach (var scenario in Cases.Where(c => c.StartOffsetMinutes.HasValue))
+                {
+                    Assert.Equal(scenario.Offerable, verdicts.Board.Contains(scenario.OrderId));
+                    Assert.Equal(scenario.Offerable && !scenario.AssignedOtherCleaner, verdicts.Native.Contains(scenario.OrderId));
+                    Assert.Equal(scenario.Offerable, verdicts.Counted.Contains(scenario.OrderId));
+                    Assert.Equal(scenario.Offerable, verdicts.Preview.Contains(scenario.OrderId));
+                    Assert.Equal(scenario.Offerable, verdicts.Browse[scenario.OrderId]);
+                    Assert.Equal(scenario.Offerable, verdicts.Contract[scenario.OrderId]);
+                }
+                return Task.CompletedTask;
+            });
+    }
+
+    [Fact]
+    public async Task An_Ended_Assignment_Remains_In_Own_Reads_And_Its_Contract_Preview()
+    {
+        await TestMethod(
+            setup: ReplaceWithEmployeeSession,
+            arrange: async context =>
+            {
+                await SeedTheOfferabilityMatrix(context);
+                var employee = (await context.Employees.FindAsync(EmployeeId))!;
+                var order = (await context.Orders.FindAsync("order-started-end"))!;
+                order.AddAssignedEmployee(OrderEmployee.Create(order, employee));
+                await context.CommitAsync(CancellationToken.None);
+            },
+            act: async provider =>
+            {
+                var mediator = provider.GetRequiredService<IMediator>();
+                var mine = await mediator.Send(new GetPagedOrders.Request { Filter = EmptyFilter() with { EmployeeId = EmployeeId } });
+                Assert.Contains(mine.Data!, row => row.Id == "order-started-end");
+                var detail = await mediator.Send(new GetOrderDetails.Query("order-started-end"));
+                Assert.True(detail.IsSuccess, detail.Error?.Message);
+                var validation = await new GetWorkContractPreview.Validator(
+                    provider.GetRequiredService<IOrderRepository>(), provider.GetRequiredService<IOrderAccessService>(),
+                    provider.GetRequiredService<ICurrencyResolutionService>())
+                    .ValidateAsync(new GetWorkContractPreview.Query("order-started-end"));
+                Assert.True(validation.IsValid);
+                var ended = await provider.GetRequiredService<IOrderRepository>().GetQueryable().SingleAsync(o => o.Id == "order-started-end");
+                var owned = Order.Create("Owner", "owner@cleansia.test", "+420777111222", ended.CustomerAddress!,
+                    2, 1, ended.CleaningDateTime, PaymentType.Card, 1500m, CurrencyId, PaymentStatus.Paid,
+                    userId: UserId, cancellationTerms: BookingPolicy.CancellationTermsAtBooking);
+                owned.UpdateEstimatedTime(60);
+                owned.AddOrderStatus(OrderStatusTrack.Create(OrderStatus.InProgress, owned));
+                foreach (var role in new[] { UserProfile.Customer, UserProfile.Administrator })
+                {
+                    var access = new OrderAccessService(new TestUserSessionProvider(UserId, EmployeeEmail, [new Claim(ClaimTypes.Role, role.ToString())]),
+                        provider.GetRequiredService<IEmployeeRepository>(), provider.GetRequiredService<IOrderRepository>(),
+                        provider.GetRequiredService<ICurrencyResolutionService>(), provider.GetRequiredService<ICashLedgerRepository>(),
+                        provider.GetRequiredService<IAppConfigurationProvider>());
+                    Assert.True(await access.CanBrowseOrderAsync(owned, CancellationToken.None));
+                }
+                return true;
+            },
+            assert: (CleansiaDbContext _, bool passed) => { Assert.True(passed); return Task.CompletedTask; });
+    }
+
     /// <summary>
     /// The client sends the status set it always sent. After the server floor carries the rule, a
     /// non-offerable row is not returned no matter what the client asks for — which is what demotes
@@ -187,7 +294,7 @@ public class OrderOfferabilityAgreementTests(PostgresContainerFixture fixture) :
 
                 var fromSql = await repository
                     .GetQueryable()
-                    .Where(OrderAvailability.IsOfferableSql)
+                    .Where(OrderAvailability.IsOfferableSql(NowUtc))
                     .Select(o => o.Id)
                     .ToListAsync();
 
@@ -201,12 +308,14 @@ public class OrderOfferabilityAgreementTests(PostgresContainerFixture fixture) :
                         o.PaymentStatus,
                         o.RecurringTemplateId,
                         o.CustomerConfirmedAt,
+                        o.CleaningDateTime,
+                        o.EstimatedTime,
                     })
                     .ToListAsync();
 
                 var fromMemory = rows
                     .Where(o => OrderAvailability.IsOfferable(
-                        o.CurrentStatus, o.PaymentType, o.PaymentStatus, o.RecurringTemplateId, o.CustomerConfirmedAt))
+                        o.CurrentStatus, o.PaymentType, o.PaymentStatus, o.RecurringTemplateId, o.CustomerConfirmedAt, o.CleaningDateTime, o.EstimatedTime, NowUtc))
                     .Select(o => o.Id)
                     .ToList();
 
@@ -296,12 +405,31 @@ public class OrderOfferabilityAgreementTests(PostgresContainerFixture fixture) :
         employee.Created(TestUtilities.Constants.TestUserSession.TestUserName, DateTime.UtcNow);
         context.Add(employee);
 
+        var colleagueUser = User.CreateWithPassword("colleague@cleansia.test", TestUtilities.Constants.TestUserSession.TestUserPassword,
+            "Other", "Cleaner", UserProfile.Employee);
+        colleagueUser.Id = "user-offer-other";
+        colleagueUser.ConfirmEmail();
+        colleagueUser.Created(TestUtilities.Constants.TestUserSession.TestUserName, NowUtc);
+        var colleague = Employee.CreateWithUser(colleagueUser);
+        colleague.Id = "employee-offer-other";
+        colleague.Approve("admin-offer");
+        colleague.AssignWorkCountry(CountryId);
+        colleague.Created(TestUtilities.Constants.TestUserSession.TestUserName, NowUtc);
+        context.Add(colleague);
+
         // Spread the cleaning times so no two fixtures overlap on the cleaner's calendar — the take
         // gate's time-conflict rule must not be what refuses a row this test is asking about.
         var slot = 0;
         foreach (var scenario in Cases)
         {
-            context.Add(CreateOrder(scenario, DateTime.UtcNow.AddDays(2).AddHours(slot * 8)));
+            var order = CreateOrder(scenario, scenario.StartOffsetMinutes is { } offset
+                ? NowUtc.AddMinutes(offset)
+                : NowUtc.AddDays(2).AddHours(slot * 8));
+            if (scenario.AssignedOtherCleaner)
+            {
+                order.AddAssignedEmployee(OrderEmployee.Create(order, colleague));
+            }
+            context.Add(order);
             slot++;
         }
 
@@ -324,6 +452,7 @@ public class OrderOfferabilityAgreementTests(PostgresContainerFixture fixture) :
             paymentStatus: scenario.PaymentStatus,
             recurringTemplateId: scenario.RecurringTemplateId,
             cancellationTerms: BookingPolicy.CancellationTermsAtBooking);
+        order.UpdateEstimatedTime(scenario.DurationMinutes).CalculateRequiredEmployees(BookingPolicy.SpareSeatsPerOrder);
         order.Id = scenario.OrderId;
         order.Created(TestUtilities.Constants.TestUserSession.TestUserName, DateTime.UtcNow);
         order.SetWorkContractDocument(WorkContractTestData.Document());
@@ -349,7 +478,14 @@ public class OrderOfferabilityAgreementTests(PostgresContainerFixture fixture) :
         PaymentStatus PaymentStatus,
         string? RecurringTemplateId,
         bool Offerable,
-        bool CustomerConfirmed = false);
+        bool CustomerConfirmed = false,
+        int? StartOffsetMinutes = null,
+        int DurationMinutes = 60,
+        bool AssignedOtherCleaner = false);
+
+    private sealed record SlotSurfaceVerdicts(
+        HashSet<string> Board, HashSet<string> Native, HashSet<string> Counted, HashSet<string> Preview,
+        Dictionary<string, bool> Browse, Dictionary<string, bool> Contract);
 
     public sealed record Verdicts(
         PagedData<OrderListItem> Board,

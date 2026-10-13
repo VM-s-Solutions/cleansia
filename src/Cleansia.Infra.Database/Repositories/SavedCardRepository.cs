@@ -31,7 +31,7 @@ public class SavedCardRepository(CleansiaDbContext context)
             .FirstOrDefaultAsync(c => c.Id == id, cancellationToken);
     }
 
-    public async Task RemoveForUserAsync(string userId, CancellationToken cancellationToken)
+    public async Task RemoveForUserIgnoringTenantAsync(string userId, CancellationToken cancellationToken)
     {
         var rows = await GetDbSet().IgnoreQueryFilters().Where(c => c.UserId == userId).ToListAsync(cancellationToken);
         GetDbSet().RemoveRange(rows);

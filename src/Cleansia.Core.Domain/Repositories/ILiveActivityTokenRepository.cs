@@ -70,5 +70,5 @@ public interface ILiveActivityTokenRepository : IRepository<LiveActivityToken, s
     /// construction. Hard delete matches this entity's own lifecycle; it is deliberately not an ADR-0007
     /// soft-delete surface.</para>
     /// </summary>
-    Task RemoveForSubjectAsync(string userId, CancellationToken cancellationToken);
+    Task RemoveForSubjectIgnoringTenantAsync(string userId, CancellationToken cancellationToken);
 }

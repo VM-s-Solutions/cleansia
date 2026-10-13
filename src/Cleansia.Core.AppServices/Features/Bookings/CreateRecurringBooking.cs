@@ -311,7 +311,7 @@ public class CreateRecurringBooking
             // held by every signed-in customer — without this the perk is free to anyone who calls
             // the endpoint directly. The client-side gates are UX, not the control.
             var membership = await userMembershipRepository
-                .GetEntitledForUserNoTrackingAsync(userId, cancellationToken);
+                .GetEntitledForUserNoTrackingIgnoringTenantAsync(userId, cancellationToken);
             if (membership is null)
             {
                 return BusinessResult.Failure<RecurringBookingTemplateDto>(new Error(

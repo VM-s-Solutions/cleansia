@@ -245,7 +245,7 @@ public sealed class DisputeSettlementAndCleanerChargeTests
     {
         var dispute = ArrangeDispute(DisputeSettlementPreference.Credit);
         _creditAccounts
-            .Setup(r => r.EnsureForUserAsync(CustomerId, "currency-czk", It.IsAny<CancellationToken>()))
+            .Setup(r => r.EnsureForUserIgnoringTenantAsync(CustomerId, "currency-czk", It.IsAny<CancellationToken>()))
             .ReturnsAsync((CreditAccount?)null);
 
         var result = await Handler().Handle(new ResolveDispute.Command(DisputeId, 300m, "justified"), CancellationToken.None);
@@ -268,7 +268,7 @@ public sealed class DisputeSettlementAndCleanerChargeTests
         var dispute = ArrangeDispute(DisputeSettlementPreference.Credit);
         ArrangeCreditAccount();
         _creditAccounts
-            .Setup(r => r.IsOnFrozenCompanyBooksAsync(CustomerId, "currency-czk", It.IsAny<CancellationToken>()))
+            .Setup(r => r.IsOnFrozenCompanyBooksIgnoringTenantAsync(CustomerId, "currency-czk", It.IsAny<CancellationToken>()))
             .ReturnsAsync(true);
 
         var result = await Handler().Handle(new ResolveDispute.Command(DisputeId, 300m, "justified"), CancellationToken.None);
@@ -493,7 +493,7 @@ public sealed class DisputeSettlementAndCleanerChargeTests
 
     private void AssertNoCreditGranted() =>
         _creditAccounts.Verify(
-            r => r.EnsureForUserAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Never);
+            r => r.EnsureForUserIgnoringTenantAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Never);
 
     private ResolveDispute.Handler Handler() =>
         new(_disputes.Object, _session.Object, _refunds.Object, _refundRows.Object, _creditAccounts.Object, _pays.Object,
@@ -529,7 +529,7 @@ public sealed class DisputeSettlementAndCleanerChargeTests
     {
         var account = CreditAccount.Create(CustomerId, "currency-czk", "system");
         _creditAccounts
-            .Setup(r => r.EnsureForUserAsync(CustomerId, "currency-czk", It.IsAny<CancellationToken>()))
+            .Setup(r => r.EnsureForUserIgnoringTenantAsync(CustomerId, "currency-czk", It.IsAny<CancellationToken>()))
             .ReturnsAsync(account);
         return account;
     }

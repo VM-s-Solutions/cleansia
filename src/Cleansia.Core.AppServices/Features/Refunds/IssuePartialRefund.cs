@@ -46,7 +46,8 @@ public class IssuePartialRefund
         decimal ConsumedRefund,
         decimal RefundAmount,
         decimal RefundVat,
-        PaymentStatus PaymentStatus);
+        PaymentStatus PaymentStatus,
+        string? RefundKey = null);
 
     public class Validator : AbstractValidator<Command>
     {
@@ -173,14 +174,21 @@ public class IssuePartialRefund
             // What the refund seam stored on this tracked order, never a second derivation of it.
             var paymentStatus = order.PaymentStatus;
 
-            auditContext.RecordChange(
-                "Order",
-                order.Id,
-                new PartialRefundSnapshot(
-                    order.Id, order.TotalPrice, consumedBefore, RefundAmount: 0m, RefundVat: 0m, order.PaymentStatus),
-                new PartialRefundSnapshot(
-                    order.Id, order.TotalPrice, consumedAfter, result.Amount, refundVat, paymentStatus),
-                command.OverrideReason);
+            if (await refundRepository.HasPartialRefundAuditUnderLockAsync(result.RefundId, result.RefundKey, cancellationToken))
+            {
+                auditContext.DeclineSuccessRow();
+            }
+            else
+            {
+                auditContext.RecordChange(
+                    "Order",
+                    order.Id,
+                    new PartialRefundSnapshot(
+                        order.Id, order.TotalPrice, consumedBefore, RefundAmount: 0m, RefundVat: 0m, order.PaymentStatus),
+                    new PartialRefundSnapshot(
+                        order.Id, order.TotalPrice, consumedAfter, result.Amount, refundVat, paymentStatus, result.RefundKey),
+                    command.OverrideReason);
+            }
 
             logger.LogInformation(
                 "Admin partial refund issued for order {OrderId}: {Amount} {Currency} ({Reason}); windowOverridden={WindowOverridden}.",

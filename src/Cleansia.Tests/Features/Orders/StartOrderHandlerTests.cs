@@ -4,6 +4,8 @@ using Cleansia.Core.AppServices.Services.Interfaces;
 using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Orders;
 using Cleansia.Core.Domain.Repositories;
+using Cleansia.Core.Queue.Abstractions;
+using Cleansia.Core.Queue.Abstractions.Messages;
 using Microsoft.Extensions.Logging;
 using MockQueryable;
 using Moq;
@@ -25,7 +27,7 @@ public class StartOrderHandlerTests
     private const string UserId = "owner-user";
 
     private readonly Mock<IOrderRepository> _orderRepository = new();
-    private readonly Mock<IEmailService> _emailService = new();
+    private readonly Mock<IPendingDispatch> _pending = new();
     private readonly Mock<INotificationProducer> _producer = new();
     private readonly Mock<ILiveActivityProducer> _liveActivityProducer = new();
     private readonly Mock<ILogger<StartOrder.Handler>> _logger = new();
@@ -33,11 +35,9 @@ public class StartOrderHandlerTests
     private StartOrder.Handler CreateHandler() =>
         new(
             _orderRepository.Object,
-            _emailService.Object,
-            TestGuestOrderAccessTokenIssuer.WithNoLiveTokens(),
+            _pending.Object,
             _producer.Object,
-            _liveActivityProducer.Object,
-            _logger.Object);
+            _liveActivityProducer.Object);
 
     private Order ArrangeOrder()
     {
@@ -77,22 +77,13 @@ public class StartOrderHandlerTests
         Assert.Equal(OrderStatus.InProgress, order.CurrentStatus);
     }
 
-    /// <summary>
-    /// The fixture's booking carries no <c>UserId</c>, so "we're on our way" goes to somebody with no
-    /// account to sign in to. The e-mail's button is only a link if the send carries a credential.
-    /// </summary>
     [Fact]
-    public async Task A_Guest_Booking_Is_Told_It_Started_With_A_Link_That_Opens_It()
+    public async Task A_Guest_Booking_Stages_One_Started_Email_For_The_Committed_Order()
     {
         var order = ArrangeOrder();
-        Assert.Null(order.UserId);
-
         await CreateHandler().Handle(new StartOrder.Command(OrderId), CancellationToken.None);
-
-        _emailService.Verify(
-            s => s.SendOrderStatusUpdateEmailAsync(
-                order.CustomerEmail, order, "Started", It.IsAny<string>(), It.IsAny<CancellationToken>(),
-                It.IsAny<decimal?>(), It.Is<string?>(token => !string.IsNullOrEmpty(token))),
-            Times.Once);
+        _pending.Verify(p => p.Enqueue(QueueNames.SendEmail,
+            It.Is<QueueEnvelope<SendOrderStatusEmailMessage>>(m => m.Payload.OrderId == order.Id && m.Payload.Status == OrderStatus.InProgress),
+            MessageKeys.OrderStatusEmail(order.Id, OrderStatus.InProgress)), Times.Once);
     }
 }

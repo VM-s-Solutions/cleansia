@@ -431,13 +431,13 @@ public class SharedAddressAnonymisationTests(PostgresContainerFixture fixture) :
                     seam.Setup(r => r.Add(It.IsAny<Address>())).Callback<Address>(repository.Add);
                     seam.Setup(r => r.RemoveRange(It.IsAny<IEnumerable<Address>>()))
                         .Callback<IEnumerable<Address>>(repository.RemoveRange);
-                    seam.Setup(r => r.GetReferencedElsewhereAsync(
+                    seam.Setup(r => r.GetReferencedElsewhereIgnoringTenantAsync(
                             It.IsAny<IReadOnlyCollection<string>>(), It.IsAny<IReadOnlyCollection<string>>(),
                             It.IsAny<IReadOnlyCollection<string>>(), It.IsAny<string?>(), It.IsAny<CancellationToken>()))
                         .Returns(async (IReadOnlyCollection<string> addressIds, IReadOnlyCollection<string> orderIds,
                             IReadOnlyCollection<string> savedAddressIds, string? employeeId, CancellationToken ct) =>
                         {
-                            var references = await repository.GetReferencedElsewhereAsync(
+                            var references = await repository.GetReferencedElsewhereIgnoringTenantAsync(
                                 addressIds, orderIds, savedAddressIds, employeeId, ct);
                             Assert.DoesNotContain(SharedAddressId, references);
 

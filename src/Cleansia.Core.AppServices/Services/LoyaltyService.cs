@@ -58,7 +58,7 @@ public sealed class LoyaltyService(
         // Idempotency: bail out if a prior Earn ledger entry exists for this
         // order. This protects against duplicate CompleteOrder fires (e.g.
         // pipeline retries, manual re-trigger).
-        var existing = await loyaltyTransactionRepository.GetLatestForOrderSourceAsync(
+        var existing = await loyaltyTransactionRepository.GetLatestForOrderSourceIgnoringTenantAsync(
             orderId, LoyaltyEarnSource.OrderCompleted, cancellationToken);
         if (existing != null)
         {
@@ -115,7 +115,7 @@ public sealed class LoyaltyService(
         }
 
         // Find the original Earn so we know how many points to walk back.
-        var originalEarn = await loyaltyTransactionRepository.GetLatestForOrderSourceAsync(
+        var originalEarn = await loyaltyTransactionRepository.GetLatestForOrderSourceIgnoringTenantAsync(
             orderId, LoyaltyEarnSource.OrderCompleted, cancellationToken);
         if (originalEarn == null)
         {
@@ -123,7 +123,7 @@ public sealed class LoyaltyService(
         }
 
         // Idempotency: if a prior Revoke for this order already exists, no-op.
-        var existingRevoke = await loyaltyTransactionRepository.GetLatestForOrderSourceAsync(
+        var existingRevoke = await loyaltyTransactionRepository.GetLatestForOrderSourceIgnoringTenantAsync(
             orderId, LoyaltyEarnSource.OrderCancelled, cancellationToken);
         if (existingRevoke != null)
         {
@@ -175,7 +175,7 @@ public sealed class LoyaltyService(
         // first took and takes only the rest instead of the whole share again.
         await loyaltyAccountRepository.LockForUserAsync(order.UserId, cancellationToken);
 
-        var originalEarn = await loyaltyTransactionRepository.GetLatestForOrderSourceAsync(
+        var originalEarn = await loyaltyTransactionRepository.GetLatestForOrderSourceIgnoringTenantAsync(
             orderId, LoyaltyEarnSource.OrderCompleted, cancellationToken);
         if (originalEarn == null)
         {
@@ -226,7 +226,7 @@ public sealed class LoyaltyService(
             return new TierDiscountResult(0m, null);
         }
 
-        var account = await loyaltyAccountRepository.GetByUserIdTierOnlyAsync(userId, cancellationToken);
+        var account = await loyaltyAccountRepository.GetByUserIdTierOnlyIgnoringTenantAsync(userId, cancellationToken);
         if (account == null)
         {
             return new TierDiscountResult(0m, null);
@@ -289,7 +289,7 @@ public sealed class LoyaltyService(
         // even if ProcessOrderCompletedAsync is replayed.
         if (!string.IsNullOrEmpty(orderId))
         {
-            var existing = await loyaltyTransactionRepository.GetLatestForOrderSourceAsync(
+            var existing = await loyaltyTransactionRepository.GetLatestForOrderSourceIgnoringTenantAsync(
                 orderId, source, cancellationToken);
             if (existing != null)
             {
@@ -346,7 +346,7 @@ public sealed class LoyaltyService(
         // Idempotency mirror of GrantPointsManuallyAsync — order-driven (orderId, Source) guard.
         if (!string.IsNullOrEmpty(orderId))
         {
-            var existing = await loyaltyTransactionRepository.GetLatestForOrderSourceAsync(
+            var existing = await loyaltyTransactionRepository.GetLatestForOrderSourceIgnoringTenantAsync(
                 orderId, source, cancellationToken);
             if (existing != null)
             {

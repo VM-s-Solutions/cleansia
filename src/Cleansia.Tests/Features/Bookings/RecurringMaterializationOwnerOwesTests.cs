@@ -45,7 +45,7 @@ public sealed class RecurringMaterializationOwnerOwesTests
     [Fact]
     public async Task An_Owner_Who_Owes_An_Open_Receivable_Gets_No_Visit_And_Keeps_The_Schedule()
     {
-        _receivables.Setup(r => r.HasOpenForUserAsync(UserId, It.IsAny<CancellationToken>())).ReturnsAsync(true);
+        _receivables.Setup(r => r.HasOpenForUserIgnoringTenantAsync(UserId, It.IsAny<CancellationToken>())).ReturnsAsync(true);
 
         var result = await Handle();
 
@@ -94,7 +94,7 @@ public sealed class RecurringMaterializationOwnerOwesTests
 
         var memberships = new Mock<IUserMembershipRepository>();
         memberships
-            .Setup(r => r.GetEntitledForUserNoTrackingAsync(UserId, It.IsAny<CancellationToken>()))
+            .Setup(r => r.GetEntitledForUserNoTrackingIgnoringTenantAsync(UserId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(UserMembership.Create(
                 UserId, "plan-owes", "currency-czk", "sub_owes", DateTime.UtcNow.AddDays(-10), DateTime.UtcNow.AddDays(20), null));
 

@@ -128,7 +128,7 @@ public class NewJobsDigestService(
                         // holder is still assigned but a taker displaces them. → Order.HasTakeableSeat
                         && o.AssignedEmployees.Count(ae => ae.CoverRequestedAt == null) < o.MaxEmployees
                         && o.AssignedEmployees.All(ae => ae.EmployeeId != cleaner.EmployeeId))
-                    .Where(OrderAvailability.IsOfferableSql)
+                    .Where(OrderAvailability.IsOfferableSql(sweepStartedAtUtc))
                     .Where(OrderVisibility.NotHeldFrom(cleaner.EmployeeId, sweepStartedAtUtc));
 
                 // "Near you", when the cleaner asked for it. The work-country term above is

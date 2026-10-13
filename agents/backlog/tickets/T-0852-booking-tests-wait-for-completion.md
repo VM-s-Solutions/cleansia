@@ -142,3 +142,5 @@ guarded merge and deployment-run reads. Fresh GETs for `deploy-dev.yml`, `deploy
 `deploy-docs.yml` and `execute-sql.yml`, created since the merge timestamp, each returned
 zero runs. No reset, deploy or PRO operation ran in this phase. Graphify was not run.
 This closure travels as the first commit of the backend branch from that merge.
+
+- 2026-10-13 — Separate post-merge master proof for #329: all four triggered push checks passed on merge155e14067322262d17d5224346621da55860a19c, first attempts. Snapshot/log/annotation receipts are retained under Wave F `raw/ci/nw-p1-master-155e14067322-poll-001` and `raw/ci/nw-p1-master-155e14067322/evidence`; next-wave `p1/master-ci-receipt.json` SHA256c15e24d47a6fcb0de9e97b463384c3a97f4e663804ef45065b427ecb88a336ad. This augments the separate master proof, not the already committed #329 pre-merge closure. No deploy was dispatched.

@@ -56,9 +56,9 @@ public class SeatOpenedNotifierTests
         return order;
     }
 
-    private Task Notify(Order order) =>
+    private Task Notify(Order order, DateTime? nowUtc = null) =>
         SeatOpenedNotifier.NotifySeatOpenAsync(
-            order, LeaverId, "assignment-1", _employees.Object, _notifications.Object, default);
+            order, LeaverId, "assignment-1", _employees.Object, _notifications.Object, nowUtc ?? DateTime.UtcNow, default);
 
     private void VerifyWoken(string employeeUserId, Times times) =>
         _notifications.Verify(n => n.NotifyAsync(
@@ -78,6 +78,26 @@ public class SeatOpenedNotifierTests
         await Notify(OrderInCountry());
 
         VerifyWoken(cleaner.UserId!, Times.Once());
+    }
+
+    [Theory]
+    [InlineData(-130, 180, true)]
+    [InlineData(-180, 180, false)]
+    [InlineData(-181, 180, false)]
+    public async Task An_Open_Seat_Is_Announced_Only_Before_The_Raw_Slot_End(int startOffsetMinutes, int duration, bool expected)
+    {
+        var nowUtc = new DateTime(2026, 10, 13, 12, 0, 0, DateTimeKind.Utc);
+        var order = OrderInCountry();
+        typeof(Order).GetProperty(nameof(Order.CleaningDateTime))!.SetValue(order, nowUtc.AddMinutes(startOffsetMinutes));
+        order.UpdateEstimatedTime(duration);
+        order.AddOrderStatus(OrderStatusTrack.Create(OrderStatus.InProgress, order));
+        var cleaner = Cleaner("emp-1");
+        Arrange(cleaner);
+
+        await Notify(order, nowUtc);
+
+        VerifyWoken(cleaner.UserId!, expected ? Times.Once() : Times.Never());
+        _employees.Verify(r => r.GetQueryableIgnoringTenant(), expected ? Times.Once() : Times.Never());
     }
 
     /// <summary>Jurisdiction, not preference: a cleaner cannot work a country they are not approved in.</summary>

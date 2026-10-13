@@ -101,6 +101,17 @@ public sealed class PerfIndexModelMetadataTests : IDisposable
     }
 
     [Fact]
+    public void Devices_HasNonuniqueDeviceIdDeviceTokenIndex_ForSharedInstallWithdrawal()
+    {
+        using var ctx = NewContext();
+        var device = ctx.Model.FindEntityType(typeof(Device))!;
+        var index = Assert.Single(device.GetIndexes().Where(candidate =>
+            candidate.Properties.Select(property => property.Name)
+                .SequenceEqual([nameof(Device.DeviceId), nameof(Device.DeviceToken)])));
+        Assert.False(index.IsUnique);
+    }
+
+    [Fact]
     public void Orders_HasCurrentStatusCleaningDateTimeIndex_ForStatusPredicates()
     {
         using var ctx = NewContext();

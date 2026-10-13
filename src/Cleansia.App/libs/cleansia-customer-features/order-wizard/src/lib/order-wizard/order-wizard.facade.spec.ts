@@ -722,6 +722,21 @@ describe('OrderWizardFacade', () => {
       expect(facade.canProceed()).toBe(true);
     });
 
+    it('step 2 accepts a long valid account email and retains the guest cap', () => {
+      facade.goToStep(2);
+      fillValidContactAndAddress();
+      facade.updateFormData({ customerEmail: `${'a'.repeat(45)}@cleansia.test` });
+      facade.isAuthenticated.set(true);
+
+      expect(facade.missingReasons()).not.toContain('pages.order.missing.email');
+      expect(facade.canProceed()).toBe(true);
+
+      facade.isAuthenticated.set(false);
+
+      expect(facade.missingReasons()).toContain('pages.order.missing.email');
+      expect(facade.canProceed()).toBe(false);
+    });
+
     it('step 2 rejects an invalid email', () => {
       facade.goToStep(2);
       fillValidContactAndAddress();
@@ -2145,14 +2160,14 @@ describe('OrderWizardFacade', () => {
       expect(facade.formData().customerPhone).toBe('+420777123456');
     });
 
-    it('does not overwrite an answer that differs from the account', () => {
+    it('uses the account email even when the draft names another address', () => {
       facade.updateFormData({ customerEmail: 'booking@example.com' });
       authService.isLoggedIn.mockReturnValue(true);
       userClient.getCurrent.mockReturnValue(of(account('+420777123456')));
 
       facade.initialize();
 
-      expect(facade.formData().customerEmail).toBe('booking@example.com');
+      expect(facade.formData().customerEmail).toBe('anna@example.com');
     });
   });
 

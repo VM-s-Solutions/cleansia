@@ -58,7 +58,7 @@ public sealed class ReturnPendingRefundCreditLegTests
 
         await _credit.Object.ReturnPendingRefundCreditLegAsync(_refunds.Object, order, request, CancellationToken.None);
 
-        _credit.Verify(c => c.TryReturnAsync(
+        _credit.Verify(c => c.TryReturnIgnoringTenantAsync(
             UserId, "czk", 180m, $"credit-return:{ownKey}", UserId,
             It.IsAny<CancellationToken>(), OrderId, It.IsAny<string?>()), Times.Once);
     }

@@ -54,7 +54,7 @@ public class AdminCancelOrderAsNoShowTests
         _refunds.Setup(r => r.IssueRefundAsync(It.IsAny<RefundRequest>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync((RefundRequest request, CancellationToken _) => BusinessResult.Success(
                 new RefundResult("refund-1", $"refund:{request.OrderId}:admin", request.Amount, RefundStatus.Succeeded, false)));
-        _credit.Setup(c => c.EnsureForUserAsync(CustomerId, CzkId, It.IsAny<CancellationToken>()))
+        _credit.Setup(c => c.EnsureForUserIgnoringTenantAsync(CustomerId, CzkId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(() => _account ??= CreditAccount.Create(CustomerId, CzkId, "system"));
     }
 
@@ -169,7 +169,7 @@ public class AdminCancelOrderAsNoShowTests
     public async Task A_Customer_Whose_Credit_Is_On_A_Frozen_Companys_Books_Gets_No_Apology_And_Is_Still_Refunded()
     {
         var order = ArrangeOrder();
-        _credit.Setup(c => c.IsOnFrozenCompanyBooksAsync(CustomerId, CzkId, It.IsAny<CancellationToken>()))
+        _credit.Setup(c => c.IsOnFrozenCompanyBooksIgnoringTenantAsync(CustomerId, CzkId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(true);
 
         var result = await ConfirmAsync();
@@ -178,7 +178,7 @@ public class AdminCancelOrderAsNoShowTests
         Assert.Null(result.Value!.ApologyCredit);
         Assert.Equal(1000m, result.Value.RefundedAmount);
         Assert.Equal(OrderStatus.Cancelled, order.CurrentStatus);
-        _credit.Verify(c => c.EnsureForUserAsync(
+        _credit.Verify(c => c.EnsureForUserIgnoringTenantAsync(
             It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Never);
         _notifications.Verify(n => n.NotifyAsync(
             CustomerId, NotificationEventCatalog.OrderCancelled,
@@ -332,10 +332,10 @@ public class AdminCancelOrderAsNoShowTests
         var result = await ConfirmAsync();
 
         Assert.True(result.Value!.RefundPending);
-        _credit.Verify(c => c.TryReturnAsync(
+        _credit.Verify(c => c.TryReturnIgnoringTenantAsync(
             CustomerId, CzkId, 240m, $"credit-return:refund:{OrderId}:admin", AdminId,
             It.IsAny<CancellationToken>(), OrderId, It.IsAny<string?>()), Times.Once);
-        _credit.Verify(c => c.TryReturnAsync(
+        _credit.Verify(c => c.TryReturnIgnoringTenantAsync(
             It.IsAny<string>(), It.IsAny<string>(), It.IsAny<decimal>(), $"credit-return:order-ended-unpaid:{OrderId}",
             It.IsAny<string>(), It.IsAny<CancellationToken>(), It.IsAny<string?>(), It.IsAny<string?>()), Times.Never);
     }
@@ -367,7 +367,7 @@ public class AdminCancelOrderAsNoShowTests
         _refunds.Verify(r => r.IssueRefundAsync(
             It.Is<RefundRequest>(q => q.Amount == 1000m && q.Reason == RefundReason.ServiceNotRendered),
             It.IsAny<CancellationToken>()), Times.Once);
-        _credit.Verify(c => c.TryReturnAsync(
+        _credit.Verify(c => c.TryReturnIgnoringTenantAsync(
             It.IsAny<string>(), It.IsAny<string>(), It.IsAny<decimal>(), $"credit-return:order-ended-unpaid:{OrderId}",
             It.IsAny<string>(), It.IsAny<CancellationToken>(), It.IsAny<string?>(), It.IsAny<string?>()), Times.Never);
         Assert.Equal(35m, result.Value!.RefundedAmount);
@@ -394,7 +394,7 @@ public class AdminCancelOrderAsNoShowTests
 
         await ConfirmAsync();
 
-        _credit.Verify(c => c.TryReturnAsync(
+        _credit.Verify(c => c.TryReturnIgnoringTenantAsync(
             CustomerId, CzkId, 200m, $"credit-return:order-ended-unpaid:{OrderId}", AdminId,
             It.IsAny<CancellationToken>(), OrderId, It.IsAny<string?>()), Times.Once);
     }

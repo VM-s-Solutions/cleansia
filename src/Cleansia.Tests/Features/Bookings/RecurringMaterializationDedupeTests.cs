@@ -8,6 +8,8 @@ using Cleansia.Core.Domain.Configuration;
 using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Internationalization;
 using Cleansia.Core.Domain.Loyalty;
+using Cleansia.Core.Domain.Notifications;
+using Cleansia.Core.Queue.Abstractions;
 using Cleansia.Core.Domain.Orders;
 using Cleansia.Core.Domain.Packages;
 using Cleansia.Core.Domain.Repositories;
@@ -20,6 +22,7 @@ using Cleansia.Tests.Features.Orders;
 using Cleansia.TestUtilities;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Diagnostics;
 using Microsoft.Extensions.DependencyInjection;
 using MockQueryable;
 using Microsoft.Extensions.Logging.Abstractions;
@@ -79,6 +82,53 @@ public sealed class RecurringMaterializationDedupeTests : IDisposable
     }
 
     public void Dispose() => _connection.Dispose();
+
+    [Theory]
+    [InlineData(8, 0)]
+    [InlineData(8, 30)]
+    public async Task A_Late_Prague_Materialization_Reminds_Before_The_Next_Tick_Could_Miss_Confirmation(int hour, int minute)
+    {
+        await SeedAsync(marketZone: "Europe/Prague", day: DayOfWeek.Monday, timeOfDay: new TimeOnly(hour, minute));
+        var late = Now.Date.AddHours(3).AddMinutes(55);
+
+        var response = await RunAsync(late, horizonDays: 1);
+
+        Assert.Equal(1, response.OrdersCreated);
+        await using var read = NewContext();
+        var order = Assert.Single(await read.Orders.IgnoreQueryFilters().ToListAsync());
+        Assert.Equal(Now.Date.AddHours(hour - 2).AddMinutes(minute), order.CleaningDateTime);
+        Assert.Equal(late, order.RecurringReminderSentAt);
+        Assert.Single(await read.OutboxMessages.IgnoreQueryFilters().Where(m =>
+            m.MessageKey == MessageKeys.Push(UserId, NotificationEventCatalog.RecurringScheduled, order.Id)).ToListAsync());
+        Assert.Equal(0, (await RunAsync(late.AddMinutes(1), horizonDays: 1)).OrdersCreated);
+        Assert.Equal(1, await read.OutboxMessages.IgnoreQueryFilters().CountAsync());
+        var reminder = new SendRecurringOrderReminder.Handler(new OrderRepository(read),
+            new NotificationProducer(new UserNotificationRepository(read), new OutboxPendingDispatch(read), new UserRepository(read),
+                NullLogger<NotificationProducer>.Instance), _tenantProvider);
+        var periodic = await reminder.Handle(new SendRecurringOrderReminder.Command(order.Id, late.AddMinutes(1),
+            late.AddHours(2), late.AddHours(26)), CancellationToken.None);
+        Assert.False(periodic.Value!.Sent);
+        Assert.Equal(1, await read.OutboxMessages.IgnoreQueryFilters().CountAsync());
+    }
+
+    [Fact]
+    public async Task A_Refused_Late_Materialization_Commits_Neither_The_Occurrence_Nor_Its_Reminder()
+    {
+        await SeedAsync(marketZone: "Europe/Prague", day: DayOfWeek.Monday, timeOfDay: new TimeOnly(8, 0));
+        await Assert.ThrowsAsync<InvalidOperationException>(() => RunAsync(Now.Date.AddHours(3).AddMinutes(55), 1,
+            new RefuseMaterializationSave()));
+        await using var read = NewContext();
+        Assert.Empty(await read.Orders.IgnoreQueryFilters().ToListAsync());
+        Assert.Empty(await read.OutboxMessages.IgnoreQueryFilters().ToListAsync());
+        Assert.Empty(await read.Set<UserNotification>().IgnoreQueryFilters().ToListAsync());
+        Assert.Null(await MarkerAsync());
+    }
+
+    private sealed class RefuseMaterializationSave : SaveChangesInterceptor
+    {
+        public override ValueTask<InterceptionResult<int>> SavingChangesAsync(DbContextEventData data,
+            InterceptionResult<int> result, CancellationToken ct = default) => throw new InvalidOperationException("Refused materialization");
+    }
 
     [Fact]
     public async Task An_Already_Materialized_Occurrence_Is_Not_Recreated_After_An_Edit_Clears_The_Watermark()
@@ -289,11 +339,11 @@ public sealed class RecurringMaterializationDedupeTests : IDisposable
         return template.LastMaterializedFor;
     }
 
-    private async Task<MaterializeRecurringBookingTemplate.Response> RunAsync(DateTime nowUtc, int horizonDays)
+    private async Task<MaterializeRecurringBookingTemplate.Response> RunAsync(DateTime nowUtc, int horizonDays, params IInterceptor[] interceptors)
     {
         _tenantProvider.ClearTenantOverride();
 
-        await using var provider = BuildProvider();
+        await using var provider = BuildProvider(interceptors);
         using var scope = provider.CreateScope();
 
         var handler = scope.ServiceProvider.GetRequiredService<MaterializeRecurringBookingTemplate.Handler>();
@@ -311,7 +361,7 @@ public sealed class RecurringMaterializationDedupeTests : IDisposable
             new TestUserSessionProvider("system", "system@cleansia.test"),
             _tenantProvider);
 
-    private ServiceProvider BuildProvider()
+    private ServiceProvider BuildProvider(IInterceptor[] interceptors)
     {
         var session = new TestUserSessionProvider("system", "system@cleansia.test");
         var services = new ServiceCollection();
@@ -320,7 +370,7 @@ public sealed class RecurringMaterializationDedupeTests : IDisposable
         services.AddSingleton(Cleansia.Tests.Features.Orders.OrderMarketDoubles.OperatedBy(TestTenants.Default));
         services.AddScoped<ITenantProvider>(_ => new MutableTenantProvider());
         services.AddScoped(sp => new CleansiaDbContext(
-            new DbContextOptionsBuilder<CleansiaDbContext>().UseSqlite(_connection).Options,
+            new DbContextOptionsBuilder<CleansiaDbContext>().UseSqlite(_connection).AddInterceptors(interceptors).Options,
             session,
             sp.GetRequiredService<ITenantProvider>()));
         services.AddScoped<IUnitOfWork>(sp => sp.GetRequiredService<CleansiaDbContext>());
@@ -348,7 +398,12 @@ public sealed class RecurringMaterializationDedupeTests : IDisposable
         // dedupe and per-template isolation, so the owner is simply entitled — otherwise the sweep
         // correctly generates nothing and their real subject never runs.
         services.AddScoped(_ => EntitledMemberships());
-        services.AddScoped<INotificationProducer>(_ => Mock.Of<INotificationProducer>());
+        services.AddScoped<INotificationProducer>(sp =>
+        {
+            var ctx = sp.GetRequiredService<CleansiaDbContext>();
+            return new NotificationProducer(new UserNotificationRepository(ctx), new OutboxPendingDispatch(ctx),
+                new UserRepository(ctx), NullLogger<NotificationProducer>.Instance);
+        });
         services.AddScoped<IReceivableRepository>(_ => Mock.Of<IReceivableRepository>());
         services.AddScoped<MaterializeRecurringBookingTemplate.Handler>();
 
@@ -484,7 +539,7 @@ public sealed class RecurringMaterializationDedupeTests : IDisposable
     {
         var memberships = new Mock<IUserMembershipRepository>();
         memberships
-            .Setup(r => r.GetEntitledForUserNoTrackingAsync(
+            .Setup(r => r.GetEntitledForUserNoTrackingIgnoringTenantAsync(
                 It.IsAny<string>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync((string userId, CancellationToken _) =>
                 UserMembershipMockFactory.Paid(userId));

@@ -502,6 +502,44 @@ describe('OrderWizardComponent (a11y)', () => {
       expect(firstNameInput?.labels?.length).toBeGreaterThan(0);
     });
 
+    it('makes the account email read-only while a guest can edit it', async () => {
+      await setup();
+      facade.activeStep.set(2);
+      facade.isAuthenticated.set(true);
+      fixture.detectChanges();
+
+      const input = el.querySelector<HTMLInputElement>('#wizard-email')!;
+      expect(input.readOnly).toBe(true);
+
+      facade.isAuthenticated.set(false);
+      fixture.detectChanges();
+
+      expect(input.readOnly).toBe(false);
+    });
+
+    it('keeps a long account email valid on blur while a guest keeps the cap', async () => {
+      await setup();
+      facade.activeStep.set(2);
+      facade.isAuthenticated.set(true);
+      facade.updateFormData({ customerEmail: `${'a'.repeat(45)}@cleansia.test` });
+      fixture.detectChanges();
+      await fixture.whenStable();
+
+      const input = el.querySelector<HTMLInputElement>('#wizard-email')!;
+      input.dispatchEvent(new Event('blur'));
+      fixture.detectChanges();
+
+      expect(fixture.componentInstance.fieldError('customerEmail')).toBeNull();
+      expect(input.getAttribute('aria-invalid')).not.toBe('true');
+      expect(el.querySelector('#wizard-email-error')).toBeNull();
+
+      facade.isAuthenticated.set(false);
+      fixture.detectChanges();
+
+      expect(fixture.componentInstance.fieldError('customerEmail')).toBe('global.validation.maxlength');
+      expect(input.getAttribute('aria-invalid')).toBe('true');
+    });
+
     it('sets aria-invalid + aria-describedby when a contact field has a touched error', async () => {
       await setup();
       facade.activeStep.set(2);

@@ -15,7 +15,7 @@ public interface ICleanerLegalDocumentAcceptanceRepository : IRepository<Cleaner
     /// Loads the cleaner's rows TRACKED, past the tenant filter, and pseudonymises each so the blanking
     /// rides the erasure's single commit. Returns the number of rows touched.
     /// </summary>
-    Task<int> PseudonymiseForEmployeeAsync(string employeeId, CancellationToken cancellationToken);
+    Task<int> PseudonymiseForEmployeeIgnoringTenantAsync(string employeeId, CancellationToken cancellationToken);
 
     /// <summary>
     /// Blanks the request metadata on every row of the AMBIENT company accepted before the cutoff that

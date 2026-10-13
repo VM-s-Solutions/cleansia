@@ -157,7 +157,9 @@ porting (`src/cleansia_android/{partner,customer}-app/.../features/<screen>`).
 - **APNs auth key** — for push (T-0311).
 - **Sign in with Apple** — required on the customer app (Guideline 4.8, it offers Google Sign-In); built
   with the customer auth wave via a backend `appleauth` endpoint (ADR-0016).
-- **Fonts** (MANUAL_STEPS §6) and the **mobile-spec regen** (§7) — both yours.
+- **Fonts** (MANUAL_STEPS §6). **Mobile-spec regeneration** (§7) is ordinary agent-run work under
+  `CLAUDE.md`: start the mobile hosts locally, dump the shared specs, regenerate and verify clients,
+  and report the commands.
 - **Azure dev** — finish the deploy so the iOS apps have a backend (owner is on this).
 
 ---

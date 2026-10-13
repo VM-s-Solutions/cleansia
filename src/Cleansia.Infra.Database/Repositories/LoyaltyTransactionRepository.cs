@@ -11,7 +11,7 @@ namespace Cleansia.Infra.Database.Repositories;
 public class LoyaltyTransactionRepository(CleansiaDbContext context)
     : BaseRepository<LoyaltyTransaction>(context), ILoyaltyTransactionRepository
 {
-    public Task<LoyaltyTransaction?> GetLatestForOrderSourceAsync(
+    public Task<LoyaltyTransaction?> GetLatestForOrderSourceIgnoringTenantAsync(
         string orderId, LoyaltyEarnSource source, CancellationToken cancellationToken)
     {
         return GetQueryableIgnoringTenant()

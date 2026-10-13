@@ -31,7 +31,7 @@ public class TierDiscountFloorCurrencyTests
         var account = LoyaltyAccount.Create(UserId);
         account.GrantPoints(600, LoyaltyEarnSource.OrderCompleted, "order-0", "system", new LoyaltyTierThresholds(500, 2000, 5000));
         _accountRepository
-            .Setup(r => r.GetByUserIdTierOnlyAsync(UserId, It.IsAny<CancellationToken>()))
+            .Setup(r => r.GetByUserIdTierOnlyIgnoringTenantAsync(UserId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(account);
         Assert.Equal(LoyaltyTier.SilverMopper, account.CurrentTier);
 

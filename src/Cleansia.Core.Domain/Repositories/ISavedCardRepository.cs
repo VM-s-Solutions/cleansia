@@ -14,5 +14,5 @@ public interface ISavedCardRepository : IRepository<SavedCard, string>
     Task<SavedCard?> GetByIdIgnoringTenantAsync(string id, CancellationToken cancellationToken);
 
     /// <summary>Erasure: every row of the user, loaded and removed inside the caller's unit of work.</summary>
-    Task RemoveForUserAsync(string userId, CancellationToken cancellationToken);
+    Task RemoveForUserIgnoringTenantAsync(string userId, CancellationToken cancellationToken);
 }

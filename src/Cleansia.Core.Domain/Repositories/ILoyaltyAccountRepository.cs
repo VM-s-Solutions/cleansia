@@ -12,9 +12,10 @@ public interface ILoyaltyAccountRepository : IRepository<LoyaltyAccount, string>
     /// <summary>
     /// No-tracking, ledger-free read for the booking/quote hot path, which reads only
     /// <see cref="LoyaltyAccount.CurrentTier"/>. Returns the same account row as
-    /// <see cref="GetByUserIdAsync"/> without enrolling it in the change tracker.
+    /// <see cref="GetByUserIdAsync"/> without enrolling it in the change tracker. Caller obligation:
+    /// userId is the session account or comes from authorized booking input or a loaded template.
     /// </summary>
-    Task<LoyaltyAccount?> GetByUserIdTierOnlyAsync(string userId, CancellationToken cancellationToken);
+    Task<LoyaltyAccount?> GetByUserIdTierOnlyIgnoringTenantAsync(string userId, CancellationToken cancellationToken);
 
     /// <summary>
     /// Account lookup across operators for a user read from an authorized order.

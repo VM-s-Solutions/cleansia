@@ -12,7 +12,6 @@ using Cleansia.Core.Domain.Repositories;
 using Cleansia.Infra.Common.Validations;
 using FluentValidation;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Logging;
 
 namespace Cleansia.Core.AppServices.Features.Orders;
 
@@ -226,11 +225,8 @@ public class CompleteOrder
         IPendingDispatch pending,
         INotificationProducer notificationProducer,
         ILiveActivityProducer liveActivityProducer,
-        IEmailService emailService,
-        GuestOrderAccessTokenIssuer guestAccessTokenIssuer,
         ILoyaltyService loyaltyService,
-        IReferralService referralService,
-        ILogger<Handler> logger)
+        IReferralService referralService)
         : ICommandHandler<Command, Response>
     {
         public async Task<BusinessResult<Response>> Handle(Command command, CancellationToken cancellationToken)
@@ -291,22 +287,11 @@ public class CompleteOrder
                     cancellationToken);
             }
 
-            try
-            {
-                var languageCode = EmailLocale.Resolve(
-                    order.LanguageCode ?? order.User?.PreferredLanguageCode ?? Constants.Language.English);
-                // A guest has no account to sign in to, so this link is only a link if it carries a
-                // credential. Its own, minted here: nothing can hand this site the one the
-                // confirmation e-mail carried, and superseding that one to reuse the row would kill
-                // the link in the message the guest most likely still has.
-                await emailService.SendOrderStatusUpdateEmailAsync(
-                    order.CustomerEmail, order, "Completed", languageCode, cancellationToken,
-                    guestAccessToken: guestAccessTokenIssuer.IssueForGuest(order));
-            }
-            catch (Exception ex)
-            {
-                logger.LogWarning(ex, "Failed to send order Completed email for order {OrderId}", order.Id);
-            }
+            var statusLanguageCode = EmailLocale.Resolve(order.LanguageCode ?? order.User?.PreferredLanguageCode ?? Constants.Language.English);
+            var emailKey = MessageKeys.OrderStatusEmail(order.Id, OrderStatus.Completed);
+            pending.Enqueue(QueueNames.SendEmail,
+                new QueueEnvelope<SendOrderStatusEmailMessage>(emailKey, order.TenantId,
+                    new SendOrderStatusEmailMessage(order.Id, OrderStatus.Completed, statusLanguageCode, order.TenantId)), emailKey);
 
             await loyaltyService.GrantForCompletedOrderAsync(order.Id, cancellationToken);
 

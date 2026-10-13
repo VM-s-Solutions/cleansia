@@ -56,7 +56,7 @@ public class LoyaltyTransactionEntityConfiguration : TenantAuditableEntityConfig
         builder.HasIndex(t => new { t.LoyaltyAccountId, t.OccurredOn })
             .IsDescending(false, true);
 
-        // Idempotency lookup: GetLatestForOrderSourceAsync(OrderId, Source)
+        // Idempotency lookup: GetLatestForOrderSourceIgnoringTenantAsync(OrderId, Source)
         builder.HasIndex(t => new { t.OrderId, t.Source });
 
         // FILTERED, TENANT-SCOPED unique index on the manual-grant idempotency key. The requestId is a

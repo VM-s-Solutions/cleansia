@@ -43,7 +43,7 @@ public class ReferralServiceCreditGrantTests
     {
         _receivables.Setup(r => r.GetQueryableIgnoringTenant()).Returns(() => _debts.AsQueryable().BuildMock());
         _credit
-            .Setup(c => c.EnsureForUserAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .Setup(c => c.EnsureForUserIgnoringTenantAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync((string userId, string currencyId, CancellationToken _) =>
             {
                 _ensured.Add(userId);
@@ -274,7 +274,7 @@ public class ReferralServiceCreditGrantTests
     {
         var czk = NewCurrency(CzkId, "CZK", 150m);
         _credit
-            .Setup(c => c.IsOnFrozenCompanyBooksAsync("referrer", CzkId, It.IsAny<CancellationToken>()))
+            .Setup(c => c.IsOnFrozenCompanyBooksIgnoringTenantAsync("referrer", CzkId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(true);
         var referral = Arrange("referrer", "referred", NewCurrency(EurId, "EUR", 6m), (czk, 2));
 

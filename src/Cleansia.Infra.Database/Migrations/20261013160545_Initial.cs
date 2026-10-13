@@ -3685,6 +3685,11 @@ namespace Cleansia.Infra.Database.Migrations
                 column: "TenantId");
 
             migrationBuilder.CreateIndex(
+                name: "IX_Devices_DeviceId_DeviceToken",
+                table: "Devices",
+                columns: new[] { "DeviceId", "DeviceToken" });
+
+            migrationBuilder.CreateIndex(
                 name: "IX_Devices_IsActive_LastActiveAt",
                 table: "Devices",
                 columns: new[] { "IsActive", "LastActiveAt" });

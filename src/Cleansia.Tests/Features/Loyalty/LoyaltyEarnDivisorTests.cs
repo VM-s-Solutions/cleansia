@@ -41,7 +41,7 @@ public class LoyaltyEarnDivisorTests
             .Setup(r => r.EnsureForUserAsync(UserId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(_account);
         _transactionRepository
-            .Setup(r => r.GetLatestForOrderSourceAsync(OrderId, LoyaltyEarnSource.OrderCompleted, It.IsAny<CancellationToken>()))
+            .Setup(r => r.GetLatestForOrderSourceIgnoringTenantAsync(OrderId, LoyaltyEarnSource.OrderCompleted, It.IsAny<CancellationToken>()))
             .ReturnsAsync((LoyaltyTransaction?)null);
         _tierConfigRepository
             .Setup(r => r.GetAllForTenantAsync(It.IsAny<CancellationToken>()))

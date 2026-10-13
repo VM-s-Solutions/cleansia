@@ -17,7 +17,7 @@ internal static class CustomerCashStanding
     /// <summary>Owed to any operating company but a frozen one, which can no longer be paid.</summary>
     public static async Task<bool> OwesNothingAsync(
         IReceivableRepository receivableRepository, string userId, CancellationToken cancellationToken)
-        => !await receivableRepository.HasOpenForUserAsync(userId, cancellationToken);
+        => !await receivableRepository.HasOpenForUserIgnoringTenantAsync(userId, cancellationToken);
 
     /// <summary>
     /// Counted in every operating company the customer booked with. A recurring occurrence the customer

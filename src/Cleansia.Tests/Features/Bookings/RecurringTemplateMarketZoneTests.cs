@@ -28,7 +28,7 @@ public sealed class RecurringTemplateMarketZoneTests
     {
         _session.Setup(s => s.GetUserId()).Returns(UserId);
         _savedAddresses.Setup(r => r.GetByUserAsync(UserId, It.IsAny<CancellationToken>())).ReturnsAsync([SavedAddressIn("country-cz")]);
-        _templates.Setup(r => r.GetByUserAsync(UserId, It.IsAny<CancellationToken>())).ReturnsAsync([Template()]);
+        _templates.Setup(r => r.GetByUserIgnoringTenantAsync(UserId, It.IsAny<CancellationToken>())).ReturnsAsync([Template()]);
     }
 
     [Fact]

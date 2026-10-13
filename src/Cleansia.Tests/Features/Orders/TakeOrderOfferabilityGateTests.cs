@@ -149,6 +149,26 @@ public class TakeOrderOfferabilityGateTests
         Assert.True(result.IsValid, string.Join("; ", result.Errors.Select(e => e.ErrorMessage)));
     }
 
+    [Theory]
+    [InlineData(false, BusinessErrorMessage.OrderNotTakeable)]
+    [InlineData(true, BusinessErrorMessage.OrderNotFound)]
+    public async Task An_Expired_Slot_Keeps_The_Held_Order_Indistinguishable_From_Missing(bool held, string error)
+    {
+        var order = ValidatorTestHelpers.BuildEmptyOrder(OrderId, OrderStatus.InProgress,
+            cleaningDateTime: DateTime.UtcNow.AddHours(-3));
+        order.UpdateEstimatedTime(180);
+        if (held)
+        {
+            order.GrantPreferredHold(OtherEmployeeId, DateTime.UtcNow.AddHours(1), DateTime.UtcNow, BookingPolicy.MaxPreferredOfferRounds);
+        }
+        Arrange(order);
+
+        var result = await _validator.ValidateAsync(new TakeOrder.Command(OrderId, WorkContractTestData.TextIdEn));
+
+        AssertSingleError(result, error);
+        Assert.Empty(order.AssignedEmployees);
+    }
+
     // ── TC-TAKE-ONE-ERROR: every refusal returns exactly one error ──
 
     /// <summary>

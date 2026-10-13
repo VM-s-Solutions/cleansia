@@ -40,7 +40,7 @@ public sealed class PreferredCleanerHoldResolver(
         }
 
         var membership = await userMembershipRepository
-            .GetEntitledForUserNoTrackingAsync(userId, cancellationToken);
+            .GetEntitledForUserNoTrackingIgnoringTenantAsync(userId, cancellationToken);
         if (membership is null)
         {
             return PreferredCleanerOutcome.Declined(HoldDeclineReason.NoMembership);

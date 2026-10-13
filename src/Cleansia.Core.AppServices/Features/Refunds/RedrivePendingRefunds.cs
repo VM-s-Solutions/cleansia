@@ -185,7 +185,7 @@ public class RedrivePendingRefunds
                         }
                         else if (!nothingOwed && !raisedBySeam && row.CreatedOn <= alertBefore
                             && !string.IsNullOrEmpty(row.TenantId)
-                            && !await userNotificationRepository.AnyForEventAsync(
+                            && !await userNotificationRepository.AnyForEventIgnoringTenantAsync(
                                 row.TenantId, alertKey, "orderId", row.OrderId, cancellationToken))
                         {
                             await adminNotifier.NotifyAsync(

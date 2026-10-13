@@ -102,8 +102,8 @@ public sealed class CustomerActionAuditImmutabilityTests
         // would be a walk that resolves nothing.
         Assert.Equal(
             [
-                $"{typeof(CustomerActionAuditRepository).FullName}.{nameof(CustomerActionAuditRepository.PseudonymiseForSubjectAsync)}",
-                $"{typeof(CustomerActionAuditRepository).FullName}.{nameof(CustomerActionAuditRepository.PseudonymiseGuestRowsForOrdersAsync)}"
+                $"{typeof(CustomerActionAuditRepository).FullName}.{nameof(CustomerActionAuditRepository.PseudonymiseForSubjectIgnoringTenantAsync)}",
+                $"{typeof(CustomerActionAuditRepository).FullName}.{nameof(CustomerActionAuditRepository.PseudonymiseGuestRowsForOrdersIgnoringTenantAsync)}"
             ],
             callers);
     }
@@ -123,8 +123,8 @@ public sealed class CustomerActionAuditImmutabilityTests
                 nameof(ICustomerActionAuditRepository.GetCountForUserAsync),
                 nameof(ICustomerActionAuditRepository.GetPagedSortForUser),
                 nameof(ICustomerActionAuditRepository.GetQueryableForUser),
-                nameof(ICustomerActionAuditRepository.PseudonymiseForSubjectAsync),
-                nameof(ICustomerActionAuditRepository.PseudonymiseGuestRowsForOrdersAsync)
+                nameof(ICustomerActionAuditRepository.PseudonymiseForSubjectIgnoringTenantAsync),
+                nameof(ICustomerActionAuditRepository.PseudonymiseGuestRowsForOrdersIgnoringTenantAsync)
             ],
             declared);
     }

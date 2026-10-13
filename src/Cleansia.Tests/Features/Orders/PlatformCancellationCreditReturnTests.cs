@@ -136,7 +136,7 @@ public sealed class PlatformCancellationCreditReturnTests
             .ReturnsAsync((string _, string? exceptRefundKey, CancellationToken _) => rows
                 .Where(r => r.Status == RefundStatus.Pending && r.RefundKey != exceptRefundKey)
                 .Sum(r => r.Amount));
-        _credit.Setup(c => c.TryReturnAsync(UserId, "czk", It.IsAny<decimal>(), It.IsAny<string>(), It.IsAny<string>(),
+        _credit.Setup(c => c.TryReturnIgnoringTenantAsync(UserId, "czk", It.IsAny<decimal>(), It.IsAny<string>(), It.IsAny<string>(),
                 It.IsAny<CancellationToken>(), OrderId, It.IsAny<string?>()))
             .ReturnsAsync((string _, string _, decimal amount, string key, string actor, CancellationToken _, string? _, string? _) =>
             {
@@ -166,12 +166,12 @@ public sealed class PlatformCancellationCreditReturnTests
     }
 
     private void VerifyCreditOnTheRefundKey(decimal amount) =>
-        _credit.Verify(c => c.TryReturnAsync(
+        _credit.Verify(c => c.TryReturnIgnoringTenantAsync(
             UserId, "czk", amount, $"credit-return:{RefundKey}", "admin-1",
             It.IsAny<CancellationToken>(), OrderId, It.IsAny<string?>()), Times.Once);
 
     private void VerifyNoOrderEndedUnpaidReturn() =>
-        _credit.Verify(c => c.TryReturnAsync(
+        _credit.Verify(c => c.TryReturnIgnoringTenantAsync(
             It.IsAny<string>(), It.IsAny<string>(), It.IsAny<decimal>(), $"credit-return:order-ended-unpaid:{OrderId}",
             It.IsAny<string>(), It.IsAny<CancellationToken>(), It.IsAny<string?>(), It.IsAny<string?>()), Times.Never);
 
@@ -206,7 +206,7 @@ public sealed class PlatformCancellationCreditReturnTests
         var result = await CancelAsync(order);
 
         VerifyCard(300m);
-        _credit.Verify(c => c.TryReturnAsync(
+        _credit.Verify(c => c.TryReturnIgnoringTenantAsync(
             It.IsAny<string>(), It.IsAny<string>(), It.IsAny<decimal>(), It.IsAny<string>(), It.IsAny<string>(),
             It.IsAny<CancellationToken>(), It.IsAny<string?>(), It.IsAny<string?>()), Times.Never);
         Assert.Equal(300m, result.RefundAmount);

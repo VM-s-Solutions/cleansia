@@ -230,11 +230,22 @@ what is named against the id before it:
   with the `Tenants` FK. `has-pending-model-changes` reports none, and reported none before the regeneration too: a
   token on an ordinary column is invisible to it, so the snapshot diff is the check for a change like this one. The
   three backend suites ran green at it (8685 / 860 / 503).
+- **`20261013160545`** (2026-10-13, branch `fix/next-wave-p2-backend`, T-0834 follow-up M11): the
+  nonunique `Devices(DeviceId, DeviceToken)` index supports the shared-install withdrawal read.
+  It is the only migration-body delta from `20261012190449`; tables and tenant foreign keys are
+  unchanged. Ran `migrations remove --force`, `migrations add Initial` and
+  `migrations has-pending-model-changes` from `src/`, with `Cleansia.Web.Partner` as startup project.
+  The model has no pending changes. Command receipts and the normalized schema diff are under
+  `/Users/michael/.codex/scratchpads/cleansia-next-wave-2026-10-13/p2/migration/`.
+  Full combined suite evidence is recorded with the backend PR's Work records; no shared DEV reset
+  or deploy ran during this regeneration.
 
-**The one owed drop belongs to `20261012190449`** (it renews the one owed for `20261005201452`), and it
-runs right before the DEV deploy that first carries this id (`fix/post-e-p5-backend-sweep-devices`), once
-the owner has approved the reset — a DEV reset needs his explicit approval (`CLAUDE.md`), and approving the
-code does not approve it: a DEV database whose `__EFMigrationsHistory` records any earlier id replays the
+**The one owed drop belongs to `20261013160545`** (it renews the one owed for `20261012190449`).
+Mike approved exactly the end-of-wave reset and fresh DEV deployment on 2026-10-13:
+"You can reset db, but once we're done with everything and we can do a fresh deployment".
+It runs after every program PR has merged green, immediately before the fresh deployment from final
+master. A shared DEV reset needs explicit approval (`CLAUDE.md`), and code approval alone does not
+provide it: a DEV database whose `__EFMigrationsHistory` records any earlier id replays the
 whole create script against tables that already exist. The legal texts need no extra step — every host seeds
 them at start, and since `b34dff07` a fresh Development database is seeded once more in the boot that
 migrates it (the factory now refuses a booking with no contract text in force, so a first boot must not come

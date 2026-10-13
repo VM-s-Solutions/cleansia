@@ -59,5 +59,5 @@ public interface IOutboxMessageRepository : IRepository<OutboxMessage, string>
     /// same body already on the queue once the drainer has sent it (bounded by the queue's own lifetime) and
     /// its poisoned copy in <c>DeadLetter</c> (taken by that table's own erasure).</para>
     /// </summary>
-    Task RemoveForSubjectAsync(string userId, CancellationToken cancellationToken);
+    Task RemoveForSubjectIgnoringTenantAsync(string userId, CancellationToken cancellationToken);
 }

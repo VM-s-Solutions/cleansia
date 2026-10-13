@@ -82,7 +82,7 @@ order, so that a claim against a cleaner for a job is answered from a record and
   the tenant filter**, because the row is stamped with the order's operator and the order's customer
   may be booked across the border; each caller re-pins on an authorised order or the subject's own id.
   `AnyForSeatAsync` (the gates) and `PseudonymiseExpiredAsync` (the per-company sweep) read through
-  the filter. `PseudonymiseForEmployeeAsync` is a **tracked** load past the filter riding the erasure's
+  the filter. `PseudonymiseForEmployeeIgnoringTenantAsync` is a **tracked** load past the filter riding the erasure's
   single commit. The inherited `Remove` / `Deactivate` are pinned unused
   (`WorkContractAcceptanceImmutabilityTests`). → [S8](/architecture/security-rules#s8-tenant-isolation-correctness)
 - **`GetWorkContractPreview.Query(OrderId, Language)`** (partner hosts, `CanTakeOrder`) — the order's

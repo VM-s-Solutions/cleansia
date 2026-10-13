@@ -1,7 +1,6 @@
 using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Orders;
 using Cleansia.Core.Domain.Specifications;
-using Cleansia.Core.AppServices.Features.Orders;
 
 namespace Cleansia.Core.AppServices.Features.Dashboard;
 
@@ -34,12 +33,7 @@ public static class DashboardSpecifications
             customerPhone: null,
             displayOrderNumber: null,
             employeeId: null,
-            // The board now admits STARTED jobs so a half-crewed order stays fillable, and nothing
-            // ever leaves InProgress except a cleaner tapping complete. Without this floor one job
-            // somebody started and abandoned would sit in every cleaner's count forever. Same bound
-            // GetPagedOrders puts on the same pane — which had no floor here at all, so the count and
-            // the list it belongs to already disagreed. → BookingPolicy.BoardBacklogHours
-            cleaningDateFrom: nowUtc.AddHours(-BookingPolicy.BoardBacklogHours),
+            cleaningDateFrom: null,
             cleaningDateTo: null,
             paymentStatuses: null,
             paymentTypes: null,

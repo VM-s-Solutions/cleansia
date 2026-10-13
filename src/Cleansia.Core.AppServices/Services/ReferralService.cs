@@ -324,7 +324,7 @@ public sealed class ReferralService(
 
             // A write to a frozen company's books fails the whole commit, and that commit is the qualifying
             // order's, which may be another, active company's: that side is skipped like an erased one.
-            if (await creditAccountRepository.IsOnFrozenCompanyBooksAsync(userId, currencyId, cancellationToken))
+            if (await creditAccountRepository.IsOnFrozenCompanyBooksIgnoringTenantAsync(userId, currencyId, cancellationToken))
             {
                 logger.LogWarning(
                     "Referral {ReferralId}: the {Side}'s credit account is on a company frozen for archive; that side receives no credit.",
@@ -332,7 +332,7 @@ public sealed class ReferralService(
                 continue;
             }
 
-            var account = await creditAccountRepository.EnsureForUserAsync(userId, currencyId, cancellationToken);
+            var account = await creditAccountRepository.EnsureForUserIgnoringTenantAsync(userId, currencyId, cancellationToken);
             if (account is null)
             {
                 logger.LogInformation(

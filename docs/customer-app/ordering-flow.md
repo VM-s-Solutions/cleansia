@@ -136,8 +136,9 @@ moves the price, the booked time and the cleaner's pay by the same rate →
 The customer says where the clean is, what kind of home it is, how the cleaner gets in, and who to
 call.
 
-**A signed-in customer** has the name, e-mail and phone filled in from the account where the fields
-are still empty, and the default saved address chosen. The account's saved addresses (`SavedAddressStore`,
+**A signed-in customer** uses the account e-mail, shown read-only even when a saved draft named
+another address. The name and phone are filled from the account only where those fields are still
+empty, and the default saved address is chosen. The account's saved addresses (`SavedAddressStore`,
 read from the server) are chips, each with its label over its street line, beside *Enter a new
 address*. A saved address is checked only for being non-empty, because the server already validated
 it.
@@ -163,7 +164,7 @@ being non-empty:
 |---|---|
 | `customerFirstName` | Required, 2-50 chars |
 | `customerLastName` | Required, 2-50 chars |
-| `customerEmail` | Required, valid email, max 50 chars |
+| `customerEmail` | Required, valid email; guest max 50 chars, signed-in account e-mail read-only |
 | `customerPhone` | Required, matches `^[+]?[\d\s()-]{6,20}$` |
 | `address.street` | Required, 5-255 chars |
 | `address.city` | Required, 2-100 chars |

@@ -35,7 +35,7 @@ public interface IDeviceRepository : IRepository<Device, string>
     /// A separate method rather than widening the existing one, whose other callers must keep seeing
     /// active rows only. → /flows/gdpr-and-audit</para>
     /// </summary>
-    Task RemoveForSubjectAsync(string userId, CancellationToken cancellationToken);
+    Task RemoveForSubjectIgnoringTenantAsync(string userId, CancellationToken cancellationToken);
 
     /// <summary>
     /// Every other user's active row holding this device id and this push token: an account the

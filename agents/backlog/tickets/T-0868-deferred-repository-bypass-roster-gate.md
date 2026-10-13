@@ -55,9 +55,9 @@ Fresh source reports:
 
 ## Acceptance criteria
 
-- [ ] **AC1** — This ticket file and exactly one INDEX row exist with the correct ID and T-0837 dependency; no duplicate ticket-state field/log copy is introduced.
-- [ ] **AC2** — S8 cites T-0868 for the deferred future roster, no longer describes absent T-0606 as an existing gate, and the targeted ADR-0051 head pointer preserves its historical body/citations. Text checks show no false current gate/accepted-ADR claim.
-- [ ] **AC3** — The Work record clearly distinguishes completed filing/citation from deferred gate construction. No roster test/scanner/CI implementation appears in the filing diff; the future design question is recorded without inventing an owner blocker.
+- [x] **AC1** — This ticket file and exactly one INDEX row exist with the correct ID and T-0837 dependency; no duplicate ticket-state field/log copy is introduced.
+- [x] **AC2** — S8 cites T-0868 for the deferred future roster, no longer describes absent T-0606 as an existing gate, and the targeted ADR-0051 head pointer preserves its historical body/citations. Text checks show no false current gate/accepted-ADR claim.
+- [x] **AC3** — The Work record clearly distinguishes completed filing/citation from deferred gate construction. No roster test/scanner/CI implementation appears in the filing diff; the future design question is recorded without inventing an owner blocker.
 
 ## Dependencies and execution
 
@@ -71,6 +71,8 @@ Filing verification is a text/record check, not behavioral RED/GREEN. This wave 
 
 - 2026-10-13 — Owner authority quoted above; the off-tree scope was filed on the backend branch after PR #329 merged, with its closure committed first. All acceptance boxes remain evidence obligations; no implementation, review approval, test, CI, generation or deployment is asserted here.
 
+- 2026-10-13 — Filing/citation action complete: exactly one ticket and INDEX row with T-0837 dependency. S8 visibly cites T-0868 as deferred future work; ADR-0051 has only the approved dated head pointer and retains its proposal/body/historical citations. Text/body verification and independent filing round2 are CLEAN (`filing/refuter-round2.md`, `p2/verifier-round1.md`). No scanner/test/workflow or gate implementation exists in this change. The row remains draft for separately scheduled construction; completion here means only filing/citation, with the future design question retained above.
+
 ## Review
 
-Pending independent review of the eventual filed scope and implementation where applicable.
+2026-10-13 — Filing/citation verified; **CLEAN. No confirmed material residuals.** Deferred construction is not an owner blocker or an accepted ADR claim.

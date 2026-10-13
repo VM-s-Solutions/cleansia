@@ -159,14 +159,14 @@ public class IssueCustomerCredit
             // that currency's account, opening one if the customer has none in it. The lookup is keyed
             // on the currency on purpose: it previously returned whatever account existed and added a
             // default-currency number to it, which is how a CZK refund could land on a EUR balance.
-            var account = await creditAccountRepository.EnsureForUserAsync(
+            var account = await creditAccountRepository.EnsureForUserIgnoringTenantAsync(
                 command.UserId, command.CurrencyId, cancellationToken);
             if (account is null)
                 return BusinessResult.Failure<Response>(new Error(nameof(command.UserId), BusinessErrorMessage.UserNotFound));
 
             var balanceBefore = account.Balance;
 
-            // A tracked write of an absolute balance, safe only because EnsureForUserAsync holds the
+            // A tracked write of an absolute balance, safe only because EnsureForUserIgnoringTenantAsync holds the
             // owner and account locks until the commit.
             account.Issue(
                 amount: command.Amount,

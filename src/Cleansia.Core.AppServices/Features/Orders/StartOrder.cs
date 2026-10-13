@@ -7,10 +7,10 @@ using Cleansia.Core.Domain.Notifications;
 using Cleansia.Core.Domain.Orders;
 using Cleansia.Core.Domain.Repositories;
 using Cleansia.Core.Queue.Abstractions;
+using Cleansia.Core.Queue.Abstractions.Messages;
 using Cleansia.Infra.Common.Validations;
 using FluentValidation;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Logging;
 
 namespace Cleansia.Core.AppServices.Features.Orders;
 
@@ -157,11 +157,9 @@ public class StartOrder
 
     public class Handler(
         IOrderRepository orderRepository,
-        IEmailService emailService,
-        GuestOrderAccessTokenIssuer guestAccessTokenIssuer,
+        IPendingDispatch pending,
         INotificationProducer notificationProducer,
-        ILiveActivityProducer liveActivityProducer,
-        ILogger<Handler> logger)
+        ILiveActivityProducer liveActivityProducer)
         : ICommandHandler<Command, Response>
     {
         public async Task<BusinessResult<Response>> Handle(Command command, CancellationToken cancellationToken)
@@ -189,22 +187,11 @@ public class StartOrder
             await liveActivityProducer.NotifyOrderTransitionAsync(
                 order, LiveActivityEventKeys.Update, statusTrack, cancellationToken);
 
-            try
-            {
-                var languageCode = EmailLocale.Resolve(
-                    order.LanguageCode ?? order.User?.PreferredLanguageCode ?? Constants.Language.English);
-                // A guest has no account to sign in to, so this link is only a link if it carries a
-                // credential. Its own, minted here: nothing can hand this site the one the
-                // confirmation e-mail carried, and superseding that one to reuse the row would kill
-                // the link in the message the guest most likely still has.
-                await emailService.SendOrderStatusUpdateEmailAsync(
-                    order.CustomerEmail, order, "Started", languageCode, cancellationToken,
-                    guestAccessToken: guestAccessTokenIssuer.IssueForGuest(order));
-            }
-            catch (Exception ex)
-            {
-                logger.LogWarning(ex, "Failed to send order Started email for order {OrderId}", order.Id);
-            }
+            var languageCode = EmailLocale.Resolve(order.LanguageCode ?? order.User?.PreferredLanguageCode ?? Constants.Language.English);
+            var emailKey = MessageKeys.OrderStatusEmail(order.Id, OrderStatus.InProgress);
+            pending.Enqueue(QueueNames.SendEmail,
+                new QueueEnvelope<SendOrderStatusEmailMessage>(emailKey, order.TenantId,
+                    new SendOrderStatusEmailMessage(order.Id, OrderStatus.InProgress, languageCode, order.TenantId)), emailKey);
 
             if (!string.IsNullOrEmpty(order.UserId))
             {

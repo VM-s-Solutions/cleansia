@@ -19,7 +19,7 @@ public class LoyaltyAccountRepository(CleansiaDbContext context)
             .FirstOrDefaultAsync(a => a.UserId == userId, cancellationToken);
     }
 
-    public Task<LoyaltyAccount?> GetByUserIdTierOnlyAsync(string userId, CancellationToken cancellationToken)
+    public Task<LoyaltyAccount?> GetByUserIdTierOnlyIgnoringTenantAsync(string userId, CancellationToken cancellationToken)
     {
         // Booking/quote hot path (LoyaltyService.ResolveTierDiscountForOrderAsync) reads only
         // CurrentTier. No-tracking + ledger-free keeps the per-quote round-trip minimal.

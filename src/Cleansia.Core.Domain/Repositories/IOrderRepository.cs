@@ -13,9 +13,11 @@ public interface IOrderRepository : IRepository<Order, string>
     /// counting against each other, in any operating company. A card checkout not paid for is not a
     /// booking, whether the stale sweep has cancelled it yet or not. Asked of orders created BEFORE this
     /// one, so a later booking never changes the answer; an earlier checkout that is paid afterwards does.
+    /// Caller obligation: supply an already-authorized order. Its account is its own; its e-mail and
+    /// phone are the booking-carried contact values. The Boolean only selects the oops window.
     /// → /product/business-rules#oops-window
     /// </summary>
-    Task<bool> IsFirstBookingAsync(Order order, CancellationToken cancellationToken);
+    Task<bool> IsFirstBookingIgnoringTenantAsync(Order order, CancellationToken cancellationToken);
 
     /// <summary>
     /// The user's own orders that carry the given phone number, for UpdateCurrentUser to back-fill a phone

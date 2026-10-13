@@ -94,7 +94,7 @@ public sealed class WorkContractAcceptanceErasureTests : IDisposable
 
         var customerAudits = new Mock<ICustomerActionAuditRepository>();
         customerAudits
-            .Setup(r => r.PseudonymiseForSubjectAsync(ErasedUserId, It.IsAny<CancellationToken>()))
+            .Setup(r => r.PseudonymiseForSubjectIgnoringTenantAsync(ErasedUserId, It.IsAny<CancellationToken>()))
             .ThrowsAsync(new InvalidOperationException("commit path broken"));
 
         await using (var ctx = NewContext())

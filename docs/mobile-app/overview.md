@@ -709,4 +709,5 @@ ticket. → [Runners and images](/deployment/ci-cd#runners)
 - [Push Notifications](/architecture/push-notifications) — the FCM/APNs dev-setup runbook, including
   the failure modes that hit iOS only.
 - `src/cleansia_ios/README.md` and `src/cleansia_ios/MANUAL_STEPS.md` — the iOS layout in full plus
-  the owner-only steps (signing, provisioning, spec regeneration).
+  signing/provisioning requirements and the local spec/client regeneration commands. Regeneration
+  is ordinary agent-run work under `CLAUDE.md`; shared DEV reset/deployment needs explicit approval.

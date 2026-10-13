@@ -68,7 +68,7 @@ public sealed class ReturnUnpaidOrderCreditTests
 
         await _credit.Object.ReturnUnpaidOrderCreditAsync(order, cardRefunded: 0m, "system", CancellationToken.None);
 
-        _credit.Verify(c => c.TryReturnAsync(
+        _credit.Verify(c => c.TryReturnIgnoringTenantAsync(
             UserId, "czk", expected, $"credit-return:order-ended-unpaid:{OrderId}", "system",
             It.IsAny<CancellationToken>(), OrderId, It.IsAny<string?>()), Times.Once);
     }
@@ -85,7 +85,7 @@ public sealed class ReturnUnpaidOrderCreditTests
         var moved = await _credit.Object.ReturnUnpaidOrderCreditAsync(order, cardRefunded: 0m, "system", CancellationToken.None);
 
         Assert.False(moved);
-        _credit.Verify(c => c.TryReturnAsync(
+        _credit.Verify(c => c.TryReturnIgnoringTenantAsync(
             It.IsAny<string>(), It.IsAny<string>(), It.IsAny<decimal>(), It.IsAny<string>(), It.IsAny<string>(),
             It.IsAny<CancellationToken>(), It.IsAny<string?>(), It.IsAny<string?>()), Times.Never);
     }
@@ -103,7 +103,7 @@ public sealed class ReturnUnpaidOrderCreditTests
 
         await _credit.Object.ReturnUnpaidOrderCreditAsync(order, cardRefunded: 280m, "system", CancellationToken.None);
 
-        _credit.Verify(c => c.TryReturnAsync(
+        _credit.Verify(c => c.TryReturnIgnoringTenantAsync(
             UserId, "czk", 180m, $"credit-return:order-ended-unpaid:{OrderId}", "system",
             It.IsAny<CancellationToken>(), OrderId, It.IsAny<string?>()), Times.Once);
     }
@@ -121,7 +121,7 @@ public sealed class ReturnUnpaidOrderCreditTests
         var moved = await _credit.Object.ReturnUnpaidOrderCreditAsync(order, cardRefunded: 280m, "system", CancellationToken.None);
 
         Assert.False(moved);
-        _credit.Verify(c => c.TryReturnAsync(
+        _credit.Verify(c => c.TryReturnIgnoringTenantAsync(
             It.IsAny<string>(), It.IsAny<string>(), It.IsAny<decimal>(), It.IsAny<string>(), It.IsAny<string>(),
             It.IsAny<CancellationToken>(), It.IsAny<string?>(), It.IsAny<string?>()), Times.Never);
     }
@@ -138,7 +138,7 @@ public sealed class ReturnUnpaidOrderCreditTests
 
         await _credit.Object.ReturnUnpaidOrderCreditAsync(order, cardRefunded: 560m, "system", CancellationToken.None);
 
-        _credit.Verify(c => c.TryReturnAsync(
+        _credit.Verify(c => c.TryReturnIgnoringTenantAsync(
             UserId, "czk", 50m, $"credit-return:order-ended-unpaid:{OrderId}", "system",
             It.IsAny<CancellationToken>(), OrderId, It.IsAny<string?>()), Times.Once);
     }
@@ -155,7 +155,7 @@ public sealed class ReturnUnpaidOrderCreditTests
 
         await _credit.Object.ReturnUnpaidOrderCreditAsync(order, cardRefunded: 0m, "system", CancellationToken.None);
 
-        _credit.Verify(c => c.TryReturnAsync(
+        _credit.Verify(c => c.TryReturnIgnoringTenantAsync(
             UserId, "czk", 500m, $"credit-return:order-ended-unpaid:{OrderId}", "system",
             It.IsAny<CancellationToken>(), OrderId, It.IsAny<string?>()), Times.Once);
     }
@@ -173,7 +173,7 @@ public sealed class ReturnUnpaidOrderCreditTests
 
         await _credit.Object.ReturnUnpaidOrderCreditAsync(order, cardRefunded: 280m, "system", CancellationToken.None);
 
-        _credit.Verify(c => c.TryReturnAsync(
+        _credit.Verify(c => c.TryReturnIgnoringTenantAsync(
             UserId, "czk", 300m, $"credit-return:order-ended-unpaid:{OrderId}", "system",
             It.IsAny<CancellationToken>(), OrderId, It.IsAny<string?>()), Times.Once);
     }
@@ -187,7 +187,7 @@ public sealed class ReturnUnpaidOrderCreditTests
 
         await _credit.Object.ReturnUnpaidOrderCreditAsync(order, cardRefunded: 280m, "system", CancellationToken.None);
 
-        _credit.Verify(c => c.TryReturnAsync(
+        _credit.Verify(c => c.TryReturnIgnoringTenantAsync(
             UserId, "czk", 300m, $"credit-return:order-ended-unpaid:{OrderId}", "system",
             It.IsAny<CancellationToken>(), OrderId, It.IsAny<string?>()), Times.Once);
     }
@@ -208,9 +208,9 @@ public sealed class ReturnUnpaidOrderCreditTests
             .ReturnsAsync(0m);
         credit.InSequence(sequence).Setup(c => c.GetDisputeSettledTotalForOrderAsync(OrderId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(0m);
-        credit.Setup(c => c.IsOnFrozenCompanyBooksAsync(UserId, "czk", It.IsAny<CancellationToken>()))
+        credit.Setup(c => c.IsOnFrozenCompanyBooksIgnoringTenantAsync(UserId, "czk", It.IsAny<CancellationToken>()))
             .ReturnsAsync(false);
-        credit.InSequence(sequence).Setup(c => c.TryReturnAsync(
+        credit.InSequence(sequence).Setup(c => c.TryReturnIgnoringTenantAsync(
                 UserId, "czk", 500m, $"credit-return:order-ended-unpaid:{OrderId}", "system",
                 It.IsAny<CancellationToken>(), OrderId, It.IsAny<string?>()))
             .ReturnsAsync(true);
@@ -242,7 +242,7 @@ public sealed class ReturnUnpaidOrderCreditTests
 
         Assert.False(moved);
         _credit.Verify(c => c.LockForUserAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Never);
-        _credit.Verify(c => c.TryReturnAsync(
+        _credit.Verify(c => c.TryReturnIgnoringTenantAsync(
             It.IsAny<string>(), It.IsAny<string>(), It.IsAny<decimal>(), It.IsAny<string>(), It.IsAny<string>(),
             It.IsAny<CancellationToken>(), It.IsAny<string?>(), It.IsAny<string?>()), Times.Never);
     }
@@ -257,13 +257,13 @@ public sealed class ReturnUnpaidOrderCreditTests
     {
         var order = OrderWithCredit(500m);
         Arrange(returned: 0m, settled: 0m);
-        _credit.Setup(c => c.IsOnFrozenCompanyBooksAsync(UserId, "czk", It.IsAny<CancellationToken>()))
+        _credit.Setup(c => c.IsOnFrozenCompanyBooksIgnoringTenantAsync(UserId, "czk", It.IsAny<CancellationToken>()))
             .ReturnsAsync(true);
 
         var moved = await _credit.Object.ReturnUnpaidOrderCreditAsync(order, cardRefunded: 0m, "system", CancellationToken.None);
 
         Assert.False(moved);
-        _credit.Verify(c => c.TryReturnAsync(
+        _credit.Verify(c => c.TryReturnIgnoringTenantAsync(
             It.IsAny<string>(), It.IsAny<string>(), It.IsAny<decimal>(), It.IsAny<string>(), It.IsAny<string>(),
             It.IsAny<CancellationToken>(), It.IsAny<string?>(), It.IsAny<string?>()), Times.Never);
     }

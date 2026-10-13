@@ -59,7 +59,7 @@ public sealed class HandlePaymentNotificationTellsAdministratorsTests
             .Setup(r => r.GetOpenDisputeForOrderAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync((Dispute?)null);
         _userNotifications
-            .Setup(r => r.AnyForEventAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .Setup(r => r.AnyForEventIgnoringTenantAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(false);
         _adminNotifier
             .Setup(n => n.NotifyAsync(It.IsAny<AdminEvent>(), It.IsAny<CancellationToken>()))
@@ -173,7 +173,7 @@ public sealed class HandlePaymentNotificationTellsAdministratorsTests
         Assert.Equal(order.DisplayOrderNumber, raised.Args["orderNumber"]);
         Assert.Equal(OrderId, raised.Args["orderId"]);
         _userNotifications.Verify(
-            r => r.AnyForEventAsync(TenantId, AdminNotificationEventCatalog.PaymentFailed, "orderId", OrderId, It.IsAny<CancellationToken>()),
+            r => r.AnyForEventIgnoringTenantAsync(TenantId, AdminNotificationEventCatalog.PaymentFailed, "orderId", OrderId, It.IsAny<CancellationToken>()),
             Times.Once);
     }
 
@@ -182,7 +182,7 @@ public sealed class HandlePaymentNotificationTellsAdministratorsTests
     {
         ArrangeOrder();
         _userNotifications
-            .Setup(r => r.AnyForEventAsync(TenantId, AdminNotificationEventCatalog.PaymentFailed, "orderId", OrderId, It.IsAny<CancellationToken>()))
+            .Setup(r => r.AnyForEventIgnoringTenantAsync(TenantId, AdminNotificationEventCatalog.PaymentFailed, "orderId", OrderId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(true);
 
         var result = await Handler().Handle(Command(IntentFailedPayload("evt_tells_declined_again")), CancellationToken.None);
@@ -201,7 +201,7 @@ public sealed class HandlePaymentNotificationTellsAdministratorsTests
         Assert.True(result.IsSuccess);
         Assert.Empty(_raised);
         _userNotifications.Verify(
-            r => r.AnyForEventAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()),
+            r => r.AnyForEventIgnoringTenantAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()),
             Times.Never);
     }
 

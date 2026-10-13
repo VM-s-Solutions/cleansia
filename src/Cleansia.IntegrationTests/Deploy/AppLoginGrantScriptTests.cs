@@ -7,7 +7,6 @@ using Cleansia.Infra.Database;
 using Cleansia.Infra.Database.Repositories;
 using Cleansia.TestUtilities;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Diagnostics;
 using Npgsql;
 using AssemblyReference = Cleansia.Infra.Database.AssemblyReference;
 
@@ -127,7 +126,6 @@ public class AppLoginGrantScriptTests(PostgresContainerFixture fixture)
 
         var options = new DbContextOptionsBuilder<CleansiaDbContext>()
             .UseNpgsql(ConnectionString(Admin, AdminPassword), x => x.MigrationsAssembly(AssemblyReference.Assembly))
-            .ConfigureWarnings(w => w.Ignore(RelationalEventId.PendingModelChangesWarning))
             .Options;
         await using (var migrator = new CleansiaDbContext(options))
         {

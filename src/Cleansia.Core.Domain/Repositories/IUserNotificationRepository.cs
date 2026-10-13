@@ -7,9 +7,10 @@ public interface IUserNotificationRepository : IRepository<UserNotification, str
     /// <summary>
     /// The digest-collapse lookup: the user's single unread row for <paramref name="eventKey"/>.
     /// Tenant-filter-bypassed because producers run without a JWT (background sweeps, webhooks);
-    /// the read stays pinned to one user's rows, so it never widens across users.
+    /// the read stays pinned to one user's rows, so it never widens across users. Caller obligation:
+    /// userId is the event's server-derived recipient and eventKey is the fixed event kind.
     /// </summary>
-    Task<UserNotification?> GetUnreadByUserAndEventAsync(string userId, string eventKey, CancellationToken cancellationToken);
+    Task<UserNotification?> GetUnreadByUserAndEventIgnoringTenantAsync(string userId, string eventKey, CancellationToken cancellationToken);
 
     Task<int> GetUnreadCountAsync(string userId, IReadOnlyList<string> eventKeys, CancellationToken cancellationToken);
 
@@ -18,8 +19,9 @@ public interface IUserNotificationRepository : IRepository<UserNotification, str
     /// carry <paramref name="argName"/> = <paramref name="argValue"/> — the cross-request guard for an
     /// admin event that must be raised once per resource. Reads by the company argument, never the
     /// ambient tenant, and only inside the feed's retention window: a row the sweep removed is forgotten.
+    /// Caller obligation: company and subject args come from the authorized event or loaded row.
     /// </summary>
-    Task<bool> AnyForEventAsync(string tenantId, string eventKey, string argName, string argValue, CancellationToken cancellationToken);
+    Task<bool> AnyForEventIgnoringTenantAsync(string tenantId, string eventKey, string argName, string argValue, CancellationToken cancellationToken);
 
     /// <summary>
     /// Atomically stamps <c>ReadOn</c> on the caller's unread rows within <paramref name="eventKeys"/>

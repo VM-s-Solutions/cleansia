@@ -146,7 +146,7 @@ public sealed class RefundMoneyConservationTests
                     It.IsAny<string?>(), It.IsAny<string?>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
                 .Returns((string? _, string? _, string key, CancellationToken _) => FindAsync(key));
             _creditRepository
-                .Setup(c => c.TryReturnAsync(UserId, It.IsAny<string>(), It.IsAny<decimal>(), It.IsAny<string>(),
+                .Setup(c => c.TryReturnIgnoringTenantAsync(UserId, It.IsAny<string>(), It.IsAny<decimal>(), It.IsAny<string>(),
                     It.IsAny<string>(), It.IsAny<CancellationToken>(), Order.Id, It.IsAny<string?>()))
                 .ReturnsAsync((string _, string _, decimal amount, string key, string _, CancellationToken _, string? _, string? _) =>
                 {
@@ -395,7 +395,7 @@ public sealed class RefundMoneyConservationTests
             disputes.Setup(d => d.GetForUpdateAsync(dispute.Id, It.IsAny<CancellationToken>())).ReturnsAsync(dispute);
             var account = CreditAccount.Create(UserId, Order.CurrencyId, "system");
             _creditRepository
-                .Setup(c => c.EnsureForUserAsync(UserId, Order.CurrencyId, It.IsAny<CancellationToken>()))
+                .Setup(c => c.EnsureForUserIgnoringTenantAsync(UserId, Order.CurrencyId, It.IsAny<CancellationToken>()))
                 .ReturnsAsync(account);
             var uow = new UnitOfWork(this);
 

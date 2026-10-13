@@ -41,6 +41,7 @@ flowchart LR
   A0066[ADR-0066] --> A0001[ADR-0001]
   A0067[ADR-0067] --> A0057[ADR-0057]
   A0074[ADR-0074] --> A0039[ADR-0039]
+  A0076[ADR-0076] --> A0037[ADR-0037]
   classDef old fill:#e5e7eb,stroke:#6b7280,color:#374151
   class A0001,A0002,A0006,A0010,A0013,A0017,A0024,A0026,A0036,A0037,A0039,A0045,A0046,A0050,A0057,A0062 old
 ```
@@ -143,6 +144,11 @@ D3, D6 and D9 passages that state the same tenancy.
 D3.2's rule against a method with zero callers and the rest of ADR-0039 stand, and ADR-0039 carries a dated
 pointer at its head.
 
+**[ADR-0076](./adr-0076)** (`accepted` 2026-10-13, T-0854) partially supersedes
+[ADR-0037](./adr-0037) D1: an open seat stops being offered and takeable when the raw booked slot
+ends. A cleaner may still join started work before that end, and the existing cancellation grace
+stands. ADR-0037 carries the dated pointer; its historical body is unchanged.
+
 ## All records
 
 | | Decision | Status |
@@ -222,6 +228,7 @@ pointer at its head.
 | **[ADR-0073](./adr-0073)** | The credit an order gives back when it ends unpaid commits with the commit that ends the order, or not at all; a unit holding several customers' credit locks takes them in ordinal user-id order (2026-10-12) | `accepted` |
 | **[ADR-0074](./adr-0074)** | The read that asks which cleaners are busy in a window reads every company's orders, so it is one method, `GetBusyEmployeeIdsInWindowIgnoringTenantAsync`, with no scoped sibling; S8 says a method every caller needs across companies carries `IgnoringTenant` (2026-10-12, T-0833; supersedes every passage of ADR-0039 on the set read's tenancy) | `accepted` |
 | **[ADR-0075](./adr-0075)** | The mobile contract states a query sort the way the server binds it (T-0832: the two mobile hosts describe `DataRangeRequest.Sort` as `Sort[0].Field` and `Sort[0].Direction`) | `accepted` |
+| **[ADR-0076](./adr-0076)** | An open cleaning seat stops being offered and takeable when its booked slot ends (owner ruling 2026-10-13; partially supersedes ADR-0037 D1) | `accepted` |
 
 ⟲ = superseded in whole or in part by a later record.
 

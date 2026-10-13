@@ -168,7 +168,7 @@ public static class BookingPolicy
 
     /// <summary>
     /// The oops window of a customer's first booking ever, account or guest — once per e-mail, phone
-    /// and account (<c>IOrderRepository.IsFirstBookingAsync</c>). Owner ruling 2026-09-28.
+    /// and account (<c>IOrderRepository.IsFirstBookingIgnoringTenantAsync</c>). Owner ruling 2026-09-28.
     /// </summary>
     public const int OopsWindowMinutesFirstBooking = 60;
 
@@ -219,17 +219,8 @@ public static class BookingPolicy
     }
 
     /// <summary>
-    /// How far PAST its cleaning time an order stays on the take-a-job board.
-    ///
-    /// <para>The board admits started jobs (owner ruling 2026-09-06: a half-crewed order must stay
-    /// fillable after the first cleaner sets off), and nothing ever moves an order out of
-    /// <c>InProgress</c> except a cleaner tapping complete. Without a floor, one job somebody started
-    /// and never finished would sit in every cleaner's available-jobs count forever.</para>
-    ///
-    /// <para>Named here because two panes answer the same question and must not drift:
-    /// <c>GetPagedOrders</c> applied this floor as a bare <c>AddHours(-2)</c> literal on the Available
-    /// pane, and <c>DashboardSpecifications</c> applied none at all — so the count and the list it
-    /// belongs to already disagreed before this rule widened.</para>
+    /// Default start-date lookback for admin and pinned own-order pages that ask for open seats.
+    /// Cleaner open boards and dashboard availability use the raw booked slot end instead.
     /// </summary>
     public const int BoardBacklogHours = 2;
 

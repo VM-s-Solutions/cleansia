@@ -44,7 +44,7 @@ public class RecurringEarlyPerformanceCarryThroughTests
     public RecurringEarlyPerformanceCarryThroughTests()
     {
         _memberships
-            .Setup(r => r.GetEntitledForUserNoTrackingAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .Setup(r => r.GetEntitledForUserNoTrackingIgnoringTenantAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync((string userId, CancellationToken _) => UserMembershipMockFactory.Paid(userId));
 
         _pricingCalculator

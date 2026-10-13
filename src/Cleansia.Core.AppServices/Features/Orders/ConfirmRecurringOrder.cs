@@ -276,8 +276,8 @@ public class ConfirmRecurringOrder
             // where its preferred cleaner is told. The card flavour is told by the Stripe webhook
             // instead, and the confirmation guard upstream keeps either to one announcement.
             await PreferredOfferNotifier.NotifyBecameOfferableAsync(
-                order, preferredCleanerHoldResolver, notificationProducer, DateTime.UtcNow, cancellationToken);
-            await NewOrderAdminNotifier.NotifyIfOfferableAsync(order, adminNotifier, logger, cancellationToken);
+                order, preferredCleanerHoldResolver, notificationProducer, confirmedAt, cancellationToken);
+            await NewOrderAdminNotifier.NotifyIfOfferableAsync(order, adminNotifier, logger, confirmedAt, cancellationToken);
 
             return BusinessResult.Success(new Response(
                 OrderId: order.Id,

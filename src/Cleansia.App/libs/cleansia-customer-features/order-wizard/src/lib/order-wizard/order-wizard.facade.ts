@@ -448,20 +448,11 @@ export class OrderWizardFacade extends UnsubscribeControlDirective {
       }
       this.customerClient.userClient.getCurrent().pipe(takeUntil(this.destroyed$)).subscribe({
         next: (user) => {
-          // PREFILL, not overwrite. This wrote all four fields unconditionally, empty account
-          // values included — and an account with no phone number on file is the ordinary case,
-          // because nothing in registration asks for one. So a customer who typed their phone into
-          // the wizard had it replaced with "" the moment this response landed, and the wizard let
-          // them carry on to a submit the server rejected as `customerPhone: ""`.
-          //
-          // Filling only what is blank is what a prefill means, and it is right in every direction:
-          // an account value appears in an empty field, and nothing the customer typed is taken
-          // away by a slower request.
           const current = this.formData();
           this.updateFormData({
             customerFirstName: current.customerFirstName || user.firstName || '',
             customerLastName: current.customerLastName || user.lastName || '',
-            customerEmail: current.customerEmail || user.email || '',
+            customerEmail: user.email || '',
             customerPhone: current.customerPhone || user.phoneNumber || '',
           });
 
@@ -927,7 +918,7 @@ export class OrderWizardFacade extends UnsubscribeControlDirective {
         if (!(data.customerLastName && data.customerLastName.length >= 2 && data.customerLastName.length <= 50)) {
           reasons.push('pages.order.missing.last_name');
         }
-        if (!(data.customerEmail && this.emailRegex.test(data.customerEmail) && data.customerEmail.length <= 50)) {
+        if (!(data.customerEmail && this.emailRegex.test(data.customerEmail) && (this.isAuthenticated() || data.customerEmail.length <= 50))) {
           reasons.push('pages.order.missing.email');
         }
         if (!(data.customerPhone && this.phoneRegex.test(data.customerPhone.replace(/\s/g, '')))) {

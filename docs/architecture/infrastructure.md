@@ -205,7 +205,7 @@ had never fired at all — see [the schedule tokens](#timer-schedules) below.
 | `AutoCancelStaleRecurringOrders` | hourly | Cancels recurring instances the customer did not confirm in time, each in its own scope: one that fails stays as it was, holds back none of the others and is retried the next hour; the same tick re-drives pending card refunds of cancelled orders (`RedrivePendingRefunds`) and alerts the administrators after 24 h. Each of the two runs in its own scope, and one that throws never stops the other; the invocation still fails once both have run |
 | `CloseExpiredPayPeriods` | daily 02:00 UTC | Marks pay periods past their end date as closed and opens the successor — no successor for a deactivated company |
 | `MaterializeRecurringBookings` | `%Cron%` — daily 02:00 UTC | Turns recurring bookings into real orders — none for a deactivated company's templates |
-| `SendRecurringOrderReminders` | `%Cron%` — daily 02:30 UTC | Warns a customer about an upcoming recurring instance |
+| `SendRecurringOrderReminders` | `%Cron%` — hourly at :30 UTC | Reminds each unconfirmed occurrence once, 2–26 hours ahead; failures are isolated per occurrence and counted |
 | `SendMembershipLifecycleNotifications` | `%Cron%` — daily 03:00 UTC | Expiry, renewal and cancellation notices |
 | `RefreshTokenCleanup` | daily 03:30 UTC | Deletes expired refresh tokens |
 | `ExpireStaleCredit` | daily 03:30 UTC | Expires customer credit past its expiry date |

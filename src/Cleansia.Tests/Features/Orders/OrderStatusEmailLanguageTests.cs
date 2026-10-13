@@ -6,6 +6,7 @@ using Cleansia.Core.Domain.Orders;
 using Cleansia.Core.Domain.Repositories;
 using Cleansia.Core.Domain.Users;
 using Cleansia.Core.Queue.Abstractions;
+using Cleansia.Core.Queue.Abstractions.Messages;
 using Cleansia.TestUtilities;
 using Cleansia.Tests.Infrastructure;
 using Microsoft.Extensions.Logging.Abstractions;
@@ -97,11 +98,9 @@ public class OrderStatusEmailLanguageTests
 
         var handler = new StartOrder.Handler(
             _orderRepository.Object,
-            _emailService.Object,
-            TestGuestOrderAccessTokenIssuer.WithNoLiveTokens(),
+            StatusEmailPending(),
             _notificationProducer.Object,
-            _liveActivityProducer.Object,
-            NullLogger<StartOrder.Handler>.Instance);
+            _liveActivityProducer.Object);
         var result = await handler.Handle(new StartOrder.Command(OrderId), CancellationToken.None);
 
         Assert.True(result.IsSuccess);
@@ -121,19 +120,24 @@ public class OrderStatusEmailLanguageTests
 
         var handler = new CompleteOrder.Handler(
             _orderRepository.Object,
-            new Mock<IPendingDispatch>().Object,
+            StatusEmailPending(),
             _notificationProducer.Object,
             _liveActivityProducer.Object,
-            _emailService.Object,
-            TestGuestOrderAccessTokenIssuer.WithNoLiveTokens(),
             new Mock<ILoyaltyService>().Object,
-            new Mock<IReferralService>().Object,
-            NullLogger<CompleteOrder.Handler>.Instance);
+            new Mock<IReferralService>().Object);
         var result = await handler.Handle(
             new CompleteOrder.Command(OrderId, ActualCompletionTimeMinutes: 120), CancellationToken.None);
 
         Assert.True(result.IsSuccess);
         Assert.Equal(expected, _emailLanguage);
+    }
+
+    private IPendingDispatch StatusEmailPending()
+    {
+        var pending = new Mock<IPendingDispatch>();
+        pending.Setup(p => p.Enqueue(QueueNames.SendEmail, It.IsAny<QueueEnvelope<SendOrderStatusEmailMessage>>(), It.IsAny<string>()))
+            .Callback<string, QueueEnvelope<SendOrderStatusEmailMessage>, string>((_, message, _) => _emailLanguage = message.Payload.LanguageCode);
+        return pending.Object;
     }
 
     /// <summary>

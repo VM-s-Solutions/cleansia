@@ -26,6 +26,9 @@ public static class MessageKeys
     /// <summary>One copy of the contract for work per acceptance.</summary>
     public static string WorkContractEmail(string acceptanceId) => $"email:work-contract:{acceptanceId}";
 
+    /// <summary>One Started or Completed e-mail per order and status.</summary>
+    public static string OrderStatusEmail(string orderId, OrderStatus status) => $"email:order-status:{orderId}:{status}";
+
     /// <summary>One lockout cancellation email per signed-in customer's order.</summary>
     public static string OrderLockoutEmail(string orderId) => $"email:order-lockout:{orderId}";
 

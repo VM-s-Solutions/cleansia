@@ -86,7 +86,7 @@ public class PlatformCancellationCreditReturnAtomicityTests(PostgresContainerFix
 
         await using (var ctx = NewContext())
         {
-            var account = await new CreditAccountRepository(ctx).EnsureForUserAsync(userId, CzkId, CancellationToken.None);
+            var account = await new CreditAccountRepository(ctx).EnsureForUserIgnoringTenantAsync(userId, CzkId, CancellationToken.None);
             account!.Issue(Credit, CreditTransactionReason.Goodwill, "seed-grant", "seed", note: "n");
 
             var order = Order.Create(

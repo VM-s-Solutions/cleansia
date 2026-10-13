@@ -81,7 +81,7 @@ public class MembershipTrialMarkerWebhookTests
             currentPeriodEnd: DateTime.UtcNow.AddMonths(1),
             trialEndsAtUtc: trialEndsAtUtc);
         _membershipRepository
-            .Setup(r => r.GetByStripeSubscriptionIdAsync(SubscriptionId, It.IsAny<CancellationToken>()))
+            .Setup(r => r.GetByStripeSubscriptionIdIgnoringTenantAsync(SubscriptionId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(membership);
         return membership;
     }
@@ -198,7 +198,7 @@ public class MembershipTrialMarkerWebhookTests
     {
         var trialEnd = DateTime.UtcNow.AddDays(30);
         _membershipRepository
-            .Setup(r => r.GetByStripeSubscriptionIdAsync(SubscriptionId, It.IsAny<CancellationToken>()))
+            .Setup(r => r.GetByStripeSubscriptionIdIgnoringTenantAsync(SubscriptionId, It.IsAny<CancellationToken>()))
             .ReturnsAsync((UserMembership?)null);
         _membershipRepository
             .Setup(r => r.GetLifecycleForUserAsync(UserId, It.IsAny<CancellationToken>()))
@@ -221,7 +221,7 @@ public class MembershipTrialMarkerWebhookTests
     public async Task SubscriptionCreated_WithoutATrial_LeavesTheMarkerNull()
     {
         _membershipRepository
-            .Setup(r => r.GetByStripeSubscriptionIdAsync(SubscriptionId, It.IsAny<CancellationToken>()))
+            .Setup(r => r.GetByStripeSubscriptionIdIgnoringTenantAsync(SubscriptionId, It.IsAny<CancellationToken>()))
             .ReturnsAsync((UserMembership?)null);
         _membershipRepository
             .Setup(r => r.GetLifecycleForUserAsync(UserId, It.IsAny<CancellationToken>()))

@@ -141,7 +141,7 @@ public class AdminCancelOrderAsLockoutTests
         Assert.Equal(0m, order.CancellationRefundAmount);
         Assert.Equal(PaymentStatus.Paid, order.PaymentStatus);
         Assert.Empty(_opened);
-        _credit.Verify(c => c.TryReturnAsync(
+        _credit.Verify(c => c.TryReturnIgnoringTenantAsync(
             It.IsAny<string>(), It.IsAny<string>(), It.IsAny<decimal>(), It.IsAny<string>(), It.IsAny<string>(),
             It.IsAny<CancellationToken>(), It.IsAny<string?>(), It.IsAny<string?>()), Times.Never);
 
@@ -178,7 +178,7 @@ public class AdminCancelOrderAsLockoutTests
         Assert.Equal(ReceivableStatus.Open, receivable.Status);
         Assert.Equal(1000m, receivable.Amount);
         Assert.Equal((OrderId, CustomerId, CzkId), (receivable.OrderId, receivable.UserId, receivable.CurrencyId));
-        _credit.Verify(c => c.TryReturnAsync(
+        _credit.Verify(c => c.TryReturnIgnoringTenantAsync(
             CustomerId, CzkId, 200m, $"credit-return:order-ended-unpaid:{OrderId}", AdminId,
             It.IsAny<CancellationToken>(), OrderId, It.IsAny<string?>()), Times.Once);
         Assert.Equal(PaymentStatus.Pending, order.PaymentStatus);

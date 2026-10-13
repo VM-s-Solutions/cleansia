@@ -440,7 +440,7 @@ public class RefundServiceTests
         var creditKey = $"credit-return:refund:{OrderId}:dispute:dispute-1";
         var creditMoved = 0m;
         _creditAccountRepository
-            .Setup(r => r.TryReturnAsync("user-1", order.CurrencyId, 160m, creditKey, ActorId,
+            .Setup(r => r.TryReturnIgnoringTenantAsync("user-1", order.CurrencyId, 160m, creditKey, ActorId,
                 It.IsAny<CancellationToken>(), OrderId, null))
             .Callback(() => creditMoved = 160m)
             .ReturnsAsync(true);
@@ -656,7 +656,7 @@ public class RefundServiceTests
         CaptureAddedRefund(out var added);
         var refundKey = $"refund:{OrderId}:cancel";
         _creditAccountRepository
-            .Setup(r => r.TryReturnAsync("user-1", order.CurrencyId, 250m,
+            .Setup(r => r.TryReturnIgnoringTenantAsync("user-1", order.CurrencyId, 250m,
                 $"credit-return:{refundKey}", ActorId, It.IsAny<CancellationToken>(), OrderId, null))
             .ReturnsAsync(false);
 
@@ -673,7 +673,7 @@ public class RefundServiceTests
         Assert.Equal(750m, refund.Amount);
         Assert.Equal(RefundStatus.Succeeded, refund.Status);
         Assert.Equal(PaymentStatus.PartiallyRefunded, order.PaymentStatus);
-        _creditAccountRepository.Verify(r => r.TryReturnAsync("user-1", order.CurrencyId, 250m,
+        _creditAccountRepository.Verify(r => r.TryReturnIgnoringTenantAsync("user-1", order.CurrencyId, 250m,
             $"credit-return:{refundKey}", ActorId, It.IsAny<CancellationToken>(), OrderId, null), Times.Once);
     }
 
@@ -690,7 +690,7 @@ public class RefundServiceTests
             .Setup(r => r.GetByRefundKeyAsync(refundKey, It.IsAny<CancellationToken>()))
             .ReturnsAsync(() => added.SingleOrDefault());
         _creditAccountRepository
-            .Setup(r => r.TryReturnAsync("user-1", order.CurrencyId, 500m,
+            .Setup(r => r.TryReturnIgnoringTenantAsync("user-1", order.CurrencyId, 500m,
                 $"credit-return:{refundKey}", ActorId, It.IsAny<CancellationToken>(), OrderId, null))
             .ReturnsAsync(false);
         var service = CreateService();
@@ -702,7 +702,7 @@ public class RefundServiceTests
         Assert.True(failed.IsFailure);
         Assert.Equal(RefundStatus.Pending, Assert.Single(added).Status);
         Assert.Equal(PaymentStatus.Paid, order.PaymentStatus);
-        _creditAccountRepository.Verify(r => r.TryReturnAsync(It.IsAny<string>(), It.IsAny<string>(),
+        _creditAccountRepository.Verify(r => r.TryReturnIgnoringTenantAsync(It.IsAny<string>(), It.IsAny<string>(),
             It.IsAny<decimal>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>(),
             It.IsAny<string?>(), It.IsAny<string?>()), Times.Never);
 
@@ -722,7 +722,7 @@ public class RefundServiceTests
         Assert.Equal(1, _stripe.RefundCallCount);
         Assert.Equal(RefundStatus.Succeeded, Assert.Single(added).Status);
         Assert.Equal(PaymentStatus.Refunded, order.PaymentStatus);
-        _creditAccountRepository.Verify(r => r.TryReturnAsync("user-1", order.CurrencyId, 500m,
+        _creditAccountRepository.Verify(r => r.TryReturnIgnoringTenantAsync("user-1", order.CurrencyId, 500m,
             $"credit-return:{refundKey}", ActorId, It.IsAny<CancellationToken>(), OrderId, null), Times.Once);
     }
 
@@ -771,7 +771,7 @@ public class RefundServiceTests
 
         Assert.True(result.IsSuccess);
         Assert.Equal(1500m, _stripe.LastAmount);
-        _creditAccountRepository.Verify(r => r.TryReturnAsync("user-1", order.CurrencyId, 500m,
+        _creditAccountRepository.Verify(r => r.TryReturnIgnoringTenantAsync("user-1", order.CurrencyId, 500m,
             $"credit-return:{refundKey}", "system", It.IsAny<CancellationToken>(), OrderId, null), Times.Once);
     }
 
@@ -791,7 +791,7 @@ public class RefundServiceTests
         var result = await CreateService().RedriveAsync(refund.Id, "system", CancellationToken.None);
 
         Assert.True(result.IsSuccess);
-        _creditAccountRepository.Verify(r => r.TryReturnAsync(
+        _creditAccountRepository.Verify(r => r.TryReturnIgnoringTenantAsync(
             It.IsAny<string>(), It.IsAny<string>(), It.IsAny<decimal>(), It.IsAny<string>(), It.IsAny<string>(),
             It.IsAny<CancellationToken>(), It.IsAny<string?>(), It.IsAny<string?>()), Times.Never);
     }
@@ -839,6 +839,9 @@ public class RefundServiceTests
         ArrangeOrder(order);
         ArrangeConsumed(1000m);
         var refund = ArrangePendingRefund(order, 1000m, $"refund:{OrderId}:admin");
+
+        _refundRepository.Setup(r => r.GetSucceededRefundTotalForOrderAsync(
+            OrderId, refund.RefundKey, It.IsAny<CancellationToken>())).ReturnsAsync(1000m);
 
         var result = await CreateService().RedriveAsync(refund.Id, "system", CancellationToken.None);
 
@@ -937,7 +940,7 @@ public class RefundServiceTests
         Assert.Empty(added);
         Assert.Equal(0, _stripe.RefundCallCount);
         Assert.Equal(PaymentStatus.Paid, order.PaymentStatus);
-        _creditAccountRepository.Verify(r => r.TryReturnAsync(
+        _creditAccountRepository.Verify(r => r.TryReturnIgnoringTenantAsync(
             It.IsAny<string>(), It.IsAny<string>(), It.IsAny<decimal>(), It.IsAny<string>(), It.IsAny<string>(),
             It.IsAny<CancellationToken>(), It.IsAny<string?>(), It.IsAny<string?>()), Times.Never);
     }
@@ -981,7 +984,7 @@ public class RefundServiceTests
             .Setup(r => r.GetReturnedTotalForOrderAsync(OrderId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(() => creditReturned);
         _creditAccountRepository
-            .Setup(r => r.TryReturnAsync(
+            .Setup(r => r.TryReturnIgnoringTenantAsync(
                 "user-1", order.CurrencyId, 400m, creditKey, ActorId, It.IsAny<CancellationToken>(), OrderId, null))
             .Callback(() => creditReturned = 400m)
             .ReturnsAsync(true);
@@ -992,9 +995,9 @@ public class RefundServiceTests
         Assert.True(result.IsSuccess, result.Error?.Message);
         Assert.Equal(1200m, _stripe.LastAmount);
         Assert.Equal(1200m, Assert.Single(added).Amount);
-        _creditAccountRepository.Verify(r => r.TryReturnAsync(
+        _creditAccountRepository.Verify(r => r.TryReturnIgnoringTenantAsync(
             "user-1", order.CurrencyId, 400m, creditKey, ActorId, It.IsAny<CancellationToken>(), OrderId, null), Times.Once);
-        _creditAccountRepository.Verify(r => r.TryReturnAsync(
+        _creditAccountRepository.Verify(r => r.TryReturnIgnoringTenantAsync(
             It.IsAny<string>(), It.IsAny<string>(), It.IsAny<decimal>(), It.IsAny<string>(), It.IsAny<string>(),
             It.IsAny<CancellationToken>(), It.IsAny<string?>(), It.IsAny<string?>()), Times.Once);
         Assert.Equal(PaymentStatus.Refunded, order.PaymentStatus);
@@ -1193,7 +1196,7 @@ public class RefundServiceTests
         Assert.True(result.IsSuccess, result.Error?.Message);
         Assert.Equal(260m, _stripe.LastAmount);
         Assert.Equal(260m, pending.Amount);
-        _creditAccountRepository.Verify(r => r.TryReturnAsync(
+        _creditAccountRepository.Verify(r => r.TryReturnIgnoringTenantAsync(
             It.IsAny<string>(), It.IsAny<string>(), It.IsAny<decimal>(), It.IsAny<string>(), It.IsAny<string>(),
             It.IsAny<CancellationToken>(), It.IsAny<string?>(), It.IsAny<string?>()), Times.Never);
     }
@@ -1262,7 +1265,7 @@ public class RefundServiceTests
         ArrangeConsumed(0m);
         CaptureAddedRefund(out var added);
         _creditAccountRepository
-            .Setup(r => r.IsOnFrozenCompanyBooksAsync("user-1", order.CurrencyId, It.IsAny<CancellationToken>()))
+            .Setup(r => r.IsOnFrozenCompanyBooksIgnoringTenantAsync("user-1", order.CurrencyId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(true);
 
         var result = await CreateService().IssueRefundAsync(
@@ -1272,7 +1275,7 @@ public class RefundServiceTests
         Assert.Equal(300m, _stripe.LastAmount);
         Assert.Equal(RefundStatus.Succeeded, Assert.Single(added).Status);
         Assert.Equal(0m, result.Value!.CreditReturned);
-        _creditAccountRepository.Verify(r => r.TryReturnAsync(
+        _creditAccountRepository.Verify(r => r.TryReturnIgnoringTenantAsync(
             It.IsAny<string>(), It.IsAny<string>(), It.IsAny<decimal>(), It.IsAny<string>(), It.IsAny<string>(),
             It.IsAny<CancellationToken>(), It.IsAny<string?>(), It.IsAny<string?>()), Times.Never);
     }
@@ -1411,7 +1414,7 @@ public class RefundServiceTests
         Assert.Equal(refundKey, _stripe.LastIdempotencyKey);
         Assert.Equal(600m, pending.Amount);
         Assert.Equal(RefundStatus.Succeeded, pending.Status);
-        _creditAccountRepository.Verify(r => r.TryReturnAsync(
+        _creditAccountRepository.Verify(r => r.TryReturnIgnoringTenantAsync(
             It.IsAny<string>(), It.IsAny<string>(), It.IsAny<decimal>(), It.IsAny<string>(), It.IsAny<string>(),
             It.IsAny<CancellationToken>(), It.IsAny<string?>(), It.IsAny<string?>()), Times.Never);
     }
@@ -1613,7 +1616,7 @@ public class RefundServiceTests
         Assert.True(retried.IsSuccess, retried.Error?.Message);
         Assert.Equal(300m, _stripe.LastAmount);
         Assert.Equal(dispute.RefundKey, _stripe.LastIdempotencyKey);
-        _creditAccountRepository.Verify(r => r.TryReturnAsync(
+        _creditAccountRepository.Verify(r => r.TryReturnIgnoringTenantAsync(
             It.IsAny<string>(), It.IsAny<string>(), It.IsAny<decimal>(), It.IsAny<string>(), It.IsAny<string>(),
             It.IsAny<CancellationToken>(), It.IsAny<string?>(), It.IsAny<string?>()), Times.Never);
     }
@@ -1756,7 +1759,7 @@ public class RefundServiceTests
         Assert.Equal("re_1", refund.StripeRefundId);
         Assert.Equal(1500m, refund.Amount);
         Assert.Equal(PaymentStatus.Refunded, order.PaymentStatus);
-        _creditAccountRepository.Verify(r => r.TryReturnAsync("user-1", order.CurrencyId, 500m,
+        _creditAccountRepository.Verify(r => r.TryReturnIgnoringTenantAsync("user-1", order.CurrencyId, 500m,
             $"credit-return:{AdminKey}", It.IsAny<string>(), It.IsAny<CancellationToken>(), OrderId, null), Times.Once);
     }
 
@@ -1862,7 +1865,7 @@ public class RefundServiceTests
         ArrangeConsumed(0m);
         var refund = ArrangeRetriedRefund(order, 1000m, new StripeRefundSnapshot("re_failed", 1000m, Failed: true));
         _userNotifications
-            .Setup(r => r.AnyForEventAsync(
+            .Setup(r => r.AnyForEventIgnoringTenantAsync(
                 TenantId, AdminNotificationEventCatalog.RefundNeedsRetry, "orderId", OrderId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(true);
 

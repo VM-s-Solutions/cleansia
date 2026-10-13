@@ -44,7 +44,7 @@ public class LiveActivityTokenRepository(CleansiaDbContext context)
             .ToListAsync(cancellationToken);
     }
 
-    public async Task RemoveForSubjectAsync(string userId, CancellationToken cancellationToken)
+    public async Task RemoveForSubjectIgnoringTenantAsync(string userId, CancellationToken cancellationToken)
     {
         // IgnoreQueryFilters + the explicit subject predicate: registration is an authenticated mobile
         // route, so the row carries the SUBJECT's tenant, while an admin-driven erasure arrives with the

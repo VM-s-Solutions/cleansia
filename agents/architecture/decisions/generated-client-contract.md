@@ -92,8 +92,9 @@
 
 The **web** generated clients only — the three NSwag-generated TypeScript clients under
 `src/Cleansia.App/libs/core/*/src/lib/client/`, **and (once ADR-0042 lands) the shared wire-enum artifact
-derived from them**. The Android/iOS generated clients come from the separate owner-only
-`mobile-spec-regen` and are **not** covered by anything on this page (ADR-0031 residue #4).
+derived from them**. The Android/iOS generated clients come from a separate shared mobile-spec
+re-dump and are **not** covered by anything on this page (ADR-0031 residue #4). Regeneration is
+ordinary agent-run work under `CLAUDE.md`.
 
 > **Why mobile is out of scope is structural, not scheduling — corrected 2026-08-05 (ADR-0042 Verdict
 > §V.6, verified first-hand).** The mobile generators emit **nameless ordinal** members —
@@ -125,9 +126,9 @@ derived from them**. The Android/iOS generated clients come from the separate ow
 | Admin | `nswag-admin.json:39` | `libs/core/admin-services/src/lib/client/admin-client.ts` | `libs/core/admin-services/src/index.ts:3` |
 | Customer | `nswag-customer.json:39` | `libs/core/customer-services/src/lib/client/customer-client.ts` | `libs/core/customer-services/src/index.ts` |
 
-**A generated client is never hand-edited.** Regeneration is an **owner-only** step
-(`quality-gates.md` §"Owner-only steps"); agents flag it as a `manual_steps` entry and block dependent
-work until the owner confirms.
+**A generated client is never hand-edited.** Regeneration is ordinary agent-run work under
+`CLAUDE.md`: run it before dependent work, verify the output, commit it with the contract change,
+and report the commands. Shared DEV deployment/reset requires explicit owner approval.
 
 > ✅ **Stale duplicate — CLOSED. The file is gone (verified 2026-08-05: `libs/core/services/**/client/**`
 > matches nothing).** Kept here as history because the lesson outlives the file, and because two
@@ -539,7 +540,7 @@ But the rejection is **bounded**, for two recorded reasons:
   → D gets its own ADR, not a footnote.
 - **Unresolved premise:** whether ASP.NET marks non-nullable value types `required` in the emitted schema
   — i.e. whether `removePhoto: boolean` would even become optional under D. **Never observed.**
-- **The free experiment:** at the next owner regen (T-0446 is imminent), one extra run with
+- **The free experiment:** at the next client regeneration, one extra run with
   `markOptionalProperties: true` into a scratch output, diffed and discarded, settles it. **Record the
   result here**, whether or not D is ever adopted.
 
@@ -547,14 +548,14 @@ But the rejection is **bounded**, for two recorded reasons:
 |---|---|
 | Does `markOptionalProperties: true` make nullable *reference* members optional? | expected yes — unverified |
 | Does it change `removePhoto: boolean` (non-nullable value type)? | **UNKNOWN — the blocking unknown** |
-| Diff size across all three clients | unknown (owner-only regen) |
+| Diff size across all three clients | unknown (scratch regeneration not yet measured) |
 | Result of the scratch experiment | _(fill in after the next regen)_ |
 
 ---
 
 ## Invariants (what a reviewer enforces)
 
-1. **A generated client is never hand-edited.** The regen is owner-only; agents flag `manual_steps`.
+1. **A generated client is never hand-edited.** Run regeneration under `CLAUDE.md`, verify and report it.
 2. **No `package.json` script invokes NSwag without ending in `npm run typecheck`** (ADR-0031 M1). A
    publicly-named script that regenerates without the guard reopens the hole silently.
 3. **The guard's unit set is derived from the build target, never hardcoded and never merely non-empty**
@@ -593,9 +594,9 @@ But the rejection is **bounded**, for two recorded reasons:
       `[ -f "$file" ] || { …; exit 1; }` output-exists check at `:7`, each with a comment naming T-0439.
       So a failed `sed` or a missing output **does** break the `&&` chain today. *The cheap fix this
       invariant proposed has landed; do not re-file it.*
-    - **Still unverified:** what `npx nswag run` returns on a partial or failed generation. Agents cannot
-      run it (owner-only), so this remains an open unknown, not a claim. The next owner regen can observe
-      it for free alongside the ADR-0031 Option-D experiment.
+    - **Still unverified:** what `npx nswag run` returns on a partial or failed generation. Regeneration
+      is ordinary agent-run work under `CLAUDE.md`; the next regeneration can observe it alongside
+      the ADR-0031 Option-D experiment. Until measured, this remains an open unknown, not a claim.
     - **Unchanged and still true:** a green regen chain proves *the tree compiles*, not *the client
       regenerated correctly*. The typecheck, the three builds **and** ADR-0042's proposed wire-enum writer
       all only see what is on disk. *(Which is why round 2 does not put the verdict there: the CI gate
@@ -606,7 +607,7 @@ But the rejection is **bounded**, for two recorded reasons:
     freshly generated one, or that the renames applied. The three production builds share the blind spot —
     they also only see what is on disk. **Out of scope for T-0439; do not let the chain be described as
     stronger than this.** Cheap future fix: `set -euo pipefail` in the three formatters. Free observation:
-    the next owner regen (T-0446) is already carrying the Option-D experiment — record `nswag run`'s
+    the next regeneration can carry the Option-D experiment — record `nswag run`'s
     exit-code behaviour on the same run.
 
 **Two things that are NOT holes, written down so they are not re-derived as such:**
@@ -624,7 +625,7 @@ But the rejection is **bounded**, for two recorded reasons:
 | 2 | Guard covers TS + templates, not bundling/budgets/SSR/styles | exact for this defect class; the three builds remain the authority |
 | 3 | `strictTemplates` can be flipped off silently in an app's `tsconfig.json` | weakens the guard **and** the production build together → a `check-consistency.mjs` rule (ADR-0031 M3) |
 | 4 | Android/iOS generated clients are a parallel, separately-governed drift surface | `mobile-spec-regen` + ADR-0019; deliberately out of scope |
-| 4b | **The regen chain can report success over a bad client.** ~~formatters always exit 0~~ **half-CLOSED 2026-08-04:** all three formatters now carry `set -euo pipefail` + an output-exists check, so a failed `sed`/missing output breaks the chain. `nswag run`'s failure exit code **remains unverified** | invariant 10; the `nswag` half rides free on the next owner regen |
+| 4b | **The regen chain can report success over a bad client.** ~~formatters always exit 0~~ **half-CLOSED 2026-08-04:** all three formatters now carry `set -euo pipefail` + an output-exists check, so a failed `sed`/missing output breaks the chain. `nswag run`'s failure exit code **remains unverified** | invariant 10; the `nswag` half can be measured on the next regeneration |
 | 5 | **Code no gate can see** — (a) ~~the stale duplicate `libs/core/services/src/lib/client/admin-client.ts` + a `CLAUDE.md` map that points at it~~; (b) app-unreachable lib files (e.g. `libs/cleansia-admin-features/template-management/.../email-template-form.facade.ts`) | (a) ✅ **CLOSED 2026-08-05 — the file is deleted** (ADR-0031 residue #5a closes; ADR-0042 §D5 is a no-op). **And the `CLAUDE.md` half never existed:** `:34-35` labels `core/services/` "(hand-written)" and applies "NSwag-generated API clients" to the three `*-services` libs. No owner step is owed. (b) still a dead-export sweep, not a wider guard |
 | 6 | **A wire enum a `scope:shared` lib needs has no importable home**, so a copy must exist there — **and today that copy is still HAND-WRITTEN, and neither it nor any of the four other hand-typed mirrors is ever compared to `Cleansia.Core.Domain.Enums`** | **OPEN.** ADR-0042 round 1 was returned 2026-08-05; **round 2 (2026-08-06) is `proposed` and awaiting a second panel.** See §"The second surface", the trade-off space, and gaps E1–E6. **Nothing may be built against it yet.** The detector half has improved independently: the `{workspaceRoot}` client glob on `models`' `test` target landed, so the spec now really runs and cannot cache-replay — but it still compares only generated artifacts to the shared table, over 2 of 12 enums |
 

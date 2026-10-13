@@ -61,7 +61,7 @@ public sealed class CustomerCashStandingTests
             .Setup(r => r.GetByIdForOwnerAsync(TemplateId, UserId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(Template());
         _memberships
-            .Setup(r => r.GetEntitledForUserNoTrackingAsync(UserId, It.IsAny<CancellationToken>()))
+            .Setup(r => r.GetEntitledForUserNoTrackingIgnoringTenantAsync(UserId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(ActiveMembership());
         _orders
             .Setup(r => r.GetCountForOwnerAsync(UserId, It.IsAny<Expression<Func<Order, bool>>?>(), It.IsAny<CancellationToken>()))
@@ -185,7 +185,7 @@ public sealed class CustomerCashStandingTests
     }
 
     private void OweAnOpenReceivable() =>
-        _receivables.Setup(r => r.HasOpenForUserAsync(UserId, It.IsAny<CancellationToken>())).ReturnsAsync(true);
+        _receivables.Setup(r => r.HasOpenForUserIgnoringTenantAsync(UserId, It.IsAny<CancellationToken>())).ReturnsAsync(true);
 
     /// <summary>
     /// The first <paramref name="openUnpaidCash"/> of the two counted shapes - a one-off cash booking

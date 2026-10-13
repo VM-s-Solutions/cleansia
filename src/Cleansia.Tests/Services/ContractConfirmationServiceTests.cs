@@ -189,7 +189,7 @@ public sealed class ContractConfirmationServiceTests
     public async Task The_Cleaners_Copy_Names_The_Company_And_The_Cleaner_Prices_The_Work_At_The_Seats_Reward_And_Carries_The_Text()
     {
         _companies
-            .Setup(r => r.GetActiveForOperatorAsync(OperatorTenantId, CountryId, It.IsAny<CancellationToken>()))
+            .Setup(r => r.GetActiveForOperatorIgnoringTenantAsync(OperatorTenantId, CountryId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(Company());
         _documents = WorkContractTestData.LegalDocumentRepository();
         var text = WorkContractTestData.Document().Texts.Single(t => t.Id == WorkContractTestData.TextIdCs);
@@ -259,7 +259,7 @@ public sealed class ContractConfirmationServiceTests
     {
         _companies.Setup(r => r.GetActiveByCountryAsync(CountryId, It.IsAny<CancellationToken>())).ReturnsAsync(Company());
         _companies
-            .Setup(r => r.GetActiveForOperatorAsync(OperatorTenantId, CountryId, It.IsAny<CancellationToken>()))
+            .Setup(r => r.GetActiveForOperatorIgnoringTenantAsync(OperatorTenantId, CountryId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(Company());
         _documents = WorkContractTestData.LegalDocumentRepository();
         var pdf = new QuestPdfService(new LayoutBuilderFactory([], []), NullLogger<QuestPdfService>.Instance);

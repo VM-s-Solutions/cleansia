@@ -33,6 +33,8 @@ public class DeviceConfiguration : TenantAuditableEntityConfiguration<Device, st
         // tombstone via Device.MarkRegistered (reactivate + refresh token)
         // — never a second INSERT — so there is at most one row per
         // (UserId, DeviceId).
+        // The shared-handset read matches an install and its push token across accounts.
+        builder.HasIndex(d => new { d.DeviceId, d.DeviceToken });
         builder.HasIndex(d => d.UserId);
         builder.HasIndex(d => new { d.UserId, d.DeviceId }).IsUnique();
 

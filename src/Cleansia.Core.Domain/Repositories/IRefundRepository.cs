@@ -10,6 +10,16 @@ public interface IRefundRepository : IRepository<Refund, string>
     /// </summary>
     Task<Refund?> GetByRefundKeyAsync(string refundKey, CancellationToken cancellationToken);
 
+    /// <summary>The committed succeeded key, untracked even when this scope already holds its pending row.</summary>
+    Task<Refund?> GetSucceededByRefundKeyNoTrackingAsync(string refundKey, CancellationToken cancellationToken);
+
+    /// <summary>
+    /// Lock this committed refund through the next unit-of-work commit and check whether its partial-refund
+    /// success audit exists. The authorized handler calls this after settlement and loyalty have flushed;
+    /// the lock and the new audit share the pipeline transaction, including refusal/cancellation rollback.
+    /// </summary>
+    Task<bool> HasPartialRefundAuditUnderLockAsync(string refundId, string refundKey, CancellationToken cancellationToken);
+
     /// <summary>
     /// Sum of an order's succeeded refund amounts: the card money confirmed back, which decides the
     /// payment status, the loyalty clawback and payroll's collected fee. A ceiling on what may still go

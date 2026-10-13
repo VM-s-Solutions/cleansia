@@ -70,7 +70,7 @@ public class ReferralServiceSamePersonHoldTests
             });
 
         _credit
-            .Setup(c => c.EnsureForUserAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .Setup(c => c.EnsureForUserIgnoringTenantAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync((string userId, string currencyId, CancellationToken _) =>
             {
                 var account = CreditAccount.Create(userId, currencyId, "system");

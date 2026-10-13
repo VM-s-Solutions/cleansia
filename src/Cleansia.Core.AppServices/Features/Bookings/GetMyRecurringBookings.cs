@@ -22,7 +22,7 @@ public class GetMyRecurringBookings
         public async Task<BusinessResult<IReadOnlyList<RecurringBookingTemplateDto>>> Handle(Query query, CancellationToken cancellationToken)
         {
             var userId = userSessionProvider.GetUserId()!;
-            var templates = await templateRepository.GetByUserAsync(userId, cancellationToken);
+            var templates = await templateRepository.GetByUserIgnoringTenantAsync(userId, cancellationToken);
             if (templates.Count == 0)
             {
                 return BusinessResult.Success<IReadOnlyList<RecurringBookingTemplateDto>>([]);

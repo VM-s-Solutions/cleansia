@@ -13,7 +13,7 @@ public class IssueCustomerCreditHandlerTests
     public async Task AnErasedSubject_RefusedByTheLockedAccountLookup_ReceivesNoGrantOrSuccessAudit()
     {
         var accounts = new Mock<ICreditAccountRepository>();
-        accounts.Setup(r => r.EnsureForUserAsync("erased-user", "currency-czk", It.IsAny<CancellationToken>()))
+        accounts.Setup(r => r.EnsureForUserIgnoringTenantAsync("erased-user", "currency-czk", It.IsAny<CancellationToken>()))
             .ReturnsAsync((CreditAccount?)null);
         var session = new Mock<IUserSessionProvider>();
         session.Setup(s => s.GetUserId()).Returns("admin-1");
@@ -27,7 +27,7 @@ public class IssueCustomerCreditHandlerTests
         Assert.True(result.IsFailure);
         Assert.Equal(nameof(IssueCustomerCredit.Command.UserId), result.Error!.Code);
         Assert.Equal(BusinessErrorMessage.UserNotFound, result.Error.Message);
-        accounts.Verify(r => r.EnsureForUserAsync("erased-user", "currency-czk", It.IsAny<CancellationToken>()), Times.Once);
+        accounts.Verify(r => r.EnsureForUserIgnoringTenantAsync("erased-user", "currency-czk", It.IsAny<CancellationToken>()), Times.Once);
         accounts.VerifyNoOtherCalls();
         audit.VerifyNoOtherCalls();
     }

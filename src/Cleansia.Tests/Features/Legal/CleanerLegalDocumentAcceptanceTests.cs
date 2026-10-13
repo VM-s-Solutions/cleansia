@@ -252,7 +252,7 @@ public sealed class CleanerLegalDocumentAcceptanceTests
             .Setup(r => r.GetByCountryIdAsync(Czechia, It.IsAny<CancellationToken>()))
             .ReturnsAsync(CountryConfiguration.Create(Czechia, "CZK", "cs", 0.21m).AssignOperator("cleansia-cz"));
         _companies
-            .Setup(r => r.GetActiveForOperatorAsync("cleansia-cz", Czechia, It.IsAny<CancellationToken>()))
+            .Setup(r => r.GetActiveForOperatorIgnoringTenantAsync("cleansia-cz", Czechia, It.IsAny<CancellationToken>()))
             .ReturnsAsync(CompanyInfo.Create("Cleansia CZ s.r.o.", "Cleansia", "12345678", "Václavské náměstí 1", "Praha", "110 00", Czechia));
         _consents.Setup(r => r.GetByUserIdNoTrackingAsync(UserId, It.IsAny<CancellationToken>())).ReturnsAsync([]);
 

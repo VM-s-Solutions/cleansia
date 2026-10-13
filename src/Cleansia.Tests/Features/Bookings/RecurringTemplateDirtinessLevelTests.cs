@@ -116,7 +116,7 @@ public class RecurringTemplateDirtinessLevelTests
     {
         var heavy = Template(DirtinessLevel.Heavy);
         _templateRepository
-            .Setup(r => r.GetByUserAsync(UserId, It.IsAny<CancellationToken>()))
+            .Setup(r => r.GetByUserIgnoringTenantAsync(UserId, It.IsAny<CancellationToken>()))
             .ReturnsAsync([heavy]);
 
         var result = await new GetMyRecurringBookings.Handler(
@@ -146,7 +146,7 @@ public class RecurringTemplateDirtinessLevelTests
             .Returns(Array.Empty<Cleansia.Core.Domain.Orders.Order>().AsQueryable().BuildMock());
         var memberships = new Mock<IUserMembershipRepository>();
         memberships
-            .Setup(r => r.GetEntitledForUserNoTrackingAsync(UserId, It.IsAny<CancellationToken>()))
+            .Setup(r => r.GetEntitledForUserNoTrackingIgnoringTenantAsync(UserId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(UserMembershipMockFactory.Paid(UserId));
         var pricing = new Mock<IOrderPricingCalculator>();
         pricing
@@ -197,7 +197,7 @@ public class RecurringTemplateDirtinessLevelTests
     {
         var memberships = new Mock<IUserMembershipRepository>();
         memberships
-            .Setup(r => r.GetEntitledForUserNoTrackingAsync(UserId, It.IsAny<CancellationToken>()))
+            .Setup(r => r.GetEntitledForUserNoTrackingIgnoringTenantAsync(UserId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(UserMembership.Create(
                 userId: UserId,
                 membershipPlanId: "plan-plus",

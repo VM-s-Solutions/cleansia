@@ -199,7 +199,7 @@ public class RedrivePendingRefundsTests
         Arrange(refund);
         RedriveFails(refund);
         _userNotifications
-            .Setup(r => r.AnyForEventAsync(TenantId, raisedAs, "orderId", "order-1",
+            .Setup(r => r.AnyForEventIgnoringTenantAsync(TenantId, raisedAs, "orderId", "order-1",
                 It.IsAny<CancellationToken>()))
             .ReturnsAsync(true);
 
@@ -307,7 +307,7 @@ public class RedrivePendingRefundsTests
     {
         Arrange(PendingRefund("order-1", TimeSpan.FromHours(30), userId: null, orderCancelled: false));
         _userNotifications
-            .Setup(r => r.AnyForEventAsync(TenantId, AdminNotificationEventCatalog.RefundWithoutCancel, "orderId", "order-1",
+            .Setup(r => r.AnyForEventIgnoringTenantAsync(TenantId, AdminNotificationEventCatalog.RefundWithoutCancel, "orderId", "order-1",
                 It.IsAny<CancellationToken>()))
             .ReturnsAsync(true);
 

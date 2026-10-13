@@ -164,6 +164,7 @@ public class DropOrder
                 releasedAssignmentId,
                 employeeRepository,
                 notificationProducer,
+                nowUtc,
                 cancellationToken);
 
             if (crewEmptied)

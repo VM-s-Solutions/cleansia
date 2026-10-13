@@ -80,7 +80,7 @@ public class CancelUnfilledOrdersTests
                 It.IsAny<string>(), It.IsAny<DateTimeOffset>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(Array.Empty<GuestOrderAccessToken>());
 
-        _credit.Setup(c => c.EnsureForUserAsync(
+        _credit.Setup(c => c.EnsureForUserIgnoringTenantAsync(
                 It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync((string userId, string currencyId, CancellationToken _) =>
             {
@@ -305,7 +305,7 @@ public class CancelUnfilledOrdersTests
         Assert.Equal(1, result.Value.RefundedCount);
         Assert.Equal(0, result.Value.CreditedCount);
         _credit.Verify(
-            c => c.EnsureForUserAsync(
+            c => c.EnsureForUserIgnoringTenantAsync(
                 It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()),
             Times.Never);
     }
@@ -316,7 +316,7 @@ public class CancelUnfilledOrdersTests
         var order = UnfilledOrder();
         Arrange(order);
         // The sweep may have loaded the order before erasure; the locked account lookup is final.
-        _credit.Setup(c => c.EnsureForUserAsync(UserId, DefaultCurrencyId, It.IsAny<CancellationToken>()))
+        _credit.Setup(c => c.EnsureForUserIgnoringTenantAsync(UserId, DefaultCurrencyId, It.IsAny<CancellationToken>()))
             .ReturnsAsync((CreditAccount?)null);
 
         var result = await Sweep();
@@ -327,7 +327,7 @@ public class CancelUnfilledOrdersTests
         Assert.Equal(0, result.Value.CreditedCount);
         Assert.Equal(OrderStatus.Cancelled, order.CurrentStatus);
         Assert.Empty(_accounts);
-        _credit.Verify(c => c.EnsureForUserAsync(UserId, DefaultCurrencyId, It.IsAny<CancellationToken>()), Times.Once);
+        _credit.Verify(c => c.EnsureForUserIgnoringTenantAsync(UserId, DefaultCurrencyId, It.IsAny<CancellationToken>()), Times.Once);
         _notifications.Verify(n => n.NotifyAsync(
             UserId, NotificationEventCatalog.OrderCancelled,
             It.Is<Dictionary<string, string>>(args => !args.ContainsKey("amount")),
@@ -376,7 +376,7 @@ public class CancelUnfilledOrdersTests
         Assert.Equal(ForeignCurrencyId, account.CurrencyId);
         Assert.Equal(10m, account.Balance);
         _credit.Verify(
-            c => c.EnsureForUserAsync(UserId, ForeignCurrencyId, It.IsAny<CancellationToken>()),
+            c => c.EnsureForUserIgnoringTenantAsync(UserId, ForeignCurrencyId, It.IsAny<CancellationToken>()),
             Times.Once);
     }
 
@@ -576,7 +576,7 @@ public class CancelUnfilledOrdersTests
     }
 
     private void VerifyOrderEndedCreditReturn(Order order, Times times) =>
-        _credit.Verify(c => c.TryReturnAsync(
+        _credit.Verify(c => c.TryReturnIgnoringTenantAsync(
             UserId,
             DefaultCurrencyId,
             300m,

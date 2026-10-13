@@ -204,7 +204,7 @@ public class FeeReceiptPersistenceTests(PostgresContainerFixture fixture) : Base
             act: async provider =>
             {
                 var repository = provider.GetRequiredService<IReceivableRepository>();
-                var owes = await repository.HasOpenForUserAsync(_customerId, CancellationToken.None);
+                var owes = await repository.HasOpenForUserIgnoringTenantAsync(_customerId, CancellationToken.None);
                 var mine = await repository.GetOpenForUserAsync(_customerId, CancellationToken.None);
                 return (Owes: owes, Mine: mine.Select(r => r.Id).ToList());
             },

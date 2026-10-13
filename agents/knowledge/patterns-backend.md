@@ -431,8 +431,9 @@ public class UpdateXxx
   list. Don't hand-roll Skip/Take/sorting.
 - `CustomerApiController`/`PartnerApiController`/`AdminApiController` + `HandleResult` + `Policy.CanXxx`.
 - `IUserSessionProvider.GetUserId()` for identity (S1). Ownership check in the handler (S3).
-- `manual_step: nswag-regen` (DTO/endpoint) — owner-only. Schema is **not**: regenerate `Initial`
-  yourself (owner ruling 2026-08-15) and raise `manual_step: dev-db-drop` for the drop it forces.
+- Regenerate NSwag clients with DTO/endpoint changes and regenerate `Initial` with schema changes;
+  verify both and report the commands (`CLAUDE.md`, owner ruling 2026-09-07). Prepare the DEV reset
+  a changed migration id forces; execute shared DEV reset/deployment only with explicit owner approval.
   **Pre-prod there is exactly ONE migration, `Initial`, and it is REGENERATED — never hand-folded.**
   Editing `<id>_Initial.cs`, `<id>_Initial.Designer.cs` and `CleansiaDbContextModelSnapshot.cs` by
   hand to slot in a new table or column is **withdrawn** (owner ruling, 2026-08-09). It was not
@@ -665,7 +666,7 @@ it encodes, and what a site owes it:
   Stripe event). An order id for "became offerable", a released assignment id for "lost its crew", a
   Stripe dispute id for a chargeback, `{requestId}:{day}` for a failed retry, the run instant to the tick
   for a sweep. A site that can raise one logical event twice reads the feed first —
-  `IUserNotificationRepository.AnyForEventAsync(tenantId, key, argName, argValue)` (jsonb containment)
+  `IUserNotificationRepository.AnyForEventIgnoringTenantAsync(tenantId, key, argName, argValue)` (jsonb containment)
   — the way the card-decline and archive sites do. The notifier dedups nothing.
 - **Args are exactly the entry's `EmailArgOrder`** (`AdminEventCatalog`), no more, no less — the notifier
   throws otherwise — and never a person: ids, numbers, enum names, `yyyy-MM-dd` days, ISO-8601 instants,
@@ -1021,7 +1022,7 @@ loads its subject through a **tenant-scoped** read, so it only runs when the cal
 matches the subject's. `IgnoreQueryFilters` in the outbox and live-activity walks is defence in depth,
 not the thing that makes them work. `DeadLetter` is the one where it is genuinely load-bearing.
 
-> ⚠️ **NOTHING IN ANY SUITE WATCHES THE EMITTED DDL, so a model/migration gap is invisible to CI.**
+> **Historical 2026-08-11 measurement:** *"NOTHING IN ANY SUITE WATCHES THE EMITTED DDL, so a model/migration gap is invisible to CI."*
 > Found 2026-08-11 while arming `IX_Users_TenantId_Email`. `NullsNotDistinctIndexModelTests` reads
 > `ctx.Model` — it is an EF **model** assertion, so it goes red on a missing builder call and green the
 > moment that call lands, **whether or not a migration carrying the DDL exists**. Measured in that
@@ -1036,6 +1037,15 @@ not the thing that makes them work. `DeadLetter` is the one where it is genuinel
 > regenerated wholesale rather than stacked — but it means *"the model test is green"* is **not**
 > evidence the constraint exists, and a claim that a DB-level guarantee is live owes the migration, not
 > the builder call.
+>
+> **2026-10-13 correction, T-0842:** the block above records the 2026-08-11 measurement. The fixture
+> warning suppressions it describes have been removed. EF's migration path now checks relational
+> model/snapshot drift in the integration and host fixtures; the existing
+> `SeededDatabaseHasNoOrphanTenantRowsTests` already migrated a fresh database through an unsuppressed
+> context before this change. This guard does not inspect every emitted DDL statement. A token-only
+> snapshot change with no relational schema effect is outside its scope and requires no DDL. A model
+> assertion alone still does not prove a database constraint exists; apply the real migration to
+> PostgreSQL to verify that constraint.
 
 ## "Post-persist" means POST-COMMIT, or the FK will say so (ADR-0038)
 
@@ -1137,7 +1147,7 @@ blindness). So: *an order with a discount **amount** stamped and no matching led
 
 `CreditUnwind.ReturnUnpaidOrderCreditAsync` takes the customer's owner lock
 (`ICreditAccountRepository.LockForUserAsync`) before it reads or returns anything. The lock opens the unit of
-work's lock transaction when none is open, `TryReturnAsync` joins it, and the commit that ends the order
+work's lock transaction when none is open, `TryReturnIgnoringTenantAsync` joins it, and the commit that ends the order
 commits the return or rolls it back with everything else — §"Post-persist" above, applied to the credit an
 order gives back. A caller therefore holds that customer's lock from the return until its commit, and needs
 no transaction of its own.
@@ -1169,7 +1179,8 @@ exception, and any failure result, is logged at **Error** and counted in the res
 its row again, checks again that it still qualifies, runs under that row's company, and **does not catch**:
 whatever fails leaves with its scope. References: `MaterializeRecurringBookings` →
 `MaterializeRecurringBookingTemplate`, `AutoCancelStaleRecurringOrders` → `AutoCancelRecurringOccurrence`,
-`RetryFailedUserDeletions` → `AdminRetryUserDeletion`. The last two leave their commit to the pipeline inside the
+`SendRecurringOrderReminders` → `SendRecurringOrderReminder`, and
+`RetryFailedUserDeletions` → `AdminRetryUserDeletion`. The occurrence units leave their commit to the pipeline inside the
 item's scope, as any handler does. **`MaterializeRecurringBookingTemplate` commits itself** — a pause notice, a
 marker alone, or its occurrences with their marker once it has switched the tenant override to the market's
 operator — because a new row is stamped from the tenant ambient at commit time; the comment at its last commit
@@ -1191,12 +1202,12 @@ invocation still fails. A failure result is logged at Error and never thrown.
 
 **Enforced by:**
 - the item rule — one scope per item, so a failing item holds back no other: `RecurringSweepPerTemplateIsolationTests`
-  and `RecurringAutoCancelPerOrderIsolationTests` assert exactly that for the two dispatchers — `T1-CI` (closed
-  roster: those two); for every other job, `runtime-readiness.md` checklist item 8 — `T3-HUMAN`. *(Not
+  and `RecurringAutoCancelPerOrderIsolationTests`, plus `RecurringReminderIsolationTests` on PostgreSQL,
+  assert exactly that for the three dispatchers — `T1-CI` (closed roster: those three); for every other job, `runtime-readiness.md` checklist item 8 — `T3-HUMAN`. *(Not
   mechanizable: a regex finds a `catch` in a loop, but cannot tell a catch over a commit, or over staging a later
   commit saves, from a catch over a read or a send. The baseline is not zero: the shipped deviations are listed in
   `consistency.md` §"A loop that continues past a failed commit in a shared scope".)* Where an item's handler
-  commits is the handler rule's question, not this entry's; neither test checks it.
+  commits is the handler rule's question, not this entry's; these isolation tests do not enforce it.
 - the timer rule: `TimerCommandIsolationTests` — the two handlers' behaviour, and a source guard that fails any
   handler under `src/Cleansia.Functions.Core/Handlers` with two or more `Send(` calls and no
   `CreateAsyncScope` — `T1-CI`.

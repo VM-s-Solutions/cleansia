@@ -133,7 +133,7 @@ export class OrderWizardComponent implements OnInit {
 
   fieldError(field: string): string | null {
     if (!this.isTouched(field)) return null;
-    return getFieldError(field, this.facade.formData(), this.translate);
+    return getFieldError(field, this.facade.formData(), this.translate, this.facade.isAuthenticated());
   }
 
   allTimeOptions: TimeOption[] = generateTimeOptions();

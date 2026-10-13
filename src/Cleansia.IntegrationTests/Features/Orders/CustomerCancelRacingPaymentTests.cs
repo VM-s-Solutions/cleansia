@@ -3,6 +3,11 @@ using Cleansia.Core.AppServices.Features.Orders;
 using Cleansia.Core.AppServices.Services;
 using Cleansia.Core.AppServices.Services.Interfaces;
 using Cleansia.Core.Domain.Credit;
+using Cleansia.Core.Domain.LiveActivities;
+using Cleansia.Core.Domain.Memberships;
+using Cleansia.Core.Domain.Notifications;
+using Cleansia.Core.Queue.Abstractions;
+using Microsoft.Extensions.Logging.Abstractions;
 using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Internationalization;
 using Cleansia.Core.Domain.Orders;
@@ -41,38 +46,90 @@ public class CustomerCancelRacingPaymentTests(PostgresContainerFixture fixture) 
     [Fact]
     public async Task A_Cancel_Decided_Before_The_Payment_Landed_Is_Refused_And_The_Order_Stays_Paid()
     {
+        await RunRaceAsync(admin: false);
+    }
+
+    [Fact]
+    public async Task An_Admin_Cancel_Staged_With_A_Credit_Return_Is_Refused_When_Payment_Lands()
+    {
+        await RunRaceAsync(admin: true);
+    }
+
+    private async Task RunRaceAsync(bool admin)
+    {
         await TestMethod(
             setup: services =>
             {
                 services.Replace(ServiceDescriptor.Scoped<IUserSessionProvider>(_ => new TestUserSessionProvider(
-                    _customerId, CustomerEmail, [new Claim(ClaimTypes.Role, UserProfile.Customer.ToString())])));
+                    _customerId, CustomerEmail, [new Claim(ClaimTypes.Role, (admin ? UserProfile.Administrator : UserProfile.Customer).ToString())])));
                 services.Replace(ServiceDescriptor.Scoped<IRequestMetadataProvider>(
                     _ => new TestRequestMetadataProvider("203.0.113.10", "iPhone 15 / iOS 17.4", "device-1")));
-                services.Replace(ServiceDescriptor.Scoped<ICancellationPolicyResolver>(sp => new PaidWhileCancelling(
-                    ActivatorUtilities.CreateInstance<CancellationPolicyResolver>(sp), PayOnceAsync)));
+                if (admin)
+                    services.Replace(ServiceDescriptor.Scoped<IExpressWaiverConsumer>(sp => new PaidAtWaiverRelease(
+                        ActivatorUtilities.CreateInstance<ExpressWaiverConsumer>(sp), PayOnceAsync)));
+                else
+                    services.Replace(ServiceDescriptor.Scoped<ICancellationPolicyResolver>(sp => new PaidWhileCancelling(
+                        ActivatorUtilities.CreateInstance<CancellationPolicyResolver>(sp), PayOnceAsync)));
                 return Task.CompletedTask;
             },
             arrange: (CleansiaDbContext _) => SeedAsync(),
-            act: provider => Record.ExceptionAsync(() => provider.GetRequiredService<IMediator>()
-                .Send(new CancelOrder.Command(OrderId, Reason: "changed my mind"))),
+            act: provider => Record.ExceptionAsync(async () =>
+            {
+                var mediator = provider.GetRequiredService<IMediator>();
+                if (admin) await mediator.Send(new AdminCancelOrder.Command(OrderId, Reason: "platform issue"));
+                else await mediator.Send(new CancelOrder.Command(OrderId, Reason: "changed my mind"));
+            }),
             assert: async (CleansiaDbContext context, Exception? refused) =>
             {
                 var order = await context.Orders.IgnoreQueryFilters().AsNoTracking()
                     .Include(o => o.OrderStatusHistory)
                     .SingleAsync(o => o.Id == OrderId);
-                Assert.Equal((PaymentStatus.Paid, OrderStatus.New), (order.PaymentStatus, order.CurrentStatus));
-                Assert.DoesNotContain(order.OrderStatusHistory, t => t.Status == OrderStatus.Cancelled);
                 var account = await context.CreditAccounts.IgnoreQueryFilters().AsNoTracking()
                     .Include(a => a.Transactions)
                     .SingleAsync(a => a.UserId == _customerId && a.CurrencyId == CzkId);
-                Assert.DoesNotContain(account.Transactions, t => t.IdempotencyKey == ReturnKey);
-                Assert.Equal(0m, account.Balance);
-                Assert.Equal(account.Balance, account.Transactions.Sum(t => t.Amount));
-
-                Assert.True(_paid);
-                Assert.IsType<DbUpdateConcurrencyException>(refused);
+                var hasNotice = await context.Set<UserNotification>().IgnoreQueryFilters().AnyAsync();
+                var hasIntent = await context.OutboxMessages.IgnoreQueryFilters().AnyAsync();
+                var rerunCancelled = await RerunCheckoutSweepAsync();
+                Assert.Multiple(
+                    () => Assert.Equal((PaymentStatus.Paid, OrderStatus.New), (order.PaymentStatus, order.CurrentStatus)),
+                    () => Assert.DoesNotContain(order.OrderStatusHistory, t => t.Status == OrderStatus.Cancelled),
+                    () => Assert.DoesNotContain(account.Transactions, t => t.IdempotencyKey == ReturnKey),
+                    () => Assert.Equal(0m, account.Balance),
+                    () => Assert.Equal(account.Balance, account.Transactions.Sum(t => t.Amount)),
+                    () => Assert.False(hasNotice),
+                    () => Assert.False(hasIntent),
+                    () => Assert.Equal(0, rerunCancelled),
+                    () => Assert.True(_paid),
+                    () => Assert.IsType<DbUpdateConcurrencyException>(refused));
             },
             transactional: false);
+    }
+
+    private async Task<int> RerunCheckoutSweepAsync()
+    {
+        await using var ctx = NewContext();
+        var tenant = new FixedTenantProvider(TestTenants.Default);
+        var pending = new OutboxPendingDispatch(ctx);
+        var producer = new NotificationProducer(new UserNotificationRepository(ctx), pending, new UserRepository(ctx),
+            NullLogger<NotificationProducer>.Instance);
+        var sweep = new CleanupStalePendingOrders.Handler(new OrderRepository(ctx), new CreditAccountRepository(ctx), producer,
+            new GuestOrderAccessTokenIssuer(new GuestOrderAccessTokenRepository(ctx)), pending, tenant, ctx,
+            NullLogger<CleanupStalePendingOrders.Handler>.Instance);
+        return (await sweep.Handle(new CleanupStalePendingOrders.Command(), CancellationToken.None)).Value!.CancelledCount;
+    }
+
+    private sealed class PaidAtWaiverRelease(IExpressWaiverConsumer inner, Func<Task> pay) : IExpressWaiverConsumer
+    {
+        public Task<ExpressWaiver> ResolveAsync(string? userId, DateTime? cleaningUtc, DateTime nowUtc,
+            CancellationToken ct) => inner.ResolveAsync(userId, cleaningUtc, nowUtc, ct);
+        public Task<MembershipBenefitUsage?> TryReserveAsync(ExpressWaiver waiver, DateTime nowUtc,
+            CancellationToken ct) => inner.TryReserveAsync(waiver, nowUtc, ct);
+        public Task AttachOrderAsync(MembershipBenefitUsage reservation, string orderId, CancellationToken ct) =>
+            inner.AttachOrderAsync(reservation, orderId, ct);
+        public Task<bool> WouldForfeitOnCustomerCancelAsync(string orderId, bool hasAssignedEmployee, CancellationToken ct) =>
+            inner.WouldForfeitOnCustomerCancelAsync(orderId, hasAssignedEmployee, ct);
+        public async Task<bool> ReleaseForOrderAsync(string orderId, CancellationToken ct)
+        { await pay(); return await inner.ReleaseForOrderAsync(orderId, ct); }
     }
 
     private CleansiaDbContext NewContext() =>
@@ -106,7 +163,7 @@ public class CustomerCancelRacingPaymentTests(PostgresContainerFixture fixture) 
 
         await using (var ctx = NewContext())
         {
-            var account = await new CreditAccountRepository(ctx).EnsureForUserAsync(_customerId, CzkId, CancellationToken.None);
+            var account = await new CreditAccountRepository(ctx).EnsureForUserIgnoringTenantAsync(_customerId, CzkId, CancellationToken.None);
             account!.Issue(Credit, CreditTransactionReason.Goodwill, "seed-grant", "seed", note: "n");
 
             var order = Order.Create(
@@ -127,7 +184,10 @@ public class CustomerCancelRacingPaymentTests(PostgresContainerFixture fixture) 
             order.SetMaxEmployees(1);
             order.ApplyCredit(Credit, _customerId);
             order.AddOrderStatus(OrderStatusTrack.Create(OrderStatus.New, order));
+            order.Created("seed", DateTimeOffset.UtcNow.AddHours(-2));
             ctx.Orders.Add(order);
+            ctx.LiveActivityTokens.Add(LiveActivityToken.Create(_customerId, "push-start-install", null,
+                "positive-push-to-start-token", TestTenants.Default));
             await ctx.CommitAsync(CancellationToken.None);
 
             Assert.True(await new CreditAccountRepository(ctx).TryDebitAsync(

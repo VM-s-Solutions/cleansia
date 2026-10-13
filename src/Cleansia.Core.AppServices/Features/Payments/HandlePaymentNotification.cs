@@ -324,7 +324,7 @@ public class HandlePaymentNotification
             if (!string.IsNullOrEmpty(order.TenantId)
                 && order.PaymentStatus == PaymentStatus.Pending
                 && order.CurrentStatus != OrderStatus.Cancelled
-                && !await userNotificationRepository.AnyForEventAsync(
+                && !await userNotificationRepository.AnyForEventIgnoringTenantAsync(
                     order.TenantId, AdminNotificationEventCatalog.PaymentFailed, "orderId", order.Id, cancellationToken))
             {
                 await adminNotifier.NotifyAsync(
@@ -423,9 +423,10 @@ public class HandlePaymentNotification
             // is New + Pending, the browse gate refuses it, and CleanupStalePendingOrders cancels it an
             // hour later. Runs after the terminal-state short-circuit, so a Stripe redelivery cannot
             // produce a second announcement.
+            var offerableAtUtc = DateTime.UtcNow;
             await PreferredOfferNotifier.NotifyBecameOfferableAsync(
-                order, preferredCleanerHoldResolver, notificationProducer, DateTime.UtcNow, cancellationToken);
-            await NewOrderAdminNotifier.NotifyIfOfferableAsync(order, adminNotifier, logger, cancellationToken);
+                order, preferredCleanerHoldResolver, notificationProducer, offerableAtUtc, cancellationToken);
+            await NewOrderAdminNotifier.NotifyIfOfferableAsync(order, adminNotifier, logger, offerableAtUtc, cancellationToken);
 
             logger.LogInformation("Successfully processed payment webhook for order {OrderId}", orderId);
             return BusinessResult.Success();

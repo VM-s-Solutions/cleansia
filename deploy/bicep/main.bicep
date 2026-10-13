@@ -528,7 +528,7 @@ var sendGridSettings = {
 // timer is added without a matching key here.
 var cronSettings = {
   MaterializeRecurringBookingsCron: '0 0 2 * * *'
-  SendRecurringOrderRemindersCron: '0 30 2 * * *'
+  SendRecurringOrderRemindersCron: '0 30 * * * *'
   SendPreCleaningRemindersCron: '0 */5 * * * *'
   SendCleanerJobRemindersCron: '0 */5 * * * *'
   SendTomorrowJobDigestCron: '0 0 * * * *'

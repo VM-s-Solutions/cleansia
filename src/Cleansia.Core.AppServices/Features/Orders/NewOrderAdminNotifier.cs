@@ -21,9 +21,10 @@ public static class NewOrderAdminNotifier
         Order order,
         IAdminNotifier adminNotifier,
         ILogger logger,
+        DateTime nowUtc,
         CancellationToken cancellationToken)
     {
-        if (!OrderAvailability.IsOfferable(order))
+        if (!OrderAvailability.IsOfferable(order, nowUtc))
         {
             return Task.CompletedTask;
         }

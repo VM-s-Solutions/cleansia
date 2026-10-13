@@ -59,7 +59,7 @@ public class CancelOrderStandardTierFeeTests
         // No active membership → the resolver returns the standard absolute 24h window, the value the
         // handler passes as freeCancellationHoursOverride for every non-member.
         _membershipRepository
-            .Setup(r => r.GetEntitledForUserNoTrackingAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .Setup(r => r.GetEntitledForUserNoTrackingIgnoringTenantAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync((UserMembership?)null);
         _refundService
             .Setup(s => s.IssueRefundAsync(It.IsAny<RefundRequest>(), It.IsAny<CancellationToken>()))
@@ -272,7 +272,7 @@ public class CancelOrderStandardTierFeeTests
         Assert.Null(result.Value.ActualRefundAmount);
         Assert.Equal(0m, order.CancellationRefundAmount);
         _refundService.Verify(s => s.IssueRefundAsync(It.IsAny<RefundRequest>(), It.IsAny<CancellationToken>()), Times.Never);
-        _creditAccountRepository.Verify(r => r.TryReturnAsync(
+        _creditAccountRepository.Verify(r => r.TryReturnIgnoringTenantAsync(
             It.IsAny<string>(), It.IsAny<string>(), It.IsAny<decimal>(), It.IsAny<string>(), It.IsAny<string>(),
             It.IsAny<CancellationToken>(), It.IsAny<string?>(), It.IsAny<string?>()), Times.Never);
     }

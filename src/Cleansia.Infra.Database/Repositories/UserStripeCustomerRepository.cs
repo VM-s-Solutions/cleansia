@@ -20,7 +20,7 @@ public class UserStripeCustomerRepository(CleansiaDbContext context)
             .AnyAsync(c => c.StripeCustomerId == stripeCustomerId, cancellationToken);
     }
 
-    public async Task RemoveForUserAsync(string userId, CancellationToken cancellationToken)
+    public async Task RemoveForUserIgnoringTenantAsync(string userId, CancellationToken cancellationToken)
     {
         var rows = await GetDbSet().IgnoreQueryFilters().Where(c => c.UserId == userId).ToListAsync(cancellationToken);
         GetDbSet().RemoveRange(rows);

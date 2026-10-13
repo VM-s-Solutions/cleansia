@@ -75,9 +75,9 @@ dispute or an account-takeover claim can be answered from the record rather than
   tenant filter — decisive when a validator named a known account on an anonymous request, a no-op for
   a signed-in subject whose claim is that operator already; a row naming nobody keeps the ambient stamp.
   A refusal raised before any operator exists cannot be stamped and is skipped with one warning.
-- **`ICustomerActionAuditRepository`** — `Add`, reads, **`PseudonymiseForSubjectAsync`** (the erasure:
+- **`ICustomerActionAuditRepository`** — `Add`, reads, **`PseudonymiseForSubjectIgnoringTenantAsync`** (the erasure:
   a tracked, tenant-ignoring load and `Pseudonymise()` on each row, riding the erasure's single commit —
-  never `ExecuteUpdateAsync`, which would commit outside it), **`PseudonymiseGuestRowsForOrdersAsync(orderIds)`**
+  never `ExecuteUpdateAsync`, which would commit outside it), **`PseudonymiseGuestRowsForOrdersIgnoringTenantAsync(orderIds)`**
   (the erasure's second sanctioned `Pseudonymise` caller, owner ruling 2026-09-15: the rows with no
   user, resource `Order` and an id among the subject's orders — the guest bookings placed with the
   account's e-mail; a row sharing the id under another resource type is untouched) and

@@ -175,7 +175,7 @@ public class ExpressSurchargeDiscountCompositionTests
                 It.IsAny<string>(), It.IsAny<decimal>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(new TierDiscountResult(tierDiscount, LoyaltyTier.GoldPolisher));
         _userMembershipRepository
-            .Setup(r => r.GetEntitledForUserAsync(UserId, It.IsAny<CancellationToken>()))
+            .Setup(r => r.GetEntitledForUserIgnoringTenantAsync(UserId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(hasPlus ? ActiveMembership(PlusPercentage) : null);
 
         var factory = new OrderFactory(
@@ -254,7 +254,7 @@ public class ExpressSurchargeDiscountCompositionTests
 
         var membershipRepository = new Mock<IUserMembershipRepository>();
         membershipRepository
-            .Setup(r => r.GetEntitledForUserAsync(UserId, It.IsAny<CancellationToken>()))
+            .Setup(r => r.GetEntitledForUserIgnoringTenantAsync(UserId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(ActiveMembership(plusPercentage));
 
         var handler = new QuoteOrder.Handler(

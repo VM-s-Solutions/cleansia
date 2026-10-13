@@ -1080,7 +1080,6 @@ still ride the group's commit):
 
 | Job | Where |
 |---|---|
-| `SendTomorrowJobDigest` | `SendTomorrowJobDigest.cs:138-153` |
 | `PayPeriodBackgroundService` | `PayPeriodBackgroundService.cs:156-172`, closing each period |
 
 **Not deviations, and this is a ruling rather than an omission:** `CleanupStalePendingOrders` commits once per

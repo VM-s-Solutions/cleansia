@@ -1125,6 +1125,9 @@ need backfilling.
   A fresh tick can retry inside its existing window; an earlier company's completed batch remains.
   (T-0866)
 
+- **Cleaner — a failed tomorrow-digest batch saves no partial current-company stamps.**
+  A fresh tick can retry within the existing three-hour catch-up window. (T-0867)
+
 - **Customer — a signed-in booking uses your account e-mail.** The web form shows that address
   read-only, and the server keeps it even if a request supplies another address. Guest contact
   details and booking names and phone numbers retain their existing rules. (T-0853)

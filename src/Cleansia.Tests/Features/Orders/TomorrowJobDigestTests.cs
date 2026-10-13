@@ -48,7 +48,7 @@ public class TomorrowJobDigestTests
         _producer.Object,
         _tenantProvider.Object,
         _unitOfWork.Object,
-        NullLogger<SendTomorrowJobDigest.Handler>.Instance);
+        NullLogger<SendTomorrowJobDigest.Handler>.Instance, TimeProvider.System);
 
     private Employee ArrangeCleaner(
         string? workCountryId = CountryId,

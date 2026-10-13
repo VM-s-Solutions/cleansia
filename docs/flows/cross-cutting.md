@@ -57,9 +57,9 @@ company at once, as `CleanupStalePendingOrders` does, keeps the plain shape, wit
 
 **A staging-only batch can fail as a batch.** Membership lifecycle notices use the command pipeline's
 whole-tick commit: a renewal or cancellation staging failure escapes, so none of that tick's unsaved
-stamps, feed rows or push envelopes lands. Pre-cleaning reminders, lapsed preferred offers and cleaner job reminders keep their
-existing company commits; a staging failure ends the tick before the current company's
-commit, while an earlier company's committed effects remain.
+stamps, feed rows or push envelopes lands. Pre-cleaning reminders, lapsed preferred offers, cleaner
+job reminders and tomorrow digests keep their existing company commits; a staging failure ends the
+tick before the current company's commit, while an earlier company's committed effects remain.
 Account preferred-offer notices are awaited before the lapse stamp is staged; guests still only get
 the stamp. Fresh retries require the original eligibility window to remain open. Repeated poison or
 a failure near its lower edge can still cost a notice; these changes widen no window or attempt cap.

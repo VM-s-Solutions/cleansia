@@ -1,5 +1,6 @@
 using Cleansia.Core.AppServices.Features.Orders;
 using System.Security.Claims;
+using System.Globalization;
 using Cleansia.Core.AppServices.Authentication;
 using Cleansia.Core.AppServices.Features.EmployeePayroll;
 using Cleansia.Core.AppServices.Features.EmployeePayroll.DTOs;
@@ -126,6 +127,117 @@ public class InvoiceListCurrencyScopeTests(PostgresContainerFixture fixture) : B
 
                 return Task.CompletedTask;
             });
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task No_Sort_Lists_Newest_Invoices_First_With_An_Id_Tie_Break(bool emptySort)
+    {
+        await AssertOrderedPagesAsync(
+            emptySort ? [] : null,
+            ["invoice-sort-c", "invoice-sort-a", "invoice-sort-b", "invoice-sort-d"]);
+    }
+
+    [Theory]
+    [InlineData(SortDirection.Descending)]
+    [InlineData(SortDirection.Ascending)]
+    public async Task A_GeneratedAt_Sort_Uses_Id_To_Keep_Equal_Timestamps_On_Stable_Pages(SortDirection direction)
+    {
+        await AssertOrderedPagesAsync(
+            [new SortDefinition("generatedAt", direction)],
+            direction == SortDirection.Descending
+                ? ["invoice-sort-c", "invoice-sort-a", "invoice-sort-b", "invoice-sort-d"]
+                : ["invoice-sort-d", "invoice-sort-b", "invoice-sort-c", "invoice-sort-a"]);
+    }
+
+    [Theory]
+    [InlineData("id", SortDirection.Ascending)]
+    [InlineData("Id", SortDirection.Ascending)]
+    [InlineData("ID", SortDirection.Ascending)]
+    [InlineData("id", SortDirection.Descending)]
+    [InlineData("Id", SortDirection.Descending)]
+    [InlineData("ID", SortDirection.Descending)]
+    public async Task An_Explicit_Id_Sort_Honors_Its_Direction_In_Turkish_Culture(string field, SortDirection direction)
+    {
+        var previousCulture = CultureInfo.CurrentCulture;
+        try
+        {
+            CultureInfo.CurrentCulture = CultureInfo.GetCultureInfo("tr-TR");
+            await AssertOrderedPagesAsync(
+                [new SortDefinition(field, direction)],
+                direction == SortDirection.Ascending
+                    ? ["invoice-sort-a", "invoice-sort-b", "invoice-sort-c", "invoice-sort-d"]
+                    : ["invoice-sort-d", "invoice-sort-c", "invoice-sort-b", "invoice-sort-a"]);
+        }
+        finally
+        {
+            CultureInfo.CurrentCulture = previousCulture;
+        }
+    }
+
+    [Fact]
+    public async Task An_Amount_Sort_Keeps_Currency_First_And_Breaks_Equal_Amounts_By_Id()
+    {
+        await AssertOrderedPagesAsync(
+            [new SortDefinition("totalAmount", SortDirection.Descending)],
+            ["invoice-sort-c", "invoice-sort-a", "invoice-sort-d", "invoice-sort-b"]);
+    }
+
+    private async Task AssertOrderedPagesAsync(IEnumerable<SortDefinition>? sort, string[] expectedIds)
+    {
+        await TestMethod(
+            setup: ReplaceWithAdminSession,
+            arrange: SeedOrderedInvoicesAsync,
+            act: async provider =>
+            {
+                var mediator = provider.GetRequiredService<IMediator>();
+                var first = await mediator.Send(new GetPagedInvoices.Request { Sort = sort, Limit = 2 });
+                var second = await mediator.Send(new GetPagedInvoices.Request { Sort = sort, Offset = 2, Limit = 2 });
+                return (First: first, Second: second);
+            },
+            assert: (CleansiaDbContext _, (PagedData<EmployeeInvoiceDto> First, PagedData<EmployeeInvoiceDto> Second) pages) =>
+            {
+                Assert.Equal(4, pages.First.Total);
+                Assert.Equal(4, pages.Second.Total);
+                var ids = pages.First.Data!.Concat(pages.Second.Data!).Select(invoice => invoice.Id).ToArray();
+                Assert.Equal(expectedIds, ids);
+                Assert.Equal(4, ids.Distinct().Count());
+                return Task.CompletedTask;
+            });
+    }
+
+    private static async Task SeedOrderedInvoicesAsync(CleansiaDbContext context)
+    {
+        var czk = Currency.Create("CZK", "Kč", "Czech koruna");
+        czk.Id = CzkId;
+        var eur = Currency.Create("EUR", "€", "Euro");
+        eur.Id = EurId;
+        var user = User.CreateWithPassword(
+            "invoice-sort@cleansia.test", "12345678Test!", "Invoice", "Sort", UserProfile.Employee);
+        var employee = Employee.CreateWithUser(user);
+        context.AddRange(czk, eur, user, employee, Language.Create("en", "English"));
+
+        var oldest = new DateTime(2026, 3, 1, 12, 0, 0, DateTimeKind.Utc);
+        var invoices = new[]
+        {
+            (Id: "invoice-sort-d", GeneratedAt: oldest, Currency: EurId, Amount: 1000m),
+            (Id: "invoice-sort-a", GeneratedAt: oldest.AddDays(2), Currency: CzkId, Amount: 30m),
+            (Id: "invoice-sort-c", GeneratedAt: oldest.AddDays(2), Currency: CzkId, Amount: 30m),
+            (Id: "invoice-sort-b", GeneratedAt: oldest.AddDays(1), Currency: EurId, Amount: 1000m),
+        };
+        for (var index = 0; index < invoices.Length; index++)
+        {
+            var row = invoices[index];
+            var period = PayPeriod.CreateBiWeekly(new DateOnly(2026, 3, 1).AddDays(index * PayPeriod.LengthInDays));
+            var invoice = EmployeeInvoice.Create(
+                employee.Id, period.Id, 1, row.Amount, row.Currency, $"26000002{index:D2}",
+                PayrollMockFactory.NextTestInvoiceNumber());
+            invoice.Id = row.Id;
+            context.AddRange(period, invoice);
+            context.Entry(invoice).Property(i => i.GeneratedAt).CurrentValue = row.GeneratedAt;
+        }
+        await context.CommitAsync(CancellationToken.None);
     }
 
     private static Task ReplaceWithAdminSession(IServiceCollection services)

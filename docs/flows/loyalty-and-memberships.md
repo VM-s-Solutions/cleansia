@@ -180,7 +180,7 @@ seeded plans, set per plan by an administrator, `0` for none. It flows like this
 3. **The trial.** Stripe reports `trialing`; the platform holds it as `Active` and mirrors `trial_end`
    into `UserMembership.TrialEndsAtUtc`, from the subscribe result and from the webhook — which never
    clears it, since a dunning event carries no trial end and clearing it would hand out a second trial.
-   The entitlement predicate (`UserMembershipRepository.EntitledForUserQuery`) asks only `Active`
+   The entitlement predicate (`UserMembershipRepository.EntitledForUserIgnoringTenantQuery`) asks only `Active`
    inside the period, so the discount, both cancellation windows, the 60-minute oops window, the
    waiver quota, recurring schedules and the preferred cleaner all apply from day one. `PastDue`,
    `Paused`, `Cancelled` and an elapsed period stay refused. While `trialEndsAtUtc` is in the future

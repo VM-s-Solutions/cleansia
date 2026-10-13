@@ -40,7 +40,7 @@ public static class CleanerNoShow
         CancellationToken cancellationToken)
     {
         if (string.IsNullOrEmpty(order.TenantId)
-            || await userNotificationRepository.AnyForEventAsync(
+            || await userNotificationRepository.AnyForEventIgnoringTenantAsync(
                 order.TenantId, AdminNotificationEventCatalog.OrderCleanerNotStarted, "orderId", order.Id,
                 cancellationToken))
         {

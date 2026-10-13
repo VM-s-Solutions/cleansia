@@ -50,9 +50,10 @@ public interface IMembershipBenefitUsageRepository : IRepository<MembershipBenef
 
     /// <summary>
     /// The live slot attached to <paramref name="orderId"/>, tracked, or <c>null</c>. Drives the release
-    /// hooks and the cancel-confirmation disclosure.
+    /// hooks and the cancel-confirmation disclosure. Caller obligation: orderId names the authorized
+    /// or swept order, and benefitKind is the fixed benefit being released or disclosed.
     /// </summary>
-    Task<MembershipBenefitUsage?> GetLiveByOrderIdAsync(
+    Task<MembershipBenefitUsage?> GetLiveByOrderIdIgnoringTenantAsync(
         string orderId,
         MembershipBenefitKind benefitKind,
         CancellationToken cancellationToken);

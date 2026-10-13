@@ -278,7 +278,7 @@ public class CleanerReminderSweepTests
         _orderRepository.Setup(r => r.GetQueryableIgnoringTenant())
             .Returns(new[] { due, early, started, raised }.AsQueryable().BuildMock());
         _userNotifications
-            .Setup(r => r.AnyForEventAsync(
+            .Setup(r => r.AnyForEventIgnoringTenantAsync(
                 "tenant-a", AdminNotificationEventCatalog.OrderCleanerNotStarted, "orderId", raised.Id,
                 It.IsAny<CancellationToken>()))
             .ReturnsAsync(true);

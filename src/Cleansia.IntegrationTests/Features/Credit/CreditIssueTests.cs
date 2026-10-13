@@ -82,7 +82,7 @@ public class CreditIssueTests(PostgresContainerFixture fixture) : BaseIntegratio
         await using (var ctx = NewContext())
         {
             var repo = new CreditAccountRepository(ctx);
-            var account = await repo.EnsureForUserAsync(userId, currencyId, CancellationToken.None);
+            var account = await repo.EnsureForUserIgnoringTenantAsync(userId, currencyId, CancellationToken.None);
             account.Issue(500m, CreditTransactionReason.Goodwill, "grant-1", ActorId,
                 note: "Second clean in a row went wrong.");
             await ctx.CommitAsync(CancellationToken.None);
@@ -92,7 +92,7 @@ public class CreditIssueTests(PostgresContainerFixture fixture) : BaseIntegratio
     }
 
     /// <summary>
-    /// A second grant lands on the SAME account. EnsureForUserAsync finding an existing row rather
+    /// A second grant lands on the SAME account. EnsureForUserIgnoringTenantAsync finding an existing row rather
     /// than opening a second one is what keeps <c>GetSpendableAsync</c>'s single-row read honest.
     /// </summary>
     [Fact]
@@ -105,7 +105,7 @@ public class CreditIssueTests(PostgresContainerFixture fixture) : BaseIntegratio
         {
             await using var ctx = NewContext();
             var repo = new CreditAccountRepository(ctx);
-            var account = await repo.EnsureForUserAsync(userId, currencyId, CancellationToken.None);
+            var account = await repo.EnsureForUserIgnoringTenantAsync(userId, currencyId, CancellationToken.None);
             account.Issue(amount, CreditTransactionReason.Goodwill, key, ActorId, note: "n");
             await ctx.CommitAsync(CancellationToken.None);
         }
@@ -134,7 +134,7 @@ public class CreditIssueTests(PostgresContainerFixture fixture) : BaseIntegratio
         await using (var first = NewContext())
         {
             var repo = new CreditAccountRepository(first);
-            var account = await repo.EnsureForUserAsync(userId, currencyId, CancellationToken.None);
+            var account = await repo.EnsureForUserIgnoringTenantAsync(userId, currencyId, CancellationToken.None);
             account.Issue(500m, CreditTransactionReason.Goodwill, "same-token", ActorId, note: "n");
             await first.CommitAsync(CancellationToken.None);
         }
@@ -142,7 +142,7 @@ public class CreditIssueTests(PostgresContainerFixture fixture) : BaseIntegratio
         await using (var replay = NewContext())
         {
             var repo = new CreditAccountRepository(replay);
-            var account = await repo.EnsureForUserAsync(userId, currencyId, CancellationToken.None);
+            var account = await repo.EnsureForUserIgnoringTenantAsync(userId, currencyId, CancellationToken.None);
             account.Issue(500m, CreditTransactionReason.Goodwill, "same-token", ActorId, note: "n");
             await Assert.ThrowsAsync<DbUpdateException>(
                 () => replay.CommitAsync(CancellationToken.None));
@@ -165,7 +165,7 @@ public class CreditIssueTests(PostgresContainerFixture fixture) : BaseIntegratio
         await using (var ctx = NewContext())
         {
             var repo = new CreditAccountRepository(ctx);
-            var account = await repo.EnsureForUserAsync(userId, currencyId, CancellationToken.None);
+            var account = await repo.EnsureForUserIgnoringTenantAsync(userId, currencyId, CancellationToken.None);
             account.Issue(800m, CreditTransactionReason.DisputeSettlement, "grant-1", ActorId, note: "n");
             await ctx.CommitAsync(CancellationToken.None);
             accountId = account.Id;

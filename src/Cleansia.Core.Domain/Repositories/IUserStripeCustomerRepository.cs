@@ -10,5 +10,5 @@ public interface IUserStripeCustomerRepository : IRepository<UserStripeCustomer,
     Task<bool> IsStripeCustomerIdClaimedAsync(string stripeCustomerId, CancellationToken cancellationToken);
 
     /// <summary>Erasure: the rows go with the legacy field <c>User.Anonymize</c> clears. Loaded and removed inside the caller's unit of work.</summary>
-    Task RemoveForUserAsync(string userId, CancellationToken cancellationToken);
+    Task RemoveForUserIgnoringTenantAsync(string userId, CancellationToken cancellationToken);
 }

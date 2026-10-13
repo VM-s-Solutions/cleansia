@@ -172,6 +172,7 @@ export default withMermaid(
               { text: "ADR-0073 — The order-ending credit return joins the commit that ends the order", link: '/decisions/adr-0073' },
               { text: "ADR-0074 — The slot-busy set read reads every company, and its name says so", link: '/decisions/adr-0074' },
               { text: "ADR-0075 — The mobile contract states a query sort the way the server binds it", link: '/decisions/adr-0075' },
+              { text: "ADR-0076 — An open cleaning seat stops at its booked slot end", link: '/decisions/adr-0076' },
             ],
           },
         ],

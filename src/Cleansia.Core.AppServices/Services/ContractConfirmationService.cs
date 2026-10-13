@@ -93,7 +93,7 @@ public sealed class ContractConfirmationService(
         var document = (await legalDocumentRepository.GetByTextIdWithTextsAsync(acceptance.LegalDocumentTextId, cancellationToken))!;
         var text = document.Texts.First(t => t.Id == acceptance.LegalDocumentTextId);
         var company = acceptance.TenantId is { } operatorTenantId
-            ? await companyInfoRepository.GetActiveForOperatorAsync(operatorTenantId, facts.CountryId, cancellationToken)
+            ? await companyInfoRepository.GetActiveForOperatorIgnoringTenantAsync(operatorTenantId, facts.CountryId, cancellationToken)
             : null;
 
         var placeholders = LegalMarkdownRenderer.MarketPlaceholders(market: null, company);

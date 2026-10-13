@@ -56,7 +56,7 @@ public class PreferredCleanerCurrencyGateTests
     {
         _session.Setup(s => s.GetUserId()).Returns(UserId);
         _membershipRepository
-            .Setup(r => r.GetEntitledForUserNoTrackingAsync(UserId, It.IsAny<CancellationToken>()))
+            .Setup(r => r.GetEntitledForUserNoTrackingIgnoringTenantAsync(UserId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(ActiveMembership());
         foreach (var served in new[] { CzkCleanerId, EurCleanerId })
         {

@@ -339,8 +339,8 @@ public class GdprDeletionService(
             // FK to the document is Restrict, so a surviving request does not leave a stray row — it
             // makes this whole erasure throw. They carry the subject's own words besides, in the reason
             // they wrote, so they could not be kept even if the FK allowed it.
-            await documentDeletionRequestRepository.RemoveForEmployeeAsync(user.Employee.Id, ct);
-            await employeeDocumentRepository.RemoveForEmployeeAsync(user.Employee.Id, ct);
+            await documentDeletionRequestRepository.RemoveForEmployeeIgnoringTenantAsync(user.Employee.Id, ct);
+            await employeeDocumentRepository.RemoveForEmployeeIgnoringTenantAsync(user.Employee.Id, ct);
         }
 
         // The account's own orders AND the guest bookings under its e-mail (owner ruling 2026-09-15), read
@@ -402,7 +402,7 @@ public class GdprDeletionService(
             .DistinctBy(a => a.Id).ToList();
 
         // These subject-owned references are all removed or replaced before the same commit.
-        var sharedAddressIds = await addressRepository.GetReferencedElsewhereAsync(
+        var sharedAddressIds = await addressRepository.GetReferencedElsewhereIgnoringTenantAsync(
             sourceAddresses.Select(a => a.Id).ToList(), customerOrderIds,
             savedAddresses.Select(s => s.Id).ToList(), user.Employee?.Id, ct);
 
@@ -426,13 +426,13 @@ public class GdprDeletionService(
         // Every device row, not the active ones: logout soft-deletes a device and leaves the row present so
         // a later login can reclaim the tombstone, and the stale-device retention sweep reaches a tombstone
         // only ninety days after the logout — an erasure does not wait for it.
-        await deviceRepository.RemoveForSubjectAsync(user.Id, ct);
+        await deviceRepository.RemoveForSubjectIgnoringTenantAsync(user.Id, ct);
 
         // The same handset's other APNs address. ADR-0029 D3 keeps activity registrations off the Device
         // aggregate, so nothing above reaches them: the sweeps that do (the 24h janitor, the logout/revoke
         // cascade) cover order-scoped rows and live sessions, and an erased account has neither — leaving
         // the per-install push-to-start row with no reaper at all.
-        await liveActivityTokenRepository.RemoveForSubjectAsync(user.Id, ct);
+        await liveActivityTokenRepository.RemoveForSubjectIgnoringTenantAsync(user.Id, ct);
 
         var notifications = await userNotificationRepository
             .GetFiltered(n => n.UserId == user.Id)
@@ -441,11 +441,11 @@ public class GdprDeletionService(
 
         // Id-keyed for the same reason the payout row below is: a poisoned send-email body holds the
         // subject's address and real name verbatim, and its row has no navigation to a user at all.
-        await deadLetterRepository.RemoveForSubjectAsync(user.Id, ct);
+        await deadLetterRepository.RemoveForSubjectIgnoringTenantAsync(user.Id, ct);
 
         // The same wire body one table over, before it poisons anything: an undrained or retry-exhausted
         // send-email outbox row holds the address and real name just as verbatim, and no prune reaches it.
-        await outboxMessageRepository.RemoveForSubjectAsync(user.Id, ct);
+        await outboxMessageRepository.RemoveForSubjectIgnoringTenantAsync(user.Id, ct);
 
         // Not a session cut — the refresh path already refuses a deactivated user — but a retention start.
         // RefreshTokenCleanupService hard-deletes only tokens that are revoked OR expired, so an untouched
@@ -506,7 +506,7 @@ public class GdprDeletionService(
                 pay.Anonymize();
         }
 
-        var templates = await recurringBookingTemplateRepository.GetByUserAsync(user.Id, ct);
+        var templates = await recurringBookingTemplateRepository.GetByUserIgnoringTenantAsync(user.Id, ct);
         recurringBookingTemplateRepository.RemoveRange(templates);
 
         if (user.Employee is not null)
@@ -525,8 +525,8 @@ public class GdprDeletionService(
             // The contract records stay with their orders (the subject handle is a bare id the
             // anonymised Employee row keeps); the IP, device label and device id on each are blanked
             // in this same commit, the way the customer's own audit rows are below.
-            await workContractAcceptanceRepository.PseudonymiseForEmployeeAsync(user.Employee.Id, ct);
-            await cleanerLegalDocumentAcceptanceRepository.PseudonymiseForEmployeeAsync(user.Employee.Id, ct);
+            await workContractAcceptanceRepository.PseudonymiseForEmployeeIgnoringTenantAsync(user.Employee.Id, ct);
+            await cleanerLegalDocumentAcceptanceRepository.PseudonymiseForEmployeeIgnoringTenantAsync(user.Employee.Id, ct);
 
             user.Employee.Anonymize();
             if (user.Employee.Address is { } address)
@@ -546,8 +546,8 @@ public class GdprDeletionService(
 
         // The per-currency Stripe Customer ids go with the legacy one Anonymize() clears, and the cards
         // saved on them with them.
-        await userStripeCustomerRepository.RemoveForUserAsync(user.Id, ct);
-        await savedCardRepository.RemoveForUserAsync(user.Id, ct);
+        await userStripeCustomerRepository.RemoveForUserIgnoringTenantAsync(user.Id, ct);
+        await savedCardRepository.RemoveForUserIgnoringTenantAsync(user.Id, ct);
 
         // The customer's own conduct record stays for defence of claims (ADR-0062 D5) — the subject id is
         // pseudonymous once the User row below is anonymized — but the IP address, device label and
@@ -556,8 +556,8 @@ public class GdprDeletionService(
         // blanked trail for a customer who still exists. The guest rows are the same person one step
         // removed: a booking placed with the account's e-mail carries no UserId, only the order id, and
         // that order is one of the subject's.
-        await customerActionAuditRepository.PseudonymiseForSubjectAsync(user.Id, ct);
-        await customerActionAuditRepository.PseudonymiseGuestRowsForOrdersAsync(customerOrderIds, ct);
+        await customerActionAuditRepository.PseudonymiseForSubjectIgnoringTenantAsync(user.Id, ct);
+        await customerActionAuditRepository.PseudonymiseGuestRowsForOrdersIgnoringTenantAsync(customerOrderIds, ct);
 
         user.Anonymize();
         user.Deactivated(deactivationReason, DateTimeOffset.UtcNow);

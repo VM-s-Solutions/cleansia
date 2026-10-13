@@ -166,7 +166,7 @@ per logical event across requests (an order id for "became offerable", a release
 no order is announced to every company in turn — the request id plus the day for a failed
 erasure retry, the run instant to the tick for a wind-down run). The two sites that can raise one
 logical event twice — a repeated card decline on one order, two overlapping archive builds of one
-frozen company — read the feed first (`AnyForEventAsync`, a jsonb containment on the row's args by
+frozen company — read the feed first (`AnyForEventIgnoringTenantAsync`, a jsonb containment on the row's args by
 company and key) and stay silent when a row already says so. A job with no ambient tenant (the daily
 erasure retry) opens a scope of its own, sets the override, calls the notifier and commits there, so a
 discarded failing walk cannot take the notice with it. → [Admin notifier](/domain/roles/admin-notifier)
@@ -249,3 +249,23 @@ row**. The alert is deliberately **not** widened to carry the body as a last-cop
 
 Persisting fails when the database does, which is not an independent per-message coin flip: every
 poisoned message in that window takes this branch at once. This is the burst case, not the singleton.
+
+
+## Independent credit returns {#credit-returns}
+
+The return seam writes a balance and its ledger in its own transaction when no transaction is already
+open. Three paths deliberately use it: a booking's failed-dispatch compensation, a confirmed refund's
+credit share, and a pending refund's credit leg after its cancellation/refund claim has committed.
+Those returns must survive a later command, notice or audit failure. `CreditUnwind.ReturnCreditAsync`
+checks the account's frozen-company books first. An unpaid order-ending return instead takes the owner
+lock before its reads and joins the transaction ending that order, so a refused cancellation returns
+no credit. The order identifier on a credit transaction is a discriminator; its foreign key points to
+the credit account.
+
+## Partial refund audits
+
+A partial-refund request locks its already committed refund row while checking for its success audit.
+The audit key is the refund key in the typed snapshot. The lock is held through the pipeline's audit
+commit and released on refusal, cancellation or scope disposal, so a concurrent identical request
+sees only the committed winner's audit. Settlement and the existing loyalty flush precede this lock;
+the lock does not alter Stripe idempotency or add a refund concurrency token.

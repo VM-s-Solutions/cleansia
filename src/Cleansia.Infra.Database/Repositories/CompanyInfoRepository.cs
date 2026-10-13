@@ -18,7 +18,7 @@ public class CompanyInfoRepository(CleansiaDbContext context) : BaseRepository<C
             .FirstOrDefaultAsync(c => c.CountryId == countryId && c.IsActive, cancellationToken);
     }
 
-    public async Task<CompanyInfo?> GetActiveForOperatorAsync(string operatorTenantId, string countryId, CancellationToken cancellationToken)
+    public async Task<CompanyInfo?> GetActiveForOperatorIgnoringTenantAsync(string operatorTenantId, string countryId, CancellationToken cancellationToken)
     {
         return await GetQueryableIgnoringTenant()
             .Include(c => c.Country)

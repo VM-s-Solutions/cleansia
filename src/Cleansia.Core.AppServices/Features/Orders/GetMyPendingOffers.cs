@@ -82,7 +82,7 @@ public class GetMyPendingOffers
                 .Where(o => o.PreferredHoldUntilUtc > nowUtc)
                 .Where(o => o.AssignedEmployees.Count < o.MaxEmployees)
                 .Where(o => o.AssignedEmployees.All(ae => ae.EmployeeId != employeeId))
-                .Where(OrderAvailability.IsOfferableSql)
+                .Where(OrderAvailability.IsOfferableSql(nowUtc))
                 .Where(OrderVisibility.PayableTo(employeeId, currency.Id))
                 .Where(o => !cashJobsHidden || o.PaymentType != PaymentType.Cash)
                 .OrderBy(o => o.PreferredHoldUntilUtc)

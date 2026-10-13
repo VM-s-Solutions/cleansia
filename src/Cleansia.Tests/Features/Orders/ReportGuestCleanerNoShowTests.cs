@@ -110,7 +110,7 @@ public class ReportGuestCleanerNoShowTests
     {
         ArrangeGuestOrder();
         _userNotifications
-            .Setup(r => r.AnyForEventAsync(
+            .Setup(r => r.AnyForEventIgnoringTenantAsync(
                 TenantId, AdminNotificationEventCatalog.OrderCleanerNotStarted, "orderId", OrderId,
                 It.IsAny<CancellationToken>()))
             .ReturnsAsync(true);

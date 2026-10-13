@@ -67,7 +67,7 @@ public class CreditExpiryLockTests(PostgresContainerFixture fixture) : BaseInteg
 
         await using var returning = NewContext();
         await using var returnTransaction = await returning.Database.BeginTransactionAsync();
-        Assert.True(await new CreditAccountRepository(returning).TryReturnAsync(
+        Assert.True(await new CreditAccountRepository(returning).TryReturnIgnoringTenantAsync(
             userId, currencyId, 25m, "credit-return:during-discharge", ActorId, CancellationToken.None));
 
         await using var discharging = NewContext();
@@ -132,7 +132,7 @@ public class CreditExpiryLockTests(PostgresContainerFixture fixture) : BaseInteg
         await ctx.CommitAsync(CancellationToken.None);
 
         await using var seed = NewContext();
-        var account = await new CreditAccountRepository(seed).EnsureForUserAsync(user.Id, currency.Id, CancellationToken.None);
+        var account = await new CreditAccountRepository(seed).EnsureForUserIgnoringTenantAsync(user.Id, currency.Id, CancellationToken.None);
         account!.Issue(balance, CreditTransactionReason.Goodwill, "seed-grant", ActorId);
         await seed.CommitAsync(CancellationToken.None);
 
@@ -164,7 +164,7 @@ public class CreditExpiryLockTests(PostgresContainerFixture fixture) : BaseInteg
     private async Task<bool> ReturnAsync(string userId, string currencyId, decimal amount, string key)
     {
         await using var ctx = NewContext();
-        return await new CreditAccountRepository(ctx).TryReturnAsync(
+        return await new CreditAccountRepository(ctx).TryReturnIgnoringTenantAsync(
             userId, currencyId, amount, key, ActorId, CancellationToken.None);
     }
 

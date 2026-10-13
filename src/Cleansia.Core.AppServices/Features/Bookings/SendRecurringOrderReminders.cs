@@ -3,7 +3,8 @@ using Cleansia.Core.AppServices.Services.Interfaces;
 using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Notifications;
 using Cleansia.Core.Domain.Repositories;
-using Cleansia.Core.Domain.SeedWork;
+using MediatR;
+using Microsoft.Extensions.DependencyInjection;
 using Cleansia.Infra.Common.Validations;
 using FluentValidation;
 using Microsoft.EntityFrameworkCore;
@@ -13,13 +14,13 @@ using BusinessResult = Cleansia.Infra.Common.Validations.BusinessResult;
 namespace Cleansia.Core.AppServices.Features.Bookings;
 
 /// <summary>
-/// Sweeps unconfirmed recurring occurrences due in roughly the next 24 hours and pushes a reminder to
-/// confirm and pay. <b>Idempotency is the sent-at stamp on the order</b>, which the sweep filters on, so
-/// running repeatedly inside the window fires once. → /flows/booking-and-pricing#recurring-bookings
+/// Reminds unconfirmed recurring occurrences 2–26 hours ahead, each in its own scope. The notice and
+/// sent-at stamp commit together; a refused occurrence leaves with its scope and the next tick retries it.
+/// → /flows/booking-and-pricing#recurring-bookings
 /// </summary>
 public class SendRecurringOrderReminders
 {
-    public record Command(int LeadHoursLow = 6, int LeadHoursHigh = 26) : ICommand<Response>;
+    public record Command(int LeadHoursLow = 2, int LeadHoursHigh = 26) : ICommand<Response>;
 
     public class Validator : AbstractValidator<Command>
     {
@@ -30,12 +31,11 @@ public class SendRecurringOrderReminders
         }
     }
 
-    public record Response(int RemindersSent, int Considered);
+    public record Response(int RemindersSent, int Considered, int Failed = 0);
 
     public class Handler(
         IOrderRepository orderRepository,
-        INotificationProducer notificationProducer,
-        IUnitOfWork unitOfWork,
+        IServiceScopeFactory serviceScopeFactory,
         ILogger<Handler> logger) : ICommandHandler<Command, Response>
     {
         public async Task<BusinessResult<Response>> Handle(Command command, CancellationToken cancellationToken)
@@ -43,55 +43,52 @@ public class SendRecurringOrderReminders
             var now = DateTime.UtcNow;
             var windowStart = now.AddHours(command.LeadHoursLow);
             var windowEnd = now.AddHours(command.LeadHoursHigh);
-
-            // Cross-tenant query — the sweep runs system-level (no JWT). The
-            // queue dispatch carries each order's TenantId so the dispatcher
-            // routes it correctly downstream. The confirmation term is
-            // Order.AwaitsCustomerConfirmation's, as in AutoCancelStaleRecurringOrders.
-            var due = await orderRepository.GetQueryableIgnoringTenant()
+            var orderIds = await orderRepository.GetQueryableIgnoringTenant()
                 .Where(o => o.RecurringTemplateId != null
+                    && o.CurrentStatus != OrderStatus.Cancelled
+                    && o.CurrentStatus != OrderStatus.Completed
                     && o.RecurringReminderSentAt == null
                     && o.PaymentStatus == PaymentStatus.Pending
                     && (o.PaymentType != PaymentType.Cash || o.CustomerConfirmedAt == null)
                     && o.CleaningDateTime >= windowStart
                     && o.CleaningDateTime <= windowEnd
                     && o.UserId != null)
+                .OrderBy(o => o.CleaningDateTime).ThenBy(o => o.Id)
+                .Select(o => o.Id)
                 .ToListAsync(cancellationToken);
 
             var sent = 0;
-            foreach (var order in due)
+            var failed = 0;
+            foreach (var orderId in orderIds)
             {
+                cancellationToken.ThrowIfCancellationRequested();
                 try
                 {
-                    await notificationProducer.NotifyAsync(
-                        order.UserId!,
-                        NotificationEventCatalog.RecurringScheduled,
-                        new Dictionary<string, string>
-                        {
-                            ["orderId"] = order.Id,
-                            ["orderNumber"] = order.DisplayOrderNumber,
-                        },
-                        order.TenantId,
-                        order.Id,
-                        cancellationToken);
-
-                    order.MarkRecurringReminderSent(now);
-
-                    // The sent-stamp and the reminder's outbox row commit together, so the row is durable
-                    // iff the stamp is. A failed commit leaves RecurringReminderSentAt null and writes no
-                    // row, so the next sweep retries this order.
-                    await unitOfWork.CommitAsync(cancellationToken);
-                    sent++;
+                    await using var scope = serviceScopeFactory.CreateAsyncScope();
+                    var result = await scope.ServiceProvider.GetRequiredService<IMediator>().Send(
+                        new SendRecurringOrderReminder.Command(orderId, now, windowStart, windowEnd), cancellationToken);
+                    if (result.IsSuccess && result.Value != null)
+                    {
+                        sent += result.Value.Sent ? 1 : 0;
+                    }
+                    else
+                    {
+                        failed++;
+                        logger.LogError("Recurring reminder for order {OrderId} failed: {Error}; the next tick retries it",
+                            orderId, result.Error?.Message ?? "unknown");
+                    }
+                }
+                catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+                {
+                    throw;
                 }
                 catch (Exception ex)
                 {
-                    logger.LogWarning(ex,
-                        "Failed to enqueue recurring reminder for order {OrderId}",
-                        order.Id);
+                    failed++;
+                    logger.LogError(ex, "Recurring reminder for order {OrderId} threw; its scope is discarded and the next tick retries it", orderId);
                 }
             }
-
-            return BusinessResult.Success(new Response(sent, due.Count));
+            return BusinessResult.Success(new Response(sent, orderIds.Count, failed));
         }
     }
 }

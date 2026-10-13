@@ -1103,6 +1103,35 @@ need backfilling.
 
 ### Fixed
 
+- **Customer — a signed-in booking uses your account e-mail.** The web form shows that address
+  read-only, and the server keeps it even if a request supplies another address. Guest contact
+  details and booking names and phone numbers retain their existing rules. (T-0853)
+
+- **Cleaner — the open board does not sort offers by hidden customer names or e-mails.** Those
+  sort entries are ignored on an open-board read; administrator and own-job sorting remain.
+  (T-0850)
+
+- **Cleaner — an open seat remains available until its booked slot ends.** You can still join
+  started work before that end, including a long slot that started more than two hours ago.
+  An expired seat cannot be taken from a stale list. The existing no-show cancellation grace
+  remains. (T-0854, ADR-0076)
+
+- **Cleaner — invoice pages have a stable order.** An empty sort shows the newest generated
+  invoices first, and tied results have a consistent order across pages. (T-0847)
+
+- **Customer — recurring confirmation reminders cover morning and late-created occurrences.**
+  The hourly reminder skips cancelled and completed work and isolates a failed occurrence.
+  An eligible late-created occurrence receives one short-notice reminder before its confirmation
+  deadline. (T-0840, T-0856)
+
+- **Administrator — concurrent retries keep a paid refund recorded as succeeded.** Identical
+  partial-refund requests write one new success audit for their refund key. Existing historical
+  audit rows are preserved. (T-0851)
+
+- **Customer — Started and Completed e-mails follow the committed order change.** A refused
+  write sends no status e-mail, and a guest receives a committed access link. **Operator:** deploy
+  the Functions consumer with or before the APIs that publish these messages. (T-0843)
+
 - **Customer — a card payment that lands while an unpaid booking is being cancelled keeps the
   booking.** If the payment arrived at the same moment as the cancellation of a booking still waiting
   for it — the clean-up of an abandoned checkout, the auto-cancel of a recurring visit nobody

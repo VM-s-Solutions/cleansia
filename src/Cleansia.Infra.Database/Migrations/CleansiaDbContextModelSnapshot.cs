@@ -1163,6 +1163,8 @@ namespace Cleansia.Infra.Database.Migrations
 
                     b.HasIndex("UserId");
 
+                    b.HasIndex("DeviceId", "DeviceToken");
+
                     b.HasIndex("IsActive", "LastActiveAt");
 
                     b.HasIndex("UserId", "DeviceId")

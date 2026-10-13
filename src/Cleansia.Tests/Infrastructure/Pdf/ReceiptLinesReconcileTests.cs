@@ -361,7 +361,7 @@ public class ReceiptLinesReconcileTests
                 booking.Tier, booking.Tier > 0m ? LoyaltyTier.GoldPolisher : LoyaltyTier.BronzeCleaner));
         var membershipRepository = new Mock<IUserMembershipRepository>();
         membershipRepository
-            .Setup(r => r.GetEntitledForUserAsync(UserId, It.IsAny<CancellationToken>()))
+            .Setup(r => r.GetEntitledForUserIgnoringTenantAsync(UserId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(booking.PlusPercentage > 0m ? Membership(booking.PlusPercentage, currency) : null);
 
         var linesSubtotal = booking.ServiceBase + booking.PerRoom * 3 + (booking.Package ?? 0m) + booking.Extra;

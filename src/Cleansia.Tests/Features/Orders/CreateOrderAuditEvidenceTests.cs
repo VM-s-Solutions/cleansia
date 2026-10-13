@@ -65,6 +65,7 @@ public sealed class CreateOrderAuditEvidenceTests
 
     public CreateOrderAuditEvidenceTests()
     {
+        _session.Setup(s => s.GetUserEmail()).Returns("account@cleansia.test");
         _legalDocuments = LegalDocumentFixtures.Resolver(_terms, LegalDocumentFixtures.Privacy());
         _countryRepository
             .Setup(r => r.IsServicedAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
@@ -98,8 +99,36 @@ public sealed class CreateOrderAuditEvidenceTests
                     TenantId = "tenant-1",
                 }, currency: Czk));
         _membershipRepository
-            .Setup(r => r.GetEntitledForUserNoTrackingAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .Setup(r => r.GetEntitledForUserNoTrackingIgnoringTenantAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync((UserMembership?)null);
+    }
+
+    [Theory]
+    [InlineData("user-contact", "account@cleansia.test", "account@cleansia.test")]
+    [InlineData("user-contact", null, null)]
+    [InlineData(null, null, "body@cleansia.test")]
+    [InlineData("", null, "body@cleansia.test")]
+    public async Task Booking_Contact_Uses_The_Account_Email_Only_For_A_Signed_In_Caller(
+        string? userId, string? sessionEmail, string? expectedEmail)
+    {
+        _session.Setup(s => s.GetUserId()).Returns(userId);
+        _session.Setup(s => s.GetUserEmail()).Returns(sessionEmail);
+        var command = CreateOrderTestData.ValidCommand(paymentType: PaymentType.Cash, termsAccepted: true) with
+        {
+            CustomerEmail = "body@cleansia.test",
+            CustomerName = "Booking Contact",
+            CustomerPhone = "+420777123456",
+        };
+
+        var result = await CreateHandler().Handle(command, CancellationToken.None);
+
+        Assert.True(result.IsSuccess, result.Error?.Message);
+        _orderFactory.Verify(f => f.CreateAsync(
+            It.Is<CreateOrderInput>(input => input.CustomerEmail == expectedEmail
+                && input.CustomerName == command.CustomerName
+                && input.CustomerPhone == command.CustomerPhone
+                && input.UserId == (userId ?? string.Empty)),
+            It.IsAny<CancellationToken>()), Times.Once);
     }
 
     private CreateOrder.Handler CreateHandler() =>
@@ -332,7 +361,7 @@ public sealed class CreateOrderAuditEvidenceTests
         typeof(UserMembership).GetProperty(nameof(UserMembership.MembershipPlan))!
             .GetSetMethod(nonPublic: true)!.Invoke(membership, [plan]);
         _membershipRepository
-            .Setup(r => r.GetEntitledForUserNoTrackingAsync(UserId, It.IsAny<CancellationToken>()))
+            .Setup(r => r.GetEntitledForUserNoTrackingIgnoringTenantAsync(UserId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(membership);
 
         var result = await CreateHandler().Handle(
@@ -362,7 +391,7 @@ public sealed class CreateOrderAuditEvidenceTests
     {
         _session.Setup(s => s.GetUserId()).Returns((string?)null);
         _earlierBookings
-            .Setup(r => r.IsFirstBookingAsync(It.IsAny<Order>(), It.IsAny<CancellationToken>()))
+            .Setup(r => r.IsFirstBookingIgnoringTenantAsync(It.IsAny<Order>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(true);
 
         var result = await CreateHandler().Handle(

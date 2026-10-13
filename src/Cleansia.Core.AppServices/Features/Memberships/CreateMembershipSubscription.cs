@@ -176,7 +176,7 @@ public class CreateMembershipSubscription
                 // row leaves the subscription billed with no mirror. The deterministic attempt id makes
                 // Stripe REPLAY the same SubscriptionId on retry, so resolve to any row already tracking it
                 // rather than minting a second mirror for one billable subscription.
-                var existingForSubscription = await userMembershipRepository.GetByStripeSubscriptionIdAsync(
+                var existingForSubscription = await userMembershipRepository.GetByStripeSubscriptionIdIgnoringTenantAsync(
                     subscription.SubscriptionId, cancellationToken);
                 if (existingForSubscription != null)
                 {
@@ -228,7 +228,7 @@ public class CreateMembershipSubscription
                 }
                 catch (DbUpdateException ex) when (IsUniqueViolation(ex))
                 {
-                    var winner = await userMembershipRepository.GetByStripeSubscriptionIdAsync(
+                    var winner = await userMembershipRepository.GetByStripeSubscriptionIdIgnoringTenantAsync(
                         subscription.SubscriptionId, cancellationToken);
                     logger.LogInformation(
                         "Concurrent confirm collapsed at insert for user {UserId}, plan {PlanCode}: unique-violation on Stripe sub {SubscriptionId} resolved to winning membership {MembershipId}",

@@ -89,7 +89,7 @@ public class DirtinessLevelPricingTests
     public async Task Discounts_Come_Off_The_Subtotal_With_The_Surcharge_Inside_It()
     {
         _memberships
-            .Setup(r => r.GetEntitledForUserAsync(UserId, It.IsAny<CancellationToken>()))
+            .Setup(r => r.GetEntitledForUserIgnoringTenantAsync(UserId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(UserMembershipMockFactory.Paid(UserId));
 
         var order = await CreateOrderAsync(
@@ -120,7 +120,7 @@ public class DirtinessLevelPricingTests
         if (discounted)
         {
             _memberships
-                .Setup(r => r.GetEntitledForUserAsync(UserId, It.IsAny<CancellationToken>()))
+                .Setup(r => r.GetEntitledForUserIgnoringTenantAsync(UserId, It.IsAny<CancellationToken>()))
                 .ReturnsAsync(UserMembershipMockFactory.Paid(UserId));
         }
         var userId = discounted ? UserId : null;

@@ -380,7 +380,7 @@ public class CancelOrderRefundSeamTests
         var order = ArrangeCardPaidPendingOrder();
         order.ApplyCredit(300m, UserId);
         _creditAccountRepository
-            .Setup(c => c.IsOnFrozenCompanyBooksAsync(UserId, order.CurrencyId, It.IsAny<CancellationToken>()))
+            .Setup(c => c.IsOnFrozenCompanyBooksIgnoringTenantAsync(UserId, order.CurrencyId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(true);
         _refundService
             .Setup(s => s.IssueRefundAsync(It.IsAny<RefundRequest>(), It.IsAny<CancellationToken>()))
@@ -391,7 +391,7 @@ public class CancelOrderRefundSeamTests
         Assert.True(result.IsSuccess);
         Assert.Equal(OrderStatus.Cancelled, order.CurrentStatus);
         Assert.True(result.Value!.RefundPending);
-        _creditAccountRepository.Verify(c => c.TryReturnAsync(
+        _creditAccountRepository.Verify(c => c.TryReturnIgnoringTenantAsync(
             It.IsAny<string>(), It.IsAny<string>(), It.IsAny<decimal>(), It.IsAny<string>(), It.IsAny<string>(),
             It.IsAny<CancellationToken>(), It.IsAny<string?>(), It.IsAny<string?>()), Times.Never);
     }
@@ -416,7 +416,7 @@ public class CancelOrderRefundSeamTests
     ];
 
     private void VerifyCreditShareReturnedOnTheRefundKey(Order order, decimal amount) =>
-        _creditAccountRepository.Verify(c => c.TryReturnAsync(
+        _creditAccountRepository.Verify(c => c.TryReturnIgnoringTenantAsync(
             UserId,
             order.CurrencyId,
             amount,
@@ -435,7 +435,7 @@ public class CancelOrderRefundSeamTests
             It.IsAny<CancellationToken>()), Times.Once);
 
     private void VerifyNoOrderEndedUnpaidReturn() =>
-        _creditAccountRepository.Verify(c => c.TryReturnAsync(
+        _creditAccountRepository.Verify(c => c.TryReturnIgnoringTenantAsync(
             It.IsAny<string>(), It.IsAny<string>(), It.IsAny<decimal>(), $"credit-return:order-ended-unpaid:{OrderId}",
             It.IsAny<string>(), It.IsAny<CancellationToken>(), It.IsAny<string?>(), It.IsAny<string?>()), Times.Never);
 

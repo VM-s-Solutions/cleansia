@@ -25,10 +25,7 @@ public class OrderSpecification : BaseSpecification<string?>, ISpecification<Ord
     public bool? IsUnassigned { get; set; }
     public string? ExcludeEmployeeId { get; set; }
 
-    // The full ADR-0037 offerability rule (status axis AND money axis), for the surfaces whose whole
-    // question is "what may a cleaner take" — the dashboard available count and its preview. A plain
-    // status set cannot express it: New is offerable only for cash, and Confirmed only once nothing
-    // scheduled can still retract the order.
+    // Dashboard count and preview ask only for offerable work: status, payment and booked slot end.
     public bool? OfferableOnly { get; set; }
 
     // Server-pinned scope for a non-admin caller: results are restricted to
@@ -61,6 +58,7 @@ public class OrderSpecification : BaseSpecification<string?>, ISpecification<Ord
 
     public Expression<Func<Order, bool>> SatisfiedBy()
     {
+        var nowUtc = NowUtc ?? DateTime.UtcNow;
         Specification<Order> specification = new TrueSpecification<Order>();
 
         if (!string.IsNullOrWhiteSpace(Id))
@@ -171,7 +169,7 @@ public class OrderSpecification : BaseSpecification<string?>, ISpecification<Ord
 
         if (OfferableOnly.HasValue && OfferableOnly.Value)
         {
-            specification &= new DirectSpecification<Order>(OrderAvailability.IsOfferableSql);
+            specification &= new DirectSpecification<Order>(OrderAvailability.IsOfferableSql(nowUtc));
         }
 
         if (!string.IsNullOrEmpty(RestrictToEmployeeId))
@@ -182,7 +180,7 @@ public class OrderSpecification : BaseSpecification<string?>, ISpecification<Ord
             // client status lists are a display refinement on top of this, never the boundary.
             Specification<Order> assignedToCaller = new DirectSpecification<Order>(x =>
                 x.AssignedEmployees.Any(ae => ae.EmployeeId == RestrictToEmployeeId));
-            Specification<Order> openAndOfferable = new DirectSpecification<Order>(OrderAvailability.IsOfferableSql);
+            Specification<Order> openAndOfferable = new DirectSpecification<Order>(OrderAvailability.IsOfferableSql(nowUtc));
             if (HasAvailableSpots != true)
             {
                 openAndOfferable = new DirectSpecification<Order>(

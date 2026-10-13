@@ -97,7 +97,7 @@ public class CancellationFeeSharePayTests
         session.Setup(s => s.GetUserId()).Returns(UserId);
         var memberships = new Mock<IUserMembershipRepository>();
         memberships
-            .Setup(r => r.GetEntitledForUserNoTrackingAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .Setup(r => r.GetEntitledForUserNoTrackingIgnoringTenantAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync((UserMembership?)null);
 
         var handler = new CancelOrder.Handler(

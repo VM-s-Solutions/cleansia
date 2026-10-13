@@ -45,7 +45,7 @@ public class CollapsingDigestFeedRowTests
     {
         var standing = UserNotification.Create(UserId, eventKey, "{\"count\":\"3\"}", null);
         _repository
-            .Setup(r => r.GetUnreadByUserAndEventAsync(UserId, eventKey, It.IsAny<CancellationToken>()))
+            .Setup(r => r.GetUnreadByUserAndEventIgnoringTenantAsync(UserId, eventKey, It.IsAny<CancellationToken>()))
             .ReturnsAsync(standing);
 
         await Producer().NotifyAsync(UserId, eventKey, Count(5), null, "subject", CancellationToken.None);
@@ -60,7 +60,7 @@ public class CollapsingDigestFeedRowTests
     public async Task With_No_Standing_Row_A_Digest_Still_Adds_One(string eventKey)
     {
         _repository
-            .Setup(r => r.GetUnreadByUserAndEventAsync(UserId, eventKey, It.IsAny<CancellationToken>()))
+            .Setup(r => r.GetUnreadByUserAndEventIgnoringTenantAsync(UserId, eventKey, It.IsAny<CancellationToken>()))
             .ReturnsAsync((UserNotification?)null);
 
         await Producer().NotifyAsync(UserId, eventKey, Count(2), null, "subject", CancellationToken.None);
@@ -79,7 +79,7 @@ public class CollapsingDigestFeedRowTests
     {
         var eventKey = NotificationEventCatalog.OrderAssignmentCancelled;
         _repository
-            .Setup(r => r.GetUnreadByUserAndEventAsync(UserId, eventKey, It.IsAny<CancellationToken>()))
+            .Setup(r => r.GetUnreadByUserAndEventIgnoringTenantAsync(UserId, eventKey, It.IsAny<CancellationToken>()))
             .ReturnsAsync(UserNotification.Create(UserId, eventKey, "{}", null));
 
         await Producer().NotifyAsync(

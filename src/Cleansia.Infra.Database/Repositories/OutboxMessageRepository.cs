@@ -19,7 +19,7 @@ public class OutboxMessageRepository(CleansiaDbContext context)
 
     private static readonly EmailType[] EmailTypes = Enum.GetValues<EmailType>();
 
-    public async Task RemoveForSubjectAsync(string userId, CancellationToken cancellationToken)
+    public async Task RemoveForSubjectIgnoringTenantAsync(string userId, CancellationToken cancellationToken)
     {
         // IgnoreQueryFilters + the explicit subject predicate: a send-email row is enqueued on the
         // ANONYMOUS paths (registration, forgot-password) and stamped from the envelope's own tenantId, so

@@ -54,7 +54,7 @@ failing e-mail can never fail the command, and nothing the notifier reads depend
   the filter is a logged warning naming the audience and a return, not an error.
 - **`IUserNotificationRepository.Add`** — one `UserNotification.Create(admin.Id, key, argsJson, tenantId)`
   per recipient, exactly as `NotificationProducer` writes a client row; the args serialised once by the
-  notifier's own serialiser. **`AnyForEventAsync(tenantId, key, argName, argValue)`** — tenant-ignoring,
+  notifier's own serialiser. **`AnyForEventIgnoringTenantAsync(tenantId, key, argName, argValue)`** — tenant-ignoring,
   explicit predicate, a **jsonb containment** (`@>`) on the one `{arg: value}` pair; the guard the two
   sites that can repeat one logical event read before calling (a repeated card decline on one order; two
   overlapping archive builds of one frozen company).
@@ -92,10 +92,10 @@ failing e-mail can never fail the command, and nothing the notifier reads depend
   Session: **one event per company** in `ITenantRepository.GetAllIdsAsync()`, because the Stripe account is
   shared, subject `{stripeDisputeId}:{tenantId}` so the companies' rows never collide on the outbox key,
   args `amount` and `stripeDisputeId`) and its `payment_intent.payment_failed`
-  arm (subject the order id, guarded by `PaymentStatus == Pending && CurrentStatus != Cancelled && !AnyForEventAsync`)
+  arm (subject the order id, guarded by `PaymentStatus == Pending && CurrentStatus != Cancelled && !AnyForEventIgnoringTenantAsync`)
   · `CleanerNoShow.AlertAsync` (`admin.order.cleaner_not_started`, shared by `SendCleanerJobReminders`' third arm,
   `ReportGuestCleanerNoShow` and `CreateDispute`'s *service not provided* filing on a staffed job nobody
-  started; subject the order id, guarded by `AnyForEventAsync` on `orderId`, so whichever comes first raises it
+  started; subject the order id, guarded by `AnyForEventIgnoringTenantAsync` on `orderId`, so whichever comes first raises it
   and the order's e-mail outbox key is written once) · `ReportCashNotPaid` (`admin.order.cash_not_paid`, the
   cleaner's door non-payment report; subject the order id, args `orderNumber`, `amount`, `orderId`; no guard
   is needed, because the report needs the order in progress and leaves it completed) ·
@@ -104,19 +104,19 @@ failing e-mail can never fail the command, and nothing the notifier reads depend
   cancelled order's own refund the job re-drives, `refund_without_cancel` (since 2026-10-06) for a
   cancellation's own refund on an order that was never cancelled — a guest's claim whose cancel failed,
   never re-driven — and `refund_needs_retry` for any other; args `orderNumber`, `amount`, `orderId`;
-  subject the refund id, guarded by `AnyForEventAsync` on `orderId`, inside the per-company loop and its
+  subject the refund id, guarded by `AnyForEventIgnoringTenantAsync` on `orderId`, inside the per-company loop and its
   per-row commit; nothing for a row it closes because the refunds Stripe confirmed took the whole card
   charge, nor for one the refund seam closed and raised itself) · `RefundService`
   (`admin.payment.refund_needs_retry` at once, since 2026-10-06, when a retry finds Stripe failed or
   canceled the refund made on its key — from the hourly re-drive, a cancellation replaying a guest's claim,
   the guest's own retry, a full or partial refund or a dispute resolved again; args `orderNumber`,
-  `amount`, `orderId`; subject the refund id, guarded by `AnyForEventAsync` on `orderId`, saved in the
+  `amount`, `orderId`; subject the refund id, guarded by `AnyForEventIgnoringTenantAsync` on `orderId`, saved in the
   seam's own commit with the row's close, so it stands when the caller rolls back)
   · `RetryFailedUserDeletions` (subject `{requestId}:{day}`, in a fresh scope with the override set and its own
   commit — the failing walk's scope is discarded by design) · `WindDownCompany` (only when a date is set;
   subject `{tenantId}:{requestInstant}`) · `CompanyWindDownService` (only when `cancelled + refunded +
   refundFailures + periodsClosed > 0`; subject the run instant **to the tick**) · `CompanyArchiveService.MarkArchived`
-  (subject `{tenantId}:{freezeInstant}`, guarded by `AnyForEventAsync` on the day; the one event written on a
+  (subject `{tenantId}:{freezeInstant}`, guarded by `AnyForEventIgnoringTenantAsync` on the day; the one event written on a
   frozen company — admitted because `UserNotification` and `OutboxMessage` are on
   `ArchivedCompanyWriteGuard.AccountSurface`).
 - **`AdminNotificationController`** — `GET api/AdminNotification/get-paged`, `GET …/unread-count`,
@@ -163,7 +163,7 @@ failing e-mail can never fail the command, and nothing the notifier reads depend
    exactly `EmailArgOrder` and the notifier throws otherwise.
 5. **Each site calls once, inside the business write's unit of work, and a redelivery adds nothing**: the
    Stripe short-circuit for the webhook arms; the candidate predicate for the daily retry; the counts guard
-   for the wind-down run; `AnyForEventAsync` for the decline, the archive, the not-started alert and the
+   for the wind-down run; `AnyForEventIgnoringTenantAsync` for the decline, the archive, the not-started alert and the
    three refund alerts; the order's own status for the door non-payment, which a completed order refuses.
 6. **The four admin routes answer 401 anonymous, 403 to an Employee token, 200 to an administrator**; a
    mark-read on another administrator's row is refused; a mark-read writes **no** `AdminActionAudits` row.

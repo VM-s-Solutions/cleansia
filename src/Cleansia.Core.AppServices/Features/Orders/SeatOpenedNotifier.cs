@@ -42,9 +42,11 @@ public static class SeatOpenedNotifier
         string assignmentId,
         IEmployeeRepository employeeRepository,
         INotificationProducer notificationProducer,
+        DateTime nowUtc,
         CancellationToken cancellationToken)
     {
-        if (order.CustomerAddress?.CountryId is not { } countryId)
+        if (!OrderAvailability.IsOfferable(order, nowUtc)
+            || order.CustomerAddress?.CountryId is not { } countryId)
         {
             return;
         }

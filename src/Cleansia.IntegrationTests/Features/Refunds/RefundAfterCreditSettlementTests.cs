@@ -97,7 +97,7 @@ public class RefundAfterCreditSettlementTests(PostgresContainerFixture fixture) 
 
         await using (var ctx = NewContext())
         {
-            var account = await new CreditAccountRepository(ctx).EnsureForUserAsync(userId, CzkId, CancellationToken.None);
+            var account = await new CreditAccountRepository(ctx).EnsureForUserIgnoringTenantAsync(userId, CzkId, CancellationToken.None);
             if (creditApplied > 0m)
             {
                 account!.Issue(creditApplied, CreditTransactionReason.Goodwill, "seed-grant", "seed", note: "n");

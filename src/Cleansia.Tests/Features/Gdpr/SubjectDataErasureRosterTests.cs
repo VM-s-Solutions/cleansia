@@ -202,13 +202,13 @@ public class SubjectDataErasureRosterTests
             "Handset identity and a push token. EVERY row, active or not: a logged-out tombstone stays "
                 + "physically present so a later login can reclaim it, and the stale-device retention sweep "
                 + "filters on IsActive as well — so it was reachable by neither path.",
-            InErasure("deviceRepository.RemoveForSubjectAsync")),
+            InErasure("deviceRepository.RemoveForSubjectIgnoringTenantAsync")),
 
         [typeof(Core.Domain.LiveActivities.LiveActivityToken)] = new(
             Verdict.Deleted,
             "The same handset's other APNs address. Pseudonymous by payload and erased anyway — see the "
                 + "RetainedPseudonymous verdict's own note.",
-            InErasure("liveActivityTokenRepository.RemoveForSubjectAsync")),
+            InErasure("liveActivityTokenRepository.RemoveForSubjectIgnoringTenantAsync")),
 
         [typeof(Core.Domain.Users.RefreshToken)] = new(
             Verdict.RetainedByPolicy,
@@ -229,7 +229,7 @@ public class SubjectDataErasureRosterTests
                 + "structurally unable to be kept: the FK to EmployeeDocument is Restrict and the erasure "
                 + "deletes those documents, so a surviving request would not leave residue — it would make "
                 + "the whole erasure throw. Removed BEFORE the documents for exactly that reason.",
-            InErasure("documentDeletionRequestRepository.RemoveForEmployeeAsync")),
+            InErasure("documentDeletionRequestRepository.RemoveForEmployeeIgnoringTenantAsync")),
 
         [typeof(Core.Domain.Documents.EmployeeDocument)] = new(
             Verdict.Deleted,
@@ -237,7 +237,7 @@ public class SubjectDataErasureRosterTests
                 + "does not survive. The rows went with them: file name (routinely the person's own), path, "
                 + "description and reviewer free text, pointing at bytes that no longer exist. The "
                 + "superseded-document purge could not reach them — it takes only already-deactivated rows.",
-            InErasure("employeeDocumentRepository.RemoveForEmployeeAsync")),
+            InErasure("employeeDocumentRepository.RemoveForEmployeeIgnoringTenantAsync")),
 
         [typeof(EmployeePayoutDetails)] = new(
             Verdict.Deleted,
@@ -248,13 +248,13 @@ public class SubjectDataErasureRosterTests
         [typeof(Core.Domain.DeadLettering.DeadLetter)] = new(
             Verdict.Deleted,
             "A poisoned send-email body is the wire payload verbatim: address, real name and a live token.",
-            InErasure("deadLetterRepository.RemoveForSubjectAsync")),
+            InErasure("deadLetterRepository.RemoveForSubjectIgnoringTenantAsync")),
 
         [typeof(Core.Domain.Outbox.OutboxMessage)] = new(
             Verdict.Deleted,
             "The same body one table over, before it poisons anything, in every status — the prune refuses "
                 + "Pending and Failed rows by design.",
-            InErasure("outboxMessageRepository.RemoveForSubjectAsync")),
+            InErasure("outboxMessageRepository.RemoveForSubjectIgnoringTenantAsync")),
 
         [typeof(Core.Domain.Users.UserConsent)] = new(
             Verdict.RetainedByPolicy,
@@ -290,7 +290,7 @@ public class SubjectDataErasureRosterTests
                 + "Employee.Anonymize keeps, so it is pseudonymous without a write; the three request-metadata "
                 + "columns are personal data and are blanked here; the facts hold an order number, money, a "
                 + "coarse location and catalogue names — WorkContractFactsPiiGuardTests is the standing proof.",
-            InErasure("workContractAcceptanceRepository.PseudonymiseForEmployeeAsync")),
+            InErasure("workContractAcceptanceRepository.PseudonymiseForEmployeeIgnoringTenantAsync")),
 
         [typeof(Core.Domain.Legal.CleanerLegalDocumentAcceptance)] = new(
             Verdict.AnonymizedInPlace,
@@ -298,7 +298,7 @@ public class SubjectDataErasureRosterTests
                 + "the cleaner worked and was self-billed under. Its subject handle is a bare EmployeeId that "
                 + "Employee.Anonymize keeps; the three request-metadata columns are personal data and are "
                 + "blanked here, as on the contract for work.",
-            InErasure("cleanerLegalDocumentAcceptanceRepository.PseudonymiseForEmployeeAsync")),
+            InErasure("cleanerLegalDocumentAcceptanceRepository.PseudonymiseForEmployeeIgnoringTenantAsync")),
 
         [typeof(Core.Domain.Auditing.CustomerActionAudit)] = new(
             Verdict.AnonymizedInPlace,
@@ -311,8 +311,8 @@ public class SubjectDataErasureRosterTests
                 + "columns in the same commit; a stranger's guest row on another order is untouched. Each row is "
                 + "deleted by the retention sweep three years after its own OccurredOn; the UserId -> OrderId link "
                 + "is kept on purpose (ADR-0062 D5).",
-            InErasure("customerActionAuditRepository.PseudonymiseForSubjectAsync"),
-            InErasure("customerActionAuditRepository.PseudonymiseGuestRowsForOrdersAsync")),
+            InErasure("customerActionAuditRepository.PseudonymiseForSubjectIgnoringTenantAsync"),
+            InErasure("customerActionAuditRepository.PseudonymiseGuestRowsForOrdersIgnoringTenantAsync")),
 
         [typeof(Core.Domain.EmployeePayroll.EmployeeInvoice)] = new(
             Verdict.RetainedByPolicy,
@@ -329,14 +329,14 @@ public class SubjectDataErasureRosterTests
             Verdict.Deleted,
             "A Stripe Customer id per currency — the same handle User.StripeCustomerId holds, which "
                 + "Anonymize() clears; two tables recording one fact are treated the same way.",
-            InErasure("userStripeCustomerRepository.RemoveForUserAsync(user.Id, ct)")),
+            InErasure("userStripeCustomerRepository.RemoveForUserIgnoringTenantAsync(user.Id, ct)")),
 
         [typeof(SavedCard)] = new(
             Verdict.Deleted,
             "A card saved on one of those Stripe Customers, with the IP address and device it was saved "
                 + "from. The Customer ids go at erasure, so the card can no longer be charged, and the row "
                 + "goes with them.",
-            InErasure("savedCardRepository.RemoveForUserAsync(user.Id, ct)")),
+            InErasure("savedCardRepository.RemoveForUserIgnoringTenantAsync(user.Id, ct)")),
 
         [typeof(Core.Domain.Payments.Receivable)] = new(
             Verdict.RetainedPseudonymous,

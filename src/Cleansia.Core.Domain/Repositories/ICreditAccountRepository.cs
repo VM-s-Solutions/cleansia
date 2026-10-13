@@ -31,7 +31,8 @@ public interface ICreditAccountRepository : IRepository<CreditAccount, string>
     /// <paramref name="currencyId"/> if they have never had credit. Shaped on
     /// <c>ILoyaltyAccountRepository.EnsureForUserAsync</c>: the caller is always about to write to it,
     /// so "no account" and "an account holding nothing" are the same thing. Holds the owner and account
-    /// locks until the unit of work commits or rolls back.
+    /// locks until the unit of work commits or rolls back. Caller obligation: owner and currency come
+    /// from an authorized order or credit target, rather than client contact values.
     ///
     /// <para><b>The currency is part of the LOOKUP, not only of the creation.</b> That sentence used
     /// to read "the currency is used ONLY when creating", and the query behind it matched on
@@ -42,16 +43,17 @@ public interface ICreditAccountRepository : IRepository<CreditAccount, string>
     /// <para>An existing account still keeps the currency it was opened in, because a lookup for a
     /// different currency no longer finds it — it opens that currency's own account instead.</para>
     /// </summary>
-    Task<CreditAccount?> EnsureForUserAsync(
+    Task<CreditAccount?> EnsureForUserIgnoringTenantAsync(
         string userId, string currencyId, CancellationToken cancellationToken);
 
     /// <summary>
     /// Whether the customer's account in <paramref name="currencyId"/> — or, with none, the one
-    /// <see cref="EnsureForUserAsync"/> would open, on the customer's own company — sits on the books of a
+    /// <see cref="EnsureForUserIgnoringTenantAsync"/> would open, on the customer's own company — sits on the books of a
     /// company frozen for archive (ADR-0064 D3). Any write to such an account fails the whole commit it
-    /// rides in, whichever company that commit is for.
+    /// rides in, whichever company that commit is for. Caller obligation: owner and currency come
+    /// from the authorized or swept order or credit target.
     /// </summary>
-    Task<bool> IsOnFrozenCompanyBooksAsync(
+    Task<bool> IsOnFrozenCompanyBooksIgnoringTenantAsync(
         string userId, string currencyId, CancellationToken cancellationToken);
 
     /// <summary>
@@ -78,6 +80,7 @@ public interface ICreditAccountRepository : IRepository<CreditAccount, string>
     /// <summary>
     /// Put credit BACK on a balance because the order it settled was unwound. Returns false when the
     /// key has already been used or the owner has been erased; false never claims money was returned.
+    /// Caller obligation: owner and currency come from the authorized or swept order being unwound.
     ///
     /// <para>This is the writer of <see cref="CreditTransactionReason.OrderPaymentReturned"/>, and
     /// without it credit is a one-way door: an order cancelled or refunded after credit settled part
@@ -95,8 +98,13 @@ public interface ICreditAccountRepository : IRepository<CreditAccount, string>
     /// credit lock of this unit of work (<see cref="LockForUserAsync"/>), an explicit database
     /// transaction or an ambient <c>TransactionScope</c>; then it commits or rolls back with it. A replay
     /// is a no-op rather than a 23505 that would take the caller's commit down with it.</para>
+    /// <para>The independent returns are checkout's failed-dispatch compensation, a settled refund's
+    /// credit share, and a pending refund's credit leg after its cancellation/refund claim committed.
+    /// Their balance and ledger writes must survive the caller's later failure and do not roll back
+    /// with its notice or audit. `CreditUnwind.ReturnCreditAsync` checks the frozen-books gate first.
+    /// → /flows/cross-cutting#credit-returns</para>
     /// </summary>
-    Task<bool> TryReturnAsync(
+    Task<bool> TryReturnIgnoringTenantAsync(
         string userId,
         string currencyId,
         decimal amount,

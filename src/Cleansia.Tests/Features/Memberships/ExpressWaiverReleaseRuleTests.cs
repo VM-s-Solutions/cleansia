@@ -36,7 +36,7 @@ public class ExpressWaiverReleaseRuleTests
             UserId, MembershipBenefitKind.ExpressUpgrade, PeriodKey, 0, "membership-1", DateTime.UtcNow);
         usage.AttachOrder(OrderId);
         _usage
-            .Setup(u => u.GetLiveByOrderIdAsync(
+            .Setup(u => u.GetLiveByOrderIdIgnoringTenantAsync(
                 OrderId, MembershipBenefitKind.ExpressUpgrade, It.IsAny<CancellationToken>()))
             .ReturnsAsync(usage);
         return usage;
@@ -57,7 +57,7 @@ public class ExpressWaiverReleaseRuleTests
     public async Task ReleasingAnOrderWithNoSlot_IsANoOp()
     {
         _usage
-            .Setup(u => u.GetLiveByOrderIdAsync(
+            .Setup(u => u.GetLiveByOrderIdIgnoringTenantAsync(
                 It.IsAny<string>(), It.IsAny<MembershipBenefitKind>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync((MembershipBenefitUsage?)null);
 
@@ -103,7 +103,7 @@ public class ExpressWaiverReleaseRuleTests
     public async Task NothingIsForfeitedOnAnOrderThatNeverDrewAWaiver()
     {
         _usage
-            .Setup(u => u.GetLiveByOrderIdAsync(
+            .Setup(u => u.GetLiveByOrderIdIgnoringTenantAsync(
                 It.IsAny<string>(), It.IsAny<MembershipBenefitKind>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync((MembershipBenefitUsage?)null);
 

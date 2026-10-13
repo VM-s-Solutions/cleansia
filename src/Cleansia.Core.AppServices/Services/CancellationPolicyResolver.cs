@@ -30,7 +30,7 @@ public class CancellationPolicyResolver(
             OopsWindowRule: OopsWindowRule.Standard);
 
         if (!string.IsNullOrEmpty(order.UserId)
-            && await userMembershipRepository.GetEntitledForUserNoTrackingAsync(order.UserId, cancellationToken) != null)
+            && await userMembershipRepository.GetEntitledForUserNoTrackingIgnoringTenantAsync(order.UserId, cancellationToken) != null)
         {
             return standardPolicy with
             {
@@ -40,7 +40,7 @@ public class CancellationPolicyResolver(
             };
         }
 
-        return await orderRepository.IsFirstBookingAsync(order, cancellationToken)
+        return await orderRepository.IsFirstBookingIgnoringTenantAsync(order, cancellationToken)
             ? standardPolicy with
             {
                 OopsWindowMinutes = BookingPolicy.OopsWindowMinutesFirstBooking,

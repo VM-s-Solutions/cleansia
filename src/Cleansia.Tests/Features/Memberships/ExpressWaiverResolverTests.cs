@@ -63,7 +63,7 @@ public class ExpressWaiverResolverTests
             .Invoke(membership, [plan]);
 
         _memberships
-            .Setup(r => r.GetEntitledForUserNoTrackingAsync(UserId, It.IsAny<CancellationToken>()))
+            .Setup(r => r.GetEntitledForUserNoTrackingIgnoringTenantAsync(UserId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(membership);
     }
 
@@ -143,7 +143,7 @@ public class ExpressWaiverResolverTests
         Assert.False(waiver.Waived);
         Assert.Equal(0, waiver.Quota);
         _memberships.Verify(
-            r => r.GetEntitledForUserNoTrackingAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()),
+            r => r.GetEntitledForUserNoTrackingIgnoringTenantAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()),
             Times.Never);
         _usage.Verify(
             u => u.CountLiveInPeriodAsync(
@@ -232,7 +232,7 @@ public class ExpressWaiverResolverTests
     public async Task NoMembership_WaivesNothing()
     {
         _memberships
-            .Setup(r => r.GetEntitledForUserNoTrackingAsync(UserId, It.IsAny<CancellationToken>()))
+            .Setup(r => r.GetEntitledForUserNoTrackingIgnoringTenantAsync(UserId, It.IsAny<CancellationToken>()))
             .ReturnsAsync((UserMembership?)null);
 
         var waiver = await CreateResolver()

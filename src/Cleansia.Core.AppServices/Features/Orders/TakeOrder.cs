@@ -141,13 +141,14 @@ public class TakeOrder
 
         private async Task<bool> IsOfferableAsync(Command command, CancellationToken cancellationToken)
         {
+            var nowUtc = DateTime.UtcNow;
             var probe = await LoadOfferabilityProbeAsync(command.OrderId, cancellationToken);
             return probe is not null && OrderAvailability.IsOfferable(
                 probe.CurrentStatus, probe.PaymentType, probe.PaymentStatus, probe.RecurringTemplateId,
-                probe.CustomerConfirmedAt);
+                probe.CustomerConfirmedAt, probe.CleaningDateTime, probe.EstimatedTime, nowUtc);
         }
 
-        /// <summary>The five columns <see cref="OrderAvailability"/> reads.</summary>
+        /// <summary>The seven columns <see cref="OrderAvailability"/> reads.</summary>
         private Task<OfferabilityProbe?> LoadOfferabilityProbeAsync(string orderId, CancellationToken cancellationToken) =>
             _orderRepository
                 .GetQueryable()
@@ -157,7 +158,9 @@ public class TakeOrder
                     o.PaymentType,
                     o.PaymentStatus,
                     o.RecurringTemplateId,
-                    o.CustomerConfirmedAt))
+                    o.CustomerConfirmedAt,
+                    o.CleaningDateTime,
+                    o.EstimatedTime))
                 .FirstOrDefaultAsync(cancellationToken)!;
 
         private sealed record OfferabilityProbe(
@@ -165,7 +168,9 @@ public class TakeOrder
             PaymentType PaymentType,
             PaymentStatus PaymentStatus,
             string? RecurringTemplateId,
-            DateTime? CustomerConfirmedAt);
+            DateTime? CustomerConfirmedAt,
+            DateTime CleaningDateTime,
+            int EstimatedTime);
 
         private async Task<bool> HasAvailableSpotsAsync(Command command, CancellationToken cancellationToken)
         {

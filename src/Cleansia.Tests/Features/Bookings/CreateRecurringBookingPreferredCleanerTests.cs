@@ -53,7 +53,7 @@ public class CreateRecurringBookingPreferredCleanerTests
             .Setup(r => r.GetByUserAsync(UserId, It.IsAny<CancellationToken>()))
             .ReturnsAsync([ArrangeSavedAddress()]);
         _membershipRepository
-            .Setup(r => r.GetEntitledForUserNoTrackingAsync(UserId, It.IsAny<CancellationToken>()))
+            .Setup(r => r.GetEntitledForUserNoTrackingIgnoringTenantAsync(UserId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(ArrangeActiveMembership());
     }
 

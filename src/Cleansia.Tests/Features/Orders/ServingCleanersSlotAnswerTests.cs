@@ -188,7 +188,7 @@ public sealed class ServingCleanersSlotAnswerTests : IDisposable
     {
         await SeedAsync();
         _membershipRepository
-            .Setup(r => r.GetEntitledForUserNoTrackingAsync(CustomerId, It.IsAny<CancellationToken>()))
+            .Setup(r => r.GetEntitledForUserNoTrackingIgnoringTenantAsync(CustomerId, It.IsAny<CancellationToken>()))
             .ReturnsAsync((UserMembership?)null);
         _busyAnswer = [CleanerId];
 
@@ -248,7 +248,7 @@ public sealed class ServingCleanersSlotAnswerTests : IDisposable
 
     private void ArrangeActiveMembership() =>
         _membershipRepository
-            .Setup(r => r.GetEntitledForUserNoTrackingAsync(CustomerId, It.IsAny<CancellationToken>()))
+            .Setup(r => r.GetEntitledForUserNoTrackingIgnoringTenantAsync(CustomerId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(UserMembership.Create(
                 userId: CustomerId,
                 membershipPlanId: "plan-plus",

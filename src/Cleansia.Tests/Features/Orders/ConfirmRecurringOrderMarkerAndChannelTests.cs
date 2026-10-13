@@ -119,7 +119,7 @@ public sealed class ConfirmRecurringOrderMarkerAndChannelTests
     public async Task A_Cash_Confirmation_Stamps_The_Marker_And_Makes_The_Occurrence_Offerable_Unpaid()
     {
         var order = ArrangeOccurrence(PaymentType.Cash);
-        Assert.False(OrderAvailability.IsOfferable(order));
+        Assert.False(OrderAvailability.IsOfferable(order, DateTime.UtcNow));
 
         var result = await Handler(OrderChannel.Web).Handle(new ConfirmRecurringOrder.Command(OrderId), CancellationToken.None);
 
@@ -127,7 +127,7 @@ public sealed class ConfirmRecurringOrderMarkerAndChannelTests
         Assert.Null(result.Value!.CheckoutUrl);
         Assert.NotNull(order.CustomerConfirmedAt);
         Assert.Equal(PaymentStatus.Pending, order.PaymentStatus);
-        Assert.True(OrderAvailability.IsOfferable(order));
+        Assert.True(OrderAvailability.IsOfferable(order, DateTime.UtcNow));
         Assert.False(order.AwaitsCustomerConfirmation);
     }
 
@@ -142,7 +142,7 @@ public sealed class ConfirmRecurringOrderMarkerAndChannelTests
         Assert.Equal("pi_1_secret", result.Value!.ClientSecret);
         Assert.NotNull(order.CustomerConfirmedAt);
         Assert.True(order.AwaitsCustomerConfirmation);
-        Assert.False(OrderAvailability.IsOfferable(order));
+        Assert.False(OrderAvailability.IsOfferable(order, DateTime.UtcNow));
 
         var retry = await Handler(OrderChannel.Mobile).Handle(new ConfirmRecurringOrder.Command(OrderId), CancellationToken.None);
         Assert.True(retry.IsSuccess, retry.Error?.Message);

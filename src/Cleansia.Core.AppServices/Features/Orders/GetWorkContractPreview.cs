@@ -109,7 +109,7 @@ public class GetWorkContractPreview
             }
 
             var company = order!.TenantId is { } operatorTenantId
-                ? await companyInfoRepository.GetActiveForOperatorAsync(operatorTenantId, facts.CountryId, cancellationToken)
+                ? await companyInfoRepository.GetActiveForOperatorIgnoringTenantAsync(operatorTenantId, facts.CountryId, cancellationToken)
                 : null;
 
             return BusinessResult.Success(document.MapToWorkContractDto(text, facts, acceptance: null, company));

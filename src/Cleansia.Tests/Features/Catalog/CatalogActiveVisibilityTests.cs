@@ -573,7 +573,7 @@ public sealed class CatalogActiveVisibilityTests : IDisposable
         var session = new Mock<IUserSessionProvider>();
         session.Setup(s => s.GetUserId()).Returns(ScheduleOwnerId);
         var memberships = new Mock<IUserMembershipRepository>();
-        memberships.Setup(r => r.GetEntitledForUserNoTrackingAsync(ScheduleOwnerId, It.IsAny<CancellationToken>()))
+        memberships.Setup(r => r.GetEntitledForUserNoTrackingIgnoringTenantAsync(ScheduleOwnerId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(UserMembership.Create(
                 ScheduleOwnerId, "plan-plus", "currency-czk", "sub_1", DateTime.UtcNow.AddDays(-1), DateTime.UtcNow.AddMonths(1)));
         var savedAddresses = new Mock<ISavedAddressRepository>();

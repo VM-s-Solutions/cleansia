@@ -8,7 +8,7 @@ namespace Cleansia.Infra.Database.Repositories;
 public class UserNotificationRepository(CleansiaDbContext context)
     : BaseRepository<UserNotification>(context), IUserNotificationRepository
 {
-    public Task<UserNotification?> GetUnreadByUserAndEventAsync(string userId, string eventKey, CancellationToken cancellationToken)
+    public Task<UserNotification?> GetUnreadByUserAndEventIgnoringTenantAsync(string userId, string eventKey, CancellationToken cancellationToken)
     {
         // Producers run without a JWT (background sweeps, webhooks), so the ambient tenant filter
         // would hide the row; the read stays pinned to a single user's rows (the sanctioned
@@ -19,7 +19,7 @@ public class UserNotificationRepository(CleansiaDbContext context)
                 cancellationToken);
     }
 
-    public Task<bool> AnyForEventAsync(string tenantId, string eventKey, string argName, string argValue, CancellationToken cancellationToken)
+    public Task<bool> AnyForEventIgnoringTenantAsync(string tenantId, string eventKey, string argName, string argValue, CancellationToken cancellationToken)
     {
         // ArgsJson is jsonb, so the match is containment (@>) on the one pair, not a text LIKE: the
         // fragment is a JSON object the notifier's own serialiser would have written.

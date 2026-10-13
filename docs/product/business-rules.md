@@ -86,6 +86,31 @@ booking alike (`order.span_exceeds_maximum`).
 > `Order.MaxOrderSpanHours = 168` is a **different** number — the overlap-scan floor. `cap ≤ floor` is
 > the safety argument, and neither may move alone.
 
+### Booking contact e-mail
+
+**Owner ruling 2026-10-13:** “I think that not since it's using the account's by default”. A signed-in
+booking stores the e-mail issued in the customer's session, even if the request names another address.
+The web form shows the account e-mail read-only. A guest keeps the address they supply; contact name
+and phone keep their existing rules. Earlier booking contacts are not changed.
+
+Because the first-booking check also matches e-mail, an earlier eligible guest booking under the
+account's address now counts when that customer books signed in. Entitled Plus still takes precedence
+over first-booking status when resolving the oops window.
+
+## Offerability until the booked slot ends
+
+**Owner ruling 2026-10-13**, [ADR-0076](/decisions/adr-0076): a free or covered seat stops being offered
+and takeable when `CleaningDateTime + EstimatedTime` reaches the current UTC instant. Estimated time
+is the raw booked minutes used by double-booking, without division by the crew. A started 180- or
+240-minute job may still gain a cleaner until that end. The open board and dashboard use the booked end,
+without the former two-hour start-date floor; owning customers, assigned cleaners and administrators
+still access their work.
+
+The unfilled-order sweep keeps its **30-minute** late-fill grace and **168-hour** lookback, its
+never-started/empty-crew selection and its existing refund and credit rules. Before the sweep cancels
+it, a late unfilled slot remains takeable while its booked time is open. At end it stops being offered
+even if the sweep has not run. A stale list's take gets `order.not_takeable` when expiry is the first failed check; earlier opaque existence/hold/currency checks and terminal-status refusals keep their existing keys; seat-open notices stop too.
+
 ## Cancellation
 
 The fee is a fraction of the order total, decided by how much notice the customer gives:
@@ -347,7 +372,7 @@ the meeting gave a new customer 60 minutes, and everyone else keeps 15.
 | Everyone else — a returning guest, any account without an entitled membership (`PastDue`, `Paused`, cancelled or lapsed) | **15 min** (`BookingPolicy.OopsWindowMinutesStandard`) | `Standard` |
 
 **Who counts as new.** The first booking ever on that **account, e-mail or phone**, in any company:
-`IOrderRepository.IsFirstBookingAsync` holds when no order created before this one shares the account,
+`IOrderRepository.IsFirstBookingIgnoringTenantAsync` holds when no order created before this one shares the account,
 the e-mail (compared case-insensitively — `Orders.CustomerEmail` is `citext`, like `Users.Email`, and
 indexed) or the phone. Guest and account bookings count against each other. An abandoned checkout does
 not count: an order cancelled as `order.cancelled.payment_not_completed`, and a one-off card order whose
@@ -877,7 +902,7 @@ administrator creates a new plan and deactivates the old one. The admin plan det
 old figures.
 
 All seven resolve through **one** entitlement predicate
-(`UserMembershipRepository.EntitledForUserQuery`), so `PastDue`, `Paused`, `Cancelled` and an elapsed
+(`UserMembershipRepository.EntitledForUserIgnoringTenantQuery`), so `PastDue`, `Paused`, `Cancelled` and an elapsed
 period are refused identically, and a trialing enrolment is served like a paying one. That predicate is
 deliberately separate from the *lifecycle* one that answers "is there a live enrolment?" — the
 lifecycle question is what stops a second Stripe subscription, lets a customer cancel, and is what GDPR

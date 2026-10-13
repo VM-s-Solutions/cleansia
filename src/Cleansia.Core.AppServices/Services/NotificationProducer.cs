@@ -82,7 +82,7 @@ public class NotificationProducer(
         if (NotificationEventCatalog.CollapsingDigestKeys.Contains(eventKey))
         {
             var unreadDigest = await userNotificationRepository
-                .GetUnreadByUserAndEventAsync(userId, eventKey, cancellationToken);
+                .GetUnreadByUserAndEventIgnoringTenantAsync(userId, eventKey, cancellationToken);
             if (unreadDigest is not null)
             {
                 unreadDigest.RefreshDigest(argsJson, DateTimeOffset.UtcNow);

@@ -1,4 +1,7 @@
 using System.Security.Claims;
+using System.Globalization;
+using SortDefinition = Cleansia.Core.AppServices.Shared.DTOs.Sorting.SortDefinition;
+using Cleansia.Core.Domain.Sorting.Common;
 using Cleansia.Core.AppServices.Features.Orders;
 using Cleansia.Core.AppServices.Features.Orders.DTOs;
 using Cleansia.Core.AppServices.Features.Orders.Filters;
@@ -208,6 +211,143 @@ public class GetPagedOrdersScopeIntegrationTests(PostgresContainerFixture fixtur
             });
     }
 
+    [Theory]
+    [InlineData("CustomerName", "en-US")]
+    [InlineData("CustomerEmail", "en-US")]
+    [InlineData("CustomerEmail", "tr-TR")]
+    public async Task Open_Board_Drops_All_Contact_Sorts_Before_Selecting_The_Page(string field, string culture)
+    {
+        await TestMethod(
+            setup: services => ReplaceWithEmployeeSession(services, UserAId, EmployeeAEmail, EmployeeAId),
+            arrange: SeedContactSortOrders,
+            act: async provider =>
+            {
+                var previousCulture = CultureInfo.CurrentCulture;
+                try
+                {
+                    CultureInfo.CurrentCulture = CultureInfo.GetCultureInfo(culture);
+                    var mediator = provider.GetRequiredService<IMediator>();
+                    var baseline = await mediator.Send(SortRequest([], limit: 1));
+                    var safe = await mediator.Send(SortRequest([new("CleaningDateTime")], limit: 2));
+                    var ascending = await mediator.Send(SortRequest([new(field.ToUpper(CultureInfo.CurrentCulture))], limit: 1));
+                    var descending = await mediator.Send(SortRequest([new(field, SortDirection.Descending)], limit: 1));
+                    var multiple = await mediator.Send(SortRequest([
+                        new("CleaningDateTime"), new("CustomerName"), new("CustomerEmail", SortDirection.Descending)], limit: 2));
+                    return (Baseline: baseline, Safe: safe, Ascending: ascending, Descending: descending, Multiple: multiple);
+                }
+                finally
+                {
+                    CultureInfo.CurrentCulture = previousCulture;
+                }
+            },
+            assert: (CleansiaDbContext _, (PagedData<OrderListItem> Baseline, PagedData<OrderListItem> Safe,
+                PagedData<OrderListItem> Ascending, PagedData<OrderListItem> Descending, PagedData<OrderListItem> Multiple) pages) =>
+            {
+                Assert.Equal(pages.Baseline.Data!.Select(o => o.Id), pages.Ascending.Data!.Select(o => o.Id));
+                Assert.Equal(pages.Baseline.Data!.Select(o => o.Id), pages.Descending.Data!.Select(o => o.Id));
+                Assert.Equal(pages.Safe.Data!.Select(o => o.Id), pages.Multiple.Data!.Select(o => o.Id));
+                foreach (var page in new[] { pages.Ascending, pages.Descending, pages.Multiple })
+                {
+                    Assert.All(page.Data!, row =>
+                    {
+                        Assert.Equal(string.Empty, row.CustomerName);
+                        Assert.Equal(string.Empty, row.CustomerEmail);
+                    });
+                }
+                return Task.CompletedTask;
+            });
+    }
+
+    [Theory]
+    [InlineData("CustomerName", false)]
+    [InlineData("CustomerEmail", false)]
+    [InlineData("CustomerName", true)]
+    [InlineData("CustomerEmail", true)]
+    public async Task Admin_And_Own_Rows_Retain_Contact_Sorting(string field, bool ownRows)
+    {
+        await TestMethod(
+            setup: services => ownRows
+                ? ReplaceWithEmployeeSession(services, UserAId, EmployeeAEmail, EmployeeAId)
+                : ReplaceWithAdminSession(services),
+            arrange: async context =>
+            {
+                await SeedContactSortOrders(context);
+                if (ownRows)
+                {
+                    var employee = (await context.Employees.FindAsync(EmployeeAId))!;
+                    foreach (var id in new[] { "order-sort-a", "order-sort-z" })
+                    {
+                        var order = (await context.Orders.FindAsync(id))!;
+                        order.AddAssignedEmployee(OrderEmployee.Create(order, employee));
+                        order.AddOrderStatus(OrderStatusTrack.Create(OrderStatus.Cancelled, order));
+                    }
+                    await context.CommitAsync(CancellationToken.None);
+                }
+            },
+            act: async provider =>
+            {
+                var mediator = provider.GetRequiredService<IMediator>();
+                var filter = ownRows
+                    ? EmptyFilter() with { EmployeeId = EmployeeBId, OrderStatuses = [OrderStatus.Cancelled] }
+                    : EmptyFilter() with { IsUnassigned = true };
+                var ascending = await mediator.Send(new GetPagedOrders.Request { Filter = filter, Sort = [new(field)] });
+                var descending = await mediator.Send(new GetPagedOrders.Request { Filter = filter, Sort = [new(field, SortDirection.Descending)] });
+                return (Ascending: ascending, Descending: descending);
+            },
+            assert: (CleansiaDbContext _, (PagedData<OrderListItem> Ascending, PagedData<OrderListItem> Descending) pages) =>
+            {
+                var expected = ownRows
+                    ? new[] { "order-sort-a", "order-sort-z" }
+                    : new[] { "order-sort-a", AvailableOrderId, "order-sort-z" };
+                Assert.Equal(expected, pages.Ascending.Data!.Select(o => o.Id));
+                Assert.Equal(expected.Reverse(), pages.Descending.Data!.Select(o => o.Id));
+                if (ownRows)
+                {
+                    Assert.All(pages.Ascending.Data!, row => Assert.Equal(string.Empty, row.CustomerEmail));
+                }
+                return Task.CompletedTask;
+            });
+    }
+
+    [Theory]
+    [InlineData("CustomerPhone")]
+    [InlineData("CustomerAddress")]
+    [InlineData("Address")]
+    [InlineData("SpecificPlace")]
+    public async Task Unsupported_Contact_Keys_Keep_The_Existing_CreatedOn_Fallback(string field)
+    {
+        await TestMethod(
+            setup: services => ReplaceWithEmployeeSession(services, UserAId, EmployeeAEmail, EmployeeAId),
+            arrange: SeedContactSortOrders,
+            act: async provider =>
+            {
+                var mediator = provider.GetRequiredService<IMediator>();
+                foreach (var direction in new[] { SortDirection.Ascending, SortDirection.Descending })
+                {
+                    var baseline = await mediator.Send(SortRequest([new("CreatedOn", direction)], 2));
+                    var page = await mediator.Send(SortRequest([new(field, direction)], 2));
+                    Assert.Equal(baseline.Data!.Select(o => o.Id), page.Data!.Select(o => o.Id));
+                }
+                return true;
+            },
+            assert: (CleansiaDbContext _, bool passed) => { Assert.True(passed); return Task.CompletedTask; });
+    }
+
+    private static GetPagedOrders.Request SortRequest(SortDefinition[] sort, int limit) =>
+        new() { Filter = EmptyFilter() with { IsUnassigned = true }, Sort = sort, Limit = limit };
+
+    private static async Task SeedContactSortOrders(CleansiaDbContext context)
+    {
+        await SeedTwoEmployeesWithOrders(context);
+        var slot = DateTime.UtcNow.AddDays(2);
+        var first = CreateOrder("order-sort-a", OrderStatus.New, false, "Alpha", "a@cleansia.test", slot);
+        first.Created(Constants.TestUserSession.TestUserName, DateTime.UtcNow.AddHours(-3));
+        var last = CreateOrder("order-sort-z", OrderStatus.New, false, "Zulu", "z@cleansia.test", slot);
+        last.Created(Constants.TestUserSession.TestUserName, DateTime.UtcNow.AddHours(-2));
+        context.AddRange(first, last);
+        await context.CommitAsync(CancellationToken.None);
+    }
+
     private static async Task SeedPastJobsOfEmployeeA(CleansiaDbContext context)
     {
         await SeedTwoEmployeesWithOrders(context);
@@ -345,7 +485,8 @@ public class GetPagedOrdersScopeIntegrationTests(PostgresContainerFixture fixtur
         return employee;
     }
 
-    private static Order CreateOrder(string orderId, OrderStatus status, bool withSecretCoords)
+    private static Order CreateOrder(string orderId, OrderStatus status, bool withSecretCoords,
+        string customerName = "Scope Customer", string customerEmail = "scope-customer@cleansia.test", DateTime? cleaningDateTime = null)
     {
         // Every order carries real coordinates so no background geocode fires; the
         // takeable-row assertion then proves the handler BLANKED a real value to null
@@ -355,13 +496,13 @@ public class GetPagedOrdersScopeIntegrationTests(PostgresContainerFixture fixtur
             : Address.Create("Open St 1", "Brno", "60200", CountryId, latitude: 49.195060, longitude: 16.606837);
 
         var order = Order.Create(
-            customerName: "Scope Customer",
-            customerEmail: "scope-customer@cleansia.test",
+            customerName: customerName,
+            customerEmail: customerEmail,
             customerPhone: "+420777999888",
             customerAddress: address,
             rooms: 2,
             bathrooms: 1,
-            cleaningDateTime: DateTime.UtcNow.AddDays(2),
+            cleaningDateTime: cleaningDateTime ?? DateTime.UtcNow.AddDays(2),
             paymentType: PaymentType.Card,
             totalPrice: 1500m,
             currencyId: CurrencyId,

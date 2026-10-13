@@ -15,7 +15,7 @@ public class AddressRepository(CleansiaDbContext context) : BaseRepository<Addre
             a.CountryId == countryId, cancellationToken);
     }
 
-    public async Task<IReadOnlySet<string>> GetReferencedElsewhereAsync(
+    public async Task<IReadOnlySet<string>> GetReferencedElsewhereIgnoringTenantAsync(
         IReadOnlyCollection<string> addressIds,
         IReadOnlyCollection<string> exceptOrderIds,
         IReadOnlyCollection<string> exceptSavedAddressIds,

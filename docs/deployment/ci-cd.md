@@ -193,6 +193,13 @@ steps:
 They are what catch the multi-tenant / FK / migration / webhook bugs the SQLite-and-mocks unit tests
 structurally cannot — for example the SQL-vs-C# equivalence pins on `OrderAvailability` and
 `OrderVisibility`. Both run with `xUnit.parallelizeTestCollections=false`.
+
+Migration setup keeps EF's `PendingModelChangesWarning` guard enabled. The existing
+`SeededDatabaseHasNoOrphanTenantRowsTests` also migrates a fresh database through an unsuppressed
+context before applying the seed, so relational model drift fails CI. A token-only snapshot change
+that alters no relational schema is outside this guard's scope and needs no DDL. The migrator's
+`MigrateAsync` path is unsuppressed too, but startup skips that path when there are no pending
+migration ids; startup alone does not check relational drift on every boot.
 :::
 
 ## Deploy to DEV (`deploy-dev.yml`)

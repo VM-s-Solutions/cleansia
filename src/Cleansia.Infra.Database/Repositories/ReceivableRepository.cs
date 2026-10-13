@@ -8,7 +8,7 @@ namespace Cleansia.Infra.Database.Repositories;
 public class ReceivableRepository(CleansiaDbContext context)
     : BaseRepository<Receivable>(context), IReceivableRepository
 {
-    public Task<bool> HasOpenForUserAsync(string userId, CancellationToken cancellationToken)
+    public Task<bool> HasOpenForUserIgnoringTenantAsync(string userId, CancellationToken cancellationToken)
     {
         return OpenForUserIgnoringTenant(userId).AnyAsync(cancellationToken);
     }

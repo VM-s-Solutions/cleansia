@@ -1,10 +1,10 @@
 ---
 id: T-0842
 title: Fail backend CI when the EF model has changes the Initial migration does not carry
-size: S
+size: XS
 owner: pm
 created: 2026-10-12
-updated: 2026-10-12
+updated: 2026-10-13
 depends_on: []
 blocks: []
 stories: []
@@ -29,16 +29,11 @@ Schema changes are folded into the one `Initial` migration by regenerating it (C
 
 **If not built:** a forgotten regeneration passes CI. It is found later, when a fresh database disagrees with the model; for a change with no DDL, it may never be found.
 
-## Doing (proposed, for Mike)
+## Doing — approved 2026-10-13
 
 1. **Check today's state first.** Run `dotnet ef migrations has-pending-model-changes` at HEAD to learn whether the model and the snapshot agree. If they do not, this change waits for a regeneration.
-2. **Then add the check, in one of two ways:**
-   - **A backend-ci step** after the build, run from `src/`:
-     - install `dotnet-ef` at the EF Core version, 10.0.3 (`src/Directory.Packages.props:13`);
-     - run `dotnet ef migrations has-pending-model-changes --project Cleansia.Infra.Database --startup-project Cleansia.Web.Partner`;
-     - keep one pinned version, or one tool manifest, shared with the deploy's install (T-0849).
-   - **Or stop ignoring the warning** in the two fixtures, so that the integration and host suites fail on a pending change by themselves. This needs no new step and no tool, provided the model is clean today.
-3. **Prove it, whichever way is chosen.** On a scratch commit that adds a column without regenerating, the check goes RED. After the regeneration it goes GREEN. Record whether a change that only adds a token is caught.
+2. **Stop suppressing the warning** in the two fixtures and two individual tests; remove the two stale fixture comments. No new tool, package, workflow step or snapshot test.
+3. **Prove the fixture boundary.** With an isolated scratch relational column-type change without regenerating, the check goes RED. After restoring the isolated model state it goes GREEN; real model changes join the wave’s one Initial regeneration. Record whether a change that only adds a token is caught.
 4. **Keep the required check's name.** No `build` job gains `name:`, `strategy:`, `if:` or `uses:`.
 5. **Docs.** `docs/deployment/ci-cd.md` says what backend-ci now checks.
 
@@ -48,14 +43,32 @@ Schema changes are folded into the one `Initial` migration by regenerating it (C
 
 ## Acceptance criteria (done looks like)
 
-- [ ] **AC1** — A model change without a regenerated `Initial` fails backend CI's `build`. This is shown RED then GREEN on a scratch commit and recorded here.
-- [ ] **AC2** — Whether a change that only adds a token is caught is recorded here.
-- [ ] **AC3** — The required check keeps its name, and the full suites pass.
+- [x] **AC1** — A model change without a regenerated `Initial` fails backend CI's `build`. This is shown RED then GREEN with an isolated scratch mutation and recorded here.
+- [x] **AC2** — Whether a change that only adds a token is caught is recorded here.
+- [x] **AC3** — The required check keeps its name, and the full suites pass.
+
+## Owner decision — 2026-10-13
+
+Mike, answer 8: "Analyze and Fix those".
+
+Mike, default choice: "Go with defaults (recommended)".
+
+Authority: `/Users/michael/.codex/scratchpads/cleansia-wave-f-2026-10-11/next-wave/decisions-2026-10-13.md`.
+
+The chosen XS shape removes the four PendingModelChangesWarning suppressions and the two stale fixture comments. No CI tool step, package or snapshot-text test is added. Existing unsuppressed seed-migration coverage already catches relational drift; a token-only metadata change is not caught and causes no DDL difference. Measure the current model, prove a real DDL mutation refused by the fixtures, and restore the scratch bytes. The migrator does not check relational drift on a startup with no pending migration ID.
+
+Evidence root: `/Users/michael/.codex/scratchpads/cleansia-next-wave-2026-10-13/`. Source checks are pre-implementation findings; no test, implementation review, CI or deployment result is asserted by this approval record.
 
 ## Work record
 
 - 2026-10-12 — Filed from the BE-11 to BE-14 design ruling's reported item 5. Reported, not absorbed (CLAUDE.md §2): Mike decides whether it becomes work.
 
+- 2026-10-13 — Removed all four PendingModelChangesWarning suppressions and both stale fixture comments. Existing migration-built seed coverage now refuses relational model drift; no tool/package/workflow/snapshot-text test was added, and backend-ci's build identity is unchanged. Existing four seed tests and combined focused27/27 pass without suppressions. Current model check is clean after the one M11 regeneration (`p2/migration/initial-pending-model-001.json`).
+- 2026-10-13 — Real DDL probe changed DeviceToken varchar512→511 while holding the shared build mutex through mutation, Release rebuild, actual tests, byte restore and restored rebuild/tests. Five real PostgreSQL migration cases failed PendingModelChangesWarning; identical restored five passed/zero skipped. Exact before/restored DeviceConfiguration SHA256 was `d97b684c6ecbb91249c23c53b36082cfee59a5e1858629671455ba07cc27d03f` before M11's separate index change. `p2/data/t0842-ddl-proof.json` binds logs/TRXs/stages. No scratch delta remains.
+- 2026-10-13 — Token-only metadata is not detected and emits no DDL delta: measured historical receipts are Wave F `p5/impl/db_be11-payment-token.json` (SHA256597e852d6b81707153ddc38e3d7a7d3e9039a477e927dd23ef351a51c458536a) and `review_backend.json` (SHAbfc6ce6393be0793746938e5f307f817409cad9d8085540446d954f1afdd0402). This is a recorded limit, not a new token mutation or an all-DDL claim. The migrator skips Migrate when no migration id is pending, so not every startup detects drift. CI docs and a dated backend-catalog correction preserve that distinction. Full rebuilt Release unit8722→integration906→host509 pass/zero skipped; hosted CI remains due.
+
+- 2026-10-13 — Combined-source local release gates completed before publication: rebuilt Release unit8722→integration906→host509, zero skipped; uncached web5041 tests/408 suites across71 tested projects (three empty projects), all three production builds and seven Playwright smokes (5/1/1); Android three Debug compilations then core296→partner839→customer1683 JVM tests, every task forced to execute, zero skipped; iOS18.6 Core776→partner1113→customer1779 passed, with one existing VoiceOver case skipped. Docs refs/catalog/VitePress, iOS symbols/booking-policy parity and their self-tests pass. Exact commands, counters and receipt/TRX/summary hashes are in `p2/local/full-gates-before-commit.json` and `p2/verifier/android-gates-final.json` under the wave root. Android ordinary ignored OpenAPI generation and ignored iOS workspace client generation from committed specs ran for local CI; no tracked contract dump/NSwag change was required. These are command-only proofs, not real mail, native behavior/device or deployment checks. First unit source-guard failure was corrected with four actual token-bearing invocations and passed the full rerun; first partner iOS ENOSPC attempt is nonproof. The initial affected lint selected no targets on filing-only HEAD and is not source proof; actual affected lint and the three Docs checks will run at the committed source head before push. Hosted exact-head CI/guarded merge and final DEV remain due.
+
 ## Review
 
-Pending.
+2026-10-13 — Implementation verdict **approve-with-notes**; independent evidence verification confirmed the real DDL proof, restoration and full backend receipts (`p2/reviewer-round1.md`, `p2/verifier-round1.md`). Hosted exact-head CI/merge remain due.

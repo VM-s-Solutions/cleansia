@@ -17,16 +17,17 @@
 ## Responsibility (one sentence)
 
 Be the **one place** that answers *"is this order, in itself, work a cleaner may be offered and may
-take?"* — a predicate over the **order alone**, combining the fulfilment axis (`CurrentStatus`) with
-the money axis, in **two evaluation forms that a test proves equal**.
+take?"* — a predicate over **seven order scalars and a supplied UTC instant**, combining the fulfilment axis
+(`CurrentStatus`), the money axis and the booked slot end, in **two evaluation forms that a test proves equal**.
 
 > **Sharpened by the panel:** the question is **not** *"what money model is this?"* — it is
 > **"can anything take this order away from the cleaner I hand it to?"** That is why the role reads
 > the money **progress**, not only the money **model**.
 
 ```
-Offerable(o) ⟺ o.CurrentStatus ∈ { New, Confirmed, OnTheWay, InProgress }
+Offerable(o, nowUtc) ⟺ o.CurrentStatus ∈ { New, Confirmed, OnTheWay, InProgress }
              ∧ NotRetractable(o)
+             ∧ o.CleaningDateTime.AddMinutes(o.EstimatedTime) > nowUtc
 
 NotRetractable(o) ⟺ o.PaymentStatus == Paid
                   ∨ (o.PaymentType == Cash
@@ -46,9 +47,9 @@ NotRetractable(o) ⟺ o.PaymentStatus == Paid
 
 | Member | Job |
 |---|---|
-| `OfferableStatuses` = `[New, Confirmed, OnTheWay, InProgress]` | the **coarse** fulfilment floor — exactly the status term, the index-served prefilter on `Orders.CurrentStatus`, and the thing the clients mirror. **Not the rule** — it has no money term. |
-| `IsOfferableSql` : `Expression<Func<Order,bool>>` | queryable form, composed into `OrderSpecification` |
-| `IsOfferable(OrderStatus?, PaymentType, PaymentStatus, string? recurringTemplateId, DateTime? customerConfirmedAt)` | in-memory form, for the `TakeOrder` write gate. **Five scalars, all columns on `Order`** — no navigation properties, no I/O, no collaborator. `IsOfferable(Order)` is the overload for callers that hold the entity; the take's probe projects the five columns. |
+| `OfferableStatuses` = `[New, Confirmed, OnTheWay, InProgress]` | the **coarse** fulfilment floor — exactly the status term, the index-served prefilter on `Orders.CurrentStatus`, and the thing the clients mirror. **Not the rule** — it has no money or slot-end term. |
+| `IsOfferableSql(nowUtc)` : `Expression<Func<Order,bool>>` | queryable form, composed into `OrderSpecification` |
+| `IsOfferable(OrderStatus, PaymentType, PaymentStatus, string? recurringTemplateId, DateTime? customerConfirmedAt, DateTime cleaningDateTime, int estimatedTimeMinutes, DateTime nowUtc)` | in-memory form, for the `TakeOrder` write gate. **Seven scalars, all columns on `Order`, plus the supplied current instant** — no navigation properties, no I/O, no collaborator. `IsOfferable(Order, nowUtc)` is the overload for callers that hold the entity; the take's probe projects the seven columns. |
 
 **`NotRetractable` is the union of the negations of the two sweeps that actually run**, read off their
 own `WHERE` clauses — `CleanupStalePendingOrders` and `AutoCancelStaleRecurringOrders` (a `PaymentType`
@@ -58,6 +59,11 @@ carry a terminal-status term — not `Cancelled` (`CleanupStalePendingOrders.cs:
 excludes, so `NotRetractable` does not change for it. If a third scheduled retractor
 is ever added, **this term is where it must be reflected** — a sweep whose predicate is not negated
 here silently re-creates the defect the panel caught.
+
+**Slot-end amendment — 2026-10-13:** [ADR-0076](/decisions/adr-0076) adds the strict raw booked end
+boundary. Started work remains offerable before that end, with no division by crew. The open board and
+dashboard no longer impose a two-hour start-date floor. Existing assignments and customer/admin access
+are independent of the open-offer arm; the 30-minute no-show grace and 168-hour lookback remain.
 
 **Cash is not an exception — it is the rule with an empty *pre-work* money axis.** A future
 `PaymentType` must be classified on **both** axes (offerable at `New`? retractable by which sweep?) and
@@ -109,7 +115,7 @@ an exhaustiveness test over `Enum.GetValues<PaymentType>()` goes red until it is
   ships.*
 - **When an abandoned card order dies, or who cancels it.** That is `CleanupStalePendingOrders` /
   `AutoCancelStaleRecurringOrders`. Availability **negates their predicates** so it never offers a
-  doomed order; it never cancels one, never schedules one, and never reads a clock.
+  doomed order; it never cancels one, never schedules one, and never reads its own clock; its caller supplies the instant.
 - **Which tenant.** The global query filter scopes every read that composes it.
 
 ## Invariants a reviewer checks
@@ -171,8 +177,9 @@ an exhaustiveness test over `Enum.GetValues<PaymentType>()` goes red until it is
      incidentally; `hasAvailableSpots` does not, and `RestrictToEmployeeId` is *assigned-to-me **OR**
      has-a-seat* (`OrderSpecification.cs:134-139`) — it deliberately does not exclude. Web already
      compensates (`orders.facade.ts:148`). **Never one without the other.**
-  3. It **closes the mobile date-floor defect for free** (`GetPagedOrders.cs:58-61` applies the `-2h`
-     default only when `HasAvailableSpots == true`). The separately-filed ticket is **absorbed**.
+  3. The backend slot-end rule already protects both request shapes ([ADR-0076](/decisions/adr-0076)).
+     The switch is separately filed as T-0855; it changes which seats are listed and adds no two-hour
+     start-date floor.
   **No backend change, no NSwag regen** — both parameters already exist on the endpoint
   (`cleansia_android/openapi/partner-mobile-api.json:1128,1142`). And it makes ADR-0036's per-seat
   Invariant H **true on mobile**, where `isUnassigned` had been withholding 100% of every second seat's

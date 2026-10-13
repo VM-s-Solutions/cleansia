@@ -27,6 +27,7 @@ public sealed class CreateOrderOperatorAgreementTests
 
     public CreateOrderOperatorAgreementTests()
     {
+        _session.Setup(s => s.GetUserEmail()).Returns("customer@cleansia.test");
         _addresses
             .Setup(r => r.ResolveCountryIdAsync(It.IsAny<CreateOrder.Command>(), It.IsAny<string?>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync((CreateOrder.Command command, string? _, CancellationToken _) => command.CustomerAddress?.CountryId);

@@ -151,7 +151,7 @@ public sealed class CleanerNoShowCancellation(
             return null;
         }
 
-        if (await creditAccountRepository.IsOnFrozenCompanyBooksAsync(order.UserId, order.CurrencyId, cancellationToken))
+        if (await creditAccountRepository.IsOnFrozenCompanyBooksIgnoringTenantAsync(order.UserId, order.CurrencyId, cancellationToken))
         {
             logger.LogWarning(
                 "No apology credit on no-show order {OrderId}: the customer's credit account is on a company "
@@ -160,7 +160,7 @@ public sealed class CleanerNoShowCancellation(
             return null;
         }
 
-        var account = await creditAccountRepository.EnsureForUserAsync(
+        var account = await creditAccountRepository.EnsureForUserIgnoringTenantAsync(
             order.UserId, order.CurrencyId, cancellationToken);
         if (account is null)
             return null;

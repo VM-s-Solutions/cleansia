@@ -321,7 +321,7 @@ public partial class CreateOrderCallerCurrencyTests
         await TestMethod(setup: ConfigureCustomerSession, arrange: SeedCrossMembershipAsync,
             act: async provider =>
             {
-                var membership = await provider.GetRequiredService<IUserMembershipRepository>().GetEntitledForUserAsync(CustomerUserId, CancellationToken.None);
+                var membership = await provider.GetRequiredService<IUserMembershipRepository>().GetEntitledForUserIgnoringTenantAsync(CustomerUserId, CancellationToken.None);
                 provider.GetRequiredService<ITenantProvider>().SetTenantOverride(TestTenants.Second);
                 var usages = provider.GetRequiredService<IMembershipBenefitUsageRepository>();
                 var slot = await usages.TryReserveSlotAsync(CustomerUserId, MembershipBenefitKind.ExpressUpgrade, "2026-09", membership!.Id, 1, DateTime.UtcNow, CancellationToken.None);

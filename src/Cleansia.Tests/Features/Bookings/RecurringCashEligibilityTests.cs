@@ -46,7 +46,7 @@ public class RecurringCashEligibilityTests
             .Setup(r => r.GetByIdForOwnerAsync(TemplateId, UserId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(Template(PaymentType.Cash, [TwoHoursAndAMinute.Id], []));
         _membershipRepository
-            .Setup(r => r.GetEntitledForUserNoTrackingAsync(UserId, It.IsAny<CancellationToken>()))
+            .Setup(r => r.GetEntitledForUserNoTrackingIgnoringTenantAsync(UserId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(ActiveMembership());
     }
 
@@ -159,7 +159,7 @@ public class RecurringCashEligibilityTests
         var roomsTipIt = Template(PaymentType.Cash, [OverTwoHoursWithTheRooms.Id], [], "tpl-cash-rooms");
         var levelTipsIt = Template(PaymentType.Cash, [TwoHours.Id], [], "tpl-cash-120-increased", DirtinessLevel.Increased);
         _templateRepository
-            .Setup(r => r.GetByUserAsync(UserId, It.IsAny<CancellationToken>()))
+            .Setup(r => r.GetByUserIgnoringTenantAsync(UserId, It.IsAny<CancellationToken>()))
             .ReturnsAsync([needsChange, packaged, eligible, card, paused, roomsTipIt, levelTipsIt]);
 
         var result = await new GetMyRecurringBookings.Handler(
@@ -183,7 +183,7 @@ public class RecurringCashEligibilityTests
         var services = new Mock<IServiceRepository>(MockBehavior.Strict);
         var packages = new Mock<IPackageRepository>(MockBehavior.Strict);
         _templateRepository
-            .Setup(r => r.GetByUserAsync(UserId, It.IsAny<CancellationToken>()))
+            .Setup(r => r.GetByUserIgnoringTenantAsync(UserId, It.IsAny<CancellationToken>()))
             .ReturnsAsync([Template(PaymentType.Card, [TwoHoursAndAMinute.Id], [])]);
 
         var result = await new GetMyRecurringBookings.Handler(

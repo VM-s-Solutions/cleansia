@@ -38,7 +38,7 @@ public sealed class ExpressWaiverResolver(
         }
 
         var membership = await userMembershipRepository
-            .GetEntitledForUserNoTrackingAsync(userId, cancellationToken);
+            .GetEntitledForUserNoTrackingIgnoringTenantAsync(userId, cancellationToken);
 
         // PastDue and expired enrolments are excluded, and a trialing one is included, by that one
         // ENTITLEMENT predicate shared with every other benefit. No second membership predicate is invented

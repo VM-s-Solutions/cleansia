@@ -151,7 +151,7 @@ public class RecurringMaterializationRequiresPaidMembershipTests
             UserId, plan.Id, "currency-czk", "sub_test", DateTime.UtcNow.AddDays(-10), DateTime.UtcNow.AddDays(20), null);
 
         _memberships
-            .Setup(r => r.GetEntitledForUserNoTrackingAsync(UserId, It.IsAny<CancellationToken>()))
+            .Setup(r => r.GetEntitledForUserNoTrackingIgnoringTenantAsync(UserId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(membership);
     }
 
@@ -193,7 +193,7 @@ public class RecurringMaterializationRequiresPaidMembershipTests
         // The entitlement read answers null, which is what a lapsed, past-due, paused or cancelled
         // membership all produce.
         _memberships
-            .Setup(r => r.GetEntitledForUserNoTrackingAsync(UserId, It.IsAny<CancellationToken>()))
+            .Setup(r => r.GetEntitledForUserNoTrackingIgnoringTenantAsync(UserId, It.IsAny<CancellationToken>()))
             .ReturnsAsync((UserMembership?)null);
 
         var inputs = CaptureOrderInputs();
@@ -218,7 +218,7 @@ public class RecurringMaterializationRequiresPaidMembershipTests
     public async Task A_lapse_does_not_deactivate_or_mutate_the_template()
     {
         _memberships
-            .Setup(r => r.GetEntitledForUserNoTrackingAsync(UserId, It.IsAny<CancellationToken>()))
+            .Setup(r => r.GetEntitledForUserNoTrackingIgnoringTenantAsync(UserId, It.IsAny<CancellationToken>()))
             .ReturnsAsync((UserMembership?)null);
 
         CaptureOrderInputs();

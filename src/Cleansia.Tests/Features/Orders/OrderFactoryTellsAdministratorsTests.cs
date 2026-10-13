@@ -52,7 +52,7 @@ public sealed class OrderFactoryTellsAdministratorsTests
                 It.IsAny<string>(), It.IsAny<decimal>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(new TierDiscountResult(0m, null));
         _userMembershipRepository
-            .Setup(r => r.GetEntitledForUserAsync(UserId, It.IsAny<CancellationToken>()))
+            .Setup(r => r.GetEntitledForUserIgnoringTenantAsync(UserId, It.IsAny<CancellationToken>()))
             .ReturnsAsync((Core.Domain.Memberships.UserMembership?)null);
         _adminNotifier
             .Setup(n => n.NotifyAsync(It.IsAny<AdminEvent>(), It.IsAny<CancellationToken>()))

@@ -19,7 +19,7 @@ public class DocumentDeletionRequestRepository(CleansiaDbContext context)
                 cancellationToken);
     }
 
-    public async Task RemoveForEmployeeAsync(string employeeId, CancellationToken cancellationToken)
+    public async Task RemoveForEmployeeIgnoringTenantAsync(string employeeId, CancellationToken cancellationToken)
     {
         var rows = await GetQueryableIgnoringTenant()
             .Where(r => r.EmployeeId == employeeId)

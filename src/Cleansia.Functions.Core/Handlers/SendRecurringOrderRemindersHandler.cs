@@ -4,16 +4,8 @@ using Microsoft.Extensions.Logging;
 
 namespace Cleansia.Functions.Core.Handlers;
 
-/// <summary>
-/// Daily at 02:30 UTC, fire <c>recurring.scheduled</c> push notifications
-/// to customers whose materialized recurring-booking Orders are due in
-/// roughly the next 24h. Runs 30min after
-/// <c>MaterializeRecurringBookingsHandler</c> so newly-spawned
-/// orders for tomorrow are eligible immediately.
-///
-/// The handler stamps <c>Order.RecurringReminderSentAt</c> on success so
-/// successive sweeps within the 24h window don't duplicate-send.
-/// </summary>
+/// <summary>Hourly at :30 UTC, remind unconfirmed recurring occurrences 2–26 hours ahead once.
+/// A failed occurrence keeps its own scope and is retried on the next tick.</summary>
 public class SendRecurringOrderRemindersHandler(
     IMediator mediator,
     ILogger<SendRecurringOrderRemindersHandler> logger)
@@ -25,9 +17,10 @@ public class SendRecurringOrderRemindersHandler(
         if (result.IsSuccess && result.Value != null)
         {
             logger.LogInformation(
-                "SendRecurringOrderReminders completed; sent {Sent} of {Considered} reminders",
+                "SendRecurringOrderReminders completed; sent {Sent} of {Considered} reminders; failed {Failed}",
                 result.Value.RemindersSent,
-                result.Value.Considered);
+                result.Value.Considered,
+                result.Value.Failed);
         }
         else
         {

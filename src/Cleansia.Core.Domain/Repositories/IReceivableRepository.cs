@@ -6,9 +6,10 @@ public interface IReceivableRepository : IRepository<Receivable, string>
 {
     /// <summary>
     /// Whether the customer owes an open receivable to any operating company but a frozen one, whose books
-    /// refuse both its payment and its write-off.
+    /// refuse both its payment and its write-off. Caller obligation: userId is the session account
+    /// or the account read from an authorized booking template.
     /// </summary>
-    Task<bool> HasOpenForUserAsync(string userId, CancellationToken cancellationToken);
+    Task<bool> HasOpenForUserIgnoringTenantAsync(string userId, CancellationToken cancellationToken);
 
     /// <summary>
     /// What the customer owes any operating company but a frozen one and has not settled, with its order and

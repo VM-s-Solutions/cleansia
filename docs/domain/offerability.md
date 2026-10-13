@@ -5,7 +5,7 @@ living in exactly one place: `OrderAvailability`. Every surface reads it; none r
 
 ## The rule
 
-It is a property of the **order alone** — five columns in, a bool out — and it spans both axes of the
+It reads **seven order scalars plus the supplied current UTC instant**, returns a bool, and spans both axes of the
 [order lifecycle](/domain/order-lifecycle):
 
 ```csharp
@@ -13,7 +13,8 @@ It is a property of the **order alone** — five columns in, a bool out — and 
     || CurrentStatus == OnTheWay || CurrentStatus == InProgress)      // the work is not over
 && (PaymentStatus == Paid
     || (PaymentType == Cash
-        && (RecurringTemplateId == null || CustomerConfirmedAt != null))) // nothing can retract it
+        && (RecurringTemplateId == null || CustomerConfirmedAt != null))) // payment qualification
+&& CleaningDateTime.AddMinutes(EstimatedTime) > nowUtc
 ```
 
 The status term asks one thing — is the work over? — and qualifies nothing about money. The money term
@@ -23,6 +24,18 @@ wrote `Confirmed` when a card payment settled. `Confirmed` now means only that a
 so a paid card order rests at `New`, and the cash qualifier would have taken every card job off every
 board.
 
+**The slot must still be open** ([ADR-0076](/decisions/adr-0076), owner ruling 2026-10-13). A seat stops
+being offered and takeable at its cleaning start plus raw booked estimated minutes; equality is ended.
+Crew size does not shorten that slot. Started work with a free or covered seat remains offerable until
+then, including 180- and 240-minute jobs more than two hours after start. The open board, dashboard
+count and preview use this boundary instead of a two-hour start-date floor. Assigned cleaner, owning
+customer and administrator access remain independent of it.
+
+The unfilled-order sweep keeps its 30-minute late-fill grace and 168-hour lookback. A +10-minute
+unfilled 60-minute slot can still be taken before the sweep gives up. At end the open seat disappears
+even if the sweep has not run; a stale list's take is refused as `order.not_takeable` when expiry is the first failed check. Earlier opaque existence/hold/currency checks and terminal-status refusals keep their existing keys. The sweep does
+not adopt offerability: its never-started, empty-crew and money selection still governs cancellation.
+
 ## Why a status list cannot express it
 
 Every status the rule admits is also a status it refuses, depending on the money. What the money term
@@ -30,13 +43,13 @@ decides:
 
 | Order | Offerable | Why |
 |---|---|---|
-| One-off, cash | **yes, from creation** | Nothing scheduled can retract it. The take *is* the confirmation, and the money changes hands at the door |
-| One-off, card, `Paid` | **yes** | The webhook's `Paid` write puts it on the board; the status stays `New` until a cleaner takes it |
+| One-off, cash | **yes, from creation until slot end** | Nothing scheduled can retract it. The take *is* the confirmation, and the money changes hands at the door |
+| One-off, card, `Paid` | **yes, before slot end** | The webhook's `Paid` write puts it on the board; the status stays `New` until a cleaner takes it |
 | One-off, card, `Pending` or `Failed` | no | The money has not landed. A `Pending` checkout is cancelled by `CleanupStalePendingOrders` once it is more than an hour old (the sweep runs every 15 minutes and takes at most the 500 oldest a run, so a larger backlog spreads over the following runs). `Failed` is only ever written together with a cancellation — by that sweep, or by the webhook when Stripe expires or cancels the payment |
 | Recurring occurrence, card, `Pending` | no | The payment has not landed, and `AutoCancelStaleRecurringOrders` withdraws an unpaid occurrence an hour before the slot. A cleaner should not be standing in a doorway when that happens |
 | Recurring occurrence, cash, not confirmed | no | The customer has not confirmed it, and the same sweep withdraws it |
-| Recurring occurrence, cash, confirmed | **yes** | The customer's confirm stamps `CustomerConfirmedAt` — its own marker, since 2026-09-28 — and the occurrence stays `Pending` until the cleaner records the cash, like any cash order. Until then the confirm wrote `Paid` before any money moved |
-| Recurring occurrence, card, `Paid` | **yes** | The webhook's `Paid`, after the customer confirmed and paid |
+| Recurring occurrence, cash, confirmed | **yes, before slot end** | The customer's confirm stamps `CustomerConfirmedAt` — its own marker, since 2026-09-28 — and the occurrence stays `Pending` until the cleaner records the cash, like any cash order. Until then the confirm wrote `Paid` before any money moved |
+| Recurring occurrence, card, `Paid` | **yes, before slot end** | The webhook's `Paid`, after the customer confirmed and paid |
 
 The money term **refuses everything either retracting sweep can still reach** —
 `CleanupStalePendingOrders` (card, `Pending`, not recurring) and `AutoCancelStaleRecurringOrders`
@@ -62,8 +75,8 @@ whether the work is still owed.
 
 | Form | Used by |
 |---|---|
-| `IsOfferableSql` | queries — `OrderSpecification`, the new-jobs digest sweep |
-| `IsOfferable` | the in-memory write gate in `TakeOrder` |
+| `IsOfferableSql(nowUtc)` | queries — `OrderSpecification`, the new-jobs digest sweep |
+| `IsOfferable(..., nowUtc)` | the in-memory write gate in `TakeOrder` |
 
 They are **not** one shared expression. SQL and C# disagree on null semantics, and compiling an
 expression tree on a request path is banned here. Instead they are pinned against each other by an

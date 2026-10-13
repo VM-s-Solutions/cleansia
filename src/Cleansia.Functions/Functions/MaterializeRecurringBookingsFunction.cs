@@ -4,8 +4,8 @@ using Microsoft.Azure.Functions.Worker;
 namespace Cleansia.Functions.Functions;
 
 // ADR-0002 D5 step 1 — thin trigger shell; body lives in MaterializeRecurringBookingsHandler (Core).
-/// <summary>Daily at 02:00 UTC. Materializes due recurring bookings into orders before the recurring
-/// reminder sweep runs (which is scheduled strictly after, at 02:30 UTC). Cron is read from the
+/// <summary>Daily at 02:00 UTC. Materializes due recurring bookings into orders; the hourly
+/// reminder follows at :30 UTC. Late occurrences are reminded in their materialization transaction. Cron is read from the
 /// <c>MaterializeRecurringBookingsCron</c> app-setting; production default is <c>0 0 2 * * *</c>.</summary>
 public class MaterializeRecurringBookingsFunction(MaterializeRecurringBookingsHandler handler)
 {

@@ -28,7 +28,7 @@ Both Android and iOS read the **same two committed specs** so the platforms can'
 ## Never hand-edit the generated client
 
 The output packages (`CleansiaPartnerApi/`, `CleansiaCustomerApi/`) are **gitignored** and
-machine-owned. To change them you change the **spec** (owner regen) or the config in this directory,
+machine-owned. To change them you change the **spec** or the config in this directory,
 then regenerate — edits made by hand are silently overwritten on the next run.
 
 ## Regenerate
@@ -78,11 +78,12 @@ and any backend shape drift becomes a compile error instead of a silent runtime 
 > in both app directories. This is exactly the order `ios-ci.yml` uses, and it is why CI passes on a
 > machine where a naive local setup fails.
 
-## First real generation is owner-gated
+## Shared spec regeneration
 
-> **`manual_step: mobile-spec-regen`** — a spec **re-dump** is owner-run (it needs the mobile API hosts
-> running), but the first generation has happened and nothing is gated on it. The paragraph below
-> describes the pre-2026-08-14 state, when the committed specs were missing
-> `Device/Mine`, `Device/{id}` revoke, and `EmployeePayroll/GetPeriodPays`). The **first real client
-> generation** is held until the owner regenerates the shared specs. The toolchain *wiring* (config +
-> scripts + discipline) is complete and runnable now; it just produces a stale client until the regen.
+A spec **re-dump** is ordinary agent-run work under `CLAUDE.md`: start the mobile API hosts locally,
+dump the shared specs, regenerate and verify both clients, and report the commands. Shared DEV
+deployment/reset still requires explicit owner approval; PRO access remains prohibited.
+
+The first real generation was completed on 2026-08-14. Before that date, the committed specs lacked
+`Device/Mine`, `Device/{id}` revoke and `EmployeePayroll/GetPeriodPays`, so first generation was held
+on the shared-spec refresh. That dated rollout state no longer gates regeneration.

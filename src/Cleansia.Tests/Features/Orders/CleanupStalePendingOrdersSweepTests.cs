@@ -661,13 +661,19 @@ public sealed class CleanupStalePendingOrdersSweepTests : IDisposable
 
         await using (var ctx = NewContext())
         {
-            var handler = new SendRecurringOrderReminders.Handler(
+            var handler = new SendRecurringOrderReminder.Handler(
                 new OrderRepository(ctx),
                 new NotificationProducer(new UserNotificationRepository(ctx), new OutboxPendingDispatch(ctx), new UserRepository(ctx), NullLogger<NotificationProducer>.Instance),
-                ctx,
-                NullLogger<SendRecurringOrderReminders.Handler>.Instance);
-            var result = await handler.Handle(new SendRecurringOrderReminders.Command(), CancellationToken.None);
-            Assert.Equal(1, result.Value!.RemindersSent);
+                _tenantProvider);
+            var now = DateTime.UtcNow;
+            var sent = 0;
+            foreach (var order in new[] { confirmedCash, unconfirmedCash })
+            {
+                var result = await handler.Handle(new SendRecurringOrderReminder.Command(order.Id, now, now.AddHours(2), now.AddHours(26)), CancellationToken.None);
+                sent += result.Value!.Sent ? 1 : 0;
+            }
+            await ctx.CommitAsync(CancellationToken.None);
+            Assert.Equal(1, sent);
         }
 
         Assert.Null((await ReadOrderAsync("01HZX9N6M7Q8R9S0T1V2W3Y416")).RecurringReminderSentAt);

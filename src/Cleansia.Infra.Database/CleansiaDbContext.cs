@@ -304,6 +304,18 @@ public class CleansiaDbContext : DbContext, IUnitOfWork
             $"""SELECT "Id" FROM "Users" WHERE "Id" = {userId} FOR NO KEY UPDATE""", cancellationToken);
     }
 
+    internal async Task LockPartialRefundAuditAsync(string refundId, CancellationToken cancellationToken)
+    {
+        if (!Database.IsNpgsql()) return;
+        if (Database.CurrentTransaction is null && System.Transactions.Transaction.Current is null)
+            lockTransaction = await Database.BeginTransactionAsync(cancellationToken);
+
+        // Hold the existing refund row until its audit commits, so a concurrent identical request reads
+        // only the committed winner's audit. Rollback/disposal releases this with the other scoped locks.
+        await Database.ExecuteSqlAsync(
+            $"""SELECT "Id" FROM "Refunds" WHERE "Id" = {refundId} FOR UPDATE""", cancellationToken);
+    }
+
     internal async Task LockCashHeldAsync(string employeeId, string currencyId, CancellationToken cancellationToken)
     {
         if (!Database.IsNpgsql())

@@ -10,6 +10,7 @@ using Cleansia.Core.Domain.EmployeePayroll;
 using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Repositories;
 using Cleansia.Core.Domain.Sorting;
+using Cleansia.Core.Domain.Sorting.Common;
 using Cleansia.Core.Domain.Specifications;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
@@ -55,8 +56,25 @@ public class GetPagedInvoices
                 currencyId: request.Filter?.CurrencyId);
 
             var filter = specification.SatisfiedBy();
-            var sort = request.Sort.MapToDomain()
-                .WithinCurrencyWhenSortedBy(nameof(EmployeeInvoice.TotalAmount), request.Filter?.CurrencyId);
+            var idField = nameof(EmployeeInvoice.Id).ToLowerInvariant();
+            var sort = request.Sort.MapToDomain().Select(definition =>
+                string.Equals(definition.Field, idField, StringComparison.OrdinalIgnoreCase)
+                    ? new SortDefinition { Field = idField, Direction = definition.Direction }
+                    : definition).ToList();
+            if (sort.Count == 0)
+            {
+                sort.Add(new SortDefinition
+                {
+                    Field = nameof(EmployeeInvoice.GeneratedAt),
+                    Direction = SortDirection.Descending
+                });
+            }
+
+            sort = sort.WithinCurrencyWhenSortedBy(nameof(EmployeeInvoice.TotalAmount), request.Filter?.CurrencyId).ToList();
+            if (!sort.Any(definition => string.Equals(definition.Field, idField, StringComparison.OrdinalIgnoreCase)))
+            {
+                sort.Add(new SortDefinition { Field = idField, Direction = SortDirection.Descending });
+            }
 
             var totalItems = await invoiceRepository.GetCountAsync(filter, cancellationToken);
             var items = await invoiceRepository

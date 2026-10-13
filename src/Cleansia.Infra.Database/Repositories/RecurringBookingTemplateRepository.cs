@@ -10,7 +10,7 @@ public class RecurringBookingTemplateRepository(CleansiaDbContext context)
     public Task<RecurringBookingTemplate?> GetByIdForOwnerAsync(string id, string userId, CancellationToken cancellationToken)
         => GetQueryableIgnoringTenant().FirstOrDefaultAsync(t => t.Id == id && t.UserId == userId, cancellationToken);
 
-    public async Task<IReadOnlyList<RecurringBookingTemplate>> GetByUserAsync(string userId, CancellationToken cancellationToken)
+    public async Task<IReadOnlyList<RecurringBookingTemplate>> GetByUserIgnoringTenantAsync(string userId, CancellationToken cancellationToken)
     {
         // The caller's account owns schedules in every market operator.
         return await GetQueryableIgnoringTenant()

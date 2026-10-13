@@ -120,7 +120,7 @@ public class CreateMembershipSubscriptionReconcileOnRetryTests
             currentPeriodStart: DateTime.UtcNow,
             currentPeriodEnd: DateTime.UtcNow.AddMonths(1));
         _membershipRepository
-            .Setup(r => r.GetByStripeSubscriptionIdAsync(
+            .Setup(r => r.GetByStripeSubscriptionIdIgnoringTenantAsync(
                 $"sub_tok-{ClientToken}", It.IsAny<CancellationToken>()))
             .ReturnsAsync(alreadyTracked);
 
@@ -140,7 +140,7 @@ public class CreateMembershipSubscriptionReconcileOnRetryTests
             .Setup(r => r.GetLifecycleForUserAsync(UserId, It.IsAny<CancellationToken>()))
             .ReturnsAsync((UserMembership?)null);
         _membershipRepository
-            .Setup(r => r.GetByStripeSubscriptionIdAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .Setup(r => r.GetByStripeSubscriptionIdIgnoringTenantAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(() => tracked);
 
         var added = new List<UserMembership>();

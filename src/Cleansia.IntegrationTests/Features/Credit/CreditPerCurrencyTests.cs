@@ -81,7 +81,7 @@ public class CreditPerCurrencyTests(PostgresContainerFixture fixture) : BaseInte
     {
         await using var ctx = NewContext();
         var account = await new CreditAccountRepository(ctx)
-            .EnsureForUserAsync(userId, currencyId, CancellationToken.None);
+            .EnsureForUserIgnoringTenantAsync(userId, currencyId, CancellationToken.None);
         account.Issue(amount, CreditTransactionReason.Goodwill, key, ActorId, note: "seed");
         await ctx.CommitAsync(CancellationToken.None);
     }
@@ -133,7 +133,7 @@ public class CreditPerCurrencyTests(PostgresContainerFixture fixture) : BaseInte
 
     /// <summary>
     /// THE DEFECT, stated as an outcome. A return denominated in one currency must not land on a
-    /// balance held in another. Before the currency term, <c>EnsureForUserAsync</c> matched on user
+    /// balance held in another. Before the currency term, <c>EnsureForUserIgnoringTenantAsync</c> matched on user
     /// alone, so the CZK return below would have been added to the EUR balance — 400 EUR where the
     /// customer had 25.
     /// </summary>
@@ -148,7 +148,7 @@ public class CreditPerCurrencyTests(PostgresContainerFixture fixture) : BaseInte
 
         await using (var ctx = NewContext())
         {
-            var returned = await new CreditAccountRepository(ctx).TryReturnAsync(
+            var returned = await new CreditAccountRepository(ctx).TryReturnIgnoringTenantAsync(
                 userId, czk, 400m, "return-czk", ActorId, CancellationToken.None);
             Assert.True(returned);
         }

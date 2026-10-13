@@ -550,6 +550,7 @@
               pInputText
               id="wizard-email"
               type="email"
+              [readonly]="facade.isAuthenticated()"
               [ngModel]="facade.formData().customerEmail"
               (ngModelChange)="facade.updateFormData({ customerEmail: $event })"
               (blur)="markTouched('customerEmail')"

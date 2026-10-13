@@ -97,7 +97,7 @@ public class GetWorkContract
 
             var facts = WorkContractFacts.FromJson(acceptance.FactsJson);
             var company = acceptance.TenantId is { } operatorTenantId
-                ? await companyInfoRepository.GetActiveForOperatorAsync(operatorTenantId, facts.CountryId, cancellationToken)
+                ? await companyInfoRepository.GetActiveForOperatorIgnoringTenantAsync(operatorTenantId, facts.CountryId, cancellationToken)
                 : null;
 
             return BusinessResult.Success(document.MapToWorkContractDto(rendered, facts, details, company));

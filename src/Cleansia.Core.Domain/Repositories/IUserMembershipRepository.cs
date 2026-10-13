@@ -38,6 +38,8 @@ public interface IUserMembershipRepository : IRepository<UserMembership, string>
     /// Resolve the membership that ENTITLES the user to Cleansia Plus benefits — a live enrolment in good
     /// standing: <see cref="MembershipStatus.Active"/> and inside its period, whether it is paid or inside
     /// its free trial. A trialing member gets every benefit a paying one does (owner ruling 2026-09-30).
+    /// Caller obligation: userId is the session account or comes from an authorized order, template or
+    /// booking input; benefits follow that account across operating companies.
     ///
     /// <para><b>This is deliberately a second method rather than a narrowing of
     /// <see cref="GetLifecycleForUserAsync"/>, and the distinction is load-bearing.</b> That one answers "is
@@ -48,18 +50,19 @@ public interface IUserMembershipRepository : IRepository<UserMembership, string>
     /// mint a SECOND subscription and collide with the filtered unique index on (TenantId, UserId) over the
     /// live statuses. Two questions, two methods.</para>
     /// </summary>
-    Task<UserMembership?> GetEntitledForUserAsync(string userId, CancellationToken cancellationToken);
+    Task<UserMembership?> GetEntitledForUserIgnoringTenantAsync(string userId, CancellationToken cancellationToken);
 
-    /// <summary>No-tracking variant of <see cref="GetEntitledForUserAsync"/>, for read-only callers.</summary>
-    Task<UserMembership?> GetEntitledForUserNoTrackingAsync(string userId, CancellationToken cancellationToken);
+    /// <summary>No-tracking variant of <see cref="GetEntitledForUserIgnoringTenantAsync"/>, for read-only callers.</summary>
+    Task<UserMembership?> GetEntitledForUserNoTrackingIgnoringTenantAsync(string userId, CancellationToken cancellationToken);
 
     /// <summary>
-    /// Lookup by Stripe subscription id. Used by webhook handlers to reconcile
+    /// Lookup by Stripe subscription id from a verified Stripe event or the caller's Stripe response.
+    /// A webhook caller adopts the returned row's tenant before mutation. Used to reconcile
     /// state changes ("this subscription's status flipped — find the local row").
     /// Returns null if no local row matches (typically a webhook for a sub we
     /// never tracked, e.g. created out-of-band in Stripe Dashboard).
     /// </summary>
-    Task<UserMembership?> GetByStripeSubscriptionIdAsync(string stripeSubscriptionId, CancellationToken cancellationToken);
+    Task<UserMembership?> GetByStripeSubscriptionIdIgnoringTenantAsync(string stripeSubscriptionId, CancellationToken cancellationToken);
 
     /// <summary>
     /// Has this user ever started a trial, on any enrolment? The once-per-customer rule needs an answer

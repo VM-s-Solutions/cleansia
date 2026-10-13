@@ -31,7 +31,7 @@ public interface ICustomerActionAuditRepository : IRepository<CustomerActionAudi
     /// so the blanking rides the erasure's single commit and a commit failure leaves the trail intact.
     /// Returns the number of rows touched.
     /// </summary>
-    Task<int> PseudonymiseForSubjectAsync(string userId, CancellationToken cancellationToken);
+    Task<int> PseudonymiseForSubjectIgnoringTenantAsync(string userId, CancellationToken cancellationToken);
 
     /// <summary>
     /// The subject's GUEST rows: acts with no <c>UserId</c> against one of the subject's orders — a booking
@@ -39,7 +39,7 @@ public interface ICustomerActionAuditRepository : IRepository<CustomerActionAudi
     /// by the order because nothing else links them. Same tracked walk, same single commit. Returns the
     /// number of rows touched.
     /// </summary>
-    Task<int> PseudonymiseGuestRowsForOrdersAsync(IReadOnlyCollection<string> orderIds, CancellationToken cancellationToken);
+    Task<int> PseudonymiseGuestRowsForOrdersIgnoringTenantAsync(IReadOnlyCollection<string> orderIds, CancellationToken cancellationToken);
 
     /// <summary>
     /// Deletes every row of the AMBIENT operating company whose own

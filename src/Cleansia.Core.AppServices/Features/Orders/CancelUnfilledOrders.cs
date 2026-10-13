@@ -51,7 +51,7 @@ public class CancelUnfilledOrders
     /// </param>
     /// <param name="GraceMinutes">
     /// How long past the slot to wait before giving up. A cleaner can still take a job after its
-    /// start time — <c>TakeOrder</c> has no lead-time gate at all — so a late fill is a real outcome
+    /// start time while its booked slot is still open — so a late fill is a real outcome
     /// and cancelling at the stroke of the hour would cut it off.
     /// </param>
     public record Command(int LookbackHours = 168, int GraceMinutes = 30) : ICommand<Response>;

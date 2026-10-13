@@ -50,7 +50,7 @@ public class WorkContractAcceptanceRepository(CleansiaDbContext context)
             .ToListAsync(cancellationToken);
     }
 
-    public async Task<int> PseudonymiseForEmployeeAsync(string employeeId, CancellationToken cancellationToken)
+    public async Task<int> PseudonymiseForEmployeeIgnoringTenantAsync(string employeeId, CancellationToken cancellationToken)
     {
         // Tracked, not ExecuteUpdateAsync: the blanking must ride the erasure's single commit, so a
         // commit failure cannot leave the trail blanked while the subject still exists (or the reverse).

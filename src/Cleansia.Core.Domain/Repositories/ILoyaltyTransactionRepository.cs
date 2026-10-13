@@ -8,9 +8,10 @@ public interface ILoyaltyTransactionRepository : IRepository<LoyaltyTransaction,
     /// Idempotency check — returns the latest transaction for a given
     /// order + source, or null if none exists. Used by LoyaltyService to
     /// avoid double-grant / double-revoke when CompleteOrder or CancelOrder
-    /// is replayed.
+    /// is replayed. Caller obligation: orderId names an already-authorized or swept order; source is
+    /// the fixed earn/revoke kind, and the result controls replay only.
     /// </summary>
-    Task<LoyaltyTransaction?> GetLatestForOrderSourceAsync(string orderId, LoyaltyEarnSource source, CancellationToken cancellationToken);
+    Task<LoyaltyTransaction?> GetLatestForOrderSourceIgnoringTenantAsync(string orderId, LoyaltyEarnSource source, CancellationToken cancellationToken);
 
     /// <summary>
     /// Idempotency lookup for the manual admin grant/revoke path (S7a).

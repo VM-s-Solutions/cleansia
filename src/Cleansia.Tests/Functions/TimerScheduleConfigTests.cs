@@ -8,7 +8,7 @@ namespace Cleansia.Tests.Functions;
 
 // The tokenized timers must read their cron from an app-setting via
 // %AppSetting% TimerTrigger syntax (promotion is config-only), the committed production defaults must
-// match each function's documented cadence, and Materialize must fire strictly before Reminder.
+// match each function's documented cadence, and an hourly reminder follows materialization.
 public class TimerScheduleConfigTests
 {
     private const string MaterializeToken = "%MaterializeRecurringBookingsCron%";
@@ -21,7 +21,7 @@ public class TimerScheduleConfigTests
     private const string TomorrowDigestToken = "%SendTomorrowJobDigestCron%";
 
     private const string MaterializeCron = "0 0 2 * * *";
-    private const string RemindersCron = "0 30 2 * * *";
+    private const string RemindersCron = "0 30 * * * *";
     private const string MembershipCron = "0 0 3 * * *";
     private const string DigestCron = "0 0 * * * *";
     private const string ExpireReferralsCron = "0 30 3 * * *";
@@ -188,7 +188,7 @@ public class TimerScheduleConfigTests
     }
 
     [Fact]
-    public void Materialize_fires_strictly_before_Reminder()
+    public void Materialize_is_followed_by_a_Reminder_within_an_hour()
     {
         var materialize = CronSchedule.Parse(ResolveToken(ReadSchedule(typeof(MaterializeRecurringBookingsFunction))));
         var reminder = CronSchedule.Parse(ResolveToken(ReadSchedule(typeof(SendRecurringOrderRemindersFunction))));
@@ -196,11 +196,31 @@ public class TimerScheduleConfigTests
         var dayStart = new DateTime(2026, 6, 1, 0, 0, 0, DateTimeKind.Utc);
 
         var materializeFire = materialize.NextOccurrence(dayStart);
-        var reminderFire = reminder.NextOccurrence(dayStart);
+        var reminderFire = reminder.NextOccurrence(materializeFire);
 
         Assert.True(
-            materializeFire < reminderFire,
+            materializeFire < reminderFire && reminderFire - materializeFire <= TimeSpan.FromHours(1),
             $"Materialize ({materializeFire:O}) must fire strictly before Reminder ({reminderFire:O}).");
+    }
+
+    [Fact]
+    public void Recurring_reminders_cover_every_hour_across_midnight()
+    {
+        var reminder = CronSchedule.Parse(ResolveToken(ReadSchedule(typeof(SendRecurringOrderRemindersFunction))));
+        var start = new DateTime(2026, 6, 1, 2, 30, 0, DateTimeKind.Utc);
+        var cursor = start;
+        while (cursor < start.AddDays(2))
+        {
+            var next = reminder.NextOccurrence(cursor);
+            Assert.Equal(TimeSpan.FromHours(1), next - cursor);
+            cursor = next;
+        }
+    }
+
+    [Fact]
+    public void The_recurring_reminder_window_reaches_the_confirmation_cutoff()
+    {
+        Assert.Equal(2, new Cleansia.Core.AppServices.Features.Bookings.SendRecurringOrderReminders.Command().LeadHoursLow);
     }
 
     private static string ReadSchedule(Type functionType)

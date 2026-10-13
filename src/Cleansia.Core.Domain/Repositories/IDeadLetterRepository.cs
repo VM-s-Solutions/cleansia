@@ -43,5 +43,5 @@ public interface IDeadLetterRepository : IRepository<DeadLetter, string>
     /// today the subject lives inside <c>RawBody</c>, and promoting it to a column changes this body and
     /// nothing else.</para>
     /// </summary>
-    Task RemoveForSubjectAsync(string userId, CancellationToken cancellationToken);
+    Task RemoveForSubjectIgnoringTenantAsync(string userId, CancellationToken cancellationToken);
 }

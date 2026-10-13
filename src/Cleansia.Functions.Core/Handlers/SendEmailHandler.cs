@@ -16,12 +16,12 @@ using Microsoft.Extensions.Logging;
 namespace Cleansia.Functions.Core.Handlers;
 
 /// <summary>
-/// Realizes every e-mail the send-email queue carries, off the request path. The queue holds eight
+/// Realizes every e-mail the send-email queue carries, off the request path. The queue holds nine
 /// payload shapes told apart by their <c>messageType</c> discriminator: the bare
 /// <see cref="SendEmailMessage"/> (no discriminator; confirmation, reset, promo and the two wind-down
 /// notices, resolved by <see cref="EmailType"/>), the guest order cancellation, the booking
 /// confirmation, the admin notification, the receivable pay link, the lockout cancellation, the cash a
-/// customer did not pay at the door and the cleaner's copy of a contract for work. Each is sent via the existing
+/// customer did not pay at the door, the cleaner's copy of a contract for work, and Started/Completed updates. Each is sent via the existing
 /// <see cref="IEmailService"/> in the language the producer chose.
 ///
 /// Idempotent via <see cref="IIdempotencyGuard"/> in ACT-THEN-CLAIM mode (at-least-once): non-claiming
@@ -62,6 +62,7 @@ public class SendEmailHandler(
         SendOrderLockoutEmailMessage? lockoutMessage;
         SendOrderCashNotPaidEmailMessage? cashNotPaidMessage;
         SendWorkContractEmailMessage? workContractMessage;
+        SendOrderStatusEmailMessage? statusMessage;
         string? discriminatedTenantId;
         try
         {
@@ -85,11 +86,18 @@ public class SendEmailHandler(
                 ? payload.Deserialize<SendOrderCashNotPaidEmailMessage>(JsonOptions) : null;
             workContractMessage = messageType == SendWorkContractEmailMessage.Discriminator
                 ? payload.Deserialize<SendWorkContractEmailMessage>(JsonOptions) : null;
+            statusMessage = messageType == SendOrderStatusEmailMessage.Discriminator
+                ? payload.Deserialize<SendOrderStatusEmailMessage>(JsonOptions) : null;
             discriminatedTenantId = root.TryGetProperty("tenantId", out var tenant) && tenant.ValueKind == JsonValueKind.String ? tenant.GetString() : null;
         }
         catch (JsonException ex)
         {
             logger.LogWarning(ex, "Discarding email message: malformed body (permanent)");
+            return;
+        }
+        if (statusMessage is not null)
+        {
+            await SendOrderStatusAsync(statusMessage, discriminatedTenantId, ct);
             return;
         }
         if (guestMessage is not null)
@@ -257,6 +265,40 @@ public class SendEmailHandler(
         catch (Exception ex)
         {
             logger.LogWarning(ex, "Guest cancellation email sent for order {OrderId}, but its delivery claim failed", order.Id);
+        }
+    }
+
+    private async Task SendOrderStatusAsync(SendOrderStatusEmailMessage message, string? envelopeTenantId, CancellationToken ct)
+    {
+        var tenantId = envelopeTenantId ?? message.TenantId;
+        if (string.IsNullOrWhiteSpace(message.OrderId) || string.IsNullOrWhiteSpace(tenantId)
+            || message.Status is not (OrderStatus.InProgress or OrderStatus.Completed))
+        {
+            logger.LogWarning("Discarding status e-mail with no eligible order, status or operator");
+            return;
+        }
+        var key = MessageKeys.OrderStatusEmail(message.OrderId, message.Status);
+        if (await idempotencyGuard.HasProcessedAsync(key, ct)) return;
+        tenantProvider.SetTenantOverride(tenantId);
+        var order = await orderRepository.GetQueryable().Include(o => o.Currency).Include(o => o.CustomerAddress).Include(o => o.User)
+            .AsNoTracking().FirstOrDefaultAsync(o => o.Id == message.OrderId && o.CurrentStatus == message.Status, ct);
+        if (order is null || string.IsNullOrWhiteSpace(order.CustomerEmail) || order.CustomerEmail == AnonymizationMarker.Value)
+        {
+            logger.LogWarning("Discarding status e-mail: order {OrderId} has no eligible destination or current status", message.OrderId);
+            return;
+        }
+        var languageCode = EmailLocale.Resolve(order.LanguageCode ?? order.User?.PreferredLanguageCode ?? message.LanguageCode);
+        var guestAccessToken = guestAccessTokenIssuer.IssueForGuest(order);
+        if (guestAccessToken is not null) await unitOfWork.CommitAsync(ct);
+        await emailService.SendOrderStatusUpdateEmailAsync(order.CustomerEmail, order,
+            message.Status == OrderStatus.InProgress ? "Started" : "Completed", languageCode, ct, guestAccessToken: guestAccessToken);
+        try
+        {
+            await idempotencyGuard.MarkProcessedAsync(key, ct);
+        }
+        catch (Exception ex)
+        {
+            logger.LogWarning(ex, "Status e-mail sent for order {OrderId}, but its delivery claim failed", order.Id);
         }
     }
 

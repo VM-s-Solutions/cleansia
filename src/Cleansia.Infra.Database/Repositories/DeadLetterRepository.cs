@@ -17,7 +17,7 @@ public class DeadLetterRepository(CleansiaDbContext context)
 {
     private static readonly EmailType[] EmailTypes = Enum.GetValues<EmailType>();
 
-    public async Task RemoveForSubjectAsync(string userId, CancellationToken cancellationToken)
+    public async Task RemoveForSubjectIgnoringTenantAsync(string userId, CancellationToken cancellationToken)
     {
         // IgnoreQueryFilters + the explicit subject predicate: the poison consumer records the body
         // verbatim and derives no tenant from it, so the row carries whatever tenant was ambient on the

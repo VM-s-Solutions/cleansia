@@ -503,6 +503,18 @@ where it is seen.
      land independently → what it does not roll back**. Recorded because the gap was listed rather
      than flagged for a reason worth keeping — the *design* was right, and unlisting a correct write
      would have made it read as a violation. The roster now has no incomplete entry.
+  **Roster — independent credit returns:**
+  7. `CreditAccountRepository.TryReturnIgnoringTenantAsync` — commits its own transaction only when no caller transaction
+     or credit lock is open. The three independent paths are `CreateOrder`'s failed-dispatch compensation
+     through `CreditUnwind.ReturnCreditAsync`, the refund settle's `ReturnCreditShareAsync` through that same
+     seam, and `CreditUnwind.ReturnPendingRefundCreditLegAsync` after the cancellation/refund claim has
+     committed. The compensation must survive a failed booking command; the refund legs must reflect money
+     already unwound even if a later notice or audit fails. Those committed balance/ledger returns are not
+     rolled back by the caller's later refusal. `ReturnCreditAsync` checks the account's frozen-company
+     books before returning it. `CreditTransactions.OrderId` is a discriminator, not a foreign key into an
+     order the same request created; its foreign key is the credit account. Order-ending unpaid credit
+     returns still acquire the owner lock first and join the ending commit (ADR-0073).
+
   (a2) *A change-tracked write is invisible to every **DB-read** guard over it for the rest of the unit
   of work* (AM-4/AM-5) — the mirror of seam law 3. Converting a self-committing write to a tracked one
   disarms its idempotency/uniqueness pre-reads until the commit; the duplicate then surfaces as a
@@ -1032,8 +1044,9 @@ second seat, and the sentence is still true while it is free.
 
 ## A loop that continues past a failed commit in a shared scope — the deviating form (2026-10-12)
 
-> **Enforced by:** for the two dispatchers that give each item a scope, `RecurringSweepPerTemplateIsolationTests`
-> and `RecurringAutoCancelPerOrderIsolationTests` — **`T1-CI`**, closed roster; for every other job,
+> **Enforced by:** for the three named dispatchers that give each item a scope, `RecurringSweepPerTemplateIsolationTests`
+> and `RecurringAutoCancelPerOrderIsolationTests`, plus `RecurringReminderIsolationTests` (payment race on PostgreSQL)
+> — **`T1-CI`**, closed roster; for every other job,
 > `runtime-readiness.md` checklist item 8 — **`T3-HUMAN`**. Rule and rejected alternatives:
 > `patterns-backend.md` §*"One scope per job item, and per command on a shared timer"*; decision: **ADR-0072**,
 > which is `accepted` (`docs/decisions/adr-0072.md:9`).
@@ -1061,7 +1074,6 @@ the roster is stale.
 | `RedrivePendingRefunds` | `RedrivePendingRefunds.cs:120-218`; it moves money |
 | `FiscalRetryService` | `FiscalRetryService.cs:40-112` |
 | `PayPeriodBackgroundService` | `PayPeriodBackgroundService.cs:255-279`, a cleaner's invoices, committing at `:455-476` |
-| `SendRecurringOrderReminders` | `SendRecurringOrderReminders.cs:62-92` |
 | `SendMembershipLifecycleNotifications` | `SendMembershipLifecycleNotifications.cs:67-89` and `:105-127` |
 | `NewJobsDigestService` | `NewJobsDigestService.cs:110-244`, committing at `:376` |
 | `DataRetentionBackgroundService` | `DataRetentionBackgroundService.cs:93-105`, around each retention task |

@@ -40,7 +40,7 @@ public static class PreferredOfferExit
     public static bool IsOpen(Order order, bool callerHasActiveMembership, DateTime nowUtc)
         => callerHasActiveMembership
            && order.RecurringTemplateId is null
-           && OrderAvailability.IsOfferable(order)
+           && OrderAvailability.IsOfferable(order, nowUtc)
            && order.PreferredOfferRound < BookingPolicy.MaxPreferredOfferRounds
            && order.AssignedEmployees.Count == 0
            && !PreferredOffer.HasLiveReservation(
@@ -60,6 +60,6 @@ public static class PreferredOfferExit
 
         return !string.IsNullOrEmpty(userId)
             && await userMembershipRepository
-                .GetEntitledForUserNoTrackingAsync(userId, cancellationToken) is not null;
+                .GetEntitledForUserNoTrackingIgnoringTenantAsync(userId, cancellationToken) is not null;
     }
 }

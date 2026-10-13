@@ -91,7 +91,7 @@ public sealed class WorkContractAcceptanceImmutabilityTests
                 nameof(IWorkContractAcceptanceRepository.GetForOrdersAsync),
                 nameof(IWorkContractAcceptanceRepository.GetForSeatsAsync),
                 nameof(IWorkContractAcceptanceRepository.PseudonymiseExpiredAsync),
-                nameof(IWorkContractAcceptanceRepository.PseudonymiseForEmployeeAsync),
+                nameof(IWorkContractAcceptanceRepository.PseudonymiseForEmployeeIgnoringTenantAsync),
             ],
             declared);
     }
@@ -151,7 +151,7 @@ public sealed class WorkContractAcceptanceImmutabilityTests
         Assert.Equal(
             [
                 $"{typeof(WorkContractAcceptanceRepository).FullName}.{nameof(WorkContractAcceptanceRepository.PseudonymiseExpiredAsync)}",
-                $"{typeof(WorkContractAcceptanceRepository).FullName}.{nameof(WorkContractAcceptanceRepository.PseudonymiseForEmployeeAsync)}"
+                $"{typeof(WorkContractAcceptanceRepository).FullName}.{nameof(WorkContractAcceptanceRepository.PseudonymiseForEmployeeIgnoringTenantAsync)}"
             ],
             callers);
     }

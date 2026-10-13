@@ -2,6 +2,7 @@ using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Payments;
 using Cleansia.Core.Domain.Repositories;
 using Microsoft.EntityFrameworkCore;
+using System.Text.Json;
 
 namespace Cleansia.Infra.Database.Repositories;
 
@@ -10,6 +11,26 @@ public class RefundRepository(CleansiaDbContext context) : BaseRepository<Refund
     public Task<Refund?> GetByRefundKeyAsync(string refundKey, CancellationToken cancellationToken)
     {
         return GetDbSet().FirstOrDefaultAsync(r => r.RefundKey == refundKey, cancellationToken);
+    }
+
+    public Task<Refund?> GetSucceededByRefundKeyNoTrackingAsync(string refundKey, CancellationToken cancellationToken) =>
+        GetDbSet().AsNoTracking().FirstOrDefaultAsync(r => r.RefundKey == refundKey && r.Status == RefundStatus.Succeeded, cancellationToken);
+
+    public async Task<bool> HasPartialRefundAuditUnderLockAsync(string refundId, string refundKey, CancellationToken cancellationToken)
+    {
+        await Context.LockPartialRefundAuditAsync(refundId, cancellationToken);
+        var json = JsonSerializer.Serialize(new { refundKey });
+        if (Context.Database.IsNpgsql())
+            return await Context.AdminActionAudits.AnyAsync(a => a.Action == "order.refund.partial" && a.Success
+                && EF.Functions.JsonContains(a.AfterJson!, json), cancellationToken);
+        var audits = await Context.AdminActionAudits.AsNoTracking()
+            .Where(a => a.Action == "order.refund.partial" && a.Success && a.AfterJson != null).ToListAsync(cancellationToken);
+        foreach (var audit in audits)
+        {
+            using var document = JsonDocument.Parse(audit.AfterJson!);
+            if (document.RootElement.TryGetProperty("refundKey", out var key) && key.GetString() == refundKey) return true;
+        }
+        return false;
     }
 
     public async Task<decimal> GetSucceededRefundTotalForOrderAsync(string orderId, CancellationToken cancellationToken)

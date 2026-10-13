@@ -132,6 +132,7 @@ public class RequestCover
                     assignment.Id,
                     employeeRepository,
                     notificationProducer,
+                    nowUtc,
                     cancellationToken);
             }
 

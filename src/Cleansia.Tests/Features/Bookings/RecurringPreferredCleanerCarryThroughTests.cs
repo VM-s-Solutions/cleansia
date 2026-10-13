@@ -59,7 +59,7 @@ public class RecurringPreferredCleanerCarryThroughTests
         // The sweep requires an entitled membership. This class is about the preferred cleaner
         // carrying through to each occurrence, so the owner is simply entitled.
         _memberships
-            .Setup(r => r.GetEntitledForUserNoTrackingAsync(
+            .Setup(r => r.GetEntitledForUserNoTrackingIgnoringTenantAsync(
                 It.IsAny<string>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync((string userId, CancellationToken _) =>
                 UserMembershipMockFactory.Paid(userId));
@@ -151,7 +151,7 @@ public class RecurringPreferredCleanerCarryThroughTests
 
         var memberships = new Mock<IUserMembershipRepository>();
         memberships
-            .Setup(r => r.GetEntitledForUserNoTrackingAsync(UserId, It.IsAny<CancellationToken>()))
+            .Setup(r => r.GetEntitledForUserNoTrackingIgnoringTenantAsync(UserId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(UserMembership.Create(
                 userId: UserId,
                 membershipPlanId: "plan-plus",

@@ -168,7 +168,7 @@ public class ChoosePreferredCleaner
                 command.EmployeeId, holdUntilUtc, nowUtc, BookingPolicy.MaxPreferredOfferRounds);
 
             await PreferredOfferNotifier.NotifyIfOfferableAsync(
-                order, recipient, notificationProducer, cancellationToken);
+                order, recipient, notificationProducer, nowUtc, cancellationToken);
 
             return BusinessResult.Success(
                 new Response(order.Id, holdUntilUtc, order.PreferredOfferRound));

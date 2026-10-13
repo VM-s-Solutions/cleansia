@@ -56,7 +56,7 @@ public sealed class CreateRecurringBookingTermsTickTests
             .Setup(r => r.ResolveInForceAsync(LegalDocumentType.PrivacyPolicy, Czechia, It.IsAny<CancellationToken>()))
             .ReturnsAsync(_privacy);
         _memberships
-            .Setup(r => r.GetEntitledForUserNoTrackingAsync(UserId, It.IsAny<CancellationToken>()))
+            .Setup(r => r.GetEntitledForUserNoTrackingIgnoringTenantAsync(UserId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(UserMembership.Create(
                 userId: UserId,
                 membershipPlanId: "plan-plus",

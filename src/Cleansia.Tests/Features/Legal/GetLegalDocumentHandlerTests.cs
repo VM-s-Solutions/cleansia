@@ -82,7 +82,7 @@ public sealed class GetLegalDocumentHandlerTests
             "The seller is {{companyLegalName}}, IČO {{companyRegistrationNumber}}, DIČ {{companyVatNumber}}, " +
             "seated at {{companySeat}}; write to {{companyEmail}} or call {{companyPhone}}.");
         _companies
-            .Setup(r => r.GetActiveForOperatorAsync(Operator, Czechia, It.IsAny<CancellationToken>()))
+            .Setup(r => r.GetActiveForOperatorIgnoringTenantAsync(Operator, Czechia, It.IsAny<CancellationToken>()))
             .ReturnsAsync(Company(vatNumber: "CZ12345678"));
 
         var result = await Handler().Handle(new GetLegalDocument.Query(LegalDocumentType.PrivacyPolicy, Czechia, "en"), CancellationToken.None);
@@ -99,7 +99,7 @@ public sealed class GetLegalDocumentHandlerTests
     {
         ArrangeSellerText("{{companyLegalName}}, DIČ {{companyVatNumber}}");
         _companies
-            .Setup(r => r.GetActiveForOperatorAsync(Operator, Czechia, It.IsAny<CancellationToken>()))
+            .Setup(r => r.GetActiveForOperatorIgnoringTenantAsync(Operator, Czechia, It.IsAny<CancellationToken>()))
             .ReturnsAsync(Company(vatNumber: null));
 
         var result = await Handler().Handle(new GetLegalDocument.Query(LegalDocumentType.PrivacyPolicy, Czechia, "en"), CancellationToken.None);

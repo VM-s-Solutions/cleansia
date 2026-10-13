@@ -132,6 +132,7 @@ public class CreateOrderHandlerCharacterizationTests
 
     public CreateOrderHandlerCharacterizationTests()
     {
+        _session.Setup(s => s.GetUserEmail()).Returns("customer@cleansia.test");
         _session.Setup(s => s.GetUserId()).Returns(UserId);
 
         _countryRepository

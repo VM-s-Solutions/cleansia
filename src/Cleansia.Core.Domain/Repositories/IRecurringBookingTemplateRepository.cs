@@ -13,7 +13,8 @@ public interface IRecurringBookingTemplateRepository : IRepository<RecurringBook
     /// <summary>
     /// All templates owned by a user, both active and paused, ordered with
     /// active first then by creation date. Used by the customer Plus UI to
-    /// list their schedules.
+    /// list their schedules. Caller obligation: userId is the session account or the proven erasure
+    /// subject; the read spans that owner's templates across companies.
     /// </summary>
-    Task<IReadOnlyList<RecurringBookingTemplate>> GetByUserAsync(string userId, CancellationToken cancellationToken);
+    Task<IReadOnlyList<RecurringBookingTemplate>> GetByUserIgnoringTenantAsync(string userId, CancellationToken cancellationToken);
 }

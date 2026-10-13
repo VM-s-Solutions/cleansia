@@ -328,11 +328,11 @@ public class AdminNotifierPostgresTests(PostgresContainerFixture fixture) : Base
                 await RaiseUnderOverride(provider, TestTenants.Second, DisputeFiledFor(TestTenants.Default));
                 var repository = provider.GetRequiredService<IUserNotificationRepository>();
                 return new GuardAnswers(
-                    SameOrder: await repository.AnyForEventAsync(TestTenants.Default, AdminNotificationEventCatalog.DisputeFiled, "orderId", OrderId, CancellationToken.None),
-                    OtherOrder: await repository.AnyForEventAsync(TestTenants.Default, AdminNotificationEventCatalog.DisputeFiled, "orderId", "order-other", CancellationToken.None),
-                    OtherCompany: await repository.AnyForEventAsync(TestTenants.Second, AdminNotificationEventCatalog.DisputeFiled, "orderId", OrderId, CancellationToken.None),
-                    OtherKey: await repository.AnyForEventAsync(TestTenants.Default, AdminNotificationEventCatalog.PaymentFailed, "orderId", OrderId, CancellationToken.None),
-                    ValueUnderAnotherName: await repository.AnyForEventAsync(TestTenants.Default, AdminNotificationEventCatalog.DisputeFiled, "disputeId", OrderId, CancellationToken.None));
+                    SameOrder: await repository.AnyForEventIgnoringTenantAsync(TestTenants.Default, AdminNotificationEventCatalog.DisputeFiled, "orderId", OrderId, CancellationToken.None),
+                    OtherOrder: await repository.AnyForEventIgnoringTenantAsync(TestTenants.Default, AdminNotificationEventCatalog.DisputeFiled, "orderId", "order-other", CancellationToken.None),
+                    OtherCompany: await repository.AnyForEventIgnoringTenantAsync(TestTenants.Second, AdminNotificationEventCatalog.DisputeFiled, "orderId", OrderId, CancellationToken.None),
+                    OtherKey: await repository.AnyForEventIgnoringTenantAsync(TestTenants.Default, AdminNotificationEventCatalog.PaymentFailed, "orderId", OrderId, CancellationToken.None),
+                    ValueUnderAnotherName: await repository.AnyForEventIgnoringTenantAsync(TestTenants.Default, AdminNotificationEventCatalog.DisputeFiled, "disputeId", OrderId, CancellationToken.None));
             },
             assert: (CleansiaDbContext _, GuardAnswers found) =>
             {

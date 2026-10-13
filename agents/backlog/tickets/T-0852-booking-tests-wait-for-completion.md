@@ -54,7 +54,7 @@ with a scratch delay in its fake before proving GREEN. PR #328's local closure t
 - [x] **AC2** — Both named tests pass with the fix and delayed fake responses.
 - [x] **AC3** — The shared helper waits for its supplied condition and fails within a bounded
   timeout; the two failed tests' conditions identify completed work.
-- [ ] **AC4** — Local gates and exact-head CI pass, with any re-run and its cause recorded.
+- [x] **AC4** — Local gates and exact-head CI pass, with any re-run and its cause recorded.
 
 ## Work record
 
@@ -119,4 +119,28 @@ citations and T-0839's current approval wording; all were corrected. Fresh round
 It checked the records, actual/proposed commit messages and PR text against primary receipts
 and confirmed unchanged reviewed source hashes. Refutation stops at this clean round.
 
-The committed-head secret scan and exact-head CI/merge remain due.
+### PR #329 closure — 2026-10-13
+
+The remaining gates above were completed on head
+`b67c985b710fc466458635083d7cc16c1963393a`. The committed-head history secret scan,
+docs references, catalogue claims and VitePress build passed. Exact-head CI passed **7/7
+checks on attempt 1**, across six workflows: Android CI, Frontend CI (build and e2e),
+iOS CI, Docs CI, iOS Symbols and Secret scan. No job was re-run. Backend and booking-policy
+parity were not triggered; the latter passed locally.
+
+[#329](https://github.com/VM-s-Solutions/cleansia/pull/329) merged at
+`2026-10-13T15:09:42Z`, by a merge request guarded with the tested head SHA. Merge
+`155e14067322262d17d5224346621da55860a19c` has the same tree as that head.
+The current master's post-merge checks are tracked separately; this closure records the
+PR's completed gates. T-0813 B remains passive: this head had no failed build.
+
+Closure receipt:
+`/Users/michael/.codex/scratchpads/cleansia-wave-f-2026-10-11/raw/ci/nw-p1-pr329-ci-merge-closure-001.json`,
+SHA-256 `a89da38f3eb132b9e0ce9463d2f272cd1eaeb8f04c6317c3d25c8550367a8ab5`.
+It hashes the check snapshot, saved job logs and annotation summary, pre-merge read,
+guarded merge and deployment-run reads. Fresh GETs for `deploy-dev.yml`, `deploy-pro.yml`,
+`deploy-docs.yml` and `execute-sql.yml`, created since the merge timestamp, each returned
+zero runs. No reset, deploy or PRO operation ran in this phase. Graphify was not run.
+This closure travels as the first commit of the backend branch from that merge.
+
+- 2026-10-13 — Separate post-merge master proof for #329: all four triggered push checks passed on merge155e14067322262d17d5224346621da55860a19c, first attempts. Snapshot/log/annotation receipts are retained under Wave F `raw/ci/nw-p1-master-155e14067322-poll-001` and `raw/ci/nw-p1-master-155e14067322/evidence`; next-wave `p1/master-ci-receipt.json` SHA256c15e24d47a6fcb0de9e97b463384c3a97f4e663804ef45065b427ecb88a336ad. This augments the separate master proof, not the already committed #329 pre-merge closure. No deploy was dispatched.

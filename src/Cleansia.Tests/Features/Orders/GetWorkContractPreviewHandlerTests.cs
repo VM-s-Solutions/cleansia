@@ -89,7 +89,7 @@ public sealed class GetWorkContractPreviewHandlerTests
         order.TenantId = OrderTenant;
         Arrange(order);
         _companyInfoRepository
-            .Setup(r => r.GetActiveForOperatorAsync(OrderTenant, "cz", It.IsAny<CancellationToken>()))
+            .Setup(r => r.GetActiveForOperatorIgnoringTenantAsync(OrderTenant, "cz", It.IsAny<CancellationToken>()))
             .ReturnsAsync(CompanyInfo.Create("Cleansia CZ s.r.o.", "Cleansia", "12345678", "Na Příkopě 1", "Praha", "11000", "cz"));
 
         var result = await CreateHandler(legalDocuments).Handle(new GetWorkContractPreview.Query(OrderId, "en"), CancellationToken.None);

@@ -494,7 +494,7 @@ is breached. The read is a fast-path optimization, not the guarantee. Enforce th
   unique-violation can race, catch the `DbUpdateException` (Postgres `SqlState == "23505"`) at the
   boundary that owns the write and resolve to the existing row / return the deterministic business error
   — do **not** let it surface as a 500. Reference: `CreateMembershipSubscription.Handler` catches the
-  `StripeSubscriptionId` unique violation and resolves via `GetByStripeSubscriptionIdAsync` →
+  `StripeSubscriptionId` unique violation and resolves via `GetByStripeSubscriptionIdIgnoringTenantAsync` →
   `MembershipAlreadyActive` (T-0111 / LG-SEC-02, round 2).
 
 **S7b — Mind WHERE the violation surfaces vs. WHERE you catch it.** With the `UnitOfWorkPipelineBehavior`,
@@ -601,7 +601,7 @@ question first and the form second.
 
 |  | **Read under a tenant claim** | **Read with no claim (anonymous / job)** |
 |---|---|---|
-| **Written under a tenant claim** | **symmetric → FILTERED.** `src/Cleansia.Config/Filters/RequireCompleteProfileAttribute.cs:25`, `src/Cleansia.Core.AppServices/Authentication/OrderAccessService.cs:112`, the employee self-service `Update*` handlers, `src/Cleansia.Infra.Database/Repositories/LiveActivityTokenRepository.cs:10-45` | **ASYMMETRIC → bypass + re-pin.** `src/Cleansia.Infra.Database/Repositories/EmployeeRepository.cs:19-26` on the token-mint paths; `src/Cleansia.Infra.Database/Repositories/LiveActivityTokenRepository.cs:47-61`; `src/Cleansia.Infra.Database/Repositories/DeviceRepository.cs:46-57` and `src/Cleansia.Infra.Database/Repositories/DeviceRepository.cs:59-68`; and, read under **another** account's claim, `src/Cleansia.Infra.Database/Repositories/DeviceRepository.cs:64-77` (`GetOtherUsersActiveByDeviceAndTokenIgnoringTenantAsync`, deactivation only, pinned on the device id and the presented push token — below) and `GetByUserAndDeviceIgnoringTenantAsync` (`src/Cleansia.Infra.Database/Repositories/LiveActivityTokenRepository.cs:72-78`, deletion only, pinned on the user id and device id read out of a row the device read found — below) |
+| **Written under a tenant claim** | **symmetric → FILTERED.** `src/Cleansia.Config/Filters/RequireCompleteProfileAttribute.cs:25`, `src/Cleansia.Core.AppServices/Authentication/OrderAccessService.cs:160-167`, the employee self-service `Update*` handlers, `src/Cleansia.Infra.Database/Repositories/LiveActivityTokenRepository.cs:10-45` | **ASYMMETRIC → bypass + re-pin.** `src/Cleansia.Infra.Database/Repositories/EmployeeRepository.cs:19-26` on the token-mint paths; `src/Cleansia.Infra.Database/Repositories/LiveActivityTokenRepository.cs:47-61`; `src/Cleansia.Infra.Database/Repositories/DeviceRepository.cs:40-51` (`GetDeactivatedSinceAsync`) and `src/Cleansia.Infra.Database/Repositories/DeviceRepository.cs:53-62` (`RemoveForSubjectIgnoringTenantAsync`); and, read under **another** account's claim, `src/Cleansia.Infra.Database/Repositories/DeviceRepository.cs:64-77` (`GetOtherUsersActiveByDeviceAndTokenIgnoringTenantAsync`, deactivation only, pinned on the device id and the presented push token — below) and `GetByUserAndDeviceIgnoringTenantAsync` (`src/Cleansia.Infra.Database/Repositories/LiveActivityTokenRepository.cs:72-78`, deletion only, pinned on the user id and device id read out of a row the device read found — below) |
 | **Written with no claim (anonymous)** | **ASYMMETRIC → bypass + re-pin.** `src/Cleansia.Infra.Database/Repositories/RefreshTokenRepository.cs:10-23` and the revoke family at `src/Cleansia.Infra.Database/Repositories/RefreshTokenRepository.cs:120-150`; **the legacy confirm read** `UserRepository.GetByConfirmationCodeIgnoringTenantAsync` (written under the market's operator by `Register`, read anonymously from the link — pinned by the code hash); **the register / resend / admin-create pre-checks** (`GetByEmailIgnoringTenantAsync` / `ExistsWithEmailIgnoringTenantAsync` — pinned by the global `IX_Users_Email`, deliberately across the holding: one email is one identity); the **guest booking family** — `Order/Lookup`, `LookupBatch`, `GuestCancellationPreview`, `CancelGuest`, all four through the one seam `GuestOrderAccess` (`GetQueryableIgnoringTenant()` on the order *and* the token table, pinned by the SHA-256 digest of the presented token, plus `UserId == null`) | **symmetric → FILTERED.** Since ADR-0061 D3 every anonymous write runs under the market operator's override, so this cell holds the reads a request makes of rows *it* wrote in the same scope — the promo `GetByCodeAsync` pre-check under `RequestPromoCode`, `ValidateReferral`'s `(TenantId, Code)` read |
 
 **The newest row in the top-right cell — the contract-for-work acceptance (ADR-0068, 2026-09-20).**
@@ -616,7 +616,7 @@ price: `GetWorkContract.Validator` re-pins on **the row's order existing for the
 filtered set for staff) **and**, when the caller is a cleaner, on `acceptance.EmployeeId == the
 caller's own employee id`; the seat and order reads are made for an order the caller already got
 through the filter or the owner pin (`GetOrderDetails`, the incident file, the customer's export);
-the subject export and the erasure walk (`PseudonymiseForEmployeeAsync`, a **tracked** load riding
+the subject export and the erasure walk (`PseudonymiseForEmployeeIgnoringTenantAsync`, a **tracked** load riding
 the erasure's single commit) name the subject's own id. The two gates (`AnyForSeatAsync`) and the
 per-company metadata sweep (`PseudonymiseExpiredAsync`) stay **filtered** — symmetric, written and
 read under the same company. Pinned by `GetWorkContractHandlerTests` (another customer, another
@@ -639,8 +639,9 @@ already-pinned row — and, since ADR-0061 D5.1, **the email**, because `IX_User
 tenant term and `Email` is NOT NULL, so the schema enforces exactly what the pin claims (the sentence
 that used to forbid it here described `(TenantId, Email)` under a dormant `TenantId`, which no longer
 exists). Where the true pin is a **caller obligation** the method cannot verify
-(`GetActiveByUserIdAsync`'s "the `UserId` comes from the caller's own JWT"), say so in those words rather
-than dressing it as an invariant.
+(`GetActiveByUserIdAsync` takes the request's session user or the trusted erasure subject passed to
+`RefreshTokenService.StageRevokeAllForUserAsync`), state that obligation rather than dressing it as an
+invariant. Its protected name remains under ADR-0074 D2; a background erasure retry has no JWT.
 
 **One more pin, admitted on 2026-10-12 for a bypass that only withdraws (T-0834):** the device id **and** the
 non-empty push token the caller's own app install presents. `DeviceRepository.GetOtherUsersActiveByDeviceAndTokenIgnoringTenantAsync`
@@ -667,7 +668,10 @@ customer iOS app registers them, under a device id kept per app on one phone. It
 (`ILiveActivityTokenRepository`) states the obligation.
 **Residual, accepted:** whoever learns another install's push token can silently stop that account's
 notification and Live Activity pushes there until the app on that install registers them again (for
-notifications, its next sign-in or token rotation) — a denial of service with no data exposure. An access token
+notifications, its next sign-in or token rotation) — a denial of service with no data exposure. A previous
+account's install row holding a different push token, or none, is outside the device+token match and its
+Live Activity tokens survive. This shared-phone residual was accepted on 2026-10-13; the customer iOS
+app re-registers at each launch. An access token
 that account was issued before is refused once, and the next refresh issues another, because the refresh
 path checks no device state (`src/Cleansia.Core.AppServices/Features/Auth/RefreshToken.cs:63-105`).
 
@@ -678,7 +682,7 @@ bypass side since ADR-0061) +
 read-anonymous cell, seeded with a **non-null** tenant so it can fail), both run by
 `.github/workflows/backend-ci.yml:69-74` with no `continue-on-error` — **`T1-CI`**, **baseline 0**, over
 the **closed scope of those two repositories only**. For the repository-wide scope the tier is
-**`(gate pending: T-0606)`**: the gate is the same roster-confinement shape applied across
+**`(gate pending: T-0868)`**: the gate is the same roster-confinement shape applied across
 `src/Cleansia.Infra.Database/Repositories/**`, and its **baseline is every unrostered bypass site,
 because the roster does not exist yet** — writing it is the ticket. No count is stated here; derive it
 with `grep -rn "IgnoreQueryFilters(\|GetQueryableIgnoringTenant()" src/Cleansia.Infra.Database/Repositories/`.
@@ -751,12 +755,16 @@ meets it.** The reference is
 `IOrderRepository.GetBusyEmployeeIdsInWindowIgnoringTenantAsync`: a commitment booked under any operator
 occupies the same cleaner, so the preferred-cleaner picker and the hold resolver on request paths, and the
 payment webhook and the recurring materializer through the resolver, all need every company's calendar;
-its re-pin is that every id it is given is server-derived (`IOrderRepository.cs:166-174`). This reaches only this form's
+its re-pin is that every id it is given is server-derived (`src/Cleansia.Core.Domain/Repositories/IOrderRepository.cs:168-178`). This reaches only this form's
 subject, a method reached from both a request path and a background job; a read that one world alone
-reaches is governed by the matrix above and its re-pin, not by its name. ✗ **Not yet named:**
-`IOrderRepository.IsFirstBookingAsync` reads every company by contract (`IOrderRepository.cs:10-18`,
-`OrderRepository.cs:20`) and is reached from request paths through `CancellationPolicyResolver.cs:43` and
-from a Function through `SendEmailHandler.cs:290` — T-0837. **Enforced by:** S8's closing test below
+reaches is governed by the matrix above and its re-pin, not by its name. The first-booking read is
+`IOrderRepository.IsFirstBookingIgnoringTenantAsync` (`src/Cleansia.Core.Domain/Repositories/IOrderRepository.cs:10-20`,
+`src/Cleansia.Infra.Database/Repositories/OrderRepository.cs:13-30`): the account is the authorized order's
+own account, and the phone and guest e-mail are booking-carried contact values. Its Boolean only selects
+the oops window. Request paths reach it through `CancellationPolicyResolver.cs:43`; the Function reaches
+that same resolver (`src/Cleansia.Functions.Core/Handlers/SendEmailHandler.cs:332`) after adopting the envelope
+operator and loading the scoped order (`src/Cleansia.Functions.Core/Handlers/SendEmailHandler.cs:319-324`).
+**Enforced by:** S8's closing test below
 (*for every repository method, list its callers*), walked in the security review of every
 `security_touching` ticket (`.claude/agents/security.md`, item 8) — `T3-HUMAN`. *(Not mechanizable:
 whether every caller needs every company's rows is a reading of meaning.)*

@@ -79,13 +79,6 @@ public sealed class HostTestPostgresFixture : IAsyncLifetime
     {
         var options = new DbContextOptionsBuilder<CleansiaDbContext>()
             .UseNpgsql(ConnectionString, x => x.MigrationsAssembly(DbAssemblyReference.Assembly))
-            // The model has drifted slightly ahead of the latest committed migration in the repo
-            // (a snapshot the owner regenerates manually — NO ef here). For the host harness we only
-            // need the migration-defined schema to apply; demote the pending-model-changes guard from
-            // error to a no-op so the container schema can be built. This is DB-setup plumbing in the
-            // TEST fixture only — it does not touch any production DbContext configuration.
-            .ConfigureWarnings(w => w.Ignore(
-                Microsoft.EntityFrameworkCore.Diagnostics.RelationalEventId.PendingModelChangesWarning))
             .Options;
         await using var dbContext = new CleansiaDbContext(options);
         await dbContext.Database.MigrateAsync();

@@ -11,6 +11,10 @@ public class EmployeeInvoiceSort(string propertyName, bool isAscending)
 
     protected override Expression<Func<EmployeeInvoice, object>> GetSortingExpression(string propertyName)
     {
+        if (string.Equals(propertyName, nameof(EmployeeInvoice.Id), StringComparison.OrdinalIgnoreCase))
+        {
+            return x => x.Id;
+        }
         if (string.Equals(propertyName, nameof(EmployeeInvoice.InvoiceNumber), StringComparison.CurrentCultureIgnoreCase))
         {
             return x => x.InvoiceNumber;

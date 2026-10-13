@@ -227,7 +227,7 @@ public sealed class MembershipAuditEvidenceTests
         UserMembership? tracked = null;
         var added = new List<UserMembership>();
         _membershipRepository
-            .Setup(r => r.GetByStripeSubscriptionIdAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .Setup(r => r.GetByStripeSubscriptionIdIgnoringTenantAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(() => tracked);
         _membershipRepository.Setup(r => r.Add(It.IsAny<UserMembership>()))
             .Callback<UserMembership>(m => { added.Add(m); tracked = m; });

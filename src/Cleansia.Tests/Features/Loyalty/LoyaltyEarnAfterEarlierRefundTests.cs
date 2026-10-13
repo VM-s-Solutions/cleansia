@@ -252,7 +252,7 @@ public class LoyaltyEarnAfterEarlierRefundTests
                 .Callback<LoyaltyAccount, Func<LoyaltyTier?, CancellationToken, Task>>((_, afterSave) => _afterSave = afterSave);
 
             _transactions
-                .Setup(r => r.GetLatestForOrderSourceAsync(
+                .Setup(r => r.GetLatestForOrderSourceIgnoringTenantAsync(
                     It.IsAny<string>(), It.IsAny<LoyaltyEarnSource>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync((string orderId, LoyaltyEarnSource source, CancellationToken _) =>
                     Account.Transactions.LastOrDefault(t => t.OrderId == orderId && t.Source == source));

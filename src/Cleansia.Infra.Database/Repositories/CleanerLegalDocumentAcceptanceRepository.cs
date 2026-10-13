@@ -17,7 +17,7 @@ public class CleanerLegalDocumentAcceptanceRepository(CleansiaDbContext context)
             .ToListAsync(cancellationToken);
     }
 
-    public async Task<int> PseudonymiseForEmployeeAsync(string employeeId, CancellationToken cancellationToken)
+    public async Task<int> PseudonymiseForEmployeeIgnoringTenantAsync(string employeeId, CancellationToken cancellationToken)
     {
         var rows = await GetQueryableIgnoringTenant()
             .Where(a => a.EmployeeId == employeeId)

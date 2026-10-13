@@ -1,8 +1,8 @@
-# /sync — Detect & flag NSwag / contract regeneration
+# /sync — Detect and run NSwag / contract regeneration
 
 Detect where the backend API contract changed and the generated clients are now stale, and produce
-the precise **owner-only** regeneration instructions. The agents do **not** regenerate clients —
-this command tells the owner exactly what to run.
+the required regeneration commands. Run them under `CLAUDE.md`, verify the resulting clients, and
+report the commands taken.
 
 ## Usage
 ```
@@ -20,11 +20,12 @@ Act as the **Backend Dev / Reviewer** in contract-parity mode:
    - `npm run generate-partner-client`
    - `npm run generate-admin-client`
    - `npm run generate-customer-client`
-3. Flag the corresponding ticket(s) with `manual_step: nswag-regen` and hold dependent
-   frontend/mobile work until the owner confirms regeneration.
+3. Run regeneration before dependent frontend/mobile work, commit the generated clients with
+   the contract change, and record the commands and verification on the corresponding tickets.
 
 ## Rules
-- **Never** run `npm run generate-*-client` or hand-edit generated client files — owner-only (S9).
+- Run `npm run generate-*-client` when the contract changes; never hand-edit generated client files
+  (S9). Shared DEV deployment/reset requires explicit owner approval; PRO access remains prohibited.
 - Surface contract breakage (removed/renamed/retyped fields) explicitly — stale clients throw on
   deserialization.
 

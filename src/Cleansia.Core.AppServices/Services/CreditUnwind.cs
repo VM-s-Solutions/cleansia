@@ -49,12 +49,12 @@ public static class CreditUnwind
     {
         if (amount <= 0m
             || string.IsNullOrEmpty(order.UserId)
-            || await creditAccountRepository.IsOnFrozenCompanyBooksAsync(order.UserId, order.CurrencyId, cancellationToken))
+            || await creditAccountRepository.IsOnFrozenCompanyBooksIgnoringTenantAsync(order.UserId, order.CurrencyId, cancellationToken))
         {
             return false;
         }
 
-        return await creditAccountRepository.TryReturnAsync(
+        return await creditAccountRepository.TryReturnIgnoringTenantAsync(
             userId: order.UserId,
             currencyId: order.CurrencyId,
             amount: amount,

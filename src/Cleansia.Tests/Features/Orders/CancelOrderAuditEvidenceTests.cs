@@ -83,7 +83,7 @@ public sealed class CancelOrderAuditEvidenceTests
         typeof(UserMembership).GetProperty(nameof(UserMembership.MembershipPlan))!
             .GetSetMethod(nonPublic: true)!.Invoke(membership, [plan]);
         _membershipRepository
-            .Setup(r => r.GetEntitledForUserNoTrackingAsync(UserId, It.IsAny<CancellationToken>()))
+            .Setup(r => r.GetEntitledForUserNoTrackingIgnoringTenantAsync(UserId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(membership);
     }
 
@@ -217,7 +217,7 @@ public sealed class CancelOrderAuditEvidenceTests
     public async Task The_Evidence_Records_The_Schedule_Frozen_On_The_Order_Not_Todays()
     {
         _membershipRepository
-            .Setup(r => r.GetEntitledForUserNoTrackingAsync(UserId, It.IsAny<CancellationToken>()))
+            .Setup(r => r.GetEntitledForUserNoTrackingIgnoringTenantAsync(UserId, It.IsAny<CancellationToken>()))
             .ReturnsAsync((UserMembership?)null);
         ArrangeOrder(
             DateTime.UtcNow.AddHours(12),
@@ -242,7 +242,7 @@ public sealed class CancelOrderAuditEvidenceTests
     public async Task A_Standard_Customer_Cancelling_An_Unaccepted_Cash_Order_Records_The_Free_Tier_No_Refund_And_No_Waiver_Released()
     {
         _membershipRepository
-            .Setup(r => r.GetEntitledForUserNoTrackingAsync(UserId, It.IsAny<CancellationToken>()))
+            .Setup(r => r.GetEntitledForUserNoTrackingIgnoringTenantAsync(UserId, It.IsAny<CancellationToken>()))
             .ReturnsAsync((UserMembership?)null);
         ArrangeOrder(DateTime.UtcNow.AddHours(3), accepted: false, paymentType: PaymentType.Cash, paymentStatus: PaymentStatus.Pending);
 
@@ -289,7 +289,7 @@ public sealed class CancelOrderAuditEvidenceTests
     public async Task A_Standard_Customer_Cancelling_An_Accepted_Job_Half_An_Hour_After_Booking_Records_The_Paid_Tier_And_Fifteen_Minutes()
     {
         _membershipRepository
-            .Setup(r => r.GetEntitledForUserNoTrackingAsync(UserId, It.IsAny<CancellationToken>()))
+            .Setup(r => r.GetEntitledForUserNoTrackingIgnoringTenantAsync(UserId, It.IsAny<CancellationToken>()))
             .ReturnsAsync((UserMembership?)null);
         ArrangeOrder(DateTime.UtcNow.AddHours(3), bookedMinutesAgo: 30);
 

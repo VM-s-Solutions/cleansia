@@ -72,7 +72,7 @@ public class CompleteEarlyRefundedCardOrderTests
         _account.Id = "acct-early-refund";
         _accounts.Setup(r => r.EnsureForUserAsync(UserId, It.IsAny<CancellationToken>())).ReturnsAsync(_account);
         _transactions
-            .Setup(r => r.GetLatestForOrderSourceAsync(
+            .Setup(r => r.GetLatestForOrderSourceIgnoringTenantAsync(
                 It.IsAny<string>(), It.IsAny<LoyaltyEarnSource>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync((string orderId, LoyaltyEarnSource source, CancellationToken _) =>
                 _account.Transactions.LastOrDefault(t => t.OrderId == orderId && t.Source == source));
@@ -109,11 +109,8 @@ public class CompleteEarlyRefundedCardOrderTests
             _pending.Object,
             Mock.Of<INotificationProducer>(),
             Mock.Of<ILiveActivityProducer>(),
-            Mock.Of<IEmailService>(),
-            TestGuestOrderAccessTokenIssuer.WithNoLiveTokens(),
             Loyalty(),
-            Mock.Of<IReferralService>(),
-            NullLogger<CompleteOrder.Handler>.Instance);
+            Mock.Of<IReferralService>());
 
     private LoyaltyService Loyalty()
     {

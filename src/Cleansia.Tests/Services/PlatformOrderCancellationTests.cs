@@ -287,7 +287,7 @@ public class PlatformOrderCancellationTests
         _refundService.Verify(
             s => s.IssueRefundAsync(It.IsAny<RefundRequest>(), It.IsAny<CancellationToken>()), Times.Never);
         _creditAccountRepository.Verify(
-            r => r.TryReturnAsync(
+            r => r.TryReturnIgnoringTenantAsync(
                 OwnerUserId, order.CurrencyId, 300m, $"credit-return:order-ended-unpaid:{OrderId}", ActorId,
                 It.IsAny<CancellationToken>(), OrderId, null),
             Times.Once);
@@ -321,7 +321,7 @@ public class PlatformOrderCancellationTests
         _refundService.Verify(
             s => s.IssueRefundAsync(It.IsAny<RefundRequest>(), It.IsAny<CancellationToken>()), Times.Never);
         _creditAccountRepository.Verify(
-            r => r.TryReturnAsync(
+            r => r.TryReturnIgnoringTenantAsync(
                 It.IsAny<string>(), It.IsAny<string>(), It.IsAny<decimal>(), It.IsAny<string>(), It.IsAny<string>(),
                 It.IsAny<CancellationToken>(), It.IsAny<string?>(), It.IsAny<string?>()),
             Times.Never);

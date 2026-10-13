@@ -7,6 +7,7 @@ using Cleansia.Core.AppServices.Services.Interfaces;
 using Cleansia.Core.Domain.Enums;
 using Cleansia.Core.Domain.Internationalization;
 using Cleansia.Core.Domain.Orders;
+using Cleansia.Core.Domain.Notifications;
 using Cleansia.Core.Domain.Repositories;
 using Cleansia.Core.Domain.SeedWork;
 using Cleansia.Core.Domain.Users;
@@ -109,6 +110,8 @@ public sealed class RecurringAutoCancelCreditAtomicityTests(PostgresContainerFix
             .SingleAsync(a => a.UserId == UserId);
         Assert.Equal(Credit, account.Balance);
         Assert.Equal(account.Balance, account.Transactions.Sum(t => t.Amount));
+        Assert.Single(await verify.Set<UserNotification>().IgnoreQueryFilters().ToListAsync());
+        Assert.Single(await verify.OutboxMessages.IgnoreQueryFilters().ToListAsync());
     }
 
     /// <summary>
@@ -129,12 +132,18 @@ public sealed class RecurringAutoCancelCreditAtomicityTests(PostgresContainerFix
             var order = await afterRace.Orders.IgnoreQueryFilters()
                 .Include(o => o.OrderStatusHistory)
                 .SingleAsync(o => o.Id == OrderId);
-            Assert.Equal((PaymentStatus.Paid, OrderStatus.New), (order.PaymentStatus, order.CurrentStatus));
-            Assert.DoesNotContain(order.OrderStatusHistory, t => t.Status == OrderStatus.Cancelled);
-            Assert.False(await afterRace.CreditTransactions.IgnoreQueryFilters()
-                .AnyAsync(t => t.IdempotencyKey == ReturnKey));
+            var creditReturned = await afterRace.CreditTransactions.IgnoreQueryFilters().AnyAsync(t => t.IdempotencyKey == ReturnKey);
+            var notices = await afterRace.Set<UserNotification>().IgnoreQueryFilters().ToListAsync();
+            var intents = await afterRace.OutboxMessages.IgnoreQueryFilters().ToListAsync();
+            Assert.Multiple(
+                () => Assert.Equal((PaymentStatus.Paid, OrderStatus.New), (order.PaymentStatus, order.CurrentStatus)),
+                () => Assert.DoesNotContain(order.OrderStatusHistory, t => t.Status == OrderStatus.Cancelled),
+                () => Assert.False(creditReturned),
+                () => Assert.Empty(notices),
+                () => Assert.Empty(intents));
         }
 
+        Assert.Equal(0, (await RunSweepAsync()).Cancelled);
         Assert.True(paidMeanwhile.Ran);
         Assert.Equal(new AutoCancelStaleRecurringOrders.Response(Cancelled: 0, Considered: 1, Failed: 1), run);
     }

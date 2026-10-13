@@ -58,7 +58,7 @@ public class CancellationFeePreviewAgreementTests
     {
         _session.Setup(s => s.GetUserId()).Returns(UserId);
         _membershipRepository
-            .Setup(r => r.GetEntitledForUserNoTrackingAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .Setup(r => r.GetEntitledForUserNoTrackingIgnoringTenantAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync((UserMembership?)null);
         _refundService
             .Setup(s => s.IssueRefundAsync(It.IsAny<RefundRequest>(), It.IsAny<CancellationToken>()))
@@ -167,7 +167,7 @@ public class CancellationFeePreviewAgreementTests
             .Invoke(membership, [plan]);
 
         _membershipRepository
-            .Setup(r => r.GetEntitledForUserNoTrackingAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .Setup(r => r.GetEntitledForUserNoTrackingIgnoringTenantAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(membership);
     }
 
@@ -215,7 +215,7 @@ public class CancellationFeePreviewAgreementTests
     {
         ArrangeOrder(cleaningInHours: 3, bookedMinutesAgo: 30);
         _orderRepository
-            .Setup(r => r.IsFirstBookingAsync(It.IsAny<Order>(), It.IsAny<CancellationToken>()))
+            .Setup(r => r.IsFirstBookingIgnoringTenantAsync(It.IsAny<Order>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(true);
 
         await AssertQuoteMatchesChargeAsync(

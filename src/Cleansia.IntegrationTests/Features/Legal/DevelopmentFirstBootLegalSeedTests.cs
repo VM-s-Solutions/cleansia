@@ -5,7 +5,6 @@ using Cleansia.Infra.Database.Seed.Legal;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Diagnostics;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.FileProviders;
 using Microsoft.Extensions.Hosting;
@@ -61,8 +60,7 @@ public sealed class DevelopmentFirstBootLegalSeedTests(PostgresContainerFixture 
         var services = new ServiceCollection();
         services.AddLogging();
         services.AddDbContext<CleansiaDbContext>(options => options
-            .UseNpgsql(_dataSource)
-            .ConfigureWarnings(w => w.Ignore(RelationalEventId.PendingModelChangesWarning)));
+            .UseNpgsql(_dataSource));
         services.AddScoped<LegalDocumentSeeder>();
         await using var provider = services.BuildServiceProvider();
 

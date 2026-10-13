@@ -57,9 +57,15 @@ public class GuestTrackLinkTests
             + "GuestOrderAccessTokenIssuer.IssueForGuest(order) — it returns null for an account "
             + "booking, which is the right answer there. Offenders:\n  " + string.Join("\n  ", offenders));
 
+        // Started/completed now share the Functions consumer with cancellation. Count actual
+        // invocations, since one production file can contain several independently guarded calls.
+        Assert.Contains(callSites, f => f.Path == Path.Combine(
+            "Cleansia.Functions.Core", "Handlers", "SendEmailHandler.cs"));
+
         // Anti-vacuity: a rename that made the marker match nothing would otherwise pass silently.
-        Assert.True(callSites.Count >= 4,
-            $"Only {callSites.Count} call site(s) found — the marker no longer matches the code it guards.");
+        var invocationCount = callSites.Sum(f => Regex.Matches(f.Text, Regex.Escape(SendMarker)).Count);
+        Assert.True(invocationCount >= 4,
+            $"Only {invocationCount} call site(s) found — the marker no longer matches the code it guards.");
     }
 
     /// <summary>

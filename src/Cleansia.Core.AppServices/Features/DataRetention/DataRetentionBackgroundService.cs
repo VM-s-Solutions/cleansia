@@ -201,7 +201,7 @@ public class DataRetentionBackgroundService(
                 .Select(o => o.CustomerAddress!).DistinctBy(a => a.Id).ToList();
 
             // The customer is not erased here, so their own newer orders and saved address still count.
-            var sharedAddressIds = await addressRepository.GetReferencedElsewhereAsync(
+            var sharedAddressIds = await addressRepository.GetReferencedElsewhereIgnoringTenantAsync(
                 sourceAddresses.Select(a => a.Id).ToList(),
                 batch.Select(o => o.Id).ToList(),
                 exceptSavedAddressIds: [],

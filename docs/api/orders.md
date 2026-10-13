@@ -74,7 +74,7 @@ actually been pulled onto the job, read the assignment rows (`assignedEmployees`
 
 ### Offerability — which orders a cleaner may be offered and may take
 
-`OrderAvailability` is the single rule (ADR-0037, status term as amended by ADR-0057). Every surface
+`OrderAvailability` is the single rule (ADR-0037, status term as amended by ADR-0057, slot end by ADR-0076). Every surface
 reads it; none re-derives it:
 
 ```csharp
@@ -82,6 +82,7 @@ reads it; none re-derives it:
     || CurrentStatus == OnTheWay || CurrentStatus == InProgress)
 && (PaymentStatus == Paid
     || (PaymentType == Cash && (RecurringTemplateId == null || CustomerConfirmedAt != null)))
+&& CleaningDateTime.AddMinutes(EstimatedTime) > nowUtc
 ```
 
 A plain status list cannot express it. The status term only says the work is not over; the money term
@@ -94,6 +95,11 @@ retract it: the two production retractors are `CleanupStalePendingOrders` (15-mi
 either can still retract — an order is offerable only when neither WHERE clause matches it. The
 `Pending` orders it admits are the cash orders neither touches.
 → [Offerability](/domain/offerability)
+
+A free or covered seat leaves the open board and dashboard at start plus raw booked estimated minutes,
+without division by crew; equality is ended. Started work remains joinable before end. Existing
+assignment, owning-customer and administrator reads retain their purpose, and the no-show sweep keeps
+its 30-minute grace and 168-hour lookback. → [ADR-0076](/decisions/adr-0076)
 
 The rule is enforced **at the take**, not only in the list — see [TakeOrder](#takeorder-validations).
 
@@ -115,6 +121,10 @@ POST /api/Order/CreateOrder
 |---|---|
 | Customer web (`Cleansia.Web.Customer`) | Anonymous — guest booking is supported; a signed-in caller gets loyalty and membership pricing. The same handler is also served as `POST /api/Payment/CreateOrder` on this host |
 | Customer mobile (`Cleansia.Web.Mobile.Customer`) | **Signed in** (`[Authorize]`) — guest booking is web-only, so an anonymous call is `401` and creates nothing, and the session user is the order's owner. This host has no `Payment/CreateOrder` route. `Quote` stays anonymous |
+
+A signed-in booking stores the session e-mail as its contact address; a different `customerEmail`
+from the body does not replace it. A guest booking stores the body's address. Contact name and phone
+retain their existing behavior.
 
 **Request body:**
 
@@ -587,6 +597,13 @@ ordered by price inside each group, because 150 EUR does not file below 3 000 CZ
 also accepted as a sort field. For a **non-admin caller** the list is additionally scoped to the
 currency the cleaner is paid in (their work country's): an order in another currency is not on their
 board at all, unless they are already assigned to it. → [Business rules](/product/business-rules#cleaner-currency)
+
+**Customer contact sorting.** A non-admin open-board request ignores every `customerName` and
+`customerEmail` sort before paging; safe sort entries retain their priority and direction. Administrators
+and a cleaner's own-orders request retain those sorts. Own rows still sort by those stored values after
+cancellation or 24 hours after completion closes customer disclosure, so ordering of those redacted own
+rows remains an accepted residual.
+
 
 **`hasReview`** exists so a client can decide whether to ask for a review **without fetching the order
 detail**. The mobile apps raise the completion prompt off the list, and before this flag the only way to

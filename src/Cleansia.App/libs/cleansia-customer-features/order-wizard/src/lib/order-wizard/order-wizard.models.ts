@@ -211,7 +211,8 @@ const ZIP_REGEX = /^[\d\s-]{3,20}$/;
 export function getFieldError(
   field: string,
   data: OrderWizardFormData,
-  translate: TranslateService
+  translate: TranslateService,
+  isAuthenticated = false
 ): string | null {
   switch (field) {
     case 'customerFirstName':
@@ -227,7 +228,7 @@ export function getFieldError(
     case 'customerEmail':
       if (!data.customerEmail) return translate.instant('global.validation.required');
       if (!EMAIL_REGEX.test(data.customerEmail)) return translate.instant('global.validation.email');
-      if (data.customerEmail.length > 50) return translate.instant('global.validation.maxlength', { max: 50 });
+      if (!isAuthenticated && data.customerEmail.length > 50) return translate.instant('global.validation.maxlength', { max: 50 });
       return null;
     case 'customerPhone':
       if (!data.customerPhone) return translate.instant('global.validation.required');

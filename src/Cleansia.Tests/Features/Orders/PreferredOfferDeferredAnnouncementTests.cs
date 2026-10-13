@@ -77,7 +77,7 @@ public class PreferredOfferDeferredAnnouncementTests
 
         // The order is offerable at the instant of the announcement, which is the whole claim: the push
         // and the gate now agree, so the deep link opens a screen that answers.
-        Assert.True(OrderAvailability.IsOfferable(order));
+        Assert.True(OrderAvailability.IsOfferable(order, DateTime.UtcNow));
 
         var offer = Assert.Single(_pushes, p => p.EventKey == NotificationEventCatalog.PreferredOffer);
         Assert.Equal(NoPreferredCleanerHold.RecipientUserId, offer.UserId);
@@ -168,7 +168,7 @@ public class PreferredOfferDeferredAnnouncementTests
             new ConfirmRecurringOrder.Command(OrderId), CancellationToken.None);
 
         Assert.True(result.IsSuccess);
-        Assert.True(OrderAvailability.IsOfferable(order));
+        Assert.True(OrderAvailability.IsOfferable(order, DateTime.UtcNow));
 
         var offer = Assert.Single(_pushes, p => p.EventKey == NotificationEventCatalog.PreferredOffer);
         Assert.Equal(NoPreferredCleanerHold.RecipientUserId, offer.UserId);

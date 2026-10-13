@@ -106,7 +106,7 @@ public sealed class OrderFactory(
             tierDiscount = tierResult.DiscountAmount > 0m ? tierResult.DiscountAmount : 0m;
 
             var activeMembership = await userMembershipRepository
-                .GetEntitledForUserAsync(input.UserId, cancellationToken);
+                .GetEntitledForUserIgnoringTenantAsync(input.UserId, cancellationToken);
             if (activeMembership != null)
             {
                 membershipDiscount = input.RawSubtotal
@@ -336,7 +336,7 @@ public sealed class OrderFactory(
         // The issuer is pinned to the address-market operator.
         var countryId = input.Address.CountryId;
         var companyInfo = (input.OperatorTenantId is { } operatorTenantId
-                              ? await companyInfoRepository.GetActiveForOperatorAsync(operatorTenantId, countryId, cancellationToken)
+                              ? await companyInfoRepository.GetActiveForOperatorIgnoringTenantAsync(operatorTenantId, countryId, cancellationToken)
                               : await companyInfoRepository.GetActiveByCountryAsync(countryId, cancellationToken));
         if (companyInfo != null)
         {
@@ -360,8 +360,8 @@ public sealed class OrderFactory(
         // Stripe webhook for card and the customer's confirm for recurring. A cash one-off is offerable
         // the moment it exists, which is why it is the only shape announced here.
         await PreferredOfferNotifier.NotifyIfOfferableAsync(
-            order, preferredCleaner.Recipient, notificationProducer, cancellationToken);
-        await NewOrderAdminNotifier.NotifyIfOfferableAsync(order, adminNotifier, logger, cancellationToken);
+            order, preferredCleaner.Recipient, notificationProducer, input.NowUtc, cancellationToken);
+        await NewOrderAdminNotifier.NotifyIfOfferableAsync(order, adminNotifier, logger, input.NowUtc, cancellationToken);
 
         orderRepository.Add(order);
         return order;

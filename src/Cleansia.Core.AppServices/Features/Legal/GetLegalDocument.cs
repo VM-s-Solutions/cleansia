@@ -57,7 +57,7 @@ public class GetLegalDocument
             }
 
             var company = market.OperatorTenantId is { } operatorTenantId
-                ? await companyInfoRepository.GetActiveForOperatorAsync(operatorTenantId, market.CountryId, cancellationToken)
+                ? await companyInfoRepository.GetActiveForOperatorIgnoringTenantAsync(operatorTenantId, market.CountryId, cancellationToken)
                 : null;
 
             return BusinessResult.Success(document.MapToDto(text, LegalMarkdownRenderer.MarketPlaceholders(market, company)));

@@ -16,7 +16,7 @@ namespace Cleansia.IntegrationTests.Features.Credit;
 ///
 /// <para>Credit is spent by one path and returned by six — a customer cancel, an admin cancel, a full
 /// or partial refund, a dispute resolution, two sweeps and an expired-session webhook. Every one of
-/// them routes through <c>TryReturnAsync</c>, and the properties that make that safe are all the
+/// them routes through <c>TryReturnIgnoringTenantAsync</c>, and the properties that make that safe are all the
 /// database's: the return and its ledger row move in one statement, and a replayed key writes
 /// nothing at all rather than raising a 23505 that would take the caller's own commit with it.</para>
 ///
@@ -72,7 +72,7 @@ public class CreditReturnTests(PostgresContainerFixture fixture) : BaseIntegrati
         {
             await using var seed = NewContext();
             var repo = new CreditAccountRepository(seed);
-            var account = await repo.EnsureForUserAsync(user.Id, currency.Id, CancellationToken.None);
+            var account = await repo.EnsureForUserIgnoringTenantAsync(user.Id, currency.Id, CancellationToken.None);
             account!.Issue(balance, CreditTransactionReason.Goodwill, "seed-grant", ActorId, note: "n");
             await seed.CommitAsync(CancellationToken.None);
         }
@@ -110,7 +110,7 @@ public class CreditReturnTests(PostgresContainerFixture fixture) : BaseIntegrati
         string userId, string currencyId, decimal amount, string key)
     {
         await using var ctx = NewContext();
-        return await new CreditAccountRepository(ctx).TryReturnAsync(
+        return await new CreditAccountRepository(ctx).TryReturnIgnoringTenantAsync(
             userId, currencyId, amount, key, ActorId, CancellationToken.None, orderId: OrderId);
     }
 
@@ -267,7 +267,7 @@ public class CreditReturnTests(PostgresContainerFixture fixture) : BaseIntegrati
 
         await using (var seed = NewContext())
         {
-            var account = await new CreditAccountRepository(seed).EnsureForUserAsync(userId, currencyId, CancellationToken.None);
+            var account = await new CreditAccountRepository(seed).EnsureForUserIgnoringTenantAsync(userId, currencyId, CancellationToken.None);
             account!.Issue(250m, CreditTransactionReason.DisputeSettlement, "dispute-settlement:d1", ActorId, orderId: OrderId, disputeId: "d1");
             account.Issue(40m, CreditTransactionReason.DisputeSettlement, "dispute-settlement:d2", ActorId, orderId: "other-order", disputeId: "d2");
             await seed.CommitAsync(CancellationToken.None);
@@ -291,14 +291,14 @@ public class CreditReturnTests(PostgresContainerFixture fixture) : BaseIntegrati
         var (userId, currencyId) = await SeedCustomerAsync(100m);
         await using (var seed = NewContext())
         {
-            var account = await new CreditAccountRepository(seed).EnsureForUserAsync(userId, currencyId, CancellationToken.None);
+            var account = await new CreditAccountRepository(seed).EnsureForUserIgnoringTenantAsync(userId, currencyId, CancellationToken.None);
             account!.Issue(250m, CreditTransactionReason.DisputeSettlement, "dispute-settlement:d1", ActorId, orderId: OrderId, disputeId: "d1");
             await seed.CommitAsync(CancellationToken.None);
         }
 
         await using var ctx = NewContext();
         var repo = new CreditAccountRepository(ctx);
-        var staging = await repo.EnsureForUserAsync(userId, currencyId, CancellationToken.None);
+        var staging = await repo.EnsureForUserIgnoringTenantAsync(userId, currencyId, CancellationToken.None);
         staging!.Issue(60m, CreditTransactionReason.DisputeSettlement, "dispute-settlement:d2", ActorId, orderId: OrderId, disputeId: "d2");
         staging.Issue(40m, CreditTransactionReason.DisputeSettlement, "dispute-settlement:d3", ActorId, orderId: "other-order", disputeId: "d3");
 
@@ -397,7 +397,7 @@ public class CreditReturnTests(PostgresContainerFixture fixture) : BaseIntegrati
         Assert.False(await ReturnAsync(userId, currencyId, 75m, "credit-return:erased"));
         await using var check = NewContext();
         var repository = new CreditAccountRepository(check);
-        Assert.Null(await repository.EnsureForUserAsync(userId, currencyId, CancellationToken.None));
+        Assert.Null(await repository.EnsureForUserIgnoringTenantAsync(userId, currencyId, CancellationToken.None));
         Assert.Equal(existingAccount ? 1 : 0, await check.CreditAccounts.CountAsync(a => a.UserId == userId));
         Assert.Equal(0m, await repository.GetReturnedTotalForOrderAsync(OrderId, CancellationToken.None));
         Assert.Equal(0m, await BalanceAsync(userId));
@@ -419,7 +419,7 @@ public class CreditReturnTests(PostgresContainerFixture fixture) : BaseIntegrati
         Assert.True(await ReturnAsync(userId, currencyId, 75m, "credit-return:inactive"));
         await using (var grant = NewContext())
         {
-            var account = await new CreditAccountRepository(grant).EnsureForUserAsync(userId, currencyId, CancellationToken.None);
+            var account = await new CreditAccountRepository(grant).EnsureForUserIgnoringTenantAsync(userId, currencyId, CancellationToken.None);
             Assert.NotNull(account);
             account.Issue(25m, CreditTransactionReason.Goodwill, "inactive-grant", ActorId);
             await grant.CommitAsync(CancellationToken.None);
@@ -437,7 +437,7 @@ public class CreditReturnTests(PostgresContainerFixture fixture) : BaseIntegrati
         {
             var user = await failingCommand.Users.SingleAsync(u => u.Id == userId);
             user.Deactivated("must not persist", DateTimeOffset.UtcNow);
-            Assert.True(await new CreditAccountRepository(failingCommand).TryReturnAsync(
+            Assert.True(await new CreditAccountRepository(failingCommand).TryReturnIgnoringTenantAsync(
                 userId, currencyId, 75m, "credit-return:failed-checkout", ActorId, CancellationToken.None));
             failingCommand.Rollback();
         }
@@ -457,12 +457,12 @@ public class CreditReturnTests(PostgresContainerFixture fixture) : BaseIntegrati
 
         await using var first = NewContext();
         await using var firstTransaction = await first.Database.BeginTransactionAsync();
-        Assert.True(await new CreditAccountRepository(first).TryReturnAsync(
+        Assert.True(await new CreditAccountRepository(first).TryReturnIgnoringTenantAsync(
             userId, currencyId, 75m, key, ActorId, CancellationToken.None, orderId: OrderId));
 
         await using var second = NewContext();
         await second.Database.OpenConnectionAsync();
-        var secondReturn = new CreditAccountRepository(second).TryReturnAsync(
+        var secondReturn = new CreditAccountRepository(second).TryReturnIgnoringTenantAsync(
             userId, currencyId, 75m, key, ActorId, CancellationToken.None, orderId: OrderId);
         await WaitUntilBlocked(((NpgsqlConnection)second.Database.GetDbConnection()).ProcessID, secondReturn);
         Assert.False(secondReturn.IsCompleted, "the second return must wait for the first one's owner lock");

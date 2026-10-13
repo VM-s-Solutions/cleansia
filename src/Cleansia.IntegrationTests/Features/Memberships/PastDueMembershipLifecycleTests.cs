@@ -31,7 +31,7 @@ public class PastDueMembershipLifecycleTests(PostgresContainerFixture fixture) :
                 var memberships = provider.GetRequiredService<IUserMembershipRepository>();
                 return (
                     Live: await memberships.GetLifecycleForUserNoTrackingAsync(userId, CancellationToken.None),
-                    Entitled: await memberships.GetEntitledForUserNoTrackingAsync(userId, CancellationToken.None));
+                    Entitled: await memberships.GetEntitledForUserNoTrackingIgnoringTenantAsync(userId, CancellationToken.None));
             },
             assert: (CleansiaDbContext _, (UserMembership? Live, UserMembership? Entitled) r) =>
             {

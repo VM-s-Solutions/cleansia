@@ -169,7 +169,7 @@ public class OrderPaymentConfirmedHonestProducerTests
         var paymentStatus = paymentType == PaymentType.Card ? PaymentStatus.Paid : PaymentStatus.Pending;
         Assert.True(OrderAvailability.IsOfferable(
             OrderStatus.New, paymentType, paymentStatus, recurringTemplateId,
-            confirmedByCustomer ? DateTime.UtcNow : null));
+            confirmedByCustomer ? DateTime.UtcNow : null, DateTime.UtcNow.AddHours(3), 60, DateTime.UtcNow));
     }
 
     private static Order ArrangeOrder(PaymentType paymentType, string? recurringTemplateId)

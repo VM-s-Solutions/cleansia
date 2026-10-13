@@ -96,7 +96,7 @@ public class WebhookProvisionActiveMembershipIdempotencyTests
 
         // No row matches the NEW subscription id (this is a fresh subscription.created).
         _membershipRepository
-            .Setup(r => r.GetByStripeSubscriptionIdAsync(NewSubId, It.IsAny<CancellationToken>()))
+            .Setup(r => r.GetByStripeSubscriptionIdIgnoringTenantAsync(NewSubId, It.IsAny<CancellationToken>()))
             .ReturnsAsync((UserMembership?)null);
     }
 

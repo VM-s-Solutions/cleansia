@@ -28,7 +28,7 @@ public class CustomerActionAuditRepository(CleansiaDbContext context)
         where TSort : BaseSort<CustomerActionAudit>
         => PagedSort<TSort>(GetQueryableForUser(userId), offset, limit, filter, sort);
 
-    public async Task<int> PseudonymiseForSubjectAsync(string userId, CancellationToken cancellationToken)
+    public async Task<int> PseudonymiseForSubjectIgnoringTenantAsync(string userId, CancellationToken cancellationToken)
     {
         // Tracked, not ExecuteUpdateAsync: the blanking must ride the erasure's single commit, so a
         // commit failure cannot leave the trail blanked while the subject still exists (or the reverse).
@@ -44,7 +44,7 @@ public class CustomerActionAuditRepository(CleansiaDbContext context)
         return rows.Count;
     }
 
-    public async Task<int> PseudonymiseGuestRowsForOrdersAsync(IReadOnlyCollection<string> orderIds, CancellationToken cancellationToken)
+    public async Task<int> PseudonymiseGuestRowsForOrdersIgnoringTenantAsync(IReadOnlyCollection<string> orderIds, CancellationToken cancellationToken)
     {
         if (orderIds.Count == 0)
         {

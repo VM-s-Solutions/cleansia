@@ -266,8 +266,7 @@ public sealed class UserMembershipCancellationSweepIndexPlanTests(
             var handler = new SendMembershipLifecycleNotifications.Handler(
                 repository,
                 new NoOpNotificationProducer(),
-                repository,
-                NullLogger<SendMembershipLifecycleNotifications.Handler>.Instance);
+                TimeProvider.System);
 
             var result = await handler.Handle(
                 new SendMembershipLifecycleNotifications.Command(), CancellationToken.None);

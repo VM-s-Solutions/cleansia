@@ -38,7 +38,7 @@ public class CleanerReminderSweepTests
         _userNotifications.Object,
         _tenantProvider.Object,
         _unitOfWork.Object,
-        NullLogger<SendCleanerJobReminders.Handler>.Instance);
+        NullLogger<SendCleanerJobReminders.Handler>.Instance, TimeProvider.System);
 
     private Order ArrangeOrder(int minutesOut, int crew, OrderStatus status = OrderStatus.Confirmed)
     {

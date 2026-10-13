@@ -76,11 +76,12 @@ public class SendTomorrowJobDigest
         INotificationProducer notificationProducer,
         ITenantProvider tenantProvider,
         IUnitOfWork unitOfWork,
-        ILogger<Handler> logger) : ICommandHandler<Command, Response>
+        ILogger<Handler> logger,
+        TimeProvider timeProvider) : ICommandHandler<Command, Response>
     {
         public async Task<BusinessResult<Response>> Handle(Command command, CancellationToken cancellationToken)
         {
-            var nowUtc = DateTime.UtcNow;
+            var nowUtc = timeProvider.GetUtcNow().UtcDateTime;
 
             // A work country is what makes a timezone resolvable at all; JobReminderRecipient answers
             // who may be told about work, once, for all three reminder keys.
@@ -137,18 +138,9 @@ public class SendTomorrowJobDigest
 
                 foreach (var cleaner in tenantGroup)
                 {
-                    try
+                    if (await TrySendAsync(cleaner, eligible, counts, nowUtc, cancellationToken))
                     {
-                        if (await TrySendAsync(cleaner, eligible, counts, nowUtc, cancellationToken))
-                        {
-                            sent++;
-                        }
-                    }
-                    catch (Exception ex)
-                    {
-                        logger.LogWarning(ex,
-                            "SendTomorrowJobDigest failed for cleaner {EmployeeId}; continuing",
-                            cleaner.Id);
+                        sent++;
                     }
                 }
 

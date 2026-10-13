@@ -257,7 +257,9 @@ public class PayPeriodInvoicePdfFailureRecordingTests
         Assert.Null(_addedInvoice.PdfBlobUrl);
     }
 
-    private Task Run() => new PayPeriodBackgroundService(
+    private Task Run() => CreateService().CloseExpiredPeriodsAndOpenNewAsync(CancellationToken.None);
+
+    private PayPeriodBackgroundService CreateService() => new(
         _payPeriodRepository.Object,
         _employeeRepository.Object,
         _emailService.Object,
@@ -276,8 +278,8 @@ public class PayPeriodInvoicePdfFailureRecordingTests
         _tenantProvider.Object,
         _payoutReferenceAllocator.Object,
         new Mock<ITenantRepository>().Object,
-        new Mock<ICashLedgerRepository>().Object)
-        .CloseExpiredPeriodsAndOpenNewAsync(CancellationToken.None);
+        new Mock<ICashLedgerRepository>().Object,
+        PayPeriodTestServices.ScopeFactory(CreateService));
 
     private static Employee Cleaner()
     {

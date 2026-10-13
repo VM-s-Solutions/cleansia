@@ -128,11 +128,14 @@ public class CancelUnfilledOrders
 
                 foreach (var order in tenantGroup)
                 {
-                    // Re-check against the tracked graph. A cleaner can take a job after its start
-                    // time, so a seat filled between the read above and this line must not be
-                    // cancelled out from under them.
-                    if (order.AssignedEmployees.Count > 0
-                        || !NeverStarted.Contains(order.CurrentStatus))
+                    // A take can leave Confirmed unchanged; read the crew afresh. A later take/start can
+                    // still commit between this read and the cancellation/refund claim.
+                    var current = await orderRepository.GetQueryableIgnoringTenant()
+                        .AsNoTracking()
+                        .Where(o => o.Id == order.Id && o.TenantId == order.TenantId)
+                        .Select(o => new { o.CurrentStatus, HasCrew = o.AssignedEmployees.Any() })
+                        .FirstOrDefaultAsync(cancellationToken);
+                    if (current is null || current.HasCrew || !NeverStarted.Contains(current.CurrentStatus))
                     {
                         continue;
                     }

@@ -12,6 +12,7 @@ using Cleansia.Infra.Database.Repositories;
 using Cleansia.TestUtilities;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Moq;
 
@@ -348,6 +349,7 @@ public sealed class NewJobsDigestSkippedJobRecoveryTests : IDisposable
         var singleWindowProbes = 0;
         var realOrderRepository = new OrderRepository(ctx);
         var orderRepository = new Mock<IOrderRepository>(MockBehavior.Strict);
+        orderRepository.Setup(r => r.Dispose());
         orderRepository
             .Setup(r => r.GetQueryableIgnoringTenant())
             .Returns(() => realOrderRepository.GetQueryableIgnoringTenant());
@@ -378,13 +380,9 @@ public sealed class NewJobsDigestSkippedJobRecoveryTests : IDisposable
                 });
 
         var log = new List<(Exception? Exception, string Message)>();
-        var digest = new NewJobsDigestService(
-            new EmployeeRepository(ctx),
-            orderRepository.Object,
-            new UserNotificationPreferencesRepository(ctx),
-            producer.Object,
-            ctx,
-            new CapturingLogger(log));
+        await using var provider = NewJobsDigestTestServices.Create(() => NewContext(tenantId: TestTenants.Default), producer.Object, _ => orderRepository.Object, logger: new CapturingLogger(log));
+        await using var scope = provider.CreateAsyncScope();
+        var digest = scope.ServiceProvider.GetRequiredService<INewJobsDigestService>();
 
         await digest.SendDigestsAsync(CancellationToken.None);
 

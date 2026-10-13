@@ -227,7 +227,8 @@ public static class ServiceExtensions
         services.AddSingleton<IEmailTemplateRenderer, EmailTemplateRenderer>();
         services.AddScoped<IEmailService, EmailService>();
         services.AddScoped<IReceiptService, ReceiptService>();
-        services.AddScoped<IFiscalRetryService, FiscalRetryService>();
+        services.AddScoped<FiscalRetryService>();
+        services.AddScoped<IFiscalRetryService>(sp => sp.GetRequiredService<FiscalRetryService>());
         // ADR-0002 D3.4 — the dispatch-layer reconciliation sweep (DISTINCT
         // from the registration-retry FiscalRetryService above; they are not merged).
         services.AddScoped<IFiscalReconciliationService, FiscalReconciliationService>();

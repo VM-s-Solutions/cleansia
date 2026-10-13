@@ -238,6 +238,14 @@ needs. The cleaner's invoice PDF applies the same rule on its side: no resolved
 → [Fiscal compliance](/architecture/fiscal-compliance) ·
 [Where CZK is hardcoded](/architecture/platform-expandability#_5-where-czk-kc-is-hardcoded-vs-configurable)
 
+The fiscal retry dispatcher selects detached candidates, then resolves the existing service and its
+dependencies in a fresh scope per receipt. It re-reads eligibility and receipt/order ownership before
+the three existing durable boundaries: fiscal state, the email claim and guest link before sending,
+then provider metadata. A failed child is discarded before another receipt runs; active host
+cancellation propagates. The selector still requires a missing fiscal code and a due retry instant,
+so successful fiscal registration followed by an email-claim or metadata refusal does not promise a
+later email retry. Claim-before-send retains the existing crash-after-claim loss tradeoff.
+
 ## What the receipt says {#what-the-receipt-says}
 
 An order gets one sale receipt, under a number from its operator's gapless counter, **once money has

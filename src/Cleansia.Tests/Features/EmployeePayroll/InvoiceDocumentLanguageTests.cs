@@ -1,5 +1,6 @@
 using Cleansia.Core.AppServices.Features.EmployeePayroll;
 using Cleansia.Core.AppServices.Services;
+using Cleansia.Tests.Services;
 using Cleansia.Core.AppServices.Services.Interfaces;
 using Cleansia.Core.Blobs.Abstractions;
 using Cleansia.Core.Domain.Company;
@@ -193,7 +194,9 @@ public class InvoiceDocumentLanguageTests
     private static IInvoiceLayoutBuilder SelectedLayout(string? countryCode) =>
         Layouts.GetInvoiceBuilder(countryCode);
 
-    private Task RenderTheOriginal() => new PayPeriodBackgroundService(
+    private Task RenderTheOriginal() => CreateService().CloseExpiredPeriodsAndOpenNewAsync(CancellationToken.None);
+
+    private PayPeriodBackgroundService CreateService() => new(
         _payPeriodRepository.Object,
         _employeeRepository.Object,
         _emailService.Object,
@@ -212,8 +215,8 @@ public class InvoiceDocumentLanguageTests
         _tenantProvider.Object,
         _payoutReferenceAllocator.Object,
         new Mock<ITenantRepository>().Object,
-        new Mock<ICashLedgerRepository>().Object)
-        .CloseExpiredPeriodsAndOpenNewAsync(CancellationToken.None);
+        new Mock<ICashLedgerRepository>().Object,
+        PayPeriodTestServices.ScopeFactory(CreateService));
 
     private Task<BusinessResult<RegenerateInvoicePdf.Response>> ReRender(string languageCode) =>
         new RegenerateInvoicePdf.Handler(

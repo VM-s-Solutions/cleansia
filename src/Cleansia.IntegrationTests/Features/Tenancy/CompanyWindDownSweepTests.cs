@@ -88,7 +88,8 @@ public sealed class CompanyWindDownSweepTests(PostgresContainerFixture fixture) 
 
     private Task SetupAsync(IServiceCollection services)
     {
-        services.AddScoped<IPayPeriodBackgroundService, PayPeriodBackgroundService>();
+        services.AddScoped<PayPeriodBackgroundService>();
+        services.AddScoped<IPayPeriodBackgroundService>(sp => sp.GetRequiredService<PayPeriodBackgroundService>());
         services.AddScoped<ICompanyWindDownService, CompanyWindDownService>();
         services.Replace(ServiceDescriptor.Singleton<IStripeClient>(_stripe));
         services.Replace(ServiceDescriptor.Singleton<IStripeClientFactory>(new StubStripeClientFactory(_stripe)));

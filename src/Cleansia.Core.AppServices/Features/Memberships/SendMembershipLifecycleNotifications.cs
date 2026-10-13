@@ -3,11 +3,9 @@ using Cleansia.Core.AppServices.Services.Interfaces;
 using Cleansia.Core.Domain.Memberships;
 using Cleansia.Core.Domain.Notifications;
 using Cleansia.Core.Domain.Repositories;
-using Cleansia.Core.Domain.SeedWork;
 using Cleansia.Infra.Common.Validations;
 using FluentValidation;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Logging;
 using BusinessResult = Cleansia.Infra.Common.Validations.BusinessResult;
 
 namespace Cleansia.Core.AppServices.Features.Memberships;
@@ -42,12 +40,11 @@ public class SendMembershipLifecycleNotifications
     public class Handler(
         IUserMembershipRepository membershipRepository,
         INotificationProducer notificationProducer,
-        IUnitOfWork unitOfWork,
-        ILogger<Handler> logger) : ICommandHandler<Command, Response>
+        TimeProvider timeProvider) : ICommandHandler<Command, Response>
     {
         public async Task<BusinessResult<Response>> Handle(Command command, CancellationToken cancellationToken)
         {
-            var now = DateTime.UtcNow;
+            var now = timeProvider.GetUtcNow().UtcDateTime;
             var renewalWindowStart = now.AddDays(command.RenewalLeadDaysLow);
             var renewalWindowEnd = now.AddDays(command.RenewalLeadDaysHigh);
             var cancellationWindowEnd = now.AddDays(command.CancellationLeadDaysHigh);
@@ -66,26 +63,16 @@ public class SendMembershipLifecycleNotifications
             var renewalSent = 0;
             foreach (var membership in renewalDue)
             {
-                try
-                {
-                    await notificationProducer.NotifyAsync(
-                        membership.UserId,
-                        NotificationEventCatalog.MembershipExpiringSoon,
-                        new Dictionary<string, string>(),
-                        membership.TenantId,
-                        membership.Id,
-                        cancellationToken);
+                await notificationProducer.NotifyAsync(
+                    membership.UserId,
+                    NotificationEventCatalog.MembershipExpiringSoon,
+                    new Dictionary<string, string>(),
+                    membership.TenantId,
+                    membership.Id,
+                    cancellationToken);
 
-                    membership.MarkRenewalReminderSent(now);
-                    await unitOfWork.CommitAsync(cancellationToken);
-                    renewalSent++;
-                }
-                catch (Exception ex)
-                {
-                    logger.LogWarning(ex,
-                        "Failed to enqueue renewal reminder for membership {MembershipId}",
-                        membership.Id);
-                }
+                membership.MarkRenewalReminderSent(now);
+                renewalSent++;
             }
 
             // Cancellation-effective reminders: subs that the user requested to
@@ -104,26 +91,16 @@ public class SendMembershipLifecycleNotifications
             var cancellationSent = 0;
             foreach (var membership in cancellationDue)
             {
-                try
-                {
-                    await notificationProducer.NotifyAsync(
-                        membership.UserId,
-                        NotificationEventCatalog.MembershipCancellationEffective,
-                        new Dictionary<string, string>(),
-                        membership.TenantId,
-                        membership.Id,
-                        cancellationToken);
+                await notificationProducer.NotifyAsync(
+                    membership.UserId,
+                    NotificationEventCatalog.MembershipCancellationEffective,
+                    new Dictionary<string, string>(),
+                    membership.TenantId,
+                    membership.Id,
+                    cancellationToken);
 
-                    membership.MarkCancellationReminderSent(now);
-                    await unitOfWork.CommitAsync(cancellationToken);
-                    cancellationSent++;
-                }
-                catch (Exception ex)
-                {
-                    logger.LogWarning(ex,
-                        "Failed to enqueue cancellation reminder for membership {MembershipId}",
-                        membership.Id);
-                }
+                membership.MarkCancellationReminderSent(now);
+                cancellationSent++;
             }
 
             return BusinessResult.Success(new Response(renewalSent, cancellationSent));

@@ -141,7 +141,7 @@ public sealed class PreCleaningReminderSweepTests : IDisposable
             new NotificationProducer(new UserNotificationRepository(ctx), new OutboxPendingDispatch(ctx), new UserRepository(ctx), Microsoft.Extensions.Logging.Abstractions.NullLogger<NotificationProducer>.Instance),
             _tenantProvider,
             ctx,
-            NullLogger<SendPreCleaningReminders.Handler>.Instance);
+            NullLogger<SendPreCleaningReminders.Handler>.Instance, TimeProvider.System);
 
         var result = await handler.Handle(new SendPreCleaningReminders.Command(), CancellationToken.None);
 

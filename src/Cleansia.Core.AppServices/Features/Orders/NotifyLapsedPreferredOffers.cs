@@ -54,11 +54,12 @@ public class NotifyLapsedPreferredOffers
         INotificationProducer notificationProducer,
         ITenantProvider tenantProvider,
         IUnitOfWork unitOfWork,
-        ILogger<Handler> logger) : ICommandHandler<Command, Response>
+        ILogger<Handler> logger,
+        TimeProvider timeProvider) : ICommandHandler<Command, Response>
     {
         public async Task<BusinessResult<Response>> Handle(Command command, CancellationToken cancellationToken)
         {
-            var nowUtc = DateTime.UtcNow;
+            var nowUtc = timeProvider.GetUtcNow().UtcDateTime;
 
             // System job — no JWT context. IgnoreQueryFilters to see rows across all tenants, then group
             // and set the override per tenant so the feed row and the outbox message inherit the right
@@ -87,18 +88,9 @@ public class NotifyLapsedPreferredOffers
 
                 foreach (var order in tenantGroup)
                 {
-                    try
-                    {
-                        await PreferredOfferClosedNotifier.NotifyPreferredOfferClosedAsync(
-                            order, notificationProducer, nowUtc, cancellationToken);
-                        notified++;
-                    }
-                    catch (Exception ex)
-                    {
-                        logger.LogWarning(ex,
-                            "Failed to enqueue preferred-offer closure for order {OrderId}",
-                            order.Id);
-                    }
+                    await PreferredOfferClosedNotifier.NotifyPreferredOfferClosedAsync(
+                        order, notificationProducer, nowUtc, cancellationToken);
+                    notified++;
                 }
 
                 // The receipt and the message commit together, so the prompt is durable iff the stamp

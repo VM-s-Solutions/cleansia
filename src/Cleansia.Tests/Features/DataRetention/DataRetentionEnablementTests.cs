@@ -1,3 +1,4 @@
+using Cleansia.Core.Domain.Tenancy;
 using Cleansia.Core.AppServices.Features.DataRetention;
 using Cleansia.Core.Blobs.Abstractions;
 using Cleansia.Core.Domain.Notifications;
@@ -123,11 +124,11 @@ public sealed class DataRetentionEnablementTests : IDisposable
             .AddInMemoryCollection(values.Select(v => new KeyValuePair<string, string?>(v.Key, v.Value)))
             .Build();
 
-    private CleansiaDbContext NewContext(ITenantProvider? tenantProvider = null) =>
+    private CleansiaDbContext NewContext(ITenantProvider? tenantProvider = null, IArchiveWriteGate? gate = null) =>
         new(
             new DbContextOptionsBuilder<CleansiaDbContext>().UseSqlite(_connection).Options,
             new TestUserSessionProvider("system", "system@cleansia.test"),
-            tenantProvider ?? new FixedTenantProvider(TestTenants.Default));
+            tenantProvider ?? new FixedTenantProvider(TestTenants.Default), gate);
 
     private async Task EnsureSchemaAsync()
     {
@@ -136,14 +137,15 @@ public sealed class DataRetentionEnablementTests : IDisposable
     }
 
     /// <summary>
-    /// The sweep and its context share one tenant provider, the way one DI scope does on the host: the
-    /// per-company override the sweep sets is what the filter and the commit read.
+    /// Each task resolves the real settings provider and repositories over its own company context.
+    /// Absent tuning keys keep the shipped defaults, as on an unconfigured deployed company.
     /// </summary>
     private async Task RunSweepAsync(IConfiguration configuration)
     {
-        var tenantProvider = new FixedTenantProvider(null);
-        await using var ctx = NewContext(tenantProvider);
-        await NewSweep(ctx, tenantProvider, configuration).RunAllRetentionTasksAsync(CancellationToken.None);
+        await using var services = DataRetentionTestServices.Create(NewContext,
+            new DataRetentionConfig(configuration), _blobClientFactory.Object);
+        await using var scope = services.CreateAsyncScope();
+        await scope.ServiceProvider.GetRequiredService<IDataRetentionBackgroundService>().RunAllRetentionTasksAsync(CancellationToken.None);
     }
 
     private static UserNotification Row(DateTimeOffset createdOn)
@@ -151,43 +153,6 @@ public sealed class DataRetentionEnablementTests : IDisposable
         var row = UserNotification.Create(UserId, NotificationEventCatalog.OrderCompleted, "{}", null);
         row.Created("seed", createdOn);
         return row;
-    }
-
-    /// <summary>
-    /// The sweep over the REAL <see cref="AppConfigurationProvider"/> against this database — no mock stands
-    /// between the test and the condition a deployed host is in. That matters: a stubbed provider is what let
-    /// the old tests pass while production did nothing. The per-task tuning keys it serves resolve to absent
-    /// here, as they do for a company that has set nothing, so every task falls through to its
-    /// RetentionDefaults window.
-    /// </summary>
-    private DataRetentionBackgroundService NewSweep(CleansiaDbContext ctx, ITenantProvider tenantProvider, IConfiguration configuration)
-    {
-        var session = new TestUserSessionProvider("system", "system@cleansia.test");
-        return new DataRetentionBackgroundService(
-            new UserRepository(ctx),
-            new DeviceRepository(ctx, session),
-            new GdprRequestRepository(ctx),
-            new OrderRepository(ctx),
-            new UserConsentRepository(ctx),
-            new EmployeeDocumentRepository(ctx),
-            new UserNotificationRepository(ctx),
-            new CustomerActionAuditRepository(ctx),
-            new DisputeRepository(ctx),
-            new WorkContractAcceptanceRepository(ctx),
-            new CleanerLegalDocumentAcceptanceRepository(ctx),
-            new AddressRepository(ctx),
-            new OrderPhotoRepository(ctx),
-            new OrderReceiptRepository(ctx),
-            new AdminActionAuditRepository(ctx),
-            new EmployeeActionAuditRepository(ctx, Mock.Of<IServiceScopeFactory>()),
-            new GuestOrderAccessTokenRepository(ctx),
-            new TenantRepository(ctx),
-            tenantProvider,
-            new AppConfigurationProvider(ctx),
-            new DataRetentionConfig(configuration),
-            _blobClientFactory.Object,
-            new ArchiveWriteGate(),
-            NullLogger<DataRetentionBackgroundService>.Instance);
     }
 
     private async Task<List<UserNotification>> ReadNotificationsAsync()

@@ -1,3 +1,7 @@
+using Microsoft.Extensions.DependencyInjection;
+using MediatR;
+using Cleansia.Infra.Common.Validations;
+using Cleansia.Core.AppServices.Behaviors;
 using Cleansia.Core.AppServices.Auditing;
 using Cleansia.Core.AppServices.Features.Orders;
 using Cleansia.Core.AppServices.Features.Refunds;
@@ -47,7 +51,7 @@ public class MemberCancellationRefundRedriveTests(PostgresContainerFixture fixtu
 
     private readonly Mock<IStripeClient> _stripe = new();
 
-    private CleansiaDbContext NewContext()
+    private CleansiaDbContext NewContext(ITenantProvider? tenantProvider = null)
     {
         var options = new DbContextOptionsBuilder<CleansiaDbContext>()
             .UseNpgsql(Fixture.GetConnectionString())
@@ -55,7 +59,7 @@ public class MemberCancellationRefundRedriveTests(PostgresContainerFixture fixtu
         return new CleansiaDbContext(
             options,
             new TestUserSessionProvider("system", "system@cleansia.test"),
-            new FixedTenantProvider(TestTenants.Default));
+            tenantProvider ?? new FixedTenantProvider(TestTenants.Default));
     }
 
     private async Task ResetAsync()
@@ -199,18 +203,7 @@ public class MemberCancellationRefundRedriveTests(PostgresContainerFixture fixtu
                 "UPDATE \"Refunds\" SET \"CreatedOn\" = NOW() - {0} * INTERVAL '1 hour'", hoursOld);
         }
 
-        await using var watchdogContext = NewContext();
-        var admins = adminNotifier?.Invoke(watchdogContext) ?? Mock.Of<IAdminNotifier>();
-        var watchdog = new RedrivePendingRefunds.Handler(
-            new RefundRepository(watchdogContext),
-            NewRefundService(watchdogContext, admins),
-            NewProducer(watchdogContext),
-            admins,
-            new UserNotificationRepository(watchdogContext),
-            new FixedTenantProvider(TestTenants.Default),
-            jobCommitFails ? new CommitFailingUnitOfWork(watchdogContext) : watchdogContext,
-            NullLogger<RedrivePendingRefunds.Handler>.Instance);
-        var result = await watchdog.Handle(new RedrivePendingRefunds.Command(), CancellationToken.None);
+        var result = await RunRedriveSweepAsync(adminNotifier, jobCommitFails);
         Assert.True(result.IsSuccess, result.Error?.Message);
         return result.Value!;
     }
@@ -530,4 +523,37 @@ public class MemberCancellationRefundRedriveTests(PostgresContainerFixture fixtu
         public void SetTenantOverride(string tenantId) => _tenantId = tenantId;
         public void ClearTenantOverride() => _tenantId = null;
     }
+    private async Task<BusinessResult<RedrivePendingRefunds.Response>> RunRedriveSweepAsync(Func<CleansiaDbContext, IAdminNotifier>? adminNotifier = null, bool jobCommitFails = false)
+    {
+        var services = new ServiceCollection();
+        services.AddLogging();
+        services.AddMediatR(c => c.RegisterServicesFromAssemblyContaining<RedrivePendingRefunds>());
+        services.AddTransient(typeof(IPipelineBehavior<,>), typeof(UnitOfWorkPipelineBehavior<,>));
+        services.AddScoped<ITenantProvider>(_ => new FixedTenantProvider(TestTenants.Default));
+        services.AddScoped(sp => NewContext(tenantProvider: sp.GetRequiredService<ITenantProvider>()));
+        services.AddScoped<IUnitOfWork>(sp => jobCommitFails ? new CommitFailingUnitOfWork(sp.GetRequiredService<CleansiaDbContext>()) : sp.GetRequiredService<CleansiaDbContext>());
+        services.AddScoped<IRefundRepository, RefundRepository>();
+        services.AddScoped<IUserNotificationRepository, UserNotificationRepository>();
+        services.AddScoped<IAdminNotifier>(sp =>
+        {
+            var ctx = sp.GetRequiredService<CleansiaDbContext>();
+            return adminNotifier?.Invoke(ctx) ?? Mock.Of<IAdminNotifier>();
+        });
+        services.AddScoped<IRefundService>(sp =>
+        {
+            var ctx = sp.GetRequiredService<CleansiaDbContext>();
+            return NewRefundService(ctx, sp.GetRequiredService<IAdminNotifier>());
+        });
+        services.AddScoped<INotificationProducer>(sp =>
+        {
+            var ctx = sp.GetRequiredService<CleansiaDbContext>();
+            return new NotificationProducer(new UserNotificationRepository(ctx), new OutboxPendingDispatch(ctx),
+                new UserRepository(ctx), NullLogger<NotificationProducer>.Instance);
+        });
+        await using var provider = services.BuildServiceProvider();
+        await using var scope = provider.CreateAsyncScope();
+        return await ActivatorUtilities.CreateInstance<RedrivePendingRefunds.Handler>(scope.ServiceProvider)
+            .Handle(new RedrivePendingRefunds.Command(), CancellationToken.None);
+    }
+
 }

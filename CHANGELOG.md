@@ -1103,6 +1103,39 @@ need backfilling.
 
 ### Fixed
 
+- **Operator — a refused retention task does not hold back later tasks or companies.**
+  Each task uses its own company settings and legal-obligation scope, including a frozen company;
+  stopping the host stops before the next task or storage effect. (T-0863)
+
+- **Customer and cleaner — a failed membership-notice tick saves no partial notice batch.**
+  A fresh tick can retry while the membership remains in its existing renewal or cancellation
+  window. (T-0859)
+
+- **Cleaner — a failed new-jobs digest for one cleaner does not hold back the next cleaner.**
+  Each cleaner's notice and watermark save together; an expired job is still excluded. (T-0860)
+
+- **Customer — pre-cleaning reminders retry a failed company batch while it is still eligible.**
+  The failed batch saves no partial reminder stamps; previously completed companies remain saved.
+  (T-0864)
+
+- **Customer — the no-show sweep re-checks whether a cleaner has taken or started the job.**
+  A change committed before that check prevents its cancellation. A concurrent change after the
+  check can still race the cancellation claim. (T-0858)
+
+- **Customer — a preferred-offer notice is staged before its lapse stamp.** A failed account-notice
+  read leaves no stamp hiding the notice from a fresh eligible retry. (T-0865)
+
+- **Cleaner — a failed soon/start-reminder batch saves no partial current-company stamps.**
+  A fresh tick can retry inside its existing window; an earlier company's completed batch remains.
+  (T-0866)
+
+- **Cleaner — a failed tomorrow-digest batch saves no partial current-company stamps.**
+  A fresh tick can retry within the existing three-hour catch-up window. (T-0867)
+
+- **Cleaner and administrator — one refused employee invoice no longer blocks the next employee's
+  invoice work.** The period stays durably Open until its post-email close; earlier invoice records
+  can remain saved, and a crash before close can still repeat email. (T-0862)
+
 - **Customer — a signed-in booking uses your account e-mail.** The web form shows that address
   read-only, and the server keeps it even if a request supplies another address. Guest contact
   details and booking names and phone numbers retain their existing rules. (T-0853)

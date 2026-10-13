@@ -1,3 +1,5 @@
+using MockQueryable;
+using Microsoft.Extensions.DependencyInjection;
 using Cleansia.Core.AppServices.Services;
 using Cleansia.Core.AppServices.Services.Interfaces;
 using Cleansia.Core.Domain.Common;
@@ -76,16 +78,58 @@ public sealed class FiscalRetryServicePerReceiptDurabilityTests
             .ReturnsAsync("msg-1");
     }
 
-    private FiscalRetryService CreateService(IUnitOfWork unitOfWork) => new(
-        _receiptRepository.Object,
-        _orderRepository.Object,
-        _countryConfigurationRepository.Object,
-        _receiptService.Object,
-        _emailService.Object,
-        TestGuestOrderAccessTokenIssuer.WithNoLiveTokens(),
-        unitOfWork,
-        _tenantProvider.Object,
-        NullLogger<FiscalRetryService>.Instance);
+    private FiscalRetryService CreateService(IUnitOfWork unitOfWork)
+    {
+        var services = new ServiceCollection();
+        services.AddScoped(_ => new List<(OrderReceipt Persisted, OrderReceipt Tracked)>());
+        services.AddScoped<IOrderReceiptRepository>(sp =>
+        {
+            var rows = sp.GetRequiredService<List<(OrderReceipt Persisted, OrderReceipt Tracked)>>();
+            var repository = new Mock<IOrderReceiptRepository>();
+            repository.Setup(r => r.GetDueForRetryAsync(It.IsAny<DateTime>(), It.IsAny<int>(), It.IsAny<CancellationToken>()))
+                .Returns((DateTime now, int take, CancellationToken ct) => _receiptRepository.Object.GetDueForRetryAsync(now, take, ct));
+            repository.Setup(r => r.GetQueryableIgnoringTenant()).Returns(() =>
+            {
+                rows.Clear();
+                var persisted = _receiptRepository.Object.GetDueForRetryAsync(DateTime.UtcNow, 50, CancellationToken.None).GetAwaiter().GetResult();
+                foreach (var row in persisted)
+                {
+                    var tracked = OrderReceipt.Create(row.OrderId, row.ReceiptNumber, row.FileName, row.BlobName, row.LanguageId);
+                    CopyReceipt(row, tracked);
+                    rows.Add((row, tracked));
+                }
+                return rows.Select(r => r.Tracked).AsQueryable().BuildMock();
+            });
+            return repository.Object;
+        });
+        services.AddScoped<IUnitOfWork>(sp => new ReceiptScopeUnitOfWork(unitOfWork,
+            sp.GetRequiredService<List<(OrderReceipt Persisted, OrderReceipt Tracked)>>()));
+        services.AddScoped(sp => new FiscalRetryService(sp.GetRequiredService<IOrderReceiptRepository>(),
+            _orderRepository.Object, _countryConfigurationRepository.Object, _receiptService.Object, _emailService.Object,
+            TestGuestOrderAccessTokenIssuer.WithNoLiveTokens(), sp.GetRequiredService<IUnitOfWork>(), _tenantProvider.Object,
+            NullLogger<FiscalRetryService>.Instance, sp.GetRequiredService<IServiceScopeFactory>()));
+        return services.BuildServiceProvider().GetRequiredService<FiscalRetryService>();
+    }
+
+    private static void CopyReceipt(OrderReceipt source, OrderReceipt target)
+    {
+        foreach (var property in typeof(OrderReceipt).GetProperties().Where(p => p.CanRead && p.CanWrite))
+            property.SetValue(target, property.GetValue(source));
+    }
+
+    private sealed class ReceiptScopeUnitOfWork(IUnitOfWork inner,
+        List<(OrderReceipt Persisted, OrderReceipt Tracked)> rows) : IUnitOfWork
+    {
+        public async Task CommitAsync(CancellationToken cancellationToken = default)
+        {
+            await inner.CommitAsync(cancellationToken);
+            foreach (var (persisted, tracked) in rows) CopyReceipt(tracked, persisted);
+        }
+        public void Rollback() { }
+        public Task<IDbContextTransaction> BeginTransactionAsync(CancellationToken cancellationToken) =>
+            inner.BeginTransactionAsync(cancellationToken);
+        public void Dispose() { }
+    }
 
     private static Currency Euro()
     {
@@ -112,12 +156,14 @@ public sealed class FiscalRetryServicePerReceiptDurabilityTests
             cancellationTerms: BookingPolicy.CancellationTermsAtBooking);
         order.SetCurrency(Euro());
         order.Id = orderId;
+        order.TenantId = "tenant-a";
         return order;
     }
 
     private static OrderReceipt BuildDueReceipt(string orderId, string receiptNumber)
     {
         var receipt = OrderReceipt.Create(orderId, receiptNumber, $"{receiptNumber}.pdf", $"2026/{orderId}/{receiptNumber}.pdf", LanguageCode);
+        receipt.TenantId = "tenant-a";
         receipt.ScheduleImmediateFiscalRetry();
         return receipt;
     }

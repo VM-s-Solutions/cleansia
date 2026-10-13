@@ -5,8 +5,10 @@ using Cleansia.Core.Domain.Notifications;
 using Cleansia.Core.Domain.Orders;
 using Cleansia.Core.Domain.Repositories;
 using Cleansia.Core.Domain.SeedWork;
+using Cleansia.Core.Domain.Users;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace Cleansia.Core.AppServices.Services;
 
@@ -54,7 +56,9 @@ public class NewJobsDigestService(
     IUserNotificationPreferencesRepository preferencesRepository,
     INotificationProducer notificationProducer,
     IUnitOfWork unitOfWork,
-    ILogger<NewJobsDigestService> logger) : INewJobsDigestService
+    ILogger<NewJobsDigestService> logger,
+    IServiceScopeFactory serviceScopeFactory,
+    ITenantProvider tenantProvider) : INewJobsDigestService
 {
     /// <summary>
     /// The statuses that hand a cleaner's slot back. Exactly the complement of the set
@@ -71,26 +75,11 @@ public class NewJobsDigestService(
     public async Task SendDigestsAsync(CancellationToken cancellationToken = default)
     {
         var sweepStartedAt = DateTimeOffset.UtcNow;
-        var sweepStartedAtUtc = sweepStartedAt.UtcDateTime;
 
-        // Pull candidate cleaners: approved/active, have a work country
-        // set, have a UserId (some legacy rows don't). Include user so we
-        // can resolve TenantId for the queue message.
-        var cleaners = await employeeRepository
-            .GetQueryableIgnoringTenant()
-            .Include(e => e.User)
-            .Where(e => e.WorkCountryId != null
-                && (e.ContractStatus == ContractStatus.Approved
-                    || e.ContractStatus == ContractStatus.Active))
-            .Select(e => new CleanerCandidate(
-                e.Id,
-                e.UserId,
-                e.WorkCountryId!,
-                e.TenantId,
-                e.LastNewJobsDigestAt,
-                e.JobRadiusKm,
-                e.Address!.Latitude,
-                e.Address!.Longitude))
+        var cleaners = await employeeRepository.GetQueryableIgnoringTenant()
+            .Where(e => e.IsActive && e.WorkCountryId != null
+                && (e.ContractStatus == ContractStatus.Approved || e.ContractStatus == ContractStatus.Active))
+            .Select(e => e.Id)
             .ToListAsync(cancellationToken);
 
         if (cleaners.Count == 0)
@@ -105,142 +94,27 @@ public class NewJobsDigestService(
         var totalRadiusUnusable = 0;
         var totalDroppedFarAway = 0;
 
-        foreach (var cleaner in cleaners)
+        foreach (var employeeId in cleaners)
         {
+            cancellationToken.ThrowIfCancellationRequested();
             try
             {
-                var sinceUtc = cleaner.LastDigestAt?.UtcDateTime;
-
-                var releasedWindow = sinceUtc is null
-                    ? null
-                    : await FindReleasedCommitmentWindowAsync(
-                        cleaner.EmployeeId, sinceUtc.Value, sweepStartedAt, cancellationToken);
-
-                // Offerable, unfilled orders in this cleaner's work country whose cleaning has not
-                // started yet. The floor is what bounds the sweep: without it a cleaner with no
-                // watermark matched every offerable order their country ever recorded, and every
-                // released window re-opened the same tail.
-                var board = orderRepository.GetQueryableIgnoringTenant()
-                    .Where(o => o.CustomerAddress != null
-                        && o.CustomerAddress.CountryId == cleaner.WorkCountryId
-                        && o.CleaningDateTime >= sweepStartedAtUtc
-                        // A cover-requested seat is takeable, so the digest advertises it: its
-                        // holder is still assigned but a taker displaces them. → Order.HasTakeableSeat
-                        && o.AssignedEmployees.Count(ae => ae.CoverRequestedAt == null) < o.MaxEmployees
-                        && o.AssignedEmployees.All(ae => ae.EmployeeId != cleaner.EmployeeId))
-                    .Where(OrderAvailability.IsOfferableSql(sweepStartedAtUtc))
-                    .Where(OrderVisibility.NotHeldFrom(cleaner.EmployeeId, sweepStartedAtUtc));
-
-                // "Near you", when the cleaner asked for it. The work-country term above is
-                // jurisdiction and stays unconditionally; this narrows within it and never widens.
-                var radiusApplies = JobProximity.Applies(
-                    cleaner.JobRadiusKm, cleaner.HomeLatitude, cleaner.HomeLongitude);
-                if (radiusApplies)
-                {
-                    board = board.Where(JobProximity.WithinBoundingBoxSql(JobProximity.BoundingBox(
-                        cleaner.HomeLatitude!.Value, cleaner.HomeLongitude!.Value, cleaner.JobRadiusKm!.Value)));
-                }
-                else if (cleaner.JobRadiusKm is not null)
-                {
-                    // The cleaner asked for a radius and we cannot honour it, because their home never
-                    // geocoded. Counting it is the whole point: this fallback is silent by design (they
-                    // keep the country-wide board), so nothing else would ever surface the gap.
-                    totalRadiusUnusable++;
-                }
-
-                // Pull just enough to make a decision: count + the cleaning times the not-busy
-                // filter needs, plus the coordinates the exact distance test needs. Bounded by the
-                // floor above and by the freshness rule.
-                var newOrders = await ApplyFreshness(
-                        board, sinceUtc, releasedWindow, cleaner.EmployeeId, sweepStartedAtUtc)
-                    .Select(o => new
-                    {
-                        o.Id,
-                        o.CleaningDateTime,
-                        o.EstimatedTime,
-                        Latitude = o.CustomerAddress!.Latitude,
-                        Longitude = o.CustomerAddress!.Longitude,
-                    })
-                    .ToListAsync(cancellationToken);
-
-                if (newOrders.Count == 0)
-                {
-                    totalSkippedNoNewJobs++;
-                    continue;
-                }
-
-                // Exact great-circle test over the box's superset. Only the survivors reach the
-                // commitment read, so a cleaner with nothing near costs no read at all.
-                var nearby = new List<(string Id, DateTime CleaningDateTime, int EstimatedTimeMinutes)>(newOrders.Count);
-                foreach (var o in newOrders)
-                {
-                    if (radiusApplies && !JobProximity.IsWithinRadius(
-                        cleaner.HomeLatitude!.Value, cleaner.HomeLongitude!.Value,
-                        o.Latitude, o.Longitude, cleaner.JobRadiusKm!.Value))
-                    {
-                        totalDroppedFarAway++;
-                        continue;
-                    }
-
-                    nearby.Add((o.Id, o.CleaningDateTime, o.EstimatedTime));
-                }
-
-                // Not-busy filter: drop orders that overlap one of the cleaner's existing
-                // live-commitment orders, answered for every survivor by one read of the cleaner's
-                // commitments over the window filter every surface asks. A dropped order is not lost, it
-                // comes back through the released-window source above.
-                var overlapped = await orderRepository.GetOverlappedCandidateIdsIgnoringTenantAsync(
-                    cleaner.EmployeeId, nearby, cancellationToken);
-                var takeable = nearby.Count(c => !overlapped.Contains(c.Id));
-
-                if (takeable == 0)
-                {
-                    totalSkippedNoNewJobs++;
-                    continue;
-                }
-
-                // Check opt-in. Defaults to true (column default), so a
-                // missing prefs row means "allowed" — the dispatch Function
-                // has the same defaults-to-true behavior when the row is
-                // absent.
-                var prefs = await preferencesRepository
-                    .GetQueryableIgnoringTenant()
-                    .FirstOrDefaultAsync(p => p.UserId == cleaner.UserId, cancellationToken);
-                if (prefs != null && !prefs.IsAllowed(NotificationCategory.NewJobsAvailable))
-                {
-                    totalSkippedMuted++;
-                    // Still advance the watermark — otherwise re-enabling
-                    // the toggle would burst a backlog of "new" jobs that
-                    // are no longer fresh.
-                    await StampWatermarkAsync(cleaner.EmployeeId, sweepStartedAt, cancellationToken);
-                    continue;
-                }
-
-                await notificationProducer.NotifyAsync(
-                    cleaner.UserId,
-                    NotificationEventCatalog.NewJobsAvailable,
-                    new Dictionary<string, string>
-                    {
-                        ["count"] = takeable.ToString(System.Globalization.CultureInfo.InvariantCulture),
-                    },
-                    cleaner.TenantId,
-                    sweepStartedAt.UtcDateTime.Ticks.ToString(System.Globalization.CultureInfo.InvariantCulture),
-                    cancellationToken);
-
-                // The digest's feed + outbox rows commit together with the cleaner's advanced watermark,
-                // so they are durable iff the watermark moved; the drainer puts the push on the wire
-                // after the commit.
-                await StampWatermarkAsync(cleaner.EmployeeId, sweepStartedAt, cancellationToken);
-                totalEnqueued++;
+                await using var scope = serviceScopeFactory.CreateAsyncScope();
+                var child = scope.ServiceProvider.GetRequiredService<NewJobsDigestService>();
+                var result = await child.SendCleanerDigestAsync(employeeId, sweepStartedAt, cancellationToken);
+                totalEnqueued += result.Enqueued;
+                totalSkippedNoNewJobs += result.NoNew;
+                totalSkippedMuted += result.Muted;
+                totalRadiusUnusable += result.RadiusUnusable;
+                totalDroppedFarAway += result.FarAway;
+            }
+            catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+            {
+                throw;
             }
             catch (Exception ex)
             {
-                // One cleaner's processing failed — log and continue. We
-                // intentionally don't advance the watermark on failure so
-                // the next sweep retries them.
-                logger.LogWarning(ex,
-                    "NewJobsDigest: failed for cleaner {EmployeeId}; continuing",
-                    cleaner.EmployeeId);
+                logger.LogError(ex, "NewJobsDigest: failed for cleaner {EmployeeId}; continuing", employeeId);
             }
         }
 
@@ -252,6 +126,149 @@ public class NewJobsDigestService(
             totalDroppedFarAway,
             totalRadiusUnusable,
             cleaners.Count);
+    }
+
+    private async Task<(int Enqueued, int NoNew, int Muted, int RadiusUnusable, int FarAway)> SendCleanerDigestAsync(
+        string employeeId, DateTimeOffset sweepStartedAt, CancellationToken cancellationToken)
+    {
+        var employee = await employeeRepository.GetQueryableIgnoringTenant()
+            .Include(e => e.User)
+            .Include(e => e.Address)
+            .FirstOrDefaultAsync(e => e.Id == employeeId, cancellationToken);
+        if (employee is null || !employee.IsActive || employee.User is null || !employee.User.IsActive
+            || employee.WorkCountryId is null || employee.TenantId is null
+            || employee.ContractStatus is not (ContractStatus.Approved or ContractStatus.Active))
+        {
+            return (0, 1, 0, 0, 0);
+        }
+
+        tenantProvider.SetTenantOverride(employee.TenantId);
+        var cleaner = new CleanerCandidate(employee.Id, employee.UserId, employee.WorkCountryId,
+            employee.TenantId, employee.LastNewJobsDigestAt, employee.JobRadiusKm,
+            employee.Address?.Latitude, employee.Address?.Longitude);
+        var sweepStartedAtUtc = sweepStartedAt.UtcDateTime;
+        var totalRadiusUnusable = 0;
+        var totalDroppedFarAway = 0;
+        var sinceUtc = cleaner.LastDigestAt?.UtcDateTime;
+
+        var releasedWindow = sinceUtc is null
+            ? null
+            : await FindReleasedCommitmentWindowAsync(
+                cleaner.EmployeeId, sinceUtc.Value, sweepStartedAt, cancellationToken);
+
+        // Offerable, unfilled orders in this cleaner's work country whose cleaning has not
+        // started yet. The floor is what bounds the sweep: without it a cleaner with no
+        // watermark matched every offerable order their country ever recorded, and every
+        // released window re-opened the same tail.
+        var board = orderRepository.GetQueryableIgnoringTenant()
+            .Where(o => o.CustomerAddress != null
+                && o.CustomerAddress.CountryId == cleaner.WorkCountryId
+                && o.CleaningDateTime >= sweepStartedAtUtc
+                // A cover-requested seat is takeable, so the digest advertises it: its
+                // holder is still assigned but a taker displaces them. → Order.HasTakeableSeat
+                && o.AssignedEmployees.Count(ae => ae.CoverRequestedAt == null) < o.MaxEmployees
+                && o.AssignedEmployees.All(ae => ae.EmployeeId != cleaner.EmployeeId))
+            .Where(OrderAvailability.IsOfferableSql(sweepStartedAtUtc))
+            .Where(OrderVisibility.NotHeldFrom(cleaner.EmployeeId, sweepStartedAtUtc));
+
+        // "Near you", when the cleaner asked for it. The work-country term above is
+        // jurisdiction and stays unconditionally; this narrows within it and never widens.
+        var radiusApplies = JobProximity.Applies(
+            cleaner.JobRadiusKm, cleaner.HomeLatitude, cleaner.HomeLongitude);
+        if (radiusApplies)
+        {
+            board = board.Where(JobProximity.WithinBoundingBoxSql(JobProximity.BoundingBox(
+                cleaner.HomeLatitude!.Value, cleaner.HomeLongitude!.Value, cleaner.JobRadiusKm!.Value)));
+        }
+        else if (cleaner.JobRadiusKm is not null)
+        {
+            // The cleaner asked for a radius and we cannot honour it, because their home never
+            // geocoded. Counting it is the whole point: this fallback is silent by design (they
+            // keep the country-wide board), so nothing else would ever surface the gap.
+            totalRadiusUnusable++;
+        }
+
+        // Pull just enough to make a decision: count + the cleaning times the not-busy
+        // filter needs, plus the coordinates the exact distance test needs. Bounded by the
+        // floor above and by the freshness rule.
+        var newOrders = await ApplyFreshness(
+                board, sinceUtc, releasedWindow, cleaner.EmployeeId, sweepStartedAtUtc)
+            .Select(o => new
+            {
+                o.Id,
+                o.CleaningDateTime,
+                o.EstimatedTime,
+                Latitude = o.CustomerAddress!.Latitude,
+                Longitude = o.CustomerAddress!.Longitude,
+            })
+            .ToListAsync(cancellationToken);
+
+        if (newOrders.Count == 0)
+        {
+            return (0, 1, 0, totalRadiusUnusable, totalDroppedFarAway);
+        }
+
+        // Exact great-circle test over the box's superset. Only the survivors reach the
+        // commitment read, so a cleaner with nothing near costs no read at all.
+        var nearby = new List<(string Id, DateTime CleaningDateTime, int EstimatedTimeMinutes)>(newOrders.Count);
+        foreach (var o in newOrders)
+        {
+            if (radiusApplies && !JobProximity.IsWithinRadius(
+                cleaner.HomeLatitude!.Value, cleaner.HomeLongitude!.Value,
+                o.Latitude, o.Longitude, cleaner.JobRadiusKm!.Value))
+            {
+                totalDroppedFarAway++;
+                continue;
+            }
+
+            nearby.Add((o.Id, o.CleaningDateTime, o.EstimatedTime));
+        }
+
+        // Not-busy filter: drop orders that overlap one of the cleaner's existing
+        // live-commitment orders, answered for every survivor by one read of the cleaner's
+        // commitments over the window filter every surface asks. A dropped order is not lost, it
+        // comes back through the released-window source above.
+        var overlapped = await orderRepository.GetOverlappedCandidateIdsIgnoringTenantAsync(
+            cleaner.EmployeeId, nearby, cancellationToken);
+        var takeable = nearby.Count(c => !overlapped.Contains(c.Id));
+
+        if (takeable == 0)
+        {
+            return (0, 1, 0, totalRadiusUnusable, totalDroppedFarAway);
+        }
+
+        // Check opt-in. Defaults to true (column default), so a
+        // missing prefs row means "allowed" — the dispatch Function
+        // has the same defaults-to-true behavior when the row is
+        // absent.
+        var prefs = await preferencesRepository
+            .GetQueryableIgnoringTenant()
+            .FirstOrDefaultAsync(p => p.UserId == cleaner.UserId, cancellationToken);
+        if (prefs != null && !prefs.IsAllowed(NotificationCategory.NewJobsAvailable))
+        {
+            // Still advance the watermark — otherwise re-enabling
+            // the toggle would burst a backlog of "new" jobs that
+            // are no longer fresh.
+            await StampWatermarkAsync(employee, sweepStartedAt, cancellationToken);
+            return (0, 0, 1, totalRadiusUnusable, totalDroppedFarAway);
+        }
+
+        await notificationProducer.NotifyAsync(
+            cleaner.UserId,
+            NotificationEventCatalog.NewJobsAvailable,
+            new Dictionary<string, string>
+            {
+                ["count"] = takeable.ToString(System.Globalization.CultureInfo.InvariantCulture),
+            },
+            cleaner.TenantId,
+            sweepStartedAt.UtcDateTime.Ticks.ToString(System.Globalization.CultureInfo.InvariantCulture),
+            cancellationToken);
+
+        // The digest's feed + outbox rows commit together with the cleaner's advanced watermark,
+        // so they are durable iff the watermark moved; the drainer puts the push on the wire
+        // after the commit.
+        await StampWatermarkAsync(employee, sweepStartedAt, cancellationToken);
+        return (1, 0, 0, totalRadiusUnusable, totalDroppedFarAway);
     }
 
     /// <summary>
@@ -345,33 +362,11 @@ public class NewJobsDigestService(
                 released.Max(r => r.CleaningDateTime.AddMinutes(r.EstimatedTime)));
     }
 
-    /// <summary>
-    /// Bump the cleaner's watermark to the sweep-start timestamp and
-    /// commit. Doing the write inside the per-cleaner loop (not at the
-    /// end) means a mid-sweep crash won't re-notify already-handled
-    /// cleaners. Uses sweep-start (not now()) so orders that became
-    /// available DURING the sweep are picked up by the next run.
-    ///
-    /// Reads tenant-IGNORING for the same reason the candidate query does — the
-    /// timer runs with no tenant context, so a tenant-scoped read resolves no
-    /// tenanted cleaner and their watermark could never advance, re-notifying
-    /// them about the same jobs every sweep. The entity stays change-tracked,
-    /// so the stamp still commits together with the feed + outbox rows.
-    /// </summary>
     private async Task StampWatermarkAsync(
-        string employeeId,
+        Employee employee,
         DateTimeOffset stamp,
         CancellationToken cancellationToken)
     {
-        var employee = await employeeRepository.GetByIdIgnoringTenantAsync(employeeId, cancellationToken);
-        if (employee is null)
-        {
-            logger.LogWarning(
-                "NewJobsDigest: cleaner {EmployeeId} disappeared between the sweep read and the watermark stamp; watermark not advanced",
-                employeeId);
-            return;
-        }
-
         employee.MarkNewJobsDigestSent(stamp);
         await unitOfWork.CommitAsync(cancellationToken);
     }

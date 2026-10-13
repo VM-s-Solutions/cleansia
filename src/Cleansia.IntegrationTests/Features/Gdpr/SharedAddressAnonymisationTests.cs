@@ -61,7 +61,8 @@ public class SharedAddressAnonymisationTests(PostgresContainerFixture fixture) :
         var factory = new Mock<IBlobContainerClientFactory>();
         factory.Setup(f => f.GetBlobContainerClient(It.IsAny<string>())).Returns(Mock.Of<IBlobContainerClient>());
         services.Replace(ServiceDescriptor.Singleton(_ => factory.Object));
-        services.AddScoped<IDataRetentionBackgroundService, DataRetentionBackgroundService>();
+        services.AddScoped<DataRetentionBackgroundService>();
+        services.AddScoped<IDataRetentionBackgroundService>(sp => sp.GetRequiredService<DataRetentionBackgroundService>());
         return Task.CompletedTask;
     }
 

@@ -386,7 +386,9 @@ public class PayPeriodMixedCurrencyInvoicingTests
             .Setup(r => r.GetHeldUnderLockAsync(PayrollMockFactory.EmployeeId, currencyId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(amount);
 
-    private Task Run() => new PayPeriodBackgroundService(
+    private Task Run() => CreateService().CloseExpiredPeriodsAndOpenNewAsync(CancellationToken.None);
+
+    private PayPeriodBackgroundService CreateService() => new(
         _payPeriodRepository.Object,
         _employeeRepository.Object,
         _emailService.Object,
@@ -405,8 +407,8 @@ public class PayPeriodMixedCurrencyInvoicingTests
         _tenantProvider.Object,
         _payoutReferenceAllocator.Object,
         new Mock<ITenantRepository>().Object,
-        _cashLedger.Object)
-        .CloseExpiredPeriodsAndOpenNewAsync(CancellationToken.None);
+        _cashLedger.Object,
+        PayPeriodTestServices.ScopeFactory(CreateService));
 
     private static Employee Cleaner()
     {

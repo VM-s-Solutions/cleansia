@@ -21,10 +21,13 @@ public static class FunctionsProcessingRegistration
 {
     public static IServiceCollection AddFunctionsProcessing(this IServiceCollection services)
     {
-        services.AddScoped<IPayPeriodBackgroundService, PayPeriodBackgroundService>();
+        services.AddScoped<PayPeriodBackgroundService>();
+        services.AddScoped<IPayPeriodBackgroundService>(provider => provider.GetRequiredService<PayPeriodBackgroundService>());
         services.AddScoped<IPeriodReminderBackgroundService, PeriodReminderBackgroundService>();
-        services.AddScoped<INewJobsDigestService, NewJobsDigestService>();
-        services.AddScoped<IDataRetentionBackgroundService, DataRetentionBackgroundService>();
+        services.AddScoped<NewJobsDigestService>();
+        services.AddScoped<INewJobsDigestService>(provider => provider.GetRequiredService<NewJobsDigestService>());
+        services.AddScoped<DataRetentionBackgroundService>();
+        services.AddScoped<IDataRetentionBackgroundService>(provider => provider.GetRequiredService<DataRetentionBackgroundService>());
         services.AddScoped<IRefreshTokenCleanupService, RefreshTokenCleanupService>();
         // ADR-0064 D2 — the company wind-down sweep, consumed here only.
         services.AddScoped<ICompanyWindDownService, CompanyWindDownService>();

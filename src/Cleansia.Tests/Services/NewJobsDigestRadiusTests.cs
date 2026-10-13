@@ -10,6 +10,7 @@ using Cleansia.Infra.Database.Repositories;
 using Cleansia.TestUtilities;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
@@ -256,13 +257,9 @@ public sealed class NewJobsDigestRadiusTests : IDisposable
                 (_, _, args, _, _, _) => pushes.Add(args))
             .Returns(Task.CompletedTask);
 
-        var digest = new NewJobsDigestService(
-            new EmployeeRepository(ctx),
-            new OrderRepository(ctx),
-            new UserNotificationPreferencesRepository(ctx),
-            producer.Object,
-            ctx,
-            NullLogger<NewJobsDigestService>.Instance);
+        await using var provider = NewJobsDigestTestServices.Create(NewContext, producer.Object, logger: NullLogger<NewJobsDigestService>.Instance);
+        await using var scope = provider.CreateAsyncScope();
+        var digest = scope.ServiceProvider.GetRequiredService<INewJobsDigestService>();
 
         await digest.SendDigestsAsync(CancellationToken.None);
 
@@ -304,6 +301,7 @@ public sealed class NewJobsDigestRadiusTests : IDisposable
         var lookups = new List<(string EmployeeId, IReadOnlyList<string> CandidateIds)>();
         var realOrderRepository = new OrderRepository(ctx);
         var orderRepository = new Mock<IOrderRepository>(MockBehavior.Strict);
+        orderRepository.Setup(r => r.Dispose());
         orderRepository
             .Setup(r => r.GetQueryableIgnoringTenant())
             .Returns(() => realOrderRepository.GetQueryableIgnoringTenant());
@@ -328,13 +326,9 @@ public sealed class NewJobsDigestRadiusTests : IDisposable
                 });
 
         var swallowed = new List<Exception>();
-        var digest = new NewJobsDigestService(
-            new EmployeeRepository(ctx),
-            orderRepository.Object,
-            new UserNotificationPreferencesRepository(ctx),
-            producer.Object,
-            ctx,
-            new FailureCapturingLogger(swallowed));
+        await using var provider = NewJobsDigestTestServices.Create(NewContext, producer.Object, _ => orderRepository.Object, logger: new FailureCapturingLogger(swallowed));
+        await using var scope = provider.CreateAsyncScope();
+        var digest = scope.ServiceProvider.GetRequiredService<INewJobsDigestService>();
 
         await digest.SendDigestsAsync(CancellationToken.None);
 

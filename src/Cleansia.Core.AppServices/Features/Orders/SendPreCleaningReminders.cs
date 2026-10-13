@@ -56,11 +56,12 @@ public class SendPreCleaningReminders
         INotificationProducer notificationProducer,
         ITenantProvider tenantProvider,
         IUnitOfWork unitOfWork,
-        ILogger<Handler> logger) : ICommandHandler<Command, Response>
+        ILogger<Handler> logger,
+        TimeProvider timeProvider) : ICommandHandler<Command, Response>
     {
         public async Task<BusinessResult<Response>> Handle(Command command, CancellationToken cancellationToken)
         {
-            var now = DateTime.UtcNow;
+            var now = timeProvider.GetUtcNow().UtcDateTime;
             var windowStart = now.AddMinutes(command.LeadMinutesLow);
             var windowEnd = now.AddMinutes(command.LeadMinutesHigh);
 
@@ -86,29 +87,20 @@ public class SendPreCleaningReminders
 
                 foreach (var order in tenantGroup)
                 {
-                    try
-                    {
-                        await notificationProducer.NotifyAsync(
-                            order.UserId!,
-                            NotificationEventCatalog.OrderStartingSoon,
-                            new Dictionary<string, string>
-                            {
-                                ["orderId"] = order.Id,
-                                ["orderNumber"] = order.DisplayOrderNumber,
-                            },
-                            order.TenantId,
-                            order.Id,
-                            cancellationToken);
+                    await notificationProducer.NotifyAsync(
+                        order.UserId!,
+                        NotificationEventCatalog.OrderStartingSoon,
+                        new Dictionary<string, string>
+                        {
+                            ["orderId"] = order.Id,
+                            ["orderNumber"] = order.DisplayOrderNumber,
+                        },
+                        order.TenantId,
+                        order.Id,
+                        cancellationToken);
 
-                        order.MarkPreCleaningReminderSent(now);
-                        sent++;
-                    }
-                    catch (Exception ex)
-                    {
-                        logger.LogWarning(ex,
-                            "Failed to enqueue pre-cleaning reminder for order {OrderId}",
-                            order.Id);
-                    }
+                    order.MarkPreCleaningReminderSent(now);
+                    sent++;
                 }
 
                 // The stamp and the reminder's outbox row commit together, so the row is durable iff the

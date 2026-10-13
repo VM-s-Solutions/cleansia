@@ -1,4 +1,7 @@
 using Cleansia.Core.AppServices.Common;
+using Cleansia.Core.AppServices.Behaviors;
+using MediatR;
+using Microsoft.Extensions.DependencyInjection;
 using Cleansia.Core.AppServices.Features.Orders;
 using Cleansia.Core.AppServices.Features.Refunds;
 using Cleansia.Core.AppServices.Services.Interfaces;
@@ -43,15 +46,24 @@ public class RedrivePendingRefundsTests
             .Returns(Task.CompletedTask);
     }
 
-    private RedrivePendingRefunds.Handler Handler() => new(
-        _refunds.Object,
-        _refundService.Object,
-        _notifications.Object,
-        _adminNotifier.Object,
-        _userNotifications.Object,
-        _tenants.Object,
-        _uow.Object,
-        NullLogger<RedrivePendingRefunds.Handler>.Instance);
+    private RedrivePendingRefunds.Handler Handler()
+    {
+        var services = new ServiceCollection();
+        services.AddScoped<IMediator>(_ =>
+        {
+            var mediator = new Mock<IMediator>();
+            mediator.Setup(m => m.Send(It.IsAny<RedrivePendingRefund.Command>(), It.IsAny<CancellationToken>()))
+                .Returns((RedrivePendingRefund.Command command, CancellationToken ct) =>
+                    new UnitOfWorkPipelineBehavior<RedrivePendingRefund.Command, BusinessResult<RedrivePendingRefund.Response>>(_uow.Object)
+                        .Handle(command, token => new RedrivePendingRefund.Handler(_refunds.Object, _refundService.Object,
+                            _notifications.Object, _adminNotifier.Object, _userNotifications.Object, _tenants.Object,
+                            NullLogger<RedrivePendingRefund.Handler>.Instance).Handle(command, token), ct));
+            return mediator.Object;
+        });
+        var provider = services.BuildServiceProvider();
+        return new RedrivePendingRefunds.Handler(_refunds.Object, provider.GetRequiredService<IServiceScopeFactory>(),
+            NullLogger<RedrivePendingRefunds.Handler>.Instance);
+    }
 
     private static Refund PendingRefund(
         string orderId,
@@ -79,6 +91,7 @@ public class RedrivePendingRefundsTests
             userId: userId,
             cancellationTerms: BookingPolicy.CancellationTermsAtBooking);
         order.Id = orderId;
+        order.TenantId = TenantId;
         order.ApplyCredit(creditApplied, "test");
         order.AddOrderStatus(OrderStatusTrack.Create(OrderStatus.Confirmed, order));
         if (orderCancelled)
@@ -228,7 +241,7 @@ public class RedrivePendingRefundsTests
 
     /// <summary>
     /// A row that fails for any other reason — a commit refused for a frozen company's books, say — is
-    /// rolled back and logged, and the rows behind it still run. Oldest first, it would otherwise block
+    /// discarded and logged, and the rows behind it still run. Oldest first, it would otherwise block
     /// every refund behind it on every run.
     /// </summary>
     [Fact]
@@ -480,4 +493,58 @@ public class RedrivePendingRefundsTests
             It.IsAny<string>(), It.IsAny<string>(), It.IsAny<Dictionary<string, string>>(),
             It.IsAny<string?>(), It.IsAny<string?>(), It.IsAny<CancellationToken>()), Times.Never);
     }
+    [Theory]
+    [InlineData(RefundStatus.Succeeded, RefundSource.AppRefund, 120, TenantId)]
+    [InlineData(RefundStatus.Pending, RefundSource.Chargeback, 120, TenantId)]
+    [InlineData(RefundStatus.Pending, RefundSource.AppRefund, 5, TenantId)]
+    [InlineData(RefundStatus.Pending, RefundSource.AppRefund, 120, "other-operator")]
+    [InlineData(RefundStatus.Pending, RefundSource.AppRefund, 120, null)]
+    public async Task A_Child_Rechecks_Current_Eligibility_And_Operator_Ownership(
+        RefundStatus status, RefundSource source, int ageMinutes, string? orderTenant)
+    {
+        var refund = PendingRefund("order-1", TimeSpan.FromMinutes(ageMinutes), status, source);
+        refund.Order!.TenantId = orderTenant;
+        Arrange(refund);
+        var result = await new RedrivePendingRefund.Handler(_refunds.Object, _refundService.Object,
+            _notifications.Object, _adminNotifier.Object, _userNotifications.Object, _tenants.Object,
+            NullLogger<RedrivePendingRefund.Handler>.Instance).Handle(
+                new RedrivePendingRefund.Command(refund.Id, DateTimeOffset.UtcNow.AddMinutes(-30),
+                    DateTimeOffset.UtcNow.AddHours(-24)), CancellationToken.None);
+        Assert.Equal(new RedrivePendingRefund.Response(false, false), result.Value);
+        _refundService.VerifyNoOtherCalls();
+        _adminNotifier.VerifyNoOtherCalls();
+        _notifications.VerifyNoOtherCalls();
+        _tenants.VerifyNoOtherCalls();
+        _uow.VerifyNoOtherCalls();
+    }
+
+    [Fact]
+    public async Task A_Disappeared_Child_Does_Nothing()
+    {
+        Arrange();
+        var result = await new RedrivePendingRefund.Handler(_refunds.Object, _refundService.Object,
+            _notifications.Object, _adminNotifier.Object, _userNotifications.Object, _tenants.Object,
+            NullLogger<RedrivePendingRefund.Handler>.Instance).Handle(
+                new RedrivePendingRefund.Command("gone", DateTimeOffset.UtcNow.AddMinutes(-30),
+                    DateTimeOffset.UtcNow.AddHours(-24)), CancellationToken.None);
+        Assert.Equal(new RedrivePendingRefund.Response(false, false), result.Value);
+        _refundService.VerifyNoOtherCalls();
+        _tenants.VerifyNoOtherCalls();
+    }
+
+    [Fact]
+    public async Task Host_Cancellation_Stops_Before_The_Next_Refund()
+    {
+        var a = PendingRefund("order-a", TimeSpan.FromHours(3));
+        var b = PendingRefund("order-b", TimeSpan.FromHours(2));
+        Arrange(a, b);
+        using var cancellation = new CancellationTokenSource();
+        _refundService.Setup(r => r.RedriveAsync(a.Id, "system", It.IsAny<CancellationToken>()))
+            .Returns(() => { cancellation.Cancel(); throw new OperationCanceledException(cancellation.Token); });
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(() => Handler().Handle(
+            new RedrivePendingRefunds.Command(), cancellation.Token));
+        _refundService.Verify(r => r.RedriveAsync(b.Id, It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Never);
+        _notifications.VerifyNoOtherCalls();
+    }
+
 }

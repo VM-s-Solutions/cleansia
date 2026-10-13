@@ -81,6 +81,10 @@ So account B, signed in on the same phone, receives A's pushes until the 90-day 
   - NOT doing held: `git diff --stat 6952149..1768d58` shows no change under `src/cleansia_android` or `src/cleansia_ios`, and none to the retention sweep.
   - Not run: no migration and no NSwag regeneration, because no model, DTO or endpoint changed. Nothing ran against DEV or PRO.
   - Not yet: the P5 pull request's exact-head CI and its merge.
+- 2026-10-13 — Shipped in [#327](https://github.com/VM-s-Solutions/cleansia/pull/327).
+  - Exact-head CI on `b47e6ce` passed all 6 check runs with no re-run: Backend, Frontend build and e2e-smoke, Android, Docs and Secret scan. iOS, iOS Symbols and booking-policy parity did not run, because their path filters match none of the changed files.
+  - Merged normally with the SHA guard as `2a8bd7f`. No deploy ran: deploy-dev, deploy-pro, deploy-docs and execute-sql have no run since the merge.
+  - Evidence: `raw/ci/p5-pr327-ci-merge-closure-001.json` (sha256 `8885990d…`) in the off-tree Wave F folder.
 
 ## Review
 

@@ -134,7 +134,7 @@ The ruling also leaves these out:
 - [x] **AC3** — The regenerated `Initial` has a byte-identical migration body, and one more `IsConcurrencyToken` line in each of the Designer and the snapshot. It has no pending model changes. MS-2 and `database.md` name the new id.
 - [x] **AC4** — The unit, integration and host suites pass in full at every step.
   - At step 4 they ran on the build before its last two edits, a comment pointer in `RefundService.cs` and a living-doc wording change. After those, the solution rebuilt with 0 errors and 42 refund and cancellation tests passed.
-- [ ] **AC5** — The three decision records, the two living records and the listed page edits ship with the code. consistency.md's deviating-forms entry names T-0841.
+- [x] **AC5** — The three decision records, the two living records and the listed page edits ship with the code. consistency.md's deviating-forms entry names T-0841.
 - [x] **AC6** — The DEV reset runs on Mike's explicit approval and is recorded here. Otherwise it is recorded as owed, with the new migration id.
 
 ## Work record
@@ -207,6 +207,12 @@ The ruling also leaves these out:
   - Checks at the head, whose docs and code are `1b4ecb7`'s: check-docs-refs, 383 references with 0 unresolved; check-catalog-claims, C1 0 · C2 0 · C3 0 with 158 advisories; the docs site builds (`p5/be-final/vitepress-build.log`, which records the commit it ran on).
   - No full suite ran after `1768d58`; the security re-review's targeted runs (Review) ran on its `src`. No commit since changes `src` beyond code comments: this branch's commits change docs, records and comments, and the master merge `6363aee` brings T-0838's workflow and Bicep changes.
   - Not yet: the P5 pull request's exact-head CI and its merge. AC5 waits for the merge: every record and page edit it names is on the branch, in the commits above.
+- 2026-10-13 — Shipped in [#327](https://github.com/VM-s-Solutions/cleansia/pull/327).
+  - Exact-head CI on `b47e6ce` passed all 6 check runs with no re-run: Backend, Frontend build and e2e-smoke, Android, Docs and Secret scan. iOS, iOS Symbols and booking-policy parity did not run, because their path filters match none of the changed files.
+  - Merged normally with the SHA guard as `2a8bd7f`. No deploy ran: deploy-dev, deploy-pro, deploy-docs and execute-sql have no run since the merge.
+  - Evidence: `raw/ci/p5-pr327-ci-merge-closure-001.json` (sha256 `8885990d…`) in the off-tree Wave F folder.
+  - **AC5.** The three decision records, the two living records and the page edits shipped with the code. consistency.md's deviating-forms entry names T-0841 (`consistency.md:1040` and `:1045`; `:1036` and `:1041` at `2a8bd7f`).
+  - T-0844 stays in progress for AC2, which waits for Mike: add the assertions it names, or read it as met. The DEV drop for `20261012190449_Initial` is still owed and waits for his explicit approval.
 
 ## Review
 

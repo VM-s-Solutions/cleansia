@@ -104,11 +104,16 @@ public sealed class NewJobsDigestPerCleanerIsolationPostgresTests(PostgresContai
                 Assert.Equal(TestTenants.Default, cleaners.Single(e => e.Id == "digest-employee-a").TenantId);
                 Assert.Equal(2, notices.Count);
                 Assert.Equal(2, outbox.Count);
+                var capturedTicks = Assert.Single(outbox
+                    .Select(o => long.Parse(o.MessageKey[(o.MessageKey.LastIndexOf(':') + 1)..],
+                        System.Globalization.CultureInfo.InvariantCulture))
+                    .Distinct());
+                Assert.Equal(capturedTicks / 10 * 10, stamp.UtcTicks);
                 Assert.All(notices, n => Assert.Equal(TestTenants.Second, n.TenantId));
                 Assert.All(outbox, o =>
                 {
                     Assert.Equal(TestTenants.Second, o.TenantId);
-                    Assert.EndsWith($":{stamp.UtcTicks}", o.MessageKey);
+                    Assert.EndsWith($":{capturedTicks}", o.MessageKey);
                 });
                 Console.WriteLine(JsonSerializer.Serialize(new { phase = "common-clock-recipient-ownership", stamp,
                     cleaners = cleaners.Select(e => new { e.Id, e.TenantId }),

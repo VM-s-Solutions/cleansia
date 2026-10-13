@@ -1111,6 +1111,10 @@ need backfilling.
   still counts. (T-0836)
 - **Cleaner iOS — a reserved job's price on *Pending offers* shows the koruna as *Kč*.** It printed
   *CZK*, where Android prints *Kč*. (T-0839)
+- **Customer iOS — the schedule form says when no payment is chosen.** When a schedule's cash payment
+  was cleared because cash stopped being available for it, and cash then became available again with
+  nothing chosen, the form showed no method and said nothing. It now says *Choose how the schedule is
+  paid.* (T-0835)
 - **Cleaner Android and iOS — the dashboard shows today's and coming jobs, with the right day
   words.** The dashboard now asks for your jobs from the start of your day, so past jobs no longer
   crowd out the next one. A job you finished earlier today still counts on the *N jobs today* line.

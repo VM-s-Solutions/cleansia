@@ -59,7 +59,7 @@ So a job the customer cancelled today still reads as *1 job today*, while the he
   - Suites, on the `6672db1` tree (`p5/native-fixpass/logs/summary.txt`):
     - Android: core 296, partner 839 and customer 1683 tests, 0 failures.
     - iOS: CleansiaCore 776/776, CleansiaPartner 1113/1113 and CleansiaCustomer 1780 (1779 passed, 1 skipped), on 18.6 and on 16.4.
-    - No code changed after `6672db1`. The filing commit and the records change only `agents/backlog/`; `3bd7b2b` changes docs and catalog pages and one test comment; `8c26004` changes the CHANGELOG. No suite ran after `6672db1`.
+    - No native code changed after `6672db1`. The filing commit and the records change only `agents/backlog/`. `3bd7b2b` changes docs and catalog pages and one test comment, and `8c26004` changes the CHANGELOG. The master merge `753b98b` brings #326's workflow and Bicep changes and #327's backend code, which #327's exact-head CI ran on `b47e6ce`. No suite ran after `6672db1`, and none ran on the merged tree.
   - Gate 8.5, iOS 16.4: the partner suite ran on 16.4, `DashboardDataTests` included. No 16.4 launch or render of the dashboard ran.
   - **Ruled differently from Doing:** nothing. Two notes:
     - The ruling's risk 1: a cancelled order still takes one of the page's ten rows, so on a day with ten or more orders the count can come out low. The ruling declined filtering the request by status, which would avoid it.

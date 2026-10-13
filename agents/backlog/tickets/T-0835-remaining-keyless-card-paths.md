@@ -92,7 +92,7 @@ Both put card into a keyless form whose card option is hidden. The form stays va
   - Suites, on the `6672db1` tree (`p5/native-fixpass/logs/summary.txt`):
     - Android: core 296, partner 839 and customer 1683 tests, 0 failures.
     - iOS: CleansiaCore 776/776, CleansiaPartner 1113/1113 and CleansiaCustomer 1780 (1779 passed, 1 skipped), on 18.6 and on 16.4.
-    - No code changed after `6672db1`. The filing commit and the records change only `agents/backlog/`; `3bd7b2b` changes docs and catalog pages and one test comment; `8c26004` changes the CHANGELOG. No suite ran after `6672db1`.
+    - No native code changed after `6672db1`. The filing commit and the records change only `agents/backlog/`. `3bd7b2b` changes docs and catalog pages and one test comment, and `8c26004` changes the CHANGELOG. The master merge `753b98b` brings #326's workflow and Bicep changes and #327's backend code, which #327's exact-head CI ran on `b47e6ce`. No suite ran after `6672db1`, and none ran on the merged tree.
   - Gate 8.5, iOS 16.4: the suites above ran on 16.4. A scratch render harness, never committed, ran on a copy of the `6672db1` tree on 16.4 and 18.6 (`p5/native-fixpass/render/`).
     - With nothing chosen, the keyless form shows "Choose how the schedule is paid.", in light and in dark.
     - When cash is taken away, the cash-cleared note shows and the missing-payment note does not. A keyed build with card chosen shows no note.
@@ -140,7 +140,7 @@ Both put card into a keyless form whose card option is hidden. The form stays va
   - It was ratified by the design ruling ("Catalog, ratified here."), with its routing. Test 1 swept the payment-type writers and the card-only actions on both apps: "Zero violations once T-0835 lands." Then "Test 2 fires (it forbids a held card and a disabled CTA), so the entry is priced." and "Test 3 does not fire."
   - One addition, named in the commit: the iOS roster also names `CreateRecurringBindingTests` and `OrderDetailFooterStyleTests`.
   - Re-checked at the head. Android reads the key at `CleansiaApp.kt:58`, `ConfirmStep.kt:115`, `SubscribePlusScreen.kt:100`, `OrderDetailScreen.kt:582`, `CreateRecurringScreen.kt:1285` and `CreateRecurringViewModel.kt:102` and `:738`. Every iOS view model that can take card takes `isCardPaymentAvailable`, defaulting to `StripeConfig.isCardPaymentAvailable`.
-  - The enforcers run in CI: `:customer-app:testDebugUnitTest` (`android-ci.yml:86`) and the CleansiaCustomer scheme (`ios-ci.yml:229`).
+  - The enforcers run in CI: `:customer-app:testDebugUnitTest` (`android-ci.yml:89`) and the CleansiaCustomer scheme (`ios-ci.yml:232`).
 - **Gate 7:** `8c26004`'s entry under Fixed, for the one keyed state a customer can see. `6672db1` gave the ticket's keyless changes no entry, because a build with no Stripe key is debug-only, and left that state to `8c26004`.
 - **Reported, not fixed:**
   - `CreateRecurringViewModel.swift` is 600 lines, the SwiftLint warning limit (`.swiftlint.yml:96-98`), so one more line fails ios-ci's `--strict` (the follow-up correctness review's N4). Not on a ticket.

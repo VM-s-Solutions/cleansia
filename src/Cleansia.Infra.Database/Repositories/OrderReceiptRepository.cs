@@ -58,6 +58,7 @@ public class OrderReceiptRepository(CleansiaDbContext context)
         // (ON FiscalNextRetryAt IS NOT NULL) already supports it → no migration.
         return await GetDbSet()
             .IgnoreQueryFilters()
+            .AsNoTracking()
             .Include(r => r.Language)
             .Include(r => r.Receivable)
             .Where(r => r.FiscalCode == null

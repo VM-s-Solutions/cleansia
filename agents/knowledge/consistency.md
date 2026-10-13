@@ -1071,7 +1071,6 @@ the roster is stale.
 
 | Job | Where |
 |---|---|
-| `FiscalRetryService` | `FiscalRetryService.cs:40-112` |
 | `PayPeriodBackgroundService` | `PayPeriodBackgroundService.cs:255-279`, a cleaner's invoices, committing at `:455-476` |
 | `DataRetentionBackgroundService` | `DataRetentionBackgroundService.cs:93-105`, around each retention task |
 

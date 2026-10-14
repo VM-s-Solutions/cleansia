@@ -73,6 +73,7 @@ struct PartnerShellView: View {
                 notificationFeedClient: container.notificationFeedClient,
                 profileClient: container.profileClient,
                 settings: container.appSettings,
+                staleness: container.ordersStaleness,
                 snackbar: container.snackbar,
                 pendingOffers: container.pendingOffers,
                 onOpenEarnings: { model.selectEarnings() },

@@ -9,14 +9,14 @@ final class DashboardViewModel: ViewModel {
 
     private let client: PartnerDashboardClient
     private let settings: AppSettingsStore
-    private let staleness: Staleness
+    private let staleness: OrdersStaleness
     private var employeeId: String?
     private var fetchGeneration = 0
 
-    init(client: PartnerDashboardClient, settings: AppSettingsStore, staleness: Staleness? = nil) {
+    init(client: PartnerDashboardClient, settings: AppSettingsStore, staleness: OrdersStaleness) {
         self.client = client
         self.settings = settings
-        self.staleness = staleness ?? Staleness(window: Self.freshnessWindow)
+        self.staleness = staleness
     }
 
     /// A loaded dashboard is kept for a minute, as Android keeps it, so a return to the tab reads nothing; after
@@ -24,11 +24,11 @@ final class DashboardViewModel: ViewModel {
     func load() async {
         guard !Task.isCancelled else { return }
         if state.loadedValue != nil {
-            guard staleness.isStale else { return }
+            guard staleness.isDashboardStale else { return }
         } else {
             state = .loading
         }
-        await fetch()
+        await fetch(preservingLoadedOnFailure: true)
     }
 
     /// A pull already has a spinner — the one under the cleaner's finger. Flipping to `.loading` would
@@ -39,16 +39,17 @@ final class DashboardViewModel: ViewModel {
     /// A failure still lands on `.error`, exactly as the initial load does: a pull that silently kept
     /// stale figures would be worse than one that says it could not refresh them.
     func userRefresh() async {
-        await fetch()
+        await fetch(preservingLoadedOnFailure: false)
     }
 
-    private func fetch() async {
+    private func fetch(preservingLoadedOnFailure: Bool) async {
         guard !Task.isCancelled else { return }
         fetchGeneration += 1
         let generation = fetchGeneration
+        let revision = staleness.dashboardRevision
         async let previewResult = client.getAvailableJobsPreview(limit: Self.previewLimit)
         let employee = try? await client.getCurrentEmployee().get()
-        guard !Task.isCancelled, generation == fetchGeneration else { return }
+        guard !Task.isCancelled, generation == fetchGeneration, revision == staleness.dashboardRevision else { return }
         let capturedEmployeeId = employee?.id
         async let upcoming = upcomingOrders(for: capturedEmployeeId)
         let nextState: UiState<DashboardData>
@@ -63,13 +64,14 @@ final class DashboardViewModel: ViewModel {
                 firstName: employee?.firstName
             ))
         case let .failure(error):
+            if preservingLoadedOnFailure, state.loadedValue != nil { return }
             nextState = .error(error)
         }
 
-        guard !Task.isCancelled, generation == fetchGeneration else { return }
+        guard !Task.isCancelled, generation == fetchGeneration, revision == staleness.dashboardRevision else { return }
         employeeId = capturedEmployeeId
         state = nextState
-        if nextState.loadedValue != nil { staleness.markFresh() }
+        if nextState.loadedValue != nil { staleness.markDashboardFresh() }
         resolveJobRadiusPrompt(radiusKm: employee?.jobRadiusKm, employeeRead: employee != nil)
     }
 
@@ -104,5 +106,4 @@ final class DashboardViewModel: ViewModel {
 
     private static let previewLimit = 5
     private static let upcomingLimit = 10
-    private static let freshnessWindow: TimeInterval = 60
 }

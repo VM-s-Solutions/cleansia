@@ -152,7 +152,7 @@ class InvoicesWireTest {
         var sent: RecordedRequest? = null
         fetchList(CAPTURED_PAGE) { sent = it }
 
-        assertSortedBy(sent!!, field = "createdOn", direction = 1)
+        assertSortedBy(sent!!, field = "generatedAt", direction = 1)
     }
 
     @Test

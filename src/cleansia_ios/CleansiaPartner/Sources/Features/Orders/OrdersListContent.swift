@@ -144,6 +144,7 @@ private struct AvailableSummaryRow: View {
                 }
                 .foregroundColor(CleansiaColors.primaryText)
             }
+            .accessibilityLabel(OrdersFormat.sortLabel(sort))
         }
         .ordersRow()
     }

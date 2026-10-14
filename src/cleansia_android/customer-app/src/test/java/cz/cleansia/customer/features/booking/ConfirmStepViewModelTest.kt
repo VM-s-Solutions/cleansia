@@ -1,5 +1,6 @@
 package cz.cleansia.customer.features.booking
 
+import cz.cleansia.customer.core.payments.StripeConfig
 import cz.cleansia.customer.core.catalog.CatalogRepository
 import cz.cleansia.customer.core.market.InsuranceCoverage
 import cz.cleansia.customer.core.market.MarketListItem
@@ -44,7 +45,14 @@ class ConfirmStepViewModelTest {
         every { marketRepository.state } returns marketState
     }
 
-    private fun viewModel() = ConfirmStepViewModel(catalogRepository, membershipRepository, marketRepository)
+    private fun viewModel(stripeConfig: StripeConfig = StripeConfig("pk_test_synthetic")) =
+        ConfirmStepViewModel(catalogRepository, membershipRepository, marketRepository, stripeConfig)
+
+    @Test
+    fun `card availability follows the injected configuration`() = runTest {
+        assertEquals(false, viewModel(StripeConfig("")).cardPaymentAvailable)
+        assertEquals(true, viewModel(StripeConfig("pk_test_synthetic")).cardPaymentAvailable)
+    }
 
     private fun market(iso: String, currency: String, insurance: Double?, isDefault: Boolean = false) = MarketListItem(
         countryId = "$iso-id",

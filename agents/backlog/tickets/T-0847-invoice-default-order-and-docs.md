@@ -4,7 +4,7 @@ title: Give the invoices endpoint a default order and a tie-break, name the nati
 size: S
 owner: pm
 created: 2026-10-12
-updated: 2026-10-13
+updated: 2026-10-14
 depends_on: [T-0832]
 blocks: []
 stories: []
@@ -49,7 +49,7 @@ This comes from open questions 1 to 3 of the 2026-10-12 native design ruling's i
 ## Acceptance criteria (done looks like)
 
 - [x] **AC1** — `GetPagedInvoices` with no sort returns the newest generated first, with a stable tie-break. The test goes RED then GREEN.
-- [ ] **AC2** — No native call site sorts invoices by `createdOn`.
+- [x] **AC2** — No native call site sorts invoices by `createdOn`.
 - [x] **AC3** — Outside dated records, the decision records no longer call regeneration or the re-dump owner-only, and the full suites pass.
 
 ## Owner decision — 2026-10-13
@@ -74,6 +74,18 @@ Evidence root: `/Users/michael/.codex/scratchpads/cleansia-next-wave-2026-10-13/
 
 - 2026-10-13 — Combined-source local release gates completed before publication: rebuilt Release unit8722→integration906→host509, zero skipped; uncached web5041 tests/408 suites across71 tested projects (three empty projects), all three production builds and seven Playwright smokes (5/1/1); Android three Debug compilations then core296→partner839→customer1683 JVM tests, every task forced to execute, zero skipped; iOS18.6 Core776→partner1113→customer1779 passed, with one existing VoiceOver case skipped. Docs refs/catalog/VitePress, iOS symbols/booking-policy parity and their self-tests pass. Exact commands, counters and receipt/TRX/summary hashes are in `p2/local/full-gates-before-commit.json` and `p2/verifier/android-gates-final.json` under the wave root. Android ordinary ignored OpenAPI generation and ignored iOS workspace client generation from committed specs ran for local CI; no tracked contract dump/NSwag change was required. These are command-only proofs, not real mail, native behavior/device or deployment checks. First unit source-guard failure was corrected with four actual token-bearing invocations and passed the full rerun; first partner iOS ENOSPC attempt is nonproof. The initial affected lint selected no targets on filing-only HEAD and is not source proof; actual affected lint and the three Docs checks will run at the committed source head before push. Hosted exact-head CI/guarded merge and final DEV remain due.
 
+### Native follow-up — 2026-10-14
+
+- Authority, dated 2026-10-13: Mike, "Analyze and Fix those" and "Go with defaults (recommended)"; `/Users/michael/.codex/scratchpads/cleansia-wave-f-2026-10-11/next-wave/decisions-2026-10-13.md`. This is the two native `generatedAt` literals in PR 3. All #330 backend/default/tie-break/regeneration-wording history remains intact.
+- Evidence root for this dated follow-up: `/Users/michael/.codex/scratchpads/cleansia-next-wave-2026-10-13/native/`. Android evidence ids resolve through `/Users/michael/.codex/scratchpads/cleansia-next-wave-2026-10-13/native/records-android-preparation-002/evidence-hash-manifest.json` (SHA256 `6b433bd7c839ac2a2e12a777a6070914ac23f785c746ec8a3ee9e467e12eb21f`), whose `evidence_ids` maps each Android id below to its exact path and SHA256. The preparation draft is retained unchanged; the actual assessment verdicts are quoted below. Base `31c10f5caac57ed17dfde0b6e07a8007bb9c310f` contains the preceding phase's first closure commit. These native source overlays are local, with commit, exact-head hosted CI and guarded merge still pending.
+- Android `InvoicesRepository.kt:124` and iOS `PartnerPayrollClient.swift:51` now send `generatedAt` descending through existing generated scalar parameters. Current employee filter, offset 0, limit 50 and response `createdOn` fields are unchanged. No endpoint/DTO/spec/client contract change or tracked regeneration is needed.
+- Android `InvoicesWireTest.theListRequestAsksForTheNewestInvoicesFirst` fails against compiled baseline with `expected:<[generatedAt]> but was:<[createdOn]>`; final and independently executed socket-request suite pass 32/32 (`AP-COMMANDS`, `AP-REVIEW`). iOS `InvoicesWireTests.testTheInvoiceListSortTravelsInTheFormTheServerBinds` is in the retained original baseline RED matrix, showing `Sort[0].Field=createdOn`, and passes with the same method id on both final floors. These are actual encoded requests; no invoice device acceptance is claimed or added.
+- `A-COMBINED` is the actual combined Android receipt, SHA256 `79723d63889bad7b0b7b7aaf83cc7c79a2f8e07191486229aa5e1b8a07f9ecb8`: forced compile 56/56 tasks, full Core 298 → Partner 881 → Customer 1694, **2873 passed, zero failed/error/skipped**, and 96/96 test tasks executed. Both Debug APK builds executed 69/69 tasks each; partner release R8 executed 55/55. All five commands exited 0. The 41 Android overlays match frozen manifest SHA256 `c6066079399fbff4f9a620f40d785ef7bbe5a6c4a2236d249c4339bd2fa9b2b9`; these are measured combined results, not an expected total or a device result.
+- `ios/developer-final-packet-001.json` (SHA256 `470115f5e483f4af7f835d3b66221bbae638315771d4296f791eab51b448c031`) binds all 27 iOS overlays to `ios/developer-final-source-001-source-manifest.json` (SHA256 `1cc89799ea912d3d650ce8fc33c2a2a96aca8b308d813d261c6610ece2ba09cb`). On **each** of 16.4 and 18.6: Core 776 passed; Partner 1133 passed; Customer 1780 reported, 1779 passed and one unchanged VoiceOver guard skipped; no failures. Focused Partner 133/133 passed on each floor. All nine final attempts are retained, including the second Customer 16.4 run: the accessibility preference was already 1, reapplying 1 still left `UIAccessibility.isVoiceOverRunning` false, and readback restored the same 1. There is no spoken VoiceOver proof. The actual Dashboard source split is 24 main-file methods plus 10 barrier-file methods, all 34 passing on both floors; the older 25+9 preparation split is stale. The final RED/GREEN matrix has 23 entries with the same method ids passing on both floors. Its 19 original failed methods include an invalid assumed default-phone-grouping assertion; the epoch attempt's three failures include the still-unlabelled Menu and a wrong radius fixture expectation, both explicitly qualified. Harness errors are not relabelled as behavior RED.
+- AC2's two native literals are locally complete. Prior backend/docs AC1/AC3 and #330 approval remain history. Final native iOS approval is sealed below; current doc/parity/symbol gates and commit/CI/merge remain pending; no phase deploy/reset occurs.
+
+- Final combined-source cross-stack gates PASS is recorded centrally in T-0839's dated native Work follow-up (`cross-stack-001/final.json` and `count-receipt-001.json`); final docs/parity/symbol and publication obligations remain separate.
+
 ## Review
 
 2026-10-13 — Backend/docs implementation verdict **approve-with-notes**. Command-only provider checks pass; final combined gates/hosted CI remain due, and AC2 belongs to PR3. Evidence: `p2/reviewer-round1.md`, `p2/verifier-round1.md` under the wave root.
@@ -82,3 +94,8 @@ Evidence root: `/Users/michael/.codex/scratchpads/cleansia-next-wave-2026-10-13/
 - 2026-10-13 — Final committed-head local checks on5490b331 passed: uncached lint64 projects, docs references/catalog/VitePress and secret-history2446 commits/no leaks (`p2/local/committed-head-gates.json` under the wave root). Earlier filing-head lint/check attempts are nonproof for this source head. The implementation/full-suite/command-only and residual limits above remain; no real-mail/device/DEV proof is added by hosted CI. This closure is prepared as the first commit of the fresh remaining-jobs branch, directly after the merged P2 base.
 
 - 2026-10-13 — Backend order/regeneration wording is merged; both native generatedAt literals/AC2 remain PR3 work.
+
+### Native follow-up assessment — 2026-10-14
+
+- Android saved `AP-REVIEW` actual verdict **APPROVED** within frozen source/command scope, including invoice wire 32/32. iOS prior applicable `APPROVED_SCOPED_LOGIC` input rebind 29 PASS/0 failed retains the logic/literal assessment; final native iOS approval is sealed below. #330's backend/docs verdict is unchanged. No device/provider result is inferred from these wire assertions.
+- Final independent `ios/final-review-001/verdict.json` (SHA256 `0b26a7a469e2478c76ffdcd4665f7d6ab593225ec63e12abbbe4713d4b0f2769`): **APPROVED_SCOPED_NATIVE_IOS27**. Allocated native source/SDK/runtime scope and the own 18/18 copied-product SDK run (no own compile) are qualified in T-0839's dated Work follow-up. This does not close records, hosted CI, merge/deploy or whole S11.

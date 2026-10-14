@@ -72,7 +72,7 @@ class OrderDetailRecurringGateTest {
     fun `a card occurrence offers no confirm in a build without a Stripe key`() {
         assertTrue(
             "the screen must read card availability from the key that initialises Stripe",
-            screen.contains("val cardPaymentAvailable = BuildConfig.STRIPE_PUBLISHABLE_KEY.isNotBlank()"),
+            screen.contains("cardPaymentAvailable = viewModel.cardPaymentAvailable"),
         )
         assertEquals(
             "val payByCard = order.paymentType?.value == 2",

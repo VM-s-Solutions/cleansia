@@ -7,6 +7,7 @@ import cz.cleansia.customer.R
 import cz.cleansia.core.network.ApiError
 import cz.cleansia.core.network.ApiResult
 import cz.cleansia.customer.core.market.MarketRepository
+import cz.cleansia.customer.core.payments.StripeConfig
 import cz.cleansia.customer.core.market.MarketState
 import cz.cleansia.customer.core.market.countryId
 import cz.cleansia.customer.core.memberships.GetMyMembershipResponse
@@ -56,7 +57,7 @@ sealed interface SubscribeOutcome {
     /** Backend rejected — idempotency guard fired (user already had Active). */
     data object AlreadyActive : SubscribeOutcome
 
-    /** Snackbar already shown by the VM. */
+    /** The attempt failed; transport failures and guarded calls can be silent. */
     data object Failed : SubscribeOutcome
 }
 
@@ -72,7 +73,10 @@ class MembershipViewModel @Inject constructor(
     private val snackbar: SnackbarController,
     private val marketRepository: MarketRepository,
     @ApplicationContext private val appContext: Context,
+    stripeConfig: StripeConfig,
 ) : ViewModel() {
+
+    val cardPaymentAvailable = stripeConfig.isCardPaymentAvailable
 
     val current: StateFlow<GetMyMembershipResponse?> = repository.current
     val loading: StateFlow<Boolean> = repository.loading
@@ -148,6 +152,7 @@ class MembershipViewModel @Inject constructor(
      * payment-method capture succeeds.
      */
     suspend fun startSubscribe(planCode: String): SubscribeOutcome {
+        if (!cardPaymentAvailable) return SubscribeOutcome.Failed
         if (_submitState.value is ActionState.Submitting) return SubscribeOutcome.Failed
         _submitState.value = ActionState.Submitting
         // New logical subscribe attempt → mint a fresh idempotency token. It is

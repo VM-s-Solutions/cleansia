@@ -4,7 +4,7 @@ title: Make the native apps' sort reach the server
 size: M
 owner: pm
 created: 2026-10-12
-updated: 2026-10-13
+updated: 2026-10-14
 depends_on: []
 blocks: []
 stories: []
@@ -128,6 +128,18 @@ Effects:
   - Merged normally with the SHA guard as `737bdb4`. No deploy ran: deploy-dev, deploy-pro, deploy-docs and execute-sql have no run since the merge.
   - Evidence: `raw/ci/p6-pr328-ci-merge-closure-001.json` (sha256 `5557de97…`) in the off-tree Wave F folder.
 
+### Native follow-up — 2026-10-14
+
+- Authority, dated 2026-10-13: Mike, "Fix the findings as well" and "Go with defaults (recommended)"; `/Users/michael/.codex/scratchpads/cleansia-wave-f-2026-10-11/next-wave/decisions-2026-10-13.md`, finding (e). #328's sort/spec closure remains intact. Finding (f)'s commit-subject correction is reserved for PR 6; no master history or subject correction is made here.
+- Evidence root: `/Users/michael/.codex/scratchpads/cleansia-next-wave-2026-10-13/native/`. Finding (e) changes exactly one production modifier, `OrdersListContent.swift:147`, `.accessibilityLabel(OrdersFormat.sortLabel(sort))`, on the existing **Menu**. `TextInkTests.testAvailableSortMenuNamesItsCurrentVisibleSelection` fails against unmodified source and passes in final SDK tests on both floors. No extra accessibility modifier is added.
+- The initial `runtime-preparation/ios-original-menu-001-164.json` and `ios-original-menu-001-186.json` attempts used the wrong child-Button metric and remains retained as nonproof. Proper unmodified base31 app replay, `runtime-preparation/ios-original-popup-scroll-004-186.json` (SHA256 `03b6313f9cf846e1f9292278b6109ad62e7ee415a1c9e9ec9d7ed10df00e6421`), shows the **parent `AXPopUpButton.AXLabel`** becoming nil after scrolling offscreen and back while its visible descendant text stays named. This device RED was captured **after** the source modifier had already been added, using the preserved unmodified normal product; it is not claimed to precede implementation. The single 16.4 original-app cycle, retained under `ios/menu-device-verifier-001.json`'s `baseline164_one_cycle_non_reproduction` raw `ios-original-popup-scroll-005-164` references, did not reproduce the parent-label defect; no two-floor RED is invented.
+- Final `runtime-preparation/ios-final-menu-choices-007-164.json` and `ios-final-menu-choices-007-186.json` qualify all three choices after scrolling away and back: Earnings high → low, Total price high → low and Soonest first. Six of six parent labels equal the visible selection; installed main/debug-dylib/source hashes bind the product. The nil direct child Button remains an irrelevant observation, not an unclosed criterion.
+- Independent read-only `ios/menu-device-verifier-001.json` (SHA256 `84161de7cd38583e76195ed365dc725de779181525c03ba7ac65049e509a7322`) reports PASS for exact Menu modifier and six post-scroll cases. It preserves the late baseline chronology and 16.4 non-reproduction, and is not a full ticket approval. `runtime-preparation/ios-runtime-acceptance-final-001.json` (SHA256 `40501b1b8af9dc2ef62bba9c33b57d8a358b8f99e801e01abe4befcb557c7628`) seals the final two-floor runtime receipts and their product/source bindings. It records PASS within the stated device scope, not a full ticket or whole-wave approval.
+- `ios/developer-final-packet-001.json` (SHA256 `470115f5e483f4af7f835d3b66221bbae638315771d4296f791eab51b448c031`) binds all 27 iOS overlays to `ios/developer-final-source-001-source-manifest.json` (SHA256 `1cc89799ea912d3d650ce8fc33c2a2a96aca8b308d813d261c6610ece2ba09cb`). On **each** of 16.4 and 18.6: Core 776 passed; Partner 1133 passed; Customer 1780 reported, 1779 passed and one unchanged VoiceOver guard skipped; no failures. Focused Partner 133/133 passed on each floor. All nine final attempts are retained, including the second Customer 16.4 run: the accessibility preference was already 1, reapplying 1 still left `UIAccessibility.isVoiceOverRunning` false, and readback restored the same 1. There is no spoken VoiceOver proof. The actual Dashboard source split is 24 main-file methods plus 10 barrier-file methods, all 34 passing on both floors; the older 25+9 preparation split is stale. The final RED/GREEN matrix has 23 entries with the same method ids passing on both floors. Its 19 original failed methods include an invalid assumed default-phone-grouping assertion; the epoch attempt's three failures include the still-unlabelled Menu and a wrong radius fixture expectation, both explicitly qualified. Harness errors are not relabelled as behavior RED.
+- The prior past-job observation is addressed by T-0854's merged slot-end rule and T-0855's native D9 follow-up. CHANGELOG adds the visible accessibility behavior. Final source commit, remaining final gates and exact-head CI/merge are pending; the older T-0832 closure is not rewritten.
+
+- Final combined-source cross-stack gates PASS is recorded centrally in T-0839's dated native Work follow-up (`cross-stack-001/final.json` and `count-receipt-001.json`); final docs/parity/symbol and publication obligations remain separate.
+
 ## Review
 
 - **Correctness review** of `fix/post-e-p6-native-followups` at `23ba6e3` against `6952149` (`p5/impl/review_native.json`): "## Verdict: CHANGES REQUESTED". "The code is correct on all three stacks and each fix has a test that catches its removal."
@@ -180,7 +192,12 @@ Effects:
   - Merge order with the P5 branch: done in `753b98b`, which keeps both sides, sets the index to 75 records and lists ADR-0071 to ADR-0075 in the sidebar.
   - Two observations from device pass -003 (`render-p6/raw/receipt-003.json`, off-tree in the Wave F folder), neither investigated. Not on a ticket:
     - On both apps the Available board lists jobs dated before today, on devices dated Tue 13 Oct: Soonest first opens on jobs dated Thu 8 Oct, and Android's Total-price list also has jobs dated 10, 11 and 12 Oct. On iOS each has a Take Order button. It may be the fixture's seeding; whether a past cleaning time should be offerable is a question for Mike.
-    - In two iOS dumps (i01g9, i01i7) the sort control's button had an empty accessibility label while its child text carried the visible one, perhaps after a scroll to the top.
+    - In three iOS dumps (i01g9, i01h, i01i7) the sort control's parent PopUpButton had an empty accessibility label while its child text carried the visible one. *(Count/element corrected 2026-10-14: this line originally said two and named only i01g9/i01i7; `ios/menu-device-verifier-001.json` rechecks all 25 historical dumps. The direct inner Button is nil in every visible capture and is not the acceptance metric.)*
   - ADR-0075 keeps the deliberation wording "by consensus of the panel" and "the lead added amendments A and B" (`docs/decisions/adr-0075.md:9-11`). Whether the rule against role names in the docs covers that convention is Mike's call; T-0844 and T-0833 record the same question for ADR-0071 and ADR-0074.
   - check-consistency over the whole repository, which no CI workflow runs, reports 30 violations (26 of them B10) and 126 advisory warnings. All are outside this branch's diff. Over the changed folders it reports OK, 271 files (`p5/native-fixpass/logs/final-consistency.txt`, `final-consistency-changed.txt`). Not on a ticket.
   - Already filed, so not repeated here: T-0847 (the invoices endpoint's default order and tie-break, the `createdOn` name, and two decision records' owner-only wording) and T-0850 (a cleaner's sort by customer e-mail or name, which the follow-up security review found wider than filed).
+
+### Native follow-up assessment — 2026-10-14
+
+- Finding (e) Menu source pin and final two-floor post-scroll **parent-label acceptance PASS** in the saved independent device assessment. The three historical nil-parent dumps are corrected in Reported above. Final native iOS approval is sealed below; docs/symbol/parity and current publication remain separate; #328's prior approval and merge evidence are retained.
+- Final independent `ios/final-review-001/verdict.json` (SHA256 `0b26a7a469e2478c76ffdcd4665f7d6ab593225ec63e12abbbe4713d4b0f2769`): **APPROVED_SCOPED_NATIVE_IOS27**. Allocated native source/SDK/runtime scope and the own 18/18 copied-product SDK run (no own compile) are qualified in T-0839's dated Work follow-up. This does not close records, hosted CI, merge/deploy or whole S11.

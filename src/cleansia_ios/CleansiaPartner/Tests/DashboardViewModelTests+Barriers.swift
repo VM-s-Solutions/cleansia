@@ -214,4 +214,118 @@ extension DashboardViewModelTests {
         XCTAssertEqual(vm.state.loadedValue?.hero, .empty)
         XCTAssertEqual(client.upcomingEmployeeIds, ["emp-1", "emp-1"])
     }
+
+    func testMutationDuringEachHeldDashboardLegCannotPublishOrRewarm() async throws {
+        for leg in ["stats", "preview", "upcoming"] {
+            client = FakeDashboardClient()
+            client.employeeResult = .success(EmployeeItem(id: "visible", firstName: "Visible", jobRadiusKm: nil))
+            client.statsResult = .success(.stub(weekEarnings: 111))
+            let shared = OrdersStaleness(now: { self.clock })
+            let vm = makeViewModel(staleness: shared)
+            await vm.load()
+            let lastGood = vm.state.loadedValue
+            let entered = expectation(description: "held \(leg) entered")
+            switch leg {
+            case "stats":
+                client.holdStats = true
+                client.statsStarted = { call in if call == 2 { entered.fulfill() } }
+            case "preview":
+                client.holdPreview = true
+                client.previewStarted = { call in if call == 2 { entered.fulfill() } }
+            default:
+                client.holdUpcoming = true
+                client.upcomingStarted = { call in if call == 2 { entered.fulfill() } }
+            }
+            client.employeeResult = .success(EmployeeItem(id: "obsolete", firstName: "Obsolete", jobRadiusKm: 25))
+            client.statsResult = .success(.stub(weekEarnings: 999))
+            let old = Task { await vm.userRefresh() }
+            await fulfillment(of: [entered], timeout: 2)
+            GeneratedWireSpine.install(recording: WireBodies()) { _ in (200, Data("{}".utf8)) }
+            _ = try await LivePartnerOrderClient(staleness: shared).startOrder(orderId: "order-1").get()
+            XCTAssertTrue(shared.isDashboardStale, leg)
+            client.releaseAll()
+            await old.value
+            XCTAssertEqual(vm.state.loadedValue, lastGood, leg)
+            XCTAssertTrue(shared.isDashboardStale, leg)
+            vm.answerJobRadiusPrompt()
+            XCTAssertTrue(settings.hasAnsweredPrompt(JobRadiusPrompt.settingsKey, userId: "visible"), leg)
+            XCTAssertFalse(settings.hasAnsweredPrompt(JobRadiusPrompt.settingsKey, userId: "obsolete"), leg)
+            client.employeeResult = .success(EmployeeItem(id: "visible", jobRadiusKm: 25))
+            client.statsResult = .success(.stub(weekEarnings: 222))
+            await vm.load()
+            XCTAssertEqual(client.statsEmployeeIds.count, 3, leg)
+            XCTAssertEqual(vm.state.loadedValue?.weekEarnings, 222, leg)
+            XCTAssertFalse(shared.isDashboardStale, leg)
+            GenMockURLProtocol.handler = nil
+        }
+    }
+
+    func testPostMutationDashboardRemainsCurrentWhenOlderFetchAnswersLast() async throws {
+        client.employeeResult = .success(EmployeeItem(id: "visible", jobRadiusKm: 25))
+        let shared = OrdersStaleness(now: { self.clock })
+        let vm = makeViewModel(staleness: shared)
+        await vm.load()
+        let entered = expectation(description: "pre-mutation stats entered")
+        client.holdStats = true
+        client.statsStarted = { call in if call == 2 { entered.fulfill() } }
+        let old = Task { await vm.userRefresh() }
+        await fulfillment(of: [entered], timeout: 2)
+        GeneratedWireSpine.install(recording: WireBodies()) { _ in (200, Data("{}".utf8)) }
+        defer { GenMockURLProtocol.handler = nil }
+        _ = try await LivePartnerOrderClient(staleness: shared).startOrder(orderId: "order-1").get()
+        client.holdStats = false
+        client.statsResult = .success(.stub(weekEarnings: 222))
+        await vm.load()
+        client.releaseStats(call: 2, result: .success(.stub(weekEarnings: 999)))
+        client.releaseAll()
+        await old.value
+        XCTAssertEqual(vm.state.loadedValue?.weekEarnings, 222)
+        XCTAssertFalse(shared.isDashboardStale)
+        XCTAssertEqual(client.statsEmployeeIds.count, 3)
+    }
+
+    func testRegisteredSessionClearRevokesAHeldDashboardPublication() async {
+        client.employeeResult = .success(EmployeeItem(id: "old-account", jobRadiusKm: nil))
+        client.statsResult = .success(.stub(weekEarnings: 111))
+        let shared = OrdersStaleness(now: { self.clock })
+        let registry = SessionScopedCacheRegistry()
+        registry.register(shared)
+        let vm = makeViewModel(staleness: shared)
+        await vm.load()
+        XCTAssertTrue(vm.showsJobRadiusPrompt)
+        let entered = expectation(description: "old account stats entered")
+        client.holdStats = true
+        client.statsStarted = { call in if call == 2 { entered.fulfill() } }
+        let old = Task { await vm.userRefresh() }
+        await fulfillment(of: [entered], timeout: 2)
+        await registry.clearAll()
+        XCTAssertTrue(shared.isDashboardStale)
+        client.releaseStats(call: 2, result: .success(.stub(weekEarnings: 999)))
+        client.releaseAll()
+        await old.value
+        XCTAssertEqual(vm.state.loadedValue?.weekEarnings, 111)
+        XCTAssertTrue(shared.isDashboardStale)
+        client.employeeResult = .success(EmployeeItem(id: "next-account", jobRadiusKm: nil))
+        client.statsResult = .success(.stub(weekEarnings: 222))
+        await vm.load()
+        XCTAssertEqual(vm.state.loadedValue?.weekEarnings, 222)
+        XCTAssertTrue(vm.showsJobRadiusPrompt)
+        vm.answerJobRadiusPrompt()
+        XCTAssertTrue(settings.hasAnsweredPrompt(JobRadiusPrompt.settingsKey, userId: "next-account"))
+        XCTAssertFalse(settings.hasAnsweredPrompt(JobRadiusPrompt.settingsKey, userId: "old-account"))
+    }
+
+    func testMaterialWriteRestalesAWarmDashboardWithinTheMinute() async throws {
+        let shared = OrdersStaleness(now: { self.clock })
+        let vm = makeViewModel(staleness: shared)
+        await vm.load()
+        let bodies = WireBodies()
+        GeneratedWireSpine.install(recording: bodies) { _ in (200, Data("{}".utf8)) }
+        defer { GenMockURLProtocol.handler = nil }
+        _ = try await LivePartnerOrderClient(staleness: shared).startOrder(orderId: "order-1").get()
+        client.statsResult = .success(.stub(weekEarnings: 222))
+        await vm.load()
+        XCTAssertEqual(client.statsEmployeeIds.count, 2)
+        XCTAssertEqual(vm.state.loadedValue?.weekEarnings, 222)
+    }
 }

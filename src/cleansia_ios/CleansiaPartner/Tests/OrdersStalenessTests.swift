@@ -102,4 +102,31 @@ final class OrdersStalenessTests: XCTestCase {
         }
         return cache
     }
+
+    func testDashboardHasItsOwnMinuteWithoutChangingPaneWindows() {
+        let cache = makeCache()
+        cache.markDashboardFresh()
+        cache.markPaneFresh(.available)
+        clock.addTimeInterval(30)
+        XCTAssertFalse(cache.isDashboardStale)
+        XCTAssertTrue(cache.isPaneStale(.available))
+        clock.addTimeInterval(30)
+        XCTAssertTrue(cache.isDashboardStale)
+    }
+
+    func testDashboardMutationRevisionAndSessionEpochHaveSeparateLifetimes() async {
+        let cache = makeCache()
+        let epoch = cache.sessionEpoch
+        let revision = cache.dashboardRevision
+        cache.markDashboardFresh()
+        cache.invalidateDashboard()
+        XCTAssertTrue(cache.isDashboardStale)
+        XCTAssertEqual(cache.dashboardRevision, revision + 1)
+        XCTAssertEqual(cache.sessionEpoch, epoch)
+        cache.markDashboardFresh()
+        await cache.clear()
+        XCTAssertTrue(cache.isDashboardStale)
+        XCTAssertEqual(cache.dashboardRevision, revision + 2)
+        XCTAssertEqual(cache.sessionEpoch, epoch + 1)
+    }
 }

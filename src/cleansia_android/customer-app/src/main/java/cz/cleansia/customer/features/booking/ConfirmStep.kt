@@ -61,7 +61,6 @@ import cz.cleansia.customer.core.booking.CashEligibility
 import cz.cleansia.customer.core.memberships.GetMyMembershipResponse
 import cz.cleansia.customer.core.memberships.benefitsPaused
 import cz.cleansia.customer.features.orders.roomsAndBathrooms
-import cz.cleansia.customer.BuildConfig
 import cz.cleansia.customer.R
 import cz.cleansia.core.format.formatOrderPrice
 import cz.cleansia.core.ui.components.CleansiaConsentCheckbox
@@ -112,7 +111,7 @@ fun ConfirmStep(
     val cashEligibility by bookingVm.cashEligibility.collectAsStateWithLifecycle()
     val cashClearedNotice by bookingVm.cashClearedNotice.collectAsStateWithLifecycle()
     val offersCardSaving by bookingVm.offersCardSaving.collectAsStateWithLifecycle()
-    val cardPaymentAvailable = BuildConfig.STRIPE_PUBLISHABLE_KEY.isNotBlank()
+    val cardPaymentAvailable = viewModel.cardPaymentAvailable
     // Every money row comes from the one resolver, so this card and the sticky bar below it cannot
     // disagree with each other or with the total the order is created with.
     val payByCard = state.paymentMethod == BookingViewModel.PAYMENT_CARD

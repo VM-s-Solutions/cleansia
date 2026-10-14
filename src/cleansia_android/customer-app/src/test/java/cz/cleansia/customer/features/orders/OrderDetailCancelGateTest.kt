@@ -1,5 +1,6 @@
 package cz.cleansia.customer.features.orders
 
+import cz.cleansia.customer.core.payments.StripeConfig
 import android.content.Context
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.viewModelScope
@@ -96,6 +97,7 @@ class OrderDetailCancelGateTest {
         loyaltyRepository = loyaltyRepository,
         paymentRepository = mockk(relaxed = true),
         consentClient = mockk(relaxed = true),
+        stripeConfig = StripeConfig("pk_test_synthetic"),
     )
 
     /**

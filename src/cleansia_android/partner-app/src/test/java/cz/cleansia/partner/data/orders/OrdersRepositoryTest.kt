@@ -35,7 +35,7 @@ class OrdersRepositoryTest {
         orderApi = mockk()
     }
 
-    private fun newRepo() = OrdersRepositoryImpl(orderApi, json)
+    private fun newRepo() = OrdersRepositoryImpl(orderApi, json, mockk(relaxed = true))
 
     @Test
     fun clear_resetsPaneWatermarks() = runTest {

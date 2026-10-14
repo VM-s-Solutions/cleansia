@@ -69,7 +69,7 @@ final class AppEnvironmentTests: XCTestCase {
             self.apiBaseURL = apiBaseURL
             self.snackbar = snackbar
             self.sessionScopedCaches = sessionScopedCaches
-            sessionManager = SessionManager(sessionScopedCaches: sessionScopedCaches)
+            sessionManager = SessionManager()
             self.authClient = authClient
             self.loginClient = loginClient
             registrationAuthClient = authSpine

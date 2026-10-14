@@ -21,4 +21,6 @@ object CleansiaWeb {
     const val TERMS_URL = "$ORIGIN/terms"
 
     const val PRIVACY_URL = "$ORIGIN/privacy"
+
+    fun referralLink(code: String): String = "$ORIGIN/r/$code"
 }

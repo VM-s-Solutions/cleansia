@@ -1,5 +1,6 @@
 package cz.cleansia.customer.features.membership
 
+import cz.cleansia.customer.core.payments.StripeConfig
 import android.content.Context
 import cz.cleansia.core.network.ApiError
 import cz.cleansia.core.network.ApiResult
@@ -64,7 +65,33 @@ class MembershipViewModelTest {
         every { appContext.getString(R.string.error_generic_network) } returns "network error"
     }
 
-    private fun viewModel() = MembershipViewModel(repository, snackbar, marketRepository, appContext)
+    private fun viewModel(stripeConfig: StripeConfig = StripeConfig("pk_test_synthetic")) =
+        MembershipViewModel(repository, snackbar, marketRepository, appContext, stripeConfig)
+
+    @Test
+    fun `keyless subscription fails before phase one`() = runTest {
+        coEvery { repository.subscribePhase1(any(), any()) } returns ApiResult.Success(
+            CreateMembershipSubscriptionResponse("", "seti_synthetic", "cus_synthetic", "ek_synthetic"),
+        )
+        val vm = viewModel(StripeConfig(""))
+        advanceUntilIdle()
+
+        assertEquals(SubscribeOutcome.Failed, vm.startSubscribe("plus_monthly"))
+        assertEquals(ActionState.Idle, vm.submitState.value)
+        coVerify(exactly = 0) { repository.subscribePhase1(any(), any()) }
+    }
+
+    @Test
+    fun `keyed subscription calls phase one once`() = runTest {
+        coEvery { repository.subscribePhase1(any(), any()) } returns ApiResult.Success(
+            CreateMembershipSubscriptionResponse("", "seti_synthetic", "cus_synthetic", "ek_synthetic"),
+        )
+        val vm = viewModel(StripeConfig("pk_test_synthetic"))
+        advanceUntilIdle()
+
+        assertTrue(vm.startSubscribe("plus_monthly") is SubscribeOutcome.NeedsPaymentMethod)
+        coVerify(exactly = 1) { repository.subscribePhase1("plus_monthly", null) }
+    }
 
     private fun market(iso: String, currency: String, isDefault: Boolean = false) = MarketListItem(
         countryId = "$iso-id",

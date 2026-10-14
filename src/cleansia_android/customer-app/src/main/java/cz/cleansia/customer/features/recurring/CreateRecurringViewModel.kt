@@ -11,6 +11,7 @@ import cz.cleansia.core.network.ApiResult
 import cz.cleansia.core.network.networkCall
 import cz.cleansia.core.snackbar.SnackbarController
 import cz.cleansia.customer.core.booking.BookingApi
+import cz.cleansia.customer.core.payments.StripeConfig
 import cz.cleansia.customer.core.booking.CashEligibility
 import cz.cleansia.customer.core.booking.DirtinessLevel
 import cz.cleansia.customer.core.booking.PropertySize
@@ -27,7 +28,6 @@ import cz.cleansia.customer.core.market.countryId
 import cz.cleansia.customer.core.orders.OrderRepository
 import cz.cleansia.customer.core.recurring.CreateRecurringBookingRequest
 import cz.cleansia.customer.core.recurring.RecurrenceFrequency
-import cz.cleansia.customer.BuildConfig
 import cz.cleansia.customer.R
 import cz.cleansia.customer.core.recurring.RecurringBookingRepository
 import cz.cleansia.customer.core.recurring.UpdateRecurringBookingRequest
@@ -89,7 +89,10 @@ class CreateRecurringViewModel @Inject constructor(
     private val consentClient: GdprConsentClient,
     private val snackbar: SnackbarController,
     @ApplicationContext private val appContext: Context,
+    stripeConfig: StripeConfig,
 ) : ViewModel() {
+
+    val cardPaymentAvailable = stripeConfig.isCardPaymentAvailable
 
     /** Optional source order id for Path B pre-fill. Null → Path A blank slate. */
     val sourceOrderId: String? = savedStateHandle.get<String>("orderId")?.takeIf { it.isNotBlank() }
@@ -99,8 +102,6 @@ class CreateRecurringViewModel @Inject constructor(
 
     val isEditing: Boolean = editingTemplateId != null
 
-    private val cardAvailable = BuildConfig.STRIPE_PUBLISHABLE_KEY.isNotBlank()
-
     /**
      * A new schedule is a new booking, so it asks for the booking's terms tick on the same rule: shown
      * until both consents on record cover the versions in force, and on a failed read. An edit asks
@@ -109,7 +110,9 @@ class CreateRecurringViewModel @Inject constructor(
     private val _termsAsked = MutableStateFlow(!isEditing)
     val termsAsked: StateFlow<Boolean> = _termsAsked.asStateFlow()
 
-    private val _state = MutableStateFlow(CreateRecurringFormState())
+    private val _state = MutableStateFlow(
+        CreateRecurringFormState(paymentType = if (cardPaymentAvailable) PAYMENT_CARD else null),
+    )
     val state: StateFlow<CreateRecurringFormState> = _state.asStateFlow()
 
     private val _step = MutableStateFlow(1)
@@ -632,7 +635,7 @@ class CreateRecurringViewModel @Inject constructor(
                 savedAddressId = template.savedAddressId,
                 selectedServiceIds = template.selectedServiceIds.toSet(),
                 selectedPackageIds = template.selectedPackageIds.toSet(),
-                paymentType = presentablePaymentType(template.paymentType, cardAvailable),
+                paymentType = presentablePaymentType(template.paymentType, cardPaymentAvailable),
                 startsOnIso = template.startsOn,
                 endsOnIso = template.endsOn,
                 preferredEmployeeId = template.preferredEmployeeId,
@@ -677,7 +680,7 @@ class CreateRecurringViewModel @Inject constructor(
                     bathrooms = order.bathrooms.coerceIn(0, PropertySize.MAX_BATHROOMS),
                     selectedServiceIds = order.selectedServices?.mapNotNull { it.id }?.toSet().orEmpty(),
                     selectedPackageIds = order.selectedPackages?.mapNotNull { it.id }?.toSet().orEmpty(),
-                    paymentType = presentablePaymentType(order.paymentType?.value, cardAvailable) ?: current.paymentType,
+                    paymentType = presentablePaymentType(order.paymentType?.value, cardPaymentAvailable) ?: current.paymentType,
                     timeOfDay = timeOfDay ?: current.timeOfDay,
                     dayOfWeek = dayOfWeek ?: current.dayOfWeek,
                 )
@@ -735,7 +738,7 @@ data class CreateRecurringFormState(
      * with no Stripe key, which offers no card, at the start and wherever card would be copied in, as booking
      * starts with no method.
      */
-    val paymentType: Int? = if (BuildConfig.STRIPE_PUBLISHABLE_KEY.isNotBlank()) CreateRecurringViewModel.PAYMENT_CARD else null,
+    val paymentType: Int? = null,
     /** ISO-8601 instant. Default empty — UI must set before submit. */
     val startsOnIso: String = "",
     /** ISO-8601 instant. No editor in the wizard; carried so an edit doesn't erase it. */

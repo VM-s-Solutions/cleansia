@@ -1103,6 +1103,24 @@ need backfilling.
 
 ### Fixed
 
+- **Cleaner, Android and iOS — your dashboard refreshes after a job changes.** Taking a job,
+  changing its work state, recording its cash outcome or declining a preferred offer makes the
+  dashboard refresh on your next return. A failed action leaves the current figures alone. On iOS,
+  a background refresh that fails keeps the last dashboard you could see, so you can try again.
+  (T-0823; approved 2026-10-13 M1/M2.)
+
+- **Cleaner, Android and iOS — Available includes a free second seat and a cover seat.** The board
+  excludes jobs you already joined and jobs whose booked slot has ended, while a started job with
+  an open seat remains available before its slot ends. (T-0855; ADR-0037 D9, ADR-0076.)
+
+- **Cleaner iOS — the sort menu keeps its current choice available to accessibility.** After you
+  scroll the board away and back, the menu is still named by the option shown on screen.
+  (T-0832, finding (e).)
+
+- **Customer Android — a build without card-payment configuration refuses card-only actions.**
+  Confirming a card occurrence or starting Plus stops before a server request; a cash occurrence
+  can still be confirmed. (T-0845.)
+
 - **Operator — a refused retention task does not hold back later tasks or companies.**
   Each task uses its own company settings and legal-obligation scope, including a frozen company;
   stopping the host stops before the next task or storage effect. (T-0863)

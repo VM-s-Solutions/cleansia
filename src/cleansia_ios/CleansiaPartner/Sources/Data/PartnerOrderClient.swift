@@ -6,6 +6,8 @@ struct OrderPageQuery {
     var statuses: [OrderStatus]
     var isUnassigned: Bool?
     var employeeId: String?
+    var hasAvailableSpots: Bool?
+    var excludeEmployeeId: String?
     var cleaningDateFrom: Date?
     var cleaningDateTo: Date?
     var sortField: String
@@ -16,7 +18,7 @@ struct OrderPageQuery {
 
 protocol PartnerOrderClient: AnyObject {
     /// The signed-in cleaner's own employeeId — JWT-truth surrogate the VM passes
-    /// to the "mine" panes (Active/History). O3: the client offers ONLY the
+    /// to scope each pane. O3: the client offers ONLY the
     /// caller's own id; it never echoes a foreign one.
     func currentEmployeeId() async -> ApiResult<String>
 
@@ -95,7 +97,14 @@ struct OrderPhoto: Equatable, Identifiable {
     }
 }
 
+@MainActor
 final class LivePartnerOrderClient: PartnerOrderClient {
+    private let staleness: OrdersStaleness
+
+    init(staleness: OrdersStaleness) {
+        self.staleness = staleness
+    }
+
     func currentEmployeeId() async -> ApiResult<String> {
         await apiResult(mapError: ApiError.fromGenerated) {
             try await PartnerEmployeeAPI.employeeGetCurrentEmployee().id.requireNonBlank("id")
@@ -109,7 +118,9 @@ final class LivePartnerOrderClient: PartnerOrderClient {
                 filterCleaningDateFrom: query.cleaningDateFrom,
                 filterCleaningDateTo: query.cleaningDateTo,
                 filterOrderStatuses: query.statuses,
+                filterHasAvailableSpots: query.hasAvailableSpots,
                 filterIsUnassigned: query.isUnassigned,
+                filterExcludeEmployeeId: query.excludeEmployeeId,
                 sort0Field: query.sortField,
                 sort0Direction: query.sortAscending ? ._0 : ._1,
                 offset: query.offset,
@@ -138,7 +149,7 @@ final class LivePartnerOrderClient: PartnerOrderClient {
     }
 
     func declinePreferredOffer(orderId: String) async -> ApiResult<Void> {
-        await apiResult(mapError: ApiError.fromGenerated) {
+        await dashboardMutation {
             _ = try await PartnerOrderAPI.orderDeclinePreferredOffer(
                 declinePreferredOfferCommand: DeclinePreferredOfferCommand(orderId: orderId)
             )
@@ -146,7 +157,7 @@ final class LivePartnerOrderClient: PartnerOrderClient {
     }
 
     func takeOrder(orderId: String, acceptedWorkContractTextId: String) async -> ApiResult<Void> {
-        await apiResult(mapError: ApiError.fromGenerated) {
+        await dashboardMutation {
             _ = try await PartnerOrderAPI.orderTakeOrder(
                 takeOrderCommand: TakeOrderCommand(
                     orderId: orderId,
@@ -180,7 +191,7 @@ final class LivePartnerOrderClient: PartnerOrderClient {
     }
 
     func notifyOnTheWay(orderId: String) async -> ApiResult<Void> {
-        await apiResult(mapError: ApiError.fromGenerated) {
+        await dashboardMutation {
             _ = try await PartnerOrderAPI.orderNotifyOnTheWay(
                 notifyOnTheWayCommand: NotifyOnTheWayCommand(orderId: orderId)
             )
@@ -188,13 +199,13 @@ final class LivePartnerOrderClient: PartnerOrderClient {
     }
 
     func startOrder(orderId: String) async -> ApiResult<Void> {
-        await apiResult(mapError: ApiError.fromGenerated) {
+        await dashboardMutation {
             _ = try await PartnerOrderAPI.orderStartOrder(startOrderCommand: StartOrderCommand(orderId: orderId))
         }
     }
 
     func markCashCollected(orderId: String) async -> ApiResult<Void> {
-        await apiResult(mapError: ApiError.fromGenerated) {
+        await dashboardMutation {
             _ = try await PartnerOrderAPI.orderMarkCashCollected(
                 markCashCollectedCommand: MarkCashCollectedCommand(orderId: orderId)
             )
@@ -202,7 +213,7 @@ final class LivePartnerOrderClient: PartnerOrderClient {
     }
 
     func reportCashNotPaid(orderId: String) async -> ApiResult<Void> {
-        await apiResult(mapError: ApiError.fromGenerated) {
+        await dashboardMutation {
             _ = try await PartnerOrderAPI.orderReportCashNotPaid(
                 reportCashNotPaidCommand: ReportCashNotPaidCommand(orderId: orderId)
             )
@@ -210,7 +221,7 @@ final class LivePartnerOrderClient: PartnerOrderClient {
     }
 
     func completeOrder(orderId: String, actualMinutes: Int?, notes: String?) async -> ApiResult<Void> {
-        await apiResult(mapError: ApiError.fromGenerated) {
+        await dashboardMutation {
             _ = try await PartnerOrderAPI.orderCompleteOrder(
                 completeOrderCommand: CompleteOrderCommand(
                     orderId: orderId,
@@ -315,5 +326,12 @@ final class LivePartnerOrderClient: PartnerOrderClient {
         await apiResult(mapError: ApiError.fromGenerated) {
             _ = try await PartnerOrderAPI.orderDeletePhoto(photoId: photoId)
         }
+    }
+
+    private func dashboardMutation(_ operation: () async throws -> Void) async -> ApiResult<Void> {
+        let epoch = staleness.sessionEpoch
+        let result = await apiResult(mapError: ApiError.fromGenerated) { try await operation() }
+        if case .success = result, epoch == staleness.sessionEpoch { staleness.invalidateDashboard() }
+        return result
     }
 }

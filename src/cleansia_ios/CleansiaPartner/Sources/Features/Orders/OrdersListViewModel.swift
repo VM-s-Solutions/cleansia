@@ -140,7 +140,7 @@ final class OrdersListViewModel: ViewModel {
     }
 
     /// The inline primary action for a list row, via the shared machine. The
-    /// Available card's `isMine` is always false (it lists unassigned offers);
+    /// Available card's `isMine` is always false (it excludes this cleaner);
     /// the Active row's is always true (assigned-to-me). Neither `hasAfterPhotos`
     /// nor the payment fields are on the list DTO, so an InProgress Active row
     /// resolves to `.complete` and the server's after-photos + payment guards are
@@ -257,7 +257,27 @@ final class OrdersListViewModel: ViewModel {
             refreshPhase = .backgroundRefreshing
         }
 
-        let resolvedEmployeeId = await resolveOwnEmployeeIdIfNeeded(for: pane)
+        let resolvedEmployeeId: String?
+        if pane == .available {
+            switch await client.currentEmployeeId() {
+            case let .success(id) where !id.isBlank:
+                resolvedEmployeeId = id
+                ownEmployeeId = id
+            case .success:
+                showFailure(
+                    ApiError(WireContractViolation(field: "id"), endpoint: "Employee/GetCurrentEmployee"),
+                    pane: pane
+                )
+                refreshPhase = .idle
+                return
+            case let .failure(error):
+                showFailure(error, pane: pane)
+                refreshPhase = .idle
+                return
+            }
+        } else {
+            resolvedEmployeeId = await resolveOwnEmployeeIdIfNeeded(for: pane)
+        }
         let query = OrdersQueryBuilder.query(
             tab: tabFor(pane),
             ownEmployeeId: resolvedEmployeeId,
@@ -270,16 +290,20 @@ final class OrdersListViewModel: ViewModel {
             paneState[pane] = .loaded(orders)
             staleness.markPaneFresh(pane)
         case let .failure(error):
-            snackbar.showApiError(error)
-            if paneState[pane]?.loadedValue == nil {
-                paneState[pane] = .error(error)
-            }
+            showFailure(error, pane: pane)
         }
         refreshPhase = .idle
     }
 
+    private func showFailure(_ error: ApiError, pane: OrdersPane) {
+        snackbar.showApiError(error)
+        if paneState[pane]?.loadedValue == nil {
+            paneState[pane] = .error(error)
+        }
+    }
+
     /// O3: resolve the caller's OWN employeeId (JWT-truth surrogate) for the
-    /// "mine" panes only — never a foreign id. Available passes nil.
+    /// "mine" panes only — never a foreign id. Available re-reads it before each page.
     private func resolveOwnEmployeeIdIfNeeded(for pane: OrdersPane) async -> String? {
         guard pane == .active || pane == .history else { return nil }
         if let ownEmployeeId { return ownEmployeeId }

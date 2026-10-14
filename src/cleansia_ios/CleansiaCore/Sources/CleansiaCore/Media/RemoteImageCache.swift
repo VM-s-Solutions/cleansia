@@ -14,8 +14,9 @@
     /// DTO is fetched, so keying on the URL would miss on every read and re-download the same image.
     ///
     /// Nothing is written to disk: the default loader runs on an `.ephemeral` session so neither the
-    /// bytes nor the credential-bearing URL that keyed them reach a `URLCache` on disk, and the images
-    /// are per-user state, so a holder registers with the `SessionScopedCacheRegistry`.
+    /// bytes nor the credential-bearing URL that keyed them reach a `URLCache` on disk. The images are
+    /// per-user state: a holder that outlives a session must register its cache with the
+    /// `SessionScopedCacheRegistry`; a view-owned cache goes away with its view.
     @MainActor
     public final class RemoteImageCache: ObservableObject, SessionScopedCache {
         public typealias Loader = @Sendable (URL) async throws -> Data

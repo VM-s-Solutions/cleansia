@@ -97,7 +97,7 @@ fun SubscribePlusScreen(
     val plansLoaded by viewModel.plansLoaded.collectAsStateWithLifecycle()
     val market by viewModel.market.collectAsStateWithLifecycle()
     val notOnSaleInMarket = plansLoaded && plans.isEmpty()
-    val canSubscribe = BuildConfig.STRIPE_PUBLISHABLE_KEY.isNotBlank()
+    val canSubscribe = viewModel.cardPaymentAvailable
 
     var selectedPlanCode by remember(plans) {
         mutableStateOf(plans.firstOrNull { it.billingInterval == 1 }?.code ?: plans.firstOrNull()?.code.orEmpty())

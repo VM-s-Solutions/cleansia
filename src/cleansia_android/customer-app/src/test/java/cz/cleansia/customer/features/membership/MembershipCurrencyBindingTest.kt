@@ -109,7 +109,7 @@ class MembershipCurrencyBindingTest {
         val subscribe = source(File(membershipDir, "SubscribePlusScreen.kt")).replace(Regex("\\s+"), " ")
         assertTrue(
             "the screen must read card availability from the key that initialises Stripe",
-            subscribe.contains("val canSubscribe = BuildConfig.STRIPE_PUBLISHABLE_KEY.isNotBlank()"),
+            subscribe.contains("val canSubscribe = viewModel.cardPaymentAvailable"),
         )
         assertTrue(
             "the purchase bar must mount only inside if (canSubscribe)",

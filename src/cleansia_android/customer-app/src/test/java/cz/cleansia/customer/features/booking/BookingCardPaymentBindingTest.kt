@@ -18,7 +18,7 @@ class BookingCardPaymentBindingTest {
         val confirm = code(confirmStep)
         assertTrue(
             "ConfirmStep must read card availability from the key that initialises Stripe",
-            confirm.contains("val cardPaymentAvailable = BuildConfig.STRIPE_PUBLISHABLE_KEY.isNotBlank()"),
+            confirm.contains("val cardPaymentAvailable = viewModel.cardPaymentAvailable"),
         )
         val gate = blockRange(confirm, "if (cardPaymentAvailable) {")
         val cardOption = confirm.indexOf("title = stringResource(R.string.booking_pay_card)")

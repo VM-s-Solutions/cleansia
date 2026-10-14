@@ -116,7 +116,7 @@ interface DashboardRepository {
      * indicator (the mutation's own button-spinner already gave the
      * user feedback).
      */
-    fun invalidate()
+    suspend fun invalidate()
 
     /**
      * One-shot stats fetch, bypassing the dashboard cache. Used by the
@@ -154,7 +154,7 @@ class DashboardRepositoryImpl @Inject constructor(
     // fresh cache via the staleness check and bail.
     private val refreshLock = Mutex()
     private val snapshotLock = Mutex()
-    private var sessionGeneration = 0L
+    private var publicationGeneration = 0L
 
     // Per-cache freshness watermark — replaces the old manual nanoTime
     // tracking. Background paths (init / ON_RESUME) consult
@@ -166,12 +166,12 @@ class DashboardRepositoryImpl @Inject constructor(
     private val staleness = Staleness()
 
     override suspend fun refresh(employeeId: String?, force: Boolean): ApiError? {
-        val generation = snapshotLock.withLock { sessionGeneration }
+        val generation = snapshotLock.withLock { publicationGeneration }
         refreshLock.withLock {
             val shouldRefresh = snapshotLock.withLock {
                 currentCoroutineContext().ensureActive()
                 val fresh = _snapshot.value.loaded && !staleness.isStale(STALE_WINDOW_MS)
-                if (generation != sessionGeneration || (fresh && !force)) {
+                if (generation != publicationGeneration || (fresh && !force)) {
                     false
                 } else {
                     _snapshot.update { it.copy(refreshing = true) }
@@ -205,7 +205,7 @@ class DashboardRepositoryImpl @Inject constructor(
                 }
                 return snapshotLock.withLock {
                     currentCoroutineContext().ensureActive()
-                    if (generation == sessionGeneration) {
+                    if (generation == publicationGeneration) {
                         staleness.markFresh()
                         _snapshot.update { it.copy(loaded = true, refreshing = false) }
                         firstError
@@ -216,7 +216,7 @@ class DashboardRepositoryImpl @Inject constructor(
             } finally {
                 withContext(NonCancellable) {
                     snapshotLock.withLock {
-                        if (generation == sessionGeneration) _snapshot.update { it.copy(refreshing = false) }
+                        if (generation == publicationGeneration) _snapshot.update { it.copy(refreshing = false) }
                     }
                 }
             }
@@ -228,18 +228,22 @@ class DashboardRepositoryImpl @Inject constructor(
         update: (DashboardSnapshot) -> DashboardSnapshot,
     ): Boolean = snapshotLock.withLock {
         currentCoroutineContext().ensureActive()
-        if (generation != sessionGeneration) return@withLock false
+        if (generation != publicationGeneration) return@withLock false
         _snapshot.update(update)
         true
     }
 
-    override fun invalidate() {
-        staleness.reset()
+    override suspend fun invalidate() {
+        snapshotLock.withLock {
+            publicationGeneration++
+            staleness.reset()
+            _snapshot.update { it.copy(refreshing = false) }
+        }
     }
 
     override suspend fun clear() {
         snapshotLock.withLock {
-            sessionGeneration++
+            publicationGeneration++
             _snapshot.value = DashboardSnapshot()
             staleness.reset()
         }

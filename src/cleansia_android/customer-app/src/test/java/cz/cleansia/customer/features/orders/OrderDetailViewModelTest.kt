@@ -1,5 +1,6 @@
 package cz.cleansia.customer.features.orders
 
+import cz.cleansia.customer.core.payments.StripeConfig
 import android.content.Context
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.viewModelScope
@@ -125,7 +126,7 @@ class OrderDetailViewModelTest {
         return ApiResult.Success(body)
     }
 
-    private fun viewModel(id: String? = orderId) = OrderDetailViewModel(
+    private fun viewModel(id: String? = orderId, stripeConfig: StripeConfig = StripeConfig("pk_test_synthetic")) = OrderDetailViewModel(
         orderRepository = repository,
         marketRepository = marketRepository,
         snackbar = snackbar,
@@ -136,6 +137,7 @@ class OrderDetailViewModelTest {
         loyaltyRepository = loyaltyRepository,
         paymentRepository = paymentRepository,
         consentClient = consentClient,
+        stripeConfig = stripeConfig,
     )
 
     /** Wire values: Confirmed=2, OnTheWay=3, InProgress=4, Completed=5, Cancelled=6. */
@@ -470,6 +472,48 @@ class OrderDetailViewModelTest {
 
         vm.dismissOwesMoney()
         assertEquals(false, vm.owesMoney.value)
+    }
+
+    @Test
+    fun `keyless card occurrence sends no confirmation or payment intent`() = runTest {
+        coEvery { repository.getById(orderId) } returns ApiResult.Success(recurringCardOccurrence())
+        coEvery { repository.confirmRecurring(orderId, null) } returns ApiResult.Error(ApiError.Network("offline"))
+        val vm = viewModel(stripeConfig = StripeConfig(""))
+        advanceUntilIdle()
+
+        vm.confirmRecurring()
+        advanceUntilIdle()
+
+        coVerify(exactly = 0) { repository.confirmRecurring(any(), any()) }
+        coVerify(exactly = 0) { paymentRepository.createPaymentIntent(any(), any()) }
+        assertEquals(ActionState.Idle, vm.confirmRecurringState.value)
+    }
+
+    @Test
+    fun `keyless cash occurrence still confirms once`() = runTest {
+        coEvery { repository.getById(orderId) } returns ApiResult.Success(recurringCashOccurrence(needsConfirmation = true))
+        coEvery { repository.confirmRecurring(orderId, null) } returns ApiResult.Error(ApiError.Network("offline"))
+        val vm = viewModel(stripeConfig = StripeConfig(""))
+        advanceUntilIdle()
+
+        vm.confirmRecurring()
+        advanceUntilIdle()
+
+        coVerify(exactly = 1) { repository.confirmRecurring(orderId, null) }
+        coVerify(exactly = 0) { paymentRepository.createPaymentIntent(any(), any()) }
+    }
+
+    @Test
+    fun `keyed card occurrence still confirms once`() = runTest {
+        coEvery { repository.getById(orderId) } returns ApiResult.Success(recurringCardOccurrence())
+        coEvery { repository.confirmRecurring(orderId, null) } returns ApiResult.Error(ApiError.Network("offline"))
+        val vm = viewModel(stripeConfig = StripeConfig("pk_test_synthetic"))
+        advanceUntilIdle()
+
+        vm.confirmRecurring()
+        advanceUntilIdle()
+
+        coVerify(exactly = 1) { repository.confirmRecurring(orderId, null) }
     }
 
     /** Wire value: PaymentType Card = 2. */

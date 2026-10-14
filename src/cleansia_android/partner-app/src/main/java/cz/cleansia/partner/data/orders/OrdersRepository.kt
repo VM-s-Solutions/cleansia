@@ -33,7 +33,9 @@ import cz.cleansia.core.network.required
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
+import cz.cleansia.partner.data.dashboard.DashboardRepository
 import kotlinx.serialization.json.Json
 import java.util.concurrent.ConcurrentHashMap
 import javax.inject.Inject
@@ -74,6 +76,8 @@ interface OrdersRepository {
          * silent-stale flow.
          */
         pane: OrdersPane? = null,
+        hasAvailableSpots: Boolean? = null,
+        excludeEmployeeId: String? = null,
     ): ApiResult<PagedDataOfOrderListItem>
 
     suspend fun getById(orderId: String): ApiResult<OrderItem>
@@ -197,6 +201,7 @@ enum class OrdersMutation { TakeOrder, NotifyOnTheWay, StartOrder, CompleteOrder
 class OrdersRepositoryImpl @Inject constructor(
     private val orderApi: OrderApi,
     private val json: Json,
+    private val dashboardRepository: DashboardRepository,
 ) : OrdersRepository, SessionScopedCache {
 
     // Per-order freshness watermarks. A separate Staleness instance per
@@ -218,6 +223,9 @@ class OrdersRepositoryImpl @Inject constructor(
     override val pendingOffers: StateFlow<List<PendingOffer>> = _pendingOffers.asStateFlow()
 
     private val pendingOffersStaleness = Staleness()
+    private val pendingOffersLock = Mutex()
+    private var sessionEpoch = 0L
+    private var pendingOffersRevision = 0L
 
     private fun stalenessFor(orderId: String): Staleness =
         orderStaleness.getOrPut(orderId) { Staleness() }
@@ -249,33 +257,67 @@ class OrdersRepositoryImpl @Inject constructor(
     }
 
     override suspend fun clear() {
-        // Drop the per-order watermarks entirely — the orderIds belonged to the
-        // previous account and must not gate the next user's first fetch as
-        // "fresh". Pane watermarks are fixed instances, so reset in place.
-        orderStaleness.clear()
-        paneStaleness.values.forEach { it.reset() }
-        _pendingOffers.value = emptyList()
-        pendingOffersStaleness.reset()
+        pendingOffersLock.withLock {
+            sessionEpoch++
+            pendingOffersRevision++
+            orderStaleness.clear()
+            paneStaleness.values.forEach { it.reset() }
+            _pendingOffers.value = emptyList()
+            pendingOffersStaleness.reset()
+        }
     }
 
     override fun arePendingOffersStale(): Boolean = pendingOffersStaleness.isStale()
 
-    override suspend fun refreshPendingOffers(): ApiResult<List<PendingOffer>> =
-        safeApiCall(json) { orderApi.orderMyPendingOffers() }
+    override suspend fun refreshPendingOffers(): ApiResult<List<PendingOffer>> {
+        val version = pendingOffersLock.withLock { sessionEpoch to pendingOffersRevision }
+        val result = safeApiCall(json) { orderApi.orderMyPendingOffers() }
             .mapWire { rows -> rows.mapNotNull { it.toDomainOrNull() } }
-            .onSuccess { offers ->
-                _pendingOffers.value = offers
-                pendingOffersStaleness.markFresh()
+        if (result is ApiResult.Success) {
+            pendingOffersLock.withLock {
+                if (version.first == sessionEpoch && version.second == pendingOffersRevision) {
+                    _pendingOffers.value = result.data
+                    pendingOffersStaleness.markFresh()
+                }
             }
+        }
+        return result
+    }
 
-    override suspend fun declinePreferredOffer(orderId: String): ApiResult<Unit> = safeApiCall(json) {
-        orderApi.orderDeclinePreferredOffer(DeclinePreferredOfferCommand(orderId = orderId))
-    }.map { }.onSuccess {
-        _pendingOffers.update { offers -> offers.filterNot { it.id == orderId } }
-        invalidateOrder(orderId)
-        // The order is back with the whole board the instant the hold ends, so the Available pane
-        // is wrong until it refetches.
-        stalenessFor(OrdersPane.Available).reset()
+    override suspend fun declinePreferredOffer(orderId: String): ApiResult<Unit> {
+        val epoch = pendingOffersLock.withLock { sessionEpoch }
+        val result = safeApiCall(json) {
+            orderApi.orderDeclinePreferredOffer(DeclinePreferredOfferCommand(orderId = orderId))
+        }.map { }
+        if (result is ApiResult.Success) {
+            pendingOffersLock.withLock {
+                if (epoch == sessionEpoch) {
+                    pendingOffersRevision++
+                    _pendingOffers.value = _pendingOffers.value.filterNot { it.id == orderId }
+                    invalidateOrder(orderId)
+                    stalenessFor(OrdersPane.Available).reset()
+                    dashboardRepository.invalidate()
+                }
+            }
+        }
+        return result
+    }
+
+    private suspend fun materialMutation(
+        orderId: String,
+        request: suspend () -> ApiResult<Unit>,
+    ): ApiResult<Unit> {
+        val epoch = pendingOffersLock.withLock { sessionEpoch }
+        val result = request()
+        if (result is ApiResult.Success) {
+            pendingOffersLock.withLock {
+                if (epoch == sessionEpoch) {
+                    invalidateOrder(orderId)
+                    dashboardRepository.invalidate()
+                }
+            }
+        }
+        return result
     }
 
     override suspend fun getPaged(
@@ -289,11 +331,15 @@ class OrdersRepositoryImpl @Inject constructor(
         offset: Int,
         limit: Int,
         pane: OrdersPane?,
+        hasAvailableSpots: Boolean?,
+        excludeEmployeeId: String?,
     ): ApiResult<PagedDataOfOrderListItem> = safeApiCall(json) {
         orderApi.orderGetPaged(
             filterOrderStatuses = statuses,
             filterIsUnassigned = isUnassigned,
             filterEmployeeId = employeeId,
+            filterHasAvailableSpots = hasAvailableSpots,
+            filterExcludeEmployeeId = excludeEmployeeId,
             filterCleaningDateFrom = cleaningDateFrom,
             filterCleaningDateTo = cleaningDateTo,
             sort0Field = sortField,
@@ -322,11 +368,13 @@ class OrdersRepositoryImpl @Inject constructor(
             .mapWire { it.reason.required("reason") }
 
     override suspend fun takeOrder(orderId: String, acceptedWorkContractTextId: String): ApiResult<Unit> =
-        safeApiCall(json) {
-            orderApi.orderTakeOrder(
-                TakeOrderCommand(orderId = orderId, acceptedWorkContractTextId = acceptedWorkContractTextId),
-            )
-        }.map { }.also { if (it is ApiResult.Success) invalidateOrder(orderId) }
+        materialMutation(orderId) {
+            safeApiCall(json) {
+                orderApi.orderTakeOrder(
+                    TakeOrderCommand(orderId = orderId, acceptedWorkContractTextId = acceptedWorkContractTextId),
+                )
+            }.map { }
+        }
 
     override suspend fun acceptWorkContract(orderId: String, acceptedWorkContractTextId: String): ApiResult<Unit> =
         safeApiCall(json) {
@@ -343,35 +391,37 @@ class OrdersRepositoryImpl @Inject constructor(
         safeApiCall(json) { orderApi.orderGetWorkContract(acceptanceId = acceptanceId, language = language) }
             .mapWire { it.toDomain() }
 
-    override suspend fun startOrder(orderId: String): ApiResult<Unit> = safeApiCall(json) {
-        orderApi.orderStartOrder(StartOrderCommand(orderId = orderId))
-    }.map { }.also { if (it is ApiResult.Success) invalidateOrder(orderId) }
+    override suspend fun startOrder(orderId: String): ApiResult<Unit> = materialMutation(orderId) {
+        safeApiCall(json) { orderApi.orderStartOrder(StartOrderCommand(orderId = orderId)) }.map { }
+    }
 
-    override suspend fun markCashCollected(orderId: String): ApiResult<Unit> = safeApiCall(json) {
-        orderApi.orderMarkCashCollected(MarkCashCollectedCommand(orderId = orderId))
-    }.map { }.also { if (it is ApiResult.Success) invalidateOrder(orderId) }
+    override suspend fun markCashCollected(orderId: String): ApiResult<Unit> = materialMutation(orderId) {
+        safeApiCall(json) { orderApi.orderMarkCashCollected(MarkCashCollectedCommand(orderId = orderId)) }.map { }
+    }
 
-    override suspend fun reportCashNotPaid(orderId: String): ApiResult<Unit> = safeApiCall(json) {
-        orderApi.orderReportCashNotPaid(ReportCashNotPaidCommand(orderId = orderId))
-    }.map { }.also { if (it is ApiResult.Success) invalidateOrder(orderId) }
+    override suspend fun reportCashNotPaid(orderId: String): ApiResult<Unit> = materialMutation(orderId) {
+        safeApiCall(json) { orderApi.orderReportCashNotPaid(ReportCashNotPaidCommand(orderId = orderId)) }.map { }
+    }
 
-    override suspend fun notifyOnTheWay(orderId: String): ApiResult<Unit> = safeApiCall(json) {
-        orderApi.orderNotifyOnTheWay(NotifyOnTheWayCommand(orderId = orderId))
-    }.map { }.also { if (it is ApiResult.Success) invalidateOrder(orderId) }
+    override suspend fun notifyOnTheWay(orderId: String): ApiResult<Unit> = materialMutation(orderId) {
+        safeApiCall(json) { orderApi.orderNotifyOnTheWay(NotifyOnTheWayCommand(orderId = orderId)) }.map { }
+    }
 
     override suspend fun completeOrder(
         orderId: String,
         actualCompletionMinutes: Int?,
         completionNotes: String?,
-    ): ApiResult<Unit> = safeApiCall(json) {
-        orderApi.orderCompleteOrder(
-            CompleteOrderCommand(
-                orderId = orderId,
-                actualCompletionTimeMinutes = actualCompletionMinutes,
-                completionNotes = completionNotes,
-            ),
-        )
-    }.map { }.also { if (it is ApiResult.Success) invalidateOrder(orderId) }
+    ): ApiResult<Unit> = materialMutation(orderId) {
+        safeApiCall(json) {
+            orderApi.orderCompleteOrder(
+                CompleteOrderCommand(
+                    orderId = orderId,
+                    actualCompletionTimeMinutes = actualCompletionMinutes,
+                    completionNotes = completionNotes,
+                ),
+            )
+        }.map { }
+    }
 
     override suspend fun getPhotos(orderId: String): ApiResult<GetOrderPhotosResponse> =
         safeApiCall(json) { orderApi.orderGetPhotos(orderId) }

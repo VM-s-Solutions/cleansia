@@ -88,7 +88,8 @@ final class CleanerLegalDocumentWireTests: XCTestCase {
     }
 
     func testTheRemovalReasonIsAGetKeyedOnTheOrder() async throws {
-        let reason = try await LivePartnerOrderClient().getMyAssignmentRemovalReason(orderId: "order-1").get()
+        let reason = try await LivePartnerOrderClient(staleness: OrdersStaleness())
+            .getMyAssignmentRemovalReason(orderId: "order-1").get()
 
         XCTAssertEqual(bodies.method(ofPath: LegalDocumentWire.removalPath), "GET")
         XCTAssertEqual(reason, "Customer request.")

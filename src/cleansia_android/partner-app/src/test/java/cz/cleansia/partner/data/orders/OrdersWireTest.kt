@@ -2,6 +2,7 @@ package cz.cleansia.partner.data.orders
 
 import cz.cleansia.partner.api.client.OrderApi
 import cz.cleansia.partner.testing.assertSortedBy
+import io.mockk.mockk
 import kotlinx.coroutines.test.runTest
 import kotlinx.serialization.json.Json
 import okhttp3.MediaType.Companion.toMediaType
@@ -25,6 +26,7 @@ class OrdersWireTest {
             .build()
             .create(OrderApi::class.java),
         json,
+        mockk(relaxed = true),
     )
 
     private suspend fun pagedRequest(sortField: String, sortAscending: Boolean): RecordedRequest {

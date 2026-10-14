@@ -89,6 +89,53 @@ class AuthRepositoryTest {
     private fun ApiResult<*>.surfacedMessage(): String =
         ApiErrorParser.parseToUserMessage(appContext, (this as ApiResult.Error).error)
 
+    @Test
+    fun login_clearsEverySuppliedCacheBeforeSavingFreshTokens() = kotlinx.coroutines.test.runTest {
+        coEvery { api.login(any()) } returns Response.success(freshIdentity())
+        assertSuccessfulSignInWipe { it.login("next@example.com", "pw", rememberMe = false) }
+    }
+
+    @Test
+    fun confirmEmail_clearsEverySuppliedCacheBeforeSavingFreshTokens() = kotlinx.coroutines.test.runTest {
+        coEvery { api.confirmUserEmail(any()) } returns Response.success(freshIdentity())
+        assertSuccessfulSignInWipe { it.confirmEmail("next@example.com", "123456") }
+    }
+
+    @Test
+    fun googleAuth_clearsEverySuppliedCacheBeforeSavingFreshTokens() = kotlinx.coroutines.test.runTest {
+        coEvery { api.googleAuth(any()) } returns Response.success(freshIdentity())
+        assertSuccessfulSignInWipe {
+            it.googleAuth("id-token", "subject", "next@example.com", "Next", "User", termsAccepted = true)
+        }
+    }
+
+    private fun freshIdentity() = JwtTokenResponseDto(
+        token = "h.p.s",
+        isEmailConfirmed = true,
+        userId = "next-user",
+        email = "next@example.com",
+        refreshToken = "next-refresh",
+        refreshTokenExpiresAt = "2099-01-01T00:00:00Z",
+    )
+
+    private suspend fun assertSuccessfulSignInWipe(signIn: suspend (AuthRepository) -> ApiResult<AuthSuccess>) {
+        val cacheA = mockk<SessionScopedCache>(relaxed = true)
+        val cacheB = mockk<SessionScopedCache>(relaxed = true)
+        val events = mutableListOf<String>()
+        every { tokenStore.current() } returns storedTokens()
+        coEvery { cacheA.clear() } answers { events += "clear-A" }
+        coEvery { cacheB.clear() } answers { events += "clear-B" }
+        every { tokenStore.save(any()) } answers { events += "save" }
+
+        val result = signIn(newRepository(linkedSetOf(cacheA, cacheB)))
+
+        assertTrue((result as? ApiResult.Success)?.data is AuthSuccess.Authenticated)
+        assertEquals(listOf("clear-A", "clear-B", "save"), events)
+        coVerify(exactly = 1) { cacheA.clear() }
+        coVerify(exactly = 1) { cacheB.clear() }
+        verify(exactly = 1) { tokenStore.save(match { it.refreshToken == "next-refresh" }) }
+    }
+
     // ── login() ──
 
     @Test

@@ -3,6 +3,7 @@ package cz.cleansia.customer.features.booking
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import cz.cleansia.customer.core.catalog.CatalogRepository
+import cz.cleansia.customer.core.payments.StripeConfig
 import cz.cleansia.customer.core.market.InsuranceCoverage
 import cz.cleansia.customer.core.market.MarketRepository
 import cz.cleansia.customer.core.market.MarketState
@@ -27,7 +28,10 @@ class ConfirmStepViewModel @Inject constructor(
     val catalogRepository: CatalogRepository,
     val membershipRepository: MembershipRepository,
     marketRepository: MarketRepository,
+    stripeConfig: StripeConfig,
 ) : ViewModel() {
+
+    val cardPaymentAvailable = stripeConfig.isCardPaymentAvailable
 
     /**
      * The insurance ceiling is per country (ADR-0060 D2) and the address wins inside a booking

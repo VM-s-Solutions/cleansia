@@ -1,5 +1,6 @@
 package cz.cleansia.customer.features.recurring
 
+import cz.cleansia.customer.core.payments.StripeConfig
 import android.content.Context
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.lifecycle.SavedStateHandle
@@ -8,7 +9,6 @@ import app.cash.turbine.test
 import cz.cleansia.core.network.ApiError
 import cz.cleansia.core.network.ApiResult
 import cz.cleansia.core.snackbar.SnackbarController
-import cz.cleansia.customer.BuildConfig
 import cz.cleansia.customer.R
 import cz.cleansia.customer.core.booking.BookingApi
 import cz.cleansia.customer.core.booking.CashEligibility
@@ -133,7 +133,7 @@ class CreateRecurringViewModelTest {
         every { appContext.getString(R.string.recurring_selection_no_longer_offered) } returns retiredNotice
     }
 
-    private fun viewModel(orderId: String? = null, templateId: String? = null) =
+    private fun viewModel(orderId: String? = null, templateId: String? = null, stripeConfig: StripeConfig = StripeConfig("pk_test_synthetic")) =
         CreateRecurringViewModel(
             savedStateHandle = SavedStateHandle(
                 mapOf("orderId" to orderId, "templateId" to templateId),
@@ -147,6 +147,7 @@ class CreateRecurringViewModelTest {
             consentClient = consentClient,
             snackbar = snackbar,
             appContext = appContext,
+            stripeConfig = stripeConfig,
         )
 
     private fun slovakMarket(): MarketState {
@@ -1609,11 +1610,11 @@ class CreateRecurringViewModelTest {
     /** A build without a Stripe key starts with no way to pay chosen, as booking does; CI builds without one. */
     @Test
     fun `a new schedule starts on card only in a build that can take a card`() = runTest {
-        val vm = viewModel()
-        advanceUntilIdle()
-
-        val expected = if (BuildConfig.STRIPE_PUBLISHABLE_KEY.isNotBlank()) CreateRecurringViewModel.PAYMENT_CARD else null
-        assertEquals(expected, vm.state.value.paymentType)
+        listOf("" to null, "pk_test_synthetic" to CreateRecurringViewModel.PAYMENT_CARD).forEach { (key, expected) ->
+            val vm = viewModel(stripeConfig = StripeConfig(key))
+            advanceUntilIdle()
+            assertEquals(expected, vm.state.value.paymentType)
+        }
     }
 
     @Test
@@ -1636,11 +1637,11 @@ class CreateRecurringViewModelTest {
             paymentType = CodeDto(type = "PaymentType", name = "Card", value = CreateRecurringViewModel.PAYMENT_CARD),
         )
 
-        val vm = viewModel(orderId = "ord-7")
-        advanceUntilIdle()
-
-        val expected = if (BuildConfig.STRIPE_PUBLISHABLE_KEY.isNotBlank()) CreateRecurringViewModel.PAYMENT_CARD else null
-        assertEquals(expected, vm.state.value.paymentType)
+        listOf("" to null, "pk_test_synthetic" to CreateRecurringViewModel.PAYMENT_CARD).forEach { (key, expected) ->
+            val vm = viewModel(orderId = "ord-7", stripeConfig = StripeConfig(key))
+            advanceUntilIdle()
+            assertEquals(expected, vm.state.value.paymentType)
+        }
     }
 
     /**
@@ -1649,22 +1650,22 @@ class CreateRecurringViewModelTest {
      */
     @Test
     fun `a card schedule is edited on card only in a build that can take a card`() = runTest {
-        val cardAvailable = BuildConfig.STRIPE_PUBLISHABLE_KEY.isNotBlank()
         editing(editableTemplate.copy(paymentType = CreateRecurringViewModel.PAYMENT_CARD))
-        val vm = viewModel(templateId = "tpl-1")
-        advanceUntilIdle()
-        vm.nextStep()
-        vm.nextStep()
-        runCurrent()
+        listOf("" to false, "pk_test_synthetic" to true).forEach { (key, cardAvailable) ->
+            val vm = viewModel(templateId = "tpl-1", stripeConfig = StripeConfig(key))
+            advanceUntilIdle()
+            vm.nextStep()
+            vm.nextStep()
+            runCurrent()
 
-        assertEquals(if (cardAvailable) CreateRecurringViewModel.PAYMENT_CARD else null, vm.state.value.paymentType)
-        assertEquals(false, vm.cashClearedNotice.value)
-        assertEquals(cardAvailable, vm.canAdvance.value)
+            assertEquals(if (cardAvailable) CreateRecurringViewModel.PAYMENT_CARD else null, vm.state.value.paymentType)
+            assertEquals(false, vm.cashClearedNotice.value)
+            assertEquals(cardAvailable, vm.canAdvance.value)
 
-        vm.setPaymentType(CreateRecurringViewModel.PAYMENT_CASH)
-        runCurrent()
-
-        assertEquals(true, vm.canAdvance.value)
+            vm.setPaymentType(CreateRecurringViewModel.PAYMENT_CASH)
+            runCurrent()
+            assertEquals(true, vm.canAdvance.value)
+        }
     }
 
     @Test

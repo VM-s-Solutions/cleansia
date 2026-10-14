@@ -8,6 +8,7 @@ import cz.cleansia.partner.api.model.WorkContractAcceptanceDetails
 import cz.cleansia.partner.api.model.WorkContractAcceptanceDto
 import cz.cleansia.partner.api.model.WorkContractDto
 import cz.cleansia.partner.api.model.WorkContractFacts
+import io.mockk.mockk
 import kotlinx.coroutines.test.runTest
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.descriptors.SerialDescriptor
@@ -46,6 +47,7 @@ class WorkContractWireTest {
             .build()
             .create(OrderApi::class.java),
         json,
+        mockk(relaxed = true),
     )
 
     private suspend fun <T> exchange(

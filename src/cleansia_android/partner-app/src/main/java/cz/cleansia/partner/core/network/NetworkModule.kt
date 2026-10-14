@@ -57,7 +57,8 @@ import javax.inject.Singleton
  *  - [AuthAuthenticator]       — single-flight 401-refresh-retry
  *  - [SessionManager]          — emits ForcedSignOut events the UI listens to
  *  - [SessionScopedCache]      — multibinding marker; any repo with per-user state
- *                                that needs flushing on sign-out joins this set
+ *                                joins the set iterated on every wipe trigger
+ * -> /mobile-app/patterns#session-wipe
  */
 @Module
 @InstallIn(SingletonComponent::class)

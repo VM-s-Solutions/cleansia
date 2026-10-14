@@ -326,6 +326,73 @@ actual final-head local commands** before push. Those gates are pending at this 
 the three source-head docs results above are the completed command evidence currently supplied.
 Hosted PR/master receipts and END runtime results remain future evidence.
 
+### 2026-10-14 — P5 Ubuntu 26.04 merge and master closure
+
+P5 [#336](https://github.com/VM-s-Solutions/cleansia/pull/336) merged at
+`2026-10-14T20:11:54Z` as `2118ad22736d91e2026967f5a19503b5e4019afd` from exact head `44392c870177ab63467448b9a841141d7da8db45`.
+All **eight PR checks across seven workflows** passed on their first attempts, with **zero
+re-runs**. Captured logs show **Ubuntu 26.04 in all eight executed Linux PR jobs**. The tested
+head and merge have the same Git tree. Exact merge, checks and bounded no-phase-dispatch evidence
+are saved in `/Users/michael/.codex/scratchpads/cleansia-wave-f-2026-10-11/raw/ci/nw-ubuntu26-pr336-ci-merge-closure-001.json` (SHA-256 `f0904ef9d7abad2601a6a88b898823dfbbe5393ddc3857538aeab3470424a4fa`).
+
+Master then passed **seven executed repository push jobs across seven workflows**, each on
+attempt 1, with the single **Frontend e2e-smoke guarded push skip**, zero re-runs, and
+**0 automatic extra checks** separately preserved. The master receipt
+`/Users/michael/.codex/scratchpads/cleansia-next-wave-2026-10-13/p5/master-ci-evidence-receipt001.json` (SHA-256
+`35207b649e1ab10cce4a1c5dd67051e4befd588ef2cf021d05026ecbc755aece`) records the completed checks and
+**seven actual Ubuntu 26.04 repository job images**; its hashes bind the poll/evidence summaries
+and all seven executed job logs. The separate raw-collection supplement
+`/Users/michael/.codex/scratchpads/cleansia-next-wave-2026-10-13/p5/master-capture-bindings-supplement001.json` (SHA-256
+`9a58b8437700af6e7e77c2116d2bcb7b8c1fc7a0af8f18b98c3a20833d2173df`) binds the exact paths and digests of all **eight raw annotation
+collections** and **seven artifact-list responses**. Captures were saved on the UTC day of
+execution under the one-day retention rule.
+
+The PR API annotation comparison initially stopped on one CS8604 warning replacing a different
+sampled warning. That original **`NEW_ANNOTATIONS_STOP`** receipt is preserved. The separately
+verified equivalence receipt `/Users/michael/.codex/scratchpads/cleansia-next-wave-2026-10-13/p5/exact-annotation-equivalence-author001/annotation-equivalence001.json` (SHA-256 `673508f197285ce6b74c78305c4678bf8c2b012ea0b7e6493eb010b5327e0041`) qualifies
+only the exact `BlobContainerClientFactory.cs:38:40` API substitution: both complete compiler
+logs contain the same **440 warning occurrences / 220 unique diagnostics**, SDK **10.0.402**,
+runtime **10.0.13**, and identical **7508 source blob/mode rows**. The prior log already contains
+that CS8604. This is an inherited compiler diagnostic; no zero-warning claim or general warning
+waiver is made. The exact gate and all eight fresh check identities/counts preceded the guarded
+merge. The hosted compiler versions are distinct from the recorded local SDK 10.0.301.
+
+The final head's **13 local command gates** and full local suite receipts above remain bound by
+`/Users/michael/.codex/scratchpads/cleansia-next-wave-2026-10-13/p5/final-record-sdk-rebind001.json` (SHA-256
+`b24f57bd6e33915c4477c17c089338eb491b7d3bbde4885af3ae42a31563fb46`). P5's iOS qualification remains unchanged:
+unfiltered iOS 18.6 tests used independently copied P4 products; **no fresh P5 iOS compilation**,
+and Customer retained **one VoiceOver runtime skip**. These source/runtime bindings are not an
+additional suite execution. The PR's Playwright artifact was saved with its exact ID and digest.
+
+Mike's dated 2026-10-13 approval — “You can reset db, but once we're done with everything and we
+can do a fresh deployment” — and “Go with defaults (recommended)” continue to govern END.
+**AC1/AC3 remain open**: the deploy/SQL/docs declarations and expanded matrix legs still need the
+approved final DEV procedure after P6 merges with green master CI. The two PRO-only declarations
+remain unexecuted. This phase dispatched no deployment or SQL workflow and performed no reset
+or tracked regeneration. The single Initial remains `20261013160545`; its DEV reset debt is END.
+This P5 closure is prepared to be the **first commit of P6**.
+
+### P6 documentation and comment follow-ups — 2026-10-14
+
+- Authority, dated 2026-10-13 — Mike: “Analyze and Fix those”; “Fix the findings as well”; “Go with defaults (recommended)”. Authority: `/Users/michael/.codex/scratchpads/cleansia-wave-f-2026-10-11/next-wave/decisions-2026-10-13.md`. The relevant decided scope is FF-13 docs-table cross-reference; P5/END source/runtime closure remains separately owned.
+- FF-13 separates request logging from local orchestration in CLAUDE.md's truth table, recorded on T-0818 and cross-recorded here because CLAUDE.md was also an AC6 destination. The dedicated Nx version line stays byte-identical. P4 items 2–6 and the actual P5 #336/source/CI/merge/master evidence above remain.
+- The actual P5 closure is the first P6 commit, `dccf996787ed52e14b7a8e0305bebab3fa3ca0ea`, parent `2118ad22736d91e2026967f5a19503b5e4019afd`; this addition preserves its T-0849 record and sole INDEX notes. Receipt: `/Users/michael/.codex/scratchpads/cleansia-next-wave-2026-10-13/p6/p5-closure-first-commit001.json` (SHA256 `6cfca7460d620e4c378a723f9008b19f30e1fcacc93d154bbefd34a87ac67dc4`). The closure head's three documentation commands passed as recorded in `p6/p5-closure-head001/final.json` (SHA256 `1627152ab1db10b09dcb6c8858a9bf692780d86a7bcd377bb64017ab53bfadae`); those are closure-head results, not P6 source-head results.
+- AC1/AC3 and the merge-then-prove reading remain open for the final authorized DEV/SQL/docs procedure. The P5 inherited-warning qualification, P4-product iOS test qualification and VoiceOver skip remain. The two PRO-only declarations stay unexecuted.
+- Source: `51a66fe807400ce9dc628e29936333aa0cf43507`, parent `dccf996787ed52e14b7a8e0305bebab3fa3ca0ea`, after the first P5 closure on P6. The 106 approved paths match the frozen afterimages and Git modes; the other 8,152 tracked paths are unchanged. Application receipt: `/Users/michael/.codex/scratchpads/cleansia-next-wave-2026-10-13/p6/source-commit001.json` (SHA256 `02ccb3119f4c30a6cd8d51b42a4ef641ada01cac06e3d533180fe3d5f5fa542d`). This is source binding, not a new SDK, device, provider, CI or deployment result.
+
+#### Actual P6 source-head local gates — 2026-10-14
+
+- On source `51a66fe807400ce9dc628e29936333aa0cf43507`, tree `c6e7ac4fee9ba1a9334ac4cae7a23a784c4e19a4`, the 11 documentation/checker commands all exited 0: documentation references and catalog checks with their self-tests, the VitePress build, and the iOS-symbols, booking-policy and Available-status scans with their self-tests. These source-head results are separate from the first P5 closure-head checks. Receipt: `/Users/michael/.codex/scratchpads/cleansia-next-wave-2026-10-13/p6/source-head-docs001/final.json` (SHA256 `2ea68d9f1b6811e6c8a9f25b60a5bc01ab6ed3dae5d93e690b8b4b25e7f2b5e7`).
+- The 25 backend/frontend commands all exited 0. The fresh Release Rebuild recorded 220 warnings and 0 errors; backend unit/integration/host suites passed 8,731/975/509 with zero failed or skipped cases. The actual frontend delta contains one comment-only spec; affected lint selected nine projects and exited 0. The separate 77-project full lint was informational, also exit 0. The typecheck guard passed 8 self-tests and the three app spec programs included 73 specs; frontend Jest passed 5,041 tests in 408 suites across 74 targets (71 nonempty, three empty). All three production builds ran without Nx cache hits. Seven localhost network-stubbed Playwright smokes passed (customer/partner/admin 5/1/1). Receipt: `/Users/michael/.codex/scratchpads/cleansia-next-wave-2026-10-13/p6/full-backend-frontend001/final.json` (SHA256 `33ae2a4702469d6b184726849dcc0cecf53543c1278370233871f1539c315173`); sealed packet SHA256 `1fcae90b147df798eefda7738386a5580061379125c6406caf54928d75559c71`.
+- Exact argv/cwd, exits, raw receipt/log hashes, complete 8,258-row source snapshot bindings and retained product-map bindings are recorded in `/Users/michael/.codex/scratchpads/cleansia-next-wave-2026-10-13/p6/actual-gate-records-preparation003/actual-gate-facts.json` and the original sealed packets. These are local macOS/Docker results; hosted Node20/Ubuntu26, provider behavior and live DEV acceptance remain separate. The retained `gradlew.bat` working bytes use CRLF and its raw Git blob uses LF; each identity is qualified, with no generic normalization claim. Actual mobile local results follow below. No device, hosted-CI, merge or deployment PASS is inferred from these docs/backend/frontend receipts.
+
+#### Actual P6 mobile local gates — 2026-10-14
+
+- The combined 30-command full mobile receipt is `PASS` at source `51a66fe807400ce9dc628e29936333aa0cf43507`. Android's fresh compile invocation executed all 56 actionable tasks and the JVM unit invocation all 96; all three modules compiled with `--rerun-tasks --no-build-cache`. The full unfiltered JVM suites passed 2,873 cases (core/partner/customer 298/881/1,694), zero failed/errors/skipped, in 309 retained XML files. Fresh iOS 18.6 build/test results are Core 776 Passed, Partner 1,133 Passed and Customer 1,779 Passed plus one Skipped. The exact known skip is `ProfileEditChipTests/testVoiceOverAnnouncesTheWholeLabelWhileTheChipIsTruncated()` because it requires the simulator accessibility server; it proves no VoiceOver announcement.
+- The original run completed 24 commands and stopped before Customer at `2026-10-14T22:41:20.123952+00:00` on the unchanged 2.5 GB capacity guard. The stopped receipt is retained unchanged (SHA256 `c3b3862d8c6733f26bd54fd19a66091ad99eb25aee7f531369c175d16f3513cf`). A separately reviewed and admitted Customer-only continuation supplied six further commands, using this same run's fresh DerivedData and private cloned package cache. Android/Core/Partner suites were not rerun, and no previous-phase Products were used. This is one capacity pause and continuation, not a failed-test retry.
+- The local mobile gate ran both iOS API-client generations through `./scripts/generate-api-clients.sh`, XcodeGen in both app directories, SwiftFormat lint before strict SwiftLint, and the three build/test schemes. Android generation tasks also executed within the fresh compile/unit invocations. The complete source proofs retain all 8,258 tracked working-byte/Git-blob/mode identities, with the known working-CRLF/raw-Git-LF `gradlew.bat` qualification. No contract/model/migration change is added. Full mobile final: `/Users/michael/.codex/scratchpads/cleansia-next-wave-2026-10-13/p6/full-mobile001/final.json` (SHA256 `cb493f835abdc65afaffec7dc3c94070c83818a6144cbfc0e8808ccca7a6e701`); sealed packet SHA256 `4e969d0ac98da4446f8dec65eb41c8ac372fbb1f0d217eb6fca0b6987deb38a7`. Exact commands, raw maps, source/product bindings and the stop/continuation remain in the retained receipts and `actual-gate-records-preparation003/actual-gate-facts.json`.
+- These are local command results. There is no new iOS-floor, device, provider, PaymentSheet, R8 or VoiceOver acceptance. Hosted CI, publication and END execution remain separate. All local source suites are now recorded; actual publication closure is still owed.
+
 ## Review
 
 Pending.

@@ -20,10 +20,11 @@ import org.junit.Test
 import retrofit2.Response
 
 /**
- * Pins the [SessionScopedCache] contract of [OrdersRepositoryImpl]: on sign-out
+ * Pins the [SessionScopedCache] contract of [OrdersRepositoryImpl]: on every wipe trigger
  * every freshness watermark (per-pane list + per-order detail) resets, so the
  * next account's first fetch is never gated out as "fresh" by the prior user's
  * cache — per Staleness.kt's documented reset-from-clear() instruction.
+ * -> /mobile-app/patterns#session-wipe
  */
 class OrdersRepositoryTest {
 

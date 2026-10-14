@@ -23,7 +23,7 @@ import kotlinx.coroutines.flow.asStateFlow
  * `validate` is a passthrough that deliberately does NOT touch repo state — the caller may be
  * unauthenticated during signup, and the result is per-attempt UI feedback rather than shared state.
  *
- * **Cleared on sign-out / account-delete.** -> /mobile-app/patterns#session-wipe
+ * **Cleared on every wipe trigger.** -> /mobile-app/patterns#session-wipe
  */
 @Singleton
 class ReferralRepository @Inject constructor(
@@ -109,7 +109,7 @@ class ReferralRepository @Inject constructor(
         return ApiResult.Error(error)
     }
 
-    /** Wipe the in-memory cache — called on sign-out so the next user starts fresh. */
+    /** Wipe the in-memory cache on every wipe trigger. -> /mobile-app/patterns#session-wipe */
     override suspend fun clear() {
         _account.value = null
         _referrals.value = emptyList()

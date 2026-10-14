@@ -22,7 +22,7 @@ namespace Cleansia.Functions.Core.Handlers;
 ///
 /// <para>What makes that true is the DI scope each command is sent from: one that throws takes its
 /// change tracker and tenant override away with its scope, is logged at Warning, and fails the
-/// invocation only after the last command has run.</para>
+/// invocation only after the last command has run. → /decisions/adr-0072</para>
 /// </summary>
 public class CleanupStalePendingOrdersHandler(
     IServiceScopeFactory scopeFactory,

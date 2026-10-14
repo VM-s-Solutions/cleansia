@@ -253,7 +253,8 @@ class MembershipRepository @Inject constructor(
     }
 
     /**
-     * Clear cache on sign-out so a re-login starts fresh. Never takes [mutex]: the authenticator runs
+     * Clear cache on every wipe trigger. -> /mobile-app/patterns#session-wipe
+     * Never takes [mutex]: the authenticator runs
      * this on OkHttp's thread while a refresh may hold it across the very request being authenticated.
      * For the same reason no `plansLock` section may wait on a request.
      */

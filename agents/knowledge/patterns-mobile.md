@@ -211,7 +211,7 @@ using `@AuthRetrofit` (main) vs `@NoAuthRetrofit` (refresh-only) qualifiers.
 > which of the two is the *per-surface* ruling below. (4) **Collections DO default** (`orEmpty()`) — an
 > absent list and an empty one render identically and falsify no arithmetic. (5) **Nullable-by-design
 > stays nullable** — the server drew that distinction on purpose. Reference: partner
-> `PeriodPayRepository.kt:77-84`, `DashboardRepository.kt:243-252`.
+> `PeriodPayRepository.kt:77-84`, `DashboardRepository.kt`’s `DashboardStatsDto.toDomain()` mapper.
 >
 > **The rollup ruling is PER SURFACE and is never inherited: refuse the page where the list IS the
 > addends; drop the row where a total is supplied independently.** Backwards, it produces *a smaller,
@@ -501,8 +501,10 @@ duplicate a `:core` component.
 > face. Core owns the pair: **`RemoteImageCache`** (`Media/`) keyed on the caller's key with the URL as
 > the fetch target only, and **`CachedRemoteImage`** (`Components/`) rendering it with a placeholder.
 > Three rules the seam encodes: the key is the **content-addressed `fileName`** the backend re-mints on
-> every upload (never the URL, never a per-user id); the holder is **per-user state** and `register`s
-> with the `SessionScopedCacheRegistry` (S11); and the loader runs on an **`.ephemeral`** `URLSession`
+> every upload (never the URL, never a per-user id); a holder that outlives the authenticated route is
+> **per-user state** and its cache must join the `SessionScopedCacheRegistry` (S11 — today the app
+> containers register the caches they hold; a view-owned cache dies with its view); and the loader
+> runs on an **`.ephemeral`** `URLSession`
 > so neither the bytes nor the credential-bearing URL that keyed them land in an on-disk `URLCache`. On
 > a load failure **re-fetch the owning DTO once, guarded per key** — an image view cannot tell an
 > expired signature (403) from a deleted blob (404), so branching on the status is not implementable;

@@ -22,7 +22,7 @@ features:
     link: /getting-started
   - icon: 🏗️
     title: Architecture
-    details: System design, backend (.NET 10), frontend (Angular 19), database schema, and Azure infrastructure.
+    details: System design, backend (.NET 10), frontend (Angular 20.3), database schema, and Azure infrastructure.
     link: /architecture/overview
   - icon: 🛒
     title: Customer App

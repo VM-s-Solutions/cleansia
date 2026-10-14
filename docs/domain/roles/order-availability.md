@@ -2,13 +2,13 @@
 
 > **THE STANDARD.** Introduced by **ADR-0037**
 > (`docs/decisions/adr-0037.md`),
-> **`accepted` 2026-08-03** after a defense panel (19 findings, 8 blocking, all resolved). Living
+> **`accepted` 2026-08-03** after the design review (19 findings, 8 blocking, all resolved). Living
 > companion: `agents/architecture/decisions/order-availability.md`. **Composes with — does not
 > replace — `OrderVisibility`** (ADR-0036, `roles/preferred-cleaner-hold-resolver.md`): the two are
 > separate conjuncts on the same surfaces. Read `TakeOrder.cs`, `OrderSpecification.cs:134-139` and
 > `NewJobsDigestService.cs:52-53` in full before changing anything here.
 >
-> ⚠️ **The panel changed this card's responsibility.** The role now reads **`PaymentStatus` and
+> ⚠️ **The design review changed this card's responsibility.** The role now reads **`PaymentStatus` and
 > `RecurringTemplateId`**, which the draft explicitly listed under *does NOT know*. See §Responsibility
 > and the struck bullet below — the change is the RDD rule working, not an exception to it.
 
@@ -20,7 +20,7 @@ Be the **one place** that answers *"is this order, in itself, work a cleaner may
 take?"* — a predicate over **seven order scalars and a supplied UTC instant**, combining the fulfilment axis
 (`CurrentStatus`), the money axis and the booked slot end, in **two evaluation forms that a test proves equal**.
 
-> **Sharpened by the panel:** the question is **not** *"what money model is this?"* — it is
+> **Sharpened in the design review:** the question is **not** *"what money model is this?"* — it is
 > **"can anything take this order away from the cleaner I hand it to?"** That is why the role reads
 > the money **progress**, not only the money **model**.
 
@@ -34,7 +34,7 @@ NotRetractable(o) ⟺ o.PaymentStatus == Paid
                      ∧ (o.RecurringTemplateId == null ∨ o.CustomerConfirmedAt ≠ null))
 ```
 
-> **Status term amended twice since the panel.** The owner ruling of 2026-09-06 admitted `OnTheWay`
+> **Status term amended twice since the design review.** The owner ruling of 2026-09-06 admitted `OnTheWay`
 > and `InProgress` (the work is not *over*, not "has not started"), and
 > [ADR-0057](/decisions/adr-0057) (2026-09-08) dropped the `New ∧ Cash` qualifier — a paid card
 > order now rests at `New`, and the money term already carried the payment qualification.
@@ -58,7 +58,7 @@ carry a terminal-status term — not `Cancelled` (`CleanupStalePendingOrders.cs:
 `Completed` (`AutoCancelStaleRecurringOrders.cs:75-76`) — which the status conjunct above already
 excludes, so `NotRetractable` does not change for it. If a third scheduled retractor
 is ever added, **this term is where it must be reflected** — a sweep whose predicate is not negated
-here silently re-creates the defect the panel caught.
+here silently re-creates the defect caught in the design review.
 
 **Slot-end amendment — 2026-10-13:** [ADR-0076](/decisions/adr-0076) adds the strict raw booked end
 boundary. Started work remains offerable before that end, with no division by crew. The open board and
@@ -104,7 +104,7 @@ an exhaustiveness test over `Enum.GetValues<PaymentType>()` goes red until it is
 - **How to write a status.** It reads `CurrentStatus`; it never appends a track. `TakeOrder.cs:192-194`
   remains the only path from `New` to `Confirmed` on a take.
 - ~~**Payment state.** It reads `PaymentType` (the money *model*), never `PaymentStatus` (the money
-  *progress*)…~~ **STRUCK 2026-08-03 by the ADR-0037 panel (CH-M3, CH-M4).** This bullet was wrong,
+  *progress*)…~~ **STRUCK 2026-08-03 by the ADR-0037 design review (CH-M3, CH-M4).** This bullet was wrong,
   and it is the textbook case the RDD rule exists to catch: *if a scenario forces a role to know
   something on its "does NOT know" list, the responsibility is wrong or a collaborator is missing.*
   Two scenarios did — a recurring cash order awaiting the customer's confirm, and a `Confirmed` card

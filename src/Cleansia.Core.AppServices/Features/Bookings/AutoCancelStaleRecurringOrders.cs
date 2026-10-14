@@ -18,7 +18,7 @@ namespace Cleansia.Core.AppServices.Features.Bookings;
 /// <c>order.cancelled</c> push so the customer learns their slot's gone.
 ///
 /// Pairs with <see cref="SendRecurringOrderReminders"/> (24h-ahead reminder)
-/// and <see cref="ConfirmRecurringOrder"/> (the customer's confirm path) —
+/// and <see cref="Cleansia.Core.AppServices.Features.Orders.ConfirmRecurringOrder"/> (the customer's confirm path) —
 /// this is the safety net that frees the cleaner's slot when the customer
 /// either ignored the reminder or never opened it. Cancellation here is fee-
 /// free (no payment was ever taken) — we just transition state + notify.

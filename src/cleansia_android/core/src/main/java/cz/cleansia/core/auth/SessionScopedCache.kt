@@ -2,7 +2,8 @@ package cz.cleansia.core.auth
 
 /**
  * Marker for any repository that holds user-scoped state and must be flushed
- * on sign-out (forced or voluntary). The auth layer iterates the multibinding
+ * on every wipe trigger. -> /mobile-app/patterns#session-wipe
+ * The auth layer iterates the multibinding
  * `Set<SessionScopedCache>` and calls [clear] on every implementor — drop-in:
  * just `@Binds @IntoSet` your repo into the `SessionScopedModule` and
  * implement this interface.
@@ -12,8 +13,8 @@ package cz.cleansia.core.auth
  *     six-file cascade through [AuthRepository] + [AuthAuthenticator] + their
  *     `@Provides` methods.
  *   - The "INVARIANT: keep AuthAuthenticator and AuthRepository in sync" comment
- *     becomes structural rather than aspirational — both clear-paths iterate
- *     the same Set, so they CAN'T drift.
+ *     becomes structural rather than aspirational — every wipe trigger iterates
+ *     the same Set, so the clear-paths CAN'T drift.
  *
  * The method is `suspend` because most existing impls are `suspend` (DataStore-backed
  * caches need to write atomically). Pure in-memory caches can implement it as a

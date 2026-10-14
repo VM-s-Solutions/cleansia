@@ -405,7 +405,7 @@ reachable from a controller action on the five hosts (shared walk: `WireSurface`
 the routes. A new PII-, payout- or credential-shaped member that is neither redacted, nor on a suppressed
 route, nor excepted **in writing** fails the build. A redaction list without that is the same defect class
 as a comment asserting an invariant.
-**Enforced by:** the three guards above (`Cleansia.Tests`, a named step of `backend-ci.yml:69-71`) — **T1-CI**.
+**Enforced by:** the three guards above (`Cleansia.Tests`, the **Unit tests (Cleansia.Tests)** step in `backend-ci.yml`) — **T1-CI**.
 
 **The credential half is now closed too, and closing it found one.** A secret whose field name was never
 in the token list used to be caught by nothing; `RequestLogCredentialShapeGuardTests` asks the question by
@@ -680,7 +680,7 @@ sites confined to an enumerated roster; the confirm family and the register pre-
 bypass side since ADR-0061) +
 `src/Cleansia.Tests/Features/Auth/EmployeeRepositoryTenantTokenLookupTests.cs` (the write-authenticated /
 read-anonymous cell, seeded with a **non-null** tenant so it can fail), both run by
-`.github/workflows/backend-ci.yml:69-74` with no `continue-on-error` — **`T1-CI`**, **baseline 0**, over
+the **Unit tests (Cleansia.Tests)** step in `backend-ci.yml` with no `continue-on-error` — **`T1-CI`**, **baseline 0**, over
 the **closed scope of those two repositories only**. For the repository-wide scope the tier is
 **`(gate pending: T-0868)`**: the gate is the same roster-confinement shape applied across
 `src/Cleansia.Infra.Database/Repositories/**`, and its **baseline is every unrostered bypass site,
@@ -834,7 +834,7 @@ stamps (`ArchiveRequestedOn`, `ArchivedOn`), not a second meaning of `IsActive`.
 mobile `@Singleton` (Android) / long-lived injected class (iOS) that holds **per-user state** — a
 cached `StateFlow`/`@Published`, a persistent DataStore/`UserDefaults` row, a
 [`Staleness`](https://github.com/VM-s-Solutions/cleansia/blob/master/src/cleansia_android/core/src/main/java/cz/cleansia/core/freshness/Staleness.kt)
-watermark, or a per-key `Map` of any of these — **is a member of the session-wipe set and must be
+watermark, or a per-key `Map` of any of these — **MUST join the session-wipe set and be
 flushed on session end.** Leaving one out leaks the prior user's orders / profile / invoices /
 notifications to the next account on that handset — a security defect, not a UX nit (this rule was
 authored after the class recurred 5+ times: `PushTokenRepository`, `NotificationFeedCache`,
@@ -845,18 +845,31 @@ Profile/OrderChecklist/NotificationPreferences).
 - **Android** — implement `cz.cleansia.core.auth.SessionScopedCache` and join the Hilt multibinding
   (`@Binds @IntoSet … : SessionScopedCache` in the app's `SessionScopedModule` / feature module). The
   auth layer iterates `Set<SessionScopedCache>` on every wipe path.
-- **iOS** — conform to `SessionScopedCache` and `register(self)` with the injected
-  `SessionScopedCacheRegistry` (held weakly); `clearAll()` iterates it.
+- **iOS** — conform to `SessionScopedCache` and register the long-lived cache with the
+  `SessionScopedCacheRegistry`. Today the containers register the caches they hold:
+  `PartnerAppContainer.init` and `CustomerAppContainer.registerSessionScopedCaches(in:)`. The registry
+  holds its members weakly; `clearAll()` snapshots live members and clears them. Registration is the
+  requirement, not self-registration or an exclusive container-only API.
 
-**Four wipe-triggers, one set — they must not drift.** The set is iterated on **all four**:
+The partner’s four view-owned `RemoteImageCache` instances are `@StateObject`s under
+`PartnerRootView`’s route switch; session end routes to `.login` and destroys those views and caches.
+They do not outlive that authenticated route. A holder retained beyond it is long-lived per-user
+state and **MUST** register its cache.
+
+**Four customer wipe-triggers, three partner wipe-triggers, one set per app — they must not drift.**
+Both apps iterate their set on sign-out, forced-401 and sign-in; the customer apps also iterate it on
+successful account deletion:
 1. **Sign-out** (voluntary `logout()`),
 2. **Authenticator forced-401** (the refresh-terminal path — a revoked/reset session),
-3. **Account deletion** (customer `UserRepository.deleteAccount()` — which, being itself a member,
+3. **Successful account deletion, customer apps only** (customer `UserRepository.deleteAccount()` — which, being itself a member,
    injects `Provider<Set<@JvmSuppressWildcards SessionScopedCache>>` / iterates the registry to
    break the self-referential Dagger cycle),
 4. **Sign-in, before the new tokens are stored** (both Android apps' `AuthRepository`; both iOS apps
    through Core's `AuthApiClient`), so whatever a sign-out that never completed, or a read that
    answered after it, left in a cache is gone before the next account's first read.
+
+Pending or failed customer deletion preserves the session. A partner deletion request also preserves
+the session and is not a partner wipe-trigger.
 
 **On iOS a read that outlives `clear()` is dropped.** Every iOS cache that reads across an `await`
 captures a session generation before it and writes only while the generation still matches, and
@@ -885,7 +898,7 @@ on the **named, reason-annotated allowlist** in [`consistency.md` §E9](https://
 [`patterns-mobile.md`](https://github.com/VM-s-Solutions/cleansia/blob/master/agents/knowledge/patterns-mobile.md). A stateless pass-through (no cache field) is trivially
 out and needs no allowlist entry, but should carry a one-line `// Stateless — nothing cached, so no
 SessionScopedCache` comment (as `DeviceManagementRepository` does) so a reviewer isn't left guessing.
-**A per-user holder missing from both the set and the allowlist is an S11 violation** — caught today by
+**A long-lived per-user holder missing from both the set and the allowlist is an S11 violation** — caught today by
 the Reviewer (reading the diff + the `check-consistency.mjs` E9 warn-only advisory); the mechanical hard
 gate is a **roster-equality assertion test** (`SessionScopedModuleTest` / `SessionScopedCacheRegistryTest`)
 that is **specified but not yet built** — see `enforcement.md` and §E9 (the existing `AuthRepositoryTest`/
@@ -1025,7 +1038,7 @@ fail a build is `T2-ADVISORY` however it is labelled — note that
 
 | Clause | Enforcer — and the assertion it **actually** makes | Tier |
 |---|---|---|
-| Q2 — served type is server-derived from a closed set | `ServedContentTypeTests` (`text/html`, `image/svg+xml`, `""`, `null`, `"nonsense"` → `application/octet-stream`, `:42-55`; **no public constructor and no `op_Implicit`/`op_Explicit`**, `:80-87`) · `SasResponseHeaderOverrideTests` (`rsct` on the minted token, `:38-43`; `rscc` never `public`, `:53-63`; the override rides **inside** the signature, `:85-91`) · `EmployeeDocumentDownloadContentTypeTests` (four legacy rows where the recorded string and the bytes disagree, over **both** download handlers, `:37-69`) · `EmployeeDocumentDownloadDispositionTests` (asserts `FileContentResult.FileDownloadName` is non-empty on all three routes, i.e. the 3-arg `File(…)` overload) | **`T1-CI`** — `Cleansia.Tests`, a named step of `backend-ci.yml:69-71` |
+| Q2 — served type is server-derived from a closed set | `ServedContentTypeTests` (`text/html`, `image/svg+xml`, `""`, `null`, `"nonsense"` → `application/octet-stream`, `:42-55`; **no public constructor and no `op_Implicit`/`op_Explicit`**, `:80-87`) · `SasResponseHeaderOverrideTests` (`rsct` on the minted token, `:38-43`; `rscc` never `public`, `:53-63`; the override rides **inside** the signature, `:85-91`) · `EmployeeDocumentDownloadContentTypeTests` (four legacy rows where the recorded string and the bytes disagree, over **both** download handlers, `:37-69`) · `EmployeeDocumentDownloadDispositionTests` (asserts `FileContentResult.FileDownloadName` is non-empty on all three routes, i.e. the 3-arg `File(…)` overload) | **`T1-CI`** — `Cleansia.Tests`, the **Unit tests (Cleansia.Tests)** step in `backend-ci.yml` |
 | Q2 — accepted set stays inside the servable set | **True by construction and unpinned.** No test reads `SniffedContentType.Signatures` at all (grep: it appears in one `src` file, its own). A seventh row that `ServedContentType` cannot serve reintroduces the defect silently. **What would close it:** assert every `Signatures` MIME reachable from a SAS-served intake resolves to a non-`Opaque` `ServedContentType`, count-asserted first. *(T-0562 pins the adjacent `ExtensionFor` ↔ `ForFileName` round-trip, which is a different assertion.)* | **`(gate pending: T-0458)`** |
 | Q1/Q3 — the roster **enumerates** every intake | `UploadIntakeRosterTests` — count first (`Assert.Equal(ExpectedIntakes.Length, intakes.Count)`, `:64`) so an empty walk cannot agree with an empty roster, then the route-name list (`:66-68`), plus a `[Theory]` naming the four `byte[]`/`IFormFile` routes (`:76-84`) so narrowing the predicate cannot silently pass | **`T1-CI`** |
 | Q1/Q3 — every intake **declares** its audience and its scrub | **Nothing.** The roster's `— <rule>` annotation is asserted by **no** test: `:66-68` splits each row on `" — "` and compares index `[0]` only, so the text after the dash is read by nobody. Adding `audience`/`scrub` columns without changing that assertion buys a string nobody reads. **What would close it:** assert the annotation vocabulary as a closed set, plus a per-intake refusal theory that names the failure's **identity** (that route's error code) and carries a **positive control** per case — `Assert.False(result.IsValid)` alone is green on any un-stubbed constructor dependency | **`(gate pending: T-0458)`** |

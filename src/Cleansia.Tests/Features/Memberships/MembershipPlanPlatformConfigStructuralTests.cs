@@ -18,7 +18,7 @@ namespace Cleansia.Tests.Features.Memberships;
 /// Country, which are already NOT <see cref="ITenantEntity"/>). Dropping the interface removes the tenant
 /// dimension entirely — there is no <c>TenantId</c> to collapse, so the footgun is structurally gone.
 ///
-/// This is the structural guard the architect mandated: it asserts the type does NOT carry the tenant
+/// This structural guard asserts the type does NOT carry the tenant
 /// dimension, so a future "let's re-add ITenantEntity for tenant-specific plan catalogues" change can't
 /// silently re-open the anonymous-read hole without a deliberate ticket (it would turn this test RED).
 ///
@@ -50,7 +50,7 @@ public class MembershipPlanPlatformConfigStructuralTests
         Assert.False(typeof(TenantAuditable).IsAssignableFrom(typeof(MembershipPlan)));
         Assert.False(typeof(ITenantEntity).IsAssignableFrom(typeof(MembershipPlan)));
 
-        // The platform-config precedent the panel cited (Currency) has exactly this shape.
+        // The platform-config precedent (Currency) has exactly this shape.
         Assert.True(typeof(Auditable).IsAssignableFrom(typeof(Currency)));
         Assert.False(typeof(ITenantEntity).IsAssignableFrom(typeof(Currency)));
     }

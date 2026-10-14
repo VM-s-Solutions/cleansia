@@ -197,8 +197,8 @@ object AuthModule {
         // Hilt resolves the Set lazily on .get() so the repos construct after
         // the OkHttpClient graph is fully built. The `Set<SessionScopedCache>`
         // multibinding is populated by [SessionScopedModule] — adding a new
-        // cache there flows through to both this clear-path and
-        // [AuthRepository.logout] without further edits.
+        // cache there flows through to every wipe trigger without further edits.
+        // -> /mobile-app/patterns#session-wipe
         repositoryProvider: javax.inject.Provider<AuthRepository>,
         sessionScopedCachesProvider: javax.inject.Provider<Set<@JvmSuppressWildcards SessionScopedCache>>,
     ): AuthAuthenticator = AuthAuthenticator(

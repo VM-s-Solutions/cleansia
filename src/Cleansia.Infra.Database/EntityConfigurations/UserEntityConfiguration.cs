@@ -41,7 +41,6 @@ public class UserEntityConfiguration : TenantAuditableEntityConfiguration<User, 
             .HasMaxLength(512);
 
         // Stores a SHA-256 hex hash (64 chars), not a 6-digit code.
-        // (Column length / migration owned by the db agent — kept consistent on the C# side here.)
         builder.Property(u => u.ResetPasswordCode)
             .HasMaxLength(64);
 
@@ -61,7 +60,6 @@ public class UserEntityConfiguration : TenantAuditableEntityConfiguration<User, 
             .HasConversion<int>();
 
         // Stores a SHA-256 hex hash (64 chars), not a 6-digit code.
-        // (Column length / migration owned by the db agent — kept consistent on the C# side here.)
         builder.Property(u => u.ConfirmationCode)
             .HasMaxLength(64);
 

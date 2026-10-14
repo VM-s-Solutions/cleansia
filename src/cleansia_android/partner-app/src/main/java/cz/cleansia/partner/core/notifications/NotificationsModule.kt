@@ -47,7 +47,8 @@ object NotificationsModule {
 /**
  * Binds the partner [DeviceRegistrationClient] and joins [PushTokenRepository]
  * + [NotificationFeedRepository] to the [SessionScopedCache] multibinding so
- * their `clear()` runs on every sign-out alongside the other per-user caches.
+ * their `clear()` runs on every wipe trigger alongside the other per-user caches.
+ * -> /mobile-app/patterns#session-wipe
  * Separate abstract module because @Binds can't live in an `object` module.
  */
 @Module

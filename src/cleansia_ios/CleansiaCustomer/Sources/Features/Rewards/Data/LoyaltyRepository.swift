@@ -5,7 +5,8 @@ import Foundation
 /// Singleton cache for the signed-in user's loyalty state (the
 /// `LoyaltyRepository.kt` parity). Caches the account snapshot, the tier ladder and the credit
 /// balance; activity is paged on demand and not cached. Registered in the
-/// `SessionScopedCacheRegistry` so sign-out / forced-401 wipes it.
+/// `SessionScopedCacheRegistry` so every wipe trigger clears it.
+/// → /mobile-app/patterns#session-wipe
 @MainActor
 final class LoyaltyRepository: ObservableObject, SessionScopedCache {
     @Published private(set) var account: LoyaltyAccount?

@@ -50,6 +50,10 @@ behavior difference from Android is a bug unless the ticket explicitly calls for
 Android behavior itself is wrong, raise it as a finding — don't silently "fix" it only on iOS.
 
 ## Constraints
+- Michael Chaban <cmisa695@gmail.com> is the sole author of record. Follow `CLAUDE.md`'s attribution
+  ban in every artifact, comment, commit and PR. Decision records name **Mike's ruling** (dated,
+  quoted) or **the design review** (dated) as the decider; preserve Challenge/Defense/Verdict and
+  challenge identifiers without contributor role credits.
 - No business logic in views. No hardcoded strings. View models don't drive navigation directly.
 - Shared code in `Core`, not copied between apps.
 - Flag Xcode project/signing/cert steps as owner `manual_steps` — you don't manage provisioning.

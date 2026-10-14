@@ -8,9 +8,11 @@ and the code carries the warning plus a pointer.
 Repositories that cache per-user data live for the app process. On a shared handset that makes them a
 leak: **the next account inherits the previous one's data unless the cache is explicitly cleared.**
 
-Every such cache is wired into the sign-out, forced-401 and account-delete paths, and into sign-in,
-which wipes the set again before it stores the new tokens. A new one that is not in that set is a
-defect, and it is the kind nobody notices until two people use one phone.
+Every such cache is wired into **sign-out**, **forced-401** and **sign-in before new tokens are
+stored** in both partner and customer apps. The customer apps also wipe on **successful account
+deletion**: four triggers for customers, three for partners. A partner deletion request, and a pending
+or failed customer deletion, preserves the session. A new long-lived per-user cache outside that set
+is a defect, and it is the kind nobody notices until two people use one phone.
 
 On iOS, the partner checklist store joins the registry and clears only `order_checklist.` keys;
 device preferences survive. The customer Live Activity coordinator is the first registry member. It

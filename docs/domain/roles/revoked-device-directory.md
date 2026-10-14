@@ -1,4 +1,4 @@
-# RevokedDeviceDirectory (ADR-0026, accepted — panel 2026-07-15, amendments A1–A6)
+# RevokedDeviceDirectory (ADR-0026, accepted — design review 2026-07-15, amendments A1–A6)
 
 **Responsibility (one sentence):** Answer, from memory and in O(1), whether a given
 `(userId, deviceId)` session established at a given instant (`iat`) predates a device revocation —

@@ -3,7 +3,7 @@ import Foundation
 
 /// The one valid primary action for an order, resolved from status × ownership ×
 /// after-photos. The single machine shared by the detail footer, the Available
-/// Take CTA, and the Active-row swipe (architect (c)) — mirrors
+/// Take CTA, and the Active-row swipe — mirrors
 /// `OrderPrimaryAction.kt:54-126`. Pure value type, no UI.
 enum OrderPrimaryAction: Equatable {
     case take

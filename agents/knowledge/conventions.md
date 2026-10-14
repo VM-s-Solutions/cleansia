@@ -239,7 +239,6 @@ form is mechanically expressible on its stack, the inline ticket **ships the gat
 Where the only mechanizer available cannot fail a build — `check-consistency.mjs` (in **zero**
 `.github/` workflows) or an ESLint rule under `frontend-ci.yml`'s `continue-on-error: true` lint step —
 the honest token is `T2-ADVISORY` and the entry says what would promote it.
-`patterns-frontend.md:462-465` is the model.
 
 *Not* the test: "is this a gap in the rules or a clarification to them?" That measures novelty relative
 to the text rather than cost imposed on the codebase, and the two come apart in both directions — a gap

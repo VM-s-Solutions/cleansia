@@ -1,7 +1,7 @@
 # Platform Expandability & Current-State Doctrine — Tenancy · Currency · Region/Country
 
-> Status: **doctrine (ratified by lead-architect panel, 2026-06-02)** — author + YAGNI + corner-painting
-> challengers reconciled; index/reversal facts file-verified. Built on the three analyst current-state
+> Status: **doctrine (ratified by the design review, 2026-06-02)** — the draft and YAGNI/corner-painting
+> challenges reconciled; index/reversal facts file-verified. Built on the three current-state
 > maps and verified against real code. Documentation/decision only — no code.
 > Owner ask: "run analysts + architecture discussion one more time to fully define the platform
 > expandability and current situation overall."
@@ -35,7 +35,7 @@
 > §8 used to name as the missing piece was never built and is not needed: an anonymous request names a
 > **market**, not a tenant, and the server maps it.
 >
-> **Architect verdict (this pass):** the wider three-axis picture **CONFIRMS** ADR-0001 Addendum A1's
+> **Design review verdict (this pass):** the wider three-axis picture **CONFIRMS** ADR-0001 Addendum A1's
 > Option-A ruling for T-0113 and broadens it into a general entity-classification rule (§6). It does
 > **not revise** A1. Only one ground-truth correction was needed at the time: there were **40** `ITenantEntity`
 > entities, not 41 (46 today — §1 carries the current list).
@@ -538,9 +538,9 @@ in.
 
 ---
 
-## 3b. The complete anonymous-read surface (verification pass, 2026-06-02) — table + two panel-missed reads
+## 3b. The complete anonymous-read surface (verification pass, 2026-06-02) — table + two reads missed in the initial review
 
-A second analyst pass enumerated **every** `[AllowAnonymous]` read on the customer
+A second verification pass enumerated **every** `[AllowAnonymous]` read on the customer
 (`Cleansia.Web.Customer`) and mobile-customer (`Cleansia.Web.Mobile.Customer`) hosts and traced each to
 its domain entity. The base controller is `[Authorize]` (`CleansiaApiController.cs:13`), so only
 explicitly-marked actions are anonymous. **Host asymmetry confirmed:** the web host marks ServiceCity
@@ -560,8 +560,8 @@ Country, Language}**, **mobile = {Service, Package, Extra, MembershipPlan}**.
 | `Market/GetOverview` (web+mobile, added 2026-09-13, ADR-0058) | Country + CountryConfiguration + Currency | **No** — all three platform config | No | none; the read omits and logs an unready country, never throws | **CORRECT (platform config)** |
 | `Language/GetOverview` (**web only**) | Language | **No** (`Language.cs:6`) | No | none | **CORRECT (platform config)** |
 | `Order/Lookup`+`LookupBatch` (web+mobile) | Order (+Service/Package) | Yes | Yes but **credentialed** by `DisplayOrderNumber`+`CustomerEmail` (`LookupOrder.cs:51-53`) | collapse fails it **shut** (hides), cannot enumerate | **CREDENTIALED — different risk class (this is the backlog's "BSP-9" / T-0123 LookupBatch item)** |
-| `Order/Quote` (web+mobile) | Service/Package/Extra (pricing) | Yes | Yes — loads catalog by id (`OrderPricingCalculator.cs:41-48`) | resolves only null-slice catalog when pricing anonymously | **BUG — catalog batch (pricing path), PANEL-MISSED** |
-| `Referral/Validate` (web+mobile) | ReferralCode + User | Yes (`ReferralCode.cs:14`, `User.cs:12`) | Yes (`ValidateReferral.cs:43-52`) | validates only null-tenant codes/users at sign-up | **BUG — anon tenant-scoped read, PANEL-MISSED** → **CLOSED 2026-09-13 (ADR-0061 D3):** the request is `IOperatorScopedRequest`; it names a market (`countryId`, default market when absent) and reads that market operator's codes |
+| `Order/Quote` (web+mobile) | Service/Package/Extra (pricing) | Yes | Yes — loads catalog by id (`OrderPricingCalculator.cs:41-48`) | resolves only null-slice catalog when pricing anonymously | **BUG — catalog batch (pricing path), MISSED IN THE INITIAL REVIEW** |
+| `Referral/Validate` (web+mobile) | ReferralCode + User | Yes (`ReferralCode.cs:14`, `User.cs:12`) | Yes (`ValidateReferral.cs:43-52`) | validates only null-tenant codes/users at sign-up | **BUG — anon tenant-scoped read, MISSED IN THE INITIAL REVIEW** → **CLOSED 2026-09-13 (ADR-0061 D3):** the request is `IOperatorScopedRequest`; it names a market (`countryId`, default market when absent) and reads that market operator's codes |
 
 > **The table above is the 2026-06 analysis and is kept as the record.** Every row marked BUG is
 > closed: the catalogue batch by making the entities tenantless (§7a/§7b), `Referral/Validate` by
@@ -584,7 +584,7 @@ original prose did not enumerate):**
   but the test plan must include the anonymous-Quote path.
 - **`Referral/Validate`** is an anonymous read (modelled as POST; `ValidateReferral.cs:10-13` says
   "Read-only validation … Modelled as IQuery") of `ReferralCode` + `User`, both `ITenantEntity`, at
-  sign-up before any tenant is known. **ACCEPTED AS-IS (panel ruling)** — known member of the
+  sign-up before any tenant is known. **ACCEPTED AS-IS (design review ruling)** — known member of the
   anonymous-`ITenantEntity` class, but it **fails shut** on the null-tenant collapse (invalid code →
   `IsValid:false`), is rate-limited (`auth` bucket), has no zero-row customer page, and no leak of
   consequence (a referral-code probe). **NOT in the catalog batch, no ticket opened.** Documented here so
@@ -879,7 +879,7 @@ names a **market**, never a tenant, so no inbound tenant-resolution middleware i
 Currency and country need no such gate because they were never tenant-coupled; tenant is downstream of
 country by the same read that decides currency.
 
-> **Reversal cost is NOT uniform across the six catalogs (corrected per architect panel, file-verified).**
+> **Reversal cost is NOT uniform across the six catalogs (corrected in the design review, file-verified).**
 > "Symmetric and cheap" is true **only for `MembershipPlan`** — zero rows at launch, `(TenantId, Code)` →
 > `(Code)` is a clean inverse. For the **populated** catalogs the reverse (re-tenant) is a **constrained
 > `TenantId` backfill**, not an index swap: `ServiceCategory`/`Extra` have `(TenantId, Slug)` unique;
@@ -915,10 +915,10 @@ country by the same read that decides currency.
 
 ---
 
-## 10. Architect ratification (this pass — the six asks, answered)
+## 10. Design review ratification (this pass — the six asks, answered)
 
-Recorded by the authoring architect on top of ADR-0001 Addendum A1, having verified every load-bearing
-premise against real code. This is the single scannable sign-off.
+The design review builds on ADR-0001 Addendum A1, with every load-bearing premise verified
+against real code. This is the single scannable sign-off.
 
 1. **Current-state map (3 axes):** done — §0 table + §1/§2/§3. **Tenancy = real mechanism,
    single-operator operation** (as rewritten 2026-09-13 for ADR-0061: a `Tenants` registry, a
@@ -955,7 +955,7 @@ premise against real code. This is the single scannable sign-off.
 5. **The 6-entity catalog batch (Service/ServiceCategory/Package/Extra/ServiceCity + MembershipPlan via
    T-0113) — marching orders:** same Option-A treatment, in **its own batch** (not folded into T-0113);
    include the **`Order/Quote` pricing read** (covered by the flip; test the anonymous-Quote path).
-   `Referral/Validate` is **accepted-as-is, NOT in the batch, no ticket** (panel ruling — fails shut, §3b).
+   `Referral/Validate` is **accepted-as-is, NOT in the batch, no ticket** (design review ruling — fails shut, §3b).
    The ticket MUST carry the **per-entity index reality** + the **forward-safe/reverse-constrained FK
    note** (§7b — the populated catalogs are NOT the cheap inverse `MembershipPlan` is). A consistency-scan
    rule failing any `ITenantEntity` returned from an `[AllowAnonymous]` action is a **recommended

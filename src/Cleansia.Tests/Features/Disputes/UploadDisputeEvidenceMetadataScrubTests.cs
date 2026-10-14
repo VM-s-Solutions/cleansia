@@ -13,7 +13,7 @@ using Moq;
 namespace Cleansia.Tests.Features.Disputes;
 
 /// <summary>
-/// ADR-0043 D4 on the surface the panel ruled non-deferrable: here the uploader IS the disputing
+/// ADR-0043 D4 on the non-deferrable surface: here the uploader IS the disputing
 /// customer (<c>UploadDisputeEvidence</c> refuses anyone else), the counterparty is a cleaner and the
 /// outcome is money. A client-side strip is not a control against a party whose interest is to not
 /// strip, so the scrub is enforceability rather than durability.

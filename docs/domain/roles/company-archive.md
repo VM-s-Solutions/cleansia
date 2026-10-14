@@ -135,6 +135,6 @@ at the one seam every write crosses**, letting through only the person's rows an
 
 - **Q-LC-02 / Q-LC-03**: whether the owner wants the estate (users, consents, audit rows) in the bundle
   after all, and whether the `UserId` on `credit-accounts.jsonl` and `promo-code-redemptions.jsonl`
-  belongs in a ten-year copy (an architect ruling pending). Either is a record member and a line in the
+  belongs in a ten-year copy (a design ruling pending). Either is a record member and a line in the
   layout, not a new mechanism.
 - **After ten years** (O-4) is a later ADR with an accountant in the room; nothing here deletes.

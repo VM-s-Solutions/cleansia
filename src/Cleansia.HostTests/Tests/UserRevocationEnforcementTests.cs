@@ -146,7 +146,7 @@ public sealed class UserRevocationEnforcementTests(HostTestPostgresFixture db) :
         Assert.Equal(HttpStatusCode.OK, await CallAuthedAsync(freshToken));
     }
 
-    // TC-REVOKE-USER-2 boundary (panel U1) — a post-reset re-login whose iat truncates into the reset's
+    // TC-REVOKE-USER-2 boundary (review point U1) — a post-reset re-login whose iat truncates into the reset's
     // SAME wall-clock second (iat < RevokedAt sub-second) 401s ONCE and then self-heals: its refresh
     // token was minted AFTER the reset (never in the keep-none revoke set), so refresh succeeds and the
     // retried request 200s. "No lockout on the recovery path" as a proven property, not an assertion.

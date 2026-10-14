@@ -35,8 +35,8 @@ public final class Staleness {
         mark = now()
     }
 
-    /// Forget the watermark: the next check reads stale. Sign-out, and any
-    /// mutation the owner knows invalidated the cache.
+    /// Forget the watermark: the next check reads stale. A session wipe, and any
+    /// mutation the owner knows invalidated the cache. → /mobile-app/patterns#session-wipe
     public func invalidate() {
         mark = nil
     }

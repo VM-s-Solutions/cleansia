@@ -217,7 +217,7 @@ class AddressRepository @Inject constructor(
         return ApiResult.Success(Unit)
     }
 
-    /** Wipe the local cache — called on sign-out so the next user doesn't inherit this one's addresses. */
+    /** Wipe the local cache on every wipe trigger. -> /mobile-app/patterns#session-wipe */
     override suspend fun clear() {
         context.addressStore.edit { prefs ->
             prefs.remove(Keys.ADDRESSES)

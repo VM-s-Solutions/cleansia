@@ -203,7 +203,7 @@ implies the class is covered. One leg prevents on one path; the other prevents n
 ### The guard's coverage, stated structurally
 
 `tools/typecheck-apps.mjs` is handed each app's `tsconfig.app.json` — the same file the production build
-target passes to `@angular/build:application` (`apps/cleansia.app/project.json:26`). Its file set is
+target passes to `@angular/build:application` (`apps/cleansia.app/project.json`, the build target’s `tsConfig` option). Its file set is
 therefore the build's compilation unit **by construction**:
 `include: ["src/**/*.ts", "server.ts"]` plus everything those files transitively import, with `strict` +
 `strictTemplates` inherited from the app's own `tsconfig.json:15-21`.
@@ -370,7 +370,7 @@ re-export" for `SortDirection`, and the ruling that the three clients keep emitt
      Nx project graph has no `models → *-services` edge — and undeclared, those files were inputs to
      nothing. So `nx affected` did not select `models` on a regen-only commit, **and** any invocation that
      *did* select it could replay a cached PASS computed over different client bytes.
-   - *What closed it, and it is one line:* `libs/shared/models/project.json:14-19` now declares
+   - *What closed it, and it is one line:* `libs/shared/models/project.json` now declares
      `"{workspaceRoot}/libs/core/*-services/src/lib/client/*.ts"` as an input of the `test` target.
      **An Nx `inputs` entry is a hashing statement, not a graph edge** — `nx graph` is unchanged and no
      cycle forms. Measured (`patterns-frontend.md:801-805`): undeclared, a warm `nx test models` **replayed

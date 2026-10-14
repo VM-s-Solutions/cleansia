@@ -20,7 +20,7 @@ namespace Cleansia.Functions.Core.Handlers;
 ///
 /// <para>The same tick re-drives pending card refunds (<c>RedrivePendingRefunds</c>). Each command is
 /// sent from a DI scope of its own, which is what keeps one from hiding the other: a command that throws
-/// is logged at Warning, and the invocation fails only after both have run.</para>
+/// is logged at Warning, and the invocation fails only after both have run. → /decisions/adr-0072</para>
 /// </summary>
 public class AutoCancelStaleRecurringOrdersHandler(
     IServiceScopeFactory scopeFactory,

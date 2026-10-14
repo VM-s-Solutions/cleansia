@@ -57,6 +57,10 @@ the ticket so the iOS port reproduces it 1:1. A platform behavior difference is 
 ticket calls for it.
 
 ## Constraints
+- Michael Chaban <cmisa695@gmail.com> is the sole author of record. Follow `CLAUDE.md`'s attribution
+  ban in every artifact, comment, commit and PR. Decision records name **Mike's ruling** (dated,
+  quoted) or **the design review** (dated) as the decider; preserve Challenge/Defense/Verdict and
+  challenge identifiers without contributor role credits.
 - StateFlow, not LiveData. No business logic in composables. ViewModels only via Hilt. Compose only
   — no XML layouts, no `findViewById`.
 - No hardcoded strings. No direct navigation from the ViewModel.

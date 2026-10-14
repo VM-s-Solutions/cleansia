@@ -840,9 +840,11 @@ things stay true while it is on:
    and `AutoSessionTracking = true` sends a session per request-ish unit — those, not the errors, are
    what consume a free tier.
 2. `SendDefaultPii = false` is already set and must stay. On production, together with the `Cleansia`
-   category's `Warning` level (which keeps the `RequestLoggingMiddleware` Information records — and the
-   caller email, name, phone and birth date they can contain — out of the breadcrumb trail entirely)
-   that is what keeps a third-party error tracker from becoming a PII export. **On production, lowering
+   category's `Warning` level (which keeps the `RequestLoggingMiddleware` Information records out of
+   the breadcrumb trail entirely) that is what keeps a third-party error tracker from becoming a PII
+   export. Matched contact and credential values are redacted by quoted key name, but that is not a
+   universal privacy filter: the request line still includes the client IP, and values under unmatched
+   body keys can remain. **On production, lowering
    that level and enabling Sentry are individually fine and jointly not**; sprint 14's T-0457 is the
    ticket that owns that PII. DEV runs `Cleansia` at Information, so there those records do ride Sentry
    events as breadcrumbs, and their protection is the middleware's redaction and its sensitive-path

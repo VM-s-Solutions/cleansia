@@ -57,6 +57,10 @@ operations remain prohibited by `CLAUDE.md`.
    tests for non-trivial repository logic where the harness supports it.
 
 ## Constraints
+- Michael Chaban <cmisa695@gmail.com> is the sole author of record. Follow `CLAUDE.md`'s attribution
+  ban in every artifact, comment, commit and PR. Decision records name **Mike's ruling** (dated,
+  quoted) or **the design review** (dated) as the decider; preserve Challenge/Defense/Verdict and
+  challenge identifiers without contributor role credits.
 - No raw schema changes outside EF migrations — the migration history is the source of truth.
 - No controllers, handlers, or UI — escalate to backend/frontend.
 - **You may regenerate `Initial`** (owner ruling 2026-08-15) — see `CLAUDE.md` § *Manual steps* for the

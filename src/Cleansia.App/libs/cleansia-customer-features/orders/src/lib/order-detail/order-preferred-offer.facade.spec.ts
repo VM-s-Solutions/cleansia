@@ -161,7 +161,7 @@ describe('OrderPreferredOfferFacade', () => {
    * ADR-0049 D4/D6. `visible()` answers one question — did the block arrive — and the server is the
    * only judge of whether its sentence is still true. These two sweeps are the mutation guard for
    * that split, and they are the pair `order-preferred-offer.models.spec.ts` cannot provide: it
-   * exercises the resolver, while the veto a lane reaches for goes here, in `visible()`.
+   * exercises the resolver, while a veto added to the facade goes here, in `visible()`.
    */
   describe('renders off the arrival of the block and nothing else', () => {
     // A sweep read off an enum passes vacuously if the read ever returns nothing.

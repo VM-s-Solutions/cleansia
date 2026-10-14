@@ -18,13 +18,13 @@ using Cleansia.TestUtilities;
 namespace Cleansia.Tests.Features.Orders;
 
 /// <summary>
-/// ADR-0045 D7.2 + PM ruling — <c>canChooseAnother</c> and the server's own refusal must agree on
+/// ADR-0045 D7.2 — <c>canChooseAnother</c> and the server's own refusal must agree on
 /// <b>every</b> term, and the way to guarantee that is for the flag to BE the command's gate rather
 /// than a copy of its terms.
 ///
 /// <para>A flag reading <see langword="true"/> where the mechanism cannot deliver is this ADR's own
 /// blocking finding (CH-F4). Three terms arrived that way: a recurring occurrence (the command refuses
-/// one and the panel's ruled four-term list did not mention it), offerability (a cancelled booking with
+/// one and the decision's four-term list did not mention it), offerability (a cancelled booking with
 /// a future cleaning time and nobody on it satisfied every ruled term, so the exit would have reserved a
 /// seat on work nobody will do and pushed a named cleaner about it), and the caller's own entitlement
 /// (the command's first gate is an active Plus membership, so the button was offered to every

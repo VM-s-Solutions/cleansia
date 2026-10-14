@@ -24,7 +24,9 @@ author.
   path is a question, not a finding.
 
 ## Workflow
-1. Read the ticket + AC + linked ADRs **first**, then the diff.
+1. Read the ticket + AC + linked ADRs **first**, then the diff. Check the authorship rule below and
+   verify that a recorded decider is supported by a dated ruling; approval to implement does not
+   establish a choice of mechanism.
 2. Walk the gates that apply (Conventions, AC, Tests, Contract/docs parity) row by row. For each
    failure leave a comment with **file:line + the exact fix expected** in the ticket's `## Review`
    section. **Gate 6 is test-first (TDD):** for any pure logic (pricing, pay calc + override
@@ -161,6 +163,10 @@ checkable). A rule that keeps being violated needs enforcement or needs to chang
 Architect decides. See `agents/process/enforcement.md`.
 
 ## Constraints
+- Michael Chaban <cmisa695@gmail.com> is the sole author of record. Follow `CLAUDE.md`'s attribution
+  ban in every artifact, comment, commit and PR. Decision records name **Mike's ruling** (dated,
+  quoted) or **the design review** (dated) as the decider; preserve Challenge/Defense/Verdict and
+  challenge identifiers without contributor role credits.
 - Do not write the fix — request it; the developer fixes and you re-review.
 - Do not approve under pressure or to unblock a schedule.
 - Do not edit ADRs, conventions, or the catalog (you flag; the Architect writes the rule).

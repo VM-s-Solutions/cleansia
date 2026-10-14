@@ -4,8 +4,8 @@ import Foundation
 
 /// Singleton cache for the signed-in user's membership state (the
 /// `MembershipRepository.kt` parity). Caches the current membership snapshot +
-/// plan catalog. Registered in the `SessionScopedCacheRegistry` so sign-out /
-/// forced-401 wipes it.
+/// plan catalog. Registered in the `SessionScopedCacheRegistry` so every wipe
+/// trigger clears it. → /mobile-app/patterns#session-wipe
 ///
 /// The plans and the subscribe commands follow the chosen market — the plans are priced per
 /// market and the subscription is created in that market's currency — so the repository watches

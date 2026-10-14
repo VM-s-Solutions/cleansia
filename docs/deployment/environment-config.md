@@ -308,10 +308,12 @@ dotnet ef database update \
   --startup-project Cleansia.Web.Partner/Cleansia.Web.Partner.csproj
 ```
 
-::: warning Migrations are owner-run
-The agent never runs `dotnet ef migrations add` / `database update` — it flags
-`manual_step: ef-migration` instead. Running the Aspire AppHost applies migrations automatically via
-`Cleansia.MigrationService`, so this step is only for a standalone single-API run.
+::: warning Migration scope
+Local migration generation and application are ordinary work under `CLAUDE.md`; regenerate the single
+`Initial` migration for pre-production schema changes and report the commands. A shared DEV database
+reset or deployment requires the owner’s explicit approval, and PRO execution is prohibited. Running
+the Aspire AppHost applies migrations automatically via `Cleansia.MigrationService`, so the command
+above is only for a standalone single-API run.
 :::
 
 ### 5. Start the API

@@ -10,7 +10,8 @@ import Foundation
 ///
 /// Mutations refetch the list rather than mirroring server invariants (default
 /// demotion, the Delete empty-200 that carries no id) in two places. Registered
-/// in the `SessionScopedCacheRegistry` so sign-out / forced-401 wipes it.
+/// in the `SessionScopedCacheRegistry` so every wipe trigger clears it.
+/// → /mobile-app/patterns#session-wipe
 @MainActor
 final class SavedAddressRepository: SessionScopedCache {
     @Published private(set) var addresses: [SavedAddress] = []
@@ -19,7 +20,8 @@ final class SavedAddressRepository: SessionScopedCache {
 
     /// The address shown in the home top bar and preferred by the booking
     /// hydration (the Android `SELECTED_ID` DataStore key — here a
-    /// UserDefaults-backed pointer, wiped on sign-out like the rest).
+    /// UserDefaults-backed pointer, cleared on every wipe trigger like the rest).
+    /// → /mobile-app/patterns#session-wipe
     @Published private(set) var selectedId: String?
 
     private let client: SavedAddressClient

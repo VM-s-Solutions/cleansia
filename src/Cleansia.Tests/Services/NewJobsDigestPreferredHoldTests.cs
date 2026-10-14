@@ -158,7 +158,7 @@ public sealed class NewJobsDigestPreferredHoldTests : IDisposable
     /// own predicate becomes self-idempotent with zero new columns. It would erase the disjunct above
     /// before the 30-minute digest ever saw it, and the order would leave the notification channel
     /// permanently — board-only, findable solely by someone who happens to scroll. That is the defect
-    /// ADR-0036 spent a panel round closing, restored through a back door, and it is why the sweep
+    /// ADR-0036 closed, restored through a back door, and it is why the sweep
     /// carries a receipt column instead.</para>
     /// </summary>
     [Fact]

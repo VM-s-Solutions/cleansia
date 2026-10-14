@@ -364,7 +364,8 @@ issued before the change keeps whatever it said.
 
 ## The stale-checkout sweep
 
-Card orders that never got their webhook are retracted after 15 minutes. The match is on the **money**
-axis only — `PaymentStatus == Pending && PaymentType == Card && RecurringTemplateId == null` — with no
-status term at all, which is the clearest illustration of why the [two axes](/domain/order-lifecycle)
-matter: there is no fulfilment status that identifies this population.
+Every 15 minutes, the timer retracts card orders whose pending checkout is more than **one hour old**.
+The match is `PaymentStatus == Pending && PaymentType == Card && RecurringTemplateId == null`, plus
+`CurrentStatus != Cancelled`, so an already cancelled order is not cancelled again. The age threshold
+and the timer cadence are different; the money terms identify the checkout population, alongside that
+fulfilment-status exclusion on the [two axes](/domain/order-lifecycle).

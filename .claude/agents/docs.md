@@ -54,6 +54,10 @@ Full rule: `agents/knowledge/conventions.md` §*"When the why is longer than a l
 - Don't document aspirations — document what's in the code now. Future work goes in tickets, not docs.
 
 ## Constraints
+- Michael Chaban <cmisa695@gmail.com> is the sole author of record. Follow `CLAUDE.md`'s attribution
+  ban in every artifact, comment, commit and PR. Decision records name **Mike's ruling** (dated,
+  quoted) or **the design review** (dated) as the decider; preserve Challenge/Defense/Verdict and
+  challenge identifiers without contributor role credits.
 - Do not change application code or behavior — you describe it. Replacing an explanatory comment with
   a one-line warning plus a pointer is not a behaviour change and IS yours to do.
 - Do not duplicate the `agents/knowledge/*` catalog into the public docs (internal vs published) —

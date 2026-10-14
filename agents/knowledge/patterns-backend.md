@@ -515,7 +515,7 @@ Its anchors: `OrderRepository.cs` and `EmployeeActionAuditRepository.cs` are in 
 ## A DISCLOSURE BLOCK is withheld by the server when its sentence stops being true (ADR-0049)
 
 > **Enforced by:** `src/Cleansia.Tests/Features/Orders/PreferredOfferDisclosureTests.cs` (backend CI,
-> `.github/workflows/backend-ci.yml:69-71`) — **`T1-CI`**. The baseline is **zero as of T-0595**, which
+> the **Unit tests (Cleansia.Tests)** step in `backend-ci.yml`) — **`T1-CI`**. The baseline is **zero as of T-0595**, which
 > landed the enforcer and the one violation's fix in the same change: `ResolvePreferredOfferAsync`
 > (`src/Cleansia.Core.AppServices/Features/Orders/GetOrderDetails.cs:150-182`) now returns `null` rather
 > than shipping the block on a concluded or fully-staffed booking.
@@ -1533,7 +1533,8 @@ already exists is the wrong tool, and calling it in a loop is the defect, not th
   ONE method that returns a queryable and terminates nothing (`LiveCommitmentsInWindow`), the caller's
   world is the queryable passed in (scoped or tenant-ignoring), and each shape ends it its own way: the
   write gate keeps `.AnyAsync`'s early exit, the set method fans out with `.SelectMany`. That filter is
-  the "same call" the read-path/write-path bullet below asks for. Do **not** make the singular method a
+  **one shared filter method, never two predicates written to the same rule**, as the
+  read-path/write-path bullet below requires. Do **not** make the singular method a
   wrapper over the set method; that costs the write gate a materialized set and a hash aggregate to
   answer a bool. Every later fix to the filter (a range bound, a status term) still lands on every
   query shape at once; a time term also lives in the in-memory twin below, which only its agreement
@@ -1556,7 +1557,7 @@ already exists is the wrong tool, and calling it in a loop is the defect, not th
   — `T3-HUMAN`. *(Not mechanizable: whether an in-memory function restates a SQL filter's time terms is
   a reading of meaning — the two are different text in different assemblies, and a new twin need not
   call `Order.OccupiesWindow`. Baseline is zero: the shipped instance carries its test.)*
-- **The read path and the write path must be the SAME CALL, not "the same rule".** If a picker can say
+- **The read path and the write path use one shared filter method, never two predicates written to the same rule.** If a picker can say
   *available* and the command can then say *busy* for a reason of its own, the feature has already
   failed and no shared documentation prevents it.
 - **An overlap/interval predicate needs a LOWER bound or it scans all of history.** `start < @end AND
@@ -1584,8 +1585,8 @@ already exists is the wrong tool, and calling it in a loop is the defect, not th
 
 ## A QUOTED price and a CHARGED price come from one FUNCTION, not one rule (T-0526)
 
-The disclosure-surface sibling of ADR-0039's *"the read path and the write path must be the SAME
-CALL"*. A surface that answers **before** the customer commits — a cancellation-fee preview, a quote,
+The disclosure-surface sibling of the shared-filter rule above: *"one shared filter method, never
+two predicates written to the same rule"*. A surface that answers **before** the customer commits — a cancellation-fee preview, a quote,
 an estimate — is only worth shipping if it cannot disagree with the commit: a customer told one number
 and charged another is worse than no disclosure at all. Three things make that structural rather than a
 promise:

@@ -1,7 +1,7 @@
 # Role — `EmployeePayoutDetails` (CRC card)
 
 > Introduced by **ADR-0034** (`docs/decisions/adr-0034.md`, **`accepted`**
-> 2026-08-02 — panel amendments folded in).
+> 2026-08-02 — design review amendments folded in).
 > A child entity of the `Employee` aggregate in `Cleansia.Core.Domain.Users` (or `.EmployeePayroll`),
 > `: Auditable, ITenantEntity` — the house archetype (`EmployeePayConfig`, `EmployeeInvoice`), **not** an
 > EF owned type (the repo has zero `OwnsOne`/`OwnsMany`).

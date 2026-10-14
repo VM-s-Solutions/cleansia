@@ -2,7 +2,7 @@
 
 > **LAW.** Introduced by **ADR-0038**
 > (`docs/decisions/adr-0038.md`), `accepted`
-> 2026-08-03 by the panel lead's `## Verdict` (amendments AM-1 … AM-11).
+> 2026-08-03 by the design review's `## Verdict` (amendments AM-1 … AM-11).
 > Living doc: `agents/architecture/decisions/promo-redemption-ordering.md`.
 >
 > **The seam does not exist in code yet** — `IPostCommitEffects` and `PostCommitEffectBehavior` land in
@@ -34,7 +34,7 @@ names its enforcer and its tier):
 
 | Law | Enforcer | Tier |
 |---|---|---|
-| 1, 3, 5 | `PostCommitEffectSeamTripwireTests` (`Cleansia.Tests`, CI at `backend-ci.yml:71`), in the `SendPushNotificationSeamTripwireTests.cs:29-54` shape **including the present-assert** at `:52-53` | **`(gate pending: T-0532)` → T1-CI when T-0532 lands** |
+| 1, 3, 5 | `PostCommitEffectSeamTripwireTests` (`Cleansia.Tests`, CI at the **Unit tests (Cleansia.Tests)** step in `backend-ci.yml`), in the `SendPushNotificationSeamTripwireTests.cs:29-54` shape **including the present-assert** at `:52-53` | **`(gate pending: T-0532)` → T1-CI when T-0532 lands** |
 | 2, 4 | `quality-gates.md` **Gate 4 (Architecture)** — already mandatory when an extension point is touched — + the deviating-form list in `consistency.md` §"Post-commit ordering + fail-soft admissibility" | **T3-HUMAN** |
 
 *Why 1/3/5 are not T1-CI **today**, given a zero baseline: ADR-0032 D3 requires a tree-walking guard to

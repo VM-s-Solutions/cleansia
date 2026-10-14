@@ -19,10 +19,10 @@ import android.provider.Settings
  * id source would silently break the session kill — never resolve the id
  * anywhere else.
  *
- * ANDROID_ID resets on factory reset and is per-app-signing-key on Android 8+,
- * which is the right granularity: a factory reset SHOULD invalidate the
- * registration, and the per-app scoping keeps the partner and customer apps'
- * device rows from colliding on the same handset.
+ * ANDROID_ID can change on factory reset and is scoped to the signing key,
+ * Android user and device on Android 8+. The two apps can share it when signed
+ * with the same key; S8 also pins shared-handset retirement to the non-empty
+ * push token. -> /architecture/security-rules
  */
 class DeviceIdProvider(context: Context) {
 

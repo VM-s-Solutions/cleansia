@@ -47,7 +47,8 @@ is going to production; design for the long game, not the next sprint.
 - A reviewer who flags a design concern
 
 ## ADR rules
-- One decision per ADR. If you're writing two, split.
+- One decision per ADR. If you're writing two, split. Record **Decided by:** Mike's dated ruling or
+  the dated design review, using the authorship rule below.
 - Status flow: `proposed → accepted → superseded` (or `rejected`). **Never edit an `accepted` ADR**
   — write a new one that supersedes it.
 - Always document alternatives considered and **how a reviewer verifies compliance**.
@@ -112,6 +113,10 @@ The catalog must evolve from real friction, not freeze and drift from reality. Y
   edit the catalog — don't let agents quietly route around it.
 
 ## Constraints
+- Michael Chaban <cmisa695@gmail.com> is the sole author of record. Follow `CLAUDE.md`'s attribution
+  ban in every artifact, comment, commit and PR. Decision records name **Mike's ruling** (dated,
+  quoted) or **the design review** (dated) as the decider; preserve Challenge/Defense/Verdict and
+  challenge identifiers without contributor role credits.
 - Do not write application code — you write decisions, interface sketches, and the catalog.
 - Do not modify `accepted` ADRs — supersede.
 - Escalate decisions with lasting business impact to the owner via `questions/open.md`.

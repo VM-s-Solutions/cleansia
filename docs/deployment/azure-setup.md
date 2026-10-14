@@ -24,7 +24,9 @@ Four .NET API apps and one Node.js SSR app run on Azure App Service:
 | Customer SSR | `web-cleansia-customer-dev` | `web-cleansia-customer-pro` | Node.js 22 |
 
 ::: tip App Service Plan
-All App Service apps share a single **B1** plan per environment. APIs are deployed sequentially to avoid overloading the B1 tier during deployments.
+All App Service apps in a region/environment share one plan: **B2 for DEV** and **S1 for PRO**, as
+configured in `weu.dev.bicepparam` and `weu.prod.bicepparam`. The API deployment matrix allows at most
+**two** parallel jobs on DEV and **five** on PRO.
 :::
 
 ### Compute -- Static Web Apps
@@ -163,19 +165,21 @@ knobs, the CI window and the rotations are `deploy/AZURE-PROD-POSTURE.md` §6–
 
 ## Estimated Monthly Costs
 
-### DEV Environment (~$66/month)
+### DEV Environment
 
-| Resource | SKU | Estimated Cost |
-|----------|-----|---------------|
-| App Service Plan (B1) | 1x B1 Linux | ~$13 |
-| PostgreSQL Flexible | Burstable B1ms | ~$25 |
-| Storage Account | LRS | ~$1 |
-| Key Vault | Standard | ~$1 |
-| Static Web Apps | Free (2x) | $0 |
-| Azure Functions | Consumption | ~$1 |
-| ACR | Basic | ~$5 |
-| Misc (bandwidth, etc.) | | ~$20 |
-| **Total** | | **~$66** |
+The prior DEV estimate used B1 rather than the configured B2 plan. Its per-resource prices and derived
+total have been removed; price the deployed region and SKUs before using this inventory as a budget.
+
+| Resource | SKU |
+|----------|-----|
+| App Service Plan (B2) | 1x B2 Linux |
+| PostgreSQL Flexible | Burstable B1ms |
+| Storage Account | LRS |
+| Key Vault | Standard |
+| Static Web Apps | Free (2x) |
+| Azure Functions | Consumption |
+| ACR | Basic |
+| Misc (bandwidth, etc.) | |
 
 ### PRO Environment (~$360/month)
 

@@ -12,8 +12,9 @@
  * a citation rotted by an unrelated refactor. There is no authoring event to gate: the artifact is
  * correct at the moment a writing-time reviewer would look at it. So the check is not "did you cite
  * carefully" but "does what you cited still say so today", and it has to run on changes to the CITED
- * tree, not only on changes to the citing page. That inversion is why the workflow
- * (`.github/workflows/catalog-claims.yml`) triggers on `src/**` as well as `agents/**`.
+ * tree, not only on changes to the citing page. That inversion is why `.github/workflows/docs-ci.yml`
+ * triggers on `src/**` as well as `agents/**`: Claims-gate self-test runs before the
+ * Written claims about the tree still resolve step.
  *
  * WHY A PLAIN NODE SCRIPT WITH ITS OWN REPO-ROOT WORKFLOW (enforcement.md §"Shape", ADR-0032 §D).
  * No stack's CI watches `agents/`: `backend-ci` / `frontend-ci` / `ios-ci` / `android-ci` all trigger

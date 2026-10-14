@@ -391,7 +391,7 @@ public class IssuePartialRefundHandlerTests
     }
 
     // FINDING 2 — the fee, the VAT and the loyalty clawback all derive from the seam-confirmed amount,
-    // never the pre-fee gross. Architect oracle: TotalPrice 1210, VAT 21%, whole order, AdminDiscretion,
+    // never the pre-fee gross. Expected calculation: TotalPrice 1210, VAT 21%, whole order, AdminDiscretion,
     // CZ fee 1.4%+6.
     [Fact]
     public async Task AdminDiscretion_VatPayer_VatAndClawbackDeriveFromConfirmedAmount_NotPreFee()

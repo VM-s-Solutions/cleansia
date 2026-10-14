@@ -44,7 +44,7 @@ src/cleansia_ios/                         (greenfield — created on the first i
 | Auth client | **hand-written** (URLSession); excluded from codegen | hand-written `AuthApi.kt` |
 | 401 refresh | `actor SessionRefresher` single-flight; separate no-auth session | `AuthAuthenticator` `synchronized(this)` + `NoAuthOkHttp` |
 | Headers | `X-Device-Id` (one source = Device/Register id), `X-Device-Label`, `X-Time-Zone`; no-Bearer-on-anon allow-list — **full contract: `src/cleansia_ios/docs/header-parity-contract.md`** | `AuthInterceptor` + per-request `X-Time-Zone` |
-| Codegen | **openapi-generator swift5 + urlsession**, from the **owner-regenerated** shared spec | openapi-generator kotlin |
+| Codegen | **openapi-generator swift5 + urlsession**, from the shared spec, **regenerated locally under `CLAUDE.md`** | openapi-generator kotlin |
 | Maps | **MapKit by default**, behind a `MapProvider` protocol; Mapbox iOS SDK = scoped fallback. **iOS-16 variant:** `Map(coordinateRegion:annotationItems:)` for pickers (*since 2026-10-01 the picker is an `MKMapView` representable too — `PickerMapView`, which adds the Cleansia centre pin itself; ADR-0014 Amendment A1*); `MKMapView` via `UIViewRepresentable` for the full-bleed map + polygon overlays (the SwiftUI `Map {...}`/`Marker`/`MapPolygon` API is iOS-17-only) | Mapbox (no first-party map on Android) |
 | Stripe | `stripe-ios` **PaymentSheet** (customer target only) | Android PaymentSheet |
 | Push | APNs token → existing `/api/Device/*` with `Platform="ios"` | FCM → `/api/Device/*` |

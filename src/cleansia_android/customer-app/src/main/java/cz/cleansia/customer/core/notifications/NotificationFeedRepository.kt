@@ -15,7 +15,8 @@ import javax.inject.Singleton
  * Server-backed notifications feed (paged list, unread badge, read state).
  * Holds the per-user unread count as a hot flow so the Home bell, the inbox
  * sheet and the FCM receive path share one badge source — which makes it a
- * [SessionScopedCache] member (wiped on sign-out/forced-401/deletion).
+ * [SessionScopedCache] member (wiped on every wipe trigger).
+ * -> /mobile-app/patterns#session-wipe
  */
 @Singleton
 class NotificationFeedRepository @Inject constructor(

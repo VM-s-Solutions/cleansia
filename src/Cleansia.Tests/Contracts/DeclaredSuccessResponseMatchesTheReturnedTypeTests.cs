@@ -12,7 +12,7 @@ namespace Cleansia.Tests.Contracts;
 /// any existing test compares the attribute against the `HandleResult&lt;T&gt;` on the next line: one is an
 /// attribute argument, the other a generic argument, and they never meet.</para>
 ///
-/// <para>Found by a frontend lane on 2026-08-09 while deriving the error-contract surface from the
+/// <para>Observed on 2026-08-09 while deriving the error-contract surface from the
 /// controllers. Reading `ProducesResponseType` as a dispatch pulled <c>CreateOrder</c> onto the
 /// <b>partner</b> error surface — because `PUT /api/Employee/UpdateEmployee` declared
 /// <c>CreateOrder.Response</c> while returning <c>UpdateEmployee.Response</c> — and injected fifteen

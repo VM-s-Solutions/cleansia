@@ -125,7 +125,7 @@ public class RequestLogProfilePiiRedactionTests
     private sealed record ProfileFixture(string Label, string Json, IReadOnlyList<string> SensitiveValues);
 
     /// <summary>
-    /// The three shapes the PM measured the exposure across: a short email and name, a typical Czech
+    /// The three exposure shapes: a short email and name, a typical Czech
     /// name, and a long Ukrainian one. All three put the PII block inside the window.
     /// </summary>
     private static IReadOnlyList<ProfileFixture> RepresentativeProfiles() =>

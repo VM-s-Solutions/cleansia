@@ -16,8 +16,8 @@ namespace Cleansia.Tests.Features.Catalog;
 /// ADR-0001 Addendum A1 read-parity behavioural tests for the five anonymous catalog entities.
 ///
 /// Spins a REAL <see cref="CleansiaDbContext"/> (so <see cref="CleansiaDbContext.OnModelCreating"/> and
-/// the global tenant query filter actually run) over SQLite in-memory. The scenario is the one the panel
-/// flagged: catalog rows seeded under TWO different tenants, then read the way an ANONYMOUS customer reads
+/// the global tenant query filter actually run) over SQLite in-memory. Catalog rows are seeded under
+/// TWO different tenants, then read the way an ANONYMOUS customer reads
 /// them (no JWT ⇒ no tenant_id claim ⇒ <see cref="ITenantProvider.GetCurrentTenantId"/> returns null).
 ///
 /// While the entities were <see cref="Cleansia.Core.Domain.Common.ITenantEntity"/> the filter collapsed

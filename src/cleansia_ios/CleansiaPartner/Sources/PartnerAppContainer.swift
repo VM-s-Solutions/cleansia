@@ -140,7 +140,8 @@ final class PartnerAppContainer: AppContainer {
         sessionScopedCaches.register(pushTokenRegistrar)
         // Rule 3: the authed Device/Unregister DELETE runs while the Bearer is
         // still live, before logout() wipes the token. The local cache clear()
-        // rides the SessionScopedCacheRegistry on every sign-out (above).
+        // rides the SessionScopedCacheRegistry on every wipe trigger (above).
+        // → /mobile-app/patterns#session-wipe
         authStack.spine.setPreLogout { [pushTokenRegistrar] in
             await pushTokenRegistrar.unregisterDevice()
         }

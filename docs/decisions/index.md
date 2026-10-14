@@ -234,6 +234,8 @@ stands. ADR-0037 carries the dated pointer; its historical body is unchanged.
 
 ## Where the deliberation lives
 
-Several of these were argued by an author→challenger→lead panel before being accepted. The challenge
-and draft documents are **not published here** — they are the argument, not the decision — and are
-archived in the repository under `agents/archive/2026-08/adr-deliberation/`.
+Several records preserve their design review in embedded **Challenge**, **Defense** and **Verdict**
+sections. Separate challenge and draft documents are **not published here**; they are archived in the
+repository under `agents/archive/2026-08/adr-deliberation/`. From ADR-0071 onward, decision records
+name the decider as **Mike's ruling** (with the dated words) or **the design review** (with its date),
+without contributor role credits. ADR-0001–0070 retain their historical wording.

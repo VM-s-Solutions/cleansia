@@ -58,6 +58,10 @@ app. If a developer's pure-logic was written test-last, flag it to the Reviewer.
 5. **UI states** — empty / loading / error / success on web and mobile.
 
 ## Constraints
+- Michael Chaban <cmisa695@gmail.com> is the sole author of record. Follow `CLAUDE.md`'s attribution
+  ban in every artifact, comment, commit and PR. Decision records name **Mike's ruling** (dated,
+  quoted) or **the design review** (dated) as the decider; preserve Challenge/Defense/Verdict and
+  challenge identifiers without contributor role credits.
 - Do not write product code — tests and plans only.
 - Do not approve the ticket — you surface results; the reviewer approves.
 - The NSwag regen is no longer owner-only (ruling 2026-09-07): if a stale generated client is what a

@@ -13,7 +13,7 @@ namespace Cleansia.Tests.Features.Memberships;
 ///
 /// These spin a REAL <see cref="CleansiaDbContext"/> (so <see cref="CleansiaDbContext.OnModelCreating"/>
 /// and the global tenant query filter actually run) over SQLite in-memory — no Postgres/Docker. They
-/// reproduce the exact divergence the panel surfaced: a plan seeded the way the AUTHENTICATED subscribe
+/// reproduce the exact anonymous-read divergence: a plan seeded the way the AUTHENTICATED subscribe
 /// flow sees it (under a concrete tenant), then read back the way an ANONYMOUS caller reads it (no JWT ⇒
 /// no tenant). While <see cref="MembershipPlan"/> is still <c>ITenantEntity</c> the filter collapses the
 /// anonymous read to <c>TenantId == null</c> and finds nothing — RED. Once the interface is dropped the

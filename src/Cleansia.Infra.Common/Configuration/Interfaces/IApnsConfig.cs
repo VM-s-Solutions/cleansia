@@ -7,7 +7,7 @@ namespace Cleansia.Infra.Common.Configuration.Interfaces;
 /// <c>APNS</c> config section (host + Functions app settings; the binder is case-insensitive).
 ///
 /// <para>Ships INERT: <see cref="Enabled"/> defaults to <c>false</c>, so the already-provisioned key
-/// can sit in config with the channel off until the iOS lane (LA-5) ships. While disabled — or with
+/// can sit in config with the channel off. While disabled — or with
 /// empty key material — the client never opens a socket and the dispatch consumer acks (Skipped), the
 /// exact no-op semantics <c>IFcmConfig</c>/<c>FcmPushDispatcher</c> implement for an unconfigured FCM.</para>
 /// </summary>
@@ -16,7 +16,7 @@ public interface IApnsConfig
     /// <summary>
     /// Master switch. <c>false</c> (default) → the client reports Skipped and the consumer acks; the
     /// client never opens a socket. Kept distinct from "empty key material" so the provisioned key can
-    /// sit bound-but-off until the iOS lane ships (ADR-0029 RV-3).
+    /// sit bound-but-off (ADR-0029 RV-3).
     /// </summary>
     bool Enabled { get; set; }
 

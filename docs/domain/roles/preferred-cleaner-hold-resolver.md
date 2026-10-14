@@ -2,19 +2,19 @@
 
 > **ACCEPTED — this is the standard.** Introduced by **ADR-0036**
 > (`docs/decisions/adr-0036.md`), `accepted` 2026-08-02 after a
-> full defense panel (author + three challengers + lead). **Read the ADR's `## Defense` before changing
-> anything here** — six of the draft's rules were broken by challengers and the surviving forms are not
+> full design review. **Read the ADR's `## Defense` before changing
+> anything here** — six of the draft's rules failed challenge and the surviving forms are not
 > the obvious ones. **Third sibling of `CancellationPolicyResolver` and `IExpressWaiverResolver`** —
 > same shape, same namespace family, same "returns a record the caller acts on" contract. Read
 > `CancellationPolicyResolver.cs:12-46`, `docs/domain/roles/express-waiver-resolver.md` and
 > `TakeOrder.cs` in full first.
 >
-> ⚠️ **AMENDED 2026-08-03 by owner instruction — ADR-0039**, `accepted` the same day after a two-lane
-> defense panel (disclosure + query-cost + lead; **sixteen findings, fourteen upheld**). It partially
+> ⚠️ **AMENDED 2026-08-03 by owner instruction — ADR-0039**, `accepted` the same day after the design
+> review (disclosure and query cost; **sixteen findings, fourteen upheld**). It partially
 > supersedes ADR-0036 D5.1/A6. **The resolver now checks the cleaner's slot conflict** and a busy
 > cleaner gets **no hold and no push**. The *weekly cap* half of "does NOT know" **stands**. Changes
-> below are marked **[ADR-0039]**; the panel's corrections to that ADR's draft are marked
-> **[ADR-0039 · panel]** and **three of them contradict the drafted text**, so read them before
+> below are marked **[ADR-0039]**; the design review's corrections to that ADR's draft are marked
+> **[ADR-0039 · design review]** and **three of them contradict the drafted text**, so read them before
 > implementing from memory.
 
 This card covers **three** collaborating responsibilities that must not be collapsed:
@@ -57,7 +57,7 @@ open  ⟺  PreferredHoldUntilUtc == null          // never held
   the first payment failure, no grace window.** No longer an escalation, and still not a local choice —
   this resolver adds **nothing** for that case; the shared predicate answers it.
 - `IEmployeeRepository` — `ContractStatus`, **`IsActive`** and `WorkCountryId` for the preferred
-  cleaner. ⚠️ **[ADR-0039 · panel — CH-D6] `IsActive` is NOT covered by `ContractStatus` and this is a
+  cleaner. ⚠️ **[ADR-0039 · design review — CH-D6] `IsActive` is NOT covered by `ContractStatus` and this is a
   live defect in ADR-0036 as it stands, not a new ADR-0039 requirement.** A departing or GDPR-erased
   cleaner is **soft-deleted**: `GdprDeletionService.cs:235-241` calls `Employee.Deactivated(...)` →
   `Auditable.cs:33-40` sets `IsActive = false` and **leaves `ContractStatus` untouched**. So an erased
@@ -84,7 +84,7 @@ open  ⟺  PreferredHoldUntilUtc == null          // never held
   supplied unchecked. `NewJobsDigestService` asks the one-employee, many-windows question through its
   own read, `GetOverlappedCandidateIdsIgnoringTenantAsync`.
 
-  > ⚠️ **[ADR-0039 · panel] Three corrections to the drafted shape. The tree moved mid-panel.**
+  > ⚠️ **[ADR-0039 · design review] Three corrections to the drafted shape. The tree moved during the design review.**
   > 1. **The tenancy fix and the scan floor are SHIPPED.** `OrderRepository.cs:272-307` is already one
   >    private predicate with two public wrappers, and the floor is applied at `:289`.
   >    `GetBusyEmployeeIdsInWindowAsync` is a **third wrapper over the same shared filter** — the
@@ -100,7 +100,7 @@ open  ⟺  PreferredHoldUntilUtc == null          // never held
   >    *(2026-10-12, T-0833: the one set method has read every company since 2026-09-16 and is now named
   >    `GetBusyEmployeeIdsInWindowIgnoringTenantAsync` (ADR-0074); item 3 stands — there is one set method
   >    and no scoped sibling.)*
-- **[ADR-0039 · panel] `BookingPolicy.MaxBookableOrderSpanHours` (24 h) — the ENFORCED span cap.**
+- **[ADR-0039 · design review] `BookingPolicy.MaxBookableOrderSpanHours` (24 h) — the ENFORCED span cap.**
   `Order.MaxOrderSpanHours` is a query safety margin that is only safe while nothing produces a longer
   order, and **nothing enforced that**: no cap on a service's estimate, on the item count, or on
   package∩service double-counting. `OrderFactory` now rejects above the cap (before
@@ -113,7 +113,7 @@ open  ⟺  PreferredHoldUntilUtc == null          // never held
 - Callers: `OrderFactory` (one call, at creation) and, through it, `CreateOrder` and
   `MaterializeRecurringBookings`. The factory calls `Order.GrantPreferredHold` with the answer — it
   **never** assigns either column itself.
-- Consumers of `OrderVisibility`, by **kind** (ADR-0036 Fact A, rebuilt by the panel):
+- Consumers of `OrderVisibility`, by **kind** (ADR-0036 Fact A, rebuilt in the design review):
   | Kind | Where |
   |---|---|
   | queryable visibility | `OrderSpecification` (its **own** `if` block) → `GetPagedOrders.cs:91`; `DashboardSpecifications.CreateAvailableOrdersSpec` → `GetAvailableJobsPreview.cs:50` **and** `GetDashboardStats.cs:236` |
@@ -175,7 +175,7 @@ open  ⟺  PreferredHoldUntilUtc == null          // never held
 2. **`PreferredHoldUntilUtc` has no independent setter, and `OrderFactory` never touches either column.**
    The only writers are `Order.GrantPreferredHold` / `Order.ClearPreferredHold`. A bare
    `PreferredEmployeeId = null` in `AnonymizeCustomerData` is a **hard reject** — it recreates the
-   stranded state the panel found (CH-V1).
+   stranded state found in the design review (CH-V1).
 3. **All five terms are present.** Missing `PreferredEmployeeId == null` (a hold nobody can act on and
    nobody can clear) or missing `AssignedEmployees.Any()` (the spare seat locked after the perk was
    delivered) each reintroduces a stuck-held state. **Hard reject.**
@@ -205,11 +205,11 @@ open  ⟺  PreferredHoldUntilUtc == null          // never held
     membership / lead-time gates (it pays a range scan for every non-member). `CleanerBusyAtCleaningTime`
     ⇒ **`NotifyPreferred == false`** — placing it beside `ShortLeadTime` (notify, no hold) is a finding:
     *short lead means we cannot hold; busy means they cannot take.*
-    **[ADR-0039 · panel]** The **digest** is one-employee-many-windows, which the set method does not
+    **[ADR-0039 · design review]** The **digest** is one-employee-many-windows, which the set method does not
     address. It reads each cleaner's commitments once (`GetOverlappedCandidateIdsIgnoringTenantAsync`,
     ADR-0039 D3.3's second shape) and judges every candidate in memory — one read per cleaner, never one
     per candidate.
-14. **[ADR-0039 · panel — CORRECTED] The scan floor is `windowStart − Order.MaxOrderSpanHours` (168 h,
+14. **[ADR-0039 · design review — CORRECTED] The scan floor is `windowStart − Order.MaxOrderSpanHours` (168 h,
     `Cleansia.Core.Domain`)** — *not* `BookingPolicy.MaxOrderSpanHours` (24 h), which does not compile
     from `Infra.Database` and was refuted by seed data. Absent ⇒ the query is the old unbounded lifetime
     scan wearing a new name. **Hard reject.** ⚠️ **And it is asserted by a test, not read by a
@@ -219,11 +219,11 @@ open  ⟺  PreferredHoldUntilUtc == null          // never held
 15. **[ADR-0039] The booking is never failed for this.** No answer (query error, no slot) ⇒ **no hold,
     no push, order created, preference stored**. A `CreateOrder` rejection on a busy preferred cleaner
     is a hard reject — ADR-0036 D8's rule: *reject where someone can react; degrade where nobody can.*
-    **[ADR-0039 · panel]** That rule now rests on **agency alone** — *"can the customer fix it in one
+    **[ADR-0039 · design review]** That rule now rests on **agency alone** — *"can the customer fix it in one
     tap?"* The "membership is static, busyness is dynamic" justification was **struck**: under the
     `Q-PLUS-05` ruling a dunning webhook can flip a customer `Active → PastDue` **mid-session**, so
     membership is not reliably static either. The conclusion is unchanged; the argument for it is not.
-16. **[ADR-0039 · panel] The occupancy predicate must NOT carry ADR-0037's `NotRetractable` conjunct.**
+16. **[ADR-0039 · design review] The occupancy predicate must NOT carry ADR-0037's `NotRetractable` conjunct.**
     It fails **OPEN**: offerability is an *entry* condition (nothing is assigned unless it was
     offerable), so the term is redundant on the happy path and wrong where it is not — an order whose
     payment state changed *after* a cleaner took it would stop blocking, double-booking a cleaner who is
@@ -233,7 +233,7 @@ open  ⟺  PreferredHoldUntilUtc == null          // never held
 
 ## Watch-list
 
-- **[ADR-0039 · panel] The picker shares this role's query, and the picker has THREE server-side
+- **[ADR-0039 · design review] The picker shares this role's query, and the picker has THREE server-side
   preconditions this role does not.** They gate the *backend* ticket, because the oracle exists the
   moment the server answers, whatever a client renders: **(1)** `[EnableRateLimiting("auth")]` on
   `MyServingCleaners`, both customer hosts (today: **none**, while `CancelOrder` eleven lines above it has
@@ -242,7 +242,7 @@ open  ⟺  PreferredHoldUntilUtc == null          // never held
   **(3)** an `IsActive` filter on the list. **If this role's busy check ships and the picker's gates do
   not, the platform has an unthrottled per-hour occupancy oracle over 20 named workers.** Not this
   role's code, but it is the same query and the same feature.
-- **[ADR-0039 · panel] `null` now has three producers, and that is load-bearing** — unevaluated, a
+- **[ADR-0039 · design review] `null` now has three producers, and that is load-bearing** — unevaluated, a
   non-member, and (reserved, not built) a cleaner-side suppression flag if `Q-AVAIL-04`'s lawful-basis
   answer allows workers to object. `false` for a suppressed cleaner would **leak the opt-out itself**;
   `true` asserts what the server declined to evaluate. **Never collapse the tri-state to a bool** —

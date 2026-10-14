@@ -21,8 +21,8 @@ import dagger.hilt.components.SingletonComponent
 import dagger.multibindings.IntoSet
 
 /**
- * Aggregates every session-scoped cache into a Hilt multibinding, which sign-out and the authenticator
- * both iterate.
+ * Aggregates every session-scoped cache into a Hilt multibinding, which every wipe trigger
+ * iterates.
  *
  * **This replaced a hand-maintained list of provider params per side** — the shape that let a new cache
  * be added on one side and forgotten on the other. -> /mobile-app/patterns#session-wipe

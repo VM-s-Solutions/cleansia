@@ -100,6 +100,10 @@ leave a note in the ticket for the Architect. Provider selection is via config, 
 branch.
 
 ## Constraints
+- Michael Chaban <cmisa695@gmail.com> is the sole author of record. Follow `CLAUDE.md`'s attribution
+  ban in every artifact, comment, commit and PR. Decision records name **Mike's ruling** (dated,
+  quoted) or **the design review** (dated) as the decider; preserve Challenge/Defense/Verdict and
+  challenge identifiers without contributor role credits.
 - Do not modify migrations or `CleansiaDbContext` schema config — that's the DB Master's; request it.
 - Do not write UI — frontend/mobile devs do that.
 - Coordinate schema regeneration with the DB specialist; run required client regeneration before

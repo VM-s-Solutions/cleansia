@@ -6,8 +6,9 @@ import Foundation
 /// `DisputeRepository.kt` parity, mirroring the Slice-A `OrderRepository`).
 /// `refresh()` replaces page 0, `loadNextPage()` appends additively. Details are
 /// NOT cached — each `getById` hits the network (message threads change often).
-/// Registered in the `SessionScopedCacheRegistry` so sign-out / forced-401 wipes
-/// it; own-dispute scoping is SERVER-enforced (Gate-SEC R10), the client adds no
+/// Registered in the `SessionScopedCacheRegistry` so every wipe trigger clears it.
+/// → /mobile-app/patterns#session-wipe
+/// Own-dispute scoping is SERVER-enforced (Gate-SEC R10), the client adds no
 /// ownership check.
 @MainActor
 final class DisputeRepository: SessionScopedCache {

@@ -268,14 +268,20 @@ Canonical shape (see `patterns-backend.md` for the full sample). **Every paged/l
   **S11** — this is its mobile mechanism + allowlist). A `@Singleton` (Android) / long-lived injected
   class (iOS) that holds **per-user state** (a cached `StateFlow`/`@Published`, a DataStore/`UserDefaults`
   row, a `Staleness` watermark, or a `Map` of these) **MUST** join the wipe set: Android — implement
-  `SessionScopedCache` + `@Binds @IntoSet … : SessionScopedCache`; iOS — conform + `register(self)` with
-  the `SessionScopedCacheRegistry`. The set is iterated on **all four** wipe-triggers S11 names (sign-out,
-  authenticator forced-401, account-deletion, and sign-in before the new tokens are stored) — never a
+  `SessionScopedCache` + `@Binds @IntoSet … : SessionScopedCache`; iOS — conform and register the cache
+  with the weak `SessionScopedCacheRegistry`. Today the app containers register the caches they hold
+  (`PartnerAppContainer.init`, `CustomerAppContainer.registerSessionScopedCaches(in:)`); the registry
+  does not prescribe who calls its registration API. View-owned caches that die with the authenticated
+  route do not outlive the session; a retained per-user holder **MUST** join the registry. Each app’s
+  set is iterated on sign-out, authenticator forced-401 and sign-in before new tokens are stored;
+  successful account deletion is the fourth trigger **in the customer apps only**. Pending/failed
+  customer deletion and partner deletion requests preserve the session — never replace the set with a
   hand-maintained partial clear-list (§`patterns-mobile.md` "three non-obvious rules"). **Enforced by:**
   for the sign-in trigger only, `AuthRepositorySignInWipeTest` (partner Android,
-  `:partner-app:testDebugUnitTest`, android-ci) and `SignInWipeTests` (`CleansiaCoreTests`, `ios-ci.yml` →
-  "Build & test CleansiaCore") — `T1-CI`, closed roster: the customer Android sign-in wipe
-  (`customer-app/…/core/auth/AuthRepository.kt:217-222`) is outside it. ✗ *Don't* leave a per-user holder
+  `:partner-app:testDebugUnitTest`, android-ci), the login/confirmEmail/googleAuth clear-before-save
+  pins in customer Android `AuthRepositoryTest` (`:customer-app:testDebugUnitTest`, android-ci),
+  and `SignInWipeTests` (`CleansiaCoreTests`, `ios-ci.yml` → "Build & test CleansiaCore") —
+  `T1-CI`, closed roster of sign-in ordering coverage with supplied test caches. ✗ *Don't* leave a per-user holder
   out — it leaks the prior user's data to the next account on a shared device.
 
   **The allowlist (the ONE sanctioned exclusion — device-level / public caches).** A `@Singleton` that
@@ -692,7 +698,7 @@ These judgment calls are **Architect-owned**; changing one is an ADR, not an ad-
 
 > **Enforced by:** `InterimMarkerTripwireTests` in `Cleansia.Tests` (walks `src/`, validates the marker
 > pattern, resolves each id against the backlog manifest) — **`(gate pending: FT-38.2)` → T1-CI**
-> via `backend-ci.yml:71` when that ticket lands. *Deliberately **not** a `check-consistency.mjs` rule:
+> via the **Unit tests (Cleansia.Tests)** step in `backend-ci.yml` when that ticket lands. *Deliberately **not** a `check-consistency.mjs` rule:
 > that tool appears in **zero** `.github/` workflows, so it can never set an exit code, and a
 > T2-ADVISORY orphan-check on a code comment is — precisely — a comment with a ticket number in it.*
 
@@ -983,7 +989,7 @@ the correct use.
 ## A disclosure block shipped past its sentence's truth — the deviating form (2026-08-11)
 
 > **Enforced by:** `src/Cleansia.Tests/Features/Orders/PreferredOfferDisclosureTests.cs`
-> (`.github/workflows/backend-ci.yml:69-71`) — **`T1-CI`**.
+> (the **Unit tests (Cleansia.Tests)** step in `backend-ci.yml`) — **`T1-CI`**.
 > Rule, scope and rejected alternatives: `patterns-backend.md` §*"A DISCLOSURE BLOCK is withheld by the
 > server when its sentence stops being true"*; decision: **ADR-0049**, which is `accepted`
 > **with amendments C1–C6**

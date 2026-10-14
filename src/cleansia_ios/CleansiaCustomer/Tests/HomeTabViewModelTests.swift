@@ -407,8 +407,9 @@ final class HomeTabViewModelTests: XCTestCase {
     }
 
     func testSignOutClearMakesTheNextEntryRefetch() async {
-        // `clear()` is what the SessionScopedCacheRegistry calls on sign-out /
-        // forced 401. Without the watermark reset the next account would read
+        // `clear()` is what the SessionScopedCacheRegistry calls on every wipe trigger.
+        // → /mobile-app/patterns#session-wipe
+        // Without the watermark reset the next account would read
         // the previous account's loyalty as fresh.
         let vm = makeViewModel()
         await vm.refreshStaleSources()

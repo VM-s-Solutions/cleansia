@@ -84,7 +84,7 @@ class OrderChecklistRepository @Inject constructor(
      * SessionScopedCache contract — wipes every order's checked set so a shared
      * device doesn't carry the prior account's per-order progress into the next
      * one. The checklist is local-only (no server row keyed by user), so a
-     * sign-out is the only signal we get to drop it.
+     * session wipe is the signal to drop it. -> /mobile-app/patterns#session-wipe
      */
     override suspend fun clear() {
         dataStore.edit { it.clear() }

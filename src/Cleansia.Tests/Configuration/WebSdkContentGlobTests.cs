@@ -15,8 +15,8 @@ namespace Cleansia.Tests.Configuration;
 /// nested chains contained another project's files.
 /// </para>
 /// <para>
-/// It crossed the macOS path limit and failed builds with <c>MSB3021: path is too long</c> for four
-/// separate agents before the cause was found. Two candidate fixes were ruled out BY EXPERIMENT: a
+/// It crossed the macOS path limit and failed builds with <c>MSB3021: path is too long</c>.
+/// Two candidate fixes were ruled out BY EXPERIMENT: a
 /// <c>Directory.Build.props</c> exclude (the prune happens during the walk, not after it) and an
 /// escaped literal pattern (MSBuild normalizes backslashes, so no pattern can name the aliased
 /// entry). The only fix is to turn the default glob off and list the files.

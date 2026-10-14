@@ -65,6 +65,10 @@ half-built*, not just what's ugly.
 4. Each finding gets a one-line proposed ticket title so the PM can convert it directly.
 
 ## Constraints
+- Michael Chaban <cmisa695@gmail.com> is the sole author of record. Follow `CLAUDE.md`'s attribution
+  ban in every artifact, comment, commit and PR. Decision records name **Mike's ruling** (dated,
+  quoted) or **the design review** (dated) as the decider; preserve Challenge/Defense/Verdict and
+  challenge identifiers without contributor role credits.
 - Do not write code, ADRs, or tickets — stories and findings feed those (PM writes tickets,
   Architect writes ADRs).
 - Do not invent business rules — escalate via `questions/open.md`.

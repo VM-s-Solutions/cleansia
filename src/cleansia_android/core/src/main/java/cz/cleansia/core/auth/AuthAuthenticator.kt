@@ -33,10 +33,11 @@ import okhttp3.Route
  * Retrofit needs the OkHttpClient. Hilt wires `refreshClient` to point at a
  * separate, no-auth OkHttp instance used solely for refresh calls.
  *
- * INVARIANT: any repository that implements [SessionScopedCache] is
- * automatically cleared on forced sign-out — there's no source-of-truth list
- * to keep in sync with [AuthRepository]. Both clear-paths iterate the same
+ * INVARIANT: every repository in the [SessionScopedCache] multibinding is
+ * cleared on every wipe trigger — there's no source-of-truth list
+ * to keep in sync with [AuthRepository]. Every wipe trigger iterates the same
  * `Set<SessionScopedCache>` Hilt multibinding, so they cannot drift.
+ * -> /mobile-app/patterns#session-wipe
  */
 class AuthAuthenticator(
     private val tokenStore: TokenStore,
@@ -108,8 +109,9 @@ class AuthAuthenticator(
 
     /**
      * Wipe every session-scoped cache. Iterates the [SessionScopedCache]
-     * multibinding — same set [AuthRepository.logout] uses, so both clear
-     * paths stay structurally in sync. OkHttp's Authenticator API is blocking,
+     * multibinding — the set every wipe trigger uses, so the clear-paths
+     * stay structurally in sync. -> /mobile-app/patterns#session-wipe
+     * OkHttp's Authenticator API is blocking,
      * so we runBlocking around the whole iteration (one suspending call per
      * cache, on this background thread).
      */

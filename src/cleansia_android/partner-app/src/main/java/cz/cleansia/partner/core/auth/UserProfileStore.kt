@@ -44,10 +44,10 @@ object UserProfileStoreModule {
  * identity (userId / email / role flags) the UI needs without unsealing the
  * token on every read.
  *
- * Joins the [SessionScopedCache] multibinding so both sign-out paths (voluntary
- * and authenticator-forced) wipe the persisted identity — otherwise the prior
+ * Joins the [SessionScopedCache] multibinding so every wipe trigger
+ * wipes the persisted identity — otherwise the prior
  * user's profile would survive a forced sign-out and leak to the next user on
- * a shared device.
+ * a shared device. -> /mobile-app/patterns#session-wipe
  */
 @Singleton
 class UserProfileStore @Inject constructor(

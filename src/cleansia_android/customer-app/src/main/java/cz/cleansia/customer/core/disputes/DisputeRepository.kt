@@ -24,7 +24,7 @@ import okhttp3.RequestBody.Companion.toRequestBody
 /**
  * Cache + orchestrator for the signed-in user's disputes. `@Singleton`, so it lives for the process.
  *
- * **Cleared on sign-out / account-delete** — without that the next account on a shared handset inherits
+ * **Cleared on every wipe trigger** — without that the next account on a shared handset inherits
  * this one's data. Errors carry the parsed message for the ViewModel's snackbar; a network failure stays
  * silent because the interceptor owns that toast.
  * -> /mobile-app/patterns#session-wipe
@@ -206,7 +206,7 @@ class DisputeRepository @Inject constructor(
         return ApiResult.Error(error)
     }
 
-    /** Wipe the in-memory cache — called on sign-out so the next user starts fresh. */
+    /** Wipe the in-memory cache on every wipe trigger. -> /mobile-app/patterns#session-wipe */
     override suspend fun clear() {
         _disputes.value = emptyList()
         _totalRecords.value = 0

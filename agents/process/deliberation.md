@@ -45,7 +45,8 @@ the author. (Same charter, parallel instances — DRY.)
 4. CHALLENGERS re-check the revised artifact. New holes → repeat from 2.
         │
 5. LEAD adjudicates every open point: each challenge is RESOLVED (defended or fixed) or it BLOCKS.
-     Consensus = zero blocking challenges remain. The lead records the verdict + the key decisions.
+     Consensus = zero blocking challenges remain. The lead records the verdict + the key decisions
+     using the decider and authorship convention below.
      ├─ **Provenance check (named enforcer for `conventions.md` → "A claim about the tree cites the
      │  tree").** For every load-bearing *code-state* claim in the artifact — a column exists, a path
      │  is down, a call site is the only one, a migration is pending — the lead **re-opens the file**
@@ -75,6 +76,17 @@ Verdict` sections stay in the artifact. Developers (and testers, reviewers, secu
 not just the conclusion but *why it's the conclusion and what was rejected* — which prevents them
 re-litigating settled points and tells them the edges that were considered. The story's AC are then
 the **TDD targets** (`knowledge/testing.md`): the tests encode what survived the defense.
+
+**Record wording — owner decision of 2026-10-13.** Mike's answer 6 was
+"If rules improve the workflow in a better way then yes"; the approved default was
+"Go with defaults (recommended)". Michael Chaban <cmisa695@gmail.com> is the sole author of record.
+Internal modes above govern separate drafting,
+challenge and adjudication passes; they are not contributor credits. Accepted records state
+**Decided by:** Mike's ruling, with its date and verbatim words, or **Decided by:** the design review,
+with its date. Preserve challenge identifiers, concessions and the Challenge/Defense/Verdict trail
+using "the draft", "challenge O3", "the defense" and "the verdict" without crediting contributing
+roles. An approval to fix a defect does not imply a ruling on its mechanism. Review this wording
+before the artifact is finalized.
 
 ## Parallel documentation (non-negotiable, happens during deliberation)
 Each role keeps its own **living documentation**, updated *as part of* finalizing — not a later chore:

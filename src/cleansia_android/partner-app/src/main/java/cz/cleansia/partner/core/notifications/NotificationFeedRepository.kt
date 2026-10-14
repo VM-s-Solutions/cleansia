@@ -16,7 +16,8 @@ import javax.inject.Singleton
  * the single source of truth that replaced the interim Room store. Holds the
  * per-user unread count as a hot flow so the dashboard bell, the feed screen
  * and the FCM receive path share one badge source — which makes it a
- * [SessionScopedCache] member (wiped on sign-out/forced-401/deletion).
+ * [SessionScopedCache] member (wiped on every wipe trigger).
+ * -> /mobile-app/patterns#session-wipe
  */
 @Singleton
 class NotificationFeedRepository @Inject constructor(

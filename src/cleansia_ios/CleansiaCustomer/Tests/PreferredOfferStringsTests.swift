@@ -31,8 +31,8 @@ final class PreferredOfferStringsTests: XCTestCase {
         "ru": ["назнач"]
     ]
 
-    /// The conduct ban. The customer is never told which way a reservation ended, and — the sentence the
-    /// web lane wrote first and then dropped — never that anyone "hasn't answered" while it is still
+    /// The conduct ban. The customer is never told which way a reservation ended, and
+    /// never that anyone "hasn't answered" while it is still
     /// running. Stems for a refusal AND for a silence, per locale, applied to every key rather than only
     /// to the closed pair: the pending state is where the temptation to editorialise actually lives.
     private let conductWords = [

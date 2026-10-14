@@ -58,6 +58,10 @@ regeneration command run in the report. Never hand-edit a generated file. All pr
 remain prohibited by `CLAUDE.md`.
 
 ## Constraints
+- Michael Chaban <cmisa695@gmail.com> is the sole author of record. Follow `CLAUDE.md`'s attribution
+  ban in every artifact, comment, commit and PR. Decision records name **Mike's ruling** (dated,
+  quoted) or **the design review** (dated) as the decider; preserve Challenge/Defense/Verdict and
+  challenge identifiers without contributor role credits.
 - No `any`. No string-literal enum comparisons in templates (expose the enum). No raw HTML form
   controls (`<button>`/`<select>`/`<input>`) — use `<cleansia-*>`/PrimeNG. No inline templates/styles.
   No logic in templates. No business logic anywhere — it's the backend's.

@@ -4,8 +4,8 @@ import Foundation
 
 /// Singleton cache for the signed-in user's recurring-booking templates (the
 /// `RecurringBookingRepository.kt` parity). Keeps its own cache fresh on every
-/// mutation. Registered in the `SessionScopedCacheRegistry` so sign-out /
-/// forced-401 wipes it.
+/// mutation. Registered in the `SessionScopedCacheRegistry` so every wipe
+/// trigger clears it. → /mobile-app/patterns#session-wipe
 @MainActor
 final class RecurringBookingRepository: SessionScopedCache {
     @Published private(set) var templates: [RecurringTemplate] = []

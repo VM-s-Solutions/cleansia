@@ -6,7 +6,8 @@ import Foundation
 /// Singleton cache + paginator for the signed-in user's orders (the
 /// `OrderRepository.kt` parity). The Home + Orders surfaces observe `orders`;
 /// `refresh()` replaces page 0, `loadNextPage()` appends additively. Registered
-/// in the `SessionScopedCacheRegistry` so sign-out / forced-401 wipes it.
+/// in the `SessionScopedCacheRegistry` so every wipe trigger clears it.
+/// → /mobile-app/patterns#session-wipe
 @MainActor
 final class OrderRepository: SessionScopedCache {
     @Published private(set) var orders: [CustomerOrderSummary] = []

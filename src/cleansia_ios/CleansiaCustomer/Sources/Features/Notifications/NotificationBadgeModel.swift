@@ -5,7 +5,7 @@ import Foundation
 /// Container-lived unread count behind the Home bell (FD-AC5): fetched on Home
 /// load + app-foreground, bumped locally on a foreground push, decremented
 /// optimistically on a row tap. Registered in the `SessionScopedCacheRegistry`
-/// so sign-out / forced-401 wipes it (E9/S11).
+/// so every wipe trigger clears it (E9/S11). → /mobile-app/patterns#session-wipe
 @MainActor
 final class NotificationBadgeModel: ObservableObject, SessionScopedCache {
     @Published private(set) var unreadCount = 0

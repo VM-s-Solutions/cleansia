@@ -22,7 +22,7 @@ import kotlinx.coroutines.flow.asStateFlow
  * Cache + orchestrator for the user's loyalty state. `@Singleton`, so it lives for the process. Activity
  * history is deliberately NOT cached — that screen pages from the network on demand.
  *
- * **Cleared on sign-out / account-delete.** -> /mobile-app/patterns#session-wipe
+ * **Cleared on every wipe trigger.** -> /mobile-app/patterns#session-wipe
  */
 @Singleton
 class LoyaltyRepository @Inject constructor(
@@ -52,7 +52,8 @@ class LoyaltyRepository @Inject constructor(
      * Freshness watermark for [account] / [tiers]. Distinct from [loaded], which
      * is a one-way first-paint latch: points earned after the first fetch would
      * otherwise sit stale for the whole process lifetime, since [loaded] only
-     * ever falls back to false on sign-out. Consumers entering a screen ask
+     * ever falls back to false on a session wipe. -> /mobile-app/patterns#session-wipe
+     * Consumers entering a screen ask
      * [Staleness.isStale] before triggering a background [refresh].
      */
     val staleness = Staleness()
@@ -129,7 +130,7 @@ class LoyaltyRepository @Inject constructor(
         return ApiResult.Error(error)
     }
 
-    /** Wipe the in-memory cache — called on sign-out so the next user starts fresh. */
+    /** Wipe the in-memory cache on every wipe trigger. -> /mobile-app/patterns#session-wipe */
     override suspend fun clear() {
         _account.value = null
         _tiers.value = emptyList()

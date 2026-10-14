@@ -25,7 +25,7 @@ import okhttp3.ResponseBody.Companion.toResponseBody
  * Cache + orchestrator for the user's orders, with additive pagination. `@Singleton`, so it lives for the
  * process.
  *
- * **Cleared on sign-out / account-delete.** Errors carry the parsed message for the snackbar; network
+ * **Cleared on every wipe trigger.** Errors carry the parsed message for the snackbar; network
  * failures stay silent because the interceptor owns that toast.
  * -> /mobile-app/patterns#session-wipe
  */
@@ -280,7 +280,7 @@ class OrderRepository @Inject constructor(
         return ApiResult.Error(error)
     }
 
-    /** Wipe the in-memory cache — called on sign-out so the next user starts fresh. */
+    /** Wipe the in-memory cache on every wipe trigger. -> /mobile-app/patterns#session-wipe */
     override suspend fun clear() {
         _orders.value = emptyList()
         _totalRecords.value = 0

@@ -28,8 +28,9 @@ final class CustomerLanguageReconcileTests: XCTestCase {
     }
 
     /// The whole reason the reconcile reads the server instead of the cached profile. That cache is
-    /// session-scoped and cleared on sign-out, so on the launch this exists for it holds nothing — a
+    /// session-scoped and cleared on every wipe trigger, so on the launch this exists for it holds nothing — a
     /// reconcile that trusted it would compare against nil and quietly do nothing at all.
+    /// → /mobile-app/patterns#session-wipe
     func testASessionBeginningReadsTheServerRatherThanAColdProfileCache() async {
         client.currentUserResult = .success(profile(language: "en"))
         let (reconciler, hasSession, repository) = makeReconciler(chosen: "uk")

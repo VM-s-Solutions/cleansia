@@ -32,7 +32,7 @@ class Staleness {
         return (System.currentTimeMillis() - stamp) > maxAgeMs
     }
 
-    /** Forget the watermark. Call from `SessionScopedCache.clear()` on logout. */
+    /** Forget the watermark. Call from `SessionScopedCache.clear()`. */
     fun reset() {
         lastFetchedAtMillis.set(NEVER)
     }

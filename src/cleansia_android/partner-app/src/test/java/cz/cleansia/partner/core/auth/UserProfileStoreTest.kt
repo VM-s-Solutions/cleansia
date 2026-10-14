@@ -16,8 +16,8 @@ import org.junit.rules.TestName
 /**
  * Pins the [SessionScopedCache] contract of [UserProfileStore]: the persisted
  * identity (including the employeeId later reused as a login seed) must not
- * survive a `clear()` issued through the multibinding — the path both the
- * voluntary sign-out and the authenticator-forced sign-out use.
+ * survive a `clear()` issued through the multibinding — the set every
+ * wipe trigger uses. -> /mobile-app/patterns#session-wipe
  */
 class UserProfileStoreTest {
 

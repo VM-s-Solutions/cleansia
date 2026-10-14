@@ -479,7 +479,8 @@ and no currency word after the placeholder slot is stripped, five locales × thr
 > and admin generated clients, and the customer's binary operations, use `responseType: 'blob'`, so
 > their refusals arrive as a Blob and `parseBlobToJson` turns them into a key. Customer JSON operations
 > use text for SSR transfer; the interceptor parses that string into the same error model.
-> **jsdom 20 ships no `Blob.prototype.text`**, so unpolyfilled that rejects and the
+> **Jest’s resolved jsdom 26.1.0 ships no `Blob.prototype.text`**
+> ([v26.1.0 Blob interface](https://raw.githubusercontent.com/jsdom/jsdom/v26.1.0/lib/jsdom/living/file-api/Blob.webidl)), so unpolyfilled that rejects and the
 > interceptor takes its `.catch` — every locale silently renders `api.common.error_occurred`. A locale
 > assertion written that way passes on the *fallback* rather than on the message, and passes just as well
 > when the key is wrong, missing, or renamed.
@@ -704,7 +705,7 @@ reuse the interceptor `api.*` path instead (EP-3 root cause was the proliferatio
 ## A server-authored disclosure block is rendered off its own ARRIVAL — the facade composes nothing (ADR-0049)
 
 > **Enforced by:** a mutation guard in **each** of the two files the rule names, run by
-> `npx nx affected -t test` (`.github/workflows/frontend-ci.yml:85-87`) — **`T1-CI`**.
+> `npx nx affected -t test` (the **Unit tests (affected)** step in `.github/workflows/frontend-ci.yml`) — **`T1-CI`**.
 > `…/order-detail/order-preferred-offer.models.spec.ts:184-205` sweeps every `OrderStatus` × every
 > `PreferredOfferState` over the resolver, on `state` as well as `canChooseAnother`;
 > `…/order-detail/order-preferred-offer.facade.spec.ts:160-219` sweeps the same statuses over
@@ -823,7 +824,7 @@ common, then client, then store — because array order is chain order (above).
 
 **Enforced by:** `agents/tools/check-module-boundaries.mjs` for the placement (a store-dispatching
 interceptor back inside `*-services` re-creates the cycle, and the gate refuses it — measured: one
-restored import took the gate from 0 drifts to 18) — **T1-CI**; and
+restored import took the gate from 0 drifts to 18) — **T2-ADVISORY**, on demand only; and
 `apps/*/src/app/http-interceptors.spec.ts` for the registration — **T1-CI** (`nx affected -t test`
 selects the app whenever the chain file changes, and the step is not `continue-on-error`).
 
@@ -860,7 +861,7 @@ changes behaviour twice: a `providedIn: 'root'` store only observes once somethi
 
 **Enforced by:** `apps/cleansia.app/src/app/session-listeners.spec.ts` (resolves the store through
 the token, and asserts the sign-out path blanks it) — **T1-CI**; the cycle it prevents is
-`check-module-boundaries.mjs`'s — **T1-CI**.
+`check-module-boundaries.mjs`'s — **T2-ADVISORY**, on demand only.
 
 ## Building a generated DTO — construct-then-assign, never an object literal (ADR-0031)
 
@@ -1115,11 +1116,14 @@ resolves its `extends` and its `references`), **NX-7** (`jest.config.*` ⇔ a `t
 `project.json` declares, or one `@nx/jest/plugin` infers because its `nx.json` registration covers the
 config, so an `include` that leaves a lib's config out leaves that lib with no target; a declared
 target's `jestConfig`/`tsConfig` options resolve — they are **workspace**-relative, not project-relative)
-and **NX-8** (a registered project holding TypeScript has a `test` target at all) — **on demand only**,
+and **NX-8** (among registered libs and rostered apps, TypeScript source witnesses a project with
+neither an effective `test` target nor a Jest config) — **on demand only**,
 as above: no workflow runs the checker, so read the tier as `T2-ADVISORY`. Same anti-vacuity anchor:
 zero tsconfigs read, zero jest configs, or zero `test` targets across a non-empty project set is a hard
-failure. None of the three has a recorded set; all three baselines are zero and each instance is a
-one-token fix. NX-8 and NX-7 are disjoint by construction, so a project is reported once, not twice.
+failure. None of the three has a recorded set; all three baselines are zero. NX-8 requires scaffolding
+the Jest config, spec tsconfig and test setup from a sibling, with a real spec in the same change; a
+path repair for NX-6 or NX-7 is a different case. NX-8 and NX-7 are disjoint by construction, so a
+project is reported once, not twice.
 
 **A dangling `tsconfig.base.json` alias is deleted, not repointed — decide per alias, by grep.** An
 alias with live importers and a typo'd path is a *repair*; an alias with **zero** importers whose lib
@@ -1361,8 +1365,8 @@ A reducer spec is worth writing beside the effect spec: it is where the three da
 catalog read **byte-identical** to an empty catalog — `CustomerCatalogState` carries no error field —
 which that spec pins as-is rather than blesses.
 
-**What is gated:** the *configuration* — that these libs are in the test run at all — is NX-8 above,
-**T1-CI**. The *coverage* is not gated and cannot be until it is clean: 7 of 11 `*.effects.ts` and 12 of
+**What is checked:** the *configuration* — that these libs have a test target — is NX-8 above,
+**T2-ADVISORY**, on demand only. The *coverage* is not gated and cannot be until it is clean: 7 of 11 `*.effects.ts` and 12 of
 14 reducers under `libs/data-access/` still have no spec, so a `*.effects.ts` ⇔ `*.effects.spec.ts`
 guard would land on a non-zero baseline (`enforcement.md`: enforcement goes behind the cleanup, never in
 front of it). Until that backfill lands this section is **(guidance — no gate)**.

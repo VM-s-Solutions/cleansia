@@ -178,8 +178,9 @@ final class CustomerAppContainer: AppContainer {
         }
     }
 
-    /// Every per-user cache joins the session-wipe set here, in one place, so a logout empties all of
+    /// Every per-user cache joins the session-wipe set here, in one place, so every wipe trigger clears
     /// them (S11); the market directory and the device settings are deliberately not on this list.
+    /// → /mobile-app/patterns#session-wipe
     private func registerSessionScopedCaches(in registry: SessionScopedCacheRegistry) {
         if #available(iOS 16.2, *) {
             registry.register(LiveActivityCoordinator.shared)

@@ -76,7 +76,7 @@ consistency survives even when an agent (or human) doesn't read carefully. The p
 
 ## The consistency checker — `agents/tools/check-consistency.mjs`
 
-Dependency-free Node (runs on the Windows dev box **and** ubuntu CI — the repo already uses Node 22).
+Dependency-free Node, run on demand with the repository’s Node 22 toolchain; no workflow runs it.
 It line-scans source for the project-specific rules that ESLint/analyzers can't express:
 
 - **Backend:** A1 (paged query inherits `DataRangeRequest`), A5 (no hand-built `PagedData`), B1
@@ -135,7 +135,7 @@ layers**:
 infer it: **the rule is partly mechanical and partly not, and it must never be labelled `T1-CI`
 wholesale.** The authoritative per-clause table is in S12 itself; the summary is:
 
-- **Enforced today (`T1-CI`, `Cleansia.Tests`, a named step of `backend-ci.yml:69-71`)** — the served
+- **Enforced today (`T1-CI`, `Cleansia.Tests`, the **Unit tests (Cleansia.Tests)** step in `backend-ci.yml`)** — the served
   type is a closed set on the read path (`ServedContentTypeTests`, `SasResponseHeaderOverrideTests`,
   `EmployeeDocumentDownloadContentTypeTests`, `EmployeeDocumentDownloadDispositionTests`); the intake
   roster **enumerates** every upload route (`UploadIntakeRosterTests`, count-asserted first); the scrub

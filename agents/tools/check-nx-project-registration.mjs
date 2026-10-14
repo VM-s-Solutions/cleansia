@@ -16,10 +16,10 @@
  *     `{projectRoot}/**\/*` with an EMPTY `sharedGlobals`, so adding an unregistered directory
  *     anywhere else in the tree does not invalidate that project's cache and Nx replays a CACHED
  *     PASS over the hole.
- *   - `frontend-ci.yml`'s lint step is `continue-on-error: true` (`:73`), so nothing attached to it
- *     can set an exit code at all.
- *   - `agents/tools/check-consistency.mjs` is the counter-example, not the model: it appears in ZERO
- *     workflow files (ADR-0038 CH-P6), so it can never go red.
+ *   - `frontend-ci.yml`'s Lint (affected, non-blocking) step is `continue-on-error: true`, so a
+ *     failure there cannot make the job fail.
+ *   - Like this guard today, `agents/tools/check-consistency.mjs` appears in ZERO workflow files
+ *     (ADR-0038 CH-P6): both run on demand only, so neither can fail a CI job.
  * Living outside the workspace removes the cache hazard by construction rather than by
  * configuration. It was given its OWN repo-root workflow so it would never be behind `nx affected`
  * and never behind a `continue-on-error` step, but that workflow,

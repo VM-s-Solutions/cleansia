@@ -236,7 +236,7 @@ opposite directions and named an enforcer that cannot see its clause's real fail
 
 | Clause | Enforcer | Tier |
 |---|---|---|
-| Served type is server-derived from a closed set | `ServedContentTypeTests`, `EmployeeDocumentDownloadContentTypeTests`, `EmployeeDocumentDownloadDispositionTests`, `SasResponseHeaderOverrideTests` (`Cleansia.Tests`, a named step of `backend-ci.yml:70-71`) | **T1-CI** |
+| Served type is server-derived from a closed set | `ServedContentTypeTests`, `EmployeeDocumentDownloadContentTypeTests`, `EmployeeDocumentDownloadDispositionTests`, `SasResponseHeaderOverrideTests` (`Cleansia.Tests`, the **Unit tests (Cleansia.Tests)** step in `backend-ci.yml`) | **T1-CI** |
 | Accept set ⊆ serve set | **true by construction today** — one `Signatures` table + `AcceptedByIntake` (`SniffedContentType.cs:66-104`) — but **unpinned**: `ServedContentTypeTests` carries no assertion that every `Signatures` MIME resolves to a non-`Opaque` `ServedContentType`, so a seventh row reintroduces the defect silently | `(gate pending: T-0458)` — for that reason, not the one previously written here |
 | The roster **enumerates** all 14 intakes | `UploadIntakeRosterTests` (`:39-55` + `:76-84`) | **T1-CI — shipped** |
 | Every intake **declares** audience + scrub | the same test, with two added columns | `(gate pending: T-0458)` |

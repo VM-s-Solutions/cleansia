@@ -84,7 +84,8 @@ a comment that only explains *why* belongs in `docs/` with a `→ /path#anchor` 
 | Per-component contracts | `/domain/roles/` |
 | The ten flows, end to end | `/flows/` |
 | Why a decision was made — the ADRs | `/decisions/` |
-| Aspire, ports, the migrator, request logging | `/architecture/local-orchestration` |
+| Aspire, ports, the migrator | `/architecture/local-orchestration` |
+| Request logging and PII redaction | `/architecture/request-logging` |
 | The S1–S12 security laws | `/architecture/security-rules` |
 
 **How we build** stays under `agents/knowledge/` — stack pattern catalogues, `consistency.md`,

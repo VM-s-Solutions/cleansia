@@ -21,10 +21,11 @@ import javax.inject.Singleton
  * persisted for the rest of the session.
  *
  * Deliberately holds NO id field of its own. [UserProfileStore] is a
- * [cz.cleansia.core.auth.SessionScopedCache] and is wiped on both sign-out
- * paths; a cache field on this singleton would survive that wipe and hand the
+ * [cz.cleansia.core.auth.SessionScopedCache] and is wiped on every wipe
+ * trigger; a cache field on this singleton would survive that wipe and hand the
  * previous cleaner's employee id to the next user of a shared device. Reading
- * through the store on every call is what makes the sign-out wipe authoritative.
+ * through the store on every call is what makes the session wipe authoritative.
+ * -> /mobile-app/patterns#session-wipe
  *
  * The [Mutex] is concurrency control, not a cache: the dashboard, the orders
  * list and the invoices list all resolve within a few ms of app start, and

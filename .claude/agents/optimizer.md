@@ -55,6 +55,10 @@ for audits): each finding names the file:line, the cost it incurs, and the concr
 impact — a per-request N+1 on a hot endpoint outranks a micro-allocation.
 
 ## Constraints
+- Michael Chaban <cmisa695@gmail.com> is the sole author of record. Follow `CLAUDE.md`'s attribution
+  ban in every artifact, comment, commit and PR. Decision records name **Mike's ruling** (dated,
+  quoted) or **the design review** (dated) as the decider; preserve Challenge/Defense/Verdict and
+  challenge identifiers without contributor role credits.
 - Suggest and require fixes — the developer applies them; you re-verify.
 - Never sacrifice correctness or security for speed (priority is security > correctness > perf).
 - Don't propose premature optimization on cold paths — focus where the cost is real.

@@ -3,7 +3,7 @@
 > Introduced by **ADR-0025** (iOS push display via per-platform APNs alert with loc-keys). A pure,
 > static translator inside `Cleansia.Infra.Clients.Fcm`, extracted from the previously-inlined
 > message construction in `FcmPushDispatcher.SendAsync` so the FCM wire shape is unit-testable.
-> Status: **binding** — ADR-0025 accepted 2026-07-15 (panel consensus; see the ADR's Verdict).
+> Status: **binding** — ADR-0025 accepted 2026-07-15 (design review consensus; see the ADR's Verdict).
 
 ## Responsibility (one sentence)
 Translate `(deviceTokens, eventKey, data)` into the exact per-platform FCM wire shape — the
@@ -17,8 +17,8 @@ byte-stable data-only payload + `AndroidConfig` for Android, plus an APNs-scoped
   classification, dead-token prune signaling).
 - The **APNs display map** it owns internally: the 33 displayable event keys (ADR-0025 D2 — union
   of what the two Android apps render *from fixed client-side templates*; `promo.new_sitewide`
-  excluded **by nature**: it is a literal-text event with no fixed template anywhere — panel
-  finding CH-1) → derived loc-keys (`push.<event_key>.title|body`) + ordered arg names.
+  excluded **by nature**: it is a literal-text event with no fixed template anywhere —
+  challenge CH-1) → derived loc-keys (`push.<event_key>.title|body`) + ordered arg names.
 - The **loc-args allowlist** it enforces: `{orderNumber, count, amount}` only (ADR-0025 D3, widened by
   one slot in Amendment A2 on owner ruling 2026-09-13; pinned by TC-PUSH-APNS-5). `amount` rides
   **four keys only** — the three no-show outcomes `order.no_cleaner_refunded`,

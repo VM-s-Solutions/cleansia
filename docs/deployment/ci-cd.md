@@ -97,7 +97,7 @@ organisation repository), checks out the full history and runs:
 ./gitleaks git --config .gitleaks.toml --redact --no-banner --verbose --log-opts="HEAD" .
 ```
 
-So a secret committed anywhere in a pull request fails it, even if a later commit deletes it again —
+So a secret committed anywhere in a pull request fails the Secret scan check, even if a later commit deletes it again —
 deleting a file does not un-publish it. `--redact` keeps a finding out of the job log.
 
 | File | What it holds |
@@ -218,7 +218,8 @@ steps:
 `Cleansia.IntegrationTests` and `Cleansia.HostTests` spin a real PostgreSQL via Testcontainers.
 They are what catch the multi-tenant / FK / migration / webhook bugs the SQLite-and-mocks unit tests
 structurally cannot — for example the SQL-vs-C# equivalence pins on `OrderAvailability` and
-`OrderVisibility`. Both run with `xUnit.parallelizeTestCollections=false`.
+`OrderVisibility`. All three suites — unit, integration and host — run with
+`xUnit.parallelizeTestCollections=false`.
 
 Migration setup keeps EF's `PendingModelChangesWarning` guard enabled. The existing
 `SeededDatabaseHasNoOrphanTenantRowsTests` also migrates a fresh database through an unsuppressed
@@ -305,16 +306,17 @@ Migrations run **before** any API deploys to ensure the database schema is ready
 
 #### 4-7. API Deployments
 
-Each API deploys sequentially to Azure App Service:
+The API matrix deploys to Azure App Service with at most **two** parallel jobs on DEV and **five** on PRO:
 
-```bash
-az webapps-deploy --app-name api-cleansia-{service}-dev
-az webapp stop --name api-cleansia-{service}-dev --resource-group rg-cleansia-dev
-az webapp start --name api-cleansia-{service}-dev --resource-group rg-cleansia-dev
-```
+The `deploy-api` matrix in `deploy-azure.yml` names `partner`, `admin`, `customer`, `partner-mobile`
+and `customer-mobile`. Its **Deploy to Azure App Service** step targets
+`api-cleansia-<host>-<region>-<env>`. DEV deploys directly to the live site and runs **Warm the site**;
+PRO deploys to `staging`, runs **Warm the staging slot**, then **Swap staging into production**. Those
+slot steps run only when `inputs.env == 'prod'`.
 
-::: tip Sequential Deployment
-APIs deploy one at a time to avoid overloading the B1 App Service Plan. Each deployment includes a stop/start to force container refresh.
+::: tip Deployment capacity
+The configured plans are **B2 for DEV** and **S1 for PRO** (`weu.dev.bicepparam` / `weu.prod.bicepparam`).
+The matrix’s `max-parallel` is 2 for DEV and 5 for PRO.
 :::
 
 #### 5. Azure Functions
@@ -327,7 +329,7 @@ az acr build --registry $ACR_NAME \
   --file src/Cleansia.Functions/Dockerfile .
 
 az functionapp config container set \
-  --name func-cleansia-dev \
+  --name func-cleansia-{region}-{env} \
   --image "$ACR_NAME.azurecr.io/cleansia-functions:$GITHUB_SHA"
 ```
 
@@ -400,10 +402,10 @@ Same pipeline as DEV with these differences:
 | Approval | None | **Required reviewers on the `prod-weu` Environment** |
 | Default mode | `deploy` or `what-if`, chosen at dispatch | `what-if` — the no-thought path is the non-mutating preview |
 | Concurrency | Never cancel: a second dispatch waits for the running one | Never cancel |
-| Environment | (default) | `prod-weu` (GitHub Environment) |
+| Environment | `dev-weu` (GitHub Environment) | `prod-weu` (GitHub Environment) |
 | Angular config | `staging` | `production` |
-| Resource group | `rg-cleansia-dev` | `rg-cleansia-pro` |
-| App names | `*-dev` | `*-pro` |
+| Resource group | `rg-cleansia-<region>-dev` | `rg-cleansia-<region>-prod` |
+| App names | `*-<region>-dev` | `*-<region>-prod` |
 | Legal-text gate | none | the `legal-texts` job runs first, in both modes — below |
 
 **A production deploy is refused while a legal text in force, or one still to come, is a draft.**
@@ -541,7 +543,6 @@ reader checks. All 32 `dev-weu` secret names and metadata remained unchanged; no
 | `DB_CONNECTION_STRING_PRO` | PRO database connection string — read by `execute-sql.yml` only, which cannot reach the private production database |
 | `POSTGRES_ADMIN_PASSWORD` | the database administrator's password: the Bicep parameter, and on production the migration's sign-in |
 | `POSTGRES_APP_PASSWORD` | **production only** — the `cleansia_app` login's password, at least 24 letters and digits ([above](#production-window)) |
-| `AZURE_STATIC_WEB_APPS_API_TOKEN_PARTNER_DEV` | Partner SPA deploy token (DEV) |
-| `AZURE_STATIC_WEB_APPS_API_TOKEN_ADMIN_DEV` | Admin SPA deploy token (DEV) |
-| `AZURE_STATIC_WEB_APPS_API_TOKEN_PARTNER_PRO` | Partner SPA deploy token (PRO) |
-| `AZURE_STATIC_WEB_APPS_API_TOKEN_ADMIN_PRO` | Admin SPA deploy token (PRO) |
+| `AZURE_STATIC_WEB_APPS_API_TOKEN_PARTNER` | Partner SPA deploy token, scoped to the target GitHub Environment |
+| `AZURE_STATIC_WEB_APPS_API_TOKEN_ADMIN` | Admin SPA deploy token, scoped to the target GitHub Environment |
+| `AZURE_STATIC_WEB_APPS_API_TOKEN_DOCS_DEV` | Docs deploy token, repository-scoped and read by `deploy-docs.yml` |

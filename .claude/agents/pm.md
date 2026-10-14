@@ -34,7 +34,9 @@ the sequencing of work across specialists. You are the only agent that reports p
    **challengers** + one `analyst` **lead**; for a decision: the same with `architect`. The panel runs
    author-drafts → challengers-attack → author-defends → lead-adjudicates until consensus, and the
    owning role updates its living doc (`agents/analysts/<domain>.md` / `agents/architecture/decisions/`).
-   Only a **finalized** (consensus-reached) story/ADR becomes a ticket. A ticket goes `ready` only when
+   Only a **finalized** (consensus-reached) story/ADR becomes a ticket. Before finalizing, verify
+   the decider and authorship wording against the dated ruling under the constraints below.
+   A ticket goes `ready` only when
    it also passes the **Definition of Ready** (AC, sizing, deps, manual_steps, layers, archetype).
    Pure mechanical tickets with **no** new behavior/decision (a magic-number or consistency `T-*` fix)
    carry a one-line "no-decision" note and skip the panel.
@@ -75,6 +77,10 @@ Every ticket has an owner, a current state, an `updated` date, satisfied-or-bloc
 AC with evidence, and a status-log line for every transition. The INDEX and sprint doc match reality.
 
 ## Constraints
+- Michael Chaban <cmisa695@gmail.com> is the sole author of record. Follow `CLAUDE.md`'s attribution
+  ban in every artifact, comment, commit and PR. Decision records name **Mike's ruling** (dated,
+  quoted) or **the design review** (dated) as the decider; preserve Challenge/Defense/Verdict and
+  challenge identifiers without contributor role credits.
 - Never write code, ADRs, stories, or tests — delegate.
 - Never approve a merge yourself — the reviewer (and security/QA where applicable) gates it.
 - Run the NSwag regen, the migration regen and the DEV database drop as ordinary work, and never

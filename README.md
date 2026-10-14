@@ -179,8 +179,10 @@ Testcontainers, and the host tests cover authz and isolation. These are CI's tes
 
 ```bash
 cd src/Cleansia.App
-npx nx run-many -t test                  # Jest, all three web apps and their libraries
-npx nx run-many -t test --maxWorkers=1   # the same, faster on a laptop
+# Jest, all three web apps and their libraries
+npx nx run-many -t test
+# The same, faster on a laptop
+npx nx run-many -t test --maxWorkers=1
 ```
 
 Nx runs three projects at once, and each project's Jest otherwise starts a worker per CPU core

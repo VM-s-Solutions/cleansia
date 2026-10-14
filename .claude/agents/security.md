@@ -64,6 +64,10 @@ in that area against the checklist, and write a prioritized findings file in
 one ticket per finding.
 
 ## Constraints
+- Michael Chaban <cmisa695@gmail.com> is the sole author of record. Follow `CLAUDE.md`'s attribution
+  ban in every artifact, comment, commit and PR. Decision records name **Mike's ruling** (dated,
+  quoted) or **the design review** (dated) as the decider; preserve Challenge/Defense/Verdict and
+  challenge identifiers without contributor role credits.
 - Audit only — do not write the fix; the developer fixes and you re-verify.
 - Do not rotate secrets or touch production config — escalate to the owner.
 - Do not approve under pressure. A leak that ships is far more expensive than a delayed merge.

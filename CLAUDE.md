@@ -264,10 +264,11 @@ coordinating multi-agent or multi-step work, start with **`agents/WAY-OF-WORKING
   to the charter's `name`.
 - **`agents/process/*.md`** — ticket lifecycle, quality gates, communication protocol, routing.
 - **`agents/tools/check-*.mjs`** — 18 repo checkers, nine with their own self-test. The only
-  required status check on `master` is `build`, emitted by the Backend, Frontend, Android and iOS
-  workflows; Backend and iOS run only when their paths change. Docs and Secret scan run on every
-  pull request, and iOS symbols and booking-policy parity when their paths change, but the ruleset
-  does not require them (→ `/deployment/ci-cd#required-checks`).
+  required checks on `master` are `build`, `References and build` and `No new secret in the history`
+  (API verified 2026-10-14). Only `build` is pinned to GitHub Actions (integration id 15368).
+  Backend and iOS emit `build` when their paths change; Frontend and Android emit it on every pull
+  request. Docs and Secret scan run on every pull request. Frontend e2e-smoke, iOS symbols and
+  booking-policy parity remain advisory (→ `/deployment/ci-cd#required-checks`).
   The last two are dependency-free Node gates with their own repo-root workflows, because the drift
   they catch spans trees that no single existing job can see: `nx affected` selects nothing for a
   C#-only diff, `backend-ci` excludes the mobile trees, and Gradle and Xcode cannot read C#.

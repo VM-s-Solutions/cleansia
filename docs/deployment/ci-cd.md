@@ -2,8 +2,8 @@
 
 Cleansia uses GitHub Actions. **The workflows below check a pull request** — one per stack, the docs,
 the dependency-free Node checks whose drift spans trees no single stack job can see, and the secret
-scan — and the rest deploy or run operational jobs. **The only status required to merge is `build`**:
-[what it covers](#required-checks).
+scan — and the rest deploy or run operational jobs. **The required statuses are `build`,
+`References and build` and `No new secret in the history`**: [what they cover](#required-checks).
 
 ::: info Source Files
 **Runs on a PR**
@@ -27,14 +27,17 @@ scan — and the rest deploy or run operational jobs. **The only status required
 
 ## What a pull request needs to merge {#required-checks}
 
-`build` is the only status check required to merge into `master`, and this section says what it
-covers (owner ruling 2026-10-11, T-0813).
+Ruleset **6739260**, applied and read back on **2026-10-14** under the owner's 2026-10-13 ruling
+(T-0813), requires **`build`**, Docs CI's **`References and build`** and Secret scan's
+**`No new secret in the history`**. Only **`build`** is pinned to GitHub Actions
+(`integration_id: 15368`); the other two contexts have no integration pin.
 
 The repository rulesets *master* and *Pull request rule* protect `master`, and there is no classic
 branch protection. They apply only to `master`, so a pull request into another branch (a stacked one)
 has no required check. Ruleset *master* requires every review thread to be resolved, no approval, and
-the status check **`build`**, strict: the branch must also be up to date with `master`. The check is
-pinned to no app, so a `build` from any source counts.
+the three status checks above, strict: the branch must also be up to date with `master`. The
+2026-10-14 update preserved strict checking, team 11814740's `always` bypass and
+`require_extra_approval_for_unattributed_changes: true`, along with all other rules.
 
 **`build` is a job name, not a workflow.** Every check called `build` on the head must report, and
 these jobs report one:
@@ -42,8 +45,9 @@ these jobs report one:
 - **Frontend** (`frontend-ci.yml`) and **Android** (`android-ci.yml`), on every pull request;
 - **Backend** (`backend-ci.yml`), when the pull request touches `src/**` outside the web, Android and
   iOS trees, `sql-scripts/**` or the workflow;
-- **iOS** (`ios-ci.yml`), when it touches `src/cleansia_ios/**`, `src/cleansia_android/openapi/**` or
-  the workflow.
+- **iOS** (`ios-ci.yml`), when it touches `src/cleansia_ios/**`, `src/cleansia_android/openapi/**`,
+  either of the two Android Kotlin sources or five locale XML files read by its cross-tree tests
+  (listed below), or the workflow.
 
 The list is every job keyed `build` with no `name:`, `strategy:`, `if:` or `uses:`, and its
 membership test has two halves. `grep -nE '^  build:$' .github/workflows/*.yml` lists the jobs keyed
@@ -61,19 +65,20 @@ Frontend's lint step is `continue-on-error`, so lint never fails its `build`.
   reading, 45 s after Backend finished.
 - **A failed `build` beside a green one has not been observed.** Whether a red `build` still blocks
   when another `build` on the same head finishes green after it stays unknown until a pull request
-  reaches that state on its own (T-0813).
+  reaches that state on its own (T-0813). Its passive observation baseline is now the ruleset
+  updated at `2026-10-14T15:34:25.285+02:00`, with these three contexts and only `build` integration-pinned.
+  No push, re-run or pull request may be created to manufacture the qualifying state.
 
-**Advisory checks** show red on a pull request when they fail, and do not block the merge: Docs CI
-(*References and build*), Secret scan (*No new secret in the history*) and Frontend CI's *e2e-smoke*
+**Advisory checks** remain Frontend CI's *e2e-smoke*
 on every pull request; iOS Symbols CI (*Symbols resolve and switches stay exhaustive*) and Booking
 policy parity (*Every surface quotes the policy it actually enforces*) when their paths change.
 
-**The gate changes when a workflow does.** A required check is matched by its name alone, not by its
-workflow, matrix or event:
+**The gate changes when a workflow does.** A required check matches its context name, with a
+GitHub Actions integration restriction for `build`, rather than its workflow, matrix or event:
 
 - a `name:`, a matrix, or a move into a reusable workflow renames a job's check, and that workflow
   leaves the gate without any error;
-- any other check called `build` on the head joins the gate, from any workflow or app;
+- any other GitHub Actions check called `build` on the head joins the gate, from any workflow;
 - renaming every `build` job leaves each pull request waiting for a check that never arrives, until
   someone bypasses the rule;
 - a workflow that fails before its job starts reports no `build`, so the others can pass the gate
@@ -110,7 +115,7 @@ failing, it does not make the secret safe.
 | `backend-ci` | PR to any branch that touches `src/**` outside the web, Android and iOS trees, `sql-scripts/**` or the workflow | Build + test .NET solution |
 | `frontend-ci` | PR to any branch | Build Angular apps |
 | `android-ci` | PR to any branch | Compile and unit-test `:core`, `:partner-app` and `:customer-app` |
-| `ios-ci` | PR to any branch that touches `src/cleansia_ios/**`, `src/cleansia_android/openapi/**` or the workflow | SwiftFormat, SwiftLint, then build and test the three schemes |
+| `ios-ci` | PR to any branch that touches `src/cleansia_ios/**`, `src/cleansia_android/openapi/**`, its seven Android test inputs listed below, or the workflow | SwiftFormat, SwiftLint, then build and test the three schemes |
 | `docs-ci` | PR to any branch | Docs pointers and written claims resolve; the docs site builds |
 | `ios-symbols-ci` | PR to any branch that touches `src/cleansia_ios/**`, the checker, its self-test or the workflow | `check-ios-symbols.mjs` on Linux |
 | `booking-policy-parity` | PR to any branch that touches a file the checker reads, the checker, its self-test or the workflow | `check-booking-policy-parity.mjs` |
@@ -120,6 +125,16 @@ failing, it does not make the secret safe.
 | `deploy-azure` | Called by `deploy-dev` and `deploy-pro` (`workflow_call`) | The shared build, provision, migrate and deploy pipeline |
 | `deploy-docs` | Manual (`workflow_dispatch`) | Build the docs site and deploy it to DEV's Static Web App |
 | `execute-sql` | Manual | Run ad-hoc SQL scripts. On PRO it refuses a development fixture by resolved path (`insert_seed_data.sql`, anything under `seed/` or outside `sql-scripts/`), and every DEV-only script by file name, from one list in its step *Refuse DEV-only scripts against production*: `insert_local_dev_admin.sql`, `fix-company-contact-placeholders.sql`, `fix-plus-trial-14-days.sql` and `fix-deactivate-local-dev-admin.sql`. A relative path cannot walk around a name, each refusal says where production does the same thing instead, and a new DEV-only script is one more row of the list (one list since 2026-10-04; the last two were not refused before). The three fixes correct what a DEV database got from a development fixture, which production is never built from. DEV runs all of them, `insert_local_dev_admin.sql` included (owner ruling 2026-09-30, until an app registration gates the DEV apps). It opens no network window, so it cannot reach the production database once that is private ([below](#production-window)) |
+
+iOS CI also watches the exact Android inputs its tests read on pull requests and master pushes:
+
+- `src/cleansia_android/customer-app/src/main/java/cz/cleansia/customer/features/profile/HelpSupportScreen.kt`
+- `src/cleansia_android/core/src/main/java/cz/cleansia/core/config/CleansiaWeb.kt`
+- `src/cleansia_android/customer-app/src/main/res/values/strings.xml`
+- `src/cleansia_android/customer-app/src/main/res/values-cs/strings.xml`
+- `src/cleansia_android/customer-app/src/main/res/values-sk/strings.xml`
+- `src/cleansia_android/customer-app/src/main/res/values-uk/strings.xml`
+- `src/cleansia_android/customer-app/src/main/res/values-ru/strings.xml`
 
 As of 2026-10-11, every file in `.github/workflows/` has a row. The workflows that check a pull
 request also run on pushes to `master`, path-scoped except for the secret scan.
@@ -140,9 +155,10 @@ runner. A new workflow either joins one of these two labels or says why not.
   - `macos-latest` resolved to macos-26-arm64, version 20260907.0351.1, with Xcode 26.6 (17F113) and an iPhone 17 Pro simulator.
 
   A maintainer's Mac ran Xcode 26.3 that day, with the same SwiftFormat, SwiftLint, xcodegen,
-  xcbeautify and openapi-generator versions as CI. Only SwiftFormat, SwiftLint and openapi-generator
-  are pinned: CI installs xcodegen and xcbeautify from Homebrew, unpinned, so their versions follow
-  Homebrew's.
+  xcbeautify and openapi-generator versions as CI. CI now pins XcodeGen **2.46.0** and xcbeautify
+  **3.2.1**, alongside SwiftFormat **0.60.1**, SwiftLint **0.65.0** and openapi-generator **7.10.0**.
+  All five downloads are SHA-256 checked before extraction or installation; the four macOS tools
+  resolve from `$RUNNER_TEMP/pinned-tools`, with XcodeGen's sibling setting presets preserved.
 - **Ubuntu 26.** GitHub moves the `ubuntu-latest` label to Ubuntu 26.04 in a rollout that begins
   2026-10-19 and completes by 2026-11-19 ([actions/runner-images#14748](https://github.com/actions/runner-images/issues/14748)).
   Every Ubuntu job names `ubuntu-24.04` instead (owner ruling 2026-10-12), the image it already ran on,
@@ -228,7 +244,7 @@ build-angular ─────> deploy-customer-ssr
 
 #### 1. Build .NET APIs
 
-Publishes **five** API projects as separate artifacts (`deploy-azure.yml:120-136`):
+The five **Publish … API** steps in `build-dotnet` publish separate API artifacts:
 
 | Artifact | Project |
 |----------|---------|
@@ -252,7 +268,11 @@ The Customer app includes SSR with a generated `package.json` for Node.js startu
 
 #### 3. Database Migration
 
-Creates and runs an EF Core migrations bundle:
+`build-dotnet` installs **dotnet-ef 10.0.3** and builds the EF Core migrations bundle in its
+**Build EF migrations bundle** step, only in deploy mode. Its upload step exposes the `ef-bundle`
+artifact ID as a job output. `migrate-database` downloads that single ID before running the bundle;
+the five API consumers likewise select their producer's artifact ID through the host matrix.
+The commands run in different jobs:
 
 ```bash
 dotnet ef migrations bundle \
@@ -459,7 +479,23 @@ Every later administrator is created in the console →
 
 ## Authentication
 
+The 2026-10-14 GitHub settings readback confirms `sha_pinning_required: true`. The default workflow
+token was already `read`, with `can_approve_pull_request_reviews: false`; no write was needed for
+that setting (SEC-CI-6). Checkout steps set `persist-credentials: false`.
+
+`prod-weu` now requires reviewer **MichaelChaban** (user id **76599514**), permits self-review
+(`prevent_self_review: false`), disables administrator bypass (`can_admins_bypass: false`) and has
+one custom deployment branch policy: branch **`master`**. Fresh authenticated and anonymous reads
+confirmed the gate; the branch-policy read confirmed the exact branch. The unused `production`
+configuration was deleted after fresh checks found zero secrets, zero variables and no current
+workflow readers. Its history was not empty: one failed GitHub deployment from **2026-04-01** was
+present before deletion. After deletion that object's only changed field was `updated_at`, and the
+statuses endpoint returned one `inactive` status. The prior error status is preserved off-tree;
+its continued server retention was not established. No PRO operation ran.
+
 Every job that signs in to Azure uses federated identity (OIDC), so no Azure client secret is stored.
+The target setup uses a distinct OIDC app per stage, federated only to that stage's environment and
+granted at its resource-group scope; actual DEV identity narrowing remains deferred to owner go-live.
 Each workflow's token is read-only (`contents: read`) at the top level, and `id-token: write` is
 granted per job: to the jobs that sign in, and to the `deploy` job of `deploy-dev.yml` and
 `deploy-pro.yml`, whose grant caps what any job in `deploy-azure.yml` may request. A job that signs in
@@ -478,6 +514,12 @@ permissions:
 ```
 
 ## Required Secrets
+
+Deploy jobs read their stage's GitHub Environment secrets: DEV uses `dev-weu`, and PRO requires its
+own `prod-weu` values at owner go-live. The only repository-level secret retained after the
+2026-10-14 cleanup is `AZURE_STATIC_WEB_APPS_API_TOKEN_DOCS_DEV`, read by `deploy-docs.yml`.
+The eight obsolete repository copies were deleted sequentially after fresh name-list and workflow
+reader checks. All 32 `dev-weu` secret names and metadata remained unchanged; no secret values were read.
 
 | Secret | Purpose |
 |--------|---------|

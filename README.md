@@ -190,10 +190,11 @@ an empty Jest cache, and 96 s instead of 242 s with a warm one, and Jest's *"wor
 gracefully"* warning went away. CI still runs the default; whether it should change is an owner
 decision (T-0813).
 
-Integration and host tests need Docker running. The only required status check on `master` is
-`build`, emitted by the Backend, Frontend, Android and iOS workflows; Backend and iOS run only when
-their paths change. Docs and Secret scan run on every pull request, and iOS Symbols and
-booking-policy parity when their paths change, but the ruleset does not require them
+Integration and host tests need Docker running. The required checks on `master` are `build`,
+`References and build` and `No new secret in the history` (API verified 2026-10-14). Only `build` is
+pinned to GitHub Actions (integration id 15368). Backend and iOS emit `build` when their paths change; Frontend and Android
+emit it on every pull request. Docs and Secret scan run on every pull request. Frontend e2e-smoke,
+iOS Symbols and booking-policy parity remain advisory
 ([what a PR needs to merge](docs/deployment/ci-cd.md#required-checks)).
 
 Two of those suites are easy to forget locally and are derived from the backend rather than from what

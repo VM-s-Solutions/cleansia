@@ -20,6 +20,13 @@ on:
       # scripts/generate-api-clients.sh consumes — a spec-only change must
       # re-run the iOS codegen + builds too.
       - 'src/cleansia_android/openapi/**'
+      - 'src/cleansia_android/customer-app/src/main/java/cz/cleansia/customer/features/profile/HelpSupportScreen.kt'
+      - 'src/cleansia_android/core/src/main/java/cz/cleansia/core/config/CleansiaWeb.kt'
+      - 'src/cleansia_android/customer-app/src/main/res/values/strings.xml'
+      - 'src/cleansia_android/customer-app/src/main/res/values-cs/strings.xml'
+      - 'src/cleansia_android/customer-app/src/main/res/values-sk/strings.xml'
+      - 'src/cleansia_android/customer-app/src/main/res/values-uk/strings.xml'
+      - 'src/cleansia_android/customer-app/src/main/res/values-ru/strings.xml'
       - '.github/workflows/ios-ci.yml'
   push:
     branches:
@@ -27,6 +34,13 @@ on:
     paths:
       - 'src/cleansia_ios/**'
       - 'src/cleansia_android/openapi/**'
+      - 'src/cleansia_android/customer-app/src/main/java/cz/cleansia/customer/features/profile/HelpSupportScreen.kt'
+      - 'src/cleansia_android/core/src/main/java/cz/cleansia/core/config/CleansiaWeb.kt'
+      - 'src/cleansia_android/customer-app/src/main/res/values/strings.xml'
+      - 'src/cleansia_android/customer-app/src/main/res/values-cs/strings.xml'
+      - 'src/cleansia_android/customer-app/src/main/res/values-sk/strings.xml'
+      - 'src/cleansia_android/customer-app/src/main/res/values-uk/strings.xml'
+      - 'src/cleansia_android/customer-app/src/main/res/values-ru/strings.xml'
       - '.github/workflows/ios-ci.yml'
 
 permissions:
@@ -55,6 +69,8 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
+        with:
+          persist-credentials: false
 
       # The runner's DEFAULT Xcode lags the newest SDK on the image, while local dev
       # builds against the newest installed Xcode. Any #available-gated API newer than
@@ -69,13 +85,28 @@ jobs:
           sudo xcode-select -s "$NEWEST"
           xcodebuild -version
 
-      # xcodegen + xcbeautify are not on the runner image; installing them keeps
-      # CI independent of image drift. SwiftLint is NOT brew-installed here — it
-      # is pinned below (like SwiftFormat + openapi-generator), because the
-      # runner image's bundled swiftlint version drifts and a new default/rule
-      # silently fails CI on code that passed a dev's local lint.
-      - name: Install toolchain
-        run: brew install xcodegen xcbeautify
+      - name: Install XcodeGen and xcbeautify (pinned)
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/pinned-tools"
+          curl -fsSL -o "$RUNNER_TEMP/xcodegen.zip" \
+            https://github.com/yonaskolb/XcodeGen/releases/download/2.46.0/xcodegen.zip
+          echo "4d9e34b62172d645eed6457cac13fc222569974098ef4ee9c3368bedf0196806  $RUNNER_TEMP/xcodegen.zip" \
+            | shasum -a 256 -c -
+          unzip -o "$RUNNER_TEMP/xcodegen.zip" -d "$RUNNER_TEMP/pinned-tools"
+          curl -fsSL -o "$RUNNER_TEMP/xcbeautify.zip" \
+            https://github.com/cpisciotta/xcbeautify/releases/download/3.2.1/xcbeautify-3.2.1-arm64-apple-macosx.zip
+          echo "ed32972e41bc3aa19588f8b0f4a0209ef70c663ad60bbf4ad84a2de73355d637  $RUNNER_TEMP/xcbeautify.zip" \
+            | shasum -a 256 -c -
+          unzip -o "$RUNNER_TEMP/xcbeautify.zip" -d "$RUNNER_TEMP/xcbeautify-bin"
+          install "$RUNNER_TEMP/xcbeautify-bin/xcbeautify" "$RUNNER_TEMP/pinned-tools/xcbeautify"
+          echo "$RUNNER_TEMP/pinned-tools/xcodegen/bin" >> "$GITHUB_PATH"
+          echo "$RUNNER_TEMP/pinned-tools" >> "$GITHUB_PATH"
+          export PATH="$RUNNER_TEMP/pinned-tools:$RUNNER_TEMP/pinned-tools/xcodegen/bin:$PATH"
+          test "$(command -v xcodegen)" = "$RUNNER_TEMP/pinned-tools/xcodegen/bin/xcodegen"
+          test "$(command -v xcbeautify)" = "$RUNNER_TEMP/pinned-tools/xcbeautify"
+          test "$(xcodegen --version)" = "Version: 2.46.0"
+          test "$(xcbeautify --version)" = "3.2.1"
 
       # openapi-generator is PINNED (not brew-latest) for the same reason as
       # SwiftFormat below: the generated business clients are wire-load-bearing,
@@ -113,14 +144,17 @@ jobs:
       - name: Install SwiftFormat (pinned 0.60.1)
         run: |
           set -euo pipefail
-          curl -fsSL -o /tmp/swiftformat.zip \
+          curl -fsSL -o "$RUNNER_TEMP/swiftformat.zip" \
             https://github.com/nicklockwood/SwiftFormat/releases/download/0.60.1/swiftformat.zip
-          unzip -o /tmp/swiftformat.zip -d /tmp/swiftformat-bin
-          BIN="$(find /tmp/swiftformat-bin -name swiftformat -type f -perm -u+x | head -1)"
+          echo "23b50c75f4223c477e822833c4cf819a1c9abbb6d00e892900bda1c3a8231afd  $RUNNER_TEMP/swiftformat.zip" \
+            | shasum -a 256 -c -
+          unzip -o "$RUNNER_TEMP/swiftformat.zip" -d "$RUNNER_TEMP/swiftformat-bin"
           mkdir -p "$RUNNER_TEMP/pinned-tools"
-          install "$BIN" "$RUNNER_TEMP/pinned-tools/swiftformat"
+          install "$RUNNER_TEMP/swiftformat-bin/swiftformat" "$RUNNER_TEMP/pinned-tools/swiftformat"
           echo "$RUNNER_TEMP/pinned-tools" >> "$GITHUB_PATH"
-          "$RUNNER_TEMP/pinned-tools/swiftformat" --version
+          export PATH="$RUNNER_TEMP/pinned-tools:$PATH"
+          test "$(command -v swiftformat)" = "$RUNNER_TEMP/pinned-tools/swiftformat"
+          test "$(swiftformat --version)" = "0.60.1"
 
       # SwiftLint is PINNED for the same reason as SwiftFormat: the runner
       # image's bundled swiftlint drifts, and a version bump can add a rule that
@@ -132,13 +166,16 @@ jobs:
       - name: Install SwiftLint (pinned 0.65.0)
         run: |
           set -euo pipefail
-          curl -fsSL -o /tmp/swiftlint.zip \
+          curl -fsSL -o "$RUNNER_TEMP/swiftlint.zip" \
             https://github.com/realm/SwiftLint/releases/download/0.65.0/portable_swiftlint.zip
-          unzip -o /tmp/swiftlint.zip -d /tmp/swiftlint-bin
-          BIN="$(find /tmp/swiftlint-bin -name swiftlint -type f -perm -u+x | head -1)"
+          echo "d6cb0aa7a2f5f1ef306fc9e37bcb54dc9a26facc8f7784ac0c3dd3eccf5c6ba6  $RUNNER_TEMP/swiftlint.zip" \
+            | shasum -a 256 -c -
+          unzip -o "$RUNNER_TEMP/swiftlint.zip" -d "$RUNNER_TEMP/swiftlint-bin"
           mkdir -p "$RUNNER_TEMP/pinned-tools"
-          install "$BIN" "$RUNNER_TEMP/pinned-tools/swiftlint"
-          "$RUNNER_TEMP/pinned-tools/swiftlint" version
+          install "$RUNNER_TEMP/swiftlint-bin/swiftlint" "$RUNNER_TEMP/pinned-tools/swiftlint"
+          export PATH="$RUNNER_TEMP/pinned-tools:$PATH"
+          test "$(command -v swiftlint)" = "$RUNNER_TEMP/pinned-tools/swiftlint"
+          test "$(swiftlint version)" = "0.65.0"
 
       # Severity rules for the missing-Config/Local.xcconfig diagnostic that both app
       # targets run as a pre-build phase. The runner deliberately has no Local.xcconfig,

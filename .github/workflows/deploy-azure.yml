@@ -84,26 +84,25 @@ jobs:
   build-dotnet:
     name: Build .NET APIs
     runs-on: ubuntu-24.04
+    outputs:
+      partner-api-id: ${{ steps.upload-partner-api.outputs.artifact-id }}
+      admin-api-id: ${{ steps.upload-admin-api.outputs.artifact-id }}
+      customer-api-id: ${{ steps.upload-customer-api.outputs.artifact-id }}
+      partner-mobile-api-id: ${{ steps.upload-partner-mobile-api.outputs.artifact-id }}
+      customer-mobile-api-id: ${{ steps.upload-customer-mobile-api.outputs.artifact-id }}
+      ef-bundle-id: ${{ steps.upload-ef-bundle.outputs.artifact-id }}
     permissions:
       contents: read
     steps:
       - name: Checkout code
         uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
+        with:
+          persist-credentials: false
 
       - name: Set up .NET
         uses: actions/setup-dotnet@26b0ec14cb23fa6904739307f278c14f94c95bf1 # v5.4.0
         with:
           dotnet-version: 10.x
-
-      # NuGet package cache — keyed on the central package versions file + csprojs, so a
-      # dependency bump misses once and everything else restores from cache instead of nuget.org.
-      - name: Cache NuGet packages
-        uses: actions/cache@caa296126883cff596d87d8935842f9db880ef25 # v5.1.0
-        with:
-          path: ~/.nuget/packages
-          key: nuget-${{ runner.os }}-${{ hashFiles('src/Directory.Packages.props', 'src/**/*.csproj') }}
-          restore-keys: |
-            nuget-${{ runner.os }}-
 
       - name: Restore dependencies
         run: dotnet restore Cleansia.Api.sln
@@ -146,30 +145,35 @@ jobs:
         working-directory: ./src
 
       - name: Upload Partner API artifact
+        id: upload-partner-api
         uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
         with:
           name: partner-api
           path: ./src/publish/partner-api
 
       - name: Upload Admin API artifact
+        id: upload-admin-api
         uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
         with:
           name: admin-api
           path: ./src/publish/admin-api
 
       - name: Upload Customer API artifact
+        id: upload-customer-api
         uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
         with:
           name: customer-api
           path: ./src/publish/customer-api
 
       - name: Upload Partner-Mobile API artifact
+        id: upload-partner-mobile-api
         uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
         with:
           name: partner-mobile-api
           path: ./src/publish/partner-mobile-api
 
       - name: Upload Customer-Mobile API artifact
+        id: upload-customer-mobile-api
         uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
         with:
           name: customer-mobile-api
@@ -181,7 +185,7 @@ jobs:
       # deploy mode: what-if runs no migrations, so it should not pay for the bundle either.
       - name: Install EF Core tools
         if: inputs.mode == 'deploy'
-        run: dotnet tool install --global dotnet-ef
+        run: dotnet tool install --global dotnet-ef --version 10.0.3
 
       - name: Build EF migrations bundle
         if: inputs.mode == 'deploy'
@@ -195,6 +199,7 @@ jobs:
         working-directory: ./src
 
       - name: Upload EF bundle artifact
+        id: upload-ef-bundle
         if: inputs.mode == 'deploy'
         uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
         with:
@@ -213,6 +218,8 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
+        with:
+          persist-credentials: false
 
       - name: Setup Node.js
         uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5.0.0
@@ -224,17 +231,6 @@ jobs:
       - name: Install dependencies
         run: npm ci
         working-directory: ./src/Cleansia.App
-
-      # Nx computation cache — content-hashed per task, so an unchanged app restores its build
-      # output instead of recompiling all three bundles. Keyed to the SHA so every run saves a
-      # fresh entry; restore-keys pulls the most recent prior run's cache.
-      - name: Cache Nx computation cache
-        uses: actions/cache@caa296126883cff596d87d8935842f9db880ef25 # v5.1.0
-        with:
-          path: ./src/Cleansia.App/.nx/cache
-          key: nx-${{ runner.os }}-${{ inputs.env }}-${{ github.sha }}
-          restore-keys: |
-            nx-${{ runner.os }}-${{ inputs.env }}-
 
       - name: Build Customer App
         run: npx nx build cleansia.app --configuration=$NX_BUILD_CONFIGURATION
@@ -290,6 +286,8 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
+        with:
+          persist-credentials: false
 
       # Read from the param file Bicep deploys, so the workflow and the infrastructure cannot disagree:
       # privateNetworkingEnabled = true (prod) closes the Key Vault to every network but its private
@@ -722,6 +720,8 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
+        with:
+          persist-credentials: false
 
       # The self-contained bundle was built in build-dotnet (a `needs` of this job) — download
       # it instead of re-restoring the whole solution here. The artifact transfer drops the
@@ -729,7 +729,7 @@ jobs:
       - name: Download EF bundle artifact
         uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7.0.0
         with:
-          name: ef-bundle
+          artifact-ids: ${{ needs.build-dotnet.outputs.ef-bundle-id }}
           path: ./src
 
       # The same read as the provision job's: privateNetworkingEnabled = true (prod) means the database
@@ -972,6 +972,7 @@ jobs:
         if: inputs.env != 'prod'
         uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
         with:
+          persist-credentials: false
           sparse-checkout: .github/scripts
 
       - name: Login to Azure
@@ -984,7 +985,7 @@ jobs:
       - name: Download artifact
         uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7.0.0
         with:
-          name: ${{ matrix.host }}-api
+          artifact-ids: ${{ needs.build-dotnet.outputs[format('{0}-api-id', matrix.host)] }}
           path: ./${{ matrix.host }}-api
 
       # Prod lands in the staging slot and is swapped below (deploy/AZURE-PROD-POSTURE.md §1);
@@ -1073,6 +1074,8 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
+        with:
+          persist-credentials: false
 
       - name: Login to Azure
         uses: azure/login@a641126d1b8aa4d1fa005f4f92df94a3a4c4c906 # v3.1.0
@@ -1282,6 +1285,8 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
+        with:
+          persist-credentials: false
 
       # Sequential on purpose: each hostname gets the plan's attention for as long as it needs it.
       # Both public hostnames are exercised without the micro-cache and must carry Angular's SSR

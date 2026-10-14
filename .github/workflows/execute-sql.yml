@@ -35,6 +35,8 @@ jobs:
 
       - name: Checkout code
         uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
+        with:
+          persist-credentials: false
 
       # insert_seed_data.sql is a DEVELOPMENT FIXTURE, not an operational script. It creates the
       # catalogue a fresh dev database needs; running it against production would collide with real
@@ -110,23 +112,14 @@ jobs:
     needs: validate
     runs-on: ubuntu-24.04
     permissions:
-      id-token: write
       contents: read
-    # Match deploy-dev.yml (environment: dev-weu) so OIDC federates with the
-    # environment:dev-weu subject that holds the RBAC + the dev-scoped secrets
-    # (AZURE_* + DB_CONNECTION_STRING_DEV). Without it the branch subject has no
-    # subscription access → "No subscriptions found". (execute-pro uses prod-weu.)
+    # The environment releases its stage-scoped database secret under its protection rules.
     environment: dev-weu
     steps:
       - name: Checkout code
         uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
-
-      - name: Login to Azure
-        uses: azure/login@a641126d1b8aa4d1fa005f4f92df94a3a4c4c906 # v3.1.0
         with:
-          client-id: ${{ secrets.AZURE_CLIENT_ID }}
-          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
-          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+          persist-credentials: false
 
       - name: Install PostgreSQL client
         run: |
@@ -136,9 +129,12 @@ jobs:
       - name: Execute SQL script
         env:
           DB_CONNECTION_STRING: ${{ secrets.DB_CONNECTION_STRING_DEV }}
+          PGSSLMODE: verify-full
+          PGSSLROOTCERT: /etc/ssl/certs/ca-certificates.crt
           SCRIPT_PATH: ${{ inputs.script_path }}
         run: |
           SCRIPT="sql-scripts/$SCRIPT_PATH"
+          test -r "$PGSSLROOTCERT" || { echo "::error::Trusted root certificate file is unavailable"; exit 1; }
 
           if [ -z "$DB_CONNECTION_STRING" ]; then
             echo "::error::DB_CONNECTION_STRING_DEV secret is not set"
@@ -163,7 +159,6 @@ jobs:
             -U "$DB_USER" \
             -d "$DB_NAME" \
             --set ON_ERROR_STOP=1 \
-            --set sslmode=require \
             -f "$SCRIPT"
 
           echo "---"
@@ -175,19 +170,13 @@ jobs:
     needs: validate
     runs-on: ubuntu-24.04
     permissions:
-      id-token: write
       contents: read
     environment: prod-weu
     steps:
       - name: Checkout code
         uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
-
-      - name: Login to Azure
-        uses: azure/login@a641126d1b8aa4d1fa005f4f92df94a3a4c4c906 # v3.1.0
         with:
-          client-id: ${{ secrets.AZURE_CLIENT_ID }}
-          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
-          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+          persist-credentials: false
 
       - name: Install PostgreSQL client
         run: |
@@ -197,9 +186,12 @@ jobs:
       - name: Execute SQL script
         env:
           DB_CONNECTION_STRING: ${{ secrets.DB_CONNECTION_STRING_PRO }}
+          PGSSLMODE: verify-full
+          PGSSLROOTCERT: /etc/ssl/certs/ca-certificates.crt
           SCRIPT_PATH: ${{ inputs.script_path }}
         run: |
           SCRIPT="sql-scripts/$SCRIPT_PATH"
+          test -r "$PGSSLROOTCERT" || { echo "::error::Trusted root certificate file is unavailable"; exit 1; }
 
           if [ -z "$DB_CONNECTION_STRING" ]; then
             echo "::error::DB_CONNECTION_STRING_PRO secret is not set"
@@ -224,7 +216,6 @@ jobs:
             -U "$DB_USER" \
             -d "$DB_NAME" \
             --set ON_ERROR_STOP=1 \
-            --set sslmode=require \
             -f "$SCRIPT"
 
           echo "---"

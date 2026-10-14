@@ -165,6 +165,22 @@ made to create an observation. Frontend e2e-smoke remains advisory; the runtime 
 README, CLAUDE.md and `ci-cd.md#required-checks` describe the actual configuration. Phase publication,
 exact-head CI and merge remain pending; this is not a P4 closure.
 
+### 2026-10-14 — completion follow-up; publication pending
+
+The P4 source/settings-record change is committed locally as `a87c0be5aca745d8bfa980080269631a1138873e`. The actual-settings
+assessment cited below passes within its settings-only scope; the three local raw-head docs gates
+pass. The later sealed receipt `/Users/michael/.codex/scratchpads/cleansia-next-wave-2026-10-13/p4/source-head-extra-001/final.json` (SHA-256 `9585ee67f11adcf4afd6fef245632dbc447101ecb889f5f723faa77b4c6fdbcc`)
+confirms **all eleven local commands PASS** on that same raw head, with all **8258** tracked
+input hashes/modes unchanged: the three docs gates plus eight Node checks/self-tests
+(available-status parity, booking-policy parity and iOS symbols with their self-tests, plus
+the docs-reference and catalog-claims self-tests), each exit 0. Receipt/log hashes are bound.
+This is local command proof, not hosted CI.
+
+T-0813 B remains passive and **AC3 stays unchecked**. Its baseline is still ruleset 6739260,
+`updated_at: 2026-10-14T15:34:25.285+02:00`, strict, with `build` pinned to integration 15368 and
+the Docs/Secret contexts without integration pins. No qualifying state was manufactured or newly
+established by local tests. Hosted exact-head CI, publication and merge remain pending.
+
 ## Review
 
 - **Docs review, first pass: request-changes, resolved.**
@@ -182,3 +198,25 @@ The frozen source verdicts in `/Users/michael/.codex/scratchpads/cleansia-next-w
 `/Users/michael/.codex/scratchpads/cleansia-next-wave-2026-10-13/p4/security-001/verdict.json` are each **"APPROVED — SCOPED"**. They cover the frozen candidate,
 not later actual-setting prose, ticket closure or merge. The actual receipt above closes the settings
 application only. This draft still requires its own read-only records check and final-head docs gates.
+
+### 2026-10-14 — later scoped evidence
+
+The actual-settings assessment in `/Users/michael/.codex/scratchpads/cleansia-next-wave-2026-10-13/p4/actual-settings-security001/verdict.json`
+(SHA-256 `4031eb2a812d1d635e840ddeaafe12009696ea4e23f8bd1596a6977d03d44483`) is **"PASS — actual P4 GitHub settings
+match the authorized decisions; no material security finding in this scope."** It covers the actual
+request/before/write/after receipts and actual-master workflow-reader binding, with fresh GET-only
+corroboration. It does not approve a merge or actual Azure identity narrowing. The later anonymous
+branch-policy GET at **2026-10-14T14:05:33Z** returned 200 and exactly one policy, branch **`master`**,
+id **63034204**: `/Users/michael/.codex/scratchpads/cleansia-next-wave-2026-10-13/p4/settings-actual-001/prod-policies-anonymous-after-002.json` (SHA-256
+`914c9c785ca25204c405177505b2e30a1e2ee2e24a484f61ae3b732d5aedbca5`). This supplies literal anonymous
+branch-policy evidence as well as the earlier anonymous environment-gate read. SEC-CI-6 remains
+read/false without a PUT; the qualified `production` deletion history and all earlier settings
+receipts remain as recorded above.
+
+The preceding draft's factual assessment is **"CLEAN — SCOPED FACTUAL REFUTATION"** in
+`/Users/michael/.codex/scratchpads/cleansia-next-wave-2026-10-13/p4/actual-records-refuter001/verdict.json`, with zero material findings. The consolidated
+source commit message003 is **"PASS — SCOPED SOURCE, DRAFT APPLICATION AND MESSAGE003 VERIFICATION"**
+in `/Users/michael/.codex/scratchpads/cleansia-next-wave-2026-10-13/p4/source-message-verifier001/verdict.json`; its checked message SHA-256 is
+`5227fde5a595cb929460ce5568412f016c99d68434b35b1c3c4e6bf413985494`. Those verdicts cover their stated prior source,
+message and draft scopes; this completion follow-up still needs its own factual check. No pushed
+history was rewritten.

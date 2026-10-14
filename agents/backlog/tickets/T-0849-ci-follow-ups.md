@@ -136,6 +136,23 @@ the dedicated Nx correction follows as `8c2e8b461c04e786a79db174ad29828da0d29a3d
   generation used the unchanged specs to prove the pinned tool/package layout; those outputs
   were not source edits. DEV reset, health checks, docs deployment and fresh deploy stay at END.
 
+### 2026-10-14 — completion follow-up; publication pending
+
+The 34-path source/settings-record change is committed locally as `a87c0be5aca745d8bfa980080269631a1138873e`, after the native
+closure `0a2b9e6` and dedicated Nx commit `8c2e8b4`. `/Users/michael/.codex/scratchpads/cleansia-next-wave-2026-10-13/p4/source-and-records-commit-001.json` records
+all exact afterimages. The source-to-suite binding in `/Users/michael/.codex/scratchpads/cleansia-next-wave-2026-10-13/p4/source-commit-sdk-rebind-001.json`
+(SHA-256 `b7a869975d6991f67cd119acfbe0d89edd2edfd638086132f4d66e06df68e059`) compares **8258 committed Git blobs and modes**:
+**8242 match** the measured combined source, with **16 declared documentation/record deltas** and
+all modes exact. **Every compiled/runtime input is identical** to the tested source. The Windows
+Gradle wrapper's working CRLF is qualified separately; its committed raw blob matches the measured
+source. This is source identity proof, not a claim that the suites were re-executed from the Git head.
+
+Items 2–6 are now committed with the source change; **AC2/AC4/AC5/AC6 remain checked**. Nx remains
+its dedicated earlier commit. **AC1 remains unchecked** for the separate Ubuntu26 P5 and END
+deploy gates under the already-dated merge-then-prove reading. **AC3 remains unchecked** until
+the END docs dispatch proves absence of the SWA annotation. No Ubuntu26 implementation, hosted
+CI, merge or deployment is claimed by these local receipts.
+
 ## Review
 
 Pending.
@@ -167,3 +184,54 @@ remain separate gates.
 - These are prospective combined candidate receipts, not hosted exact-head CI or merge evidence.
   Final documentation checks, exact-head CI, publication and the approved END DEV/docs procedure
   remain pending. No SQL, reset, DEV deployment or PRO operation ran in these P4 checks.
+
+### 2026-10-14 — completed local suites bound to the committed source
+
+The earlier Customer **NOT STARTED** paragraph is retained as the true interim capture.
+Customer resumed only after a fresh free-space measurement cleared its **2,680,205,312-byte**
+admission threshold. The later complete mobile receipt is `/Users/michael/.codex/scratchpads/cleansia-next-wave-2026-10-13/p4/full-mobile-001/final.json`
+(SHA-256 `3b306e02d2fcd6d911636a12835f3d86f4aac98e86ccbf100b707015ef7788b1`), with packet `/Users/michael/.codex/scratchpads/cleansia-next-wave-2026-10-13/p4/full-mobile-001/final-packet.json`
+(SHA-256 `a5d0e7f0e70e8849cfabedced6de94b3b1d63f39427c97676dceede098585da1`). Its exact result is
+**`PASS_WITH_UNCHANGED_VOICEOVER_RUNTIME_SKIP`**: Android forced compile then unit tasks pass,
+**2873 tests** (298 core / 881 partner / 1694 customer), zero errors, failures or skips; iOS **18.6**
+Core **776**, Partner **1133** and Customer **1779** pass, with **one unchanged Customer skip** and
+zero failures. The skipped method is
+`ProfileEditChipTests/testVoiceOverAnnouncesTheWholeLabelWhileTheChipIsTruncated()`; no VoiceOver
+retry or spoken-announcement proof is claimed. Xcode 26.3 used Simulator SDK 26.2, arm64, initially
+absent DerivedData and within-run shared DerivedData, with copied SPM downloads. All **8258** source
+hashes/modes, **68** native source inputs, **479** generated files and historical result/product pins
+remain unchanged; the final product manifests retain **20,590 Android** and **2,219 iOS** files.
+The simulator lease is released and no SDK command remains active. P4 added no iOS 16.4, device,
+provider, mail, D9, APK or R8 acceptance run; retained P3 proof is not described as a P4 re-test.
+
+The full backend/frontend receipt `/Users/michael/.codex/scratchpads/cleansia-next-wave-2026-10-13/p4/full-backend-frontend-001/final.json` is now bound to
+the actual source commit by the Git-blob/mode receipt above: Release rebuild, zero errors;
+unit → real-Postgres integration → host **8731 / 975 / 509 passed**, zero failed/skipped; all **73**
+app specs and guard self-tests, **5041 Jest tests / 408 suites** across **71 nonempty + 3 empty**
+projects, three production builds and **7 network-stubbed** smokes (5/1/1) pass. Advisory lint passes
+across 77 executed targets. Full local mobile completion is qualified above by its one unchanged
+runtime skip. None of these receipts is hosted CI or live DEV acceptance.
+
+The raw source commit's docs-reference check, catalog-claims check and VitePress build each exit 0
+in `/Users/michael/.codex/scratchpads/cleansia-next-wave-2026-10-13/p4/source-head-001/final.json` (SHA-256 `300c773489054361b3178dd1f23efc59f13a3fef09b4405c68840ab9c59b3a8d`), with all tracked
+input hashes/modes unchanged. The later sealed receipt `/Users/michael/.codex/scratchpads/cleansia-next-wave-2026-10-13/p4/source-head-extra-001/final.json` (SHA-256 `9585ee67f11adcf4afd6fef245632dbc447101ecb889f5f723faa77b4c6fdbcc`)
+confirms **all eleven local commands PASS** on that same raw head, with all **8258** tracked
+input hashes/modes unchanged: the three docs gates plus eight Node checks/self-tests
+(available-status parity, booking-policy parity and iOS symbols with their self-tests, plus
+the docs-reference and catalog-claims self-tests), each exit 0. Receipt/log hashes are bound.
+This is local command proof, not hosted CI.
+
+
+The preceding draft's factual assessment is **"CLEAN — SCOPED FACTUAL REFUTATION"** in
+`/Users/michael/.codex/scratchpads/cleansia-next-wave-2026-10-13/p4/actual-records-refuter001/verdict.json`, with zero material findings. The consolidated
+source commit message003 is **"PASS — SCOPED SOURCE, DRAFT APPLICATION AND MESSAGE003 VERIFICATION"**
+in `/Users/michael/.codex/scratchpads/cleansia-next-wave-2026-10-13/p4/source-message-verifier001/verdict.json`; its checked message SHA-256 is
+`5227fde5a595cb929460ce5568412f016c99d68434b35b1c3c4e6bf413985494`. Those verdicts cover their stated prior source,
+message and draft scopes; this completion follow-up still needs its own factual check. No pushed
+history was rewritten.
+
+The unchanged EF 10.0.3 Mac arm64 compile receipt above still proves install/version and local
+bundle compilation only, with both initial failures retained and no bundle invocation. Actual
+Linux packaging/execution, artifact-ID transfers, DEV certificate/hostname validation and the
+SWA annotation result remain END proof. The final record-only commit still needs its own exact
+Git-blob binding and actual-head gates before push.

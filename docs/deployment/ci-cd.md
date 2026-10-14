@@ -141,9 +141,9 @@ request also run on pushes to `master`, path-scoped except for the secret scan.
 
 ## Runners and images {#runners}
 
-Every Ubuntu job runs on `ubuntu-24.04`, and `ios-ci.yml` runs on `macos-latest`. The Ubuntu jobs pin
-their Ubuntu release and the macOS job does not pin its macOS one; none uses a self-hosted or larger
-runner. A new workflow either joins one of these two labels or says why not.
+All 25 Linux `runs-on` declarations request `ubuntu-26.04`, and `ios-ci.yml` requests `macos-latest`.
+The Linux jobs pin their Ubuntu release and the macOS job does not pin its macOS one; none uses a
+self-hosted or larger runner. A new workflow either joins one of these two labels or says why not.
 
 - **Which image a label resolved to** is printed only in the job log's *Runner Image* group (`Image:`
   and `Version:`). The repository keeps logs for one day, so read it within 24 hours. The jobs API
@@ -159,12 +159,22 @@ runner. A new workflow either joins one of these two labels or says why not.
   **3.2.1**, alongside SwiftFormat **0.60.1**, SwiftLint **0.65.0** and openapi-generator **7.10.0**.
   All five downloads are SHA-256 checked before extraction or installation; the four macOS tools
   resolve from `$RUNNER_TEMP/pinned-tools`, with XcodeGen's sibling setting presets preserved.
-- **Ubuntu 26.** GitHub moves the `ubuntu-latest` label to Ubuntu 26.04 in a rollout that begins
-  2026-10-19 and completes by 2026-11-19 ([actions/runner-images#14748](https://github.com/actions/runner-images/issues/14748)).
-  Every Ubuntu job names `ubuntu-24.04` instead (owner ruling 2026-10-12), the image it already ran on,
-  so the rollout changes nothing here. Moving to 26.04 is a deliberate change of the label: that image
-  brings Docker 29 under backend-ci's Testcontainers, a PostgreSQL 18 client for the migrate job's
-  `psql`, Android command-line tools 20 and jq 1.8.
+- **Ubuntu 26.** `ubuntu-26.04` became generally available on 2026-09-17
+  ([actions/runner-images#14747](https://github.com/actions/runner-images/issues/14747)). The explicit
+  release label follows the owner's 2026-10-13 ruling (T-0849), independently of the `ubuntu-latest`
+  rollout from 2026-10-19 to 2026-11-19
+  ([actions/runner-images#14748](https://github.com/actions/runner-images/issues/14748)). The published
+  26.04 image includes Docker 29, a PostgreSQL 18 client, Android command-line tools 20 and jq 1.8.
+  The locked Playwright **1.62.1** supports Ubuntu 26.04 and its Chromium dependencies; actual browser
+  installation and execution must still be proved by PR CI. The job log establishes the image assigned.
+- **Runner proof.** All **eight Linux PR jobs** must pass on one exact head before merge. Master runs
+  **seven Linux jobs** and intentionally skips the PR-only `e2e-smoke`. Deploy/SQL runtime proof
+  follows in the approved end-of-wave DEV procedure, after all phase PRs merge; this is T-0849's
+  recorded **merge-then-prove** reading. Its deploy half remains open until those receipts exist,
+  including the expanded API matrix legs and actual runner-image logs. The two PRO-only declarations
+  (`deploy-pro`'s `legal-texts` and `execute-sql`'s `execute-pro`) change in source only and remain
+  unexecuted under the PRO ban. A runner-caused failure needs an observed scoped fix or revert,
+  with the failure recorded; PR CI alone does not close the deploy half.
 - **Required checks** are not a runner setting: [what a pull request needs to merge](#required-checks).
   → [What validates iOS, and where](/mobile-app/overview#ios-validation-tiers)
 

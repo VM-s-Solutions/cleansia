@@ -23,7 +23,7 @@
  *   - `backend-ci.yml` excludes `src/cleansia_android/**` and `src/cleansia_ios/**`.
  *   - `android-ci` and `ios-ci` are Gradle and Xcode; neither reads C#.
  * No single existing job can see all four trees. This one is dependency-free, runs on
- * ubuntu-24.04 in seconds, and has its own repo-root workflow triggering on every tree it reads.
+ * ubuntu-26.04 in seconds, and has its own repo-root workflow triggering on every tree it reads.
  *
  * WHAT IT DELIBERATELY DOES NOT DO. It does not serve these numbers from the API. They change at
  * release cadence, a client that cannot reach the network still has to state them, and the copy

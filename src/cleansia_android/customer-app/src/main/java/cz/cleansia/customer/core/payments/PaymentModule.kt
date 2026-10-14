@@ -1,5 +1,6 @@
 package cz.cleansia.customer.core.payments
 
+import cz.cleansia.customer.BuildConfig
 import cz.cleansia.customer.api.client.PaymentApi as GenPaymentApi
 import cz.cleansia.customer.api.client.ReceivableApi as GenReceivableApi
 import cz.cleansia.customer.api.client.SavedCardApi as GenSavedCardApi
@@ -14,6 +15,10 @@ import retrofit2.Retrofit
 @Module
 @InstallIn(SingletonComponent::class)
 object PaymentModule {
+    @Provides
+    @Singleton
+    fun provideStripeConfig(): StripeConfig = StripeConfig(BuildConfig.STRIPE_PUBLISHABLE_KEY)
+
     @Provides
     @Singleton
     fun provideGenPaymentApi(@AuthRetrofit retrofit: Retrofit): GenPaymentApi =

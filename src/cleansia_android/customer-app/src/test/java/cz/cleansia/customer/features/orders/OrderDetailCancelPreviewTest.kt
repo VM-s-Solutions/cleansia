@@ -1,5 +1,6 @@
 package cz.cleansia.customer.features.orders
 
+import cz.cleansia.customer.core.payments.StripeConfig
 import android.content.Context
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.viewModelScope
@@ -94,6 +95,7 @@ class OrderDetailCancelPreviewTest {
         loyaltyRepository = io.mockk.mockk(relaxed = true),
         paymentRepository = mockk(relaxed = true),
         consentClient = mockk(relaxed = true),
+        stripeConfig = StripeConfig("pk_test_synthetic"),
     )
 
     private fun preview(tier: Int = 3) = CancellationFeePreviewDto(

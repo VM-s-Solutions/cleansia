@@ -13,14 +13,14 @@ final class OrdersListLogicTests: XCTestCase {
 
     // MARK: tab → query (+ O3)
 
-    func testAvailableQueryIsUnassignedNoEmployeeSortEarningsDesc() {
+    func testAvailableQueryRequiresAFreeSeatAndExcludesOwnEmployee() {
         let query = OrdersQueryBuilder.query(
             tab: .available, ownEmployeeId: "emp-self", sort: .earningsHighToLow, period: .all
         )
-        // Mirrors OrderAvailability.OfferableStatuses, which now admits the two started statuses so a
-        // half-crewed job stays fillable. isUnassigned below is what keeps a FULL job off this tab.
         XCTAssertEqual(query.statuses, [._0, ._2, ._3, ._4])
-        XCTAssertEqual(query.isUnassigned, true)
+        XCTAssertNil(query.isUnassigned)
+        XCTAssertEqual(query.hasAvailableSpots, true)
+        XCTAssertEqual(query.excludeEmployeeId, "emp-self")
         XCTAssertNil(query.employeeId)
         XCTAssertEqual(query.sortField, "estimatedCleanerPay")
         XCTAssertFalse(query.sortAscending)
@@ -33,6 +33,8 @@ final class OrdersListLogicTests: XCTestCase {
         XCTAssertEqual(query.statuses, [._2, ._3, ._4])
         XCTAssertNil(query.isUnassigned)
         XCTAssertEqual(query.employeeId, "emp-self")
+        XCTAssertNil(query.hasAvailableSpots)
+        XCTAssertNil(query.excludeEmployeeId)
         XCTAssertEqual(query.sortField, "cleaningDateTime")
         XCTAssertTrue(query.sortAscending)
     }
@@ -43,6 +45,8 @@ final class OrdersListLogicTests: XCTestCase {
         )
         XCTAssertEqual(query.statuses, [._5])
         XCTAssertEqual(query.employeeId, "emp-self")
+        XCTAssertNil(query.hasAvailableSpots)
+        XCTAssertNil(query.excludeEmployeeId)
         XCTAssertFalse(query.sortAscending)
     }
 

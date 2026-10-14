@@ -121,7 +121,7 @@ class InvoicesRepositoryImpl @Inject constructor(
         safeApiCall(json) {
             payrollApi.employeePayrollGetPagedInvoices(
                 filterEmployeeId = employeeId,
-                sort0Field = "createdOn",
+                sort0Field = "generatedAt",
                 sort0Direction = SortDirection._1,
                 offset = 0,
                 limit = 50,

@@ -18,7 +18,7 @@ class CreateRecurringCardPaymentBindingTest {
         val screen = code(createRecurringScreen)
         assertTrue(
             "CreateRecurringScreen must read card availability from the key that initialises Stripe",
-            screen.contains("val cardPaymentAvailable = BuildConfig.STRIPE_PUBLISHABLE_KEY.isNotBlank()"),
+            screen.contains("cardPaymentAvailable = viewModel.cardPaymentAvailable"),
         )
         val gate = blockRange(screen, "if (cardPaymentAvailable) {")
         val cardOption = screen.indexOf("label = stringResource(R.string.recurring_create_pay_card)")
@@ -69,7 +69,7 @@ class CreateRecurringCardPaymentBindingTest {
         }
         assertTrue(
             "the view model must read card availability from the key that initialises Stripe",
-            viewModel.contains("private val cardAvailable = BuildConfig.STRIPE_PUBLISHABLE_KEY.isNotBlank()"),
+            viewModel.contains("val cardPaymentAvailable = stripeConfig.isCardPaymentAvailable"),
         )
     }
 
@@ -118,12 +118,12 @@ class CreateRecurringCardPaymentBindingTest {
                 """|\bpaymentType\s*=\s*(?:CreateRecurringViewModel\.)?PAYMENT_CARD\b""",
         )
         val CARD_DEFAULT = Regex(
-            """val paymentType: Int\? =\s*if \(BuildConfig\.STRIPE_PUBLISHABLE_KEY\.isNotBlank\(\)\)\s*""" +
-                """(?:CreateRecurringViewModel\.)?PAYMENT_CARD\s+else\s+null\b""",
+            """CreateRecurringFormState\(\s*paymentType\s*=\s*if \(cardPaymentAvailable\)\s*""" +
+                """(?:CreateRecurringViewModel\.)?PAYMENT_CARD\s+else\s+null\s*,?\s*\)""",
         )
         val COPIED_PAYMENT_TYPE = Regex("""\b(?:template|order)\.paymentType\b""")
         val GATED_COPY = Regex(
-            """presentablePaymentType\(\s*(?:template|order)\.paymentType(?:\?\.value)?\s*,\s*cardAvailable\s*\)""",
+            """presentablePaymentType\(\s*(?:template|order)\.paymentType(?:\?\.value)?\s*,\s*cardPaymentAvailable\s*\)""",
         )
     }
 }

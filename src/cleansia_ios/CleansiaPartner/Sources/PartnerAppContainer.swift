@@ -70,7 +70,7 @@ final class PartnerAppContainer: AppContainer {
     let profileClient: PartnerProfileClient = LivePartnerProfileClient()
     let userClient: PartnerUserClient = LivePartnerUserClient()
     let devicesClient: PartnerDevicesClient
-    let orderClient: PartnerOrderClient = LivePartnerOrderClient()
+    lazy var orderClient: PartnerOrderClient = LivePartnerOrderClient(staleness: ordersStaleness)
     let ordersStaleness = OrdersStaleness()
     let invoicesStaleness = InvoicesStaleness()
     lazy var pendingOffers = PendingOffersStore(client: orderClient, ordersStaleness: ordersStaleness)

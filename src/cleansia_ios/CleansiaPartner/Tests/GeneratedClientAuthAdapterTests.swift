@@ -177,6 +177,7 @@ private final class MemoryTokenStore: TokenStore, @unchecked Sendable {
 
 final class GenMockURLProtocol: URLProtocol {
     nonisolated(unsafe) static var handler: ((URLRequest) -> (Int, Data))?
+    nonisolated(unsafe) static var deferredResponse: ((URLRequest, @escaping (Int, Data) -> Void) -> Void)?
 
     override static func canInit(with _: URLRequest) -> Bool {
         true
@@ -191,7 +192,17 @@ final class GenMockURLProtocol: URLProtocol {
             client?.urlProtocol(self, didFailWithError: URLError(.badServerResponse))
             return
         }
-        let (status, data) = handler(request)
+        if let deferredResponse = Self.deferredResponse {
+            deferredResponse(request) { [self] status, data in
+                deliver(status: status, data: data, url: url)
+            }
+        } else {
+            let (status, data) = handler(request)
+            deliver(status: status, data: data, url: url)
+        }
+    }
+
+    private func deliver(status: Int, data: Data, url: URL) {
         guard let response = HTTPURLResponse(
             url: url,
             statusCode: status,

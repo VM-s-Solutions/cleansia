@@ -12,11 +12,8 @@ public final class SessionManager: ObservableObject {
     @Published public private(set) var lastForcedSignOut: ForcedSignOutReason?
 
     private var continuations: [UUID: AsyncStream<ForcedSignOutReason>.Continuation] = [:]
-    private let sessionScopedCaches: SessionScopedCacheRegistry
 
-    public init(sessionScopedCaches: SessionScopedCacheRegistry = SessionScopedCacheRegistry()) {
-        self.sessionScopedCaches = sessionScopedCaches
-    }
+    public init() {}
 
     public var forcedSignOutStream: AsyncStream<ForcedSignOutReason> {
         AsyncStream { continuation in
@@ -33,14 +30,6 @@ public final class SessionManager: ObservableObject {
         for continuation in continuations.values {
             continuation.yield(reason)
         }
-    }
-
-    public func registerSessionScopedCache(_ cache: SessionScopedCache) {
-        sessionScopedCaches.register(cache)
-    }
-
-    public func clearSessionScopedCaches() async {
-        await sessionScopedCaches.clearAll()
     }
 }
 

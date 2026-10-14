@@ -68,6 +68,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import cz.cleansia.core.ui.theme.primaryText
+import cz.cleansia.core.config.CleansiaWeb
 import cz.cleansia.customer.R
 import cz.cleansia.core.format.formatOrderDateTime
 import cz.cleansia.core.format.formatOrderPrice
@@ -1184,7 +1185,7 @@ internal fun shareReferralOrFallback(
     code: String,
     onShareUnavailable: () -> Unit,
 ) {
-    val landingUrl = "https://cleansia.cz/r/$code"
+    val landingUrl = CleansiaWeb.referralLink(code)
     val message = context.getString(R.string.loyalty_referral_share_text_no_figure, code, landingUrl)
     val send = android.content.Intent(android.content.Intent.ACTION_SEND).apply {
         type = "text/plain"

@@ -151,10 +151,13 @@ final class DashboardViewModelTests: XCTestCase {
         super.tearDown()
     }
 
-    private var clock = Date(timeIntervalSince1970: 1_780_000_000)
+    var clock = Date(timeIntervalSince1970: 1_780_000_000)
 
-    func makeViewModel() -> DashboardViewModel {
-        DashboardViewModel(client: client, settings: settings, staleness: Staleness(window: 60, now: { self.clock }))
+    func makeViewModel(staleness: OrdersStaleness? = nil) -> DashboardViewModel {
+        DashboardViewModel(
+            client: client, settings: settings,
+            staleness: staleness ?? OrdersStaleness(now: { self.clock })
+        )
     }
 
     func testInitialStateIsLoading() {
@@ -454,5 +457,37 @@ final class DashboardViewModelTests: XCTestCase {
 
         XCTAssertEqual(client.statsEmployeeIds.count, 2)
         XCTAssertEqual(vm.state.loadedValue?.weekEarnings, 100)
+    }
+
+    func testSilentFailedRefreshRetainsEveryLastGoodValueAndRetries() async {
+        let shared = OrdersStaleness(now: { self.clock })
+        client.employeeResult = .success(EmployeeItem(id: "emp-1", firstName: "Jana", jobRadiusKm: 25))
+        client.statsResult = .success(.stub(weekEarnings: 111, weekCompletedCount: 2, currencyCode: "CZK"))
+        client.previewResult = .success(AvailableJobsPreview(totalAvailableCount: 3, totalPotentialEarnings: 456))
+        let vm = makeViewModel(staleness: shared)
+        await vm.load()
+        let lastGood = vm.state.loadedValue
+        clock.addTimeInterval(60)
+        client.statsResult = .failure(ApiError(httpStatus: 500))
+        var publications: [UiState<DashboardData>] = []
+        let token = vm.$state.dropFirst().sink { publications.append($0) }
+        await vm.load()
+        XCTAssertEqual(vm.state.loadedValue, lastGood)
+        XCTAssertFalse(publications.contains { $0.isLoading })
+        XCTAssertTrue(shared.isDashboardStale)
+        client.statsResult = .success(.stub(weekEarnings: 222))
+        await vm.load()
+        XCTAssertEqual(client.statsEmployeeIds.count, 3)
+        XCTAssertEqual(vm.state.loadedValue?.weekEarnings, 222)
+        XCTAssertFalse(shared.isDashboardStale)
+        token.cancel()
+    }
+
+    func testExplicitFailedRefreshReplacesLoadedDataWithError() async {
+        let vm = makeViewModel()
+        await vm.load()
+        client.statsResult = .failure(ApiError(httpStatus: 500))
+        await vm.userRefresh()
+        guard case .error = vm.state else { return XCTFail("expected explicit refresh error") }
     }
 }

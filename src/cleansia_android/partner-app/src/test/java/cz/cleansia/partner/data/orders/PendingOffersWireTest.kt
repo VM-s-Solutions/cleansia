@@ -3,6 +3,7 @@ package cz.cleansia.partner.data.orders
 import cz.cleansia.core.network.ApiResult
 import cz.cleansia.partner.api.client.OrderApi
 import cz.cleansia.partner.api.model.PendingOfferItem
+import io.mockk.mockk
 import kotlinx.coroutines.test.runTest
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.descriptors.SerialDescriptor
@@ -42,6 +43,7 @@ class PendingOffersWireTest {
             .build()
             .create(OrderApi::class.java),
         json,
+        mockk(relaxed = true),
     )
 
     private suspend fun fetch(

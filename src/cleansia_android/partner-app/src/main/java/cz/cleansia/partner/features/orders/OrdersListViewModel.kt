@@ -10,6 +10,7 @@ import cz.cleansia.partner.api.model.OrderStatus
 import cz.cleansia.partner.core.auth.EmployeeIdResolver
 import cz.cleansia.partner.core.location.haversineKm
 import cz.cleansia.partner.core.network.ApiErrorTranslator
+import cz.cleansia.core.network.ApiError
 import cz.cleansia.core.network.ApiResult
 import cz.cleansia.partner.data.orders.OrdersMutation
 import cz.cleansia.partner.data.orders.OrdersPane
@@ -31,8 +32,7 @@ import javax.inject.Inject
 
 /**
  * Three tabs cover the partner UX:
- *  - [Available]  : unassigned, not yet taken — `IsUnassigned=true`, statuses
- *                   [New, Confirmed]
+ *  - [Available]  : available seats excluding my assignments — [New, Confirmed, OnTheWay, InProgress]
  *  - [MyActive]   : assigned to me + still active — [Confirmed, OnTheWay, InProgress]
  *  - [MyCompleted]: assigned to me + done — [Completed]
  */
@@ -253,32 +253,13 @@ class OrdersListViewModel @Inject constructor(
                 )
             }
 
-            // Resolved, not merely read: a session minted by confirm-email on
-            // a pre-fix build has no stored employee id, which silently sends
-            // the My-Active / My-Completed tabs unscoped — the cleaner sees an
-            // empty list on a day they are working.
             val employeeId = employeeIdResolver.resolve()
             val state = _uiState.value
 
-            val (statuses, isUnassigned, scopedEmployeeId) = when (tab) {
-                OrdersTab.Available -> Triple(
-                    // Mirrors OrderAvailability.OfferableStatuses. Started is not over: a half-crewed
-                    // job stays fillable after its first cleaner sets off (owner ruling 2026-09-06),
-                    // and isUnassigned/hasAvailableSpots is what keeps a FULL job off this tab.
-                    listOf(OrderStatus._0, OrderStatus._2, OrderStatus._3, OrderStatus._4),
-                    true,
-                    null,
-                )
-                OrdersTab.MyActive -> Triple(
-                    listOf(OrderStatus._2, OrderStatus._3, OrderStatus._4),
-                    null,
-                    employeeId,
-                )
-                OrdersTab.MyCompleted -> Triple(
-                    listOf(OrderStatus._5),
-                    null,
-                    employeeId,
-                )
+            val statuses = when (tab) {
+                OrdersTab.Available -> listOf(OrderStatus._0, OrderStatus._2, OrderStatus._3, OrderStatus._4)
+                OrdersTab.MyActive -> listOf(OrderStatus._2, OrderStatus._3, OrderStatus._4)
+                OrdersTab.MyCompleted -> listOf(OrderStatus._5)
             }
 
             val (dateFrom, dateTo) = when (tab) {
@@ -291,16 +272,20 @@ class OrdersListViewModel @Inject constructor(
                 else -> "cleaningDateTime" to (tab == OrdersTab.MyActive)
             }
 
-            when (val result = ordersRepository.getPaged(
+            val result = if (employeeId.isNullOrBlank()) {
+                ApiResult.Error(ApiError.Unauthorized)
+            } else ordersRepository.getPaged(
                 statuses = statuses,
-                isUnassigned = isUnassigned,
-                employeeId = scopedEmployeeId,
+                employeeId = employeeId.takeUnless { tab == OrdersTab.Available },
+                hasAvailableSpots = true.takeIf { tab == OrdersTab.Available },
+                excludeEmployeeId = employeeId.takeIf { tab == OrdersTab.Available },
                 cleaningDateFrom = dateFrom,
                 cleaningDateTo = dateTo,
                 sortField = sortField,
                 sortAscending = ascending,
                 pane = tab.toPane(),
-            )) {
+            )
+            when (result) {
                 is ApiResult.Success -> _uiState.update {
                     // Only adopt the fetched list if the user hasn't
                     // already swapped tabs while the call was in flight —

@@ -1,6 +1,7 @@
 package cz.cleansia.partner
 
 import android.Manifest
+import android.content.ActivityNotFoundException
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.content.res.Configuration
@@ -76,6 +77,7 @@ class MainActivity : AppCompatActivity() {
      * Activity because onNewIntent fires outside composition.
      */
     private val pendingDeepLink = MutableStateFlow<NavRoute?>(null)
+    private var forceNoMailHandler = false
 
     private val requestNotificationPermission =
         registerForActivityResult(ActivityResultContracts.RequestPermission()) { /* ignored */ }
@@ -83,6 +85,9 @@ class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         installSplashScreen()
         super.onCreate(savedInstanceState)
+        if (BuildConfig.DEBUG) {
+            forceNoMailHandler = intent.getBooleanExtra("cleansia.debug.force_no_mail_handler", false)
+        }
         enableEdgeToEdge()
         // Cold-start tap on a notification — resolve before the NavHost composes.
         pendingDeepLink.value = NotificationDeepLink.resolve(intent)
@@ -133,6 +138,15 @@ class MainActivity : AppCompatActivity() {
                 }
             }
         }
+    }
+
+    override fun startActivity(intent: Intent) {
+        if (BuildConfig.DEBUG && forceNoMailHandler &&
+            intent.action == Intent.ACTION_SENDTO && intent.data?.scheme == "mailto"
+        ) {
+            throw ActivityNotFoundException()
+        }
+        super.startActivity(intent)
     }
 
     /**

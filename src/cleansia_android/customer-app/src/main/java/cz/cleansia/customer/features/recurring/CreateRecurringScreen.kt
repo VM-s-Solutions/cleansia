@@ -71,7 +71,6 @@ import cz.cleansia.core.ui.components.CleansiaTextButton
 import cz.cleansia.core.ui.theme.primaryText
 import cz.cleansia.customer.ui.components.adjustableStepper
 import cz.cleansia.customer.ui.components.rememberStepperTick
-import cz.cleansia.customer.BuildConfig
 import cz.cleansia.customer.R
 import cz.cleansia.customer.core.booking.CashEligibility
 import cz.cleansia.customer.core.booking.PropertySize
@@ -646,6 +645,7 @@ private fun WhereAndPayStep(
     PaymentTypePicker(
         selected = state.paymentType,
         cashEnabled = cashEligibility == CashEligibility.Available,
+        cardPaymentAvailable = viewModel.cardPaymentAvailable,
         onSelect = viewModel::setPaymentType,
     )
     val paymentNote = when {
@@ -1281,8 +1281,7 @@ private fun SelectionBadge(selected: Boolean) {
  * cards on Step 2 and the affordance is more obviously tappable.
  */
 @Composable
-private fun PaymentTypePicker(selected: Int?, cashEnabled: Boolean, onSelect: (Int) -> Unit) {
-    val cardPaymentAvailable = BuildConfig.STRIPE_PUBLISHABLE_KEY.isNotBlank()
+private fun PaymentTypePicker(selected: Int?, cashEnabled: Boolean, cardPaymentAvailable: Boolean, onSelect: (Int) -> Unit) {
     Row(
         modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.spacedBy(12.dp),

@@ -4,6 +4,7 @@ import cz.cleansia.core.location.LocationService
 import cz.cleansia.core.network.ApiError
 import cz.cleansia.core.network.ApiResult
 import cz.cleansia.core.snackbar.SnackbarController
+import cz.cleansia.partner.api.model.OrderStatus
 import cz.cleansia.partner.api.model.PagedDataOfOrderListItem
 import cz.cleansia.partner.core.auth.EmployeeIdResolver
 import cz.cleansia.partner.core.network.ApiErrorTranslator
@@ -68,7 +69,20 @@ class OrdersListViewModelTest {
         coEvery { employeeIdResolver.resolve() } returns "employee-1"
         every { ordersRepository.isPaneStale(any()) } returns false
         coEvery {
-            ordersRepository.getPaged(any(), any(), any(), any(), any(), any(), any(), any(), any(), any())
+            ordersRepository.getPaged(
+                statuses = any(),
+                isUnassigned = any(),
+                employeeId = any(),
+                cleaningDateFrom = any(),
+                cleaningDateTo = any(),
+                sortField = any(),
+                sortAscending = any(),
+                offset = any(),
+                limit = any(),
+                pane = any(),
+                hasAvailableSpots = any(),
+                excludeEmployeeId = any(),
+            )
         } returns ApiResult.Success(PagedDataOfOrderListItem(data = emptyList()))
     }
 
@@ -103,7 +117,20 @@ class OrdersListViewModelTest {
         advanceUntilIdle()
 
         coVerify(exactly = 1) {
-            ordersRepository.getPaged(any(), any(), any(), any(), any(), any(), any(), any(), any(), OrdersPane.Available)
+            ordersRepository.getPaged(
+                statuses = any(),
+                isUnassigned = any(),
+                employeeId = any(),
+                cleaningDateFrom = any(),
+                cleaningDateTo = any(),
+                sortField = any(),
+                sortAscending = any(),
+                offset = any(),
+                limit = any(),
+                pane = OrdersPane.Available,
+                hasAvailableSpots = any(),
+                excludeEmployeeId = any(),
+            )
         }
         assertFalse("the spinner never cleared", vm.uiState.value.isInitialLoad)
         assertTrue(vm.uiState.value.hasLoadedOnce)
@@ -126,7 +153,20 @@ class OrdersListViewModelTest {
         advanceUntilIdle()
 
         coVerify(exactly = 0) {
-            ordersRepository.getPaged(any(), any(), any(), any(), any(), any(), any(), any(), any(), any())
+            ordersRepository.getPaged(
+                statuses = any(),
+                isUnassigned = any(),
+                employeeId = any(),
+                cleaningDateFrom = any(),
+                cleaningDateTo = any(),
+                sortField = any(),
+                sortAscending = any(),
+                offset = any(),
+                limit = any(),
+                pane = any(),
+                hasAvailableSpots = any(),
+                excludeEmployeeId = any(),
+            )
         }
     }
 
@@ -146,7 +186,20 @@ class OrdersListViewModelTest {
         advanceUntilIdle()
 
         coVerify(exactly = 1) {
-            ordersRepository.getPaged(any(), any(), any(), any(), any(), any(), any(), any(), any(), OrdersPane.Active)
+            ordersRepository.getPaged(
+                statuses = any(),
+                isUnassigned = any(),
+                employeeId = any(),
+                cleaningDateFrom = any(),
+                cleaningDateTo = any(),
+                sortField = any(),
+                sortAscending = any(),
+                offset = any(),
+                limit = any(),
+                pane = OrdersPane.Active,
+                hasAvailableSpots = any(),
+                excludeEmployeeId = any(),
+            )
         }
     }
 
@@ -174,7 +227,20 @@ class OrdersListViewModelTest {
 
         verify(exactly = 1) { ordersRepository.invalidatePanesFor(OrdersMutation.TakeOrder) }
         coVerify(exactly = 1) {
-            ordersRepository.getPaged(any(), any(), any(), any(), any(), any(), any(), any(), any(), OrdersPane.Available)
+            ordersRepository.getPaged(
+                statuses = any(),
+                isUnassigned = any(),
+                employeeId = any(),
+                cleaningDateFrom = any(),
+                cleaningDateTo = any(),
+                sortField = any(),
+                sortAscending = any(),
+                offset = any(),
+                limit = any(),
+                pane = OrdersPane.Available,
+                hasAvailableSpots = any(),
+                excludeEmployeeId = any(),
+            )
         }
         assertNull(vm.uiState.value.inFlightActionOrderId)
     }
@@ -192,7 +258,20 @@ class OrdersListViewModelTest {
         assertEquals(WorkContractRequest.Take(orderId), vm.uiState.value.contractRequest)
         coVerify(exactly = 0) { ordersRepository.takeOrder(any(), any()) }
         coVerify(exactly = 0) {
-            ordersRepository.getPaged(any(), any(), any(), any(), any(), any(), any(), any(), any(), any())
+            ordersRepository.getPaged(
+                statuses = any(),
+                isUnassigned = any(),
+                employeeId = any(),
+                cleaningDateFrom = any(),
+                cleaningDateTo = any(),
+                sortField = any(),
+                sortAscending = any(),
+                offset = any(),
+                limit = any(),
+                pane = any(),
+                hasAvailableSpots = any(),
+                excludeEmployeeId = any(),
+            )
         }
     }
 
@@ -209,7 +288,20 @@ class OrdersListViewModelTest {
         assertNull(vm.uiState.value.contractRequest)
         verify(exactly = 1) { ordersRepository.invalidatePanesFor(OrdersMutation.TakeOrder) }
         coVerify(exactly = 1) {
-            ordersRepository.getPaged(any(), any(), any(), any(), any(), any(), any(), any(), any(), OrdersPane.Available)
+            ordersRepository.getPaged(
+                statuses = any(),
+                isUnassigned = any(),
+                employeeId = any(),
+                cleaningDateFrom = any(),
+                cleaningDateTo = any(),
+                sortField = any(),
+                sortAscending = any(),
+                offset = any(),
+                limit = any(),
+                pane = OrdersPane.Available,
+                hasAvailableSpots = any(),
+                excludeEmployeeId = any(),
+            )
         }
         assertNull(vm.uiState.value.inFlightActionOrderId)
     }
@@ -226,7 +318,20 @@ class OrdersListViewModelTest {
 
         assertNull(vm.uiState.value.contractRequest)
         coVerify(exactly = 0) {
-            ordersRepository.getPaged(any(), any(), any(), any(), any(), any(), any(), any(), any(), any())
+            ordersRepository.getPaged(
+                statuses = any(),
+                isUnassigned = any(),
+                employeeId = any(),
+                cleaningDateFrom = any(),
+                cleaningDateTo = any(),
+                sortField = any(),
+                sortAscending = any(),
+                offset = any(),
+                limit = any(),
+                pane = any(),
+                hasAvailableSpots = any(),
+                excludeEmployeeId = any(),
+            )
         }
     }
 
@@ -240,7 +345,20 @@ class OrdersListViewModelTest {
     fun `a failed reconciling refetch raises only the action error`() = runTest {
         coEvery { ordersRepository.startOrder(orderId) } returns ApiResult.Error(ApiError.Network("down"))
         coEvery {
-            ordersRepository.getPaged(any(), any(), any(), any(), any(), any(), any(), any(), any(), any())
+            ordersRepository.getPaged(
+                statuses = any(),
+                isUnassigned = any(),
+                employeeId = any(),
+                cleaningDateFrom = any(),
+                cleaningDateTo = any(),
+                sortField = any(),
+                sortAscending = any(),
+                offset = any(),
+                limit = any(),
+                pane = any(),
+                hasAvailableSpots = any(),
+                excludeEmployeeId = any(),
+            )
         } returns ApiResult.Error(ApiError.Network("down"))
 
         val vm = viewModel()
@@ -252,7 +370,66 @@ class OrdersListViewModelTest {
 
         verify(exactly = 1) { snackbar.showError("translated error") }
         coVerify(exactly = 1) {
-            ordersRepository.getPaged(any(), any(), any(), any(), any(), any(), any(), any(), any(), any())
+            ordersRepository.getPaged(
+                statuses = any(),
+                isUnassigned = any(),
+                employeeId = any(),
+                cleaningDateFrom = any(),
+                cleaningDateTo = any(),
+                sortField = any(),
+                sortAscending = any(),
+                offset = any(),
+                limit = any(),
+                pane = any(),
+                hasAvailableSpots = any(),
+                excludeEmployeeId = any(),
+            )
         }
     }
+    @Test
+    fun availableScopesItsSeatsToCurrentEmployeeExclusion() = runTest {
+        val vm = viewModel()
+        advanceUntilIdle()
+        coVerify(exactly = 1) {
+            ordersRepository.getPaged(
+                statuses = listOf(OrderStatus._0, OrderStatus._2, OrderStatus._3, OrderStatus._4),
+                isUnassigned = null,
+                employeeId = null,
+                hasAvailableSpots = true,
+                excludeEmployeeId = "employee-1",
+                cleaningDateFrom = null,
+                cleaningDateTo = null,
+                sortField = "estimatedCleanerPay",
+                sortAscending = false,
+                offset = 0,
+                limit = 50,
+                pane = OrdersPane.Available,
+            )
+        }
+        assertTrue(vm.uiState.value.hasLoadedOnce)
+    }
+
+    private suspend fun assertMissingIdentity(id: String?) {
+        coEvery { employeeIdResolver.resolve() } returns id
+        val vm = viewModel()
+        mainRule.testDispatcher.scheduler.advanceUntilIdle()
+        coVerify(exactly = 0) {
+            ordersRepository.getPaged(
+                statuses = any(), isUnassigned = any(), employeeId = any(),
+                cleaningDateFrom = any(), cleaningDateTo = any(), sortField = any(),
+                sortAscending = any(), offset = any(), limit = any(), pane = any(),
+                hasAvailableSpots = any(), excludeEmployeeId = any(),
+            )
+        }
+        verify(exactly = 1) { errorTranslator.translate(ApiError.Unauthorized) }
+        coVerify(exactly = 1) { snackbar.showError("translated error") }
+        assertTrue(vm.uiState.value.hasLoadedOnce)
+        assertFalse(vm.uiState.value.isInitialLoad)
+        assertFalse(vm.uiState.value.isBackgroundRefreshing)
+        assertFalse(vm.uiState.value.isUserRefreshing)
+    }
+
+    @Test fun nullIdentityFinishesLoadingWithoutQueryingOrders() = runTest { assertMissingIdentity(null) }
+    @Test fun blankIdentityFinishesLoadingWithoutQueryingOrders() = runTest { assertMissingIdentity(" ") }
+
 }

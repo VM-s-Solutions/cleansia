@@ -61,9 +61,6 @@ enum ActiveDayBucket: Int, CaseIterable {
 }
 
 enum OrdersQueryBuilder {
-    /// Per-tab query (the `OrdersListViewModel.kt:235-261` parity). O3: `employeeId`
-    /// is supplied ONLY for the "mine" panes (Active/History) and is the caller's
-    /// own id; Available passes `isUnassigned=true` with no employee scope.
     static func query(
         tab: OrdersTab,
         ownEmployeeId: String?,
@@ -75,12 +72,11 @@ enum OrdersQueryBuilder {
         switch tab {
         case .available:
             return OrderPageQuery(
-                // Mirrors OrderAvailability.OfferableStatuses. Started is not over: a half-crewed job
-                // stays fillable after its first cleaner sets off (owner ruling 2026-09-06), and
-                // isUnassigned is what keeps a fully crewed job off this tab.
                 statuses: [._0, ._2, ._3, ._4],
-                isUnassigned: true,
+                isUnassigned: nil,
                 employeeId: nil,
+                hasAvailableSpots: true,
+                excludeEmployeeId: ownEmployeeId,
                 cleaningDateFrom: nil,
                 cleaningDateTo: nil,
                 sortField: sort.field,

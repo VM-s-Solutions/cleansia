@@ -10,6 +10,11 @@ import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.mockk
 import io.mockk.slot
+import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.async
+import kotlinx.coroutines.withContext
+import kotlinx.coroutines.withTimeout
 import kotlinx.coroutines.test.runTest
 import kotlinx.serialization.json.Json
 import okhttp3.MediaType.Companion.toMediaType
@@ -36,7 +41,7 @@ class OrdersRepositoryPendingOffersTest {
         orderApi = mockk()
     }
 
-    private fun newRepo() = OrdersRepositoryImpl(orderApi, json)
+    private fun newRepo() = OrdersRepositoryImpl(orderApi, json, mockk(relaxed = true))
 
     private fun offer(id: String) = PendingOfferItem(
         id = id,
@@ -140,4 +145,90 @@ class OrdersRepositoryPendingOffersTest {
         assertEquals(emptyList<PendingOffer>(), repo.pendingOffers.value)
         assertTrue(repo.arePendingOffersStale())
     }
+    private suspend fun awaitEntered(entered: CompletableDeferred<Unit>) =
+        withContext(Dispatchers.Default) { withTimeout(5_000) { entered.await() } }
+
+    @Test
+    fun heldFetchCannotPublishOrStampAfterClear() = runTest {
+        val entered = CompletableDeferred<Unit>()
+        val release = CompletableDeferred<Unit>()
+        coEvery { orderApi.orderMyPendingOffers() } coAnswers {
+            entered.complete(Unit); release.await(); Response.success(listOf(offer("a")))
+        }
+        val repo = newRepo()
+        val held = async { repo.refreshPendingOffers() }
+        try {
+            awaitEntered(entered)
+            repo.clear()
+            release.complete(Unit)
+            held.await()
+            assertTrue(repo.pendingOffers.value.isEmpty())
+            assertTrue(repo.arePendingOffersStale())
+        } finally { release.complete(Unit); held.await() }
+    }
+
+    @Test
+    fun heldFetchCannotReplaceNextSessionsFreshRows() = runTest {
+        val entered = CompletableDeferred<Unit>()
+        val release = CompletableDeferred<Unit>()
+        var calls = 0
+        coEvery { orderApi.orderMyPendingOffers() } coAnswers {
+            if (++calls == 1) { entered.complete(Unit); release.await(); Response.success(listOf(offer("a"))) }
+            else Response.success(listOf(offer("b")))
+        }
+        val repo = newRepo()
+        val held = async { repo.refreshPendingOffers() }
+        try {
+            awaitEntered(entered)
+            repo.clear()
+            repo.refreshPendingOffers()
+            release.complete(Unit)
+            held.await()
+            assertEquals(listOf("b"), repo.pendingOffers.value.map { it.id })
+            assertFalse(repo.arePendingOffersStale())
+        } finally { release.complete(Unit); held.await() }
+    }
+
+    @Test
+    fun heldDeclineCannotRemoveSameIdFromNextSession() = runTest {
+        val entered = CompletableDeferred<Unit>()
+        val release = CompletableDeferred<Unit>()
+        coEvery { orderApi.orderMyPendingOffers() } returns Response.success(listOf(offer("same-id")))
+        coEvery { orderApi.orderDeclinePreferredOffer(any()) } coAnswers {
+            entered.complete(Unit); release.await(); Response.success(DeclinePreferredOfferResponse(orderId = "same-id"))
+        }
+        val repo = newRepo()
+        repo.refreshPendingOffers()
+        val held = async { repo.declinePreferredOffer("same-id") }
+        try {
+            awaitEntered(entered)
+            repo.clear()
+            repo.refreshPendingOffers()
+            release.complete(Unit)
+            held.await()
+            assertEquals(listOf("same-id"), repo.pendingOffers.value.map { it.id })
+            assertFalse(repo.arePendingOffersStale())
+        } finally { release.complete(Unit); held.await() }
+    }
+
+    @Test
+    fun heldFetchCannotResurrectOfferAfterSuccessfulDecline() = runTest {
+        val entered = CompletableDeferred<Unit>()
+        val release = CompletableDeferred<Unit>()
+        coEvery { orderApi.orderMyPendingOffers() } coAnswers {
+            entered.complete(Unit); release.await(); Response.success(listOf(offer("a")))
+        }
+        coEvery { orderApi.orderDeclinePreferredOffer(any()) } returns Response.success(DeclinePreferredOfferResponse(orderId = "a"))
+        val repo = newRepo()
+        val held = async { repo.refreshPendingOffers() }
+        try {
+            awaitEntered(entered)
+            repo.declinePreferredOffer("a")
+            release.complete(Unit)
+            held.await()
+            assertTrue(repo.pendingOffers.value.isEmpty())
+            assertTrue(repo.arePendingOffersStale())
+        } finally { release.complete(Unit); held.await() }
+    }
+
 }

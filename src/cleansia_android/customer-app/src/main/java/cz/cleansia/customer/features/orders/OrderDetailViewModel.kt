@@ -9,6 +9,7 @@ import cz.cleansia.core.format.formatOrderPrice
 import cz.cleansia.core.network.ApiError
 import cz.cleansia.core.network.ApiResult
 import cz.cleansia.customer.core.consent.GdprConsentClient
+import cz.cleansia.customer.core.payments.StripeConfig
 import cz.cleansia.customer.core.consent.SIGNUP_TICK_CONSENTS
 import cz.cleansia.customer.core.loyalty.LoyaltyRepository
 import cz.cleansia.customer.core.memberships.MembershipRepository
@@ -113,7 +114,10 @@ class OrderDetailViewModel @Inject constructor(
     private val loyaltyRepository: LoyaltyRepository,
     private val paymentRepository: PaymentRepository,
     private val consentClient: GdprConsentClient,
+    stripeConfig: StripeConfig,
 ) : ViewModel() {
+
+    val cardPaymentAvailable = stripeConfig.isCardPaymentAvailable
 
     val markets = marketRepository.state
 
@@ -522,6 +526,8 @@ class OrderDetailViewModel @Inject constructor(
         val id = orderId
         if (id.isNullOrBlank()) return
         if (_confirmRecurringState.value is ActionState.Submitting) return
+        val order = (_state.value as? OrderDetailUiState.Loaded)?.order ?: return
+        if (order.paymentType?.value == 2 && !cardPaymentAvailable) return
         if (_termsAsked.value && !_termsAccepted.value) return
         val termsAccepted = if (_termsAsked.value) true else null
         viewModelScope.launch {

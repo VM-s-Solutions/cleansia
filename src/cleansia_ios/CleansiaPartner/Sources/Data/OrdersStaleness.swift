@@ -34,21 +34,38 @@ enum OrdersMutation {
     }
 }
 
-/// Per-pane + per-order freshness watermarks (the `OrdersRepository.kt:159-192`
+/// Dashboard, per-pane + per-order freshness watermarks (the `OrdersRepository.kt:159-192`
 /// staleness parity). A pane/order is "fresh" within `window` of its last
 /// `markFresh`; `ensureFreshOrCached` callers skip the network while warm so a
 /// resume from the detail screen is a no-op (no spinner flash). User pulls
-/// bypass this entirely. `MainActor`-isolated — only the VM touches it.
+/// bypass this entirely. `MainActor`-isolated.
 @MainActor
 final class OrdersStaleness: SessionScopedCache {
     private let window: TimeInterval
     private let now: () -> Date
     private var paneMarks: [OrdersPane: Date] = [:]
     private var orderMarks: [String: Date] = [:]
+    private var dashboardMark: Date?
+    private(set) var dashboardRevision = 0
+    private(set) var sessionEpoch = 0
 
     init(window: TimeInterval = 30, now: @escaping () -> Date = Date.init) {
         self.window = window
         self.now = now
+    }
+
+    var isDashboardStale: Bool {
+        guard let dashboardMark else { return true }
+        return now().timeIntervalSince(dashboardMark) >= Self.dashboardWindow
+    }
+
+    func markDashboardFresh() {
+        dashboardMark = now()
+    }
+
+    func invalidateDashboard() {
+        dashboardRevision += 1
+        dashboardMark = nil
     }
 
     func isPaneStale(_ pane: OrdersPane) -> Bool {
@@ -78,9 +95,13 @@ final class OrdersStaleness: SessionScopedCache {
     }
 
     func clear() async {
+        sessionEpoch += 1
+        invalidateDashboard()
         paneMarks.removeAll()
         orderMarks.removeAll()
     }
+
+    private static let dashboardWindow: TimeInterval = 60
 
     private func isStale(_ mark: Date?) -> Bool {
         guard let mark else { return true }

@@ -243,6 +243,14 @@ final class TextInkTests: XCTestCase {
         )
     }
 
+    func testAvailableSortMenuNamesItsCurrentVisibleSelection() throws {
+        let source = try compactSource("Orders/OrdersListContent.swift")
+        XCTAssertTrue(source.contains(
+            "Image(systemName:\"chevron.down\").font(.system(size:12))}"
+                + ".foregroundColor(CleansiaColors.primaryText)}.accessibilityLabel(OrdersFormat.sortLabel(sort))"
+        ), "the sort Menu must name its selected visible label")
+    }
+
     private var featureSources: URL {
         URL(fileURLWithPath: #filePath)
             .deletingLastPathComponent()

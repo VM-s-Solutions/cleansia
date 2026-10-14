@@ -12,12 +12,16 @@ import com.stripe.android.PaymentConfiguration
 import cz.cleansia.core.sentry.SentryUserTracker
 import cz.cleansia.customer.core.auth.TokenStoreEntryPoint
 import cz.cleansia.customer.core.notifications.NotificationChannels
+import cz.cleansia.customer.core.payments.StripeConfig
 import dagger.hilt.android.EntryPointAccessors
 import dagger.hilt.android.HiltAndroidApp
 import io.sentry.android.core.SentryAndroid
+import javax.inject.Inject
 
 @HiltAndroidApp
 class CleansiaApp : Application(), SingletonImageLoader.Factory {
+
+    @Inject lateinit var stripeConfig: StripeConfig
 
     /**
      * Custom Coil [ImageLoader] that registers the animated-image decoder so
@@ -52,11 +56,8 @@ class CleansiaApp : Application(), SingletonImageLoader.Factory {
         // Token lives in ~/.gradle/gradle.properties → BuildConfig; see build.gradle.kts.
         MapboxOptions.accessToken = BuildConfig.MAPBOX_ACCESS_TOKEN
 
-        // Stripe PaymentSheet requires the publishable key set once at app start.
-        // Empty string fallback means "no card payments configured" — PaymentSheet
-        // will throw a clear error at first use rather than crashing on launch.
-        if (BuildConfig.STRIPE_PUBLISHABLE_KEY.isNotBlank()) {
-            PaymentConfiguration.init(this, BuildConfig.STRIPE_PUBLISHABLE_KEY)
+        if (stripeConfig.isCardPaymentAvailable) {
+            PaymentConfiguration.init(this, stripeConfig.publishableKey)
         }
 
         if (BuildConfig.SENTRY_DSN.isNotBlank()) {

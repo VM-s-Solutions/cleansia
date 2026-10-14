@@ -52,7 +52,7 @@ public final class BaseAppContainer: AppContainer {
         self.snackbar = snackbar
         self.sessionScopedCaches = sessionScopedCaches
         self.appSettings = appSettings
-        sessionManager = SessionManager(sessionScopedCaches: sessionScopedCaches)
+        sessionManager = SessionManager()
         self.makeAuthSpine = makeAuthSpine
         self.makeApiClient = makeApiClient
     }

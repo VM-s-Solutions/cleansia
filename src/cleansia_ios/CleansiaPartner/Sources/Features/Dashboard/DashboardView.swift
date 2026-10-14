@@ -27,6 +27,7 @@ struct DashboardView: View {
         notificationFeedClient: NotificationFeedClient,
         profileClient: PartnerProfileClient,
         settings: AppSettingsStore,
+        staleness: OrdersStaleness,
         snackbar: SnackbarController,
         pendingOffers: PendingOffersStore,
         onOpenEarnings: @escaping () -> Void = {},
@@ -38,7 +39,7 @@ struct DashboardView: View {
         onOpenDocuments: @escaping () -> Void = {},
         onOpenHelp: @escaping () -> Void = {}
     ) {
-        _vm = StateObject(wrappedValue: DashboardViewModel(client: client, settings: settings))
+        _vm = StateObject(wrappedValue: DashboardViewModel(client: client, settings: settings, staleness: staleness))
         _pendingOffersVM = StateObject(wrappedValue: PendingOffersCardViewModel(store: pendingOffers))
         self.notificationBadge = notificationBadge
         self.notificationFeedClient = notificationFeedClient

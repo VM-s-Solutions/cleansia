@@ -24,8 +24,11 @@ final class InvoicesWireTests: XCTestCase {
         _ = try await LivePartnerPayrollClient().getPagedInvoices(employeeId: "emp-1").get()
 
         let query = try XCTUnwrap(bodies.query(ofPath: "/api/EmployeePayroll/GetPagedInvoices"), "no invoice request")
-        XCTAssertTrue(query.contains(URLQueryItem(name: "Sort[0].Field", value: "createdOn")), "\(query)")
+        XCTAssertTrue(query.contains(URLQueryItem(name: "Sort[0].Field", value: "generatedAt")), "\(query)")
         XCTAssertTrue(query.contains(URLQueryItem(name: "Sort[0].Direction", value: "1")), "\(query)")
+        XCTAssertTrue(query.contains(URLQueryItem(name: "Filter.EmployeeId", value: "emp-1")), "\(query)")
+        XCTAssertTrue(query.contains(URLQueryItem(name: "Offset", value: "0")), "\(query)")
+        XCTAssertTrue(query.contains(URLQueryItem(name: "Limit", value: "50")), "\(query)")
         XCTAssertFalse(query.contains { $0.name == "Sort" }, "a sort the server does not bind: \(query)")
     }
 }

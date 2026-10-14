@@ -75,7 +75,6 @@ import cz.cleansia.core.ui.components.SnapSheetState
 import cz.cleansia.core.ui.components.rememberSnapSheetState
 import cz.cleansia.core.ui.theme.Spacing
 import cz.cleansia.core.ui.theme.primaryText
-import cz.cleansia.customer.BuildConfig
 import cz.cleansia.customer.R
 import cz.cleansia.customer.core.market.MarketState
 import cz.cleansia.customer.core.orders.OrderCurrencyDetailDto
@@ -298,6 +297,7 @@ fun OrderDetailScreen(
                 showMakeRecurring = canMakeRecurring,
                 cancelEnabled = !cancelling,
                 confirmingRecurring = confirmingRecurring,
+                cardPaymentAvailable = viewModel.cardPaymentAvailable,
                 offersCardSaving = offersCardSaving,
                 saveCard = saveCard,
                 termsAsked = termsAsked,
@@ -416,6 +416,7 @@ private fun OrderDetailMapLayout(
     showMakeRecurring: Boolean,
     cancelEnabled: Boolean,
     confirmingRecurring: Boolean,
+    cardPaymentAvailable: Boolean,
     offersCardSaving: Boolean,
     saveCard: Boolean,
     termsAsked: Boolean,
@@ -507,6 +508,7 @@ private fun OrderDetailMapLayout(
             showMakeRecurring = showMakeRecurring,
             cancelEnabled = cancelEnabled,
             confirmingRecurring = confirmingRecurring,
+            cardPaymentAvailable = cardPaymentAvailable,
             offersCardSaving = offersCardSaving,
             saveCard = saveCard,
             termsAsked = termsAsked,
@@ -560,6 +562,7 @@ private fun OrderDetailSheetContent(
     showMakeRecurring: Boolean,
     cancelEnabled: Boolean,
     confirmingRecurring: Boolean,
+    cardPaymentAvailable: Boolean,
     offersCardSaving: Boolean,
     saveCard: Boolean,
     termsAsked: Boolean,
@@ -579,7 +582,6 @@ private fun OrderDetailSheetContent(
     onTermsAcceptedChange: (Boolean) -> Unit,
 ) {
     val payByCard = order.paymentType?.value == 2
-    val cardPaymentAvailable = BuildConfig.STRIPE_PUBLISHABLE_KEY.isNotBlank()
     // Without a Stripe key a card occurrence is not offered: its confirm spends credit for a sheet that cannot open.
     val showConfirmRecurringCta = order.needsConfirmation && (cardPaymentAvailable || !payByCard)
     val hasFooter = showCancel || showCleanerNoShow || showReportIssue || showRebook || showMakeRecurring
@@ -1166,6 +1168,7 @@ private fun PreviewSheet() {
                 showMakeRecurring = false,
                 cancelEnabled = true,
                 confirmingRecurring = false,
+                cardPaymentAvailable = true,
                 offersCardSaving = false,
                 saveCard = false,
                 termsAsked = false,

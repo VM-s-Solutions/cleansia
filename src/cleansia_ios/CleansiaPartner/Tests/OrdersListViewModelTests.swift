@@ -45,15 +45,17 @@ final class OrdersListViewModelTests: XCTestCase {
         XCTAssertNotNil(snackbar.current)
     }
 
-    // MARK: O3 — "mine" panes send only the own id; Available sends none
+    // MARK: current cleaner scope
 
-    func testAvailablePaneSendsNoEmployeeIdUnassignedTrue() async {
+    func testAvailablePaneExcludesOnlyTheResolvedCurrentEmployee() async {
         let vm = makeVM()
         await vm.onAppear()
         let query = try? XCTUnwrap(client.queries.last)
         XCTAssertNil(query?.employeeId)
-        XCTAssertEqual(query?.isUnassigned, true)
-        XCTAssertEqual(client.employeeIdCallCount, 0) // never resolved for Available
+        XCTAssertNil(query?.isUnassigned)
+        XCTAssertEqual(query?.hasAvailableSpots, true)
+        XCTAssertEqual(query?.excludeEmployeeId, "emp-self")
+        XCTAssertEqual(client.employeeIdCallCount, 1)
     }
 
     func testActivePaneSendsOnlyOwnEmployeeId() async {
@@ -410,5 +412,45 @@ final class OrdersListViewModelTests: XCTestCase {
         await vm.selectTab(.active)
 
         XCTAssertFalse(vm.showsLocationPrompt)
+    }
+
+    func testAvailableIdentityFailureNeverSendsAnUnscopedRequest() async {
+        client.employeeIdResult = .failure(ApiError(code: "network.unreachable"))
+        let vm = makeVM()
+        await vm.onAppear()
+        XCTAssertEqual(client.employeeIdCallCount, 1)
+        XCTAssertEqual(client.getPagedCallCount, 0)
+        guard case .error = vm.currentState else { return XCTFail("expected unresolved identity error") }
+        XCTAssertTrue(staleness.isPaneStale(.available))
+        XCTAssertNotNil(snackbar.current)
+    }
+
+    func testAvailableBlankIdentityNeverSendsAnUnscopedRequest() async {
+        for id in ["", " ", "\n\t"] {
+            client = FakePartnerOrderClient()
+            client.employeeIdResult = .success(id)
+            let vm = makeVM()
+            await vm.onAppear()
+            XCTAssertEqual(client.getPagedCallCount, 0, "blank id: \(id.debugDescription)")
+            guard case .error = vm.currentState else { return XCTFail("expected blank identity error") }
+            XCTAssertTrue(staleness.isPaneStale(.available))
+        }
+    }
+
+    func testLoadedAvailableIdentityFailureRetainsRowsAndRetries() async {
+        client.pagedResult = .success([.sample(id: "last-good")])
+        let vm = makeVM()
+        await vm.onAppear()
+        client.employeeIdResult = .failure(ApiError(code: "network.unreachable"))
+        clock.addTimeInterval(30)
+        await vm.onAppear()
+        XCTAssertEqual(client.getPagedCallCount, 1)
+        XCTAssertEqual(vm.currentState.loadedValue?.map(\.id), ["last-good"])
+        XCTAssertTrue(staleness.isPaneStale(.available))
+        XCTAssertNotNil(snackbar.current)
+        client.employeeIdResult = .success("emp-self")
+        await vm.onAppear()
+        XCTAssertEqual(client.getPagedCallCount, 2)
+        XCTAssertFalse(staleness.isPaneStale(.available))
     }
 }

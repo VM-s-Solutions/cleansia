@@ -74,7 +74,10 @@ final class WorkContractWireTests: XCTestCase {
     // MARK: the echo on the take
 
     func testTheTakeCarriesTheAcceptedTextIdBesideTheOrderId() async throws {
-        _ = await LivePartnerOrderClient().takeOrder(orderId: "order-1", acceptedWorkContractTextId: "text-cs-1")
+        _ = await LivePartnerOrderClient(staleness: OrdersStaleness()).takeOrder(
+            orderId: "order-1",
+            acceptedWorkContractTextId: "text-cs-1"
+        )
 
         let body = try XCTUnwrap(bodies.json(ofPath: Self.takePath))
         XCTAssertEqual(body["orderId"] as? String, "order-1")
@@ -84,7 +87,7 @@ final class WorkContractWireTests: XCTestCase {
     }
 
     func testTheStandaloneAcceptanceCarriesTheSameEchoToItsOwnRoute() async throws {
-        _ = await LivePartnerOrderClient()
+        _ = await LivePartnerOrderClient(staleness: OrdersStaleness())
             .acceptWorkContract(orderId: "order-1", acceptedWorkContractTextId: "text-cs-1")
 
         let body = try XCTUnwrap(bodies.json(ofPath: Self.acceptPath))
@@ -110,7 +113,7 @@ final class WorkContractWireTests: XCTestCase {
     // MARK: the reads
 
     func testThePreviewIsAGetKeyedOnTheOrderAndTheLanguage() async throws {
-        let contract = try await LivePartnerOrderClient()
+        let contract = try await LivePartnerOrderClient(staleness: OrdersStaleness())
             .getWorkContractPreview(orderId: "order-1", language: "cs")
             .get()
 
@@ -122,7 +125,7 @@ final class WorkContractWireTests: XCTestCase {
     }
 
     func testTheReadIsAGetKeyedOnTheAcceptance() async throws {
-        let contract = try await LivePartnerOrderClient()
+        let contract = try await LivePartnerOrderClient(staleness: OrdersStaleness())
             .getWorkContract(acceptanceId: "acc-1", language: "en")
             .get()
 

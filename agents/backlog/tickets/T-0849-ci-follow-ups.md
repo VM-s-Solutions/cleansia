@@ -326,6 +326,52 @@ actual final-head local commands** before push. Those gates are pending at this 
 the three source-head docs results above are the completed command evidence currently supplied.
 Hosted PR/master receipts and END runtime results remain future evidence.
 
+### 2026-10-14 — P5 Ubuntu 26.04 merge and master closure
+
+P5 [#336](https://github.com/VM-s-Solutions/cleansia/pull/336) merged at
+`2026-10-14T20:11:54Z` as `2118ad22736d91e2026967f5a19503b5e4019afd` from exact head `44392c870177ab63467448b9a841141d7da8db45`.
+All **eight PR checks across seven workflows** passed on their first attempts, with **zero
+re-runs**. Captured logs show **Ubuntu 26.04 in all eight executed Linux PR jobs**. The tested
+head and merge have the same Git tree. Exact merge, checks and bounded no-phase-dispatch evidence
+are saved in `/Users/michael/.codex/scratchpads/cleansia-wave-f-2026-10-11/raw/ci/nw-ubuntu26-pr336-ci-merge-closure-001.json` (SHA-256 `f0904ef9d7abad2601a6a88b898823dfbbe5393ddc3857538aeab3470424a4fa`).
+
+Master then passed **seven executed repository push jobs across seven workflows**, each on
+attempt 1, with the single **Frontend e2e-smoke guarded push skip**, zero re-runs, and
+**0 automatic extra checks** separately preserved. The master receipt
+`/Users/michael/.codex/scratchpads/cleansia-next-wave-2026-10-13/p5/master-ci-evidence-receipt001.json` (SHA-256
+`35207b649e1ab10cce4a1c5dd67051e4befd588ef2cf021d05026ecbc755aece`) records the completed checks and
+**seven actual Ubuntu 26.04 repository job images**; its hashes bind the poll/evidence summaries
+and all seven executed job logs. The separate raw-collection supplement
+`/Users/michael/.codex/scratchpads/cleansia-next-wave-2026-10-13/p5/master-capture-bindings-supplement001.json` (SHA-256
+`9a58b8437700af6e7e77c2116d2bcb7b8c1fc7a0af8f18b98c3a20833d2173df`) binds the exact paths and digests of all **eight raw annotation
+collections** and **seven artifact-list responses**. Captures were saved on the UTC day of
+execution under the one-day retention rule.
+
+The PR API annotation comparison initially stopped on one CS8604 warning replacing a different
+sampled warning. That original **`NEW_ANNOTATIONS_STOP`** receipt is preserved. The separately
+verified equivalence receipt `/Users/michael/.codex/scratchpads/cleansia-next-wave-2026-10-13/p5/exact-annotation-equivalence-author001/annotation-equivalence001.json` (SHA-256 `673508f197285ce6b74c78305c4678bf8c2b012ea0b7e6493eb010b5327e0041`) qualifies
+only the exact `BlobContainerClientFactory.cs:38:40` API substitution: both complete compiler
+logs contain the same **440 warning occurrences / 220 unique diagnostics**, SDK **10.0.402**,
+runtime **10.0.13**, and identical **7508 source blob/mode rows**. The prior log already contains
+that CS8604. This is an inherited compiler diagnostic; no zero-warning claim or general warning
+waiver is made. The exact gate and all eight fresh check identities/counts preceded the guarded
+merge. The hosted compiler versions are distinct from the recorded local SDK 10.0.301.
+
+The final head's **13 local command gates** and full local suite receipts above remain bound by
+`/Users/michael/.codex/scratchpads/cleansia-next-wave-2026-10-13/p5/final-record-sdk-rebind001.json` (SHA-256
+`b24f57bd6e33915c4477c17c089338eb491b7d3bbde4885af3ae42a31563fb46`). P5's iOS qualification remains unchanged:
+unfiltered iOS 18.6 tests used independently copied P4 products; **no fresh P5 iOS compilation**,
+and Customer retained **one VoiceOver runtime skip**. These source/runtime bindings are not an
+additional suite execution. The PR's Playwright artifact was saved with its exact ID and digest.
+
+Mike's dated 2026-10-13 approval — “You can reset db, but once we're done with everything and we
+can do a fresh deployment” — and “Go with defaults (recommended)” continue to govern END.
+**AC1/AC3 remain open**: the deploy/SQL/docs declarations and expanded matrix legs still need the
+approved final DEV procedure after P6 merges with green master CI. The two PRO-only declarations
+remain unexecuted. This phase dispatched no deployment or SQL workflow and performed no reset
+or tracked regeneration. The single Initial remains `20261013160545`; its DEV reset debt is END.
+This P5 closure is prepared to be the **first commit of P6**.
+
 ## Review
 
 Pending.

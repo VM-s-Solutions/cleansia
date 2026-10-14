@@ -57,7 +57,7 @@ Fresh source reports:
 
 - [x] **AC1** — Each Available request sends hasAvailableSpots and the signed-in employee exclusion, without isUnassigned. Wire tests demonstrate the old request shape RED and the new shape GREEN.
 - [x] **AC2** — Both apps show an eligible free second seat and cover seat, exclude an already-assigned current cleaner, and preserve no offer at/after slot end. Record command/device evidence honestly and distinguish their scope.
-- [ ] **AC3** — Both platforms full relevant suites and parity/symbol gates pass on the actual head; reviewer/security checks preserve current-account and hold restrictions; ADR-D9 fulfillment and owner ruling are recorded.
+- [x] **AC3** — Both platforms full relevant suites and parity/symbol gates pass on the actual head; reviewer/security checks preserve current-account and hold restrictions; ADR-D9 fulfillment and owner ruling are recorded.
 
 ## Dependencies and execution
 
@@ -91,6 +91,14 @@ Generation assessment: no DTO/endpoint/schema regeneration is implied by this ti
 - Final combined-source cross-stack gates PASS is recorded centrally in T-0839's dated native Work follow-up (`cross-stack-001/final.json` and `count-receipt-001.json`); final docs/parity/symbol and publication obligations remain separate.
 
 - 2026-10-14, local gate follow-up — T-0839 records all 11 final docs/parity/symbol commands passing and the source commit byte/mode rebind to all 8260 measured inputs. AC3 stays open until the final committed-head documentation checks and native publication are recorded; the prior pending statements above describe their earlier capture time.
+
+
+### Native publication closure — 2026-10-14
+
+- 2026-10-14 — Native follow-up shipped in [#333](https://github.com/VM-s-Solutions/cleansia/pull/333). Exact-head CI on `e6039a9acca40e22047a2bf4ba56a4c76a1abf63` passed all 8 check runs across 7 triggered workflows on their first attempt, with no rerun. Merged with the head SHA guard as `a667f62b1c7157c5ca0104837dbe8e6c4dc45045` at `2026-10-14T12:55:03Z`. Exact merge-head master CI on `a667f62b1c7157c5ca0104837dbe8e6c4dc45045` passed all 6 check runs across 6 triggered workflows on their first attempt, with no skipped job or rerun. Evidence: `/Users/michael/.codex/scratchpads/cleansia-wave-f-2026-10-11/raw/ci/nw-native-pr333-ci-merge-closure-001.json` (SHA256 `ca11540ebb8c221b5b6abe1af2160e107afd801ce360adba66c7275a0692e179`) and `/Users/michael/.codex/scratchpads/cleansia-next-wave-2026-10-13/native/master-ci-evidence-receipt-001.json` (SHA256 `1005f55da28ab299d259aea4772f2253ee42eff213314291e8d215ce4c9abde8`).
+- AC3 is complete: the published source retains the full relevant suite proofs, actual committed-head parity/symbol/documentation gates, applicable current-account/hold checks and dated ADR-D9 fulfillment. The first-50-row device matrix, separate SQL/HTTP qualification, CZE fixture/HTTP binding and no-Take limit remain; no whole S11 closure is claimed.
+- Final source commit `ead09ca1c2121f04d86a3278dd67d42ca82f962e` binds all 8260 measured inputs; its final child `e6039a9acca40e22047a2bf4ba56a4c76a1abf63` changes only the 11 reviewed record files, and the merge tree equals that exact head. `native/final-record-gates-002/final.json` records all 11 committed-head documentation/parity/symbol commands passing with unchanged source and records. The full relevant Android and both-floor iOS suite proofs above therefore bind to the published source; the unchanged Customer VoiceOver skip remains qualified.
+- The captured deployment metadata queries beginning at the merge timestamp reported zero runs for deploy-dev, deploy-pro, deploy-docs and execute-sql. The authorized wave-end DEV reset, fresh deployment and docs deployment remain due. Earlier dated pending statements record their capture time.
 
 ## Review
 

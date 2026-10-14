@@ -4,8 +4,10 @@
 > "dev environment live and serving the iOS/web clients." Source of truth: **ADR-0015** (Azure deploy),
 > **ADR-0017** (region seam). The Bicep lives at [`deploy/bicep/`](bicep/). Region: **West Europe** (`weu`).
 >
-> **Hard rule:** Claude/agents author the declarative artifacts (Bicep, YAML). Only the **owner** runs
-> `az`, creates GitHub Environments, and populates real secret values. This runbook is the owner's part.
+> **Hard rule:** The repository holds the declarative artifacts (Bicep, YAML). The **owner** runs
+> `az` and populates real secret values. The required-check and GitHub environment/settings changes
+> approved on 2026-10-13 were applied through the GitHub API on 2026-10-14, with before/after receipts.
+> Current Azure identity narrowing remains the owner's go-live work.
 
 ---
 
@@ -115,8 +117,10 @@ and `QueueListenerInventoryTests` fails the build if the two drift again.
 
 ## 1. Prerequisites (one-time, before anything else)
 
-- [ ] **Azure subscription** with **Owner** or **Contributor + User Access Administrator** on it
-      (you need to create role assignments, which Contributor alone can't do).
+- [ ] **Azure subscription** under the owner's control, with the required resource providers registered
+      before provisioning. The owner creates each stage's resource group before granting its deploy
+      identity **Contributor + User Access Administrator** on that group; Contributor cannot create
+      role assignments, and a group-scoped identity cannot register subscription providers.
 - [ ] **Azure CLI** with the Bicep extension. **Azure Cloud Shell** (the `>_` bash in the portal) already
       has both — you can run every `az` command in this runbook from there, no local install needed.
 - [ ] **GitHub repo admin** rights (to create Environments + secrets).
@@ -136,44 +140,48 @@ and `QueueListenerInventoryTests` fails the build if the two drift again.
 ## 2. Azure OIDC federation (so CI logs in without a stored password)
 
 The workflows sign in with `azure/login` (v3.1.0, pinned to its commit) and federated credentials — no
-client secret is stored. Create an app registration (service principal) and federate it to this repo's
-environments.
+client secret is stored. Each stage gets a distinct app registration and service principal. The DEV
+app federates only to `dev-weu`; the PRO app is created separately at go-live (§11).
+
+This is the target setup. The existing DEV identity's narrowing is deferred to go-live by the owner's
+2026-10-13 decision; these instructions do not attest to current Azure identities or grants.
 
 ```bash
-# 2.1 — Create the app registration + service principal
-az ad app create --display-name "cleansia-github-oidc"
-APP_ID=$(az ad app list --display-name "cleansia-github-oidc" --query "[0].appId" -o tsv)
+# The owner creates the group before any group-scoped grant.
+SUB_ID=$(az account show --query id -o tsv)
+az group create --name rg-cleansia-weu-dev --location westeurope
+
+az ad app create --display-name "cleansia-github-oidc-dev"
+APP_ID=$(az ad app list --display-name "cleansia-github-oidc-dev" --query "[0].appId" -o tsv)
 az ad sp create --id "$APP_ID"
 SP_OBJECT_ID=$(az ad sp show --id "$APP_ID" --query id -o tsv)
 
-# 2.2 — Federate it to the dev-weu GitHub Environment (one credential per environment)
 az ad app federated-credential create --id "$APP_ID" --parameters '{
   "name": "cleansia-dev-weu",
   "issuer": "https://token.actions.githubusercontent.com",
   "subject": "repo:VM-s-Solutions/cleansia:environment:dev-weu",
   "audiences": ["api://AzureADTokenExchange"]
 }'
-# (Repeat with subject ...:environment:prod-weu when you provision prod.)
 
-# 2.3 — Grant the SP rights on the subscription (Contributor to create resources +
-#        User Access Administrator so the deployment can create the MI role assignments).
-SUB_ID=$(az account show --query id -o tsv)
 az role assignment create --assignee "$APP_ID" --role "Contributor" \
-  --scope "/subscriptions/$SUB_ID"
+  --scope "/subscriptions/$SUB_ID/resourceGroups/rg-cleansia-weu-dev"
 az role assignment create --assignee "$APP_ID" --role "User Access Administrator" \
-  --scope "/subscriptions/$SUB_ID"
+  --scope "/subscriptions/$SUB_ID/resourceGroups/rg-cleansia-weu-dev"
 ```
 
-Note the three OIDC ids for the GitHub secrets in step 4: `AZURE_CLIENT_ID` = `$APP_ID`,
+The deployment assigns five managed-identity roles within that group: **Key Vault Secrets User**,
+**Key Vault Secrets Officer**, **Storage Blob Data Contributor**, **Storage Queue Data Contributor**
+and **AcrPull**. Keep the deployment identity's grants at the stage's resource-group scope.
+
+Note the three OIDC ids for the `dev-weu` secrets in step 4: `AZURE_CLIENT_ID` = DEV's `$APP_ID`,
 `AZURE_TENANT_ID` = `az account show --query tenantId -o tsv`, `AZURE_SUBSCRIPTION_ID` = `$SUB_ID`.
 
 ---
 
-## 3. Resource group
+## 3. Resource group readiness
 
-```bash
-az group create --name rg-cleansia-weu-dev --location westeurope
-```
+The owner has already created `rg-cleansia-weu-dev` in §2 before the identity grants. Verify the
+subscription's resource-provider registrations before the first group deployment.
 
 ---
 
@@ -181,10 +189,11 @@ az group create --name rg-cleansia-weu-dev --location westeurope
 
 In **GitHub → repo → Settings → Environments**:
 
-- [ ] Create **`dev-weu`** — no protection rules (auto-deploys on merge to `master`).
-- [ ] Create **`prod-weu`** — **Required reviewers** = you; **Wait timer** optional. This protection **is**
-      the prod gate: `deploy-pro.yml` has no typed-confirmation step anymore — a prod run pauses for your
-      approval before any prod secret is released. Full prod setup: **§11 (PROD)** below.
+- [ ] Create **`dev-weu`** — no protection rules; DEV deploys only through manual dispatch.
+- [x] **`prod-weu`** gate configured and API verified **2026-10-14**: required reviewer
+      **MichaelChaban**, self-review allowed, administrator bypass disabled, branch `master` only.
+      This is the gate for an environment-protected job; it is configuration proof, with no PRO run.
+      Full prod setup: **§11 (PROD)** below.
 
 Add these **environment secrets** to `dev-weu` (Settings → Environments → dev-weu → Add secret):
 
@@ -520,18 +529,20 @@ When green: the five `api-cleansia-*-weu-dev.azurewebsites.net` hosts are the st
 ```
 [ ] 1.  Prereqs: subscription Owner, GitHub admin, your LAPTOP's public IP, Postgres password
         (use Azure Cloud Shell — it already has az + bicep; no local install needed)
-[ ] 2.  OIDC app registration + federate to dev-weu + grant Contributor + User Access Administrator
-[ ] 3.  az group create rg-cleansia-weu-dev (westeurope)
+[ ] 2.  Owner registers providers and creates rg-cleansia-weu-dev (westeurope)
+[ ] 3.  Separate DEV OIDC app + dev-weu federation + Contributor and User Access Administrator
+        scoped to /subscriptions/<sub>/resourceGroups/rg-cleansia-weu-dev; current DEV narrowing
+        remains deferred to go-live (owner decision 2026-10-13)
 [ ] 4.  GitHub Environments dev-weu (open) + prod-weu (protected); add the dev-weu secrets
         (ACR_NAME = acrcleansiaweudev ; ADMIN_IP_ADDRESS = your laptop IP)
 [ ] 4b. In Cloud Shell: git clone the repo, cd cleansia  (steps 5 + the manual EF bundle need the files)
 [ ] 5.  First provision: az deployment group create (from inside cleansia/) → all 11 resources + KV empty
 [ ] 6.  Grant self Secrets Officer; set every Key Vault secret value; restart API hosts  (plain az, anywhere)
 [ ] 7.  (Migrations apply automatically on the CI deploy; manual bundle needs the .NET SDK — rarely)
-[ ] 8.  Fill the 2 SWA deploy tokens; first deploy = merge to master (auto) OR Actions → Run workflow.
-        Thereafter every merge to master auto-deploys dev; the manual button stays for re-runs / what-if.
+[ ] 8.  Fill the 2 SWA deploy tokens; deploy through Actions → Run workflow on master.
+        DEV stays dispatch-only; choose deploy or what-if and wait for each run to finish.
 [ ] 9.  Smoke: 5 APIs + both mobile tokens + SSR + 2 SPAs + the Functions PDF pipeline
-[ ] 10. Green → tell Claude → iOS Phase 0 points at dev
+[ ] 10. Green → point iOS Phase 0 at DEV
 ```
 
 ---
@@ -580,17 +591,27 @@ any of this — it lives in each provider's console — so it is recorded here a
        tenant requiring MFA for members and guests signing in to the admin Static Web App.
 ```
 
-> **MANUAL_STEP P1 — create the `prod-weu` GitHub Environment with Required reviewers.**
-> GitHub → repo → **Settings → Environments → New environment → `prod-weu`** → add **Required
-> reviewers** = you (+ a second approver if available); **Wait timer** optional; restrict
-> *Deployment branches* to `master` (checklist item 4). This **replaces** the old typed-"deploy" confirmation gate: a
-> `Deploy to PRO` run now pauses at the first prod job until a reviewer approves — **no prod secret is
-> released before that approval.**
+> **P1 — `prod-weu` GitHub Environment gate configured and verified 2026-10-14.** Required reviewer
+> **MichaelChaban** (user id **76599514**), `prevent_self_review: false`, `can_admins_bypass: false`,
+> and one custom deployment branch policy, branch `master` only. Fresh authenticated and anonymous
+> reads confirmed the gate, and the branch-policy read confirmed `master`. The environment configuration
+> is established; no PRO workflow was run. Retain the before/after receipts with the deployment records.
+>
+> The unused `production` configuration was deleted after fresh checks found zero secrets, zero
+> variables and no current workflow readers. It had one failed GitHub deployment from 2026-04-01:
+> history was not empty. After deletion the deployment object's only changed field was `updated_at`,
+> and its statuses endpoint returned one `inactive` status; the old error status is preserved off-tree,
+> with continued server retention unverified. Authenticated and anonymous environment reads returned 404.
+> No PRO resource operation ran. No PRO workflow or Azure operation is permitted during this program.
 
-> **MANUAL_STEP P2 — federate the OIDC app to `prod-weu`** (repeat §2.2 with the prod subject):
+> **P2 — create a separate PRO OIDC app and federate only to `prod-weu` at owner go-live.** Prefer a
+> separate production subscription. Never add a production federation to the DEV app.
 >
 > ```bash
-> az ad app federated-credential create --id "$APP_ID" --parameters '{
+> az ad app create --display-name "cleansia-github-oidc-prod"
+> PRO_APP_ID=$(az ad app list --display-name "cleansia-github-oidc-prod" --query "[0].appId" -o tsv)
+> az ad sp create --id "$PRO_APP_ID"
+> az ad app federated-credential create --id "$PRO_APP_ID" --parameters '{
 >   "name": "cleansia-prod-weu",
 >   "issuer": "https://token.actions.githubusercontent.com",
 >   "subject": "repo:VM-s-Solutions/cleansia:environment:prod-weu",
@@ -598,19 +619,25 @@ any of this — it lives in each provider's console — so it is recorded here a
 > }'
 > ```
 
-> **MANUAL_STEP P3 — create the prod resource group:**
+> **P3 — the owner registers providers, creates the PRO group, then grants PRO's identity there:**
 >
 > ```bash
+> PRO_SUB_ID=$(az account show --query id -o tsv)
 > az group create --name rg-cleansia-weu-prod --location westeurope
+> az role assignment create --assignee "$PRO_APP_ID" --role "Contributor" \
+>   --scope "/subscriptions/$PRO_SUB_ID/resourceGroups/rg-cleansia-weu-prod"
+> az role assignment create --assignee "$PRO_APP_ID" --role "User Access Administrator" \
+>   --scope "/subscriptions/$PRO_SUB_ID/resourceGroups/rg-cleansia-weu-prod"
 > ```
 
-> **MANUAL_STEP P4 — add the `prod-weu` Environment secrets.** Same **names** as `dev-weu`
+> **P4 — add the `prod-weu` Environment secrets.** Same **names** as `dev-weu`
 > (the reusable workflow reads identical names in both stages — only the Environment differs),
-> prod **values**. Never reuse a dev secret value in prod.
+> prod **values**. `AZURE_CLIENT_ID` is the distinct `$PRO_APP_ID` from P2. Never reuse a dev secret
+> value in prod.
 
 | `prod-weu` secret (same name as dev-weu) | Prod value | Used by |
 |---|---|---|
-| `AZURE_CLIENT_ID` | the OIDC app id (after P2 federation) | `azure/login` |
+| `AZURE_CLIENT_ID` | the distinct PRO OIDC app id (`$PRO_APP_ID`, P2) | `azure/login` |
 | `AZURE_TENANT_ID` | tenant id | `azure/login` |
 | `AZURE_SUBSCRIPTION_ID` | subscription id | `azure/login` |
 | `POSTGRES_ADMIN_PASSWORD` | a **new** strong alphanumeric password (§1 rules; never dev's) | the Bicep `@secure()` param, and the migration's administrator connection |

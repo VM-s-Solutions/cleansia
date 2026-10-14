@@ -39,7 +39,7 @@ Edge cases F3 ported between the apps, and the iOS reload [AND-10, AND-11, AND-1
 - [x] **AC2** — A test that the iOS tab return within 60 s makes no read.
 - [x] **AC3** — The full suites pass, and a render check of the dashboard.
 
-- [x] **AC4 — approved M1/M2 follow-up, local scope** — Both implementations invalidate dashboard freshness after successful same-session material writes, retain displayed data while invalidating, and reject held prior-generation dashboard publication; failure/old-session controls and a later same-session success are covered. iOS retains every last good dashboard value on silent failure and retries. Compiled RED/GREEN and combined relevant suites are recorded below. Publication remains pending.
+- [x] **AC4 — approved M1/M2 follow-up, local scope** — Both implementations invalidate dashboard freshness after successful same-session material writes, retain displayed data while invalidating, and reject held prior-generation dashboard publication; failure/old-session controls and a later same-session success are covered. iOS retains every last good dashboard value on silent failure and retries. Compiled RED/GREEN and combined relevant suites are recorded below. Publication is recorded in the native closure below.
 
 ## Work record
 
@@ -81,6 +81,14 @@ Edge cases F3 ported between the apps, and the iOS reload [AND-10, AND-11, AND-1
 - These M1/M2 behavior proofs are command based. The board device pass took no material order action; no additional device-mutation criterion is inferred. CHANGELOG describes the dashboard refresh and retained-data behavior. Final docs/parity/symbol checks, independent final record scrutiny, commit/CI/merge remain separate obligations.
 
 - Final combined-source cross-stack gates PASS is recorded centrally in T-0839's dated native Work follow-up (`cross-stack-001/final.json` and `count-receipt-001.json`); final docs/parity/symbol and publication obligations remain separate.
+
+
+### Native publication closure — 2026-10-14
+
+- 2026-10-14 — Native follow-up shipped in [#333](https://github.com/VM-s-Solutions/cleansia/pull/333). Exact-head CI on `e6039a9acca40e22047a2bf4ba56a4c76a1abf63` passed all 8 check runs across 7 triggered workflows on their first attempt, with no rerun. Merged with the head SHA guard as `a667f62b1c7157c5ca0104837dbe8e6c4dc45045` at `2026-10-14T12:55:03Z`. Exact merge-head master CI on `a667f62b1c7157c5ca0104837dbe8e6c4dc45045` passed all 6 check runs across 6 triggered workflows on their first attempt, with no skipped job or rerun. Evidence: `/Users/michael/.codex/scratchpads/cleansia-wave-f-2026-10-11/raw/ci/nw-native-pr333-ci-merge-closure-001.json` (SHA256 `ca11540ebb8c221b5b6abe1af2160e107afd801ce360adba66c7275a0692e179`) and `/Users/michael/.codex/scratchpads/cleansia-next-wave-2026-10-13/native/master-ci-evidence-receipt-001.json` (SHA256 `1005f55da28ab299d259aea4772f2253ee42eff213314291e8d215ce4c9abde8`).
+- The M1/M2 follow-up is published within its recorded command scope: seven existing successful writers, session/revision isolation and complete last-good iOS data retention. No device mutation proof is added.
+- The source/full-suite and actual committed-head gate binding is recorded in T-0839’s native publication closure below its Work record.
+- The captured deployment metadata queries beginning at the merge timestamp reported zero runs for deploy-dev, deploy-pro, deploy-docs and execute-sql. The authorized wave-end DEV reset, fresh deployment and docs deployment remain due. Earlier dated pending statements record their capture time.
 
 ## Review
 

@@ -3,7 +3,7 @@
 This page documents the configuration settings for each Cleansia API, covering app settings, Key Vault references, connection strings, and local development setup.
 
 ::: info Source Files
-- Partner API settings: `src/Cleansia.Web/appsettings.json`, `appsettings.Production.json`
+- Partner API settings: `src/Cleansia.Web.Partner/appsettings.json`, `appsettings.Production.json`
 - Stripe config: `src/Cleansia.Infra.Common/Configuration/StripeConfig.cs`
 - JWT config: `src/Cleansia.Infra.Common/Configuration/Interfaces/IJwtSettings.cs`
 :::

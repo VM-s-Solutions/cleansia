@@ -9,7 +9,7 @@
 #
 # THE TWO KNOBS THAT DO THAT:
 #
-#   open-pull-requests-limit: 0  turns VERSION updates off entirely. Routine "a package moved" PRs
+#   open-pull-requests-limit: 0  turns npm VERSION updates off. Routine "a package moved" PRs
 #     are the bulk of Dependabot's volume and none of them are why this was enabled. Security updates
 #     are governed separately and keep flowing — this limit does not apply to them.
 #
@@ -19,8 +19,8 @@
 #     development dependencies differ in what they can actually reach, since 127 of the 165 are build
 #     tooling that never ships to a browser.
 #
-# Only the two npm manifests are listed, because every one of the 165 alerts is npm. Adding
-# ecosystems with no alerts would spend CI minutes to discover nothing.
+# The two npm manifests keep security-only updates. GitHub Actions receives one monthly
+# minor/patch group; all action majors are ignored until reviewed separately.
 version: 2
 updates:
   - package-ecosystem: "npm"
@@ -88,3 +88,19 @@ updates:
         applies-to: security-updates
         patterns:
           - "*"
+
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "monthly"
+    groups:
+      actions:
+        patterns:
+          - "*"
+        update-types:
+          - "minor"
+          - "patch"
+    ignore:
+      - dependency-name: "*"
+        update-types:
+          - "version-update:semver-major"

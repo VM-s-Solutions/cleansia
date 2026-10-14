@@ -4,7 +4,7 @@ title: Wave E C06 — required-check policy and CI runtime: a decision for the o
 size: S
 owner: pm
 created: 2026-10-11
-updated: 2026-10-12
+updated: 2026-10-14
 depends_on: [T-0808]
 blocks: []
 stories: []
@@ -15,9 +15,9 @@ security_touching: true
 
 ## Context
 
-The roadmap: "only if evidence shows it is necessary, present a concrete decision on required-check policy and CI billing/runtime trade-offs before changing any required status, workflow gate, or budget-sensitive configuration." Checked against the read-only Wave E ground truth of 2026-10-11 (off-tree: `/Users/michael/.codex/scratchpads/cleansia-wave-e-2026-10-11/raw/ground-truth/`). **Nothing is changed by this ticket.** It is Mike's decision.
+The roadmap: "only if evidence shows it is necessary, present a concrete decision on required-check policy and CI billing/runtime trade-offs before changing any required status, workflow gate, or budget-sensitive configuration." Checked against the read-only Wave E ground truth of 2026-10-11 (off-tree: `/Users/michael/.codex/scratchpads/cleansia-wave-e-2026-10-11/raw/ground-truth/`). **The original 2026-10-11 scope changed nothing.** The later ruling and settings evidence are dated below.
 
-**What is enforced.** Ruleset 6739260 requires one status context, `build`, strict, with no source app pinned. Four jobs emit that name:
+**What was enforced on 2026-10-11.** Ruleset 6739260 required one status context, `build`, strict, with no source app pinned. Four jobs emit that name:
 - Backend, path-filtered;
 - Frontend, every PR;
 - Android, every PR;
@@ -97,7 +97,7 @@ B is passive. Whichever lane watches a PR's CI samples a head only when its norm
 3. `R/pulls/{n}` — draft, mergeable, mergeable_state, head.sha, base.ref, user.login. While it reads `unknown`, read again every 10 s for up to a minute.
 4. `R/git/ref/heads/master`, then `R/compare/{master_sha}...{sha}`. `behind_by` must be 0.
 5. `R/pulls/{n}/reviews` and `R/pulls/{n}/comments` must both be empty, so no review thread exists.
-6. `R/rulesets/6739260` — `updated_at` must still be `2025-08-15T15:40:28.396+02:00`, and the required checks must still be `[{context: build}]`, strict.
+6. `R/rulesets/6739260` — under the 2026-10-14 rebaseline, `updated_at` must still be `2026-10-14T15:34:25.285+02:00`, strict, with required checks `[{context: build, integration_id: 15368}, {context: References and build}, {context: No new secret in the history}]`. Only `build` has an integration pin. Any later ruleset change voids the occurrence until its baseline is explicitly re-established.
 7. `R/commits/{sha}/status` — `total_count` must be 0, so there is no commit status named `build`.
 
 **When.**
@@ -140,6 +140,47 @@ B is passive. Whichever lane watches a PR's CI samples a head only when its norm
 - 2026-10-12 — A shipped in [#322](https://github.com/VM-s-Solutions/cleansia/pull/322). Exact-head CI on `1136e16` passed all 9 check runs with no re-run: Backend, Frontend and e2e-smoke, Android, iOS, Docs, iOS Symbols, booking-policy parity and Secret scan. Merged normally with the SHA guard as `6840882`. No deploy ran. Evidence: `raw/ci/p1-pr322-ci-merge-closure-001.json` (sha256 `d31e29ba…`) in the off-tree Wave F folder. B stays open: PR #322 was not a qualifying head, because no `build` failed on it.
 - 2026-10-12 — **`8351347` stays.** Mike: "If it’s worthy keeping then keep" (2026-10-12). It is accurate: only `build` is required, and Docs CI and Secret scan are advisory. Mike asked for option D to be explained; it waits for his word.
 
+### Owner ruling — 2026-10-13; settings verified 2026-10-14
+
+Mike: **"Go with defaults (recommended)"**. Q1 in [decisions-2026-10-13.md](/Users/michael/.codex/scratchpads/cleansia-wave-f-2026-10-11/next-wave/decisions-2026-10-13.md):
+
+> C + D, with e2e-smoke staying advisory, applied through the rulesets API. So:
+> - C pins `build` to GitHub Actions (integration_id 15368);
+> - D also requires Docs CI's "References and build" and Secret scan's "No new secret in the history".
+> - The team bypass (option H) is unchanged.
+
+The earlier A write-up and its historical evidence remain above. This dated ruling supersedes its
+one-check configuration; AC1 and AC2 retain the evidence of A. Ruleset 6739260 was changed through
+one PUT and freshly read back on 2026-10-14: `build` integration 15368, plus the two named contexts
+without integration pins. Strict checking, team 11814740's `always` bypass,
+`require_extra_approval_for_unattributed_changes: true` and every other rule were preserved.
+Receipt: `/Users/michael/.codex/scratchpads/cleansia-next-wave-2026-10-13/p4/settings-actual-001/ruleset-receipt-002.json` (SHA-256
+`369e209d6ed9b2580a2555d83ab8aa3464338ec6727242aaac66be1a15f186af`).
+
+B is still passive, **AC3 remains unchecked**, and no qualifying head has been established by the
+settings change. Its ruleset precondition is rebaselined above to the actual `updated_at`
+`2026-10-14T15:34:25.285+02:00` and exact three-check list. The remaining qualifying-state,
+timing/control, no-re-run and GET-only rules continue to apply. No push, re-run or pull request was
+made to create an observation. Frontend e2e-smoke remains advisory; the runtime packet is unchanged.
+README, CLAUDE.md and `ci-cd.md#required-checks` describe the actual configuration. Phase publication,
+exact-head CI and merge remain pending; this is not a P4 closure.
+
+### 2026-10-14 — completion follow-up; publication pending
+
+The P4 source/settings-record change is committed locally as `a87c0be5aca745d8bfa980080269631a1138873e`. The actual-settings
+assessment cited below passes within its settings-only scope; the three local raw-head docs gates
+pass. The later sealed receipt `/Users/michael/.codex/scratchpads/cleansia-next-wave-2026-10-13/p4/source-head-extra-001/final.json` (SHA-256 `9585ee67f11adcf4afd6fef245632dbc447101ecb889f5f723faa77b4c6fdbcc`)
+confirms **all eleven local commands PASS** on that same raw head, with all **8258** tracked
+input hashes/modes unchanged: the three docs gates plus eight Node checks/self-tests
+(available-status parity, booking-policy parity and iOS symbols with their self-tests, plus
+the docs-reference and catalog-claims self-tests), each exit 0. Receipt/log hashes are bound.
+This is local command proof, not hosted CI.
+
+T-0813 B remains passive and **AC3 stays unchecked**. Its baseline is still ruleset 6739260,
+`updated_at: 2026-10-14T15:34:25.285+02:00`, strict, with `build` pinned to integration 15368 and
+the Docs/Secret contexts without integration pins. No qualifying state was manufactured or newly
+established by local tests. Hosted exact-head CI, publication and merge remain pending.
+
 ## Review
 
 - **Docs review, first pass: request-changes, resolved.**
@@ -150,3 +191,32 @@ B is passive. Whichever lane watches a PR's CI samples a head only when its norm
 - **For Mike:**
   - `8351347` changes his own instruction file, so the PR body must show its exact wording for him to keep or drop.
   - The first-pass docs reviewer and the security re-reviewer raise a policy question this ticket leaves alone. CLAUDE.md and the README no longer say Docs CI gates a PR. The lane's draft wording, "advisory — not blocking", was dropped. So no rule says an agent must not merge past a red Secret scan or Docs CI. Option D is the lever.
+
+### 2026-10-14 — current settings and source proof
+
+The frozen source verdicts in `/Users/michael/.codex/scratchpads/cleansia-next-wave-2026-10-13/p4/review-001/verdict.json` and
+`/Users/michael/.codex/scratchpads/cleansia-next-wave-2026-10-13/p4/security-001/verdict.json` are each **"APPROVED — SCOPED"**. They cover the frozen candidate,
+not later actual-setting prose, ticket closure or merge. The actual receipt above closes the settings
+application only. This draft still requires its own read-only records check and final-head docs gates.
+
+### 2026-10-14 — later scoped evidence
+
+The actual-settings assessment in `/Users/michael/.codex/scratchpads/cleansia-next-wave-2026-10-13/p4/actual-settings-security001/verdict.json`
+(SHA-256 `4031eb2a812d1d635e840ddeaafe12009696ea4e23f8bd1596a6977d03d44483`) is **"PASS — actual P4 GitHub settings
+match the authorized decisions; no material security finding in this scope."** It covers the actual
+request/before/write/after receipts and actual-master workflow-reader binding, with fresh GET-only
+corroboration. It does not approve a merge or actual Azure identity narrowing. The later anonymous
+branch-policy GET at **2026-10-14T14:05:33Z** returned 200 and exactly one policy, branch **`master`**,
+id **63034204**: `/Users/michael/.codex/scratchpads/cleansia-next-wave-2026-10-13/p4/settings-actual-001/prod-policies-anonymous-after-002.json` (SHA-256
+`914c9c785ca25204c405177505b2e30a1e2ee2e24a484f61ae3b732d5aedbca5`). This supplies literal anonymous
+branch-policy evidence as well as the earlier anonymous environment-gate read. SEC-CI-6 remains
+read/false without a PUT; the qualified `production` deletion history and all earlier settings
+receipts remain as recorded above.
+
+The preceding draft's factual assessment is **"CLEAN — SCOPED FACTUAL REFUTATION"** in
+`/Users/michael/.codex/scratchpads/cleansia-next-wave-2026-10-13/p4/actual-records-refuter001/verdict.json`, with zero material findings. The consolidated
+source commit message003 is **"PASS — SCOPED SOURCE, DRAFT APPLICATION AND MESSAGE003 VERIFICATION"**
+in `/Users/michael/.codex/scratchpads/cleansia-next-wave-2026-10-13/p4/source-message-verifier001/verdict.json`; its checked message SHA-256 is
+`5227fde5a595cb929460ce5568412f016c99d68434b35b1c3c4e6bf413985494`. Those verdicts cover their stated prior source,
+message and draft scopes; this completion follow-up still needs its own factual check. No pushed
+history was rewritten.

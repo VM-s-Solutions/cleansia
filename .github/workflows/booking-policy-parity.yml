@@ -96,6 +96,8 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
+        with:
+          persist-credentials: false
 
       # No `cache: npm` — the checker is dependency-free Node by the same rule as every other tool in
       # agents/tools, so there is no lock file to key a cache on and nothing to install.

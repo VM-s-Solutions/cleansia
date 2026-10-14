@@ -5,7 +5,6 @@
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <UserSecretsId>a3c7e4f1-9d2b-4a8e-b6f0-1e5d3c7a9b2f</UserSecretsId>
-    <DockerDefaultTargetOS>Linux</DockerDefaultTargetOS>
 
     <!--
       Do NOT re-enable. See the long-form explanation in Cleansia.Web.Partner.csproj.

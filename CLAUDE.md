@@ -97,7 +97,7 @@ a writer needs.
 | Layer | Tech | Location |
 |---|---|---|
 | Backend | .NET 10, PostgreSQL 16, EF Core 10, MediatR | `src/Cleansia.Core.*`, `src/Cleansia.Infra.*`, `src/Cleansia.Web.*` |
-| Frontend | Angular 20.3, Nx 23.1, NgRx 20.1, PrimeNG 20.4, ngx-translate | `src/Cleansia.App/` |
+| Frontend | Angular 20.3, Nx 23.2, NgRx 20.1, PrimeNG 20.4, ngx-translate | `src/Cleansia.App/` |
 | Android | Kotlin, Jetpack Compose, MVVM + Hilt | `src/cleansia_android/` (`:core`, `:partner-app`, `:customer-app`) |
 | iOS | Swift/SwiftUI, iOS 16 floor, XcodeGen + SPM | `src/cleansia_ios/` (`CleansiaCore` + two apps) |
 | Orchestration | .NET Aspire 13.1.1 | `src/Cleansia.AppHost/` |

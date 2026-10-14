@@ -4,7 +4,7 @@ title: Give every system job that continues past a failed commit one scope per i
 size: L
 owner: pm
 created: 2026-10-12
-updated: 2026-10-13
+updated: 2026-10-14
 depends_on: [T-0856, T-0857, T-0858, T-0859, T-0860, T-0861, T-0862, T-0863, T-0864, T-0865, T-0866, T-0867]
 blocks: []
 stories: []
@@ -81,7 +81,7 @@ Remove only each verified job’s deviating-forms row; the final child reconcile
 
 - [x] **AC1** — Each listed job’s child proves its chosen independent-scope or fail-tick boundary RED then GREEN. A fail-tick shape need not finish later unsaved items in that tick; its retry eligibility and finite-window limitations are recorded.
 - [x] **AC2** — T-0858’s PostgreSQL two-connection test proves the final fresh read skips cancellation after a take committed before that read. The read-to-claim residual remains explicit; no serializability claim.
-- [ ] **AC3** — All twelve child results are linked, the verified deviations and temporary records match the final tree, and the full combined suites and reviews pass.
+- [x] **AC3** — All twelve child results are linked, the verified deviations and temporary records match the final tree, and the full combined suites and reviews pass.
 
 ## Owner decision — 2026-10-13
 
@@ -149,3 +149,9 @@ Full local source gates PASS for the final frozen composition and all eleven ind
 - 2026-10-13 — The branch carries #331's truthful closure first at `efe6e765ab7acd76e99fa6037c025e408daeb810`; its records passed fresh refutation and all three docs gates against the exact committed source (`closure-docs-gates-003.json` SHA256 `d153ce372ca00324bb99edf38e3f94b92e1a38c87c881b2934c8631ee924847b`). Two earlier archive-preparation assertions stopped before docs execution: tar permission normalization and gradlew.bat line-ending conversion were corrected by reconstructing exact Git blobs/modes. No migration or client regeneration was needed. Final committed-head docs/history checks, exact-head CI, guarded merge and green master remain due; this repair adds no device, real-mail, DEV or PRO proof.
 
 - 2026-10-13 — Fresh final evidence verification returned **PASS_FOR_ALLOCATED_LOCAL_REPAIR_EVIDENCE**, no material finding. It independently checked 1,152 evidence hashes, 7,525 source/SQL inputs, all actual suite counts and produced-DLL/TRX paths. The 29 produced DLL timestamps lie inside the forced rebuild interval. No root before-DLL snapshot was collected, so unchanged root DLL hashes during those suites are not claimed. Receipt `final-gate-verifier.json` under the same repair folder, SHA256 `c20084aa4c5f8f9825784c0c6c408ef486c23424abba5cb7f6a46a91502d5fb7`. Final committed-head gates and publication remain separate obligations.
+
+- 2026-10-14 — Focused repair PR [#332](https://github.com/VM-s-Solutions/cleansia/pull/332) merged at `2026-10-13T23:08:35Z` as `093af7f89301a9c7838be6b0d11023d401e3b6c8` after all **6/6 exact-head checks in five workflows** passed on first attempts, with no rerun. Tested head `44120a3e0ce1d24403b9b48384881b9ba4c2df7f` and merge share tree `da8e9e7b21904997fdf2f76392b2fafdffbdbd41`. The SHA-guarded merge carries #331's truthful closure first and the one-file digest timestamp assertion repair. Production source, clocks, message keys, schema and clients are unchanged. Saved annotations, six job logs, guarded merge and bounded deployment metadata are bound by `/Users/michael/.codex/scratchpads/cleansia-wave-f-2026-10-11/raw/ci/nw-clock-proof-pr332-ci-merge-closure-001.json` SHA256 `2d15f0b6fbcb949a0263ba0545d5953d7fdc2af5aed77960752164563cc2c754`. No phase reset or deployment was dispatched.
+
+- 2026-10-14 — New master push CI at `093af7f89301a9c7838be6b0d11023d401e3b6c8` passed **3/3 executed checks in three workflows**, first attempts, no skipped job and no rerun. Retained hosted logs, annotation responses and polling snapshots are bound by `/Users/michael/.codex/scratchpads/cleansia-next-wave-2026-10-13/remaining-jobs/master-failure-001/master-ci-evidence-receipt-001.json` SHA256 `cc8aec520dd76c0ae8bc6b34d848e458b4c37daa4e43ee2f97d25fb723974975`. The original #331 master attempt at `26883f31c2cba99881ffe2140ae197e46d438670` remains a recorded failure and was not rerun; this new revision supplies the green completion gate. No iOS, device, real-mail or DEV proof is added by the repair.
+
+- 2026-10-14 — Final repair head passed references, catalog claims, VitePress, affected lint and the history secret scan; affected lint selected zero projects and adds no positive lint coverage. Exact head gate receipt `/Users/michael/.codex/scratchpads/cleansia-next-wave-2026-10-13/remaining-jobs/master-failure-001/actual-head-gates-002.json` SHA256 `b99681905915c0d9b131f4f46b355d2860bd4fdce0243c2bc3a659a8bbc64372`. Final record refutation was CLEAN103/103. Existing local suite, PostgreSQL-version, precision-probe and inherited-checker qualifications above remain. This closure rides first on the native branch.

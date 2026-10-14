@@ -181,6 +181,46 @@ T-0813 B remains passive and **AC3 stays unchecked**. Its baseline is still rule
 the Docs/Secret contexts without integration pins. No qualifying state was manufactured or newly
 established by local tests. Hosted exact-head CI, publication and merge remain pending.
 
+### 2026-10-14 — P4 shipped; remaining runtime gates
+
+P4 shipped in [#335](https://github.com/VM-s-Solutions/cleansia/pull/335), merged at
+**2026-10-14T16:11:33Z** as `252c5e50502539ca0d562ca2cf7ae1b083e5dfbd` using the exact-head SHA guard on
+`6343b1908a8ca30f20e6bbae1713b47085a1c89f`. The merge tree equals the PR head tree, `0358f5df38a9a139e7ed80ab2ed8ea6fff3ca673`.
+The PR contains **42 changed paths and four commits**: native closure first (`0a2b9e6`), the
+dedicated Nx correction (`8c2e8b4`), source/settings records (`a87c0be`) and the four-record
+completion follow-up (`6343b19`). The earlier capture-time records are preserved, including
+their then-pending publication and interim evidence where present.
+
+Exact-head PR CI passed **9/9 checks across eight triggered workflows**, all at attempt 1,
+with **zero re-runs**: Backend, Frontend (build and e2e-smoke), Android, iOS, Docs, iOS Symbols,
+booking-policy parity and Secret scan. The actual closure is `/Users/michael/.codex/scratchpads/cleansia-wave-f-2026-10-11/raw/ci/nw-ci-hardening-pr335-ci-merge-closure-001.json`
+(SHA-256 `5fc756948b54492e3f781c9f8012d9884dc5255d481ffba906945c1bc0e386ce`). Its same-day
+evidence summary contains **18 entries: nine annotation responses and nine job logs**; this is
+not a count of annotation messages. The one saved `playwright-report` artifact, id **11904984846**,
+has SHA-256 `9c8c321c224c19f4a42ef44ad1a3174cd75d6c28c3240ae3d5b44172b802360b`;
+the download receipt is `/Users/michael/.codex/scratchpads/cleansia-next-wave-2026-10-13/p4/ci-artifact-receipt-001.json` (SHA-256 `2b70ad120f172ae9c98bd91d523b9de87979bb61e8ca7a58ab7e894737aa6c93`).
+
+One PR check-runs GET returned HTTP 500 during polling. That was a transport failure,
+not a CI job failure or re-run; the saved exact-head CI attempts and zero re-runs above remain.
+
+Master push CI on `252c5e50502539ca0d562ca2cf7ae1b083e5dfbd` completed on **2026-10-14**: **eight repository workflows**, **nine repository check rows** comprising **eight successful executed jobs** and **e2e-smoke skipped** by its push guard. Every repository workflow ran at attempt 1, with **zero re-runs**. The raw **12-check** inventory also contains **three successful automatic extras**, counted separately: **two dynamic Dependabot update jobs** and **`.github/dependabot.yml` configuration validation**. Both dynamic runs were attempt 1; configuration validation has no Actions job log.
+
+Actual master receipt: `/Users/michael/.codex/scratchpads/cleansia-next-wave-2026-10-13/p4/master-ci-evidence-receipt-001.json` (SHA-256 `3f5316b1d8b69e12bb5971bab4a8651f850eaa2bf355a99e7ef2c7a304b5d43b`). Its same-day evidence summary has **21 entries: 12 annotation collections, eight executed CI logs and one skip entry**. The supplemental receipt `/Users/michael/.codex/scratchpads/cleansia-next-wave-2026-10-13/p4/master-automatic-and-artifacts001.json` (SHA-256 `fb7195bf318a95ad7fa7c9ffbe45af5272999a74871cfa10815d099d811c82c4`) saves **two additional automatic-job logs and run metadata**. All **ten artifact-list GETs** for the eight repository and two dynamic runs returned **zero master artifacts**. The PR's one saved artifact is separate. These captures were saved on **2026-10-14 UTC**.
+
+No phase DEV reset, deployment, docs dispatch or SQL runtime proof is supplied by P4; no PRO
+operation ran. The four bounded workflow-dispatch GETs saved in the closure each returned zero
+runs created since **2026-10-14T16:11:33Z** for `deploy-dev.yml`, `deploy-pro.yml`, `deploy-docs.yml`
+and `execute-sql.yml`; `deploy-azure.yml` is workflow-call only. Those reads describe their
+capture window, not later activity. The approved one-reset/fresh-DEV/docs END procedure remains
+due after every phase merges green. Decisions 10 and 11 still leave the separate token decision
+and actual Azure identity narrowing to owner go-live.
+
+C+D and their actual settings evidence have shipped. B remains passive and **AC3 stays
+unchecked**: no `build` failed on the exact PR head, so #335 was not a qualifying observation.
+No push, re-run or PR was made to create that state. The ruleset `updated_at` baseline and all
+qualifying-state/timing/control rules above remain in force; e2e stays advisory and team bypass
+is unchanged. The INDEX row remains `in_progress` for B.
+
 ## Review
 
 - **Docs review, first pass: request-changes, resolved.**
@@ -220,3 +260,39 @@ in `/Users/michael/.codex/scratchpads/cleansia-next-wave-2026-10-13/p4/source-me
 `5227fde5a595cb929460ce5568412f016c99d68434b35b1c3c4e6bf413985494`. Those verdicts cover their stated prior source,
 message and draft scopes; this completion follow-up still needs its own factual check. No pushed
 history was rewritten.
+
+### 2026-10-14 — actual final head and publication evidence
+
+The full local suites remain bound to source commit `a87c0be5aca745d8bfa980080269631a1138873e` by
+`/Users/michael/.codex/scratchpads/cleansia-next-wave-2026-10-13/p4/source-commit-sdk-rebind-001.json` (SHA-256 `b7a869975d6991f67cd119acfbe0d89edd2edfd638086132f4d66e06df68e059`): **8258 committed blobs/modes**, **8242 identical**
+to the measured combined source and **16 declared documentation/record deltas**; every compiled
+or runtime input is identical. This is source identity proof; the suites were not re-executed
+from that Git head. Android's forced compile/unit result remains **2873 passed**; iOS **18.6**
+Core **776**, Partner **1133**, Customer **1779** passed with **one unchanged Customer VoiceOver
+runtime skip**. No spoken-announcement proof, additional iOS 16.4, device, provider, mail, D9,
+APK or R8 acceptance run is added by P4; the qualified native-phase proof remains preserved.
+
+The final follow-up `6343b1908a8ca30f20e6bbae1713b47085a1c89f` changed exactly the four ticket/INDEX afterimages in
+`/Users/michael/.codex/scratchpads/cleansia-next-wave-2026-10-13/p4/final-records-commit-001.json` (SHA-256 `fb77a8b0d2c64a2dbd9cb15ac0cf8e2d36037f4e182935efbc9479bd31454bc2`). The other **8254 Git blobs/modes** are unchanged from
+the source commit. Its actual-head receipt `/Users/michael/.codex/scratchpads/cleansia-next-wave-2026-10-13/p4/final-record-head-001/final.json` (SHA-256 `059a9d52b642df16168c65acacd8b20a382b8516d3a6119daac1f87cf3692410`)
+records **13 commands, each exit 0**: docs references, catalog claims, VitePress build, eight
+Node checks/self-tests, actionlint with ShellCheck/Pyflakes disabled, and the redacted secret-history
+scan. All **8258 tracked hashes/modes** stayed unchanged. These command gates precede and are
+distinct from the hosted PR result above.
+
+The earlier frozen source verdicts remain **"APPROVED — SCOPED"** for their candidate source
+scope; the actual-settings assessment remains **"PASS — actual P4 GitHub settings match the
+authorized decisions; no material security finding in this scope."** for the saved actual-settings
+outcomes. Neither is a blanket runtime or Azure assessment. The final record/message factual
+assessment, `/Users/michael/.codex/scratchpads/cleansia-next-wave-2026-10-13/p4/final-records-refuter001/verdict.json` (SHA-256 `954e80e7276c0a3e20153423d1488bd65dcca19b3699e03237748fde2f90e606`), is
+**"CLEAN — SCOPED FACTUAL REFUTATION"**, **800 checks passed**, zero material findings.
+The subsequent assessment `/Users/michael/.codex/scratchpads/cleansia-next-wave-2026-10-13/p4/publication-refuter001/verdict.json` (SHA-256 `30874657fc725baa17c7b3260e095af5ccd131f6c54776c1968ef159b1ed37e8`) is
+**"CLEAN — BOUNDED PREPUBLICATION FACTUAL REFUTATION"**, **721 checks passed**, zero material
+findings; it rechecked the publication change and bindings while retaining the prior 800-control
+round, whose controls were not re-run. Publication receipt
+`/Users/michael/.codex/scratchpads/cleansia-next-wave-2026-10-13/p4/publication-001/published-receipt.json` (SHA-256 `a93461b72e25fe48378d2013d5166cf495903f203c277b700ddf8c0a96d3242a`) binds the published PR body SHA-256
+`9399d0d24f01e3b3fac42db8cb20727f15746bb01234c822186b7d5a4f0c364d`.
+
+The original A history, dated owner words and prior reviews are preserved. The settings,
+local-command, hosted-PR and master evidence have separate scopes; none establishes B's mixed
+failed/successful `build` occurrence.

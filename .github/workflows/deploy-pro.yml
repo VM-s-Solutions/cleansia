@@ -46,7 +46,7 @@ jobs:
   # force on its date with no deploy in between. Runs in both modes, before any provisioning.
   legal-texts:
     name: No legal text in force or upcoming is a draft
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     permissions:
       contents: read
     timeout-minutes: 10

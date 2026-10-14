@@ -153,6 +153,179 @@ deploy gates under the already-dated merge-then-prove reading. **AC3 remains unc
 the END docs dispatch proves absence of the SWA annotation. No Ubuntu26 implementation, hosted
 CI, merge or deployment is claimed by these local receipts.
 
+### 2026-10-14 — P4 shipped; remaining runtime gates
+
+P4 shipped in [#335](https://github.com/VM-s-Solutions/cleansia/pull/335), merged at
+**2026-10-14T16:11:33Z** as `252c5e50502539ca0d562ca2cf7ae1b083e5dfbd` using the exact-head SHA guard on
+`6343b1908a8ca30f20e6bbae1713b47085a1c89f`. The merge tree equals the PR head tree, `0358f5df38a9a139e7ed80ab2ed8ea6fff3ca673`.
+The PR contains **42 changed paths and four commits**: native closure first (`0a2b9e6`), the
+dedicated Nx correction (`8c2e8b4`), source/settings records (`a87c0be`) and the four-record
+completion follow-up (`6343b19`). The earlier capture-time records are preserved, including
+their then-pending publication and interim evidence where present.
+
+Exact-head PR CI passed **9/9 checks across eight triggered workflows**, all at attempt 1,
+with **zero re-runs**: Backend, Frontend (build and e2e-smoke), Android, iOS, Docs, iOS Symbols,
+booking-policy parity and Secret scan. The actual closure is `/Users/michael/.codex/scratchpads/cleansia-wave-f-2026-10-11/raw/ci/nw-ci-hardening-pr335-ci-merge-closure-001.json`
+(SHA-256 `5fc756948b54492e3f781c9f8012d9884dc5255d481ffba906945c1bc0e386ce`). Its same-day
+evidence summary contains **18 entries: nine annotation responses and nine job logs**; this is
+not a count of annotation messages. The one saved `playwright-report` artifact, id **11904984846**,
+has SHA-256 `9c8c321c224c19f4a42ef44ad1a3174cd75d6c28c3240ae3d5b44172b802360b`;
+the download receipt is `/Users/michael/.codex/scratchpads/cleansia-next-wave-2026-10-13/p4/ci-artifact-receipt-001.json` (SHA-256 `2b70ad120f172ae9c98bd91d523b9de87979bb61e8ca7a58ab7e894737aa6c93`).
+
+One PR check-runs GET returned HTTP 500 during polling. That was a transport failure,
+not a CI job failure or re-run; the saved exact-head CI attempts and zero re-runs above remain.
+
+Master push CI on `252c5e50502539ca0d562ca2cf7ae1b083e5dfbd` completed on **2026-10-14**: **eight repository workflows**, **nine repository check rows** comprising **eight successful executed jobs** and **e2e-smoke skipped** by its push guard. Every repository workflow ran at attempt 1, with **zero re-runs**. The raw **12-check** inventory also contains **three successful automatic extras**, counted separately: **two dynamic Dependabot update jobs** and **`.github/dependabot.yml` configuration validation**. Both dynamic runs were attempt 1; configuration validation has no Actions job log.
+
+Actual master receipt: `/Users/michael/.codex/scratchpads/cleansia-next-wave-2026-10-13/p4/master-ci-evidence-receipt-001.json` (SHA-256 `3f5316b1d8b69e12bb5971bab4a8651f850eaa2bf355a99e7ef2c7a304b5d43b`). Its same-day evidence summary has **21 entries: 12 annotation collections, eight executed CI logs and one skip entry**. The supplemental receipt `/Users/michael/.codex/scratchpads/cleansia-next-wave-2026-10-13/p4/master-automatic-and-artifacts001.json` (SHA-256 `fb7195bf318a95ad7fa7c9ffbe45af5272999a74871cfa10815d099d811c82c4`) saves **two additional automatic-job logs and run metadata**. All **ten artifact-list GETs** for the eight repository and two dynamic runs returned **zero master artifacts**. The PR's one saved artifact is separate. These captures were saved on **2026-10-14 UTC**.
+
+No phase DEV reset, deployment, docs dispatch or SQL runtime proof is supplied by P4; no PRO
+operation ran. The four bounded workflow-dispatch GETs saved in the closure each returned zero
+runs created since **2026-10-14T16:11:33Z** for `deploy-dev.yml`, `deploy-pro.yml`, `deploy-docs.yml`
+and `execute-sql.yml`; `deploy-azure.yml` is workflow-call only. Those reads describe their
+capture window, not later activity. The approved one-reset/fresh-DEV/docs END procedure remains
+due after every phase merges green. Decisions 10 and 11 still leave the separate token decision
+and actual Azure identity narrowing to owner go-live.
+
+Items 2–6 have shipped, with **AC2/AC4/AC5/AC6 still checked**. The deliberate Dependabot
+ignore remains broader than the initial Gradle-only wording: **all GitHub Actions major updates**
+are ignored. The saved schema/source proof remains. Master's two automatic Dependabot update
+jobs are separately recorded above as dynamic runs; the earlier not-yet-scheduled sentence is
+preserved as its capture-time qualification. No scheduled run was manufactured.
+**AC1 stays unchecked** for the separate Ubuntu 26.04 P5
+exact-head and END deploy gates under the dated merge-then-prove reading. P4 retains Ubuntu 24.04
+and the existing macOS label. **AC3 stays unchecked** until the END docs dispatch supplies the
+actual SWA annotation result; the mutable SWA `stable` image remains an accepted residual.
+
+The exact dotnet-ef 10.0.3 install/version and Mach-O arm64 bundle compilation remain command-only
+proof, with both initial failures preserved and no bundle invocation. Linux packaging/execution,
+artifact-ID transfers and DEV TLS remain END evidence. No tracked DTO, client/spec, model or
+migration regeneration occurred in P4; ignored mobile generation and XcodeGen used unchanged
+specs. The Initial id remains `20261013160545`, with its final DEV reset debt still open. No
+changelog entry is owed for this CI/tooling and record-only phase.
+
+### 2026-10-14 — P5 source and local suites complete; publication and runtime gates pending
+
+The separate Ubuntu 26.04 source is committed locally as `2751ffb7d44976d27f7b0a83f5083ab3adfc7f9e`,
+after the P4 closure-first commit `65f2aa2a1ac52038420747855b458d8c5fdebdfc`. The source receipt
+`/Users/michael/.codex/scratchpads/cleansia-next-wave-2026-10-13/p5/source-commit001.json`
+(SHA-256 `661781bbb9414576720bcddd9d6b19d24640f3da59ec55a11ec1ac39cfc502c9`) binds exactly **14 changed paths**:
+**25 Linux runner declarations in 12 workflow files**, **five related comments** including the
+parity checker comment, and the CI runner documentation. All other **8244 Git blobs/modes** are
+unchanged from the closure-first parent. The macOS workflow, action pins, runtime flags and
+workflow logic are unchanged; no application behavior or client, spec, model or migration changed.
+No changelog entry is owed for this CI and record-only phase.
+
+The frozen source verdict is **"APPROVED — SCOPED"**, with zero material findings, in
+`/Users/michael/.codex/scratchpads/cleansia-next-wave-2026-10-13/p5/candidate-review001/verdict.json`.
+The later source/message factual assessment is **"CLEAN — BOUNDED SOURCE AND MESSAGE PRECOMMIT REFUTATION"**,
+**1021 checks passed**, zero material findings, in
+`/Users/michael/.codex/scratchpads/cleansia-next-wave-2026-10-13/p5/source-precommit-refuter001/verdict.json`.
+Both cover their stated source/message scopes; these P5 records and publication evidence remain
+separate gates. YAML parsing, runner inventory, source equality and actionlint are **command-only**
+proof. Actionlint 1.7.12's built-in inventory rejects the 25 Ubuntu26 labels; it exits 0 with the
+saved off-tree label configuration, with ShellCheck/Pyflakes disabled. No repository actionlint
+configuration changed, and the allowance does not prove hosted compatibility.
+
+The separate Gate 3 source assessment is **"APPROVED"**, qualified as
+**"SCOPED P5 T-0849 GATE 3 SOURCE PASS"**, with zero material findings, in
+`/Users/michael/.codex/scratchpads/cleansia-next-wave-2026-10-13/p5/ubuntu-security-review001/verdict.json`
+(SHA-256 `922f2bf482f3e6279a7a52f704f8f2990998b52bc5f3116d2c42d1e63fa316f9`). It covers the exact
+committed 14-path source change and preserves the existing token/cloud grants and workflow
+security boundaries; it is not hosted/runtime or Azure identity approval.
+
+Fresh backend → frontend local checks on the frozen source passed **all 23 recorded steps** in
+`/Users/michael/.codex/scratchpads/cleansia-next-wave-2026-10-13/p5/full-backend-frontend001/finalization-continuation001/final.json`
+(SHA-256 `bfc03be8cfc63fed84a0d9f68180e95b6333dbd76c872573cba46881d7696bb5`); its
+`sealed-packet.json` has SHA-256 `41851fe45547c3a6b764276404811fe775abd9fe8cf3f6bed3f6f0fbdc2e22f6`.
+Release rebuild has **220 warnings, zero errors**, followed by unit → real-Postgres
+integration → host tests: **8731 / 975 / 509 passed**, zero failures or skips. Frontend guard
+self-tests (**8**), type-checking all **73** app specs, **5041 Jest tests / 408 suites** across
+**71 nonempty + 3 empty projects**, three production builds and **7 localhost, network-stubbed
+smokes** (5 customer / 1 partner / 1 admin) pass. The actual P5 affected-lint selection is **zero
+projects / no coverage**, because the 14 source changes are outside the Nx workspace; separate
+full informational lint passes across **77 executed targets**. The first finalization attempt's
+parser rejected a wrapped success marker; the continuation corrected only whitespace parsing,
+preserved the initial failure and re-ran **zero SDK steps**.
+
+The later source binding
+`/Users/michael/.codex/scratchpads/cleansia-next-wave-2026-10-13/p5/source-commit-sdk-rebind001.json`
+(SHA-256 `f14d0ebf03928cdde0ccc2317e687b3f5db31a24e9594a5a8209b5113464d4b8`) compares
+**8258 committed Git blobs/modes**: **8254 identical** to the measured source, four declared
+P4 closure-record deltas and all modes exact. **Every compiled/runtime input is identical.**
+This is source identity proof; the backend/frontend suites were not re-executed from the Git head.
+The actual source head's docs-reference check, catalog-claims check and VitePress build each exit 0 in
+`/Users/michael/.codex/scratchpads/cleansia-next-wave-2026-10-13/p5/source-head001/final.json`
+(SHA-256 `106cc56228081508f08ecc9fe0486412648d8fb159ad02e81fbffd7c74dbc64f`), with all
+**8258 tracked input hashes/modes unchanged**.
+
+The actual P5 mobile receipt
+`/Users/michael/.codex/scratchpads/cleansia-next-wave-2026-10-13/p5/full-mobile001/final.json`
+(SHA-256 `1ddc7db5667ae4f80383ce8224bd82865f300d01e513f38c9ea19959f2f4f410`), with sealed packet SHA-256
+`7ad47152cc166766012d7d99ac2ed6a2c18cf4824180b55014bebe1ac2d05aa5`, records **`PASS_WITH_UNCHANGED_VOICEOVER_RUNTIME_SKIP`**.
+Fresh, forced Android compile/unit execution passes **2873 tests in 309 XML files**
+(298 core / 881 partner / 1694 customer), zero failures, errors or skips. Compile executes
+**56/56 actionable tasks** and units **96/96**, with no `FROM-CACHE` rows. The named lifecycle,
+diagnostic and empty-Java task outcomes are separately qualified; the first helper rejected a
+successful compile's lifecycle `UP-TO-DATE` rows. That parser finding was independently confirmed
+with **44 passing controls**. The narrow off-tree helper correction reparsed the saved successful
+compile, preserved the original failure and re-ran **zero SDK compile steps**; the later unit
+execution is actual P5 evidence. Its parser-history seal is
+`/Users/michael/.codex/scratchpads/cleansia-next-wave-2026-10-13/p5/android-parser-finding-verifier001/sealed-packet.json`
+(SHA-256 `48fd5127e6ed2a117f11df93c72942f7ab2ce535b889a4258f6ece016ce8d589`).
+
+iOS **18.6**, arm64, executes all three unfiltered `test-without-building` schemes:
+Core **776**, Partner **1133**, Customer **1779 passed**, zero failures and **one unchanged
+Customer VoiceOver runtime skip**, `ProfileEditChipTests/testVoiceOverAnnouncesTheWholeLabelWhileTheChipIsTruncated()`.
+No VoiceOver retry or spoken-announcement proof is claimed. These are new P5 executions using a
+private APFS copy of exactly **2219 source-bound P4 compiled-product files**, with distinct inodes
+and no hardlinks. **There is no fresh P5 iOS compilation or P3 binary reuse.** P3 supplies only
+portable, unchanged, unfiltered execution metadata. Tool versions, arm64 Simulator SDK **26.2**
+ABI under Xcode **26.3**, compile source and generated inputs match the P4 products.
+Preparation ran SwiftFormat `--lint` before SwiftLint `--strict`, the local-config guard,
+`./scripts/generate-api-clients.sh` and `xcodegen generate` in both app directories from unchanged
+specs. The **473 ignored client files plus six XcodeGen files** match P4 compilation inputs;
+these commands produced no tracked client/spec edits.
+Reused binaries retain P4 `#filePath` roots: the saved audit confirms equal **7508 `src` files/modes**,
+keeps the old source readable, and finds no source-backed runtime reads of the changed 14 paths.
+That audit is **static source/binary proof**, not runtime file-access instrumentation:
+`/Users/michael/.codex/scratchpads/cleansia-next-wave-2026-10-13/p5/full-mobile001/runtime-reader001/sealed-packet.json`
+(SHA-256 `761c9f65fc1b44ff91c9807508ad03b7c99df9c67eba9ef6ac06381d9a6f3563`).
+The final mobile receipt must be read with these inherited-compilation and runtime-reader limits.
+P5 adds no iOS 16.4, device, provider/mail/D9, APK or R8 acceptance proof.
+
+Mobile admission followed two guarded off-tree capacity cleanups, recorded in
+`/Users/michael/.codex/scratchpads/cleansia-next-wave-2026-10-13/p5/mobile-capacity-review001/revision002/application-receipt.json`
+(SHA-256 `d0054259bbe6d1d252ce882932920e758857ff1fbf0b7b2038b469b9195a8985`) and
+`/Users/michael/.codex/scratchpads/cleansia-next-wave-2026-10-13/p5/mobile-capacity-options002/revision002/application-receipt.json`
+(SHA-256 `aff3a50f2d71d10fc1d1cf1d26cab7be106eb4829c5cd035938d3774ae2c7ab0`). They remove
+**39746 generated leaf files**, with preservation checks passing and zero intersection with
+the original **80021 preservation pins**. The summed observed free-space increase is
+**2673881088 bytes**; it is an observation, not exclusive APFS reclaim attributed to deletion.
+The final mobile packet confirms all **8258 source hashes/modes**, **68 native inputs**, **7508
+runtime-read `src` inputs**, **479 generated files** and **80021 historical preservation pins**
+remain exact. New Android **20590** compiled-product files and the copied iOS **2219** files are
+pinned, the simulator lease is released and no mobile SDK command remains active. These SDK
+executions are off-tree; the actual Git checkout itself was not compiled. Earlier failures
+and captures remain preserved.
+
+No Ubuntu26 hosted job, P5 PR publication, merge or END deploy/SQL/docs runtime result is supplied
+by these local receipts. Expected source-triggered hosted proof is **eight Linux PR checks across
+seven workflows**, then **seven executed Linux master jobs plus the guarded e2e-smoke skip**
+(eight repository check rows), with actual runner-image logs. The approved END procedure must
+prove deploy/SQL/docs execution and expanded matrix legs after all phases merge. The two PRO-only
+declarations (`deploy-pro`'s `legal-texts`, `execute-sql`'s `execute-pro`) remain source-only and
+unexecuted under the PRO ban. **AC1 remains unchecked** until its PR and END runtime gates are
+proved under the dated merge-then-prove reading; **AC3 remains unchecked** until the END docs
+dispatch supplies the actual SWA annotation result. Existing checked AC2/AC4/AC5/AC6 and owner
+wording are preserved. No reset, deployment, SQL operation or tracked client/migration regeneration is
+claimed by this P5 phase; the Initial `20261013160545` reset debt stays at END.
+
+The final record commit still requires its own compiled/runtime-input rebinding and **13
+actual final-head local commands** before push. Those gates are pending at this records capture;
+the three source-head docs results above are the completed command evidence currently supplied.
+Hosted PR/master receipts and END runtime results remain future evidence.
+
 ## Review
 
 Pending.
@@ -235,3 +408,40 @@ bundle compilation only, with both initial failures retained and no bundle invoc
 Linux packaging/execution, artifact-ID transfers, DEV certificate/hostname validation and the
 SWA annotation result remain END proof. The final record-only commit still needs its own exact
 Git-blob binding and actual-head gates before push.
+
+### 2026-10-14 — actual final head and publication evidence
+
+The full local suites remain bound to source commit `a87c0be5aca745d8bfa980080269631a1138873e` by
+`/Users/michael/.codex/scratchpads/cleansia-next-wave-2026-10-13/p4/source-commit-sdk-rebind-001.json` (SHA-256 `b7a869975d6991f67cd119acfbe0d89edd2edfd638086132f4d66e06df68e059`): **8258 committed blobs/modes**, **8242 identical**
+to the measured combined source and **16 declared documentation/record deltas**; every compiled
+or runtime input is identical. This is source identity proof; the suites were not re-executed
+from that Git head. Android's forced compile/unit result remains **2873 passed**; iOS **18.6**
+Core **776**, Partner **1133**, Customer **1779** passed with **one unchanged Customer VoiceOver
+runtime skip**. No spoken-announcement proof, additional iOS 16.4, device, provider, mail, D9,
+APK or R8 acceptance run is added by P4; the qualified native-phase proof remains preserved.
+
+The final follow-up `6343b1908a8ca30f20e6bbae1713b47085a1c89f` changed exactly the four ticket/INDEX afterimages in
+`/Users/michael/.codex/scratchpads/cleansia-next-wave-2026-10-13/p4/final-records-commit-001.json` (SHA-256 `fb77a8b0d2c64a2dbd9cb15ac0cf8e2d36037f4e182935efbc9479bd31454bc2`). The other **8254 Git blobs/modes** are unchanged from
+the source commit. Its actual-head receipt `/Users/michael/.codex/scratchpads/cleansia-next-wave-2026-10-13/p4/final-record-head-001/final.json` (SHA-256 `059a9d52b642df16168c65acacd8b20a382b8516d3a6119daac1f87cf3692410`)
+records **13 commands, each exit 0**: docs references, catalog claims, VitePress build, eight
+Node checks/self-tests, actionlint with ShellCheck/Pyflakes disabled, and the redacted secret-history
+scan. All **8258 tracked hashes/modes** stayed unchanged. These command gates precede and are
+distinct from the hosted PR result above.
+
+The earlier frozen source verdicts remain **"APPROVED — SCOPED"** for their candidate source
+scope; the actual-settings assessment remains **"PASS — actual P4 GitHub settings match the
+authorized decisions; no material security finding in this scope."** for the saved actual-settings
+outcomes. Neither is a blanket runtime or Azure assessment. The final record/message factual
+assessment, `/Users/michael/.codex/scratchpads/cleansia-next-wave-2026-10-13/p4/final-records-refuter001/verdict.json` (SHA-256 `954e80e7276c0a3e20153423d1488bd65dcca19b3699e03237748fde2f90e606`), is
+**"CLEAN — SCOPED FACTUAL REFUTATION"**, **800 checks passed**, zero material findings.
+The subsequent assessment `/Users/michael/.codex/scratchpads/cleansia-next-wave-2026-10-13/p4/publication-refuter001/verdict.json` (SHA-256 `30874657fc725baa17c7b3260e095af5ccd131f6c54776c1968ef159b1ed37e8`) is
+**"CLEAN — BOUNDED PREPUBLICATION FACTUAL REFUTATION"**, **721 checks passed**, zero material
+findings; it rechecked the publication change and bindings while retaining the prior 800-control
+round, whose controls were not re-run. Publication receipt
+`/Users/michael/.codex/scratchpads/cleansia-next-wave-2026-10-13/p4/publication-001/published-receipt.json` (SHA-256 `a93461b72e25fe48378d2013d5166cf495903f203c277b700ddf8c0a96d3242a`) binds the published PR body SHA-256
+`9399d0d24f01e3b3fac42db8cb20727f15746bb01234c822186b7d5a4f0c364d`.
+
+Command-only checks remain qualified: seven trigger inputs, Docker-reference/BOM controls,
+app-spec type-error/stub controls, lockfile equality, dependency schemas, and the isolated Mac
+dotnet-ef install/compile. The passed PR jobs do not close Ubuntu 26.04 deploy runtime or SWA
+annotation acceptance.

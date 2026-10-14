@@ -30,7 +30,7 @@ concurrency:
 
 jobs:
   build:
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
 
     # A hang ceiling, not the performance budget. Wall time depends on the selected tests
     # and cache state; compare dated workflow measurements rather than assuming a fixed duration.
@@ -134,7 +134,7 @@ jobs:
   # job concurrently — each step boots and tears down its own app server in turn.
   e2e-smoke:
     if: github.event_name == 'pull_request'
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
 
     # A ceiling, not a budget: this job runs in single-digit minutes, so 60 only ever
     # catches a hang. A wedged browser is the likeliest way that happens here.

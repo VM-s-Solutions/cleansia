@@ -44,7 +44,7 @@ concurrency:
 
 jobs:
   docs:
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
 
     # A ceiling, not a budget: this job runs in single-digit minutes, so 60 only ever
     # catches a hang. Without it a wedged run bills to GitHub's 6-hour default.

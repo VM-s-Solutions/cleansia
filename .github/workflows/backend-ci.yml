@@ -29,6 +29,10 @@ on:
       - '!src/cleansia_ios/**'
       - 'sql-scripts/**'
       - '.github/workflows/backend-ci.yml'
+      - '.github/scripts/deploy_package.py'
+      - '.github/scripts/test_deploy_package.py'
+      - '.github/workflows/deploy-azure.yml'
+      - 'deploy/bicep/main.bicep'
   push:
     branches:
       - master
@@ -39,6 +43,10 @@ on:
       - '!src/cleansia_ios/**'
       - 'sql-scripts/**'
       - '.github/workflows/backend-ci.yml'
+      - '.github/scripts/deploy_package.py'
+      - '.github/scripts/test_deploy_package.py'
+      - '.github/workflows/deploy-azure.yml'
+      - 'deploy/bicep/main.bicep'
 
 permissions:
   contents: read
@@ -68,6 +76,9 @@ jobs:
         uses: actions/setup-dotnet@26b0ec14cb23fa6904739307f278c14f94c95bf1 # v5.4.0
         with:
           dotnet-version: 10.x
+
+      - name: Package deployment contracts
+        run: python3 -m unittest discover -s .github/scripts -p 'test_deploy_package.py' -v
 
       # NuGet package cache — keyed on the central package versions file + csprojs, so a
       # dependency bump misses once and everything else restores from cache instead of nuget.org.

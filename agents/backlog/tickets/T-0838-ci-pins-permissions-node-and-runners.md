@@ -210,6 +210,65 @@ The authorized DEV SQL pre-health, what-if and docs deployment passed (`38657842
 
 Shared END actuals and qualified evidence pins: `/Users/michael/.codex/scratchpads/cleansia-next-wave-2026-10-13/end/final-records-preparation002/end-outcome-facts.json` (SHA256 `8c49656e9f9dfecd936cf0386846fb958cbb64d0eb55f6dc8b67e965de0c3695`).
 
+
+### Owner reply and resumed DEV procedure — 2026-10-15
+
+This is the checkpoint after the earlier END/SSR blocker above. Q-END-01 was answered and removed from the open queue; it does not require another owner diagnostic before the already-authorized work continues. The cause of the earlier process outage remains unestablished.
+
+Mike’s replies, verbatim, 2026-10-15:
+
+> All of the services are healthy. It happens all the time that after deployment it takes some time to start up the service and if fails in the beginning. I want you to investigate this issue and make the start up almost immediate without issues
+
+> There is no seed data which is expected on backend (language,currency, so on)
+
+Fresh sequential HTTP checks at 07:51 UTC passed all five API `/health` endpoints with exact `Healthy` bodies and both customer SSR origins with the server-render marker, before any of the four seeds. This establishes recovery before seeding, not a missing-seed cause. The original deployment `38660355359` recovered as attempt 3 after rerunning only its failed Warm job: all 16 job conclusions are successful, with 14 carried executions and only Warm `116312011258` and Close `116312189668` freshly executed. Earlier attempt-1/2 failures remain retained. The close job still reports `MissingSubscriptionRegistration`; shortening/muting is not proved.
+
+On unchanged master `cfeed43c1ca3defd0b85ca500e109a8ead9b7e6e`, DEV-only SQL scripts then ran one at a time after fresh master and all three workflow-dispatch queue inventories:
+
+- `prod-bootstrap.sql`: run `38702440461`, attempt 1, committed at 07:59:52.9004135 UTC.
+- `insert_seed_data.sql`: run `38702856219`, attempt 1, committed at 08:03:19.5675480 UTC.
+- `insert_local_dev_admin.sql`: run `38703413453`, attempt 1, actual `INSERT 0 1` at 08:08:09.1632115 UTC. Its source leaves `MustChangePassword=false`; no forced password-change or authenticated console exercise is claimed.
+- `seed/insert_email_template_translations_promo_code.sql`: run `38703639106`, attempt 1, failed at 08:09:49.4004421 UTC because `UpdatedOn` is `timestamptz` while its derived VALUES column is inferred as text. The single rejected INSERT wrote no prefix. Both nullable timestamp columns need explicit typing, with a real PostgreSQL regression before correction.
+
+The first three scripts must not be replayed. The current END obligation is a reviewed source correction on the startup branch, retrying only that failed seed after merge, then `check-db-health.sql` and final five-API/two-SSR readiness. No further reset, storage emptying, PRO operation or docs dispatch is added. Existing Initial `20261013160545_Initial` remains unchanged. Startup reliability work revisits existing T-0636 separately; no earlier outage cause or speed improvement is claimed yet.
+
+Actual receipts are retained under `/Users/michael/.codex/scratchpads/cleansia-next-wave-2026-10-13/startup-2026-10-15/resume-end001/`. Independent attempt-3/bootstrap/fixtures/admin reviews and the confirmed promo failure are under `startup-2026-10-15/resume-end-review001/`; the promo finding SHA256 is `35d4974400e501cfe0d02b8468c249f631feea19356cdb93eca0ba2668e84db3`. Final seeded health and the applicable acceptance criteria remain unchecked.
+
+#### Answered diagnostic question retained as history
+
+## Q-END-01 — DEV customer SSR: first error and worker status after API recovery
+
+**Raised by:** the final DEV procedure, 2026-10-15. **Who answers:** the owner, with the DEV
+App Service diagnostics.
+**Why it needs you:** reset cycle 1 passed. Deployment `38660355359`, attempt 2, ended with
+15 successful jobs and one failed job; the three API jobs retried in that attempt passed. The
+remaining failure is `Warm dev sites`, job `116199476676`, completed at **02:00:41 UTC on
+2026-10-15**: both `https://web-cleansia-customer-weu-dev.azurewebsites.net/` and
+`https://customer.dev.cleansia.cz/` returned no response in 30 attempts each (60 total,
+HTTP `000`, curl exit `28`, zero-byte bodies). After attempt 2, the SSR HTTP diagnostics and
+worker-process diagnostic each timed out after 20 seconds. The cause remains **unestablished**.
+**Answer needed:** provide the first redacted DEV customer SSR startup or request error, together
+with whether its worker was listening and its exit/restart status, for **00:49–02:02 UTC on
+2026-10-15**, covering requests to both origins above. This evidence determines the next fix;
+the recovered API warm failures are retained as history and are not the current blocker.
+**Blocks:** T-0838 AC5, T-0844 Doing 6 / AC6, and T-0849 AC1. The four seed scripts have never
+run, the published admin was not recreated, and no post-seed health or final readiness result is claimed.
+
+The preceding question describes the earlier blocked checkpoint. Mike’s replies and the current obligations above supersede its open/never-run statements.
+
+### Startup correction and remaining END completion — 2026-10-15
+
+The dated END and resumed-procedure sections above remain the record of their capture times. Q-END-01 is answered; the original deployment `38660355359` recovered on Warm-only attempt 3, with 14 carried and two fresh successful jobs. Its earlier failures remain retained. The three successful seeds `38702440461`, `38702856219` and `38703413453` are not replayed. The promo seed's failed run `38703639106` remains a failed first attempt.
+
+The promo script's minimal source correction now passed its exact-script real-PostgreSQL regression, including all 60 translations across five languages and 12 keys, with unchanged complete rows after a repeat. Only the two first-tuple nullable timestamp casts changed. The Initial migration, schema and generated contracts remain unchanged. Startup implementation, scoped reviews and completed local gates are recorded on [T-0636](T-0636-deployment-startup.md); they do not substitute for the following END actuals.
+
+- Resulting-master startup publication and DEV rollout: outstanding at this checkpoint; no startup publication or resulting-master startup rollout has occurred.
+- Retry of only the failed promo script, from the merged correction: outstanding at this checkpoint; retry only failed run `38703639106` from the merged correction.
+- Read-only `check-db-health.sql` and final exact Healthy responses from all five APIs plus both server-rendered SSR origins: outstanding at this checkpoint; earlier warm responses and approximate statistics do not establish final seeded readiness.
+- Acceptance disposition after those results: unmet at this checkpoint. Until the required live results are recorded, the applicable END criterion remains unchecked and INDEX remains `in_progress`.
+
+There is one database reset in this END procedure. No second reset, replay of the first three seeds, storage emptying, further docs deployment or PRO operation is added. The published admin's existing `MustChangePassword=false` and absence of an authenticated console exercise remain qualified. The attempt-3 quiet-window close warning `MissingSubscriptionRegistration` remains retained; a successful job conclusion is not proof of mail suppression.
+
 ## Review
 
 - **Correctness: changes requested, then fixed.**

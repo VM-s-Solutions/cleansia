@@ -560,6 +560,16 @@ var storageSettings = storageManagedIdentityEnabled
 // start was killed and retried rather than waited for. 600 s on DEV only; prod stays on the default.
 var containerStartSettings = env == 'prod' ? {} : { WEBSITES_CONTAINER_START_TIME_LIMIT: '600' }
 
+var devPackageSettings = env == 'prod' ? {} : {
+  WEBSITE_RUN_FROM_PACKAGE: '1'
+  SCM_DO_BUILD_DURING_DEPLOYMENT: 'false'
+}
+
+var apiStartupSettings = env == 'prod' ? {} : {
+  WEBSITE_WARMUP_PATH: '/health'
+  WEBSITE_WARMUP_STATUSES: '200'
+}
+
 var apiBaseSettings = union({
   ConnectionStrings__ConnectionString: kvRef(keyVaultUri, 'ConnectionStrings--cleansia-db')
   JwtSettings__Secret: kvRef(keyVaultUri, 'Jwt--Key')
@@ -599,7 +609,7 @@ var apiBaseSettings = union({
   // Development settings that switch it off never load here, because every deployed host runs as
   // Production. DEV skips it so test cleaners with made-up IČOs can be approved (owner default).
   Ares__Enabled: env == 'prod' ? 'true' : 'false'
-}, storageSettings, sendGridSettings, containerStartSettings)
+}, storageSettings, sendGridSettings, containerStartSettings, devPackageSettings, apiStartupSettings)
 
 // FCM push dispatch — the Functions queue consumer is the ONLY dispatcher; FcmPushDispatcher is a
 // deliberate no-op while this is unset, so pushes are silently ACKed until the secret exists. Value:
@@ -809,7 +819,7 @@ module ssr 'modules/appService.bicep' = {
       NG_TRUST_PROXY_HEADERS: 'x-forwarded-for,x-forwarded-host,x-forwarded-proto,x-forwarded-tlsversion'
       WEBSITE_WARMUP_PATH: '/health'
       WEBSITE_WARMUP_STATUSES: '200'
-    }, containerStartSettings)
+    }, containerStartSettings, devPackageSettings)
     corsAllowedOrigins: []
     httpsOnly: true
     // Always On in every stage — same reasoning as the API hosts above, and it matters most here:

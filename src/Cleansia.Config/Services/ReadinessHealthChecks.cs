@@ -1,6 +1,7 @@
 using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.Blobs.Abstractions;
 using Cleansia.Infra.Database;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
 
@@ -40,7 +41,7 @@ public static class ReadinessHealthChecks
     public static IServiceCollection AddCleansiaReadinessChecks(this IServiceCollection services)
     {
         services.AddHealthChecks()
-            .AddDbContextCheck<CleansiaDbContext>("database", tags: ["ready"])
+            .AddCheck<DatabaseReadinessHealthCheck>("database", tags: ["ready"])
             .AddCheck<BlobStorageHealthCheck>("blob_storage", failureStatus: HealthStatus.Degraded, tags: ["ready"]);
 
         // Bound every readiness check. The registrations above take no timeout, so this rewrites them
@@ -64,6 +65,40 @@ public static class ReadinessHealthChecks
         });
 
         return services;
+    }
+}
+
+internal sealed class DatabaseReadinessHealthCheck(DbContextOptions<CleansiaDbContext> options) : IHealthCheck
+{
+    public async Task<HealthCheckResult> CheckHealthAsync(
+        HealthCheckContext context,
+        CancellationToken cancellationToken = default)
+    {
+        using var deadline = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+        deadline.CancelAfter(ReadinessHealthChecks.ReadinessCheckTimeout);
+        var probe = CanConnectAsync(deadline.Token);
+
+        try
+        {
+            return await probe.WaitAsync(deadline.Token)
+                ? HealthCheckResult.Healthy()
+                : HealthCheckResult.Unhealthy("database is unreachable");
+        }
+        catch (Exception ex)
+        {
+            _ = probe.ContinueWith(static completed => { _ = completed.Exception; },
+                CancellationToken.None,
+                TaskContinuationOptions.OnlyOnFaulted | TaskContinuationOptions.ExecuteSynchronously,
+                TaskScheduler.Default);
+            return HealthCheckResult.Unhealthy("database is unreachable", ex);
+        }
+    }
+
+    private async Task<bool> CanConnectAsync(CancellationToken cancellationToken)
+    {
+        // The open can outlive the deadline; its context must remain alive until that open finishes.
+        await using var probeContext = new CleansiaDbContext(options);
+        return await probeContext.Database.CanConnectAsync(cancellationToken);
     }
 }
 

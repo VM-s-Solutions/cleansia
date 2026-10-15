@@ -965,10 +965,21 @@ jobs:
       matrix:
         region: ["${{ inputs.region }}"]
         host: [partner, admin, customer, partner-mobile, customer-mobile]
+        include:
+          - host: partner
+            entry: Cleansia.Web.Partner.dll
+          - host: admin
+            entry: Cleansia.Web.Admin.dll
+          - host: customer
+            entry: Cleansia.Web.Customer.dll
+          - host: partner-mobile
+            entry: Cleansia.Web.Mobile.Partner.dll
+          - host: customer-mobile
+            entry: Cleansia.Web.Mobile.Customer.dll
     environment: ${{ inputs.githubEnvironment }}
     steps:
-      # DEV only, for the warm step at the end. First, so it never clears a downloaded artifact.
-      - name: Checkout the warm script
+      # First, so checkout never clears a downloaded artifact.
+      - name: Checkout the deployment scripts
         if: inputs.env != 'prod'
         uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
         with:
@@ -988,14 +999,21 @@ jobs:
           artifact-ids: ${{ needs.build-dotnet.outputs[format('{0}-api-id', matrix.host)] }}
           path: ./${{ matrix.host }}-api
 
-      # Prod lands in the staging slot and is swapped below (deploy/AZURE-PROD-POSTURE.md §1);
-      # 'production' is the action's default slot, so the dev (B-series, slotless) path is unchanged.
       - name: Deploy to Azure App Service
+        if: inputs.env == 'prod'
         uses: azure/webapps-deploy@02a81bead70021f5284939794bcec79c271ab383 # v3.0.8
         with:
           app-name: api-cleansia-${{ matrix.host }}-${{ matrix.region }}-${{ inputs.env }}
           slot-name: ${{ inputs.env == 'prod' && 'staging' || 'production' }}
           package: ./${{ matrix.host }}-api
+
+      - name: Deploy immutable DEV package
+        if: inputs.env != 'prod'
+        env:
+          APP: api-cleansia-${{ matrix.host }}-${{ matrix.region }}-${{ inputs.env }}
+          PACKAGE: ./${{ matrix.host }}-api
+          ENTRY: ${{ matrix.entry }}
+        run: timeout 600s python3 .github/scripts/deploy_package.py "$APP" "$PACKAGE" "$ENTRY"
 
       # Slots are not Always On (deliberate — see appService.bicep), so the freshly-deployed slot is
       # cold: warm it and PROVE it healthy before the swap. Failing here fails the job — a slot that
@@ -1119,11 +1137,19 @@ jobs:
     runs-on: ubuntu-26.04
     permissions:
       id-token: write
+      contents: read
     strategy:
       matrix:
         region: ["${{ inputs.region }}"]
     environment: ${{ inputs.githubEnvironment }}
     steps:
+      - name: Checkout the deployment scripts
+        if: inputs.env != 'prod'
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
+        with:
+          persist-credentials: false
+          sparse-checkout: .github/scripts
+
       - name: Login to Azure
         uses: azure/login@a641126d1b8aa4d1fa005f4f92df94a3a4c4c906 # v3.1.0
         with:
@@ -1144,11 +1170,18 @@ jobs:
       # load and every real request 500s, which is exactly the slot we must not swap into production.
       # '/' forces a real SSR render, so it gates the swap on the render path AND warms it.
       - name: Deploy to Azure App Service
+        if: inputs.env == 'prod'
         uses: azure/webapps-deploy@02a81bead70021f5284939794bcec79c271ab383 # v3.0.8
         with:
           app-name: web-cleansia-customer-${{ matrix.region }}-${{ inputs.env }}
           slot-name: ${{ inputs.env == 'prod' && 'staging' || 'production' }}
           package: ./customer-app
+
+      - name: Deploy immutable DEV package
+        if: inputs.env != 'prod'
+        env:
+          APP: web-cleansia-customer-${{ matrix.region }}-${{ inputs.env }}
+        run: timeout 600s python3 .github/scripts/deploy_package.py "$APP" ./customer-app server/server.mjs
 
       - name: Warm the staging slot
         if: inputs.env == 'prod'

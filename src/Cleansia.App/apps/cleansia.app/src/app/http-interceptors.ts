@@ -2,6 +2,7 @@ import { HttpInterceptorFn } from '@angular/common/http';
 import { CUSTOMER_INTERCEPTORS_FN } from '@cleansia/customer-services';
 import { CUSTOMER_STORE_INTERCEPTORS_FN } from '@cleansia/customer-stores';
 import { COMMON_INTERCEPTORS_FN } from '@cleansia/services';
+import { SsrApiDeadlineInterceptorFn } from './ssr/api-deadline.interceptor';
 
 /**
  * The app is the only place that can see both the HTTP client lib and the
@@ -12,4 +13,5 @@ export const APP_INTERCEPTORS_FN: HttpInterceptorFn[] = [
   ...COMMON_INTERCEPTORS_FN,
   ...CUSTOMER_INTERCEPTORS_FN,
   ...CUSTOMER_STORE_INTERCEPTORS_FN,
+  SsrApiDeadlineInterceptorFn,
 ];

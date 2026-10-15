@@ -477,6 +477,12 @@ The reviewed read-only inspection `38814387736` supported one scoped recovery. R
 
 The applicable END criterion remains unmet, INDEX remains `in_progress` and MS-2 remains Open. The original reset/docs and successful three seeds stay historical; only the failed promo retry, final DB/13-HTTP acceptance and final closure remain outstanding after the runtime dependency. No successful seed replay, reset, docs redispatch, storage cleanup, PRO or graphify action is added.
 
+### Linux package source and later promo completion checkpoint — 2026-10-15 UTC
+
+This source checkpoint is 2026-10-16 in Europe/Prague; preceding unresolved/promo-pending statements remain history. [T-0636](T-0636-deployment-startup.md#linux-selected-package-verification-source-checkpoint--2026-10-15-utc) records the exact source, review and actual-evidence pins. Linux selected-package archive identity plus separate public readiness is the accepted bounded gate; all six SCM entry mismatches and failed recovery `38815343537` remain intact, with no executing-worker/cold-start/continuous-uptime claim. Later public health samples passed 6/6, not the real SSR/final 13-HTTP gate.
+
+Promo-only retry `38820436701` / attempt 1 completed on master `70878a3545da4a6fbc8b541a20916d7d53c86be7`: two successful jobs/one PRO skip, zero annotations/artifacts; DEV reported `INSERT 0 60` and script success. Sixty is affected rows, not a table total; no literal BEGIN/COMMIT receipt is claimed. No original successful seed/reset/docs work was repeated. C3 `f5e04cbb210afd7b9053ffb34840b98ff4bf3112` is local/unpushed and exactly three reviewed source changes are locally uncommitted. Full 66-test/local/docs/head gates, actual source binding/publication/CI, resulting-master deployment and final DB/13-HTTP acceptance/closure remain pending. The applicable END criterion remains unchecked, INDEX remains `in_progress` and MS-2 remains Open.
+
 ## Review
 
 Pending.

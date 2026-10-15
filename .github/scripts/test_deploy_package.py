@@ -43,6 +43,7 @@ class ScmFixture:
         self.entry = ENTRY
         self.package_setting = '1'
         self.token = TOKEN
+        self.hosts = []
 
     def respond(self, method, path, headers, body):
         self.requests.append((method, path, dict(headers), body))
@@ -60,6 +61,12 @@ class ScmFixture:
             location = f'https://{self.app}.scm.azurewebsites.net/api/deployments/latest?deployer={self.deployer}&time=2026-10-15_12-00-00Z'
             if self.mode == 'foreign-location':
                 location = 'https://other.invalid/api/deployments/latest?token=must-not-print'
+            if self.mode == 'absent-location':
+                return 202, {}, b''
+            if self.mode == 'relative-location':
+                location = '/api/deployments/header-only-relative?token=must-not-print'
+            if self.mode == 'opaque-location':
+                location = 'opaque:must-not-print'
             return 202, {'Location': location}, b''
         if parsed.path == '/api/deployments':
             self.discovery_count += 1
@@ -91,7 +98,9 @@ class ScmFixture:
         if parsed.path == f'/api/vfs/data/SitePackages/{self.pointer}':
             return 200, {}, b'wrong-archive' if self.mode == 'wrong-archive' else self.upload
         if parsed.path == f'/api/vfs/site/wwwroot/{self.entry}':
-            return 200, {}, b'wrong-entry' if self.mode == 'wrong-entry' else b'application-entry'
+            if self.mode == 'missing-scm-entry':
+                return 404, {}, b''
+            return 200, {}, b'wrong-entry' if self.mode in ('wrong-entry', 'old-scm-entry') else b'application-entry'
         return 404, {}, b''
 
 
@@ -125,6 +134,7 @@ class DeploymentTests(unittest.TestCase):
 
         class LoopbackConnection(http.client.HTTPConnection):
             def __init__(self, host, **kwargs):
+                fixture.hosts.append(host)
                 test.assertEqual(host, f'{fixture.app}.scm.azurewebsites.net')
                 kwargs.pop('context', None)
                 kwargs.pop('check_hostname', None)
@@ -215,10 +225,40 @@ class DeploymentTests(unittest.TestCase):
         self.assert_failed_without_secret()
         self.assertEqual([r[0] for r in self.fixture.requests], ['GET', 'POST'])
 
-    def test_refuses_foreign_location_before_an_authenticated_get(self):
-        self.fixture.mode = 'foreign-location'
-        self.assert_failed_without_secret()
-        self.assertEqual([r[0] for r in self.fixture.requests], ['GET', 'POST'])
+    def assert_upload_location_ignored(self, mode):
+        self.fixture.mode = mode
+        self.assertEqual(self.run_deploy(), 0, self.output.getvalue())
+        requests = self.fixture.requests
+        self.assertEqual(sum(request[0] == 'POST' for request in requests), 1)
+        self.assertEqual(self.fixture.hosts, [f'{APP}.scm.azurewebsites.net'] * len(requests))
+        self.assertEqual([urllib.parse.urlsplit(request[1]).path for request in requests], [
+            '/api/deployments', '/api/zipdeploy', '/api/deployments',
+            '/api/deployments/exact-id', '/api/vfs/data/SitePackages/packagename.txt',
+            f'/api/vfs/data/SitePackages/{self.fixture.pointer}',
+            '/api/vfs/data/SitePackages/packagename.txt'])
+        self.assertTrue(all(request[2]['Authorization'] == f'Bearer {TOKEN}' for request in requests))
+        result = json.loads(self.output.getvalue().splitlines()[-1])
+        self.assertEqual(result['deployment_id'], 'exact-id')
+        self.assertEqual(result['verification_scope'], 'selected-package-archive')
+        self.assertEqual(result['package_bytes'], len(self.fixture.upload))
+        self.assertRegex(result['deployer'], r'^cleansia-[^-]+-[^-]+-' + APP + r'-[0-9a-f]{32}$')
+        self.assertEqual(result['package_sha256'], hashlib.sha256(self.fixture.upload).hexdigest())
+        self.assertEqual(result['entry_sha256'], hashlib.sha256(b'application-entry').hexdigest())
+        self.assertNotIn(TOKEN, self.output.getvalue())
+        self.assertNotIn('must-not-print', self.output.getvalue())
+        self.assertNotIn('other.invalid', self.output.getvalue())
+
+    def test_ignores_foreign_upload_location_without_following_or_printing_it(self):
+        self.assert_upload_location_ignored('foreign-location')
+
+    def test_absent_upload_location_keeps_exact_verification(self):
+        self.assert_upload_location_ignored('absent-location')
+
+    def test_relative_upload_location_keeps_exact_verification(self):
+        self.assert_upload_location_ignored('relative-location')
+
+    def test_opaque_upload_location_keeps_exact_verification(self):
+        self.assert_upload_location_ignored('opaque-location')
 
     def test_exact_status_response_must_keep_id_and_deployer(self):
         for mode in ['wrong-id', 'wrong-deployer', 'unknown-state']:
@@ -226,11 +266,47 @@ class DeploymentTests(unittest.TestCase):
                 self.fixture.mode = mode
                 self.assert_failed_without_secret()
 
-    def test_archive_and_live_entry_hash_must_match_uploaded_artifact(self):
-        for mode in ['wrong-archive', 'wrong-entry']:
-            with self.subTest(mode=mode):
-                self.fixture.mode = mode
-                self.assert_failed_without_secret()
+    def test_selected_archive_hash_must_match_uploaded_artifact(self):
+        self.fixture.mode = 'wrong-archive'
+        self.assert_failed_without_secret()
+        self.assertEqual(sum(request[0] == 'POST' for request in self.fixture.requests), 1)
+        self.assertFalse(any(request[1].startswith('/api/vfs/site/wwwroot/') for request in self.fixture.requests))
+
+    def assert_selected_package_without_scm_entry(self, mode):
+        self.fixture.mode = mode
+        self.assertEqual(self.run_deploy(), 0, self.output.getvalue())
+        self.assertEqual(sum(request[0] == 'POST' for request in self.fixture.requests), 1)
+        self.assertFalse(any(request[1].startswith('/api/vfs/site/wwwroot/') for request in self.fixture.requests))
+        result = json.loads(self.output.getvalue().splitlines()[-1])
+        self.assertEqual(result['verification_scope'], 'selected-package-archive')
+        self.assertEqual(result['package_sha256'], hashlib.sha256(self.fixture.upload).hexdigest())
+        self.assertEqual(result['package_bytes'], len(self.fixture.upload))
+        with zipfile.ZipFile(io.BytesIO(self.fixture.upload)) as archive:
+            self.assertEqual(result['entry_sha256'], hashlib.sha256(archive.read(ENTRY)).hexdigest())
+        self.assertNotIn(TOKEN, self.output.getvalue())
+        self.assertNotIn('must-not-print', self.output.getvalue())
+
+    def test_old_scm_wwwroot_does_not_block_exact_selected_package(self):
+        self.assert_selected_package_without_scm_entry('old-scm-entry')
+
+    def test_missing_scm_wwwroot_does_not_block_exact_selected_package(self):
+        self.assert_selected_package_without_scm_entry('missing-scm-entry')
+
+    def test_entry_digest_is_bound_to_completed_local_zip(self):
+        original = deploy.zipfile.ZipFile.write
+        changed_entry = b'entry-changed-before-packaging'
+        def write(archive, filename, arcname=None, *args, **kwargs):
+            if arcname == ENTRY:
+                Path(filename).write_bytes(changed_entry)
+            return original(archive, filename, arcname, *args, **kwargs)
+        with patch.object(deploy.zipfile.ZipFile, 'write', new=write):
+            self.assertEqual(self.run_deploy(), 0, self.output.getvalue())
+        result = json.loads(self.output.getvalue().splitlines()[-1])
+        with zipfile.ZipFile(io.BytesIO(self.fixture.upload)) as archive:
+            self.assertEqual(archive.read(ENTRY), changed_entry)
+            self.assertEqual(result['entry_sha256'], hashlib.sha256(archive.read(ENTRY)).hexdigest())
+        self.assertEqual(sum(request[0] == 'POST' for request in self.fixture.requests), 1)
+        self.assertNotIn(TOKEN, self.output.getvalue())
 
     def test_pointer_cannot_escape_sitepackages(self):
         self.fixture.mode = 'unsafe-pointer'
@@ -862,6 +938,24 @@ class AdditionalContracts(unittest.TestCase):
             return {'exit_code': code, 'posts': sum(request[0] == 'POST' for request in test.fixture.requests),
                     'requests': [request[1].split('?')[0] for request in test.fixture.requests],
                     'safe_output': test.output.getvalue()}
+        finally:
+            test.tearDown()
+
+    def test_selected_archive_byte_count_must_match_uploaded_zip(self):
+        test = DeploymentTests('test_uploads_right_root_binary_zip_and_pins_own_final_deployment')
+        test.setUp()
+        original = deploy.scm_request
+        def request(*args, **kwargs):
+            result = original(*args, **kwargs)
+            if args[4] in ('active-package-hash', 'selected-package-hash'):
+                self.assertEqual(result['sha256'], hashlib.sha256(test.fixture.upload).hexdigest())
+                result = {**result, 'bytes': result['bytes'] + 1}
+            return result
+        try:
+            with patch.object(deploy, 'scm_request', side_effect=request):
+                self.assertEqual(test.run_deploy(), 1, test.output.getvalue())
+            self.assertEqual(sum(item[0] == 'POST' for item in test.fixture.requests), 1)
+            self.assertNotIn(TOKEN, test.output.getvalue())
         finally:
             test.tearDown()
 

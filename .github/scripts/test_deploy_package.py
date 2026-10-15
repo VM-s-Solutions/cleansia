@@ -556,7 +556,8 @@ class InspectionTests(unittest.TestCase):
         self.fixture.upload = b'active-archive'
         def az(args, **kwargs):
             self.az_calls.append(args)
-            output = 'AzureCloud' if args[1] == 'cloud' else TOKEN if '--resource' in args else 'secret-default-token'
+            output = ('AzureCloud' if args[1] == 'cloud' else 'enabled' if args[1] == 'webapp' else
+                      TOKEN if '--resource' in args else 'secret-default-token')
             return subprocess.CompletedProcess(args, 0, output, 'secret-cli-stderr')
         with patch.object(deploy.subprocess, 'run', side_effect=az), \
              contextlib.redirect_stdout(self.output), contextlib.redirect_stderr(self.output):
@@ -677,6 +678,172 @@ class InspectionTests(unittest.TestCase):
         self.assertTrue(all(call.args[0].get_method() == 'GET' for call in opener.open.call_args_list))
         self.assertNotIn('secret-error', json.dumps(result))
         self.assertEqual(result['requests'][0]['errno'], 32)
+
+
+class InspectionObservationTests(unittest.TestCase):
+    setUp = DeploymentTests.setUp
+    tearDown = DeploymentTests.tearDown
+
+    def observe(self, before, after=None, mode='enabled', missing_pointer=False, after_failure=False, detail_changes=None):
+        after = before if after is None else after
+        self.fixture.upload = b'active-archive'
+        original = self.fixture.respond
+        app_lists = 0
+        def respond(method, path, headers, body):
+            nonlocal app_lists
+            if headers.get('Authorization') == 'Bearer secret-default-token':
+                self.fixture.requests.append((method, path, dict(headers), body))
+                return 401, {}, b'secret-response-body'
+            if path == '/api/deployments':
+                self.fixture.requests.append((method, path, dict(headers), body))
+                app_lists += 1
+                if after_failure and app_lists == 2:
+                    return 503, {}, b'secret-after-failure'
+                return 200, {}, json.dumps(before if app_lists == 1 else after).encode()
+            if path.startswith('/api/deployments/'):
+                self.fixture.requests.append((method, path, dict(headers), body))
+                identity = path.rsplit('/', 1)[1]
+                rows = before if isinstance(before, list) else []
+                found = next((row for row in rows if isinstance(row, dict) and row.get('id') == identity), {})
+                return 200, {}, json.dumps(dict(found, **(detail_changes or {}))).encode()
+            if missing_pointer and path.endswith('/packagename.txt'):
+                self.fixture.requests.append((method, path, dict(headers), body))
+                return 404, {}, b'secret-missing-pointer'
+            return original(method, path, headers, body)
+        self.fixture.respond = respond
+        def az(args, **kwargs):
+            self.az_calls.append(args)
+            if args[1] == 'webapp':
+                self.assertEqual(args[2:5], ['config', 'appsettings', 'list'])
+                self.assertEqual(args[args.index('--name') + 1], APP)
+                self.assertEqual(args[args.index('--resource-group') + 1], 'rg-cleansia-weu-dev')
+                self.assertIn("WEBSITE_RUN_FROM_PACKAGE", args[args.index('--query') + 1])
+                if mode == 'error':
+                    return subprocess.CompletedProcess(args, 9, 'secret-mode-value', 'secret-mode-stderr')
+                value = mode
+            else:
+                value = 'AzureCloud' if args[1] == 'cloud' else TOKEN if '--resource' in args else 'secret-default-token'
+            return subprocess.CompletedProcess(args, 0, value, 'secret-cli-stderr')
+        with patch.object(deploy.subprocess, 'run', side_effect=az):
+            result = deploy.inspect_dev(APP, '123', 10)
+        text = json.dumps(result)
+        for secret in (TOKEN, 'secret-default-token', 'secret-response-body', 'secret-after-failure',
+                       'secret-missing-pointer', 'secret-mode-value', 'secret-mode-stderr',
+                       'secret-cli-stderr', 'secret-row-id', 'secret-status', 'secret-activity'):
+            self.assertNotIn(secret, text)
+        self.assertTrue(all(method == 'GET' and not body for method, _, _, body in self.fixture.requests))
+        return result
+
+    def terminal(self, **changes):
+        return {'id': 'finished', 'deployer': 'foreign-publisher', 'status': 4,
+                'complete': True, 'is_temp': False, 'active': True, **changes}
+
+    def own(self, **changes):
+        return self.terminal(id='own-final', deployer='cleansia-123-1-' + APP + '-' + 'a' * 32, **changes)
+
+    def test_every_raw_row_has_a_safe_snapshot_and_invalid_reason(self):
+        rows = [self.terminal(), None, self.terminal(id='../secret-row-id'),
+                self.terminal(id='bad-status', status='secret-status'), {'id': 'missing-flags', 'status': 1}]
+        result = self.observe(rows)
+        listing = result['deployment_lists']['before']
+        self.assertEqual((listing['row_count'], listing['valid_count'], listing['invalid_count']), (5, 1, 4))
+        self.assertFalse(listing['valid'])
+        self.assertEqual([row['index'] for row in listing['rows']], list(range(5)))
+        self.assertEqual(listing['rows'][1]['invalid_fields'], ['row-not-object'])
+        self.assertIn('id-invalid', listing['rows'][2]['invalid_fields'])
+        self.assertIsNone(listing['rows'][2]['id'])
+        self.assertIn('status-invalid', listing['rows'][3]['invalid_fields'])
+        self.assertIsNone(listing['rows'][3]['status'])
+        self.assertEqual(listing['rows'][4]['invalid_fields'], ['complete-missing', 'is_temp-missing'])
+        self.assertEqual(result['server_activity']['observation'], 'unverified')
+        self.assertEqual(result['collection_result'], 'partial')
+
+    def test_complete_stable_terminal_lists_remain_separate_from_missing_package_pointer(self):
+        rows = [self.terminal(), self.terminal(id='another', active=False)]
+        result = self.observe(rows, after=list(reversed(rows)), missing_pointer=True)
+        for phase in ('before', 'after'):
+            listing = result['deployment_lists'][phase]
+            self.assertTrue(listing['valid'])
+            self.assertEqual((listing['row_count'], listing['valid_count'], listing['invalid_count']), (2, 2, 0))
+        self.assertEqual(result['server_activity'], {'observation': 'stable-terminal', 'stable': True,
+                                                    'pending_or_temporary': False})
+        self.assertEqual(result['collection_result'], 'partial')
+        self.assertEqual(result['active']['observation'], 'unverified')
+        phases = [request['phase'] for request in result['requests']]
+        self.assertGreater(phases.index('deployment-list-after'), phases.index('package-pointer-after'))
+
+    def test_pending_record_appearing_after_hashes_blocks_stale_history_success(self):
+        rows = [self.own()]
+        pending = self.terminal(id='new-pending', status=1, complete=False, is_temp=True)
+        result = self.observe(rows, after=rows + [pending])
+        self.assertEqual(result['historical_state'], 'pending-or-temporary')
+        self.assertTrue(result['server_activity']['pending_or_temporary'])
+        self.assertFalse(result['server_activity']['stable'])
+        self.assertEqual(result['server_activity']['observation'], 'pending-or-temporary')
+        self.assertIn('new-pending', [row['id'] for row in result['pending_or_temporary']])
+        self.assertEqual(result['collection_result'], 'partial')
+
+    def test_changed_terminal_or_active_facts_do_not_claim_stability(self):
+        for changed in (self.own(status=3), self.own(active=False)):
+            with self.subTest(changed=changed):
+                result = self.observe([self.own()], after=[changed])
+                self.assertEqual(result['server_activity']['observation'], 'changed')
+                self.assertFalse(result['server_activity']['stable'])
+                self.assertEqual(result['historical_state'], 'unverified')
+                self.assertEqual(result['collection_result'], 'partial')
+
+    def test_unavailable_after_list_preserves_before_facts_without_idle_claim(self):
+        result = self.observe([self.own()], after_failure=True)
+        self.assertTrue(result['deployment_lists']['before']['valid'])
+        self.assertEqual(result['deployment_lists']['after']['observation'], 'unavailable')
+        self.assertIsNone(result['deployment_lists']['after']['row_count'])
+        self.assertEqual(result['server_activity']['observation'], 'unverified')
+        self.assertEqual(result['historical_state'], 'unverified')
+        self.assertEqual(result['collection_result'], 'partial')
+
+    def test_package_mode_is_a_sanitized_classification_with_no_setting_value(self):
+        for mode in ('enabled', 'absent', 'other', 'secret-mode-value', 'error'):
+            with self.subTest(mode=mode):
+                result = self.observe([], mode=mode)
+                self.assertEqual(result['package_mode']['state'], mode if mode in ('enabled', 'absent', 'other') else 'unknown')
+                self.assertEqual(result['package_mode']['observation'], 'received' if mode in ('enabled', 'absent', 'other') else 'unavailable')
+                if mode in ('error', 'secret-mode-value'):
+                    self.assertEqual(result['collection_result'], 'partial')
+
+    def test_non_list_or_invalid_optional_active_value_is_explicit_and_unverified(self):
+        result = self.observe({'secret-status': 'secret-row-id'})
+        self.assertEqual(result['deployment_lists']['before']['invalid_fields'], ['not-a-list'])
+        self.assertIsNone(result['deployment_lists']['before']['row_count'])
+        self.assertEqual(result['server_activity']['observation'], 'unverified')
+        result = self.observe([self.terminal(active='secret-activity')])
+        row = result['deployment_lists']['before']['rows'][0]
+        self.assertIsNone(row['active'])
+        self.assertIn('active-invalid', row['invalid_fields'])
+        self.assertFalse(result['deployment_lists']['before']['valid'])
+        self.assertEqual(result['server_activity']['observation'], 'unverified')
+
+
+    def test_utc_timestamp_overflow_is_an_invalid_row_and_preserves_partial_evidence(self):
+        for value in ('0001-01-01T00:00:00+01:00', '9999-12-31T23:59:59-01:00'):
+            with self.subTest(value=value):
+                result = self.observe([self.terminal(received_time=value)])
+                row = result['deployment_lists']['before']['rows'][0]
+                self.assertIsNone(row['received_time'])
+                self.assertIn('received_time-invalid', row['invalid_fields'])
+                self.assertEqual(result['collection_result'], 'partial')
+                self.assertEqual(result['server_activity']['observation'], 'unverified')
+
+
+    def test_contradictory_list_and_detail_state_cannot_verify_history(self):
+        for status, changes in ((3, {'status': 4}), (4, {'status': 3}),
+                                (4, {'complete': False}), (4, {'is_temp': True})):
+            with self.subTest(status=status, changes=changes):
+                result = self.observe([self.own(status=status)], detail_changes=changes)
+                self.assertEqual(result['historical_state'], 'unverified')
+                self.assertEqual(result['collection_result'], 'partial')
+                self.assertTrue(result['details'][0]['identity_matches'])
+                self.assertFalse(result['details'][0]['state_matches'])
+                self.assertEqual(result['details'][0]['status'], changes.get('status', status))
 
 
 class AdditionalContracts(unittest.TestCase):

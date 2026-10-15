@@ -297,7 +297,14 @@ def inspect_dev(app, prior_run_id, budget):
     result = {'app': app, 'entry': DEV_ENTRIES[app], 'prior_run_id': prior_run_id,
               'prior_run_attempt': 1, 'collection_result': 'partial', 'historical_state': 'unverified',
               'matches': [], 'pending_or_temporary': [], 'details': [], 'requests': [],
-              'authentication': {}, 'active': {'observation': 'unverified'}}
+              'authentication': {}, 'active': {'observation': 'unverified'},
+              'package_mode': {'observation': 'unavailable', 'state': 'unknown'},
+              'deployment_lists': {phase: {'observation': 'unavailable', 'valid': False,
+                                          'row_count': None, 'valid_count': 0, 'invalid_count': 0,
+                                          'invalid_fields': [], 'rows': []}
+                                   for phase in ('before', 'after')},
+              'server_activity': {'observation': 'unverified', 'stable': None,
+                                  'pending_or_temporary': None}}
     opener = urllib.request.build_opener(urllib.request.ProxyHandler({}), NoRedirect())
     try:
         resource = app_service_resource(remaining)
@@ -316,6 +323,17 @@ def inspect_dev(app, prior_run_id, budget):
             result['authentication'][audience] = {'available': True}
         except DeploymentError as error:
             result['authentication'][audience] = {'available': False, 'error': str(error)}
+    try:
+        mode = az_value(['webapp', 'config', 'appsettings', 'list', '--name', app,
+                         '--resource-group', 'rg-cleansia-weu-dev', '--query',
+                         "[?name=='WEBSITE_RUN_FROM_PACKAGE'] | length(@) == `0` && 'absent' || "
+                         "(length(@) == `1` && [0].value == '1' && 'enabled' || 'other')"],
+                        remaining, 'package-mode')
+        if mode not in ('enabled', 'absent', 'other'):
+            raise DeploymentError('Package mode classification is invalid')
+        result['package_mode'] = {'observation': 'received', 'state': mode}
+    except DeploymentError as error:
+        result['package_mode']['error'] = str(error)
     listings = {}
     for audience, token in tokens.items():
         try:
@@ -325,86 +343,123 @@ def inspect_dev(app, prior_run_id, budget):
             pass
     if 'app-service' not in listings:
         return result
-    rows = listings['app-service']
-    if not isinstance(rows, list):
-        return result
     prefix = f'cleansia-{prior_run_id}-1-{app}-'
-    complete = True
-    selected = []
 
     def snapshot(item):
-        nonlocal complete
+        fields = ('id', 'deployer', 'status', 'complete', 'is_temp', 'active',
+                  'received_time', 'start_time', 'end_time', 'last_success_end_time')
+        record = {field: None for field in fields}
+        record.update(source='foreign', valid=False, invalid_fields=[])
+        errors = record['invalid_fields']
         if not isinstance(item, dict):
-            complete = False
-            return None
+            errors.append('row-not-object')
+            return record
         identity = item.get('id')
-        status = item.get('status')
         if (not isinstance(identity, str) or not re.fullmatch(r'[A-Za-z0-9_-]{1,128}', identity)
-                or identity == 'latest' or any(token in identity for token in tokens.values()) or type(status) is not int or status not in (0, 1, 2, 3, 4)):
-            complete = False
-            return None
+                or identity == 'latest'):
+            errors.append('id-missing' if 'id' not in item else 'id-invalid')
+        elif any(token in identity for token in tokens.values()):
+            errors.append('id-credential')
+        else:
+            record['id'] = identity
+        status = item.get('status')
+        if type(status) is not int or status not in (0, 1, 2, 3, 4):
+            errors.append('status-missing' if 'status' not in item else 'status-invalid')
+        else:
+            record['status'] = status
         deployer = item.get('deployer')
         if isinstance(deployer, str) and any(token in deployer for token in tokens.values()):
-            complete = False
-            return None
-        matched = isinstance(deployer, str) and re.fullmatch(re.escape(prefix) + r'[0-9a-f]{32}', deployer) is not None
-        known = isinstance(deployer, str) and re.fullmatch(
-            r'cleansia-[1-9][0-9]{0,18}-[1-9][0-9]{0,5}-' + re.escape(app) + r'-[0-9a-f]{32}', deployer) is not None
-        record = {'id': identity, 'deployer': deployer if known else None,
-                  'source': 'prior-run' if matched else 'foreign', 'status': status}
-        for field in ('complete', 'is_temp'):
-            record[field] = item.get(field) if type(item.get(field)) is bool else None
-            if record[field] is None:
-                complete = False
+            errors.append('deployer-credential')
+        elif deployer is not None and not isinstance(deployer, str):
+            errors.append('deployer-invalid')
+        elif isinstance(deployer, str):
+            matched = re.fullmatch(re.escape(prefix) + r'[0-9a-f]{32}', deployer) is not None
+            known = re.fullmatch(r'cleansia-[1-9][0-9]{0,18}-[1-9][0-9]{0,5}-' +
+                                 re.escape(app) + r'-[0-9a-f]{32}', deployer) is not None
+            record['deployer'] = deployer if known else None
+            record['source'] = 'prior-run' if matched else 'foreign'
+        for field in ('complete', 'is_temp', 'active'):
+            if type(item.get(field)) is bool:
+                record[field] = item[field]
+            elif field != 'active' or field in item:
+                errors.append(field + ('-missing' if field not in item else '-invalid'))
         for field in ('received_time', 'start_time', 'end_time', 'last_success_end_time'):
             value = item.get(field)
-            record[field] = None
+            if value is None:
+                continue
             if isinstance(value, str) and len(value) <= 40:
                 try:
                     parsed = datetime.fromisoformat(value.replace('Z', '+00:00'))
                     if parsed.tzinfo is not None:
                         record[field] = parsed.astimezone(timezone.utc).isoformat()
-                except ValueError:
+                except (ValueError, OverflowError):
                     pass
+            if record[field] is None:
+                errors.append(field + '-invalid')
+        record['valid'] = not errors
         return record
 
-    for item in rows:
-        record = snapshot(item)
-        if record is None:
+    def listing(raw):
+        if not isinstance(raw, list):
+            return {'observation': 'received', 'valid': False, 'row_count': None,
+                    'valid_count': 0, 'invalid_count': 0, 'invalid_fields': ['not-a-list'], 'rows': []}
+        rows = []
+        seen = set()
+        duplicate = set()
+        for index, item in enumerate(raw):
+            record = snapshot(item)
+            record['index'] = index
+            rows.append(record)
+            if record['id'] is not None:
+                if record['id'] in seen:
+                    duplicate.add(record['id'])
+                seen.add(record['id'])
+        for record in rows:
+            if record['id'] in duplicate:
+                record['invalid_fields'].append('id-duplicate')
+                record['valid'] = False
+        invalid = sum(not record['valid'] for record in rows)
+        return {'observation': 'received', 'valid': invalid == 0, 'row_count': len(raw),
+                'valid_count': len(raw) - invalid, 'invalid_count': invalid,
+                'invalid_fields': [], 'rows': rows}
+
+    result['deployment_lists']['before'] = listing(listings['app-service'])
+    if 'default-arm' in listings:
+        result['deployment_lists']['default-arm'] = listing(listings['default-arm'])
+    before = result['deployment_lists']['before']
+    complete = before['valid']
+    selected = []
+    for observed in before['rows']:
+        if observed['id'] is None or observed['status'] is None or 'deployer-credential' in observed['invalid_fields']:
             continue
+        record = {key: value for key, value in observed.items()
+                  if key not in ('index', 'valid', 'invalid_fields', 'active')}
         if record['source'] == 'prior-run':
             result['matches'].append(record)
         pending = record['is_temp'] is not False or record['complete'] is not True or record['status'] not in (3, 4)
         if pending:
             result['pending_or_temporary'].append(record)
         if record['source'] == 'prior-run' or pending:
-            selected.append((record, item.get('deployer')))
+            selected.append((record, listings['app-service'][observed['index']].get('deployer')))
     for record, deployer in selected:
         try:
             raw = scm_request(opener, app, tokens['app-service'], '/api/deployments/' + record['id'],
                               'deployment-detail', remaining, events=result['requests'])
-            detail = snapshot(raw)
-            if detail is None:
+            observed = snapshot(raw)
+            if not observed['valid']:
                 complete = False
+            if observed['id'] is None or observed['status'] is None or 'deployer-credential' in observed['invalid_fields']:
                 continue
+            detail = {key: value for key, value in observed.items()
+                      if key not in ('valid', 'invalid_fields', 'active')}
             detail['identity_matches'] = raw.get('id') == record['id'] and raw.get('deployer') == deployer
-            if not detail['identity_matches']:
+            detail['state_matches'] = all(detail[field] == record[field] for field in ('status', 'complete', 'is_temp'))
+            if not detail['identity_matches'] or not detail['state_matches']:
                 complete = False
             result['details'].append(detail)
         except DeploymentError:
             complete = False
-    final = [row for row in result['matches'] if row['is_temp'] is False]
-    if result['pending_or_temporary']:
-        result['historical_state'] = 'pending-or-temporary'
-    elif len(final) > 1:
-        result['historical_state'] = 'ambiguous'
-    elif complete and len(final) == 1:
-        detail = next((row for row in result['details'] if row['id'] == final[0]['id']), None)
-        if detail and detail['identity_matches'] and detail['is_temp'] is False and detail['complete'] is True:
-            if detail['status'] == 4:
-                result['historical_state'] = 'matched-terminal-success'
-            elif detail['status'] == 3:
-                result['historical_state'] = 'matched-terminal-failure'
+    history_complete = complete
     pointer_path = '/api/vfs/data/SitePackages/packagename.txt'
     active = result['active']
     for phase, path, kind, field in (
@@ -431,6 +486,47 @@ def inspect_dev(app, prior_run_id, budget):
     if active['pointer_stable'] and 'archive' in active and 'entry' in active:
         active['observation'] = 'stable-uncompared'
     else:
+        complete = False
+    try:
+        raw = scm_request(opener, app, tokens['app-service'], '/api/deployments', 'deployment-list-after',
+                          remaining, events=result['requests'])
+        result['deployment_lists']['after'] = listing(raw)
+    except DeploymentError:
+        complete = False
+    after = result['deployment_lists']['after']
+    for observed in after['rows']:
+        if observed['id'] is None or observed['status'] is None or 'deployer-credential' in observed['invalid_fields']:
+            continue
+        if observed['is_temp'] is not False or observed['complete'] is not True or observed['status'] not in (3, 4):
+            record = {key: value for key, value in observed.items()
+                      if key not in ('index', 'valid', 'invalid_fields', 'active')}
+            if record not in result['pending_or_temporary']:
+                result['pending_or_temporary'].append(record)
+    pending = bool(result['pending_or_temporary'])
+    activity = result['server_activity']
+    if before['valid'] and after['valid']:
+        facts = [sorted(json.dumps({key: value for key, value in row.items() if key != 'index'}, sort_keys=True)
+                        for row in observation['rows']) for observation in (before, after)]
+        activity.update(stable=facts[0] == facts[1], pending_or_temporary=pending)
+        activity['observation'] = ('pending-or-temporary' if pending else
+                                   'stable-terminal' if activity['stable'] else 'changed')
+    elif pending:
+        activity['pending_or_temporary'] = True
+    if activity['stable'] is not True:
+        complete = False
+    final = [row for row in result['matches'] if row['is_temp'] is False]
+    if pending:
+        result['historical_state'] = 'pending-or-temporary'
+    elif len(final) > 1:
+        result['historical_state'] = 'ambiguous'
+    elif history_complete and activity['stable'] is True and len(final) == 1:
+        detail = next((row for row in result['details'] if row['id'] == final[0]['id']), None)
+        if detail and detail['identity_matches'] and detail['is_temp'] is False and detail['complete'] is True:
+            if detail['status'] == 4:
+                result['historical_state'] = 'matched-terminal-success'
+            elif detail['status'] == 3:
+                result['historical_state'] = 'matched-terminal-failure'
+    if result['package_mode']['observation'] != 'received':
         complete = False
     result['collection_result'] = 'complete' if complete else 'partial'
     return result

@@ -1,0 +1,85 @@
+name: Inspect DEV package state
+
+on:
+  workflow_dispatch:
+    inputs:
+      prior_run_id:
+        description: 'Prior DEV deployment run ID (positive decimal digits only; attempt 1)'
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: deploy-dev
+  cancel-in-progress: false
+
+jobs:
+  inspect:
+    if: github.repository == 'VM-s-Solutions/cleansia' && github.ref == 'refs/heads/master'
+    runs-on: ubuntu-26.04
+    timeout-minutes: 15
+    permissions:
+      contents: read
+      id-token: write
+    environment: dev-weu
+    strategy:
+      fail-fast: false
+      max-parallel: 2
+      matrix:
+        app:
+          - api-cleansia-partner-weu-dev
+          - api-cleansia-admin-weu-dev
+          - api-cleansia-customer-weu-dev
+          - api-cleansia-partner-mobile-weu-dev
+          - api-cleansia-customer-mobile-weu-dev
+          - web-cleansia-customer-weu-dev
+    steps:
+      - name: Checkout inspection source
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+          sparse-checkout: .github/scripts
+
+      - name: Validate prior run identity before authentication
+        env:
+          PRIOR_RUN_ID: ${{ inputs.prior_run_id }}
+        run: |
+          python3 - <<'PYVALIDATE'
+          import os
+          import re
+          import sys
+          value = os.environ.get('PRIOR_RUN_ID', '')
+          valid = re.fullmatch(r'[1-9][0-9]{0,18}', value) is not None
+          valid = valid and int(value) <= 9_223_372_036_854_775_807
+          if not valid:
+              print('::error::Prior DEV run ID must be a positive decimal 64-bit identity')
+              sys.exit(1)
+          PYVALIDATE
+
+      - name: Login to Azure
+        uses: azure/login@a641126d1b8aa4d1fa005f4f92df94a3a4c4c906 # v3.1.0
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Read fixed DEV deployment and package state
+        env:
+          PRIOR_RUN_ID: ${{ inputs.prior_run_id }}
+          APP: ${{ matrix.app }}
+        run: >-
+          python3 .github/scripts/deploy_package.py "$APP"
+          --inspect-prior-run-id "$PRIOR_RUN_ID"
+          --output "$RUNNER_TEMP/dev-scm-diagnostics/evidence.json"
+
+      - name: Preserve sanitized inspection evidence
+        if: always()
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
+        with:
+          name: dev-scm-${{ matrix.app }}
+          path: ${{ runner.temp }}/dev-scm-diagnostics/evidence.json
+          retention-days: 1
+          if-no-files-found: error

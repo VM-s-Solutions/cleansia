@@ -457,6 +457,10 @@ The stopped observer's 924 samples (588 healthy, 336 five-second curl-28/HTTP-ze
 
 No promo retry or final seeded DB/HTTP acceptance followed the failed dependency. The three successful seeds `38702440461`/`38702856219`/`38703413453` must not be replayed; only failed promo `38703639106` remains a future retry. Original deployment attempts 1–3, earlier failures and the single reset stay historical. No additional reset, docs dispatch, storage emptying or PRO work is added. The applicable END criterion remains unmet, INDEX remains `in_progress` and MS-2 remains Open.
 
+### Fixed DEV diagnostic workflow source — 2026-10-15
+
+The transport follow-up adds manual master-only `diagnose-dev.yml` for the six fixed DEV apps under existing OIDC/concurrency and sanitized one-day artifacts. Both Backend CI filters include it; the existing CI step selects the module whose 50 local contracts passed. [T-0636](T-0636-deployment-startup.md) records qualified fresh application actuals and remaining final operations/source binding/publication/live acceptance at the dated checkpoint. This supplies no diagnostic dispatch or hosted runtime proof; AC1/END and MS-2 remain open.
+
 ## Review
 
 Pending.

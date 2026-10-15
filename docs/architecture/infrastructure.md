@@ -524,6 +524,38 @@ the active package pointer, archive digest and expected entry-point digest. Thes
 checks; the following HTTP readiness and rendered-page checks establish that the worker serves requests.
 An ambiguous deployment, mismatched package or failed check fails the job without another upload.
 
+The helper requests the documented App Service audience (`https://appservice.azure.com`) only after
+confirming `AzureCloud`, then performs an authenticated GET of the deployment list before its sole
+POST. This follows the [Azure CLI bearer client](https://github.com/Azure/azure-cli/blob/dev/src/azure-cli/azure/cli/command_modules/appservice/custom.py)
+and [public-cloud audience](https://github.com/Azure/azure-cli/blob/dev/src/azure-cli-core/azure/cli/core/cloud.py).
+A successful GET does not establish publish authorization. Before the POST, a flushed intent records
+the unique deployer, package SHA256/size and entry SHA256. Transport failures expose only phase,
+method, upload acknowledgement state, exception/reason class, numeric errno/TLS code and duration;
+they never print token, headers, response body, full error text or CLI stderr. Upload transport errors
+leave the outcome unknown; later GET errors retain the acknowledged-upload distinction. There is no
+automatic upload retry or timeout increase.
+
+**Read-only DEV reconciliation.** `diagnose-dev.yml` accepts one positive decimal prior run ID and
+inspects attempt 1 for the six fixed weu DEV apps, under `dev-weu` OIDC and the `deploy-dev` concurrency
+group. It compares bounded deployment-list GETs with default ARM and App Service tokens held in
+memory. An authenticated App Service response permits exact prior-run UUID/deployer correlation,
+exact deployment GETs and every observed pending/temporary record, including foreign deployments.
+An absent prefix never proves that an earlier upload did not arrive. Unknown/unsafe records and
+ambiguous identities remain unverified. The separate active observation returns streamed archive
+and live-entry SHA256/size plus a pointer read before and after; `stable-uncompared` requires independent
+comparison with retained artifacts. It does not assert that the active bytes belong to the prior run.
+The [Kudu read APIs](https://github.com/projectkudu/kudu/wiki/REST-API) are bounded by the ten-minute
+operation budget, one-MiB JSON limit and one-billion-byte artifact limit. The standalone POSIX CLI
+uses a main-thread real-time signal deadline around each transport request, covering sending, headers
+and response bodies even while bytes keep arriving; it clears the timer and restores the signal
+handler before recording an outcome. The existing socket inactivity ceiling remains separate.
+A transport deadline becomes a sanitized failed phase, allowing inspection to persist partial JSON.
+Inspection issues only GETs;
+collection status, historical correlation and active bytes are separate evidence. Its credential-free
+JSON artifacts expire after one day and must be preserved promptly. Authentication failure or missing
+history never grants readiness or permission to upload. Audience acceptance and the cause of an earlier
+Azure failure remain unproved until actual read-only evidence is collected.
+
 Enabling package mode on an existing DEV site can itself interrupt that site's current deployment;
 the first transition must be recorded separately from later package replacements. Package activation
 does not remove process startup or shared-plan contention. It is not a zero-downtime guarantee.

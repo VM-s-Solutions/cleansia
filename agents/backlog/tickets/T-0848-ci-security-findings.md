@@ -4,7 +4,7 @@ title: Close the CI security findings SEC-CI-1 to SEC-CI-6 before production hol
 size: M
 owner: pm
 created: 2026-10-12
-updated: 2026-10-14
+updated: 2026-10-15
 depends_on: []
 blocks: []
 stories: []
@@ -122,7 +122,7 @@ Production does not exist yet, so all six findings are latent. SEC-CI-1 and SEC-
 - [x] **AC1** — An anonymous read of the environments API shows `prod-weu` with required reviewers and a `master`-only branch policy. `production` is gone, or confirmed empty.
 - [ ] **AC2** — DEV and PRO each have their own Azure identity, scoped to their own resource group, and the runbook says so.
 - [ ] **AC3** — The deploy runs the migrations bundle and the API packages only after checking they are the files the build made. A swapped artifact fails the run.
-- [ ] **AC4** — The production deploy does not restore the shared NuGet cache. The SwiftFormat and SwiftLint downloads are checked against a checksum, and xcodegen and xcbeautify are pinned.
+- [x] **AC4** — The production deploy does not restore the shared NuGet cache. The SwiftFormat and SwiftLint downloads are checked against a checksum, and xcodegen and xcbeautify are pinned.
 - [x] **AC5** — The repository's default workflow token is read-only.
 
 ## Work record
@@ -287,6 +287,18 @@ stale-secret deletions after fresh names/reader checks. The `production` deletio
 qualified history: one failed April GitHub deployment, then an `inactive` status, with prior error
 evidence saved and continued server retention unverified. That configuration history establishes
 no PRO resource inspection or execution. AC2's actual Azure narrowing remains owner go-live.
+
+### END actual execution and remaining CI-security evidence — 2026-10-15
+
+The earlier dated publication/gate checkpoints remain historical; this actual partial-execution record supersedes their END-pending wording. Original phase history and owner quotes remain unchanged.
+
+Actual DEV build/migration and six intended single-ID downloads match the retained build artifacts; all nine ZIPs (358,513,680 bytes) remain retained. The three attempt-2 web API consumers again selected the original intended single IDs/digests. This is observed happy-path identity, not the still-unproved swapped-artifact-fails-the-run clause: **AC3 remains unchecked**.
+
+**AC4 is now checked for its exact source/tool/cache contract.** Final reusable deploy source has no shared `actions/cache` or `~/.nuget/packages` restore, and the actual DEV .NET setup recorded `cache: false`. P4's successful hosted iOS job recorded all four pinned-tool archive checksum OK results; the exact checksum/pin source and hosted results are retained in the qualified evidence map. This adds no PRO workflow execution or Azure identity claim and is separate from the failed SSR runtime gate. Earlier dated AC4-pending statements describe their earlier publication/applicable-gate checkpoint.
+
+**AC2 remains unchecked and INDEX is blocked on Q-SEC-CI-01.** D11 already decided that actual DEV identity narrowing is the owner's go-live work, with no action now. Separately, AC2 and the runbook require distinct DEV/PRO identities scoped to their stage resource groups; the open question asks only for actual completion evidence, without reopening D11's DEV decision/timing. D10 is not re-asked. No real Azure assignment or secret/effective-setting value was read. The failed AlertManagement courtesy windows are separately retained and do not create another owner question or prove the SSR cause.
+
+Shared END actuals and qualified evidence pins: `/Users/michael/.codex/scratchpads/cleansia-next-wave-2026-10-13/end/final-records-preparation002/end-outcome-facts.json` (SHA256 `8c49656e9f9dfecd936cf0386846fb958cbb64d0eb55f6dc8b67e965de0c3695`).
 
 ## Review
 

@@ -390,3 +390,36 @@ owner question; lost in the backlog reset and re-filed on 2026-09-16. **Who answ
 **Why it needs you:** uploads are sniffed against `SniffedContentType.Signatures` (images, PDF, …) and
 size-capped; narrowing to images only is a product decision (fewer attack surfaces, but a customer
 cannot attach an invoice PDF as evidence). **Default applied: the accept set unchanged.** Blocks nothing.
+
+## Q-END-01 — DEV customer SSR: first error and worker status after API recovery
+
+**Raised by:** the final DEV procedure, 2026-10-15. **Who answers:** the owner, with the DEV
+App Service diagnostics.
+**Why it needs you:** reset cycle 1 passed. Deployment `38660355359`, attempt 2, ended with
+15 successful jobs and one failed job; the three API jobs retried in that attempt passed. The
+remaining failure is `Warm dev sites`, job `116199476676`, completed at **02:00:41 UTC on
+2026-10-15**: both `https://web-cleansia-customer-weu-dev.azurewebsites.net/` and
+`https://customer.dev.cleansia.cz/` returned no response in 30 attempts each (60 total,
+HTTP `000`, curl exit `28`, zero-byte bodies). After attempt 2, the SSR HTTP diagnostics and
+worker-process diagnostic each timed out after 20 seconds. The cause remains **unestablished**.
+**Answer needed:** provide the first redacted DEV customer SSR startup or request error, together
+with whether its worker was listening and its exit/restart status, for **00:49–02:02 UTC on
+2026-10-15**, covering requests to both origins above. This evidence determines the next fix;
+the recovered API warm failures are retained as history and are not the current blocker.
+**Blocks:** T-0838 AC5, T-0844 Doing 6 / AC6, and T-0849 AC1. The four seed scripts have never
+run, the published admin was not recreated, and no post-seed health or final readiness result is claimed.
+
+## Q-SEC-CI-01 — Completion evidence for the decided go-live Azure identity narrowing
+
+**Raised by:** T-0848 AC2 and decision 11, recorded 2026-10-13; remaining evidence recorded
+2026-10-15. **Who answers:** the owner, who holds the Azure assignment evidence.
+**Why it needs you:** decision 11 already places actual DEV identity narrowing at owner
+go-live: “narrow it at go-live. No action now.” Separately, T-0848 AC2 and the runbook require
+a distinct identity per stage with grants scoped to that stage's resource group. Actual
+assignments have not been read or changed in this wave. D11's decided DEV scope and timing
+remain in force.
+**Answer needed:** when that already-decided go-live work is complete, provide its completion
+evidence: the separate DEV and PRO identity names or principal ids and their effective
+resource-group role-assignment scopes. This records completion of T-0848 AC2; it does not
+reopen the decision or request a new permission or a PRO runtime operation.
+**Blocks:** T-0848 AC2.

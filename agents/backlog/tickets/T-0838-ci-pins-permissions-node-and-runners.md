@@ -4,7 +4,7 @@ title: Harden the workflows — actions pinned to commits, least-privilege token
 size: M
 owner: pm
 created: 2026-10-12
-updated: 2026-10-12
+updated: 2026-10-15
 depends_on: [T-0820]
 blocks: [T-0849]
 stories: []
@@ -194,6 +194,21 @@ At `207d2f319`:
 - The original run completed 24 commands and stopped before Customer at `2026-10-14T22:41:20.123952+00:00` on the unchanged 2.5 GB capacity guard. The stopped receipt is retained unchanged (SHA256 `c3b3862d8c6733f26bd54fd19a66091ad99eb25aee7f531369c175d16f3513cf`). A separately reviewed and admitted Customer-only continuation supplied six further commands, using this same run's fresh DerivedData and private cloned package cache. Android/Core/Partner suites were not rerun, and no previous-phase Products were used. This is one capacity pause and continuation, not a failed-test retry.
 - The local mobile gate ran both iOS API-client generations through `./scripts/generate-api-clients.sh`, XcodeGen in both app directories, SwiftFormat lint before strict SwiftLint, and the three build/test schemes. Android generation tasks also executed within the fresh compile/unit invocations. The complete source proofs retain all 8,258 tracked working-byte/Git-blob/mode identities, with the known working-CRLF/raw-Git-LF `gradlew.bat` qualification. No contract/model/migration change is added. Full mobile final: `/Users/michael/.codex/scratchpads/cleansia-next-wave-2026-10-13/p6/full-mobile001/final.json` (SHA256 `cb493f835abdc65afaffec7dc3c94070c83818a6144cbfc0e8808ccca7a6e701`); sealed packet SHA256 `4e969d0ac98da4446f8dec65eb41c8ac372fbb1f0d217eb6fca0b6987deb38a7`. Exact commands, raw maps, source/product bindings and the stop/continuation remain in the retained receipts and `actual-gate-records-preparation003/actual-gate-facts.json`.
 - These are local command results. There is no new iOS-floor, device, provider, PaymentSheet, R8 or VoiceOver acceptance. Hosted CI, publication and END execution remain separate. All local source suites are now recorded; actual publication closure is still owed.
+
+### P6 publication closure — 2026-10-15
+
+- The P6 follow-up for FF-19–21 deployment and Angular descriptions was published in [#337](https://github.com/VM-s-Solutions/cleansia/pull/337), head `da03f005d99c60e3acbae7fef5b5f0bc16a17156`, merged as `cfeed43c1ca3defd0b85ca500e109a8ead9b7e6e`. AC5 and the END procedure remain open. The actual PR/master outcomes, expected skipped job, annotation qualifications, zero reruns and UTC capture timing are retained in the [PR publication closure](/Users/michael/.codex/scratchpads/cleansia-next-wave-2026-10-13/p6/pr337-ci-merge-closure001.json) and [master CI closure](/Users/michael/.codex/scratchpads/cleansia-next-wave-2026-10-13/p6/master-ci-complete001.json).
+
+
+Shared publication evidence: `/Users/michael/.codex/scratchpads/cleansia-next-wave-2026-10-13/end/final-records-preparation001/publication-facts.json` (SHA256 `8d709a85b776d2c014c68bf0cf76d7d71c9ccccbe90bfb3505a293a3bd63616f`), with exact retained PR/merge/master-CI, annotation and local/rebind receipt pins.
+
+### END actual execution and SSR blocker — 2026-10-15
+
+The P6 publication subsection above is an earlier checkpoint. Its END-pending or unexecuted wording is historical and is superseded by this actual partial-execution record; original dated phase history and owner quotes remain unchanged.
+
+The authorized DEV SQL pre-health, what-if and docs deployment passed (`38657842040`, `38658034721`, `38658881649`, each attempt 1). Reset and the sole current Initial application completed in cycle 1, but full deployment `38660355359` still failed: its three original API readiness failures recovered and their attempt-2 jobs passed; the remaining customer SSR Warm job timed out on both origins, and the later root/process diagnostics obtained no HTTP response. No seed-first exception or further mutation was admitted. Four seeds and post-seed final readiness remain unperformed. **AC5 remains unchecked/unmet; INDEX is blocked on Q-END-01** for redacted SSR startup/request and worker evidence. Earlier P6 and original phase “no deploy/reset” statements remain historical checkpoint facts. No PRO runtime, alert muting or complete RBAC-preview claim is added; the what-if `NestedDeploymentShortCircuited` roleAssignments diagnostic is retained.
+
+Shared END actuals and qualified evidence pins: `/Users/michael/.codex/scratchpads/cleansia-next-wave-2026-10-13/end/final-records-preparation002/end-outcome-facts.json` (SHA256 `8c49656e9f9dfecd936cf0386846fb958cbb64d0eb55f6dc8b67e965de0c3695`).
 
 ## Review
 

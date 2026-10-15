@@ -127,7 +127,10 @@ app.use((req, res, next) => {
         next();
         return;
       }
-      if (cacheable && response.status === 200) {
+      const noStore = response.headers.get('cache-control')
+        ?.split(',')
+        .some((directive) => directive.trim().toLowerCase() === 'no-store');
+      if (cacheable && response.status === 200 && !noStore) {
         response.headers.set('vary', 'Accept-Language');
         const body = Buffer.from(await response.clone().arrayBuffer());
         // A transient SSR failure still responds 200 with the bare app shell;

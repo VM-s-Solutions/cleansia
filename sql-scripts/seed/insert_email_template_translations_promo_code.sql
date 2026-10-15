@@ -15,7 +15,7 @@ INSERT INTO public."EmailTemplateTranslations" (
 SELECT * FROM (VALUES
   (
     generate_ulid()::TEXT, true, 'System', CURRENT_TIMESTAMP,
-    NULL, NULL, NULL, NULL,
+    NULL, NULL::timestamptz, NULL, NULL::timestamptz,
     'Subject',
     'Your Cleansia discount code',
     7,

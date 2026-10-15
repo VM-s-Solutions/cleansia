@@ -216,6 +216,19 @@ The transferred customer JSON response body is text, and the client parses it af
 the cache. Transferring a Blob would serialize its body as an empty object. The transport does not
 change the credential rules or cache inclusion policy above.
 
+**Server renders bound own-API GETs to 1500 ms each.** This covers the initial market directory and
+later catalogue or plan requests that Angular waits for before completing the document. A shorter
+explicit request timeout stays shorter. Native HTTP cancellation aborts stalled response headers or
+bodies, and the existing readers supply their fallback. Browser requests and other origins are outside
+this interceptor's scope. The per-request limit is not a total-page deadline: sequential reads can use
+more than one such interval.
+
+A timed-out render marks its response `Cache-Control: no-store`, and the landing-page micro-cache
+does not admit it. A subsequent healthy anonymous render can therefore recover immediately instead
+of receiving the fallback until the cache expires. A successful empty catalogue remains a valid result
+and can be cached. `/health` bypasses rendering and these API reads; this request deadline does not
+explain or repair a worker process that is not listening.
+
 The partner and admin apps are client-side only (no SSR).
 
 ## State Management

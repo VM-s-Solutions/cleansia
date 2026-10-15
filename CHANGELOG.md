@@ -1103,6 +1103,11 @@ need backfilling.
 
 ### Fixed
 
+- **Customer website — a stalled catalogue request no longer holds the server-rendered page open
+  indefinitely.** The server cancels a slow market, catalogue or plan read and uses its existing
+  fallback. A page affected by that timeout is not kept in the landing-page cache, so a later healthy
+  request can recover. (T-0636.)
+
 - **Cleaner, Android and iOS — your dashboard refreshes after a job changes.** Taking a job,
   changing its work state, recording its cash outcome or declining a preferred offer makes the
   dashboard refresh on your next return. A failed action leaves the current figures alone. On iOS,

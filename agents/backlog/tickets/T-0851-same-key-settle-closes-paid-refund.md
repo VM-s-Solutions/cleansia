@@ -4,7 +4,7 @@ title: Stop a second settle of one refund key closing the refund Stripe paid as 
 size: S
 owner: pm
 created: 2026-10-13
-updated: 2026-10-13
+updated: 2026-10-15
 depends_on: [T-0844]
 blocks: []
 stories: []
@@ -112,6 +112,18 @@ Evidence root: `/Users/michael/.codex/scratchpads/cleansia-next-wave-2026-10-13/
 - The original run completed 24 commands and stopped before Customer at `2026-10-14T22:41:20.123952+00:00` on the unchanged 2.5 GB capacity guard. The stopped receipt is retained unchanged (SHA256 `c3b3862d8c6733f26bd54fd19a66091ad99eb25aee7f531369c175d16f3513cf`). A separately reviewed and admitted Customer-only continuation supplied six further commands, using this same run's fresh DerivedData and private cloned package cache. Android/Core/Partner suites were not rerun, and no previous-phase Products were used. This is one capacity pause and continuation, not a failed-test retry.
 - The local mobile gate ran both iOS API-client generations through `./scripts/generate-api-clients.sh`, XcodeGen in both app directories, SwiftFormat lint before strict SwiftLint, and the three build/test schemes. Android generation tasks also executed within the fresh compile/unit invocations. The complete source proofs retain all 8,258 tracked working-byte/Git-blob/mode identities, with the known working-CRLF/raw-Git-LF `gradlew.bat` qualification. No contract/model/migration change is added. Full mobile final: `/Users/michael/.codex/scratchpads/cleansia-next-wave-2026-10-13/p6/full-mobile001/final.json` (SHA256 `cb493f835abdc65afaffec7dc3c94070c83818a6144cbfc0e8808ccca7a6e701`); sealed packet SHA256 `4e969d0ac98da4446f8dec65eb41c8ac372fbb1f0d217eb6fca0b6987deb38a7`. Exact commands, raw maps, source/product bindings and the stop/continuation remain in the retained receipts and `actual-gate-records-preparation003/actual-gate-facts.json`.
 - These are local command results. There is no new iOS-floor, device, provider, PaymentSheet, R8 or VoiceOver acceptance. Hosted CI, publication and END execution remain separate. All local source suites are now recorded; actual publication closure is still owed.
+
+### P6 publication closure — 2026-10-15
+
+The deferred ADR-0071 mechanism-wording publication is complete. INDEX records this completed item as `done`; the previously recorded post-read interval and response residual remain.
+
+The exact publication head `da03f005d99c60e3acbae7fef5b5f0bc16a17156` merged at `2026-10-14T23:37:36Z` as `cfeed43c1ca3defd0b85ca500e109a8ead9b7e6e`; both trees are `b2f5ec95779c28024d6a016a1f7c7fbc74413a42` (all 8,258 tracked blobs/modes equal). PR CI passed eight executed checks across seven workflows; merged-master CI passed seven executed checks across seven workflows with the expected push-only e2e-smoke skip. All were first attempts; no reruns. The PR retained 43 annotations and master 42, with no unqualified API or raw-warning deltas. Fresh scoped iOS/backend PR qualifications and a separate fresh six-warning master iOS qualification bind actual raw message/source/caret multisets and exact exported source blobs. Identical rendered loader warnings are not uniquely paired to numeric API locations; no zero-warning or blanket-waiver claim is added.
+
+The existing source-head local results above remain: docs 11 / backend-frontend 25 / combined mobile 30 commands exited 0. The actual record head then passed 13 docs/checker/actionlint/secret-history commands and the record-only SDK evidence rebind. That rebind verifies tracked working/Git/mode inputs, including the existing CRLF/LF wrapper qualification; it reruns no SDK and rehashes no product content, so it makes no new current-product-identity claim. The original mobile 24-command capacity stop and separately admitted six-command Customer-only continuation remain unchanged; this was no failed-test retry. Existing device/provider/floor/VoiceOver and response-only Paid residual limits remain.
+
+UTC capture qualification: the master backend log request was on `2026-10-14T23:59:27Z`, full capture on `2026-10-15T00:01:33Z`, and final capture receipt on `2026-10-15T00:01:35Z`; other master completed logs were captured on the 14th. This is not a claim that every log was captured on the same UTC date. P6 publication is closed here; INDEX records T-0851 as `done` after its previous `in_review` publication state. This does not discharge another ticket's END debt.
+
+Shared publication evidence: `/Users/michael/.codex/scratchpads/cleansia-next-wave-2026-10-13/end/final-records-preparation001/publication-facts.json` (SHA256 `8d709a85b776d2c014c68bf0cf76d7d71c9ccccbe90bfb3505a293a3bd63616f`), with exact retained PR/merge/master-CI, annotation and local/rebind receipt pins.
 
 ## Review
 

@@ -390,3 +390,18 @@ owner question; lost in the backlog reset and re-filed on 2026-09-16. **Who answ
 **Why it needs you:** uploads are sniffed against `SniffedContentType.Signatures` (images, PDF, …) and
 size-capped; narrowing to images only is a product decision (fewer attack surfaces, but a customer
 cannot attach an invoice PDF as evidence). **Default applied: the accept set unchanged.** Blocks nothing.
+
+## Q-SEC-CI-01 — Completion evidence for the decided go-live Azure identity narrowing
+
+**Raised by:** T-0848 AC2 and decision 11, recorded 2026-10-13; remaining evidence recorded
+2026-10-15. **Who answers:** the owner, who holds the Azure assignment evidence.
+**Why it needs you:** decision 11 already places actual DEV identity narrowing at owner
+go-live: “narrow it at go-live. No action now.” Separately, T-0848 AC2 and the runbook require
+a distinct identity per stage with grants scoped to that stage's resource group. Actual
+assignments have not been read or changed in this wave. D11's decided DEV scope and timing
+remain in force.
+**Answer needed:** when that already-decided go-live work is complete, provide its completion
+evidence: the separate DEV and PRO identity names or principal ids and their effective
+resource-group role-assignment scopes. This records completion of T-0848 AC2; it does not
+reopen the decision or request a new permission or a PRO runtime operation.
+**Blocks:** T-0848 AC2.

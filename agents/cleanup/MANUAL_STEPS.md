@@ -292,6 +292,14 @@ near-empty e-mail rather than an error anyone sees. The six older e-mails have t
 This obligation was recorded only inside `MS-1`'s **Cleared** row, where a reader looking at *"what do I
 owe?"* would not find it. That is what `CL-043` is.
 
+#### 2026-10-15 — actual reset/migration complete; END blocked, reseed still owed
+
+This dated partial execution supersedes the earlier wholly deferred execution checkpoint without clearing MS-2 or rewriting its historical migration chronology/owner quotes. DEV reset `38660229404` / attempt 1 reported public tables 0; full deploy `38660355359` applied the sole `20261013160545_Initial` (Done `00:44:42.6012853Z`). The three initial web API failures recovered and their three retried jobs passed in the sole failed-jobs rerun, but attempt 2 ended with both customer SSR origins exhausting 30 zero-byte HTTP000/curl28 timeouts each. Later root/process diagnostics also timed out; SSR cause is unestablished and no further mutation or seed-first exception is admitted.
+
+All four seeds remain **unrun**: bootstrap, fixture data, published-admin INSERT and promo translations. Published admin was **not recreated**; company/settings/plans/catalog fixtures were not seeded. Final post-seed DB health and five-API/two-origin readiness were not performed. The missing runtime/worker evidence is recorded in [Q-END-01](../backlog/questions/open.md). Keep MS-2 in this open section, not Cleared. DEV accounts/order/upload rows/push registrations were reset, so testers must wait for completion before signup; SWA roles and storage blobs/queues persist. No PRO operation or graphify rebuild ran.
+
+Shared END actuals and qualified evidence pins: `/Users/michael/.codex/scratchpads/cleansia-next-wave-2026-10-13/end/final-records-preparation002/end-outcome-facts.json` (SHA256 `8c49656e9f9dfecd936cf0386846fb958cbb64d0eb55f6dc8b67e965de0c3695`).
+
 ### MS-9 — Invite yourself to the admin console — **DEV verified 2026-09-11**
 
 The owner confirmed the DEV site's `/.auth/me` reports `aad` with `admin_console`, and the

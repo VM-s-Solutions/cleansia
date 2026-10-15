@@ -489,6 +489,7 @@ restarts stop feeding on each other.
 | What | DEV | Prod | Where |
 |---|---|---|---|
 | API deploys | `deploy-api` is one matrix job of five legs at `max-parallel: 2`. Each leg deploys, then warms its own `/health` through `.github/scripts/warm-site.sh` before it gives up its seat | `max-parallel: 5`, the full fan-out: each leg deploys to its staging slot, warms it and swaps | `.github/workflows/deploy-azure.yml` |
+| API and SSR package activation | `WEBSITE_RUN_FROM_PACKAGE=1`, with build during deployment disabled; an explicit Kudu ZIP deployment activates the complete package | the existing deployment action publishes to staging before warm-up and swap | `main.bicep`, `.github/scripts/deploy_package.py` |
 | Container start limit | `WEBSITES_CONTAINER_START_TIME_LIMIT` = `600` on the five APIs and the SSR | the platform default, 230 s | `containerStartSettings`, `main.bicep` |
 | SSR startup command | `node server/server.mjs`, set by Bicep as `appCommandLine` on the site and its staging slot | the same | `appService.bicep`, passed by `main.bicep` |
 | Functions deploy | `az functionapp config container set` to the build's sha, and no separate restart | the same | `build-and-deploy-functions` |
@@ -514,8 +515,25 @@ site — seconds before the artifact deploy restarted it again. `appCommandLine`
 a swap, so prod needs nothing more. The Functions deploy lost its restart step for the same reason:
 setting the image already restarts the site.
 
-The alert mails those restarts would trip are muted for the length of the deploy —
-[the deploy quiet window](#deploy-quiet-window).
+**DEV runs the complete API and SSR ZIP package.** Linux App Service supports local
+[`WEBSITE_RUN_FROM_PACKAGE=1`](https://learn.microsoft.com/en-us/azure/app-service/deploy-run-package).
+The package is mounted read-only at `wwwroot`, avoiding a live tree containing files from two builds.
+The deploy helper uses the workflow's existing OIDC identity and sends one asynchronous ZIP upload.
+It identifies the final deployment by a unique tag, waits for its successful completion, then verifies
+the active package pointer, archive digest and expected entry-point digest. These are SCM package
+checks; the following HTTP readiness and rendered-page checks establish that the worker serves requests.
+An ambiguous deployment, mismatched package or failed check fails the job without another upload.
+
+Enabling package mode on an existing DEV site can itself interrupt that site's current deployment;
+the first transition must be recorded separately from later package replacements. Package activation
+does not remove process startup or shared-plan contention. It is not a zero-downtime guarantee.
+The DEV APIs' **container startup** warm-up uses `/health` and accepts only HTTP 200; their continuous
+App Service health probe remains `/alive` as described below. The SSR startup warm-up retains its own
+dependency-free `/health` and HTTP 200 requirement.
+
+The workflow requests a mail-suppression rule for the deploy —
+[the deploy quiet window](#deploy-quiet-window). Suppression depends on that rule being created
+successfully; a warning can leave the deployment successful without muting mail.
 
 ## Health probes — liveness restarts, readiness reports {#health-probes}
 
@@ -548,6 +566,13 @@ shared server with nothing left. A recycle does rebuild a wedged pool; it cannot
 deploy warm loop allows 15 seconds per probe, so a 95-second answer is indistinguishable from no answer.
 `ReadinessHealthChecks.ReadinessCheckTimeout` is the single value, and `AppServiceHealthProbeTests` pins
 it against the warm loop's patience so the two cannot drift apart.
+
+The database check bounds the **wait** as well as sending a cancellation token. A PostgreSQL peer
+that accepts a connection and then stays silent can keep Npgsql's open pending until its connection
+timeout despite cancellation. The probe owns its context so the health request can answer at five
+seconds while the pending open finishes and disposes safely; it does not abandon a context owned by
+the request scope. The real registered check and shared HTTP middleware are tested against that silent
+peer, including repeated probes, eventual disposal and a responsive `/alive`.
 
 `/health` keeps its failure semantics: database Unhealthy (an instance with no database fails every
 request anyway), blob Degraded-but-200. What changed is only who is allowed to respond by killing things.
@@ -658,7 +683,8 @@ is something to look at once you know to look. Being *told* about a first occurr
 
 #### The deploy quiet window {#deploy-quiet-window}
 
-A DEV deploy mutes the mails, not the alerts. The provision job opens an alert processing rule,
+A DEV deploy requests suppression of mails while leaving alerts visible. When the request succeeds,
+the provision job opens an alert processing rule,
 `apr-cleansia-<region>-<env>-deploy`, that removes the action groups from every alert raised in the
 resource group: the alerts still fire and stay visible in Monitor > Alerts, and only the mails are
 suppressed. It opens set to lapse after **120 minutes**, so a run that never reaches its end cannot mute
@@ -667,6 +693,10 @@ cancelled — and rewrites the rule to lapse **25 minutes** later, because an al
 deploy resolves up to a 15-minute window plus a 5-minute evaluation afterwards, and that Resolved mail is
 the deploy's too. The workflow owns the rule, not Bicep; `deploy/AZURE-DEV-RUNBOOK.md` §0 says why. Prod
 has no quiet window.
+
+The rule requests warn and continue on failure. Deployment `38660355359`, attempt 3, retained
+`MissingSubscriptionRegistration` for `Microsoft.AlertsManagement` in its close job; that successful
+job conclusion does not prove the rule was shortened or mail was muted.
 
 ### Reading API telemetry
 

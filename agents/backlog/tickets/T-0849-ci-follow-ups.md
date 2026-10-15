@@ -4,7 +4,7 @@ title: CI follow-ups — move to Ubuntu 26.04 deliberately, let Dependabot updat
 size: S
 owner: pm
 created: 2026-10-12
-updated: 2026-10-14
+updated: 2026-10-15
 depends_on: [T-0838]
 blocks: []
 stories: []
@@ -58,7 +58,7 @@ These are surprises in the CI ground truth of 2026-10-12 that no ruling covered.
 
 - [ ] **AC1** — Before any switch, the PR workflows pass on `ubuntu-26.04` on one exact head, and the deploy workflows pass on an approved DEV deploy. Otherwise 24.04 stays, with the reason recorded here.
 - [x] **AC2** — Dependabot's config validates and covers the pinned actions. It never proposes gradle/actions v6.
-- [ ] **AC3** — deploy-docs carries no "Unexpected input" annotation. This needs a deploy-docs dispatch, which is a deployment, so it waits for Mike's approval.
+- [x] **AC3** — deploy-docs carries no "Unexpected input" annotation. This needs a deploy-docs dispatch, which is a deployment, so it waits for Mike's approval.
 - [x] **AC4** — `dotnet-ef` installs at the EF Core version.
 - [x] **AC5** — No file refers to a `Cleansia.Web` project or to the deleted Dockerfile, and the backend builds.
 - [x] **AC6** — On Mike's word, CLAUDE.md's quick reference matches `package.json`.
@@ -392,6 +392,60 @@ This P5 closure is prepared to be the **first commit of P6**.
 - The original run completed 24 commands and stopped before Customer at `2026-10-14T22:41:20.123952+00:00` on the unchanged 2.5 GB capacity guard. The stopped receipt is retained unchanged (SHA256 `c3b3862d8c6733f26bd54fd19a66091ad99eb25aee7f531369c175d16f3513cf`). A separately reviewed and admitted Customer-only continuation supplied six further commands, using this same run's fresh DerivedData and private cloned package cache. Android/Core/Partner suites were not rerun, and no previous-phase Products were used. This is one capacity pause and continuation, not a failed-test retry.
 - The local mobile gate ran both iOS API-client generations through `./scripts/generate-api-clients.sh`, XcodeGen in both app directories, SwiftFormat lint before strict SwiftLint, and the three build/test schemes. Android generation tasks also executed within the fresh compile/unit invocations. The complete source proofs retain all 8,258 tracked working-byte/Git-blob/mode identities, with the known working-CRLF/raw-Git-LF `gradlew.bat` qualification. No contract/model/migration change is added. Full mobile final: `/Users/michael/.codex/scratchpads/cleansia-next-wave-2026-10-13/p6/full-mobile001/final.json` (SHA256 `cb493f835abdc65afaffec7dc3c94070c83818a6144cbfc0e8808ccca7a6e701`); sealed packet SHA256 `4e969d0ac98da4446f8dec65eb41c8ac372fbb1f0d217eb6fca0b6987deb38a7`. Exact commands, raw maps, source/product bindings and the stop/continuation remain in the retained receipts and `actual-gate-records-preparation003/actual-gate-facts.json`.
 - These are local command results. There is no new iOS-floor, device, provider, PaymentSheet, R8 or VoiceOver acceptance. Hosted CI, publication and END execution remain separate. All local source suites are now recorded; actual publication closure is still owed.
+
+### P6 publication closure — 2026-10-15
+
+- The P6 follow-up for FF-13 CLAUDE table cross-reference was published in [#337](https://github.com/VM-s-Solutions/cleansia/pull/337), head `da03f005d99c60e3acbae7fef5b5f0bc16a17156`, merged as `cfeed43c1ca3defd0b85ca500e109a8ead9b7e6e`. The first P5 closure and merge-then-prove history are preserved; AC1/AC3 and END runtime remain open. The actual PR/master outcomes, expected skipped job, annotation qualifications, zero reruns and UTC capture timing are retained in the [PR publication closure](/Users/michael/.codex/scratchpads/cleansia-next-wave-2026-10-13/p6/pr337-ci-merge-closure001.json) and [master CI closure](/Users/michael/.codex/scratchpads/cleansia-next-wave-2026-10-13/p6/master-ci-complete001.json).
+
+
+Shared publication evidence: `/Users/michael/.codex/scratchpads/cleansia-next-wave-2026-10-13/end/final-records-preparation001/publication-facts.json` (SHA256 `8d709a85b776d2c014c68bf0cf76d7d71c9ccccbe90bfb3505a293a3bd63616f`), with exact retained PR/merge/master-CI, annotation and local/rebind receipt pins.
+
+### END actual execution and SSR blocker — 2026-10-15
+
+The P6 publication subsection above is an earlier checkpoint. Its END-pending or unexecuted wording is historical and is superseded by this actual partial-execution record; original dated phase history and owner quotes remain unchanged.
+
+The dated merge-then-prove history is retained. P5's actual hosted Ubuntu26 CI passed, and END what-if plus the real DEV build/provision/migration ran on the approved definitions; this is actual runner execution, but it does not complete **AC1** because the full DEV deployment ended with failed customer SSR readiness after the three web API retry jobs passed. **AC1 stays unchecked; INDEX is blocked on Q-END-01** for the missing SSR runtime/worker evidence. No revert or source correction is inferred from the unknown cause.
+
+**AC3 is now checked:** the single authorized docs deployment `38658881649` / attempt 1 passed VitePress and SWA upload on the pinned final master, with zero stored annotations and no Unexpected-input/Node20/integrity-warning matches. An authenticated docs-reader session was not tested. Runtime attempt-1 compiler/Buffer warnings and attempt-2 failure/warning/notice evidence remain preserved; this is no zero-warning full-deploy claim. The four seeds, post-seed health and final host/SSR probes were never completed.
+
+Shared END actuals and qualified evidence pins: `/Users/michael/.codex/scratchpads/cleansia-next-wave-2026-10-13/end/final-records-preparation002/end-outcome-facts.json` (SHA256 `8c49656e9f9dfecd936cf0386846fb958cbb64d0eb55f6dc8b67e965de0c3695`).
+
+
+### Owner reply and resumed DEV procedure — 2026-10-15
+
+This is the checkpoint after the earlier END/SSR blocker above. Q-END-01 was answered and removed from the open queue; it does not require another owner diagnostic before the already-authorized work continues. The cause of the earlier process outage remains unestablished.
+
+Mike’s replies, verbatim, 2026-10-15:
+
+> All of the services are healthy. It happens all the time that after deployment it takes some time to start up the service and if fails in the beginning. I want you to investigate this issue and make the start up almost immediate without issues
+
+> There is no seed data which is expected on backend (language,currency, so on)
+
+Fresh sequential HTTP checks at 07:51 UTC passed all five API `/health` endpoints with exact `Healthy` bodies and both customer SSR origins with the server-render marker, before any of the four seeds. This establishes recovery before seeding, not a missing-seed cause. The original deployment `38660355359` recovered as attempt 3 after rerunning only its failed Warm job: all 16 job conclusions are successful, with 14 carried executions and only Warm `116312011258` and Close `116312189668` freshly executed. Earlier attempt-1/2 failures remain retained. The close job still reports `MissingSubscriptionRegistration`; shortening/muting is not proved.
+
+On unchanged master `cfeed43c1ca3defd0b85ca500e109a8ead9b7e6e`, DEV-only SQL scripts then ran one at a time after fresh master and all three workflow-dispatch queue inventories:
+
+- `prod-bootstrap.sql`: run `38702440461`, attempt 1, committed at 07:59:52.9004135 UTC.
+- `insert_seed_data.sql`: run `38702856219`, attempt 1, committed at 08:03:19.5675480 UTC.
+- `insert_local_dev_admin.sql`: run `38703413453`, attempt 1, actual `INSERT 0 1` at 08:08:09.1632115 UTC. Its source leaves `MustChangePassword=false`; no forced password-change or authenticated console exercise is claimed.
+- `seed/insert_email_template_translations_promo_code.sql`: run `38703639106`, attempt 1, failed at 08:09:49.4004421 UTC because `UpdatedOn` is `timestamptz` while its derived VALUES column is inferred as text. The single rejected INSERT wrote no prefix. Both nullable timestamp columns need explicit typing, with a real PostgreSQL regression before correction.
+
+The first three scripts must not be replayed. The current END obligation is a reviewed source correction on the startup branch, retrying only that failed seed after merge, then `check-db-health.sql` and final five-API/two-SSR readiness. No further reset, storage emptying, PRO operation or docs dispatch is added. Existing Initial `20261013160545_Initial` remains unchanged. Startup reliability work revisits existing T-0636 separately; no earlier outage cause or speed improvement is claimed yet.
+
+Actual receipts are retained under `/Users/michael/.codex/scratchpads/cleansia-next-wave-2026-10-13/startup-2026-10-15/resume-end001/`. Independent attempt-3/bootstrap/fixtures/admin reviews and the confirmed promo failure are under `startup-2026-10-15/resume-end-review001/`; the promo finding SHA256 is `35d4974400e501cfe0d02b8468c249f631feea19356cdb93eca0ba2668e84db3`. Final seeded health and the applicable acceptance criteria remain unchecked.
+
+### Startup correction and remaining END completion — 2026-10-15
+
+The dated END and resumed-procedure sections above remain the record of their capture times. Q-END-01 is answered; the original deployment `38660355359` recovered on Warm-only attempt 3, with 14 carried and two fresh successful jobs. Its earlier failures remain retained. The three successful seeds `38702440461`, `38702856219` and `38703413453` are not replayed. The promo seed's failed run `38703639106` remains a failed first attempt.
+
+The promo script's minimal source correction now passed its exact-script real-PostgreSQL regression, including all 60 translations across five languages and 12 keys, with unchanged complete rows after a repeat. Only the two first-tuple nullable timestamp casts changed. The Initial migration, schema and generated contracts remain unchanged. Startup implementation, scoped reviews and completed local gates are recorded on [T-0636](T-0636-deployment-startup.md); they do not substitute for the following END actuals.
+
+- Resulting-master startup publication and DEV rollout: outstanding at this checkpoint; no startup publication or resulting-master startup rollout has occurred.
+- Retry of only the failed promo script, from the merged correction: outstanding at this checkpoint; retry only failed run `38703639106` from the merged correction.
+- Read-only `check-db-health.sql` and final exact Healthy responses from all five APIs plus both server-rendered SSR origins: outstanding at this checkpoint; earlier warm responses and approximate statistics do not establish final seeded readiness.
+- Acceptance disposition after those results: unmet at this checkpoint. Until the required live results are recorded, the applicable END criterion remains unchecked and INDEX remains `in_progress`.
+
+There is one database reset in this END procedure. No second reset, replay of the first three seeds, storage emptying, further docs deployment or PRO operation is added. The published admin's existing `MustChangePassword=false` and absence of an authenticated console exercise remain qualified. The attempt-3 quiet-window close warning `MissingSubscriptionRegistration` remains retained; a successful job conclusion is not proof of mail suppression.
 
 ## Review
 

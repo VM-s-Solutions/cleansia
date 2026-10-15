@@ -447,6 +447,16 @@ The promo script's minimal source correction now passed its exact-script real-Po
 
 There is one database reset in this END procedure. No second reset, replay of the first three seeds, storage emptying, further docs deployment or PRO operation is added. The published admin's existing `MustChangePassword=false` and absence of an authenticated console exercise remain qualified. The attempt-3 quiet-window close warning `MissingSubscriptionRegistration` remains retained; a successful job conclusion is not proof of mail suppression.
 
+### PR #338 publication and failed startup rollout — 2026-10-15
+
+The earlier publication-pending checkpoint is superseded by these dated actuals. [PR #338](https://github.com/VM-s-Solutions/cleansia/pull/338) merged as `c54d3d64e777d5042572231b1ce2db0990e67306`, SHA-guarded on reviewed head `3a480403e7e48a8d6f8369b5a343f32211a877aa` and base `cfeed43c1ca3defd0b85ca500e109a8ead9b7e6e`. The merge retained reviewed tree `12206772eab4070624c197d5bd9af2a0f56facba`. PR CI passed all six jobs across five triggered workflows, attempt 1, no reruns, retaining 11 warnings (10 Backend, one e2e artifact-retention) and zero failure annotations. Exact-merge master CI completed four executed jobs successfully across four workflows; Frontend `e2e-smoke` was the fifth job view and was skipped on push. All were attempt 1 with no reruns; ten Backend warning annotations and zero failure annotations remain. The skip supplies no executed test pass.
+
+The resulting-master rollout `38766841247` / attempt 1 failed with nine successful, six failed and one skipped job; 30 annotations retain 18 warnings and 12 failures. All six SCM package attempts have **UNVERIFIED** committed outcomes and no verified final package JSON or structured activation timings. `Warm dev sites` was skipped. The qualified step count is 18 PRO-only skips plus five DEV API warm-step skips, not 23 PRO-only steps. No new migrations were applied; the bundle reported the database already up to date. Nine retained CRC/digest-checked producer archives total 358,521,552 bytes, with six artifact-ID consumer bindings and three qualified name bindings; no live package verification is inferred.
+
+The stopped observer's 924 samples (588 healthy, 336 five-second curl-28/HTTP-zero timeouts; first round healthy, last round timed out) are dated samples, not continuous or final readiness proof. A separately confirmed owned loopback early-401/403 large-request `BrokenPipeError` reproducer establishes diagnostic ambiguity only, not an Azure authentication cause or October incident cause. Transport follow-up is being prepared separately; no corrected deployment/new PR or executed read-only diagnosis is claimed. Full actual qualifications and immutable evidence digests are on [T-0636](T-0636-deployment-startup.md).
+
+No promo retry or final seeded DB/HTTP acceptance followed the failed dependency. The three successful seeds `38702440461`/`38702856219`/`38703413453` must not be replayed; only failed promo `38703639106` remains a future retry. Original deployment attempts 1–3, earlier failures and the single reset stay historical. No additional reset, docs dispatch, storage emptying or PRO work is added. The applicable END criterion remains unmet, INDEX remains `in_progress` and MS-2 remains Open.
+
 ## Review
 
 Pending.

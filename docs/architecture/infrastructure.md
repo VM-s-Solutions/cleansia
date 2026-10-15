@@ -540,8 +540,17 @@ inspects attempt 1 for the six fixed weu DEV apps, under `dev-weu` OIDC and the 
 group. It compares bounded deployment-list GETs with default ARM and App Service tokens held in
 memory. An authenticated App Service response permits exact prior-run UUID/deployer correlation,
 exact deployment GETs and every observed pending/temporary record, including foreign deployments.
-An absent prefix never proves that an earlier upload did not arrive. Unknown/unsafe records and
-ambiguous identities remain unverified. The separate active observation returns streamed archive
+The saved before/after lists retain one sanitized snapshot per returned row, with row positions,
+valid/invalid counts and fixed reason codes. Malformed or credential-bearing values, unrecognized
+deployer text and raw setting values are omitted; safe duplicate identities are retained and flagged.
+A second App Service list GET after the byte checks
+reports whether the sanitized deployment facts (including a valid optional active flag) stayed stable
+and terminal; missing, malformed or changed lists cannot establish that state. A selected detail
+record must agree with its list record's identity, status, completion and temporary flags before
+historical verification succeeds. The effective
+`WEBSITE_RUN_FROM_PACKAGE` setting is queried as `enabled` (exactly `1`), `absent` or `other`, without
+printing its value. An absent prefix never proves that an earlier upload did not arrive. Unknown/unsafe
+records and ambiguous identities remain unverified. The separate active observation returns streamed archive
 and live-entry SHA256/size plus a pointer read before and after; `stable-uncompared` requires independent
 comparison with retained artifacts. It does not assert that the active bytes belong to the prior run.
 The [Kudu read APIs](https://github.com/projectkudu/kudu/wiki/REST-API) are bounded by the ten-minute

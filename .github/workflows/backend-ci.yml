@@ -31,6 +31,7 @@ on:
       - '.github/workflows/backend-ci.yml'
       - '.github/scripts/deploy_package.py'
       - '.github/scripts/test_deploy_package.py'
+      - '.github/workflows/diagnose-dev.yml'
       - '.github/workflows/deploy-azure.yml'
       - 'deploy/bicep/main.bicep'
   push:
@@ -45,6 +46,7 @@ on:
       - '.github/workflows/backend-ci.yml'
       - '.github/scripts/deploy_package.py'
       - '.github/scripts/test_deploy_package.py'
+      - '.github/workflows/diagnose-dev.yml'
       - '.github/workflows/deploy-azure.yml'
       - 'deploy/bicep/main.bicep'
 

@@ -251,16 +251,25 @@ class PackageAndProbeTests(OfflineCase):
 
     def test_fixed_restart_requires_204_and_never_exposes_token(self):
         def response(arguments, **kwargs):
-            self.assertIn('--max-redirs', arguments)
-            self.assertIn('--proxy', arguments)
-            self.assertEqual(arguments[-1], 'https://management.azure.com' + trial.plan_id() + '/restartSites?softRestart=false&api-version=2024-04-01')
+            self.assertEqual(arguments, ['curl', '--disable', '--silent', '--request', 'POST', '--proto', '=https',
+                '--proxy', '', '--noproxy', '*', '--max-redirs', '0', '--retry', '0', '--max-time', '30',
+                '--connect-timeout', '3', '--max-filesize', '65536', '--header', '@-',
+                '--output', arguments[arguments.index('--output') + 1], '--write-out', '%{http_code}',
+                'https://management.azure.com' + trial.plan_id() + '/restartSites?softRestart=false&api-version=2024-04-01'])
             self.assertNotIn('credential-needle', repr(arguments))
-            self.assertEqual(kwargs['stdin'], b'Authorization: Bearer credential-needle\n')
-            return b'204'
-        with patch.object(trial.package, 'az_value', return_value='credential-needle'), patch.object(trial, 'command', side_effect=response):
-            self.assertEqual(trial.restart_sites(), 204)
-        with patch.object(trial.package, 'az_value', return_value='credential-needle'), patch.object(trial, 'command', return_value=b'202'), self.assertRaises(ValueError):
-            trial.restart_sites()
+            self.assertEqual(kwargs['input'], b'Authorization: Bearer credential-needle\n')
+            self.assertIs(kwargs['stderr'], subprocess.DEVNULL)
+            self.assertFalse(kwargs['check'])
+            self.assertEqual(kwargs['timeout'], 9)
+            kwargs['stdout'].write(b'204')
+            return subprocess.CompletedProcess(arguments, 0)
+        self.process.side_effect = response
+        with patch.object(trial.package, 'az_value', return_value='credential-needle') as token, \
+             patch.object(trial.time, 'monotonic', return_value=100):
+            self.assertEqual(trial.restart_sites(109), 204)
+        self.process.assert_called_once()
+        token.assert_called_once()
+        self.assertFalse(any(row['kind'] == 'restart-control-plane-failed' for row in trial.EVENTS))
         self.assertNotIn('credential-needle', self.stdout.getvalue())
 
     def test_warm_200_is_inconclusive_and_negative_transition_recovers(self):
@@ -1063,6 +1072,78 @@ class InventoryBindingTests(OfflineCase):
         self.assertEqual(command.call_args.args[1], 1.0)
         self.assertIsNone(rows['value'][0]['plan'])
         self.process.assert_not_called()
+
+
+class RestartDiagnosticTests(OfflineCase):
+    def response(self, status, exit_code=0, error=None):
+        def respond(arguments, **kwargs):
+            Path(arguments[arguments.index('--output') + 1]).write_bytes(b'secret-body-needle')
+            kwargs['stdout'].write(status)
+            if error is not None:
+                raise error
+            return subprocess.CompletedProcess(arguments, exit_code)
+        return respond
+
+    def failure(self, category, **facts):
+        rows = [row for row in trial.EVENTS if row['kind'] == 'restart-control-plane-failed']
+        self.assertTrue(rows, 'restart failure diagnostic missing')
+        row = rows[-1]
+        self.assertEqual(set(row), {'kind', 'utc', 'elapsed_seconds', 'failure_category', *facts})
+        self.assertEqual(row['failure_category'], category)
+        for key, value in facts.items():
+            self.assertIs(type(row[key]), int)
+            self.assertEqual(row[key], value)
+        self.assertFalse(any(row['kind'] == 'restart-control-plane-return' for row in trial.EVENTS))
+        raw = self.stdout.getvalue() + ''.join(path.read_text() for path in trial.DIRECTORY.iterdir())
+        for withheld in ('credential-needle', 'secret-body-needle', 'secret-error-needle',
+                         'secret-needle', 'https://', trial.plan_id()):
+            self.assertNotIn(withheld, raw)
+
+    def test_non204_status_is_numeric_and_fails_closed_without_body(self):
+        for status in (202, 400, 401, 403, 409, 429, 500):
+            with self.subTest(status=status), patch.object(trial.package, 'az_value', return_value='credential-needle'):
+                self.process.side_effect = self.response(str(status).encode())
+                with self.assertRaises(ValueError):
+                    trial.restart_sites()
+                self.failure('http-status-not-204', http_status=status, curl_exit_code=0)
+        self.assertEqual(self.process.call_count, 7)
+
+    def test_curl_failure_keeps_only_valid_status_and_exit_code(self):
+        for status, code in ((b'403', 63), (b'204', 28), (b'000', 7), (b'', -15)):
+            with self.subTest(status=status, code=code), patch.object(trial.package, 'az_value', return_value='credential-needle'):
+                self.process.side_effect = self.response(status, code)
+                with self.assertRaises(ValueError):
+                    trial.restart_sites()
+                facts = {'http_status': int(status)} if status in (b'403', b'204') else {}
+                self.failure('curl-exit', curl_exit_code=code, **facts)
+        self.assertEqual(self.process.call_count, 4)
+
+    def test_malformed_and_oversize_status_is_withheld_and_fails_closed(self):
+        for status in (b'', b'000', b'099', b'600', b'204\n', b'\xff', b'secret-needle', b'204' + b'x' * 14):
+            with self.subTest(status=status), patch.object(trial.package, 'az_value', return_value='credential-needle'):
+                self.process.side_effect = self.response(status)
+                with self.assertRaises(ValueError):
+                    trial.restart_sites()
+                self.failure('status-output-bound' if len(status) > 16 else 'http-status-invalid', curl_exit_code=0)
+        self.assertEqual(self.process.call_count, 8)
+
+    def test_timeout_and_launch_error_withhold_raw_exception_and_keep_partial_status(self):
+        for error, category, status in (
+                (subprocess.TimeoutExpired(['curl', 'secret-error-needle'], 30, output=b'secret-error-needle'), 'curl-timeout', b'503'),
+                (FileNotFoundError('secret-error-needle'), 'curl-process-error', b'')):
+            with self.subTest(category=category), patch.object(trial.package, 'az_value', return_value='credential-needle'):
+                self.process.side_effect = self.response(status, error=error)
+                with self.assertRaises(type(error)):
+                    trial.restart_sites()
+                self.failure(category, **({'http_status': 503} if status else {}))
+        self.assertEqual(self.process.call_count, 2)
+
+    def test_expired_shared_deadline_performs_no_curl(self):
+        with patch.object(trial.package, 'az_value', return_value='credential-needle'), \
+             patch.object(trial.time, 'monotonic', return_value=100), self.assertRaises(TimeoutError):
+            trial.restart_sites(99)
+        self.process.assert_not_called()
+        self.failure('deadline-exhausted')
 
 
 if __name__ == '__main__':

@@ -233,7 +233,7 @@ def read_plan(capacity, allowed=('B2', 'B3'), require_ready=True, deadline=None)
           identity_matches=type(selected.get('id')) is str and selected['id'].lower() == plan_id().lower(),
           name_matches=type(selected.get('name')) is str and selected['name'] == PLAN,
           resource_type_matches=type(selected.get('type')) is str and selected['type'].lower() == 'microsoft.web/serverfarms',
-          location_matches=type(selected.get('location')) is str and selected['location'] == 'westeurope',
+          location_matches=type(selected.get('location')) is str and selected['location'] in ('westeurope', 'West Europe'),
           location=selected.get('location') if type(selected.get('location')) is str and selected['location'] in ('westeurope', 'West Europe') else 'unrecognized',
           configuration_shape='object' if type(configuration) is dict else 'null' if configuration is None else 'unsupported',
           configuration_nonempty=type(configuration) is dict and bool(configuration),
@@ -248,7 +248,8 @@ def read_plan(capacity, allowed=('B2', 'B3'), require_ready=True, deadline=None)
                  ('provisioning', ('Succeeded', 'Updating', 'Failed', 'Canceled', 'Accepted', 'InProgress', 'Creating', 'Deleting')))})
     if (not isinstance(data, dict) or str(data.get('id', '')).lower() != plan_id().lower()
             or data.get('name') != PLAN or str(data.get('type', '')).lower() != 'microsoft.web/serverfarms'
-            or data.get('location') != 'westeurope' or data.get('reserved') is not True
+            or type(data.get('location')) is not str or data.get('location') not in ('westeurope', 'West Europe')
+            or data.get('reserved') is not True
             or data.get('perSiteScaling') is not False or data.get('tier') != 'Basic'
             or data.get('sku') not in allowed or type(data.get('capacity')) is not int
             or type(data.get('workers')) is not int or data['capacity'] != capacity or data['workers'] != capacity

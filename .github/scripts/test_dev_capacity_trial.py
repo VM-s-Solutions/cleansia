@@ -750,21 +750,40 @@ class ObservationDiagnosticTests(OfflineCase):
         self.process.assert_not_called()
 
 
-    def test_location_projection_distinguishes_display_variant_without_admitting_it(self):
-        for location, selected in (('West Europe', 'West Europe'), ('northeurope', 'unrecognized'),
-                                   ('credential-needle.example', 'unrecognized'), (['credential-needle'], 'unrecognized')):
-            with self.subTest(location=selected), patch.object(trial, 'arm', return_value=self.raw_plan(location=location)):
+    def test_location_projection_accepts_only_two_exact_west_europe_strings(self):
+        class StringSubclass(str):
+            pass
+        rejected = ('northeurope', 'WESTEUROPE', 'west europe', 'WestEurope', 'westeurope ', ' West Europe',
+                    'West Europe\n', '', 'credential-needle.example', None, True, 1, ['credential-needle'],
+                    {'credential-needle': 'secret'}, StringSubclass('westeurope'), StringSubclass('West Europe'))
+        for location in rejected:
+            with self.subTest(kind=type(location).__name__), patch.object(trial, 'arm', return_value=self.raw_plan(location=location)):
                 with self.assertRaisesRegex(ValueError, '^fixed-plan-state-guard$'):
                     trial.read_plan(1)
-            observation = trial.EVENTS[-1]
-            self.assertEqual(observation.get('location'), selected)
-            self.assertFalse(observation['location_matches'])
-        with patch.object(trial, 'arm', return_value=self.raw_plan(location='westeurope')):
-            self.assertEqual(trial.read_plan(1)['sku'], 'B2')
-        self.assertEqual(trial.EVENTS[-1]['location'], 'westeurope')
-        self.assertTrue(trial.EVENTS[-1]['location_matches'])
+                observation = trial.EVENTS[-1]
+                self.assertEqual(observation.get('location'), 'unrecognized')
+                self.assertFalse(observation['location_matches'])
+        for location in ('westeurope', 'West Europe'):
+            with self.subTest(location=location), patch.object(trial, 'arm', return_value=self.raw_plan(location=location)):
+                try:
+                    observed = trial.read_plan(1)
+                except ValueError:
+                    self.fail('documented fixed West Europe representation unexpectedly rejected')
+                self.assertEqual(observed['sku'], 'B2')
+                self.assertEqual(trial.EVENTS[-1]['location'], location)
+                self.assertTrue(trial.EVENTS[-1]['location_matches'])
         self.assertNotIn('northeurope', self.stdout.getvalue())
         self.assertNotIn('credential-needle', self.stdout.getvalue())
+        self.process.assert_not_called()
+
+    def test_display_region_does_not_relax_other_fixed_plan_guards(self):
+        invalid = ({'id': trial.plan_id() + '-foreign'}, {'name': 'other'}, {'reserved': False},
+                   {'capacity': 2}, {'workers': 2}, {'perSiteScaling': True}, {'status': 'Scaling'},
+                   {'provisioning': 'Updating'}, {'configuration': {}})
+        for change in invalid:
+            with self.subTest(field=next(iter(change))), patch.object(trial, 'arm', return_value=self.raw_plan(location='West Europe', **change)):
+                with self.assertRaisesRegex(ValueError, '^fixed-plan-state-guard$'):
+                    trial.read_plan(1)
         self.process.assert_not_called()
 
 

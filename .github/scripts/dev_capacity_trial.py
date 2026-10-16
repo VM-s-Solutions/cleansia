@@ -274,16 +274,59 @@ def inventory(deadline=None):
     for _ in range(10):
         data = azure(['rest', '--method', 'get', '--url', url, '--query',
                       '{value:value[].{id:id,name:name,plan:properties.serverFarmId,state:properties.state},nextLink:nextLink}'], deadline=deadline)
+        event('inventory-page-selected', page_index=_,
+              response_shape={dict: 'object', list: 'array', str: 'string', bool: 'boolean', int: 'integer',
+                              float: 'number', type(None): 'null'}.get(type(data), 'unsupported'),
+              value_shape='missing' if type(data) is not dict or 'value' not in data else
+                  {dict: 'object', list: 'array', str: 'string', bool: 'boolean', int: 'integer',
+                   float: 'number', type(None): 'null'}.get(type(data['value']), 'unsupported'),
+              value_count=len(data['value']) if type(data) is dict and type(data.get('value')) is list
+                  and len(data['value']) <= 100 else None,
+              value_within_bound=type(data) is dict and type(data.get('value')) is list and len(data['value']) <= 100,
+              next_link_present=type(data) is dict and 'nextLink' in data,
+              current_page_known_counts={name: sum(type(row) is dict and type(row.get('name')) is str and row['name'] == name
+                  for row in data['value']) if type(data) is dict and type(data.get('value')) is list
+                  and len(data['value']) <= 100 else None for name in OCCUPANTS},
+              current_page_unrecognized_name_count=sum(type(row) is dict and not
+                  (type(row.get('name')) is str and row['name'] in OCCUPANTS) for row in data['value'])
+                  if type(data) is dict and type(data.get('value')) is list and len(data['value']) <= 100 else None,
+              current_page_nonobject_count=sum(type(row) is not dict for row in data['value'])
+                  if type(data) is dict and type(data.get('value')) is list and len(data['value']) <= 100 else None,
+              validated_prefix_counts={name: int(name in seen) for name in OCCUPANTS},
+              coverage='received-current-page-and-validated-prefix-before-current-page')
         if not isinstance(data, dict) or not isinstance(data.get('value'), list) or len(data['value']) > 100:
             raise ValueError('occupancy-response-guard')
+        page_prefix_count = len(seen)
         for item in data['value']:
             if (not isinstance(item, dict) or item.get('name') not in OCCUPANTS or item['name'] in seen
                     or str(item.get('id', '')).lower() != (base() + '/sites/' + item['name']).lower()
                     or str(item.get('plan', '')).lower() != plan_id().lower()):
+                event('inventory-row-rejected', page_index=_, row_index=len(seen) - page_prefix_count,
+                      row_shape={dict: 'object', list: 'array', str: 'string', bool: 'boolean', int: 'integer',
+                                 float: 'number', type(None): 'null'}.get(type(item), 'unsupported'),
+                      known_name=item['name'] if type(item) is dict and type(item.get('name')) is str
+                          and item['name'] in OCCUPANTS else 'unrecognized',
+                      name_expected=type(item) is dict and type(item.get('name')) is str and item['name'] in OCCUPANTS,
+                      field_presence={key: type(item) is dict and key in item for key in ('name', 'id', 'plan')},
+                      field_shapes={key: 'missing' if type(item) is not dict or key not in item else
+                          {dict: 'object', list: 'array', str: 'string', bool: 'boolean', int: 'integer',
+                           float: 'number', type(None): 'null'}.get(type(item[key]), 'unsupported')
+                          for key in ('name', 'id', 'plan')},
+                      id_matches=type(item) is dict and type(item.get('name')) is str and item['name'] in OCCUPANTS
+                          and type(item.get('id')) is str and item['id'].lower() == (base() + '/sites/' + item['name']).lower(),
+                      plan_matches=type(item) is dict and type(item.get('plan')) is str and item['plan'].lower() == plan_id().lower(),
+                      duplicate_known_name=type(item) is dict and type(item.get('name')) is str
+                          and item['name'] in OCCUPANTS and item['name'] in seen,
+                      validated_prefix_counts={name: int(name in seen) for name in OCCUPANTS},
+                      coverage='validated-prefix-before-first-rejected-row')
                 raise ValueError('seven-occupant-guard')
             seen[item['name']] = {'name': item['name'], 'bound_to_fixed_plan': True, 'running': item.get('state') == 'Running'}
         next_link = data.get('nextLink')
         if not next_link:
+            event('inventory-terminal-selected', page_index=_,
+                  validated_prefix_counts={name: int(name in seen) for name in OCCUPANTS},
+                  missing_known_names=[name for name in OCCUPANTS if name not in seen],
+                  coverage='terminal-by-existing-next-link-condition')
             if set(seen) != set(OCCUPANTS):
                 raise ValueError('seven-occupant-guard')
             return [seen[app] for app in sorted(seen)]

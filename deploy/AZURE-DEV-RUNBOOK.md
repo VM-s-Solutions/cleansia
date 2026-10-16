@@ -984,6 +984,8 @@ health/populated rendering. Initial and final readiness also check every API. Re
 bounds and cadence; an immediate warm response is inconclusive until a negative transition or
 responding SSR process uptime reset is observed. SSR uptime describes that process only. The evidence
 separates first availability, first post-boundary success and its second confirmation.
+Initial/final and pre-restart full-page SSR admission may wait 20 seconds for complete HTML; timed
+startup requests remain capped at five seconds, and existing shared deadlines still apply.
 
 B3 restoration is attempted within 25 minutes of its intent, with cleanup time reserved in the
 75-minute job. Ordinary failures and termination enter guarded recovery. A killed runner, forced

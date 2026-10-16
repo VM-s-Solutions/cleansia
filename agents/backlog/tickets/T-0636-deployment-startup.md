@@ -260,6 +260,18 @@ Source application, helper 66/full local gates, publication, CI and a live diagn
 
 Pins: `/Users/michael/.codex/scratchpads/cleansia-next-wave-2026-10-13/startup-2026-10-15/public-observation-source-records-preparation001/CLAIMS-AND-PINS001.json`.
 
+### PR #343 source and CI closure — 2026-10-16 UTC
+
+[PR #343](https://github.com/VM-s-Solutions/cleansia/pull/343) merged C8 `f3b1db5c7e90` as M4 `440a7e96a2ef`, retaining tree `58a56ad1cf80` and parents M3 then C8. The curl metrics correction and fixed DEV plan/binding GETs are merged; this is diagnostic collection source, with no startup-speed or causal-fix claim.
+
+Same-C8 local gates record seven successes and one YAML consistency unsupported/NOT RUN: Python 66/66 (37.737 s), docs 7,479 files/422 references/0 unresolved, catalog 0 claim/reach failures/163 advisories, private docs build 12.35 s (606 files/174 HTML), actionlint 14 workflows, secret history 2,486 reported commits/no leaks (raw Git 2,656), and diff check. Application results remain qualified prior carry: Backend 10,218, Frontend 5,070 plus seven fixture Chromium cases, Android 2,873, iOS 3,688 plus one VoiceOver skip on 18.6, without a new 16.4/device/provider result. Prior failures, compilation/cache reuse and fixture limits remain.
+
+PR CI passed 5 workflows/6 jobs/6 checks; resulting master passed 3/3/3, all attempt 1/zero reruns. Each freshly passed Backend 8,733/976/509 plus Python 66 (PR 37.459 s; master 40.047 s). The PR's seven Chromium fixture cases use synthetic merge `4a3bfdeac458`; artifact `12036103446` had one GET. Affected Jest/lint selected no tasks; Android compile/unit targets were FROM-CACHE and iOS did not trigger. Both fresh Frontend npm summaries report 16 findings (1 low/2 moderate/13 high); prior PR #342's 17 is historical, with unchanged lockfiles and no remediation/triage claim. Warning/advisory and artifact-retention limits remain.
+
+At this source/CI closure checkpoint, a new live diagnostic and final DB health/13 anonymous HTTP acceptance remain pending. Prior rollout failure, NULL public status/timing observations and selected-package/worker-identity limits remain history. Promo is complete/no replay. All seven unchecked criteria, four INDEX `in_progress` rows and MS-2 Open remain; B3 approval is pending under the cost ban, with no capacity change.
+
+Exact local/CI/merge actuals, raw references and qualifications: `/Users/michael/.codex/scratchpads/cleansia-next-wave-2026-10-13/startup-2026-10-15/pr343-closure-preparation001/CLAIMS-AND-PINS001.json`.
+
 ## Review
 
 The scoped correctness/security and exact final record/publication assessments are retained with their recorded limits. PR #338 and exact-head/master CI are complete as dated above. The new resulting-master rollout failed with unverified SCM outcomes; live package/readiness acceptance and the applicable criteria remain unmet. The transport source/local verification and qualified fresh application results are recorded above. Final operations/source binding, publication, diagnostic execution and live acceptance remain required at this dated checkpoint.

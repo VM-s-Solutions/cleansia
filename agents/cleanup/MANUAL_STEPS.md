@@ -354,6 +354,10 @@ The one-YAML diagnostic evidence candidate has scoped correctness/security and c
 
 [T-0636](../backlog/tickets/T-0636-deployment-startup.md#public-metrics-correction-and-dev-plan-observation--2026-10-16-utc-prelaunch) records the off-tree curl correction and fixed read-only DEV plan/binding observation, finite mock results and qualifications. Source application, helper 66/full local gates, publication, CI and a live diagnostic remain pending here. No live SKU/count/binding, OOM, initiating cause or readiness conclusion. **MS-2 remains Open**; criteria, four INDEX dispositions and all prior history remain. B3 approval is pending and the cost ban stands. Successful prior operations/promo are not replayed; final DB/13 HTTP remain unperformed.
 
+#### 2026-10-16 UTC — PR #343 source and CI closure
+
+[T-0636](../backlog/tickets/T-0636-deployment-startup.md#pr-343-source-and-ci-closure--2026-10-16-utc) records merged PR #343/C8/M4, exact local/hosted CI actuals and qualified prior application carry. This source/CI checkpoint leaves the new live diagnostic and final DB health/13 anonymous HTTP acceptance pending. All prior failures, observations, quotes and qualifications remain history. **MS-2 remains Open**; all seven unchecked criteria and four INDEX `in_progress` dispositions remain unchanged. Successful reset/docs/bootstrap/fixtures/admin/promo are not replayed. B3 approval remains pending under the cost ban; no capacity change or startup/readiness/cause conclusion follows from source CI.
+
 ### MS-9 — Invite yourself to the admin console — **DEV verified 2026-09-11**
 
 The owner confirmed the DEV site's `/.auth/me` reports `aad` with `admin_console`, and the

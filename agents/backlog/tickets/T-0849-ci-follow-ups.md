@@ -503,6 +503,10 @@ Promo-only retry `38820436701` is complete (`INSERT 0 60`, affected rows/no lite
 
 [T-0636](T-0636-deployment-startup.md#public-metrics-correction-and-dev-plan-observation--2026-10-16-utc-prelaunch) records the off-tree curl correction and fixed DEV metadata GETs, finite mocked checks and their limits. Source application, full local gates/helper 66, publication, CI and a live diagnostic remain pending at this checkpoint. No live capacity/binding or cause conclusion; B3 approval remains pending under the cost ban. Criteria, INDEX `in_progress`, MS-2 Open and prior history remain; promo is complete/no replay, final DB/13 HTTP unperformed.
 
+### PR #343 source and CI closure — 2026-10-16 UTC
+
+[T-0636](T-0636-deployment-startup.md#pr-343-source-and-ci-closure--2026-10-16-utc) records PR #343/C8/M4, seven successful local gates plus one unsupported consistency NOT RUN, qualified prior application carry, and PR 5 workflows/6 jobs/6 checks plus master 3/3/3, all attempt 1/zero reruns. At this source/CI checkpoint, the new live diagnostic and final DB/13 HTTP acceptance remain pending. Prior failures/qualifications remain; promo is complete/no replay. Applicable criteria, INDEX `in_progress` and MS-2 Open stay unchanged; B3 remains pending under the cost ban, with no capacity change.
+
 ## Review
 
 Pending.

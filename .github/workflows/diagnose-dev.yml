@@ -22,6 +22,7 @@ jobs:
     timeout-minutes: 15
     permissions:
       contents: read
+      actions: read
       id-token: write
     environment: dev-weu
     strategy:
@@ -59,12 +60,193 @@ jobs:
               sys.exit(1)
           PYVALIDATE
 
+      - name: Observe three fixed public DEV health endpoints
+        if: matrix.app == 'api-cleansia-customer-mobile-weu-dev'
+        timeout-minutes: 2
+        run: |
+          python3 - <<'PYPUBLIC'
+          from datetime import datetime, timezone
+          import hashlib
+          import json
+          import math
+          import re
+          import subprocess
+          import tempfile
+          from pathlib import Path
+
+          for probe, url in (
+              ('customer-mobile-alive', 'https://api-cleansia-customer-mobile-weu-dev.azurewebsites.net/alive'),
+              ('customer-mobile-health', 'https://api-cleansia-customer-mobile-weu-dev.azurewebsites.net/health'),
+              ('customer-ssr-health', 'https://web-cleansia-customer-weu-dev.azurewebsites.net/health')):
+              observed = {'kind': 'public-dev-health-observation', 'probe': probe, 'url': url,
+                          'started_at': datetime.now(timezone.utc).isoformat(), 'collection_result': 'partial'}
+              with tempfile.TemporaryDirectory() as directory:
+                  body_path = Path(directory) / 'body'
+                  try:
+                      response = subprocess.run(
+                          ['curl', '--disable', '--silent', '--request', 'GET', '--proto', '=https',
+                           '--proxy', '', '--noproxy', '*', '--max-redirs', '0', '--retry', '0',
+                           '--max-time', '15', '--connect-timeout', '5', '--max-filesize', '65536',
+                           '--output', str(body_path), '--write-out', '%{json}', url],
+                          capture_output=True, timeout=20)
+                      observed['curl_exit_code'] = response.returncode
+                      timings = json.loads(response.stdout) if len(response.stdout) <= 16384 else {}
+                      if not isinstance(timings, dict):
+                          raise ValueError('invalid curl timings')
+                      observed['curl'] = {key: timings.get(key) for key in (
+                          'http_code', 'time_namelookup', 'time_connect', 'time_appconnect',
+                          'time_starttransfer', 'time_total', 'size_download', 'num_redirects')}
+                      observed['collection_result'] = 'received' if response.returncode == 0 else 'partial'
+                  except (OSError, ValueError, subprocess.TimeoutExpired) as error:
+                      observed['error_kind'] = type(error).__name__
+                  with body_path.open('rb') if body_path.exists() else open('/dev/null', 'rb') as body_file:
+                      raw_body = body_file.read(65537)
+                  observed.update(body_bytes=body_path.stat().st_size if body_path.exists() else 0,
+                                  body_sha256=hashlib.sha256(raw_body).hexdigest() if len(raw_body) <= 65536 else None)
+                  safe_body = None
+                  if len(raw_body) <= 65536:
+                      try:
+                          text = raw_body.decode('utf-8')
+                          if probe != 'customer-ssr-health' and text.strip() in ('Healthy', 'Degraded', 'Unhealthy'):
+                              safe_body = text
+                          elif probe == 'customer-ssr-health':
+                              body = json.loads(text)
+                              memory_keys = {'rss', 'heapTotal', 'heapUsed', 'external', 'arrayBuffers'}
+                              if (isinstance(body, dict) and set(body) == {'status', 'timestamp', 'uptime', 'memory'}
+                                  and body['status'] == 'healthy' and isinstance(body['timestamp'], str)
+                                  and re.fullmatch(r'\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z', body['timestamp'])
+                                  and type(body['uptime']) in (int, float) and math.isfinite(body['uptime'])
+                                  and body['uptime'] >= 0 and isinstance(body['memory'], dict)
+                                  and set(body['memory']) == memory_keys
+                                  and all(type(value) is int and value >= 0 for value in body['memory'].values())):
+                                  safe_body = text
+                      except (UnicodeDecodeError, ValueError):
+                          pass
+                  observed['body'] = safe_body
+                  observed['body_observation'] = 'known-health-contract' if safe_body is not None else 'withheld-unexpected-body'
+              observed['finished_at'] = datetime.now(timezone.utc).isoformat()
+              print(json.dumps(observed, sort_keys=True, ensure_ascii=True, allow_nan=False), flush=True)
+          PYPUBLIC
+
       - name: Login to Azure
         uses: azure/login@a641126d1b8aa4d1fa005f4f92df94a3a4c4c906 # v3.1.0
         with:
           client-id: ${{ secrets.AZURE_CLIENT_ID }}
           tenant-id: ${{ secrets.AZURE_TENANT_ID }}
           subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Read named DEV shared-plan metrics around the prior deployment
+        if: matrix.app == 'api-cleansia-customer-mobile-weu-dev'
+        timeout-minutes: 2
+        env:
+          PRIOR_RUN_ID: ${{ inputs.prior_run_id }}
+          GH_TOKEN: ${{ github.token }}
+          EXPECTED_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+        run: |
+          python3 - <<'PYMETRICS'
+          from datetime import datetime, timedelta, timezone
+          import json
+          import math
+          import os
+          import re
+          import subprocess
+          import tempfile
+          from pathlib import Path
+
+          observed = {'kind': 'named-dev-plan-metrics', 'resource_group': 'rg-cleansia-weu-dev',
+                      'plan': 'plan-cleansia-weu-dev', 'collection_result': 'partial',
+                      'started_at': datetime.now(timezone.utc).isoformat()}
+          phase = 'prior-run-metadata'
+          try:
+              prior_run_id = os.environ.get('PRIOR_RUN_ID', '')
+              if (re.fullmatch(r'[1-9][0-9]{0,18}', prior_run_id) is None
+                  or int(prior_run_id) > 9_223_372_036_854_775_807):
+                  raise ValueError('invalid prior run identity')
+              with tempfile.TemporaryDirectory() as directory:
+                  metadata_path = Path(directory) / 'run.json'
+                  response = subprocess.run(
+                      ['curl', '--disable', '--silent', '--request', 'GET', '--proto', '=https',
+                       '--proxy', '', '--noproxy', '*', '--max-redirs', '0', '--retry', '0',
+                       '--max-time', '15', '--connect-timeout', '5', '--max-filesize', '262144',
+                       '--header', '@-', '--output', str(metadata_path), '--write-out', '%{http_code}',
+                       f'https://api.github.com/repos/VM-s-Solutions/cleansia/actions/runs/{prior_run_id}'],
+                      input=('Authorization: Bearer ' + os.environ['GH_TOKEN'] + '\n'
+                             'Accept: application/vnd.github+json\nX-GitHub-Api-Version: 2026-03-10\n').encode(),
+                      capture_output=True, timeout=20)
+                  observed['metadata_curl_exit_code'] = response.returncode
+                  observed['metadata_http_status'] = response.stdout.decode('ascii')
+                  if response.returncode != 0 or response.stdout != b'200':
+                      raise ValueError('prior run metadata unavailable')
+                  with metadata_path.open('rb') as metadata_file:
+                      raw_metadata = metadata_file.read(262145)
+                  if len(raw_metadata) > 262144:
+                      raise ValueError('prior run metadata exceeds bound')
+                  run = json.loads(raw_metadata)
+              phase = 'prior-run-validation'
+              if (type(run.get('id')) is not int or run['id'] != int(prior_run_id)
+                  or run.get('repository', {}).get('full_name') != 'VM-s-Solutions/cleansia'
+                  or run.get('head_repository', {}).get('full_name') != 'VM-s-Solutions/cleansia'
+                  or run.get('path') != '.github/workflows/deploy-dev.yml'
+                  or run.get('head_branch') != 'master' or run.get('event') != 'workflow_dispatch'
+                  or run.get('status') != 'completed' or type(run.get('run_attempt')) is not int
+                  or run['run_attempt'] != 1 or re.fullmatch(r'[0-9a-f]{40}', run.get('head_sha', '')) is None):
+                  raise ValueError('unexpected prior run')
+              created = datetime.strptime(run['created_at'], '%Y-%m-%dT%H:%M:%SZ').replace(tzinfo=timezone.utc)
+              updated = datetime.strptime(run['updated_at'], '%Y-%m-%dT%H:%M:%SZ').replace(tzinfo=timezone.utc)
+              start = created - timedelta(minutes=2)
+              end = updated + timedelta(minutes=5)
+              if not created <= updated <= datetime.now(timezone.utc) or not timedelta() < end - start <= timedelta(hours=2):
+                  raise ValueError('invalid or excessive metric window')
+              subscription = os.environ.get('EXPECTED_SUBSCRIPTION_ID', '')
+              if re.fullmatch(r'[0-9a-fA-F]{8}(?:-[0-9a-fA-F]{4}){3}-[0-9a-fA-F]{12}', subscription) is None:
+                  raise ValueError('invalid expected subscription identity')
+              resource = (f'/subscriptions/{subscription}/resourceGroups/rg-cleansia-weu-dev'
+                          '/providers/Microsoft.Web/serverfarms/plan-cleansia-weu-dev')
+              observed.update(prior_run_id=prior_run_id, prior_run_attempt=1, prior_head_sha=run['head_sha'],
+                              window_start=start.isoformat(), window_end=end.isoformat(),
+                              window_basis='created_at minus 2 minutes through completed-run updated_at plus 5 minutes; updated_at is not an exact completion timestamp')
+              phase = 'named-dev-plan-metric-read'
+              with tempfile.TemporaryFile() as output:
+                  response = subprocess.run(
+                      ['az', 'monitor', 'metrics', 'list', '--resource', resource,
+                       '--subscription', subscription, '--namespace', 'Microsoft.Web/serverfarms',
+                       '--metrics', 'CpuPercentage', 'MemoryPercentage', 'HttpQueueLength',
+                       '--aggregation', 'Average', '--interval', '1m',
+                       '--start-time', start.strftime('%Y-%m-%dT%H:%M:%SZ'),
+                       '--end-time', end.strftime('%Y-%m-%dT%H:%M:%SZ'), '--only-show-errors', '--output', 'json',
+                       '--query', 'value[].{name:name.value,unit:unit,errorCode:errorCode,data:timeseries[].data[].{timestamp:timeStamp,average:average}}'],
+                      stdout=output, stderr=subprocess.DEVNULL, timeout=60)
+                  observed['metric_command_exit_code'] = response.returncode
+                  output.seek(0)
+                  raw_metrics = output.read(1048577)
+              if response.returncode != 0 or len(raw_metrics) > 1048576:
+                  raise ValueError('plan metrics unavailable or exceed bound')
+              phase = 'metric-response-validation'
+              metrics = json.loads(raw_metrics)
+              expected_metrics = {'CpuPercentage': 'Percent', 'MemoryPercentage': 'Percent', 'HttpQueueLength': 'Count'}
+              if (not isinstance(metrics, list) or len(metrics) != 3
+                  or {metric.get('name') for metric in metrics} != set(expected_metrics)):
+                  raise ValueError('unexpected metric set')
+              for metric in metrics:
+                  if (metric.get('unit') != expected_metrics[metric['name']]
+                      or metric.get('errorCode') not in (None, 'Success')
+                      or not isinstance(metric.get('data'), list) or len(metric['data']) > 122):
+                      raise ValueError('unexpected metric series')
+                  for point in metric['data']:
+                      timestamp = datetime.fromisoformat(point['timestamp'].replace('Z', '+00:00'))
+                      average = point.get('average')
+                      if (timestamp.tzinfo is None or not start - timedelta(minutes=1) <= timestamp <= end + timedelta(minutes=1)
+                          or average is not None and (type(average) not in (int, float) or not math.isfinite(average))):
+                          raise ValueError('unexpected metric point')
+              counts = {metric['name']: sum(point.get('average') is not None for point in metric['data']) for metric in metrics}
+              observed.update(collection_result='received' if all(counts.values()) else 'partial',
+                              metrics=metrics, non_null_points=counts)
+          except (OSError, ValueError, KeyError, TypeError, AttributeError, subprocess.TimeoutExpired) as error:
+              observed.update(failed_phase=phase, error_kind=type(error).__name__)
+              print('::warning::Named DEV plan metric evidence is partial; no runtime health conclusion follows')
+          observed['finished_at'] = datetime.now(timezone.utc).isoformat()
+          print(json.dumps(observed, sort_keys=True, ensure_ascii=True, allow_nan=False), flush=True)
+          PYMETRICS
 
       - name: Read fixed DEV deployment and package state
         env:

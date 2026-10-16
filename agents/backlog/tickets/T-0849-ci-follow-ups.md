@@ -491,6 +491,10 @@ DEV `38830931038` / attempt 1 failed with 14 successes, one Customer Mobile post
 
 Promo-only retry `38820436701` is complete (`INSERT 0 60`, affected rows/no literal COMMIT receipt) and is not repeated. Fresh final DB health/13 anonymous HTTP acceptance remain unperformed. The applicable criterion/checklist remains unchanged and unmet, INDEX remains `in_progress` and MS-2 remains Open. Original successful reset/docs/bootstrap/fixtures/admin/promo are not replayed; all prior history and qualifications remain.
 
+### Bounded runtime evidence source checkpoint — PRELAUNCH 2026-10-16 UTC
+
+[T-0636](T-0636-deployment-startup.md#bounded-runtime-evidence-source-checkpoint--prelaunch-2026-10-16-utc) records the one-YAML evidence candidate and scoped correctness/security/command-mock QA. Full66/docs/head/app-input carry proof, publication/CI and hosted runtime execution remain pending at this dated prelaunch checkpoint. No causal fix or live readiness is claimed; prior rollout/inspection/promo facts, all criteria, `in_progress` and MS-2 Open remain unchanged.
+
 ## Review
 
 Pending.

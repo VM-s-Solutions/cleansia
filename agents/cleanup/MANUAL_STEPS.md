@@ -342,6 +342,10 @@ Resulting-master DEV `38830931038` / attempt 1 failed: 14 successful jobs, Custo
 
 **MS-2 remains Open under its existing heading**; all applicable criteria/checklists and the four INDEX `in_progress` dispositions stay unchanged. Promo `38820436701` remains completed `INSERT 0 60`/script success, affected rows without literal COMMIT/table-total proof, and is not replayed. The original successful reset/docs/bootstrap `38702440461`/fixtures `38702856219`/admin `38703413453` remain retained without replay. Fresh final DB health/13 anonymous HTTP observations and END closure remain unperformed. Earlier `MustChangePassword=false`, no authenticated console exercise, provider/muting and all historical failure/qualification statements remain in force. No PRO/storage/plan/slot/cost/Graphify action is added. T-0636 pins PR/master CI, failure `0cdcb8d4…`, inspection `6ee3262d…` and source/runtime investigation `cbdc4308…` with their full immutable digests.
 
+#### 2026-10-16 UTC — PRELAUNCH bounded runtime evidence source checkpoint
+
+The one-YAML diagnostic evidence candidate has scoped correctness/security and command-mock QA; [T-0636](../backlog/tickets/T-0636-deployment-startup.md#bounded-runtime-evidence-source-checkpoint--prelaunch-2026-10-16-utc) records its bounds and pins. At this prelaunch checkpoint full66/docs/head gates, fresh app-input carry proof, source binding/publication/CI and hosted execution remain pending. No metrics, cause, public readiness or final acceptance is inferred. **MS-2 remains Open**, with all prior history/quotes/checklists intact, including PR #341 closure. Successful reset/seeds/promo/docs are not replayed; final DB/13 HTTP acceptance remains unperformed.
+
 ### MS-9 — Invite yourself to the admin console — **DEV verified 2026-09-11**
 
 The owner confirmed the DEV site's `/.auth/me` reports `aad` with `admin_console`, and the

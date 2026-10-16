@@ -356,6 +356,10 @@ DEV `38830931038` / attempt 1 failed with 14 successes, one Customer Mobile post
 
 Promo-only retry `38820436701` is complete (`INSERT 0 60`, affected rows/no literal COMMIT receipt) and is not repeated. Fresh final DB health/13 anonymous HTTP acceptance remain unperformed. The applicable criterion/checklist remains unchanged and unmet, INDEX remains `in_progress` and MS-2 remains Open. Original successful reset/docs/bootstrap/fixtures/admin/promo are not replayed; all prior history and qualifications remain.
 
+### Bounded runtime evidence source checkpoint — PRELAUNCH 2026-10-16 UTC
+
+[T-0636](T-0636-deployment-startup.md#bounded-runtime-evidence-source-checkpoint--prelaunch-2026-10-16-utc) records the one-YAML evidence candidate and scoped correctness/security/command-mock QA. Full66/docs/head/app-input carry proof, publication/CI and hosted runtime execution remain pending at this dated prelaunch checkpoint. No causal fix or live readiness is claimed; prior rollout/inspection/promo facts, all criteria, `in_progress` and MS-2 Open remain unchanged.
+
 ## Review
 
 **2026-10-13 P2 AC2 follow-up:** Implementation assessment: **approve-with-notes**. The separate security verdict is **APPROVED for the reviewed P2 security implementation**, dated 2026-10-13. Evidence: `p2/reviewer-round1.md` and `p2/security-round1.md` under the evidence root. Their focused command results are distinct from the later full backend receipts above. Their implementation verdicts retain the limits recorded here; neither is a CI, merge or deployment result. Final records and publication gates remain outstanding. The dated AC2 reading below describes the earlier #327 evidence; the current Work record and AC2 supersede its missing D/F/admin assertions. AC6 remains open for the final wave reset/deployment.

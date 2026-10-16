@@ -3,7 +3,7 @@ id: T-0636
 title: Make DEV deployment startup reliable and bound SSR dependency waits
 size: M
 created: 2026-10-15
-updated: 2026-10-15
+updated: 2026-10-16
 depends_on: []
 blocks: []
 layers: [backend, frontend, docs]
@@ -26,10 +26,10 @@ Fresh checks proved five exact Healthy API responses and two rendered SSR pages 
 
 ## Acceptance criteria
 
-- [ ] **AC1** — A DEV API/SSR deployment publishes a complete package without executing a partially replaced live tree. The chosen Linux ZIP path is covered by real HTTP client regression tests and DEV package identity/readiness evidence; the first package-mode transition is timed and qualified separately.
-- [ ] **AC2** — With a deliberately stalled own-API market or later catalogue/plan request, a fresh optimized SSR process aborts the transport, finishes a populated server-rendered fallback within the tested budget and stays responsive on `/health`. A subsequent healthy anonymous render recovers before the landing-cache TTL. Browser, credential, transfer-cache and valid-empty catalogue behavior remain intact.
-- [ ] **AC3** — Fresh-process healthy startup and readiness timings are recorded separately from upload, deployment and warm-loop durations. API database readiness is tested against a silent PostgreSQL peer before any correction; legal first-read and type-catalogue ordering remain valid.
-- [ ] **AC4** — Independent review, security review, meaningful RED/GREEN evidence, full applicable local suites, exact-head CI and guarded merge complete. A DEV deployment from the resulting master passes the package and readiness checks. No almost-immediate or zero-error platform guarantee is inferred from a local benchmark.
+- [x] **AC1** — A DEV API/SSR deployment publishes a complete package without executing a partially replaced live tree. The chosen Linux ZIP path is covered by real HTTP client regression tests and DEV package identity/readiness evidence; the first package-mode transition is timed and qualified separately.
+- [x] **AC2** — With a deliberately stalled own-API market or later catalogue/plan request, a fresh optimized SSR process aborts the transport, finishes a populated server-rendered fallback within the tested budget and stays responsive on `/health`. A subsequent healthy anonymous render recovers before the landing-cache TTL. Browser, credential, transfer-cache and valid-empty catalogue behavior remain intact.
+- [x] **AC3** — Fresh-process healthy startup and readiness timings are recorded separately from upload, deployment and warm-loop durations. API database readiness is tested against a silent PostgreSQL peer before any correction; legal first-read and type-catalogue ordering remain valid.
+- [x] **AC4** — Independent review, security review, meaningful RED/GREEN evidence, full applicable local suites, exact-head CI and guarded merge complete. A DEV deployment from the resulting master passes the package and readiness checks. No almost-immediate or zero-error platform guarantee is inferred from a local benchmark.
 
 ## Out of scope
 
@@ -271,6 +271,22 @@ PR CI passed 5 workflows/6 jobs/6 checks; resulting master passed 3/3/3, all att
 At this source/CI closure checkpoint, a new live diagnostic and final DB health/13 anonymous HTTP acceptance remain pending. Prior rollout failure, NULL public status/timing observations and selected-package/worker-identity limits remain history. Promo is complete/no replay. All seven unchecked criteria, four INDEX `in_progress` rows and MS-2 Open remain; B3 approval is pending under the cost ban, with no capacity change.
 
 Exact local/CI/merge actuals, raw references and qualifications: `/Users/michael/.codex/scratchpads/cleansia-next-wave-2026-10-13/startup-2026-10-15/pr343-closure-preparation001/CLAIMS-AND-PINS001.json`.
+
+### Final DEV acceptance and current disposition — 2026-10-16 UTC
+
+**Current disposition:** AC1–AC4 are satisfied within their recorded bounds. T-0636 remains `in_progress`: Mike's request for almost-immediate startup without issues is unresolved. The recorded 357.913/96.132 s platform lifecycle durations and historical stalls are not erased by current readiness.
+
+Diagnostic `38883920239/a1` at M4 passed all six jobs, zero annotations. Each selected whole ZIP's SHA256 AND byte length matches its own original `38830931038/a1` intent, with terminal status4/complete records and stable pointers. These remain M2-built packages. The 8,260 unchanged tracked runtime-input paths through M4 support AC1/AC4's bounded continuation; no M4 rebuild/upload, executing-worker/mount or all-instance identity is proved. All six backing-entry mismatches remain qualified. The first package-mode transition has separate chronology; structured upload/deployment/activation timings are UNAVAILABLE. Original `38830931038/a1` remains FAILED.
+
+Final DEV health `38885747547/a1` at M4 passed (PRO skipped): five SQL result sets, 90 approximate table-stat rows, 16 MB, 20 size rows, active 1/idle 11 and no non-idle query over 30 s or SQL error. These statistics are not exact seed totals or a fresh migration-history query.
+
+Exactly one 12+1 anonymous batch at 10:18:10.217644–10:18:25.485296 UTC passed all 13 curl 0/HTTP 200 with finite total/TTFB: five exact Healthy APIs; both real SSR roots/home with three named local order cards each; Market 1(CZ), Service 10, Package 8, Currency 5(CZK), Plans 2 and Language 5 usable id/code/name DTOs (cs/en/sk/uk/ru). SSR totals 3.897939/2.735299 s and API totals 0.770982–2.199293 s are point observations, not cold-start improvement or an SLA. First 12 finish UTC were not emitted; external reconcile/watcher exact walltimes remain null/retrospectively qualified.
+
+AC2 retains native stalled-transport abort/fallback/recovery evidence. AC3 retains separate cold local API/silent-PostgreSQL and legal/type-catalogue evidence, with fixture/cache/IPv4 limits. Existing security, RED/GREEN, qualified full local suites and exact C8/M4 CI/guarded merges support AC4; compilation/cache reuse, skips and warnings remain. Final records-head checks are pending at this checkpoint.
+
+Current B2 capacity 1/worker 1/perSiteScaling false and six bindings are observed. Incident memory 95–98% predates uploads; CPU 20–94% and queue 0 averages do not prove OOM, cause or historical placement. B3 has no owner answer/change; it is a headroom experiment, neither proved necessary nor sufficient, under the existing cost/instance/slot exclusion. T-0838/T-0844/T-0849 are done and MS-2 is discharged; completed reset/docs/bootstrap/fixtures/admin/promo are not replayed.
+
+Exact accepted evidence, criterion interpretation and raw pins: `/Users/michael/.codex/scratchpads/cleansia-next-wave-2026-10-13/startup-2026-10-15/final-c10-records-preparation001/CLAIMS-AND-PINS001.json`.
 
 ## Review
 

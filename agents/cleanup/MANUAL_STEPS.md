@@ -58,7 +58,82 @@ server and not yet on the client.
 running — they hold the abstraction DLLs open. `Cleansia.Core.Domain` and `Cleansia.Core.AppServices`
 both build clean on their own; the backend test suites need the hosts stopped.
 
+### MS-9 — Invite yourself to the admin console — **DEV verified 2026-09-11**
+
+The owner confirmed the DEV site's `/.auth/me` reports `aad` with `admin_console`, and the
+deployed Cleansia login loads after Microsoft sign-in in a fresh private browser window.
+The normal browser's script redirects did not occur in that fresh session. This confirms DEV
+access only; each additional admin Static Web App requires its own invitation.
+
+`apps/cleansia-admin.app/src/staticwebapp.config.json` now requires the role `admin_console` on
+every route and redirects anonymous visitors (401) to `/.auth/login/aad`. Authenticated visitors
+without the role receive 403; redirecting them back to sign-in would loop. See
+[`docs/admin-app/overview.md`](../../docs/admin-app/overview.md#access-to-the-deployed-console).
+Owner ruling 2026-08-27: docs + admin, not the two self-service funnels.
+
+**For each additional admin site:** Portal → `swa-cleansia-admin-*` → *Role management* →
+**Invite** yourself with the role `admin_console`.
+
+**This is the step that makes the console reachable.** The built-in `aad` provider admits any
+Microsoft identity, so the ROLE is the access control, not the login — an uninvited visitor with a
+perfectly valid Microsoft account signs in and still gets nothing. Skip it and the console refuses
+everyone, including the owner, until the invite exists.
+
+`admin_console` is underscore-only on purpose. The SWA invitation form rejects hyphens — that is
+what blocked `docs-reader` and is why the docs role is `docs_reader`. If the string here and the
+string in the portal ever differ, the console is unreachable and correcting it costs a full DEV
+deploy.
+
+**Prod inherits this automatically** on the first prod deploy, because one config file ships to
+both environments. Environment-specific gating is not expressible in this file and would need an
+asset swap in `project.json`'s configurations block — not built, because nothing asks for it yet.
+
+### MS-4 — Re-copy the docs SWA deployment token, and invite yourself — **DONE 2026-08-29**
+
+`main.bicep` now declares the documentation Static Web App (`swa-cleansia-docs-weu-dev`) under
+`if (env == 'dev')`. It was previously created by hand, so the **next DEV infrastructure deploy creates
+a NEW resource** — and a Static Web App deployment token belongs to the resource, not to the name.
+
+**Action, after the next DEV deploy:**
+
+1. Portal → `swa-cleansia-docs-weu-dev` → *Manage deployment token* → copy.
+2. Replace the repository secret `AZURE_STATIC_WEB_APPS_API_TOKEN_DOCS_DEV`.
+3. Portal → same SWA → *Role management* → **Invite** yourself with the role `docs_reader`.
+
+Step 3 is what makes the site reachable at all. `docs/public/staticwebapp.config.json` requires
+`docs_reader` on every route and redirects 401/403 to `/.auth/login/aad`, so an uninvited visitor —
+including one with a valid Microsoft account — logs in and still gets nothing. That is deliberate: the
+built-in `aad` provider admits any Microsoft identity, so the ROLE is the access control, not the login.
+
+**Why not restrict to the tenant instead:** that needs a custom Entra app registration plus a client
+secret held as a SWA application setting. Per-person invitation costs one click and no secret, and the
+audience is a handful of people. Revisit if the reader list grows.
+
+Until step 3 happens the docs deploy will succeed and the site will refuse everyone, which is the safe
+direction to fail in.
+
+**Discharged by the owner on 2026-08-29.** Token re-copied into
+`AZURE_STATIC_WEB_APPS_API_TOKEN_DOCS_DEV` and the `docs_reader` invitation accepted, so the docs site
+is reachable again.
+
+> **Numbering note:** there are two MS-4 entries in this file — this one, and a payroll-currency item
+> further down that was closed on 2026-08-14. The collision is historical and is left alone rather than
+> renumbered, because both ids are referenced in commits and PR bodies that cannot be edited. Read the
+> title, not the number.
+### MS-3 — Rotate the exposed Mapbox token — **owner**
+
+Four environment files and two runbook rows still carry `MANUAL_STEP (rotate-mapbox-token)`; the exposed
+token remains recoverable from git history, so rotation is the only thing that retires it. Its original
+tracker row is now inside the archived backlog, which is why it is re-filed here.
+
+**Action:** rotate the token at Mapbox, provision the new value as `Mapbox--GeocodingAccessToken` in Key
+Vault (`deploy/AZURE-DEV-RUNBOOK.md:281`), then delete the four `MANUAL_STEP` comments.
+
+## Cleared
+
 ### MS-2 — Drop the DEV database with the next deploy — **deferred by decision**
+
+**Current disposition — 2026-10-16 UTC: DISCHARGED.** This entire MS-2 section is now under Cleared. The retained "deferred by decision" heading and all earlier Open, unrun, pending and promo statements are historical checkpoints; the current reset/reseed/final-readiness obligation is complete. T-0636 remains open for Mike's separate unresolved startup goal.
 
 > **Owner, 2026-08-14:** *"I'll drop the db and reseed the data after all of the Phases are done."*
 > Deferred deliberately — not overlooked. It stays open until the drop happens.
@@ -358,78 +433,9 @@ The one-YAML diagnostic evidence candidate has scoped correctness/security and c
 
 [T-0636](../backlog/tickets/T-0636-deployment-startup.md#pr-343-source-and-ci-closure--2026-10-16-utc) records merged PR #343/C8/M4, exact local/hosted CI actuals and qualified prior application carry. This source/CI checkpoint leaves the new live diagnostic and final DB health/13 anonymous HTTP acceptance pending. All prior failures, observations, quotes and qualifications remain history. **MS-2 remains Open**; all seven unchecked criteria and four INDEX `in_progress` dispositions remain unchanged. Successful reset/docs/bootstrap/fixtures/admin/promo are not replayed. B3 approval remains pending under the cost ban; no capacity change or startup/readiness/cause conclusion follows from source CI.
 
-### MS-9 — Invite yourself to the admin console — **DEV verified 2026-09-11**
+#### 2026-10-16 UTC — final actual acceptance; MS-2 discharged
 
-The owner confirmed the DEV site's `/.auth/me` reports `aad` with `admin_console`, and the
-deployed Cleansia login loads after Microsoft sign-in in a fresh private browser window.
-The normal browser's script redirects did not occur in that fresh session. This confirms DEV
-access only; each additional admin Static Web App requires its own invitation.
-
-`apps/cleansia-admin.app/src/staticwebapp.config.json` now requires the role `admin_console` on
-every route and redirects anonymous visitors (401) to `/.auth/login/aad`. Authenticated visitors
-without the role receive 403; redirecting them back to sign-in would loop. See
-[`docs/admin-app/overview.md`](../../docs/admin-app/overview.md#access-to-the-deployed-console).
-Owner ruling 2026-08-27: docs + admin, not the two self-service funnels.
-
-**For each additional admin site:** Portal → `swa-cleansia-admin-*` → *Role management* →
-**Invite** yourself with the role `admin_console`.
-
-**This is the step that makes the console reachable.** The built-in `aad` provider admits any
-Microsoft identity, so the ROLE is the access control, not the login — an uninvited visitor with a
-perfectly valid Microsoft account signs in and still gets nothing. Skip it and the console refuses
-everyone, including the owner, until the invite exists.
-
-`admin_console` is underscore-only on purpose. The SWA invitation form rejects hyphens — that is
-what blocked `docs-reader` and is why the docs role is `docs_reader`. If the string here and the
-string in the portal ever differ, the console is unreachable and correcting it costs a full DEV
-deploy.
-
-**Prod inherits this automatically** on the first prod deploy, because one config file ships to
-both environments. Environment-specific gating is not expressible in this file and would need an
-asset swap in `project.json`'s configurations block — not built, because nothing asks for it yet.
-
-### MS-4 — Re-copy the docs SWA deployment token, and invite yourself — **DONE 2026-08-29**
-
-`main.bicep` now declares the documentation Static Web App (`swa-cleansia-docs-weu-dev`) under
-`if (env == 'dev')`. It was previously created by hand, so the **next DEV infrastructure deploy creates
-a NEW resource** — and a Static Web App deployment token belongs to the resource, not to the name.
-
-**Action, after the next DEV deploy:**
-
-1. Portal → `swa-cleansia-docs-weu-dev` → *Manage deployment token* → copy.
-2. Replace the repository secret `AZURE_STATIC_WEB_APPS_API_TOKEN_DOCS_DEV`.
-3. Portal → same SWA → *Role management* → **Invite** yourself with the role `docs_reader`.
-
-Step 3 is what makes the site reachable at all. `docs/public/staticwebapp.config.json` requires
-`docs_reader` on every route and redirects 401/403 to `/.auth/login/aad`, so an uninvited visitor —
-including one with a valid Microsoft account — logs in and still gets nothing. That is deliberate: the
-built-in `aad` provider admits any Microsoft identity, so the ROLE is the access control, not the login.
-
-**Why not restrict to the tenant instead:** that needs a custom Entra app registration plus a client
-secret held as a SWA application setting. Per-person invitation costs one click and no secret, and the
-audience is a handful of people. Revisit if the reader list grows.
-
-Until step 3 happens the docs deploy will succeed and the site will refuse everyone, which is the safe
-direction to fail in.
-
-**Discharged by the owner on 2026-08-29.** Token re-copied into
-`AZURE_STATIC_WEB_APPS_API_TOKEN_DOCS_DEV` and the `docs_reader` invitation accepted, so the docs site
-is reachable again.
-
-> **Numbering note:** there are two MS-4 entries in this file — this one, and a payroll-currency item
-> further down that was closed on 2026-08-14. The collision is historical and is left alone rather than
-> renumbered, because both ids are referenced in commits and PR bodies that cannot be edited. Read the
-> title, not the number.
-### MS-3 — Rotate the exposed Mapbox token — **owner**
-
-Four environment files and two runbook rows still carry `MANUAL_STEP (rotate-mapbox-token)`; the exposed
-token remains recoverable from git history, so rotation is the only thing that retires it. Its original
-tracker row is now inside the archived backlog, which is why it is re-filed here.
-
-**Action:** rotate the token at Mapbox, provision the new value as `Mapbox--GeocodingAccessToken` in Key
-Vault (`deploy/AZURE-DEV-RUNBOOK.md:281`), then delete the four `MANUAL_STEP` comments.
-
-## Cleared
+The approved single reset and original current `20261013160545_Initial` application, docs `38658881649`, original DEV `38660355359/a3`, bootstrap `38702440461`, fixtures `38702856219`, admin `38703413453` and corrected promo `38820436701` are complete; no replay. Final DEV health `38885747547/a1` and the once 13 public batch are accepted. [T-0636](../backlog/tickets/T-0636-deployment-startup.md#final-dev-acceptance-and-current-disposition--2026-10-16-utc) carries exact selected-package/M4-input/readiness evidence and limits. No fresh migration-history/exact seed-total claim follows from final pg_stat statistics; promo INSERT 0 60 remains affected rows with qualified autocommit inference. T-0838/T-0844/T-0849 are done; the original failed startup rollout and unresolved T-0636 goal remain. Final records-head checks are pending.
 
 ### MS-14 — Regenerate the customer client for the property-size catalogue — **DISCHARGED 2026-09-15**
 

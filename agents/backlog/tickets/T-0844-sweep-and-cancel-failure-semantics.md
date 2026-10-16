@@ -4,7 +4,7 @@ title: Stop a cancel overwriting a payment or returning credit on an order it fa
 size: L
 owner: pm
 created: 2026-10-12
-updated: 2026-10-15
+updated: 2026-10-16
 depends_on: [T-0814]
 blocks: [T-0841, T-0843]
 stories: []
@@ -135,7 +135,7 @@ The ruling also leaves these out:
 - [x] **AC4** — The unit, integration and host suites pass in full at every step.
   - At step 4 they ran on the build before its last two edits, a comment pointer in `RefundService.cs` and a living-doc wording change. After those, the solution rebuilt with 0 errors and 42 refund and cancellation tests passed.
 - [x] **AC5** — The three decision records, the two living records and the listed page edits ship with the code. consistency.md's deviating-forms entry names T-0841.
-- [ ] **AC6** — After every wave PR has merged with green CI, perform Mike's approved single final DEV reset, fresh DEV deployment and docs deployment, verify the Initial id then carried by master, and record same-day logs and health checks here and on T-0838 AC5. The reset and current Initial application completed; Q-END-01 is answered, the original deployment recovered and three seeds completed. Final acceptance remains outstanding at this checkpoint for the resulting-master rollout, corrected promo-only retry and final DB/HTTP health. Earlier P2 and END no-execution statements remain historical.
+- [x] **AC6** — After every wave PR has merged with green CI, perform Mike's approved single final DEV reset, fresh DEV deployment and docs deployment, verify the Initial id then carried by master, and record same-day logs and health checks here and on T-0838 AC5. The reset and current Initial application completed; Q-END-01 is answered, the original deployment recovered and three seeds completed. Final acceptance remains outstanding at this checkpoint for the resulting-master rollout, corrected promo-only retry and final DB/HTTP health. Earlier P2 and END no-execution statements remain historical.
 
 ## Owner decision — 2026-10-13
 
@@ -371,6 +371,10 @@ Promo-only retry `38820436701` is complete (`INSERT 0 60`, affected rows/no lite
 ### PR #343 source and CI closure — 2026-10-16 UTC
 
 [T-0636](T-0636-deployment-startup.md#pr-343-source-and-ci-closure--2026-10-16-utc) records PR #343/C8/M4, seven successful local gates plus one unsupported consistency NOT RUN, qualified prior application carry, and PR 5 workflows/6 jobs/6 checks plus master 3/3/3, all attempt 1/zero reruns. At this source/CI checkpoint, the new live diagnostic and final DB/13 HTTP acceptance remain pending. Prior failures/qualifications remain; promo is complete/no replay. Applicable criteria, INDEX `in_progress` and MS-2 Open stay unchanged; B3 remains pending under the cost ban, with no capacity change.
+
+### Final DEV acceptance and current disposition — 2026-10-16 UTC
+
+**Current disposition: done; Doing 6/AC6 discharged and checked.** The approved one reset, original application of sole `20261013160545_Initial`, docs `38658881649`, recovered original DEV `38660355359/a3`, bootstrap `38702440461`, fixtures `38702856219`, admin `38703413453` and corrected promo `38820436701` are complete without replay. Accepted final health `38885747547/a1` and exact 13 close the remaining current readiness obligation; [T-0636](T-0636-deployment-startup.md#final-dev-acceptance-and-current-disposition--2026-10-16-utc) records package/source applicability and limits. Final SQL did not freshly query migration history; pg_stat figures are estimates and promo INSERT 0 60 is affected rows, not an exact table total or literal COMMIT receipt. AC6's then-pending sentence is preserved as a historical checkpoint. Final records-head checks remain pending.
 
 ## Review
 

@@ -87,15 +87,32 @@ jobs:
                           ['curl', '--disable', '--silent', '--request', 'GET', '--proto', '=https',
                            '--proxy', '', '--noproxy', '*', '--max-redirs', '0', '--retry', '0',
                            '--max-time', '15', '--connect-timeout', '5', '--max-filesize', '65536',
-                           '--output', str(body_path), '--write-out', '%{json}', url],
+                           '--output', str(body_path), '--write-out',
+                           '{"http_code":"%{http_code}","time_namelookup":%{time_namelookup},'
+                           '"time_connect":%{time_connect},"time_appconnect":%{time_appconnect},'
+                           '"time_starttransfer":%{time_starttransfer},"time_total":%{time_total},'
+                           '"size_download":%{size_download},"num_redirects":%{num_redirects}}', url],
                           capture_output=True, timeout=20)
                       observed['curl_exit_code'] = response.returncode
-                      timings = json.loads(response.stdout) if len(response.stdout) <= 16384 else {}
-                      if not isinstance(timings, dict):
+                      if len(response.stdout) > 16384:
+                          raise ValueError('curl timings exceed bound')
+                      timings = json.loads(response.stdout)
+                      timing_keys = ('time_namelookup', 'time_connect', 'time_appconnect',
+                                     'time_starttransfer', 'time_total')
+                      count_keys = ('size_download', 'num_redirects')
+                      if (not isinstance(timings, dict)
+                          or set(timings) != {'http_code', *timing_keys, *count_keys}
+                          or not isinstance(timings['http_code'], str)
+                          or re.fullmatch(r'000|[1-5][0-9]{2}', timings['http_code']) is None
+                          or any(type(timings[key]) not in (int, float) or timings[key] < 0
+                                 or type(timings[key]) is float and not math.isfinite(timings[key])
+                                 for key in timing_keys)
+                          or any(type(timings[key]) is not int or timings[key] < 0 for key in count_keys)):
                           raise ValueError('invalid curl timings')
-                      observed['curl'] = {key: timings.get(key) for key in (
-                          'http_code', 'time_namelookup', 'time_connect', 'time_appconnect',
-                          'time_starttransfer', 'time_total', 'size_download', 'num_redirects')}
+                      timings['http_code'] = int(timings['http_code'])
+                      observed['curl'] = timings
+                      if timings['http_code'] == 0:
+                          raise ValueError('no HTTP response')
                       observed['collection_result'] = 'received' if response.returncode == 0 else 'partial'
                   except (OSError, ValueError, subprocess.TimeoutExpired) as error:
                       observed['error_kind'] = type(error).__name__
@@ -247,6 +264,79 @@ jobs:
           observed['finished_at'] = datetime.now(timezone.utc).isoformat()
           print(json.dumps(observed, sort_keys=True, ensure_ascii=True, allow_nan=False), flush=True)
           PYMETRICS
+
+      - name: Observe fixed DEV plan capacity and six app bindings
+        if: matrix.app == 'api-cleansia-customer-mobile-weu-dev'
+        timeout-minutes: 2
+        continue-on-error: true
+        env:
+          EXPECTED_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+        run: |
+          python3 - <<'PYPLAN'
+          from datetime import datetime, timezone
+          import json
+          import os
+          import re
+          import subprocess
+          import tempfile
+
+          observed = {'kind': 'fixed-dev-plan-observation', 'plan': 'plan-cleansia-weu-dev',
+                      'collection_result': 'partial', 'started_at': datetime.now(timezone.utc).isoformat()}
+          phase = 'subscription-validation'
+          try:
+              subscription = os.environ.get('EXPECTED_SUBSCRIPTION_ID', '')
+              if re.fullmatch(r'[0-9a-fA-F]{8}(?:-[0-9a-fA-F]{4}){3}-[0-9a-fA-F]{12}', subscription) is None:
+                  raise ValueError('invalid expected subscription identity')
+              base = f'/subscriptions/{subscription}/resourceGroups/rg-cleansia-weu-dev/providers/Microsoft.Web'
+              plan = base + '/serverfarms/plan-cleansia-weu-dev'
+              apps = ('api-cleansia-partner-weu-dev', 'api-cleansia-admin-weu-dev',
+                      'api-cleansia-customer-weu-dev', 'api-cleansia-partner-mobile-weu-dev',
+                      'api-cleansia-customer-mobile-weu-dev', 'web-cleansia-customer-weu-dev')
+              for phase, path, query in (
+                  ('plan-read', plan, '{name:name,sku:sku.name,capacity:sku.capacity,numberOfWorkers:properties.numberOfWorkers,perSiteScaling:properties.perSiteScaling}'),
+                  ('six-app-binding-read', base + '/sites',
+                   'value[?' + ' || '.join("name == '" + app + "'" for app in apps) + '].{name:name,serverFarmId:properties.serverFarmId}')):
+                  with tempfile.TemporaryFile() as output:
+                      response = subprocess.run(
+                          ['az', 'rest', '--method', 'get', '--url',
+                           'https://management.azure.com' + path + '?api-version=2023-12-01',
+                           '--query', query, '--only-show-errors', '--output', 'json'],
+                          stdout=output, stderr=subprocess.DEVNULL, timeout=30)
+                      output.seek(0)
+                      raw = output.read(1048577)
+                  if response.returncode != 0 or len(raw) > 1048576:
+                      raise ValueError('read unavailable or exceeds bound')
+                  phase = phase.replace('-read', '-validation')
+                  data = json.loads(raw)
+                  if phase == 'plan-validation':
+                      if (not isinstance(data, dict)
+                          or set(data) != {'name', 'sku', 'capacity', 'numberOfWorkers', 'perSiteScaling'}
+                          or data['name'] != 'plan-cleansia-weu-dev' or not isinstance(data['sku'], str)
+                          or re.fullmatch(r'(?:B[1-3]|S[1-3]|P[0-3](?:m?v[2-4])?|I[1-6](?:v2)?|F1|D1|EP[1-3]|Y1|FC1|WS[1-3])', data['sku']) is None
+                          or type(data['perSiteScaling']) is not bool
+                          or any(type(data[key]) is not int or not 0 < data[key] <= 2147483647
+                                 for key in ('capacity', 'numberOfWorkers'))):
+                          raise ValueError('unexpected plan response')
+                      observed.update(sku=data['sku'], capacity=data['capacity'],
+                                      numberOfWorkers=data['numberOfWorkers'], perSiteScaling=data['perSiteScaling'])
+                      if data['capacity'] != data['numberOfWorkers']:
+                          raise ValueError('inconsistent current worker counts')
+                  else:
+                      if (not isinstance(data, list) or len(data) != 6
+                          or any(not isinstance(site, dict) or set(site) != {'name', 'serverFarmId'}
+                                 or site['name'] not in apps or not isinstance(site['serverFarmId'], str) for site in data)
+                          or {site['name'] for site in data} != set(apps)):
+                          raise ValueError('unexpected app set')
+                      observed['apps'] = [{'name': site['name'], 'matches_expected_plan': site['serverFarmId'].lower() == plan.lower()}
+                                          for site in data]
+                      if not all(site['matches_expected_plan'] for site in observed['apps']):
+                          raise ValueError('unexpected plan binding')
+              observed['collection_result'] = 'received'
+          except Exception as error:
+              observed.update(failed_phase=phase, error_kind=type(error).__name__)
+          observed['finished_at'] = datetime.now(timezone.utc).isoformat()
+          print(json.dumps(observed, sort_keys=True, ensure_ascii=True, allow_nan=False), flush=True)
+          PYPLAN
 
       - name: Read fixed DEV deployment and package state
         env:

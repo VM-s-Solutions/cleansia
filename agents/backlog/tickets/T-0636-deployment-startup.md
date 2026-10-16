@@ -288,6 +288,26 @@ Current B2 capacity 1/worker 1/perSiteScaling false and six bindings are observe
 
 Exact accepted evidence, criterion interpretation and raw pins: `/Users/michael/.codex/scratchpads/cleansia-next-wave-2026-10-13/startup-2026-10-15/final-c10-records-preparation001/CLAIMS-AND-PINS001.json`.
 
+### Temporary B3 capacity comparison — owner scope extension, 2026-10-16
+
+The prior C10 record-head closure is complete: all six local documentation/head commands passed once, with an independent 224-check final assessment and no material findings. Exact evidence and retained checker-only failures are in `/Users/michael/.codex/scratchpads/cleansia-next-wave-2026-10-13/startup-2026-10-15/final-records-gates-actual-review001/SEAL003.json`. Qualified application carry and historical YAML consistency NOT RUN remain as recorded; this establishes no startup-speed improvement.
+
+Mike answered the temporary capacity question:
+
+> Let's try B3 temporarily and if the cost increase isn't significant (10-15$) then we can keep. But DEV environment isn't a big consideration for me since it's DEV. I'm wondering if you're able to identify the issue of long startup with B3 and if so then we can assume that the delay is cause of the limited resources and rollback to B2
+
+This is a scoped exception to the earlier cost exclusion for a temporary B2 → B3 → B2 experiment only. The steady-state Bicep parameter stays B2; the current worker count must be freshly checked and preserved. The $10–15 retention range is interpreted as monthly. The fresh official Linux West Europe retail comparison is $0.036/hour B2 versus $0.071/hour B3: $25.55 extra per instance at 730 hours, above that range. Therefore the default is verified B2 restoration after the bounded experiment, without permanent B3 retention. A half-hour on one instance would add about $0.0175 at those retail rates; actual billing, discounts, tax and exposure timing can differ.
+
+The selected design is a dedicated, manually dispatched DEV-only capacity control using the existing identity, with read-only observation, one B2-before/B3/B2-after comparison cycle and independently callable B2 restoration. All seven occupants, including Functions, must be inventoried. The trial preserves selected packages/configuration and count, separates resize effects from matched restart observations, retains missing restart boundaries as inconclusive, and cannot establish cause from one faster B3 response. SQL/docs interference stops the experiment without blocking guarded B2 recovery; an ambiguous pending upscale cannot be called restored solely because a B2 GET was observed.
+
+No PRO operation, database reset, successful seed/promo replay, docs deployment, storage cleanup, slot, identity/permission change, new credential, application package upload or configuration redeployment is authorized by this extension. The prior completed operations remain complete. All earlier failed rollouts, resource measurements, worker/package limitations and dated pending statements above remain historical evidence.
+
+The cross-run CLI admission requires a root-reviewed deterministic receipt from `observe` and exact equality on the separate trial runner before its first restart or resize. B2 recovery remains independent of that receipt. These controls are source work pending exact final review at this checkpoint.
+
+At this prelaunch source checkpoint, implementation/control tests, applicable source/head checks, publication/CI, fresh Azure admission, the comparison and verified rollback remain pending. No B3 write, restart or temporary-capacity result is claimed. T-0636 remains `in_progress` for the unresolved original almost-immediate startup goal. Initial read-only GitHub ground truth still found master M4 `440a7e96a2ef540d445a2d8a7c878b4a5a9c3a73` and no in-progress or queued run; complete fresh manual admission is still required before the trial. C9/C10 remain the first two local closure commits on this next branch.
+
+Exact owner scope, retail comparison, design and implementation selections: `/Users/michael/.codex/scratchpads/cleansia-next-wave-2026-10-13/startup-2026-10-15/temp-b3-root001/OWNER-SCOPE001.json`, `RETAIL-COMPARISON002.json`, `ARTIFACT-SELECTION002.json`, `RESTORE-ADMISSION003.json`, `DERIVED-SCALE004.json`, `STANDALONE-RESTORE005.json`, `CLI-CROSS-RUN-ADMISSION006.json`, and `/Users/michael/.codex/scratchpads/cleansia-next-wave-2026-10-13/startup-2026-10-15/temp-b3-design001/SELECTION-ADDENDUM002.txt`.
+
 ## Review
 
 The scoped correctness/security and exact final record/publication assessments are retained with their recorded limits. PR #338 and exact-head/master CI are complete as dated above. The new resulting-master rollout failed with unverified SCM outcomes; live package/readiness acceptance and the applicable criteria remain unmet. The transport source/local verification and qualified fresh application results are recorded above. Final operations/source binding, publication, diagnostic execution and live acceptance remain required at this dated checkpoint.

@@ -298,6 +298,25 @@ def inventory(deadline=None):
             raise ValueError('occupancy-response-guard')
         page_prefix_count = len(seen)
         for item in data['value']:
+            if (isinstance(item, dict) and item.get('name') in OCCUPANTS and item['name'] not in seen
+                    and str(item.get('id', '')).lower() == (base() + '/sites/' + item['name']).lower()
+                    and item.get('plan') is None):
+                known_name = OCCUPANTS[OCCUPANTS.index(item['name'])]
+                event('inventory-binding-detail-read', known_name=known_name)
+                detail = arm(base() + '/sites/' + known_name, '{id:id,name:name,plan:properties.serverFarmId}', deadline)
+                event('inventory-binding-detail-selected', known_name=known_name, response_object=type(detail) is dict,
+                      name_matches=type(detail) is dict and type(detail.get('name')) is str and detail['name'] == known_name,
+                      id_matches=type(detail) is dict and type(detail.get('id')) is str
+                          and detail['id'].lower() == (base() + '/sites/' + known_name).lower(),
+                      plan_present=type(detail) is dict and 'plan' in detail,
+                      plan_shape='missing' if type(detail) is not dict or 'plan' not in detail else
+                          'null' if detail['plan'] is None else 'string' if type(detail['plan']) is str else 'unsupported',
+                      plan_matches=type(detail) is dict and type(detail.get('plan')) is str and detail['plan'].lower() == plan_id().lower())
+                if (type(detail) is not dict or type(detail.get('name')) is not str or detail['name'] != known_name
+                        or type(detail.get('id')) is not str or detail['id'].lower() != (base() + '/sites/' + known_name).lower()
+                        or type(detail.get('plan')) is not str or detail['plan'].lower() != plan_id().lower()):
+                    raise ValueError('seven-occupant-guard')
+                item['plan'] = detail['plan']
             if (not isinstance(item, dict) or item.get('name') not in OCCUPANTS or item['name'] in seen
                     or str(item.get('id', '')).lower() != (base() + '/sites/' + item['name']).lower()
                     or str(item.get('plan', '')).lower() != plan_id().lower()):

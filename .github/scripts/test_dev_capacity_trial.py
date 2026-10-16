@@ -787,5 +787,117 @@ class ObservationDiagnosticTests(OfflineCase):
         self.process.assert_not_called()
 
 
+class InventoryDiagnosticTests(OfflineCase):
+    def test_missing_names_are_reported_only_after_terminal_pagination(self):
+        missing = trial.APPS[2]
+        first = self.listing(trial.OCCUPANTS[:2])
+        first['nextLink'] = 'https://management.azure.com' + trial.plan_id() + '/sites?api-version=2024-04-01&$skiptoken=x'
+        second = self.listing([app for app in trial.OCCUPANTS[2:] if app != missing])
+        with patch.object(trial, 'azure', side_effect=[first, second]) as azure:
+            with self.assertRaisesRegex(ValueError, '^seven-occupant-guard$'):
+                trial.inventory()
+        terminal = [row for row in trial.EVENTS if row['kind'] == 'inventory-terminal-selected']
+        self.assertEqual(len(terminal), 1)
+        self.assertEqual(terminal[0]['missing_known_names'], [missing])
+        pages = [row for row in trial.EVENTS if row['kind'] == 'inventory-page-selected']
+        self.assertEqual([row['page_index'] for row in pages], [0, 1])
+        self.assertEqual(sum(pages[0]['validated_prefix_counts'].values()), 0)
+        self.assertEqual(sum(pages[1]['validated_prefix_counts'].values()), 2)
+        self.assertEqual(sum(pages[1]['current_page_known_counts'].values()), 4)
+        self.assertEqual(azure.call_count, 2)
+        self.process.assert_not_called()
+
+    def test_first_rejected_row_reports_only_known_name_shapes_and_guard_booleans(self):
+        class UnknownValue:
+            def __str__(self):
+                raise AssertionError('unknown diagnostic value was stringified')
+            __repr__ = __str__
+        cases = []
+        extra = self.listing();extra['value'].append({'name': 'credential-needle', 'id': 'https://secret.example', 'plan': trial.plan_id()})
+        cases.append((extra, 7, 'unrecognized', False, False, True, 'object'))
+        duplicate = self.listing();duplicate['value'].append(duplicate['value'][0])
+        cases.append((duplicate, 7, trial.OCCUPANTS[0], True, True, True, 'object'))
+        for field, value, expected_id, expected_plan in (('id', 'https://credential-needle.example', False, True),
+                                                       ('plan', None, True, False)):
+            wrong = self.listing();wrong['value'][2][field] = value
+            cases.append((wrong, 2, trial.OCCUPANTS[2], False, expected_id, expected_plan, 'object'))
+        for value, shape in ((None, 'null'), ('credential-needle', 'string'), ({'name': UnknownValue()}, 'object')):
+            wrong = self.listing();wrong['value'][2] = value
+            cases.append((wrong, 2, 'unrecognized', False, False, False, shape))
+        missing_id = self.listing();del missing_id['value'][2]['id']
+        cases.append((missing_id, 2, trial.OCCUPANTS[2], False, False, True, 'object'))
+        for response, index, name, duplicate, id_match, plan_match, shape in cases:
+            with self.subTest(index=index, shape=shape), patch.object(trial, 'azure', return_value=response) as azure:
+                with self.assertRaisesRegex(ValueError, '^seven-occupant-guard$'):
+                    trial.inventory()
+            rejected = next((row for row in reversed(trial.EVENTS) if row['kind'] == 'inventory-row-rejected'), None)
+            self.assertIsNotNone(rejected, 'first rejected row evidence is absent')
+            self.assertEqual((rejected['page_index'], rejected['row_index']), (0, index))
+            self.assertEqual((rejected['known_name'], rejected['row_shape']), (name, shape))
+            self.assertEqual((rejected['duplicate_known_name'], rejected['id_matches'], rejected['plan_matches']),
+                             (duplicate, id_match, plan_match))
+            self.assertEqual(sum(rejected['validated_prefix_counts'].values()), index)
+            self.assertEqual(azure.call_count, 1)
+        self.assertFalse(trial.EVENTS[-1]['field_presence']['id'])
+        self.assertEqual(trial.EVENTS[-1]['field_shapes']['id'], 'missing')
+        self.assertNotIn('credential-needle', self.stdout.getvalue())
+        self.assertNotIn('secret.example', self.stdout.getvalue())
+        self.assertNotIn(trial.plan_id(), self.stdout.getvalue())
+        self.assertFalse(any(row['kind'] == 'inventory-terminal-selected' for row in trial.EVENTS))
+        self.process.assert_not_called()
+
+    def test_page_shapes_and_oversize_counts_are_bounded_without_raw_values(self):
+        for response, value_shape in ((None, 'missing'), (['credential-needle'], 'missing'), ({}, 'missing'),
+                                      ({'value': None}, 'null'), ({'value': 'credential-needle'}, 'string'),
+                                      ({'value': [None] * 101}, 'array')):
+            with self.subTest(shape=value_shape), patch.object(trial, 'azure', return_value=response) as azure:
+                with self.assertRaisesRegex(ValueError, '^occupancy-response-guard$'):
+                    trial.inventory()
+            page = next((row for row in reversed(trial.EVENTS) if row['kind'] == 'inventory-page-selected'), None)
+            self.assertIsNotNone(page, 'page response evidence is absent')
+            self.assertEqual(page['value_shape'], value_shape)
+            self.assertIsNone(page['value_count'])
+            self.assertFalse(page['value_within_bound'])
+            self.assertTrue(all(value is None for value in page['current_page_known_counts'].values()))
+            self.assertEqual(azure.call_count, 1)
+        self.assertNotIn('credential-needle', self.stdout.getvalue())
+        self.assertFalse(any(row['kind'] == 'inventory-terminal-selected' for row in trial.EVENTS))
+        self.process.assert_not_called()
+
+    def test_bad_pagination_and_ten_page_bound_never_claim_missing_inventory(self):
+        first = self.listing(trial.OCCUPANTS[:2]);first['nextLink'] = 'https://credential-needle.example/secret'
+        with patch.object(trial, 'azure', return_value=first) as azure:
+            with self.assertRaisesRegex(ValueError, '^occupancy-pagination-guard$'):
+                trial.inventory()
+        self.assertEqual(azure.call_count, 1)
+        repeated = self.listing([])
+        repeated['nextLink'] = 'https://management.azure.com' + trial.plan_id() + '/sites?api-version=2024-04-01&$skiptoken=x'
+        with patch.object(trial, 'azure', return_value=repeated) as azure:
+            with self.assertRaisesRegex(ValueError, '^occupancy-pagination-bound$'):
+                trial.inventory()
+        self.assertEqual(azure.call_count, 10)
+        pages = [row for row in trial.EVENTS if row['kind'] == 'inventory-page-selected']
+        self.assertEqual([row['page_index'] for row in pages[-10:]], list(range(10)))
+        self.assertTrue(all(row['next_link_present'] for row in pages))
+        self.assertFalse(any(row['kind'] == 'inventory-terminal-selected' for row in trial.EVENTS))
+        self.assertNotIn('credential-needle', self.stdout.getvalue())
+        self.assertNotIn('skiptoken', self.stdout.getvalue())
+        self.process.assert_not_called()
+
+    def test_valid_paginated_inventory_retains_output_and_exact_get_count(self):
+        first = self.listing(trial.OCCUPANTS[:3])
+        first['nextLink'] = 'https://management.azure.com' + trial.plan_id() + '/sites?api-version=2024-04-01&$skiptoken=x'
+        with patch.object(trial, 'azure', side_effect=[first, self.listing(trial.OCCUPANTS[3:])]) as azure:
+            observed = trial.inventory()
+        self.assertEqual(observed, self.snapshot()['occupants'])
+        self.assertEqual(azure.call_count, 2)
+        terminal = next((row for row in trial.EVENTS if row['kind'] == 'inventory-terminal-selected'), None)
+        self.assertIsNotNone(terminal, 'terminal coverage evidence is absent')
+        self.assertEqual(terminal['missing_known_names'], [])
+        self.assertEqual(sum(terminal['validated_prefix_counts'].values()), 7)
+        self.assertFalse(any(row['kind'] == 'inventory-row-rejected' for row in trial.EVENTS))
+        self.process.assert_not_called()
+
+
 if __name__ == '__main__':
     unittest.main()

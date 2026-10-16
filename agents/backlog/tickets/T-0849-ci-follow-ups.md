@@ -483,6 +483,18 @@ This source checkpoint is 2026-10-16 in Europe/Prague; preceding unresolved/prom
 
 Promo-only retry `38820436701` / attempt 1 completed on master `70878a3545da4a6fbc8b541a20916d7d53c86be7`: two successful jobs/one PRO skip, zero annotations/artifacts; DEV reported `INSERT 0 60` and script success. Sixty is affected rows, not a table total; no literal BEGIN/COMMIT receipt is claimed. No original successful seed/reset/docs work was repeated. C3 `f5e04cbb210afd7b9053ffb34840b98ff4bf3112` is local/unpushed and exactly three reviewed source changes are locally uncommitted. Full 66-test/local/docs/head gates, actual source binding/publication/CI, resulting-master deployment and final DB/13-HTTP acceptance/closure remain pending. The applicable END criterion remains unchecked, INDEX remains `in_progress` and MS-2 remains Open.
 
+### PR #341 closure and qualified selected-package reconciliation — 2026-10-16 UTC
+
+[PR #341](https://github.com/VM-s-Solutions/cleansia/pull/341) merged `2b83eff633a195c35b4fac332839ff47942638c1` from C4 `4b42cfb4bd543f08b5fa4aa7f782b8226eb594ad`, retaining tree `d8855b6ff21815d605435bed30e2a3d99e5a71a7`. Local proof retains eight actual rows/seven successes/one consistency non-run and full Python 66; PR CI passed six jobs/five workflows and master CI three push jobs/three workflows, all attempt 1/zero reruns. PR/master retain 11/10 warning annotations, cache/zero-affected-Jest/fixture browser/app-carry qualifications and no invented master Frontend run. [T-0636](T-0636-deployment-startup.md#pr-341-closure-selected-packages-verified-rolloutreadiness-still-failed--2026-10-16-utc) records exact evidence and limits.
+
+DEV `38830931038` / attempt 1 failed with 14 successes, one Customer Mobile post-acknowledgment deployment-list GET TimeoutError (60.519 seconds/no final JSON) and one global warm skip. Six new intents/five selected-package final JSONs and nine fresh artifact lineages are retained. Its stopped observer recorded 672 samples/533 healthy/139 timeouts, last round 0/6; no real SSR render/final acceptance follows. Read-only singleton `38833690130` / attempt 1 passed six collection jobs; the independent 897-check/109-pin comparison verifies all six current selected ZIP hashes and byte counts against their own UUID intents, including Customer Mobile. All six SCM backing-entry mismatches remain separate namespace diagnostics, not executing-worker proof. The failed rollout stays failed; neither readiness nor reupload is justified by green collection. No causal source defect is confirmed; bounded hosted-runtime/plan-metrics evidence is prepared off-tree only.
+
+Promo-only retry `38820436701` is complete (`INSERT 0 60`, affected rows/no literal COMMIT receipt) and is not repeated. Fresh final DB health/13 anonymous HTTP acceptance remain unperformed. The applicable criterion/checklist remains unchanged and unmet, INDEX remains `in_progress` and MS-2 remains Open. Original successful reset/docs/bootstrap/fixtures/admin/promo are not replayed; all prior history and qualifications remain.
+
+### Bounded runtime evidence source checkpoint — PRELAUNCH 2026-10-16 UTC
+
+[T-0636](T-0636-deployment-startup.md#bounded-runtime-evidence-source-checkpoint--prelaunch-2026-10-16-utc) records the one-YAML evidence candidate and scoped correctness/security/command-mock QA. Full66/docs/head/app-input carry proof, publication/CI and hosted runtime execution remain pending at this dated prelaunch checkpoint. No causal fix or live readiness is claimed; prior rollout/inspection/promo facts, all criteria, `in_progress` and MS-2 Open remain unchanged.
+
 ## Review
 
 Pending.

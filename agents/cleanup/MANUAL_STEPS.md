@@ -346,6 +346,10 @@ Resulting-master DEV `38830931038` / attempt 1 failed: 14 successful jobs, Custo
 
 The one-YAML diagnostic evidence candidate has scoped correctness/security and command-mock QA; [T-0636](../backlog/tickets/T-0636-deployment-startup.md#bounded-runtime-evidence-source-checkpoint--prelaunch-2026-10-16-utc) records its bounds and pins. At this prelaunch checkpoint full66/docs/head gates, fresh app-input carry proof, source binding/publication/CI and hosted execution remain pending. No metrics, cause, public readiness or final acceptance is inferred. **MS-2 remains Open**, with all prior history/quotes/checklists intact, including PR #341 closure. Successful reset/seeds/promo/docs are not replayed; final DB/13 HTTP acceptance remains unperformed.
 
+#### 2026-10-16 UTC — PR #342 closure and bounded runtime observations
+
+[T-0636](../backlog/tickets/T-0636-deployment-startup.md#pr-342-closure-and-bounded-runtime-observations--2026-10-16-utc) records PR #342/M3 CI, qualified local/application carry and read-only diagnostic `38868360114`/1. All six selected archives still match their own original uploads; three healthy public bodies have NULL status/timing fields. Named-plan samples and platform lifecycle timings establish no initiating cause or complete readiness. Prior failures, observer stalls, quotes and qualifications remain history. **MS-2 remains Open**; all criteria and four INDEX dispositions remain unchanged. Successful reset/docs/bootstrap/fixtures/admin/promo are not replayed; final DB/13 HTTP remain unperformed. B3 remains a pending proposal; the cost ban remains operative.
+
 ### MS-9 — Invite yourself to the admin console — **DEV verified 2026-09-11**
 
 The owner confirmed the DEV site's `/.auth/me` reports `aad` with `admin_console`, and the

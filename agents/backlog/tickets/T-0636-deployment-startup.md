@@ -236,6 +236,18 @@ Correctness passed 138 controls and security 43 pin/scope checks, with no materi
 
 At this explicitly **PRELAUNCH** checkpoint, the candidate's full 66-test/docs/head gates, fresh unchanged-app-input carry proof, final source binding, publication/exact-head/master CI and hosted runtime execution remain pending. Later actuals require their own immutable receipts; earlier C4/PR #341 proof stays dated history. The failed rollout, selected-archive reconciliation, completed promo/no replay, unperformed final DB/13 HTTP acceptance, all ACs/four `in_progress` rows and MS-2 Open remain unchanged. Evidence: `startup-runtime-evidence-preparation001/SEAL001.json`, correctness/security review seals and `startup-runtime-evidence-qa001/SEAL001.json` under the existing startup evidence root.
 
+### PR #342 closure and bounded runtime observations — 2026-10-16 UTC
+
+[PR #342](https://github.com/VM-s-Solutions/cleansia/pull/342) merged C6 `56914b0f17a7` as M3 `40645abf8997`, with the same tree. PR CI passed 5 workflows/6 jobs/6 checks; master passed 3/3/3, all attempt 1/zero reruns. Local evidence records seven successes, one unsupported consistency NOT RUN and fresh Python 66/66 (38.086 s); full application results remain qualified carry. Hosted Backend freshly passed 8,733/976/509 plus Python 66; Frontend affected Jest selected no tasks, seven Chromium cases used fixtures, Android compile/unit tasks were FROM-CACHE; no fresh device proof.
+
+Read-only diagnostic `38868360114`/1 on M3 passed six jobs/checks, zero annotations: one POST, then GET-only identity reconciliation. All six selected ZIP hashes/bytes/deployers/status-4 complete records/stable pointers still match their own `38830931038` intents; backing-entry differences remain separate from executing bytes. Three public curls exited 0 with known healthy bodies, but each has eight NULL status/timing fields: HTTP 200 and timings were not observed; a correction remains off-tree.
+
+The named plan has 24 buckets (00:39–01:02 UTC): memory 95–98%, final-five CPU 90–94%, queue 0. App-plan binding, instance count, OOM and cause remain unproved. Platform API/SSR lifecycle durations were 357.913/96.132 s, starting 273 ms apart; matching deployment GUIDs do not prove executing bytes/all instances. October 15's remount termination does not establish October 16's onset cause.
+
+Prior rollout failure/stalls remain history. Promo 60 affected rows is complete/no replay; final DB/13 HTTP remain unperformed. All criteria, four `in_progress` rows and MS-2 Open remain. B3 is a pending proposal; the cost ban remains.
+
+Exact identities, qualifications and evidence pins: `/Users/michael/.codex/scratchpads/cleansia-next-wave-2026-10-13/startup-2026-10-15/pr342-closure-preparation001/CLAIMS-AND-PINS001.json`.
+
 ## Review
 
 The scoped correctness/security and exact final record/publication assessments are retained with their recorded limits. PR #338 and exact-head/master CI are complete as dated above. The new resulting-master rollout failed with unverified SCM outcomes; live package/readiness acceptance and the applicable criteria remain unmet. The transport source/local verification and qualified fresh application results are recorded above. Final operations/source binding, publication, diagnostic execution and live acceptance remain required at this dated checkpoint.

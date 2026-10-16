@@ -248,6 +248,18 @@ Prior rollout failure/stalls remain history. Promo 60 affected rows is complete/
 
 Exact identities, qualifications and evidence pins: `/Users/michael/.codex/scratchpads/cleansia-next-wave-2026-10-13/startup-2026-10-15/pr342-closure-preparation001/CLAIMS-AND-PINS001.json`.
 
+### Public metrics correction and DEV plan observation — 2026-10-16 UTC prelaunch
+
+PRELAUNCH: the sole source candidate is `diagnose-dev.yml`, still off-tree. Explicit eight-field curl output and typed finite validation keep missing/NULL metrics and HTTP 000 partial. Command mocks: 6/10 RED failures before correction, then 10/10 GREEN; adapted prior 15 cases passed as later compatibility checks.
+
+A new 63-line customer-mobile leg, two-minute step makes two fixed ARM GETs (30 s each): validated subscription GUID, DEV plan SKU/capacity/numberOfWorkers/perSiteScaling and six app-binding booleans. Output is whitelisted; IDs/raw bodies/stderr withheld. The 1 MiB bound is a read after commands, not a streaming cap. No privilege/configuration change.
+
+Correctness checks passed: curl 106 inline/318 mocks, metadata 65/84; security 58 checks passed. Metadata's 46 cases are post-candidate verification. Exact official 2023 routes/schema confirmed. Helper, six SCM legs and artifact contracts unchanged.
+
+Source application, helper 66/full local gates, publication, CI and a live diagnostic remain pending here. No live binding/SKU/count, OOM, cause or readiness conclusion. B3 approval pending; cost ban, open criteria, four `in_progress` rows and MS-2 Open remain. Promo complete/no replay; final DB/13 HTTP unperformed.
+
+Pins: `/Users/michael/.codex/scratchpads/cleansia-next-wave-2026-10-13/startup-2026-10-15/public-observation-source-records-preparation001/CLAIMS-AND-PINS001.json`.
+
 ## Review
 
 The scoped correctness/security and exact final record/publication assessments are retained with their recorded limits. PR #338 and exact-head/master CI are complete as dated above. The new resulting-master rollout failed with unverified SCM outcomes; live package/readiness acceptance and the applicable criteria remain unmet. The transport source/local verification and qualified fresh application results are recorded above. Final operations/source binding, publication, diagnostic execution and live acceptance remain required at this dated checkpoint.

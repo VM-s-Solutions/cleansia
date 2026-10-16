@@ -499,6 +499,10 @@ Promo-only retry `38820436701` is complete (`INSERT 0 60`, affected rows/no lite
 
 [T-0636](T-0636-deployment-startup.md#pr-342-closure-and-bounded-runtime-observations--2026-10-16-utc) records PR #342/M3 CI, qualified local/application evidence and read-only diagnostic `38868360114`/1. Selected packages still match; public status/timing fields are NULL and plan samples establish no initiating cause. The failed rollout and prior history remain. Promo is complete/no replay; final DB/13 HTTP remain unperformed. The applicable criteria/checklists, INDEX `in_progress` and MS-2 Open stay unchanged; B3 remains a pending proposal under the cost ban.
 
+### Public metrics correction and DEV plan observation — 2026-10-16 UTC prelaunch
+
+[T-0636](T-0636-deployment-startup.md#public-metrics-correction-and-dev-plan-observation--2026-10-16-utc-prelaunch) records the off-tree curl correction and fixed DEV metadata GETs, finite mocked checks and their limits. Source application, full local gates/helper 66, publication, CI and a live diagnostic remain pending at this checkpoint. No live capacity/binding or cause conclusion; B3 approval remains pending under the cost ban. Criteria, INDEX `in_progress`, MS-2 Open and prior history remain; promo is complete/no replay, final DB/13 HTTP unperformed.
+
 ## Review
 
 Pending.

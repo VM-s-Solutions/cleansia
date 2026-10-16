@@ -350,6 +350,10 @@ The one-YAML diagnostic evidence candidate has scoped correctness/security and c
 
 [T-0636](../backlog/tickets/T-0636-deployment-startup.md#pr-342-closure-and-bounded-runtime-observations--2026-10-16-utc) records PR #342/M3 CI, qualified local/application carry and read-only diagnostic `38868360114`/1. All six selected archives still match their own original uploads; three healthy public bodies have NULL status/timing fields. Named-plan samples and platform lifecycle timings establish no initiating cause or complete readiness. Prior failures, observer stalls, quotes and qualifications remain history. **MS-2 remains Open**; all criteria and four INDEX dispositions remain unchanged. Successful reset/docs/bootstrap/fixtures/admin/promo are not replayed; final DB/13 HTTP remain unperformed. B3 remains a pending proposal; the cost ban remains operative.
 
+#### 2026-10-16 UTC prelaunch — public metrics correction and DEV plan observation
+
+[T-0636](../backlog/tickets/T-0636-deployment-startup.md#public-metrics-correction-and-dev-plan-observation--2026-10-16-utc-prelaunch) records the off-tree curl correction and fixed read-only DEV plan/binding observation, finite mock results and qualifications. Source application, helper 66/full local gates, publication, CI and a live diagnostic remain pending here. No live SKU/count/binding, OOM, initiating cause or readiness conclusion. **MS-2 remains Open**; criteria, four INDEX dispositions and all prior history remain. B3 approval is pending and the cost ban stands. Successful prior operations/promo are not replayed; final DB/13 HTTP remain unperformed.
+
 ### MS-9 — Invite yourself to the admin console — **DEV verified 2026-09-11**
 
 The owner confirmed the DEV site's `/.auth/me` reports `aad` with `admin_console`, and the

@@ -3,7 +3,7 @@ id: T-0636
 title: Make DEV deployment startup reliable and bound SSR dependency waits
 size: M
 created: 2026-10-15
-updated: 2026-10-15
+updated: 2026-10-16
 depends_on: []
 blocks: []
 layers: [backend, frontend, docs]
@@ -26,10 +26,10 @@ Fresh checks proved five exact Healthy API responses and two rendered SSR pages 
 
 ## Acceptance criteria
 
-- [ ] **AC1** — A DEV API/SSR deployment publishes a complete package without executing a partially replaced live tree. The chosen Linux ZIP path is covered by real HTTP client regression tests and DEV package identity/readiness evidence; the first package-mode transition is timed and qualified separately.
-- [ ] **AC2** — With a deliberately stalled own-API market or later catalogue/plan request, a fresh optimized SSR process aborts the transport, finishes a populated server-rendered fallback within the tested budget and stays responsive on `/health`. A subsequent healthy anonymous render recovers before the landing-cache TTL. Browser, credential, transfer-cache and valid-empty catalogue behavior remain intact.
-- [ ] **AC3** — Fresh-process healthy startup and readiness timings are recorded separately from upload, deployment and warm-loop durations. API database readiness is tested against a silent PostgreSQL peer before any correction; legal first-read and type-catalogue ordering remain valid.
-- [ ] **AC4** — Independent review, security review, meaningful RED/GREEN evidence, full applicable local suites, exact-head CI and guarded merge complete. A DEV deployment from the resulting master passes the package and readiness checks. No almost-immediate or zero-error platform guarantee is inferred from a local benchmark.
+- [x] **AC1** — A DEV API/SSR deployment publishes a complete package without executing a partially replaced live tree. The chosen Linux ZIP path is covered by real HTTP client regression tests and DEV package identity/readiness evidence; the first package-mode transition is timed and qualified separately.
+- [x] **AC2** — With a deliberately stalled own-API market or later catalogue/plan request, a fresh optimized SSR process aborts the transport, finishes a populated server-rendered fallback within the tested budget and stays responsive on `/health`. A subsequent healthy anonymous render recovers before the landing-cache TTL. Browser, credential, transfer-cache and valid-empty catalogue behavior remain intact.
+- [x] **AC3** — Fresh-process healthy startup and readiness timings are recorded separately from upload, deployment and warm-loop durations. API database readiness is tested against a silent PostgreSQL peer before any correction; legal first-read and type-catalogue ordering remain valid.
+- [x] **AC4** — Independent review, security review, meaningful RED/GREEN evidence, full applicable local suites, exact-head CI and guarded merge complete. A DEV deployment from the resulting master passes the package and readiness checks. No almost-immediate or zero-error platform guarantee is inferred from a local benchmark.
 
 ## Out of scope
 
@@ -259,6 +259,54 @@ Correctness checks passed: curl 106 inline/318 mocks, metadata 65/84; security 5
 Source application, helper 66/full local gates, publication, CI and a live diagnostic remain pending here. No live binding/SKU/count, OOM, cause or readiness conclusion. B3 approval pending; cost ban, open criteria, four `in_progress` rows and MS-2 Open remain. Promo complete/no replay; final DB/13 HTTP unperformed.
 
 Pins: `/Users/michael/.codex/scratchpads/cleansia-next-wave-2026-10-13/startup-2026-10-15/public-observation-source-records-preparation001/CLAIMS-AND-PINS001.json`.
+
+### PR #343 source and CI closure — 2026-10-16 UTC
+
+[PR #343](https://github.com/VM-s-Solutions/cleansia/pull/343) merged C8 `f3b1db5c7e90` as M4 `440a7e96a2ef`, retaining tree `58a56ad1cf80` and parents M3 then C8. The curl metrics correction and fixed DEV plan/binding GETs are merged; this is diagnostic collection source, with no startup-speed or causal-fix claim.
+
+Same-C8 local gates record seven successes and one YAML consistency unsupported/NOT RUN: Python 66/66 (37.737 s), docs 7,479 files/422 references/0 unresolved, catalog 0 claim/reach failures/163 advisories, private docs build 12.35 s (606 files/174 HTML), actionlint 14 workflows, secret history 2,486 reported commits/no leaks (raw Git 2,656), and diff check. Application results remain qualified prior carry: Backend 10,218, Frontend 5,070 plus seven fixture Chromium cases, Android 2,873, iOS 3,688 plus one VoiceOver skip on 18.6, without a new 16.4/device/provider result. Prior failures, compilation/cache reuse and fixture limits remain.
+
+PR CI passed 5 workflows/6 jobs/6 checks; resulting master passed 3/3/3, all attempt 1/zero reruns. Each freshly passed Backend 8,733/976/509 plus Python 66 (PR 37.459 s; master 40.047 s). The PR's seven Chromium fixture cases use synthetic merge `4a3bfdeac458`; artifact `12036103446` had one GET. Affected Jest/lint selected no tasks; Android compile/unit targets were FROM-CACHE and iOS did not trigger. Both fresh Frontend npm summaries report 16 findings (1 low/2 moderate/13 high); prior PR #342's 17 is historical, with unchanged lockfiles and no remediation/triage claim. Warning/advisory and artifact-retention limits remain.
+
+At this source/CI closure checkpoint, a new live diagnostic and final DB health/13 anonymous HTTP acceptance remain pending. Prior rollout failure, NULL public status/timing observations and selected-package/worker-identity limits remain history. Promo is complete/no replay. All seven unchecked criteria, four INDEX `in_progress` rows and MS-2 Open remain; B3 approval is pending under the cost ban, with no capacity change.
+
+Exact local/CI/merge actuals, raw references and qualifications: `/Users/michael/.codex/scratchpads/cleansia-next-wave-2026-10-13/startup-2026-10-15/pr343-closure-preparation001/CLAIMS-AND-PINS001.json`.
+
+### Final DEV acceptance and current disposition — 2026-10-16 UTC
+
+**Current disposition:** AC1–AC4 are satisfied within their recorded bounds. T-0636 remains `in_progress`: Mike's request for almost-immediate startup without issues is unresolved. The recorded 357.913/96.132 s platform lifecycle durations and historical stalls are not erased by current readiness.
+
+Diagnostic `38883920239/a1` at M4 passed all six jobs, zero annotations. Each selected whole ZIP's SHA256 AND byte length matches its own original `38830931038/a1` intent, with terminal status4/complete records and stable pointers. These remain M2-built packages. The 8,260 unchanged tracked runtime-input paths through M4 support AC1/AC4's bounded continuation; no M4 rebuild/upload, executing-worker/mount or all-instance identity is proved. All six backing-entry mismatches remain qualified. The first package-mode transition has separate chronology; structured upload/deployment/activation timings are UNAVAILABLE. Original `38830931038/a1` remains FAILED.
+
+Final DEV health `38885747547/a1` at M4 passed (PRO skipped): five SQL result sets, 90 approximate table-stat rows, 16 MB, 20 size rows, active 1/idle 11 and no non-idle query over 30 s or SQL error. These statistics are not exact seed totals or a fresh migration-history query.
+
+Exactly one 12+1 anonymous batch at 10:18:10.217644–10:18:25.485296 UTC passed all 13 curl 0/HTTP 200 with finite total/TTFB: five exact Healthy APIs; both real SSR roots/home with three named local order cards each; Market 1(CZ), Service 10, Package 8, Currency 5(CZK), Plans 2 and Language 5 usable id/code/name DTOs (cs/en/sk/uk/ru). SSR totals 3.897939/2.735299 s and API totals 0.770982–2.199293 s are point observations, not cold-start improvement or an SLA. First 12 finish UTC were not emitted; external reconcile/watcher exact walltimes remain null/retrospectively qualified.
+
+AC2 retains native stalled-transport abort/fallback/recovery evidence. AC3 retains separate cold local API/silent-PostgreSQL and legal/type-catalogue evidence, with fixture/cache/IPv4 limits. Existing security, RED/GREEN, qualified full local suites and exact C8/M4 CI/guarded merges support AC4; compilation/cache reuse, skips and warnings remain. Final records-head checks are pending at this checkpoint.
+
+Current B2 capacity 1/worker 1/perSiteScaling false and six bindings are observed. Incident memory 95–98% predates uploads; CPU 20–94% and queue 0 averages do not prove OOM, cause or historical placement. B3 has no owner answer/change; it is a headroom experiment, neither proved necessary nor sufficient, under the existing cost/instance/slot exclusion. T-0838/T-0844/T-0849 are done and MS-2 is discharged; completed reset/docs/bootstrap/fixtures/admin/promo are not replayed.
+
+Exact accepted evidence, criterion interpretation and raw pins: `/Users/michael/.codex/scratchpads/cleansia-next-wave-2026-10-13/startup-2026-10-15/final-c10-records-preparation001/CLAIMS-AND-PINS001.json`.
+
+### Temporary B3 capacity comparison — owner scope extension, 2026-10-16
+
+The prior C10 record-head closure is complete: all six local documentation/head commands passed once, with an independent 224-check final assessment and no material findings. Exact evidence and retained checker-only failures are in `/Users/michael/.codex/scratchpads/cleansia-next-wave-2026-10-13/startup-2026-10-15/final-records-gates-actual-review001/SEAL003.json`. Qualified application carry and historical YAML consistency NOT RUN remain as recorded; this establishes no startup-speed improvement.
+
+Mike answered the temporary capacity question:
+
+> Let's try B3 temporarily and if the cost increase isn't significant (10-15$) then we can keep. But DEV environment isn't a big consideration for me since it's DEV. I'm wondering if you're able to identify the issue of long startup with B3 and if so then we can assume that the delay is cause of the limited resources and rollback to B2
+
+This is a scoped exception to the earlier cost exclusion for a temporary B2 → B3 → B2 experiment only. The steady-state Bicep parameter stays B2; the current worker count must be freshly checked and preserved. The $10–15 retention range is interpreted as monthly. The fresh official Linux West Europe retail comparison is $0.036/hour B2 versus $0.071/hour B3: $25.55 extra per instance at 730 hours, above that range. Therefore the default is verified B2 restoration after the bounded experiment, without permanent B3 retention. A half-hour on one instance would add about $0.0175 at those retail rates; actual billing, discounts, tax and exposure timing can differ.
+
+The selected design is a dedicated, manually dispatched DEV-only capacity control using the existing identity, with read-only observation, one B2-before/B3/B2-after comparison cycle and independently callable B2 restoration. All seven occupants, including Functions, must be inventoried. The trial preserves selected packages/configuration and count, separates resize effects from matched restart observations, retains missing restart boundaries as inconclusive, and cannot establish cause from one faster B3 response. SQL/docs interference stops the experiment without blocking guarded B2 recovery; an ambiguous pending upscale cannot be called restored solely because a B2 GET was observed.
+
+No PRO operation, database reset, successful seed/promo replay, docs deployment, storage cleanup, slot, identity/permission change, new credential, application package upload or configuration redeployment is authorized by this extension. The prior completed operations remain complete. All earlier failed rollouts, resource measurements, worker/package limitations and dated pending statements above remain historical evidence.
+
+The cross-run CLI admission requires a root-reviewed deterministic receipt from `observe` and exact equality on the separate trial runner before its first restart or resize. B2 recovery remains independent of that receipt. These controls are source work pending exact final review at this checkpoint.
+
+At this prelaunch source checkpoint, implementation/control tests, applicable source/head checks, publication/CI, fresh Azure admission, the comparison and verified rollback remain pending. No B3 write, restart or temporary-capacity result is claimed. T-0636 remains `in_progress` for the unresolved original almost-immediate startup goal. Initial read-only GitHub ground truth still found master M4 `440a7e96a2ef540d445a2d8a7c878b4a5a9c3a73` and no in-progress or queued run; complete fresh manual admission is still required before the trial. C9/C10 remain the first two local closure commits on this next branch.
+
+Exact owner scope, retail comparison, design and implementation selections: `/Users/michael/.codex/scratchpads/cleansia-next-wave-2026-10-13/startup-2026-10-15/temp-b3-root001/OWNER-SCOPE001.json`, `RETAIL-COMPARISON002.json`, `ARTIFACT-SELECTION002.json`, `RESTORE-ADMISSION003.json`, `DERIVED-SCALE004.json`, `STANDALONE-RESTORE005.json`, `CLI-CROSS-RUN-ADMISSION006.json`, and `/Users/michael/.codex/scratchpads/cleansia-next-wave-2026-10-13/startup-2026-10-15/temp-b3-design001/SELECTION-ADDENDUM002.txt`.
 
 ## Review
 

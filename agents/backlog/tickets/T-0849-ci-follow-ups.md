@@ -4,7 +4,7 @@ title: CI follow-ups — move to Ubuntu 26.04 deliberately, let Dependabot updat
 size: S
 owner: pm
 created: 2026-10-12
-updated: 2026-10-15
+updated: 2026-10-16
 depends_on: [T-0838]
 blocks: []
 stories: []
@@ -56,7 +56,7 @@ These are surprises in the CI ground truth of 2026-10-12 that no ruling covered.
 
 ## Acceptance criteria (done looks like)
 
-- [ ] **AC1** — Before any switch, the PR workflows pass on `ubuntu-26.04` on one exact head, and the deploy workflows pass on an approved DEV deploy. Otherwise 24.04 stays, with the reason recorded here.
+- [x] **AC1** — Before any switch, the PR workflows pass on `ubuntu-26.04` on one exact head, and the deploy workflows pass on an approved DEV deploy. Otherwise 24.04 stays, with the reason recorded here.
 - [x] **AC2** — Dependabot's config validates and covers the pinned actions. It never proposes gradle/actions v6.
 - [x] **AC3** — deploy-docs carries no "Unexpected input" annotation. This needs a deploy-docs dispatch, which is a deployment, so it waits for Mike's approval.
 - [x] **AC4** — `dotnet-ef` installs at the EF Core version.
@@ -502,6 +502,14 @@ Promo-only retry `38820436701` is complete (`INSERT 0 60`, affected rows/no lite
 ### Public metrics correction and DEV plan observation — 2026-10-16 UTC prelaunch
 
 [T-0636](T-0636-deployment-startup.md#public-metrics-correction-and-dev-plan-observation--2026-10-16-utc-prelaunch) records the off-tree curl correction and fixed DEV metadata GETs, finite mocked checks and their limits. Source application, full local gates/helper 66, publication, CI and a live diagnostic remain pending at this checkpoint. No live capacity/binding or cause conclusion; B3 approval remains pending under the cost ban. Criteria, INDEX `in_progress`, MS-2 Open and prior history remain; promo is complete/no replay, final DB/13 HTTP unperformed.
+
+### PR #343 source and CI closure — 2026-10-16 UTC
+
+[T-0636](T-0636-deployment-startup.md#pr-343-source-and-ci-closure--2026-10-16-utc) records PR #343/C8/M4, seven successful local gates plus one unsupported consistency NOT RUN, qualified prior application carry, and PR 5 workflows/6 jobs/6 checks plus master 3/3/3, all attempt 1/zero reruns. At this source/CI checkpoint, the new live diagnostic and final DB/13 HTTP acceptance remain pending. Prior failures/qualifications remain; promo is complete/no replay. Applicable criteria, INDEX `in_progress` and MS-2 Open stay unchanged; B3 remains pending under the cost ban, with no capacity change.
+
+### Final DEV acceptance and current disposition — 2026-10-16 UTC
+
+**Current disposition: done; AC1 checked.** Ubuntu 26.04 PR [#336](https://github.com/VM-s-Solutions/cleansia/pull/336), exact head `44392c870177ab63467448b9a841141d7da8db45`, passed eight checks/seven workflows before merge. The recorded merge-then-prove reading is fulfilled by approved original DEV `38660355359/a3` and docs `38658881649`: sixteen successful DEV conclusions comprise fourteen carried executions and only Warm/Close fresh. Later startup failures do not erase that original runner proof. [T-0636](T-0636-deployment-startup.md#final-dev-acceptance-and-current-disposition--2026-10-16-utc) records separately accepted current package/DB13 readiness and remaining startup limits. This AC does not depend on B3 or another deployment. Historical then-open statements remain; final records-head checks remain pending.
 
 ## Review
 

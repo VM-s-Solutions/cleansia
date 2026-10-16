@@ -4,7 +4,7 @@ title: Harden the workflows — actions pinned to commits, least-privilege token
 size: M
 owner: pm
 created: 2026-10-12
-updated: 2026-10-15
+updated: 2026-10-16
 depends_on: [T-0820]
 blocks: [T-0849]
 stories: []
@@ -123,7 +123,7 @@ At `207d2f319`:
 - [x] **AC2** — Every workflow declares top-level permissions, and the job blocks are as listed. The names of the required `build` checks are unchanged.
 - [x] **AC3** — No `node-version: 20`, `NODE|20-lts` or `ubuntu-latest` remains under `.github/workflows/` or `deploy/bicep/`. The listed docs and comments say what the files do.
 - [x] **AC4** — The PR workflows pass on the exact head, with no "Node.js 20" annotation and no new warning.
-- [ ] **AC5** — Validation is done or recorded:
+- [x] **AC5** — Validation is done or recorded:
   - deploy-pro has had its static review, and its two scripts pass on Node 22;
   - execute-sql's DEV job passes the read-only health check;
   - the DEV deploy and the deploy-docs run pass on Mike's approval, or are recorded here as owed.
@@ -320,6 +320,14 @@ Promo-only retry `38820436701` is complete (`INSERT 0 60`, affected rows/no lite
 ### Public metrics correction and DEV plan observation — 2026-10-16 UTC prelaunch
 
 [T-0636](T-0636-deployment-startup.md#public-metrics-correction-and-dev-plan-observation--2026-10-16-utc-prelaunch) records the off-tree curl correction and fixed DEV metadata GETs, finite mocked checks and their limits. Source application, full local gates/helper 66, publication, CI and a live diagnostic remain pending at this checkpoint. No live capacity/binding or cause conclusion; B3 approval remains pending under the cost ban. Criteria, INDEX `in_progress`, MS-2 Open and prior history remain; promo is complete/no replay, final DB/13 HTTP unperformed.
+
+### PR #343 source and CI closure — 2026-10-16 UTC
+
+[T-0636](T-0636-deployment-startup.md#pr-343-source-and-ci-closure--2026-10-16-utc) records PR #343/C8/M4, seven successful local gates plus one unsupported consistency NOT RUN, qualified prior application carry, and PR 5 workflows/6 jobs/6 checks plus master 3/3/3, all attempt 1/zero reruns. At this source/CI checkpoint, the new live diagnostic and final DB/13 HTTP acceptance remain pending. Prior failures/qualifications remain; promo is complete/no replay. Applicable criteria, INDEX `in_progress` and MS-2 Open stay unchanged; B3 remains pending under the cost ban, with no capacity change.
+
+### Final DEV acceptance and current disposition — 2026-10-16 UTC
+
+**Current disposition: done; AC5 checked.** The literal "done or recorded" validation is satisfied by the retained PRO static/Node 22 script evidence, approved original DEV `38660355359/a3`, docs `38658881649` and accepted final health `38885747547/a1` plus exact 13 seeded public observations. [T-0636](T-0636-deployment-startup.md#final-dev-acceptance-and-current-disposition--2026-10-16-utc) records the M2-package/M4-input continuation and limits. The one reset, sole current `20261013160545_Initial`, original recovery, three seeds and corrected promo are complete without replay. Earlier owed/pending checkpoints remain historical; this completion does not establish the separate startup-performance goal. Final records-head checks remain pending.
 
 ## Review
 

@@ -1,0 +1,149 @@
+name: Temporary DEV capacity trial
+
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/dev-capacity-trial.yml'
+      - '.github/scripts/dev_capacity_trial.py'
+      - '.github/scripts/test_dev_capacity_trial.py'
+  push:
+    branches: [master]
+    paths:
+      - '.github/workflows/dev-capacity-trial.yml'
+      - '.github/scripts/dev_capacity_trial.py'
+      - '.github/scripts/test_dev_capacity_trial.py'
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: 'Observe only, one temporary B2/B3/B2 trial, or independent B2 recovery'
+        required: true
+        default: observe
+        type: choice
+        options: [observe, trial, restore-b2]
+      expected_capacity:
+        description: 'Guard only: must equal fresh capacity AND actual worker count; never scales out'
+        required: true
+        default: '1'
+        type: choice
+        options: ['1', '2', '3']
+      expected_cli_receipt:
+        description: 'Trial only: reviewed observe CLI receipt SHA-256 (64 lowercase hex digits)'
+        required: false
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.event_name == 'workflow_dispatch' && 'deploy-dev' || format('capacity-controls-{0}-{1}', github.event_name, github.ref) }}
+  cancel-in-progress: false
+
+jobs:
+  offline-controls:
+    if: github.event_name != 'workflow_dispatch'
+    runs-on: ubuntu-26.04
+    timeout-minutes: 5
+    steps:
+      - name: Checkout controls
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - name: Exercise offline capacity and package controls
+        run: |
+          python3 -m unittest discover -s .github/scripts -p 'test_dev_capacity_trial.py' -v
+          python3 -m unittest discover -s .github/scripts -p 'test_deploy_package.py' -v
+      - name: Inspect installed CLI compatibility without authentication
+        run: |
+          python3 - <<'PY'
+          import json
+          import sys
+          sys.path.insert(0, '.github/scripts')
+          import dev_capacity_trial as trial
+          receipt = trial.hosted_cli()
+          print(json.dumps({'kind': 'unauthenticated-hosted-cli-compatibility', 'cli': receipt,
+                            'cli_receipt_sha256': trial.fingerprint(receipt)},
+                           sort_keys=True, ensure_ascii=True, allow_nan=False))
+          PY
+
+  capacity:
+    if: github.event_name == 'workflow_dispatch' && github.repository == 'VM-s-Solutions/cleansia' && github.ref == 'refs/heads/master'
+    runs-on: ubuntu-26.04
+    timeout-minutes: 75
+    permissions:
+      contents: read
+      actions: read
+      id-token: write
+    environment: dev-weu
+    env:
+      TRIAL_MODE: ${{ inputs.mode }}
+      EXPECTED_CAPACITY: ${{ inputs.expected_capacity }}
+      EXPECTED_CLI_RECEIPT: ${{ inputs.expected_cli_receipt }}
+    steps:
+      - name: Checkout fixed dispatch source
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+          sparse-checkout: .github/scripts
+      - name: Validate fixed context and inputs before authentication
+        run: python3 .github/scripts/dev_capacity_trial.py "$TRIAL_MODE" --expected-capacity "$EXPECTED_CAPACITY" --validate-only
+      - name: Login to existing DEV identity
+        uses: azure/login@a641126d1b8aa4d1fa005f4f92df94a3a4c4c906 # v3.1.0
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+      - name: Observe and persist original B2 baseline
+        id: prepare
+        if: inputs.mode != 'restore-b2'
+        timeout-minutes: 10
+        env:
+          GH_TOKEN: ${{ github.token }}
+          EXPECTED_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+          EXPECTED_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
+        run: python3 .github/scripts/dev_capacity_trial.py observe --expected-capacity "$EXPECTED_CAPACITY"
+      - name: Publish immutable baseline before any mutation
+        id: baseline
+        if: inputs.mode != 'restore-b2'
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
+        with:
+          name: dev-capacity-baseline-${{ github.run_id }}-${{ github.run_attempt }}
+          path: dev-capacity-evidence/baseline.json
+          retention-days: 1
+          if-no-files-found: error
+      - name: Run one bounded B2 B3 B2 cycle
+        if: inputs.mode == 'trial'
+        timeout-minutes: 45
+        env:
+          GH_TOKEN: ${{ github.token }}
+          EXPECTED_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+          EXPECTED_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
+          BASELINE_ARTIFACT_ID: ${{ steps.baseline.outputs.artifact-id }}
+        run: python3 .github/scripts/dev_capacity_trial.py trial --expected-capacity "$EXPECTED_CAPACITY"
+      - name: Login independently for armed recovery
+        if: always() && inputs.mode == 'trial' && steps.baseline.outcome == 'success'
+        uses: azure/login@a641126d1b8aa4d1fa005f4f92df94a3a4c4c906 # v3.1.0
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+      - name: Independently restore armed trial or requested B2 recovery
+        if: always() && (inputs.mode == 'restore-b2' || (inputs.mode == 'trial' && steps.baseline.outcome == 'success'))
+        timeout-minutes: 20
+        env:
+          GH_TOKEN: ${{ github.token }}
+          EXPECTED_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+          EXPECTED_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
+        run: |
+          if [[ "$TRIAL_MODE" == 'restore-b2' || -f dev-capacity-evidence/b3-armed.json ]]; then
+            python3 .github/scripts/dev_capacity_trial.py restore-b2 --expected-capacity "$EXPECTED_CAPACITY"
+          fi
+      - name: Retain final or partial safe evidence
+        if: always()
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
+        with:
+          name: dev-capacity-evidence-${{ github.run_id }}-${{ github.run_attempt }}
+          path: dev-capacity-evidence/
+          retention-days: 1
+          if-no-files-found: error

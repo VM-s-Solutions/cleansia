@@ -952,3 +952,62 @@ A successful response with suggestions confirms the API can use its server-side 
 - **Mobile-spec regen** — needed before the iOS *feature* waves (not Phase 0).
 - **Admin client regen** — unblocks T-0295 (employee-page audit drill-in).
 - **IMP-3 admin regen** — unblocks T-0279 (pay-config client swap).
+
+## Temporary DEV B3 startup comparison
+
+`dev-capacity-trial.yml` is a dedicated manual workflow for the fixed Linux plan
+`plan-cleansia-weu-dev` in `rg-cleansia-weu-dev`. Use the reviewed source on `master`, the existing
+`dev-weu` identity, and `expected_capacity` equal to the freshly observed capacity **and** worker
+count (1–3). This input is an admission guard; every resize preserves that count. The plan must
+contain exactly the five APIs, customer SSR and Functions. All seven share the resize and restart.
+
+Run `observe` first and inspect its baseline, installed CLI behavior receipt, safe plan/configuration
+fingerprints, six accepted deployment identities/pointers, current readiness and planned commands.
+The preview is a read-only projection, not an ARM what-if. Observe requires the current accepted
+package run `38830931038`; it performs no upload or archive download. It does not emit secret values
+or establish executing bytes on every worker. Functions image configuration is fingerprinted;
+background job health is not tested.
+
+After independent source review and passing offline controls on the exact source, dispatch `trial`
+with the same preserved count and `expected_cli_receipt` equal to the reviewed observe baseline's
+`cli_receipt_sha256`. The fresh runner's complete CLI version/registration/getter/update/setter
+receipt must match before its first restart or write. Observe and restore ignore this optional
+input. The workflow shares `deploy-dev` concurrency without cancellation.
+It rejects other active or queued manual work before experiment writes, publishes an immutable
+one-day baseline artifact before the first restart, and retains final or partial evidence in a
+separate one-day artifact. Keep both artifacts and supervise the run through verified B2 recovery.
+
+The finite protocol is one B2-before / B3 / B2-after cycle, with one identical fixed-plan
+`restartSites?softRestart=false` round per leg. Resize transitions are measured separately. Four
+fixed public endpoints represent Customer Mobile liveness/dependency readiness and SSR cheap
+health/populated rendering. Initial and final readiness also check every API. Requests have fixed
+bounds and cadence; an immediate warm response is inconclusive until a negative transition or
+responding SSR process uptime reset is observed. SSR uptime describes that process only. The evidence
+separates first availability, first post-boundary success and its second confirmation.
+
+B3 restoration is attempted within 25 minutes of its intent, with cleanup time reserved in the
+75-minute job. Ordinary failures and termination enter guarded recovery. A killed runner, forced
+cancellation, expired authentication, pending Azure operation or platform outage can defeat cleanup;
+workflow `always()` is not an unattended rollback guarantee. An ambiguous B3 command is reconciled
+by reads and never blindly retried. An old B2 snapshot cannot close a still-unresolved B3 operation.
+
+For independent recovery, dispatch `restore-b2` from reviewed `master` using the **original count
+from the immutable baseline**. This path requires no successful package, readiness or metric probe,
+and performs no restart if B2 is already present. It validates the fixed target, actual count,
+terminal plan state and all seven bindings before any B2 write. When the original trial baseline is
+available in the same run, it also guards its non-SKU plan fingerprint. Later unrelated master
+updates, queued deployments and active SQL/docs work do not block recovery; a confirmed active plan
+writer or conflicting plan/count state requires reconciliation. Recovery records B2 state before its
+independent final readiness check. Independently verify final B2/count/bindings, unchanged input
+fingerprints/pointers and functional readiness from the saved evidence. A new recovery run cannot
+prove an earlier ambiguous operation terminal from its own B2 snapshot alone.
+Fresh standalone B3 recovery requires two consistent terminal observations at least ten seconds
+apart; these observations remain conservative admission, rather than proof of older operation completion.
+
+Repository Bicep stays at B2. The quoted incremental retail price is $25.55 per worker/month at
+730 hours, above the owner's $10–15 monthly retention condition; permanent B3 retention is not part
+of this workflow. At $0.035 per worker-hour, 30 minutes is about $0.0175 incremental retail cost per
+worker, subject to actual billing. One matched cycle can support a resource-pressure hypothesis;
+worker placement, caches, background activity, metric lag and changing memory denominators prevent
+causal certainty or an instant-start guarantee. No deployment, SQL, seed, promo, docs, storage,
+application configuration, instance-count, identity or PRO action belongs to this trial.

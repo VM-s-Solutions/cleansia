@@ -53,6 +53,18 @@ jobs:
         run: |
           python3 -m unittest discover -s .github/scripts -p 'test_dev_capacity_trial.py' -v
           python3 -m unittest discover -s .github/scripts -p 'test_deploy_package.py' -v
+      - name: Inspect installed CLI compatibility without authentication
+        run: |
+          python3 - <<'PY'
+          import json
+          import sys
+          sys.path.insert(0, '.github/scripts')
+          import dev_capacity_trial as trial
+          receipt = trial.hosted_cli()
+          print(json.dumps({'kind': 'unauthenticated-hosted-cli-compatibility', 'cli': receipt,
+                            'cli_receipt_sha256': trial.fingerprint(receipt)},
+                           sort_keys=True, ensure_ascii=True, allow_nan=False))
+          PY
 
   capacity:
     if: github.event_name == 'workflow_dispatch' && github.repository == 'VM-s-Solutions/cleansia' && github.ref == 'refs/heads/master'

@@ -589,16 +589,17 @@ class HostedReceiptTests(OfflineCase):
         commands.load_command_table = object()
         factory = modules['azure.cli.command_modules.appservice._client_factory']
         factory.cf_plans = object()
-        def generic_update_command(getter_name=default_getter):
-            return getter_name
-        modules['azure.cli.core.commands.arm'].generic_update_command = generic_update_command
+        class AzCommandGroup:
+            def generic_update_command(self, name, getter_name=default_getter):
+                return getter_name
+        modules['azure.cli.core.commands'].AzCommandGroup = AzCommandGroup
         getter_callback = object()
         modules['azure.mgmt.web.operations'].AppServicePlansOperations = types.SimpleNamespace(get=getter_callback)
         sources = {
             custom.update_app_service_plan: 'instance.sku; sku_def.name = sku; sku_def.capacity = number_of_workers; return instance',
             custom.update_app_service_plan_with_progress: 'begin_create_or_update(resource_group_name, name, app_service_plan); poller.result()',
             commands.load_command_table: "def load_command_table(self, _):\n    appservice_plan_sdk = CliCommandType(operations_tmpl='azure.mgmt.web.operations#AppServicePlansOperations.{}', client_factory=cf_plans)\n    appservice_custom = CliCommandType(operations_tmpl='azure.cli.command_modules.appservice.custom#{}')\n    with self.command_group('appservice plan', appservice_plan_sdk) as g:\n        g.generic_update_command('update', setter_name='" + setter + "', custom_func_name='update_app_service_plan', setter_arg_name='app_service_plan', setter_type=appservice_custom" + (", getter_name='" + getter + "'" if getter != 'get' else '') + ")\n",
-            generic_update_command: 'def generic_update_command(getter_name=' + repr(default_getter) + '): return getter_name',
+            AzCommandGroup.generic_update_command: 'def generic_update_command(self, name, getter_name=' + repr(default_getter) + '): return getter_name',
             factory.cf_plans: 'def cf_plans(cli_ctx, _): return web_client_factory(cli_ctx).app_service_plans',
             getter_callback: getter_source or 'def get(resource_group_name, name): return existing_plan',
         }
@@ -616,7 +617,7 @@ class HostedReceiptTests(OfflineCase):
         with patch.object(trial, 'command', side_effect=command):
             return trial.hosted_cli()
 
-    def test_receipt_captures_registration_and_selected_getter_source_hashes(self):
+    def test_receipt_uses_primary_command_group_method_without_arm_export(self):
         proof = self.runtime()
         self.assertEqual(proof['getter_name'], 'get')
         self.assertTrue(proof['registered_callbacks'])

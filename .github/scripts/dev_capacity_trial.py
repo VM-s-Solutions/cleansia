@@ -144,7 +144,7 @@ import hashlib
 import inspect
 import json
 from azure.cli.command_modules.appservice import custom, commands, _client_factory
-from azure.cli.core.commands.arm import generic_update_command
+from azure.cli.core.commands import AzCommandGroup
 from azure.mgmt.web.operations import AppServicePlansOperations
 
 source = inspect.getsource(commands.load_command_table)
@@ -170,7 +170,7 @@ sdk_keywords = {item.arg: item.value for item in sdks[0].value.keywords}
 custom_keywords = {item.arg: item.value for item in customs[0].value.keywords}
 def literal(name):
     return ast.literal_eval(keywords[name])
-getter = literal('getter_name') if 'getter_name' in keywords else inspect.signature(generic_update_command).parameters['getter_name'].default
+getter = literal('getter_name') if 'getter_name' in keywords else inspect.signature(AzCommandGroup.generic_update_command).parameters['getter_name'].default
 registered = (getter == 'get' and literal('setter_name') == 'update_app_service_plan_with_progress'
     and literal('custom_func_name') == 'update_app_service_plan' and literal('setter_arg_name') == 'app_service_plan'
     and isinstance(keywords.get('setter_type'), ast.Name) and keywords['setter_type'].id == 'appservice_custom'
@@ -181,7 +181,7 @@ registered = (getter == 'get' and literal('setter_name') == 'update_app_service_
 if not registered:
     raise ValueError('plan-callbacks-unverified')
 registration = '\n'.join((ast.get_source_segment(source, groups[0]), ast.get_source_segment(source, sdks[0]),
-    ast.get_source_segment(source, customs[0]), inspect.getsource(generic_update_command), inspect.getsource(_client_factory.cf_plans)))
+    ast.get_source_segment(source, customs[0]), inspect.getsource(AzCommandGroup.generic_update_command), inspect.getsource(_client_factory.cf_plans)))
 a = inspect.getsource(custom.update_app_service_plan)
 b = inspect.getsource(custom.update_app_service_plan_with_progress)
 print(json.dumps({'update_sha256': hashlib.sha256(a.encode()).hexdigest(),

@@ -687,5 +687,86 @@ class ReceiptBindingTests(OfflineCase):
         self.process.assert_not_called()
 
 
+class ObservationDiagnosticTests(OfflineCase):
+    def test_observe_guard_failure_keeps_selected_plan_and_phase_without_mutation(self):
+        with patch.object(trial, 'authenticate'), patch.object(trial, 'queues'), \
+             patch.object(trial, 'arm', return_value=self.raw_plan(capacity=2)), \
+             patch.object(trial, 'inventory') as inventory, patch.object(trial, 'resize') as resize, \
+             patch.object(trial, 'restart_sites') as restart:
+            self.assertEqual(trial.main(['observe']), 1)
+        failure = next(row for row in trial.EVENTS if row['kind'] == 'operation-failed')
+        self.assertEqual(failure.get('reason'), 'fixed-plan-state-guard')
+        selected = next(row for row in trial.EVENTS if row['kind'] == 'plan-state-selected')
+        self.assertEqual((selected['capacity'], selected['workers']), (2, 1))
+        self.assertFalse(selected['capacity_matches'])
+        self.assertTrue(selected['identity_matches'])
+        self.assertEqual([row['phase'] for row in trial.EVENTS if row['kind'] == 'snapshot-phase'], ['plan-read'])
+        self.assertNotIn('opaque-value', self.stdout.getvalue())
+        self.assertFalse((trial.DIRECTORY / 'baseline.json').exists())
+        inventory.assert_not_called()
+        resize.assert_not_called()
+        restart.assert_not_called()
+        self.process.assert_not_called()
+
+    def test_inventory_failure_is_distinguished_after_plan_guard_passes(self):
+        with patch.object(trial, 'authenticate'), patch.object(trial, 'queues'), \
+             patch.object(trial, 'arm', return_value=self.raw_plan()), \
+             patch.object(trial, 'azure', return_value=self.listing(trial.OCCUPANTS[:-1])):
+            self.assertEqual(trial.main(['observe']), 1)
+        self.assertEqual([row['phase'] for row in trial.EVENTS if row['kind'] == 'snapshot-phase'],
+                         ['plan-read', 'occupant-inventory'])
+        self.assertEqual(trial.EVENTS[-1].get('reason'), 'seven-occupant-guard')
+        self.process.assert_not_called()
+
+    def test_unknown_error_args_are_withheld_even_when_stringification_is_hostile(self):
+        class ForeignError(ValueError):
+            def __str__(self):
+                raise AssertionError('exception must not be stringified')
+        for error in (ValueError('credential-needle https://secret.example/config'),
+                      ValueError({'credential-needle': 'secret'}), ForeignError('fixed-plan-state-guard')):
+            with self.subTest(kind=type(error).__name__), patch.object(trial, 'authenticate'), \
+                 patch.object(trial, 'prepare', side_effect=error):
+                self.assertEqual(trial.main(['observe']), 1)
+            self.assertEqual(trial.EVENTS[-1].get('reason'), 'unclassified')
+        self.assertNotIn('credential-needle', self.stdout.getvalue())
+        self.assertNotIn('secret.example', self.stdout.getvalue())
+        self.process.assert_not_called()
+
+    def test_plan_projection_withholds_unknown_strings_nested_data_and_unsupported_types(self):
+        changes = {'id': 'https://credential-needle.example', 'location': 'credential-needle',
+                   'sku': 'credential-needle', 'status': ['credential-needle'], 'capacity': True,
+                   'workers': 2 ** 64, 'reserved': {'credential-needle': 'secret'},
+                   'configuration': {'tags': {'credential-needle': 'secret'}}}
+        for response in (self.raw_plan(**changes), ['credential-needle'], 'credential-needle', None):
+            with self.subTest(shape=type(response).__name__), patch.object(trial, 'authenticate'), \
+                 patch.object(trial, 'queues'), patch.object(trial, 'arm', return_value=response):
+                self.assertEqual(trial.main(['observe']), 1)
+            selected = next(row for row in reversed(trial.EVENTS) if row['kind'] == 'plan-state-selected')
+            self.assertIsNone(selected['capacity'])
+            self.assertIsNone(selected['workers'])
+            self.assertFalse(selected['identity_matches'])
+        self.assertNotIn('credential-needle', self.stdout.getvalue())
+        self.assertNotIn('secret', self.stdout.getvalue())
+        self.process.assert_not_called()
+
+
+    def test_location_projection_distinguishes_display_variant_without_admitting_it(self):
+        for location, selected in (('West Europe', 'West Europe'), ('northeurope', 'unrecognized'),
+                                   ('credential-needle.example', 'unrecognized'), (['credential-needle'], 'unrecognized')):
+            with self.subTest(location=selected), patch.object(trial, 'arm', return_value=self.raw_plan(location=location)):
+                with self.assertRaisesRegex(ValueError, '^fixed-plan-state-guard$'):
+                    trial.read_plan(1)
+            observation = trial.EVENTS[-1]
+            self.assertEqual(observation.get('location'), selected)
+            self.assertFalse(observation['location_matches'])
+        with patch.object(trial, 'arm', return_value=self.raw_plan(location='westeurope')):
+            self.assertEqual(trial.read_plan(1)['sku'], 'B2')
+        self.assertEqual(trial.EVENTS[-1]['location'], 'westeurope')
+        self.assertTrue(trial.EVENTS[-1]['location_matches'])
+        self.assertNotIn('northeurope', self.stdout.getvalue())
+        self.assertNotIn('credential-needle', self.stdout.getvalue())
+        self.process.assert_not_called()
+
+
 if __name__ == '__main__':
     unittest.main()

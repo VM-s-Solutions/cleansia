@@ -427,3 +427,6 @@
 > the merge order is #255 then #260. Open rows: none.
 
 *Next id: **T-0869**.*
+
+
+Current startup checkpoint — 2026-10-16 UTC: PR #344 merged C12 `70d9c8b1ea82` as M5 `a8d308126dc4`; C12 local8, PR5 workflows/7 checks and M5 4/5 passed, all attempt 1/no reruns, with guarded manual skips and prior application limits retained. First read-only observation `38947741183/a1` failed before its baseline with a generic validation error; one POST, GET-only discovery, final artifact saved once, no resize/restart/B3 trial. T-0636 remains `in_progress`; safe diagnostic correction and the temporary comparison remain pending. The ticket's dated PR #344 closure and `pr344-closure-preparation001/CLAIMS-AND-PINS001.json` carry the bounds.

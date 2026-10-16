@@ -510,7 +510,7 @@ def semantic(label, body):
     return {'healthy': body == b'Healthy'}
 
 
-def probe(label, deadline=None):
+def probe(label, deadline=None, maximum=5):
     limit = 524_288 if label == 'ssr-root' else 65_536
     row = {'probe': label, 'started_utc': utc(), 'healthy': False}
     started = time.monotonic()
@@ -518,13 +518,13 @@ def probe(label, deadline=None):
         body_path = Path(directory) / 'body'
         try:
             arguments = ['curl', '--disable', '--silent', '--request', 'GET', '--proto', '=https',
-                '--proxy', '', '--noproxy', '*', '--max-redirs', '0', '--retry', '0', '--max-time', '5',
+                '--proxy', '', '--noproxy', '*', '--max-redirs', '0', '--retry', '0', '--max-time', str(maximum),
                 '--connect-timeout', '3', '--max-filesize', str(limit), '--header', 'Accept-Language: en',
                 '--header', 'Cookie: cleansia_ssr_probe=1', '--output', str(body_path), '--write-out',
                 '{"status":%{http_code},"ttfb":%{time_starttransfer},"total":%{time_total},"redirects":%{num_redirects}}', URLS[label]]
             with tempfile.TemporaryFile() as output:
                 response = subprocess.run(arguments, stdout=output, stderr=subprocess.DEVNULL,
-                                          timeout=remaining(deadline, 7), check=False)
+                                          timeout=remaining(deadline, maximum + 2), check=False)
                 row['curl_exit_code'] = response.returncode
                 output.seek(0)
                 raw = output.read(4097)
@@ -549,7 +549,7 @@ def probe(label, deadline=None):
 def functionality():
     labels = (*APPS[:5], 'ssr-health', 'ssr-root')
     with ThreadPoolExecutor(max_workers=4) as pool:
-        rows = list(pool.map(probe, labels))
+        rows = list(pool.map(lambda label: probe(label, maximum=20 if label == 'ssr-root' else 5), labels))
     for row in rows:
         row.pop('_started_monotonic', None)
     event('functional-readiness', samples=rows)
@@ -729,7 +729,8 @@ def restart_leg(name, capacity, baseline, deadline=None):
     observed = snapshot(capacity, ('B3',) if name == 'B3' else ('B2',), deadline)
     preserved(baseline, observed)
     with ThreadPoolExecutor(max_workers=4) as pool:
-        before = {row['probe']: row for row in pool.map(lambda label: probe(label, deadline), PROBES)}
+        before = {row['probe']: row for row in pool.map(
+            lambda label: probe(label, deadline, 20 if label == 'ssr-root' else 5), PROBES)}
     for row in before.values():
         row.pop('_started_monotonic', None)
     save(name + '-precheck.json', {'leg': name, 'samples': list(before.values())})

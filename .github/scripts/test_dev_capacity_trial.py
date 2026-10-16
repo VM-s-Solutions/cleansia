@@ -267,7 +267,7 @@ class PackageAndProbeTests(OfflineCase):
         baseline = self.snapshot()
         for negative in (False, True):
             counts = dict.fromkeys(trial.PROBES, 0)
-            def probe(label, deadline=None):
+            def probe(label, deadline=None, maximum=5):
                 counts[label] += 1
                 healthy = not negative or counts[label] != 2
                 return {'probe': label, 'healthy': healthy, 'elapsed_seconds': 0.1,
@@ -418,6 +418,98 @@ class EvidenceTests(OfflineCase):
         self.assertEqual(result['curl_exit_code'], 0)
         self.assertNotIn('credential-needle', json.dumps(result))
         self.assertEqual(len(result['body_sha256']), 64)
+
+    def test_slow_complete_ssr_admission_preserves_timeout_and_partial_body_guards(self):
+        body = (b'<app-root ng-server-context="ssr"><cleansia-home><a class="cl-services__card" '
+                b'href="/order?serviceId=1"><h3 class="cl-services__name">Home</h3></a>'
+                b'</cleansia-home></app-root>')
+        for maximum, partial, deadline, healthy, envelope in (
+                (None, False, None, False, 7), (20, False, None, True, 22),
+                (20, True, None, False, 22), (20, False, 103, False, 3)):
+            with self.subTest(maximum=maximum, partial=partial, deadline=deadline):
+                def respond(arguments, **kwargs):
+                    cap = float(arguments[arguments.index('--max-time') + 1])
+                    self.assertEqual(kwargs['timeout'], envelope)
+                    self.assertEqual(arguments[arguments.index('--connect-timeout') + 1], '3')
+                    self.assertEqual(arguments[arguments.index('--retry') + 1], '0')
+                    self.assertEqual(arguments[arguments.index('--max-filesize') + 1], '524288')
+                    if kwargs['timeout'] < 6:
+                        raise subprocess.TimeoutExpired(arguments, kwargs['timeout'])
+                    timed_out = cap < 6 or partial
+                    Path(arguments[arguments.index('--output') + 1]).write_bytes(body)
+                    kwargs['stdout'].write(json.dumps({'status': 200, 'ttfb': 1,
+                        'total': min(cap, 6), 'redirects': 0}).encode())
+                    return subprocess.CompletedProcess(arguments, 28 if timed_out else 0)
+                self.process.side_effect = respond
+                with patch.object(trial.time, 'monotonic', return_value=100):
+                    result = (trial.probe('ssr-root', deadline) if maximum is None
+                              else trial.probe('ssr-root', deadline, maximum))
+                self.assertEqual(result['healthy'], healthy)
+                if deadline is not None:
+                    self.assertEqual(result['error_kind'], 'TimeoutExpired')
+                else:
+                    self.assertEqual(result['status'], 200)
+                    self.assertEqual(result['curl_exit_code'], 0 if healthy else 28)
+                self.assertNotIn('Home', json.dumps(result))
+        self.process.reset_mock()
+        with patch.object(trial.time, 'monotonic', return_value=100):
+            result = trial.probe('ssr-root', 99, 20)
+        self.assertFalse(result['healthy'])
+        self.process.assert_not_called()
+
+    def test_functional_admission_accepts_six_second_ssr_with_health_probes_still_bounded(self):
+        observed = {}
+        def respond(arguments, **kwargs):
+            label = next(key for key in (*trial.APPS[:5], 'ssr-health', 'ssr-root')
+                         if trial.URLS[key] == arguments[-1])
+            cap = float(arguments[arguments.index('--max-time') + 1])
+            observed[label] = (cap, kwargs['timeout'])
+            body = b'Healthy'
+            if label == 'ssr-root':
+                body = (b'<app-root ng-server-context="ssr"><cleansia-home><a class="cl-services__card" '
+                        b'href="/order?serviceId=1"><h3 class="cl-services__name">Home</h3></a>'
+                        b'</cleansia-home></app-root>')
+            elif label == 'ssr-health':
+                body = json.dumps({'status': 'healthy', 'timestamp': '2026-10-16T16:00:00.000Z',
+                    'uptime': 1, 'memory': dict.fromkeys(
+                        ('rss', 'heapTotal', 'heapUsed', 'external', 'arrayBuffers'), 1)}).encode()
+            Path(arguments[arguments.index('--output') + 1]).write_bytes(body)
+            kwargs['stdout'].write(json.dumps({'status': 200, 'ttfb': 1,
+                'total': min(cap, 6) if label == 'ssr-root' else 1, 'redirects': 0}).encode())
+            return subprocess.CompletedProcess(arguments, 28 if label == 'ssr-root' and cap < 6 else 0)
+        self.process.side_effect = respond
+        result = trial.functionality()
+        self.assertTrue(all(row['healthy'] for row in result))
+        self.assertEqual(observed, {label: (20, 22) if label == 'ssr-root' else (5, 7)
+            for label in (*trial.APPS[:5], 'ssr-health', 'ssr-root')})
+
+    def test_ssr_precheck_cap_does_not_change_timed_rounds_or_admit_failure(self):
+        for admitted in (False, True):
+            with self.subTest(admitted=admitted):
+                calls = {label: [] for label in trial.PROBES}
+                def probe(label, deadline=None, maximum=5):
+                    calls[label].append((maximum, deadline))
+                    count = len(calls[label])
+                    return {'probe': label, 'healthy': (admitted or label != 'ssr-root') and count != 2,
+                            'elapsed_seconds': 0.1}
+                ticks = iter(range(0, 10000, 5))
+                with patch.object(trial, 'queues'), patch.object(trial, 'snapshot', return_value=self.snapshot()), \
+                     patch.object(trial, 'probe', side_effect=probe), patch.object(trial, 'restart_sites', return_value=204) as restart, \
+                     patch.object(trial.time, 'monotonic', side_effect=lambda: next(ticks)):
+                    if admitted:
+                        result = trial.restart_leg('B2-before', 1, self.snapshot())
+                        self.assertTrue(all(row['classification'] == 'observed-recovery'
+                                            for row in result['measurements'].values()))
+                        restart.assert_called_once()
+                    else:
+                        with self.assertRaisesRegex(ValueError, 'pre-restart-readiness-failed'):
+                            trial.restart_leg('B2-before', 1, self.snapshot())
+                        restart.assert_not_called()
+                for label, samples in calls.items():
+                    self.assertEqual(samples[0][0], 20 if label == 'ssr-root' else 5)
+                    self.assertEqual(len(samples), 4 if admitted else 1)
+                    self.assertTrue(all(cap == 5 for cap, _ in samples[1:]))
+                    self.assertTrue(all(deadline == samples[0][1] for _, deadline in samples))
 
     def test_metrics_preserve_nulls_and_hash_instance_identity(self):
         started = trial.utc()

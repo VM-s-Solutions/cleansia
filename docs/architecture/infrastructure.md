@@ -519,10 +519,18 @@ setting the image already restarts the site.
 [`WEBSITE_RUN_FROM_PACKAGE=1`](https://learn.microsoft.com/en-us/azure/app-service/deploy-run-package).
 The package is mounted read-only at `wwwroot`, avoiding a live tree containing files from two builds.
 The deploy helper uses the workflow's existing OIDC identity and sends one asynchronous ZIP upload.
-It identifies the final deployment by a unique tag, waits for its successful completion, then verifies
-the active package pointer, archive digest and expected entry-point digest. These are SCM package
-checks; the following HTTP readiness and rendered-page checks establish that the worker serves requests.
-An ambiguous deployment, mismatched package or failed check fails the job without another upload.
+It requires HTTP 202, then discovers the deployment from the fixed SCM origin's deployment list; the
+upload response's optional `Location` header is ignored and never followed.
+It identifies the final deployment by a unique tag, waits for its successful completion, then checks a
+safe, unchanged selected package pointer and the complete archive's SHA256 and byte count. The entry
+digest comes from the completed local ZIP; matching the whole archive binds those packaged entry bytes.
+Results name this scope `selected-package-archive`.
+[Linux Kudu runs in a separate container](https://github.com/Azure/app-service-linux-docs/blob/f2ca8b85d25839dc9a2c1d13fe3090e48d1b4240/Things_You_Should_Know/things_you_should_know.md#the-bash-console-in-kudu-advanced-tools-is-a-different-container);
+its backing `site/wwwroot` does not attest to the files mounted by a worker, so deployment verification
+does not query it. The following HTTP readiness and rendered-page checks separately establish that the worker
+serves requests at observation time; they do not directly attest its entry bytes or every instance's
+transition. An ambiguous deployment, mismatched package or failed check fails the job without another
+upload.
 
 The helper requests the documented App Service audience (`https://appservice.azure.com`) only after
 confirming `AzureCloud`, then performs an authenticated GET of the deployment list before its sole
@@ -551,8 +559,8 @@ historical verification succeeds. The effective
 `WEBSITE_RUN_FROM_PACKAGE` setting is queried as `enabled` (exactly `1`), `absent` or `other`, without
 printing its value. An absent prefix never proves that an earlier upload did not arrive. Unknown/unsafe
 records and ambiguous identities remain unverified. The separate active observation returns streamed archive
-and live-entry SHA256/size plus a pointer read before and after; `stable-uncompared` requires independent
-comparison with retained artifacts. It does not assert that the active bytes belong to the prior run.
+and SCM backing-filesystem entry SHA256/size plus a pointer read before and after; `stable-uncompared`
+requires independent comparison with retained artifacts. It does not assert that the active bytes belong to the prior run.
 The [Kudu read APIs](https://github.com/projectkudu/kudu/wiki/REST-API) are bounded by the ten-minute
 operation budget, one-MiB JSON limit and one-billion-byte artifact limit. The standalone POSIX CLI
 uses a main-thread real-time signal deadline around each transport request, covering sending, headers

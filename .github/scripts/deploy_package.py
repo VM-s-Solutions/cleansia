@@ -109,7 +109,7 @@ def scm_request(opener, app, token, path, phase, remaining, *, kind='json', data
             if kind == 'upload':
                 if response.status != 202:
                     raise DeploymentError('SCM did not acknowledge an asynchronous ZIP deployment')
-                result = response.headers.get('Location', '')
+                result = None
             else:
                 if response.status != 200:
                     raise DeploymentError('Unexpected SCM read response')
@@ -183,8 +183,6 @@ def deploy(app, directory, entry, budget):
             raise DeploymentError('Package contains a link or nonregular file')
         if path.is_file():
             files.append(path)
-    with (directory / entry).open('rb') as source:
-        entry_hash = digest(source)
     origin = f'https://{app}.scm.azurewebsites.net'
     deployer = f"cleansia-{os.environ.get('GITHUB_RUN_ID', 'local')}-{os.environ.get('GITHUB_RUN_ATTEMPT', '1')}-{app}-{uuid.uuid4().hex}"
     opener = urllib.request.build_opener(urllib.request.ProxyHandler({}), NoRedirect())
@@ -195,6 +193,10 @@ def deploy(app, directory, entry, budget):
         length = archive.tell()
         if length > MAX_PACKAGE_BYTES:
             raise DeploymentError('Package exceeds the App Service ZIP size limit')
+        archive.seek(0)
+        with zipfile.ZipFile(archive) as package:
+            with package.open(relative.as_posix()) as source:
+                entry_hash = digest(source)
         archive.seek(0)
         package_hash = digest(archive)
         archive.seek(0)
@@ -221,15 +223,9 @@ def deploy(app, directory, entry, budget):
                           'package_bytes': length, 'file_count': len(files), 'deployer': deployer,
                           'entry_sha256': entry_hash}, sort_keys=True), flush=True)
         upload_state = 'unknown'
-        location = urllib.parse.urlsplit(request('/api/zipdeploy?isAsync=true&deployer=' + deployer,
-                                               'upload-post', kind='upload', data=archive, length=length))
+        request('/api/zipdeploy?isAsync=true&deployer=' + deployer,
+                'upload-post', kind='upload', data=archive, length=length)
         upload_state = 'acknowledged'
-        query = urllib.parse.parse_qs(location.query, keep_blank_values=True)
-        if (location.scheme != 'https' or location.netloc != f'{app}.scm.azurewebsites.net'
-                or location.fragment or not re.fullmatch(r'/api/deployments/[A-Za-z0-9_-]+', location.path)
-                or set(query) - {'deployer', 'time'}
-                or ('deployer' in query and query['deployer'] != [deployer])):
-            raise DeploymentError('SCM returned an unexpected deployment Location')
         uploaded = time.monotonic()
         deployment_id = None
         while deployment_id is None:
@@ -263,15 +259,15 @@ def deploy(app, directory, entry, budget):
         deployed = time.monotonic()
         pointer_path = '/api/vfs/data/SitePackages/packagename.txt'
         pointer = request(pointer_path, 'package-pointer-before', kind='pointer')
-        if request('/api/vfs/data/SitePackages/' + pointer, 'active-package-hash', kind='hash')['sha256'] != package_hash:
-            raise DeploymentError('SCM active package hash differs from the uploaded ZIP')
-        if request('/api/vfs/site/wwwroot/' + entry, 'live-entry-hash', kind='hash')['sha256'] != entry_hash:
-            raise DeploymentError('SCM live entry hash differs from the uploaded artifact')
+        selected = request('/api/vfs/data/SitePackages/' + pointer, 'selected-package-hash', kind='hash')
+        if selected['sha256'] != package_hash or selected['bytes'] != length:
+            raise DeploymentError('SCM selected package differs from the uploaded ZIP')
         if request(pointer_path, 'package-pointer-after', kind='pointer') != pointer:
             raise DeploymentError('SCM active package changed during verification')
         remaining()
         return {'app': app, 'deployment_id': deployment_id, 'package_pointer': pointer,
                 'run_from_package': '1', 'deployer': deployer,
+                'verification_scope': 'selected-package-archive',
                 'package_sha256': package_hash, 'entry_sha256': entry_hash, 'file_count': len(files),
                 'package_bytes': length, 'upload_seconds': round(uploaded - upload_started, 3),
                 'deployment_seconds': round(deployed - uploaded, 3),

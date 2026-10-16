@@ -31,6 +31,14 @@ EVENTS = []
 SUBSCRIPTION = ''
 UUID = r'[0-9a-fA-F]{8}(?:-[0-9a-fA-F]{4}){3}-[0-9a-fA-F]{12}'
 PROBES = ('mobile-alive', 'mobile-health', 'ssr-health', 'ssr-root')
+FAILURE_REASONS = frozenset((
+    'fixed-context-guard', 'reviewed-cli-receipt-required', 'expected-identity-guard', 'azure-identity-guard',
+    'bounded-command-failed', 'cli-version-guard', 'hosted-cli-behavior-unverified', 'fixed-plan-state-guard',
+    'occupancy-response-guard', 'seven-occupant-guard', 'occupancy-pagination-guard', 'occupancy-pagination-bound',
+    'github-token-unavailable', 'master-moved-guard', 'complete-queue-guard', 'concurrent-manual-work-guard',
+    'site-config-identity-unavailable', 'functions-image-unverified', 'local-package-mode-guard',
+    'stable-deployment-list-guard', 'idle-deployment-guard', 'accepted-package-pointer-guard',
+    'functional-readiness-failed', 'resize-arguments-guard'))
 URLS = {
     'mobile-alive': f'https://{APPS[4]}.azurewebsites.net/alive',
     'mobile-health': f'https://{APPS[4]}.azurewebsites.net/health',
@@ -207,6 +215,7 @@ print(json.dumps({'update_sha256': hashlib.sha256(a.encode()).hexdigest(),
 
 
 def read_plan(capacity, allowed=('B2', 'B3'), require_ready=True, deadline=None):
+    event('snapshot-phase', phase='plan-read')
     data = arm(plan_id(), '{id:id,name:name,type:type,location:location,sku:sku.name,tier:sku.tier,'
                'capacity:sku.capacity,workers:properties.numberOfWorkers,reserved:properties.reserved,'
                'perSiteScaling:properties.perSiteScaling,status:properties.status,provisioning:properties.provisioningState,'
@@ -218,6 +227,25 @@ def read_plan(capacity, allowed=('B2', 'B3'), require_ready=True, deadline=None)
                'workerTierName:properties.workerTierName,isSpot:properties.isSpot,spotExpirationTime:properties.spotExpirationTime,'
                'freeOfferExpirationTime:properties.freeOfferExpirationTime,isXenon:properties.isXenon,hyperV:properties.hyperV,'
                'kubeEnvironmentProfile:properties.kubeEnvironmentProfile,extendedLocation:extendedLocation}}', deadline)
+    selected = data if type(data) is dict else {}
+    configuration = selected.get('configuration')
+    event('plan-state-selected', response_shape='object' if type(data) is dict else 'null' if data is None else 'unsupported',
+          identity_matches=type(selected.get('id')) is str and selected['id'].lower() == plan_id().lower(),
+          name_matches=type(selected.get('name')) is str and selected['name'] == PLAN,
+          resource_type_matches=type(selected.get('type')) is str and selected['type'].lower() == 'microsoft.web/serverfarms',
+          location_matches=type(selected.get('location')) is str and selected['location'] == 'westeurope',
+          location=selected.get('location') if type(selected.get('location')) is str and selected['location'] in ('westeurope', 'West Europe') else 'unrecognized',
+          configuration_shape='object' if type(configuration) is dict else 'null' if configuration is None else 'unsupported',
+          configuration_nonempty=type(configuration) is dict and bool(configuration),
+          capacity_matches=type(selected.get('capacity')) is int and selected['capacity'] == capacity,
+          workers_match=type(selected.get('workers')) is int and selected['workers'] == capacity,
+          **{key: selected.get(key) if type(selected.get(key)) is int and 0 <= selected[key] <= 2_147_483_647 else None
+             for key in ('capacity', 'workers', 'targetWorkerCount', 'targetWorkerSizeId')},
+          **{key: selected.get(key) if type(selected.get(key)) is bool else None for key in ('reserved', 'perSiteScaling')},
+          **{key: selected.get(key) if selected.get(key) is None or type(selected.get(key)) is str and selected[key] in values
+             else 'unrecognized' for key, values in (
+                 ('sku', ('B1', 'B2', 'B3')), ('tier', ('Basic',)), ('status', ('Ready', 'Scaling', 'NotReady')),
+                 ('provisioning', ('Succeeded', 'Updating', 'Failed', 'Canceled', 'Accepted', 'InProgress', 'Creating', 'Deleting')))})
     if (not isinstance(data, dict) or str(data.get('id', '')).lower() != plan_id().lower()
             or data.get('name') != PLAN or str(data.get('type', '')).lower() != 'microsoft.web/serverfarms'
             or data.get('location') != 'westeurope' or data.get('reserved') is not True
@@ -238,6 +266,7 @@ def read_plan(capacity, allowed=('B2', 'B3'), require_ready=True, deadline=None)
 
 
 def inventory(deadline=None):
+    event('snapshot-phase', phase='occupant-inventory')
     path = plan_id() + '/sites'
     url = 'https://management.azure.com' + path + '?api-version=' + API
     seen = {}
@@ -783,14 +812,23 @@ def activity(started):
 
 
 def prepare(capacity):
+    event('baseline-phase', phase='queues')
     queues()
+    event('baseline-phase', phase='snapshot')
     baseline = {'source_sha': os.environ['GITHUB_SHA'], 'run_id': os.environ['GITHUB_RUN_ID'],
-        'run_attempt': 1, 'recorded_utc': utc(), **snapshot(capacity, ('B2',)), 'cli': hosted_cli(),
-        'configurations': configurations(), 'packages': packages(), 'readiness': functionality(),
-        'protocol': {'b3_restore_attempt_deadline_seconds': 1500, 'job_timeout_minutes': 75,
+        'run_attempt': 1, 'recorded_utc': utc(), **snapshot(capacity, ('B2',))}
+    event('baseline-phase', phase='cli')
+    baseline['cli'] = hosted_cli()
+    event('baseline-phase', phase='configurations')
+    baseline['configurations'] = configurations()
+    event('baseline-phase', phase='packages')
+    baseline['packages'] = packages()
+    event('baseline-phase', phase='readiness')
+    baseline['readiness'] = functionality()
+    baseline.update({'protocol': {'b3_restore_attempt_deadline_seconds': 1500, 'job_timeout_minutes': 75,
                      'readiness_leg_deadline_seconds': 600, 'maximum_rounds_per_leg': 60,
                      'cadence_seconds': 10, 'matched_restarts': 3, 'logical_sku_updates': 2},
-        'restore_argv': ['az', *resize_arguments('B2', capacity), '--subscription', '<dev-weu-subscription>', '--only-show-errors', '--output', 'json']}
+        'restore_argv': ['az', *resize_arguments('B2', capacity), '--subscription', '<dev-weu-subscription>', '--only-show-errors', '--output', 'json']})
     baseline['cli_receipt_sha256'] = fingerprint(baseline['cli'])
     baseline['optional_evidence'] = {}
     for phase, collect in (('metrics', telemetry), ('activity', activity)):
@@ -909,7 +947,9 @@ def main(argv=None):
                 return 1
         return 0
     except (Exception, KeyboardInterrupt) as error:
-        event('operation-failed', mode=args.mode, error_kind=type(error).__name__)
+        reason = error.args[0] if (type(error) is ValueError and len(error.args) == 1
+                                  and type(error.args[0]) is str and error.args[0] in FAILURE_REASONS) else 'unclassified'
+        event('operation-failed', mode=args.mode, error_kind=type(error).__name__, reason=reason)
         return 1
 
 

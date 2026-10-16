@@ -986,6 +986,11 @@ responding SSR process uptime reset is observed. SSR uptime describes that proce
 separates first availability, first post-boundary success and its second confirmation.
 Initial/final and pre-restart full-page SSR admission may wait 20 seconds for complete HTML; timed
 startup requests remain capped at five seconds, and existing shared deadlines still apply.
+Restart failures record only a fixed local failure category, a numeric curl exit code when available
+and an HTTP status when the bounded status output is exactly a valid three-digit status. Response
+bodies, stderr, credentials, headers, targets and raw error text are withheld. Only curl exit zero
+with HTTP 204 acknowledges the same single restart request; diagnostics add no retry and do not
+prove restart completion or explain startup latency.
 
 B3 restoration is attempted within 25 minutes of its intent, with cleanup time reserved in the
 75-minute job. Ordinary failures and termination enter guarded recovery. A killed runner, forced

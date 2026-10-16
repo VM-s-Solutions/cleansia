@@ -710,14 +710,38 @@ def restart_sites(deadline=None):
         '--resource', 'https://management.azure.com/', '--query', 'accessToken'],
         lambda: remaining(deadline, 60), 'trial-restart-arm-token')
     headers = ('Authorization: Bearer ' + token + '\n').encode()
-    with tempfile.TemporaryDirectory() as directory:
-        status = command(['curl', '--disable', '--silent', '--request', 'POST', '--proto', '=https',
-            '--proxy', '', '--noproxy', '*', '--max-redirs', '0', '--retry', '0', '--max-time', '30',
-            '--connect-timeout', '3', '--max-filesize', '65536', '--header', '@-',
-            '--output', str(Path(directory) / 'body'), '--write-out', '%{http_code}',
-            'https://management.azure.com' + plan_id() + '/restartSites?softRestart=false&api-version=' + API],
-            timeout=remaining(deadline, 30), limit=16, stdin=headers)
-    if status != b'204':
+    facts = {}
+    failure = None
+    with tempfile.TemporaryDirectory() as directory, tempfile.TemporaryFile() as output:
+        try:
+            response = subprocess.run(['curl', '--disable', '--silent', '--request', 'POST', '--proto', '=https',
+                '--proxy', '', '--noproxy', '*', '--max-redirs', '0', '--retry', '0', '--max-time', '30',
+                '--connect-timeout', '3', '--max-filesize', '65536', '--header', '@-',
+                '--output', str(Path(directory) / 'body'), '--write-out', '%{http_code}',
+                'https://management.azure.com' + plan_id() + '/restartSites?softRestart=false&api-version=' + API],
+                input=headers, stdout=output, stderr=subprocess.DEVNULL,
+                timeout=remaining(deadline, 30), check=False)
+            facts['curl_exit_code'] = response.returncode
+        except (OSError, subprocess.SubprocessError, TimeoutError) as error:
+            failure = error
+        output.seek(0)
+        status = output.read(17)
+    if re.fullmatch(rb'[1-5][0-9]{2}', status) is not None:
+        facts['http_status'] = int(status)
+    category = ('curl-timeout' if isinstance(failure, subprocess.TimeoutExpired) else
+        'deadline-exhausted' if isinstance(failure, TimeoutError) else
+        'curl-process-error' if failure is not None else
+        'curl-exit' if facts['curl_exit_code'] else
+        'status-output-bound' if len(status) > 16 else
+        'http-status-invalid' if 'http_status' not in facts else
+        'http-status-not-204' if facts['http_status'] != 204 else None)
+    if category is not None:
+        event('restart-control-plane-failed', failure_category=category, **facts,
+              elapsed_seconds=round(time.monotonic() - started, 3))
+        if failure is not None:
+            raise failure
+        if facts['curl_exit_code'] or len(status) > 16:
+            raise ValueError('bounded-command-failed')
         raise ValueError('restart-not-204')
     event('restart-control-plane-return', http_status=204, elapsed_seconds=round(time.monotonic() - started, 3))
     return 204

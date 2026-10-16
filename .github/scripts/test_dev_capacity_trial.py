@@ -818,7 +818,7 @@ class InventoryDiagnosticTests(OfflineCase):
         duplicate = self.listing();duplicate['value'].append(duplicate['value'][0])
         cases.append((duplicate, 7, trial.OCCUPANTS[0], True, True, True, 'object'))
         for field, value, expected_id, expected_plan in (('id', 'https://credential-needle.example', False, True),
-                                                       ('plan', None, True, False)):
+                                                       ('plan', 'credential-needle', True, False)):
             wrong = self.listing();wrong['value'][2][field] = value
             cases.append((wrong, 2, trial.OCCUPANTS[2], False, expected_id, expected_plan, 'object'))
         for value, shape in ((None, 'null'), ('credential-needle', 'string'), ({'name': UnknownValue()}, 'object')):
@@ -896,6 +896,80 @@ class InventoryDiagnosticTests(OfflineCase):
         self.assertEqual(terminal['missing_known_names'], [])
         self.assertEqual(sum(terminal['validated_prefix_counts'].values()), 7)
         self.assertFalse(any(row['kind'] == 'inventory-row-rejected' for row in trial.EVENTS))
+        self.process.assert_not_called()
+
+
+class InventoryBindingTests(OfflineCase):
+    def test_null_bindings_use_one_fixed_detail_get_per_site_and_keep_list_state(self):
+        rows = self.listing()
+        for row in rows['value']:
+            row['plan'] = None
+        del rows['value'][0]['plan']
+        rows['value'][2]['state'] = 'Stopped'
+        deadline = 1234.5
+        def read(arguments, **kwargs):
+            self.assertEqual(kwargs, {'deadline': deadline})
+            url = arguments[arguments.index('--url') + 1]
+            if '/serverfarms/' in url:
+                return rows
+            name = next(app for app in trial.OCCUPANTS if url == 'https://management.azure.com' + trial.base() + '/sites/' + app + '?api-version=2024-04-01')
+            self.assertEqual(arguments, ['rest', '--method', 'get', '--url', url, '--query', '{id:id,name:name,plan:properties.serverFarmId}'])
+            return {'id': trial.base() + '/sites/' + name, 'name': name, 'plan': trial.plan_id(), 'state': 'Running'}
+        with patch.object(trial, 'azure', side_effect=read) as azure:
+            observed = trial.inventory(deadline)
+        self.assertEqual(azure.call_count, 8)
+        self.assertEqual({row['name'] for row in observed}, set(trial.OCCUPANTS))
+        self.assertFalse(next(row['running'] for row in observed if row['name'] == trial.OCCUPANTS[2]))
+        self.assertTrue(all(row['plan'] == trial.plan_id() for row in rows['value']))
+        self.process.assert_not_called()
+
+    def test_invalid_list_identity_duplicate_or_nonnull_plan_never_reads_detail(self):
+        cases = []
+        for field, value in (('name', 'credential-needle'), ('id', 'https://credential-needle.example'),
+                             ('plan', 'credential-needle'), ('plan', ''), ('plan', False), ('plan', [])):
+            rows = self.listing();rows['value'][0]['plan'] = None;rows['value'][0][field] = value;cases.append(rows)
+        rows = self.listing();rows['value'][0] = None;cases.append(rows)
+        rows = self.listing();duplicate = dict(rows['value'][0], plan=None);rows['value'].append(duplicate);cases.append(rows)
+        for rows in cases:
+            with self.subTest(kind=type(rows['value'][0]).__name__), patch.object(trial, 'azure', return_value=rows) as azure:
+                with self.assertRaisesRegex(ValueError, '^seven-occupant-guard$'):
+                    trial.inventory()
+                self.assertEqual(azure.call_count, 1)
+        self.assertNotIn('credential-needle', self.stdout.getvalue())
+        self.process.assert_not_called()
+
+    def test_invalid_details_still_fail_closed_and_withhold_untrusted_values(self):
+        class UnknownValue:
+            def __str__(self):
+                raise AssertionError('unknown detail value was stringified')
+            __repr__ = __str__
+        name = trial.OCCUPANTS[0]
+        good = {'id': trial.base() + '/sites/' + name, 'name': name, 'plan': trial.plan_id()}
+        invalid = (None, [], {}, good | {'name': 'credential-needle'}, good | {'id': 'https://credential-needle.example'},
+                   good | {'plan': None}, {key: value for key, value in good.items() if key != 'plan'},
+                   good | {'plan': 'https://credential-needle.example'}, good | {'plan': UnknownValue()})
+        for detail in invalid:
+            rows = self.listing();rows['value'][0]['plan'] = None
+            with self.subTest(shape=type(detail).__name__), patch.object(trial, 'azure', side_effect=[rows, detail]) as azure:
+                with self.assertRaisesRegex(ValueError, '^seven-occupant-guard$'):
+                    trial.inventory()
+                self.assertEqual(azure.call_count, 2)
+                self.assertIsNone(rows['value'][0]['plan'])
+                event = next(row for row in reversed(trial.EVENTS) if row['kind'] == 'inventory-binding-detail-selected')
+                self.assertFalse(event['name_matches'] and event['id_matches'] and event['plan_matches'])
+        self.assertNotIn('credential-needle', self.stdout.getvalue())
+        self.assertNotIn(trial.plan_id(), self.stdout.getvalue())
+        self.process.assert_not_called()
+
+    def test_detail_read_uses_remaining_shared_deadline_without_retry(self):
+        rows = self.listing();rows['value'][0]['plan'] = None
+        with patch.object(trial.time, 'monotonic', side_effect=[100.0, 102.0]), \
+             patch.object(trial, 'command', return_value=json.dumps(rows).encode()) as command:
+            with self.assertRaises(TimeoutError):
+                trial.inventory(101.0)
+        self.assertEqual(command.call_count, 1)
+        self.assertEqual(command.call_args.args[1], 1.0)
+        self.assertIsNone(rows['value'][0]['plan'])
         self.process.assert_not_called()
 
 

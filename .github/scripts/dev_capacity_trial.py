@@ -732,7 +732,7 @@ def restart_sites(deadline=None):
     token = package.az_value(['account', 'get-access-token', '--subscription', SUBSCRIPTION,
         '--resource', 'https://management.azure.com/', '--query', 'accessToken'],
         lambda: remaining(deadline, 60), 'trial-restart-arm-token')
-    headers = ('Authorization: Bearer ' + token + '\n').encode()
+    headers = ('Authorization: Bearer ' + token + '\nContent-Length: 0\n').encode()
     facts = {}
     failure = None
     with tempfile.TemporaryDirectory() as directory, tempfile.TemporaryFile() as output:

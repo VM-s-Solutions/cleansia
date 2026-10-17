@@ -257,7 +257,7 @@ class PackageAndProbeTests(OfflineCase):
                 '--output', arguments[arguments.index('--output') + 1], '--write-out', '%{http_code}',
                 'https://management.azure.com' + trial.plan_id() + '/restartSites?softRestart=false&api-version=2024-04-01'])
             self.assertNotIn('credential-needle', repr(arguments))
-            self.assertEqual(kwargs['input'], b'Authorization: Bearer credential-needle\n')
+            self.assertEqual(kwargs['input'], b'Authorization: Bearer credential-needle\nContent-Length: 0\n')
             self.assertIs(kwargs['stderr'], subprocess.DEVNULL)
             self.assertFalse(kwargs['check'])
             self.assertEqual(kwargs['timeout'], 9)
@@ -1075,6 +1075,25 @@ class InventoryBindingTests(OfflineCase):
 
 
 class RestartDiagnosticTests(OfflineCase):
+    def test_empty_restart_post_defines_zero_length_without_request_body(self):
+        def respond(arguments, **kwargs):
+            self.assertEqual(arguments[arguments.index('--header') + 1], '@-')
+            self.assertEqual(kwargs['input'].splitlines(),
+                             [b'Authorization: Bearer credential-needle', b'Content-Length: 0'])
+            self.assertNotIn('credential-needle', repr(arguments))
+            for option in ('--data', '--data-raw', '--data-binary', '--data-urlencode', '-d',
+                           '--json', '--form', '-F', '--upload-file', '-T'):
+                self.assertNotIn(option, arguments)
+            kwargs['stdout'].write(b'204')
+            return subprocess.CompletedProcess(arguments, 0)
+        self.process.side_effect = respond
+        with patch.object(trial.package, 'az_value', return_value='credential-needle') as token:
+            self.assertEqual(trial.restart_sites(), 204)
+        self.process.assert_called_once()
+        token.assert_called_once()
+        self.assertNotIn('credential-needle', self.stdout.getvalue())
+        self.assertFalse(any(row['kind'] == 'restart-control-plane-failed' for row in trial.EVENTS))
+
     def response(self, status, exit_code=0, error=None):
         def respond(arguments, **kwargs):
             Path(arguments[arguments.index('--output') + 1]).write_bytes(b'secret-body-needle')

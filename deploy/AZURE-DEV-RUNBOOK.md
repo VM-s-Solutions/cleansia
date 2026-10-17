@@ -1011,6 +1011,8 @@ and an HTTP status when the bounded status output is exactly a valid three-digit
 bodies, stderr, credentials, headers, targets and raw error text are withheld. Only curl exit zero
 with HTTP 204 acknowledges the same single restart request; diagnostics add no retry and do not
 prove restart completion or explain startup latency.
+The empty restart POST declares `Content-Length: 0` through the stdin header buffer. HTTP 411
+is a request-framing refusal; it does not establish startup latency or a capacity cause.
 
 B3 restoration is attempted within 25 minutes of its intent, with cleanup time reserved in the
 75-minute job. Ordinary failures and termination enter guarded recovery. A killed runner, forced

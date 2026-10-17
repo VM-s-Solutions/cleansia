@@ -986,6 +986,26 @@ responding SSR process uptime reset is observed. SSR uptime describes that proce
 separates first availability, first post-boundary success and its second confirmation.
 Initial/final and pre-restart full-page SSR admission may wait 20 seconds for complete HTML; timed
 startup requests remain capped at five seconds, and existing shared deadlines still apply.
+Complete observations, including failed readiness samples, CLI/configuration/package facts and
+qualified optional metrics/activity, are saved before readiness policy is enforced. A saved baseline
+is uploaded even after a failed observation; its file and artifact are evidence, not a health pass.
+Failed preparation cannot start the trial or add an independent recovery login.
+
+Only trial preparation and admission may accept an unhealthy SSR root as an experimental baseline:
+the complete bounded response must be HTTP 200 with curl exit zero, no parse/transport error, valid
+explicitly closed SSR root and nested home from the same root, and zero offered cards. Outstanding
+markers, misnested closes and implicit marker pops are rejected; all six other functional probes must be
+healthy. The sample keeps `healthy=false`, with strict readiness and experimental admission recorded
+separately. Every leg applies the same root exception with its other three probes pre-positive.
+A pre-unhealthy root, or a healthy full-page precheck taking over five seconds, is excluded from
+that leg's cold comparison and advancement requirement. Its five-second samples and censoring remain.
+A fast pre-positive root remains required. Cold eligibility requires the endpoint's own positive
+precheck, observed boundary, two confirmations and HTTP 204 restart acknowledgment; a pre-unhealthy
+root cannot acquire a recovery boundary from later samples or SSR uptime. Ordinary unobserved/warm
+observations stay inconclusive. Final full-page readiness remains strict: missing offerings still
+fail verification and leave the startup investigation open. This policy does not establish an
+application fix, resource cause or permanent B3 authorization.
+
 Restart failures record only a fixed local failure category, a numeric curl exit code when available
 and an HTTP status when the bounded status output is exactly a valid three-digit status. Response
 bodies, stderr, credentials, headers, targets and raw error text are withheld. Only curl exit zero

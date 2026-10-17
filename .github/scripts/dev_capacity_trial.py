@@ -463,12 +463,17 @@ class SSRPage(HTMLParser):
         super().__init__(convert_charrefs=True)
         self.stack = []
         self.named_cards = []
+        self.ssr_root_seen = False
+        self.ssr_home_seen = False
+        self.marker_error = False
     def handle_starttag(self, tag, attrs):
         attrs = dict(attrs)
         active = not any(node['tag'] in ('script', 'style', 'template') for node in self.stack)
         node = {'tag': tag, 'root': active and tag == 'app-root' and attrs.get('ng-server-context') == 'ssr',
-                'home': False, 'card': None, 'capture': None}
+                'home': False, 'home_closed': False, 'card': None, 'capture': None}
         node['home'] = active and tag == 'cleansia-home' and any(item['root'] for item in self.stack)
+        if active and tag == 'cleansia-home' and not node['home']:
+            self.marker_error = True
         if active and tag == 'a' and any(item['home'] for item in self.stack) and 'cl-services__card' in attrs.get('class', '').split():
             href = urllib.parse.urlsplit(attrs.get('href', ''))
             ids = urllib.parse.parse_qs(href.query, keep_blank_values=True).get('serviceId', [])
@@ -478,6 +483,11 @@ class SSRPage(HTMLParser):
             node['capture'] = next((item['card'] for item in reversed(self.stack) if item['card'] is not None), None)
         if tag not in ('area', 'base', 'br', 'col', 'embed', 'hr', 'img', 'input', 'link', 'meta', 'param', 'source', 'track', 'wbr'):
             self.stack.append(node)
+    def handle_startendtag(self, tag, attrs):
+        self.handle_starttag(tag, attrs)
+        if tag in ('app-root', 'cleansia-home'):
+            self.marker_error = True
+        self.handle_endtag(tag)
     def handle_data(self, data):
         if not any(node['tag'] in ('script', 'style', 'template') for node in self.stack):
             capture = next((item['capture'] for item in reversed(self.stack) if item['capture'] is not None), None)
@@ -487,8 +497,17 @@ class SSRPage(HTMLParser):
         index = next((i for i in range(len(self.stack) - 1, -1, -1) if self.stack[i]['tag'] == tag), None)
         if index is not None:
             removed = self.stack[index:]
+            if any(item['root'] or item['home'] for item in removed) and len(removed) != 1:
+                self.marker_error = True
+            if len(removed) == 1 and removed[0]['home']:
+                next(item for item in reversed(self.stack[:index]) if item['root'])['home_closed'] = True
+            if len(removed) == 1 and removed[0]['root']:
+                self.ssr_root_seen = True
+                self.ssr_home_seen |= removed[0]['home_closed']
             del self.stack[index:]
             self.named_cards.extend(bool(''.join(item['card']).strip()) for item in removed if item['card'] is not None)
+        elif tag in ('app-root', 'cleansia-home'):
+            self.marker_error = True
 
 
 def semantic(label, body):
@@ -496,7 +515,10 @@ def semantic(label, body):
         page = SSRPage()
         page.feed(body.decode('utf-8'))
         page.close()
-        return {'healthy': bool(page.named_cards) and all(page.named_cards), 'named_card_count': sum(page.named_cards)}
+        markers_complete = not page.marker_error and not any(node['root'] or node['home'] for node in page.stack)
+        return {'healthy': bool(page.named_cards) and all(page.named_cards), 'named_card_count': sum(page.named_cards),
+                'ssr_root_seen': page.ssr_root_seen and markers_complete,
+                'ssr_home_seen': page.ssr_home_seen and markers_complete}
     if label == 'ssr-health':
         data = json.loads(body)
         memory = {'rss', 'heapTotal', 'heapUsed', 'external', 'arrayBuffers'}
@@ -546,14 +568,15 @@ def probe(label, deadline=None, maximum=5):
     return row
 
 
-def functionality():
+def functionality(strict=True):
     labels = (*APPS[:5], 'ssr-health', 'ssr-root')
     with ThreadPoolExecutor(max_workers=4) as pool:
         rows = list(pool.map(lambda label: probe(label, maximum=20 if label == 'ssr-root' else 5), labels))
     for row in rows:
         row.pop('_started_monotonic', None)
-    event('functional-readiness', samples=rows)
-    if not all(row['healthy'] for row in rows):
+    strict_ready = all(row['healthy'] for row in rows)
+    event('functional-readiness', samples=rows, strict_ready=strict_ready)
+    if strict and not strict_ready:
         raise ValueError('functional-readiness-failed')
     return rows
 
@@ -757,9 +780,20 @@ def restart_leg(name, capacity, baseline, deadline=None):
             lambda label: probe(label, deadline, 20 if label == 'ssr-root' else 5), PROBES)}
     for row in before.values():
         row.pop('_started_monotonic', None)
-    save(name + '-precheck.json', {'leg': name, 'samples': list(before.values())})
-    if not all(row['healthy'] for row in before.values()):
+    root = before['ssr-root']
+    strict_ready = all(row['healthy'] for row in before.values())
+    experimental_admission = (os.environ.get('TRIAL_MODE') == 'trial'
+        and all(row['healthy'] for label, row in before.items() if label != 'ssr-root')
+        and root['healthy'] is False and root.get('curl_exit_code') == 0 and root.get('status') == 200
+        and root.get('redirects') == 0 and type(root.get('body_bytes')) is int and 0 < root['body_bytes'] <= 524_288
+        and 'error_kind' not in root and root.get('named_card_count') == 0
+        and root.get('ssr_root_seen') is True and root.get('ssr_home_seen') is True)
+    save(name + '-precheck.json', {'leg': name, 'samples': list(before.values()),
+        'strict_ready': strict_ready, 'experimental_admission': experimental_admission})
+    if not strict_ready and not experimental_admission:
         raise ValueError('pre-restart-readiness-failed')
+    required = tuple(label for label in PROBES if label != 'ssr-root'
+                     or root['healthy'] and root.get('elapsed_seconds', 0) <= 5)
     started = time.monotonic()
     intent = utc()
     event('restart-intent', leg=name, method='POST', path='fixed-plan/restartSites', api_version=API,
@@ -789,11 +823,15 @@ def restart_leg(name, capacity, baseline, deadline=None):
                 samples.append(row)
                 consecutive[label] = consecutive[label] + 1 if row['healthy'] else 0
                 if not row['healthy']:
-                    boundary[label] = 'observed-negative-transition'
+                    if before[label]['healthy']:
+                        boundary[label] = 'observed-negative-transition'
                     confirmations[label] = 0
                     first_recovery[label] = confirmed_recovery[label] = None
-                if label == 'ssr-health' and row['healthy'] and before[label].get('uptime_seconds', 0) > row.get('uptime_seconds', float('inf')):
-                    boundary['ssr-health'] = boundary['ssr-root'] = 'responding-SSR-process-uptime-reset'
+                if (label == 'ssr-health' and before[label]['healthy'] and row['healthy']
+                        and before[label].get('uptime_seconds', 0) > row.get('uptime_seconds', float('inf'))):
+                    boundary['ssr-health'] = 'responding-SSR-process-uptime-reset'
+                    if before['ssr-root']['healthy']:
+                        boundary['ssr-root'] = 'responding-SSR-process-uptime-reset'
                 if row['healthy'] and boundary[label] is not None:
                     confirmations[label] += 1
                     if first_recovery[label] is None:
@@ -805,7 +843,7 @@ def restart_leg(name, capacity, baseline, deadline=None):
             save(name + '-restart.json', {'leg': name, 'intent_utc': intent,
                 'collection_result': 'partial', 'control_plane_acknowledged': None, 'samples': samples})
             elapsed = time.monotonic() - started
-            if all(confirmations[label] >= 2 for label in PROBES) or elapsed >= 180 and all(consecutive[label] >= 2 for label in PROBES):
+            if all(confirmations[label] >= 2 for label in required) or elapsed >= 180 and all(consecutive[label] >= 2 for label in required):
                 break
             if time.monotonic() >= deadline:
                 deadline_exhausted = True
@@ -821,18 +859,23 @@ def restart_leg(name, capacity, baseline, deadline=None):
               'right_censored': not rows or any(consecutive[label] < 2 for label in PROBES),
               'elapsed_seconds': round(time.monotonic() - started, 3), 'samples': samples,
               'measurements': {label: {'boundary': boundary[label], 'confirmations': confirmations[label],
+                  'precheck_healthy': before[label]['healthy'],
+                  'cold_comparison_eligible': bool(acknowledged and label in required and boundary[label] is not None
+                                                   and confirmations[label] >= 2),
                   'consecutive_healthy_samples': consecutive[label],
                   'first_semantic_success_seconds': first_success[label],
                   'first_post_boundary_success_seconds': first_recovery[label],
                   'second_post_boundary_success_seconds': confirmed_recovery[label],
-                  'classification': 'observed-recovery' if boundary[label] and confirmations[label] >= 2 else
+                  'classification': 'pre-existing-unhealthy-excluded' if not before[label]['healthy'] else
+                    'slow-precheck-excluded' if label not in required else
+                    'observed-recovery' if boundary[label] and confirmations[label] >= 2 else
                     'right-censored-not-ready' if not rows or not next(row['healthy'] for row in rows if row['probe'] == label) else
                     'right-censored-unconfirmed' if boundary[label] else
                     'warm-or-unobserved-inconclusive'} for label in PROBES}}
     save(name + '-restart.json', result)
     event('restart-leg-complete', leg=name, measurements=result['measurements'], control_plane_acknowledged=acknowledged)
-    if (not acknowledged or not rows or any(consecutive[label] < 2 for label in PROBES)
-            or deadline_exhausted and not all(confirmations[label] >= 2 for label in PROBES)):
+    if (not acknowledged or not rows or any(consecutive[label] < 2 for label in required)
+            or deadline_exhausted and not all(confirmations[label] >= 2 for label in required)):
         raise ValueError('restart-leg-not-ready')
     return result
 
@@ -912,7 +955,15 @@ def prepare(capacity):
     event('baseline-phase', phase='packages')
     baseline['packages'] = packages()
     event('baseline-phase', phase='readiness')
-    baseline['readiness'] = functionality()
+    baseline['readiness'] = functionality(strict=False)
+    root = baseline['readiness'][-1]
+    baseline['strict_ready'] = all(row['healthy'] for row in baseline['readiness'])
+    baseline['experimental_admission'] = (os.environ.get('TRIAL_MODE') == 'trial'
+        and len(baseline['readiness']) == 7 and all(row['healthy'] for row in baseline['readiness'][:-1])
+        and root['healthy'] is False and root.get('curl_exit_code') == 0 and root.get('status') == 200
+        and root.get('redirects') == 0 and type(root.get('body_bytes')) is int and 0 < root['body_bytes'] <= 524_288
+        and 'error_kind' not in root and root.get('named_card_count') == 0
+        and root.get('ssr_root_seen') is True and root.get('ssr_home_seen') is True)
     baseline.update({'protocol': {'b3_restore_attempt_deadline_seconds': 1500, 'job_timeout_minutes': 75,
                      'readiness_leg_deadline_seconds': 600, 'maximum_rounds_per_leg': 60,
                      'cadence_seconds': 10, 'matched_restarts': 3, 'logical_sku_updates': 2},
@@ -930,7 +981,10 @@ def prepare(capacity):
     save('baseline.json', baseline)
     event('baseline-prepared', baseline_sha256=fingerprint(baseline), preserved_capacity=capacity,
           cli_receipt_sha256=baseline['cli_receipt_sha256'],
+          strict_ready=baseline['strict_ready'], experimental_admission=baseline['experimental_admission'],
           preview={'before': 'B2', 'trial': 'B3', 'restore': 'B2', 'count_changes': False})
+    if not baseline['strict_ready'] and not baseline['experimental_admission']:
+        raise ValueError('functional-readiness-failed')
     return baseline
 
 
@@ -955,8 +1009,21 @@ def run_trial(capacity):
     preserved(baseline, current)
     if packages() != baseline['packages'] or configurations() != baseline['configurations']:
         raise ValueError('package-or-configuration-drift')
-    functionality()
-    event('durable-baseline-admitted', artifact_id=os.environ['BASELINE_ARTIFACT_ID'], baseline_sha256=fingerprint(baseline))
+    readiness = functionality(strict=False)
+    strict_ready = all(row['healthy'] for row in readiness)
+    experimental_admission = False
+    if not strict_ready:
+        root = readiness[-1]
+        experimental_admission = (os.environ.get('TRIAL_MODE') == 'trial'
+            and len(readiness) == 7 and all(row['healthy'] for row in readiness[:-1])
+            and root['healthy'] is False and root.get('curl_exit_code') == 0 and root.get('status') == 200
+            and root.get('redirects') == 0 and type(root.get('body_bytes')) is int and 0 < root['body_bytes'] <= 524_288
+            and 'error_kind' not in root and root.get('named_card_count') == 0
+            and root.get('ssr_root_seen') is True and root.get('ssr_home_seen') is True)
+        if not experimental_admission:
+            raise ValueError('functional-readiness-failed')
+    event('durable-baseline-admitted', artifact_id=os.environ['BASELINE_ARTIFACT_ID'], baseline_sha256=fingerprint(baseline),
+          strict_ready=strict_ready, experimental_admission=experimental_admission)
     result = {'started_utc': utc(), 'legs': [], 'trial_error': None, 'restore_error': None}
     try:
         time.sleep(180)

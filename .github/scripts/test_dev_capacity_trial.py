@@ -1146,5 +1146,216 @@ class RestartDiagnosticTests(OfflineCase):
         self.failure('deadline-exhausted')
 
 
+class ExperimentalBaselineTests(OfflineCase):
+    incomplete_renders = {
+        'open-pair': '<app-root ng-server-context="ssr"><cleansia-home>',
+        'only-root-closed': '<app-root ng-server-context="ssr"><cleansia-home></app-root>',
+        'only-home-closed': '<app-root ng-server-context="ssr"><cleansia-home></cleansia-home>',
+        'reversed-closes': '<app-root ng-server-context="ssr"><cleansia-home></app-root></cleansia-home>',
+        'home-outside-root': '<app-root ng-server-context="ssr"></app-root><cleansia-home></cleansia-home>',
+        'implicit-home-pop': '<app-root ng-server-context="ssr"><div><cleansia-home></div></app-root>',
+        'open-child-at-home-close': '<app-root ng-server-context="ssr"><cleansia-home><div></cleansia-home></app-root>',
+        'separate-roots': '<app-root ng-server-context="ssr"></app-root><app-root ng-server-context="ssr"><cleansia-home></cleansia-home>',
+        'valid-then-open-home': '<app-root ng-server-context="ssr"><cleansia-home></cleansia-home></app-root><cleansia-home>',
+        'self-closing-home': '<app-root ng-server-context="ssr"><cleansia-home/></app-root>',
+        'self-closing-root': '<app-root ng-server-context="ssr"/><cleansia-home></cleansia-home>',
+        'unmatched-marker-close': '<app-root ng-server-context="ssr"><cleansia-home></cleansia-home></app-root></cleansia-home>',
+    }
+    def root(self, healthy=False, elapsed=1, **changes):
+        return {'probe': 'ssr-root', 'healthy': healthy, 'elapsed_seconds': elapsed,
+            'curl_exit_code': 0, 'status': 200, 'redirects': 0, 'body_bytes': 1000,
+            'named_card_count': 3 if healthy else 0, 'ssr_root_seen': True,
+            'ssr_home_seen': True} | changes
+
+    def readiness(self, root, bad_api=False):
+        return [({'probe': label, 'healthy': not bad_api or label != trial.APPS[0], 'elapsed_seconds': 0.1}
+                 if label != 'ssr-root' else copy.deepcopy(root))
+                for label in (*trial.APPS[:5], 'ssr-health', 'ssr-root')]
+
+    def prepare_observation(self, root, mode='trial', bad_api=False):
+        rows = self.readiness(root, bad_api)
+        def probe(label, **_kwargs):
+            return copy.deepcopy(next(row for row in rows if row['probe'] == label))
+        with patch.dict(os.environ, {'TRIAL_MODE': mode}), patch.object(trial, 'authenticate'), \
+             patch.object(trial, 'queues'), patch.object(trial, 'snapshot', return_value=self.snapshot()), \
+             patch.object(trial, 'hosted_cli', return_value=CLI_RECEIPT), \
+             patch.object(trial, 'configurations', return_value={'same': 'configs'}), \
+             patch.object(trial, 'packages', return_value={'same': 'packages'}), \
+             patch.object(trial, 'probe', side_effect=probe), \
+             patch.object(trial, 'telemetry', side_effect=lambda _start: trial.save('metrics.json', {'safe': True})), \
+             patch.object(trial, 'activity', side_effect=lambda _start: trial.save('activity.json', {'safe': True})), \
+             patch.object(trial, 'resize') as resize, patch.object(trial, 'restart_sites') as restart:
+            status = trial.main(['observe'])
+        resize.assert_not_called()
+        restart.assert_not_called()
+        target = trial.DIRECTORY / 'baseline.json'
+        self.assertTrue(target.exists(), 'completed observation facts must survive failed strict readiness')
+        return status, json.loads(target.read_bytes())
+
+    def test_ssr_marker_facts_require_rendered_root_and_nested_home(self):
+        valid = '<app-root ng-server-context="ssr"><cleansia-home><a href="/services">Fallback</a></cleansia-home></app-root>'
+        for body, root, home in ((valid, True, True), ('<html>Error</html>', False, False),
+                (valid.replace('ng-server-context="ssr"', ''), False, False),
+                ('<cleansia-home></cleansia-home>', False, False), ('<script>' + valid + '</script>', False, False)):
+            with self.subTest(root=root, home=home, body=body[:20]):
+                result = trial.semantic('ssr-root', body.encode())
+                self.assertFalse(result['healthy'])
+                self.assertEqual(result['named_card_count'], 0)
+                self.assertIs(result['ssr_root_seen'], root)
+                self.assertIs(result['ssr_home_seen'], home)
+        for name, body in self.incomplete_renders.items():
+            with self.subTest(render=name):
+                result = trial.semantic('ssr-root', body.encode())
+                self.assertFalse(result['healthy'])
+                self.assertEqual(result['named_card_count'], 0)
+                self.assertFalse(result['ssr_root_seen'] and result['ssr_home_seen'])
+        offered = '<app-root ng-server-context="ssr"><cleansia-home><a class="cl-services__card" href="/order?serviceId=1"><h3 class="cl-services__name">Service</h3></a></cleansia-home></app-root>'
+        for body in (offered, offered.replace('</cleansia-home></app-root>', '')):
+            with self.subTest(named_card_closure=body.endswith('</app-root>')):
+                result = trial.semantic('ssr-root', body.encode())
+                self.assertTrue(result['healthy'])
+                self.assertEqual(result['named_card_count'], 1)
+
+    def test_strict_observation_saves_complete_failed_facts_without_mutation(self):
+        status, baseline = self.prepare_observation(self.root(), 'observe')
+        self.assertEqual(status, 1)
+        self.assertFalse(baseline['strict_ready'])
+        self.assertFalse(baseline['experimental_admission'])
+        self.assertEqual(baseline['cli_receipt_sha256'], trial.fingerprint(CLI_RECEIPT))
+        self.assertEqual(baseline['cli'], CLI_RECEIPT)
+        self.assertEqual(baseline['packages'], {'same': 'packages'})
+        self.assertEqual(baseline['configurations'], {'same': 'configs'})
+        self.assertEqual(baseline['plan'], self.snapshot()['plan'])
+        self.assertEqual(len(baseline['readiness']), 7)
+        self.assertFalse(baseline['readiness'][-1]['healthy'])
+        self.assertTrue(all(row['state'] == 'received' for row in baseline['optional_evidence'].values()))
+        self.assertTrue((trial.DIRECTORY / 'initial-metrics.json').exists())
+        self.assertTrue((trial.DIRECTORY / 'initial-activity.json').exists())
+
+    def test_trial_preparation_admits_only_truthful_complete_zero_offer_failure(self):
+        status, baseline = self.prepare_observation(self.root())
+        self.assertEqual(status, 0)
+        self.assertFalse(baseline['strict_ready'])
+        self.assertTrue(baseline['experimental_admission'])
+        self.assertFalse(baseline['readiness'][-1]['healthy'])
+        status, baseline = self.prepare_observation(self.root(True), 'observe')
+        self.assertEqual(status, 0)
+        self.assertTrue(baseline['strict_ready'])
+        self.assertFalse(baseline['experimental_admission'])
+
+    def test_trial_preparation_rejects_invalid_root_or_any_other_failed_probe(self):
+        for change in ({'ssr_root_seen': False}, {'ssr_home_seen': False}, {'curl_exit_code': 28},
+                {'status': 500}, {'redirects': 1}, {'body_bytes': 524289}, {'body_bytes': 0},
+                {'error_kind': 'UnicodeError'}, {'named_card_count': 1}, {'bad_api': True}):
+            with self.subTest(change=change):
+                bad_api = change.get('bad_api', False)
+                status, baseline = self.prepare_observation(self.root(**{key: value for key, value in change.items() if key != 'bad_api'}), bad_api=bad_api)
+                self.assertEqual(status, 1)
+                self.assertFalse(baseline['experimental_admission'])
+                self.assertFalse(baseline['strict_ready'])
+
+        for name, body in self.incomplete_renders.items():
+            with self.subTest(render=name):
+                row = self.root(**trial.semantic('ssr-root', body.encode()), body_bytes=len(body.encode()))
+                status, baseline = self.prepare_observation(row)
+                self.assertEqual(status, 1)
+                self.assertFalse(baseline['experimental_admission'])
+                self.assertFalse(baseline['strict_ready'])
+
+    def test_trial_recheck_uses_exception_but_final_readiness_remains_strict(self):
+        baseline = self.baseline()
+        roots = [('valid', self.root(), True), ('missing-home', self.root(ssr_home_seen=False), False)]
+        roots.extend((name, self.root(**trial.semantic('ssr-root', body.encode()), body_bytes=len(body.encode())), False)
+                     for name, body in self.incomplete_renders.items())
+        for name, root, admitted in roots:
+            rows = self.readiness(root)
+            def probe(label, **_kwargs):
+                return copy.deepcopy(next(row for row in rows if row['probe'] == label))
+            with self.subTest(render=name, admitted=admitted), patch.dict(os.environ, {'TRIAL_MODE': 'trial'}), \
+                 patch.object(trial, 'snapshot', return_value=self.snapshot()), \
+                 patch.object(trial, 'packages', return_value=baseline['packages']), \
+                 patch.object(trial, 'configurations', return_value=baseline['configurations']), \
+                 patch.object(trial, 'probe', side_effect=probe), \
+                 patch.object(trial, 'restart_leg', side_effect=lambda name, *_args: {'leg': name}) as restart, \
+                 patch.object(trial, 'resize') as resize, patch.object(trial, 'telemetry'), patch.object(trial, 'activity'):
+                with self.assertRaises(ValueError):
+                    trial.run_trial(1)
+                self.assertEqual(restart.call_count, 3 if admitted else 0)
+                self.assertEqual(resize.call_count, 1 if admitted else 0)
+                if admitted:
+                    result = json.loads((trial.DIRECTORY / 'result.json').read_bytes())
+                    self.assertEqual(result['verification_errors'], [{'phase': 'readiness', 'error_kind': 'ValueError'}])
+                    event = next(row for row in trial.EVENTS if row['kind'] == 'durable-baseline-admitted')
+                    self.assertFalse(event['strict_ready'])
+                    self.assertTrue(event['experimental_admission'])
+
+    def leg(self, root, later_healthy=False, bad_api=False, ack=204):
+        calls = dict.fromkeys(trial.PROBES, 0)
+        caps = {label: [] for label in trial.PROBES}
+        def probe(label, deadline=None, maximum=5):
+            calls[label] += 1
+            count = calls[label]
+            caps[label].append(maximum)
+            if label == 'ssr-root':
+                return copy.deepcopy(root) if count == 1 else self.root(later_healthy and count >= 3, 0.1)
+            return {'probe': label, 'healthy': not bad_api and count != 2,
+                    'elapsed_seconds': 0.1, 'uptime_seconds': 100 if count == 1 else 1}
+        ticks = iter(range(0, 100000, 5))
+        with patch.dict(os.environ, {'TRIAL_MODE': 'trial'}), patch.object(trial, 'queues'), \
+             patch.object(trial, 'snapshot', return_value=self.snapshot()), \
+             patch.object(trial, 'probe', side_effect=probe), patch.object(trial, 'restart_sites', return_value=ack) as restart, \
+             patch.object(trial.time, 'monotonic', side_effect=lambda: next(ticks)):
+            result = trial.restart_leg('B2-before', 1, self.snapshot())
+        restart.assert_called_once()
+        for label, values in caps.items():
+            self.assertEqual(values[0], 20 if label == 'ssr-root' else 5)
+            self.assertTrue(all(value == 5 for value in values[1:]))
+        return result
+
+    def test_unhealthy_or_slow_root_advances_without_false_cold_recovery(self):
+        for healthy, elapsed in ((False, 1), (True, 6)):
+            for later_healthy in (False, True):
+                with self.subTest(healthy=healthy, later_healthy=later_healthy):
+                    result = self.leg(self.root(healthy, elapsed), later_healthy)
+                    root = result['measurements']['ssr-root']
+                    self.assertFalse(root['cold_comparison_eligible'])
+                    self.assertEqual(root['classification'], 'pre-existing-unhealthy-excluded' if not healthy else 'slow-precheck-excluded')
+                    if not healthy:
+                        self.assertIsNone(root['boundary'])
+                        self.assertIsNone(root['first_post_boundary_success_seconds'])
+                    if not later_healthy:
+                        self.assertTrue(result['right_censored'])
+                    self.assertTrue(all(row['cold_comparison_eligible'] for label, row in result['measurements'].items() if label != 'ssr-root'))
+
+    def test_fast_root_other_prechecks_and_ack_still_gate_progression(self):
+        with self.assertRaisesRegex(ValueError, 'restart-leg-not-ready'):
+            self.leg(self.root(True), later_healthy=False)
+        for bad_api, ack in ((True, 204), (False, 202)):
+            with self.subTest(bad_api=bad_api, ack=ack), self.assertRaises(ValueError):
+                self.leg(self.root(), bad_api=bad_api, ack=ack)
+        for name, body in self.incomplete_renders.items():
+            with self.subTest(render=name), self.assertRaisesRegex(ValueError, 'pre-restart-readiness-failed'):
+                self.leg(self.root(**trial.semantic('ssr-root', body.encode()), body_bytes=len(body.encode())))
+        result = self.leg(self.root(True), later_healthy=True)
+        self.assertTrue(result['measurements']['ssr-root']['cold_comparison_eligible'])
+
+    def test_workflow_retains_failed_observations_but_preserves_trial_and_cleanup_guards(self):
+        workflow = (Path(__file__).parents[1] / 'workflows/dev-capacity-trial.yml').read_text()
+        sections = {part.splitlines()[0]: part for part in workflow.split('      - name: ')[1:]}
+        upload = sections['Publish immutable baseline before any mutation']
+        self.assertIn("if: always() && inputs.mode != 'restore-b2' && hashFiles('dev-capacity-evidence/baseline.json') != ''", upload)
+        self.assertIn('if-no-files-found: error', upload)
+        self.assertIn("if: success() && inputs.mode == 'trial' && steps.prepare.outcome == 'success' && steps.baseline.outcome == 'success'", sections['Run one bounded B2 B3 B2 cycle'])
+        login = sections['Login independently for armed recovery']
+        restore = sections['Independently restore armed trial or requested B2 recovery']
+        self.assertIn("if: always() && inputs.mode == 'trial' && steps.prepare.outcome == 'success' && steps.baseline.outcome == 'success'", login)
+        self.assertIn("if: always() && (inputs.mode == 'restore-b2' || (inputs.mode == 'trial' && steps.prepare.outcome == 'success' && steps.baseline.outcome == 'success'))", restore)
+        for section in (login, restore):
+            self.assertNotIn('success()', section)
+            self.assertNotIn('steps.trial', section)
+        self.assertIn("if [[ \"$TRIAL_MODE\" == 'restore-b2' || -f dev-capacity-evidence/b3-armed.json ]]", restore)
+        self.assertIn('if: always()', sections['Retain final or partial safe evidence'])
+
+
 if __name__ == '__main__':
     unittest.main()

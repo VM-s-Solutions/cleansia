@@ -249,28 +249,32 @@ class PackageAndProbeTests(OfflineCase):
         data['uptime'] = float('nan')
         self.assertFalse(trial.semantic('ssr-health', json.dumps(data).encode())['healthy'])
 
-    def test_fixed_restart_requires_204_and_never_exposes_token(self):
+    def test_fixed_site_restarts_require_all_seven_200_and_never_expose_token(self):
         def response(arguments, **kwargs):
             self.assertEqual(arguments, ['curl', '--disable', '--silent', '--request', 'POST', '--proto', '=https',
                 '--proxy', '', '--noproxy', '*', '--max-redirs', '0', '--retry', '0', '--max-time', '30',
                 '--connect-timeout', '3', '--max-filesize', '65536', '--header', '@-',
                 '--output', arguments[arguments.index('--output') + 1], '--write-out', '%{http_code}',
-                'https://management.azure.com' + trial.plan_id() + '/restartSites?softRestart=false&api-version=2024-04-01'])
+                'https://management.azure.com' + trial.base() + '/sites/' + trial.OCCUPANTS[self.process.call_count - 1] + '/restart?softRestart=false&api-version=2024-04-01'])
             self.assertNotIn('credential-needle', repr(arguments))
             self.assertEqual(kwargs['input'], b'Authorization: Bearer credential-needle\nContent-Length: 0\n')
             self.assertIs(kwargs['stderr'], subprocess.DEVNULL)
             self.assertFalse(kwargs['check'])
             self.assertEqual(kwargs['timeout'], 9)
-            kwargs['stdout'].write(b'204')
+            kwargs['stdout'].write(b'200')
             return subprocess.CompletedProcess(arguments, 0)
         self.process.side_effect = response
         with patch.object(trial.package, 'az_value', return_value='credential-needle') as token, \
              patch.object(trial.time, 'monotonic', return_value=100):
-            self.assertEqual(trial.restart_sites(109), 204)
-        self.process.assert_called_once()
+            self.assertEqual(trial.restart_sites(109), 200)
+        self.assertEqual(self.process.call_count, 7)
         token.assert_called_once()
         self.assertFalse(any(row['kind'] == 'restart-control-plane-failed' for row in trial.EVENTS))
         self.assertNotIn('credential-needle', self.stdout.getvalue())
+        self.assertEqual([row['app'] for row in trial.EVENTS if row['kind'] == 'restart-site-intent'], list(trial.OCCUPANTS))
+        returned = [row for row in trial.EVENTS if row['kind'] == 'restart-control-plane-return']
+        self.assertEqual([row['app'] for row in returned], list(trial.OCCUPANTS))
+        self.assertTrue(all(row['http_status'] == 200 for row in returned))
 
     def test_warm_200_is_inconclusive_and_negative_transition_recovers(self):
         baseline = self.snapshot()
@@ -283,7 +287,7 @@ class PackageAndProbeTests(OfflineCase):
                         'started_utc': trial.utc(), 'finished_utc': trial.utc()}
             ticks = iter(range(0, 10000, 5))
             with patch.object(trial, 'queues'), patch.object(trial, 'snapshot', return_value=baseline), \
-                 patch.object(trial, 'probe', side_effect=probe), patch.object(trial, 'restart_sites', return_value=204), \
+                 patch.object(trial, 'probe', side_effect=probe), patch.object(trial, 'restart_sites', return_value=200), \
                  patch.object(trial.time, 'monotonic', side_effect=lambda: next(ticks)):
                 result = trial.restart_leg('B2-before', 1, baseline)
             expected = 'observed-recovery' if negative else 'warm-or-unobserved-inconclusive'
@@ -503,7 +507,7 @@ class EvidenceTests(OfflineCase):
                             'elapsed_seconds': 0.1}
                 ticks = iter(range(0, 10000, 5))
                 with patch.object(trial, 'queues'), patch.object(trial, 'snapshot', return_value=self.snapshot()), \
-                     patch.object(trial, 'probe', side_effect=probe), patch.object(trial, 'restart_sites', return_value=204) as restart, \
+                     patch.object(trial, 'probe', side_effect=probe), patch.object(trial, 'restart_sites', return_value=200) as restart, \
                      patch.object(trial.time, 'monotonic', side_effect=lambda: next(ticks)):
                     if admitted:
                         result = trial.restart_leg('B2-before', 1, self.snapshot())
@@ -620,7 +624,7 @@ class FinalBoundaryTests(OfflineCase):
                 now['value'] += 20
             return {'probe': label, 'healthy': counts[label] != 3, 'elapsed_seconds': 0.1}
         with patch.object(trial, 'queues'), patch.object(trial, 'snapshot', return_value=self.snapshot()), \
-             patch.object(trial, 'probe', side_effect=probe), patch.object(trial, 'restart_sites', return_value=204), \
+             patch.object(trial, 'probe', side_effect=probe), patch.object(trial, 'restart_sites', return_value=200), \
              patch.object(trial.time, 'monotonic', side_effect=lambda: now['value']):
             result = trial.restart_leg('B2-before', 1, self.snapshot())
         for row in result['measurements'].values():
@@ -637,7 +641,7 @@ class FinalBoundaryTests(OfflineCase):
                 now['value'] += 400 if count == 4 else 100
             return {'probe': label, 'healthy': count == 1 or count >= 4, 'elapsed_seconds': 0.1}
         with patch.object(trial, 'queues'), patch.object(trial, 'snapshot', return_value=self.snapshot()), \
-             patch.object(trial, 'probe', side_effect=probe), patch.object(trial, 'restart_sites', return_value=204), \
+             patch.object(trial, 'probe', side_effect=probe), patch.object(trial, 'restart_sites', return_value=200), \
              patch.object(trial.time, 'monotonic', side_effect=lambda: now['value']), self.assertRaises(ValueError):
             trial.restart_leg('B2-before', 1, self.snapshot())
         result = json.loads((trial.DIRECTORY / 'B2-before-restart.json').read_bytes())
@@ -1084,15 +1088,52 @@ class RestartDiagnosticTests(OfflineCase):
             for option in ('--data', '--data-raw', '--data-binary', '--data-urlencode', '-d',
                            '--json', '--form', '-F', '--upload-file', '-T'):
                 self.assertNotIn(option, arguments)
-            kwargs['stdout'].write(b'204')
+            kwargs['stdout'].write(b'200')
             return subprocess.CompletedProcess(arguments, 0)
         self.process.side_effect = respond
         with patch.object(trial.package, 'az_value', return_value='credential-needle') as token:
-            self.assertEqual(trial.restart_sites(), 204)
-        self.process.assert_called_once()
+            self.assertEqual(trial.restart_sites(), 200)
+        self.assertEqual(self.process.call_count, 7)
         token.assert_called_once()
         self.assertNotIn('credential-needle', self.stdout.getvalue())
         self.assertFalse(any(row['kind'] == 'restart-control-plane-failed' for row in trial.EVENTS))
+
+    def test_partial_site_batch_stops_without_retry_or_later_posts(self):
+        for failed_index in (1, 3, 6):
+            with self.subTest(failed_index=failed_index):
+                self.process.reset_mock()
+                trial.EVENTS.clear()
+                def respond(arguments, **kwargs):
+                    status = b'200' if self.process.call_count - 1 < failed_index else b'501'
+                    return self.response(status)(arguments, **kwargs)
+                self.process.side_effect = respond
+                with patch.object(trial.package, 'az_value', return_value='credential-needle') as token:
+                    with self.assertRaisesRegex(ValueError, '^restart-not-200$'):
+                        trial.restart_sites()
+                token.assert_called_once()
+                self.assertEqual(self.process.call_count, failed_index + 1)
+                intended = [row['app'] for row in trial.EVENTS if row['kind'] == 'restart-site-intent']
+                returned = [row['app'] for row in trial.EVENTS if row['kind'] == 'restart-control-plane-return']
+                self.assertEqual(intended, list(trial.OCCUPANTS[:failed_index + 1]))
+                self.assertEqual(returned, list(trial.OCCUPANTS[:failed_index]))
+                self.failure('http-status-not-200', app=trial.OCCUPANTS[failed_index], http_status=501, curl_exit_code=0)
+
+    def test_shared_deadline_exhaustion_stops_after_completed_site(self):
+        now = {'value': 100.0}
+        def respond(arguments, **kwargs):
+            self.assertEqual(kwargs['timeout'], 3)
+            result = self.response(b'200')(arguments, **kwargs)
+            now['value'] = 103.0
+            return result
+        self.process.side_effect = respond
+        with patch.object(trial.package, 'az_value', return_value='credential-needle') as token, \
+             patch.object(trial.time, 'monotonic', side_effect=lambda: now['value']):
+            with self.assertRaises(TimeoutError):
+                trial.restart_sites(103)
+        self.process.assert_called_once()
+        token.assert_called_once()
+        self.assertEqual([row['app'] for row in trial.EVENTS if row['kind'] == 'restart-site-intent'], [trial.OCCUPANTS[0]])
+        self.failure('deadline-exhausted', app=trial.OCCUPANTS[1])
 
     def response(self, status, exit_code=0, error=None):
         def respond(arguments, **kwargs):
@@ -1103,42 +1144,44 @@ class RestartDiagnosticTests(OfflineCase):
             return subprocess.CompletedProcess(arguments, exit_code)
         return respond
 
-    def failure(self, category, **facts):
+    def failure(self, category, app=None, **facts):
         rows = [row for row in trial.EVENTS if row['kind'] == 'restart-control-plane-failed']
         self.assertTrue(rows, 'restart failure diagnostic missing')
         row = rows[-1]
-        self.assertEqual(set(row), {'kind', 'utc', 'elapsed_seconds', 'failure_category', *facts})
+        app = trial.OCCUPANTS[0] if app is None else app
+        self.assertEqual(row['app'], app)
+        self.assertEqual(set(row), {'kind', 'utc', 'elapsed_seconds', 'app', 'failure_category', *facts})
         self.assertEqual(row['failure_category'], category)
         for key, value in facts.items():
             self.assertIs(type(row[key]), int)
             self.assertEqual(row[key], value)
-        self.assertFalse(any(row['kind'] == 'restart-control-plane-return' for row in trial.EVENTS))
+        self.assertFalse(any(row['kind'] == 'restart-control-plane-return' and row['app'] == app for row in trial.EVENTS))
         raw = self.stdout.getvalue() + ''.join(path.read_text() for path in trial.DIRECTORY.iterdir())
         for withheld in ('credential-needle', 'secret-body-needle', 'secret-error-needle',
                          'secret-needle', 'https://', trial.plan_id()):
             self.assertNotIn(withheld, raw)
 
-    def test_non204_status_is_numeric_and_fails_closed_without_body(self):
-        for status in (202, 400, 401, 403, 409, 429, 500):
+    def test_non200_status_is_numeric_and_fails_closed_without_body(self):
+        for status in (202, 204, 400, 401, 403, 409, 411, 429, 500, 501):
             with self.subTest(status=status), patch.object(trial.package, 'az_value', return_value='credential-needle'):
                 self.process.side_effect = self.response(str(status).encode())
                 with self.assertRaises(ValueError):
                     trial.restart_sites()
-                self.failure('http-status-not-204', http_status=status, curl_exit_code=0)
-        self.assertEqual(self.process.call_count, 7)
+                self.failure('http-status-not-200', http_status=status, curl_exit_code=0)
+        self.assertEqual(self.process.call_count, 10)
 
     def test_curl_failure_keeps_only_valid_status_and_exit_code(self):
-        for status, code in ((b'403', 63), (b'204', 28), (b'000', 7), (b'', -15)):
+        for status, code in ((b'403', 63), (b'200', 28), (b'000', 7), (b'', -15)):
             with self.subTest(status=status, code=code), patch.object(trial.package, 'az_value', return_value='credential-needle'):
                 self.process.side_effect = self.response(status, code)
                 with self.assertRaises(ValueError):
                     trial.restart_sites()
-                facts = {'http_status': int(status)} if status in (b'403', b'204') else {}
+                facts = {'http_status': int(status)} if status in (b'403', b'200') else {}
                 self.failure('curl-exit', curl_exit_code=code, **facts)
         self.assertEqual(self.process.call_count, 4)
 
     def test_malformed_and_oversize_status_is_withheld_and_fails_closed(self):
-        for status in (b'', b'000', b'099', b'600', b'204\n', b'\xff', b'secret-needle', b'204' + b'x' * 14):
+        for status in (b'', b'000', b'099', b'600', b'200\n', b'\xff', b'secret-needle', b'200' + b'x' * 14):
             with self.subTest(status=status), patch.object(trial.package, 'az_value', return_value='credential-needle'):
                 self.process.side_effect = self.response(status)
                 with self.assertRaises(ValueError):
@@ -1308,7 +1351,7 @@ class ExperimentalBaselineTests(OfflineCase):
                     self.assertFalse(event['strict_ready'])
                     self.assertTrue(event['experimental_admission'])
 
-    def leg(self, root, later_healthy=False, bad_api=False, ack=204):
+    def leg(self, root, later_healthy=False, bad_api=False, ack=200):
         calls = dict.fromkeys(trial.PROBES, 0)
         caps = {label: [] for label in trial.PROBES}
         def probe(label, deadline=None, maximum=5):
@@ -1322,7 +1365,8 @@ class ExperimentalBaselineTests(OfflineCase):
         ticks = iter(range(0, 100000, 5))
         with patch.dict(os.environ, {'TRIAL_MODE': 'trial'}), patch.object(trial, 'queues'), \
              patch.object(trial, 'snapshot', return_value=self.snapshot()), \
-             patch.object(trial, 'probe', side_effect=probe), patch.object(trial, 'restart_sites', return_value=ack) as restart, \
+             patch.object(trial, 'probe', side_effect=probe), patch.object(trial, 'restart_sites',
+                 return_value=ack, side_effect=ack if isinstance(ack, Exception) else None) as restart, \
              patch.object(trial.time, 'monotonic', side_effect=lambda: next(ticks)):
             result = trial.restart_leg('B2-before', 1, self.snapshot())
         restart.assert_called_once()
@@ -1330,6 +1374,15 @@ class ExperimentalBaselineTests(OfflineCase):
             self.assertEqual(values[0], 20 if label == 'ssr-root' else 5)
             self.assertTrue(all(value == 5 for value in values[1:]))
         return result
+
+    def test_incomplete_restart_batch_cannot_acknowledge_or_enable_cold_comparison(self):
+        for ack in (None, 204, ValueError('restart-not-200'), TimeoutError('partial-batch')):
+            with self.subTest(ack_kind=type(ack).__name__), self.assertRaisesRegex(ValueError, '^restart-leg-not-ready$'):
+                self.leg(self.root(True), later_healthy=True, ack=ack)
+            result = json.loads((trial.DIRECTORY / 'B2-before-restart.json').read_bytes())
+            self.assertFalse(result['control_plane_acknowledged'])
+            self.assertTrue(all(row['boundary'] and row['confirmations'] >= 2 for row in result['measurements'].values()))
+            self.assertTrue(all(not row['cold_comparison_eligible'] for row in result['measurements'].values()))
 
     def test_unhealthy_or_slow_root_advances_without_false_cold_recovery(self):
         for healthy, elapsed in ((False, 1), (True, 6)):
@@ -1349,7 +1402,7 @@ class ExperimentalBaselineTests(OfflineCase):
     def test_fast_root_other_prechecks_and_ack_still_gate_progression(self):
         with self.assertRaisesRegex(ValueError, 'restart-leg-not-ready'):
             self.leg(self.root(True), later_healthy=False)
-        for bad_api, ack in ((True, 204), (False, 202)):
+        for bad_api, ack in ((True, 200), (False, 202)):
             with self.subTest(bad_api=bad_api, ack=ack), self.assertRaises(ValueError):
                 self.leg(self.root(), bad_api=bad_api, ack=ack)
         for name, body in self.incomplete_renders.items():

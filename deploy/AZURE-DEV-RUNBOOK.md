@@ -977,13 +977,22 @@ It rejects other active or queued manual work before experiment writes, publishe
 one-day baseline artifact before the first restart, and retains final or partial evidence in a
 separate one-day artifact. Keep both artifacts and supervise the run through verified B2 recovery.
 
-The finite protocol is one B2-before / B3 / B2-after cycle, with one identical fixed-plan
-`restartSites?softRestart=false` round per leg. Resize transitions are measured separately. Four
-fixed public endpoints represent Customer Mobile liveness/dependency readiness and SSR cheap
-health/populated rendering. Initial and final readiness also check every API. Requests have fixed
+The finite protocol is one B2-before / B3 / B2-after cycle. Each leg restarts the same seven fixed
+DEV sites, including Functions, sequentially in the same order with one empty
+`sites/{name}/restart?softRestart=false` POST per site: 21 nominal requests across three completed
+legs. Only seven HTTP 200 responses with curl exit zero acknowledge a batch. Any partial failure,
+non-200 response, timeout or unknown outcome stops the batch without retry or later site requests.
+Resize transitions are measured separately. Four fixed public endpoints represent Customer Mobile
+liveness/dependency readiness and SSR cheap health/populated rendering. Initial and final readiness
+also check every API. Requests have fixed
 bounds and cadence; an immediate warm response is inconclusive until a negative transition or
 responding SSR process uptime reset is observed. SSR uptime describes that process only. The evidence
 separates first availability, first post-boundary success and its second confirmation.
+Site intents/results retain fixed site names, UTC timestamps and bounded numeric diagnostics. The
+API is asynchronous by default: HTTP 200 does not prove worker readiness or Functions-job health.
+The common leg clock includes sequential dispatch delay; the batch is not atomic or simultaneous,
+and its observed intervals are not per-site process-start durations. Per-site timestamps expose
+this ordering without changing the existing boundary or cold-eligibility calculations.
 Initial/final and pre-restart full-page SSR admission may wait 20 seconds for complete HTML; timed
 startup requests remain capped at five seconds, and existing shared deadlines still apply.
 Complete observations, including failed readiness samples, CLI/configuration/package facts and
@@ -1000,7 +1009,7 @@ separately. Every leg applies the same root exception with its other three probe
 A pre-unhealthy root, or a healthy full-page precheck taking over five seconds, is excluded from
 that leg's cold comparison and advancement requirement. Its five-second samples and censoring remain.
 A fast pre-positive root remains required. Cold eligibility requires the endpoint's own positive
-precheck, observed boundary, two confirmations and HTTP 204 restart acknowledgment; a pre-unhealthy
+precheck, observed boundary, two confirmations and an all-seven HTTP 200 batch acknowledgment; a pre-unhealthy
 root cannot acquire a recovery boundary from later samples or SSR uptime. Ordinary unobserved/warm
 observations stay inconclusive. Final full-page readiness remains strict: missing offerings still
 fail verification and leave the startup investigation open. This policy does not establish an
@@ -1008,11 +1017,13 @@ application fix, resource cause or permanent B3 authorization.
 
 Restart failures record only a fixed local failure category, a numeric curl exit code when available
 and an HTTP status when the bounded status output is exactly a valid three-digit status. Response
-bodies, stderr, credentials, headers, targets and raw error text are withheld. Only curl exit zero
-with HTTP 204 acknowledges the same single restart request; diagnostics add no retry and do not
-prove restart completion or explain startup latency.
-The empty restart POST declares `Content-Length: 0` through the stdin header buffer. HTTP 411
-is a request-framing refusal; it does not establish startup latency or a capacity cause.
+bodies, stderr, credentials, headers, targets and raw error text are withheld. A token is read once
+per batch and shared only through the private stdin header buffer with `Content-Length: 0`; no
+application body is sent. Each request keeps its 30-second limit within the shared 60-second batch
+deadline. Diagnostics add no retry and do not prove restart completion or explain startup latency.
+The earlier plan-wide endpoint returned HTTP 411 before explicit empty framing, then HTTP 501 after
+it. These request failures establish neither a general platform-support rule nor a startup or
+capacity cause; older trials without a captured HTTP status remain unknown.
 
 B3 restoration is attempted within 25 minutes of its intent, with cleanup time reserved in the
 75-minute job. Ordinary failures and termination enter guarded recovery. A killed runner, forced

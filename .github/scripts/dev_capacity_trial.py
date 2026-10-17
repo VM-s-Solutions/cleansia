@@ -728,46 +728,49 @@ def restore(capacity, baseline=None):
 
 def restart_sites(deadline=None):
     deadline = min(time.monotonic() + 60, deadline) if deadline is not None else time.monotonic() + 60
-    started = time.monotonic()
     token = package.az_value(['account', 'get-access-token', '--subscription', SUBSCRIPTION,
         '--resource', 'https://management.azure.com/', '--query', 'accessToken'],
         lambda: remaining(deadline, 60), 'trial-restart-arm-token')
     headers = ('Authorization: Bearer ' + token + '\nContent-Length: 0\n').encode()
-    facts = {}
-    failure = None
-    with tempfile.TemporaryDirectory() as directory, tempfile.TemporaryFile() as output:
-        try:
-            response = subprocess.run(['curl', '--disable', '--silent', '--request', 'POST', '--proto', '=https',
-                '--proxy', '', '--noproxy', '*', '--max-redirs', '0', '--retry', '0', '--max-time', '30',
-                '--connect-timeout', '3', '--max-filesize', '65536', '--header', '@-',
-                '--output', str(Path(directory) / 'body'), '--write-out', '%{http_code}',
-                'https://management.azure.com' + plan_id() + '/restartSites?softRestart=false&api-version=' + API],
-                input=headers, stdout=output, stderr=subprocess.DEVNULL,
-                timeout=remaining(deadline, 30), check=False)
-            facts['curl_exit_code'] = response.returncode
-        except (OSError, subprocess.SubprocessError, TimeoutError) as error:
-            failure = error
-        output.seek(0)
-        status = output.read(17)
-    if re.fullmatch(rb'[1-5][0-9]{2}', status) is not None:
-        facts['http_status'] = int(status)
-    category = ('curl-timeout' if isinstance(failure, subprocess.TimeoutExpired) else
-        'deadline-exhausted' if isinstance(failure, TimeoutError) else
-        'curl-process-error' if failure is not None else
-        'curl-exit' if facts['curl_exit_code'] else
-        'status-output-bound' if len(status) > 16 else
-        'http-status-invalid' if 'http_status' not in facts else
-        'http-status-not-204' if facts['http_status'] != 204 else None)
-    if category is not None:
-        event('restart-control-plane-failed', failure_category=category, **facts,
-              elapsed_seconds=round(time.monotonic() - started, 3))
-        if failure is not None:
-            raise failure
-        if facts['curl_exit_code'] or len(status) > 16:
-            raise ValueError('bounded-command-failed')
-        raise ValueError('restart-not-204')
-    event('restart-control-plane-return', http_status=204, elapsed_seconds=round(time.monotonic() - started, 3))
-    return 204
+    for app in OCCUPANTS:
+        started = time.monotonic()
+        facts = {}
+        failure = None
+        with tempfile.TemporaryDirectory() as directory, tempfile.TemporaryFile() as output:
+            try:
+                timeout = remaining(deadline, 30)
+                event('restart-site-intent', app=app)
+                response = subprocess.run(['curl', '--disable', '--silent', '--request', 'POST', '--proto', '=https',
+                    '--proxy', '', '--noproxy', '*', '--max-redirs', '0', '--retry', '0', '--max-time', '30',
+                    '--connect-timeout', '3', '--max-filesize', '65536', '--header', '@-',
+                    '--output', str(Path(directory) / 'body'), '--write-out', '%{http_code}',
+                    'https://management.azure.com' + base() + '/sites/' + app + '/restart?softRestart=false&api-version=' + API],
+                    input=headers, stdout=output, stderr=subprocess.DEVNULL,
+                    timeout=timeout, check=False)
+                facts['curl_exit_code'] = response.returncode
+            except (OSError, subprocess.SubprocessError, TimeoutError) as error:
+                failure = error
+            output.seek(0)
+            status = output.read(17)
+        if re.fullmatch(rb'[1-5][0-9]{2}', status) is not None:
+            facts['http_status'] = int(status)
+        category = ('curl-timeout' if isinstance(failure, subprocess.TimeoutExpired) else
+            'deadline-exhausted' if isinstance(failure, TimeoutError) else
+            'curl-process-error' if failure is not None else
+            'curl-exit' if facts['curl_exit_code'] else
+            'status-output-bound' if len(status) > 16 else
+            'http-status-invalid' if 'http_status' not in facts else
+            'http-status-not-200' if facts['http_status'] != 200 else None)
+        if category is not None:
+            event('restart-control-plane-failed', app=app, failure_category=category, **facts,
+                  elapsed_seconds=round(time.monotonic() - started, 3))
+            if failure is not None:
+                raise failure
+            if facts['curl_exit_code'] or len(status) > 16:
+                raise ValueError('bounded-command-failed')
+            raise ValueError('restart-not-200')
+        event('restart-control-plane-return', app=app, http_status=200, elapsed_seconds=round(time.monotonic() - started, 3))
+    return 200
 
 
 def restart_leg(name, capacity, baseline, deadline=None):
@@ -796,8 +799,8 @@ def restart_leg(name, capacity, baseline, deadline=None):
                      or root['healthy'] and root.get('elapsed_seconds', 0) <= 5)
     started = time.monotonic()
     intent = utc()
-    event('restart-intent', leg=name, method='POST', path='fixed-plan/restartSites', api_version=API,
-          softRestart=False, all_seven_occupants=True)
+    event('restart-intent', leg=name, method='POST', path='fixed-sites/restart', api_version=API,
+          softRestart=False, all_seven_occupants=True, sequential=True)
     boundary = {label: None for label in PROBES}
     confirmations = dict.fromkeys(PROBES, 0)
     consecutive = dict.fromkeys(PROBES, 0)
@@ -850,7 +853,7 @@ def restart_leg(name, capacity, baseline, deadline=None):
                 break
             time.sleep(max(0, min(10 - (time.monotonic() - round_started), deadline - time.monotonic())))
         try:
-            acknowledged = operation.result(timeout=1) == 204
+            acknowledged = operation.result(timeout=1) == 200
         except (OSError, ValueError, subprocess.SubprocessError, TimeoutError) as error:
             acknowledged = False
             event('restart-command-failed', leg=name, error_kind=type(error).__name__)

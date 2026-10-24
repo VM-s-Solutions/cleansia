@@ -108,7 +108,7 @@
 				<string>NSPrivacyCollectedDataTypePurposeAppFunctionality</string>
 			</array>
 		</dict>
-		<!-- A crash report and the device and app state recorded with it, sent to Firebase Crashlytics on the next launch. Never from a Debug build. CustomerAppDelegate. -->
+		<!-- A crash report and the device and app state recorded with it, sent to Firebase Crashlytics by a later launch. Debug builds turn collection off, from their second launch on. CustomerAppDelegate. -->
 		<dict>
 			<key>NSPrivacyCollectedDataType</key>
 			<string>NSPrivacyCollectedDataTypeCrashData</string>

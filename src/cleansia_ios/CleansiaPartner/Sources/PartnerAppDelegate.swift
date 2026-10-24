@@ -25,7 +25,8 @@ final class PartnerAppDelegate: NSObject, UIApplicationDelegate, UNUserNotificat
         application.registerForRemoteNotifications()
         if GoogleServicePlist.isPresent {
             FirebaseApp.configure()
-            // Set on every launch: the SDK persists it, and a Debug install shares its data with a TestFlight one.
+            // Set on every launch: the SDK persists it and applies it from the next launch, and a Debug install
+            // shares its data with a TestFlight one.
             #if DEBUG
                 Crashlytics.crashlytics().setCrashlyticsCollectionEnabled(false)
             #else

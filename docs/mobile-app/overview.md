@@ -767,10 +767,14 @@ no new package, DSN or token (decided 2026-10-24,
 - **Only where Firebase is configured.** Crashlytics starts inside `FirebaseApp.configure()`, which the
   app delegates call only when the bundle holds `GoogleService-Info.plist`. CI has none, so CI builds
   stay inert, like Android's Sentry without a DSN.
-- **Never from a Debug build.** Each app delegate switches collection off under `#if DEBUG` and on
-  otherwise, on every launch, because the SDK persists the setting and a Debug install shares its data
-  container with a TestFlight install of the same app. Simulator runs, including the lanes' optimised
-  test run, send nothing.
+- **Off in Debug builds, from their second launch.** Each app delegate switches collection off under
+  `#if DEBUG` and on otherwise, on every launch, because the SDK keeps the last value and a Debug install
+  shares its data container with a TestFlight install of the same app. The SDK reads that value when
+  `FirebaseApp.configure()` starts it, so a switch takes effect on the next launch: the first launch of a
+  Debug install still runs with the value stored before it, or with collection on if none was. A crash a
+  Debug build records is not sent by a later Debug launch, since the switch is off by then; it stays on
+  the device, and a later TestFlight launch of the same install sends it. The lanes' optimised test runs
+  are Debug builds, so they send no crash report.
 - **A report is sent on the next launch.** The SDK writes the report when the app crashes and sends it
   once the app is opened again and stays up long enough. A crash before the first run-loop turn is sent
   synchronously during the next launch.

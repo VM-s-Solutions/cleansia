@@ -6,7 +6,7 @@ import { CustomerAuthService } from '@cleansia/customer-services';
 import { loadCustomerUser } from '@cleansia/customer-stores';
 import { CleansiaCustomerRoute, SnackbarService } from '@cleansia/services';
 import { Store } from '@ngrx/store';
-import { takeUntil } from 'rxjs';
+import { finalize, takeUntil } from 'rxjs';
 
 @Injectable()
 export class ConfirmEmailFacade extends UnsubscribeControlDirective {
@@ -18,6 +18,7 @@ export class ConfirmEmailFacade extends UnsubscribeControlDirective {
   readonly isResendDisabled = signal(false);
   readonly resendCodeTimeout = signal(30);
   readonly emailKnown = signal(false);
+  readonly confirming = signal(false);
 
   formGroup: FormGroup = this.createConfirmEmailFormGroup();
 
@@ -33,7 +34,13 @@ export class ConfirmEmailFacade extends UnsubscribeControlDirective {
     this.emailKnown.set(emailControl.valid);
   }
 
+  // The boxes complete a code again when AutoFill delivers it twice; one confirm at a time keeps the
+  // second from spending an attempt.
   confirmEmail(): void {
+    if (this.confirming()) {
+      return;
+    }
+
     if (this.formGroup.invalid) {
       this.snackbarService.showErrorTranslated(
         'validation.common.not_all_fields_filled'
@@ -42,8 +49,10 @@ export class ConfirmEmailFacade extends UnsubscribeControlDirective {
     }
 
     const { code, email } = this.formGroup.value;
+    this.confirming.set(true);
     this.authService.confirmUserEmail(code, email).pipe(
-      takeUntil(this.destroyed$)
+      takeUntil(this.destroyed$),
+      finalize(() => this.confirming.set(false))
     ).subscribe({
       next: () => {
         this.snackbarService.showSuccessTranslated('auth.confirm_email.success');

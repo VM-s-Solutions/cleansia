@@ -1,3 +1,4 @@
+import SwiftUI
 import XCTest
 @testable import CleansiaCore
 
@@ -85,5 +86,37 @@ final class OneTimeCodeTests: XCTestCase {
     func testTheLengthIsTheCallersCode() {
         XCTAssertEqual(OneTimeCode.accept("12345678", replacing: "", length: 4), "1234")
         XCTAssertEqual(OneTimeCode.accept("12", replacing: "1", length: 4), "12")
+    }
+
+    // MARK: - The binding a code field writes through
+
+    private final class Holder {
+        var code = ""
+    }
+
+    private func field(over holder: Holder) -> Binding<String> {
+        Binding(get: { holder.code }, set: { holder.code = $0 }).oneTimeCode(length: 6)
+    }
+
+    func testTheBindingMeasuresAPasteAgainstTheCodeItHolds() {
+        let holder = Holder()
+        holder.code = "12"
+        field(over: holder).wrappedValue = "12654321"
+        XCTAssertEqual(holder.code, "654321")
+    }
+
+    func testTheBindingTakesTypingOneDigitAtATime() {
+        let holder = Holder()
+        for (raw, expected) in [("1", "1"), ("12", "12"), ("123", "123"), ("12", "12")] {
+            field(over: holder).wrappedValue = raw
+            XCTAssertEqual(holder.code, expected)
+        }
+    }
+
+    func testTheBindingKeepsTheDigitsOfAPastedSentence() {
+        let holder = Holder()
+        field(over: holder).wrappedValue = "Code: 123 456"
+        XCTAssertEqual(holder.code, "123456")
+        XCTAssertEqual(field(over: holder).wrappedValue, "123456")
     }
 }

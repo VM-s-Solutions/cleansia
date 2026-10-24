@@ -1,3 +1,5 @@
+import SwiftUI
+
 /// What a field holding a numeric one-time code keeps of an edit. Android's twin (`acceptOneTimeCode`) is
 /// held to the same case list; keep the two in step.
 public enum OneTimeCode {
@@ -27,5 +29,15 @@ public enum OneTimeCode {
 
     private static func digits(in characters: ArraySlice<Character>) -> [Character] {
         characters.filter { $0.isASCII && $0.isNumber }
+    }
+}
+
+public extension Binding where Value == String {
+    /// A code field's text, kept to what ``OneTimeCode/accept(_:replacing:length:)`` allows of each edit.
+    func oneTimeCode(length: Int) -> Binding<String> {
+        Binding(
+            get: { wrappedValue },
+            set: { wrappedValue = OneTimeCode.accept($0, replacing: wrappedValue, length: length) }
+        )
     }
 }

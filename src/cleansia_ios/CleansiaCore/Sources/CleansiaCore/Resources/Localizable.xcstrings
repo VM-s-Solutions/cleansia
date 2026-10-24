@@ -7730,6 +7730,41 @@
         }
       }
     },
+    "error.validation.passport_id.invalid_length": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Číslo pasu / OP musí mít 5 až 20 znaků."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your passport / ID number must be 5 to 20 characters long."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Номер паспорта / ID должен содержать от 5 до 20 символов."
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Číslo pasu / OP musí mať 5 až 20 znakov."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Номер паспорта / ID має містити від 5 до 20 символів."
+          }
+        }
+      }
+    },
     "error.validation.payout.account_number_required": {
       "extractionState": "manual",
       "localizations": {

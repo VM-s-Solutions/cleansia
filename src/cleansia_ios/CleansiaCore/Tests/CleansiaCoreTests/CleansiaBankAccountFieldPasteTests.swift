@@ -33,26 +33,33 @@ final class CleansiaBankAccountFieldPasteTests: XCTestCase {
         }
     }
 
+    /// Each row starts with the other two boxes empty and ends with what the three boxes hold, as prefix, number and
+    /// bank code. An edit the control lets through as typed keeps the keyboard; any other rebuilds the boxes.
     func testTheCaseListTheTwinsShare() {
-        let account: Edit = .account(prefix: "19", number: "2000145399", bankCode: "0800")
+        let account = ["19", "2000145399", "0800"]
         let rows = [
-            PasteRow(1, into: .bankCode, holding: "", paste: "0800", .after, gives: .box("0800")),
-            PasteRow(2, into: .bankCode, holding: "0800", paste: "5500", .after, gives: .box("5500")),
-            PasteRow(3, into: .bankCode, holding: "0800", paste: "5500", .before, gives: .box("5500")),
-            PasteRow(4, into: .bankCode, holding: "0800", paste: "55", .over("08"), gives: .box("5500")),
-            PasteRow(5, into: .bankCode, holding: "08", paste: "00", .after, gives: .box("0800")),
-            PasteRow(6, into: .bankCode, holding: "08", paste: "0800", .after, gives: .box("0800")),
-            PasteRow(7, into: .bankCode, holding: "0800", paste: "2000145399", .after, gives: .number("2000145399")),
-            PasteRow(8, into: .bankCode, holding: "", paste: "2000145399", .after, gives: .number("2000145399")),
-            PasteRow(9, into: .prefix, holding: "12345", paste: "67", .after, gives: .box("67")),
-            PasteRow(10, into: .prefix, holding: "", paste: "19", .after, gives: .box("19")),
-            PasteRow(11, into: .number, holding: "", paste: "19-2000145399/0800", .after, gives: account),
-            PasteRow(12, into: .number, holding: "", paste: "CZ65 0800 0000 1920 0014 5399", .after, gives: account),
-            PasteRow(13, into: .bankCode, holding: "0800", paste: "5", .after, gives: .box("0800")),
-            PasteRow(14, into: .number, holding: "2000145399", paste: "1234567890", .after, gives: .box("1234567890"))
+            PasteRow(1, into: .bankCode, holding: "", paste: "0800", leaves: ["", "", "0800"]),
+            PasteRow(2, into: .bankCode, holding: "0800", paste: "5500", leaves: ["", "", "5500"]),
+            PasteRow(3, into: .bankCode, holding: "0800", paste: "5500", .before, leaves: ["", "", "5500"]),
+            PasteRow(4, into: .bankCode, holding: "0800", paste: "55", .over("08"), leaves: ["", "", "5500"]),
+            PasteRow(5, into: .bankCode, holding: "08", paste: "00", leaves: ["", "", "0800"]),
+            PasteRow(6, into: .bankCode, holding: "08", paste: "0800", leaves: ["", "", "0800"]),
+            PasteRow(7, into: .bankCode, holding: "0800", paste: "2000145399", leaves: ["", "2000145399", "0800"]),
+            PasteRow(8, into: .bankCode, holding: "", paste: "2000145399", leaves: ["", "2000145399", ""]),
+            PasteRow(9, into: .prefix, holding: "12345", paste: "67", leaves: ["67", "", ""]),
+            PasteRow(10, into: .prefix, holding: "", paste: "19", leaves: ["19", "", ""]),
+            PasteRow(11, into: .number, holding: "", paste: "19-2000145399/0800", leaves: account),
+            PasteRow(12, into: .number, holding: "", paste: "CZ65 0800 0000 1920 0014 5399", leaves: account),
+            PasteRow(13, into: .bankCode, holding: "0800", paste: "5", leaves: ["", "", "0800"]),
+            PasteRow(14, into: .number, holding: "2000145399", paste: "1234567890", leaves: ["", "1234567890", ""])
         ]
+        let typedThrough: Set = [1, 3, 4, 5, 10, 13]
         for row in rows {
-            XCTAssertEqual(edit(row.newText, into: row.box, replacing: row.held), row.result, "row \(row.number)")
+            var held = CleansiaBankAccountField.Boxes(prefix: "", number: "", bankCode: "")
+            held[row.box] = row.held
+            let (boxes, rebuilds) = CleansiaBankAccountField.boxes(afterEditing: row.box, to: row.newText, from: held)
+            XCTAssertEqual([boxes.prefix, boxes.number, boxes.bankCode], row.leaves, "row \(row.number)")
+            XCTAssertEqual(rebuilds, !typedThrough.contains(row.number), "row \(row.number) rebuilds the boxes")
         }
     }
 
@@ -214,8 +221,8 @@ final class CleansiaBankAccountFieldPasteTests: XCTestCase {
     }
 }
 
-/// One row of the shared case list: the box, what it held, what was pasted or typed and where, and what the
-/// edit leaves.
+/// One row of the shared case list: the box, what it held, what was pasted or typed and where (after what the box
+/// held, unless placed otherwise), and what the three boxes hold after it.
 private struct PasteRow {
     enum Place {
         case after, before
@@ -226,15 +233,15 @@ private struct PasteRow {
     let box: CleansiaBankAccountField.Segment
     let held: String
     let newText: String
-    let result: CleansiaBankAccountField.Edit
+    let leaves: [String]
 
     init(
         _ number: Int,
         into box: CleansiaBankAccountField.Segment,
         holding held: String,
         paste: String,
-        _ place: Place,
-        gives result: CleansiaBankAccountField.Edit
+        _ place: Place = .after,
+        leaves: [String]
     ) {
         self.number = number
         self.box = box
@@ -244,6 +251,6 @@ private struct PasteRow {
         case .before: newText = paste + held
         case let .over(selection): newText = held.replacingOccurrences(of: selection, with: paste)
         }
-        self.result = result
+        self.leaves = leaves
     }
 }

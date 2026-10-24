@@ -155,28 +155,19 @@ public struct CleansiaBankAccountField: View {
     ) -> some View {
         // An edit is read here, before the caller's binding sees it: callers sanitise to digits on write, so by
         // the time onChange below runs a pasted account's slash is gone and its bank code has been run into the
-        // number. Where the digit clamp turns the new text into what the box keeps, the edit goes through as
-        // typed and the keyboard stays; otherwise the control writes the boxes itself and rebuilds them.
+        // number.
         TextField("", text: Binding(
             get: { text.wrappedValue },
             set: { raw in
-                let edit = Self.splitPastedAccount(raw, replacing: text.wrappedValue, into: focus)
-                if case let .box(kept) = edit,
-                   Self.clampSegment(kept, maxLength: maxLength) == Self.clampSegment(raw, maxLength: maxLength)
-                {
+                let held = Boxes(prefix: prefix, number: number, bankCode: bankCode)
+                let (edited, rebuilds) = Self.boxes(afterEditing: focus, to: raw, from: held)
+                guard rebuilds else {
                     text.wrappedValue = raw
                     return
                 }
-                switch edit {
-                case let .box(kept):
-                    text.wrappedValue = kept
-                case let .number(run):
-                    number = run
-                case let .account(newPrefix, newNumber, newBankCode):
-                    if let newPrefix { prefix = newPrefix }
-                    number = newNumber
-                    if let newBankCode { bankCode = newBankCode }
-                }
+                if edited.prefix != prefix { prefix = edited.prefix }
+                if edited.number != number { number = edited.number }
+                if edited.bankCode != bankCode { bankCode = edited.bankCode }
                 // The rebuild ends the edit, so the keyboard goes with it: say so, rather than leave
                 // the focus state to catch up with a field that no longer exists.
                 pasteRevision += 1
@@ -226,6 +217,53 @@ public struct CleansiaBankAccountField: View {
         case number(String)
         /// A written-out account or an IBAN across the three boxes; a nil part is left as it is.
         case account(prefix: String?, number: String, bankCode: String?)
+    }
+
+    /// The text of the three boxes.
+    struct Boxes: Equatable {
+        var prefix: String
+        var number: String
+        var bankCode: String
+
+        subscript(box: Segment) -> String {
+            get {
+                switch box {
+                case .prefix: prefix
+                case .number: number
+                case .bankCode: bankCode
+                }
+            }
+            set {
+                switch box {
+                case .prefix: prefix = newValue
+                case .number: number = newValue
+                case .bankCode: bankCode = newValue
+                }
+            }
+        }
+    }
+
+    /// What the boxes hold once `box` is edited to `raw`, and whether the control writes them itself. An edit the
+    /// digit clamp alone turns into what the box keeps goes through as typed, and the keyboard stays; any other is
+    /// written by the control, which rebuilds the boxes and so ends the edit.
+    static func boxes(afterEditing box: Segment, to raw: String, from held: Boxes) -> (boxes: Boxes, rebuilds: Bool) {
+        let boxLength = maxLength(of: box)
+        let typed = clampSegment(raw, maxLength: boxLength)
+        var edited = held
+        switch splitPastedAccount(raw, replacing: held[box], into: box) {
+        case let .box(kept) where clampSegment(kept, maxLength: boxLength) == typed:
+            edited[box] = typed
+            return (edited, false)
+        case let .box(kept):
+            edited[box] = kept
+        case let .number(run):
+            edited.number = run
+        case let .account(prefix, number, bankCode):
+            edited.prefix = prefix ?? held.prefix
+            edited.number = number
+            edited.bankCode = bankCode ?? held.bankCode
+        }
+        return (edited, true)
     }
 
     /// What an edit of `box` does; `raw` is the box's new text and `current` the text it replaces. Android's

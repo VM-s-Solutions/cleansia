@@ -147,7 +147,7 @@ private struct ForgotPasswordContent: View {
     private var resetStep: some View {
         VStack(alignment: .leading, spacing: Spacing.m) {
             CleansiaTextField(
-                value: $code,
+                value: $code.oneTimeCode(length: resetCodeLength),
                 label: L10n.Security.codeLabel,
                 keyboardType: .numberPad,
                 textContentType: .oneTimeCode,

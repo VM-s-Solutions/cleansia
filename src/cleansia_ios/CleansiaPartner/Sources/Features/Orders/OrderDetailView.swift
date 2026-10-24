@@ -2,6 +2,7 @@ import CleansiaCore
 import SwiftUI
 
 struct OrderDetailView: View {
+    @Environment(\.dismiss) private var dismiss
     @StateObject private var vm: OrderDetailViewModel
     @StateObject private var checklistVM: CleaningChecklistViewModel
     @StateObject private var notesVM: OrderNotesViewModel
@@ -78,6 +79,7 @@ struct OrderDetailView: View {
             .task(id: vm.canReadPhotos) { await photosVM.load(isAuthorized: vm.canReadPhotos) }
             .onReceive(notesVM.mutated) { Task { await vm.load() } }
             .onReceive(photosVM.mutated) { Task { await vm.load() } }
+            .onReceive(vm.left) { dismiss() }
     }
 
     private var contractRequest: Binding<WorkContractRequest?> {
@@ -121,6 +123,8 @@ struct OrderDetailView: View {
                 onDismissRefusal: vm.dismissActionError,
                 onReportLockout: { note in Task { await vm.reportLockout(note) } },
                 onReportCashNotPaid: { Task { await vm.reportCashNotPaid() } },
+                canDropOrder: vm.canDropOrder,
+                onDropOrder: { Task { await vm.dropOrder() } },
                 checklistVM: checklistVM,
                 notesVM: notesVM,
                 photosVM: photosVM

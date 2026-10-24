@@ -381,7 +381,7 @@ final class CustomerAuthViewModel: ViewModel {
         resetState = .submitting
         let result = await changePasswordClient.changePassword(
             email: forgotForm.email,
-            code: code.trimmingCharacters(in: .whitespacesAndNewlines),
+            code: OneTimeCode.accept(code, replacing: "", length: resetCodeLength),
             newPassword: newPassword
         )
 
@@ -545,6 +545,7 @@ final class CustomerAuthViewModel: ViewModel {
 }
 
 let confirmCodeLength = 6
+let resetCodeLength = 6
 
 #if DEBUG
     extension CustomerAuthViewModel {

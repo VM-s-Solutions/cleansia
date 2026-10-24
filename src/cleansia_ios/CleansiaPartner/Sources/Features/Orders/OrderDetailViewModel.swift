@@ -15,6 +15,7 @@ enum OrderAction: Equatable {
     case complete
     case declineOffer
     case reportLockout
+    case drop
 
     /// Only the two reservation actions earn platform-owned framing; every other refusal on the detail
     /// reaches the snackbar exactly as it always did.
@@ -23,7 +24,7 @@ enum OrderAction: Equatable {
         case .take: .confirm
         case .declineOffer: .release
         case .acceptContract, .notifyOnTheWay, .start, .markCashCollected, .reportCashNotPaid, .complete,
-             .reportLockout: nil
+             .reportLockout, .drop: nil
         }
     }
 
@@ -38,6 +39,7 @@ enum OrderAction: Equatable {
         case .complete: .completeOrder
         case .declineOffer: .declinePreferredOffer
         case .reportLockout: .reportLockout
+        case .drop: .dropOrder
         }
     }
 
@@ -53,7 +55,8 @@ enum OrderAction: Equatable {
         case .complete: L10n.Orders.orderCompletedToast
         case .declineOffer: L10n.Offers.declinedToast
         case .reportLockout: L10n.Orders.lockoutReportedToast
-        case .take, .acceptContract: nil
+        // Which sentence depends on the crew the server says is left.
+        case .take, .acceptContract, .drop: nil
         }
     }
 }
@@ -83,6 +86,8 @@ final class OrderDetailViewModel: ViewModel {
     /// The administrator's written reason for taking this cleaner off the job, asked for only when the
     /// removal notice opened the screen. Shown even when the job itself is no longer readable.
     @Published private(set) var removalReason: String?
+    /// Fires once the cleaner is off the job, for the screen to leave it.
+    let left = PassthroughSubject<Void, Never>()
 
     private let orderId: String
     private let client: PartnerOrderClient
@@ -139,6 +144,18 @@ final class OrderDetailViewModel: ViewModel {
     /// is not a debt to report.
     var offersCashNotPaid: Bool {
         primaryAction == .collectCash && state.loadedValue?.payment.isPending == true
+    }
+
+    /// Only before the cleaner sets off, and never after they reported they cannot get in: leaving deletes the
+    /// seat that report pays.
+    var canDropOrder: Bool {
+        guard let order = state.loadedValue, order.isAssignedToCurrentUser, order.lockoutReportedAt == nil else {
+            return false
+        }
+        switch order.status {
+        case ._0, ._2: return true
+        case ._1, ._3, ._4, ._5, ._6, .none: return false
+        }
     }
 
     func load() async {
@@ -261,6 +278,31 @@ final class OrderDetailViewModel: ViewModel {
         let note = callAttempts.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !note.isEmpty else { return }
         await run(.reportLockout) { await self.client.reportLockout(orderId: self.orderId, callAttempts: note) }
+    }
+
+    /// Unlike every other action, a success is not followed by a re-read: the server only shows a job its
+    /// crew left as an open one to take, or not at all.
+    func dropOrder() async {
+        guard !actionState.isSubmitting else { return }
+        actionState = .submitting
+        inFlightAction = .drop
+
+        switch await client.dropOrder(orderId: orderId) {
+        case let .success(crewRemaining):
+            snackbar.showSuccess(crewRemaining == 0 ? L10n.Orders.droppedNoCrewToast : L10n.Orders.droppedToast)
+            staleness.invalidatePanes(for: OrderAction.drop.mutation)
+            staleness.invalidateOrder(orderId)
+            actionState = .idle
+            inFlightAction = nil
+            left.send()
+        case let .failure(error):
+            inFlightAction = nil
+            refusedAction = .drop
+            snackbar.showApiError(error)
+            actionState = .error(ApiErrorLocalizer().message(for: error))
+            staleness.invalidateOrder(orderId)
+            await fetch()
+        }
     }
 
     private func fetch() async {

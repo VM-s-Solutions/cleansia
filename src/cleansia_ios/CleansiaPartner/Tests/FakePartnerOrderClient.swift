@@ -71,6 +71,10 @@ final class FakePartnerOrderClient: PartnerOrderClient {
     /// view model always issues sees the write it just made.
     var onDeclinePreferredOffer: ((String) -> Void)?
 
+    /// The crew the server reports left once the caller is off the job.
+    var dropResult: ApiResult<Int> = .success(1)
+    private(set) var dropCalls: [String] = []
+
     var removalReasonResult: ApiResult<String> = .success("The customer asked for another cleaner.")
     private(set) var removalReasonRequests: [String] = []
 
@@ -209,6 +213,15 @@ final class FakePartnerOrderClient: PartnerOrderClient {
 
     func completeOrder(orderId: String, actualMinutes _: Int?, notes _: String?) async -> ApiResult<Void> {
         await record("complete", orderId)
+    }
+
+    /// Gated like the lifecycle commands, so a test can hold a drop mid-flight.
+    func dropOrder(orderId: String) async -> ApiResult<Int> {
+        dropCalls.append(orderId)
+        if suspendCommands {
+            await withCheckedContinuation { commandGate = $0 }
+        }
+        return dropResult
     }
 
     func addNote(orderId _: String, content: String) async -> ApiResult<Void> {

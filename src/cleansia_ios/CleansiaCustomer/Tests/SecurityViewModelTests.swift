@@ -76,6 +76,18 @@ final class SecurityViewModelTests: XCTestCase {
         XCTAssertTrue(done)
     }
 
+    /// A code pasted from the e-mail brings its spacing and the words around it, and the server charges one of
+    /// the code's attempts for anything it is sent, so only the digits go.
+    func testChangePasswordSendsOnlyTheDigitsOfAPastedCode() async {
+        for pasted in ["123 456", "Code: 123456", " 123456 "] {
+            let vm = makeVM()
+            vm.codeRequested = true
+            await vm.changePassword(code: pasted, newPassword: "newpass123", confirmPassword: "newpass123")
+        }
+
+        XCTAssertEqual(client.changeCalls.map(\.code), ["123456", "123456", "123456"])
+    }
+
     func testChangePasswordServerFailureSurfacesError() async {
         client.changePasswordResult = .failure(ApiError(httpStatus: 400))
         let vm = makeVM()

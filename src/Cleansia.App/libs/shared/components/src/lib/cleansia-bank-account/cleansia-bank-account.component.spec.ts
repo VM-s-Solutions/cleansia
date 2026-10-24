@@ -23,10 +23,11 @@ describe('CleansiaBankAccountComponent paste', () => {
   let fixture: ComponentFixture<HostComponent>;
   let host: HostComponent;
 
-  function paste(segment: 'prefix' | 'number' | 'bank-code', text: string): Event {
+  function paste(segment: 'prefix' | 'number' | 'bank-code', text: string, caret?: number): Event {
     const input: HTMLInputElement = fixture.nativeElement.querySelector(
       `.cleansia-bank-account__segment--${segment}`,
     );
+    if (caret !== undefined) input.setSelectionRange(caret, caret);
     const event = new Event('paste', { cancelable: true });
     Object.defineProperty(event, 'clipboardData', { value: { getData: () => text } });
     input.dispatchEvent(event);
@@ -110,6 +111,23 @@ describe('CleansiaBankAccountComponent paste', () => {
 
     expect(parts()).toEqual(['19', '', '0800']);
   });
+
+  it.each([
+    ['5500', 'after', '0800', 'bank-code', ['', '2000145399', '5500']],
+    ['5500', 'before', '0800', 'bank-code', ['', '2000145399', '5500']],
+    ['67', 'after', '12345', 'prefix', ['67', '2000145399', '']],
+  ] as const)(
+    'keeps %s pasted %s the %s of the %s segment there, and the number already entered',
+    (text, side, held, segment, expected) => {
+      host.number.setValue('2000145399');
+      (segment === 'prefix' ? host.prefix : host.bankCode).setValue(held);
+
+      const event = paste(segment, text, side === 'before' ? 0 : held.length);
+
+      expect(event.defaultPrevented).toBe(true);
+      expect(parts()).toEqual(expected);
+    },
+  );
 
   it('marks only the segment a fitting bank code lands in as edited', () => {
     paste('bank-code', '0800');

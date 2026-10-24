@@ -592,7 +592,6 @@
     <string name="validation_max_100">Maximum 100 characters allowed</string>
     <string name="validation_date_past">Date must be in the past</string>
     <string name="validation_min_age_18">You must be at least 18 years old</string>
-    <string name="validation_max_age_120">Invalid date of birth</string>
     <string name="validation_invalid_date">Invalid date format</string>
     <string name="validation_invalid_phone">Invalid phone number format</string>
     <string name="validation_invalid_email">Invalid email format</string>

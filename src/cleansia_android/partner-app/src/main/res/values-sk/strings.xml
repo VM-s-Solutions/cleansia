@@ -592,7 +592,6 @@
     <string name="validation_max_100">Maximálne 100 znakov</string>
     <string name="validation_date_past">Dátum musí byť v minulosti</string>
     <string name="validation_min_age_18">Musíte mať aspoň 18 rokov</string>
-    <string name="validation_max_age_120">Neplatný dátum narodenia</string>
     <string name="validation_invalid_date">Neplatný formát dátumu</string>
     <string name="validation_invalid_phone">Neplatný formát telefónneho čísla</string>
     <string name="validation_invalid_email">Neplatný formát e-mailu</string>

@@ -592,7 +592,6 @@
     <string name="validation_max_100">Максимум 100 символів</string>
     <string name="validation_date_past">Дата повинна бути в минулому</string>
     <string name="validation_min_age_18">Вам повинно бути щонайменше 18 років</string>
-    <string name="validation_max_age_120">Недійсна дата народження</string>
     <string name="validation_invalid_date">Недійсний формат дати</string>
     <string name="validation_invalid_phone">Недійсний формат номера телефону</string>
     <string name="validation_invalid_email">Недійсний формат електронної пошти</string>

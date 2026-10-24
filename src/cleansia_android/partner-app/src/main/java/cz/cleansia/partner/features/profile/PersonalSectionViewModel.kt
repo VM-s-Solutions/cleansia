@@ -48,7 +48,7 @@ internal fun birthDateProblem(birthDate: String, today: LocalDate): Int? {
     val day = runCatching { LocalDate.parse(birthDate) }.getOrNull() ?: return null
     return when {
         day.isAfter(today.minusYears(YoungestAge)) -> R.string.validation_min_age_18
-        day.isBefore(today.minusYears(OldestAge)) -> R.string.validation_max_age_120
+        day.isBefore(today.minusYears(OldestAge)) -> R.string.error_validation_invalid_age
         else -> null
     }
 }

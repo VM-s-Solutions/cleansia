@@ -83,7 +83,7 @@ class PersonalSectionViewModelTest {
         every { appContext.getString(R.string.error_phone_number_invalid) } returns "Enter the number with its country code"
         every { appContext.getString(R.string.validation_max_50) } returns "Maximum 50 characters allowed"
         every { appContext.getString(R.string.validation_min_age_18) } returns "You must be at least 18 years old"
-        every { appContext.getString(R.string.validation_max_age_120) } returns "Invalid date of birth"
+        every { appContext.getString(R.string.error_validation_invalid_age) } returns "Please enter a valid age."
     }
 
     private fun viewModel() =
@@ -278,7 +278,7 @@ class PersonalSectionViewModelTest {
         assertEquals(R.string.validation_min_age_18, birthDateProblem("2008-10-25", today))
         assertNull("eighteen today", birthDateProblem("2008-10-24", today))
         assertNull("a hundred and twenty today", birthDateProblem("1906-10-24", today))
-        assertEquals(R.string.validation_max_age_120, birthDateProblem("1906-10-23", today))
+        assertEquals(R.string.error_validation_invalid_age, birthDateProblem("1906-10-23", today))
         assertEquals("a leap-day birthday turns 18 on 1 March", R.string.validation_min_age_18, birthDateProblem("2008-02-29", LocalDate.of(2026, 2, 28)))
         assertNull("not a date the picker writes: the server decides", birthDateProblem("29/02/2008", today))
     }
@@ -288,7 +288,7 @@ class PersonalSectionViewModelTest {
         val today = LocalDate.now(ZoneOffset.UTC)
         mapOf(
             today.minusYears(17) to "You must be at least 18 years old",
-            today.minusYears(121) to "Invalid date of birth",
+            today.minusYears(121) to "Please enter a valid age.",
         ).forEach { (birthDate, message) ->
             coEvery { repository.getCurrentEmployee() } returns
                 ApiResult.Success(employee.copy(birthDate = birthDate.toString()))

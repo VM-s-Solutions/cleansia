@@ -2,11 +2,15 @@ package cz.cleansia.partner.features.profile
 
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import cz.cleansia.core.ui.components.CleansiaTextField
@@ -72,6 +76,7 @@ fun IdentificationSectionScreen(
                 options = countryOptions,
                 onSelected = viewModel::onNationalitySelected,
                 label = stringResource(R.string.nationality),
+                errorText = form.nationalityError,
                 enabled = !saving,
                 searchable = true,
             )
@@ -80,6 +85,7 @@ fun IdentificationSectionScreen(
                 value = form.passportId,
                 onValueChange = viewModel::onPassportChange,
                 label = stringResource(R.string.passport_id),
+                errorText = form.passportError,
                 enabled = !saving,
                 transparentContainer = true,
             )
@@ -93,6 +99,7 @@ fun IdentificationSectionScreen(
                 options = countryOptions,
                 onSelected = viewModel::onBusinessCountrySelected,
                 label = stringResource(R.string.business_country),
+                errorText = form.businessCountryError,
                 enabled = !saving,
                 searchable = true,
             )
@@ -107,19 +114,28 @@ fun IdentificationSectionScreen(
                 label = fieldLabels?.registrationNumberLabel
                     ?: stringResource(R.string.registration_number_label),
                 helper = stringResource(R.string.registration_number_helper),
+                errorText = form.registrationNumberError,
                 enabled = !saving,
                 transparentContainer = true,
             )
 
-            form.storedLegalEntityName?.let { storedLegalEntityName ->
+            if (form.isLegalEntity) {
                 Spacer(Modifier.height(Spacing.XS))
                 CleansiaTextField(
-                    value = storedLegalEntityName,
+                    value = form.storedLegalEntityName.orEmpty(),
                     onValueChange = {},
                     label = stringResource(R.string.legal_entity_name_label),
                     enabled = false,
                     transparentContainer = true,
                 )
+                form.legalEntityNameError?.let { message ->
+                    Text(
+                        text = message,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.error,
+                        modifier = Modifier.padding(start = 16.dp, top = 4.dp),
+                    )
+                }
             }
         }
 

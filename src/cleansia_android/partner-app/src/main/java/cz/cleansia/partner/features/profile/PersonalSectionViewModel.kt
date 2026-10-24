@@ -8,6 +8,7 @@ import cz.cleansia.partner.data.user.UserRepository
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import cz.cleansia.core.snackbar.SnackbarController
+import cz.cleansia.core.ui.components.isValidPhoneNumber
 import cz.cleansia.core.ui.state.ActionState
 import cz.cleansia.partner.R
 import cz.cleansia.partner.core.network.ApiErrorTranslator
@@ -23,7 +24,29 @@ import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import java.time.LocalDate
+import java.time.ZoneOffset
 import javax.inject.Inject
+
+/** `UpdatePersonalInfo`'s bounds: names of up to 50 characters, a cleaner aged 18 to 120. */
+private const val NameMaxLength = 50
+private const val YoungestAge = 18L
+private const val OldestAge = 120L
+
+/**
+ * The resource naming what the server would refuse about [birthDate] on [today], the server's own day
+ * (UTC); null when it would take the date, or when the text is no `yyyy-MM-dd` date and the server
+ * decides.
+ */
+internal fun birthDateProblem(birthDate: String, today: LocalDate): Int? {
+    if (birthDate.isBlank()) return R.string.error_birth_date_required
+    val day = runCatching { LocalDate.parse(birthDate) }.getOrNull() ?: return null
+    return when {
+        day.isAfter(today.minusYears(YoungestAge)) -> R.string.validation_min_age_18
+        day.isBefore(today.minusYears(OldestAge)) -> R.string.validation_max_age_120
+        else -> null
+    }
+}
 
 data class PersonalForm(
     val employeeId: String = "",
@@ -37,6 +60,7 @@ data class PersonalForm(
     val firstNameError: String? = null,
     val lastNameError: String? = null,
     val birthDateError: String? = null,
+    val phoneError: String? = null,
 )
 
 sealed interface PersonalSectionUiState {
@@ -137,7 +161,7 @@ class PersonalSectionViewModel @Inject constructor(
     fun onFirstNameChange(v: String) = updateForm { it.copy(firstName = v, firstNameError = null) }
     fun onLastNameChange(v: String) = updateForm { it.copy(lastName = v, lastNameError = null) }
     fun onBirthDateChange(v: String) = updateForm { it.copy(birthDate = v, birthDateError = null) }
-    fun onPhoneChange(v: String) = updateForm { it.copy(phone = v) }
+    fun onPhoneChange(v: String) = updateForm { it.copy(phone = v, phoneError = null) }
 
     fun save() {
         val form = (_uiState.value as? PersonalSectionUiState.Loaded)?.form ?: return
@@ -146,13 +170,26 @@ class PersonalSectionViewModel @Inject constructor(
         if (form.firstName.isBlank()) {
             updateForm { it.copy(firstNameError = appContext.getString(R.string.error_first_name_required)) }
             hasError = true
+        } else if (form.firstName.trim().length > NameMaxLength) {
+            updateForm { it.copy(firstNameError = appContext.getString(R.string.validation_max_50)) }
+            hasError = true
         }
         if (form.lastName.isBlank()) {
             updateForm { it.copy(lastNameError = appContext.getString(R.string.error_last_name_required)) }
             hasError = true
+        } else if (form.lastName.trim().length > NameMaxLength) {
+            updateForm { it.copy(lastNameError = appContext.getString(R.string.validation_max_50)) }
+            hasError = true
         }
-        if (form.birthDate.isBlank()) {
-            updateForm { it.copy(birthDateError = appContext.getString(R.string.error_birth_date_required)) }
+        birthDateProblem(form.birthDate, LocalDate.now(ZoneOffset.UTC))?.let { problem ->
+            updateForm { it.copy(birthDateError = appContext.getString(problem)) }
+            hasError = true
+        }
+        if (form.phone.isBlank()) {
+            updateForm { it.copy(phoneError = appContext.getString(R.string.error_phone_number_required)) }
+            hasError = true
+        } else if (!isValidPhoneNumber(form.phone.trim())) {
+            updateForm { it.copy(phoneError = appContext.getString(R.string.error_phone_number_invalid)) }
             hasError = true
         }
         if (hasError) return
@@ -168,7 +205,7 @@ class PersonalSectionViewModel @Inject constructor(
                 firstName = form.firstName.trim(),
                 lastName = form.lastName.trim(),
                 birthDate = form.birthDate,
-                phone = form.phone.takeIf { it.isNotBlank() },
+                phone = form.phone.trim(),
             )
             when (result) {
                 is ApiResult.Success -> {

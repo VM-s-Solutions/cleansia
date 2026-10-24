@@ -521,11 +521,15 @@
     <string name="error_profile_not_loaded">Profil se ještě nenačetl</string>
     <string name="error_name_required">Jméno kontaktu je povinné</string>
     <string name="error_phone_required">Telefon kontaktu je povinný</string>
+    <string name="error_phone_number_required">Telefonní číslo je povinné</string>
+    <string name="error_phone_number_invalid">Zadejte číslo i s předvolbou země, např. +420 777 123 456</string>
     <string name="error_pick_nationality">Vyberte svou národnost</string>
     <string name="error_passport_required">Zadejte číslo pasu / OP</string>
     <string name="error_pick_business_country">Vyberte zemi, kde je vaše podnikání registrováno</string>
     <string name="error_registration_number_required">Zadejte IČO</string>
+    <string name="error_legal_entity_name_missing">Chybí registrovaný název vaší firmy. Požádejte podporu o doplnění — zde ho změnit nelze.</string>
     <string name="error_pick_address_first">Nejprve vyberte adresu na mapě</string>
+    <string name="error_address_incomplete">Na tomto místě není úplná adresa. Posuňte špendlík na budovu nebo vyhledejte ulici a číslo domu.</string>
 
     <!-- Profile Validation -->
     <string name="validation_required">Toto pole je povinné</string>
@@ -1212,6 +1216,7 @@
     <string name="error_validation_invalid_age">Zadejte prosím platný věk.</string>
     <string name="error_validation_invalid_phone_number">Zadejte prosím platné telefonní číslo.</string>
     <string name="error_validation_invalid_national_id">Zadejte prosím platné rodné číslo.</string>
+    <string name="error_validation_passport_id_invalid_length">Číslo pasu / OP musí mít 5 až 20 znaků.</string>
     <string name="error_validation_invalid_tax_id">Zadejte prosím platné DIČ.</string>
     <string name="error_validation_invalid_iban">Zadejte prosím platný IBAN.</string>
     <string name="error_validation_invalid_zip_code">Zadejte prosím platné PSČ.</string>

@@ -147,22 +147,25 @@ private class PhoneVisualTransformation(
 }
 
 /**
- * Strip everything except digits and a single optional leading `+`.
- * Tolerates pasted "(420) 728 089 247" or "+420-728-089-247" by
- * normalizing to "+420728089247".
+ * The server's rule for a stored phone (`PhoneNumberAttribute`): international form, and a number
+ * libphonenumber holds valid. The iOS twin is `PhoneNumberKitDisplayFormatter.isValidNumber`.
  */
-private fun sanitizePhoneInput(input: String): String {
-    if (input.isEmpty()) return ""
+fun isValidPhoneNumber(wire: String): Boolean = wire.startsWith("+") && runCatching {
+    val util = PhoneNumberUtil.getInstance()
+    util.isValidNumber(util.parse(wire, null))
+}.getOrDefault(false)
+
+/**
+ * Digits, and a `+` only while nothing has been kept before it: a pasted " +420 728 089 247",
+ * "Tel: +420 728 089 247" or "(+420) 728 089 247" keeps its country code as "+420728089247", and
+ * "(420) 728 089 247" stays "420728089247". The iOS twin is `PhoneNumberSanitizer.sanitize`.
+ */
+fun sanitizePhoneInput(input: String): String {
     val builder = StringBuilder()
-    var seenPlus = false
-    for ((i, ch) in input.withIndex()) {
+    for (ch in input) {
         when {
-            ch == '+' && i == 0 && !seenPlus -> {
-                builder.append('+')
-                seenPlus = true
-            }
+            ch == '+' && builder.isEmpty() -> builder.append(ch)
             ch.isDigit() -> builder.append(ch)
-            else -> { /* drop */ }
         }
     }
     return builder.toString()

@@ -31,9 +31,9 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
 /** Czech account maxima — prefix 6 digits, number 10, bank code 4. */
-private const val PrefixMaxLength = 6
-private const val NumberMaxLength = 10
-private const val BankCodeMaxLength = 4
+internal const val PrefixMaxLength = 6
+internal const val NumberMaxLength = 10
+internal const val BankCodeMaxLength = 4
 
 /**
  * A Czech bank account entered as ONE control: `prefix – number / bank code`.
@@ -55,9 +55,10 @@ private const val BankCodeMaxLength = 4
  * widths below are sized to the *placeholder*, not to the digits, for the same reason — a hint that is
  * clipped to "Předčí…" answers nothing.
  *
- * **A whole account pasted into any segment is spread over all three, and a bare number pasted into
- * any segment is the number** ([splitPastedAccount]), so an account copied off a statement or a banking
- * app lands where it belongs instead of being clamped into one box. Such a paste ends the edit, so the
+ * **A whole account pasted into any segment is spread over all three, and a bare number too long for
+ * the segment it was pasted into is the number** ([splitPastedAccount]), so an account copied off a
+ * statement or a banking app lands where it belongs instead of being clamped into one box, while a
+ * prefix or bank code copied on its own stays in its own box. A spread paste ends the edit, so the
  * keyboard closes, as on iOS.
  *
  * The web twin is `cleansia-bank-account`; keep the two in step.
@@ -100,11 +101,11 @@ fun CleansiaBankAccountInput(
         else -> MaterialTheme.colorScheme.outline
     }
 
-    // A paste that reads as a whole account fills the segments it names, and a bare number pasted into
-    // any segment is the account number; anything else is clamped into the segment it went into,
+    // A paste that reads as a whole account fills the segments it names, and a bare number too long for
+    // the segment it went into is the account number; anything else is clamped into that segment,
     // exactly as typing is. [current] is the text the change replaces, as the segment reported it.
     fun segmentChange(maxLength: Int, onChange: (String) -> Unit): (String, String) -> Unit = { current, raw ->
-        val split = splitPastedAccount(raw, current)
+        val split = splitPastedAccount(raw, current, maxLength)
         if (split == null) {
             onChange(clampSegment(raw, maxLength))
         } else {
@@ -196,24 +197,32 @@ private val czSkIban = Regex("""^(?:CZ|SK)\d{2}(\d{20})$""")
  *
  * Recognised: `[prefix-]number/bankcode` and `prefix-number` — a number pad types neither separator,
  * and the clamp drops a typed one at once, so their presence is what marks a paste — a CZ or SK IBAN,
- * whose BBAN is `bankcode(4) prefix(6) number(10)` with the zero padding dropped, and a bare number,
- * which is the account number whichever box it was pasted into (owner decision D14). A bare number
- * counts only when it lands two or more characters at once: the number pad types one at a time, so
- * typing a prefix or a bank code never jumps to the number. Whitespace of every kind (NBSP included)
- * is dropped and an en or em dash reads as a hyphen, because that is what banking apps put on the
- * clipboard. A written-out account without a prefix clears the old one; a missing bank code keeps it.
- * Nothing is validated beyond shape: the server owns mod-11, the bank code and the IBAN cross-check.
+ * whose BBAN is `bankcode(4) prefix(6) number(10)` with the zero padding dropped, and a bare number
+ * longer than [segmentMaxLength], the box it was pasted into: "2000145399" pasted into the prefix box
+ * is the account number, while "0800" pasted into the bank-code box or "19" into the prefix box stays
+ * there. A bare number counts only when it lands two or more characters at once: the number pad types
+ * one at a time, so typing a prefix or a bank code never jumps to the number. Whitespace of every kind
+ * (NBSP included) is dropped and an en or em dash reads as a hyphen, because that is what banking apps
+ * put on the clipboard. A written-out account without a prefix clears the old one; a missing bank code
+ * keeps it. Nothing is validated beyond shape: the server owns mod-11, the bank code and the IBAN
+ * cross-check.
  *
- * The iOS twin is `CleansiaBankAccountField.splitPastedAccount`; the two are held to one case list.
+ * The iOS twin is `CleansiaBankAccountField.splitPastedAccount` and the web's is
+ * `cleansia-bank-account`'s paste handler; the three are held to one case list.
  * -> /partner-app/onboarding
  */
-internal fun splitPastedAccount(raw: String, current: String = ""): Triple<String?, String, String?>? {
+internal fun splitPastedAccount(
+    raw: String,
+    current: String,
+    segmentMaxLength: Int,
+): Triple<String?, String, String?>? {
     val pasted = raw.filterNot(Char::isWhitespace).replace('\u2013', '-').replace('\u2014', '-')
     val text = domesticFormOfIban(pasted) ?: pasted
     val account = domesticAccount.matchEntire(text) ?: return null
     val number = account.groupValues[2]
     if ('-' !in text && '/' !in text) {
-        return if (raw.length - current.length >= 2) Triple(null, number, null) else null
+        val landedAtOnce = raw.length - current.length >= 2
+        return if (landedAtOnce && number.length > segmentMaxLength) Triple(null, number, null) else null
     }
     return Triple(account.groups[1]?.value.orEmpty(), number, account.groups[3]?.value)
 }

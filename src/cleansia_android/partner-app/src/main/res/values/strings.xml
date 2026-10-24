@@ -575,11 +575,15 @@
     <string name="error_profile_not_loaded">Profile not loaded yet</string>
     <string name="error_name_required">Contact name is required</string>
     <string name="error_phone_required">Contact phone is required</string>
+    <string name="error_phone_number_required">Phone number is required</string>
+    <string name="error_phone_number_invalid">Enter the number with its country code, e.g. +420 777 123 456</string>
     <string name="error_pick_nationality">Pick your nationality</string>
     <string name="error_passport_required">Enter your passport / ID number</string>
     <string name="error_pick_business_country">Pick the country your business is registered in</string>
     <string name="error_registration_number_required">Enter your registration number</string>
+    <string name="error_legal_entity_name_missing">Your company\'s registered name is missing. Contact support to add it — it can\'t be changed here.</string>
     <string name="error_pick_address_first">Pick your address on the map first</string>
+    <string name="error_address_incomplete">This spot has no full address. Move the pin onto the building, or search for the street and house number.</string>
 
     <!-- Profile Validation -->
     <string name="validation_required">This field is required</string>
@@ -1222,6 +1226,7 @@
     <string name="error_validation_invalid_age">Please enter a valid age.</string>
     <string name="error_validation_invalid_phone_number">Please enter a valid phone number.</string>
     <string name="error_validation_invalid_national_id">Please enter a valid national ID.</string>
+    <string name="error_validation_passport_id_invalid_length">Your passport / ID number must be 5 to 20 characters long.</string>
     <string name="error_validation_invalid_tax_id">Please enter a valid tax ID.</string>
     <string name="error_validation_invalid_iban">Please enter a valid IBAN.</string>
     <string name="error_validation_invalid_zip_code">Please enter a valid ZIP code.</string>

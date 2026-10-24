@@ -282,13 +282,15 @@ private struct HeroBlock: View {
         .padding(.top, Spacing.ml)
         .frame(maxWidth: .infinity)
         // Inside the offer's scroll view, so it paints its own status-bar strip: the gradient keeps the
-        // hero's bounds and a block of its first stop rises above them (the ProfileTab hero's form).
+        // hero's bounds and a block of its first stop rises above them (the ProfileTab hero's form), and it paints
+        // sideways past them, so the hero meets both edges of a wide canvas whose content is held to a readable width.
         .background(alignment: .bottom) {
             VStack(spacing: 0) {
                 MembershipPalette.sky950.frame(height: heroBleed)
                 MembershipPalette.heroGradient
             }
             .padding(.top, -heroBleed)
+            .padding(.horizontal, -heroBleed)
         }
     }
 

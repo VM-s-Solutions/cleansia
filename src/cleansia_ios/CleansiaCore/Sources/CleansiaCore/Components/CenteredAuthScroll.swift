@@ -17,6 +17,7 @@ public struct CenteredAuthScroll<Content: View>: View {
         GeometryReader { proxy in
             let scroll = ScrollView {
                 content
+                    .readableWidth()
                     .frame(maxWidth: .infinity, minHeight: proxy.size.height)
             }
             if #available(iOS 16.4, *) {

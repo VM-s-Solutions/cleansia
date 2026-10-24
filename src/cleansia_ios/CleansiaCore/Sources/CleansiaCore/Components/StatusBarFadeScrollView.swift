@@ -49,6 +49,7 @@ public struct StatusBarFadeScrollView<Content: View>: View {
     private var scroll: some View {
         ScrollView {
             content
+                .readableWidth()
                 .environment(\.statusBarFadeHeroBottom, heroTint == nil ? nil : $heroBottom)
                 .background(alignment: .top) {
                     GeometryReader { proxy in

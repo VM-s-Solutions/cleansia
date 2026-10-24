@@ -398,7 +398,8 @@ private struct HeroGradient: View {
         // line. So the background paints upward past the hero's own frame instead: the gradient keeps
         // exactly the hero's bounds (its colours unchanged) and a block of its first stop fills the
         // status-bar strip and the rubber-band overscroll above it. Its top is `ProfileTab.heroTop`, darker
-        // than the brand blue where the white clock sits on it.
+        // than the brand blue where the white clock sits on it. It paints sideways past the frame too, so on a wide
+        // canvas, where the scroll holds the hero to a readable width, the gradient still meets both edges.
         .background(alignment: .bottom) {
             VStack(spacing: 0) {
                 ProfileTab.heroTop(colorScheme).frame(height: heroBleed)
@@ -409,6 +410,7 @@ private struct HeroGradient: View {
                 )
             }
             .padding(.top, -heroBleed)
+            .padding(.horizontal, -heroBleed)
         }
     }
 }

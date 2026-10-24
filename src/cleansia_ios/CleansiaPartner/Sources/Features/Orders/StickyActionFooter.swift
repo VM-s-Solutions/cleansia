@@ -133,7 +133,7 @@ struct StickyActionFooter: View {
             control()
         }
         .padding(Spacing.m)
-        .frame(maxWidth: .infinity)
+        .readableWidth()
         .background(CleansiaColors.surface)
     }
 }

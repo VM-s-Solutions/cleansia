@@ -693,8 +693,10 @@ TEST_RUNNER_MallocScribble=1 xcodebuild -workspace Cleansia.xcworkspace -scheme 
 - **A test that reads an answer from an off-main fake waits for that answer.** The quote, catalogue and
   plans fakes answer off the main actor, so a fixed number of `Task.yield()` calls is a race that Debug
   happens to win and the optimised pass loses: sixteen customer tests failed that way at first. Wait with
-  `eventually { … }` on the state the test reads, as those tests now do, and keep fixed yields for
-  assertions that nothing happened.
+  `eventually { … }` on the state the test reads, as those tests now do; it returns as soon as that state
+  holds. Fixed yields stay where the assertion is that nothing more happened: alone before a negative
+  assertion, and after the wait before an exact list of calls or events, where a second entry one hop
+  later would otherwise go unseen.
 
 ### Shipping to TestFlight
 

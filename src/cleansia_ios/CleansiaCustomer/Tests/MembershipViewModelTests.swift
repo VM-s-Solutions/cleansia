@@ -87,6 +87,7 @@ final class MembershipViewModelTests: XCTestCase {
         client.plansResult = .success(MembershipFixtures.plansInEur)
         market.select(isoCode: "SVK")
         await eventually { vm.plans.first?.currencyCode == "EUR" }
+        await drain()
 
         XCTAssertEqual(client.plansCountryIds, ["cze", "svk"])
         XCTAssertEqual(vm.plans.first?.currencyCode, "EUR")

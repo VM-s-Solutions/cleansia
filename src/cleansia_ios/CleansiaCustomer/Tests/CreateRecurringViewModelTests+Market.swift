@@ -43,6 +43,7 @@ extension CreateRecurringViewModelTests {
         catalog.result = .success(CatalogFixtures.slovak)
         vm.setSavedAddressId("addr-sk")
         await eventually { vm.catalogState.loadedValue == CatalogFixtures.slovak }
+        await drain()
 
         XCTAssertEqual(catalog.requestedCountryIds, ["cze", "svk"])
         XCTAssertEqual(vm.catalogState.loadedValue, CatalogFixtures.slovak)
@@ -80,6 +81,7 @@ extension CreateRecurringViewModelTests {
         catalog.result = .success(CatalogFixtures.slovak)
         vm.setSavedAddressId("addr-sk")
         await eventually { !events.isEmpty }
+        await drain()
 
         XCTAssertEqual(vm.formState.selectedServiceIds, ["s-1"])
         XCTAssertEqual(vm.formState.selectedPackageIds, [])
@@ -139,6 +141,7 @@ extension CreateRecurringViewModelTests {
         ])
         await vm.reloadAddresses()
         await eventually { vm.catalogState.loadedValue == CatalogFixtures.slovak }
+        await drain()
 
         XCTAssertEqual(catalog.requestedCountryIds, ["cze", "svk"])
         XCTAssertEqual(vm.catalogState.loadedValue, CatalogFixtures.slovak)
@@ -164,6 +167,7 @@ extension CreateRecurringViewModelTests {
         catalog.result = .success(CatalogFixtures.populated)
         vm.setSavedAddressId("addr-cz")
         await eventually { vm.catalogState.loadedValue == CatalogFixtures.populated }
+        await drain()
         XCTAssertEqual(catalog.requestedCountryIds, ["cze", "svk", "cze"])
         XCTAssertEqual(vm.catalogState.loadedValue, CatalogFixtures.populated)
     }

@@ -73,6 +73,7 @@ extension CreateRecurringViewModelTests {
         catalog.result = .success(CatalogFixtures.slovak)
         vm.setSavedAddressId("addr-sk")
         await eventually { !events.isEmpty }
+        await drain()
 
         XCTAssertEqual(vm.formState.selectedServiceIds, ["s-1"])
         XCTAssertEqual(events, [.selectionPrunedForMarket])

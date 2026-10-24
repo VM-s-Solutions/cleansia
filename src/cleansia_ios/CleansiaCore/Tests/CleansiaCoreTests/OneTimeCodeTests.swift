@@ -17,6 +17,7 @@ final class OneTimeCodeTests: XCTestCase {
         XCTAssertEqual(accept("Your code: 123 456"), "123456")
         XCTAssertEqual(accept("123\u{00A0}456"), "123456")
         XCTAssertEqual(accept("Code: 123456."), "123456")
+        XCTAssertEqual(accept("Your code is 123456."), "123456")
     }
 
     /// The defect: the old field appended the paste to what was typed and kept the first six digits.
@@ -28,6 +29,7 @@ final class OneTimeCodeTests: XCTestCase {
     func testAWholeCodePastedOverAFullWrongOneReplacesIt() {
         XCTAssertEqual(accept("123456654321", replacing: "123456"), "654321")
         XCTAssertEqual(accept("654321", replacing: "123456"), "654321", "select all, then paste")
+        XCTAssertEqual(accept("123456Your code is 654321", replacing: "123456"), "654321")
     }
 
     /// iOS can insert an AutoFilled code twice into a `.oneTimeCode` field.
@@ -54,6 +56,7 @@ final class OneTimeCodeTests: XCTestCase {
     /// The full-length threshold is what keeps typing off the replace path: several digits typed before a
     /// recomposition still arrive as fewer than a whole code.
     func testDigitsTypedFasterThanTheFieldReportsAreStillTyping() {
+        XCTAssertEqual(accept("12"), "12")
         XCTAssertEqual(accept("12345", replacing: "12"), "12345")
     }
 
@@ -64,6 +67,7 @@ final class OneTimeCodeTests: XCTestCase {
     /// By design: a fragment shorter than a code is typing, so it lands after what is there.
     func testAFragmentShorterThanACodeIsAppendedAndClamped() {
         XCTAssertEqual(accept("1234", replacing: "12"), "1234")
+        XCTAssertEqual(accept("1234567", replacing: "12"), "123456")
         XCTAssertEqual(accept("1234567", replacing: "123"), "123456")
     }
 
@@ -76,10 +80,13 @@ final class OneTimeCodeTests: XCTestCase {
         XCTAssertEqual(accept("١٢٣٤٥٦"), "")
         XCTAssertEqual(accept("１２３４５６"), "")
         XCTAssertEqual(accept("12３4", replacing: "12"), "124")
+        XCTAssertEqual(accept("12٣", replacing: "12"), "12")
+        XCTAssertEqual(accept("١٢٣123456"), "123456")
     }
 
     func testAPasteWithNoDigitsLeavesTheCodeUnchanged() {
         XCTAssertEqual(accept("12hello", replacing: "12"), "12")
+        XCTAssertEqual(accept("12abc", replacing: "12"), "12")
         XCTAssertEqual(accept("hello"), "")
     }
 

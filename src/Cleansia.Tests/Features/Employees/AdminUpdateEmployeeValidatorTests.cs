@@ -14,7 +14,8 @@ namespace Cleansia.Tests.Features.Employees;
 /// An administrator's edit of a cleaner's company ID (IČO) is judged only when it changes the stored number:
 /// the format of the register country first, then that country's register, held to approval's full check
 /// when the cleaner is approved. The admin web resends the stored number with every section it saves, so
-/// an untouched number is never checked.
+/// an untouched number is never checked. A company's registered name is judged on every edit, merged over
+/// the stored row, because the cleaner's apps cannot supply it.
 /// </summary>
 public class AdminUpdateEmployeeValidatorTests
 {
@@ -247,5 +248,80 @@ public class AdminUpdateEmployeeValidatorTests
 
         AssertRefusedOnTheNumber(result, BusinessErrorMessage.MaxLengthExceeded);
         _registry.VerifyNoOtherCalls();
+    }
+
+    private const string CompanyName = "Úklid Nováková s.r.o.";
+
+    private static AdminUpdateEmployee.Command EditIdentity(EmployeeEntityType? entityType, string? legalEntityName) =>
+        Edit(registrationNumber: null) with { EntityType = entityType, LegalEntityName = legalEntityName };
+
+    private void StoreACompany(string? legalEntityName) =>
+        _employee.UpdateBusinessIdentity(EmployeeEntityType.LegalEntity, StoredNumber, legalEntityName);
+
+    private static void AssertRefusedOnTheCompanyName(FluentValidation.Results.ValidationResult result)
+    {
+        var failure = Assert.Single(result.Errors);
+        Assert.Equal(BusinessErrorMessage.Required, failure.ErrorMessage);
+        Assert.Equal(nameof(AdminUpdateEmployee.Command.LegalEntityName), failure.ErrorCode);
+    }
+
+    [Theory]
+    [InlineData(null)]
+    [InlineData("")]
+    [InlineData("   ")]
+    public async Task Making_A_Cleaner_A_Company_Without_A_Registered_Name_Is_Refused_On_The_Name(string? legalEntityName)
+    {
+        var result = await CreateValidator().ValidateAsync(EditIdentity(EmployeeEntityType.LegalEntity, legalEntityName));
+
+        AssertRefusedOnTheCompanyName(result);
+    }
+
+    /// <summary>
+    /// The admin web resends the stored pair with every section it saves, so a company row that already lacks
+    /// its name holds every edit until an administrator adds it.
+    /// </summary>
+    [Theory]
+    [InlineData(null)]
+    [InlineData(EmployeeEntityType.LegalEntity)]
+    public async Task Any_Edit_Of_A_Stored_Company_With_No_Name_Is_Refused_Until_The_Name_Is_Supplied(EmployeeEntityType? resentType)
+    {
+        StoreACompany(legalEntityName: null);
+
+        var refused = await CreateValidator().ValidateAsync(EditIdentity(resentType, legalEntityName: null));
+        var named = await CreateValidator().ValidateAsync(EditIdentity(resentType, CompanyName));
+
+        AssertRefusedOnTheCompanyName(refused);
+        Assert.True(named.IsValid);
+    }
+
+    [Fact]
+    public async Task A_Stored_Company_Name_Satisfies_An_Edit_That_Does_Not_Carry_One()
+    {
+        StoreACompany(CompanyName);
+
+        var result = await CreateValidator().ValidateAsync(EditIdentity(entityType: null, legalEntityName: null));
+
+        Assert.True(result.IsValid);
+    }
+
+    [Fact]
+    public async Task Turning_A_Nameless_Company_Back_Into_A_Natural_Person_Needs_No_Name()
+    {
+        StoreACompany(legalEntityName: null);
+
+        var result = await CreateValidator().ValidateAsync(EditIdentity(EmployeeEntityType.NaturalPerson, legalEntityName: null));
+
+        Assert.True(result.IsValid);
+    }
+
+    [Fact]
+    public async Task An_Unknown_Cleaner_Is_Refused_Only_As_Not_Found()
+    {
+        var result = await CreateValidator().ValidateAsync(
+            EditIdentity(EmployeeEntityType.LegalEntity, legalEntityName: null) with { EmployeeId = "emp-unknown" });
+
+        var failure = Assert.Single(result.Errors);
+        Assert.Equal(BusinessErrorMessage.NotFound, failure.ErrorMessage);
+        Assert.Equal(nameof(AdminUpdateEmployee.Command.EmployeeId), failure.PropertyName);
     }
 }

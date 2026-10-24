@@ -68,8 +68,8 @@ describe('CleansiaCodeInputComponent', () => {
 
   afterEach(() => jest.useRealTimers());
 
-  it('lets a whole code into any one box, beside the digit it already holds', () => {
-    expect(boxes().map((box) => box.maxLength)).toEqual([7, 7, 7, 7, 7, 7]);
+  it('lets a whole code into any one box beside the digit it already holds, spaced or inserted twice', () => {
+    expect(boxes().map((box) => box.maxLength)).toEqual([13, 13, 13, 13, 13, 13]);
   });
 
   it('spreads a whole code inserted into the first box over all six and completes it', () => {
@@ -106,6 +106,16 @@ describe('CleansiaCodeInputComponent', () => {
     expect(host.completed).toEqual(['987656', '123456']);
   });
 
+  it('takes a spaced code inserted after the digit a box holds as that code, and submits it once', () => {
+    ['9', '8', '7', '6', '5', '6'].forEach((digit, index) => enter(index, digit));
+
+    insert(5, '123 456');
+
+    expect(values()).toEqual(['1', '2', '3', '4', '5', '6']);
+    expect(host.code.value).toBe('123456');
+    expect(host.completed).toEqual(['987656', '123456']);
+  });
+
   it('takes a whole code inserted before the digit a box holds as that code', () => {
     enter(5, '6');
 
@@ -134,7 +144,7 @@ describe('CleansiaCodeInputComponent', () => {
   });
 
   it.each(['after', 'before'] as const)(
-    'takes a code inserted twice %s the digit a box holds, which the box cuts to one code, as that code',
+    'takes a code inserted twice %s the digit a box holds as that code, once',
     (caret) => {
       enter(5, '9');
 

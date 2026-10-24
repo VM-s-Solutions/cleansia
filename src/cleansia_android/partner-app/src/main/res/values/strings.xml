@@ -1224,6 +1224,7 @@
     <string name="error_validation_invalid_age">Please enter a valid age.</string>
     <string name="error_validation_invalid_phone_number">Please enter a valid phone number.</string>
     <string name="error_validation_invalid_national_id">Please enter a valid national ID.</string>
+    <string name="error_validation_passport_id_invalid_length">Your passport / ID number must be 5 to 20 characters long.</string>
     <string name="error_validation_invalid_tax_id">Please enter a valid tax ID.</string>
     <string name="error_validation_invalid_iban">Please enter a valid IBAN.</string>
     <string name="error_validation_invalid_zip_code">Please enter a valid ZIP code.</string>

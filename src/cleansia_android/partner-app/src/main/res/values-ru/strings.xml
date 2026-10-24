@@ -1198,6 +1198,7 @@
     <string name="error_validation_invalid_age">Введите, пожалуйста, корректный возраст.</string>
     <string name="error_validation_invalid_phone_number">Введите, пожалуйста, корректный номер телефона.</string>
     <string name="error_validation_invalid_national_id">Введите, пожалуйста, корректный национальный ID.</string>
+    <string name="error_validation_passport_id_invalid_length">Номер паспорта / ID должен содержать от 5 до 20 символов.</string>
     <string name="error_validation_invalid_tax_id">Введите, пожалуйста, корректный налоговый ID.</string>
     <string name="error_validation_invalid_iban">Введите, пожалуйста, корректный IBAN.</string>
     <string name="error_validation_invalid_zip_code">Введите, пожалуйста, корректный почтовый индекс.</string>

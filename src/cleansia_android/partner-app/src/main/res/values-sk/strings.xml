@@ -1193,6 +1193,7 @@
     <string name="error_validation_invalid_age">Zadajte prosím platný vek.</string>
     <string name="error_validation_invalid_phone_number">Zadajte prosím platné telefónne číslo.</string>
     <string name="error_validation_invalid_national_id">Zadajte prosím platné rodné číslo.</string>
+    <string name="error_validation_passport_id_invalid_length">Číslo pasu / OP musí mať 5 až 20 znakov.</string>
     <string name="error_validation_invalid_tax_id">Zadajte prosím platné DIČ.</string>
     <string name="error_validation_invalid_iban">Zadajte prosím platný IBAN.</string>
     <string name="error_validation_invalid_zip_code">Zadajte prosím platné PSČ.</string>

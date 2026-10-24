@@ -85,8 +85,13 @@ struct DashboardData: Equatable {
     /// Android's `pickNextJob`. An undated order is never the next job.
     private static func nextJob(in upcoming: [OrderListItem]) -> DashboardHero? {
         let active: Set<OrderStatus> = [._2, ._3, ._4]
+        // A closure literal, not `map(active.contains)`: Swift 6.2's optimizer freed that method
+        // reference's context before calling it, and Release builds crashed here on every launch.
+        // → /mobile-app/overview#optimizer-only-crashes
         let soonest = upcoming
-            .filter { ($0.status.map(active.contains) ?? false) && $0.cleaningDateTime != nil }
+            .filter { order in
+                (order.status.map { active.contains($0) } ?? false) && order.cleaningDateTime != nil
+            }
             .min { ($0.cleaningDateTime ?? .distantFuture) < ($1.cleaningDateTime ?? .distantFuture) }
         guard let soonest, let status = soonest.status else { return nil }
         return .nextJob(

@@ -103,7 +103,7 @@ struct RegistrationLockView: View {
             if phase == .active { Task { await vm.load() } }
         }
         // A decision pushed while the lock is on screen leaves scenePhase where it was.
-        .onReceive(pushNavigation.foregroundPushes.filter(Self.registrationDecisionEvents.contains)) { _ in
+        .onReceive(pushNavigation.foregroundPushes.filter { Self.registrationDecisionEvents.contains($0) }) { _ in
             Task { await vm.load() }
         }
         .onReceive(chainVM.jumpRequested) { section in

@@ -638,6 +638,24 @@ unchanged. A rule is never relaxed in the config; the accepted exception is a na
 declaration or section, such as `large_tuple` on a fake's recorded-call tuple or
 `calendar_day_needs_greenwich` round a wire fixture.
 
+### Optimizer-only crashes
+
+Partner TestFlight build 14 crashed on every launch for a cleaner with an upcoming job (2026-10-22).
+The line was `order.status.map(active.contains)` in `DashboardData.nextJob`. Xcode 26.3's Swift 6.2
+optimizer, at `-O` with whole-module compilation, freed the context of the unapplied method reference
+`active.contains` before calling it. Debug builds (`-Onone`) and Swift 6.3 or later compile the same line
+correctly, so neither the simulator nor `ios-ci.yml`, which tested Debug on the runner's newest Xcode,
+could see it. Only an archive built with the shipping compiler could.
+
+Two rules follow from it:
+
+- **Pass a closure literal, not a method reference that captures a value.** Write
+  `status.map { active.contains($0) }`, not `status.map(active.contains)`, and the same for `filter`,
+  `allSatisfy`, `contains(where:)` and every other higher-order argument. Every such site in the apps was
+  rewritten after the incident.
+- **Prove an iOS crash fix in an optimised build made with the archiving Xcode.** A green Debug run says
+  nothing about this class of bug.
+
 ### Shipping to TestFlight
 
 `fastlane` lanes run **on the owner's Mac** (they reuse the working-tree Stripe key,

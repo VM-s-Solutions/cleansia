@@ -60,7 +60,7 @@ struct BankForm: Equatable {
     /// Whether the account is entered as the three domestic parts rather than an IBAN: a CZ or SK bank,
     /// and a country the list cannot name (no country picked yet, or the list failed to load).
     var usesDomesticAccount: Bool {
-        bankCountryAlpha2.map(Self.domesticAccountCountries.contains) ?? true
+        bankCountryAlpha2.map { Self.domesticAccountCountries.contains($0) } ?? true
     }
 
     /// What the server would refuse about the IBAN; nil when it would take it, or for a domestic account.

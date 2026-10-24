@@ -658,12 +658,13 @@ Two rules follow from it:
 
 **The guard.** `src/cleansia_ios/.xcode-version` pins the Xcode that archives TestFlight builds, 26.3.
 `ios-ci.yml` selects that Xcode by the version `xcodebuild -version` reports and fails if its image has
-none. After the Debug suites it runs the partner and customer suites again with
-`SWIFT_OPTIMIZATION_LEVEL=-O SWIFT_COMPILATION_MODE=wholemodule`, the two Swift settings the guard takes
-from Release, and `TEST_RUNNER_MallocScribble=1`, which fills freed memory so that a use-after-free faults
-instead of reading what was left behind. The release lanes select the same Xcode and run the shipped
-app's suite the same way before they ask TestFlight for a build number
-([Shipping to TestFlight](#shipping-to-testflight)).
+none. On pushes to `master` and manual runs, after the Debug suites, it runs the partner and customer
+suites again with `SWIFT_OPTIMIZATION_LEVEL=-O SWIFT_COMPILATION_MODE=wholemodule`, the two Swift settings
+the guard takes from Release, and `TEST_RUNNER_MallocScribble=1`, which fills freed memory so that a
+use-after-free faults instead of reading what was left behind. Pull requests skip those two passes to
+keep macOS minutes down ([why](/deployment/ci-cd#runners)). The release lanes select the same Xcode and
+run the shipped app's suite the same way before they ask TestFlight for a build number
+([Shipping to TestFlight](#shipping-to-testflight)), and that run is the gate a build cannot pass red.
 Debug stays the configuration on purpose: the tests need the `#if DEBUG` hooks and `@testable`, and a
 customer Release build without a Stripe key is a build error. Moving to another compiler means moving the
 pin, and CI and the lanes follow it together.
@@ -802,7 +803,7 @@ no new package, DSN or token (decided 2026-10-24,
 | Workflow | Triggers | What it runs |
 |---|---|---|
 | `.github/workflows/android-ci.yml` | **every** pull request (not path-scoped), plus pushes to `master` scoped to `src/cleansia_android/**` | Temurin JDK 21 + the runner's preinstalled SDK → `compileDebugKotlin` and `testDebugUnitTest` for `:core`, `:partner-app` and `:customer-app`. JVM only, no emulator. Test reports are uploaded on failure. |
-| `.github/workflows/ios-ci.yml` | pull requests and pushes to `master`, scoped to `src/cleansia_ios/**`, `src/cleansia_android/openapi/**` and the workflow file | `build`, on `macos-26` with the Xcode pinned in `src/cleansia_ios/.xcode-version` → local-config test → generate API clients → `xcodegen generate` for both apps → SwiftFormat lint → SwiftLint strict → build **and test** `CleansiaCore`, `CleansiaPartner`, `CleansiaCustomer` in Debug → test `CleansiaPartner` and `CleansiaCustomer` again optimised ([the guard](#optimizer-only-crashes)). Beside it, `xcode-27-readiness`, which never blocks: the same generation and the three Debug suites on Xcode 27.1, on GitHub's `xcode-27` preview image. |
+| `.github/workflows/ios-ci.yml` | pull requests and pushes to `master`, scoped to `src/cleansia_ios/**`, `src/cleansia_android/openapi/**` and the workflow file; manual runs (`workflow_dispatch`) | `build`, on `macos-26` with the Xcode pinned in `src/cleansia_ios/.xcode-version` → local-config test → generate API clients → `xcodegen generate` for both apps → SwiftFormat lint → SwiftLint strict → build **and test** `CleansiaCore`, `CleansiaPartner`, `CleansiaCustomer` in Debug → on `master` pushes and manual runs only, test `CleansiaPartner` and `CleansiaCustomer` again optimised ([the guard](#optimizer-only-crashes)). On manual runs only, beside it, `xcode-27-readiness`, which never blocks: the same generation and the three Debug suites on Xcode 27.1, on GitHub's `xcode-27` preview image. |
 
 Android CI runs on every PR on purpose: a path-scoped PR check *skips* silently, and a skipped check
 looks the same as a passing one at a glance. iOS is path-scoped because macOS runners bill at a
@@ -824,11 +825,12 @@ and none says anything about how the app behaves in a simulator. This was charac
 | Ubuntu | `secret-scan.yml` | no new secret in the history, the iOS tree included | — |
 | Ubuntu | `android-ci.yml` (`MarketCopyStringsTest`) | reads the iOS customer catalog's market copy against Android's | — |
 | Ubuntu | `backend-ci.yml` (`ApnsDisplayMapIosCatalogSyncTests`, `MobileSpecEnumGuardTests`) | both iOS app catalogs carry every push event's loc-keys; the shared mobile specs' enums agree | it does not run on a diff limited to the mobile trees, which `backend-ci.yml` excludes |
-| macOS hosted | `ios-ci.yml` | the pinned SwiftFormat and SwiftLint gates, then a Debug simulator build and the XCTest suites of CleansiaCore, CleansiaPartner and CleansiaCustomer, then the two app suites again at `-O` with whole-module compilation, all on the Xcode that archives TestFlight builds and one iPhone simulator; and, without blocking, whether the three Debug suites build and pass on Xcode 27.1 | the iOS 16 floor; UI and navigation (the only test targets are unit tests); the VoiceOver tree (that test skips); the card path (no `Local.xcconfig`); the Release configuration itself (the optimised passes are Debug with Release's two Swift settings), signing, archive and TestFlight; physical devices; the Notification Service Extension banner; iPhone Duo (no Duo simulator on any image) |
+| macOS hosted | `ios-ci.yml` | the pinned SwiftFormat and SwiftLint gates, then a Debug simulator build and the XCTest suites of CleansiaCore, CleansiaPartner and CleansiaCustomer, then (on `master` pushes and manual runs) the two app suites again at `-O` with whole-module compilation, all on the Xcode that archives TestFlight builds and one iPhone simulator; and, on manual runs and without blocking, whether the three Debug suites build and pass on Xcode 27.1 | the iOS 16 floor; UI and navigation (the only test targets are unit tests); the VoiceOver tree (that test skips); the card path (no `Local.xcconfig`); the Release configuration itself (the optimised passes are Debug with Release's two Swift settings), signing, archive and TestFlight; physical devices; the Notification Service Extension banner; iPhone Duo (no Duo simulator on any image) |
 | a local Mac only | — | the iOS 16.4 floor smoke the quality gates require of every iOS ticket; simulator UI walks; the VoiceOver test with the accessibility server on; `check-available-status-parity.mjs`; the fastlane archive and TestFlight lanes | the exact 16.0 floor, which no check verifies |
 
-So a green `ios-ci.yml` run means the code compiles and its unit tests pass, in Debug and optimised,
-with the compiler that archives the TestFlight builds. Floor, UI, accessibility and device behaviour are
+So a green `ios-ci.yml` run means the code compiles and its unit tests pass with the compiler that
+archives the TestFlight builds: in Debug on every run, and optimised too on a `master` push or a manual
+run. Floor, UI, accessibility and device behaviour are
 proved only by the local evidence recorded on each ticket. → [Runners and images](/deployment/ci-cd#runners)
 
 ## Where to go next

@@ -1,8 +1,7 @@
 name: iOS CI
 
-# macOS minutes bill at about 10x Linux if the repo goes private (free while it is public),
-# so only run this when the iOS sources (or this workflow) actually change — backend/frontend
-# PRs skip it.
+# macOS minutes bill at about 10x Linux on this private repository, so only run this when the
+# iOS sources (or this workflow) actually change — backend/frontend PRs skip it.
 # Also runs on pushes to master: direct-to-master commits used to bypass this
 # gate entirely (pull_request-only), which let lint-red code land unnoticed.
 on:
@@ -42,12 +41,15 @@ on:
       - 'src/cleansia_android/customer-app/src/main/res/values-uk/strings.xml'
       - 'src/cleansia_android/customer-app/src/main/res/values-ru/strings.xml'
       - '.github/workflows/ios-ci.yml'
+  # A manual run (Actions → iOS CI → Run workflow) adds what pull requests skip: the optimised
+  # passes and the Xcode 27.1 readiness job. → /deployment/ci-cd#runners
+  workflow_dispatch:
 
 permissions:
   contents: read
 
 # The other CI workflows carry this; this one did not, and it is the expensive one (about 10x
-# Linux billing if the repo goes private; free while public): every superseded push to a PR
+# Linux billing on this private repository): every superseded push to a PR
 # branch ran a full 20-to-80-minute build of a SHA nobody would ever look at.
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -60,9 +62,10 @@ jobs:
 
     # The ceiling is here to stop a HUNG run billing to GitHub's 6-hour default, not to police a slow
     # one. Before the optimised passes this job ran 20-30 minutes, and once 1h22m on a degraded macOS
-    # runner while still passing. The passes rebuild both apps at -O: on an M4 they took 137 s
-    # (partner) and 246-614 s (customer), beside 33-118 s for each Debug suite. The first macos-26 runs
-    # show the real cost here, and whether 120 still leaves that headroom. → /deployment/ci-cd#runners
+    # runner while still passing. The passes, which run on pushes to master and manual runs only,
+    # rebuild both apps at -O: on an M4 they took 137 s (partner) and 246-614 s (customer), beside
+    # 33-118 s for each Debug suite. The first macos-26 runs show the real cost here, and whether 120
+    # still leaves that headroom. → /deployment/ci-cd#runners
     timeout-minutes: 120
 
     defaults:
@@ -292,7 +295,12 @@ jobs:
       # The suites again, built the way the archive is: -O and whole-module, the two Swift settings the
       # guard takes from Release. Debug otherwise, for the DEBUG test hooks and @testable. MallocScribble
       # makes a use-after-free fault instead of reading stale bytes. → /mobile-app/overview#optimizer-only-crashes
+      # Not on pull requests: the two passes take longer than the three Debug suites together (on an M4,
+      # 383-751 s against 218 s), in macOS minutes this private repository pays for, and the release lanes
+      # run the same pass on the archiving Mac before every TestFlight build, so a miscompile still cannot
+      # reach a phone. Delete both `if:` lines to run them on every pull request. → /deployment/ci-cd#runners
       - name: Test CleansiaPartner optimised
+        if: github.event_name != 'pull_request'
         env:
           TEST_RUNNER_MallocScribble: '1'
         run: |
@@ -309,6 +317,7 @@ jobs:
             }
 
       - name: Test CleansiaCustomer optimised
+        if: github.event_name != 'pull_request'
         env:
           TEST_RUNNER_MallocScribble: '1'
         run: |
@@ -326,8 +335,10 @@ jobs:
 
   # A readiness signal for Xcode 27.1 (Swift 6.4, the iOS 27.1 SDK that iPhone Duo builds need), never a
   # gate: not keyed `build`, so not a required check, and allowed to fail. Only GitHub's `xcode-27`
-  # preview image has Xcode 27. Delete this job when .xcode-version moves to 27.1. → /deployment/ci-cd#runners
+  # preview image has Xcode 27. It runs only when started by hand, which keeps its macOS minutes off
+  # every push. Delete this job when .xcode-version moves to 27.1. → /deployment/ci-cd#runners
   xcode-27-readiness:
+    if: github.event_name == 'workflow_dispatch'
     runs-on: xcode-27
     continue-on-error: true
     timeout-minutes: 120

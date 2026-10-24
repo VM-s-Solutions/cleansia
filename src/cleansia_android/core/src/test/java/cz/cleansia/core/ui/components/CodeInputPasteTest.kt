@@ -22,7 +22,7 @@ class CodeInputPasteTest {
     @Test
     fun `the words and spaces around a pasted code are dropped`() {
         assertEquals("123456", accept("Your code: 123 456"))
-        assertEquals("123456", accept("123 456"))
+        assertEquals("123456", accept("123\u00A0456"))
         assertEquals("123456", accept("Code: 123456."))
         assertEquals("123456", accept("Your code is 123456."))
     }

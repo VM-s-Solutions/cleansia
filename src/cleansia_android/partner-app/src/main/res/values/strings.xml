@@ -928,6 +928,13 @@
     <string name="order_cash_not_paid_confirm_message_no_amount">Use this only if the customer paid nothing. If they paid part of it, tell the company instead. The job is completed and you are paid for it. The customer will owe the price of the cleaning, is told so and cannot book again until they pay, and an administrator is alerted. Only an administrator can undo this.</string>
     <string name="order_cash_not_paid_confirm_action">Yes, report it</string>
     <string name="order_cash_not_paid_reported_toast">Reported. The job is completed and the customer has been told.</string>
+    <string name="order_drop_action">Cancel job</string>
+    <string name="order_drop_confirm_title">Cancel this job?</string>
+    <string name="order_drop_confirm_message">You will be taken off this job and your place goes back on the board for other cleaners. The customer\'s booking is not cancelled. If you are the only cleaner on it, the job has no cleaner until someone takes it.</string>
+    <string name="order_drop_confirm_action">Yes, cancel the job</string>
+    <string name="order_drop_keep">Keep the job</string>
+    <string name="order_dropped_toast_no_crew">You are off the job. It has no cleaner now: it is back on the board.</string>
+    <string name="order_dropped_toast">You are off the job. Your place is back on the board for other cleaners.</string>
 
     <!-- Backend error-key translations. Resource names follow
          `error_key_<dot-replaced-with-underscore>` per

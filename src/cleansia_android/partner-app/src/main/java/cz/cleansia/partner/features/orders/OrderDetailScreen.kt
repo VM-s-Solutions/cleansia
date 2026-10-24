@@ -39,6 +39,7 @@ import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberBottomSheetScaffoldState
 import androidx.compose.material3.rememberStandardBottomSheetState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -122,6 +123,8 @@ fun OrderDetailScreen(
         viewModel.onResume()
     }
 
+    LaunchedEffect(viewModel) { viewModel.left.collect { onNavigateBack() } }
+
     when (val s = uiState) {
         OrderDetailUiState.Loading -> {
             Box(
@@ -144,6 +147,7 @@ fun OrderDetailScreen(
             var confirmingCash by remember { mutableStateOf(false) }
             var confirmingCashNotPaid by remember { mutableStateOf(false) }
             var decliningOffer by remember { mutableStateOf(false) }
+            var confirmingDrop by remember { mutableStateOf(false) }
 
             Box(modifier = Modifier.fillMaxSize()) {
                 OrderDetailBottomSheetLayout(
@@ -165,6 +169,7 @@ fun OrderDetailScreen(
                     onCashConfirmRequested = { confirmingCash = true },
                     onCashNotPaidRequested = { confirmingCashNotPaid = true },
                     onDeclineOffer = { decliningOffer = true },
+                    onDropRequested = { confirmingDrop = true },
                     // onContentMutated routes through the staleness-gated
                     // refresh path, so photo upload / note add re-fetches
                     // silently (no full-page spinner flash). Repository
@@ -280,6 +285,28 @@ fun OrderDetailScreen(
                         },
                     )
                 }
+
+                if (confirmingDrop) {
+                    AlertDialog(
+                        onDismissRequest = { confirmingDrop = false },
+                        title = { Text(stringResource(R.string.order_drop_confirm_title)) },
+                        text = { Text(stringResource(R.string.order_drop_confirm_message)) },
+                        confirmButton = {
+                            TextButton(
+                                onClick = {
+                                    confirmingDrop = false
+                                    viewModel.dropOrder()
+                                },
+                                colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error),
+                            ) { Text(stringResource(R.string.order_drop_confirm_action)) }
+                        },
+                        dismissButton = {
+                            CleansiaTextButton(onClick = { confirmingDrop = false }) {
+                                Text(stringResource(R.string.order_drop_keep))
+                            }
+                        },
+                    )
+                }
             }
         }
         // Retry is wired to `refresh()`, NOT to `onResume()`/
@@ -343,6 +370,7 @@ private fun OrderDetailBottomSheetLayout(
     onCashConfirmRequested: () -> Unit,
     onCashNotPaidRequested: () -> Unit,
     onDeclineOffer: () -> Unit,
+    onDropRequested: () -> Unit,
     onPhotosChanged: () -> Unit,
     onReportLockout: (String) -> Unit,
     onNavigateBack: () -> Unit,
@@ -411,6 +439,7 @@ private fun OrderDetailBottomSheetLayout(
                     onCashConfirmRequested = onCashConfirmRequested,
                     onCashNotPaidRequested = onCashNotPaidRequested,
                     onDeclineOffer = onDeclineOffer,
+                    onDropRequested = onDropRequested,
                     onPhotosChanged = onPhotosChanged,
                     onReportLockout = onReportLockout,
                 )
@@ -630,6 +659,7 @@ private fun OrderDetailSheetContent(
     onCashConfirmRequested: () -> Unit,
     onCashNotPaidRequested: () -> Unit,
     onDeclineOffer: () -> Unit,
+    onDropRequested: () -> Unit,
     onPhotosChanged: () -> Unit,
     onReportLockout: (String) -> Unit,
 ) {
@@ -819,6 +849,7 @@ private fun OrderDetailSheetContent(
             canComplete = order.hasAfterPhotos == true,
             needsCashCollection = order.needsCashCollection(),
             canReportCashNotPaid = order.cashNotPaidReportable(),
+            canDrop = order.droppable(),
             preferredOffer = preferredOffer,
             onTake = onTake,
             onStart = onStart,
@@ -827,6 +858,7 @@ private fun OrderDetailSheetContent(
             onCashConfirmRequested = onCashConfirmRequested,
             onCashNotPaidRequested = onCashNotPaidRequested,
             onDeclineOffer = onDeclineOffer,
+            onDropRequested = onDropRequested,
         )
     }
 }
@@ -839,6 +871,7 @@ private fun StickyActionFooter(
     canComplete: Boolean,
     needsCashCollection: Boolean,
     canReportCashNotPaid: Boolean,
+    canDrop: Boolean,
     preferredOffer: PendingOffer?,
     onTake: () -> Unit,
     onStart: () -> Unit,
@@ -847,6 +880,7 @@ private fun StickyActionFooter(
     onCashConfirmRequested: () -> Unit,
     onCashNotPaidRequested: () -> Unit,
     onDeclineOffer: () -> Unit,
+    onDropRequested: () -> Unit,
 ) {
     // Completed / Cancelled / null — no action available. Don't even
     // render the footer so the cleaner doesn't see a hollow strip.
@@ -897,6 +931,20 @@ private fun StickyActionFooter(
                 canReportCashNotPaid = canReportCashNotPaid,
                 isPreferredOffer = preferredOffer != null,
             )
+            if (canDrop) {
+                Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
+                    if (inFlight == OrderAction.Drop) {
+                        CircularProgressIndicator(
+                            modifier = Modifier.padding(vertical = 12.dp).size(20.dp),
+                            strokeWidth = 2.dp,
+                        )
+                    } else {
+                        CleansiaTextButton(onClick = onDropRequested, enabled = inFlight == null) {
+                            Text(stringResource(R.string.order_drop_action))
+                        }
+                    }
+                }
+            }
             if (preferredOffer != null && !isMine) {
                 Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Center) {
                     CleansiaTextButton(onClick = onDeclineOffer, enabled = inFlight == null) {
@@ -947,4 +995,17 @@ internal fun OrderItem.cashNotPaidOwed(): Double? {
     val price = totalPrice ?: return null
     val credit = creditAppliedAmount ?: return null
     return price - credit
+}
+
+/**
+ * Mirrors `DropOrder` more narrowly than the server does. The server lets the crew leave up to InProgress; the apps
+ * offer it on a New or Confirmed job only, because once the cleaner is on the way the customer is expecting them,
+ * and before a lockout report only, because leaving afterwards gives up the reward a confirmed lockout pays.
+ */
+internal fun OrderItem.droppable(): Boolean {
+    if (isAssignedToCurrentUser != true || !lockoutReportedAt.isNullOrBlank()) return false
+    return when (orderStatus.toOrderStatus()) {
+        OrderStatus._0, OrderStatus._2 -> true
+        else -> false
+    }
 }

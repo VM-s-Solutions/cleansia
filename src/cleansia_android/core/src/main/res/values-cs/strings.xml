@@ -2,6 +2,7 @@
 <resources>
     <string name="core_search">Hledat</string>
     <string name="core_snackbar_dismiss">Zavřít</string>
+    <string name="core_code_paste">Vložit</string>
     <string name="core_consent_toggle">Souhlasit s podmínkami a zásadami ochrany soukromí</string>
     <string name="core_error_server">Server je dočasně nedostupný. Zkuste to později.</string>
     <string name="core_error_timeout">Časový limit připojení. Zkuste to prosím znovu.</string>

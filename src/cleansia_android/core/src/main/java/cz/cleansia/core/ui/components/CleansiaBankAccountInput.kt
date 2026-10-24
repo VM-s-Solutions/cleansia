@@ -55,8 +55,8 @@ internal const val BankCodeMaxLength = 4
  * widths below are sized to the *placeholder*, not to the digits, for the same reason — a hint that is
  * clipped to "Předčí…" answers nothing.
  *
- * **A whole account pasted into any segment is spread over all three, and a bare number too long for
- * the segment it was pasted into is the number** ([splitPastedAccount]), so an account copied off a
+ * **A whole account that overflows the segment it is pasted into is spread over all three, and a bare
+ * number too long for that segment is the number** ([splitPastedAccount]), so an account copied off a
  * statement or a banking app lands where it belongs instead of being clamped into one box, while a
  * prefix or bank code copied on its own replaces what its own box held. A spread paste ends the edit,
  * so the keyboard closes, as on iOS.
@@ -265,8 +265,10 @@ internal fun clampSegment(raw: String, maxLength: Int): String = raw.filter { it
  * recomposition late (BasicTextField keeps its own `lastTextValue` for the same reason). Read against
  * [value], two edits in one frame read as one run: "0" and "1" typed into a bank code "080" put in "01",
  * which would replace the box's text, and a digit typed right after "0800" is pasted into an empty box
- * makes "08001", which would go to the number. Like `lastTextValue`, it is reset only when [value] changes,
- * so after an edit the segment kept out, the next one is still measured against the text kept out.
+ * makes "08001", which would go to the number. A segment builds a new one at the composition after every
+ * edit, the one in which BasicTextField shows [value] again, so the next edit is measured against the box's
+ * text and not against an edit the segment kept out: one kept across a "5" typed into a full "0800" reads
+ * "5500" pasted after it as "500".
  */
 internal fun lastReported(value: String): (raw: String) -> String {
     var last = value
@@ -287,10 +289,14 @@ private fun AccountSegment(
     modifier: Modifier = Modifier,
     placeholder: String? = null,
 ) {
-    val replaced = remember(value) { lastReported(value) }
+    var edits by remember { mutableIntStateOf(0) }
+    val replaced = remember(value, edits) { lastReported(value) }
     BasicTextField(
         value = value,
-        onValueChange = { raw -> onValueChange(replaced(raw), raw) },
+        onValueChange = { raw ->
+            onValueChange(replaced(raw), raw)
+            edits++
+        },
         modifier = modifier,
         enabled = enabled,
         singleLine = true,

@@ -163,6 +163,20 @@ class CleansiaBankAccountInputPasteTest {
         assertEquals(Kept, edit("08001", bankCodeBox, current = replaced("08001")))
     }
 
+    /**
+     * A box that kept an edit out shows its own text again at the next composition, where the segment builds a new
+     * reporter ([CleansiaBankAccountInputBindingTest]). Kept across it, the reporter would answer the "08005" kept
+     * out, and "5500" pasted after "0800" would put in "500".
+     */
+    @Test
+    fun `a paste after a digit the full box kept out replaces the box's text`() {
+        val typing = lastReported("0800")
+        assertEquals(Kept, edit("08005", bankCodeBox, current = typing("08005")))
+
+        val atTheNextComposition = lastReported("0800")
+        assertEquals(Changed("5500"), edit("08005500", bankCodeBox, current = atTheNextComposition("08005500")))
+    }
+
     @Test
     fun `a bare run too long for a number keeps the box's text`() {
         everyBox.forEach { box -> assertEquals("into the $box-digit box", Kept, edit("20001453991", box)) }

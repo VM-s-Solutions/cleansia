@@ -2,6 +2,7 @@ package cz.cleansia.core.ui.components
 
 import java.io.File
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
@@ -57,12 +58,20 @@ class CodeInputBindingTest {
         )
     }
 
-    /** getText() on Android 12+ tells the user the app read their clipboard; hasText() reads only its description. */
+    /**
+     * getText() on Android 12+ tells the user the app read their clipboard; hasText() reads only its description.
+     * Android 10+ answers neither until the app holds window focus, which it regains only after ON_RESUME.
+     */
     @Test
-    fun `the paste button is offered off the clip description and re-checked on resume`() {
+    fun `the paste button is offered off the clip description and re-checked when the window regains focus`() {
+        assertTrue(source.contains("val windowInfo = LocalWindowInfo.current"))
         assertTrue(
-            Regex("""LifecycleEventEffect\(Lifecycle\.Event\.ON_RESUME\)\s*\{\s*clipboardHasText = clipboard\.hasText\(\)\s*\}""")
+            Regex("""snapshotFlow\s*\{\s*windowInfo\.isWindowFocused\s*\}\s*\.collect\s*\{\s*focused\s*->\s*if \(focused\) clipboardHasText = clipboard\.hasText\(\)\s*\}""")
                 .containsMatchIn(source),
+        )
+        assertFalse(
+            "a lifecycle event comes before the window has focus back, so the check must not hang off one",
+            source.contains("androidx.lifecycle"),
         )
         assertTrue(source.contains("if (clipboardHasText) {"))
     }

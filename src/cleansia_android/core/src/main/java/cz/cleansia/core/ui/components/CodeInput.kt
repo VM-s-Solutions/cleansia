@@ -23,6 +23,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
@@ -30,6 +31,7 @@ import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.platform.LocalClipboardManager
+import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.text.TextRange
@@ -38,8 +40,6 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.lifecycle.Lifecycle
-import androidx.lifecycle.compose.LifecycleEventEffect
 import cz.cleansia.core.R
 import cz.cleansia.core.ui.theme.Poppins
 
@@ -58,11 +58,17 @@ fun CodeInput(
 ) {
     val focusRequester = remember { FocusRequester() }
     val clipboard = LocalClipboardManager.current
+    val windowInfo = LocalWindowInfo.current
     var clipboardHasText by remember { mutableStateOf(false) }
 
-    // Re-read on resume: the code is usually copied in the mail app. hasText() reads only the clip's description,
+    // Android 10+ lets only the app holding window focus read the clipboard, and an app coming back from the mail
+    // app gets focus back after ON_RESUME, so the check runs on focus. hasText() reads only the clip's description,
     // so it raises no "pasted from your clipboard" notice; getText() on the tap does, which is the paste itself.
-    LifecycleEventEffect(Lifecycle.Event.ON_RESUME) { clipboardHasText = clipboard.hasText() }
+    LaunchedEffect(windowInfo, clipboard) {
+        snapshotFlow { windowInfo.isWindowFocused }.collect { focused ->
+            if (focused) clipboardHasText = clipboard.hasText()
+        }
+    }
 
     Column(modifier = modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
         CompositionLocalProvider(LocalTextSelectionColors provides invisibleSelection) {

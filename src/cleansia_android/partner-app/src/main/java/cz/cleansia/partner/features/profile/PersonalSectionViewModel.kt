@@ -24,7 +24,29 @@ import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import java.time.LocalDate
+import java.time.ZoneOffset
 import javax.inject.Inject
+
+/** `UpdatePersonalInfo`'s bounds: names of up to 50 characters, a cleaner aged 18 to 120. */
+private const val NameMaxLength = 50
+private const val YoungestAge = 18L
+private const val OldestAge = 120L
+
+/**
+ * The resource naming what the server would refuse about [birthDate] on [today], the server's own day
+ * (UTC); null when it would take the date, or when the text is no `yyyy-MM-dd` date and the server
+ * decides.
+ */
+internal fun birthDateProblem(birthDate: String, today: LocalDate): Int? {
+    if (birthDate.isBlank()) return R.string.error_birth_date_required
+    val day = runCatching { LocalDate.parse(birthDate) }.getOrNull() ?: return null
+    return when {
+        day.isAfter(today.minusYears(YoungestAge)) -> R.string.validation_min_age_18
+        day.isBefore(today.minusYears(OldestAge)) -> R.string.validation_max_age_120
+        else -> null
+    }
+}
 
 data class PersonalForm(
     val employeeId: String = "",
@@ -148,13 +170,19 @@ class PersonalSectionViewModel @Inject constructor(
         if (form.firstName.isBlank()) {
             updateForm { it.copy(firstNameError = appContext.getString(R.string.error_first_name_required)) }
             hasError = true
+        } else if (form.firstName.trim().length > NameMaxLength) {
+            updateForm { it.copy(firstNameError = appContext.getString(R.string.validation_max_50)) }
+            hasError = true
         }
         if (form.lastName.isBlank()) {
             updateForm { it.copy(lastNameError = appContext.getString(R.string.error_last_name_required)) }
             hasError = true
+        } else if (form.lastName.trim().length > NameMaxLength) {
+            updateForm { it.copy(lastNameError = appContext.getString(R.string.validation_max_50)) }
+            hasError = true
         }
-        if (form.birthDate.isBlank()) {
-            updateForm { it.copy(birthDateError = appContext.getString(R.string.error_birth_date_required)) }
+        birthDateProblem(form.birthDate, LocalDate.now(ZoneOffset.UTC))?.let { problem ->
+            updateForm { it.copy(birthDateError = appContext.getString(problem)) }
             hasError = true
         }
         if (form.phone.isBlank()) {

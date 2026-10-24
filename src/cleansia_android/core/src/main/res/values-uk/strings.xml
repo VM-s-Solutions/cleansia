@@ -2,6 +2,7 @@
 <resources>
     <string name="core_search">Пошук</string>
     <string name="core_snackbar_dismiss">Закрити</string>
+    <string name="core_code_paste">Вставити</string>
     <string name="core_consent_toggle">Прийняти умови та політику конфіденційності</string>
     <string name="core_error_server">Сервер тимчасово недоступний. Спробуйте пізніше.</string>
     <string name="core_error_timeout">Час очікування з\'єднання вичерпано. Будь ласка, спробуйте ще раз.</string>

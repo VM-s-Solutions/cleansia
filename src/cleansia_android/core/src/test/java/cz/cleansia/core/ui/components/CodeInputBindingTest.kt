@@ -44,4 +44,26 @@ class CodeInputBindingTest {
     fun `the invisible caret is held at the end of the code`() {
         assertTrue(source.contains("TextFieldValue(code, selection = TextRange(code.length))"))
     }
+
+    @Test
+    fun `the paste button replaces the code with the one on the clipboard`() {
+        assertTrue(
+            "the button must read the clipboard through the same rule, with nothing typed to keep",
+            source.contains("acceptOneTimeCode(clipboard.getText()?.text.orEmpty(), \"\", length)"),
+        )
+        assertTrue(
+            "a clipboard with no digits on it must leave a partial code alone",
+            source.contains("if (pasted.isNotEmpty()) onCodeChange(pasted)"),
+        )
+    }
+
+    /** getText() on Android 12+ tells the user the app read their clipboard; hasText() reads only its description. */
+    @Test
+    fun `the paste button is offered off the clip description and re-checked on resume`() {
+        assertTrue(
+            Regex("""LifecycleEventEffect\(Lifecycle\.Event\.ON_RESUME\)\s*\{\s*clipboardHasText = clipboard\.hasText\(\)\s*\}""")
+                .containsMatchIn(source),
+        )
+        assertTrue(source.contains("if (clipboardHasText) {"))
+    }
 }

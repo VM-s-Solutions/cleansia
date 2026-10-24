@@ -4,6 +4,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -18,13 +19,18 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.platform.LocalClipboardManager
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.TextStyle
@@ -32,12 +38,16 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.compose.LifecycleEventEffect
+import cz.cleansia.core.R
 import cz.cleansia.core.ui.theme.Poppins
 
 /**
  * One-time-code entry: one real text field drawn as [length] digit boxes, so a tap anywhere on the boxes brings
  * the keyboard back and a long-press offers Paste. The code it reports holds ASCII digits only, up to [length]
- * ([acceptOneTimeCode]).
+ * ([acceptOneTimeCode]). A Paste button under the boxes is shown while the clipboard holds text, because not every
+ * keyboard offers the clipboard on a number pad.
  */
 @Composable
 fun CodeInput(
@@ -47,28 +57,47 @@ fun CodeInput(
     modifier: Modifier = Modifier,
 ) {
     val focusRequester = remember { FocusRequester() }
+    val clipboard = LocalClipboardManager.current
+    var clipboardHasText by remember { mutableStateOf(false) }
 
-    CompositionLocalProvider(LocalTextSelectionColors provides invisibleSelection) {
-        BasicTextField(
-            // The text is invisible, so the caret is held at its end: a tap on the first box would otherwise put
-            // it inside a partial code, and the next digit typed would land in the middle of it.
-            value = TextFieldValue(code, selection = TextRange(code.length)),
-            onValueChange = { edit ->
-                if (edit.text != code) onCodeChange(acceptOneTimeCode(edit.text, code, length))
-            },
-            modifier = modifier
-                .fillMaxWidth()
-                .focusRequester(focusRequester),
-            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-            textStyle = TextStyle(color = Color.Transparent),
-            cursorBrush = SolidColor(Color.Transparent),
-            decorationBox = { innerTextField ->
-                Box {
-                    CodeBoxes(code = code, length = length)
-                    Box(modifier = Modifier.matchParentSize()) { innerTextField() }
-                }
-            },
-        )
+    // Re-read on resume: the code is usually copied in the mail app. hasText() reads only the clip's description,
+    // so it raises no "pasted from your clipboard" notice; getText() on the tap does, which is the paste itself.
+    LifecycleEventEffect(Lifecycle.Event.ON_RESUME) { clipboardHasText = clipboard.hasText() }
+
+    Column(modifier = modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
+        CompositionLocalProvider(LocalTextSelectionColors provides invisibleSelection) {
+            BasicTextField(
+                // The text is invisible, so the caret is held at its end: a tap on the first box would otherwise
+                // put it inside a partial code, and the next digit typed would land in the middle of it.
+                value = TextFieldValue(code, selection = TextRange(code.length)),
+                onValueChange = { edit ->
+                    if (edit.text != code) onCodeChange(acceptOneTimeCode(edit.text, code, length))
+                },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .focusRequester(focusRequester),
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                textStyle = TextStyle(color = Color.Transparent),
+                cursorBrush = SolidColor(Color.Transparent),
+                decorationBox = { innerTextField ->
+                    Box {
+                        CodeBoxes(code = code, length = length)
+                        Box(modifier = Modifier.matchParentSize()) { innerTextField() }
+                    }
+                },
+            )
+        }
+
+        if (clipboardHasText) {
+            CleansiaTextButton(
+                onClick = {
+                    val pasted = acceptOneTimeCode(clipboard.getText()?.text.orEmpty(), "", length)
+                    if (pasted.isNotEmpty()) onCodeChange(pasted)
+                },
+            ) {
+                Text(stringResource(R.string.core_code_paste))
+            }
+        }
     }
 
     LaunchedEffect(Unit) { focusRequester.requestFocus() }

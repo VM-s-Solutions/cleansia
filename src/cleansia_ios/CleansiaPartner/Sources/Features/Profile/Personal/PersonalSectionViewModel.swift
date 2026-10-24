@@ -5,16 +5,31 @@ import Foundation
 
 @MainActor
 final class PersonalSectionViewModel: ViewModel {
+    /// Each error clears when its own field changes, whichever binding wrote it. A write of the value
+    /// already there fixes nothing, so it keeps the error.
     struct Loaded: Equatable {
         var employeeId: String
-        var firstName: String
-        var lastName: String
-        var birthDate: Date?
-        var phone: String
+        var firstName: String {
+            didSet { if firstName != oldValue { firstNameError = nil } }
+        }
+
+        var lastName: String {
+            didSet { if lastName != oldValue { lastNameError = nil } }
+        }
+
+        var birthDate: Date? {
+            didSet { if birthDate != oldValue { birthDateError = nil } }
+        }
+
+        var phone: String {
+            didSet { if phone != oldValue { phoneError = nil } }
+        }
+
         var email: String
         var firstNameError: String?
         var lastNameError: String?
         var birthDateError: String?
+        var phoneError: String?
     }
 
     @Published private(set) var state: UiState<Void> = .loading
@@ -60,24 +75,12 @@ final class PersonalSectionViewModel: ViewModel {
 
     func save() async {
         guard case .loaded = state, !action.isSubmitting else { return }
-        form.firstNameError = nil
-        form.lastNameError = nil
-        form.birthDateError = nil
-
-        var hasError = false
-        if form.firstName.isBlank {
-            form.firstNameError = L10n.Profile.errorFirstNameRequired
-            hasError = true
-        }
-        if form.lastName.isBlank {
-            form.lastNameError = L10n.Profile.errorLastNameRequired
-            hasError = true
-        }
-        if form.birthDate == nil {
-            form.birthDateError = L10n.Profile.errorBirthDateRequired
-            hasError = true
-        }
-        if hasError { return }
+        form.firstNameError = Self.nameProblem(form.firstName, ifBlank: L10n.Profile.errorFirstNameRequired)
+        form.lastNameError = Self.nameProblem(form.lastName, ifBlank: L10n.Profile.errorLastNameRequired)
+        form.birthDateError = Self.birthDateProblem(form.birthDate, today: Date())
+        form.phoneError = Self.phoneProblem(form.phone)
+        let errors = [form.firstNameError, form.lastNameError, form.birthDateError, form.phoneError]
+        guard errors.allSatisfy({ $0 == nil }) else { return }
         guard !form.employeeId.isBlank else {
             snackbar.showError(L10n.Profile.errorProfileNotLoaded)
             return
@@ -90,7 +93,7 @@ final class PersonalSectionViewModel: ViewModel {
             firstName: form.firstName.trimmed,
             lastName: form.lastName.trimmed,
             birthDate: OpenAPIDateWithoutTime(day: form.birthDate),
-            phone: form.phone.trimmedOrNil
+            phone: form.phone.trimmed
         )
         switch await client.updatePersonalInfo(command) {
         case .success:
@@ -100,5 +103,31 @@ final class PersonalSectionViewModel: ViewModel {
             action = .error(localizer.message(for: error))
             snackbar.showError(localizer.message(for: error))
         }
+    }
+
+    /// The server's age bounds, in Gregorian years as its `DateOnly.AddYears` counts them, on the day in
+    /// Greenwich that the birth date travels as: born at least 18 and at most 120 years before today.
+    static func birthDateProblem(_ birthDate: Date?, today now: Date) -> String? {
+        guard let birthDate else { return L10n.Profile.errorBirthDateRequired }
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = .gmt
+        let today = calendar.startOfDay(for: now)
+        guard let youngest = calendar.date(byAdding: .year, value: -18, to: today),
+              let oldest = calendar.date(byAdding: .year, value: -120, to: today) else { return nil }
+        let day = calendar.startOfDay(for: birthDate)
+        if day > youngest { return L10n.Profile.errorMinAge }
+        if day < oldest { return ApiErrorLocalizer().message(for: ApiError(code: "validation.invalid_age")) }
+        return nil
+    }
+
+    /// The server caps a name at 50 UTF-16 code units, trimmed as it is sent.
+    private static func nameProblem(_ name: String, ifBlank blankMessage: String) -> String? {
+        if name.isBlank { return blankMessage }
+        return name.trimmed.utf16.count > 50 ? L10n.Profile.errorNameTooLong : nil
+    }
+
+    private static func phoneProblem(_ phone: String) -> String? {
+        if phone.isBlank { return L10n.Profile.errorPhoneRequired }
+        return PhoneNumberKitDisplayFormatter.isValidNumber(phone.trimmed) ? nil : L10n.Profile.errorPhoneInvalid
     }
 }

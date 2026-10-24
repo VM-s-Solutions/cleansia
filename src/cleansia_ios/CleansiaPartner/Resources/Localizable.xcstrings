@@ -16466,6 +16466,76 @@
         }
       }
     },
+    "profile_error_min_age": {
+      "extractionState": "stale",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Musíte mít alespoň 18 let"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "You must be at least 18 years old"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Вам должно быть не менее 18 лет"
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Musíte mať aspoň 18 rokov"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Вам повинно бути щонайменше 18 років"
+          }
+        }
+      }
+    },
+    "profile_error_name_too_long": {
+      "extractionState": "stale",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Maximálně 50 znaků"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Maximum 50 characters allowed"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Максимум 50 символов"
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Maximálne 50 znakov"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Максимум 50 символів"
+          }
+        }
+      }
+    },
     "profile_error_nationality_required": {
       "extractionState": "stale",
       "localizations": {
@@ -16567,6 +16637,76 @@
           "stringUnit": {
             "state": "translated",
             "value": "Введіть номер паспорта / ID"
+          }
+        }
+      }
+    },
+    "profile_error_phone_invalid": {
+      "extractionState": "stale",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zadejte číslo i s předvolbou země, např. +420 777 123 456"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Enter the number with its country code, e.g. +420 777 123 456"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Введите номер с кодом страны, напр. +420 777 123 456"
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zadajte číslo aj s predvoľbou krajiny, napr. +421 912 345 678"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Введіть номер із кодом країни, напр. +420 777 123 456"
+          }
+        }
+      }
+    },
+    "profile_error_phone_required": {
+      "extractionState": "stale",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Telefonní číslo je povinné"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Phone number is required"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Номер телефона обязателен"
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Telefónne číslo je povinné"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Номер телефону обов'язковий"
           }
         }
       }

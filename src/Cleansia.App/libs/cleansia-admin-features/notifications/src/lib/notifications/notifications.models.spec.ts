@@ -30,11 +30,12 @@ function dto(overrides: Partial<UserNotificationDto> = {}): UserNotificationDto 
 }
 
 describe('the admin event catalogue mirror', () => {
-  it('pins the seventeen keys the backend catalogue declares, in its order', () => {
+  it('pins the eighteen keys the backend catalogue declares, in its order', () => {
     expect(ADMIN_NOTIFICATION_EVENT_KEYS).toEqual([
       'admin.order.new',
       'admin.order.crew_lost',
       'admin.order.cleaner_not_started',
+      'admin.order.no_cleaner_yet',
       'admin.order.lockout_reported',
       'admin.order.cash_not_paid',
       'admin.dispute.filed',
@@ -66,6 +67,7 @@ describe('the admin event catalogue mirror', () => {
   it('sorts every key into a family the page has an icon for', () => {
     const families = ADMIN_NOTIFICATION_EVENT_KEYS.map(getNotificationFamily);
     expect(families).toEqual([
+      NotificationFamily.Order,
       NotificationFamily.Order,
       NotificationFamily.Order,
       NotificationFamily.Order,
@@ -117,6 +119,29 @@ describe('the copy keys', () => {
       'pages.notifications.events.admin.order.crew_lost.body'
     );
   });
+
+  it('words an order still without a cleaner ahead of its slot in one sentence, with the slot as a date and time', () => {
+    const [row] = buildNotificationRows(
+      [
+        dto({
+          eventKey: 'admin.order.no_cleaner_yet',
+          args: { orderNumber: 'ORD-7', cleaningDateTime: '2026-10-25T08:00:00.0000000Z', orderId: 'o-7' },
+        }),
+      ],
+      'en',
+      translate
+    );
+
+    expect(row.family).toBe(NotificationFamily.Order);
+    expect(row.titleKey).toBe('pages.notifications.events.admin.order.no_cleaner_yet.title');
+    expect(row.bodyKey).toBe('pages.notifications.events.admin.order.no_cleaner_yet.body');
+    expect(row.params).toEqual({
+      orderNumber: 'ORD-7',
+      cleaningDateTime: new Date('2026-10-25T08:00:00Z').toLocaleString('en', { dateStyle: 'medium', timeStyle: 'short' }),
+      orderId: 'o-7',
+    });
+    expect(row.route).toEqual(['order-management', 'o-7']);
+  });
 });
 
 describe('buildNotificationParams', () => {
@@ -163,6 +188,7 @@ describe('getNotificationRoute', () => {
     'admin.order.new',
     'admin.order.crew_lost',
     'admin.order.cleaner_not_started',
+    'admin.order.no_cleaner_yet',
     'admin.order.lockout_reported',
     'admin.order.cash_not_paid',
     'admin.payment.failed',

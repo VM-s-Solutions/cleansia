@@ -2871,6 +2871,10 @@
               "title": "Uklízeč nezačal objednávku",
               "body": "Objednávka {{orderNumber}} byla objednána na {{cleaningDateTime}} a nikdo ji nezačal. Pokud uklízeč nedorazil, zrušte ji jako nedostavení."
             },
+            "no_cleaner_yet": {
+              "title": "Objednávka stále nemá uklízeče",
+              "body": "Na objednávce {{orderNumber}} dne {{cleaningDateTime}} stále nikdo není. Přiřaďte uklízeče v objednávce; pokud ji nikdo nepřijme, po začátku se automaticky zruší."
+            },
             "lockout_reported": {
               "title": "Uklízeč se nemůže dostat dovnitř",
               "body": "Uklízeč u objednávky {{orderNumber}}, objednané na {{cleaningDateTime}}, hlásí, že se nemůže dostat dovnitř. Zkontrolujte fotografii vchodu a jeho pokusy o volání; pokud ho zákazník nepustil dovnitř, zrušte ji jako nezpřístupnění zákazníkem."

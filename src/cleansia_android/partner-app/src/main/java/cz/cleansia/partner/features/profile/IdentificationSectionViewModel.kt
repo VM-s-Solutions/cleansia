@@ -160,7 +160,7 @@ class IdentificationSectionViewModel @Inject constructor(
     fun onPassportChange(v: String) = updateForm { it.copy(passportId = v, passportError = null) }
 
     fun onBusinessCountrySelected(id: String) {
-        updateForm { it.copy(businessCountryId = id, businessCountryError = null) }
+        updateForm { it.copy(businessCountryId = id, businessCountryError = null, registrationNumberError = null) }
         loadFieldLabels(id)
     }
 

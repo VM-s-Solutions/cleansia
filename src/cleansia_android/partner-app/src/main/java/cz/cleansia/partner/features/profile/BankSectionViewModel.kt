@@ -227,7 +227,8 @@ class BankSectionViewModel @Inject constructor(
         _uiState.value = BankSectionUiState.Error
     }
 
-    fun onBankCountrySelected(id: String) = updateForm { it.copy(bankCountryId = id, bankCountryError = null) }
+    fun onBankCountrySelected(id: String) =
+        updateForm { it.copy(bankCountryId = id, bankCountryError = null, swiftError = null) }
 
     fun onAccountPrefixChange(v: String) = updateForm { it.copy(accountPrefix = v.digitsOnly(), accountError = null) }
 

@@ -547,6 +547,23 @@ class BankSectionViewModelTest {
     }
 
     @Test
+    fun `a refused SWIFT clears when the bank country it depends on changes`() = runTest {
+        stubSaveRefused("validation.payout.swift_required")
+        val vm = viewModel()
+        vm.awaitForm()
+        vm.onBankCountrySelected("country-sk")
+        vm.onAccountNumberChange("5885638003")
+        vm.onBankCodeChange("5500")
+        vm.save()
+        advanceUntilIdle()
+        assertEquals("translated error", vm.form().swiftError)
+
+        vm.onBankCountrySelected("country-cz")
+
+        assertNull(vm.form().swiftError)
+    }
+
+    @Test
     fun `a bank country the server cannot pay to is named under the country`() = runTest {
         listOf("validation.payout.country_not_supported", "validation.payout.scheme_not_supported").forEach { key ->
             stubSaveRefused(key)

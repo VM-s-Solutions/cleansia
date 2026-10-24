@@ -205,4 +205,45 @@ describe('CleansiaCodeInputComponent', () => {
     expect(host.code.value).toBe('12');
     expect(document.activeElement).toBe(boxes()[1]);
   });
+
+  it('writes a short paste from the box it lands in, keeping the boxes before it', () => {
+    enter(0, '1');
+    enter(1, '2');
+
+    paste(2, '34');
+
+    expect(values()).toEqual(['1', '2', '3', '4', '', '']);
+    expect(host.code.value).toBe('1234');
+    expect(host.completed).toEqual([]);
+    expect(document.activeElement).toBe(boxes()[3]);
+  });
+
+  it('writes a fragment the keyboard inserts into a box from that box onward', () => {
+    enter(0, '1');
+    enter(1, '2');
+
+    insert(2, '34');
+
+    expect(values()).toEqual(['1', '2', '3', '4', '', '']);
+    expect(host.code.value).toBe('1234');
+    expect(host.completed).toEqual([]);
+  });
+
+  it('cuts a short paste at the last box, and completes the code it fills', () => {
+    ['1', '2', '3', '4'].forEach((digit, index) => enter(index, digit));
+
+    paste(4, '567');
+
+    expect(values()).toEqual(['1', '2', '3', '4', '5', '6']);
+    expect(host.completed).toEqual(['123456']);
+  });
+
+  it('leaves the boxes after a short paste as they were', () => {
+    ['1', '2', '3', '4', '5'].forEach((digit, index) => enter(index, digit));
+
+    paste(1, '9');
+
+    expect(values()).toEqual(['1', '9', '3', '4', '5', '']);
+    expect(host.code.value).toBe('19345');
+  });
 });

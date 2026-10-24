@@ -10,7 +10,7 @@
     [value]="digit"
     (input)="onDigitInput($event, $index)"
     (keydown)="onKeyDown($event, $index)"
-    (paste)="onPaste($event)"
+    (paste)="onPaste($event, $index)"
     (focus)="onFocus($index)"
     autocomplete="one-time-code"
   />

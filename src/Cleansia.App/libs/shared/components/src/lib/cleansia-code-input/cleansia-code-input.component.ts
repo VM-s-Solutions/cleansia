@@ -109,8 +109,9 @@ export class CleansiaCodeInputComponent implements ControlValueAccessor {
   // Safari's one-time-code AutoFill and the keyboard's suggestion strip put a whole code into the
   // focused box without a paste event, beside the digit it holds or in place of it. The code is what
   // the edit put in, so that digit is not run into it; one that replaced a selected digit it starts
-  // with reads as five digits put in, and the box's whole value is the code then. A shorter edit is
-  // typing: the new digit sits before the caret.
+  // with reads as five digits put in, and the box's whole value is the code then. Fewer digits put in
+  // at once are written from this box onward, as a paste of them is; a single one is typing: the new
+  // digit sits before the caret.
   onDigitInput(event: Event, index: number): void {
     const input = event.target as HTMLInputElement;
     const caret = input.selectionStart ?? input.value.length;
@@ -119,6 +120,12 @@ export class CleansiaCodeInputComponent implements ControlValueAccessor {
 
     if (code.length >= this.length()) {
       this.fillFrom(code);
+      input.value = this.digits[index];
+      return;
+    }
+
+    if (inserted.length > 1) {
+      this.fillFrom(inserted, index);
       input.value = this.digits[index];
       return;
     }
@@ -155,7 +162,9 @@ export class CleansiaCodeInputComponent implements ControlValueAccessor {
     }
   }
 
-  onPaste(event: ClipboardEvent): void {
+  // A whole code fills the boxes from the first, wherever it is pasted; fewer digits are written from
+  // the box they are pasted into, as the apps insert them at the caret.
+  onPaste(event: ClipboardEvent, index: number): void {
     event.preventDefault();
     const pasted = (event.clipboardData?.getData('text') || '').replace(
       /\D/g,
@@ -163,7 +172,7 @@ export class CleansiaCodeInputComponent implements ControlValueAccessor {
     );
     if (!pasted) return;
 
-    this.fillFrom(pasted);
+    this.fillFrom(pasted, pasted.length >= this.length() ? 0 : index);
   }
 
   onFocus(index: number): void {
@@ -174,14 +183,13 @@ export class CleansiaCodeInputComponent implements ControlValueAccessor {
     }
   }
 
-  private fillFrom(code: string): void {
-    for (let i = 0; i < this.length(); i++) {
-      this.digits[i] = code[i] || '';
+  private fillFrom(code: string, start = 0): void {
+    const written = code.slice(0, this.length() - start);
+    for (let i = 0; i < written.length; i++) {
+      this.digits[start + i] = written[i];
     }
     this.emitValue();
-
-    const lastFilledIndex = Math.min(code.length, this.length()) - 1;
-    this.focusDigit(lastFilledIndex);
+    this.focusDigit(start + written.length - 1);
   }
 
   private focusDigit(index: number): void {

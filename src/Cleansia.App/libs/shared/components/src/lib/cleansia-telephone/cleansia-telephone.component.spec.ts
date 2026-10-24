@@ -71,6 +71,19 @@ describe('CleansiaTelephoneComponent input', () => {
     expect(host.phone.value).toBe('+421 905123456');
   });
 
+  it.each(['Tel: +420 728 089 247', '(+420) 728 089 247', '+ 420 728 089 247'])(
+    'reads the plus before the first digit of %s as the country code, whatever comes before or after it',
+    (pasted) => {
+      render('sk');
+
+      enter(pasted);
+
+      expect(host.phone.value).toBe('+420 728089247');
+      expect(field().value).toBe('728089247');
+      expect(selectedCode()).toBe('+420');
+    }
+  );
+
   it('keeps the selected country when the pasted code is one it shares with another', () => {
     render('us');
 

@@ -20,9 +20,6 @@ import {
 import { FloatLabelModule } from 'primeng/floatlabel';
 import { CleansiaBaseFormInputComponent } from '../cleansia-base-form';
 
-// Whitespace, and the zero-width and direction marks a contacts app puts around a copied number.
-const LEADING_BLANKS = /^[\s\u200B-\u200F\u202A-\u202E\u2060-\u2069]+/;
-
 @Component({
   selector: 'cleansia-telephone',
   templateUrl: './cleansia-telephone.component.html',
@@ -148,7 +145,7 @@ export class CleansiaTelephoneComponent
   }
 
   private readCountryCode(raw: string): { country: CountryPhoneCode; national: string } | null {
-    const value = raw.replace(LEADING_BLANKS, '');
+    const value = plusAndDigits(raw);
     const matched = this.phoneService.findByPhoneValue(value);
     if (!matched) return null;
     const country = matched.code === this.selectedCountry.code ? this.selectedCountry : matched;
@@ -162,4 +159,14 @@ export class CleansiaTelephoneComponent
     this.onChange(fullValue);
     this.valueChanges.emit(fullValue);
   }
+}
+
+/**
+ * A `+` counts until the first digit, wherever it sits: a copied number often has a label, a bracket, a
+ * space or an invisible direction mark in front of it. The apps' `PhoneNumberSanitizer` and
+ * `sanitizePhoneInput` read the `+` the same way.
+ */
+function plusAndDigits(raw: string): string {
+  const kept = raw.replace(/[^\d+]/g, '');
+  return kept.slice(0, 1) + kept.slice(1).replace(/\+/g, '');
 }

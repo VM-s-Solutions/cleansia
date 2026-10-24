@@ -44,6 +44,7 @@ interface OrderOverrides {
   creditAppliedAmount?: number;
   assignedEmployeeId?: string | null;
   lockoutReportedAt?: string;
+  cleaningDateTime?: string;
 }
 
 function buildOrder(overrides: OrderOverrides = {}): OrderItem {
@@ -55,6 +56,7 @@ function buildOrder(overrides: OrderOverrides = {}): OrderItem {
     creditAppliedAmount = 0,
     assignedEmployeeId = EMPLOYEE_ID,
     lockoutReportedAt,
+    cleaningDateTime,
   } = overrides;
 
   return OrderItem.fromJS({
@@ -71,6 +73,7 @@ function buildOrder(overrides: OrderOverrides = {}): OrderItem {
       ? [{ employeeId: assignedEmployeeId, fullName: 'Jan Novak' }]
       : [],
     lockoutReportedAt,
+    cleaningDateTime,
   });
 }
 
@@ -864,6 +867,7 @@ describe('OrderDetailsFacade', () => {
       { orderStatusValue: OrderStatus.InProgress },
       { assignedEmployeeId: 'someone-else' },
       { lockoutReportedAt: '2026-09-29T10:20:00Z' },
+      { cleaningDateTime: '2026-09-29T10:00:00Z' },
     ])('does not ask on a job the action is not offered on, %o', (overrides) => {
       const facade = onTheJob(overrides);
 

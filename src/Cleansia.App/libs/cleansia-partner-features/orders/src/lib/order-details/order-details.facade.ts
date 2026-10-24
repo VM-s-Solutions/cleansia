@@ -676,7 +676,7 @@ export class OrderDetailsFacade extends UnsubscribeControlDirective {
     const orderId = order?.id;
     const employeeId = this.currentEmployeeId();
 
-    if (!order || !orderId || !employeeId || !canDropOrder(order, employeeId)) {
+    if (!order || !orderId || !employeeId || !canDropOrder(order, employeeId, Date.now())) {
       this.snackbarService.showErrorTranslated(
         'global.messages.orders.invalid_request'
       );

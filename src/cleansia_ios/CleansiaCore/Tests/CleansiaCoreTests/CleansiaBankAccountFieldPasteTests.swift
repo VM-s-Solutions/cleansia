@@ -1,11 +1,30 @@
 import XCTest
 @testable import CleansiaCore
 
-/// Android's twin (`CleansiaBankAccountInput`) is held to the same cases; keep the two lists in step.
+/// Android's twin (`CleansiaBankAccountInput`) and the web's (`cleansia-bank-account`) are held to the same
+/// cases; keep the lists in step.
 final class CleansiaBankAccountFieldPasteTests: XCTestCase {
-    private func split(_ raw: String, replacing current: String = "") -> [String?]? {
-        CleansiaBankAccountField.splitPastedAccount(raw, replacing: current)
+    private let everyBox: [CleansiaBankAccountField.Segment] = [.prefix, .number, .bankCode]
+
+    private func split(
+        _ raw: String,
+        into box: CleansiaBankAccountField.Segment,
+        replacing current: String = ""
+    ) -> [String?]? {
+        CleansiaBankAccountField.splitPastedAccount(raw, replacing: current, into: box)
             .map { [$0.prefix, $0.number, $0.bankCode] }
+    }
+
+    /// A written-out account fills all three boxes, whichever one it was pasted into.
+    private func assertSplitsFromEveryBox(
+        _ raw: String,
+        _ expected: [String?],
+        file: StaticString = #filePath,
+        line: UInt = #line
+    ) {
+        for box in everyBox {
+            XCTAssertEqual(split(raw, into: box), expected, "\(raw) into the \(box) box", file: file, line: line)
+        }
     }
 
     /// The server takes ASCII digits only; a keyboard can type Arabic-Indic or full-width ones.
@@ -16,53 +35,79 @@ final class CleansiaBankAccountFieldPasteTests: XCTestCase {
     }
 
     func testANumberAndBankCodeSplitAndClearThePrefix() {
-        XCTAssertEqual(split("12321414/3545"), ["", "12321414", "3545"])
+        assertSplitsFromEveryBox("12321414/3545", ["", "12321414", "3545"])
     }
 
     func testAllThreePartsSplit() {
-        XCTAssertEqual(split("19-2000145399/0800"), ["19", "2000145399", "0800"])
+        assertSplitsFromEveryBox("19-2000145399/0800", ["19", "2000145399", "0800"])
     }
 
     /// Banking apps space the parts, and some use a no-break space or a narrow one.
     func testWhitespaceOfEveryKindIsIgnored() {
-        XCTAssertEqual(split(" 19 - 2000145399 / 0800 "), ["19", "2000145399", "0800"])
-        XCTAssertEqual(split("19\u{00A0}-\u{00A0}2000145399\u{202F}/\u{202F}0800"), ["19", "2000145399", "0800"])
-        XCTAssertEqual(split("12321414 /\n3545"), ["", "12321414", "3545"])
+        assertSplitsFromEveryBox(" 19 - 2000145399 / 0800 ", ["19", "2000145399", "0800"])
+        assertSplitsFromEveryBox("19\u{00A0}-\u{00A0}2000145399\u{202F}/\u{202F}0800", ["19", "2000145399", "0800"])
+        assertSplitsFromEveryBox("12321414 /\n3545", ["", "12321414", "3545"])
     }
 
     func testAnEnOrEmDashReadsAsAHyphen() {
-        XCTAssertEqual(split("19–2000145399/0800"), ["19", "2000145399", "0800"])
-        XCTAssertEqual(split("19—2000145399/0800"), ["19", "2000145399", "0800"])
+        assertSplitsFromEveryBox("19–2000145399/0800", ["19", "2000145399", "0800"])
+        assertSplitsFromEveryBox("19—2000145399/0800", ["19", "2000145399", "0800"])
     }
 
     /// No bank code in the paste leaves the one already entered alone.
     func testAPrefixAndNumberWithoutABankCodeKeepTheBankCode() {
-        XCTAssertEqual(split("19-2000145399"), ["19", "2000145399", nil])
+        assertSplitsFromEveryBox("19-2000145399", ["19", "2000145399", nil])
     }
 
-    /// A bare number is the account number whichever box received it, so "2000145399" pasted into the
-    /// empty prefix box no longer becomes the prefix "200014". The split never learns which box it was:
-    /// these are the prefix, number and bank-code boxes alike, and prefix and bank code are left alone.
-    func testABarePastedNumberGoesToTheNumberAndLeavesTheOtherTwo() {
-        XCTAssertEqual(split("2000145399"), [nil, "2000145399", nil])
-        XCTAssertEqual(split("2000 1453 99"), [nil, "2000145399", nil])
-        XCTAssertEqual(split("2000145399", replacing: "0800"), [nil, "2000145399", nil], "pasted over a bank code")
-        // Owner decision D14 as written: two digits pasted into the empty prefix box are the number too.
-        XCTAssertEqual(split("19"), [nil, "19", nil])
+    /// A part copied on its own is pasted back into its own box, and the number already entered stays.
+    func testABareBankCodeOrPrefixThatFitsItsOwnBoxStaysThere() {
+        XCTAssertNil(split("0800", into: .bankCode))
+        XCTAssertEqual(CleansiaBankAccountField.clampSegment("0800", maxLength: 4), "0800")
+        XCTAssertNil(split("19", into: .prefix))
+        XCTAssertNil(split("000019", into: .prefix))
+        XCTAssertNil(split("5500", into: .bankCode, replacing: "0800"), "pasted over the box's own digits")
+    }
+
+    /// A bare number too long for the box it landed in is the account number, so "2000145399" pasted into
+    /// the empty prefix box does not become the prefix "200014". The prefix and bank code already entered
+    /// stay.
+    func testABareNumberTooLongForItsBoxGoesToTheNumberAndLeavesTheOtherTwo() {
+        XCTAssertEqual(split("2000145399", into: .prefix), [nil, "2000145399", nil])
+        XCTAssertEqual(split("2000 1453 99", into: .prefix), [nil, "2000145399", nil])
+        XCTAssertEqual(split("1234567", into: .prefix), [nil, "1234567", nil])
+        XCTAssertEqual(split("12345", into: .bankCode), [nil, "12345", nil])
+        XCTAssertEqual(
+            split("2000145399", into: .bankCode, replacing: "0800"),
+            [nil, "2000145399", nil],
+            "pasted over a bank code"
+        )
+    }
+
+    func testABareNumberPastedIntoTheNumberBoxStaysThere() {
+        XCTAssertNil(split("2000145399", into: .number))
+        XCTAssertNil(split("19", into: .number))
     }
 
     /// The number pad types one digit at a time, and a typed prefix or bank code must stay where it is.
     func testTypingNeverJumpsToTheNumber() {
-        XCTAssertNil(split("5"))
-        XCTAssertNil(split("12", replacing: "1"))
-        XCTAssertNil(split("08001", replacing: "0800"))
-        XCTAssertNil(split(""))
-        XCTAssertNil(split("", replacing: "19"))
+        for box in everyBox {
+            XCTAssertNil(split("5", into: box), "\(box)")
+            XCTAssertNil(split("", into: box), "\(box)")
+            XCTAssertNil(split("", into: box, replacing: "19"), "\(box)")
+        }
+        XCTAssertNil(split("12", into: .prefix, replacing: "1"))
+        XCTAssertNil(split("1234567", into: .prefix, replacing: "123456"))
+        XCTAssertNil(split("08001", into: .bankCode, replacing: "0800"))
     }
 
     func testABareRunTooLongForANumberIsLeftToTheClamp() {
-        XCTAssertNil(split("20001453991"))
-        XCTAssertNil(split("08002000145399", replacing: "0800"), "pasted after a bank code already there")
+        for box in everyBox {
+            XCTAssertNil(split("20001453991", into: box), "\(box)")
+        }
+        XCTAssertNil(
+            split("08002000145399", into: .bankCode, replacing: "0800"),
+            "pasted after a bank code already there"
+        )
     }
 
     func testAnythingThatIsNotAnAccountIsLeftToTheClamp() {
@@ -79,23 +124,25 @@ final class CleansiaBankAccountFieldPasteTests: XCTestCase {
             "12a4/0800",
             "١٢٣/0800"
         ] {
-            XCTAssertNil(split(raw), raw)
+            for box in everyBox {
+                XCTAssertNil(split(raw, into: box), "\(raw) into the \(box) box")
+            }
         }
     }
 
     func testACzechIbanIsBrokenIntoItsDomesticParts() {
-        XCTAssertEqual(split("CZ65 0800 0000 1920 0014 5399"), ["19", "2000145399", "0800"])
-        XCTAssertEqual(split("cz6508000000192000145399"), ["19", "2000145399", "0800"])
+        assertSplitsFromEveryBox("CZ65 0800 0000 1920 0014 5399", ["19", "2000145399", "0800"])
+        assertSplitsFromEveryBox("cz6508000000192000145399", ["19", "2000145399", "0800"])
     }
 
     func testASlovakIbanIsBrokenIntoItsDomesticParts() {
-        XCTAssertEqual(split("SK31 1200 0000 1987 4263 7541"), ["19", "8742637541", "1200"])
+        assertSplitsFromEveryBox("SK31 1200 0000 1987 4263 7541", ["19", "8742637541", "1200"])
     }
 
     /// Leading zeros are padding in the BBAN, not part of the written account; an all-zero prefix is no
     /// prefix at all.
     func testIbanPaddingIsDropped() {
-        XCTAssertEqual(split("CZ55 0800 0000 0000 0012 3457"), ["", "123457", "0800"])
+        assertSplitsFromEveryBox("CZ55 0800 0000 0000 0012 3457", ["", "123457", "0800"])
     }
 
     func testOtherIbansAreNotDomesticAccounts() {
@@ -106,7 +153,9 @@ final class CleansiaBankAccountFieldPasteTests: XCTestCase {
             "CZ6X 0800 0000 1920 0014 5399",
             "CZ00 0800 0000 0000 0000 0000"
         ] {
-            XCTAssertNil(split(raw), raw)
+            for box in everyBox {
+                XCTAssertNil(split(raw, into: box), "\(raw) into the \(box) box")
+            }
         }
     }
 }

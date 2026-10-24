@@ -45,7 +45,7 @@ public struct CleansiaBankAccountField: View {
     /// box's placeholder — until focus moves, whether or not that box's own value changed.
     @State private var pasteRevision = 0
 
-    private enum Segment: Hashable {
+    enum Segment: Hashable {
         case prefix, number, bankCode
     }
 
@@ -153,14 +153,14 @@ public struct CleansiaBankAccountField: View {
         maxLength: Int,
         focus: Segment
     ) -> some View {
-        // A whole account pasted into any one segment is split across all three, and a bare number pasted
-        // into any of them is the account number. It has to be caught here, before the caller's binding
-        // sees it: callers sanitise to digits on write, so by the time onChange below runs the slash is
-        // gone and the bank code has been run into the number.
+        // A whole account pasted into any one segment is split across all three, and a bare number too long
+        // for the box it landed in is the account number. It has to be caught here, before the caller's
+        // binding sees it: callers sanitise to digits on write, so by the time onChange below runs the slash
+        // is gone and the bank code has been run into the number.
         TextField("", text: Binding(
             get: { text.wrappedValue },
             set: { raw in
-                guard let pasted = Self.splitPastedAccount(raw, replacing: text.wrappedValue) else {
+                guard let pasted = Self.splitPastedAccount(raw, replacing: text.wrappedValue, into: focus) else {
                     text.wrappedValue = raw
                     return
                 }
@@ -210,29 +210,33 @@ public struct CleansiaBankAccountField: View {
 
     // swiftlint:disable large_tuple
     /// A Czech or Slovak account pasted (or typed on a hardware keyboard) in one go, split into its
-    /// three fields; `raw` is the segment's new text and `current` the value it replaces. A nil part
-    /// leaves that field as it is, and a nil result means the text is an ordinary entry for the segment
-    /// it landed in, which the digit clamp takes.
+    /// three fields; `raw` is the new text of the `box` it landed in and `current` the value it replaces.
+    /// A nil part leaves that field as it is, and a nil result means the text is an ordinary entry for
+    /// that box, which the digit clamp takes.
     ///
     /// Recognised: `[prefix-]number/bankcode` and `prefix-number` — the number pad types neither
     /// separator, so their presence is what marks a paste — a CZ or SK IBAN, whose BBAN is
-    /// `bankcode(4) prefix(6) number(10)`, and a bare number, which is the account number whichever box
-    /// it was pasted into. A bare number counts only when it lands two or more characters at once: the
-    /// number pad types one at a time, so typing a prefix or a bank code never jumps to the number.
-    /// Whitespace of every kind (NBSP included) is dropped and an en or em dash reads as a hyphen,
-    /// because that is what banking apps put on the clipboard. A written-out account without a prefix
-    /// clears the old one; a missing bank code keeps it. Nothing is validated beyond shape: the server
-    /// owns mod-11, the bank code and the IBAN cross-check. -> /partner-app/onboarding
+    /// `bankcode(4) prefix(6) number(10)`, and a bare number too long for the box it was pasted into:
+    /// "2000145399" pasted into the prefix box is the account number, while "0800" pasted into the
+    /// bank-code box or "19" into the prefix box is that part, copied on its own, and stays there. A bare
+    /// number counts only when it lands two or more characters at once: the number pad types one at a
+    /// time, so typing a prefix or a bank code never jumps to the number. Whitespace of every kind (NBSP
+    /// included) is dropped and an en or em dash reads as a hyphen, because that is what banking apps put
+    /// on the clipboard. A written-out account without a prefix clears the old one; a missing bank code
+    /// keeps it. Nothing is validated beyond shape: the server owns mod-11, the bank code and the IBAN
+    /// cross-check. -> /partner-app/onboarding
     static func splitPastedAccount(
         _ raw: String,
-        replacing current: String = ""
+        replacing current: String = "",
+        into box: Segment
     ) -> (prefix: String?, number: String, bankCode: String?)? {
         let pasted = String(
             raw.filter { !$0.isWhitespace }.map { $0 == "\u{2013}" || $0 == "\u{2014}" ? "-" : $0 }
         )
         let text = domesticForm(ofIban: pasted) ?? pasted
         guard text.contains("-") || text.contains("/") else {
-            guard raw.count - current.count >= 2, isDigits(text, upTo: numberMaxLength) else { return nil }
+            guard raw.count - current.count >= 2, isDigits(text, upTo: numberMaxLength),
+                  text.count > maxLength(of: box) else { return nil }
             return (nil, text, nil)
         }
 
@@ -251,6 +255,14 @@ public struct CleansiaBankAccountField: View {
     }
 
     // swiftlint:enable large_tuple
+
+    private static func maxLength(of box: Segment) -> Int {
+        switch box {
+        case .prefix: prefixMaxLength
+        case .number: numberMaxLength
+        case .bankCode: bankCodeMaxLength
+        }
+    }
 
     /// `CZ65 0800 0000 1920 0014 5399` reads as `19-2000145399/0800`: the BBAN's zero padding is not
     /// part of the written account. Nil for any other text, other countries' IBANs included.

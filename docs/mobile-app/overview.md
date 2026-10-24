@@ -659,10 +659,11 @@ Two rules follow from it:
 **The guard.** `src/cleansia_ios/.xcode-version` pins the Xcode that archives TestFlight builds, 26.3.
 `ios-ci.yml` selects that Xcode by the version `xcodebuild -version` reports and fails if its image has
 none. After the Debug suites it runs the partner and customer suites again with
-`SWIFT_OPTIMIZATION_LEVEL=-O SWIFT_COMPILATION_MODE=wholemodule`, the two Swift settings Release changes,
-and `TEST_RUNNER_MallocScribble=1`, which fills freed memory so that a use-after-free faults instead of
-reading what was left behind. The release lanes select the same Xcode and run the shipped app's suite the
-same way before they ask TestFlight for a build number ([Shipping to TestFlight](#shipping-to-testflight)).
+`SWIFT_OPTIMIZATION_LEVEL=-O SWIFT_COMPILATION_MODE=wholemodule`, the two Swift settings the guard takes
+from Release, and `TEST_RUNNER_MallocScribble=1`, which fills freed memory so that a use-after-free faults
+instead of reading what was left behind. The release lanes select the same Xcode and run the shipped
+app's suite the same way before they ask TestFlight for a build number
+([Shipping to TestFlight](#shipping-to-testflight)).
 Debug stays the configuration on purpose: the tests need the `#if DEBUG` hooks and `@testable`, and a
 customer Release build without a Stripe key is a build error. Moving to another compiler means moving the
 pin, and CI and the lanes follow it together.

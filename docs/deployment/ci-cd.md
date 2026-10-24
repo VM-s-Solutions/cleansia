@@ -13,7 +13,7 @@ scan — and the rest deploy or run operational jobs. **The required statuses ar
 | `backend-ci.yml` | the .NET solution — unit, integration (Testcontainers) and host tests. Also runs on pushes to `master`, because direct-to-master commits used to bypass it entirely. Scoped to `src/**` **and `sql-scripts/**`** |
 | `frontend-ci.yml` | the Nx workspace — lint, test, build across the three apps |
 | `android-ci.yml` | the Gradle multi-module build |
-| `ios-ci.yml` | SwiftFormat, then SwiftLint, then three test schemes |
+| `ios-ci.yml` | SwiftFormat, then SwiftLint, then three test schemes in Debug and both app suites again optimised; beside it, a non-blocking Xcode 27.1 readiness job |
 | `docs-ci.yml` | both halves of the reference contract: two checkers with their own self-tests blocking first, then `vitepress build` with `ignoreDeadLinks: false` |
 | `ios-symbols-ci.yml` | the compiler-free half of the iOS gate — `check-ios-symbols.mjs` on Linux |
 | `booking-policy-parity.yml` | every client's stated booking figures against `BookingPolicy`, and the legal seed's currency placeholders |
@@ -115,7 +115,7 @@ failing, it does not make the secret safe.
 | `backend-ci` | PR to any branch that touches `src/**` outside the web, Android and iOS trees, `sql-scripts/**` or the workflow | Build + test .NET solution |
 | `frontend-ci` | PR to any branch | Build Angular apps |
 | `android-ci` | PR to any branch | Compile and unit-test `:core`, `:partner-app` and `:customer-app` |
-| `ios-ci` | PR to any branch that touches `src/cleansia_ios/**`, `src/cleansia_android/openapi/**`, its seven Android test inputs listed below, or the workflow | SwiftFormat, SwiftLint, then build and test the three schemes |
+| `ios-ci` | PR to any branch that touches `src/cleansia_ios/**`, `src/cleansia_android/openapi/**`, its seven Android test inputs listed below, or the workflow | SwiftFormat, SwiftLint, then build and test the three schemes in Debug and test both apps again optimised; a non-blocking Xcode 27.1 readiness job beside it |
 | `docs-ci` | PR to any branch | Docs pointers and written claims resolve; the docs site builds |
 | `ios-symbols-ci` | PR to any branch that touches `src/cleansia_ios/**`, the checker, its self-test or the workflow | `check-ios-symbols.mjs` on Linux |
 | `booking-policy-parity` | PR to any branch that touches a file the checker reads, the checker, its self-test or the workflow | `check-booking-policy-parity.mjs` |
@@ -141,7 +141,7 @@ request also run on pushes to `master`, path-scoped except for the secret scan.
 
 ## Runners and images {#runners}
 
-All 25 Linux `runs-on` declarations request `ubuntu-26.04`. `ios-ci.yml` requests `macos-26` for its
+All 28 Linux `runs-on` declarations request `ubuntu-26.04`. `ios-ci.yml` requests `macos-26` for its
 required `build` job and `xcode-27` for its `xcode-27-readiness` job. Every job names an exact image
 rather than a `-latest` label, and none uses a self-hosted or larger runner. A new workflow either joins
 one of these labels or says why not.

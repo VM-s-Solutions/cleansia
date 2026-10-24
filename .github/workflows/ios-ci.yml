@@ -58,9 +58,11 @@ jobs:
     # Not macos-latest: the image must ship the Xcode pinned in .xcode-version.
     runs-on: macos-26
 
-    # Generous on purpose. This job legitimately runs 20-30 minutes, and has been observed at
-    # 1h22m on a degraded macOS runner while still passing — so the ceiling is here to stop a
-    # HUNG run billing to GitHub's 6-hour default, not to police a slow one.
+    # The ceiling is here to stop a HUNG run billing to GitHub's 6-hour default, not to police a slow
+    # one. Before the optimised passes this job ran 20-30 minutes, and once 1h22m on a degraded macOS
+    # runner while still passing. The passes rebuild both apps at -O: on an M4 they took 137 s
+    # (partner) and 246-614 s (customer), beside 33-118 s for each Debug suite. The first macos-26 runs
+    # show the real cost here, and whether 120 still leaves that headroom. → /deployment/ci-cd#runners
     timeout-minutes: 120
 
     defaults:
@@ -287,9 +289,9 @@ jobs:
               exit 1
             }
 
-      # The suites again, built the way the archive is: -O and whole-module, the two Swift settings
-      # Release changes. Debug otherwise, for the DEBUG test hooks and @testable. MallocScribble makes
-      # a use-after-free fault instead of reading stale bytes. → /mobile-app/overview#optimizer-only-crashes
+      # The suites again, built the way the archive is: -O and whole-module, the two Swift settings the
+      # guard takes from Release. Debug otherwise, for the DEBUG test hooks and @testable. MallocScribble
+      # makes a use-after-free fault instead of reading stale bytes. → /mobile-app/overview#optimizer-only-crashes
       - name: Test CleansiaPartner optimised
         env:
           TEST_RUNNER_MallocScribble: '1'

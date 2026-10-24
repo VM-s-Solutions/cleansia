@@ -98,16 +98,28 @@ extension BankSectionViewModelTests {
         await vm.save()
         XCTAssertEqual(try loadedForm(vm).swiftError, message("validation.payout.swift_required"))
 
-        vm.update(\.bankCountryId, to: "country-cz")
-        vm.update(\.accountNumber, to: "5885638004")
-        vm.update(\.bankCode, to: "5500")
-        client.bankUpdateResult = .failure(
-            ApiError(code: "validation.payout.invalid_account_number", httpStatus: 400)
-        )
+        client.bankUpdateResult = .failure(ApiError(code: "validation.payout.looks_like_card", httpStatus: 400))
         await vm.save()
 
-        XCTAssertNil(try loadedForm(vm).swiftError, "a Czech bank for a Czech cleaner needs no SWIFT")
-        XCTAssertEqual(try loadedForm(vm).accountError, message("validation.payout.invalid_account_number"))
+        XCTAssertNil(try loadedForm(vm).swiftError, "the SWIFT refusal answered the save before")
+        XCTAssertEqual(try loadedForm(vm).ibanServerError, message("validation.payout.looks_like_card"))
+    }
+
+    /// Whether a SWIFT is needed, and which one, depends on the bank's country, so the server's refusal of it
+    /// no longer holds once that country changes.
+    func testARefusedSwiftClearsWhenTheBankCountryChanges() async throws {
+        let vm = await loadWithEuropeanBanks()
+        vm.update(\.bankCountryId, to: "country-de")
+        vm.update(\.iban, to: "DE89370400440532013000")
+        client.bankUpdateResult = .failure(ApiError(code: "validation.payout.swift_required", httpStatus: 400))
+        await vm.save()
+        XCTAssertEqual(try loadedForm(vm).swiftError, message("validation.payout.swift_required"))
+
+        vm.update(\.bankCountryId, to: "country-de")
+        XCTAssertNotNil(try loadedForm(vm).swiftError, "picking the same country again changes nothing")
+
+        vm.update(\.bankCountryId, to: "country-cz")
+        XCTAssertNil(try loadedForm(vm).swiftError)
     }
 
     func testAnIbanTheServerRefusesIsNamedUnderTheIbanAndClearsAsItIsEdited() async throws {

@@ -23,7 +23,12 @@ struct BankForm: Equatable {
 
     var employeeId = ""
     var bankCountryId: String? {
-        didSet { if bankCountryId != oldValue { bankCountryError = nil } }
+        didSet {
+            if bankCountryId != oldValue {
+                bankCountryError = nil
+                swiftError = nil
+            }
+        }
     }
 
     var accountPrefix = "" {
@@ -65,7 +70,8 @@ struct BankForm: Equatable {
     var holderName = ""
 
     /// Named under their field until that field changes: what a save found, on the device or from the
-    /// server. A write of the value already there fixes nothing, so it keeps the error.
+    /// server. A write of the value already there fixes nothing, so it keeps the error. The SWIFT's also goes
+    /// when the bank country changes, since the server judges the SWIFT by it.
     var bankCountryError: String?
     var accountError: String?
     var ibanServerError: String?

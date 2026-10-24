@@ -14,21 +14,38 @@ public struct CodeInput: View {
     /// The field is the control and the boxes only draw it, so a tap focuses the field and a long press opens
     /// its edit menu.
     public var body: some View {
-        ZStack {
-            HStack(spacing: Spacing.xs) {
-                ForEach(0 ..< length, id: \.self) { index in
-                    box(at: index)
+        VStack(spacing: Spacing.s) {
+            ZStack {
+                HStack(spacing: Spacing.xs) {
+                    ForEach(0 ..< length, id: \.self) { index in
+                        box(at: index)
+                    }
                 }
-            }
-            .allowsHitTesting(false)
-            .accessibilityHidden(true)
+                .allowsHitTesting(false)
+                .accessibilityHidden(true)
 
-            CodeTextField(code: $code, focused: $focused, length: length)
-                .frame(maxWidth: .infinity)
-                .frame(height: 56)
+                CodeTextField(code: $code, focused: $focused, length: length)
+                    .frame(maxWidth: .infinity)
+                    .frame(height: 56)
+            }
+            // The iPhone keyboard has no clipboard key. The system's own paste control reads the clipboard
+            // without the prompt a read from code raises, and its icon needs no words in any language.
+            PasteButton(payloadType: String.self) { pasted in
+                guard let text = pasted.first else { return }
+                Task { @MainActor in code = Self.pasting(text, onto: code, length: length) }
+            }
+            .labelStyle(.iconOnly)
+            .buttonBorderShape(.capsule)
+            .tint(CleansiaColors.primary)
         }
         .frame(maxWidth: .infinity)
         .onAppear { focused = true }
+    }
+
+    /// What the field's own Paste would do with the caret after the code: a whole code replaces it, a fragment
+    /// is added to it, and text without digits leaves it as it is.
+    static func pasting(_ text: String, onto code: String, length: Int) -> String {
+        OneTimeCode.accept(code + text, replacing: code, length: length)
     }
 
     private func box(at index: Int) -> some View {

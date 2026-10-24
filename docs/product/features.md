@@ -297,12 +297,20 @@ contract for work on {date}, version {version}* with **Read the contract**. If t
 between the preview and the take, the app re-fetches it and asks again. → [Business rules — the contract for work](/product/business-rules#work-contract),
 [ADR-0068](/decisions/adr-0068)
 
-**Leaving a job** — ask for cover (the cleaner stays on the hook until somebody takes the seat) or drop
-it outright. A drop puts the seat back on the board and cancels nothing; when it was the last cleaner
-on a confirmed booking, the booking goes back to *New* and is re-offered, and the company's
-administrators are told — at any status, including a clean already under way. The customer hears
-nothing until either a new cleaner takes it or the slot passes with nobody on it.
-→ [Business rules — when the last cleaner leaves](/product/business-rules#crew-lost)
+**Leaving a job** — *Cancel job* on the job, on partner web, Android and iOS (since 2026-10-24), while
+the cleaner is on its crew, the job is *New* or *Confirmed* and no lockout has been reported; never once
+they are on the way or the clean has started (owner defaults 2026-10-24). A confirmation asks first: they
+will be taken off the job and their place goes back on the board for other cleaners, the customer's
+booking is not cancelled, and if they are its only cleaner the job has no cleaner until someone takes
+it; *Keep the job* changes nothing. After *Yes, cancel the job* the cleaner reads that they are off the
+job and their place is back on the board for others, or, when nobody is left on it, that it has no
+cleaner now and is back on the board, and the app leaves the job. It puts the seat back on the board and
+cancels nothing; a confirmed booking with nobody left goes back to *New* and is re-offered
+([ADR-0067](/decisions/adr-0067)). The company's administrators are told when the crew empties, and
+once more when the job is inside a day of its start with nobody on it. The customer hears nothing until
+either a new cleaner takes it or the slot passes with nobody on it. Asking for cover, where the cleaner
+stays on the hook until somebody takes the seat, exists in the API (`RequestCover`) only; no app offers
+it. → [Business rules — when the last cleaner leaves](/product/business-rules#crew-lost)
 
 **Not forgetting the job** — a count of tomorrow's jobs each evening at 18:00 in the cleaner's own local
 time, a notice about two hours before each one, and a nudge close to the start for a cleaner who still

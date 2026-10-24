@@ -70,7 +70,10 @@ detail shows the seat as *contract pending* until then.
 [WorkContractAcceptance](/domain/roles/work-contract-acceptance)
 
 **A placement is an offer, and a removal has a reason** (owner ruling 2026-09-28). The placed cleaner may
-drop the job at no cost. An administrator who takes a cleaner off a job must give a reason
+drop the job at no cost, with *Cancel job* (`DropOrder`), which partner web, Android and iOS offer to a
+cleaner on the crew while the job is `New` or `Confirmed` and no lockout is reported, never once it is
+`OnTheWay` or `InProgress` (owner defaults 2026-10-24) → [Leaving a job](/product/features#cleaner-partner).
+An administrator who takes a cleaner off a job must give a reason
 (`removalReason`, else `order.reassign.removal_reason_required`); the cleaner's notice carries only the
 order, and the job detail shows them the reason (`GetMyAssignmentRemoval`). A weekly job limit carries a
 reason the cleaner sees on their profile. → [Business rules — placement is an offer](/product/business-rules#placement-is-an-offer)

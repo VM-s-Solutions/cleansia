@@ -23,8 +23,8 @@ extension View {
     }
 }
 
-/// A view in a window of the given size in the app's own scene, so it can present a sheet, with no safe area of
-/// its own, so every simulator lays it out the same. The window that was key before is key again on `close()`.
+/// A view in a window of the given size in the app's own scene, with no safe area of its own, so every simulator lays
+/// it out the same. The window that was key before is key again on `close()`.
 @MainActor
 final class HostedCanvas {
     let window: UIWindow
@@ -60,7 +60,6 @@ final class HostedCanvas {
     }
 
     func close() {
-        host.presentedViewController?.dismiss(animated: false)
         window.isHidden = true
         window.rootViewController = nil
         previous?.makeKeyAndVisible()

@@ -41,6 +41,17 @@ class CodeInputBindingTest {
         )
     }
 
+    /** The boxes are cleared from the semantics tree, so the field is all TalkBack reads; without a label it says "Edit box". */
+    @Test
+    fun `TalkBack names the field as the six-digit verification code`() {
+        assertTrue(source.contains("val fieldLabel = stringResource(R.string.core_code_field_label)"))
+        assertTrue(
+            "the text field itself must carry the label",
+            Regex("""\.focusRequester\(focusRequester\)\s*\.semantics\s*\{\s*contentDescription = fieldLabel\s*\}""")
+                .containsMatchIn(source),
+        )
+    }
+
     @Test
     fun `the invisible caret is held at the end of the code`() {
         assertTrue(source.contains("TextFieldValue(code, selection = TextRange(code.length))"))

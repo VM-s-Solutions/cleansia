@@ -34,6 +34,8 @@ import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.clearAndSetSemantics
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.input.KeyboardType
@@ -61,6 +63,7 @@ fun CodeInput(
     val clipboard = LocalClipboardManager.current
     val windowInfo = LocalWindowInfo.current
     var clipboardHasText by remember { mutableStateOf(false) }
+    val fieldLabel = stringResource(R.string.core_code_field_label)
 
     // Android 10+ lets only the app holding window focus read the clipboard, and an app coming back from the mail
     // app gets focus back after ON_RESUME, so the check runs on focus. hasText() reads only the clip's description,
@@ -82,7 +85,8 @@ fun CodeInput(
                 },
                 modifier = Modifier
                     .fillMaxWidth()
-                    .focusRequester(focusRequester),
+                    .focusRequester(focusRequester)
+                    .semantics { contentDescription = fieldLabel },
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                 textStyle = TextStyle(color = Color.Transparent),
                 cursorBrush = SolidColor(Color.Transparent),

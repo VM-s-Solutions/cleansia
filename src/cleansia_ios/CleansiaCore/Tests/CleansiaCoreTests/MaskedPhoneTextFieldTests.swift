@@ -91,6 +91,17 @@ final class MaskedPhoneTextFieldTests: XCTestCase {
         XCTAssertEqual(value, "+420728089247")
     }
 
+    func testAPastedNumberKeepsItsCountryCodeBehindALeadingSpace() {
+        let harness = makeField()
+        _ = harness.coordinator.textField(
+            harness.field,
+            shouldChangeCharactersIn: NSRange(location: 0, length: 0),
+            replacementString: " +420 728-089-247"
+        )
+        XCTAssertEqual(harness.field.text, "+420 728 089 247")
+        XCTAssertEqual(value, "+420728089247")
+    }
+
     func testTheDelegateNeverLetsUIKitApplyTheRawEdit() {
         let harness = makeField()
         let coordinator = harness.coordinator

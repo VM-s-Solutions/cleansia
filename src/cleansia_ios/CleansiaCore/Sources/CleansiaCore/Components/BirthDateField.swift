@@ -37,7 +37,7 @@ public struct BirthDateField: View {
         VStack(alignment: .leading, spacing: Spacing.xs) {
             Text(label)
                 .font(CleansiaTypography.labelMedium)
-                .foregroundColor(CleansiaColors.onSurfaceVariant)
+                .foregroundColor(isError ? CleansiaColors.error : CleansiaColors.onSurfaceVariant)
             Button {
                 showPicker = true
             } label: {
@@ -51,11 +51,11 @@ public struct BirthDateField: View {
                 }
                 .padding(Spacing.m)
                 .background(CleansiaColors.surface)
+                .clipShape(RoundedRectangle(cornerRadius: CornerRadius.small))
                 .overlay(
                     RoundedRectangle(cornerRadius: CornerRadius.small)
                         .stroke(isError ? CleansiaColors.error : CleansiaColors.outline, lineWidth: 1)
                 )
-                .clipShape(RoundedRectangle(cornerRadius: CornerRadius.small))
             }
             .buttonStyle(.plain)
 

@@ -22,6 +22,8 @@ final class AddressSectionViewModel: ViewModel {
     @Published private(set) var action: ActionState = .idle
     @Published private(set) var picked: GeocodedAddress?
     @Published private(set) var serviceAreaStatus: ServiceAreaStatus = .unknown
+    /// Shown on the address card, the thing the cleaner taps to pick again.
+    @Published private(set) var addressError: String?
 
     let saved = PassthroughSubject<Void, Never>()
 
@@ -55,10 +57,6 @@ final class AddressSectionViewModel: ViewModel {
         return parts.isEmpty ? nil : parts.joined(separator: " · ")
     }
 
-    var canSave: Bool {
-        picked != nil && !action.isSubmitting
-    }
-
     func load() async {
         state = .loading
         countries = await serviceArea.loadCountries()
@@ -76,6 +74,7 @@ final class AddressSectionViewModel: ViewModel {
 
     func applyPick(_ address: GeocodedAddress) {
         picked = address
+        addressError = Self.pickProblem(address)
         // Reset first, then check: the city lookup is a round trip, and leaving the
         // previous address's verdict on screen while it runs would show the wrong answer
         // about the new one. Android resets to Unknown on the same line.
@@ -86,9 +85,11 @@ final class AddressSectionViewModel: ViewModel {
     func save() async {
         guard case .loaded = state, !action.isSubmitting else { return }
         guard let picked else {
-            snackbar.showError(L10n.Profile.errorAddressNotPicked)
+            addressError = L10n.Profile.errorAddressNotPicked
             return
         }
+        addressError = Self.pickProblem(picked)
+        guard addressError == nil else { return }
         guard !employeeId.isBlank else {
             snackbar.showError(L10n.Profile.errorProfileNotLoaded)
             return
@@ -132,9 +133,29 @@ final class AddressSectionViewModel: ViewModel {
             action = .idle
             saved.send()
         case let .failure(error):
+            showRefusal(error)
+        }
+    }
+
+    /// The server's refusal of a street, city or postcode is the pick's problem, named on the card; anything
+    /// else is a snackbar.
+    private func showRefusal(_ error: ApiError) {
+        guard error.carries("common.required") || error.carries("address.invalid_length") else {
             action = .error(localizer.message(for: error))
             snackbar.showError(localizer.message(for: error))
+            return
         }
+        action = .idle
+        addressError = L10n.Profile.errorAddressIncomplete
+    }
+
+    /// The server's rules for the parts a geocoded pick can lack: a street of 5 to 255, a city of 2 to 100
+    /// and a postcode of 3 to 20 UTF-16 code units, trimmed as they are sent.
+    private static func pickProblem(_ address: GeocodedAddress) -> String? {
+        let complete = (5 ... 255).contains(address.street.trimmed.utf16.count)
+            && (2 ... 100).contains(address.city.trimmed.utf16.count)
+            && (3 ... 20).contains(address.zipCode.trimmed.utf16.count)
+        return complete ? nil : L10n.Profile.errorAddressIncomplete
     }
 
     private func reconstructAddress(from employee: EmployeeItem) -> GeocodedAddress? {

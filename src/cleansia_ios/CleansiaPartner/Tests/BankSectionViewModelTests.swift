@@ -5,8 +5,8 @@ import XCTest
 
 @MainActor
 final class BankSectionViewModelTests: XCTestCase {
-    private var client: FakePartnerProfileClient!
-    private var snackbar: SnackbarController!
+    var client: FakePartnerProfileClient!
+    var snackbar: SnackbarController!
 
     private let czechPayout = MyPayoutDetails(
         bankCountryId: "country-cz",
@@ -26,11 +26,11 @@ final class BankSectionViewModelTests: XCTestCase {
         ])
     }
 
-    private func makeVM() -> BankSectionViewModel {
+    func makeVM() -> BankSectionViewModel {
         BankSectionViewModel(client: client, snackbar: snackbar)
     }
 
-    private func loadedForm(_ vm: BankSectionViewModel) throws -> BankForm {
+    func loadedForm(_ vm: BankSectionViewModel) throws -> BankForm {
         try XCTUnwrap(vm.state.loadedValue, "expected loaded")
     }
 
@@ -121,34 +121,42 @@ final class BankSectionViewModelTests: XCTestCase {
     func testAnAccountWithNoIdentifierCannotBeSubmitted() async throws {
         let vm = makeVM()
         await vm.load()
-        XCTAssertFalse(try loadedForm(vm).canSubmit)
 
         await vm.save()
 
         XCTAssertNil(client.bankCommand)
+        XCTAssertEqual(try loadedForm(vm).accountError, message("validation.payout.account_number_required"))
+        XCTAssertNil(try loadedForm(vm).bankCountryError)
+        XCTAssertNil(snackbar.current, "a field error is shown on its field, not in a snackbar")
     }
 
     /// A CZ or SK bank takes the three parts; an IBAN alone is not its identifier.
     func testACzechBankTakesTheThreePartsAndAnIbanAloneDoesNotSubmit() async throws {
         let vm = makeVM()
         await vm.load()
-
         vm.update(\.iban, to: "CZ6508000000192000145399")
 
+        await vm.save()
+
         XCTAssertTrue(try loadedForm(vm).usesDomesticAccount)
-        XCTAssertFalse(try loadedForm(vm).canSubmit)
+        XCTAssertNil(client.bankCommand)
+        XCTAssertEqual(try loadedForm(vm).accountError, message("validation.payout.account_number_required"))
     }
 
     func testAnAccountNumberWithoutABankCountryCannotBeSubmitted() async throws {
         client.employeeResult = .success(EmployeeItem(id: "emp-1"))
         let vm = makeVM()
         await vm.load()
-
         vm.update(\.accountNumber, to: "5885638003")
+        vm.update(\.bankCode, to: "5500")
+
+        await vm.save()
 
         let form = try loadedForm(vm)
         XCTAssertNil(form.bankCountryId)
-        XCTAssertFalse(form.canSubmit)
+        XCTAssertNil(client.bankCommand)
+        XCTAssertEqual(form.bankCountryError, message("common.required"))
+        XCTAssertNil(form.accountError, "the account itself is complete")
     }
 
     /// Every field on the generated command is optional with a `nil` default, so a dropped
@@ -221,7 +229,7 @@ final class BankSectionViewModelTests: XCTestCase {
         )
     }
 
-    func testSaveFailureSnackbarsAndReturnsToIdle() async {
+    func testARefusedAccountIsNamedUnderTheAccountField() async throws {
         client.bankUpdateResult = .failure(
             ApiError(code: "validation.payout.invalid_account_number", httpStatus: 400)
         )
@@ -233,7 +241,11 @@ final class BankSectionViewModelTests: XCTestCase {
         await vm.save()
 
         guard case .idle = vm.action else { return XCTFail("expected idle after a rejected save") }
-        XCTAssertNotNil(snackbar.current)
+        XCTAssertEqual(try loadedForm(vm).accountError, message("validation.payout.invalid_account_number"))
+        XCTAssertNil(snackbar.current)
+
+        vm.update(\.accountNumber, to: "5885638003")
+        XCTAssertNil(try loadedForm(vm).accountError, "the error clears as the number is fixed")
     }
 
     func testSaveWithoutALoadedEmployeeIdSnackbarsInsteadOfCallingTheClient() async {
@@ -258,7 +270,7 @@ final class BankSectionViewModelTests: XCTestCase {
 
     // MARK: A bank outside CZ and SK is entered as one IBAN (owner ruling 2026-10-02)
 
-    private func loadWithEuropeanBanks() async -> BankSectionViewModel {
+    func loadWithEuropeanBanks() async -> BankSectionViewModel {
         client.allCountriesResult = .success([
             CountryListItem(id: "country-cz", isoCode: "CZE", isoAlpha2: "CZ", name: "Czech Republic"),
             CountryListItem(id: "country-sk", isoCode: "SVK", isoAlpha2: "SK", name: "Slovakia"),
@@ -277,11 +289,17 @@ final class BankSectionViewModelTests: XCTestCase {
 
         vm.update(\.bankCountryId, to: "country-de")
         vm.update(\.accountNumber, to: "5885638003")
+        vm.update(\.bankCode, to: "5500")
         XCTAssertFalse(try loadedForm(vm).usesDomesticAccount)
-        XCTAssertFalse(try loadedForm(vm).canSubmit, "the parts are not this country's identifier")
+        await vm.save()
+        XCTAssertNil(client.bankCommand, "the parts are not this country's identifier")
+        XCTAssertTrue(try loadedForm(vm).ibanChecked)
+        XCTAssertEqual(try loadedForm(vm).ibanProblem, .invalid)
 
         vm.update(\.iban, to: "DE89370400440532013000")
-        XCTAssertTrue(try loadedForm(vm).canSubmit)
+        await vm.save()
+        XCTAssertEqual(client.bankCommand?.iban, "DE89370400440532013000")
+        XCTAssertNil(client.bankCommand?.accountNumber)
     }
 
     /// No country picked yet, or a country the list cannot name, keeps the three parts.

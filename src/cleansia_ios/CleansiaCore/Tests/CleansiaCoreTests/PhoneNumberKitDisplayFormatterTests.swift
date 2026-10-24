@@ -48,6 +48,16 @@ final class PhoneNumberKitDisplayFormatterTests: XCTestCase {
         "728089247"
     ]
 
+    /// The server keeps a number only in its international form and only when libphonenumber takes it.
+    func testANumberIsValidOnlyInternationalAndWhole() {
+        for valid in ["+420777123456", "+421905123456", "+420 728 089 247"] {
+            XCTAssertTrue(PhoneNumberKitDisplayFormatter.isValidNumber(valid), valid)
+        }
+        for invalid in ["777123456", "+", "+4201", "", "+1", "420777123456"] {
+            XCTAssertFalse(PhoneNumberKitDisplayFormatter.isValidNumber(invalid), invalid)
+        }
+    }
+
     func testEngineWiredToTheRealFormatterKeepsTheWireFormat() {
         let engine = PhoneMaskEngine(formatter: formatter)
         XCTAssertEqual(engine.reformat("+420 728089247").wireValue, "+420728089247")

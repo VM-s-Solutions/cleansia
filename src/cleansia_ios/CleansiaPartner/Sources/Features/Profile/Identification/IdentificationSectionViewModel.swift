@@ -5,16 +5,40 @@ import Foundation
 
 @MainActor
 final class IdentificationSectionViewModel: ViewModel {
+    /// Each error clears when its own field changes, whichever binding wrote it. A write of the value
+    /// already there fixes nothing, so it keeps the error.
     struct Loaded: Equatable {
         var employeeId: String
-        var nationalityId: String?
-        var passportId: String
-        var businessCountryId: String?
-        var registrationNumber: String
+        var nationalityId: String? {
+            didSet { if nationalityId != oldValue { nationalityError = nil } }
+        }
+
+        var passportId: String {
+            didSet { if passportId != oldValue { passportError = nil } }
+        }
+
+        var businessCountryId: String? {
+            didSet { if businessCountryId != oldValue { businessCountryError = nil } }
+        }
+
+        var registrationNumber: String {
+            didSet { if registrationNumber != oldValue { registrationNumberError = nil } }
+        }
+
         /// Display only. An operator may onboard a company by hand, and what the server holds for
         /// such a row is shown, never edited or sent from here — a cleaner contracts as a natural
         /// person and the server refuses anything else on this write.
         var storedLegalEntityName: String?
+        var isLegalEntity = false
+        var nationalityError: String?
+        var passportError: String?
+        var businessCountryError: String?
+        var registrationNumberError: String?
+
+        /// The step stays incomplete without a company's legal name, and only an operator can add one.
+        var legalEntityNameError: String? {
+            isLegalEntity && (storedLegalEntityName ?? "").isBlank ? L10n.Profile.errorLegalEntityNameMissing : nil
+        }
     }
 
     @Published private(set) var state: UiState<Void> = .loading
@@ -67,7 +91,8 @@ final class IdentificationSectionViewModel: ViewModel {
                 passportId: employee.passportId ?? "",
                 businessCountryId: employee.countryId,
                 registrationNumber: employee.registrationNumber ?? "",
-                storedLegalEntityName: employee.entityType == ._2 ? employee.legalEntityName : nil
+                storedLegalEntityName: employee.entityType == ._2 ? employee.legalEntityName : nil,
+                isLegalEntity: employee.entityType == ._2
             )
             state = .loaded(())
             await loadFieldLabels(for: employee.countryId)
@@ -98,22 +123,8 @@ final class IdentificationSectionViewModel: ViewModel {
             snackbar.showError(L10n.Profile.errorProfileNotLoaded)
             return
         }
-        guard let nationalityId = form.nationalityId, !nationalityId.isBlank else {
-            snackbar.showError(L10n.Profile.errorNationalityRequired)
-            return
-        }
-        guard !form.passportId.isBlank else {
-            snackbar.showError(L10n.Profile.errorPassportRequired)
-            return
-        }
-        guard let businessCountryId = form.businessCountryId, !businessCountryId.isBlank else {
-            snackbar.showError(L10n.Profile.errorBusinessCountryRequired)
-            return
-        }
-        guard !form.registrationNumber.isBlank else {
-            snackbar.showError(L10n.Profile.errorRegistrationNumberRequired)
-            return
-        }
+        guard checkFields(), let nationalityId = form.nationalityId,
+              let businessCountryId = form.businessCountryId else { return }
 
         action = .submitting
         let command = UpdateIdentificationInfoCommand(
@@ -130,9 +141,54 @@ final class IdentificationSectionViewModel: ViewModel {
             action = .idle
             saved.send()
         case let .failure(error):
+            showRefusal(error)
+        }
+    }
+
+    private func checkFields() -> Bool {
+        form.nationalityError = (form.nationalityId ?? "").isBlank ? L10n.Profile.errorNationalityRequired : nil
+        form.passportError = Self.passportProblem(form.passportId)
+        form.businessCountryError = (form.businessCountryId ?? "").isBlank
+            ? L10n.Profile.errorBusinessCountryRequired
+            : nil
+        form.registrationNumberError = form.registrationNumber.isBlank
+            ? L10n.Profile.errorRegistrationNumberRequired
+            : nil
+        return [form.nationalityError, form.passportError, form.businessCountryError, form.registrationNumberError]
+            .allSatisfy { $0 == nil }
+    }
+
+    /// A refusal only the server can make is named under the field it is about; anything else is a snackbar.
+    private func showRefusal(_ error: ApiError) {
+        let registration = Self.registrationNumberRefusals.first { error.carries($0) }
+        let passport = error.carries(Self.passportLengthRefusal) ? Self.passportLengthRefusal : nil
+        guard registration != nil || passport != nil else {
             action = .error(localizer.message(for: error))
             snackbar.showError(localizer.message(for: error))
+            return
         }
+        form.registrationNumberError = registration.map { localizer.message(for: ApiError(code: $0)) }
+        form.passportError = passport.map { localizer.message(for: ApiError(code: $0)) }
+        action = .idle
+    }
+
+    private static let passportLengthRefusal = "validation.passport_id.invalid_length"
+
+    /// The country's number format, and the business register's answers about the number.
+    private static let registrationNumberRefusals = [
+        "validation.registration_number.invalid_format",
+        "validation.registration_number.not_registered",
+        "employee.business_ceased",
+        "employee.trade_licence_inactive"
+    ]
+
+    /// The server's passport rule: 5 to 20 UTF-16 code units, trimmed as it is sent.
+    private static func passportProblem(_ passport: String) -> String? {
+        let value = passport.trimmed
+        if value.isEmpty { return L10n.Profile.errorPassportRequired }
+        return (5 ... 20).contains(value.utf16.count)
+            ? nil
+            : ApiErrorLocalizer().message(for: ApiError(code: passportLengthRefusal))
     }
 }
 

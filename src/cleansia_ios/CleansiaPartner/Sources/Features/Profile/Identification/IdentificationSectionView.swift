@@ -53,17 +53,20 @@ struct IdentificationSectionView: View {
                     selectedId: $vm.form.nationalityId,
                     options: vm.countryOptions,
                     label: L10n.Profile.nationality,
+                    errorText: vm.form.nationalityError,
                     placeholder: L10n.Profile.noData,
                     searchable: true
                 )
                 CleansiaTextField(
                     value: $vm.form.passportId,
-                    label: L10n.Profile.passport
+                    label: L10n.Profile.passport,
+                    errorText: vm.form.passportError
                 )
                 CleansiaDropdown(
                     selectedId: $vm.form.businessCountryId,
                     options: vm.countryOptions,
                     label: L10n.Profile.businessCountry,
+                    errorText: vm.form.businessCountryError,
                     placeholder: L10n.Profile.noData,
                     searchable: true
                 )
@@ -73,15 +76,18 @@ struct IdentificationSectionView: View {
                     // "Registration number" is correct everywhere and precise nowhere, which is
                     // exactly what a fallback should be — flattening every country to it would have
                     // cost CZ and SK the term their own registries use.
-                    label: vm.fieldLabels?.registrationNumberLabel ?? L10n.Profile.registrationNumber
+                    label: vm.fieldLabels?.registrationNumberLabel ?? L10n.Profile.registrationNumber,
+                    errorText: vm.form.registrationNumberError
                 )
                 // A row an operator onboarded as a company shows its stored legal name locked, the
                 // way the personal section shows the email: the server holds it and this surface
-                // must not hide it, but nothing typed here could ever be saved.
-                if let storedLegalEntityName = vm.form.storedLegalEntityName {
+                // must not hide it, but nothing typed here could ever be saved. A blank one says why
+                // the step cannot be finished here.
+                if vm.form.isLegalEntity {
                     CleansiaTextField(
-                        value: .constant(storedLegalEntityName),
+                        value: .constant(vm.form.storedLegalEntityName ?? ""),
                         label: L10n.Profile.legalEntityName,
+                        errorText: vm.form.legalEntityNameError,
                         enabled: false
                     )
                 }

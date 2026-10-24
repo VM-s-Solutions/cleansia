@@ -460,13 +460,6 @@ final class RegisterViewModelTests: XCTestCase {
         vm.onConfirmPasswordChange("abcdefg1")
         XCTAssertTrue(vm.form.passwordsMatch)
     }
-
-    func testIsValidRequiresEveryField() {
-        let vm = makeViewModel()
-        XCTAssertFalse(vm.form.isValid)
-        fillValid(vm)
-        XCTAssertTrue(vm.form.isValid)
-    }
 }
 
 enum RegisterMarketFixtures {

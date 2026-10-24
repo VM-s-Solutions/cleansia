@@ -423,6 +423,22 @@ extension L10n {
             localized("profile_error_birth_date_required")
         }
 
+        static var errorMinAge: String {
+            localized("profile_error_min_age")
+        }
+
+        static var errorNameTooLong: String {
+            localized("profile_error_name_too_long")
+        }
+
+        static var errorPhoneRequired: String {
+            localized("profile_error_phone_required")
+        }
+
+        static var errorPhoneInvalid: String {
+            localized("profile_error_phone_invalid")
+        }
+
         static var errorProfileNotLoaded: String {
             localized("profile_error_not_loaded")
         }
@@ -451,8 +467,16 @@ extension L10n {
             localized("profile_error_registration_number_required")
         }
 
+        static var errorLegalEntityNameMissing: String {
+            localized("profile_error_legal_entity_name_missing")
+        }
+
         static var errorAddressNotPicked: String {
             localized("profile_error_address_not_picked")
+        }
+
+        static var errorAddressIncomplete: String {
+            localized("profile_error_address_incomplete")
         }
 
         static var errorCountryNotServiced: String {

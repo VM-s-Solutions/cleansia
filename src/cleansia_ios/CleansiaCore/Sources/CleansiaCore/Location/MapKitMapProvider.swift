@@ -164,8 +164,11 @@ enum FullBleedMapGeometry {
     /// pin lands in the visible UPPER sliver above the sheet — the
     /// `MapBackdrop` `EdgeInsets(0,0,sheetPeekPx,0)` parity
     /// (OrderDetailScreen.kt:273-281) without depending on async layout.
-    static func region(for coordinate: Coordinate) -> MKCoordinateRegion {
-        let southwardShift = spanDelta * bottomCoverFraction / 2
+    static func region(
+        for coordinate: Coordinate,
+        coveredFraction: CLLocationDegrees = bottomCoverFraction
+    ) -> MKCoordinateRegion {
+        let southwardShift = spanDelta * coveredFraction / 2
         let center = CLLocationCoordinate2D(
             latitude: coordinate.latitude - southwardShift,
             longitude: coordinate.longitude
@@ -187,15 +190,20 @@ struct FullBleedOrderMap: UIViewRepresentable {
     func makeUIView(context: Context) -> MKMapView {
         makeMapView(
             placement: context.coordinator,
-            coveredHeight: coveredHeight(sheetTop: context.environment.snapSheetTop)
+            coveredHeight: coveredHeight(sheetTop: context.environment.snapSheetTop),
+            besideSheet: context.environment.snapSheetBeside
         )
     }
 
-    func makeMapView(placement: Placement = Placement(), coveredHeight: CGFloat = 0) -> MKMapView {
+    func makeMapView(
+        placement: Placement = Placement(),
+        coveredHeight: CGFloat = 0,
+        besideSheet: Bool = false
+    ) -> MKMapView {
         let mapView = MKMapView()
         mapView.showsUserLocation = false
         CleansiaMapStyle.apply(to: mapView)
-        apply(to: mapView, placement: placement, coveredHeight: coveredHeight)
+        apply(to: mapView, placement: placement, coveredHeight: coveredHeight, besideSheet: besideSheet)
         return mapView
     }
 
@@ -203,7 +211,8 @@ struct FullBleedOrderMap: UIViewRepresentable {
         apply(
             to: mapView,
             placement: context.coordinator,
-            coveredHeight: coveredHeight(sheetTop: context.environment.snapSheetTop)
+            coveredHeight: coveredHeight(sheetTop: context.environment.snapSheetTop),
+            besideSheet: context.environment.snapSheetBeside
         )
     }
 
@@ -213,19 +222,28 @@ struct FullBleedOrderMap: UIViewRepresentable {
     }
 
     /// The region is centred on the map's whole bounds, as it always was, so the pin's place on screen
-    /// depends neither on the safe area nor on the sheet; it is set again only for a new coordinate, so a
-    /// sheet drag does not undo a pan. Then the bottom margin follows the sheet's edge, which lifts Apple's
-    /// logo and its *Legal* link above the sheet (MapKit's terms) and moves nothing else. The margins ignore
-    /// the safe area: the sheet's cover is measured from the map's own bottom edge.
-    func apply(to mapView: MKMapView, placement: Placement = Placement(), coveredHeight: CGFloat = 0) {
+    /// depends neither on the safe area nor on the sheet; it is set again only for a new coordinate, or when the
+    /// sheet moves beside the map or back over it, so a sheet drag does not undo a pan. Over the map the pin is
+    /// lifted into the strip above the resting sheet; beside it, nothing covers the map and the pin is at its
+    /// centre. Then the bottom margin follows the sheet's edge, which lifts Apple's logo and its *Legal* link
+    /// above the sheet (MapKit's terms) and moves nothing else. The margins ignore the safe area: the sheet's
+    /// cover is measured from the map's own bottom edge.
+    func apply(
+        to mapView: MKMapView,
+        placement: Placement = Placement(),
+        coveredHeight: CGFloat = 0,
+        besideSheet: Bool = false
+    ) {
         mapView.delegate = CleansiaMapMarker.delegate
         let pin = CLLocationCoordinate2D(latitude: coordinate.latitude, longitude: coordinate.longitude)
-        if placement.coordinate != coordinate {
+        if placement.coordinate != coordinate || placement.besideSheet != besideSheet {
             placement.coordinate = coordinate
+            placement.besideSheet = besideSheet
             placement.cover = 0
             mapView.insetsLayoutMarginsFromSafeArea = false
             mapView.layoutMargins = .zero
-            mapView.setRegion(FullBleedMapGeometry.region(for: coordinate), animated: false)
+            let covered = besideSheet ? 0 : FullBleedMapGeometry.bottomCoverFraction
+            mapView.setRegion(FullBleedMapGeometry.region(for: coordinate, coveredFraction: covered), animated: false)
             mapView.removeAnnotations(mapView.annotations)
             let annotation = MKPointAnnotation()
             annotation.coordinate = pin
@@ -237,7 +255,7 @@ struct FullBleedOrderMap: UIViewRepresentable {
         guard mapView.bounds.height > 0 else {
             DispatchQueue.main.async { [weak mapView] in
                 guard let mapView, mapView.bounds.height > 0 else { return }
-                apply(to: mapView, placement: placement, coveredHeight: coveredHeight)
+                apply(to: mapView, placement: placement, coveredHeight: coveredHeight, besideSheet: besideSheet)
             }
             return
         }
@@ -255,6 +273,7 @@ struct FullBleedOrderMap: UIViewRepresentable {
     /// What this map last applied, so an update re-applies only what changed.
     final class Placement {
         var coordinate: Coordinate?
+        var besideSheet = false
         var cover: CGFloat = 0
     }
 }

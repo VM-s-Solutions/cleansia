@@ -55,6 +55,18 @@ public enum SnapSheetOrnament {
     }
 }
 
+/// The column the sheet becomes beside its backdrop, which keeps the rest. It stands there only in a wide, short
+/// container: wider than it is tall, with room for a map beside the column. Anywhere else the sheet lies over the
+/// backdrop. Decided by the container's size, never by the device.
+enum SnapSheetColumn {
+    static let width: CGFloat = 440
+    static let minimumContainerWidth: CGFloat = 700
+
+    static func standsBeside(in container: CGSize) -> Bool {
+        container.width > container.height && container.width >= minimumContainerWidth
+    }
+}
+
 public enum SnapResolver {
     static func sheetTop(for anchor: SnapAnchor, containerHeight: CGFloat) -> CGFloat {
         containerHeight * (1 - anchor.coveredFraction)
@@ -123,35 +135,43 @@ public struct SnapSheet<Background: View, Ornament: View, Content: View>: View {
     public var body: some View {
         GeometryReader { geometry in
             let height = geometry.size.height
+            let beside = SnapSheetColumn.standsBeside(in: geometry.size)
             let restingTop = SnapResolver.sheetTop(for: anchor, containerHeight: height)
-            let currentTop = (restingTop + dragOffset)
+            let currentTop = beside ? 0 : (restingTop + dragOffset)
                 .clamped(to: topBound(height) ... bottomBound(height))
+            let columnInset = beside ? SnapSheetColumn.width + geometry.safeAreaInsets.trailing : 0
 
             ZStack(alignment: .top) {
                 background
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    .padding(.trailing, columnInset)
                     .ignoresSafeArea()
                     // Where the sheet's top edge sits IN THE BACKDROP'S OWN COORDINATES. The backdrop
                     // ignores the safe area, so its origin is the top of the screen, while `currentTop`
                     // is measured from the safe-area top — the inset converts between the two. Without
                     // this a backdrop cannot lay anything out against the sheet without silently
                     // guessing, and a guess is only visibly wrong at the anchors where the uncovered
-                    // strip is small.
-                    .environment(\.snapSheetTop, currentTop + geometry.safeAreaInsets.top)
+                    // strip is small. Beside the backdrop the sheet covers none of it, so its top is the safe
+                    // area's foot: 0 means no sheet at all, and a backdrop laid out against it collapses.
+                    .environment(\.snapSheetTop, (beside ? height : currentTop) + geometry.safeAreaInsets.top)
                     .environment(\.snapSheetSafeTop, geometry.safeAreaInsets.top)
+                    .environment(\.snapSheetBeside, beside)
 
-                sheet(bottomOverhang: currentTop)
-                    .frame(height: height)
+                sheet(bottomOverhang: currentTop, beside: beside)
+                    .frame(width: beside ? SnapSheetColumn.width : geometry.size.width, height: height)
+                    .frame(maxWidth: .infinity, alignment: .trailing)
                     .offset(y: currentTop)
-                    .gesture(dragGesture(containerHeight: height))
+                    .gesture(dragGesture(containerHeight: height), including: beside ? .subviews : .all)
 
-                ornament
-                    .frame(width: ornamentSize, height: ornamentSize)
-                    .offset(y: SnapSheetOrnament.offsetY(sheetTop: currentTop, size: ornamentSize))
-                    .allowsHitTesting(false)
-                    .padding(.trailing, Spacing.m)
-                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topTrailing)
-                    .clipped()
+                if !beside {
+                    ornament
+                        .frame(width: ornamentSize, height: ornamentSize)
+                        .offset(y: SnapSheetOrnament.offsetY(sheetTop: currentTop, size: ornamentSize))
+                        .allowsHitTesting(false)
+                        .padding(.trailing, Spacing.m)
+                        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topTrailing)
+                        .clipped()
+                }
             }
             .animation(.interactiveSpring(response: 0.35, dampingFraction: 0.85), value: anchor)
             .animation(.interactiveSpring(response: 0.35, dampingFraction: 0.85), value: dragOffset)
@@ -161,9 +181,11 @@ public struct SnapSheet<Background: View, Ornament: View, Content: View>: View {
     /// The full-height frame hangs `bottomOverhang` points below the container
     /// once offset; insetting the content by the same amount keeps the bottom
     /// row (the sticky footer) pinned inside the visible area at every anchor.
-    private func sheet(bottomOverhang: CGFloat) -> some View {
+    private func sheet(bottomOverhang: CGFloat, beside: Bool) -> some View {
         VStack(spacing: 0) {
-            DragHandle(anchor: $anchor)
+            if !beside {
+                DragHandle(anchor: $anchor)
+            }
             content
                 .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
         }
@@ -175,6 +197,7 @@ public struct SnapSheet<Background: View, Ornament: View, Content: View>: View {
                 topTrailingRadius: CornerRadius.large
             )
             .fill(CleansiaColors.surface)
+            .ignoresSafeArea(edges: beside ? [.top, .bottom, .trailing] : [])
         )
         // FLATTEN BEFORE SHADOWING. `.shadow` applies to every opaque thing drawn in the subtree, not
         // to the composite silhouette — so without this the sheet's shadow was re-drawn around each
@@ -292,6 +315,18 @@ private struct SnapSheetTopKey: EnvironmentKey {
 
 private struct SnapSheetSafeTopKey: EnvironmentKey {
     static let defaultValue: CGFloat = 0
+}
+
+private struct SnapSheetBesideKey: EnvironmentKey {
+    static let defaultValue = false
+}
+
+extension EnvironmentValues {
+    /// Whether the sheet stands beside the backdrop as a column rather than over it.
+    var snapSheetBeside: Bool {
+        get { self[SnapSheetBesideKey.self] }
+        set { self[SnapSheetBesideKey.self] = newValue }
+    }
 }
 
 public extension EnvironmentValues {

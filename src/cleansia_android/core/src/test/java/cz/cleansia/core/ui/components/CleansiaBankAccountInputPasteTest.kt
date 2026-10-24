@@ -79,7 +79,7 @@ class CleansiaBankAccountInputPasteTest {
     @Test
     fun `whitespace of every kind is ignored`() {
         assertSpreadFromEveryBox(Spread("19", "2000145399", "0800"), " 19 - 2000145399 / 0800 ")
-        assertSpreadFromEveryBox(Spread("19", "2000145399", "0800"), "19 - 2000145399 / 0800")
+        assertSpreadFromEveryBox(Spread("19", "2000145399", "0800"), "19\u00A0-\u00A02000145399\u202F/\u202F0800")
         assertSpreadFromEveryBox(Spread("", "12321414", "3545"), "12321414 /\n3545")
     }
 

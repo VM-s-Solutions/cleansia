@@ -141,21 +141,40 @@ request also run on pushes to `master`, path-scoped except for the secret scan.
 
 ## Runners and images {#runners}
 
-All 25 Linux `runs-on` declarations request `ubuntu-26.04`, and `ios-ci.yml` requests `macos-latest`.
-The Linux jobs pin their Ubuntu release and the macOS job does not pin its macOS one; none uses a
-self-hosted or larger runner. A new workflow either joins one of these two labels or says why not.
+All 25 Linux `runs-on` declarations request `ubuntu-26.04`. `ios-ci.yml` requests `macos-26` for its
+required `build` job and `xcode-27` for its `xcode-27-readiness` job. Every job names an exact image
+rather than a `-latest` label, and none uses a self-hosted or larger runner. A new workflow either joins
+one of these labels or says why not.
 
 - **Which image a label resolved to** is printed only in the job log's *Runner Image* group (`Image:`
   and `Version:`). The repository keeps logs for one day, so read it within 24 hours. The jobs API
   returns only the requested label.
-- **iOS CI picks its tools at run time.** The newest installed Xcode (`ls -d /Applications/Xcode*.app |
-  sort -V | tail -1`), and the first available iPhone simulator.
+- **iOS CI pins its Xcode.** `build` selects the Xcode whose `xcodebuild -version` reports the version in
+  `src/cleansia_ios/.xcode-version`, 26.3, the Xcode that archives the TestFlight builds, and fails with
+  an `::error::` naming the installed ones when the image has none. It matches the reported version, not
+  the app's name, because an image may name an app by its release stage. `macos-26` ships it as
+  `/Applications/Xcode_26.3.app` (17C529), beside 26.0.1 to 26.6, the image default; `macos-latest` moves
+  to a new macOS and its Xcode set on GitHub's schedule, which is why `build` no longer uses it. The
+  simulator is still the first available iPhone. The release lanes select the same Xcode, so moving the
+  pin moves both. → [Optimizer-only crashes](/mobile-app/overview#optimizer-only-crashes)
+- **The optimised passes take longer than the Debug ones they follow.** Measured on 2026-10-24 on the archiving
+  Mac (Apple M4), in the job's order and one DerivedData: the partner suite took 67 s in Debug and 137 s
+  optimised, the customer suite 118 s and 614 s, the latter with the machine shared by other builds
+  (246 s in a quieter run). GitHub's runners are slower; the first runs show the real cost against the
+  job's 120-minute ceiling.
+- **`xcode-27` is a preview image** ([actions/runner-images#14404](https://github.com/actions/runner-images/issues/14404)):
+  macOS 27, Xcode 27.0, 27.1 and a 27.2 beta, one iOS 27.0 simulator runtime, and no iPhone Duo device.
+  `xcode-27-readiness` selects Xcode 27.1 the same way and generates, builds and runs the three Debug
+  suites, as an early signal of what Swift 6.4 and the iOS 27.1 SDK break. It has `continue-on-error` and
+  is not keyed `build`, so it never blocks a merge. It goes when `.xcode-version` moves to 27.1, which needs
+  an archiving Mac on macOS Tahoe 26.6 or later, and `build` moves to an image that ships it.
 - **Observed on 2026-10-11**, in runs 38098170687 and 38098170722 at `64dfed7`:
   - `ubuntu-latest` resolved to ubuntu-24.04, version 20261004.327.1;
   - `macos-latest` resolved to macos-26-arm64, version 20260907.0351.1, with Xcode 26.6 (17F113) and an iPhone 17 Pro simulator.
 
-  A maintainer's Mac ran Xcode 26.3 that day, with the same SwiftFormat, SwiftLint, xcodegen,
-  xcbeautify and openapi-generator versions as CI. CI now pins XcodeGen **2.46.0** and xcbeautify
+  A maintainer's Mac ran Xcode 26.3 that day, the Xcode that archives the TestFlight builds, which is the
+  gap the pin closes; it had the same SwiftFormat, SwiftLint, xcodegen, xcbeautify and
+  openapi-generator versions as CI. CI now pins XcodeGen **2.46.0** and xcbeautify
   **3.2.1**, alongside SwiftFormat **0.60.1**, SwiftLint **0.65.0** and openapi-generator **7.10.0**.
   All five downloads are SHA-256 checked before extraction or installation; the four macOS tools
   resolve from `$RUNNER_TEMP/pinned-tools`, with XcodeGen's sibling setting presets preserved.

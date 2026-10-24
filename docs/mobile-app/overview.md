@@ -656,31 +656,132 @@ Two rules follow from it:
 - **Prove an iOS crash fix in an optimised build made with the archiving Xcode.** A green Debug run says
   nothing about this class of bug.
 
-### Shipping to TestFlight
+**The guard.** `src/cleansia_ios/.xcode-version` pins the Xcode that archives TestFlight builds, 26.3.
+`ios-ci.yml` selects that Xcode by the version `xcodebuild -version` reports and fails if its image has
+none. After the Debug suites it runs the partner and customer suites again with
+`SWIFT_OPTIMIZATION_LEVEL=-O SWIFT_COMPILATION_MODE=wholemodule`, the two Swift settings Release changes,
+and `TEST_RUNNER_MallocScribble=1`, which fills freed memory so that a use-after-free faults instead of
+reading what was left behind. The release lanes select the same Xcode and run the shipped app's suite the
+same way before they ask TestFlight for a build number ([Shipping to TestFlight](#shipping-to-testflight)).
+Debug stays the configuration on purpose: the tests need the `#if DEBUG` hooks and `@testable`, and a
+customer Release build without a Stripe key is a build error. Moving to another compiler means moving the
+pin, and CI and the lanes follow it together.
 
-`fastlane` lanes run **on the owner's Mac** (they reuse the working-tree Stripe key,
-`GoogleService-Info.plist` and Xcode-managed signing — no secrets in CI):
+It was proved against the bug it guards, on Xcode 26.3, on 2026-10-24. On an unfixed copy of the tree
+(`0f26b0207`), the optimised `DashboardDataTests` run ended `** TEST FAILED **`: all five tests crashed
+the host with `EXC_BAD_ACCESS` in `specialized Set.contains(_:)`, called from `DashboardData.nextJob(in:)`
+at the old line 89. The Debug run of the same tests passed, so did the optimised run on the fixed line,
+and the simulator's allocator faulted even without MallocScribble.
+
+To run it locally, the same command CI runs:
 
 ```bash
 cd src/cleansia_ios
-bundle exec fastlane customer   # Customer → TestFlight
-bundle exec fastlane partner    # Partner  → TestFlight
-bundle exec fastlane all
+set -o pipefail
+TEST_RUNNER_MallocScribble=1 xcodebuild -workspace Cleansia.xcworkspace -scheme CleansiaPartner \
+  -destination 'platform=iOS Simulator,name=iPhone 17' \
+  SWIFT_OPTIMIZATION_LEVEL=-O SWIFT_COMPILATION_MODE=wholemodule test | xcbeautify
 ```
 
-Each lane regenerates the OpenAPI clients and both `.xcodeproj`, picks the next build number from
-TestFlight, archives Release through `Cleansia.xcworkspace` with automatic signing, and uploads.
-The workspace matters: it builds against the committed `Package.resolved` pins, the versions CI
-builds, where an app's `.xcodeproj` alone re-resolves its packages past them. See
+- **A crashed test host reads like an empty run in `xcbeautify`.** It prints `Executed 0 tests, with 0
+  failures` above `** TEST FAILED **`. The raw log says *Restarting after unexpected exit, crash, or test
+  timeout*, which CI's failure group prints, and the crashing frame is in the result bundle and in
+  `~/Library/Logs/DiagnosticReports`.
+- **The tested binary is close to the archive, not identical.** `-enable-testing` keeps internal symbols
+  exported, which blocks some dead-code elimination and devirtualisation. The 2026-10-22 miscompile
+  survives it.
+- **A test that reads an answer from an off-main fake waits for that answer.** The quote, catalogue and
+  plans fakes answer off the main actor, so a fixed number of `Task.yield()` calls is a race that Debug
+  happens to win and the optimised pass loses: sixteen customer tests failed that way at first. Wait with
+  `eventually { … }` on the state the test reads, as those tests now do, and keep fixed yields for
+  assertions that nothing happened.
+
+### Shipping to TestFlight
+
+`fastlane` lanes run **on the owner's Mac** (they reuse the working-tree Stripe key,
+`GoogleService-Info.plist` and Xcode-managed signing — no secrets in CI), and only from a clone outside
+`~/Desktop`, `~/Documents` and `~/Downloads`, because the pre-archive tests read repo files the
+simulator cannot open there:
+
+```bash
+cd src/cleansia_ios
+FASTLANE_SKIP_DOCS=1 bundle exec fastlane partner api_base_url:https://api-cleansia-partner-mobile-weu-dev.azurewebsites.net
+FASTLANE_SKIP_DOCS=1 bundle exec fastlane customer api_base_url:https://api-cleansia-customer-mobile-weu-dev.azurewebsites.net
+FASTLANE_SKIP_DOCS=1 bundle exec fastlane preflight app:partner   # the checks and the tests, no upload
+```
+
+**Pass `api_base_url:` with the DEV host for every build while production has no DNS.** Without it the
+build calls the production host and reaches no backend. `all` ships both apps but refuses the option,
+because the two apps call different hosts, so use the two lanes.
+
+Each lane, in order:
+
+1. refuses an app whose `Firebase/GoogleService-Info.plist` is missing, which would ship without push
+   and without crash reports;
+2. refuses a clone under the three protected folders, and selects the Xcode in `.xcode-version`
+   ([the guard](#optimizer-only-crashes));
+3. regenerates the OpenAPI clients and both `.xcodeproj`;
+4. refuses uncommitted or untracked changes under `src/cleansia_ios` and the mobile specs, checked after
+   the regeneration so that a stale committed `Info.plist` counts. `allow_dirty:true` overrides it; such
+   a build is stamped `<sha>-dirty` and never tagged. Gitignored owner files never count;
+5. runs the app's suite optimised, the way CI does. A failure stops the lane before anything reaches App
+   Store Connect;
+6. picks the next build number from TestFlight and archives Release through `Cleansia.xcworkspace` with
+   automatic signing, with the commit and branch stamped into `Info.plist` as `CleansiaGitCommit` and
+   `CleansiaGitBranch`, and stops if the exported app's `Info.plist` names any other commit;
+7. uploads the archive's dSYMs to Crashlytics ([Crash reporting](#crash-reporting));
+8. uploads to TestFlight with *What to Test* set to the bundle id, version and build, the commit and
+   branch, the API host the exported app calls and the `xcodebuild -version` line;
+9. tags the commit `ios/<app>/<version>-<build>`, annotated with the same notes, and pushes the tag only
+   when the commit is already on a remote branch: this repository is public, so a tag would publish the
+   commits it points at. Otherwise the tag stays local and the lane prints the push command. A failed
+   push only warns, because the build is already up.
+
+`preflight` stops after step 5 and calls nothing in App Store Connect. The workspace matters: it builds
+against the committed `Package.resolved` pins, the versions CI builds, where an app's `.xcodeproj` alone
+re-resolves its packages past them. Prefix the lanes with `FASTLANE_SKIP_DOCS=1`, or fastlane rewrites
+the hand-written `fastlane/README.md`, and the next run refuses the dirty tree. See
 `src/cleansia_ios/fastlane/README.md`.
+
+To find the source of a TestFlight build, read `CleansiaGitCommit` from its `Info.plist` or *What to
+Test*, or `git show ios/partner/<version>-<build>`.
 
 By default an upload is a **production** build: Release calls `api-partner-mobile.cleansia.cz` or
 `api-customer-mobile.cleansia.cz` ([Build types](#build-types-and-where-the-base-url-comes-from)), so the
 `GoogleService-Info.plist` on the Mac must be the production Firebase project's. A lane given
 `api_base_url:` calls that host instead (`src/cleansia_ios/fastlane/README.md`); the export still signs
 in the production APNs entitlement, so Live Activity pushes that the DEV backend sends through the APNs
-sandbox do not reach such a build. iOS has no gate like
-Android's: an app built without the plist runs, without push (`GoogleServicePlist.isPresent`).
+sandbox do not reach such a build. Outside the lanes there is no such gate: an app built without the
+plist runs, without push and without crash reporting (`GoogleServicePlist.isPresent`).
+
+### Crash reporting {#crash-reporting}
+
+Both iOS apps report crashes to **Firebase Crashlytics**, the `FirebaseCrashlytics` product of the
+firebase-ios-sdk package both apps already pin (11.15.0). Android and the backend report to Sentry. iOS
+uses Crashlytics because both apps already ship Firebase and its `GoogleService-Info.plist`, so it needed
+no new package, DSN or token (decided 2026-10-24,
+[ADR-0048's later amendment](/decisions/adr-0048#q-obs-01-ios)).
+
+- **Only where Firebase is configured.** Crashlytics starts inside `FirebaseApp.configure()`, which the
+  app delegates call only when the bundle holds `GoogleService-Info.plist`. CI has none, so CI builds
+  stay inert, like Android's Sentry without a DSN.
+- **Never from a Debug build.** Each app delegate switches collection off under `#if DEBUG` and on
+  otherwise, on every launch, because the SDK persists the setting and a Debug install shares its data
+  container with a TestFlight install of the same app. Simulator runs, including the lanes' optimised
+  test run, send nothing.
+- **A report is sent on the next launch.** The SDK writes the report when the app crashes and sends it
+  once the app is opened again and stays up long enough. A crash before the first run-loop turn is sent
+  synchronously during the next launch.
+- **Symbols come from the lane.** After `build_app`, the lane uploads the archive's dSYMs with
+  `upload_symbols_to_crashlytics`, using `upload-symbols` from the firebase-ios-sdk checkout and the
+  app's own plist; CI uploads nothing. Without them a report arrives unsymbolicated.
+- **Crashes only.** Nothing records a non-fatal error, so the field name a `WireContractViolation`
+  carries still reaches no sink.
+- **`-ObjC`** is in both app targets' `OTHER_LDFLAGS`, as Firebase requires for its Objective-C SDKs
+  linked through Swift Package Manager.
+- **Privacy.** Both privacy manifests declare Crash Data and Other Diagnostic Data, not linked to the
+  user, not used for tracking, for app functionality. The App Store privacy answers and the privacy
+  policy must say the same before an App Store submission. Internal TestFlight builds do not need them.
 
 ---
 
@@ -689,7 +790,7 @@ Android's: an app built without the plist runs, without push (`GoogleServicePlis
 | Workflow | Triggers | What it runs |
 |---|---|---|
 | `.github/workflows/android-ci.yml` | **every** pull request (not path-scoped), plus pushes to `master` scoped to `src/cleansia_android/**` | Temurin JDK 21 + the runner's preinstalled SDK → `compileDebugKotlin` and `testDebugUnitTest` for `:core`, `:partner-app` and `:customer-app`. JVM only, no emulator. Test reports are uploaded on failure. |
-| `.github/workflows/ios-ci.yml` | pull requests and pushes to `master`, scoped to `src/cleansia_ios/**`, `src/cleansia_android/openapi/**` and the workflow file | macOS runner on the newest installed Xcode → local-config test → generate API clients → `xcodegen generate` for both apps → SwiftFormat lint → SwiftLint strict → build **and test** `CleansiaCore`, `CleansiaPartner`, `CleansiaCustomer`. |
+| `.github/workflows/ios-ci.yml` | pull requests and pushes to `master`, scoped to `src/cleansia_ios/**`, `src/cleansia_android/openapi/**` and the workflow file | `build`, on `macos-26` with the Xcode pinned in `src/cleansia_ios/.xcode-version` → local-config test → generate API clients → `xcodegen generate` for both apps → SwiftFormat lint → SwiftLint strict → build **and test** `CleansiaCore`, `CleansiaPartner`, `CleansiaCustomer` in Debug → test `CleansiaPartner` and `CleansiaCustomer` again optimised ([the guard](#optimizer-only-crashes)). Beside it, `xcode-27-readiness`, which never blocks: the same generation and the three Debug suites on Xcode 27.1, on GitHub's `xcode-27` preview image. |
 
 Android CI runs on every PR on purpose: a path-scoped PR check *skips* silently, and a skipped check
 looks the same as a passing one at a glance. iOS is path-scoped because macOS runners bill at a
@@ -711,12 +812,12 @@ and none says anything about how the app behaves in a simulator. This was charac
 | Ubuntu | `secret-scan.yml` | no new secret in the history, the iOS tree included | — |
 | Ubuntu | `android-ci.yml` (`MarketCopyStringsTest`) | reads the iOS customer catalog's market copy against Android's | — |
 | Ubuntu | `backend-ci.yml` (`ApnsDisplayMapIosCatalogSyncTests`, `MobileSpecEnumGuardTests`) | both iOS app catalogs carry every push event's loc-keys; the shared mobile specs' enums agree | it does not run on a diff limited to the mobile trees, which `backend-ci.yml` excludes |
-| macOS hosted | `ios-ci.yml` | the pinned SwiftFormat and SwiftLint gates, then a Debug simulator build and the XCTest suites of CleansiaCore, CleansiaPartner and CleansiaCustomer, on one newest-runtime iPhone simulator | the iOS 16 floor; UI and navigation (the only test targets are unit tests); the VoiceOver tree (that test skips); the card path (no `Local.xcconfig`); Release builds, signing, archive and TestFlight; physical devices; the Notification Service Extension banner |
+| macOS hosted | `ios-ci.yml` | the pinned SwiftFormat and SwiftLint gates, then a Debug simulator build and the XCTest suites of CleansiaCore, CleansiaPartner and CleansiaCustomer, then the two app suites again at `-O` with whole-module compilation, all on the Xcode that archives TestFlight builds and one iPhone simulator; and, without blocking, whether the three Debug suites build and pass on Xcode 27.1 | the iOS 16 floor; UI and navigation (the only test targets are unit tests); the VoiceOver tree (that test skips); the card path (no `Local.xcconfig`); the Release configuration itself (the optimised passes are Debug with Release's two Swift settings), signing, archive and TestFlight; physical devices; the Notification Service Extension banner; iPhone Duo (no Duo simulator on any image) |
 | a local Mac only | — | the iOS 16.4 floor smoke the quality gates require of every iOS ticket; simulator UI walks; the VoiceOver test with the accessibility server on; `check-available-status-parity.mjs`; the fastlane archive and TestFlight lanes | the exact 16.0 floor, which no check verifies |
 
-So a green `ios-ci.yml` run means the code compiles and its unit tests pass on the newest runtime.
-Floor, UI, accessibility and device behaviour are proved only by the local evidence recorded on each
-ticket. → [Runners and images](/deployment/ci-cd#runners)
+So a green `ios-ci.yml` run means the code compiles and its unit tests pass, in Debug and optimised,
+with the compiler that archives the TestFlight builds. Floor, UI, accessibility and device behaviour are
+proved only by the local evidence recorded on each ticket. → [Runners and images](/deployment/ci-cd#runners)
 
 ## Where to go next
 

@@ -26,6 +26,12 @@ public struct PhoneNumberKitDisplayFormatter: PhoneDisplayFormatting {
         return region.isEmpty ? "US" : region.uppercased()
     }()
 
+    /// What the server's `PhoneNumberAttribute` keeps: the international form, and a number libphonenumber
+    /// takes. A national number fails here whatever the handset's region.
+    public static func isValidNumber(_ wireValue: String) -> Bool {
+        wireValue.hasPrefix("+") && utility.isValidPhoneNumber(wireValue)
+    }
+
     /// Parsing the bundled metadata is expensive; one instance serves every field.
     private static let utility = PhoneNumberUtility()
 }

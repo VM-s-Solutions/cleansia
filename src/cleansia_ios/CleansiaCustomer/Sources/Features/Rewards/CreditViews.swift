@@ -95,6 +95,7 @@ struct CreditExplainerSheet: View {
         }
         .background(CleansiaColors.surface.ignoresSafeArea())
         .presentationDetents([.height(contentHeight + buttonHeight), .large])
+        .fittedPresentationSizing()
         .presentationDragIndicator(.visible)
     }
 

@@ -27,6 +27,7 @@ struct PackageDetailsSheet: View {
         .background(CleansiaColors.surface.ignoresSafeArea())
         .onPreferenceChange(PackageSheetHeightKey.self) { contentHeight = $0 }
         .presentationDetents([.height(contentHeight)])
+        .fittedPresentationSizing()
         .presentationDragIndicator(.visible)
     }
 

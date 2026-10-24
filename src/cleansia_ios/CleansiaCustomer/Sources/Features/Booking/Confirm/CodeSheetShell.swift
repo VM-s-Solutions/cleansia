@@ -34,6 +34,7 @@ struct CodeSheetShell<Message: View>: View {
             .background(CleansiaColors.surface.ignoresSafeArea())
             .onPreferenceChange(CodeSheetHeightKey.self) { contentHeight = $0 }
             .presentationDetents([.height(contentHeight)])
+            .fittedPresentationSizing()
     }
 
     private var content: some View {

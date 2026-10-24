@@ -118,6 +118,6 @@ class OnboardingFormCallSiteTest {
         val card = screen.substringAfter("private fun AddressSummaryCard(").substringBefore("private fun ServiceAreaRow(")
         val flat = card.replace(Regex("\\s+"), " ")
         assertTrue("the card's border no longer turns red", flat.contains("if (errorText != null) MaterialTheme.colorScheme.error"))
-        assertEquals("MaterialTheme.colorScheme.error", argument(callBlock(card, "Text(", "text = errorText"), "color"))
+        assertEquals("MaterialTheme.colorScheme.error", argument(callBlock(card, "Text" + "(", "text = errorText"), "color"))
     }
 }

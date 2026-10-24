@@ -563,6 +563,50 @@ class BankSectionViewModelTest {
         assertNull(vm.form().swiftError)
     }
 
+    /**
+     * A save answers for itself: once it passes the device's checks, what the server refused about another field
+     * last time is off the screen, so a new refusal is never shown beside a stale one.
+     */
+    @Test
+    fun `a save that passes the device checks clears the server's earlier SWIFT refusal`() = runTest {
+        val vm = viewModel()
+        vm.awaitForm()
+        vm.onAccountNumberChange("5885638003")
+        vm.onBankCodeChange("5500")
+        stubSaveRefused("validation.payout.swift_required")
+        vm.save()
+        advanceUntilIdle()
+        assertEquals("translated error", vm.form().swiftError)
+
+        vm.onAccountNumberChange("5885638004")
+        stubSaveRefused("validation.payout.invalid_account_number")
+        vm.save()
+        advanceUntilIdle()
+
+        assertNull("the SWIFT refusal answered the save before", vm.form().swiftError)
+        assertEquals("translated error", vm.form().accountError)
+    }
+
+    @Test
+    fun `a save that passes the device checks clears the server's earlier IBAN refusal`() = runTest {
+        val vm = viewModel()
+        vm.awaitForm()
+        vm.onBankCountrySelected("country-de")
+        vm.onIbanChange("DE89370400440532013000")
+        stubSaveRefused("validation.payout.looks_like_card")
+        vm.save()
+        advanceUntilIdle()
+        assertEquals("translated error", vm.form().ibanServerError)
+
+        vm.onSwiftChange("COBADEFF")
+        stubSaveRefused("validation.payout.invalid_swift")
+        vm.save()
+        advanceUntilIdle()
+
+        assertNull("the IBAN refusal answered the save before", vm.form().ibanServerError)
+        assertEquals("translated error", vm.form().swiftError)
+    }
+
     @Test
     fun `a bank country the server cannot pay to is named under the country`() = runTest {
         listOf("validation.payout.country_not_supported", "validation.payout.scheme_not_supported").forEach { key ->

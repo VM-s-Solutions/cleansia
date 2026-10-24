@@ -252,6 +252,7 @@ class BankSectionViewModel @Inject constructor(
             snackbar.showError(appContext.getString(R.string.error_profile_not_loaded))
             return
         }
+        updateForm { it.copy(ibanServerError = null, swiftError = null) }
         var hasError = false
         if (form.bankCountryId.isNullOrBlank()) {
             updateForm { it.copy(bankCountryError = appContext.getString(R.string.validation_required)) }

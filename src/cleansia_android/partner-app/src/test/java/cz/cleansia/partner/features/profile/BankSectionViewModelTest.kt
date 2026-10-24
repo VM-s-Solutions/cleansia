@@ -25,6 +25,7 @@ import kotlinx.coroutines.test.runTest
 import kotlinx.serialization.json.Json
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Before
@@ -68,6 +69,9 @@ class BankSectionViewModelTest {
         appContext = mockk(relaxed = true)
         every { errorTranslator.translate(any()) } returns "translated error"
         every { appContext.getString(R.string.error_profile_not_loaded) } returns "Profile not loaded yet"
+        every { appContext.getString(R.string.validation_required) } returns "This field is required"
+        every { appContext.getString(R.string.error_validation_payout_account_number_required) } returns "Enter your account number"
+        every { appContext.getString(R.string.error_validation_payout_invalid_bank_code) } returns "Enter the four-digit bank code"
         coEvery { countryApi.countryGetOverview() } returns Response.success(
             listOf(
                 CountryListItem(id = "country-cz", isoCode = "CZE", isoAlpha2 = "CZ", name = "Czech Republic"),
@@ -174,20 +178,67 @@ class BankSectionViewModelTest {
         assertEquals("GIBACZPX", form.swift)
     }
 
+    private fun BankSectionViewModel.form(): BankForm = (uiState.value as BankSectionUiState.Loaded).form
+
+    private fun stubSaveSucceeds() = coEvery {
+        repository.updateBankDetails(any(), any(), any(), any(), any(), any(), any(), any(), any())
+    } returns ApiResult.Success(Unit)
+
+    private fun stubSaveRefused(key: String) = coEvery {
+        repository.updateBankDetails(any(), any(), any(), any(), any(), any(), any(), any(), any())
+    } returns ApiResult.Error(ApiError.BadRequest("Validation Error", validationErrors = mapOf("AccountNumber" to listOf(key))))
+
+    private fun assertNothingSent() = coVerify(exactly = 0) {
+        repository.updateBankDetails(any(), any(), any(), any(), any(), any(), any(), any(), any())
+    }
+
     @Test
-    fun `an account with no identifier cannot be submitted`() = runTest {
+    fun `an account with no identifier is named under the account and not sent`() = runTest {
         val vm = viewModel()
-        assertFalse(vm.awaitForm().canSubmit)
+        vm.awaitForm()
 
         vm.save()
         advanceUntilIdle()
 
-        coVerify(exactly = 0) {
-            repository.updateBankDetails(any(), any(), any(), any(), any(), any(), any(), any(), any())
-        }
+        assertEquals("Enter your account number", vm.form().accountError)
+        assertNull("the country is the cleaner's own", vm.form().bankCountryError)
+        assertEquals(ActionState.Idle, vm.saveState.value)
+        verify(exactly = 0) { snackbar.showError(any<String>()) }
+        assertNothingSent()
     }
 
-    private fun BankSectionViewModel.form(): BankForm = (uiState.value as BankSectionUiState.Loaded).form
+    /** `PayoutDetailsValidator` takes a bank code of exactly four ASCII digits, and nothing else. */
+    @Test
+    fun `a bank code that is not four digits is named under the account and not sent`() = runTest {
+        listOf("", "080", "08000").forEach { code ->
+            val vm = viewModel()
+            vm.awaitForm()
+            vm.onAccountNumberChange("5885638003")
+            vm.onBankCodeChange(code)
+
+            vm.save()
+            advanceUntilIdle()
+
+            assertEquals(code, "Enter the four-digit bank code", vm.form().accountError)
+        }
+        assertNothingSent()
+    }
+
+    @Test
+    fun `editing any part of the account clears its error`() = runTest {
+        val vm = viewModel()
+        vm.awaitForm()
+        listOf<(String) -> Unit>(vm::onAccountPrefixChange, vm::onAccountNumberChange, vm::onBankCodeChange)
+            .forEach { edit ->
+                vm.save()
+                advanceUntilIdle()
+                assertNotNull(vm.form().accountError)
+
+                edit("1")
+
+                assertNull(vm.form().accountError)
+            }
+    }
 
     @Test
     fun `a CZ or SK bank takes the three parts and an IBAN alone does not submit`() = runTest {
@@ -196,7 +247,10 @@ class BankSectionViewModelTest {
 
         vm.onIbanChange("CZ6508000000192000145399")
         assertTrue(vm.form().usesDomesticAccount)
-        assertFalse(vm.form().canSubmit)
+        vm.save()
+        advanceUntilIdle()
+        assertEquals("Enter your account number", vm.form().accountError)
+        assertNothingSent()
 
         vm.onBankCountrySelected("country-sk")
         assertTrue(vm.form().usesDomesticAccount)
@@ -210,10 +264,20 @@ class BankSectionViewModelTest {
         vm.onBankCountrySelected("country-de")
         vm.onAccountNumberChange("5885638003")
         assertFalse(vm.form().usesDomesticAccount)
-        assertFalse("the parts are not this country's identifier", vm.form().canSubmit)
+        vm.save()
+        advanceUntilIdle()
+        assertTrue("the parts are not this country's identifier", vm.form().ibanChecked)
+        assertEquals(IbanProblem.Invalid, vm.form().ibanProblem)
+        assertNull(vm.form().accountError)
+        assertNothingSent()
 
+        stubSaveSucceeds()
         vm.onIbanChange("DE89370400440532013000")
-        assertTrue(vm.form().canSubmit)
+        vm.save()
+        advanceUntilIdle()
+        coVerify(exactly = 1) {
+            repository.updateBankDetails(any(), any(), any(), any(), any(), iban = "DE89370400440532013000", any(), any(), any())
+        }
     }
 
     /**
@@ -358,16 +422,23 @@ class BankSectionViewModelTest {
     }
 
     @Test
-    fun `an account number without a bank country cannot be submitted`() = runTest {
+    fun `an account without a bank country is named under the country and not sent`() = runTest {
         every { employee.countryId } returns null
         val vm = viewModel()
         vm.awaitForm()
 
         vm.onAccountNumberChange("5885638003")
+        vm.onBankCodeChange("5500")
+        vm.save()
+        advanceUntilIdle()
 
-        val form = (vm.uiState.value as BankSectionUiState.Loaded).form
-        assertNull(form.bankCountryId)
-        assertFalse(form.canSubmit)
+        assertNull(vm.form().bankCountryId)
+        assertEquals("This field is required", vm.form().bankCountryError)
+        assertNull(vm.form().accountError)
+        assertNothingSent()
+
+        vm.onBankCountrySelected("country-cz")
+        assertNull("the error clears as a country is picked", vm.form().bankCountryError)
     }
 
     @Test
@@ -409,11 +480,94 @@ class BankSectionViewModelTest {
         assertEquals(ActionState.Idle, vm.saveState.value)
     }
 
+    /** Every payout refusal arrives keyed AccountNumber (`UpdateBankDetails`), so it is routed by its key. */
     @Test
-    fun `save failure snackbars and returns to Idle`() = runTest {
+    fun `a refused account is named under the account field`() = runTest {
+        listOf(
+            "validation.payout.account_number_required",
+            "validation.payout.invalid_account_number",
+            "validation.payout.invalid_account_prefix",
+            "validation.payout.invalid_bank_code",
+            "validation.payout.looks_like_card",
+            "validation.payout.iban_mismatch",
+        ).forEach { key ->
+            stubSaveRefused(key)
+            val vm = viewModel()
+            vm.awaitForm()
+            vm.onAccountNumberChange("5885638004")
+            vm.onBankCodeChange("5500")
+
+            vm.save()
+            advanceUntilIdle()
+
+            assertEquals(key, "translated error", vm.form().accountError)
+            assertEquals(key, ActionState.Idle, vm.saveState.value)
+        }
+        verify(exactly = 0) { snackbar.showError(any<String>()) }
+    }
+
+    @Test
+    fun `a refused IBAN is named under the IBAN field and clears as it is edited`() = runTest {
+        listOf("validation.payout.invalid_iban", "validation.payout.iban_country_mismatch", "validation.payout.looks_like_card")
+            .forEach { key ->
+                stubSaveRefused(key)
+                val vm = viewModel()
+                vm.awaitForm()
+                vm.onBankCountrySelected("country-de")
+                vm.onIbanChange("DE89370400440532013000")
+
+                vm.save()
+                advanceUntilIdle()
+
+                assertEquals(key, "translated error", vm.form().ibanServerError)
+                assertNull(key, vm.form().accountError)
+                vm.onIbanChange("DE89370400440532013000")
+                assertNull(key, vm.form().ibanServerError)
+            }
+        verify(exactly = 0) { snackbar.showError(any<String>()) }
+    }
+
+    @Test
+    fun `a refused SWIFT is named under the SWIFT field and clears as it is edited`() = runTest {
+        listOf("validation.payout.swift_required", "validation.payout.invalid_swift").forEach { key ->
+            stubSaveRefused(key)
+            val vm = viewModel()
+            vm.awaitForm()
+            vm.onAccountNumberChange("5885638003")
+            vm.onBankCodeChange("5500")
+
+            vm.save()
+            advanceUntilIdle()
+
+            assertEquals(key, "translated error", vm.form().swiftError)
+            vm.onSwiftChange("GIBACZPX")
+            assertNull(key, vm.form().swiftError)
+        }
+        verify(exactly = 0) { snackbar.showError(any<String>()) }
+    }
+
+    @Test
+    fun `a bank country the server cannot pay to is named under the country`() = runTest {
+        listOf("validation.payout.country_not_supported", "validation.payout.scheme_not_supported").forEach { key ->
+            stubSaveRefused(key)
+            val vm = viewModel()
+            vm.awaitForm()
+            vm.onAccountNumberChange("5885638003")
+            vm.onBankCodeChange("5500")
+
+            vm.save()
+            advanceUntilIdle()
+
+            assertEquals(key, "translated error", vm.form().bankCountryError)
+        }
+        verify(exactly = 0) { snackbar.showError(any<String>()) }
+    }
+
+    @Test
+    fun `save failure that names no field snackbars and returns to Idle`() = runTest {
         coEvery {
             repository.updateBankDetails(any(), any(), any(), any(), any(), any(), any(), any(), any())
-        } returns ApiResult.Error(ApiError.BadRequest("bad", errorKey = "validation.payout.invalid_account_number"))
+        } returns ApiResult.Error(ApiError.Network("down"))
 
         val vm = viewModel()
         vm.awaitForm()
@@ -425,6 +579,7 @@ class BankSectionViewModelTest {
 
         assertTrue(vm.saveState.value is ActionState.Idle)
         verify { snackbar.showError("translated error") }
+        assertNull(vm.form().accountError)
     }
 
     @Test

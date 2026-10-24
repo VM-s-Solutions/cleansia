@@ -12,6 +12,7 @@ import cz.cleansia.partner.api.client.CountryApi
 import cz.cleansia.partner.api.model.CountryListItem
 import cz.cleansia.partner.core.network.ApiErrorTranslator
 import cz.cleansia.partner.data.profile.ProfileRepository
+import cz.cleansia.partner.features.orders.hasKey
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -33,13 +34,40 @@ import javax.inject.Inject
  */
 private val DomesticAccountCountries = setOf("CZ", "SK")
 
+/** `PayoutDetailsValidator`'s domestic bank code: exactly four ASCII digits. */
+private const val BankCodeLength = 4
+
+/**
+ * `UpdateBankDetails` keys every payout refusal to AccountNumber, so a refusal is placed by its key:
+ * under the account control, the IBAN, the SWIFT or the bank country it is about.
+ */
+private val DomesticAccountRefusals = listOf(
+    "validation.payout.account_number_required",
+    "validation.payout.invalid_account_number",
+    "validation.payout.invalid_account_prefix",
+    "validation.payout.invalid_bank_code",
+    "validation.payout.looks_like_card",
+    "validation.payout.iban_mismatch",
+)
+private val IbanRefusals = listOf(
+    "validation.payout.invalid_iban",
+    "validation.payout.iban_country_mismatch",
+    "validation.payout.looks_like_card",
+)
+private val SwiftRefusals = listOf("validation.payout.swift_required", "validation.payout.invalid_swift")
+private val BankCountryRefusals = listOf(
+    "validation.payout.country_not_supported",
+    "validation.payout.scheme_not_supported",
+)
+
 /**
  * The payout destination. A Czech or Slovak cleaner enters the parts they read off their statement —
- * prefix, account number, bank code — and the server derives the IBAN, so everything about those
- * parts (the account checksum, the bank code, a card number typed in) is left to it, and its answers
- * are wired to `error_validation_payout_*`. Any other bank country takes one IBAN, checked here as
- * the server's IbanCalculator checks it ([ibanProblem]) so a typo is named before the round trip;
- * the server still checks it again.
+ * prefix, account number, bank code — and the server derives the IBAN. Here they are checked only for
+ * an account number and a four-digit bank code; the account checksum and a card number typed in are
+ * left to the server, whose answers are named under the field they are about
+ * (`error_validation_payout_*`). Any other bank country takes one IBAN, checked here as the server's
+ * IbanCalculator checks it ([ibanProblem]) so a typo is named before the round trip; the server still
+ * checks it again.
  */
 data class BankForm(
     val employeeId: String = "",
@@ -54,6 +82,10 @@ data class BankForm(
     val holderName: String = "",
     /** Whether a save has been tried, after which the IBAN's problem shows under it as it is edited. */
     val ibanChecked: Boolean = false,
+    val bankCountryError: String? = null,
+    val accountError: String? = null,
+    val ibanServerError: String? = null,
+    val swiftError: String? = null,
 ) {
     /** The bank country's ISO code, which its IBANs start with. */
     val bankCountryAlpha2: String?
@@ -69,11 +101,6 @@ data class BankForm(
     /** What the server would refuse about the IBAN; null when it would take it, or for a domestic account. */
     val ibanProblem: IbanProblem?
         get() = bankCountryAlpha2?.takeUnless { usesDomesticAccount }?.let { ibanProblem(iban, it) }
-
-    /** The bank's country plus the account in the form that country takes. */
-    val canSubmit: Boolean
-        get() = !bankCountryId.isNullOrBlank() &&
-            (if (usesDomesticAccount) accountNumber.isNotBlank() else iban.isNotBlank())
 }
 
 /** Why the server's IbanCalculator would refuse an IBAN for the bank country picked (ADR-0034 D4). */
@@ -200,17 +227,18 @@ class BankSectionViewModel @Inject constructor(
         _uiState.value = BankSectionUiState.Error
     }
 
-    fun onBankCountrySelected(id: String) = updateForm { it.copy(bankCountryId = id) }
+    fun onBankCountrySelected(id: String) = updateForm { it.copy(bankCountryId = id, bankCountryError = null) }
 
-    fun onAccountPrefixChange(v: String) = updateForm { it.copy(accountPrefix = v.digitsOnly()) }
+    fun onAccountPrefixChange(v: String) = updateForm { it.copy(accountPrefix = v.digitsOnly(), accountError = null) }
 
-    fun onAccountNumberChange(v: String) = updateForm { it.copy(accountNumber = v.digitsOnly()) }
+    fun onAccountNumberChange(v: String) = updateForm { it.copy(accountNumber = v.digitsOnly(), accountError = null) }
 
-    fun onBankCodeChange(v: String) = updateForm { it.copy(bankCode = v.digitsOnly()) }
+    fun onBankCodeChange(v: String) = updateForm { it.copy(bankCode = v.digitsOnly(), accountError = null) }
 
-    fun onIbanChange(v: String) = updateForm { it.copy(iban = v.asBankReference().take(IbanMaxLength)) }
+    fun onIbanChange(v: String) =
+        updateForm { it.copy(iban = v.asBankReference().take(IbanMaxLength), ibanServerError = null) }
 
-    fun onSwiftChange(v: String) = updateForm { it.copy(swift = v.asBankReference()) }
+    fun onSwiftChange(v: String) = updateForm { it.copy(swift = v.asBankReference(), swiftError = null) }
 
     fun onBankNameChange(v: String) = updateForm { it.copy(bankName = v) }
 
@@ -223,11 +251,26 @@ class BankSectionViewModel @Inject constructor(
             snackbar.showError(appContext.getString(R.string.error_profile_not_loaded))
             return
         }
-        if (!form.canSubmit) return
-        if (form.ibanProblem != null) {
-            updateForm { it.copy(ibanChecked = true) }
-            return
+        var hasError = false
+        if (form.bankCountryId.isNullOrBlank()) {
+            updateForm { it.copy(bankCountryError = appContext.getString(R.string.validation_required)) }
+            hasError = true
         }
+        if (form.usesDomesticAccount) {
+            val accountProblem = when {
+                form.accountNumber.isBlank() -> R.string.error_validation_payout_account_number_required
+                !form.bankCode.isBankCode() -> R.string.error_validation_payout_invalid_bank_code
+                else -> null
+            }
+            if (accountProblem != null) {
+                updateForm { it.copy(accountError = appContext.getString(accountProblem)) }
+                hasError = true
+            }
+        } else if (form.ibanProblem != null) {
+            updateForm { it.copy(ibanChecked = true) }
+            hasError = true
+        }
+        if (hasError) return
 
         // Each scheme sends only its own identifier. A domestic IBAN is the server's to derive, and the
         // stored one sent back with edited parts was refused as a mismatch; an IBAN account has no parts.
@@ -252,7 +295,18 @@ class BankSectionViewModel @Inject constructor(
                 }
                 is ApiResult.Error -> {
                     _saveState.value = ActionState.Idle
-                    snackbar.showError(errorTranslator.translate(result.error))
+                    val error = result.error
+                    val message = errorTranslator.translate(error)
+                    when {
+                        domestic && DomesticAccountRefusals.any { error.hasKey(it) } ->
+                            updateForm { it.copy(accountError = message) }
+                        !domestic && IbanRefusals.any { error.hasKey(it) } ->
+                            updateForm { it.copy(ibanServerError = message) }
+                        SwiftRefusals.any { error.hasKey(it) } -> updateForm { it.copy(swiftError = message) }
+                        BankCountryRefusals.any { error.hasKey(it) } ->
+                            updateForm { it.copy(bankCountryError = message) }
+                        else -> snackbar.showError(message)
+                    }
                 }
             }
         }
@@ -266,6 +320,8 @@ class BankSectionViewModel @Inject constructor(
 }
 
 private fun String.digitsOnly(): String = filter { it.isDigit() }
+
+private fun String.isBankCode(): Boolean = length == BankCodeLength && all { it in '0'..'9' }
 
 private fun String.asBankReference(): String = uppercase().filter { it.isLetterOrDigit() }
 

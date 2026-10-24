@@ -2,6 +2,7 @@ package cz.cleansia.partner.features.profile
 
 import java.io.File
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertTrue
 import org.junit.Test
 
 /**
@@ -84,5 +85,28 @@ class OnboardingFormCallSiteTest {
         assertEquals("form.storedLegalEntityName.orEmpty()", argument(callBlock(block, "CleansiaTextField("), "value"))
         val reason = callBlock(block.substringAfter("form.legalEntityNameError?.let"), "Text(")
         assertEquals("MaterialTheme.colorScheme.error", argument(reason, "color"))
+    }
+
+    @Test
+    fun `the bank step's Save is held only while saving, and each refusal is named under its field`() {
+        val screen = source("profile/BankSectionScreen.kt")
+        assertEquals("!saving", argument(callBlock(screen, "SectionSaveRow("), "enabled"))
+        assertEquals(
+            "form.bankCountryError",
+            argument(callBlock(screen, "PickerDropdown(", "R.string.bank_country"), "errorText"),
+        )
+        assertEquals("form.accountError", argument(callBlock(screen, "CleansiaBankAccountInput("), "errorText"))
+        val iban = callBlock(screen, "CleansiaTextField(", "R.string.iban_helper").replace(Regex("\\s+"), " ")
+        assertTrue(
+            "the IBAN's own check comes first and the server's refusal after it:\n$iban",
+            iban.contains(
+                "errorText = form.ibanProblem?.takeIf { form.ibanChecked }?.let { ibanProblemMessage(it) } " +
+                    "?: form.ibanServerError,",
+            ),
+        )
+        assertEquals(
+            "form.swiftError",
+            argument(callBlock(screen, "CleansiaTextField(", "R.string.swift_code_helper"), "errorText"),
+        )
     }
 }

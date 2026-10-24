@@ -729,15 +729,17 @@ Each lane, in order:
 6. picks the next build number from TestFlight and archives Release through `Cleansia.xcworkspace` with
    automatic signing, with the commit and branch stamped into `Info.plist` as `CleansiaGitCommit` and
    `CleansiaGitBranch`, and stops if the exported app's `Info.plist` names any other commit;
-7. uploads the archive's dSYMs to Crashlytics ([Crash reporting](#crash-reporting));
+7. uploads the archive's dSYMs to Crashlytics, and stops if the archive has none; a failed upload does not
+   stop it, and the lane prints the command that uploads them later ([Crash reporting](#crash-reporting));
 8. uploads to TestFlight with *What to Test* set to the bundle id, version and build, the commit and
    branch, the API host the exported app calls and the `xcodebuild -version` line;
-9. tags the commit `ios/<app>/<version>-<build>`, annotated with the same notes, and pushes the tag only
-   when the commit is already on a remote branch: this repository is public, so a tag would publish the
-   commits it points at. Otherwise the tag stays local and the lane prints the push command. A failed
-   push only warns, because the build is already up.
+9. tags the commit `ios/<app>/<version>-<build>`, annotated with the same notes, and pushes the tag to
+   `origin` only when the commit is already on one of its branches, as last fetched: a pushed tag uploads
+   the commits it points at, and they stay on `origin` even if no branch there ever carries them.
+   Otherwise the tag stays local and the lane prints the push command. A failed push only warns, because
+   the build is already up.
 
-`preflight` stops after step 5 and calls nothing in App Store Connect. The workspace matters: it builds
+`preflight` runs steps 2–5 and calls nothing in App Store Connect. The workspace matters: it builds
 against the committed `Package.resolved` pins, the versions CI builds, where an app's `.xcodeproj` alone
 re-resolves its packages past them. Prefix the lanes with `FASTLANE_SKIP_DOCS=1`, or fastlane rewrites
 the hand-written `fastlane/README.md`, and the next run refuses the dirty tree. See
@@ -772,9 +774,12 @@ no new package, DSN or token (decided 2026-10-24,
 - **A report is sent on the next launch.** The SDK writes the report when the app crashes and sends it
   once the app is opened again and stays up long enough. A crash before the first run-loop turn is sent
   synchronously during the next launch.
-- **Symbols come from the lane.** After `build_app`, the lane uploads the archive's dSYMs with
-  `upload_symbols_to_crashlytics`, using `upload-symbols` from the firebase-ios-sdk checkout and the
-  app's own plist; CI uploads nothing. Without them a report arrives unsymbolicated.
+- **Symbols come from the lane.** After `build_app`, the lane runs `upload-symbols` from the
+  firebase-ios-sdk checkout, authenticated by the app's own plist; CI uploads nothing. It runs the binary
+  itself because fastlane's `upload_symbols_to_crashlytics` reports success whatever the upload did. An
+  archive without dSYMs stops the lane before TestFlight. A failed upload does not: the build ships, and
+  the lane prints the `upload-symbols` command that uploads them later, again in the line reporting the
+  TestFlight upload. Until they are uploaded, its reports arrive unsymbolicated.
 - **Crashes only.** Nothing records a non-fatal error, so the field name a `WireContractViolation`
   carries still reaches no sink.
 - **`-ObjC`** is in both app targets' `OTHER_LDFLAGS`, as Firebase requires for its Objective-C SDKs

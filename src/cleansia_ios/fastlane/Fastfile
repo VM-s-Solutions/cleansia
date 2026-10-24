@@ -18,6 +18,7 @@
 # Auth + the signing team come entirely from the environment — see
 # fastlane/.env.example. Copy it to fastlane/.env (gitignored) and fill it in.
 
+require "fileutils"
 require "shellwords"
 
 default_platform(:ios)
@@ -203,6 +204,9 @@ def ship(key, options = {})
     UI.important("🌐 #{app[:bundle_id]} build ##{build_number} calls #{api_base_url}, not the Release host")
     xcargs += " API_BASE_URL=#{api_base_url.shellescape}"
   end
+  # build_app zips the archive's dSYMs here, into whatever zip an earlier run left, and only when it has some.
+  symbols = File.join(IOS_ROOT, "build", "#{app[:scheme]}.app.dSYM.zip")
+  FileUtils.rm_f(symbols)
   build_app(
     workspace: WORKSPACE,
     scheme: app[:scheme],
@@ -227,14 +231,22 @@ def ship(key, options = {})
   unless shipped["CleansiaGitCommit"] == source[:stamp]
     UI.user_error!("The archive's Info.plist names commit #{shipped["CleansiaGitCommit"].inspect}, not #{source[:stamp]}")
   end
+  UI.user_error!("The archive left no #{symbols}, so no crash report of build ##{build_number} could be symbolicated") unless File.file?(symbols)
 
-  # 6. Symbols for Crashlytics, authenticated by the app's own plist. A failed upload only logs an error:
-  #    the build still ships, and its crash reports arrive unsymbolicated.
-  upload_symbols_to_crashlytics(
-    dsym_path: lane_context[SharedValues::DSYM_OUTPUT_PATH],
-    gsp_path: gsp,
-    binary_path: File.join(SOURCE_PACKAGES, "checkouts", "firebase-ios-sdk", "Crashlytics", "upload-symbols"),
-  )
+  # 6. Symbols for Crashlytics, authenticated by the app's own plist. upload_symbols_to_crashlytics reports success
+  #    whatever upload-symbols returns, so the binary runs directly. A failed upload does not stop the lane, since the
+  #    dSYMs can be uploaded later; the lane prints the command that does it, now and in the line reporting the upload.
+  upload_symbols = [
+    File.join(SOURCE_PACKAGES, "checkouts", "firebase-ios-sdk", "Crashlytics", "upload-symbols"),
+    "-gsp", gsp, "-p", "ios", symbols,
+  ]
+  symbols_uploaded = sh(*upload_symbols, log: false) { |status| status.success? }
+  symbols_note = if symbols_uploaded
+                   "its dSYMs are on Crashlytics"
+                 else
+                   "its dSYMs are NOT on Crashlytics; upload them with: #{upload_symbols.shelljoin}"
+                 end
+  UI.important("Build ##{build_number} ships, but #{symbols_note}") unless symbols_uploaded
 
   # 7. Ship. Internal testers get it within minutes of processing (no Beta App
   #    Review); external testers need a one-time review, enabled per-app in ASC.
@@ -252,21 +264,21 @@ def ship(key, options = {})
     distribute_external: false,
     changelog: notes,
   )
-  UI.success("✅ #{app[:bundle_id]} build ##{build_number} uploaded to TestFlight")
+  UI.success("✅ #{app[:bundle_id]} build ##{build_number} uploaded to TestFlight; #{symbols_note}")
 
-  # 8. Tag the commit, and publish the tag only when the commit is already on a remote branch: this
-  #    repository is public, so a pushed tag publishes the commits it points at. An allow_dirty build
-  #    gets none, since no commit describes it.
+  # 8. Tag the commit, and push the tag only when the commit is already on a branch of origin, the remote it goes
+  #    to: a pushed tag uploads the commits it points at, and keeps them there even if no branch ever carries
+  #    them. An allow_dirty build gets none, since no commit describes it.
   return UI.important("No tag: build ##{build_number} has uncommitted changes") unless source[:clean]
 
   tag = "ios/#{key}/#{shipped["CFBundleShortVersionString"]}-#{build_number}"
   add_git_tag(tag: tag, commit: source[:commit], message: notes)
-  if git("branch", "-r", "--contains", source[:commit]).empty?
-    UI.important("Tag #{tag} stays local: #{source[:commit]} is on no remote branch. Once it is: git push origin #{tag}")
+  if git("branch", "-r", "--list", "origin/*", "--contains", source[:commit]).empty?
+    UI.important("Tag #{tag} stays local: #{source[:commit]} is on no branch of origin. Once it is: git push origin #{tag}")
     return
   end
   begin
-    push_git_tags(tag: tag)
+    push_git_tags(remote: "origin", tag: tag)
   rescue StandardError => e
     UI.important("Tag #{tag} was not pushed (#{e.message}); the build is up. Retry with: git push origin #{tag}")
   end

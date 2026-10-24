@@ -93,16 +93,22 @@ so those do not reach it.
    are stamped into the app's `Info.plist` as `CleansiaGitCommit` and
    `CleansiaGitBranch`, and the lane stops if the exported app names any other
    commit.
-7. Uploads the archive's dSYMs to Firebase Crashlytics, authenticated by the
-   app's own `GoogleService-Info.plist`. A failed symbol upload only logs an
-   error: the build still ships, and its crash reports arrive unsymbolicated.
+7. Uploads the archive's dSYMs to Firebase Crashlytics with `upload-symbols`,
+   authenticated by the app's own `GoogleService-Info.plist`. An archive
+   without dSYMs stops the lane here, before TestFlight, since none of its
+   crash reports could ever be symbolicated. A failed upload does not stop it:
+   the build still ships, and the lane prints the `upload-symbols` command
+   that uploads them later, then repeats it in the line reporting the
+   TestFlight upload. Until they are uploaded, its crash reports arrive
+   unsymbolicated.
 8. Uploads to TestFlight with **What to Test** set to the bundle id, version
    and build, the commit and branch, the API host the exported app calls and
    the Xcode version.
 9. Tags the commit `ios/<app>/<version>-<build>` (annotated, with the same
-   notes) and pushes the tag only when the commit is already on a remote
-   branch. The repository is public, so pushing a tag publishes the commits it
-   points at; otherwise the tag stays local and the lane prints the
+   notes) and pushes the tag to `origin` only when the commit is already on
+   one of its branches, as last fetched: a pushed tag uploads the commits it
+   points at, and they stay on `origin` even if no branch there ever carries
+   them. Otherwise the tag stays local and the lane prints the
    `git push origin <tag>` to run once the commit is pushed. A failed push only
    warns, because the build is already up. Pushing uses your git credentials.
 

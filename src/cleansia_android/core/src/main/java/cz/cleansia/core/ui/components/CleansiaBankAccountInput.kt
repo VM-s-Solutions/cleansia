@@ -200,12 +200,12 @@ private val czSkIban = Regex("""^(?:CZ|SK)\d{2}(\d{20})$""")
  * whose BBAN is `bankcode(4) prefix(6) number(10)` with the zero padding dropped, and a bare number
  * longer than [segmentMaxLength], the box it was pasted into: "2000145399" pasted into the prefix box
  * is the account number, while "0800" pasted into the bank-code box or "19" into the prefix box stays
- * there. A bare number counts only when it lands two or more characters at once: the number pad types
- * one at a time, so typing a prefix or a bank code never jumps to the number. Whitespace of every kind
- * (NBSP included) is dropped and an en or em dash reads as a hyphen, because that is what banking apps
- * put on the clipboard. A written-out account without a prefix clears the old one; a missing bank code
- * keeps it. Nothing is validated beyond shape: the server owns mod-11, the bank code and the IBAN
- * cross-check.
+ * there, beside digits already in the box too. A bare number is measured by what the edit put in, not
+ * by the box's new text, and the number pad types one digit at a time, so typing never jumps to the
+ * number. Whitespace of every kind (NBSP included) is dropped and an en or em dash reads as a hyphen,
+ * because that is what banking apps put on the clipboard. A written-out account without a prefix
+ * clears the old one; a missing bank code keeps it. Nothing is validated beyond shape: the server owns
+ * mod-11, the bank code and the IBAN cross-check.
  *
  * The iOS twin is `CleansiaBankAccountField.splitPastedAccount` and the web's is
  * `cleansia-bank-account`'s paste handler; the three are held to one case list.
@@ -221,10 +221,16 @@ internal fun splitPastedAccount(
     val account = domesticAccount.matchEntire(text) ?: return null
     val number = account.groupValues[2]
     if ('-' !in text && '/' !in text) {
-        val landedAtOnce = raw.length - current.length >= 2
-        return if (landedAtOnce && number.length > segmentMaxLength) Triple(null, number, null) else null
+        return if (insertedLength(text, current) > segmentMaxLength) Triple(null, number, null) else null
     }
     return Triple(account.groups[1]?.value.orEmpty(), number, account.groups[3]?.value)
+}
+
+/** [text] less the start and the end it shares with [current]: the length of what the edit put in. */
+private fun insertedLength(text: String, current: String): Int {
+    val start = text.commonPrefixWith(current).length
+    val end = text.commonSuffixWith(current).length
+    return text.length - start - minOf(end, minOf(text.length, current.length) - start)
 }
 
 /** `CZ65 0800 0000 1920 0014 5399` reads as `19-2000145399/0800`; null for any other text. */

@@ -63,6 +63,9 @@ class CleansiaBankAccountInputPasteTest {
         assertNull(split("19", into = prefixBox))
         assertNull(split("000019", into = prefixBox))
         assertNull("pasted over the box's own digits", split("5500", into = bankCodeBox, current = "0800"))
+        assertNull("pasted after the box's own digits", split("08005500", into = bankCodeBox, current = "0800"))
+        assertNull("pasted before the box's own digits", split("55000800", into = bankCodeBox, current = "0800"))
+        assertNull("pasted after the box's own digits", split("1234567", into = prefixBox, current = "12345"))
     }
 
     /**

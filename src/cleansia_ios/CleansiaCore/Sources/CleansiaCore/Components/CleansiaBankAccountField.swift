@@ -218,13 +218,13 @@ public struct CleansiaBankAccountField: View {
     /// separator, so their presence is what marks a paste — a CZ or SK IBAN, whose BBAN is
     /// `bankcode(4) prefix(6) number(10)`, and a bare number too long for the box it was pasted into:
     /// "2000145399" pasted into the prefix box is the account number, while "0800" pasted into the
-    /// bank-code box or "19" into the prefix box is that part, copied on its own, and stays there. A bare
-    /// number counts only when it lands two or more characters at once: the number pad types one at a
-    /// time, so typing a prefix or a bank code never jumps to the number. Whitespace of every kind (NBSP
-    /// included) is dropped and an en or em dash reads as a hyphen, because that is what banking apps put
-    /// on the clipboard. A written-out account without a prefix clears the old one; a missing bank code
-    /// keeps it. Nothing is validated beyond shape: the server owns mod-11, the bank code and the IBAN
-    /// cross-check. -> /partner-app/onboarding
+    /// bank-code box or "19" into the prefix box is that part, copied on its own, and stays there, beside
+    /// digits already in the box too. A bare number is measured by what the edit put in, not by the box's
+    /// new text, and the number pad types one digit at a time, so typing never jumps to the number.
+    /// Whitespace of every kind (NBSP included) is dropped and an en or em dash reads as a hyphen, because
+    /// that is what banking apps put on the clipboard. A written-out account without a prefix clears the
+    /// old one; a missing bank code keeps it. Nothing is validated beyond shape: the server owns mod-11,
+    /// the bank code and the IBAN cross-check. -> /partner-app/onboarding
     static func splitPastedAccount(
         _ raw: String,
         replacing current: String = "",
@@ -235,8 +235,8 @@ public struct CleansiaBankAccountField: View {
         )
         let text = domesticForm(ofIban: pasted) ?? pasted
         guard text.contains("-") || text.contains("/") else {
-            guard raw.count - current.count >= 2, isDigits(text, upTo: numberMaxLength),
-                  text.count > maxLength(of: box) else { return nil }
+            guard insertedLength(text, replacing: current) > maxLength(of: box),
+                  isDigits(text, upTo: numberMaxLength) else { return nil }
             return (nil, text, nil)
         }
 
@@ -262,6 +262,15 @@ public struct CleansiaBankAccountField: View {
         case .number: numberMaxLength
         case .bankCode: bankCodeMaxLength
         }
+    }
+
+    /// `text` less the start and the end it shares with `current`: the length of what the edit put in.
+    private static func insertedLength(_ text: String, replacing current: String) -> Int {
+        let new = Array(text)
+        let old = Array(current)
+        let start = zip(new, old).prefix { $0 == $1 }.count
+        let end = zip(new.reversed(), old.reversed()).prefix { $0 == $1 }.count
+        return new.count - start - min(end, min(new.count, old.count) - start)
     }
 
     /// `CZ65 0800 0000 1920 0014 5399` reads as `19-2000145399/0800`: the BBAN's zero padding is not

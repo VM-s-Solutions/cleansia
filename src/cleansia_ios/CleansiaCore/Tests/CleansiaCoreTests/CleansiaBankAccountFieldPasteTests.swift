@@ -66,6 +66,9 @@ final class CleansiaBankAccountFieldPasteTests: XCTestCase {
         XCTAssertNil(split("19", into: .prefix))
         XCTAssertNil(split("000019", into: .prefix))
         XCTAssertNil(split("5500", into: .bankCode, replacing: "0800"), "pasted over the box's own digits")
+        XCTAssertNil(split("08005500", into: .bankCode, replacing: "0800"), "pasted after the box's own digits")
+        XCTAssertNil(split("55000800", into: .bankCode, replacing: "0800"), "pasted before the box's own digits")
+        XCTAssertNil(split("1234567", into: .prefix, replacing: "12345"), "pasted after the box's own digits")
     }
 
     /// A bare number too long for the box it landed in is the account number, so "2000145399" pasted into

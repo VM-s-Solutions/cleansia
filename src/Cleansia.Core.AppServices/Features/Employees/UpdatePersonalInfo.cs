@@ -3,6 +3,7 @@ using Cleansia.Core.AppServices.Abstractions;
 using Cleansia.Core.AppServices.Common;
 using Cleansia.Core.AppServices.Common.Validators;
 using Cleansia.Core.Domain.Repositories;
+using Cleansia.Infra.Common.Attributes;
 using Cleansia.Infra.Common.Validations;
 using FluentValidation;
 
@@ -35,8 +36,13 @@ public class UpdatePersonalInfo
                 .MustBeInPast()
                 .MustBeReasonableAge();
 
+            // Not in the shared ValidatePhoneNumber: the web profile save accepts numbers without a
+            // country code, which this rule refuses.
             RuleFor(c => c.Phone)
-                .ValidatePhoneNumber();
+                .Cascade(CascadeMode.Stop)
+                .ValidatePhoneNumber()
+                .Must(phone => new PhoneNumberAttribute().IsValid(phone))
+                .WithMessage(BusinessErrorMessage.InvalidPhoneNumber);
         }
 
         // Not an ownership comparison — the subject is server-resolved, so there is nothing for a client
@@ -57,7 +63,8 @@ public class UpdatePersonalInfo
         string FirstName,
         string LastName,
         DateOnly BirthDate,
-        string Phone) : ICommand<Response>;
+        // Nullable for the same reason: an absent phone must reach the validator's common.required.
+        string? Phone) : ICommand<Response>;
 
     public record Response(string EmployeeId);
 

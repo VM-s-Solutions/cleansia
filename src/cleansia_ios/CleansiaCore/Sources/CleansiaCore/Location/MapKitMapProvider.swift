@@ -222,12 +222,12 @@ struct FullBleedOrderMap: UIViewRepresentable {
     }
 
     /// The region is centred on the map's whole bounds, as it always was, so the pin's place on screen
-    /// depends neither on the safe area nor on the sheet; it is set again only for a new coordinate, or when the
-    /// sheet moves beside the map or back over it, so a sheet drag does not undo a pan. Over the map the pin is
-    /// lifted into the strip above the resting sheet; beside it, nothing covers the map and the pin is at its
-    /// centre. Then the bottom margin follows the sheet's edge, which lifts Apple's logo and its *Legal* link
-    /// above the sheet (MapKit's terms) and moves nothing else. The margins ignore the safe area: the sheet's
-    /// cover is measured from the map's own bottom edge.
+    /// depends neither on the safe area nor on where the sheet is dragged; it is set again only for a new
+    /// coordinate, or when the sheet moves beside the map or back over it, so a sheet drag does not undo a pan.
+    /// Over the map the pin is lifted into the strip above the resting sheet; beside it, nothing covers the map
+    /// and the pin is at its centre. Then the bottom margin follows the sheet's edge, which lifts Apple's logo and
+    /// its *Legal* link above the sheet (MapKit's terms) and moves nothing else. The margins ignore the safe area:
+    /// the sheet's cover is measured from the map's own bottom edge.
     func apply(
         to mapView: MKMapView,
         placement: Placement = Placement(),

@@ -60,6 +60,7 @@ struct StickyActionFooter: View {
                     CleansiaPrimaryButton(
                         L10n.Orders.notifyOnTheWay,
                         loading: isBusy(.notifyOnTheWay),
+                        enabled: inFlightAction == nil,
                         action: { onConfirm(.notifyOnTheWay) }
                     )
                     if canDropOrder {

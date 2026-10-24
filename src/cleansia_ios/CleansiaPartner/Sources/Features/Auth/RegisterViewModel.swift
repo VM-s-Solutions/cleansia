@@ -31,15 +31,6 @@ struct RegisterFormState: Equatable {
     var passwordsMatch: Bool {
         PasswordPolicy.passwordsMatch(password, confirmPassword)
     }
-
-    var isValid: Bool {
-        !firstName.isBlank &&
-            !lastName.isBlank &&
-            !email.isBlank &&
-            PasswordPolicy.isValid(password) &&
-            passwordsMatch &&
-            acceptTerms
-    }
 }
 
 @MainActor

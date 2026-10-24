@@ -185,7 +185,6 @@ private struct RegisterContent: View {
                 CleansiaPrimaryButton(
                     L10n.Register.submit,
                     loading: isLoading,
-                    enabled: form.isValid,
                     action: onSubmit
                 )
 

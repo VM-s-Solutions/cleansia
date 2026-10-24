@@ -48,4 +48,11 @@ class OnboardingFormCallSiteTest {
         val button = callBlock(source("auth/RegisterScreen.kt"), "CleansiaPrimaryButton(", "R.string.register")
         assertEquals("!uiState.isLoading", argument(button, "enabled"))
     }
+
+    @Test
+    fun `the personal step's Next is held only while saving, and the phone is named under its field`() {
+        val screen = source("profile/PersonalSectionScreen.kt")
+        assertEquals("!saving", argument(callBlock(screen, "SectionSaveRow("), "enabled"))
+        assertEquals("form.phoneError", argument(callBlock(screen, "CleansiaPhoneInput("), "errorText"))
+    }
 }

@@ -22,6 +22,7 @@ import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Before
@@ -74,6 +75,9 @@ class PersonalSectionViewModelTest {
         every { errorTranslator.translate(any()) } returns "translated error"
         every { appContext.getString(R.string.error_birth_date_required) } returns "Date of birth is required"
         every { appContext.getString(R.string.error_profile_not_loaded) } returns "Profile not loaded yet"
+        every { appContext.getString(R.string.error_first_name_required) } returns "First name is required"
+        every { appContext.getString(R.string.error_last_name_required) } returns "Last name is required"
+        every { appContext.getString(R.string.error_phone_number_required) } returns "Phone number is required"
     }
 
     private fun viewModel() =
@@ -137,6 +141,55 @@ class PersonalSectionViewModelTest {
         val loaded = vm.uiState.value as PersonalSectionUiState.Loaded
         assertNull(loaded.form.birthDateError)
         assertEquals("1991-01-01", loaded.form.birthDate)
+    }
+
+    private fun PersonalSectionViewModel.form(): PersonalForm = (uiState.value as PersonalSectionUiState.Loaded).form
+
+    @Test
+    fun `blank names are named under their fields and nothing is sent`() = runTest {
+        coEvery { repository.getCurrentEmployee() } returns
+            ApiResult.Success(employee.copy(firstName = " ", lastName = null))
+        val vm = viewModel()
+        advanceUntilIdle()
+
+        vm.save()
+        advanceUntilIdle()
+
+        assertEquals("First name is required", vm.form().firstNameError)
+        assertEquals("Last name is required", vm.form().lastNameError)
+        coVerify(exactly = 0) { repository.updatePersonalInfo(any(), any(), any(), any(), any()) }
+        verify(exactly = 0) { snackbar.showError(any<String>()) }
+    }
+
+    @Test
+    fun `missing phone surfaces a field error and does not call the repo`() = runTest {
+        coEvery { repository.getCurrentEmployee() } returns ApiResult.Success(employee.copy(phoneNumber = null))
+        val vm = viewModel()
+        advanceUntilIdle()
+
+        vm.save()
+        advanceUntilIdle()
+
+        assertEquals("Phone number is required", vm.form().phoneError)
+        assertNull(vm.form().firstNameError)
+        assertEquals(ActionState.Idle, vm.saveState.value)
+        coVerify(exactly = 0) { repository.updatePersonalInfo(any(), any(), any(), any(), any()) }
+        verify(exactly = 0) { snackbar.showError(any<String>()) }
+    }
+
+    @Test
+    fun `typing a phone clears its error`() = runTest {
+        coEvery { repository.getCurrentEmployee() } returns ApiResult.Success(employee.copy(phoneNumber = " "))
+        val vm = viewModel()
+        advanceUntilIdle()
+        vm.save()
+        advanceUntilIdle()
+        assertNotNull(vm.form().phoneError)
+
+        vm.onPhoneChange("+420777123456")
+
+        assertNull(vm.form().phoneError)
+        assertEquals("+420777123456", vm.form().phone)
     }
 
     @Test

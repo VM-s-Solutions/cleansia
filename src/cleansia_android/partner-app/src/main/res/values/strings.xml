@@ -575,6 +575,7 @@
     <string name="error_profile_not_loaded">Profile not loaded yet</string>
     <string name="error_name_required">Contact name is required</string>
     <string name="error_phone_required">Contact phone is required</string>
+    <string name="error_phone_number_required">Phone number is required</string>
     <string name="error_pick_nationality">Pick your nationality</string>
     <string name="error_passport_required">Enter your passport / ID number</string>
     <string name="error_pick_business_country">Pick the country your business is registered in</string>

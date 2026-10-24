@@ -521,6 +521,7 @@
     <string name="error_profile_not_loaded">Profil se ještě nenačetl</string>
     <string name="error_name_required">Jméno kontaktu je povinné</string>
     <string name="error_phone_required">Telefon kontaktu je povinný</string>
+    <string name="error_phone_number_required">Telefonní číslo je povinné</string>
     <string name="error_pick_nationality">Vyberte svou národnost</string>
     <string name="error_passport_required">Zadejte číslo pasu / OP</string>
     <string name="error_pick_business_country">Vyberte zemi, kde je vaše podnikání registrováno</string>

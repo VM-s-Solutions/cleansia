@@ -575,6 +575,7 @@
     <string name="error_profile_not_loaded">Profil sa ešte nenačítal</string>
     <string name="error_name_required">Meno kontaktu je povinné</string>
     <string name="error_phone_required">Telefón kontaktu je povinný</string>
+    <string name="error_phone_number_required">Telefónne číslo je povinné</string>
     <string name="error_pick_nationality">Vyberte svoju národnosť</string>
     <string name="error_passport_required">Zadajte číslo pasu / OP</string>
     <string name="error_pick_business_country">Vyberte krajinu, kde je vaše podnikanie registrované</string>

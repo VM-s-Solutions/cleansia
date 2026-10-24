@@ -575,6 +575,7 @@
     <string name="error_profile_not_loaded">Профіль ще не завантажено</string>
     <string name="error_name_required">Ім\'я контакту обов\'язкове</string>
     <string name="error_phone_required">Телефон контакту обов\'язковий</string>
+    <string name="error_phone_number_required">Номер телефону обов\'язковий</string>
     <string name="error_pick_nationality">Виберіть громадянство</string>
     <string name="error_passport_required">Введіть номер паспорта / ID</string>
     <string name="error_pick_business_country">Виберіть країну реєстрації вашого бізнесу</string>

@@ -67,6 +67,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import cz.cleansia.core.ui.components.CleansiaTextButton
+import cz.cleansia.core.ui.components.sanitizePhoneInput
 import cz.cleansia.core.ui.theme.primaryText
 import cz.cleansia.customer.R
 import cz.cleansia.customer.core.user.CurrentUser
@@ -188,7 +189,7 @@ fun EditProfileScreen(
                 LabeledField(
                     label = stringResource(R.string.profile_edit_phone),
                     value = phone,
-                    onValueChange = { phone = it },
+                    onValueChange = { phone = sanitizePhoneInput(it) },
                     placeholder = "+420 000 000 000",
                     keyboardType = KeyboardType.Phone,
                 )

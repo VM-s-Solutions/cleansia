@@ -48,6 +48,7 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import cz.cleansia.core.ui.components.CleansiaTextButton
+import cz.cleansia.core.ui.components.sanitizePhoneInput
 import cz.cleansia.customer.R
 import cz.cleansia.customer.core.user.CurrentUser
 import cz.cleansia.core.ui.components.CleansiaPrimaryButton
@@ -102,7 +103,7 @@ fun ProfileOnboardingScreen(
             OnboardingField(
                 label = stringResource(R.string.onboarding_phone_label),
                 value = phone,
-                onValueChange = { phone = it },
+                onValueChange = { phone = sanitizePhoneInput(it) },
                 placeholder = "+420 000 000 000",
                 keyboardType = KeyboardType.Phone,
                 leading = Icons.Outlined.Phone,

@@ -151,7 +151,7 @@ private class PhoneVisualTransformation(
  * Tolerates pasted "(420) 728 089 247" or "+420-728-089-247" by
  * normalizing to "+420728089247".
  */
-private fun sanitizePhoneInput(input: String): String {
+fun sanitizePhoneInput(input: String): String {
     if (input.isEmpty()) return ""
     val builder = StringBuilder()
     var seenPlus = false

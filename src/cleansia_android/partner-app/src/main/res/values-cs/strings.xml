@@ -527,6 +527,7 @@
     <string name="error_passport_required">Zadejte číslo pasu / OP</string>
     <string name="error_pick_business_country">Vyberte zemi, kde je vaše podnikání registrováno</string>
     <string name="error_registration_number_required">Zadejte IČO</string>
+    <string name="error_legal_entity_name_missing">Chybí registrovaný název vaší firmy. Požádejte podporu o doplnění — zde ho změnit nelze.</string>
     <string name="error_pick_address_first">Nejprve vyberte adresu na mapě</string>
 
     <!-- Profile Validation -->

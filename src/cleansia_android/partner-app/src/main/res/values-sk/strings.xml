@@ -581,6 +581,7 @@
     <string name="error_passport_required">Zadajte číslo pasu / OP</string>
     <string name="error_pick_business_country">Vyberte krajinu, kde je vaše podnikanie registrované</string>
     <string name="error_registration_number_required">Zadajte IČO</string>
+    <string name="error_legal_entity_name_missing">Chýba registrovaný názov vašej firmy. Požiadajte podporu o doplnenie — tu ho zmeniť nemožno.</string>
     <string name="error_pick_address_first">Najprv vyberte adresu na mape</string>
 
     <!-- Profile Validation -->

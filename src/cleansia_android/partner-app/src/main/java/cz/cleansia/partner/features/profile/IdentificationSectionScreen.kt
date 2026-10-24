@@ -2,11 +2,15 @@ package cz.cleansia.partner.features.profile
 
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import cz.cleansia.core.ui.components.CleansiaTextField
@@ -115,15 +119,23 @@ fun IdentificationSectionScreen(
                 transparentContainer = true,
             )
 
-            form.storedLegalEntityName?.let { storedLegalEntityName ->
+            if (form.isLegalEntity) {
                 Spacer(Modifier.height(Spacing.XS))
                 CleansiaTextField(
-                    value = storedLegalEntityName,
+                    value = form.storedLegalEntityName.orEmpty(),
                     onValueChange = {},
                     label = stringResource(R.string.legal_entity_name_label),
                     enabled = false,
                     transparentContainer = true,
                 )
+                form.legalEntityNameError?.let { message ->
+                    Text(
+                        text = message,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.error,
+                        modifier = Modifier.padding(start = 16.dp, top = 4.dp),
+                    )
+                }
             }
         }
 

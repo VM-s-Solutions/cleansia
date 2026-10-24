@@ -581,6 +581,7 @@
     <string name="error_passport_required">Enter your passport / ID number</string>
     <string name="error_pick_business_country">Pick the country your business is registered in</string>
     <string name="error_registration_number_required">Enter your registration number</string>
+    <string name="error_legal_entity_name_missing">Your company\'s registered name is missing. Contact support to add it — it can\'t be changed here.</string>
     <string name="error_pick_address_first">Pick your address on the map first</string>
 
     <!-- Profile Validation -->

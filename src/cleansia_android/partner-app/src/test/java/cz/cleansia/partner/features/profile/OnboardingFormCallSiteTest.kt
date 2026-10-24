@@ -71,4 +71,18 @@ class OnboardingFormCallSiteTest {
             assertEquals(label, error, argument(field, "errorText"))
         }
     }
+
+    /**
+     * The legal name is locked, and a disabled Material field draws its supporting text in the disabled
+     * grey, so the reason it is missing is its own line in the error colour.
+     */
+    @Test
+    fun `a legal-entity row always shows its locked name, and says in the error colour when it is missing`() {
+        val block = source("profile/IdentificationSectionScreen.kt")
+            .substringAfter("if (form.isLegalEntity) {")
+            .substringBefore("SectionSaveRow(")
+        assertEquals("form.storedLegalEntityName.orEmpty()", argument(callBlock(block, "CleansiaTextField("), "value"))
+        val reason = callBlock(block.substringAfter("form.legalEntityNameError?.let"), "Text(")
+        assertEquals("MaterialTheme.colorScheme.error", argument(reason, "color"))
+    }
 }

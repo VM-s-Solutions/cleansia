@@ -28,8 +28,10 @@ import kotlinx.serialization.json.Json
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.ResponseBody.Companion.toResponseBody
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
+import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
@@ -80,6 +82,7 @@ class IdentificationSectionViewModelTest {
         every { appContext.getString(R.string.error_pick_business_country) } returns "Pick the business country"
         every { appContext.getString(R.string.error_registration_number_required) } returns "Enter it"
         every { appContext.getString(R.string.error_validation_passport_id_invalid_length) } returns "5 to 20 characters"
+        every { appContext.getString(R.string.error_legal_entity_name_missing) } returns "Contact support"
         coEvery { countryApi.countryGetOverview() } returns Response.success(emptyList())
         coEvery { countryApi.countryGetFieldLabels(any()) } returns Response.error(
             404,
@@ -117,7 +120,26 @@ class IdentificationSectionViewModelTest {
 
         val form = viewModel().awaitLoaded()
 
+        assertTrue(form.isLegalEntity)
         assertEquals("Uklid Praha s.r.o.", form.storedLegalEntityName)
+        assertNull(form.legalEntityNameError)
+    }
+
+    /**
+     * The registration lock needs a company's name, which only an operator can set, so a company row
+     * without one keeps the cleaner on this step: the locked field says why instead of staying hidden.
+     */
+    @Test
+    fun `an operator-onboarded company without a name says why the step cannot finish`() = runTest {
+        listOf(null, " ").forEach { name ->
+            coEvery { repository.getCurrentEmployee() } returns
+                ApiResult.Success(operatorOnboardedCompany.copy(legalEntityName = name))
+
+            val form = viewModel().awaitLoaded()
+
+            assertTrue(form.isLegalEntity)
+            assertEquals("Contact support", form.legalEntityNameError)
+        }
     }
 
     @Test
@@ -127,7 +149,9 @@ class IdentificationSectionViewModelTest {
 
         val form = viewModel().awaitLoaded()
 
+        assertFalse(form.isLegalEntity)
         assertNull(form.storedLegalEntityName)
+        assertNull(form.legalEntityNameError)
     }
 
     @Test

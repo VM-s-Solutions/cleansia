@@ -581,6 +581,7 @@
     <string name="error_passport_required">Введите номер паспорта / ID</string>
     <string name="error_pick_business_country">Выберите страну регистрации вашего бизнеса</string>
     <string name="error_registration_number_required">Введите регистрационный номер</string>
+    <string name="error_legal_entity_name_missing">Отсутствует зарегистрированное название вашей компании. Обратитесь в поддержку — здесь его изменить нельзя.</string>
     <string name="error_pick_address_first">Сначала выберите адрес на карте</string>
 
     <!-- Profile Validation -->

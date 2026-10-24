@@ -54,7 +54,9 @@ private val RegistrationNumberRefusals = listOf(
  *
  * [storedLegalEntityName] is display only: an operator may onboard a
  * company by hand, and what the server holds for such a row is shown,
- * never edited or sent from here.
+ * never edited or sent from here. Such a row with no name cannot pass
+ * the registration lock, and only support can add the name, so
+ * [legalEntityNameError] says so under the locked field.
  */
 data class IdentificationForm(
     val employeeId: String = "",
@@ -63,7 +65,9 @@ data class IdentificationForm(
     val passportId: String = "",
     val businessCountryId: String? = null,
     val registrationNumber: String = "",
+    val isLegalEntity: Boolean = false,
     val storedLegalEntityName: String? = null,
+    val legalEntityNameError: String? = null,
     val nationalityError: String? = null,
     val passportError: String? = null,
     val businessCountryError: String? = null,
@@ -121,6 +125,7 @@ class IdentificationSectionViewModel @Inject constructor(
             when (val empResult = profileRepository.getCurrentEmployee()) {
                 is ApiResult.Success -> {
                     val e = empResult.data
+                    val isLegalEntity = e.entityType == EmployeeEntityType._2
                     _uiState.value = IdentificationSectionUiState.Loaded(
                         IdentificationForm(
                             employeeId = e.id.orEmpty(),
@@ -131,8 +136,13 @@ class IdentificationSectionViewModel @Inject constructor(
                             // country so the typical case is zero-tap.
                             businessCountryId = e.countryId,
                             registrationNumber = e.registrationNumber.orEmpty(),
-                            storedLegalEntityName = e.legalEntityName
-                                ?.takeIf { e.entityType == EmployeeEntityType._2 },
+                            isLegalEntity = isLegalEntity,
+                            storedLegalEntityName = e.legalEntityName?.takeIf { isLegalEntity },
+                            legalEntityNameError = if (isLegalEntity && e.legalEntityName.isNullOrBlank()) {
+                                appContext.getString(R.string.error_legal_entity_name_missing)
+                            } else {
+                                null
+                            },
                         ),
                     )
                     e.countryId?.let { loadFieldLabels(it) }

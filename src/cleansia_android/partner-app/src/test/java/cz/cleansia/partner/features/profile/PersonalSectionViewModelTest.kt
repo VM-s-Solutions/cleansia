@@ -46,7 +46,7 @@ class PersonalSectionViewModelTest {
         email = "jana@example.com",
         firstName = "Jana",
         lastName = "Nováková",
-        phoneNumber = "+420123456789",
+        phoneNumber = "+420777123456",
         birthDate = "1991-01-01",
     )
 
@@ -78,6 +78,7 @@ class PersonalSectionViewModelTest {
         every { appContext.getString(R.string.error_first_name_required) } returns "First name is required"
         every { appContext.getString(R.string.error_last_name_required) } returns "Last name is required"
         every { appContext.getString(R.string.error_phone_number_required) } returns "Phone number is required"
+        every { appContext.getString(R.string.error_phone_number_invalid) } returns "Enter the number with its country code"
     }
 
     private fun viewModel() =
@@ -178,6 +179,39 @@ class PersonalSectionViewModelTest {
     }
 
     @Test
+    fun `a phone without its country code, or one libphonenumber refuses, is named and not sent`() = runTest {
+        listOf("+1", "777123456", "+420123456789").forEach { phone ->
+            coEvery { repository.getCurrentEmployee() } returns ApiResult.Success(employee.copy(phoneNumber = phone))
+            val vm = viewModel()
+            advanceUntilIdle()
+
+            vm.save()
+            advanceUntilIdle()
+
+            assertEquals(phone, "Enter the number with its country code", vm.form().phoneError)
+        }
+        coVerify(exactly = 0) { repository.updatePersonalInfo(any(), any(), any(), any(), any()) }
+        verify(exactly = 0) { snackbar.showError(any<String>()) }
+    }
+
+    @Test
+    fun `a stored phone with spaces is valid and is sent as stored`() = runTest {
+        coEvery { repository.getCurrentEmployee() } returns
+            ApiResult.Success(employee.copy(phoneNumber = "+420 777123456"))
+        coEvery { repository.updatePersonalInfo(any(), any(), any(), any(), any()) } returns ApiResult.Success(Unit)
+        val vm = viewModel()
+        advanceUntilIdle()
+
+        vm.save()
+        advanceUntilIdle()
+
+        assertNull(vm.form().phoneError)
+        coVerify(exactly = 1) {
+            repository.updatePersonalInfo(any(), any(), any(), any(), phone = "+420 777123456")
+        }
+    }
+
+    @Test
     fun `typing a phone clears its error`() = runTest {
         coEvery { repository.getCurrentEmployee() } returns ApiResult.Success(employee.copy(phoneNumber = " "))
         val vm = viewModel()
@@ -214,7 +248,7 @@ class PersonalSectionViewModelTest {
                 firstName = "Jana",
                 lastName = "Nováková",
                 birthDate = "1991-01-01",
-                phone = "+420123456789",
+                phone = "+420777123456",
             )
         }
     }

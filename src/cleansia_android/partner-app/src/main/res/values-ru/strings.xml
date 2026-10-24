@@ -576,6 +576,7 @@
     <string name="error_name_required">Имя контакта обязательно</string>
     <string name="error_phone_required">Телефон контакта обязателен</string>
     <string name="error_phone_number_required">Номер телефона обязателен</string>
+    <string name="error_phone_number_invalid">Введите номер с кодом страны, напр. +420 777 123 456</string>
     <string name="error_pick_nationality">Выберите гражданство</string>
     <string name="error_passport_required">Введите номер паспорта / ID</string>
     <string name="error_pick_business_country">Выберите страну регистрации вашего бизнеса</string>

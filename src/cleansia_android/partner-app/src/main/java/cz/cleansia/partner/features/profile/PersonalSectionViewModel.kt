@@ -8,6 +8,7 @@ import cz.cleansia.partner.data.user.UserRepository
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import cz.cleansia.core.snackbar.SnackbarController
+import cz.cleansia.core.ui.components.isValidPhoneNumber
 import cz.cleansia.core.ui.state.ActionState
 import cz.cleansia.partner.R
 import cz.cleansia.partner.core.network.ApiErrorTranslator
@@ -158,6 +159,9 @@ class PersonalSectionViewModel @Inject constructor(
         }
         if (form.phone.isBlank()) {
             updateForm { it.copy(phoneError = appContext.getString(R.string.error_phone_number_required)) }
+            hasError = true
+        } else if (!isValidPhoneNumber(form.phone.trim())) {
+            updateForm { it.copy(phoneError = appContext.getString(R.string.error_phone_number_invalid)) }
             hasError = true
         }
         if (hasError) return

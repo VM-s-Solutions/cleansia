@@ -147,6 +147,15 @@ private class PhoneVisualTransformation(
 }
 
 /**
+ * The server's rule for a stored phone (`PhoneNumberAttribute`): international form, and a number
+ * libphonenumber holds valid. The iOS twin is `PhoneNumberKitDisplayFormatter.isValidNumber`.
+ */
+fun isValidPhoneNumber(wire: String): Boolean = wire.startsWith("+") && runCatching {
+    val util = PhoneNumberUtil.getInstance()
+    util.isValidNumber(util.parse(wire, null))
+}.getOrDefault(false)
+
+/**
  * Digits, and a `+` only while nothing has been kept before it: a pasted " +420 728 089 247",
  * "Tel: +420 728 089 247" or "(+420) 728 089 247" keeps its country code as "+420728089247", and
  * "(420) 728 089 247" stays "420728089247". The iOS twin is `PhoneNumberSanitizer.sanitize`.

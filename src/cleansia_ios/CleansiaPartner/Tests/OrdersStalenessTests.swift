@@ -79,6 +79,15 @@ final class OrdersStalenessTests: XCTestCase {
         XCTAssertFalse(cache.isPaneStale(.history))
     }
 
+    /// The job leaves the cleaner's own list and its seat is open on the board again.
+    func testDropInvalidatesAvailableAndActiveOnly() {
+        let cache = freshAllPanes()
+        cache.invalidatePanes(for: .dropOrder)
+        XCTAssertTrue(cache.isPaneStale(.available))
+        XCTAssertTrue(cache.isPaneStale(.active))
+        XCTAssertFalse(cache.isPaneStale(.history))
+    }
+
     func testCompleteInvalidatesActiveAndHistoryOnly() {
         let cache = freshAllPanes()
         cache.invalidatePanes(for: .completeOrder)

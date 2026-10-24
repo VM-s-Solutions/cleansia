@@ -63,6 +63,34 @@ extension L10n.Orders {
         L10n.localized("order_cash_not_paid_reported_toast")
     }
 
+    static var dropAction: String {
+        L10n.localized("order_drop_action")
+    }
+
+    static var dropConfirmTitle: String {
+        L10n.localized("order_drop_confirm_title")
+    }
+
+    static var dropConfirmMessage: String {
+        L10n.localized("order_drop_confirm_message")
+    }
+
+    static var dropConfirmAction: String {
+        L10n.localized("order_drop_confirm_action")
+    }
+
+    static var dropKeep: String {
+        L10n.localized("order_drop_keep")
+    }
+
+    static var droppedNoCrewToast: String {
+        L10n.localized("order_dropped_toast_no_crew")
+    }
+
+    static var droppedToast: String {
+        L10n.localized("order_dropped_toast")
+    }
+
     static var slideToComplete: String {
         L10n.localized("slide_to_complete")
     }

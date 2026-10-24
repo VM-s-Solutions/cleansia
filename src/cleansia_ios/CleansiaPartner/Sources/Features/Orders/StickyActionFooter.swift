@@ -21,6 +21,9 @@ struct StickyActionFooter: View {
     /// why the screen degrades to an ordinary job in the short-lead band the push also reaches.
     var preferredOffer: PendingOfferItem?
     var onDeclineOffer: () -> Void = {}
+    /// Leaving the job is confirmed by the screen root as well.
+    var canDropOrder = false
+    var onDropRequested: () -> Void = {}
 
     private func isBusy(_ orderAction: OrderAction) -> Bool {
         inFlightAction == orderAction
@@ -53,11 +56,16 @@ struct StickyActionFooter: View {
             }
         case .notifyOnTheWay:
             footer {
-                CleansiaPrimaryButton(
-                    L10n.Orders.notifyOnTheWay,
-                    loading: isBusy(.notifyOnTheWay),
-                    action: { onConfirm(.notifyOnTheWay) }
-                )
+                VStack(spacing: Spacing.xs) {
+                    CleansiaPrimaryButton(
+                        L10n.Orders.notifyOnTheWay,
+                        loading: isBusy(.notifyOnTheWay),
+                        action: { onConfirm(.notifyOnTheWay) }
+                    )
+                    if canDropOrder {
+                        dropLink
+                    }
+                }
             }
         case .start:
             footer {
@@ -80,8 +88,9 @@ struct StickyActionFooter: View {
                         action: onCashConfirmRequested
                     )
                     if offersCashNotPaid {
-                        CashNotPaidLink(
-                            isReporting: isBusy(.reportCashNotPaid),
+                        FooterTextLink(
+                            L10n.Orders.cashNotPaidAction,
+                            isBusy: isBusy(.reportCashNotPaid),
                             enabled: inFlightAction == nil,
                             onTap: onCashNotPaidRequested
                         )
@@ -100,8 +109,22 @@ struct StickyActionFooter: View {
         case let .completeBlocked(cashPending):
             footer { CompleteBlockedHint(cashPending: cashPending) }
         case .none:
-            EmptyView()
+            // An assigned job still New: there is nothing to start yet, but it can be left.
+            if canDropOrder {
+                footer { dropLink }
+            } else {
+                EmptyView()
+            }
         }
+    }
+
+    private var dropLink: some View {
+        FooterTextLink(
+            L10n.Orders.dropAction,
+            isBusy: isBusy(.drop),
+            enabled: inFlightAction == nil,
+            onTap: onDropRequested
+        )
     }
 
     private func footer(@ViewBuilder _ control: () -> some View) -> some View {
@@ -114,19 +137,29 @@ struct StickyActionFooter: View {
     }
 }
 
-private struct CashNotPaidLink: View {
-    let isReporting: Bool
+/// While it is sent, a spinner of the link's own touch-target height stands in for it, so the footer does not
+/// drop under the cleaner's thumb.
+private struct FooterTextLink: View {
+    let label: String
+    let isBusy: Bool
     let enabled: Bool
     let onTap: () -> Void
 
+    init(_ label: String, isBusy: Bool, enabled: Bool, onTap: @escaping () -> Void) {
+        self.label = label
+        self.isBusy = isBusy
+        self.enabled = enabled
+        self.onTap = onTap
+    }
+
     var body: some View {
-        if isReporting {
+        if isBusy {
             ProgressView()
                 .progressViewStyle(.circular)
                 .padding(Spacing.xxs)
                 .frame(minHeight: 44)
         } else {
-            CleansiaTextLink(L10n.Orders.cashNotPaidAction, action: onTap)
+            CleansiaTextLink(label, action: onTap)
                 .disabled(!enabled)
         }
     }

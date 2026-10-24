@@ -74,11 +74,17 @@ class OrderDetailViewModelTest {
         errorKey = key,
     )
 
-    private fun crewOrder(status: Int, mySeatId: String = "seat-me", acceptance: WorkContractAcceptanceDto? = null) = OrderItem(
+    private fun crewOrder(
+        status: Int,
+        mySeatId: String = "seat-me",
+        acceptance: WorkContractAcceptanceDto? = null,
+        cleaningDateTime: String? = null,
+    ) = OrderItem(
         orderStatus = Code(value = status),
         isAssignedToCurrentUser = true,
         assignedEmployees = listOf(AssignedEmployeeDto(id = mySeatId, employeeId = "employee-me", fullName = "Me")),
         workContractAcceptances = listOfNotNull(acceptance),
+        cleaningDateTime = cleaningDateTime,
     )
 
     @Test
@@ -559,6 +565,30 @@ class OrderDetailViewModelTest {
         io.mockk.coVerify(exactly = 0) { ordersRepository.dropOrder(any()) }
         assertEquals(ActionState.Idle, vm.actionState.value)
         assertNull(vm.inFlightAction.value)
+    }
+
+    /** A screen left open across the start can still be confirmed; the gate read at the tap refuses it. */
+    @Test
+    fun `a drop is sent before the job's start and not once it has passed`() = runTest {
+        every { ordersRepository.isOrderStale(orderId) } returns true
+        coEvery { ordersRepository.dropOrder(orderId) } returns ApiResult.Success(1)
+        coEvery { ordersRepository.getById(orderId) } returns
+            ApiResult.Success(crewOrder(status = 2, cleaningDateTime = "2020-01-01T09:00:00Z"))
+        val started = viewModel()
+        advanceUntilIdle()
+
+        started.dropOrder()
+        advanceUntilIdle()
+        io.mockk.coVerify(exactly = 0) { ordersRepository.dropOrder(any()) }
+
+        coEvery { ordersRepository.getById(orderId) } returns
+            ApiResult.Success(crewOrder(status = 2, cleaningDateTime = "2999-01-01T09:00:00Z"))
+        val ahead = viewModel()
+        advanceUntilIdle()
+
+        ahead.dropOrder()
+        advanceUntilIdle()
+        io.mockk.coVerify(exactly = 1) { ordersRepository.dropOrder(orderId) }
     }
 
     @Test

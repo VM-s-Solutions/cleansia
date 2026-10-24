@@ -24,6 +24,7 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import java.time.Instant
 import javax.inject.Inject
 
 /** Per-action discriminator so individual buttons can show their own spinners. */
@@ -220,7 +221,7 @@ class OrderDetailViewModel @Inject constructor(
      */
     fun dropOrder() {
         if (_actionState.value is ActionState.Submitting) return
-        if ((_uiState.value as? OrderDetailUiState.Loaded)?.order?.droppable() != true) return
+        if ((_uiState.value as? OrderDetailUiState.Loaded)?.order?.droppable(Instant.now()) != true) return
         _actionState.value = ActionState.Submitting
         _inFlightAction.value = OrderAction.Drop
         viewModelScope.launch {

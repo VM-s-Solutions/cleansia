@@ -455,6 +455,13 @@
         "confirm_action": "Yes, the customer did not pay",
         "gating_error": "This can be reported only for a cash order in progress that has not been paid yet"
       },
+      "cancel_job": {
+        "action": "Cancel Job",
+        "confirm_title": "Cancel this job?",
+        "confirm_message": "You will be taken off this job and your place goes back to Available Orders for other partners. The customer's order is not cancelled. If you are the only partner on it, the job has no partner until someone takes it.",
+        "confirm_action": "Yes, cancel the job",
+        "keep": "Keep the job"
+      },
       "complete_missing_after_photos": "Order cannot be completed without after photos",
       "work_contract": {
         "accepted_line": "You accepted the contract for work on {{date}}, version {{version}}",
@@ -723,6 +730,8 @@
         "order_started": "Order started successfully.",
         "cash_collected": "Cash collected. The order is marked as paid.",
         "cash_not_paid_reported": "Reported. The order is completed and the customer owes {{amount}}.",
+        "job_cancelled": "You are off the job. Your place is back in Available Orders for other partners.",
+        "job_cancelled_no_crew": "You are off the job. It has no partner now and is back in Available Orders.",
         "failed_to_start": "Failed to start order. Please try again.",
         "print_failed": "Failed to print order. Please try again.",
         "receipt_not_available": "Receipt is not available for this order.",

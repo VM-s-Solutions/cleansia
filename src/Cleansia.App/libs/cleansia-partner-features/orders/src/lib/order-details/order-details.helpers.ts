@@ -144,6 +144,17 @@ export function canCompleteOrder(
   return orderStatusValue === OrderStatus.InProgress && isEmployeeAssigned(assignedEmployees, employeeId);
 }
 
+// DropOrder admits a job under way too; the app offers it only before (owner default 2026-10-24), and
+// never after a lockout report, whose confirmation pays the seat the drop would delete.
+export function canDropOrder(order: OrderItem, employeeId: string): boolean {
+  const status = order.orderStatus?.value;
+  return (
+    (status === OrderStatus.New || status === OrderStatus.Confirmed) &&
+    isEmployeeAssigned(order.assignedEmployees, employeeId) &&
+    !order.lockoutReportedAt
+  );
+}
+
 // Photo section is visible (read or write) when employee is assigned and the order
 // has progressed past acceptance — Confirmed, OnTheWay, InProgress, or Completed.
 export function canManagePhotos(

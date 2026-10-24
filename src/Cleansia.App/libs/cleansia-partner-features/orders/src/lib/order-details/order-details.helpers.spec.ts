@@ -11,6 +11,7 @@ import {
 } from '@cleansia/partner-services';
 import {
   canAcceptWorkContract,
+  canDropOrder,
   canMarkCashCollected,
   canReportCashNotPaid,
   canTakeOrder,
@@ -318,6 +319,56 @@ describe('a customer who did not pay at the door', () => {
         'pages.order_details.cash_not_paid.confirm_action',
         'pages.order_details.cash_not_paid.gating_error',
         'global.messages.orders.cash_not_paid_reported',
+      ])
+    ).toEqual([]);
+  });
+});
+
+describe('leaving a job', () => {
+  const jobSheet = (status: OrderStatus, employeeId = EMPLOYEE_ID, lockoutReportedAt?: string): OrderItem =>
+    OrderItem.fromJS({
+      orderStatus: { value: status },
+      assignedEmployees: [{ employeeId }],
+      lockoutReportedAt,
+    });
+
+  it.each([OrderStatus.New, OrderStatus.Confirmed])(
+    'is offered to a cleaner on the crew before the job is under way, status %s',
+    (status) => {
+      expect(canDropOrder(jobSheet(status), EMPLOYEE_ID)).toBe(true);
+    }
+  );
+
+  it.each([
+    OrderStatus.Pending,
+    OrderStatus.OnTheWay,
+    OrderStatus.InProgress,
+    OrderStatus.Completed,
+    OrderStatus.Cancelled,
+  ])('is not offered once the job is under way or over, status %s', (status) => {
+    expect(canDropOrder(jobSheet(status), EMPLOYEE_ID)).toBe(false);
+  });
+
+  it('is not offered to a cleaner who is not on the crew', () => {
+    expect(canDropOrder(jobSheet(OrderStatus.Confirmed, 'emp-2'), EMPLOYEE_ID)).toBe(false);
+  });
+
+  it('is not offered once the cleaner has reported that they cannot get in', () => {
+    expect(
+      canDropOrder(jobSheet(OrderStatus.Confirmed, EMPLOYEE_ID, '2026-09-29T10:20:00Z'), EMPLOYEE_ID)
+    ).toBe(false);
+  });
+
+  it.each(PARTNER_LOCALES)('%s words the action, its confirmation and both outcomes', (locale) => {
+    expect(
+      missingIn(locale, [
+        'pages.order_details.cancel_job.action',
+        'pages.order_details.cancel_job.confirm_title',
+        'pages.order_details.cancel_job.confirm_message',
+        'pages.order_details.cancel_job.confirm_action',
+        'pages.order_details.cancel_job.keep',
+        'global.messages.orders.job_cancelled',
+        'global.messages.orders.job_cancelled_no_crew',
       ])
     ).toEqual([]);
   });

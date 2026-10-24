@@ -3,6 +3,7 @@ import { UnsubscribeControlDirective } from '@cleansia/directives';
 import {
   AddOrderNoteCommand,
   APIBASEURL,
+  DropOrderCommand,
   GetMyAssignmentRemovalResponse,
   MarkCashCollectedCommand,
   OrderClient,
@@ -45,6 +46,7 @@ import {
   WorkContractDialogResult,
 } from '../components/work-contract-dialog';
 import {
+  canDropOrder,
   canMarkCashCollected,
   canReportCashNotPaid,
   cashCollectionRefusal,
@@ -658,6 +660,69 @@ export class OrderDetailsFacade extends UnsubscribeControlDirective {
           if (code === ACCEPTANCE_REQUIRED) {
             this.openAcceptWorkContractDialog();
           } else if (code) {
+            this.loadOrderDetails(orderId);
+          }
+          return of(null);
+        }),
+        finalize(() => this.loading.set(false))
+      )
+      .subscribe();
+  }
+
+  // The page is left on success: the job is no longer the caller's, and re-reading it would show
+  // the open seat they just gave up.
+  openDropOrderDialog(onLeft: () => void): void {
+    const order = this.orderDetails();
+    const orderId = order?.id;
+    const employeeId = this.currentEmployeeId();
+
+    if (!order || !orderId || !employeeId || !canDropOrder(order, employeeId)) {
+      this.snackbarService.showErrorTranslated(
+        'global.messages.orders.invalid_request'
+      );
+      return;
+    }
+
+    this.confirmDialog
+      .confirmTranslated(
+        'pages.order_details.cancel_job.confirm_message',
+        'pages.order_details.cancel_job.confirm_title',
+        undefined,
+        {
+          danger: true,
+          icon: 'pi pi-exclamation-triangle',
+          acceptLabelKey: 'pages.order_details.cancel_job.confirm_action',
+          rejectLabelKey: 'pages.order_details.cancel_job.keep',
+        }
+      )
+      .pipe(takeUntil(this.destroyed$))
+      .subscribe((confirmed) => {
+        if (confirmed) {
+          this.dropOrder(orderId, onLeft);
+        }
+      });
+  }
+
+  private dropOrder(orderId: string, onLeft: () => void): void {
+    this.loading.set(true);
+
+    const command = new DropOrderCommand();
+    command.orderId = orderId;
+
+    this.partnerClient.orderClient
+      .dropOrder(command)
+      .pipe(
+        takeUntil(this.destroyed$),
+        tap((response) => {
+          this.snackbarService.showSuccessTranslated(
+            response.crewRemaining === 0
+              ? 'global.messages.orders.job_cancelled_no_crew'
+              : 'global.messages.orders.job_cancelled'
+          );
+          onLeft();
+        }),
+        catchError((error) => {
+          if (extractApiErrorCode(error)) {
             this.loadOrderDetails(orderId);
           }
           return of(null);

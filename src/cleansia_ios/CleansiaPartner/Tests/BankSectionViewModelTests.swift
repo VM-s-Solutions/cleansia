@@ -5,8 +5,8 @@ import XCTest
 
 @MainActor
 final class BankSectionViewModelTests: XCTestCase {
-    private var client: FakePartnerProfileClient!
-    private var snackbar: SnackbarController!
+    var client: FakePartnerProfileClient!
+    var snackbar: SnackbarController!
 
     private let czechPayout = MyPayoutDetails(
         bankCountryId: "country-cz",
@@ -26,11 +26,11 @@ final class BankSectionViewModelTests: XCTestCase {
         ])
     }
 
-    private func makeVM() -> BankSectionViewModel {
+    func makeVM() -> BankSectionViewModel {
         BankSectionViewModel(client: client, snackbar: snackbar)
     }
 
-    private func loadedForm(_ vm: BankSectionViewModel) throws -> BankForm {
+    func loadedForm(_ vm: BankSectionViewModel) throws -> BankForm {
         try XCTUnwrap(vm.state.loadedValue, "expected loaded")
     }
 
@@ -126,6 +126,9 @@ final class BankSectionViewModelTests: XCTestCase {
         await vm.save()
 
         XCTAssertNil(client.bankCommand)
+        XCTAssertEqual(try loadedForm(vm).accountError, message("validation.payout.account_number_required"))
+        XCTAssertNil(try loadedForm(vm).bankCountryError)
+        XCTAssertNil(snackbar.current, "a field error is shown on its field, not in a snackbar")
     }
 
     /// A CZ or SK bank takes the three parts; an IBAN alone is not its identifier.
@@ -221,7 +224,7 @@ final class BankSectionViewModelTests: XCTestCase {
         )
     }
 
-    func testSaveFailureSnackbarsAndReturnsToIdle() async {
+    func testARefusedAccountIsNamedUnderTheAccountField() async throws {
         client.bankUpdateResult = .failure(
             ApiError(code: "validation.payout.invalid_account_number", httpStatus: 400)
         )
@@ -233,7 +236,11 @@ final class BankSectionViewModelTests: XCTestCase {
         await vm.save()
 
         guard case .idle = vm.action else { return XCTFail("expected idle after a rejected save") }
-        XCTAssertNotNil(snackbar.current)
+        XCTAssertEqual(try loadedForm(vm).accountError, message("validation.payout.invalid_account_number"))
+        XCTAssertNil(snackbar.current)
+
+        vm.update(\.accountNumber, to: "5885638003")
+        XCTAssertNil(try loadedForm(vm).accountError, "the error clears as the number is fixed")
     }
 
     func testSaveWithoutALoadedEmployeeIdSnackbarsInsteadOfCallingTheClient() async {
@@ -258,7 +265,7 @@ final class BankSectionViewModelTests: XCTestCase {
 
     // MARK: A bank outside CZ and SK is entered as one IBAN (owner ruling 2026-10-02)
 
-    private func loadWithEuropeanBanks() async -> BankSectionViewModel {
+    func loadWithEuropeanBanks() async -> BankSectionViewModel {
         client.allCountriesResult = .success([
             CountryListItem(id: "country-cz", isoCode: "CZE", isoAlpha2: "CZ", name: "Czech Republic"),
             CountryListItem(id: "country-sk", isoCode: "SVK", isoAlpha2: "SK", name: "Slovakia"),

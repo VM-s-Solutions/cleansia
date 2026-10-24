@@ -88,6 +88,28 @@ extension BankSectionViewModelTests {
         XCTAssertNil(snackbar.current)
     }
 
+    /// A save answers for itself: once it passes the device's checks, what the server refused about another
+    /// field last time is off the screen, so a new refusal is never shown beside a stale one.
+    func testASaveThatPassesTheDeviceChecksClearsTheServersEarlierRefusals() async throws {
+        let vm = await loadWithEuropeanBanks()
+        vm.update(\.bankCountryId, to: "country-de")
+        vm.update(\.iban, to: "DE89370400440532013000")
+        client.bankUpdateResult = .failure(ApiError(code: "validation.payout.swift_required", httpStatus: 400))
+        await vm.save()
+        XCTAssertEqual(try loadedForm(vm).swiftError, message("validation.payout.swift_required"))
+
+        vm.update(\.bankCountryId, to: "country-cz")
+        vm.update(\.accountNumber, to: "5885638004")
+        vm.update(\.bankCode, to: "5500")
+        client.bankUpdateResult = .failure(
+            ApiError(code: "validation.payout.invalid_account_number", httpStatus: 400)
+        )
+        await vm.save()
+
+        XCTAssertNil(try loadedForm(vm).swiftError, "a Czech bank for a Czech cleaner needs no SWIFT")
+        XCTAssertEqual(try loadedForm(vm).accountError, message("validation.payout.invalid_account_number"))
+    }
+
     func testAnIbanTheServerRefusesIsNamedUnderTheIbanAndClearsAsItIsEdited() async throws {
         client.bankUpdateResult = .failure(
             ApiError(code: "validation.payout.looks_like_card", httpStatus: 400)

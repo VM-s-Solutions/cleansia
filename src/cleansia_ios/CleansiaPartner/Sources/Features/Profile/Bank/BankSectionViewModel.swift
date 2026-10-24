@@ -234,10 +234,8 @@ final class BankSectionViewModel: ViewModel {
             return
         }
         checkFields(&form)
-        guard form.bankCountryError == nil, form.accountError == nil, form.ibanProblem == nil else {
-            state = .loaded(withBankCountryCode(form))
-            return
-        }
+        state = .loaded(withBankCountryCode(form))
+        guard form.bankCountryError == nil, form.accountError == nil, form.ibanProblem == nil else { return }
 
         action = .submitting
         // Each scheme sends only its own identifier. A domestic IBAN is the server's to derive, and the

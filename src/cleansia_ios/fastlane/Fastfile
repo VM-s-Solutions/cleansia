@@ -125,6 +125,13 @@ def preflight(key, options)
   unless dirty.empty? || options[:allow_dirty]
     UI.user_error!("Uncommitted changes would ship in a build no commit describes:\n#{dirty}\nCommit them, or pass allow_dirty:true")
   end
+  commit = git("rev-parse", "HEAD")
+  source = {
+    commit: commit,
+    stamp: dirty.empty? ? commit : "#{commit}-dirty",
+    branch: git("rev-parse", "--abbrev-ref", "HEAD"),
+    clean: dirty.empty?,
+  }
 
   # 3. This app's suite built the way the archive is (-O, whole module) by the pinned Xcode, and Debug
   #    otherwise for the DEBUG test hooks and @testable. MallocScribble makes a use-after-free fault.
@@ -145,9 +152,10 @@ def preflight(key, options)
   ensure
     ENV.delete("TEST_RUNNER_MallocScribble")
   end
+  source
 end
 
-# Gate → bump → archive → upload for one app.
+# Gate → bump → archive → symbols → upload → tag for one app.
 def ship(key, options = {})
   app = APPS.fetch(key)
   team_id = ENV.fetch("ASC_TEAM_ID")
@@ -167,7 +175,7 @@ def ship(key, options = {})
     key_filepath: ENV.fetch("ASC_KEY_PATH"),
   )
 
-  preflight(key, options)
+  source = preflight(key, options)
 
   # 4. Next build number = one past the highest already on TestFlight (0 → 1 for
   #    the very first upload). TestFlight rejects a duplicate build number.
@@ -184,7 +192,10 @@ def ship(key, options = {})
   #    Activity extension together (they must share a version). An api_base_url
   #    is injected the same way: a command-line build setting outranks the
   #    Release value in project.yml, which is otherwise the production host.
+  #    So are the commit and branch, which land in Info.plist as
+  #    CleansiaGitCommit and CleansiaGitBranch, checked in the archive below.
   xcargs = "CURRENT_PROJECT_VERSION=#{build_number} DEVELOPMENT_TEAM=#{team_id} -allowProvisioningUpdates"
+  xcargs += " CLEANSIA_GIT_COMMIT=#{source[:stamp].shellescape} CLEANSIA_GIT_BRANCH=#{source[:branch].shellescape}"
   if api_base_url
     UI.important("🌐 #{app[:bundle_id]} build ##{build_number} calls #{api_base_url}, not the Release host")
     xcargs += " API_BASE_URL=#{api_base_url.shellescape}"
@@ -209,6 +220,10 @@ def ship(key, options = {})
       teamID: team_id,
     },
   )
+  shipped = FastlaneCore::IpaFileAnalyser.fetch_info_plist_file(lane_context[SharedValues::IPA_OUTPUT_PATH])
+  unless shipped["CleansiaGitCommit"] == source[:stamp]
+    UI.user_error!("The archive's Info.plist names commit #{shipped["CleansiaGitCommit"].inspect}, not #{source[:stamp]}")
+  end
 
   # 6. Symbols for Crashlytics, authenticated by the app's own plist. A failed upload only logs an error:
   #    the build still ships, and its crash reports arrive unsymbolicated.
@@ -220,12 +235,36 @@ def ship(key, options = {})
 
   # 7. Ship. Internal testers get it within minutes of processing (no Beta App
   #    Review); external testers need a one-time review, enabled per-app in ASC.
+  #    With a changelog, pilot waits until the build appears to set What to Test, then returns.
+  notes = <<~NOTES
+    #{app[:bundle_id]} #{shipped["CFBundleShortVersionString"]} (#{build_number})
+    Commit #{source[:stamp]} on #{source[:branch]}
+    API #{shipped["API_BASE_URL"]}
+    #{sh("xcodebuild", "-version", log: false).split.join(" ")}
+  NOTES
   upload_to_testflight(
     api_key: api_key,
     app_identifier: app[:bundle_id],
     skip_waiting_for_build_processing: true,
     distribute_external: false,
+    changelog: notes,
   )
-
   UI.success("✅ #{app[:bundle_id]} build ##{build_number} uploaded to TestFlight")
+
+  # 8. Tag the commit, and publish the tag only when the commit is already on a remote branch: this
+  #    repository is public, so a pushed tag publishes the commits it points at. An allow_dirty build
+  #    gets none, since no commit describes it.
+  return UI.important("No tag: build ##{build_number} has uncommitted changes") unless source[:clean]
+
+  tag = "ios/#{key}/#{shipped["CFBundleShortVersionString"]}-#{build_number}"
+  add_git_tag(tag: tag, commit: source[:commit], message: notes)
+  if git("branch", "-r", "--contains", source[:commit]).empty?
+    UI.important("Tag #{tag} stays local: #{source[:commit]} is on no remote branch. Once it is: git push origin #{tag}")
+    return
+  end
+  begin
+    push_git_tags(tag: tag)
+  rescue StandardError => e
+    UI.important("Tag #{tag} was not pushed (#{e.message}); the build is up. Retry with: git push origin #{tag}")
+  end
 end

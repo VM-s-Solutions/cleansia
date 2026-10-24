@@ -22,6 +22,10 @@
 	<string>$(MARKETING_VERSION)</string>
 	<key>CFBundleVersion</key>
 	<string>$(CURRENT_PROJECT_VERSION)</string>
+	<key>CleansiaGitBranch</key>
+	<string>$(CLEANSIA_GIT_BRANCH)</string>
+	<key>CleansiaGitCommit</key>
+	<string>$(CLEANSIA_GIT_COMMIT)</string>
 	<key>FirebaseAppDelegateProxyEnabled</key>
 	<false/>
 	<key>ITSAppUsesNonExemptEncryption</key>

@@ -100,6 +100,9 @@ targets:
         # disable it per Firebase's own manual-integration guidance.
         FirebaseAppDelegateProxyEnabled: false
         API_BASE_URL: $(API_BASE_URL)
+        # The commit and branch a TestFlight build was archived from; the lanes pass both as build settings.
+        CleansiaGitCommit: $(CLEANSIA_GIT_COMMIT)
+        CleansiaGitBranch: $(CLEANSIA_GIT_BRANCH)
         GIDClientID: $(GID_CLIENT_ID)
         GIDServerClientID: $(GID_SERVER_CLIENT_ID)
         STRIPE_PUBLISHABLE_KEY: $(STRIPE_PUBLISHABLE_KEY)

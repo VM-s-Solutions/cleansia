@@ -50,6 +50,28 @@ apps' `WorkContractScreen` / `WorkContractView` render an accepted contract with
 the order detail's *Read the contract*, and the customer wizards' confirm step links to the public web
 `/work-contract` page. → [Business rules — the contract for work](/product/business-rules#work-contract)
 
+**Two shared inputs take a paste as it was copied** (since 2026-10-24):
+
+- **The one-time-code entry** (`ui/components/CodeInput.kt`, `Components/CodeInput.swift`), behind the
+  partner app's e-mail confirmation and the customer app's e-mail verification, is one real text field
+  drawn as six boxes: a tap anywhere on them focuses it, and a long press opens its edit menu with
+  Paste. iOS adds the system's Paste button under the boxes, an icon alone, which reads the clipboard
+  without the prompt a read from code raises; Android adds a *Paste* text button, shown while the
+  clipboard holds text, checked whenever the window regains focus, because Android 10 and later let
+  only the focused app read the clipboard. Each edit goes through one rule per platform, held to one
+  case list (`OneTimeCode.accept`, `acceptOneTimeCode`): only ASCII digits are kept, up to the code's
+  length, and a run of at least that many digits arriving in one edit is a whole code and replaces the
+  code typed so far; anything shorter is typing. The iOS customer app's two reset-code fields, the
+  forgotten password's and the Security page's, keep and send their code by the same rule.
+- **The phone field** keeps a `+` only while nothing has been kept before it
+  (`PhoneNumberSanitizer.sanitize`, `sanitizePhoneInput`), so a number copied with a space, a label or
+  a bracket in front of its country code keeps the code; until then only a `+` that was the very first
+  character survived. The Android customer app's two profile phone fields, plain text fields, go
+  through the same function since the same day.
+
+→ [Partner onboarding — e-mail confirmation](/partner-app/onboarding#step-2-email-confirmation),
+[what each step checks](/partner-app/onboarding#step-checks)
+
 ::: warning One definition, not two copies
 `ApiError`/`ApiResult` and the auth spine exist **once** per platform on purpose. A second copy in an
 app module is the drift that produced "blank screen" bugs before the shared module existed. If you

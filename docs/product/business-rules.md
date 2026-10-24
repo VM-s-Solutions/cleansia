@@ -2049,6 +2049,48 @@ above, which are accepted in the app, never uploaded.
   The framework agreement recommends the insurance since `2026-10-05`; its `2026-09-29` version
   required the certificate ([The legal texts](#legal-texts)).
 
+## What a cleaner's profile accepts {#cleaner-profile-fields}
+
+The server's rules for what a cleaner enters about themselves, on each save that writes it: the
+partner web's profile (`UpdateEmployee`), the apps' onboarding steps (`UpdatePersonalInfo`,
+`UpdateAddressInfo`, `UpdateIdentificationInfo` and the bank details) and an administrator's edit
+(`AdminUpdateEmployee`, which judges the fields it carries). A length is counted in UTF-16 code
+units, as .NET counts a string. Since 2026-10-24 the Android and iOS partner apps check the same
+numbers before they send, and name each failing field under it
+→ [What each step checks before it sends](/partner-app/onboarding#step-checks).
+
+| Field | The rule | Refused with |
+|---|---|---|
+| First and last name | required, at most 50 | `common.required`, `common.max_length` (on an administrator's edit, `dispute.max_length_exceeded`) |
+| Birth date | a date in the past, 18 to 120 years before today, both days included | `validation.invalid_date`, `validation.date_must_be_in_past`, `validation.invalid_age` |
+| Phone | required; on the apps' Personal save also in international form, with its country code, and a number libphonenumber holds valid | `common.required`, `validation.invalid_phone_number` |
+| Street, city, postcode | required; 5–255, 2–100 and 3–20 | `common.required`, `address.invalid_length` |
+| Passport or ID number | required, 5–20 as sent (the apps trim it first) | `common.required`, `validation.passport_id.invalid_length` |
+| Registration number | at most 50, then the business country's format, which a blank number fails where the country requires one, and, for a Czech number, ARES; the apps' identification save requires it outright | `common.required` (the apps), `dispute.max_length_exceeded`, `validation.registration_number.invalid_format` and the register's keys → [below](#business-register) |
+| Bank code of a CZ or SK account | exactly four ASCII digits | `validation.payout.invalid_bank_code` |
+| Legal entity name | required while the cleaner is registered as a company, which only an operator can set; at most 200 | `common.required` on `LegalEntityName`, `dispute.max_length_exceeded` |
+
+**The phone rule is the mobile save's alone** (owner default 2026-10-24). `UpdatePersonalInfo`, the
+apps' Personal step on the mobile partner host, refuses a missing phone with `common.required`, where it
+used to answer with MVC's untranslated *The Phone field is required.*, and a number that is not valid in
+international form with `validation.invalid_phone_number`, the check `PhoneNumberAttribute` makes. The
+partner web's profile and an administrator's edit still accept a number without its country code, which
+the web's own phone field allows, so the rule is not in the shared phone validator.
+
+**A passport or ID number of the wrong length has its own key** (since 2026-10-24),
+`validation.passport_id.invalid_length`, on the identification save, the partner web's profile and an
+administrator's edit. Until then it was refused with the address wording, `address.invalid_length`,
+which stays for the street, the city, the postcode and an emergency contact's name.
+
+**A company needs its registered name, and only an operator can supply it** (since 2026-10-24). A
+cleaner's own save cannot make them a company (`employee.legal_entity_not_accepted`), and while they are
+one the profile is not complete without the name. An administrator's edit is judged on the edit merged
+over the stored row: an edit that would leave a company without its name is refused with
+`common.required` on `LegalEntityName`, and so is every edit of a company row already stored without
+one, until the name is added, because the cleaner's apps cannot supply it. The admin console marks the
+field required while *Legal entity* is chosen, and the apps show the cleaner of such a row the locked
+field and the reason.
+
 ## The cleaner's business is checked in its register {#business-register}
 
 **Owner ruling 2026-10-04.** A Czech cleaner's company ID (IČO) is looked up in ARES, the Czech

@@ -1,6 +1,41 @@
 {
   "sourceLanguage": "en",
   "strings": {
+    "code_input.label": {
+      "extractionState": "manual",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ověřovací kód, 6 číslic"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Verification code, 6 digits"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Код подтверждения, 6 цифр"
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Overovací kód, 6 číslic"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Код підтвердження, 6 цифр"
+          }
+        }
+      }
+    },
     "error.address.already_exists": {
       "extractionState": "stale",
       "localizations": {

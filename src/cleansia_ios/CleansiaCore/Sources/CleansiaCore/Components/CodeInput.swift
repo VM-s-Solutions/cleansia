@@ -97,6 +97,7 @@ struct CodeTextField: UIViewRepresentable {
         )
         field.keyboardType = .numberPad
         field.textContentType = .oneTimeCode
+        field.accessibilityLabel = CoreL10n.localized("code_input.label")
         field.font = .systemFont(ofSize: 1)
         field.textColor = .clear
         field.tintColor = .clear

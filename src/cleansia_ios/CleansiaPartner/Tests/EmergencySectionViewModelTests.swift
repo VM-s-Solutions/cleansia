@@ -81,6 +81,34 @@ final class EmergencySectionViewModelTests: XCTestCase {
         XCTAssertNil(client.emergencyCommand)
     }
 
+    func testEachErrorClearsWhenItsOwnFieldChanges() async {
+        client.employeeResult = .success(EmployeeItem(id: "emp-1"))
+        let vm = makeVM()
+        await vm.load()
+        await vm.save()
+
+        vm.name = "Petr"
+        XCTAssertNil(vm.nameError)
+        XCTAssertNotNil(vm.phoneError)
+
+        vm.phone = "+420999"
+        XCTAssertNil(vm.phoneError)
+    }
+
+    /// A binding that writes back the value it already holds has fixed nothing.
+    func testWritingTheSameValueBackKeepsTheError() async {
+        client.employeeResult = .success(EmployeeItem(id: "emp-1"))
+        let vm = makeVM()
+        await vm.load()
+        await vm.save()
+
+        vm.name = vm.name
+        vm.phone = vm.phone
+
+        XCTAssertNotNil(vm.nameError)
+        XCTAssertNotNil(vm.phoneError)
+    }
+
     func testSaveSuccessEmitsSavedEffect() async {
         client.employeeResult = .success(EmployeeItem(
             id: "emp-1",

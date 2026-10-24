@@ -72,6 +72,7 @@ fun IdentificationSectionScreen(
                 options = countryOptions,
                 onSelected = viewModel::onNationalitySelected,
                 label = stringResource(R.string.nationality),
+                errorText = form.nationalityError,
                 enabled = !saving,
                 searchable = true,
             )
@@ -80,6 +81,7 @@ fun IdentificationSectionScreen(
                 value = form.passportId,
                 onValueChange = viewModel::onPassportChange,
                 label = stringResource(R.string.passport_id),
+                errorText = form.passportError,
                 enabled = !saving,
                 transparentContainer = true,
             )
@@ -93,6 +95,7 @@ fun IdentificationSectionScreen(
                 options = countryOptions,
                 onSelected = viewModel::onBusinessCountrySelected,
                 label = stringResource(R.string.business_country),
+                errorText = form.businessCountryError,
                 enabled = !saving,
                 searchable = true,
             )
@@ -107,6 +110,7 @@ fun IdentificationSectionScreen(
                 label = fieldLabels?.registrationNumberLabel
                     ?: stringResource(R.string.registration_number_label),
                 helper = stringResource(R.string.registration_number_helper),
+                errorText = form.registrationNumberError,
                 enabled = !saving,
                 transparentContainer = true,
             )

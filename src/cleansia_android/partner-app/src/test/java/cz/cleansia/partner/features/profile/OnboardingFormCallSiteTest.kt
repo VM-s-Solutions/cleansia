@@ -55,4 +55,20 @@ class OnboardingFormCallSiteTest {
         assertEquals("!saving", argument(callBlock(screen, "SectionSaveRow("), "enabled"))
         assertEquals("form.phoneError", argument(callBlock(screen, "CleansiaPhoneInput("), "errorText"))
     }
+
+    @Test
+    fun `the identification step's Next is held only while saving, and each field is named under it`() {
+        val screen = source("profile/IdentificationSectionScreen.kt")
+        assertEquals("!saving", argument(callBlock(screen, "SectionSaveRow("), "enabled"))
+        mapOf(
+            "R.string.nationality" to "form.nationalityError",
+            "R.string.passport_id" to "form.passportError",
+            "R.string.business_country" to "form.businessCountryError",
+            "R.string.registration_number_label" to "form.registrationNumberError",
+        ).forEach { (label, error) ->
+            val field = listOf("PickerDropdown(", "CleansiaTextField(")
+                .firstNotNullOf { call -> runCatching { callBlock(screen, call, label) }.getOrNull() }
+            assertEquals(label, error, argument(field, "errorText"))
+        }
+    }
 }

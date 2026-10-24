@@ -103,7 +103,7 @@ struct AddressSectionView: View {
     }
 }
 
-private struct AddressSummaryCard: View {
+struct AddressSummaryCard: View {
     let line1: String?
     let line2: String?
     let errorText: String?

@@ -142,6 +142,9 @@ def preflight(key, options)
       workspace: WORKSPACE,
       scheme: app[:scheme],
       destination: "platform=iOS Simulator,name=iPhone 17",
+      # scan otherwise picks a simulator of its own, the first listed once it rules the iPhone 17 out for
+      # a runtime newer than the SDK, and runs its device setup there.
+      skip_detect_devices: true,
       xcargs: "SWIFT_OPTIMIZATION_LEVEL=-O SWIFT_COMPILATION_MODE=wholemodule",
       derived_data_path: File.join(IOS_ROOT, "build", "DerivedData-tests"),
       cloned_source_packages_path: SOURCE_PACKAGES,

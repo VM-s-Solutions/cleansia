@@ -45,10 +45,12 @@ public struct CodeInput: View {
         .onAppear { focused = true }
     }
 
-    /// What the field's own Paste would do with the caret after the code: a whole code replaces it, a fragment
-    /// is added to it, and text without digits leaves it as it is.
+    /// The clipboard's code replaces what was typed, so a fragment shows as itself, incomplete, and is never
+    /// completed from digits already in the boxes; text without digits leaves the code as it is. The field's
+    /// own Paste still inserts at the caret: that is editing the text, and this a gesture of its own.
     static func pasting(_ text: String, onto code: String, length: Int) -> String {
-        OneTimeCode.accept(code + text, replacing: code, length: length)
+        let pasted = OneTimeCode.accept(text, replacing: "", length: length)
+        return pasted.isEmpty ? code : pasted
     }
 
     private func box(at index: Int) -> some View {

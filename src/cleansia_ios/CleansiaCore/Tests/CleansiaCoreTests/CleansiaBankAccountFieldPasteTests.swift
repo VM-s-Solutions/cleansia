@@ -1,29 +1,58 @@
 import XCTest
 @testable import CleansiaCore
 
-/// Android's twin (`CleansiaBankAccountInput`) and the web's (`cleansia-bank-account`) are held to the same
-/// cases; keep the lists in step.
+/// What an edit of one box leaves in the bank account field. Android's twin (`CleansiaBankAccountInput`) and
+/// the web's (`cleansia-bank-account`) pin the same case list, row for row; keep the three in step.
 final class CleansiaBankAccountFieldPasteTests: XCTestCase {
-    private let everyBox: [CleansiaBankAccountField.Segment] = [.prefix, .number, .bankCode]
+    private typealias Box = CleansiaBankAccountField.Segment
+    private typealias Edit = CleansiaBankAccountField.Edit
 
-    private func split(
-        _ raw: String,
-        into box: CleansiaBankAccountField.Segment,
-        replacing current: String = ""
-    ) -> [String?]? {
+    private let everyBox: [Box] = [.prefix, .number, .bankCode]
+
+    private func edit(_ raw: String, into box: Box, replacing current: String = "") -> Edit {
         CleansiaBankAccountField.splitPastedAccount(raw, replacing: current, into: box)
-            .map { [$0.prefix, $0.number, $0.bankCode] }
     }
 
     /// A written-out account fills all three boxes, whichever one it was pasted into.
     private func assertSplitsFromEveryBox(
         _ raw: String,
-        _ expected: [String?],
+        _ expected: Edit,
         file: StaticString = #filePath,
         line: UInt = #line
     ) {
         for box in everyBox {
-            XCTAssertEqual(split(raw, into: box), expected, "\(raw) into the \(box) box", file: file, line: line)
+            XCTAssertEqual(edit(raw, into: box), expected, "\(raw) into the \(box) box", file: file, line: line)
+        }
+    }
+
+    private static func maxLength(of box: Box) -> Int {
+        switch box {
+        case .prefix: 6
+        case .number: 10
+        case .bankCode: 4
+        }
+    }
+
+    func testTheCaseListTheTwinsShare() {
+        let account: Edit = .account(prefix: "19", number: "2000145399", bankCode: "0800")
+        let rows = [
+            PasteRow(1, into: .bankCode, holding: "", paste: "0800", .after, gives: .box("0800")),
+            PasteRow(2, into: .bankCode, holding: "0800", paste: "5500", .after, gives: .box("5500")),
+            PasteRow(3, into: .bankCode, holding: "0800", paste: "5500", .before, gives: .box("5500")),
+            PasteRow(4, into: .bankCode, holding: "0800", paste: "55", .over("08"), gives: .box("5500")),
+            PasteRow(5, into: .bankCode, holding: "08", paste: "00", .after, gives: .box("0800")),
+            PasteRow(6, into: .bankCode, holding: "08", paste: "0800", .after, gives: .box("0800")),
+            PasteRow(7, into: .bankCode, holding: "0800", paste: "2000145399", .after, gives: .number("2000145399")),
+            PasteRow(8, into: .bankCode, holding: "", paste: "2000145399", .after, gives: .number("2000145399")),
+            PasteRow(9, into: .prefix, holding: "12345", paste: "67", .after, gives: .box("67")),
+            PasteRow(10, into: .prefix, holding: "", paste: "19", .after, gives: .box("19")),
+            PasteRow(11, into: .number, holding: "", paste: "19-2000145399/0800", .after, gives: account),
+            PasteRow(12, into: .number, holding: "", paste: "CZ65 0800 0000 1920 0014 5399", .after, gives: account),
+            PasteRow(13, into: .bankCode, holding: "0800", paste: "5", .after, gives: .box("0800")),
+            PasteRow(14, into: .number, holding: "2000145399", paste: "1234567890", .after, gives: .box("1234567890"))
+        ]
+        for row in rows {
+            XCTAssertEqual(edit(row.newText, into: row.box, replacing: row.held), row.result, "row \(row.number)")
         }
     }
 
@@ -35,85 +64,98 @@ final class CleansiaBankAccountFieldPasteTests: XCTestCase {
     }
 
     func testANumberAndBankCodeSplitAndClearThePrefix() {
-        assertSplitsFromEveryBox("12321414/3545", ["", "12321414", "3545"])
+        assertSplitsFromEveryBox("12321414/3545", .account(prefix: "", number: "12321414", bankCode: "3545"))
     }
 
     func testAllThreePartsSplit() {
-        assertSplitsFromEveryBox("19-2000145399/0800", ["19", "2000145399", "0800"])
+        assertSplitsFromEveryBox("19-2000145399/0800", .account(prefix: "19", number: "2000145399", bankCode: "0800"))
     }
 
     /// Banking apps space the parts, and some use a no-break space or a narrow one.
     func testWhitespaceOfEveryKindIsIgnored() {
-        assertSplitsFromEveryBox(" 19 - 2000145399 / 0800 ", ["19", "2000145399", "0800"])
-        assertSplitsFromEveryBox("19\u{00A0}-\u{00A0}2000145399\u{202F}/\u{202F}0800", ["19", "2000145399", "0800"])
-        assertSplitsFromEveryBox("12321414 /\n3545", ["", "12321414", "3545"])
+        let account: Edit = .account(prefix: "19", number: "2000145399", bankCode: "0800")
+        assertSplitsFromEveryBox(" 19 - 2000145399 / 0800 ", account)
+        assertSplitsFromEveryBox("19\u{00A0}-\u{00A0}2000145399\u{202F}/\u{202F}0800", account)
+        assertSplitsFromEveryBox("12321414 /\n3545", .account(prefix: "", number: "12321414", bankCode: "3545"))
     }
 
     func testAnEnOrEmDashReadsAsAHyphen() {
-        assertSplitsFromEveryBox("19–2000145399/0800", ["19", "2000145399", "0800"])
-        assertSplitsFromEveryBox("19—2000145399/0800", ["19", "2000145399", "0800"])
+        let account: Edit = .account(prefix: "19", number: "2000145399", bankCode: "0800")
+        assertSplitsFromEveryBox("19–2000145399/0800", account)
+        assertSplitsFromEveryBox("19—2000145399/0800", account)
     }
 
     /// No bank code in the paste leaves the one already entered alone.
     func testAPrefixAndNumberWithoutABankCodeKeepTheBankCode() {
-        assertSplitsFromEveryBox("19-2000145399", ["19", "2000145399", nil])
+        assertSplitsFromEveryBox("19-2000145399", .account(prefix: "19", number: "2000145399", bankCode: nil))
+    }
+
+    /// Pasted after the digits a box holds, the account is what was pasted, not those digits run into it.
+    func testAnAccountPastedBesideDigitsIsReadWithoutThem() {
+        XCTAssertEqual(
+            edit("12319-2000145399/0800", into: .number, replacing: "123"),
+            .account(prefix: "19", number: "2000145399", bankCode: "0800")
+        )
     }
 
     /// A part copied on its own is pasted back into its own box, and the number already entered stays.
     func testABareBankCodeOrPrefixThatFitsItsOwnBoxStaysThere() {
-        XCTAssertNil(split("0800", into: .bankCode))
-        XCTAssertEqual(CleansiaBankAccountField.clampSegment("0800", maxLength: 4), "0800")
-        XCTAssertNil(split("19", into: .prefix))
-        XCTAssertNil(split("000019", into: .prefix))
-        XCTAssertNil(split("5500", into: .bankCode, replacing: "0800"), "pasted over the box's own digits")
-        XCTAssertNil(split("08005500", into: .bankCode, replacing: "0800"), "pasted after the box's own digits")
-        XCTAssertNil(split("55000800", into: .bankCode, replacing: "0800"), "pasted before the box's own digits")
-        XCTAssertNil(split("1234567", into: .prefix, replacing: "12345"), "pasted after the box's own digits")
+        XCTAssertEqual(edit("0800", into: .bankCode), .box("0800"))
+        XCTAssertEqual(edit("19", into: .prefix), .box("19"))
+        XCTAssertEqual(edit("000019", into: .prefix), .box("000019"))
+        XCTAssertEqual(edit("5500", into: .bankCode, replacing: "0800"), .box("5500"), "pasted over the box's digits")
+        XCTAssertEqual(edit("1234567", into: .prefix, replacing: "123"), .box("4567"), "pasted after the box's digits")
     }
 
     /// A bare number too long for the box it landed in is the account number, so "2000145399" pasted into
-    /// the empty prefix box does not become the prefix "200014". The prefix and bank code already entered
-    /// stay.
+    /// the empty prefix box does not become the prefix "200014". The box it landed in keeps what it held.
     func testABareNumberTooLongForItsBoxGoesToTheNumberAndLeavesTheOtherTwo() {
-        XCTAssertEqual(split("2000145399", into: .prefix), [nil, "2000145399", nil])
-        XCTAssertEqual(split("2000 1453 99", into: .prefix), [nil, "2000145399", nil])
-        XCTAssertEqual(split("1234567", into: .prefix), [nil, "1234567", nil])
-        XCTAssertEqual(split("12345", into: .bankCode), [nil, "12345", nil])
+        XCTAssertEqual(edit("2000145399", into: .prefix), .number("2000145399"))
+        XCTAssertEqual(edit("2000 1453 99", into: .prefix), .number("2000145399"))
+        XCTAssertEqual(edit("1234567", into: .prefix), .number("1234567"))
+        XCTAssertEqual(edit("12345", into: .bankCode), .number("12345"))
         XCTAssertEqual(
-            split("2000145399", into: .bankCode, replacing: "0800"),
-            [nil, "2000145399", nil],
+            edit("2000145399", into: .bankCode, replacing: "0800"),
+            .number("2000145399"),
             "pasted over a bank code"
         )
     }
 
     func testABareNumberPastedIntoTheNumberBoxStaysThere() {
-        XCTAssertNil(split("2000145399", into: .number))
-        XCTAssertNil(split("19", into: .number))
+        XCTAssertEqual(edit("2000145399", into: .number), .box("2000145399"))
+        XCTAssertEqual(edit("19", into: .number), .box("19"))
     }
 
-    /// The number pad types one digit at a time, and a typed prefix or bank code must stay where it is.
+    /// The number pad types one digit at a time: a digit that fits stays where it was typed, and one typed
+    /// into a full box changes nothing, wherever the caret was.
     func testTypingNeverJumpsToTheNumber() {
         for box in everyBox {
-            XCTAssertNil(split("5", into: box), "\(box)")
-            XCTAssertNil(split("", into: box), "\(box)")
-            XCTAssertNil(split("", into: box, replacing: "19"), "\(box)")
+            XCTAssertEqual(edit("5", into: box), .box("5"), "\(box)")
+            XCTAssertEqual(edit("", into: box), .box(""), "\(box)")
+            XCTAssertEqual(edit("", into: box, replacing: "19"), .box(""), "\(box)")
         }
-        XCTAssertNil(split("12", into: .prefix, replacing: "1"))
-        XCTAssertNil(split("1234567", into: .prefix, replacing: "123456"))
-        XCTAssertNil(split("08001", into: .bankCode, replacing: "0800"))
+        XCTAssertEqual(edit("12", into: .prefix, replacing: "1"), .box("12"))
+        XCTAssertEqual(edit("1234567", into: .prefix, replacing: "123456"), .box("123456"))
+        XCTAssertEqual(edit("08001", into: .bankCode, replacing: "0800"), .box("0800"))
+        XCTAssertEqual(edit("50800", into: .bankCode, replacing: "0800"), .box("0800"), "typed before the code")
+        XCTAssertEqual(edit("08500", into: .bankCode, replacing: "0800"), .box("0800"), "typed inside the code")
     }
 
-    func testABareRunTooLongForANumberIsLeftToTheClamp() {
+    /// A run of digits too long even for the number goes nowhere: the box keeps what it held.
+    func testABareRunTooLongForANumberIsRefused() {
         for box in everyBox {
-            XCTAssertNil(split("20001453991", into: box), "\(box)")
+            XCTAssertEqual(edit("20001453991", into: box), .box(""), "\(box)")
         }
-        XCTAssertNil(
-            split("08002000145399", into: .bankCode, replacing: "0800"),
+        XCTAssertEqual(
+            edit("080020001453991", into: .bankCode, replacing: "0800"),
+            .box("0800"),
             "pasted after a bank code already there"
         )
     }
 
-    func testAnythingThatIsNotAnAccountIsLeftToTheClamp() {
+    /// Text that is not an account is never split. Where it fits its box it is an ordinary edit, which the
+    /// digit clamp takes; where it does not, the box keeps what it held.
+    func testAnythingThatIsNotAnAccountIsNeverSplit() {
         for raw in [
             "1234567-1/0800",
             "12345678901/0800",
@@ -128,26 +170,35 @@ final class CleansiaBankAccountFieldPasteTests: XCTestCase {
             "١٢٣/0800"
         ] {
             for box in everyBox {
-                XCTAssertNil(split(raw, into: box), "\(raw) into the \(box) box")
+                let expected: Edit = raw.count <= Self.maxLength(of: box) ? .box(raw) : .box("")
+                XCTAssertEqual(edit(raw, into: box), expected, "\(raw) into the \(box) box")
             }
         }
     }
 
     func testACzechIbanIsBrokenIntoItsDomesticParts() {
-        assertSplitsFromEveryBox("CZ65 0800 0000 1920 0014 5399", ["19", "2000145399", "0800"])
-        assertSplitsFromEveryBox("cz6508000000192000145399", ["19", "2000145399", "0800"])
+        let account: Edit = .account(prefix: "19", number: "2000145399", bankCode: "0800")
+        assertSplitsFromEveryBox("CZ65 0800 0000 1920 0014 5399", account)
+        assertSplitsFromEveryBox("cz6508000000192000145399", account)
     }
 
     func testASlovakIbanIsBrokenIntoItsDomesticParts() {
-        assertSplitsFromEveryBox("SK31 1200 0000 1987 4263 7541", ["19", "8742637541", "1200"])
+        assertSplitsFromEveryBox(
+            "SK31 1200 0000 1987 4263 7541",
+            .account(prefix: "19", number: "8742637541", bankCode: "1200")
+        )
     }
 
     /// Leading zeros are padding in the BBAN, not part of the written account; an all-zero prefix is no
     /// prefix at all.
     func testIbanPaddingIsDropped() {
-        assertSplitsFromEveryBox("CZ55 0800 0000 0000 0012 3457", ["", "123457", "0800"])
+        assertSplitsFromEveryBox(
+            "CZ55 0800 0000 0000 0012 3457",
+            .account(prefix: "", number: "123457", bankCode: "0800")
+        )
     }
 
+    /// Too long for any box, and no account the control can split: the box keeps what it held.
     func testOtherIbansAreNotDomesticAccounts() {
         for raw in [
             "DE89 3704 0044 0532 0130 00",
@@ -157,8 +208,42 @@ final class CleansiaBankAccountFieldPasteTests: XCTestCase {
             "CZ00 0800 0000 0000 0000 0000"
         ] {
             for box in everyBox {
-                XCTAssertNil(split(raw, into: box), "\(raw) into the \(box) box")
+                XCTAssertEqual(edit(raw, into: box), .box(""), "\(raw) into the \(box) box")
             }
         }
+    }
+}
+
+/// One row of the shared case list: the box, what it held, what was pasted or typed and where, and what the
+/// edit leaves.
+private struct PasteRow {
+    enum Place {
+        case after, before
+        case over(String)
+    }
+
+    let number: Int
+    let box: CleansiaBankAccountField.Segment
+    let held: String
+    let newText: String
+    let result: CleansiaBankAccountField.Edit
+
+    init(
+        _ number: Int,
+        into box: CleansiaBankAccountField.Segment,
+        holding held: String,
+        paste: String,
+        _ place: Place,
+        gives result: CleansiaBankAccountField.Edit
+    ) {
+        self.number = number
+        self.box = box
+        self.held = held
+        switch place {
+        case .after: newText = held + paste
+        case .before: newText = paste + held
+        case let .over(selection): newText = held.replacingOccurrences(of: selection, with: paste)
+        }
+        self.result = result
     }
 }

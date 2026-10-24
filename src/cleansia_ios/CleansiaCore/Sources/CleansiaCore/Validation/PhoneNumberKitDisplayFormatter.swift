@@ -30,7 +30,11 @@ public struct PhoneNumberKitDisplayFormatter: PhoneDisplayFormatting {
     /// range is in use is the server's call, on newer metadata than this library's, so a newly allocated one
     /// is not refused here with no way past it.
     public static func isPossibleNumber(_ wireValue: String) -> Bool {
-        wireValue.hasPrefix("+") && utility.isValidPhoneNumber(wireValue, ignorePrefixValidation: true)
+        guard wireValue.hasPrefix("+"),
+              let number = try? utility.parse(wireValue, ignorePrefixValidation: true) else { return false }
+        // A country code no country has is read as a number of the handset's region, under that region's code.
+        let digits = wireValue.compactMap(\.wholeNumberValue).map { String($0) }.joined()
+        return digits.hasPrefix(String(number.countryCode))
     }
 
     /// Parsing the bundled metadata is expensive; one instance serves every field.

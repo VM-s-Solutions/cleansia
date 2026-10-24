@@ -60,6 +60,14 @@ final class PhoneNumberKitDisplayFormatterTests: XCTestCase {
         }
     }
 
+    /// No country has these codes, so no length can make them a number, as libphonenumber, on the server and
+    /// on Android, says too. This library reads such a number as one of the handset's own region instead.
+    func testANumberWithACountryCodeNoCountryHasIsNotPossible() {
+        for unassigned in ["+0123456789", "+9991234567", "+999 123 456 789"] {
+            XCTAssertFalse(PhoneNumberKitDisplayFormatter.isPossibleNumber(unassigned), unassigned)
+        }
+    }
+
     func testEngineWiredToTheRealFormatterKeepsTheWireFormat() {
         let engine = PhoneMaskEngine(formatter: formatter)
         XCTAssertEqual(engine.reformat("+420 728089247").wireValue, "+420728089247")

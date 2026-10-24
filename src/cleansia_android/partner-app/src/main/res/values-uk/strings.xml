@@ -929,6 +929,13 @@
     <string name="order_cash_not_paid_confirm_message_no_amount">Використовуйте це, лише якщо клієнт нічого не заплатив. Якщо він заплатив лише частину, натомість повідомте компанію. Прибирання буде завершено, і вам за нього заплатять. Клієнт буде винен вартість прибирання, отримає про це повідомлення і не зможе нічого замовити, доки не заплатить; адміністратор отримає сповіщення. Скасувати це може лише адміністратор.</string>
     <string name="order_cash_not_paid_confirm_action">Так, повідомити</string>
     <string name="order_cash_not_paid_reported_toast">Повідомлено. Прибирання завершено, клієнта поінформовано.</string>
+    <string name="order_drop_action">Відмовитися від замовлення</string>
+    <string name="order_drop_confirm_title">Відмовитися від цього замовлення?</string>
+    <string name="order_drop_confirm_message">Вас буде знято з цього замовлення, а ваше місце повернеться до списку для інших прибиральників. Замовлення клієнта не скасовується. Якщо ви єдиний прибиральник на ньому, замовлення не матиме прибиральника, доки його хтось не візьме.</string>
+    <string name="order_drop_confirm_action">Так, відмовитися</string>
+    <string name="order_drop_keep">Залишити замовлення</string>
+    <string name="order_dropped_toast_no_crew">Ви відмовилися від замовлення. Зараз на ньому немає прибиральника: воно знову в списку.</string>
+    <string name="order_dropped_toast">Ви відмовилися від замовлення. Ваше місце знову в списку для інших прибиральників.</string>
 
     <!-- Backend error-key translations -->
     <string name="error_key_order_after_photos_required">Перед завершенням замовлення зробіть принаймні одне фото \"після\".</string>

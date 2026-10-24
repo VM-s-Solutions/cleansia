@@ -88,6 +88,26 @@ class OrderDetailCallSiteTest {
     }
 
     @Test
+    fun `cancelling the job is offered through its gate and sent only from its confirm`() {
+        assertTrue(
+            "the footer must offer Cancel job through droppable()",
+            detailScreen.contains("canDrop = order.droppable()"),
+        )
+        assertTrue(
+            "the drop must be sent from the confirm dialog",
+            Regex("""confirmingDrop = false\s+viewModel\.dropOrder\(\)""").containsMatchIn(detailScreen),
+        )
+        assertTrue(
+            "the screen must leave the job once the drop lands",
+            Regex("""viewModel\.left\.collect\s*\{\s*onNavigateBack\(\)\s*\}""").containsMatchIn(detailScreen),
+        )
+        assertFalse(
+            "the gate stays out of OrderPrimaryAction.kt, whose first `when (status)` the parity checker reads",
+            primaryAction.contains("droppable"),
+        )
+    }
+
+    @Test
     fun `the scope card renders the seat facts`() {
         assertTrue(
             "ScopeCard must resolve the crew through orderCrew() — TakeOrder's free-seat " +

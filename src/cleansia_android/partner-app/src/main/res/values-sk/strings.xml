@@ -924,6 +924,13 @@
     <string name="order_cash_not_paid_confirm_message_no_amount">Použite to len vtedy, keď zákazník nezaplatil nič. Ak zaplatil len časť, dajte namiesto toho vedieť spoločnosti. Upratovanie sa dokončí a dostanete zaň zaplatené. Zákazník bude dlžiť cenu upratovania, dozvie sa to a kým nezaplatí, nemôže si nič ďalšie objednať; administrátor dostane upozornenie. Vrátiť to môže len administrátor.</string>
     <string name="order_cash_not_paid_confirm_action">Áno, nahlásiť</string>
     <string name="order_cash_not_paid_reported_toast">Nahlásené. Upratovanie je dokončené a zákazník bol informovaný.</string>
+    <string name="order_drop_action">Odstúpiť od zákazky</string>
+    <string name="order_drop_confirm_title">Odstúpiť od tejto zákazky?</string>
+    <string name="order_drop_confirm_message">Budete zo zákazky odobratí a vaše miesto sa vráti do ponuky ostatným upratovačom. Objednávka zákazníka sa neruší. Ak ste na zákazke jediný upratovač, nebude mať žiadneho upratovača, kým si ju niekto nevezme.</string>
+    <string name="order_drop_confirm_action">Áno, odstúpiť</string>
+    <string name="order_drop_keep">Ponechať si zákazku</string>
+    <string name="order_dropped_toast_no_crew">Od zákazky ste odstúpili. Teraz nemá žiadneho upratovača: je späť v ponuke.</string>
+    <string name="order_dropped_toast">Od zákazky ste odstúpili. Vaše miesto je späť v ponuke pre ostatných upratovačov.</string>
 
     <!-- Backend error-key translations -->
     <string name="error_key_order_after_photos_required">Pred dokončením zákazky urobte aspoň jednu fotografiu \"po\".</string>

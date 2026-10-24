@@ -13,7 +13,10 @@ import cz.cleansia.core.network.ApiResult
 import cz.cleansia.partner.data.orders.OrdersRepository
 import cz.cleansia.partner.data.orders.PendingOffer
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharedFlow
+import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -24,7 +27,7 @@ import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 /** Per-action discriminator so individual buttons can show their own spinners. */
-enum class OrderAction { Take, AcceptContract, Start, NotifyOnTheWay, MarkCashCollected, ReportCashNotPaid, Complete, DeclineOffer, ReportLockout }
+enum class OrderAction { Take, AcceptContract, Start, NotifyOnTheWay, MarkCashCollected, ReportCashNotPaid, Complete, DeclineOffer, ReportLockout, Drop }
 
 sealed interface OrderDetailUiState {
     data object Loading : OrderDetailUiState
@@ -75,6 +78,10 @@ class OrderDetailViewModel @Inject constructor(
     /** The contract sheet the screen is showing, if any: a take, a standalone acceptance or a read. */
     private val _contractRequest = MutableStateFlow<WorkContractRequest?>(null)
     val contractRequest: StateFlow<WorkContractRequest?> = _contractRequest.asStateFlow()
+
+    /** Fires once the cleaner is off the job. */
+    private val _left = MutableSharedFlow<Unit>(extraBufferCapacity = 1)
+    val left: SharedFlow<Unit> = _left.asSharedFlow()
 
     private val myEmployeeId = MutableStateFlow<String?>(null)
 
@@ -204,6 +211,37 @@ class OrderDetailViewModel @Inject constructor(
         val note = callAttempts.trim()
         if (note.isEmpty()) return
         runAction(OrderAction.ReportLockout) { ordersRepository.reportLockout(orderId, note) }
+    }
+
+    /**
+     * Leaving the crew, offered only while the job is [droppable]. The confirm can outlive the state it was opened
+     * on, so the gate is read again here. A success re-reads nothing, because the job is no longer the cleaner's to
+     * read: the screen goes back through [left], to tabs and a dashboard the repository has expired.
+     */
+    fun dropOrder() {
+        if (_actionState.value is ActionState.Submitting) return
+        if ((_uiState.value as? OrderDetailUiState.Loaded)?.order?.droppable() != true) return
+        _actionState.value = ActionState.Submitting
+        _inFlightAction.value = OrderAction.Drop
+        viewModelScope.launch {
+            when (val result = ordersRepository.dropOrder(orderId)) {
+                is ApiResult.Success -> {
+                    snackbar.showSuccessKey(
+                        if (result.data == 0) R.string.order_dropped_toast_no_crew else R.string.order_dropped_toast,
+                    )
+                    _actionState.value = ActionState.Idle
+                    _inFlightAction.value = null
+                    _left.tryEmit(Unit)
+                }
+                is ApiResult.Error -> {
+                    val reason = errorTranslator.translate(result.error)
+                    snackbar.showError(reason)
+                    _actionState.value = ActionState.Error(reason)
+                    _inFlightAction.value = null
+                    fetch(notifyOnError = false)
+                }
+            }
+        }
     }
 
     fun onContentMutated() = ensureFreshOrCachedAsync()

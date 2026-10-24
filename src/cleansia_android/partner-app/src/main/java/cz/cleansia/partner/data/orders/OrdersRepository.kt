@@ -6,6 +6,7 @@ import cz.cleansia.partner.api.model.AddOrderNoteCommand
 import cz.cleansia.partner.api.model.BlobFileDto
 import cz.cleansia.partner.api.model.CompleteOrderCommand
 import cz.cleansia.partner.api.model.DeclinePreferredOfferCommand
+import cz.cleansia.partner.api.model.DropOrderCommand
 import cz.cleansia.partner.api.model.GetOrderPhotosResponse
 import cz.cleansia.partner.api.model.MarkCashCollectedCommand
 import cz.cleansia.partner.api.model.NotifyOnTheWayCommand
@@ -154,6 +155,12 @@ interface OrdersRepository {
     suspend fun declinePreferredOffer(orderId: String): ApiResult<Unit>
 
     /**
+     * Leave the crew of [orderId]: the seat goes back on the board, the customer's booking stands and no money
+     * moves. The answer is how many cleaners the job still has.
+     */
+    suspend fun dropOrder(orderId: String): ApiResult<Int>
+
+    /**
      * `true` if the cached single-order payload for [orderId] is stale and a
      * fresh fetch should be issued. ViewModels use this on screen entry /
      * resume to gate background refreshes: skip the network when the cache
@@ -295,6 +302,23 @@ class OrdersRepositoryImpl @Inject constructor(
                     pendingOffersRevision++
                     _pendingOffers.value = _pendingOffers.value.filterNot { it.id == orderId }
                     invalidateOrder(orderId)
+                    stalenessFor(OrdersPane.Available).reset()
+                    dashboardRepository.invalidate()
+                }
+            }
+        }
+        return result
+    }
+
+    override suspend fun dropOrder(orderId: String): ApiResult<Int> {
+        val epoch = pendingOffersLock.withLock { sessionEpoch }
+        val result = safeApiCall(json) { orderApi.orderDropOrder(DropOrderCommand(orderId = orderId)) }
+            .mapWire { it.crewRemaining.required("crewRemaining") }
+        if (result is ApiResult.Success) {
+            pendingOffersLock.withLock {
+                if (epoch == sessionEpoch) {
+                    invalidateOrder(orderId)
+                    stalenessFor(OrdersPane.Active).reset()
                     stalenessFor(OrdersPane.Available).reset()
                     dashboardRepository.invalidate()
                 }

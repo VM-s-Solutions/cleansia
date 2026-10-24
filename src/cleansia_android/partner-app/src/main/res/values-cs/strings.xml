@@ -945,6 +945,13 @@
     <string name="order_cash_not_paid_confirm_message_no_amount">Použijte jen tehdy, když zákazník nezaplatil nic. Pokud zaplatil jen část, dejte místo toho vědět společnosti. Úklid se dokončí a dostanete za něj zaplaceno. Zákazník bude dlužit cenu úklidu, dozví se to a dokud nezaplatí, nemůže si nic dalšího objednat; administrátor dostane upozornění. Vrátit to může jen administrátor.</string>
     <string name="order_cash_not_paid_confirm_action">Ano, nahlásit</string>
     <string name="order_cash_not_paid_reported_toast">Nahlášeno. Úklid je dokončen a zákazník byl informován.</string>
+    <string name="order_drop_action">Odstoupit od zakázky</string>
+    <string name="order_drop_confirm_title">Odstoupit od této zakázky?</string>
+    <string name="order_drop_confirm_message">Budete ze zakázky odebráni a vaše místo se vrátí do nabídky ostatním uklízečům. Objednávka zákazníka se neruší. Pokud jste na zakázce jediný uklízeč, nebude mít žádného uklízeče, dokud si ji někdo nevezme.</string>
+    <string name="order_drop_confirm_action">Ano, odstoupit</string>
+    <string name="order_drop_keep">Ponechat si zakázku</string>
+    <string name="order_dropped_toast_no_crew">Od zakázky jste odstoupili. Teď nemá žádného uklízeče: je zpět v nabídce.</string>
+    <string name="order_dropped_toast">Od zakázky jste odstoupili. Vaše místo je zpět v nabídce pro ostatní uklízeče.</string>
 
     <!-- Backend error-key translations -->
     <string name="error_key_order_after_photos_required">Před dokončením zakázky pořiďte alespoň jednu fotografii \"po\".</string>

@@ -467,6 +467,10 @@ extension L10n {
             localized("profile_error_registration_number_required")
         }
 
+        static var errorLegalEntityNameMissing: String {
+            localized("profile_error_legal_entity_name_missing")
+        }
+
         static var errorAddressNotPicked: String {
             localized("profile_error_address_not_picked")
         }

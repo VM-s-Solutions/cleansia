@@ -16466,6 +16466,41 @@
         }
       }
     },
+    "profile_error_legal_entity_name_missing": {
+      "extractionState": "stale",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Chybí registrovaný název vaší firmy. Požádejte podporu o doplnění — zde ho změnit nelze."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your company's registered name is missing. Contact support to add it — it can't be changed here."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Отсутствует зарегистрированное название вашей компании. Обратитесь в поддержку — здесь его изменить нельзя."
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Chýba registrovaný názov vašej firmy. Požiadajte podporu o doplnenie — tu ho zmeniť nemožno."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Бракує зареєстрованої назви вашої компанії. Зверніться до підтримки — тут її змінити не можна."
+          }
+        }
+      }
+    },
     "profile_error_min_age": {
       "extractionState": "stale",
       "localizations": {

@@ -55,7 +55,8 @@ concurrency:
 
 jobs:
   build:
-    runs-on: macos-latest
+    # Not macos-latest: the image must ship the Xcode pinned in .xcode-version.
+    runs-on: macos-26
 
     # Generous on purpose. This job legitimately runs 20-30 minutes, and has been observed at
     # 1h22m on a degraded macOS runner while still passing — so the ceiling is here to stop a
@@ -72,17 +73,24 @@ jobs:
         with:
           persist-credentials: false
 
-      # The runner's DEFAULT Xcode lags the newest SDK on the image, while local dev
-      # builds against the newest installed Xcode. Any #available-gated API newer than
-      # the default SDK then compiles locally but fails CI (bit us with the since-retired
-      # Liquid Glass bar). Select the newest Xcode the image ships so CI's SDK tracks
-      # what local dev builds against.
-      - name: Select the newest Xcode on the runner
+      # The Xcode that archives TestFlight builds, which the release lanes select too: an optimiser
+      # bug of one compiler is invisible on another. Matched by the version xcodebuild reports,
+      # because an image may name the app by release stage. → /mobile-app/overview#optimizer-only-crashes
+      - name: Select the pinned Xcode
         run: |
           set -euo pipefail
-          NEWEST="$(ls -d /Applications/Xcode*.app | sort -V | tail -1)"
-          echo "Selecting: $NEWEST"
-          sudo xcode-select -s "$NEWEST"
+          PINNED="$(tr -d '[:space:]' < .xcode-version)"
+          for APP in /Applications/Xcode*.app; do
+            if [ "$(env -u DEVELOPER_DIR "$APP/Contents/Developer/usr/bin/xcodebuild" -version 2>/dev/null | sed -n 1p)" = "Xcode $PINNED" ]; then
+              sudo xcode-select -s "$APP"
+              break
+            fi
+          done
+          if [ "$(xcodebuild -version | sed -n 1p)" != "Xcode $PINNED" ]; then
+            echo "::error::Xcode $PINNED (src/cleansia_ios/.xcode-version) is not on this runner image. Installed:"
+            ls -d /Applications/Xcode*.app
+            exit 1
+          fi
           xcodebuild -version
 
       - name: Install XcodeGen and xcbeautify (pinned)
@@ -275,6 +283,41 @@ jobs:
             build test 2>&1 | tee "$LOG" | xcbeautify || {
               echo "::group::Compiler diagnostics (raw, unbeautified)"
               grep -nE "error:|Failing tests|\*\* (BUILD|TEST) FAILED" "$LOG" | head -80 || true
+              echo "::endgroup::"
+              exit 1
+            }
+
+      # The suites again, built the way the archive is: -O and whole-module, the two Swift settings
+      # Release changes. Debug otherwise, for the DEBUG test hooks and @testable. MallocScribble makes
+      # a use-after-free fault instead of reading stale bytes. → /mobile-app/overview#optimizer-only-crashes
+      - name: Test CleansiaPartner optimised
+        env:
+          TEST_RUNNER_MallocScribble: '1'
+        run: |
+          set -o pipefail
+          LOG="$RUNNER_TEMP/partner-optimised.log"
+          xcodebuild -workspace Cleansia.xcworkspace -scheme CleansiaPartner \
+            -destination "platform=iOS Simulator,name=${{ steps.sim.outputs.name }}" \
+            SWIFT_OPTIMIZATION_LEVEL=-O SWIFT_COMPILATION_MODE=wholemodule \
+            test 2>&1 | tee "$LOG" | xcbeautify || {
+              echo "::group::Compiler diagnostics (raw, unbeautified)"
+              grep -nE "error:|Failing tests|unexpected exit|\*\* (BUILD|TEST) FAILED" "$LOG" | head -80 || true
+              echo "::endgroup::"
+              exit 1
+            }
+
+      - name: Test CleansiaCustomer optimised
+        env:
+          TEST_RUNNER_MallocScribble: '1'
+        run: |
+          set -o pipefail
+          LOG="$RUNNER_TEMP/customer-optimised.log"
+          xcodebuild -workspace Cleansia.xcworkspace -scheme CleansiaCustomer \
+            -destination "platform=iOS Simulator,name=${{ steps.sim.outputs.name }}" \
+            SWIFT_OPTIMIZATION_LEVEL=-O SWIFT_COMPILATION_MODE=wholemodule \
+            test 2>&1 | tee "$LOG" | xcbeautify || {
+              echo "::group::Compiler diagnostics (raw, unbeautified)"
+              grep -nE "error:|Failing tests|unexpected exit|\*\* (BUILD|TEST) FAILED" "$LOG" | head -80 || true
               echo "::endgroup::"
               exit 1
             }

@@ -42,6 +42,7 @@ struct RewardsTab: View {
             content
                 .id(locale.identifier)
         }
+        .readableWidth()
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
         .background(CleansiaColors.background.ignoresSafeArea())
         .task { await vm.load() }

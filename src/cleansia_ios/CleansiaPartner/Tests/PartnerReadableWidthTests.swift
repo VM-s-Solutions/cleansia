@@ -4,9 +4,10 @@ import UIKit
 import XCTest
 @testable import CleansiaPartner
 
-/// The profile and onboarding sections and the job's action footer keep their content at most a readable width,
-/// centred, decided by the width they are given: on every iPhone today (440pt at most) and on the iPhone Duo's outer
-/// display they lay out exactly as before, and only a wider container, such as the Duo's inner display, centres them.
+/// The profile and onboarding sections, the job's action footer and the orders and invoices lists keep their content
+/// at most a readable width, centred, decided by the width they are given: on every iPhone today (440pt at most) and
+/// on the iPhone Duo's outer display they lay out exactly as before, and only a wider container, such as the Duo's
+/// inner display, centres them.
 @MainActor
 final class PartnerReadableWidthTests: XCTestCase {
     private let cap: CGFloat = 640
@@ -16,6 +17,7 @@ final class PartnerReadableWidthTests: XCTestCase {
         CGSize(width: 466, height: 678)
     ]
     private let wide = [CGSize(width: 669, height: 951), CGSize(width: 951, height: 669)]
+    private let phoneSafeArea = EdgeInsets(top: 59, leading: 0, bottom: 34, trailing: 0)
 
     func testASectionsFormSpansAPhoneInsideItsMarginsAsBefore() async throws {
         for size in narrow {
@@ -49,6 +51,44 @@ final class PartnerReadableWidthTests: XCTestCase {
         }
     }
 
+    func testTheOrdersListSpansAPhoneAsBefore() async throws {
+        for size in narrow {
+            let list = try await activeOrdersFrames(in: size)
+            XCTAssertEqual(list.row.minX, 0, accuracy: 0.5, "\(size)")
+            XCTAssertEqual(list.row.width, size.width, accuracy: 0.5, "\(size)")
+            XCTAssertEqual(list.tabs.minX, Spacing.m, accuracy: 0.5, "\(size)")
+            XCTAssertEqual(list.tabs.width, size.width - 2 * Spacing.m, accuracy: 0.5, "\(size)")
+        }
+    }
+
+    /// An active job's slide spans its row inside the row's margins, so the row held to the readable width holds the
+    /// slide there too, under tabs held to it as well.
+    func testTheOrdersListHoldsTheActiveJobsSlideToTheReadableWidthOnAWiderCanvas() async throws {
+        for size in wide {
+            let list = try await activeOrdersFrames(in: size)
+            XCTAssertEqual(list.row.width, cap, accuracy: 0.5, "\(size)")
+            XCTAssertEqual(list.row.midX, size.width / 2, accuracy: 0.5, "\(size)")
+            XCTAssertEqual(list.tabs.width, cap - 2 * Spacing.m, accuracy: 0.5, "\(size)")
+            XCTAssertEqual(list.tabs.midX, size.width / 2, accuracy: 0.5, "\(size)")
+        }
+    }
+
+    func testTheInvoicesListSpansAPhoneAsBefore() async throws {
+        for size in narrow {
+            let list = try await invoicesListFrame(in: size)
+            XCTAssertEqual(list.minX, 0, accuracy: 0.5, "\(size)")
+            XCTAssertEqual(list.width, size.width, accuracy: 0.5, "\(size)")
+        }
+    }
+
+    func testTheInvoicesListIsCentredAtTheReadableWidthOnAWiderCanvas() async throws {
+        for size in wide {
+            let list = try await invoicesListFrame(in: size)
+            XCTAssertEqual(list.width, cap, accuracy: 0.5, "\(size)")
+            XCTAssertEqual(list.midX, size.width / 2, accuracy: 0.5, "\(size)")
+        }
+    }
+
     /// The hub's content is held to the readable width on a wide canvas, so its hero's gradient paints sideways past
     /// the hero's frame as it already paints upwards past it: the hero stays full-bleed at any width.
     func testTheProfileHubsHeroPaintsPastItsFrameOnEverySide() throws {
@@ -70,7 +110,7 @@ final class PartnerReadableWidthTests: XCTestCase {
 
     private func sectionFormFrame(in size: CGSize) async throws -> CGRect {
         let probes = LayoutProbes()
-        let canvas = HostedCanvas(size: size, safeArea: EdgeInsets(top: 59, leading: 0, bottom: 34, trailing: 0)) {
+        let canvas = try HostedCanvas(size: size, safeArea: phoneSafeArea) {
             SectionScaffold(title: "Section", isLoading: false) {
                 Color.clear
                     .frame(maxWidth: .infinity)
@@ -81,6 +121,46 @@ final class PartnerReadableWidthTests: XCTestCase {
         defer { canvas.close() }
         await canvas.settle { probes.frames["form"] != nil }
         return try XCTUnwrap(probes.frames["form"], "the form never laid out at \(size)")
+    }
+
+    /// The Orders screen on its Active tab with one job about to start, which its row offers as a slide: the row
+    /// and the tabs, where they lay out.
+    private func activeOrdersFrames(in size: CGSize) async throws -> (row: CGRect, tabs: CGRect) {
+        let client = FakePartnerOrderClient()
+        client.pagedResult = .success([.sample(id: "job", status: ._3, cleaningDateTime: Date())])
+        let vm = OrdersListViewModel(
+            client: client,
+            staleness: OrdersStaleness(window: 30, now: { Date() }),
+            snackbar: SnackbarController()
+        )
+        await vm.selectTab(.active)
+        XCTAssertEqual(vm.inlineAction(for: .sample(id: "job", status: ._3)), .start)
+        let canvas = try HostedCanvas(size: size, safeArea: phoneSafeArea) {
+            OrdersListView(vm: vm)
+                .environment(\.locationProvider, OrdersListViewModelTests.FakeLocationProvider())
+        }
+        defer { canvas.close() }
+        await canvas.settle { !canvas.views(of: UICollectionViewCell.self).isEmpty }
+        let row = try XCTUnwrap(canvas.views(of: UICollectionViewCell.self).first, "no job row at \(size)")
+        let tabs = try XCTUnwrap(canvas.views(of: UISegmentedControl.self).first, "no tabs at \(size)")
+        return (canvas.frame(of: row), canvas.frame(of: tabs))
+    }
+
+    private func invoicesListFrame(in size: CGSize) async throws -> CGRect {
+        let client = FakePayrollClient()
+        client.invoicesResult = .success([.stub(id: "inv-1", totalAmount: 4200)])
+        let canvas = try HostedCanvas(size: size, safeArea: phoneSafeArea) {
+            InvoicesListView(
+                client: client,
+                staleness: InvoicesStaleness(),
+                snackbar: SnackbarController(),
+                onOpenInvoice: { _ in }
+            )
+        }
+        defer { canvas.close() }
+        await canvas.settle { !canvas.views(of: UIScrollView.self).isEmpty }
+        let list = try XCTUnwrap(canvas.views(of: UIScrollView.self).first, "no invoices list at \(size)")
+        return canvas.frame(of: list)
     }
 
     /// The slide's track along the footer's middle row, where its capsule is full height: from the first point that
@@ -135,14 +215,18 @@ private extension View {
     }
 }
 
-/// A view in a window of the given size whose safe area is exactly the one given: the system's own is dropped and
-/// the given one laid in, so every simulator reads the same insets.
+/// A view in a window of the given size in the app's own scene, so a screen's scroll views lay out as in the app,
+/// whose safe area is exactly the one given: the system's own is dropped and the given one laid in, so every
+/// simulator reads the same insets. The window that was key before is key again on `close()`.
 @MainActor
 private final class HostedCanvas {
     let window: UIWindow
     let host: UIViewController
+    private let previous: UIWindow?
 
-    init(size: CGSize, safeArea: EdgeInsets = EdgeInsets(), @ViewBuilder content: () -> some View) {
+    init(size: CGSize, safeArea: EdgeInsets = EdgeInsets(), @ViewBuilder content: () -> some View) throws {
+        let scenes = UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }
+        previous = scenes.flatMap(\.windows).first { $0.isKeyWindow }
         let root = content()
             .safeAreaInset(edge: .top, spacing: 0) { Color.clear.frame(height: safeArea.top) }
             .safeAreaInset(edge: .bottom, spacing: 0) { Color.clear.frame(height: safeArea.bottom) }
@@ -150,10 +234,10 @@ private final class HostedCanvas {
         if #available(iOS 16.4, *) {
             host.safeAreaRegions = []
         }
-        let window = UIWindow(frame: CGRect(origin: .zero, size: size))
+        let window = try UIWindow(windowScene: XCTUnwrap(scenes.first, "the test host has no scene"))
+        window.frame = CGRect(origin: .zero, size: size)
         window.rootViewController = host
         window.makeKeyAndVisible()
-        host.view.frame = window.bounds
         host.view.layoutIfNeeded()
         self.window = window
         self.host = host
@@ -174,10 +258,23 @@ private final class HostedCanvas {
     func close() {
         window.isHidden = true
         window.rootViewController = nil
+        previous?.makeKeyAndVisible()
+    }
+
+    func views<V: UIView>(of _: V.Type) -> [V] {
+        Self.views(under: host.view).compactMap { $0 as? V }
+    }
+
+    func frame(of view: UIView) -> CGRect {
+        view.convert(view.bounds, to: window)
     }
 
     private func pause() async {
         try? await Task.sleep(nanoseconds: 30_000_000)
         host.view.layoutIfNeeded()
+    }
+
+    private static func views(under view: UIView) -> [UIView] {
+        [view] + view.subviews.flatMap { views(under: $0) }
     }
 }

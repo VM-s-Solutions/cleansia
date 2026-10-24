@@ -110,6 +110,7 @@ struct OrdersListView: View {
             }
             paneContent
         }
+        .readableWidth()
         .background(CleansiaColors.background.ignoresSafeArea())
         .navigationBarTitleDisplayMode(.inline)
         .toolbar(.hidden, for: .navigationBar)

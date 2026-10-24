@@ -65,8 +65,20 @@ final class HostedCanvas {
         previous?.makeKeyAndVisible()
     }
 
+    func views<V: UIView>(of _: V.Type) -> [V] {
+        Self.views(under: host.view).compactMap { $0 as? V }
+    }
+
+    func frame(of view: UIView) -> CGRect {
+        view.convert(view.bounds, to: window)
+    }
+
     private func pause() async {
         try? await Task.sleep(nanoseconds: 30_000_000)
         host.view.layoutIfNeeded()
+    }
+
+    private static func views(under view: UIView) -> [UIView] {
+        [view] + view.subviews.flatMap { views(under: $0) }
     }
 }

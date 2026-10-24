@@ -492,7 +492,7 @@ private struct StickyCtaBar: View {
         .padding(.horizontal, Spacing.ml)
         .padding(.top, Spacing.m)
         .padding(.bottom, Spacing.s)
-        .frame(maxWidth: .infinity)
+        .readableWidth()
         .background(CleansiaColors.surface.ignoresSafeArea(edges: .bottom))
     }
 }

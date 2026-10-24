@@ -184,8 +184,8 @@ class PersonalSectionViewModelTest {
     }
 
     @Test
-    fun `a phone without its country code, or one libphonenumber refuses, is named and not sent`() = runTest {
-        listOf("+1", "777123456", "+420123456789").forEach { phone ->
+    fun `a phone without its country code, or too short or too long for its country, is named and not sent`() = runTest {
+        listOf("+1", "777123456", "+42077712345", "+4207771234567890").forEach { phone ->
             coEvery { repository.getCurrentEmployee() } returns ApiResult.Success(employee.copy(phoneNumber = phone))
             val vm = viewModel()
             advanceUntilIdle()
@@ -199,8 +199,62 @@ class PersonalSectionViewModelTest {
         verify(exactly = 0) { snackbar.showError(any<String>()) }
     }
 
+    /** The server's phone metadata is newer than the app's, so only it says whether a possible number is valid. */
     @Test
-    fun `a stored phone with spaces is valid and is sent as stored`() = runTest {
+    fun `a phone of a possible length is sent for the server to judge`() = runTest {
+        coEvery { repository.getCurrentEmployee() } returns ApiResult.Success(employee.copy(phoneNumber = "+420123456789"))
+        coEvery { repository.updatePersonalInfo(any(), any(), any(), any(), any()) } returns ApiResult.Success(Unit)
+        val vm = viewModel()
+        advanceUntilIdle()
+
+        vm.save()
+        advanceUntilIdle()
+
+        assertNull(vm.form().phoneError)
+        coVerify(exactly = 1) { repository.updatePersonalInfo(any(), any(), any(), any(), phone = "+420123456789") }
+    }
+
+    /** `UpdatePersonalInfo` files both refusals under Phone. */
+    @Test
+    fun `the server's refusal of the phone is named under the phone and clears as it is edited`() = runTest {
+        listOf("validation.invalid_phone_number", "common.required").forEach { key ->
+            coEvery { repository.getCurrentEmployee() } returns ApiResult.Success(employee)
+            coEvery { repository.updatePersonalInfo(any(), any(), any(), any(), any()) } returns
+                ApiResult.Error(refusal(field = "Phone", key = key))
+            val vm = viewModel()
+            advanceUntilIdle()
+
+            vm.save()
+            advanceUntilIdle()
+
+            assertEquals(key, "translated error", vm.form().phoneError)
+            assertEquals(key, ActionState.Idle, vm.saveState.value)
+            vm.onPhoneChange("+420777123457")
+            assertNull(key, vm.form().phoneError)
+        }
+        verify(exactly = 0) { snackbar.showError(any<String>()) }
+    }
+
+    @Test
+    fun `a required refusal of another field is not put under the phone`() = runTest {
+        coEvery { repository.getCurrentEmployee() } returns ApiResult.Success(employee)
+        coEvery { repository.updatePersonalInfo(any(), any(), any(), any(), any()) } returns
+            ApiResult.Error(refusal(field = "FirstName", key = "common.required"))
+        val vm = viewModel()
+        advanceUntilIdle()
+
+        vm.save()
+        advanceUntilIdle()
+
+        assertNull(vm.form().phoneError)
+        verify { snackbar.showError("translated error") }
+    }
+
+    private fun refusal(field: String, key: String) =
+        ApiError.BadRequest("Validation Error", validationErrors = mapOf(field to listOf(key)), errorKey = key)
+
+    @Test
+    fun `a stored phone with spaces passes and is sent as stored`() = runTest {
         coEvery { repository.getCurrentEmployee() } returns
             ApiResult.Success(employee.copy(phoneNumber = "+420 777123456"))
         coEvery { repository.updatePersonalInfo(any(), any(), any(), any(), any()) } returns ApiResult.Success(Unit)

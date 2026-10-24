@@ -153,7 +153,83 @@ class FacadeStub {
   startEditingWeeklyLimit = jest.fn(() => this.editingWeeklyLimit.set(true));
   cancelEditingWeeklyLimit = jest.fn(() => this.editingWeeklyLimit.set(false));
   setWeeklyOrderLimit = jest.fn();
+  connectLegalEntityName = jest.fn();
   ngOnDestroy = jest.fn();
+}
+
+/** The page with every shared control stubbed, the text input too unless `textInput` is 'real'. */
+async function renderPage(
+  facade: FacadeStub,
+  textInput: 'stub' | 'real' = 'stub'
+): Promise<ComponentFixture<EmployeeDetailComponent>> {
+  const stubbed = textInput === 'stub';
+  await TestBed.configureTestingModule({
+    imports: [EmployeeDetailComponent, TranslateModule.forRoot()],
+    providers: [
+      provideNoopAnimations(),
+      { provide: PermissionService, useValue: { hasPolicy: () => true } },
+      { provide: Router, useValue: { navigate: jest.fn() } },
+      {
+        provide: ActivatedRoute,
+        useValue: { snapshot: { paramMap: convertToParamMap({ employeeId: 'employee-1' }) } },
+      },
+      {
+        provide: CountryFieldLabelsService,
+        useValue: { labels: signal(null), load: jest.fn() },
+      },
+    ],
+  })
+    .overrideComponent(EmployeeDetailComponent, {
+      remove: {
+        imports: [
+          CleansiaButtonComponent,
+          CleansiaSectionComponent,
+          CleansiaSelectComponent,
+          CleansiaTextareaComponent,
+          ...(stubbed ? [CleansiaTextInputComponent] : []),
+          EmployeeDocumentsSectionComponent,
+          EmployeePayoutSectionComponent,
+        ],
+      },
+      add: {
+        imports: [
+          ButtonStub,
+          SectionStub,
+          SelectStub,
+          TextareaStub,
+          ...(stubbed ? [TextInputStub] : []),
+          DocumentsSectionStub,
+          PayoutSectionStub,
+        ],
+        providers: [
+          { provide: EmployeeDetailFacade, useValue: facade },
+          {
+            provide: EmployeeDocumentsFacade,
+            useValue: {
+              destroyed$: new Subject<void>(),
+              ngOnDestroy: jest.fn(),
+              openRejectDocumentDialog: jest.fn(),
+            },
+          },
+        ],
+      },
+    })
+    .compileComponents();
+
+  return TestBed.createComponent(EmployeeDetailComponent);
+}
+
+function employeeDetail(saved: Partial<IAdminEmployeeDetail>): AdminEmployeeDetail {
+  return AdminEmployeeDetail.fromJS({
+    id: 'employee-1',
+    firstName: 'Jana',
+    lastName: 'Nová',
+    averageRating: 4.8,
+    complaintsCount: 0,
+    isProfileComplete: true,
+    contractStatus: 'Approved',
+    ...saved,
+  });
 }
 
 const REASON_LABEL = 'pages.employee_detail.weekly_order_limit_reason';
@@ -164,76 +240,11 @@ describe('EmployeeDetailComponent', () => {
 
   beforeEach(async () => {
     facade = new FacadeStub();
-
-    await TestBed.configureTestingModule({
-      imports: [EmployeeDetailComponent, TranslateModule.forRoot()],
-      providers: [
-        provideNoopAnimations(),
-        { provide: PermissionService, useValue: { hasPolicy: () => true } },
-        { provide: Router, useValue: { navigate: jest.fn() } },
-        {
-          provide: ActivatedRoute,
-          useValue: { snapshot: { paramMap: convertToParamMap({ employeeId: 'employee-1' }) } },
-        },
-        {
-          provide: CountryFieldLabelsService,
-          useValue: { labels: signal(null), load: jest.fn() },
-        },
-      ],
-    })
-      .overrideComponent(EmployeeDetailComponent, {
-        remove: {
-          imports: [
-            CleansiaButtonComponent,
-            CleansiaSectionComponent,
-            CleansiaSelectComponent,
-            CleansiaTextareaComponent,
-            CleansiaTextInputComponent,
-            EmployeeDocumentsSectionComponent,
-            EmployeePayoutSectionComponent,
-          ],
-        },
-        add: {
-          imports: [
-            ButtonStub,
-            SectionStub,
-            SelectStub,
-            TextareaStub,
-            TextInputStub,
-            DocumentsSectionStub,
-            PayoutSectionStub,
-          ],
-          providers: [
-            { provide: EmployeeDetailFacade, useValue: facade },
-            {
-              provide: EmployeeDocumentsFacade,
-              useValue: {
-                destroyed$: new Subject<void>(),
-                ngOnDestroy: jest.fn(),
-                openRejectDocumentDialog: jest.fn(),
-              },
-            },
-          ],
-        },
-      })
-      .compileComponents();
-
-    fixture = TestBed.createComponent(EmployeeDetailComponent);
+    fixture = await renderPage(facade);
   });
 
   function render(saved: Partial<IAdminEmployeeDetail>): void {
-    facade.employee.set(
-      AdminEmployeeDetail.fromJS({
-        id: 'employee-1',
-        firstName: 'Jana',
-        lastName: 'Nová',
-        averageRating: 4.8,
-        complaintsCount: 0,
-        isProfileComplete: true,
-        contractStatus: 'Approved',
-        ...saved,
-      })
-    );
+    facade.employee.set(employeeDetail(saved));
     fixture.detectChanges();
   }
 
@@ -364,5 +375,40 @@ describe('EmployeeDetailComponent', () => {
       entityType.setValue(EmployeeEntityType.NaturalPerson);
       expect(legalName.valid).toBe(true);
     });
+  });
+});
+
+/**
+ * The legal-name rule judges the merged row, so a save from any section can be refused for it, and the
+ * field exists only in the employment section; the facade opens that section and marks the field.
+ */
+describe('EmployeeDetailComponent, a company row refused for its registered name', () => {
+  let fixture: ComponentFixture<EmployeeDetailComponent>;
+  let facade: FacadeStub;
+
+  beforeEach(async () => {
+    facade = new FacadeStub();
+    fixture = await renderPage(facade, 'real');
+    facade.employee.set(employeeDetail({ entityType: EmployeeEntityType.LegalEntity, legalEntityName: undefined }));
+    fixture.detectChanges();
+  });
+
+  it('hands the legal-name field to the facade', () => {
+    expect(facade.connectLegalEntityName).toHaveBeenCalledWith(
+      fixture.componentInstance.editForm.controls.legalEntityName
+    );
+  });
+
+  it('shows the name as required when the facade opens the employment section for it after another section was saved', () => {
+    fixture.componentInstance.onEditSection('personal');
+    fixture.detectChanges();
+    const [legalEntityName] = facade.connectLegalEntityName.mock.calls[0];
+
+    legalEntityName.markAsTouched();
+    facade.editingSection.set('employment');
+    fixture.detectChanges();
+
+    const field: HTMLElement | null = fixture.nativeElement.querySelector('[formcontrolname="legalEntityName"]');
+    expect(field?.querySelector('.cleansia-error-message-container')).not.toBeNull();
   });
 });

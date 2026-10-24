@@ -210,6 +210,7 @@ export class EmployeeDetailComponent implements OnInit, OnDestroy {
   }));
 
   ngOnInit(): void {
+    this.facade.connectLegalEntityName(this.editForm.controls.legalEntityName);
     const employeeId = this.route.snapshot.paramMap.get('employeeId');
     if (employeeId) {
       this.facade.loadEmployeeDetail(employeeId);

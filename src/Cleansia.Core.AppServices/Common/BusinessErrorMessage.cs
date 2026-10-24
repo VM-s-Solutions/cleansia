@@ -539,6 +539,8 @@ public static class BusinessErrorMessage
     public const string InvalidDate = "validation.invalid_date";
     public const string DateMustBeInPast = "validation.date_must_be_in_past";
     public const string InvalidAge = "validation.invalid_age";
+    public const string InvalidPhoneNumber = "validation.invalid_phone_number";
+    public const string PassportIdInvalidLength = "validation.passport_id.invalid_length";
     // Country-scoped IČO/VAT format checks, driven by CountryConfiguration's regexes.
     public const string RegistrationNumberInvalidFormat = "validation.registration_number.invalid_format";
     /// <summary>The country's public business register does not know the number.</summary>

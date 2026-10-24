@@ -282,6 +282,20 @@ public class UpdateIdentificationInfoValidatorTests
         Assert.True(result.IsValid);
     }
 
+    [Theory]
+    [InlineData("AB12")]
+    [InlineData("AB1234567890123456789")]
+    public async Task A_Passport_Id_Outside_5_To_20_Characters_Is_Refused_With_Its_Own_Key_Not_The_Address_One(string passportId)
+    {
+        ArrangePassingContext();
+
+        var result = await CreateValidator().ValidateAsync(Valid() with { PassportId = passportId });
+
+        var failure = Assert.Single(result.Errors);
+        Assert.Equal(nameof(UpdateIdentificationInfo.Command.PassportId), failure.PropertyName);
+        Assert.Equal(BusinessErrorMessage.PassportIdInvalidLength, failure.ErrorMessage);
+    }
+
     [Fact]
     public async Task A_Caller_With_No_Employee_Record_Fails_NotAllowedToUpdateEmployee()
     {

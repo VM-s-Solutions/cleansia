@@ -583,6 +583,7 @@
     <string name="error_registration_number_required">Zadajte IČO</string>
     <string name="error_legal_entity_name_missing">Chýba registrovaný názov vašej firmy. Požiadajte podporu o doplnenie — tu ho zmeniť nemožno.</string>
     <string name="error_pick_address_first">Najprv vyberte adresu na mape</string>
+    <string name="error_address_incomplete">Na tomto mieste nie je úplná adresa. Posuňte špendlík na budovu alebo vyhľadajte ulicu a číslo domu.</string>
 
     <!-- Profile Validation -->
     <string name="validation_required">Toto pole je povinné</string>

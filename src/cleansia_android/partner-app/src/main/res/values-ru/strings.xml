@@ -583,6 +583,7 @@
     <string name="error_registration_number_required">Введите регистрационный номер</string>
     <string name="error_legal_entity_name_missing">Отсутствует зарегистрированное название вашей компании. Обратитесь в поддержку — здесь его изменить нельзя.</string>
     <string name="error_pick_address_first">Сначала выберите адрес на карте</string>
+    <string name="error_address_incomplete">Здесь нет полного адреса. Переместите метку на здание или найдите улицу и номер дома.</string>
 
     <!-- Profile Validation -->
     <string name="validation_required">Это поле обязательно</string>

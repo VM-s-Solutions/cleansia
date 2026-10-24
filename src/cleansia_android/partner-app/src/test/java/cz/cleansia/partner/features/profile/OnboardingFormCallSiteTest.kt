@@ -109,4 +109,15 @@ class OnboardingFormCallSiteTest {
             argument(callBlock(screen, "CleansiaTextField(", "R.string.swift_code_helper"), "errorText"),
         )
     }
+
+    @Test
+    fun `the address step's Next is held only while saving, and the card names an incomplete pick`() {
+        val screen = source("profile/AddressSectionScreen.kt")
+        assertEquals("!saving", argument(callBlock(screen, "SectionSaveRow("), "enabled"))
+        assertEquals("form.addressError", argument(callBlock(screen, "AddressSummaryCard(", "onClick"), "errorText"))
+        val card = screen.substringAfter("private fun AddressSummaryCard(").substringBefore("private fun ServiceAreaRow(")
+        val flat = card.replace(Regex("\\s+"), " ")
+        assertTrue("the card's border no longer turns red", flat.contains("if (errorText != null) MaterialTheme.colorScheme.error"))
+        assertEquals("MaterialTheme.colorScheme.error", argument(callBlock(card, "Text(", "text = errorText"), "color"))
+    }
 }

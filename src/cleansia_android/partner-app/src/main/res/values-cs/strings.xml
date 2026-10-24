@@ -529,6 +529,7 @@
     <string name="error_registration_number_required">Zadejte IČO</string>
     <string name="error_legal_entity_name_missing">Chybí registrovaný název vaší firmy. Požádejte podporu o doplnění — zde ho změnit nelze.</string>
     <string name="error_pick_address_first">Nejprve vyberte adresu na mapě</string>
+    <string name="error_address_incomplete">Na tomto místě není úplná adresa. Posuňte špendlík na budovu nebo vyhledejte ulici a číslo domu.</string>
 
     <!-- Profile Validation -->
     <string name="validation_required">Toto pole je povinné</string>

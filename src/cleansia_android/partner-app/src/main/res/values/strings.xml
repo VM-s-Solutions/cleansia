@@ -583,6 +583,7 @@
     <string name="error_registration_number_required">Enter your registration number</string>
     <string name="error_legal_entity_name_missing">Your company\'s registered name is missing. Contact support to add it — it can\'t be changed here.</string>
     <string name="error_pick_address_first">Pick your address on the map first</string>
+    <string name="error_address_incomplete">This spot has no full address. Move the pin onto the building, or search for the street and house number.</string>
 
     <!-- Profile Validation -->
     <string name="validation_required">This field is required</string>

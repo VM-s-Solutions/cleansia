@@ -116,6 +116,7 @@ fun AddressSectionScreen(
         AddressSummaryCard(
             line1 = form.summaryLine1,
             line2 = form.summaryLine2,
+            errorText = form.addressError,
             enabled = !saving,
             onClick = onLaunchPicker,
         )
@@ -141,7 +142,7 @@ fun AddressSectionScreen(
             onBack = onboardingBackFor(cz.cleansia.partner.features.orders.ProfileSection.Address, onboarding, onJumpToSection),
             onSave = { viewModel.save() },
             saving = saving,
-            enabled = !saving && form.pickedAddress != null,
+            enabled = !saving,
         )
     }
 }
@@ -150,78 +151,93 @@ fun AddressSectionScreen(
  * Tappable card that opens the map picker. When nothing is picked yet
  * shows a "Pick on map" placeholder; once picked, shows two lines
  * (street, then zip · city · country) with a chevron to indicate the
- * card is still tappable for re-picking.
+ * card is still tappable for re-picking. [errorText] is what is wrong
+ * with the pick, under the card the cleaner taps to pick again.
  */
 @Composable
 private fun AddressSummaryCard(
     line1: String?,
     line2: String?,
+    errorText: String?,
     enabled: Boolean,
     onClick: () -> Unit,
 ) {
-    Surface(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clip(RoundedCornerShape(16.dp))
-            .clickable(enabled = enabled, onClick = onClick),
-        shape = RoundedCornerShape(16.dp),
-        color = MaterialTheme.colorScheme.surface,
-        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
-        tonalElevation = 1.dp,
-    ) {
-        Row(
-            modifier = Modifier.padding(Spacing.M),
-            verticalAlignment = Alignment.CenterVertically,
+    Column {
+        Surface(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clip(RoundedCornerShape(16.dp))
+                .clickable(enabled = enabled, onClick = onClick),
+            shape = RoundedCornerShape(16.dp),
+            color = MaterialTheme.colorScheme.surface,
+            border = BorderStroke(
+                1.dp,
+                if (errorText != null) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.outlineVariant,
+            ),
+            tonalElevation = 1.dp,
         ) {
-            Box(
-                modifier = Modifier
-                    .size(40.dp)
-                    .clip(RoundedCornerShape(50))
-                    .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.10f)),
-                contentAlignment = Alignment.Center,
+            Row(
+                modifier = Modifier.padding(Spacing.M),
+                verticalAlignment = Alignment.CenterVertically,
             ) {
+                Box(
+                    modifier = Modifier
+                        .size(40.dp)
+                        .clip(RoundedCornerShape(50))
+                        .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.10f)),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Icon(
+                        imageVector = Icons.Outlined.Place,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.size(20.dp),
+                    )
+                }
+                Spacer(Modifier.width(Spacing.S))
+                Column(modifier = Modifier.weight(1f)) {
+                    if (line1 != null) {
+                        Text(
+                            text = line1,
+                            style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.SemiBold),
+                            color = MaterialTheme.colorScheme.onSurface,
+                            maxLines = 1,
+                        )
+                        if (line2 != null) {
+                            Text(
+                                text = line2,
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                maxLines = 1,
+                            )
+                        }
+                    } else {
+                        Text(
+                            text = stringResource(R.string.address_pick_on_map),
+                            style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.SemiBold),
+                            color = MaterialTheme.colorScheme.onSurface,
+                        )
+                        Text(
+                            text = stringResource(R.string.address_pick_on_map_helper),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
+                }
                 Icon(
-                    imageVector = Icons.Outlined.Place,
+                    imageVector = Icons.AutoMirrored.Outlined.KeyboardArrowRight,
                     contentDescription = null,
-                    tint = MaterialTheme.colorScheme.primary,
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.size(20.dp),
                 )
             }
-            Spacer(Modifier.width(Spacing.S))
-            Column(modifier = Modifier.weight(1f)) {
-                if (line1 != null) {
-                    Text(
-                        text = line1,
-                        style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.SemiBold),
-                        color = MaterialTheme.colorScheme.onSurface,
-                        maxLines = 1,
-                    )
-                    if (line2 != null) {
-                        Text(
-                            text = line2,
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            maxLines = 1,
-                        )
-                    }
-                } else {
-                    Text(
-                        text = stringResource(R.string.address_pick_on_map),
-                        style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.SemiBold),
-                        color = MaterialTheme.colorScheme.onSurface,
-                    )
-                    Text(
-                        text = stringResource(R.string.address_pick_on_map_helper),
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-                }
-            }
-            Icon(
-                imageVector = Icons.AutoMirrored.Outlined.KeyboardArrowRight,
-                contentDescription = null,
-                tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.size(20.dp),
+        }
+        if (errorText != null) {
+            Text(
+                text = errorText,
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.error,
+                modifier = Modifier.padding(start = 16.dp, top = 4.dp),
             )
         }
     }

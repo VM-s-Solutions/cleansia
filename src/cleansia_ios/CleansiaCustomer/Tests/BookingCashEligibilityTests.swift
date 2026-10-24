@@ -157,7 +157,7 @@ final class BookingCashEligibilityTests: XCTestCase {
         let received = events(of: vm)
         vm.update(readyState())
         scheduler.advance(by: .milliseconds(400))
-        await drain()
+        await eventually { vm.cashEligibility == .available }
         XCTAssertEqual(vm.cashEligibility, .available, "the watcher never landed the first quote")
         vm.selectPayment(.cash)
         XCTAssertEqual(vm.state.paymentMethod, .cash)
@@ -185,7 +185,7 @@ final class BookingCashEligibilityTests: XCTestCase {
         vm.update(readyState())
         vm.setDirtiness(.normal)
         scheduler.advance(by: .milliseconds(400))
-        await drain()
+        await eventually { vm.cashEligibility == .available }
         vm.selectPayment(.cash)
         XCTAssertEqual(vm.state.paymentMethod, .cash)
 

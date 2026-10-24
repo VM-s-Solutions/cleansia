@@ -15,9 +15,9 @@ class HostComponent {
 }
 
 /**
- * Pasting a whole account into the one control. The apps' `splitPastedAccount` (owner decision D14)
- * is the rule: a written-out account fills the segments it names, and a bare number is the account
- * number and nothing else.
+ * Pasting into the one control. The apps' `splitPastedAccount` (owner decision D14, revised
+ * 2026-10-24) is the rule: a written-out account fills the segments it names, a bare run of digits
+ * that fits the segment it is pasted into stays there, and a longer one is the account number.
  */
 describe('CleansiaBankAccountComponent paste', () => {
   let fixture: ComponentFixture<HostComponent>;
@@ -83,6 +83,52 @@ describe('CleansiaBankAccountComponent paste', () => {
       expect(host.bankCode.value).toBe('0800');
     },
   );
+
+  it('keeps a bank code pasted into its own segment there, and the number already entered', () => {
+    host.number.setValue('2000145399');
+
+    const event = paste('bank-code', '0800');
+
+    expect(event.defaultPrevented).toBe(true);
+    expect(parts()).toEqual(['', '2000145399', '0800']);
+  });
+
+  it('keeps a prefix pasted into its own segment there, and the number already entered', () => {
+    host.number.setValue('2000145399');
+
+    paste('prefix', '19');
+
+    expect(parts()).toEqual(['19', '2000145399', '']);
+  });
+
+  it('puts a pasted bank code or prefix in place of the one in the segment, spaces dropped', () => {
+    host.prefix.setValue('35');
+    host.bankCode.setValue('0100');
+
+    paste('bank-code', ' 08 00 ');
+    paste('prefix', '19\u00A0');
+
+    expect(parts()).toEqual(['19', '', '0800']);
+  });
+
+  it('marks only the segment a fitting bank code lands in as edited', () => {
+    paste('bank-code', '0800');
+
+    expect(host.bankCode.dirty).toBe(true);
+    expect(host.number.dirty).toBe(false);
+    expect(host.prefix.dirty).toBe(false);
+  });
+
+  it.each([
+    ['prefix', '123456', ['123456', '', '']],
+    ['prefix', '1234567', ['', '1234567', '']],
+    ['bank-code', '1234', ['', '', '1234']],
+    ['bank-code', '12345', ['', '12345', '']],
+  ] as const)('reads %s paste %s as the segment it fits, or else the number', (segment, text, expected) => {
+    paste(segment, text);
+
+    expect(parts()).toEqual(expected);
+  });
 
   it('leaves text that is not an account to the segment it was pasted into', () => {
     const event = paste('number', 'not an account');

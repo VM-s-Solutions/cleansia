@@ -4,7 +4,7 @@
     #digitInput
     type="text"
     inputmode="numeric"
-    maxlength="1"
+    [attr.maxlength]="length()"
     class="cleansia-code-input__digit"
     [class.cleansia-code-input__digit--filled]="digit !== ''"
     [value]="digit"

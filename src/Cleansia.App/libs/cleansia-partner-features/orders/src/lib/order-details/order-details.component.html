@@ -169,8 +169,8 @@
 
       <!-- Action buttons row: Report Issue / Add Note available across active statuses, Mark Cash Collected
            only while InProgress, awaiting payment and not refused by anything the job sheet shows, Customer Did Not Pay only on a cash order
-           InProgress and awaiting payment, Complete only in InProgress with after-photos. -->
-      @if (canAddNoteOrIssue() || canMarkCashCollected() || canReportCashNotPaid() || canCompleteOrder()) {
+           InProgress and awaiting payment, Cancel Job only before the job is under way, Complete only in InProgress with after-photos. -->
+      @if (canAddNoteOrIssue() || canMarkCashCollected() || canReportCashNotPaid() || canDropOrder() || canCompleteOrder()) {
       <div class="cleansia-order-details__actions-row">
         @if (canMarkCashCollected()) {
         <cleansia-button
@@ -205,6 +205,16 @@
           [icon]="'pi pi-file-edit'"
           [outlined]="true"
           (onClick)="openAddNote()"
+        />
+        }
+        @if (canDropOrder()) {
+        <cleansia-button
+          [label]="'pages.order_details.cancel_job.action' | translate"
+          [icon]="'pi pi-sign-out'"
+          [outlined]="true"
+          [severity]="'danger'"
+          (onClick)="openDropOrder()"
+          [loading]="loading()"
         />
         }
         @if (canCompleteOrder()) {

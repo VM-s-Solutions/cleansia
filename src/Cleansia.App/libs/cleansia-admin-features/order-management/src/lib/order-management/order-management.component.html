@@ -47,6 +47,20 @@
 
             <div class="filter-section">
               <h3 class="filter-section-title">
+                {{ 'pages.order_management.filters.staffing' | translate }}
+              </h3>
+              <div class="filter-checkbox-group">
+                <div class="filter-checkbox-item" [class.checked]="facade.filterForm.value.unassignedOnly">
+                  <cleansia-checkbox
+                    formControlName="unassignedOnly"
+                    [label]="'pages.order_management.filters.unassigned_only' | translate"
+                  />
+                </div>
+              </div>
+            </div>
+
+            <div class="filter-section">
+              <h3 class="filter-section-title">
                 {{ 'pages.order_management.filters.payment_status' | translate }}
               </h3>
               <div class="filter-checkbox-group">

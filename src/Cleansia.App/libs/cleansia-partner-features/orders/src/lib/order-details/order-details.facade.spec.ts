@@ -3,6 +3,8 @@ import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
 import {
   AddOrderNoteCommand,
+  DropOrderCommand,
+  DropOrderResponse,
   MarkCashCollectedCommand,
   MarkCashCollectedResponse,
   OrderItem,
@@ -41,6 +43,7 @@ interface OrderOverrides {
   requiredEmployees?: number;
   creditAppliedAmount?: number;
   assignedEmployeeId?: string | null;
+  lockoutReportedAt?: string;
 }
 
 function buildOrder(overrides: OrderOverrides = {}): OrderItem {
@@ -51,6 +54,7 @@ function buildOrder(overrides: OrderOverrides = {}): OrderItem {
     requiredEmployees,
     creditAppliedAmount = 0,
     assignedEmployeeId = EMPLOYEE_ID,
+    lockoutReportedAt,
   } = overrides;
 
   return OrderItem.fromJS({
@@ -66,11 +70,13 @@ function buildOrder(overrides: OrderOverrides = {}): OrderItem {
     assignedEmployees: assignedEmployeeId
       ? [{ employeeId: assignedEmployeeId, fullName: 'Jan Novak' }]
       : [],
+    lockoutReportedAt,
   });
 }
 
 describe('OrderDetailsFacade', () => {
   let orderClient: {
+    dropOrder: jest.Mock;
     markCashCollected: jest.Mock;
     reportCashNotPaid: jest.Mock;
     takeOrder: jest.Mock;
@@ -112,6 +118,7 @@ describe('OrderDetailsFacade', () => {
   beforeEach(() => {
     TestBed.resetTestingModule();
     orderClient = {
+      dropOrder: jest.fn(),
       markCashCollected: jest.fn(),
       reportCashNotPaid: jest.fn(),
       takeOrder: jest.fn(),
@@ -735,6 +742,135 @@ describe('OrderDetailsFacade', () => {
       expect(snackbar.showErrorTranslated).toHaveBeenCalledWith(
         'pages.order_details.cash_not_paid.gating_error'
       );
+    });
+  });
+
+  describe('leaving a job', () => {
+    const left = (crewRemaining: number) =>
+      of(DropOrderResponse.fromJS({ orderId: ORDER_ID, crewRemaining }));
+
+    let onLeft: jest.Mock;
+
+    const onTheJob = (overrides: OrderOverrides = {}): OrderDetailsFacade => {
+      const facade = createFacade();
+      facade.orderDetails.set(buildOrder({ orderStatusValue: OrderStatus.Confirmed, ...overrides }));
+      facade.currentEmployeeId.set(EMPLOYEE_ID);
+      return facade;
+    };
+
+    beforeEach(() => {
+      onLeft = jest.fn();
+    });
+
+    it('asks first, as a destructive act, offering to keep the job rather than a bare Cancel', () => {
+      const facade = onTheJob();
+
+      facade.openDropOrderDialog(onLeft);
+
+      expect(confirmDialog.confirmTranslated).toHaveBeenCalledWith(
+        'pages.order_details.cancel_job.confirm_message',
+        'pages.order_details.cancel_job.confirm_title',
+        undefined,
+        {
+          danger: true,
+          icon: 'pi pi-exclamation-triangle',
+          acceptLabelKey: 'pages.order_details.cancel_job.confirm_action',
+          rejectLabelKey: 'pages.order_details.cancel_job.keep',
+        }
+      );
+    });
+
+    it('sends nothing and stays when the cleaner keeps the job', () => {
+      const facade = onTheJob();
+
+      facade.openDropOrderDialog(onLeft);
+
+      expect(orderClient.dropOrder).not.toHaveBeenCalled();
+      expect(onLeft).not.toHaveBeenCalled();
+    });
+
+    it('drops the seat once confirmed, with the order id as the whole body', () => {
+      const facade = onTheJob();
+      confirmDialog.confirmTranslated.mockReturnValue(of(true));
+      orderClient.dropOrder.mockReturnValue(left(1));
+
+      facade.openDropOrderDialog(onLeft);
+
+      const command: DropOrderCommand = orderClient.dropOrder.mock.calls[0][0];
+      expect(command).toBeInstanceOf(DropOrderCommand);
+      expect(command.toJSON()).toEqual({ orderId: ORDER_ID });
+    });
+
+    it('says the job has no partner now when the crew emptied, then leaves the page', () => {
+      const facade = onTheJob();
+      confirmDialog.confirmTranslated.mockReturnValue(of(true));
+      orderClient.dropOrder.mockReturnValue(left(0));
+
+      facade.openDropOrderDialog(onLeft);
+
+      expect(snackbar.showSuccessTranslated).toHaveBeenCalledWith(
+        'global.messages.orders.job_cancelled_no_crew'
+      );
+      expect(onLeft).toHaveBeenCalledTimes(1);
+      expect(orderClient.getById).not.toHaveBeenCalled();
+      expect(facade.loading()).toBe(false);
+    });
+
+    it('says the place is back in Available Orders when others are still on the job, then leaves the page', () => {
+      const facade = onTheJob();
+      confirmDialog.confirmTranslated.mockReturnValue(of(true));
+      orderClient.dropOrder.mockReturnValue(left(1));
+
+      facade.openDropOrderDialog(onLeft);
+
+      expect(snackbar.showSuccessTranslated).toHaveBeenCalledWith(
+        'global.messages.orders.job_cancelled'
+      );
+      expect(onLeft).toHaveBeenCalledTimes(1);
+    });
+
+    it('re-reads the job after a refusal and stays on it, leaving the translated toast to the interceptor', () => {
+      const facade = onTheJob();
+      confirmDialog.confirmTranslated.mockReturnValue(of(true));
+      orderClient.dropOrder.mockReturnValue(throwError(() => refusal('order.not_confirmed')));
+
+      facade.openDropOrderDialog(onLeft);
+
+      expect(orderClient.getById).toHaveBeenCalledWith(ORDER_ID);
+      expect(onLeft).not.toHaveBeenCalled();
+      expect(snackbar.showSuccessTranslated).not.toHaveBeenCalled();
+      expect(snackbar.showErrorTranslated).not.toHaveBeenCalled();
+      expect(snackbar.showApiError).not.toHaveBeenCalled();
+      expect(facade.loading()).toBe(false);
+    });
+
+    it('keeps the job sheet when the call never reached the server', () => {
+      const facade = onTheJob();
+      confirmDialog.confirmTranslated.mockReturnValue(of(true));
+      orderClient.dropOrder.mockReturnValue(
+        throwError(() => new HttpErrorResponse({ status: 0, statusText: 'Unknown Error' }))
+      );
+
+      facade.openDropOrderDialog(onLeft);
+
+      expect(orderClient.getById).not.toHaveBeenCalled();
+      expect(onLeft).not.toHaveBeenCalled();
+      expect(facade.orderDetails()).not.toBeNull();
+      expect(facade.loading()).toBe(false);
+    });
+
+    it.each([
+      { orderStatusValue: OrderStatus.OnTheWay },
+      { orderStatusValue: OrderStatus.InProgress },
+      { assignedEmployeeId: 'someone-else' },
+      { lockoutReportedAt: '2026-09-29T10:20:00Z' },
+    ])('does not ask on a job the action is not offered on, %o', (overrides) => {
+      const facade = onTheJob(overrides);
+
+      facade.openDropOrderDialog(onLeft);
+
+      expect(confirmDialog.confirmTranslated).not.toHaveBeenCalled();
+      expect(orderClient.dropOrder).not.toHaveBeenCalled();
     });
   });
 

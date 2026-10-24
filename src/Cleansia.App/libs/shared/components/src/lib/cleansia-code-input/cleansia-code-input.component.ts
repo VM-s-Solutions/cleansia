@@ -106,22 +106,27 @@ export class CleansiaCodeInputComponent implements ControlValueAccessor {
     this.onTouched = fn;
   }
 
+  // Safari's one-time-code AutoFill and the keyboard's suggestion strip put a whole code into the
+  // focused box without a paste event. A shorter edit is typing: the new digit sits before the caret.
   onDigitInput(event: Event, index: number): void {
     const input = event.target as HTMLInputElement;
-    const value = input.value.replace(/\D/g, '');
+    const code = input.value.replace(/\D/g, '');
 
-    if (value.length > 0) {
-      this.digits[index] = value[0];
-      input.value = value[0];
-      this.emitValue();
+    if (code.length >= this.length()) {
+      this.fillFrom(code);
+      input.value = this.digits[index];
+      return;
+    }
 
-      if (index < this.length() - 1) {
-        this.focusDigit(index + 1);
-      }
-    } else {
-      this.digits[index] = '';
-      input.value = '';
-      this.emitValue();
+    const typed = input.value.charAt((input.selectionStart ?? input.value.length) - 1);
+    const typedDigit = /\d/.test(typed);
+    const digit = typedDigit ? typed : code.slice(-1);
+    this.digits[index] = digit;
+    input.value = digit;
+    this.emitValue();
+
+    if (typedDigit && index < this.length() - 1) {
+      this.focusDigit(index + 1);
     }
   }
 
@@ -153,13 +158,7 @@ export class CleansiaCodeInputComponent implements ControlValueAccessor {
     );
     if (!pasted) return;
 
-    for (let i = 0; i < this.length(); i++) {
-      this.digits[i] = pasted[i] || '';
-    }
-    this.emitValue();
-
-    const lastFilledIndex = Math.min(pasted.length, this.length()) - 1;
-    this.focusDigit(lastFilledIndex);
+    this.fillFrom(pasted);
   }
 
   onFocus(index: number): void {
@@ -168,6 +167,16 @@ export class CleansiaCodeInputComponent implements ControlValueAccessor {
     if (inputs?.[index]) {
       inputs[index].nativeElement.select();
     }
+  }
+
+  private fillFrom(code: string): void {
+    for (let i = 0; i < this.length(); i++) {
+      this.digits[i] = code[i] || '';
+    }
+    this.emitValue();
+
+    const lastFilledIndex = Math.min(code.length, this.length()) - 1;
+    this.focusDigit(lastFilledIndex);
   }
 
   private focusDigit(index: number): void {

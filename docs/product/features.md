@@ -355,7 +355,8 @@ text row's SHA-256, the hash a dispute cites. → [Business rules — the contra
 **Being told** — a bell at the bottom right of every page that opens the latest notifications in a
 panel over it (on a phone, the toolbar's bell opens the same panel), and the *Notifications* page in the
 sidebar for the full history: one row per event the company has
-to act on — an order to serve, an order that lost its last cleaner, a dispute filed, a chargeback, a
+to act on — an order to serve, an order that lost its last cleaner, an order nobody has taken a day
+before its start, a dispute filed, a chargeback, a
 first card decline, a failed erasure retry, and the company's own wind-down request, each run that did
 something, and the archive — with the order, dispute or page it names a click away, unread emphasis,
 mark read and mark all read, and a badge that refreshes every minute while the tab is visible. Every

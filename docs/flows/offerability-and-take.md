@@ -97,7 +97,11 @@ the customer's confirm — are the three that raise `admin.order.new` to the com
 cleaner's offer and under the same offerability read; an unpaid card checkout, which the stale sweep
 cancels an hour later, announces nothing. A seat that empties again is a second notice: a drop or an
 admin rejection that leaves nobody on the order raises `admin.order.crew_lost` at any status, and
-walks a `Confirmed` order back to `New` so the fresh row is also the digest's re-advertisement.
+walks a `Confirmed` order back to `New` so the fresh row is also the digest's re-advertisement. An
+order still on the board with nobody on it inside 24 h of its start raises `admin.order.no_cleaner_yet`
+once, from the five-minute reminder sweep (since 2026-10-24): it must be offerable, past any
+preferred-cleaner hold, and an hour past its last status change or the customer's confirmation, so it
+comes before the unfilled-order cancel at slot + 30 min, while there is still time to staff it.
 → [Business rules — administrators are told](/product/business-rules#admin-notifications),
 [when the last cleaner leaves](/product/business-rules#crew-lost)
 

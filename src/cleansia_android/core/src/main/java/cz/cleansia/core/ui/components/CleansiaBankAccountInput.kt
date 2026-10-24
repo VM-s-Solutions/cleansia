@@ -56,10 +56,10 @@ internal const val BankCodeMaxLength = 4
  * clipped to "Předčí…" answers nothing.
  *
  * **A whole account pasted into any segment is spread over all three, and a bare number too long for
- * the segment it was pasted into is the number** ([splitPastedAccount]), so an account copied off a
+ * the segment it was pasted into is the number** ([editSegment]), so an account copied off a
  * statement or a banking app lands where it belongs instead of being clamped into one box, while a
- * prefix or bank code copied on its own stays in its own box. A spread paste ends the edit, so the
- * keyboard closes, as on iOS.
+ * prefix or bank code copied on its own replaces what its own box held. A spread paste ends the edit,
+ * so the keyboard closes, as on iOS.
  *
  * The web twin is `cleansia-bank-account`; keep the two in step.
  */
@@ -101,18 +101,16 @@ fun CleansiaBankAccountInput(
         else -> MaterialTheme.colorScheme.outline
     }
 
-    // A paste that reads as a whole account fills the segments it names, and a bare number too long for
-    // the segment it went into is the account number; anything else is clamped into that segment,
-    // exactly as typing is. [current] is the text the change replaces, as the segment reported it.
     fun segmentChange(maxLength: Int, onChange: (String) -> Unit): (String, String) -> Unit = { current, raw ->
-        val split = splitPastedAccount(raw, current, maxLength)
-        if (split == null) {
-            onChange(clampSegment(raw, maxLength))
-        } else {
-            split.first?.let(onPrefixChange)
-            onNumberChange(split.second)
-            split.third?.let(onBankCodeChange)
-            pasteRevision++
+        when (val edit = editSegment(raw, current, maxLength)) {
+            SegmentEdit.Kept -> Unit
+            is SegmentEdit.Changed -> onChange(edit.text)
+            is SegmentEdit.Spread -> {
+                edit.prefix?.let(onPrefixChange)
+                onNumberChange(edit.number)
+                edit.bankCode?.let(onBankCodeChange)
+                pasteRevision++
+            }
         }
     }
 
@@ -189,48 +187,61 @@ fun CleansiaBankAccountInput(
 private val domesticAccount = Regex("""^(?:(\d{1,6})-)?(\d{1,10})(?:/(\d{1,4}))?$""")
 private val czSkIban = Regex("""^(?:CZ|SK)\d{2}(\d{20})$""")
 
-/**
- * A Czech or Slovak account pasted (or typed on a hardware keyboard) in one go, split into its three
- * fields as (prefix, number, bank code); [raw] is the segment's new text and [current] the text it
- * replaces. A null part leaves that field as it is, and a null result means the text is an ordinary
- * entry for the segment it landed in, which the digit clamp takes.
- *
- * Recognised: `[prefix-]number/bankcode` and `prefix-number` — a number pad types neither separator,
- * and the clamp drops a typed one at once, so their presence is what marks a paste — a CZ or SK IBAN,
- * whose BBAN is `bankcode(4) prefix(6) number(10)` with the zero padding dropped, and a bare number
- * longer than [segmentMaxLength], the box it was pasted into: "2000145399" pasted into the prefix box
- * is the account number, while "0800" pasted into the bank-code box or "19" into the prefix box stays
- * there, beside digits already in the box too. A bare number is measured by what the edit put in, not
- * by the box's new text, and the number pad types one digit at a time, so typing never jumps to the
- * number. Whitespace of every kind (NBSP included) is dropped and an en or em dash reads as a hyphen,
- * because that is what banking apps put on the clipboard. A written-out account without a prefix
- * clears the old one; a missing bank code keeps it. Nothing is validated beyond shape: the server owns
- * mod-11, the bank code and the IBAN cross-check.
- *
- * The iOS twin is `CleansiaBankAccountField.splitPastedAccount` and the web's is
- * `cleansia-bank-account`'s paste handler; the three are held to one case list.
- * -> /partner-app/onboarding
- */
-internal fun splitPastedAccount(
-    raw: String,
-    current: String,
-    segmentMaxLength: Int,
-): Triple<String?, String, String?>? {
-    val pasted = raw.filterNot(Char::isWhitespace).replace('\u2013', '-').replace('\u2014', '-')
-    val text = domesticFormOfIban(pasted) ?: pasted
-    val account = domesticAccount.matchEntire(text) ?: return null
-    val number = account.groupValues[2]
-    if ('-' !in text && '/' !in text) {
-        return if (insertedLength(text, current) > segmentMaxLength) Triple(null, number, null) else null
-    }
-    return Triple(account.groups[1]?.value.orEmpty(), number, account.groups[3]?.value)
+/** What one edit of a segment does to the account. */
+internal sealed interface SegmentEdit {
+    /** The segment keeps the text it had. */
+    data object Kept : SegmentEdit
+
+    /** The segment's text becomes [text]. */
+    data class Changed(val text: String) : SegmentEdit
+
+    /** The account is spread over the three segments; a null part keeps what that segment holds. */
+    data class Spread(val prefix: String?, val number: String, val bankCode: String?) : SegmentEdit
 }
 
-/** [text] less the start and the end it shares with [current]: the length of what the edit put in. */
-private fun insertedLength(text: String, current: String): Int {
+/**
+ * What an edit of one segment does; [raw] is the segment's new text and [current] the text it replaces,
+ * [segmentMaxLength] says which segment it is. New text that fits the segment is kept, as typed or pasted,
+ * digits only. Text that overflows it is read by the run the edit put in, the new text less what it shares
+ * with [current] at either end:
+ * - one character is typing into a full segment, which keeps its text;
+ * - a written-out account (`prefix-number/code`, `number/code`, `prefix-number`) or a CZ or SK IBAN, whose
+ *   BBAN is `bankcode(4) prefix(6) number(10)` with the zero padding dropped, is spread over the three; one
+ *   without a prefix clears the old one, and a missing bank code keeps it;
+ * - bare digits that fit the segment become its text, so a bank code pasted beside the old one replaces it;
+ * - bare digits too long for it, up to [NumberMaxLength], are the account number, and the segment keeps its
+ *   own text;
+ * - anything else keeps the segment's text.
+ * Whitespace of every kind is dropped and an en or em dash reads as a hyphen, because that is what banking
+ * apps put on the clipboard. Nothing is validated beyond shape: the server owns mod-11, the bank code and
+ * the IBAN cross-check.
+ *
+ * The iOS twin is in `CleansiaBankAccountField` and the web's in `cleansia-bank-account`; the three pin one
+ * case list. -> /partner-app/onboarding
+ */
+internal fun editSegment(raw: String, current: String, segmentMaxLength: Int): SegmentEdit {
+    if (raw.length <= segmentMaxLength) return SegmentEdit.Changed(clampSegment(raw, segmentMaxLength))
+    val run = insertedRun(raw, current)
+    if (run.length == 1) return SegmentEdit.Kept
+    val pasted = run.filterNot(Char::isWhitespace).replace('\u2013', '-').replace('\u2014', '-')
+    val text = domesticFormOfIban(pasted) ?: pasted
+    val account = domesticAccount.matchEntire(text)
+    if (account != null && ('-' in text || '/' in text)) {
+        return SegmentEdit.Spread(account.groups[1]?.value.orEmpty(), account.groupValues[2], account.groups[3]?.value)
+    }
+    if (pasted.isEmpty() || pasted.any { it !in '0'..'9' }) return SegmentEdit.Kept
+    return when {
+        pasted.length <= segmentMaxLength -> SegmentEdit.Changed(pasted)
+        pasted.length <= NumberMaxLength -> SegmentEdit.Spread(null, pasted, null)
+        else -> SegmentEdit.Kept
+    }
+}
+
+/** [text] less the start and the end it shares with [current], which never overlap: what the edit put in. */
+private fun insertedRun(text: String, current: String): String {
     val start = text.commonPrefixWith(current).length
-    val end = text.commonSuffixWith(current).length
-    return text.length - start - minOf(end, minOf(text.length, current.length) - start)
+    val end = minOf(text.commonSuffixWith(current).length, minOf(text.length, current.length) - start)
+    return text.substring(start, text.length - end)
 }
 
 /** `CZ65 0800 0000 1920 0014 5399` reads as `19-2000145399/0800`; null for any other text. */
@@ -249,11 +260,13 @@ private fun domesticFormOfIban(text: String): String? {
 internal fun clampSegment(raw: String, maxLength: Int): String = raw.filter { it in '0'..'9' }.take(maxLength)
 
 /**
- * For each text a segment composed with [value] reports, the text that edit replaced: the one the
- * segment reported before it, and [value] for the first. Not [value] every time: [value] comes back
- * through the caller's state one recomposition late, and BasicTextField can report several edits before
- * then (it keeps its own `lastTextValue` for the same reason). Read against [value], the second of two
- * digits typed in one frame looked like a two-digit paste and went to the number.
+ * For each text a segment composed with [value] reports, the text it reported before, and [value] for the
+ * first: what the edit replaced when several arrive before the caller's [value] comes back, one
+ * recomposition late (BasicTextField keeps its own `lastTextValue` for the same reason). Read against
+ * [value], two edits in one frame read as one run: "0" and "1" typed into a bank code "080" put in "01",
+ * which would replace the box's text, and a digit typed right after "0800" is pasted into an empty box
+ * makes "08001", which would go to the number. Like `lastTextValue`, it is reset only when [value] changes,
+ * so after an edit the segment kept out, the next one is still measured against the text kept out.
  */
 internal fun lastReported(value: String): (raw: String) -> String {
     var last = value

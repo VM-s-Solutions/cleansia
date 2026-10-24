@@ -100,10 +100,19 @@ final class PersonalSectionViewModel: ViewModel {
             action = .idle
             saved.send()
         case let .failure(error):
-            action = .error(localizer.message(for: error))
-            snackbar.showError(localizer.message(for: error))
+            if let refusal = Self.phoneRefusals.first(where: { error.carries($0) }) {
+                form.phoneError = localizer.message(for: ApiError(code: refusal))
+                action = .idle
+            } else {
+                action = .error(localizer.message(for: error))
+                snackbar.showError(localizer.message(for: error))
+            }
         }
     }
+
+    /// Read by key, since the response's field names are not kept: the names are the only other fields this
+    /// command can refuse as required, and the device never sends one blank.
+    private static let phoneRefusals = ["validation.invalid_phone_number", "common.required"]
 
     /// The server's age bounds, in Gregorian years as its `DateOnly.AddYears` counts them, on the day in
     /// Greenwich that the birth date travels as: born at least 18 and at most 120 years before today.
@@ -128,6 +137,6 @@ final class PersonalSectionViewModel: ViewModel {
 
     private static func phoneProblem(_ phone: String) -> String? {
         if phone.isBlank { return L10n.Profile.errorPhoneRequired }
-        return PhoneNumberKitDisplayFormatter.isValidNumber(phone.trimmed) ? nil : L10n.Profile.errorPhoneInvalid
+        return PhoneNumberKitDisplayFormatter.isPossibleNumber(phone.trimmed) ? nil : L10n.Profile.errorPhoneInvalid
     }
 }

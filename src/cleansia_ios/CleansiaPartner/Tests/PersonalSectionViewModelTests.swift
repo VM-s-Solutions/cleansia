@@ -254,15 +254,46 @@ final class PersonalSectionViewModelTests: XCTestCase {
         XCTAssertEqual(client.personalCommand?.phone, "+420777111222")
     }
 
-    func testANumberTheServerWouldNotKeepIsRefusedOnTheDevice() async {
+    /// What the device can tell without the server: a number without its country code, or with fewer or more
+    /// digits than its country's numbers have.
+    func testANumberNotInInternationalFormOrOfALengthItsCountryDoesNotUseIsRefusedOnTheDevice() async {
         let vm = await loadValidForm()
-        for phone in ["777111222", "+1", "+4201"] {
+        for phone in ["777111222", "+1", "+4201", "+4219051234567"] {
             vm.form.phone = phone
             await vm.save()
             XCTAssertEqual(vm.form.phoneError, L10n.Profile.errorPhoneInvalid, phone)
         }
         XCTAssertNil(client.personalCommand)
         XCTAssertNil(snackbar.current)
+    }
+
+    /// The server's phone metadata is newer than the device's, so a number of a length its country uses, in a
+    /// range the device does not know, is sent for the server to judge instead of being refused with no way past.
+    func testANumberOfAPossibleLengthIsLeftToTheServer() async {
+        let vm = await loadValidForm()
+        vm.form.phone = "+420609123456"
+
+        await vm.save()
+
+        XCTAssertNil(vm.form.phoneError)
+        XCTAssertEqual(client.personalCommand?.phone, "+420609123456")
+    }
+
+    /// The server's refusals of the phone are named under it, in their own words, and clear as it is edited.
+    func testTheServersPhoneRefusalIsNamedUnderThePhone() async {
+        for key in ["validation.invalid_phone_number", "common.required"] {
+            client.personalUpdateResult = .failure(ApiError(code: key, httpStatus: 400, keys: [key]))
+            let vm = await loadValidForm()
+
+            await vm.save()
+
+            XCTAssertEqual(vm.form.phoneError, ApiErrorLocalizer().message(for: ApiError(code: key)), key)
+            XCTAssertEqual(vm.action, .idle, key)
+            XCTAssertNil(snackbar.current, key)
+
+            vm.form.phone = "+420777111223"
+            XCTAssertNil(vm.form.phoneError, key)
+        }
     }
 
     func testAStoredNumberWithSeparatorsIsSentAsStored() async {

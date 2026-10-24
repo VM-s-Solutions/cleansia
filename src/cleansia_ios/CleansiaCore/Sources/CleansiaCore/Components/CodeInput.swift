@@ -37,6 +37,9 @@ public struct CodeInput: View {
             .labelStyle(.iconOnly)
             .buttonBorderShape(.capsule)
             .tint(CleansiaColors.primary)
+            // It ignores frames and control sizes and grows only with the text size; the first accessibility
+            // size is the smallest that makes it a 44-point target, on iOS 16 and 26 alike.
+            .dynamicTypeSize(DynamicTypeSize.accessibility1...)
         }
         .frame(maxWidth: .infinity)
         .onAppear { focused = true }

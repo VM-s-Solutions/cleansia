@@ -112,4 +112,14 @@ final class CodeInputLayoutTests: XCTestCase {
         XCTAssertEqual(field.tintColor.cgColor.alpha, 0)
         XCTAssertEqual(field.textColor?.cgColor.alpha, 0)
     }
+
+    /// Paste is the main way to the code, and the system control is drawn smaller than 44 points unless its
+    /// text size is raised.
+    func testThePasteButtonIsAFullTouchTargetInBothAxes() async throws {
+        let (root, _) = try await hostCodeInput()
+        let paste = try XCTUnwrap(Self.views(under: root).first { $0 is UIPasteControl })
+
+        XCTAssertGreaterThanOrEqual(paste.bounds.width, 44, "the paste button is \(paste.bounds.width)pt wide")
+        XCTAssertGreaterThanOrEqual(paste.bounds.height, 44, "the paste button is \(paste.bounds.height)pt tall")
+    }
 }

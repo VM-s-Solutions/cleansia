@@ -1,13 +1,14 @@
 /* eslint-disable @angular-eslint/no-output-on-prefix */
 import { Component, DebugElement, forwardRef, input, output, signal, Type } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { NG_VALUE_ACCESSOR } from '@angular/forms';
+import { FormControl, NG_VALUE_ACCESSOR, Validators } from '@angular/forms';
 import { By } from '@angular/platform-browser';
 import { provideNoopAnimations } from '@angular/platform-browser/animations';
 import { ActivatedRoute, convertToParamMap, Router } from '@angular/router';
 import {
   AdminEmployeeDetail,
   CountryFieldLabelsService,
+  EmployeeEntityType,
   EmployeePayConfigSummaryDto,
   IAdminEmployeeDetail,
 } from '@cleansia/admin-services';
@@ -148,6 +149,7 @@ class FacadeStub {
   loadEmployeeDetail = jest.fn();
   loadEmployeePayConfigs = jest.fn();
   loadPayConfigOptions = jest.fn();
+  startEditingSection = jest.fn((section: string) => this.editingSection.set(section));
   startEditingWeeklyLimit = jest.fn(() => this.editingWeeklyLimit.set(true));
   cancelEditingWeeklyLimit = jest.fn(() => this.editingWeeklyLimit.set(false));
   setWeeklyOrderLimit = jest.fn();
@@ -322,5 +324,45 @@ describe('EmployeeDetailComponent', () => {
     click(capPanel(), 'global.actions.save');
 
     expect(facade.setWeeklyOrderLimit).toHaveBeenCalledWith(5, 'first month');
+  });
+
+  describe('the registered name of a company row', () => {
+    function editIdentity(saved: Partial<IAdminEmployeeDetail>): FormControl<string | null> {
+      render(saved);
+      fixture.componentInstance.onEditSection('employment');
+      fixture.detectChanges();
+      return fixture.componentInstance.editForm.controls.legalEntityName;
+    }
+
+    it('is required of a company row, so one saved without it reads as missing', () => {
+      const legalName = editIdentity({ entityType: EmployeeEntityType.LegalEntity, legalEntityName: undefined });
+
+      expect(legalName.hasError('required')).toBe(true);
+    });
+
+    it('accepts a company row that carries its name', () => {
+      const legalName = editIdentity({ entityType: EmployeeEntityType.LegalEntity, legalEntityName: 'Úklid Novák s.r.o.' });
+
+      expect(legalName.hasValidator(Validators.required)).toBe(true);
+      expect(legalName.valid).toBe(true);
+    });
+
+    it('is not asked of a natural person', () => {
+      const legalName = editIdentity({ entityType: EmployeeEntityType.NaturalPerson });
+
+      expect(legalName.hasValidator(Validators.required)).toBe(false);
+      expect(legalName.valid).toBe(true);
+    });
+
+    it('follows the entity type the administrator picks while editing', () => {
+      const legalName = editIdentity({ entityType: EmployeeEntityType.NaturalPerson });
+      const entityType = fixture.componentInstance.editForm.controls.entityType;
+
+      entityType.setValue(EmployeeEntityType.LegalEntity);
+      expect(legalName.hasError('required')).toBe(true);
+
+      entityType.setValue(EmployeeEntityType.NaturalPerson);
+      expect(legalName.valid).toBe(true);
+    });
   });
 });

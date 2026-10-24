@@ -21,7 +21,7 @@ class CleansiaBankAccountInputPasteTest {
     private val bankCodeBox = BankCodeMaxLength
     private val everyBox = listOf(prefixBox, numberBox, bankCodeBox)
 
-    private fun edit(raw: String, into: Int, current: String = "") = editSegment(raw, current, into)
+    private fun edit(raw: String, into: Int, current: String = "") = splitPastedAccount(raw, current, into)
 
     /** A written-out account fills all three boxes, whichever one it was pasted into. */
     private fun assertSpreadFromEveryBox(expected: Spread, raw: String) =

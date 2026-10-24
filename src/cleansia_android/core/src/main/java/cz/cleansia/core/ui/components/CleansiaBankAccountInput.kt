@@ -56,7 +56,7 @@ internal const val BankCodeMaxLength = 4
  * clipped to "Předčí…" answers nothing.
  *
  * **A whole account pasted into any segment is spread over all three, and a bare number too long for
- * the segment it was pasted into is the number** ([editSegment]), so an account copied off a
+ * the segment it was pasted into is the number** ([splitPastedAccount]), so an account copied off a
  * statement or a banking app lands where it belongs instead of being clamped into one box, while a
  * prefix or bank code copied on its own replaces what its own box held. A spread paste ends the edit,
  * so the keyboard closes, as on iOS.
@@ -102,7 +102,7 @@ fun CleansiaBankAccountInput(
     }
 
     fun segmentChange(maxLength: Int, onChange: (String) -> Unit): (String, String) -> Unit = { current, raw ->
-        when (val edit = editSegment(raw, current, maxLength)) {
+        when (val edit = splitPastedAccount(raw, current, maxLength)) {
             SegmentEdit.Kept -> Unit
             is SegmentEdit.Changed -> onChange(edit.text)
             is SegmentEdit.Spread -> {
@@ -216,10 +216,10 @@ internal sealed interface SegmentEdit {
  * apps put on the clipboard. Nothing is validated beyond shape: the server owns mod-11, the bank code and
  * the IBAN cross-check.
  *
- * The iOS twin is in `CleansiaBankAccountField` and the web's in `cleansia-bank-account`; the three pin one
- * case list. -> /partner-app/onboarding
+ * The iOS twin is `CleansiaBankAccountField.splitPastedAccount` and the web's is `cleansia-bank-account`'s
+ * paste handler; the three pin one case list. -> /partner-app/onboarding
  */
-internal fun editSegment(raw: String, current: String, segmentMaxLength: Int): SegmentEdit {
+internal fun splitPastedAccount(raw: String, current: String, segmentMaxLength: Int): SegmentEdit {
     if (raw.length <= segmentMaxLength) return SegmentEdit.Changed(clampSegment(raw, segmentMaxLength))
     val run = insertedRun(raw, current)
     if (run.length == 1) return SegmentEdit.Kept

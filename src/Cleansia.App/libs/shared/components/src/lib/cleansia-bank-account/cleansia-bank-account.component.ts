@@ -100,13 +100,19 @@ export class CleansiaBankAccountComponent {
    * a Czech account is actually written in — and the alternative is the customer deleting the
    * punctuation by hand, which is exactly the friction the single control is meant to remove.
    *
-   * A bare number is the account number and nothing else, so the prefix and bank code already in the
-   * control stay; an account written out with a separator but no prefix clears the old prefix.
-   * Whitespace of every kind (a no-break space included) is dropped and an en or em dash reads as a
-   * hyphen, because that is what banking apps put on the clipboard. All as in the apps'
-   * `splitPastedAccount` (owner decision D14).
+   * A bare run of digits that fits the segment it was pasted into is that segment's own entry, so a
+   * bank code or a prefix copied on its own stays where it was put; a longer one is the account
+   * number, and the prefix and bank code already in the control stay. An account written out with a
+   * separator but no prefix clears the old prefix. Whitespace of every kind (a no-break space
+   * included) is dropped and an en or em dash reads as a hyphen, because that is what banking apps put
+   * on the clipboard. All as in the apps' `splitPastedAccount` (owner decision D14, revised
+   * 2026-10-24).
    */
-  protected onPaste(event: ClipboardEvent): void {
+  protected onPaste(
+    event: ClipboardEvent,
+    segment: FormControl<string>,
+    segmentMaxLength: number
+  ): void {
     const pasted = (event.clipboardData?.getData('text') ?? '')
       .replace(/\s/g, '')
       .replace(/[\u2013\u2014]/g, '-');
@@ -118,7 +124,14 @@ export class CleansiaBankAccountComponent {
     event.preventDefault();
     const [, prefix, number, bankCode] = match;
 
-    if (/[-/]/.test(text)) this.prefix().setValue(prefix ?? '');
+    if (!/[-/]/.test(text)) {
+      const target = number.length <= segmentMaxLength ? segment : this.number();
+      target.setValue(number);
+      target.markAsDirty();
+      return;
+    }
+
+    this.prefix().setValue(prefix ?? '');
     this.number().setValue(number);
     if (bankCode) this.bankCode().setValue(bankCode);
 

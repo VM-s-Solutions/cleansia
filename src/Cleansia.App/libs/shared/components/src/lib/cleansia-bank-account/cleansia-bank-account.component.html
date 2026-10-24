@@ -18,7 +18,7 @@
       [formControl]="prefix()"
       (focus)="focused.set(true)"
       (blur)="onBlur()"
-      (paste)="onPaste($event)"
+      (paste)="onPaste($event, prefix(), PrefixMaxLength)"
     />
     <span class="cleansia-bank-account__separator" aria-hidden="true">–</span>
     <input
@@ -33,7 +33,7 @@
       [formControl]="number()"
       (focus)="focused.set(true)"
       (blur)="onBlur()"
-      (paste)="onPaste($event)"
+      (paste)="onPaste($event, number(), NumberMaxLength)"
     />
     <span class="cleansia-bank-account__separator" aria-hidden="true">/</span>
     <input
@@ -48,7 +48,7 @@
       [formControl]="bankCode()"
       (focus)="focused.set(true)"
       (blur)="onBlur()"
-      (paste)="onPaste($event)"
+      (paste)="onPaste($event, bankCode(), BankCodeMaxLength)"
     />
   </div>
   <label [for]="id()">{{ label() }}</label>

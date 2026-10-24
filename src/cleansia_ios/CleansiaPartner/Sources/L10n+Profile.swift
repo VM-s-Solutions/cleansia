@@ -475,6 +475,10 @@ extension L10n {
             localized("profile_error_address_not_picked")
         }
 
+        static var errorAddressIncomplete: String {
+            localized("profile_error_address_incomplete")
+        }
+
         static var errorCountryNotServiced: String {
             localized("profile_error_country_not_serviced")
         }

@@ -16186,6 +16186,41 @@
         }
       }
     },
+    "profile_error_address_incomplete": {
+      "extractionState": "stale",
+      "localizations": {
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Na tomto místě není úplná adresa. Posuňte špendlík na budovu nebo vyhledejte ulici a číslo domu."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This spot has no full address. Move the pin onto the building, or search for the street and house number."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Здесь нет полного адреса. Переместите метку на здание или найдите улицу и номер дома."
+          }
+        },
+        "sk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Na tomto mieste nie je úplná adresa. Posuňte špendlík na budovu alebo vyhľadajte ulicu a číslo domu."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Тут немає повної адреси. Перемістіть мітку на будівлю або знайдіть вулицю та номер будинку."
+          }
+        }
+      }
+    },
     "profile_error_address_not_picked": {
       "extractionState": "stale",
       "localizations": {

@@ -915,6 +915,9 @@
       "invalid_date": "Neplatné datum",
       "date_must_be_in_past": "Datum musí být v minulosti",
       "invalid_age": "Neplatný věk",
+      "passport_id": {
+        "invalid_length": "Číslo pasu / OP musí mít 5 až 20 znaků."
+      },
       "registration_number": {
         "invalid_format": "Neplatný formát IČO pro vybranou zemi",
         "not_registered": "Toto IČO není v registru ekonomických subjektů (ARES). Zkontrolujte číslo."

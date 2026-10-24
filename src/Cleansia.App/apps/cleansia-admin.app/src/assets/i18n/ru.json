@@ -3581,6 +3581,9 @@
       "invalid_password": "Недействительный пароль",
       "must_be_positive": "Значение должно быть положительным",
       "page_size_exceeded": "Размер страницы не может превышать 100",
+      "passport_id": {
+        "invalid_length": "Номер паспорта / ID должен содержать от 5 до 20 символов."
+      },
       "payout": {
         "account_number_required": "Введите номер счёта",
         "country_not_supported": "Выплаты в банк этой страны пока не поддерживаются",

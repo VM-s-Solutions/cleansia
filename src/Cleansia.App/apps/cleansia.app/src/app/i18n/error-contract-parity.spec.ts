@@ -753,6 +753,11 @@ const SHARED_KEYS_NOT_REACHABLE_HERE: ReadonlyArray<{
     reason: 'Same helper, same four admin-only callers.',
   },
   {
+    key: 'validation.passport_id.invalid_length',
+    reason:
+      'Emitted only by ValidatePassportId, whose callers UpdateIdentificationInfo, UpdateEmployee and AdminUpdateEmployee are dispatched by the partner, mobile-partner and admin hosts. This host has no employee controller.',
+  },
+  {
     key: 'validation.payout.account_number_required',
     reason:
       'Every validation.payout.* code comes from PayoutDetailsValidator, whose only consumer in the solution is UpdateBankDetails — dispatched by the partner host\'s EmployeeController and its mobile twin. This host has no employee controller and no bank-details endpoint.',

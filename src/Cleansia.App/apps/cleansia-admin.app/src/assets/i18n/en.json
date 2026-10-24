@@ -3581,6 +3581,9 @@
       "invalid_password": "Invalid password",
       "must_be_positive": "Value must be positive",
       "page_size_exceeded": "Page size cannot exceed 100",
+      "passport_id": {
+        "invalid_length": "Your passport / ID number must be 5 to 20 characters long."
+      },
       "payout": {
         "account_number_required": "Enter the account number",
         "country_not_supported": "Payouts to a bank in this country are not supported yet",

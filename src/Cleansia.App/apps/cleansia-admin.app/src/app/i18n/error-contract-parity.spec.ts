@@ -765,6 +765,7 @@ const ADMIN_SURFACE_ERROR_KEYS: readonly string[] = [
   'service.prices_required',
   'service.translations_required',
   'user.not_existing_email',
+  'validation.passport_id.invalid_length',
 ];
 
 // Reachable from a Cleansia.Web.Admin controller and deliberately left out of the

@@ -3581,6 +3581,9 @@
       "invalid_password": "Neplatné heslo",
       "must_be_positive": "Hodnota musí být kladná",
       "page_size_exceeded": "Velikost stránky nesmí překročit 100",
+      "passport_id": {
+        "invalid_length": "Číslo pasu / OP musí mít 5 až 20 znaků."
+      },
       "payout": {
         "account_number_required": "Zadejte číslo účtu",
         "country_not_supported": "Výplaty do banky v této zemi zatím nejsou podporovány",

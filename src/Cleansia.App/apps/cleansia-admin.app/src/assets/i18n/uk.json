@@ -3581,6 +3581,9 @@
       "invalid_password": "Недійсний пароль",
       "must_be_positive": "Значення повинно бути додатним",
       "page_size_exceeded": "Розмір сторінки не може перевищувати 100",
+      "passport_id": {
+        "invalid_length": "Номер паспорта / ID має містити від 5 до 20 символів."
+      },
       "payout": {
         "account_number_required": "Введіть номер рахунку",
         "country_not_supported": "Виплати в банк цієї країни поки не підтримуються",

@@ -36,7 +36,8 @@ XCODE_PIN = File.join(IOS_ROOT, ".xcode-version")
 # The simulator may not read these folders, and the tests read repo files at run time.
 SIMULATOR_UNREADABLE = %w[Desktop Documents Downloads].map { |dir| File.join(Dir.home, dir) }.freeze
 
-# One package checkout for the pre-archive tests and the archive, so a run fetches once.
+# One package checkout for the pre-archive tests and the archive, so a run fetches once. Crashlytics'
+# upload-symbols comes from it too.
 SOURCE_PACKAGES = File.join(IOS_ROOT, "build", "SourcePackages")
 
 APPS = {
@@ -156,9 +157,9 @@ def ship(key, options = {})
     UI.user_error!("api_base_url must be an https:// URL written with no space after the colon, got #{api_base_url.inspect}")
   end
 
-  # Without it the app skips FirebaseApp.configure(), so the build would ship without push.
+  # Without it the app skips FirebaseApp.configure(), so the build would ship without push and crash reports.
   gsp = File.join(IOS_ROOT, app[:dir], "Firebase", "GoogleService-Info.plist")
-  UI.user_error!("#{gsp} is missing: this build would ship without push") unless File.file?(gsp)
+  UI.user_error!("#{gsp} is missing: this build would ship without push and without crash reporting") unless File.file?(gsp)
 
   api_key = app_store_connect_api_key(
     key_id: ENV.fetch("ASC_KEY_ID"),
@@ -209,7 +210,15 @@ def ship(key, options = {})
     },
   )
 
-  # 6. Ship. Internal testers get it within minutes of processing (no Beta App
+  # 6. Symbols for Crashlytics, authenticated by the app's own plist. A failed upload only logs an error:
+  #    the build still ships, and its crash reports arrive unsymbolicated.
+  upload_symbols_to_crashlytics(
+    dsym_path: lane_context[SharedValues::DSYM_OUTPUT_PATH],
+    gsp_path: gsp,
+    binary_path: File.join(SOURCE_PACKAGES, "checkouts", "firebase-ios-sdk", "Crashlytics", "upload-symbols"),
+  )
+
+  # 7. Ship. Internal testers get it within minutes of processing (no Beta App
   #    Review); external testers need a one-time review, enabled per-app in ASC.
   upload_to_testflight(
     api_key: api_key,

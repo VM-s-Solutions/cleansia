@@ -95,12 +95,6 @@ struct BankForm: Equatable {
         return Self.ibanProblem(iban, bankCountryAlpha2: bankCountryAlpha2)
     }
 
-    /// The bank's country plus the account in the form that country takes.
-    var canSubmit: Bool {
-        guard let bankCountryId, !bankCountryId.isBlank else { return false }
-        return usesDomesticAccount ? !accountNumber.isBlank : !iban.isBlank
-    }
-
     /// ISO 13616 registry lengths, the server's `IbanCalculator.RegistryLengths` entry for entry
     /// (BankSectionViewModelTests reads the C# table). A country absent from it takes the generic 15–34.
     static let ibanRegistryLengths: [String: Int] = [

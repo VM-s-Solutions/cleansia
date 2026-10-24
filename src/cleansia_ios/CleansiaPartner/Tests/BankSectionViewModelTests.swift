@@ -121,7 +121,6 @@ final class BankSectionViewModelTests: XCTestCase {
     func testAnAccountWithNoIdentifierCannotBeSubmitted() async throws {
         let vm = makeVM()
         await vm.load()
-        XCTAssertFalse(try loadedForm(vm).canSubmit)
 
         await vm.save()
 
@@ -135,23 +134,29 @@ final class BankSectionViewModelTests: XCTestCase {
     func testACzechBankTakesTheThreePartsAndAnIbanAloneDoesNotSubmit() async throws {
         let vm = makeVM()
         await vm.load()
-
         vm.update(\.iban, to: "CZ6508000000192000145399")
 
+        await vm.save()
+
         XCTAssertTrue(try loadedForm(vm).usesDomesticAccount)
-        XCTAssertFalse(try loadedForm(vm).canSubmit)
+        XCTAssertNil(client.bankCommand)
+        XCTAssertEqual(try loadedForm(vm).accountError, message("validation.payout.account_number_required"))
     }
 
     func testAnAccountNumberWithoutABankCountryCannotBeSubmitted() async throws {
         client.employeeResult = .success(EmployeeItem(id: "emp-1"))
         let vm = makeVM()
         await vm.load()
-
         vm.update(\.accountNumber, to: "5885638003")
+        vm.update(\.bankCode, to: "5500")
+
+        await vm.save()
 
         let form = try loadedForm(vm)
         XCTAssertNil(form.bankCountryId)
-        XCTAssertFalse(form.canSubmit)
+        XCTAssertNil(client.bankCommand)
+        XCTAssertEqual(form.bankCountryError, message("common.required"))
+        XCTAssertNil(form.accountError, "the account itself is complete")
     }
 
     /// Every field on the generated command is optional with a `nil` default, so a dropped
@@ -284,11 +289,17 @@ final class BankSectionViewModelTests: XCTestCase {
 
         vm.update(\.bankCountryId, to: "country-de")
         vm.update(\.accountNumber, to: "5885638003")
+        vm.update(\.bankCode, to: "5500")
         XCTAssertFalse(try loadedForm(vm).usesDomesticAccount)
-        XCTAssertFalse(try loadedForm(vm).canSubmit, "the parts are not this country's identifier")
+        await vm.save()
+        XCTAssertNil(client.bankCommand, "the parts are not this country's identifier")
+        XCTAssertTrue(try loadedForm(vm).ibanChecked)
+        XCTAssertEqual(try loadedForm(vm).ibanProblem, .invalid)
 
         vm.update(\.iban, to: "DE89370400440532013000")
-        XCTAssertTrue(try loadedForm(vm).canSubmit)
+        await vm.save()
+        XCTAssertEqual(client.bankCommand?.iban, "DE89370400440532013000")
+        XCTAssertNil(client.bankCommand?.accountNumber)
     }
 
     /// No country picked yet, or a country the list cannot name, keeps the three parts.

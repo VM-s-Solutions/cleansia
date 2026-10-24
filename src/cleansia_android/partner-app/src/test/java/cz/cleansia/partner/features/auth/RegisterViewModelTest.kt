@@ -4,6 +4,7 @@ import android.content.Context
 import cz.cleansia.core.network.ApiError
 import cz.cleansia.core.network.ApiResult
 import cz.cleansia.core.snackbar.SnackbarController
+import cz.cleansia.partner.R
 import cz.cleansia.partner.core.market.Market
 import cz.cleansia.partner.core.market.MarketRepository
 import cz.cleansia.partner.core.network.ApiErrorTranslator
@@ -150,6 +151,32 @@ class RegisterViewModelTest {
 
         coVerify(exactly = 0) { authRepository.register(any(), any(), any(), any(), any(), any(), any()) }
         assertNotNull(vm.uiState.value.termsError)
+    }
+
+    @Test
+    fun `every missing field is named under it in one pass and nothing is sent`() = runTest {
+        every { context.getString(R.string.error_first_name_required) } returns "first name"
+        every { context.getString(R.string.error_last_name_required) } returns "last name"
+        every { context.getString(R.string.error_email_required) } returns "e-mail"
+        every { context.getString(R.string.error_password_rules) } returns "password rules"
+        every { context.getString(R.string.error_passwords_not_match) } returns "confirmation"
+        every { context.getString(R.string.error_terms_required) } returns "terms"
+        coEvery { appSettingsRepository.emailLanguageTag() } returns "cs"
+        coEvery { authRepository.register(any(), any(), any(), any(), any(), any(), any()) } returns
+            ApiResult.Success(Unit)
+
+        val vm = viewModel()
+        vm.register()
+        advanceUntilIdle()
+
+        val state = vm.uiState.value
+        assertEquals("first name", state.firstNameError)
+        assertEquals("last name", state.lastNameError)
+        assertEquals("e-mail", state.emailError)
+        assertEquals("password rules", state.passwordError)
+        assertEquals("confirmation", state.confirmPasswordError)
+        assertEquals("terms", state.termsError)
+        coVerify(exactly = 0) { authRepository.register(any(), any(), any(), any(), any(), any(), any()) }
     }
 
     @Test

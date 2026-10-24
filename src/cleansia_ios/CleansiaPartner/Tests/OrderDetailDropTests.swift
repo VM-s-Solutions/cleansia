@@ -244,6 +244,33 @@ final class OrderDetailDropTests: XCTestCase {
         await notifying.value
     }
 
+    /// A screen drawn before the start still shows the link at it, and the confirm can outlive it too: the tap
+    /// reads the clock again, sends nothing and says nothing, and re-reads the job so the screen draws without it.
+    func testATapFromTheStartOnAScreenLoadedBeforeItSendsNothingAndReReadsTheJob() async {
+        let start = Date(timeIntervalSince1970: 1_786_200_000)
+        for minutesFromStart in [0.0, 1.0] {
+            clock = start.addingTimeInterval(-60)
+            var item = job(status: 2)
+            item.cleaningDateTime = start
+            let vm = await loaded(item)
+            XCTAssertTrue(vm.canDropOrder)
+            let fetchesBefore = client.getByIdCallCount
+            let leftCount = leaves(vm)
+
+            clock = start.addingTimeInterval(minutesFromStart * 60)
+            await vm.dropOrder()
+
+            let moment = "\(minutesFromStart) minutes from the start"
+            XCTAssertTrue(client.dropCalls.isEmpty, moment)
+            XCTAssertEqual(client.getByIdCallCount, fetchesBefore + 1, moment)
+            XCTAssertFalse(vm.canDropOrder, moment)
+            XCTAssertNil(snackbar.current, moment)
+            XCTAssertEqual(leftCount(), 0, moment)
+            XCTAssertEqual(vm.actionState, .idle, moment)
+            XCTAssertNil(vm.inFlightAction, moment)
+        }
+    }
+
     func testTheDropSendsOnlyTheOrderItWasOpenedOn() async {
         let vm = await loaded(job())
 

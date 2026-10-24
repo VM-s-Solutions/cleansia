@@ -289,6 +289,12 @@ final class OrderDetailViewModel: ViewModel {
     /// crew left as an open one to take, or not at all.
     func dropOrder() async {
         guard !actionState.isSubmitting else { return }
+        // The screen draws the link from the clock only when something else redraws it, so a tap or a confirm
+        // can arrive from the start on; the re-read draws it without the link.
+        guard canDropOrder else {
+            await fetch()
+            return
+        }
         actionState = .submitting
         inFlightAction = .drop
 

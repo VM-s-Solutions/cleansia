@@ -107,10 +107,15 @@ export class CleansiaCodeInputComponent implements ControlValueAccessor {
   }
 
   // Safari's one-time-code AutoFill and the keyboard's suggestion strip put a whole code into the
-  // focused box without a paste event. A shorter edit is typing: the new digit sits before the caret.
+  // focused box without a paste event, beside the digit it holds or in place of it. The code is what
+  // the edit put in, so that digit is not run into it; one that replaced a selected digit it starts
+  // with reads as five digits put in, and the box's whole value is the code then. A shorter edit is
+  // typing: the new digit sits before the caret.
   onDigitInput(event: Event, index: number): void {
     const input = event.target as HTMLInputElement;
-    const code = input.value.replace(/\D/g, '');
+    const caret = input.selectionStart ?? input.value.length;
+    const inserted = insertedRun(input.value, this.digits[index], caret).replace(/\D/g, '');
+    const code = inserted.length >= this.length() ? inserted : input.value.replace(/\D/g, '');
 
     if (code.length >= this.length()) {
       this.fillFrom(code);
@@ -118,7 +123,7 @@ export class CleansiaCodeInputComponent implements ControlValueAccessor {
       return;
     }
 
-    const typed = input.value.charAt((input.selectionStart ?? input.value.length) - 1);
+    const typed = input.value.charAt(caret - 1);
     const typedDigit = /\d/.test(typed);
     const digit = typedDigit ? typed : code.slice(-1);
     this.digits[index] = digit;
@@ -199,4 +204,15 @@ export class CleansiaCodeInputComponent implements ControlValueAccessor {
       this.codeComplete.emit(code);
     }
   }
+}
+
+/**
+ * What an edit put into a box that held `held`: its new value less that digit, which sits after the
+ * caret when the edit went in before it. The apps' `OneTimeCode.accept` and `acceptOneTimeCode` take
+ * the same run, with their caret held after the code.
+ */
+function insertedRun(value: string, held: string, caret: number): string {
+  if (held === '') return value;
+  if (value.slice(caret) === held) return value.slice(0, caret);
+  return value.startsWith(held) ? value.slice(held.length) : value;
 }

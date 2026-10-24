@@ -6,6 +6,7 @@
     [class.cleansia-bank-account--invalid]="invalid()"
   >
     <input
+      #prefixBox
       type="text"
       inputmode="numeric"
       autocomplete="off"
@@ -18,10 +19,11 @@
       [formControl]="prefix()"
       (focus)="focused.set(true)"
       (blur)="onBlur()"
-      (paste)="onPaste($event, prefix(), PrefixMaxLength)"
+      (paste)="onPaste($event, prefixBox, prefix(), PrefixMaxLength)"
     />
     <span class="cleansia-bank-account__separator" aria-hidden="true">–</span>
     <input
+      #numberBox
       type="text"
       inputmode="numeric"
       autocomplete="off"
@@ -33,10 +35,11 @@
       [formControl]="number()"
       (focus)="focused.set(true)"
       (blur)="onBlur()"
-      (paste)="onPaste($event, number(), NumberMaxLength)"
+      (paste)="onPaste($event, numberBox, number(), NumberMaxLength)"
     />
     <span class="cleansia-bank-account__separator" aria-hidden="true">/</span>
     <input
+      #bankCodeBox
       type="text"
       inputmode="numeric"
       autocomplete="off"
@@ -48,7 +51,7 @@
       [formControl]="bankCode()"
       (focus)="focused.set(true)"
       (blur)="onBlur()"
-      (paste)="onPaste($event, bankCode(), BankCodeMaxLength)"
+      (paste)="onPaste($event, bankCodeBox, bankCode(), BankCodeMaxLength)"
     />
   </div>
   <label [for]="id()">{{ label() }}</label>

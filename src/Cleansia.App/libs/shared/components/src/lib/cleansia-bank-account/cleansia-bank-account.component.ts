@@ -96,15 +96,16 @@ export class CleansiaBankAccountComponent {
 
   /**
    * A paste into one box, by the rule the apps' `splitPastedAccount` follows too
-   * (→ /partner-app/onboarding). The box's new text is what the browser would make of the paste at the
-   * selection, and text that fits the box is kept as pasted. Text that overflows it is read by the run
-   * the paste put in: a single character is typing into a full box and is kept out; a written-out
-   * account (`19-2000145399/0800`, `2000145399/0800`, `19-2000145399`) or a Czech or Slovak IBAN fills
-   * the three boxes, a missing prefix clearing the old one and a missing bank code keeping it; digits
-   * that fit the box replace what it held; longer digits, up to the number's ten, are the account number
-   * and the box keeps what it held. Anything else leaves the box as it was. Whitespace of every kind is
-   * dropped from the run and an en or em dash reads as a hyphen, because that is what banking apps put
-   * on the clipboard.
+   * (→ /partner-app/onboarding). The run is the pasted text itself, which the paste event carries, with
+   * whitespace of every kind dropped and an en or em dash read as a hyphen, because that is what banking
+   * apps put on the clipboard. A run that is a written-out account (`19-2000145399/0800`,
+   * `2000145399/0800`, `19-2000145399`) or a Czech or Slovak IBAN fills the three boxes before anything
+   * else, however short it is, a missing prefix clearing the old one and a missing bank code keeping it.
+   * Otherwise the box's new text is what the browser would make of the paste at the selection, and text
+   * that fits the box is kept as pasted. Text that overflows it: a single character is typing, and the
+   * box keeps the digits of its new text that fit; digits that fit the box replace what it held; longer
+   * digits, up to the number's ten, are the account number and the box keeps what it held. Anything else
+   * leaves the box as it was. Typing itself is the browser's, held to each box's maxlength.
    */
   protected onPaste(
     event: ClipboardEvent,
@@ -116,6 +117,18 @@ export class CleansiaBankAccountComponent {
     if (!pasted) return;
     event.preventDefault();
 
+    const run = pasted.replace(/\s/g, '').replace(/[\u2013\u2014]/g, '-');
+    const account = writtenOutAccount(domesticFormOfIban(run) ?? run);
+    if (account) {
+      this.prefix().setValue(account.prefix ?? '');
+      this.number().setValue(account.number);
+      if (account.bankCode) this.bankCode().setValue(account.bankCode);
+      for (const control of [this.prefix(), this.number(), this.bankCode()]) {
+        control.markAsDirty();
+      }
+      return;
+    }
+
     const held = box.value;
     const start = box.selectionStart ?? held.length;
     const text = held.slice(0, start) + pasted + held.slice(box.selectionEnd ?? start);
@@ -126,17 +139,8 @@ export class CleansiaBankAccountComponent {
       return;
     }
 
-    const run = insertedRun(text, held).replace(/\s/g, '').replace(/[\u2013\u2014]/g, '-');
-    if (run.length === 1) return;
-
-    const account = writtenOutAccount(domesticFormOfIban(run) ?? run);
-    if (account) {
-      this.prefix().setValue(account.prefix ?? '');
-      this.number().setValue(account.number);
-      if (account.bankCode) this.bankCode().setValue(account.bankCode);
-      for (const control of [this.prefix(), this.number(), this.bankCode()]) {
-        control.markAsDirty();
-      }
+    if (run.length === 1) {
+      this.write(segment, text.replace(/\D/g, '').slice(0, segmentMaxLength));
       return;
     }
 
@@ -157,21 +161,6 @@ export class CleansiaBankAccountComponent {
 /** What a single-line field inserts of pasted text: trailing line breaks go, the others read as spaces. */
 function asSingleLine(text: string): string {
   return text.replace(/[\r\n]+$/, '').replace(/\r\n|[\r\n]/g, ' ');
-}
-
-/** `text` less the start and the end it shares with `held`, which may not overlap: what the edit put in. */
-function insertedRun(text: string, held: string): string {
-  let start = 0;
-  while (start < text.length && start < held.length && text[start] === held[start]) start++;
-  let end = 0;
-  while (
-    end < text.length - start &&
-    end < held.length - start &&
-    text[text.length - 1 - end] === held[held.length - 1 - end]
-  ) {
-    end++;
-  }
-  return text.slice(start, text.length - end);
 }
 
 /** `prefix-number/code`, `number/code` or `prefix-number`; the separators are what mark an account. */

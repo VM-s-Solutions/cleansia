@@ -17,12 +17,13 @@ class HostComponent {
 type Segment = 'prefix' | 'number' | 'bank-code';
 
 /**
- * Pasting into one box, by the rule the three twins share (→ /partner-app/onboarding). The box's new
- * text is what the browser would make of the paste at the selection, and text that fits the box is kept
- * as pasted. Text that overflows it is read by the run the paste put in: one character into a full box
- * is kept out, a written-out account or an IBAN fills the three boxes, digits that fit the box replace
- * what it held, and longer digits up to ten are the account number. Anything else leaves the box as it
- * was.
+ * Pasting into one box, by the rule the three twins share (→ /partner-app/onboarding). The run is the
+ * pasted text, whitespace dropped and an en or em dash read as a hyphen, and a run that is a written-out
+ * account or an IBAN fills the three boxes, however short it is. Otherwise the box's new text is what
+ * the browser would make of the paste at the selection, and text that fits the box is kept as pasted.
+ * Text that overflows it: one character is typing, and the box keeps the digits of its new text that fit;
+ * digits that fit the box replace what it held, and longer digits up to ten are the account number.
+ * Anything else leaves the box as it was.
  */
 describe('CleansiaBankAccountComponent paste', () => {
   let fixture: ComponentFixture<HostComponent>;
@@ -66,13 +67,22 @@ describe('CleansiaBankAccountComponent paste', () => {
     [12, 'number', '', 'CZ65 0800 0000 1920 0014 5399', 'into', ['19', '2000145399', '0800']],
     [13, 'bank-code', '0800', '5', 'after', ['', '', '0800']],
     [14, 'number', '2000145399', '1234567890', 'after', ['', '1234567890', '']],
-  ] as [number, Segment, string, string, string, [string, string, string]][])(
-    'case %i: the %s segment holding "%s", "%s" pasted %s it',
+    [15, 'number', '', '12345/0800', 'into', ['', '12345', '0800']],
+    [16, 'number', '', '19-1234567', 'into', ['19', '1234567', '']],
+    [17, 'bank-code', '0800', '5', 'before', ['', '', '5080']],
+    ['W1', 'number', '2000145399', '2000145399/0800', 'over all of', ['', '2000145399', '0800']],
+    ['W2', 'number', '19', '19-2000145399/0800', 'before', ['19', '2000145399', '0800']],
+  ] as [number | string, Segment, string, string, string, [string, string, string]][])(
+    'case %s: the %s segment holding "%s", "%s" pasted %s it',
     (_, segment, held, text, where, expected) => {
       const box = { prefix: host.prefix, number: host.number, 'bank-code': host.bankCode }[segment];
       box.setValue(held);
-      const [caret, selectionEnd] =
-        where === 'before' ? [0, 0] : where === 'over the selection 08' ? [0, 2] : [held.length, held.length];
+      const selections: Record<string, [number, number]> = {
+        before: [0, 0],
+        'over the selection 08': [0, 2],
+        'over all of': [0, held.length],
+      };
+      const [caret, selectionEnd] = selections[where] ?? [held.length, held.length];
 
       const event = paste(segment, text, caret, selectionEnd);
 
@@ -98,10 +108,23 @@ describe('CleansiaBankAccountComponent paste', () => {
     expect(parts()).toEqual(['19', '', '']);
   });
 
-  it('keeps any text that fits the segment as pasted, a written-out account too, as typing it would', () => {
+  it('splits a written-out account even where it fits the segment, and keeps other text that fits as pasted, as typing it would', () => {
     paste('number', '12345/0800');
+    paste('prefix', '19/');
 
-    expect(parts()).toEqual(['', '12345/0800', '']);
+    expect(parts()).toEqual(['19/', '12345', '0800']);
+    expect(boxes()).toEqual(['19/', '12345', '0800']);
+  });
+
+  it('takes one character pasted into a full segment as typing there, keeping the digits that fit', () => {
+    host.bankCode.setValue('0800');
+
+    paste('bank-code', '5', 2);
+    expect(parts()).toEqual(['', '', '0850']);
+
+    paste('bank-code', '-', 0);
+    expect(parts()).toEqual(['', '', '0850']);
+    expect(boxes()).toEqual(['', '', '0850']);
   });
 
   it('spreads a written-out account over the three segments', () => {

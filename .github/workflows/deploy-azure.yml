@@ -249,17 +249,21 @@ jobs:
           echo '{"name":"cleansia-customer-ssr","version":"1.0.0","type":"module","scripts":{"start":"node server/server.mjs"}}' \
             > ./src/Cleansia.App/dist/apps/cleansia.app/package.json
 
+      # include-hidden-files: the upload leaves dot-folders out by default, and browser/.well-known
+      # carries the apple-app-site-association each iOS app's password AutoFill is verified against.
       - name: Upload Customer App artifact (SSR)
         uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
         with:
           name: customer-app
           path: ./src/Cleansia.App/dist/apps/cleansia.app
+          include-hidden-files: true
 
       - name: Upload Partner App artifact
         uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
         with:
           name: partner-app
           path: ./src/Cleansia.App/dist/apps/cleansia-partner.app/browser
+          include-hidden-files: true
 
       - name: Upload Admin App artifact
         uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0

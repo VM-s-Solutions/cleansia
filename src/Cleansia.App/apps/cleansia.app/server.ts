@@ -1,6 +1,6 @@
 import { AngularNodeAppEngine, createNodeRequestHandler, isMainModule, writeResponseToNodeResponse } from '@angular/ssr/node';
 import { ɵsetAngularAppEngineManifest } from '@angular/ssr';
-import { dirname, resolve } from 'node:path';
+import { basename, dirname, resolve } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import compression from 'compression';
 import express from 'express';
@@ -58,20 +58,26 @@ app.get('/health', (_req, res) => {
   });
 });
 
-// Domain-verification files (Apple's domain association today; apple-app-site-association
-// and assetlinks.json later). These need their own mount because the general static
+// Domain-verification files (Apple's domain association and apple-app-site-association).
+// These need their own mount because the general static
 // handler below sees the request path `/.well-known/…`, and `send` defaults to
 // dotfiles: 'ignore' — it rejects any path segment starting with a dot. The request then
 // falls through to the SSR catch-all and answers the Angular HTML page with a 200, which
 // the verifying party reports as "invalid file" rather than as a 404. Mounting at the
 // prefix strips the dotted segment; `dotfiles: 'allow'` keeps nested dot-paths working
-// without opening up the rest of the browser bundle.
+// without opening up the rest of the browser bundle. apple-app-site-association has no
+// extension, so `send` would type it application/octet-stream, and Apple expects JSON.
 app.use(
   '/.well-known',
   express.static(resolve(browserDistFolder, '.well-known'), {
     dotfiles: 'allow',
     index: false,
     redirect: false,
+    setHeaders: (res, path) => {
+      if (basename(path) === 'apple-app-site-association') {
+        res.setHeader('Content-Type', 'application/json');
+      }
+    },
   }),
 );
 

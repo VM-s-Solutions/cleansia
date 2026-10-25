@@ -765,6 +765,8 @@ describe('OrderDetailsFacade', () => {
       onLeft = jest.fn();
     });
 
+    afterEach(() => jest.useRealTimers());
+
     it('asks first, as a destructive act, offering to keep the job rather than a bare Cancel', () => {
       const facade = onTheJob();
 
@@ -868,13 +870,95 @@ describe('OrderDetailsFacade', () => {
       { assignedEmployeeId: 'someone-else' },
       { lockoutReportedAt: '2026-09-29T10:20:00Z' },
       { cleaningDateTime: '2026-09-29T10:00:00Z' },
-    ])('does not ask on a job the action is not offered on, %o', (overrides) => {
+    ])('does not ask on a job the action is not offered on, says nothing and re-reads it, %o', (overrides) => {
       const facade = onTheJob(overrides);
 
       facade.openDropOrderDialog(onLeft);
 
       expect(confirmDialog.confirmTranslated).not.toHaveBeenCalled();
       expect(orderClient.dropOrder).not.toHaveBeenCalled();
+      expect(snackbar.showErrorTranslated).not.toHaveBeenCalled();
+      expect(orderClient.getById).toHaveBeenCalledWith(ORDER_ID);
+    });
+
+    it('asks nothing, sends nothing and says nothing on a tap a minute after the start, and re-reads the job', () => {
+      jest.useFakeTimers();
+      jest.setSystemTime(new Date('2026-09-29T10:01:00Z'));
+      const facade = onTheJob({ cleaningDateTime: '2026-09-29T10:00:00Z' });
+
+      facade.openDropOrderDialog(onLeft);
+
+      expect(confirmDialog.confirmTranslated).not.toHaveBeenCalled();
+      expect(orderClient.dropOrder).not.toHaveBeenCalled();
+      expect(snackbar.showErrorTranslated).not.toHaveBeenCalled();
+      expect(orderClient.getById).toHaveBeenCalledWith(ORDER_ID);
+    });
+
+    it('sends nothing when a cancel asked a minute before the start is confirmed a minute after it, and re-reads the job', () => {
+      jest.useFakeTimers();
+      jest.setSystemTime(new Date('2026-09-29T09:59:00Z'));
+      const answer = new Subject<boolean>();
+      confirmDialog.confirmTranslated.mockReturnValue(answer);
+      const facade = onTheJob({ cleaningDateTime: '2026-09-29T10:00:00Z' });
+
+      facade.openDropOrderDialog(onLeft);
+      expect(confirmDialog.confirmTranslated).toHaveBeenCalledTimes(1);
+
+      jest.setSystemTime(new Date('2026-09-29T10:01:00Z'));
+      answer.next(true);
+
+      expect(orderClient.dropOrder).not.toHaveBeenCalled();
+      expect(orderClient.getById).toHaveBeenCalledWith(ORDER_ID);
+      expect(snackbar.showErrorTranslated).not.toHaveBeenCalled();
+      expect(onLeft).not.toHaveBeenCalled();
+    });
+
+    it('sends nothing when the job read while the cancel was being confirmed is no longer offered it', () => {
+      const answer = new Subject<boolean>();
+      confirmDialog.confirmTranslated.mockReturnValue(answer);
+      const facade = onTheJob();
+
+      facade.openDropOrderDialog(onLeft);
+      facade.orderDetails.set(buildOrder({ orderStatusValue: OrderStatus.InProgress }));
+      answer.next(true);
+
+      expect(orderClient.dropOrder).not.toHaveBeenCalled();
+      expect(orderClient.getById).toHaveBeenCalledWith(ORDER_ID);
+    });
+
+    it('drops the seat when a cancel asked before the start is confirmed before it too', () => {
+      jest.useFakeTimers();
+      jest.setSystemTime(new Date('2026-09-29T09:58:00Z'));
+      const answer = new Subject<boolean>();
+      confirmDialog.confirmTranslated.mockReturnValue(answer);
+      orderClient.dropOrder.mockReturnValue(left(1));
+      const facade = onTheJob({ cleaningDateTime: '2026-09-29T10:00:00Z' });
+
+      facade.openDropOrderDialog(onLeft);
+      jest.setSystemTime(new Date('2026-09-29T09:59:00Z'));
+      answer.next(true);
+
+      expect(orderClient.dropOrder).toHaveBeenCalledTimes(1);
+      expect(orderClient.getById).not.toHaveBeenCalled();
+      expect(onLeft).toHaveBeenCalledTimes(1);
+    });
+
+    it.each([
+      ['job', (facade: OrderDetailsFacade) => facade.currentEmployeeId.set(EMPLOYEE_ID)],
+      [
+        'cleaner',
+        (facade: OrderDetailsFacade) =>
+          facade.orderDetails.set(buildOrder({ orderStatusValue: OrderStatus.Confirmed })),
+      ],
+    ])('still says the request is invalid while the %s is not known, and asks nothing', (_, knowTheOther) => {
+      const facade = createFacade();
+      knowTheOther(facade);
+
+      facade.openDropOrderDialog(onLeft);
+
+      expect(snackbar.showErrorTranslated).toHaveBeenCalledWith('global.messages.orders.invalid_request');
+      expect(confirmDialog.confirmTranslated).not.toHaveBeenCalled();
+      expect(orderClient.getById).not.toHaveBeenCalled();
     });
   });
 

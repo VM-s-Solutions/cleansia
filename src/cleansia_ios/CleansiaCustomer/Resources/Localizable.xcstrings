@@ -32543,31 +32543,31 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Nobody was able to take booking #%1$@, so we have refunded it in full and added %2$@ credit towards your next clean. Sorry."
+            "value": "No cleaner could make it to booking #%1$@, so we have refunded it in full and added %2$@ credit towards your next clean. Sorry."
           }
         },
         "cs": {
           "stringUnit": {
             "state": "translated",
-            "value": "Objednávku #%1$@ nikdo nestihl převzít, proto vám vracíme celou částku a přidáváme kredit %2$@ na příští úklid. Omlouváme se."
+            "value": "Na objednávku #%1$@ nemohl dorazit žádný uklízeč, proto vám vracíme celou částku a přidáváme kredit %2$@ na příští úklid. Omlouváme se."
           }
         },
         "sk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Objednávku #%1$@ nikto nestihol prevziať, preto vám vraciame celú sumu a pridávame kredit %2$@ na ďalšie upratovanie. Ospravedlňujeme sa."
+            "value": "Na objednávku #%1$@ nemohol prísť žiadny upratovač, preto vám vraciame celú sumu a pridávame kredit %2$@ na ďalšie upratovanie. Ospravedlňujeme sa."
           }
         },
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Заказ #%1$@ никто не взял, поэтому мы вернули всю сумму и начислили %2$@ кредита на следующую уборку. Простите."
+            "value": "На заказ #%1$@ не смог приехать ни один уборщик, поэтому мы вернули всю сумму и начислили %2$@ кредита на следующую уборку. Простите."
           }
         },
         "uk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Замовлення #%1$@ ніхто не взяв, тому ми повернули всю суму та нарахували %2$@ кредиту на наступне прибирання. Вибачте."
+            "value": "На замовлення #%1$@ не зміг приїхати жоден прибиральник, тому ми повернули всю суму та нарахували %2$@ кредиту на наступне прибирання. Вибачте."
           }
         }
       }

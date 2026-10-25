@@ -14,27 +14,28 @@ using Moq;
 namespace Cleansia.Tests.Services;
 
 /// <summary>
-/// Owner ruling 2026-10-25: the customer is told when their booking goes back to New. The status e-mail's
-/// cleaner-released arm says so in the customer's language, in the copy the code carries: it names no
-/// cleaner, gives no reason, promises no time and no money, and links the booking the way every status
-/// e-mail does.
+/// Owner ruling 2026-10-25: the customer is told when a cleaner leaves their booking. The status e-mail's
+/// cleaner-released arm says so in the customer's language, in the copy the code carries: it counts no
+/// cleaners, so it stays true whether the last cleaner left or one of two did, names no cleaner, gives no
+/// reason, promises no time and no money and no follow-up message, and links the booking the way every
+/// status e-mail does (owner decision 2, 2026-10-25).
 /// </summary>
 public class OrderCleanerReleasedEmailCopyTests
 {
     private const string Recipient = "customer@example.com";
 
     [Theory]
-    [InlineData("en", "We're finding you a new cleaner",
-        "The cleaner booked for your cleaning can no longer come. We're looking for another cleaner and will let you know as soon as one takes your booking.")]
-    [InlineData("cs", "Hledáme vám nového uklízeče",
-        "Uklízeč objednaný na váš úklid už nemůže přijít. Hledáme jiného uklízeče a dáme vám vědět, jakmile vaši rezervaci někdo převezme.")]
-    [InlineData("sk", "Hľadáme vám nového upratovača",
-        "Upratovač objednaný na vaše upratovanie už nemôže prísť. Hľadáme iného upratovača a dáme vám vedieť, hneď ako vašu rezerváciu niekto prevezme.")]
-    [InlineData("uk", "Шукаємо для вас нового прибиральника",
-        "Прибиральник, призначений на ваше прибирання, більше не може прийти. Ми шукаємо іншого прибиральника й повідомимо вас, щойно хтось візьме ваше бронювання.")]
-    [InlineData("ru", "Ищем для вас нового уборщика",
-        "Уборщик, назначенный на вашу уборку, больше не может прийти. Мы ищем другого уборщика и сообщим вам, как только кто-нибудь возьмёт ваше бронирование.")]
-    public async Task The_Customer_Is_Told_In_Their_Language_That_Another_Cleaner_Is_Being_Looked_For(
+    [InlineData("en", "A cleaner can no longer come",
+        "Your booking still stands. We're offering it to our cleaners again.")]
+    [InlineData("cs", "Uklízeč už nemůže přijít",
+        "Vaše rezervace dál platí. Znovu ji nabízíme našim uklízečům.")]
+    [InlineData("sk", "Upratovač už nemôže prísť",
+        "Vaša rezervácia naďalej platí. Opäť ju ponúkame našim upratovačom.")]
+    [InlineData("uk", "Прибиральник більше не може прийти",
+        "Ваше бронювання залишається в силі. Ми знову пропонуємо його нашим прибиральникам.")]
+    [InlineData("ru", "Уборщик больше не может прийти",
+        "Ваше бронирование остаётся в силе. Мы снова предлагаем его нашим уборщикам.")]
+    public async Task The_Customer_Is_Told_In_Their_Language_That_The_Booking_Is_Offered_To_Cleaners_Again(
         string language, string title, string message)
     {
         var (service, values) = BuildService();

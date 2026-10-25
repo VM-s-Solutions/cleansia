@@ -7,6 +7,7 @@ type Locale = (typeof LOCALES)[number];
 const PAGE_ROOT = 'pages.notifications';
 const EVENTS_ROOT = `${PAGE_ROOT}.events`;
 const CREW_LOST = 'admin.order.crew_lost';
+const CREW_SHORT = 'admin.order.crew_short';
 const PANEL_ROOT = 'components.notifications_panel';
 const PANEL_KEYS = ['empty', 'open', 'title', 'view_all'];
 
@@ -106,8 +107,8 @@ function copyKeysFor(key: string): string[] {
 }
 
 describe('admin notification copy', () => {
-  it('reads the eighteen-key catalogue off the backend, and the page pins the same eighteen', () => {
-    expect(keys).toHaveLength(18);
+  it('reads the nineteen-key catalogue off the backend, and the page pins the same nineteen', () => {
+    expect(keys).toHaveLength(19);
     expect([...argsByKey.keys()].sort()).toEqual([...keys].sort());
     expect(pageKeys()).toEqual(keys);
   });
@@ -166,6 +167,16 @@ describe('admin notification copy', () => {
       expect(placeholders(board)).toEqual(['cause', 'cleaningDateTime', 'orderNumber']);
       expect(placeholders(underWay)).toEqual(['cause', 'cleaningDateTime', 'orderNumber']);
       expect(board).not.toEqual(underWay);
+    }
+  });
+
+  it('the crew-short sentence names the order, the time and the cause, and says somebody is still on it', () => {
+    for (const locale of LOCALES) {
+      const tree = readLocale(locale);
+      const short = resolve(tree, `${EVENTS_ROOT}.${CREW_SHORT}.body`);
+      expect(placeholders(short)).toEqual(['cause', 'cleaningDateTime', 'orderNumber']);
+      expect(short).not.toEqual(resolve(tree, `${EVENTS_ROOT}.${CREW_LOST}.body`));
+      expect(resolve(tree, `${EVENTS_ROOT}.${CREW_SHORT}.title`)).not.toEqual(resolve(tree, `${EVENTS_ROOT}.${CREW_LOST}.title`));
     }
   });
 

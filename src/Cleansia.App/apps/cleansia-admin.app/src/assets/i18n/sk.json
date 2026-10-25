@@ -2870,6 +2870,10 @@
                 "rejected": "účet upratovača bol zamietnutý"
               }
             },
+            "crew_short": {
+              "title": "Objednávka prišla o jedného z upratovačov",
+              "body": "Objednávka {{orderNumber}} dňa {{cleaningDateTime}} prišla o jedného z upratovačov — {{cause}}. Niekto na nej stále je a voľné miesto je späť na nástenke; ak ho nikto neprevezme, upratovanie prebehne v menšom počte, preto v objednávke priraďte upratovača."
+            },
             "cleaner_not_started": {
               "title": "Upratovač nezačal objednávku",
               "body": "Objednávka {{orderNumber}} bola objednaná na {{cleaningDateTime}} a nikto ju nezačal. Ak upratovač neprišiel, zrušte ju ako nedostavenie sa."

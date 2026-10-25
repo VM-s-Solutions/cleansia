@@ -2870,6 +2870,10 @@
                 "rejected": "účet pracovníka byl zamítnut"
               }
             },
+            "crew_short": {
+              "title": "Objednávka přišla o jednoho z uklízečů",
+              "body": "Objednávka {{orderNumber}} dne {{cleaningDateTime}} přišla o jednoho z uklízečů — {{cause}}. Někdo na ní stále je a volné místo je zpět na nástěnce; pokud ho nikdo nepřevezme, úklid proběhne v menším počtu, proto v objednávce přiřaďte uklízeče."
+            },
             "cleaner_not_started": {
               "title": "Uklízeč nezačal objednávku",
               "body": "Objednávka {{orderNumber}} byla objednána na {{cleaningDateTime}} a nikdo ji nezačal. Pokud uklízeč nedorazil, zrušte ji jako nedostavení."

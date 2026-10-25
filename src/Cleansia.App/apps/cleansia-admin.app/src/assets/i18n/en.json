@@ -2870,6 +2870,10 @@
                 "rejected": "the cleaner's account was rejected"
               }
             },
+            "crew_short": {
+              "title": "An order lost one of its cleaners",
+              "body": "Order {{orderNumber}} on {{cleaningDateTime}} lost one of its cleaners — {{cause}}. Somebody is still on it and the free place is back on the board; if nobody takes it, the clean goes ahead short-staffed, so assign a cleaner from the order."
+            },
             "cleaner_not_started": {
               "title": "The cleaner has not started an order",
               "body": "Order {{orderNumber}} was booked for {{cleaningDateTime}} and nobody has started it. If the cleaner did not arrive, cancel it as a no-show."

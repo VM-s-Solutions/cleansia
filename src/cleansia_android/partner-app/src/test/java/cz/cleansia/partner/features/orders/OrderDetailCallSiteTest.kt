@@ -90,8 +90,16 @@ class OrderDetailCallSiteTest {
     @Test
     fun `cancelling the job is offered through its gate and sent only from its confirm`() {
         assertTrue(
-            "the footer must offer Cancel job through droppable()",
-            detailScreen.contains("canDrop = order.droppable()"),
+            "the footer must offer Cancel job through droppable(now)",
+            detailScreen.contains("canDrop = order.droppable(now)"),
+        )
+        assertTrue(
+            "the clock behind the gate must be read again on every return to the screen",
+            detailScreen.contains("LifecycleEventEffect(Lifecycle.Event.ON_RESUME) { now = Instant.now() }"),
+        )
+        assertTrue(
+            "the clock must be read again at the start, when the gate closes",
+            Regex("""LaunchedEffect\(start, now\)\s*\{\s*delay\(""").containsMatchIn(detailScreen),
         )
         assertTrue(
             "the drop must be sent from the confirm dialog",

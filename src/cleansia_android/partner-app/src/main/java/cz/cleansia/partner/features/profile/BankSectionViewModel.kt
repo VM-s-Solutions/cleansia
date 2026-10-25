@@ -227,7 +227,8 @@ class BankSectionViewModel @Inject constructor(
         _uiState.value = BankSectionUiState.Error
     }
 
-    fun onBankCountrySelected(id: String) = updateForm { it.copy(bankCountryId = id, bankCountryError = null) }
+    fun onBankCountrySelected(id: String) =
+        updateForm { it.copy(bankCountryId = id, bankCountryError = null, swiftError = null) }
 
     fun onAccountPrefixChange(v: String) = updateForm { it.copy(accountPrefix = v.digitsOnly(), accountError = null) }
 
@@ -251,6 +252,7 @@ class BankSectionViewModel @Inject constructor(
             snackbar.showError(appContext.getString(R.string.error_profile_not_loaded))
             return
         }
+        updateForm { it.copy(ibanServerError = null, swiftError = null) }
         var hasError = false
         if (form.bankCountryId.isNullOrBlank()) {
             updateForm { it.copy(bankCountryError = appContext.getString(R.string.validation_required)) }

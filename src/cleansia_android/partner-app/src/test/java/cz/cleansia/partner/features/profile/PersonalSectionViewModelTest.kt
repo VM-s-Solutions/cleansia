@@ -83,7 +83,7 @@ class PersonalSectionViewModelTest {
         every { appContext.getString(R.string.error_phone_number_invalid) } returns "Enter the number with its country code"
         every { appContext.getString(R.string.validation_max_50) } returns "Maximum 50 characters allowed"
         every { appContext.getString(R.string.validation_min_age_18) } returns "You must be at least 18 years old"
-        every { appContext.getString(R.string.validation_max_age_120) } returns "Invalid date of birth"
+        every { appContext.getString(R.string.error_validation_invalid_age) } returns "Please enter a valid age."
     }
 
     private fun viewModel() =
@@ -184,8 +184,8 @@ class PersonalSectionViewModelTest {
     }
 
     @Test
-    fun `a phone without its country code, or one libphonenumber refuses, is named and not sent`() = runTest {
-        listOf("+1", "777123456", "+420123456789").forEach { phone ->
+    fun `a phone without its country code, or too short or too long for its country, is named and not sent`() = runTest {
+        listOf("+1", "777123456", "+42077712345", "+4207771234567890").forEach { phone ->
             coEvery { repository.getCurrentEmployee() } returns ApiResult.Success(employee.copy(phoneNumber = phone))
             val vm = viewModel()
             advanceUntilIdle()
@@ -199,8 +199,62 @@ class PersonalSectionViewModelTest {
         verify(exactly = 0) { snackbar.showError(any<String>()) }
     }
 
+    /** The server's phone metadata is newer than the app's, so only it says whether a possible number is valid. */
     @Test
-    fun `a stored phone with spaces is valid and is sent as stored`() = runTest {
+    fun `a phone of a possible length is sent for the server to judge`() = runTest {
+        coEvery { repository.getCurrentEmployee() } returns ApiResult.Success(employee.copy(phoneNumber = "+420123456789"))
+        coEvery { repository.updatePersonalInfo(any(), any(), any(), any(), any()) } returns ApiResult.Success(Unit)
+        val vm = viewModel()
+        advanceUntilIdle()
+
+        vm.save()
+        advanceUntilIdle()
+
+        assertNull(vm.form().phoneError)
+        coVerify(exactly = 1) { repository.updatePersonalInfo(any(), any(), any(), any(), phone = "+420123456789") }
+    }
+
+    /** `UpdatePersonalInfo` files both refusals under Phone. */
+    @Test
+    fun `the server's refusal of the phone is named under the phone and clears as it is edited`() = runTest {
+        listOf("validation.invalid_phone_number", "common.required").forEach { key ->
+            coEvery { repository.getCurrentEmployee() } returns ApiResult.Success(employee)
+            coEvery { repository.updatePersonalInfo(any(), any(), any(), any(), any()) } returns
+                ApiResult.Error(refusal(field = "Phone", key = key))
+            val vm = viewModel()
+            advanceUntilIdle()
+
+            vm.save()
+            advanceUntilIdle()
+
+            assertEquals(key, "translated error", vm.form().phoneError)
+            assertEquals(key, ActionState.Idle, vm.saveState.value)
+            vm.onPhoneChange("+420777123457")
+            assertNull(key, vm.form().phoneError)
+        }
+        verify(exactly = 0) { snackbar.showError(any<String>()) }
+    }
+
+    @Test
+    fun `a required refusal of another field is not put under the phone`() = runTest {
+        coEvery { repository.getCurrentEmployee() } returns ApiResult.Success(employee)
+        coEvery { repository.updatePersonalInfo(any(), any(), any(), any(), any()) } returns
+            ApiResult.Error(refusal(field = "FirstName", key = "common.required"))
+        val vm = viewModel()
+        advanceUntilIdle()
+
+        vm.save()
+        advanceUntilIdle()
+
+        assertNull(vm.form().phoneError)
+        verify { snackbar.showError("translated error") }
+    }
+
+    private fun refusal(field: String, key: String) =
+        ApiError.BadRequest("Validation Error", validationErrors = mapOf(field to listOf(key)), errorKey = key)
+
+    @Test
+    fun `a stored phone with spaces passes and is sent as stored`() = runTest {
         coEvery { repository.getCurrentEmployee() } returns
             ApiResult.Success(employee.copy(phoneNumber = "+420 777123456"))
         coEvery { repository.updatePersonalInfo(any(), any(), any(), any(), any()) } returns ApiResult.Success(Unit)
@@ -224,7 +278,7 @@ class PersonalSectionViewModelTest {
         assertEquals(R.string.validation_min_age_18, birthDateProblem("2008-10-25", today))
         assertNull("eighteen today", birthDateProblem("2008-10-24", today))
         assertNull("a hundred and twenty today", birthDateProblem("1906-10-24", today))
-        assertEquals(R.string.validation_max_age_120, birthDateProblem("1906-10-23", today))
+        assertEquals(R.string.error_validation_invalid_age, birthDateProblem("1906-10-23", today))
         assertEquals("a leap-day birthday turns 18 on 1 March", R.string.validation_min_age_18, birthDateProblem("2008-02-29", LocalDate.of(2026, 2, 28)))
         assertNull("not a date the picker writes: the server decides", birthDateProblem("29/02/2008", today))
     }
@@ -234,7 +288,7 @@ class PersonalSectionViewModelTest {
         val today = LocalDate.now(ZoneOffset.UTC)
         mapOf(
             today.minusYears(17) to "You must be at least 18 years old",
-            today.minusYears(121) to "Invalid date of birth",
+            today.minusYears(121) to "Please enter a valid age.",
         ).forEach { (birthDate, message) ->
             coEvery { repository.getCurrentEmployee() } returns
                 ApiResult.Success(employee.copy(birthDate = birthDate.toString()))

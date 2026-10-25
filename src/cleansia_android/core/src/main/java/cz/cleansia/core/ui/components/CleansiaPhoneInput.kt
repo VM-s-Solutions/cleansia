@@ -147,12 +147,14 @@ private class PhoneVisualTransformation(
 }
 
 /**
- * The server's rule for a stored phone (`PhoneNumberAttribute`): international form, and a number
- * libphonenumber holds valid. The iOS twin is `PhoneNumberKitDisplayFormatter.isValidNumber`.
+ * International form, and a length libphonenumber holds possible for the country. Not whether the number is
+ * valid: the server's metadata is newer than this library's, so a number in a range allocated since would be
+ * refused here with no way past it, and the server (`PhoneNumberAttribute`) stays the judge of validity.
+ * The iOS twin is in `PhoneNumberKitDisplayFormatter`.
  */
-fun isValidPhoneNumber(wire: String): Boolean = wire.startsWith("+") && runCatching {
+fun isPossiblePhoneNumber(wire: String): Boolean = wire.startsWith("+") && runCatching {
     val util = PhoneNumberUtil.getInstance()
-    util.isValidNumber(util.parse(wire, null))
+    util.isPossibleNumber(util.parse(wire, null))
 }.getOrDefault(false)
 
 /**

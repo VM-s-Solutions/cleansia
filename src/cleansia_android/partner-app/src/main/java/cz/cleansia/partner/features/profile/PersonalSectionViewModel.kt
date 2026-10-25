@@ -8,10 +8,11 @@ import cz.cleansia.partner.data.user.UserRepository
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import cz.cleansia.core.snackbar.SnackbarController
-import cz.cleansia.core.ui.components.isValidPhoneNumber
+import cz.cleansia.core.ui.components.isPossiblePhoneNumber
 import cz.cleansia.core.ui.state.ActionState
 import cz.cleansia.partner.R
 import cz.cleansia.partner.core.network.ApiErrorTranslator
+import cz.cleansia.core.network.ApiError
 import cz.cleansia.core.network.ApiResult
 import cz.cleansia.partner.data.profile.ProfileRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -33,6 +34,10 @@ private const val NameMaxLength = 50
 private const val YoungestAge = 18L
 private const val OldestAge = 120L
 
+/** What `UpdatePersonalInfo` refuses about the phone, filed under its Phone field. */
+private const val PhoneField = "Phone"
+private val PhoneRefusals = listOf("validation.invalid_phone_number", "common.required")
+
 /**
  * The resource naming what the server would refuse about [birthDate] on [today], the server's own day
  * (UTC); null when it would take the date, or when the text is no `yyyy-MM-dd` date and the server
@@ -43,7 +48,7 @@ internal fun birthDateProblem(birthDate: String, today: LocalDate): Int? {
     val day = runCatching { LocalDate.parse(birthDate) }.getOrNull() ?: return null
     return when {
         day.isAfter(today.minusYears(YoungestAge)) -> R.string.validation_min_age_18
-        day.isBefore(today.minusYears(OldestAge)) -> R.string.validation_max_age_120
+        day.isBefore(today.minusYears(OldestAge)) -> R.string.error_validation_invalid_age
         else -> null
     }
 }
@@ -188,7 +193,7 @@ class PersonalSectionViewModel @Inject constructor(
         if (form.phone.isBlank()) {
             updateForm { it.copy(phoneError = appContext.getString(R.string.error_phone_number_required)) }
             hasError = true
-        } else if (!isValidPhoneNumber(form.phone.trim())) {
+        } else if (!isPossiblePhoneNumber(form.phone.trim())) {
             updateForm { it.copy(phoneError = appContext.getString(R.string.error_phone_number_invalid)) }
             hasError = true
         }
@@ -223,7 +228,12 @@ class PersonalSectionViewModel @Inject constructor(
                 }
                 is ApiResult.Error -> {
                     _saveState.value = ActionState.Idle
-                    snackbar.showError(errorTranslator.translate(result.error))
+                    val message = errorTranslator.translate(result.error)
+                    if (result.error.refusesPhone()) {
+                        updateForm { it.copy(phoneError = message) }
+                    } else {
+                        snackbar.showError(message)
+                    }
                 }
             }
         }
@@ -254,6 +264,9 @@ class PersonalSectionViewModel @Inject constructor(
         }
     }
 }
+
+private fun ApiError.refusesPhone(): Boolean =
+    (this as? ApiError.BadRequest)?.validationErrors?.get(PhoneField).orEmpty().any { it in PhoneRefusals }
 
 /** What the cleaner has said about their photo, if anything, since the screen opened. */
 sealed interface PartnerAvatarDraft {

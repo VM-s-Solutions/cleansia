@@ -82,7 +82,10 @@ import cz.cleansia.partner.api.model.OrderStatus
 import cz.cleansia.partner.api.model.PaymentStatus
 import cz.cleansia.partner.api.model.PaymentType
 import cz.cleansia.partner.api.model.PhotoType
+import java.time.Duration
+import java.time.Instant
 import java.util.Locale
+import kotlinx.coroutines.delay
 
 /**
  * v2 layout: Mapbox tile as full-bleed backdrop, BottomSheetScaffold
@@ -670,6 +673,17 @@ private fun OrderDetailSheetContent(
     val showFromCustomerCard =
         !order.notes.isNullOrBlank() || !order.specialInstructions.isNullOrBlank()
 
+    // Cancel job closes at the job's start, so the clock is read again then, and on every resume, since a delay
+    // stops while the device sleeps.
+    var now by remember { mutableStateOf(Instant.now()) }
+    LifecycleEventEffect(Lifecycle.Event.ON_RESUME) { now = Instant.now() }
+    order.cleaningStart()?.takeIf { now.isBefore(it) }?.let { start ->
+        LaunchedEffect(start, now) {
+            delay(Duration.between(now, start).toMillis().coerceAtLeast(1))
+            now = Instant.now()
+        }
+    }
+
     // Resolved here for the in-sheet OrderTimerCard's live timer.
     val startedAtMillis = remember(order.statusHistory) {
         order.statusHistory.orEmpty()
@@ -849,7 +863,7 @@ private fun OrderDetailSheetContent(
             canComplete = order.hasAfterPhotos == true,
             needsCashCollection = order.needsCashCollection(),
             canReportCashNotPaid = order.cashNotPaidReportable(),
-            canDrop = order.droppable(),
+            canDrop = order.droppable(now),
             preferredOffer = preferredOffer,
             onTake = onTake,
             onStart = onStart,
@@ -997,13 +1011,20 @@ internal fun OrderItem.cashNotPaidOwed(): Double? {
     return price - credit
 }
 
+/** The booked start, or null when the wire carries none that reads as an instant. */
+internal fun OrderItem.cleaningStart(): Instant? = cleaningDateTime?.let { runCatching { Instant.parse(it) }.getOrNull() }
+
 /**
  * Mirrors `DropOrder` more narrowly than the server does. The server lets the crew leave up to InProgress; the apps
  * offer it on a New or Confirmed job only, because once the cleaner is on the way the customer is expecting them,
- * and before a lockout report only, because leaving afterwards gives up the reward a confirmed lockout pays.
+ * before a lockout report only, because leaving afterwards gives up the reward a confirmed lockout pays, and before
+ * the job's start only, because a job nobody has started by then is a no-show, which the administrators handle.
+ * Without a start on the wire the status alone decides.
  */
-internal fun OrderItem.droppable(): Boolean {
+internal fun OrderItem.droppable(now: Instant): Boolean {
     if (isAssignedToCurrentUser != true || !lockoutReportedAt.isNullOrBlank()) return false
+    val start = cleaningStart()
+    if (start != null && !now.isBefore(start)) return false
     return when (orderStatus.toOrderStatus()) {
         OrderStatus._0, OrderStatus._2 -> true
         else -> false

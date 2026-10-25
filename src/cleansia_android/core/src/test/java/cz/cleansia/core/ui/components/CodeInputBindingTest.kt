@@ -41,20 +41,32 @@ class CodeInputBindingTest {
         )
     }
 
+    /** The boxes are cleared from the semantics tree, so the field is all TalkBack reads; without a label it says "Edit box". */
+    @Test
+    fun `TalkBack names the field as the six-digit verification code`() {
+        assertTrue(source.contains("val fieldLabel = stringResource(R.string.core_code_field_label)"))
+        assertTrue(
+            "the text field itself must carry the label",
+            Regex("""\.focusRequester\(focusRequester\)\s*\.semantics\s*\{\s*contentDescription = fieldLabel\s*\}""")
+                .containsMatchIn(source),
+        )
+    }
+
     @Test
     fun `the invisible caret is held at the end of the code`() {
         assertTrue(source.contains("TextFieldValue(code, selection = TextRange(code.length))"))
     }
 
+    /** [CodeInputPasteButtonTest] proves the button's rule; this pins that the button is what uses it. */
     @Test
     fun `the paste button replaces the code with the one on the clipboard`() {
         assertTrue(
-            "the button must read the clipboard through the same rule, with nothing typed to keep",
-            source.contains("acceptOneTimeCode(clipboard.getText()?.text.orEmpty(), \"\", length)"),
+            "the button must paste the clipboard through pasteOneTimeCode, onto the code on screen",
+            source.contains("pasteOneTimeCode(clipboard.getText()?.text.orEmpty(), code, length)"),
         )
         assertTrue(
             "a clipboard with no digits on it must leave a partial code alone",
-            source.contains("if (pasted.isNotEmpty()) onCodeChange(pasted)"),
+            source.contains("if (pasted != code) onCodeChange(pasted)"),
         )
     }
 

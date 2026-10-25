@@ -34,6 +34,8 @@ import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.clearAndSetSemantics
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.input.KeyboardType
@@ -47,7 +49,8 @@ import cz.cleansia.core.ui.theme.Poppins
  * One-time-code entry: one real text field drawn as [length] digit boxes, so a tap anywhere on the boxes brings
  * the keyboard back and a long-press offers Paste. The code it reports holds ASCII digits only, up to [length]
  * ([acceptOneTimeCode]). A Paste button under the boxes is shown while the clipboard holds text, because not every
- * keyboard offers the clipboard on a number pad.
+ * keyboard offers the clipboard on a number pad; it replaces what was typed with the clipboard's code
+ * ([pasteOneTimeCode]).
  */
 @Composable
 fun CodeInput(
@@ -60,6 +63,7 @@ fun CodeInput(
     val clipboard = LocalClipboardManager.current
     val windowInfo = LocalWindowInfo.current
     var clipboardHasText by remember { mutableStateOf(false) }
+    val fieldLabel = stringResource(R.string.core_code_field_label)
 
     // Android 10+ lets only the app holding window focus read the clipboard, and an app coming back from the mail
     // app gets focus back after ON_RESUME, so the check runs on focus. hasText() reads only the clip's description,
@@ -81,7 +85,8 @@ fun CodeInput(
                 },
                 modifier = Modifier
                     .fillMaxWidth()
-                    .focusRequester(focusRequester),
+                    .focusRequester(focusRequester)
+                    .semantics { contentDescription = fieldLabel },
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                 textStyle = TextStyle(color = Color.Transparent),
                 cursorBrush = SolidColor(Color.Transparent),
@@ -97,8 +102,8 @@ fun CodeInput(
         if (clipboardHasText) {
             CleansiaTextButton(
                 onClick = {
-                    val pasted = acceptOneTimeCode(clipboard.getText()?.text.orEmpty(), "", length)
-                    if (pasted.isNotEmpty()) onCodeChange(pasted)
+                    val pasted = pasteOneTimeCode(clipboard.getText()?.text.orEmpty(), code, length)
+                    if (pasted != code) onCodeChange(pasted)
                 },
             ) {
                 Text(stringResource(R.string.core_code_paste))
@@ -168,5 +173,13 @@ internal fun acceptOneTimeCode(raw: String, current: String, length: Int): Strin
     val inserted = rest.dropLast(rest.commonSuffixWith(current.substring(kept)).length).asciiDigits()
     return if (inserted.length >= length) inserted.take(length) else raw.asciiDigits().take(length)
 }
+
+/**
+ * The code after the Paste button pastes [clipboardText] onto [current]: the clipboard's code replaces what was
+ * typed, so a fragment shows as itself and is never completed from typed digits into a code the screen submits.
+ * A clipboard without digits leaves [current] as it is. The field's own long-press Paste keeps [acceptOneTimeCode].
+ */
+internal fun pasteOneTimeCode(clipboardText: String, current: String, length: Int): String =
+    acceptOneTimeCode(clipboardText, "", length).ifEmpty { current }
 
 private fun String.asciiDigits(): String = filter { it in '0'..'9' }

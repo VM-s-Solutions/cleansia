@@ -284,15 +284,15 @@ class IdentificationSectionViewModelTest {
 
         vm.onPassportChange("AB1234567")
         assertNull(vm.form().passportError)
+        assertNotNull(vm.form().registrationNumberError)
+
+        vm.onRegistrationNumberChange("12345678")
+        assertNull(vm.form().registrationNumberError)
         assertNotNull(vm.form().businessCountryError)
 
         vm.onBusinessCountrySelected("country-sk")
         vm.settle()
         assertNull(vm.form().businessCountryError)
-        assertNotNull(vm.form().registrationNumberError)
-
-        vm.onRegistrationNumberChange("12345678")
-        assertNull(vm.form().registrationNumberError)
     }
 
     /** Refusals only the business register can give are the registration number's, not a snackbar's. */
@@ -318,6 +318,27 @@ class IdentificationSectionViewModelTest {
             assertEquals(key, ActionState.Idle, vm.saveState.value)
         }
         verify(exactly = 0) { snackbar.showError(any<String>()) }
+    }
+
+    @Test
+    fun `a refused registration number clears when the business country it depends on changes`() = runTest {
+        coEvery { repository.getCurrentEmployee() } returns ApiResult.Success(naturalPerson)
+        coEvery { repository.updateIdentification(any(), any(), any(), any(), any()) } returns ApiResult.Error(
+            ApiError.BadRequest(
+                "Validation Error",
+                validationErrors = mapOf("RegistrationNumber" to listOf("validation.registration_number.invalid_format")),
+            ),
+        )
+        val vm = viewModel()
+        vm.awaitLoaded()
+        vm.save()
+        advanceUntilIdle()
+        assertEquals("translated error", vm.form().registrationNumberError)
+
+        vm.onBusinessCountrySelected("country-sk")
+        vm.settle()
+
+        assertNull(vm.form().registrationNumberError)
     }
 
     @Test

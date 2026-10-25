@@ -74,14 +74,29 @@ need backfilling.
   *Cancel job* takes you off it while the job is still *New* or *Confirmed*, you have not reported
   that you cannot get in, and its start is still ahead. It is not offered once you are on the way or
   the clean has started, nor from the job's start on, when a job nobody started is a no-show for the
-  administrators. A confirmation says first what happens: you leave the job and your place goes back
+  administrators. Since 2026-10-25 the server itself refuses a job that is on the way or in progress
+  (under *Changed*). A confirmation says first what happens: you leave the job and your place goes back
   on the board for other cleaners, the customer's booking is not cancelled, and a job you were alone
   on has no cleaner until someone takes it; *Keep the job* changes nothing. After
   *Yes, cancel the job* you are told whether anyone is still on it, and the app leaves the job. A
   confirmed job with nobody left goes back to the board as a new job, and the company's administrators
-  are told. Android takes *Cancel job* away at the job's start; iOS and partner web take it away the
-  next time they load the job, and a cancel confirmed after the start sends nothing. (Owner defaults
-  2026-10-24; the limit at the job's start, since 2026-10-25; ADR-0067.)
+  are told; since 2026-10-25 so is the customer (below). Android takes *Cancel job* away at the job's
+  start; iOS and partner web take it away the next time they load the job, and a cancel confirmed after
+  the start sends nothing. (Owner defaults 2026-10-24; the limit at the job's start, since 2026-10-25;
+  ADR-0067.)
+
+- **Customer, Android, iOS and e-mail — you are told when your cleaner can no longer come.** When the
+  last cleaner on your confirmed booking leaves it — they cancel the job, or the company rejects them —
+  the booking waits for a cleaner again, and you are told that another one is being looked for. With an
+  account you get a notification and an inbox entry in the Android and iOS apps, *Your cleaner can no
+  longer come*, naming the booking; switching off booking updates silences the notification, not the
+  inbox entry. With an account or without, you get an e-mail in the booking's language, *We're finding
+  you a new cleaner*, with the link to your booking, unless the booking was taken again or cancelled by
+  the time it goes out. Neither names the cleaner or says why, and both are in five languages. The next
+  cleaner to take the booking still sends the confirmation e-mail again. Until 2026-10-25 nothing was
+  sent when the cleaner left. **Operator:** deploy the Functions consumer with or before the APIs that
+  publish the new e-mail, and the updated apps before the notification backend: an older build cannot
+  render the new key. (Owner ruling 2026-10-25 on O-D2-1, *"yup"*; ADR-0067.)
 
 - **Admin — told a day ahead when nobody is on a job, and a filter for such orders.** An eighteenth
   notice, in the console and by e-mail, for Support and above: once per order, when a *New* or
@@ -302,7 +317,9 @@ need backfilling.
   the new **administrator notification mailbox** on Company settings (`notifications.admin_email`, the
   eleventh setting, an e-mail field that reads *every administrator* while unset) — to that one address,
   in English. The notices carry order numbers, amounts, dates and ids, never a person. Nothing is pushed
-  to a phone. (ADR-0065; owner ruling 2026-09-19, *"both in-app and email"*.)
+  to a phone. Since 2026-10-25 a cleaner cannot drop a job that is under way, so an order loses its last
+  cleaner only while it is new or confirmed, and the notice never says the clean was under way (under
+  *Changed*). (ADR-0065; owner ruling 2026-09-19, *"both in-app and email"*.)
 
 - **Plus — a recurring schedule pause is now explained.** After a confirmed paid membership
   lapses, the customer receives one notice explaining that scheduling is paused and renewing Plus
@@ -592,6 +609,17 @@ need backfilling.
   client sends the slot yet, so nothing displays this today. (ADR-0039)
 
 ### Changed
+
+- **Cleaner and API consumer — a job under way can no longer be dropped.** `POST api/Order/DropOrder`
+  on the partner web and partner mobile hosts takes a drop only while the job is *New* or *Confirmed*.
+  A job on the way, in progress or in any other status is refused with `order.not_confirmed`, the key
+  it already gave a completed or cancelled job, and nothing changes: the cleaner stays on it and nobody
+  is told. The apps already offered *Cancel job* only before then, so a cleaner meets the refusal only
+  when the job moved after the app last read it, as when a crew-mate sets off first, and the app then
+  reads the job again. Asking for cover is unchanged, and the server sets no limit at the job's start.
+  Until 2026-10-25 the server took a drop at any status up to *In progress*. (Owner ruling 2026-10-25,
+  *"No, impossible for other than Confirmed. So if partner didn't start yet then it's possible to Drop
+  Order"*; ADR-0067.)
 
 - **Cleaner, Android and iOS — the sign-up and profile forms say what is missing, on the first tap.**
   *Sign Up* and each onboarding step's *Next* or *Save* can be tapped at any time but while they are
@@ -914,7 +942,11 @@ need backfilling.
   to all cleaners, the message a hold that ends untaken sends, a few minutes after the booking is first
   left with nobody on it once the hold has ended, whoever left last; the chosen cleaner cancelling, or
   being rejected, while the hold runs ends it at once. An admin's status override can no longer set
-  *Confirmed* on a booking with nobody assigned — reassign instead. (ADR-0067; owner ruling 2026-09-19.)
+  *Confirmed* on a booking with nobody assigned — reassign instead. Since 2026-10-25 a cleaner can no
+  longer drop a booking that is on the way or in progress, so the administrators are told only of a new
+  or confirmed one (under *Changed*), and the walk-back tells the customer that another cleaner is being
+  looked for (under *Added*); the next take still sends the second confirmation e-mail. (ADR-0067; owner
+  ruling 2026-09-19.)
 
 - **Admin — the revenue report is net, by completion date.** The headline is completed and paid
   orders in the period **by completion date**, in one currency, **minus every refund on those orders** —

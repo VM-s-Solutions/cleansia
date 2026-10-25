@@ -270,14 +270,19 @@ public struct CleansiaBankAccountField: View {
     /// `splitPastedAccount` follows the same rule, and so does the web control's paste handler, which reads what was
     /// put in from the pasted text itself.
     ///
-    /// Every edit is first read by what it put in, the new text less the start and the end it shares with `current`.
-    /// If that, with every kind of whitespace dropped and an en or em dash read as a hyphen, is a written-out account
-    /// (`prefix-number/code`, `number/code`, `prefix-number`) or a CZ or SK IBAN, it is split across the three boxes,
-    /// whichever box it landed in and whether or not it fits there; one without a prefix clears the old one, and one
-    /// without a bank code keeps it. Otherwise new text that fits the box is ordinary editing, kept as typed or
-    /// pasted, and new text too long for the box is read by what the edit put in:
-    /// - one character is typing, which the box's digit clamp takes: at the end of a full box it changes nothing,
-    ///   and before or inside one the box's last digit falls out;
+    /// An account is looked for first, in four readings of the edit tried in this order:
+    /// 1. When the new text starts with `current`, the text after it, for a paste at the end or into an empty box.
+    /// 2. When the new text ends with `current`, the text before it, for a paste at the start.
+    /// 3. The whole new text, for a paste over the whole box, as after Select All.
+    /// 4. The run, the new text less the start and the end it shares with `current`, for a paste in the middle.
+    ///
+    /// The first reading that, with every kind of whitespace dropped and an en or em dash read as a hyphen, is a
+    /// written-out account (`prefix-number/code`, `number/code`, `prefix-number`) or a CZ or SK IBAN is split across
+    /// the three boxes, whichever box it landed in and whether or not it fits there; one without a prefix clears the
+    /// old one, and one without a bank code keeps it. Otherwise new text that fits the box is ordinary editing, kept as
+    /// typed or pasted, and new text too long for the box is read by its run alone:
+    /// - one character is typing, which the box's digit clamp takes: at the end of a full box it changes nothing, and
+    ///   a digit typed before or inside one pushes out its last digit;
     /// - a run of digits that fits the box becomes its content;
     /// - a run of digits too long for the box but not for the number becomes the number, the box keeping its
     ///   text;
@@ -287,12 +292,26 @@ public struct CleansiaBankAccountField: View {
     /// -> /partner-app/onboarding
     static func splitPastedAccount(_ raw: String, replacing current: String = "", into box: Segment) -> Edit {
         let run = insertedRun(raw, replacing: current)
-        let pasted = String(run.filter { !$0.isWhitespace }.map { $0 == "\u{2013}" || $0 == "\u{2014}" ? "-" : $0 })
-        if let account = account(in: domesticForm(ofIban: pasted) ?? pasted) { return account }
+        let readings = [
+            raw.hasPrefix(current) ? String(raw.dropFirst(current.count)) : nil,
+            raw.hasSuffix(current) ? String(raw.dropLast(current.count)) : nil,
+            raw,
+            run
+        ]
+        for case let reading? in readings {
+            let text = normalised(reading)
+            if let account = account(in: domesticForm(ofIban: text) ?? text) { return account }
+        }
+        let pasted = normalised(run)
         let boxLength = maxLength(of: box)
         guard raw.count > boxLength, run.count != 1 else { return .box(raw) }
         guard isDigits(pasted, upTo: numberMaxLength) else { return .box(current) }
         return pasted.count <= boxLength ? .box(pasted) : .number(pasted)
+    }
+
+    /// `text` with every kind of whitespace dropped and an en or em dash read as a hyphen.
+    private static func normalised(_ text: String) -> String {
+        String(text.filter { !$0.isWhitespace }.map { $0 == "\u{2013}" || $0 == "\u{2014}" ? "-" : $0 })
     }
 
     /// `[prefix-]number/code` or `prefix-number`: the number pad types neither separator, so their presence is

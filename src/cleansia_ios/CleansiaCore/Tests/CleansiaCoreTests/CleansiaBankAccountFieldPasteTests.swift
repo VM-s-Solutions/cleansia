@@ -75,7 +75,26 @@ final class CleansiaBankAccountFieldPasteTests: XCTestCase {
             PasteRow(14, into: .number, holding: "2000145399", paste: "1234567890", leaves: ["", "1234567890", ""]),
             PasteRow(15, into: .number, holding: "", paste: "12345/0800", leaves: ["", "12345", "0800"]),
             PasteRow(16, into: .number, holding: "", paste: "19-1234567", leaves: ["19", "1234567", ""]),
-            PasteRow(17, into: .bankCode, holding: "0800", paste: "5", .before, leaves: ["", "", "5080"])
+            PasteRow(17, into: .bankCode, holding: "0800", paste: "5", .before, leaves: ["", "", "5080"]),
+            PasteRow(18, into: .bankCode, holding: "0800", paste: "19-2000145399/0800", .over("0800"), leaves: account),
+            PasteRow(
+                19,
+                into: .number,
+                holding: "1234567890",
+                paste: "19-2000145399/0801",
+                .over("1234567890"),
+                leaves: ["19", "2000145399", "0801"]
+            ),
+            PasteRow(20, into: .bankCode, holding: "0800", paste: "19-2000145399/0800", leaves: account),
+            PasteRow(
+                21,
+                into: .number,
+                holding: "2000145399",
+                paste: "2000145399/0800",
+                .over("2000145399"),
+                leaves: ["", "2000145399", "0800"]
+            ),
+            PasteRow(22, into: .number, holding: "19", paste: "19-2000145399/0800", .before, leaves: account)
         ]
         let typedThrough: Set = [1, 3, 4, 5, 10, 13, 17]
         for row in rows {
@@ -85,6 +104,17 @@ final class CleansiaBankAccountFieldPasteTests: XCTestCase {
             XCTAssertEqual([boxes.prefix, boxes.number, boxes.bankCode], row.leaves, "row \(row.number)")
             XCTAssertEqual(rebuilds, !typedThrough.contains(row.number), "row \(row.number) rebuilds the boxes")
         }
+    }
+
+    /// The known residual, pinned so that changing it is a choice: an account pasted over part of a box's text can be
+    /// read without a digit it shares with the text there. With `12345` of `1234567890` replaced, the prefix comes out
+    /// as 9; the web reads the pasted text and gives 19.
+    func testTheKnownResidualAnAccountPastedOverPartOfABoxIsReadWithoutADigitItShares() {
+        let held = CleansiaBankAccountField.Boxes(prefix: "", number: "1234567890", bankCode: "")
+        let newText = "1234567890".replacingOccurrences(of: "12345", with: "19-2000145399/0800")
+        let (boxes, rebuilds) = CleansiaBankAccountField.boxes(afterEditing: .number, to: newText, from: held)
+        XCTAssertEqual(boxes, CleansiaBankAccountField.Boxes(prefix: "9", number: "2000145399", bankCode: "0800"))
+        XCTAssertTrue(rebuilds)
     }
 
     /// The server takes ASCII digits only; a keyboard can type Arabic-Indic or full-width ones.

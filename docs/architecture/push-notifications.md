@@ -338,22 +338,21 @@ entry declares the exact set a site may pass, so a site cannot smuggle a name in
 `Confirmed` order loses its last cleaner and goes back to `New` ([ADR-0067](/decisions/adr-0067)), both
 release writers call `OrderCleanerReleasedNotifier` exactly when `Order.ReturnToBoardIfUnstaffed()`
 walks it back; a crew that remains, or an order that was not `Confirmed`, sends the customer nothing. A
-booking with an account
-gets `order.cleaner_released` — `OrderUpdates`, args `orderId` (the deep link) and `orderNumber`, subject
-`{orderId}:{releasedAssignmentId}` so every walk-back is its own message — which is in
-`NotificationFeedEventKeys.Customer` and in the APNs display map with `[orderNumber]`; a mute silences the
-push, never the feed row. Every booking, a guest's included, gets an `order-cleaner-released` message on
-`send-email`, keyed `email:order-cleaner-released:{orderId}:{assignmentId}`, which the consumer sends only
-while the order is still `New`. Both ride the release's own commit, so a release its commit refuses tells
-nobody. The next take is a `New → Confirmed` transition again, so the customer still receives a
+booking with an account gets `order.cleaner_released` — `OrderUpdates`, args `orderId` (the deep link) and
+`orderNumber`, subject `{orderId}:{releasedAssignmentId}` so every walk-back is its own message — which is
+in `NotificationFeedEventKeys.Customer` and in the APNs display map with `[orderNumber]`; a mute silences
+the push, never the feed row. Every booking, a guest's included, gets an `order-cleaner-released` message
+on `send-email`, keyed `email:order-cleaner-released:{orderId}:{assignmentId}`, which the consumer sends
+only while the order is still `New`. Both ride the release's own commit, so a release its commit refuses
+tells nobody. The next take is a `New → Confirmed` transition again, so the customer still receives a
 **second** "your order is confirmed" e-mail on top of the assignment push: a new cleaner is a new
 confirmation, and suppressing that e-mail, option (a), was not taken. When the one-off booking was
-reserved for a cleaner the customer asked for and nothing has
-stamped that reservation's receipt (`PreferredOfferLapseNotifiedAt`: only a path that sends the closure
-message does, and the chosen cleaner's take of the reserved job does not), the five-minute lapse sweep
-pushes a signed-in customer `order.preferred_offer_closed`, with no feed row, on its first run that
-finds nobody on the order after the reservation ended, whoever left last, on top of the release's own
-messages; a drop by, or the rejection of, the chosen cleaner while the reservation runs ends it at once.
+reserved for a cleaner the customer asked for and nothing has stamped that reservation's receipt
+(`PreferredOfferLapseNotifiedAt`: only a path that sends the closure message does, and the chosen
+cleaner's take of the reserved job does not), the five-minute lapse sweep pushes a signed-in customer
+`order.preferred_offer_closed`, with no feed row, on its first run that finds nobody on the order after
+the reservation ended, whoever left last, on top of the release's own messages; a drop by, or the
+rejection of, the chosen cleaner while the reservation runs ends it at once.
 → [Business rules — when the last cleaner leaves](/product/business-rules#crew-lost),
 [administrators are told](/product/business-rules#admin-notifications),
 [Admin notifier](/domain/roles/admin-notifier)

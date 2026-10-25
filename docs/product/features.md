@@ -71,10 +71,9 @@ ruling 2026-10-01; until then the apps offered *Find a guest booking*, where the
 
 Every message about the booking — the receipt, *a cleaner has taken your job*, *we're on our way*,
 *all done*, *we're finding you a new cleaner*, the cancellation — carries a fresh working link, and a
-browser remembers the bookings it holds tokens for. A link stops working 30 days after the cleaning,
-and every link the guest already
-held stops at once if the booking is cancelled — the cancellation e-mail then carries a new one, so
-they can still read what they were refunded.
+browser remembers the bookings it holds tokens for. A link stops working 30 days after the cleaning, and
+every link the guest already held stops at once if the booking is cancelled — the cancellation e-mail
+then carries a new one, so they can still read what they were refunded.
 → [Guest order lookup](/flows/booking-and-pricing#guest-order-lookup)
 
 **The receipt** — one per order, in the language the customer booked in, with a line per service,

@@ -56,9 +56,12 @@ failing e-mail can never fail the command, and nothing the notifier reads depend
 - **`IUserNotificationRepository.Add`** — one `UserNotification.Create(admin.Id, key, argsJson, tenantId)`
   per recipient, exactly as `NotificationProducer` writes a client row; the args serialised once by the
   notifier's own serialiser. **`AnyForEventIgnoringTenantAsync(tenantId, key, argName, argValue)`** — tenant-ignoring,
-  explicit predicate, a **jsonb containment** (`@>`) on the one `{arg: value}` pair; the guard the two
-  sites that can repeat one logical event read before calling (a repeated card decline on one order; two
-  overlapping archive builds of one frozen company).
+  explicit predicate, a **jsonb containment** (`@>`) on the one `{arg: value}` pair; the guard these
+  sites read before calling: the card decline (a repeated decline on one order), the archive (two
+  overlapping archive builds of one frozen company), the not-started alert
+  (whichever of its three callers comes first), the no-cleaner-yet alert (a later five-minute tick) and
+  the three refund alerts (the hourly re-drive and the refund seam), each on `orderId` but the archive,
+  which reads the day — the sites invariant 5 lists.
 - **`IAppConfigurationProvider.GetTenantSettingAsync(tenantId, key)`** + `TenantSettingReader.GetAsync(provider,
   tenantId, definition)` — the mailbox read **by argument** (`IgnoreQueryFilters().Where(TenantId == tenantId
   && Key == key)`), beside the ambient overload every other reader uses. The notifier never calls the

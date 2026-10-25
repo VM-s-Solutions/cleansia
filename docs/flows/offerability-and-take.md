@@ -71,8 +71,11 @@ detail shows the seat as *contract pending* until then.
 
 **A placement is an offer, and a removal has a reason** (owner ruling 2026-09-28). The placed cleaner may
 drop the job at no cost, with *Cancel job* (`DropOrder`), which partner web, Android and iOS offer to a
-cleaner on the crew while the job is `New` or `Confirmed` and no lockout is reported, never once it is
-`OnTheWay` or `InProgress` (owner defaults 2026-10-24) → [Leaving a job](/product/features#cleaner-partner).
+cleaner on the crew while the job is `New` or `Confirmed`, no lockout is reported and its start is still
+ahead (with no start time, the rest decides), never once it is `OnTheWay` or `InProgress` (owner
+defaults 2026-10-24); Android takes it away at the start, iOS and partner web at the next read of the
+job, and `DropOrder` itself still admits all four offerable statuses
+→ [Leaving a job](/product/features#cleaner-partner).
 An administrator who takes a cleaner off a job must give a reason
 (`removalReason`, else `order.reassign.removal_reason_required`); the cleaner's notice carries only the
 order, and the job detail shows them the reason (`GetMyAssignmentRemoval`). A weekly job limit carries a

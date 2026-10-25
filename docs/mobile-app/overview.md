@@ -651,8 +651,17 @@ Two rules follow from it:
 
 - **Pass a closure literal, not a method reference that captures a value.** Write
   `status.map { active.contains($0) }`, not `status.map(active.contains)`, and the same for `filter`,
-  `allSatisfy`, `contains(where:)` and every other higher-order argument. Every such site in the apps was
-  rewritten after the incident.
+  `allSatisfy`, `contains(where:)` and every other higher-order argument. What was rewritten after the
+  incident is exactly that class in the apps' sources: a method reference that captures a value, such as
+  `active.contains` where `active` is a `Set`, passed as a non-escaping argument to a higher-order
+  function. Method references bound to a view's `@StateObject` view model and stored as a callback were
+  left on purpose, because the analysis found no early release for a class-reference or an escaping
+  context in the sweep of the build-14 binary. Among them are `onCodeChange: vm.onCodeChange` in
+  `ConfirmEmailView`, `onEmailChange: vm.onEmailChange` and `onPasswordChange: vm.onPasswordChange` in
+  `LoginView`, `onEmailChange` in `ForgotPasswordView` and the `RegisterView` callbacks, with the same
+  shape on the customer app's sign-in, sign-up, forgotten-password and e-mail verification screens. A
+  reference that captures no value, such as a static function, an initialiser
+  (`compactMap(UserNotification.init)`) or a key path, is outside the rule and was left as written.
 - **Prove an iOS crash fix in an optimised build made with the archiving Xcode.** A green Debug run says
   nothing about this class of bug.
 

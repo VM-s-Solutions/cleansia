@@ -253,6 +253,42 @@ reports it from the order detail instead of completing the job, and the job comp
   `OrderDetailCashNotPaidTests`).
   It is not offered on the Active-list swipe, where cash collection is not offered either.
 
+### Cancel job {#cancel-job}
+
+A cleaner on a job's crew can leave it from the order detail, and the job goes back on the board for
+others; the customer's booking is not cancelled (owner defaults 2026-10-24)
+→ [Leaving a job](/product/features#cleaner-partner).
+
+- **Where it shows.** A *Cancel Job* button, outlined and marked as dangerous, in the actions row, while
+  `canDropOrder(order, employeeId, Date.now())` in `order-details.helpers.ts` holds: the partner is on the
+  crew, the job is `New` or `Confirmed`, no lockout has been reported, and its start (`cleaningDateTime`)
+  is still ahead; a job with no start, or one that does not read as a date, is judged without it. The
+  check reads the clock only when the page's copy of the job or of the partner changes, so nothing
+  takes the button away at the start itself: it goes the next time the job is read, as on iOS, while
+  Android hides it at the start.
+- **What it asks.** `OrderDetailsFacade.openDropOrderDialog()` opens the shared confirmation, marked
+  dangerous: *Cancel this job?*, that the partner is taken off the job and their place goes back to
+  Available Orders for other partners, that the customer's order is not cancelled, and that a job they
+  were alone on has no partner until someone takes it (`pages.order_details.cancel_job.*`, five locales).
+  *Yes, cancel the job* goes ahead; *Keep the job* changes nothing.
+- **What it sends.** `DropOrderCommand { orderId }` through `orderClient.dropOrder`. On success the
+  notice follows the answer's `crewRemaining`: at `0`, that the partner is off the job and it has no
+  partner now and is back in Available Orders (`global.messages.orders.job_cancelled_no_crew`); otherwise,
+  that they are off the job and their place is back in Available Orders
+  (`global.messages.orders.job_cancelled`). The page then leaves for the orders page: the job is no
+  longer the partner's, and reading it again would show the seat they just gave up. A refusal the
+  server answers with a key is left to the translated interceptor notice, and the job is read again.
+- **From the start on, it sends nothing and says nothing.** A tap the gate refuses, on a page drawn
+  before the start, opens no confirmation, sends nothing and shows no notice, and reads the job again,
+  which draws it without the button. A confirmation opened before the start and accepted after it is
+  checked again on the job as the page holds it then, and likewise sends nothing and reads the job
+  again. Only a page that does not know the job or the partner still answers a tap with
+  `global.messages.orders.invalid_request`.
+
+`DropOrder` on the server admits a drop at any offerable status, `OnTheWay` and `InProgress` included
+([ADR-0067](/decisions/adr-0067)): the narrower gate is the apps'. Asking for cover (`RequestCover`) has
+no button. → [Business rules — when the last cleaner leaves](/product/business-rules#crew-lost)
+
 ### Elapsed Timer
 
 While an order is `InProgress`, an elapsed timer is displayed on the order detail page showing how long the cleaning has been running. The timer updates in real time based on the `InProgress` status timestamp.

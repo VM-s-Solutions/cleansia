@@ -585,7 +585,7 @@ then the crew was paid half of the fee once the company had collected it.
 ### When the last cleaner leaves {#crew-lost}
 
 **A confirmed booking whose last cleaner leaves goes back to `New` and is re-offered; the customer is
-told nothing; the company's administrators are** (owner ruling 2026-09-19, [ADR-0067](/decisions/adr-0067):
+told nothing at the release; the company's administrators are** (owner ruling 2026-09-19, [ADR-0067](/decisions/adr-0067):
 *"it could go back to New since 'Confirmed' means that cleaner(s) are assigned. Also I want admin know
 about it as well."*). Two acts can empty a crew — a cleaner **dropping** the job, and an admin
 **rejecting** a cleaner who holds future confirmed work — and both walk a `Confirmed` order back
@@ -613,6 +613,17 @@ reassign or a cover swap replaces. Three rules ride with it:
   rejected cleaner is ended with the release — an order back on the board must be *on* the board — while
   a hold naming another cleaner is left alone. → [Offerability](/domain/offerability#the-preferred-cleaner-hold)
 
+**The partner apps offer the drop more narrowly than the server takes it.** Partner web, Android and
+iOS show *Cancel job* only while the cleaner is on the crew, the job is `New` or `Confirmed` and no
+lockout has been reported (owner defaults 2026-10-24) and, since 2026-10-25, its start is still ahead;
+with no start time, the other three decide. From its start, a job nobody started is a no-show for the
+administrators to confirm, and a drop would walk it back to `New` for the unfilled-order sweep to cancel
+instead. Android hides *Cancel job* at the start and again when the app resumes. iOS and partner web
+hide it the next time they read the job; until then a cancel confirmed from the start on sends nothing
+and reads the job again, and partner web opens no confirmation for a tap from the start on. `DropOrder`
+itself still admits a drop at any offerable status, `OnTheWay` and `InProgress` included
+([ADR-0067](/decisions/adr-0067)); that is unchanged. → [Leaving a job](/product/features#cleaner-partner)
+
 **The customer's sequence changes, and nothing new is sent** (default O-D2-1, the owner may overrule).
 A drop moves no money and cancels nothing — *the customer has lost a cleaner, not their clean* — and the
 slot-time sweep is still the one place the customer learns nobody came. But the next take is a
@@ -621,6 +632,22 @@ the assignment push it already sends: *Confirmed → silence → Confirmed again
 search step current again in between and no message saying why. Accepted as stated: a new cleaner is
 a new confirmation, and the e-mail is true when it is sent. No "your cleaner left, we are looking for
 another" message exists.
+
+**One message can follow, when the booking was reserved for a cleaner the customer asked for.** The
+five-minute lapse sweep (`NotifyLapsedPreferredOffers`) looks for a one-off order, not completed or
+cancelled and with nobody on it, whose reservation is past its deadline and was never announced, and
+pushes a signed-in customer `order.preferred_offer_closed`, *Your booking is open to all cleaners*, the
+one sentence a reservation that ended without a confirmation sends
+([why it is one sentence](/architecture/push-notifications#one-sentence)). Only the three paths that
+send that sentence mark a reservation announced: the sweep, the chosen cleaner's decline, and their
+taking another job that clashes with it. Their taking the reserved job announces nothing. So when
+somebody is on the job as the reservation ends, or takes it in the minutes before the sweep's next run,
+the sentence waits until the order is next left with nobody on it, and the next run then sends it,
+whoever left last: the chosen cleaner, who took the job, another cleaner on its crew, or a cleaner an
+administrator rejected. A drop by the chosen cleaner, or their rejection, while the reservation is
+still running ends it then and there. It is sent once per reservation, as a push only, with no inbox
+row, so the customer web shows nothing; a guest and a recurring occurrence get nothing. The release
+itself still sends the customer nothing.
 
 **A drop is checked against the order's status at commit** (since 2026-10-05). The drop touches the
 order row, so the commit compares the order's two tokens, `CurrentStatus` and `PaymentStatus` (the second
@@ -2056,14 +2083,15 @@ partner web's profile (`UpdateEmployee`), the apps' onboarding steps (`UpdatePer
 `UpdateAddressInfo`, `UpdateIdentificationInfo` and the bank details) and an administrator's edit
 (`AdminUpdateEmployee`, which judges the fields it carries). A length is counted in UTF-16 code
 units, as .NET counts a string. Since 2026-10-24 the Android and iOS partner apps check the same
-numbers before they send, and name each failing field under it
+numbers before they send, and name each failing field under it, all but the phone's validity, which
+only the server judges (below)
 → [What each step checks before it sends](/partner-app/onboarding#step-checks).
 
 | Field | The rule | Refused with |
 |---|---|---|
 | First and last name | required, at most 50 | `common.required`, `common.max_length` (on an administrator's edit, `dispute.max_length_exceeded`) |
 | Birth date | a date in the past, 18 to 120 years before today, both days included | `validation.invalid_date`, `validation.date_must_be_in_past`, `validation.invalid_age` |
-| Phone | required; on the apps' Personal save also in international form, with its country code, and a number libphonenumber holds valid | `common.required`, `validation.invalid_phone_number` |
+| Phone | required; on the apps' Personal save also in international form, with its country code, and a number libphonenumber holds valid (the apps check only the form and a possible number, below) | `common.required`, `validation.invalid_phone_number` |
 | Street, city, postcode | required; 5–255, 2–100 and 3–20 | `common.required`, `address.invalid_length` |
 | Passport or ID number | required, 5–20 as sent (the apps trim it first) | `common.required`, `validation.passport_id.invalid_length` |
 | Registration number | at most 50, then the business country's format, which a blank number fails where the country requires one, and, for a Czech number, ARES; the apps' identification save requires it outright | `common.required` (the apps), `dispute.max_length_exceeded`, `validation.registration_number.invalid_format` and the register's keys → [below](#business-register) |
@@ -2076,6 +2104,19 @@ used to answer with MVC's untranslated *The Phone field is required.*, and a num
 international form with `validation.invalid_phone_number`, the check `PhoneNumberAttribute` makes. The
 partner web's profile and an administrator's edit still accept a number without its country code, which
 the web's own phone field allows, so the rule is not in the shared phone validator.
+
+**The apps check the phone's form; the server judges whether it is valid.** Before Personal sends, the
+device checks only the number's form: the international form, a leading `+`, and a **possible**
+number, of a length its country's numbers have. Android asks libphonenumber's `isPossibleNumber`. iOS
+parses with PhoneNumberKit's possible-length check and also requires the digits to start with the
+country code it read, because that parse reads a code no country has as a number of the device's own
+region; so an unassigned code is refused on iOS as libphonenumber refuses it. Validity is the
+server's: `PhoneNumberAttribute` asks libphonenumber-csharp 9.0.24, and neither app carries its
+numbering data. Android's libphonenumber 8.13.50 is older; iOS's PhoneNumberKit 5.0.5 bundles the
+newer 9.0.35. A validity check on either device could refuse a number the server accepts, with no way
+past it, so the devices check only the form and a possible length, and the server alone judges
+validity. The server's refusal, `validation.invalid_phone_number` or `common.required` on the phone, is
+named under the phone field, not in a snackbar.
 
 **A passport or ID number of the wrong length has its own key** (since 2026-10-24),
 `validation.passport_id.invalid_length`, on the identification save, the partner web's profile and an

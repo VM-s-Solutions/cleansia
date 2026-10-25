@@ -64,7 +64,25 @@ boxes iOS shows the system's Paste button, an icon alone, and Android a *Paste* 
 clipboard holds text, because the iPhone keyboard has no clipboard and not every Android keyboard offers
 one on a number pad. **A whole code pasted, or put in by AutoFill or a keyboard's clipboard suggestion,
 replaces a partial one** instead of being added to it, so `654321` pasted after a typed `12` is sent as
-`654321`, not run into `126543`. Only the digits `0`–`9` are kept.
+`654321`, not run into `126543`. Only the digits `0`–`9` are kept. What happens to less than a whole
+code depends on the gesture and the platform:
+
+- **The apps' Paste button replaces what was typed** with the clipboard's code. A fragment shows as
+  itself, so `3456` on the clipboard after a typed `12` shows `3456`, and it is submitted only once the
+  boxes hold six digits: the button never completes a code from digits already typed and spends an
+  attempt on it. A clipboard with no digits changes nothing.
+- **The field's own Paste, from the long press, is editing**: a fragment goes in at the caret, which the
+  apps keep after the code, and a whole code replaces.
+- **On partner web a fragment is written from the box it lands in**, and the boxes before it keep their
+  digits: `12` typed, then `34` pasted into the third box, gives `1234`. The focus then moves to the box
+  after the fragment, or stays on the last box, so the digits typed next continue the code. Each box
+  takes up to 13 characters, twice a code and one more, so a code spaced as `123 456` and put in beside
+  a digit a box already holds keeps all six digits. The page sends one confirm at a time: a code the
+  boxes complete again while the first confirm is in flight, as AutoFill can deliver it, is not sent a
+  second time.
+
+VoiceOver and TalkBack read the apps' field as *Verification code, 6 digits*; the boxes drawn over it
+are hidden from them.
 → [Mobile app features](/mobile-app/features#shared-versus-app-owned)
 
 ::: warning
@@ -192,42 +210,152 @@ bank code. The clients read three shapes:
 | `CZ65 0800 0000 1920 0014 5399`, or an SK IBAN | the same three parts, with the IBAN's zero padding dropped |
 
 Spaces of every kind are ignored (a non-breaking one included) and an en or em dash counts as a hyphen.
-**A bare run of digits is measured by what the paste put in, and the box it lands in decides where it
-goes** (since 2026-10-24), on partner web, Android and iOS alike:
+**The bank code of a written-out account is exactly four digits**, as every Czech and Slovak bank code
+is (since 2026-10-25): a slash followed by one to three digits, or by five or more, is no account, so
+`19-2000145399/080` is not split. An IBAN always gives a four-digit bank code.
 
-- **A run that fits the box it lands in** — at most 6 digits in the prefix box, 4 in the bank code's,
-  10 in the number's — is that part, copied on its own, and stays in that box, even beside digits
-  already there. `0800` pasted into the bank-code box and `19` into the prefix box stay where they were
-  pasted, and the number already entered is kept.
-- **A longer run, up to ten digits, is the account number.** `2000145399` pasted into the prefix box
-  becomes the number, and the prefix and bank code stay as they are.
-- **A whole written-out account or a CZ or SK IBAN is split** over the three boxes, as the table says.
-- **Typing never moves anything**: the number pad types one digit at a time. Eleven or more bare digits
-  are no account number and are cut to the box's length, like typing.
+**One rule decides what an edit of a box does, on partner web, Android and iOS alike** (since
+2026-10-25). The prefix holds at most 6 digits, the number 10 and the bank code 4. Steps 1 and 3 read
+what the edit put in, which the clients work out differently (below):
+
+1. **An account first.** If the edit put in more than one character and what it put in is one of the
+   three shapes, with a bank code, where it has one, of exactly four digits, it is split over the three
+   boxes, whichever box it landed in and even where its digits would fit that box, so `12345/0800`
+   pasted into the empty number gives the number `12345` and the bank code `0800`. One character is
+   never an account.
+2. **Otherwise new text that fits the box is kept**, as typed or pasted, and the box then keeps only its
+   digits, on the apps by its digit clamp and on partner web by the profile page: `19` pasted into the
+   empty prefix box stays the prefix, and `12345/080`, which is no account, pasted into the empty number
+   is the number `12345080`.
+3. **Otherwise the new text is too long for the box**, and what the edit put in decides:
+   - **one character is typing**: the box keeps the first digits of its new text that fit, so a digit at
+     the end of a full box changes nothing, and one before or inside it pushes out the box's last digit;
+   - **digits that fit the box replace what it held**: `5500` pasted after the bank code `0800` gives
+     `5500`, and the number already entered stays;
+   - **digits too long for the box, up to the number's ten, are the account number**, and the box keeps
+     what it held: `2000145399` pasted into the prefix box becomes the number, and the prefix and bank
+     code stay as they are;
+   - **anything else leaves the box as it was**, eleven or more digits included, and so does an account
+     whose bank code is cut short, which is too long for any box: `19-2000145399/080` or
+     `2000145399/080` pasted into an empty one, and on partner web into any box, whatever it holds.
 
 Until 2026-10-24 a bare number pasted into any box became the account number, on the apps from two
 digits and on the web from one, so a bank code pasted into its own box replaced the number already
 entered, and a real prefix such as `19` pasted into the prefix box went to the number.
 
-**Beside digits a box already holds, the platforms still differ.** Partner web reads the clipboard
-alone: a run that fits replaces the box's digits (`5500` pasted after a bank code `0800` gives
-`5500`), a longer run becomes the number whatever the box held, and a paste that is none of the shapes
-is left to the browser, which inserts it at the caret and cuts it to the box's length. The apps read
-the box's whole new text, the paste together with the digits beside it, for the three shapes and for
-the number's ten digits, and they clamp a run that fits into the box with its old digits, keeping the
-first ones: `5500` pasted after `0800` leaves `0800` and pasted before it gives `5500`, and
-`2000145399` pasted after `0800` is fourteen digits, so the box keeps `0800` and the number is not
-filled. Pasted into an empty box, a paste is read on its own on all three.
+**What the edit put in is read from the paste on partner web, and worked out on the apps.**
 
-**After a routed paste the keyboard closes, on both apps**, because both rebuild the three boxes: iOS
-with `.id(pasteRevision)`, so each box draws its new value, and Android with `key(pasteRevision)`, so
-pasting the same text into the same box a second time is not dropped as a repeat. **Each box keeps the
-digits `0`–`9` only**, up to its length, on both apps (`clampSegment`, since 2026-10-02): a keyboard can
-type Arabic-Indic or full-width digits, which the server refuses, and the boxes used to keep them. The
-clients only split text. The server keeps every rule on the parts (the mod-11 check and the bank-code
-shape). Partner web reads the same three shapes since 2026-10-02: it splits a CZ or SK IBAN, ignores
-whitespace of every kind inside the digits too, and reads an en or em dash as a hyphen. Before, it split
-only the two separator shapes, and a bare number pasted there cleared the prefix.
+- **Partner web** reads the pasted text from the paste event, so it knows what went in whatever the box
+  held and wherever the caret or the selection was. Typing is the browser's own: each box is held to its
+  `maxlength`, so a digit typed into a full box is refused wherever the caret is, and only a
+  one-character paste goes through the typing step.
+- **The apps** see only the box's text before and after the edit, and typing goes through the box's
+  digit clamp. Their *run* is the new text less the longest start and the longest end it shares with the
+  old text, the two never overlapping. When the run is longer than one character, step 1 tries four
+  readings, in this order, and splits the first one that is an account:
+  1. when the new text starts with the old text, the text after it: a paste at the end, or into an
+     empty box;
+  2. when the new text ends with the old text, the text before it: a paste at the start;
+  3. the whole new text: a paste over the whole box, as after Select All;
+  4. the run: a paste in the middle.
+
+  Step 3 reads the run alone.
+
+**A run of one character is never read as an account, on both apps**, so a `-` or `/` typed among a
+box's digits is dropped by the digit clamp like any other non-digit, and nothing moves between the
+boxes: a `-` typed after the `1` of the prefix `12345` leaves the prefix `12345` (rows 25 and 25b
+below). The price is a paste whose run is a single character: `123456/0800` pasted over the whole number
+`1234560800` differs from it by the `/` alone, so the apps read it as typing and the number stays as it
+was, where partner web splits it.
+
+**The three clients pin one case list, row for row**: iOS in `CleansiaBankAccountFieldPasteTests`,
+Android in `CleansiaBankAccountInputPasteTest` and partner web in
+`cleansia-bank-account.component.spec.ts`. Each row starts with the other two boxes empty. The one
+character of rows 13 and 17 is typed on the apps and pasted on the web, where a digit typed into a full
+box is refused. Rows 25 and 25b are typing, which partner web leaves to the browser, so only the apps
+pin them.
+
+| # | Box | It holds | The edit | The boxes then hold | iOS keyboard |
+|---|---|---|---|---|---|
+| 1 | bank code | nothing | `0800` pasted | bank code `0800` | stays |
+| 2 | bank code | `0800` | `5500` pasted after it | bank code `5500` | closes |
+| 3 | bank code | `0800` | `5500` pasted before it | bank code `5500` | stays |
+| 4 | bank code | `0800` | `55` pasted over its `08` | bank code `5500` | stays |
+| 5 | bank code | `08` | `00` pasted after it | bank code `0800` | stays |
+| 6 | bank code | `08` | `0800` pasted after it | bank code `0800` | closes |
+| 7 | bank code | `0800` | `2000145399` pasted after it | number `2000145399`, bank code still `0800` | closes |
+| 8 | bank code | nothing | `2000145399` pasted | number `2000145399`, bank code still empty | closes |
+| 9 | prefix | `12345` | `67` pasted after it | prefix `67` | closes |
+| 10 | prefix | nothing | `19` pasted | prefix `19` | stays |
+| 11 | number | nothing | `19-2000145399/0800` pasted | prefix `19`, number `2000145399`, bank code `0800` | closes |
+| 12 | number | nothing | `CZ65 0800 0000 1920 0014 5399` pasted | prefix `19`, number `2000145399`, bank code `0800` | closes |
+| 13 | bank code | `0800` | `5` after it | bank code `0800` | stays |
+| 14 | number | `2000145399` | `1234567890` pasted after it | number `1234567890` | closes |
+| 15 | number | nothing | `12345/0800` pasted | number `12345`, bank code `0800` | closes |
+| 16 | number | nothing | `19-1234567` pasted | prefix `19`, number `1234567`, bank code still empty | closes |
+| 17 | bank code | `0800` | `5` before it | bank code `5080` | stays |
+| 18 | bank code | `0800`, all of it selected | `19-2000145399/0800` pasted over it | prefix `19`, number `2000145399`, bank code `0800` | closes |
+| 19 | number | `1234567890`, all of it selected | `19-2000145399/0801` pasted over it | prefix `19`, number `2000145399`, bank code `0801` | closes |
+| 20 | bank code | `0800` | `19-2000145399/0800` pasted after it | prefix `19`, number `2000145399`, bank code `0800` | closes |
+| 21 | number | `2000145399`, all of it selected | `2000145399/0800` pasted over it | number `2000145399`, bank code `0800` | closes |
+| 22 | number | `19` | `19-2000145399/0800` pasted before it | prefix `19`, number `2000145399`, bank code `0800` | closes |
+| 23 | bank code | `0800` | `19-2000145399/0800` pasted after its first `0` | prefix `19`, number `2000145399`, bank code `0800` | closes |
+| 24 | bank code | `0`, all of it selected | `19-2000145399/0800` pasted over it | prefix `19`, number `2000145399`, bank code `0800` | closes |
+| 25 | prefix | `12345` | `-` typed after its `1` | prefix `12345` | stays |
+| 25b | number | `2000145399` | `/` typed after its `200014` | number `2000145399` | stays |
+| 26 | prefix | `0` | `19-2000145399/0800` pasted after it | prefix `19`, number `2000145399`, bank code `0800` | closes |
+| 27 | prefix | `0` | `1234567890` pasted after it | prefix `0`, number `1234567890` | closes |
+
+**Partner web pins one row more, W3**, a paste the apps misread (below): `19-2000145399/0800` pasted
+over the first five digits of the number `1234567890` gives the prefix `19`, the number `2000145399` and
+the bank code `0800`. Reading the pasted text, partner web gets rows 23, 24, 26 and 27 right with or
+without the four-digit rule; on the apps rows 23 and 24 need it, because a reading that cuts the pasted
+bank code to `080` is no account.
+
+**On iOS an edit the box's digit clamp settles keeps the keyboard, and an edit the control writes
+itself closes it.** An edit whose result is what the clamp makes of the box's new text, its first digits
+up to the box's length, goes through as typed: typing, and rows 1, 3, 4, 5, 10, 13, 17, 25 and 25b. Any
+other edit is written by the control, which rebuilds the three boxes with `.id(pasteRevision)`, so that
+each draws its new value, and the rebuild ends the edit and closes the keyboard: a split, a number
+routed from another box, or digits replacing the box's own (rows 2, 6–9, 11, 12, 14–16, 18–24, 26 and
+27). **On Android only a spread closes the keyboard**: an account, or a number routed from another box
+(rows 7, 8, 11, 12, 15, 16, 18–24, 26 and 27), rebuilds the boxes with `key(pasteRevision)`, so that the
+same paste into the same box a second time is not dropped as a repeat. Every other edit keeps the
+keyboard.
+
+**Each box keeps the digits `0`–`9` only**, up to its length, on both apps (`clampSegment`, since
+2026-10-02): a keyboard can type Arabic-Indic or full-width digits, which the server refuses, and the
+boxes used to keep them. The clients only split text. The server keeps every rule on the parts (the
+mod-11 check and the bank-code shape). Partner web reads the same three shapes since 2026-10-02: it
+splits a CZ or SK IBAN, ignores whitespace of every kind inside the digits too, and reads an en or em
+dash as a hyphen. Before, it split only the two separator shapes, and a bare number pasted there cleared
+the prefix.
+
+::: warning The apps can misread a paste beside or over digits a box already holds
+On the apps, which see only a box's old and new text, these pastes can still be misread:
+
+- a whole account pasted with the caret inside a box's digits, or over part of them, which can take in
+  the digits beside it or lose digits it shares with them;
+- a Select All paste over digits that the pasted account begins with: number `2000` selected, then
+  `2000145399/0800`, gives number `145399`;
+- a bare number pasted before digits that share its first digits: `0100` pasted before `0800` gives
+  `1000`.
+
+The web reads all of these correctly, because the paste event carries the pasted text.
+
+The apps compare the box's text before and after the edit, so a digit the paste shares with what the box
+held can be read as one the box kept, and the box's own digits beside the caret or a selection can be
+read as part of the paste. A bare number pasted over a box's digits can lose the digits it shares with
+them the same way. A paste into an empty box is never misread. More examples, each read correctly on
+partner web:
+
+| The box holds | Pasted | The apps read | Partner web reads |
+|---|---|---|---|
+| the number `1234567890`, with `12345` selected (W3) | `19-2000145399/0800` | prefix `9` | prefix `19` |
+| the prefix `12345`, with `2345` selected | `19-2000145399/0800` | prefix `119` | prefix `19` |
+| the number `2`, all of it selected | `2000145399/0800` | number `000145399` | number `2000145399` |
+| the prefix `19`, all of it selected | `2000145399` | number `200014539`, prefix still `19` | number `2000145399`, prefix still `19` |
+:::
 
 ::: tip Country Configuration
 Country-specific labels and validation rules (e.g., field names, format masks) are driven by the `CountryConfiguration` table managed in the admin app.
@@ -258,18 +386,22 @@ a large text size iOS shrinks a name to fit its column, and Android wraps it ont
 **On the Android and iOS partner apps a form's button can be tapped at any time but while its request
 is in flight** (since 2026-10-24): *Sign Up*, and each onboarding step's *Next* or *Save*. A tap checks
 every rule the device can check, in one pass, and names each missing or invalid field under it; nothing
-is sent until all of them pass, and an error clears as soon as its own field changes. A refusal only the
-server can make comes back under the field it is about, by its key, and any other refusal is a
-snackbar. Until then most of these buttons stayed disabled until their form looked complete, which
-said nothing about what was missing. On partner web, *Register* still waits for a valid form, and the
-bank form's *Save* for the bank country and the account or the IBAN.
+is sent until all of them pass, and an error clears as soon as its own field changes. Two also clear
+when the country they were judged by changes: a SWIFT refusal when the bank country changes, and a
+registration-number refusal when the business country changes. Every Bank save first clears the
+server's earlier SWIFT and IBAN refusals, before the device checks run, so a new refusal never shows
+beside one answered for an earlier save. A refusal only the server can make comes back under the field
+it is about, by its key, and any other refusal is a snackbar. Until then most of these buttons stayed
+disabled until their form looked complete, which said nothing about what was missing. On partner web,
+*Register* still waits for a valid form, and the bank form's *Save* for the bank country and the
+account or the IBAN.
 
 Every field named below is required; the rest is what else it must meet.
 
 | Step | Checked on the device | Named under its field, from the server |
 |---|---|---|
 | Sign up | first and last name; the e-mail, then its shape; a password that meets the policy; a matching confirmation; the terms ticked | — |
-| Personal | first and last name, at most 50 characters each; the birth date, 18 to 120 years before today, counted on today's UTC date; the phone, in international form with its country code, and a valid number | — |
+| Personal | first and last name, at most 50 characters each; the birth date, 18 to 120 years before today, counted on today's UTC date, a date more than 120 years back named in the words of the server's `validation.invalid_age` (*Please enter a valid age.*) on both apps; the phone, in international form with its country code, and a possible number for that country | `validation.invalid_phone_number`, and `common.required` on the phone, under the phone |
 | Address | a pick with a street of 5–255 characters, a city of 2–100 and a postcode of 3–20, checked as soon as the picker returns; with nothing picked, the card asks for a pick | `common.required` and `address.invalid_length`, on the address card |
 | Identification | nationality; the passport or ID number, 5–20 characters once trimmed; the business country; the registration number | the number's format and the business register's answers (`validation.registration_number.invalid_format`, `validation.registration_number.not_registered`, `employee.business_ceased`, `employee.trade_licence_inactive`) under the registration number; `validation.passport_id.invalid_length` under the passport |
 | Bank | the bank country; for a CZ or SK bank the account number and a bank code of four digits, for any other the IBAN (above) | the payout refusals under the account, the IBAN, the SWIFT or the bank country |
@@ -281,17 +413,23 @@ registered name is missing. Contact support to add it — it can't be changed he
 incomplete until an administrator adds the name. The server holds every save to the same numbers, the
 partner web's and an administrator's edit too, with one exception: only the apps' Personal save
 requires the phone's country code (`validation.invalid_phone_number`), and partner web and an
-administrator's edit still accept a number without it.
+administrator's edit still accept a number without it. **The phone is the one Personal field the apps
+check less than the server does**: the device checks the international form and a length the number's
+country allows, and whether the number is valid is the server's to judge, on numbering data neither app
+carries (newer than Android's, older than the data iOS bundles). Its refusal is named under the phone
+field, not in a snackbar.
 → [The numbers the server holds these fields to](/product/business-rules#cleaner-profile-fields)
 
 **A phone pasted with its country code keeps it** (since 2026-10-24). On the apps the phone field keeps
 a `+` that comes before the first digit, wherever it sits, so ` +420 728 089 247`,
 `Tel: +420 728 089 247` and `(+420) 728 089 247` all read `+420728089247`; until then a `+` that was not
 the very first character was dropped, and the number lost its country code. `(420) 728 089 247` still
-reads `420728089247`, which Personal refuses for its missing `+`. On partner web, a number pasted or
-autofilled with its own country code, such as `+420 777 111 222`, selects that country and keeps the
-rest as the national number, where it used to save the code twice (`+420 420777111222`); the spaces
-and the invisible marks a contacts app puts in front of a copied number are ignored.
+reads `420728089247`, which Personal refuses for its missing `+`. On partner web, the phone control
+reads a pasted or autofilled number's country from a `+` before its first digit, wherever it sits, as
+the apps keep it: `+420 777 111 222`, `Tel: +420 728 089 247`, `(+420) 728 089 247` and
+`+ 420 728 089 247` all select +420 and keep the rest as the national number, where it used to save the
+code twice (`+420 420777111222`); the spaces, the label, the brackets and the invisible marks a contacts
+app puts in front of a copied number are ignored.
 
 ## Step 5: Document Upload
 

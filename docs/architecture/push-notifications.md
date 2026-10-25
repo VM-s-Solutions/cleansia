@@ -336,10 +336,17 @@ entry declares the exact set a site may pass, so a site cannot smuggle a name in
 
 **The customer keyset is unchanged by the walk-back**, and one consequence is named rather than hidden:
 when a `Confirmed` order loses its last cleaner and goes back to `New` ([ADR-0067](/decisions/adr-0067)),
-no customer push, e-mail or feed row is written — but the next take is a `New → Confirmed` transition
-again, so the customer receives a **second** "your order is confirmed" e-mail on top of the assignment
-push. A new cleaner is a new confirmation; the e-mail is true when it is sent (default O-D2-1).
-→ [Business rules — administrators are told](/product/business-rules#admin-notifications),
+the release itself writes no customer push, e-mail or feed row — but the next take is a `New → Confirmed`
+transition again, so the customer receives a **second** "your order is confirmed" e-mail on top of the
+assignment push. A new cleaner is a new confirmation; the e-mail is true when it is sent (default
+O-D2-1). When the one-off booking was reserved for a cleaner the customer asked for and nothing has
+stamped that reservation's receipt (`PreferredOfferLapseNotifiedAt`: only a path that sends the closure
+message does, and the chosen cleaner's take of the reserved job does not), the five-minute lapse sweep
+pushes a signed-in customer `order.preferred_offer_closed`, with no feed row, on its first run that
+finds nobody on the order after the reservation ended, whoever left last; a drop by, or the rejection
+of, the chosen cleaner while the reservation runs ends it at once.
+→ [Business rules — when the last cleaner leaves](/product/business-rules#crew-lost),
+[administrators are told](/product/business-rules#admin-notifications),
 [Admin notifier](/domain/roles/admin-notifier)
 
 ### The no-show pushes say what happened to the money {#no-show-outcomes}

@@ -24,7 +24,8 @@ final class LocalizableCatalogFormatTests: XCTestCase {
         "order.starting_soon",
         "order.assigned",
         "order.assignment_revoked",
-        "order.preferred_offer_closed"
+        "order.preferred_offer_closed",
+        "order.cleaner_released"
     ]
 
     private func iosRoot() -> URL {
